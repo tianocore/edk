@@ -87,7 +87,6 @@ Returns:
               );
     Pe32Data = (VOID *) TEImageHeader;
   }
-
   if (Status == EFI_SUCCESS) {
     if (TEImageHeader == NULL) {
       if (((EFI_IMAGE_DOS_HEADER *) Pe32Data)->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
@@ -124,27 +123,18 @@ Returns:
 
     if (EFI_ERROR (Status)) {
       if (TEImageHeader != NULL) {
-        *EntryPoint = (VOID *)
-          (
-            (UINTN) TEImageHeader +
-            sizeof (EFI_TE_IMAGE_HEADER) +
-            TEImageHeader->AddressOfEntryPoint -
-            TEImageHeader->StrippedSize
-          );
+      	*EntryPoint = (VOID *)((UINTN) TEImageHeader + sizeof (EFI_TE_IMAGE_HEADER) +
+                      TEImageHeader->AddressOfEntryPoint - TEImageHeader->StrippedSize);
       } else {
         *EntryPoint = (VOID *) ((UINTN) Pe32Data + (UINTN) (PeHdr->OptionalHeader.AddressOfEntryPoint & 0x0ffffffff));
       }
     }
 
 #else
+    ImageAddress = (EFI_PHYSICAL_ADDRESS)Pe32Data;
     if (TEImageHeader != NULL) {
-      *EntryPoint = (VOID *)
-        (
-          (UINTN) TEImageHeader +
-          sizeof (EFI_TE_IMAGE_HEADER) +
-          TEImageHeader->AddressOfEntryPoint -
-          TEImageHeader->StrippedSize
-        );
+      *EntryPoint = (VOID *)((UINTN) TEImageHeader + sizeof (EFI_TE_IMAGE_HEADER) +
+                    TEImageHeader->AddressOfEntryPoint - TEImageHeader->StrippedSize);
     } else {
       *EntryPoint = (VOID *) ((UINTN) Pe32Data + (UINTN) (PeHdr->OptionalHeader.AddressOfEntryPoint & 0x0ffffffff));
     }
@@ -178,27 +168,24 @@ Returns:
       TEImageAdjust   = 0;
       if (TEImageHeader == NULL) {
         if (PeHdr->OptionalHeader.NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_DEBUG) {
-        DirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *) &(PeHdr->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
-        DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *) ((UINTN) Pe32Data + DirectoryEntry->VirtualAddress);
-      }
-    } else {
-      if (TEImageHeader->DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress != 0) {
-      DirectoryEntry  = &TEImageHeader->DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG];
-      TEImageAdjust   = sizeof (EFI_TE_IMAGE_HEADER) - TEImageHeader->StrippedSize;
-      DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *)
-        (
-          (UINTN) TEImageHeader +
-          TEImageHeader->DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress +
-          TEImageAdjust
-        );
-      }
-    }
+          DirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *) &(PeHdr->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+          DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *) ((UINTN) ImageAddress + DirectoryEntry->VirtualAddress);
+        }
+      } else {
+        if (TEImageHeader->DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress != 0) {
+          DirectoryEntry  = &TEImageHeader->DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG];
+          TEImageAdjust   = sizeof (EFI_TE_IMAGE_HEADER) - TEImageHeader->StrippedSize;
+          DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *)((UINTN) TEImageHeader +
+                        TEImageHeader->DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress +
+                        TEImageAdjust);
+        }
+     }
 
-      if (DebugEntry != NULL) {
+      if (DebugEntry != NULL && DirectoryEntry != NULL) {
         for (DirCount = 0; DirCount < DirectoryEntry->Size; DirCount++, DebugEntry++) {
           if (DebugEntry->Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
             if (DebugEntry->SizeOfData > 0) {
-              CodeViewEntryPointer = (VOID *) ((UINTN) DebugEntry->RVA + (UINTN) Pe32Data + (UINTN)TEImageAdjust);
+              CodeViewEntryPointer = (VOID *) ((UINTN) DebugEntry->RVA + (UINTN) ImageAddress + (UINTN)TEImageAdjust);
               switch (* (UINT32 *) CodeViewEntryPointer) {
                 case CODEVIEW_SIGNATURE_NB10:
                   AsciiString = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_NB10_ENTRY);
@@ -236,7 +223,6 @@ Returns:
       }
     }
     )
-
 
     PEI_DEBUG ((PeiServices, EFI_D_INFO | EFI_D_LOAD, "\n"));
   } else {
