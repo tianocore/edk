@@ -15,31 +15,32 @@ Module Name:
     
 Abstract:
 
-  Read-only Variable Service PPI as defined in EFI 2.0
+  Read-only Variable Service PPI as defined in Tiano
 
 --*/
 
 #ifndef _PEI_READ_ONLY_VARIABLE_PPI_H
 #define _PEI_READ_ONLY_VARIABLE_PPI_H
-        
-#define PEI_READ_ONLY_VARIABLE_ACCESS_PPI_GUID  \
-  {0x3cdc90c6, 0x13fb, 0x4a75, 0x9e, 0x79, 0x59, 0xe9, 0xdd, 0x78, 0xb9, 0xfa}
+
+#define PEI_READ_ONLY_VARIABLE_ACCESS_PPI_GUID \
+  { \
+    0x3cdc90c6, 0x13fb, 0x4a75, 0x9e, 0x79, 0x59, 0xe9, 0xdd, 0x78, 0xb9, 0xfa \
+  }
 
 //
 // Variable attributes
 //
-#define EFI_VARIABLE_NON_VOLATILE           0x00000001
-#define EFI_VARIABLE_BOOTSERVICE_ACCESS     0x00000002
-#define EFI_VARIABLE_RUNTIME_ACCESS         0x00000004
-#define EFI_VARIABLE_READ_ONLY              0x00000008
-
+#define EFI_VARIABLE_NON_VOLATILE       0x00000001
+#define EFI_VARIABLE_BOOTSERVICE_ACCESS 0x00000002
+#define EFI_VARIABLE_RUNTIME_ACCESS     0x00000004
+#define EFI_VARIABLE_READ_ONLY          0x00000008
 
 typedef
 EFI_STATUS
 (EFIAPI *PEI_GET_VARIABLE) (
-  IN EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_PEI_SERVICES             **PeiServices,
   IN CHAR16                       *VariableName,
-  IN EFI_GUID                     *VendorGuid,
+  IN EFI_GUID                     * VendorGuid,
   OUT UINT32                      *Attributes OPTIONAL,
   IN OUT UINTN                    *DataSize,
   OUT VOID                        *Data
@@ -48,10 +49,10 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *PEI_GET_NEXT_VARIABLE_NAME) (
-  IN EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_PEI_SERVICES             **PeiServices,
   IN OUT UINTN                    *VariableNameSize,
   IN OUT CHAR16                   *VariableName,
-  IN OUT EFI_GUID                 *VendorGuid
+  IN OUT EFI_GUID                 * VendorGuid
   );
 
 typedef struct PEI_READ_ONLY_VARIABLE_PPI {

@@ -17,13 +17,14 @@ Abstract:
 
   Variable Write Architectural Protocol as defined in DXE CIS
 
-  This code is used to produce the EFI 1.0 runtime variable services
+  This code is used to indicate the EFI 1.0 runtime variable services
+  support writting to variables.
 
 --*/
 
 #include "Tiano.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (VariableWrite)
 
-EFI_GUID gEfiVariableWriteArchProtocolGuid = EFI_VARIABLE_WRITE_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiVariableWriteArchProtocolGuid = EFI_VARIABLE_WRITE_ARCH_PROTOCOL_GUID;
 
-EFI_GUID_STRING (&gEfiVariableWriteArchProtocolGuid, "VariableWrite", "Variable Write Arch Protocol");
+EFI_GUID_STRING(&gEfiVariableWriteArchProtocolGuid, "VariableWrite", "Variable Write Arch Protocol");

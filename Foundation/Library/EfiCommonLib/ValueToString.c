@@ -199,8 +199,7 @@ Returns:
   }                   
 
   Index = Count;
-  if (!(Flags & LEFT_JUSTIFY))
-  {
+  if (!(Flags & LEFT_JUSTIFY)) {
     for (; Index < Width; Index++) {
       *(TempStr++) = Prefix;
   }

@@ -22,8 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(BootInRecoveryMode)
+#include EFI_PPI_DEFINITION (BootInRecoveryMode)
 
-EFI_GUID gPeiBootInRecoveryModePpiGuid = PEI_BOOT_IN_RECOVERY_MODE_PEIM_PPI;
+EFI_GUID  gPeiBootInRecoveryModePpiGuid = PEI_BOOT_IN_RECOVERY_MODE_PEIM_PPI;
 
 EFI_GUID_STRING(&gPeiMasterBootModePpiGuid, "BootMode", "Master Boot Mode PPI");

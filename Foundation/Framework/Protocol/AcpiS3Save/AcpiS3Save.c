@@ -15,14 +15,14 @@ Module Name:
 
 Abstract:
 
-  Tiano EFI 2.0 S3 Save Protocol
+  Tiano Tiano S3 Save Protocol
 
 --*/
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(AcpiS3Save)
+#include EFI_PROTOCOL_DEFINITION (AcpiS3Save)
 
-EFI_GUID gEfiAcpiS3SaveGuid = EFI_ACPI_S3_SAVE_GUID;
+EFI_GUID  gEfiAcpiS3SaveGuid = EFI_ACPI_S3_SAVE_GUID;
 
-EFI_GUID_STRING(&gEfiAcpiS3SaveGuid, "EFI Acpi S3 Save Protocol", "EFI 2.0 Acpi S3 Save Protocol");
+EFI_GUID_STRING(&gEfiAcpiS3SaveGuid, "EFI Acpi S3 Save Protocol", "Tiano Acpi S3 Save Protocol");

@@ -25,13 +25,12 @@ Revision History
 // to the system, and the FW connects to the devices to provide the
 // variable store interfaces through these devices.
 //
-
 //
 // Variable Store Device protocol
 //
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(VariableStore)
+#include EFI_PROTOCOL_DEFINITION (VariableStore)
 
-EFI_GUID gEfiVariableStoreProtocolGuid = EFI_VARIABLE_STORE_PROTOCOL_GUID;
+EFI_GUID  gEfiVariableStoreProtocolGuid = EFI_VARIABLE_STORE_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiVariableStoreProtocolGuid, "Variable Storage Protocol", "EFI 2.0 Variable Storage Protocol");
+EFI_GUID_STRING(&gEfiVariableStoreProtocolGuid, "Variable Storage Protocol", "Tiano Variable Storage Protocol");

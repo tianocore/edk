@@ -22,8 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(Variable)
+#include EFI_PPI_DEFINITION (Variable)
 
-EFI_GUID gPeiReadOnlyVariablePpiGuid = PEI_READ_ONLY_VARIABLE_ACCESS_PPI_GUID;
+EFI_GUID  gPeiReadOnlyVariablePpiGuid = PEI_READ_ONLY_VARIABLE_ACCESS_PPI_GUID;
 
 EFI_GUID_STRING(&gPeiReadOnlyVariablePpiGuid, "Variable", "Read Only Variable PPI");

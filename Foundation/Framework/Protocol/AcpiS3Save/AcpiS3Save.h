@@ -24,37 +24,35 @@ Abstract:
 //
 // Includes
 //
-
 #include "Tiano.h"
 
 //
 // Forward reference for pure ANSI compatability
 //
-
 EFI_FORWARD_DECLARATION (EFI_ACPI_S3_SAVE_PROTOCOL);
 
 //
 // S3 Save Protocol GUID
 //
 #define EFI_ACPI_S3_SAVE_GUID \
-{ 0x125f2de1, 0xfb85, 0x440c, 0xa5, 0x4c, 0x4d, 0x99, 0x35, 0x8a, 0x8d, 0x38 }
-
+  { \
+    0x125f2de1, 0xfb85, 0x440c, 0xa5, 0x4c, 0x4d, 0x99, 0x35, 0x8a, 0x8d, 0x38 \
+  }
 
 //
 // Protocol Data Structures
 //
-
-typedef 
-EFI_STATUS 
-EFI_BOOTSERVICE 
+typedef
+EFI_STATUS
+EFI_BOOTSERVICE
 (EFIAPI *EFI_ACPI_S3_SAVE) (
-  IN EFI_ACPI_S3_SAVE_PROTOCOL   *This
-);
+  IN EFI_ACPI_S3_SAVE_PROTOCOL   * This
+  );
 
-typedef struct _EFI_ACPI_S3_SAVE_PROTOCOL{
-  EFI_ACPI_S3_SAVE       S3Save;
+typedef struct _EFI_ACPI_S3_SAVE_PROTOCOL {
+  EFI_ACPI_S3_SAVE  S3Save;
 } EFI_ACPI_S3_SAVE_PROTOCOL;
 
-extern EFI_GUID                         gEfiAcpiS3SaveGuid;
+extern EFI_GUID gEfiAcpiS3SaveGuid;
 
 #endif

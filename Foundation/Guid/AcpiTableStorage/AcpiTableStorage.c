@@ -24,4 +24,5 @@ Abstract:
 
 EFI_GUID gEfiAcpiTableStorageGuid = EFI_ACPI_TABLE_STORAGE_GUID;
 
-EFI_GUID_STRING (&gEfiAcpiTableStorageGuid, "ACPI Table Storage File Name", "Tiano ACPI 2.0 Table Storage file name GUID");
+EFI_GUID_STRING (&gEfiAcpiTableStorageGuid, "ACPI Table Storage File Name", 
+                "Tiano ACPI 2.0 Table Storage file name GUID");

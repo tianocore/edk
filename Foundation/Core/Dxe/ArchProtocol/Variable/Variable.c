@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Variable Architectural Protocol as defined in EFI 2.0
+  Variable Architectural Protocol as defined in Tiano
 
   This code is used to produce the EFI 1.0 runtime variable services
 
@@ -24,6 +24,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variable)
 
-EFI_GUID gEfiVariableArchProtocolGuid = EFI_VARIABLE_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiVariableArchProtocolGuid = EFI_VARIABLE_ARCH_PROTOCOL_GUID;
 
-EFI_GUID_STRING (&gEfiVariableArchProtocolGuid, "Variable", "Variable Arch Protocol");
+EFI_GUID_STRING(&gEfiVariableArchProtocolGuid, "Variable", "Variable Arch Protocol");

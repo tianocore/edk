@@ -24,7 +24,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_GUID_DEFINITION (Apriori)
 
-EFI_GUID gAprioriGuid  = EFI_APRIORI_GUID;
+EFI_GUID  gAprioriGuid = EFI_APRIORI_GUID;
 
-EFI_GUID_STRING (&gAprioriGuid, "Apriori File Name", "Apriori File containing FV GUIDs");
-
+EFI_GUID_STRING(&gAprioriGuid, "Apriori File Name", "Apriori File containing FV GUIDs");

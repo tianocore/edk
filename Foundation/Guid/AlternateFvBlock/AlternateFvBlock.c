@@ -15,17 +15,14 @@ Module Name:
     
 Abstract:
 
-  EFI 2.0 Guid used to define the Alternate Firmware Volume Block Guid.  
+  Tiano Guid used to define the Alternate Firmware Volume Block Guid.  
 
 --*/
 
 #include "Tiano.h"
-#include EFI_GUID_DEFINITION(AlternateFvBlock)
+#include EFI_GUID_DEFINITION (AlternateFvBlock)
 
-EFI_GUID gEfiAlternateFvBlockGuid     = EFI_ALTERNATE_FV_BLOCK_GUID;
+EFI_GUID  gEfiAlternateFvBlockGuid = EFI_ALTERNATE_FV_BLOCK_GUID;
 
-EFI_GUID_STRING (                             \
-  &gEfiAlternateFvBlockGuid,      \
-  "Alternate Firmware Volume Block GUID",     \
-  "Alternate Firmware Volume Block GUID"      \
-  );
+EFI_GUID_STRING
+  (&gEfiAlternateFvBlockGuid, "Alternate Firmware Volume Block GUID", "Alternate Firmware Volume Block GUID");

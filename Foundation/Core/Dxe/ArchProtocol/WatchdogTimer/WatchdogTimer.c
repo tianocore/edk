@@ -15,13 +15,13 @@ Module Name:
 
 Abstract:
 
-  Watchdog Timer Architectural Protocol GUID as defined in EFI 2.0
+  Watchdog Timer Architectural Protocol GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (WatchdogTimer)
 
-EFI_GUID gEfiWatchdogTimerArchProtocolGuid = EFI_WATCHDOG_TIMER_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiWatchdogTimerArchProtocolGuid = EFI_WATCHDOG_TIMER_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiWatchdogTimerArchProtocolGuid, "Watchdog Timer", "Watchdog Timer Arch Protocol");

@@ -19,8 +19,9 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(VirtualMemoryAccess)
+#include EFI_PROTOCOL_DEFINITION (VirtualMemoryAccess)
 
-EFI_GUID gEfiVirtualMemoryAccessProtocolGuid = EFI_VIRTUAL_MEMORY_ACCESS_PROTOCOL_GUID;
+EFI_GUID  gEfiVirtualMemoryAccessProtocolGuid = EFI_VIRTUAL_MEMORY_ACCESS_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiVirtualMemoryAccessProtocolGuid, "Virtual Memory Access Protocol", "EFI 2.0 Virtual Memory Access Protocol");
+EFI_GUID_STRING
+  (&gEfiVirtualMemoryAccessProtocolGuid, "Virtual Memory Access Protocol", "Tiano Virtual Memory Access Protocol");
