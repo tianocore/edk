@@ -128,6 +128,8 @@ Abstract:
 //
 #define SYMBOL_FILE_SIZE  0x80000
 
+#define FV_IMAGES_TOP_ADDRESS             0x100000000
+
 //
 // Private data types
 //

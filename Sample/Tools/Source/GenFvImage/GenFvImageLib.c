@@ -2756,18 +2756,20 @@ Returns:
     }
     //
     // Update reset vector (SALE_ENTRY for IPF)
-    // BUGBUG: If a non-bsf fv has a VTF, this will throw an error if no PEI
-    // core is found.  If the PEI Core is found, the VTF file will probably get
-    // corrupted by updating the entry point.  Need some way to determine if
-    // it is proper to updated the VTF.
+    // Now for IA32 and IA64 platform, the fv which has bsf file must have the 
+    // EndAddress of 0xFFFFFFFF. Thus, only this type fv needs to update the   
+    // reset vector. If the PEI Core is found, the VTF file will probably get  
+    // corrupted by updating the entry point.                                  
     //
-    Status = UpdateResetVector (&FvImageMemoryFile, &FvInfo, VtfFileImage);
-    if (EFI_ERROR (Status)) {
-      printf ("ERROR: Could not update the reset vector.\n");
-      free (*FvImage);
-      return EFI_ABORTED;
+    if ((FvInfo.BaseAddress + FvInfo.Size) == FV_IMAGES_TOP_ADDRESS) {       
+      Status = UpdateResetVector (&FvImageMemoryFile, &FvInfo, VtfFileImage);
+      if (EFI_ERROR(Status)) {                                               
+        printf ("ERROR: Could not update the reset vector.\n");              
+        free (*FvImage);                                                     
+        return EFI_ABORTED;                                                  
+      }                                                                      
     }
-  }
+  } 
   //
   // Determine final Sym file size
   //
