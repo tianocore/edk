@@ -1320,21 +1320,25 @@ CoreCloseProtocol (
 
 Routine Description:
 
-  Close Protocol
+  Closes a protocol on a handle that was opened using OpenProtocol().
 
 Arguments:
 
-  UserHandle       - The handle to close the protocol interface on
-
-  Protocol         - The ID of the protocol 
-
-  AgentHandle      - The user of the protocol to close
-
-  ControllerHandle - The user of the protocol to close
+  UserHandle       -  The handle for the protocol interface that was previously opened
+                      with OpenProtocol(), and is now being closed.
+  Protocol         -  The published unique identifier of the protocol. It is the caller¡¯s
+                      responsibility to pass in a valid GUID.
+  AgentHandle      -  The handle of the agent that is closing the protocol interface.
+  ControllerHandle -  If the agent that opened a protocol is a driver that follows the
+                      EFI Driver Model, then this parameter is the controller handle
+                      that required the protocol interface. If the agent does not follow
+                      the EFI Driver Model, then this parameter is optional and may be NULL.
 
 Returns:
 
-  EFI_INVALID_PARAMETER     - Protocol is NULL.
+  EFI_SUCCESS             - The protocol instance was closed.
+  EFI_INVALID_PARAMETER   - Handle, AgentHandle or ControllerHandle is not a valid EFI_HANDLE. 
+  EFI_NOT_FOUND           - Can not find the specified protocol or AgentHandle.
   
 --*/
 {
@@ -1342,7 +1346,6 @@ Returns:
   PROTOCOL_INTERFACE  *ProtocolInterface;
   EFI_LIST_ENTRY      *Link;
   OPEN_PROTOCOL_DATA  *OpenData;
-  BOOLEAN             Removed;
 
   //
   // Check for invalid parameters
@@ -1382,28 +1385,21 @@ Returns:
   //
   // Walk the Open data base looking for AgentHandle
   //
-  do {
-    Removed = FALSE;
-    for ( Link = ProtocolInterface->OpenList.ForwardLink; 
-          (Link != &ProtocolInterface->OpenList) && (!Removed);
-          Link = Link->ForwardLink
-          ) {
-      OpenData = CR (Link, OPEN_PROTOCOL_DATA, Link, OPEN_PROTOCOL_DATA_SIGNATURE);
-    
-      if (OpenData->AgentHandle == AgentHandle && (OpenData->ControllerHandle == ControllerHandle)) {
-
+  Link = ProtocolInterface->OpenList.ForwardLink;
+  while (Link != &ProtocolInterface->OpenList) {
+    OpenData = CR (Link, OPEN_PROTOCOL_DATA, Link, OPEN_PROTOCOL_DATA_SIGNATURE);
+    Link = Link->ForwardLink;
+    if ((OpenData->AgentHandle == AgentHandle) && (OpenData->ControllerHandle == ControllerHandle)) {
         RemoveEntryList (&OpenData->Link);  
         ProtocolInterface->OpenListCount--;
         CoreFreePool (OpenData);
-        Removed = TRUE;
         Status = EFI_SUCCESS;
-      }
     }
-  } while (Removed);
+  }
 
 Done:
   //
-  // Done. Release the database lock are return
+  // Done. Release the database lock and return.
   //
   CoreReleaseProtocolLock ();
   return Status;
