@@ -20,9 +20,6 @@ Abstract:
   independent, we can use lib functions. ESAL calls have a significant
   software overhead and too deep nesting is bad for the stack.
 
-  BUGBUG : Add support for multiple levels of nesting, context information. This
-  code will have to be rewriten in assembly to support that.
-
 --*/
 
 #include "Tiano.h"
