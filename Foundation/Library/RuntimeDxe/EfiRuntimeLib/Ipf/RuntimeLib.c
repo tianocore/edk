@@ -1220,3 +1220,31 @@ Returns:
   SalFlushCache (Start, Length);
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+EfiRuntimeLibCleanup (
+  )
+/*++
+
+Routine Description:
+
+  The runtime service should also can be used in boot time driver, but in the 
+  EfiInitializeRuntimeDriverLib () it created an runtime event. If this runtime
+  driver is used in boot time driver, this event should be closed using this 
+  interface.
+
+Arguments:
+
+  None
+
+Returns:
+
+  The status of calling the boot service (CloseEvent)
+
+--*/
+{
+  EFI_STATUS Status;
+  
+  Status = gBS->CloseEvent (mEfiVirtualNotifyEvent);
+  return Status;
+}
