@@ -48,15 +48,15 @@ Returns:
   // Connect the platform console first
   //
   BdsLibConnectAllDefaultConsoles ();
-  
+
   //
   // Generic way to connect all the drivers
   //
   BdsLibConnectAllDriversToAllControllers ();
-  
+
   //
-  // Here we have the assumption that we have already had 
-  // platform default console 
+  // Here we have the assumption that we have already had
+  // platform default console
   //
   BdsLibConnectAllDefaultConsoles ();
 }
@@ -134,8 +134,8 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  DevicePath = EfiDuplicateDevicePath (DevicePathToConnect);
-  CopyOfDevicePath = DevicePath;
+  DevicePath        = EfiDuplicateDevicePath (DevicePathToConnect);
+  CopyOfDevicePath  = DevicePath;
   if (DevicePath == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -147,12 +147,13 @@ Returns:
     //
     // After this call DevicePath points to the next Instance
     //
-    Instance = EfiDevicePathInstance (&DevicePath, &Size);
-    Next = Instance;
-    while (!IsDevicePathEndType(Next)) {
-      Next = NextDevicePathNode(Next);
+    Instance  = EfiDevicePathInstance (&DevicePath, &Size);
+    Next      = Instance;
+    while (!IsDevicePathEndType (Next)) {
+      Next = NextDevicePathNode (Next);
     }
-    SetDevicePathEndNode(Next);
+
+    SetDevicePathEndNode (Next);
 
     //
     // Start the real work of connect with RemainingDevicePath
@@ -160,19 +161,19 @@ Returns:
     PreviousHandle = NULL;
     do {
       //
-      // Find the handle that best matches the Device Path. If it is only a 
+      // Find the handle that best matches the Device Path. If it is only a
       // partial match the remaining part of the device path is returned in
       // RemainingDevicePath.
       //
       RemainingDevicePath = Instance;
-      Status = gBS->LocateDevicePath (&gEfiDevicePathProtocolGuid, &RemainingDevicePath, &Handle);
-      
+      Status              = gBS->LocateDevicePath (&gEfiDevicePathProtocolGuid, &RemainingDevicePath, &Handle);
+
       if (!EFI_ERROR (Status)) {
         if (Handle == PreviousHandle) {
           //
           // If no forward progress is made try invoking the Dispatcher.
           // A new FV may have been added to the system an new drivers
-          // may now be found. 
+          // may now be found.
           // Status == EFI_SUCCESS means a driver was dispatched
           // Status == EFI_NOT_FOUND means no new drivers were dispatched
           //
@@ -184,7 +185,7 @@ Returns:
           //
           // Connect all drivers that apply to Handle and RemainingDevicePath,
           // the Recursive flag is FALSE so only one level will be expanded.
-          // 
+          //
           // Do not check the connect status here, if the connect controller fail,
           // then still give the chance to do dispatch, because partial
           // RemainingDevicepath may be in the new FV
@@ -193,13 +194,12 @@ Returns:
           //    change, so next time will do the dispatch, then dispatch's status
           //    will take effect
           // 2. If the connect success, the RemainingDevicepath and handle will
-          //    change, then avoid the dispatch, we have chance to continue the 
-          //    next connection 
+          //    change, then avoid the dispatch, we have chance to continue the
+          //    next connection
           //
           gBS->ConnectController (Handle, NULL, RemainingDevicePath, FALSE);
         }
       }
-
       //
       // Loop until RemainingDevicePath is an empty device path
       //
@@ -208,15 +208,13 @@ Returns:
   } while (DevicePath != NULL);
 
   if (CopyOfDevicePath != NULL) {
-    gBS->FreePool(CopyOfDevicePath);
+    gBS->FreePool (CopyOfDevicePath);
   }
-
   //
   // All handle with DevicePath exists in the handle database
   //
   return Status;
 }
-
 
 EFI_STATUS
 BdsLibConnectAllEfi (
@@ -241,10 +239,10 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                            Status;
-  UINTN                                 HandleCount;
-  EFI_HANDLE                            *HandleBuffer;
-  UINTN                                 Index;
+  EFI_STATUS  Status;
+  UINTN       HandleCount;
+  EFI_HANDLE  *HandleBuffer;
+  UINTN       Index;
 
   Status = gBS->LocateHandleBuffer (
                   AllHandles,
@@ -289,10 +287,10 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                  Status;
-  UINTN                       HandleCount;
-  EFI_HANDLE                  *HandleBuffer;
-  UINTN                       Index;
+  EFI_STATUS  Status;
+  UINTN       HandleCount;
+  EFI_HANDLE  *HandleBuffer;
+  UINTN       Index;
 
   //
   // Disconnect all
@@ -347,11 +345,11 @@ Returns:
     // Connect All EFI 1.10 drivers following EFI 1.10 algorithm
     //
     BdsLibConnectAllEfi ();
-    
+
     //
     // Check to see if it's possible to dispatch an more DXE drivers.
     // The BdsLibConnectAllEfi () may have made new DXE drivers show up.
-    // If anything is Dispatched Status == EFI_SUCCESS and we will try 
+    // If anything is Dispatched Status == EFI_SUCCESS and we will try
     // the connect again.
     //
     Status = gDS->Dispatch ();

@@ -45,22 +45,22 @@ AtaSMARTSupport (
 
 EFI_STATUS
 AtaReadSectorsExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  OUT VOID        *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  OUT VOID        *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   );
 
 EFI_STATUS
 AtaWriteSectorsExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   );
 
 EFI_STATUS
-AtaPioDataInExt(
+AtaPioDataInExt (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  OUT VOID        *Buffer,
   IN  UINT32          ByteCount,
@@ -70,7 +70,7 @@ AtaPioDataInExt(
   );
 
 EFI_STATUS
-AtaPioDataOutExt(
+AtaPioDataOutExt (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  VOID            *Buffer,
   IN  UINT32          ByteCount,
@@ -79,8 +79,8 @@ AtaPioDataOutExt(
   IN  UINT16          SectorCount
   );
 
-EFI_STATUS                                                         
-ATAIdentify (                                                  
+EFI_STATUS
+ATAIdentify (
   IN  IDE_BLK_IO_DEV  *IdeDev
   )
 /*++
@@ -116,98 +116,99 @@ ATAIdentify (
   Notes:
         parameter IdeDev will be updated in this function.
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
 {
-  EFI_STATUS           Status;
-  EFI_IDENTIFY_DATA    *AtaIdentifyPointer;
-  UINT32               Capacity;
-  UINT8                DeviceSelect;
-      
+  EFI_STATUS        Status;
+  EFI_IDENTIFY_DATA *AtaIdentifyPointer;
+  UINT32            Capacity;
+  UINT8             DeviceSelect;
+
   //
-  //  AtaIdentifyPointer is used for accommodating returned IDENTIFY data of 
+  //  AtaIdentifyPointer is used for accommodating returned IDENTIFY data of
   //  the ATA Identify command
   //
-  AtaIdentifyPointer = (EFI_IDENTIFY_DATA *)EfiLibAllocateZeroPool(sizeof(EFI_IDENTIFY_DATA));
-  
+  AtaIdentifyPointer = (EFI_IDENTIFY_DATA *) EfiLibAllocateZeroPool (sizeof (EFI_IDENTIFY_DATA));
 
   //
   //  use ATA PIO Data In protocol to send ATA Identify command
   //  and receive data from device
   //
-  DeviceSelect = 0;
-  DeviceSelect = (UINT8)((IdeDev->Device) << 4);
+  DeviceSelect  = 0;
+  DeviceSelect  = (UINT8) ((IdeDev->Device) << 4);
   Status = AtaPioDataIn (
-             IdeDev, 
-             (VOID*)AtaIdentifyPointer, 
-             sizeof(EFI_IDENTIFY_DATA),
-             IDENTIFY_DRIVE_CMD, 
-             DeviceSelect, 
-             0,
-             0,
-             0,
-             0
-             );
+            IdeDev,
+            (VOID *) AtaIdentifyPointer,
+            sizeof (EFI_IDENTIFY_DATA),
+            IDENTIFY_DRIVE_CMD,
+            DeviceSelect,
+            0,
+            0,
+            0,
+            0
+            );
   //
-  // If ATA Identify command succeeds, then according to the received 
+  // If ATA Identify command succeeds, then according to the received
   // IDENTIFY data,
   // identify the device type ( ATA or not ).
   // If ATA device, fill the information in IdeDev.
   // If not ATA device, return IDE_DEVICE_ERROR
   //
-  if (!EFI_ERROR(Status)) {
-    
+  if (!EFI_ERROR (Status)) {
+
     IdeDev->pIdData = AtaIdentifyPointer;
-    
+
     //
     // Print ATA Module Name
     //
-    PrintAtaModuleName(IdeDev);
-    
-    // bit 15 of pAtaIdentify->config is used to identify whether device is 
+    PrintAtaModuleName (IdeDev);
+
+    //
+    // bit 15 of pAtaIdentify->config is used to identify whether device is
     // ATA device or ATAPI device.
     // if 0, means ATA device; if 1, means ATAPI device.
     //
     if ((AtaIdentifyPointer->AtaData.config & 0x8000) == 0x00) {
-    
       //
-      //Detect if support S.M.A.R.T. If yes, enable it as default
+      // Detect if support S.M.A.R.T. If yes, enable it as default
       //
-      AtaSMARTSupport(IdeDev);
-      
+      AtaSMARTSupport (IdeDev);
+
       //
       // Check whether this device needs 48-bit addressing (ATAPI-6 ata device)
       //
       Status = AtaAtapi6Identify (IdeDev);
-      if (!EFI_ERROR(Status)) {
+      if (!EFI_ERROR (Status)) {
         //
         // It's a disk with >120GB capacity, initialized in AtaAtapi6Identify()
         //
         return EFI_SUCCESS;
       }
-      
       //
       // This is a hard disk <= 120GB capacity, treat it as normal hard disk
       //
       IdeDev->Type = IdeHardDisk;
 
-      // 
+      //
       // Block Media Information:
       // Media->LogicalPartition , Media->WriteCaching will be filled
       // in the DiscoverIdeDevcie() function.
       //
-      IdeDev->BlkIo.Media->IoAlign       = 4;
-      IdeDev->BlkIo.Media->MediaId       = 1 ;
-      IdeDev->BlkIo.Media->RemovableMedia = FALSE ;
-      IdeDev->BlkIo.Media->MediaPresent = TRUE ;
-      IdeDev->BlkIo.Media->ReadOnly = FALSE ;
-      IdeDev->BlkIo.Media->BlockSize = 0x200;
-      
+      IdeDev->BlkIo.Media->IoAlign        = 4;
+      IdeDev->BlkIo.Media->MediaId        = 1;
+      IdeDev->BlkIo.Media->RemovableMedia = FALSE;
+      IdeDev->BlkIo.Media->MediaPresent   = TRUE;
+      IdeDev->BlkIo.Media->ReadOnly       = FALSE;
+      IdeDev->BlkIo.Media->BlockSize      = 0x200;
+
       //
-      // Calculate device capacity 
-      //       
-      Capacity = (AtaIdentifyPointer->AtaData.user_addressable_sectors_hi << 16) 
-                  | AtaIdentifyPointer->AtaData.user_addressable_sectors_lo ;
+      // Calculate device capacity
+      //
+      Capacity = (AtaIdentifyPointer->AtaData.user_addressable_sectors_hi << 16) |
+                  AtaIdentifyPointer->AtaData.user_addressable_sectors_lo ;
       IdeDev->BlkIo.Media->LastBlock = Capacity - 1;
-      
+
       return EFI_SUCCESS;
 
     }
@@ -215,13 +216,12 @@ ATAIdentify (
 
   gBS->FreePool (AtaIdentifyPointer);
   //
-  // Make sure the pIdData will not be freed again. 
+  // Make sure the pIdData will not be freed again.
   //
   IdeDev->pIdData = NULL;
-  
-  return EFI_DEVICE_ERROR;
-}    
 
+  return EFI_DEVICE_ERROR;
+}
 
 STATIC
 EFI_STATUS
@@ -256,12 +256,15 @@ AtaAtapi6Identify (
 
        This function must be called after DEVICE_IDENTITY command has been 
        successfully returned
---*/   
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
 {
-  UINT8              Index;
-  EFI_LBA            TmpLba;            
-  EFI_LBA            Capacity;
-  EFI_IDENTIFY_DATA  *Atapi6IdentifyStruct;
+  UINT8             Index;
+  EFI_LBA           TmpLba;
+  EFI_LBA           Capacity;
+  EFI_IDENTIFY_DATA *Atapi6IdentifyStruct;
 
   if (IdeDev->pIdData == NULL) {
     return EFI_UNSUPPORTED;
@@ -284,26 +287,26 @@ AtaAtapi6Identify (
     //
     // Lower byte goes first: word[100] is the lowest word, word[103] is highest
     //
-    TmpLba    = Atapi6IdentifyStruct->AtapiData.max_user_lba_for_48bit_addr[Index];
-    Capacity |= LShiftU64 (TmpLba, 16 * Index);  
+    TmpLba = Atapi6IdentifyStruct->AtapiData.max_user_lba_for_48bit_addr[Index];
+    Capacity |= LShiftU64 (TmpLba, 16 * Index);
   }
-  
+
   if (Capacity > MAX_28BIT_ADDRESSING_CAPACITY) {
     //
     // Capacity exceeds 120GB. 48-bit addressing is really needed
     //
     IdeDev->Type = Ide48bitAddressingHardDisk;
 
-    // 
-    // Fill block media information:Media->LogicalPartition , 
+    //
+    // Fill block media information:Media->LogicalPartition ,
     // Media->WriteCaching will be filledin the DiscoverIdeDevcie() function.
     //
     IdeDev->BlkIo.Media->IoAlign        = 4;
-    IdeDev->BlkIo.Media->MediaId        = 1 ;
-    IdeDev->BlkIo.Media->RemovableMedia = FALSE ;
-    IdeDev->BlkIo.Media->MediaPresent   = TRUE ;
-    IdeDev->BlkIo.Media->ReadOnly       = FALSE ;
-    IdeDev->BlkIo.Media->BlockSize      = 0x200; 
+    IdeDev->BlkIo.Media->MediaId        = 1;
+    IdeDev->BlkIo.Media->RemovableMedia = FALSE;
+    IdeDev->BlkIo.Media->MediaPresent   = TRUE;
+    IdeDev->BlkIo.Media->ReadOnly       = FALSE;
+    IdeDev->BlkIo.Media->BlockSize      = 0x200;
     IdeDev->BlkIo.Media->LastBlock      = Capacity - 1;
 
     return EFI_SUCCESS;
@@ -312,9 +315,8 @@ AtaAtapi6Identify (
   return EFI_UNSUPPORTED;
 }
 
-
-VOID 
-PrintAtaModuleName(
+VOID
+PrintAtaModuleName (
   IN  IDE_BLK_IO_DEV  *IdeDev
   )
 /*++
@@ -336,20 +338,22 @@ PrintAtaModuleName(
         no returns.
 
   Notes:
---*/   
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
 {
   if (IdeDev->pIdData == NULL) {
-    return;
+    return ;
   }
-  
-  SwapStringChars(IdeDev->ModelName, IdeDev->pIdData->AtaData.ModelName, 40);
+
+  SwapStringChars (IdeDev->ModelName, IdeDev->pIdData->AtaData.ModelName, 40);
   IdeDev->ModelName[40] = 0x00;
 }
 
-
 EFI_STATUS
 AtaPioDataIn (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  VOID            *Buffer,
   IN  UINT32          ByteCount,
   IN  UINT8           AtaCommand,
@@ -407,15 +411,26 @@ AtaPioDataIn (
         EFI_DEVICE_ERROR
           command sent failed.
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    ByteCount - add argument and description to function comment
+// TODO:    AtaCommand - add argument and description to function comment
+// TODO:    Head - add argument and description to function comment
+// TODO:    SectorCount - add argument and description to function comment
+// TODO:    SectorNumber - add argument and description to function comment
+// TODO:    CylinderLsb - add argument and description to function comment
+// TODO:    CylinderMsb - add argument and description to function comment
 {
   UINTN       WordCount;
   UINTN       Increment;
   UINT16      *Buffer16;
   EFI_STATUS  Status;
-  
+
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -424,111 +439,110 @@ AtaPioDataIn (
   //           bit6 set means LBA mode
   //
   IDEWritePortB (
-    IdeDev->PciIo,IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0 | Head)
-    );   
+    IdeDev->PciIo,
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0 | Head)
+    );
 
   //
-  // All ATAPI device's ATA commands can be issued regardless of the 
+  // All ATAPI device's ATA commands can be issued regardless of the
   // state of the DRDY
   //
-  if (IdeDev->Type == IdeHardDisk){
-    
-    Status = DRDYReady(IdeDev, ATATIMEOUT);
-    if (EFI_ERROR(Status)) {
+  if (IdeDev->Type == IdeHardDisk) {
+
+    Status = DRDYReady (IdeDev, ATATIMEOUT);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
   }
- 
   //
   // set all the command parameters
   // Before write to all the following registers, BSY and DRQ must be 0.
   //
   Status = DRQClear2 (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {    
-    return EFI_DEVICE_ERROR ;
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
   }
+
   if (AtaCommand == SET_FEATURES_CMD) {
-    IDEWritePortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Feature, 0x03);
+    IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, 0x03);
   }
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, SectorNumber);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb, CylinderLsb); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb, CylinderMsb); 
+
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, SectorNumber);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, CylinderLsb);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, CylinderMsb);
 
   //
   // send command via Command Register
   //
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Command, AtaCommand);
- 
-  Buffer16 = (UINT16 *)Buffer;
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, AtaCommand);
+
+  Buffer16 = (UINT16 *) Buffer;
+
   //
-  // According to PIO data in protocol, host can perform a series of reads to 
+  // According to PIO data in protocol, host can perform a series of reads to
   // the data register after each time device set DRQ ready;
   // The data size of "a series of read" is command specific.
-  // For most ATA command, data size received from device will not exceed 
+  // For most ATA command, data size received from device will not exceed
   // 1 sector, hence the data size for "a series of read" can be the whole data
   // size of one command request.
-  // For ATA command such as Read Sector command, the data size of one ATA 
-  // command request is often larger than 1 sector, according to the 
-  // Read Sector command, the data size of "a series of read" is exactly 1 
+  // For ATA command such as Read Sector command, the data size of one ATA
+  // command request is often larger than 1 sector, according to the
+  // Read Sector command, the data size of "a series of read" is exactly 1
   // sector.
-  // Here for simplification reason, we specify the data size for 
+  // Here for simplification reason, we specify the data size for
   // "a series of read" to 1 sector (256 words) if data size of one ATA command
   // request is larger than 256 words.
-  // 
-  Increment = 256;      
+  //
+  Increment = 256;
 
   //
   // used to record bytes of currently transfered data
   //
-  WordCount = 0;        
+  WordCount = 0;
 
-  while ( WordCount < ByteCount/2 ) {
+  while (WordCount < ByteCount / 2) {
     //
     // Poll DRQ bit set, data transfer can be performed only when DRQ is ready.
     //
-    Status = DRQReady2(IdeDev, ATATIMEOUT);
-    if (EFI_ERROR(Status)) {      
+    Status = DRQReady2 (IdeDev, ATATIMEOUT);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
-    } 
-    
-    Status = CheckErrorStatus(IdeDev);
-    if (EFI_ERROR(Status)) {      
+    }
+
+    Status = CheckErrorStatus (IdeDev);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
 
     //
     // Get the byte count for one series of read
     //
-    if ( (WordCount + Increment) > ByteCount/2) {
-      Increment = ByteCount/2 - WordCount ;
+    if ((WordCount + Increment) > ByteCount / 2) {
+      Increment = ByteCount / 2 - WordCount;
     }
 
     IDEReadPortWMultiple (
       IdeDev->PciIo,
-      IdeDev->IoPort->Data, 
-      Increment, 
+      IdeDev->IoPort->Data,
+      Increment,
       Buffer16
       );
 
     WordCount += Increment;
     Buffer16 += Increment;
-    
-  } 
 
-  DRQClear(IdeDev, ATATIMEOUT);
-  
-  return CheckErrorStatus(IdeDev);
+  }
+
+  DRQClear (IdeDev, ATATIMEOUT);
+
+  return CheckErrorStatus (IdeDev);
 }
-
-
-
 
 EFI_STATUS
 AtaPioDataOut (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  VOID            *Buffer,
   IN  UINT32          ByteCount,
   IN  UINT8           AtaCommand,
@@ -587,15 +601,26 @@ AtaPioDataOut (
           command sent failed. 
 
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    ByteCount - add argument and description to function comment
+// TODO:    AtaCommand - add argument and description to function comment
+// TODO:    Head - add argument and description to function comment
+// TODO:    SectorCount - add argument and description to function comment
+// TODO:    SectorNumber - add argument and description to function comment
+// TODO:    CylinderLsb - add argument and description to function comment
+// TODO:    CylinderMsb - add argument and description to function comment
 {
-  UINTN         WordCount;
-  UINTN         Increment;
-  UINT16        *Buffer16;
-  EFI_STATUS    Status;
+  UINTN       WordCount;
+  UINTN       Increment;
+  UINT16      *Buffer16;
+  EFI_STATUS  Status;
 
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -604,20 +629,22 @@ AtaPioDataOut (
   // Before write Head/Device register, BSY and DRQ must be 0.
   //
   Status = DRQClear2 (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {    
-    return EFI_DEVICE_ERROR ;
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
   }
 
   //
   // e0:1110,0000-- bit7 and bit5 are reserved bits.
   //          bit6 set means LBA mode
+  //
   IDEWritePortB (
-    IdeDev->PciIo,IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0 | Head)
-    );   
-  
-  Status = DRDYReady(IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
+    IdeDev->PciIo,
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0 | Head)
+    );
+
+  Status = DRDYReady (IdeDev, ATATIMEOUT);
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -626,52 +653,53 @@ AtaPioDataOut (
   // Before write to all the following registers, BSY and DRQ must be 0.
   //
   Status = DRQClear2 (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
-    return EFI_DEVICE_ERROR ;
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
   }
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, SectorNumber);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb, CylinderLsb); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb, CylinderMsb); 
+
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, SectorNumber);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, CylinderLsb);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, CylinderMsb);
 
   //
   // send command via Command Register
   //
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Command, AtaCommand);
- 
-  Buffer16 = (UINT16 *)Buffer;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, AtaCommand);
+
+  Buffer16 = (UINT16 *) Buffer;
 
   //
-  // According to PIO data out protocol, host can perform a series of 
+  // According to PIO data out protocol, host can perform a series of
   // writes to the data register after each time device set DRQ ready;
   // The data size of "a series of read" is command specific.
   // For most ATA command, data size written to device will not exceed 1 sector,
-  // hence the data size for "a series of write" can be the data size of one 
+  // hence the data size for "a series of write" can be the data size of one
   // command request.
-  // For ATA command such as Write Sector command, the data size of one 
-  // ATA command request is often larger than 1 sector, according to the 
+  // For ATA command such as Write Sector command, the data size of one
+  // ATA command request is often larger than 1 sector, according to the
   // Write Sector command, the data size of "a series of read" is exactly
   // 1 sector.
-  // Here for simplification reason, we specify the data size for 
+  // Here for simplification reason, we specify the data size for
   // "a series of write" to 1 sector (256 words) if data size of one ATA command
   // request is larger than 256 words.
-  // 
-  Increment = 256 ;
-  WordCount = 0 ;
+  //
+  Increment = 256;
+  WordCount = 0;
 
-  while (WordCount < ByteCount/2)  {    
+  while (WordCount < ByteCount / 2) {
     
     //
     // DRQReady2-- read Alternate Status Register to determine the DRQ bit
     // data transfer can be performed only when DRQ is ready.
     //
-    Status = DRQReady2(IdeDev, ATATIMEOUT);
-    if (EFI_ERROR(Status)) {
+    Status = DRQReady2 (IdeDev, ATATIMEOUT);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
-    } 
-    
-    Status = CheckErrorStatus(IdeDev);
-    if (EFI_ERROR(Status)) {
+    }
+
+    Status = CheckErrorStatus (IdeDev);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
 
@@ -680,20 +708,19 @@ AtaPioDataOut (
     //
     IDEWritePortWMultiple (
       IdeDev->PciIo,
-      IdeDev->IoPort->Data, 
-      Increment, 
+      IdeDev->IoPort->Data,
+      Increment,
       Buffer16
       );
-    WordCount += Increment ;
+    WordCount += Increment;
     Buffer16 += Increment;
-    
-  } 
 
-  DRQClear(IdeDev, ATATIMEOUT);
-     
-  return CheckErrorStatus(IdeDev);
+  }
+
+  DRQClear (IdeDev, ATATIMEOUT);
+
+  return CheckErrorStatus (IdeDev);
 }
-
 
 EFI_STATUS
 CheckErrorStatus (
@@ -724,79 +751,105 @@ CheckErrorStatus (
 
   Notes:
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
 {
-  UINT8   StatusRegister;
+  UINT8 StatusRegister;
 
 #ifdef EFI_DEBUG
 
-  UINT8   ErrorRegister;
+  UINT8 ErrorRegister;
 
 #endif
 
-  StatusRegister = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Status); 
+  StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
 
   DEBUG_CODE (
-    
-    if (StatusRegister & DWF)  {
-      DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Write Fault\n", 
-             StatusRegister));
-    }
-    
-    if (StatusRegister & CORR) {
-      DEBUG((EFI_D_BLKIO,"CheckErrorStatus()-- %02x : Error : Corrected Data\n",
-             StatusRegister));
-    }
-  
-    if (StatusRegister & ERR) {
-      ErrorRegister = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg1.Error);
-  
-      if (ErrorRegister & BBK_ERR) {
-        DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Bad Block Detected\n",
-               ErrorRegister));
-      }
-      
-      if (ErrorRegister & UNC_ERR) {
-        DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Uncorrectable Data\n",
-                ErrorRegister));
-      }
-      
-      if (ErrorRegister & MC_ERR) {
-        DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Media Change\n", 
-                ErrorRegister));
-      }
-      
-      if (ErrorRegister & ABRT_ERR) {
-        DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Abort\n",
-               ErrorRegister));
-      }
-      
-      if (ErrorRegister & TK0NF_ERR) {
-        DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Track 0 Not Found\n",
-               ErrorRegister));
-      }
-      
-      if (ErrorRegister & AMNF_ERR) {
-        DEBUG((EFI_D_BLKIO, "CheckErrorStatus()-- %02x : Error : Address Mark Not Found\n",
-              ErrorRegister));
-      }
-  
-    }
+
+    if (StatusRegister & DWF) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Write Fault\n",
+      StatusRegister)
+      );
+  }
+
+  if (StatusRegister & CORR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Corrected Data\n",
+      StatusRegister)
+      );
+  }
+
+  if (StatusRegister & ERR) {
+    ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
+
+    if (ErrorRegister & BBK_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Bad Block Detected\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & UNC_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Uncorrectable Data\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & MC_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Media Change\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & ABRT_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Abort\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & TK0NF_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Track 0 Not Found\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & AMNF_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "CheckErrorStatus()-- %02x : Error : Address Mark Not Found\n",
+      ErrorRegister)
+      );
+  }
+
+  }
   )
 
-  if ( (StatusRegister & (ERR | DWF | CORR) ) == 0 ) {    
-    return EFI_SUCCESS;  
-  } 
-  
-  return EFI_DEVICE_ERROR;
-  
-}
+  if ((StatusRegister & (ERR | DWF | CORR)) == 0) {
+    return EFI_SUCCESS;
+  }
 
+  return EFI_DEVICE_ERROR;
+
+}
 
 EFI_STATUS
 AtaReadSectors (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         Lba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         Lba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -829,97 +882,107 @@ AtaReadSectors (
         of AtaPioDataIn() function.
 
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    Lba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  UINTN         BlocksRemaining;
-  UINT32        Lba32;
-  UINT8         Lba0;
-  UINT8         Lba1;
-  UINT8         Lba2;
-  UINT8         Lba3;
-  UINT8         AtaCommand;
-  UINT8         SectorCount8;
-  UINT16        SectorCount;
-  UINTN         ByteCount;
-  VOID          *Buffer;
-  
+  EFI_STATUS  Status;
+  UINTN       BlocksRemaining;
+  UINT32      Lba32;
+  UINT8       Lba0;
+  UINT8       Lba1;
+  UINT8       Lba2;
+  UINT8       Lba3;
+  UINT8       AtaCommand;
+  UINT8       SectorCount8;
+  UINT16      SectorCount;
+  UINTN       ByteCount;
+  VOID        *Buffer;
+
   Buffer = DataBuffer;
 
   //
-  //Using ATA Read Sector(s) command (opcode=0x20) with PIO DATA IN protocol 
+  // Using ATA Read Sector(s) command (opcode=0x20) with PIO DATA IN protocol
   //
-  AtaCommand = READ_SECTORS_CMD;
+  AtaCommand      = READ_SECTORS_CMD;
 
   
   BlocksRemaining = NumberOfBlocks;
-  
-  Lba32 = (UINT32)Lba;
 
-  Status = EFI_SUCCESS ;
+  Lba32           = (UINT32) Lba;
+
+  Status          = EFI_SUCCESS;
 
   while (BlocksRemaining > 0) {
     
     //
     // in ATA-3 spec, LBA is in 28 bit width
     //
-    Lba0 = (UINT8) (Lba32 & 0xff);
-    Lba1 = (UINT8) (Lba32 >> 8);
-    Lba2 = (UINT8) (Lba32 >> 16);
+    Lba0  = (UINT8) (Lba32 & 0xff);
+    Lba1  = (UINT8) (Lba32 >> 8);
+    Lba2  = (UINT8) (Lba32 >> 16);
     //
     // low 4 bit of Lba3 stands for LBA bit24~bit27.
     //
-    Lba3 = (UINT8) ((Lba32 >> 24) & 0x0f); 
+    Lba3 = (UINT8) ((Lba32 >> 24) & 0x0f);
 
     if (BlocksRemaining >= 0x100) {
       
       //
-      //  SectorCount8 is sent to Sector Count register, 0x00 means 256 
+      //  SectorCount8 is sent to Sector Count register, 0x00 means 256
       //  sectors to be read
       //
-      SectorCount8 = 0x00 ;   
+      SectorCount8 = 0x00;
       //
       //  SectorCount is used to record the number of sectors to be read
       //
-      SectorCount = 256 ;     
+      SectorCount = 256;
     } else {
-      
-      SectorCount8 = (UINT8)BlocksRemaining ;
-      SectorCount = (UINT16)BlocksRemaining ;
+
+      SectorCount8  = (UINT8) BlocksRemaining;
+      SectorCount   = (UINT16) BlocksRemaining;
     }
 
     //
     // ByteCount is the number of bytes that will be read
     //
-    ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize) ;  
+    ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize);
 
     //
     // call AtaPioDataIn() to send Read Sector Command and receive data read
     //
-    Status = AtaPioDataIn(
-               IdeDev, Buffer, (UINT32)ByteCount,
-               AtaCommand, 
-               Lba3, SectorCount8, Lba0, Lba1, Lba2
-               );
-    if (EFI_ERROR(Status)) {      
-      return Status ;
+    Status = AtaPioDataIn (
+              IdeDev,
+              Buffer,
+              (UINT32) ByteCount,
+              AtaCommand,
+              Lba3,
+              SectorCount8,
+              Lba0,
+              Lba1,
+              Lba2
+              );
+    if (EFI_ERROR (Status)) {
+      return Status;
     }
 
     Lba32 += SectorCount;
-    Buffer = ((UINT8 *)Buffer + SectorCount*(IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
     BlocksRemaining -= SectorCount;
   }
 
   return Status;
 }
 
-
-
 EFI_STATUS
 AtaWriteSectors (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *BufferData, 
-  IN  EFI_LBA         Lba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *BufferData,
+  IN  EFI_LBA         Lba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -953,41 +1016,46 @@ AtaWriteSectors (
         of AtaPioDataOut() function.
 
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    BufferData - add argument and description to function comment
+// TODO:    Lba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  UINTN         BlocksRemaining;
-  UINT32        Lba32;
-  UINT8         Lba0;
-  UINT8         Lba1;
-  UINT8         Lba2;
-  UINT8         Lba3;
-  UINT8         AtaCommand;
-  UINT8         SectorCount8;
-  UINT16        SectorCount;
-  UINTN         ByteCount;
-  VOID          *Buffer;
+  EFI_STATUS  Status;
+  UINTN       BlocksRemaining;
+  UINT32      Lba32;
+  UINT8       Lba0;
+  UINT8       Lba1;
+  UINT8       Lba2;
+  UINT8       Lba3;
+  UINT8       AtaCommand;
+  UINT8       SectorCount8;
+  UINT16      SectorCount;
+  UINTN       ByteCount;
+  VOID        *Buffer;
 
-  Buffer = BufferData ;
-
+  Buffer = BufferData;
 
   //
-  //Using Write Sector(s) command (opcode=0x30) with PIO DATA OUT protocol 
+  // Using Write Sector(s) command (opcode=0x30) with PIO DATA OUT protocol
   //
-  AtaCommand = WRITE_SECTORS_CMD;
+  AtaCommand      = WRITE_SECTORS_CMD;
 
   BlocksRemaining = NumberOfBlocks;
-  
-  Lba32 = (UINT32)Lba;
 
-  Status = EFI_SUCCESS ;      
+  Lba32           = (UINT32) Lba;
 
-  while (BlocksRemaining > 0)  {
-    
-    Lba0 = (UINT8) (Lba32 & 0xff);
-    Lba1 = (UINT8) (Lba32 >> 8);
-    Lba2 = (UINT8) (Lba32 >> 16);
-    Lba3 = (UINT8) ((Lba32 >> 24) & 0x0f);
+  Status          = EFI_SUCCESS;
+
+  while (BlocksRemaining > 0) {
+
+    Lba0  = (UINT8) (Lba32 & 0xff);
+    Lba1  = (UINT8) (Lba32 >> 8);
+    Lba2  = (UINT8) (Lba32 >> 16);
+    Lba3  = (UINT8) ((Lba32 >> 24) & 0x0f);
 
     if (BlocksRemaining >= 0x100) {
       
@@ -995,37 +1063,41 @@ AtaWriteSectors (
       //  SectorCount8 is sent to Sector Count register, 0x00 means 256 sectors
       //  to be written
       //
-      SectorCount8 = 0x00 ; 
+      SectorCount8 = 0x00;
       //
       //  SectorCount is used to record the number of sectors to be written
       //
-      SectorCount = 256 ;   
+      SectorCount = 256;
     } else {
-      
-      SectorCount8 = (UINT8)BlocksRemaining ;
-      SectorCount = (UINT16)BlocksRemaining ;
+
+      SectorCount8  = (UINT8) BlocksRemaining;
+      SectorCount   = (UINT16) BlocksRemaining;
     }
 
     ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize);
-    
-    Status = AtaPioDataOut(
-               IdeDev, Buffer, (UINT32)ByteCount,
-               AtaCommand, 
-               Lba3, SectorCount8, Lba0, Lba1, Lba2
-               );
-    if (EFI_ERROR(Status)) {      
-      return Status ;
+
+    Status = AtaPioDataOut (
+              IdeDev,
+              Buffer,
+              (UINT32) ByteCount,
+              AtaCommand,
+              Lba3,
+              SectorCount8,
+              Lba0,
+              Lba1,
+              Lba2
+              );
+    if (EFI_ERROR (Status)) {
+      return Status;
     }
 
     Lba32 += SectorCount;
-    Buffer = ((UINT8 *)Buffer + SectorCount*(IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
     BlocksRemaining -= SectorCount;
   }
 
   return Status;
 }
-
-
 
 EFI_STATUS
 AtaSoftReset (
@@ -1058,41 +1130,49 @@ AtaSoftReset (
   Notes:
         The registers initial values after ATA soft reset are different
         to the ATA device and ATAPI device.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
 {
 
   UINT8 DeviceControl;
-    
-  
+
   DeviceControl = 0;
-  DeviceControl |= SRST;      // set SRST bit to initiate soft reset
-  DeviceControl |= bit1;      // disable Interrupt
-  
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
- 
-  gBS->Stall(10);     
- 
+  //
+  // set SRST bit to initiate soft reset
+  //
+  DeviceControl |= SRST;
+
+  //
+  // disable Interrupt
+  //
+  DeviceControl |= bit1;
+
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+
+  gBS->Stall (10);
+
   //
   // Enable interrupt to support UDMA
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
   //
   // Clear SRST bit  0xfb:1111,1011
   //
-  DeviceControl &= 0xfb ;    
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  DeviceControl &= 0xfb;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   //
-  // slave device needs at most 31s to clear BSY 
+  // slave device needs at most 31s to clear BSY
   //
-  if ( WaitForBSYClear (IdeDev, 31000) == EFI_TIMEOUT) {    
+  if (WaitForBSYClear (IdeDev, 31000) == EFI_TIMEOUT) {
     return EFI_DEVICE_ERROR;
   }
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 AtaBlkIoReadBlocks (
@@ -1156,19 +1236,26 @@ AtaBlkIoReadBlocks (
   Notes:
       If Read Block error because of device error, this function will call
       AtaSoftReset() function to reset device.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeBlkIoDevice - add argument and description to function comment
+// TODO:    MediaId - add argument and description to function comment
+// TODO:    LBA - add argument and description to function comment
+// TODO:    BufferSize - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_MEDIA_CHANGED - add return value to function comment
 {
   EFI_BLOCK_IO_MEDIA  *Media;
-  UINTN               BlockSize;        
-  UINTN               NumberOfBlocks ;  
+  UINTN               BlockSize;
+  UINTN               NumberOfBlocks;
   EFI_STATUS          Status;
 
-
-  if (Buffer == NULL) {    
+  if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (BufferSize == 0) {    
+  if (BufferSize == 0) {
     return EFI_SUCCESS;
   }
 
@@ -1177,23 +1264,23 @@ AtaBlkIoReadBlocks (
   //
   //  Get the intrinsic block size
   //
-  Media = IdeBlkIoDevice->BlkIo.Media;
-  BlockSize = Media->BlockSize;
+  Media           = IdeBlkIoDevice->BlkIo.Media;
+  BlockSize       = Media->BlockSize;
 
-  NumberOfBlocks = BufferSize / BlockSize ;
+  NumberOfBlocks  = BufferSize / BlockSize;
 
-  if (MediaId != Media->MediaId) {    
+  if (MediaId != Media->MediaId) {
     return EFI_MEDIA_CHANGED;
   }
 
   if (BufferSize % BlockSize != 0) {
     return EFI_BAD_BUFFER_SIZE;
   }
-  
+
   if (!(Media->MediaPresent)) {
     return EFI_NO_MEDIA;
   }
-  
+
   if (LBA > Media->LastBlock) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1202,17 +1289,16 @@ AtaBlkIoReadBlocks (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((Media->IoAlign > 1) && (((UINTN)Buffer & (Media->IoAlign - 1)) != 0)) {
+  if ((Media->IoAlign > 1) && (((UINTN) Buffer & (Media->IoAlign - 1)) != 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-    
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
     // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 read block mechanism
     //
     Status = AtaUdmaReadExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       Status = AtaReadSectorsExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   } else {
@@ -1220,18 +1306,20 @@ AtaBlkIoReadBlocks (
     // For ATA-3 compatible device, use ATA-3 read block mechanism
     // Notice DMA operation can only handle 32bit address
     //
-    if ((UINTN)Buffer <= 0xFFFFFFFF) {      
+    if ((UINTN) Buffer <= 0xFFFFFFFF) {
       Status = AtaUdmaRead (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    } 
-    if (EFI_ERROR(Status) || ((UINTN)Buffer > 0xFFFFFFFF)) {
-      Status = AtaReadSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks) ;  
+    }
+
+    if (EFI_ERROR (Status) || ((UINTN) Buffer > 0xFFFFFFFF)) {
+      Status = AtaReadSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   }
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     AtaSoftReset (IdeBlkIoDevice);
     return EFI_DEVICE_ERROR;
   }
+
   return EFI_SUCCESS;
 
 }
@@ -1300,15 +1388,22 @@ AtaBlkIoWriteBlocks (
         If Write Block error because of device error, this function will call
         AtaSoftReset() function to reset device.
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeBlkIoDevice - add argument and description to function comment
+// TODO:    MediaId - add argument and description to function comment
+// TODO:    LBA - add argument and description to function comment
+// TODO:    BufferSize - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_MEDIA_CHANGED - add return value to function comment
 {
 
   EFI_BLOCK_IO_MEDIA  *Media;
-  UINTN               BlockSize;        
-  UINTN               NumberOfBlocks; 
+  UINTN               BlockSize;
+  UINTN               NumberOfBlocks;
   UINTN               Status;
 
-
-  if (Buffer == NULL){
+  if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1319,22 +1414,20 @@ AtaBlkIoWriteBlocks (
   Status = EFI_SUCCESS;
 
   //
-  //Get the intrinsic block size
+  // Get the intrinsic block size
   //
-  Media = IdeBlkIoDevice->BlkIo.Media;
-  BlockSize = Media->BlockSize;
-  NumberOfBlocks = BufferSize/BlockSize;
-  
- 
+  Media           = IdeBlkIoDevice->BlkIo.Media;
+  BlockSize       = Media->BlockSize;
+  NumberOfBlocks  = BufferSize / BlockSize;
+
   if (MediaId != Media->MediaId) {
     return EFI_MEDIA_CHANGED;
   }
 
-
   if (BufferSize % BlockSize != 0) {
     return EFI_BAD_BUFFER_SIZE;
   }
-  
+
   if (LBA > Media->LastBlock) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1343,7 +1436,7 @@ AtaBlkIoWriteBlocks (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((Media->IoAlign > 1) && (((UINTN)Buffer & (Media->IoAlign - 1)) != 0)) {
+  if ((Media->IoAlign > 1) && (((UINTN) Buffer & (Media->IoAlign - 1)) != 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1360,25 +1453,24 @@ AtaBlkIoWriteBlocks (
     // For ATA-3 compatible device, use ATA-3 write block mechanism
     //
     Status = AtaUdmaWrite (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    if (EFI_ERROR(Status) || ((UINTN)Buffer > 0xFFFFFFFF)) {
-      Status = AtaWriteSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);  
+    if (EFI_ERROR (Status) || ((UINTN) Buffer > 0xFFFFFFFF)) {
+      Status = AtaWriteSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   }
-  
-  if (EFI_ERROR(Status)) {
-    AtaSoftReset(IdeBlkIoDevice);
+
+  if (EFI_ERROR (Status)) {
+    AtaSoftReset (IdeBlkIoDevice);
     return EFI_DEVICE_ERROR;
   }
-  
+
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 AtaReadSectorsExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -1414,27 +1506,33 @@ AtaReadSectorsExt (
         of AtaPioDataInExt() function.
 
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  UINTN         BlocksRemaining;
-  EFI_LBA       Lba64;
-  UINT8         AtaCommand;
-  UINT16        SectorCount;
-  UINT32        ByteCount;
-  VOID          *Buffer;
-  
+  EFI_STATUS  Status;
+  UINTN       BlocksRemaining;
+  EFI_LBA     Lba64;
+  UINT8       AtaCommand;
+  UINT16      SectorCount;
+  UINT32      ByteCount;
+  VOID        *Buffer;
+
   //
-  // Using ATA "Read Sectors Ext" command(opcode=0x24) with PIO DATA IN protocol 
+  // Using ATA "Read Sectors Ext" command(opcode=0x24) with PIO DATA IN protocol
   //
   AtaCommand      = READ_SECTORS_EXT_CMD;
   Buffer          = DataBuffer;
   BlocksRemaining = NumberOfBlocks;
   Lba64           = StartLba;
-  Status          = EFI_SUCCESS ;
+  Status          = EFI_SUCCESS;
 
   while (BlocksRemaining > 0) {
-    
+
     if (BlocksRemaining >= 0x10000) {
       //
       //  SectorCount is used to record the number of sectors to be read
@@ -1442,43 +1540,42 @@ AtaReadSectorsExt (
       //
       SectorCount = 0xffff;
     } else {
-      SectorCount = (UINT16)BlocksRemaining ;
+      SectorCount = (UINT16) BlocksRemaining;
     }
 
     //
     // ByteCount is the number of bytes that will be read
     //
-    ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize) ;  
+    ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize);
 
     //
     // call AtaPioDataInExt() to send Read Sector Command and receive data read
     //
-    Status = AtaPioDataInExt(
-               IdeDev, 
-               Buffer, 
-               ByteCount,
-               AtaCommand, 
-               Lba64, 
-               SectorCount
-               );
-    if (EFI_ERROR(Status)) {      
-      return Status ;
+    Status = AtaPioDataInExt (
+              IdeDev,
+              Buffer,
+              ByteCount,
+              AtaCommand,
+              Lba64,
+              SectorCount
+              );
+    if (EFI_ERROR (Status)) {
+      return Status;
     }
 
     Lba64 += SectorCount;
-    Buffer = ((UINT8 *)Buffer + SectorCount*(IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
     BlocksRemaining -= SectorCount;
   }
 
   return Status;
 }
 
-
 EFI_STATUS
 AtaWriteSectorsExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -1514,28 +1611,34 @@ AtaWriteSectorsExt (
         of AtaPioDataOutExt() function.
 
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  EFI_LBA       Lba64;
-  UINTN         BlocksRemaining;
-  UINT8         AtaCommand;
-  UINT16        SectorCount;
-  UINT32        ByteCount;
-  VOID          *Buffer;
+  EFI_STATUS  Status;
+  EFI_LBA     Lba64;
+  UINTN       BlocksRemaining;
+  UINT8       AtaCommand;
+  UINT16      SectorCount;
+  UINT32      ByteCount;
+  VOID        *Buffer;
 
   //
-  // Using ATA "Write Sectors Ext" cmd(opcode=0x24) with PIO DATA OUT protocol 
+  // Using ATA "Write Sectors Ext" cmd(opcode=0x24) with PIO DATA OUT protocol
   //
   AtaCommand      = WRITE_SECTORS_EXT_CMD;
   Lba64           = StartLba;
   Buffer          = DataBuffer;
   BlocksRemaining = NumberOfBlocks;
-  
-  Status = EFI_SUCCESS;
 
-  while (BlocksRemaining > 0)  {
-    
+  Status          = EFI_SUCCESS;
+
+  while (BlocksRemaining > 0) {
+
     if (BlocksRemaining >= 0x10000) {
       //
       //  SectorCount is used to record the number of sectors to be written.
@@ -1543,31 +1646,31 @@ AtaWriteSectorsExt (
       //
       SectorCount = 0xffff;
     } else {
-      SectorCount = (UINT16)BlocksRemaining ;
+      SectorCount = (UINT16) BlocksRemaining;
     }
 
     //
     // ByteCount is the number of bytes that will be written
     //
-    ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize);  
+    ByteCount = SectorCount * (IdeDev->BlkIo.Media->BlockSize);
 
     //
     // Call AtaPioDataOutExt() to send "Write Sectors Ext" Command
     //
-    Status = AtaPioDataOutExt(
-               IdeDev, 
-               Buffer, 
-               ByteCount,
-               AtaCommand, 
-               Lba64, 
-               SectorCount
-               );
-    if (EFI_ERROR(Status)) {      
-      return Status ;
+    Status = AtaPioDataOutExt (
+              IdeDev,
+              Buffer,
+              ByteCount,
+              AtaCommand,
+              Lba64,
+              SectorCount
+              );
+    if (EFI_ERROR (Status)) {
+      return Status;
     }
-    
+
     Lba64 += SectorCount;
-    Buffer = ((UINT8 *)Buffer + SectorCount*(IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
     BlocksRemaining -= SectorCount;
   }
 
@@ -1575,7 +1678,7 @@ AtaWriteSectorsExt (
 }
 
 EFI_STATUS
-AtaPioDataInExt(
+AtaPioDataInExt (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  OUT VOID        *Buffer,
   IN  UINT32          ByteCount,
@@ -1631,7 +1734,15 @@ AtaPioDataInExt(
         EFI_DEVICE_ERROR
           command sent failed.
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    ByteCount - add argument and description to function comment
+// TODO:    AtaCommand - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    SectorCount - add argument and description to function comment
 {
   UINT8       DevSel;
   UINT8       SectorCount8;
@@ -1642,31 +1753,31 @@ AtaPioDataInExt(
   UINTN       Increment;
   UINT16      *Buffer16;
   EFI_STATUS  Status;
-  
+
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
   //
   // Select device, set bit6 as 1 to indicate LBA mode is used
   //
-  DevSel  = (UINT8)(IdeDev->Device << 4);
+  DevSel = (UINT8) (IdeDev->Device << 4);
   DevSel |= 0x40;
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
+    IdeDev->IoPort->Head,
     DevSel
-    );   
+    );
 
   //
   // Wait for DRDY singnal asserting. ATAPI device needn't wait
   //
-  if (  (IdeDev->Type == IdeHardDisk)  ||
+  if ( (IdeDev->Type == IdeHardDisk)  ||
         (IdeDev->Type == Ide48bitAddressingHardDisk)) {
-      
-    Status = DRDYReady(IdeDev, ATATIMEOUT);
-    if (EFI_ERROR(Status)) {
+
+    Status = DRDYReady (IdeDev, ATATIMEOUT);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
   }
@@ -1675,88 +1786,95 @@ AtaPioDataInExt(
   // Fill feature register if needed
   //
   if (AtaCommand == SET_FEATURES_CMD) {
-    IDEWritePortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Feature, 0x03);
+    IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, 0x03);
   }
 
   //
   // Fill the sector count register, which is a two-byte FIFO. Need write twice.
   //
-  SectorCount8 = (UINT8)(SectorCount >> 8);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
-  SectorCount8 = (UINT8)SectorCount;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
+  SectorCount8 = (UINT8) (SectorCount >> 8);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
+  SectorCount8 = (UINT8) SectorCount;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
   //
   // Fill the start LBA registers, which are also two-byte FIFO
   //
-  LbaLow  = (UINT8)RShiftU64 (StartLba, 24);
-  LbaMid  = (UINT8)RShiftU64 (StartLba, 32);
-  LbaHigh = (UINT8)RShiftU64 (StartLba, 40); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
+  LbaLow  = (UINT8) RShiftU64 (StartLba, 24);
+  LbaMid  = (UINT8) RShiftU64 (StartLba, 32);
+  LbaHigh = (UINT8) RShiftU64 (StartLba, 40);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
 
-  LbaLow  = (UINT8)StartLba;
-  LbaMid  = (UINT8)RShiftU64 (StartLba, 8);
-  LbaHigh = (UINT8)RShiftU64 (StartLba, 16); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
+  LbaLow  = (UINT8) StartLba;
+  LbaMid  = (UINT8) RShiftU64 (StartLba, 8);
+  LbaHigh = (UINT8) RShiftU64 (StartLba, 16);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
 
   //
   // Send command via Command Register, invoking the processing of this command
   //
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Command, AtaCommand);
- 
-  Buffer16 = (UINT16 *)Buffer;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, AtaCommand);
+
+  Buffer16 = (UINT16 *) Buffer;
+
+  //
+  // According to PIO data in protocol, host can perform a series of reads to
+  // the data register after each time device set DRQ ready;
+  //
   
   //
-  // According to PIO data in protocol, host can perform a series of reads to 
-  // the data register after each time device set DRQ ready;
-  // 
-  Increment = 256;      // 256 words
-  WordCount = 0;        // used to record bytes of currently transfered data
+  // 256 words
+  //
+  Increment = 256;
 
-  while ( WordCount < ByteCount/2 ) {
+  //
+  // used to record bytes of currently transfered data
+  //
+  WordCount = 0;
+
+  while (WordCount < ByteCount / 2) {
     //
     // Poll DRQ bit set, data transfer can be performed only when DRQ is ready.
     //
-    Status = DRQReady2(IdeDev, ATATIMEOUT);
-    if (EFI_ERROR(Status)) {      
+    Status = DRQReady2 (IdeDev, ATATIMEOUT);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
-    } 
-    
-    Status = CheckErrorStatus(IdeDev);
-    if (EFI_ERROR(Status)) {      
+    }
+
+    Status = CheckErrorStatus (IdeDev);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
 
     //
     // Get the byte count for one series of read
     //
-    if ((WordCount + Increment) > ByteCount/2) {
-      Increment = ByteCount/2 - WordCount ;
+    if ((WordCount + Increment) > ByteCount / 2) {
+      Increment = ByteCount / 2 - WordCount;
     }
 
     IDEReadPortWMultiple (
       IdeDev->PciIo,
-      IdeDev->IoPort->Data, 
-      Increment, 
+      IdeDev->IoPort->Data,
+      Increment,
       Buffer16
       );
 
     WordCount += Increment;
-    Buffer16  += Increment;
-    
-  } 
+    Buffer16 += Increment;
 
-  return CheckErrorStatus(IdeDev);
+  }
+
+  return CheckErrorStatus (IdeDev);
 }
 
-
 EFI_STATUS
-AtaPioDataOutExt(
+AtaPioDataOutExt (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  VOID            *Buffer,
   IN  UINT32          ByteCount,
@@ -1811,7 +1929,15 @@ AtaPioDataOutExt(
         EFI_DEVICE_ERROR
           command sent failed.
   Notes:
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    ByteCount - add argument and description to function comment
+// TODO:    AtaCommand - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    SectorCount - add argument and description to function comment
 {
   UINT8       DevSel;
   UINT8       SectorCount8;
@@ -1822,28 +1948,28 @@ AtaPioDataOutExt(
   UINTN       Increment;
   UINT16      *Buffer16;
   EFI_STATUS  Status;
-  
+
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
   //
   // Select device. Set bit6 as 1 to indicate LBA mode is used
   //
-  DevSel  = (UINT8)(IdeDev->Device << 4);
+  DevSel = (UINT8) (IdeDev->Device << 4);
   DevSel |= 0x40;
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
+    IdeDev->IoPort->Head,
     DevSel
-    );   
+    );
 
   //
   // Wait for DRDY singnal asserting.
   //
-  Status = DRDYReady(IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
+  Status = DRDYReady (IdeDev, ATATIMEOUT);
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
      
@@ -1851,89 +1977,91 @@ AtaPioDataOutExt(
   // Fill feature register if needed
   //
   if (AtaCommand == SET_FEATURES_CMD) {
-    IDEWritePortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Feature, 0x03);
+    IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, 0x03);
   }
 
   //
   // Fill the sector count register, which is a two-byte FIFO. Need write twice.
   //
-  SectorCount8 = (UINT8)(SectorCount >> 8);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
-  SectorCount8 = (UINT8)SectorCount;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
+  SectorCount8 = (UINT8) (SectorCount >> 8);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
+  SectorCount8 = (UINT8) SectorCount;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
   //
   // Fill the start LBA registers, which are also two-byte FIFO
   //
-  LbaLow  = (UINT8)RShiftU64 (StartLba, 24);
-  LbaMid  = (UINT8)RShiftU64 (StartLba, 32);
-  LbaHigh = (UINT8)RShiftU64 (StartLba, 40); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
+  LbaLow  = (UINT8) RShiftU64 (StartLba, 24);
+  LbaMid  = (UINT8) RShiftU64 (StartLba, 32);
+  LbaHigh = (UINT8) RShiftU64 (StartLba, 40);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
 
-  LbaLow  = (UINT8)StartLba;
-  LbaMid  = (UINT8)RShiftU64 (StartLba, 8);
-  LbaHigh = (UINT8)RShiftU64 (StartLba, 16); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
+  LbaLow  = (UINT8) StartLba;
+  LbaMid  = (UINT8) RShiftU64 (StartLba, 8);
+  LbaHigh = (UINT8) RShiftU64 (StartLba, 16);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
 
   //
   // Send command via Command Register, invoking the processing of this command
   //
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Command, AtaCommand);
- 
-  Buffer16 = (UINT16 *)Buffer;
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, AtaCommand);
+
+  Buffer16 = (UINT16 *) Buffer;
+
   //
-  // According to PIO Data Out protocol, host can perform a series of writes to 
+  // According to PIO Data Out protocol, host can perform a series of writes to
   // the data register after each time device set DRQ ready;
-  // 
-  Increment = 256;  
+  //
+  Increment = 256;
 
   //
   // used to record bytes of currently transfered data
   //
-  WordCount = 0;        
+  WordCount = 0;
 
-  while ( WordCount < ByteCount/2 ) {
+  while (WordCount < ByteCount / 2) {
     //
     // Poll DRQ bit set, data transfer can be performed only when DRQ is ready.
     //
-    Status = DRQReady2(IdeDev, ATATIMEOUT);
-    if (EFI_ERROR(Status)) {      
+    Status = DRQReady2 (IdeDev, ATATIMEOUT);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
-    } 
-    
-    Status = CheckErrorStatus(IdeDev);
-    if (EFI_ERROR(Status)) {      
+    }
+
+    Status = CheckErrorStatus (IdeDev);
+    if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
 
     //
     // Write data into device by one series of writing to data register
     //
-    if ((WordCount + Increment) > ByteCount/2) {
-      Increment = ByteCount/2 - WordCount ;
+    if ((WordCount + Increment) > ByteCount / 2) {
+      Increment = ByteCount / 2 - WordCount;
     }
 
     IDEWritePortWMultiple (
       IdeDev->PciIo,
-      IdeDev->IoPort->Data, 
-      Increment, 
+      IdeDev->IoPort->Data,
+      Increment,
       Buffer16
       );
 
     WordCount += Increment;
-    Buffer16  += Increment;
-    
-  } // while 
+    Buffer16 += Increment;
 
-  return CheckErrorStatus(IdeDev);
+  }
+  //
+  // while
+  //
+
+  return CheckErrorStatus (IdeDev);
 }
-
 
 STATIC
 VOID
@@ -1957,28 +2085,31 @@ AtaSMARTSupport (
   Returns:  
   
         NONE
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
 {
-  EFI_STATUS                          Status;
-  BOOLEAN                             SMARTSupported;
-  UINT8                               Device;
-  EFI_IDENTIFY_DATA                   *TmpAtaIdentifyPointer;
-  UINT8                               DeviceSelect;
-  UINT8                               LBAMid;
-  UINT8                               LBAHigh;
+  EFI_STATUS        Status;
+  BOOLEAN           SMARTSupported;
+  UINT8             Device;
+  EFI_IDENTIFY_DATA *TmpAtaIdentifyPointer;
+  UINT8             DeviceSelect;
+  UINT8             LBAMid;
+  UINT8             LBAHigh;
 
   //
-  //Detect if the device supports S.M.A.R.T.
+  // Detect if the device supports S.M.A.R.T.
   //
   if ((IdeDev->pIdData->AtaData.command_set_supported_83 & 0xc000) != 0x4000) {
     //
-    //Data in word 82 is not valid (bit15 shall be zero and bit14 shall be to one)
+    // Data in word 82 is not valid (bit15 shall be zero and bit14 shall be to one)
     //
-    return;
+    return ;
   } else {
     if ((IdeDev->pIdData->AtaData.command_set_supported_82 & 0x0001) != 0x0001) {
       //
-      //S.M.A.R.T is not supported by the device
+      // S.M.A.R.T is not supported by the device
       //
       SMARTSupported = FALSE;
     } else {
@@ -1988,124 +2119,127 @@ AtaSMARTSupport (
 
   if (!SMARTSupported) {
     //
-    //Report nonsupport status code
+    // Report nonsupport status code
     //
     gRT->ReportStatusCode (
-           EFI_ERROR_CODE | EFI_ERROR_MINOR,
-           (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_NOTSUPPORTED),
-           0,
-           &gIDEBusDriverGuid,
-           NULL
-           );
+          EFI_ERROR_CODE | EFI_ERROR_MINOR,
+          (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_NOTSUPPORTED),
+          0,
+          &gIDEBusDriverGuid,
+          NULL
+          );
   } else {
     //
-    //Enable this feature
+    // Enable this feature
     //
     gRT->ReportStatusCode (
-           EFI_PROGRESS_CODE,
-           (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_ENABLE),
-           0,
-           &gIDEBusDriverGuid,
-           NULL
-           );
+          EFI_PROGRESS_CODE,
+          (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_ENABLE),
+          0,
+          &gIDEBusDriverGuid,
+          NULL
+          );
 
-    Device = (UINT8)((IdeDev->Device << 4) | 0xe0);
+    Device = (UINT8) ((IdeDev->Device << 4) | 0xe0);
     Status = AtaNonDataCommandIn (
-               IdeDev, 
-               ATA_SMART_CMD,
-               Device, 
-               ATA_SMART_ENABLE_OPERATION,
-               0, 0, 
-               ATA_CONSTANT_4F,
-               ATA_CONSTANT_C2
-               );
+              IdeDev,
+              ATA_SMART_CMD,
+              Device,
+              ATA_SMART_ENABLE_OPERATION,
+              0,
+              0,
+              ATA_CONSTANT_4F,
+              ATA_CONSTANT_C2
+              );
     //
-    //Detect if this feature is enabled
+    // Detect if this feature is enabled
     //
-    TmpAtaIdentifyPointer = (EFI_IDENTIFY_DATA *)EfiLibAllocateZeroPool(sizeof(EFI_IDENTIFY_DATA));
-    
-    DeviceSelect = (UINT8)((IdeDev->Device) << 4);
+    TmpAtaIdentifyPointer = (EFI_IDENTIFY_DATA *) EfiLibAllocateZeroPool (sizeof (EFI_IDENTIFY_DATA));
+
+    DeviceSelect          = (UINT8) ((IdeDev->Device) << 4);
     Status = AtaPioDataIn (
-               IdeDev, 
-               (VOID*)TmpAtaIdentifyPointer, 
-               sizeof(EFI_IDENTIFY_DATA),
-               IDENTIFY_DRIVE_CMD, 
-               DeviceSelect, 
-               0,
-               0,
-               0,
-               0
-               );
-    if (EFI_ERROR(Status)) {
+              IdeDev,
+              (VOID *) TmpAtaIdentifyPointer,
+              sizeof (EFI_IDENTIFY_DATA),
+              IDENTIFY_DRIVE_CMD,
+              DeviceSelect,
+              0,
+              0,
+              0,
+              0
+              );
+    if (EFI_ERROR (Status)) {
       gBS->FreePool (TmpAtaIdentifyPointer);
       return ;
     }
 
     //
-    //Check if the feature is enabled
+    // Check if the feature is enabled
     //
     if ((TmpAtaIdentifyPointer->AtaData.command_set_feature_enb_85 & 0x0001) == 0x0001) {
       //
-      //Read status data
+      // Read status data
       //
       AtaNonDataCommandIn (
-        IdeDev, 
+        IdeDev,
         ATA_SMART_CMD,
-        Device, 
+        Device,
         ATA_SMART_RETURN_STATUS,
-        0, 0, 
+        0,
+        0,
         ATA_CONSTANT_4F,
         ATA_CONSTANT_C2
         );
-      LBAMid = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb); 
-      LBAHigh = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb); 
+      LBAMid  = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb);
+      LBAHigh = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb);
 
       if ((LBAMid == 0x4f) && (LBAHigh == 0xc2)) {
         //
-        //The threshold exceeded condition is not detected by the device
+        // The threshold exceeded condition is not detected by the device
         //
         gRT->ReportStatusCode (
-               EFI_PROGRESS_CODE,
-               (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_UNDERTHRESHOLD),
-               0,
-               &gIDEBusDriverGuid,
-               NULL
-               );
+              EFI_PROGRESS_CODE,
+              (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_UNDERTHRESHOLD),
+              0,
+              &gIDEBusDriverGuid,
+              NULL
+              );
 
       } else if ((LBAMid == 0xf4) && (LBAHigh == 0x2c)) {
         //
-        //The threshold exceeded condition is  detected by the device
+        // The threshold exceeded condition is  detected by the device
         //
         gRT->ReportStatusCode (
-               EFI_PROGRESS_CODE,
-               (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_OVERTHRESHOLD),
-               0,
-               &gIDEBusDriverGuid,
-               NULL
-               );
+              EFI_PROGRESS_CODE,
+              (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_OVERTHRESHOLD),
+              0,
+              &gIDEBusDriverGuid,
+              NULL
+              );
       }
 
     } else {
       //
-      //Report disabled status code
+      // Report disabled status code
       //
       gRT->ReportStatusCode (
-             EFI_ERROR_CODE | EFI_ERROR_MINOR,
-             (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_DISABLED),
-             0,
-             &gIDEBusDriverGuid,
-             NULL
-             );
+            EFI_ERROR_CODE | EFI_ERROR_MINOR,
+            (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_DISABLED),
+            0,
+            &gIDEBusDriverGuid,
+            NULL
+            );
     }
+
     gBS->FreePool (TmpAtaIdentifyPointer);
   }
-  
-  return;
+
+  return ;
 }
 
 EFI_STATUS
 AtaCommandIssueExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINT8           AtaCommand,
   IN  UINT8           Device,
   IN  UINT16          Feature,
@@ -2134,15 +2268,15 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  UINT8             SectorCount8;
-  UINT8             Feature8;
-  UINT8             LbaLow;
-  UINT8             LbaMid;
-  UINT8             LbaHigh;
-  
+  EFI_STATUS  Status;
+  UINT8       SectorCount8;
+  UINT8       Feature8;
+  UINT8       LbaLow;
+  UINT8       LbaMid;
+  UINT8       LbaHigh;
+
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -2151,15 +2285,15 @@ Returns:
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0)
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0)
     );
 
   //
   // ATA commands for ATA device must be issued when DRDY is set
   //
-  Status = DRDYReady(IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
+  Status = DRDYReady (IdeDev, ATATIMEOUT);
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -2171,44 +2305,44 @@ Returns:
   //
   // Fill the feature register, which is a two-byte FIFO. Need write twice.
   //
-  Feature8 = (UINT8)(Feature >> 8);
+  Feature8 = (UINT8) (Feature >> 8);
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, Feature8);
-  
-  Feature8 = (UINT8)Feature;
+
+  Feature8 = (UINT8) Feature;
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, Feature8);
 
   //
   // Fill the sector count register, which is a two-byte FIFO. Need write twice.
   //
-  SectorCount8 = (UINT8)(SectorCount >> 8);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
-  SectorCount8 = (UINT8)SectorCount;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
+  SectorCount8 = (UINT8) (SectorCount >> 8);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
+  SectorCount8 = (UINT8) SectorCount;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
   //
   // Fill the start LBA registers, which are also two-byte FIFO
   //
-  LbaLow  = (UINT8)RShiftU64 (LbaAddress, 24);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  LbaLow  = (UINT8)LbaAddress;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
+  LbaLow = (UINT8) RShiftU64 (LbaAddress, 24);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  LbaLow = (UINT8) LbaAddress;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
 
-  LbaMid  = (UINT8)RShiftU64 (LbaAddress, 32);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  LbaMid  = (UINT8)RShiftU64 (LbaAddress, 8);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
+  LbaMid = (UINT8) RShiftU64 (LbaAddress, 32);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  LbaMid = (UINT8) RShiftU64 (LbaAddress, 8);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
 
-  LbaHigh = (UINT8)RShiftU64 (LbaAddress, 40); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
-  LbaHigh = (UINT8)RShiftU64 (LbaAddress, 16); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
+  LbaHigh = (UINT8) RShiftU64 (LbaAddress, 40);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
+  LbaHigh = (UINT8) RShiftU64 (LbaAddress, 16);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
 
   //
-  //Work around for Segate 160G disk writing
+  // Work around for Segate 160G disk writing
   //
-  gBS->Stall(1800);
-  
+  gBS->Stall (1800);
+
   //
   // Send command via Command Register
   //
@@ -2217,14 +2351,14 @@ Returns:
   //
   // Stall at least 400ns
   //
-  gBS->Stall(100);
-  
+  gBS->Stall (100);
+
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 AtaCommandIssue (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINT8           AtaCommand,
   IN  UINT8           Device,
   IN  UINT16          Feature,
@@ -2253,16 +2387,16 @@ Returns:
 
 --*/
 {
-  EFI_STATUS       Status;
-  UINT8            SectorCount8;
-  UINT8            Feature8;
-  UINT8            Lba0;
-  UINT8            Lba1;
-  UINT8            Lba2;
-  UINT8            Lba3;
+  EFI_STATUS  Status;
+  UINT8       SectorCount8;
+  UINT8       Feature8;
+  UINT8       Lba0;
+  UINT8       Lba1;
+  UINT8       Lba2;
+  UINT8       Lba3;
 
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -2271,25 +2405,24 @@ Returns:
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0)
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0)
     );
 
   //
   // ATA commands for ATA device must be issued when DRDY is set
   //
-  Status = DRDYReady(IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
+  Status = DRDYReady (IdeDev, ATATIMEOUT);
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  
-  Lba0  = (UINT8)LbaAddress;
-  Lba1  = (UINT8)RShiftU64 (LbaAddress, 8);
-  Lba2  = (UINT8)RShiftU64 (LbaAddress, 16); 
-  Lba3  = (UINT8)RShiftU64 (LbaAddress, 24);
+  Lba0  = (UINT8) LbaAddress;
+  Lba1  = (UINT8) RShiftU64 (LbaAddress, 8);
+  Lba2  = (UINT8) RShiftU64 (LbaAddress, 16);
+  Lba3  = (UINT8) RShiftU64 (LbaAddress, 24);
   Device |= Lba3;
-  
+
   //
   // Pass parameter into device register block
   //
@@ -2298,42 +2431,41 @@ Returns:
   //
   // Fill the feature register, which is a two-byte FIFO. Need write twice.
   //
-  Feature8 = (UINT8)Feature;
+  Feature8 = (UINT8) Feature;
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, Feature8);
 
   //
   // Fill the sector count register, which is a two-byte FIFO. Need write twice.
   //
-  SectorCount8 = (UINT8)SectorCount;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
+  SectorCount8 = (UINT8) SectorCount;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
   //
   // Fill the start LBA registers, which are also two-byte FIFO
   //
   
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, Lba0);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  Lba1); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  Lba2); 
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, Lba0);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, Lba1);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, Lba2);
+
   //
   // Send command via Command Register
   //
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, AtaCommand);
-  
+
   //
   // Stall at least 400ns
   //
-  gBS->Stall(100);
-  
+  gBS->Stall (100);
+
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 AtaUdmaReadExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -2368,41 +2500,48 @@ AtaUdmaReadExt (
         The device status of UDMA operation. If the operation is 
          successful, return EFI_SUCCESS.
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD         *PrdAddr;
-  IDE_DMA_PRD         *UsedPrdAddr;
-  IDE_DMA_PRD         *TempPrdAddr;
-  UINT8               RegisterValue;
-  UINT8               Device;
-  UINT64              IoPortForBmic;
-  UINT64              IoPortForBmis;
-  UINT64              IoPortForBmid;
-  EFI_STATUS          Status;
-  UINTN               PrdTableNum;
-  UINTN               ByteCount;
-  UINTN               ByteAvailable;
-  UINT8               *PrdBuffer;
-  UINTN		      RemainBlockNum;
-  UINT8               DeviceControl;
+  IDE_DMA_PRD *PrdAddr;
+  IDE_DMA_PRD *UsedPrdAddr;
+  IDE_DMA_PRD *TempPrdAddr;
+  UINT8       RegisterValue;
+  UINT8       Device;
+  UINT64      IoPortForBmic;
+  UINT64      IoPortForBmis;
+  UINT64      IoPortForBmid;
+  EFI_STATUS  Status;
+  UINTN       PrdTableNum;
+  UINTN       ByteCount;
+  UINTN       ByteAvailable;
+  UINT8       *PrdBuffer;
+  UINTN       RemainBlockNum;
+  UINT8       DeviceControl;
 
   //
   // Channel and device differential. Select device.
   //
-  Device = (UINT8)((IdeDev->Device << 4) | 0xe0);
-
-  
+  Device = (UINT8) ((IdeDev->Device << 4) | 0xe0);
 
   //
   // Enable interrupt to support UDMA and Select device
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Head,Device);
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Head, Device);
 
-  if (IdePrimary == IdeDev->Channel) { 
+  if (IdePrimary == IdeDev->Channel) {
     IoPortForBmic = IdeDev->IoPort->BusMasterBaseAddr + BMICP_OFFSET;
     IoPortForBmis = IdeDev->IoPort->BusMasterBaseAddr + BMISP_OFFSET;
     IoPortForBmid = IdeDev->IoPort->BusMasterBaseAddr + BMIDP_OFFSET;
@@ -2427,30 +2566,30 @@ AtaUdmaReadExt (
       NumberOfBlocks = MAX_DMA_EXT_COMMAND_SECTORS;
       RemainBlockNum -= MAX_DMA_EXT_COMMAND_SECTORS;
     } else {
-      NumberOfBlocks = (UINT16)RemainBlockNum ;
-      RemainBlockNum = 0;
+      NumberOfBlocks  = (UINT16) RemainBlockNum;
+      RemainBlockNum  = 0;
     }
 
     //
     // Calculate the number of PRD table to make sure the memory region
     // not cross 64K boundary
     //
-    ByteCount = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+    ByteCount   = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     PrdTableNum = ((ByteCount >> 16) + 1) + 1;
 
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *)EfiLibAllocateZeroPool((2 * PrdTableNum * sizeof(IDE_DMA_PRD)));
+    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
 
     //
     // To make sure PRD is allocated in one 64K page
     //
-    if (((UINTN)PrdAddr & 0x0FFFF) > (((UINTN)PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
-      UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x10000) & 0xFFFF0000);
+    if (((UINTN) PrdAddr & 0x0FFFF) > (((UINTN) PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
+      UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x10000) & 0xFFFF0000);
     } else {
-      if ((UINTN)PrdAddr & 0x03){
-        UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x04) & 0xFFFFFFFC);
+      if ((UINTN) PrdAddr & 0x03) {
+        UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x04) & 0xFFFFFFFC);
       } else {
         UsedPrdAddr = PrdAddr;
       }
@@ -2459,25 +2598,25 @@ AtaUdmaReadExt (
     //
     // Build the PRD table
     //
-    PrdBuffer = DataBuffer;
+    PrdBuffer   = DataBuffer;
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
-      ByteAvailable = 0x10000 - ((UINTN)PrdBuffer & 0xFFFF);
+      ByteAvailable = 0x10000 - ((UINTN) PrdBuffer & 0xFFFF);
 
       if (ByteCount <= ByteAvailable) {
-        TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-        TempPrdAddr->ByteCount = (UINT16)ByteCount;
-        TempPrdAddr->EndOfTable = 0x8000;
+        TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+        TempPrdAddr->ByteCount      = (UINT16) ByteCount;
+        TempPrdAddr->EndOfTable     = 0x8000;
         break;
       }
 
-      TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-      TempPrdAddr->ByteCount = (UINT16)ByteAvailable;
+      TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+      TempPrdAddr->ByteCount      = (UINT16) ByteAvailable;
 
       ByteCount -= ByteAvailable;
       PrdBuffer += ByteAvailable;
-      TempPrdAddr ++;
+      TempPrdAddr++;
     }
   
     //
@@ -2504,8 +2643,8 @@ AtaUdmaReadExt (
                         &RegisterValue
                         );
 
-    RegisterValue |= BMIC_nREAD; 
-    
+    RegisterValue |= BMIC_nREAD;
+
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
                         EfiPciIoWidthUint8,
@@ -2542,13 +2681,13 @@ AtaUdmaReadExt (
     // Issue READ DMA EXT command
     //
     Status = AtaCommandIssueExt (
-               IdeDev, 
-               READ_DMA_EXT_CMD,
-               Device,
-               0,
-               (UINT16)NumberOfBlocks,
-               StartLba
-               );
+              IdeDev,
+              READ_DMA_EXT_CMD,
+              Device,
+              0,
+              (UINT16) NumberOfBlocks,
+              StartLba
+              );
     if (EFI_ERROR (Status)) {
       gBS->FreePool (PrdAddr);
       return EFI_DEVICE_ERROR;
@@ -2566,7 +2705,7 @@ AtaUdmaReadExt (
                         &RegisterValue
                         );
 
-    RegisterValue |=  BMIC_START;
+    RegisterValue |= BMIC_START;
 
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
@@ -2581,7 +2720,7 @@ AtaUdmaReadExt (
     // Check the INTERRUPT and ERROR bit of BMIS
     //
     while (TRUE) {
-      
+
       IdeDev->PciIo->Io.Read (
                           IdeDev->PciIo,
                           EfiPciIoWidthUint8,
@@ -2590,16 +2729,17 @@ AtaUdmaReadExt (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR))  {       
+      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
         if (RegisterValue & BMIS_ERROR) {
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
         break;
-      }      
-      gBS->Stall(1000);
+      }
+
+      gBS->Stall (1000);
     }
- 
+
     gBS->FreePool (PrdAddr);
 
     //
@@ -2614,7 +2754,7 @@ AtaUdmaReadExt (
                         &RegisterValue
                         );
 
-    RegisterValue &= ~((UINT8)BMIC_START);
+    RegisterValue &= ~((UINT8) BMIC_START);
 
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
@@ -2628,20 +2768,19 @@ AtaUdmaReadExt (
     if (RegisterValue & BMIS_ERROR) {
       return EFI_DEVICE_ERROR;
     }
-    
-    DataBuffer = (UINT8*)DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+
+    DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
 
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 AtaUdmaRead (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -2676,40 +2815,48 @@ AtaUdmaRead (
         The device status of UDMA operation. If the operation is 
          successful, return EFI_SUCCESS.
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD         *PrdAddr;
-  IDE_DMA_PRD         *UsedPrdAddr;
-  IDE_DMA_PRD         *TempPrdAddr;
-  UINT8               RegisterValue;
-  UINT8               Device;
-  UINT64              IoPortForBmic;
-  UINT64              IoPortForBmis;
-  UINT64              IoPortForBmid;
-  EFI_STATUS          Status;
-  UINTN               PrdTableNum;
-  UINTN               ByteCount;
-  UINTN               ByteAvailable;
-  UINT8               *PrdBuffer;
-  UINTN		      RemainBlockNum;
-  UINT8               DeviceControl;
-
+  IDE_DMA_PRD *PrdAddr;
+  IDE_DMA_PRD *UsedPrdAddr;
+  IDE_DMA_PRD *TempPrdAddr;
+  UINT8       RegisterValue;
+  UINT8       Device;
+  UINT64      IoPortForBmic;
+  UINT64      IoPortForBmis;
+  UINT64      IoPortForBmid;
+  EFI_STATUS  Status;
+  UINTN       PrdTableNum;
+  UINTN       ByteCount;
+  UINTN       ByteAvailable;
+  UINT8       *PrdBuffer;
+  UINTN       RemainBlockNum;
+  UINT8       DeviceControl;
 
   //
   // Channel and device differential
   //
-  Device = (UINT8)((IdeDev->Device << 4) | 0xe0);
+  Device = (UINT8) ((IdeDev->Device << 4) | 0xe0);
 
   //
   // Enable interrupt to support UDMA and Select device
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Head,Device);
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Head, Device);
 
-  if (IdePrimary == IdeDev->Channel) { 
+  if (IdePrimary == IdeDev->Channel) {
     IoPortForBmic = IdeDev->IoPort->BusMasterBaseAddr + BMICP_OFFSET;
     IoPortForBmis = IdeDev->IoPort->BusMasterBaseAddr + BMISP_OFFSET;
     IoPortForBmid = IdeDev->IoPort->BusMasterBaseAddr + BMIDP_OFFSET;
@@ -2734,29 +2881,29 @@ AtaUdmaRead (
       NumberOfBlocks = MAX_DMA_COMMAND_SECTORS;
       RemainBlockNum -= MAX_DMA_COMMAND_SECTORS;
     } else {
-      NumberOfBlocks = (UINT16)RemainBlockNum ;
-      RemainBlockNum = 0;
+      NumberOfBlocks  = (UINT16) RemainBlockNum;
+      RemainBlockNum  = 0;
     }
 
     //
     // Calculate the number of PRD table to make sure the memory region
     // not cross 64K boundary
     //
-    ByteCount = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+    ByteCount   = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     PrdTableNum = ((ByteCount >> 16) + 1) + 1;
 
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *)EfiLibAllocateZeroPool((2 * PrdTableNum * sizeof(IDE_DMA_PRD)));
+    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
     //
     // To make sure PRD is allocated in one 64K page
     //
-    if (((UINTN)PrdAddr & 0x0FFFF) > (((UINTN)PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
-      UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x10000) & 0xFFFF0000);
+    if (((UINTN) PrdAddr & 0x0FFFF) > (((UINTN) PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
+      UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x10000) & 0xFFFF0000);
     } else {
-      if ((UINTN)PrdAddr & 0x03){
-        UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x04) & 0xFFFFFFFC);
+      if ((UINTN) PrdAddr & 0x03) {
+        UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x04) & 0xFFFFFFFC);
       } else {
         UsedPrdAddr = PrdAddr;
       }
@@ -2765,25 +2912,25 @@ AtaUdmaRead (
     //
     // Build the PRD table
     //
-    PrdBuffer = DataBuffer;
+    PrdBuffer   = DataBuffer;
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
-      ByteAvailable = 0x10000 - ((UINTN)PrdBuffer & 0xFFFF);
+      ByteAvailable = 0x10000 - ((UINTN) PrdBuffer & 0xFFFF);
 
       if (ByteCount <= ByteAvailable) {
-        TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-        TempPrdAddr->ByteCount = (UINT16)ByteCount;
-        TempPrdAddr->EndOfTable = 0x8000;
+        TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+        TempPrdAddr->ByteCount      = (UINT16) ByteCount;
+        TempPrdAddr->EndOfTable     = 0x8000;
         break;
       }
 
-      TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-      TempPrdAddr->ByteCount = (UINT16)ByteAvailable;
+      TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+      TempPrdAddr->ByteCount      = (UINT16) ByteAvailable;
 
       ByteCount -= ByteAvailable;
       PrdBuffer += ByteAvailable;
-      TempPrdAddr ++;
+      TempPrdAddr++;
     }
 
     //
@@ -2810,8 +2957,8 @@ AtaUdmaRead (
                         &RegisterValue
                         );
 
-    RegisterValue |= BMIC_nREAD;  
-    
+    RegisterValue |= BMIC_nREAD;
+
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
                         EfiPciIoWidthUint8,
@@ -2848,13 +2995,13 @@ AtaUdmaRead (
     // Issue READ DMA command
     //
     Status = AtaCommandIssue (
-               IdeDev, 
-               READ_DMA_CMD,
-               Device,
-               0,
-               (UINT16)NumberOfBlocks,
-               StartLba
-               );
+              IdeDev,
+              READ_DMA_CMD,
+              Device,
+              0,
+              (UINT16) NumberOfBlocks,
+              StartLba
+              );
     if (EFI_ERROR (Status)) {
       gBS->FreePool (PrdAddr);
       return EFI_DEVICE_ERROR;
@@ -2887,7 +3034,7 @@ AtaUdmaRead (
     // Check the INTERRUPT and ERROR bit of BMIS
     //
     while (TRUE) {
-      
+
       IdeDev->PciIo->Io.Read (
                           IdeDev->PciIo,
                           EfiPciIoWidthUint8,
@@ -2896,19 +3043,19 @@ AtaUdmaRead (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR))  {       
+      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
         if (RegisterValue & BMIS_ERROR) {
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
         break;
       }
-      
-      gBS->Stall(1000);
+
+      gBS->Stall (1000);
     }
- 
+
     gBS->FreePool (PrdAddr);
-    
+
     //
     // Set START bit of BMIC register
     //
@@ -2921,7 +3068,7 @@ AtaUdmaRead (
                         &RegisterValue
                         );
 
-    RegisterValue &= ~((UINT8)BMIC_START);
+    RegisterValue &= ~((UINT8) BMIC_START);
 
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
@@ -2935,20 +3082,19 @@ AtaUdmaRead (
     if (RegisterValue & BMIS_ERROR) {
       return EFI_DEVICE_ERROR;
     }
-    
-    DataBuffer = (UINT8*)DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+
+    DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
 
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 AtaUdmaWriteExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -2983,39 +3129,47 @@ AtaUdmaWriteExt (
         The device status of UDMA operation. If the operation is 
          successful, return EFI_SUCCESS.
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD         *PrdAddr;
-  IDE_DMA_PRD         *UsedPrdAddr;
-  IDE_DMA_PRD         *TempPrdAddr;
-  UINT8               RegisterValue;
-  UINT8               Device;
-  UINT64              IoPortForBmic;
-  UINT64              IoPortForBmis;
-  UINT64              IoPortForBmid;
-  EFI_STATUS          Status;
-  UINTN               PrdTableNum;
-  UINTN               ByteCount;
-  UINTN               ByteAvailable;
-  UINT8               *PrdBuffer;
-  UINTN               RemainBlockNum;
-  UINT8               DeviceControl;
+  IDE_DMA_PRD *PrdAddr;
+  IDE_DMA_PRD *UsedPrdAddr;
+  IDE_DMA_PRD *TempPrdAddr;
+  UINT8       RegisterValue;
+  UINT8       Device;
+  UINT64      IoPortForBmic;
+  UINT64      IoPortForBmis;
+  UINT64      IoPortForBmid;
+  EFI_STATUS  Status;
+  UINTN       PrdTableNum;
+  UINTN       ByteCount;
+  UINTN       ByteAvailable;
+  UINT8       *PrdBuffer;
+  UINTN       RemainBlockNum;
+  UINT8       DeviceControl;
 
   //
   // Channel and device differential
   //
-  Device = (UINT8)((IdeDev->Device << 4) | 0xe0);
+  Device = (UINT8) ((IdeDev->Device << 4) | 0xe0);
 
   //
   // Enable interrupt to support UDMA and Select device
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Head,Device);
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Head, Device);
 
-  if (IdePrimary == IdeDev->Channel) { 
+  if (IdePrimary == IdeDev->Channel) {
     IoPortForBmic = IdeDev->IoPort->BusMasterBaseAddr + BMICP_OFFSET;
     IoPortForBmis = IdeDev->IoPort->BusMasterBaseAddr + BMISP_OFFSET;
     IoPortForBmid = IdeDev->IoPort->BusMasterBaseAddr + BMIDP_OFFSET;
@@ -3040,29 +3194,29 @@ AtaUdmaWriteExt (
       NumberOfBlocks = MAX_DMA_EXT_COMMAND_SECTORS;
       RemainBlockNum -= MAX_DMA_EXT_COMMAND_SECTORS;
     } else {
-      NumberOfBlocks = (UINT16)RemainBlockNum ;
-      RemainBlockNum = 0;
+      NumberOfBlocks  = (UINT16) RemainBlockNum;
+      RemainBlockNum  = 0;
     }
 
     //
     // Calculate the number of PRD table to make sure the memory region
     // not cross 64K boundary
     //
-    ByteCount = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+    ByteCount   = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     PrdTableNum = ((ByteCount >> 16) + 1) + 1;
 
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *)EfiLibAllocateZeroPool((2 * PrdTableNum * sizeof(IDE_DMA_PRD)));
+    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
     //
     // To make sure PRD is allocated in one 64K page
     //
-    if (((UINTN)PrdAddr & 0x0FFFF) > (((UINTN)PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
-      UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x10000) & 0xFFFF0000);
+    if (((UINTN) PrdAddr & 0x0FFFF) > (((UINTN) PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
+      UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x10000) & 0xFFFF0000);
     } else {
-      if ((UINTN)PrdAddr & 0x03){
-        UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x04) & 0xFFFFFFFC);
+      if ((UINTN) PrdAddr & 0x03) {
+        UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x04) & 0xFFFFFFFC);
       } else {
         UsedPrdAddr = PrdAddr;
       }
@@ -3071,25 +3225,25 @@ AtaUdmaWriteExt (
     //
     // Build the PRD table
     //
-    PrdBuffer = DataBuffer;
+    PrdBuffer   = DataBuffer;
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
-      ByteAvailable = 0x10000 - ((UINTN)PrdBuffer & 0xFFFF);
+      ByteAvailable = 0x10000 - ((UINTN) PrdBuffer & 0xFFFF);
 
       if (ByteCount <= ByteAvailable) {
-        TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-        TempPrdAddr->ByteCount = (UINT16)ByteCount;
-        TempPrdAddr->EndOfTable = 0x8000;
+        TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+        TempPrdAddr->ByteCount      = (UINT16) ByteCount;
+        TempPrdAddr->EndOfTable     = 0x8000;
         break;
       }
 
-      TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-      TempPrdAddr->ByteCount = (UINT16)ByteAvailable;
+      TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+      TempPrdAddr->ByteCount      = (UINT16) ByteAvailable;
 
       ByteCount -= ByteAvailable;
       PrdBuffer += ByteAvailable;
-      TempPrdAddr ++;
+      TempPrdAddr++;
     }
   
     //
@@ -3115,9 +3269,11 @@ AtaUdmaWriteExt (
                         1,
                         &RegisterValue
                         );
+    //
+    // 0000 1000
+    //
+    RegisterValue &= ~((UINT8) BMIC_nREAD);
 
-    RegisterValue &= ~((UINT8)BMIC_nREAD);  // 0000 1000
-   
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
                         EfiPciIoWidthUint8,
@@ -3154,14 +3310,14 @@ AtaUdmaWriteExt (
     // Issue WRITE DMA EXT command
     //
     Status = AtaCommandIssueExt (
-               IdeDev, 
-               WRITE_DMA_EXT_CMD,
-               Device,
-               0,
-               (UINT16)NumberOfBlocks,
-               StartLba
-               );
-    if (EFI_ERROR(Status)) {
+              IdeDev,
+              WRITE_DMA_EXT_CMD,
+              Device,
+              0,
+              (UINT16) NumberOfBlocks,
+              StartLba
+              );
+    if (EFI_ERROR (Status)) {
       gBS->FreePool (PrdAddr);
       return EFI_DEVICE_ERROR;
     }
@@ -3193,7 +3349,7 @@ AtaUdmaWriteExt (
     // Check the INTERRUPT and ERROR bit of BMIS
     //
     while (TRUE) {
-      
+
       IdeDev->PciIo->Io.Read (
                           IdeDev->PciIo,
                           EfiPciIoWidthUint8,
@@ -3202,15 +3358,15 @@ AtaUdmaWriteExt (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR))  {       
+      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
         if (RegisterValue & BMIS_ERROR) {
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
         break;
       }
-      
-      gBS->Stall(1000);
+
+      gBS->Stall (1000);
     }
 
     gBS->FreePool (PrdAddr);
@@ -3227,7 +3383,7 @@ AtaUdmaWriteExt (
                         &RegisterValue
                         );
 
-    RegisterValue &= ~((UINT8)BMIC_START);
+    RegisterValue &= ~((UINT8) BMIC_START);
 
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
@@ -3237,8 +3393,8 @@ AtaUdmaWriteExt (
                         1,
                         &RegisterValue
                         );
-    
-    DataBuffer = (UINT8*)DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+
+    DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
 
@@ -3247,9 +3403,9 @@ AtaUdmaWriteExt (
 
 EFI_STATUS
 AtaUdmaWrite (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
-  IN  VOID            *DataBuffer, 
-  IN  EFI_LBA         StartLba, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  IN  VOID            *DataBuffer,
+  IN  EFI_LBA         StartLba,
   IN  UINTN           NumberOfBlocks
   )
 /*++
@@ -3284,38 +3440,47 @@ AtaUdmaWrite (
         The device status of UDMA operation. If the operation is 
          successful, return EFI_SUCCESS.
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    StartLba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD         *PrdAddr;
-  IDE_DMA_PRD         *UsedPrdAddr;
-  IDE_DMA_PRD         *TempPrdAddr;
-  UINT8               RegisterValue;
-  UINT8               Device;
-  UINT64              IoPortForBmic;
-  UINT64              IoPortForBmis;
-  UINT64              IoPortForBmid;
-  EFI_STATUS          Status;
-  UINTN               PrdTableNum;
-  UINTN               ByteCount;
-  UINTN               ByteAvailable;
-  UINT8               *PrdBuffer;
-  UINTN		      RemainBlockNum;
-  UINT8               DeviceControl;
+  IDE_DMA_PRD *PrdAddr;
+  IDE_DMA_PRD *UsedPrdAddr;
+  IDE_DMA_PRD *TempPrdAddr;
+  UINT8       RegisterValue;
+  UINT8       Device;
+  UINT64      IoPortForBmic;
+  UINT64      IoPortForBmis;
+  UINT64      IoPortForBmid;
+  EFI_STATUS  Status;
+  UINTN       PrdTableNum;
+  UINTN       ByteCount;
+  UINTN       ByteAvailable;
+  UINT8       *PrdBuffer;
+  UINTN       RemainBlockNum;
+  UINT8       DeviceControl;
 
   //
   // Channel and device differential
   //
-  Device = (UINT8)((IdeDev->Device << 4) | 0xe0);
+  Device = (UINT8) ((IdeDev->Device << 4) | 0xe0);
 
   //
   // Enable interrupt to support UDMA
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Head,Device);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Head, Device);
 
-  if (IdePrimary == IdeDev->Channel) { 
+  if (IdePrimary == IdeDev->Channel) {
     IoPortForBmic = IdeDev->IoPort->BusMasterBaseAddr + BMICP_OFFSET;
     IoPortForBmis = IdeDev->IoPort->BusMasterBaseAddr + BMISP_OFFSET;
     IoPortForBmid = IdeDev->IoPort->BusMasterBaseAddr + BMIDP_OFFSET;
@@ -3340,30 +3505,30 @@ AtaUdmaWrite (
       NumberOfBlocks = MAX_DMA_COMMAND_SECTORS;
       RemainBlockNum -= MAX_DMA_COMMAND_SECTORS;
     } else {
-      NumberOfBlocks = (UINT16)RemainBlockNum ;
-      RemainBlockNum = 0;
+      NumberOfBlocks  = (UINT16) RemainBlockNum;
+      RemainBlockNum  = 0;
     }
 
     //
     // Calculate the number of PRD table to make sure the memory region
     // not cross 64K boundary
     //
-    ByteCount = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+    ByteCount   = NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     PrdTableNum = ((ByteCount >> 16) + 1) + 1;
 
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *)EfiLibAllocateZeroPool((2 * PrdTableNum * sizeof(IDE_DMA_PRD)));
+    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
 
     //
     // To make sure PRD is allocated in one 64K page
     //
-    if (((UINTN)PrdAddr & 0x0FFFF) > (((UINTN)PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
-      UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x10000) & 0xFFFF0000);
+    if (((UINTN) PrdAddr & 0x0FFFF) > (((UINTN) PrdAddr + PrdTableNum * sizeof (IDE_DMA_PRD) - 1) & 0x0FFFF)) {
+      UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x10000) & 0xFFFF0000);
     } else {
-      if ((UINTN)PrdAddr & 0x03){
-        UsedPrdAddr = (IDE_DMA_PRD*)((UINTN)((UINT8*)PrdAddr + 0x04) & 0xFFFFFFFC);
+      if ((UINTN) PrdAddr & 0x03) {
+        UsedPrdAddr = (IDE_DMA_PRD *) ((UINTN) ((UINT8 *) PrdAddr + 0x04) & 0xFFFFFFFC);
       } else {
         UsedPrdAddr = PrdAddr;
       }
@@ -3372,25 +3537,25 @@ AtaUdmaWrite (
     //
     // Build the PRD table
     //
-    PrdBuffer = DataBuffer;
+    PrdBuffer   = DataBuffer;
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
-      ByteAvailable = 0x10000 - ((UINTN)PrdBuffer & 0xFFFF);
+      ByteAvailable = 0x10000 - ((UINTN) PrdBuffer & 0xFFFF);
 
       if (ByteCount <= ByteAvailable) {
-        TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-        TempPrdAddr->ByteCount = (UINT16)ByteCount;
-        TempPrdAddr->EndOfTable = 0x8000;
+        TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+        TempPrdAddr->ByteCount      = (UINT16) ByteCount;
+        TempPrdAddr->EndOfTable     = 0x8000;
         break;
       }
 
-      TempPrdAddr->RegionBaseAddr = (UINT32)((UINTN)PrdBuffer);
-      TempPrdAddr->ByteCount = (UINT16)ByteAvailable;
+      TempPrdAddr->RegionBaseAddr = (UINT32) ((UINTN) PrdBuffer);
+      TempPrdAddr->ByteCount      = (UINT16) ByteAvailable;
 
       ByteCount -= ByteAvailable;
       PrdBuffer += ByteAvailable;
-      TempPrdAddr ++;
+      TempPrdAddr++;
     }
   
     //
@@ -3416,9 +3581,11 @@ AtaUdmaWrite (
                         1,
                         &RegisterValue
                         );
+    //
+    // 0000 1000
+    //
+    RegisterValue &= ~((UINT8) BMIC_nREAD);
 
-    RegisterValue &=  ~((UINT8)BMIC_nREAD);  // 0000 1000
-    
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
                         EfiPciIoWidthUint8,
@@ -3455,14 +3622,14 @@ AtaUdmaWrite (
     // Issue WRITE DMA command
     //
     Status = AtaCommandIssue (
-               IdeDev, 
-               WRITE_DMA_CMD,
-               Device,
-               0,
-               (UINT16)NumberOfBlocks,
-               StartLba
-               );
-    if (EFI_ERROR(Status)) {
+              IdeDev,
+              WRITE_DMA_CMD,
+              Device,
+              0,
+              (UINT16) NumberOfBlocks,
+              StartLba
+              );
+    if (EFI_ERROR (Status)) {
       gBS->FreePool (PrdAddr);
       return EFI_DEVICE_ERROR;
     }
@@ -3494,7 +3661,7 @@ AtaUdmaWrite (
     // Check the INTERRUPT and ERROR bit of BMIS
     //
     while (TRUE) {
-      
+
       IdeDev->PciIo->Io.Read (
                           IdeDev->PciIo,
                           EfiPciIoWidthUint8,
@@ -3503,16 +3670,17 @@ AtaUdmaWrite (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR))  {
+      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
         if (RegisterValue & BMIS_ERROR) {
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
         break;
       }
-      gBS->Stall(1000);
+
+      gBS->Stall (1000);
     }
- 
+
     gBS->FreePool (PrdAddr);
 
     //
@@ -3527,7 +3695,7 @@ AtaUdmaWrite (
                         &RegisterValue
                         );
 
-    RegisterValue &= ~((UINT8)BMIC_START);
+    RegisterValue &= ~((UINT8) BMIC_START);
 
     IdeDev->PciIo->Io.Write (
                         IdeDev->PciIo,
@@ -3537,8 +3705,8 @@ AtaUdmaWrite (
                         1,
                         &RegisterValue
                         );
-    
-    DataBuffer = (UINT8*)DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
+
+    DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
 

@@ -27,30 +27,36 @@ PxeBcComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
-);
+  );
 
 EFI_STATUS
 EFIAPI
 PxeBcComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-);
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gPxeBcComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gPxeBcComponentName = {
   PxeBcComponentNameGetDriverName,
   PxeBcComponentNameGetControllerName,
   "eng"
 };
 
 static EFI_UNICODE_STRING_TABLE mPxeBcDriverNameTable[] = {
-  { "eng", L"PXE Base Code Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"PXE Base Code Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -59,7 +65,7 @@ PxeBcComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
-)
+  )
 /*++
 
   Routine Description:
@@ -88,21 +94,22 @@ PxeBcComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gPxeBcComponentName.SupportedLanguages,
-           mPxeBcDriverNameTable, 
-           DriverName);
+          Language,
+          gPxeBcComponentName.SupportedLanguages,
+          mPxeBcDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 PxeBcComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-)
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
 /*++
 
   Routine Description:

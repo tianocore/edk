@@ -33,17 +33,17 @@ AtapiScsiPassThruComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 AtapiScsiPassThruComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gAtapiScsiPassThruComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gAtapiScsiPassThruComponentName = {
   AtapiScsiPassThruComponentNameGetDriverName,
   AtapiScsiPassThruComponentNameGetControllerName,
   "eng"
@@ -51,7 +51,7 @@ EFI_COMPONENT_NAME_PROTOCOL gAtapiScsiPassThruComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mAtapiScsiPassThruDriverNameTable[] = {
   { "eng", L"ATAPI SCSI Pass Thru Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -89,21 +89,21 @@ AtapiScsiPassThruComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gAtapiScsiPassThruComponentName.SupportedLanguages,
-           mAtapiScsiPassThruDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gAtapiScsiPassThruComponentName.SupportedLanguages,
+          mAtapiScsiPassThruDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 AtapiScsiPassThruComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

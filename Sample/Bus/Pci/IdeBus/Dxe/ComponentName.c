@@ -22,7 +22,7 @@ Abstract:
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gIDEBusComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gIDEBusComponentName = {
   IDEBusComponentNameGetDriverName,
   IDEBusComponentNameGetControllerName,
   "eng"
@@ -30,12 +30,12 @@ EFI_COMPONENT_NAME_PROTOCOL gIDEBusComponentName = {
 
 STATIC EFI_UNICODE_STRING_TABLE mIDEBusDriverNameTable[] = {
   { "eng", L"PCI IDE/ATAPI Bus Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mIDEBusControllerNameTable[] = {
   { "eng", L"PCI IDE/ATAPI Controller" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -73,21 +73,21 @@ IDEBusComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gIDEBusComponentName.SupportedLanguages,
-           mIDEBusDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gIDEBusComponentName.SupportedLanguages,
+          mIDEBusDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 IDEBusComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -135,19 +135,19 @@ IDEBusComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS             Status;
-  EFI_BLOCK_IO_PROTOCOL  *BlockIo;
-  IDE_BLK_IO_DEV         *IdeBlkIoDevice;
+  EFI_STATUS            Status;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
+  IDE_BLK_IO_DEV        *IdeBlkIoDevice;
 
   //
   // Get the controller context
   //
   Status = gBS->OpenProtocol (
                   ControllerHandle,
-                  &gIDEBusDriverGuid,  
+                  &gIDEBusDriverGuid,
                   NULL,
-                  gIDEBusDriverBinding.DriverBindingHandle,             
-                  ControllerHandle,   
+                  gIDEBusDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -156,22 +156,22 @@ IDEBusComponentNameGetControllerName (
 
   if (ChildHandle == NULL) {
     return EfiLibLookupUnicodeString (
-             Language, 
-             gIDEBusComponentName.SupportedLanguages,
-             mIDEBusControllerNameTable,
-             ControllerName
-             );
+            Language,
+            gIDEBusComponentName.SupportedLanguages,
+            mIDEBusControllerNameTable,
+            ControllerName
+            );
   }
 
   //
   // Get the child context
   //
   Status = gBS->OpenProtocol (
-                  ChildHandle,   
-                  &gEfiBlockIoProtocolGuid,  
-                  (VOID **)&BlockIo,
-                  gIDEBusDriverBinding.DriverBindingHandle,   
-                  ChildHandle,   
+                  ChildHandle,
+                  &gEfiBlockIoProtocolGuid,
+                  (VOID **) &BlockIo,
+                  gIDEBusDriverBinding.DriverBindingHandle,
+                  ChildHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -181,14 +181,15 @@ IDEBusComponentNameGetControllerName (
   IdeBlkIoDevice = IDE_BLOCK_IO_DEV_FROM_THIS (BlockIo);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gIDEBusComponentName.SupportedLanguages,
-           IdeBlkIoDevice->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gIDEBusComponentName.SupportedLanguages,
+          IdeBlkIoDevice->ControllerNameTable,
+          ControllerName
+          );
 }
 
-VOID AddName (
+VOID
+AddName (
   IN  IDE_BLK_IO_DEV               *IdeBlkIoDevicePtr
   )
 /*++
@@ -203,8 +204,8 @@ VOID AddName (
 
 --*/
 {
-  UINTN                           StringIndex;
-  CHAR16                          ModelName[41];
+  UINTN   StringIndex;
+  CHAR16  ModelName[41];
 
   //
   // Add Component Name for the IDE/ATAPI device that was discovered.
@@ -215,10 +216,9 @@ VOID AddName (
   }
 
   EfiLibAddUnicodeString (
-    "eng", 
-    gIDEBusComponentName.SupportedLanguages, 
-    &IdeBlkIoDevicePtr->ControllerNameTable, 
+    "eng",
+    gIDEBusComponentName.SupportedLanguages,
+    &IdeBlkIoDevicePtr->ControllerNameTable,
     ModelName
     );
 }
-

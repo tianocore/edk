@@ -20,6 +20,7 @@ Abstract:
 Revision History
 
 --*/
+
 #ifndef _EFI_BDS_BBS_SUPPORT_H
 #define _EFI_BDS_BBS_SUPPORT_H
 
@@ -32,18 +33,18 @@ Revision History
 #ifdef EFI32
 #define REFRESH_LEGACY_BOOT_OPTIONS \
         BdsDeleteAllInvalidLegacyBootOptions ();\
-        BdsAddNonExistingLegacyBootOptions ();  \
+        BdsAddNonExistingLegacyBootOptions (); \
         BdsUpdateLegacyDevOrder ()
-#else 
-#define REFRESH_LEGACY_BOOT_OPTIONS 
+#else
+#define REFRESH_LEGACY_BOOT_OPTIONS
 #endif
 
 VOID
 BdsBuildLegacyDevNameString (
-  IN BBS_TABLE                 *CurBBSEntry,
+  IN BBS_TABLE                     *CurBBSEntry,
   IN UINTN                         Index,
-  IN UINTN                        BufSize,
-  OUT CHAR16                   *BootString
+  IN UINTN                         BufSize,
+  OUT CHAR16                       *BootString
   );
 
 EFI_STATUS
@@ -65,5 +66,5 @@ EFI_STATUS
 BdsRefreshBbsTableForBoot (
   IN BDS_COMMON_OPTION        *Entry
   );
-  
+
 #endif

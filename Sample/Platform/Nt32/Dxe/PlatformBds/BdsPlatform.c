@@ -26,7 +26,7 @@ Abstract:
 #include "Language.h"
 #include "FrontPage.h"
 
-CHAR16 mFirmwareVendor[] = EFI_FIRMWARE_VENDOR;
+CHAR16  mFirmwareVendor[] = EFI_FIRMWARE_VENDOR;
 
 //
 // BDS Platform Functions
@@ -53,34 +53,34 @@ Returns:
 --*/
 {
   //
-  //set firmwarevendor, here can be IBV/OEM customize
+  // set firmwarevendor, here can be IBV/OEM customize
   //
-  gST->FirmwareVendor  = EfiLibAllocateRuntimeCopyPool (
-                           sizeof (mFirmwareVendor), 
-                           &mFirmwareVendor
-                           );
+  gST->FirmwareVendor = EfiLibAllocateRuntimeCopyPool (
+                          sizeof (mFirmwareVendor),
+                          &mFirmwareVendor
+                          );
   ASSERT (gST->FirmwareVendor != NULL);
 
   gST->FirmwareRevision = EFI_FIRMWARE_REVISION;
-  
+
   //
   // Fixup Tasble CRC after we updated Firmware Vendor and Revision
   //
-  gBS->CalculateCrc32 ((VOID *)gST, sizeof(EFI_SYSTEM_TABLE), &gST->Hdr.CRC32);
+  gBS->CalculateCrc32 ((VOID *) gST, sizeof (EFI_SYSTEM_TABLE), &gST->Hdr.CRC32);
 
   //
   // Initialize the platform specific string and language
   //
-  InitializeStringSupport();
+  InitializeStringSupport ();
   InitializeLanguage (TRUE);
-  InitializeFrontPage(FALSE);
+  InitializeFrontPage (FALSE);
 
 }
 
 EFI_STATUS
 PlatformBdsConnectConsole (
   IN BDS_CONSOLE_CONNECT_ENTRY   *PlatformConsole
-)
+  )
 /*++
 
 Routine Description:
@@ -103,11 +103,11 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                         Status;
-  UINTN                              Index;
+  EFI_STATUS  Status;
+  UINTN       Index;
 
-  Index = 0;
-  Status = EFI_SUCCESS;
+  Index   = 0;
+  Status  = EFI_SUCCESS;
 
   //
   // Have chance to connect the platform default console,
@@ -121,15 +121,17 @@ Returns:
     if ((PlatformConsole[Index].ConnectType & CONSOLE_IN) == CONSOLE_IN) {
       BdsLibUpdateConsoleVariable (L"ConIn", PlatformConsole[Index].DevicePath, NULL);
     }
+
     if ((PlatformConsole[Index].ConnectType & CONSOLE_OUT) == CONSOLE_OUT) {
       BdsLibUpdateConsoleVariable (L"ConOut", PlatformConsole[Index].DevicePath, NULL);
     }
+
     if ((PlatformConsole[Index].ConnectType & STD_ERROR) == STD_ERROR) {
       BdsLibUpdateConsoleVariable (L"ErrOut", PlatformConsole[Index].DevicePath, NULL);
     }
-    Index ++;
-  }
 
+    Index++;
+  }
   //
   // Connect the all the default console with current cosole variable
   //
@@ -137,7 +139,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -162,13 +164,13 @@ Returns:
   
 --*/
 {
-  UINTN                     Index;
+  UINTN Index;
 
   Index = 0;
 
   //
   // Here we can get the customized platform connect sequence
-  // Notes: we can connect with new variable which record the 
+  // Notes: we can connect with new variable which record the
   // last time boots connect device path sequence
   //
   while (gPlatformConnectSequence[Index] != NULL) {
@@ -176,7 +178,7 @@ Returns:
     // Build the platform boot option
     //
     BdsLibConnectDevicePath (gPlatformConnectSequence[Index]);
-    Index ++;
+    Index++;
   }
 
 }
@@ -202,10 +204,10 @@ Returns:
   
 --*/
 {
-  UINTN                              Index;
-  
+  UINTN Index;
+
   Index = 0;
-  
+
   //
   // Here we can get the customized platform driver option
   //
@@ -214,7 +216,7 @@ Returns:
     // Build the platform boot option
     //
     BdsLibRegisterNewOption (BdsDriverLists, gPlatformDriverOption[Index], NULL, L"DriverOrder");
-    Index ++;
+    Index++;
   }
 
 }
@@ -243,8 +245,8 @@ Returns:
   
 --*/
 {
-  EFI_STATUS                     Status;
-  
+  EFI_STATUS  Status;
+
   //
   // Here we can decide if we need to show
   // the diagnostics screen
@@ -260,9 +262,9 @@ Returns:
     if (EFI_ERROR (Status)) {
       DisableQuietBoot ();
     }
-    return;
+
+    return ;
   }
-  
   //
   // Perform system diagnostic
   //
@@ -297,9 +299,9 @@ Returns:
   
 --*/
 {
-  EFI_STATUS                         Status;
-  UINT16                             Timeout;
-  
+  EFI_STATUS  Status;
+  UINT16      Timeout;
+
   //
   // Init the time out value
   //
@@ -311,7 +313,7 @@ Returns:
   PlatformBdsGetDriverOption (DriverOptionList);
 
   //
-  // Get current Boot Mode 
+  // Get current Boot Mode
   //
   Status = BdsLibGetBootMode (&PrivateData->BootMode);
 
@@ -323,7 +325,6 @@ Returns:
 
   case BOOT_ASSUMING_NO_CONFIGURATION_CHANGES:
   case BOOT_WITH_MINIMAL_CONFIGURATION:
-
     //
     // In no-configuration boot mode, we can connect the
     // console directly.
@@ -347,7 +348,7 @@ Returns:
     //
     BdsLibBuildOptionFromVar (BootOptionList, L"BootOrder");
     break;
-    
+
   case BOOT_ON_FLASH_UPDATE:
     //
     // Boot with the specific configuration
@@ -357,7 +358,7 @@ Returns:
     BdsLibConnectAll ();
     ProcessCapsules (BOOT_ON_FLASH_UPDATE);
     break;
-    
+
   case BOOT_IN_RECOVERY_MODE:
     //
     // In recovery mode, just connect platform console
@@ -365,9 +366,9 @@ Returns:
     //
     PlatformBdsConnectConsole (gPlatformConsole);
     PlatformBdsDiagnostics (EXTENSIVE, FALSE);
-    
+
     //
-    // In recovery boot mode, we still enter to the 
+    // In recovery boot mode, we still enter to the
     // frong page now
     //
     PlatformBdsEnterFrontPage (Timeout, FALSE);
@@ -387,15 +388,16 @@ Returns:
       //
       PlatformBdsNoConsoleAction ();
     }
+
     PlatformBdsDiagnostics (IGNORE, TRUE);
-    
+
     //
     // Perform some platform specific connect sequence
     //
     PlatformBdsConnectSequence ();
-    
+
     //
-    // Give one chance to enter the setup if we 
+    // Give one chance to enter the setup if we
     // have the time out
     //
     PlatformBdsEnterFrontPage (Timeout, FALSE);
@@ -406,8 +408,8 @@ Returns:
     BdsLibEnumerateAllBootOption (BootOptionList);
     break;
   }
-  
-  return;
+
+  return ;
 
 }
 
@@ -443,7 +445,7 @@ Returns:
   TmpStr = GetStringById (STRING_TOKEN (STR_BOOT_SUCCEEDED));
   if (TmpStr != NULL) {
     BdsLibOutputStrings (gST->ConOut, TmpStr, Option->Description, L"\n\r", NULL);
-    gBS->FreePool(TmpStr);
+    gBS->FreePool (TmpStr);
   }
 }
 
@@ -485,7 +487,7 @@ Returns:
   TmpStr = GetStringById (STRING_TOKEN (STR_BOOT_FAILED));
   if (TmpStr != NULL) {
     BdsLibOutputStrings (gST->ConOut, TmpStr, Option->Description, L"\n\r", NULL);
-    gBS->FreePool(TmpStr);
+    gBS->FreePool (TmpStr);
   }
 
 }
@@ -513,5 +515,3 @@ Returns:
 {
   return EFI_SUCCESS;
 }
-
-

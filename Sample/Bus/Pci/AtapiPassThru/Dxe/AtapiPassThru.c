@@ -42,21 +42,21 @@ AtapiScsiPassThruDriverBindingStop (
   IN  UINTN                           NumberOfChildren,
   IN  EFI_HANDLE                      *ChildHandleBuffer
   );
-  
+
 //
 // IDE registers' fixed address
 //
-static IDE_BASE_REGISTERS   AtapiIoPortRegisters[2] = { 
+static IDE_BASE_REGISTERS   AtapiIoPortRegisters[2] = {
         {0x1f0, 0x1f1, 0x1f2, 0x1f3, 0x1f4, 0x1f5, 0x1f6, 0x1f7, 0x3f6, 0x3f7},
         {0x170, 0x171, 0x172, 0x173, 0x174, 0x175, 0x176, 0x177, 0x376, 0x377},
 };
 
-static SCSI_COMMAND_SET EndTable = {0xff,0xff};
+static SCSI_COMMAND_SET     EndTable = { 0xff, 0xff };
 
 //
 // This table contains all the supported ATAPI commands.
 //
-static SCSI_COMMAND_SET  SupportedATAPICommands[] = {
+static SCSI_COMMAND_SET     SupportedATAPICommands[] = {
     OP_INQUIRY,                     DataIn,
     OP_LOAD_UNLOAD_CD,              NoData,
     OP_MECHANISM_STATUS,            DataIn,
@@ -90,11 +90,11 @@ static SCSI_COMMAND_SET  SupportedATAPICommands[] = {
     OP_WRITE_12,                    DataOut,
     OP_WRITE_AND_VERIFY,            DataOut,
     0xff,                           0xff
-  };
-  
-static CHAR16 ControllerNameString[] = L"ATAPI Controller";
-static CHAR16 AtapiChannelString[] = L"ATAPI Channel";
-    
+};
+
+static CHAR16               ControllerNameString[]  = L"ATAPI Controller";
+static CHAR16               AtapiChannelString[]    = L"ATAPI Channel";
+
 EFI_DRIVER_BINDING_PROTOCOL gAtapiScsiPassThruDriverBinding = {
   AtapiScsiPassThruDriverBindingSupported,
   AtapiScsiPassThruDriverBindingStart,
@@ -102,15 +102,15 @@ EFI_DRIVER_BINDING_PROTOCOL gAtapiScsiPassThruDriverBinding = {
   0x10,
   NULL,
   NULL
-};  
-    
-EFI_DRIVER_ENTRY_POINT(AtapiScsiPassThruDriverEntryPoint)
-    
+};
+
+EFI_DRIVER_ENTRY_POINT (AtapiScsiPassThruDriverEntryPoint)
+
 EFI_STATUS
-AtapiScsiPassThruDriverEntryPoint(
+AtapiScsiPassThruDriverEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  ) 
+  )
 /*++
   
   Routine Description:
@@ -121,18 +121,20 @@ AtapiScsiPassThruDriverEntryPoint(
   
   Returns:
     EFI_STATUS
---*/                
+--*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gAtapiScsiPassThruDriverBinding,
-           ImageHandle,
-           &gAtapiScsiPassThruComponentName,
-           NULL,
-           NULL
-           );
-} 
+          ImageHandle,
+          SystemTable,
+          &gAtapiScsiPassThruDriverBinding,
+          ImageHandle,
+          &gAtapiScsiPassThruComponentName,
+          NULL,
+          NULL
+          );
+}
 
 EFI_STATUS
 AtapiScsiPassThruDriverBindingSupported (
@@ -151,60 +153,66 @@ AtapiScsiPassThruDriverBindingSupported (
   Returns:
     EFI_STATUS
   
---*/                
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  EFI_STATUS                Status;
-  EFI_PCI_IO_PROTOCOL       *PciIo;
-  PCI_TYPE00                Pci;
+  EFI_STATUS          Status;
+  EFI_PCI_IO_PROTOCOL *PciIo;
+  PCI_TYPE00          Pci;
 
   //
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  Controller,           
-                  &gEfiPciIoProtocolGuid, 
-                  (VOID **)&PciIo,
-                  This->DriverBindingHandle,   
-                  Controller,   
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  (VOID **) &PciIo,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-      
-  
   //
   // Use the PCI I/O Protocol to see if Controller is a IDE Controller that
-  // can be managed by this driver.  Read the PCI Configuration Header 
+  // can be managed by this driver.  Read the PCI Configuration Header
   // for this device.
   //
-  Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, 0, 
-                            sizeof(Pci) / sizeof (UINT32), &Pci);
+  Status = PciIo->Pci.Read (
+                        PciIo,
+                        EfiPciIoWidthUint32,
+                        0,
+                        sizeof (Pci) / sizeof (UINT32),
+                        &Pci
+                        );
   if (EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-         Controller,  
-         &gEfiPciIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
+          Controller,
+          &gEfiPciIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return EFI_UNSUPPORTED;
   }
-  
-  if(Pci.Hdr.ClassCode[2] != PCI_CLASS_MASS_STORAGE || 
-      Pci.Hdr.ClassCode[1] != PCI_CLASS_IDE) {
-    
+
+  if (Pci.Hdr.ClassCode[2] != PCI_CLASS_MASS_STORAGE || Pci.Hdr.ClassCode[1] != PCI_CLASS_IDE) {
+
     Status = EFI_UNSUPPORTED;
   }
 
   gBS->CloseProtocol (
-         Controller,  
-         &gEfiPciIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
-         
-  return Status;    
-}   
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
+  return Status;
+}
 
 EFI_STATUS
 AtapiScsiPassThruDriverBindingStart (
@@ -224,18 +232,21 @@ AtapiScsiPassThruDriverBindingStart (
   Returns:
     EFI_STATUS
     
---*/                
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS                  Status;
-  EFI_PCI_IO_PROTOCOL         *PciIo;
+  EFI_STATUS          Status;
+  EFI_PCI_IO_PROTOCOL *PciIo;
 
   PciIo = NULL;
   Status = gBS->OpenProtocol (
-                  Controller, 
-                  &gEfiPciIoProtocolGuid, 
-                  (VOID **)&PciIo,
-                  This->DriverBindingHandle,   
-                  Controller,   
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  (VOID **) &PciIo,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
@@ -245,7 +256,7 @@ AtapiScsiPassThruDriverBindingStart (
   Status = PciIo->Attributes (
                     PciIo,
                     EfiPciIoAttributeOperationEnable,
-                    EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE, 
+                    EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
                     NULL
                     );
   if (EFI_ERROR (Status)) {
@@ -261,18 +272,19 @@ Done:
   if (EFI_ERROR (Status)) {
     if (PciIo) {
       PciIo->Attributes (
-               PciIo, 
-               EfiPciIoAttributeOperationDisable, 
-               EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE, 
-               NULL
-               );
+              PciIo,
+              EfiPciIoAttributeOperationDisable,
+              EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
+              NULL
+              );
     }
+
     gBS->CloseProtocol (
-           Controller, 
-           &gEfiPciIoProtocolGuid, 
-           This->DriverBindingHandle,   
-           Controller   
-           );
+          Controller,
+          &gEfiPciIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
   }
 
   return Status;
@@ -296,20 +308,25 @@ AtapiScsiPassThruDriverBindingStop (
   Returns:
     EFI_STATUS
   
---*/                
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                    Status;
-  EFI_SCSI_PASS_THRU_PROTOCOL   *ScsiPassThru;
-  ATAPI_SCSI_PASS_THRU_DEV      *AtapiScsiPrivate;
+  EFI_STATUS                  Status;
+  EFI_SCSI_PASS_THRU_PROTOCOL *ScsiPassThru;
+  ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate;
 
   Status = gBS->OpenProtocol (
-                    Controller,
-                    &gEfiScsiPassThruProtocolGuid,  
-                    (VOID **)&ScsiPassThru,
-                    This->DriverBindingHandle,             
-                    Controller,   
-                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                    );
+                  Controller,
+                  &gEfiScsiPassThruProtocolGuid,
+                  (VOID **) &ScsiPassThru,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -317,35 +334,34 @@ AtapiScsiPassThruDriverBindingStop (
   AtapiScsiPrivate = ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS (ScsiPassThru);
 
   Status = gBS->UninstallProtocolInterface (
-                  Controller, 
-                  &gEfiScsiPassThruProtocolGuid,&AtapiScsiPrivate->ScsiPassThru
+                  Controller,
+                  &gEfiScsiPassThruProtocolGuid,
+                  &AtapiScsiPrivate->ScsiPassThru
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-    
   //
   // Release Pci Io protocol on the controller handle.
   //
   AtapiScsiPrivate->PciIo->Attributes (
-                             AtapiScsiPrivate->PciIo, 
-                             EfiPciIoAttributeOperationDisable, 
-                             EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE, 
-                             NULL
-                             );
+                            AtapiScsiPrivate->PciIo,
+                            EfiPciIoAttributeOperationDisable,
+                            EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
+                            NULL
+                            );
 
   gBS->CloseProtocol (
-         Controller, 
-         &gEfiPciIoProtocolGuid, 
-         This->DriverBindingHandle, 
-         Controller
-         );
-    
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
   gBS->FreePool (AtapiScsiPrivate);
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 RegisterAtapiScsiPassThru (
@@ -364,82 +380,86 @@ RegisterAtapiScsiPassThru (
   
   Returns:
     Always return EFI_SUCCESS unless installing SCSI Pass Thru Protocol failed.
---*/    
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    PciIo - add argument and description to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
 {
-  EFI_STATUS                  Status;
-  ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate;
-  UINT64                      Attributes;
-  
+  EFI_STATUS                Status;
+  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
+  UINT64                    Attributes;
+
   AtapiScsiPrivate = EfiLibAllocateZeroPool (sizeof (ATAPI_SCSI_PASS_THRU_DEV));
-  if (AtapiScsiPrivate == NULL){
+  if (AtapiScsiPrivate == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   Attributes = EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE;
-  EfiCopyMem (AtapiScsiPrivate->ChannelName,AtapiChannelString,sizeof(AtapiChannelString));
+  EfiCopyMem (AtapiScsiPrivate->ChannelName, AtapiChannelString, sizeof (AtapiChannelString));
 
   //
   // Enable channel
   //
-  PciIo->Attributes ( PciIo, EfiPciIoAttributeOperationSet, Attributes, NULL ) ;
-  
+  PciIo->Attributes (PciIo, EfiPciIoAttributeOperationSet, Attributes, NULL);
+
   AtapiScsiPrivate->Signature = ATAPI_SCSI_PASS_THRU_DEV_SIGNATURE;
-  AtapiScsiPrivate->Handle    = Controller ;
-  
+  AtapiScsiPrivate->Handle    = Controller;
+
   //
   // will reset the IoPort inside each API function.
   //
-  AtapiScsiPrivate->IoPort      = AtapiIoPortRegisters;
-  AtapiScsiPrivate->PciIo       = PciIo;
+  AtapiScsiPrivate->IoPort  = AtapiIoPortRegisters;
+  AtapiScsiPrivate->PciIo   = PciIo;
 
   //
   // initialize SCSI Pass Thru Protocol interface
   //
   AtapiScsiPrivate->ScsiPassThru.Mode             = &AtapiScsiPrivate->ScsiPassThruMode;
-  AtapiScsiPrivate->ScsiPassThru.PassThru         = AtapiScsiPassThruFunction; 
+  AtapiScsiPrivate->ScsiPassThru.PassThru         = AtapiScsiPassThruFunction;
   AtapiScsiPrivate->ScsiPassThru.GetNextDevice    = AtapiScsiPassThruGetNextDevice;
   AtapiScsiPrivate->ScsiPassThru.BuildDevicePath  = AtapiScsiPassThruBuildDevicePath;
   AtapiScsiPrivate->ScsiPassThru.GetTargetLun     = AtapiScsiPassThruGetTargetLun;
   AtapiScsiPrivate->ScsiPassThru.ResetChannel     = AtapiScsiPassThruResetChannel;
   AtapiScsiPrivate->ScsiPassThru.ResetTarget      = AtapiScsiPassThruResetTarget;
-  
+
   //
   // Set Mode
   //
-  EfiCopyMem (AtapiScsiPrivate->ControllerName,ControllerNameString,sizeof(ControllerNameString));
-  
+  EfiCopyMem (AtapiScsiPrivate->ControllerName, ControllerNameString, sizeof (ControllerNameString));
+
   AtapiScsiPrivate->ScsiPassThruMode.ControllerName = AtapiScsiPrivate->ControllerName;
-  AtapiScsiPrivate->ScsiPassThruMode.ChannelName = AtapiScsiPrivate->ChannelName;
-  AtapiScsiPrivate->ScsiPassThruMode.AdapterId = 4;
+  AtapiScsiPrivate->ScsiPassThruMode.ChannelName    = AtapiScsiPrivate->ChannelName;
+  AtapiScsiPrivate->ScsiPassThruMode.AdapterId      = 4;
   //
   // non-RAID SCSI controllers should set both physical and logical attributes
   //
-  AtapiScsiPrivate->ScsiPassThruMode.Attributes = EFI_SCSI_PASS_THRU_ATTRIBUTES_PHYSICAL 
-                                                  | EFI_SCSI_PASS_THRU_ATTRIBUTES_LOGICAL;
+  AtapiScsiPrivate->ScsiPassThruMode.Attributes = EFI_SCSI_PASS_THRU_ATTRIBUTES_PHYSICAL | 
+                                                  EFI_SCSI_PASS_THRU_ATTRIBUTES_LOGICAL;
   AtapiScsiPrivate->ScsiPassThruMode.IoAlign = 0;
-  
+
   //
   // Initialize the LatestTargetId to 0xFFFFFFFF (for the GetNextDevice() call).
   //
-  AtapiScsiPrivate->LatestTargetId = 0xFFFFFFFF;
-  AtapiScsiPrivate->LatestLun      = 0;
-  
+  AtapiScsiPrivate->LatestTargetId  = 0xFFFFFFFF;
+  AtapiScsiPrivate->LatestLun       = 0;
+
   Status = gBS->InstallProtocolInterface (
-        &Controller,
-        &gEfiScsiPassThruProtocolGuid,
-        EFI_NATIVE_INTERFACE,
-        &AtapiScsiPrivate->ScsiPassThru
-        );
+                  &Controller,
+                  &gEfiScsiPassThruProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &AtapiScsiPrivate->ScsiPassThru
+                  );
   return Status;
 }
 
 EFI_STATUS
 AtapiScsiPassThruFunction (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL                  *This,
-  IN UINT32                                       Target,
-  IN UINT64                                       Lun,
-  IN OUT EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   *Packet,
-  IN EFI_EVENT                                    Event OPTIONAL
+  IN EFI_SCSI_PASS_THRU_PROTOCOL                        *This,
+  IN UINT32                                             Target,
+  IN UINT64                                             Lun,
+  IN OUT EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET         *Packet,
+  IN EFI_EVENT                                          Event OPTIONAL
   )
 /*++
 
@@ -465,25 +485,28 @@ AtapiScsiPassThruFunction (
     
   Returns:  
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  ATAPI_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate;
-  EFI_STATUS                      Status;
-  
+  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
+  EFI_STATUS                Status;
+
   AtapiScsiPrivate = ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  
+
   //
   // Target is not allowed beyond MAX_TARGET_ID
   //
   if (Target > MAX_TARGET_ID) {
     return EFI_INVALID_PARAMETER;
-  }  
+  }
   
   //
   // check the data fields in Packet parameter.
   //
   Status = CheckSCSIRequestPacket (Packet);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -501,7 +524,7 @@ AtapiScsiPassThruFunction (
   // (Target Id in [0,1] area, using AtapiIoPortRegisters[0],
   //  Target Id in [2,3] area, using AtapiIoPortRegisters[1]
   //
-  if ((Target / 2) == 0 ) {
+  if ((Target / 2) == 0) {
     AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[0];
   } else {
     AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[1];
@@ -513,9 +536,9 @@ AtapiScsiPassThruFunction (
   //
   // Performs blocking I/O.
   //
-  Status = SubmitBlockingIoCommand (AtapiScsiPrivate,Target,Packet);  
+  Status = SubmitBlockingIoCommand (AtapiScsiPrivate, Target, Packet);
   return Status;
-}    
+}
 
 EFI_STATUS
 AtapiScsiPassThruGetNextDevice (
@@ -550,46 +573,46 @@ AtapiScsiPassThruGetNextDevice (
                             returned on a previous call to GetNextDevice().
 --*/
 {
-  ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate;
-  
+  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
+
   //
   // Retrieve Device Private Data Structure.
   //
   AtapiScsiPrivate = ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  
+
   //
   // Check whether Target is valid.
   //
-  
   if (Target == NULL || Lun == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if ((*Target != 0xFFFFFFFF) &&
       ((*Target != AtapiScsiPrivate->LatestTargetId) ||
       (*Lun != AtapiScsiPrivate->LatestLun))) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (*Target == MAX_TARGET_ID) {
     return EFI_NOT_FOUND;
   }
-  
+
   if (*Target == 0xFFFFFFFF) {
     *Target = 0;
   } else {
     *Target = AtapiScsiPrivate->LatestTargetId + 1;
   }
+
   *Lun = 0;
-  
+
   //
   // Update the LatestTargetId.
   //
-  AtapiScsiPrivate->LatestTargetId = *Target;
-  AtapiScsiPrivate->LatestLun = *Lun;
-  
+  AtapiScsiPrivate->LatestTargetId  = *Target;
+  AtapiScsiPrivate->LatestLun       = *Lun;
+
   return EFI_SUCCESS;
-  
+
 }
 
 EFI_STATUS
@@ -629,9 +652,9 @@ AtapiScsiPassThruBuildDevicePath (
                             DevicePath.
 --*/
 {
-  ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate;
-  EFI_DEV_PATH                *Node;
-  
+  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
+  EFI_DEV_PATH              *Node;
+
   //
   // Retrieve Device Private Data Structure.
   //
@@ -651,24 +674,24 @@ AtapiScsiPassThruBuildDevicePath (
   if ((Target > (MAX_TARGET_ID - 1)) || (Lun != 0)) {
     return EFI_NOT_FOUND;
   }
-  
+
   Node = EfiLibAllocateZeroPool (sizeof (EFI_DEV_PATH));
   if (Node == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  
-  Node->DevPath.Type     = MESSAGING_DEVICE_PATH;
-  Node->DevPath.SubType  = MSG_ATAPI_DP;
-  SetDevicePathNodeLength (&Node->DevPath, sizeof(ATAPI_DEVICE_PATH));
-  
-  Node->Atapi.PrimarySecondary = (UINT8)(Target / 2);
-  Node->Atapi.SlaveMaster      = (UINT8)(Target % 2);
-  Node->Atapi.Lun              = (UINT16)Lun;
-    
-  *DevicePath = (EFI_DEVICE_PATH_PROTOCOL*)Node;
-  
+
+  Node->DevPath.Type    = MESSAGING_DEVICE_PATH;
+  Node->DevPath.SubType = MSG_ATAPI_DP;
+  SetDevicePathNodeLength (&Node->DevPath, sizeof (ATAPI_DEVICE_PATH));
+
+  Node->Atapi.PrimarySecondary  = (UINT8) (Target / 2);
+  Node->Atapi.SlaveMaster       = (UINT8) (Target % 2);
+  Node->Atapi.Lun               = (UINT16) Lun;
+
+  *DevicePath                   = (EFI_DEVICE_PATH_PROTOCOL *) Node;
+
   return EFI_SUCCESS;
-}    
+}
 
 EFI_STATUS
 AtapiScsiPassThruGetTargetLun (
@@ -703,8 +726,8 @@ AtapiScsiPassThruGetTargetLun (
                             Target ID and LUN does not exist.
 --*/
 {
-  EFI_DEV_PATH    *Node;
-  
+  EFI_DEV_PATH  *Node;
+
   //
   // Validate parameters passed in.
   //
@@ -721,15 +744,15 @@ AtapiScsiPassThruGetTargetLun (
     return EFI_UNSUPPORTED;
   }
 
-  Node = (EFI_DEV_PATH*)DevicePath;
-  
+  Node    = (EFI_DEV_PATH *) DevicePath;
+
   *Target = Node->Atapi.PrimarySecondary * 2 + Node->Atapi.SlaveMaster;
-  *Lun = Node->Atapi.Lun;
-  
+  *Lun    = Node->Atapi.Lun;
+
   if (*Target > (MAX_TARGET_ID - 1) || *Lun != 0) {
     return EFI_NOT_FOUND;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -759,46 +782,57 @@ AtapiScsiPassThruResetChannel (
   UINT8                     DeviceControlValue;
   ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
   UINT8                     Index;
-  
+
   AtapiScsiPrivate = ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  
+
   //
   // Reset both Primary channel and Secondary channel.
   // so, the IoPort pointer must point to the right I/O Register group
   //
-  for (Index = 0; Index < 2; Index ++ ) {
-    
+  for (Index = 0; Index < 2; Index++) {
     //
-    // Reset 
+    // Reset
     //
-    AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[Index];
-    
-    DeviceControlValue = 0;
-    DeviceControlValue |= SRST;      // set SRST bit to initiate soft reset
-    DeviceControlValue |= bit(1);      // disable Interrupt
-    
-    WritePortB (AtapiScsiPrivate->PciIo,
-                AtapiScsiPrivate->IoPort->Alt.DeviceControl, 
-                DeviceControlValue);
-   
-    gBS->Stall(10);     // Wait 10us 
-   
+    AtapiScsiPrivate->IoPort  = &AtapiIoPortRegisters[Index];
+
+    DeviceControlValue        = 0;
+    //
+    // set SRST bit to initiate soft reset
+    //
+    DeviceControlValue |= SRST;
+    //
+    // disable Interrupt
+    //
+    DeviceControlValue |= bit (1);
+    WritePortB (
+      AtapiScsiPrivate->PciIo,
+      AtapiScsiPrivate->IoPort->Alt.DeviceControl,
+      DeviceControlValue
+      );
+
+    //
+    // Wait 10us
+    //
+    gBS->Stall (10);
+
     //
     // Clear SRST bit
+    // 0xfb:1111,1011
     //
-    DeviceControlValue &= 0xfb ;     // 0xfb:1111,1011
-    WritePortB (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Alt.DeviceControl, DeviceControlValue);
-  
+    DeviceControlValue &= 0xfb;
+    
+    WritePortB (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Alt.DeviceControl, DeviceControlValue);
+
     //
-    // slave device needs at most 31s to clear BSY 
+    // slave device needs at most 31s to clear BSY
     //
-    if ( StatusWaitForBSYClear (AtapiScsiPrivate, 31000) == EFI_TIMEOUT) {    
+    if (StatusWaitForBSYClear (AtapiScsiPrivate, 31000) == EFI_TIMEOUT) {
       return EFI_DEVICE_ERROR;
     }
   }
-  
+
   return EFI_SUCCESS;
-}    
+}
 
 EFI_STATUS
 AtapiScsiPassThruResetTarget (
@@ -829,12 +863,12 @@ AtapiScsiPassThruResetTarget (
                             the SCSI device specified by Target and Lun.
 --*/
 {
-  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;  
+  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
   UINT8                     Command;
   UINT8                     DeviceSelect;
-  
+
   AtapiScsiPrivate = ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  
+
   if (Target > MAX_TARGET_ID) {
     return EFI_INVALID_PARAMETER;
   }
@@ -850,7 +884,7 @@ AtapiScsiPassThruResetTarget (
   // (Target Id in [0,1] area, using AtapiIoPortRegisters[0],
   //  Target Id in [2,3] area, using AtapiIoPortRegisters[1]
   //
-  if ((Target / 2) == 0 ) {
+  if ((Target / 2) == 0) {
     AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[0];
   } else {
     AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[1];
@@ -861,26 +895,26 @@ AtapiScsiPassThruResetTarget (
   //
   // bit7 and bit5 are both set to 1 for backward compatibility
   //
-  DeviceSelect = (UINT8)(((bit(7) | bit(5)) | (Target << 4))); 
-  WritePortB (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Head, DeviceSelect);
-  
+  DeviceSelect = (UINT8) (((bit (7) | bit (5)) | (Target << 4)));
+  WritePortB (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Head, DeviceSelect);
+
   Command = ATAPI_SOFT_RESET_CMD;
-  WritePortB (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Reg.Command, Command);
- 
+  WritePortB (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Reg.Command, Command);
+
   //
-  // BSY clear is the only status return to the host by the device 
+  // BSY clear is the only status return to the host by the device
   // when reset is complete.
-  // slave device needs at most 31s to clear BSY 
+  // slave device needs at most 31s to clear BSY
   //
-  if (EFI_ERROR(StatusWaitForBSYClear (AtapiScsiPrivate, 31000))) {
+  if (EFI_ERROR (StatusWaitForBSYClear (AtapiScsiPrivate, 31000))) {
     return EFI_DEVICE_ERROR;
   }
   
   //
   // stall 5 seconds to make the device status stable
   //
-  gBS->Stall(5000000);
-  
+  gBS->Stall (5000000);
+
   return EFI_SUCCESS;
 }
 
@@ -894,17 +928,26 @@ CheckSCSIRequestPacket (
   Checks the parameters in the SCSI Request Packet to make sure
   they are valid for a SCSI Pass Thru request.
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    Packet - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   if (Packet == NULL) {
     return EFI_INVALID_PARAMETER;
-  }  
+  }
 
   if (!ValidCdbLength (Packet->CdbLength)) {
     return EFI_INVALID_PARAMETER;
   }
-  
-  if ( Packet->Cdb == NULL) {
+
+  if (Packet->Cdb == NULL) {
     return EFI_INVALID_PARAMETER;
   }
   
@@ -914,34 +957,37 @@ CheckSCSIRequestPacket (
   if (!IsCommandValid (Packet)) {
     return EFI_UNSUPPORTED;
   }
-  
+
   return EFI_SUCCESS;
-}  
+}
 
 BOOLEAN
 IsCommandValid (
   EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   *Packet
-  ) 
+  )
 /*++
   
   Checks the requested SCSI command: 
     Is it supported by this driver?
     Is the Data transfer direction reasonable?
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    Packet - add argument and description to function comment
 {
-  UINT8     Index;
-  UINT8     *OpCode;
-  
-  OpCode = (UINT8*)(Packet->Cdb);
-  
-  for (Index = 0; EfiCompareMem (&SupportedATAPICommands[Index],&EndTable,sizeof(SCSI_COMMAND_SET)); Index ++) {
+  UINT8 Index;
+  UINT8 *OpCode;
 
-    if ( *OpCode == SupportedATAPICommands[Index].OpCode) {
+  OpCode = (UINT8 *) (Packet->Cdb);
+
+  for (Index = 0; EfiCompareMem (&SupportedATAPICommands[Index], &EndTable, sizeof (SCSI_COMMAND_SET)); Index++) {
+
+    if (*OpCode == SupportedATAPICommands[Index].OpCode) {
       //
       // Check whether the requested Command is supported by this driver
       //
-      
       if (Packet->DataDirection == DataIn) {
         //
         // Check whether the requested data direction conforms to
@@ -951,7 +997,7 @@ IsCommandValid (
           return FALSE;
         }
       }
-      
+
       if (Packet->DataDirection == DataOut) {
         //
         // Check whether the requested data direction conforms to
@@ -961,19 +1007,19 @@ IsCommandValid (
           return FALSE;
         }
       }
-      
+
       return TRUE;
     }
   }
-  
+
   return FALSE;
-}    
+}
 
 EFI_STATUS
 SubmitBlockingIoCommand (
   ATAPI_SCSI_PASS_THRU_DEV                  *AtapiScsiPrivate,
   UINT32                                    Target,
-  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET    *Packet  
+  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET    *Packet
   )
 /*++
 
@@ -991,43 +1037,43 @@ Routine Description:
   
   Returns:
   
---*/  
+--*/
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
 {
-  UINT8           PacketCommand[12];
-  UINT64          TimeoutInMicroSeconds;
-  EFI_STATUS      PacketCommandStatus;
-  UINTN           Remainder;
-  
+  UINT8       PacketCommand[12];
+  UINT64      TimeoutInMicroSeconds;
+  EFI_STATUS  PacketCommandStatus;
+  UINTN       Remainder;
+
   //
   // Fill ATAPI Command Packet according to CDB
   //
-  EfiZeroMem (&PacketCommand,12);  
-  EfiCopyMem (&PacketCommand,Packet->Cdb,Packet->CdbLength);  
-  
+  EfiZeroMem (&PacketCommand, 12);
+  EfiCopyMem (&PacketCommand, Packet->Cdb, Packet->CdbLength);
+
   //
   // Timeout is 100ns unit, convert it to 1000ns (1us) unit.
   //
-  TimeoutInMicroSeconds = DivU64x32 (Packet->Timeout, (UINT32)10,&Remainder);
-  
+  TimeoutInMicroSeconds = DivU64x32 (Packet->Timeout, (UINT32) 10, &Remainder);
+
   //
   // Submit ATAPI Command Packet
   //
-  PacketCommandStatus = AtapiPacketCommand (AtapiScsiPrivate,
-                                           Target,
-                                           PacketCommand,
-                                           Packet->DataBuffer, 
-                                           &(Packet->TransferLength), 
-                                           Packet->DataDirection, 
-                                           TimeoutInMicroSeconds
-                                           );
-  if (!EFI_ERROR(PacketCommandStatus) ||
-      (Packet->SenseData == NULL)) {
+  PacketCommandStatus = AtapiPacketCommand (
+                          AtapiScsiPrivate,
+                          Target,
+                          PacketCommand,
+                          Packet->DataBuffer,
+                          &(Packet->TransferLength),
+                          Packet->DataDirection,
+                          TimeoutInMicroSeconds
+                          );
+  if (!EFI_ERROR (PacketCommandStatus) || (Packet->SenseData == NULL)) {
     Packet->SenseDataLength = 0;
     return PacketCommandStatus;
   }
-  
   //
-  // Return SenseData if PacketCommandStatus matches 
+  // Return SenseData if PacketCommandStatus matches
   // the following return codes.
   //
   if ((PacketCommandStatus == EFI_WARN_BUFFER_TOO_SMALL) ||
@@ -1041,44 +1087,67 @@ Routine Description:
       Packet->SenseDataLength = 0;
       return PacketCommandStatus;
     }
-    
-    RequestSenseCommand (AtapiScsiPrivate,Target,Packet->Timeout,
-                         Packet->SenseData,&Packet->SenseDataLength
-                         );
+
+    RequestSenseCommand (
+      AtapiScsiPrivate,
+      Target,
+      Packet->Timeout,
+      Packet->SenseData,
+      &Packet->SenseDataLength
+      );
   }
-  
-  return PacketCommandStatus;  
-}    
+
+  return PacketCommandStatus;
+}
 
 EFI_STATUS
-RequestSenseCommand(
+RequestSenseCommand (
   ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
   UINT32                      Target,
   UINT64                      Timeout,
   VOID                        *SenseData,
   UINT8                       *SenseDataLength
   )
-{
-  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET    Packet;
-  UINT8                                     Cdb[12];
-  EFI_STATUS                                Status;
-  
-  EfiZeroMem (&Packet,sizeof (EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,12);
-  
-  Cdb[0] = OP_REQUEST_SENSE;
-  Cdb[4] = (UINT8)(*SenseDataLength);
+/*++
 
-  Packet.Timeout = Timeout;
-  Packet.DataBuffer = SenseData;
-  Packet.SenseData = NULL;
-  Packet.Cdb = Cdb;
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  AtapiScsiPrivate  - TODO: add argument description
+  Target            - TODO: add argument description
+  Timeout           - TODO: add argument description
+  SenseData         - TODO: add argument description
+  SenseDataLength   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+{
+  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET  Packet;
+  UINT8                                   Cdb[12];
+  EFI_STATUS                              Status;
+
+  EfiZeroMem (&Packet, sizeof (EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 12);
+
+  Cdb[0]                = OP_REQUEST_SENSE;
+  Cdb[4]                = (UINT8) (*SenseDataLength);
+
+  Packet.Timeout        = Timeout;
+  Packet.DataBuffer     = SenseData;
+  Packet.SenseData      = NULL;
+  Packet.Cdb            = Cdb;
   Packet.TransferLength = *SenseDataLength;
-  Packet.CdbLength = 12;
-  Packet.DataDirection = DataIn;
-  
-  Status = SubmitBlockingIoCommand (AtapiScsiPrivate,Target,&Packet);
-  *SenseDataLength = (UINT8)(Packet.TransferLength);
+  Packet.CdbLength      = 12;
+  Packet.DataDirection  = DataIn;
+
+  Status                = SubmitBlockingIoCommand (AtapiScsiPrivate, Target, &Packet);
+  *SenseDataLength      = (UINT8) (Packet.TransferLength);
   return Status;
 }
 
@@ -1087,7 +1156,7 @@ AtapiPacketCommand (
   ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
   UINT32                      Target,
   UINT8                       *PacketCommand,
-  VOID                        *Buffer,   
+  VOID                        *Buffer,
   UINT32                      *ByteCount,
   DATA_DIRECTION              Direction,
   UINT64                      TimeoutInMicroSeconds
@@ -1122,84 +1191,96 @@ AtapiPacketCommand (
   Returns:
 
 
---*/  
+--*/
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    PacketCommand - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    ByteCount - add argument and description to function comment
+// TODO:    Direction - add argument and description to function comment
 {
 
-  UINT16          *CommandIndex;
-  UINT8           Count;
-  EFI_STATUS      Status;
-  
+  UINT16      *CommandIndex;
+  UINT8       Count;
+  EFI_STATUS  Status;
+
   //
   // Set all the command parameters by fill related registers.
   // Before write to all the following registers, BSY and DRQ must be 0.
   //
   Status = StatusDRQClear (AtapiScsiPrivate, TimeoutInMicroSeconds);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     if (Status == EFI_ABORTED) {
       Status = EFI_DEVICE_ERROR;
     }
+
     *ByteCount = 0;
     return Status;
   }
-
   //
   // Select device via Device/Head Register.
   // "Target = 0" indicates device 0; "Target = 1" indicates device 1
   //
-  WritePortB (AtapiScsiPrivate->PciIo,
-              AtapiScsiPrivate->IoPort->Head, 
-              (UINT8)((Target << 4) | DEFAULT_CMD)    // DEFAULT_CMD: 0xa0 (1010,0000)
-              );  
-  
+  WritePortB (
+    AtapiScsiPrivate->PciIo,
+    AtapiScsiPrivate->IoPort->Head,
+    (UINT8) ((Target << 4) | DEFAULT_CMD) // DEFAULT_CMD: 0xa0 (1010,0000)
+    );
+
   //
   // No OVL; No DMA (by setting feature register)
   //
-  WritePortB (AtapiScsiPrivate->PciIo,
-              AtapiScsiPrivate->IoPort->Reg1.Feature, 
-              0x00
-              );             
+  WritePortB (
+    AtapiScsiPrivate->PciIo,
+    AtapiScsiPrivate->IoPort->Reg1.Feature,
+    0x00
+    );
 
   //
   // set the transfersize to MAX_ATAPI_BYTE_COUNT to let the device
   // determine how much data should be transfered.
   //
-  WritePortB (AtapiScsiPrivate->PciIo,
-              AtapiScsiPrivate->IoPort->CylinderLsb, 
-              (UINT8)(MAX_ATAPI_BYTE_COUNT & 0x00ff)
-              ); 
-  WritePortB (AtapiScsiPrivate->PciIo,
-              AtapiScsiPrivate->IoPort->CylinderMsb, 
-              (UINT8)(MAX_ATAPI_BYTE_COUNT >> 8)
-              );  
+  WritePortB (
+    AtapiScsiPrivate->PciIo,
+    AtapiScsiPrivate->IoPort->CylinderLsb,
+    (UINT8) (MAX_ATAPI_BYTE_COUNT & 0x00ff)
+    );
+  WritePortB (
+    AtapiScsiPrivate->PciIo,
+    AtapiScsiPrivate->IoPort->CylinderMsb,
+    (UINT8) (MAX_ATAPI_BYTE_COUNT >> 8)
+    );
 
   //
   //  DEFAULT_CTL:0x0a (0000,1010)
   //  Disable interrupt
   //
-  WritePortB (AtapiScsiPrivate->PciIo,
-             AtapiScsiPrivate->IoPort->Alt.DeviceControl, 
-             DEFAULT_CTL
-             );       
-  
+  WritePortB (
+    AtapiScsiPrivate->PciIo,
+    AtapiScsiPrivate->IoPort->Alt.DeviceControl,
+    DEFAULT_CTL
+    );
+
   //
-  // Send Packet command to inform device 
+  // Send Packet command to inform device
   // that the following data bytes are command packet.
   //
-  WritePortB (AtapiScsiPrivate->PciIo,
-              AtapiScsiPrivate->IoPort->Reg.Command, 
-              PACKET_CMD
-              );   
-  
+  WritePortB (
+    AtapiScsiPrivate->PciIo,
+    AtapiScsiPrivate->IoPort->Reg.Command,
+    PACKET_CMD
+    );
+
   //
   // Before data transfer, BSY should be 0 and DRQ should be 1.
   // if they are not in specified time frame,
   // retrieve Sense Key from Error Register before return.
   //
-  Status = StatusDRQReady(AtapiScsiPrivate, TimeoutInMicroSeconds);
-  if (EFI_ERROR(Status)) {
+  Status = StatusDRQReady (AtapiScsiPrivate, TimeoutInMicroSeconds);
+  if (EFI_ERROR (Status)) {
     if (Status == EFI_ABORTED) {
       Status = EFI_DEVICE_ERROR;
     }
+
     *ByteCount = 0;
     return Status;
   }
@@ -1207,27 +1288,28 @@ AtapiPacketCommand (
   //
   // Send out command packet
   //
-  CommandIndex = (UINT16*)PacketCommand; 
-  for (Count = 0; Count < 6; Count++, CommandIndex++) {    
-    WritePortW (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Data, *CommandIndex);
+  CommandIndex = (UINT16 *) PacketCommand;
+  for (Count = 0; Count < 6; Count++, CommandIndex++) {
+    WritePortW (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Data, *CommandIndex);
   }
 
   //
-  // call AtapiPassThruPioReadWriteData() function to get 
+  // call AtapiPassThruPioReadWriteData() function to get
   // requested transfer data form device.
   //
-  return AtapiPassThruPioReadWriteData(AtapiScsiPrivate, 
-                                       Buffer, 
-                                       ByteCount, 
-                                       Direction, 
-                                       TimeoutInMicroSeconds
-                                       );
+  return AtapiPassThruPioReadWriteData (
+          AtapiScsiPrivate,
+          Buffer,
+          ByteCount,
+          Direction,
+          TimeoutInMicroSeconds
+          );
 }
 
-EFI_STATUS 
-AtapiPassThruPioReadWriteData (       
-  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate, 
-  UINT16                    *Buffer,   
+EFI_STATUS
+AtapiPassThruPioReadWriteData (
+  ATAPI_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate,
+  UINT16                    *Buffer,
   UINT32                    *ByteCount,
   DATA_DIRECTION            Direction,
   UINT64                    TimeoutInMicroSeconds
@@ -1258,48 +1340,54 @@ AtapiPassThruPioReadWriteData (
   Returns:
 
 
---*/               
-{                                                      
-  UINT32        Index;   
-  UINT32        RequiredWordCount; 
-  UINT32        ActualWordCount;
-  
-  UINT32        WordCount;
-  EFI_STATUS    Status ;
-  UINT16        *ptrBuffer;
+--*/
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    ByteCount - add argument and description to function comment
+// TODO:    Direction - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_WARN_BUFFER_TOO_SMALL - add return value to function comment
+{
+  UINT32      Index;
+  UINT32      RequiredWordCount;
+  UINT32      ActualWordCount;
 
-  Status      = EFI_SUCCESS ;
-  
+  UINT32      WordCount;
+  EFI_STATUS  Status;
+  UINT16      *ptrBuffer;
+
+  Status = EFI_SUCCESS;
+
   //
   // Non Data transfer request is also supported.
   //
   if (*ByteCount == 0 || Buffer == NULL) {
     *ByteCount = 0;
-    if (EFI_ERROR(StatusWaitForBSYClear (AtapiScsiPrivate,TimeoutInMicroSeconds))) {
+    if (EFI_ERROR (StatusWaitForBSYClear (AtapiScsiPrivate, TimeoutInMicroSeconds))) {
       return EFI_DEVICE_ERROR;
     }
   }
-  
-  ptrBuffer = Buffer;
+
+  ptrBuffer         = Buffer;
   RequiredWordCount = *ByteCount / 2;
- 
+
   //
   // ActuralWordCount means the word count of data really transfered.
   //
   ActualWordCount = 0;
 
-  while (ActualWordCount < RequiredWordCount) { 
-    
+  while (ActualWordCount < RequiredWordCount) {
     //
     // before each data transfer stream, the host should poll DRQ bit ready,
     // which indicates device's ready for data transfer .
     //
     Status = StatusDRQReady (AtapiScsiPrivate, TimeoutInMicroSeconds);
-    if (EFI_ERROR(Status)) {            
-      *ByteCount = ActualWordCount * 2;        
-      
+    if (EFI_ERROR (Status)) {
+      *ByteCount = ActualWordCount * 2;
+
       AtapiPassThruCheckErrorStatus (AtapiScsiPrivate);
-      
+
       if (ActualWordCount == 0) {
         return EFI_DEVICE_ERROR;
       }
@@ -1310,27 +1398,29 @@ AtapiPassThruPioReadWriteData (
         return EFI_WARN_BUFFER_TOO_SMALL;
       }
     }
-    
     //
     // get current data transfer size from Cylinder Registers.
     //
-    WordCount = ((ReadPortB (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->CylinderMsb) << 8) | 
-                  ReadPortB (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->CylinderLsb)) & 0xffff;                  
+    WordCount =
+      (
+        (ReadPortB (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->CylinderMsb) << 8) |
+        ReadPortB (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->CylinderLsb)
+      ) & 0xffff;
     WordCount /= 2;
 
     //
     // perform a series data In/Out.
     //
-    for (Index = 0; (Index < WordCount) && (ActualWordCount < RequiredWordCount); Index ++, ActualWordCount++) {
-      
+    for (Index = 0; (Index < WordCount) && (ActualWordCount < RequiredWordCount); Index++, ActualWordCount++) {
+
       if (Direction == DataIn) {
-        
-        *ptrBuffer = ReadPortW (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Data);
+
+        *ptrBuffer = ReadPortW (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Data);
       } else {
-        
-        WritePortW (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Data, *ptrBuffer);
+
+        WritePortW (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Data, *ptrBuffer);
       }
-      
+
       ptrBuffer++;
 
     }
@@ -1338,17 +1428,17 @@ AtapiPassThruPioReadWriteData (
   //
   // After data transfer is completed, normally, DRQ bit should clear.
   //
-  StatusDRQClear(AtapiScsiPrivate, TimeoutInMicroSeconds);
-  
+  StatusDRQClear (AtapiScsiPrivate, TimeoutInMicroSeconds);
+
   //
   // read status register to check whether error happens.
   //
-  Status = AtapiPassThruCheckErrorStatus (AtapiScsiPrivate);    
-  
-  *ByteCount = ActualWordCount * 2;
-  
+  Status      = AtapiPassThruCheckErrorStatus (AtapiScsiPrivate);
+
+  *ByteCount  = ActualWordCount * 2;
+
   return Status;
-} 
+}
 
 STATIC
 UINT8
@@ -1358,20 +1448,26 @@ ReadPortB (
   )
 /*++
   Read one byte from a specified I/O port.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PciIo - add argument and description to function comment
+// TODO:    Port - add argument and description to function comment
 {
-  UINT8         Data;
-  
+  UINT8 Data;
+
   Data = 0;
-  PciIo->Io.Read(PciIo,
-                 EfiPciIoWidthUint8,
-                 EFI_PCI_IO_PASS_THROUGH_BAR,
-                 (UINT64)Port,
-                 1,
-                 &Data
-                 );
-  return Data;                 
-}   
+  PciIo->Io.Read (
+              PciIo,
+              EfiPciIoWidthUint8,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
+  return Data;
+}
 
 STATIC
 UINT16
@@ -1381,66 +1477,85 @@ ReadPortW (
   )
 /*++
   Read one word from a specified I/O port.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PciIo - add argument and description to function comment
+// TODO:    Port - add argument and description to function comment
 {
-  UINT16          Data;
-  
+  UINT16  Data;
+
   Data = 0;
-  PciIo->Io.Read(PciIo,
-                 EfiPciIoWidthUint16,
-                 EFI_PCI_IO_PASS_THROUGH_BAR,
-                 (UINT64)Port,
-                 1,
-                 &Data
-                 );
-    return Data;      
-}   
+  PciIo->Io.Read (
+              PciIo,
+              EfiPciIoWidthUint16,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
+  return Data;
+}
 
 STATIC
 VOID
 WritePortB (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
-  IN  UINT16                Port, 
+  IN  UINT16                Port,
   IN  UINT8                 Data
   )
 /*++
   Write one byte to a specified I/O port.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PciIo - add argument and description to function comment
+// TODO:    Port - add argument and description to function comment
+// TODO:    Data - add argument and description to function comment
 {
 
-  
-  PciIo->Io.Write(PciIo,
-                  EfiPciIoWidthUint8,
-                  EFI_PCI_IO_PASS_THROUGH_BAR,
-                  (UINT64)Port,
-                  1,
-                  &Data
-                  );  
+  PciIo->Io.Write (
+              PciIo,
+              EfiPciIoWidthUint8,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
 
-}   
+}
 
 STATIC
 VOID
 WritePortW (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
-  IN  UINT16                Port, 
+  IN  UINT16                Port,
   IN  UINT16                Data
   )
 /*++
   Write one word to a specified I/O port.
---*/    
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PciIo - add argument and description to function comment
+// TODO:    Port - add argument and description to function comment
+// TODO:    Data - add argument and description to function comment
 {
-  
-  PciIo->Io.Write(PciIo,
-                  EfiPciIoWidthUint16,
-                  EFI_PCI_IO_PASS_THROUGH_BAR,
-                  (UINT64)Port,
-                  1,
-                  &Data
-                  );
-}      
 
-EFI_STATUS  
+  PciIo->Io.Write (
+              PciIo,
+              EfiPciIoWidthUint16,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
+}
+
+EFI_STATUS
 StatusDRQClear (
   ATAPI_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate,
   UINT64                          TimeoutInMicroSeconds
@@ -1450,68 +1565,77 @@ StatusDRQClear (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64        Delay; 
-  UINT8         StatusRegister;
-  UINT8         ErrRegister;
-  UINTN         Remainder;
-  
+  UINT64  Delay;
+  UINT8   StatusRegister;
+  UINT8   ErrRegister;
+  UINTN   Remainder;
+
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
 
   do {
-    
-    StatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                               AtapiScsiPrivate->IoPort->Reg.Status
-                               );
-    
+
+    StatusRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg.Status
+                      );
+
     //
     // wait for BSY == 0 and DRQ == 0
     //
-    if ( (StatusRegister & (DRQ | BSY) ) == 0) {
+    if ((StatusRegister & (DRQ | BSY)) == 0) {
       break;
     }
     //
     // check whether the command is aborted by the device
-    //  
-    if ((StatusRegister & (BSY | ERR)) == ERR ) {
-      
-     ErrRegister =  ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg1.Error
-                              ); 
-     if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
-        
-      return EFI_ABORTED;
-     }
-    }
+    //
+    if ((StatusRegister & (BSY | ERR)) == ERR) {
 
+      ErrRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg1.Error
+                      );
+      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
+
+        return EFI_ABORTED;
+      }
+    }
     //
     //  Stall for 30 us
     //
-    gBS->Stall(30);
-        
+    gBS->Stall (30);
+
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
     }
-    
-    Delay --;
+
+    Delay--;
   } while (Delay);
-  
+
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-EFI_STATUS  
+EFI_STATUS
 AltStatusDRQClear (
   ATAPI_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate,
   UINT64                          TimeoutInMicroSeconds
@@ -1522,66 +1646,75 @@ AltStatusDRQClear (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64        Delay; 
-  UINT8         AltStatusRegister;
-  UINT8         ErrRegister;
-  UINTN         Remainder;
+  UINT64  Delay;
+  UINT8   AltStatusRegister;
+  UINT8   ErrRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
 
   do {
-    
-    AltStatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                               AtapiScsiPrivate->IoPort->Alt.AltStatus
-                               );
-    
+
+    AltStatusRegister = ReadPortB (
+                          AtapiScsiPrivate->PciIo,
+                          AtapiScsiPrivate->IoPort->Alt.AltStatus
+                          );
+
     //
     // wait for BSY == 0 and DRQ == 0
     //
-    if ( (AltStatusRegister & (DRQ |  BSY) ) == 0) {
-    break;
-    }
-  
-    if ((AltStatusRegister & (BSY | ERR)) == ERR ) {
-      
-     ErrRegister =  ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg1.Error
-                              ); 
-     if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
-        
-      return EFI_ABORTED;
-     }
+    if ((AltStatusRegister & (DRQ | BSY)) == 0) {
+      break;
     }
 
+    if ((AltStatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg1.Error
+                      );
+      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
+
+        return EFI_ABORTED;
+      }
+    }
     //
     //  Stall for 30 us
     //
-    gBS->Stall(30);
-    
+    gBS->Stall (30);
+
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
     }
-    
-    Delay --;
+
+    Delay--;
   } while (Delay);
-  
+
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-EFI_STATUS  
+EFI_STATUS
 StatusDRQReady (
   ATAPI_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate,
   UINT64                          TimeoutInMicroSeconds
@@ -1591,64 +1724,77 @@ StatusDRQReady (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64      Delay; 
-  UINT8       StatusRegister;
-  UINT8       ErrRegister;
-  UINTN       Remainder;
+  UINT64  Delay;
+  UINT8   StatusRegister;
+  UINT8   ErrRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
 
   do {
     //
     //  read Status Register will clear interrupt
     //
-    StatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg.Status
-                              );   
-    
+    StatusRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg.Status
+                      );
+
     //
     //  BSY==0,DRQ==1
     //
-    if ( (StatusRegister & (BSY | DRQ )) == DRQ) {
+    if ((StatusRegister & (BSY | DRQ)) == DRQ) {
       break;
     }
-    
-    if ((StatusRegister & (BSY | ERR)) == ERR ) {
-      
-     ErrRegister =  ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg1.Error
-                              ); 
-     if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {        
-      return EFI_ABORTED;
-     }
+
+    if ((StatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg1.Error
+                      );
+      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
+        return EFI_ABORTED;
+      }
     }
-   
-    gBS->Stall(30); // Stall for 30 us
-    
+
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
     }
-    
-    Delay --;
+
+    Delay--;
   } while (Delay);
 
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-EFI_STATUS  
+EFI_STATUS
 AltStatusDRQReady (
   ATAPI_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate,
   UINT64                          TimeoutInMicroSeconds
@@ -1659,63 +1805,76 @@ AltStatusDRQReady (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64      Delay; 
-  UINT8       AltStatusRegister;
-  UINT8       ErrRegister;
-  UINTN       Remainder;
+  UINT64  Delay;
+  UINT8   AltStatusRegister;
+  UINT8   ErrRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
-  
+
   do {
     //
     //  read Status Register will clear interrupt
     //
-    AltStatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Alt.AltStatus
-                              );      
+    AltStatusRegister = ReadPortB (
+                          AtapiScsiPrivate->PciIo,
+                          AtapiScsiPrivate->IoPort->Alt.AltStatus
+                          );
     //
     //  BSY==0,DRQ==1
     //
-    if ((AltStatusRegister & (BSY | DRQ )) == DRQ) {
+    if ((AltStatusRegister & (BSY | DRQ)) == DRQ) {
       break;
     }
-    
-    if ((AltStatusRegister & (BSY | ERR)) == ERR ) {
-      
-     ErrRegister =  ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg1.Error
-                              ); 
-     if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {        
-      return EFI_ABORTED;
-     }
+
+    if ((AltStatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg1.Error
+                      );
+      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
+        return EFI_ABORTED;
+      }
     }
-   
-    gBS->Stall(30); // Stall for 30 us
-    
+
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
     }
-    
-    Delay --;
+
+    Delay--;
   } while (Delay);
 
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-EFI_STATUS  
+EFI_STATUS
 StatusWaitForBSYClear (
   ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
   UINT64                      TimeoutInMicroSeconds
@@ -1725,47 +1884,59 @@ StatusWaitForBSYClear (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64      Delay; 
-  UINT8       StatusRegister;
-  UINTN       Remainder;
+  UINT64  Delay;
+  UINT8   StatusRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
-  
+
   do {
 
-    StatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg.Status); 
-    if ( (StatusRegister & BSY) == 0x00) {
+    StatusRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg.Status
+                      );
+    if ((StatusRegister & BSY) == 0x00) {
       break;
     }
-    
-    gBS->Stall(30); // Stall for 30 us 
-    
+
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
-    }  
-    
-    Delay --;
+    }
+
+    Delay--;
   } while (Delay);
 
-  if (Delay == 0){
+  if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-EFI_STATUS  
-AltStatusWaitForBSYClear  (
+EFI_STATUS
+AltStatusWaitForBSYClear (
   ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
   UINT64                      TimeoutInMicroSeconds
   )
@@ -1774,47 +1945,59 @@ AltStatusWaitForBSYClear  (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/    
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64      Delay; 
-  UINT8       AltStatusRegister;
-  UINTN       Remainder;
+  UINT64  Delay;
+  UINT8   AltStatusRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
-  
+
   do {
 
-    AltStatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                                  AtapiScsiPrivate->IoPort->Alt.AltStatus); 
+    AltStatusRegister = ReadPortB (
+                          AtapiScsiPrivate->PciIo,
+                          AtapiScsiPrivate->IoPort->Alt.AltStatus
+                          );
     if ((AltStatusRegister & BSY) == 0x00) {
       break;
     }
-    
-    gBS->Stall(30); // Stall for 30 us   
+
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
-    } 
-    
-    Delay --;
+    }
+
+    Delay--;
   } while (Delay);
 
-  if (Delay == 0){
+  if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 StatusDRDYReady (
-  ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
+  ATAPI_SCSI_PASS_THRU_DEV     *AtapiScsiPrivate,
   UINT64                       TimeoutInMicroSeconds
   )
 /*++
@@ -1823,60 +2006,74 @@ StatusDRDYReady (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64      Delay; 
-  UINT8       StatusRegister;
-  UINT8       ErrRegister;
-  UINTN       Remainder;
+  UINT64  Delay;
+  UINT8   StatusRegister;
+  UINT8   ErrRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
-  
+
   do {
-    StatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg.Status); 
+    StatusRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg.Status
+                      );
     //
     //  BSY == 0 , DRDY == 1
     //
-    if ( (StatusRegister & (DRDY | BSY) ) == DRDY) {
+    if ((StatusRegister & (DRDY | BSY)) == DRDY) {
       break;
     }
-    
-    if ((StatusRegister & (BSY | ERR)) == ERR ) {
-        
-      ErrRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg1.Error
-                              ); 
-      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {         
+
+    if ((StatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg1.Error
+                      );
+      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
-
-    gBS->Stall(30); // Stall for 30 us
+    
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
-    } 
-    
-    Delay --;
+    }
+
+    Delay--;
   } while (Delay);
 
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 AltStatusDRDYReady (
-  ATAPI_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
+  ATAPI_SCSI_PASS_THRU_DEV     *AtapiScsiPrivate,
   UINT64                       TimeoutInMicroSeconds
   )
 /*++
@@ -1885,53 +2082,67 @@ AltStatusDRDYReady (
   If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
   DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
   elapsed.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    TimeoutInMicroSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT64      Delay; 
-  UINT8       AltStatusRegister;
-  UINT8       ErrRegister;
-  UINTN       Remainder;
+  UINT64  Delay;
+  UINT8   AltStatusRegister;
+  UINT8   ErrRegister;
+  UINTN   Remainder;
 
   if (TimeoutInMicroSeconds == 0) {
     Delay = 2;
   } else {
-    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32)30,&Remainder) + 1;
+    Delay = DivU64x32 (TimeoutInMicroSeconds, (UINT32) 30, &Remainder) + 1;
   }
-  
+
   do {
-    AltStatusRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                                  AtapiScsiPrivate->IoPort->Alt.AltStatus); 
+    AltStatusRegister = ReadPortB (
+                          AtapiScsiPrivate->PciIo,
+                          AtapiScsiPrivate->IoPort->Alt.AltStatus
+                          );
     //
     //  BSY == 0 , DRDY == 1
     //
-    if ((AltStatusRegister & (DRDY | BSY) ) == DRDY) {
+    if ((AltStatusRegister & (DRDY | BSY)) == DRDY) {
       break;
     }
-    
-    if ((AltStatusRegister & (BSY | ERR)) == ERR ) {
-        
-      ErrRegister = ReadPortB(AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg1.Error
-                              ); 
-      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {         
+
+    if ((AltStatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrRegister = ReadPortB (
+                      AtapiScsiPrivate->PciIo,
+                      AtapiScsiPrivate->IoPort->Reg1.Error
+                      );
+      if ((ErrRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
 
-    gBS->Stall(30); // Stall for 30 us
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
     //
     // Loop infinitely if not meeting expected condition
     //
     if (TimeoutInMicroSeconds == 0) {
       Delay = 2;
-    } 
-    
-    Delay --;
+    }
+
+    Delay--;
   } while (Delay);
 
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
@@ -1942,72 +2153,103 @@ AtapiPassThruCheckErrorStatus (
   )
 /*++  
   Check Error Register for Error Information. 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    AtapiScsiPrivate - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  UINT8   StatusRegister;
+  UINT8 StatusRegister;
 
 #ifdef EFI_DEBUG
 
-  UINT8   ErrorRegister;
+  UINT8 ErrorRegister;
 
 #endif
 
-  StatusRegister = ReadPortB (AtapiScsiPrivate->PciIo,
-                              AtapiScsiPrivate->IoPort->Reg.Status
-                              ); 
+  StatusRegister = ReadPortB (
+                    AtapiScsiPrivate->PciIo,
+                    AtapiScsiPrivate->IoPort->Reg.Status
+                    );
   DEBUG_CODE (
-    
-    if (StatusRegister & DWF)  {
-      DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Write Fault\n", 
-             StatusRegister));
-    }
-    
-    if (StatusRegister & CORR) {
-      DEBUG((EFI_D_BLKIO,"AtapiPassThruCheckErrorStatus()-- %02x : Error : Corrected Data\n",
-             StatusRegister));
-    }
-  
-    if (StatusRegister & ERR) {
-      ErrorRegister = ReadPortB (AtapiScsiPrivate->PciIo,AtapiScsiPrivate->IoPort->Reg1.Error);
-  
-      if (ErrorRegister & BBK_ERR) {
-        DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Bad Block Detected\n",
-               ErrorRegister));
-      }
-      
-      if (ErrorRegister & UNC_ERR) {
-        DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Uncorrectable Data\n",
-                ErrorRegister));
-      }
-      
-      if (ErrorRegister & MC_ERR) {
-        DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Media Change\n", 
-                ErrorRegister));
-      }
-      
-      if (ErrorRegister & ABRT_ERR) {
-        DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Abort\n",
-               ErrorRegister));
-      }
-      
-      if (ErrorRegister & TK0NF_ERR) {
-        DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Track 0 Not Found\n",
-               ErrorRegister));
-      }
-      
-      if (ErrorRegister & AMNF_ERR) {
-        DEBUG((EFI_D_BLKIO, "AtapiPassThruCheckErrorStatus()-- %02x : Error : Address Mark Not Found\n",
-              ErrorRegister));
-      }
-  
-    }
+
+    if (StatusRegister & DWF) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Write Fault\n",
+      StatusRegister)
+      );
+  }
+
+  if (StatusRegister & CORR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Corrected Data\n",
+      StatusRegister)
+      );
+  }
+
+  if (StatusRegister & ERR) {
+    ErrorRegister = ReadPortB (AtapiScsiPrivate->PciIo, AtapiScsiPrivate->IoPort->Reg1.Error);
+
+    if (ErrorRegister & BBK_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Bad Block Detected\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & UNC_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Uncorrectable Data\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & MC_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Media Change\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & ABRT_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Abort\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & TK0NF_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Track 0 Not Found\n",
+      ErrorRegister)
+      );
+  }
+
+  if (ErrorRegister & AMNF_ERR) {
+    DEBUG (
+      (EFI_D_BLKIO,
+      "AtapiPassThruCheckErrorStatus()-- %02x : Error : Address Mark Not Found\n",
+      ErrorRegister)
+      );
+  }
+
+  }
   )
 
-  if ( (StatusRegister & (ERR | DWF | CORR) ) == 0 ) {
-    
-    return EFI_SUCCESS;  
-  } 
-  
+  if ((StatusRegister & (ERR | DWF | CORR)) == 0) {
+
+    return EFI_SUCCESS;
+  }
+
   return EFI_DEVICE_ERROR;
-  
+
 }

@@ -23,8 +23,8 @@ Abstract:
 #include "PeiHob.h"
 #include "EfiFlashMap.h"
 #include "EfiFirmwareVolumeHeader.h"
-#include "EfiDriverLib.h"             // needed for gDS
-#include "EfiHobLib.h"                // needed for GetNextGuidHob
+#include "EfiDriverLib.h" // needed for gDS
+#include "EfiHobLib.h"    // needed for GetNextGuidHob
 #include "EfiCapsule.h"
 #include "Capsule.h"
 
@@ -46,55 +46,59 @@ BdsLockFv (
   IN EFI_CPU_IO_PROTOCOL          *CpuIo,
   IN EFI_FLASH_SUBAREA_ENTRY      *FlashEntry
   );
-  
+
 VOID
 BdsLockFv (
   IN EFI_CPU_IO_PROTOCOL          *CpuIo,
   IN EFI_FLASH_SUBAREA_ENTRY      *FlashEntry
   )
 {
-  EFI_FV_BLOCK_MAP_ENTRY          *BlockMap;
-  EFI_FIRMWARE_VOLUME_HEADER      *FvHeader;
-  UINT64                          BaseAddress;
-  UINT8                           Data;
-  UINT32                          BlockLength;
-  UINTN                           Index;
+  EFI_FV_BLOCK_MAP_ENTRY      *BlockMap;
+  EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
+  UINT64                      BaseAddress;
+  UINT8                       Data;
+  UINT32                      BlockLength;
+  UINTN                       Index;
 
   BaseAddress = FlashEntry->Base - 0x400000 + 2;
-  FvHeader    = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN)(FlashEntry->Base));
+  FvHeader    = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) (FlashEntry->Base));
   BlockMap    = &(FvHeader->FvBlockMap[0]);
 
-  while ( ( BlockMap->NumBlocks != 0 ) && ( BlockMap->BlockLength != 0 ) ) {
+  while ((BlockMap->NumBlocks != 0) && (BlockMap->BlockLength != 0)) {
     BlockLength = BlockMap->BlockLength;
-    for ( Index = 0; Index < BlockMap->NumBlocks; Index ++ ) {
-      CpuIo->Mem.Read (CpuIo,
-                       EfiCpuIoWidthUint8,
-                       BaseAddress,
-                       1,
-                       &Data
-                       );
-      Data  = (UINT8) (Data | 0x3);
-      CpuIo->Mem.Write (CpuIo,
-                        EfiCpuIoWidthUint8,
-                        BaseAddress,
-                        1,
-                        &Data
-                        );
+    for (Index = 0; Index < BlockMap->NumBlocks; Index++) {
+      CpuIo->Mem.Read (
+                  CpuIo,
+                  EfiCpuIoWidthUint8,
+                  BaseAddress,
+                  1,
+                  &Data
+                  );
+      Data = (UINT8) (Data | 0x3);
+      CpuIo->Mem.Write (
+                  CpuIo,
+                  EfiCpuIoWidthUint8,
+                  BaseAddress,
+                  1,
+                  &Data
+                  );
       BaseAddress += BlockLength;
     }
-    BlockMap ++;                      
+
+    BlockMap++;
   }
 }
 
 VOID
 BdsLockNonUpdatableFlash (
+  VOID
   )
 {
-  EFI_FLASH_MAP_ENTRY_DATA        *FlashMapEntryData;
-  VOID                            *HobList;
-  VOID                            *Buffer;
-  EFI_STATUS                      Status;
-  EFI_CPU_IO_PROTOCOL             *CpuIo;
+  EFI_FLASH_MAP_ENTRY_DATA  *FlashMapEntryData;
+  VOID                      *HobList;
+  VOID                      *Buffer;
+  EFI_STATUS                Status;
+  EFI_CPU_IO_PROTOCOL       *CpuIo;
 
   Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &CpuIo);
   ASSERT_EFI_ERROR (Status);
@@ -113,13 +117,14 @@ BdsLockNonUpdatableFlash (
     //
     // Get the variable store area
     //
-    if ( ( FlashMapEntryData->AreaType == EFI_FLASH_AREA_RECOVERY_BIOS ) 
-      || ( FlashMapEntryData->AreaType == EFI_FLASH_AREA_MAIN_BIOS ) ) {
+    if ((FlashMapEntryData->AreaType == EFI_FLASH_AREA_RECOVERY_BIOS) ||
+        (FlashMapEntryData->AreaType == EFI_FLASH_AREA_MAIN_BIOS)
+        ) {
       BdsLockFv (CpuIo, &(FlashMapEntryData->Entries[0]));
     }
   }
 
-  return;
+  return ;
 }
 
 EFI_STATUS
@@ -154,13 +159,13 @@ Note:
 
 --*/
 {
-  EFI_STATUS                          Status;
-  EFI_HOB_HANDOFF_INFO_TABLE          *HobList;
-  EFI_PHYSICAL_ADDRESS                BaseAddress;
-  UINT64                              Length;
-  EFI_STATUS                          HobStatus;
-  EFI_FIRMWARE_VOLUME_HEADER          *FwVolHeader;
-  EFI_HANDLE                          FvProtocolHandle;
+  EFI_STATUS                  Status;
+  EFI_HOB_HANDOFF_INFO_TABLE  *HobList;
+  EFI_PHYSICAL_ADDRESS        BaseAddress;
+  UINT64                      Length;
+  EFI_STATUS                  HobStatus;
+  EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
+  EFI_HANDLE                  FvProtocolHandle;
 
   //
   // We don't do anything else if the boot mode is not flash-update
@@ -172,11 +177,11 @@ Note:
   // Get the HOB list so we can determine the boot mode, and (if update mode)
   // look for capsule hobs.
   //
-  Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, (VOID *)&HobList);
-  if (EFI_ERROR(Status)) {
+  Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, (VOID *) &HobList);
+  if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   Status = EFI_SUCCESS;
   //
   // If flash update mode, then walk the hobs to find capsules and produce
@@ -189,7 +194,7 @@ Note:
     HobStatus = GetNextCapsuleVolumeHob (&HobList, &BaseAddress, &Length);
     if (EFI_ERROR (HobStatus)) {
       //
-      // We didn't find a hob, so had no errors. 
+      // We didn't find a hob, so had no errors.
       //
       BdsLockNonUpdatableFlash ();
       return EFI_SUCCESS;
@@ -202,8 +207,8 @@ Note:
       //
       // Point to the next firmware volume header, and then
       // call the DXE service to process it.
-      // 
-      FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)BaseAddress;
+      //
+      FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
       if (FwVolHeader->FvLength > Length) {
         //
         // Notes: need to stuff this status somewhere so that the
@@ -212,11 +217,13 @@ Note:
         Status = EFI_VOLUME_CORRUPTED;
         break;
       }
-      Status = gDS->ProcessFirmwareVolume ((VOID *)(UINTN)BaseAddress,
-                                            (UINTN)FwVolHeader->FvLength,
-                                            &FvProtocolHandle
-                                            );
-      if (EFI_ERROR(Status)) {
+
+      Status = gDS->ProcessFirmwareVolume (
+                      (VOID *) (UINTN) BaseAddress,
+                      (UINTN) FwVolHeader->FvLength,
+                      &FvProtocolHandle
+                      );
+      if (EFI_ERROR (Status)) {
         break;
       }
       //
@@ -227,10 +234,10 @@ Note:
       // On to the next FV in the capsule
       //
       Length -= FwVolHeader->FvLength;
-      BaseAddress = (EFI_PHYSICAL_ADDRESS)((UINTN)BaseAddress + FwVolHeader->FvLength);
+      BaseAddress = (EFI_PHYSICAL_ADDRESS) ((UINTN) BaseAddress + FwVolHeader->FvLength);
       //
       // Notes: when capsule spec is finalized, if the requirement is made to
-      // have each FV in a capsule aligned, then we will need to align the 
+      // have each FV in a capsule aligned, then we will need to align the
       // BaseAddress and Length here.
       //
     }
@@ -247,7 +254,7 @@ GetNextCapsuleVolumeHob (
   IN OUT VOID                  **HobStart,
   OUT    EFI_PHYSICAL_ADDRESS  *BaseAddress,
   OUT    UINT64                *Length
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -276,10 +283,10 @@ Returns:
     return EFI_NOT_FOUND;
   }
 
-  *BaseAddress = Hob.CapsuleVolume->BaseAddress;
-  *Length      = Hob.CapsuleVolume->Length;
+  *BaseAddress  = Hob.CapsuleVolume->BaseAddress;
+  *Length       = Hob.CapsuleVolume->Length;
 
-  *HobStart = GET_NEXT_HOB (Hob);
+  *HobStart     = GET_NEXT_HOB (Hob);
 
   return EFI_SUCCESS;
 }

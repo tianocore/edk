@@ -24,50 +24,53 @@ Revision History
 #ifndef _BDS_H
 #define _BDS_H
 
-
 #include "Tiano.h"
 #include "PeiHob.h"
 #include "EfiDriverLib.h"
 
-#include EFI_ARCH_PROTOCOL_DEFINITION(Bds)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Bds)
 
 #include EFI_PROTOCOL_DEFINITION (GenericMemoryTest)
 
 //
 // Bds AP Context data
 //
-#define EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE EFI_SIGNATURE_32 ('B','d','s','A')
+#define EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE  EFI_SIGNATURE_32 ('B', 'd', 's', 'A')
 typedef struct {
-  UINTN                       Signature;
+  UINTN                     Signature;
 
-  EFI_HANDLE                  Handle;
+  EFI_HANDLE                Handle;
 
-  EFI_BDS_ARCH_PROTOCOL       Bds;
+  EFI_BDS_ARCH_PROTOCOL     Bds;
 
   //
   // Save the current boot mode
   //
-  EFI_BOOT_MODE               BootMode;
-  
+  EFI_BOOT_MODE             BootMode;
+
   //
   // Set true if boot with default settings
   //
-  BOOLEAN                     DefaultBoot;
+  BOOLEAN                   DefaultBoot;
 
   //
   // The system default timeout for choose the boot option
   //
-  UINT16                      TimeoutDefault;
-  
+  UINT16                    TimeoutDefault;
+
   //
   // Memory Test Level
   //
-  EXTENDMEM_COVERAGE_LEVEL    MemoryTestLevel;
-  
+  EXTENDMEM_COVERAGE_LEVEL  MemoryTestLevel;
+
 } EFI_BDS_ARCH_PROTOCOL_INSTANCE;
 
 #define EFI_BDS_ARCH_PROTOCOL_INSTANCE_FROM_THIS(_this) \
-          CR (_this, EFI_BDS_ARCH_PROTOCOL_INSTANCE, Bds, EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE)
+  CR (_this, \
+      EFI_BDS_ARCH_PROTOCOL_INSTANCE, \
+      Bds, \
+      EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE \
+      )
 
 //
 // Prototypes

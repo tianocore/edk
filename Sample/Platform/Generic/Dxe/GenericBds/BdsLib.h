@@ -67,65 +67,63 @@ extern EFI_HANDLE mBdsImageHandle;
 //
 // Constants which are variable names used to access variables
 //
-
-#define VarLegacyDevOrder           L"LegacyDevOrder"
+#define VarLegacyDevOrder L"LegacyDevOrder"
 
 //
 // Data structures and defines
 //
-
 #define FRONT_PAGE_QUESTION_ID  0x0000
 #define FRONT_PAGE_DATA_WIDTH   0x01
 
 //
 // ConnectType
 //
-#define CONSOLE_OUT   0x00000001
-#define STD_ERROR     0x00000002
-#define CONSOLE_IN    0x00000004
-#define CONSOLE_ALL   (CONSOLE_OUT | CONSOLE_IN | STD_ERROR)
+#define CONSOLE_OUT 0x00000001
+#define STD_ERROR   0x00000002
+#define CONSOLE_IN  0x00000004
+#define CONSOLE_ALL (CONSOLE_OUT | CONSOLE_IN | STD_ERROR)
 
 //
 // Load Option Attributes defined in EFI Specification
 //
-#define LOAD_OPTION_ACTIVE          0x00000001
-#define LOAD_OPTION_FORCE_RECONNECT 0x00000002
-#define IS_LOAD_OPTION_TYPE(_c, _Mask) (BOOLEAN)(((_c) & (_Mask)) != 0)
+#define LOAD_OPTION_ACTIVE              0x00000001
+#define LOAD_OPTION_FORCE_RECONNECT     0x00000002
+#define IS_LOAD_OPTION_TYPE(_c, _Mask)  (BOOLEAN) (((_c) & (_Mask)) != 0)
 
 //
 // Define Maxmim characters that will be accepted
 //
-#define MAX_CHAR        480
-#define MAX_CHAR_SIZE   (MAX_CHAR * 2)
+#define MAX_CHAR            480
+#define MAX_CHAR_SIZE       (MAX_CHAR * 2)
 
-#define MIN_ALIGNMENT_SIZE 4
-#define ALIGN_SIZE(a)   ((a % MIN_ALIGNMENT_SIZE) ? MIN_ALIGNMENT_SIZE - (a % MIN_ALIGNMENT_SIZE) : 0)
+#define MIN_ALIGNMENT_SIZE  4
+#define ALIGN_SIZE(a)       ((a % MIN_ALIGNMENT_SIZE) ? MIN_ALIGNMENT_SIZE - (a % MIN_ALIGNMENT_SIZE) : 0)
 
 //
 // This data structure is the part of BDS_CONNECT_ENTRY that we can hard code.
 //
-#define BDS_LOAD_OPTION_SIGNATURE EFI_SIGNATURE_32('B','d','C','O')
+#define BDS_LOAD_OPTION_SIGNATURE EFI_SIGNATURE_32 ('B', 'd', 'C', 'O')
 
 typedef struct {
 
-  UINTN                       Signature;
-  EFI_LIST_ENTRY              Link;
-  
-  EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
-  
-  CHAR16                      *OptionName;
-  UINTN                       OptionNumber;
-  UINT16                      BootCurrent;
-  UINT32                      Attribute;
-  CHAR16                      *Description;
-  VOID                        *LoadOptions;
-  UINT32                      LoadOptionsSize;
+  UINTN                     Signature;
+  EFI_LIST_ENTRY            Link;
+
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+
+  CHAR16                    *OptionName;
+  UINTN                     OptionNumber;
+  UINT16                    BootCurrent;
+  UINT32                    Attribute;
+  CHAR16                    *Description;
+  VOID                      *LoadOptions;
+  UINT32                    LoadOptionsSize;
 
 } BDS_COMMON_OPTION;
 
 typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
-  UINTN                       ConnectType;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  UINTN                     ConnectType;
 } BDS_CONSOLE_CONNECT_ENTRY;
 
 //
@@ -148,10 +146,10 @@ BdsLibBootNext (
 
 EFI_STATUS
 BdsLibBootViaBootOption (
-  IN  BDS_COMMON_OPTION             *Option,
-  IN  EFI_DEVICE_PATH_PROTOCOL      *DevicePath,
+  IN  BDS_COMMON_OPTION             * Option,
+  IN  EFI_DEVICE_PATH_PROTOCOL      * DevicePath,
   OUT UINTN                         *ExitDataSize,
-  OUT CHAR16                        **ExitData      OPTIONAL
+  OUT CHAR16                        **ExitData OPTIONAL
   );
 
 EFI_STATUS
@@ -161,7 +159,7 @@ BdsLibEnumerateAllBootOption (
 
 VOID
 BdsLibBuildOptionFromHandle (
-  IN  EFI_HANDLE          Handle, 
+  IN  EFI_HANDLE          Handle,
   IN  EFI_LIST_ENTRY      *BdsBootOptionList
   );
 
@@ -170,7 +168,7 @@ BdsLibBuildOptionFromShell (
   IN  EFI_HANDLE                     Handle,
   IN  EFI_LIST_ENTRY                 *BdsBootOptionList
   );
-  
+
 //
 // Bds misc lib functions
 //
@@ -185,17 +183,17 @@ BdsLibGetBootMode (
   );
 
 VOID
-BdsLibLoadDrivers(
+BdsLibLoadDrivers (
   IN  EFI_LIST_ENTRY              *BdsDriverLists
   );
-  
+
 EFI_STATUS
 BdsLibBuildOptionFromVar (
   IN  EFI_LIST_ENTRY              *BdsCommonOptionList,
   IN  CHAR16                      *VariableName
   );
 
-VOID *
+VOID                      *
 BdsLibGetVariableAndSize (
   IN  CHAR16              *Name,
   IN  EFI_GUID            *VendorGuid,
@@ -208,7 +206,7 @@ BdsLibOutputStrings (
   ...
   );
 
-BDS_COMMON_OPTION *
+BDS_COMMON_OPTION         *
 BdsLibVariableToOption (
   IN OUT EFI_LIST_ENTRY               *BdsCommonOptionList,
   IN CHAR16                           *VariableName
@@ -221,7 +219,7 @@ BdsLibRegisterNewOption (
   IN  CHAR16                         *String,
   IN  CHAR16                         *VariableName
   );
-  
+
 //
 // Bds connect or disconnect driver lib funcion
 //
@@ -229,7 +227,7 @@ VOID
 BdsLibConnectAllDriversToAllControllers (
   VOID
   );
-  
+
 VOID
 BdsLibConnectAll (
   VOID
@@ -244,7 +242,7 @@ EFI_STATUS
 BdsLibConnectAllEfi (
   VOID
   );
-  
+
 EFI_STATUS
 BdsLibDisconnectAllEfi (
   VOID
@@ -278,7 +276,7 @@ BdsLibConnectConsoleVariable (
 //
 // Bds device path relate lib functions
 //
-EFI_DEVICE_PATH_PROTOCOL *
+EFI_DEVICE_PATH_PROTOCOL  *
 BdsLibUnpackDevicePath (
   IN EFI_DEVICE_PATH_PROTOCOL  *DevPath
   );
@@ -288,13 +286,13 @@ BdsLibMatchDevicePaths (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Multi,
   IN  EFI_DEVICE_PATH_PROTOCOL  *Single
   );
-  
-CHAR16 *
+
+CHAR16                    *
 DevicePathToStr (
   EFI_DEVICE_PATH_PROTOCOL     *DevPath
   );
 
-VOID *
+VOID                      *
 EfiLibGetVariable (
   IN CHAR16               *Name,
   IN EFI_GUID             *VendorGuid
@@ -304,15 +302,15 @@ EfiLibGetVariable (
 // Internal definitions
 //
 typedef struct {
-  CHAR16                            *str;
-  UINTN                             len;
-  UINTN                             maxlen;
+  CHAR16  *str;
+  UINTN   len;
+  UINTN   maxlen;
 } POOL_PRINT;
 
 typedef struct {
-  UINT8   Type;
-  UINT8   SubType;
-  VOID    (*Function)(POOL_PRINT *, VOID *);    
+  UINT8 Type;
+  UINT8 SubType;
+  VOID (*Function) (POOL_PRINT *, VOID *);
 } DEVICE_PATH_STRING_TABLE;
 
 //
@@ -320,19 +318,19 @@ typedef struct {
 //
 EFI_STATUS
 BdsBootByDiskSignatureAndPartition (
-  IN  BDS_COMMON_OPTION          *Option,
-  IN  HARDDRIVE_DEVICE_PATH      *HardDriveDevicePath,
+  IN  BDS_COMMON_OPTION          * Option,
+  IN  HARDDRIVE_DEVICE_PATH      * HardDriveDevicePath,
   IN  UINT32                     LoadOptionsSize,
   IN  VOID                       *LoadOptions,
   OUT UINTN                      *ExitDataSize,
-  OUT CHAR16                     **ExitData      OPTIONAL
+  OUT CHAR16                     **ExitData OPTIONAL
   );
 
 //
 // Notes: EFI 64 shadow all option rom
 //
 #ifdef EFI64
-#define EFI64_SHADOW_ALL_LEGACY_ROM() ShadowAllOptionRom();
+#define EFI64_SHADOW_ALL_LEGACY_ROM() ShadowAllOptionRom ();
 VOID
 ShadowAllOptionRom();
 #else

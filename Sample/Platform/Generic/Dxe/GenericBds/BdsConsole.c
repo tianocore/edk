@@ -62,11 +62,11 @@ Returns:
   UINTN                     DevicePathSize;
   EFI_DEVICE_PATH_PROTOCOL  *Instance;
   EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
-  
-  VarConsole = NULL;
-  DevicePathSize = 0;
-  NewDevicePath = NULL;
-  Status = EFI_UNSUPPORTED;
+
+  VarConsole      = NULL;
+  DevicePathSize  = 0;
+  NewDevicePath   = NULL;
+  Status          = EFI_UNSUPPORTED;
 
   //
   // Notes: check the device path point, here should check
@@ -75,24 +75,26 @@ Returns:
   if (CustomizedConDevicePath == ExclusiveDevicePath) {
     return EFI_UNSUPPORTED;
   }
-  
   //
-  // Delete the ExclusiveDevicePath from current default console 
+  // Delete the ExclusiveDevicePath from current default console
   //
   VarConsole = BdsLibGetVariableAndSize (
-                 ConVarName,
-                 &gEfiGlobalVariableGuid,
-                 &DevicePathSize
-                 );
-  
+                ConVarName,
+                &gEfiGlobalVariableGuid,
+                &DevicePathSize
+                );
+
   if (ExclusiveDevicePath != NULL && VarConsole != NULL) {
     if (BdsLibMatchDevicePaths (VarConsole, ExclusiveDevicePath)) {
-      
+
       Instance = EfiDevicePathInstance (&VarConsole, &DevicePathSize);
-      
+
       while (VarConsole != NULL) {
-        if (EfiCompareMem (Instance, ExclusiveDevicePath, 
-          DevicePathSize - sizeof (EFI_DEVICE_PATH_PROTOCOL)) == 0) {
+        if (EfiCompareMem (
+              Instance,
+              ExclusiveDevicePath,
+              DevicePathSize - sizeof (EFI_DEVICE_PATH_PROTOCOL)
+              ) == 0) {
           //
           // Remove the match part
           //
@@ -104,30 +106,29 @@ Returns:
           //
           NewDevicePath = EfiAppendDevicePathInstance (NewDevicePath, Instance);
         }
+
         Instance = EfiDevicePathInstance (&VarConsole, &DevicePathSize);
       }
-
       //
       // Reset the console variable with new device path
       //
       gRT->SetVariable (
-             ConVarName,
-             &gEfiGlobalVariableGuid,
-             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-             EfiDevicePathSize (NewDevicePath),
-             NewDevicePath
-             );
+            ConVarName,
+            &gEfiGlobalVariableGuid,
+            EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+            EfiDevicePathSize (NewDevicePath),
+            NewDevicePath
+            );
     }
   }
-
   //
   // Try to append customized device path
   //
   VarConsole = BdsLibGetVariableAndSize (
-                 ConVarName,
-                 &gEfiGlobalVariableGuid,
-                 &DevicePathSize
-                 );
+                ConVarName,
+                &gEfiGlobalVariableGuid,
+                &DevicePathSize
+                );
 
   if (CustomizedConDevicePath != NULL) {
     if (!BdsLibMatchDevicePaths (VarConsole, CustomizedConDevicePath)) {
@@ -136,22 +137,22 @@ Returns:
       // just append current customized device path
       //
       VarConsole = EfiAppendDevicePathInstance (VarConsole, CustomizedConDevicePath);
-  
+
       //
       // Update the variable of the default console
       //
       gRT->SetVariable (
-             ConVarName,
-             &gEfiGlobalVariableGuid,
-             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-             EfiDevicePathSize (VarConsole),
-             VarConsole
-             );
+            ConVarName,
+            &gEfiGlobalVariableGuid,
+            EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+            EfiDevicePathSize (VarConsole),
+            VarConsole
+            );
     }
   }
-  
+
   return EFI_SUCCESS;
-  
+
 }
 
 EFI_STATUS
@@ -188,10 +189,10 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL  *CopyOfDevicePath;
   UINTN                     Size;
   BOOLEAN                   DeviceExist;
-  
-  Status= EFI_SUCCESS;
+
+  Status      = EFI_SUCCESS;
   DeviceExist = FALSE;
-  
+
   //
   // Check if the console variable exist
   //
@@ -203,19 +204,20 @@ Returns:
   if (StartDevicePath == NULL) {
     return EFI_UNSUPPORTED;
   }
-  
+
   CopyOfDevicePath = EfiDuplicateDevicePath (StartDevicePath);
   do {
     //
     // Check every instance of the console variable
     //
-    Instance = EfiDevicePathInstance (&CopyOfDevicePath, &Size);
-    Next = Instance;
-    while (!IsDevicePathEndType(Next)) {
-      Next = NextDevicePathNode(Next);
+    Instance  = EfiDevicePathInstance (&CopyOfDevicePath, &Size);
+    Next      = Instance;
+    while (!IsDevicePathEndType (Next)) {
+      Next = NextDevicePathNode (Next);
     }
-    SetDevicePathEndNode(Next);
-    
+
+    SetDevicePathEndNode (Next);
+
     //
     // Connect the instance device path
     //
@@ -232,11 +234,11 @@ Returns:
   } while (CopyOfDevicePath != NULL);
 
   gBS->FreePool (StartDevicePath);
-  
+
   if (DeviceExist == FALSE) {
     return EFI_NOT_FOUND;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -266,48 +268,47 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL  *ConDevicePath;
   UINTN                     HandleCount;
   EFI_HANDLE                *HandleBuffer;
-    
-  Index = 0;
-  HandleCount = 0;
-  HandleBuffer = NULL;
+
+  Index         = 0;
+  HandleCount   = 0;
+  HandleBuffer  = NULL;
   ConDevicePath = NULL;
-  
+
   //
   // Update all the console varables
   //
   Status = gBS->LocateHandleBuffer (
-                  ByProtocol, 
-                  &gEfiSimpleTextInProtocolGuid, 
+                  ByProtocol,
+                  &gEfiSimpleTextInProtocolGuid,
                   NULL,
-                  &HandleCount, 
+                  &HandleCount,
                   &HandleBuffer
                   );
   for (Index = 0; Index < HandleCount; Index++) {
     Status = gBS->HandleProtocol (
                     HandleBuffer[Index],
                     &gEfiDevicePathProtocolGuid,
-                    (VOID **)&ConDevicePath
+                    (VOID **) &ConDevicePath
                     );
     BdsLibUpdateConsoleVariable (L"ConIn", ConDevicePath, NULL);
   }
 
   Status = gBS->LocateHandleBuffer (
-                  ByProtocol, 
-                  &gEfiSimpleTextOutProtocolGuid, 
+                  ByProtocol,
+                  &gEfiSimpleTextOutProtocolGuid,
                   NULL,
-                  &HandleCount, 
+                  &HandleCount,
                   &HandleBuffer
                   );
   for (Index = 0; Index < HandleCount; Index++) {
     Status = gBS->HandleProtocol (
                     HandleBuffer[Index],
                     &gEfiDevicePathProtocolGuid,
-                    (VOID **)&ConDevicePath
+                    (VOID **) &ConDevicePath
                     );
     BdsLibUpdateConsoleVariable (L"ConOut", ConDevicePath, NULL);
     BdsLibUpdateConsoleVariable (L"ErrOut", ConDevicePath, NULL);
   }
-  
   //
   // Connect all console variables
   //
@@ -339,10 +340,10 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                         Status;
-  EFI_DEVICE_PATH_PROTOCOL           *VarErrout;
-  UINTN                              DevicePathSize;
-  
+  EFI_STATUS                Status;
+  EFI_DEVICE_PATH_PROTOCOL  *VarErrout;
+  UINTN                     DevicePathSize;
+
   //
   // Connect all default console variables
   //
@@ -350,13 +351,13 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
   Status = BdsLibConnectConsoleVariable (L"ConOut");
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
   //
-  // Special treat the err out device, becaues the null 
+  // Special treat the err out device, becaues the null
   // err out var is legal.
   //
   VarErrout = BdsLibGetVariableAndSize (
@@ -367,7 +368,7 @@ Returns:
   if (VarErrout != NULL) {
     BdsLibConnectConsoleVariable (L"ErrOut");
   }
-  
+
   return EFI_SUCCESS;
 
 }

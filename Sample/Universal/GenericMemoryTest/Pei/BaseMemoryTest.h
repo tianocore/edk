@@ -15,7 +15,7 @@ Module Name:
    
 Abstract:
 
-  EFI 2.0 PEIM to provide a PEI memory test service.
+  Tiano PEIM to provide a PEI memory test service.
 
 --*/
 
@@ -27,25 +27,65 @@ Abstract:
 #include EFI_PPI_DEFINITION (CpuIo)
 #include EFI_PPI_DEFINITION (BaseMemoryTest)
 
-//Some global define
-#define  COVER_SPAN           0x40000
-#define  TEST_PATTERN         0x5A5A5A5A
+//
+// Some global define
+//
+#define COVER_SPAN    0x40000
+#define TEST_PATTERN  0x5A5A5A5A
 
 EFI_STATUS
 EFIAPI
-PeiBaseMemoryTestInit(
+PeiBaseMemoryTestInit (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  FfsHeader   - TODO: add argument description
+  PeiServices - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 BaseMemoryTest (
   IN  EFI_PEI_SERVICES                   **PeiServices,
-  IN PEI_BASE_MEMORY_TEST_PPI   *This, 
+  IN PEI_BASE_MEMORY_TEST_PPI            *This,
   IN  EFI_PHYSICAL_ADDRESS               BeginAddress,
   IN  UINT64                             MemoryLength,
   IN  PEI_MEMORY_TEST_OP                 Operation,
   OUT EFI_PHYSICAL_ADDRESS               *ErrorAddress
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PeiServices   - TODO: add argument description
+  This          - TODO: add argument description
+  BeginAddress  - TODO: add argument description
+  MemoryLength  - TODO: add argument description
+  Operation     - TODO: add argument description
+  ErrorAddress  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

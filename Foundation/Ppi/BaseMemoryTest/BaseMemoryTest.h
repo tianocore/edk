@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Pei memory test PPI as defined in EFI 2.0
+  Pei memory test PPI as defined in Tiano
 
   Used to Pei memory test in PEI
 
@@ -25,7 +25,9 @@ Abstract:
 #define _BASE_MEMORY_TEST_H_
 
 #define PEI_BASE_MEMORY_TEST_GUID \
-  {0xb6ec423c, 0x21d2, 0x490d, 0x85, 0xc6, 0xdd, 0x58, 0x64, 0xea, 0xa6, 0x74}
+  { \
+    0xb6ec423c, 0x21d2, 0x490d, 0x85, 0xc6, 0xdd, 0x58, 0x64, 0xea, 0xa6, 0x74 \
+  }
 
 EFI_FORWARD_DECLARATION (PEI_BASE_MEMORY_TEST_PPI);
 
@@ -36,15 +38,15 @@ typedef enum {
   Extensive
 } PEI_MEMORY_TEST_OP;
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *PEI_BASE_MEMORY_TEST) (
   IN  EFI_PEI_SERVICES                   **PeiServices,
-  IN PEI_BASE_MEMORY_TEST_PPI   *This, 
+  IN PEI_BASE_MEMORY_TEST_PPI            * This,
   IN  EFI_PHYSICAL_ADDRESS               BeginAddress,
   IN  UINT64                             MemoryLength,
   IN  PEI_MEMORY_TEST_OP                 Operation,
-  OUT EFI_PHYSICAL_ADDRESS               *ErrorAddress
+  OUT EFI_PHYSICAL_ADDRESS               * ErrorAddress
   );
 
 typedef struct _PEI_BASE_MEMORY_TEST_PPI {

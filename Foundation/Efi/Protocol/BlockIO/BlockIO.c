@@ -24,10 +24,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(BlockIo)
- 
+#include EFI_PROTOCOL_DEFINITION (BlockIo)
 
-EFI_GUID gEfiBlockIoProtocolGuid = EFI_BLOCK_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiBlockIoProtocolGuid = EFI_BLOCK_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiBlockIoProtocolGuid, "BlockIo Protocol", "EFI 1.0 Block IO protocol");
-

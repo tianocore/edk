@@ -32,12 +32,12 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (WinNtThunk)
 #include EFI_PROTOCOL_DEFINITION (WinNtIo)
 
-extern BDS_CONSOLE_CONNECT_ENTRY gPlatformConsole [];
-extern EFI_DEVICE_PATH_PROTOCOL  *gPlatformConnectSequence [];
-extern EFI_DEVICE_PATH_PROTOCOL  *gPlatformDriverOption [];
+extern BDS_CONSOLE_CONNECT_ENTRY  gPlatformConsole[];
+extern EFI_DEVICE_PATH_PROTOCOL   *gPlatformConnectSequence[];
+extern EFI_DEVICE_PATH_PROTOCOL   *gPlatformDriverOption[];
 
 #define gEndEntire \
-  {\
+  { \
     END_DEVICE_PATH_TYPE,\
     END_ENTIRE_DEVICE_PATH_SUBTYPE,\
     END_DEVICE_PATH_LENGTH,\
@@ -72,24 +72,28 @@ typedef struct {
 VOID
 PlatformBdsInit (
   IN EFI_BDS_ARCH_PROTOCOL_INSTANCE  *PrivateData
-  );
+  )
+;
 
 VOID
 PlatformBdsPolicyBehavior (
   IN EFI_BDS_ARCH_PROTOCOL_INSTANCE  *PrivateData,
   IN EFI_LIST_ENTRY                  *DriverOptionList,
   IN EFI_LIST_ENTRY                  *BootOptionList
-  );
+  )
+;
 
 VOID
 PlatformBdsGetDriverOption (
   IN EFI_LIST_ENTRY               *BdsDriverLists
-  );
-  
+  )
+;
+
 EFI_STATUS
 BdsMemoryTest (
   EXTENDMEM_COVERAGE_LEVEL Level
-  );
+  )
+;
 
 EFI_STATUS
 PlatformBdsShowProgress (
@@ -99,39 +103,46 @@ PlatformBdsShowProgress (
   EFI_UGA_PIXEL ProgressColor,
   UINTN         Progress,
   UINTN         PreviousValue
-  );
-  
+  )
+;
+
 VOID
 PlatformBdsConnectSequence (
   VOID
-  );
+  )
+;
 
 VOID
 PlatformBdsBootFail (
-  IN  BDS_COMMON_OPTION *Option,
+  IN  BDS_COMMON_OPTION  *Option,
   IN  EFI_STATUS         Status,
   IN  CHAR16             *ExitData,
   IN  UINTN              ExitDataSize
-  );
+  )
+;
 
 VOID
 PlatformBdsBootSuccess (
   IN  BDS_COMMON_OPTION *Option
-  );
-  
+  )
+;
+
 EFI_STATUS
 ProcessCapsules (
   EFI_BOOT_MODE BootMode
-  );
+  )
+;
 
 EFI_STATUS
 PlatformBdsConnectConsole (
   IN BDS_CONSOLE_CONNECT_ENTRY   *PlatformConsole
-  );
+  )
+;
 
 EFI_STATUS
 PlatformBdsNoConsoleAction (
   VOID
-  );
+  )
+;
 
 #endif // _BDS_PLATFORM_H

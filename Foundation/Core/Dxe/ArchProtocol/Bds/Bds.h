@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Boot Device Selection Architectural Protocol as defined in EFI 2.0
+  Boot Device Selection Architectural Protocol as defined in Tiano
 
   When the DXE core is done it calls the BDS via this protocol.
 
@@ -38,7 +38,7 @@ EFI_FORWARD_DECLARATION (EFI_BDS_ARCH_PROTOCOL);
 typedef
 VOID
 (EFIAPI *EFI_BDS_ENTRY) (
-  IN EFI_BDS_ARCH_PROTOCOL  *This
+  IN EFI_BDS_ARCH_PROTOCOL  * This
   );
 /*++
 
@@ -73,7 +73,7 @@ Returns:
 // Interface stucture for the BDS Architectural Protocol
 //
 typedef struct _EFI_BDS_ARCH_PROTOCOL {
-  EFI_BDS_ENTRY             Entry;
+  EFI_BDS_ENTRY Entry;
 } EFI_BDS_ARCH_PROTOCOL;
 
 /*++

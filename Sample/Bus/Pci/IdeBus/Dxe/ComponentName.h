@@ -16,7 +16,7 @@ Abstract:
 
 
 Revision History
-++*/
+--*/
 
 #ifndef _IDE_BUS_COMPONENT_NAME_H
 #define _IDE_BUS_COMPONENT_NAME_H
@@ -27,9 +27,9 @@ Revision History
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 
-#define ADD_NAME(x)                      AddName ((x));
-                                         
-extern EFI_COMPONENT_NAME_PROTOCOL       gIDEBusComponentName;
+#define ADD_NAME(x) AddName ((x));
+
+extern EFI_COMPONENT_NAME_PROTOCOL  gIDEBusComponentName;
 
 #else
 
@@ -46,22 +46,75 @@ IDEBusComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  Language    - TODO: add argument description
+  DriverName  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
 IDEBusComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-  );
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
+/*++
 
-VOID AddName (
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  ControllerHandle  - TODO: add argument description
+  ChildHandle       - TODO: add argument description
+  Language          - TODO: add argument description
+  ControllerName    - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+VOID
+AddName (
   IN  IDE_BLK_IO_DEV               *IdeBlkIoDevicePtr
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  IdeBlkIoDevicePtr - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif
-
-

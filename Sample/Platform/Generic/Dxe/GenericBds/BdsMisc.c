@@ -21,7 +21,7 @@ Abstract:
 
 #include "BdsLib.h"
 
-extern UINT16     gPlatformBootTimeOutDefault;
+extern UINT16 gPlatformBootTimeOutDefault;
 
 UINT16
 BdsLibGetTimeout (
@@ -51,12 +51,11 @@ Returns:
   // Return Timeout variable or 0xffff if no valid
   // Timeout variable exists.
   //
-  Size = sizeof (UINT16);
-  Status = gRT->GetVariable (L"Timeout", &gEfiGlobalVariableGuid, NULL, &Size, &Timeout);
+  Size    = sizeof (UINT16);
+  Status  = gRT->GetVariable (L"Timeout", &gEfiGlobalVariableGuid, NULL, &Size, &Timeout);
   if (!EFI_ERROR (Status)) {
     return Timeout;
   }
-
   //
   // To make the current EFI Automatic-Test activity possible, just add
   // following code to make AutoBoot enabled when this variable is not
@@ -71,9 +70,7 @@ Returns:
   Status = gRT->SetVariable (
                   L"Timeout",
                   &gEfiGlobalVariableGuid,
-                  EFI_VARIABLE_BOOTSERVICE_ACCESS |
-                  EFI_VARIABLE_RUNTIME_ACCESS |
-                  EFI_VARIABLE_NON_VOLATILE,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
                   sizeof (UINT16),
                   &Timeout
                   );
@@ -81,7 +78,7 @@ Returns:
 }
 
 VOID
-BdsLibLoadDrivers(
+BdsLibLoadDrivers (
   IN EFI_LIST_ENTRY               *BdsDriverLists
   )
 /*++
@@ -101,24 +98,24 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
-  EFI_LIST_ENTRY                  *Link;
-  BDS_COMMON_OPTION               *Option;
-  EFI_HANDLE                      ImageHandle;
-  EFI_LOADED_IMAGE_PROTOCOL       *ImageInfo;
-  UINTN                           ExitDataSize;
-  CHAR16                          *ExitData;
-  BOOLEAN                         ReconnectAll;
+  EFI_STATUS                Status;
+  EFI_LIST_ENTRY            *Link;
+  BDS_COMMON_OPTION         *Option;
+  EFI_HANDLE                ImageHandle;
+  EFI_LOADED_IMAGE_PROTOCOL *ImageInfo;
+  UINTN                     ExitDataSize;
+  CHAR16                    *ExitData;
+  BOOLEAN                   ReconnectAll;
 
   ReconnectAll = FALSE;
-  
+
   //
   // Process the driver option
   //
   for (Link = BdsDriverLists->ForwardLink; Link != BdsDriverLists; Link = Link->ForwardLink) {
     Option = CR (Link, BDS_COMMON_OPTION, Link, BDS_LOAD_OPTION_SIGNATURE);
     //
-    // If a load option is not marked as LOAD_OPTION_ACTIVE, 
+    // If a load option is not marked as LOAD_OPTION_ACTIVE,
     // the boot manager will not automatically load the option.
     //
     if (!IS_LOAD_OPTION_TYPE (Option->Attribute, LOAD_OPTION_ACTIVE)) {
@@ -132,7 +129,6 @@ Returns:
     if (IS_LOAD_OPTION_TYPE (Option->Attribute, LOAD_OPTION_FORCE_RECONNECT)) {
       ReconnectAll = TRUE;
     }
-
     //
     // Make sure the driver path is connected.
     //
@@ -142,11 +138,11 @@ Returns:
     // Load and start the image that Driver#### describes
     //
     Status = gBS->LoadImage (
-                    FALSE, 
-                    mBdsImageHandle, 
-                    Option->DevicePath, 
-                    NULL, 
-                    0, 
+                    FALSE,
+                    mBdsImageHandle,
+                    Option->DevicePath,
+                    NULL,
+                    0,
                     &ImageHandle
                     );
 
@@ -157,17 +153,15 @@ Returns:
       // Verify whether this image is a driver, if not,
       // exit it and continue to parse next load option
       //
-      if (ImageInfo->ImageCodeType != EfiBootServicesCode &&
-          ImageInfo->ImageCodeType != EfiRuntimeServicesCode) {
+      if (ImageInfo->ImageCodeType != EfiBootServicesCode && ImageInfo->ImageCodeType != EfiRuntimeServicesCode) {
         gBS->Exit (ImageHandle, EFI_INVALID_PARAMETER, 0, NULL);
         continue;
       }
 
       if (Option->LoadOptionsSize != 0) {
-        ImageInfo->LoadOptionsSize = Option->LoadOptionsSize;
-        ImageInfo->LoadOptions = Option->LoadOptions;
+        ImageInfo->LoadOptionsSize  = Option->LoadOptionsSize;
+        ImageInfo->LoadOptions      = Option->LoadOptions;
       }
-
       //
       // Before calling the image, enable the Watchdog Timer for
       // the 5 Minute period
@@ -184,7 +178,6 @@ Returns:
       continue;
     }
   }
-  
   //
   // Process the LOAD_OPTION_FORCE_RECONNECT driver option
   //
@@ -230,31 +223,31 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                         Status;
-  UINTN                              Index;
-  UINT16                             MaxOptionNumber;
-  UINT16                             RegisterOptionNumber;
-  UINT16                             *TempOptionPtr;
-  UINTN                              TempOptionSize;
-  UINT16                             *OptionOrderPtr;
-  VOID                               *OptionPtr;
-  UINTN                              OptionSize;
-  UINT8                              *TempPtr;
-  EFI_DEVICE_PATH_PROTOCOL           *OptionDevicePath;
-  CHAR16                             *Description;
-  CHAR16                             OptionName[10];
-  BOOLEAN                            UpdateBootDevicePath;
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  UINT16                    MaxOptionNumber;
+  UINT16                    RegisterOptionNumber;
+  UINT16                    *TempOptionPtr;
+  UINTN                     TempOptionSize;
+  UINT16                    *OptionOrderPtr;
+  VOID                      *OptionPtr;
+  UINTN                     OptionSize;
+  UINT8                     *TempPtr;
+  EFI_DEVICE_PATH_PROTOCOL  *OptionDevicePath;
+  CHAR16                    *Description;
+  CHAR16                    OptionName[10];
+  BOOLEAN                   UpdateBootDevicePath;
 
-  OptionPtr = NULL;
-  OptionSize = 0;
-  TempPtr = NULL;
-  OptionDevicePath = NULL;
-  Description = NULL;
-  MaxOptionNumber = 0;
-  OptionOrderPtr = NULL;
-  UpdateBootDevicePath = FALSE;
+  OptionPtr             = NULL;
+  OptionSize            = 0;
+  TempPtr               = NULL;
+  OptionDevicePath      = NULL;
+  Description           = NULL;
+  MaxOptionNumber       = 0;
+  OptionOrderPtr        = NULL;
+  UpdateBootDevicePath  = FALSE;
   EfiZeroMem (OptionName, sizeof (OptionName));
-  
+
   TempOptionSize = 0;
   TempOptionPtr = BdsLibGetVariableAndSize (
                     VariableName,
@@ -264,30 +257,31 @@ Returns:
   //
   // Compare with current option variable
   //
-  for (Index = 0; Index < TempOptionSize / sizeof (UINT16); Index ++) {
+  for (Index = 0; Index < TempOptionSize / sizeof (UINT16); Index++) {
     //
     // Got the max option#### number
     //
     if (MaxOptionNumber < TempOptionPtr[Index]) {
       MaxOptionNumber = TempOptionPtr[Index];
     }
-    
+
     if (*VariableName == 'B') {
       SPrint (OptionName, sizeof (OptionName), L"Boot%04x", TempOptionPtr[Index]);
     } else {
       SPrint (OptionName, sizeof (OptionName), L"Driver%04x", TempOptionPtr[Index]);
     }
+
     OptionPtr = BdsLibGetVariableAndSize (
                   OptionName,
                   &gEfiGlobalVariableGuid,
                   &OptionSize
                   );
     TempPtr = OptionPtr;
-    TempPtr += sizeof(UINT32) + sizeof(UINT16);
-    Description = (CHAR16*) TempPtr;
-    TempPtr += EfiStrSize ((CHAR16 *)TempPtr);
-    OptionDevicePath = (EFI_DEVICE_PATH_PROTOCOL *)TempPtr;
-    
+    TempPtr += sizeof (UINT32) + sizeof (UINT16);
+    Description = (CHAR16 *) TempPtr;
+    TempPtr += EfiStrSize ((CHAR16 *) TempPtr);
+    OptionDevicePath = (EFI_DEVICE_PATH_PROTOCOL *) TempPtr;
+
     //
     // Notes: the description may will change base on the GetStringToken
     //
@@ -307,21 +301,21 @@ Returns:
         break;
       }
     }
+
     gBS->FreePool (OptionPtr);
   }
- 
-  OptionSize = sizeof (UINT32) + sizeof (UINT16) +
-               EfiStrSize (String) + EfiDevicePathSize (DevicePath);
-  OptionPtr = EfiLibAllocateZeroPool (OptionSize);
-  TempPtr = OptionPtr;
-  *(UINT32*)TempPtr = LOAD_OPTION_ACTIVE;
+
+  OptionSize          = sizeof (UINT32) + sizeof (UINT16) + EfiStrSize (String) + EfiDevicePathSize (DevicePath);
+  OptionPtr           = EfiLibAllocateZeroPool (OptionSize);
+  TempPtr             = OptionPtr;
+  *(UINT32 *) TempPtr = LOAD_OPTION_ACTIVE;
   TempPtr += sizeof (UINT32);
-  *(UINT16*)TempPtr = (UINT16) EfiDevicePathSize (DevicePath);
+  *(UINT16 *) TempPtr = (UINT16) EfiDevicePathSize (DevicePath);
   TempPtr += sizeof (UINT16);
   EfiCopyMem (TempPtr, String, EfiStrSize (String));
   TempPtr += EfiStrSize (String);
   EfiCopyMem (TempPtr, DevicePath, EfiDevicePathSize (DevicePath));
-  
+
   if (UpdateBootDevicePath) {
     //
     // The number in option#### to be updated
@@ -333,13 +327,13 @@ Returns:
     //
     RegisterOptionNumber = MaxOptionNumber + 1;
   }
-  
+
   if (*VariableName == 'B') {
     SPrint (OptionName, sizeof (OptionName), L"Boot%04x", RegisterOptionNumber);
   } else {
     SPrint (OptionName, sizeof (OptionName), L"Driver%04x", RegisterOptionNumber);
   }
-  
+
   Status = gRT->SetVariable (
                   OptionName,
                   &gEfiGlobalVariableGuid,
@@ -352,14 +346,15 @@ Returns:
     gBS->FreePool (TempOptionPtr);
     return Status;
   }
+
   gBS->FreePool (OptionPtr);
-  
+
   //
   // Update the option order variable
   //
   OptionOrderPtr = EfiLibAllocateZeroPool ((Index + 1) * sizeof (UINT16));
   EfiCopyMem (OptionOrderPtr, TempOptionPtr, Index * sizeof (UINT16));
-  OptionOrderPtr [Index] = RegisterOptionNumber;
+  OptionOrderPtr[Index] = RegisterOptionNumber;
   Status = gRT->SetVariable (
                   VariableName,
                   &gEfiGlobalVariableGuid,
@@ -372,10 +367,10 @@ Returns:
     gBS->FreePool (OptionOrderPtr);
     return Status;
   }
-  
+
   gBS->FreePool (TempOptionPtr);
   gBS->FreePool (OptionOrderPtr);
-  
+
   return EFI_SUCCESS;
 }
 
@@ -405,65 +400,63 @@ Returns:
 
 --*/
 {
-  UINT32                      Attribute;
-  UINT16                      FilePathSize;
-  UINT8                       *Variable;
-  UINT8                       *TempPtr;
-  UINTN                       VariableSize;
-  EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
-  BDS_COMMON_OPTION           *Option;
-  VOID                        *LoadOptions;
-  UINT32                      LoadOptionsSize;
-  CHAR16                      *Description;
+  UINT32                    Attribute;
+  UINT16                    FilePathSize;
+  UINT8                     *Variable;
+  UINT8                     *TempPtr;
+  UINTN                     VariableSize;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  BDS_COMMON_OPTION         *Option;
+  VOID                      *LoadOptions;
+  UINT32                    LoadOptionsSize;
+  CHAR16                    *Description;
 
   //
   // Read the variable. We will never free this data.
   //
   Variable = BdsLibGetVariableAndSize (
-               VariableName,
-               &gEfiGlobalVariableGuid,
-               &VariableSize
-               );
+              VariableName,
+              &gEfiGlobalVariableGuid,
+              &VariableSize
+              );
   if (Variable == NULL) {
     return NULL;
   }
-
   //
-  // Notes: careful defined the variable of Boot#### or 
+  // Notes: careful defined the variable of Boot#### or
   // Driver####, consider use some macro to abstract the code
   //
-
   //
   // Get the option attribute
   //
-  TempPtr = Variable;
-  Attribute = *(UINT32 *)Variable;
-  TempPtr += sizeof(UINT32);
+  TempPtr   = Variable;
+  Attribute = *(UINT32 *) Variable;
+  TempPtr += sizeof (UINT32);
 
   //
   // Get the option's device path size
   //
-  FilePathSize = *(UINT16 *)TempPtr;
-  TempPtr += sizeof(UINT16);
+  FilePathSize = *(UINT16 *) TempPtr;
+  TempPtr += sizeof (UINT16);
 
   //
   // Get the option's description string
   //
-  Description = (CHAR16 *)TempPtr;
-  
+  Description = (CHAR16 *) TempPtr;
+
   //
   // Get the option's description string size
   //
-  TempPtr += EfiStrSize ((CHAR16 *)TempPtr);
+  TempPtr += EfiStrSize ((CHAR16 *) TempPtr);
 
   //
   // Get the option's device path
   //
-  DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)TempPtr;
+  DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) TempPtr;
   TempPtr += FilePathSize;
 
-  LoadOptions = TempPtr;
-  LoadOptionsSize = (UINT32) (VariableSize - (UINTN)(TempPtr - Variable));
+  LoadOptions     = TempPtr;
+  LoadOptionsSize = (UINT32) (VariableSize - (UINTN) (TempPtr - Variable));
 
   //
   // The Console variables may have multiple device paths, so make
@@ -473,11 +466,11 @@ Returns:
   if (Option == NULL) {
     return NULL;
   }
-  
-  Option->Signature = BDS_LOAD_OPTION_SIGNATURE;
-  Option->DevicePath = EfiLibAllocateZeroPool (EfiDevicePathSize (DevicePath));
+
+  Option->Signature   = BDS_LOAD_OPTION_SIGNATURE;
+  Option->DevicePath  = EfiLibAllocateZeroPool (EfiDevicePathSize (DevicePath));
   EfiCopyMem (Option->DevicePath, DevicePath, EfiDevicePathSize (DevicePath));
-  Option->Attribute = Attribute;
+  Option->Attribute   = Attribute;
   Option->Description = EfiLibAllocateZeroPool (EfiStrSize (Description));
   EfiCopyMem (Option->Description, Description, EfiStrSize (Description));
   Option->LoadOptions = EfiLibAllocateZeroPool (LoadOptionsSize);
@@ -492,7 +485,7 @@ Returns:
     gBS->FreePool (Variable);
     return Option;
   }
-  
+
   gBS->FreePool (Variable);
   gBS->FreePool (Option);
   return NULL;
@@ -526,17 +519,17 @@ Returns:
 
 --*/
 {
-  UINT16              *OptionOrder;
-  UINTN               OptionOrderSize;
-  UINTN               Index;
-  BDS_COMMON_OPTION   *Option;
-  CHAR16              OptionName[20];
-  
+  UINT16            *OptionOrder;
+  UINTN             OptionOrderSize;
+  UINTN             Index;
+  BDS_COMMON_OPTION *Option;
+  CHAR16            OptionName[20];
+
   //
   // Zero Buffer in order to get all BOOT#### variables
   //
   EfiZeroMem (OptionName, sizeof (OptionName));
-  
+
   //
   // Read the BootOrder, or DriverOrder variable.
   //
@@ -556,13 +549,13 @@ Returns:
       SPrint (OptionName, sizeof (OptionName), L"Driver%04x", OptionOrder[Index]);
     }
 
-    Option = BdsLibVariableToOption (BdsCommonOptionList, OptionName);
+    Option              = BdsLibVariableToOption (BdsCommonOptionList, OptionName);
     Option->BootCurrent = OptionOrder[Index];
 
   }
 
   gBS->FreePool (OptionOrder);
-  
+
   return EFI_SUCCESS;
 }
 
@@ -609,7 +602,7 @@ Returns:
   return EFI_SUCCESS;
 }
 
-VOID*
+VOID *
 BdsLibGetVariableAndSize (
   IN  CHAR16              *Name,
   IN  EFI_GUID            *VendorGuid,
@@ -639,17 +632,17 @@ Returns:
 
 --*/
 {
-  EFI_STATUS    Status;
-  UINTN         BufferSize;
-  VOID          *Buffer;
+  EFI_STATUS  Status;
+  UINTN       BufferSize;
+  VOID        *Buffer;
 
   Buffer = NULL;
 
   //
   // Pass in a zero size buffer to find the required buffer size.
   //
-  BufferSize = 0;
-  Status = gRT->GetVariable (Name, VendorGuid, NULL, &BufferSize, Buffer);
+  BufferSize  = 0;
+  Status      = gRT->GetVariable (Name, VendorGuid, NULL, &BufferSize, Buffer);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     //
     // Allocate the buffer to return
@@ -658,7 +651,6 @@ Returns:
     if (Buffer == NULL) {
       return NULL;
     }
-
     //
     // Read variable into the allocated buffer.
     //
@@ -707,8 +699,8 @@ Returns:
     return FALSE;
   }
 
-  DevicePath = Multi;
-  DevicePathInst = EfiDevicePathInstance (&DevicePath, &Size);
+  DevicePath      = Multi;
+  DevicePathInst  = EfiDevicePathInstance (&DevicePath, &Size);
   Size -= sizeof (EFI_DEVICE_PATH_PROTOCOL);
 
   //
@@ -722,14 +714,17 @@ Returns:
     if (Size == 0) {
       return FALSE;
     }
+
     if (EfiCompareMem (Single, DevicePathInst, Size) == 0) {
       return TRUE;
     }
-    gBS->FreePool(DevicePathInst);
+
+    gBS->FreePool (DevicePathInst);
     DevicePathInst = EfiDevicePathInstance (&DevicePath, &Size);
     Size -= sizeof (EFI_DEVICE_PATH_PROTOCOL);
   }
-  return  FALSE;
+
+  return FALSE;
 }
 
 EFI_STATUS
@@ -758,15 +753,14 @@ Returns:
 
 --*/
 {
-  VA_LIST         args;
-  EFI_STATUS      Status;
-  CHAR16          *String;
+  VA_LIST     args;
+  EFI_STATUS  Status;
+  CHAR16      *String;
 
   Status = EFI_SUCCESS;
   VA_START (args, ConOut);
 
-  while (!EFI_ERROR(Status)) {
-
+  while (!EFI_ERROR (Status)) {
     //
     // If String is NULL, then it's the end of the list
     //
@@ -774,8 +768,9 @@ Returns:
     if (!String) {
       break;
     }
+
     Status = ConOut->OutputString (ConOut, String);
-    
+
     if (EFI_ERROR (Status)) {
       break;
     }

@@ -22,7 +22,6 @@ Abstract:
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (Bis)
 
-EFI_GUID gEfiBisProtocolGuid = EFI_BIS_PROTOCOL_GUID;
+EFI_GUID  gEfiBisProtocolGuid = EFI_BIS_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiBisProtocolGuid, "BIS Base Protocol", "BIS Base protocol");
-

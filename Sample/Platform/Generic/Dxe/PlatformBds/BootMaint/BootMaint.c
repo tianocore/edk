@@ -29,13 +29,12 @@ Revision History
 //
 // Form binary for Boot Maintenance
 //
-extern UINT8  bmBin[];
-extern UINT8  FEBin[];
-extern EFI_GUID         gBdsStringPackGuid;
-extern BOOLEAN          gConnectAllHappened;
+extern UINT8    bmBin[];
+extern UINT8    FEBin[];
+extern EFI_GUID gBdsStringPackGuid;
+extern BOOLEAN  gConnectAllHappened;
 
-EFI_GUID EfiLegacyDevOrderGuid = EFI_LEGACY_DEV_ORDER_VARIABLE_GUID;
-
+EFI_GUID        EfiLegacyDevOrderGuid = EFI_LEGACY_DEV_ORDER_VARIABLE_GUID;
 
 VOID
 InitAllMenu (
@@ -43,7 +42,9 @@ InitAllMenu (
   );
 
 VOID
-FreeAllMenu();
+FreeAllMenu (
+  VOID
+  );
 
 EFI_STATUS
 CreateMenuStringToken (
@@ -70,31 +71,32 @@ Returns:
   
 --*/
 {
-  BM_MENU_ENTRY                       *NewMenuEntry;
-  UINTN                               Index;
-  
-  for (Index = 0; Index < MenuOption->MenuNumber; Index ++) {
+  BM_MENU_ENTRY *NewMenuEntry;
+  UINTN         Index;
+
+  for (Index = 0; Index < MenuOption->MenuNumber; Index++) {
     NewMenuEntry = BOpt_GetMenuEntry (MenuOption, Index);
     CallbackData->Hii->NewString (
-                         CallbackData->Hii,
-                         NULL,
-                         HiiHandle,
-                         &NewMenuEntry->DisplayStringToken,
-                         NewMenuEntry->DisplayString
-                         );
+                        CallbackData->Hii,
+                        NULL,
+                        HiiHandle,
+                        &NewMenuEntry->DisplayStringToken,
+                        NewMenuEntry->DisplayString
+                        );
 
     if (NULL == NewMenuEntry->HelpString) {
       NewMenuEntry->HelpStringToken = NewMenuEntry->DisplayStringToken;
     } else {
       CallbackData->Hii->NewString (
-                           CallbackData->Hii,
-                           NULL,
-                           HiiHandle,
-                           &NewMenuEntry->HelpStringToken,
-                           NewMenuEntry->HelpString
-                           );
-    }                                    
+                          CallbackData->Hii,
+                          NULL,
+                          HiiHandle,
+                          &NewMenuEntry->HelpStringToken,
+                          NewMenuEntry->HelpString
+                          );
+    }
   }
+
   return EFI_SUCCESS;
 }
 
@@ -124,41 +126,41 @@ Returns:
   
 --*/
 {
-  BMM_CALLBACK_DATA                   *Private;
-  BM_MENU_ENTRY                       *NewMenuEntry;
-  BMM_FAKE_NV_DATA                    *CurrentFakeNVMap;
-  EFI_STATUS                          Status;
-  UINTN                               OldValue;
-  UINTN                               NewValue;
-  UINTN                               Number;
-  UINTN                               Pos;
-  UINTN                               Bit;
-  UINT16                              NewValuePos;
-  UINT16                              Index2;
-  UINT16                              Index;
-  UINT8                               *OldLegacyDev;
-  UINT8                               *NewLegacyDev;
-  UINT8                               *Location;
-  UINT8                               *DisMap;
-  FORM_ID                             FormId;
+  BMM_CALLBACK_DATA *Private;
+  BM_MENU_ENTRY     *NewMenuEntry;
+  BMM_FAKE_NV_DATA  *CurrentFakeNVMap;
+  EFI_STATUS        Status;
+  UINTN             OldValue;
+  UINTN             NewValue;
+  UINTN             Number;
+  UINTN             Pos;
+  UINTN             Bit;
+  UINT16            NewValuePos;
+  UINT16            Index2;
+  UINT16            Index;
+  UINT8             *OldLegacyDev;
+  UINT8             *NewLegacyDev;
+  UINT8             *Location;
+  UINT8             *DisMap;
+  FORM_ID           FormId;
 
-  OldValue = 0;
-  NewValue = 0;
-  Number = 0;
-  OldLegacyDev = NULL;
-  NewLegacyDev = NULL;
-  NewValuePos = 0;
-  DisMap = NULL;
+  OldValue                        = 0;
+  NewValue                        = 0;
+  Number                          = 0;
+  OldLegacyDev                    = NULL;
+  NewLegacyDev                    = NULL;
+  NewValuePos                     = 0;
+  DisMap                          = NULL;
 
-  Private = BMM_CALLBACK_DATA_FROM_THIS (This);
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) Private->BmmCallbackHandle;
-  CurrentFakeNVMap = (BMM_FAKE_NV_DATA *)Data->NvRamMap;
-  Private->BmmFakeNvData = CurrentFakeNVMap;
-  Location = (UINT8 *) &UpdateData->Data;
+  Private                         = BMM_CALLBACK_DATA_FROM_THIS (This);
+  UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) Private->BmmCallbackHandle;
+  CurrentFakeNVMap                = (BMM_FAKE_NV_DATA *) Data->NvRamMap;
+  Private->BmmFakeNvData          = CurrentFakeNVMap;
+  Location                        = (UINT8 *) &UpdateData->Data;
 
   UpdatePageId (Private, KeyValue);
 
-  //  
+  //
   // need to be subtituded.
   //
   // Update Select FD/HD/CD/NET/BEV Order Form
@@ -169,64 +171,63 @@ Returns:
       FORM_SET_NET_ORDER_ID == Private->BmmPreviousPageId ||
       FORM_SET_BEV_ORDER_ID == Private->BmmPreviousPageId ||
       ((FORM_BOOT_SETUP_ID == Private->BmmPreviousPageId) &&
-       (KeyValue >= LEGACY_FD_QUESTION_ID) &&
+      (KeyValue >= LEGACY_FD_QUESTION_ID) &&
        (KeyValue < (LEGACY_BEV_QUESTION_ID + 100)) )
-     ) {
+      ) {
 
-    DisMap = Private->BmmOldFakeNVData.DisableMap;
-    
-    FormId = Private->BmmPreviousPageId;
+    DisMap  = Private->BmmOldFakeNVData.DisableMap;
+
+    FormId  = Private->BmmPreviousPageId;
     if (FormId == FORM_BOOT_SETUP_ID) {
       FormId = Private->BmmCurrentPageId;
     }
-    
+
     switch (FormId) {
-      case FORM_SET_FD_ORDER_ID:
-        Number = (UINT16) LegacyFDMenu.MenuNumber;
-        OldLegacyDev = Private->BmmOldFakeNVData.LegacyFD;
-        NewLegacyDev = CurrentFakeNVMap->LegacyFD;
-        break;
+    case FORM_SET_FD_ORDER_ID:
+      Number        = (UINT16) LegacyFDMenu.MenuNumber;
+      OldLegacyDev  = Private->BmmOldFakeNVData.LegacyFD;
+      NewLegacyDev  = CurrentFakeNVMap->LegacyFD;
+      break;
 
-      case FORM_SET_HD_ORDER_ID:
-        Number = (UINT16) LegacyHDMenu.MenuNumber;
-        OldLegacyDev = Private->BmmOldFakeNVData.LegacyHD;
-        NewLegacyDev = CurrentFakeNVMap->LegacyHD;
-        break;
+    case FORM_SET_HD_ORDER_ID:
+      Number        = (UINT16) LegacyHDMenu.MenuNumber;
+      OldLegacyDev  = Private->BmmOldFakeNVData.LegacyHD;
+      NewLegacyDev  = CurrentFakeNVMap->LegacyHD;
+      break;
 
-      case FORM_SET_CD_ORDER_ID:
-        Number = (UINT16) LegacyCDMenu.MenuNumber;
-        OldLegacyDev = Private->BmmOldFakeNVData.LegacyCD;
-        NewLegacyDev = CurrentFakeNVMap->LegacyCD;
-        break;
+    case FORM_SET_CD_ORDER_ID:
+      Number        = (UINT16) LegacyCDMenu.MenuNumber;
+      OldLegacyDev  = Private->BmmOldFakeNVData.LegacyCD;
+      NewLegacyDev  = CurrentFakeNVMap->LegacyCD;
+      break;
 
-      case FORM_SET_NET_ORDER_ID:
-        Number = (UINT16) LegacyNETMenu.MenuNumber;
-        OldLegacyDev = Private->BmmOldFakeNVData.LegacyNET;
-        NewLegacyDev = CurrentFakeNVMap->LegacyNET;
-        break;
+    case FORM_SET_NET_ORDER_ID:
+      Number        = (UINT16) LegacyNETMenu.MenuNumber;
+      OldLegacyDev  = Private->BmmOldFakeNVData.LegacyNET;
+      NewLegacyDev  = CurrentFakeNVMap->LegacyNET;
+      break;
 
-      case FORM_SET_BEV_ORDER_ID:
-        Number = (UINT16) LegacyBEVMenu.MenuNumber;
-        OldLegacyDev = Private->BmmOldFakeNVData.LegacyBEV;
-        NewLegacyDev = CurrentFakeNVMap->LegacyBEV;
-        break;
+    case FORM_SET_BEV_ORDER_ID:
+      Number        = (UINT16) LegacyBEVMenu.MenuNumber;
+      OldLegacyDev  = Private->BmmOldFakeNVData.LegacyBEV;
+      NewLegacyDev  = CurrentFakeNVMap->LegacyBEV;
+      break;
 
-      default:
-        break;
+    default:
+      break;
     }
- 
     //
     //  First, find the different position
     //  if there is change, it should be only one
     //
     for (Index = 0; Index < Number; Index++) {
       if (OldLegacyDev[Index] != NewLegacyDev[Index]) {
-        OldValue = OldLegacyDev[Index];
-        NewValue = NewLegacyDev[Index];
+        OldValue  = OldLegacyDev[Index];
+        NewValue  = NewLegacyDev[Index];
         break;
       }
     }
-    
+
     if (Index != Number) {
       //
       // there is change, now process
@@ -242,12 +243,14 @@ Returns:
         for (Index2 = Index; Index2 < Number - 1; Index2++) {
           NewLegacyDev[Index2] = NewLegacyDev[Index2 + 1];
         }
+
         NewLegacyDev[Index2] = 0xFF;
       } else {
         for (Index2 = 0; Index2 < Number; Index2++) {
           if (Index2 == Index) {
             continue;
           }
+
           if (OldLegacyDev[Index2] == NewValue) {
             //
             // If NewValue is in OldLegacyDev array
@@ -279,7 +282,7 @@ Returns:
           //
           Pos = NewValue / 8;
           Bit = 7 - (NewValue % 8);
-          DisMap[Pos] &= ~(UINT8)(1 << Bit);
+          DisMap[Pos] &= ~ (UINT8) (1 << Bit);
           if (0xFF != OldValue) {
             //
             // Because NewValue is a item that was disabled before
@@ -288,7 +291,7 @@ Returns:
             //
             Pos = OldValue / 8;
             Bit = 7 - (OldValue % 8);
-            DisMap[Pos] |= (UINT8)(1 << Bit);
+            DisMap[Pos] |= (UINT8) (1 << Bit);
           }
         }
       }
@@ -302,25 +305,27 @@ Returns:
           Index++;
           continue;
         }
-        
+
         Index2 = Index;
         Index2++;
         while (Index2 < Number) {
           if (0xFF != NewLegacyDev[Index2]) {
             break;
           }
+
           Index2++;
         }
-        
-        if (Index2 < Number) {  
-          NewLegacyDev[Index] = NewLegacyDev[Index2];
-          NewLegacyDev[Index2] = 0xFF;
+
+        if (Index2 < Number) {
+          NewLegacyDev[Index]   = NewLegacyDev[Index2];
+          NewLegacyDev[Index2]  = 0xFF;
         }
+
         Index++;
       }
 
       EfiCopyMem (
-        OldLegacyDev, 
+        OldLegacyDev,
         NewLegacyDev,
         Number
         );
@@ -330,129 +335,127 @@ Returns:
   if (KeyValue < FILE_OPTION_OFFSET) {
     if (KeyValue < NORMAL_GOTO_OFFSET) {
       switch (KeyValue) {
-        case KEY_VALUE_BOOT_FROM_FILE :
-          Private->FeCurrentState = BOOT_FROM_FILE_STATE;
+      case KEY_VALUE_BOOT_FROM_FILE:
+        Private->FeCurrentState = BOOT_FROM_FILE_STATE;
 
-          //
-          // Exit Bmm main formset to send File Explorer formset.
-          //
-          CreateCallbackPacket (Packet, EXIT_REQUIRED);
+        //
+        // Exit Bmm main formset to send File Explorer formset.
+        //
+        CreateCallbackPacket (Packet, EXIT_REQUIRED);
 
-          break;          
-        
-        case FORM_BOOT_ADD_ID :
-          Private->FeCurrentState = ADD_BOOT_OPTION_STATE;
- 
-          //
-          // Exit Bmm main formset to send File Explorer formset.
-          //
-          CreateCallbackPacket (Packet, EXIT_REQUIRED);
-          break;
+        break;
 
-        case FORM_DRV_ADD_FILE_ID :
-          Private->FeCurrentState = ADD_DRIVER_OPTION_STATE;
+      case FORM_BOOT_ADD_ID:
+        Private->FeCurrentState = ADD_BOOT_OPTION_STATE;
 
-          //
-          // Exit Bmm main formset to send File Explorer formset.
-          //
-          CreateCallbackPacket (Packet, EXIT_REQUIRED);
+        //
+        // Exit Bmm main formset to send File Explorer formset.
+        //
+        CreateCallbackPacket (Packet, EXIT_REQUIRED);
+        break;
 
-          break;
+      case FORM_DRV_ADD_FILE_ID:
+        Private->FeCurrentState = ADD_DRIVER_OPTION_STATE;
 
-        case FORM_DRV_ADD_HANDLE_ID :
-          CleanUpPage (FORM_DRV_ADD_HANDLE_ID, Private);
-          UpdateDrvAddHandlePage (Private);
-          break;
+        //
+        // Exit Bmm main formset to send File Explorer formset.
+        //
+        CreateCallbackPacket (Packet, EXIT_REQUIRED);
 
-        case FORM_BOOT_DEL_ID :
-          CleanUpPage (FORM_BOOT_DEL_ID, Private);
-          UpdateBootDelPage (Private);
-          break;
+        break;
 
-        case FORM_BOOT_CHG_ID :
-        case FORM_DRV_CHG_ID :
-          UpdatePageBody (KeyValue, Private);
-          break;
-          
-        case FORM_DRV_DEL_ID :
-          CleanUpPage (FORM_DRV_DEL_ID, Private);
-          UpdateDrvDelPage (Private);
-          break;
-          
-        case FORM_BOOT_NEXT_ID :
-          CleanUpPage (FORM_BOOT_NEXT_ID, Private);
-          UpdateBootNextPage (Private);
-          break;
+      case FORM_DRV_ADD_HANDLE_ID:
+        CleanUpPage (FORM_DRV_ADD_HANDLE_ID, Private);
+        UpdateDrvAddHandlePage (Private);
+        break;
 
-        case FORM_TIME_OUT_ID :
-          CleanUpPage (FORM_TIME_OUT_ID, Private);
-          UpdateTimeOutPage (Private);
-          break;
+      case FORM_BOOT_DEL_ID:
+        CleanUpPage (FORM_BOOT_DEL_ID, Private);
+        UpdateBootDelPage (Private);
+        break;
 
-        case FORM_RESET :
-          gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
-          return EFI_UNSUPPORTED;
-          
-        case FORM_CON_IN_ID :
-        case FORM_CON_OUT_ID :
-        case FORM_CON_ERR_ID :
-          UpdatePageBody (KeyValue, Private);           
-          break;
+      case FORM_BOOT_CHG_ID:
+      case FORM_DRV_CHG_ID:
+        UpdatePageBody (KeyValue, Private);
+        break;
 
-        case FORM_CON_COM_ID :
-          CleanUpPage (FORM_CON_COM_ID, Private);
-          UpdateConCOMPage (Private);
-          break;
-          
-        case FORM_SET_FD_ORDER_ID:
-        case FORM_SET_HD_ORDER_ID:
-        case FORM_SET_CD_ORDER_ID:
-        case FORM_SET_NET_ORDER_ID:
-        case FORM_SET_BEV_ORDER_ID:
-          CleanUpPage (KeyValue, Private);
-          UpdateSetLegacyDeviceOrderPage (KeyValue, Private);
-          break;
+      case FORM_DRV_DEL_ID:
+        CleanUpPage (FORM_DRV_DEL_ID, Private);
+        UpdateDrvDelPage (Private);
+        break;
 
-        case KEY_VALUE_SAVE_AND_EXIT :
-        case KEY_VALUE_NO_SAVE_AND_EXIT :
-          
-          if (KeyValue == KEY_VALUE_SAVE_AND_EXIT) {
-            Status = ApplyChangeHandler (Private, CurrentFakeNVMap, Private->BmmPreviousPageId);
-            if (EFI_ERROR (Status)) {
-              return Status;
-            }
-          } else if (KeyValue == KEY_VALUE_NO_SAVE_AND_EXIT) {
-            DiscardChangeHandler (Private, CurrentFakeNVMap);
+      case FORM_BOOT_NEXT_ID:
+        CleanUpPage (FORM_BOOT_NEXT_ID, Private);
+        UpdateBootNextPage (Private);
+        break;
+
+      case FORM_TIME_OUT_ID:
+        CleanUpPage (FORM_TIME_OUT_ID, Private);
+        UpdateTimeOutPage (Private);
+        break;
+
+      case FORM_RESET:
+        gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
+        return EFI_UNSUPPORTED;
+
+      case FORM_CON_IN_ID:
+      case FORM_CON_OUT_ID:
+      case FORM_CON_ERR_ID:
+        UpdatePageBody (KeyValue, Private);
+        break;
+
+      case FORM_CON_COM_ID:
+        CleanUpPage (FORM_CON_COM_ID, Private);
+        UpdateConCOMPage (Private);
+        break;
+
+      case FORM_SET_FD_ORDER_ID:
+      case FORM_SET_HD_ORDER_ID:
+      case FORM_SET_CD_ORDER_ID:
+      case FORM_SET_NET_ORDER_ID:
+      case FORM_SET_BEV_ORDER_ID:
+        CleanUpPage (KeyValue, Private);
+        UpdateSetLegacyDeviceOrderPage (KeyValue, Private);
+        break;
+
+      case KEY_VALUE_SAVE_AND_EXIT:
+      case KEY_VALUE_NO_SAVE_AND_EXIT:
+
+        if (KeyValue == KEY_VALUE_SAVE_AND_EXIT) {
+          Status = ApplyChangeHandler (Private, CurrentFakeNVMap, Private->BmmPreviousPageId);
+          if (EFI_ERROR (Status)) {
+            return Status;
           }
+        } else if (KeyValue == KEY_VALUE_NO_SAVE_AND_EXIT) {
+          DiscardChangeHandler (Private, CurrentFakeNVMap);
+        }
+        //
+        // Tell browser not to ask for confirmation of changes,
+        // since we have already applied or discarded.
+        //
+        CreateCallbackPacket (Packet, NV_NOT_CHANGED);
+        break;
 
-          //
-          // Tell browser not to ask for confirmation of changes,
-          // since we have already applied or discarded.
-          //
-          CreateCallbackPacket (Packet, NV_NOT_CHANGED);
-          break;
-
-        default :
-          break;
+      default:
+        break;
       }
-    } else if ((KeyValue >= TERMINAL_OPTION_OFFSET) && 
-               (KeyValue < CONSOLE_OPTION_OFFSET)   ) {
-      Index2 = (UINT16) (KeyValue - TERMINAL_OPTION_OFFSET);
-      Private->CurrentTerminal = Index2;
+    } else if ((KeyValue >= TERMINAL_OPTION_OFFSET) && (KeyValue < CONSOLE_OPTION_OFFSET)) {
+      Index2                    = (UINT16) (KeyValue - TERMINAL_OPTION_OFFSET);
+      Private->CurrentTerminal  = Index2;
 
       CleanUpPage (FORM_CON_COM_SETUP_ID, Private);
       UpdateTerminalPage (Private);
 
     } else if (KeyValue >= HANDLE_OPTION_OFFSET) {
-      Index2 = (UINT16) (KeyValue - HANDLE_OPTION_OFFSET);
+      Index2                  = (UINT16) (KeyValue - HANDLE_OPTION_OFFSET);
 
-      NewMenuEntry = BOpt_GetMenuEntry (&DriverMenu, Index2);
-      Private->HandleContext = (BM_HANDLE_CONTEXT *) NewMenuEntry->VariableContext;
+      NewMenuEntry            = BOpt_GetMenuEntry (&DriverMenu, Index2);
+      Private->HandleContext  = (BM_HANDLE_CONTEXT *) NewMenuEntry->VariableContext;
 
       CleanUpPage (FORM_DRV_ADD_HANDLE_DESC_ID, Private);
 
-      Private->MenuEntry = NewMenuEntry;
-      Private->LoadContext->FilePathList = Private->HandleContext->DevicePath;
+      Private->MenuEntry                  = NewMenuEntry;
+      Private->LoadContext->FilePathList  = Private->HandleContext->DevicePath;
 
       UpdateDriverAddHandleDescPage (Private);
     }
@@ -468,155 +471,162 @@ ApplyChangeHandler (
   IN  FORM_ID                         FormId
   )
 {
-  BM_CONSOLE_CONTEXT                  *NewConsoleContext;
-  BM_TERMINAL_CONTEXT                 *NewTerminalContext;
-  BM_LOAD_CONTEXT                     *NewLoadContext;
-  BM_MENU_ENTRY                       *NewMenuEntry;
-  EFI_STATUS                          Status;
-  UINT16                              Index;
+  BM_CONSOLE_CONTEXT  *NewConsoleContext;
+  BM_TERMINAL_CONTEXT *NewTerminalContext;
+  BM_LOAD_CONTEXT     *NewLoadContext;
+  BM_MENU_ENTRY       *NewMenuEntry;
+  EFI_STATUS          Status;
+  UINT16              Index;
 
   Status = EFI_SUCCESS;
 
   switch (FormId) {
-    case FORM_SET_FD_ORDER_ID:
-    case FORM_SET_HD_ORDER_ID:
-    case FORM_SET_CD_ORDER_ID:
-    case FORM_SET_NET_ORDER_ID:
-    case FORM_SET_BEV_ORDER_ID:
-      Var_UpdateBBSOption (Private);
-      break;
+  case FORM_SET_FD_ORDER_ID:
+  case FORM_SET_HD_ORDER_ID:
+  case FORM_SET_CD_ORDER_ID:
+  case FORM_SET_NET_ORDER_ID:
+  case FORM_SET_BEV_ORDER_ID:
+    Var_UpdateBBSOption (Private);
+    break;
 
-    case FORM_BOOT_DEL_ID :
-      for (Index = 0; Index < BootOptionMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&BootOptionMenu, Index);
-        NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
-        NewLoadContext->Deleted = CurrentFakeNVMap->BootOptionDel[Index];
-      }                                    
-      Var_DelBootOption ();                
-      break;
+  case FORM_BOOT_DEL_ID:
+    for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
+      NewMenuEntry            = BOpt_GetMenuEntry (&BootOptionMenu, Index);
+      NewLoadContext          = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
+      NewLoadContext->Deleted = CurrentFakeNVMap->BootOptionDel[Index];
+    }
 
-    case FORM_DRV_DEL_ID :
-      for (Index = 0; Index < DriverOptionMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&DriverOptionMenu, Index);
-        NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
-        NewLoadContext->Deleted = CurrentFakeNVMap->DriverOptionDel[Index];
-      }                                    
-      Var_DelDriverOption();
-      break;
-    
-    case FORM_BOOT_CHG_ID :
-      Status = Var_UpdateBootOrder(Private);
-      break;
-      
-    case FORM_DRV_CHG_ID :
-      Status = Var_UpdateDriverOrder(Private);
-      break;
+    Var_DelBootOption ();
+    break;
 
-    case FORM_TIME_OUT_ID :
-      Status = gRT->SetVariable (
-                      L"Timeout",
-                      &gEfiGlobalVariableGuid,
-                      VAR_FLAG,                      
-                      sizeof (UINT16),
-                      &(CurrentFakeNVMap->BootTimeOut)
-                      );
-      if (EFI_ERROR (Status)) {
-        goto Error;
-      }
-      Private->BmmOldFakeNVData.BootTimeOut = CurrentFakeNVMap->BootTimeOut;
-      break;
-    
-    case FORM_BOOT_NEXT_ID :
-      Status = Var_UpdateBootNext (Private);
-      break;
+  case FORM_DRV_DEL_ID:
+    for (Index = 0; Index < DriverOptionMenu.MenuNumber; Index++) {
+      NewMenuEntry            = BOpt_GetMenuEntry (&DriverOptionMenu, Index);
+      NewLoadContext          = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
+      NewLoadContext->Deleted = CurrentFakeNVMap->DriverOptionDel[Index];
+    }
 
-    case FORM_CON_COM_SETUP_ID :
-      NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Private->CurrentTerminal);
+    Var_DelDriverOption ();
+    break;
 
-      NewTerminalContext = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
+  case FORM_BOOT_CHG_ID:
+    Status = Var_UpdateBootOrder (Private);
+    break;
 
-      NewTerminalContext->BaudRateIndex = CurrentFakeNVMap->COMBaudRate;
-      NewTerminalContext->BaudRate = BaudRateList[CurrentFakeNVMap->COMBaudRate].Value;
-      NewTerminalContext->DataBitsIndex = CurrentFakeNVMap->COMDataRate;
-      NewTerminalContext->DataBits = (UINT8)DataBitsList[CurrentFakeNVMap->COMDataRate].Value;
-      NewTerminalContext->StopBitsIndex = CurrentFakeNVMap->COMStopBits;
-      NewTerminalContext->StopBits = (UINT8)StopBitsList[CurrentFakeNVMap->COMStopBits].Value;
-      NewTerminalContext->ParityIndex = CurrentFakeNVMap->COMParity;
-      NewTerminalContext->Parity = (UINT8)ParityList[CurrentFakeNVMap->COMParity].Value;
-      NewTerminalContext->TerminalType = CurrentFakeNVMap->COMTerminalType;
-        
-      ChangeTerminalDevicePath (
-        NewTerminalContext->DevicePath, 
-        FALSE
-        );
+  case FORM_DRV_CHG_ID:
+    Status = Var_UpdateDriverOrder (Private);
+    break;
 
-      Var_UpdateConsoleInpOption ();
-      Var_UpdateConsoleOutOption ();
-      Var_UpdateErrorOutOption (); 
-      break;
-    
-    case FORM_CON_IN_ID :
-      for (Index = 0; Index < ConsoleInpMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&ConsoleInpMenu, Index);
-        NewConsoleContext = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
-        NewConsoleContext->IsActive = CurrentFakeNVMap->ConsoleCheck[Index];
-      }                                    
-      for (Index = 0; Index < TerminalMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Index);
-        NewTerminalContext = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
-        NewTerminalContext->IsConIn = \
-          CurrentFakeNVMap->ConsoleCheck[Index + ConsoleInpMenu.MenuNumber];
-      }
-      Var_UpdateConsoleInpOption ();
-      break;
-      
-    case FORM_CON_OUT_ID :
-      for (Index = 0; Index < ConsoleOutMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&ConsoleOutMenu, Index);
-        NewConsoleContext = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
-        NewConsoleContext->IsActive = CurrentFakeNVMap->ConsoleCheck[Index];
-      }                                    
-      for (Index = 0; Index < TerminalMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Index);
-        NewTerminalContext = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
-        NewTerminalContext->IsConOut = \
-          CurrentFakeNVMap->ConsoleCheck[Index + ConsoleOutMenu.MenuNumber];
-      }
-      Var_UpdateConsoleOutOption ();
-      break;
-      
-    case FORM_CON_ERR_ID :
-      for (Index = 0; Index < ConsoleErrMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&ConsoleErrMenu, Index);
-        NewConsoleContext = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
-        NewConsoleContext->IsActive = CurrentFakeNVMap->ConsoleCheck[Index];
-      }                                    
-      for (Index = 0; Index < TerminalMenu.MenuNumber; Index ++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Index);
-        NewTerminalContext = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
-        NewTerminalContext->IsStdErr = \
-          CurrentFakeNVMap->ConsoleCheck[Index + ConsoleErrMenu.MenuNumber];
-      }
-      Var_UpdateErrorOutOption();
-      break;
+  case FORM_TIME_OUT_ID:
+    Status = gRT->SetVariable (
+                    L"Timeout",
+                    &gEfiGlobalVariableGuid,
+                    VAR_FLAG,
+                    sizeof (UINT16),
+                    &(CurrentFakeNVMap->BootTimeOut)
+                    );
+    if (EFI_ERROR (Status)) {
+      goto Error;
+    }
 
-    case FORM_DRV_ADD_HANDLE_DESC_ID:
-      Status = Var_UpdateDriverOption(
-                 Private,
-                 Private->BmmHiiHandle,
-                 CurrentFakeNVMap->DriverAddHandleDesc,
-                 CurrentFakeNVMap->DriverAddHandleOptionalData,
-                 CurrentFakeNVMap->DriverAddForceReconnect
-                 );
-      if (EFI_ERROR (Status)) {
-        goto Error;
-      }
-      BOpt_GetDriverOptions(Private);
-      CreateMenuStringToken (Private, Private->BmmHiiHandle, &DriverOptionMenu);
-      break;
-      
-    default :
-      break;
+    Private->BmmOldFakeNVData.BootTimeOut = CurrentFakeNVMap->BootTimeOut;
+    break;
+
+  case FORM_BOOT_NEXT_ID:
+    Status = Var_UpdateBootNext (Private);
+    break;
+
+  case FORM_CON_COM_SETUP_ID:
+    NewMenuEntry                      = BOpt_GetMenuEntry (&TerminalMenu, Private->CurrentTerminal);
+
+    NewTerminalContext                = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
+
+    NewTerminalContext->BaudRateIndex = CurrentFakeNVMap->COMBaudRate;
+    NewTerminalContext->BaudRate      = BaudRateList[CurrentFakeNVMap->COMBaudRate].Value;
+    NewTerminalContext->DataBitsIndex = CurrentFakeNVMap->COMDataRate;
+    NewTerminalContext->DataBits      = (UINT8) DataBitsList[CurrentFakeNVMap->COMDataRate].Value;
+    NewTerminalContext->StopBitsIndex = CurrentFakeNVMap->COMStopBits;
+    NewTerminalContext->StopBits      = (UINT8) StopBitsList[CurrentFakeNVMap->COMStopBits].Value;
+    NewTerminalContext->ParityIndex   = CurrentFakeNVMap->COMParity;
+    NewTerminalContext->Parity        = (UINT8) ParityList[CurrentFakeNVMap->COMParity].Value;
+    NewTerminalContext->TerminalType  = CurrentFakeNVMap->COMTerminalType;
+
+    ChangeTerminalDevicePath (
+      NewTerminalContext->DevicePath,
+      FALSE
+      );
+
+    Var_UpdateConsoleInpOption ();
+    Var_UpdateConsoleOutOption ();
+    Var_UpdateErrorOutOption ();
+    break;
+
+  case FORM_CON_IN_ID:
+    for (Index = 0; Index < ConsoleInpMenu.MenuNumber; Index++) {
+      NewMenuEntry                = BOpt_GetMenuEntry (&ConsoleInpMenu, Index);
+      NewConsoleContext           = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
+      NewConsoleContext->IsActive = CurrentFakeNVMap->ConsoleCheck[Index];
+    }
+
+    for (Index = 0; Index < TerminalMenu.MenuNumber; Index++) {
+      NewMenuEntry                = BOpt_GetMenuEntry (&TerminalMenu, Index);
+      NewTerminalContext          = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
+      NewTerminalContext->IsConIn = CurrentFakeNVMap->ConsoleCheck[Index + ConsoleInpMenu.MenuNumber];
+    }
+
+    Var_UpdateConsoleInpOption ();
+    break;
+
+  case FORM_CON_OUT_ID:
+    for (Index = 0; Index < ConsoleOutMenu.MenuNumber; Index++) {
+      NewMenuEntry                = BOpt_GetMenuEntry (&ConsoleOutMenu, Index);
+      NewConsoleContext           = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
+      NewConsoleContext->IsActive = CurrentFakeNVMap->ConsoleCheck[Index];
+    }
+
+    for (Index = 0; Index < TerminalMenu.MenuNumber; Index++) {
+      NewMenuEntry                  = BOpt_GetMenuEntry (&TerminalMenu, Index);
+      NewTerminalContext            = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
+      NewTerminalContext->IsConOut  = CurrentFakeNVMap->ConsoleCheck[Index + ConsoleOutMenu.MenuNumber];
+    }
+
+    Var_UpdateConsoleOutOption ();
+    break;
+
+  case FORM_CON_ERR_ID:
+    for (Index = 0; Index < ConsoleErrMenu.MenuNumber; Index++) {
+      NewMenuEntry                = BOpt_GetMenuEntry (&ConsoleErrMenu, Index);
+      NewConsoleContext           = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
+      NewConsoleContext->IsActive = CurrentFakeNVMap->ConsoleCheck[Index];
+    }
+
+    for (Index = 0; Index < TerminalMenu.MenuNumber; Index++) {
+      NewMenuEntry                  = BOpt_GetMenuEntry (&TerminalMenu, Index);
+      NewTerminalContext            = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
+      NewTerminalContext->IsStdErr  = CurrentFakeNVMap->ConsoleCheck[Index + ConsoleErrMenu.MenuNumber];
+    }
+
+    Var_UpdateErrorOutOption ();
+    break;
+
+  case FORM_DRV_ADD_HANDLE_DESC_ID:
+    Status = Var_UpdateDriverOption (
+              Private,
+              Private->BmmHiiHandle,
+              CurrentFakeNVMap->DriverAddHandleDesc,
+              CurrentFakeNVMap->DriverAddHandleOptionalData,
+              CurrentFakeNVMap->DriverAddForceReconnect
+              );
+    if (EFI_ERROR (Status)) {
+      goto Error;
+    }
+
+    BOpt_GetDriverOptions (Private);
+    CreateMenuStringToken (Private, Private->BmmHiiHandle, &DriverOptionMenu);
+    break;
+
+  default:
+    break;
   }
 
 Error:
@@ -629,56 +639,56 @@ DiscardChangeHandler (
   IN  BMM_FAKE_NV_DATA                *CurrentFakeNVMap
   )
 {
-  UINT16                              Index;
+  UINT16  Index;
 
   switch (Private->BmmPreviousPageId) {
-    case FORM_BOOT_CHG_ID :
-    case FORM_DRV_CHG_ID  :
-      EfiCopyMem (CurrentFakeNVMap->OptionOrder, Private->BmmOldFakeNVData.OptionOrder, 100);
-      break;
+  case FORM_BOOT_CHG_ID:
+  case FORM_DRV_CHG_ID:
+    EfiCopyMem (CurrentFakeNVMap->OptionOrder, Private->BmmOldFakeNVData.OptionOrder, 100);
+    break;
 
-    case FORM_BOOT_DEL_ID :
-      for (Index = 0; Index < BootOptionMenu.MenuNumber; Index ++) {
-        CurrentFakeNVMap->BootOptionDel[Index] = 0x00;
-      }
-      break;
-      
-    case FORM_DRV_DEL_ID :
-      for (Index = 0; Index < DriverOptionMenu.MenuNumber; Index ++) {
-        CurrentFakeNVMap->DriverOptionDel[Index] = 0x00;
-      }
-      break;
-      
-    case FORM_BOOT_NEXT_ID :
-      CurrentFakeNVMap->BootNext = Private->BmmOldFakeNVData.BootNext;
-      break;
-    
-    case FORM_TIME_OUT_ID :
-      CurrentFakeNVMap->BootTimeOut = Private->BmmOldFakeNVData.BootTimeOut;
-      break;
-  
-    case FORM_DRV_ADD_HANDLE_DESC_ID :
-    case FORM_DRV_ADD_FILE_ID:
-    case FORM_DRV_ADD_HANDLE_ID:
-      CurrentFakeNVMap->DriverAddHandleDesc[0] = 0x0000;
-      CurrentFakeNVMap->DriverAddHandleOptionalData[0] = 0x0000;
-      break;
+  case FORM_BOOT_DEL_ID:
+    for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
+      CurrentFakeNVMap->BootOptionDel[Index] = 0x00;
+    }
+    break;
 
-    default :
-      break;
+  case FORM_DRV_DEL_ID:
+    for (Index = 0; Index < DriverOptionMenu.MenuNumber; Index++) {
+      CurrentFakeNVMap->DriverOptionDel[Index] = 0x00;
+    }
+    break;
+
+  case FORM_BOOT_NEXT_ID:
+    CurrentFakeNVMap->BootNext = Private->BmmOldFakeNVData.BootNext;
+    break;
+
+  case FORM_TIME_OUT_ID:
+    CurrentFakeNVMap->BootTimeOut = Private->BmmOldFakeNVData.BootTimeOut;
+    break;
+
+  case FORM_DRV_ADD_HANDLE_DESC_ID:
+  case FORM_DRV_ADD_FILE_ID:
+  case FORM_DRV_ADD_HANDLE_ID:
+    CurrentFakeNVMap->DriverAddHandleDesc[0]          = 0x0000;
+    CurrentFakeNVMap->DriverAddHandleOptionalData[0]  = 0x0000;
+    break;
+
+  default:
+    break;
   }
 }
 
 EFI_STATUS
 EFIAPI
 NvWrite (
-  IN     EFI_FORM_CALLBACK_PROTOCOL  *This,
-  IN     CHAR16                      *VariableName,
-  IN     EFI_GUID                    *VendorGuid,
-  OUT    UINT32                       Attributes OPTIONAL,
-  IN OUT UINTN                        DataSize,
-  OUT    VOID                        *Buffer,
-  OUT    BOOLEAN                     *ResetRequired
+  IN     EFI_FORM_CALLBACK_PROTOCOL              *This,
+  IN     CHAR16                                  *VariableName,
+  IN     EFI_GUID                                *VendorGuid,
+  OUT    UINT32                                  Attributes OPTIONAL,
+  IN OUT UINTN                                   DataSize,
+  OUT    VOID                                    *Buffer,
+  OUT    BOOLEAN                                 *ResetRequired
   )
 {
   //
@@ -687,10 +697,10 @@ NvWrite (
   return EFI_SUCCESS;
 }
 
-
-
 EFI_STATUS
-InitializeBM ()
+InitializeBM (
+  VOID
+  )
 /*++
 Routine Description:
 
@@ -710,24 +720,23 @@ Returns:
   
 --*/
 {
-  EFI_LEGACY_BIOS_PROTOCOL        *LegacyBios;
-  EFI_HII_PACKAGES                *PackageList;
-  BMM_CALLBACK_DATA               *BmmCallbackInfo;
-  EFI_HII_PROTOCOL                *Hii;
-  EFI_HII_HANDLE                  HiiHandle;
-  EFI_STATUS                      Status;
-  EFI_HANDLE                      Handle;
-  UINT8                           *Ptr;
-  UINT8                           *Location;
-  
-  Status = EFI_SUCCESS;
-  UpdateData = NULL;
+  EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
+  EFI_HII_PACKAGES          *PackageList;
+  BMM_CALLBACK_DATA         *BmmCallbackInfo;
+  EFI_HII_PROTOCOL          *Hii;
+  EFI_HII_HANDLE            HiiHandle;
+  EFI_STATUS                Status;
+  EFI_HANDLE                Handle;
+  UINT8                     *Ptr;
+  UINT8                     *Location;
+
+  Status      = EFI_SUCCESS;
+  UpdateData  = NULL;
   //
   // Initialize EfiUtilityLib and EfiDriverLib
   // Since many functions in UtilityLib must be used and
   // SetupBrowser use DriverLib
   //
-   
   //
   // There should be only one EFI_HII_PROTOCOL Image
   //
@@ -735,7 +744,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Create CallbackData structures for Driver Callback
   //
@@ -743,50 +751,44 @@ Returns:
   if (!BmmCallbackInfo) {
     return EFI_OUT_OF_RESOURCES;
   }
-
   //
   // Create LoadOption in BmmCallbackInfo for Driver Callback
   //
-  Ptr = EfiAllocateZeroPool (sizeof (BM_LOAD_CONTEXT) + 
-                             sizeof (BM_FILE_CONTEXT) +
-                             sizeof (BM_HANDLE_CONTEXT) +
-                             sizeof (BM_MENU_ENTRY)
-                             );
+  Ptr = EfiAllocateZeroPool (sizeof (BM_LOAD_CONTEXT) + sizeof (BM_FILE_CONTEXT) + sizeof (BM_HANDLE_CONTEXT) + sizeof (BM_MENU_ENTRY));
   if (!Ptr) {
     SafeFreePool (BmmCallbackInfo);
     return EFI_OUT_OF_RESOURCES;
   }
-   
   //
   // Initialize Bmm callback data.
   //
-  BmmCallbackInfo->LoadContext = (BM_LOAD_CONTEXT*)Ptr;
+  BmmCallbackInfo->LoadContext = (BM_LOAD_CONTEXT *) Ptr;
   Ptr += sizeof (BM_LOAD_CONTEXT);
-  
-  BmmCallbackInfo->FileContext = (BM_FILE_CONTEXT*)Ptr;
-  Ptr += sizeof (BM_FILE_CONTEXT);
-  
-  BmmCallbackInfo->HandleContext = (BM_HANDLE_CONTEXT*)Ptr;
-  Ptr += sizeof (BM_HANDLE_CONTEXT);
-  
-  BmmCallbackInfo->MenuEntry = (BM_MENU_ENTRY*)Ptr;
 
-  BmmCallbackInfo->BmmFakeNvData = &BmmCallbackInfo->BmmOldFakeNVData;
+  BmmCallbackInfo->FileContext = (BM_FILE_CONTEXT *) Ptr;
+  Ptr += sizeof (BM_FILE_CONTEXT);
+
+  BmmCallbackInfo->HandleContext = (BM_HANDLE_CONTEXT *) Ptr;
+  Ptr += sizeof (BM_HANDLE_CONTEXT);
+
+  BmmCallbackInfo->MenuEntry      = (BM_MENU_ENTRY *) Ptr;
+
+  BmmCallbackInfo->BmmFakeNvData  = &BmmCallbackInfo->BmmOldFakeNVData;
 
   EfiZeroMem (BmmCallbackInfo->BmmFakeNvData, sizeof (BMM_FAKE_NV_DATA));
 
-  BmmCallbackInfo->Signature = BMM_CALLBACK_DATA_SIGNATURE;
-  BmmCallbackInfo->Hii = Hii;
+  BmmCallbackInfo->Signature                  = BMM_CALLBACK_DATA_SIGNATURE;
+  BmmCallbackInfo->Hii                        = Hii;
   BmmCallbackInfo->BmmDriverCallback.NvRead   = NULL;
   BmmCallbackInfo->BmmDriverCallback.NvWrite  = NvWrite;
   BmmCallbackInfo->BmmDriverCallback.Callback = DriverCallback;
-  BmmCallbackInfo->BmmPreviousPageId = FORM_MAIN_ID;
-  BmmCallbackInfo->BmmCurrentPageId = FORM_MAIN_ID;
-  BmmCallbackInfo->FeDriverCallback.NvRead   = NULL;
-  BmmCallbackInfo->FeDriverCallback.NvWrite  = NvWrite;
-  BmmCallbackInfo->FeDriverCallback.Callback = FileExplorerCallback;
-  BmmCallbackInfo->FeCurrentState  = INACTIVE_STATE;
-  BmmCallbackInfo->FeDisplayContext = UNKNOWN_CONTEXT;
+  BmmCallbackInfo->BmmPreviousPageId          = FORM_MAIN_ID;
+  BmmCallbackInfo->BmmCurrentPageId           = FORM_MAIN_ID;
+  BmmCallbackInfo->FeDriverCallback.NvRead    = NULL;
+  BmmCallbackInfo->FeDriverCallback.NvWrite   = NvWrite;
+  BmmCallbackInfo->FeDriverCallback.Callback  = FileExplorerCallback;
+  BmmCallbackInfo->FeCurrentState             = INACTIVE_STATE;
+  BmmCallbackInfo->FeDisplayContext           = UNKNOWN_CONTEXT;
 
   //
   // Install bmm callback protocol interface
@@ -794,28 +796,28 @@ Returns:
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
                   &Handle,
-                  &gEfiFormCallbackProtocolGuid, 
+                  &gEfiFormCallbackProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &BmmCallbackInfo->BmmDriverCallback
                   );
-  
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   BmmCallbackInfo->BmmCallbackHandle = Handle;
-  
+
   //
   // Install file explorer callback protocol interface
   //
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
                   &Handle,
-                  &gEfiFormCallbackProtocolGuid, 
+                  &gEfiFormCallbackProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &BmmCallbackInfo->FeDriverCallback
                   );
-  
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -826,17 +828,17 @@ Returns:
   // Post our VFR to the HII database.
   //
   PackageList = PreparePackages (1, &gBdsStringPackGuid, bmBin);
-  Status = Hii->NewPack (Hii, PackageList, &HiiHandle);
+  Status      = Hii->NewPack (Hii, PackageList, &HiiHandle);
   gBS->FreePool (PackageList);
-  
+
   BmmCallbackInfo->BmmHiiHandle = HiiHandle;
 
-  PackageList = PreparePackages (1, &gBdsStringPackGuid, FEBin);
-  Status = Hii->NewPack (Hii, PackageList, &HiiHandle);
+  PackageList                   = PreparePackages (1, &gBdsStringPackGuid, FEBin);
+  Status                        = Hii->NewPack (Hii, PackageList, &HiiHandle);
   gBS->FreePool (PackageList);
-  
+
   BmmCallbackInfo->FeHiiHandle = HiiHandle;
-  
+
   //
   // Allocate space for creation of Buffer
   //
@@ -846,13 +848,12 @@ Returns:
     SafeFreePool (BmmCallbackInfo);
     return EFI_OUT_OF_RESOURCES;
   }
-
   //
   // Initialize UpdateData structure
   //
   RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) BmmCallbackInfo->BmmCallbackHandle, FALSE, 0, 0);
 
-  Location = (UINT8 *)&UpdateData->Data;
+  Location = (UINT8 *) &UpdateData->Data;
 
   InitializeStringDepository ();
 
@@ -873,9 +874,9 @@ Returns:
     BmmCallbackInfo->CurrentTerminal = 0;
     UpdateTerminalPage (BmmCallbackInfo);
   }
-  
-  Location = (UINT8 *)&UpdateData->Data;
-  Status = EfiLibLocateProtocol (&gEfiLegacyBiosProtocolGuid, &LegacyBios);
+
+  Location  = (UINT8 *) &UpdateData->Data;
+  Status    = EfiLibLocateProtocol (&gEfiLegacyBiosProtocolGuid, &LegacyBios);
   if (!EFI_ERROR (Status)) {
     //
     // If LegacyBios Protocol is installed, add 3 tags about legacy boot option
@@ -884,70 +885,69 @@ Returns:
     UpdateData->DataCount = 5;
     CreateGotoOpCode (
       FORM_SET_FD_ORDER_ID,
-      STRING_TOKEN(STR_FORM_SET_FD_ORDER_TITLE),
-      STRING_TOKEN(STR_FORM_SET_FD_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_FD_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_FD_ORDER_TITLE),
       EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
       FORM_SET_FD_ORDER_ID,
       Location
       );
 
-    Location = Location + ((EFI_IFR_OP_HEADER *)Location)->Length;
+    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
 
     CreateGotoOpCode (
       FORM_SET_HD_ORDER_ID,
-      STRING_TOKEN(STR_FORM_SET_HD_ORDER_TITLE),
-      STRING_TOKEN(STR_FORM_SET_HD_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_HD_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_HD_ORDER_TITLE),
       EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
       FORM_SET_HD_ORDER_ID,
       Location
       );
-                  
-    Location = Location + ((EFI_IFR_OP_HEADER *)Location)->Length;
+
+    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
 
     CreateGotoOpCode (
       FORM_SET_CD_ORDER_ID,
-      STRING_TOKEN(STR_FORM_SET_CD_ORDER_TITLE),
-      STRING_TOKEN(STR_FORM_SET_CD_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_CD_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_CD_ORDER_TITLE),
       EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
       FORM_SET_CD_ORDER_ID,
       Location
       );
-      
-    Location = Location + ((EFI_IFR_OP_HEADER *)Location)->Length;
-                  
+
+    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
+
     CreateGotoOpCode (
       FORM_SET_NET_ORDER_ID,
-      STRING_TOKEN(STR_FORM_SET_NET_ORDER_TITLE),
-      STRING_TOKEN(STR_FORM_SET_NET_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_NET_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_NET_ORDER_TITLE),
       EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
       FORM_SET_NET_ORDER_ID,
       Location
       );
 
-    Location = Location + ((EFI_IFR_OP_HEADER *)Location)->Length;
-                  
+    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
+
     CreateGotoOpCode (
       FORM_SET_BEV_ORDER_ID,
-      STRING_TOKEN(STR_FORM_SET_BEV_ORDER_TITLE),
-      STRING_TOKEN(STR_FORM_SET_BEV_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_BEV_ORDER_TITLE),
+      STRING_TOKEN (STR_FORM_SET_BEV_ORDER_TITLE),
       EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
       FORM_SET_BEV_ORDER_ID,
       Location
       );
 
     Hii->UpdateForm (
-           Hii, 
-           BmmCallbackInfo->BmmHiiHandle, 
-           (EFI_FORM_LABEL)FORM_BOOT_LEGACY_DEVICE_ID, 
-           TRUE, 
-           UpdateData
-           );  
-  }    
-
+          Hii,
+          BmmCallbackInfo->BmmHiiHandle,
+          (EFI_FORM_LABEL) FORM_BOOT_LEGACY_DEVICE_ID,
+          TRUE,
+          UpdateData
+          );
+  }
   //
   // Dispatch BMM main formset and File Explorer formset.
   //
-  FormSetDispatcher(BmmCallbackInfo);
+  FormSetDispatcher (BmmCallbackInfo);
 
   Hii->ResetStrings (Hii, HiiHandle);
 
@@ -957,7 +957,7 @@ Returns:
     return Status;
   }
 
-  FreeAllMenu();
+  FreeAllMenu ();
 
   SafeFreePool (BmmCallbackInfo->LoadContext);
   BmmCallbackInfo->LoadContext = NULL;
@@ -965,7 +965,7 @@ Returns:
   BmmCallbackInfo = NULL;
   SafeFreePool (UpdateData);
   UpdateData = NULL;
-  
+
   return Status;
 }
 
@@ -986,23 +986,28 @@ InitAllMenu (
   InitializeListHead (&ConsoleOutMenu.Head);
   InitializeListHead (&ConsoleErrMenu.Head);
   InitializeListHead (&TerminalMenu.Head);
-  LocateSerialIo();
-  GetAllConsoles();
+  LocateSerialIo ();
+  GetAllConsoles ();
 }
 
 VOID
-FreeAllMenu () {
-  BOpt_FreeMenu(&DirectoryMenu);
-  BOpt_FreeMenu(&FsOptionMenu);
-  BOpt_FreeMenu(&BootOptionMenu);
-  BOpt_FreeMenu(&DriverOptionMenu);
-  BOpt_FreeMenu(&DriverMenu);
-  BOpt_FreeLegacyOptions();
-  FreeAllConsoles();
+FreeAllMenu (
+  VOID
+  )
+{
+  BOpt_FreeMenu (&DirectoryMenu);
+  BOpt_FreeMenu (&FsOptionMenu);
+  BOpt_FreeMenu (&BootOptionMenu);
+  BOpt_FreeMenu (&DriverOptionMenu);
+  BOpt_FreeMenu (&DriverMenu);
+  BOpt_FreeLegacyOptions ();
+  FreeAllConsoles ();
 }
 
 VOID
-InitializeStringDepository ()
+InitializeStringDepository (
+  VOID
+  )
 /*++
 Routine Description:
   Intialize all the string depositories.
@@ -1014,22 +1019,22 @@ Returns:
   None.  
 --*/
 {
-  STRING_DEPOSITORY     *StringDepository;
-  StringDepository               = EfiAllocateZeroPool(sizeof(STRING_DEPOSITORY) * STRING_DEPOSITORY_NUMBER);
-  FileOptionStrDepository        = StringDepository++;
-  ConsoleOptionStrDepository     = StringDepository++;
-  BootOptionStrDepository        = StringDepository++;
-  BootOptionHelpStrDepository    = StringDepository++;
-  DriverOptionStrDepository      = StringDepository++;
-  DriverOptionHelpStrDepository  = StringDepository++;
-  TerminalStrDepository          = StringDepository;
+  STRING_DEPOSITORY *StringDepository;
+  StringDepository              = EfiAllocateZeroPool (sizeof (STRING_DEPOSITORY) * STRING_DEPOSITORY_NUMBER);
+  FileOptionStrDepository       = StringDepository++;
+  ConsoleOptionStrDepository    = StringDepository++;
+  BootOptionStrDepository       = StringDepository++;
+  BootOptionHelpStrDepository   = StringDepository++;
+  DriverOptionStrDepository     = StringDepository++;
+  DriverOptionHelpStrDepository = StringDepository++;
+  TerminalStrDepository         = StringDepository;
 }
 
 STRING_REF
 GetStringTokenFromDepository (
   IN   BMM_CALLBACK_DATA     *CallbackData,
   IN   STRING_DEPOSITORY     *StringDepository
-  ) 
+  )
 /*++
 Routine Description:
   Fetch a usable string node from the string depository and return the string token.
@@ -1041,8 +1046,8 @@ Returns:
   STRING_REF             - String token.
 --*/
 {
-  STRING_LIST_NODE      *CurrentListNode;
-  STRING_LIST_NODE      *NextListNode;
+  STRING_LIST_NODE  *CurrentListNode;
+  STRING_LIST_NODE  *NextListNode;
 
   CurrentListNode = StringDepository->CurrentNode;
 
@@ -1055,15 +1060,15 @@ Returns:
     //
     // If there is no usable node in the list, update the list.
     //
-    NextListNode = EfiAllocateZeroPool(sizeof(STRING_LIST_NODE));
+    NextListNode = EfiAllocateZeroPool (sizeof (STRING_LIST_NODE));
 
-    CallbackData->Hii->NewString ( 
-                         CallbackData->Hii, 
-                         NULL, 
-                         CallbackData->BmmHiiHandle, 
-                         &(NextListNode->StringToken), 
-                         L" "
-                         );
+    CallbackData->Hii->NewString (
+                        CallbackData->Hii,
+                        NULL,
+                        CallbackData->BmmHiiHandle,
+                        &(NextListNode->StringToken),
+                        L" "
+                        );
 
     ASSERT (NextListNode->StringToken != 0);
 
@@ -1082,7 +1087,9 @@ Returns:
 }
 
 VOID
-ReclaimStringDepository () 
+ReclaimStringDepository (
+  VOID
+  )
 /*++
 Routine Description:
   Reclaim string depositories by moving the current node pointer to list head..
@@ -1094,8 +1101,8 @@ Returns:
   None.
 --*/
 {
-  UINTN                 DepositoryIndex;
-  STRING_DEPOSITORY     *StringDepository;
+  UINTN             DepositoryIndex;
+  STRING_DEPOSITORY *StringDepository;
 
   StringDepository = FileOptionStrDepository;
   for (DepositoryIndex = 0; DepositoryIndex < STRING_DEPOSITORY_NUMBER; DepositoryIndex++) {
@@ -1107,7 +1114,7 @@ Returns:
 VOID
 CleanUpStringDepository (
   VOID
-  ) 
+  )
 /*++
 Routine Description:
   Release resource for all the string depositories.
@@ -1119,11 +1126,11 @@ Returns:
   None.
 --*/
 {
-  UINTN                 NodeIndex;
-  UINTN                 DepositoryIndex;
-  STRING_LIST_NODE      *CurrentListNode;
-  STRING_LIST_NODE      *NextListNode;
-  STRING_DEPOSITORY     *StringDepository;
+  UINTN             NodeIndex;
+  UINTN             DepositoryIndex;
+  STRING_LIST_NODE  *CurrentListNode;
+  STRING_LIST_NODE  *NextListNode;
+  STRING_DEPOSITORY *StringDepository;
 
   //
   // Release string list nodes.
@@ -1136,9 +1143,9 @@ Returns:
       SafeFreePool (CurrentListNode);
       CurrentListNode = NextListNode;
     }
+
     StringDepository++;
   }
-
   //
   // Release string depository.
   //
@@ -1160,11 +1167,11 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                Status;
-  EFI_LIST_ENTRY            BdsBootOptionList;
-  
+  EFI_STATUS      Status;
+  EFI_LIST_ENTRY  BdsBootOptionList;
+
   InitializeListHead (&BdsBootOptionList);
-  
+
   //
   // Connect all prior to entering the platform setup menu.
   //
@@ -1172,17 +1179,16 @@ Returns:
     BdsLibConnectAllDriversToAllControllers ();
     gConnectAllHappened = TRUE;
   }
-
   //
   // Have chance to enumerate boot device
   //
   BdsLibEnumerateAllBootOption (&BdsBootOptionList);
-  
+
   //
   // Drop the TPL level from EFI_TPL_DRIVER to EFI_TPL_APPLICATION
   //
   gBS->RestoreTPL (EFI_TPL_APPLICATION);
-  
+
   //
   // Init the BMM
   //
@@ -1211,18 +1217,18 @@ Returns:
 
 --*/
 {
-  EFI_FORM_BROWSER_PROTOCOL       *FormConfig;
-  UINT8                           *Location;
-  EFI_STATUS                      Status;
-  UINTN                           Index;
-  BM_MENU_ENTRY                   *NewMenuEntry;
-  BM_FILE_CONTEXT                 *NewFileContext;
+  EFI_FORM_BROWSER_PROTOCOL *FormConfig;
+  UINT8                     *Location;
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  BM_MENU_ENTRY             *NewMenuEntry;
+  BM_FILE_CONTEXT           *NewFileContext;
 
-  Location = NULL;
-  Index = 0;
-  NewMenuEntry = NULL;
-  NewFileContext = NULL;
-  
+  Location        = NULL;
+  Index           = 0;
+  NewMenuEntry    = NULL;
+  NewFileContext  = NULL;
+
   //
   // There should only be one Form Configuration protocol
   //
@@ -1235,16 +1241,16 @@ Returns:
     UpdatePageId (CallbackData, FORM_MAIN_ID);
 
     Status = FormConfig->SendForm (
-                           FormConfig, 
-                           TRUE, 
-                           &(CallbackData->BmmHiiHandle), 
-                           1,
-                           NULL, 
-                           NULL,
-                           (UINT8 *) CallbackData->BmmFakeNvData,
-                           NULL,
-                           NULL
-                           );
+                          FormConfig,
+                          TRUE,
+                          &(CallbackData->BmmHiiHandle),
+                          1,
+                          NULL,
+                          NULL,
+                          (UINT8 *) CallbackData->BmmFakeNvData,
+                          NULL,
+                          NULL
+                          );
 
     ReclaimStringDepository ();
 
@@ -1255,36 +1261,38 @@ Returns:
       UpdateFileExplorer (CallbackData, 0);
 
       Status = FormConfig->SendForm (
-                             FormConfig, 
-                             TRUE, 
-                             &(CallbackData->FeHiiHandle), 
-                             1,
-                             NULL, 
-                             NULL,
-                             NULL,
-                             NULL,
-                             NULL
-                             );
+                            FormConfig,
+                            TRUE,
+                            &(CallbackData->FeHiiHandle),
+                            1,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL
+                            );
 
-      CallbackData->FeCurrentState = INACTIVE_STATE;
-      CallbackData->FeDisplayContext = UNKNOWN_CONTEXT;
+      CallbackData->FeCurrentState    = INACTIVE_STATE;
+      CallbackData->FeDisplayContext  = UNKNOWN_CONTEXT;
       ReclaimStringDepository ();
     } else {
       break;
     }
   }
+
   return Status;
 }
 
-VOID CreateCallbackPacket (
+VOID
+CreateCallbackPacket (
   OUT EFI_HII_CALLBACK_PACKET         **Packet,
   IN  UINT16                          Flags
   )
 {
-  *Packet =  (EFI_HII_CALLBACK_PACKET *) EfiAllocateZeroPool (sizeof (EFI_HII_CALLBACK_PACKET) + 2);
-  ASSERT ( *Packet != NULL );
+  *Packet = (EFI_HII_CALLBACK_PACKET *) EfiAllocateZeroPool (sizeof (EFI_HII_CALLBACK_PACKET) + 2);
+  ASSERT (*Packet != NULL);
 
-  (*Packet)->DataArray.EntryCount = 1;
-  (*Packet)->DataArray.NvRamMap = NULL;
-  (*Packet)->DataArray.Data->Flags = Flags;
+  (*Packet)->DataArray.EntryCount   = 1;
+  (*Packet)->DataArray.NvRamMap     = NULL;
+  (*Packet)->DataArray.Data->Flags  = Flags;
 }

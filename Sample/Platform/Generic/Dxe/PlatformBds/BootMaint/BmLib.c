@@ -44,14 +44,15 @@ Returns:
 
 --*/
 {
-  EFI_STATUS          Status;
-  VOID                *Ptr;
+  EFI_STATUS  Status;
+  VOID        *Ptr;
   Status = gBS->AllocatePool (EfiBootServicesData, Size, &Ptr);
   if (EFI_ERROR (Status)) {
     Ptr = NULL;
     return Ptr;
   }
-  EfiZeroMem(Ptr, Size);
+
+  EfiZeroMem (Ptr, Size);
   return Ptr;
 }
 
@@ -81,14 +82,14 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                Status;
-  
+  EFI_STATUS  Status;
+
   Status = gBS->LocateProtocol (
                   ProtocolGuid,
                   NULL,
                   Interface
                   );
-  return Status;  
+  return Status;
 }
 
 EFI_FILE_HANDLE
@@ -115,36 +116,34 @@ Returns:
   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *Volume;
   EFI_FILE_HANDLE                 File;
 
-  
   File = NULL;
 
   //
   // File the file system interface to the device
   //
   Status = gBS->HandleProtocol (
-                 DeviceHandle, 
-                 &gEfiSimpleFileSystemProtocolGuid, 
-                 (VOID*)&Volume
-                 );
+                  DeviceHandle,
+                  &gEfiSimpleFileSystemProtocolGuid,
+                  (VOID *) &Volume
+                  );
 
   //
-  // Open the root directory of the volume 
+  // Open the root directory of the volume
   //
-  if (!EFI_ERROR(Status)) {
-    Status = Volume->OpenVolume(
-                       Volume, 
-                       &File
-                       );
+  if (!EFI_ERROR (Status)) {
+    Status = Volume->OpenVolume (
+                      Volume,
+                      &File
+                      );
   }
-
   //
   // Done
   //
-  return EFI_ERROR(Status) ? NULL : File;
+  return EFI_ERROR (Status) ? NULL : File;
 }
 
 BOOLEAN
-EfiGrowBuffer(
+EfiGrowBuffer (
   IN OUT EFI_STATUS   *Status,
   IN OUT VOID         **Buffer,
   IN UINTN            BufferSize
@@ -172,20 +171,17 @@ Returns:
 
 --*/
 {
-  BOOLEAN         TryAgain;
+  BOOLEAN TryAgain;
 
   //
   // If this is an initial request, buffer will be null with a new buffer size
   //
-
   if (!*Buffer && BufferSize) {
     *Status = EFI_BUFFER_TOO_SMALL;
   }
-
   //
   // If the status code is "buffer too small", resize the buffer
   //
-      
   TryAgain = FALSE;
   if (*Status == EFI_BUFFER_TOO_SMALL) {
 
@@ -195,16 +191,14 @@ Returns:
 
     if (*Buffer) {
       TryAgain = TRUE;
-    } else {    
+    } else {
       *Status = EFI_OUT_OF_RESOURCES;
-    } 
+    }
   }
-
   //
   // If there's an error, free the buffer
   //
-
-  if (!TryAgain && EFI_ERROR(*Status) && *Buffer) {
+  if (!TryAgain && EFI_ERROR (*Status) && *Buffer) {
     SafeFreePool (*Buffer);
     *Buffer = NULL;
   }
@@ -234,7 +228,7 @@ Returns:
 
 --*/
 {
-  UINTN   VarSize;
+  UINTN VarSize;
 
   return BdsLibGetVariableAndSize (Name, VendorGuid, &VarSize);
 }
@@ -267,24 +261,23 @@ Returns:
 
 --*/
 {
-    VOID        *VarBuf;
-    EFI_STATUS  Status;
+  VOID        *VarBuf;
+  EFI_STATUS  Status;
 
-    VarBuf = EfiLibGetVariable(VarName,VarGuid);
-    Status = EFI_NOT_FOUND;
+  VarBuf  = EfiLibGetVariable (VarName, VarGuid);
+  Status  = EFI_NOT_FOUND;
 
-    if (VarBuf) {
-        //
-        // Delete variable from Storage
-        //
-        Status = gRT->SetVariable (VarName, VarGuid, VAR_FLAG, 0, NULL);
-        ASSERT (!EFI_ERROR(Status));
-        SafeFreePool(VarBuf);
-    }
+  if (VarBuf) {
+    //
+    // Delete variable from Storage
+    //
+    Status = gRT->SetVariable (VarName, VarGuid, VAR_FLAG, 0, NULL);
+    ASSERT (!EFI_ERROR (Status));
+    SafeFreePool (VarBuf);
+  }
 
-    return (Status);
+  return Status;
 }
-
 
 EFI_FILE_SYSTEM_VOLUME_LABEL_INFO *
 EfiLibFileSystemVolumeLabelInfo (
@@ -313,8 +306,8 @@ Returns:
   //
   // Initialize for GrowBuffer loop
   //
-  Buffer = NULL;
-  BufferSize = SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO + 200;
+  Buffer      = NULL;
+  BufferSize  = SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL_INFO + 200;
 
   //
   // Call the real function
@@ -327,6 +320,7 @@ Returns:
                       Buffer
                       );
   }
+
   return Buffer;
 }
 
@@ -334,18 +328,18 @@ CHAR16 *
 EfiStrDuplicate (
   IN CHAR16   *Src
   )
-// duplicate a string
 {
-    CHAR16      *Dest;
-    UINTN       Size;
+  CHAR16  *Dest;
+  UINTN   Size;
 
-    Size = EfiStrSize(Src);
-    Dest = EfiAllocateZeroPool (Size);
-    ASSERT (Dest != NULL);
-    if (Dest) {
-        EfiCopyMem (Dest, Src, Size);
-    }
-    return Dest;
+  Size  = EfiStrSize (Src);
+  Dest  = EfiAllocateZeroPool (Size);
+  ASSERT (Dest != NULL);
+  if (Dest) {
+    EfiCopyMem (Dest, Src, Size);
+  }
+
+  return Dest;
 }
 
 EFI_FILE_INFO *
@@ -369,16 +363,15 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  EFI_FILE_INFO           *Buffer;
-  UINTN                   BufferSize;
+  EFI_STATUS    Status;
+  EFI_FILE_INFO *Buffer;
+  UINTN         BufferSize;
 
   //
   // Initialize for GrowBuffer loop
   //
-
-  Buffer = NULL;
-  BufferSize = SIZE_OF_EFI_FILE_INFO + 200;
+  Buffer      = NULL;
+  BufferSize  = SIZE_OF_EFI_FILE_INFO + 200;
 
   //
   // Call the real function
@@ -415,13 +408,14 @@ Returns:
 
 --*/
 {
-  UINTN       Count;
-  UINTN       Size;
+  UINTN Count;
+  UINTN Size;
 
   Count = 0;
-  while (EfiDevicePathInstance(&DevicePath, &Size)) {
+  while (EfiDevicePathInstance (&DevicePath, &Size)) {
     Count += 1;
   }
+
   return Count;
 }
 
@@ -451,7 +445,7 @@ Returns:
 
 --*/
 {
-  VOID                    *NewPool;
+  VOID  *NewPool;
 
   NewPool = NULL;
   if (NewSize) {
@@ -462,12 +456,12 @@ Returns:
     if (NewPool) {
       EfiCopyMem (NewPool, OldPool, OldSize < NewSize ? OldSize : NewSize);
     }
+
     SafeFreePool (OldPool);
   }
-    
+
   return NewPool;
 }
-
 
 EFI_STATUS
 EfiLibGetStringFromToken (
@@ -499,16 +493,16 @@ Returns:
   UINTN             Index;
   UINT16            Length;
   EFI_GUID          HiiGuid;
-  EFI_HII_PROTOCOL *Hii;
-  
-  HandleBufferLength = 0x1000;
-  HiiHandleBuffer = NULL;
+  EFI_HII_PROTOCOL  *Hii;
+
+  HandleBufferLength  = 0x1000;
+  HiiHandleBuffer     = NULL;
   Status = gBS->LocateProtocol (
                   &gEfiHiiProtocolGuid,
                   NULL,
                   &Hii
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     *String = NULL;
     return Status;
   }
@@ -519,41 +513,42 @@ Returns:
   ASSERT (HiiHandleBuffer != NULL);
 
   Status = Hii->FindHandles (Hii, &HandleBufferLength, HiiHandleBuffer);
-  ASSERT_EFI_ERROR(Status);
-  
+  ASSERT_EFI_ERROR (Status);
+
   //
   // Get the Hii Handle that matches the StructureNode->ProducerName
   //
   NumberOfHiiHandles = HandleBufferLength / sizeof (EFI_HII_HANDLE);
-  for (Index = 0; Index < NumberOfHiiHandles; Index ++) {
+  for (Index = 0; Index < NumberOfHiiHandles; Index++) {
     Length = 0;
-    Status = ExtractDataFromHiiHandle (HiiHandleBuffer[Index],
-                                       &Length,
-                                       NULL,
-                                       &HiiGuid
-                                       );
+    Status = ExtractDataFromHiiHandle (
+              HiiHandleBuffer[Index],
+              &Length,
+              NULL,
+              &HiiGuid
+              );
     if (EfiCompareGuid (ProducerGuid, &HiiGuid)) {
       break;
     }
   }
-  
   //
   // Find the string based on the current language
   //
-  StringBufferLength = 0x100;
-  *String = EfiLibAllocateZeroPool (0x100);
+  StringBufferLength  = 0x100;
+  *String             = EfiLibAllocateZeroPool (0x100);
   ASSERT (*String != NULL);
 
-  Status = Hii->GetString (Hii,
-                           HiiHandleBuffer[Index],
-                           Token,
-                           FALSE,
-                           NULL,
-                           &StringBufferLength,
-                           *String
-                           );
-  
-  gBS->FreePool (HiiHandleBuffer);  
+  Status = Hii->GetString (
+                  Hii,
+                  HiiHandleBuffer[Index],
+                  Token,
+                  FALSE,
+                  NULL,
+                  &StringBufferLength,
+                  *String
+                  );
+
+  gBS->FreePool (HiiHandleBuffer);
 
   return Status;
 }
@@ -579,52 +574,53 @@ Returns:
   
 --*/
 {
-  if(FirstTime->Year != SecondTime->Year) {
-    return (BOOLEAN)(FirstTime->Year < SecondTime->Year);
+  if (FirstTime->Year != SecondTime->Year) {
+    return (BOOLEAN) (FirstTime->Year < SecondTime->Year);
   } else if (FirstTime->Month != SecondTime->Month) {
-    return (BOOLEAN)(FirstTime->Month < SecondTime->Month);
+    return (BOOLEAN) (FirstTime->Month < SecondTime->Month);
   } else if (FirstTime->Day != SecondTime->Day) {
-    return (BOOLEAN)(FirstTime->Day < SecondTime->Day);
+    return (BOOLEAN) (FirstTime->Day < SecondTime->Day);
   } else if (FirstTime->Hour != SecondTime->Hour) {
-    return (BOOLEAN)(FirstTime->Hour < SecondTime->Hour);
+    return (BOOLEAN) (FirstTime->Hour < SecondTime->Hour);
   } else if (FirstTime->Minute != SecondTime->Minute) {
-    return (BOOLEAN)(FirstTime->Minute < FirstTime->Minute);
+    return (BOOLEAN) (FirstTime->Minute < FirstTime->Minute);
   } else if (FirstTime->Second != SecondTime->Second) {
-    return (BOOLEAN)(FirstTime->Second < SecondTime->Second);
+    return (BOOLEAN) (FirstTime->Second < SecondTime->Second);
   }
-  return   (BOOLEAN)(FirstTime->Nanosecond <= SecondTime->Nanosecond);
+
+  return (BOOLEAN) (FirstTime->Nanosecond <= SecondTime->Nanosecond);
 }
 
-UINT16*
+UINT16 *
 EfiLibStrFromDatahub (
   IN EFI_DEVICE_PATH_PROTOCOL                 *DevPath
   )
 {
-  EFI_STATUS                                                  Status;
-  UINT16                                                         *Desc;
-  EFI_DATA_HUB_PROTOCOL                            *Datahub;
-  UINT64                                                         Count;
-  EFI_DATA_RECORD_HEADER                          *Record;
-  EFI_SUBCLASS_TYPE1_HEADER                      *DataHdr;
-  EFI_GUID                                                      MiscGuid = EFI_MISC_SUBCLASS_GUID;
-  EFI_MISC_ONBOARD_DEVICE                        *ob;
-  EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR        *Port;
+  EFI_STATUS                                  Status;
+  UINT16                                      *Desc;
+  EFI_DATA_HUB_PROTOCOL                       *Datahub;
+  UINT64                                      Count;
+  EFI_DATA_RECORD_HEADER                      *Record;
+  EFI_SUBCLASS_TYPE1_HEADER                   *DataHdr;
+  EFI_GUID                                    MiscGuid = EFI_MISC_SUBCLASS_GUID;
+  EFI_MISC_ONBOARD_DEVICE                     *ob;
+  EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *Port;
   EFI_TIME                                    CurTime;
-  
+
   Status = gBS->LocateProtocol (
                   &gEfiDataHubProtocolGuid,
                   NULL,
                   &Datahub
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return NULL;
   }
 
-  Status = gRT->GetTime(&CurTime, NULL);
-  if (EFI_ERROR(Status)) {
+  Status = gRT->GetTime (&CurTime, NULL);
+  if (EFI_ERROR (Status)) {
     return NULL;
   }
-  
+
   Count = 0;
   do {
     Status = Datahub->GetNextRecord (Datahub, &Count, NULL, &Record);
@@ -632,23 +628,23 @@ EfiLibStrFromDatahub (
     if (EFI_ERROR (Status)) {
       break;
     }
-    
-    if (Record->DataRecordClass == EFI_DATA_RECORD_CLASS_DATA && 
-      EfiCompareGuid (&Record->DataRecordGuid, &MiscGuid)) {
+
+    if (Record->DataRecordClass == EFI_DATA_RECORD_CLASS_DATA && EfiCompareGuid (&Record->DataRecordGuid, &MiscGuid)) {
       //
       // This record is what we need
       //
-      DataHdr = (EFI_SUBCLASS_TYPE1_HEADER*)(Record + 1);
+      DataHdr = (EFI_SUBCLASS_TYPE1_HEADER *) (Record + 1);
       if (EFI_MISC_ONBOARD_DEVICE_RECORD_NUMBER == DataHdr->RecordType) {
-        ob = (EFI_MISC_ONBOARD_DEVICE*)(DataHdr + 1);
-        if (BdsLibMatchDevicePaths ((EFI_DEVICE_PATH_PROTOCOL*)&ob->OnBoardDevicePath, DevPath)) {
+        ob = (EFI_MISC_ONBOARD_DEVICE *) (DataHdr + 1);
+        if (BdsLibMatchDevicePaths ((EFI_DEVICE_PATH_PROTOCOL *) &ob->OnBoardDevicePath, DevPath)) {
           EfiLibGetStringFromToken (&Record->ProducerName, ob->OnBoardDeviceDescription, &Desc);
           return Desc;
         }
       }
+
       if (EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR_RECORD_NUMBER == DataHdr->RecordType) {
-        Port = (EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR*)(DataHdr + 1);
-        if (BdsLibMatchDevicePaths ((EFI_DEVICE_PATH_PROTOCOL*)&Port->PortPath, DevPath)) {
+        Port = (EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) (DataHdr + 1);
+        if (BdsLibMatchDevicePaths ((EFI_DEVICE_PATH_PROTOCOL *) &Port->PortPath, DevPath)) {
           EfiLibGetStringFromToken (&Record->ProducerName, Port->PortExternalConnectorDesignator, &Desc);
           return Desc;
         }
