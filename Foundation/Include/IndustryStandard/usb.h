@@ -77,7 +77,7 @@ Revision History
 #define EFI_USB_ERR_BITSTUFF    0x80
 #define EFI_USB_ERR_SYSTEM      0x100
 
-#define EFI_USB_INTERRUPT_DELAY 100000000
+#define EFI_USB_INTERRUPT_DELAY 5000000
 
 //
 // USB transation direction

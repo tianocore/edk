@@ -378,15 +378,13 @@ KeyboardHandler (
   UINT8               NewRepeatKey;
   UINT32              UsbStatus;
   UINT8               *DataPtr;
-  UINT8               PacketSize;
-
+  
+  ASSERT(Context);
+  
   NewRepeatKey      = 0;
   DataPtr           = (UINT8 *) Data;
-
   UsbKeyboardDevice = (USB_KB_DEV *) Context;
-  ASSERT (UsbKeyboardDevice);
-
-  UsbIo = UsbKeyboardDevice->UsbIo;
+  UsbIo             = UsbKeyboardDevice->UsbIo;
 
   //
   // Analyzes the Result and performs corresponding action.
@@ -396,10 +394,10 @@ KeyboardHandler (
     // Some errors happen during the process
     //
     KbdReportStatusCode (
-      UsbIo,
-      EFI_ERROR_CODE | EFI_ERROR_MINOR,
-      (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INPUT_ERROR)
-      );
+        UsbIo,
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INPUT_ERROR)
+        );
 
     //
     // stop the repeat key generation if any
@@ -424,34 +422,17 @@ KeyboardHandler (
     // Delete & Submit this interrupt again
     //
     
-    Status = UsbIo->UsbAsyncInterruptTransfer (
-                      UsbIo,
-                      UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-                      FALSE,
-                      0,
-                      0,
-                      NULL,
-                      NULL
-                      );
-
-    if (Result == (EFI_USB_ERR_STALL | EFI_USB_ERR_TIMEOUT)) {
-      UsbKeyboardDevice = (USB_KB_DEV *) Context;
-      UsbIo             = UsbKeyboardDevice->UsbIo;
-      PacketSize        = (UINT8) (UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);
-      UsbIo->UsbAsyncInterruptTransfer (
-              UsbIo,
-              UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-              TRUE,
-              UsbKeyboardDevice->IntEndpointDescriptor.Interval,
-              PacketSize,
-              KeyboardHandler,
-              UsbKeyboardDevice
-              );
-      return EFI_DEVICE_ERROR;
-
-    }
-
-    gBS->SetTimer (
+     Status = UsbIo->UsbAsyncInterruptTransfer (
+                       UsbIo,
+                       UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+                       FALSE,
+                       0,
+                       0,
+                       NULL,
+                       NULL
+                       );    
+ 
+     gBS->SetTimer (
           UsbKeyboardDevice->DelayedRecoveryEvent,
           TimerRelative,
           EFI_USB_INTERRUPT_DELAY
@@ -493,7 +474,7 @@ KeyboardHandler (
   for (Index = 0; Index < 8; Index++) {
 
     if ((CurModifierMap & KB_Mod[Index].Mask) != 
-                      (OldModifierMap & KB_Mod[Index].Mask)) {
+        (OldModifierMap & KB_Mod[Index].Mask)) {
       //
       // if current modifier key is up, then
       // CurModifierMap & KB_Mod[Index].Mask = 0;
@@ -529,7 +510,11 @@ KeyboardHandler (
     }
 
     if (KeyRelease) {
-      InsertKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), OldKeyCodeBuffer[Index], 0);
+      InsertKeyCode (
+        &(UsbKeyboardDevice->KeyboardBuffer),
+        OldKeyCodeBuffer[Index],
+        0
+        );
       //
       // the original reapeat key is released.
       //
@@ -544,10 +529,10 @@ KeyboardHandler (
   //
   if (UsbKeyboardDevice->RepeatKey == 0) {
     gBS->SetTimer (
-          UsbKeyboardDevice->RepeatTimer,
-          TimerCancel,
-          USBKBD_REPEAT_RATE
-          );
+           UsbKeyboardDevice->RepeatTimer, 
+           TimerCancel, 
+           USBKBD_REPEAT_RATE
+           );
   }
   
   //

@@ -449,30 +449,6 @@ UHCIDriverBindingStart (
   HcDev->UsbHc.MinorRevision            = 0x1;
 
   //
-  // Install Host Controller Protocol
-  //
-  Status = gBS->InstallProtocolInterface (
-                  &Controller,
-                  &gEfiUsbHcProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &HcDev->UsbHc
-                  );
-  if (EFI_ERROR (Status)) {
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-          Controller,
-          &gEfiPciIoProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
-    return Status;
-  }
-
-  //
   //  Init UHCI private data structures
   //
   HcDev->Signature  = USB_HC_DEV_SIGNATURE;
@@ -485,12 +461,6 @@ UHCIDriverBindingStart (
   //
   Status = CreateFrameList (HcDev, (UINT32) FlBaseAddrReg);
   if (EFI_ERROR (Status)) {
-    gBS->UninstallProtocolInterface (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          &HcDev->UsbHc
-          );
-
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
@@ -555,16 +525,10 @@ UHCIDriverBindingStart (
 
     FreeFrameListEntry (HcDev);
 
-    gBS->UninstallProtocolInterface (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          &HcDev->UsbHc
-          );
-
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
-
+  
     gBS->CloseProtocol (
           Controller,
           &gEfiPciIoProtocolGuid,
@@ -582,22 +546,10 @@ UHCIDriverBindingStart (
   Status = InitializeMemoryManagement (HcDev);
   if (EFI_ERROR (Status)) {
 
-    gBS->SetTimer (
-          HcDev->InterruptTransTimer,
-          TimerCancel,
-          0
-          );
-
     gBS->CloseEvent (HcDev->InterruptTransTimer);
 
     FreeFrameListEntry (HcDev);
-
-    gBS->UninstallProtocolInterface (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          &HcDev->UsbHc
-          );
-
+        
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
@@ -612,6 +564,34 @@ UHCIDriverBindingStart (
   }
   
   //
+  // Install Host Controller Protocol            
+  //                                             
+  Status = gBS->InstallProtocolInterface (       
+                  &Controller,                   
+                  &gEfiUsbHcProtocolGuid,        
+                  EFI_NATIVE_INTERFACE,          
+                  &HcDev->UsbHc                  
+                  ); 
+                            
+  if (EFI_ERROR (Status)) {                      
+    gBS->CloseEvent (HcDev->InterruptTransTimer);
+    FreeFrameListEntry (HcDev);                  
+    DelMemoryManagement (HcDev);                 
+                                               
+    if (HcDev != NULL) {                         
+      gBS->FreePool (HcDev);                     
+    }                                            
+                                                
+    gBS->CloseProtocol (                         
+           Controller,                           
+           &gEfiPciIoProtocolGuid,               
+           This->DriverBindingHandle,            
+           Controller                            
+           );                                    
+    return Status;                               
+  }                                              
+                                               
+  //                                             
   // component name protocol.
   //
   HcDev->ControllerNameTable = NULL;
@@ -621,10 +601,10 @@ UHCIDriverBindingStart (
     &HcDev->ControllerNameTable,
     L"Usb Universal Host Controller"
     );
-
+  
   return EFI_SUCCESS;
-}
-
+} 
+  
 EFI_STATUS
 UnInstallUHCInterface (
   IN  EFI_HANDLE              Controller,
@@ -659,11 +639,6 @@ UnInstallUHCInterface (
   //
   // Delete interrupt transfer polling timer
   //
-  gBS->SetTimer (
-        HcDev->InterruptTransTimer,
-        TimerCancel,
-        0
-        );
   gBS->CloseEvent (HcDev->InterruptTransTimer);
 
   //
@@ -1812,7 +1787,7 @@ UHCIControlTransfer (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-
+      
     Ptr = (UINT8 *) ((UINTN) TempPtr);
     break;
 
@@ -2007,6 +1982,163 @@ UHCIControlTransfer (
     return Status;
   }  
   
+   if (IsSlowDevice) {
+     //
+     // link setup TD structures to QH structure
+     //
+     LinkTDToQH (PtrQH, PtrSetupTD);
+     
+     LoadFrameListIndex = (UINT16)((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+   
+     //
+     // link QH-TDs to total 100 frame list entry to speed up the execution.
+     //
+     for (Index = 0; Index < 100; Index ++) {
+       LinkQHToFrameList (
+         HcDev->FrameListEntry,
+         (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
+         PtrQH
+         );
+     }
+   
+     //
+     // Poll QH-TDs execution and get result.
+     // detail status is returned
+     //
+     Status = ExecuteControlTransfer (
+                HcDev,
+                PtrSetupTD,
+                LoadFrameListIndex,
+                DataLength,
+                TimeOut,
+                TransferResult
+                );
+     //
+     // Remove Control Transfer QH-TDs structure from the frame list
+     // and update the pointers in the Frame List
+     // and other pointers in other related QH structures.
+     //
+     for (Index = 0; Index < 100; Index ++) {
+       DelLinkSingleQH ( 
+         HcDev,
+         PtrQH,
+         (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
+         FALSE,
+         FALSE
+         );
+     }
+     //
+     // delete setup stage TD; the QH is reserved for the next stages.
+     //
+     DeleteQueuedTDs (HcDev, PtrSetupTD);
+ 
+     //
+     // if setup stage error, return error
+     //
+ 
+     if (EFI_ERROR (Status)) {
+       goto Done;
+     }
+ 
+     //
+     // some control transfers do not have Data Stage
+     //
+     if (PtrFirstDataTD != NULL) {
+      
+       LinkTDToQH (PtrQH,PtrFirstDataTD);
+       LoadFrameListIndex = (UINT16)((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg))  & 0x3FF);
+       
+       for (Index = 0; Index < 500; Index ++) {
+         LinkQHToFrameList (
+           HcDev->FrameListEntry,
+           (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
+           PtrQH
+           );
+       }
+      
+     Status = ExecuteControlTransfer (
+                HcDev,
+                PtrFirstDataTD,
+                LoadFrameListIndex, 
+                DataLength,
+                TimeOut,
+                TransferResult
+                );
+     
+     for (Index = 0; Index < 500; Index ++) {
+       DelLinkSingleQH (
+         HcDev,
+         PtrQH,
+         (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
+         FALSE,
+         FALSE
+         );
+     }
+     //
+     // delete data stage TD; the QH is reserved for the next stage.
+     //
+     DeleteQueuedTDs (HcDev, PtrFirstDataTD);
+    }
+ 
+    //
+    // if data stage error, goto done and return error
+    //
+    
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+    
+    LinkTDToQH (PtrQH, PtrStatusTD);  
+    //
+    // get the frame list index that the QH-TDs will be linked to.
+    //  
+    LoadFrameListIndex = (UINT16)((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+    
+    for(Index = 0; Index < 100; Index ++) {
+      
+      //
+      // put the QH-TDs directly or indirectly into the proper place 
+      // in the Frame List 
+      //
+      LinkQHToFrameList (
+        HcDev->FrameListEntry,
+        (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
+        PtrQH
+        );
+    }
+    
+    //
+    // Poll QH-TDs execution and get result.
+    // detail status is returned
+    //
+    Status = ExecuteControlTransfer (
+               HcDev,
+               PtrStatusTD,
+               LoadFrameListIndex,
+               DataLength,
+               TimeOut,
+               TransferResult
+               );
+    
+    //
+    // Delete Control Transfer QH-TDs structure
+    // and update the pointers in the Frame List
+    // and other pointers in other related QH structures.
+    //
+    // TRUE means must search other framelistindex
+    //
+    for (Index = 0; Index < 100; Index ++) {
+      DelLinkSingleQH (
+        HcDev,
+        PtrQH,
+        (UINT16)((LoadFrameListIndex + Index)  & 0x3FF),
+        FALSE,
+        FALSE
+        );
+    }
+    DeleteQueuedTDs (HcDev, PtrStatusTD);
+    
+   } else {  
   //
   // link setup stage TD with data stage TD
   //
@@ -2067,7 +2199,10 @@ UHCIControlTransfer (
       );
   }
 
-  DeleteQueuedTDs (HcDev, PtrSetupTD);
+   DeleteQueuedTDs (HcDev, PtrSetupTD);
+  }
+
+Done:
 
   UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
 

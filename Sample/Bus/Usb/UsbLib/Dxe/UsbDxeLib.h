@@ -33,6 +33,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // define the timeout time as 3ms
 //
+#define TIMEOUT_VALUE  3 * 1000
 
 //
 // Get Device Descriptor

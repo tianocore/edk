@@ -23,7 +23,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "UsbDxeLib.h"
 
-#define TIMEOUT_VALUE 3 * 1000
 //
 // Get Device Descriptor
 //
@@ -58,8 +57,7 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
-
+  
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -72,12 +70,11 @@ Returns:
   DevReq.Index        = Index;
   DevReq.Length       = DescriptorLength;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbDataIn,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   Descriptor,
                   DescriptorLength,
                   Status
@@ -117,7 +114,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -131,12 +127,11 @@ Returns:
   DevReq.Index        = Index;
   DevReq.Length       = DescriptorLength;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbDataOut,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   Descriptor,
                   DescriptorLength,
                   Status
@@ -170,7 +165,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -184,12 +178,11 @@ Returns:
   DevReq.Index        = 0;
   DevReq.Length       = 0;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbNoData,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   NULL,
                   0,
                   Status
@@ -225,7 +218,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -239,12 +231,11 @@ Returns:
   DevReq.Index        = Index;
   DevReq.Length       = 1;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbDataIn,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   AltSetting,
                   1,
                   Status
@@ -280,7 +271,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -294,12 +284,11 @@ Returns:
   DevReq.Index        = InterfaceNo;
   DevReq.Length       = 0;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbNoData,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   NULL,
                   0,
                   Status
@@ -333,7 +322,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -347,12 +335,11 @@ Returns:
   DevReq.Index        = 0;
   DevReq.Length       = 1;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbDataIn,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   ConfigValue,
                   1,
                   Status
@@ -386,8 +373,7 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
-
+ 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -400,12 +386,11 @@ Returns:
   DevReq.Index        = 0;
   DevReq.Length       = 0;
 
-  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbNoData,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   NULL,
                   0,
                   Status
@@ -443,7 +428,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -473,12 +457,11 @@ Returns:
   DevReq.Index    = Target;
   DevReq.Length   = 0;
 
-  Timeout         = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbNoData,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   NULL,
                   0,
                   Status
@@ -517,7 +500,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -547,12 +529,11 @@ Returns:
   DevReq.Index    = Target;
   DevReq.Length   = 0;
 
-  Timeout         = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbNoData,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   NULL,
                   0,
                   Status
@@ -591,7 +572,6 @@ Returns:
 --*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
-  UINT32                  Timeout;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -621,12 +601,11 @@ Returns:
   DevReq.Index    = Target;
   DevReq.Length   = 2;
 
-  Timeout         = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
                   EfiUsbDataIn,
-                  Timeout,
+                  TIMEOUT_VALUE,
                   DevStatus,
                   2,
                   Status
