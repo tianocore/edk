@@ -387,7 +387,7 @@ Returns:
       MaxIndex = (VARIABLE_HEADER *) (IndexTable->Index[Count] + ((UINT32) IndexTable->StartPtr & 0xFFFF0000));
 #else
 #if ALIGNMENT >= 4
-      MaxIndex = (VARIABLE_HEADER *) ((((UINT32) IndexTable->Index[Count]) << 2) + ((UINT32) IndexTable->StartPtr & 0xFFFC0000));
+          MaxIndex = (VARIABLE_HEADER *) (UINTN) ((((UINT32)IndexTable->Index[Count]) << 2) + ((UINT32)(UINTN)IndexTable->StartPtr & 0xFFFC0000) );       
 #endif
 #endif
       if (CompareWithValidVariable (MaxIndex, VariableName, VendorGuid, PtrTrack) == EFI_SUCCESS) {
@@ -481,7 +481,7 @@ Returns:
         IndexTable->Index[IndexTable->Length++] = (UINT16) (UINT32) Variable;
 #else
 #if ALIGNMENT >= 4
-        IndexTable->Index[IndexTable->Length++] = (UINT16) (((UINT32) Variable) >> 2);
+            IndexTable->Index[IndexTable->Length++] = (UINT16) (((UINT32)(UINTN) Variable) >> 2);
 #endif
 #endif
       }
