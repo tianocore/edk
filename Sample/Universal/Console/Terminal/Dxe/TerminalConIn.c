@@ -770,34 +770,37 @@ Symbols used in table below
   DEL = 0x7f  
   ^   = CTRL
 
-+=========+======+===========+=========+===========+==========+===========+=========+=======+=====+
-|         | EFI  | EFI 1.10  |EFI 1.10 |           |          |           |         |       |     |
-|         | Scan |           |  ANSI   |           |          |           |         |VT100+ |     |
-|   KEY   | Code |  PC ANSI  | X3.64   |           |          |           |         |VTUTF8 |Other|
-+=========+======+===========+=========+===========+==========+===========+=========+=======+=====+
-| NULL    | 0x00 |           |         |           |          |           |         |       |     |
-| UP      | 0x01 | ESC [ A   | CSI A   |           |          |           |         |       |     |
-| DOWN    | 0x02 | ESC [ B   | CSI B   |           |          |           |         |       |     |
-| RIGHT   | 0x03 | ESC [ C   | CSI C   |           |          |           |         |       |     | 
-| LEFT    | 0x04 | ESC [ D   | CSI D   |           |          |           |         |       |     |
-| HOME    | 0x05 | ESC [ H   | CSI H   |           |          |           |         | ESC h  |     |
-| END     | 0x06 | ESC [ K   | CSI K   |           |          |           |         | ESC k  |     |
-| INSERT  | 0x07 | ESC [ @   | CSI @   | ESC [ L   |  CSI L   |           |         | ESC +  |     |
-| DELETE  | 0x08 | ESC [ P   | CSI P   |           |          |           |         | ESC - | DEL |
-| PG UP   | 0x09 | ESC [ ?   | CSI ?   | ESC [ V   |  CSI V   | ESC [ M   | CSI M   | ESC ?  |     |
-| PG DOWN | 0x0A | ESC [ /   | CSI /   | ESC [ U   |  CSI U   | ESC [ 2 J | CSI 2 J | ESC /  |     |
-| F1      | 0x0B | ESC [ O P | CSI O P |           |          | ESC O P   |         | ESC 1  |     |
-| F2      | 0x0C | ESC [ O Q | CSI O Q |           |          | ESC O Q   |         | ESC 2  |     |
-| F3      | 0x0D | ESC [ O w | CSI O w | ESC [ O R |  CSI O R  |  ESC O R   |         | ESC 3  |     |
-| F4      | 0x0E | ESC [ O x | CSI O x | ESC [ O S |  CSI O S  |  ESC O S   |         | ESC 4  |     |
-| F5      | 0x0F | ESC [ O t | CSI O t | ESC [ O T |  CSI O T  |  ESC O T   |         | ESC 5  |     |
-| F6      | 0x10 | ESC [ O u | CSI O u | ESC [ O U |  CSI O U  |  ESC O U   |         | ESC 6  |     |
-| F7      | 0x11 | ESC [ O q | CSI O q | ESC [ O V |  CSI O V  |  ESC O V   |         | ESC 7  |     |
-| F8      | 0x12 | ESC [ O r | CSI O r | ESC [ O W |  CSI O W  |  ESC O W   |         | ESC 8  |     |
-| F9      | 0x13 | ESC [ O p | CSI O p | ESC [ O X |  CSI O X  |  ESC O X   |         | ESC 9  |     |
-| F10     | 0x14 | ESC [ O M | CSI O M | ESC [ O Y |  CSI O Y  |  ESC O Y   |         | ESC 0  |     |
-| Escape  | 0x17 | ESC       |         |           |          |           |         |       | ^[  |
-+=========+======+===========+=========+===========+==========+===========+=========+=======+=====+
++=========+======+===========+==========+==========+
+|         | EFI  | EFI 1.10  |          |          |
+|         | Scan |           |  VT100+  |          |
+|   KEY   | Code |  PC ANSI  |  VTUTF8  |   VT100  |
++=========+======+===========+==========+==========+
+| NULL    | 0x00 |           |          |          |
+| UP      | 0x01 | ESC [ A   | ESC [ A  | ESC [ A  |
+| DOWN    | 0x02 | ESC [ B   | ESC [ B  | ESC [ B  |
+| RIGHT   | 0x03 | ESC [ C   | ESC [ C  | ESC [ C  | 
+| LEFT    | 0x04 | ESC [ D   | ESC [ D  | ESC [ D  |
+| HOME    | 0x05 | ESC [ H   | ESC h    | ESC [ H  |
+| END     | 0x06 | ESC [ F   | ESC k    | ESC [ K  |
+| INSERT  | 0x07 | ESC [ @   | ESC +    | ESC [ @  |
+|         |      | ESC [ L   |          | ESC [ L  |
+| DELETE  | 0x08 | ESC [ X   | ESC -    | ESC [ P  |
+| PG UP   | 0x09 | ESC [ I   | ESC ?    | ESC [ V  |
+|         |      |           |          | ESC [ ?  |
+| PG DOWN | 0x0A | ESC [ G   | ESC /    | ESC [ U  |
+|         |      |           |          | ESC [ /  |
+| F1      | 0x0B | ESC [ M   | ESC 1    | ESC O P  |
+| F2      | 0x0C | ESC [ N   | ESC 2    | ESC O Q  |
+| F3      | 0x0D | ESC [ O   | ESC 3    | ESC O w  |
+| F4      | 0x0E | ESC [ P   | ESC 4    | ESC O x  |
+| F5      | 0x0F | ESC [ Q   | ESC 5    | ESC O t  |
+| F6      | 0x10 | ESC [ R   | ESC 6    | ESC O u  |
+| F7      | 0x11 | ESC [ S   | ESC 7    | ESC O q  |
+| F8      | 0x12 | ESC [ T   | ESC 8    | ESC O r  |
+| F9      | 0x13 | ESC [ U   | ESC 9    | ESC O p  |
+| F10     | 0x14 | ESC [ V   | ESC 0    | ESC O M  |
+| Escape  | 0x17 | ESC       | ESC      | ESC      |
++=========+======+===========+==========+=========+
 
 Special Mappings
 ================
@@ -805,12 +808,12 @@ ESC R ESC r ESC R = Reset System
 
 --*/
 {
-  EFI_STATUS    Status;
-  EFI_STATUS    TimerStatus;
-  UINT16        UnicodeChar;
-  EFI_INPUT_KEY Key;
-  BOOLEAN       SetDefaultResetState;
-
+  EFI_STATUS          Status;
+  EFI_STATUS          TimerStatus;
+  UINT16              UnicodeChar;
+  EFI_INPUT_KEY       Key;
+  BOOLEAN             SetDefaultResetState;
+  
   TimerStatus = gBS->CheckEvent (TerminalDevice->TwoSecondTimeOut);
 
   if (!EFI_ERROR (TimerStatus)) {
@@ -818,8 +821,8 @@ ESC R ESC r ESC R = Reset System
     TerminalDevice->ResetState = RESET_STATE_DEFAULT;
   }
 
-  while (!IsUnicodeFiFoEmpty (TerminalDevice)) {
-
+  while (!IsUnicodeFiFoEmpty(TerminalDevice)) {
+    
     if (TerminalDevice->InputState != INPUT_STATE_DEFAULT) {
       //
       // Check to see if the 2 second timer has expired
@@ -830,10 +833,11 @@ ESC R ESC r ESC R = Reset System
         TerminalDevice->ResetState = RESET_STATE_DEFAULT;
       }
     }
+
     //
     // Fetch one Unicode character from the Unicode FIFO
     //
-    UnicodeFiFoRemoveOneKey (TerminalDevice, &UnicodeChar);
+    UnicodeFiFoRemoveOneKey (TerminalDevice,&UnicodeChar);
 
     SetDefaultResetState = TRUE;
 
@@ -850,99 +854,88 @@ ESC R ESC r ESC R = Reset System
         continue;
       }
 
-      if (UnicodeChar == 'O') {
+      if (UnicodeChar == 'O' && TerminalDevice->TerminalType == VT100Type) {
         TerminalDevice->InputState |= INPUT_STATE_O;
         TerminalDevice->ResetState = RESET_STATE_DEFAULT;
         continue;
       }
 
+      Key.ScanCode = SCAN_NULL;
+      
+      if (TerminalDevice->TerminalType == VT100PlusType || 
+          TerminalDevice->TerminalType == VTUTF8Type) {
+        switch (UnicodeChar) {
+        case '1': 
+          Key.ScanCode = SCAN_F1;         
+          break;
+        case '2': 
+          Key.ScanCode = SCAN_F2;         
+          break;
+        case '3': 
+          Key.ScanCode = SCAN_F3;         
+          break;
+        case '4': 
+          Key.ScanCode = SCAN_F4;         
+          break;
+        case '5': 
+          Key.ScanCode = SCAN_F5;         
+          break;
+        case '6': 
+          Key.ScanCode = SCAN_F6;         
+          break;
+        case '7': 
+          Key.ScanCode = SCAN_F7;         
+          break;
+        case '8': 
+          Key.ScanCode = SCAN_F8;         
+          break;
+        case '9': 
+          Key.ScanCode = SCAN_F9;         
+          break;
+        case '0': 
+          Key.ScanCode = SCAN_F10;        
+          break;
+        case 'h': 
+          Key.ScanCode = SCAN_HOME;       
+          break;
+        case 'k': 
+          Key.ScanCode = SCAN_END;        
+          break;
+        case '+': 
+          Key.ScanCode = SCAN_INSERT;     
+          break;
+        case '-': 
+          Key.ScanCode = SCAN_DELETE;     
+          break;
+        case '/': 
+          Key.ScanCode = SCAN_PAGE_DOWN;  
+          break;
+        case '?': 
+          Key.ScanCode = SCAN_PAGE_UP;    
+          break;        
+        default :                                 
+          break;
+        }
+      }
+      
       switch (UnicodeChar) {
-      case '1':
-        Key.ScanCode = SCAN_F1;
-        break;
-
-      case '2':
-        Key.ScanCode = SCAN_F2;
-        break;
-
-      case '3':
-        Key.ScanCode = SCAN_F3;
-        break;
-
-      case '4':
-        Key.ScanCode = SCAN_F4;
-        break;
-
-      case '5':
-        Key.ScanCode = SCAN_F5;
-        break;
-
-      case '6':
-        Key.ScanCode = SCAN_F6;
-        break;
-
-      case '7':
-        Key.ScanCode = SCAN_F7;
-        break;
-
-      case '8':
-        Key.ScanCode = SCAN_F8;
-        break;
-
-      case '9':
-        Key.ScanCode = SCAN_F9;
-        break;
-
-      case '0':
-        Key.ScanCode = SCAN_F10;
-        break;
-
-      case 'h':
-        Key.ScanCode = SCAN_HOME;
-        break;
-
-      case 'k':
-        Key.ScanCode = SCAN_END;
-        break;
-
-      case '+':
-        Key.ScanCode = SCAN_INSERT;
-        break;
-
-      case '-':
-        Key.ScanCode = SCAN_DELETE;
-        break;
-
-      case '/':
-        Key.ScanCode = SCAN_PAGE_DOWN;
-        break;
-
-      case '?':
-        Key.ScanCode = SCAN_PAGE_UP;
-        break;
-
-      case 'R':
+      case 'R': 
         if (TerminalDevice->ResetState == RESET_STATE_DEFAULT) {
-          TerminalDevice->ResetState  = RESET_STATE_ESC_R;
-          SetDefaultResetState        = FALSE;
+          TerminalDevice->ResetState = RESET_STATE_ESC_R;
+          SetDefaultResetState = FALSE;
         } else if (TerminalDevice->ResetState == RESET_STATE_ESC_R_ESC_r) {
           gRT->ResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
         }
-
         Key.ScanCode = SCAN_NULL;
         break;
-
-      case 'r':
+      case 'r': 
         if (TerminalDevice->ResetState == RESET_STATE_ESC_R) {
-          TerminalDevice->ResetState  = RESET_STATE_ESC_R_ESC_r;
-          SetDefaultResetState        = FALSE;
+          TerminalDevice->ResetState = RESET_STATE_ESC_R_ESC_r;
+          SetDefaultResetState = FALSE;
         }
-
         Key.ScanCode = SCAN_NULL;
         break;
-
-      default:
-        Key.ScanCode = SCAN_NULL;
+      default : 
         break;
       }
 
@@ -952,7 +945,7 @@ ESC R ESC r ESC R = Reset System
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -966,55 +959,48 @@ ESC R ESC r ESC R = Reset System
 
       TerminalDevice->ResetState = RESET_STATE_DEFAULT;
 
-      switch (UnicodeChar) {
-      case 'P':
-        Key.ScanCode = SCAN_F1;
-        break;
-
-      case 'Q':
-        Key.ScanCode = SCAN_F2;
-        break;
-
-      case 'R':
-        Key.ScanCode = SCAN_F3;
-        break;
-
-      case 'S':
-        Key.ScanCode = SCAN_F4;
-        break;
-
-      case 'T':
-        Key.ScanCode = SCAN_F5;
-        break;
-
-      case 'U':
-        Key.ScanCode = SCAN_F6;
-        break;
-
-      case 'V':
-        Key.ScanCode = SCAN_F7;
-        break;
-
-      case 'W':
-        Key.ScanCode = SCAN_F8;
-        break;
-
-      case 'X':
-        Key.ScanCode = SCAN_F9;
-        break;
-
-      case 'Y':
-        Key.ScanCode = SCAN_F10;
-        break;
-
-      default:
-        Key.ScanCode = SCAN_NULL;
-        break;
+      Key.ScanCode = SCAN_NULL;
+      
+      if (TerminalDevice->TerminalType == VT100Type) {
+        switch (UnicodeChar) {
+        case 'P': 
+          Key.ScanCode = SCAN_F1;         
+          break;
+        case 'Q': 
+          Key.ScanCode = SCAN_F2;         
+          break;
+        case 'w': 
+          Key.ScanCode = SCAN_F3;         
+          break;
+        case 'x': 
+          Key.ScanCode = SCAN_F4;         
+          break;
+        case 't': 
+          Key.ScanCode = SCAN_F5;         
+          break;
+        case 'u': 
+          Key.ScanCode = SCAN_F6;         
+          break;
+        case 'q': 
+          Key.ScanCode = SCAN_F7;         
+          break;
+        case 'r': 
+          Key.ScanCode = SCAN_F8;         
+          break;
+        case 'p': 
+          Key.ScanCode = SCAN_F9;         
+          break;
+        case 'M': 
+          Key.ScanCode = SCAN_F10;        
+          break;
+        default :                                 
+          break;
+        }
       }
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -1025,73 +1011,134 @@ ESC R ESC r ESC R = Reset System
       break;
 
     case INPUT_STATE_ESC | INPUT_STATE_LEFTOPENBRACKET:
-    case INPUT_STATE_CSI:
-
+    
       TerminalDevice->ResetState = RESET_STATE_DEFAULT;
-
-      if (UnicodeChar == 'O') {
-        TerminalDevice->InputState |= INPUT_STATE_O;
-        continue;
-      }
-
-      if (UnicodeChar == '2') {
-        TerminalDevice->InputState |= INPUT_STATE_2;
-        continue;
-      }
-
-      switch (UnicodeChar) {
-      case 'A':
-        Key.ScanCode = SCAN_UP;
-        break;
-
-      case 'B':
-        Key.ScanCode = SCAN_DOWN;
-        break;
-
-      case 'C':
-        Key.ScanCode = SCAN_RIGHT;
-        break;
-
-      case 'D':
-        Key.ScanCode = SCAN_LEFT;
-        break;
-
-      case 'H':
-        Key.ScanCode = SCAN_HOME;
-        break;
-
-      case 'K':
-        Key.ScanCode = SCAN_END;
-        break;
-
-      case 'L':
-      case '@':
-        Key.ScanCode = SCAN_INSERT;
-        break;
-
-      case 'P':
-        Key.ScanCode = SCAN_DELETE;
-        break;
-
-      case 'M':
-      case 'V':
-      case '?':
-        Key.ScanCode = SCAN_PAGE_UP;
-        break;
-
-      case 'U':
-      case '/':
-        Key.ScanCode = SCAN_PAGE_DOWN;
-        break;
-
-      default:
-        Key.ScanCode = SCAN_NULL;
-        break;
+      
+      Key.ScanCode = SCAN_NULL;
+      
+      if (TerminalDevice->TerminalType == PcAnsiType    ||
+          TerminalDevice->TerminalType == VT100Type     ||
+          TerminalDevice->TerminalType == VT100PlusType || 
+          TerminalDevice->TerminalType == VTUTF8Type) {
+        switch (UnicodeChar) {
+        case 'A': 
+          Key.ScanCode = SCAN_UP;         
+          break;
+        case 'B': 
+          Key.ScanCode = SCAN_DOWN;       
+          break;
+        case 'C': 
+          Key.ScanCode = SCAN_RIGHT;      
+          break;
+        case 'D': 
+          Key.ScanCode = SCAN_LEFT;       
+          break;
+        case 'H': 
+          if (TerminalDevice->TerminalType == PcAnsiType ||
+              TerminalDevice->TerminalType == VT100Type) {
+            Key.ScanCode = SCAN_HOME;       
+          }
+          break;
+        case 'F': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_END;
+          }
+          break;
+        case 'K': 
+          if (TerminalDevice->TerminalType == VT100Type) {
+            Key.ScanCode = SCAN_END;        
+          }
+          break;
+        case 'L':   
+        case '@': 
+          if (TerminalDevice->TerminalType == PcAnsiType ||
+              TerminalDevice->TerminalType == VT100Type) {
+            Key.ScanCode = SCAN_INSERT;     
+          }
+          break;
+        case 'X': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_DELETE;
+          }
+          break;
+        case 'P': 
+          if (TerminalDevice->TerminalType == VT100Type) {
+            Key.ScanCode = SCAN_DELETE;        
+          } else if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F4;
+          }
+          break;
+        case 'I': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_PAGE_UP;
+          }
+          break;        
+        case 'V': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F10;
+          }  
+        case '?': 
+          if (TerminalDevice->TerminalType == VT100Type) {
+            Key.ScanCode = SCAN_PAGE_UP;        
+          }
+          break;
+        case 'G': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_PAGE_DOWN;
+          }
+          break;        
+        case 'U': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F9;
+          }
+        case '/': 
+          if (TerminalDevice->TerminalType == VT100Type) {
+            Key.ScanCode = SCAN_PAGE_DOWN;        
+          }
+          break;
+        case 'M': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F1;
+          }
+          break;        
+        case 'N': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F2;
+          }
+          break;        
+        case 'O': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F3;
+          }
+          break;        
+        case 'Q': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F5;
+          }
+          break;        
+        case 'R': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F6;
+          }
+          break;        
+        case 'S': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F7;
+          }
+          break;        
+        case 'T': 
+          if (TerminalDevice->TerminalType == PcAnsiType) {
+            Key.ScanCode = SCAN_F8;
+          }
+          break;        
+        default : 
+          break;
+        }
       }
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -1101,95 +1148,7 @@ ESC R ESC r ESC R = Reset System
 
       break;
 
-    case INPUT_STATE_ESC | INPUT_STATE_LEFTOPENBRACKET | INPUT_STATE_2:
-    case INPUT_STATE_CSI | INPUT_STATE_2:
-
-      TerminalDevice->ResetState = RESET_STATE_DEFAULT;
-
-      if (UnicodeChar == 'J') {
-        Key.ScanCode    = SCAN_PAGE_DOWN;
-        Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
-        TerminalDevice->InputState = INPUT_STATE_DEFAULT;
-        UnicodeToEfiKeyFlushState (TerminalDevice);
-        continue;
-      }
-
-      UnicodeToEfiKeyFlushState (TerminalDevice);
-
-      break;
-
-    case INPUT_STATE_ESC | INPUT_STATE_LEFTOPENBRACKET | INPUT_STATE_O:
-    case INPUT_STATE_CSI | INPUT_STATE_O:
-
-      TerminalDevice->ResetState = RESET_STATE_DEFAULT;
-
-      switch (UnicodeChar) {
-      case 'P':
-        Key.ScanCode = SCAN_F1;
-        break;
-
-      case 'Q':
-        Key.ScanCode = SCAN_F2;
-        break;
-
-      case 'R':
-      case 'w':
-        Key.ScanCode = SCAN_F3;
-        break;
-
-      case 'S':
-      case 'x':
-        Key.ScanCode = SCAN_F4;
-        break;
-
-      case 'T':
-      case 't':
-        Key.ScanCode = SCAN_F5;
-        break;
-
-      case 'U':
-      case 'u':
-        Key.ScanCode = SCAN_F6;
-        break;
-
-      case 'V':
-      case 'q':
-        Key.ScanCode = SCAN_F7;
-        break;
-
-      case 'W':
-      case 'r':
-        Key.ScanCode = SCAN_F8;
-        break;
-
-      case 'X':
-      case 'p':
-        Key.ScanCode = SCAN_F9;
-        break;
-
-      case 'Y':
-      case 'M':
-        Key.ScanCode = SCAN_F10;
-        break;
-
-      default:
-        Key.ScanCode = SCAN_NULL;
-        break;
-      }
-
-      if (Key.ScanCode != SCAN_NULL) {
-        Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
-        TerminalDevice->InputState = INPUT_STATE_DEFAULT;
-        UnicodeToEfiKeyFlushState (TerminalDevice);
-        continue;
-      }
-
-      UnicodeToEfiKeyFlushState (TerminalDevice);
-
-      break;
-
+    
     default:
       //
       // Invalid state. This should never happen.
@@ -1204,16 +1163,12 @@ ESC R ESC r ESC R = Reset System
     if (UnicodeChar == ESC) {
       TerminalDevice->InputState = INPUT_STATE_ESC;
     }
-
-    if (UnicodeChar == CSI) {
-      TerminalDevice->InputState = INPUT_STATE_CSI;
-    }
-
+    
     if (TerminalDevice->InputState != INPUT_STATE_DEFAULT) {
-      Status = gBS->SetTimer (
+      Status = gBS->SetTimer(
                       TerminalDevice->TwoSecondTimeOut,
                       TimerRelative,
-                      (UINT64) 20000000
+                      (UINT64)20000000
                       );
       continue;
     }
@@ -1230,6 +1185,6 @@ ESC R ESC r ESC R = Reset System
       Key.UnicodeChar = UnicodeChar;
     }
 
-    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
+    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
   }
 }
