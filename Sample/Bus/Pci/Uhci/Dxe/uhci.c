@@ -19,15 +19,13 @@ Abstract:
 Revision History
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
-
 #include "uhci.h"
 
 //
 // Prototypes
 // Driver model protocol interface
 //
+
 EFI_STATUS
 EFIAPI
 UHCIDriverEntryPoint (
@@ -63,6 +61,7 @@ UHCIDriverBindingStop (
 //
 // UHCI interface functions
 //
+
 EFI_STATUS
 EFIAPI
 UHCIReset (
@@ -221,6 +220,7 @@ EFI_DRIVER_BINDING_PROTOCOL gUhciDriverBinding = {
   NULL
 };
 
+
 EFI_DRIVER_ENTRY_POINT (UHCIDriverEntryPoint)
 
 EFI_STATUS
@@ -235,15 +235,13 @@ UHCIDriverEntryPoint (
     Entry point for EFI drivers.
 
   Arguments:
-    (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
-
+    ImageHandle - EFI_HANDLE
+    SystemTable - EFI_SYSTEM_TABLE
   Returns:
     EFI_SUCCESS
     others
 
---*/
-// TODO:    ImageHandle - add argument and description to function comment
-// TODO:    SystemTable - add argument and description to function comment
+--*/   
 {
   return EfiLibInstallAllDriverProtocols (
           ImageHandle,
@@ -271,7 +269,7 @@ UHCIDriverBindingSupported (
 
   Arguments:
     This                - Protocol instance pointer.
-    ControllerHandle    - Handle of device to test
+    Controller,         - Handle of device to test
     RemainingDevicePath - Not used
 
   Returns:
@@ -279,7 +277,6 @@ UHCIDriverBindingSupported (
     EFI_UNSUPPORTED     - This driver does not support this device.
 
 --*/
-// TODO:    Controller - add argument and description to function comment
 {
   EFI_STATUS          OpenStatus;
   EFI_STATUS          Status;
@@ -333,7 +330,6 @@ UHCIDriverBindingSupported (
 
     return EFI_UNSUPPORTED;
   }
-
   gBS->CloseProtocol (
         Controller,
         &gEfiPciIoProtocolGuid,
@@ -358,7 +354,7 @@ UHCIDriverBindingStart (
 
   Arguments:
     This                - Protocol instance pointer.
-    ControllerHandle    - Handle of device to test
+    Controller          - Handle of device to test
     RemainingDevicePath - Not used
 
   Returns:
@@ -369,13 +365,12 @@ UHCIDriverBindingStart (
     EFI_OUT_OF_RESOURCES
 
 --*/
-// TODO:    Controller - add argument and description to function comment
-{
-  EFI_STATUS          Status;
-  UINTN               FlBaseAddrReg;
-  EFI_PCI_IO_PROTOCOL *PciIo;
-  USB_HC_DEV          *HcDev;
-
+{ 
+  EFI_STATUS              Status; 
+  UINTN                   FlBaseAddrReg; 
+  EFI_PCI_IO_PROTOCOL     *PciIo; 
+  USB_HC_DEV              *HcDev;
+  
   HcDev = NULL;
 
   Status = gBS->OpenProtocol (
@@ -389,7 +384,6 @@ UHCIDriverBindingStart (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Turn off USB emulation
   //
@@ -461,6 +455,7 @@ UHCIDriverBindingStart (
   //
   Status = CreateFrameList (HcDev, (UINT32) FlBaseAddrReg);
   if (EFI_ERROR (Status)) {
+
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
@@ -493,12 +488,6 @@ UHCIDriverBindingStart (
 
     FreeFrameListEntry (HcDev);
 
-    gBS->UninstallProtocolInterface (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          &HcDev->UsbHc
-          );
-
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
@@ -528,7 +517,7 @@ UHCIDriverBindingStart (
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
-  
+
     gBS->CloseProtocol (
           Controller,
           &gEfiPciIoProtocolGuid,
@@ -545,11 +534,38 @@ UHCIDriverBindingStart (
   //
   Status = InitializeMemoryManagement (HcDev);
   if (EFI_ERROR (Status)) {
-
+  
     gBS->CloseEvent (HcDev->InterruptTransTimer);
-
+    
     FreeFrameListEntry (HcDev);
-        
+
+    if (HcDev != NULL) {
+      gBS->FreePool (HcDev);
+    }
+
+    gBS->CloseProtocol (
+           Controller, 
+           &gEfiPciIoProtocolGuid, 
+           This->DriverBindingHandle,   
+           Controller
+           );
+    return Status;
+  }
+  
+  //
+  // Install Host Controller Protocol
+  //
+  Status = gBS->InstallProtocolInterface (
+                  &Controller,
+                  &gEfiUsbHcProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &HcDev->UsbHc
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->CloseEvent (HcDev->InterruptTransTimer);
+    FreeFrameListEntry (HcDev);
+    DelMemoryManagement (HcDev);
+
     if (HcDev != NULL) {
       gBS->FreePool (HcDev);
     }
@@ -564,34 +580,6 @@ UHCIDriverBindingStart (
   }
   
   //
-  // Install Host Controller Protocol            
-  //                                             
-  Status = gBS->InstallProtocolInterface (       
-                  &Controller,                   
-                  &gEfiUsbHcProtocolGuid,        
-                  EFI_NATIVE_INTERFACE,          
-                  &HcDev->UsbHc                  
-                  ); 
-                            
-  if (EFI_ERROR (Status)) {                      
-    gBS->CloseEvent (HcDev->InterruptTransTimer);
-    FreeFrameListEntry (HcDev);                  
-    DelMemoryManagement (HcDev);                 
-                                               
-    if (HcDev != NULL) {                         
-      gBS->FreePool (HcDev);                     
-    }                                            
-                                                
-    gBS->CloseProtocol (                         
-           Controller,                           
-           &gEfiPciIoProtocolGuid,               
-           This->DriverBindingHandle,            
-           Controller                            
-           );                                    
-    return Status;                               
-  }                                              
-                                               
-  //                                             
   // component name protocol.
   //
   HcDev->ControllerNameTable = NULL;
@@ -601,10 +589,11 @@ UHCIDriverBindingStart (
     &HcDev->ControllerNameTable,
     L"Usb Universal Host Controller"
     );
-  
+
   return EFI_SUCCESS;
-} 
-  
+}
+
+
 EFI_STATUS
 UnInstallUHCInterface (
   IN  EFI_HANDLE              Controller,
@@ -660,7 +649,6 @@ UnInstallUHCInterface (
   if (HcDev->ControllerNameTable) {
     EfiLibFreeUnicodeStringTable (HcDev->ControllerNameTable);
   }
-
   //
   // Disable the USB Host Controller
   //
@@ -675,6 +663,7 @@ UnInstallUHCInterface (
 
   return EFI_SUCCESS;
 }
+
 
 EFI_STATUS
 EFIAPI
@@ -692,7 +681,7 @@ UHCIDriverBindingStop (
 
   Arguments:
     This              - Protocol instance pointer.
-    DeviceHandle      - Handle of device to stop driver on
+    Controller        - Handle of device to stop driver on
     NumberOfChildren  - Number of Children in the ChildHandleBuffer
     ChildHandleBuffer - List of handles for the children we need to stop.
 
@@ -701,7 +690,6 @@ UHCIDriverBindingStop (
     others
 
 --*/
-// TODO:    Controller - add argument and description to function comment
 {
   EFI_USB_HC_PROTOCOL *UsbHc;
   EFI_STATUS          OpenStatus;
@@ -723,7 +711,6 @@ UHCIDriverBindingStop (
   if (EFI_ERROR (OpenStatus)) {
     return OpenStatus;
   }
-
   //
   // free all the controller related memory and uninstall UHCI Protocol.
   //
@@ -739,6 +726,7 @@ UHCIDriverBindingStop (
   return EFI_SUCCESS;
 
 }
+
 
 EFI_STATUS
 EFIAPI
@@ -815,6 +803,7 @@ UHCIReset (
     if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
+
     //
     // Wait 50ms for root port to let reset complete
     // See UHCI spec page122 Reset signaling
@@ -981,6 +970,7 @@ UHCIGetState (
   return EFI_SUCCESS;
 }
 
+
 EFI_STATUS
 EFIAPI
 UHCISetState (
@@ -1062,8 +1052,7 @@ UHCISetState (
     break;
 
   case EfiUsbHcStateOperational:
-    if (IsHostSysErr (HcDev->PciIo, StatusRegAddr) ||
-        IsHCProcessErr (HcDev->PciIo, StatusRegAddr)) {
+    if (IsHostSysOrProcessErr (HcDev->PciIo, StatusRegAddr)) {
       return EFI_DEVICE_ERROR;
     }
 
@@ -1085,7 +1074,7 @@ UHCISetState (
         return EFI_DEVICE_ERROR;
       }
 
-      Command |= USBCMD_RS;
+      Command |= USBCMD_RS | USBCMD_MAXP;
       Status = WriteUHCCommandReg (
                 HcDev->PciIo,
                 CommandRegAddr,
@@ -1273,9 +1262,9 @@ UHCIGetRootHubPortStatus (
         The status of the USB root hub port specified by PortNumber 
         was returned in PortStatus.
     EFI_INVALID_PARAMETER 
-        PortNumber is invalid.  
+        PortNumber is invalid. 
+    EFI_DEVICE_ERROR - Can't read register      
 --*/
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   USB_HC_DEV  *HcDev;
   UINT32      PSAddr;
@@ -1320,7 +1309,6 @@ UHCIGetRootHubPortStatus (
   if (RHPortStatus & USBPORTSC_CCS) {
     PortStatus->PortStatus |= USB_PORT_STAT_CONNECTION;
   }
-
   //
   // Port Enabled/Disabled
   //
@@ -1348,7 +1336,6 @@ UHCIGetRootHubPortStatus (
   if (RHPortStatus & USBPORTSC_LSDA) {
     PortStatus->PortStatus |= USB_PORT_STAT_LOW_SPEED;
   }
-
   //
   //   Fill Port Status Change bits
   //
@@ -1398,9 +1385,9 @@ UHCISetRootHubPortFeature (
         USB root hub port specified by PortNumber.
     EFI_INVALID_PARAMETER 
         PortNumber is invalid or PortFeature is invalid.
+    EFI_DEVICE_ERROR
+        Can't read register
 --*/
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   USB_HC_DEV  *HcDev;
   UINT32      PSAddr;
@@ -1510,8 +1497,9 @@ UHCIClearRootHubPortFeature (
         USB root hub port specified by PortNumber.
     EFI_INVALID_PARAMETER 
         PortNumber is invalid or PortFeature is invalid.
+    EFI_DEVICE_ERROR
+        Can't read register
 --*/
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   USB_HC_DEV  *HcDev;
   UINT32      PSAddr;
@@ -1737,9 +1725,7 @@ UHCIControlTransfer (
   // if errors exist that cause host controller halt,
   // then return EFI_DEVICE_ERROR.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-      IsHostSysErr (HcDev->PciIo,StatusReg)) {      
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     *TransferResult = EFI_USB_ERR_SYSTEM;
@@ -1787,7 +1773,7 @@ UHCIControlTransfer (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-      
+
     Ptr = (UINT8 *) ((UINTN) TempPtr);
     break;
 
@@ -1838,7 +1824,6 @@ UHCIControlTransfer (
     HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
     return EFI_DEVICE_ERROR;
   }
-
   //
   // create QH structure and init
   //
@@ -1980,146 +1965,139 @@ UHCIControlTransfer (
     DeleteQueuedTDs (HcDev, PtrSetupTD);
     DeleteQueuedTDs (HcDev, PtrFirstDataTD);
     return Status;
-  }  
-  
-   if (IsSlowDevice) {
-     //
-     // link setup TD structures to QH structure
-     //
-     LinkTDToQH (PtrQH, PtrSetupTD);
-     
-     LoadFrameListIndex = (UINT16)((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-   
-     //
-     // link QH-TDs to total 100 frame list entry to speed up the execution.
-     //
-     for (Index = 0; Index < 100; Index ++) {
-       LinkQHToFrameList (
-         HcDev->FrameListEntry,
-         (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
-         PtrQH
-         );
-     }
-   
-     //
-     // Poll QH-TDs execution and get result.
-     // detail status is returned
-     //
-     Status = ExecuteControlTransfer (
-                HcDev,
-                PtrSetupTD,
-                LoadFrameListIndex,
-                DataLength,
-                TimeOut,
-                TransferResult
-                );
-     //
-     // Remove Control Transfer QH-TDs structure from the frame list
-     // and update the pointers in the Frame List
-     // and other pointers in other related QH structures.
-     //
-     for (Index = 0; Index < 100; Index ++) {
-       DelLinkSingleQH ( 
-         HcDev,
-         PtrQH,
-         (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
-         FALSE,
-         FALSE
-         );
-     }
-     //
-     // delete setup stage TD; the QH is reserved for the next stages.
-     //
-     DeleteQueuedTDs (HcDev, PtrSetupTD);
- 
-     //
-     // if setup stage error, return error
-     //
- 
-     if (EFI_ERROR (Status)) {
-       goto Done;
-     }
- 
-     //
-     // some control transfers do not have Data Stage
-     //
-     if (PtrFirstDataTD != NULL) {
-      
-       LinkTDToQH (PtrQH,PtrFirstDataTD);
-       LoadFrameListIndex = (UINT16)((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg))  & 0x3FF);
-       
-       for (Index = 0; Index < 500; Index ++) {
-         LinkQHToFrameList (
-           HcDev->FrameListEntry,
-           (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
-           PtrQH
-           );
-       }
-      
-     Status = ExecuteControlTransfer (
-                HcDev,
-                PtrFirstDataTD,
-                LoadFrameListIndex, 
-                DataLength,
-                TimeOut,
-                TransferResult
-                );
-     
-     for (Index = 0; Index < 500; Index ++) {
-       DelLinkSingleQH (
-         HcDev,
-         PtrQH,
-         (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
-         FALSE,
-         FALSE
-         );
-     }
-     //
-     // delete data stage TD; the QH is reserved for the next stage.
-     //
-     DeleteQueuedTDs (HcDev, PtrFirstDataTD);
-    }
- 
+  }
+
+  if (IsSlowDevice) {
     //
-    // if data stage error, goto done and return error
+    // link setup TD structures to QH structure
     //
-    
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-    
-    LinkTDToQH (PtrQH, PtrStatusTD);  
+    LinkTDToQH (PtrQH, PtrSetupTD);
+
+    LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+
     //
-    // get the frame list index that the QH-TDs will be linked to.
-    //  
-    LoadFrameListIndex = (UINT16)((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-    
-    for(Index = 0; Index < 100; Index ++) {
-      
-      //
-      // put the QH-TDs directly or indirectly into the proper place 
-      // in the Frame List 
-      //
+    // link QH-TDs to total 100 frame list entry to speed up the execution.
+    //
+    for (Index = 0; Index < 100; Index++) {
       LinkQHToFrameList (
         HcDev->FrameListEntry,
-        (UINT16)((LoadFrameListIndex + Index) & 0x3FF),
+        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
         PtrQH
         );
     }
-    
     //
     // Poll QH-TDs execution and get result.
     // detail status is returned
     //
     Status = ExecuteControlTransfer (
                HcDev,
-               PtrStatusTD,
+               PtrSetupTD,
                LoadFrameListIndex,
                DataLength,
                TimeOut,
                TransferResult
                );
-    
+    //
+    // Remove Control Transfer QH-TDs structure from the frame list
+    // and update the pointers in the Frame List
+    // and other pointers in other related QH structures.
+    //
+    for (Index = 0; Index < 100; Index++) {
+      DelLinkSingleQH (
+        HcDev,
+        PtrQH,
+        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
+        FALSE,
+        FALSE
+        );
+    }
+    //
+    // delete setup stage TD; the QH is reserved for the next stages.
+    //
+    DeleteQueuedTDs (HcDev, PtrSetupTD);
+
+    //
+    // if setup stage error, return error
+    //
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+    //
+    // some control transfers do not have Data Stage
+    //
+    if (PtrFirstDataTD != NULL) {
+
+      LinkTDToQH (PtrQH, PtrFirstDataTD);
+      LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+
+      for (Index = 0; Index < 500; Index++) {
+        LinkQHToFrameList (
+          HcDev->FrameListEntry,
+          (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
+          PtrQH
+          );
+      }
+
+      Status = ExecuteControlTransfer (
+                HcDev,
+                PtrFirstDataTD,
+                LoadFrameListIndex,
+                DataLength,
+                TimeOut,
+                TransferResult
+                );
+
+      for (Index = 0; Index < 500; Index++) {
+        DelLinkSingleQH (
+          HcDev,
+          PtrQH,
+          (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
+          FALSE,
+          FALSE
+          );
+      }
+      //
+      // delete data stage TD; the QH is reserved for the next stage.
+      //
+      DeleteQueuedTDs (HcDev, PtrFirstDataTD);
+    }
+    //
+    // if data stage error, goto done and return error
+    //
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+
+    LinkTDToQH (PtrQH, PtrStatusTD);
+    //
+    // get the frame list index that the QH-TDs will be linked to.
+    //
+    LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+
+    for (Index = 0; Index < 100; Index++) {
+      //
+      // put the QH-TDs directly or indirectly into the proper place
+      // in the Frame List
+      //
+      LinkQHToFrameList (
+        HcDev->FrameListEntry,
+        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
+        PtrQH
+        );
+    }
+    //
+    // Poll QH-TDs execution and get result.
+    // detail status is returned
+    //
+    Status = ExecuteControlTransfer (
+              HcDev,
+              PtrStatusTD,
+              LoadFrameListIndex,
+              DataLength,
+              TimeOut,
+              TransferResult
+              );
+
     //
     // Delete Control Transfer QH-TDs structure
     // and update the pointers in the Frame List
@@ -2127,79 +2105,77 @@ UHCIControlTransfer (
     //
     // TRUE means must search other framelistindex
     //
-    for (Index = 0; Index < 100; Index ++) {
+    for (Index = 0; Index < 100; Index++) {
       DelLinkSingleQH (
         HcDev,
         PtrQH,
-        (UINT16)((LoadFrameListIndex + Index)  & 0x3FF),
+        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
         FALSE,
         FALSE
         );
     }
+
     DeleteQueuedTDs (HcDev, PtrStatusTD);
-    
-   } else {  
-  //
-  // link setup stage TD with data stage TD
-  //
-  PtrPreTD = PtrSetupTD;
-  if (PtrFirstDataTD != NULL) {
-    LinkTDToTD (PtrSetupTD, PtrFirstDataTD);
-    PtrPreTD = ptrLastDataTD;
-  }
-    
-  //
-  // link status TD with previous TD
-  //
-  LinkTDToTD (PtrPreTD, PtrStatusTD);
 
-  //
-  // link QH with TD
-  //
-  LinkTDToQH (PtrQH, PtrSetupTD);
-
-  LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-  for (Index = 0; Index < 500; Index++) {
-      
+  } else {
     //
-    // put the QH-TDs directly or indirectly into the proper place
-    // in the Frame List
+    // link setup stage TD with data stage TD
     //
-    LinkQHToFrameList (
-      HcDev->FrameListEntry,
-      (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-      PtrQH
-      );
-  }
-    
-  //
-  // Poll QH-TDs execution and get result.
-  // detail status is returned
-  //
-  Status = ExecuteControlTransfer (
-            HcDev,
-            PtrSetupTD,
-            LoadFrameListIndex,
-            DataLength,
-            TimeOut,
-            TransferResult
-            );
-  //
-  // Remove Control Transfer QH-TDs structure from the frame list
-  // and update the pointers in the Frame List
-  // and other pointers in other related QH structures.
-  //
-  for (Index = 0; Index < 500; Index++) {
-    DelLinkSingleQH (
-      HcDev,
-      PtrQH,
-      (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-      FALSE,
-      FALSE
-      );
-  }
+    PtrPreTD = PtrSetupTD;
+    if (PtrFirstDataTD != NULL) {
+      LinkTDToTD (PtrSetupTD, PtrFirstDataTD);
+      PtrPreTD = ptrLastDataTD;
+    }
+    //
+    // link status TD with previous TD
+    //
+    LinkTDToTD (PtrPreTD, PtrStatusTD);
 
-   DeleteQueuedTDs (HcDev, PtrSetupTD);
+    //
+    // link QH with TD
+    //
+    LinkTDToQH (PtrQH, PtrSetupTD);
+
+    LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+    for (Index = 0; Index < 500; Index++) {
+      //
+      // put the QH-TDs directly or indirectly into the proper place
+      // in the Frame List
+      //
+      LinkQHToFrameList (
+        HcDev->FrameListEntry,
+        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
+        PtrQH
+        );
+    }
+    //
+    // Poll QH-TDs execution and get result.
+    // detail status is returned
+    //
+    Status = ExecuteControlTransfer (
+              HcDev,
+              PtrSetupTD,
+              LoadFrameListIndex,
+              DataLength,
+              TimeOut,
+              TransferResult
+              );
+    //
+    // Remove Control Transfer QH-TDs structure from the frame list
+    // and update the pointers in the Frame List
+    // and other pointers in other related QH structures.
+    //
+    for (Index = 0; Index < 500; Index++) {
+      DelLinkSingleQH (
+        HcDev,
+        PtrQH,
+        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
+        FALSE,
+        FALSE
+        );
+    }
+
+    DeleteQueuedTDs (HcDev, PtrSetupTD);
   }
 
 Done:
@@ -2217,9 +2193,7 @@ Done:
   // if has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-      IsHostSysErr (HcDev->PciIo, StatusReg)) {      
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     *TransferResult |= EFI_USB_ERR_SYSTEM;
@@ -2354,9 +2328,7 @@ UHCIBulkTransfer (
   // if has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-      IsHostSysErr (HcDev->PciIo, StatusReg)) {      
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     *TransferResult = EFI_USB_ERR_SYSTEM;
@@ -2558,7 +2530,6 @@ UHCIBulkTransfer (
   //
   // put QH-TDs into  Frame list
   //
-
   LoadFrameListIndex  = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
   SavedFrameListIndex = LoadFrameListIndex;
 
@@ -2625,9 +2596,7 @@ UHCIBulkTransfer (
   // if has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-      IsHostSysErr (HcDev->PciIo, StatusReg)) {      
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     *TransferResult |= EFI_USB_ERR_SYSTEM;
@@ -2719,8 +2688,9 @@ UHCIAsyncInterruptTransfer (
         Some parameters are invalid.
     EFI_OUT_OF_RESOURCES  
         The request could not be completed due to a lack of resources.  
+    EFI_DEVICE_ERROR
+        Can't read register
 --*/
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   USB_HC_DEV            *HcDev;
   UINT32                StatusReg;
@@ -2789,9 +2759,7 @@ UHCIAsyncInterruptTransfer (
   // if has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-     IsHostSysErr (HcDev->PciIo, StatusReg)) {
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     return EFI_DEVICE_ERROR;
@@ -3119,9 +3087,7 @@ UHCISyncInterruptTransfer (
   // if has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-      IsHostSysErr (HcDev->PciIo, StatusReg)) {      
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     *TransferResult = EFI_USB_ERR_SYSTEM;
@@ -3193,7 +3159,6 @@ UHCISyncInterruptTransfer (
     //
     // create TD structures and link together
     //
-
     PktSize = (UINT8) DataLen;
     if (DataLen > MaximumPacketLength) {
       PktSize = MaximumPacketLength;
@@ -3327,9 +3292,7 @@ UHCISyncInterruptTransfer (
   // if has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (IsHCHalted (HcDev->PciIo, StatusReg)     ||
-      IsHCProcessErr (HcDev->PciIo, StatusReg) ||
-      IsHostSysErr (HcDev->PciIo, StatusReg)) {      
+  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
     ClearStatusReg (HcDev->PciIo, StatusReg);
     *TransferResult |= EFI_USB_ERR_SYSTEM;
@@ -3361,40 +3324,27 @@ UHCIIsochronousTransfer (
   
   Arguments:
     
-    This:                - A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    DeviceAddress:       - Represents the address of the target device on the USB,
+    This                - A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       - Represents the address of the target device on the USB,
                            which is assigned during USB enumeration.
-
-    EndPointAddress:     - End point address
-    
-    MaximumPacketLength: - Indicates the maximum packet size that the 
+    EndPointAddress     - End point address
+    MaximumPacketLength - Indicates the maximum packet size that the 
                            default control transfer endpoint is capable of 
                            sending or receiving.
-       
-    Data:                - A pointer to the buffer of data that will be transmitted 
+    Data                - A pointer to the buffer of data that will be transmitted 
                            to USB device or received from USB device.
-    
-    DataLength:          - Indicates the size, in bytes, of the data buffer 
+    DataLength          - Indicates the size, in bytes, of the data buffer 
                            specified by Data.
-    
-    TransferResult:      - A pointer to the detailed result information generated 
-                           by this control transfer.
-                    
+    TransferResult      - A pointer to the detailed result information generated 
+                           by this control transfer.               
   Returns:
     EFI_UNSUPPORTED 
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    DeviceAddress - add argument and description to function comment
-// TODO:    EndPointAddress - add argument and description to function comment
-// TODO:    MaximumPacketLength - add argument and description to function comment
-// TODO:    Data - add argument and description to function comment
-// TODO:    DataLength - add argument and description to function comment
-// TODO:    TransferResult - add argument and description to function comment
 {
   return EFI_UNSUPPORTED;
 }
+
 
 EFI_STATUS
 EFIAPI
@@ -3415,36 +3365,28 @@ UHCIAsyncIsochronousTransfer (
   
   Arguments:
     
-    This:                - A pointer to the EFI_USB_HC_PROTOCOL instance.
+    This                - A pointer to the EFI_USB_HC_PROTOCOL instance.
     
-    DeviceAddress:       - Represents the address of the target device on the USB,
+    DeviceAddress       - Represents the address of the target device on the USB,
                            which is assigned during USB enumeration.
 
-    EndPointAddress:     - End point address
+    EndPointAddress     - End point address
     
-    MaximumPacketLength: - Indicates the maximum packet size that the 
+    MaximumPacketLength - Indicates the maximum packet size that the 
                            default control transfer endpoint is capable of 
                            sending or receiving.
        
-    Data:                - A pointer to the buffer of data that will be transmitted 
+    Data                - A pointer to the buffer of data that will be transmitted 
                            to USB device or received from USB device.
     
-    IsochronousCallBack: - When the transfer complete, the call back function will be called
+    IsochronousCallBack - When the transfer complete, the call back function will be called
     
-    Context:             - Pass to the call back function as parameter
+    Context             - Pass to the call back function as parameter
                     
   Returns:
     EFI_UNSUPPORTED 
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    DeviceAddress - add argument and description to function comment
-// TODO:    EndPointAddress - add argument and description to function comment
-// TODO:    MaximumPacketLength - add argument and description to function comment
-// TODO:    Data - add argument and description to function comment
-// TODO:    DataLength - add argument and description to function comment
-// TODO:    IsochronousCallBack - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
 {
   return EFI_UNSUPPORTED;
 }
@@ -3458,13 +3400,11 @@ MonitorInterruptTrans (
   Routine Description:
     Interrupt transfer periodic check handler
   Arguments:
-    Event:  - Interrupt event
-    Contex: - Pointer to USB_HC_DEV
+    Event  - Interrupt event
+    Contex - Pointer to USB_HC_DEV
   Returns:
     None
---*/
-// TODO:    Event - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
+--*/            
 {
 
   USB_HC_DEV      *HcDev;

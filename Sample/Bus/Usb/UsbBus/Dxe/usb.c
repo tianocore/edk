@@ -21,18 +21,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
-
-//
-// Driver Consumed Protocol Prototypes
-//
-#include EFI_PROTOCOL_DEFINITION (UsbIo)
-
-#include "usb.h"
-#include EFI_PROTOCOL_DEFINITION (UsbHostController)
 #include "usbbus.h"
-#include "UsbDxeLib.h"
 
 //
 // Here are some internal helper functions
@@ -85,16 +74,12 @@ IsHub (
   Routine Description:
     Tell if a usb controller is a hub controller.
     
-  Parameters:
-    Dev     -     UsbIoController device structure.
+  Arguments:
+    Dev - UsbIoController device structure.
     
-  Return Value:
+  Returns:
     TRUE/FALSE
-    
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    Dev - add argument and description to function comment
 {
   EFI_USB_INTERFACE_DESCRIPTOR  Interface;
   EFI_USB_IO_PROTOCOL           *UsbIo;
@@ -157,24 +142,15 @@ UsbGetStringtable (
   Routine Description:
     Get the string table stored in a usb device.
     
-  Parameters:
+  Arguments:
     Dev     -     UsbIoController device structure.
     
-  Return Value:
+  Returns:
     EFI_SUCCESS
     EFI_UNSUPPORTED
     EFI_OUT_OF_RESOURCES
     
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    Dev - add argument and description to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS                  Result;
   UINT32                      Status;
@@ -209,7 +185,6 @@ UsbGetStringtable (
   if (LanguageTable->Length == 0) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // If length is 2, then there is no string table
   //
@@ -257,32 +232,25 @@ UsbGetStringtable (
   return EFI_SUCCESS;
 }
 
+
 EFI_STATUS
 UsbGetAllConfigurations (
-  IN USB_IO_DEVICE     *UsbDev
+  IN USB_IO_DEVICE     *UsbIoDevice
   )
 /*++
 
   Routine Description:
     This function is to parse all the configuration descriptor.
     
-  Parameters:
-    Dev     -     USB_IO_DEVICE device structure.
+  Arguments:
+    UsbIoDevice  -  USB_IO_DEVICE device structure.
     
-  Return Values:
+  Returns:
     EFI_SUCCESS
     EFI_DEVICE_ERROR
     EFI_OUT_OF_RESOURCES  
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    UsbDev - add argument and description to function comment
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS              Result;
   UINT32                  Status;
@@ -292,55 +260,54 @@ UsbGetAllConfigurations (
   CONFIG_DESC_LIST_ENTRY  *ConfigDescEntry;
   EFI_USB_IO_PROTOCOL     *UsbIo;
 
-  UsbIo = &(UsbDev->UsbController[0]->UsbIo);
+  InitializeListHead (&UsbIoDevice->ConfigDescListHead);
+  UsbIo = &(UsbIoDevice->UsbController[0]->UsbIo);
 
-  for (Index = 0; Index < UsbDev->DeviceDescriptor.NumConfigurations; Index++) {
+  for (Index = 0; Index < UsbIoDevice->DeviceDescriptor.NumConfigurations; Index++) {
     ConfigDescEntry = NULL;
 
     ConfigDescEntry = EfiLibAllocateZeroPool (sizeof (CONFIG_DESC_LIST_ENTRY));
     if (ConfigDescEntry == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
-
     //
     // 1st only get 1st 4 bytes config descriptor,
     // so we can know the whole length
     //
     Result = UsbGetDescriptor (
               UsbIo,
-              0x0200,
-              (UINT8) Index,
+              (UINT16) ((USB_DT_CONFIG << 8) | Index),
+              0,
               4,
               &ConfigDescEntry->CongfigDescriptor,
               &Status
               );
     if (EFI_ERROR (Result)) {
-      DEBUG ((EFI_D_ERROR, "Get 1st config descriptor error\n"));
+      DEBUG ((gUSBErrorLevel, "First get config descriptor error\n"));
       gBS->FreePool (ConfigDescEntry);
       return EFI_DEVICE_ERROR;
     }
 
-    TotalLength = (ConfigDescEntry->CongfigDescriptor).TotalLength;
+    TotalLength = ConfigDescEntry->CongfigDescriptor.TotalLength;
 
     Buffer      = EfiLibAllocateZeroPool (TotalLength);
     if (Buffer == NULL) {
       gBS->FreePool (ConfigDescEntry);
       return EFI_OUT_OF_RESOURCES;
     }
-
     //
     // Then we get the total descriptors for this configuration
     //
     Result = UsbGetDescriptor (
               UsbIo,
-              0x0200,
-              (UINT16) Index,
+              (UINT16) ((USB_DT_CONFIG << 8) | Index),
+              0,
               (UINT16) TotalLength,
               Buffer,
               &Status
               );
     if (EFI_ERROR (Result)) {
-      DEBUG ((EFI_D_ERROR, "Get whole config descriptor error\n"));
+      DEBUG ((gUSBErrorLevel, "Get whole config descriptor error\n"));
       gBS->FreePool (ConfigDescEntry);
       gBS->FreePool (Buffer);
       return EFI_DEVICE_ERROR;
@@ -362,7 +329,7 @@ UsbGetAllConfigurations (
       continue;
     }
 
-    InsertTailList (&UsbDev->ConfigDescListHead, &ConfigDescEntry->Link);
+    InsertTailList (&UsbIoDevice->ConfigDescListHead, &ConfigDescEntry->Link);
 
     gBS->FreePool (Buffer);
 
@@ -385,25 +352,17 @@ GetExpectedDescriptor (
   Routine Description:
     Get the start position of next wanted descriptor.
     
-  Parameters:
-  
-  Return Value:
+  Arguments:
+    Buffer      - Buffer to parse
+    Length      - Buffer length 
+    DescType    - Descriptor type 
+    DescLength  - Descriptor length
+    ParsedBytes - Parsed Bytes to return
+  Returns:
     EFI_SUCCESS
     EFI_DEVICE_ERROR
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    Buffer - add argument and description to function comment
-// TODO:    Length - add argument and description to function comment
-// TODO:    DescType - add argument and description to function comment
-// TODO:    DescLength - add argument and description to function comment
-// TODO:    ParsedBytes - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT16  DescriptorHeader;
   UINT8   Len;
@@ -420,7 +379,6 @@ GetExpectedDescriptor (
     if (Length < DescLength) {
       return EFI_DEVICE_ERROR;
     }
-
     //
     // DescriptorHeader = *((UINT16 *)ptr), compatible with IPF
     //
@@ -440,7 +398,6 @@ GetExpectedDescriptor (
         return EFI_DEVICE_ERROR;
       }
     }
-
     //
     // Descriptor length should be at least 2
     // and should not exceed the buffer length
@@ -465,6 +422,7 @@ GetExpectedDescriptor (
   return EFI_SUCCESS;
 }
 
+
 STATIC
 EFI_STATUS
 ParseThisEndpoint (
@@ -478,20 +436,16 @@ ParseThisEndpoint (
   Routine Description:
     Get the start position of next wanted endpoint descriptor.
 
-  Parameters:
-  
-  Return Value:
+  Arguments:
+    EndpointEntry - ENDPOINT_DESC_LIST_ENTRY
+    Buffer        - Buffer to parse 
+    BufferLength  - Buffer Length
+    ParsedBytes   - Parsed Bytes to return
+  Returns:
     EFI_SUCCESS
     EFI_DEVICE_ERROR
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    EndpointEntry - add argument and description to function comment
-// TODO:    Buffer - add argument and description to function comment
-// TODO:    BufferLength - add argument and description to function comment
-// TODO:    ParsedBytes - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT8       *ptr;
   EFI_STATUS  Status;
@@ -539,21 +493,17 @@ ParseThisInterface (
   Routine Description:
     Get the start position of next wanted interface descriptor.
 
-  Parameters:
-  
-  Return Value:
+  Arguments:
+    InterfaceEntry - INTERFACE_DESC_LIST_ENTRY
+    Buffer         - Buffer to parse 
+    BufferLength   - Buffer Length
+    ParsedBytes    - Parsed Bytes to return
+
+  Returns:
     EFI_SUCCESS
     EFI_DEVICE_ERROR
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    InterfaceEntry - add argument and description to function comment
-// TODO:    Buffer - add argument and description to function comment
-// TODO:    BufferLen - add argument and description to function comment
-// TODO:    ParsedBytes - add argument and description to function comment
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT8                     *ptr;
   UINTN                     SkipBytes;
@@ -597,8 +547,7 @@ ParseThisInterface (
 
   Length = *BufferLen - SkipBytes - sizeof (EFI_USB_INTERFACE_DESCRIPTOR);
 
-  for (Index = 0; Index < (InterfaceEntry->InterfaceDescriptor).NumEndpoints; Index++) {
-    EndpointEntry = NULL;
+  for (Index = 0; Index < InterfaceEntry->InterfaceDescriptor.NumEndpoints; Index++) {
     EndpointEntry = EfiLibAllocateZeroPool (sizeof (ENDPOINT_DESC_LIST_ENTRY));
     if (EndpointEntry == NULL) {
       return EFI_OUT_OF_RESOURCES;
@@ -639,20 +588,16 @@ ParseThisConfig (
   Routine Description:
     Parse the current configuration descriptior.
 
-  Parameters:
-  
-  Return Value:
+  Arguments:
+    ConfigDescEntry - CONFIG_DESC_LIST_ENTRY
+    Buffer          - Buffer to parse 
+    Length          - Buffer Length
+
+  Returns
     EFI_SUCCESS
     EFI_DEVICE_ERROR
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    ConfigDescEntry - add argument and description to function comment
-// TODO:    Buffer - add argument and description to function comment
-// TODO:    Length - add argument and description to function comment
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT8                     *ptr;
   UINT8                     NumInterface;
@@ -721,17 +666,15 @@ ParseThisConfig (
     LengthLeft -= Parsed;
     ptr += Parsed;
   }
-
   //
   // Parse for additional alt setting;
   //
-
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 UsbSetConfiguration (
-  IN USB_IO_DEVICE     *Dev,
+  IN USB_IO_DEVICE     *UsbIoDev,
   IN UINTN             ConfigurationValue
   )
 /*++
@@ -739,19 +682,15 @@ UsbSetConfiguration (
   Routine Description:
     Set the device to a configuration value.
     
-  Parameters:
-    Dev                 -   USB_IO_DEVICE to be set configuration
+  Arguments:
+    UsbIoDev            -   USB_IO_DEVICE to be set configuration
     ConfigrationValue   -   The configuration value to be set to that device
     
-  Return Value:
+  Returns:
     EFI_SUCCESS
     EFI_DEVICE_ERROR
     
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    Dev - add argument and description to function comment
-// TODO:    ConfigurationValue - add argument and description to function comment
 {
   EFI_LIST_ENTRY          *NextEntry;
   CONFIG_DESC_LIST_ENTRY  *ConfigEntry;
@@ -759,29 +698,27 @@ UsbSetConfiguration (
   EFI_STATUS              Result;
   EFI_USB_IO_PROTOCOL     *UsbIo;
 
-  UsbIo     = &(Dev->UsbController[0]->UsbIo);
-  NextEntry = (Dev->ConfigDescListHead).ForwardLink;
+  UsbIo     = &(UsbIoDev->UsbController[0]->UsbIo);
+  NextEntry = UsbIoDev->ConfigDescListHead.ForwardLink;
 
-  while (NextEntry != &Dev->ConfigDescListHead) {
+  while (NextEntry != &UsbIoDev->ConfigDescListHead) {
     //
     // Get one entry
     //
     ConfigEntry = (CONFIG_DESC_LIST_ENTRY *) NextEntry;
-    if ((ConfigEntry->CongfigDescriptor).ConfigurationValue == ConfigurationValue) {
+    if (ConfigEntry->CongfigDescriptor.ConfigurationValue == ConfigurationValue) {
       //
       // Find one, set to the active configuration
       //
-      Dev->ActiveConfig = ConfigEntry;
+      UsbIoDev->ActiveConfig = ConfigEntry;
       break;
     }
 
     NextEntry = NextEntry->ForwardLink;
   }
-
   //
   // Next Entry should not be null
   //
-
   Result = UsbSetDeviceConfiguration (
             UsbIo,
             (UINT16) ConfigurationValue,
@@ -793,61 +730,54 @@ UsbSetConfiguration (
 
 EFI_STATUS
 UsbSetDefaultConfiguration (
-  IN  USB_IO_DEVICE      *Dev
+  IN  USB_IO_DEVICE      *UsbIoDev
   )
 /*++
 
   Routine Description:
     Set the device to a default configuration value.
     
-  Parameters:
-    Dev       -    USB_IO_DEVICE to be set configuration
+  Arguments:
+    UsbIoDev       -    USB_IO_DEVICE to be set configuration
     
-  Return Value:
+  Returns
     EFI_SUCCESS
     EFI_DEVICE_ERROR
     
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    Dev - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   CONFIG_DESC_LIST_ENTRY  *ConfigEntry;
   UINT16                  ConfigValue;
   EFI_LIST_ENTRY          *NextEntry;
 
-  if (IsListEmpty (&Dev->ConfigDescListHead)) {
+  if (IsListEmpty (&UsbIoDev->ConfigDescListHead)) {
     return EFI_DEVICE_ERROR;
   }
 
-  NextEntry   = (Dev->ConfigDescListHead).ForwardLink;
+  NextEntry   = UsbIoDev->ConfigDescListHead.ForwardLink;
 
   ConfigEntry = (CONFIG_DESC_LIST_ENTRY *) NextEntry;
-  ConfigValue = (ConfigEntry->CongfigDescriptor).ConfigurationValue;
+  ConfigValue = ConfigEntry->CongfigDescriptor.ConfigurationValue;
 
-  return UsbSetConfiguration (Dev, ConfigValue);
+  return UsbSetConfiguration (UsbIoDev, ConfigValue);
 }
 
 VOID
 UsbDestroyAllConfiguration (
-  IN  USB_IO_DEVICE      *Dev
+  IN  USB_IO_DEVICE      *UsbIoDevice
   )
 /*++
 
   Routine Description:
     Delete all configuration data when device is not used.
     
-  Parameter:
-    Dev         -    USB_IO_DEVICE to be set configuration
+  Arguments:
+    UsbIoDevice  - USB_IO_DEVICE to be set configuration
   
-  Return Value:
+  Returns:
     N/A
     
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    Dev - add argument and description to function comment
 {
   CONFIG_DESC_LIST_ENTRY    *ConfigEntry;
   INTERFACE_DESC_LIST_ENTRY *InterfaceEntry;
@@ -857,9 +787,9 @@ UsbDestroyAllConfiguration (
   //
   // Delete all configuration descriptor data
   //
-  ConfigEntry = (CONFIG_DESC_LIST_ENTRY *) (Dev->ConfigDescListHead).ForwardLink;
+  ConfigEntry = (CONFIG_DESC_LIST_ENTRY *) UsbIoDevice->ConfigDescListHead.ForwardLink;
 
-  while (ConfigEntry != (CONFIG_DESC_LIST_ENTRY *) &Dev->ConfigDescListHead) {
+  while (ConfigEntry != (CONFIG_DESC_LIST_ENTRY *) &UsbIoDevice->ConfigDescListHead) {
     //
     // Delete all its interface descriptors
     //

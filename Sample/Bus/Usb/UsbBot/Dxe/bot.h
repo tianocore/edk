@@ -20,7 +20,16 @@ Abstract:
 #ifndef _BOT_H
 #define _BOT_H
 
+#include "Tiano.h"
+#include "EfiDriverLib.h"
 #include "usb.h"
+#include "UsbDxeLib.h"
+
+//
+// Driver Consumed Protocol Prototypes
+//
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (UsbAtapi)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
@@ -30,7 +39,6 @@ Abstract:
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
 #pragma pack(1)
-
 //
 // Bulk Only device protocol
 //
@@ -57,7 +65,7 @@ typedef struct {
 
 typedef struct {
   UINTN                         Signature;
-
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   EFI_USB_ATAPI_PROTOCOL        UsbAtapiProtocol;
   EFI_USB_IO_PROTOCOL           *UsbIo;
   EFI_USB_INTERFACE_DESCRIPTOR  *InterfaceDescriptor;

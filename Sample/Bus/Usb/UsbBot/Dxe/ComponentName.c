@@ -56,6 +56,7 @@ STATIC EFI_UNICODE_STRING_TABLE mUsbBotDriverNameTable[] = {
   { NULL , NULL }
 };
 
+
 EFI_STATUS
 EFIAPI
 UsbBotComponentNameGetDriverName (

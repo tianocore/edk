@@ -21,7 +21,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define _USB_MOUSE_H
 
 #include "usb.h"
-#include "usbbus.h"
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (SimplePointer)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
@@ -44,6 +43,7 @@ typedef struct {
 
 typedef struct {
   UINTN                         Signature;
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   EFI_EVENT                     DelayedRecoveryEvent;
   EFI_USB_IO_PROTOCOL           *UsbIo;
   EFI_USB_INTERFACE_DESCRIPTOR  *InterfaceDescriptor;
@@ -68,24 +68,7 @@ VOID
 USBMouseRecoveryHandler (
   IN    EFI_EVENT    Event,
   IN    VOID         *Context
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Event   - TODO: add argument description
-  Context - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 //
 // Global Variables
@@ -96,27 +79,9 @@ extern EFI_GUID                     gEfiUsbMouseDriverGuid;
 
 VOID
 MouseReportStatusCode (
-  IN  EFI_USB_IO_PROTOCOL       *UsbIo,
-  IN  EFI_STATUS_CODE_TYPE      CodeType,
-  IN  EFI_STATUS_CODE_VALUE     Value
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  CodeType  - TODO: add argument description
-  Value     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
+  IN EFI_STATUS_CODE_TYPE      CodeType,
+  IN EFI_STATUS_CODE_VALUE     Value
+  );
 
 #endif

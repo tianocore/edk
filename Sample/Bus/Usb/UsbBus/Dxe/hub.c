@@ -21,15 +21,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
-#include "usb.h"
-
-#include EFI_PROTOCOL_DEFINITION (UsbIo)
-
 #include "usbbus.h"
-#include "UsbDxeLib.h"
-#include "hub.h"
 
 EFI_STATUS
 HubGetPortStatus (
@@ -452,6 +444,7 @@ DoHubConfig (
             &HubDescriptor
             );
   if (EFI_ERROR (Status)) {
+    DEBUG ((gUSBErrorLevel, "Get hub descriptor fail\n"));
     return EFI_DEVICE_ERROR;
   }
 
@@ -459,6 +452,7 @@ DoHubConfig (
 
   Status                          = HubGetHubStatus (UsbIo, (UINT32 *) &HubStatus);
   if (EFI_ERROR (Status)) {
+    DEBUG ((gUSBErrorLevel, "Get hub status fail when configure\n"));
     return EFI_DEVICE_ERROR;
   }
   
@@ -472,7 +466,6 @@ DoHubConfig (
       continue;
     }
   }
-
   //
   //  Power all the hub ports
   //
@@ -492,6 +485,7 @@ DoHubConfig (
   //
   Status = HubGetHubStatus (UsbIo, (UINT32 *) &HubStatus);
   if (EFI_ERROR (Status)) {
+    DEBUG ((gUSBErrorLevel, "Get hub status fail\n"));
     return EFI_DEVICE_ERROR;
   } else {
     //
@@ -500,7 +494,6 @@ DoHubConfig (
     if (HubStatus.HubChange & HUB_CHANGE_LOCAL_POWER) {
       HubClearHubFeature (UsbIo, C_HUB_LOCAL_POWER);
     }
-
     //
     // Hub change overcurrent happens
     //

@@ -58,6 +58,7 @@ STATIC EFI_UNICODE_STRING_TABLE     mUsbCbi0DriverNameTable[] = {
   { NULL , NULL }
 };
 
+
 EFI_STATUS
 EFIAPI
 UsbCbi0ComponentNameGetDriverName (

@@ -17,8 +17,6 @@ Abstract:
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
 #include "uhci.h"
 
 //

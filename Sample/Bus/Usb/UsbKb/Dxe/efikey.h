@@ -17,9 +17,7 @@ Abstract:
     Header file for USB Keyboard Driver's Data Structures
 
 Revision History
-++*/
-
-// TODO: fix comment to end with --*/
+--*/
 #ifndef _USB_KB_H
 #define _USB_KB_H
 
@@ -45,7 +43,6 @@ Revision History
 
 #include "usb.h"
 #include "UsbDxeLib.h"
-#include "usbbus.h"
 
 #define MAX_KEY_ALLOWED     32
 
@@ -74,7 +71,7 @@ typedef struct {
 #define USB_KB_DEV_SIGNATURE  EFI_SIGNATURE_32 ('u', 'k', 'b', 'd')
 typedef struct {
   UINTN                         Signature;
-
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   EFI_EVENT                     DelayedRecoveryEvent;
   EFI_SIMPLE_TEXT_IN_PROTOCOL   SimpleInput;
   EFI_USB_IO_PROTOCOL           *UsbIo;
@@ -107,28 +104,10 @@ extern EFI_GUID                     gEfiUsbKeyboardDriverGuid;
 
 VOID
 KbdReportStatusCode (
-  IN  EFI_USB_IO_PROTOCOL       *UsbIo,
-  IN  EFI_STATUS_CODE_TYPE      CodeType,
-  IN  EFI_STATUS_CODE_VALUE     Value
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  CodeType  - TODO: add argument description
-  Value     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
+  IN EFI_STATUS_CODE_TYPE      CodeType,
+  IN EFI_STATUS_CODE_VALUE     Value
+  );
 
 #define USB_KB_DEV_FROM_THIS(a) \
     CR(a, USB_KB_DEV, SimpleInput, USB_KB_DEV_SIGNATURE)

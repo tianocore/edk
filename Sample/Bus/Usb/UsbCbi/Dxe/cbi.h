@@ -20,8 +20,6 @@ Abstract:
 
 #ifndef _CBI_H
 #define _CBI_H
-#include "usbbus.h"
-
 //
 // Driver Consumed Protocol Prototypes
 //
@@ -67,7 +65,7 @@ typedef struct {
 //
 typedef struct {
   UINT32                        Signature;
-
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   EFI_USB_ATAPI_PROTOCOL        UsbAtapiProtocol;
   EFI_USB_IO_PROTOCOL           *UsbIo;
   EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;

@@ -82,23 +82,17 @@ USBFloppyPacketCommand (
     Sends Packet Command to USB Floppy Drive.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
-    Command:            A pointer to the command packet.
-    CommandSize:        Indicates the size of the command packet.
-    DataBuffer:         A pointer to the buffer for the data transfer
+    UsbFloppyDevice  -  The USB_FLOPPY_DEV instance.
+    Command          -  A pointer to the command packet.
+    CommandSize      -  Indicates the size of the command packet.
+    DataBuffer       -  A pointer to the buffer for the data transfer
                         after the command packet.              
-    BufferLength:       Indicates the size of the Data Buffer.
-  
+    BufferLength     -  Indicates the size of the Data Buffer.
+    Direction        -  Transfer Direction
+    TimeOutInMilliSeconds - Timeout Value
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    Command - add argument and description to function comment
-// TODO:    CommandSize - add argument and description to function comment
-// TODO:    DataBuffer - add argument and description to function comment
-// TODO:    BufferLength - add argument and description to function comment
-// TODO:    Direction - add argument and description to function comment
-// TODO:    TimeOutInMilliSeconds - add argument and description to function comment
+    EFI_SUCCESS  - Success
+--*/    
 {
   EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
   EFI_STATUS              Status;
@@ -131,16 +125,12 @@ USBFloppyIdentify (
     Retrieves device information to tell the device type.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice    The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/    
 {
 
   EFI_STATUS        Status;
@@ -233,18 +223,14 @@ USBFloppyInquiry (
     Send Inquiry Packet Command to device and retrieve Inquiry Data.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
-    Idata:              A pointer pointing to the address of 
-                        Inquiry Data.
+    UsbFloppyDevice    The USB_FLOPPY_DEV instance.
+    Idata              A pointer pointing to the address of 
+                       Inquiry Data.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    Idata - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/      
 {
   ATAPI_PACKET_COMMAND    Packet;
   EFI_STATUS              Status;
@@ -277,7 +263,7 @@ USBFloppyInquiry (
             USBFLPTIMEOUT * 3
             );
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (Idata);
+    gBS->FreePool (*Idata);
     return EFI_DEVICE_ERROR;
   }
 
@@ -298,24 +284,19 @@ USBFloppyRead10 (
     from device to host.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
-    Buffer:             A pointer to the destination buffer for the data. 
+    UsbFloppyDevice -   The USB_FLOPPY_DEV instance.
+    Buffer          -   A pointer to the destination buffer for the data. 
                         The caller is responsible for either having implicit
                         or explicit ownership of the buffer.
-    Lba:                The starting logical block address to read from 
+    Lba             -   The starting logical block address to read from 
                         on the device.
-    NumberOfBlocks:     Indicates the number of blocks that the read 
+    NumberOfBlocks  -   Indicates the number of blocks that the read 
                         operation requests.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    Buffer - add argument and description to function comment
-// TODO:    Lba - add argument and description to function comment
-// TODO:    NumberOfBlocks - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/      
 {
   ATAPI_PACKET_COMMAND    Packet;
   READ10_CMD              *Read10Packet;
@@ -352,7 +333,6 @@ USBFloppyRead10 (
     } else {
       SectorCount = MaxBlock;
     }
-
     //
     // fill the Packet data structure
     //
@@ -408,7 +388,6 @@ USBFloppyRead10 (
       } else {
         return EFI_DEVICE_ERROR;
       }
-
       //
       // retry read10 command
       //
@@ -445,15 +424,13 @@ USBFloppyReadCapacity (
     sending Read Capacity Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice -   The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/        
+{ 
   //
   // status returned by Read Capacity Packet Command
   //
@@ -510,15 +487,13 @@ USBFloppyReadFormatCapacity (
     Capacity Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice  - The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/         
+{ 
   //
   // status returned by Read Capacity Packet Command
   //
@@ -594,17 +569,13 @@ UsbFloppyRequestSense (
     sending Request Sense Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
-    SenseCounts:        A pointer to the number of Sense Data returned.
+    UsbFloppyDevice - The USB_FLOPPY_DEV instance.
+    SenseCounts     - A pointer to the number of Sense Data returned.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    SenseCounts - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/         
 {
   EFI_STATUS              Status;
   REQUEST_SENSE_DATA      *Sense;
@@ -718,32 +689,30 @@ UsbFloppyTestUnitReady (
     Sends Test Unit ReadyPacket Command to the device.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice -  The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-{
-  ATAPI_PACKET_COMMAND    Packet;
-  EFI_STATUS              Status;
-  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
-  UINT32                  RetryIndex;
-  UINT32                  MaximumRetryTimes;
-
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/  
+{ 
+  ATAPI_PACKET_COMMAND      Packet; 
+  EFI_STATUS                Status;
+  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
+  UINT32                    RetryIndex;
+  UINT32                    MaximumRetryTimes;
+  
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
   MaximumRetryTimes = 2;
   //
   // fill command packet  
   //
-
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
   Packet.TestUnitReady.opcode = TEST_UNIT_READY;
 
   //
   // send command packet
   //
-
   Status = EFI_DEVICE_ERROR;
 
   for (RetryIndex = 0; RetryIndex < MaximumRetryTimes && EFI_ERROR (Status); RetryIndex++) {
@@ -780,23 +749,19 @@ USBFloppyWrite10 (
     from host to device.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
-    Buffer:             A pointer to the source buffer for the data. 
+    UsbFloppyDevice -   The USB_FLOPPY_DEV instance.
+    Buffer          -   A pointer to the source buffer for the data. 
                         The caller is responsible for either having implicit
                         or explicit ownership of the buffer.
-    Lba:                The starting logical block address to written to 
+    Lba             -   The starting logical block address to written to 
                         the device.
-    NumberOfBlocks:     Indicates the number of blocks that the write 
+    NumberOfBlocks  -   Indicates the number of blocks that the write 
                         operation requests.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    Buffer - add argument and description to function comment
-// TODO:    Lba - add argument and description to function comment
-// TODO:    NumberOfBlocks - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+--*/      
 {
   ATAPI_PACKET_COMMAND    Packet;
   READ10_CMD              *Write10Packet;
@@ -836,11 +801,9 @@ USBFloppyWrite10 (
 
       SectorCount = MaxBlock;
     }
-
     //
     // fill the Packet data structure
     //
-
     Write10Packet->opcode = WRITE_10;
 
     //
@@ -927,18 +890,14 @@ UsbFloppyDetectMedia (
     Retrieves media information.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
-    MediaChange:        Indicates whether media was changed.
+    UsbFloppyDevice  -  The USB_FLOPPY_DEV instance.
+    MediaChange      -  Indicates whether media was changed.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    MediaChange - add argument and description to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+    EFI_INVALID_PARAMETER - Parameter is error
+--*/        
 {
   EFI_STATUS          Status;
   EFI_STATUS          FloppyStatus;
@@ -1035,6 +994,7 @@ UsbFloppyDetectMedia (
       // Using different command to retrieve media capacity.
       //
       switch (UsbFloppyDevice->DeviceType) {
+
       case USBCDROM:
         Status = USBFloppyReadCapacity (UsbFloppyDevice);
         break;
@@ -1042,8 +1002,7 @@ UsbFloppyDetectMedia (
       case USBFLOPPY:
         UsbMassStorageModeSense (UsbFloppyDevice);
         Status = USBFloppyReadFormatCapacity (UsbFloppyDevice);
-          if (EFI_ERROR(Status) || 
-              !UsbFloppyDevice->BlkMedia.MediaPresent) {            
+        if (EFI_ERROR (Status) || !UsbFloppyDevice->BlkMedia.MediaPresent) {
           //
           // retry the ReadCapacity command
           //
@@ -1192,6 +1151,8 @@ UsbFloppyDetectMedia (
   return EFI_SUCCESS;
 }
 
+
+
 EFI_STATUS
 UsbFloppyModeSense5APage5 (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
@@ -1203,15 +1164,14 @@ UsbFloppyModeSense5APage5 (
     Capacity Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice  - The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+    
+--*/         
+{ 
   //
   // status returned by Read Capacity Packet Command
   //
@@ -1290,15 +1250,14 @@ UsbFloppyModeSense5APage1C (
     Capacity Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice  - The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+    
+--*/         
+{ 
   //
   // status returned by Read Capacity Packet Command
   //
@@ -1347,21 +1306,6 @@ EFI_STATUS
 UsbMassStorageModeSense (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbFloppyDevice - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   if (UsbFloppyDevice->AtapiProtocol->CommandProtocol == EFI_USB_SUBCLASS_SCSI) {
     return UsbSCSIModeSense1APage3F (UsbFloppyDevice);
@@ -1381,15 +1325,14 @@ UsbFloppyModeSense5APage3F (
     Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice  - The USB_FLOPPY_DEV instance.
       
   Returns:  
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
 
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
+--*/         
+{ 
   //
   // status returned by Read Capacity Packet Command
   //
@@ -1440,15 +1383,14 @@ UsbSCSIModeSense1APage3F (
     Packet Command.
   
   Arguments:
-    UsbFloppyDevice:    The USB_FLOPPY_DEV instance.
+    UsbFloppyDevice  - The USB_FLOPPY_DEV instance.
       
   Returns:  
-
---*/
-// TODO:    UsbFloppyDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
+    EFI_DEVICE_ERROR - Hardware error
+    EFI_SUCCESS      - Success
+    
+--*/  
+{ 
   //
   // status returned by Read Capacity Packet Command
   //
@@ -1492,28 +1434,11 @@ UsbSCSIModeSense1APage3F (
   which are used to parse sense key returned by the device.
 
 --*/
-
 BOOLEAN
 IsNoMedia (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;
@@ -1537,27 +1462,12 @@ Returns:
   return NoMedia;
 }
 
+
 BOOLEAN
 IsMediaError (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;
@@ -1575,6 +1485,7 @@ Returns:
     //
     case SK_MEDIUM_ERROR:
       switch (SensePtr->addnl_sense_code) {
+
       case ASC_MEDIA_ERR1:
       case ASC_MEDIA_ERR2:
       case ASC_MEDIA_ERR3:
@@ -1617,22 +1528,6 @@ IsMediaChange (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;
@@ -1661,23 +1556,6 @@ IsDriveReady (
   IN  UINTN                 SenseCounts,
   OUT BOOLEAN               *NeedRetry
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-  NeedRetry   - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;
@@ -1693,6 +1571,7 @@ Returns:
         (SensePtr->addnl_sense_code == ASC_NOT_READY)) {
 
       switch (SensePtr->addnl_sense_code_qualifier) {
+
       case ASCQ_IN_PROGRESS:
       case ASCQ_DEVICE_BUSY:
         IsReady     = FALSE;
@@ -1721,22 +1600,6 @@ IsMediaWriteProtected (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;
@@ -1766,22 +1629,6 @@ IsLogicalUnitCommunicationOverRun (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;

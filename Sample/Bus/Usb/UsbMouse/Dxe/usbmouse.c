@@ -155,19 +155,17 @@ USBMouseDriverBindingEntryPoint (
   )
 /*++
 
-Routine Description:
-  Register Driver Binding protocol for this driver.
+  Routine Description:
+    Entry point for EFI drivers.
 
-Arguments:
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
-
-Returns:
-  EFI_SUCCESS - Driver loaded
-  other       - Driver not loaded
+  Arguments:
+   ImageHandle - EFI_HANDLE
+   SystemTable - EFI_SYSTEM_TABLE
+  Returns:
+    EFI_SUCCESS
+    others
 
 --*/
-// TODO:    ImageHandle - add argument and description to function comment
-// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
           ImageHandle,
@@ -191,21 +189,18 @@ USBMouseDriverBindingSupported (
 
   Routine Description:
     Test to see if this driver supports ControllerHandle. Any ControllerHandle
-    than contains a BlockIo and DiskIo protocol can be supported.
+    that has UsbHcProtocol installed will be supported.
 
   Arguments:
     This                - Protocol instance pointer.
-    ControllerHandle    - Handle of device to test
+    Controller         - Handle of device to test
     RemainingDevicePath - Not used
 
   Returns:
-    EFI_SUCCESS         - This driver supports this device
-    EFI_ALREADY_STARTED - This driver is already running on this device
-    other               - This driver does not support this device
+    EFI_SUCCESS         - This driver supports this device.
+    EFI_UNSUPPORTED     - This driver does not support this device.
 
 --*/
-// TODO:    Controller - add argument and description to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   EFI_STATUS          OpenStatus;
   EFI_USB_IO_PROTOCOL *UsbIo;
@@ -255,22 +250,21 @@ USBMouseDriverBindingStart (
 /*++
 
   Routine Description:
-    Start this driver on ControllerHandle by opening a Block IO and Disk IO
-    protocol, reading Device Path, and creating a child handle with a
-    Disk IO and device path protocol.
+    Starting the Usb Bus Driver
 
   Arguments:
     This                - Protocol instance pointer.
-    ControllerHandle    - Handle of device to bind driver to
+    Controller          - Handle of device to test
     RemainingDevicePath - Not used
 
   Returns:
-    EFI_SUCCESS         - This driver is added to DeviceHandle
-    EFI_ALREADY_STARTED - This driver is already running on DeviceHandle
-    other               - This driver does not support this device
-
+    EFI_SUCCESS         - This driver supports this device.
+    EFI_UNSUPPORTED     - This driver does not support this device.
+    EFI_DEVICE_ERROR    - This driver cannot be started due to device
+                          Error
+    EFI_OUT_OF_RESOURCES- Can't allocate memory resources
+    EFI_ALREADY_STARTED - Thios driver has been started
 --*/
-// TODO:    Controller - add argument and description to function comment
 {
   EFI_STATUS                  Status;
   EFI_USB_IO_PROTOCOL         *UsbIo;
@@ -318,7 +312,21 @@ USBMouseDriverBindingStart (
     Status = EFI_OUT_OF_RESOURCES;
     goto ErrorExit;
   }
+  //
+  // Get the Device Path Protocol on Controller's handle
+  //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &UsbMouseDevice->DevicePath,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
 
+  if (EFI_ERROR (Status)) {
+    goto ErrorExit;
+  }
   //
   // Get interface & endpoint descriptor
   //
@@ -356,7 +364,7 @@ USBMouseDriverBindingStart (
   Status = InitializeUsbMouseDevice (UsbMouseDevice);
   if (EFI_ERROR (Status)) {
     MouseReportStatusCode (
-      UsbIo,
+      UsbMouseDevice->DevicePath,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       (EFI_PERIPHERAL_MOUSE | EFI_P_EC_INTERFACE_ERROR)
       );
@@ -398,7 +406,7 @@ USBMouseDriverBindingStart (
   //
   
   MouseReportStatusCode (
-    UsbIo,
+    UsbMouseDevice->DevicePath,
     EFI_PROGRESS_CODE,
     (EFI_PERIPHERAL_MOUSE | EFI_P_PC_ENABLE)
     );
@@ -489,17 +497,16 @@ USBMouseDriverBindingStop (
 
   Arguments:
     This              - Protocol instance pointer.
-    DeviceHandle      - Handle of device to stop driver on
+    Controller        - Handle of device to stop driver on
     NumberOfChildren  - Number of Children in the ChildHandleBuffer
     ChildHandleBuffer - List of handles for the children we need to stop.
 
   Returns:
-    EFI_SUCCESS         - This driver is removed DeviceHandle
-    other               - This driver was not removed from this device
+    EFI_SUCCESS
+    EFI_DEVICE_ERROR
+    others
 
 --*/
-// TODO:    Controller - add argument and description to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   EFI_STATUS                  Status;
   USB_MOUSE_DEV               *UsbMouseDevice;
@@ -538,7 +545,7 @@ USBMouseDriverBindingStop (
   // will disable the mouse data input from this device
   //
   MouseReportStatusCode (
-    UsbIo,
+    UsbMouseDevice->DevicePath,
     EFI_PROGRESS_CODE,
     (EFI_PERIPHERAL_MOUSE | EFI_P_PC_DISABLE)
     );
@@ -602,13 +609,12 @@ IsUsbMouse (
     Tell if a Usb Controller is a mouse
 
   Arguments:
-    This              - Protocol instance pointer.
+    UsbIo              - Protocol instance pointer.
 
   Returns:
     TRUE              - It is a mouse
     FALSE             - It is not a mouse
 --*/
-// TODO:    UsbIo - add argument and description to function comment
 {
   EFI_STATUS                    Status;
   EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
@@ -650,13 +656,10 @@ InitializeUsbMouseDevice (
     UsbMouseDev         - Device instance to be initialized
 
   Returns:
-    EFI_SUCCESS
-    other               - Init error.
-
+    EFI_SUCCESS         - Success
+    EFI_DEVICE_ERROR    - Init error.
+    EFI_OUT_OF_RESOURCES- Can't allocate memory
 --*/
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   EFI_USB_IO_PROTOCOL     *UsbIo;
   UINT8                   Protocol;
@@ -804,26 +807,26 @@ OnMouseInterruptComplete (
 
 --*/
 {
-  USB_MOUSE_DEV       *UsbMouseDev;
+  USB_MOUSE_DEV       *UsbMouseDevice;
   EFI_USB_IO_PROTOCOL *UsbIo;
   UINT8               EndpointAddr;
   UINT32              UsbResult;
 
-  UsbMouseDev = (USB_MOUSE_DEV *) Context;
-  UsbIo       = UsbMouseDev->UsbIo;
+  UsbMouseDevice  = (USB_MOUSE_DEV *) Context;
+  UsbIo           = UsbMouseDevice->UsbIo;
 
   if (Result != EFI_USB_NOERROR) {
     //
     // Some errors happen during the process
     //
     MouseReportStatusCode (
-      UsbIo,
+      UsbMouseDevice->DevicePath,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       (EFI_PERIPHERAL_MOUSE | EFI_P_EC_INPUT_ERROR)
       );
 
     if ((Result & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
-      EndpointAddr = UsbMouseDev->IntEndpointDescriptor->EndpointAddress;
+      EndpointAddr = UsbMouseDevice->IntEndpointDescriptor->EndpointAddress;
 
       UsbClearEndpointHalt (
         UsbIo,
@@ -834,7 +837,7 @@ OnMouseInterruptComplete (
 
     UsbIo->UsbAsyncInterruptTransfer (
             UsbIo,
-            UsbMouseDev->IntEndpointDescriptor->EndpointAddress,
+            UsbMouseDevice->IntEndpointDescriptor->EndpointAddress,
             FALSE,
             0,
             0,
@@ -843,7 +846,7 @@ OnMouseInterruptComplete (
             );
 
     gBS->SetTimer (
-          UsbMouseDev->DelayedRecoveryEvent,
+          UsbMouseDevice->DelayedRecoveryEvent,
           TimerRelative,
           EFI_USB_INTERRUPT_DELAY
           );
@@ -854,18 +857,18 @@ OnMouseInterruptComplete (
     return EFI_SUCCESS;
   }
 
-  UsbMouseDev->StateChanged = TRUE;
+  UsbMouseDevice->StateChanged = TRUE;
 
   //
   // Check mouse Data
   //
-  UsbMouseDev->State.LeftButton   = (BOOLEAN) (*(UINT8 *) Data & 0x01);
-  UsbMouseDev->State.RightButton  = (BOOLEAN) (*(UINT8 *) Data & 0x02);
-  UsbMouseDev->State.RelativeMovementX += *((INT8 *) Data + 1);
-  UsbMouseDev->State.RelativeMovementY += *((INT8 *) Data + 2);
+  UsbMouseDevice->State.LeftButton  = (BOOLEAN) (*(UINT8 *) Data & 0x01);
+  UsbMouseDevice->State.RightButton = (BOOLEAN) (*(UINT8 *) Data & 0x02);
+  UsbMouseDevice->State.RelativeMovementX += *((INT8 *) Data + 1);
+  UsbMouseDevice->State.RelativeMovementY += *((INT8 *) Data + 2);
 
   if (DataLength > 3) {
-    UsbMouseDev->State.RelativeMovementZ += *((INT8 *) Data + 3);
+    UsbMouseDevice->State.RelativeMovementZ += *((INT8 *) Data + 3);
   }
 
   return EFI_SUCCESS;
@@ -884,7 +887,6 @@ PrintMouseState(
         );
 }
 */
-
 STATIC
 EFI_STATUS
 EFIAPI
@@ -959,24 +961,24 @@ UsbMouseReset (
 
 --*/
 {
-  USB_MOUSE_DEV       *UsbMouseDev;
+  USB_MOUSE_DEV       *UsbMouseDevice;
   EFI_USB_IO_PROTOCOL *UsbIo;
 
-  UsbMouseDev = USB_MOUSE_DEV_FROM_MOUSE_PROTOCOL (This);
+  UsbMouseDevice  = USB_MOUSE_DEV_FROM_MOUSE_PROTOCOL (This);
 
-  UsbIo       = UsbMouseDev->UsbIo;
+  UsbIo           = UsbMouseDevice->UsbIo;
 
   MouseReportStatusCode (
-    UsbIo,
+    UsbMouseDevice->DevicePath,
     EFI_PROGRESS_CODE,
     (EFI_PERIPHERAL_MOUSE | EFI_P_PC_RESET)
     );
 
   EfiZeroMem (
-    &UsbMouseDev->State,
+    &UsbMouseDevice->State,
     sizeof (EFI_SIMPLE_POINTER_STATE)
     );
-  UsbMouseDev->StateChanged = FALSE;
+  UsbMouseDevice->StateChanged = FALSE;
 
   return EFI_SUCCESS;
 }
@@ -996,12 +998,11 @@ Routine Description:
   Signal the event if there is input from mouse
 
 Arguments:
-
+  Event    - Wait Event
+  Context  - Passed parameter to event handler
 Returns:
-
+  VOID
 --*/
-// TODO:    Event - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
 {
   USB_MOUSE_DEV *UsbMouseDev;
 
@@ -1027,14 +1028,12 @@ USBMouseRecoveryHandler (
     Timer handler for Delayed Recovery timer.
     
   Arguments:
-    Event:    The Delayed Recovery event.
-    Context:  Points to the USB_KB_DEV instance.
+    Event   -  The Delayed Recovery event.
+    Context -  Points to the USB_KB_DEV instance.
     
   Returns:
   
---*/
-// TODO:    Event - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
+--*/    
 {
   USB_MOUSE_DEV       *UsbMouseDev;
   EFI_USB_IO_PROTOCOL *UsbIo;
@@ -1056,9 +1055,9 @@ USBMouseRecoveryHandler (
 
 VOID
 MouseReportStatusCode (
-  IN  EFI_USB_IO_PROTOCOL       *UsbIo,
-  IN  EFI_STATUS_CODE_TYPE      CodeType,
-  IN  EFI_STATUS_CODE_VALUE     Value
+  IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
+  IN EFI_STATUS_CODE_TYPE      CodeType,
+  IN EFI_STATUS_CODE_VALUE     Value
   )
 /*++
 
@@ -1066,25 +1065,21 @@ MouseReportStatusCode (
     Report Status Code in Usb Bot Driver
 
   Arguments:
-    UsbIo                   - Use this to get Device Path
-    CodeType                - Status Code Type
-    CodeValue               - Status Code Value
+    DevicePath  - Use this to get Device Path
+    CodeType    - Status Code Type
+    CodeValue   - Status Code Value
 
   Returns:
     None
 
 --*/
-// TODO:    Value - add argument and description to function comment
 {
-  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
-
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (UsbIo);
 
   ReportStatusCodeWithDevicePath (
     CodeType,
     Value,
     0,
     &gEfiUsbMouseDriverGuid,
-    UsbIoController->DevicePath
+    DevicePath
     );
 }

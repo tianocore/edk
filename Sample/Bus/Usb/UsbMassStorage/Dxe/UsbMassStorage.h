@@ -17,9 +17,8 @@ Abstract:
     Header file for USB Mass Storage Driver's Data Structures
 
 Revision History
-++*/
+--*/
 
-// TODO: fix comment to end with --*/
 #ifndef _USB_FLP_H
 #define _USB_FLP_H
 

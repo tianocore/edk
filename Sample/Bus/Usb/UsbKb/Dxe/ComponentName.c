@@ -56,6 +56,7 @@ STATIC EFI_UNICODE_STRING_TABLE mUsbKeyboardDriverNameTable[] = {
   { NULL , NULL }
 };
 
+
 EFI_STATUS
 EFIAPI
 UsbKeyboardComponentNameGetDriverName (
@@ -188,7 +189,6 @@ UsbKeyboardComponentNameGetControllerName (
   if (Status != EFI_ALREADY_STARTED) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Get the device context
   //

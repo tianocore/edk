@@ -17,9 +17,8 @@ Abstract:
     Header file for USB Mass Storage Device related Data Structures
 
 Revision History
-++*/
+--*/
 
-// TODO: fix comment to end with --*/
 #ifndef _USB_FLP_DATA_H
 #define _USB_FLP_DATA_H
 
@@ -159,7 +158,6 @@ typedef union {
 } ATAPI_PACKET_COMMAND;
 
 #pragma pack()
-
 //
 // Packet Command Code
 //

@@ -20,10 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
-#include "usb.h"
-#include "usbutil.h"
+#include "usbbus.h"
 
 //
 // Following APIs are used to query Port Status
@@ -46,9 +43,6 @@ IsPortConnect (
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 0 value of PortStatus
@@ -69,17 +63,14 @@ IsPortEnable (
   Routine Description:
     Tell if Port is enabled.
 
-  Parameters:
+  Arguments:
     PortStatus  -   The status value of that port.
 
-  Return Value:
-    TRUE
-    FALSE
+  Returns:
+    TRUE  - Port is enable
+    FALSE - Port is disable
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 1 value of PortStatus
@@ -100,17 +91,14 @@ IsPortInReset (
   Routine Description:
     Tell if the port is being reset.
 
-  Parameters:
+  Arguments:
     PortStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 4 value of PortStatus
@@ -131,17 +119,14 @@ IsPortPowerApplied (
   Routine Description:
     Tell if there is power applied to that port.
 
-  Parameters:
+  Arguments:
     PortStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 8 value of PortStatus
@@ -162,17 +147,14 @@ IsPortLowSpeedDeviceAttached (
   Routine Description:
     Tell if the connected device is a low device.
 
-  Parameters:
+  Arguments:
     PortStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 9 value of PortStatus
@@ -193,17 +175,14 @@ IsPortSuspend (
   Routine Description:
     Tell if the port is suspend.
 
-  Parameters:
+  Arguments:
     PortStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 2 value of PortStatus
@@ -226,17 +205,14 @@ IsPortConnectChange (
   Routine Description:
     Tell if there is a Connect Change status in that port.
 
-  Parameters:
+  Arguments:
     PortChangeStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 0 value of PortChangeStatus
@@ -257,17 +233,14 @@ IsPortEnableDisableChange (
   Routine Description:
     Tell if there is a Enable/Disable change in that port.
 
-  Parameters:
+  Arguments:
     PortChangeStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 1 value of PortChangeStatus
@@ -288,17 +261,14 @@ IsPortResetChange (
   Routine Description:
     Tell if there is a Port Reset Change status in that port.
 
-  Parameters:
+  Arguments:
     PortChangeStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 4 value of PortChangeStatus
@@ -310,6 +280,7 @@ IsPortResetChange (
   }
 }
 
+
 BOOLEAN
 IsPortSuspendChange (
   IN UINT16  PortChangeStatus
@@ -319,17 +290,14 @@ IsPortSuspendChange (
   Routine Description:
     Tell if there is a Suspend Change Status in that port.
 
-  Parameters:
+  Arguments:
     PortChangeStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
 --*/
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 2 value of PortChangeStatus
@@ -339,4 +307,249 @@ IsPortSuspendChange (
   } else {
     return FALSE;
   }
+}
+
+
+INTERFACE_DESC_LIST_ENTRY* 
+FindInterfaceListEntry (
+  IN EFI_USB_IO_PROTOCOL    *This
+  )
+/*++
+
+  Routine Description:
+    Find Interface ListEntry.
+
+  Arguments:
+    This         -  EFI_USB_IO_PROTOCOL   
+  
+  Returns:
+    INTERFACE_DESC_LIST_ENTRY pointer
+
+--*/
+{
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+  USB_IO_DEVICE             *UsbIoDev;
+  EFI_LIST_ENTRY            *InterfaceListHead;
+  INTERFACE_DESC_LIST_ENTRY *InterfaceListEntry;
+
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
+
+  if (!UsbIoDev->IsConfigured) {
+    return NULL;
+  }
+
+  InterfaceListHead   = &UsbIoDev->ActiveConfig->InterfaceDescListHead;
+  InterfaceListEntry  = (INTERFACE_DESC_LIST_ENTRY *) (InterfaceListHead->ForwardLink);
+
+  //
+  // Loop all interface descriptor to get match one.
+  //
+  while (InterfaceListEntry != (INTERFACE_DESC_LIST_ENTRY *) InterfaceListHead) {
+    if (InterfaceListEntry->InterfaceDescriptor.InterfaceNumber == UsbIoController->InterfaceNumber) {
+      return InterfaceListEntry;
+    }
+
+    InterfaceListEntry = (INTERFACE_DESC_LIST_ENTRY *) InterfaceListEntry->Link.ForwardLink;
+  }
+
+  return NULL;
+}
+
+ENDPOINT_DESC_LIST_ENTRY* 
+FindEndPointListEntry (
+  IN EFI_USB_IO_PROTOCOL    *This,
+  IN UINT8                  EndPointAddress
+  )
+/*++
+
+  Routine Description:
+    Find EndPoint ListEntry.
+
+  Arguments:
+    This         -  EFI_USB_IO_PROTOCOL   
+    EndpointAddr -  Endpoint address.
+ 
+  Returns:
+    ENDPOINT_DESC_LIST_ENTRY pointer
+
+--*/
+{
+  INTERFACE_DESC_LIST_ENTRY *InterfaceListEntry;
+  EFI_LIST_ENTRY            *EndpointDescListHead;
+  ENDPOINT_DESC_LIST_ENTRY  *EndPointListEntry;
+
+  InterfaceListEntry = FindInterfaceListEntry (This);
+  if (InterfaceListEntry != NULL) {
+    EndpointDescListHead  = &InterfaceListEntry->EndpointDescListHead;
+    EndPointListEntry     = (ENDPOINT_DESC_LIST_ENTRY *) (EndpointDescListHead->ForwardLink);
+
+    //
+    // Loop all interface descriptor to get match one.
+    //
+    while (EndPointListEntry != (ENDPOINT_DESC_LIST_ENTRY *) EndpointDescListHead) {
+      if (EndPointListEntry->EndpointDescriptor.EndpointAddress == EndPointAddress) {
+        return EndPointListEntry;
+      }
+
+      EndPointListEntry = (ENDPOINT_DESC_LIST_ENTRY *) EndPointListEntry->Link.ForwardLink;
+    }
+  }
+
+  return NULL;
+}
+
+VOID
+GetDataToggleBit (
+  IN EFI_USB_IO_PROTOCOL    *UsbIo,
+  IN  UINT8                 EndpointAddr,
+  OUT UINT8                 *DataToggle
+  )
+/*++
+
+  Routine Description:
+    Get the datatoggle of a specified endpoint.
+
+  Arguments:
+    UsbIo         -     Given Usb Controller device.
+    EndpointAddr  -     Given Endpoint address.
+    DataToggle    -     The current data toggle of that endpoint
+
+  Returns:
+    N/A
+
+--*/
+{
+
+  ENDPOINT_DESC_LIST_ENTRY  *EndpointListEntry;
+
+  *DataToggle       = 0;
+
+  EndpointListEntry = FindEndPointListEntry (UsbIo, EndpointAddr);
+  if (EndpointListEntry == NULL) {
+    return ;
+  }
+
+  *DataToggle = (UINT8) (EndpointListEntry->Toggle);
+  return ;
+}
+
+VOID
+SetDataToggleBit (
+  IN EFI_USB_IO_PROTOCOL    *UsbIo,
+  IN UINT8                  EndpointAddr,
+  IN UINT8                  DataToggle
+  )
+/*++
+
+  Routine Description:
+    Set the datatoggle of a specified endpoint
+
+  Arguments:
+    UsbIo         -     Given Usb Controller device.
+    EndpointAddr  -     Given Endpoint address.
+    DataToggle    -     The current data toggle of that endpoint to be set
+
+  Returns:
+    N/A
+
+--*/
+{
+
+  ENDPOINT_DESC_LIST_ENTRY  *EndpointListEntry;
+
+  EndpointListEntry = FindEndPointListEntry (UsbIo, EndpointAddr);
+  if (EndpointListEntry == NULL) {
+    return ;
+  }
+
+  EndpointListEntry->Toggle = DataToggle;
+  return ;
+}
+
+VOID
+GetDeviceEndPointMaxPacketLength (
+  IN  EFI_USB_IO_PROTOCOL    *UsbIo,
+  IN  UINT8                  EndpointAddr,
+  OUT UINT8                  *MaxPacketLength
+  )
+/*++
+
+  Routine Description:
+    Get the Max Packet Length of the speified Endpoint.
+
+  Arguments:
+    UsbIo           -     Given Usb Controller device.
+    EndpointAddr    -     Given Endpoint address.
+    MaxPacketLength -     The max packet length of that endpoint
+
+  Returns:
+    N/A
+
+--*/
+{
+
+  ENDPOINT_DESC_LIST_ENTRY  *EndpointListEntry;
+
+  *MaxPacketLength  = 0;
+
+  EndpointListEntry = FindEndPointListEntry (UsbIo, EndpointAddr);
+  if (EndpointListEntry == NULL) {
+    return ;
+  }
+
+  *MaxPacketLength = (UINT8) (EndpointListEntry->EndpointDescriptor.MaxPacketSize);
+
+  return ;
+}
+
+
+EFI_STATUS
+UsbSetDeviceAddress (
+  IN  EFI_USB_IO_PROTOCOL     *UsbIo,
+  IN  UINT16                  AddressValue,
+  OUT UINT32                  *Status
+  )
+/*++
+
+Routine Description:
+
+  Usb Set Device Address
+
+Arguments:
+
+  UsbIo         - EFI_USB_IO_PROTOCOL
+  AddressValue  - Device address 
+  Status        - Transfer status
+
+Returns:
+
+  EFI_INVALID_PARAMETER - Parameter is error
+  EFI_SUCCESS           - Success
+  EFI_TIMEOUT           - Device has no response 
+
+
+--*/
+{
+  EFI_USB_DEVICE_REQUEST  DevReq;
+
+  if (UsbIo == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
+
+  DevReq.RequestType  = USB_DEV_SET_ADDRESS_REQ_TYPE;
+  DevReq.Request      = USB_DEV_SET_ADDRESS;
+  DevReq.Value        = AddressValue;
+ 
+  return UsbIo->UsbControlTransfer (
+                  UsbIo,
+                  &DevReq,
+                  EfiUsbNoData,
+                  TIMEOUT_VALUE,
+                  NULL,
+                  0,
+                  Status
+                  );
 }

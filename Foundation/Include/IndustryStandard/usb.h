@@ -1,7 +1,3 @@
-#ifndef _USB_H
-// TODO: move protective #ifndef after comment header
-#define _USB_H
-
 /*++
 
 Copyright 2004, Intel Corporation                                                         
@@ -27,6 +23,8 @@ Revision History
 
 --*/
 
+#ifndef _USB_H
+#define _USB_H
 //
 // USB Descriptor types
 //
@@ -77,7 +75,10 @@ Revision History
 #define EFI_USB_ERR_BITSTUFF    0x80
 #define EFI_USB_ERR_SYSTEM      0x100
 
-#define EFI_USB_INTERRUPT_DELAY 5000000
+//
+//Use 200 ms to increase the error handling response time
+//
+#define EFI_USB_INTERRUPT_DELAY 2000000
 
 //
 // USB transation direction

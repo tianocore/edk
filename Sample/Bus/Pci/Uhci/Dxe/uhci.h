@@ -72,7 +72,6 @@ Revision History
 //
 #define NORMAL_MEMORY_BLOCK_UNIT_IN_PAGES 1
 
-#define EFI_PAGES_TO_SIZE(a)   ( (a) << EFI_PAGE_SHIFT)
 
 #define bit(a)                            1 << (a)
 
@@ -303,317 +302,81 @@ WriteUHCCommandReg (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  CmdAddrOffset,
   IN UINT16                  UsbCmd
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  CmdAddrOffset - TODO: add argument description
-  UsbCmd        - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 ReadUHCCommandReg (
   IN       EFI_PCI_IO_PROTOCOL     *PciIo,
   IN       UINT32                  CmdAddrOffset,
   IN OUT   UINT16                  *Data
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  CmdAddrOffset - TODO: add argument description
-  Data          - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 WriteUHCStatusReg (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  StatusAddrOffset,
   IN UINT16                  UsbSts
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo             - TODO: add argument description
-  StatusAddrOffset  - TODO: add argument description
-  UsbSts            - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 ReadUHCStatusReg (
   IN       EFI_PCI_IO_PROTOCOL     *PciIo,
   IN       UINT32                  StatusAddrOffset,
   IN OUT   UINT16                  *Data
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo             - TODO: add argument description
-  StatusAddrOffset  - TODO: add argument description
-  Data              - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 ClearStatusReg (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  StatusAddrOffset
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo             - TODO: add argument description
-  StatusAddrOffset  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 ReadUHCFrameNumberReg (
   IN       EFI_PCI_IO_PROTOCOL     *PciIo,
   IN       UINT32                  FrameNumAddrOffset,
   IN OUT   UINT16                  *Data
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo               - TODO: add argument description
-  FrameNumAddrOffset  - TODO: add argument description
-  Data                - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 WriteUHCFrameListBaseReg (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  FlBaseAddrOffset,
   IN UINT32                  UsbFrameListBaseAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo                 - TODO: add argument description
-  FlBaseAddrOffset      - TODO: add argument description
-  UsbFrameListBaseAddr  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 ReadRootPortReg (
   IN       EFI_PCI_IO_PROTOCOL     *PciIo,
   IN       UINT32                  PortAddrOffset,
   IN OUT   UINT16                  *Data
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo           - TODO: add argument description
-  PortAddrOffset  - TODO: add argument description
-  Data            - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 WriteRootPortReg (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  PortAddrOffset,
   IN UINT16                  ControlBits
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo           - TODO: add argument description
-  PortAddrOffset  - TODO: add argument description
-  ControlBits     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 WaitForUHCHalt (
   IN EFI_PCI_IO_PROTOCOL      *PciIo,
   IN UINT32                   StatusRegAddr,
   IN UINTN                    Timeout
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  StatusRegAddr - TODO: add argument description
-  Timeout       - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
-IsHostSysErr (
+IsStatusOK (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  StatusRegAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  StatusRegAddr - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
-IsHCProcessErr (
+IsHostSysOrProcessErr (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  StatusRegAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  StatusRegAddr - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-BOOLEAN
-IsHCHalted (
-  IN EFI_PCI_IO_PROTOCOL     *PciIo,
-  IN UINT32                  StatusRegAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  StatusRegAddr - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 //
 // This routine programs the USB frame number register. We assume that the
@@ -624,517 +387,150 @@ SetFrameNumberReg (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  FRNUMAddr,
   IN UINT16                  Index
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo     - TODO: add argument description
-  FRNUMAddr - TODO: add argument description
-  Index     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT16
 GetCurrentFrameNumber (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  FRNUMAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo     - TODO: add argument description
-  FRNUMAddr - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 SetFrameListBaseAddress (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  FLBASEADDRReg,
   IN UINT32                  Addr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo         - TODO: add argument description
-  FLBASEADDRReg - TODO: add argument description
-  Addr          - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT32
 GetFrameListBaseAddress (
   IN EFI_PCI_IO_PROTOCOL     *PciIo,
   IN UINT32                  FLBAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo   - TODO: add argument description
-  FLBAddr - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 CreateFrameList (
   IN USB_HC_DEV     *HcDev,
   IN UINT32         FLBASEADDRReg
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev         - TODO: add argument description
-  FLBASEADDRReg - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 FreeFrameListEntry (
   IN USB_HC_DEV     *UhcDev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UhcDev  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 InitFrameList (
   IN USB_HC_DEV     *HcDev
-  )
-/*++
+  );
 
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-EFI_STATUS
-AllocateQHStruct (
-  IN  USB_HC_DEV     *HcDev,
-  OUT QH_STRUCT      **ppQHStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev       - TODO: add argument description
-  ppQHStruct  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-VOID
-InitQH (
-  IN QH_STRUCT     *ptrQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
 
 EFI_STATUS
 CreateQH (
   IN  USB_HC_DEV     *HcDev,
   OUT QH_STRUCT      **pptrQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev   - TODO: add argument description
-  pptrQH  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetQHHorizontalLinkPtr (
   IN QH_STRUCT     *ptrQH,
   IN VOID          *ptrNext
-  )
-/*++
+  );
 
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH   - TODO: add argument description
-  ptrNext - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-VOID                                *
+VOID *
 GetQHHorizontalLinkPtr (
   IN QH_STRUCT     *ptrQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetQHHorizontalQHorTDSelect (
   IN QH_STRUCT     *ptrQH,
   IN BOOLEAN       bQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-  bQH   - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetQHHorizontalValidorInvalid (
   IN QH_STRUCT     *ptrQH,
   IN BOOLEAN       bValid
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH   - TODO: add argument description
-  bValid  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetQHVerticalLinkPtr (
   IN QH_STRUCT     *ptrQH,
   IN VOID          *ptrNext
-  )
-/*++
+  );
 
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH   - TODO: add argument description
-  ptrNext - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-VOID                                *
+VOID * 
 GetQHVerticalLinkPtr (
   IN QH_STRUCT     *ptrQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetQHVerticalQHorTDSelect (
   IN QH_STRUCT     *ptrQH,
   IN BOOLEAN       bQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-  bQH   - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsQHHorizontalQHSelect (
   IN QH_STRUCT     *ptrQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetQHVerticalValidorInvalid (
   IN QH_STRUCT     *ptrQH,
   IN BOOLEAN       bValid
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH   - TODO: add argument description
-  bValid  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 GetQHVerticalValidorInvalid (
   IN QH_STRUCT     *ptrQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 AllocateTDStruct (
   IN  USB_HC_DEV     *HcDev,
   OUT TD_STRUCT      **ppTDStruct
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Allocate TD Struct
 
 Arguments:
 
-  HcDev       - TODO: add argument description
-  ppTDStruct  - TODO: add argument description
-
+  HcDev       - USB_HC_DEV
+  ppTDStruct  - place to store TD_STRUCT pointer
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS
 
 --*/
-;
-
-VOID
-InitTD (
-  IN TD_STRUCT     *ptrTD
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTD - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
 
 EFI_STATUS
 CreateTD (
   IN  USB_HC_DEV     *HcDev,
   OUT TD_STRUCT      **pptrTD
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Create TD
 
 Arguments:
 
-  HcDev   - TODO: add argument description
-  pptrTD  - TODO: add argument description
+  HcDev   - USB_HC_DEV
+  pptrTD  - TD_STRUCT pointer to store
 
 Returns:
 
-  TODO: add return values
+  EFI_OUT_OF_RESOURCES - Can't allocate resources
+  EFI_SUCCESS          - Success
 
 --*/
-;
+
 
 EFI_STATUS
 GenSetupStageTD (
@@ -1145,29 +541,28 @@ GenSetupStageTD (
   IN  UINT8          *pDevReq,
   IN  UINT8          RequestLen,
   OUT TD_STRUCT      **ppTD
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Generate Setup Stage TD
 
 Arguments:
 
-  HcDev       - TODO: add argument description
-  DevAddr     - TODO: add argument description
-  Endpoint    - TODO: add argument description
-  bSlow       - TODO: add argument description
-  pDevReq     - TODO: add argument description
-  RequestLen  - TODO: add argument description
-  ppTD        - TODO: add argument description
-
+  HcDev       - USB_HC_DEV
+  DevAddr     - Device address
+  Endpoint    - Endpoint number 
+  bSlow       - Full speed or low speed
+  pDevReq     - Device request
+  RequestLen  - Request length
+  ppTD        - TD_STRUCT to return
 Returns:
 
-  TODO: add return values
+  EFI_OUT_OF_RESOURCES - Can't allocate memory
+  EFI_SUCCESS          - Success
 
 --*/
-;
 
 EFI_STATUS
 GenDataTD (
@@ -1180,31 +575,30 @@ GenDataTD (
   IN  UINT8          Toggle,
   IN  BOOLEAN        bSlow,
   OUT TD_STRUCT      **ppTD
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Generate Data Stage TD
 
 Arguments:
 
-  HcDev     - TODO: add argument description
-  DevAddr   - TODO: add argument description
-  Endpoint  - TODO: add argument description
-  pData     - TODO: add argument description
-  Len       - TODO: add argument description
-  PktID     - TODO: add argument description
-  Toggle    - TODO: add argument description
-  bSlow     - TODO: add argument description
-  ppTD      - TODO: add argument description
-
+  HcDev       - USB_HC_DEV
+  DevAddr     - Device address
+  Endpoint    - Endpoint number 
+  pData       - Data buffer 
+  Len         - Data length
+  PktID       - Packet ID
+  Toggle      - Data toggle value
+  bSlow       - Full speed or low speed
+  ppTD        - TD_STRUCT to return
 Returns:
 
-  TODO: add return values
+  EFI_OUT_OF_RESOURCES - Can't allocate memory
+  EFI_SUCCESS          - Success
 
 --*/
-;
 
 EFI_STATUS
 CreateStatusTD (
@@ -1214,953 +608,275 @@ CreateStatusTD (
   IN  UINT8          PktID,
   IN  BOOLEAN        bSlow,
   OUT TD_STRUCT      **ppTD
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Generate Setup Stage TD
 
 Arguments:
 
-  HcDev     - TODO: add argument description
-  DevAddr   - TODO: add argument description
-  Endpoint  - TODO: add argument description
-  PktID     - TODO: add argument description
-  bSlow     - TODO: add argument description
-  ppTD      - TODO: add argument description
-
+  HcDev       - USB_HC_DEV
+  DevAddr     - Device address
+  Endpoint    - Endpoint number 
+  bSlow       - Full speed or low speed
+  pDevReq     - Device request
+  RequestLen  - Request length
+  ppTD        - TD_STRUCT to return
 Returns:
 
-  TODO: add return values
+  EFI_OUT_OF_RESOURCES - Can't allocate memory
+  EFI_SUCCESS          - Success
 
 --*/
-;
 
 VOID
 SetTDLinkPtrValidorInvalid (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bValid
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  bValid      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDLinkPtrQHorTDSelect (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  bQH         - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDLinkPtrDepthorBreadth (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bDepth
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  bDepth      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDLinkPtr (
   IN TD_STRUCT     *ptrTDStruct,
   IN VOID          *ptrNext
-  )
-/*++
+  );
 
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  ptrNext     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-VOID                                *
+VOID *
 GetTDLinkPtr (
   IN TD_STRUCT   *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 EnableorDisableTDShortPacket (
   IN TD_STRUCT   *ptrTDStruct,
   IN BOOLEAN     bEnable
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  bEnable     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDControlErrorCounter (
   IN TD_STRUCT     *ptrTDStruct,
   IN UINT8         nMaxErrors
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  nMaxErrors  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDLoworFullSpeedDevice (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bLowSpeedDevice
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct     - TODO: add argument description
-  bLowSpeedDevice - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDControlIsochronousorNot (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bIsochronous
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct   - TODO: add argument description
-  bIsochronous  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetorClearTDControlIOC (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bSet
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  bSet        - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDStatusActiveorInactive (
   IN TD_STRUCT     *ptrTDStruct,
   IN BOOLEAN       bActive
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  bActive     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT16
 SetTDTokenMaxLength (
   IN TD_STRUCT     *ptrTDStruct,
   IN UINT16        nMaxLen
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  nMaxLen     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDTokenDataToggle1 (
   IN TD_STRUCT    *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDTokenDataToggle0 (
   IN TD_STRUCT    *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT8
 GetTDTokenDataToggle (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDTokenEndPoint (
   IN TD_STRUCT     *ptrTDStruct,
   IN UINTN         nEndPoint
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  nEndPoint   - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDTokenDeviceAddress (
   IN TD_STRUCT     *ptrTDStruct,
   IN UINTN         nDevAddr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  nDevAddr    - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDTokenPacketID (
   IN TD_STRUCT     *ptrTDStruct,
   IN UINT8         nPID
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-  nPID        - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetTDDataBuffer (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusActive (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusStalled (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusBufferError (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusBabbleError (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusNAKReceived (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusCRCTimeOutError (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsTDStatusBitStuffError (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT16
 GetTDStatusActualLength (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT16
 GetTDTokenMaxLength (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT8
 GetTDTokenEndPoint (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT8
 GetTDTokenDeviceAddress (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINT8
 GetTDTokenPacketID (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
+  );
 
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-UINT8                               *
+UINT8 *
 GetTDDataBuffer (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 GetTDLinkPtrValidorInvalid (
   IN TD_STRUCT     *ptrTDStruct
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrTDStruct - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 UINTN
 CountTDsNumber (
   IN TD_STRUCT     *ptrFirstTD
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrFirstTD  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 LinkTDToQH (
   IN QH_STRUCT     *ptrQH,
   IN TD_STRUCT     *ptrTD
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrQH - TODO: add argument description
-  ptrTD - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 LinkTDToTD (
   IN TD_STRUCT     *ptrPreTD,
   IN TD_STRUCT     *ptrTD
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  ptrPreTD  - TODO: add argument description
-  ptrTD     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetorClearCurFrameListTerminate (
   IN FRAMELIST_ENTRY     *pCurEntry,
   IN BOOLEAN             bSet
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  pCurEntry - TODO: add argument description
-  bSet      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetCurFrameListQHorTD (
-  IN FRAMELIST_ENTRY      *pCurEntry,
-  IN BOOLEAN              bQH
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  pCurEntry - TODO: add argument description
-  bQH       - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN FRAMELIST_ENTRY        *pCurEntry,
+  IN BOOLEAN                bQH
+  );
 
 BOOLEAN
 GetCurFrameListTerminate (
   IN FRAMELIST_ENTRY     *pCurEntry
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  pCurEntry - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 SetCurFrameListPointer (
   IN FRAMELIST_ENTRY     *pCurEntry,
   IN UINT8               *ptr
-  )
-/*++
+  );
 
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  pCurEntry - TODO: add argument description
-  ptr       - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-VOID                                *
+VOID *
 GetCurFrameListPointer (
   IN FRAMELIST_ENTRY     *pCurEntry
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  pCurEntry - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 LinkQHToFrameList (
   IN FRAMELIST_ENTRY   *pEntry,
   IN UINT16            FrameListIndex,
   IN QH_STRUCT         *ptrQH
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Link QH To Frame List
 
 Arguments:
 
-  pEntry          - TODO: add argument description
-  FrameListIndex  - TODO: add argument description
-  ptrQH           - TODO: add argument description
-
+  pEntry           - FRAMELIST_ENTRY
+  FrameListIndex   - Frame List Index
+  PtrQH            - QH to link 
 Returns:
 
-  TODO: add return values
+  VOID
 
 --*/
-;
-
 VOID
 DeleteQHTDs (
   IN FRAMELIST_ENTRY *pEntry,
@@ -2168,27 +884,7 @@ DeleteQHTDs (
   IN TD_STRUCT       *ptrFirstTD,
   IN UINT16          FrameListIndex,
   IN BOOLEAN         SearchOther
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  pEntry          - TODO: add argument description
-  ptrQH           - TODO: add argument description
-  ptrFirstTD      - TODO: add argument description
-  FrameListIndex  - TODO: add argument description
-  SearchOther     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 DelLinkSingleQH (
@@ -2197,50 +893,13 @@ DelLinkSingleQH (
   IN UINT16          FrameListIndex,
   IN BOOLEAN         SearchOther,
   IN BOOLEAN         Delete
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev           - TODO: add argument description
-  ptrQH           - TODO: add argument description
-  FrameListIndex  - TODO: add argument description
-  SearchOther     - TODO: add argument description
-  Delete          - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 DeleteQueuedTDs (
   IN USB_HC_DEV      *HcDev,
   IN TD_STRUCT       *ptrFirstTD
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev       - TODO: add argument description
-  ptrFirstTD  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 InsertQHTDToINTList (
@@ -2256,34 +915,29 @@ InsertQHTDToINTList (
   IN UINT8                             *DataBuffer,
   IN EFI_ASYNC_USB_TRANSFER_CALLBACK   CallBackFunction,
   IN VOID                              *Context
-  )
+  );
 /*++
-
 Routine Description:
-
-  TODO: Add function description
-
+  Insert QH and TD To Interrupt List
 Arguments:
 
-  HcDev             - TODO: add argument description
-  ptrQH             - TODO: add argument description
-  ptrFirstTD        - TODO: add argument description
-  DeviceAddress     - TODO: add argument description
-  EndPointAddress   - TODO: add argument description
-  DataToggle        - TODO: add argument description
-  DataLength        - TODO: add argument description
-  PollingInterval   - TODO: add argument description
-  Mapping           - TODO: add argument description
-  DataBuffer        - TODO: add argument description
-  CallBackFunction  - TODO: add argument description
-  Context           - TODO: add argument description
-
+  HcDev           - USB_HC_DEV
+  PtrQH           - QH_STRUCT
+  PtrFirstTD      - First TD_STRUCT
+  DeviceAddress   - Device Address
+  EndPointAddress - EndPoint Address
+  DataToggle      - Data Toggle
+  DataLength      - Data length 
+  PollingInterval - Polling Interval when inserted to frame list
+  Mapping         - Mapping alue  
+  DataBuffer      - Data buffer
+  CallBackFunction- CallBackFunction after interrupt transfeer
+  Context         - CallBackFunction Context passed as function parameter
 Returns:
-
-  TODO: add return values
+  EFI_SUCCESS            - Sucess
+  EFI_INVALID_PARAMETER  - Paremeter is error 
 
 --*/
-;
 
 EFI_STATUS
 DeleteAsyncINTQHTDs (
@@ -2291,27 +945,23 @@ DeleteAsyncINTQHTDs (
   IN  UINT8       DeviceAddress,
   IN  UINT8       EndPointAddress,
   OUT UINT8       *DataToggle
-  )
+  );
 /*++
-
 Routine Description:
 
-  TODO: Add function description
-
+  Delete Async INT QH and TDs
 Arguments:
 
-  HcDev           - TODO: add argument description
-  DeviceAddress   - TODO: add argument description
-  EndPointAddress - TODO: add argument description
-  DataToggle      - TODO: add argument description
+  HcDev           - USB_HC_DEV
+  DeviceAddress   - Device Address
+  EndPointAddress - EndPoint Address
+  DataToggle      - Data Toggle
 
 Returns:
-
-  TODO: add return values
+  EFI_SUCCESS            - Sucess
+  EFI_INVALID_PARAMETER  - Paremeter is error 
 
 --*/
-;
-
 BOOLEAN
 CheckTDsResults (
   IN  TD_STRUCT               *ptrTD,
@@ -2319,28 +969,27 @@ CheckTDsResults (
   OUT UINT32                  *Result,
   OUT UINTN                   *ErrTDPos,
   OUT UINTN                   *ActualTransferSize
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Check TDs Results
 
 Arguments:
 
-  ptrTD               - TODO: add argument description
-  RequiredLen         - TODO: add argument description
-  Result              - TODO: add argument description
-  ErrTDPos            - TODO: add argument description
-  ActualTransferSize  - TODO: add argument description
+  PtrTD               - TD_STRUCT to check
+  RequiredLen         - Required Len
+  Result              - Transfer result
+  ErrTDPos            - Error TD Position
+  ActualTransferSize  - Actual Transfer Size
 
 Returns:
 
-  TODO: add return values
+  TRUE  - Sucess
+  FALSE - Fail
 
 --*/
-;
-
 VOID
 ExecuteAsyncINTTDs (
   IN  USB_HC_DEV      *HcDev,
@@ -2348,76 +997,69 @@ ExecuteAsyncINTTDs (
   OUT UINT32          *Result,
   OUT UINTN           *ErrTDPos,
   OUT UINTN           *ActualLen
-  )
- /*++
+  ) ;
+/*++
 
 Routine Description:
 
-  TODO: Add function description
+  Execute Async Interrupt TDs
 
 Arguments:
 
-  HcDev     - TODO: add argument description
-  ptrList   - TODO: add argument description
-  Result    - TODO: add argument description
-  ErrTDPos  - TODO: add argument description
-  ActualLen - TODO: add argument description
-
+  HcDev     - USB_HC_DEV
+  PtrList   - INTERRUPT_LIST
+  Result    - Transfer result
+  ErrTDPos  - Error TD Position
+  ActualTransferSize  - Actual Transfer Size
+  
 Returns:
 
-  TODO: add return values
+  VOID
 
 --*/
-;
-
 VOID
 UpdateAsyncINTQHTDs (
   IN INTERRUPT_LIST  *ptrList,
   IN UINT32          Result,
   IN UINT32          ErrTDPos
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Update Async Interrupt QH and TDs
 
 Arguments:
 
-  ptrList   - TODO: add argument description
-  Result    - TODO: add argument description
-  ErrTDPos  - TODO: add argument description
+  PtrList   - INTERRUPT_LIST
+  Result    - Transfer reslut
+  ErrTDPos  - Error TD Position
 
 Returns:
 
-  TODO: add return values
+  VOID
 
 --*/
-;
-
 VOID
 ReleaseInterruptList (
   IN USB_HC_DEV      *HcDev,
   IN EFI_LIST_ENTRY  *ListHead
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
-
+  Release Interrupt List
 Arguments:
 
-  HcDev     - TODO: add argument description
-  ListHead  - TODO: add argument description
+  HcDev     - USB_HC_DEV
+  ListHead  - List head
 
 Returns:
 
-  TODO: add return values
+  VOID
 
 --*/
-;
-
 EFI_STATUS
 ExecuteControlTransfer (
   IN  USB_HC_DEV  *HcDev,
@@ -2426,29 +1068,28 @@ ExecuteControlTransfer (
   OUT UINTN       *ActualLen,
   IN  UINTN       TimeOut,
   OUT UINT32      *TransferResult
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Execute Control Transfer
 
 Arguments:
 
-  HcDev           - TODO: add argument description
-  ptrTD           - TODO: add argument description
-  wIndex          - TODO: add argument description
-  ActualLen       - TODO: add argument description
-  TimeOut         - TODO: add argument description
-  TransferResult  - TODO: add argument description
-
+  HcDev            - USB_HC_DEV
+  PtrTD            - TD_STRUCT
+  wIndex           - No use
+  ActualLen        - Actual transfered Len 
+  TimeOut          - TimeOut value in milliseconds
+  TransferResult   - Transfer result
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS      - Sucess
+  EFI_DEVICE_ERROR - Error
+  
 
 --*/
-;
-
 EFI_STATUS
 ExecBulkorSyncInterruptTransfer (
   IN  USB_HC_DEV  *HcDev,
@@ -2458,323 +1099,102 @@ ExecBulkorSyncInterruptTransfer (
   OUT UINT8       *DataToggle,
   IN  UINTN       TimeOut,
   OUT UINT32      *TransferResult
-  )
+  );
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Execute Bulk or SyncInterrupt Transfer
 
 Arguments:
 
-  HcDev           - TODO: add argument description
-  ptrTD           - TODO: add argument description
-  wIndex          - TODO: add argument description
-  ActualLen       - TODO: add argument description
-  DataToggle      - TODO: add argument description
-  TimeOut         - TODO: add argument description
-  TransferResult  - TODO: add argument description
-
+  HcDev            - USB_HC_DEV
+  PtrTD            - TD_STRUCT
+  wIndex           - No use
+  ActualLen        - Actual transfered Len 
+  DataToggle       - Data Toggle
+  TimeOut          - TimeOut value in milliseconds
+  TransferResult   - Transfer result
 Returns:
 
-  TODO: add return values
-
+  EFI_SUCCESS      - Sucess
+  EFI_DEVICE_ERROR - Error
 --*/
-;
 
 EFI_STATUS
 InitializeMemoryManagement (
   IN USB_HC_DEV           *HcDev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 CreateMemoryBlock (
   IN USB_HC_DEV            *HcDev,
   IN MEMORY_MANAGE_HEADER  **MemoryHeader,
   IN UINTN                 MemoryBlockSizeInPages
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev                   - TODO: add argument description
-  MemoryHeader            - TODO: add argument description
-  MemoryBlockSizeInPages  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 FreeMemoryHeader (
   IN USB_HC_DEV            *HcDev,
   IN MEMORY_MANAGE_HEADER  *MemoryHeader
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev         - TODO: add argument description
-  MemoryHeader  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UhciAllocatePool (
   IN USB_HC_DEV      *UhcDev,
   IN UINT8           **Pool,
   IN UINTN           AllocSize
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UhcDev    - TODO: add argument description
-  Pool      - TODO: add argument description
-  AllocSize - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 UhciFreePool (
   IN USB_HC_DEV      *HcDev,
   IN UINT8           *Pool,
   IN UINTN           AllocSize
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev     - TODO: add argument description
-  Pool      - TODO: add argument description
-  AllocSize - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 InsertMemoryHeaderToList (
   IN MEMORY_MANAGE_HEADER  *MemoryHeader,
   IN MEMORY_MANAGE_HEADER  *NewMemoryHeader
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  MemoryHeader    - TODO: add argument description
-  NewMemoryHeader - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 AllocMemInMemoryBlock (
   IN MEMORY_MANAGE_HEADER  *MemoryHeader,
   IN VOID                  **Pool,
   IN UINTN                 NumberOfMemoryUnit
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  MemoryHeader        - TODO: add argument description
-  Pool                - TODO: add argument description
-  NumberOfMemoryUnit  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 BOOLEAN
 IsMemoryBlockEmptied (
   IN MEMORY_MANAGE_HEADER  *MemoryHeaderPtr
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  MemoryHeaderPtr - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 DelinkMemoryBlock (
   IN MEMORY_MANAGE_HEADER    *FirstMemoryHeader,
   IN MEMORY_MANAGE_HEADER    *FreeMemoryHeader
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  FirstMemoryHeader - TODO: add argument description
-  FreeMemoryHeader  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 DelMemoryManagement (
   IN USB_HC_DEV      *HcDev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 EnableMaxPacketSize (
   IN USB_HC_DEV          *HcDev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 CleanUsbTransactions (
   IN USB_HC_DEV    *HcDev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HcDev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 TurnOffUSBEmulation (
   IN EFI_PCI_IO_PROTOCOL  *PciIo
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  PciIo - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 #endif

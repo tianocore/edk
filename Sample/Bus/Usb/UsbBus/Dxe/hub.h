@@ -94,168 +94,45 @@ HubGetPortStatus (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   IN  UINT8                   Port,
   OUT UINT32                  *PortStatus
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo       - TODO: add argument description
-  Port        - TODO: add argument description
-  PortStatus  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 HubSetPortFeature (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Port,
   IN UINT8                   Value
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo - TODO: add argument description
-  Port  - TODO: add argument description
-  Value - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 HubSetHubFeature (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Value
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo - TODO: add argument description
-  Value - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 HubGetHubStatus (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   OUT UINT32                  *HubStatus
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  HubStatus - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 HubClearPortFeature (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Port,
   IN UINT8                   Value
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo - TODO: add argument description
-  Port  - TODO: add argument description
-  Value - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 HubClearHubFeature (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Value
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo - TODO: add argument description
-  Value - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 GetHubDescriptor (
   IN  EFI_USB_IO_PROTOCOL        *UsbIo,
   IN  UINTN                      DescriptorSize,
   OUT EFI_USB_HUB_DESCRIPTOR     *HubDescriptor
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo           - TODO: add argument description
-  DescriptorSize  - TODO: add argument description
-  HubDescriptor   - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 #endif

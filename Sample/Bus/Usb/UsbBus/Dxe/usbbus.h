@@ -25,16 +25,29 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #ifndef _EFI_USB_BUS_H
 #define _EFI_USB_BUS_H
 
+#include "Tiano.h"
+#include "EfiDriverLib.h"
+#include "usb.h"
+#include "UsbDxeLib.h"
+#include "Hub.h"
+#include "Usbutil.h"
+
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (UsbHostController)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
-//
-// Define USB DEBUG Value
-//
-#define EFI_D_USB EFI_D_ERROR
 
+#ifdef EFI_DEBUG
+extern UINTN  gUSBDebugLevel;
+extern UINTN  gUSBErrorLevel;
+#endif
+
+#define MICROSECOND 10000
+#define ONESECOND   (1000 * MICROSECOND)
+#define BUSPOLLING_PERIOD ONESECOND
 //
 // We define some maximun value here
 //
@@ -174,228 +187,85 @@ extern EFI_GUID                     gUSBBusDriverGuid;
 BOOLEAN
 IsHub (
   IN USB_IO_CONTROLLER_DEVICE     *Dev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Dev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbGetStringtable (
   IN  USB_IO_DEVICE     *Dev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Dev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbGetAllConfigurations (
-  IN  USB_IO_DEVICE     *UsbDev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbDev  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN  USB_IO_DEVICE     *UsbIoDevice
+  );
 
 EFI_STATUS
 UsbSetConfiguration (
   IN  USB_IO_DEVICE     *Dev,
   IN  UINTN             ConfigurationValue
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Dev                 - TODO: add argument description
-  ConfigurationValue  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbSetDefaultConfiguration (
   IN  USB_IO_DEVICE     *Dev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Dev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 //
 // Device Deconfiguration functions
 //
 VOID
 UsbDestroyAllConfiguration (
-  IN USB_IO_DEVICE     *Dev
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Dev - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN USB_IO_DEVICE     *UsbIoDevice
+  );
 
 EFI_STATUS
 DoHubConfig (
   IN USB_IO_CONTROLLER_DEVICE     *HubIoDevice
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  HubIoDevice - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 VOID
 GetDeviceEndPointMaxPacketLength (
-  IN  USB_IO_CONTROLLER_DEVICE     *UsbIoController,
-  IN  UINT8                        EndpointAddr,
-  OUT UINT8                        *MaxPacketLength
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIoController - TODO: add argument description
-  EndpointAddr    - TODO: add argument description
-  MaxPacketLength - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN EFI_USB_IO_PROTOCOL    *UsbIo,
+  IN  UINT8                 EndpointAddr,
+  OUT UINT8                 *MaxPacketLength
+  );
 
 VOID
 GetDataToggleBit (
-  IN  USB_IO_CONTROLLER_DEVICE     *UsbIoController,
-  IN  UINT8                        EndpointAddr,
-  OUT UINT8                        *DataToggle
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIoController - TODO: add argument description
-  EndpointAddr    - TODO: add argument description
-  DataToggle      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  IN EFI_USB_IO_PROTOCOL    *UsbIo,
+  IN  UINT8                 EndpointAddr,
+  OUT UINT8                 *DataToggle
+  );
 
 VOID
 SetDataToggleBit (
-  IN USB_IO_CONTROLLER_DEVICE     *UsbIoController,
-  IN UINT8                        EndpointAddr,
-  IN UINT8                        DataToggle
-  )
-/*++
+  IN EFI_USB_IO_PROTOCOL    *UsbIo,
+  IN UINT8                  EndpointAddr,
+  IN UINT8                  DataToggle
+  );
 
-Routine Description:
+INTERFACE_DESC_LIST_ENTRY *
+FindInterfaceListEntry (
+  IN EFI_USB_IO_PROTOCOL    *This
+  );
 
-  TODO: Add function description
+ENDPOINT_DESC_LIST_ENTRY *
+FindEndPointListEntry (
+  IN EFI_USB_IO_PROTOCOL    *This,
+  IN UINT8                  EndPointAddress
+  );
 
-Arguments:
 
-  UsbIoController - TODO: add argument description
-  EndpointAddr    - TODO: add argument description
-  DataToggle      - TODO: add argument description
+EFI_STATUS
+IsDeviceDisconnected (
+  IN USB_IO_CONTROLLER_DEVICE    *UsbIoController,
+  IN OUT BOOLEAN                 *Disconnected
+  );
 
-Returns:
+EFI_STATUS
+UsbDeviceDeConfiguration (
+  IN USB_IO_DEVICE     *UsbIoDevice
+  );
 
-  TODO: add return values
-
---*/
-;
 
 #endif

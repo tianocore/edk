@@ -21,14 +21,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
-
-#include EFI_PROTOCOL_DEFINITION (UsbIo)
-
-#include "usb.h"
 #include "usbbus.h"
-#include "UsbDxeLib.h"
 
 //
 // USB I/O Support Function Prototypes
@@ -116,7 +109,7 @@ UsbPortReset (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetDeviceDescriptor (
+UsbGetDeviceDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
   OUT EFI_USB_DEVICE_DESCRIPTOR     *DeviceDescriptor
   );
@@ -124,7 +117,7 @@ NewUsbGetDeviceDescriptor (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetActiveConfigDescriptor (
+UsbGetActiveConfigDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
   OUT EFI_USB_CONFIG_DESCRIPTOR     *ConfigurationDescriptor
   );
@@ -132,7 +125,7 @@ NewUsbGetActiveConfigDescriptor (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetInterfaceDescriptor (
+UsbGetInterfaceDescriptor (
   IN  EFI_USB_IO_PROTOCOL              *This,
   OUT EFI_USB_INTERFACE_DESCRIPTOR     *InterfaceDescriptor
   );
@@ -140,7 +133,7 @@ NewUsbGetInterfaceDescriptor (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetEndpointDescriptor (
+UsbGetEndpointDescriptor (
   IN  EFI_USB_IO_PROTOCOL             *This,
   IN  UINT8                           EndpointIndex,
   OUT EFI_USB_ENDPOINT_DESCRIPTOR     *EndpointDescriptor
@@ -175,10 +168,10 @@ STATIC EFI_USB_IO_PROTOCOL  UsbIoInterface = {
   UsbSyncInterruptTransfer,
   UsbIsochronousTransfer,
   UsbAsyncIsochronousTransfer,
-  NewUsbGetDeviceDescriptor,
-  NewUsbGetActiveConfigDescriptor,
-  NewUsbGetInterfaceDescriptor,
-  NewUsbGetEndpointDescriptor,
+  UsbGetDeviceDescriptor,
+  UsbGetActiveConfigDescriptor,
+  UsbGetInterfaceDescriptor,
+  UsbGetEndpointDescriptor,
   UsbGetStringDescriptor,
   UsbGetSupportedLanguages,
   UsbPortReset
@@ -188,21 +181,6 @@ VOID
 InitializeUsbIoInstance (
   IN USB_IO_CONTROLLER_DEVICE     *UsbIoController
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIoController - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   //
   // Copy EFI_USB_IO protocol instance
@@ -213,7 +191,6 @@ Returns:
     sizeof (EFI_USB_IO_PROTOCOL)
     );
 }
-
 //
 // Implementation
 //
@@ -261,7 +238,7 @@ UsbControlTransfer (
   USB_IO_DEVICE             *UsbIoDevice;
   UINT8                     MaxPacketLength;
   UINT32                    TransferResult;
-
+  BOOLEAN                   Disconnected;
   //
   // Parameters Checking
   //
@@ -273,11 +250,26 @@ UsbControlTransfer (
   // leave the HostController's ControlTransfer
   // to perform other parameters checking
   //
-
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
   UsbIoDevice     = UsbIoController->UsbDevice;
   UsbHCInterface  = UsbIoDevice->BusController->UsbHCInterface;
   MaxPacketLength = UsbIoDevice->DeviceDescriptor.MaxPacketSize0;
+
+ 
+  if (Request->Request     == USB_DEV_CLEAR_FEATURE && 
+      Request->RequestType == 0x02                  && 
+      Request->Value       == EfiUsbEndpointHalt) {
+     //
+     //Reduce the remove delay time for system response
+     //
+     IsDeviceDisconnected (UsbIoController, &Disconnected);
+     if (!EFI_ERROR (Status) && Disconnected == TRUE) {
+      DEBUG ((gUSBErrorLevel, "Device is disconnected when trying reset\n"));
+      return EFI_DEVICE_ERROR;
+    }
+  }
+
+
 
   //
   // using HostController's ControlTransfer to complete the request
@@ -296,6 +288,22 @@ UsbControlTransfer (
                                 );
   *Status = TransferResult;
 
+  if (Request->Request     == USB_DEV_CLEAR_FEATURE && 
+      Request->RequestType == 0x02                  && 
+      Request->Value       == EfiUsbEndpointHalt) {
+    //
+    // This is a UsbClearEndpointHalt request
+    // Need to clear data toggle
+    // Request.Index == EndpointAddress
+    //
+    if (!EFI_ERROR (RetStatus) && TransferResult == EFI_USB_NOERROR) {
+      SetDataToggleBit (
+        This,
+        (UINT8) Request->Index,
+        0
+        );
+    }
+  }
   return RetStatus;
 }
 
@@ -328,7 +336,7 @@ UsbBulkTransfer (
                       time frame.
     Status          - This parameter indicates the USB transfer status.
 
-  Return Values:
+  Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_OUT_OF_RESOURCES
@@ -336,12 +344,6 @@ UsbBulkTransfer (
     EFI_DEVICE_ERROR
 
 --*/
-// TODO: function comment is missing 'Returns:'
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   USB_IO_DEVICE               *UsbIoDev;
   UINT8                       MaxPacketLength;
@@ -350,7 +352,7 @@ UsbBulkTransfer (
   EFI_STATUS                  RetStatus;
   EFI_USB_HC_PROTOCOL         *UsbHCInterface;
   USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  EFI_USB_ENDPOINT_DESCRIPTOR *UsbEndpointDesc;
+  ENDPOINT_DESC_LIST_ENTRY    *EndPointListEntry;
   UINT32                      TransferResult;
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
@@ -372,16 +374,16 @@ UsbBulkTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  UsbEndpointDesc = GetEndpointDescriptor (
-                      This,
-                      DeviceEndpoint
-                      );
+  EndPointListEntry = FindEndPointListEntry (
+                        This,
+                        DeviceEndpoint
+                        );
 
-  if (UsbEndpointDesc == NULL) {
+  if (EndPointListEntry == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((UsbEndpointDesc->Attributes & 0x03) != 0x02) {
+  if ((EndPointListEntry->EndpointDescriptor.Attributes & 0x03) != 0x02) {
     return EFI_INVALID_PARAMETER;
   }
                         
@@ -389,15 +391,14 @@ UsbBulkTransfer (
   // leave the HostController's BulkTransfer
   // to perform other parameters checking
   //
-
   GetDeviceEndPointMaxPacketLength (
-    UsbIoController,
+    This,
     DeviceEndpoint,
     &MaxPacketLength
     );
 
   GetDataToggleBit (
-    UsbIoController,
+    This,
     DeviceEndpoint,
     &DataToggle
     );
@@ -424,7 +425,7 @@ UsbBulkTransfer (
     // Write the toggle back
     //
     SetDataToggleBit (
-      UsbIoController,
+      This,
       DeviceEndpoint,
       DataToggle
       );
@@ -464,7 +465,7 @@ UsbSyncInterruptTransfer (
                       time frame.
     Status          - This parameter indicates the USB transfer status.
 
-  Return Values:
+  Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_OUT_OF_RESOURCES
@@ -472,12 +473,6 @@ UsbSyncInterruptTransfer (
     EFI_DEVICE_ERROR
 
 --*/
-// TODO: function comment is missing 'Returns:'
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   USB_IO_DEVICE               *UsbIoDev;
   UINT8                       MaxPacketLength;
@@ -486,7 +481,7 @@ UsbSyncInterruptTransfer (
   EFI_STATUS                  RetStatus;
   EFI_USB_HC_PROTOCOL         *UsbHCInterface;
   USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  EFI_USB_ENDPOINT_DESCRIPTOR *UsbEndpointDesc;
+  ENDPOINT_DESC_LIST_ENTRY    *EndPointListEntry;
 
   //
   // Parameters Checking
@@ -503,16 +498,16 @@ UsbSyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  UsbEndpointDesc = GetEndpointDescriptor (
-                      This,
-                      DeviceEndpoint
-                      );
+  EndPointListEntry = FindEndPointListEntry (
+                        This,
+                        DeviceEndpoint
+                        );
 
-  if (UsbEndpointDesc == NULL) {
+  if (EndPointListEntry == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((UsbEndpointDesc->Attributes & 0x03) != 0x03) {
+  if ((EndPointListEntry->EndpointDescriptor.Attributes & 0x03) != 0x03) {
     return EFI_INVALID_PARAMETER;
   }
   
@@ -520,19 +515,18 @@ UsbSyncInterruptTransfer (
   // leave the HostController's SyncInterruptTransfer
   // to perform other parameters checking
   //
-
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
   UsbIoDev        = UsbIoController->UsbDevice;
   UsbHCInterface  = UsbIoDev->BusController->UsbHCInterface;
 
   GetDeviceEndPointMaxPacketLength (
-    UsbIoController,
+    This,
     DeviceEndpoint,
     &MaxPacketLength
     );
 
   GetDataToggleBit (
-    UsbIoController,
+    This,
     DeviceEndpoint,
     &DataToggle
     );
@@ -559,7 +553,7 @@ UsbSyncInterruptTransfer (
     // Write the toggle back
     //
     SetDataToggleBit (
-      UsbIoController,
+      This,
       DeviceEndpoint,
       DataToggle
       );
@@ -572,7 +566,7 @@ STATIC
 EFI_STATUS
 EFIAPI
 UsbAsyncInterruptTransfer (
-  IN EFI_USB_IO_PROTOCOL                 * This,
+  IN EFI_USB_IO_PROTOCOL                 *This,
   IN UINT8                               DeviceEndpoint,
   IN BOOLEAN                             IsNewTransfer,
   IN UINTN                               PollingInterval, OPTIONAL
@@ -596,17 +590,15 @@ UsbAsyncInterruptTransfer (
                           the transfer is to be executed.
     DataLength        -   Specifies the length, in bytes, of the data to be
                           received from the USB device.
-    Context           -   Data passed to the InterruptCallback function.
     InterruptCallback -   The Callback function.  This function is called if
                           the asynchronous interrupt transfer is completed.
-
+    Context           -   Passed to InterruptCallback 
   Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_OUT_OF_RESOURCES
 
 --*/
-// TODO:    InterruptCallBack - add argument and description to function comment
 {
   USB_IO_DEVICE               *UsbIoDev;
   UINT8                       MaxPacketLength;
@@ -614,7 +606,7 @@ UsbAsyncInterruptTransfer (
   EFI_USB_HC_PROTOCOL         *UsbHCInterface;
   EFI_STATUS                  RetStatus;
   USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  EFI_USB_ENDPOINT_DESCRIPTOR *UsbEndpointDesc;
+  ENDPOINT_DESC_LIST_ENTRY    *EndpointListEntry;
 
   //
   // Check endpoint
@@ -627,16 +619,16 @@ UsbAsyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  UsbEndpointDesc = GetEndpointDescriptor (
-                      This,
-                      DeviceEndpoint
-                      );
+  EndpointListEntry = FindEndPointListEntry (
+                        This,
+                        DeviceEndpoint
+                        );
 
-  if (UsbEndpointDesc == NULL) {
+  if (EndpointListEntry == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((UsbEndpointDesc->Attributes & 0x03) != 0x03) {
+  if ((EndpointListEntry->EndpointDescriptor.Attributes & 0x03) != 0x03) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -666,7 +658,7 @@ UsbAsyncInterruptTransfer (
     // We need to store the toggle value
     //
     SetDataToggleBit (
-      UsbIoController,
+      This,
       DeviceEndpoint,
       DataToggle
       );
@@ -675,13 +667,13 @@ UsbAsyncInterruptTransfer (
   }
 
   GetDeviceEndPointMaxPacketLength (
-    UsbIoController,
+    This,
     DeviceEndpoint,
     &MaxPacketLength
     );
 
   GetDataToggleBit (
-    UsbIoController,
+    This,
     DeviceEndpoint,
     &DataToggle
     );
@@ -734,9 +726,8 @@ UsbIsochronousTransfer (
     EFI_OUT_OF_RESOURCES
     EFI_TIMEOUT
     EFI_DEVICE_ERROR
-
+    EFI_UNSUPPORTED
 --*/
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   //
   // Currently we don't support this transfer
@@ -748,7 +739,7 @@ STATIC
 EFI_STATUS
 EFIAPI
 UsbAsyncIsochronousTransfer (
-  IN        EFI_USB_IO_PROTOCOL                 * This,
+  IN        EFI_USB_IO_PROTOCOL                 *This,
   IN        UINT8                               DeviceEndpoint,
   IN OUT    VOID                                *Data,
   IN        UINTN                               DataLength,
@@ -759,20 +750,19 @@ UsbAsyncIsochronousTransfer (
 
 Routine Description:
 
-  TODO: Add function description
+  Usb Async Isochronous Transfer
 
 Arguments:
 
-  This                - TODO: add argument description
-  DeviceEndpoint      - TODO: add argument description
-  Data                - TODO: add argument description
-  DataLength          - TODO: add argument description
-  IsochronousCallBack - TODO: add argument description
-  Context             - TODO: add argument description
-
+  This                - EFI_USB_IO_PROTOCOL
+  DeviceEndpoint      - DeviceEndpoint number
+  Data                - Data to transfer
+  DataLength          - DataLength
+  IsochronousCallBack - Isochronous CallBack function
+  Context             - Passed to IsochronousCallBack function
 Returns:
 
-  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_UNSUPPORTED     - Unsupported now
 
 --*/
 {
@@ -787,37 +777,29 @@ Returns:
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetDeviceDescriptor (
+UsbGetDeviceDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
   OUT EFI_USB_DEVICE_DESCRIPTOR     *DeviceDescriptor
   )
 /*++
 
-  Rountine Description:
+  Routine Description:
     Retrieves the USB Device Descriptor.
 
-  Parameters:
+  Arguments:
     This              -   Indicates the calling context.
     DeviceDescriptor  -   A pointer to the caller allocated USB Device
                           Descriptor.
 
-  Return Value:
+  Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_NOT_FOUND
 
 --*/
-// TODO: function comment is missing 'Routine Description:'
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    This - add argument and description to function comment
-// TODO:    DeviceDescriptor - add argument and description to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_DEVICE_DESCRIPTOR *UsbDeviceDescriptor;
-  EFI_STATUS                Status;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+  USB_IO_DEVICE             *UsbIoDev;
 
   //
   // This function just wrapps UsbGetDeviceDescriptor.
@@ -827,14 +809,16 @@ NewUsbGetDeviceDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = UsbGetDeviceDescriptor (This, &UsbDeviceDescriptor);
-  if (EFI_ERROR (Status)) {
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
+
+  if (!UsbIoDev->IsConfigured) {
     return EFI_NOT_FOUND;
   }
 
   EfiCopyMem (
     DeviceDescriptor,
-    UsbDeviceDescriptor,
+    &UsbIoDev->DeviceDescriptor,
     sizeof (EFI_USB_DEVICE_DESCRIPTOR)
     );
 
@@ -844,37 +828,29 @@ NewUsbGetDeviceDescriptor (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetActiveConfigDescriptor (
+UsbGetActiveConfigDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
   OUT EFI_USB_CONFIG_DESCRIPTOR     *ConfigurationDescriptor
   )
 /*++
 
-  Rountine Description:
+  Routine Description:
     Retrieves the current USB configuration Descriptor.
 
-  Parameters:
+  Arguments:
     This                     -   Indicates the calling context.
     ConfigurationDescriptor  -   A pointer to the caller allocated USB active
                                  Configuration Descriptor.
 
-  Return Value:
+  Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_NOT_FOUND
 
 --*/
-// TODO: function comment is missing 'Routine Description:'
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    This - add argument and description to function comment
-// TODO:    ConfigurationDescriptor - add argument and description to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_CONFIG_DESCRIPTOR *UsbConfigDescriptor;
-  EFI_STATUS                Status;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
 
   //
   // This function just wrapps UsbGetActiveConfigDescriptor.
@@ -883,14 +859,16 @@ NewUsbGetActiveConfigDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = UsbGetActiveConfigDescriptor (This, &UsbConfigDescriptor);
-  if (EFI_ERROR (Status)) {
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
+
+  if (!UsbIoDev->IsConfigured) {
     return EFI_NOT_FOUND;
   }
 
   EfiCopyMem (
     ConfigurationDescriptor,
-    UsbConfigDescriptor,
+    &(UsbIoDev->ActiveConfig->CongfigDescriptor),
     sizeof (EFI_USB_CONFIG_DESCRIPTOR)
     );
 
@@ -900,53 +878,42 @@ NewUsbGetActiveConfigDescriptor (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetInterfaceDescriptor (
+UsbGetInterfaceDescriptor (
   IN  EFI_USB_IO_PROTOCOL              *This,
   OUT EFI_USB_INTERFACE_DESCRIPTOR     *InterfaceDescriptor
   )
 /*++
 
-  Rountine Description:
+  Routine Description:
     Retrieves the interface Descriptor for that controller.
 
-  Parameters:
+  Arguments:
     This                  -   Indicates the calling context.
     InterfaceDescriptor   -   A pointer to the caller allocated USB interface
                               Descriptor.
 
-  Return Value:
+  Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_NOT_FOUND
 
 --*/
-// TODO: function comment is missing 'Routine Description:'
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    This - add argument and description to function comment
-// TODO:    InterfaceDescriptor - add argument and description to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_INTERFACE_DESCRIPTOR  *UsbInterfaceDescriptor;
-  EFI_STATUS                    Status;
+  INTERFACE_DESC_LIST_ENTRY *InterfaceListEntry;
 
-  //
-  // This function just wrapps UsbGetInterfaceDescriptor.
-  //
   if (InterfaceDescriptor == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = UsbGetInterfaceDescriptor (This, &UsbInterfaceDescriptor);
-  if (EFI_ERROR (Status)) {
+  InterfaceListEntry = FindInterfaceListEntry (This);
+
+  if (InterfaceListEntry == NULL) {
     return EFI_NOT_FOUND;
   }
 
   EfiCopyMem (
     InterfaceDescriptor,
-    UsbInterfaceDescriptor,
+    &(InterfaceListEntry->InterfaceDescriptor),
     sizeof (EFI_USB_INTERFACE_DESCRIPTOR)
     );
 
@@ -956,46 +923,33 @@ NewUsbGetInterfaceDescriptor (
 STATIC
 EFI_STATUS
 EFIAPI
-NewUsbGetEndpointDescriptor (
+UsbGetEndpointDescriptor (
   IN  EFI_USB_IO_PROTOCOL             *This,
   IN  UINT8                           EndpointIndex,
   OUT EFI_USB_ENDPOINT_DESCRIPTOR     *EndpointDescriptor
   )
 /*++
 
-  Rountine Description:
+  Routine Description:
     Retrieves the endpoint Descriptor for a given endpoint.
 
-  Parameters:
+  Arguments:
     This                -   Indicates the calling context.
     EndpointIndex       -   Indicates which endpoint descriptor to retrieve.
                             The valid range is 0..15.
     EndpointDescriptor  -   A pointer to the caller allocated USB Endpoint
                             Descriptor of a USB controller.
 
-  Return Value:
+  Returns:
     EFI_SUCCESS
     EFI_INVALID_PARAMETER
     EFI_NOT_FOUND
 
 --*/
-// TODO: function comment is missing 'Routine Description:'
-// TODO: function comment is missing 'Arguments:'
-// TODO: function comment is missing 'Returns:'
-// TODO:    This - add argument and description to function comment
-// TODO:    EndpointIndex - add argument and description to function comment
-// TODO:    EndpointDescriptor - add argument and description to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_ENDPOINT_DESCRIPTOR *UsbEndpointDescriptor;
-  EFI_STATUS                  Status;
-
-  //
-  // This function just wrapps UsbGetEndpointDescriptor.
-  //
+  INTERFACE_DESC_LIST_ENTRY *InterfaceListEntry;
+  EFI_LIST_ENTRY            *EndpointListHead;
+  ENDPOINT_DESC_LIST_ENTRY  *EndpointListEntry;
 
   if (EndpointDescriptor == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1005,19 +959,29 @@ NewUsbGetEndpointDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = UsbGetEndpointDescriptor (
-            This,
-            EndpointIndex,
-            &UsbEndpointDescriptor
-            );
+  InterfaceListEntry = FindInterfaceListEntry (This);
 
-  if (EFI_ERROR (Status)) {
+  if (InterfaceListEntry == NULL) {
     return EFI_NOT_FOUND;
+  }
+
+  EndpointListHead  = (EFI_LIST_ENTRY *) (&InterfaceListEntry->EndpointDescListHead);
+  EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *) (EndpointListHead->ForwardLink);
+
+  if (EndpointIndex >= InterfaceListEntry->InterfaceDescriptor.NumEndpoints) {
+    return EFI_INVALID_PARAMETER;
+  }
+  //
+  // Loop all endpoint descriptor to get match one.
+  //
+  while (EndpointIndex != 0) {
+    EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *) (EndpointListEntry->Link.ForwardLink);
+    EndpointIndex--;
   }
 
   EfiCopyMem (
     EndpointDescriptor,
-    UsbEndpointDescriptor,
+    &EndpointListEntry->EndpointDescriptor,
     sizeof (EFI_USB_ENDPOINT_DESCRIPTOR)
     );
 
@@ -1079,6 +1043,7 @@ UsbGetSupportedLanguages (
 
 STATIC
 EFI_STATUS
+EFIAPI
 UsbGetStringDescriptor (
   IN  EFI_USB_IO_PROTOCOL     *This,
   IN  UINT16                  LangID,
@@ -1093,7 +1058,7 @@ UsbGetStringDescriptor (
   Arguments:
     This          -   Indicates the calling context.
     LangID        -   The Language ID for the string being retrieved.
-    StringID      -   The ID of the string being retrieved.
+    StringIndex  -   The ID of the string being retrieved.
     String        -   A pointer to a buffer allocated by this function
                       with AllocatePool() to store the string.  If this
                       function returns EFI_SUCCESS, it stores the string
@@ -1106,8 +1071,6 @@ UsbGetStringDescriptor (
     EFI_OUT_OF_RESOURCES
 
 --*/
-// TODO:    StringIndex - add argument and description to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   UINT32                    Status;
   EFI_STATUS                Result;
@@ -1147,7 +1110,6 @@ UsbGetStringDescriptor (
   if (!Found) {
     return EFI_NOT_FOUND;
   }
-
   //
   // Get String Length
   //

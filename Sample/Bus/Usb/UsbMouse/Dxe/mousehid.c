@@ -38,17 +38,16 @@ GetNextItem (
 
 Routine Description:
 
-  TODO: Add function description
+  Get Next Item
 
 Arguments:
 
-  StartPos  - TODO: add argument description
-  EndPos    - TODO: add argument description
-  HidItem   - TODO: add argument description
+  StartPos  - Start Position
+  EndPos    - End Position
+  HidItem   - HidItem to return
 
 Returns:
-
-  TODO: add return values
+  Position
 
 --*/
 {
@@ -93,6 +92,7 @@ Returns:
     //
     HidItem->Size   = (UINT8) (Temp & 0x03);
     switch (HidItem->Size) {
+
     case 0:
       //
       // No data
@@ -143,15 +143,15 @@ GetItemData (
 
 Routine Description:
 
-  TODO: Add function description
+  Get Item Data
 
 Arguments:
 
-  HidItem - TODO: add argument description
+  HidItem - HID_ITEM
 
 Returns:
-
-  TODO: add return values
+  HidItem Data
+  
 
 --*/
 {
@@ -159,6 +159,7 @@ Returns:
   // Get Data from HID_ITEM structure
   //
   switch (HidItem->Size) {
+
   case 1:
     return HidItem->Data.U8;
 
@@ -182,16 +183,14 @@ ParseLocalItem (
 
 Routine Description:
 
-  TODO: Add function description
+  Parse Local Item
 
 Arguments:
 
-  UsbMouse  - TODO: add argument description
-  LocalItem - TODO: add argument description
+  UsbMouse  - USB_MOUSE_DEV
+  LocalItem - Local Item
 
 Returns:
-
-  TODO: add return values
 
 --*/
 {
@@ -207,6 +206,7 @@ Returns:
   Data = GetItemData (LocalItem);
 
   switch (LocalItem->Tag) {
+
   case HID_LOCAL_ITEM_TAG_DELIMITER:
     //
     // we don't support delimiter here
@@ -240,22 +240,6 @@ ParseGlobalItem (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  HID_ITEM        *GlobalItem
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbMouse    - TODO: add argument description
-  GlobalItem  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 {
   UINT8 UsagePage;
 
@@ -280,6 +264,7 @@ Returns:
   }
 }
 
+
 STATIC
 VOID
 ParseMainItem (
@@ -290,16 +275,16 @@ ParseMainItem (
 
 Routine Description:
 
-  TODO: Add function description
+  Parse Main Item
 
 Arguments:
 
   UsbMouse  - TODO: add argument description
-  MainItem  - TODO: add argument description
+  MainItem  - HID_ITEM to parse
 
 Returns:
 
-  TODO: add return values
+  VOID
 
 --*/
 {
@@ -319,20 +304,21 @@ ParseHidItem (
 
 Routine Description:
 
-  TODO: Add function description
+  Parse Hid Item
 
 Arguments:
 
-  UsbMouse  - TODO: add argument description
-  HidItem   - TODO: add argument description
+  UsbMouse  - USB_MOUSE_DEV
+  HidItem   - HidItem to parse
 
 Returns:
 
-  TODO: add return values
+  VOID
 
 --*/
 {
   switch (HidItem->Type) {
+
   case HID_ITEM_TYPE_MAIN:
     //
     // For Main Item, parse main item
@@ -355,7 +341,6 @@ Returns:
     break;
   }
 }
-
 //
 // A simple parse just read some field we are interested in
 //
@@ -369,18 +354,18 @@ ParseMouseReportDescriptor (
 
 Routine Description:
 
-  TODO: Add function description
+  Parse Mouse Report Descriptor
 
 Arguments:
 
-  UsbMouse          - TODO: add argument description
-  ReportDescriptor  - TODO: add argument description
-  ReportSize        - TODO: add argument description
+  UsbMouse          - USB_MOUSE_DEV
+  ReportDescriptor  - Report descriptor to parse
+  ReportSize        - Report descriptor size
 
 Returns:
 
-  EFI_DEVICE_ERROR - TODO: Add description for return value
-  EFI_SUCCESS - TODO: Add description for return value
+  EFI_DEVICE_ERROR - Report descriptor error
+  EFI_SUCCESS      - Success
 
 --*/
 {

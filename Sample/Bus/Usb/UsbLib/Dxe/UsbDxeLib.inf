@@ -40,7 +40,6 @@ COMPONENT_TYPE       = LIBRARY
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Sample\Bus\Usb\UsbBus\Dxe
   
 [nmake.common]
   C_STD_INCLUDE=

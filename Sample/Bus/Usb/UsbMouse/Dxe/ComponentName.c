@@ -56,6 +56,7 @@ STATIC EFI_UNICODE_STRING_TABLE mUsbMouseDriverNameTable[] = {
   { NULL , NULL }
 };
 
+
 EFI_STATUS
 EFIAPI
 UsbMouseComponentNameGetDriverName (
@@ -189,7 +190,6 @@ UsbMouseComponentNameGetControllerName (
   if (Status != EFI_ALREADY_STARTED) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Get the device context
   //

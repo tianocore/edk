@@ -143,6 +143,7 @@ STATIC KB_MODIFIER  KB_Mod[8] = {
   { MOD_WIN_R,      0xe7 }, // 11100111 
 };
 
+
 BOOLEAN
 IsUSBKeyboard (
   IN  EFI_USB_IO_PROTOCOL       *UsbIo
@@ -157,8 +158,7 @@ IsUSBKeyboard (
     
   Returns:
   
---*/
-// TODO:    UsbIo - add argument and description to function comment
+--*/  
 {
   EFI_STATUS                    Status;
   EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
@@ -187,6 +187,7 @@ IsUSBKeyboard (
   return FALSE;
 }
 
+
 EFI_STATUS
 InitUSBKeyboard (
   IN USB_KB_DEV   *UsbKeyboardDevice
@@ -197,14 +198,12 @@ InitUSBKeyboard (
     Initialize USB Keyboard device and all private data structures.
     
   Arguments:
-    UsbKeyboardDevice:    The USB_KB_DEV instance.
+    UsbKeyboardDevice    The USB_KB_DEV instance.
     
   Returns:
-  
+    EFI_SUCCESS      - Success
+    EFI_DEVICE_ERROR - Hardware Error
 --*/
-// TODO:    UsbKeyboardDevice - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT8               ConfigValue;
   UINT8               Protocol;
@@ -217,7 +216,7 @@ InitUSBKeyboard (
   UsbIo = UsbKeyboardDevice->UsbIo;
 
   KbdReportStatusCode (
-    UsbIo,
+    UsbKeyboardDevice->DevicePath,
     EFI_PROGRESS_CODE,
     (EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_SELF_TEST)
     );
@@ -238,14 +237,13 @@ InitUSBKeyboard (
             &TransferResult
             );
   if (EFI_ERROR (Status)) {
-
     //
     // If configuration could not be set here, it means
     // the keyboard interface has some errors and could
     // not be initialized
     //
     KbdReportStatusCode (
-      UsbIo,
+      UsbKeyboardDevice->DevicePath,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INTERFACE_ERROR)
       );
@@ -342,24 +340,16 @@ KeyboardHandler (
     Handler function for USB Keyboard's asynchronous interrupt transfer.
     
   Arguments:
-    Data:       A pointer to a buffer that is filled with key data which is
-                retrieved via asynchronous interrupt transfer.
-    DataLength: Indicates the size of the data buffer.
-    Context:    Pointing to USB_KB_DEV instance.
-    Result:     Indicates the result of the asynchronous interrupt transfer.
+    Data       A pointer to a buffer that is filled with key data which is
+               retrieved via asynchronous interrupt transfer.
+    DataLength Indicates the size of the data buffer.
+    Context    Pointing to USB_KB_DEV instance.
+    Result     Indicates the result of the asynchronous interrupt transfer.
     
   Returns:
-  
---*/
-// TODO:    Data - add argument and description to function comment
-// TODO:    DataLength - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
-// TODO:    Result - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_SUCCESS      - Success
+    EFI_DEVICE_ERROR - Hardware Error
+--*/  
 {
   USB_KB_DEV          *UsbKeyboardDevice;
   EFI_USB_IO_PROTOCOL *UsbIo;
@@ -378,9 +368,9 @@ KeyboardHandler (
   UINT8               NewRepeatKey;
   UINT32              UsbStatus;
   UINT8               *DataPtr;
-  
-  ASSERT(Context);
-  
+
+  ASSERT (Context);
+
   NewRepeatKey      = 0;
   DataPtr           = (UINT8 *) Data;
   UsbKeyboardDevice = (USB_KB_DEV *) Context;
@@ -394,10 +384,10 @@ KeyboardHandler (
     // Some errors happen during the process
     //
     KbdReportStatusCode (
-        UsbIo,
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INPUT_ERROR)
-        );
+      UsbKeyboardDevice->DevicePath,
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INPUT_ERROR)
+      );
 
     //
     // stop the repeat key generation if any
@@ -422,17 +412,17 @@ KeyboardHandler (
     // Delete & Submit this interrupt again
     //
     
-     Status = UsbIo->UsbAsyncInterruptTransfer (
-                       UsbIo,
-                       UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-                       FALSE,
-                       0,
-                       0,
-                       NULL,
-                       NULL
-                       );    
- 
-     gBS->SetTimer (
+    Status = UsbIo->UsbAsyncInterruptTransfer (
+                      UsbIo,
+                      UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+                      FALSE,
+                      0,
+                      0,
+                      NULL,
+                      NULL
+                      );
+
+    gBS->SetTimer (
           UsbKeyboardDevice->DelayedRecoveryEvent,
           TimerRelative,
           EFI_USB_INTERRUPT_DELAY
@@ -473,8 +463,7 @@ KeyboardHandler (
   //
   for (Index = 0; Index < 8; Index++) {
 
-    if ((CurModifierMap & KB_Mod[Index].Mask) != 
-        (OldModifierMap & KB_Mod[Index].Mask)) {
+    if ((CurModifierMap & KB_Mod[Index].Mask) != (OldModifierMap & KB_Mod[Index].Mask)) {
       //
       // if current modifier key is up, then
       // CurModifierMap & KB_Mod[Index].Mask = 0;
@@ -529,10 +518,10 @@ KeyboardHandler (
   //
   if (UsbKeyboardDevice->RepeatKey == 0) {
     gBS->SetTimer (
-           UsbKeyboardDevice->RepeatTimer, 
-           TimerCancel, 
-           USBKBD_REPEAT_RATE
-           );
+          UsbKeyboardDevice->RepeatTimer,
+          TimerCancel,
+          USBKBD_REPEAT_RATE
+          );
   }
   
   //
@@ -593,6 +582,7 @@ KeyboardHandler (
     RemoveKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), &UsbKey);
 
     switch (UsbKey.KeyCode) {
+
     case 0xe0:
     case 0xe4:
       if (UsbKey.Down) {
@@ -671,16 +661,13 @@ USBParseKey (
     Retrieves a key character after parsing the raw data in keyboard buffer.
     
   Arguments:
-    UsbKeyboardDevice:    The USB_KB_DEV instance.
-    KeyChar:              Points to the Key character after key parsing.
+    UsbKeyboardDevice    The USB_KB_DEV instance.
+    KeyChar              Points to the Key character after key parsing.
     
   Returns:
-  
---*/
-// TODO:    UsbKeyboardDevice - add argument and description to function comment
-// TODO:    KeyChar - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_NOT_READY - add return value to function comment
+    EFI_SUCCESS   - Success
+    EFI_NOT_READY - Device is not ready 
+--*/  
 {
   USB_KEY UsbKey;
 
@@ -695,25 +682,16 @@ USBParseKey (
     if (!UsbKey.Down) {
       switch (UsbKey.KeyCode) {
 
-      //
-      // fall through
-      //
       case 0xe0:
       case 0xe4:
         UsbKeyboardDevice->CtrlOn = 0;
         break;
 
-      //
-      // fall through
-      //
       case 0xe1:
       case 0xe5:
         UsbKeyboardDevice->ShiftOn = 0;
         break;
 
-      //
-      // fall through
-      //
       case 0xe2:
       case 0xe6:
         UsbKeyboardDevice->AltOn = 0;
@@ -730,36 +708,25 @@ USBParseKey (
     // Analyzes key pressing situation
     //
     switch (UsbKey.KeyCode) {
-    //
-    // fall through
-    //
+
     case 0xe0:
     case 0xe4:
       UsbKeyboardDevice->CtrlOn = 1;
       continue;
       break;
 
-    //
-    // fall through
-    //
     case 0xe1:
     case 0xe5:
       UsbKeyboardDevice->ShiftOn = 1;
       continue;
       break;
 
-    //
-    // fall through
-    //
     case 0xe2:
     case 0xe6:
       UsbKeyboardDevice->AltOn = 1;
       continue;
       break;
 
-    //
-    // fall through
-    //
     case 0xe3:
     case 0xe7:
       continue;
@@ -780,10 +747,6 @@ USBParseKey (
     //
     // F11,F12,PrintScreen,ScrollLock,Pause,Application,Power
     // keys are not valid EFI key
-    //
-
-    //
-    // fall through
     //
     case 0x44:
     //
@@ -831,6 +794,7 @@ USBParseKey (
 
 }
 
+
 EFI_STATUS
 USBKeyCodeToEFIScanCode (
   IN  USB_KB_DEV      *UsbKeyboardDevice,
@@ -843,21 +807,15 @@ USBKeyCodeToEFIScanCode (
     Converts USB Keyboard code to EFI Scan Code.
     
   Arguments:  
-    UsbKeyboardDevice:    The USB_KB_DEV instance.
-    KeyChar:              Indicates the key code that will be interpreted.    
-    Key:                  A pointer to a buffer that is filled in with 
-                          the keystroke information for the key that 
-                          was pressed.
+    UsbKeyboardDevice    The USB_KB_DEV instance.
+    KeyChar              Indicates the key code that will be interpreted.    
+    Key                  A pointer to a buffer that is filled in with 
+                         the keystroke information for the key that 
+                         was pressed.
   Returns:
-  
+    EFI_NOT_READY - Device is not ready
+    EFI_SUCCESS   - Success
 --*/
-// TODO:    UsbKeyboardDevice - add argument and description to function comment
-// TODO:    KeyChar - add argument and description to function comment
-// TODO:    Key - add argument and description to function comment
-// TODO:    EFI_NOT_READY - add return value to function comment
-// TODO:    EFI_NOT_READY - add return value to function comment
-// TODO:    EFI_NOT_READY - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT8 Index;
 
@@ -918,6 +876,7 @@ USBKeyCodeToEFIScanCode (
 
 }
 
+
 EFI_STATUS
 InitUSBKeyBuffer (
   IN OUT  USB_KB_BUFFER   *KeyboardBuffer
@@ -928,13 +887,11 @@ InitUSBKeyBuffer (
     Resets USB Keyboard Buffer.
     
   Arguments:
-    KeyboardBuffer:   Points to the USB Keyboard Buffer.
+    KeyboardBuffer - Points to the USB Keyboard Buffer.
     
   Returns:
-  
---*/
-// TODO:    KeyboardBuffer - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_SUCCESS - Success
+--*/  
 {
   EfiZeroMem (KeyboardBuffer, sizeof (USB_KB_BUFFER));
 
@@ -953,18 +910,18 @@ IsUSBKeyboardBufferEmpty (
     Check whether USB Keyboard buffer is empty.
     
   Arguments:
-    KeyboardBuffer:   USB Keyboard Buffer.
+    KeyboardBuffer - USB Keyboard Buffer.
     
   Returns:
   
 --*/
-// TODO:    KeyboardBuffer - add argument and description to function comment
 {
   //
   // meet FIFO empty condition
   //
   return (BOOLEAN) (KeyboardBuffer.bHead == KeyboardBuffer.bTail);
 }
+
 
 BOOLEAN
 IsUSBKeyboardBufferFull (
@@ -976,16 +933,16 @@ IsUSBKeyboardBufferFull (
     Check whether USB Keyboard buffer is full.
     
   Arguments:
-    KeyboardBuffer:   USB Keyboard Buffer.
+    KeyboardBuffer - USB Keyboard Buffer.
     
   Returns:
   
 --*/
-// TODO:    KeyboardBuffer - add argument and description to function comment
 {
   return (BOOLEAN)(((KeyboardBuffer.bTail + 1) % (MAX_KEY_ALLOWED + 1)) == 
                                                         KeyboardBuffer.bHead);
 }
+
 
 EFI_STATUS
 InsertKeyCode (
@@ -999,15 +956,12 @@ InsertKeyCode (
     Inserts a key code into keyboard buffer.
     
   Arguments:
-    KeyboardBuffer:   Points to the USB Keyboard Buffer.
-  
+    KeyboardBuffer - Points to the USB Keyboard Buffer.
+    Key            - Key code
+    Down           - Special key
   Returns:
-  
+    EFI_SUCCESS - Success
 --*/
-// TODO:    KeyboardBuffer - add argument and description to function comment
-// TODO:    Key - add argument and description to function comment
-// TODO:    Down - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   USB_KEY UsbKey;
 
@@ -1041,16 +995,13 @@ RemoveKeyCode (
     Pops a key code off from keyboard buffer.
     
   Arguments:
-    KeyboardBuffer:   Points to the USB Keyboard Buffer.
-    UsbKey:           Points to the buffer that contains a usb key code.
+    KeyboardBuffer -  Points to the USB Keyboard Buffer.
+    UsbKey         -  Points to the buffer that contains a usb key code.
   
   Returns:
-  
---*/
-// TODO:    KeyboardBuffer - add argument and description to function comment
-// TODO:    UsbKey - add argument and description to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_SUCCESS      - Success
+    EFI_DEVICE_ERROR - Hardware Error
+--*/  
 {
   if (IsUSBKeyboardBufferEmpty (*KeyboardBuffer)) {
     return EFI_DEVICE_ERROR;
@@ -1077,13 +1028,11 @@ SetKeyLED (
     Sets USB Keyboard LED state.
     
   Arguments:
-    UsbKeyboardDevice:    The USB_KB_DEV instance.
+    UsbKeyboardDevice - The USB_KB_DEV instance.
   
   Returns:
-  
---*/
-// TODO:    UsbKeyboardDevice - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_SUCCESS - Success
+--*/  
 {
   LED_MAP Led;
   UINT8   ReportId;
@@ -1122,14 +1071,12 @@ USBKeyboardRepeatHandler (
     Timer handler for Repeat Key timer.
     
   Arguments:
-    Event:    The Repeat Key event.
-    Context:  Points to the USB_KB_DEV instance.
+    Event   - The Repeat Key event.
+    Context - Points to the USB_KB_DEV instance.
     
   Returns:
   
---*/
-// TODO:    Event - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
+--*/    
 {
   USB_KB_DEV  *UsbKeyboardDevice;
 
@@ -1171,14 +1118,12 @@ USBKeyboardRecoveryHandler (
     Timer handler for Delayed Recovery timer.
     
   Arguments:
-    Event:    The Delayed Recovery event.
-    Context:  Points to the USB_KB_DEV instance.
+    Event   -  The Delayed Recovery event.
+    Context -  Points to the USB_KB_DEV instance.
     
   Returns:
   
---*/
-// TODO:    Event - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
+--*/    
 {
 
   USB_KB_DEV          *UsbKeyboardDevice;

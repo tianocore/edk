@@ -80,24 +80,6 @@ ParseMouseReportDescriptor (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  UINT8           *ReportDescriptor,
   IN  UINTN           ReportSize
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbMouse          - TODO: add argument description
-  ReportDescriptor  - TODO: add argument description
-  ReportSize        - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 #endif

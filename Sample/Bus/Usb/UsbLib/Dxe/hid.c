@@ -21,11 +21,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
 #include "hid.h"
 
-#define TIMEOUT_VALUE 3 * 1000
 //
 // Function to get HID descriptor
 //
@@ -56,26 +53,18 @@ UsbGetHidDescriptor (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
-  //
-  // Get HID class descriptor
-  //
   Request.RequestType = 0x81;
-  Request.Request = 0x06;
-  //
-  // HID descriptor type
-  //
-  Request.Value   = (UINT16) (0x21 << 8);
-  Request.Index   = InterfaceNum;
-  Request.Length  = sizeof (EFI_USB_HID_DESCRIPTOR);
+  Request.Request     = 0x06;
+  Request.Value       = (UINT16) (0x21 << 8);
+  Request.Index       = InterfaceNum;
+  Request.Length      = sizeof (EFI_USB_HID_DESCRIPTOR);
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbDataIn,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     HidDescriptor,
                     sizeof (EFI_USB_HID_DESCRIPTOR),
                     &Status
@@ -84,7 +73,6 @@ UsbGetHidDescriptor (
   return Result;
 
 }
-
 //
 // Function to get Report Class descriptor
 //
@@ -117,7 +105,6 @@ UsbGetReportDescriptor (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
@@ -128,12 +115,11 @@ UsbGetReportDescriptor (
   Request.Index       = InterfaceNum;
   Request.Length      = DescriptorSize;
 
-  Timeout             = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbDataIn,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     DescriptorBuffer,
                     DescriptorSize,
                     &Status
@@ -142,7 +128,6 @@ UsbGetReportDescriptor (
   return Result;
 
 }
-
 //
 // Following are HID class request
 //
@@ -172,27 +157,24 @@ UsbGetProtocolRequest (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
   //
-
+  Request.RequestType = 0xa1;
   //
   // 10100001b;
   //
-  Request.RequestType = 0xa1;
   Request.Request = EFI_USB_GET_PROTOCOL_REQUEST;
   Request.Value   = 0;
   Request.Index   = Interface;
   Request.Length  = 1;
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbDataIn,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     Protocol,
                     sizeof (UINT8),
                     &Status
@@ -200,6 +182,7 @@ UsbGetProtocolRequest (
 
   return Result;
 }
+
 
 EFI_STATUS
 UsbSetProtocolRequest (
@@ -227,33 +210,31 @@ UsbSetProtocolRequest (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
   //
-
+  Request.RequestType = 0x21;
   //
   // 00100001b;
   //
-  Request.RequestType = 0x21;
   Request.Request = EFI_USB_SET_PROTOCOL_REQUEST;
   Request.Value   = Protocol;
   Request.Index   = Interface;
   Request.Length  = 0;
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbNoData,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     NULL,
                     0,
                     &Status
                     );
   return Result;
 }
+
 
 EFI_STATUS
 UsbSetIdleRequest (
@@ -283,27 +264,24 @@ UsbSetIdleRequest (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
   //
-
+  Request.RequestType = 0x21;
   //
   // 00100001b;
   //
-  Request.RequestType = 0x21;
   Request.Request = EFI_USB_SET_IDLE_REQUEST;
   Request.Value   = (UINT16) ((Duration << 8) | ReportId);
   Request.Index   = Interface;
   Request.Length  = 0;
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbNoData,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     NULL,
                     0,
                     &Status
@@ -339,27 +317,24 @@ UsbGetIdleRequest (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
   //
-
+  Request.RequestType = 0xa1;
   //
   // 10100001b;
   //
-  Request.RequestType = 0xa1;
   Request.Request = EFI_USB_GET_IDLE_REQUEST;
   Request.Value   = ReportId;
   Request.Index   = Interface;
   Request.Length  = 1;
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbDataIn,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     Duration,
                     1,
                     &Status
@@ -367,6 +342,7 @@ UsbGetIdleRequest (
 
   return Result;
 }
+
 
 EFI_STATUS
 UsbSetReportRequest (
@@ -400,27 +376,24 @@ UsbSetReportRequest (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
   //
-
+  Request.RequestType = 0x21;
   //
   // 00100001b;
   //
-  Request.RequestType = 0x21;
   Request.Request = EFI_USB_SET_REPORT_REQUEST;
   Request.Value   = (UINT16) ((ReportType << 8) | ReportId);
   Request.Index   = Interface;
   Request.Length  = ReportLen;
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbDataOut,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     Report,
                     ReportLen,
                     &Status
@@ -461,27 +434,24 @@ UsbGetReportRequest (
   UINT32                  Status;
   EFI_STATUS              Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  UINT32                  Timeout;
 
   //
   // Fill Device request packet
   //
-
+  Request.RequestType = 0xa1;
   //
   // 10100001b;
   //
-  Request.RequestType = 0xa1;
   Request.Request = EFI_USB_GET_REPORT_REQUEST;
   Request.Value   = (UINT16) ((ReportType << 8) | ReportId);
   Request.Index   = Interface;
   Request.Length  = ReportLen;
 
-  Timeout         = TIMEOUT_VALUE;
   Result = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbDataIn,
-                    Timeout,
+                    TIMEOUT_VALUE,
                     Report,
                     ReportLen,
                     &Status

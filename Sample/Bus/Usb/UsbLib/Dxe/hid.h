@@ -24,13 +24,18 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #ifndef _HID_H
 #define _HID_H
 
+#include "Tiano.h"
+#include "EfiDriverLib.h"
 #include "usb.h"
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
+//
+// define the timeout time as 3ms
+//
+#define TIMEOUT_VALUE 3 * 1000
 
 //
 // HID constants definition, see HID rev1.0
 //
-
 //
 // HID report item format
 //
@@ -154,7 +159,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define EFI_USB_SET_PROTOCOL_REQUEST  0x0b
 
 #pragma pack(1)
-
 //
 // Descriptor header for Report/Physical Descriptors
 //
@@ -179,25 +183,7 @@ UsbGetHidDescriptor (
   IN  EFI_USB_IO_PROTOCOL        *UsbIo,
   IN  UINT8                      InterfaceNum,
   OUT EFI_USB_HID_DESCRIPTOR     *HidDescriptor
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo         - TODO: add argument description
-  InterfaceNum  - TODO: add argument description
-  HidDescriptor - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbGetReportDescriptor (
@@ -205,76 +191,21 @@ UsbGetReportDescriptor (
   IN  UINT8                   InterfaceNum,
   IN  UINT16                  DescriptorSize,
   OUT UINT8                   *DescriptorBuffer
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo             - TODO: add argument description
-  InterfaceNum      - TODO: add argument description
-  DescriptorSize    - TODO: add argument description
-  DescriptorBuffer  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbGetProtocolRequest (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Interface,
   IN UINT8                   *Protocol
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  Interface - TODO: add argument description
-  Protocol  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbSetProtocolRequest (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Interface,
   IN UINT8                   Protocol
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  Interface - TODO: add argument description
-  Protocol  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbSetIdleRequest (
@@ -282,26 +213,7 @@ UsbSetIdleRequest (
   IN UINT8                   Interface,
   IN UINT8                   ReportId,
   IN UINT8                   Duration
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  Interface - TODO: add argument description
-  ReportId  - TODO: add argument description
-  Duration  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbGetIdleRequest (
@@ -309,26 +221,7 @@ UsbGetIdleRequest (
   IN  UINT8                   Interface,
   IN  UINT8                   ReportId,
   OUT UINT8                   *Duration
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo     - TODO: add argument description
-  Interface - TODO: add argument description
-  ReportId  - TODO: add argument description
-  Duration  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbSetReportRequest (
@@ -338,28 +231,7 @@ UsbSetReportRequest (
   IN UINT8                   ReportType,
   IN UINT16                  ReportLen,
   IN UINT8                   *Report
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo       - TODO: add argument description
-  Interface   - TODO: add argument description
-  ReportId    - TODO: add argument description
-  ReportType  - TODO: add argument description
-  ReportLen   - TODO: add argument description
-  Report      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 EFI_STATUS
 UsbGetReportRequest (
@@ -369,27 +241,6 @@ UsbGetReportRequest (
   IN UINT8                   ReportType,
   IN UINT16                  ReportLen,
   IN UINT8                   *Report
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  UsbIo       - TODO: add argument description
-  Interface   - TODO: add argument description
-  ReportId    - TODO: add argument description
-  ReportType  - TODO: add argument description
-  ReportLen   - TODO: add argument description
-  Report      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
+  );
 
 #endif

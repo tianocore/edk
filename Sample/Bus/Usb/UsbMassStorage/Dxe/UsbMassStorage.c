@@ -105,7 +105,6 @@ USBFloppyFlushBlocks (
 //
 // USB Floppy Driver Global Variables
 //
-
 EFI_DRIVER_BINDING_PROTOCOL         gUSBFloppyDriverBinding = {
   USBFloppyDriverBindingSupported,
   USBFloppyDriverBindingStart,
@@ -124,19 +123,18 @@ USBMassStorageDriverBindingEntryPoint (
   IN EFI_SYSTEM_TABLE     *SystemTable
   )
 /*++
-  
+
   Routine Description:
-    Driver Entry Point.
-        
+    Entry point for EFI drivers.
+
   Arguments:
-    (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
-  
+   ImageHandle - EFI_HANDLE
+   SystemTable - EFI_SYSTEM_TABLE
   Returns:
-    EFI_STATUS
-  
+    EFI_SUCCESS
+    others
+
 --*/
-// TODO:    ImageHandle - add argument and description to function comment
-// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_STATUS  Status;
 
@@ -156,6 +154,7 @@ USBMassStorageDriverBindingEntryPoint (
   return Status;
 }
 
+
 EFI_STATUS
 EFIAPI
 USBFloppyDriverBindingSupported (
@@ -164,21 +163,21 @@ USBFloppyDriverBindingSupported (
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
   )
 /*++
-  
+
   Routine Description:
-    Supported.
-    
+    Test to see if this driver supports ControllerHandle. Any ControllerHandle
+    that has UsbHcProtocol installed will be supported.
+
   Arguments:
-    (Standard DriverBinding Protocol Supported() function)
-    
+    This                - Protocol instance pointer.
+    Controller         - Handle of device to test
+    RemainingDevicePath - Not used
+
   Returns:
-    EFI_STATUS
-  
+    EFI_SUCCESS         - This driver supports this device.
+    EFI_UNSUPPORTED     - This driver does not support this device.
+
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    Controller - add argument and description to function comment
-// TODO:    RemainingDevicePath - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS              OpenStatus;
   EFI_USB_ATAPI_PROTOCOL  *AtapiProtocol;
@@ -217,26 +216,28 @@ USBFloppyDriverBindingStart (
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
   )
 /*++
-  
-  Routine Description:
-    Start.
-  
-  Arguments:
-    (Standard DriverBinding Protocol Start() function)
-    
-  Returns:
-    EFI_STATUS
-  
---*/
-// TODO:    This - add argument and description to function comment
-// TODO:    Controller - add argument and description to function comment
-// TODO:    RemainingDevicePath - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-{
-  EFI_STATUS              Status;
-  EFI_USB_ATAPI_PROTOCOL  *AtapiProtocol;
-  USB_FLOPPY_DEV          *UsbFloppyDevice;
 
+  Routine Description:
+    Starting the Usb Bus Driver
+
+  Arguments:
+    This                - Protocol instance pointer.
+    Controller          - Handle of device to test
+    RemainingDevicePath - Not used
+
+  Returns:
+    EFI_SUCCESS         - This driver supports this device.
+    EFI_UNSUPPORTED     - This driver does not support this device.
+    EFI_DEVICE_ERROR    - This driver cannot be started due to device
+                          Error
+    EFI_OUT_OF_RESOURCES- Can't allocate memory resources
+    EFI_ALREADY_STARTED - Thios driver has been started
+--*/
+{ 
+  EFI_STATUS                Status; 
+  EFI_USB_ATAPI_PROTOCOL    *AtapiProtocol;
+  USB_FLOPPY_DEV            *UsbFloppyDevice;
+  
   UsbFloppyDevice = NULL;
   //
   // Check whether Usb Atapi Protocol attached on the controller handle.
@@ -325,6 +326,7 @@ USBFloppyDriverBindingStart (
 
 }
 
+
 EFI_STATUS
 EFIAPI
 USBFloppyDriverBindingStop (
@@ -334,22 +336,23 @@ USBFloppyDriverBindingStop (
   IN  EFI_HANDLE                      *ChildHandleBuffer
   )
 /*++
-  
+
   Routine Description:
-    Stop.
-  
+    Stop this driver on ControllerHandle. Support stoping any child handles
+    created by this driver.
+
   Arguments:
-    (Standard DriverBinding Protocol Stop() function)
-  
+    This              - Protocol instance pointer.
+    Controller        - Handle of device to stop driver on
+    NumberOfChildren  - Number of Children in the ChildHandleBuffer
+    ChildHandleBuffer - List of handles for the children we need to stop.
+
   Returns:
-    EFI_STATUS
-  
---*/
-// TODO:    This - add argument and description to function comment
-// TODO:    Controller - add argument and description to function comment
-// TODO:    NumberOfChildren - add argument and description to function comment
-// TODO:    ChildHandleBuffer - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_SUCCESS
+    EFI_DEVICE_ERROR
+    others
+
+--*/  
 {
   EFI_STATUS            Status;
   USB_FLOPPY_DEV        *UsbFloppyDevice;
@@ -358,7 +361,6 @@ USBFloppyDriverBindingStop (
   //
   // First find USB_FLOPPY_DEV
   //
-
   gBS->OpenProtocol (
         Controller,
         &gEfiBlockIoProtocolGuid,
@@ -381,7 +383,6 @@ USBFloppyDriverBindingStop (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Stop using EFI_USB_ATAPI_PROTOCOL
   //
@@ -401,6 +402,7 @@ USBFloppyDriverBindingStop (
   return EFI_SUCCESS;
 }
 
+
 STATIC
 EFI_STATUS
 EFIAPI
@@ -414,17 +416,15 @@ USBFloppyReset (
     Implements EFI_BLOCK_IO_PROTOCOL.Reset() function.
   
   Arguments:
-    This:     The EFI_BLOCK_IO_PROTOCOL instance.
-    ExtendedVerification:
+    This     The EFI_BLOCK_IO_PROTOCOL instance.
+    ExtendedVerification
               Indicates that the driver may perform a more exhaustive
               verification operation of the device during reset.
               (This parameter is ingored in this driver.)
     
   Returns:  
-
---*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ExtendedVerification - add argument and description to function comment
+    EFI_SUCCESS - Success
+--*/      
 {
   USB_FLOPPY_DEV          *UsbFloppyDevice;
   EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
@@ -458,22 +458,24 @@ USBFloppyReadBlocks (
     Implements EFI_BLOCK_IO_PROTOCOL.ReadBlocks() function.
   
   Arguments:
-    This:     The EFI_BLOCK_IO_PROTOCOL instance.
-    MediaId:  The media id that the read request is for.
-    LBA:      The starting logical block address to read from on the device.
-    BufferSize:
+    This     The EFI_BLOCK_IO_PROTOCOL instance.
+    MediaId  The media id that the read request is for.
+    LBA      The starting logical block address to read from on the device.
+    BufferSize
               The size of the Buffer in bytes. This must be a multiple of 
               the intrinsic block size of the device.
-    Buffer:   A pointer to the destination buffer for the data. The caller 
+    Buffer    A pointer to the destination buffer for the data. The caller 
               is responsible for either having implicit or explicit ownership
               of the buffer.                               
   
   Returns:  
-
- --*/
-// TODO:    MediaId - add argument and description to function comment
-// TODO:    LBA - add argument and description to function comment
-// TODO:    BufferSize - add argument and description to function comment
+    EFI_INVALID_PARAMETER - Parameter is error
+    EFI_SUCCESS           - Success  
+    EFI_DEVICE_ERROR      - Hardware Error
+    EFI_NO_MEDIA          - No media
+    EFI_MEDIA_CHANGED     - Media Change
+    EFI_BAD_BUFFER_SIZE   - Buffer size is bad
+ --*/      
 {
   USB_FLOPPY_DEV      *UsbFloppyDevice;
   EFI_STATUS          Status;
@@ -604,24 +606,27 @@ USBFloppyWriteBlocks (
     Implements EFI_BLOCK_IO_PROTOCOL.WriteBlocks() function.
   
   Arguments:
-    This:     The EFI_BLOCK_IO_PROTOCOL instance.
-    MediaId:  The media id that the write request is for.
-    LBA:      The starting logical block address to be written.
-              The caller is responsible for writing to only 
-              legitimate locations.
-    BufferSize:
+    This     The EFI_BLOCK_IO_PROTOCOL instance.
+    MediaId  The media id that the write request is for.
+    LBA      The starting logical block address to be written.
+             The caller is responsible for writing to only 
+             legitimate locations.
+    BufferSize
               The size of the Buffer in bytes. This must be a multiple of 
               the intrinsic block size of the device.
-    Buffer:   A pointer to the source buffer for the data. The caller 
+    Buffer    A pointer to the source buffer for the data. The caller 
               is responsible for either having implicit or explicit ownership
               of the buffer.                               
   
   Returns:  
+    EFI_INVALID_PARAMETER - Parameter is error
+    EFI_SUCCESS           - Success  
+    EFI_DEVICE_ERROR      - Hardware Error
+    EFI_NO_MEDIA          - No media
+    EFI_MEDIA_CHANGED     - Media Change
+    EFI_BAD_BUFFER_SIZE   - Buffer size is bad
 
---*/
-// TODO:    MediaId - add argument and description to function comment
-// TODO:    LBA - add argument and description to function comment
-// TODO:    BufferSize - add argument and description to function comment
+--*/        
 {
   USB_FLOPPY_DEV      *UsbFloppyDevice;
   EFI_STATUS          Status;
@@ -753,13 +758,11 @@ USBFloppyFlushBlocks (
     (In this driver, this function just returns EFI_SUCCESS.)
   
   Arguments:
-    This:     The EFI_BLOCK_IO_PROTOCOL instance.
+    This     The EFI_BLOCK_IO_PROTOCOL instance.
   
   Returns:  
-
---*/
-// TODO:    This - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
+    EFI_SUCCESS - Success
+--*/    
 {
   return EFI_SUCCESS;
 }
