@@ -1,0 +1,127 @@
+/*++
+
+Copyright 2004, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  BaseMemoryTest.c
+  
+Abstract:
+  
+  The PEI memory test support
+
+--*/
+
+#include "BaseMemoryTest.h"
+
+static PEI_BASE_MEMORY_TEST_PPI mPeiBaseMemoryTestPpi = {
+  BaseMemoryTest
+};
+
+static EFI_PEI_PPI_DESCRIPTOR PpiListPeiBaseMemoryTest = {
+  (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+  &gPeiBaseMemoryTestPpiGuid,
+  &mPeiBaseMemoryTestPpi
+};
+  
+EFI_PEIM_ENTRY_POINT (PeiBaseMemoryTestInit);
+
+EFI_STATUS
+EFIAPI
+PeiBaseMemoryTestInit(
+  IN EFI_FFS_FILE_HEADER       *FfsHeader,
+  IN EFI_PEI_SERVICES          **PeiServices
+  )
+{
+  EFI_STATUS            Status;
+
+  Status = (**PeiServices).InstallPpi (PeiServices, &PpiListPeiBaseMemoryTest);
+
+  return Status;
+}
+  
+EFI_STATUS
+BaseMemoryTest (
+  IN  EFI_PEI_SERVICES                   **PeiServices,
+  IN PEI_BASE_MEMORY_TEST_PPI   *This, 
+  IN  EFI_PHYSICAL_ADDRESS               BeginAddress,
+  IN  UINT64                             MemoryLength,
+  IN  PEI_MEMORY_TEST_OP                 Operation,
+  OUT EFI_PHYSICAL_ADDRESS               *ErrorAddress
+  )
+{
+  UINT32                                 TestPattern;
+  UINT32                                 TestMask;
+  EFI_PHYSICAL_ADDRESS                   TempAddress;
+  UINT32                                 SpanSize;
+
+  (*PeiServices)->PeiReportStatusCode (
+    PeiServices,
+    EFI_PROGRESS_CODE,                     
+    EFI_COMPUTING_UNIT_MEMORY + EFI_CU_MEMORY_PC_TEST,   
+    0,                                                          
+    NULL,                                                       
+    NULL                                                        
+    );
+
+  TestPattern = TEST_PATTERN;
+  TestMask = 0;
+  SpanSize = 0;
+
+  //
+  // Make sure we don't try and test anything above the max physical address range
+  //
+  ASSERT_PEI_ERROR (PeiServices, BeginAddress + MemoryLength < EFI_MAX_ADDRESS);
+
+  switch (Operation) {
+    case Extensive:
+      SpanSize = 0x4;
+      break;
+    case Sparse:
+    case Quick:
+      SpanSize = COVER_SPAN;
+      break;
+    case Ignore:
+      goto Done;
+      break;
+  }
+  
+  //
+  // Write the test pattern into memory range
+  //
+  TempAddress = BeginAddress;
+  while (TempAddress < BeginAddress + MemoryLength) {
+    (*(UINT32*)(UINTN)TempAddress) = TestPattern;
+    TempAddress += SpanSize;
+  }
+  
+  //
+  // Read pattern from memory and compare it
+  //
+  TempAddress = BeginAddress;
+  while (TempAddress < BeginAddress + MemoryLength){
+    if ((*(UINT32*)(UINTN)TempAddress) != TestPattern) {
+      *ErrorAddress = TempAddress;
+      (*PeiServices)->PeiReportStatusCode (
+        PeiServices,
+        EFI_ERROR_CODE + EFI_ERROR_UNRECOVERED,                     
+        EFI_COMPUTING_UNIT_MEMORY + EFI_CU_MEMORY_EC_UNCORRECTABLE,   
+        0,                                                          
+        NULL,                                                       
+        NULL                                                        
+        );
+      return EFI_DEVICE_ERROR;
+    }
+    TempAddress += SpanSize;
+  }
+
+Done:
+  return EFI_SUCCESS;
+}

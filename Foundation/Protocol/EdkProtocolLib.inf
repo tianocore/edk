@@ -1,0 +1,116 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    EdkProtocolLib.inf
+#
+#  Abstract:
+#
+#    Component description file.
+#
+#--*/
+
+[defines]
+BASE_NAME=   EdkProtocolLib
+COMPONENT_TYPE=   LIBRARY
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[nmake.common]
+C_STD_INCLUDE=
+
+[sources.common]
+  ConsoleControl\ConsoleControl.h
+  ConsoleControl\ConsoleControl.c
+  CpuIo\CpuIo.h
+  CpuIo\CpuIo.c
+  CustomizedDecompress\CustomizedDecompress.c
+  CustomizedDecompress\CustomizedDecompress.h
+  DebugAssert\DebugAssert.h
+  DebugAssert\DebugAssert.c
+  DebugMask\DebugMask.h
+  DebugMask\DebugMask.c
+  DiskInfo\DiskInfo.h
+  DiskInfo\DiskInfo.c
+  EfiOemBadging\EfiOemBadging.h
+  EfiOemBadging\EfiOemBadging.c
+  FaultTolerantWriteLite\FaultTolerantWriteLite.h
+  FaultTolerantWriteLite\FaultTolerantWriteLite.c
+  FirmwareVolumeDispatch\FirmwareVolumeDispatch.h
+  FirmwareVolumeDispatch\FirmwareVolumeDispatch.c
+  FvbExtension\FvbExtension.h
+  FvbExtension\FvbExtension.c
+  GenericMemoryTest\GenericMemoryTest.h
+  GenericMemoryTest\GenericMemoryTest.c
+  GuidedSectionExtraction\GuidedSectionExtraction.h
+  GuidedSectionExtraction\GuidedSectionExtraction.c
+  IdeControllerInit\IdeControllerInit.h
+  IdeControllerInit\IdeControllerInit.c
+  IncompatiblePciDeviceSupport\IncompatiblePciDeviceSupport.h
+  IncompatiblePciDeviceSupport\IncompatiblePciDeviceSupport.c
+  IsaAcpi\IsaAcpi.h
+  IsaAcpi\IsaAcpi.c
+  IsaIo\IsaIo.h
+  IsaIo\IsaIo.c
+  LoadPe32Image\LoadPe32Image.h
+  LoadPe32Image\LoadPe32Image.c
+  PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.h
+  PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.c
+  PciHotPlugInit\PciHotPlugInit.h
+  PciHotPlugInit\PciHotPlugInit.c
+  PciHotPlugRequest\PciHotPlugRequest.h
+  PciHotPlugRequest\PciHotPlugRequest.c
+  PciPlatform\PciPlatform.h
+  PciPlatform\PciPlatform.c
+  Performance\Performance.h
+  Performance\Performance.c
+  PlatformMemTest\PlatformMemTest.h
+  PlatformMemTest\PlatformMemTest.c
+  Print\Print.h
+  Print\Print.c
+  PxeDhcp4\PxeDhcp4.h
+  PxeDhcp4\PxeDhcp4.c
+  PxeDhcp4Callback\PxeDhcp4Callback.h
+  PxeDhcp4Callback\PxeDhcp4Callback.c
+  ScsiIo\ScsiIo.h
+  ScsiIo\ScsiIo.c
+  SecurityPolicy\SecurityPolicy.h
+  SecurityPolicy\SecurityPolicy.c
+  Tcp\Tcp.h
+  Tcp\Tcp.c
+  TianoDecompress\TianoDecompress.h
+  TianoDecompress\TianoDecompress.c
+  UgaSplash\UgaSplash.h
+  UgaSplash\UgaSplash.c
+  UsbAtapi\UsbAtapi.h
+  UsbAtapi\UsbAtapi.c
+  VariableStore\VariableStore.h
+  VariableStore\VariableStore.c
+  VirtualMemoryAccess\VirtualMemoryAccess.h
+  VirtualMemoryAccess\VirtualMemoryAccess.c
+
+[sources.ipf]
+  ExtendedSalBootService\ExtendedSalBootService.c
+  ExtendedSalBootService\ExtendedSalBootService.h
+  ExtendedSalGuid\ExtendedSalGuid.c
+  ExtendedSalGuid\ExtendedSalGuid.h

@@ -1,0 +1,122 @@
+/*++
+
+Copyright 2004, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+  
+  exec.h
+
+Abstract:
+    
+  EFI Event support
+
+--*/
+
+#ifndef _EXEC_H_
+#define _EXEC_H_
+
+#include "Tiano.h"
+#include "DxeCore.h"
+
+#define VALID_TPL(a)            ((a) <= EFI_TPL_HIGH_LEVEL)
+
+//
+// EFI_EVENT
+//
+
+#define EVENT_SIGNATURE         EFI_SIGNATURE_32('e','v','n','t')
+typedef struct {
+  UINTN                   Signature;
+  UINT32                  Type;
+  UINT32                  SignalCount;
+
+  //
+  // Entry if the event is registered to be signalled
+  //
+
+  EFI_LIST_ENTRY          SignalLink;
+
+  //
+  // Notification information for this event
+  //
+
+  EFI_TPL                 NotifyTpl;
+  EFI_EVENT_NOTIFY        NotifyFunction;
+  VOID                    *NotifyContext;
+  EFI_LIST_ENTRY          NotifyLink;         
+  
+  //
+  // A list of all runtime events
+  //
+  EFI_LIST_ENTRY          RuntimeLink;
+
+  //
+  // Information by event type
+  //
+
+  union {
+    //
+    // For timer events
+    //
+    struct {
+      EFI_LIST_ENTRY  Link;
+      UINT64          TriggerTime;
+      UINT64          Period;
+    } Timer;
+  } u;
+
+} IEVENT;    
+
+//
+// Internal prototypes
+//
+
+VOID
+CoreDispatchEventNotifies (
+  IN EFI_TPL      Priority
+  );
+
+UINTN
+CoreHighestSetBit (
+  IN UINTN         Number
+  );
+
+
+BOOLEAN
+GetInterruptState (
+  VOID               
+  );
+
+//
+// Exported functions
+//
+
+VOID
+CoreEventVirtualAddressFixup (
+  VOID
+  );
+
+VOID
+CoreInitializeTimer (
+  VOID
+  );
+
+//
+// extern data declarations
+//
+
+extern EFI_LOCK       gEventQueueLock;
+extern UINTN          gEventPending;
+extern EFI_LIST_ENTRY gEventQueue[];
+extern EFI_LIST_ENTRY gEventSignalQueue[];
+extern UINT8          gHSB[];
+extern EFI_LIST_ENTRY mRuntimeEventList;
+
+#endif

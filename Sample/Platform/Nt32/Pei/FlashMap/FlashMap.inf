@@ -1,0 +1,56 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    FlashMap.inf
+#
+#  Abstract:
+#
+#    Component description file for FlashMap PEI module
+#
+#--*/
+
+[defines]
+BASE_NAME            = PeiFlashMap
+FILE_GUID            = 681F3771-6F1D-42DE-9AA2-F82BBCDBC5F9
+COMPONENT_TYPE       = PE32_PEIM
+
+[sources.common]
+  FlashMap.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Sample\Platform\Nt32
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  .\Nt32
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Core\Pei\Include
+  $(EDK_SOURCE)\Sample\Platform\Nt32\Include
+
+[libraries.common]
+  EdkPpiLib
+  EdkNt32PpiLib
+  EdkGuidLib
+  PeiLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=PeimInitializeFlashMap
+  DPX_SOURCE=FlashMap.dxs

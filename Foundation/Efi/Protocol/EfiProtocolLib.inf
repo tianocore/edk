@@ -1,0 +1,114 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    EfiProtocolLib.inf
+#
+#  Abstract:
+#
+#    Component description file.
+#
+#--*/
+
+[defines]
+BASE_NAME=   EfiProtocolLib
+COMPONENT_TYPE=   LIBRARY
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[nmake.common]
+C_STD_INCLUDE=
+
+[sources.common]
+  Bis\Bis.h
+  Bis\Bis.c
+  BlockIo\BlockIo.h
+  BlockIo\BlockIo.c
+  BusSpecificDriverOverride\BusSpecificDriverOverride.h
+  BusSpecificDriverOverride\BusSpecificDriverOverride.c
+  ComponentName\ComponentName.h
+  ComponentName\ComponentName.c
+  DebugPort\DebugPort.h
+  DebugPort\DebugPort.c
+  DebugSupport\DebugSupport.h
+  DebugSupport\DebugSupport.c
+  Decompress\Decompress.h
+  Decompress\Decompress.c
+  DeviceIo\DeviceIo.h
+  DeviceIo\DeviceIo.c
+  DevicePath\DevicePath.h
+  DevicePath\DevicePath.c
+  DiskIo\DiskIo.h
+  DiskIo\DiskIo.c
+  DriverBinding\DriverBinding.h
+  DriverBinding\DriverBinding.c
+  DriverConfiguration\DriverConfiguration.h
+  DriverConfiguration\DriverConfiguration.c
+  DriverDiagnostics\DriverDiagnostics.h
+  DriverDiagnostics\DriverDiagnostics.c
+  Ebc\Ebc.h
+  Ebc\Ebc.c
+  EfiNetworkInterfaceIdentifier\EfiNetworkInterfaceIdentifier.h
+  EfiNetworkInterfaceIdentifier\EfiNetworkInterfaceIdentifier.c
+  FileInfo\FileInfo.h
+  FileInfo\FileInfo.c
+  FileSystemInfo\FileSystemInfo.h
+  FileSystemInfo\FileSystemInfo.c
+  FileSystemVolumeLabelInfo\FileSystemVolumeLabelInfo.h
+  FileSystemVolumeLabelInfo\FileSystemVolumeLabelInfo.c
+  LoadedImage\LoadedImage.h
+  LoadedImage\LoadedImage.c
+  LoadFile\LoadFile.h
+  LoadFile\LoadFile.c
+  PciIo\PciIo.h
+  PciIo\PciIo.c
+  PciRootBridgeIo\PciRootBridgeIo.h
+  PciRootBridgeIo\PciRootBridgeIo.c
+  PlatformDriverOverride\PlatformDriverOverride.h
+  PlatformDriverOverride\PlatformDriverOverride.c
+  PxeBaseCode\PxeBaseCode.h
+  PxeBaseCode\PxeBaseCode.c
+  PxeBaseCodeCallBack\PxeBaseCodeCallBack.h
+  PxeBaseCodeCallBack\PxeBaseCodeCallBack.c
+  ScsiPassThru\ScsiPassThru.h
+  ScsiPassThru\ScsiPassThru.c
+  SerialIo\SerialIo.h
+  SerialIo\SerialIo.c
+  SimpleFileSystem\SimpleFileSystem.h
+  SimpleFileSystem\SimpleFileSystem.c
+  SimpleNetwork\SimpleNetwork.h
+  SimpleNetwork\SimpleNetwork.c
+  SimplePointer\SimplePointer.h
+  SimplePointer\SimplePointer.c
+  SimpleTextIn\SimpleTextIn.h
+  SimpleTextIn\SimpleTextIn.c
+  SimpleTextOut\SimpleTextOut.h
+  SimpleTextOut\SimpleTextOut.c
+  UgaDraw\UgaDraw.h
+  UgaDraw\UgaDraw.c
+  UgaIo\UgaIo.h
+  UgaIo\UgaIo.c
+  UnicodeCollation\UnicodeCollation.h
+  UnicodeCollation\UnicodeCollation.c
+  UsbHostController\UsbHostController.h
+  UsbHostController\UsbHostController.c
+  UsbIo\UsbIo.h
+  UsbIo\UsbIo.c

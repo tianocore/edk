@@ -1,0 +1,59 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    EdkFrameworkProtocolLib.inf
+#
+#  Abstract:
+#
+#    Component description file.
+#
+#--*/
+
+[defines]
+BASE_NAME=   EdkFrameworkProtocolLib
+COMPONENT_TYPE=   LIBRARY
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[nmake.common]
+C_STD_INCLUDE=
+
+[sources.common]
+  AcpiS3Save\AcpiS3Save.h
+  AcpiS3Save\AcpiS3Save.c
+  DataHub\DataHub.h
+  DataHub\DataHub.c
+  FirmwareVolume\FirmwareVolume.h
+  FirmwareVolume\FirmwareVolume.c
+  FirmwareVolumeBlock\FirmwareVolumeBlock.h
+  FirmwareVolumeBlock\FirmwareVolumeBlock.c
+  FormBrowser\FormBrowser.h
+  FormBrowser\FormBrowser.c
+  FormCallback\FormCallback.h
+  FormCallback\FormCallback.c
+  Hii\Hii.h
+  Hii\Hii.c
+  LegacyBios\LegacyBios.h
+  LegacyBios\LegacyBios.c
+  SectionExtraction\SectionExtraction.h
+  SectionExtraction\SectionExtraction.c

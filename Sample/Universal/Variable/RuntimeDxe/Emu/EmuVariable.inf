@@ -1,0 +1,62 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#   EmuVariable.inf
+#
+#  Abstract:
+#
+#    Component description file for variable module
+#
+#--*/
+
+[defines]
+BASE_NAME            = EmuVariable
+FILE_GUID            = CBD2E4D5-7068-4FF5-B866-9822B4AD8D60
+
+[defines.ia32]
+COMPONENT_TYPE       = RT_DRIVER
+
+[defines.ipf]
+COMPONENT_TYPE       = SAL_RT_DRIVER
+
+[sources.ia32]
+  ..\Ia32\Ia32Variable.c
+
+[sources.ipf]
+  ..\Ipf\IpfVariable.c
+
+[sources.common]
+  EmuVariable.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation
+  .
+  ..
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[libraries.common]
+  EdkProtocolLib
+  EfiRuntimeLib
+  ArchProtocolLib
+  HobLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=VariableServiceInitialize
+  DPX_SOURCE=EmuVariable.dxs

@@ -1,0 +1,65 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    DebugSupport.inf
+#
+#  Abstract:
+#
+#    Component description file for DebugSupport module
+#
+#--*/
+
+[defines]
+BASE_NAME            = DebugSupport
+FILE_GUID            = 911D584C-35F7-4955-BEF9-B452769DDC3A
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  DebugSupport.c
+
+[sources.ia32]
+  ia32\AsmFuncs.asm
+  ia32\plDebugSupport.c
+
+[sources.ipf]
+  ipf\AsmFuncs.s
+  ipf\common.i
+  ipf\ds64macros.i
+  ipf\plDebugSupport.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[libraries.common]
+  EfiProtocolLib
+  EfiDriverLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=InitializeDebugSupportDriver
+  DPX_SOURCE=DebugSupport.dxs
+
+[nmake.ia32]
+  C_FLAGS            = $(C_FLAGS:/O1=/Od)
+
+[nmake.ipf]
+  C_FLAGS            = $(C_FLAGS:/Os=/Od)
+

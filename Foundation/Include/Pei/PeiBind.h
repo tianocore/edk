@@ -1,0 +1,107 @@
+/*++
+
+Copyright 2004, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  PeiBind.h
+
+Abstract:
+
+  EFI 2.0 PEI core and PEIM binding macros
+
+--*/
+
+#ifndef _PEI_BIND_H_
+#define _PEI_BIND_H_
+
+#ifdef EFI_DEBUG
+
+#define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
+          UINTN                                               \
+          __stdcall                                           \
+          _DllMainCRTStartup (                                \
+              UINTN    Inst,                                  \
+              UINTN    reason_for_call,                       \
+              VOID    *rserved                                \
+              )                                               \
+          {                                                   \
+              return 1;                                       \
+          }                                                   \
+                                                              \
+          EFI_STATUS                                                 \
+          __declspec( dllexport  )                            \
+          __cdecl                                             \
+          InitializeDriver (                                  \
+            IN EFI_PEI_STARTUP_DESCRIPTOR *PeiStartup             \
+              )                                               \
+          {                                                   \
+              return InitFunction(PeiStartup);  \
+          }
+
+
+
+#define EFI_PEIM_ENTRY_POINT(InitFunction)                \
+          UINTN                                               \
+          __stdcall                                           \
+          _DllMainCRTStartup (                                \
+              UINTN    Inst,                                  \
+              UINTN    reason_for_call,                       \
+              VOID    *rserved                                \
+              )                                               \
+          {                                                   \
+              return 1;                                       \
+          }                                                   \
+                                                              \
+          EFI_STATUS                                                 \
+          __declspec( dllexport  )                            \
+          __cdecl                                             \
+          InitializeDriver (                                  \
+              IN EFI_FFS_FILE_HEADER       *FfsHeader,        \
+              IN EFI_PEI_SERVICES          **PeiServices      \
+              )                                               \
+          {                                                   \
+              return InitFunction(FfsHeader, PeiServices);               \
+          }
+
+#else
+
+#ifdef EFI_NT_EMULATOR
+#define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
+          EFI_STATUS                                          \
+          __declspec( dllexport  )                            \
+          __cdecl                                             \
+          InitializeDriver (                                  \
+            IN EFI_PEI_STARTUP_DESCRIPTOR *PeiStartup             \
+              )                                               \
+          {                                                   \
+              return InitFunction(PeiStartup);                \
+          }
+          
+#define EFI_PEIM_ENTRY_POINT(InitFunction)                    \
+          EFI_STATUS                                          \
+          __declspec( dllexport  )                            \
+          __cdecl                                             \
+          InitializeDriver (                                  \
+              IN EFI_FFS_FILE_HEADER       *FfsHeader,        \
+              IN EFI_PEI_SERVICES          **PeiServices      \
+              )                                               \
+          {                                                   \
+              return InitFunction(FfsHeader, PeiServices);    \
+          }
+#else
+
+#define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                
+#define EFI_PEIM_ENTRY_POINT(InitFunction)
+
+#endif
+
+#endif
+#endif

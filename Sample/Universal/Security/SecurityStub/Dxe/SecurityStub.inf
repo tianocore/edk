@@ -1,0 +1,54 @@
+#/*++
+#
+# Copyright 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    SecurityStub.inf
+#
+#  Abstract:
+#
+#    Component description file for SecurityStub module
+#
+#--*/
+
+[defines]
+BASE_NAME            = SecurityStub
+FILE_GUID            = F1EFB523-3D59-4888-BB71-EAA5A96628FA
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  SecurityStub.h
+  SecurityStub.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Core\Dxe\Include
+
+[libraries.common]
+  EfiDriverLib
+  PrintLib
+  ArchProtocolLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=SecurityStubInitialize
+  TARGET_BS_DRIVER=SecurityStub
+  DPX_SOURCE=SecurityStub.dxs
+
+

@@ -1,0 +1,96 @@
+/*++
+
+Copyright 2004, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  Variable.h
+   
+Abstract:
+
+  EFI 2.0 PEIM to provide the variable functionality
+
+--*/
+
+#ifndef _PEI_VARIABLE_H
+#define _PEI_VARIABLE_H
+
+#include "EfiVariable.h"
+#include "VarMachine.h"
+
+#include EFI_PPI_DEFINITION (FlashMap)
+#include EFI_PPI_PRODUCER (Variable)
+
+//
+// Define GET_PAD_SIZE to optimize compiler
+//
+#if ((ALIGNMENT == 0) || (ALIGNMENT == 1))
+#define GET_PAD_SIZE(a) (0)
+#else
+#define GET_PAD_SIZE(a) (((~a)+1) & (ALIGNMENT - 1))
+#endif
+
+#define GET_VARIABLE_NAME_PTR(a)   (CHAR16*)((UINTN)(a) + sizeof (VARIABLE_HEADER))
+                                   
+#define GET_VARIABLE_DATA_PTR(a)   (UINT8*)((UINTN)GET_VARIABLE_NAME_PTR(a) + (a)->NameSize + GET_PAD_SIZE((a)->NameSize))
+
+typedef struct {
+  VARIABLE_HEADER       *CurrPtr;
+  VARIABLE_HEADER       *EndPtr;
+  VARIABLE_HEADER       *StartPtr;
+} VARIABLE_POINTER_TRACK;
+
+
+#define VARIABLE_INDEX_TABLE_VOLUME 122
+
+#define EFI_VARIABLE_INDEX_TABLE_GUID    \
+  { 0x8cfdb8c8, 0xd6b2, 0x40f3, 0x8e, 0x97, 0x02, 0x30, 0x7c, 0xc9, 0x8b, 0x7c }
+
+typedef struct {
+  UINT16                Length;
+  UINT16                GoneThrough;
+  VARIABLE_HEADER       *EndPtr;
+  VARIABLE_HEADER       *StartPtr;
+  UINT16                Index[VARIABLE_INDEX_TABLE_VOLUME];
+} VARIABLE_INDEX_TABLE;
+
+extern EFI_GUID gEfiVariableIndexTableGuid;
+
+
+//
+// Functions
+//
+EFI_STATUS
+EFIAPI
+PeimInitializeVariableServices (
+  IN EFI_FFS_FILE_HEADER       *FfsHeader,
+  IN EFI_PEI_SERVICES          **PeiServices
+  );
+
+EFI_STATUS
+EFIAPI PeiGetVariable (
+  IN EFI_PEI_SERVICES     **PeiServices,
+  IN CHAR16                       *VariableName,
+  IN EFI_GUID                     *VendorGuid,
+  OUT UINT32                      *Attributes OPTIONAL,
+  IN OUT UINTN                    *DataSize,
+  OUT VOID                        *Data
+  );
+
+EFI_STATUS
+EFIAPI 
+PeiGetNextVariableName (
+  IN EFI_PEI_SERVICES     **PeiServices,
+  IN OUT UINTN                    *VariableNameSize,
+  IN OUT CHAR16                   *VariableName,
+  IN OUT EFI_GUID                 *VendorGuid
+  );
+  
+#endif // _PEI_VARIABLE_H
