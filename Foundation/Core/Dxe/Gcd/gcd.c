@@ -81,6 +81,7 @@ EFI_GCD_MAP_ENTRY mGcdIoSpaceMapEntryTemplate = {
 
 GCD_ATTRIBUTE_CONVERSION_ENTRY mAttributeConversionTable[] = {
   { EFI_RESOURCE_ATTRIBUTE_UNCACHEABLE,             EFI_MEMORY_UC,          TRUE  },
+  { EFI_RESOURCE_ATTRIBUTE_UNCACHED_EXPORTED,       EFI_MEMORY_UCE,         TRUE  },   
   { EFI_RESOURCE_ATTRIBUTE_WRITE_COMBINEABLE,       EFI_MEMORY_WC,          TRUE  },
   { EFI_RESOURCE_ATTRIBUTE_WRITE_THROUGH_CACHEABLE, EFI_MEMORY_WT,          TRUE  },
   { EFI_RESOURCE_ATTRIBUTE_WRITE_BACK_CACHEABLE,    EFI_MEMORY_WB,          TRUE  },
@@ -1977,29 +1978,29 @@ Routine Description:
 
 Arguments:
 
-  GcdMemoryType - Memory type
-
-  Attributes - The attributes mask from the Resource Descriptor HOB
+  GcdMemoryType   - Type of resource in the GCD memory map.
+  Attributes      - The attribute mask in the Resource Descriptor HOB.
 
 Returns:
 
-  The capabilities mask for an EFI Memory Descriptor
+  The capabilities mask for an EFI Memory Descriptor.
 
 --*/
 {
   UINT64                          Capabilities;
   GCD_ATTRIBUTE_CONVERSION_ENTRY  *Conversion;
+  
   //
   // Convert the Resource HOB Attributes to an EFI Memory Capabilities mask
-  // BUGBUG : How does the capability EFI_MEMORY_UCE get added?
   //
-  for (Capabilities = 0,Conversion = mAttributeConversionTable; Conversion->Attribute != 0; Conversion++) {
+  for (Capabilities = 0, Conversion = mAttributeConversionTable; Conversion->Attribute != 0; Conversion++) {
     if (Conversion->Memory || (GcdMemoryType != EfiGcdMemoryTypeSystemMemory)) {
       if (Attributes & Conversion->Attribute) {
         Capabilities |= Conversion->Capability;
       }
     }
   }
+  
   return Capabilities;
 }
 
@@ -2022,31 +2023,28 @@ Routine Description:
 
 Arguments:
 
-  HobStart - The start address of the HOB.
-  
+  HobStart            - The start address of the HOB.
   MemoryBaseAddress   - Start address of memory region found to init DXE core.
-  
   MemoryLength        - Length of memory region found to init DXE core.
 
 Returns:
 
-  EFI_SUCCESS         - Memory services successfully initialized.
+  EFI_SUCCESS   - Memory services successfully initialized.
 
 --*/
 {
   EFI_STATUS                         Status;
-  EFI_PEI_HOB_POINTERS                   Hob;
+  EFI_PEI_HOB_POINTERS               Hob;
   EFI_MEMORY_TYPE_INFORMATION        *EfiMemoryTypeInformation;
   UINTN                              DataSize;
   BOOLEAN                            Found;
-  EFI_HOB_HANDOFF_INFO_TABLE  *PhitHob;
+  EFI_HOB_HANDOFF_INFO_TABLE         *PhitHob;
   EFI_HOB_RESOURCE_DESCRIPTOR        *ResourceHob;
   EFI_HOB_RESOURCE_DESCRIPTOR        *PhitResourceHob;
   EFI_PHYSICAL_ADDRESS               BaseAddress;
   UINT64                             Length;
   UINT64                             Attributes;
   UINT64                             Capabilities;
-
   EFI_PHYSICAL_ADDRESS               MaxMemoryBaseAddress;
   UINT64                             MaxMemoryLength;
   UINT64                             MaxMemoryAttributes;
@@ -2382,41 +2380,35 @@ Returns:
   // Allocate first memory region from the GCD by the DXE core
   //
   Status = CoreAllocateMemorySpace (
-                  EfiGcdAllocateAddress,
-                  EfiGcdMemoryTypeSystemMemory,
-                  0,
-                  MemoryLength,
-                  &MemoryBaseAddress,
-                  gDxeCoreImageHandle,
-                  NULL
-                  );
+             EfiGcdAllocateAddress,
+             EfiGcdMemoryTypeSystemMemory,
+             0,
+             MemoryLength,
+             &MemoryBaseAddress,
+             gDxeCoreImageHandle,
+             NULL
+             );
 
   //
   // Walk the HOB list and allocate all memory space that is consumed by memory allocation HOBs,
   // and Firmware Volume HOBs.  Also update the EFI Memory Map with the memory allocation HOBs.
   //
   for (Hob.Raw = *HobStart; !END_OF_HOB_LIST(Hob); Hob.Raw = GET_NEXT_HOB(Hob)) {
-
     if (GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_MEMORY_ALLOCATION) {
-
       MemoryHob = Hob.MemoryAllocation;
-
       BaseAddress = MemoryHob->AllocDescriptor.MemoryBaseAddress;
-
       Status = CoreAllocateMemorySpace (
-                      EfiGcdAllocateAddress,
-                      EfiGcdMemoryTypeSystemMemory, 
-                      0,
-                      MemoryHob->AllocDescriptor.MemoryLength,
-                      &BaseAddress,
-                      gDxeCoreImageHandle,
-                      NULL
-                      );
+                 EfiGcdAllocateAddress,
+                 EfiGcdMemoryTypeSystemMemory, 
+                 0,
+                 MemoryHob->AllocDescriptor.MemoryLength,
+                 &BaseAddress,
+                 gDxeCoreImageHandle,
+                 NULL
+                 );
       if (!EFI_ERROR (Status)) {
-
         Status = CoreGetMemorySpaceDescriptor (MemoryHob->AllocDescriptor.MemoryBaseAddress, &Descriptor);
         if (!EFI_ERROR (Status)) {
-
           CoreAddMemoryDescriptor (
             MemoryHob->AllocDescriptor.MemoryType,
             MemoryHob->AllocDescriptor.MemoryBaseAddress,
@@ -2428,20 +2420,17 @@ Returns:
     }
 
     if (GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_FV) {
-    
       FirmwareVolumeHob = Hob.FirmwareVolume;
-
       BaseAddress = FirmwareVolumeHob->BaseAddress;
-
       Status = CoreAllocateMemorySpace (
-                      EfiGcdAllocateAddress,
-                      EfiGcdMemoryTypeMemoryMappedIo, 
-                      0,
-                      FirmwareVolumeHob->Length,
-                      &BaseAddress,
-                      gDxeCoreImageHandle,
-                      NULL
-                      );
+                 EfiGcdAllocateAddress,
+                 EfiGcdMemoryTypeMemoryMappedIo, 
+                 0,
+                 FirmwareVolumeHob->Length,
+                 &BaseAddress,
+                 gDxeCoreImageHandle,
+                 NULL
+                 );
     }
   }
 
@@ -2463,41 +2452,27 @@ Returns:
   for (Index = 0; Index < NumberOfDescriptors; Index++) {
     if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeSystemMemory) {
       if (MemorySpaceMap[Index].ImageHandle == NULL) {
-
         BaseAddress  = PageAlignAddress (MemorySpaceMap[Index].BaseAddress);
         Length       = PageAlignLength  (MemorySpaceMap[Index].BaseAddress + MemorySpaceMap[Index].Length - BaseAddress);
-
         CoreAddMemoryDescriptor (
           EfiConventionalMemory,
           BaseAddress,
           RShiftU64 (Length, EFI_PAGE_SHIFT),
           MemorySpaceMap[Index].Capabilities & (~EFI_MEMORY_RUNTIME)
           );
-
         Status = CoreAllocateMemorySpace (
-                        EfiGcdAllocateAddress,
-                        EfiGcdMemoryTypeSystemMemory,
-                        0,
-                        Length,
-                        &BaseAddress,
-                        gDxeCoreImageHandle,
-                        NULL
-                        );
+                   EfiGcdAllocateAddress,
+                   EfiGcdMemoryTypeSystemMemory,
+                   0,
+                   Length,
+                   &BaseAddress,
+                   gDxeCoreImageHandle,
+                   NULL
+                   );
       }
     }
   }
   CoreFreePool (MemorySpaceMap);
 
-  //
-  // BugBug : Check the size of the STACK and the BSP Store.  If they are smaller than what is required by
-  // the DXE core, then reallocate them with AllocatePages(), switch stacks, and free the old STACK and BSP Store.
-  //
-
-  //
-  // BugBug : Call CPU Arch Protocol to initialize all attributes in the GCD Memory Space Map
-  //
-
   return EFI_SUCCESS;
 }
-
-
