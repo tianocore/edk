@@ -1250,40 +1250,40 @@ CoreGetMemoryMap (
 
 Routine Description:
 
-  Returns the current memory map.
+  This function returns a copy of the current memory map. The map is an array of 
+  memory descriptors, each of which describes a contiguous block of memory.
 
 Arguments:
 
-  MemoryMapSize     - On input the buffer size of MemoryMap allocated by caller
-                      On output the required buffer size to contain the memory map 
-                      
-  MemoryMap         - The buffer to return the current memory map
-
-  MapKey            - The address to return the current map key
-
-  DescriptorSize    - The size in bytes for an individual EFI_MEMORY_DESCRIPTOR
-
-  DescriptorVersion - The version number associated with the EFI_MEMORY_DESCRIPTOR
+  MemoryMapSize     - A pointer to the size, in bytes, of the MemoryMap buffer. On
+                      input, this is the size of the buffer allocated by the caller. 
+                      On output, it is the size of the buffer returned by the firmware 
+                      if the buffer was large enough, or the size of the buffer needed 
+                      to contain the map if the buffer was too small.
+  MemoryMap         - A pointer to the buffer in which firmware places the current memory map.
+  MapKey            - A pointer to the location in which firmware returns the key for the
+                      current memory map.
+  DescriptorSize    - A pointer to the location in which firmware returns the size, in
+                      bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  DescriptorVersion - A pointer to the location in which firmware returns the version
+                      number associated with the EFI_MEMORY_DESCRIPTOR.
 
 Returns:
 
-  EFI_SUCCESS           The current memory map was returned successfully
-
-  EFI_BUFFER_TOO_SMALL  The MemoryMap buffer was too small
-
-  EFI_INVALID_PARAMETER One of the parameters has an invalid value
+  EFI_SUCCESS           - The memory map was returned in the MemoryMap buffer.       
+  EFI_BUFFER_TOO_SMALL  - The MemoryMap buffer was too small. The current buffer size
+                          needed to hold the memory map is returned in MemoryMapSize.
+  EFI_INVALID_PARAMETER - One of the parameters has an invalid value.                
 
 --*/
 {
-  UINTN             BufferSize;
-  EFI_STATUS        Status;
-  EFI_LIST_ENTRY    *Link;
-  MEMORY_MAP        *Entry;
-  UINTN             Size;
-  UINTN                            Index;
-  UINTN                            NumberOfDescriptors;
-  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap;
-  UINTN                            NumberOfRuntimeEntries;
+  EFI_STATUS                        Status;
+  UINTN                             Size;  
+  UINTN                             BufferSize;  
+  UINTN                             NumberOfRuntimeEntries;
+  EFI_LIST_ENTRY                    *Link;
+  MEMORY_MAP                        *Entry;  
+  EFI_GCD_MAP_ENTRY                 *GcdMapEntry;  
 
   //
   // Make sure the parameters are valid
@@ -1291,40 +1291,36 @@ Returns:
   if (MemoryMapSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
-  //
-  // Get the GCD Memory Space Map
-  //
-  Status = CoreGetMemorySpaceMap (&NumberOfDescriptors, &MemorySpaceMap);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
+  
+  CoreAcquireGcdMemoryLock ();
+  
   //
   // Count the number of Reserved and MMIO entries that are marked for runtime use
   //
   NumberOfRuntimeEntries = 0;
-  for (Index = 0; Index < NumberOfDescriptors; Index++) {
-    if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved       ||
-        MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo) {
-      if ((MemorySpaceMap[Index].Attributes & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
+  for (Link = mGcdMemorySpaceMap.ForwardLink; Link != &mGcdMemorySpaceMap; Link = Link->ForwardLink) {
+    GcdMapEntry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
+    if ((GcdMapEntry->GcdMemoryType == EfiGcdMemoryTypeReserved) ||
+        (GcdMapEntry->GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo)) {
+      if ((GcdMapEntry->Attributes & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
         NumberOfRuntimeEntries++;
       }
     }
   }
 
-  Size = sizeof(EFI_MEMORY_DESCRIPTOR);
+  Size = sizeof (EFI_MEMORY_DESCRIPTOR);
 
   //
   // Make sure Size != sizeof(EFI_MEMORY_DESCRIPTOR). This will
   // prevent people from having pointer math bugs in their code.
   // now you have to use *DescriptorSize to make things work.
   //
-  Size += sizeof(UINT64) - (Size % sizeof(UINT64));
+  Size += sizeof(UINT64) - (Size % sizeof (UINT64));
 
   if (DescriptorSize != NULL) {
     *DescriptorSize = Size;
   }
+  
   if (DescriptorVersion != NULL) {
     *DescriptorVersion = EFI_MEMORY_DESCRIPTOR_VERSION;
   }
@@ -1355,12 +1351,12 @@ Returns:
   EfiCommonLibZeroMem (MemoryMap, Size);
   for (Link = gMemoryMap.ForwardLink; Link != &gMemoryMap; Link = Link->ForwardLink) {
     Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
-    ASSERT (!Entry->VirtualStart);
+    ASSERT (Entry->VirtualStart == 0);
 
-    MemoryMap->Type = Entry->Type;
-    MemoryMap->PhysicalStart = Entry->Start;
-    MemoryMap->VirtualStart = Entry->VirtualStart;
-    MemoryMap->NumberOfPages = RShiftU64 (Entry->End - Entry->Start + 1, EFI_PAGE_SHIFT);
+    MemoryMap->Type           = Entry->Type;
+    MemoryMap->PhysicalStart  = Entry->Start;
+    MemoryMap->VirtualStart   = Entry->VirtualStart;
+    MemoryMap->NumberOfPages  = RShiftU64 (Entry->End - Entry->Start + 1, EFI_PAGE_SHIFT);
   
     switch (Entry->Type) {
     case EfiRuntimeServicesCode:
@@ -1377,22 +1373,21 @@ Returns:
     MemoryMap = NextMemoryDescriptor (MemoryMap, Size);
   }
 
-  for (Index = 0; Index < NumberOfDescriptors; Index++) {
-    if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved       ||
-        MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo) {
-      if ((MemorySpaceMap[Index].Attributes & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
-
-        MemoryMap->PhysicalStart = MemorySpaceMap[Index].BaseAddress;
+  for (Link = mGcdMemorySpaceMap.ForwardLink; Link != &mGcdMemorySpaceMap; Link = Link->ForwardLink) {
+    GcdMapEntry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
+    if ((GcdMapEntry->GcdMemoryType == EfiGcdMemoryTypeReserved) ||
+        (GcdMapEntry->GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo)) {
+      if ((GcdMapEntry->Attributes & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
+        
+        MemoryMap->PhysicalStart = GcdMapEntry->BaseAddress;
         MemoryMap->VirtualStart  = 0;
-        MemoryMap->NumberOfPages = RShiftU64 (MemorySpaceMap[Index].Length, EFI_PAGE_SHIFT);
-        MemoryMap->Attribute     = MemorySpaceMap[Index].Attributes & (~EFI_MEMORY_PORT_IO);
+        MemoryMap->NumberOfPages = MemoryMap->NumberOfPages = RShiftU64 ((GcdMapEntry->EndAddress - GcdMapEntry->BaseAddress + 1), EFI_PAGE_SHIFT);
+        MemoryMap->Attribute     = GcdMapEntry->Attributes & ~EFI_MEMORY_PORT_IO;
 
-        if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved) {
+        if (GcdMapEntry->GcdMemoryType == EfiGcdMemoryTypeReserved) {
           MemoryMap->Type = EfiReservedMemoryType;
-        }
-
-        if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo) {
-          if ((MemorySpaceMap[Index].Attributes & EFI_MEMORY_PORT_IO) == EFI_MEMORY_PORT_IO) {
+        } else if (GcdMapEntry->GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo) {
+          if ((GcdMapEntry->Attributes & EFI_MEMORY_PORT_IO) == EFI_MEMORY_PORT_IO) {
             MemoryMap->Type = EfiMemoryMappedIOPortSpace;
           } else {
             MemoryMap->Type = EfiMemoryMappedIO;
@@ -1407,13 +1402,11 @@ Returns:
   Status = EFI_SUCCESS;
 
 Done:
+
   CoreReleaseMemoryLock ();
-
-  //
-  // Free GCD Memory Space Map
-  //
-  CoreFreePool (MemorySpaceMap);
-
+  
+  CoreReleaseGcdMemoryLock ();
+  
   // 
   // Update the map key finally 
   // 
@@ -1422,6 +1415,7 @@ Done:
   }
   
   *MemoryMapSize = BufferSize;
+  
   return Status;
 }
 
