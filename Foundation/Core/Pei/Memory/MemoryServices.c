@@ -197,7 +197,7 @@ PeiAllocatePages (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_MEMORY_TYPE            MemoryType,
   IN UINTN                      Pages,
-  IN OUT EFI_PHYSICAL_ADDRESS   *Memory
+  OUT EFI_PHYSICAL_ADDRESS      *Memory
   )
 /*++
 

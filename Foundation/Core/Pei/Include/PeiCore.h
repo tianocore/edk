@@ -354,7 +354,7 @@ VOID
 SetDispatched (
   IN EFI_PEI_SERVICES   **PeiServices,
   IN UINT8              CurrentPeim,
-  IN OUT UINT32         *DispatchedPeimBitMap
+  OUT UINT32            *DispatchedPeimBitMap
   )
 /*++
 
@@ -400,10 +400,10 @@ Returns:
 
 VOID
 SwitchCoreStacks (
-  VOID  *EntryPoint,
-  UINTN Parameter1,
-  UINTN Parameter2,
-  VOID  *NewStack
+  IN VOID  *EntryPoint,
+  IN UINTN Parameter1,
+  IN UINTN Parameter2,
+  IN VOID  *NewStack
   )
 /*++
 
@@ -1036,7 +1036,7 @@ PeiAllocatePages (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_MEMORY_TYPE            MemoryType,
   IN UINTN                      Pages,
-  IN OUT EFI_PHYSICAL_ADDRESS   *Memory
+  OUT EFI_PHYSICAL_ADDRESS      *Memory
   )
 /*++
 
