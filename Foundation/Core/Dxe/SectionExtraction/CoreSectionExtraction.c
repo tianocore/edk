@@ -825,18 +825,13 @@ Returns:
           
           ASSERT_EFI_ERROR (Status);
           
-          //
-          // BUGBUG: We'd better update the decompress protocol to make the parameters 
-          // related to the buffer size be UINTN. Because the decompress protocol is 
-          // a universal protocol and has been used in IA64.
-          //
-        Status = Decompress->GetInfo (
-                               Decompress,
-                               CompressionHeader + 1,
-                               Node->Size - sizeof (EFI_COMPRESSION_SECTION),
-                               (UINT32 *)&NewStreamBufferSize,
-                               &ScratchSize
-                               );
+          Status = Decompress->GetInfo (
+                                 Decompress,
+                                 CompressionHeader + 1,
+                                 Node->Size - sizeof (EFI_COMPRESSION_SECTION),
+                                 (UINT32 *)&NewStreamBufferSize,
+                                 &ScratchSize
+                                 );
           ASSERT_EFI_ERROR (Status);
           ASSERT (NewStreamBufferSize == CompressionHeader->UncompressedLength);
 
