@@ -278,6 +278,7 @@ Sample\Universal\Runtime\Dxe\Runtime.inf
 Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\StatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\FvbServices\nt32fwh.inf
+Sample\Universal\FirmwareVolume\FaultTolerantWriteLite\Dxe\FtwLite.inf
 Sample\Universal\Variable\RuntimeDxe\Variable.inf
 Sample\Platform\Nt32\Dxe\PlatformBds\PlatformBds.inf
 Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf

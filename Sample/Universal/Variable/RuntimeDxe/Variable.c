@@ -784,6 +784,10 @@ Arguments:
 Returns:
 
   EFI STATUS
+  EFI_INVALID_PARAMETER           - Invalid parameter
+  EFI_SUCCESS                     - Set successfully
+  EFI_OUT_OF_RESOURCES            - Resource not enough to set variable
+  EFI_NOT_FOUND                   - Not found
 
 --*/
 {
@@ -795,6 +799,9 @@ Returns:
   UINTN                   VarDataOffset;
   UINTN                   VarSize;
   UINT8                   State;
+  BOOLEAN                 Reclaimed;
+  
+  Reclaimed = FALSE;
 
   if (VariableName == NULL || VariableName[0] == 0 || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -953,6 +960,8 @@ Returns:
               ) {
           return EFI_OUT_OF_RESOURCES;
         }
+        
+        Reclaimed = TRUE;
       }
       //
       // Three steps
@@ -1035,6 +1044,8 @@ Returns:
               ) {
           return EFI_OUT_OF_RESOURCES;
         }
+        
+        Reclaimed = TRUE;
       }
 
       NextVariable->State = VAR_ADDED;
@@ -1057,7 +1068,7 @@ Returns:
     //
     // Mark the old variable as deleted
     //
-    if (!EFI_ERROR (Status) && Variable.CurrPtr != NULL) {
+    if (!Reclaimed && !EFI_ERROR (Status) && Variable.CurrPtr != NULL) {
       State = Variable.CurrPtr->State;
       State &= VAR_DELETED;
 
