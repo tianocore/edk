@@ -36,10 +36,9 @@ Abstract:
 #include "EfiSpec.h"
 
 //
-// Firmware Vendor and Firmware Revision information
+// EFI Revision information
 //
-#define EFI_FIRMWARE_VENDOR         L"INTEL"
-#define EFI_FIRMWARE_MAJOR_REVISION 0x2000
+#define EFI_FIRMWARE_MAJOR_REVISION 0x1000
 #define EFI_FIRMWARE_MINOR_REVISION 1
 #define EFI_FIRMWARE_REVISION       ((EFI_FIRMWARE_MAJOR_REVISION << 16) | (EFI_FIRMWARE_MINOR_REVISION))
 

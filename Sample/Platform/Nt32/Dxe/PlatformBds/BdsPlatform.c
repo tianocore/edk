@@ -26,7 +26,7 @@ Abstract:
 #include "Language.h"
 #include "FrontPage.h"
 
-CHAR16  mFirmwareVendor[] = EFI_FIRMWARE_VENDOR;
+CHAR16  mFirmwareVendor[] = L"TianoCore.org";
 
 //
 // BDS Platform Functions
