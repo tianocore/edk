@@ -33,10 +33,10 @@ SwitchCoreStacks PROC C   EntryPoint: DWORD, Parameter1: DWORD, Parameter2: DWOR
 ;------------------------------------------------------------------------------
 ; VOID
 ; SwitchCoreStacks (
-;   VOID  *EntryPoint,
-;   UINTN Parameter1,
-;   UINTN Parameter2,
-;   VOID  *NewStack
+;   IN VOID  *EntryPoint,
+;   IN UINTN Parameter1,
+;   IN UINTN Parameter2,
+;   IN VOID  *NewStack
 ;   )
 ;
 ; Routine Description:
