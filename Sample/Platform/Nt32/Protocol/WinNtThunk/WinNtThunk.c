@@ -23,8 +23,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (WinNtThunk)
 
+EFI_GUID  gEfiWinNtThunkProtocolGuid = EFI_WIN_NT_THUNK_PROTOCOL_GUID;
 
-EFI_GUID gEfiWinNtThunkProtocolGuid = EFI_WIN_NT_THUNK_PROTOCOL_GUID;
-
-EFI_GUID_STRING (&gEfiWinNtThunkProtocolGuid, "EFI Win NT Thunk", "Win32 API thunk protocol");
-
+EFI_GUID_STRING(&gEfiWinNtThunkProtocolGuid, "EFI Win NT Thunk", "Win32 API thunk protocol");

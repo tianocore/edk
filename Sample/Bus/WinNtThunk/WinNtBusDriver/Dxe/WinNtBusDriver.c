@@ -110,7 +110,7 @@ static EFI_GUID gWinNtBusDriverGuid = {
 //
 // DriverBinding protocol global
 //
-EFI_DRIVER_BINDING_PROTOCOL gWinNtBusDriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL           gWinNtBusDriverBinding = {
   WinNtBusDriverBindingSupported,
   WinNtBusDriverBindingStart,
   WinNtBusDriverBindingStop,
@@ -120,10 +120,10 @@ EFI_DRIVER_BINDING_PROTOCOL gWinNtBusDriverBinding = {
 };
 
 //
-// Table to map NT Environment variable to the GUID that should be in 
+// Table to map NT Environment variable to the GUID that should be in
 // device path.
 //
-static NT_ENVIRONMENT_VARIABLE_ENTRY mEnvironment[] = {
+static NT_ENVIRONMENT_VARIABLE_ENTRY  mEnvironment[] = {
   L"EFI_WIN_NT_CONSOLE",          &gEfiWinNtConsoleGuid,
   L"EFI_WIN_NT_UGA",              &gEfiWinNtUgaGuid,
   L"EFI_WIN_NT_SERIAL_PORT",      &gEfiWinNtSerialPortGuid,
@@ -137,13 +137,13 @@ static NT_ENVIRONMENT_VARIABLE_ENTRY mEnvironment[] = {
   NULL, NULL
 };
 
-EFI_DRIVER_ENTRY_POINT(InitializeWinNtBusDriver)
+EFI_DRIVER_ENTRY_POINT (InitializeWinNtBusDriver)
 
 EFI_STATUS
 InitializeWinNtBusDriver (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-  )           
+  )
 /*++
 
 Routine Description:
@@ -158,25 +158,26 @@ Returns:
                 InstallProtocolInterface() is returned.
 
 --*/
-
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
-  gHostBridgeInit = FALSE;
-  gReadPending = FALSE;
-  gImageHandle = ImageHandle;
-  gConfigData.Enable = 1;
-  gBaseAddress = 0;
+  gHostBridgeInit     = FALSE;
+  gReadPending        = FALSE;
+  gImageHandle        = ImageHandle;
+  gConfigData.Enable  = 1;
+  gBaseAddress        = 0;
 
   CpuIoInitialize (ImageHandle, SystemTable);
 
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gWinNtBusDriverBinding, 
-           ImageHandle,
-           &gWinNtBusDriverComponentName,
-           NULL,
-           NULL
-           );
+          ImageHandle,
+          SystemTable,
+          &gWinNtBusDriverBinding,
+          ImageHandle,
+          &gWinNtBusDriverComponentName,
+          NULL,
+          NULL
+          );
 }
 
 EFI_STATUS
@@ -196,15 +197,22 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ControllerHandle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                 Status;  
-  EFI_DEVICE_PATH_PROTOCOL   *ParentDevicePath;
-  EFI_WIN_NT_THUNK_PROTOCOL  *WinNtThunk;
-  UINTN Index;
-  
+  EFI_STATUS                Status;
+  EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
+  EFI_WIN_NT_THUNK_PROTOCOL *WinNtThunk;
+  UINTN                     Index;
+
   //
   // Check the contents of the first Device Path Node of RemainingDevicePath to make sure
-  // it is a legal Device Path Node for this bus driver's children. 
+  // it is a legal Device Path Node for this bus driver's children.
   //
   if (RemainingDevicePath != NULL) {
     if (RemainingDevicePath->Type != HARDWARE_DEVICE_PATH ||
@@ -214,10 +222,11 @@ Returns:
     }
 
     for (Index = 0; mEnvironment[Index].Variable != NULL; Index++) {
-      if (EfiCompareGuid (&((VENDOR_DEVICE_PATH *)RemainingDevicePath)->Guid, mEnvironment[Index].DevicePathGuid)) {
+      if (EfiCompareGuid (&((VENDOR_DEVICE_PATH *) RemainingDevicePath)->Guid, mEnvironment[Index].DevicePathGuid)) {
         break;
       }
     }
+
     if (mEnvironment[Index].Variable == NULL) {
       return EFI_UNSUPPORTED;
     }
@@ -227,38 +236,40 @@ Returns:
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiDevicePathProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
                   &ParentDevicePath,
-                  This->DriverBindingHandle,     
-                  ControllerHandle,   
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
     return EFI_SUCCESS;
   }
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   gBS->CloseProtocol (
-         ControllerHandle,           
-         &gEfiDevicePathProtocolGuid, 
-         This->DriverBindingHandle,   
-         ControllerHandle
-         );
+        ControllerHandle,
+        &gEfiDevicePathProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiWinNtThunkProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiWinNtThunkProtocolGuid,
                   &WinNtThunk,
-                  This->DriverBindingHandle,     
-                  ControllerHandle,   
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
     return EFI_SUCCESS;
   }
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -275,11 +286,11 @@ Returns:
   // Close the I/O Abstraction(s) used to perform the supported test
   //
   gBS->CloseProtocol (
-         ControllerHandle,           
-         &gEfiWinNtThunkProtocolGuid,  
-         This->DriverBindingHandle,   
-         ControllerHandle
-         );
+        ControllerHandle,
+        &gEfiWinNtThunkProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   return Status;
 }
@@ -301,6 +312,12 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ControllerHandle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS                      Status;
   EFI_STATUS                      InstallStatus;
@@ -327,11 +344,11 @@ Returns:
   // Grab the protocols we need
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiDevicePathProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
                   &ParentDevicePath,
-                  This->DriverBindingHandle,     
-                  ControllerHandle,   
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status) && Status != EFI_ALREADY_STARTED) {
@@ -339,11 +356,11 @@ Returns:
   }
 
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiWinNtThunkProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiWinNtThunkProtocolGuid,
                   &WinNtThunk,
-                  This->DriverBindingHandle,     
-                  ControllerHandle,   
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status) && Status != EFI_ALREADY_STARTED) {
@@ -359,10 +376,10 @@ Returns:
   if (Status != EFI_ALREADY_STARTED) {
     Status = gBS->AllocatePool (
                     EfiBootServicesData,
-                    sizeof(WIN_NT_BUS_DEVICE), 
-                    (VOID *)&WinNtBusDevice
+                    sizeof (WIN_NT_BUS_DEVICE),
+                    (VOID *) &WinNtBusDevice
                     );
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
 
@@ -370,20 +387,21 @@ Returns:
     WinNtBusDevice->ControllerNameTable = NULL;
 
     EfiLibAddUnicodeString (
-      "eng", 
-      gWinNtBusDriverComponentName.SupportedLanguages, 
-      &WinNtBusDevice->ControllerNameTable, 
+      "eng",
+      gWinNtBusDriverComponentName.SupportedLanguages,
+      &WinNtBusDevice->ControllerNameTable,
       L"Windows Bus Controller"
       );
 
     Status = gBS->InstallMultipleProtocolInterfaces (
-                     &ControllerHandle,
-                     &gWinNtBusDriverGuid, WinNtBusDevice,
-                     NULL
-                     );
+                    &ControllerHandle,
+                    &gWinNtBusDriverGuid,
+                    WinNtBusDevice,
+                    NULL
+                    );
     if (EFI_ERROR (Status)) {
       EfiLibFreeUnicodeStringTable (WinNtBusDevice->ControllerNameTable);
-      gBS->FreePool (WinNtBusDevice);    
+      gBS->FreePool (WinNtBusDevice);
       return Status;
     }
   }
@@ -392,21 +410,22 @@ Returns:
   // Loop on the Variable list. Parse each variable to produce a set of handles that
   // represent virtual hardware devices.
   //
-  NoWinNtConsole = FALSE;
-  InstallStatus = EFI_NOT_FOUND;
-  for (Index = 0; mEnvironment[Index].Variable != NULL ; Index++) {
+  NoWinNtConsole  = FALSE;
+  InstallStatus   = EFI_NOT_FOUND;
+  for (Index = 0; mEnvironment[Index].Variable != NULL; Index++) {
     Result = WinNtThunk->GetEnvironmentVariable (
-                           mEnvironment[Index].Variable,
-                           (CHAR16 *)NtEnvironmentVariableBuffer, MAX_NT_ENVIRNMENT_VARIABLE_LENGTH
-                           );
+                          mEnvironment[Index].Variable,
+                          (CHAR16 *) NtEnvironmentVariableBuffer,
+                          MAX_NT_ENVIRNMENT_VARIABLE_LENGTH
+                          );
 
     //
     // We found the EFI_WIN_NT_PASS_THROUGH variable defined
     //
     if (EfiCompareGuid (mEnvironment[Index].DevicePathGuid, &gEfiWinNtPassThroughGuid) && (Result > 0)) {
       if (!gHostBridgeInit) {
-        StartString = (CHAR16 *)NtEnvironmentVariableBuffer;
-        Count = 0;
+        StartString = (CHAR16 *) NtEnvironmentVariableBuffer;
+        Count       = 0;
 
         while (*StartString != '\0') {
           //
@@ -462,10 +481,11 @@ Returns:
         if (EfiCompareGuid (mEnvironment[Index].DevicePathGuid, &gEfiWinNtConsoleGuid)) {
           NoWinNtConsole = TRUE;
         }
+
         continue;
       }
     } else {
-      StartString = (CHAR16 *)NtEnvironmentVariableBuffer;
+      StartString = (CHAR16 *) NtEnvironmentVariableBuffer;
     }
 
     //
@@ -483,24 +503,27 @@ Returns:
       while (*SubString != '\0' && *SubString != '!') {
         SubString++;
       }
+
       if (*SubString == '!') {
         //
-        // Replace token with '\0' to make sub strings. If this is the end 
+        // Replace token with '\0' to make sub strings. If this is the end
         //  of the string SubString will already point to NULL.
         //
         *SubString = '\0';
         SubString++;
-      } 
+      }
 
       CreateDevice = TRUE;
       if (RemainingDevicePath != NULL) {
-        CreateDevice = FALSE;
-        Node = (WIN_NT_VENDOR_DEVICE_PATH_NODE *)RemainingDevicePath;
+        CreateDevice  = FALSE;
+        Node          = (WIN_NT_VENDOR_DEVICE_PATH_NODE *) RemainingDevicePath;
         if (Node->VendorDevicePath.Header.Type == HARDWARE_DEVICE_PATH &&
             Node->VendorDevicePath.Header.SubType == HW_VENDOR_DP &&
-            DevicePathNodeLength(&Node->VendorDevicePath.Header) == sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)) {
+            DevicePathNodeLength (&Node->VendorDevicePath.Header) == sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)
+            ) {
           if (EfiCompareGuid (&Node->VendorDevicePath.Guid, mEnvironment[Index].DevicePathGuid) &&
-              Node->Instance == Count) {
+              Node->Instance == Count
+              ) {
             CreateDevice = TRUE;
           }
         }
@@ -513,29 +536,29 @@ Returns:
         //
         Status = gBS->AllocatePool (
                         EfiBootServicesData,
-                        sizeof(WIN_NT_IO_DEVICE), 
-                        (VOID *)&WinNtDevice
+                        sizeof (WIN_NT_IO_DEVICE),
+                        (VOID *) &WinNtDevice
                         );
-        if (EFI_ERROR(Status)) {
+        if (EFI_ERROR (Status)) {
           return EFI_OUT_OF_RESOURCES;
         }
 
-        WinNtDevice->Handle           = NULL;
-        WinNtDevice->ControllerHandle = ControllerHandle;
-        WinNtDevice->ParentDevicePath = ParentDevicePath;
+        WinNtDevice->Handle             = NULL;
+        WinNtDevice->ControllerHandle   = ControllerHandle;
+        WinNtDevice->ParentDevicePath   = ParentDevicePath;
 
         WinNtDevice->WinNtIo.WinNtThunk = WinNtThunk;
 
         //
-        // Plus 2 to account for the NULL at the end of the Unicode string     
+        // Plus 2 to account for the NULL at the end of the Unicode string
         //
-        StringSize = (UINTN)((UINT8 *)SubString - (UINT8 *)StartString) + 2;
-        Status = gBS->AllocatePool(
+        StringSize = (UINTN) ((UINT8 *) SubString - (UINT8 *) StartString) + 2;
+        Status = gBS->AllocatePool (
                         EfiBootServicesData,
-                        StringSize, 
-                        (VOID *)&WinNtDevice->WinNtIo.EnvString
+                        StringSize,
+                        (VOID *) &WinNtDevice->WinNtIo.EnvString
                         );
-        if (EFI_ERROR(Status)) {
+        if (EFI_ERROR (Status)) {
           WinNtDevice->WinNtIo.EnvString = NULL;
         } else {
           EfiCopyMem (WinNtDevice->WinNtIo.EnvString, StartString, StringSize);
@@ -544,35 +567,37 @@ Returns:
         WinNtDevice->ControllerNameTable = NULL;
 
         WinNtThunk->SPrintf (ComponentName, L"%s=%s", mEnvironment[Index].Variable, WinNtDevice->WinNtIo.EnvString);
-        
+
         WinNtDevice->DevicePath = WinNtBusCreateDevicePath (
-                                      ParentDevicePath, 
-                                      mEnvironment[Index].DevicePathGuid,
-                                      Count
-                                      );
+                                    ParentDevicePath,
+                                    mEnvironment[Index].DevicePathGuid,
+                                    Count
+                                    );
         if (WinNtDevice->DevicePath == NULL) {
           gBS->FreePool (WinNtDevice);
           return EFI_OUT_OF_RESOURCES;
         }
 
         EfiLibAddUnicodeString (
-          "eng", 
-          gWinNtBusDriverComponentName.SupportedLanguages, 
-          &WinNtDevice->ControllerNameTable, 
+          "eng",
+          gWinNtBusDriverComponentName.SupportedLanguages,
+          &WinNtDevice->ControllerNameTable,
           ComponentName
           );
 
-        WinNtDevice->WinNtIo.TypeGuid = mEnvironment[Index].DevicePathGuid;
+        WinNtDevice->WinNtIo.TypeGuid       = mEnvironment[Index].DevicePathGuid;
         WinNtDevice->WinNtIo.InstanceNumber = Count;
 
-        WinNtDevice->Signature = WIN_NT_IO_DEVICE_SIGNATURE;
-    
+        WinNtDevice->Signature              = WIN_NT_IO_DEVICE_SIGNATURE;
+
         Status = gBS->InstallMultipleProtocolInterfaces (
-                         &WinNtDevice->Handle,            
-                         &gEfiDevicePathProtocolGuid, WinNtDevice->DevicePath,
-                         &gEfiWinNtIoProtocolGuid,    &WinNtDevice->WinNtIo,
-                         NULL
-                         );
+                        &WinNtDevice->Handle,
+                        &gEfiDevicePathProtocolGuid,
+                        WinNtDevice->DevicePath,
+                        &gEfiWinNtIoProtocolGuid,
+                        &WinNtDevice->WinNtIo,
+                        NULL
+                        );
         if (EFI_ERROR (Status)) {
           EfiLibFreeUnicodeStringTable (WinNtDevice->ControllerNameTable);
           gBS->FreePool (WinNtDevice);
@@ -581,11 +606,11 @@ Returns:
           // Open For Child Device
           //
           Status = gBS->OpenProtocol (
-                          ControllerHandle,   
-                          &gEfiWinNtThunkProtocolGuid,  
+                          ControllerHandle,
+                          &gEfiWinNtThunkProtocolGuid,
                           &WinNtThunk,
-                          This->DriverBindingHandle,     
-                          WinNtDevice->Handle,   
+                          This->DriverBindingHandle,
+                          WinNtDevice->Handle,
                           EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                           );
           if (!EFI_ERROR (Status)) {
@@ -605,12 +630,12 @@ Returns:
   gDeviceHandle = WinNtThunk->CreateFile (
                                 L"\\\\.\\DeviceUnderDevelopment", // Open the Kernel driver "file"/IOCTL
                                 GENERIC_READ,                     // Open the interface Read-Only
-                                FILE_SHARE_READ,                  // Allow others to get Read-Only access 
+                                FILE_SHARE_READ,                  // Allow others to get Read-Only access
                                 NULL,                             // Default security options
                                 OPEN_EXISTING,                    // Succeeds only if Kernel driver exported interface
                                 0,                                // Not used for non-file objects
                                 NULL                              // No template since not opening a real file
-                                ); 
+                                );
 
   //
   // Did we successfully open the IOCTL?
@@ -648,14 +673,21 @@ Returns:
     None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ControllerHandle - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                 Status;
-  UINTN                      Index;
-  BOOLEAN                    AllChildrenStopped;
-  EFI_WIN_NT_IO_PROTOCOL     *WinNtIo;
-  WIN_NT_BUS_DEVICE          *WinNtBusDevice;
-  WIN_NT_IO_DEVICE           *WinNtDevice;
-  EFI_WIN_NT_THUNK_PROTOCOL  *WinNtThunk;
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  BOOLEAN                   AllChildrenStopped;
+  EFI_WIN_NT_IO_PROTOCOL    *WinNtIo;
+  WIN_NT_BUS_DEVICE         *WinNtBusDevice;
+  WIN_NT_IO_DEVICE          *WinNtDevice;
+  EFI_WIN_NT_THUNK_PROTOCOL *WinNtThunk;
 
   //
   // Complete all outstanding transactions to Controller.
@@ -667,11 +699,11 @@ Returns:
     // Close the bus driver
     //
     Status = gBS->OpenProtocol (
-                    ControllerHandle,   
-                    &gWinNtBusDriverGuid,  
+                    ControllerHandle,
+                    &gWinNtBusDriverGuid,
                     &WinNtBusDevice,
-                    This->DriverBindingHandle,             
-                    ControllerHandle,   
+                    This->DriverBindingHandle,
+                    ControllerHandle,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (EFI_ERROR (Status)) {
@@ -679,29 +711,29 @@ Returns:
     }
 
     gBS->UninstallMultipleProtocolInterfaces (
-           ControllerHandle,
-           &gWinNtBusDriverGuid, WinNtBusDevice,
-           NULL
-           );
-
+          ControllerHandle,
+          &gWinNtBusDriverGuid,
+          WinNtBusDevice,
+          NULL
+          );
 
     EfiLibFreeUnicodeStringTable (WinNtBusDevice->ControllerNameTable);
 
     gBS->FreePool (WinNtBusDevice);
 
     gBS->CloseProtocol (
-           ControllerHandle, 
-           &gEfiWinNtThunkProtocolGuid, 
-           This->DriverBindingHandle, 
-           ControllerHandle
-           );
+          ControllerHandle,
+          &gEfiWinNtThunkProtocolGuid,
+          This->DriverBindingHandle,
+          ControllerHandle
+          );
 
     gBS->CloseProtocol (
-           ControllerHandle, 
-           &gEfiDevicePathProtocolGuid, 
-           This->DriverBindingHandle, 
-           ControllerHandle
-           );
+          ControllerHandle,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          ControllerHandle
+          );
     return EFI_SUCCESS;
   }
 
@@ -710,11 +742,11 @@ Returns:
   for (Index = 0; Index < NumberOfChildren; Index++) {
 
     Status = gBS->OpenProtocol (
-                    ChildHandleBuffer[Index],   
-                    &gEfiWinNtIoProtocolGuid,  
+                    ChildHandleBuffer[Index],
+                    &gEfiWinNtIoProtocolGuid,
                     &WinNtIo,
-                    This->DriverBindingHandle,             
-                    ControllerHandle,   
+                    This->DriverBindingHandle,
+                    ControllerHandle,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (!EFI_ERROR (Status)) {
@@ -722,28 +754,30 @@ Returns:
       WinNtDevice = WIN_NT_IO_DEVICE_FROM_THIS (WinNtIo);
 
       Status = gBS->CloseProtocol (
-                      ControllerHandle, 
-                      &gEfiWinNtThunkProtocolGuid, 
-                      This->DriverBindingHandle, 
+                      ControllerHandle,
+                      &gEfiWinNtThunkProtocolGuid,
+                      This->DriverBindingHandle,
                       WinNtDevice->Handle
                       );
 
       Status = gBS->UninstallMultipleProtocolInterfaces (
-                      WinNtDevice->Handle, 
-                      &gEfiDevicePathProtocolGuid, WinNtDevice->DevicePath,
-                      &gEfiWinNtIoProtocolGuid,    &WinNtDevice->WinNtIo,
+                      WinNtDevice->Handle,
+                      &gEfiDevicePathProtocolGuid,
+                      WinNtDevice->DevicePath,
+                      &gEfiWinNtIoProtocolGuid,
+                      &WinNtDevice->WinNtIo,
                       NULL
                       );
 
       if (EFI_ERROR (Status)) {
         gBS->OpenProtocol (
-               ControllerHandle,   
-               &gEfiWinNtThunkProtocolGuid,  
-               (VOID **)&WinNtThunk,
-               This->DriverBindingHandle,     
-               WinNtDevice->Handle,   
-               EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-               );
+              ControllerHandle,
+              &gEfiWinNtThunkProtocolGuid,
+              (VOID **) &WinNtThunk,
+              This->DriverBindingHandle,
+              WinNtDevice->Handle,
+              EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+              );
       } else {
         //
         // Close the child handle
@@ -753,20 +787,20 @@ Returns:
       }
     }
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       AllChildrenStopped = FALSE;
     }
   }
 
   if (!AllChildrenStopped) {
     return EFI_DEVICE_ERROR;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
-WinNtBusCreateDevicePath ( 
+WinNtBusCreateDevicePath (
   IN  EFI_DEVICE_PATH_PROTOCOL  *RootDevicePath,
   IN  EFI_GUID                  *Guid,
   IN  UINT16                    InstanceNumber
@@ -792,24 +826,24 @@ Returns:
 --*/
 {
   WIN_NT_VENDOR_DEVICE_PATH_NODE  DevicePath;
-  
+
   DevicePath.VendorDevicePath.Header.Type     = HARDWARE_DEVICE_PATH;
   DevicePath.VendorDevicePath.Header.SubType  = HW_VENDOR_DP;
-  SetDevicePathNodeLength(&DevicePath.VendorDevicePath.Header, sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE));
+  SetDevicePathNodeLength (&DevicePath.VendorDevicePath.Header, sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE));
 
   //
   // The GUID defines the Class
   //
-  EfiCopyMem (&DevicePath.VendorDevicePath.Guid, Guid, sizeof(EFI_GUID));
+  EfiCopyMem (&DevicePath.VendorDevicePath.Guid, Guid, sizeof (EFI_GUID));
 
   //
-  // Add an instance number so we can make sure there are no Device Path 
+  // Add an instance number so we can make sure there are no Device Path
   // duplication.
   //
   DevicePath.Instance = InstanceNumber;
 
   return EfiAppendDevicePathNode (
-          RootDevicePath, 
-          (EFI_DEVICE_PATH_PROTOCOL *)&DevicePath
+          RootDevicePath,
+          (EFI_DEVICE_PATH_PROTOCOL *) &DevicePath
           );
 }

@@ -35,9 +35,9 @@ static WIN_NT_THUNK_DEVICE_PATH mWinNtThunkDevicePath = {
   {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8) (sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8) ((sizeof(VENDOR_DEVICE_PATH)) >> 8),
-    EFI_WIN_NT_THUNK_PROTOCOL_GUID, 
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
+    EFI_WIN_NT_THUNK_PROTOCOL_GUID,
   },
   {
     END_DEVICE_PATH_TYPE,
@@ -47,7 +47,7 @@ static WIN_NT_THUNK_DEVICE_PATH mWinNtThunkDevicePath = {
   }
 };
 
-EFI_DRIVER_ENTRY_POINT(InitializeWinNtThunk)
+EFI_DRIVER_ENTRY_POINT (InitializeWinNtThunk)
 
 EFI_STATUS
 InitializeWinNtThunk (
@@ -67,18 +67,22 @@ Returns:
                 gBS->InstallMultiProtocolInterfaces().
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_STATUS  Status;
   EFI_HANDLE  ControllerHandle;
 
-  EfiInitializeDriverLib      (ImageHandle, SystemTable);
+  EfiInitializeDriverLib (ImageHandle, SystemTable);
   EfiInitializeWinNtDriverLib (ImageHandle, SystemTable);
 
   ControllerHandle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
-                  &ControllerHandle,                         
-                  &gEfiWinNtThunkProtocolGuid, gWinNt,
-                  &gEfiDevicePathProtocolGuid, &mWinNtThunkDevicePath,
+                  &ControllerHandle,
+                  &gEfiWinNtThunkProtocolGuid,
+                  gWinNt,
+                  &gEfiDevicePathProtocolGuid,
+                  &mWinNtThunkDevicePath,
                   NULL
                   );
 

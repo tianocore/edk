@@ -31,11 +31,13 @@ Abstract:
 #define _WIN_NT_THUNK_H_
 
 #define EFI_WIN_NT_THUNK_PROTOCOL_GUID \
-  { 0x58c518b1, 0x76f3, 0x11d4, 0xbc, 0xea, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 }
+  { \
+    0x58c518b1, 0x76f3, 0x11d4, 0xbc, 0xea, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 \
+  }
 
 //
-// The following APIs require EfiWinNT.h. In some environmnets the GUID 
-// definitions are needed but the EfiWinNT.h is not included. 
+// The following APIs require EfiWinNT.h. In some environmnets the GUID
+// definitions are needed but the EfiWinNT.h is not included.
 // EfiWinNT.h is needed to support WINDOWS API requirements.
 //
 #ifdef _EFI_WIN_NT_H_
@@ -49,47 +51,47 @@ VOID
 
 typedef
 WINBASEAPI
-DWORD 
+DWORD
 (WINAPI *WinNtSuspendThread) (
   HANDLE hThread
-  ); 
+  );
 
 typedef
 WINBASEAPI
-HANDLE 
+HANDLE
 (WINAPI *WinNtGetCurrentThread) (
   VOID
   );
 
 typedef
 WINBASEAPI
-DWORD 
+DWORD
 (WINAPI *WinNtGetCurrentThreadId) (
   VOID
   );
 
 typedef
 WINBASEAPI
-HANDLE 
+HANDLE
 (WINAPI *WinNtGetCurrentProcess) (
   VOID
   );
 
 typedef
 WINBASEAPI
-HANDLE 
+HANDLE
 (WINAPI *WinNtCreateThread) (
-  LPSECURITY_ATTRIBUTES   lpThreadAttributes, 
-  DWORD                   dwStackSize, 
-  LPTHREAD_START_ROUTINE  lpStartAddress, 
-  LPVOID                  lpParameter, 
-  DWORD                   dwCreationFlags, 
+  LPSECURITY_ATTRIBUTES   lpThreadAttributes,
+  DWORD                   dwStackSize,
+  LPTHREAD_START_ROUTINE  lpStartAddress,
+  LPVOID                  lpParameter,
+  DWORD                   dwCreationFlags,
   LPDWORD                 lpThreadId
   );
 
 typedef
 WINBASEAPI
-BOOL 
+BOOL
 (WINAPI *WinNtTerminateThread) (
   HANDLE hThread,
   DWORD  dwExitCode
@@ -97,7 +99,7 @@ BOOL
 
 typedef
 WINBASEAPI
-BOOL 
+BOOL
 (WINAPI *WinNtSendMessage) (
   HWND    hWnd,
   UINT    Msg,
@@ -107,25 +109,25 @@ BOOL
 
 typedef
 WINBASEAPI
-VOID 
+VOID
 (WINAPI *WinNtExitThread) (
   DWORD   dwExitCode
   );
 
 typedef
 WINBASEAPI
-DWORD 
-(WINAPI *WinNtResumeThread) ( 
-  HANDLE hThread 
-  ); 
+DWORD
+(WINAPI *WinNtResumeThread) (
+  HANDLE hThread
+  );
 
 typedef
 WINBASEAPI
-BOOL 
-(WINAPI *WinNtSetThreadPriority) ( 
-  HANDLE    hThread, 
+BOOL
+(WINAPI *WinNtSetThreadPriority) (
+  HANDLE    hThread,
   INTN      nPriority
-  ); 
+  );
 
 typedef
 WINBASEAPI
@@ -145,18 +147,17 @@ typedef
 WINBASEAPI
 VOID
 (WINAPI *WinNtEnterCriticalSection) (
-  LPCRITICAL_SECTION lpCriticalSection 
+  LPCRITICAL_SECTION lpCriticalSection
   );
 
 typedef
 WINBASEAPI
 VOID
 (WINAPI *WinNtLeaveCriticalSection) (
-  LPCRITICAL_SECTION lpCriticalSection 
+  LPCRITICAL_SECTION lpCriticalSection
   );
 
-
-typedef 
+typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtTlsAlloc) (
@@ -174,7 +175,7 @@ typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtTlsSetValue) (
-  DWORD dwTlsIndex,
+  DWORD  dwTlsIndex,
   LPVOID lpTlsValue
   );
 
@@ -185,17 +186,17 @@ BOOL
   DWORD dwTlsIndex
   );
 
-typedef 
+typedef
 WINBASEAPI
 HANDLE
 (WINAPI *WinNtCreateSemaphore) (
   LPSECURITY_ATTRIBUTES lpSemaphoreAttributes,
-  LONG lInitialCount,
-  LONG lMaximumCount,
-  LPCWSTR lpName
+  LONG                  lInitialCount,
+  LONG                  lMaximumCount,
+  LPCWSTR               lpName
   );
 
-typedef 
+typedef
 WINBASEAPI
 DWORD
 (WINAPI *WinNtWaitForSingleObject) (
@@ -203,7 +204,7 @@ DWORD
   DWORD   dwMilliseconds
   );
 
-typedef 
+typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtReleaseSemaphore) (
@@ -211,21 +212,19 @@ BOOL
   LONG    lReleaseCount,
   LPLONG  lpPreviousCount
   );
-                         
 
 typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtDuplicateHandle) (
-  HANDLE hSourceProcessHandle,
-  HANDLE hSourceHandle,
-  HANDLE hTargetProcessHandle,
+  HANDLE   hSourceProcessHandle,
+  HANDLE   hSourceHandle,
+  HANDLE   hTargetProcessHandle,
   LPHANDLE lpTargetHandle,
-  DWORD dwDesiredAccess,
-  BOOL bInheritHandle,
-  DWORD dwOptions
+  DWORD    dwDesiredAccess,
+  BOOL     bInheritHandle,
+  DWORD    dwOptions
   );
-
 
 typedef
 WINBASEAPI
@@ -263,7 +262,6 @@ BOOL
   COORD   WriteCoord,
   LPDWORD NumberOfAttrsWritten
   );
-  
 
 typedef
 WINBASEAPI
@@ -328,7 +326,6 @@ BOOL
   HANDLE  Process,
   DWORD   PriorityClass
   );
-
 
 typedef
 WINBASEAPI
@@ -398,7 +395,7 @@ HANDLE
 
 typedef
 WINBASEAPI
-BOOL 
+BOOL
 (WINAPI *WinNtDeviceIoControl) (
   HANDLE                DeviceHandle,
   DWORD                 IoControlCode,
@@ -414,36 +411,31 @@ typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtCreateDirectory) (
-  LPCWSTR               PathName,  
-  LPSECURITY_ATTRIBUTES SecurityAttributes  
+  LPCWSTR               PathName,
+  LPSECURITY_ATTRIBUTES SecurityAttributes
   );
-  
-  
+
 typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtRemoveDirectory) (
   LPCWSTR               PathName
   );
-  
-  
+
 typedef
 WINBASEAPI
 DWORD
 (WINAPI *WinNtGetFileAttributes) (
   LPCWSTR               FileName
   );
-  
-  
+
 typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtSetFileAttributes) (
   LPCWSTR               FileName,
   DWORD                 FileAttributes
-  );  
-  
-  
+  );
 
 typedef
 WINBASEAPI
@@ -485,7 +477,6 @@ BOOL
   HANDLE    Object
   );
 
-
 typedef
 WINBASEAPI
 DWORD
@@ -493,7 +484,7 @@ DWORD
   HANDLE    FileHandle,
   LONG      DistanceToMove,
   PLONG     DistanceToHoveHigh,
-  DWORD     MoveMethod    
+  DWORD     MoveMethod
   );
 
 typedef
@@ -562,7 +553,6 @@ BOOL
   LPCTSTR     NewFileName
   );
 
-
 typedef
 WINBASEAPI
 BOOL
@@ -572,16 +562,14 @@ BOOL
   FILETIME    *LastAccessTime,
   FILETIME    *LastWriteTime
   );
-  
-  
+
 typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtSystemTimeToFileTime) (
-  SYSTEMTIME  *SystemTime,
-  FILETIME    *FileTime
-  );  
-
+  SYSTEMTIME  * SystemTime,
+  FILETIME    * FileTime
+  );
 
 typedef
 WINBASEAPI
@@ -594,6 +582,7 @@ typedef
 WINBASEAPI
 BOOL
 (WINAPI *WinNtFlushFileBuffers) (
+  HANDLE
   );
 
 typedef
@@ -603,12 +592,12 @@ DWORD
   VOID
   );
 
-typedef 
+typedef
 WINBASEAPI
 UINT
 (WINAPI *WinNtSetErrorMode) (
-    UINT  Mode
-    );
+  UINT  Mode
+  );
 
 typedef
 WINBASEAPI
@@ -631,24 +620,24 @@ WINBASEAPI
 FARPROC
 (WINAPI *WinNtGetProcAddress) (
   HMODULE Module,
-  LPCSTR  ProcName  
+  LPCSTR  ProcName
   );
 
 typedef
 WINBASEAPI
 DWORD
 (WINAPI *WinNtGetTimeZoneInformation) (
-  LPTIME_ZONE_INFORMATION timeZoneInformation  
+  LPTIME_ZONE_INFORMATION timeZoneInformation
   );
-  
+
 typedef
 WINBASEAPI
 MMRESULT
 (WINAPI *WinNttimeSetEvent) (
-  UINT           uDelay,      
-  UINT           uResolution, 
-  LPTIMECALLBACK lpTimeProc,  
-  DWORD_PTR      dwUser,      
+  UINT           uDelay,
+  UINT           uResolution,
+  LPTIMECALLBACK lpTimeProc,
+  DWORD_PTR      dwUser,
   UINT           fuEvent
   );
 
@@ -659,12 +648,11 @@ MMRESULT
   UINT           uTimerID
   );
 
-
 typedef
 WINBASEAPI
 DWORD
 (WINAPI *WinNtSetTimeZoneInformation) (
-  LPTIME_ZONE_INFORMATION timeZoneInformation  
+  LPTIME_ZONE_INFORMATION timeZoneInformation
   );
 
 typedef
@@ -768,10 +756,10 @@ BOOL
 
 typedef
 WINBASEAPI
-VOID 
+VOID
 (WINAPI *WinNtExitProcess) (
-  UINT uExitCode   // exit code for all threads
-);
+  UINT uExitCode  // exit code for all threads
+  );
 
 typedef
 WINBASEAPI
@@ -808,10 +796,10 @@ BOOL
 
 typedef
 WINUSERAPI
-INT32 
+INT32
 (WINAPIV *WinNtSprintf) (
-  LPWSTR    Buffer, 
-  LPCWSTR   String, 
+  LPWSTR    Buffer,
+  LPCWSTR   String,
   ...
   );
 
@@ -858,13 +846,13 @@ typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtShowWindow) (
-  HWND      hWnd,
+  HWND        hWnd,
   INT32       nCmdShow
   );
 
 typedef
 WINGDIAPI
-BOOL  
+BOOL
 (WINAPI *WinNtDestroyWindow) (
   HWND    hWnd
   );
@@ -888,45 +876,45 @@ typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtAdjustWindowRect) (
-  LPRECT  lpRect, 
+  LPRECT  lpRect,
   DWORD   dwStyle,
   BOOL    bMenu
   );
 
 typedef
-WINGDIAPI 
-INT32   
+WINGDIAPI
+INT32
 (WINAPI *WinNtSetDIBitsToDevice) (
-  HDC, 
-  INT32, 
-  INT32, 
-  DWORD, 
-  DWORD, 
+  HDC,
   INT32,
-  INT32, 
-  UINT, 
-  UINT, 
-  CONST VOID *, 
-  CONST BITMAPINFO *, 
+  INT32,
+  DWORD,
+  DWORD,
+  INT32,
+  INT32,
+  UINT,
+  UINT,
+  CONST VOID       *,
+  CONST BITMAPINFO *,
   UINT
   );
 
 typedef
-WINGDIAPI 
-BOOL  
+WINGDIAPI
+BOOL
 (WINAPI *WinNtBitBlt) (
-  HDC, 
-  INT32, 
-  INT32, 
-  INT32, 
-  INT32, 
-  HDC, 
-  INT32, 
-  INT32, 
+  HDC,
+  INT32,
+  INT32,
+  INT32,
+  INT32,
+  HDC,
+  INT32,
+  INT32,
   DWORD
   );
 
-typedef 
+typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtInvalidateRect) (
@@ -935,14 +923,14 @@ BOOL
   BOOL        bErase
   );
 
-typedef 
+typedef
 WINUSERAPI
 HDC
 (WINAPI *WinNtGetDC) (
   HWND    hWnd
   );
 
-typedef 
+typedef
 WINUSERAPI
 INT32
 (WINAPI *WinNtReleaseDC) (
@@ -961,11 +949,11 @@ typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtUnregisterClass) (
-  LPCTSTR lpClassName,
+  LPCTSTR   lpClassName,
   HINSTANCE hInstance
-);
- 
-typedef 
+  );
+
+typedef
 WINUSERAPI
 HDC
 (WINAPI *WinNtBeginPaint) (
@@ -981,14 +969,14 @@ BOOL
   CONST PAINTSTRUCT   *lpPaint
   );
 
-typedef 
+typedef
 WINUSERAPI
 VOID
 (WINAPI *WinNtPostQuitMessage) (
   INT32   nExitCode
   );
 
-typedef 
+typedef
 WINUSERAPI
 LRESULT
 (WINAPI *WinNtDefWindowProc) (
@@ -1015,51 +1003,52 @@ HCURSOR
   );
 
 typedef
-WINGDIAPI 
-HGDIOBJ 
+WINGDIAPI
+HGDIOBJ
 (WINAPI *WinNtGetStockObject) (
-  INT32       
+  INT32
   );
 
 typedef
-WINGDIAPI 
-BOOL  
+WINGDIAPI
+BOOL
 (WINAPI *WinNtSetViewportOrgEx) (
-  HDC, 
-  INT32, 
-  INT32, 
+  HDC,
+  INT32,
+  INT32,
   LPPOINT
   );
 
 typedef
-WINGDIAPI 
-BOOL  
+WINGDIAPI
+BOOL
 (WINAPI *WinNtSetWindowOrgEx) (
-  HDC, 
-  INT32, 
-  INT32, 
+  HDC,
+  INT32,
+  INT32,
   LPPOINT
   );
 typedef
-WINGDIAPI 
-BOOL (WINAPI *WinNtMoveWindow) (
+WINGDIAPI
+BOOL
+(WINAPI *WinNtMoveWindow) (
   HWND,
   INT32,
   INT32,
   INT32,
   INT32,
   BOOL
-);
+  );
 
 typedef
-WINGDIAPI 
-BOOL (WINAPI *WinNtGetWindowRect) (
+WINGDIAPI
+BOOL
+(WINAPI *WinNtGetWindowRect) (
   HWND,
   LPRECT
-);
+  );
 
-
-typedef 
+typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtGetMessage) (
@@ -1069,26 +1058,26 @@ BOOL
   UINT      wMsgFilterMax
   );
 
-typedef 
+typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtTranslateMessage) (
   CONST MSG *lpMsg
   );
 
-typedef 
+typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtDispatchMessage) (
   CONST MSG *lpMsg
   );
 
-typedef 
+typedef
 WINUSERAPI
 HANDLE
 (WINAPI *WinNtGetProcessHeap) ();
 
-typedef 
+typedef
 WINUSERAPI
 LPVOID
 (WINAPI *WinNtHeapAlloc) (
@@ -1097,7 +1086,7 @@ LPVOID
   SIZE_T  dwBytes
   );
 
-typedef 
+typedef
 WINUSERAPI
 BOOL
 (WINAPI *WinNtHeapFree) (
@@ -1115,10 +1104,9 @@ BOOL
 //
 //
 //
-
 EFI_FORWARD_DECLARATION (EFI_WIN_NT_THUNK_PROTOCOL);
 
-#define EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE  EFI_SIGNATURE_32('N', 'T', 'T', 'T')
+#define EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE EFI_SIGNATURE_32 ('N', 'T', 'T', 'T')
 
 typedef struct _EFI_WIN_NT_THUNK_PROTOCOL {
   UINT64                              Signature;
@@ -1127,9 +1115,9 @@ typedef struct _EFI_WIN_NT_THUNK_PROTOCOL {
   // Win32 Process APIs
   //
   WinNtGetProcAddress                 GetProcAddress;
-  WinNtGetTickCount                   GetTickCount; 
-  WinNtLoadLibraryEx                  LoadLibraryEx; 
-  WinNtFreeLibrary                      FreeLibrary;
+  WinNtGetTickCount                   GetTickCount;
+  WinNtLoadLibraryEx                  LoadLibraryEx;
+  WinNtFreeLibrary                    FreeLibrary;
 
   WinNtSetPriorityClass               SetPriorityClass;
   WinNtSetThreadPriority              SetThreadPriority;
@@ -1168,44 +1156,44 @@ typedef struct _EFI_WIN_NT_THUNK_PROTOCOL {
   WinNtFillConsoleOutputAttribute     FillConsoleOutputAttribute;
   WinNtFillConsoleOutputCharacter     FillConsoleOutputCharacter;
   WinNtGetConsoleCursorInfo           GetConsoleCursorInfo;
-  WinNtGetNumberOfConsoleInputEvents  GetNumberOfConsoleInputEvents; 
-  WinNtPeekConsoleInput               PeekConsoleInput; 
+  WinNtGetNumberOfConsoleInputEvents  GetNumberOfConsoleInputEvents;
+  WinNtPeekConsoleInput               PeekConsoleInput;
   WinNtScrollConsoleScreenBuffer      ScrollConsoleScreenBuffer;
-  WinNtReadConsoleInput               ReadConsoleInput; 
+  WinNtReadConsoleInput               ReadConsoleInput;
 
   WinNtSetConsoleActiveScreenBuffer   SetConsoleActiveScreenBuffer;
   WinNtSetConsoleCursorInfo           SetConsoleCursorInfo;
-  WinNtSetConsoleCursorPosition       SetConsoleCursorPosition; 
+  WinNtSetConsoleCursorPosition       SetConsoleCursorPosition;
   WinNtSetConsoleScreenBufferSize     SetConsoleScreenBufferSize;
   WinNtSetConsoleTitleW               SetConsoleTitleW;
-  WinNtWriteConsoleInput              WriteConsoleInput; 
+  WinNtWriteConsoleInput              WriteConsoleInput;
   WinNtWriteConsoleOutput             WriteConsoleOutput;
 
   //
   // Win32 File APIs
   //
-  WinNtCreateFile                     CreateFile; 
+  WinNtCreateFile                     CreateFile;
   WinNtDeviceIoControl                DeviceIoControl;
   WinNtCreateDirectory                CreateDirectory;
   WinNtRemoveDirectory                RemoveDirectory;
   WinNtGetFileAttributes              GetFileAttributes;
   WinNtSetFileAttributes              SetFileAttributes;
-  WinNtCreateFileMapping              CreateFileMapping; 
-  WinNtCloseHandle                    CloseHandle; 
-  WinNtDeleteFile                     DeleteFile; 
+  WinNtCreateFileMapping              CreateFileMapping;
+  WinNtCloseHandle                    CloseHandle;
+  WinNtDeleteFile                     DeleteFile;
   WinNtFindFirstFile                  FindFirstFile;
-  WinNtFindNextFile                   FindNextFile; 
+  WinNtFindNextFile                   FindNextFile;
   WinNtFindClose                      FindClose;
-  WinNtFlushFileBuffers               FlushFileBuffers; 
-  WinNtGetEnvironmentVariable         GetEnvironmentVariable; 
-  WinNtGetLastError                   GetLastError; 
-  WinNtSetErrorMode                   SetErrorMode; 
-  WinNtGetStdHandle                   GetStdHandle; 
-  WinNtMapViewOfFileEx                MapViewOfFileEx; 
-  WinNtReadFile                       ReadFile; 
-  WinNtSetEndOfFile                   SetEndOfFile; 
-  WinNtSetFilePointer                 SetFilePointer; 
-  WinNtWriteFile                      WriteFile; 
+  WinNtFlushFileBuffers               FlushFileBuffers;
+  WinNtGetEnvironmentVariable         GetEnvironmentVariable;
+  WinNtGetLastError                   GetLastError;
+  WinNtSetErrorMode                   SetErrorMode;
+  WinNtGetStdHandle                   GetStdHandle;
+  WinNtMapViewOfFileEx                MapViewOfFileEx;
+  WinNtReadFile                       ReadFile;
+  WinNtSetEndOfFile                   SetEndOfFile;
+  WinNtSetFilePointer                 SetFilePointer;
+  WinNtWriteFile                      WriteFile;
   WinNtGetFileInformationByHandle     GetFileInformationByHandle;
   WinNtGetDiskFreeSpace               GetDiskFreeSpace;
   WinNtGetDiskFreeSpaceEx             GetDiskFreeSpaceEx;
@@ -1216,13 +1204,13 @@ typedef struct _EFI_WIN_NT_THUNK_PROTOCOL {
   //
   // Win32 Time APIs
   //
-  WinNtFileTimeToLocalFileTime        FileTimeToLocalFileTime; 
-  WinNtFileTimeToSystemTime           FileTimeToSystemTime; 
-  WinNtGetSystemTime                  GetSystemTime; 
-  WinNtSetSystemTime                  SetSystemTime; 
-  WinNtGetLocalTime                   GetLocalTime; 
-  WinNtSetLocalTime                   SetLocalTime; 
-  WinNtGetTimeZoneInformation         GetTimeZoneInformation; 
+  WinNtFileTimeToLocalFileTime        FileTimeToLocalFileTime;
+  WinNtFileTimeToSystemTime           FileTimeToSystemTime;
+  WinNtGetSystemTime                  GetSystemTime;
+  WinNtSetSystemTime                  SetSystemTime;
+  WinNtGetLocalTime                   GetLocalTime;
+  WinNtSetLocalTime                   SetLocalTime;
+  WinNtGetTimeZoneInformation         GetTimeZoneInformation;
   WinNtSetTimeZoneInformation         SetTimeZoneInformation;
   WinNttimeSetEvent                   timeSetEvent;
   WinNttimeKillEvent                  timeKillEvent;
@@ -1230,14 +1218,14 @@ typedef struct _EFI_WIN_NT_THUNK_PROTOCOL {
   //
   // Win32 Serial APIs
   //
-  WinNtClearCommError                 ClearCommError; 
-  WinNtEscapeCommFunction             EscapeCommFunction; 
-  WinNtGetCommModemStatus             GetCommModemStatus; 
-  WinNtGetCommState                   GetCommState; 
-  WinNtSetCommState                   SetCommState; 
-  WinNtPurgeComm                      PurgeComm; 
-  WinNtSetCommTimeouts                SetCommTimeouts; 
-  
+  WinNtClearCommError                 ClearCommError;
+  WinNtEscapeCommFunction             EscapeCommFunction;
+  WinNtGetCommModemStatus             GetCommModemStatus;
+  WinNtGetCommState                   GetCommState;
+  WinNtSetCommState                   SetCommState;
+  WinNtPurgeComm                      PurgeComm;
+  WinNtSetCommTimeouts                SetCommTimeouts;
+
   WinNtExitProcess                    ExitProcess;
 
   WinNtSprintf                        SPrintf;
@@ -1270,7 +1258,6 @@ typedef struct _EFI_WIN_NT_THUNK_PROTOCOL {
   WinNtSetWindowOrgEx                 SetWindowOrgEx;
   WinNtMoveWindow                     MoveWindow;
   WinNtGetWindowRect                  GetWindowRect;
-
 
   WinNtGetMessage                     GetMessage;
   WinNtTranslateMessage               TranslateMessage;

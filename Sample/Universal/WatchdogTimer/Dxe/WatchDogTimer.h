@@ -40,26 +40,30 @@ EFIAPI
 WatchdogTimerDriverRegisterHandler (
   IN EFI_WATCHDOG_TIMER_ARCH_PROTOCOL  *This,
   IN EFI_WATCHDOG_TIMER_NOTIFY         NotifyFunction
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 WatchdogTimerDriverSetTimerPeriod (
   IN EFI_WATCHDOG_TIMER_ARCH_PROTOCOL  *This,
   IN UINT64                            TimerPeriod
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 WatchdogTimerDriverGetTimerPeriod (
   IN EFI_WATCHDOG_TIMER_ARCH_PROTOCOL  *This,
   IN UINT64                            *TimerPeriod
-  );
+  )
+;
 
 EFI_STATUS
 WatchdogTimerDriverInitialize (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-  );
+  )
+;
 
 #endif

@@ -46,15 +46,13 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (FileSystemInfo)
 #include EFI_PROTOCOL_DEFINITION (FileSystemVolumeLabelInfo)
 
-#define FILENAME_BUFFER_SIZE                        80
-
 #define WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE_SIGNATURE EFI_SIGNATURE_32 ('N', 'T', 'f', 's')
 
 typedef struct {
   UINTN                           Signature;
   EFI_WIN_NT_THUNK_PROTOCOL       *WinNtThunk;
   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL SimpleFileSystem;
-  CHAR16                          FilePath[FILENAME_BUFFER_SIZE];
+  CHAR16                          *FilePath;
   CHAR16                          *VolumeLabel;
   EFI_UNICODE_STRING_TABLE        *ControllerNameTable;
 } WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE;
@@ -179,7 +177,7 @@ WinNtSimpleFileSystemDriverBindingStop (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  TODO: Add function description
 
 Arguments:
 

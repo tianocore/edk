@@ -26,12 +26,12 @@ Revision History
 //
 // Handle for the Watchdog Timer Architectural Protocol instance produced by this driver
 //
-EFI_HANDLE mWatchdogTimerHandle = NULL;
+EFI_HANDLE                        mWatchdogTimerHandle = NULL;
 
 //
 // The Watchdog Timer Architectural Protocol instance produced by this driver
 //
-EFI_WATCHDOG_TIMER_ARCH_PROTOCOL mWatchdogTimer = {
+EFI_WATCHDOG_TIMER_ARCH_PROTOCOL  mWatchdogTimer = {
   WatchdogTimerDriverRegisterHandler,
   WatchdogTimerDriverSetTimerPeriod,
   WatchdogTimerDriverGetTimerPeriod
@@ -40,22 +40,21 @@ EFI_WATCHDOG_TIMER_ARCH_PROTOCOL mWatchdogTimer = {
 //
 // The watchdog timer period in 100 nS units
 //
-UINT64  mWatchdogTimerPeriod = 0;
+UINT64                            mWatchdogTimerPeriod = 0;
 
 //
 // The notification function to call if the watchdig timer fires
 //
-EFI_WATCHDOG_TIMER_NOTIFY mWatchdogTimerNotifyFunction = NULL;
+EFI_WATCHDOG_TIMER_NOTIFY         mWatchdogTimerNotifyFunction = NULL;
 
 //
 // The one-shot timer event that is armed when the watchdog timer is enabled
 //
-EFI_EVENT  mWatchdogTimerEvent;
+EFI_EVENT                         mWatchdogTimerEvent;
 
 //
 // Worker Functions
 //
-
 VOID
 EFIAPI
 WatchdogTimerDriverExpires (
@@ -89,12 +88,12 @@ WatchdogTimerDriverExpires (
   // Report error code before exiting
   //
   gRT->ReportStatusCode (
-              EFI_ERROR_CODE | EFI_ERROR_MINOR,
-              (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_CU_HP_EC_TIMER_EXPIRED),
-              0,
-              &gEfiCallerIdGuid,
-              NULL
-              );
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_CU_HP_EC_TIMER_EXPIRED),
+        0,
+        &gEfiCallerIdGuid,
+        NULL
+        );
 
   //
   // If a notification function has been registered, then call it
@@ -102,13 +101,11 @@ WatchdogTimerDriverExpires (
   if (mWatchdogTimerNotifyFunction != NULL) {
     mWatchdogTimerNotifyFunction (mWatchdogTimerPeriod);
   }
-  
   //
   // Reset the platform
   //
   gRT->ResetSystem (EfiResetCold, EFI_TIMEOUT, 0, NULL);
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -164,7 +161,6 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 WatchdogTimerDriverSetTimerPeriod (
@@ -206,7 +202,6 @@ Returns:
                 );
 }
 
-
 EFI_STATUS
 EFIAPI
 WatchdogTimerDriverGetTimerPeriod (
@@ -247,7 +242,6 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_DRIVER_ENTRY_POINT (WatchdogTimerDriverInitialize)
 
 EFI_STATUS
@@ -285,12 +279,12 @@ Returns:
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
   gRT->ReportStatusCode (
-              EFI_PROGRESS_CODE,
-              (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_BEGIN),
-              0,
-              &gEfiCallerIdGuid,
-              NULL
-              );
+        EFI_PROGRESS_CODE,
+        (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_BEGIN),
+        0,
+        &gEfiCallerIdGuid,
+        NULL
+        );
   //
   // Make sure the Watchdog Timer Architectural Protocol is not already installed in the system
   //
@@ -299,7 +293,7 @@ Returns:
   //
   // Create the timer event used to implement a simple watchdog timer
   //
-  Status = gBS->CreateEvent(
+  Status = gBS->CreateEvent (
                   EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
                   EFI_TPL_NOTIFY,
                   WatchdogTimerDriverExpires,
@@ -313,18 +307,19 @@ Returns:
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mWatchdogTimerHandle,
-                  &gEfiWatchdogTimerArchProtocolGuid, &mWatchdogTimer,
+                  &gEfiWatchdogTimerArchProtocolGuid,
+                  &mWatchdogTimer,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
-  
+
   gRT->ReportStatusCode (
-       EFI_PROGRESS_CODE,
-       (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_END),
-       0,
-       &gEfiCallerIdGuid,
-       NULL
-       );
+        EFI_PROGRESS_CODE,
+        (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_END),
+        0,
+        &gEfiCallerIdGuid,
+        NULL
+        );
 
   return Status;
 }

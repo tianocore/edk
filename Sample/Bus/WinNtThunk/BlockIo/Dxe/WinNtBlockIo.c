@@ -93,16 +93,18 @@ Returns:
   EFI_STATUS
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gWinNtBlockIoDriverBinding, 
-           ImageHandle,
-           &gWinNtBlockIoComponentName,
-           &gWinNtBlockIoDriverConfiguration,
-           &gWinNtBlockIoDriverDiagnostics
-           );
+          ImageHandle,
+          SystemTable,
+          &gWinNtBlockIoDriverBinding,
+          ImageHandle,
+          &gWinNtBlockIoComponentName,
+          &gWinNtBlockIoDriverConfiguration,
+          &gWinNtBlockIoDriverDiagnostics
+          );
 }
 
 EFI_STATUS
@@ -122,19 +124,22 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS                        Status;
-  EFI_WIN_NT_IO_PROTOCOL *WinNtIo;
-  
+  EFI_STATUS              Status;
+  EFI_WIN_NT_IO_PROTOCOL  *WinNtIo;
+
   //
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  Handle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  Handle,
+                  &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
@@ -142,7 +147,7 @@ Returns:
   }
 
   //
-  // Make sure the WinNtThunkProtocol is valid 
+  // Make sure the WinNtThunkProtocol is valid
   //
   Status = EFI_UNSUPPORTED;
   if (WinNtIo->WinNtThunk->Signature == EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE) {
@@ -160,10 +165,10 @@ Returns:
   // Close the I/O Abstraction(s) used to perform the supported test
   //
   gBS->CloseProtocol (
-         Handle,   
-         &gEfiWinNtIoProtocolGuid,  
-         This->DriverBindingHandle,   
-         Handle   
+        Handle,
+        &gEfiWinNtIoProtocolGuid,
+        This->DriverBindingHandle,
+        Handle
         );
 
   return Status;
@@ -186,26 +191,29 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS                        Status;
-  EFI_WIN_NT_IO_PROTOCOL *WinNtIo;
-  WIN_NT_RAW_DISK_DEVICE_TYPE       DiskType;                      
-  UINT16                            Buffer[FILENAME_BUFFER_SIZE];
-  CHAR16                            *Str;
-  BOOLEAN                           RemovableMedia;
-  BOOLEAN                           WriteProtected;
-  UINTN                             NumberOfBlocks;
-  UINTN                             BlockSize;
- 
+  EFI_STATUS                  Status;
+  EFI_WIN_NT_IO_PROTOCOL      *WinNtIo;
+  WIN_NT_RAW_DISK_DEVICE_TYPE DiskType;
+  UINT16                      Buffer[FILENAME_BUFFER_SIZE];
+  CHAR16                      *Str;
+  BOOLEAN                     RemovableMedia;
+  BOOLEAN                     WriteProtected;
+  UINTN                       NumberOfBlocks;
+  UINTN                       BlockSize;
+
   //
   // Grab the protocols we need
   //
   Status = gBS->OpenProtocol (
-                  Handle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  Handle,
+                  &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
@@ -224,68 +232,71 @@ Returns:
     goto Done;
   }
 
-  Status = EFI_NOT_FOUND;
-  Str = WinNtIo->EnvString;
+  Status  = EFI_NOT_FOUND;
+  Str     = WinNtIo->EnvString;
   if (DiskType == EfiWinNtVirtualDisks) {
     WinNtIo->WinNtThunk->SPrintf (
-                                            Buffer, L"Diskfile%d", 
-                                            WinNtIo->InstanceNumber
-                                            );
+                          Buffer,
+                          L"Diskfile%d",
+                          WinNtIo->InstanceNumber
+                          );
   } else {
     if (*Str >= 'A' && *Str <= 'Z' || *Str >= 'a' && *Str <= 'z') {
       WinNtIo->WinNtThunk->SPrintf (Buffer, L"\\\\.\\%c:", *Str);
     } else {
       WinNtIo->WinNtThunk->SPrintf (Buffer, L"\\\\.\\PHYSICALDRIVE%c", *Str);
     }
-    
+
     Str++;
     if (*Str != ':') {
       Status = EFI_NOT_FOUND;
       goto Done;
     }
+
     Str++;
   }
 
   if (*Str == 'R' || *Str == 'F') {
-    RemovableMedia = (BOOLEAN)(*Str == 'R'); 
+    RemovableMedia = (BOOLEAN) (*Str == 'R');
     Str++;
     if (*Str == 'O' || *Str == 'W') {
-      WriteProtected = (BOOLEAN)(*Str == 'O');
-      Str = GetNextElementPastTerminator (Str, ';');
-      
-      NumberOfBlocks = Atoi (Str);
+      WriteProtected  = (BOOLEAN) (*Str == 'O');
+      Str             = GetNextElementPastTerminator (Str, ';');
+
+      NumberOfBlocks  = Atoi (Str);
       if (NumberOfBlocks != 0) {
-        Str = GetNextElementPastTerminator (Str, ';');
+        Str       = GetNextElementPastTerminator (Str, ';');
         BlockSize = Atoi (Str);
         if (BlockSize != 0) {
           //
           // If we get here the variable is valid so do the work.
           //
           Status = WinNtBlockIoCreateMapping (
-                      WinNtIo,
-                      Handle,
-                      Buffer,
-                      WriteProtected,
-                      RemovableMedia,
-                      NumberOfBlocks,
-                      BlockSize,
-                      DiskType
-                      );
+                    WinNtIo,
+                    Handle,
+                    Buffer,
+                    WriteProtected,
+                    RemovableMedia,
+                    NumberOfBlocks,
+                    BlockSize,
+                    DiskType
+                    );
 
         }
       }
     }
-  }  
+  }
 
 Done:
   if (EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-           Handle,   
-           &gEfiWinNtIoProtocolGuid,  
-           This->DriverBindingHandle,   
-           Handle
-           );
+          Handle,
+          &gEfiWinNtIoProtocolGuid,
+          This->DriverBindingHandle,
+          Handle
+          );
   }
+
   return Status;
 }
 
@@ -296,20 +307,38 @@ WinNtBlockIoDriverBindingStop (
   IN  UINTN                        NumberOfChildren,
   IN  EFI_HANDLE                   *ChildHandleBuffer
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  Handle            - TODO: add argument description
+  NumberOfChildren  - TODO: add argument description
+  ChildHandleBuffer - TODO: add argument description
+
+Returns:
+
+  EFI_UNSUPPORTED - TODO: Add description for return value
+
+--*/
 {
-  EFI_BLOCK_IO_PROTOCOL             *BlockIo;
-  EFI_STATUS                        Status;
-  WIN_NT_BLOCK_IO_PRIVATE           *Private;
-  
+  EFI_BLOCK_IO_PROTOCOL   *BlockIo;
+  EFI_STATUS              Status;
+  WIN_NT_BLOCK_IO_PRIVATE *Private;
+
   //
   // Get our context back
   //
   Status = gBS->OpenProtocol (
-                  Handle,   
-                  &gEfiBlockIoProtocolGuid,  
+                  Handle,
+                  &gEfiBlockIoProtocolGuid,
                   &BlockIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -318,24 +347,23 @@ WinNtBlockIoDriverBindingStop (
 
   Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS (BlockIo);
 
-
   //
-  // BugBug: If we need to kick people off, we need to make Uninstall Close the handles. 
-  //         We could pass in our image handle or FLAG our open to be closed via 
+  // BugBug: If we need to kick people off, we need to make Uninstall Close the handles.
+  //         We could pass in our image handle or FLAG our open to be closed via
   //         Unistall (== to saying any CloseProtocol will close our open)
   //
-
   Status = gBS->UninstallMultipleProtocolInterfaces (
-                  Private->EfiHandle, 
-                  &gEfiBlockIoProtocolGuid, &Private->BlockIo,
+                  Private->EfiHandle,
+                  &gEfiBlockIoProtocolGuid,
+                  &Private->BlockIo,
                   NULL
                   );
   if (!EFI_ERROR (Status)) {
 
     Status = gBS->CloseProtocol (
-                    Handle, 
-                    &gEfiWinNtIoProtocolGuid, 
-                    This->DriverBindingHandle,   
+                    Handle,
+                    &gEfiWinNtIoProtocolGuid,
+                    This->DriverBindingHandle,
                     Handle
                     );
 
@@ -379,7 +407,7 @@ Returns:
 
 --*/
 {
-  CHAR16 *Ptr;
+  CHAR16  *Ptr;
 
   for (Ptr = EnvironmentVariable; *Ptr != '\0'; Ptr++) {
     if (*Ptr == Terminator) {
@@ -387,13 +415,14 @@ Returns:
       break;
     }
   }
+
   return Ptr;
 }
 
 STATIC
 EFI_STATUS
 WinNtBlockIoCreateMapping (
-  IN EFI_WIN_NT_IO_PROTOCOL  *WinNtIo,
+  IN EFI_WIN_NT_IO_PROTOCOL             *WinNtIo,
   IN EFI_HANDLE                         EfiDeviceHandle,
   IN CHAR16                             *Filename,
   IN BOOLEAN                            ReadOnly,
@@ -402,20 +431,42 @@ WinNtBlockIoCreateMapping (
   IN UINTN                              BlockSize,
   IN WIN_NT_RAW_DISK_DEVICE_TYPE        DeviceType
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  WinNtIo         - TODO: add argument description
+  EfiDeviceHandle - TODO: add argument description
+  Filename        - TODO: add argument description
+  ReadOnly        - TODO: add argument description
+  RemovableMedia  - TODO: add argument description
+  NumberOfBlocks  - TODO: add argument description
+  BlockSize       - TODO: add argument description
+  DeviceType      - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   EFI_STATUS              Status;
   EFI_BLOCK_IO_PROTOCOL   *BlockIo;
   WIN_NT_BLOCK_IO_PRIVATE *Private;
   UINTN                   Index;
-    
+
   WinNtIo->WinNtThunk->SetErrorMode (SEM_FAILCRITICALERRORS);
 
-  Status = gBS->AllocatePool(
+  Status = gBS->AllocatePool (
                   EfiBootServicesData,
-                  sizeof(WIN_NT_BLOCK_IO_PRIVATE), 
+                  sizeof (WIN_NT_BLOCK_IO_PRIVATE),
                   &Private
                   );
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   EfiInitializeLock (&Private->Lock, EFI_TPL_NOTIFY);
 
@@ -428,41 +479,42 @@ WinNtBlockIoCreateMapping (
   for (Index = 0; Filename[Index] != 0; Index++) {
     Private->Filename[Index] = Filename[Index];
   }
-  Private->Filename[Index] = 0;
 
-  Private->ReadMode   = GENERIC_READ | (ReadOnly ? 0 : GENERIC_WRITE);
-  Private->ShareMode  = FILE_SHARE_READ | FILE_SHARE_WRITE;
+  Private->Filename[Index]      = 0;
 
-  Private->NumberOfBlocks = NumberOfBlocks;
-  Private->DeviceType     = DeviceType;
-  Private->NtHandle       = INVALID_HANDLE_VALUE;
+  Private->ReadMode             = GENERIC_READ | (ReadOnly ? 0 : GENERIC_WRITE);
+  Private->ShareMode            = FILE_SHARE_READ | FILE_SHARE_WRITE;
 
-  Private->ControllerNameTable = NULL;
+  Private->NumberOfBlocks       = NumberOfBlocks;
+  Private->DeviceType           = DeviceType;
+  Private->NtHandle             = INVALID_HANDLE_VALUE;
+
+  Private->ControllerNameTable  = NULL;
 
   EfiLibAddUnicodeString (
-    "eng", 
-    gWinNtBlockIoComponentName.SupportedLanguages, 
-    &Private->ControllerNameTable, 
+    "eng",
+    gWinNtBlockIoComponentName.SupportedLanguages,
+    &Private->ControllerNameTable,
     Private->Filename
     );
 
-  BlockIo                   = &Private->BlockIo;
-  BlockIo->Revision         = EFI_BLOCK_IO_PROTOCOL_REVISION;
-  BlockIo->Media            = &Private->Media;
+  BlockIo = &Private->BlockIo;
+  BlockIo->Revision = EFI_BLOCK_IO_PROTOCOL_REVISION;
+  BlockIo->Media = &Private->Media;
   BlockIo->Media->BlockSize = Private->BlockSize;
   BlockIo->Media->LastBlock = Private->NumberOfBlocks - 1;
-  BlockIo->Media->MediaId   = 0;;
+  BlockIo->Media->MediaId = 0;;
 
-  BlockIo->Reset        = WinNtBlockIoResetBlock;
-  BlockIo->ReadBlocks   = WinNtBlockIoReadBlocks;
-  BlockIo->WriteBlocks  = WinNtBlockIoWriteBlocks;
-  BlockIo->FlushBlocks  = WinNtBlockIoFlushBlocks;
+  BlockIo->Reset = WinNtBlockIoResetBlock;
+  BlockIo->ReadBlocks = WinNtBlockIoReadBlocks;
+  BlockIo->WriteBlocks = WinNtBlockIoWriteBlocks;
+  BlockIo->FlushBlocks = WinNtBlockIoFlushBlocks;
 
-  BlockIo->Media->ReadOnly          = ReadOnly;
-  BlockIo->Media->RemovableMedia    = RemovableMedia;
-  BlockIo->Media->LogicalPartition  = FALSE;
-  BlockIo->Media->MediaPresent      = TRUE;
-  BlockIo->Media->WriteCaching      = FALSE;
+  BlockIo->Media->ReadOnly = ReadOnly;
+  BlockIo->Media->RemovableMedia = RemovableMedia;
+  BlockIo->Media->LogicalPartition = FALSE;
+  BlockIo->Media->MediaPresent = TRUE;
+  BlockIo->Media->WriteCaching = FALSE;
 
   if (DeviceType == EfiWinNtVirtualDisks) {
     BlockIo->Media->IoAlign = 1;
@@ -482,39 +534,54 @@ WinNtBlockIoCreateMapping (
     //
     Private->OpenMode = OPEN_EXISTING;
   } else {
-    ASSERT(FALSE);
+    ASSERT (FALSE);
   }
 
-  Private->EfiHandle = EfiDeviceHandle;
-  Status = WinNtBlockIoOpenDevice (Private);
+  Private->EfiHandle  = EfiDeviceHandle;
+  Status              = WinNtBlockIoOpenDevice (Private);
   if (!EFI_ERROR (Status)) {
 
     Status = gBS->InstallMultipleProtocolInterfaces (
-                    &Private->EfiHandle,       
-                    &gEfiBlockIoProtocolGuid, &Private->BlockIo,
+                    &Private->EfiHandle,
+                    &gEfiBlockIoProtocolGuid,
+                    &Private->BlockIo,
                     NULL
                     );
-    //ASSERT(!EFI_ERROR(Status));                     
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       EfiLibFreeUnicodeStringTable (Private->ControllerNameTable);
       gBS->FreePool (Private);
     }
+
     DEBUG ((EFI_D_INIT, "BlockDevice added: %s\n", Filename));
   }
 
   return Status;
 }
 
-
 STATIC
 EFI_STATUS
 WinNtBlockIoOpenDevice (
   WIN_NT_BLOCK_IO_PRIVATE                 *Private
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   EFI_STATUS            Status;
-  UINT64                 FileSize;
-  UINT64                 EndOfFile;
+  UINT64                FileSize;
+  UINT64                EndOfFile;
   EFI_BLOCK_IO_PROTOCOL *BlockIo;
 
   BlockIo = &Private->BlockIo;
@@ -524,48 +591,46 @@ WinNtBlockIoOpenDevice (
   // If the device is already opened, close it
   //
   if (Private->NtHandle != INVALID_HANDLE_VALUE) {
-    BlockIo->Reset(BlockIo, FALSE);
+    BlockIo->Reset (BlockIo, FALSE);
   }
 
   //
   // Open the device
-  //   
+  //
   Private->NtHandle = Private->WinNtThunk->CreateFile (
-                                        Private->Filename,
-                                        Private->ReadMode,
-                                        Private->ShareMode,
-                                        NULL,
-                                        Private->OpenMode, 
-                                        0,
-                                        NULL
-                                        );
+                                            Private->Filename,
+                                            Private->ReadMode,
+                                            Private->ShareMode,
+                                            NULL,
+                                            Private->OpenMode,
+                                            0,
+                                            NULL
+                                            );
 
-  Status = Private->WinNtThunk->GetLastError();
+  Status = Private->WinNtThunk->GetLastError ();
 
   if (Private->NtHandle == INVALID_HANDLE_VALUE) {
-    DEBUG((EFI_D_INFO, "PlOpenBlock: Could not open %s, %x\n", Private->Filename, Private->WinNtThunk->GetLastError()));
-    BlockIo->Media->MediaPresent = FALSE;
-    Status = EFI_NO_MEDIA;
+    DEBUG ((EFI_D_INFO, "PlOpenBlock: Could not open %s, %x\n", Private->Filename, Private->WinNtThunk->GetLastError ()));
+    BlockIo->Media->MediaPresent  = FALSE;
+    Status                        = EFI_NO_MEDIA;
     goto Done;
   }
-  
+
   if (!BlockIo->Media->MediaPresent) {
     //
     // BugBug: try to emulate if a CD appears - notify drivers to check it out
     //
     BlockIo->Media->MediaPresent = TRUE;
     EfiReleaseLock (&Private->Lock);
-//    gBS->ReinstallProtocolInterface (Private->EfiHandle, &gEfiBlockIoProtocolGuid, BlockIo, BlockIo);
     EfiAcquireLock (&Private->Lock);
   }
 
   //
   // get the size of the file
   //
-  //FileSizeLow = Private->WinNtThunk->SetFilePointer (Private->NtHandle, 0, NULL, FILE_END);
   Status = SetFilePointer64 (Private, 0, &FileSize, FILE_END);
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     FileSize = MultU64x32 (Private->NumberOfBlocks, Private->BlockSize);
     if (Private->DeviceType == EfiWinNtVirtualDisks) {
       DEBUG ((EFI_D_ERROR, "PlOpenBlock: Could not get filesize of %s\n", Private->Filename));
@@ -577,36 +642,37 @@ WinNtBlockIoOpenDevice (
   if (Private->NumberOfBlocks == 0) {
     Private->NumberOfBlocks = DivU64x32 (FileSize, Private->BlockSize, NULL);
   }
+
   EndOfFile = MultU64x32 (Private->NumberOfBlocks, Private->BlockSize);
-    
+
   if (FileSize != EndOfFile) {
+    //
     // file is not the proper size, change it
+    //
     DEBUG ((EFI_D_INIT, "PlOpenBlock: Initializing block device: %hs\n", Private->Filename));
 
     //
     // first set it to 0
     //
-    //Private->WinNtThunk->SetFilePointer (Private->NtHandle, 0, NULL, FILE_BEGIN);
     SetFilePointer64 (Private, 0, NULL, FILE_BEGIN);
     Private->WinNtThunk->SetEndOfFile (Private->NtHandle);
 
     //
     // then set it to the needed file size (OS will zero fill it)
     //
-    //Private->WinNtThunk->SetFilePointer (Private->NtHandle, EndOfFile, NULL, FILE_BEGIN);
     SetFilePointer64 (Private, EndOfFile, NULL, FILE_BEGIN);
     Private->WinNtThunk->SetEndOfFile (Private->NtHandle);
   }
 
-  DEBUG((EFI_D_INIT, "%HPlOpenBlock: opened %s%N\n", Private->Filename));
+  DEBUG ((EFI_D_INIT, "%HPlOpenBlock: opened %s%N\n", Private->Filename));
   Status = EFI_SUCCESS;
-    
+
 Done:
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     if (Private->NtHandle != INVALID_HANDLE_VALUE) {
       BlockIo->Reset (BlockIo, FALSE);
     }
-  } 
+  }
 
   EfiReleaseLock (&Private->Lock);
   return Status;
@@ -617,52 +683,68 @@ EFI_STATUS
 WinNtBlockIoError (
   IN WIN_NT_BLOCK_IO_PRIVATE      *Private
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  EFI_BLOCK_IO_PROTOCOL   *BlockIo;
-  EFI_STATUS              Status;
-  BOOLEAN                 ReinstallBlockIoFlag;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
+  EFI_STATUS            Status;
+  BOOLEAN               ReinstallBlockIoFlag;
 
   BlockIo = &Private->BlockIo;
 
-  switch (Private->WinNtThunk->GetLastError()) {
+  switch (Private->WinNtThunk->GetLastError ()) {
 
   case ERROR_NOT_READY:
-    Status = EFI_NO_MEDIA;
-    BlockIo->Media->ReadOnly = FALSE;
-    BlockIo->Media->MediaPresent = FALSE;
-    ReinstallBlockIoFlag = FALSE;
+    Status                        = EFI_NO_MEDIA;
+    BlockIo->Media->ReadOnly      = FALSE;
+    BlockIo->Media->MediaPresent  = FALSE;
+    ReinstallBlockIoFlag          = FALSE;
     break;
 
   case ERROR_WRONG_DISK:
-    BlockIo->Media->ReadOnly = FALSE;
-    BlockIo->Media->MediaPresent = TRUE;
+    BlockIo->Media->ReadOnly      = FALSE;
+    BlockIo->Media->MediaPresent  = TRUE;
     BlockIo->Media->MediaId += 1;
-    ReinstallBlockIoFlag = TRUE;
-    Status = EFI_MEDIA_CHANGED;
+    ReinstallBlockIoFlag  = TRUE;
+    Status                = EFI_MEDIA_CHANGED;
     break;
 
   case ERROR_WRITE_PROTECT:
-    BlockIo->Media->ReadOnly = TRUE;
-    ReinstallBlockIoFlag = FALSE;
-    Status = EFI_WRITE_PROTECTED;
+    BlockIo->Media->ReadOnly  = TRUE;
+    ReinstallBlockIoFlag      = FALSE;
+    Status                    = EFI_WRITE_PROTECTED;
     break;
 
   default:
-    ReinstallBlockIoFlag = FALSE;
-    Status = EFI_DEVICE_ERROR;
+    ReinstallBlockIoFlag  = FALSE;
+    Status                = EFI_DEVICE_ERROR;
     break;
   }
 
   if (ReinstallBlockIoFlag) {
     BlockIo->Reset (BlockIo, FALSE);
-    
+
     gBS->ReinstallProtocolInterface (
-          Private->EfiHandle, 
-          &gEfiBlockIoProtocolGuid, 
-          BlockIo, 
+          Private->EfiHandle,
+          &gEfiBlockIoProtocolGuid,
+          BlockIo,
           BlockIo
           );
   }
+
   return Status;
 }
 
@@ -670,22 +752,48 @@ STATIC
 EFI_STATUS
 WinNtBlockIoReadWriteCommon (
   IN  WIN_NT_BLOCK_IO_PRIVATE     *Private,
-  IN UINT32       MediaId,
-  IN EFI_LBA      Lba,
-  IN UINTN        BufferSize,
-  IN VOID         *Buffer,        
-  IN CHAR8        *CallerName 
+  IN UINT32                       MediaId,
+  IN EFI_LBA                      Lba,
+  IN UINTN                        BufferSize,
+  IN VOID                         *Buffer,
+  IN CHAR8                        *CallerName
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private     - TODO: add argument description
+  MediaId     - TODO: add argument description
+  Lba         - TODO: add argument description
+  BufferSize  - TODO: add argument description
+  Buffer      - TODO: add argument description
+  CallerName  - TODO: add argument description
+
+Returns:
+
+  EFI_NO_MEDIA - TODO: Add description for return value
+  EFI_MEDIA_CHANGED - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+  EFI_BAD_BUFFER_SIZE - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   EFI_STATUS  Status;
   UINTN       BlockSize;
   UINT64      LastBlock;
   INT64       DistanceToMove;
-  UINT64       DistanceMoved;
+  UINT64      DistanceMoved;
 
   if (Private->NtHandle == INVALID_HANDLE_VALUE) {
     Status = WinNtBlockIoOpenDevice (Private);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
   }
@@ -694,12 +802,12 @@ WinNtBlockIoReadWriteCommon (
     DEBUG ((EFI_D_INIT, "%s: No Media\n", CallerName));
     return EFI_NO_MEDIA;
   }
-  
+
   if (Private->Media.MediaId != MediaId) {
     return EFI_MEDIA_CHANGED;
   }
-  
-  if ((UINT32)Buffer % Private->Media.IoAlign != 0) {
+
+  if ((UINT32) Buffer % Private->Media.IoAlign != 0) {
     return EFI_INVALID_PARAMETER;
   }
   
@@ -717,27 +825,24 @@ WinNtBlockIoReadWriteCommon (
     return EFI_BAD_BUFFER_SIZE;
   }
 
-  LastBlock = Lba + (BufferSize/BlockSize) - 1;
+  LastBlock = Lba + (BufferSize / BlockSize) - 1;
   if (LastBlock > Private->LastBlock) {
     DEBUG ((EFI_D_INIT, "ReadBlocks: Attempted to read off end of device\n"));
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Seek to End of File
   //
   DistanceToMove = MultU64x32 (Lba, BlockSize);
-  //DistanceMoved = Private->WinNtThunk->SetFilePointer (Private->NtHandle, DistanceToMove, NULL, FILE_BEGIN);
   Status = SetFilePointer64 (Private, DistanceToMove, &DistanceMoved, FILE_BEGIN);
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_INIT, "WriteBlocks: SetFilePointer failed\n"));
     return WinNtBlockIoError (Private);
   }
 
   return EFI_SUCCESS;
 }
-
 
 STATIC
 EFI_STATUS
@@ -778,16 +883,16 @@ WinNtBlockIoReadBlocks (
   EFI_STATUS              Status;
   DWORD                   BytesRead;
 
-  Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS(This);
+  Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS (This);
 
-  Status = WinNtBlockIoReadWriteCommon (Private, MediaId, Lba, BufferSize, Buffer, "WinNtReadBlocks");
-  if (EFI_ERROR(Status)) {
+  Status  = WinNtBlockIoReadWriteCommon (Private, MediaId, Lba, BufferSize, Buffer, "WinNtReadBlocks");
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Flag = Private->WinNtThunk->ReadFile (Private->NtHandle, Buffer, (DWORD)BufferSize, (LPDWORD)&BytesRead, NULL);
+  Flag = Private->WinNtThunk->ReadFile (Private->NtHandle, Buffer, (DWORD) BufferSize, (LPDWORD) &BytesRead, NULL);
   if (!Flag || (BytesRead != BufferSize)) {
-    DEBUG ((EFI_D_INIT, "ReadBlocks: ReadFile failed. (%d)\n", Private->WinNtThunk->GetLastError()));
+    DEBUG ((EFI_D_INIT, "ReadBlocks: ReadFile failed. (%d)\n", Private->WinNtThunk->GetLastError ()));
     return WinNtBlockIoError (Private);
   }
 
@@ -797,8 +902,6 @@ WinNtBlockIoReadBlocks (
   This->Media->MediaPresent = TRUE;
   return EFI_SUCCESS;
 }
-
-
 
 STATIC
 EFI_STATUS
@@ -839,17 +942,17 @@ WinNtBlockIoWriteBlocks (
   UINTN                   BytesWritten;
   BOOL                    Flag;
   EFI_STATUS              Status;
-    
-  Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS(This);
-  
-  Status = WinNtBlockIoReadWriteCommon (Private, MediaId, Lba, BufferSize, Buffer, "WinNtWriteBlocks");
-  if (EFI_ERROR(Status)) {
+
+  Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS (This);
+
+  Status  = WinNtBlockIoReadWriteCommon (Private, MediaId, Lba, BufferSize, Buffer, "WinNtWriteBlocks");
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Flag = Private->WinNtThunk->WriteFile (Private->NtHandle, Buffer, (DWORD)BufferSize, (LPDWORD)&BytesWritten, NULL);
+  Flag = Private->WinNtThunk->WriteFile (Private->NtHandle, Buffer, (DWORD) BufferSize, (LPDWORD) &BytesWritten, NULL);
   if (!Flag || (BytesWritten != BufferSize)) {
-    DEBUG ((EFI_D_INIT, "ReadBlocks: WriteFile failed. (%d)\n", Private->WinNtThunk->GetLastError()));
+    DEBUG ((EFI_D_INIT, "ReadBlocks: WriteFile failed. (%d)\n", Private->WinNtThunk->GetLastError ()));
     return WinNtBlockIoError (Private);
   }
 
@@ -857,15 +960,14 @@ WinNtBlockIoWriteBlocks (
   // If the write succeeded, we are not write protected and media is present.
   //
   This->Media->MediaPresent = TRUE;
-  This->Media->ReadOnly = FALSE;
+  This->Media->ReadOnly     = FALSE;
   return EFI_SUCCESS;
 }
-
 
 STATIC
 EFI_STATUS
 EFIAPI
-WinNtBlockIoFlushBlocks(
+WinNtBlockIoFlushBlocks (
   IN EFI_BLOCK_IO_PROTOCOL  *This
   )
 /*++
@@ -886,11 +988,10 @@ WinNtBlockIoFlushBlocks(
   return EFI_SUCCESS;
 }
 
-
 STATIC
 EFI_STATUS
 EFIAPI
-WinNtBlockIoResetBlock(
+WinNtBlockIoResetBlock (
   IN EFI_BLOCK_IO_PROTOCOL  *This,
   IN BOOLEAN                ExtendedVerification
   )
@@ -911,17 +1012,16 @@ WinNtBlockIoResetBlock(
 --*/
 {
   WIN_NT_BLOCK_IO_PRIVATE *Private;
-    
-  Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS(This);
+
+  Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS (This);
 
   if (Private->NtHandle != INVALID_HANDLE_VALUE) {
     Private->WinNtThunk->CloseHandle (Private->NtHandle);
     Private->NtHandle = INVALID_HANDLE_VALUE;
   }
-    
+
   return EFI_SUCCESS;
 }
-
 
 UINTN
 Atoi (
@@ -953,61 +1053,65 @@ Returns:
   while ((*Str) && (*Str == ' ')) {
     Str++;
   }
-
   //
   // Convert ot a Number
   //
   Number = 0;
   while (*Str != '\0') {
-      if ((*Str >= '0') && (*Str <= '9')) {
-          Number = (Number * 10) + *Str - '0';
-      } else {
-          break;
-      }
-      Str++;
+    if ((*Str >= '0') && (*Str <= '9')) {
+      Number = (Number * 10) +*Str - '0';
+    } else {
+      break;
+    }
+
+    Str++;
   }
 
   return Number;
 }
 
-
 EFI_STATUS
 SetFilePointer64 (
-  IN  WIN_NT_BLOCK_IO_PRIVATE   *Private,
-  IN  INT64                     DistanceToMove,
+  IN  WIN_NT_BLOCK_IO_PRIVATE    *Private,
+  IN  INT64                      DistanceToMove,
   OUT UINT64                     *NewFilePointer,
-  IN  DWORD                     MoveMethod
+  IN  DWORD                      MoveMethod
   )
 /*++
 
 This function extends the capability of SetFilePointer to accept 64 bit parameters
 
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    Private - add argument and description to function comment
+// TODO:    DistanceToMove - add argument and description to function comment
+// TODO:    NewFilePointer - add argument and description to function comment
+// TODO:    MoveMethod - add argument and description to function comment
 {
-  EFI_STATUS      Status;
-  LARGE_INTEGER   LargeInt;
-  UINT32          ErrorCode;
+  EFI_STATUS    Status;
+  LARGE_INTEGER LargeInt;
+  UINT32        ErrorCode;
 
   LargeInt.QuadPart = DistanceToMove;
-  Status = EFI_SUCCESS;
-  
-  LargeInt.LowPart = Private->WinNtThunk->SetFilePointer(Private->NtHandle, 
-                                          LargeInt.LowPart,
-                                          &LargeInt.HighPart,
-                                          MoveMethod
-                                          );
-  
+  Status            = EFI_SUCCESS;
+
+  LargeInt.LowPart = Private->WinNtThunk->SetFilePointer (
+                                            Private->NtHandle,
+                                            LargeInt.LowPart,
+                                            &LargeInt.HighPart,
+                                            MoveMethod
+                                            );
+
   if (LargeInt.LowPart == -1 &&
-      (ErrorCode = Private->WinNtThunk->GetLastError()) != NO_ERROR)
-  {
+      (ErrorCode = Private->WinNtThunk->GetLastError ()) != NO_ERROR) {
     Status = EFI_INVALID_PARAMETER;
   }
-  
-  if (NewFilePointer != NULL)
-  {
+
+  if (NewFilePointer != NULL) {
     *NewFilePointer = LargeInt.QuadPart;
   }
 
-  return Status;  
+  return Status;
 }
-

@@ -81,16 +81,16 @@ IsZero (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  TODO: Add function description
 
 Arguments:
 
-  Buffer  - GC_TODO: add argument description
-  Length  - GC_TODO: add argument description
+  Buffer  - TODO: add argument description
+  Length  - TODO: add argument description
 
 Returns:
 
-  GC_TODO: add return values
+  TODO: add return values
 
 --*/
 {
@@ -116,6 +116,22 @@ CutPrefix (
   IN  CHAR16  *Str,
   IN  UINTN   Count
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Str   - TODO: add argument description
+  Count - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   CHAR16  *Pointer;
 
@@ -135,6 +151,22 @@ InitializeWinNtSimpleFileSystem (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  SystemTable - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   return EfiLibInstallAllDriverProtocols (
           ImageHandle,
@@ -255,7 +287,6 @@ Returns:
   EFI_STATUS                        Status;
   EFI_WIN_NT_IO_PROTOCOL            *WinNtIo;
   WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE *Private;
-  UINTN                             Index;
 
   Private = NULL;
 
@@ -294,11 +325,7 @@ Returns:
   Private->Signature  = WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE_SIGNATURE;
   Private->WinNtThunk = WinNtIo->WinNtThunk;
 
-  for (Index = 0; WinNtIo->EnvString[Index] != 0; Index++) {
-    Private->FilePath[Index] = WinNtIo->EnvString[Index];
-  }
-
-  Private->FilePath[Index]  = 0;
+  Private->FilePath = WinNtIo->EnvString;
 
   Private->VolumeLabel      = NULL;
   Status = gBS->AllocatePool (
@@ -366,7 +393,7 @@ WinNtSimpleFileSystemDriverBindingStop (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  TODO: Add function description
 
 Arguments:
 
@@ -385,6 +412,7 @@ Returns:
   EFI_DEVICE_ERROR  - The device could not be stopped due to a device failure.
 
 --*/
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   EFI_STATUS                        Status;
   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL   *SimpleFileSystem;
@@ -473,6 +501,7 @@ Returns:
   EFI_MEDIA_CHANGED     - The device has new media or the media is no longer supported.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS                        Status;
   WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE *Private;
@@ -606,6 +635,10 @@ Returns:
   EFI_VOLUME_FULL       - There is not enough space left to create the new file.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_FILE                          *Root;
   WIN_NT_EFI_FILE_PRIVATE           *PrivateFile;
@@ -737,6 +770,7 @@ OpenRoot:
   //
   // Get rid of . and .., except leading . or ..
   //
+
   //
   // GuardPointer protect simplefilesystem root path not be destroyed
   //
@@ -753,7 +787,11 @@ OpenRoot:
           (*(ParseFileName + 1) == 0 || *(ParseFileName + 1) == L'\\') &&
           *(ParseFileName - 1) == L'\\'
           ) {
-        CutPrefix (ParseFileName - 1, 2); // cut \.
+
+        //
+        // cut \.
+        //
+        CutPrefix (ParseFileName - 1, 2);
         LoopFinish = FALSE;
         break;
       }
@@ -775,7 +813,10 @@ OpenRoot:
           }
         }
 
-        CutPrefix (ParseFileName, Count); // cut \.. and its left directory
+        //
+        // cut \.. and its left directory
+        //
+        CutPrefix (ParseFileName, Count);
         LoopFinish = FALSE;
         break;
       }
@@ -1061,6 +1102,7 @@ Returns:
   EFI_SUCCESS - The file handle has been closed.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   WIN_NT_EFI_FILE_PRIVATE *PrivateFile;
 
@@ -1114,6 +1156,7 @@ Returns:
   EFI_WARN_DELETE_FAILURE - The handle was closed but could not be deleted.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   WIN_NT_EFI_FILE_PRIVATE *PrivateFile;
@@ -1156,12 +1199,30 @@ Returns:
   return Status;
 }
 
-STATIC VOID
+STATIC
+VOID
 WinNtSystemTimeToEfiTime (
   IN SYSTEMTIME             *SystemTime,
   IN TIME_ZONE_INFORMATION  *TimeZone,
   OUT EFI_TIME              *Time
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SystemTime  - TODO: add argument description
+  TimeZone    - TODO: add argument description
+  Time        - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   Time->Year        = (UINT16) SystemTime->wYear;
   Time->Month       = (UINT8) SystemTime->wMonth;
@@ -1211,6 +1272,7 @@ Returns:
                           *BufferSize has been updated with the size needed to complete the request.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   WIN_NT_EFI_FILE_PRIVATE *PrivateFile;
   EFI_STATUS              Status;
@@ -1426,6 +1488,7 @@ Returns:
   EFI_VOLUME_FULL       - The volume is full.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   WIN_NT_EFI_FILE_PRIVATE *PrivateFile;
 
@@ -1484,6 +1547,7 @@ Returns:
   EFI_UNSUPPORTED - The seek request for non-zero is not supported for directories.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   WIN_NT_EFI_FILE_PRIVATE *PrivateFile;
@@ -1569,6 +1633,7 @@ Returns:
   EFI_UNSUPPORTED - Not valid for directories.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   WIN_NT_EFI_FILE_PRIVATE *PrivateFile;
@@ -1611,12 +1676,30 @@ Done:
   return Status;
 }
 
-STATIC EFI_STATUS
+STATIC
+EFI_STATUS
 WinNtSimpleFileSystemFileInfo (
   IN     WIN_NT_EFI_FILE_PRIVATE  *PrivateFile,
   IN OUT UINTN                    *BufferSize,
   OUT    VOID                     *Buffer
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PrivateFile - TODO: add argument description
+  BufferSize  - TODO: add argument description
+  Buffer      - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   EFI_STATUS                  Status;
   UINTN                       Size;
@@ -1757,6 +1840,7 @@ Returns:
                           been updated with the size needed to complete the requested operation.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS                        Status;
   WIN_NT_EFI_FILE_PRIVATE           *PrivateFile;
@@ -1936,6 +2020,8 @@ Returns:
   EFI_BAD_BUFFER_SIZE   - The buffer size is smaller than the type indicated by InformationType.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE *PrivateRoot;
   WIN_NT_EFI_FILE_PRIVATE           *PrivateFile;
@@ -2034,6 +2120,7 @@ Returns:
   //
   // Set file/directory information.
   //
+
   //
   // Check for invalid set file information parameters.
   //
@@ -2506,6 +2593,7 @@ Returns:
   EFI_VOLUME_FULL       - The volume is full.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   BY_HANDLE_FILE_INFORMATION  FileInfo;
   WIN_NT_EFI_FILE_PRIVATE     *PrivateFile;

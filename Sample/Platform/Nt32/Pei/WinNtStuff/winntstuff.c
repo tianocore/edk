@@ -15,18 +15,21 @@ Module Name:
     
 Abstract:
 
-    EFI 2.0 PEIM to abstract construction of firmware volume in a Windows NT environment.
+    Tiano PEIM to abstract construction of firmware volume in a Windows NT environment.
 
 Revision History
 
 --*/
+
 #include "Tiano.h"
 #include "Pei.h"
 #include "PeiLib.h"
 #include EFI_PPI_DEFINITION (NtThunk)
 
 #define EFI_PEI_WIN_NT_THUNK_PROTOCOL_GUID \
-  { 0x58c518b1, 0x76f3, 0x11d4, 0xbc, 0xea, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 }
+  { \
+    0x58c518b1, 0x76f3, 0x11d4, 0xbc, 0xea, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 \
+  }
 
 EFI_STATUS
 PeimInitializeWinNtStuff (
@@ -36,7 +39,7 @@ PeimInitializeWinNtStuff (
 
 EFI_GUID  mEfiPeiWinNtThunkProtocolGuid = EFI_PEI_WIN_NT_THUNK_PROTOCOL_GUID;
 
-EFI_PEIM_ENTRY_POINT(PeimInitializeWinNtStuff);
+EFI_PEIM_ENTRY_POINT (PeimInitializeWinNtStuff)
 
 EFI_STATUS
 PeimInitializeWinNtStuff (
@@ -58,33 +61,31 @@ Returns:
   None
 
 --*/
+// TODO:    FfsHeader - add argument and description to function comment
 {
-  EFI_STATUS                            Status;
-  EFI_PEI_PPI_DESCRIPTOR                    *PpiDescriptor;
-  PEI_NT_WIN_NT_THUNK_CALLBACK_PROTOCOL  *PeiNtService;
-  UINT64                                InterfaceSize;
-  EFI_PHYSICAL_ADDRESS                  InterfaceBase;
+  EFI_STATUS              Status;
+  EFI_PEI_PPI_DESCRIPTOR  *PpiDescriptor;
+  PEI_NT_THUNK_PPI        *PeiNtService;
+  UINT64                  InterfaceSize;
+  EFI_PHYSICAL_ADDRESS    InterfaceBase;
 
-
-  Status =  (**PeiServices).LocatePpi ( PeiServices,
-                                        &gPeiWinNtThunkGuid,          // GUID
-                                        0,                            // INSTANCE
-                                        &PpiDescriptor,               // EFI_PEI_PPI_DESCRIPTOR
-                                        &PeiNtService                 // PPI
-                                        );
-  ASSERT_PEI_ERROR (PeiServices, Status);  
+  Status = (**PeiServices).LocatePpi (
+                            PeiServices,
+                            &gPeiNtThunkPpiGuid,  // GUID
+                            0,                    // INSTANCE
+                            &PpiDescriptor,       // EFI_PEI_PPI_DESCRIPTOR
+                            &PeiNtService         // PPI
+                            );
+  ASSERT_PEI_ERROR (PeiServices, Status);
 
   Status = PeiNtService->NtThunk (&InterfaceSize, &InterfaceBase);
+  ASSERT_PEI_ERROR (PeiServices, Status);
 
-  ASSERT_PEI_ERROR (PeiServices, Status);  
-
-  Status =  PeiBuildHobGuidData (
-               PeiServices,
-               &mEfiPeiWinNtThunkProtocolGuid,      // Guid
-               &InterfaceBase,                      // Buffer
-               (UINTN) InterfaceSize                // BufferSize
-              );
-
-
+  Status = PeiBuildHobGuidData (
+            PeiServices,
+            &mEfiPeiWinNtThunkProtocolGuid,       // Guid
+            &InterfaceBase,                       // Buffer
+            (UINTN) InterfaceSize                 // BufferSize
+            );
   return Status;
 }

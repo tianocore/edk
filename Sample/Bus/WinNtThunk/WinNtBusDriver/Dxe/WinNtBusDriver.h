@@ -98,6 +98,7 @@ EFI_WIN_NT_PASS_THRU      - associates a device with our PCI support
 
 ---*/
 
+// TODO: fix comment to start with /*++
 #ifndef _NT_BUS_DRIVER_H_
 #define _NT_BUS_DRIVER_H_
 
@@ -124,13 +125,13 @@ EFI_WIN_NT_PASS_THRU      - associates a device with our PCI support
 //
 // WinNt Bus Driver Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL gWinNtBusDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gWinNtBusDriverComponentName;
+extern EFI_DRIVER_BINDING_PROTOCOL  gWinNtBusDriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL  gWinNtBusDriverComponentName;
 
 //
 // WinNt Bus Controller Structure
 //
-#define WIN_NT_BUS_DEVICE_SIGNATURE  EFI_SIGNATURE_32('N','T','B','D')
+#define WIN_NT_BUS_DEVICE_SIGNATURE EFI_SIGNATURE_32 ('N', 'T', 'B', 'D')
 
 typedef struct {
   UINT64                    Signature;
@@ -140,21 +141,21 @@ typedef struct {
 //
 // WinNt Child Device Controller Structure
 //
-#define WIN_NT_IO_DEVICE_SIGNATURE  EFI_SIGNATURE_32('N','T','V','D')
+#define WIN_NT_IO_DEVICE_SIGNATURE  EFI_SIGNATURE_32 ('N', 'T', 'V', 'D')
 
 typedef struct {
-  UINT64                            Signature;
-  EFI_HANDLE                        Handle;
-  EFI_WIN_NT_IO_PROTOCOL            WinNtIo;
-  EFI_DEVICE_PATH_PROTOCOL          *DevicePath;
+  UINT64                    Signature;
+  EFI_HANDLE                Handle;
+  EFI_WIN_NT_IO_PROTOCOL    WinNtIo;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
 
   //
   // Private data about the parent
   //
-  EFI_HANDLE                        ControllerHandle;
-  EFI_DEVICE_PATH_PROTOCOL          *ParentDevicePath;
+  EFI_HANDLE                ControllerHandle;
+  EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
 
-  EFI_UNICODE_STRING_TABLE          *ControllerNameTable;
+  EFI_UNICODE_STRING_TABLE  *ControllerNameTable;
 
 } WIN_NT_IO_DEVICE;
 
@@ -167,9 +168,9 @@ typedef struct {
 #define MAX_NT_ENVIRNMENT_VARIABLE_LENGTH 512
 
 typedef struct {
-  CHAR16      *Variable;
-  EFI_GUID    *DevicePathGuid;
-} NT_ENVIRONMENT_VARIABLE_ENTRY; 
+  CHAR16    *Variable;
+  EFI_GUID  *DevicePathGuid;
+} NT_ENVIRONMENT_VARIABLE_ENTRY;
 
 typedef struct {
   VENDOR_DEVICE_PATH  VendorDevicePath;
@@ -181,7 +182,24 @@ EFIAPI
 CpuIoInitialize (
   IN EFI_HANDLE                            ImageHandle,
   IN EFI_SYSTEM_TABLE                      *SystemTable
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  SystemTable - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // Driver Binding Protocol function prototypes
@@ -191,14 +209,50 @@ WinNtBusDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Handle,
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                - TODO: add argument description
+  Handle              - TODO: add argument description
+  RemainingDevicePath - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 WinNtBusDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     ParentHandle,
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                - TODO: add argument description
+  ParentHandle        - TODO: add argument description
+  RemainingDevicePath - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 WinNtBusDriverBindingStop (
@@ -206,36 +260,72 @@ WinNtBusDriverBindingStop (
   IN  EFI_HANDLE                   Handle,
   IN  UINTN                        NumberOfChildren,
   IN  EFI_HANDLE                   *ChildHandleBuffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  Handle            - TODO: add argument description
+  NumberOfChildren  - TODO: add argument description
+  ChildHandleBuffer - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // WinNt Bus Driver private worker functions
 //
-EFI_DEVICE_PATH_PROTOCOL *
-WinNtBusCreateDevicePath ( 
+EFI_DEVICE_PATH_PROTOCOL  *
+WinNtBusCreateDevicePath (
   IN  EFI_DEVICE_PATH_PROTOCOL  *RootDevicePath,
   IN  EFI_GUID                  *Guid,
   IN  UINT16                    InstanceNumber
-  );
+  )
+/*++
 
+Routine Description:
 
-#define IA32_MAX_IO_ADDRESS       0xFFFF
-#define IA32_MAX_MEM_ADDRESS      0xFFFFFFFF
+  TODO: Add function description
 
-#define IOCTL_MEM_COPY            0x00000001
-#define IOCTL_IO_READ             0x00000002
-#define IOCTL_IO_WRITE            0x00000003
+Arguments:
+
+  RootDevicePath  - TODO: add argument description
+  Guid            - TODO: add argument description
+  InstanceNumber  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+#define IA32_MAX_IO_ADDRESS   0xFFFF
+#define IA32_MAX_MEM_ADDRESS  0xFFFFFFFF
+
+#define IOCTL_MEM_COPY        0x00000001
+#define IOCTL_IO_READ         0x00000002
+#define IOCTL_IO_WRITE        0x00000003
 
 typedef union {
-  UINT8       *buf;
-  UINT8       *ui8;
-  UINT16      *ui16;
-  UINT32      *ui32;
-  UINT64      *ui64;
-  UINTN       ui;
+  UINT8   *buf;
+  UINT8   *ui8;
+  UINT16  *ui16;
+  UINT32  *ui32;
+  UINT64  *ui64;
+  UINTN   ui;
 } PTR;
 
-EFI_CPU_IO_PROTOCOL    mCpuIoProtocol;
+EFI_CPU_IO_PROTOCOL       mCpuIoProtocol;
 
 EFI_STATUS
 CpuIoCheckAddressRange (
@@ -244,7 +334,27 @@ CpuIoCheckAddressRange (
   IN  UINTN                             Count,
   IN  VOID                              *Buffer,
   IN  UINT64                            Limit
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Width   - TODO: add argument description
+  Address - TODO: add argument description
+  Count   - TODO: add argument description
+  Buffer  - TODO: add argument description
+  Limit   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN                   gReadPending;
 BOOLEAN                   gHostBridgeInit;
@@ -254,7 +364,5 @@ PCI_CONFIG_ACCESS_CF8     gConfigData;
 
 EFI_WIN_NT_THUNK_PROTOCOL *gWinNtThunk;
 HANDLE                    *gDeviceHandle;
-
-
 
 #endif

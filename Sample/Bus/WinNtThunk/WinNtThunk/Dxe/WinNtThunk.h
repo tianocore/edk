@@ -17,6 +17,7 @@ Abstract:
 
 --*/
 
+// TODO: add protective #ifndef
 #include "Efi2WinNT.h"
 #include "EfiWinNtLib.h"
 #include "EfiDriverLib.h"
@@ -26,6 +27,6 @@ Abstract:
 // WinNtThunk Device Path Protocol Instance Type
 //
 typedef struct {
-  VENDOR_DEVICE_PATH            Vendor;
-  EFI_DEVICE_PATH_PROTOCOL      EndDevicePath;
+  VENDOR_DEVICE_PATH        Vendor;
+  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath;
 } WIN_NT_THUNK_DEVICE_PATH;

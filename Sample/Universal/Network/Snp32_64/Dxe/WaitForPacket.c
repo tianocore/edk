@@ -18,10 +18,12 @@ Abstract:
 
 #include "snp.h"
 
-VOID EFIAPI
-SnpWaitForPacketNotify(
+VOID
+EFIAPI
+SnpWaitForPacketNotify (
   EFI_EVENT Event,
-  VOID      *SnpPtr)
+  VOID      *SnpPtr
+  )
 /*++
 
 Routine Description:
@@ -38,61 +40,59 @@ Returns:
   // Do nothing if either parameter is a NULL pointer.
   //
   if (Event == NULL || SnpPtr == NULL) {
-    return;
+    return ;
   }
-
   //
   // Do nothing if the SNP interface is not initialized.
   //
-  switch (((SNP_DRIVER *)SnpPtr)->mode.State) {
+  switch (((SNP_DRIVER *) SnpPtr)->mode.State) {
   case EfiSimpleNetworkInitialized:
     break;
 
   case EfiSimpleNetworkStopped:
   case EfiSimpleNetworkStarted:
   default:
-    return;
+    return ;
   }
-
   //
   // Fill in CDB for UNDI GetStatus().
   //
-  ((SNP_DRIVER *)SnpPtr)->cdb.OpCode = PXE_OPCODE_GET_STATUS;
-  ((SNP_DRIVER *)SnpPtr)->cdb.OpFlags = 0;
-  ((SNP_DRIVER *)SnpPtr)->cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  ((SNP_DRIVER *)SnpPtr)->cdb.CPBaddr = PXE_CPBADDR_NOT_USED;
-  ((SNP_DRIVER *)SnpPtr)->cdb.DBsize = sizeof(UINT32) * 2;
-  ((SNP_DRIVER *)SnpPtr)->cdb.DBaddr = (UINT64)(((SNP_DRIVER *)SnpPtr)->db);
-  ((SNP_DRIVER *)SnpPtr)->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  ((SNP_DRIVER *)SnpPtr)->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  ((SNP_DRIVER *)SnpPtr)->cdb.IFnum = ((SNP_DRIVER *)SnpPtr)->if_num;
-  ((SNP_DRIVER *)SnpPtr)->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  ((SNP_DRIVER *) SnpPtr)->cdb.OpCode     = PXE_OPCODE_GET_STATUS;
+  ((SNP_DRIVER *) SnpPtr)->cdb.OpFlags    = 0;
+  ((SNP_DRIVER *) SnpPtr)->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
+  ((SNP_DRIVER *) SnpPtr)->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
+  ((SNP_DRIVER *) SnpPtr)->cdb.DBsize     = sizeof (UINT32) * 2;
+  ((SNP_DRIVER *) SnpPtr)->cdb.DBaddr     = (UINT64) (((SNP_DRIVER *) SnpPtr)->db);
+  ((SNP_DRIVER *) SnpPtr)->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  ((SNP_DRIVER *) SnpPtr)->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  ((SNP_DRIVER *) SnpPtr)->cdb.IFnum      = ((SNP_DRIVER *) SnpPtr)->if_num;
+  ((SNP_DRIVER *) SnpPtr)->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
   //
   // Clear contents of DB buffer.
   //
-  EfiZeroMem(((SNP_DRIVER *)SnpPtr)->db, sizeof(UINT32) * 2);
+  EfiZeroMem (((SNP_DRIVER *) SnpPtr)->db, sizeof (UINT32) * 2);
 
   //
   // Issue UNDI command and check result.
   //
-  (*((SNP_DRIVER *)SnpPtr)->issue_undi32_command)((UINT64)&((SNP_DRIVER *)SnpPtr)->cdb);
+  (*((SNP_DRIVER *) SnpPtr)->issue_undi32_command) ((UINT64) &((SNP_DRIVER *) SnpPtr)->cdb);
 
-  if (((SNP_DRIVER *)SnpPtr)->cdb.StatCode != EFI_SUCCESS) {
-    return;
+  if (((SNP_DRIVER *) SnpPtr)->cdb.StatCode != EFI_SUCCESS) {
+    return ;
   }
-
   //
   // We might have a packet.  Check the receive length and signal
   // the event if the length is not zero.
   //
-  EfiCopyMem(
-    &PxeDbGetStatus, 
-    ((SNP_DRIVER *)SnpPtr)->db,
-    sizeof(UINT32) * 2);
+  EfiCopyMem (
+    &PxeDbGetStatus,
+    ((SNP_DRIVER *) SnpPtr)->db,
+    sizeof (UINT32) * 2
+    );
 
   if (PxeDbGetStatus.RxFrameLen != 0) {
-    gBS->SignalEvent(Event);
+    gBS->SignalEvent (Event);
   }
 }
 

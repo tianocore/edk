@@ -59,16 +59,18 @@ Returns:
   EFI_STATUS
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gWinNtUgaDriverBinding, 
-           ImageHandle,
-           &gWinNtUgaComponentName,
-           NULL,
-           NULL
-           );
+          ImageHandle,
+          SystemTable,
+          &gWinNtUgaDriverBinding,
+          ImageHandle,
+          &gWinNtUgaComponentName,
+          NULL,
+          NULL
+          );
 }
 
 EFI_STATUS
@@ -89,19 +91,22 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS               Status;
-  EFI_WIN_NT_IO_PROTOCOL   *WinNtIo;
+  EFI_STATUS              Status;
+  EFI_WIN_NT_IO_PROTOCOL  *WinNtIo;
 
   //
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  Handle,           
-                  &gEfiWinNtIoProtocolGuid,  
+                  Handle,
+                  &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
@@ -114,15 +119,14 @@ Returns:
   // Close the I/O Abstraction(s) used to perform the supported test
   //
   gBS->CloseProtocol (
-         Handle,           
-         &gEfiWinNtIoProtocolGuid,  
-         This->DriverBindingHandle,   
-         Handle   
-         );
-  
+        Handle,
+        &gEfiWinNtIoProtocolGuid,
+        This->DriverBindingHandle,
+        Handle
+        );
+
   return Status;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -142,24 +146,27 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  EFI_WIN_NT_IO_PROTOCOL  *WinNtIo;                
+  EFI_WIN_NT_IO_PROTOCOL  *WinNtIo;
   EFI_STATUS              Status;
   UGA_PRIVATE_DATA        *Private;
-
 
   //
   // Grab the protocols we need
   //
   Status = gBS->OpenProtocol (
-                  Handle,           
-                  &gEfiWinNtIoProtocolGuid,  
+                  Handle,
+                  &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
@@ -168,43 +175,46 @@ Returns:
   //
   Private = NULL;
   Status = gBS->AllocatePool (
-                  EfiBootServicesData, sizeof(UGA_PRIVATE_DATA), &Private
+                  EfiBootServicesData,
+                  sizeof (UGA_PRIVATE_DATA),
+                  &Private
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     goto Done;
   }
-
   //
   // Set up context record
   //
-  Private->Signature        = UGA_PRIVATE_DATA_SIGNATURE;
-  Private->Handle           = Handle;
-  Private->WinNtThunk       = WinNtIo->WinNtThunk;
+  Private->Signature            = UGA_PRIVATE_DATA_SIGNATURE;
+  Private->Handle               = Handle;
+  Private->WinNtThunk           = WinNtIo->WinNtThunk;
 
-  Private->ControllerNameTable = NULL;
+  Private->ControllerNameTable  = NULL;
 
   EfiLibAddUnicodeString (
-    "eng", 
-    gWinNtUgaComponentName.SupportedLanguages, 
-    &Private->ControllerNameTable, 
+    "eng",
+    gWinNtUgaComponentName.SupportedLanguages,
+    &Private->ControllerNameTable,
     WinNtIo->EnvString
     );
 
   Private->WindowName = WinNtIo->EnvString;
 
-  Status = WinNtUgaConstructor (Private);
+  Status              = WinNtUgaConstructor (Private);
   if (EFI_ERROR (Status)) {
     goto Done;
   }
-
   //
   // Publish the Uga interface to the world
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
-                  &Private->Handle,         
-                  &gEfiUgaDrawProtocolGuid,       &Private->UgaDraw,
-                  &gEfiUgaIoProtocolGuid,         &Private->UgaIo,
-                  &gEfiSimpleTextInProtocolGuid,  &Private->SimpleTextIn,
+                  &Private->Handle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &Private->UgaDraw,
+                  &gEfiUgaIoProtocolGuid,
+                  &Private->UgaIo,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &Private->SimpleTextIn,
                   NULL
                   );
 
@@ -212,11 +222,11 @@ Done:
   if (EFI_ERROR (Status)) {
 
     gBS->CloseProtocol (
-           Handle,           
-           &gEfiWinNtIoProtocolGuid,  
-           This->DriverBindingHandle,   
-           Handle
-           );
+          Handle,
+          &gEfiWinNtIoProtocolGuid,
+          This->DriverBindingHandle,
+          Handle
+          );
 
     if (Private != NULL) {
       //
@@ -229,9 +239,9 @@ Done:
       gBS->FreePool (Private);
     }
   }
+
   return Status;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -252,17 +262,23 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_NOT_STARTED - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  EFI_UGA_DRAW_PROTOCOL *UgaDraw;                  
+  EFI_UGA_DRAW_PROTOCOL *UgaDraw;
   EFI_STATUS            Status;
   UGA_PRIVATE_DATA      *Private;
 
   Status = gBS->OpenProtocol (
-                  Handle,           
-                  &gEfiUgaDrawProtocolGuid,  
+                  Handle,
+                  &gEfiUgaDrawProtocolGuid,
                   &UgaDraw,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -275,16 +291,19 @@ Returns:
   //
   // Get our private context information
   //
-  Private = UGA_DRAW_PRIVATE_DATA_FROM_THIS (UgaDraw); 
+  Private = UGA_DRAW_PRIVATE_DATA_FROM_THIS (UgaDraw);
 
   //
   // Remove the SGO interface from the system
   //
   Status = gBS->UninstallMultipleProtocolInterfaces (
-                  Private->Handle, 
-                  &gEfiUgaDrawProtocolGuid,        &Private->UgaDraw,
-                  &gEfiUgaIoProtocolGuid,          &Private->UgaIo,
-                  &gEfiSimpleTextInProtocolGuid,   &Private->SimpleTextIn,
+                  Private->Handle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &Private->UgaDraw,
+                  &gEfiUgaIoProtocolGuid,
+                  &Private->UgaIo,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &Private->SimpleTextIn,
                   NULL
                   );
   if (!EFI_ERROR (Status)) {
@@ -297,11 +316,11 @@ Returns:
     }
 
     gBS->CloseProtocol (
-           Handle,           
-           &gEfiWinNtIoProtocolGuid,  
-           This->DriverBindingHandle,   
-           Handle
-           );
+          Handle,
+          &gEfiWinNtIoProtocolGuid,
+          This->DriverBindingHandle,
+          Handle
+          );
 
     //
     // Free our instance data
@@ -311,9 +330,9 @@ Returns:
     gBS->FreePool (Private);
 
   }
+
   return Status;
 }
-
 
 UINTN
 Atoi (
@@ -351,12 +370,13 @@ Returns:
   //
   Number = 0;
   while (*Str != '\0') {
-      if ((*Str >= '0') && (*Str <= '9')) {
-          Number = (Number * 10) + *Str - '0';
-      } else {
-          break;
-      }
-      Str++;
+    if ((*Str >= '0') && (*Str <= '9')) {
+      Number = (Number * 10) +*Str - '0';
+    } else {
+      break;
+    }
+
+    Str++;
   }
 
   return Number;

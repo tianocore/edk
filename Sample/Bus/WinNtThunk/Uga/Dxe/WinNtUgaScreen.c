@@ -23,11 +23,10 @@ Abstract:
 
 #include "WinNtUga.h"
 
-EFI_WIN_NT_THUNK_PROTOCOL  *mWinNt;
-DWORD                      mTlsIndex = TLS_OUT_OF_INDEXES;
-DWORD                      mTlsIndexUseCount = 0; // lets us know when we can free mTlsIndex.
-static EFI_EVENT           mUgaScreenExitBootServicesEvent;
-
+EFI_WIN_NT_THUNK_PROTOCOL *mWinNt;
+DWORD                     mTlsIndex         = TLS_OUT_OF_INDEXES;
+DWORD                     mTlsIndexUseCount = 0;  // lets us know when we can free mTlsIndex.
+static EFI_EVENT          mUgaScreenExitBootServicesEvent;
 
 EFI_STATUS
 WinNtUgaStartWindow (
@@ -46,13 +45,12 @@ KillNtUgaThread (
   IN VOID       *Context
   );
 
-
 //
 // UGA Protocol Member Functions
 //
 
 EFI_STATUS
-EFIAPI 
+EFIAPI
 WinNtUgaGetMode (
   EFI_UGA_DRAW_PROTOCOL *This,
   UINT32                *HorizontalResolution,
@@ -78,6 +76,7 @@ WinNtUgaGetMode (
     EFI_INVALID_PARAMETER - One of the input args was NULL.
 
 --*/
+// TODO:    ADD IN/OUT description here
 {
   UGA_PRIVATE_DATA  *Private;
 
@@ -87,8 +86,10 @@ WinNtUgaGetMode (
     return EFI_NOT_STARTED;
   }
 
-  if ((HorizontalResolution == NULL) || (VerticalResolution == NULL)
-      || (ColorDepth == NULL) || (RefreshRate == NULL)) {
+  if ((HorizontalResolution == NULL) ||
+      (VerticalResolution   == NULL) ||
+      (ColorDepth           == NULL) ||
+      (RefreshRate          == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -99,9 +100,8 @@ WinNtUgaGetMode (
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
-EFIAPI 
+EFIAPI
 WinNtUgaSetMode (
   EFI_UGA_DRAW_PROTOCOL *This,
   UINT32                HorizontalResolution,
@@ -127,37 +127,43 @@ WinNtUgaSetMode (
     EFI_INVALID_PARAMETER - One of the input args was NULL.
 
 --*/
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    ADD IN/OUT description here
 {
   EFI_STATUS        Status;
   UGA_PRIVATE_DATA  *Private;
   EFI_UGA_PIXEL     Fill;
   EFI_UGA_PIXEL     *NewFillLine;
-  RECT              Rect; 
-  UINTN             Size; 
+  RECT              Rect;
+  UINTN             Size;
   UINTN             Width;
   UINTN             Height;
-  
+
   Private = UGA_DRAW_PRIVATE_DATA_FROM_THIS (This);
 
   if (Private->HardwareNeedsStarting) {
     Status = WinNtUgaStartWindow (
-              Private, 
-              HorizontalResolution, VerticalResolution, ColorDepth, RefreshRate
+              Private,
+              HorizontalResolution,
+              VerticalResolution,
+              ColorDepth,
+              RefreshRate
               );
     if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
+
     Private->HardwareNeedsStarting = FALSE;
   } else {
     //
-    //Change the resolution and resize of the window
+    // Change the resolution and resize of the window
     //
 
-
     //
-    //Free the old buffer. We do not save the content of the old buffer since the 
-    //screen is to be cleared anyway. Clearing the screen is required by the EFI spec.
-    //See EFI spec chepter 10.5-EFI_UGA_DRAW_PROTOCOL.SetMode()
+    // Free the old buffer. We do not save the content of the old buffer since the
+    // screen is to be cleared anyway. Clearing the screen is required by the EFI spec.
+    // See EFI spec chepter 10.5-EFI_UGA_DRAW_PROTOCOL.SetMode()
     //
     Private->WinNtThunk->HeapFree (Private->WinNtThunk->GetProcessHeap (), 0, Private->VirtualScreenInfo);
 
@@ -167,54 +173,57 @@ WinNtUgaSetMode (
     // same a a frame buffer. The first row of this buffer will be the bottom
     // line of the image. This is an artifact of the way we draw to the screen.
     //
-    Size = HorizontalResolution * VerticalResolution * sizeof (RGBQUAD) + sizeof(BITMAPV4HEADER);
+    Size = HorizontalResolution * VerticalResolution * sizeof (RGBQUAD) + sizeof (BITMAPV4HEADER);
     Private->VirtualScreenInfo = Private->WinNtThunk->HeapAlloc (
                                                         Private->WinNtThunk->GetProcessHeap (),
-                                                        HEAP_ZERO_MEMORY, 
+                                                        HEAP_ZERO_MEMORY,
                                                         Size
                                                         );
 
     //
-    //Update the virtual screen info data structure
+    // Update the virtual screen info data structure
     //
-    Private->VirtualScreenInfo->bV4Size            = sizeof (BITMAPV4HEADER);
-    Private->VirtualScreenInfo->bV4Width           = HorizontalResolution;
-    Private->VirtualScreenInfo->bV4Height          = VerticalResolution;
-    Private->VirtualScreenInfo->bV4Planes          = 1;
-    Private->VirtualScreenInfo->bV4BitCount        = 32;
-    Private->VirtualScreenInfo->bV4V4Compression   = BI_RGB;  // uncompressed
+    Private->VirtualScreenInfo->bV4Size           = sizeof (BITMAPV4HEADER);
+    Private->VirtualScreenInfo->bV4Width          = HorizontalResolution;
+    Private->VirtualScreenInfo->bV4Height         = VerticalResolution;
+    Private->VirtualScreenInfo->bV4Planes         = 1;
+    Private->VirtualScreenInfo->bV4BitCount       = 32;
+    //
+    // uncompressed
+    //
+    Private->VirtualScreenInfo->bV4V4Compression  = BI_RGB;
 
     //
-    //The rest of the allocated memory block is the virtual screen buffer
+    // The rest of the allocated memory block is the virtual screen buffer
     //
-    Private->VirtualScreen = (RGBQUAD *)(Private->VirtualScreenInfo + 1);
+    Private->VirtualScreen = (RGBQUAD *) (Private->VirtualScreenInfo + 1);
 
     //
-    //Use the AdjuctWindowRect fuction to calculate the real width and height
-    //of the new window including the border and caption
+    // Use the AdjuctWindowRect fuction to calculate the real width and height
+    // of the new window including the border and caption
     //
-    Rect.left = 0;
-    Rect.top = 0;
-    Rect.right = HorizontalResolution;
+    Rect.left   = 0;
+    Rect.top    = 0;
+    Rect.right  = HorizontalResolution;
     Rect.bottom = VerticalResolution;
 
     Private->WinNtThunk->AdjustWindowRect (&Rect, WS_OVERLAPPEDWINDOW, 0);
 
-    Width = Rect.right - Rect.left;
-    Height = Rect.bottom - Rect.top;
+    Width   = Rect.right - Rect.left;
+    Height  = Rect.bottom - Rect.top;
 
     //
-    //Retrieve the original window position information
+    // Retrieve the original window position information
     //
     Private->WinNtThunk->GetWindowRect (Private->WindowHandle, &Rect);
 
     //
-    //Adjust the window size
+    // Adjust the window size
     //
     Private->WinNtThunk->MoveWindow (Private->WindowHandle, Rect.left, Rect.top, Width, Height, TRUE);
 
   }
- 
+
   Status = gBS->AllocatePool (
                   EfiBootServicesData,
                   sizeof (EFI_UGA_PIXEL) * HorizontalResolution,
@@ -227,40 +236,45 @@ WinNtUgaSetMode (
   if (Private->FillLine != NULL) {
     gBS->FreePool (Private->FillLine);
   }
-  Private->FillLine = NewFillLine;
+
+  Private->FillLine             = NewFillLine;
 
   Private->HorizontalResolution = HorizontalResolution;
   Private->VerticalResolution   = VerticalResolution;
-  Private->ColorDepth   = ColorDepth;
-  Private->RefreshRate  = RefreshRate;
+  Private->ColorDepth           = ColorDepth;
+  Private->RefreshRate          = RefreshRate;
 
-  Fill.Red    = 0x00;
-  Fill.Green  = 0x00;
-  Fill.Blue   = 0x00;
+  Fill.Red                      = 0x00;
+  Fill.Green                    = 0x00;
+  Fill.Blue                     = 0x00;
   This->Blt (
-          This, 
-          &Fill,                EfiUgaVideoFill, 
-          0,  0,                0,  0,       
-          HorizontalResolution, VerticalResolution, 
+          This,
+          &Fill,
+          EfiUgaVideoFill,
+          0,
+          0,
+          0,
+          0,
+          HorizontalResolution,
+          VerticalResolution,
           HorizontalResolution * sizeof (EFI_UGA_PIXEL)
           );
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
-EFIAPI 
+EFIAPI
 WinNtUgaBlt (
-  IN  EFI_UGA_DRAW_PROTOCOL     *This,
-  IN  EFI_UGA_PIXEL             *BltBuffer,   OPTIONAL
-  IN  EFI_UGA_BLT_OPERATION     BltOperation,
-  IN  UINTN                     SourceX,
-  IN  UINTN                     SourceY,
-  IN  UINTN                     DestinationX,
-  IN  UINTN                     DestinationY,
-  IN  UINTN                      Width,
-  IN  UINTN                      Height,
-  IN  UINTN                     Delta         OPTIONAL
+  IN  EFI_UGA_DRAW_PROTOCOL                   *This,
+  IN  EFI_UGA_PIXEL                           *BltBuffer, OPTIONAL
+  IN  EFI_UGA_BLT_OPERATION                   BltOperation,
+  IN  UINTN                                   SourceX,
+  IN  UINTN                                   SourceY,
+  IN  UINTN                                   DestinationX,
+  IN  UINTN                                   DestinationY,
+  IN  UINTN                                   Width,
+  IN  UINTN                                   Height,
+  IN  UINTN                                   Delta         OPTIONAL
   )
 /*++
 
@@ -295,31 +309,34 @@ WinNtUgaBlt (
                              buffer.
 
 --*/
+// TODO:    SourceY - add argument and description to function comment
+// TODO:    DestinationX - add argument and description to function comment
+// TODO:    DestinationY - add argument and description to function comment
+// TODO:    Delta - add argument and description to function comment
 {
-  UGA_PRIVATE_DATA        *Private;
-  EFI_TPL                 OriginalTPL;
-  UINTN                   DstY;
-  UINTN                   SrcY;
-  RGBQUAD                 *VScreen;
-  RGBQUAD                 *VScreenSrc;
-  EFI_UGA_PIXEL           *Blt;
-  UINTN                   Index;
-  RECT                    Rect;
-  EFI_UGA_PIXEL           *FillPixel;
+  UGA_PRIVATE_DATA  *Private;
+  EFI_TPL           OriginalTPL;
+  UINTN             DstY;
+  UINTN             SrcY;
+  RGBQUAD           *VScreen;
+  RGBQUAD           *VScreenSrc;
+  EFI_UGA_PIXEL     *Blt;
+  UINTN             Index;
+  RECT              Rect;
+  EFI_UGA_PIXEL     *FillPixel;
 
   Private = UGA_DRAW_PRIVATE_DATA_FROM_THIS (This);
 
-  if ((BltOperation < 0 ) || (BltOperation >= EfiUgaBltMax)) {
+  if ((BltOperation < 0) || (BltOperation >= EfiUgaBltMax)) {
     return EFI_INVALID_PARAMETER;
   }
 
   if (Width == 0 || Height == 0) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
-  // If Delta is zero, then the entire BltBuffer is being used, so Delta 
-  // is the number of bytes in each row of BltBuffer.  Since BltBuffer is Width pixels size, 
+  // If Delta is zero, then the entire BltBuffer is being used, so Delta
+  // is the number of bytes in each row of BltBuffer.  Since BltBuffer is Width pixels size,
   // the number of bytes in each row can be computed.
   //
   if (Delta == 0) {
@@ -333,26 +350,27 @@ WinNtUgaBlt (
   //
 
   if (BltOperation == EfiUgaVideoToBltBuffer) {
+
     //
     // Video to BltBuffer: Source is Video, destination is BltBuffer
     //
     if (SourceY + Height > Private->VerticalResolution) {
       return EFI_INVALID_PARAMETER;
     }
+
     if (SourceX + Width > Private->HorizontalResolution) {
       return EFI_INVALID_PARAMETER;
     }
-
     //
-    // We have to raise to TPL Notify, so we make an atomic write the frame buffer. 
+    // We have to raise to TPL Notify, so we make an atomic write the frame buffer.
     // We would not want a timer based event (Cursor, ...) to come in while we are
     // doing this operation.
     //
     OriginalTPL = gBS->RaiseTPL (EFI_TPL_NOTIFY);
 
     for (SrcY = SourceY, DstY = DestinationY; DstY < (Height + DestinationY); SrcY++, DstY++) {
-      Blt = (EFI_UGA_PIXEL *)((UINT8 *)BltBuffer + (DstY * Delta) + DestinationX * sizeof (EFI_UGA_PIXEL));
-      VScreen = &Private->VirtualScreen[(Private->VerticalResolution - SrcY - 1)*Private->HorizontalResolution + SourceX];
+      Blt = (EFI_UGA_PIXEL *) ((UINT8 *) BltBuffer + (DstY * Delta) + DestinationX * sizeof (EFI_UGA_PIXEL));
+      VScreen = &Private->VirtualScreen[(Private->VerticalResolution - SrcY - 1) * Private->HorizontalResolution + SourceX];
       EfiCopyMem (Blt, VScreen, sizeof (EFI_UGA_PIXEL) * Width);
     }
   } else {
@@ -362,12 +380,13 @@ WinNtUgaBlt (
     if (DestinationY + Height > Private->VerticalResolution) {
       return EFI_INVALID_PARAMETER;
     }
+
     if (DestinationX + Width > Private->HorizontalResolution) {
       return EFI_INVALID_PARAMETER;
     }
 
     //
-    // We have to raise to TPL Notify, so we make an atomic write the frame buffer. 
+    // We have to raise to TPL Notify, so we make an atomic write the frame buffer.
     // We would not want a timer based event (Cursor, ...) to come in while we are
     // doing this operation.
     //
@@ -382,22 +401,25 @@ WinNtUgaBlt (
 
     for (Index = 0; Index < Height; Index++) {
       if (DestinationY <= SourceY) {
-        SrcY = SourceY + Index;
-        DstY = DestinationY + Index;
+        SrcY  = SourceY + Index;
+        DstY  = DestinationY + Index;
       } else {
-        SrcY = SourceY + Height - Index - 1;
-        DstY = DestinationY + Height - Index - 1;
+        SrcY  = SourceY + Height - Index - 1;
+        DstY  = DestinationY + Height - Index - 1;
       }
-      VScreen = &Private->VirtualScreen[(Private->VerticalResolution - DstY - 1)*Private->HorizontalResolution + DestinationX];
+
+      VScreen = &Private->VirtualScreen[(Private->VerticalResolution - DstY - 1) * Private->HorizontalResolution + DestinationX];
       switch (BltOperation) {
       case EfiUgaBltBufferToVideo:
-        Blt = (EFI_UGA_PIXEL *)((UINT8 *)BltBuffer + (SrcY * Delta) + SourceX * sizeof (EFI_UGA_PIXEL));
+        Blt = (EFI_UGA_PIXEL *) ((UINT8 *) BltBuffer + (SrcY * Delta) + SourceX * sizeof (EFI_UGA_PIXEL));
         EfiCopyMem (VScreen, Blt, Width * sizeof (EFI_UGA_PIXEL));
         break;
+
       case EfiUgaVideoToVideo:
-        VScreenSrc = &Private->VirtualScreen[(Private->VerticalResolution - SrcY - 1)*Private->HorizontalResolution + SourceX];
+        VScreenSrc = &Private->VirtualScreen[(Private->VerticalResolution - SrcY - 1) * Private->HorizontalResolution + SourceX];
         EfiCopyMem (VScreen, VScreenSrc, Width * sizeof (EFI_UGA_PIXEL));
         break;
+
       case EfiUgaVideoFill:
         EfiCopyMem (VScreen, Private->FillLine, Width * sizeof (EFI_UGA_PIXEL));
         break;
@@ -414,14 +436,14 @@ WinNtUgaBlt (
     Rect.right  = DestinationX + Width;
     Rect.bottom = DestinationY + Height;
     Private->WinNtThunk->InvalidateRect (Private->WindowHandle, &Rect, FALSE);
-  
+
     //
-    // Send the WM_PAINT message to the thread that is drawing the window. We 
-    // are in the main thread and the window drawing is in a child thread. 
+    // Send the WM_PAINT message to the thread that is drawing the window. We
+    // are in the main thread and the window drawing is in a child thread.
     // There is a child thread per window. We have no CriticalSection or Mutex
-    // since we write the data and the other thread displays the data. While 
+    // since we write the data and the other thread displays the data. While
     // we may miss some data for a short period of time this is no different than
-    // a write combining on writes to a frame buffer. 
+    // a write combining on writes to a frame buffer.
     //
   
     Private->WinNtThunk->UpdateWindow (Private->WindowHandle);
@@ -431,7 +453,6 @@ WinNtUgaBlt (
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 WinNtUgaDispatchService (
@@ -453,15 +474,14 @@ WinNtUgaDispatchService (
     Varies depending on pIoRequest.
 
 --*/
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
   return EFI_NOT_FOUND;
 }
 
-
 //
 // Construction and Destruction functions
 //
-
 
 EFI_STATUS
 WinNtUgaSupported (
@@ -478,6 +498,9 @@ Returns:
   None
 
 --*/
+// TODO:    WinNtIo - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   //
   // Check to see if the IO abstraction represents a device type we support.
@@ -490,7 +513,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 LRESULT
 CALLBACK
@@ -512,18 +534,25 @@ Returns:
   See Win32 Book
 
 --*/
+// TODO:    hwnd - add argument and description to function comment
+// TODO:    iMsg - add argument and description to function comment
+// TODO:    wParam - add argument and description to function comment
+// TODO:    lParam - add argument and description to function comment
 {
-  UGA_PRIVATE_DATA          *Private;
-  UINTN                     Size;
-  HDC                       Handle;
-  PAINTSTRUCT               PaintStruct;
-  LPARAM                    Index;
-  EFI_INPUT_KEY             Key;
+  UGA_PRIVATE_DATA  *Private;
+  UINTN             Size;
+  HDC               Handle;
+  PAINTSTRUCT       PaintStruct;
+  LPARAM            Index;
+  EFI_INPUT_KEY     Key;
 
-  // BugBug - if there are two instances of this DLL in memory (such as is 
+  //
+  // BugBug - if there are two instances of this DLL in memory (such as is
   // the case for ERM), the correct instance of this function may not be called.
   // This also means that the address of the mTlsIndex value will be wrong, and
   // the value may be wrong too.
+  //
+
 
   //
   // Use mTlsIndex global to get a Thread Local Storage version of Private.
@@ -531,7 +560,7 @@ Returns:
   // a unique thread.
   //
   Private = mWinNt->TlsGetValue (mTlsIndex);
-  ASSERT(NULL != Private);
+  ASSERT (NULL != Private);
 
   switch (iMsg) {
   case WM_CREATE:
@@ -545,18 +574,20 @@ Returns:
     //
     Private->VirtualScreenInfo = Private->WinNtThunk->HeapAlloc (
                                                         Private->WinNtThunk->GetProcessHeap (),
-                                                        HEAP_ZERO_MEMORY, 
+                                                        HEAP_ZERO_MEMORY,
                                                         Size
                                                         );
-  
-    Private->VirtualScreenInfo->bV4Size            = sizeof (BITMAPV4HEADER);
-    Private->VirtualScreenInfo->bV4Width           = Private->HorizontalResolution;
-    Private->VirtualScreenInfo->bV4Height          = Private->VerticalResolution;
-    Private->VirtualScreenInfo->bV4Planes          = 1;
-    Private->VirtualScreenInfo->bV4BitCount        = 32;
-    Private->VirtualScreenInfo->bV4V4Compression   = BI_RGB;  // uncompressed
 
-    Private->VirtualScreen = (RGBQUAD *)(Private->VirtualScreenInfo + 1);
+    Private->VirtualScreenInfo->bV4Size           = sizeof (BITMAPV4HEADER);
+    Private->VirtualScreenInfo->bV4Width          = Private->HorizontalResolution;
+    Private->VirtualScreenInfo->bV4Height         = Private->VerticalResolution;
+    Private->VirtualScreenInfo->bV4Planes         = 1;
+    Private->VirtualScreenInfo->bV4BitCount       = 32;
+    //
+    // uncompressed
+    //
+    Private->VirtualScreenInfo->bV4V4Compression  = BI_RGB;
+    Private->VirtualScreen = (RGBQUAD *) (Private->VirtualScreenInfo + 1);
     return 0;
 
   case WM_PAINT:
@@ -568,19 +599,19 @@ Returns:
     Handle = mWinNt->BeginPaint (hwnd, &PaintStruct);
 
     mWinNt->SetDIBitsToDevice (
-              Handle,                                   // Destination Device Context
-              0,                                        // Destination X - 0
-              0,                                        // Destination Y - 0
-              Private->HorizontalResolution,            // Width
-              Private->VerticalResolution,              // Height
-              0,                                        // Source X
-              0,                                        // Source Y
-              0,                                        // DIB Start Scan Line
-              Private->VerticalResolution,              // Number of scan lines
-              Private->VirtualScreen,                   // Address of array of DIB bits
-              (BITMAPINFO *)Private->VirtualScreenInfo, // Address of structure with bitmap info
-              DIB_RGB_COLORS                            // RGB or palette indexes
-              ); 
+              Handle,                                     // Destination Device Context
+              0,                                          // Destination X - 0
+              0,                                          // Destination Y - 0
+              Private->HorizontalResolution,              // Width
+              Private->VerticalResolution,                // Height
+              0,                                          // Source X
+              0,                                          // Source Y
+              0,                                          // DIB Start Scan Line
+              Private->VerticalResolution,                // Number of scan lines
+              Private->VirtualScreen,                     // Address of array of DIB bits
+              (BITMAPINFO *) Private->VirtualScreenInfo,  // Address of structure with bitmap info
+              DIB_RGB_COLORS                              // RGB or palette indexes
+              );
 
     mWinNt->EndPaint (hwnd, &PaintStruct);
     return 0;
@@ -591,10 +622,11 @@ Returns:
   case WM_SYSKEYDOWN:
     Key.ScanCode = 0;
     switch (wParam) {
-      case VK_F10:  Key.ScanCode = SCAN_F10;
-        Key.UnicodeChar = 0;
-        UgaPrivateAddQ (Private, Key);
-        return 0;
+    case VK_F10:
+      Key.ScanCode    = SCAN_F10;
+      Key.UnicodeChar = 0;
+      UgaPrivateAddQ (Private, Key);
+      return 0;
     }
     break;
 
@@ -613,7 +645,6 @@ Returns:
     case VK_NEXT:       Key.ScanCode = SCAN_PAGE_DOWN;  break;
     case VK_ESCAPE:     Key.ScanCode = SCAN_ESC;        break;
 
-
     case VK_F1:   Key.ScanCode = SCAN_F1;   break;
     case VK_F2:   Key.ScanCode = SCAN_F2;   break;
     case VK_F3:   Key.ScanCode = SCAN_F3;   break;
@@ -629,23 +660,25 @@ Returns:
       Key.UnicodeChar = 0;
       UgaPrivateAddQ (Private, Key);
     }
+
     return 0;
 
   case WM_CHAR:
     //
     // The ESC key also generate WM_CHAR.
     //
-    if ( wParam == 0x1B ) {
+    if (wParam == 0x1B) {
       return 0;
     }
 
     for (Index = 0; Index < (lParam & 0xffff); Index++) {
       if (wParam != 0) {
-        Key.UnicodeChar = (CHAR16)wParam;
-        Key.ScanCode = 0;
+        Key.UnicodeChar = (CHAR16) wParam;
+        Key.ScanCode    = 0;
         UgaPrivateAddQ (Private, Key);
       }
     }
+
     return 0;
 
   case WM_CLOSE:
@@ -659,18 +692,18 @@ Returns:
   case WM_DESTROY:
     mWinNt->DestroyWindow (hwnd);
     mWinNt->PostQuitMessage (0);
-    
+
     mWinNt->HeapFree (Private->WinNtThunk->GetProcessHeap (), 0, Private->VirtualScreenInfo);
 
     mWinNt->ExitThread (0);
     return 0;
+
   default:
     break;
   };
 
   return mWinNt->DefWindowProc (hwnd, iMsg, wParam, lParam);
 }
-
 
 DWORD
 WINAPI
@@ -698,38 +731,38 @@ Returns:
 
 --*/
 {
-  MSG                 Message;
-  UGA_PRIVATE_DATA    *Private;
-  ATOM                Atom;
-  RECT                Rect;
+  MSG               Message;
+  UGA_PRIVATE_DATA  *Private;
+  ATOM              Atom;
+  RECT              Rect;
 
-  Private = (UGA_PRIVATE_DATA *)lpParameter;
-  ASSERT(NULL != Private);
+  Private = (UGA_PRIVATE_DATA *) lpParameter;
+  ASSERT (NULL != Private);
 
   //
-  // Since each thread has unique private data, save the private data in Thread 
+  // Since each thread has unique private data, save the private data in Thread
   // Local Storage slot. Then the shared global mTlsIndex can be used to get
   // thread specific context.
   //
   Private->WinNtThunk->TlsSetValue (mTlsIndex, Private);
 
-  Private->ThreadId = Private->WinNtThunk->GetCurrentThreadId ();
+  Private->ThreadId                   = Private->WinNtThunk->GetCurrentThreadId ();
 
   Private->WindowsClass.cbSize        = sizeof (WNDCLASSEX);
-  Private->WindowsClass.style          = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-  Private->WindowsClass.lpfnWndProc    = WinNtUgaThreadWindowProc;
+  Private->WindowsClass.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+  Private->WindowsClass.lpfnWndProc   = WinNtUgaThreadWindowProc;
   Private->WindowsClass.cbClsExtra    = 0;
   Private->WindowsClass.cbWndExtra    = 0;
-  Private->WindowsClass.hInstance      = NULL;
-  Private->WindowsClass.hIcon          = Private->WinNtThunk->LoadIcon (NULL, IDI_APPLICATION);
-  Private->WindowsClass.hCursor        = Private->WinNtThunk->LoadCursor (NULL, IDC_ARROW);
-  Private->WindowsClass.hbrBackground  = (HBRUSH)COLOR_WINDOW;//(HBRUSH) Private->WinNtThunk->GetStockObject (WHITE_BRUSH);
+  Private->WindowsClass.hInstance     = NULL;
+  Private->WindowsClass.hIcon         = Private->WinNtThunk->LoadIcon (NULL, IDI_APPLICATION);
+  Private->WindowsClass.hCursor       = Private->WinNtThunk->LoadCursor (NULL, IDC_ARROW);
+  Private->WindowsClass.hbrBackground = (HBRUSH) COLOR_WINDOW;
   Private->WindowsClass.lpszMenuName  = NULL;
   Private->WindowsClass.lpszClassName = WIN_NT_UGA_CLASS_NAME;
-  Private->WindowsClass.hIconSm        = Private->WinNtThunk->LoadIcon (NULL, IDI_APPLICATION);
+  Private->WindowsClass.hIconSm       = Private->WinNtThunk->LoadIcon (NULL, IDI_APPLICATION);
 
   //
-  // This call will fail after the first time, but thats O.K. since we only need 
+  // This call will fail after the first time, but thats O.K. since we only need
   // WIN_NT_UGA_CLASS_NAME to exist to create the window.
   //
   // Note: Multiple instances of this DLL will use the same instance of this
@@ -742,27 +775,27 @@ Returns:
   // Setting Rect values to allow for the AdjustWindowRect to provide
   // us the correct sizes for the client area when doing the CreateWindowEx
   //
-  Rect.top = 0;
+  Rect.top    = 0;
   Rect.bottom = Private->VerticalResolution;
-  Rect.left = 0;
-  Rect.right = Private->HorizontalResolution;
+  Rect.left   = 0;
+  Rect.right  = Private->HorizontalResolution;
 
   Private->WinNtThunk->AdjustWindowRect (&Rect, WS_OVERLAPPEDWINDOW, 0);
-    
+
   Private->WindowHandle = Private->WinNtThunk->CreateWindowEx (
-                                                 0,
-                                                  WIN_NT_UGA_CLASS_NAME, 
-                                                 Private->WindowName,
-                                                 WS_OVERLAPPEDWINDOW,
-                                                 CW_USEDEFAULT,
-                                                 CW_USEDEFAULT,
-                                                 Rect.right - Rect.left,
-                                                 Rect.bottom - Rect.top,
-                                                 NULL,
-                                                 NULL,
-                                                 NULL,
-                                                 &Private
-                                                 );
+                                                0,
+                                                WIN_NT_UGA_CLASS_NAME,
+                                                Private->WindowName,
+                                                WS_OVERLAPPEDWINDOW,
+                                                CW_USEDEFAULT,
+                                                CW_USEDEFAULT,
+                                                Rect.right - Rect.left,
+                                                Rect.bottom - Rect.top,
+                                                NULL,
+                                                NULL,
+                                                NULL,
+                                                &Private
+                                                );
 
   //
   // The reset of this thread is the standard winows program. We need a sperate
@@ -779,7 +812,7 @@ Returns:
   Private->WinNtThunk->ReleaseSemaphore (Private->ThreadInited, 1, NULL);
 
   //
-  // This is the message loop that all Windows programs need. 
+  // This is the message loop that all Windows programs need.
   //
   while (Private->WinNtThunk->GetMessage (&Message, Private->WindowHandle, 0, 0)) {
     Private->WinNtThunk->TranslateMessage (&Message);
@@ -789,7 +822,6 @@ Returns:
   return Message.wParam;
 }
 
-
 EFI_STATUS
 WinNtUgaStartWindow (
   IN  UGA_PRIVATE_DATA    *Private,
@@ -798,64 +830,84 @@ WinNtUgaStartWindow (
   IN  UINT32              ColorDepth,
   IN  UINT32              RefreshRate
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private               - TODO: add argument description
+  HorizontalResolution  - TODO: add argument description
+  VerticalResolution    - TODO: add argument description
+  ColorDepth            - TODO: add argument description
+  RefreshRate           - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  EFI_STATUS            Status;
-  EFI_UGA_IO_PROTOCOL   *UgaIo;
-  DWORD                 NewThreadId;
+  EFI_STATUS          Status;
+  EFI_UGA_IO_PROTOCOL *UgaIo;
+  DWORD               NewThreadId;
 
   //
   // Fill in Private->UgaIo protocol
   //
-  UgaIo = &Private->UgaIo;
+  UgaIo   = &Private->UgaIo;
 
-  mWinNt = Private->WinNtThunk;
+  mWinNt  = Private->WinNtThunk;
 
   //
-  // Initialize a Thread Local Storge variable slot. We use TLS to get the 
+  // Initialize a Thread Local Storge variable slot. We use TLS to get the
   // correct Private data instance into the windows thread.
   //
   if (mTlsIndex == TLS_OUT_OF_INDEXES) {
-    ASSERT(0 == mTlsIndexUseCount);
+    ASSERT (0 == mTlsIndexUseCount);
     mTlsIndex = Private->WinNtThunk->TlsAlloc ();
   }
-  mTlsIndexUseCount++; // always increase the use count!
+
+  //
+  // always increase the use count!
+  //
+  mTlsIndexUseCount++;
 
   Private->HorizontalResolution = HorizontalResolution;
-  Private->VerticalResolution = VerticalResolution;
+  Private->VerticalResolution   = VerticalResolution;
 
   //
   // Register to be notified on exit boot services so we can destroy the window.
   //
   Status = gBS->CreateEvent (
-                EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
-                EFI_TPL_CALLBACK,
-                KillNtUgaThread,
-                Private, 
-                &mUgaScreenExitBootServicesEvent
-                );
+                  EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                  EFI_TPL_CALLBACK,
+                  KillNtUgaThread,
+                  Private,
+                  &mUgaScreenExitBootServicesEvent
+                  );
 
   Private->ThreadInited = Private->WinNtThunk->CreateSemaphore (NULL, 0, 1, NULL);
   Private->ThreadHandle = Private->WinNtThunk->CreateThread (
-                                                 NULL,
-                                                 0,
-                                                 WinNtUgaThreadWinMain, 
-                                                 (VOID *)Private, 
-                                                 0, 
-                                                 &NewThreadId
-                                                 );
-
+                                                NULL,
+                                                0,
+                                                WinNtUgaThreadWinMain,
+                                                (VOID *) Private,
+                                                0,
+                                                &NewThreadId
+                                                );
 
   //
   // The other thread has entered the windows message loop so we can
-  // continue our initialization. 
+  // continue our initialization.
   //
   Private->WinNtThunk->WaitForSingleObject (Private->ThreadInited, INFINITE);
   Private->WinNtThunk->CloseHandle (Private->ThreadInited);
- 
+
   return Status;
 }
-
-
 
 EFI_STATUS
 WinNtUgaConstructor (
@@ -872,22 +924,22 @@ Returns:
   None
 
 --*/
+// TODO:    Private - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
 
-  Private->UgaDraw.GetMode          = WinNtUgaGetMode;
-  Private->UgaDraw.SetMode          = WinNtUgaSetMode;
-  Private->UgaDraw.Blt              = WinNtUgaBlt;
-  Private->UgaIo.DispatchService    = WinNtUgaDispatchService;
+  Private->UgaDraw.GetMode        = WinNtUgaGetMode;
+  Private->UgaDraw.SetMode        = WinNtUgaSetMode;
+  Private->UgaDraw.Blt            = WinNtUgaBlt;
+  Private->UgaIo.DispatchService  = WinNtUgaDispatchService;
 
-  Private->HardwareNeedsStarting = TRUE;
-  Private->FillLine = NULL;
+  Private->HardwareNeedsStarting  = TRUE;
+  Private->FillLine               = NULL;
 
   WinNtUgaInitializeSimpleTextInForWindow (Private);
 
   return EFI_SUCCESS;
 }
-  
-
 
 EFI_STATUS
 WinNtUgaDestructor (
@@ -904,8 +956,10 @@ Returns:
   None
 
 --*/
+// TODO:    Private - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT32           UnregisterReturn;
+  UINT32  UnregisterReturn;
 
   if (!Private->HardwareNeedsStarting) {
     //
@@ -920,25 +974,23 @@ Returns:
     // The callback function for another window could still be called,
     // so we need to make sure there are no more users of mTlsIndex.
     //
-    if(0 == mTlsIndexUseCount)
-    {
-      ASSERT(TLS_OUT_OF_INDEXES != mTlsIndex);
+    if (0 == mTlsIndexUseCount) {
+      ASSERT (TLS_OUT_OF_INDEXES != mTlsIndex);
 
-      Private->WinNtThunk->TlsFree(mTlsIndex);
+      Private->WinNtThunk->TlsFree (mTlsIndex);
       mTlsIndex = TLS_OUT_OF_INDEXES;
 
       UnregisterReturn = Private->WinNtThunk->UnregisterClass (
-                                          Private->WindowsClass.lpszClassName,
-                                          Private->WindowsClass.hInstance
-                                          );
+                                                Private->WindowsClass.lpszClassName,
+                                                Private->WindowsClass.hInstance
+                                                );
     }
-  
+
     WinNtUgaDestroySimpleTextInForWindow (Private);
   }
+
   return EFI_SUCCESS;
 }
-
-
 
 STATIC
 VOID
@@ -965,7 +1017,6 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
+  EFI_STATUS  Status;
   Status = WinNtUgaDestructor (Context);
 }
-
