@@ -57,7 +57,6 @@ TARGET_LIB_SOURCE   = "$(TARGET_SOURCE_DIR)\GenFvImageLib.c"
 TARGET_LIB_INCLUDE  = "$(TARGET_SOURCE_DIR)\GenFvImageLib.h" \
                          "$(TARGET_SOURCE_DIR)\GenFvImageLibInternal.h" \
                          "$(EDK_TOOLS_COMMON)\ParseInf.h" \
-                         "$(EDK_TOOLS_COMMON)\PeiCommon.h" \
                          "$(EDK_SOURCE)\Foundation\Include\TianoCommon.h" \
                          "$(EDK_SOURCE)\Foundation\Framework\Include\EfiFirmwareVolumeHeader.h" \
                          "$(EDK_SOURCE)\Foundation\Framework\Include\EfiFirmwareFileSystem.h" \

@@ -41,7 +41,6 @@ TARGET_LIB = $(EDK_TOOLS_OUTPUT)\Common.lib
 TARGET_SOURCE_DIR = $(COMMON_SOURCE)
 
 OBJECTS = "$(EDK_TOOLS_OUTPUT)\ParseInf.obj"      \
-          "$(EDK_TOOLS_OUTPUT)\ParsePeim.obj"       \
           "$(EDK_TOOLS_OUTPUT)\EfiCompress.obj"   \
           "$(EDK_TOOLS_OUTPUT)\EfiDecompress.obj"   \
           "$(EDK_TOOLS_OUTPUT)\crc32.obj"   \
@@ -68,9 +67,6 @@ all: $(TARGET_LIB)
 
 "$(EDK_TOOLS_OUTPUT)\MyAlloc.obj": "$(TARGET_SOURCE_DIR)\MyAlloc.c" "$(TARGET_SOURCE_DIR)\MyAlloc.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
   $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\MyAlloc.c" /Fo"$(EDK_TOOLS_OUTPUT)\MyAlloc.obj"
-
-"$(EDK_TOOLS_OUTPUT)\ParsePeim.obj": "$(TARGET_SOURCE_DIR)\ParsePeim.c" "$(TARGET_SOURCE_DIR)\ParsePeim.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
-  $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\ParsePeim.c" /Fo"$(EDK_TOOLS_OUTPUT)\ParsePeim.obj"
 
 "$(EDK_TOOLS_OUTPUT)\EfiCompress.obj": "$(TARGET_SOURCE_DIR)\EfiCompress.c" "$(TARGET_SOURCE_DIR)\EfiCompress.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
   $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\EfiCompress.c" /Fo"$(EDK_TOOLS_OUTPUT)\EfiCompress.obj"
