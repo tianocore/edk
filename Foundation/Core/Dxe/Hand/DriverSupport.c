@@ -256,24 +256,20 @@ CoreConnectSingleController (
 
 Routine Description:
 
-  Connects a controller to a driver
+  Connects a controller to a driver.
 
 Arguments:
 
-  ControllerHandle    -Handle of the controller to be connected.
-
-  ContextDriverImageHandles  -DriverImageHandle A pointer to an ordered list of driver image handles.
-
-  RemainingDevicePath  -RemainingDevicePath A pointer to the device path that specifies a child of the
-                          controller specified by ControllerHandle.
+  ControllerHandle            - Handle of the controller to be connected.
+  ContextDriverImageHandles   - DriverImageHandle A pointer to an ordered list of driver image handles.
+  RemainingDevicePath         - RemainingDevicePath A pointer to the device path that specifies a child 
+                                of the controller specified by ControllerHandle.
     
 Returns:
 
-  EFI_NOT_FOUND           - Handles or drivers not found.
-  
-  EFI_OUT_OF_RESOURCES    - No enough buffer to allocate.
-  
-  EFI_SUCCESS             - Successfully connect a controller to a driver.
+  EFI_SUCCESS           - One or more drivers were connected to ControllerHandle.
+  EFI_OUT_OF_RESOURCES  - No enough system resources to complete the request.
+  EFI_NOT_FOUND         - No drivers were connected to ControllerHandle.
 
 --*/
 {
@@ -313,13 +309,13 @@ Returns:
   // Get list of all Driver Binding Protocol Instances
   //
   Status = CoreLocateHandleBuffer (
-              ByProtocol,   
-              &gEfiDriverBindingProtocolGuid,  
-              NULL,
-              &DriverBindingHandleCount, 
-              &DriverBindingHandleBuffer
-              );
-  if (EFI_ERROR (Status) || DriverBindingHandleCount == 0) {
+             ByProtocol,   
+             &gEfiDriverBindingProtocolGuid,  
+             NULL,
+             &DriverBindingHandleCount, 
+             &DriverBindingHandleBuffer
+             );
+  if (EFI_ERROR (Status) || (DriverBindingHandleCount == 0)) {
     return EFI_NOT_FOUND;
   }
 
@@ -355,7 +351,7 @@ Returns:
              NULL, 
              &PlatformDriverOverride
              );
-  if (!EFI_ERROR (Status) && PlatformDriverOverride != NULL) {
+  if (!EFI_ERROR (Status) && (PlatformDriverOverride != NULL)) {
     DriverImageHandle = NULL;
     do {
       Status = PlatformDriverOverride->GetDriver (
@@ -383,7 +379,7 @@ Returns:
              &gEfiBusSpecificDriverOverrideProtocolGuid, 
              &BusSpecificDriverOverride
              );
-  if (!EFI_ERROR (Status) && BusSpecificDriverOverride != NULL) {
+  if (!EFI_ERROR (Status) && (BusSpecificDriverOverride != NULL)) {
     DriverImageHandle = NULL;
     do {
       Status = BusSpecificDriverOverride->GetDriver (
@@ -419,7 +415,7 @@ Returns:
   //
   // Free the Driver Binding Handle Buffer
   //
-  CoreFreePool(DriverBindingHandleBuffer);
+  CoreFreePool (DriverBindingHandleBuffer);
 
   //
   // Sort the remaining DriverBinding Protocol based on their Version field from
@@ -454,7 +450,7 @@ Returns:
     //
     DriverBinding = NULL;
     DriverFound = FALSE;
-    for (Index = 0; Index < NumberOfSortedDriverBindingProtocols; Index++) {
+    for (Index = 0; (Index < NumberOfSortedDriverBindingProtocols) && !DriverFound; Index++) {
       if (SortedDriverBindingProtocols[Index] != NULL) {
         DriverBinding = SortedDriverBindingProtocols[Index];
         Status = DriverBinding->Supported(
@@ -489,7 +485,6 @@ Returns:
             //
             OneStarted = TRUE;
           }
-          break;
         }
       }
     }
