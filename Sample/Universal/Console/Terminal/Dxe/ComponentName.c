@@ -33,25 +33,31 @@ TerminalComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 TerminalComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gTerminalComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gTerminalComponentName = {
   TerminalComponentNameGetDriverName,
   TerminalComponentNameGetControllerName,
   "eng"
 };
 
 static EFI_UNICODE_STRING_TABLE mTerminalDriverNameTable[] = {
-  { "eng", L"Serial Terminal Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Serial Terminal Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -89,21 +95,21 @@ TerminalComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gTerminalComponentName.SupportedLanguages,
-           mTerminalDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gTerminalComponentName.SupportedLanguages,
+          mTerminalDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 TerminalComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -161,28 +167,27 @@ TerminalComponentNameGetControllerName (
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Get our context back
   //
   Status = gBS->OpenProtocol (
-                  ChildHandle, 
-                  &gEfiSimpleTextOutProtocolGuid, 
-                  (VOID **)&SimpleTextOutput, 
-                  gTerminalDriverBinding.DriverBindingHandle, 
-                  ChildHandle,   
+                  ChildHandle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  (VOID **) &SimpleTextOutput,
+                  gTerminalDriverBinding.DriverBindingHandle,
+                  ChildHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(SimpleTextOutput);
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (SimpleTextOutput);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gTerminalComponentName.SupportedLanguages,
-           TerminalDevice->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gTerminalComponentName.SupportedLanguages,
+          TerminalDevice->ControllerNameTable,
+          ControllerName
+          );
 }

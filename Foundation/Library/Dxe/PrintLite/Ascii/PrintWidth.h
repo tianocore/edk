@@ -24,8 +24,8 @@ Abstract:
 #ifndef _PRINT_WIDTH_H_
 #define _PRINT_WIDTH_H_
 
-typedef CHAR8         CHAR_W;
-#define STRING_W(_s)  _s
+typedef CHAR8 CHAR_W;
+#define STRING_W(_s)                                  _s
 
 #define ASPrint(Buffer, BufferSize, Format)           SPrint (Buffer, BufferSize, Format)
 #define AvSPrint(Buffer, BufferSize, Format, Marker)  VSPrint (Buffer, BufferSize, Format, Marker)
@@ -36,7 +36,27 @@ UvSPrint (
   IN  UINTN         StrLen,
   IN  CONST CHAR16  *Format,
   IN  VA_LIST       Marker
-  );
+  )
+/*++
+
+Routine Description:
+
+  Internal implementation of USPrint. 
+  Process format and place the results in Buffer for wide chars.
+
+Arguments:
+
+  StartOfBuffer        - Wide char buffer to print the results of the parsing of Format into.
+  StrLen               - Maximum number of characters to put into buffer.
+  Format               - Format string
+  Marker               - Vararg list consumed by processing Format.
+
+Returns:
+
+  Number of characters printed.
+
+--*/
+;
 
 UINTN
 USPrint (
@@ -44,6 +64,25 @@ USPrint (
   IN UINTN        BufferSize,
   IN CONST CHAR16 *Format,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+  Process format and place the results in Buffer for wide chars.
+
+Arguments:
+
+  Buffer      - Wide char buffer to print the results of the parsing of Format into.
+  BufferSize  - Maximum number of characters to put into buffer.
+  Format      - Format string
+  ...         - Vararg list consumed by processing Format.
+
+Returns:
+
+  Number of characters printed.
+
+--*/
+;
 
 #endif

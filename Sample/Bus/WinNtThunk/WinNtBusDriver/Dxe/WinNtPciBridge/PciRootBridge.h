@@ -31,54 +31,53 @@ Abstract:
 // Driver Consumed Protocol Prototypes
 //
 
-#include EFI_ARCH_PROTOCOL_DEFINITION(Metronome)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Metronome)
 #include EFI_PROTOCOL_CONSUMER (CpuIo)
 
 //
 // Driver Produced Protocol Prototypes
 //
 
-#include EFI_PROTOCOL_DEFINITION(DevicePath)
-#include EFI_PROTOCOL_DEFINITION(PciRootBridgeIo)
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (PciRootBridgeIo)
 
 //
-// Define resource status constant 
+// Define resource status constant
 //
-#define EFI_RESOURCE_NONEXISTENT   0xFFFFFFFFFFFFFFFF
-#define EFI_RESOURCE_LESS          0xFFFFFFFFFFFFFFFE
-#define EFI_RESOURCE_SATISFIED     0x0000000000000000
-
+#define EFI_RESOURCE_NONEXISTENT  0xFFFFFFFFFFFFFFFF
+#define EFI_RESOURCE_LESS         0xFFFFFFFFFFFFFFFE
+#define EFI_RESOURCE_SATISFIED    0x0000000000000000
 
 //
 // Driver Instance Data Prototypes
 //
 
 typedef struct {
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  Operation;
-  UINTN                                      NumberOfBytes;
-  UINTN                                      NumberOfPages;
-  EFI_PHYSICAL_ADDRESS                       HostAddress;
-  EFI_PHYSICAL_ADDRESS                       MappedHostAddress;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION Operation;
+  UINTN                                     NumberOfBytes;
+  UINTN                                     NumberOfPages;
+  EFI_PHYSICAL_ADDRESS                      HostAddress;
+  EFI_PHYSICAL_ADDRESS                      MappedHostAddress;
 } MAP_INFO;
 
 typedef struct {
-  ACPI_HID_DEVICE_PATH              AcpiDevicePath;
-  EFI_DEVICE_PATH_PROTOCOL          EndDevicePath;
+  ACPI_HID_DEVICE_PATH      AcpiDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath;
 } EFI_PCI_ROOT_BRIDGE_DEVICE_PATH;
 
 typedef struct {
-  UINT64          BusBase;
-  UINT64          BusLimit;     
-  
-  UINT64          MemBase;     
-  UINT64          MemLimit;    
-  
-  UINT64          IoBase; 
-  UINT64          IoLimit;     
+  UINT64  BusBase;
+  UINT64  BusLimit;
+
+  UINT64  MemBase;
+  UINT64  MemLimit;
+
+  UINT64  IoBase;
+  UINT64  IoLimit;
 } PCI_ROOT_BRIDGE_RESOURCE_APPETURE;
 
 typedef enum {
-  TypeIo = 0,
+  TypeIo    = 0,
   TypeMem32,
   TypePMem32,
   TypeMem64,
@@ -88,7 +87,7 @@ typedef enum {
 } PCI_RESOURCE_TYPE;
 
 typedef enum {
-  ResNone = 0,
+  ResNone     = 0,
   ResSubmitted,
   ResRequested,
   ResAllocated,
@@ -103,40 +102,39 @@ typedef struct {
   RES_STATUS        Status;
 } PCI_RES_NODE;
 
-#define PCI_ROOT_BRIDGE_SIGNATURE  EFI_SIGNATURE_32('e', '2', 'p', 'b')
+#define PCI_ROOT_BRIDGE_SIGNATURE EFI_SIGNATURE_32 ('e', '2', 'p', 'b')
 
 typedef struct {
-  UINT32                 Signature;
-  EFI_LIST_ENTRY         Link;
-  EFI_HANDLE             Handle;
-  UINT64                 RootBridgeAttrib;
-  UINT64                 Attributes;
-  UINT64                 Supports;
-  
+  UINT32                          Signature;
+  EFI_LIST_ENTRY                  Link;
+  EFI_HANDLE                      Handle;
+  UINT64                          RootBridgeAttrib;
+  UINT64                          Attributes;
+  UINT64                          Supports;
+
   //
   // Specific for ea815: Bus, I/O, Mem
   //
-  PCI_RES_NODE           ResAllocNode[6];
-  
+  PCI_RES_NODE                    ResAllocNode[6];
+
   //
   // Addressing for Memory and I/O and Bus arrange
   //
-  UINT64                 BusBase;
-  UINT64                 MemBase;     
-  UINT64                 IoBase; 
-  UINT64                 BusLimit;     
-  UINT64                 MemLimit;    
-  UINT64                 IoLimit;     
+  UINT64                          BusBase;
+  UINT64                          MemBase;
+  UINT64                          IoBase;
+  UINT64                          BusLimit;
+  UINT64                          MemLimit;
+  UINT64                          IoLimit;
 
-  EFI_LOCK               PciLock;
-  UINTN                  PciAddress;
-  UINTN                  PciData;
-  
-  EFI_DEVICE_PATH_PROTOCOL                *DevicePath;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL         Io;
+  EFI_LOCK                        PciLock;
+  UINTN                           PciAddress;
+  UINTN                           PciData;
+
+  EFI_DEVICE_PATH_PROTOCOL        *DevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL Io;
 
 } PCI_ROOT_BRIDGE_INSTANCE;
-
 
 //
 // Driver Instance Data Macros
@@ -156,7 +154,26 @@ RootBridgeConstructor (
   IN EFI_HANDLE                         HostBridgeHandle,
   IN UINT64                             Attri,
   IN PCI_ROOT_BRIDGE_RESOURCE_APPETURE  ResAppeture
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Protocol          - TODO: add argument description
+  HostBridgeHandle  - TODO: add argument description
+  Attri             - TODO: add argument description
+  ResAppeture       - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // Help function
@@ -164,6 +181,22 @@ RootBridgeConstructor (
 UINT64
 Power2MaxMemory (
   IN UINT64                     MemoryLength
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  MemoryLength  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

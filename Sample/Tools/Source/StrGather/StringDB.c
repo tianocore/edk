@@ -17,35 +17,35 @@ Abstract:
 
   String database implementation
   
---*/  
+--*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>    // for tolower()
-
+#include <ctype.h>  // for tolower()
 #include "Tiano.h"
 #include "EfiUtilityMsgs.h"
 #include "StrGather.h"
 #include "StringDb.h"
 #include "EfiInternalFormRepresentation.h"
 
-#include EFI_PROTOCOL_DEFINITION(Hii)
+#include EFI_PROTOCOL_DEFINITION (Hii)
 
-typedef CHAR16            WCHAR;
-#define STRING_OFFSET     RELOFST
+typedef CHAR16  WCHAR;
+#define STRING_OFFSET RELOFST
 
-#define STRING_DB_KEY   (('S' << 24) | ('D' << 16) | ('B' << 8) | 'K')
+#define STRING_DB_KEY (('S' << 24) | ('D' << 16) | ('B' << 8) | 'K')
 //
 // Version supported by this tool
 //
-#define STRING_DB_VERSION   0x00010000
+#define STRING_DB_VERSION             0x00010000
 
-#define STRING_DB_MAJOR_VERSION_MASK    0xFFFF0000
-#define STRING_DB_MINOR_VERSION_MASK    0x0000FFFF
+#define STRING_DB_MAJOR_VERSION_MASK  0xFFFF0000
+#define STRING_DB_MINOR_VERSION_MASK  0x0000FFFF
 
-#define DEFINE_STR      L"// #define"
+#define DEFINE_STR                    L"// #define"
 
-#define LANGUAGE_CODE_WIDTH 4
+#define LANGUAGE_CODE_WIDTH           4
 //
 // This is the header that gets written to the top of the
 // output binary database file.
@@ -80,21 +80,21 @@ typedef struct {
 // their list of strings.
 //
 typedef struct _STRING_LIST {
-  struct _STRING_LIST     *Next;
-  UINT32                  Size;         // number of bytes in string, including null terminator
-  WCHAR                   *LanguageName;
-  WCHAR                   *StringName;  // for example STR_ID_TEXT1
-  WCHAR                   *Scope;       // 
-  WCHAR                   *Str;         // the actual string
-  UINT16                  Flags;        // properties of this string (used, undefined)
+  struct _STRING_LIST *Next;
+  UINT32              Size;         // number of bytes in string, including null terminator
+  WCHAR               *LanguageName;
+  WCHAR               *StringName;  // for example STR_ID_TEXT1
+  WCHAR               *Scope;       //
+  WCHAR               *Str;         // the actual string
+  UINT16              Flags;        // properties of this string (used, undefined)
 } STRING_LIST;
 
 typedef struct _LANGUAGE_LIST {
-  struct _LANGUAGE_LIST   *Next;
-  WCHAR                   LanguageName[4];
-  WCHAR                   *PrintableLanguageName;
-  STRING_LIST             *String;
-  STRING_LIST             *LastString;
+  struct _LANGUAGE_LIST *Next;
+  WCHAR                 LanguageName[4];
+  WCHAR                 *PrintableLanguageName;
+  STRING_LIST           *String;
+  STRING_LIST           *LastString;
 } LANGUAGE_LIST;
 
 //
@@ -102,31 +102,31 @@ typedef struct _LANGUAGE_LIST {
 // values to. Create a structure to keep track of them all.
 //
 typedef struct _STRING_IDENTIFIER {
-  struct _STRING_IDENTIFIER   *Next;
-  UINT32                      Index;        // only need 16 bits, but makes it easier with UINT32
-  WCHAR                       *StringName;
-  UINT16                      Flags;        // if someone referenced it via STRING_TOKEN()
+  struct _STRING_IDENTIFIER *Next;
+  UINT32                    Index;  // only need 16 bits, but makes it easier with UINT32
+  WCHAR                     *StringName;
+  UINT16                    Flags;  // if someone referenced it via STRING_TOKEN()
 } STRING_IDENTIFIER;
 //
 // Keep our globals in this structure to be as modular as possible.
 //
 typedef struct {
-  FILE                *StringDBFptr;
-  LANGUAGE_LIST       *LanguageList;
-  LANGUAGE_LIST       *LastLanguageList;
-  LANGUAGE_LIST       *CurrentLanguage;          // keep track of the last language they used
-  STRING_IDENTIFIER   *StringIdentifier;
-  STRING_IDENTIFIER   *LastStringIdentifier;
-  UINT8               *StringDBFileName;
-  UINT32              NumStringIdentifiers;
-  UINT32              NumStringIdentifiersReferenced;  
-  STRING_IDENTIFIER   *CurrentStringIdentifier;   // keep track of the last string identifier they added
-  WCHAR               *CurrentScope;
+  FILE              *StringDBFptr;
+  LANGUAGE_LIST     *LanguageList;
+  LANGUAGE_LIST     *LastLanguageList;
+  LANGUAGE_LIST     *CurrentLanguage;         // keep track of the last language they used
+  STRING_IDENTIFIER *StringIdentifier;
+  STRING_IDENTIFIER *LastStringIdentifier;
+  UINT8             *StringDBFileName;
+  UINT32            NumStringIdentifiers;
+  UINT32            NumStringIdentifiersReferenced;
+  STRING_IDENTIFIER *CurrentStringIdentifier; // keep track of the last string identifier they added
+  WCHAR             *CurrentScope;
 } STRING_DB_DATA;
 
-static STRING_DB_DATA   mDBData;
+static STRING_DB_DATA mDBData;
 
-static const char *mSourceFileHeader[] = {
+static const char     *mSourceFileHeader[] = {
   "//",
   "//  DO NOT EDIT -- auto-generated file",
   "//",
@@ -135,8 +135,8 @@ static const char *mSourceFileHeader[] = {
   NULL
 };
 
-static 
-STRING_LIST *
+static
+STRING_LIST           *
 StringDBFindString (
   WCHAR                       *LanguageName,
   WCHAR                       *StringName,
@@ -145,38 +145,38 @@ StringDBFindString (
   WCHAR_MATCHING_STRING_LIST  *IndirectionList
   );
 
-static 
-STRING_IDENTIFIER *
+static
+STRING_IDENTIFIER     *
 StringDBFindStringIdentifierByName (
   WCHAR *Name
   );
 
-static 
-STRING_IDENTIFIER *
+static
+STRING_IDENTIFIER     *
 StringDBFindStringIdentifierByIndex (
   UINT32    Index
   );
 
-static 
-LANGUAGE_LIST *
+static
+LANGUAGE_LIST         *
 StringDBFindLanguageList (
   WCHAR *LanguageName
   );
 
-static 
-void 
+static
+void
 StringDBWriteStandardFileHeader (
   FILE *OutFptr
   );
 
-static 
-WCHAR *
+static
+WCHAR                 *
 AsciiToWchar (
- INT8 *Str
- );
+  INT8 *Str
+  );
 
 static
-WCHAR   *
+WCHAR                 *
 DuplicateString (
   WCHAR   *Str
   );
@@ -222,7 +222,7 @@ StringDBWriteString (
   );
 
 static
-STATUS 
+STATUS
 StringDBReadString (
   FILE            *DBFptr
   );
@@ -244,7 +244,9 @@ StringDBWriteGenericString (
 
 static
 void
-StringDBAssignStringIndexes ();
+StringDBAssignStringIndexes (
+  VOID
+  );
 
 /*****************************************************************************/
 
@@ -260,12 +262,17 @@ Returns:
   None.
 
 --*/
-void StringDBConstructor ()
+void
+StringDBConstructor (
+  VOID
+  )
 {
-  memset ((char *)&mDBData, 0, sizeof (STRING_DB_DATA));
+  memset ((char *) &mDBData, 0, sizeof (STRING_DB_DATA));
   mDBData.CurrentScope = DuplicateString (L"NULL");
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -278,11 +285,14 @@ Returns:
   None.
 
 --*/
-void StringDBDestructor ()
+void
+StringDBDestructor (
+  VOID
+  )
 {
-  LANGUAGE_LIST       *NextLang;
-  STRING_LIST         *NextStr;
-  STRING_IDENTIFIER   *NextIdentifier;
+  LANGUAGE_LIST     *NextLang;
+  STRING_LIST       *NextStr;
+  STRING_IDENTIFIER *NextIdentifier;
   //
   // Close the database file if it's open
   //
@@ -294,7 +304,7 @@ void StringDBDestructor ()
   // If we've allocated any strings/languages, free them up
   //
   while (mDBData.LanguageList != NULL) {
-    NextLang = mDBData.LanguageList->Next; 
+    NextLang = mDBData.LanguageList->Next;
     //
     // Free up all strings for this language
     //
@@ -304,6 +314,7 @@ void StringDBDestructor ()
       FREE (mDBData.LanguageList->String);
       mDBData.LanguageList->String = NextStr;
     }
+
     FREE (mDBData.LanguageList->PrintableLanguageName);
     FREE (mDBData.LanguageList);
     mDBData.LanguageList = NextLang;
@@ -333,7 +344,9 @@ void StringDBDestructor ()
     mDBData.CurrentScope = NULL;
   }
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -358,14 +371,13 @@ Notes:
   missing look for a cat string and print if it it exists.
 
 --*/
-
-STATUS 
+STATUS
 StringDBDumpCStrings (
   INT8                        *FileName,
   INT8                        *BaseName,
   WCHAR_STRING_LIST           *LanguagesOfInterest,
   WCHAR_MATCHING_STRING_LIST  *IndirectionList
-  ) 
+  )
 {
   FILE                        *Fptr;
   LANGUAGE_LIST               *Lang;
@@ -393,7 +405,7 @@ StringDBDumpCStrings (
   // Assign index values to the string identifiers
   //
   StringDBAssignStringIndexes ();
-  // 
+  //
   // Write the standard header to the output file, then the structure
   // definition header.
   //
@@ -403,8 +415,8 @@ StringDBDumpCStrings (
   // If a given string is not defined, then we'll use this one.
   //
   memset (&EmptyString, 0, sizeof (EmptyString));
-  EmptyString.Size = sizeof (ZeroString);
-  EmptyString.Str = ZeroString;
+  EmptyString.Size  = sizeof (ZeroString);
+  EmptyString.Str   = ZeroString;
   //
   // Process each language, then each string for each langage
   //
@@ -414,18 +426,19 @@ StringDBDumpCStrings (
     // If we have a language list, then make sure this language is in that
     // list.
     //
-    LanguageOk = TRUE;
-    LangName = Lang->LanguageName;
+    LanguageOk  = TRUE;
+    LangName    = Lang->LanguageName;
     if (LanguagesOfInterest != NULL) {
       LanguageOk = FALSE;
       for (LOIPtr = LanguagesOfInterest; LOIPtr != NULL; LOIPtr = LOIPtr->Next) {
         if (wcsncmp (LOIPtr->Str, Lang->LanguageName, LANGUAGE_IDENTIFIER_NAME_LEN) == 0) {
-          LangName = LOIPtr->Str;
-          LanguageOk = TRUE;
+          LangName    = LOIPtr->Str;
+          LanguageOk  = TRUE;
           break;
         }
       }
     }
+
     if (!LanguageOk) {
       continue;
     }
@@ -434,7 +447,7 @@ StringDBDumpCStrings (
     //   Pass1: computes sizes and fill in the string pack header
     //   Pass2: write the array of offsets
     //   Pass3: write the strings
-    // 
+    //
     //
     // PASS 1: Fill in and print the HII string pack header
     //
@@ -444,24 +457,26 @@ StringDBDumpCStrings (
     //   Offset[]  -- an array of offsets to strings, of type RELOFST each
     //   String[]  -- the actual strings themselves
     //
-    fprintf (Fptr, "\n//******************************************************************************"
-                   "\n// Start of string definitions for %S/%S", 
-                   Lang->LanguageName, Lang->PrintableLanguageName);
-    memset ((char *)&StringPack, 0, sizeof(EFI_HII_STRING_PACK_HEADER));
-    StringPack.Header.Type          = EFI_HII_STRING;
-    StringPack.NumStringPointers    = (UINT16)mDBData.NumStringIdentifiersReferenced;
+    fprintf (
+      Fptr,
+      "\n//******************************************************************************"
+      "\n// Start of string definitions for %S/%S",
+      Lang->LanguageName,
+      Lang->PrintableLanguageName
+      );
+    memset ((char *) &StringPack, 0, sizeof (EFI_HII_STRING_PACK_HEADER));
+    StringPack.Header.Type        = EFI_HII_STRING;
+    StringPack.NumStringPointers  = (UINT16) mDBData.NumStringIdentifiersReferenced;
     //
     // First string is the language name. If we're printing all languages, then
     // it's just the "spa". If we were given a list of languages to print, then it's
     // the "spacat" string. Compute its offset and fill in
-    // the info in the header. Since we know the language name string's length, 
+    // the info in the header. Since we know the language name string's length,
     // and the printable language name follows it, use that info to fill in the
     // entry for the printable language name as well.
     //
-    StringPack.LanguageNameString     = (STRING_OFFSET)(sizeof (EFI_HII_STRING_PACK_HEADER) + 
-                                        (mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET)));
-    StringPack.PrintableLanguageName  = (STRING_OFFSET)(StringPack.LanguageNameString + 
-                                        (wcslen (LangName) + 1) * sizeof (WCHAR));
+    StringPack.LanguageNameString = (STRING_OFFSET) (sizeof (EFI_HII_STRING_PACK_HEADER) + (mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET)));
+    StringPack.PrintableLanguageName = (STRING_OFFSET) (StringPack.LanguageNameString + (wcslen (LangName) + 1) * sizeof (WCHAR));
     //
     // Add up the size of all strings so we can fill in our header.
     //
@@ -483,44 +498,55 @@ StringDBDumpCStrings (
           return STATUS_ERROR;
         }
         //
-        // Find a matching string if this string identifier was referenced 
+        // Find a matching string if this string identifier was referenced
         //
         EmptyString.Flags = STRING_FLAGS_UNDEFINED;
-        CurrString = NULL;
+        CurrString        = NULL;
         if (StringIdentifier->Flags & STRING_FLAGS_REFERENCED) {
-          CurrString = StringDBFindString ( Lang->LanguageName, 
-                                            StringIdentifier->StringName, 
-                                            NULL, 
-                                            LanguagesOfInterest, 
-                                            IndirectionList);
-          if (NULL == CurrString) { // If string for Lang->LanguageName is not found, try to get an English version
-            CurrString = StringDBFindString ( L"eng", 
-                                            StringIdentifier->StringName, 
-                                            NULL, 
-                                            LanguagesOfInterest, 
-                                            IndirectionList);
+          CurrString = StringDBFindString (
+                        Lang->LanguageName,
+                        StringIdentifier->StringName,
+                        NULL,
+                        LanguagesOfInterest,
+                        IndirectionList
+                        );
+          if (NULL == CurrString) {
+            //
+            // If string for Lang->LanguageName is not found, try to get an English version
+            //
+            CurrString = StringDBFindString (
+                          L"eng",
+                          StringIdentifier->StringName,
+                          NULL,
+                          LanguagesOfInterest,
+                          IndirectionList
+                          );
           }
         }
+
         if (CurrString == NULL) {
           CurrString = &EmptyString;
           EmptyString.Flags |= StringIdentifier->Flags;
         }
+
         Len += CurrString->Size;
       }
-    }      
+    }
     StringPack.Header.Length =    sizeof (EFI_HII_STRING_PACK_HEADER) 
                                 + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET) 
                                 + Len;
     //
     // Write out the header one byte at a time
     //
-    Ptr = (UINT8 *)&StringPack;
+    Ptr = (UINT8 *) &StringPack;
     for (TempIndex = 0; TempIndex < sizeof (EFI_HII_STRING_PACK_HEADER); TempIndex++, Ptr++) {
       if ((TempIndex & 0x07) == 0) {
         fprintf (Fptr, "\n  ");
       }
-      fprintf (Fptr, "0x%02X, ", (UINT32)*Ptr);
+
+      fprintf (Fptr, "0x%02X, ", (UINT32) *Ptr);
     }
+
     fprintf (Fptr, "\n  // offset 0x%X\n", sizeof (StringPack));
     //
     // PASS2 : write the offsets
@@ -530,15 +556,15 @@ StringDBDumpCStrings (
     // plus the size of the offsets array. The other strings follow it.
     //
     StringIndex = 0;
-    Offset = sizeof (StringPack) + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET);
+    Offset      = sizeof (StringPack) + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET);
     for (StringIndex = 0; StringIndex < mDBData.NumStringIdentifiersReferenced; StringIndex++) {
       //
       // Write the offset, followed by a useful comment
       //
-      fprintf (Fptr, "  "); 
-      Ptr = (UINT8 *)&Offset;
+      fprintf (Fptr, "  ");
+      Ptr = (UINT8 *) &Offset;
       for (TempIndex = 0; TempIndex < sizeof (STRING_OFFSET); TempIndex++) {
-        fprintf (Fptr, "0x%02X, ", (UINT32)Ptr[TempIndex]);
+        fprintf (Fptr, "0x%02X, ", (UINT32) Ptr[TempIndex]);
       }
       //
       // Find the string name
@@ -548,6 +574,7 @@ StringDBDumpCStrings (
         Error (NULL, 0, 0, "internal error", "invalid string index 0x%X", StringIndex);
         return STATUS_ERROR;
       }
+
       fprintf (Fptr, " // offset to string %S (0x%04X)", StringIdentifier->StringName, StringIndex);
       //
       // For the first string (language name), we print out the "spacat" if they
@@ -555,37 +582,44 @@ StringDBDumpCStrings (
       //
       if (StringIndex == STRING_ID_LANGUAGE_NAME) {
         Offset += (wcslen (LangName) + 1) * sizeof (WCHAR);
-        CurrString = StringDBFindString ( Lang->LanguageName, 
-                                          StringIdentifier->StringName, 
-                                          NULL,                         // scope
-                                          NULL,  
-                                          NULL);
+        CurrString = StringDBFindString (
+                      Lang->LanguageName,
+                      StringIdentifier->StringName,
+                      NULL, // scope
+                      NULL,
+                      NULL
+                      );
       } else {
         //
         // Find a matching string
         //
-        CurrString = StringDBFindString ( Lang->LanguageName, 
-                                          StringIdentifier->StringName, 
-                                          NULL,                         // scope
-                                          LanguagesOfInterest, 
-                                          IndirectionList);
-        
+        CurrString = StringDBFindString (
+                      Lang->LanguageName,
+                      StringIdentifier->StringName,
+                      NULL,   // scope
+                      LanguagesOfInterest,
+                      IndirectionList
+                      );
+
         if (NULL == CurrString) {
-          CurrString = StringDBFindString ( L"eng", 
-                                          StringIdentifier->StringName, 
-                                          NULL,                         // scope
-                                          LanguagesOfInterest, 
-                                          IndirectionList);
+          CurrString = StringDBFindString (
+                        L"eng",
+                        StringIdentifier->StringName,
+                        NULL, // scope
+                        LanguagesOfInterest,
+                        IndirectionList
+                        );
         }
-        
+
         EmptyString.LanguageName = Lang->LanguageName;
         if (CurrString == NULL) {
-          CurrString = &EmptyString;
+          CurrString        = &EmptyString;
           EmptyString.Flags = STRING_FLAGS_UNDEFINED;
         } else if ((StringIdentifier->Flags & STRING_FLAGS_REFERENCED) == 0) {
-          CurrString = &EmptyString;
+          CurrString        = &EmptyString;
           EmptyString.Flags = 0;
         }
+
         Offset += CurrString->Size;
       }
       //
@@ -594,14 +628,19 @@ StringDBDumpCStrings (
       if ((StringIdentifier->Flags & STRING_FLAGS_REFERENCED) == 0) {
         fprintf (Fptr, " - not referenced");
       }
+
       if (CurrString->Flags & STRING_FLAGS_UNDEFINED) {
         fprintf (Fptr, " - not defined for this language");
       } else if (wcscmp (CurrString->LanguageName, Lang->LanguageName) != 0) {
-        fprintf (Fptr, " - not defined for this language -- using secondary language %S definition",
-          CurrString->LanguageName);
+        fprintf (
+          Fptr,
+          " - not defined for this language -- using secondary language %S definition",
+          CurrString->LanguageName
+          );
       }
+
       fprintf (Fptr, "\n");
-    }      
+    }
     //
     // For unreferenced string identifiers, print a message that they are not referenced anywhere
     //
@@ -610,9 +649,11 @@ StringDBDumpCStrings (
       if (StringIdentifier != NULL) {
         fprintf (Fptr, "  // %S not referenced\n", StringIdentifier->StringName);
       }
+
       StringIndex++;
     }
-    // 
+
+    //
     // PASS 3: write the strings themselves.
     // Keep track of how many bytes we write per line because some editors
     // (Visual Studio for instance) can't handle too long of lines.
@@ -624,6 +665,7 @@ StringDBDumpCStrings (
         Error (NULL, 0, 0, "internal error", "invalid string index 0x%X", StringIndex);
         return STATUS_ERROR;
       }
+
       fprintf (Fptr, "  // string %S offset 0x%08X\n  ", StringIdentifier->StringName, Offset);
       //
       // For the first string (language name), we print out the "spacat" if they
@@ -637,29 +679,39 @@ StringDBDumpCStrings (
         //
         CurrString = NULL;
         if (StringIdentifier->Flags & STRING_FLAGS_REFERENCED) {
-          CurrString = StringDBFindString ( Lang->LanguageName, 
-                                            StringIdentifier->StringName, 
-                                            NULL,                         // scope
-                                            LanguagesOfInterest, 
-                                            IndirectionList);
+          CurrString = StringDBFindString (
+                        Lang->LanguageName,
+                        StringIdentifier->StringName,
+                        NULL,   // scope
+                        LanguagesOfInterest,
+                        IndirectionList
+                        );
           if (NULL == CurrString) {
-            CurrString = StringDBFindString ( L"eng", 
-                                            StringIdentifier->StringName, 
-                                            NULL,                         // scope
-                                            LanguagesOfInterest, 
-                                            IndirectionList);
+            CurrString = StringDBFindString (
+                          L"eng",
+                          StringIdentifier->StringName,
+                          NULL, // scope
+                          LanguagesOfInterest,
+                          IndirectionList
+                          );
           }
         }
+
         if (CurrString == NULL) {
           CurrString = &EmptyString;
         }
+
         TempStringPtr = CurrString->Str;
       }
+
       BytesThisLine = 0;
       for (TempIndex = 0; TempStringPtr[TempIndex] != 0; TempIndex++) {
-        fprintf (Fptr, "0x%02X, 0x%02X, ",
-          (UINT32)TempStringPtr[TempIndex] & 0xFF,
-          (UINT32)((TempStringPtr[TempIndex] >> 8) & 0xFF));
+        fprintf (
+          Fptr,
+          "0x%02X, 0x%02X, ",
+          (UINT32) TempStringPtr[TempIndex] & 0xFF,
+          (UINT32) ((TempStringPtr[TempIndex] >> 8) & 0xFF)
+          );
         BytesThisLine += 2;
         Offset += 2;
         //
@@ -677,33 +729,44 @@ StringDBDumpCStrings (
       Offset += 2;
     }
     //
-    // Sanity check the offset. Make sure our running offset is what we put in the 
+    // Sanity check the offset. Make sure our running offset is what we put in the
     // string pack header.
     //
     if (StringPack.Header.Length != Offset) {
-      Error (__FILE__, __LINE__, 0, "application error", "stringpack size 0x%X does not match final size 0x%X",
-        StringPack.Header.Length, Offset);
+      Error (
+        __FILE__,
+        __LINE__,
+        0,
+        "application error",
+        "stringpack size 0x%X does not match final size 0x%X",
+        StringPack.Header.Length,
+        Offset
+        );
     }
-  }    
+  }
   //
-  // Print terminator string pack, closing brace and close the file. 
+  // Print terminator string pack, closing brace and close the file.
   // The size of 0 triggers to the consumer that this is the end.
   //
-  memset ((char *)&StringPack, 0, sizeof(EFI_HII_STRING_PACK_HEADER));
-  StringPack.Header.Type = EFI_HII_STRING;
-  Ptr = (UINT8 *)&StringPack;
+  memset ((char *) &StringPack, 0, sizeof (EFI_HII_STRING_PACK_HEADER));
+  StringPack.Header.Type  = EFI_HII_STRING;
+  Ptr                     = (UINT8 *) &StringPack;
   fprintf (Fptr, "\n  // strings terminator pack");
   for (TempIndex = 0; TempIndex < sizeof (StringPack); TempIndex++, Ptr++) {
     if ((TempIndex & 0x0F) == 0) {
       fprintf (Fptr, "\n  ");
     }
-    fprintf (Fptr, "0x%02X, ", (UINT32)*Ptr);
+
+    fprintf (Fptr, "0x%02X, ", (UINT32) *Ptr);
   }
+
   fprintf (Fptr, "\n};\n");
   fclose (Fptr);
   return STATUS_SUCCESS;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -720,22 +783,22 @@ Returns:
   STATUS
 
 --*/
-STATUS 
+STATUS
 StringDBDumpStringDefines (
-  INT8 *FileName, 
+  INT8 *FileName,
   INT8 *BaseName
-  ) 
+  )
 {
-  FILE                *Fptr;
-  STRING_IDENTIFIER   *Identifier;
-  INT8                CopyBaseName[100];
-  UINT32              Index;
-  const INT8          *StrDefHeader[] = {
+  FILE              *Fptr;
+  STRING_IDENTIFIER *Identifier;
+  INT8              CopyBaseName[100];
+  UINT32            Index;
+  const INT8        *StrDefHeader[] = {
     "#ifndef _%s_STRINGS_DEFINE_H_\n",
     "#define _%s_STRINGS_DEFINE_H_\n\n",
     NULL
   };
-  
+
   if ((Fptr = fopen (FileName, "w")) == NULL) {
     Error (NULL, 0, 0, FileName, "failed to open output string defines file");
     return STATUS_ERROR;
@@ -747,17 +810,18 @@ StringDBDumpStringDefines (
     Error (NULL, 0, 0, "application error", "StringDBDumpStringDefines() string length insufficient");
     return STATUS_ERROR;
   }
+
   strcpy (CopyBaseName, BaseName);
   for (Index = 0; CopyBaseName[Index] != 0; Index++) {
     if (islower (CopyBaseName[Index])) {
-      CopyBaseName[Index] = (INT8)toupper (CopyBaseName[Index]);
+      CopyBaseName[Index] = (INT8) toupper (CopyBaseName[Index]);
     }
   }
   //
   // Assign index values to the string identifiers
   //
   StringDBAssignStringIndexes ();
-  // 
+  //
   // Write the standard header to the output file, and then the
   // protective #ifndef.
   //
@@ -775,18 +839,23 @@ StringDBDumpStringDefines (
     if (Identifier->StringName[0] == L'$') {
       fprintf (Fptr, "// ");
     }
+
     if (Identifier->Flags & STRING_FLAGS_REFERENCED) {
       fprintf (Fptr, "#define %-40S 0x%04X\n", Identifier->StringName, Identifier->Index);
     } else {
       fprintf (Fptr, "//#define %-40S 0x%04X // not referenced\n", Identifier->StringName, Identifier->Index);
     }
+
     Identifier = Identifier->Next;
   }
+
   fprintf (Fptr, "\n#endif\n");
   fclose (Fptr);
   return STATUS_SUCCESS;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -804,41 +873,45 @@ Returns:
   STATUS
 
 --*/
-STATUS 
+STATUS
 StringDBAddStringIdentifier (
   WCHAR     *StringName,
   UINT16    *NewId,
   UINT16    Flags
   )
 {
-  STRING_IDENTIFIER   *StringIdentifier;
-  STATUS              Status;
+  STRING_IDENTIFIER *StringIdentifier;
+  STATUS            Status;
   //
   // If it was already used for some other language, then we don't
   // need to add it. But set it to the current string identifier.
   // The referenced bit is sticky.
   //
-  Status = STATUS_SUCCESS;
-  StringIdentifier = StringDBFindStringIdentifierByName (StringName);
+  Status            = STATUS_SUCCESS;
+  StringIdentifier  = StringDBFindStringIdentifierByName (StringName);
   if (StringIdentifier != NULL) {
     if (Flags & STRING_FLAGS_REFERENCED) {
       StringIdentifier->Flags |= STRING_FLAGS_REFERENCED;
     }
+
     mDBData.CurrentStringIdentifier = StringIdentifier;
-    *NewId = (UINT16)StringIdentifier->Index;
+    *NewId                          = (UINT16) StringIdentifier->Index;
     return Status;
   }
-  StringIdentifier = (STRING_IDENTIFIER *)MALLOC (sizeof (STRING_IDENTIFIER));
+
+  StringIdentifier = (STRING_IDENTIFIER *) MALLOC (sizeof (STRING_IDENTIFIER));
   if (StringIdentifier == NULL) {
     Error (NULL, 0, 0, NULL, "memory allocation error");
     return STATUS_ERROR;
   }
-  memset ((char *)StringIdentifier, 0, sizeof (STRING_IDENTIFIER));
-  StringIdentifier->StringName = (WCHAR *)malloc ((wcslen(StringName) + 1) * sizeof (WCHAR));
+
+  memset ((char *) StringIdentifier, 0, sizeof (STRING_IDENTIFIER));
+  StringIdentifier->StringName = (WCHAR *) malloc ((wcslen (StringName) + 1) * sizeof (WCHAR));
   if (StringIdentifier->StringName == NULL) {
     Error (NULL, 0, 0, NULL, "memory allocation error");
     return STATUS_ERROR;
   }
+
   wcscpy (StringIdentifier->StringName, StringName);
   if (*NewId != STRING_ID_INVALID) {
     StringIdentifier->Index = *NewId;
@@ -849,6 +922,7 @@ StringDBAddStringIdentifier (
   } else {
     StringIdentifier->Index = mDBData.NumStringIdentifiers++;
   }
+
   StringIdentifier->Flags |= Flags;
   //
   // Add it to our list of string identifiers
@@ -858,12 +932,15 @@ StringDBAddStringIdentifier (
   } else {
     mDBData.LastStringIdentifier->Next = StringIdentifier;
   }
-  mDBData.LastStringIdentifier = StringIdentifier;
+
+  mDBData.LastStringIdentifier    = StringIdentifier;
   mDBData.CurrentStringIdentifier = StringIdentifier;
-  *NewId = (UINT16)StringIdentifier->Index;
+  *NewId                          = (UINT16) StringIdentifier->Index;
   return Status;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -889,22 +966,22 @@ Notes:
   we'll use the previous setting.
 
 --*/
-STATUS 
+STATUS
 StringDBAddString (
-  WCHAR   *LanguageName, 
-  WCHAR   *StringName, 
+  WCHAR   *LanguageName,
+  WCHAR   *StringName,
   WCHAR   *Scope,
   WCHAR   *String,
   BOOLEAN Format,
   UINT16  Flags
-  ) 
+  )
 {
-  LANGUAGE_LIST       *Lang;
-  UINT32              Size;
-  STRING_LIST         *Str;
-  UINT16              StringIndex;
-  WCHAR               TempLangName[4];
-  STRING_IDENTIFIER   *StringIdentifier;
+  LANGUAGE_LIST     *Lang;
+  UINT32            Size;
+  STRING_LIST       *Str;
+  UINT16            StringIndex;
+  WCHAR             TempLangName[4];
+  STRING_IDENTIFIER *StringIdentifier;
 
   //
   // Check that language name is exactly 3 characters, or emit an error.
@@ -926,8 +1003,9 @@ StringDBAddString (
         for (; Size < 3; Size++) {
           TempLangName[Size] = L'?';
         }
+
         TempLangName[4] = 0;
-        LanguageName = TempLangName;
+        LanguageName    = TempLangName;
       }
     }
   }
@@ -954,7 +1032,7 @@ StringDBAddString (
     }
   }
   //
-  // If they didn't define a string identifier, use the last string identifier 
+  // If they didn't define a string identifier, use the last string identifier
   // added.
   //
   if (StringName == NULL) {
@@ -972,40 +1050,51 @@ StringDBAddString (
   } else {
     Scope = DuplicateString (mDBData.CurrentScope);
   }
-  //printf ("Adding string: %S.%S.%S\n", Lang->LanguageName, StringName, Scope);
+  //
+  // printf ("Adding string: %S.%S.%S\n", Lang->LanguageName, StringName, Scope);
   //
   // Check for duplicates for this Language.StringName.Scope. Allow multiple
   // definitions of the language name and printable language name, since the
   // user does not specifically define them.
   //
   if (StringDBFindString (Lang->LanguageName, StringName, Scope, NULL, NULL) != NULL) {
-    if ((wcscmp (StringName, LANGUAGE_NAME_STRING_NAME) == 0) && 
-        (wcscmp (StringName, PRINTABLE_LANGUAGE_NAME_STRING_NAME) == 0)) {
-      ParserError (0, "string multiply defined", "Language.Name.Scope = %S.%S.%S", 
-        Lang->LanguageName, StringName, Scope);
+    if ((wcscmp (StringName, LANGUAGE_NAME_STRING_NAME) == 0) &&
+        (wcscmp (StringName, PRINTABLE_LANGUAGE_NAME_STRING_NAME) == 0)
+        ) {
+      ParserError (
+        0,
+        "string multiply defined",
+        "Language.Name.Scope = %S.%S.%S",
+        Lang->LanguageName,
+        StringName,
+        Scope
+        );
       return STATUS_ERROR;
     }
   }
+
   StringIndex = STRING_ID_INVALID;
   if (StringDBAddStringIdentifier (StringName, &StringIndex, Flags) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   StringIdentifier = StringDBFindStringIdentifierByName (StringName);
   //
   // Add this string to the end of the strings for this language.
-  // 
-  Str = (STRING_LIST *)malloc (sizeof (STRING_LIST));
+  //
+  Str = (STRING_LIST *) malloc (sizeof (STRING_LIST));
   if (Str == NULL) {
     Error (NULL, 0, 0, NULL, "memory allocation error");
     return STATUS_ERROR;
   }
-  memset ((char *)Str, 0, sizeof (STRING_LIST));
+
+  memset ((char *) Str, 0, sizeof (STRING_LIST));
   Size              = (wcslen (String) + 1) * sizeof (WCHAR);
   Str->Flags        = Flags;
   Str->Scope        = Scope;
   Str->StringName   = StringIdentifier->StringName;
   Str->LanguageName = DuplicateString (LanguageName);
-  Str->Str          = (WCHAR *)MALLOC (Size);
+  Str->Str          = (WCHAR *) MALLOC (Size);
   if (Str->Str == NULL) {
     Error (NULL, 0, 0, NULL, "memory allocation error");
     return STATUS_ERROR;
@@ -1028,10 +1117,13 @@ StringDBAddString (
   } else {
     Lang->LastString->Next = Str;
   }
+
   Lang->LastString = Str;
   return STATUS_SUCCESS;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -1047,7 +1139,7 @@ Returns:
   A pointer to the language list
 
 --*/
-static 
+static
 LANGUAGE_LIST *
 StringDBFindLanguageList (
   WCHAR *LanguageName
@@ -1060,32 +1152,37 @@ StringDBFindLanguageList (
     if (wcscmp (LanguageName, Lang->LanguageName) == 0) {
       break;
     }
+
     Lang = Lang->Next;
   }
+
   return Lang;
 }
+
 /*****************************************************************************/
-STATUS 
+STATUS
 StringDBSetCurrentLanguage (
   WCHAR *LanguageName
   )
 {
   LANGUAGE_LIST *Lang;
- 
+
   Lang = StringDBFindLanguageList (LanguageName);
   if (Lang == NULL) {
     ParserError (0, "language not previously defined", "%S", LanguageName);
     return STATUS_ERROR;
   }
+
   mDBData.CurrentLanguage = Lang;
   return STATUS_SUCCESS;
 }
+
 /*****************************************************************************/
-STATUS 
+STATUS
 StringDBAddLanguage (
-  WCHAR *LanguageName, 
+  WCHAR *LanguageName,
   WCHAR *PrintableLanguageName
-  ) 
+  )
 {
   LANGUAGE_LIST *Lang;
   //
@@ -1097,33 +1194,44 @@ StringDBAddLanguage (
     // Better be the same printable name
     //
     if (wcscmp (PrintableLanguageName, Lang->PrintableLanguageName) != 0) {
-      ParserError (0, "language redefinition", "%S:%S != %S:%S", 
-        Lang->LanguageName, Lang->PrintableLanguageName, LanguageName, PrintableLanguageName);
+      ParserError (
+        0,
+        "language redefinition",
+        "%S:%S != %S:%S",
+        Lang->LanguageName,
+        Lang->PrintableLanguageName,
+        LanguageName,
+        PrintableLanguageName
+        );
       return STATUS_ERROR;
-//    } else {
-//      ParserWarning (0, "benign language redefinition", "%S", PrintableLanguageName);
-//      return STATUS_WARNING;
+      //
+      //    } else {
+      //      ParserWarning (0, "benign language redefinition", "%S", PrintableLanguageName);
+      //      return STATUS_WARNING;
+      //
     }
   } else {
     //
     // Allocate memory to keep track of this new language
     //
-    Lang = (LANGUAGE_LIST *)malloc (sizeof (LANGUAGE_LIST));
+    Lang = (LANGUAGE_LIST *) malloc (sizeof (LANGUAGE_LIST));
     if (Lang == NULL) {
       Error (NULL, 0, 0, NULL, "memory allocation error");
       return STATUS_ERROR;
     }
-    memset ((char *)Lang, 0, sizeof (LANGUAGE_LIST));
+
+    memset ((char *) Lang, 0, sizeof (LANGUAGE_LIST));
     //
     // Save the language name, then allocate memory to save the
-    // printable language name 
+    // printable language name
     //
     wcscpy (Lang->LanguageName, LanguageName);
-    Lang->PrintableLanguageName = (WCHAR *)malloc ((wcslen (PrintableLanguageName) + 1) * sizeof (WCHAR));
+    Lang->PrintableLanguageName = (WCHAR *) malloc ((wcslen (PrintableLanguageName) + 1) * sizeof (WCHAR));
     if (Lang->PrintableLanguageName == NULL) {
       Error (NULL, 0, 0, NULL, "memory allocation error");
       return STATUS_ERROR;
     }
+
     wcscpy (Lang->PrintableLanguageName, PrintableLanguageName);
 
     if (mDBData.LanguageList == NULL) {
@@ -1131,6 +1239,7 @@ StringDBAddLanguage (
     } else {
       mDBData.LastLanguageList->Next = Lang;
     }
+
     mDBData.LastLanguageList = Lang;
   }
   //
@@ -1142,14 +1251,27 @@ StringDBAddLanguage (
   // followed by the printable language name. Add them and set them
   // to referenced so they never get stripped out.
   //
-  StringDBAddString ( LanguageName, LANGUAGE_NAME_STRING_NAME, NULL, LanguageName, FALSE, 
-                      STRING_FLAGS_REFERENCED);
-  StringDBAddString ( LanguageName, PRINTABLE_LANGUAGE_NAME_STRING_NAME, NULL, 
-                      PrintableLanguageName, FALSE, STRING_FLAGS_REFERENCED);
+  StringDBAddString (
+    LanguageName,
+    LANGUAGE_NAME_STRING_NAME,
+    NULL,
+    LanguageName,
+    FALSE,
+    STRING_FLAGS_REFERENCED
+    );
+  StringDBAddString (
+    LanguageName,
+    PRINTABLE_LANGUAGE_NAME_STRING_NAME,
+    NULL,
+    PrintableLanguageName,
+    FALSE,
+    STRING_FLAGS_REFERENCED
+    );
   return STATUS_SUCCESS;
 }
+
 /*****************************************************************************/
-static 
+static
 STRING_IDENTIFIER *
 StringDBFindStringIdentifierByName (
   WCHAR *StringName
@@ -1162,11 +1284,14 @@ StringDBFindStringIdentifierByName (
     if (wcscmp (StringName, Identifier->StringName) == 0) {
       return Identifier;
     }
+
     Identifier = Identifier->Next;
   }
+
   return NULL;
 }
-static 
+
+static
 STRING_IDENTIFIER *
 StringDBFindStringIdentifierByIndex (
   UINT32    StringIndex
@@ -1179,23 +1304,28 @@ StringDBFindStringIdentifierByIndex (
     if (Identifier->Index == StringIndex) {
       return Identifier;
     }
+
     Identifier = Identifier->Next;
   }
+
   return NULL;
 }
+
 /*****************************************************************************/
-static 
-void 
+static
+void
 StringDBWriteStandardFileHeader (
   FILE *OutFptr
-  ) 
+  )
 {
-  UINT32 TempIndex;
+  UINT32  TempIndex;
   for (TempIndex = 0; mSourceFileHeader[TempIndex] != NULL; TempIndex++) {
     fprintf (OutFptr, "%s\n", mSourceFileHeader[TempIndex]);
   }
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -1217,14 +1347,15 @@ StringDBFormatString (
   WCHAR   *String
   )
 {
-  WCHAR   *From, *To;
-  int     HexNibbles;
-  WCHAR   HexValue;
+  WCHAR *From;
+  WCHAR *To;
+  int   HexNibbles;
+  WCHAR HexValue;
   //
   // Go through the string and process any formatting characters
   //
-  From = String;
-  To = String;
+  From  = String;
+  To    = String;
   while (*From) {
     if (*From == UNICODE_BACKSLASH) {
       //
@@ -1236,11 +1367,15 @@ StringDBFormatString (
         *To = WIDE_CHAR;
         From += sizeof (UNICODE_WIDE_STRING) / sizeof (WCHAR) - 2;
       } else if (wcsncmp (From, UNICODE_NARROW_STRING, sizeof (UNICODE_NARROW_STRING) / sizeof (WCHAR) - 1) == 0) {
+        //
         // Found: \narrow
+        //
         *To = NARROW_CHAR;
         From += sizeof (UNICODE_NARROW_STRING) / sizeof (WCHAR) - 2;
       } else if (wcsncmp (From, UNICODE_NBR_STRING, sizeof (UNICODE_NBR_STRING) / sizeof (WCHAR) - 1) == 0) {
+        //
         // Found: \nbr
+        //
         *To = NON_BREAKING_CHAR;
         From += sizeof (UNICODE_NBR_STRING) / sizeof (WCHAR) - 2;
       } else if (wcsncmp (From, UNICODE_BR_STRING, sizeof (UNICODE_BR_STRING) / sizeof (WCHAR) - 1) == 0) {
@@ -1254,31 +1389,44 @@ StringDBFormatString (
         //
         From++;
         switch (*From) {
-        case ASCII_TO_UNICODE('n'):
+        case ASCII_TO_UNICODE ('n'):
           *To = UNICODE_CR;
           To++;
           *To = UNICODE_LF;
           break;
-        // carriage return 
-        case ASCII_TO_UNICODE('r'):
+
+        //
+        // carriage return
+        //
+        case ASCII_TO_UNICODE ('r'):
           *To = UNICODE_CR;
           break;
+
+        //
         // backslash
+        //
         case UNICODE_BACKSLASH:
           *To = UNICODE_BACKSLASH;
-           break;
+          break;
+
+        //
         // Tab
-        case ASCII_TO_UNICODE('t'):
+        //
+        case ASCII_TO_UNICODE ('t'):
           *To = UNICODE_TAB;
           break;
+
+        //
         // embedded double-quote
+        //
         case UNICODE_DOUBLE_QUOTE:
-          *To = UNICODE_DOUBLE_QUOTE; 
+          *To = UNICODE_DOUBLE_QUOTE;
           break;
+
         //
         // Hex Unicode character \x1234. We'll process up to 4 hex characters
         //
-        case ASCII_TO_UNICODE('x'):
+        case ASCII_TO_UNICODE ('x'):
           HexValue = 0;
           for (HexNibbles = 0; HexNibbles < 4; HexNibbles++) {
             if ((From[1] >= UNICODE_0) && (From[1] <= UNICODE_9)) {
@@ -1290,14 +1438,22 @@ StringDBFormatString (
             } else {
               break;
             }
+
             From++;
           }
+
           if (HexNibbles == 0) {
-            ParserWarning (0, "expected at least one valid hex digit with \\x escaped character in string", "\\%C", *From);
+            ParserWarning (
+              0,
+              "expected at least one valid hex digit with \\x escaped character in string",
+              "\\%C",
+              *From
+              );
           } else {
             *To = HexValue;
           }
           break;
+
         default:
           *To = UNICODE_SPACE;
           ParserWarning (0, "invalid escaped character in string", "\\%C", *From);
@@ -1307,11 +1463,14 @@ StringDBFormatString (
     } else {
       *To = *From;
     }
+
     From++;
     To++;
   }
+
   *To = 0;
 }
+
 /*****************************************************************************/
 STATUS
 StringDBReadDatabase (
@@ -1320,16 +1479,17 @@ StringDBReadDatabase (
   BOOLEAN Verbose
   )
 {
-  STRING_DB_HEADER            DbHeader;
-  STATUS                      Status;
-  FILE                        *DBFptr;
-  DB_DATA_ITEM_HEADER         DataItemHeader;
+  STRING_DB_HEADER    DbHeader;
+  STATUS              Status;
+  FILE                *DBFptr;
+  DB_DATA_ITEM_HEADER DataItemHeader;
 
-  Status    = STATUS_SUCCESS;
-  DBFptr    = NULL;
-//  if (Verbose) {
-//    fprintf (stdout, "Reading database file %s\n", DBFileName);
-//  }
+  Status  = STATUS_SUCCESS;
+  DBFptr  = NULL;
+  //
+  //  if (Verbose) {
+  //    fprintf (stdout, "Reading database file %s\n", DBFileName);
+  //  }
   //
   // Try to open the input file
   //
@@ -1337,24 +1497,26 @@ StringDBReadDatabase (
     if (IgnoreIfNotExist) {
       return STATUS_SUCCESS;
     }
+
     Error (NULL, 0, 0, DBFileName, "failed to open input database file for reading");
     return STATUS_ERROR;
   }
   //
   // Read and verify the database header
   //
-  if (fread ((void *)&DbHeader, sizeof (STRING_DB_HEADER), 1, DBFptr) != 1) {
+  if (fread ((void *) &DbHeader, sizeof (STRING_DB_HEADER), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, DBFileName, "failed to read header from database file");
     Status = STATUS_ERROR;
     goto Finish;
   }
+
   if (DbHeader.Key != STRING_DB_KEY) {
     Error (NULL, 0, 0, DBFileName, "invalid header in database file");
     Status = STATUS_ERROR;
     goto Finish;
   }
-  if ((DbHeader.Version & STRING_DB_MAJOR_VERSION_MASK) != 
-      (STRING_DB_VERSION & STRING_DB_MAJOR_VERSION_MASK)) {
+
+  if ((DbHeader.Version & STRING_DB_MAJOR_VERSION_MASK) != (STRING_DB_VERSION & STRING_DB_MAJOR_VERSION_MASK)) {
     Error (NULL, 0, 0, DBFileName, "incompatible database file version -- rebuild clean");
     Status = STATUS_ERROR;
     goto Finish;
@@ -1367,26 +1529,40 @@ StringDBReadDatabase (
     case DB_DATA_TYPE_STRING_IDENTIFIER:
       StringDBReadStringIdentifier (DBFptr);
       break;
+
     case DB_DATA_TYPE_LANGUAGE_DEFINITION:
       StringDBReadLanguageDefinition (DBFptr);
       break;
+
     case DB_DATA_TYPE_STRING_DEFINITION:
       StringDBReadString (DBFptr);
       break;
+
     default:
-      Error (NULL, 0, 0, "database corrupted", "invalid data item type 0x%X at offset 0x%X", 
-        (UINT32)DataItemHeader.DataType, ftell (DBFptr) - sizeof (DataItemHeader));
+      Error (
+        NULL,
+        0,
+        0,
+        "database corrupted",
+        "invalid data item type 0x%X at offset 0x%X",
+        (UINT32) DataItemHeader.DataType,
+        ftell (DBFptr) - sizeof (DataItemHeader)
+        );
       Status = STATUS_ERROR;
       goto Finish;
     }
   }
+
 Finish:
   if (DBFptr != NULL) {
     fclose (DBFptr);
   }
+
   return Status;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -1413,17 +1589,18 @@ StringDBWriteDatabase (
   BOOLEAN Verbose
   )
 {
-  STRING_DB_HEADER            DbHeader;
-  UINT32                      Counter;
-  UINT32                      StrLen;
-  LANGUAGE_LIST               *Lang;
-  STRING_IDENTIFIER           *StringIdentifier;
-  STRING_LIST                 *StrList;
-  FILE                        *DBFptr;
+  STRING_DB_HEADER  DbHeader;
+  UINT32            Counter;
+  UINT32            StrLen;
+  LANGUAGE_LIST     *Lang;
+  STRING_IDENTIFIER *StringIdentifier;
+  STRING_LIST       *StrList;
+  FILE              *DBFptr;
 
   if (Verbose) {
     fprintf (stdout, "Writing database %s\n", DBFileName);
   }
+
   if ((DBFptr = fopen (DBFileName, "wb")) == NULL) {
     Error (NULL, 0, 0, DBFileName, "failed to open output database file for writing");
     return STATUS_ERROR;
@@ -1443,17 +1620,18 @@ StringDBWriteDatabase (
   }
   //
   // Count up how many string identifiers we have, and total up the
-  // size of the names plus the size of the flags field we will 
+  // size of the names plus the size of the flags field we will
   // write out too.
   //
   DbHeader.NumStringIdenfiers = mDBData.NumStringIdentifiers;
-  StringIdentifier = mDBData.StringIdentifier;
+  StringIdentifier            = mDBData.StringIdentifier;
   for (Counter = 0; Counter < mDBData.NumStringIdentifiers; Counter++) {
     StrLen = wcslen (StringIdentifier->StringName) + 1;
     DbHeader.StringIdentifiersSize += StrLen * sizeof (WCHAR) + sizeof (StringIdentifier->Flags);
     StringIdentifier = StringIdentifier->Next;
   }
-  // 
+
+  //
   // Write the header
   //
   fwrite (&DbHeader, sizeof (STRING_DB_HEADER), 1, DBFptr);
@@ -1465,7 +1643,12 @@ StringDBWriteDatabase (
   // Write the string identifiers
   //
   for (StringIdentifier = mDBData.StringIdentifier; StringIdentifier != NULL; StringIdentifier = StringIdentifier->Next) {
-    StringDBWriteStringIdentifier (DBFptr, (UINT16)StringIdentifier->Index, StringIdentifier->Flags, StringIdentifier->StringName);
+    StringDBWriteStringIdentifier (
+      DBFptr,
+      (UINT16) StringIdentifier->Index,
+      StringIdentifier->Flags,
+      StringIdentifier->StringName
+      );
   }
   //
   // Now write all the strings for each language
@@ -1473,12 +1656,21 @@ StringDBWriteDatabase (
   for (Lang = mDBData.LanguageList; Lang != NULL; Lang = Lang->Next) {
     StringDBWriteLanguageDefinition (DBFptr, Lang->LanguageName, Lang->PrintableLanguageName);
     for (StrList = Lang->String; StrList != NULL; StrList = StrList->Next) {
-      StringDBWriteString (DBFptr, StrList->Flags, Lang->LanguageName, StrList->StringName, StrList->Scope, StrList->Str);
+      StringDBWriteString (
+        DBFptr,
+        StrList->Flags,
+        Lang->LanguageName,
+        StrList->StringName,
+        StrList->Scope,
+        StrList->Str
+        );
     }
   }
+
   fclose (DBFptr);
   return STATUS_SUCCESS;
 }
+
 STATUS
 StringDBSetStringReferenced (
   INT8      *StringIdentifierName,
@@ -1491,8 +1683,8 @@ StringDBSetStringReferenced (
   //
   // See if it's already been defined.
   //
-  Status = STATUS_SUCCESS;
-  WName = (WCHAR *)malloc ((strlen (StringIdentifierName) + 1) * sizeof (WCHAR));
+  Status  = STATUS_SUCCESS;
+  WName   = (WCHAR *) malloc ((strlen (StringIdentifierName) + 1) * sizeof (WCHAR));
   swprintf (WName, L"%S", StringIdentifierName);
   Id = StringDBFindStringIdentifierByName (WName);
   if (Id != NULL) {
@@ -1503,10 +1695,13 @@ StringDBSetStringReferenced (
       Status = STATUS_WARNING;
     }
   }
+
   free (WName);
   return Status;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -1537,15 +1732,15 @@ StringDBDumpDatabase (
   BOOLEAN             Verbose
   )
 {
-  LANGUAGE_LIST               *Lang;
-  STRING_IDENTIFIER           *StringIdentifier;
-  STRING_LIST                 *StrList;
-  FILE                        *OutFptr;
-  WCHAR                       WChar;
-  WCHAR                       *WOutputFileName;
-  WCHAR                       CrLf[2];
-  WCHAR                       Line[200];
-  WCHAR                       *Scope;
+  LANGUAGE_LIST     *Lang;
+  STRING_IDENTIFIER *StringIdentifier;
+  STRING_LIST       *StrList;
+  FILE              *OutFptr;
+  WCHAR             WChar;
+  WCHAR             *WOutputFileName;
+  WCHAR             CrLf[2];
+  WCHAR             Line[200];
+  WCHAR             *Scope;
   //
   // This function assumes the database has already been read, and
   // we're just dumping our internal data structures to a unicode file.
@@ -1553,13 +1748,15 @@ StringDBDumpDatabase (
   if (Verbose) {
     fprintf (stdout, "Dumping database file %s\n", DBFileName);
   }
+
   WOutputFileName = AsciiToWchar (OutputFileName);
-  OutFptr = _wfopen (WOutputFileName, L"wb");
+  OutFptr         = _wfopen (WOutputFileName, L"wb");
   free (WOutputFileName);
   if (OutFptr == NULL) {
     Error (NULL, 0, 0, OutputFileName, "failed to open output file for writing");
     return STATUS_ERROR;
   }
+
   WChar = UNICODE_FILE_START;
   fwrite (&WChar, sizeof (WCHAR), 1, OutFptr);
   CrLf[1] = UNICODE_LF;
@@ -1576,22 +1773,32 @@ StringDBDumpDatabase (
   // Dump all the string identifiers and their values
   //
   StringDBAssignStringIndexes ();
-  for ( StringIdentifier = mDBData.StringIdentifier; 
-        StringIdentifier != NULL; 
-        StringIdentifier = StringIdentifier->Next) {
+  for (StringIdentifier = mDBData.StringIdentifier; StringIdentifier != NULL; StringIdentifier = StringIdentifier->Next) {
     //
     // Write the "#define " string
     //
     if (StringIdentifier->Flags & STRING_FLAGS_REFERENCED) {
-      swprintf (Line, L"%s %-60.60s 0x%04X", 
-        DEFINE_STR, StringIdentifier->StringName, StringIdentifier->Index);
+      swprintf (
+        Line,
+        L"%s %-60.60s 0x%04X",
+        DEFINE_STR,
+        StringIdentifier->StringName,
+        StringIdentifier->Index
+        );
     } else {
-      swprintf (Line, L"%s %-60.60s 0x%04X  // NOT REFERENCED", 
-        DEFINE_STR, StringIdentifier->StringName, StringIdentifier->Index);
+      swprintf (
+        Line,
+        L"%s %-60.60s 0x%04X  // NOT REFERENCED",
+        DEFINE_STR,
+        StringIdentifier->StringName,
+        StringIdentifier->Index
+        );
     }
+
     fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
     fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
   }
+
   fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
   //
   // Now write all the strings for each language.
@@ -1612,7 +1819,7 @@ StringDBDumpDatabase (
       //
       // Print the internal flags for debug
       //
-      swprintf (Line, L"// flags=0x%02X", (UINT32)StrList->Flags);
+      swprintf (Line, L"// flags=0x%02X", (UINT32) StrList->Flags);
       fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
       fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
       //
@@ -1624,8 +1831,13 @@ StringDBDumpDatabase (
         fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
         Scope = StrList->Scope;
       }
-      swprintf (Line, L"#string %-50.50s #language %s \"",
-        StrList->StringName, Lang->LanguageName);
+
+      swprintf (
+        Line,
+        L"#string %-50.50s #language %s \"",
+        StrList->StringName,
+        Lang->LanguageName
+        );
       fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
       fwrite (StrList->Str, StrList->Size - sizeof (WCHAR), 1, OutFptr);
       swprintf (Line, L"\"");
@@ -1633,10 +1845,13 @@ StringDBDumpDatabase (
       fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
     }
   }
+
   fclose (OutFptr);
   return STATUS_SUCCESS;
 }
+
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -1677,17 +1892,21 @@ StringDBWriteStringIdentifier (
     Error (NULL, 0, 0, "failed to write string to output database file", NULL);
     return STATUS_ERROR;
   }
+
   if (fwrite (&StringId, sizeof (StringId), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to write StringId to output database", NULL);
     return STATUS_ERROR;
   }
+
   if (fwrite (&Flags, sizeof (Flags), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to write StringId flags to output database", NULL);
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, IdentifierName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   return STATUS_SUCCESS;
 }
 
@@ -1698,21 +1917,28 @@ StringDBReadStringIdentifier (
   )
 {
   WCHAR   *IdentifierName;
-  UINT16  Flags, StringId, Size;
+  UINT16  Flags;
+  UINT16  StringId;
+  UINT16  Size;
 
   if (fread (&StringId, sizeof (StringId), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to read StringId from database", NULL);
     return STATUS_ERROR;
   }
+
   if (fread (&Flags, sizeof (Flags), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to read StringId flags from database", NULL);
     return STATUS_ERROR;
   }
+
   if (StringDBReadGenericString (DBFptr, &Size, &IdentifierName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   StringDBAddStringIdentifier (IdentifierName, &StringId, Flags);
-  //printf ("STRID:  0x%04X %S\n", (UINT32)StringId, IdentifierName);
+  //
+  // printf ("STRID:  0x%04X %S\n", (UINT32)StringId, IdentifierName);
+  //
   FREE (IdentifierName);
   return STATUS_SUCCESS;
 }
@@ -1735,49 +1961,63 @@ StringDBWriteString (
     Error (NULL, 0, 0, "failed to write string header to output database file", NULL);
     return STATUS_ERROR;
   }
+
   if (fwrite (&Flags, sizeof (Flags), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to write string flags to output database", NULL);
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, Language) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, StringName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, Scope) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, Str) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
-  //printf ("DBWriteString: %S.%S.%S\n", Language, StringName, Scope);
+  //
+  // printf ("DBWriteString: %S.%S.%S\n", Language, StringName, Scope);
+  //
   return STATUS_SUCCESS;
 }
 
 static
-STATUS 
+STATUS
 StringDBReadString (
   FILE            *DBFptr
   )
 {
   UINT16  Flags;
   UINT16  Size;
-  WCHAR   *Language, *StringName, *Scope, *Str;
-  
+  WCHAR   *Language;
+  WCHAR   *StringName;
+  WCHAR   *Scope;
+  WCHAR   *Str;
+
   if (fread (&Flags, sizeof (Flags), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to read string flags from database", NULL);
     return STATUS_ERROR;
   }
+
   if (StringDBReadGenericString (DBFptr, &Size, &Language) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBReadGenericString (DBFptr, &Size, &StringName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBReadGenericString (DBFptr, &Size, &Scope) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBReadGenericString (DBFptr, &Size, &Str) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
@@ -1789,17 +2029,22 @@ StringDBReadString (
   if (StringName[0] != L'$') {
     StringDBAddString (Language, StringName, Scope, Str, FALSE, Flags);
   }
-  //printf ("DBReadString: %S.%S.%S\n", Language, StringName, Scope);
+  //
+  // printf ("DBReadString: %S.%S.%S\n", Language, StringName, Scope);
+  //
   FREE (Language);
   FREE (StringName);
   if (Str != NULL) {
     FREE (Str);
   }
+
   if (Scope != NULL) {
     FREE (Scope);
   }
+
   return STATUS_SUCCESS;
 }
+
 static
 STATUS
 StringDBWriteLanguageDefinition (
@@ -1815,12 +2060,15 @@ StringDBWriteLanguageDefinition (
     Error (NULL, 0, 0, "failed to write string to output database file", NULL);
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, LanguageName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBWriteGenericString (DBFptr, PrintableLanguageName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   return STATUS_SUCCESS;
 }
 
@@ -1838,10 +2086,13 @@ StringDBReadLanguageDefinition (
   if (StringDBReadGenericString (DBFptr, &Size, &LanguageName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
+
   if (StringDBReadGenericString (DBFptr, &Size, &PrintableLanguageName) != STATUS_SUCCESS) {
     return STATUS_ERROR;
   }
-  //printf("LANG: %S %S\n", LanguageName, PrintableLanguageName);
+  //
+  // printf("LANG: %S %S\n", LanguageName, PrintableLanguageName);
+  //
   Status = StringDBAddLanguage (LanguageName, PrintableLanguageName);
   FREE (LanguageName);
   FREE (PrintableLanguageName);
@@ -1860,42 +2111,49 @@ StringDBReadGenericString (
   WCHAR     **Str
   )
 {
-  UINT16  LSize, Flags;
+  UINT16  LSize;
+  UINT16  Flags;
   WCHAR   *LStr;
 
   if (fread (&LSize, sizeof (UINT16), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to read a string length field from the database", NULL);
     return STATUS_ERROR;
   }
+
   if (fread (&Flags, sizeof (UINT16), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to read a string flags field from the database", NULL);
     return STATUS_ERROR;
   }
+
   LStr = MALLOC (LSize);
   if (LStr == NULL) {
     Error (__FILE__, __LINE__, 0, "memory allocation failed reading the database", NULL);
     return STATUS_ERROR;
   }
-  if (fread (LStr, sizeof (WCHAR), (UINT32)LSize / sizeof (WCHAR), DBFptr) != (UINT32)LSize / sizeof (WCHAR)) {
+
+  if (fread (LStr, sizeof (WCHAR), (UINT32) LSize / sizeof (WCHAR), DBFptr) != (UINT32) LSize / sizeof (WCHAR)) {
     Error (NULL, 0, 0, "failed to read string from database", NULL);
     Error (NULL, 0, 0, "database read failure", "offset 0x%X", ftell (DBFptr));
     free (LStr);
     return STATUS_ERROR;
   }
-  //printf ("DBR: %S\n", LStr);
+  //
+  // printf ("DBR: %S\n", LStr);
   //
   // If the flags field indicated we were asked to write a NULL string, then
   // return them a NULL pointer.
   //
   if (Flags & STRING_FLAGS_UNDEFINED) {
     *Size = 0;
-    *Str = NULL;
+    *Str  = NULL;
   } else {
     *Size = LSize;
-    *Str = LStr;
+    *Str  = LStr;
   }
+
   return STATUS_SUCCESS;
 }
+
 static
 STATUS
 StringDBWriteGenericString (
@@ -1903,7 +2161,8 @@ StringDBWriteGenericString (
   WCHAR     *Str
   )
 {
-  UINT16  Size, Flags;
+  UINT16  Size;
+  UINT16  Flags;
   WCHAR   ZeroString[1];
   //
   // Strings in the database consist of a size UINT16 followed
@@ -1911,28 +2170,33 @@ StringDBWriteGenericString (
   //
   if (Str == NULL) {
     ZeroString[0] = 0;
-    Str = ZeroString;
-    Size = sizeof (ZeroString);
-    Flags = STRING_FLAGS_UNDEFINED;
+    Str           = ZeroString;
+    Size          = sizeof (ZeroString);
+    Flags         = STRING_FLAGS_UNDEFINED;
   } else {
     Flags = 0;
-    Size = (UINT16)((wcslen (Str) + 1) * sizeof (WCHAR));
+    Size  = (UINT16) ((wcslen (Str) + 1) * sizeof (WCHAR));
   }
+
   if (fwrite (&Size, sizeof (UINT16), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to write string size to database", NULL);
     return STATUS_ERROR;
   }
+
   if (fwrite (&Flags, sizeof (UINT16), 1, DBFptr) != 1) {
     Error (NULL, 0, 0, "failed to write string flags to database", NULL);
     return STATUS_ERROR;
   }
+
   if (fwrite (Str, sizeof (WCHAR), Size / sizeof (WCHAR), DBFptr) != Size / sizeof (WCHAR)) {
     Error (NULL, 0, 0, "failed to write string to database", NULL);
     return STATUS_ERROR;
   }
+
   return STATUS_SUCCESS;
 }
-static 
+
+static
 STRING_LIST *
 StringDBFindString (
   WCHAR                       *LanguageName,
@@ -1945,7 +2209,7 @@ StringDBFindString (
   LANGUAGE_LIST               *Lang;
   STRING_LIST                 *CurrString;
   WCHAR_MATCHING_STRING_LIST  *IndListPtr;
-  WCHAR                       TempLangName[LANGUAGE_IDENTIFIER_NAME_LEN+1];
+  WCHAR                       TempLangName[LANGUAGE_IDENTIFIER_NAME_LEN + 1];
   WCHAR                       *WCharPtr;
 
   //
@@ -1969,7 +2233,7 @@ StringDBFindString (
   //
   for (Lang = mDBData.LanguageList; Lang != NULL; Lang = Lang->Next) {
     if (wcscmp (LanguageName, Lang->LanguageName) == 0) {
-      // 
+      //
       // Found language match. Try to find string name match
       //
       for (CurrString = Lang->String; CurrString != NULL; CurrString = CurrString->Next) {
@@ -2010,19 +2274,24 @@ StringDBFindString (
           Error (NULL, 0, 0, "malformed alternate language list", "%S", LanguagesOfInterest->Str);
           return NULL;
         }
+
         wcsncpy (TempLangName, WCharPtr, LANGUAGE_IDENTIFIER_NAME_LEN);
-        TempLangName[LANGUAGE_IDENTIFIER_NAME_LEN] = 0;
+        TempLangName[LANGUAGE_IDENTIFIER_NAME_LEN]  = 0;
         CurrString = StringDBFindString (TempLangName, StringName, NULL, NULL, IndirectionList);
         if (CurrString != NULL) {
           return CurrString;
         }
+
         WCharPtr += LANGUAGE_IDENTIFIER_NAME_LEN;
       }
     }
+
     LanguagesOfInterest = LanguagesOfInterest->Next;
   }
+
   return NULL;
 }
+
 STATUS
 StringDBSetScope (
   WCHAR   *Scope
@@ -2034,6 +2303,7 @@ StringDBSetScope (
   if (mDBData.CurrentScope != NULL) {
     FREE (mDBData.CurrentScope);
   }
+
   mDBData.CurrentScope = DuplicateString (Scope);
   return STATUS_SUCCESS;
 }
@@ -2047,21 +2317,27 @@ StringDBSetScope (
 //
 static
 void
-StringDBAssignStringIndexes ()
+StringDBAssignStringIndexes (
+  VOID
+  )
 {
-  STRING_IDENTIFIER   *StrId, *FirstUsed, *LastUsed, *FirstUnused, *LastUnused;
-  UINT32              Index;
-  UINT32              MaxReferenced;
+  STRING_IDENTIFIER *StrId;
+  STRING_IDENTIFIER *FirstUsed;
+  STRING_IDENTIFIER *LastUsed;
+  STRING_IDENTIFIER *FirstUnused;
+  STRING_IDENTIFIER *LastUnused;
+  UINT32            Index;
+  UINT32            MaxReferenced;
 
-  // 
+  //
   // Create two lists -- used and unused. Then put them together with
   // the unused ones on the end.
-  // 
+  //
   FirstUsed   = NULL;
   LastUsed    = NULL;
   FirstUnused = NULL;
   LastUnused  = NULL;
-  StrId = mDBData.StringIdentifier;
+  StrId       = mDBData.StringIdentifier;
   while (StrId != NULL) {
     if ((StrId->Flags & STRING_FLAGS_REFERENCED) == 0) {
       //
@@ -2072,9 +2348,10 @@ StringDBAssignStringIndexes ()
       } else {
         LastUnused->Next = StrId;
       }
-      LastUnused = StrId;
-      StrId = StrId->Next;
-      LastUnused->Next = NULL;
+
+      LastUnused        = StrId;
+      StrId             = StrId->Next;
+      LastUnused->Next  = NULL;
     } else {
       //
       // Put it on the used list
@@ -2084,22 +2361,24 @@ StringDBAssignStringIndexes ()
       } else {
         LastUsed->Next = StrId;
       }
-      LastUsed = StrId;
-      StrId = StrId->Next;
-      LastUsed->Next = NULL;
+
+      LastUsed        = StrId;
+      StrId           = StrId->Next;
+      LastUsed->Next  = NULL;
     }
   }
   //
   // Join the lists
   //
   if (FirstUsed != NULL) {
-    mDBData.StringIdentifier = FirstUsed;
-    LastUsed->Next = FirstUnused;
+    mDBData.StringIdentifier  = FirstUsed;
+    LastUsed->Next            = FirstUnused;
   } else {
     mDBData.StringIdentifier = FirstUnused;
   }
+
   MaxReferenced = 0;
-  Index = 0;
+  Index         = 0;
   for (StrId = mDBData.StringIdentifier; StrId != NULL; StrId = StrId->Next) {
     StrId->Index = Index;
     Index++;
@@ -2107,10 +2386,12 @@ StringDBAssignStringIndexes ()
       mDBData.NumStringIdentifiersReferenced = Index;
     }
   }
+
   mDBData.NumStringIdentifiers = Index;
 }
+
 static
-WCHAR   *
+WCHAR *
 DuplicateString (
   WCHAR   *Str
   )
@@ -2119,33 +2400,39 @@ DuplicateString (
   if (Str == NULL) {
     return NULL;
   }
+
   NewStr = MALLOC ((wcslen (Str) + 1) * sizeof (WCHAR));
   if (NewStr == NULL) {
     Error (NULL, 0, 0, "memory allocation failure", NULL);
     return NULL;
   }
+
   wcscpy (NewStr, Str);
   return NewStr;
 }
-static 
+
+static
 WCHAR *
 AsciiToWchar (
   INT8 *Str
   )
 {
   UINT32  Len;
-  WCHAR   *NewStr, *Ptr;
+  WCHAR   *NewStr;
+  WCHAR   *Ptr;
 
-  Len = strlen (Str) + 1;
-  NewStr = (WCHAR *)malloc (Len * sizeof (WCHAR));
+  Len     = strlen (Str) + 1;
+  NewStr  = (WCHAR *) malloc (Len * sizeof (WCHAR));
   for (Ptr = NewStr; *Str != 0; Str++, Ptr++) {
-    *Ptr = (UINT16)(UINT8)*Str;
+    *Ptr = (UINT16) (UINT8) *Str;
   }
+
   *Ptr = 0;
   return NewStr;
 }
 
 /*****************************************************************************/
+
 /*++
 
 Routine Description:
@@ -2162,11 +2449,10 @@ Returns:
 
 
 --*/
-
-STATUS 
+STATUS
 StringDBCreateHiiExportPack (
   INT8                        *FileName
-  ) 
+  )
 {
   FILE                        *Fptr;
   LANGUAGE_LIST               *Lang;
@@ -2194,8 +2480,8 @@ StringDBCreateHiiExportPack (
   // If a given string is not defined, then we'll use this one.
   //
   memset (&EmptyString, 0, sizeof (EmptyString));
-  EmptyString.Size = sizeof (ZeroString);
-  EmptyString.Str = ZeroString;
+  EmptyString.Size  = sizeof (ZeroString);
+  EmptyString.Str   = ZeroString;
   //
   // Process each language, then each string for each langage
   //
@@ -2206,7 +2492,7 @@ StringDBCreateHiiExportPack (
     //   Pass1: computes sizes and fill in the string pack header
     //   Pass2: write the array of offsets
     //   Pass3: write the strings
-    // 
+    //
     //
     // PASS 1: Fill in and print the HII string pack header
     //
@@ -2216,22 +2502,20 @@ StringDBCreateHiiExportPack (
     //   Offset[]  -- an array of offsets to strings, of type RELOFST each
     //   String[]  -- the actual strings themselves
     //
-    memset ((char *)&StringPack, 0, sizeof(EFI_HII_STRING_PACK_HEADER));
-    StringPack.Header.Type          = EFI_HII_STRING;
-    StringPack.NumStringPointers    = (UINT16)mDBData.NumStringIdentifiersReferenced;
-    LangName = Lang->LanguageName;
+    memset ((char *) &StringPack, 0, sizeof (EFI_HII_STRING_PACK_HEADER));
+    StringPack.Header.Type        = EFI_HII_STRING;
+    StringPack.NumStringPointers  = (UINT16) mDBData.NumStringIdentifiersReferenced;
+    LangName                      = Lang->LanguageName;
     //
     // First string is the language name. If we're printing all languages, then
     // it's just the "spa". If we were given a list of languages to print, then it's
     // the "spacat" string. Compute its offset and fill in
-    // the info in the header. Since we know the language name string's length, 
+    // the info in the header. Since we know the language name string's length,
     // and the printable language name follows it, use that info to fill in the
     // entry for the printable language name as well.
     //
-    StringPack.LanguageNameString     = (STRING_OFFSET)(sizeof (EFI_HII_STRING_PACK_HEADER) + 
-                                        (mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET)));
-    StringPack.PrintableLanguageName  = (STRING_OFFSET)(StringPack.LanguageNameString + 
-                                        (wcslen (LangName) + 1) * sizeof (WCHAR));
+    StringPack.LanguageNameString = (STRING_OFFSET) (sizeof (EFI_HII_STRING_PACK_HEADER) + (mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET)));
+    StringPack.PrintableLanguageName = (STRING_OFFSET) (StringPack.LanguageNameString + (wcslen (LangName) + 1) * sizeof (WCHAR));
     //
     // Add up the size of all strings so we can fill in our header.
     //
@@ -2253,38 +2537,53 @@ StringDBCreateHiiExportPack (
           return STATUS_ERROR;
         }
         //
-        // Find a matching string if this string identifier was referenced 
+        // Find a matching string if this string identifier was referenced
         //
         EmptyString.Flags = STRING_FLAGS_UNDEFINED;
-        CurrString = NULL;
+        CurrString        = NULL;
         if (StringIdentifier->Flags & STRING_FLAGS_REFERENCED) {
-          CurrString = StringDBFindString ( Lang->LanguageName, 
-                                            StringIdentifier->StringName, 
-                                            NULL, 
-                                            NULL, // LanguagesOfInterest, 
-                                            NULL); //IndirectionList);
-          if (NULL == CurrString) { // If string for Lang->LanguageName is not found, try to get an English version
-            CurrString = StringDBFindString ( L"eng", 
-                                            StringIdentifier->StringName, 
-                                            NULL, 
-                                            NULL, // LanguagesOfInterest, 
-                                            NULL); // IndirectionList);
+          CurrString = StringDBFindString (
+                        Lang->LanguageName,
+                        StringIdentifier->StringName,
+                        NULL,
+                        NULL, // LanguagesOfInterest,
+                        NULL
+                        );
+          //
+          // IndirectionList);
+          //
+          if (NULL == CurrString) {
+            //
+            // If string for Lang->LanguageName is not found, try to get an English version
+            //
+            CurrString = StringDBFindString (
+                          L"eng",
+                          StringIdentifier->StringName,
+                          NULL,
+                          NULL, // LanguagesOfInterest,
+                          NULL
+                          );
+            //
+            // IndirectionList);
+            //
           }
         }
+
         if (CurrString == NULL) {
           CurrString = &EmptyString;
           EmptyString.Flags |= StringIdentifier->Flags;
         }
+
         Len += CurrString->Size;
       }
-    }      
+    }
     StringPack.Header.Length =    sizeof (EFI_HII_STRING_PACK_HEADER) 
                                 + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET) 
                                 + Len;
     //
     // Write out the string pack header
     //
-    fwrite ((void *)&StringPack, sizeof (StringPack), 1, Fptr);
+    fwrite ((void *) &StringPack, sizeof (StringPack), 1, Fptr);
     //
     // PASS2 : write the offsets
     //
@@ -2293,12 +2592,12 @@ StringDBCreateHiiExportPack (
     // plus the size of the offsets array. The other strings follow it.
     //
     StringIndex = 0;
-    Offset = sizeof (StringPack) + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET);
+    Offset      = sizeof (StringPack) + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET);
     for (StringIndex = 0; StringIndex < mDBData.NumStringIdentifiersReferenced; StringIndex++) {
       //
       // Write the offset
       //
-      fwrite (&Offset, sizeof(STRING_OFFSET), 1, Fptr);
+      fwrite (&Offset, sizeof (STRING_OFFSET), 1, Fptr);
       //
       // Find the string name
       //
@@ -2313,41 +2612,54 @@ StringDBCreateHiiExportPack (
       //
       if (StringIndex == STRING_ID_LANGUAGE_NAME) {
         Offset += (wcslen (LangName) + 1) * sizeof (WCHAR);
-        CurrString = StringDBFindString ( Lang->LanguageName, 
-                                          StringIdentifier->StringName, 
-                                          NULL,                         // scope
-                                          NULL,  
-                                          NULL);
+        CurrString = StringDBFindString (
+                      Lang->LanguageName,
+                      StringIdentifier->StringName,
+                      NULL, // scope
+                      NULL,
+                      NULL
+                      );
       } else {
         //
         // Find a matching string
         //
-        CurrString = StringDBFindString ( Lang->LanguageName, 
-                                          StringIdentifier->StringName, 
-                                          NULL,                         // scope
-                                          NULL, // LanguagesOfInterest, 
-                                          NULL); // IndirectionList);
-        
+        CurrString = StringDBFindString (
+                      Lang->LanguageName,
+                      StringIdentifier->StringName,
+                      NULL, // scope
+                      NULL, // LanguagesOfInterest,
+                      NULL
+                      );
+        //
+        // IndirectionList);
+        //
         if (NULL == CurrString) {
-          CurrString = StringDBFindString ( L"eng", 
-                                          StringIdentifier->StringName, 
-                                          NULL,                         // scope
-                                          NULL, // LanguagesOfInterest, 
-                                          NULL); // IndirectionList);
+          CurrString = StringDBFindString (
+                        L"eng",
+                        StringIdentifier->StringName,
+                        NULL, // scope
+                        NULL, // LanguagesOfInterest,
+                        NULL
+                        );
+          //
+          // IndirectionList);
+          //
         }
-        
+
         EmptyString.LanguageName = Lang->LanguageName;
         if (CurrString == NULL) {
-          CurrString = &EmptyString;
+          CurrString        = &EmptyString;
           EmptyString.Flags = STRING_FLAGS_UNDEFINED;
         } else if ((StringIdentifier->Flags & STRING_FLAGS_REFERENCED) == 0) {
-          CurrString = &EmptyString;
+          CurrString        = &EmptyString;
           EmptyString.Flags = 0;
         }
+
         Offset += CurrString->Size;
       }
-    }      
-    // 
+    }
+
+    //
     // PASS 3: write the strings themselves.
     //
     Offset = sizeof (StringPack) + mDBData.NumStringIdentifiersReferenced * sizeof (STRING_OFFSET);
@@ -2369,51 +2681,71 @@ StringDBCreateHiiExportPack (
         //
         CurrString = NULL;
         if (StringIdentifier->Flags & STRING_FLAGS_REFERENCED) {
-          CurrString = StringDBFindString ( Lang->LanguageName, 
-                                            StringIdentifier->StringName, 
-                                            NULL,                         // scope
-                                            NULL, // LanguagesOfInterest, 
-                                            NULL); // IndirectionList);
+          CurrString = StringDBFindString (
+                        Lang->LanguageName,
+                        StringIdentifier->StringName,
+                        NULL, // scope
+                        NULL, // LanguagesOfInterest,
+                        NULL
+                        );
+          //
+          // IndirectionList);
+          //
           if (NULL == CurrString) {
-            CurrString = StringDBFindString ( L"eng", 
-                                            StringIdentifier->StringName, 
-                                            NULL,                         // scope
-                                            NULL, // LanguagesOfInterest, 
-                                            NULL); // IndirectionList);
+            CurrString = StringDBFindString (
+                          L"eng",
+                          StringIdentifier->StringName,
+                          NULL, // scope
+                          NULL, // LanguagesOfInterest,
+                          NULL
+                          );
+            //
+            // IndirectionList);
+            //
           }
         }
+
         if (CurrString == NULL) {
           CurrString = &EmptyString;
         }
+
         TempStringPtr = CurrString->Str;
       }
+
       for (TempIndex = 0; TempStringPtr[TempIndex] != 0; TempIndex++) {
-        fwrite(&TempStringPtr[TempIndex], sizeof(CHAR16), 1, Fptr);
+        fwrite (&TempStringPtr[TempIndex], sizeof (CHAR16), 1, Fptr);
         Offset += 2;
       }
       //
       // Print NULL WCHAR at the end of this string.
       //
       TempIndex = 0;
-      fwrite (&TempIndex, sizeof(CHAR16), 1, Fptr);
+      fwrite (&TempIndex, sizeof (CHAR16), 1, Fptr);
       Offset += 2;
     }
     //
-    // Sanity check the offset. Make sure our running offset is what we put in the 
+    // Sanity check the offset. Make sure our running offset is what we put in the
     // string pack header.
     //
     if (StringPack.Header.Length != Offset) {
-      Error (__FILE__, __LINE__, 0, "application error", "stringpack size 0x%X does not match final size 0x%X",
-        StringPack.Header.Length, Offset);
+      Error (
+        __FILE__,
+        __LINE__,
+        0,
+        "application error",
+        "stringpack size 0x%X does not match final size 0x%X",
+        StringPack.Header.Length,
+        Offset
+        );
     }
-  }    
+  }
   //
-  // Print terminator string pack, closing brace and close the file. 
+  // Print terminator string pack, closing brace and close the file.
   // The size of 0 triggers to the consumer that this is the end.
   //
-  memset ((char *)&StringPack, 0, sizeof(EFI_HII_STRING_PACK_HEADER));
+  memset ((char *) &StringPack, 0, sizeof (EFI_HII_STRING_PACK_HEADER));
   StringPack.Header.Type = EFI_HII_STRING;
-  fwrite ((void *)&StringPack, sizeof (StringPack), 1, Fptr);
+  fwrite ((void *) &StringPack, sizeof (StringPack), 1, Fptr);
   fclose (Fptr);
   return STATUS_SUCCESS;
 }

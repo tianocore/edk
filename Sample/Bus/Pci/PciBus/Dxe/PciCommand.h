@@ -21,38 +21,92 @@ Revision History
 
 --*/
 
-
 #ifndef _EFI_PCI_COMMAND_H
 #define _EFI_PCI_COMMAND_H
 
 #include "pci22.h"
 
 #define EFI_GET_REGISTER      1
-#define EFI_SET_REGISTER      2  
+#define EFI_SET_REGISTER      2
 #define EFI_ENABLE_REGISTER   3
 #define EFI_DISABLE_REGISTER  4
 
-EFI_STATUS 
+EFI_STATUS
 PciOperateRegister (
   IN  PCI_IO_DEVICE *PciIoDevice,
-  IN  UINT16        Command,  
+  IN  UINT16        Command,
   IN  UINT8         Offset,
   IN  UINT8         Operation,
-  OUT UINT16       *PtrCommand
-);
+  OUT UINT16        *PtrCommand
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+  Command     - TODO: add argument description
+  Offset      - TODO: add argument description
+  Operation   - TODO: add argument description
+  PtrCommand  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 PciCapabilitySupport (
   IN PCI_IO_DEVICE  *PciIoDevice
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 LocateCapabilityRegBlock (
-  IN PCI_IO_DEVICE *PciIoDevice,
+  IN PCI_IO_DEVICE  *PciIoDevice,
   IN UINT8          CapId,
-  OUT UINT8        *Offset,
-  OUT UINT8        *NextRegBlock
-);
+  OUT UINT8         *Offset,
+  OUT UINT8         *NextRegBlock
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice   - TODO: add argument description
+  CapId         - TODO: add argument description
+  Offset        - TODO: add argument description
+  NextRegBlock  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 
 #define PciReadCommandRegister(a,b) \
@@ -80,4 +134,3 @@ LocateCapabilityRegBlock (
         PciOperateRegister (a,b, PCI_BRIDGE_CONTROL_REGISTER_OFFSET, EFI_DISABLE_REGISTER, NULL)
 
 #endif
-

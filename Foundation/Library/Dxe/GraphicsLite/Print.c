@@ -59,13 +59,13 @@ Abstract:
 #include "PrintWidth.h"
 #include "EfiPrintLib.h"
 #include "Print.h"
-#include EFI_PROTOCOL_DEFINITION(Hii)
+#include EFI_PROTOCOL_DEFINITION (Hii)
 
 STATIC
-CHAR_W *
+CHAR_W                *
 GetFlagsAndWidth (
-  IN  CHAR_W      *Format, 
-  OUT UINTN       *Flags, 
+  IN  CHAR_W      *Format,
+  OUT UINTN       *Flags,
   OUT UINTN       *Width,
   IN OUT  VA_LIST *Marker
   );
@@ -100,7 +100,7 @@ Atoi (
   CHAR_W  *String
   );
 
-static EFI_UGA_PIXEL mEfiColors[16] = {
+static EFI_UGA_PIXEL  mEfiColors[16] = {
   0x00, 0x00, 0x00, 0x00,
   0x98, 0x00, 0x00, 0x00,
   0x00, 0x98, 0x00, 0x00,
@@ -131,23 +131,52 @@ _IPrint (
   IN CHAR16                           *fmt,
   IN VA_LIST                          args
   )
-// Display string worker for: Print, PrintAt, IPrint, IPrintAt
-{
-  VOID                                *Buffer;
-  EFI_STATUS                          Status;
-  UINT16                              GlyphWidth;
-  UINT32                              GlyphStatus;
-  UINT16                              StringIndex;
-  UINTN                               Index;
-  CHAR16                              *UnicodeWeight;
-  EFI_NARROW_GLYPH                    *Glyph;
-  EFI_HII_PROTOCOL                    *Hii;
-  EFI_UGA_PIXEL                       *LineBuffer;
-  UINT32                              HorizontalResolution;
-  UINT32                              VerticalResolution;
-  UINT32                              ColorDepth;
-  UINT32                              RefreshRate;
+/*++
 
+Routine Description:
+
+  Display string worker for: Print, PrintAt, IPrint, IPrintAt
+
+Arguments:
+
+  UgaDraw         - UGA draw protocol interface
+  
+  Sto             - Simple text out protocol interface
+  
+  X               - X coordinate to start printing
+  
+  Y               - Y coordinate to start printing
+  
+  Foreground      - Foreground color
+  
+  Background      - Background color
+  
+  fmt             - Format string
+  
+  args            - Print arguments
+
+Returns: 
+
+  EFI_SUCCESS          - success
+  
+  EFI_OUT_OF_RESOURCES - out of resources      
+
+--*/
+{
+  VOID              *Buffer;
+  EFI_STATUS        Status;
+  UINT16            GlyphWidth;
+  UINT32            GlyphStatus;
+  UINT16            StringIndex;
+  UINTN             Index;
+  CHAR16            *UnicodeWeight;
+  EFI_NARROW_GLYPH  *Glyph;
+  EFI_HII_PROTOCOL  *Hii;
+  EFI_UGA_PIXEL     *LineBuffer;
+  UINT32            HorizontalResolution;
+  UINT32            VerticalResolution;
+  UINT32            ColorDepth;
+  UINT32            RefreshRate;
 
   GlyphStatus = 0;
 
@@ -159,11 +188,11 @@ _IPrint (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  UgaDraw->GetMode(UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
+  UgaDraw->GetMode (UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
 
-  LineBuffer = EfiLibAllocatePool (sizeof(EFI_UGA_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
+  LineBuffer = EfiLibAllocatePool (sizeof (EFI_UGA_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
   if (LineBuffer == NULL) {
-    gBS->FreePool(Buffer);
+    gBS->FreePool (Buffer);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -174,49 +203,66 @@ _IPrint (
 
   VSPrint (Buffer, 0x10000, fmt, args);
 
-  UnicodeWeight = (CHAR16 *)Buffer;
+  UnicodeWeight = (CHAR16 *) Buffer;
 
   for (Index = 0; UnicodeWeight[Index] != 0; Index++) {
     if (UnicodeWeight[Index] == CHAR_BACKSPACE ||
-        UnicodeWeight[Index] == CHAR_LINEFEED ||
+        UnicodeWeight[Index] == CHAR_LINEFEED  ||
         UnicodeWeight[Index] == CHAR_CARRIAGE_RETURN) {
       UnicodeWeight[Index] = 0;
     }
   }
 
-  for (Index = 0; Index < EfiStrLen(Buffer); Index++) {
-    StringIndex = (UINT16)Index;
-    Status = Hii->GetGlyph (Hii, UnicodeWeight, &StringIndex, (UINT8 **)&Glyph, &GlyphWidth, &GlyphStatus);
+  for (Index = 0; Index < EfiStrLen (Buffer); Index++) {
+    StringIndex = (UINT16) Index;
+    Status      = Hii->GetGlyph (Hii, UnicodeWeight, &StringIndex, (UINT8 **) &Glyph, &GlyphWidth, &GlyphStatus);
     if (EFI_ERROR (Status)) {
       goto Error;
     }
 
     if (Foreground == NULL || Background == NULL) {
-      Status = Hii->GlyphToBlt (Hii, (UINT8 *)Glyph, mEfiColors[Sto->Mode->Attribute & 0x0f], mEfiColors[Sto->Mode->Attribute >> 4], EfiStrLen(Buffer), GlyphWidth, GLYPH_HEIGHT, &LineBuffer[Index * GLYPH_WIDTH]);
+      Status = Hii->GlyphToBlt (
+                      Hii,
+                      (UINT8 *) Glyph,
+                      mEfiColors[Sto->Mode->Attribute & 0x0f],
+                      mEfiColors[Sto->Mode->Attribute >> 4],
+                      EfiStrLen (Buffer),
+                      GlyphWidth,
+                      GLYPH_HEIGHT,
+                      &LineBuffer[Index * GLYPH_WIDTH]
+                      );
     } else {
-      Status = Hii->GlyphToBlt (Hii, (UINT8 *)Glyph, *Foreground, *Background, EfiStrLen(Buffer), GlyphWidth, GLYPH_HEIGHT, &LineBuffer[Index * GLYPH_WIDTH]);
+      Status = Hii->GlyphToBlt (
+                      Hii,
+                      (UINT8 *) Glyph,
+                      *Foreground,
+                      *Background,
+                      EfiStrLen (Buffer),
+                      GlyphWidth,
+                      GLYPH_HEIGHT,
+                      &LineBuffer[Index * GLYPH_WIDTH]
+                      );
     }
   }
-
   //
   // Blt a character to the screen
   //
   Status = UgaDraw->Blt (
-                      UgaDraw, 
+                      UgaDraw,
                       LineBuffer,
-                      EfiUgaBltBufferToVideo, 
+                      EfiUgaBltBufferToVideo,
                       0,
                       0,
-                      X, 
-                      Y, 
-                      GLYPH_WIDTH * EfiStrLen(Buffer), 
-                      GLYPH_HEIGHT, 
-                      GLYPH_WIDTH * EfiStrLen(Buffer) * sizeof (EFI_UGA_PIXEL)
+                      X,
+                      Y,
+                      GLYPH_WIDTH * EfiStrLen (Buffer),
+                      GLYPH_HEIGHT,
+                      GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_UGA_PIXEL)
                       );
 
-Error:  
-  gBS->FreePool(LineBuffer);
-  gBS->FreePool(Buffer);
+Error:
+  gBS->FreePool (LineBuffer);
+  gBS->FreePool (Buffer);
   return Status;
 }
 
@@ -225,8 +271,8 @@ UINTN
 PrintXY (
   IN UINTN                            X,
   IN UINTN                            Y,
-  IN EFI_UGA_PIXEL                    *ForeGround,  OPTIONAL
-  IN EFI_UGA_PIXEL                    *BackGround,  OPTIONAL
+  IN EFI_UGA_PIXEL                    *ForeGround, OPTIONAL
+  IN EFI_UGA_PIXEL                    *BackGround, OPTIONAL
   IN CHAR_W                           *Fmt,
   ...
   )
@@ -238,7 +284,17 @@ Routine Description:
 
 Arguments:
 
+    X           - X coordinate to start printing
+    
+    Y           - Y coordinate to start printing
+    
+    ForeGround  - Foreground color
+    
+    BackGround  - Background color
+
     Fmt         - Format string
+
+    ...         - Print arguments
 
 Returns:
 
@@ -246,31 +302,31 @@ Returns:
 
 --*/
 {
-  EFI_HANDLE                          Handle;
-  EFI_UGA_DRAW_PROTOCOL               *UgaDraw;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL        *Sto;
-  EFI_STATUS                          Status;
-  VA_LIST                             Args;
+  EFI_HANDLE                    Handle;
+  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *Sto;
+  EFI_STATUS                    Status;
+  VA_LIST                       Args;
 
   VA_START (Args, Fmt);
 
   Handle = gST->ConsoleOutHandle;
 
   Status = gBS->HandleProtocol (
-                Handle,
-                &gEfiUgaDrawProtocolGuid,
-                &UgaDraw
-                );
+                  Handle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &UgaDraw
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   Status = gBS->HandleProtocol (
-                Handle,
-                &gEfiSimpleTextOutProtocolGuid,
-                &Sto
-                );
+                  Handle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  &Sto
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
@@ -295,12 +351,12 @@ Routine Description:
 
 Arguments:
 
-  Buffer     - Ascii buffer to print the results of the parsing of Format into.
+  Buffer     - Wide char buffer to print the results of the parsing of Format into.
 
   BufferSize - Maximum number of characters to put into buffer. Zero means no 
                limit.
 
-  Format - Ascii format string see file header for more details.
+  Format - Format string see file header for more details.
 
   ...    - Vararg list consumed by processing Format.
 
@@ -316,7 +372,7 @@ Returns:
   VA_START (Marker, Format);
   Return = VSPrint (Buffer, BufferSize, Format, Marker);
   VA_END (Marker);
-  
+
   return Return;
 }
 
@@ -352,20 +408,22 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_PRINT_PROTOCOL            *PrintProtocol;
-  
-  Status = gBS->LocateProtocol (&gEfiPrintProtocolGuid, 
-                                NULL, 
-                                &PrintProtocol
-                                );
+  EFI_STATUS          Status;
+  EFI_PRINT_PROTOCOL  *PrintProtocol;
+
+  Status = gBS->LocateProtocol (
+                  &gEfiPrintProtocolGuid,
+                  NULL,
+                  &PrintProtocol
+                  );
   if (EFI_ERROR (Status)) {
     return 0;
   } else {
-    return PrintProtocol->VSPrint (StartOfBuffer, 
-                                     BufferSize,
-                                     FormatString,
-                                     Marker
-                                    );
-  }                                    
+    return PrintProtocol->VSPrint (
+                            StartOfBuffer,
+                            BufferSize,
+                            FormatString,
+                            Marker
+                            );
+  }
 }

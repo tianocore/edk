@@ -23,9 +23,8 @@ Abstract:
 #include "EfiRuntimeLib.h"
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 
-
-#define PCI_CONFIG_INDEX_PORT     0xcf8
-#define PCI_CONFIG_DATA_PORT      0xcfc
+#define PCI_CONFIG_INDEX_PORT 0xcf8
+#define PCI_CONFIG_DATA_PORT  0xcfc
 
 UINT32
 GetPciAddress (
@@ -50,19 +49,18 @@ Returns:
 
 --*/
 {
-  UINT32 Data;
+  UINT32  Data;
 
-  Data = 0;
+  Data  = 0;
 
-  Data = (((UINT32)Segment) << 24);
-  Data |= (((UINT32)Bus) << 16);
-  Data |= (((UINT32)DevFunc) << 8);
-  Data |= (UINT32)Register;
+  Data  = (((UINT32) Segment) << 24);
+  Data |= (((UINT32) Bus) << 16);
+  Data |= (((UINT32) DevFunc) << 8);
+  Data |= (UINT32) Register;
 
   return Data;
 
 }
-
 
 UINT8
 PciRead8 (
@@ -97,19 +95,18 @@ Returns:
   // Set bit 31 for PCI config access
   //
   PciAddress1 = PciAddress;
-  PciAddress = ((PciAddress & 0xFFFFFFFC) | (0x80000000)) ;
+  PciAddress  = ((PciAddress & 0xFFFFFFFC) | (0x80000000));
 
-  Status = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress); 
+  Status      = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress);
 
   if (EFI_ERROR (Status)) {
     return 0;
   }
 
-  EfiIoRead (EfiCpuIoWidthUint8, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data); 
+  EfiIoRead (EfiCpuIoWidthUint8, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data);
 
   return Data;
 }
-
 
 UINT16
 PciRead16 (
@@ -144,20 +141,18 @@ Returns:
   // Set bit 31 for PCI config access
   //
   PciAddress1 = PciAddress;
-  PciAddress = ((PciAddress & 0xFFFFFFFC) | (0x80000000)) ;
+  PciAddress  = ((PciAddress & 0xFFFFFFFC) | (0x80000000));
 
-
-  Status = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress); 
+  Status      = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress);
 
   if (EFI_ERROR (Status)) {
     return 0;
   }
 
-  EfiIoRead (EfiCpuIoWidthUint16, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data); 
+  EfiIoRead (EfiCpuIoWidthUint16, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data);
 
   return Data;
 }
-
 
 UINT32
 PciRead32 (
@@ -192,20 +187,18 @@ Returns:
   // Set bit 31 for PCI config access
   //
   PciAddress1 = PciAddress;
-  PciAddress = ((PciAddress & 0xFFFFFFFC) | (0x80000000)) ;
+  PciAddress  = ((PciAddress & 0xFFFFFFFC) | (0x80000000));
 
-
-  Status = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress); 
+  Status      = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress);
 
   if (EFI_ERROR (Status)) {
     return 0;
   }
 
-  EfiIoRead (EfiCpuIoWidthUint32, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data); 
+  EfiIoRead (EfiCpuIoWidthUint32, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data);
 
   return Data;
 }
-
 
 VOID
 PciWrite8 (
@@ -241,18 +234,16 @@ Returns:
   // Set bit 31 for PCI config access
   //
   PciAddress1 = PciAddress;
-  PciAddress = ((PciAddress & 0xFFFFFFFC) | (0x80000000)) ;
+  PciAddress  = ((PciAddress & 0xFFFFFFFC) | (0x80000000));
 
-
-  Status = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress); 
+  Status      = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress);
 
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
 
-  EfiIoWrite (EfiCpuIoWidthUint8, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data); 
+  EfiIoWrite (EfiCpuIoWidthUint8, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data);
 }
-
 
 VOID
 PciWrite16 (
@@ -288,18 +279,16 @@ Returns:
   // Set bit 31 for PCI config access
   //
   PciAddress1 = PciAddress;
-  PciAddress = ((PciAddress & 0xFFFFFFFC) | (0x80000000)) ;
+  PciAddress  = ((PciAddress & 0xFFFFFFFC) | (0x80000000));
 
-
-  Status = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress); 
+  Status      = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress);
 
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
 
-  EfiIoWrite (EfiCpuIoWidthUint16, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data); 
+  EfiIoWrite (EfiCpuIoWidthUint16, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data);
 }
-
 
 VOID
 PciWrite32 (
@@ -335,18 +324,16 @@ Returns:
   // Set bit 31 for PCI config access
   //
   PciAddress1 = PciAddress;
-  PciAddress = ((PciAddress & 0xFFFFFFFC) | (0x80000000)) ;
+  PciAddress  = ((PciAddress & 0xFFFFFFFC) | (0x80000000));
 
-
-  Status = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress); 
+  Status      = EfiIoWrite (EfiCpuIoWidthUint32, PCI_CONFIG_INDEX_PORT, 1, &PciAddress);
 
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
 
-  EfiIoWrite (EfiCpuIoWidthUint32, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data); 
+  EfiIoWrite (EfiCpuIoWidthUint32, (PCI_CONFIG_DATA_PORT + (PciAddress1 & 0x3)), 1, &Data);
 }
-
 //
 // Delay Primative
 //
@@ -367,25 +354,25 @@ Returns:
 
 --*/
 {
-  UINT8   Data;
-  UINT8   InitialState;
-  UINTN   CycleIterations;
+  UINT8 Data;
+  UINT8 InitialState;
+  UINTN CycleIterations;
 
   CycleIterations = 0;
-  Data = 0;
-  InitialState = 0;
+  Data            = 0;
+  InitialState    = 0;
 
   if (EfiAtRuntime ()) {
     //
     // The time-source is 15 us granular, so calibrate the timing loop
     // based on this baseline
     // Error is possible 15us.
-    // 
+    //
     CycleIterations = (Microseconds / 15) + 1;
 
     //
     // Use the DMA Refresh timer in port 0x61.  Cheap but effective.
-    // The only issue is that the granularity is 15us, and we want to 
+    // The only issue is that the granularity is 15us, and we want to
     // guarantee "at least" one full transition to avoid races.
     //
     //
@@ -398,13 +385,14 @@ Returns:
     while (CycleIterations--) {
       EfiIoRead (EfiCpuIoWidthUint8, 0x61, 1, &Data);
       InitialState = Data;
-    
+
       //
       // Capture first transition (strictly less than one period)
       //
       while (InitialState == Data) {
         EfiIoRead (EfiCpuIoWidthUint8, 0x61, 1, &Data);
       }
+
       InitialState = Data;
       //
       // Capture next transition (guarantee at least one full pulse)
@@ -417,4 +405,3 @@ Returns:
     gBS->Stall (Microseconds);
   }
 }
-

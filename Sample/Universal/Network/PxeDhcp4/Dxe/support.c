@@ -20,62 +20,64 @@ Abstract:
 #include "PxeDhcp4.h"
 
 #define DebugPrint(x)
-//#define DebugPrint(x) Aprint x
+//
+// #define DebugPrint(x) Aprint x
+//
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 UINT16
-htons(UINTN n)
+htons (
+  UINTN n
+  )
 {
-  return (UINT16)((n >> 8) | (n << 8));
+  return (UINT16) ((n >> 8) | (n << 8));
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 UINT32
-htonl(UINTN n)
+htonl (
+  UINTN n
+  )
 {
-  return (UINT32)((n >> 24) |
-    ((n >> 8) & 0xFF00) |
-    ((n & 0xFF00) << 8) |
-    (n << 24));
+  return (UINT32) ((n >> 24) | ((n >> 8) & 0xFF00) | ((n & 0xFF00) << 8) | (n << 24));
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-timeout_notify(
+timeout_notify (
   IN EFI_EVENT Event,
-  IN VOID *Context)
+  IN VOID      *Context
+  )
 {
-  ASSERT(Context);
+  ASSERT (Context);
 
   if (Context != NULL) {
-    ((PXE_DHCP4_PRIVATE_DATA *)Context)->TimeoutOccurred = TRUE;
+    ((PXE_DHCP4_PRIVATE_DATA *) Context)->TimeoutOccurred = TRUE;
   }
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-periodic_notify(
+periodic_notify (
   IN EFI_EVENT Event,
-  IN VOID *Context)
+  IN VOID      *Context
+  )
 {
-  ASSERT(Context);
+  ASSERT (Context);
 
   if (Context != NULL) {
-    ((PXE_DHCP4_PRIVATE_DATA *)Context)->PeriodicOccurred = TRUE;
+    ((PXE_DHCP4_PRIVATE_DATA *) Context)->PeriodicOccurred = TRUE;
   }
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 EFI_STATUS
-find_opt(
+find_opt (
   IN DHCP4_PACKET *Packet,
-  IN UINT8 OpCode,
-  IN UINTN Skip,
-  OUT DHCP4_OP **OpPtr)
+  IN UINT8        OpCode,
+  IN UINTN        Skip,
+  OUT DHCP4_OP    **OpPtr
+  )
 /*++
 Routine description:
   Locate option inside DHCP packet.
@@ -107,63 +109,52 @@ Returns:
   //
   // Verify parameters.
   //
-
-  if (Packet == NULL || OpPtr == NULL || OpCode == DHCP4_PAD ||
-    (OpCode == DHCP4_END && Skip != 0))
-  {
+  if (Packet == NULL || OpPtr == NULL || OpCode == DHCP4_PAD || (OpCode == DHCP4_END && Skip != 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (Packet->dhcp4.magik != htonl(DHCP4_MAGIK_NUMBER)) {
+  if (Packet->dhcp4.magik != htonl (DHCP4_MAGIK_NUMBER)) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Initialize search variables.
   //
+  *OpPtr    = NULL;
 
-  *OpPtr = NULL;
+  msg_size  = DHCP4_MAX_PACKET_SIZE - (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE);
 
-  msg_size = DHCP4_MAX_PACKET_SIZE -
-    (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE);
+  overload  = 0;
+  end_ptr   = NULL;
 
-  overload = 0;
-  end_ptr = NULL;
-
-  buf = Packet->dhcp4.options;
-  buf_len = msg_size - (Packet->dhcp4.options - Packet->raw);
+  buf       = Packet->dhcp4.options;
+  buf_len   = msg_size - (Packet->dhcp4.options - Packet->raw);
 
   //
   // Start searching for requested option.
   //
-
-  for (n = 0; ; ) {
+  for (n = 0;;) {
     //
     // If match is found, decrement skip count and return
     // when desired match is found.
     //
-
     if (buf[n] == OpCode) {
-      *OpPtr = (DHCP4_OP *)&buf[n];
+      *OpPtr = (DHCP4_OP *) &buf[n];
 
       if (Skip-- == 0) {
         return EFI_SUCCESS;
       }
     }
-
     //
     // Skip past current option.  Check for option overload
     // and message size options since these will affect the
     // amount of data to be searched.
     //
-
     switch (buf[n]) {
     case DHCP4_PAD:
       //
       // Remember the first pad byte of a group.  This
       // could be the end of a badly formed packet.
       //
-
       if (end_ptr == NULL) {
         end_ptr = &buf[n];
       }
@@ -175,17 +166,15 @@ Returns:
       //
       // If we reach the end we are done.
       //
-
       end_ptr = NULL;
       return EFI_NOT_FOUND;
 
     case DHCP4_OPTION_OVERLOAD:
       //
       // Remember the option overload value since it
-      // could cause the search to continue into 
+      // could cause the search to continue into
       // the fname and sname fields.
       //
-
       end_ptr = NULL;
 
       if (buf[n + 1] == 1) {
@@ -200,75 +189,60 @@ Returns:
       // Remember the message size value since it could
       // change the amount of option buffer to search.
       //
-
       end_ptr = NULL;
 
       if (buf[n + 1] == 2 && buf == Packet->dhcp4.options) {
-        msg_size = ((buf[n + 2] << 8) | buf[n + 3]) -
-          (DHCP4_UDP_HEADER_SIZE + 
-          DHCP4_IP_HEADER_SIZE);
+        msg_size = ((buf[n + 2] << 8) | buf[n + 3]) - (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE);
 
         if (msg_size < 328) {
           return EFI_INVALID_PARAMETER;
         }
 
-        buf_len = msg_size -
-          (Packet->dhcp4.options - Packet->raw);
+        buf_len = msg_size - (Packet->dhcp4.options - Packet->raw);
 
         if (n + 2 + buf[n + 1] > buf_len) {
           return EFI_INVALID_PARAMETER;
         }
       }
 
-      /* fall thru */
-
+    /* fall thru */
     default:
       end_ptr = NULL;
 
       n += 2 + buf[n + 1];
     }
-
     //
     // Keep searching until the end of the buffer is reached.
     //
-
     if (n < buf_len) {
       continue;
     }
-
     //
     // Reached end of current buffer.  Check if we are supposed
     // to search the fname and sname buffers.
     //
-
     if (buf == Packet->dhcp4.options &&
-      (overload == DHCP4_OVERLOAD_FNAME ||
-      overload == DHCP4_OVERLOAD_FNAME_AND_SNAME))
-    {
-      buf = Packet->dhcp4.fname;
+        (overload == DHCP4_OVERLOAD_FNAME || overload == DHCP4_OVERLOAD_FNAME_AND_SNAME)
+        ) {
+      buf     = Packet->dhcp4.fname;
       buf_len = 128;
-      n = 0;
+      n       = 0;
       continue;
     }
 
-    if (buf != Packet->dhcp4.sname &&
-      (overload == DHCP4_OVERLOAD_SNAME ||
-      overload == DHCP4_OVERLOAD_FNAME_AND_SNAME))
-    {
-      buf = Packet->dhcp4.sname;
+    if (buf != Packet->dhcp4.sname && (overload == DHCP4_OVERLOAD_SNAME || overload == DHCP4_OVERLOAD_FNAME_AND_SNAME)) {
+      buf     = Packet->dhcp4.sname;
       buf_len = 64;
-      n = 0;
+      n       = 0;
       continue;
     }
-
     //
     // End of last buffer reached.  If this was a search
     // for the end of the options, go back to the start
     // of the current pad block.
     //
-
     if (OpCode == DHCP4_END && end_ptr != NULL) {
-      *OpPtr = (DHCP4_OP *)end_ptr;
+      *OpPtr = (DHCP4_OP *) end_ptr;
       return EFI_SUCCESS;
     }
 
@@ -277,11 +251,11 @@ Returns:
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
-add_opt(
+add_opt (
   IN DHCP4_PACKET *Packet,
-  IN DHCP4_OP *OpPtr)
+  IN DHCP4_OP     *OpPtr
+  )
 /*++
 Routine description:
   Add option to DHCP packet.
@@ -303,21 +277,20 @@ Returns:
   EFI_SUCCESS := Option added to DHCP packet
 --*/
 {
-  EFI_STATUS efi_status;
-  DHCP4_OP *msg_size_op;
-  DHCP4_OP *overload_op;
-  DHCP4_OP *op;
-  UINTN msg_size;
-  UINTN buf_len;
-  UINT32 magik;
-  UINT8 *buf;
+  EFI_STATUS  efi_status;
+  DHCP4_OP    *msg_size_op;
+  DHCP4_OP    *overload_op;
+  DHCP4_OP    *op;
+  UINTN       msg_size;
+  UINTN       buf_len;
+  UINT32      magik;
+  UINT8       *buf;
 
   //
   // Verify parameters.
   //
-
-  ASSERT(Packet);
-  ASSERT(OpPtr);
+  ASSERT (Packet);
+  ASSERT (OpPtr);
 
   if (Packet == NULL || OpPtr == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -329,57 +302,66 @@ Returns:
     //
     // No adding PAD or END.
     //
-
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Check the DHCP magik number.
   //
+  EfiCopyMem (&magik, &Packet->dhcp4.magik, 4);
 
-  EfiCopyMem(&magik, &Packet->dhcp4.magik, 4);
-
-  if (magik != htonl(DHCP4_MAGIK_NUMBER)) {
+  if (magik != htonl (DHCP4_MAGIK_NUMBER)) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find the DHCP message size option.
   //
-
   msg_size = DHCP4_DEFAULT_MAX_MESSAGE_SIZE;
 
-  efi_status = find_opt(Packet, DHCP4_MAX_MESSAGE_SIZE,
-    0, &msg_size_op);
+  efi_status = find_opt (
+                Packet,
+                DHCP4_MAX_MESSAGE_SIZE,
+                0,
+                &msg_size_op
+                );
 
-  if (EFI_ERROR(efi_status)) {
+  if (EFI_ERROR (efi_status)) {
     if (efi_status != EFI_NOT_FOUND) {
-      DebugPrint(("%s:%d:%r\n",
-        __FILE__, __LINE__, efi_status));
+      DebugPrint (
+        ("%s:%d:%r\n",
+        __FILE__,
+        __LINE__,
+        efi_status)
+        );
       return efi_status;
     }
 
     msg_size_op = NULL;
   } else {
-    EfiCopyMem(&msg_size, msg_size_op->data, 2);
-    msg_size = htons(msg_size);
+    EfiCopyMem (&msg_size, msg_size_op->data, 2);
+    msg_size = htons (msg_size);
 
     if (msg_size < DHCP4_DEFAULT_MAX_MESSAGE_SIZE) {
       return EFI_INVALID_PARAMETER;
     }
   }
-
   //
   // Find the DHCP option overload option.
   //
+  efi_status = find_opt (
+                Packet,
+                DHCP4_OPTION_OVERLOAD,
+                0,
+                &overload_op
+                );
 
-  efi_status = find_opt(Packet, DHCP4_OPTION_OVERLOAD,
-    0, &overload_op);
-
-  if (EFI_ERROR(efi_status)) {
+  if (EFI_ERROR (efi_status)) {
     if (efi_status != EFI_NOT_FOUND) {
-      DebugPrint(("%s:%d:%r\n",
-        __FILE__, __LINE__, efi_status));
+      DebugPrint (
+        ("%s:%d:%r\n",
+        __FILE__,
+        __LINE__,
+        efi_status)
+        );
       return efi_status;
     }
 
@@ -399,59 +381,49 @@ Returns:
       return EFI_INVALID_PARAMETER;
     }
   }
-
   //
   // Find the end of the packet.
   //
+  efi_status = find_opt (Packet, DHCP4_END, 0, &op);
 
-  efi_status = find_opt(Packet, DHCP4_END, 0, &op);
-
-  if (EFI_ERROR(efi_status)) {
+  if (EFI_ERROR (efi_status)) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find which buffer the end is in.
   //
-
-  if ((UINTN)op >= (UINTN)(buf = Packet->dhcp4.options)) {
-    buf_len = (msg_size -
-    ((UINT8 *)&Packet->dhcp4.options - (UINT8 *)&Packet->raw)) -
-      (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE);
-  } else if ((UINTN)op >= (UINTN)(buf = Packet->dhcp4.fname)) {
+  if ((UINTN) op >= (UINTN) (buf = Packet->dhcp4.options)) {
+    buf_len = (msg_size - ((UINT8 *) &Packet->dhcp4.options - (UINT8 *) &Packet->raw)) - (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE);
+  } else if ((UINTN) op >= (UINTN) (buf = Packet->dhcp4.fname)) {
     buf_len = 128;
-  } else if ((UINTN)op >= (UINTN)(buf = Packet->dhcp4.sname)) {
+  } else if ((UINTN) op >= (UINTN) (buf = Packet->dhcp4.sname)) {
     buf_len = 64;
   } else {
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Add option to current buffer if there is no overlow.
   //
-
-  if ((UINTN)((&op->op - buf) + 3 + op->len) < buf_len) {
-    EfiCopyMem(op, OpPtr, OpPtr->len + 2);
+  if ((UINTN) ((&op->op - buf) + 3 + op->len) < buf_len) {
+    EfiCopyMem (op, OpPtr, OpPtr->len + 2);
 
     op->data[op->len] = DHCP4_END;
 
     return EFI_SUCCESS;
   }
-
   //
   // Error if there is no space for option.
   //
-
   return EFI_BUFFER_TOO_SMALL;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
-start_udp(
+start_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN OPTIONAL EFI_IP_ADDRESS *StationIp,
-  IN OPTIONAL EFI_IP_ADDRESS *SubnetMask)
+  IN OPTIONAL EFI_IP_ADDRESS         *StationIp,
+  IN OPTIONAL EFI_IP_ADDRESS         *SubnetMask
+  )
 /*++
 Routine description:
   Setup PXE BaseCode UDP stack.
@@ -469,14 +441,13 @@ Returns:
 --*/
 {
   EFI_PXE_BASE_CODE_IP_FILTER bcast_filter;
-  EFI_STATUS efi_status;
+  EFI_STATUS                  efi_status;
 
   //
   //
   //
-
-  ASSERT(Private);
-  ASSERT(Private->PxeBc);
+  ASSERT (Private);
+  ASSERT (Private->PxeBc);
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -493,60 +464,58 @@ Returns:
   if (StationIp == NULL && SubnetMask != NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Setup broadcast receive filter...
   //
+  EfiZeroMem (&bcast_filter, sizeof (EFI_PXE_BASE_CODE_IP_FILTER));
 
-  EfiZeroMem(&bcast_filter, sizeof(EFI_PXE_BASE_CODE_IP_FILTER));
+  bcast_filter.Filters  = EFI_PXE_BASE_CODE_IP_FILTER_BROADCAST;
+  bcast_filter.IpCnt    = 0;
 
-  bcast_filter.Filters = EFI_PXE_BASE_CODE_IP_FILTER_BROADCAST;
-  bcast_filter.IpCnt = 0;
+  efi_status = Private->PxeBc->SetIpFilter (
+                                Private->PxeBc,
+                                &bcast_filter
+                                );
 
-  efi_status = Private->PxeBc->SetIpFilter(
-    Private->PxeBc,
-    &bcast_filter);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
     return efi_status;
   }
-
   //
   // Configure station IP address and subnet mask...
   //
+  efi_status = Private->PxeBc->SetStationIp (
+                                Private->PxeBc,
+                                StationIp,
+                                SubnetMask
+                                );
 
-  efi_status = Private->PxeBc->SetStationIp(
-    Private->PxeBc,
-    StationIp,
-    SubnetMask);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
   }
 
   return efi_status;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-stop_udp(IN PXE_DHCP4_PRIVATE_DATA *Private)
+stop_udp (
+  IN PXE_DHCP4_PRIVATE_DATA *Private
+  )
 {
   //
   //
   //
-
-  ASSERT(Private);
-  ASSERT(Private->PxeBc);
+  ASSERT (Private);
+  ASSERT (Private->PxeBc);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
-start_receive_events(
+start_receive_events (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN UINTN SecondsTimeout)
+  IN UINTN                  SecondsTimeout
+  )
 /*++
 Routine description:
   Create periodic and timeout receive events.
@@ -558,62 +527,55 @@ Parameters:
 Returns:
 --*/
 {
-  EFI_STATUS efi_status;
-  UINTN random;
+  EFI_STATUS  efi_status;
+  UINTN       random;
 
   //
   //
   //
-
-  ASSERT(Private);
-  ASSERT(SecondsTimeout);
+  ASSERT (Private);
+  ASSERT (SecondsTimeout);
 
   if (Private == NULL || SecondsTimeout == 0) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Need a bettern randomizer...
   // For now adjust the timeout value by the least significant
   // digit in the MAC address.
   //
-
   random = 0;
 
   if (Private->PxeDhcp4.Data != NULL) {
-    if (Private->PxeDhcp4.Data->Discover.dhcp4.hlen != 0 &&
-      Private->PxeDhcp4.Data->Discover.dhcp4.hlen <= 16)
-    {
-      random = 0xFFF &
-        Private->PxeDhcp4.Data->Discover.dhcp4.chaddr[
-        Private->PxeDhcp4.Data->Discover.dhcp4.hlen - 1];
+    if (Private->PxeDhcp4.Data->Discover.dhcp4.hlen != 0 && Private->PxeDhcp4.Data->Discover.dhcp4.hlen <= 16) {
+      random = 0xFFF & Private->PxeDhcp4.Data->Discover.dhcp4.chaddr[Private->PxeDhcp4.Data->Discover.dhcp4.hlen - 1];
     }
   }
-
   //
   // Setup timeout event and start timer.
   //
+  efi_status = gBS->CreateEvent (
+                      EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
+                      EFI_TPL_NOTIFY,
+                      &timeout_notify,
+                      Private,
+                      &Private->TimeoutEvent
+                      );
 
-  efi_status = gBS->CreateEvent(
-    EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
-    EFI_TPL_NOTIFY, 
-    &timeout_notify,
-    Private,
-    &Private->TimeoutEvent);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
     return efi_status;
   }
 
-  efi_status = gBS->SetTimer(
-    Private->TimeoutEvent,
-    TimerRelative,
-    SecondsTimeout * 10000000 + random);
+  efi_status = gBS->SetTimer (
+                      Private->TimeoutEvent,
+                      TimerRelative,
+                      SecondsTimeout * 10000000 + random
+                      );
 
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
-    gBS->CloseEvent(Private->TimeoutEvent);
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+    gBS->CloseEvent (Private->TimeoutEvent);
     return efi_status;
   }
 
@@ -622,29 +584,30 @@ Returns:
   //
   // Setup periodic event for callbacks
   //
+  efi_status = gBS->CreateEvent (
+                      EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
+                      EFI_TPL_NOTIFY,
+                      &periodic_notify,
+                      Private,
+                      &Private->PeriodicEvent
+                      );
 
-  efi_status = gBS->CreateEvent(
-    EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
-    EFI_TPL_NOTIFY, 
-    &periodic_notify,
-    Private,
-    &Private->PeriodicEvent);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
-    gBS->CloseEvent(Private->TimeoutEvent);
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+    gBS->CloseEvent (Private->TimeoutEvent);
     return efi_status;
   }
 
-  efi_status = gBS->SetTimer(
-    Private->PeriodicEvent,
-    TimerPeriodic,
-    1000000);  /* 1/10th second */
+  efi_status = gBS->SetTimer (
+                      Private->PeriodicEvent,
+                      TimerPeriodic,
+                      1000000
+                      );  /* 1/10th second */
 
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
-    gBS->CloseEvent(Private->TimeoutEvent);
-    gBS->CloseEvent(Private->PeriodicEvent);
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+    gBS->CloseEvent (Private->TimeoutEvent);
+    gBS->CloseEvent (Private->PeriodicEvent);
     return efi_status;
   }
 
@@ -654,46 +617,42 @@ Returns:
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-stop_receive_events(
-  IN PXE_DHCP4_PRIVATE_DATA *Private)
+stop_receive_events (
+  IN PXE_DHCP4_PRIVATE_DATA *Private
+  )
 {
   //
   //
   //
-
-  ASSERT(Private);
+  ASSERT (Private);
 
   if (Private == NULL) {
-    return;
+    return ;
   }
-
   //
   //
   //
-
-  gBS->CloseEvent(Private->TimeoutEvent);
+  gBS->CloseEvent (Private->TimeoutEvent);
   Private->TimeoutOccurred = FALSE;
 
   //
   //
   //
-
-  gBS->CloseEvent(Private->PeriodicEvent);
+  gBS->CloseEvent (Private->PeriodicEvent);
   Private->PeriodicOccurred = FALSE;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
-tx_udp(
+tx_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN EFI_IP_ADDRESS *dest_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *gateway_ip,
-  IN EFI_IP_ADDRESS *src_ip,
-  IN VOID *buffer,
-  IN UINTN BufferSize)
+  IN EFI_IP_ADDRESS         *dest_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *gateway_ip,
+  IN EFI_IP_ADDRESS         *src_ip,
+  IN VOID                   *buffer,
+  IN UINTN                  BufferSize
+  )
 /*++
 Routine description:
   Transmit DHCP packet.
@@ -713,66 +672,64 @@ Returns:
   other := Return from PxeBc->UdpWrite()
 --*/
 {
-  EFI_PXE_BASE_CODE_UDP_PORT dest_port;
-  EFI_PXE_BASE_CODE_UDP_PORT src_port;
-  EFI_IP_ADDRESS zero_ip;
+  EFI_PXE_BASE_CODE_UDP_PORT  dest_port;
+  EFI_PXE_BASE_CODE_UDP_PORT  src_port;
+  EFI_IP_ADDRESS              zero_ip;
 
   //
   //
   //
-
-  ASSERT(Private);
-  ASSERT(dest_ip);
-  ASSERT(buffer);
-  ASSERT(BufferSize >= 300);
+  ASSERT (Private);
+  ASSERT (dest_ip);
+  ASSERT (buffer);
+  ASSERT (BufferSize >= 300);
 
   if (Private == NULL || dest_ip == NULL || buffer == NULL || BufferSize < 300) {
     return EFI_INVALID_PARAMETER;
   }
 
-  ASSERT(Private->PxeBc);
+  ASSERT (Private->PxeBc);
 
   if (Private->PxeBc == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Transmit DHCP discover packet...
   //
-
-  EfiZeroMem(&zero_ip, sizeof(EFI_IP_ADDRESS));
+  EfiZeroMem (&zero_ip, sizeof (EFI_IP_ADDRESS));
 
   if (src_ip == NULL) {
     src_ip = &zero_ip;
   }
 
   dest_port = DHCP4_SERVER_PORT;
-  src_port = DHCP4_CLIENT_PORT;
+  src_port  = DHCP4_CLIENT_PORT;
 
-  return Private->PxeBc->UdpWrite(
-    Private->PxeBc,
-    EFI_PXE_BASE_CODE_UDP_OPFLAGS_MAY_FRAGMENT,
-    dest_ip,
-    &dest_port,
-    gateway_ip,
-    src_ip,
-    &src_port,
-    NULL,
-    NULL,
-    &BufferSize,
-    buffer);
+  return Private->PxeBc->UdpWrite (
+                          Private->PxeBc,
+                          EFI_PXE_BASE_CODE_UDP_OPFLAGS_MAY_FRAGMENT,
+                          dest_ip,
+                          &dest_port,
+                          gateway_ip,
+                          src_ip,
+                          &src_port,
+                          NULL,
+                          NULL,
+                          &BufferSize,
+                          buffer
+                          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
-rx_udp(
+rx_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  OUT VOID *buffer,
-  IN OUT UINTN *BufferSize,
-  IN OUT EFI_IP_ADDRESS *dest_ip,
-  IN OUT EFI_IP_ADDRESS *src_ip,
-  IN UINT16 op_flags)
+  OUT VOID                  *buffer,
+  IN OUT UINTN              *BufferSize,
+  IN OUT EFI_IP_ADDRESS     *dest_ip,
+  IN OUT EFI_IP_ADDRESS     *src_ip,
+  IN UINT16                 op_flags
+  )
 /*++
 Routine description:
   Receive DHCP packet.
@@ -791,69 +748,66 @@ Returns:
   other := Return from PxeBc->UdpRead()
 --*/
 {
-  EFI_PXE_BASE_CODE_UDP_PORT dest_port;
-  EFI_PXE_BASE_CODE_UDP_PORT src_port;
+  EFI_PXE_BASE_CODE_UDP_PORT  dest_port;
+  EFI_PXE_BASE_CODE_UDP_PORT  src_port;
 
   //
   //
   //
+  ASSERT (Private);
+  ASSERT (buffer);
+  ASSERT (dest_ip);
+  ASSERT (src_ip);
 
-  ASSERT(Private);
-  ASSERT(buffer);
-  ASSERT(dest_ip);
-  ASSERT(src_ip);
-
-  if (Private == NULL || buffer == NULL || dest_ip == NULL || src_ip == NULL ||
-    BufferSize == NULL)
-  {
+  if (Private == NULL || buffer == NULL || dest_ip == NULL || src_ip == NULL || BufferSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  ASSERT(Private->PxeBc);
+  ASSERT (Private->PxeBc);
 
   if (Private->PxeBc == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Check for packet
   //
+  *BufferSize = sizeof (DHCP4_PACKET);
 
-  *BufferSize = sizeof(DHCP4_PACKET);
+  dest_port   = DHCP4_CLIENT_PORT;
+  src_port    = DHCP4_SERVER_PORT;
 
-  dest_port = DHCP4_CLIENT_PORT;
-  src_port = DHCP4_SERVER_PORT;
-
-  return Private->PxeBc->UdpRead(
-    Private->PxeBc,
-    op_flags,
-    dest_ip,
-    &dest_port,
-    src_ip,
-    &src_port,
-    NULL,
-    NULL,
-    BufferSize,
-    buffer);
+  return Private->PxeBc->UdpRead (
+                          Private->PxeBc,
+                          op_flags,
+                          dest_ip,
+                          &dest_port,
+                          src_ip,
+                          &src_port,
+                          NULL,
+                          NULL,
+                          BufferSize,
+                          buffer
+                          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
-tx_rx_udp(
+tx_rx_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN OUT EFI_IP_ADDRESS *ServerIp,
-  IN OPTIONAL EFI_IP_ADDRESS *gateway_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *client_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *SubnetMask,
-  IN DHCP4_PACKET *tx_pkt,
-  OUT DHCP4_PACKET *rx_pkt,
+  IN OUT EFI_IP_ADDRESS     *ServerIp,
+  IN OPTIONAL EFI_IP_ADDRESS         *gateway_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *client_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *SubnetMask,
+  IN DHCP4_PACKET           *tx_pkt,
+  OUT DHCP4_PACKET          *rx_pkt,
   IN UINTN (*rx_vfy)(
-    IN PXE_DHCP4_PRIVATE_DATA *Private,
-    IN DHCP4_PACKET *tx_pkt,
-    IN DHCP4_PACKET *rx_pkt,
-    IN UINTN rx_pkt_size),
-  IN UINTN SecondsTimeout)
+      IN PXE_DHCP4_PRIVATE_DATA *Private,
+      IN DHCP4_PACKET *tx_pkt,
+      IN DHCP4_PACKET *rx_pkt,
+      IN UINTN rx_pkt_size
+    ),
+  IN UINTN SecondsTimeout
+  )
 /*++
 Routine description:
   Transmit DHCP packet and wait for replies.
@@ -879,145 +833,138 @@ Returns:
 --*/
 {
   EFI_PXE_DHCP4_CALLBACK_STATUS CallbackStatus;
-  EFI_IP_ADDRESS dest_ip, src_ip;
-  EFI_STATUS efi_status;
-  DHCP4_OP *msg_size_op;
-  UINTN pkt_size;
-  UINTN n;
-  UINT16 msg_size;
-  UINT16 op_flags;
-  BOOLEAN done_flag;
-  BOOLEAN got_packet;
+  EFI_IP_ADDRESS                dest_ip;
+  EFI_IP_ADDRESS                src_ip;
+  EFI_STATUS                    efi_status;
+  DHCP4_OP                      *msg_size_op;
+  UINTN                         pkt_size;
+  UINTN                         n;
+  UINT16                        msg_size;
+  UINT16                        op_flags;
+  BOOLEAN                       done_flag;
+  BOOLEAN                       got_packet;
 
   //
   // Bad programmer check...
   //
+  ASSERT (Private);
+  ASSERT (ServerIp);
+  ASSERT (tx_pkt);
+  ASSERT (rx_pkt);
+  ASSERT (rx_vfy);
 
-  ASSERT(Private);
-  ASSERT(ServerIp);
-  ASSERT(tx_pkt);
-  ASSERT(rx_pkt);
-  ASSERT(rx_vfy);
-
-  if (Private == NULL || ServerIp == NULL || tx_pkt == NULL ||
-    rx_pkt == NULL || rx_vfy == NULL)
-  {
+  if (Private == NULL || ServerIp == NULL || tx_pkt == NULL || rx_pkt == NULL || rx_vfy == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  ASSERT(Private->PxeBc);
+  ASSERT (Private->PxeBc);
 
   if (Private->PxeBc == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Enable UDP...
   //
+  efi_status = start_udp (Private, client_ip, SubnetMask);
 
-  efi_status = start_udp(Private, client_ip, SubnetMask);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
     return efi_status;
   }
-
   //
   // Get length of transmit packet...
   //
-
   msg_size = DHCP4_DEFAULT_MAX_MESSAGE_SIZE;
 
-  efi_status = find_opt(tx_pkt, DHCP4_MAX_MESSAGE_SIZE,
-    0, &msg_size_op);
+  efi_status = find_opt (
+                tx_pkt,
+                DHCP4_MAX_MESSAGE_SIZE,
+                0,
+                &msg_size_op
+                );
 
-  if (!EFI_ERROR(efi_status)) {
-    EfiCopyMem(&msg_size, msg_size_op->data, 2);
+  if (!EFI_ERROR (efi_status)) {
+    EfiCopyMem (&msg_size, msg_size_op->data, 2);
 
-    if ((msg_size = htons(msg_size)) < 328) {
+    if ((msg_size = htons (msg_size)) < 328) {
       msg_size = 328;
     }
   }
-
   //
   // Transmit packet...
   //
+  efi_status = tx_udp (
+                Private,
+                ServerIp,
+                gateway_ip,
+                client_ip,
+                tx_pkt,
+                msg_size - (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE)
+                );
 
-  efi_status = tx_udp(Private, ServerIp, gateway_ip,
-    client_ip, tx_pkt, msg_size -
-    (DHCP4_UDP_HEADER_SIZE + DHCP4_IP_HEADER_SIZE));
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
-    stop_udp(Private);
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+    stop_udp (Private);
     return efi_status;
   }
-
   //
   // Enable periodic and timeout events...
   //
+  efi_status = start_receive_events (Private, SecondsTimeout);
 
-  efi_status = start_receive_events(Private, SecondsTimeout);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
-    stop_udp(Private);
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+    stop_udp (Private);
     return efi_status;
   }
-
   //
   // Wait for packet(s)...
   //
-
 #if 0
   if (!client_ip) {
-    Aprint("client_ip == NULL    ");
+    Aprint ("client_ip == NULL    ");
   } else {
-    Aprint("client_ip == %d.%d.%d.%d    ",
+    Aprint (
+      "client_ip == %d.%d.%d.%d    ",
       client_ip->v4.Addr[0],
       client_ip->v4.Addr[1],
       client_ip->v4.Addr[2],
-      client_ip->v4.Addr[3]);
+      client_ip->v4.Addr[3]
+      );
   }
 
   if (!ServerIp) {
-    Aprint("ServerIp == NULL\n");
+    Aprint ("ServerIp == NULL\n");
   } else {
-    Aprint("ServerIp == %d.%d.%d.%d\n",
+    Aprint (
+      "ServerIp == %d.%d.%d.%d\n",
       ServerIp->v4.Addr[0],
       ServerIp->v4.Addr[1],
       ServerIp->v4.Addr[2],
-      ServerIp->v4.Addr[3]);
+      ServerIp->v4.Addr[3]
+      );
   }
 #endif
 
-  done_flag = FALSE;
-  got_packet = FALSE;
+  done_flag   = FALSE;
+  got_packet  = FALSE;
 
   while (!done_flag) {
     //
     // Check for timeout event...
     //
-
     if (Private->TimeoutOccurred) {
       efi_status = EFI_SUCCESS;
       break;
     }
-
     //
     // Check for periodic event...
     //
-
     if (Private->PeriodicOccurred && Private->callback != NULL) {
-      CallbackStatus =
-        EFI_PXE_DHCP4_CALLBACK_STATUS_CONTINUE;
+      CallbackStatus = EFI_PXE_DHCP4_CALLBACK_STATUS_CONTINUE;
 
       if (Private->callback->Callback != NULL) {
-        CallbackStatus = (Private->callback->Callback)(
-          &Private->PxeDhcp4,
-          Private->function,
-          0,
-          NULL);
+        CallbackStatus = (Private->callback->Callback) (&Private->PxeDhcp4, Private->function, 0, NULL);
       }
 
       switch (CallbackStatus) {
@@ -1026,49 +973,51 @@ Returns:
 
       case EFI_PXE_DHCP4_CALLBACK_STATUS_ABORT:
       default:
-        stop_receive_events(Private);
-        stop_udp(Private);
+        stop_receive_events (Private);
+        stop_udp (Private);
         return EFI_ABORTED;
       }
 
       Private->PeriodicOccurred = FALSE;
     }
-
     //
     // Check for packet...
     //
-
     if (client_ip == NULL) {
-      EfiSetMem(&dest_ip, sizeof(EFI_IP_ADDRESS), 0xFF);
+      EfiSetMem (&dest_ip, sizeof (EFI_IP_ADDRESS), 0xFF);
     } else {
-      EfiCopyMem(&dest_ip, client_ip, sizeof(EFI_IP_ADDRESS));
+      EfiCopyMem (&dest_ip, client_ip, sizeof (EFI_IP_ADDRESS));
     }
 
-    EfiSetMem(&src_ip, sizeof(EFI_IP_ADDRESS), 0xFF);
+    EfiSetMem (&src_ip, sizeof (EFI_IP_ADDRESS), 0xFF);
 
-    if (EfiCompareMem(&src_ip, &ServerIp, sizeof(EFI_IP_ADDRESS))) {
-      EfiZeroMem(&src_ip, sizeof(EFI_IP_ADDRESS));
+    if (EfiCompareMem (&src_ip, &ServerIp, sizeof (EFI_IP_ADDRESS))) {
+      EfiZeroMem (&src_ip, sizeof (EFI_IP_ADDRESS));
       op_flags = EFI_PXE_BASE_CODE_UDP_OPFLAGS_ANY_SRC_IP;
     } else {
       op_flags = 0;
     }
 
-    efi_status = rx_udp(Private, rx_pkt, &pkt_size,
-      &dest_ip, &src_ip, op_flags);
+    efi_status = rx_udp (
+                  Private,
+                  rx_pkt,
+                  &pkt_size,
+                  &dest_ip,
+                  &src_ip,
+                  op_flags
+                  );
 
     if (efi_status == EFI_TIMEOUT) {
       efi_status = EFI_SUCCESS;
       continue;
     }
 
-    if (EFI_ERROR(efi_status)) {
+    if (EFI_ERROR (efi_status)) {
       break;
     }
-
     //
     // Some basic packet sanity checks..
     //
-
     if (pkt_size < 300) {
       continue;
     }
@@ -1085,7 +1034,7 @@ Returns:
       continue;
     }
 
-    if (EfiCompareMem(&tx_pkt->dhcp4.xid, &rx_pkt->dhcp4.xid, 4)) {
+    if (EfiCompareMem (&tx_pkt->dhcp4.xid, &rx_pkt->dhcp4.xid, 4)) {
       continue;
     }
 
@@ -1094,48 +1043,40 @@ Returns:
         n = 16;
       }
 
-      if (EfiCompareMem(tx_pkt->dhcp4.chaddr, rx_pkt->dhcp4.chaddr, n)) {
+      if (EfiCompareMem (tx_pkt->dhcp4.chaddr, rx_pkt->dhcp4.chaddr, n)) {
         continue;
       }
     }
-
     //
     // Internal callback packet verification...
     //
-
-    switch ((*rx_vfy)(Private, tx_pkt, rx_pkt, pkt_size)) {
+    switch ((*rx_vfy) (Private, tx_pkt, rx_pkt, pkt_size)) {
     case -2:  /* ignore and stop */
-      stop_receive_events(Private);
-      stop_udp(Private);
+      stop_receive_events (Private);
+      stop_udp (Private);
       return EFI_ABORTED;
 
     case -1:  /* ignore and wait */
       continue;
 
-    case 0:  /* accept and wait */
+    case 0:   /* accept and wait */
       break;
 
-    case 1:  /* accept and stop */
+    case 1:   /* accept and stop */
       done_flag = TRUE;
       break;
 
     default:
-      ASSERT(0);
+      ASSERT (0);
     }
-
     //
     // External callback packet verification...
     //
-
     CallbackStatus = EFI_PXE_DHCP4_CALLBACK_STATUS_KEEP_CONTINUE;
 
     if (Private->callback != NULL) {
       if (Private->callback->Callback != NULL) {
-        CallbackStatus = (Private->callback->Callback)(
-          &Private->PxeDhcp4,
-          Private->function,
-          (UINT32)pkt_size,
-          rx_pkt);
+        CallbackStatus = (Private->callback->Callback) (&Private->PxeDhcp4, Private->function, (UINT32) pkt_size, rx_pkt);
       }
     }
 
@@ -1148,31 +1089,27 @@ Returns:
       break;
 
     case EFI_PXE_DHCP4_CALLBACK_STATUS_IGNORE_ABORT:
-      stop_receive_events(Private);
-      stop_udp(Private);
+      stop_receive_events (Private);
+      stop_udp (Private);
       return EFI_ABORTED;
 
     case EFI_PXE_DHCP4_CALLBACK_STATUS_KEEP_CONTINUE:
     default:
       break;
     }
-
     //
     // We did!  We did get a packet!
     //
-
     got_packet = TRUE;
   }
-
   //
   //
   //
+  stop_receive_events (Private);
+  stop_udp (Private);
 
-  stop_receive_events(Private);
-  stop_udp(Private);
-
-  if (EFI_ERROR(efi_status)) {
-    DebugPrint(("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
+  if (EFI_ERROR (efi_status)) {
+    DebugPrint (("%s:%d:%r\n", __FILE__, __LINE__, efi_status));
     return efi_status;
   }
 

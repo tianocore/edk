@@ -15,7 +15,16 @@
 #
 #  Abstract:
 #
-#    Component description file for Pei Main module.
+#    Component description file for NT32 Sec.
+#
+#    Warning the [sources.*] does not work like you think!
+#    If you add a file you need to update the makefile in the NT32 build tip
+#    SEC_OBJECTS needs to get the OBJ of the new C file added in. 
+#    We keep [sources.*] synced up with SEC_OBJECTS so dependencies work
+#    properly.
+#
+#    Libraries.Common does not work you must update SEC_OBJECTS in the platform
+#    makefile
 #
 #--*/
 
@@ -24,13 +33,18 @@ BASE_NAME       = SecMain
 COMPONENT_TYPE  = LIBRARY
 
 [sources.common]
+#
+# This needs to match SEC_OBJECTS in NT32 makefile
+#
   SecMain.c
+  FwVol.c
+  WinNtThunk.c
+  SecMain.h
 
 [sources.ia32]
-  Ia32\PeiSwitchStacks.asm
+  Ia32\SecSwitchStacks.asm
 
 [includes.common]
-  $(EDK_SOURCE)\Sample\Platform\Nt32
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Efi
@@ -45,12 +59,18 @@ COMPONENT_TYPE  = LIBRARY
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Sample\Include
-  $(EDK_SOURCE)\Foundation\Library\CustomizedDecompress  
+  $(EDK_SOURCE)\Sample\Platform\Nt32
   
 [libraries.common]
+#
+# Update SEC_OBJ in platform makefile in place of using this section
+#
+  PeiLib                                      
   PeiHobLib
-  CustomizedDecompress
-  
+  EdkGuidLib
+  EdkFrameworkPpiLib
+  EdkNt32PpiLib
+
 [nmake.common]
   C_STD_INCLUDE=
   ASM_FLAGS = $(ASM_FLAGS) /W2

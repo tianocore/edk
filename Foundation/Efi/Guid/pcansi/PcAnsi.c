@@ -21,15 +21,14 @@ Abstract:
 
 #include "EfiSpec.h"
 
-#include EFI_GUID_DEFINITION(PcAnsi)
+#include EFI_GUID_DEFINITION (PcAnsi)
 
-EFI_GUID gEfiPcAnsiGuid     = EFI_PC_ANSI_GUID;
-EFI_GUID gEfiVT100Guid      =  EFI_VT_100_GUID;
-EFI_GUID gEfiVT100PlusGuid  =  EFI_VT_100_PLUS_GUID;
-EFI_GUID gEfiVTUTF8Guid     =  EFI_VT_UTF8_GUID;
+EFI_GUID  gEfiPcAnsiGuid    = EFI_PC_ANSI_GUID;
+EFI_GUID  gEfiVT100Guid     = EFI_VT_100_GUID;
+EFI_GUID  gEfiVT100PlusGuid = EFI_VT_100_PLUS_GUID;
+EFI_GUID  gEfiVTUTF8Guid    = EFI_VT_UTF8_GUID;
 
 EFI_GUID_STRING(&gEfiPcAnsiGuid, "Efi", "Efi PC ANSI Device Path Vendor GUID")
 EFI_GUID_STRING(&gEfiVT100Guid, "Efi", "Efi VT100 Device Path Vendor GUID")
 EFI_GUID_STRING(&gEfiVT100PlusGuid, "Efi", "Efi VT100Plus Device Path Vendor GUID")
 EFI_GUID_STRING(&gEfiVTUTF8Guid, "Efi", "Efi VTUTF8 Device Path Vendor GUID")
-

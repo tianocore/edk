@@ -49,12 +49,12 @@ Returns:
   UINT32  Result;
   UINT32  *IntGuid1;
   UINT32  *IntGuid2;
-  
-  IntGuid1 = (UINT32 *) Guid1;
-  IntGuid2 = (UINT32 *) Guid2;
-  for (Index = 0, Result=0; Index < 4; Index++) {
+
+  IntGuid1  = (UINT32 *) Guid1;
+  IntGuid2  = (UINT32 *) Guid2;
+  for (Index = 0, Result = 0; Index < 4; Index++) {
     Result |= (IntGuid1[Index] - IntGuid2[Index]);
   }
-  return (BOOLEAN)(Result == 0);
-}
 
+  return (BOOLEAN) (Result == 0);
+}

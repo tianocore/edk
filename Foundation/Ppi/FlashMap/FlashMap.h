@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  FlashMap PPI defined in EFI 2.0
+  FlashMap PPI defined in Tiano
 
   This code abstracts FlashMap access
 
@@ -24,8 +24,10 @@ Abstract:
 #ifndef _PEI_FLASH_MAP_PPI_H_
 #define _PEI_FLASH_MAP_PPI_H_
 
-#define PEI_FLASH_MAP_PPI_GUID  \
-  {0xf34c2fa0, 0xde88, 0x4270, 0x84, 0x14, 0x96, 0x12, 0x22, 0xf4, 0x52, 0x1c}
+#define PEI_FLASH_MAP_PPI_GUID \
+  { \
+    0xf34c2fa0, 0xde88, 0x4270, 0x84, 0x14, 0x96, 0x12, 0x22, 0xf4, 0x52, 0x1c \
+  }
 
 #include "EfiFlashMap.h"
 
@@ -38,9 +40,9 @@ typedef
 EFI_STATUS
 (EFIAPI *PEI_GET_FLASH_AREA_INFO) (
   IN  EFI_PEI_SERVICES            **PeiServices,
-  IN PEI_FLASH_MAP_PPI   *This,
+  IN PEI_FLASH_MAP_PPI            * This,
   IN  EFI_FLASH_AREA_TYPE         AreaType,
-  IN  EFI_GUID                    *AreaTypeGuid,
+  IN  EFI_GUID                    * AreaTypeGuid,
   OUT UINT32                      *NumEntries,
   OUT EFI_FLASH_SUBAREA_ENTRY     **Entries
   );
@@ -49,9 +51,9 @@ EFI_STATUS
 // PEI_FLASH_MAP_PPI
 //
 typedef struct _PEI_FLASH_MAP_PPI {
-  PEI_GET_FLASH_AREA_INFO         GetAreaInfo;
+  PEI_GET_FLASH_AREA_INFO GetAreaInfo;
 } PEI_FLASH_MAP_PPI;
 
-extern  EFI_GUID    gPeiFlashMapPpiGuid;
+extern EFI_GUID gPeiFlashMapPpiGuid;
 
 #endif // _PEI_FLASH_MAP_PPI_H_

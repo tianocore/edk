@@ -27,15 +27,12 @@ Abstract:
 // Define PEIM entry point
 //
 EFI_PEIM_ENTRY_POINT (InstallMonoStatusCode)
-
 //
 // Module globals
 //
-PEI_STATUS_CODE_PPI mStatusCodePpi = {
-  PlatformReportStatusCode
-};
+PEI_STATUS_CODE_PPI     mStatusCodePpi = { PlatformReportStatusCode };
 
-EFI_PEI_PPI_DESCRIPTOR mPpiListStatusCode = {
+EFI_PEI_PPI_DESCRIPTOR  mPpiListStatusCode = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gPeiStatusCodePpiGuid,
   &mStatusCodePpi
@@ -50,8 +47,8 @@ TranslateDxeStatusCodeToPeiStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -97,17 +94,17 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  VOID                    *Instance;
+  EFI_STATUS  Status;
+  VOID        *Instance;
 
-  Instance = (VOID*) (UINTN) TranslateDxeStatusCodeToPeiStatusCode;
-  
-  Status =  PeiBuildHobGuidData (
-                 PeiServices,
-                 &gEfiStatusCodeArchProtocolGuid,
-                 &Instance,
-                 sizeof (VOID*)
-                 );
+  Instance = (VOID *) (UINTN) TranslateDxeStatusCodeToPeiStatusCode;
+
+  Status = PeiBuildHobGuidData (
+            PeiServices,
+            &gEfiStatusCodeArchProtocolGuid,
+            &Instance,
+            sizeof (VOID *)
+            );
 
   return Status;
 }
@@ -136,7 +133,7 @@ Returns:
 
 --*/
 {
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
   //
   // Initialize status code listeners.
@@ -148,9 +145,9 @@ Returns:
   //
   Status = (*PeiServices)->InstallPpi (PeiServices, &mPpiListStatusCode);
 
-  ASSERT_PEI_ERROR(PeiServices, Status);
+  ASSERT_PEI_ERROR (PeiServices, Status);
 
   PEI_DEBUG ((PeiServices, EFI_D_ERROR, "\nMono Status Code PEIM Loaded\n"));
 
-  return;
+  return ;
 }

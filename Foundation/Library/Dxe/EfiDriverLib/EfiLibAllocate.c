@@ -26,6 +26,21 @@ VOID *
 EfiLibAllocatePool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate BootServicesData pool.
+
+Arguments:
+
+  AllocationSize  - The size to allocate
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
 {
   VOID  *Memory;
 
@@ -38,6 +53,21 @@ VOID *
 EfiLibAllocateRuntimePool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate RuntimeServicesData pool.
+
+Arguments:
+
+  AllocationSize  - The size to allocate
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
 {
   VOID  *Memory;
 
@@ -50,6 +80,21 @@ VOID *
 EfiLibAllocateZeroPool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate BootServicesData pool and zero it.
+
+Arguments:
+
+  AllocationSize  - The size to allocate
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
 {
   VOID  *Memory;
 
@@ -57,6 +102,7 @@ EfiLibAllocateZeroPool (
   if (Memory != NULL) {
     gBS->SetMem (Memory, AllocationSize, 0);
   }
+
   return Memory;
 }
 
@@ -64,6 +110,21 @@ VOID *
 EfiLibAllocateRuntimeZeroPool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate RuntimeServicesData pool and zero it.
+
+Arguments:
+
+  AllocationSize  - The size to allocate
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
 {
   VOID  *Memory;
 
@@ -71,6 +132,7 @@ EfiLibAllocateRuntimeZeroPool (
   if (Memory != NULL) {
     gBS->SetMem (Memory, AllocationSize, 0);
   }
+
   return Memory;
 }
 
@@ -79,6 +141,24 @@ EfiLibAllocateCopyPool (
   IN  UINTN   AllocationSize,
   IN  VOID    *Buffer
   )
+/*++
+
+Routine Description:
+
+  Allocate BootServicesData pool and use a buffer provided by 
+  caller to fill it.
+
+Arguments:
+
+  AllocationSize  - The size to allocate
+  
+  Buffer          - Buffer that will be filled into the buffer allocated
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
 {
   VOID  *Memory;
 
@@ -87,15 +167,33 @@ EfiLibAllocateCopyPool (
   if (Memory != NULL) {
     gBS->CopyMem (Memory, Buffer, AllocationSize);
   }
+
   return Memory;
 }
-
 
 VOID *
 EfiLibAllocateRuntimeCopyPool (
   IN  UINTN            AllocationSize,
   IN  VOID             *Buffer
   )
+/*++
+
+Routine Description:
+
+  Allocate RuntimeServicesData pool and use a buffer provided by 
+  caller to fill it.
+
+Arguments:
+
+  AllocationSize  - The size to allocate
+  
+  Buffer          - Buffer that will be filled into the buffer allocated
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
 {
   VOID  *Memory;
 
@@ -104,6 +202,6 @@ EfiLibAllocateRuntimeCopyPool (
   if (Memory != NULL) {
     gBS->CopyMem (Memory, Buffer, AllocationSize);
   }
+
   return Memory;
 }
-

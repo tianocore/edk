@@ -33,22 +33,20 @@ Abstract:
 //
 // Worker functions private to this file
 //
-
 STATIC
-DATA_HUB_FILTER_DRIVER *
+DATA_HUB_FILTER_DRIVER  *
 FindFilterDriverByEvent (
   IN  EFI_LIST_ENTRY  *Head,
   IN  EFI_EVENT       Event
   );
 
 STATIC
-EFI_DATA_RECORD_HEADER *
+EFI_DATA_RECORD_HEADER  *
 GetNextDataRecord (
   IN  EFI_LIST_ENTRY      *Head,
   IN  UINT64              ClassFilter,
   IN OUT  UINT64          *PtrCurrentMTC
   );
-
 
 EFI_STATUS
 EFIAPI
@@ -88,32 +86,32 @@ Returns:
                            resources.
 --*/
 {
-  EFI_STATUS                          Status;
-  DATA_HUB_INSTANCE                   *Private;
-  EFI_DATA_ENTRY                      *LogEntry;
-  UINT32                              TotalSize;
-  UINT32                              RecordSize;
-  EFI_DATA_RECORD_HEADER              *Record;
-  VOID                                *Raw;
-  DATA_HUB_FILTER_DRIVER              *FilterEntry;
-  EFI_LIST_ENTRY                      *Link;
-  EFI_LIST_ENTRY                      *Head;
-  EFI_GUID                            ZeroGuid = {0,0,0,0,0,0,0,0,0,0,0};
+  EFI_STATUS              Status;
+  DATA_HUB_INSTANCE       *Private;
+  EFI_DATA_ENTRY          *LogEntry;
+  UINT32                  TotalSize;
+  UINT32                  RecordSize;
+  EFI_DATA_RECORD_HEADER  *Record;
+  VOID                    *Raw;
+  DATA_HUB_FILTER_DRIVER  *FilterEntry;
+  EFI_LIST_ENTRY          *Link;
+  EFI_LIST_ENTRY          *Head;
+  EFI_GUID                ZeroGuid  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
   Private = DATA_HUB_INSTANCE_FROM_THIS (This);
 
   //
   // Combine the storage for the internal structs and a copy of the log record.
-  //  Record follows PrivateLogEntry. The consumer will be returned a pointer  
-  //  to Record so we don't what it to be the thing that was allocated from 
+  //  Record follows PrivateLogEntry. The consumer will be returned a pointer
+  //  to Record so we don't what it to be the thing that was allocated from
   //  pool, so the consumer can't free an data record by mistake.
   //
-  RecordSize = sizeof (EFI_DATA_RECORD_HEADER) + RawDataSize;
-  TotalSize = sizeof (EFI_DATA_ENTRY) + RecordSize;
+  RecordSize  = sizeof (EFI_DATA_RECORD_HEADER) + RawDataSize;
+  TotalSize   = sizeof (EFI_DATA_ENTRY) + RecordSize;
 
   //
   // The Logging action is the critical section, so it is locked.
-  //  The MTC asignment & update, time, and logging must be an 
+  //  The MTC asignment & update, time, and logging must be an
   //  atomic operation, so use the lock.
   //
   Status = EfiAcquireLockOrFail (&Private->DataLock);
@@ -124,26 +122,27 @@ Returns:
     return Status;
   }
 
-  Status = gBS->AllocatePool (EfiBootServicesData, TotalSize, (VOID **)&LogEntry);
+  Status = gBS->AllocatePool (EfiBootServicesData, TotalSize, (VOID **) &LogEntry);
   if (EFI_ERROR (Status)) {
     EfiReleaseLock (&Private->DataLock);
     return EFI_OUT_OF_RESOURCES;
   }
+
   EfiZeroMem (LogEntry, TotalSize);
 
-  Record = (EFI_DATA_RECORD_HEADER *)(LogEntry + 1);
-  Raw = (VOID *)(Record + 1);
+  Record  = (EFI_DATA_RECORD_HEADER *) (LogEntry + 1);
+  Raw     = (VOID *) (Record + 1);
 
   //
   // Build Standard Log Header
   //
-  Record->Version = EFI_DATA_RECORD_HEADER_VERSION;
-  Record->HeaderSize = sizeof (EFI_DATA_RECORD_HEADER);
-  Record->RecordSize = RecordSize;
+  Record->Version     = EFI_DATA_RECORD_HEADER_VERSION;
+  Record->HeaderSize  = sizeof (EFI_DATA_RECORD_HEADER);
+  Record->RecordSize  = RecordSize;
   EfiCopyMem (&Record->DataRecordGuid, DataRecordGuid, sizeof (EFI_GUID));
   EfiCopyMem (&Record->ProducerName, ProducerName, sizeof (EFI_GUID));
-  Record->DataRecordClass = DataRecordClass;
-  
+  Record->DataRecordClass   = DataRecordClass;
+
   Record->LogMonotonicCount = Private->GlobalMonotonicCount++;
 
   gRT->GetTime (&Record->LogTime, NULL);
@@ -151,15 +150,14 @@ Returns:
   //
   // Insert log into the internal linked list.
   //
-  LogEntry->Signature = EFI_DATA_ENTRY_SIGNATURE;
-  LogEntry->Record = Record;
-  LogEntry->RecordSize = sizeof(EFI_DATA_ENTRY) + RawDataSize;
+  LogEntry->Signature   = EFI_DATA_ENTRY_SIGNATURE;
+  LogEntry->Record      = Record;
+  LogEntry->RecordSize  = sizeof (EFI_DATA_ENTRY) + RawDataSize;
   InsertTailList (&Private->DataListHead, &LogEntry->Link);
 
   EfiCopyMem (Raw, RawData, RawDataSize);
-  
+
   EfiReleaseLock (&Private->DataLock);
-  
 
   //
   // Send Signal to all the filter drivers which are interested
@@ -168,7 +166,7 @@ Returns:
   Head = &Private->FilterDriverListHead;
   for (Link = Head->ForwardLink; Link != Head; Link = Link->ForwardLink) {
     FilterEntry = FILTER_ENTRY_FROM_LINK (Link);
-    if (((FilterEntry->ClassFilter & DataRecordClass) != 0) && 
+    if (((FilterEntry->ClassFilter & DataRecordClass) != 0) &&
         (EfiCompareGuid (&FilterEntry->FilterDataRecordGuid, &ZeroGuid) || 
          EfiCompareGuid (&FilterEntry->FilterDataRecordGuid, DataRecordGuid))) {
       gBS->SignalEvent (FilterEntry->Event);
@@ -178,14 +176,13 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 DataHubGetNextRecord (
   IN EFI_DATA_HUB_PROTOCOL            *This,
   IN OUT UINT64                       *MonotonicCount,
   IN EFI_EVENT                        *FilterDriverEvent, OPTIONAL
-  OUT EFI_DATA_RECORD_HEADER          **Record              
+  OUT EFI_DATA_RECORD_HEADER          **Record
   )
 /*++
 
@@ -223,35 +220,33 @@ Returns:
 
 --*/
 {
-  DATA_HUB_INSTANCE         *Private;
-  DATA_HUB_FILTER_DRIVER    *FilterDriver;
-  UINT64                    ClassFilter;
-  UINT64                    FilterMonotonicCount;
+  DATA_HUB_INSTANCE       *Private;
+  DATA_HUB_FILTER_DRIVER  *FilterDriver;
+  UINT64                  ClassFilter;
+  UINT64                  FilterMonotonicCount;
 
-  Private = DATA_HUB_INSTANCE_FROM_THIS (This);
+  Private               = DATA_HUB_INSTANCE_FROM_THIS (This);
 
-  FilterDriver = NULL;
-  FilterMonotonicCount = 0;
-  ClassFilter = EFI_DATA_RECORD_CLASS_DEBUG     | 
-                EFI_DATA_RECORD_CLASS_ERROR     | 
-                EFI_DATA_RECORD_CLASS_DATA      | 
-                EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
-                
+  FilterDriver          = NULL;
+  FilterMonotonicCount  = 0;
+  ClassFilter = EFI_DATA_RECORD_CLASS_DEBUG |
+    EFI_DATA_RECORD_CLASS_ERROR |
+    EFI_DATA_RECORD_CLASS_DATA |
+    EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
+
   if (FilterDriverEvent != NULL) {
-    
     //
-    // For events the beginning is the last unread record. This info is 
+    // For events the beginning is the last unread record. This info is
     // stored in the instance structure, so we must look up the event
     // to get the data.
     //
     FilterDriver = FindFilterDriverByEvent (
-                     &Private->FilterDriverListHead, 
-                     *FilterDriverEvent
-                     );
+                    &Private->FilterDriverListHead,
+                    *FilterDriverEvent
+                    );
     if (FilterDriver == NULL) {
       return EFI_INVALID_PARAMETER;
     }
-
     //
     // Use the Class filter the event was created with.
     //
@@ -268,7 +263,7 @@ Returns:
         // But we already processed this vaule, so we need to find the next one. So if
         // It is not the first time get the new record entry.
         //
-        *Record = GetNextDataRecord (&Private->DataListHead, ClassFilter, &FilterMonotonicCount);
+        *Record         = GetNextDataRecord (&Private->DataListHead, ClassFilter, &FilterMonotonicCount);
         *MonotonicCount = FilterMonotonicCount;
         if (FilterMonotonicCount == 0) {
           //
@@ -277,13 +272,12 @@ Returns:
           return EFI_NOT_FOUND;
         }
       }
-    } 
+    }
   }
-  
   //
   // Return the record
   //
-  *Record = GetNextDataRecord (&Private->DataListHead, ClassFilter, MonotonicCount);  
+  *Record = GetNextDataRecord (&Private->DataListHead, ClassFilter, MonotonicCount);
   if (*Record == NULL) {
     return EFI_NOT_FOUND;
   }
@@ -311,15 +305,14 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 DataHubRegisterFilterDriver (
-  IN EFI_DATA_HUB_PROTOCOL    *This,
+  IN EFI_DATA_HUB_PROTOCOL    * This,
   IN EFI_EVENT                FilterEvent,
   IN EFI_TPL                  FilterTpl,
   IN UINT64                   FilterClass,
-  IN EFI_GUID                 *FilterDataRecordGuid  OPTIONAL
+  IN EFI_GUID                 * FilterDataRecordGuid OPTIONAL
   )
 /*++
 
@@ -357,36 +350,34 @@ Returns:
 
 --*/
 {
-  DATA_HUB_INSTANCE         *Private;
-  DATA_HUB_FILTER_DRIVER    *FilterDriver;
-  
-  Private = DATA_HUB_INSTANCE_FROM_THIS (This);
-  
-  FilterDriver = (DATA_HUB_FILTER_DRIVER *) 
-                 EfiLibAllocateZeroPool (sizeof (DATA_HUB_FILTER_DRIVER));
+  DATA_HUB_INSTANCE       *Private;
+  DATA_HUB_FILTER_DRIVER  *FilterDriver;
+
+  Private       = DATA_HUB_INSTANCE_FROM_THIS (This);
+
+  FilterDriver  = (DATA_HUB_FILTER_DRIVER *) EfiLibAllocateZeroPool (sizeof (DATA_HUB_FILTER_DRIVER));
   if (FilterDriver == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-
   //
   // Initialize filter driver info
   //
-  FilterDriver->Signature = EFI_DATA_HUB_FILTER_DRIVER_SIGNATURE;
-  FilterDriver->Event = FilterEvent;
-  FilterDriver->Tpl = FilterTpl;
+  FilterDriver->Signature             = EFI_DATA_HUB_FILTER_DRIVER_SIGNATURE;
+  FilterDriver->Event                 = FilterEvent;
+  FilterDriver->Tpl                   = FilterTpl;
   FilterDriver->GetNextMonotonicCount = 0;
   if (FilterClass == 0) {
-    FilterDriver->ClassFilter = EFI_DATA_RECORD_CLASS_DEBUG   | 
-                                EFI_DATA_RECORD_CLASS_ERROR   | 
-                                EFI_DATA_RECORD_CLASS_DATA    | 
-                                EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
+    FilterDriver->ClassFilter = EFI_DATA_RECORD_CLASS_DEBUG |
+      EFI_DATA_RECORD_CLASS_ERROR |
+      EFI_DATA_RECORD_CLASS_DATA |
+      EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
   } else {
     FilterDriver->ClassFilter = FilterClass;
   }
+
   if (FilterDataRecordGuid != NULL) {
     EfiCopyMem (&FilterDriver->FilterDataRecordGuid, FilterDataRecordGuid, sizeof (EFI_GUID));
   }
-
   //
   // Search for duplicate entries
   //
@@ -394,7 +385,6 @@ Returns:
     gBS->FreePool (FilterDriver);
     return EFI_ALREADY_STARTED;
   }
-
   //
   // Make insertion an atomic operation with the lock.
   //
@@ -405,14 +395,13 @@ Returns:
   //
   // Signal the Filter driver we just loaded so they will recieve all the
   // previous history. If we did not signal here we would have to wait until
-  // the next data was logged to get the history. In a case where no next 
+  // the next data was logged to get the history. In a case where no next
   // data was logged we would never get synced up.
   //
   gBS->SignalEvent (FilterEvent);
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -442,8 +431,8 @@ Returns:
 
 --*/
 {
-  DATA_HUB_INSTANCE         *Private;
-  DATA_HUB_FILTER_DRIVER    *FilterDriver;
+  DATA_HUB_INSTANCE       *Private;
+  DATA_HUB_FILTER_DRIVER  *FilterDriver;
 
   Private = DATA_HUB_INSTANCE_FROM_THIS (This);
 
@@ -451,30 +440,24 @@ Returns:
   // Search for duplicate entries
   //
   FilterDriver = FindFilterDriverByEvent (
-                  &Private->FilterDriverListHead, 
+                  &Private->FilterDriverListHead,
                   FilterEvent
                   );
   if (FilterDriver == NULL) {
     return EFI_NOT_FOUND;
   }
-
   //
   // Make removal an atomic operation with the lock
   //
   EfiAcquireLock (&Private->DataLock);
   RemoveEntryList (&FilterDriver->Link);
   EfiReleaseLock (&Private->DataLock);
-  
+
   return EFI_SUCCESS;
 }
-
-
-
 //
 // STATIC Worker fucntions follow
 //
-
-
 STATIC
 DATA_HUB_FILTER_DRIVER *
 FindFilterDriverByEvent (
@@ -502,20 +485,19 @@ Returns:
   NULL - If Event is not in the list
 
 --*/
-
 {
-  DATA_HUB_FILTER_DRIVER    *FilterEntry;
-  EFI_LIST_ENTRY            *Link;
+  DATA_HUB_FILTER_DRIVER  *FilterEntry;
+  EFI_LIST_ENTRY          *Link;
 
   for (Link = Head->ForwardLink; Link != Head; Link = Link->ForwardLink) {
-    FilterEntry = FILTER_ENTRY_FROM_LINK(Link);
+    FilterEntry = FILTER_ENTRY_FROM_LINK (Link);
     if (FilterEntry->Event == Event) {
       return FilterEntry;
     }
   }
+
   return NULL;
 }
-
 
 STATIC
 EFI_DATA_RECORD_HEADER *
@@ -551,15 +533,15 @@ Returns:
   EFI_DATA_ENTRY          *LogEntry;
   EFI_LIST_ENTRY          *Link;
   BOOLEAN                 ReturnFirstEntry;
-  EFI_DATA_RECORD_HEADER *Record;
+  EFI_DATA_RECORD_HEADER  *Record;
   EFI_DATA_ENTRY          *NextLogEntry;
 
   //
   // If MonotonicCount == 0 just return the first one
   //
-  ReturnFirstEntry = (BOOLEAN)(*PtrCurrentMTC == 0);
+  ReturnFirstEntry  = (BOOLEAN) (*PtrCurrentMTC == 0);
 
-  Record = NULL;
+  Record            = NULL;
   for (Link = Head->ForwardLink; Link != Head; Link = Link->ForwardLink) {
     LogEntry = DATA_ENTRY_FROM_LINK (Link);
     if ((LogEntry->Record->DataRecordClass & ClassFilter) == 0) {
@@ -569,9 +551,7 @@ Returns:
       continue;
     }
 
-    if ((LogEntry->Record->LogMonotonicCount == *PtrCurrentMTC) || 
-        ReturnFirstEntry) {
-
+    if ((LogEntry->Record->LogMonotonicCount == *PtrCurrentMTC) || ReturnFirstEntry) {
       //
       // Return record to the user
       //
@@ -591,18 +571,16 @@ Returns:
           *PtrCurrentMTC = NextLogEntry->Record->LogMonotonicCount;
           break;
         }
-      } 
-
+      }
       //
       // Record found exit loop and return
       //
       break;
     }
   }
+
   return Record;
 }
-
-
 //
 // Module Global:
 //  Since this driver will only ever produce one instance of the Logging Hub
@@ -610,9 +588,7 @@ Returns:
 //
 DATA_HUB_INSTANCE mPrivateData;
 
-
-
-EFI_DRIVER_ENTRY_POINT (DataHubInstall);
+EFI_DRIVER_ENTRY_POINT (DataHubInstall)
 
 EFI_STATUS
 DataHubInstall (
@@ -635,16 +611,16 @@ Returns:
 
 --*/
 {
-  EFI_STATUS      Status;
-  UINT32          HighMontonicCount;
+  EFI_STATUS  Status;
+  UINT32      HighMontonicCount;
 
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
-  mPrivateData.Signature = DATA_HUB_INSTANCE_SIGNATURE;
-  mPrivateData.DataHub.LogData                 = DataHubLogData;
-  mPrivateData.DataHub.GetNextRecord           = DataHubGetNextRecord;
-  mPrivateData.DataHub.RegisterFilterDriver    = DataHubRegisterFilterDriver;
-  mPrivateData.DataHub.UnregisterFilterDriver  = DataHubUnregisterFilterDriver;
+  mPrivateData.Signature                      = DATA_HUB_INSTANCE_SIGNATURE;
+  mPrivateData.DataHub.LogData                = DataHubLogData;
+  mPrivateData.DataHub.GetNextRecord          = DataHubGetNextRecord;
+  mPrivateData.DataHub.RegisterFilterDriver   = DataHubRegisterFilterDriver;
+  mPrivateData.DataHub.UnregisterFilterDriver = DataHubUnregisterFilterDriver;
 
   //
   // Initialize Private Data in CORE_LOGGING_HUB_INSTANCE that is
@@ -665,19 +641,17 @@ Returns:
     //
     mPrivateData.GlobalMonotonicCount = 0;
   } else {
-    mPrivateData.GlobalMonotonicCount = LShiftU64((UINT64)HighMontonicCount, 32);
+    mPrivateData.GlobalMonotonicCount = LShiftU64 ((UINT64) HighMontonicCount, 32);
   }
-
   //
   // Make a new handle and install the protocol
   //
   mPrivateData.Handle = NULL;
   Status = gBS->InstallProtocolInterface (
                   &mPrivateData.Handle,
-                  &gEfiDataHubProtocolGuid, 
+                  &gEfiDataHubProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &mPrivateData.DataHub
                   );
   return Status;
 }
-

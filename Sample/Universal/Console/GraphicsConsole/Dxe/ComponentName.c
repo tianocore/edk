@@ -22,15 +22,21 @@ Abstract:
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gGraphicsConsoleComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gGraphicsConsoleComponentName = {
   GraphicsConsoleComponentNameGetDriverName,
   GraphicsConsoleComponentNameGetControllerName,
   "eng"
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mGraphicsConsoleDriverNameTable[] = {
-  { "eng", L"UGA Console Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"UGA Console Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -68,21 +74,21 @@ GraphicsConsoleComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gGraphicsConsoleComponentName.SupportedLanguages,
-           mGraphicsConsoleDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gGraphicsConsoleComponentName.SupportedLanguages,
+          mGraphicsConsoleDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 GraphicsConsoleComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -131,4 +137,3 @@ GraphicsConsoleComponentNameGetControllerName (
 {
   return EFI_UNSUPPORTED;
 }
-

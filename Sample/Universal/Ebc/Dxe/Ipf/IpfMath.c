@@ -46,9 +46,9 @@ Returns:
   if (Count > 63) {
     return 0;
   }
-  return (Operand << Count);
-}
 
+  return Operand << Count;
+}
 
 UINT64
 RightShiftU64 (
@@ -75,9 +75,9 @@ Returns:
   if (Count > 63) {
     return 0;
   }
-  return (Operand >> Count);
-}
 
+  return Operand >> Count;
+}
 
 INT64
 ARightShift64 (
@@ -106,15 +106,17 @@ Returns:
     if (Operand & (0x01 << 63)) {
       return (INT64)~0;
     }
+
     return 0;
   }
-  return (Operand >> Count);
+
+  return Operand >> Count;
 }
 
 #if 0
-
+//
 // The compiler generates true assembly for these, so we don't need them.
-
+//
 INT32
 ARightShift32 (
   IN INT32   Operand,
@@ -137,10 +139,11 @@ Returns:
 
 --*/
 {
-    return (Operand >> (Count & 0x1f));
+  return Operand >> (Count & 0x1f);
 }
 
-INT32 MulS32x32 (
+INT32
+MulS32x32 (
   INT32 Value1,
   INT32 Value2,
   INT32 *ResultHigh
@@ -172,17 +175,17 @@ Notes:
 
 --*/
 {
-  INT64     Rres64;
-  INT32     Result;
+  INT64 Rres64;
+  INT32 Result;
 
-  Res64 = (INT64)Value1 * (INT64)Value2;
+  Res64       = (INT64) Value1 * (INT64) Value2;
   *ResultHigh = (Res64 >> 32) & 0xffffffff;
-  Result = Res64 & 0xffffffff;
+  Result      = Res64 & 0xffffffff;
   return Result;
 }
 
-
-UINT32 MulU32x32 (
+UINT32
+MulU32x32 (
   UINT32 Value1,
   UINT32 Value2,
   UINT32 *ResultHigh
@@ -210,15 +213,14 @@ Notes:
 
 --*/
 {
-  UINT64    Res64;
-  UINT32    Result;
-  
-  Res64 = (INT64)Value1 * (INT64)Value2;
+  UINT64  Res64;
+  UINT32  Result;
+
+  Res64       = (INT64) Value1 * (INT64) Value2;
   *ResultHigh = (Res64 >> 32) & 0xffffffff;
-  Result = Res64 & 0xffffffff;
+  Result      = Res64 & 0xffffffff;
   return Result;
 }
-
 
 INT32
 DivS32x32 (
@@ -227,28 +229,27 @@ DivS32x32 (
   INT32 *Remainder,
   UINTN *error
   )
-  
-  //
-  // signed 32-bit by signed 32-bit divide; the 32-bit remainder is
-  // in *Remainder and the quotient is the return value; *error = 1 if the
-  // divisor is 0, and it is 1 otherwise
-  //
+//
+// signed 32-bit by signed 32-bit divide; the 32-bit remainder is
+// in *Remainder and the quotient is the return value; *error = 1 if the
+// divisor is 0, and it is 1 otherwise
+//
 {
   INT32 Result;
-  
+
   *error = 0;
 
   if (Value2 == 0x0) {
-    *error = 1;
-    Result = 0x80000000;
-    *Remainder = 0x80000000;
+    *error      = 1;
+    Result      = 0x80000000;
+    *Remainder  = 0x80000000;
   } else {
-    Result = Value1 / Value2;
-    *Remainder = Value1 - Result * Value2;
+    Result      = Value1 / Value2;
+    *Remainder  = Value1 - Result * Value2;
   }
+
   return Result;
 }
-
 
 UINT32
 DivU32x32 (
@@ -257,23 +258,25 @@ DivU32x32 (
   UINT32  *Remainder,
   UINTN   *Error
   )
-  
-  // unsigned 32-bit by unsigned 32-bit divide; the 32-bit remainder is
-  // in *Remainder and the quotient is the return value; *error = 1 if the
-  // divisor is 0, and it is 1 otherwise
+//
+// unsigned 32-bit by unsigned 32-bit divide; the 32-bit remainder is
+// in *Remainder and the quotient is the return value; *error = 1 if the
+// divisor is 0, and it is 1 otherwise
+//
 {
-  UINT32 Result;
-  
+  UINT32  Result;
+
   *Error = 0;
 
   if (Value2 == 0x0) {
-    *Error = 1;
-    Result = 0x80000000;
-    *Remainder = 0x80000000;
+    *Error      = 1;
+    Result      = 0x80000000;
+    *Remainder  = 0x80000000;
   } else {
-    Result = Value1 / Value2;
-    *Remainder = Value1 - Result * Value2;
+    Result      = Value1 / Value2;
+    *Remainder  = Value1 - Result * Value2;
   }
+
   return Result;
 }
 
@@ -311,27 +314,27 @@ Note:
 --*/
 {
   INT64 Result;
-  
+
   *Error = 0;
 
   if (Value2 == 0x0) {
-    *Error = 1;
-    Result = 0x8000000000000000;
-    *Remainder = 0x8000000000000000;
+    *Error      = 1;
+    Result      = 0x8000000000000000;
+    *Remainder  = 0x8000000000000000;
   } else {
-    Result = Value1 / Value2;
-    *Remainder = Value1 - Result * Value2;
+    Result      = Value1 / Value2;
+    *Remainder  = Value1 - Result * Value2;
   }
+
   return Result;
 }
-
 
 UINT64
 DivU64x64 (
   UINT64 Value1,
   UINT64 Value2,
   UINT64 *Remainder,
-  UINTN *Error
+  UINTN  *Error
   )
 /*++
 
@@ -357,17 +360,18 @@ Note:
 
 --*/
 {
-  UINT64 Result;
-  
+  UINT64  Result;
+
   *Error = 0;
 
   if (Value2 == 0x0) {
-    *Error = 1;
-    Result = 0x8000000000000000;
-    *Remainder = 0x8000000000000000;
+    *Error      = 1;
+    Result      = 0x8000000000000000;
+    *Remainder  = 0x8000000000000000;
   } else {
-    Result = Value1 / Value2;
-    *Remainder = Value1 - Result * Value2;
+    Result      = Value1 / Value2;
+    *Remainder  = Value1 - Result * Value2;
   }
+
   return Result;
 }

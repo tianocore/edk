@@ -38,7 +38,7 @@ Abstract:
 #include "StatusCode.h"
 #include "EfiPrintLib.h"
 
-EFI_LOCK  mStatusCodeLock = EFI_INITIALIZE_LOCK_VARIABLE (EFI_TPL_HIGH_LEVEL);
+EFI_LOCK  mStatusCodeLock = EFI_INITIALIZE_LOCK_VARIABLE(EFI_TPL_HIGH_LEVEL);
 BOOLEAN   mStatusCodeFlag = FALSE;
 
 //
@@ -46,13 +46,13 @@ BOOLEAN   mStatusCodeFlag = FALSE;
 //
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 StatusCodeReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -86,7 +86,6 @@ Returns:
     //
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Check to see if we are already in the middle of a ReportStatusCode()
   //
@@ -94,7 +93,6 @@ Returns:
     EfiReleaseLock (&mStatusCodeLock);
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Set the flag to show we are in the middle of a ReportStatusCode()
   //
@@ -120,7 +118,6 @@ Returns:
     //
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Clear the flag to show we are no longer in the middle of a ReportStatusCode()
   //
@@ -133,11 +130,9 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 //
 // Protocol instance, there can be only one.
 //
-
 EFI_STATUS
 InitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,

@@ -19,14 +19,11 @@ Abstract:
 
 #include "EfiSpec.h"
 
-#include EFI_PROTOCOL_DEFINITION(PxeBaseCodeCallBack)
+#include EFI_PROTOCOL_DEFINITION (PxeBaseCodeCallBack)
 
-EFI_GUID gEfiPxeBaseCodeCallbackProtocolGuid =
-  EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL_GUID;
+EFI_GUID  gEfiPxeBaseCodeCallbackProtocolGuid = EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL_GUID;
 
-EFI_GUID_STRING(
-  &gEfiPxeBaseCodeCallbackProtocolGuid,
-  "PXE Base Code Callback Protocol",
-  "EFI PXE Base Code Callback Protocol");
+EFI_GUID_STRING
+  (&gEfiPxeBaseCodeCallbackProtocolGuid, "PXE Base Code Callback Protocol", "EFI PXE Base Code Callback Protocol");
 
 /* EOF - PxeBaseCodeCallBack.c */

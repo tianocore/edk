@@ -58,44 +58,51 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
-  UINT32                        SizeOfX;
-  UINT32                        SizeOfY;
-  UINT32                        ColorDepth;
-  UINT32                        RefreshRate;
-  EFI_UGA_PIXEL                 Color;
-  UINTN                         BlockHeight;
-  UINTN                         BlockWidth;
-  UINTN                         BlockNum;
-  UINTN                         PosX;
-  UINTN                         PosY;
-  UINTN                         Index;
+  EFI_STATUS            Status;
+  EFI_UGA_DRAW_PROTOCOL *UgaDraw;
+  UINT32                SizeOfX;
+  UINT32                SizeOfY;
+  UINT32                ColorDepth;
+  UINT32                RefreshRate;
+  EFI_UGA_PIXEL         Color;
+  UINTN                 BlockHeight;
+  UINTN                 BlockWidth;
+  UINTN                 BlockNum;
+  UINTN                 PosX;
+  UINTN                 PosY;
+  UINTN                 Index;
 
   if (Progress > 100) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = gBS->HandleProtocol (gST->ConsoleOutHandle, 
-                                &gEfiUgaDrawProtocolGuid, 
-                                &UgaDraw);
+  Status = gBS->HandleProtocol (
+                  gST->ConsoleOutHandle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &UgaDraw
+                  );
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
-  Status = UgaDraw->GetMode (UgaDraw, &SizeOfX, &SizeOfY, 
-                             &ColorDepth, &RefreshRate);
+  Status = UgaDraw->GetMode (
+                      UgaDraw,
+                      &SizeOfX,
+                      &SizeOfY,
+                      &ColorDepth,
+                      &RefreshRate
+                      );
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
-  BlockWidth = SizeOfX / 100;
+  BlockWidth  = SizeOfX / 100;
   BlockHeight = SizeOfY / 50;
-  
-  BlockNum = Progress;
-    
-  PosX = 0;
-  PosY = SizeOfY * 48 / 50;
+
+  BlockNum    = Progress;
+
+  PosX        = 0;
+  PosY        = SizeOfY * 48 / 50;
 
   if (BlockNum == 0) {
     //
@@ -116,28 +123,33 @@ Returns:
                         SizeOfX * sizeof (EFI_UGA_PIXEL)
                         );
   }
-
   //
   // Show progress by drawing blocks
   //
   for (Index = PreviousValue; Index < BlockNum; Index++) {
     PosX = Index * BlockWidth;
     Status = UgaDraw->Blt (
-                       UgaDraw,
-                       &ProgressColor,
-                       EfiUgaVideoFill,
-                       0,
-                       0,
-                       PosX,
-                       PosY,
-                       BlockWidth - 1,
-                       BlockHeight,
-                       (BlockWidth) * sizeof (EFI_UGA_PIXEL)
-                       );
+                        UgaDraw,
+                        &ProgressColor,
+                        EfiUgaVideoFill,
+                        0,
+                        0,
+                        PosX,
+                        PosY,
+                        BlockWidth - 1,
+                        BlockHeight,
+                        (BlockWidth) * sizeof (EFI_UGA_PIXEL)
+                        );
   }
-  
-  PrintXY ((SizeOfX - EfiStrLen (Title) * GLYPH_WIDTH) / 2, PosY - GLYPH_HEIGHT - 1, &TitleForeground, &TitleBackground, Title);
-  
+
+  PrintXY (
+    (SizeOfX - EfiStrLen (Title) * GLYPH_WIDTH) / 2,
+    PosY - GLYPH_HEIGHT - 1,
+    &TitleForeground,
+    &TitleBackground,
+    Title
+    );
+
   return EFI_SUCCESS;
 }
 
@@ -163,30 +175,30 @@ Returns:
                     
 --*/
 {
-  EFI_STATUS                       Status;
-  EFI_STATUS                       InitStatus;
-  EFI_STATUS                       KeyStatus;
-  EFI_STATUS                       ReturnStatus;
-  BOOLEAN                          RequireSoftECCInit;
-  EFI_GENERIC_MEMORY_TEST_PROTOCOL *GenMemoryTest;
-  UINT64                           TestedMemorySize;
-  UINT64                           TotalMemorySize;
-  UINTN                            TestPercent;
-  UINT64                           PreviousValue;
-  BOOLEAN                          ErrorOut;
-  BOOLEAN                          TestAbort;
-  EFI_INPUT_KEY                    Key;
-  CHAR16                           StrPercent[16];
-  CHAR16                           *StrTotalMemory;
-  CHAR16                           *Pos;
-  CHAR16                           *TmpStr;
-  EFI_UGA_PIXEL                    Foreground;
-  EFI_UGA_PIXEL                    Background;
-  EFI_UGA_PIXEL                    Color;
-  UINT8                            Value;
-  UINTN                            DataSize;
-  UINT32                           Attributes;
-  
+  EFI_STATUS                        Status;
+  EFI_STATUS                        InitStatus;
+  EFI_STATUS                        KeyStatus;
+  EFI_STATUS                        ReturnStatus;
+  BOOLEAN                           RequireSoftECCInit;
+  EFI_GENERIC_MEMORY_TEST_PROTOCOL  *GenMemoryTest;
+  UINT64                            TestedMemorySize;
+  UINT64                            TotalMemorySize;
+  UINTN                             TestPercent;
+  UINT64                            PreviousValue;
+  BOOLEAN                           ErrorOut;
+  BOOLEAN                           TestAbort;
+  EFI_INPUT_KEY                     Key;
+  CHAR16                            StrPercent[16];
+  CHAR16                            *StrTotalMemory;
+  CHAR16                            *Pos;
+  CHAR16                            *TmpStr;
+  EFI_UGA_PIXEL                     Foreground;
+  EFI_UGA_PIXEL                     Background;
+  EFI_UGA_PIXEL                     Color;
+  UINT8                             Value;
+  UINTN                             DataSize;
+  UINT32                            Attributes;
+
   ReturnStatus = EFI_SUCCESS;
   EfiZeroMem (&Key, sizeof (EFI_INPUT_KEY));
 
@@ -195,14 +207,14 @@ Returns:
   if (Pos == NULL) {
     return ReturnStatus;
   }
-  
-  StrTotalMemory = Pos;
 
-  TestedMemorySize = 0;
-  TotalMemorySize = 0;
-  PreviousValue = 0;
-  ErrorOut = FALSE;
-  TestAbort = FALSE;
+  StrTotalMemory    = Pos;
+
+  TestedMemorySize  = 0;
+  TotalMemorySize   = 0;
+  PreviousValue     = 0;
+  ErrorOut          = FALSE;
+  TestAbort         = FALSE;
 
   EfiSetMem (&Foreground, sizeof (EFI_UGA_PIXEL), 0xff);
   EfiSetMem (&Background, sizeof (EFI_UGA_PIXEL), 0x0);
@@ -231,10 +243,10 @@ Returns:
                                 );
   if (InitStatus == EFI_NO_MEDIA) {
     //
-    // The PEI codes also have the relevant memory test code to check the memory, 
+    // The PEI codes also have the relevant memory test code to check the memory,
     // it can select to test some range of the memory or all of them. If PEI code
     // checks all the memory, this BDS memory test will has no not-test memory to
-    // do the test, and then the status of EFI_NO_MEDIA will be returned by 
+    // do the test, and then the status of EFI_NO_MEDIA will be returned by
     // "MemoryTestInit". So it does not need to test memory again, just return.
     //
     gBS->FreePool (Pos);
@@ -242,11 +254,11 @@ Returns:
   }
 
   gST->ConOut->SetCursorPosition (gST->ConOut, 0, 2);
-  TmpStr = GetStringById (STRING_TOKEN(STR_ESC_TO_SKIP_MEM_TEST));
+  TmpStr = GetStringById (STRING_TOKEN (STR_ESC_TO_SKIP_MEM_TEST));
 
   if (TmpStr != NULL) {
     gST->ConOut->OutputString (gST->ConOut, TmpStr);
-    gBS->FreePool(TmpStr);
+    gBS->FreePool (TmpStr);
   }
 
   do {
@@ -258,16 +270,17 @@ Returns:
                               TestAbort
                               );
     if (ErrorOut && (Status == EFI_DEVICE_ERROR)) {
-      TmpStr = GetStringById (STRING_TOKEN(STR_SYSTEM_MEM_ERROR));
+      TmpStr = GetStringById (STRING_TOKEN (STR_SYSTEM_MEM_ERROR));
       if (TmpStr != NULL) {
         PrintXY (10, 10, NULL, NULL, TmpStr);
         gST->ConOut->SetCursorPosition (gST->ConOut, 0, 4);
         gST->ConOut->OutputString (gST->ConOut, TmpStr);
-        gBS->FreePool(TmpStr);
+        gBS->FreePool (TmpStr);
       }
+
       ASSERT (0);
     }
-    
+
     TestPercent = (UINTN) DivU64x32 (
                             DivU64x32 (MultU64x32 (TestedMemorySize, 100), 16, NULL),
                             (UINTN)DivU64x32 (TotalMemorySize, 16, NULL),
@@ -279,38 +292,39 @@ Returns:
       TmpStr = GetStringById (STRING_TOKEN (STR_MEMORY_TEST_PERCENT));
       if (TmpStr != NULL) {
         BdsLibOutputStrings (gST->ConOut, StrPercent, TmpStr, NULL);
-        gBS->FreePool(TmpStr);
+        gBS->FreePool (TmpStr);
       }
-      
+
       TmpStr = GetStringById (STRING_TOKEN (STR_PERFORM_MEM_TEST));
       if (TmpStr != NULL) {
         PlatformBdsShowProgress (
-          Foreground, 
-          Background, 
-          TmpStr, 
-          Color, 
-          TestPercent, 
-          (UINTN)PreviousValue
+          Foreground,
+          Background,
+          TmpStr,
+          Color,
+          TestPercent,
+          (UINTN) PreviousValue
           );
-        gBS->FreePool(TmpStr);
+        gBS->FreePool (TmpStr);
       }
     }
 
     PreviousValue = TestPercent;
 
-    KeyStatus = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+    KeyStatus     = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
     if (Key.ScanCode == SCAN_ESC) {
       if (!RequireSoftECCInit) {
         TmpStr = GetStringById (STRING_TOKEN (STR_PERFORM_MEM_TEST));
         if (TmpStr != NULL) {
           PlatformBdsShowProgress (
-            Foreground, Background, 
+            Foreground,
+            Background,
             TmpStr,
-            Color, 
+            Color,
             100,
-            (UINTN)PreviousValue
+            (UINTN) PreviousValue
             );
-          gBS->FreePool(TmpStr);
+          gBS->FreePool (TmpStr);
         }
 
         gST->ConOut->SetCursorPosition (gST->ConOut, 0, 0);
@@ -318,6 +332,7 @@ Returns:
         Status = GenMemoryTest->Finished (GenMemoryTest);
         goto Done;
       }
+
       TestAbort = TRUE;
     }
   } while (Status != EFI_NOT_FOUND);
@@ -333,7 +348,7 @@ Done:
   TmpStr = GetStringById (STRING_TOKEN (STR_MEM_TEST_COMPLETED));
   if (TmpStr != NULL) {
     EfiStrCat (StrTotalMemory, TmpStr);
-    gBS->FreePool(TmpStr);
+    gBS->FreePool (TmpStr);
   }
 
   gST->ConOut->ClearScreen (gST->ConOut);
@@ -341,12 +356,12 @@ Done:
   gST->ConOut->EnableCursor (gST->ConOut, FALSE);
   gST->ConOut->OutputString (gST->ConOut, StrTotalMemory);
   PlatformBdsShowProgress (
-    Foreground, 
-    Background, 
-    StrTotalMemory, 
-    Color, 
+    Foreground,
+    Background,
+    StrTotalMemory,
+    Color,
     100,
-    (UINTN)PreviousValue
+    (UINTN) PreviousValue
     );
 
   gBS->FreePool (Pos);
@@ -362,16 +377,14 @@ Done:
 
   if (EFI_ERROR (Status)) {
     Value = 1;
-    gRT->SetVariable (  
-           L"BootState", 
-           &gEfiBootStateGuid,
-           EFI_VARIABLE_NON_VOLATILE  | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-           sizeof (Value),
-           &Value
-           );
+    gRT->SetVariable (
+          L"BootState",
+          &gEfiBootStateGuid,
+          EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+          sizeof (Value),
+          &Value
+          );
   }
 
   return ReturnStatus;
 }
-
-

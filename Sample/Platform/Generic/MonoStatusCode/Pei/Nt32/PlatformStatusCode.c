@@ -25,22 +25,22 @@ Abstract:
 //
 // Platform definitions
 //
-EFI_PEI_REPORT_STATUS_CODE                   mSecReportStatusCode = NULL;
+EFI_PEI_REPORT_STATUS_CODE  mSecReportStatusCode = NULL;
 
-extern PEI_STATUS_CODE_PPI        mStatusCodePpi;
+extern PEI_STATUS_CODE_PPI  mStatusCodePpi;
 
 //
 // Function implementations
 //
 EFI_STATUS
-EFIAPI 
+EFIAPI
 PlatformReportStatusCode (
   IN EFI_PEI_SERVICES         **PeiServices,
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -60,7 +60,7 @@ Returns:
 {
   mSecReportStatusCode (PeiServices, CodeType, Value, Instance, CallerId, Data);
   MemoryReportStatusCode (PeiServices, CodeType, Value, Instance, CallerId, Data);
-  return EFI_SUCCESS; 
+  return EFI_SUCCESS;
 }
 
 VOID
@@ -86,9 +86,9 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  PEI_STATUS_CODE_PPI           *ReportStatusCodePpi;
-  EFI_PEI_PPI_DESCRIPTOR            *ReportStatusCodeDescriptor;
+  EFI_STATUS              Status;
+  PEI_STATUS_CODE_PPI     *ReportStatusCodePpi;
+  EFI_PEI_PPI_DESCRIPTOR  *ReportStatusCodeDescriptor;
 
   //
   // Cache the existing status code listener installed by the SEC core.
@@ -96,22 +96,21 @@ Returns:
   // know that we are running from a DLL, we can use global variables, and
   // directly update the status code PPI descriptor
   //
-
   //
   // Locate SEC status code PPI
   //
   Status = (*PeiServices)->LocatePpi (
-             PeiServices,
-             &gPeiStatusCodePpiGuid,
-             0,
-             &ReportStatusCodeDescriptor,
-             &ReportStatusCodePpi
-             );
+                            PeiServices,
+                            &gPeiStatusCodePpiGuid,
+                            0,
+                            &ReportStatusCodeDescriptor,
+                            &ReportStatusCodePpi
+                            );
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
 
-  mSecReportStatusCode = ReportStatusCodePpi->ReportStatusCode;
+  mSecReportStatusCode            = ReportStatusCodePpi->ReportStatusCode;
   ReportStatusCodeDescriptor->Ppi = &mStatusCodePpi;
 
   //

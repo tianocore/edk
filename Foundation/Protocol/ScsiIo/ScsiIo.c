@@ -20,10 +20,8 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(ScsiIo)
- 
+#include EFI_PROTOCOL_DEFINITION (ScsiIo)
 
-EFI_GUID gEfiScsiIoProtocolGuid = EFI_SCSI_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiScsiIoProtocolGuid = EFI_SCSI_IO_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiScsiIoProtocolGuid, "SCSI IO Protocol", "EFI 1.0 SCSI IO protocol");
-
+EFI_GUID_STRING(&gEfiScsiIoProtocolGuid, "SCSI IO Protocol", "EFI SCSI IO protocol");

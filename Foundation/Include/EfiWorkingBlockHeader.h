@@ -30,18 +30,18 @@ Abstract:
 // The header is immediately followed by the write queue.
 //
 typedef struct {
-  EFI_GUID             Signature;
-  UINT32               Crc;
-  UINT8                WorkingBlockValid:1;
-  UINT8                WorkingBlockInvalid:1;
-#define WORKING_BLOCK_VALID    0x1
-#define WORKING_BLOCK_INVALID  0x2
-  UINT8                Reserved:6;
-  UINT8                Reserved3[3];
-  UINTN                WriteQueueSize;
-//UINT8                WriteQueue[WriteQueueSize];
+  EFI_GUID  Signature;
+  UINT32    Crc;
+  UINT8     WorkingBlockValid : 1;
+  UINT8     WorkingBlockInvalid : 1;
+#define WORKING_BLOCK_VALID   0x1
+#define WORKING_BLOCK_INVALID 0x2
+  UINT8     Reserved : 6;
+  UINT8     Reserved3[3];
+  UINTN     WriteQueueSize;
+  //
+  // UINT8                WriteQueue[WriteQueueSize];
+  //
 } EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER;
 
-
 #endif
-

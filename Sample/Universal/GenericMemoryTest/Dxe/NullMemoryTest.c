@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  MemoryMapping.c
+  NullMemoryTest.c
   
 Abstract:
 
@@ -19,27 +19,24 @@ Abstract:
 
 #include "NullMemoryTest.h"
 
-
 //
 // Module global members
 //
-UINT64 mTestedSystemMemory = 0;
-UINT64 mTotalSystemMemory = 0;
-EFI_HANDLE mGenericMemoryTestHandle;
-
+UINT64                            mTestedSystemMemory = 0;
+UINT64                            mTotalSystemMemory  = 0;
+EFI_HANDLE                        mGenericMemoryTestHandle;
 
 //
 // Driver entry here
 //
-EFI_GENERIC_MEMORY_TEST_PROTOCOL mGenericMemoryTest = {
+EFI_GENERIC_MEMORY_TEST_PROTOCOL  mGenericMemoryTest = {
   InitializeMemoryTest,
   GenPerformMemoryTest,
   GenMemoryTestFinished,
   GenCompatibleRangeTest
 };
 
-
-EFI_DRIVER_ENTRY_POINT (GenericMemoryTestEntryPoint);
+EFI_DRIVER_ENTRY_POINT (GenericMemoryTestEntryPoint)
 
 EFI_STATUS
 EFIAPI
@@ -69,9 +66,9 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                       Status;
+  EFI_STATUS  Status;
 
-  DxeInitializeDriverLib ( ImageHandle, SystemTable );
+  DxeInitializeDriverLib (ImageHandle, SystemTable);
 
   //
   // Install the protocol
@@ -85,16 +82,13 @@ Returns:
 
   return Status;
 }
-
-
 //
 // EFI_GENERIC_MEMORY_TEST_PROTOCOL implementation
 //
-
 EFI_STATUS
 EFIAPI
 InitializeMemoryTest (
-  IN EFI_GENERIC_MEMORY_TEST_PROTOCOL *This,
+  IN EFI_GENERIC_MEMORY_TEST_PROTOCOL          *This,
   IN  EXTENDMEM_COVERAGE_LEVEL                 Level,
   OUT BOOLEAN                                  *RequireSoftECCInit
   )
@@ -108,25 +102,28 @@ Returns:
 
 --*/
 {
-  UINTN                              NumberOfDescriptors;
-  EFI_GCD_MEMORY_SPACE_DESCRIPTOR    *MemorySpaceMap;
-  UINTN                              Index;
+  UINTN                           NumberOfDescriptors;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR *MemorySpaceMap;
+  UINTN                           Index;
 
   gDS->GetMemorySpaceMap (&NumberOfDescriptors, &MemorySpaceMap);
   for (Index = 0; Index < NumberOfDescriptors; Index++) {
-    if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved && 
-        (MemorySpaceMap[Index].Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) == (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)) {
+    if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved &&
+        (MemorySpaceMap[Index].Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
+          (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)
+          ) {
       gDS->RemoveMemorySpace (
-                      MemorySpaceMap[Index].BaseAddress,
-                      MemorySpaceMap[Index].Length
-                      );
+            MemorySpaceMap[Index].BaseAddress,
+            MemorySpaceMap[Index].Length
+            );
 
       gDS->AddMemorySpace (
-                      EfiGcdMemoryTypeSystemMemory,
-                      MemorySpaceMap[Index].BaseAddress,
-                      MemorySpaceMap[Index].Length,
-                      MemorySpaceMap[Index].Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
-                      );
+            EfiGcdMemoryTypeSystemMemory,
+            MemorySpaceMap[Index].BaseAddress,
+            MemorySpaceMap[Index].Length,
+            MemorySpaceMap[Index].Capabilities &~
+            (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
+            );
 
       mTestedSystemMemory += MemorySpaceMap[Index].Length;
       mTotalSystemMemory += MemorySpaceMap[Index].Length;
@@ -134,7 +131,8 @@ Returns:
       mTotalSystemMemory += MemorySpaceMap[Index].Length;
     }
   }
-  gBS->FreePool( MemorySpaceMap );
+
+  gBS->FreePool (MemorySpaceMap);
 
   *RequireSoftECCInit = FALSE;
   return EFI_SUCCESS;
@@ -143,7 +141,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 GenPerformMemoryTest (
-  IN EFI_GENERIC_MEMORY_TEST_PROTOCOL *This,
+  IN EFI_GENERIC_MEMORY_TEST_PROTOCOL          *This,
   IN OUT UINT64                                *TestedMemorySize,
   OUT UINT64                                   *TotalMemorySize,
   OUT BOOLEAN                                  *ErrorOut,
@@ -159,9 +157,9 @@ Returns:
 
 --*/
 {
-  *ErrorOut = FALSE;
+  *ErrorOut         = FALSE;
   *TestedMemorySize = mTestedSystemMemory;
-  *TotalMemorySize = mTotalSystemMemory;
+  *TotalMemorySize  = mTotalSystemMemory;
 
   return EFI_NOT_FOUND;
 
@@ -188,7 +186,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 GenCompatibleRangeTest (
-  IN EFI_GENERIC_MEMORY_TEST_PROTOCOL *This,
+  IN EFI_GENERIC_MEMORY_TEST_PROTOCOL          *This,
   IN  EFI_PHYSICAL_ADDRESS                     StartAddress,
   IN  UINT64                                   Length
   )
@@ -204,17 +202,16 @@ Returns:
 {
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR descriptor;
 
-  gDS->GetMemorySpaceDescriptor( StartAddress, &descriptor );
+  gDS->GetMemorySpaceDescriptor (StartAddress, &descriptor);
 
-  gDS->RemoveMemorySpace ( StartAddress, Length );
+  gDS->RemoveMemorySpace (StartAddress, Length);
 
   gDS->AddMemorySpace (
-                  EfiGcdMemoryTypeSystemMemory,
-                  StartAddress,
-                  Length,
-                  descriptor.Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
-                  );
+        EfiGcdMemoryTypeSystemMemory,
+        StartAddress,
+        Length,
+        descriptor.Capabilities &~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
+        );
 
   return EFI_SUCCESS;
 }
-

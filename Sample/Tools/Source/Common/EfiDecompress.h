@@ -19,6 +19,8 @@ Abstract:
   
 --*/
 
+#ifndef _EFI_DECOMPRESS_H
+#define _EFI_DECOMPRESS_H
 EFI_STATUS
 GetInfo (
   IN      VOID    *Source,
@@ -26,6 +28,7 @@ GetInfo (
   OUT     UINT32  *DstSize,
   OUT     UINT32  *ScratchSize
   );
+
 /*++
 
 Routine Description:
@@ -45,17 +48,17 @@ Returns:
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
-
-
 EFI_STATUS
 Decompress (
   IN      VOID    *Source,
   IN      UINT32  SrcSize,
   IN OUT  VOID    *Destination,
   IN      UINT32  DstSize,
-  IN OUT  VOID   *Scratch,
+  IN OUT  VOID    *Scratch,
   IN      UINT32  ScratchSize
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -78,10 +81,9 @@ Returns:
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
-
 typedef
 EFI_STATUS
-(* GETINFO_FUNCTION) (
+(*GETINFO_FUNCTION) (
   IN      VOID    *Source,
   IN      UINT32  SrcSize,
   OUT     UINT32  *DstSize,
@@ -90,12 +92,12 @@ EFI_STATUS
 
 typedef
 EFI_STATUS
-(* DECOMPRESS_FUNCTION) (
+(*DECOMPRESS_FUNCTION) (
   IN      VOID    *Source,
   IN      UINT32  SrcSize,
   IN OUT  VOID    *Destination,
   IN      UINT32  DstSize,
-  IN OUT  VOID   *Scratch,
+  IN OUT  VOID    *Scratch,
   IN      UINT32  ScratchSize
   );
-  
+#endif

@@ -27,20 +27,20 @@ Abstract:
 //
 // Driver Consumed Protocol Prototypes
 //
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
-#include EFI_PROTOCOL_DEFINITION(DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
 
 //
 // Driver produced Protocol
 //
-#include EFI_PROTOCOL_DEFINITION(UsbAtapi)
+#include EFI_PROTOCOL_DEFINITION (UsbAtapi)
 
 #include "UsbDxeLib.h"
 #include "cbi.h"
 
 EFI_STATUS
 EFIAPI
-UsbCBI1DriverEntryPoint(
+UsbCBI1DriverEntryPoint (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
@@ -48,16 +48,16 @@ UsbCBI1DriverEntryPoint(
 //
 // CBI Function prototypes
 //
-STATIC 
+STATIC
 EFI_STATUS
 CBI1CommandPhase (
   IN  USB_CBI_DEVICE          *UsbCbiDev,
-  IN  VOID          *Command,
-  IN  UINT8           CommandSize,
+  IN  VOID                    *Command,
+  IN  UINT8                   CommandSize,
   OUT UINT32                  *Result
-);
+  );
 
-STATIC 
+STATIC
 EFI_STATUS
 CBI1DataPhase (
   IN  USB_CBI_DEVICE          *UsbCbiDev,
@@ -66,12 +66,12 @@ CBI1DataPhase (
   IN  EFI_USB_DATA_DIRECTION  Direction,
   IN  UINT16                  Timeout,
   OUT UINT32                  *Result
-);
+  );
 
 //
 // USB Atapi implementation
 //
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1AtapiCommand (
@@ -82,15 +82,15 @@ CBI1AtapiCommand (
   IN  UINT32                    BufferLength,
   IN  EFI_USB_DATA_DIRECTION    Direction,
   IN  UINT16                    TimeOutInMilliSeconds
-);
+  );
 
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1MassStorageReset (
-  IN  EFI_USB_ATAPI_PROTOCOL    *This,
+  IN  EFI_USB_ATAPI_PROTOCOL      *This,
   IN  BOOLEAN                     ExtendedVerification
-);
+  );
 
 //
 // CBI1 Driver Binding Protocol
@@ -104,7 +104,7 @@ CBI1DriverBindingSupported (
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
   );
 
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1DriverBindingStart (
@@ -128,13 +128,13 @@ Cbi1ReportStatusCode (
   IN  EFI_USB_IO_PROTOCOL       *UsbIo,
   IN  EFI_STATUS_CODE_TYPE      CodeType,
   IN  EFI_STATUS_CODE_VALUE     Value
-);
+  );
 
 EFI_GUID  gEfiUsbCbi1DriverGuid = {
   0x565f7885, 0x447e, 0x44bc, 0x8f, 0xf5, 0x5c, 0x82, 0x6a, 0x51, 0xac, 0xb1
 };
 
-EFI_DRIVER_BINDING_PROTOCOL gCBI1DriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL   gCBI1DriverBinding = {
   CBI1DriverBindingSupported,
   CBI1DriverBindingStart,
   CBI1DriverBindingStop,
@@ -144,19 +144,19 @@ EFI_DRIVER_BINDING_PROTOCOL gCBI1DriverBinding = {
 };
 
 STATIC EFI_USB_ATAPI_PROTOCOL CBI1AtapiProtocol = {
-    CBI1AtapiCommand,
-    CBI1MassStorageReset,
-    0
+  CBI1AtapiCommand,
+  CBI1MassStorageReset,
+  0
 };
 
 //
 // CBI1 Driver Entry Point
 //
-EFI_DRIVER_ENTRY_POINT(UsbCBI1DriverEntryPoint)
+EFI_DRIVER_ENTRY_POINT (UsbCBI1DriverEntryPoint)
 
 EFI_STATUS
 EFIAPI
-UsbCBI1DriverEntryPoint(
+UsbCBI1DriverEntryPoint (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   )
@@ -173,19 +173,21 @@ Returns:
   other       - Driver not loaded
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallDriverBinding (
-          ImageHandle, 
-          SystemTable, 
-          &gCBI1DriverBinding, 
+          ImageHandle,
+          SystemTable,
+          &gCBI1DriverBinding,
           ImageHandle
-         );
+          );
 }
 
 //
 // CBI1 Driver Binding implementation
 //
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1DriverBindingSupported (
@@ -211,57 +213,57 @@ CBI1DriverBindingSupported (
 
 --*/
 {
-    EFI_STATUS                    Status;
-    EFI_USB_IO_PROTOCOL           *UsbIo;
-    EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
+  EFI_STATUS                    Status;
+  EFI_USB_IO_PROTOCOL           *UsbIo;
+  EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
 
-    //
-    // Check if the Controller supports USB IO protocol
-    //
-    Status = gBS->OpenProtocol (
-                    ControllerHandle,
-                    &gEfiUsbIoProtocolGuid,
-                    &UsbIo,
-                    This->DriverBindingHandle,
-                    ControllerHandle,
-                    EFI_OPEN_PROTOCOL_BY_DRIVER
+  //
+  // Check if the Controller supports USB IO protocol
+  //
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiUsbIoProtocolGuid,
+                  &UsbIo,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
-    //
-    // Get the Controller interface descriptor
-    //
-    Status = UsbIo->UsbGetInterfaceDescriptor(
-                      UsbIo,
-                      &InterfaceDescriptor
+  //
+  // Get the Controller interface descriptor
+  //
+  Status = UsbIo->UsbGetInterfaceDescriptor (
+                    UsbIo,
+                    &InterfaceDescriptor
                     );
-    if(EFI_ERROR(Status)) {
-      goto Exit;
-    }
+  if (EFI_ERROR (Status)) {
+    goto Exit;
+  }
 
-    //
-    // Bug here: just let Vendor specific CBI protocol get supported
-    //
-    if(!((InterfaceDescriptor.InterfaceClass == 0xFF)
-        && (InterfaceDescriptor.InterfaceProtocol == 0))) {
-        Status = EFI_UNSUPPORTED;
-        goto Exit;
-    }
+  //
+  // Bug here: just let Vendor specific CBI protocol get supported
+  //
+  if (!((InterfaceDescriptor.InterfaceClass == 0xFF) &&
+        (InterfaceDescriptor.InterfaceProtocol == 0))) {
+    Status = EFI_UNSUPPORTED;
+    goto Exit;
+  }
 
 Exit:
-    gBS->CloseProtocol(
-            ControllerHandle,
-            &gEfiUsbIoProtocolGuid,
-            This->DriverBindingHandle,
-            ControllerHandle
-          );
-    return Status;
+  gBS->CloseProtocol (
+        ControllerHandle,
+        &gEfiUsbIoProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
+  return Status;
 
 }
 
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1DriverBindingStart (
@@ -288,13 +290,13 @@ CBI1DriverBindingStart (
 
 --*/
 {
-  USB_CBI_DEVICE                  *UsbCbiDev;
-  UINT8                           Index;
-  EFI_USB_ENDPOINT_DESCRIPTOR     EndpointDescriptor;
-  EFI_USB_INTERFACE_DESCRIPTOR    InterfaceDescriptor;
-  EFI_STATUS                      Status;
-  EFI_USB_IO_PROTOCOL             *UsbIo;
-  BOOLEAN                         Found;
+  USB_CBI_DEVICE                *UsbCbiDev;
+  UINT8                         Index;
+  EFI_USB_ENDPOINT_DESCRIPTOR   EndpointDescriptor;
+  EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
+  EFI_STATUS                    Status;
+  EFI_USB_IO_PROTOCOL           *UsbIo;
+  BOOLEAN                       Found;
 
   Found = FALSE;
   //
@@ -309,7 +311,7 @@ CBI1DriverBindingStart (
                   This->DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
-                );
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -317,60 +319,61 @@ CBI1DriverBindingStart (
   //
   // Get the controller interface descriptor
   //
-  Status = UsbIo->UsbGetInterfaceDescriptor(
+  Status = UsbIo->UsbGetInterfaceDescriptor (
                     UsbIo,
                     &InterfaceDescriptor
-                  );
-  if(EFI_ERROR(Status)) {
+                    );
+  if (EFI_ERROR (Status)) {
     goto ErrorExit;
   }
 
   CBI1AtapiProtocol.CommandProtocol = InterfaceDescriptor.InterfaceSubClass;
-  
-  UsbCbiDev = EfiLibAllocateZeroPool (sizeof (USB_CBI_DEVICE));
-  if(UsbCbiDev == NULL) {
+
+  UsbCbiDev                         = EfiLibAllocateZeroPool (sizeof (USB_CBI_DEVICE));
+  if (UsbCbiDev == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
     goto ErrorExit;
   }
 
-  UsbCbiDev->Signature = USB_CBI_DEVICE_SIGNATURE;
-  UsbCbiDev->UsbIo = UsbIo;
-  UsbCbiDev->InterfaceDescriptor = InterfaceDescriptor;
-  UsbCbiDev->UsbAtapiProtocol = CBI1AtapiProtocol;
+  UsbCbiDev->Signature            = USB_CBI_DEVICE_SIGNATURE;
+  UsbCbiDev->UsbIo                = UsbIo;
+  UsbCbiDev->InterfaceDescriptor  = InterfaceDescriptor;
+  UsbCbiDev->UsbAtapiProtocol     = CBI1AtapiProtocol;
 
-  for(Index = 0; Index < InterfaceDescriptor.NumEndpoints; Index++) {
-      UsbIo->UsbGetEndpointDescriptor(
-              UsbIo,
-              Index,
-              &EndpointDescriptor
+  for (Index = 0; Index < InterfaceDescriptor.NumEndpoints; Index++) {
+    UsbIo->UsbGetEndpointDescriptor (
+            UsbIo,
+            Index,
+            &EndpointDescriptor
             );
 
-      //
-      // We parse bulk endpoint
-      //
-      if(EndpointDescriptor.Attributes == 0x02) {
-            if(EndpointDescriptor.EndpointAddress & 0x80) {
-                UsbCbiDev->BulkInEndpointDescriptor = EndpointDescriptor;
-            } else {
-                UsbCbiDev->BulkOutEndpointDescriptor = EndpointDescriptor;
-            }
-            Found = TRUE;
+    //
+    // We parse bulk endpoint
+    //
+    if (EndpointDescriptor.Attributes == 0x02) {
+      if (EndpointDescriptor.EndpointAddress & 0x80) {
+        UsbCbiDev->BulkInEndpointDescriptor = EndpointDescriptor;
+      } else {
+        UsbCbiDev->BulkOutEndpointDescriptor = EndpointDescriptor;
       }
 
-      //
-      // We parse interrupt endpoint
-      //
-      if(EndpointDescriptor.Attributes == 0x03) {
-        UsbCbiDev->InterruptEndpointDescriptor = EndpointDescriptor;
-        Found = TRUE;
-      }
+      Found = TRUE;
+    }
+
+    //
+    // We parse interrupt endpoint
+    //
+    if (EndpointDescriptor.Attributes == 0x03) {
+      UsbCbiDev->InterruptEndpointDescriptor  = EndpointDescriptor;
+      Found = TRUE;
+    }
 
   }
 
   //
   // Double check we have these
   //
-  if(!Found) {
+  if (!Found) {
     goto ErrorExit;
   }
 
@@ -379,20 +382,19 @@ CBI1DriverBindingStart (
   // it will be called by upper layer drivers such as Fat
   //
   Cbi1ReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_PC_ENABLE)
-      );
-
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_PC_ENABLE)
+    );
 
   Status = gBS->InstallProtocolInterface (
                   &ControllerHandle,
                   &gEfiUsbAtapiProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &UsbCbiDev->UsbAtapiProtocol
-                );
+                  );
 
-  if(EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     goto ErrorExit;
   }
 
@@ -400,21 +402,21 @@ CBI1DriverBindingStart (
 
 ErrorExit:
   gBS->CloseProtocol (
-         ControllerHandle,
-         &gEfiUsbIoProtocolGuid,
-         This->DriverBindingHandle,
-         ControllerHandle
-       );
+        ControllerHandle,
+        &gEfiUsbIoProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
-  if(UsbCbiDev != NULL) {
-    gBS->FreePool(UsbCbiDev);
+  if (UsbCbiDev != NULL) {
+    gBS->FreePool (UsbCbiDev);
   }
 
   return Status;
 
 }
 
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1DriverBindingStop (
@@ -440,11 +442,13 @@ CBI1DriverBindingStop (
     other               - This driver was not removed from this device
 
 --*/
+// TODO:    ControllerHandle - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  EFI_STATUS                    Status;
-  EFI_USB_ATAPI_PROTOCOL        *CBI1AtapiProtocol;
-  USB_CBI_DEVICE                *UsbCbiDev;
-  EFI_USB_IO_PROTOCOL           *UsbIo;
+  EFI_STATUS              Status;
+  EFI_USB_ATAPI_PROTOCOL  *CBI1AtapiProtocol;
+  USB_CBI_DEVICE          *UsbCbiDev;
+  EFI_USB_IO_PROTOCOL     *UsbIo;
 
   //
   // Get our context back.
@@ -461,21 +465,21 @@ CBI1DriverBindingStop (
     return EFI_UNSUPPORTED;
   }
 
-  UsbCbiDev = USB_CBI_DEVICE_FROM_THIS(CBI1AtapiProtocol);
+  UsbCbiDev = USB_CBI_DEVICE_FROM_THIS (CBI1AtapiProtocol);
 
-  UsbIo = UsbCbiDev->UsbIo;
-  
+  UsbIo     = UsbCbiDev->UsbIo;
+
   Cbi1ReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_PC_DISABLE)
-      );
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_PC_DISABLE)
+    );
 
   Status = gBS->UninstallProtocolInterface (
                   ControllerHandle,
                   &gEfiUsbAtapiProtocolGuid,
                   &UsbCbiDev->UsbAtapiProtocol
-                );
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -485,67 +489,71 @@ CBI1DriverBindingStop (
                   &gEfiUsbIoProtocolGuid,
                   This->DriverBindingHandle,
                   ControllerHandle
-                );
+                  );
 
-  gBS->FreePool(UsbCbiDev);
+  gBS->FreePool (UsbCbiDev);
 
   return Status;
 
 }
 
-
 //
 // CBI1 command
 //
-STATIC 
+STATIC
 EFI_STATUS
 CBI1CommandPhase (
   IN  USB_CBI_DEVICE          *UsbCbiDev,
   IN  VOID                    *Command,
   IN  UINT8                   CommandSize,
   OUT UINT32                  *Result
-)
+  )
 /*++
     In order to make consistence, CBI transportation protocol does only use
     the first 3 parameters. Other parameters are not used here.
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbCbiDev - add argument and description to function comment
+// TODO:    Command - add argument and description to function comment
+// TODO:    CommandSize - add argument and description to function comment
+// TODO:    Result - add argument and description to function comment
 {
-  EFI_STATUS            Status;
-//  UINT32                Result;
-  EFI_USB_IO_PROTOCOL   *UsbIo;
-  EFI_USB_DEVICE_REQUEST    Request;
-  UINT32                TimeOutInMilliSeconds;
+  EFI_STATUS              Status;
+  EFI_USB_IO_PROTOCOL     *UsbIo;
+  EFI_USB_DEVICE_REQUEST  Request;
+  UINT32                  TimeOutInMilliSeconds;
 
   UsbIo = UsbCbiDev->UsbIo;
 
-  EfiZeroMem ( &Request, sizeof(EFI_USB_DEVICE_REQUEST));
+  EfiZeroMem (&Request, sizeof (EFI_USB_DEVICE_REQUEST));
 
   //
   // Device request see CBI specification
   //
-  Request.RequestType = 0x21;
-  Request.Request = 0x00;
-  Request.Value = 0 ;
-  Request.Index = 0 ;
-  Request.Length = CommandSize;
-  
+  Request.RequestType   = 0x21;
+  Request.Request       = 0x00;
+  Request.Value         = 0;
+  Request.Index         = 0;
+  Request.Length        = CommandSize;
+
   TimeOutInMilliSeconds = 1000;
 
-  Status = UsbIo->UsbControlTransfer(
-              UsbIo,
-              &Request,
-              EfiUsbDataOut,
-              TimeOutInMilliSeconds,
-              Command,
-              CommandSize,
-              Result
-            );  
+  Status = UsbIo->UsbControlTransfer (
+                    UsbIo,
+                    &Request,
+                    EfiUsbDataOut,
+                    TimeOutInMilliSeconds,
+                    Command,
+                    CommandSize,
+                    Result
+                    );
 
-  return Status ;
+  return Status;
 }
 
-
-STATIC 
+STATIC
 EFI_STATUS
 CBI1DataPhase (
   IN  USB_CBI_DEVICE              *UsbCbiDev,
@@ -554,7 +562,27 @@ CBI1DataPhase (
   IN  EFI_USB_DATA_DIRECTION      Direction,
   IN  UINT16                      Timeout,
   OUT UINT32                      *Result
-)
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbCbiDev   - TODO: add argument description
+  DataSize    - TODO: add argument description
+  DataBuffer  - TODO: add argument description
+  Direction   - TODO: add argument description
+  Timeout     - TODO: add argument description
+  Result      - TODO: add argument description
+
+Returns:
+
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   EFI_STATUS          Status;
   EFI_USB_IO_PROTOCOL *UsbIo;
@@ -564,47 +592,47 @@ CBI1DataPhase (
   UINT32              MaxPacketLen;
   UINT8               *BufferPtr;
 
-  UsbIo = UsbCbiDev->UsbIo;
+  UsbIo     = UsbCbiDev->UsbIo;
 
-  Remain = DataSize;
-  BufferPtr = (UINT8 *)DataBuffer;
+  Remain    = DataSize;
+  BufferPtr = (UINT8 *) DataBuffer;
 
   //
   // retrieve the the max packet length of the given endpoint
   //
-  if ( Direction == EfiUsbDataIn ) {
-    MaxPacketLen = (UsbCbiDev->BulkInEndpointDescriptor).MaxPacketSize;
-    EndpointAddr = (UsbCbiDev->BulkInEndpointDescriptor).EndpointAddress;
+  if (Direction == EfiUsbDataIn) {
+    MaxPacketLen  = (UsbCbiDev->BulkInEndpointDescriptor).MaxPacketSize;
+    EndpointAddr  = (UsbCbiDev->BulkInEndpointDescriptor).EndpointAddress;
   } else {
-    MaxPacketLen = (UsbCbiDev->BulkOutEndpointDescriptor).MaxPacketSize;
-    EndpointAddr = (UsbCbiDev->BulkOutEndpointDescriptor).EndpointAddress;
+    MaxPacketLen  = (UsbCbiDev->BulkOutEndpointDescriptor).MaxPacketSize;
+    EndpointAddr  = (UsbCbiDev->BulkOutEndpointDescriptor).EndpointAddress;
   }
 
-  while ( Remain > 0 ) {
+  while (Remain > 0) {
     //
     // Using 15 packets to aVOID Bitstuff error
     //
-    if ( Remain > 15 * MaxPacketLen) {
+    if (Remain > 15 * MaxPacketLen) {
       Increment = 15 * MaxPacketLen;
     } else {
-      Increment = Remain ;
+      Increment = Remain;
     }
 
-    Status = UsbIo->UsbBulkTransfer(
-                UsbIo,
-                EndpointAddr,
-                BufferPtr,
-                &Increment,
-                Timeout,
-                Result
-              );
+    Status = UsbIo->UsbBulkTransfer (
+                      UsbIo,
+                      EndpointAddr,
+                      BufferPtr,
+                      &Increment,
+                      Timeout,
+                      Result
+                      );
 
-    if(EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       goto ErrorExit;
     }
 
     BufferPtr += Increment;
-    Remain -= Increment ;
+    Remain -= Increment;
   }
 
   return EFI_SUCCESS;
@@ -613,27 +641,27 @@ ErrorExit:
 
   if (Direction == EfiUsbDataIn) {
     Cbi1ReportStatusCode (
-        UsbIo,
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_EC_INPUT_ERROR)
-        ); 
+      UsbIo,
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_EC_INPUT_ERROR)
+      );
   } else {
     Cbi1ReportStatusCode (
-        UsbIo,
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_EC_OUTPUT_ERROR)
-        ); 
+      UsbIo,
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_EC_OUTPUT_ERROR)
+      );
   }
 
-  if(((*Result) & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
+  if (((*Result) & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
     //
-    //just endpoint stall happens
+    // just endpoint stall happens
     //
-    UsbClearEndpointHalt(
-        UsbIo,
-        EndpointAddr,
-        Result
-    );
+    UsbClearEndpointHalt (
+      UsbIo,
+      EndpointAddr,
+      Result
+      );
   }
 
   return Status;
@@ -642,7 +670,7 @@ ErrorExit:
 //
 // CBI1 USB ATAPI Protocol
 //
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1MassStorageReset (
@@ -672,17 +700,17 @@ CBI1MassStorageReset (
   UINT8               EndpointAddr;
   UINT32              Result;
 
-  UsbCbiDev = USB_CBI_DEVICE_FROM_THIS(This);
-  UsbIo = UsbCbiDev->UsbIo;
+  UsbCbiDev = USB_CBI_DEVICE_FROM_THIS (This);
+  UsbIo     = UsbCbiDev->UsbIo;
 
   Cbi1ReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_PC_RESET)
-      );
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_PC_RESET)
+    );
 
   if (ExtendedVerification) {
-    UsbIo->UsbPortReset(UsbIo);
+    UsbIo->UsbPortReset (UsbIo);
   }
 
   //
@@ -690,42 +718,42 @@ CBI1MassStorageReset (
   //
   ResetCommand[0] = 0x1d;
   ResetCommand[1] = 0x04;
-  for(Index = 2; Index < 12; Index++) {
+  for (Index = 2; Index < 12; Index++) {
     ResetCommand[Index] = 0xff;
   }
 
-  Status = CBI1CommandPhase(
-              UsbCbiDev,
-              ResetCommand,
-              12,
-              &Result
-           );
+  Status = CBI1CommandPhase (
+            UsbCbiDev,
+            ResetCommand,
+            12,
+            &Result
+            );
 
   //
   // clear bulk in endpoint stall feature
   //
   EndpointAddr = (UsbCbiDev->BulkInEndpointDescriptor).EndpointAddress;
-  UsbClearEndpointHalt(
-        UsbIo,
-        EndpointAddr,
-        &Result
+  UsbClearEndpointHalt (
+    UsbIo,
+    EndpointAddr,
+    &Result
     );
 
   //
   // clear bulk out endpoint stall feature
   //
   EndpointAddr = (UsbCbiDev->BulkOutEndpointDescriptor).EndpointAddress;
-  UsbClearEndpointHalt(
+  UsbClearEndpointHalt (
     UsbIo,
     EndpointAddr,
     &Result
-  );
+    );
 
-  return EFI_SUCCESS ;
+  return EFI_SUCCESS;
 
 }
 
-STATIC 
+STATIC
 EFI_STATUS
 EFIAPI
 CBI1AtapiCommand (
@@ -756,95 +784,109 @@ CBI1AtapiCommand (
     EFI_DEVICE_ERROR    - Command failed.
 
 --*/
+// TODO:    TimeOutInMilliSeconds - add argument and description to function comment
 {
-  EFI_STATUS              Status;
-  USB_CBI_DEVICE          *UsbCbiDev;
-  UINT32                  Result;
-  UINT8                   Index;
-  UINT8                   MaxRetryNum;
+  EFI_STATUS      Status;
+  USB_CBI_DEVICE  *UsbCbiDev;
+  UINT32          Result;
+  UINT8           Index;
+  UINT8           MaxRetryNum;
 
-  UsbCbiDev = USB_CBI_DEVICE_FROM_THIS(This);
-  
+  UsbCbiDev   = USB_CBI_DEVICE_FROM_THIS (This);
+
   MaxRetryNum = 3;
-  
-  for (Index = 0 ; Index < MaxRetryNum; Index ++) {
+
+  for (Index = 0; Index < MaxRetryNum; Index++) {
   
     //
     // First send ATAPI command through CBI1
     //
-    Status = CBI1CommandPhase(
-                UsbCbiDev,
-                Command,
-                CommandSize,
-                &Result
-             );
+    Status = CBI1CommandPhase (
+              UsbCbiDev,
+              Command,
+              CommandSize,
+              &Result
+              );
     if (EFI_ERROR (Status)) {
 
-      switch (Result) {        
-        //
-        // when meeting the first 3 err code,
-        // no need to perform retry
-        //        
-        case EFI_USB_NOERROR:
-        case EFI_USB_ERR_STALL:
-        case EFI_USB_ERR_SYSTEM:
-          return EFI_DEVICE_ERROR;
-          
-        default:
-          continue;
-          break;
+      switch (Result) {
+      //
+      // when meeting the first 3 err code,
+      // no need to perform retry
+      //
+      case EFI_USB_NOERROR:
+      case EFI_USB_ERR_STALL:
+      case EFI_USB_ERR_SYSTEM:
+        return EFI_DEVICE_ERROR;
+
+      default:
+        continue;
+        break;
       }
     } else {
       break;
     }
   }
-  
+
   if (Index == MaxRetryNum) {
     return EFI_DEVICE_ERROR;
   }
-  
-  for (Index = 0 ; Index < MaxRetryNum; Index ++) {
+
+  for (Index = 0; Index < MaxRetryNum; Index++) {
     //
     // Send/Get Data if there is a Data Stage
     //
-    switch(Direction) {
-      case EfiUsbDataIn:  // fall through
-      case EfiUsbDataOut:
-        Status = CBI1DataPhase(
-                  UsbCbiDev,
-                  BufferLength,
-                  DataBuffer,
-                  Direction,
-                  TimeOutInMilliSeconds,
-                  &Result
-                 );
-  
-        if (EFI_ERROR(Status)) {
+    switch (Direction) {
 
-          switch (Result) {
-            
-            //
-            // when meeting the first 3 err code,
-            // no need to perform retry
-            //
-            case EFI_USB_NOERROR:     // fall through
-            case EFI_USB_ERR_STALL:   // fall through
-            case EFI_USB_ERR_SYSTEM:  // fall through
-              return EFI_DEVICE_ERROR;
-              
-            default:
-              continue;
-              break;
-          }
+    //
+    // fall through
+    //
+    case EfiUsbDataIn:
+    case EfiUsbDataOut:
+      Status = CBI1DataPhase (
+                UsbCbiDev,
+                BufferLength,
+                DataBuffer,
+                Direction,
+                TimeOutInMilliSeconds,
+                &Result
+                );
+
+      if (EFI_ERROR (Status)) {
+
+        switch (Result) {
+        //
+        // when meeting the first 3 err code,
+        // no need to perform retry
+        //
+
+        //
+        // fall through
+        //
+        case EFI_USB_NOERROR:
+        //
+        // fall through
+        //
+        case EFI_USB_ERR_STALL:
+        //
+        // fall through
+        //
+        case EFI_USB_ERR_SYSTEM:
+          return EFI_DEVICE_ERROR;
+
+        default:
+          continue;
+          break;
+        }
 
       } else {
 
-          return EFI_SUCCESS;
-        }
-        break;
-    
-      case EfiUsbNoData:
         return EFI_SUCCESS;
+      }
+      break;
+
+    case EfiUsbNoData:
+      return EFI_SUCCESS;
     }
   }
   //
@@ -858,7 +900,7 @@ Cbi1ReportStatusCode (
   IN  EFI_USB_IO_PROTOCOL       *UsbIo,
   IN  EFI_STATUS_CODE_TYPE      CodeType,
   IN  EFI_STATUS_CODE_VALUE     Value
-)
+  )
 /*++
 
   Routine Description:
@@ -873,19 +915,20 @@ Cbi1ReportStatusCode (
     None
 
 --*/
+// TODO:    Value - add argument and description to function comment
 {
-  USB_IO_CONTROLLER_DEVICE        *UsbIoController;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
 
   //
   // Initialize status code structure
-  // 
+  //
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (UsbIo);
 
   ReportStatusCodeWithDevicePath (
-        CodeType,
-        Value,
-        0,
-        &gEfiUsbCbi1DriverGuid,
-        UsbIoController->DevicePath
-        );
+    CodeType,
+    Value,
+    0,
+    &gEfiUsbCbi1DriverGuid,
+    UsbIoController->DevicePath
+    );
 }

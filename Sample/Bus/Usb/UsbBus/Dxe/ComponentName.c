@@ -46,7 +46,7 @@ UsbBusComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gUsbBusComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gUsbBusComponentName = {
   UsbBusComponentNameGetDriverName,
   UsbBusComponentNameGetControllerName,
   "eng"
@@ -54,7 +54,7 @@ EFI_COMPONENT_NAME_PROTOCOL gUsbBusComponentName = {
 
 STATIC EFI_UNICODE_STRING_TABLE mUsbBusDriverNameTable[] = {
   { "eng", L"USB Bus Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -92,11 +92,11 @@ UsbBusComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gUsbBusComponentName.SupportedLanguages,
-           mUsbBusDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gUsbBusComponentName.SupportedLanguages,
+          mUsbBusDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS

@@ -37,23 +37,22 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 #include EFI_PROTOCOL_DEFINITION (DiskIo)
 
+#define DISK_IO_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32 ('d', 's', 'k', 'I')
 
-#define DISK_IO_PRIVATE_DATA_SIGNATURE   EFI_SIGNATURE_32('d','s','k','I')
-
-#define DATA_BUFFER_BLOCK_NUM    (64)
+#define DATA_BUFFER_BLOCK_NUM           (64)
 
 typedef struct {
-  UINTN                   Signature;
-  EFI_DISK_IO_PROTOCOL    DiskIo;
-  EFI_BLOCK_IO_PROTOCOL   *BlockIo;
+  UINTN                 Signature;
+  EFI_DISK_IO_PROTOCOL  DiskIo;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
 } DISK_IO_PRIVATE_DATA;
 
-#define DISK_IO_PRIVATE_DATA_FROM_THIS(a) CR(a, DISK_IO_PRIVATE_DATA, DiskIo, DISK_IO_PRIVATE_DATA_SIGNATURE)
+#define DISK_IO_PRIVATE_DATA_FROM_THIS(a) CR (a, DISK_IO_PRIVATE_DATA, DiskIo, DISK_IO_PRIVATE_DATA_SIGNATURE)
 
 //
 // Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL gDiskIoDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gDiskIoComponentName;
+extern EFI_DRIVER_BINDING_PROTOCOL  gDiskIoDriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL  gDiskIoComponentName;
 
 #endif

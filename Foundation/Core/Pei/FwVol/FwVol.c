@@ -208,7 +208,7 @@ Returns:
         FileLength = *(UINT32 *)(FfsFileHeader->Size) & 0x00FFFFFF;
         FileOccupiedSize = GETOCCUPIEDSIZE(FileLength, 8);
         if (Flag) {
-          if ((FfsFileHeader->Type == EFI_FV_FILETYPE_PEIM) || \
+          if ((FfsFileHeader->Type == EFI_FV_FILETYPE_PEIM) || 
               (FfsFileHeader->Type == EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER)) { 
             
             *FileHeader = FfsFileHeader;
@@ -217,7 +217,7 @@ Returns:
             return EFI_SUCCESS;
           }
         } else {        
-          if ((SearchType == FfsFileHeader->Type) || \
+          if ((SearchType == FfsFileHeader->Type) || 
               (SearchType == EFI_FV_FILETYPE_ALL)) { 
           
             *FileHeader = FfsFileHeader;
@@ -426,6 +426,10 @@ Arguments:
 Returns:
   Pointer to the Firmware Volume instance requested
 
+  EFI_INVALID_PARAMETER     - FwVolHeader is NULL
+  
+  EFI_SUCCESS               - Firmware volume instance successfully found.
+
 --*/
 {
   PEI_CORE_INSTANCE       *PrivateData;
@@ -454,20 +458,23 @@ Returns:
     // Locate all instances of FindFV
     // Alternately, could use FV HOBs, but the PPI is cleaner
     //
-    Status = (**PeiServices).LocatePpi  (PeiServices,
-                                         &gEfiFindFvPpiGuid,
-                                         0,
-                                         NULL,
-                                         &FindFvPpi);
+    Status = (**PeiServices).LocatePpi (
+                              PeiServices,
+                              &gEfiFindFvPpiGuid,
+                              0,
+                              NULL,
+                              &FindFvPpi
+                              );
 
     if (Status != EFI_SUCCESS) {
       Status = EFI_NOT_FOUND;
     } else {
-      Status = FindFvPpi->FindFv (FindFvPpi,
-                                  PeiServices,
-                                  &LocalInstance,
-                                  FwVolHeader
-                                  );  
+      Status = FindFvPpi->FindFv (
+                            FindFvPpi,
+                            PeiServices,
+                            &LocalInstance,
+                            FwVolHeader
+                            );  
 
     }
   }

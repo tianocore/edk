@@ -15,9 +15,9 @@ Module Name:
 
 Abstract:
 
-  WinNt Load File PPI as defined in EFI 2.0
+  WinNt Load File PPI.
 
-  When the PEI core is done it calls the DXE IPL via this PPI.
+  When the PEI core is done it calls the DXE IPL via PPI
 
 --*/
 
@@ -27,30 +27,40 @@ Abstract:
 #include "Tiano.h"
 #include "PeiHob.h"
 
-#define PEI_LOAD_FILE_PRIVATE_GUID \
-  { 0xfd0c65eb, 0x405, 0x4cd2, 0x8a, 0xee, 0xf4, 0x0, 0xef, 0x13, 0xba, 0xc2 }
+#define NT_PEI_LOAD_FILE_GUID \
+  { \
+    0xfd0c65eb, 0x405, 0x4cd2, 0x8a, 0xee, 0xf4, 0x0, 0xef, 0x13, 0xba, 0xc2 \
+  }
 
 typedef
 EFI_STATUS
-(EFIAPI *PEI_NT_LOAD_FILE) (
+(EFIAPI *NT_PEI_LOAD_FILE) (
   VOID                  *Pe32Data,
   EFI_PHYSICAL_ADDRESS  *ImageAddress,
   UINT64                *ImageSize,
   EFI_PHYSICAL_ADDRESS  *EntryPoint
   );
 
-EFI_FORWARD_DECLARATION (PEI_NT_CALLBACK_PROTOCOL);
+/*++
 
-typedef struct _PEI_NT_CALLBACK_PROTOCOL {
-  //
-  //  OK, so now load all of the stuff that was formerly GLOBAL in the
-  //  SecMain utility.  This stuff was only consumed by this protocol.
-  //  This protocol thing needs to be declared, but members can be privately
-  //  scoped.  
-  //
-  PEI_NT_LOAD_FILE  PeiLoadFileService;
-} PEI_NT_CALLBACK_PROTOCOL;
+Routine Description:
+  Loads and relocates a PE/COFF image into memory.
 
-extern EFI_GUID gPeiLoadFileGuid;
+Arguments:
+  Pe32Data         - The base address of the PE/COFF file that is to be loaded and relocated
+  ImageAddress     - The base address of the relocated PE/COFF image
+  ImageSize        - The size of the relocated PE/COFF image
+  EntryPoint       - The entry point of the relocated PE/COFF image
+
+Returns:
+  EFI_SUCCESS   - The file was loaded and relocated
+  EFI_OUT_OF_RESOURCES - There was not enough memory to load and relocate the PE/COFF file
+
+--*/
+typedef struct {
+  NT_PEI_LOAD_FILE  PeiLoadFileService;
+} NT_PEI_LOAD_FILE_PPI;
+
+extern EFI_GUID gNtPeiLoadFileGuid;
 
 #endif

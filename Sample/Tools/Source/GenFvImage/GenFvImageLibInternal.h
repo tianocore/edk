@@ -20,22 +20,19 @@ Abstract:
 
 --*/
 
-#ifndef   _EFI_GEN_FV_IMAGE_LIB_INTERNAL_H
-#define   _EFI_GEN_FV_IMAGE_LIB_INTERNAL_H
+#ifndef _EFI_GEN_FV_IMAGE_LIB_INTERNAL_H
+#define _EFI_GEN_FV_IMAGE_LIB_INTERNAL_H
 
 //
 // Include files
 //
-
 #include "GenFvImageLib.h"
 #include <stdlib.h>
 #include "EfiFirmwareVolumeHeader.h"
 
-
 //
 // Private data declarations
 //
-
 //
 // The maximum number of block map entries supported by the library
 //
@@ -44,13 +41,12 @@ Abstract:
 //
 // The maximum number of files in the FV supported by the library
 //
-#define MAX_NUMBER_OF_FILES_IN_FV 1000
-#define MAX_NUMBER_OF_COMPONENTS_IN_FV 10
+#define MAX_NUMBER_OF_FILES_IN_FV       1000
+#define MAX_NUMBER_OF_COMPONENTS_IN_FV  10
 
 //
 // INF file strings
 //
-
 #define OPTIONS_SECTION_STRING            "[options]"
 #define ATTRIBUTES_SECTION_STRING         "[attributes]"
 #define FILES_SECTION_STRING              "[files]"
@@ -99,74 +95,73 @@ Abstract:
 //
 // Component sections
 //
-#define EFI_NV_VARIABLE_STRING            "EFI_NV_VARIABLE"
-#define EFI_NV_EVENT_LOG_STRING           "EFI_NV_EVENT_LOG"
-#define EFI_NV_FTW_WORKING_STRING         "EFI_NV_FTW_WORKING"
-#define EFI_NV_FTW_SPARE_STRING           "EFI_NV_FTW_SPARE"
+#define EFI_NV_VARIABLE_STRING    "EFI_NV_VARIABLE"
+#define EFI_NV_EVENT_LOG_STRING   "EFI_NV_EVENT_LOG"
+#define EFI_NV_FTW_WORKING_STRING "EFI_NV_FTW_WORKING"
+#define EFI_NV_FTW_SPARE_STRING   "EFI_NV_FTW_SPARE"
 
-#define EFI_FILE_NAME_STRING              "EFI_FILE_NAME"
+#define EFI_FILE_NAME_STRING      "EFI_FILE_NAME"
 
-#define ONE_STRING                        "1"
-#define ZERO_STRING                       "0"
-#define TRUE_STRING                       "TRUE"
-#define FALSE_STRING                      "FALSE"
-#define NULL_STRING                       "NULL"
+#define ONE_STRING                "1"
+#define ZERO_STRING               "0"
+#define TRUE_STRING               "TRUE"
+#define FALSE_STRING              "FALSE"
+#define NULL_STRING               "NULL"
 
 //
 // Defines to calculate the offset for PEI CORE entry points
 //
-#define   IA32_PEI_CORE_ENTRY_OFFSET      0x20
+#define IA32_PEI_CORE_ENTRY_OFFSET  0x20
 
 //
-//Defines to calculate the FIT table
+// Defines to calculate the FIT table
 //
-#define   IPF_FIT_ADDRESS_OFFSET          0x20
+#define IPF_FIT_ADDRESS_OFFSET  0x20
 
 //
 // Defines to calculate the offset for SALE_ENTRY
 //
-#define   IPF_SALE_ENTRY_ADDRESS_OFFSET   0x18
+#define IPF_SALE_ENTRY_ADDRESS_OFFSET 0x18
 
 //
 // Symbol file definitions, current max size if 512K
 //
-#define SYMBOL_FILE_SIZE                  0x80000
+#define SYMBOL_FILE_SIZE  0x80000
 
 //
 // Private data types
 //
-
 //
 // Component information
 //
 typedef struct {
-  UINTN                     Size;
-  CHAR8                     ComponentName[_MAX_PATH];
+  UINTN Size;
+  CHAR8 ComponentName[_MAX_PATH];
 } COMPONENT_INFO;
 
 //
 // FV information holder
 //
 typedef struct {
-  EFI_PHYSICAL_ADDRESS      BaseAddress;
-  EFI_GUID                  FvGuid;
-  UINTN                     Size;
-  CHAR8                     FvName[_MAX_PATH];
-  CHAR8                     SymName[_MAX_PATH];
-  EFI_FV_BLOCK_MAP_ENTRY    FvBlocks[MAX_NUMBER_OF_FV_BLOCKS];
-  EFI_FVB_ATTRIBUTES        FvAttributes;
-  CHAR8                     FvFiles[MAX_NUMBER_OF_FILES_IN_FV][_MAX_PATH];
-  COMPONENT_INFO            FvComponents[MAX_NUMBER_OF_COMPONENTS_IN_FV];
+  EFI_PHYSICAL_ADDRESS    BaseAddress;
+  EFI_GUID                FvGuid;
+  UINTN                   Size;
+  CHAR8                   FvName[_MAX_PATH];
+  CHAR8                   SymName[_MAX_PATH];
+  EFI_FV_BLOCK_MAP_ENTRY  FvBlocks[MAX_NUMBER_OF_FV_BLOCKS];
+  EFI_FVB_ATTRIBUTES      FvAttributes;
+  CHAR8                   FvFiles[MAX_NUMBER_OF_FILES_IN_FV][_MAX_PATH];
+  COMPONENT_INFO          FvComponents[MAX_NUMBER_OF_COMPONENTS_IN_FV];
 } FV_INFO;
 
 //
 // Private function prototypes
 //
-
 EFI_STATUS
 ParseFvInf (
   IN MEMORY_FILE  *InfFile,
   IN FV_INFO      *FvInfo
-  );
+  )
+;
 
 #endif

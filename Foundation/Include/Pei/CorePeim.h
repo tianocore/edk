@@ -30,14 +30,11 @@ Abstract:
 //
 // Make the PHIT base 0 for this implementation
 //
-
 #define PHIT_PHYSICAL_ADDRESS_BASE  0x00000000
 
 //
 // Peim Flags
 //
-
-
 #define EFI_NOT_RECOVERY            0x0000000000000000
 #define EFI_RECOVERY                0x0000000000000001
 
@@ -57,12 +54,10 @@ Abstract:
 #define IMPORT_FLAG_LAST_ENTRY      0x8000
 #define IMPORT_FLAG_LAST_ENTRY_POS  0xf
 
-
-#define BIT0            0x0000000000000001
-#define BIT1            0x0000000000000002
+#define BIT0                        0x0000000000000001
+#define BIT1                        0x0000000000000002
 
 typedef UINT16  PPI_FLAGS;
-
 
 typedef struct {
   UINT16  SpecMinor;
@@ -72,4 +67,3 @@ typedef struct {
 } EFI_PEIM_VERSION;
 
 #endif
-

@@ -40,14 +40,15 @@ BootManagerCallbackRoutine (
   IN EFI_IFR_DATA_ARRAY               *DataArray,
   OUT EFI_HII_CALLBACK_PACKET         **Packet
   );
-  
+
 VOID
 CallBootManager (
   VOID
 );
 
-#define BOOT_MANAGER_GUID  \
-  {0x847bc3fe, 0xb974, 0x446d, 0x94, 0x49, 0x5a, 0xd5, 0x41, 0x2e, 0x99, 0x3b}
+#define BOOT_MANAGER_GUID \
+  { \
+    0x847bc3fe, 0xb974, 0x446d, 0x94, 0x49, 0x5a, 0xd5, 0x41, 0x2e, 0x99, 0x3b \
+  }
 
-  
 #endif

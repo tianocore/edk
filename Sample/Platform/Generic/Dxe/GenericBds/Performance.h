@@ -19,6 +19,7 @@ Abstract:
   definition.
 
 --*/
+
 #ifndef _PERF_H_
 #define _PERF_H_
 
@@ -31,23 +32,23 @@ Abstract:
 #include EFI_GUID_DEFINITION (Acpi)
 #include EFI_GUID_DEFINITION (GlobalVariable)
 
-#define EFI_PERF_TOKEN_LENGTH        28
-#define EFI_PERF_PEI_ENTRY_MAX_NUM   50
+#define EFI_PERF_TOKEN_LENGTH       28
+#define EFI_PERF_PEI_ENTRY_MAX_NUM  50
 
 typedef struct {
-  CHAR8    Token[EFI_PERF_TOKEN_LENGTH];
-  UINT32   Duration;
+  CHAR8   Token[EFI_PERF_TOKEN_LENGTH];
+  UINT32  Duration;
 } EFI_PERF_DATA;
 
 typedef struct {
-  UINT64    BootToOs;
-  UINT64    S3Resume;
-  UINT32    S3EntryNum;
-  EFI_PERF_DATA  S3Entry[EFI_PERF_PEI_ENTRY_MAX_NUM];
-  UINT64    CpuFreq;
-  UINT64    BDSRaw;
-  UINT32    Count;
-  UINT32    Signiture;
+  UINT64        BootToOs;
+  UINT64        S3Resume;
+  UINT32        S3EntryNum;
+  EFI_PERF_DATA S3Entry[EFI_PERF_PEI_ENTRY_MAX_NUM];
+  UINT64        CpuFreq;
+  UINT64        BDSRaw;
+  UINT32        Count;
+  UINT32        Signiture;
 } EFI_PERF_HEADER;
 
 VOID

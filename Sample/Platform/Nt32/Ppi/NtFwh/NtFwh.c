@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  NT FWH Information PPI GUID as defined in EFI 2.0
+  NT FWH Information PPI GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(NtFwh)
+#include EFI_PPI_DEFINITION (NtFwh)
 
-EFI_GUID gPeiFwhInformationGuid = PEI_NT_FWH_PRIVATE_GUID;
+EFI_GUID  gNtFwhPpiGuid = NT_FWH_PPI_GUID;
 
-EFI_GUID_STRING(&gPeiFwhInformationGuid, "NtFwh", "NT PEI FWH INFO PPI");
+EFI_GUID_STRING(&gNtFwhPpiGuid, "NtFwh", "NT PEI FWH INFO PPI");

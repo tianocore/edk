@@ -23,7 +23,9 @@ Abstract:
 #include "DxeCore.h"
 #include "EfiCommonLib.h"
 
-DEBUG_CODE (UINTN mErrorLevel = EFI_DBUG_MASK | EFI_D_LOAD;)
+DEBUG_CODE (
+  UINTN mErrorLevel = EFI_DBUG_MASK | EFI_D_LOAD;
+)
 
 EFI_DEVICE_HANDLE_EXTENDED_DATA mStatusCodeData = {
   sizeof (EFI_STATUS_CODE_DATA),
@@ -37,6 +39,25 @@ CoreReportProgressCodeSpecific (
   IN  EFI_STATUS_CODE_VALUE   Value,
   IN  EFI_HANDLE              Handle
   )
+/*++
+
+Routine Description:
+
+  Report status code of type EFI_PROGRESS_CODE by caller ID gEfiDxeServicesTableGuid, 
+  with a handle as additional information.
+    
+Arguments:
+
+  Value    - Describes the class/subclass/operation of the hardware or software entity 
+             that the Status Code relates to. 
+             
+  Handle   - Additional information.
+   
+Returns:
+
+  None
+
+--*/
 {
   mStatusCodeData.Handle = Handle;
 
@@ -53,6 +74,22 @@ VOID
 CoreReportProgressCode (
   IN  EFI_STATUS_CODE_VALUE   Value
   )
+/*++
+
+Routine Description:
+
+  Report status code of type EFI_PROGRESS_CODE by caller ID gEfiDxeServicesTableGuid.
+    
+Arguments:
+
+  Value    - Describes the class/subclass/operation of the hardware or software entity 
+             that the Status Code relates to. 
+   
+Returns:
+
+  None
+
+--*/
 {
   gRT->ReportStatusCode (
         EFI_PROGRESS_CODE,
@@ -68,6 +105,21 @@ VOID *
 CoreAllocateBootServicesPool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate pool of type EfiBootServicesData, the size is specified with AllocationSize.
+    
+Arguments:
+
+  AllocationSize    - Size to allocate.
+   
+Returns:
+
+  Pointer of the allocated pool.
+
+--*/
 {
   VOID  *Memory;
 
@@ -80,6 +132,21 @@ VOID *
 CoreAllocateZeroBootServicesPool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate pool of type EfiBootServicesData and zero it, the size is specified with AllocationSize.
+    
+Arguments:
+
+  AllocationSize    - Size to allocate.
+   
+Returns:
+
+  Pointer of the allocated pool.
+
+--*/
 {
   VOID  *Memory;
 
@@ -94,6 +161,23 @@ CoreAllocateCopyPool (
   IN  UINTN   AllocationSize,
   IN  VOID    *Buffer
   )
+/*++
+
+Routine Description:
+
+  Allocate pool of specified size with EfiBootServicesData type, and copy specified buffer to this pool.
+    
+Arguments:
+
+  AllocationSize    - Size to allocate.
+  
+  Buffer            - Specified buffer that will be copy to the allocated pool
+   
+Returns:
+
+  Pointer of the allocated pool.
+
+--*/
 {
   VOID  *Memory;
 
@@ -109,6 +193,21 @@ VOID *
 CoreAllocateRuntimePool (
   IN  UINTN   AllocationSize
   )
+/*++
+
+Routine Description:
+
+  Allocate pool of type EfiRuntimeServicesData, the size is specified with AllocationSize.
+    
+Arguments:
+
+  AllocationSize    - Size to allocate.
+   
+Returns:
+
+  Pointer of the allocated pool.
+
+--*/
 {
   VOID  *Memory;
 
@@ -121,6 +220,24 @@ CoreAllocateRuntimeCopyPool (
   IN  UINTN   AllocationSize,
   IN  VOID    *Buffer
   )
+/*++
+
+Routine Description:
+
+  Allocate pool of specified size with EfiRuntimeServicesData type, and copy specified buffer to this pool.
+    
+Arguments:
+
+  AllocationSize    - Size to allocate.
+  
+  Buffer            - Specified buffer that will be copy to the allocated pool
+   
+Returns:
+
+  Pointer of the allocated pool.
+
+--*/
+
 {
   VOID  *Memory;
 
@@ -434,9 +551,9 @@ Arguments:
 
   ProtocolGuid    - Protocol to register notification event on.
 
-  NotifTpl        - Maximum TPL to signal the NotifyFunction.
+  NotifyTpl        - Maximum TPL to signal the NotifyFunction.
 
-  NotifyFunciton  - EFI notification routine.
+  NotifyFuncition  - EFI notification routine.
 
   NotifyContext   - Context passed into Event when it is created.
 
@@ -590,7 +707,7 @@ Returns:
           EFI_DEBUG_CODE,
           (EFI_SOFTWARE_DXE_CORE | EFI_DC_UNSPECIFIED),
           0,
-          &gEfiDxeServicesTableGuid,
+         &gEfiDxeServicesTableGuid,
           (EFI_STATUS_CODE_DATA *)Buffer
           );
   }
@@ -615,6 +732,7 @@ Arguments:
 
   Format     - String to use for the print, followed by Print arguments.
 
+  ...        - Print arguments.
   
 Returns:
   

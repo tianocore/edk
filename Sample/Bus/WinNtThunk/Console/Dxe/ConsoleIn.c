@@ -40,23 +40,57 @@ WinNtSimpleTextInCheckKey (
 EFI_STATUS
 EFIAPI
 WinNtSimpleTextInReset (
-  IN EFI_SIMPLE_TEXT_IN_PROTOCOL  *This,
+  IN EFI_SIMPLE_TEXT_IN_PROTOCOL          *This,
   IN BOOLEAN                              ExtendedVerification
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                  - TODO: add argument description
+  ExtendedVerification  - TODO: add argument description
+
+Returns:
+
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private;
 
-  Private = WIN_NT_SIMPLE_TEXT_IN_PRIVATE_DATA_FROM_THIS(This);
+  Private = WIN_NT_SIMPLE_TEXT_IN_PRIVATE_DATA_FROM_THIS (This);
   return EFI_SUCCESS;
 }
 
 STATIC
 EFI_STATUS
-WinNtConvertInputRecordToEfiKey(
+WinNtConvertInputRecordToEfiKey (
   IN  INPUT_RECORD    *InputRecord,
   OUT EFI_INPUT_KEY   *Key
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  InputRecord - TODO: add argument description
+  Key         - TODO: add argument description
+
+Returns:
+
+  EFI_NOT_READY - TODO: Add description for return value
+  EFI_NOT_READY - TODO: Add description for return value
+  EFI_NOT_READY - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   //
   // Make sure InputRecord is an event that represents a keypress
@@ -72,8 +106,8 @@ WinNtConvertInputRecordToEfiKey(
   //
   // Check to see if we should return a scan code in place of Unicode character.
   //
-  Key->ScanCode = 0;
-  Key->UnicodeChar = 0;
+  Key->ScanCode     = 0;
+  Key->UnicodeChar  = 0;
   if ((InputRecord->Event.KeyEvent.dwControlKeyState & (NUMLOCK_ON | ENHANCED_KEY)) != NUMLOCK_ON) {
     //
     // Only check these scan codes if num lock is off.
@@ -90,7 +124,8 @@ WinNtConvertInputRecordToEfiKey(
       case 0x49: Key->ScanCode = SCAN_PAGE_UP;    break;
       case 0x51: Key->ScanCode = SCAN_PAGE_DOWN;  break;
     }
-  } 
+  }
+
   switch (InputRecord->Event.KeyEvent.wVirtualScanCode) {
     case 0x3b: Key->ScanCode = SCAN_F1;   break;
     case 0x3c: Key->ScanCode = SCAN_F2;   break;
@@ -120,20 +155,37 @@ WinNtConvertInputRecordToEfiKey(
 
 STATIC
 EFI_STATUS
-EFIAPI 
+EFIAPI
 WinNtSimpleTextInReadKeyStroke (
-  IN EFI_SIMPLE_TEXT_IN_PROTOCOL  *This,
+  IN EFI_SIMPLE_TEXT_IN_PROTOCOL          *This,
   OUT EFI_INPUT_KEY                       *Key
-    )
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This  - TODO: add argument description
+  Key   - TODO: add argument description
+
+Returns:
+
+  EFI_DEVICE_ERROR - TODO: Add description for return value
+  EFI_NOT_READY - TODO: Add description for return value
+
+--*/
 {
-  EFI_STATUS                       Status;
-  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA  *Private;
-  INPUT_RECORD                     InputRecord;  
-  DWORD                            NtEventCount;
+  EFI_STATUS                      Status;
+  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private;
+  INPUT_RECORD                    InputRecord;
+  DWORD                           NtEventCount;
 
-  Private = WIN_NT_SIMPLE_TEXT_IN_PRIVATE_DATA_FROM_THIS(This);
+  Private = WIN_NT_SIMPLE_TEXT_IN_PRIVATE_DATA_FROM_THIS (This);
 
-  Status = WinNtSimpleTextInCheckKey (Private);
+  Status  = WinNtSimpleTextInCheckKey (Private);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -157,42 +209,71 @@ WinNtSimpleTextInReadKeyStroke (
   return Status;
 }
 
-
 STATIC
 VOID
 EFIAPI
 WinNtSimpleTextInWaitForKey (
-    IN EFI_EVENT          Event,
-    IN VOID               *Context
+  IN EFI_EVENT          Event,
+  IN VOID               *Context
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Event   - TODO: add argument description
+  Context - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private;
   EFI_STATUS                      Status;
 
-  Private = (WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *)Context;
-  Status = WinNtSimpleTextInCheckKey (Private);
-  if (!EFI_ERROR(Status)) {
+  Private = (WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *) Context;
+  Status  = WinNtSimpleTextInCheckKey (Private);
+  if (!EFI_ERROR (Status)) {
     gBS->SignalEvent (Event);
   }
 }
-
 
 STATIC
 EFI_STATUS
 WinNtSimpleTextInCheckKey (
   WIN_NT_SIMPLE_TEXT_PRIVATE_DATA   *Private
   )
-{
-  INPUT_RECORD    *InputRecord;
-  DWORD           NtEventCount;
-  DWORD           ActualNtEventCount;
-  EFI_STATUS      Status;
-  BOOLEAN         Success;
-  UINTN           Index;
-  EFI_INPUT_KEY   Key;
+/*++
 
-  InputRecord = NULL;
-  NtEventCount = 0;
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+{
+  INPUT_RECORD  *InputRecord;
+  DWORD         NtEventCount;
+  DWORD         ActualNtEventCount;
+  EFI_STATUS    Status;
+  BOOLEAN       Success;
+  UINTN         Index;
+  EFI_INPUT_KEY Key;
+
+  InputRecord   = NULL;
+  NtEventCount  = 0;
   Private->WinNtThunk->GetNumberOfConsoleInputEvents (Private->NtInHandle, &NtEventCount);
   if (NtEventCount == 0) {
     Status = EFI_NOT_READY;
@@ -200,32 +281,32 @@ WinNtSimpleTextInCheckKey (
   }
 
   Status = gBS->AllocatePool (
-              EfiBootServicesData,
-              sizeof(INPUT_RECORD)*NtEventCount, 
-              &InputRecord
-              );
+                  EfiBootServicesData,
+                  sizeof (INPUT_RECORD) * NtEventCount,
+                  &InputRecord
+                  );
   if (EFI_ERROR (Status)) {
     Status = EFI_NOT_READY;
     goto Done;
   }
 
   Success = (BOOLEAN) Private->WinNtThunk->PeekConsoleInput (
-                                             Private->NtInHandle, 
-                                             InputRecord, 
-                                             NtEventCount, 
-                                             &ActualNtEventCount
-                                             );
+                                            Private->NtInHandle,
+                                            InputRecord,
+                                            NtEventCount,
+                                            &ActualNtEventCount
+                                            );
   if (!Success) {
     Status = EFI_NOT_READY;
     goto Done;
   }
 
   Status = EFI_NOT_READY;
-  for (Index =0; Index < (UINTN)ActualNtEventCount; Index++) {
+  for (Index = 0; Index < (UINTN) ActualNtEventCount; Index++) {
     //
     // Convert the Input Record to an EFI Keystroke.
     //
-    Status = WinNtConvertInputRecordToEfiKey(&InputRecord[Index], &Key);
+    Status = WinNtConvertInputRecordToEfiKey (&InputRecord[Index], &Key);
     if (!EFI_ERROR (Status)) {
       Status = EFI_SUCCESS;
       goto Done;
@@ -236,6 +317,7 @@ Done:
   if (InputRecord != NULL) {
     gBS->FreePool (InputRecord);
   }
+
   return Status;
 }
 
@@ -243,14 +325,29 @@ EFI_STATUS
 WinNtSimpleTextInAttachToWindow (
   IN  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   EFI_STATUS  Status;
 
-  Private->NtInHandle = Private->WinNtThunk->GetStdHandle (STD_INPUT_HANDLE);
+  Private->NtInHandle                 = Private->WinNtThunk->GetStdHandle (STD_INPUT_HANDLE);
 
-  Private->SimpleTextIn.Reset = WinNtSimpleTextInReset;
+  Private->SimpleTextIn.Reset         = WinNtSimpleTextInReset;
   Private->SimpleTextIn.ReadKeyStroke = WinNtSimpleTextInReadKeyStroke;
-  
+
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_WAIT,
                   EFI_TPL_NOTIFY,
@@ -258,7 +355,7 @@ WinNtSimpleTextInAttachToWindow (
                   Private,
                   &Private->SimpleTextIn.WaitForKey
                   );
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   return Status;
 }

@@ -26,9 +26,8 @@ Abstract:
 //
 // Global stack used to evaluate boolean expresions
 //
-BOOLEAN *mBooleanEvaluationStack = (BOOLEAN)0;
-BOOLEAN *mBooleanEvaluationStackEnd = (BOOLEAN)0;
-
+BOOLEAN *mBooleanEvaluationStack    = (BOOLEAN) 0;
+BOOLEAN *mBooleanEvaluationStackEnd = (BOOLEAN) 0;
 
 STATIC
 VOID
@@ -46,7 +45,7 @@ Arguments:
 
   Stack     - Old stack on the way in and new stack on the way out
 
-  StackSize - New size of the stack
+  StackSizeInBoolean - New size of the stack
 
 Returns:
 
@@ -54,7 +53,7 @@ Returns:
 
 --*/
 {
-  BOOLEAN     *NewStack;
+  BOOLEAN *NewStack;
 
   NewStack = EfiLibAllocatePool (StackSizeInBoolean * sizeof (BOOLEAN));
   ASSERT (NewStack != NULL);
@@ -64,7 +63,8 @@ Returns:
     // Copy to Old Stack to the New Stack
     //
     EfiCopyMem (
-      NewStack, mBooleanEvaluationStack, 
+      NewStack,
+      mBooleanEvaluationStack,
       (mBooleanEvaluationStackEnd - mBooleanEvaluationStack) * sizeof (BOOLEAN)
       );
 
@@ -79,10 +79,9 @@ Returns:
     gBS->FreePool (mBooleanEvaluationStack);
   }
 
-  mBooleanEvaluationStack = NewStack;
-  mBooleanEvaluationStackEnd = NewStack + StackSizeInBoolean;
+  mBooleanEvaluationStack     = NewStack;
+  mBooleanEvaluationStackEnd  = NewStack + StackSizeInBoolean;
 }
-
 
 VOID
 InitializeBooleanEvaluator (
@@ -104,7 +103,7 @@ Returns:
 
 --*/
 {
-  BOOLEAN   *NullStack;
+  BOOLEAN *NullStack;
 
   NullStack = NULL;
   GrowBooleanStack (&NullStack, 0x1000);
@@ -149,9 +148,8 @@ Returns:
   }
 }
 
-
 STATIC
-BOOLEAN 
+BOOLEAN
 PopBool (
   IN OUT BOOLEAN **Stack
   )
@@ -175,7 +173,7 @@ Returns:
 
   *Stack -= 1;
   EfiCopyMem (&ReturnValue, *Stack, sizeof (BOOLEAN));
-  return ReturnValue;  
+  return ReturnValue;
 }
 
 EFI_STATUS
@@ -185,8 +183,8 @@ GrowBooleanExpression (
   IN OUT  UINTN                   *BooleanExpressionLength
   )
 {
-  UINT8                           *NewExpression;
-  
+  UINT8 *NewExpression;
+
   NewExpression = EfiLibAllocatePool (*BooleanExpressionLength + sizeof (EFI_INCONSISTENCY_DATA));
   ASSERT (NewExpression != NULL);
 
@@ -209,8 +207,8 @@ GrowBooleanExpression (
     EfiCopyMem (NewExpression, InconsistentTags, sizeof (EFI_INCONSISTENCY_DATA));
   }
 
-  *BooleanExpressionLength = *BooleanExpressionLength + sizeof(EFI_INCONSISTENCY_DATA);
-  *BooleanExpression = (VOID *)NewExpression;
+  *BooleanExpressionLength  = *BooleanExpressionLength + sizeof (EFI_INCONSISTENCY_DATA);
+  *BooleanExpression        = (VOID *) NewExpression;
   return EFI_SUCCESS;
 }
 
@@ -233,9 +231,9 @@ Returns:
 
 --*/
 {
-  UINTN                     Count;
-  EFI_INCONSISTENCY_DATA    *InconsistentTags;
-  EFI_INCONSISTENCY_DATA    FakeInconsistentTags;
+  UINTN                   Count;
+  EFI_INCONSISTENCY_DATA  *InconsistentTags;
+  EFI_INCONSISTENCY_DATA  FakeInconsistentTags;
 
   InconsistentTags = FileFormTags->InconsistentTags;
 
@@ -246,7 +244,7 @@ Returns:
 
     if (InconsistentTags->QuestionId1 == Id) {
       //
-      // If !Complex - means evaluate a single if/endif expression 
+      // If !Complex - means evaluate a single if/endif expression
       //
       if (!Complex) {
         //
@@ -260,33 +258,35 @@ Returns:
       //
       // We need to rewind to the beginning of the Inconsistent expression
       //
-      for ( ; (InconsistentTags->Operand != EFI_IFR_INCONSISTENT_IF_OP) &&
-              (InconsistentTags->Operand != EFI_IFR_GRAYOUT_IF_OP) &&
-              (InconsistentTags->Operand != EFI_IFR_SUPPRESS_IF_OP);) {
+      for (;
+           (InconsistentTags->Operand != EFI_IFR_INCONSISTENT_IF_OP) &&
+             (InconsistentTags->Operand != EFI_IFR_GRAYOUT_IF_OP) &&
+             (InconsistentTags->Operand != EFI_IFR_SUPPRESS_IF_OP);
+              ) {
         InconsistentTags = InconsistentTags->Previous;
       }
-
       //
       // Store the consistency check expression, ensure the next for loop starts at the op-code afterwards
       //
-      GrowBooleanExpression(InconsistentTags, BooleanExpression, BooleanExpressionLength);
+      GrowBooleanExpression (InconsistentTags, BooleanExpression, BooleanExpressionLength);
       InconsistentTags = InconsistentTags->Next;
 
       //
       // Keep growing until we hit the End expression op-code or we hit the beginning of another
       // consistency check like grayout/suppress
       //
-      for (;InconsistentTags->Operand != EFI_IFR_END_IF_OP && 
-            InconsistentTags->Operand != EFI_IFR_GRAYOUT_IF_OP &&
-            InconsistentTags->Operand != EFI_IFR_SUPPRESS_IF_OP;) {
-        GrowBooleanExpression(InconsistentTags, BooleanExpression, BooleanExpressionLength);
+      for (;
+           InconsistentTags->Operand != EFI_IFR_END_IF_OP &&
+           InconsistentTags->Operand != EFI_IFR_GRAYOUT_IF_OP &&
+           InconsistentTags->Operand != EFI_IFR_SUPPRESS_IF_OP;
+            ) {
+        GrowBooleanExpression (InconsistentTags, BooleanExpression, BooleanExpressionLength);
         InconsistentTags = InconsistentTags->Next;
       }
-      
       //
       // Store the EndExpression Op-code
       //
-      GrowBooleanExpression(InconsistentTags, BooleanExpression, BooleanExpressionLength);
+      GrowBooleanExpression (InconsistentTags, BooleanExpression, BooleanExpressionLength);
     }
 
 NextEntry:
@@ -303,7 +303,7 @@ NextEntry:
   //
   // Add one last expression which will signify we have definitely hit the end
   //
-  GrowBooleanExpression(&FakeInconsistentTags, BooleanExpression, BooleanExpressionLength);
+  GrowBooleanExpression (&FakeInconsistentTags, BooleanExpression, BooleanExpressionLength);
 }
 
 EFI_STATUS
@@ -325,7 +325,7 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
+  EFI_STATUS  Status;
 
   Status = gRT->GetVariable (
                   VariableName,
@@ -335,11 +335,11 @@ Returns:
                   *VariableData
                   );
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
       *VariableData = EfiLibAllocatePool (*SizeOfVariable);
-      ASSERT(*VariableData != NULL);
+      ASSERT (*VariableData != NULL);
 
       Status = gRT->GetVariable (
                       VariableName,
@@ -367,7 +367,7 @@ Returns:
 BOOLEAN
 ValueIsNotValid (
   IN  BOOLEAN                     Complex,
-  IN  UINT16                      Value,  
+  IN  UINT16                      Value,
   IN  EFI_TAG                     *Tag,
   IN  EFI_FILE_FORM_TAGS          *FileFormTags,
   IN  STRING_REF                  *PopUp
@@ -387,64 +387,64 @@ Returns:
 
 --*/
 {
-  BOOLEAN                       *StackPtr;
-  EFI_INCONSISTENCY_DATA        *Iterator;
-  BOOLEAN                       Operator;
-  BOOLEAN                       Operator2;
-  UINTN                         Index;
-  VOID                          *BooleanExpression;
-  UINTN                         BooleanExpressionLength;
-  BOOLEAN                       NotOperator;
-  BOOLEAN                       OrOperator;
-  BOOLEAN                       AndOperator;
-  BOOLEAN                       ArtificialEnd;
-  UINT16                        *MapBuffer;
-  UINT16                        *MapBuffer2;
-  UINT16                        MapValue;
-  UINT16                        MapValue2;
-  UINTN                         SizeOfVariable;
-  CHAR16                        VariableName[40];
-  VOID                          *VariableData;                          
-  EFI_STATUS                    Status;
-  UINT16                        Id;
-  UINT16                        Width;
-  EFI_VARIABLE_DEFINITION       *VariableDefinition;
-  BOOLEAN                       CosmeticConsistency;
+  BOOLEAN                 *StackPtr;
+  EFI_INCONSISTENCY_DATA  *Iterator;
+  BOOLEAN                 Operator;
+  BOOLEAN                 Operator2;
+  UINTN                   Index;
+  VOID                    *BooleanExpression;
+  UINTN                   BooleanExpressionLength;
+  BOOLEAN                 NotOperator;
+  BOOLEAN                 OrOperator;
+  BOOLEAN                 AndOperator;
+  BOOLEAN                 ArtificialEnd;
+  UINT16                  *MapBuffer;
+  UINT16                  *MapBuffer2;
+  UINT16                  MapValue;
+  UINT16                  MapValue2;
+  UINTN                   SizeOfVariable;
+  CHAR16                  VariableName[40];
+  VOID                    *VariableData;
+  EFI_STATUS              Status;
+  UINT16                  Id;
+  UINT16                  Width;
+  EFI_VARIABLE_DEFINITION *VariableDefinition;
+  BOOLEAN                 CosmeticConsistency;
 
-  VariableData = NULL;
+  VariableData            = NULL;
   BooleanExpressionLength = 0;
-  BooleanExpression = NULL;
-  Operator = FALSE;
-  ArtificialEnd = FALSE;
-  CosmeticConsistency = TRUE;
+  BooleanExpression       = NULL;
+  Operator                = FALSE;
+  ArtificialEnd           = FALSE;
+  CosmeticConsistency     = TRUE;
 
-  Id = Tag->Id;
+  Id                      = Tag->Id;
   if (Tag->StorageWidth == 1) {
     Width = 1;
   } else {
     Width = 2;
   }
-  
-  CreateBooleanExpression(FileFormTags, Value, Id, Complex, &BooleanExpression, &BooleanExpressionLength);
+
+  CreateBooleanExpression (FileFormTags, Value, Id, Complex, &BooleanExpression, &BooleanExpressionLength);
 
   if (mBooleanEvaluationStack == 0) {
-    InitializeBooleanEvaluator();
+    InitializeBooleanEvaluator ();
   }
 
   if (BooleanExpression == NULL) {
     return FALSE;
   }
 
-  StackPtr  = mBooleanEvaluationStack;
-  Iterator  = BooleanExpression;
-  MapBuffer = NULL;
-  MapBuffer2 = NULL;
-  MapValue = 0;
-  MapValue2 = 0;
-  
+  StackPtr    = mBooleanEvaluationStack;
+  Iterator    = BooleanExpression;
+  MapBuffer   = NULL;
+  MapBuffer2  = NULL;
+  MapValue    = 0;
+  MapValue2   = 0;
+
   while (TRUE) {
     NotOperator = FALSE;
-    OrOperator = FALSE;
+    OrOperator  = FALSE;
     AndOperator = FALSE;
 
     if (Iterator->Operand == 0) {
@@ -452,64 +452,164 @@ Returns:
     }
 
     if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-      ExtractNvValue(FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-      ExtractNvValue(FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
+      ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
+      ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
       if (MapBuffer != NULL) {
         if (Width == 2) {
           MapValue = *MapBuffer;
         } else {
-          MapValue = (UINT8)*MapBuffer;
+          MapValue = (UINT8) *MapBuffer;
         }
-        gBS->FreePool(MapBuffer);
+
+        gBS->FreePool (MapBuffer);
       }
+
       if (MapBuffer2 != NULL) {
         if (Width == 2) {
           MapValue2 = *MapBuffer2;
         } else {
-          MapValue2 = (UINT8)*MapBuffer2;
+          MapValue2 = (UINT8) *MapBuffer2;
         }
-        gBS->FreePool(MapBuffer2);
+
+        gBS->FreePool (MapBuffer2);
       }
     }
 
     switch (Iterator->Operand) {
-      case EFI_IFR_SUPPRESS_IF_OP:
-        //
-        // Must have hit a suppress followed by a grayout or vice-versa
-        //
-        if (ArtificialEnd) {
-          ArtificialEnd = FALSE;
-          Operator = PopBool (&StackPtr);
-          if (Operator) {
-            Tag->Suppress = TRUE;
-          }
-          return Operator;
+    case EFI_IFR_SUPPRESS_IF_OP:
+      //
+      // Must have hit a suppress followed by a grayout or vice-versa
+      //
+      if (ArtificialEnd) {
+        ArtificialEnd = FALSE;
+        Operator      = PopBool (&StackPtr);
+        if (Operator) {
+          Tag->Suppress = TRUE;
         }
 
-        ArtificialEnd = TRUE;
-        *PopUp = Iterator->Popup;
-        break;
+        return Operator;
+      }
 
-      case EFI_IFR_GRAYOUT_IF_OP:
-        //
-        // Must have hit a suppress followed by a grayout or vice-versa
-        //
-        if (ArtificialEnd) {
-          ArtificialEnd = FALSE;
-          Operator = PopBool (&StackPtr);
-          if (Operator) {
-            Tag->GrayOut = TRUE;
-          }
-          return Operator;
+      ArtificialEnd = TRUE;
+      *PopUp        = Iterator->Popup;
+      break;
+
+    case EFI_IFR_GRAYOUT_IF_OP:
+      //
+      // Must have hit a suppress followed by a grayout or vice-versa
+      //
+      if (ArtificialEnd) {
+        ArtificialEnd = FALSE;
+        Operator      = PopBool (&StackPtr);
+        if (Operator) {
+          Tag->GrayOut = TRUE;
         }
 
-        ArtificialEnd = TRUE;
-        *PopUp = Iterator->Popup;
-        break;
+        return Operator;
+      }
 
-      case EFI_IFR_INCONSISTENT_IF_OP:
-        CosmeticConsistency = FALSE;
-        *PopUp = Iterator->Popup;
+      ArtificialEnd = TRUE;
+      *PopUp        = Iterator->Popup;
+      break;
+
+    case EFI_IFR_INCONSISTENT_IF_OP:
+      CosmeticConsistency = FALSE;
+      *PopUp              = Iterator->Popup;
+      break;
+
+    //
+    // In the case of external variable values, we must read the variable which is
+    // named by the human readable version of the OpCode->VariableId and the guid of the formset
+    //
+    case EFI_IFR_EQ_VAR_VAL_OP:
+      ValueToString (VariableName, FALSE, Iterator->QuestionId1);
+
+      SizeOfVariable = 0;
+
+      ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
+
+      Status = BooleanVariableWorker (
+                VariableName,
+                VariableDefinition,
+                StackPtr,
+                &SizeOfVariable,
+                &VariableData
+                );
+
+      if (!EFI_ERROR (Status)) {
+        if (SizeOfVariable == 1) {
+          EfiCopyMem (&MapValue, VariableData, 1);
+        } else {
+          EfiCopyMem (&MapValue, VariableData, 2);
+        }
+
+        PushBool (&StackPtr, (BOOLEAN) (MapValue == Iterator->Value));
+      }
+
+      break;
+
+    case EFI_IFR_EQ_ID_VAL_OP:
+      PushBool (&StackPtr, (BOOLEAN) (MapValue == Iterator->Value));
+      break;
+
+    case EFI_IFR_EQ_ID_ID_OP:
+      PushBool (&StackPtr, (BOOLEAN) (MapValue == MapValue2));
+      break;
+
+    case EFI_IFR_EQ_ID_LIST_OP:
+      for (Index = 0; Index < Iterator->ListLength; Index++) {
+        Operator = (BOOLEAN) (MapValue == Iterator->ValueList[Index]);
+        if (Operator) {
+          break;
+        }
+      }
+
+      PushBool (&StackPtr, Operator);
+      break;
+
+    case EFI_IFR_AND_OP:
+      Iterator++;
+      if (Iterator->Operand == EFI_IFR_NOT_OP) {
+        NotOperator = TRUE;
+        Iterator++;
+      }
+
+      if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
+        ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
+        ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
+        if (MapBuffer != NULL) {
+          if (Width == 2) {
+            MapValue = *MapBuffer;
+          } else {
+            MapValue = (UINT8) *MapBuffer;
+          }
+
+          gBS->FreePool (MapBuffer);
+        }
+
+        if (MapBuffer2 != NULL) {
+          if (Width == 2) {
+            MapValue2 = *MapBuffer2;
+          } else {
+            MapValue2 = (UINT8) *MapBuffer2;
+          }
+
+          gBS->FreePool (MapBuffer2);
+        }
+      }
+
+      switch (Iterator->Operand) {
+      case EFI_IFR_EQ_ID_VAL_OP:
+        //
+        // If Not - flip the results
+        //
+        if (NotOperator) {
+          Operator = (BOOLEAN)!(MapValue == Iterator->Value);
+        } else {
+          Operator = (BOOLEAN) (MapValue == Iterator->Value);
+        }
+
+        PushBool (&StackPtr, Operator);
         break;
 
       //
@@ -524,447 +624,362 @@ Returns:
         ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
 
         Status = BooleanVariableWorker (
-                   VariableName, 
-                   VariableDefinition,
-                   StackPtr,
-                   &SizeOfVariable,
-                   &VariableData
-                   );
+                  VariableName,
+                  VariableDefinition,
+                  StackPtr,
+                  &SizeOfVariable,
+                  &VariableData
+                  );
 
-        if (!EFI_ERROR(Status)) {
+        if (!EFI_ERROR (Status)) {
           if (SizeOfVariable == 1) {
-            EfiCopyMem(&MapValue, VariableData, 1);
+            EfiCopyMem (&MapValue, VariableData, 1);
           } else {
-            EfiCopyMem(&MapValue, VariableData, 2);
+            EfiCopyMem (&MapValue, VariableData, 2);
           }
-
-          PushBool (&StackPtr, (BOOLEAN)(MapValue == Iterator->Value));
+          //
+          // If Not - flip the results
+          //
+          if (NotOperator) {
+            PushBool (&StackPtr, (BOOLEAN)!(MapValue == Iterator->Value));
+          } else {
+            PushBool (&StackPtr, (BOOLEAN) (MapValue == Iterator->Value));
+          }
         }
-
-        break;
-
-      case EFI_IFR_EQ_ID_VAL_OP:
-        PushBool (&StackPtr, (BOOLEAN)(MapValue == Iterator->Value));
         break;
 
       case EFI_IFR_EQ_ID_ID_OP:
-        PushBool (&StackPtr, (BOOLEAN)(MapValue == MapValue2));
+        //
+        // If Not - flip the results
+        //
+        if (NotOperator) {
+          Operator = (BOOLEAN)!(MapValue == MapValue2);
+        } else {
+          Operator = (BOOLEAN) (MapValue == MapValue2);
+        }
+
+        PushBool (&StackPtr, Operator);
         break;
 
       case EFI_IFR_EQ_ID_LIST_OP:
         for (Index = 0; Index < Iterator->ListLength; Index++) {
-          Operator = (BOOLEAN)(MapValue == Iterator->ValueList[Index]);
+          //
+          // If Not - flip the results
+          //
+          if (NotOperator) {
+            Operator = (BOOLEAN)!(MapValue == Iterator->ValueList[Index]);
+          } else {
+            Operator = (BOOLEAN) (MapValue == Iterator->ValueList[Index]);
+          }
+          //
+          // If We are trying to make sure that MapValue != Item[x], keep looking through
+          // the list to make sure we don't equal any other items
+          //
+          if (Operator && NotOperator) {
+            continue;
+          }
+          //
+          // If MapValue == Item, then we have succeeded (first found is good enough)
+          //
           if (Operator) {
             break;
           }
         }
+
         PushBool (&StackPtr, Operator);
         break;
 
-      case EFI_IFR_AND_OP:
+      default:
+        return FALSE;
+      }
+
+      Operator  = PopBool (&StackPtr);
+      Operator2 = PopBool (&StackPtr);
+      PushBool (&StackPtr, (BOOLEAN) (Operator && Operator2));
+      break;
+
+    case EFI_IFR_OR_OP:
+      Iterator++;
+      if (Iterator->Operand == EFI_IFR_NOT_OP) {
+        NotOperator = TRUE;
         Iterator++;
-        if (Iterator->Operand == EFI_IFR_NOT_OP) {
-          NotOperator = TRUE;
-          Iterator++;
-        }
-        
-        if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-          ExtractNvValue(FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-          ExtractNvValue(FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-          if (MapBuffer != NULL) {
-            if (Width == 2) {
-              MapValue = *MapBuffer;
-            } else {
-              MapValue = (UINT8)*MapBuffer;
-            }
-            gBS->FreePool(MapBuffer);
-          }
-          if (MapBuffer2 != NULL) {
-            if (Width == 2) {
-              MapValue2 = *MapBuffer2;
-            } else {
-              MapValue2 = (UINT8)*MapBuffer2;
-            }
-            gBS->FreePool(MapBuffer2);
-          }
-        }
+      }
 
-        switch (Iterator->Operand) {
-          case EFI_IFR_EQ_ID_VAL_OP:
-            //
-            // If Not - flip the results
-            //
-            if (NotOperator) {
-              Operator = (BOOLEAN)!(MapValue == Iterator->Value);
-            } else {
-              Operator = (BOOLEAN)(MapValue == Iterator->Value);
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-            //
-            // In the case of external variable values, we must read the variable which is
-            // named by the human readable version of the OpCode->VariableId and the guid of the formset
-            //
-            case EFI_IFR_EQ_VAR_VAL_OP:
-              ValueToString (VariableName, FALSE, Iterator->QuestionId1);
-
-              SizeOfVariable = 0;
-
-              ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
-
-              Status = BooleanVariableWorker (
-                        VariableName, 
-                        VariableDefinition,
-                        StackPtr,
-                        &SizeOfVariable,
-                        &VariableData
-                        );
-
-
-              if (!EFI_ERROR(Status)) {
-                if (SizeOfVariable == 1) {
-                  EfiCopyMem(&MapValue, VariableData, 1);
-                } else {
-                  EfiCopyMem(&MapValue, VariableData, 2);
-                }
-
-              //
-              // If Not - flip the results
-              //
-              if (NotOperator) {
-                PushBool (&StackPtr, (BOOLEAN)!(MapValue == Iterator->Value));
-              } else {
-                PushBool (&StackPtr, (BOOLEAN)(MapValue == Iterator->Value));
-              }
-            }
-            break;
-
-          case EFI_IFR_EQ_ID_ID_OP:
-            //
-            // If Not - flip the results
-            //
-            if (NotOperator) {
-              Operator = (BOOLEAN)!(MapValue == MapValue2);
-            } else {
-              Operator = (BOOLEAN)(MapValue == MapValue2);
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-          case EFI_IFR_EQ_ID_LIST_OP:
-            for (Index = 0; Index < Iterator->ListLength; Index++) {
-              //
-              // If Not - flip the results
-              //
-              if (NotOperator) {
-                Operator = (BOOLEAN)!(MapValue == Iterator->ValueList[Index]);
-              } else {
-                Operator = (BOOLEAN)(MapValue == Iterator->ValueList[Index]);
-              }
-
-              //
-              // If We are trying to make sure that MapValue != Item[x], keep looking through
-              // the list to make sure we don't equal any other items
-              //
-              if (Operator && NotOperator) {
-                continue;
-              }
-
-              //
-              // If MapValue == Item, then we have succeeded (first found is good enough)
-              //
-              if (Operator) {
-                break;
-              }
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-          default:      
-            return FALSE;
-        }
-
-        Operator = PopBool (&StackPtr);
-        Operator2 = PopBool (&StackPtr);
-        PushBool (&StackPtr, (BOOLEAN)(Operator && Operator2));
-        break;
-
-      case EFI_IFR_OR_OP:
-        Iterator++;
-        if (Iterator->Operand == EFI_IFR_NOT_OP) {
-          NotOperator = TRUE;
-          Iterator++;
-        }
-        
-        if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-          ExtractNvValue(FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-          ExtractNvValue(FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-          if (MapBuffer != NULL) {
-            if (Width == 2) {
-              MapValue = *MapBuffer;
-            } else {
-              MapValue = (UINT8)*MapBuffer;
-            }
-            gBS->FreePool(MapBuffer);
-          }
-          if (MapBuffer2 != NULL) {
-            if (Width == 2) {
-              MapValue2 = *MapBuffer2;
-            } else {
-              MapValue2 = (UINT8)*MapBuffer2;
-            }
-            gBS->FreePool(MapBuffer2);
-          }
-        }
-
-        switch (Iterator->Operand) {
-          case EFI_IFR_EQ_ID_VAL_OP:
-            //
-            // If Not - flip the results
-            //
-            if (NotOperator) {
-              Operator = (BOOLEAN)!(MapValue == Iterator->Value);
-            } else {
-              Operator = (BOOLEAN)(MapValue == Iterator->Value);
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-          //
-          // In the case of external variable values, we must read the variable which is
-          // named by the human readable version of the OpCode->VariableId and the guid of the formset
-          //
-          case EFI_IFR_EQ_VAR_VAL_OP:
-            ValueToString (VariableName, FALSE, Iterator->QuestionId1);
-
-            SizeOfVariable = 0;
-
-            ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
-
-            Status = BooleanVariableWorker (
-                      VariableName, 
-                      VariableDefinition,
-                      StackPtr,
-                      &SizeOfVariable,
-                      &VariableData
-                      );
-
-            if (!EFI_ERROR(Status)) {
-              if (SizeOfVariable == 1) {
-                EfiCopyMem(&MapValue, VariableData, 1);
-              } else {
-                EfiCopyMem(&MapValue, VariableData, 2);
-              }
-
-              //
-              // If Not - flip the results
-              //
-              if (NotOperator) {
-                PushBool (&StackPtr, (BOOLEAN)!(MapValue == Iterator->Value));
-              } else {
-                PushBool (&StackPtr, (BOOLEAN)(MapValue == Iterator->Value));
-              }
-            }
-            break;
-
-          case EFI_IFR_EQ_ID_ID_OP:
-            //
-            // If Not - flip the results
-            //
-            if (NotOperator) {
-              Operator = (BOOLEAN)!(MapValue == MapValue2);
-            } else {
-              Operator = (BOOLEAN)(MapValue == MapValue2);
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-          case EFI_IFR_EQ_ID_LIST_OP:
-            for (Index = 0; Index < Iterator->ListLength; Index++) {
-              //
-              // If Not - flip the results
-              //
-              if (NotOperator) {
-                Operator = (BOOLEAN)!(MapValue == Iterator->ValueList[Index]);
-              } else {
-                Operator = (BOOLEAN)(MapValue == Iterator->ValueList[Index]);
-              }
-
-              //
-              // If We are trying to make sure that MapValue != Item[x], keep looking through
-              // the list to make sure we don't equal any other items
-              //
-              if (Operator && NotOperator) {
-                continue;
-              }
-
-              //
-              // If MapValue == Item, then we have succeeded (first found is good enough)
-              //
-              if (Operator) {
-                break;
-              }
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-          default:      
-            return FALSE;
-        }
-
-        Operator = PopBool (&StackPtr);
-        Operator2 = PopBool (&StackPtr);
-        PushBool (&StackPtr, (BOOLEAN)(Operator || Operator2));
-        break;
-
-      case EFI_IFR_NOT_OP:
-        //
-        // I don't need to set the NotOperator (I know that I have to NOT this in this case
-        //
-        Iterator++;
-
-        if (Iterator->Operand == EFI_IFR_OR_OP) {
-          OrOperator = TRUE;
-          Iterator++;
-        } 
-
-        if (Iterator->Operand == EFI_IFR_AND_OP) {
-          AndOperator = TRUE;
-          Iterator++;
-        } 
-
-        if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-          ExtractNvValue(FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-          ExtractNvValue(FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-          if (MapBuffer != NULL) {
-            if (Width == 2) {
-              MapValue = *MapBuffer;
-            } else {
-              MapValue = (UINT8)*MapBuffer;
-            }
-            gBS->FreePool(MapBuffer);
-          }
-          if (MapBuffer2 != NULL) {
-            if (Width == 2) {
-              MapValue2 = *MapBuffer2;
-            } else {
-              MapValue2 = (UINT8)*MapBuffer2;
-            }
-            gBS->FreePool(MapBuffer2);
-          }
-        }
-
-        switch (Iterator->Operand) {
-          case EFI_IFR_EQ_ID_VAL_OP:
-            Operator = (BOOLEAN)!(MapValue == Iterator->Value);
-            PushBool (&StackPtr, Operator);
-            break;
-
-          //
-          // In the case of external variable values, we must read the variable which is
-          // named by the human readable version of the OpCode->VariableId and the guid of the formset
-          //
-          case EFI_IFR_EQ_VAR_VAL_OP:
-            ValueToString (VariableName, FALSE, Iterator->QuestionId1);
-
-            SizeOfVariable = 0;
-
-            ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
-
-            Status = BooleanVariableWorker (
-                      VariableName, 
-                      VariableDefinition,
-                      StackPtr,
-                      &SizeOfVariable,
-                      &VariableData
-                      );
-
-            if (!EFI_ERROR(Status)) {
-              if (SizeOfVariable == 1) {
-                EfiCopyMem(&MapValue, VariableData, 1);
-              } else {
-                EfiCopyMem(&MapValue, VariableData, 2);
-              }
-
-              PushBool (&StackPtr, (BOOLEAN)!(MapValue == Iterator->Value));
-            }
-            break;
-
-          case EFI_IFR_EQ_ID_ID_OP:
-            Operator = (BOOLEAN)!(MapValue == MapValue2);
-            PushBool (&StackPtr, Operator);
-            break;
-
-          case EFI_IFR_EQ_ID_LIST_OP:
-            for (Index = 0; Index < Iterator->ListLength; Index++) {
-              Operator = (BOOLEAN)!(MapValue == Iterator->ValueList[Index]);
-              if (Operator) {
-                continue;
-              }
-            }
-            PushBool (&StackPtr, Operator);
-            break;
-
-          default:      
-            return FALSE;
-        }
-
-        Operator = PopBool (&StackPtr);
-        Operator2 = PopBool (&StackPtr);
-
-        if (OrOperator) {
-          PushBool (&StackPtr, (BOOLEAN)(Operator || Operator2));
-        }
-
-        if (AndOperator) {
-          PushBool (&StackPtr, (BOOLEAN)(Operator && Operator2));
-        }
-
-        if (!OrOperator && !AndOperator) {
-          PushBool (&StackPtr, Operator);
-        }
-        break;
-
-      
-      case EFI_IFR_END_IF_OP:
-        Operator = PopBool (&StackPtr);
-        //
-        // If there is an error, return, otherwise keep looking - there might
-        // be another test that causes an error
-        //
-        if (Operator) {
-          if (Complex && CosmeticConsistency) {
-            return EFI_SUCCESS;
+      if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
+        ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
+        ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
+        if (MapBuffer != NULL) {
+          if (Width == 2) {
+            MapValue = *MapBuffer;
           } else {
-            return  Operator;
+            MapValue = (UINT8) *MapBuffer;
           }
-        } else {
-          //
-          // If not doing a global consistency check, the endif is the REAL terminator of this operation
-          // This is used for grayout/suppress operations.  InconsistentIf is a global operation so the EndIf is
-          // not the end-all be-all of terminators.
-          //
-          if (!Complex) {
-            return Operator;
-          }
-          break;
+
+          gBS->FreePool (MapBuffer);
         }
 
+        if (MapBuffer2 != NULL) {
+          if (Width == 2) {
+            MapValue2 = *MapBuffer2;
+          } else {
+            MapValue2 = (UINT8) *MapBuffer2;
+          }
 
-      default:      
+          gBS->FreePool (MapBuffer2);
+        }
+      }
+
+      switch (Iterator->Operand) {
+      case EFI_IFR_EQ_ID_VAL_OP:
         //
-        // Must have hit a non-consistency related op-code after a suppress/grayout
+        // If Not - flip the results
         //
-        if (ArtificialEnd) {
-          ArtificialEnd = FALSE;
-          Operator = PopBool (&StackPtr);
+        if (NotOperator) {
+          Operator = (BOOLEAN)!(MapValue == Iterator->Value);
+        } else {
+          Operator = (BOOLEAN) (MapValue == Iterator->Value);
+        }
+
+        PushBool (&StackPtr, Operator);
+        break;
+
+      //
+      // In the case of external variable values, we must read the variable which is
+      // named by the human readable version of the OpCode->VariableId and the guid of the formset
+      //
+      case EFI_IFR_EQ_VAR_VAL_OP:
+        ValueToString (VariableName, FALSE, Iterator->QuestionId1);
+
+        SizeOfVariable = 0;
+
+        ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
+
+        Status = BooleanVariableWorker (
+                  VariableName,
+                  VariableDefinition,
+                  StackPtr,
+                  &SizeOfVariable,
+                  &VariableData
+                  );
+
+        if (!EFI_ERROR (Status)) {
+          if (SizeOfVariable == 1) {
+            EfiCopyMem (&MapValue, VariableData, 1);
+          } else {
+            EfiCopyMem (&MapValue, VariableData, 2);
+          }
+          //
+          // If Not - flip the results
+          //
+          if (NotOperator) {
+            PushBool (&StackPtr, (BOOLEAN)!(MapValue == Iterator->Value));
+          } else {
+            PushBool (&StackPtr, (BOOLEAN) (MapValue == Iterator->Value));
+          }
+        }
+        break;
+
+      case EFI_IFR_EQ_ID_ID_OP:
+        //
+        // If Not - flip the results
+        //
+        if (NotOperator) {
+          Operator = (BOOLEAN)!(MapValue == MapValue2);
+        } else {
+          Operator = (BOOLEAN) (MapValue == MapValue2);
+        }
+
+        PushBool (&StackPtr, Operator);
+        break;
+
+      case EFI_IFR_EQ_ID_LIST_OP:
+        for (Index = 0; Index < Iterator->ListLength; Index++) {
+          //
+          // If Not - flip the results
+          //
+          if (NotOperator) {
+            Operator = (BOOLEAN)!(MapValue == Iterator->ValueList[Index]);
+          } else {
+            Operator = (BOOLEAN) (MapValue == Iterator->ValueList[Index]);
+          }
+          //
+          // If We are trying to make sure that MapValue != Item[x], keep looking through
+          // the list to make sure we don't equal any other items
+          //
+          if (Operator && NotOperator) {
+            continue;
+          }
+          //
+          // If MapValue == Item, then we have succeeded (first found is good enough)
+          //
+          if (Operator) {
+            break;
+          }
+        }
+
+        PushBool (&StackPtr, Operator);
+        break;
+
+      default:
+        return FALSE;
+      }
+
+      Operator  = PopBool (&StackPtr);
+      Operator2 = PopBool (&StackPtr);
+      PushBool (&StackPtr, (BOOLEAN) (Operator || Operator2));
+      break;
+
+    case EFI_IFR_NOT_OP:
+      //
+      // I don't need to set the NotOperator (I know that I have to NOT this in this case
+      //
+      Iterator++;
+
+      if (Iterator->Operand == EFI_IFR_OR_OP) {
+        OrOperator = TRUE;
+        Iterator++;
+      }
+
+      if (Iterator->Operand == EFI_IFR_AND_OP) {
+        AndOperator = TRUE;
+        Iterator++;
+      }
+
+      if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
+        ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
+        ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
+        if (MapBuffer != NULL) {
+          if (Width == 2) {
+            MapValue = *MapBuffer;
+          } else {
+            MapValue = (UINT8) *MapBuffer;
+          }
+
+          gBS->FreePool (MapBuffer);
+        }
+
+        if (MapBuffer2 != NULL) {
+          if (Width == 2) {
+            MapValue2 = *MapBuffer2;
+          } else {
+            MapValue2 = (UINT8) *MapBuffer2;
+          }
+
+          gBS->FreePool (MapBuffer2);
+        }
+      }
+
+      switch (Iterator->Operand) {
+      case EFI_IFR_EQ_ID_VAL_OP:
+        Operator = (BOOLEAN)!(MapValue == Iterator->Value);
+        PushBool (&StackPtr, Operator);
+        break;
+
+      //
+      // In the case of external variable values, we must read the variable which is
+      // named by the human readable version of the OpCode->VariableId and the guid of the formset
+      //
+      case EFI_IFR_EQ_VAR_VAL_OP:
+        ValueToString (VariableName, FALSE, Iterator->QuestionId1);
+
+        SizeOfVariable = 0;
+
+        ExtractRequestedNvMap (FileFormTags, Iterator->VariableNumber, &VariableDefinition);
+
+        Status = BooleanVariableWorker (
+                  VariableName,
+                  VariableDefinition,
+                  StackPtr,
+                  &SizeOfVariable,
+                  &VariableData
+                  );
+
+        if (!EFI_ERROR (Status)) {
+          if (SizeOfVariable == 1) {
+            EfiCopyMem (&MapValue, VariableData, 1);
+          } else {
+            EfiCopyMem (&MapValue, VariableData, 2);
+          }
+
+          PushBool (&StackPtr, (BOOLEAN)!(MapValue == Iterator->Value));
+        }
+        break;
+
+      case EFI_IFR_EQ_ID_ID_OP:
+        Operator = (BOOLEAN)!(MapValue == MapValue2);
+        PushBool (&StackPtr, Operator);
+        break;
+
+      case EFI_IFR_EQ_ID_LIST_OP:
+        for (Index = 0; Index < Iterator->ListLength; Index++) {
+          Operator = (BOOLEAN)!(MapValue == Iterator->ValueList[Index]);
+          if (Operator) {
+            continue;
+          }
+        }
+
+        PushBool (&StackPtr, Operator);
+        break;
+
+      default:
+        return FALSE;
+      }
+
+      Operator  = PopBool (&StackPtr);
+      Operator2 = PopBool (&StackPtr);
+
+      if (OrOperator) {
+        PushBool (&StackPtr, (BOOLEAN) (Operator || Operator2));
+      }
+
+      if (AndOperator) {
+        PushBool (&StackPtr, (BOOLEAN) (Operator && Operator2));
+      }
+
+      if (!OrOperator && !AndOperator) {
+        PushBool (&StackPtr, Operator);
+      }
+      break;
+
+    case EFI_IFR_END_IF_OP:
+      Operator = PopBool (&StackPtr);
+      //
+      // If there is an error, return, otherwise keep looking - there might
+      // be another test that causes an error
+      //
+      if (Operator) {
+        if (Complex && CosmeticConsistency) {
+          return EFI_SUCCESS;
+        } else {
           return Operator;
         }
-        return FALSE;
+      } else {
+        //
+        // If not doing a global consistency check, the endif is the REAL terminator of this operation
+        // This is used for grayout/suppress operations.  InconsistentIf is a global operation so the EndIf is
+        // not the end-all be-all of terminators.
+        //
+        if (!Complex) {
+          return Operator;
+        }
+        break;
+      }
+
+    default:
+      //
+      // Must have hit a non-consistency related op-code after a suppress/grayout
+      //
+      if (ArtificialEnd) {
+        ArtificialEnd = FALSE;
+        Operator      = PopBool (&StackPtr);
+        return Operator;
+      }
+
+      return FALSE;
     }
+
     Iterator++;
   }
+
   return FALSE;
 }
-

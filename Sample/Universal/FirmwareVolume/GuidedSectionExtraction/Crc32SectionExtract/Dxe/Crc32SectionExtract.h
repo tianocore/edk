@@ -16,7 +16,7 @@ Module Name:
 Abstract:
 
   Header file for Crc32SectionExtract.c
-  Please refer to EFI 2.0 File Image Format specification 
+  Please refer to Tiano File Image Format specification 
   FV spec 0.3.6
 
 --*/
@@ -27,11 +27,11 @@ Abstract:
 //
 // Statements that include other header files
 //
-#include EFI_PROTOCOL_DEFINITION(GuidedSectionExtraction)
+#include EFI_PROTOCOL_DEFINITION (GuidedSectionExtraction)
 
 typedef struct {
-  EFI_GUID_DEFINED_SECTION       GuidedSectionHeader;
-  UINT32                         CRC32Checksum;
+  EFI_GUID_DEFINED_SECTION  GuidedSectionHeader;
+  UINT32                    CRC32Checksum;
 } CRC32_SECTION_HEADER;
 
 //
@@ -45,6 +45,26 @@ Crc32ExtractSection (
   OUT VOID                                    **OutputBuffer,
   OUT UINTN                                   *OutputSize,
   OUT UINT32                                  *AuthenticationStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                  - TODO: add argument description
+  InputSection          - TODO: add argument description
+  OutputBuffer          - TODO: add argument description
+  OutputSize            - TODO: add argument description
+  AuthenticationStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

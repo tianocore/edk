@@ -23,41 +23,54 @@ Abstract:
 #ifndef _FW_VOLUME_H_
 #define _FW_VOLUME_H_
 
+//
+// class CFirmwareVolume
+// {
+// public:
+//
+void
+CFVConstructor (
+  VOID
+  )
+;
+void
+CFVDestructor (
+  VOID
+  )
+;
 
-//class CFirmwareVolume
-//{
-//public:
-void CFVConstructor ();
-void CFVDestructor ();
-
-int 
+int
 CFVAddFVFile (
-  char  *Name, 
-  char  *ComponentType, 
-  char  *FVs, 
+  char  *Name,
+  char  *ComponentType,
+  char  *FVs,
   int   ComponentsInstance,
   char  *FFSExt,
   char  *Processor,
   char  *Apriori,
   char  *BaseName,
   char  *Guid
-  );
+  )
+;
 
 int
 CFVSetXRefFileName (
   char    *FileName
-  );
+  )
+;
 
-int 
-CFVWriteInfFiles( 
+int
+CFVWriteInfFiles (
   DSC_FILE  *DSC,
   FILE      *MakeFptr
-  );
+  )
+;
 
 int
 NonFFSFVWriteInfFiles (
   DSC_FILE  *DSC,
   char      *FileName
-  );
+  )
+;
 
 #endif // ifndef _FW_VOLUME_H_

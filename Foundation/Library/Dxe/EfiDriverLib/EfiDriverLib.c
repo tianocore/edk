@@ -25,7 +25,7 @@ Abstract:
 //
 // Global Interface for Debug Mask Protocol
 //
-EFI_DEBUG_MASK_PROTOCOL        *gDebugMaskInterface = NULL;
+EFI_DEBUG_MASK_PROTOCOL *gDebugMaskInterface = NULL;
 
 EFI_STATUS
 EfiInitializeDriverLib (
@@ -40,7 +40,9 @@ Routine Description:
 
 Arguments:
 
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  ImageHandle     - Standard EFI Image entry parameter
+  
+  SystemTable     - Standard EFI Image entry parameter
 
 Returns: 
 
@@ -53,7 +55,7 @@ Returns:
   ASSERT (gST != NULL);
 
   gBS = gST->BootServices;
-  gRT = gST->RuntimeServices;   
+  gRT = gST->RuntimeServices;
 
   ASSERT (gBS != NULL);
   ASSERT (gRT != NULL);
@@ -61,54 +63,80 @@ Returns:
   //
   // Get driver debug mask protocol interface
   //
-#ifdef EFI_DEBUG  
+#ifdef EFI_DEBUG
   gBS->HandleProtocol (
-         ImageHandle, 
-         &gEfiDebugMaskProtocolGuid, 
-         (VOID*)&gDebugMaskInterface
-         );
+        ImageHandle,
+        &gEfiDebugMaskProtocolGuid,
+        (VOID *) &gDebugMaskInterface
+        );
 #endif
   //
   // Should be at EFI_D_INFO, but lets us know things are running
   //
-  DEBUG((EFI_D_INFO, "EfiInitializeDriverLib: Started\n"));
+  DEBUG ((EFI_D_INFO, "EfiInitializeDriverLib: Started\n"));
 
   return EFI_SUCCESS;
 }
 
 BOOLEAN
 EfiLibCompareLanguage (
-  CHAR8  *Language1,
-  CHAR8  *Language2
+  IN  CHAR8  *Language1,
+  IN  CHAR8  *Language2
   )
+/*++
 
+Routine Description:
+
+  Compare whether two names of languages are identical.
+
+Arguments:
+
+  Language1 - Name of language 1
+  Language2 - Name of language 2
+
+Returns:
+
+  TRUE      - same
+  FALSE     - not same
+
+--*/
 {
-  UINTN  Index;
+  UINTN Index;
 
   for (Index = 0; Index < 3; Index++) {
     if (Language1[Index] != Language2[Index]) {
       return FALSE;
     }
   }
+
   return TRUE;
 }
 
 EFI_STATUS
 EfiLibLookupUnicodeString (
-  CHAR8                     *Language,
-  CHAR8                     *SupportedLanguages,
-  EFI_UNICODE_STRING_TABLE  *UnicodeStringTable,
-  CHAR16                    **UnicodeString
+  IN  CHAR8                     *Language,
+  IN  CHAR8                     *SupportedLanguages,
+  IN  EFI_UNICODE_STRING_TABLE  *UnicodeStringTable,
+  OUT CHAR16                    **UnicodeString
   )
 /*++
 
 Routine Description:
 
+  Translate a unicode string to a specified language if supported.
+  
 Arguments:
+
+  Language              - The name of language to translate to
+  SupportedLanguages    - Supported languages set
+  UnicodeStringTable    - Pointer of one item in translation dictionary
+  UnicodeString         - The translated string
 
 Returns: 
 
-  None
+  EFI_INVALID_PARAMETER - Invalid parameter
+  EFI_UNSUPPORTED       - System not supported this language or this string translation
+  EFI_SUCCESS           - String successfully translated
 
 --*/
 {
@@ -120,7 +148,7 @@ Returns:
   }
 
   //
-  // If there are no supported languages, or the Unicode String Table is empty, then the 
+  // If there are no supported languages, or the Unicode String Table is empty, then the
   // Unicode String specified by Language is not supported by this Unicode String Table
   //
   if (SupportedLanguages == NULL || UnicodeStringTable == NULL) {
@@ -145,31 +173,46 @@ Returns:
           *UnicodeString = UnicodeStringTable->UnicodeString;
           return EFI_SUCCESS;
         }
+
         UnicodeStringTable++;
       }
+
       return EFI_UNSUPPORTED;
     }
+
     SupportedLanguages += 3;
   }
+
   return EFI_UNSUPPORTED;
 }
 
 EFI_STATUS
 EfiLibAddUnicodeString (
-  CHAR8                     *Language,
-  CHAR8                     *SupportedLanguages,
-  EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
-  CHAR16                    *UnicodeString
+  IN      CHAR8                     *Language,
+  IN      CHAR8                     *SupportedLanguages,
+  IN OUT  EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
+  IN      CHAR16                    *UnicodeString
   )
 /*++
 
 Routine Description:
 
+  Add an translation to the dictionary if this language if supported.
+  
 Arguments:
+
+  Language              - The name of language to translate to
+  SupportedLanguages    - Supported languages set
+  UnicodeStringTable    - Translation dictionary
+  UnicodeString         - The corresponding string for the language to be translated to
 
 Returns: 
 
-  None
+  EFI_INVALID_PARAMETER - Invalid parameter
+  EFI_UNSUPPORTED       - System not supported this language
+  EFI_ALREADY_STARTED   - Already has a translation item of this language
+  EFI_OUT_OF_RESOURCES  - No enough buffer to be allocated
+  EFI_SUCCESS           - String successfully translated
 
 --*/
 {
@@ -215,6 +258,7 @@ Returns:
           if (EfiLibCompareLanguage (Language, OldUnicodeStringTable->Language)) {
             return EFI_ALREADY_STARTED;
           }
+
           OldUnicodeStringTable++;
           NumberOfEntries++;
         }
@@ -222,10 +266,10 @@ Returns:
 
       //
       // Allocate space for a new Unicode String Table.  It must hold the current number of
-      // entries, plus 1 entry for the new Unicode String, plus 1 entry for the end of table 
+      // entries, plus 1 entry for the new Unicode String, plus 1 entry for the end of table
       // marker
       //
-      NewUnicodeStringTable = EfiLibAllocatePool ((NumberOfEntries + 2) * sizeof(EFI_UNICODE_STRING_TABLE));
+      NewUnicodeStringTable = EfiLibAllocatePool ((NumberOfEntries + 2) * sizeof (EFI_UNICODE_STRING_TABLE));
       if (NewUnicodeStringTable == NULL) {
         return EFI_OUT_OF_RESOURCES;
       }
@@ -235,10 +279,10 @@ Returns:
       // newly allocated Unicode String Table.
       //
       if (*UnicodeStringTable != NULL) {
-        EfiCopyMem(
-          NewUnicodeStringTable, 
-          *UnicodeStringTable, 
-          NumberOfEntries * sizeof(EFI_UNICODE_STRING_TABLE)
+        EfiCopyMem (
+          NewUnicodeStringTable,
+          *UnicodeStringTable,
+          NumberOfEntries * sizeof (EFI_UNICODE_STRING_TABLE)
           );
       }
 
@@ -254,12 +298,16 @@ Returns:
       //
       // Compute the length of the Unicode String
       //
-      for (UnicodeStringLength = 0;UnicodeString[UnicodeStringLength] != 0; UnicodeStringLength++);
+      for (UnicodeStringLength = 0; UnicodeString[UnicodeStringLength] != 0; UnicodeStringLength++)
+        ;
 
       //
       // Allocate space for a copy of the Unicode String
       //
-      NewUnicodeStringTable[NumberOfEntries].UnicodeString = EfiLibAllocateCopyPool ((UnicodeStringLength + 1) * sizeof(CHAR16), UnicodeString);
+      NewUnicodeStringTable[NumberOfEntries].UnicodeString = EfiLibAllocateCopyPool (
+                                                              (UnicodeStringLength + 1) * sizeof (CHAR16),
+                                                              UnicodeString
+                                                              );
       if (NewUnicodeStringTable[NumberOfEntries].UnicodeString == NULL) {
         gBS->FreePool (NewUnicodeStringTable[NumberOfEntries].Language);
         gBS->FreePool (NewUnicodeStringTable);
@@ -269,14 +317,14 @@ Returns:
       //
       // Mark the end of the Unicode String Table
       //
-      NewUnicodeStringTable[NumberOfEntries + 1].Language      = NULL;
-      NewUnicodeStringTable[NumberOfEntries + 1].UnicodeString = NULL;
+      NewUnicodeStringTable[NumberOfEntries + 1].Language       = NULL;
+      NewUnicodeStringTable[NumberOfEntries + 1].UnicodeString  = NULL;
 
       //
       // Free the old Unicode String Table
       //
       if (*UnicodeStringTable != NULL) {
-        gBS->FreePool(*UnicodeStringTable);
+        gBS->FreePool (*UnicodeStringTable);
       }
 
       //
@@ -286,28 +334,34 @@ Returns:
 
       return EFI_SUCCESS;
     }
+
     SupportedLanguages += 3;
   }
+
   return EFI_UNSUPPORTED;
 }
 
 EFI_STATUS
 EfiLibFreeUnicodeStringTable (
-  EFI_UNICODE_STRING_TABLE  *UnicodeStringTable
+  IN OUT  EFI_UNICODE_STRING_TABLE  *UnicodeStringTable
   )
 /*++
 
 Routine Description:
 
+  Free a string table.
+
 Arguments:
+
+  UnicodeStringTable      - The string table to be freed.
 
 Returns: 
 
-  None
+  EFI_SUCCESS       - The table successfully freed.
 
 --*/
 {
-  UINTN       Index;
+  UINTN Index;
 
   //
   // If the Unicode String Table is NULL, then it is already freed
@@ -324,20 +378,20 @@ Returns:
     //
     // Free the Language string from the Unicode String Table
     //
-    gBS->FreePool(UnicodeStringTable[Index].Language);
+    gBS->FreePool (UnicodeStringTable[Index].Language);
 
     //
     // Free the Unicode String from the Unicode String Table
     //
     if (UnicodeStringTable[Index].UnicodeString != NULL) {
-      gBS->FreePool(UnicodeStringTable[Index].UnicodeString);
+      gBS->FreePool (UnicodeStringTable[Index].UnicodeString);
     }
   }
 
   //
   // Free the Unicode String Table itself
   //
-  gBS->FreePool(UnicodeStringTable);
+  gBS->FreePool (UnicodeStringTable);
 
   return EFI_SUCCESS;
 }

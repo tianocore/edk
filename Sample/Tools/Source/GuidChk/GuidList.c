@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  GuidDatabase.c  
+  GuidList.c  
 
 Abstract:
 
@@ -42,14 +42,19 @@ Notes:
 #include "Tiano.h"
 #include "EfiUtilityMsgs.h"
 
-#include EFI_GUID_DEFINITION(Apriori)
-#include EFI_GUID_DEFINITION(AcpiTableStorage)
-#include EFI_GUID_DEFINITION(Bmp)
-#include EFI_GUID_DEFINITION(AcpiTableStorage)
+#include EFI_GUID_DEFINITION (Apriori)
+#include EFI_GUID_DEFINITION (AcpiTableStorage)
+#include EFI_GUID_DEFINITION (Bmp)
+#include EFI_GUID_DEFINITION (AcpiTableStorage)
 
-#define GUID_XREF(varname, guid)     { #varname, #guid, guid }
+#define GUID_XREF(varname, guid) { \
+    #varname, #guid, guid \
+  }
 
-#define NULL_GUID   { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 }
+#define NULL_GUID \
+  { \
+    0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 \
+  }
 
 typedef struct {
   INT8      *VariableName;
@@ -62,16 +67,19 @@ typedef struct {
 // a GUID-to-name cross reference.
 // Use the #defined name from the GUID definition's source .h file.
 //
-static GUID_LIST mGuidList[] = 
-{
-  GUID_XREF(gAprioriGuid,             EFI_APRIORI_GUID),
+static GUID_LIST  mGuidList[] = {
+  GUID_XREF(gAprioriGuid, EFI_APRIORI_GUID),
   GUID_XREF(gEfiAcpiTableStorageGuid, EFI_ACPI_TABLE_STORAGE_GUID),
-  GUID_XREF(gEfiDefaultBmpLogoGuid,   EFI_DEFAULT_BMP_LOGO_GUID),
+  GUID_XREF(gEfiDefaultBmpLogoGuid, EFI_DEFAULT_BMP_LOGO_GUID),
   GUID_XREF(gEfiAcpiTableStorageGuid, EFI_ACPI_TABLE_STORAGE_GUID),
   //
   // Terminator
   //
-  { NULL, NULL, NULL_GUID } 
+  {
+    NULL,
+    NULL,
+    NULL_GUID
+  }
 };
 
 void
@@ -82,7 +90,7 @@ PrintGuidText (
   EFI_GUID  *Guid
   );
 
-int 
+int
 CreateGuidList (
   INT8    *OutFileName
   )
@@ -100,8 +108,8 @@ Returns:
   
 --*/
 {
-  FILE    *OutFptr;
-  int     Index;
+  FILE  *OutFptr;
+  int   Index;
 
   //
   // Open output file for writing. If the name is NULL, then write to stdout
@@ -115,6 +123,7 @@ Returns:
   } else {
     OutFptr = stdout;
   }
+
   for (Index = 0; mGuidList[Index].VariableName != NULL; Index++) {
     PrintGuidText (OutFptr, mGuidList[Index].VariableName, mGuidList[Index].DefineName, &mGuidList[Index].Guid);
   }
@@ -124,8 +133,10 @@ Returns:
   if (OutFileName != NULL) {
     fclose (OutFptr);
   }
+
   return STATUS_SUCCESS;
 }
+
 void
 PrintGuidText (
   FILE      *OutFptr,
@@ -154,19 +165,22 @@ Returns:
   if (OutFptr == NULL) {
     OutFptr = stdout;
   }
-  fprintf (OutFptr, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X %s %s\n", 
-          Guid->Data1, 
-          Guid->Data2, 
-          Guid->Data3, 
-          Guid->Data4[0], 
-          Guid->Data4[1], 
-          Guid->Data4[2], 
-          Guid->Data4[3], 
-          Guid->Data4[4],
-          Guid->Data4[5], 
-          Guid->Data4[6], 
-          Guid->Data4[7],
-          DefineName,
-          VariableName
-          );
+
+  fprintf (
+    OutFptr,
+    "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X %s %s\n",
+    Guid->Data1,
+    Guid->Data2,
+    Guid->Data3,
+    Guid->Data4[0],
+    Guid->Data4[1],
+    Guid->Data4[2],
+    Guid->Data4[3],
+    Guid->Data4[4],
+    Guid->Data4[5],
+    Guid->Data4[6],
+    Guid->Data4[7],
+    DefineName,
+    VariableName
+    );
 }

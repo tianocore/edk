@@ -26,7 +26,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (FormCallback)
 
-EFI_GUID gEfiFormCallbackProtocolGuid = EFI_FORM_CALLBACK_PROTOCOL_GUID;
+EFI_GUID  gEfiFormCallbackProtocolGuid = EFI_FORM_CALLBACK_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiFormCallbackProtocolGuid, "Form Callback Protocol", "Form Callback 1.0 protocol");
-

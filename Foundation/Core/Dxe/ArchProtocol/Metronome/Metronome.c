@@ -15,13 +15,13 @@ Module Name:
 
 Abstract:
 
-  Metronome Architectural Protocol as defined in EFI 1.1
+  Metronome Architectural Protocol as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
-#include EFI_ARCH_PROTOCOL_DEFINITION(Metronome)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Metronome)
 
-EFI_GUID gEfiMetronomeArchProtocolGuid = EFI_METRONOME_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiMetronomeArchProtocolGuid = EFI_METRONOME_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiMetronomeArchProtocolGuid, "Metronome", "Metronome Arch Protocol");

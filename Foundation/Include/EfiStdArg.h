@@ -58,19 +58,17 @@ Abstract:
 #ifndef _EFISTDARG_H_
 #define _EFISTDARG_H_
 
-#define _EFI_INT_SIZE_OF(n)  \
-  ( (sizeof(n) + sizeof(UINTN) - 1) & ~(sizeof(UINTN) - 1) )
-
+#define _EFI_INT_SIZE_OF(n) ((sizeof (n) + sizeof (UINTN) - 1) &~(sizeof (UINTN) - 1))
 
 //
 // Also support coding convention rules for var arg macros
 //
 #ifndef VA_START
 
-  typedef CHAR8   *VA_LIST;
-  #define VA_START(ap,v)  ( ap = (VA_LIST)&(v) + _EFI_INT_SIZE_OF(v) )
-  #define VA_ARG(ap,t)    ( *(t *)((ap += _EFI_INT_SIZE_OF(t)) - _EFI_INT_SIZE_OF(t)) )
-  #define VA_END(ap)      ( ap = (VA_LIST)0 )
+typedef CHAR8 *VA_LIST;
+#define VA_START(ap, v) (ap = (VA_LIST) & (v) + _EFI_INT_SIZE_OF (v))
+#define VA_ARG(ap, t)   (*(t *) ((ap += _EFI_INT_SIZE_OF (t)) - _EFI_INT_SIZE_OF (t)))
+#define VA_END(ap)      (ap = (VA_LIST) 0)
 
 #endif
 

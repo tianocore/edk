@@ -38,6 +38,7 @@ Revision History
 //
 EFI_FORWARD_DECLARATION (EFI_IDE_CONTROLLER_INIT_PROTOCOL);
 
+//
 //////////////////////////////////////////////////////////////////////////////////////////
 // EFI_IDE_BUS_ENUMERATION_PHASE
 // EFI_IDE_CONTROLLER_ENUM_PHASE
@@ -72,9 +73,11 @@ typedef enum {
 #define  EFI_SATA_GEN1_SPEED  1
 #define  EFI_SATA_GEN2_SPEED  2
 
+//
 //*******************************************************
 // EFI_IDE_CABLE_TYPE
 //*******************************************************
+//
 typedef enum {
   EfiIdeCableTypeUnknown,
   EfiIdeCableType40pin,
@@ -83,29 +86,31 @@ typedef enum {
   EfiIdeCableTypeMaximum
 } EFI_IDE_CABLE_TYPE;
 
-
+//
 //******************************************************
 // EFI_ATA_MODE
 //******************************************************
+//
 typedef struct {
   BOOLEAN  Valid;
   UINT32       Mode; 
 } EFI_ATA_MODE;
 
-
+//
 //******************************************************
 // EFI_ATA_EXTENDED_MODE
 //******************************************************
+//
 typedef struct {
   EFI_ATA_EXT_TRANSFER_PROTOCOL  TransferProtocol;
   UINT32                         Mode;
 } EFI_ATA_EXTENDED_MODE;
 
-
-
+//
 //******************************************************
 // EFI_ATA_COLLECTIVE_MODE
 //******************************************************
+//
 typedef struct {
   EFI_ATA_MODE           PioMode; 
   EFI_ATA_MODE           SingleWordDmaMode;
@@ -176,10 +181,11 @@ typedef struct {
 } EFI_ATA_IDENTIFY_DATA;
 
 #pragma pack()
-
+//
 //*******************************************************
 // EFI_ATAPI_IDENTIFY_DATA
 //*******************************************************
+//
 #pragma pack(1)
 typedef struct {
     UINT16  config;             // General Configuration
@@ -244,10 +250,11 @@ typedef struct {
 } EFI_ATAPI_IDENTIFY_DATA;
 
 #pragma pack()
-
+//
 //*******************************************************
 // EFI_IDENTIFY_DATA
 //*******************************************************
+//
 typedef union {
   EFI_ATA_IDENTIFY_DATA       AtaData;
   EFI_ATAPI_IDENTIFY_DATA    AtapiData;
@@ -255,7 +262,7 @@ typedef union {
 
 #define   EFI_ATAPI_DEVICE_IDENTIFY_DATA  0x8000
 
-
+//
 /////////////////////////////////////////////////////////////////////////////////////////
 // Function prototype declaration, for ANSI compatability
 //
@@ -305,8 +312,9 @@ EFI_STATUS
   OUT EFI_ATA_COLLECTIVE_MODE         **SupportedModes
 );
 
+//
 // ?? What happen to EFI_IDE_CONTROLLER_SET_TIMING ???
-
+//
 typedef
 EFI_STATUS
 (EFIAPI *EFI_IDE_CONTROLLER_SET_TIMING) (
@@ -316,7 +324,7 @@ EFI_STATUS
   IN  EFI_ATA_COLLECTIVE_MODE         *Modes
 );
 
-
+//
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interface structure 
 // EFI_IDE_CONTROLLER_INIT_PROTOCOL protocol provides the chipset specific information to the IDE bus driver.

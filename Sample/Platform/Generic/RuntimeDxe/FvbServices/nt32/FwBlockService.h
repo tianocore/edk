@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other header files
 //
-
 #include "Tiano.h"
 #include "EfiFirmwareVolumeHeader.h"
 #include "EfiRuntimeLib.h"
@@ -52,37 +51,37 @@ typedef struct {
 } EFI_FW_VOL_INSTANCE;
 
 typedef struct {
-  UINT32                      NumFv;
-  EFI_FW_VOL_INSTANCE         *FvInstance[2];
-  UINT8                       *FvbScratchSpace[2];
+  UINT32              NumFv;
+  EFI_FW_VOL_INSTANCE *FvInstance[2];
+  UINT8               *FvbScratchSpace[2];
 } ESAL_FWB_GLOBAL;
 
 //
 // Fvb Protocol instance data
 //
-
-#define FVB_DEVICE_FROM_THIS(a) CR(a, EFI_FW_VOL_BLOCK_DEVICE, FwVolBlockInstance, FVB_DEVICE_SIGNATURE)
-#define FVB_EXTEND_DEVICE_FROM_THIS(a) CR(a, EFI_FW_VOL_BLOCK_DEVICE, FvbExtension, FVB_DEVICE_SIGNATURE)
-#define FVB_DEVICE_SIGNATURE       EFI_SIGNATURE_32('F','V','B','N')
+#define FVB_DEVICE_FROM_THIS(a)         CR (a, EFI_FW_VOL_BLOCK_DEVICE, FwVolBlockInstance, FVB_DEVICE_SIGNATURE)
+#define FVB_EXTEND_DEVICE_FROM_THIS(a)  CR (a, EFI_FW_VOL_BLOCK_DEVICE, FvbExtension, FVB_DEVICE_SIGNATURE)
+#define FVB_DEVICE_SIGNATURE            EFI_SIGNATURE_32 ('F', 'V', 'B', 'N')
 
 typedef struct {
-  MEMMAP_DEVICE_PATH                    MemMapDevPath;
-  EFI_DEVICE_PATH_PROTOCOL              EndDevPath;
+  MEMMAP_DEVICE_PATH        MemMapDevPath;
+  EFI_DEVICE_PATH_PROTOCOL  EndDevPath;
 } FV_DEVICE_PATH;
 
 typedef struct {
-  UINTN                                 Signature;
-  FV_DEVICE_PATH                        DevicePath;
-  UINTN                                 Instance;
-  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    FwVolBlockInstance;
-  EFI_FVB_EXTENSION_PROTOCOL            FvbExtension;
+  UINTN                               Signature;
+  FV_DEVICE_PATH                      DevicePath;
+  UINTN                               Instance;
+  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  FwVolBlockInstance;
+  EFI_FVB_EXTENSION_PROTOCOL          FvbExtension;
 } EFI_FW_VOL_BLOCK_DEVICE;
 
-EFI_STATUS 
+EFI_STATUS
 GetFvbInfo (
   IN  UINT64                            FvLength,
   OUT EFI_FIRMWARE_VOLUME_HEADER        **FvbInfo
-  );
+  )
+;
 
 EFI_STATUS
 FvbReadBlock (
@@ -92,8 +91,9 @@ FvbReadBlock (
   IN OUT UINTN                            *NumBytes,
   IN UINT8                                *Buffer,
   IN ESAL_FWB_GLOBAL                      *Global,
-  IN BOOLEAN                              Virtual 
-  );
+  IN BOOLEAN                              Virtual
+  )
+;
 
 EFI_STATUS
 FvbWriteBlock (
@@ -103,53 +103,60 @@ FvbWriteBlock (
   IN OUT UINTN                            *NumBytes,
   IN UINT8                                *Buffer,
   IN ESAL_FWB_GLOBAL                      *Global,
-  IN BOOLEAN                              Virtual 
-  );
+  IN BOOLEAN                              Virtual
+  )
+;
 
 EFI_STATUS
 FvbEraseBlock (
   IN UINTN                                Instance,
   IN EFI_LBA                              Lba,
   IN ESAL_FWB_GLOBAL                      *Global,
-  IN BOOLEAN                              Virtual 
-  );
+  IN BOOLEAN                              Virtual
+  )
+;
 
 EFI_STATUS
 FvbSetVolumeAttributes (
   IN UINTN                                Instance,
   IN OUT EFI_FVB_ATTRIBUTES               *Attributes,
   IN ESAL_FWB_GLOBAL                      *Global,
-  IN BOOLEAN                              Virtual 
-  );
+  IN BOOLEAN                              Virtual
+  )
+;
 
 EFI_STATUS
 FvbGetVolumeAttributes (
   IN UINTN                                Instance,
   OUT EFI_FVB_ATTRIBUTES                  *Attributes,
   IN ESAL_FWB_GLOBAL                      *Global,
-  IN BOOLEAN                              Virtual 
-  );
+  IN BOOLEAN                              Virtual
+  )
+;
 
 EFI_STATUS
 FvbGetPhysicalAddress (
   IN UINTN                                Instance,
   OUT EFI_PHYSICAL_ADDRESS                *Address,
   IN ESAL_FWB_GLOBAL                      *Global,
-  IN BOOLEAN                              Virtual      
-  );
+  IN BOOLEAN                              Virtual
+  )
+;
 
 EFI_STATUS
 FvbInitialize (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  );
+  )
+;
 
 EFI_RUNTIMESERVICE
 VOID
 FvbClassAddressChangeEvent (
   IN EFI_EVENT        Event,
   IN VOID             *Context
-  );
+  )
+;
 
 EFI_STATUS
 FvbGetLbaAddress (
@@ -159,8 +166,9 @@ FvbGetLbaAddress (
   OUT UINTN                               *LbaLength,
   OUT UINTN                               *NumOfBlocks,
   IN  ESAL_FWB_GLOBAL                     *Global,
-  IN  BOOLEAN                             Virtual 
-  );
+  IN  BOOLEAN                             Virtual
+  )
+;
 
 //
 // Protocol APIs
@@ -168,58 +176,65 @@ FvbGetLbaAddress (
 EFI_STATUS
 EFIAPI
 FvbProtocolGetAttributes (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   OUT EFI_FVB_ATTRIBUTES                          *Attributes
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 FvbProtocolSetAttributes (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   IN OUT EFI_FVB_ATTRIBUTES                       *Attributes
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 FvbProtocolGetPhysicalAddress (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   OUT EFI_PHYSICAL_ADDRESS                        *Address
-  );
+  )
+;
 
 EFI_STATUS
 FvbProtocolGetBlockSize (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   IN  EFI_LBA                                     Lba,
   OUT UINTN                                       *BlockSize,
   OUT UINTN                                       *NumOfBlocks
-  );
+  )
+;
 
 EFI_STATUS
-EFIAPI 
+EFIAPI
 FvbProtocolRead (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   IN EFI_LBA                                      Lba,
   IN UINTN                                        Offset,
   IN OUT UINTN                                    *NumBytes,
   IN UINT8                                        *Buffer
-  );
+  )
+;
 
 EFI_STATUS
-EFIAPI 
+EFIAPI
 FvbProtocolWrite (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL   *This,
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   IN EFI_LBA                                      Lba,
   IN UINTN                                        Offset,
   IN OUT UINTN                                    *NumBytes,
   IN UINT8                                        *Buffer
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 FvbProtocolEraseBlocks (
   IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *This,
   ...
-  );
+  )
+;
 
 EFI_STATUS
 FvbExtendProtocolEraseCustomBlockRange (
@@ -228,6 +243,7 @@ FvbExtendProtocolEraseCustomBlockRange (
   IN UINTN                                OffsetStartLba,
   IN EFI_LBA                              LastLba,
   IN UINTN                                OffsetLastLba
-  );
+  )
+;
 
 #endif

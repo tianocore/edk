@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Firmware Volume Block protocol as defined in the EFI 2.0 Firmware Volume
+  Firmware Volume Block protocol as defined in the Tiano Firmware Volume
   specification.
 
   Low level firmware device access routines to abstract firmware device
@@ -23,14 +23,9 @@ Abstract:
  
 --*/
 
-#include "Tiano.h"                  
-#include EFI_PROTOCOL_DEFINITION(FirmwareVolumeBlock)
+#include "Tiano.h"
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 
-EFI_GUID gEfiFirmwareVolumeBlockProtocolGuid = EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID;
+EFI_GUID  gEfiFirmwareVolumeBlockProtocolGuid = EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID;
 
-EFI_GUID_STRING (                         \
-  &gEfiFirmwareVolumeBlockProtocolGuid,   \
-  "FirmwareVolumeBlock Protocol",         \
-  "Firmware Volume Block protocol"
-);
-
+EFI_GUID_STRING(&gEfiFirmwareVolumeBlockProtocolGuid, "FirmwareVolumeBlock Protocol", "Firmware Volume Block protocol");

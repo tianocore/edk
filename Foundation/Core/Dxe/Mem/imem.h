@@ -56,38 +56,151 @@ CoreAllocatePoolPages (
   IN EFI_MEMORY_TYPE   PoolType,
   IN UINTN             NumberOfPages,
   IN UINTN             Alignment
-  );
+  )
+/*++
+
+Routine Description:
+
+  Internal function.  Used by the pool functions to allocate pages
+  to back pool allocation requests.
+
+Arguments:
+
+  PoolType      - The type of memory for the new pool pages
+
+  NumberOfPages - No of pages to allocate
+  
+  Alignment     - Bits to align.
+
+Returns:
+
+  The allocated memory, or NULL
+
+--*/
+;
 
 
 VOID
 CoreFreePoolPages (
   IN EFI_PHYSICAL_ADDRESS   Memory,
   IN UINTN                  NumberOfPages
-  );
+  )
+/*++
+
+Routine Description:
+
+  Internal function.  Frees pool pages allocated via AllocatePoolPages ()
+
+Arguments:
+
+  Memory        - The base address to free
+
+  NumberOfPages - The number of pages to free
+
+Returns:
+
+  None
+
+--*/
+;
 
 
 VOID *
 CoreAllocatePoolI (
   IN EFI_MEMORY_TYPE  PoolType,
   IN UINTN            Size
-  );
+  )
+/*++
+
+Routine Description:
+
+  Internal function to allocate pool of a particular type.
+
+  N.B. Caller must have the memory lock held
+
+
+Arguments:
+
+  PoolType    - Type of pool to allocate
+
+  Size        - The amount of pool to allocate
+
+Returns:
+
+  The allocate pool, or NULL
+
+--*/
+;
 
 
 EFI_STATUS
 CoreFreePoolI (
   IN VOID           *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Internal function to free a pool entry.
+
+  N.B. Caller must have the memory lock held
+
+
+Arguments:
+
+  Buffer      - The allocated pool entry to free
+
+Returns:
+
+  EFI_INVALID_PARAMETER     - Buffer not valid
+  
+  EFI_SUCCESS               - Buffer successfully freed.
+
+--*/
+;
 
 
 VOID
 CoreAcquireMemoryLock (
   VOID
-  );
+  )
+/*++
+
+Routine Description:
+
+  Enter critical section by gaining lock on gMemoryLock
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
+;
 
 VOID
 CoreReleaseMemoryLock (
   VOID
-  );
+  )
+/*++
+
+Routine Description:
+
+  Exit critical section by releasing lock on gMemoryLock
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
+;
 
 
 //

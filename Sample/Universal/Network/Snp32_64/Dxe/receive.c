@@ -19,16 +19,15 @@ Revision history:
 
 #include "snp.h"
 
-
 EFI_STATUS
 pxe_receive (
-  SNP_DRIVER *snp,
-  VOID *BufferPtr,
-  UINTN *BuffSizePtr,
-  UINTN *HeaderSizePtr,
+  SNP_DRIVER      *snp,
+  VOID            *BufferPtr,
+  UINTN           *BuffSizePtr,
+  UINTN           *HeaderSizePtr,
   EFI_MAC_ADDRESS *SourceAddrPtr,
   EFI_MAC_ADDRESS *DestinationAddrPtr,
-  UINT16 *ProtocolPtr
+  UINT16          *ProtocolPtr
   )
 /*++
 
@@ -55,12 +54,12 @@ Returns:
 --*/
 {
   PXE_CPB_RECEIVE *cpb;
-  PXE_DB_RECEIVE *db;
-  UINTN buf_size;
+  PXE_DB_RECEIVE  *db;
+  UINTN           buf_size;
 
-  cpb = snp->cpb;
-  db = snp->db;
-  buf_size = *BuffSizePtr;
+  cpb       = snp->cpb;
+  db        = snp->db;
+  buf_size  = *BuffSizePtr;
   //
   // IMPORTANT NOTE:
   // In case of the older 3.0 UNDI, if the input buffer address is beyond 4GB,
@@ -89,55 +88,62 @@ Returns:
   // it is giving the address to the device and unmaps it before using the cpu
   // address!
   //
-  if (snp->IsOldUndi && ((UINT64)BufferPtr >= FOUR_GIGABYTES)) {
-    cpb->BufferAddr = (UINT64)snp->receive_buf;
-    cpb->BufferLen = (UINT32)(snp->init_info.MediaHeaderLen +
-                              snp->init_info.FrameDataLen);
+  if (snp->IsOldUndi && ((UINT64) BufferPtr >= FOUR_GIGABYTES)) {
+    cpb->BufferAddr = (UINT64) snp->receive_buf;
+    cpb->BufferLen  = (UINT32) (snp->init_info.MediaHeaderLen + snp->init_info.FrameDataLen);
   } else {
-    cpb->BufferAddr = (UINT64)BufferPtr;
-    cpb->BufferLen = (UINT32)*BuffSizePtr;
+    cpb->BufferAddr = (UINT64) BufferPtr;
+    cpb->BufferLen  = (UINT32) *BuffSizePtr;
   }
 
-  cpb->reserved = 0;
+  cpb->reserved       = 0;
 
-  snp->cdb.OpCode = PXE_OPCODE_RECEIVE;
-  snp->cdb.OpFlags = PXE_OPFLAGS_NOT_USED;
+  snp->cdb.OpCode     = PXE_OPCODE_RECEIVE;
+  snp->cdb.OpFlags    = PXE_OPFLAGS_NOT_USED;
 
-  snp->cdb.CPBsize = sizeof (PXE_CPB_RECEIVE);
-  snp->cdb.CPBaddr = (UINT64)cpb;
+  snp->cdb.CPBsize    = sizeof (PXE_CPB_RECEIVE);
+  snp->cdb.CPBaddr    = (UINT64) cpb;
 
-  snp->cdb.DBsize = sizeof (PXE_DB_RECEIVE);
-  snp->cdb.DBaddr = (UINT64)db;
+  snp->cdb.DBsize     = sizeof (PXE_DB_RECEIVE);
+  snp->cdb.DBaddr     = (UINT64) db;
 
-  snp->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  snp->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  snp->cdb.IFnum = snp->if_num;
-  snp->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  snp->cdb.IFnum      = snp->if_num;
+  snp->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
   //
   // Issue UNDI command and check result.
   //
+  DEBUG ((EFI_D_INFO, "\nsnp->undi.receive ()  "));
 
-  DEBUG((EFI_D_INFO, "\nsnp->undi.receive ()  "));
-
-  (*snp->issue_undi32_command) ((UINT64)&snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
 
   switch (snp->cdb.StatCode) {
-    case PXE_STATCODE_SUCCESS:
-        break;
+  case PXE_STATCODE_SUCCESS:
+    break;
 
-    case PXE_STATCODE_NO_DATA:
-        DEBUG((EFI_D_INFO, "\nsnp->undi.receive ()  %xh:%xh\n",
-            snp->cdb.StatFlags, snp->cdb.StatCode));
+  case PXE_STATCODE_NO_DATA:
+    DEBUG (
+      (EFI_D_INFO,
+      "\nsnp->undi.receive ()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
-        return EFI_NOT_READY;
+    return EFI_NOT_READY;
 
-    default:
-        DEBUG((EFI_D_ERROR, "\nsnp->undi.receive()  %xh:%xh\n",
-            snp->cdb.StatFlags, snp->cdb.StatCode));
+  default:
+    DEBUG (
+      (EFI_D_ERROR,
+      "\nsnp->undi.receive()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
-        return EFI_DEVICE_ERROR;
+    return EFI_DEVICE_ERROR;
   }
+
   *BuffSizePtr = db->FrameLen;
 
   if (HeaderSizePtr != NULL) {
@@ -153,10 +159,10 @@ Returns:
   }
 
   if (ProtocolPtr != NULL) {
-    *ProtocolPtr = (UINT16)PXE_SWAP_UINT16(db->Protocol);   /*  we need to do the byte swapping */
+    *ProtocolPtr = (UINT16) PXE_SWAP_UINT16 (db->Protocol); /*  we need to do the byte swapping */
   }
 
-  if (snp->IsOldUndi && ((UINT64)BufferPtr >= FOUR_GIGABYTES)) {
+  if (snp->IsOldUndi && ((UINT64) BufferPtr >= FOUR_GIGABYTES)) {
     EfiCopyMem (BufferPtr, snp->receive_buf, snp->init_info.MediaHeaderLen + snp->init_info.FrameDataLen);
   }
 
@@ -165,13 +171,13 @@ Returns:
 
 EFI_STATUS
 snp_undi32_receive (
-  IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
-  OUT UINTN *HeaderSizePtr OPTIONAL,
-  IN OUT UINTN *BuffSizePtr,
-  OUT VOID *BufferPtr,
-  OUT EFI_MAC_ADDRESS *SourceAddrPtr OPTIONAL,
-  OUT EFI_MAC_ADDRESS *DestinationAddrPtr OPTIONAL,
-  OUT UINT16 *ProtocolPtr OPTIONAL
+  IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
+  OUT UINTN                      *HeaderSizePtr OPTIONAL,
+  IN OUT UINTN                   *BuffSizePtr,
+  OUT VOID                       *BufferPtr,
+  OUT EFI_MAC_ADDRESS            * SourceAddrPtr OPTIONAL,
+  OUT EFI_MAC_ADDRESS            * DestinationAddrPtr OPTIONAL,
+  OUT UINT16                     *ProtocolPtr OPTIONAL
   )
 /*++
 
@@ -198,30 +204,30 @@ Returns:
 
 --*/
 {
-  SNP_DRIVER *snp;
+  SNP_DRIVER  *snp;
 
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS(this);
+  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
   if (snp == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
   switch (snp->mode.State) {
-    case EfiSimpleNetworkInitialized:
-        break;
+  case EfiSimpleNetworkInitialized:
+    break;
 
-    case EfiSimpleNetworkStopped:
-        return EFI_NOT_STARTED;
+  case EfiSimpleNetworkStopped:
+    return EFI_NOT_STARTED;
 
-    case EfiSimpleNetworkStarted:
-        return EFI_DEVICE_ERROR;
+  case EfiSimpleNetworkStarted:
+    return EFI_DEVICE_ERROR;
 
-    default:
-        return EFI_DEVICE_ERROR;
+  default:
+    return EFI_DEVICE_ERROR;
   }
 
   if ((BuffSizePtr == NULL) || (BufferPtr == NULL)) {
@@ -233,13 +239,12 @@ Returns:
   }
 
   return pxe_receive (
-            snp,
-            BufferPtr,
-            BuffSizePtr,
-            HeaderSizePtr,
-            SourceAddrPtr,
-            DestinationAddrPtr,
-            ProtocolPtr
-            );
+          snp,
+          BufferPtr,
+          BuffSizePtr,
+          HeaderSizePtr,
+          SourceAddrPtr,
+          DestinationAddrPtr,
+          ProtocolPtr
+          );
 }
-

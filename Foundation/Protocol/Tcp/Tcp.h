@@ -1,6 +1,3 @@
-#ifndef _EFITCP_H
-#define _EFITCP_H
-
 /*++
 
 Copyright 2004, Intel Corporation                                                         
@@ -25,6 +22,11 @@ Abstract:
 Revision History
 
 --*/
+
+
+#ifndef _EFITCP_H
+#define _EFITCP_H
+
 
 #include EFI_PROTOCOL_DEFINITION(PxeBaseCode)
 

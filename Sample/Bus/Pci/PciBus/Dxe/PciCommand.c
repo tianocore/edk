@@ -22,15 +22,15 @@ Revision History
 --*/
 
 #include "Pcibus.h"
-  
-EFI_STATUS 
+
+EFI_STATUS
 PciOperateRegister (
   IN  PCI_IO_DEVICE *PciIoDevice,
-  IN  UINT16        Command,  
+  IN  UINT16        Command,
   IN  UINT8         Offset,
   IN  UINT8         Operation,
-  OUT UINT16       *PtrCommand
-)
+  OUT UINT16        *PtrCommand
+  )
 /*++
 
 Routine Description:
@@ -42,50 +42,55 @@ Returns:
   None
 
 --*/
+// TODO:    PciIoDevice - add argument and description to function comment
+// TODO:    Command - add argument and description to function comment
+// TODO:    Offset - add argument and description to function comment
+// TODO:    Operation - add argument and description to function comment
+// TODO:    PtrCommand - add argument and description to function comment
 {
-  UINT16                 OldCommand;
-  EFI_STATUS             Status;
-  EFI_PCI_IO_PROTOCOL   *PciIo;
+  UINT16              OldCommand;
+  EFI_STATUS          Status;
+  EFI_PCI_IO_PROTOCOL *PciIo;
 
-  OldCommand = 0;
-  PciIo = &PciIoDevice->PciIo;
+  OldCommand  = 0;
+  PciIo       = &PciIoDevice->PciIo;
 
   if (Operation != EFI_SET_REGISTER) {
     Status = PciIo->Pci.Read (
-                              PciIo, 
-                              EfiPciIoWidthUint16, 
-                              Offset, 
-                              1, 
-                              &OldCommand
-                              );
-  
+                          PciIo,
+                          EfiPciIoWidthUint16,
+                          Offset,
+                          1,
+                          &OldCommand
+                          );
+
     if (Operation == EFI_GET_REGISTER) {
       *PtrCommand = OldCommand;
       return Status;
     }
   }
-    
+
   if (Operation == EFI_ENABLE_REGISTER) {
     OldCommand |= Command;
   } else if (Operation == EFI_DISABLE_REGISTER) {
-    OldCommand &= ~(Command);      
+    OldCommand &= ~(Command);
   } else {
     OldCommand = Command;
   }
-  
+
   return PciIo->Pci.Write (
-              PciIo, 
-              EfiPciIoWidthUint16, 
-              Offset, 
-              1, 
-              &OldCommand
-              );  
+                      PciIo,
+                      EfiPciIoWidthUint16,
+                      Offset,
+                      1,
+                      &OldCommand
+                      );
 }
-   
+
 BOOLEAN
 PciCapabilitySupport (
   IN PCI_IO_DEVICE  *PciIoDevice
-)
+  )
 /*++
 
 Routine Description:
@@ -97,6 +102,7 @@ Returns:
   None
 
 --*/
+// TODO:    PciIoDevice - add argument and description to function comment
 {
 
   if (PciIoDevice->Pci.Hdr.Status & EFI_PCI_STATUS_CAPABILITY) {
@@ -108,11 +114,11 @@ Returns:
 
 EFI_STATUS
 LocateCapabilityRegBlock (
-  IN PCI_IO_DEVICE *PciIoDevice,
+  IN PCI_IO_DEVICE  *PciIoDevice,
   IN UINT8          CapId,
-  OUT UINT8        *Offset,
-  OUT UINT8        *NextRegBlock
-)
+  OUT UINT8         *Offset,
+  OUT UINT8         *NextRegBlock
+  )
 /*++
 
 Routine Description:
@@ -129,15 +135,18 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
-  UINT8  CapabilityPtr;
-  UINT16 CapabilityEntry;
-  UINT8  CapabilityID;
- 
+  UINT8   CapabilityPtr;
+  UINT16  CapabilityEntry;
+  UINT8   CapabilityID;
+
   //
   // To check the cpability of this device supports
-  //   
-  if (!PciCapabilitySupport (PciIoDevice)) {    
+  //
+  if (!PciCapabilitySupport (PciIoDevice)) {
     return EFI_UNSUPPORTED;
   }
 
@@ -147,23 +156,23 @@ Returns:
 
     CapabilityPtr = 0;
     if (IS_CARDBUS_BRIDGE (&PciIoDevice->Pci)) {
-      
+
       PciIoDevice->PciIo.Pci.Read (
-                               &PciIoDevice->PciIo, 
-                               EfiPciIoWidthUint8,
-                               EFI_PCI_CARDBUS_BRIDGE_CAPABILITY_PTR,
-                               1,
-                               &CapabilityPtr
-                               );
+                              &PciIoDevice->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_CARDBUS_BRIDGE_CAPABILITY_PTR,
+                              1,
+                              &CapabilityPtr
+                              );
     } else {
 
       PciIoDevice->PciIo.Pci.Read (
-                               &PciIoDevice->PciIo, 
-                               EfiPciIoWidthUint8,
-                               EFI_PCI_CAPABILITY_PTR,
-                               1,
-                               &CapabilityPtr
-                               );
+                              &PciIoDevice->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_CAPABILITY_PTR,
+                              1,
+                              &CapabilityPtr
+                              );
     }
   }
 
@@ -173,23 +182,24 @@ Returns:
     //
     CapabilityPtr &= 0xFC;
     PciIoDevice->PciIo.Pci.Read (
-                             &PciIoDevice->PciIo, 
-                             EfiPciIoWidthUint16,
-                             CapabilityPtr,
-                             1,
-                             &CapabilityEntry
-                             );
+                            &PciIoDevice->PciIo,
+                            EfiPciIoWidthUint16,
+                            CapabilityPtr,
+                            1,
+                            &CapabilityEntry
+                            );
 
     CapabilityID = (UINT8) CapabilityEntry;
-    
+
     if (CapabilityID == CapId) {
       *Offset = CapabilityPtr;
       if (NextRegBlock != NULL) {
         *NextRegBlock = (UINT8) (CapabilityEntry >> 8);
       }
+
       return EFI_SUCCESS;
     }
-    
+
     CapabilityPtr = (UINT8) (CapabilityEntry >> 8);
   }
 

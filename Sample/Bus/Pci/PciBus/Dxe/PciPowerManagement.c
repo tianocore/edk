@@ -23,11 +23,10 @@ Revision History
 
 #include "Pcibus.h"
 
-
 EFI_STATUS
 ResetPowerManagementFeature (
   IN PCI_IO_DEVICE *PciIoDevice
-)
+  )
 /*++
 
 Routine Description:
@@ -43,21 +42,24 @@ Returns:
   None
 
 --*/
+// TODO:    PciIoDevice - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS Status;
-  UINT8      PowerManagementRegBlock;
-  UINT16     PMCSR;
+  EFI_STATUS  Status;
+  UINT8       PowerManagementRegBlock;
+  UINT16      PMCSR;
 
   PowerManagementRegBlock = 0;
 
   Status = LocateCapabilityRegBlock (
-                                        PciIoDevice,
-                                        EFI_PCI_CAPABILITY_ID_PMI,
-                                        &PowerManagementRegBlock,
-                                        NULL
-                                      );
+            PciIoDevice,
+            EFI_PCI_CAPABILITY_ID_PMI,
+            &PowerManagementRegBlock,
+            NULL
+            );
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
@@ -70,33 +72,12 @@ Returns:
   // Write PMCSR
   //
   PciIoDevice->PciIo.Pci.Write (
-                                &PciIoDevice->PciIo,
-                                EfiPciIoWidthUint16,
-                                PowerManagementRegBlock + 4,
-                                1,
-                                &PMCSR
-                              );
+                          &PciIoDevice->PciIo,
+                          EfiPciIoWidthUint16,
+                          PowerManagementRegBlock + 4,
+                          1,
+                          &PMCSR
+                          );
 
   return EFI_SUCCESS;
 }
-
-                                
-
-
-
-
-
-
-
-
-
-
-
-
-         
-
-
-
-
-
-

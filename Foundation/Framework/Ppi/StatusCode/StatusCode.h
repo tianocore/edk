@@ -15,35 +15,34 @@ Module Name:
     
 Abstract:
 
-  Status Code PPI as defined in EFI 2.0
+  Status Code PPI as defined in Tiano
 
 --*/
 
 #ifndef _PEI_STATUS_CODE_PPI_H
 #define _PEI_STATUS_CODE_PPI_H
 
-#define PEI_STATUS_CODE_PPI_GUID  \
-  {0x229832d3, 0x7a30, 0x4b36, 0xb8, 0x27, 0xf4, 0xc, 0xb7, 0xd4, 0x54, 0x36}
-  
+#define PEI_STATUS_CODE_PPI_GUID \
+  { \
+    0x229832d3, 0x7a30, 0x4b36, 0xb8, 0x27, 0xf4, 0xc, 0xb7, 0xd4, 0x54, 0x36 \
+  }
 
 EFI_FORWARD_DECLARATION (PEI_STATUS_CODE_PPI);
-
 
 typedef
 EFI_STATUS
 (EFIAPI *PEI_REPORT_STATUS_CODE) (
-  IN EFI_PEI_SERVICES        **PeiServices,
+  IN EFI_PEI_SERVICES                **PeiServices,
   IN EFI_STATUS_CODE_TYPE            CodeType,
   IN EFI_STATUS_CODE_VALUE           Value,
   IN UINT32                          Instance,
-  IN EFI_GUID                        *CallerId,
-  IN EFI_STATUS_CODE_DATA            *Data OPTIONAL
+  IN EFI_GUID                        * CallerId,
+  IN EFI_STATUS_CODE_DATA            * Data OPTIONAL
   );
 
 typedef struct _PEI_STATUS_CODE_PPI {
   PEI_REPORT_STATUS_CODE  ReportStatusCode;
 } PEI_STATUS_CODE_PPI;
-
 
 extern EFI_GUID gPeiStatusCodePpiGuid;
 

@@ -15,7 +15,7 @@ Module Name:
     
 Abstract:
 
-  EFI 2.0 Guid used to define the Firmware File System.  See the EFI Firmware 
+  Tiano Guid used to define the Firmware File System.  See the EFI Firmware 
   File System Specification for more details.
 
 --*/

@@ -22,16 +22,15 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 // Static (possibly build generated) Bios Vendor data.
 //
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_ONBOARD_DEVICE, MiscOnboardDevice) = {
   STRING_TOKEN(STR_MISC_ONBOARD_DEVICE_DESCRIPTION),  // OnBoardDeviceDescription
-  {                                     // OnBoardDeviceStatus
-    EfiOnBoardDeviceTypeOther,          // DeviceType
-    0,                                  // DeviceEnabled
-    0                                   // Reserved
+  {                             // OnBoardDeviceStatus
+    EfiOnBoardDeviceTypeOther,  // DeviceType
+    0,                          // DeviceEnabled
+    0                           // Reserved
   },
-  0                                     // OnBoardDevicePath
+  0                             // OnBoardDevicePath
 };

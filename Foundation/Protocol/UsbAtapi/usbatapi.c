@@ -20,15 +20,12 @@ Abstract:
 Revision History
 
 --*/
+
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
-#include EFI_PROTOCOL_DEFINITION(UsbAtapi)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
+#include EFI_PROTOCOL_DEFINITION (UsbAtapi)
 
-EFI_GUID gEfiUsbAtapiProtocolGuid = EFI_USB_ATAPI_PROTOCOL_GUID;
+EFI_GUID  gEfiUsbAtapiProtocolGuid = EFI_USB_ATAPI_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiUsbAtapiProtocolGuid, \
-            "Usb Atapi Protocol", \
-            "EFI 1.1 Usb Atapi Protocol");
-
-                                
+EFI_GUID_STRING(&gEfiUsbAtapiProtocolGuid, "Usb Atapi Protocol", "Usb Atapi Protocol");

@@ -22,9 +22,7 @@ Abstract:
 
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (Ebc)
- 
 
-EFI_GUID gEfiEbcProtocolGuid = EFI_EBC_INTERPRETER_PROTOCOL_GUID;
+EFI_GUID  gEfiEbcProtocolGuid = EFI_EBC_INTERPRETER_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiEbcProtocolGuid, "EBC Protocol", "EFI 1.1 EBC protocol");
-

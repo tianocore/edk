@@ -25,15 +25,14 @@ Abstract:
 //
 // Globals only work at BootService Time. NOT at Runtime!
 //
-
 static EFI_DATA_HUB_PROTOCOL  *mDataHub;
 static EFI_LIST_ENTRY         mRecordBuffer;
 static INTN                   mRecordNum;
 static EFI_EVENT              mLogDataHubEvent;
-static EFI_LOCK               mStatusCodeReportLock = EFI_INITIALIZE_LOCK_VARIABLE (EFI_TPL_HIGH_LEVEL);
-static BOOLEAN                mEventHandlerActive = FALSE;
+static EFI_LOCK               mStatusCodeReportLock = EFI_INITIALIZE_LOCK_VARIABLE(EFI_TPL_HIGH_LEVEL);
+static BOOLEAN                mEventHandlerActive   = FALSE;
 
-STATUS_CODE_RECORD_LIST* 
+STATUS_CODE_RECORD_LIST *
 GetRecordBuffer (
   VOID
   )
@@ -55,18 +54,18 @@ Returns:
 {
   STATUS_CODE_RECORD_LIST *Buffer;
 
-  gBS->AllocatePool(EfiBootServicesData, sizeof(STATUS_CODE_RECORD_LIST), &Buffer);
-  if ( Buffer == NULL) {
+  gBS->AllocatePool (EfiBootServicesData, sizeof (STATUS_CODE_RECORD_LIST), &Buffer);
+  if (Buffer == NULL) {
     return NULL;
   }
-  EfiCommonLibZeroMem(Buffer, sizeof(STATUS_CODE_RECORD_LIST));
+
+  EfiCommonLibZeroMem (Buffer, sizeof (STATUS_CODE_RECORD_LIST));
   Buffer->Signature = BS_DATA_HUB_STATUS_CODE_SIGNATURE;
 
   return Buffer;
 }
 
-
-DATA_HUB_STATUS_CODE_DATA_RECORD* 
+DATA_HUB_STATUS_CODE_DATA_RECORD *
 AquireEmptyRecordBuffer (
   VOID
   )
@@ -86,21 +85,21 @@ Returns:
 
 --*/
 {
-  STATUS_CODE_RECORD_LIST  *DataBuffer;
-  
+  STATUS_CODE_RECORD_LIST *DataBuffer;
+
   if (mRecordNum < MAX_RECORD_NUM) {
-    DataBuffer = GetRecordBuffer();
+    DataBuffer = GetRecordBuffer ();
     if (DataBuffer != NULL) {
       EfiAcquireLock (&mStatusCodeReportLock);
-      InsertTailList ( &mRecordBuffer, &DataBuffer->Link);
-      mRecordNum ++;
+      InsertTailList (&mRecordBuffer, &DataBuffer->Link);
+      mRecordNum++;
       EfiReleaseLock (&mStatusCodeReportLock);
-      return (DATA_HUB_STATUS_CODE_DATA_RECORD*)DataBuffer->RecordBuffer;
+      return (DATA_HUB_STATUS_CODE_DATA_RECORD *) DataBuffer->RecordBuffer;
     }
   }
+
   return NULL;
 }
-
 
 EFI_STATUS
 ReleaseRecordBuffer (
@@ -127,24 +126,24 @@ Returns:
   if (mRecordNum <= 0) {
     return EFI_UNSUPPORTED;
   }
+
   EfiAcquireLock (&mStatusCodeReportLock);
-  RemoveEntryList(&RecordBuffer->Link);  
-  mRecordNum --;    
+  RemoveEntryList (&RecordBuffer->Link);
+  mRecordNum--;
   EfiReleaseLock (&mStatusCodeReportLock);
   gBS->FreePool (RecordBuffer);
   return EFI_SUCCESS;
 }
 
-
 EFI_BOOTSERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 BsDataHubReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -183,20 +182,20 @@ Returns:
   if (mEventHandlerActive) {
     return EFI_SUCCESS;
   }
-  DataHub = (DATA_HUB_STATUS_CODE_DATA_RECORD *)AquireEmptyRecordBuffer ();
+
+  DataHub = (DATA_HUB_STATUS_CODE_DATA_RECORD *) AquireEmptyRecordBuffer ();
   if (DataHub == NULL) {
     //
     // There are no empty record buffer in private buffers
     //
     return EFI_OUT_OF_RESOURCES;
-  }  
-
+  }
   //
-  // Construct Data Hub Extended Data 
+  // Construct Data Hub Extended Data
   //
-  DataHub->CodeType      = CodeType;
-  DataHub->Value         = Value;
-  DataHub->Instance      = Instance;
+  DataHub->CodeType = CodeType;
+  DataHub->Value    = Value;
+  DataHub->Instance = Instance;
 
   if (CallerId != NULL) {
     EfiCopyMem (&DataHub->CallerId, CallerId, sizeof (EFI_GUID));
@@ -217,42 +216,42 @@ Returns:
       // Convert Ascii Format string to Unicode.
       //
       for (Index = 0; Format[Index] != '\0' && Index < (BYTES_PER_RECORD - 1); Index += 1) {
-        FormatBuffer[Index] = (CHAR16)Format[Index];
+        FormatBuffer[Index] = (CHAR16) Format[Index];
       }
+
       FormatBuffer[Index] = L'\0';
 
       //
       // Put processed string into the buffer
       //
       Index = VSPrint (
-        (UINT16 *)(DataHub + 1), 
-        BYTES_PER_RECORD - (sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD)),
-        FormatBuffer,
-        Marker
-        );
+                (UINT16 *) (DataHub + 1),
+                BYTES_PER_RECORD - (sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD)),
+                FormatBuffer,
+                Marker
+                );
 
       //
       // DATA_HUB_STATUS_CODE_DATA_RECORD followed by VSPrint String Buffer
       //
-      DataHub->Data.Size = (UINT16)(Index * sizeof (CHAR16));
+      DataHub->Data.Size = (UINT16) (Index * sizeof (CHAR16));
 
     } else {
       //
       // Default behavior is to copy optional data
       //
-      if (Data->Size > (BYTES_PER_RECORD -  sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD))) {
-        DataHub->Data.Size = (UINT16)(BYTES_PER_RECORD - sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD));
+      if (Data->Size > (BYTES_PER_RECORD - sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD))) {
+        DataHub->Data.Size = (UINT16) (BYTES_PER_RECORD - sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD));
       }
 
       EfiCopyMem (DataHub + 1, Data + 1, DataHub->Data.Size);
     }
   }
- 
+
   gBS->SignalEvent (mLogDataHubEvent);
 
   return EFI_SUCCESS;
 }
-
 
 VOID
 EFIAPI
@@ -289,21 +288,21 @@ Returns:
   // Set our global flag so we don't recurse if we get an error here.
   //
   mEventHandlerActive = TRUE;
-  
+
   //
   // Log DataRecord in Data Hub.
-  // If there are multiple DataRecords, Log all of them. 
+  // If there are multiple DataRecords, Log all of them.
   //
   for (Link = mRecordBuffer.ForwardLink; Link != &mRecordBuffer;) {
     BufferEntry = CR (Link, STATUS_CODE_RECORD_LIST, Link, BS_DATA_HUB_STATUS_CODE_SIGNATURE);
-    DataRecord = (DATA_HUB_STATUS_CODE_DATA_RECORD *) (BufferEntry->RecordBuffer);
-    Link = Link->ForwardLink;
-    
+    DataRecord  = (DATA_HUB_STATUS_CODE_DATA_RECORD *) (BufferEntry->RecordBuffer);
+    Link        = Link->ForwardLink;
+
     //
     // Add in the size of the header we added.
     //
     Size = sizeof (DATA_HUB_STATUS_CODE_DATA_RECORD) + DataRecord->Data.Size;
-  
+
     if ((DataRecord->CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE) {
       DataRecordClass = EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
     } else if ((DataRecord->CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_ERROR_CODE) {
@@ -314,15 +313,15 @@ Returns:
       //
       // Should never get here.
       //
-      DataRecordClass = EFI_DATA_RECORD_CLASS_DEBUG | 
-                        EFI_DATA_RECORD_CLASS_ERROR | 
-                        EFI_DATA_RECORD_CLASS_DATA  | 
-                        EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
+      DataRecordClass = EFI_DATA_RECORD_CLASS_DEBUG |
+        EFI_DATA_RECORD_CLASS_ERROR |
+        EFI_DATA_RECORD_CLASS_DATA |
+        EFI_DATA_RECORD_CLASS_PROGRESS_CODE;
     }
-    
-    if (((DataRecord->Instance & EFI_D_ERROR) != 0) && 
-        (((DataRecord->Instance & EFI_D_POOL) != 0) || 
-         ((DataRecord->Instance & EFI_D_PAGE) != 0))) {
+
+    if (((DataRecord->Instance & EFI_D_ERROR) != 0) &&
+        (((DataRecord->Instance & EFI_D_POOL) != 0) || ((DataRecord->Instance & EFI_D_PAGE) != 0))
+        ) {
       //
       // If memory error, do not call LogData ().
       //
@@ -333,23 +332,22 @@ Returns:
       // Log DataRecord in Data Hub
       //
       Status = mDataHub->LogData (
-                           mDataHub,
-                           &gEfiStatusCodeGuid,
-                           &gEfiStatusCodeArchProtocolGuid,
-                           DataRecordClass,
-                           DataRecord,
-                           (UINT32)Size
-                           );
+                          mDataHub,
+                          &gEfiStatusCodeGuid,
+                          &gEfiStatusCodeArchProtocolGuid,
+                          DataRecordClass,
+                          DataRecord,
+                          (UINT32) Size
+                          );
     }
-    
+
     ReleaseRecordBuffer (BufferEntry);
   }
-  
-  mEventHandlerActive = FALSE;
-  
-  return;
-}
 
+  mEventHandlerActive = FALSE;
+
+  return ;
+}
 
 EFI_BOOTSERVICE
 EFI_STATUS
@@ -392,12 +390,12 @@ Returns:
   // Create a Notify Event to log data in Data Hub
   //
   Status = gBS->CreateEvent (
-    EFI_EVENT_NOTIFY_SIGNAL, 
-    EFI_TPL_CALLBACK, 
-    LogDataHubEventHandler, 
-    NULL,
-    &mLogDataHubEvent
-    );
+                  EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_CALLBACK,
+                  LogDataHubEventHandler,
+                  NULL,
+                  &mLogDataHubEvent
+                  );
 
   return EFI_SUCCESS;
 }

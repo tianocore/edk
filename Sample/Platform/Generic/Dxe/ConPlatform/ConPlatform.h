@@ -16,9 +16,9 @@ Module Name:
 Abstract:
 
 --*/
+
 #ifndef CON_MANAGE_H_
 #define CON_MANAGE_H_
-
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
@@ -31,26 +31,26 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
-#include EFI_GUID_DEFINITION     (GlobalVariable)
+#include EFI_GUID_DEFINITION (GlobalVariable)
 
 //
 // Produced Protocols
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
-#include EFI_GUID_DEFINITION     (ConsoleInDevice)
-#include EFI_GUID_DEFINITION     (ConsoleOutDevice)
-#include EFI_GUID_DEFINITION     (StandardErrorDevice)
-#include EFI_GUID_DEFINITION     (HotPlugDevice)
+#include EFI_GUID_DEFINITION (ConsoleInDevice)
+#include EFI_GUID_DEFINITION (ConsoleOutDevice)
+#include EFI_GUID_DEFINITION (StandardErrorDevice)
+#include EFI_GUID_DEFINITION (HotPlugDevice)
 
 //
 //
 //
-#define VarConsoleInpDev L"ConInDev"
-#define VarConsoleInp    L"ConIn"
-#define VarConsoleOutDev L"ConOutDev"
-#define VarConsoleOut    L"ConOut"
-#define VarErrorOutDev   L"ErrOutDev"
-#define VarErrorOut      L"ErrOut"
+#define VarConsoleInpDev  L"ConInDev"
+#define VarConsoleInp     L"ConIn"
+#define VarConsoleOutDev  L"ConOutDev"
+#define VarConsoleOut     L"ConOut"
+#define VarErrorOutDev    L"ErrOutDev"
+#define VarErrorOut       L"ErrOut"
 
 typedef enum {
   CHECK,
@@ -61,7 +61,6 @@ typedef enum {
 //
 // Global variables
 //
-
 extern EFI_DRIVER_BINDING_PROTOCOL gConPlatformTextInDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL gConPlatformTextOutDriverBinding;
 
@@ -139,12 +138,12 @@ VOID *
 ConPlatformGetVariable (
   IN  CHAR16              *Name
   );
-  
+
 EFI_STATUS
 ConPlatformMatchDevicePaths (
-  IN  EFI_DEVICE_PATH_PROTOCOL  *Multi,
-  IN  EFI_DEVICE_PATH_PROTOCOL  *Single,
-  IN  EFI_DEVICE_PATH_PROTOCOL  **NewDevicePath  OPTIONAL,
+  IN  EFI_DEVICE_PATH_PROTOCOL  * Multi,
+  IN  EFI_DEVICE_PATH_PROTOCOL  * Single,
+  IN  EFI_DEVICE_PATH_PROTOCOL  **NewDevicePath OPTIONAL,
   IN  BOOLEAN                   Delete
   );
 
@@ -154,7 +153,7 @@ ConPlatformUpdateDeviceVariable (
   IN  EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
   IN  CONPLATFORM_VAR_OPERATION Operation
   );
-  
+
 BOOLEAN
 IsHotPlugDevice (
   EFI_HANDLE    DriverBindingHandle,

@@ -97,7 +97,7 @@ Arguments:
 
 Returns:
 
-  None
+  Status code
 
 --*/
 {
@@ -242,5 +242,3 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
-

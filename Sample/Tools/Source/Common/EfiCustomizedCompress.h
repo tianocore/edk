@@ -19,10 +19,14 @@ Abstract:
   
 --*/
 
+#ifndef _EFICUSTOMIZEDCOMPRESS_H
+#define _EFICUSTOMIZEDCOMPRESS_H
 EFI_STATUS
 SetCustomizedCompressionType (
   IN  CHAR8   *Type
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -39,14 +43,15 @@ Returns:
 
     
 --*/
-
 EFI_STATUS
 CustomizedGetInfo (
   IN      VOID    *Source,
   IN      UINT32  SrcSize,
   OUT     UINT32  *DstSize,
   OUT     UINT32  *ScratchSize
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -66,17 +71,17 @@ Returns:
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
-
-
 EFI_STATUS
 CustomizedDecompress (
   IN      VOID    *Source,
   IN      UINT32  SrcSize,
   IN OUT  VOID    *Destination,
   IN      UINT32  DstSize,
-  IN OUT  VOID   *Scratch,
+  IN OUT  VOID    *Scratch,
   IN      UINT32  ScratchSize
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -99,14 +104,15 @@ Returns:
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
-
 EFI_STATUS
 CustomizedCompress (
   IN      UINT8   *SrcBuffer,
   IN      UINT32  SrcSize,
   IN      UINT8   *DstBuffer,
   IN OUT  UINT32  *DstSize
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -128,3 +134,5 @@ Returns:
   EFI_SUCCESS           - Compression is successful.
 
 --*/
+
+#endif

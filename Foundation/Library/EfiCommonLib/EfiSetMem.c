@@ -30,7 +30,7 @@ VOID
 EfiCommonLibSetMem (
   IN VOID   *Buffer,
   IN UINTN  Size,
-  IN UINT8  Value    
+  IN UINT8  Value
   )
 /*++
 

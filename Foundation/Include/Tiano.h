@@ -27,11 +27,7 @@ Abstract:
 #ifndef _TIANO_H_
 #define _TIANO_H_
 
-
-
 #define TIANO_EXTENSION_FLAG
-
-
 
 #include "TianoCommon.h"
 #include "TianoApi.h"
@@ -39,17 +35,12 @@ Abstract:
 #include "TianoDevicePath.h"
 #include "EfiSpec.h"
 
-
-
 //
 // Firmware Vendor and Firmware Revision information
 //
 #define EFI_FIRMWARE_VENDOR         L"INTEL"
 #define EFI_FIRMWARE_MAJOR_REVISION 0x2000
 #define EFI_FIRMWARE_MINOR_REVISION 1
-#define EFI_FIRMWARE_REVISION ( (EFI_FIRMWARE_MAJOR_REVISION << 16) | \
-                                (EFI_FIRMWARE_MINOR_REVISION) )
-
+#define EFI_FIRMWARE_REVISION       ((EFI_FIRMWARE_MAJOR_REVISION << 16) | (EFI_FIRMWARE_MINOR_REVISION))
 
 #endif
-

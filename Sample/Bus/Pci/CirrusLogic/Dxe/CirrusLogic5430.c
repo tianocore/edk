@@ -48,7 +48,7 @@ EFI_DRIVER_BINDING_PROTOCOL gCirrusLogic5430DriverBinding = {
 // Cirrus Logic 5430 Driver Entry point
 //
 
-EFI_DRIVER_ENTRY_POINT(CirrusLogic5430UgaDrawDriverEntryPoint)
+EFI_DRIVER_ENTRY_POINT (CirrusLogic5430UgaDrawDriverEntryPoint)
 
 EFI_STATUS
 EFIAPI
@@ -56,7 +56,6 @@ CirrusLogic5430UgaDrawDriverEntryPoint (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   )
-                
 /*++
 
 Routine Description:
@@ -68,17 +67,18 @@ Returns:
     None
 
 --*/
-
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gCirrusLogic5430DriverBinding,
-           ImageHandle,
-           &gCirrusLogic5430ComponentName,
-           NULL,
-           NULL
-           );
+          ImageHandle,
+          SystemTable,
+          &gCirrusLogic5430DriverBinding,
+          ImageHandle,
+          &gCirrusLogic5430ComponentName,
+          NULL,
+          NULL
+          );
 }
 
 EFI_STATUS
@@ -99,23 +99,25 @@ Returns:
     None
 
 --*/
-
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS           Status; 
-  EFI_PCI_IO_PROTOCOL  *PciIo;
-  PCI_TYPE00           Pci;
+  EFI_STATUS          Status;
+  EFI_PCI_IO_PROTOCOL *PciIo;
+  PCI_TYPE00          Pci;
 
   //
   // Open the PCI I/O Protocol
   //
   Status = gBS->OpenProtocol (
-                  Controller,       
-                  &gEfiPciIoProtocolGuid, 
-                  (VOID **)&PciIo,
-                  This->DriverBindingHandle,   
-                  Controller,   
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  (VOID **) &PciIo,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
-                 );
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -124,10 +126,10 @@ Returns:
   // Read the PCI Configuration Header from the PCI Device
   //
   Status = PciIo->Pci.Read (
-                        PciIo, 
-                        EfiPciIoWidthUint32, 
-                        0, 
-                        sizeof (Pci) / sizeof (UINT32), 
+                        PciIo,
+                        EfiPciIoWidthUint32,
+                        0,
+                        sizeof (Pci) / sizeof (UINT32),
                         &Pci
                         );
   if (EFI_ERROR (Status)) {
@@ -139,37 +141,38 @@ Returns:
   // See if the I/O enable is on.  Most systems only allow one VGA device to be turned on
   // at a time, so see if this is one that is turned on.
   //
-//  if (((Pci.Hdr.Command & 0x01) == 0x01)) {
+  //  if (((Pci.Hdr.Command & 0x01) == 0x01)) {
+  //
+  // See if this is a Cirrus Logic PCI controller
+  //
+  if (Pci.Hdr.VendorId == CIRRUS_LOGIC_VENDOR_ID) {
     //
-    // See if this is a Cirrus Logic PCI controller
+    // See if this is a 5430 or a 5446 PCI controller
     //
-    if (Pci.Hdr.VendorId == CIRRUS_LOGIC_VENDOR_ID) {
-      //
-      // See if this is a 5430 or a 5446 PCI controller
-      //
-      if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_DEVICE_ID) {
-        Status = EFI_SUCCESS;
-      }
-      if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_ALTERNATE_DEVICE_ID) {
-        Status = EFI_SUCCESS;
-      }
-      if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5446_DEVICE_ID) {
-        Status = EFI_SUCCESS;
-      }
+    if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_DEVICE_ID) {
+      Status = EFI_SUCCESS;
     }
-//  }
+
+    if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5430_ALTERNATE_DEVICE_ID) {
+      Status = EFI_SUCCESS;
+    }
+
+    if (Pci.Hdr.DeviceId == CIRRUS_LOGIC_5446_DEVICE_ID) {
+      Status = EFI_SUCCESS;
+    }
+  }
 
 Done:
   //
   // Close the PCI I/O Protocol
   //
   gBS->CloseProtocol (
-         Controller,       
-         &gEfiPciIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
-  
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
   return Status;
 }
 
@@ -191,7 +194,9 @@ Returns:
     None
 
 --*/
-
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
   EFI_STATUS                      Status;
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
@@ -209,30 +214,30 @@ Returns:
   //
   // Set up context record
   //
-  Private->Signature = CIRRUS_LOGIC_5430_PRIVATE_DATA_SIGNATURE;
-  Private->Handle    = Controller;
+  Private->Signature  = CIRRUS_LOGIC_5430_PRIVATE_DATA_SIGNATURE;
+  Private->Handle     = Controller;
 
   //
   // Open PCI I/O Protocol
   //
   Status = gBS->OpenProtocol (
-                      Private->Handle, 
-                      &gEfiPciIoProtocolGuid, 
-                      (VOID **)&Private->PciIo,
-                      This->DriverBindingHandle,   
-                      Private->Handle,   
-                      EFI_OPEN_PROTOCOL_BY_DRIVER 
-                      );
+                  Private->Handle,
+                  &gEfiPciIoProtocolGuid,
+                  (VOID **) &Private->PciIo,
+                  This->DriverBindingHandle,
+                  Private->Handle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
   if (EFI_ERROR (Status)) {
     goto Error;
   }
 
-  Status = Private->PciIo->Attributes ( 
-                             Private->PciIo, 
-                             EfiPciIoAttributeOperationEnable, 
-                             EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
-                             NULL
-                             );
+  Status = Private->PciIo->Attributes (
+                            Private->PciIo,
+                            EfiPciIoAttributeOperationEnable,
+                            EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
+                            NULL
+                            );
   if (EFI_ERROR (Status)) {
     goto Error;
   }
@@ -249,8 +254,9 @@ Returns:
   // Publish the UGA Draw interface to the world
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
-                  &Private->Handle,         
-                  &gEfiUgaDrawProtocolGuid, &Private->UgaDraw,
+                  &Private->Handle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &Private->UgaDraw,
                   NULL
                   );
 
@@ -258,9 +264,9 @@ Error:
   if (EFI_ERROR (Status)) {
     if (Private) {
       if (Private->PciIo) {
-        Private->PciIo->Attributes ( 
-                          Private->PciIo, 
-                          EfiPciIoAttributeOperationDisable, 
+        Private->PciIo->Attributes (
+                          Private->PciIo,
+                          EfiPciIoAttributeOperationDisable,
                           EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
                           NULL
                           );
@@ -271,15 +277,16 @@ Error:
     // Close the PCI I/O Protocol
     //
     gBS->CloseProtocol (
-           Private->Handle, 
-           &gEfiPciIoProtocolGuid, 
-           This->DriverBindingHandle, 
-           Private->Handle
-           );
+          Private->Handle,
+          &gEfiPciIoProtocolGuid,
+          This->DriverBindingHandle,
+          Private->Handle
+          );
     if (Private) {
       gBS->FreePool (Private);
     }
   }
+
   return Status;
 }
 
@@ -302,18 +309,22 @@ Returns:
     None
 
 --*/
-
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_UGA_DRAW_PROTOCOL           *UgaDraw;
   EFI_STATUS                      Status;
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
 
   Status = gBS->OpenProtocol (
-                  Controller,           
-                  &gEfiUgaDrawProtocolGuid,  
-                  (VOID **)&UgaDraw,
-                  This->DriverBindingHandle,   
-                  Controller,   
+                  Controller,
+                  &gEfiUgaDrawProtocolGuid,
+                  (VOID **) &UgaDraw,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -332,8 +343,9 @@ Returns:
   // Remove the UGA Draw interface from the system
   //
   Status = gBS->UninstallMultipleProtocolInterfaces (
-                  Private->Handle, 
-                  &gEfiUgaDrawProtocolGuid, &Private->UgaDraw,
+                  Private->Handle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &Private->UgaDraw,
                   NULL
                   );
   if (EFI_ERROR (Status)) {
@@ -345,9 +357,9 @@ Returns:
   //
   CirrusLogic5430UgaDrawDestructor (Private);
 
-  Private->PciIo->Attributes ( 
-                    Private->PciIo, 
-                    EfiPciIoAttributeOperationDisable, 
+  Private->PciIo->Attributes (
+                    Private->PciIo,
+                    EfiPciIoAttributeOperationDisable,
                     EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
                     NULL
                     );
@@ -356,11 +368,11 @@ Returns:
   // Close the PCI I/O Protocol
   //
   gBS->CloseProtocol (
-         Controller, 
-         &gEfiPciIoProtocolGuid, 
-         This->DriverBindingHandle, 
-         Controller
-         );
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   //
   // Free our instance data
@@ -369,4 +381,3 @@ Returns:
 
   return EFI_SUCCESS;
 }
-

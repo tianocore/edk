@@ -20,6 +20,7 @@ Abstract:
 Revision History
 
 --*/
+
 #ifndef _UI_H
 #define _UI_H
 
@@ -31,25 +32,24 @@ Revision History
 //
 // Globals
 //
-
-#define REGULAR_NUMERIC   0
-#define TIME_NUMERIC      1
-#define DATE_NUMERIC      2
+#define REGULAR_NUMERIC 0
+#define TIME_NUMERIC    1
+#define DATE_NUMERIC    2
 
 typedef enum {
-    UiNoOperation,
-    UiDefault,
-    UiSelect,
-    UiUp,
-    UiDown,
-    UiLeft,
-    UiRight,
-    UiReset,
-    UiSave,
-    UiPrevious,
-    UiPageUp,
-    UiPageDown,
-    UiMaxOperation
+  UiNoOperation,
+  UiDefault,
+  UiSelect,
+  UiUp,
+  UiDown,
+  UiLeft,
+  UiRight,
+  UiReset,
+  UiSave,
+  UiPrevious,
+  UiPageUp,
+  UiPageDown,
+  UiMaxOperation
 } UI_SCREEN_OPERATION;
 
 typedef enum {
@@ -77,38 +77,38 @@ typedef enum {
   CfMaxControlFlag
 } UI_CONTROL_FLAG;
 
-#define UI_MENU_OPTION_SIGNATURE    EFI_SIGNATURE_32('u','i','m','m')
-#define UI_MENU_LIST_SIGNATURE      EFI_SIGNATURE_32('u','i','m','l')
+#define UI_MENU_OPTION_SIGNATURE  EFI_SIGNATURE_32 ('u', 'i', 'm', 'm')
+#define UI_MENU_LIST_SIGNATURE    EFI_SIGNATURE_32 ('u', 'i', 'm', 'l')
 
 typedef struct {
-  UINTN               Signature;
-  EFI_LIST_ENTRY      Link;
+  UINTN           Signature;
+  EFI_LIST_ENTRY  Link;
 
-  UINTN               Row;
-  UINTN               Col;
-  UINTN               OptCol;
-  CHAR16              *Description;
-  UINTN               Skip;
+  UINTN           Row;
+  UINTN           Col;
+  UINTN           OptCol;
+  CHAR16          *Description;
+  UINTN           Skip;
 
-  UINTN               IfrNumber;
-  VOID                *FormBinary;
-  EFI_HII_HANDLE      Handle;
-  EFI_TAG             *Tags;
-  UINTN               TagIndex;
-  EFI_TAG             *ThisTag;
-  UINT16              FormId;
-  BOOLEAN             Previous;
-  UINT16              EntryNumber;
-  UINT16              Consistency;
-  BOOLEAN             GrayOut;
+  UINTN           IfrNumber;
+  VOID            *FormBinary;
+  EFI_HII_HANDLE  Handle;
+  EFI_TAG         *Tags;
+  UINTN           TagIndex;
+  EFI_TAG         *ThisTag;
+  UINT16          FormId;
+  BOOLEAN         Previous;
+  UINT16          EntryNumber;
+  UINT16          Consistency;
+  BOOLEAN         GrayOut;
 } UI_MENU_OPTION;
 
 typedef struct {
-  UINTN               Signature;
-  EFI_LIST_ENTRY      MenuLink;
+  UINTN           Signature;
+  EFI_LIST_ENTRY  MenuLink;
 
-  UI_MENU_OPTION      Selection;
-  UINTN               FormerEntryNumber;
+  UI_MENU_OPTION  Selection;
+  UINTN           FormerEntryNumber;
 } UI_MENU_LIST;
 
 typedef struct _MENU_REFRESH_ENTRY {
@@ -120,13 +120,13 @@ typedef struct _MENU_REFRESH_ENTRY {
   UI_MENU_OPTION              *MenuOption;  // Describes the entry needing an update
 } MENU_REFRESH_ENTRY;
 
-typedef struct { 
+typedef struct {
   UINT16              ScanCode;
-  UI_SCREEN_OPERATION ScreenOperation; 
+  UI_SCREEN_OPERATION ScreenOperation;
 } SCAN_CODE_TO_SCREEN_OPERATION;
 
-typedef struct { 
-  UI_SCREEN_OPERATION ScreenOperation; 
+typedef struct {
+  UI_SCREEN_OPERATION ScreenOperation;
   UI_CONTROL_FLAG     ControlFlag;
 } SCREEN_OPERATION_T0_CONTROL_FLAG;
 
@@ -134,41 +134,47 @@ EFI_LIST_ENTRY      Menu;
 EFI_LIST_ENTRY      gMenuList;
 MENU_REFRESH_ENTRY  *gMenuRefreshHead;
 
-INTN      gEntryNumber;
-BOOLEAN   gLastOpr;
+INTN                gEntryNumber;
+BOOLEAN             gLastOpr;
 //
 // Global Functions
 //
 VOID
 UiInitMenu (
   VOID
-  );
+  )
+;
 
 VOID
 UiInitMenuList (
   VOID
-  );
+  )
+;
 
 VOID
 UiRemoveMenuListEntry (
   IN  UI_MENU_OPTION    *Selection,
   OUT UI_MENU_OPTION    **PreviousSelection
-  );
+  )
+;
 
 VOID
 UiFreeMenuList (
   VOID
-  );
+  )
+;
 
 VOID
 UiAddMenuListEntry (
   IN UI_MENU_OPTION   *Selection
-  );
+  )
+;
 
 VOID
 UiFreeMenu (
   VOID
-  );
+  )
+;
 
 VOID
 UiAddMenuOption (
@@ -177,7 +183,8 @@ UiAddMenuOption (
   IN EFI_TAG        *Tag,
   IN VOID           *FormBinary,
   IN UINTN          IfrNumber
-  );
+  )
+;
 
 VOID
 UiAddSubMenuOption (
@@ -187,79 +194,91 @@ UiAddSubMenuOption (
   IN UINTN            TagIndex,
   IN UINT16           FormId,
   IN UINT16           MenuItemCount
-  );
+  )
+;
 
-UI_MENU_OPTION *
+UI_MENU_OPTION      *
 UiDisplayMenu (
   IN  BOOLEAN                      SubMenu,
   IN  EFI_FILE_FORM_TAGS           *FileFormTagsHead,
   OUT EFI_IFR_DATA_ARRAY           *PageData
-  );
-  
+  )
+;
+
 VOID
 InitPage (
   VOID
-  );
+  )
+;
 
-UI_MENU_OPTION *
+UI_MENU_OPTION      *
 SetupBrowser (
   IN  UI_MENU_OPTION              *Selection,
   IN  BOOLEAN                     Callback,
   IN  EFI_FILE_FORM_TAGS          *FileFormTagsHead,
   IN  UINT8                       *CallbackData
-  );
+  )
+;
 
 VOID
 ValueToString (
-    IN CHAR16   *Buffer,
-    IN BOOLEAN  Comma,
-    IN INT64    v
-    );
+  IN CHAR16   *Buffer,
+  IN BOOLEAN  Comma,
+  IN INT64    v
+  )
+;
 
 EFI_STATUS
 UiIntToString (
   IN UINTN      num,
   IN OUT CHAR16 *str,
   IN UINT16     size
-  );
-  
+  )
+;
+
 VOID
 StrCpy (
-    IN CHAR16   *Dest,
-    IN CHAR16   *Src
-    );
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src
+  )
+;
 
 VOID
 StrnCpy (
-    IN CHAR16   *Dest,
-    IN CHAR16   *Src,
-    IN UINTN    Length
-    );
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src,
+  IN UINTN    Length
+  )
+;
 
 VOID
 StrCat (
-    IN CHAR16   *Dest,
-    IN CHAR16   *Src
-    );
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src
+  )
+;
 
 INTN
 StrCmp (
-    IN CHAR16   *s1,
-    IN CHAR16   *s2
-    );
+  IN CHAR16   *s1,
+  IN CHAR16   *s2
+  )
+;
 
 VOID
 SetUnicodeMem (
   IN VOID   *Buffer,
   IN UINTN  Size,
-  IN CHAR16 Value    
-  );
+  IN CHAR16 Value
+  )
+;
 
 EFI_STATUS
 UiWaitForSingleEvent (
-  IN EFI_EVENT        Event,
-  IN UINT64           Timeout OPTIONAL
-  );
+  IN EFI_EVENT                Event,
+  IN UINT64                   Timeout OPTIONAL
+  )
+;
 
 VOID
 CreatePopUp (
@@ -267,13 +286,15 @@ CreatePopUp (
   IN  UINTN                       NumberOfLines,
   IN  CHAR16                      *ArrayOfStrings,
   ...
-  );
+  )
+;
 
 EFI_STATUS
 ReadString (
   IN  UI_MENU_OPTION              *MenuOption,
   OUT CHAR16                      *StringPtr
-  );
+  )
+;
 
 EFI_STATUS
 ReadPassword (
@@ -284,13 +305,15 @@ ReadPassword (
   IN  BOOLEAN                     SecondEntry,
   IN  EFI_FILE_FORM_TAGS          *FileFormTags,
   OUT CHAR16                      *StringPtr
-  );
+  )
+;
 
 VOID
 EncodePassword (
   IN  CHAR16                      *Password,
   IN  UINT8                       MaxSize
-  );
+  )
+;
 
 EFI_STATUS
 GetSelectionInputPopUp (
@@ -299,7 +322,8 @@ GetSelectionInputPopUp (
   IN  UINTN                       ValueCount,
   OUT UINT16                      *Value,
   OUT UINT16                      *KeyValue
-  );
+  )
+;
 
 EFI_STATUS
 GetSelectionInputLeftRight (
@@ -307,7 +331,8 @@ GetSelectionInputLeftRight (
   IN  EFI_TAG                     *Tag,
   IN  UINTN                       ValueCount,
   OUT UINT16                      *Value
-  );
+  )
+;
 
 EFI_STATUS
 GetNumericInput (
@@ -317,14 +342,16 @@ GetNumericInput (
   IN  EFI_TAG                     *Tag,
   IN  UINTN                       NumericType,
   OUT UINT16                      *Value
-  );
+  )
+;
 
 VOID
 UpdateStatusBar (
   IN  UINTN                       MessageType,
   IN  UINT8                       Flags,
   IN  BOOLEAN                     State
-  );
+  )
+;
 
 EFI_STATUS
 ProcessOptions (
@@ -333,36 +360,41 @@ ProcessOptions (
   IN  EFI_FILE_FORM_TAGS          *FileFormTagsHead,
   IN  EFI_IFR_DATA_ARRAY          *PageData,
   OUT CHAR16                      **OptionString
-  );
+  )
+;
 
 VOID
 ProcessHelpString (
   IN  CHAR16                      *StringPtr,
   OUT CHAR16                      **FormattedString,
   IN  UINTN                       RowCount
-  );
+  )
+;
 
 VOID
 UpdateKeyHelp (
   IN  UI_MENU_OPTION              *Selection,
   IN  BOOLEAN                     Selected
-  );
+  )
+;
 
 BOOLEAN
 ValueIsNotValid (
   IN  BOOLEAN                     Complex,
-  IN  UINT16                      Value,  
+  IN  UINT16                      Value,
   IN  EFI_TAG                     *Tag,
   IN  EFI_FILE_FORM_TAGS          *FileFormTags,
   IN  STRING_REF                  *PopUp
-  );
+  )
+;
 
 VOID
 FreeData (
-  IN EFI_FILE_FORM_TAGS           *FileFormTagsHead,
+  IN EFI_FILE_FORM_TAGS            *FileFormTagsHead,
   IN CHAR16                        *FormattedString,
-  IN CHAR16                       *OptionString
-  );
+  IN CHAR16                        *OptionString
+  )
+;
 
 VOID
 ClearLines (
@@ -371,12 +403,14 @@ ClearLines (
   UINTN                                       TopRow,
   UINTN                                       BottomRow,
   UINTN                                       TextAttribute
-  );
+  )
+;
 
 UINTN
 GetStringWidth (
   CHAR16                                      *String
-  );
+  )
+;
 
 UINT16
 GetLineByWidth (
@@ -384,19 +418,22 @@ GetLineByWidth (
   IN      UINT16                      LineWidth,
   IN OUT  UINTN                       *Index,
   OUT     CHAR16                      **OutputString
-  );
+  )
+;
 
 UINT16
 GetWidth (
   IN EFI_TAG                          *Tag,
   IN EFI_HII_HANDLE                   Handle
-  );
+  )
+;
 
 VOID
 NewStrCat (
   CHAR16                                      *Destination,
   CHAR16                                      *Source
-  );
+  )
+;
 
 VOID
 IfrToFormTag (
@@ -404,7 +441,8 @@ IfrToFormTag (
   IN  EFI_TAG             *TargetTag,
   IN  VOID                *FormData,
   EFI_VARIABLE_DEFINITION *VariableDefinitionsHead
-  );
+  )
+;
 
 EFI_STATUS
 ExtractNvValue (
@@ -412,30 +450,35 @@ ExtractNvValue (
   IN  UINT16                      VariableId,
   IN  UINT16                      VariableSize,
   IN  UINT16                      OffsetValue,
-  OUT VOID                        *Buffer  
-  );
+  OUT VOID                        *Buffer
+  )
+;
 
 EFI_STATUS
 ExtractRequestedNvMap (
   IN  EFI_FILE_FORM_TAGS          *FileFormTags,
   IN  UINT16                      VariableId,
   OUT EFI_VARIABLE_DEFINITION     **VariableDefinition
-  );
-  
+  )
+;
+
 BOOLEAN
 ValueIsScroll (
   IN  BOOLEAN                     Direction,
   IN  EFI_LIST_ENTRY              *CurrentPos
-  );
+  )
+;
 
 UINTN
 AdjustDateAndTimePosition (
   IN  BOOLEAN                     DirectionUp,
   IN  EFI_LIST_ENTRY              **CurrentPosition
- );
+  )
+;
 
 EFI_STATUS
 WaitForKeyStroke (
   OUT  EFI_INPUT_KEY           *Key
-  );
+  )
+;
 #endif // _UI_H

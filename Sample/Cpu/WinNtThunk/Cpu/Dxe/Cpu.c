@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  NT Emulation Architectural Protocol Driver as defined in EFI 2.0.
+  NT Emulation Architectural Protocol Driver as defined in Tiano.
   This CPU module abstracts the interrupt subsystem of a platform and
   the CPU-specific setjump/long pair.  Other services are not implemented
   in this driver.
@@ -34,12 +34,12 @@ Abstract:
 #include "CpuDriver.h"
 #include "CpuIA32.h"
 //
-// This is the VFR compiler generated header file which defines the 
+// This is the VFR compiler generated header file which defines the
 // string identifiers.
 //
 #include STRING_DEFINES_FILE
 
-#define EFI_CPU_DATA_MAXIMUM_LENGTH          0x100
+#define EFI_CPU_DATA_MAXIMUM_LENGTH 0x100
 
 EFI_STATUS
 EFIAPI
@@ -49,29 +49,27 @@ InitializeCpu (
   );
 
 VOID
-WinNtIoProtocolNotifyFunction ( 
+WinNtIoProtocolNotifyFunction (
   IN EFI_EVENT                Event,
   IN VOID                     *Context
-  );  
+  );
 
 typedef union {
-  EFI_CPU_DATA_RECORD             *DataRecord;
-  UINT8                           *Raw;
+  EFI_CPU_DATA_RECORD *DataRecord;
+  UINT8               *Raw;
 } EFI_CPU_DATA_RECORD_BUFFER;
 
-EFI_SUBCLASS_TYPE1_HEADER mCpuDataRecordHeader =
-{
-  EFI_PROCESSOR_SUBCLASS_VERSION,           // Version
-  sizeof (EFI_SUBCLASS_TYPE1_HEADER),       // Header Size
-  0,                                        // Instance, Initialize later
-  EFI_SUBCLASS_INSTANCE_NON_APPLICABLE,     // SubInstance
-  0                                         // RecordType, Initialize later
+EFI_SUBCLASS_TYPE1_HEADER mCpuDataRecordHeader = {
+  EFI_PROCESSOR_SUBCLASS_VERSION,       // Version
+  sizeof (EFI_SUBCLASS_TYPE1_HEADER),   // Header Size
+  0,                                    // Instance, Initialize later
+  EFI_SUBCLASS_INSTANCE_NON_APPLICABLE, // SubInstance
+  0                                     // RecordType, Initialize later
 };
 
 //
 // Service routines for the driver
 //
-
 STATIC
 EFI_STATUS
 EFIAPI
@@ -102,6 +100,9 @@ Returns:
     EFI_SUCCESS
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    FlushType - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   if (FlushType == EfiCpuFlushTypeWriteBackInvalidate) {
     //
@@ -110,7 +111,6 @@ Returns:
     //
     return EFI_SUCCESS;
   }
-
   //
   // Other flush types are not supported by NT emulator
   //
@@ -142,10 +142,11 @@ Returns:
     EFI_SUCCESS
 
 --*/
+// TODO:    This - add argument and description to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;  
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
-  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
+  Private                 = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
   Private->InterruptState = TRUE;
   return EFI_SUCCESS;
 }
@@ -175,14 +176,14 @@ Returns:
     EFI_SUCCESS
 
 --*/
+// TODO:    This - add argument and description to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;  
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
-  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This); 
+  Private                 = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
   Private->InterruptState = FALSE;
   return EFI_SUCCESS;
 }
-
 
 STATIC
 EFI_STATUS
@@ -210,18 +211,20 @@ Returns:
     EFI_SUCCESS
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    State - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;  
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
   if (State == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This); 
-  *State = Private->InterruptState;
+  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
+  *State  = Private->InterruptState;
   return EFI_SUCCESS;
 }
-
 
 STATIC
 EFI_STATUS
@@ -229,7 +232,7 @@ EFIAPI
 WinNtInit (
   IN EFI_CPU_ARCH_PROTOCOL  *This,
   IN EFI_CPU_INIT_TYPE      InitType
-)
+  )
 /*++
 
 Routine Description:
@@ -248,8 +251,10 @@ Returns:
     EFI_UNSUPPORTED - not yet implemented
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    InitType - add argument and description to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;  
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
   Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
   return EFI_UNSUPPORTED;
@@ -282,8 +287,11 @@ Returns:
     EFI_UNSUPPORTED - not yet implemented
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    InterruptType - add argument and description to function comment
+// TODO:    InterruptHandler - add argument and description to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
   //
   // Do parameter checking for EFI spec conformance
@@ -291,14 +299,12 @@ Returns:
   if (InterruptType < 0 || InterruptType > 0xff) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Do nothing for Nt32 emulation
-  // 
+  //
   Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
   return EFI_UNSUPPORTED;
 }
-
 
 STATIC
 EFI_STATUS
@@ -329,21 +335,27 @@ Returns:
     EFI_UNSUPPORTED - not yet implemented
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    TimerIndex - add argument and description to function comment
+// TODO:    TimerValue - add argument and description to function comment
+// TODO:    TimerPeriod - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;  
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
   if (TimerValue == NULL || TimerPeriod == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This); 
+  Private     = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
   *TimerValue = 0xFFFFFFFFFFFF;
   if (TimerPeriod != NULL) {
     *TimerPeriod = 333333333;
   }
+
   return EFI_SUCCESS;
 }
-
 
 STATIC
 EFI_STATUS
@@ -374,8 +386,13 @@ Returns:
     EFI_UNSUPPORTED - not yet implemented
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    BaseAddress - add argument and description to function comment
+// TODO:    Length - add argument and description to function comment
+// TODO:    Attributes - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE   *Private;  
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
 
   //
   // Check for invalid parameter for EFI Spec conformance
@@ -383,19 +400,16 @@ Returns:
   if (Length == 0) {
     return EFI_INVALID_PARAMETER;
   }
-  
-  if ((BaseAddress & ~EFI_CACHE_VALID_ADDRESS) != 0 || 
-      (Length & ~EFI_CACHE_VALID_ADDRESS) != 0 ) {
+
+  if ((BaseAddress &~EFI_CACHE_VALID_ADDRESS) != 0 || (Length &~EFI_CACHE_VALID_ADDRESS) != 0) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Do nothing for Nt32 emulation
   //
-  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This); 
+  Private = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
   return EFI_UNSUPPORTED;
 }
-
 
 EFI_DRIVER_ENTRY_POINT (InitializeCpu)
 
@@ -425,11 +439,12 @@ Returns:
   EFI_DEVICE_ERROR      - cannot create the thread
 
 --*/
+// TODO:    SystemTable - add argument and description to function comment
 {
-  EFI_STATUS                 Status;
-  EFI_EVENT                  Event;
-  CPU_ARCH_PROTOCOL_PRIVATE  *Private;
-  VOID                       *Registration;
+  EFI_STATUS                Status;
+  EFI_EVENT                 Event;
+  CPU_ARCH_PROTOCOL_PRIVATE *Private;
+  VOID                      *Registration;
 
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
@@ -437,30 +452,30 @@ Returns:
 
   Status = gBS->AllocatePool (
                   EfiBootServicesData,
-                  sizeof(CPU_ARCH_PROTOCOL_PRIVATE), 
+                  sizeof (CPU_ARCH_PROTOCOL_PRIVATE),
                   &Private
                   );
   ASSERT_EFI_ERROR (Status);
 
-  Private->Signature                     = CPU_ARCH_PROT_PRIVATE_SIGNATURE;
-  Private->Cpu.FlushDataCache            = WinNtFlushCpuDataCache;
-  Private->Cpu.EnableInterrupt           = WinNtEnableInterrupt;
-  Private->Cpu.DisableInterrupt          = WinNtDisableInterrupt;
-  Private->Cpu.GetInterruptState         = WinNtGetInterruptState;
-  Private->Cpu.Init                      = WinNtInit;
-  Private->Cpu.RegisterInterruptHandler  = WinNtRegisterInterruptHandler;
-  Private->Cpu.GetTimerValue             = WinNtGetTimerValue;
-  Private->Cpu.SetMemoryAttributes       = WinNtSetMemoryAttributes;
+  Private->Signature                    = CPU_ARCH_PROT_PRIVATE_SIGNATURE;
+  Private->Cpu.FlushDataCache           = WinNtFlushCpuDataCache;
+  Private->Cpu.EnableInterrupt          = WinNtEnableInterrupt;
+  Private->Cpu.DisableInterrupt         = WinNtDisableInterrupt;
+  Private->Cpu.GetInterruptState        = WinNtGetInterruptState;
+  Private->Cpu.Init                     = WinNtInit;
+  Private->Cpu.RegisterInterruptHandler = WinNtRegisterInterruptHandler;
+  Private->Cpu.GetTimerValue            = WinNtGetTimerValue;
+  Private->Cpu.SetMemoryAttributes      = WinNtSetMemoryAttributes;
 
-  Private->Cpu.NumberOfTimers            = 0;
-  Private->Cpu.DmaBufferAlignment        = 4;
+  Private->Cpu.NumberOfTimers           = 0;
+  Private->Cpu.DmaBufferAlignment       = 4;
 
-  Private->InterruptState            = TRUE;
+  Private->InterruptState               = TRUE;
 
-  Private->Handle = NULL;
+  Private->Handle                       = NULL;
   Status = gBS->InstallProtocolInterface (
                   &Private->Handle,
-                  &gEfiCpuArchProtocolGuid, 
+                  &gEfiCpuArchProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &Private->Cpu
                   );
@@ -479,16 +494,16 @@ Returns:
   ASSERT (!EFI_ERROR (Status));
 
   Status = gBS->RegisterProtocolNotify (
-                &gEfiWinNtIoProtocolGuid,
-                Event,
-                &Registration
-                );
-  ASSERT (!EFI_ERROR (Status));  
+                  &gEfiWinNtIoProtocolGuid,
+                  Event,
+                  &Registration
+                  );
+  ASSERT (!EFI_ERROR (Status));
 
   //
   // Should be at EFI_D_INFO, but lets us now things are running
   //
-  DEBUG((EFI_D_ERROR, "CPU Architectural Protocol Loaded\n"));
+  DEBUG ((EFI_D_ERROR, "CPU Architectural Protocol Loaded\n"));
   return Status;
 }
 
@@ -519,25 +534,25 @@ Returns:
   while ((*Str) && (*Str == ' ' || *Str == '"')) {
     Str++;
   }
-
   //
   // Convert ot a Number
   //
   Number = 0;
   while (*Str != '\0') {
-      if ((*Str >= '0') && (*Str <= '9')) {
-          Number = (Number * 10) + *Str - '0';
-      } else {
-          break;
-      }
-      Str++;
+    if ((*Str >= '0') && (*Str <= '9')) {
+      Number = (Number * 10) +*Str - '0';
+    } else {
+      break;
+    }
+
+    Str++;
   }
 
   return Number;
 }
 
 VOID
-WinNtIoProtocolNotifyFunction ( 
+WinNtIoProtocolNotifyFunction (
   IN EFI_EVENT                Event,
   IN VOID                     *Context
   )
@@ -555,28 +570,28 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                              Status;
-  EFI_CPU_DATA_RECORD_BUFFER              RecordBuffer;
-  EFI_DATA_RECORD_HEADER                  *Record;
-  EFI_SUBCLASS_TYPE1_HEADER               *DataHeader;
-  UINT32                                  HeaderSize;
-  UINT32                                  TotalSize;
-  UINTN                                   HandleCount;
-  UINTN                                   HandleIndex;  
-  UINT64                                  MonotonicCount;
-  BOOLEAN                                 RecordFound;
-  EFI_HANDLE                              *HandleBuffer;
-  EFI_WIN_NT_IO_PROTOCOL                  *WinNtIo;
-  EFI_DATA_HUB_PROTOCOL                   *DataHub;
-  EFI_HII_PROTOCOL                        *Hii;
-  EFI_HII_HANDLE                          StringHandle;
-  EFI_HII_PACKAGES                        *PackageList;
-  STRING_REF                              Token;
-   
-  DataHub = NULL;
-  Token = 0;
-  MonotonicCount = 0;
-  RecordFound = FALSE;
+  EFI_STATUS                  Status;
+  EFI_CPU_DATA_RECORD_BUFFER  RecordBuffer;
+  EFI_DATA_RECORD_HEADER      *Record;
+  EFI_SUBCLASS_TYPE1_HEADER   *DataHeader;
+  UINT32                      HeaderSize;
+  UINT32                      TotalSize;
+  UINTN                       HandleCount;
+  UINTN                       HandleIndex;
+  UINT64                      MonotonicCount;
+  BOOLEAN                     RecordFound;
+  EFI_HANDLE                  *HandleBuffer;
+  EFI_WIN_NT_IO_PROTOCOL      *WinNtIo;
+  EFI_DATA_HUB_PROTOCOL       *DataHub;
+  EFI_HII_PROTOCOL            *Hii;
+  EFI_HII_HANDLE              StringHandle;
+  EFI_HII_PACKAGES            *PackageList;
+  STRING_REF                  Token;
+
+  DataHub         = NULL;
+  Token           = 0;
+  MonotonicCount  = 0;
+  RecordFound     = FALSE;
 
   //
   // Retrieve the list of all handles from the handle database
@@ -589,37 +604,34 @@ Returns:
                   &HandleBuffer
                   );
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
-  
   //
   // Locate HII protocol
   //
   Status = gBS->LocateProtocol (&gEfiHiiProtocolGuid, NULL, &Hii);
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
-
   //
   // Locate DataHub protocol.
   //
-  Status = gBS->LocateProtocol (&gEfiDataHubProtocolGuid, NULL, &DataHub);  
+  Status = gBS->LocateProtocol (&gEfiDataHubProtocolGuid, NULL, &DataHub);
   if (EFI_ERROR (Status)) {
-    return;
-  }  
-  
+    return ;
+  }
   //
   // Initialize data record header
   //
   mCpuDataRecordHeader.Instance = 1;
-  HeaderSize = sizeof(EFI_SUBCLASS_TYPE1_HEADER);
+  HeaderSize                    = sizeof (EFI_SUBCLASS_TYPE1_HEADER);
 
-  RecordBuffer.Raw = EfiLibAllocatePool (HeaderSize + EFI_CPU_DATA_MAXIMUM_LENGTH);
+  RecordBuffer.Raw              = EfiLibAllocatePool (HeaderSize + EFI_CPU_DATA_MAXIMUM_LENGTH);
   if (RecordBuffer.Raw == NULL) {
-    return;
+    return ;
   }
 
-  EfiCopyMem(RecordBuffer.Raw, &mCpuDataRecordHeader, HeaderSize);
+  EfiCopyMem (RecordBuffer.Raw, &mCpuDataRecordHeader, HeaderSize);
 
   //
   // Search the Handle array to find the CPU model and speed information
@@ -636,35 +648,36 @@ Returns:
     if (EFI_ERROR (Status)) {
       continue;
     }
-     
+
     if ((WinNtIo->WinNtThunk->Signature == EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE) &&
-        EfiCompareGuid (WinNtIo->TypeGuid, &gEfiWinNtCPUModelGuid)) {
-      // 
+        EfiCompareGuid (WinNtIo->TypeGuid, &gEfiWinNtCPUModelGuid)
+          ) {
+      //
       // Check if this record has been stored in data hub
       //
       do {
         Status = DataHub->GetNextRecord (DataHub, &MonotonicCount, NULL, &Record);
         if (Record->DataRecordClass == EFI_DATA_RECORD_CLASS_DATA) {
-          DataHeader  = (EFI_SUBCLASS_TYPE1_HEADER *)(Record + 1);
-          if (EfiCompareGuid(&Record->DataRecordGuid, &gProcessorSubClassName) &&
-              (DataHeader->RecordType == ProcessorVersionRecordType)) {
+          DataHeader = (EFI_SUBCLASS_TYPE1_HEADER *) (Record + 1);
+          if (EfiCompareGuid (&Record->DataRecordGuid, &gProcessorSubClassName) &&
+              (DataHeader->RecordType == ProcessorVersionRecordType)
+              ) {
             RecordFound = TRUE;
           }
         }
       } while (MonotonicCount != 0);
-      
+
       if (RecordFound) {
         RecordFound = FALSE;
         continue;
       }
-      
       //
-      // Initialize strings to HII database 
+      // Initialize strings to HII database
       //
       PackageList = PreparePackages (1, &gProcessorProducerGuid, STRING_ARRAY_NAME);
 
-      Status = Hii->NewPack (Hii, PackageList, &StringHandle);
-      ASSERT (!EFI_ERROR (Status));  
+      Status      = Hii->NewPack (Hii, PackageList, &StringHandle);
+      ASSERT (!EFI_ERROR (Status));
 
       gBS->FreePool (PackageList);
 
@@ -672,66 +685,69 @@ Returns:
       // Store processor version data record to data hub
       //
       Status = Hii->NewString (Hii, NULL, StringHandle, &Token, WinNtIo->EnvString);
-      ASSERT (!EFI_ERROR (Status));  
-      
-      RecordBuffer.DataRecord->DataRecordHeader.RecordType = ProcessorVersionRecordType;
-      RecordBuffer.DataRecord->VariableRecord.ProcessorVersion = Token;
-      TotalSize = HeaderSize + sizeof(EFI_PROCESSOR_VERSION_DATA);
-      
-      Status = DataHub->LogData(
+      ASSERT (!EFI_ERROR (Status));
+
+      RecordBuffer.DataRecord->DataRecordHeader.RecordType      = ProcessorVersionRecordType;
+      RecordBuffer.DataRecord->VariableRecord.ProcessorVersion  = Token;
+      TotalSize = HeaderSize + sizeof (EFI_PROCESSOR_VERSION_DATA);
+
+      Status = DataHub->LogData (
                           DataHub,
                           &gProcessorSubClassName,
                           &gProcessorProducerGuid,
                           EFI_DATA_RECORD_CLASS_DATA,
                           RecordBuffer.Raw,
-                          TotalSize);
+                          TotalSize
+                          );
     }
-    
+
     if ((WinNtIo->WinNtThunk->Signature == EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE) &&
-        EfiCompareGuid (WinNtIo->TypeGuid, &gEfiWinNtCPUSpeedGuid)) {
-      // 
+        EfiCompareGuid (WinNtIo->TypeGuid, &gEfiWinNtCPUSpeedGuid)
+          ) {
+      //
       // Check if this record has been stored in data hub
       //
       do {
         Status = DataHub->GetNextRecord (DataHub, &MonotonicCount, NULL, &Record);
         if (Record->DataRecordClass == EFI_DATA_RECORD_CLASS_DATA) {
-          DataHeader  = (EFI_SUBCLASS_TYPE1_HEADER *)(Record + 1);
-          if (EfiCompareGuid(&Record->DataRecordGuid, &gProcessorSubClassName) &&
-              (DataHeader->RecordType == ProcessorCoreFrequencyRecordType)) {
+          DataHeader = (EFI_SUBCLASS_TYPE1_HEADER *) (Record + 1);
+          if (EfiCompareGuid (&Record->DataRecordGuid, &gProcessorSubClassName) &&
+              (DataHeader->RecordType == ProcessorCoreFrequencyRecordType)
+              ) {
             RecordFound = TRUE;
           }
         }
       } while (MonotonicCount != 0);
-      
+
       if (RecordFound) {
         RecordFound = FALSE;
         continue;
       }
-      
       //
       // Store CPU frequency data record to data hub
       //
-      RecordBuffer.DataRecord->DataRecordHeader.RecordType = ProcessorCoreFrequencyRecordType;
-      RecordBuffer.DataRecord->VariableRecord.ProcessorCoreFrequency.Value = (UINT16)Atoi(WinNtIo->EnvString);
+      RecordBuffer.DataRecord->DataRecordHeader.RecordType                    = ProcessorCoreFrequencyRecordType;
+      RecordBuffer.DataRecord->VariableRecord.ProcessorCoreFrequency.Value    = (UINT16) Atoi (WinNtIo->EnvString);
       RecordBuffer.DataRecord->VariableRecord.ProcessorCoreFrequency.Exponent = 6;
-      TotalSize = HeaderSize + sizeof(EFI_PROCESSOR_CORE_FREQUENCY_DATA);
-      
-      Status = DataHub->LogData(
+      TotalSize = HeaderSize + sizeof (EFI_PROCESSOR_CORE_FREQUENCY_DATA);
+
+      Status = DataHub->LogData (
                           DataHub,
                           &gProcessorSubClassName,
                           &gProcessorProducerGuid,
                           EFI_DATA_RECORD_CLASS_DATA,
                           RecordBuffer.Raw,
-                          TotalSize);
-                                  
-      gBS->FreePool(RecordBuffer.Raw);
+                          TotalSize
+                          );
+
+      gBS->FreePool (RecordBuffer.Raw);
     }
-    
+
     gBS->CloseProtocol (
-           HandleBuffer[HandleIndex],   
-           &gEfiWinNtIoProtocolGuid,  
-           Context,   
-           NULL
-           );
+          HandleBuffer[HandleIndex],
+          &gEfiWinNtIoProtocolGuid,
+          Context,
+          NULL
+          );
   }
 }

@@ -21,10 +21,8 @@ Revision History
 
 --*/
 
-
 #ifndef _EFI_PCI_ROM_TABLE_H
 #define _EFI_PCI_ROM_TABLE_H
-
 
 VOID
 PciRomAddImageMapping (
@@ -35,25 +33,97 @@ PciRomAddImageMapping (
   IN UINT8       Func,
   IN UINT64      RomAddress,
   IN UINT64      RomLength
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  Seg         - TODO: add argument description
+  Bus         - TODO: add argument description
+  Dev         - TODO: add argument description
+  Func        - TODO: add argument description
+  RomAddress  - TODO: add argument description
+  RomLength   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 PciRomLoadEfiDriversFromOptionRomTable (
   IN EFI_DRIVER_BINDING_PROTOCOL      *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This            - TODO: add argument description
+  PciRootBridgeIo - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 PciRomGetRomResourceFromPciOptionRomTable (
   IN EFI_DRIVER_BINDING_PROTOCOL      *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
   PCI_IO_DEVICE                       *PciIoDevice
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This            - TODO: add argument description
+  PciRootBridgeIo - TODO: add argument description
+  PciIoDevice     - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
-PciRomGetImageMapping(
+PciRomGetImageMapping (
   PCI_IO_DEVICE                       *PciIoDevice
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif
-

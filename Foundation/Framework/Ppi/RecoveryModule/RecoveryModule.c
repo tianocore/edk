@@ -22,9 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(RecoveryModule)
+#include EFI_PPI_DEFINITION (RecoveryModule)
 
 EFI_GUID  gPeiRecoveryModulePpiGuid = PEI_RECOVERY_MODULE_INTERFACE_PPI;
 
 EFI_GUID_STRING(&gPeiRecoveryModulePpiGuid, "RecoveryModule", "Recovery Module PPI");
-

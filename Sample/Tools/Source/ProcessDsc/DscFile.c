@@ -26,45 +26,45 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 --*/
 
-#include <stdio.h>    // for file ops
+#include <stdio.h>  // for file ops
 #include <string.h>
 #include <ctype.h>
-#include <stdlib.h>   // for malloc
+#include <stdlib.h> // for malloc
 #include "Common.h"
 #include "DSCFile.h"
 
-#define MAX_INCLUDE_NEST_LEVEL    20
+#define MAX_INCLUDE_NEST_LEVEL  20
 
-static 
-void 
+static
+void
 DSCFileFree (
   DSC_FILE *DSC
   );
 
-static 
-STATUS 
+static
+STATUS
 DSCParseInclude (
-  DSC_FILE  *DSC, 
-  char      *FileName, 
+  DSC_FILE  *DSC,
+  char      *FileName,
   int       NestLevel
   );
 
 //
 // Constructor for a DSC file
 //
-int 
+int
 DSCFileInit (
   DSC_FILE *DSC
   )
 {
-  memset ((char *)DSC, 0, sizeof (DSC_FILE));
+  memset ((char *) DSC, 0, sizeof (DSC_FILE));
   DSC->SavedPositionIndex = -1;
   return STATUS_SUCCESS;
 }
 //
 // Destructor for a DSC file
 //
-int 
+int
 DSCFileDestroy (
   DSC_FILE *DSC
   )
@@ -78,13 +78,13 @@ DSCFileDestroy (
 //
 char *
 DSCFileGetLine (
-  DSC_FILE  *DSC, 
-  char      *Line, 
+  DSC_FILE  *DSC,
+  char      *Line,
   int       LineLen
   )
 {
   char  *Cptr;
-  
+
   if (DSC->CurrentLine == NULL) {
     return NULL;
   }
@@ -103,15 +103,16 @@ DSCFileGetLine (
   } else {
     Cptr = DSC->CurrentLine->Line;
   }
+
   strncpy (Line, Cptr, LineLen);
   ParserSetPosition (DSC->CurrentLine->FileName, DSC->CurrentLine->LineNum);
-  DSC->CurrentLine = DSC->CurrentLine->Next;  
+  DSC->CurrentLine = DSC->CurrentLine->Next;
   return Line;
 }
 
-int 
+int
 DSCFileSetFile (
-  DSC_FILE  *DSC, 
+  DSC_FILE  *DSC,
   char      *FileName
   )
 /*++
@@ -132,34 +133,39 @@ Returns:
 
 --*/
 {
-  STATUS    Status;
-  
+  STATUS  Status;
+
   //
-  // Called to open a new sectioned file. 
+  // Called to open a new sectioned file.
   //
   Status = DSCParseInclude (DSC, FileName, 1);
   return Status;
 }
-static 
-STATUS 
+
+static
+STATUS
 DSCParseInclude (
-  DSC_FILE    *DSC, 
+  DSC_FILE    *DSC,
   char        *FileName,
   int         NestLevel
   )
 {
-  SECTION           *NewSect;
-  SECTION_LINE      *NewLine;
-  DSC_FILE_NAME     *NewDscFileName;
-  char              Line[MAX_LINE_LEN];
-  char              *Start, *End, SaveChar, *TempCptr;
-  char              ShortHandSectionName[MAX_LINE_LEN];
-  char              ThisSectionName[MAX_LINE_LEN];
-  SECTION           *CurrSect, *TempSect;
-  FILE              *FilePtr;  
-  STATUS            Status;
-  UINT32            LineNum;
-    
+  SECTION       *NewSect;
+  SECTION_LINE  *NewLine;
+  DSC_FILE_NAME *NewDscFileName;
+  char          Line[MAX_LINE_LEN];
+  char          *Start;
+  char          *End;
+  char          SaveChar;
+  char          *TempCptr;
+  char          ShortHandSectionName[MAX_LINE_LEN];
+  char          ThisSectionName[MAX_LINE_LEN];
+  SECTION       *CurrSect;
+  SECTION       *TempSect;
+  FILE          *FilePtr;
+  STATUS        Status;
+  UINT32        LineNum;
+
   //
   // Make sure we haven't exceeded our maximum nesting level
   //
@@ -181,6 +187,7 @@ DSCParseInclude (
     } else {
       Error (NULL, 0, 0, FileName, "could not open !include DSC file for reading");
     }
+
     return STATUS_ERROR;
   }
   //
@@ -191,28 +198,32 @@ DSCParseInclude (
     Error (__FILE__, __LINE__, 0, "memory allocation failed", NULL);
     return STATUS_ERROR;
   }
+
   memset (NewDscFileName, 0, sizeof (DSC_FILE_NAME));
-  NewDscFileName->FileName = (INT8 *)malloc (strlen (FileName) + 1);
+  NewDscFileName->FileName = (INT8 *) malloc (strlen (FileName) + 1);
   if (NewDscFileName->FileName == NULL) {
     Error (__FILE__, __LINE__, 0, "memory allocation failed", NULL);
     return STATUS_ERROR;
   }
+
   strcpy (NewDscFileName->FileName, FileName);
   if (DSC->FileName == NULL) {
     DSC->FileName = NewDscFileName;
   } else {
     DSC->LastFileName->Next = NewDscFileName;
   }
+
   DSC->LastFileName = NewDscFileName;
   //
   // Read lines and process until done
   //
-  Status = STATUS_SUCCESS;
+  Status  = STATUS_SUCCESS;
   LineNum = 0;
-  for(;;) {
+  for (;;) {
     if (fgets (Line, sizeof (Line), FilePtr) == NULL) {
       break;
     }
+
     LineNum++;
     ParserSetPosition (FileName, LineNum);
     //
@@ -220,51 +231,60 @@ DSCParseInclude (
     //
     if ((strncmp (Line, "!include", 8) == 0) && (isspace (Line[8]))) {
       Start = Line + 9;
-      while (*Start && (*Start != '"')) Start++;
+      while (*Start && (*Start != '"')) {
+        Start++;
+      }
+
       if (*Start != '"') {
         Error (FileName, LineNum, 0, NULL, "invalid format for !include");
         Status = STATUS_ERROR;
         goto Done;
       }
+
       Start++;
-      for (End = Start; *End && (*End != '"'); End++);
+      for (End = Start; *End && (*End != '"'); End++)
+        ;
       if (*End != '"') {
         Error (FileName, LineNum, 0, NULL, "invalid format for !include");
         Status = STATUS_ERROR;
         goto Done;
       }
+
       *End = 0;
       //
-      // Expand macro names. Use 'ThisSectionName' as scratchpad 
+      // Expand macro names. Use 'ThisSectionName' as scratchpad
       //
       ExpandMacros (Start, ThisSectionName, sizeof (ThisSectionName), 0);
       Status = DSCParseInclude (DSC, ThisSectionName, NestLevel + 1);
       if (Status != STATUS_SUCCESS) {
         Error (FileName, LineNum, 0, NULL, "failed to parse !include file");
         goto Done;
-      }      
+      }
     } else {
       NewLine = (SECTION_LINE *) malloc (sizeof (SECTION_LINE));
       if (NewLine == NULL) {
         Error (NULL, 0, 0, NULL, "failed to allocate memory");
         Status = STATUS_ERROR;
         goto Done;
-      }    
-      memset ((char *)NewLine, 0, sizeof (SECTION_LINE));
-      NewLine->LineNum = LineNum;
+      }
+
+      memset ((char *) NewLine, 0, sizeof (SECTION_LINE));
+      NewLine->LineNum  = LineNum;
       NewLine->FileName = NewDscFileName->FileName;
-      NewLine->Line = (char *) malloc (strlen(Line) + 1);
+      NewLine->Line     = (char *) malloc (strlen (Line) + 1);
       if (NewLine->Line == NULL) {
         Error (NULL, 0, 0, NULL, "failed to allocate memory");
         Status = STATUS_ERROR;
         goto Done;
-      }    
-      strcpy (NewLine->Line, Line);    
+      }
+
+      strcpy (NewLine->Line, Line);
       if (DSC->Lines == NULL) {
         DSC->Lines = NewLine;
       } else {
         DSC->LastLine->Next = NewLine;
       }
+
       DSC->LastLine = NewLine;
       //
       // Parse the line for []. Ignore [] and [----] delimiters. The
@@ -278,23 +298,25 @@ DSCParseInclude (
         //
         Start++;
         ShortHandSectionName[0] = 0;
-      
+
         while (*Start && (*Start != ']')) {
-          while (isspace (*Start)) Start++;
+          while (isspace (*Start)) {
+            Start++;
+          }
           //
           // Hack off closing bracket or trailing spaces or comma separator.
           // Also allow things like [section.subsection1|subsection2], which
           // is shorthand for [section.subsection1,section.subsection2]
           //
           End = Start;
-          while (*End && (*End != ']') && !isspace(*End) && (*End != ',') && (*End != '|')) {
+          while (*End && (*End != ']') && !isspace (*End) && (*End != ',') && (*End != '|')) {
             End++;
           }
           //
           // Save the character and null-terminate the string
           //
-          SaveChar = *End;
-          *End = 0;
+          SaveChar  = *End;
+          *End      = 0;
           //
           // Now allocate space for a new section and add it to the linked list.
           // If the previous section ended with the shorthand indicator, then
@@ -309,43 +331,48 @@ DSCParseInclude (
           //
           // Allocate memory for the section. Then clear it out.
           //
-          NewSect = (SECTION *)malloc (sizeof (SECTION));
+          NewSect = (SECTION *) malloc (sizeof (SECTION));
           if (NewSect == NULL) {
             Error (NULL, 0, 0, NULL, "failed to allocation memory for sections");
             Status = STATUS_ERROR;
             goto Done;
           }
-          memset ((char *)NewSect, 0, sizeof (SECTION));
-          NewSect->FirstLine = NewLine;
-          NewSect->Name = (char *) malloc (strlen (ThisSectionName) + 1);
+
+          memset ((char *) NewSect, 0, sizeof (SECTION));
+          NewSect->FirstLine  = NewLine;
+          NewSect->Name       = (char *) malloc (strlen (ThisSectionName) + 1);
           if (NewSect->Name == NULL) {
             Error (NULL, 0, 0, NULL, "failed to allocation memory for sections");
             Status = STATUS_ERROR;
             goto Done;
           }
+
           strcpy (NewSect->Name, ThisSectionName);
           if (DSC->Sections == NULL) {
             DSC->Sections = NewSect;
           } else {
             DSC->LastSection->Next = NewSect;
           }
-          DSC->LastSection = NewSect;
-          *End = SaveChar;
+
+          DSC->LastSection  = NewSect;
+          *End              = SaveChar;
           //
-          // If the name ended in a shorthand indicator, then save the 
+          // If the name ended in a shorthand indicator, then save the
           // section name and truncate it at the last dot.
           //
           if (SaveChar == '|') {
             strcpy (ShortHandSectionName, ThisSectionName);
             for (TempCptr = ShortHandSectionName + strlen (ShortHandSectionName) - 1;
-                  (TempCptr != ShortHandSectionName) && (*TempCptr != '.');
-                  TempCptr--);
+                 (TempCptr != ShortHandSectionName) && (*TempCptr != '.');
+                 TempCptr--
+                )
+              ;
             //
             // If we didn't find a dot, then hopefully they have [name1|name2]
             // instead of [name1,name2].
-            // 
+            //
             if (TempCptr == ShortHandSectionName) {
-              ShortHandSectionName[0] = 0;          
+              ShortHandSectionName[0] = 0;
             } else {
               //
               // Truncate after the dot
@@ -361,7 +388,10 @@ DSCParseInclude (
           //
           // Skip to next section name or closing bracket
           //
-          while (*End && ((*End == ',') || isspace (*End) || (*End == '|'))) End++;
+          while (*End && ((*End == ',') || isspace (*End) || (*End == '|'))) {
+            End++;
+          }
+
           Start = End;
         }
       }
@@ -375,16 +405,31 @@ DSCParseInclude (
   while (CurrSect != NULL) {
     TempSect = CurrSect->Next;
     while (TempSect != NULL) {
-      if (isalpha(CurrSect->Name[0]) && (stricmp (CurrSect->Name, TempSect->Name) == 0)) {
-        Error (TempSect->FirstLine->FileName, TempSect->FirstLine->LineNum, 0, TempSect->Name, "duplicate section found");
-        Error (CurrSect->FirstLine->FileName, CurrSect->FirstLine->LineNum, 0, TempSect->Name, "first definition of duplicate section");
+      if (isalpha (CurrSect->Name[0]) && (stricmp (CurrSect->Name, TempSect->Name) == 0)) {
+        Error (
+          TempSect->FirstLine->FileName,
+          TempSect->FirstLine->LineNum,
+          0,
+          TempSect->Name,
+          "duplicate section found"
+          );
+        Error (
+          CurrSect->FirstLine->FileName,
+          CurrSect->FirstLine->LineNum,
+          0,
+          TempSect->Name,
+          "first definition of duplicate section"
+          );
         Status = STATUS_ERROR;
         goto Done;
       }
+
       TempSect = TempSect->Next;
     }
+
     CurrSect = CurrSect->Next;
-  }        
+  }
+
 Done:
   fclose (FilePtr);
   return Status;
@@ -392,8 +437,8 @@ Done:
 //
 // Free up memory allocated for DSC file handling.
 //
-static 
-void 
+static
+void
 DSCFileFree (
   DSC_FILE *DSC
   )
@@ -401,21 +446,24 @@ DSCFileFree (
   SECTION       *NextSection;
   SECTION_LINE  *NextLine;
   DSC_FILE_NAME *NextName;
-  
+
   while (DSC->Sections != NULL) {
     NextSection = DSC->Sections->Next;
     if (DSC->Sections->Name != NULL) {
       free (DSC->Sections->Name);
     }
+
     free (DSC->Sections);
     DSC->Sections = NextSection;
   }
+
   while (DSC->Lines != NULL) {
     NextLine = DSC->Lines->Next;
     free (DSC->Lines->Line);
     free (DSC->Lines);
     DSC->Lines = NextLine;
   }
+
   while (DSC->FileName != NULL) {
     NextName = DSC->FileName->Next;
     free (DSC->FileName->FileName);
@@ -423,9 +471,10 @@ DSCFileFree (
     DSC->FileName = NextName;
   }
 }
+
 SECTION *
 DSCFileFindSection (
-  DSC_FILE  *DSC, 
+  DSC_FILE  *DSC,
   char      *Name
   )
 {
@@ -443,11 +492,14 @@ DSCFileFindSection (
       DSC->CurrentLine = Sect->FirstLine->Next;
       return Sect;
     }
+
     Sect = Sect->Next;
   }
+
   return NULL;
 }
-int 
+
+int
 DSCFileSavePosition (
   DSC_FILE *DSC
   )
@@ -458,13 +510,16 @@ DSCFileSavePosition (
   DSC->SavedPositionIndex++;
   if (DSC->SavedPositionIndex >= MAX_SAVES) {
     DSC->SavedPositionIndex--;
-    Error (NULL, 0, 0, "APP ERROR" , "max nesting of saved section file positions exceeded");
+    Error (NULL, 0, 0, "APP ERROR", "max nesting of saved section file positions exceeded");
     return STATUS_ERROR;
   }
+
   DSC->SavedPosition[DSC->SavedPositionIndex] = DSC->CurrentLine;
   return STATUS_SUCCESS;
 }
-int DSCFileRestorePosition (
+
+int
+DSCFileRestorePosition (
   DSC_FILE *DSC
   )
 {
@@ -472,6 +527,7 @@ int DSCFileRestorePosition (
     Error (NULL, 0, 0, "APP ERROR", "underflow of saved positions in section file");
     return STATUS_ERROR;
   }
+
   DSC->CurrentLine = DSC->SavedPosition[DSC->SavedPositionIndex];
   DSC->SavedPositionIndex--;
   return STATUS_SUCCESS;

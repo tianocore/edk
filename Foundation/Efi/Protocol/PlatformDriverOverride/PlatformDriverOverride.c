@@ -20,8 +20,12 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(PlatformDriverOverride)
+#include EFI_PROTOCOL_DEFINITION (PlatformDriverOverride)
 
-EFI_GUID gEfiPlatformDriverOverrideProtocolGuid = EFI_PLATFORM_DRIVER_OVERRIDE_PROTOCOL_GUID;
+EFI_GUID  gEfiPlatformDriverOverrideProtocolGuid = EFI_PLATFORM_DRIVER_OVERRIDE_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiPlatformDriverOverrideProtocolGuid, "Platform Driver Override Protocol", "EFI 1.1 Platform Driver Override Protocol");
+EFI_GUID_STRING
+  (
+    &gEfiPlatformDriverOverrideProtocolGuid, "Platform Driver Override Protocol",
+      "EFI 1.1 Platform Driver Override Protocol"
+  );

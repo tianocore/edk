@@ -26,7 +26,7 @@ Revision History
 //
 // Don't use module globals after the SetVirtualAddress map is signaled
 //
-ESAL_VARIABLE_GLOBAL   *mVariableModuleGlobal;
+ESAL_VARIABLE_GLOBAL  *mVariableModuleGlobal;
 
 UINT32
 EFIAPI
@@ -49,7 +49,7 @@ Returns:
 
 --*/
 {
-  UINT32 Count;
+  UINT32  Count;
 
   if (NULL == String) {
     return 0;
@@ -60,9 +60,9 @@ Returns:
   while (0 != String[Count]) {
     Count++;
   }
-  return ((Count * 2) + 2);
-}
 
+  return (Count * 2) + 2;
+}
 
 BOOLEAN
 EFIAPI
@@ -84,15 +84,15 @@ Returns:
 
 --*/
 {
-  if (Variable ==NULL ||
-      Variable->StartId != VARIABLE_DATA || 
-      (sizeof (VARIABLE_HEADER) + Variable->NameSize + Variable->DataSize) > MAX_VARIABLE_SIZE) {
+  if (Variable == NULL ||
+      Variable->StartId != VARIABLE_DATA ||
+      (sizeof (VARIABLE_HEADER) + Variable->NameSize + Variable->DataSize) > MAX_VARIABLE_SIZE
+      ) {
     return FALSE;
   }
-  
+
   return TRUE;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -130,29 +130,29 @@ Returns:
 
 --*/
 {
-  EFI_FV_BLOCK_MAP_ENTRY          *PtrBlockMapEntry;
-  UINTN                           BlockIndex2;
-  UINTN                           LinearOffset;
-  UINTN                           CurrWriteSize;
-  UINTN                           CurrWritePtr;
-  UINT8                           *CurrBuffer;
-  EFI_LBA                         LbaNumber;
-  UINTN                           Size;
-  EFI_FIRMWARE_VOLUME_HEADER      *FwVolHeader;
-  VARIABLE_STORE_HEADER           *VolatileBase;
-  EFI_PHYSICAL_ADDRESS            FvVolHdr;
-  EFI_PHYSICAL_ADDRESS            DataPtr;
-  EFI_STATUS                      Status;
+  EFI_FV_BLOCK_MAP_ENTRY      *PtrBlockMapEntry;
+  UINTN                       BlockIndex2;
+  UINTN                       LinearOffset;
+  UINTN                       CurrWriteSize;
+  UINTN                       CurrWritePtr;
+  UINT8                       *CurrBuffer;
+  EFI_LBA                     LbaNumber;
+  UINTN                       Size;
+  EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
+  VARIABLE_STORE_HEADER       *VolatileBase;
+  EFI_PHYSICAL_ADDRESS        FvVolHdr;
+  EFI_PHYSICAL_ADDRESS        DataPtr;
+  EFI_STATUS                  Status;
 
   FwVolHeader = NULL;
-  DataPtr = DataPtrIndex;
+  DataPtr     = DataPtrIndex;
 
   //
   // Check if the Data is Volatile
   //
   if (!Volatile) {
     EfiFvbGetPhysicalAddress (Instance, &FvVolHdr);
-    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER*) ((UINTN) FvVolHdr);
+    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvVolHdr);
     //
     // Data Pointer should point to the actual Address where data is to be
     // written
@@ -160,7 +160,8 @@ Returns:
     if (SetByIndex) {
       DataPtr += Global->NonVolatileVariableBase;
     }
-    if ((DataPtr + DataSize) >= ((EFI_PHYSICAL_ADDRESS) (UINTN) ((UINT8*) FwVolHeader + FwVolHeader->FvLength))) {
+
+    if ((DataPtr + DataSize) >= ((EFI_PHYSICAL_ADDRESS) (UINTN) ((UINT8 *) FwVolHeader + FwVolHeader->FvLength))) {
       return EFI_INVALID_PARAMETER;
     }
   } else {
@@ -168,32 +169,31 @@ Returns:
     // Data Pointer should point to the actual Address where data is to be
     // written
     //
-    VolatileBase = (VARIABLE_STORE_HEADER*) ((UINTN) Global->VolatileVariableBase);
+    VolatileBase = (VARIABLE_STORE_HEADER *) ((UINTN) Global->VolatileVariableBase);
     if (SetByIndex) {
       DataPtr += Global->VolatileVariableBase;
     }
-    if ((DataPtr + DataSize) >= ((UINTN) ((UINT8*) VolatileBase + VolatileBase->Size))) {
+
+    if ((DataPtr + DataSize) >= ((UINTN) ((UINT8 *) VolatileBase + VolatileBase->Size))) {
       return EFI_INVALID_PARAMETER;
     }
   }
-
   //
   // If Volatile Variable just do a simple mem copy.
   //
   if (Volatile) {
-    EfiCopyMem ((UINT8*) ((UINTN) DataPtr), Buffer, DataSize);
+    EfiCopyMem ((UINT8 *) ((UINTN) DataPtr), Buffer, DataSize);
     return EFI_SUCCESS;
   }
-
   //
   // If we are here we are dealing with Non-Volatile Variables
   //
-  LinearOffset = (UINTN) FwVolHeader;
-  CurrWritePtr = (UINTN) DataPtr;
+  LinearOffset  = (UINTN) FwVolHeader;
+  CurrWritePtr  = (UINTN) DataPtr;
   CurrWriteSize = DataSize;
-  CurrBuffer = Buffer;
-  LbaNumber = 0;
-  
+  CurrBuffer    = Buffer;
+  LbaNumber     = 0;
+
   if (CurrWritePtr < LinearOffset) {
     return EFI_INVALID_PARAMETER;
   }
@@ -204,35 +204,44 @@ Returns:
       // Check to see if the Variable Writes are spanning through multiple
       // blocks.
       //
-      if ((CurrWritePtr >= LinearOffset) &&
-          (CurrWritePtr < LinearOffset + PtrBlockMapEntry->BlockLength)) {
+      if ((CurrWritePtr >= LinearOffset) && (CurrWritePtr < LinearOffset + PtrBlockMapEntry->BlockLength)) {
         if ((CurrWritePtr + CurrWriteSize) <= (LinearOffset + PtrBlockMapEntry->BlockLength)) {
-          Status = EfiFvbWriteBlock (Instance, LbaNumber,
-                                     (UINTN) (CurrWritePtr - LinearOffset),
-                                     &CurrWriteSize, CurrBuffer);
+          Status = EfiFvbWriteBlock (
+                    Instance,
+                    LbaNumber,
+                    (UINTN) (CurrWritePtr - LinearOffset),
+                    &CurrWriteSize,
+                    CurrBuffer
+                    );
           if (EFI_ERROR (Status)) {
             return Status;
           }
         } else {
           Size = (UINT32) (LinearOffset + PtrBlockMapEntry->BlockLength - CurrWritePtr);
-          Status = EfiFvbWriteBlock (Instance, LbaNumber,
-                                     (UINTN) (CurrWritePtr - LinearOffset),
-                                     &Size, CurrBuffer);
+          Status = EfiFvbWriteBlock (
+                    Instance,
+                    LbaNumber,
+                    (UINTN) (CurrWritePtr - LinearOffset),
+                    &Size,
+                    CurrBuffer
+                    );
           if (EFI_ERROR (Status)) {
             return Status;
           }
-          CurrWritePtr = LinearOffset + PtrBlockMapEntry->BlockLength;
-          CurrBuffer = CurrBuffer + Size;
+
+          CurrWritePtr  = LinearOffset + PtrBlockMapEntry->BlockLength;
+          CurrBuffer    = CurrBuffer + Size;
           CurrWriteSize = CurrWriteSize - Size;
         }
       }
+
       LinearOffset += PtrBlockMapEntry->BlockLength;
       LbaNumber++;
     }
   }
+
   return EFI_SUCCESS;
 }
-
 
 VARIABLE_STORE_STATUS
 EFIAPI
@@ -259,21 +268,23 @@ Returns:
 {
   if (VarStoreHeader->Signature == VARIABLE_STORE_SIGNATURE &&
       VarStoreHeader->Format == VARIABLE_STORE_FORMATTED &&
-      VarStoreHeader->State == VARIABLE_STORE_HEALTHY) {
-    
+      VarStoreHeader->State == VARIABLE_STORE_HEALTHY
+      ) {
+
     return EfiValid;
-  } else  if (VarStoreHeader->Signature == 0xffffffff &&
-      VarStoreHeader->Size == 0xffffffff &&
-      VarStoreHeader->Format == 0xff &&
-      VarStoreHeader->State == 0xff) {
-    
+  } else if (VarStoreHeader->Signature == 0xffffffff &&
+           VarStoreHeader->Size == 0xffffffff &&
+           VarStoreHeader->Format == 0xff &&
+           VarStoreHeader->State == 0xff
+          ) {
+
     return EfiRaw;
   } else {
     return EfiInvalid;
-  } 
+  }
 }
 
-UINT8*
+UINT8 *
 EFIAPI
 GetVariableDataPtr (
   IN  VARIABLE_HEADER   *Variable
@@ -293,15 +304,14 @@ Returns:
   UINT8*              Pointer to Variable Data
 
 --*/
-{ 
+{
   //
   // Be careful about pad size for alignment
-  //  
-  return (UINT8*) ((UINTN)GET_VARIABLE_NAME_PTR(Variable) + Variable->NameSize + GET_PAD_SIZE(Variable->NameSize));  
+  //
+  return (UINT8 *) ((UINTN) GET_VARIABLE_NAME_PTR (Variable) + Variable->NameSize + GET_PAD_SIZE (Variable->NameSize));
 }
 
-
-VARIABLE_HEADER*
+VARIABLE_HEADER *
 EFIAPI
 GetNextVariablePtr (
   IN  VARIABLE_HEADER   *Variable
@@ -325,16 +335,13 @@ Returns:
   if (!IsValidVariableHeader (Variable)) {
     return NULL;
   }
-
   //
   // Be careful about pad size for alignment
   //
-  return (VARIABLE_HEADER*) ((UINTN) GetVariableDataPtr (Variable) + \
-                    Variable->DataSize + GET_PAD_SIZE(Variable->DataSize)); 
+  return (VARIABLE_HEADER *) ((UINTN) GetVariableDataPtr (Variable) + Variable->DataSize + GET_PAD_SIZE (Variable->DataSize));
 }
 
-
-VARIABLE_HEADER*
+VARIABLE_HEADER *
 EFIAPI
 GetEndPointer (
   IN VARIABLE_STORE_HEADER       *VarStoreHeader
@@ -358,9 +365,8 @@ Returns:
   //
   // The end of variable store
   //
-  return (VARIABLE_HEADER*) ((UINTN) VarStoreHeader + VarStoreHeader->Size);
+  return (VARIABLE_HEADER *) ((UINTN) VarStoreHeader + VarStoreHeader->Size);
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -388,36 +394,39 @@ Returns:
 
 --*/
 {
-  VARIABLE_HEADER             *Variable;
-  VARIABLE_HEADER             *NextVariable;
-  VARIABLE_STORE_HEADER       *VariableStoreHeader;
-  UINT8                       *ValidBuffer;
-  UINTN                       ValidBufferSize;
-  UINTN                       VariableSize;
-  UINT8                       *CurrPtr;
-  EFI_STATUS                  Status;
+  VARIABLE_HEADER       *Variable;
+  VARIABLE_HEADER       *NextVariable;
+  VARIABLE_STORE_HEADER *VariableStoreHeader;
+  UINT8                 *ValidBuffer;
+  UINTN                 ValidBufferSize;
+  UINTN                 VariableSize;
+  UINT8                 *CurrPtr;
+  EFI_STATUS            Status;
 
-  VariableStoreHeader = (VARIABLE_STORE_HEADER*) ((UINTN) VariableBase);
+  VariableStoreHeader = (VARIABLE_STORE_HEADER *) ((UINTN) VariableBase);
 
   //
   // Start Pointers for the variable.
   //
-  Variable = (VARIABLE_HEADER*) (VariableStoreHeader + 1);
+  Variable        = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
 
   ValidBufferSize = sizeof (VARIABLE_STORE_HEADER);
 
   while (IsValidVariableHeader (Variable)) {
     NextVariable = GetNextVariablePtr (Variable);
     if (Variable->State == VAR_ADDED) {
-      VariableSize = (UINTN)NextVariable - (UINTN)Variable;      
+      VariableSize = (UINTN) NextVariable - (UINTN) Variable;
       ValidBufferSize += VariableSize;
     }
+
     Variable = NextVariable;
   }
 
-  Status =  gBS->AllocatePool (EfiBootServicesData,
-                               ValidBufferSize,
-                               &ValidBuffer);
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  ValidBufferSize,
+                  &ValidBuffer
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -435,15 +444,16 @@ Returns:
   //
   // Start Pointers for the variable.
   //
-  Variable = (VARIABLE_HEADER*) (VariableStoreHeader + 1);
+  Variable = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
 
   while (IsValidVariableHeader (Variable)) {
-     NextVariable = GetNextVariablePtr (Variable);
+    NextVariable = GetNextVariablePtr (Variable);
     if (Variable->State == VAR_ADDED) {
-      VariableSize = (UINTN)NextVariable - (UINTN)Variable;            
+      VariableSize = (UINTN) NextVariable - (UINTN) Variable;
       EfiCopyMem (CurrPtr, (UINT8 *) Variable, VariableSize);
       CurrPtr += VariableSize;
     }
+
     Variable = NextVariable;
   }
 
@@ -451,20 +461,20 @@ Returns:
     //
     // If volatile variable store, just copy valid buffer
     //
-    EfiSetMem ((UINT8 *)(UINTN) VariableBase, VariableStoreHeader->Size, 0xff);
-    EfiCopyMem ((UINT8 *)(UINTN) VariableBase, ValidBuffer, ValidBufferSize);
+    EfiSetMem ((UINT8 *) (UINTN) VariableBase, VariableStoreHeader->Size, 0xff);
+    EfiCopyMem ((UINT8 *) (UINTN) VariableBase, ValidBuffer, ValidBufferSize);
     *LastVariableOffset = ValidBufferSize;
-    Status = EFI_SUCCESS;
+    Status              = EFI_SUCCESS;
   } else {
     //
     // If non-volatile variable store, perform FTW here.
     //
     Status = FtwVariableSpace (
-               VariableBase,
-               ValidBuffer,
-               ValidBufferSize
-               );
-    if (! EFI_ERROR (Status)) {
+              VariableBase,
+              ValidBuffer,
+              ValidBufferSize
+              );
+    if (!EFI_ERROR (Status)) {
       *LastVariableOffset = ValidBufferSize;
     }
   }
@@ -474,6 +484,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     *LastVariableOffset = 0;
   }
+
   return Status;
 }
 
@@ -483,7 +494,7 @@ FindVariable (
   IN  CHAR16                  *VariableName,
   IN  EFI_GUID                *VendorGuid,
   OUT VARIABLE_POINTER_TRACK  *PtrTrack,
-  IN  VARIABLE_GLOBAL      *Global
+  IN  VARIABLE_GLOBAL         *Global
   )
 /*++
 
@@ -506,47 +517,45 @@ Returns:
 
 --*/
 {
-  VARIABLE_HEADER             *Variable[2];
-  VARIABLE_STORE_HEADER       *VariableStoreHeader[2];
-  UINTN                       Index;
+  VARIABLE_HEADER       *Variable[2];
+  VARIABLE_STORE_HEADER *VariableStoreHeader[2];
+  UINTN                 Index;
 
   //
   // 0: Non-Volatile, 1: Volatile
   //
-  VariableStoreHeader[0] = (VARIABLE_STORE_HEADER*) ((UINTN) Global->NonVolatileVariableBase);
-  VariableStoreHeader[1] = (VARIABLE_STORE_HEADER*) ((UINTN) Global->VolatileVariableBase);
+  VariableStoreHeader[0]  = (VARIABLE_STORE_HEADER *) ((UINTN) Global->NonVolatileVariableBase);
+  VariableStoreHeader[1]  = (VARIABLE_STORE_HEADER *) ((UINTN) Global->VolatileVariableBase);
 
   //
   // Start Pointers for the variable.
   // Actual Data Pointer where data can be written.
   //
-  Variable[0] = (VARIABLE_HEADER*) (VariableStoreHeader[0] + 1);
-  Variable[1] = (VARIABLE_HEADER*) (VariableStoreHeader[1] + 1);
+  Variable[0] = (VARIABLE_HEADER *) (VariableStoreHeader[0] + 1);
+  Variable[1] = (VARIABLE_HEADER *) (VariableStoreHeader[1] + 1);
 
   if (VariableName[0] != 0 && VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find the variable by walk through non-volatile and volatile variable store
   //
   for (Index = 0; Index < 2; Index++) {
-    PtrTrack->StartPtr = (VARIABLE_HEADER*) (VariableStoreHeader[Index] + 1);
-    PtrTrack->EndPtr = GetEndPointer (VariableStoreHeader[Index]);
+    PtrTrack->StartPtr  = (VARIABLE_HEADER *) (VariableStoreHeader[Index] + 1);
+    PtrTrack->EndPtr    = GetEndPointer (VariableStoreHeader[Index]);
 
-    while (IsValidVariableHeader (Variable[Index]) && 
-           (Variable[Index] <= GetEndPointer (VariableStoreHeader[Index]))) {
+    while (IsValidVariableHeader (Variable[Index]) && (Variable[Index] <= GetEndPointer (VariableStoreHeader[Index]))) {
       if (Variable[Index]->State == VAR_ADDED) {
         if (!(EfiAtRuntime () && !(Variable[Index]->Attributes & EFI_VARIABLE_RUNTIME_ACCESS))) {
           if (VariableName[0] == 0) {
-            PtrTrack->CurrPtr = Variable[Index];
-            PtrTrack->Volatile = (BOOLEAN) Index;
+            PtrTrack->CurrPtr   = Variable[Index];
+            PtrTrack->Volatile  = (BOOLEAN) Index;
             return EFI_SUCCESS;
           } else {
             if (EfiCompareGuid (VendorGuid, &Variable[Index]->VendorGuid)) {
-              if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR(Variable[Index]), ArrayLength (VariableName))) {              
-                PtrTrack->CurrPtr = Variable[Index];
-                PtrTrack->Volatile = (BOOLEAN) Index;
+              if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), ArrayLength (VariableName))) {
+                PtrTrack->CurrPtr   = Variable[Index];
+                PtrTrack->Volatile  = (BOOLEAN) Index;
                 return EFI_SUCCESS;
               }
             }
@@ -555,23 +564,27 @@ Returns:
       }
 
       Variable[Index] = GetNextVariablePtr (Variable[Index]);
-    } // While (...)
-  } // for (...)
-
+    }
+    //
+    // While (...)
+    //
+  }
+  //
+  // for (...)
+  //
   PtrTrack->CurrPtr = NULL;
   return EFI_NOT_FOUND;
 }
-
 
 EFI_STATUS
 EFIAPI
 GetVariable (
   IN      CHAR16            *VariableName,
-  IN      EFI_GUID          *VendorGuid,
+  IN      EFI_GUID          * VendorGuid,
   OUT     UINT32            *Attributes OPTIONAL,
   IN OUT  UINTN             *DataSize,
   OUT     VOID              *Data,
-  IN      VARIABLE_GLOBAL   *Global,
+  IN      VARIABLE_GLOBAL   * Global,
   IN      UINT32            Instance
   )
 /*++
@@ -597,14 +610,13 @@ Returns:
 
 --*/
 {
-  VARIABLE_POINTER_TRACK          Variable;
-  UINTN                           VarDataSize;
-  EFI_STATUS                      Status;
+  VARIABLE_POINTER_TRACK  Variable;
+  UINTN                   VarDataSize;
+  EFI_STATUS              Status;
 
   if (VariableName == NULL || VendorGuid == NULL || DataSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find existing variable
   //
@@ -613,7 +625,6 @@ Returns:
   if (Variable.CurrPtr == NULL || EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Get data size
   //
@@ -622,10 +633,12 @@ Returns:
     if (Data == NULL) {
       return EFI_INVALID_PARAMETER;
     }
+
     EfiCopyMem (Data, GetVariableDataPtr (Variable.CurrPtr), VarDataSize);
     if (Attributes != NULL) {
       *Attributes = Variable.CurrPtr->Attributes;
     }
+
     *DataSize = VarDataSize;
     return EFI_SUCCESS;
   } else {
@@ -633,7 +646,6 @@ Returns:
     return EFI_BUFFER_TOO_SMALL;
   }
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -664,20 +676,20 @@ Returns:
 
 --*/
 {
-  VARIABLE_POINTER_TRACK          Variable;
-  UINTN                           VarNameSize;
-  EFI_STATUS                      Status;
+  VARIABLE_POINTER_TRACK  Variable;
+  UINTN                   VarNameSize;
+  EFI_STATUS              Status;
 
   if (VariableNameSize == NULL || VariableName == NULL || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   Status = FindVariable (VariableName, VendorGuid, &Variable, Global);
 
   if (Variable.CurrPtr == NULL || EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   if (VariableName[0] != 0) {
     //
     // If variable name is not NULL, get next variable
@@ -693,44 +705,49 @@ Returns:
     if (Variable.CurrPtr >= Variable.EndPtr || Variable.CurrPtr == NULL) {
       Variable.Volatile = (BOOLEAN) (Variable.Volatile ^ ((BOOLEAN) 0x1));
       if (Variable.Volatile) {
-        Variable.StartPtr = (VARIABLE_HEADER*) ((UINTN) (Global->VolatileVariableBase + sizeof (VARIABLE_STORE_HEADER)));
-        Variable.EndPtr = (VARIABLE_HEADER*) GetEndPointer ((VARIABLE_STORE_HEADER*) ((UINTN) Global->VolatileVariableBase));
+        Variable.StartPtr = (VARIABLE_HEADER *) ((UINTN) (Global->VolatileVariableBase + sizeof (VARIABLE_STORE_HEADER)));
+        Variable.EndPtr = (VARIABLE_HEADER *) GetEndPointer ((VARIABLE_STORE_HEADER *) ((UINTN) Global->VolatileVariableBase));
       } else {
         return EFI_NOT_FOUND;
       }
+
       Variable.CurrPtr = Variable.StartPtr;
       if (!IsValidVariableHeader (Variable.CurrPtr)) {
         continue;
       }
     }
-
     //
     // Variable is found
     //
     if (IsValidVariableHeader (Variable.CurrPtr) && Variable.CurrPtr->State == VAR_ADDED) {
       if (!(EfiAtRuntime () && !(Variable.CurrPtr->Attributes & EFI_VARIABLE_RUNTIME_ACCESS))) {
-        VarNameSize = Variable.CurrPtr->NameSize;        
+        VarNameSize = Variable.CurrPtr->NameSize;
         if (VarNameSize <= *VariableNameSize) {
-          EfiCopyMem (VariableName,
-                      GET_VARIABLE_NAME_PTR (Variable.CurrPtr),
-                      VarNameSize);
-          EfiCopyMem (VendorGuid,
-                      &Variable.CurrPtr->VendorGuid,
-                      sizeof (EFI_GUID));
+          EfiCopyMem (
+            VariableName,
+            GET_VARIABLE_NAME_PTR (Variable.CurrPtr),
+            VarNameSize
+            );
+          EfiCopyMem (
+            VendorGuid,
+            &Variable.CurrPtr->VendorGuid,
+            sizeof (EFI_GUID)
+            );
           Status = EFI_SUCCESS;
         } else {
           Status = EFI_BUFFER_TOO_SMALL;
         }
+
         *VariableNameSize = VarNameSize;
         return Status;
       }
     }
-    
+
     Variable.CurrPtr = GetNextVariablePtr (Variable.CurrPtr);
   }
+
   return EFI_NOT_FOUND;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -770,14 +787,14 @@ Returns:
 
 --*/
 {
-  VARIABLE_POINTER_TRACK      Variable;
-  EFI_STATUS                  Status;
-  VARIABLE_HEADER             *NextVariable;
-  UINTN                       VarNameSize;
-  UINTN                       VarNameOffset;
-  UINTN                       VarDataOffset;
-  UINTN                       VarSize;
-  UINT8                       State;
+  VARIABLE_POINTER_TRACK  Variable;
+  EFI_STATUS              Status;
+  VARIABLE_HEADER         *NextVariable;
+  UINTN                   VarNameSize;
+  UINTN                   VarNameOffset;
+  UINTN                   VarDataOffset;
+  UINTN                   VarSize;
+  UINT8                   State;
 
   if (VariableName == NULL || VariableName[0] == 0 || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -788,7 +805,6 @@ Returns:
   if (Status == EFI_INVALID_PARAMETER) {
     return Status;
   }
-
   //
   //  The size of the VariableName, including the Unicode Null in bytes plus
   //  the DataSize is limited to maximum size of MAX_VARIABLE_SIZE (1024) bytes.
@@ -796,28 +812,25 @@ Returns:
   else if (sizeof (VARIABLE_HEADER) + ArrayLength (VariableName) + DataSize > MAX_VARIABLE_SIZE) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   //  Make sure if runtime bit is set, boot service bit is set also
   //
-  else if ((Attributes & (EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS)) == EFI_VARIABLE_RUNTIME_ACCESS ) {
+  else if ((Attributes & (EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS)) == EFI_VARIABLE_RUNTIME_ACCESS
+          ) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Runtime but Attribute is not Runtime
   //
   else if (EfiAtRuntime () && Attributes && !(Attributes & EFI_VARIABLE_RUNTIME_ACCESS)) {
-  return EFI_INVALID_PARAMETER;
+    return EFI_INVALID_PARAMETER;
   }
-
   //
   // Cannot set volatile variable in Runtime
   //
   else if (EfiAtRuntime () && Attributes && !(Attributes & EFI_VARIABLE_NON_VOLATILE)) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Setting a data variable with no access, or zero DataSize attributes
   // specified causes it to be deleted.
@@ -827,16 +840,22 @@ Returns:
       State = Variable.CurrPtr->State;
       State &= VAR_DELETED;
 
-      Status = UpdateVariableStore (Global, Variable.Volatile,
-                                    FALSE, Instance,
-                                    (UINTN) &Variable.CurrPtr->State,
-                                    sizeof (UINT8),
-                                    &State);
+      Status = UpdateVariableStore (
+                Global,
+                Variable.Volatile,
+                FALSE,
+                Instance,
+                (UINTN) &Variable.CurrPtr->State,
+                sizeof (UINT8),
+                &State
+                );
       if (EFI_ERROR (Status)) {
         return Status;
       }
+
       return EFI_SUCCESS;
     }
+
     return EFI_NOT_FOUND;
   } else {
     if (!EFI_ERROR (Status)) {
@@ -845,70 +864,80 @@ Returns:
       // then return to the caller immediately.
       //
       if (Variable.CurrPtr->DataSize == DataSize &&
-        !EfiCompareMem (Data, GetVariableDataPtr (Variable.CurrPtr), DataSize)) {
+          !EfiCompareMem (Data, GetVariableDataPtr (Variable.CurrPtr), DataSize)
+            ) {
         return EFI_SUCCESS;
-      }
-      else if (Variable.CurrPtr->State == VAR_ADDED) {
+      } else if (Variable.CurrPtr->State == VAR_ADDED) {
         //
         // Mark the old variable as in delete transition
         //
         State = Variable.CurrPtr->State;
         State &= VAR_IN_DELETED_TRANSITION;
 
-        Status = UpdateVariableStore (Global, Variable.Volatile,
-                                      FALSE, Instance,
-                                      (UINTN) &Variable.CurrPtr->State,
-                                      sizeof (UINT8),
-                                      &State);
+        Status = UpdateVariableStore (
+                  Global,
+                  Variable.Volatile,
+                  FALSE,
+                  Instance,
+                  (UINTN) &Variable.CurrPtr->State,
+                  sizeof (UINT8),
+                  &State
+                  );
         if (EFI_ERROR (Status)) {
           return Status;
         }
       }
     }
-
     //
     // Create a new variable and copy the data.
     //
     // Tricky part: Use scratch data area at the end of volatile variable store
     // as a temporary storage.
     //
-    NextVariable = GetEndPointer ((VARIABLE_STORE_HEADER*) ((UINTN) Global->VolatileVariableBase));
+    NextVariable = GetEndPointer ((VARIABLE_STORE_HEADER *) ((UINTN) Global->VolatileVariableBase));
 
     EfiSetMem (NextVariable, SCRATCH_SIZE, 0xff);
 
-    NextVariable->StartId = VARIABLE_DATA;
-    NextVariable->Attributes = Attributes;
+    NextVariable->StartId     = VARIABLE_DATA;
+    NextVariable->Attributes  = Attributes;
+    //
     // NextVariable->State = VAR_ADDED;
-    NextVariable->Reserved = 0;
-    VarNameOffset = sizeof (VARIABLE_HEADER);
-    VarNameSize = ArrayLength (VariableName);
-    EfiCopyMem ((UINT8 *) ((UINTN) NextVariable + VarNameOffset),
-                VariableName,
-                VarNameSize);
+    //
+    NextVariable->Reserved  = 0;
+    VarNameOffset           = sizeof (VARIABLE_HEADER);
+    VarNameSize             = ArrayLength (VariableName);
+    EfiCopyMem (
+      (UINT8 *) ((UINTN) NextVariable + VarNameOffset),
+      VariableName,
+      VarNameSize
+      );
     VarDataOffset = VarNameOffset + VarNameSize + GET_PAD_SIZE (VarNameSize);
-    EfiCopyMem ((UINT8 *)((UINTN) NextVariable + VarDataOffset),
-                Data,
-                DataSize);
+    EfiCopyMem (
+      (UINT8 *) ((UINTN) NextVariable + VarDataOffset),
+      Data,
+      DataSize
+      );
     EfiCopyMem (&NextVariable->VendorGuid, VendorGuid, sizeof (EFI_GUID));
     //
     // There will be pad bytes after Data, the NextVariable->NameSize and
-    // NextVariable->DataSize should not include pad size so that variable 
+    // NextVariable->DataSize should not include pad size so that variable
     // service can get actual size in GetVariable
     //
-    NextVariable->NameSize = VarNameSize;
-    NextVariable->DataSize = DataSize;
-    
+    NextVariable->NameSize  = VarNameSize;
+    NextVariable->DataSize  = DataSize;
+
     //
     // The actual size of the variable that stores in storage should
     // include pad size.
     //
     VarSize = VarDataOffset + DataSize + GET_PAD_SIZE (DataSize);
     if (Attributes & EFI_VARIABLE_NON_VOLATILE) {
-      if ((UINT32) (VarSize + *NonVolatileOffset) > ((VARIABLE_STORE_HEADER*) ((UINTN) (Global->NonVolatileVariableBase)))->Size) {
+      if ((UINT32) (VarSize +*NonVolatileOffset) >
+            ((VARIABLE_STORE_HEADER *) ((UINTN) (Global->NonVolatileVariableBase)))->Size
+            ) {
         if (EfiAtRuntime ()) {
           return EFI_OUT_OF_RESOURCES;
         }
-
         //
         // Perform garbage collection & reclaim operation
         //
@@ -916,54 +945,66 @@ Returns:
         if (EFI_ERROR (Status)) {
           return Status;
         }
-
         //
         // If still no enough space, return out of resources
         //
-        if ((UINT32) (VarSize + *NonVolatileOffset) > ((VARIABLE_STORE_HEADER*) ((UINTN) (Global->NonVolatileVariableBase)))->Size) {
+        if ((UINT32) (VarSize +*NonVolatileOffset) >
+              ((VARIABLE_STORE_HEADER *) ((UINTN) (Global->NonVolatileVariableBase)))->Size
+              ) {
           return EFI_OUT_OF_RESOURCES;
         }
       }
-
       //
       // Three steps
       // 1. Write variable header
       // 2. Write variable data
       // 3. Set variable state to valid
       //
-
       //
       // Step 1:
       //
-      Status = UpdateVariableStore (Global, FALSE, TRUE, Instance,
-                                    *NonVolatileOffset,
-                                    sizeof (VARIABLE_HEADER),
-                                    (UINT8 *) NextVariable);
+      Status = UpdateVariableStore (
+                Global,
+                FALSE,
+                TRUE,
+                Instance,
+                *NonVolatileOffset,
+                sizeof (VARIABLE_HEADER),
+                (UINT8 *) NextVariable
+                );
 
       if (EFI_ERROR (Status)) {
         return Status;
       }
-
       //
       // Step 2:
       //
-      Status = UpdateVariableStore (Global, FALSE, TRUE, Instance,
-                                    *NonVolatileOffset + sizeof (VARIABLE_HEADER),
-                                    (UINT32) VarSize - sizeof (VARIABLE_HEADER),
-                                    (UINT8 *) NextVariable + sizeof (VARIABLE_HEADER));
+      Status = UpdateVariableStore (
+                Global,
+                FALSE,
+                TRUE,
+                Instance,
+                *NonVolatileOffset + sizeof (VARIABLE_HEADER),
+                (UINT32) VarSize - sizeof (VARIABLE_HEADER),
+                (UINT8 *) NextVariable + sizeof (VARIABLE_HEADER)
+                );
 
       if (EFI_ERROR (Status)) {
         return Status;
       }
-
       //
       // Step 3:
       //
       NextVariable->State = VAR_ADDED;
-      Status = UpdateVariableStore (Global, FALSE, TRUE, Instance,
-                                    *NonVolatileOffset,
-                                    sizeof (VARIABLE_HEADER),
-                                    (UINT8 *) NextVariable);
+      Status = UpdateVariableStore (
+                Global,
+                FALSE,
+                TRUE,
+                Instance,
+                *NonVolatileOffset,
+                sizeof (VARIABLE_HEADER),
+                (UINT8 *) NextVariable
+                );
 
       if (EFI_ERROR (Status)) {
         return Status;
@@ -975,7 +1016,10 @@ Returns:
       if (EfiAtRuntime ()) {
         return EFI_INVALID_PARAMETER;
       }
-      if ((UINT32) (VarSize + *VolatileOffset) > ((VARIABLE_STORE_HEADER*) ((UINTN) (Global->VolatileVariableBase)))->Size) {
+
+      if ((UINT32) (VarSize +*VolatileOffset) >
+            ((VARIABLE_STORE_HEADER *) ((UINTN) (Global->VolatileVariableBase)))->Size
+            ) {
         //
         // Perform garbage collection & reclaim operation
         //
@@ -983,19 +1027,26 @@ Returns:
         if (EFI_ERROR (Status)) {
           return Status;
         }
-
         //
         // If still no enough space, return out of resources
         //
-        if ((UINT32) (VarSize + *VolatileOffset) > ((VARIABLE_STORE_HEADER*) ((UINTN) (Global->VolatileVariableBase)))->Size) {
+        if ((UINT32) (VarSize +*VolatileOffset) >
+              ((VARIABLE_STORE_HEADER *) ((UINTN) (Global->VolatileVariableBase)))->Size
+              ) {
           return EFI_OUT_OF_RESOURCES;
         }
       }
-      
+
       NextVariable->State = VAR_ADDED;
-      Status = UpdateVariableStore (Global, TRUE, TRUE, Instance,
-                                    *VolatileOffset,
-                                    (UINT32) VarSize, (UINT8*) NextVariable);
+      Status = UpdateVariableStore (
+                Global,
+                TRUE,
+                TRUE,
+                Instance,
+                *VolatileOffset,
+                (UINT32) VarSize,
+                (UINT8 *) NextVariable
+                );
 
       if (EFI_ERROR (Status)) {
         return Status;
@@ -1003,7 +1054,6 @@ Returns:
 
       *VolatileOffset = *VolatileOffset + VarSize;
     }
-
     //
     // Mark the old variable as deleted
     //
@@ -1011,11 +1061,15 @@ Returns:
       State = Variable.CurrPtr->State;
       State &= VAR_DELETED;
 
-      Status = UpdateVariableStore (Global, Variable.Volatile,
-                                    FALSE, Instance,
-                                    (UINTN) &Variable.CurrPtr->State,
-                                    sizeof (UINT8),
-                                    &State);
+      Status = UpdateVariableStore (
+                Global,
+                Variable.Volatile,
+                FALSE,
+                Instance,
+                (UINTN) &Variable.CurrPtr->State,
+                sizeof (UINT8),
+                &State
+                );
 
       if (EFI_ERROR (Status)) {
         return Status;
@@ -1025,7 +1079,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -1078,24 +1131,23 @@ Returns:
     VariableClassAddressChangeEvent
     );
 
-  Status =  gBS->AllocatePool (
-                   EfiRuntimeServicesData,
-                   sizeof (ESAL_VARIABLE_GLOBAL),
-                   &mVariableModuleGlobal
-                   );
+  Status = gBS->AllocatePool (
+                  EfiRuntimeServicesData,
+                  sizeof (ESAL_VARIABLE_GLOBAL),
+                  &mVariableModuleGlobal
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Allocate memory for volatile variable store
   //
-  Status =  gBS->AllocatePool (
-                   EfiRuntimeServicesData,
-                   VARIABLE_STORE_SIZE + SCRATCH_SIZE,
-                   &VolatileVariableStore
-                   );
+  Status = gBS->AllocatePool (
+                  EfiRuntimeServicesData,
+                  VARIABLE_STORE_SIZE + SCRATCH_SIZE,
+                  &VolatileVariableStore
+                  );
 
   if (EFI_ERROR (Status)) {
     gBS->FreePool (mVariableModuleGlobal);
@@ -1110,12 +1162,12 @@ Returns:
   mVariableModuleGlobal->VariableBase[Physical].VolatileVariableBase = (EFI_PHYSICAL_ADDRESS) (UINTN) VolatileVariableStore;
   mVariableModuleGlobal->VolatileLastVariableOffset = sizeof (VARIABLE_STORE_HEADER);
 
-  VolatileVariableStore->Signature = VARIABLE_STORE_SIGNATURE;
-  VolatileVariableStore->Size      = VARIABLE_STORE_SIZE;
-  VolatileVariableStore->Format    = VARIABLE_STORE_FORMATTED;
-  VolatileVariableStore->State     = VARIABLE_STORE_HEALTHY;
-  VolatileVariableStore->Reserved  = 0;
-  VolatileVariableStore->Reserved1 = 0;
+  VolatileVariableStore->Signature                  = VARIABLE_STORE_SIGNATURE;
+  VolatileVariableStore->Size                       = VARIABLE_STORE_SIZE;
+  VolatileVariableStore->Format                     = VARIABLE_STORE_FORMATTED;
+  VolatileVariableStore->State                      = VARIABLE_STORE_HEALTHY;
+  VolatileVariableStore->Reserved                   = 0;
+  VolatileVariableStore->Reserved1                  = 0;
 
   //
   // Get non volatile varaible store
@@ -1174,7 +1226,7 @@ Returns:
   Length      = VariableStoreEntry.Length + (VariableStoreEntry.Base - BaseAddress);
   Length      = (Length + EFI_PAGE_SIZE - 1) & (~EFI_PAGE_MASK);
 
-  Status = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
+  Status      = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
   if (EFI_ERROR (Status)) {
     gBS->FreePool (mVariableModuleGlobal);
     gBS->FreePool (VolatileVariableStore);
@@ -1183,7 +1235,7 @@ Returns:
 
   Status = gDS->SetMemorySpaceAttributes (
                   BaseAddress,
-                  Length, 
+                  Length,
                   GcdDescriptor.Attributes | EFI_MEMORY_RUNTIME
                   );
   if (EFI_ERROR (Status)) {
@@ -1191,7 +1243,6 @@ Returns:
     gBS->FreePool (VolatileVariableStore);
     return EFI_UNSUPPORTED;
   }
-
   //
   // Get address of non volatile variable store base
   //
@@ -1200,33 +1251,33 @@ Returns:
   //
   // Check Integrity
   //
-
   //
   // Find the Correct Instance of the FV Block Service.
   //
-  Instance = 0;
-  CurrPtr = (CHAR8*) ((UINTN) mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase);
+  Instance  = 0;
+  CurrPtr   = (CHAR8 *) ((UINTN) mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase);
   while (EfiFvbGetPhysicalAddress (Instance, &FvVolHdr) == EFI_SUCCESS) {
-    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER*) ((UINTN) FvVolHdr);
-    if (CurrPtr >= (CHAR8*) FwVolHeader && CurrPtr < (((CHAR8*) FwVolHeader) + FwVolHeader->FvLength)) {
+    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvVolHdr);
+    if (CurrPtr >= (CHAR8 *) FwVolHeader && CurrPtr < (((CHAR8 *) FwVolHeader) + FwVolHeader->FvLength)) {
       mVariableModuleGlobal->FvbInstance = Instance;
       break;
     }
+
     Instance++;
   }
-  
+
   VariableStoreHeader = (VARIABLE_STORE_HEADER *) CurrPtr;
   if (GetVariableStoreStatus (VariableStoreHeader) == EfiValid) {
     if (~VariableStoreHeader->Size == 0) {
       Status = UpdateVariableStore (
-                 &mVariableModuleGlobal->VariableBase[Physical],
-                 FALSE,
-                 FALSE,
-                 mVariableModuleGlobal->FvbInstance,
-                 (UINTN) &VariableStoreHeader->Size,
-                 sizeof (UINT32),
-                 (CHAR8 *) &VariableStoreEntry.Length
-                 );
+                &mVariableModuleGlobal->VariableBase[Physical],
+                FALSE,
+                FALSE,
+                mVariableModuleGlobal->FvbInstance,
+                (UINTN) &VariableStoreHeader->Size,
+                sizeof (UINT32),
+                (CHAR8 *) &VariableStoreEntry.Length
+                );
 
       if (EFI_ERROR (Status)) {
         return Status;
@@ -1237,38 +1288,38 @@ Returns:
     //
     // Parse non-volatile variable data and get last variable offset
     //
-    NextVariable = (VARIABLE_HEADER*) (CurrPtr + sizeof (VARIABLE_STORE_HEADER));
-    Status = EFI_SUCCESS;
-    
+    NextVariable  = (VARIABLE_HEADER *) (CurrPtr + sizeof (VARIABLE_STORE_HEADER));
+    Status        = EFI_SUCCESS;
+
     while (IsValidVariableHeader (NextVariable)) {
       NextVariable = GetNextVariablePtr (NextVariable);
     }
+
     mVariableModuleGlobal->NonVolatileLastVariableOffset = (UINTN) NextVariable - (UINTN) CurrPtr;
-    
+
     //
     // Check if the free area is really free.
     //
-    for (Index = mVariableModuleGlobal->NonVolatileLastVariableOffset;
-         Index < VariableStoreHeader->Size; Index++) {
+    for (Index = mVariableModuleGlobal->NonVolatileLastVariableOffset; Index < VariableStoreHeader->Size; Index++) {
       Data = ((UINT8 *) (UINTN) mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase)[Index];
-      if ( Data != 0xff) {
+      if (Data != 0xff) {
         //
         // There must be something wrong in variable store, do reclaim operation.
         //
         Status = Reclaim (
-                   mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase, 
-                   &mVariableModuleGlobal->NonVolatileLastVariableOffset,
-                   FALSE
-                   );
+                  mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
+                  &mVariableModuleGlobal->NonVolatileLastVariableOffset,
+                  FALSE
+                  );
         break;
       }
     }
   }
-  
+
   if (EFI_ERROR (Status)) {
     gBS->FreePool (mVariableModuleGlobal);
     gBS->FreePool (VolatileVariableStore);
   }
-  
+
   return Status;
 }

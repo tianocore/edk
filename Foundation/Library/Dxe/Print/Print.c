@@ -115,12 +115,12 @@ Routine Description:
 
 Arguments:
 
-  Buffer     - Ascii buffer to print the results of the parsing of Format into.
+  Buffer     - Wide char buffer to print the results of the parsing of Format into.
 
   BufferSize - Maximum number of characters to put into buffer. Zero means no 
                limit.
 
-  Format - Ascii format string see file header for more details.
+  Format - Format string see file header for more details.
 
   ...    - Vararg list consumed by processing Format.
 
@@ -445,7 +445,8 @@ Returns:
   UINTN Size;
 
   Size = SPrint (
-            Buffer, BufferSize, 
+            Buffer,
+            BufferSize, 
             STRING_W ("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"),
             Guid->Data1,                    
             Guid->Data2,
@@ -497,7 +498,8 @@ Returns:
   UINTN Size;
 
   Size = SPrint (
-            Buffer, BufferSize, 
+            Buffer,
+            BufferSize, 
             STRING_W ("%02d/%02d/%04d  %02d:%02d"),
             Time->Month,
             Time->Day,

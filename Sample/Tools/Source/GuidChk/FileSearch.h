@@ -17,7 +17,7 @@ Abstract:
 
   Header file to support file searching.
   
---*/  
+--*/
 
 #ifndef _FILE_SEARCH_H_
 #define _FILE_SEARCH_H_
@@ -36,59 +36,73 @@ Abstract:
 //
 // Return codes of some of the file search routines
 //
-#define STATUS_NOT_FOUND          0x1000
+#define STATUS_NOT_FOUND  0x1000
 
+//
 // Flags for what to search for. Also used in the FileFlags return field.
-#define FILE_SEARCH_DIR          0x0001
-#define FILE_SEARCH_FILE         0x0002
+//
+#define FILE_SEARCH_DIR   0x0001
+#define FILE_SEARCH_FILE  0x0002
 
-// 
+//
 // Here's our class definition
 //
 typedef struct {
-  HANDLE            Handle;
-  WIN32_FIND_DATA   FindData;
-  UINT32            FileSearchFlags;      // DIRS, FILES, etc
-  UINT32            FileFlags;  
-  INT8              FileName[MAX_PATH];   // for portability
-  STRING_LIST       *ExcludeDirs;
-  STRING_LIST       *ExcludeFiles;
-  STRING_LIST       *ExcludeExtensions;
+  HANDLE          Handle;
+  WIN32_FIND_DATA FindData;
+  UINT32          FileSearchFlags;    // DIRS, FILES, etc
+  UINT32          FileFlags;
+  INT8            FileName[MAX_PATH]; // for portability
+  STRING_LIST     *ExcludeDirs;
+  STRING_LIST     *ExcludeFiles;
+  STRING_LIST     *ExcludeExtensions;
 } FILE_SEARCH_DATA;
 
 //
 // Here's our member functions
 //
-STATUS 
+STATUS
 FileSearchInit (
   FILE_SEARCH_DATA    *FSData
-  );
+  )
+;
 
 STATUS
 FileSearchDestroy (
   FILE_SEARCH_DATA    *FSData
-  );
+  )
+;
 
-STATUS FileSearchStart (
+STATUS
+FileSearchStart (
   FILE_SEARCH_DATA    *FSData,
   char                *FileMask,
   UINT32              SearchFlags
-  );
-  
-STATUS FileSearchFindNext (
-  FILE_SEARCH_DATA    *FSData
-  );
+  )
+;
 
-STATUS FileSearchExcludeDirs (
+STATUS
+FileSearchFindNext (
+  FILE_SEARCH_DATA    *FSData
+  )
+;
+
+STATUS
+FileSearchExcludeDirs (
   FILE_SEARCH_DATA    *FSData,
   STRING_LIST         *StrList
-  );
-STATUS FileSearchExcludeExtensions (
+  )
+;
+STATUS
+FileSearchExcludeExtensions (
   FILE_SEARCH_DATA    *FSData,
   STRING_LIST         *StrList
-  );
-STATUS FileSearchExcludeFiles (
+  )
+;
+STATUS
+FileSearchExcludeFiles (
   FILE_SEARCH_DATA    *FSData,
   STRING_LIST         *StrList
-  );
+  )
+;
 #endif

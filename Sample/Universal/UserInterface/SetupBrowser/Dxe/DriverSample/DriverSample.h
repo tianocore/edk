@@ -27,9 +27,9 @@ Revision History
 #include "EfiDriverLib.h"
 #include "IfrLibrary.h"
 #include "EfiPrintLib.h"
-#include EFI_PROTOCOL_DEFINITION(Hii)
-#include EFI_PROTOCOL_DEFINITION(FormBrowser)
-#include EFI_PROTOCOL_DEFINITION(FormCallback)
+#include EFI_PROTOCOL_DEFINITION (Hii)
+#include EFI_PROTOCOL_DEFINITION (FormBrowser)
+#include EFI_PROTOCOL_DEFINITION (FormCallback)
 
 #include "NVDataStruc.h"
 
@@ -38,26 +38,30 @@ Revision History
 //
 #include "DriverSampleStrDefs.h"
 
-extern UINT8 VfrBin[];
-//extern UINT8 VfrStringsStr[];
-extern UINT8 InventoryBin[];
-//extern UINT8 InventoryStringsStr[];
-extern UINT8 DriverSampleStrings[];
+extern UINT8  VfrBin[];
+//
+// extern UINT8 VfrStringsStr[];
+//
+extern UINT8  InventoryBin[];
+//
+// extern UINT8 InventoryStringsStr[];
+//
+extern UINT8  DriverSampleStrings[];
 
-#define SAMPLE_STRING L"This is an error!"
+#define SAMPLE_STRING               L"This is an error!"
 
-#define EFI_CALLBACK_INFO_SIGNATURE EFI_SIGNATURE_32('C','l','b','k')
+#define EFI_CALLBACK_INFO_SIGNATURE EFI_SIGNATURE_32 ('C', 'l', 'b', 'k')
 
 typedef struct {
-  UINTN                             Signature;
-  EFI_HANDLE                        CallbackHandle;
-  EFI_FORM_CALLBACK_PROTOCOL        DriverCallback;
-  UINT16                            *KeyList;
-  VOID                              *FormBuffer;
-  EFI_HII_HANDLE                    RegisteredHandle;
-  EFI_HII_PROTOCOL                  *Hii;
+  UINTN                       Signature;
+  EFI_HANDLE                  CallbackHandle;
+  EFI_FORM_CALLBACK_PROTOCOL  DriverCallback;
+  UINT16                      *KeyList;
+  VOID                        *FormBuffer;
+  EFI_HII_HANDLE              RegisteredHandle;
+  EFI_HII_PROTOCOL            *Hii;
 } EFI_CALLBACK_INFO;
 
-#define EFI_CALLBACK_INFO_FROM_THIS(a) CR (a, EFI_CALLBACK_INFO, DriverCallback, EFI_CALLBACK_INFO_SIGNATURE)
+#define EFI_CALLBACK_INFO_FROM_THIS(a)  CR (a, EFI_CALLBACK_INFO, DriverCallback, EFI_CALLBACK_INFO_SIGNATURE)
 
 #endif

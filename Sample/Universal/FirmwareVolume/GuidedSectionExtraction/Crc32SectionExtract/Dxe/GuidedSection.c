@@ -21,7 +21,7 @@ Abstract:
   GUIDed section extraction protocol can be found in other
   files under the same directory.
   
-  Please refer to the EFI 2.0 File Image Format Specification, 
+  Please refer to the Tiano File Image Format Specification, 
   FV spec 0.3.6
   
   Acronyms used       Meaning
@@ -33,7 +33,7 @@ Abstract:
 #include "EfiDriverLib.h"
 #include "EfiFirmwareFileSystem.h"
 
-#include EFI_PROTOCOL_DEFINITION(GuidedSectionExtraction)
+#include EFI_PROTOCOL_DEFINITION (GuidedSectionExtraction)
 
 EFI_STATUS
 GuidedSectionExtractionProtocolConstructor (
@@ -56,16 +56,19 @@ Returns:
   EFI_SUCCESS:  Instance initialized.
 
 --*/
+// TODO:    GuidedSep - add argument and description to function comment
+// TODO:    ExtractSection - add argument and description to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
 {
   EFI_STATUS  Status;
 
   *GuidedSep = NULL;
   Status = gBS->AllocatePool (
-                  EfiBootServicesData, 
-                  sizeof(EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL),
+                  EfiBootServicesData,
+                  sizeof (EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL),
                   GuidedSep
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -73,4 +76,3 @@ Returns:
 
   return EFI_SUCCESS;
 }
-

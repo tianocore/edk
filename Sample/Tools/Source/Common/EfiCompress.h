@@ -19,13 +19,17 @@ Abstract:
   
 --*/
 
+#ifndef _EFICOMPRESS_H
+#define _EFICOMPRESS_H
 EFI_STATUS
 Compress (
   IN      UINT8   *SrcBuffer,
   IN      UINT32  SrcSize,
   IN      UINT8   *DstBuffer,
   IN OUT  UINT32  *DstSize
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -47,7 +51,6 @@ Returns:
   EFI_SUCCESS           - Compression is successful.
 
 --*/
-
 typedef
 EFI_STATUS
 (*COMPRESS_FUNCTION) (
@@ -56,3 +59,5 @@ EFI_STATUS
   IN      UINT8   *DstBuffer,
   IN OUT  UINT32  *DstSize
   );
+
+#endif

@@ -30,10 +30,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // Driver Consumed Protocol Prototypes
 //
-#include EFI_PROTOCOL_DEFINITION(DriverBinding)
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
-#include EFI_PROTOCOL_DEFINITION(DevicePath)
-#include EFI_PROTOCOL_DEFINITION(UsbHostController)
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (UsbHostController)
 
 #include "usb.h"
 #include "usbbus.h"
@@ -41,15 +41,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "usbutil.h"
 #include "hub.h"
 
-#define MICROSECOND     10000
-#define ONESECOND       (1000 * MICROSECOND)
+#define MICROSECOND 10000
+#define ONESECOND   (1000 * MICROSECOND)
 
 //
 // The UsbBusProtocol is just used to locate USB_BUS_CONTROLLER
 // structure in the UsbBusDriverControllerDriverStop(). Then we can
 // Close all opened protocols and release this structure.
 //
-STATIC EFI_GUID mUsbBusProtocolGuid = EFI_USB_BUS_PROTOCOL_GUID;
+STATIC EFI_GUID             mUsbBusProtocolGuid = EFI_USB_BUS_PROTOCOL_GUID;
 //
 // USB Bus Driver Guid
 //
@@ -106,7 +106,7 @@ EFI_DRIVER_BINDING_PROTOCOL gUsbBusDriverBinding = {
 //
 // Internal use only
 //
-STATIC 
+STATIC
 EFI_STATUS
 ReportUsbStatusCode (
   IN USB_BUS_CONTROLLER_DEVICE     *UsbBusController,
@@ -123,9 +123,8 @@ InitializeUsbIoInstance (
   IN USB_IO_CONTROLLER_DEVICE     *UsbIoController
   );
 
-
 STATIC
-USB_IO_CONTROLLER_DEVICE *
+USB_IO_CONTROLLER_DEVICE    *
 CreateUsbIoControllerDevice (
   VOID
   );
@@ -164,7 +163,6 @@ UsbEnumeration (
   IN VOID          *Context
   );
 
-
 EFI_STATUS
 ResetRootPort (
   IN UINT8                   PortNum,
@@ -177,7 +175,7 @@ IsDeviceDisconnected (
   IN USB_IO_CONTROLLER_DEVICE    *UsbIoController,
   IN OUT BOOLEAN                 *Disconnected
   );
-  
+
 EFI_STATUS
 ClearRootPortConnectionChangeStatus (
   IN UINT8                   PortNum,
@@ -199,18 +197,33 @@ UINT8
 UsbAllocateAddress (
   IN UINT8    *AddressPool
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  AddressPool - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   UINT8 ByteIndex;
   UINT8 BitIndex;
 
-  for (ByteIndex = 0; ByteIndex < 16 ; ByteIndex ++) {
-    for (BitIndex = 0; BitIndex < 8 ; BitIndex ++) {
+  for (ByteIndex = 0; ByteIndex < 16; ByteIndex++) {
+    for (BitIndex = 0; BitIndex < 8; BitIndex++) {
       if ((AddressPool[ByteIndex] & (1 << BitIndex)) == 0) {
-         //
-         // Found one, covert to address, and mark it use
-         //
-         AddressPool[ByteIndex] |= (1 << BitIndex);
-         return (UINT8)(ByteIndex * 8 + BitIndex);
+        //
+        // Found one, covert to address, and mark it use
+        //
+        AddressPool[ByteIndex] |= (1 << BitIndex);
+        return (UINT8) (ByteIndex * 8 + BitIndex);
       }
     }
   }
@@ -220,19 +233,35 @@ UsbAllocateAddress (
 }
 
 STATIC
-VOID 
+VOID
 UsbFreeAddress (
   IN UINT8     DevAddress,
   IN UINT8     *AddressPool
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  DevAddress  - TODO: add argument description
+  AddressPool - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   UINT8 WhichByte;
   UINT8 WhichBit;
   //
   // Locate the position
-  // 
-  WhichByte = (UINT8)(DevAddress / 8);
-  WhichBit = (UINT8)(DevAddress % 8);
+  //
+  WhichByte = (UINT8) (DevAddress / 8);
+  WhichBit  = (UINT8) (DevAddress % 8);
 
   AddressPool[WhichByte] &= (~(1 << WhichBit));
 }
@@ -261,7 +290,8 @@ UsbBusDriverEntryPoint (
     others
 
 --*/
-
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_STATUS  Status;
 
@@ -269,19 +299,18 @@ UsbBusDriverEntryPoint (
   // Install driver binding protocol
   //
   Status = EfiLibInstallAllDriverProtocols (
-             ImageHandle, 
-             SystemTable, 
-             &gUsbBusDriverBinding, 
-             ImageHandle,
-             &gUsbBusComponentName,
-             NULL,
-             NULL
-             );
+            ImageHandle,
+            SystemTable,
+            &gUsbBusDriverBinding,
+            ImageHandle,
+            &gUsbBusComponentName,
+            NULL,
+            NULL
+            );
 
   return Status;
 
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -306,8 +335,9 @@ UsbBusControllerDriverSupported (
     EFI_UNSUPPORTED     - This driver does not support this device.
 
 --*/
+// TODO:    Controller - add argument and description to function comment
 {
-  EFI_STATUS                 OpenStatus;
+  EFI_STATUS  OpenStatus;
 
   //
   // Check whether USB Host Controller Protocol is already
@@ -325,11 +355,10 @@ UsbBusControllerDriverSupported (
 
   if (EFI_ERROR (OpenStatus) && (OpenStatus != EFI_ALREADY_STARTED)) {
     return EFI_UNSUPPORTED;
-  } 
+  }
 
   return OpenStatus;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -356,14 +385,16 @@ UsbBusControllerDriverStart (
     EFI_OUT_OF_RESOURCES
 
 --*/
+// TODO:    Controller - add argument and description to function comment
+// TODO:    EFI_ALREADY_STARTED - add return value to function comment
 {
-  EFI_STATUS                     Status;
-  EFI_STATUS                     OpenStatus;
-  USB_BUS_CONTROLLER_DEVICE      *UsbBusDev;
-  USB_IO_DEVICE                  *RootHub;
-  USB_IO_CONTROLLER_DEVICE       *RootHubController;
-  EFI_USB_HC_PROTOCOL            *UsbHCInterface;
-  EFI_TPL                        OldTPL;
+  EFI_STATUS                Status;
+  EFI_STATUS                OpenStatus;
+  USB_BUS_CONTROLLER_DEVICE *UsbBusDev;
+  USB_IO_DEVICE             *RootHub;
+  USB_IO_CONTROLLER_DEVICE  *RootHubController;
+  EFI_USB_HC_PROTOCOL       *UsbHCInterface;
+  EFI_TPL                   OldTPL;
 
   OldTPL = gBS->RaiseTPL (EFI_TPL_CALLBACK);
 
@@ -377,7 +408,7 @@ UsbBusControllerDriverStart (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  UsbBusDev->Signature = USB_BUS_DEVICE_SIGNATURE;
+  UsbBusDev->Signature      = USB_BUS_DEVICE_SIGNATURE;
   UsbBusDev->AddressPool[0] = 1;
 
   //
@@ -386,7 +417,7 @@ UsbBusControllerDriverStart (
   OpenStatus = gBS->OpenProtocol (
                       Controller,
                       &gEfiDevicePathProtocolGuid,
-                      (VOID **)&UsbBusDev->DevicePath,
+                      (VOID **) &UsbBusDev->DevicePath,
                       This->DriverBindingHandle,
                       Controller,
                       EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -404,7 +435,7 @@ UsbBusControllerDriverStart (
   OpenStatus = gBS->OpenProtocol (
                       Controller,
                       &gEfiUsbHcProtocolGuid,
-                      (VOID **)&UsbHCInterface,
+                      (VOID **) &UsbHCInterface,
                       This->DriverBindingHandle,
                       Controller,
                       EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -422,25 +453,25 @@ UsbBusControllerDriverStart (
       &gUSBBusDriverGuid,
       UsbBusDev->DevicePath
       );
-    
+
     gBS->CloseProtocol (
-           Controller,
-           &gEfiDevicePathProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->FreePool (UsbBusDev);
     gBS->RestoreTPL (OldTPL);
     return EFI_UNSUPPORTED;
-  } 
-  
+  }
+
   if (OpenStatus == EFI_ALREADY_STARTED) {
     gBS->CloseProtocol (
-           Controller,
-           &gEfiDevicePathProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->FreePool (UsbBusDev);
     gBS->RestoreTPL (OldTPL);
     return EFI_ALREADY_STARTED;
@@ -462,17 +493,17 @@ UsbBusControllerDriverStart (
   if (EFI_ERROR (Status)) {
 
     gBS->CloseProtocol (
-           Controller,
-           &gEfiDevicePathProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->CloseProtocol (
-           Controller,
-           &gEfiUsbHcProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiUsbHcProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->FreePool (UsbBusDev);
     gBS->RestoreTPL (OldTPL);
     return Status;
@@ -484,23 +515,23 @@ UsbBusControllerDriverStart (
   RootHub = NULL;
   RootHub = EfiLibAllocateZeroPool (sizeof (USB_IO_DEVICE));
   if (RootHub == NULL) {
-     gBS->UninstallProtocolInterface (
-            Controller,
-            &mUsbBusProtocolGuid,
-            &UsbBusDev->BusIdentify
-            );
+    gBS->UninstallProtocolInterface (
+          Controller,
+          &mUsbBusProtocolGuid,
+          &UsbBusDev->BusIdentify
+          );
     gBS->CloseProtocol (
-            Controller,
-            &gEfiDevicePathProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+          Controller,
+          &gEfiUsbHcProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->FreePool (UsbBusDev);
     gBS->RestoreTPL (OldTPL);
     return EFI_OUT_OF_RESOURCES;
@@ -509,30 +540,30 @@ UsbBusControllerDriverStart (
   RootHub->BusController  = UsbBusDev;
   RootHub->DeviceAddress  = UsbAllocateAddress (UsbBusDev->AddressPool);
 
-  UsbBusDev->Root = RootHub;
+  UsbBusDev->Root         = RootHub;
 
   //
   // Allocate Root Hub Controller
   //
   RootHubController = CreateUsbIoControllerDevice ();
   if (RootHubController == NULL) {
-     gBS->UninstallProtocolInterface (
-            Controller,
-            &mUsbBusProtocolGuid,
-            &UsbBusDev->BusIdentify
-            );
+    gBS->UninstallProtocolInterface (
+          Controller,
+          &mUsbBusProtocolGuid,
+          &UsbBusDev->BusIdentify
+          );
     gBS->CloseProtocol (
-            Controller,
-            &gEfiDevicePathProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+          Controller,
+          &gEfiUsbHcProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->FreePool (UsbBusDev);
     gBS->FreePool (RootHub);
     gBS->RestoreTPL (OldTPL);
@@ -548,8 +579,8 @@ UsbBusControllerDriverStart (
   RootHubController->DevicePath     = UsbBusDev->DevicePath;
   RootHubController->HostController = Controller;
 
-  RootHub->NumOfControllers = 1;
-  RootHub->UsbController[0] = RootHubController;
+  RootHub->NumOfControllers         = 1;
+  RootHub->UsbController[0]         = RootHubController;
 
   //
   // Create a timer to query root ports periodically
@@ -563,24 +594,24 @@ UsbBusControllerDriverStart (
                   );
   if (EFI_ERROR (Status)) {
     gBS->UninstallProtocolInterface (
-           Controller,
-           &mUsbBusProtocolGuid,
-           &UsbBusDev->BusIdentify
-           );
+          Controller,
+          &mUsbBusProtocolGuid,
+          &UsbBusDev->BusIdentify
+          );
 
     gBS->CloseProtocol (
-           Controller,
-           &gEfiDevicePathProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
 
     gBS->CloseProtocol (
-           Controller,
-           &gEfiUsbHcProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiUsbHcProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
 
     gBS->FreePool (RootHubController);
     gBS->FreePool (RootHub);
@@ -596,25 +627,25 @@ UsbBusControllerDriverStart (
                   ONESECOND
                   );
   if (EFI_ERROR (Status)) {
-     gBS->UninstallProtocolInterface (
-            Controller,
-            &mUsbBusProtocolGuid,
-            &UsbBusDev->BusIdentify
-            );
-
-     gBS->CloseProtocol (
-            Controller,
-            &gEfiDevicePathProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+    gBS->UninstallProtocolInterface (
+          Controller,
+          &mUsbBusProtocolGuid,
+          &UsbBusDev->BusIdentify
+          );
 
     gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
+
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiUsbHcProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
 
     gBS->CloseEvent (RootHubController->HubNotify);
     gBS->FreePool (RootHubController);
@@ -697,36 +728,38 @@ UsbBusControllerDriverStop (
     others
 
 --*/
+// TODO:    Controller - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  EFI_STATUS                  Status;
-  USB_IO_DEVICE               *Root;
-  USB_IO_CONTROLLER_DEVICE    *RootHubController;
-  USB_BUS_CONTROLLER_DEVICE   *UsbBusController;
-  EFI_USB_BUS_PROTOCOL        *UsbIdentifier;
-  UINT8                       Index2;
-  EFI_USB_HC_PROTOCOL         *UsbHCInterface;
-  USB_IO_CONTROLLER_DEVICE    *UsbController;
-  USB_IO_DEVICE               *UsbIoDevice;
-  USB_IO_CONTROLLER_DEVICE    *HubController;
-  UINTN                       Index;
-  EFI_USB_IO_PROTOCOL         *UsbIo;
-  
+  EFI_STATUS                Status;
+  USB_IO_DEVICE             *Root;
+  USB_IO_CONTROLLER_DEVICE  *RootHubController;
+  USB_BUS_CONTROLLER_DEVICE *UsbBusController;
+  EFI_USB_BUS_PROTOCOL      *UsbIdentifier;
+  UINT8                     Index2;
+  EFI_USB_HC_PROTOCOL       *UsbHCInterface;
+  USB_IO_CONTROLLER_DEVICE  *UsbController;
+  USB_IO_DEVICE             *UsbIoDevice;
+  USB_IO_CONTROLLER_DEVICE  *HubController;
+  UINTN                     Index;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+
   if (NumberOfChildren > 0) {
-    
+
     for (Index = 0; Index < NumberOfChildren; Index++) {
       Status = gBS->OpenProtocol (
                       ChildHandleBuffer[Index],
-                      &gEfiUsbIoProtocolGuid,  
-                      (VOID**)&UsbIo,
-                      This->DriverBindingHandle,             
-                      Controller,   
+                      &gEfiUsbIoProtocolGuid,
+                      (VOID **) &UsbIo,
+                      This->DriverBindingHandle,
+                      Controller,
                       EFI_OPEN_PROTOCOL_GET_PROTOCOL
                       );
       if (EFI_ERROR (Status)) {
         //
         // We are here since the handle passed in does not support
         // UsbIo protocol. There are several reasons that will cause
-        // this. 
+        // this.
         // For combo device such as keyboard, it may have 2 devices
         // in one, namely, keyboard and mouse. If we deconfigure one
         // of them, the other will be freed at the same time. This will
@@ -734,21 +767,23 @@ UsbBusControllerDriverStop (
         // For hub device, if we deconfigure hub first, the other chile
         // device will be disconnected also, this will also provide us
         // a status error. Now we will only report EFI_SUCCESS since Uhc
-        // driver will be disconnected at the second time.(pls see 
+        // driver will be disconnected at the second time.(pls see
         // CoreDisconnectController for details)
         //
         continue;
       }
+
       UsbController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (UsbIo);
-      UsbIoDevice = UsbController->UsbDevice;
-      HubController =  UsbController->Parent;
-      UsbDeviceDeConfiguration(UsbIoDevice);
-      for (Index2 = 0; Index2 < HubController->DownstreamPorts; Index2 ++) {
+      UsbIoDevice   = UsbController->UsbDevice;
+      HubController = UsbController->Parent;
+      UsbDeviceDeConfiguration (UsbIoDevice);
+      for (Index2 = 0; Index2 < HubController->DownstreamPorts; Index2++) {
         if (HubController->Children[Index2] == UsbIoDevice) {
           HubController->Children[Index2] = NULL;
         }
       }
     }
+
     return EFI_SUCCESS;
   }
 
@@ -758,7 +793,7 @@ UsbBusControllerDriverStop (
   Status = gBS->OpenProtocol (
                   Controller,
                   &mUsbBusProtocolGuid,
-                  (VOID **)&UsbIdentifier,
+                  (VOID **) &UsbIdentifier,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -779,7 +814,7 @@ UsbBusControllerDriverStop (
   // Report Status Code here since we will reset the host controller
   //
   ReportUsbStatusCode (
-    UsbBusController, 
+    UsbBusController,
     EFI_PROGRESS_CODE,
     EFI_IO_BUS_USB | EFI_IOB_PC_RESET
     );
@@ -792,18 +827,18 @@ UsbBusControllerDriverStop (
   //
   // Deconfiguration all its devices
   //
-  Root = UsbBusController->Root;
+  Root              = UsbBusController->Root;
   RootHubController = Root->UsbController[0];
-  
+
   gBS->CloseEvent (RootHubController->HubNotify);
-  
+
   for (Index2 = 0; Index2 < RootHubController->DownstreamPorts; Index2++) {
     if (RootHubController->Children[Index2]) {
       UsbDeviceDeConfiguration (RootHubController->Children[Index2]);
       RootHubController->Children[Index2] = NULL;
     }
-  }  
-  
+  }
+
   gBS->FreePool (RootHubController);
   gBS->FreePool (Root);
 
@@ -811,10 +846,10 @@ UsbBusControllerDriverStop (
   // Uninstall USB Bus Protocol
   //
   gBS->UninstallProtocolInterface (
-         Controller,
-         &mUsbBusProtocolGuid,
-         &UsbBusController->BusIdentify
-         );
+        Controller,
+        &mUsbBusProtocolGuid,
+        &UsbBusController->BusIdentify
+        );
 
   //
   // Close USB_HC_PROTOCOL & DEVICE_PATH_PROTOCOL
@@ -826,13 +861,13 @@ UsbBusControllerDriverStop (
         This->DriverBindingHandle,
         Controller
         );
-  
+
   gBS->CloseProtocol (
-         Controller,
-         &gEfiDevicePathProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
+        Controller,
+        &gEfiDevicePathProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   gBS->FreePool (UsbBusController);
 
@@ -865,35 +900,37 @@ UsbDeviceConfiguration (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO:    HostController - add argument and description to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
 {
-  UINT8                       DevAddress;
-  UINT8                       Index;
-  EFI_STATUS                  Result;
-  UINT32                      Status;
-  CHAR16                      *StrManufacturer;
-  CHAR16                      *StrProduct;
-  CHAR16                      *StrSerialNumber;
-  EFI_USB_IO_PROTOCOL         *UsbIo;
-  UINT8                       NumOfInterface;
-  USB_IO_CONTROLLER_DEVICE    *FirstController;
-  USB_BUS_CONTROLLER_DEVICE   *UsbBusDev;
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  
+  UINT8                     DevAddress;
+  UINT8                     Index;
+  EFI_STATUS                Result;
+  UINT32                    Status;
+  CHAR16                    *StrManufacturer;
+  CHAR16                    *StrProduct;
+  CHAR16                    *StrSerialNumber;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+  UINT8                     NumOfInterface;
+  USB_IO_CONTROLLER_DEVICE  *FirstController;
+  USB_BUS_CONTROLLER_DEVICE *UsbBusDev;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+
   DEBUG ((EFI_D_USB, "Configuration Usb Device...\n"));
-  
+
   UsbBusDev = UsbIoDevice->BusController;
   //
   // Since a USB device must have at least on interface,
   // so create this instance first
   //
-  FirstController = CreateUsbIoControllerDevice ();
-  FirstController->UsbDevice = UsbIoDevice;
-  UsbIoDevice->UsbController[0] = FirstController;
+  FirstController                   = CreateUsbIoControllerDevice ();
+  FirstController->UsbDevice        = UsbIoDevice;
+  UsbIoDevice->UsbController[0]     = FirstController;
   FirstController->InterfaceNumber  = 0;
   FirstController->ParentPort       = ParentPort;
   FirstController->Parent           = ParentHubController;
   FirstController->HostController   = HostController;
-  
+
   InitializeUsbIoInstance (FirstController);
 
   DevAddress = UsbAllocateAddress (UsbIoDevice->BusController->AddressPool);
@@ -913,14 +950,14 @@ UsbDeviceConfiguration (
   // in order to get the MaxPacketSize for Endpoint 0
   //
   Result = UsbGetDescriptor (
-             UsbIo,
-             0x0100,             // Value
-             0,                  // Index
-             8,                  // Length
-             &UsbIoDevice->DeviceDescriptor,
-             &Status
-             );
-  if (EFI_ERROR (Result) || (UsbIoDevice->DeviceDescriptor.MaxPacketSize0 == 0)) { 
+            UsbIo,
+            0x0100, // Value
+            0,      // Index
+            8,      // Length
+            &UsbIoDevice->DeviceDescriptor,
+            &Status
+            );
+  if (EFI_ERROR (Result) || (UsbIoDevice->DeviceDescriptor.MaxPacketSize0 == 0)) {
 
     DEBUG ((EFI_D_USB, "Get Device Descriptor error\n"));
     //
@@ -932,21 +969,21 @@ UsbDeviceConfiguration (
     //
     UsbIoDevice->DeviceDescriptor.MaxPacketSize0 = 8;
     Result = UsbGetDescriptor (
-               UsbIo,
-               0x0100,             // Value
-               0,                  // Index
-               8,                  // Length
-               &UsbIoDevice->DeviceDescriptor,
-               &Status
-               );
+              UsbIo,
+              0x0100, // Value
+              0,      // Index
+              8,      // Length
+              &UsbIoDevice->DeviceDescriptor,
+              &Status
+              );
     if (EFI_ERROR (Result)) {
-      DEBUG ((EFI_D_USB, "Get Device Descriptor error again\n"));       
+      DEBUG ((EFI_D_USB, "Get Device Descriptor error again\n"));
       ReportUsbStatusCode (
-        UsbBusDev, 
+        UsbBusDev,
         EFI_ERROR_CODE | EFI_ERROR_MINOR,
         EFI_IO_BUS_USB | EFI_IOB_EC_READ_ERROR
         );
-      
+
       UsbFreeAddress (
         DevAddress,
         UsbIoDevice->BusController->AddressPool
@@ -961,11 +998,11 @@ UsbDeviceConfiguration (
   // Assign a unique address to this device
   //
   Result = UsbSetDeviceAddress (UsbIo, DevAddress, &Status);
-  
+
   if (EFI_ERROR (Result)) {
     DEBUG ((EFI_D_USB, "Set address error\n"));
     ReportUsbStatusCode (
-      UsbBusDev, 
+      UsbBusDev,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       EFI_IO_BUS_USB | EFI_IOB_EC_WRITE_ERROR
       );
@@ -973,28 +1010,28 @@ UsbDeviceConfiguration (
       DevAddress,
       UsbIoDevice->BusController->AddressPool
       );
-    
+
     gBS->FreePool (FirstController);
-    return EFI_DEVICE_ERROR ;
+    return EFI_DEVICE_ERROR;
   }
 
-  UsbIoDevice->DeviceAddress = DevAddress ;
+  UsbIoDevice->DeviceAddress = DevAddress;
 
   //
   // Get the whole device descriptor
   //
   Result = UsbGetDescriptor (
-             UsbIo,
-             0x0100,
-             0,
-             sizeof(EFI_USB_DEVICE_DESCRIPTOR),
-             &UsbIoDevice->DeviceDescriptor,
-             &Status
-             );
+            UsbIo,
+            0x0100,
+            0,
+            sizeof (EFI_USB_DEVICE_DESCRIPTOR),
+            &UsbIoDevice->DeviceDescriptor,
+            &Status
+            );
   if (EFI_ERROR (Result)) {
     DEBUG ((EFI_D_USB, "Get whole Device Descriptor error\n"));
     ReportUsbStatusCode (
-      UsbBusDev, 
+      UsbBusDev,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       EFI_IO_BUS_USB | EFI_IOB_EC_READ_ERROR
       );
@@ -1004,7 +1041,7 @@ UsbDeviceConfiguration (
       );
 
     gBS->FreePool (FirstController);
-    return EFI_DEVICE_ERROR ;
+    return EFI_DEVICE_ERROR;
   }
 
   InitializeListHead (&UsbIoDevice->ConfigDescListHead);
@@ -1015,11 +1052,11 @@ UsbDeviceConfiguration (
   // endpoint descriptors
   //
   Result = UsbGetAllConfigurations (UsbIoDevice);
-  
+
   if (EFI_ERROR (Result)) {
     DEBUG ((EFI_D_USB, "Failed to get device configuration\n"));
     ReportUsbStatusCode (
-      UsbBusDev, 
+      UsbBusDev,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       EFI_IO_BUS_USB | EFI_IOB_EC_READ_ERROR
       );
@@ -1029,7 +1066,7 @@ UsbDeviceConfiguration (
       );
 
     gBS->FreePool (FirstController);
-    return EFI_DEVICE_ERROR ;
+    return EFI_DEVICE_ERROR;
   }
 
   //
@@ -1039,7 +1076,7 @@ UsbDeviceConfiguration (
   if (EFI_ERROR (Result)) {
     DEBUG ((EFI_D_USB, "Failed to set device configuration\n"));
     ReportUsbStatusCode (
-      UsbBusDev, 
+      UsbBusDev,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       EFI_IO_BUS_USB | EFI_IOB_EC_WRITE_ERROR
       );
@@ -1047,9 +1084,9 @@ UsbDeviceConfiguration (
       DevAddress,
       UsbIoDevice->BusController->AddressPool
       );
-    
+
     gBS->FreePool (FirstController);
-    return EFI_DEVICE_ERROR ;
+    return EFI_DEVICE_ERROR;
   }
 
   UsbIoDevice->IsConfigured = TRUE;
@@ -1059,33 +1096,33 @@ UsbDeviceConfiguration (
   //
   Result = UsbGetStringtable (UsbIoDevice);
   if (EFI_ERROR (Result)) {
-    DEBUG((EFI_D_USB, "Failed to get device strings\n"));
+    DEBUG ((EFI_D_USB, "Failed to get device strings\n"));
   }
-  
+
   StrManufacturer = NULL;
   UsbIo->UsbGetStringDescriptor (
-           UsbIo,
-           UsbIoDevice->LangID[0],
-           (UsbIoDevice->DeviceDescriptor).StrManufacturer,
-           &StrManufacturer
-           );
-  
+          UsbIo,
+          UsbIoDevice->LangID[0],
+          (UsbIoDevice->DeviceDescriptor).StrManufacturer,
+          &StrManufacturer
+          );
+
   StrProduct = NULL;
   UsbIo->UsbGetStringDescriptor (
-           UsbIo,
-           UsbIoDevice->LangID[0],
-           (UsbIoDevice->DeviceDescriptor).StrProduct,
-           &StrProduct
-           );
-  
+          UsbIo,
+          UsbIoDevice->LangID[0],
+          (UsbIoDevice->DeviceDescriptor).StrProduct,
+          &StrProduct
+          );
+
   StrSerialNumber = NULL;
   UsbIo->UsbGetStringDescriptor (
-           UsbIo,
-           UsbIoDevice->LangID[0],
-           (UsbIoDevice->DeviceDescriptor).StrSerialNumber,
-           &StrSerialNumber
-           );
-  
+          UsbIo,
+          UsbIoDevice->LangID[0],
+          (UsbIoDevice->DeviceDescriptor).StrSerialNumber,
+          &StrSerialNumber
+          );
+
   if (StrManufacturer) {
     gBS->FreePool (StrManufacturer);
   }
@@ -1102,16 +1139,17 @@ UsbDeviceConfiguration (
   // Create USB_IO_CONTROLLER_DEVICE for
   // each detected interface
   //
-  FirstController->CurrentConfigValue = \
-    UsbIoDevice->ActiveConfig->CongfigDescriptor.ConfigurationValue;
+  FirstController->CurrentConfigValue =
+  UsbIoDevice->ActiveConfig->CongfigDescriptor.ConfigurationValue;
 
-  NumOfInterface = UsbIoDevice->ActiveConfig->CongfigDescriptor.NumInterfaces;
-  UsbIoDevice->NumOfControllers = NumOfInterface;
-  
+  NumOfInterface                      =
+  UsbIoDevice->ActiveConfig->CongfigDescriptor.NumInterfaces;
+  UsbIoDevice->NumOfControllers       = NumOfInterface;
+
   Result = InitUsbIoController (FirstController);
   if (EFI_ERROR (Result)) {
     ReportUsbStatusCode (
-      UsbBusDev, 
+      UsbBusDev,
       EFI_ERROR_CODE | EFI_ERROR_MINOR,
       EFI_IO_BUS_USB | EFI_IOB_EC_INTERFACE_ERROR
       );
@@ -1121,15 +1159,15 @@ UsbDeviceConfiguration (
   }
 
   for (Index = 1; Index < NumOfInterface; Index++) {
-    UsbIoController = CreateUsbIoControllerDevice ();
-    UsbIoController->UsbDevice = UsbIoDevice;
-    UsbIoController->CurrentConfigValue = \
-        UsbIoDevice->ActiveConfig->CongfigDescriptor.ConfigurationValue;
-    UsbIoController->InterfaceNumber = Index;
-    UsbIoDevice->UsbController[Index] = UsbIoController;
-    UsbIoController->ParentPort = ParentPort;
-    UsbIoController->Parent = ParentHubController;
-    UsbIoController->HostController = HostController;
+    UsbIoController                     = CreateUsbIoControllerDevice ();
+    UsbIoController->UsbDevice          = UsbIoDevice;
+    UsbIoController->CurrentConfigValue =
+    UsbIoDevice->ActiveConfig->CongfigDescriptor.ConfigurationValue;
+    UsbIoController->InterfaceNumber    = Index;
+    UsbIoDevice->UsbController[Index]   = UsbIoController;
+    UsbIoController->ParentPort         = ParentPort;
+    UsbIoController->Parent             = ParentHubController;
+    UsbIoController->HostController     = HostController;
 
     //
     // First copy the USB_IO Protocol instance
@@ -1139,11 +1177,11 @@ UsbDeviceConfiguration (
       UsbIo,
       sizeof (EFI_USB_IO_PROTOCOL)
       );
-    
+
     Result = InitUsbIoController (UsbIoController);
     if (EFI_ERROR (Result)) {
       ReportUsbStatusCode (
-        UsbBusDev, 
+        UsbBusDev,
         EFI_ERROR_CODE | EFI_ERROR_MINOR,
         EFI_IO_BUS_USB | EFI_IOB_EC_INTERFACE_ERROR
         );
@@ -1151,16 +1189,16 @@ UsbDeviceConfiguration (
       UsbIoDevice->UsbController[Index] = NULL;
     }
   }
-  
-  return EFI_SUCCESS ;
+
+  return EFI_SUCCESS;
 }
 
 //
 // USB Device DeConfiguration
 //
-STATIC 
+STATIC
 EFI_STATUS
-UsbDeviceDeConfiguration ( 
+UsbDeviceDeConfiguration (
   IN USB_IO_DEVICE     *UsbIoDevice
   )
 /*++
@@ -1176,12 +1214,17 @@ UsbDeviceDeConfiguration (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoDevice - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_IO_CONTROLLER_DEVICE    *UsbController;
-  UINT8                       index;
-  USB_IO_DEVICE               *ChildDevice;
-  UINT8                       Index;
-  EFI_USB_IO_PROTOCOL         *UsbIo;
+  USB_IO_CONTROLLER_DEVICE  *UsbController;
+  UINT8                     index;
+  USB_IO_DEVICE             *ChildDevice;
+  UINT8                     Index;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
 
   DEBUG ((EFI_D_USB, "Enter Usb Device Deconfiguration\n"));
 
@@ -1206,36 +1249,36 @@ UsbDeviceDeConfiguration (
       continue;
     }
 
-    if (UsbController->IsUsbHub) {       
+    if (UsbController->IsUsbHub) {
 
-       DEBUG ((EFI_D_USB, "Hub Deconfig, First Deconfig its downstream ports\n"));
+      DEBUG ((EFI_D_USB, "Hub Deconfig, First Deconfig its downstream ports\n"));
 
-       //
-       // First Remove interrupt transfer request for the status
-       // change port
-       //
-       UsbIo = &UsbController->UsbIo;
-       UsbIo->UsbAsyncInterruptTransfer (
-                UsbIo,
-                UsbController->HubEndpointAddress,
-                FALSE,
-                0,
-                0,
-                NULL,
-                NULL
-                );
-       
-       if (NULL != UsbController->HubNotify) {
-         gBS->CloseEvent (UsbController->HubNotify);
-       }
+      //
+      // First Remove interrupt transfer request for the status
+      // change port
+      //
+      UsbIo = &UsbController->UsbIo;
+      UsbIo->UsbAsyncInterruptTransfer (
+              UsbIo,
+              UsbController->HubEndpointAddress,
+              FALSE,
+              0,
+              0,
+              NULL,
+              NULL
+              );
 
-       for (Index = 0; Index < UsbController->DownstreamPorts; Index++) {
-         if (UsbController->Children[Index]) {
-           ChildDevice = UsbController->Children[Index];
-           UsbDeviceDeConfiguration (ChildDevice);
-           UsbController->Children[Index] = NULL;
-         }
-       }
+      if (NULL != UsbController->HubNotify) {
+        gBS->CloseEvent (UsbController->HubNotify);
+      }
+
+      for (Index = 0; Index < UsbController->DownstreamPorts; Index++) {
+        if (UsbController->Children[Index]) {
+          ChildDevice = UsbController->Children[Index];
+          UsbDeviceDeConfiguration (ChildDevice);
+          UsbController->Children[Index] = NULL;
+        }
+      }
     }
 
     //
@@ -1243,11 +1286,11 @@ UsbDeviceDeConfiguration (
     // disconnect them
     //
     if (UsbController->IsManagedByDriver) {
-       gBS->DisconnectController (
-              UsbController->Handle,
-              NULL,
-              NULL
-              );
+      gBS->DisconnectController (
+            UsbController->Handle,
+            NULL,
+            NULL
+            );
     }
     
     //
@@ -1265,13 +1308,13 @@ UsbDeviceDeConfiguration (
     // installed on this handle
     //
     gBS->UninstallMultipleProtocolInterfaces (
-           UsbController->Handle,
-           &gEfiDevicePathProtocolGuid,
-           UsbController->DevicePath,
-           &gEfiUsbIoProtocolGuid,
-           &UsbController->UsbIo,
-           NULL
-           );    
+          UsbController->Handle,
+          &gEfiDevicePathProtocolGuid,
+          UsbController->DevicePath,
+          &gEfiUsbIoProtocolGuid,
+          &UsbController->UsbIo,
+          NULL
+          );
 
     gBS->FreePool (UsbController);
     UsbIoDevice->UsbController[index] = NULL;
@@ -1302,7 +1345,7 @@ UsbDeviceDeConfiguration (
 // After interrupt complete, this function will be called,
 // This function need to be well-defined later
 //
-STATIC 
+STATIC
 EFI_STATUS
 OnHubInterruptComplete (
   IN  VOID          *Data,
@@ -1327,18 +1370,28 @@ OnHubInterruptComplete (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    Data - add argument and description to function comment
+// TODO:    DataLength - add argument and description to function comment
+// TODO:    Context - add argument and description to function comment
+// TODO:    Result - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_IO_CONTROLLER_DEVICE    *HubController;
-  UINT8                       Index;
-  UINT8                       *ptr;
-  EFI_USB_IO_PROTOCOL         *UsbIo;
-  UINT32                      UsbResult;
-  BOOLEAN                     Disconnected;
-  EFI_STATUS                  Status;
-  
-  HubController = (USB_IO_CONTROLLER_DEVICE *)Context;
-  UsbIo = &HubController->UsbIo;
-  
+  USB_IO_CONTROLLER_DEVICE  *HubController;
+  UINT8                     Index;
+  UINT8                     *ptr;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+  UINT32                    UsbResult;
+  BOOLEAN                   Disconnected;
+  EFI_STATUS                Status;
+
+  HubController = (USB_IO_CONTROLLER_DEVICE *) Context;
+  UsbIo         = &HubController->UsbIo;
+
   //
   // If something error in this interrupt transfer,
   //
@@ -1348,47 +1401,47 @@ OnHubInterruptComplete (
         UsbIo,
         HubController->HubEndpointAddress,
         &UsbResult
-        );      
+        );
     }
     
     //
     // Delete & Submit this interrupt again
     //
     UsbIo->UsbAsyncInterruptTransfer (
-             UsbIo,
-             HubController->HubEndpointAddress,
-             FALSE,
-             0,
-             0,
-             NULL,
-             NULL
-             );
-           
+            UsbIo,
+            HubController->HubEndpointAddress,
+            FALSE,
+            0,
+            0,
+            NULL,
+            NULL
+            );
+
     //
     // try to detect if the hub itself was disconnected or not
     //
     Status = IsDeviceDisconnected (
-               HubController,
-               &Disconnected
-               );
-    
+              HubController,
+              &Disconnected
+              );
+
     if (!EFI_ERROR (Status) && Disconnected == TRUE) {
-      return EFI_DEVICE_ERROR;           
+      return EFI_DEVICE_ERROR;
     }
-    
+
     UsbIo->UsbAsyncInterruptTransfer (
-             UsbIo,
-             HubController->HubEndpointAddress,
-             TRUE,
-             100,
-             1,  //Hub ports < 7
-             OnHubInterruptComplete,
-             HubController
-             );
-           
-    return EFI_DEVICE_ERROR;           
+            UsbIo,
+            HubController->HubEndpointAddress,
+            TRUE,
+            100,
+            1,  // Hub ports < 7
+            OnHubInterruptComplete,
+            HubController
+            );
+
+    return EFI_DEVICE_ERROR;
   }
-  
+
   if (DataLength == 0 || Data == NULL) {
     return EFI_SUCCESS;
   }
@@ -1400,7 +1453,7 @@ OnHubInterruptComplete (
   //
 
   for (Index = 0; Index < DataLength * 8; Index++) {
-    ptr = (UINT8 *)Data + Index /8;
+    ptr = (UINT8 *) Data + Index / 8;
     if ((*ptr) & (1 << (Index % 8))) {
       HubController->StatusChangePort = Index;
       break;
@@ -1408,7 +1461,7 @@ OnHubInterruptComplete (
   }
 
   //
-  //Signal hub notify event
+  // Signal hub notify event
   //
   gBS->SignalEvent (HubController->HubNotify);
 
@@ -1438,39 +1491,41 @@ UsbEnumeration (
     Others
 
 --*/
+// TODO:    Event - add argument and description to function comment
+// TODO:    Context - add argument and description to function comment
 {
-  USB_IO_CONTROLLER_DEVICE            *HubController;
-  EFI_USB_PORT_STATUS                 HubPortStatus;
-  EFI_STATUS                          Status;
-  UINT8                               Index;
-  EFI_USB_HC_PROTOCOL                 *UsbHCInterface;
-  USB_IO_DEVICE                       *UsbIoDev;
-  USB_BUS_CONTROLLER_DEVICE           *UsbBusDev;
-  EFI_HANDLE                          HostController;
-  USB_IO_DEVICE                       *OldUsbIoDevice;
-  USB_IO_DEVICE                       *NewDevice;
-  USB_IO_CONTROLLER_DEVICE            *NewController;
-  UINT8                               Index2;
-  UINT8                               Number;
-  EFI_USB_IO_PROTOCOL                 *UsbIo;
-  UINT8                               StatusChangePort;
-  
-  HubController = (USB_IO_CONTROLLER_DEVICE *)Context;
-  HostController = HubController->HostController;
-  UsbBusDev = HubController->UsbDevice->BusController;
-  
+  USB_IO_CONTROLLER_DEVICE  *HubController;
+  EFI_USB_PORT_STATUS       HubPortStatus;
+  EFI_STATUS                Status;
+  UINT8                     Index;
+  EFI_USB_HC_PROTOCOL       *UsbHCInterface;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_BUS_CONTROLLER_DEVICE *UsbBusDev;
+  EFI_HANDLE                HostController;
+  USB_IO_DEVICE             *OldUsbIoDevice;
+  USB_IO_DEVICE             *NewDevice;
+  USB_IO_CONTROLLER_DEVICE  *NewController;
+  UINT8                     Index2;
+  UINT8                     Number;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+  UINT8                     StatusChangePort;
+
+  HubController   = (USB_IO_CONTROLLER_DEVICE *) Context;
+  HostController  = HubController->HostController;
+  UsbBusDev       = HubController->UsbDevice->BusController;
+
   if (HubController->UsbDevice->DeviceAddress == 1) {
     //
     // Root hub has the address 1
     //
-    UsbIoDev = HubController->UsbDevice;
-    UsbHCInterface = UsbIoDev->BusController->UsbHCInterface;
+    UsbIoDev        = HubController->UsbDevice;
+    UsbHCInterface  = UsbIoDev->BusController->UsbHCInterface;
 
     for (Index = 0; Index < HubController->DownstreamPorts; Index++) {
       UsbHCInterface->GetRootHubPortStatus (
                         UsbHCInterface,
                         Index,
-                        (EFI_USB_PORT_STATUS *)&HubPortStatus
+                        (EFI_USB_PORT_STATUS *) &HubPortStatus
                         );
 
       if (!IsPortConnectChange (HubPortStatus.PortChangeStatus)) {
@@ -1478,7 +1533,7 @@ UsbEnumeration (
       }
 
       //
-      //Clear root hub status change status
+      // Clear root hub status change status
       //
       ClearRootPortConnectionChangeStatus (
         Index,
@@ -1488,7 +1543,7 @@ UsbEnumeration (
       UsbHCInterface->GetRootHubPortStatus (
                         UsbHCInterface,
                         Index,
-                        (EFI_USB_PORT_STATUS *)&HubPortStatus
+                        (EFI_USB_PORT_STATUS *) &HubPortStatus
                         );
 
       if (IsPortConnect (HubPortStatus.PortStatus)) {
@@ -1497,76 +1552,76 @@ UsbEnumeration (
         // There is something connected to this port
         //
         DEBUG ((EFI_D_USB, "Something attached from Root Hub\n"));
-        
+
         ReportUsbStatusCode (
-          UsbBusDev, 
+          UsbBusDev,
           EFI_PROGRESS_CODE,
           EFI_IO_BUS_USB | EFI_IOB_PC_HOTPLUG
           );
         //
-        // if there is something physically detached, but still logically 
+        // if there is something physically detached, but still logically
         // attached...
         //
         OldUsbIoDevice = HubController->Children[Index];
-        
+
         if (NULL != OldUsbIoDevice) {
           UsbDeviceDeConfiguration (OldUsbIoDevice);
           HubController->Children[Index] = NULL;
-          }
+        }
         
         //
         // Reset the port.
         //
         Status = ResetRootPort (
-                   Index,
-                   UsbHCInterface
-                   );
-        
+                  Index,
+                  UsbHCInterface
+                  );
+
         if (EFI_ERROR (Status)) {
           DEBUG ((EFI_D_ERROR, "UHCI ResetRootPort Fail\n"));
-          ReportUsbStatusCode(
-            UsbBusDev, 
+          ReportUsbStatusCode (
+            UsbBusDev,
             EFI_ERROR_CODE | EFI_ERROR_MINOR,
             EFI_IO_BUS_USB | EFI_IOB_EC_CONTROLLER_ERROR
             );
-          
-          return;
+
+          return ;
         }
-  
+
         UsbHCInterface->GetRootHubPortStatus (
                           UsbHCInterface,
                           Index,
-                          (EFI_USB_PORT_STATUS *)&HubPortStatus
+                          (EFI_USB_PORT_STATUS *) &HubPortStatus
                           );
-                         
-        NewDevice = EfiLibAllocateZeroPool (sizeof(USB_IO_DEVICE));
+
+        NewDevice = EfiLibAllocateZeroPool (sizeof (USB_IO_DEVICE));
         if (NewDevice == NULL) {
-           return;
+          return ;
         }
 
         //
         // Initialize some fields by copying data from
         // its parents
         //
-        NewDevice->IsSlowDevice = \
-             IsPortLowSpeedDeviceAttached (HubPortStatus.PortStatus);
+        NewDevice->IsSlowDevice                     =
+        IsPortLowSpeedDeviceAttached (HubPortStatus.PortStatus);
 
-        NewDevice->DeviceDescriptor.MaxPacketSize0 = 8;
+        NewDevice->DeviceDescriptor.MaxPacketSize0  = 8;
 
-        NewDevice->BusController = UsbIoDev->BusController;
+        NewDevice->BusController                    = UsbIoDev->BusController;
 
         //
         // Configure that device
         //
         Status = UsbDeviceConfiguration (
-                   HubController,
-                   HostController,
-                   Index,
-                   NewDevice
-                   );
+                  HubController,
+                  HostController,
+                  Index,
+                  NewDevice
+                  );
         if (EFI_ERROR (Status)) {
           gBS->FreePool (NewDevice);
-          return;
+          return ;
         }
 
         //
@@ -1595,7 +1650,7 @@ UsbEnumeration (
           // controller handles for them, but we don't have
           // device drivers to manage them.
           //
-          NewController->IsManagedByDriver = (BOOLEAN)(!EFI_ERROR (Status));
+          NewController->IsManagedByDriver = (BOOLEAN) (!EFI_ERROR (Status));
 
           if (IsHub (NewController)) {
 
@@ -1606,34 +1661,34 @@ UsbEnumeration (
             //
             Status = DoHubConfig (NewController);
             if (EFI_ERROR (Status)) {
-               continue;
+              continue;
             }
 
             //
             // Create an event to do hub enumeration
             //
             gBS->CreateEvent (
-                   EFI_EVENT_NOTIFY_SIGNAL,
-                   EFI_TPL_CALLBACK,
-                   UsbEnumeration,
-                   NewController,
-                   &NewController->HubNotify
-                   );
+                  EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_CALLBACK,
+                  UsbEnumeration,
+                  NewController,
+                  &NewController->HubNotify
+                  );
 
-             //
-             // Add request to do query hub status
-             // change endpoint
-             //
-             UsbIo = &NewController->UsbIo;
-             UsbIo->UsbAsyncInterruptTransfer (
-                       UsbIo,
-                       NewController->HubEndpointAddress,
-                       TRUE,
-                       100,
-                       1,  //Hub ports < 7
-                       OnHubInterruptComplete,
-                       NewController
-                       );
+            //
+            // Add request to do query hub status
+            // change endpoint
+            //
+            UsbIo = &NewController->UsbIo;
+            UsbIo->UsbAsyncInterruptTransfer (
+                    UsbIo,
+                    NewController->HubEndpointAddress,
+                    TRUE,
+                    100,
+                    1,  // Hub ports < 7
+                    OnHubInterruptComplete,
+                    NewController
+                    );
 
           }
         }
@@ -1643,7 +1698,7 @@ UsbEnumeration (
         //
         
         DEBUG ((EFI_D_USB, "Something deteached from Root Hub\n"));
-        
+
         OldUsbIoDevice = HubController->Children[Index];
 
         UsbDeviceDeConfiguration (OldUsbIoDevice);
@@ -1659,16 +1714,17 @@ UsbEnumeration (
         UsbHCInterface->GetRootHubPortStatus (
                           UsbHCInterface,
                           Index,
-                          (EFI_USB_PORT_STATUS *)&HubPortStatus
+                          (EFI_USB_PORT_STATUS *) &HubPortStatus
                           );
-                        
+
       }
     }
-    return;
+
+    return ;
   } else {
     //
     // Event from Hub, Get the hub controller handle
-    //    
+    //
 
     //
     // Get the status change endpoint
@@ -1684,7 +1740,7 @@ UsbEnumeration (
       //
       // Hub changes, we don't handle here
       //
-      return;
+      return ;
     }
 
     //
@@ -1692,13 +1748,13 @@ UsbEnumeration (
     //
     UsbIo = &HubController->UsbIo;
     Status = HubGetPortStatus (
-               UsbIo,
-               StatusChangePort,
-               (UINT32 *)&HubPortStatus
-               );
+              UsbIo,
+              StatusChangePort,
+              (UINT32 *) &HubPortStatus
+              );
 
     if (EFI_ERROR (Status)) {
-      return;
+      return ;
     }
 
     //
@@ -1714,11 +1770,11 @@ UsbEnumeration (
         StatusChangePort,
         EfiUsbPortEnableChange
         );
-      
+
       HubGetPortStatus (
         UsbIo,
         StatusChangePort,
-        (UINT32 *)&HubPortStatus
+        (UINT32 *) &HubPortStatus
         );
     }
 
@@ -1736,10 +1792,10 @@ UsbEnumeration (
       HubGetPortStatus (
         UsbIo,
         StatusChangePort,
-        (UINT32 *)&HubPortStatus
+        (UINT32 *) &HubPortStatus
         );
     }
-  
+
     if (HubPortStatus.PortChangeStatus & USB_PORT_STAT_C_OVERCURRENT) {
       //
       // Clear Hub overcurrent change
@@ -1754,7 +1810,7 @@ UsbEnumeration (
       HubGetPortStatus (
         UsbIo,
         StatusChangePort,
-        (UINT32 *)&HubPortStatus
+        (UINT32 *) &HubPortStatus
         );
     }
 
@@ -1772,43 +1828,43 @@ UsbEnumeration (
       HubGetPortStatus (
         UsbIo,
         StatusChangePort,
-        (UINT32 *)&HubPortStatus
+        (UINT32 *) &HubPortStatus
         );
 
-      if (IsPortConnect(HubPortStatus.PortStatus)) {
-        
+      if (IsPortConnect (HubPortStatus.PortStatus)) {
+
         DEBUG ((EFI_D_USB, "New Device Connect on Hub port \n"));
-        
+
         ReportUsbStatusCode (
-          UsbBusDev, 
+          UsbBusDev,
           EFI_PROGRESS_CODE,
           EFI_IO_BUS_USB | EFI_IOB_PC_HOTPLUG
-          );            
-        
+          );
+
         //
-        // if there is something physically detached, but still logically 
+        // if there is something physically detached, but still logically
         // attached...
         //
         OldUsbIoDevice = HubController->Children[StatusChangePort - 1];
-        
+
         if (NULL != OldUsbIoDevice) {
-          UsbDeviceDeConfiguration(OldUsbIoDevice);
+          UsbDeviceDeConfiguration (OldUsbIoDevice);
           HubController->Children[StatusChangePort - 1] = NULL;
         }
-        
+
         NewDevice = EfiLibAllocateZeroPool (sizeof (USB_IO_DEVICE));
         if (NewDevice == NULL) {
-          return;
+          return ;
         }
 
         //
         // Initialize some fields
         //
-        NewDevice->IsSlowDevice = \
-             IsPortLowSpeedDeviceAttached(HubPortStatus.PortStatus);
+        NewDevice->IsSlowDevice                     =
+        IsPortLowSpeedDeviceAttached (HubPortStatus.PortStatus);
 
-        NewDevice->DeviceDescriptor.MaxPacketSize0 = 8;
-        NewDevice->BusController = HubController->UsbDevice->BusController;
+        NewDevice->DeviceDescriptor.MaxPacketSize0  = 8;
+        NewDevice->BusController                    = HubController->UsbDevice->BusController;
 
         //
         // There is something connected to this port,
@@ -1830,49 +1886,49 @@ UsbEnumeration (
           HubGetPortStatus (
             UsbIo,
             StatusChangePort,
-            (UINT32 *)&HubPortStatus
+            (UINT32 *) &HubPortStatus
             );
           gBS->Stall (10 * 100);
           Number -= 1;
-        } while ((HubPortStatus.PortChangeStatus & USB_PORT_STAT_C_RESET ) == 0 && Number > 0);
+        } while ((HubPortStatus.PortChangeStatus & USB_PORT_STAT_C_RESET) == 0 && Number > 0);
 
         if (Number == 0) {
           //
           // Cannot reset port, return error
           //
           gBS->FreePool (NewDevice);
-          return;
+          return ;
         }
 
         //
         // reset port will cause some bits change, clear them
         //
         if (HubPortStatus.PortChangeStatus & USB_PORT_STAT_C_ENABLE) {
-           DEBUG ((EFI_D_USB, "Port Enable Change\n"));
-           HubClearPortFeature(
-             UsbIo,
-             StatusChangePort,
-             EfiUsbPortEnableChange
-             );
-
-          HubGetPortStatus(
+          DEBUG ((EFI_D_USB, "Port Enable Change\n"));
+          HubClearPortFeature (
             UsbIo,
             StatusChangePort,
-            (UINT32 *)&HubPortStatus
+            EfiUsbPortEnableChange
+            );
+
+          HubGetPortStatus (
+            UsbIo,
+            StatusChangePort,
+            (UINT32 *) &HubPortStatus
             );
         }
 
         if (HubPortStatus.PortChangeStatus & USB_PORT_STAT_C_RESET) {
           DEBUG ((EFI_D_USB, "Port Reset Change\n"));
-          HubClearPortFeature(
+          HubClearPortFeature (
             UsbIo,
             StatusChangePort,
             EfiUsbPortResetChange
             );
-          HubGetPortStatus(
+          HubGetPortStatus (
             UsbIo,
             StatusChangePort,
-            (UINT32 *)&HubPortStatus
+            (UINT32 *) &HubPortStatus
             );
         }
 
@@ -1880,15 +1936,15 @@ UsbEnumeration (
         // Configure that device
         //
         Status = UsbDeviceConfiguration (
-                   HubController,
-                   HostController,
-                   (UINT8)(StatusChangePort - 1),
-                    NewDevice
-                   );
+                  HubController,
+                  HostController,
+                  (UINT8) (StatusChangePort - 1),
+                  NewDevice
+                  );
 
         if (EFI_ERROR (Status)) {
           gBS->FreePool (NewDevice);
-          return;
+          return ;
         }
 
         //
@@ -1921,7 +1977,7 @@ UsbEnumeration (
           // controller handles for them, but we don't have
           // device drivers to manage them.
           //
-          NewController->IsManagedByDriver = (BOOLEAN)(!EFI_ERROR (Status));
+          NewController->IsManagedByDriver = (BOOLEAN) (!EFI_ERROR (Status));
 
           //
           // If this device is hub, add to the hub index
@@ -1936,19 +1992,19 @@ UsbEnumeration (
             Status = DoHubConfig (NewController);
 
             if (EFI_ERROR (Status)) {
-               continue;
+              continue;
             }
 
             //
             // Create an event to do hub enumeration
             //
             gBS->CreateEvent (
-                   EFI_EVENT_NOTIFY_SIGNAL,
-                   EFI_TPL_CALLBACK,
-                   UsbEnumeration,
-                   NewController,
-                   &NewController->HubNotify
-                   );
+                  EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_CALLBACK,
+                  UsbEnumeration,
+                  NewController,
+                  &NewController->HubNotify
+                  );
 
             //
             // Add request to do query hub status
@@ -1956,14 +2012,14 @@ UsbEnumeration (
             //
             UsbIo = &NewController->UsbIo;
             UsbIo->UsbAsyncInterruptTransfer (
-                     UsbIo,
-                     NewController->HubEndpointAddress, //Hub endpoint address
-                     TRUE,
-                     100,
-                     1,  //Hub ports < 7
-                     OnHubInterruptComplete,
-                     NewController
-                     );
+                    UsbIo,
+                    NewController->HubEndpointAddress,  // Hub endpoint address
+                    TRUE,
+                    100,
+                    1,                                  // Hub ports < 7
+                    OnHubInterruptComplete,
+                    NewController
+                    );
           }
         }
       } else {
@@ -1981,13 +2037,12 @@ UsbEnumeration (
 
       }
 
-      return;
+      return ;
     }
 
-    return;
+    return ;
   }
 }
-
 
 //
 // Clear port connection change status over a given root hub port
@@ -1996,7 +2051,7 @@ EFI_STATUS
 ClearRootPortConnectionChangeStatus (
   UINT8                   PortNum,
   EFI_USB_HC_PROTOCOL     *UsbHCInterface
-)
+  )
 /*++
 
   Routine Description:
@@ -2010,13 +2065,17 @@ ClearRootPortConnectionChangeStatus (
     N/A
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortNum - add argument and description to function comment
+// TODO:    UsbHCInterface - add argument and description to function comment
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
   Status = UsbHCInterface->ClearRootHubPortFeature (
-                             UsbHCInterface,
-                             PortNum,
-                             EfiUsbPortConnectChange
-                             );
+                            UsbHCInterface,
+                            PortNum,
+                            EfiUsbPortConnectChange
+                            );
   return Status;
 }
 
@@ -2038,14 +2097,16 @@ CreateUsbIoControllerDevice (
     Or NULL.
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
 {
   USB_IO_CONTROLLER_DEVICE  *UsbIoControllerDev;
 
   //
   // Allocate USB_IO_CONTROLLER_DEVICE structure
   //
-  UsbIoControllerDev = NULL;
-  UsbIoControllerDev = EfiLibAllocateZeroPool (sizeof (USB_IO_CONTROLLER_DEVICE));
+  UsbIoControllerDev  = NULL;
+  UsbIoControllerDev  = EfiLibAllocateZeroPool (sizeof (USB_IO_CONTROLLER_DEVICE));
 
   if (UsbIoControllerDev == NULL) {
     return NULL;
@@ -2074,25 +2135,29 @@ InitUsbIoController (
     Others
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoController - add argument and description to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
 {
-  USB_DEVICE_PATH             UsbNode;
-  EFI_STATUS                  Status;
-  EFI_DEVICE_PATH_PROTOCOL    *ParentDevicePath;
-  EFI_USB_HC_PROTOCOL         *UsbHcProtocol;
-  
+  USB_DEVICE_PATH           UsbNode;
+  EFI_STATUS                Status;
+  EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
+  EFI_USB_HC_PROTOCOL       *UsbHcProtocol;
+
   //
   // Build the child device path for each new USB_IO device
   //
-  EfiZeroMem (&UsbNode, sizeof(UsbNode));
-  UsbNode.Header.Type = MESSAGING_DEVICE_PATH;
-  UsbNode.Header.SubType = MSG_USB_DP;
-  SetDevicePathNodeLength (&UsbNode.Header, sizeof(UsbNode));
-  UsbNode.InterfaceNumber = UsbIoController->InterfaceNumber;
-  UsbNode.ParentPortNumber = UsbIoController->ParentPort;
-  ParentDevicePath = UsbIoController->Parent->DevicePath;
+  EfiZeroMem (&UsbNode, sizeof (UsbNode));
+  UsbNode.Header.Type     = MESSAGING_DEVICE_PATH;
+  UsbNode.Header.SubType  = MSG_USB_DP;
+  SetDevicePathNodeLength (&UsbNode.Header, sizeof (UsbNode));
+  UsbNode.InterfaceNumber     = UsbIoController->InterfaceNumber;
+  UsbNode.ParentPortNumber    = UsbIoController->ParentPort;
+  ParentDevicePath            = UsbIoController->Parent->DevicePath;
 
-  UsbIoController->DevicePath = \
-        EfiAppendDevicePathNode (ParentDevicePath, &UsbNode.Header);
+  UsbIoController->DevicePath =
+  EfiAppendDevicePathNode (ParentDevicePath, &UsbNode.Header);
   if (UsbIoController->DevicePath == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -2109,17 +2174,17 @@ InitUsbIoController (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   Status = gBS->OpenProtocol (
                   UsbIoController->HostController,
-                  &gEfiUsbHcProtocolGuid, 
+                  &gEfiUsbHcProtocolGuid,
                   &UsbHcProtocol,
-                  gUsbBusDriverBinding.DriverBindingHandle,   
-                  UsbIoController->Handle,   
+                  gUsbBusDriverBinding.DriverBindingHandle,
+                  UsbIoController->Handle,
                   EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                   );
 
-  return Status;  
+  return Status;
 }
 
 STATIC
@@ -2142,20 +2207,29 @@ ParentPortReset (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoController - add argument and description to function comment
+// TODO:    ReConfigure - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_IO_DEVICE               *ParentIoDev;
-  USB_IO_DEVICE               *UsbIoDev;
-  USB_IO_CONTROLLER_DEVICE    *ParentController;
-  UINT8                       HubPort;
-  UINT32                      Status;
-  EFI_STATUS                  Result;
-  EFI_USB_IO_PROTOCOL         *UsbIo;
-  UINT8                       Address;
+  USB_IO_DEVICE             *ParentIoDev;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_IO_CONTROLLER_DEVICE  *ParentController;
+  UINT8                     HubPort;
+  UINT32                    Status;
+  EFI_STATUS                Result;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+  UINT8                     Address;
 
-  ParentController = UsbIoController->Parent;
-  ParentIoDev = ParentController->UsbDevice;
-  UsbIoDev = UsbIoController->UsbDevice;
-  HubPort = UsbIoController->ParentPort;
+  ParentController  = UsbIoController->Parent;
+  ParentIoDev       = ParentController->UsbDevice;
+  UsbIoDev          = UsbIoController->UsbDevice;
+  HubPort           = UsbIoController->ParentPort;
 
   if (UsbIoController->IsUsbHub) {
     return EFI_INVALID_PARAMETER;
@@ -2168,14 +2242,13 @@ ParentPortReset (
     DEBUG ((EFI_D_USB, "\n"));
     ResetRootPort (HubPort, ParentIoDev->BusController->UsbHCInterface);
   } else {
-
     //
     // Send RESET signal from Hub Port
     //
     DEBUG ((EFI_D_USB, "\n"));
     HubSetPortFeature (
       &ParentController->UsbIo,
-      (UINT8)(HubPort + 1),
+      (UINT8) (HubPort + 1),
       EfiUsbPortReset
       );
   }
@@ -2197,14 +2270,14 @@ ParentPortReset (
   //
   // Assign a unique address to this device
   //
-  Address = UsbIoDev->DeviceAddress;
+  Address                 = UsbIoDev->DeviceAddress;
   UsbIoDev->DeviceAddress = 0;
 
-  Result = UsbSetDeviceAddress (UsbIo, Address, &Status);
+  Result                  = UsbSetDeviceAddress (UsbIo, Address, &Status);
   UsbIoDev->DeviceAddress = Address;
 
   if (EFI_ERROR (Result)) {
-    return EFI_DEVICE_ERROR ;
+    return EFI_DEVICE_ERROR;
   }
 
   //
@@ -2212,7 +2285,7 @@ ParentPortReset (
   //
   Result = UsbSetDefaultConfiguration (UsbIoDev);
   if (EFI_ERROR (Result)) {
-    return EFI_DEVICE_ERROR ;
+    return EFI_DEVICE_ERROR;
   }
 
   return EFI_SUCCESS;
@@ -2238,11 +2311,14 @@ UsbPortReset (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    This - add argument and description to function comment
 {
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  EFI_STATUS                  Status;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+  EFI_STATUS                Status;
 
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS(This);
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
 
   //
   // Since at this time, this device has already been configured,
@@ -2254,7 +2330,7 @@ UsbPortReset (
 }
 
 EFI_STATUS
-ResetRootPort(
+ResetRootPort (
   UINT8                  PortNum,
   EFI_USB_HC_PROTOCOL    *UsbHCInterface
   )
@@ -2271,15 +2347,25 @@ ResetRootPort(
     N/A
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortNum - add argument and description to function comment
+// TODO:    UsbHCInterface - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_PORT_STATUS   PortStatus;
-  EFI_STATUS            Status;   
+  EFI_USB_PORT_STATUS PortStatus;
+  EFI_STATUS          Status;
 
   Status = UsbHCInterface->GetRootHubPortStatus (
-                             UsbHCInterface,
-                             PortNum,
-                             &PortStatus
-                             );
+                            UsbHCInterface,
+                            PortNum,
+                            &PortStatus
+                            );
 
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
@@ -2288,30 +2374,30 @@ ResetRootPort(
   // reset root port
   //
   Status = UsbHCInterface->SetRootHubPortFeature (
-                             UsbHCInterface,
-                             PortNum,
-                             EfiUsbPortReset
-                             );
+                            UsbHCInterface,
+                            PortNum,
+                            EfiUsbPortReset
+                            );
 
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   gBS->Stall (200 * 1000);
 
   //
   // clear reset root port
   //
   Status = UsbHCInterface->ClearRootHubPortFeature (
-                             UsbHCInterface,
-                             PortNum,
-                             EfiUsbPortReset
-                             );
+                            UsbHCInterface,
+                            PortNum,
+                            EfiUsbPortReset
+                            );
 
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   gBS->Stall (1000);
 
   Status = ClearRootPortConnectionChangeStatus (PortNum, UsbHCInterface);
@@ -2323,14 +2409,14 @@ ResetRootPort(
   // Set port enable
   //
   Status = UsbHCInterface->SetRootHubPortFeature (
-                             UsbHCInterface,
-                             PortNum,
-                             EfiUsbPortEnable
-                             );
+                            UsbHCInterface,
+                            PortNum,
+                            EfiUsbPortEnable
+                            );
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   gBS->Stall (500);
 
   return EFI_SUCCESS;
@@ -2343,7 +2429,6 @@ ReportUsbStatusCode (
   IN EFI_STATUS_CODE_TYPE          Type,
   IN EFI_STATUS_CODE_VALUE         Code
   )
-
 /*++
 
 Routine Description:
@@ -2357,15 +2442,17 @@ Returns:
   None
 
 --*/
-
+// TODO:    UsbBusController - add argument and description to function comment
+// TODO:    Type - add argument and description to function comment
+// TODO:    Code - add argument and description to function comment
 {
   return ReportStatusCodeWithDevicePath (
-            Type,
-            Code,
-            0,
-            &gUSBBusDriverGuid,
-            UsbBusController->DevicePath
-            );
+          Type,
+          Code,
+          0,
+          &gUSBBusDriverGuid,
+          UsbBusController->DevicePath
+          );
 }
 
 STATIC
@@ -2388,20 +2475,25 @@ IsDeviceDisconnected (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoController - add argument and description to function comment
+// TODO:    Disconnected - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_IO_DEVICE               *ParentIoDev;
-  USB_IO_DEVICE               *UsbIoDev;
-  USB_IO_CONTROLLER_DEVICE    *ParentController;
-  UINT8                       HubPort;
-  EFI_STATUS                  Status;
-  EFI_USB_IO_PROTOCOL         *UsbIo;
-  EFI_USB_PORT_STATUS         PortStatus;
-  EFI_USB_HC_PROTOCOL         *UsbHCInterface;
+  USB_IO_DEVICE             *ParentIoDev;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_IO_CONTROLLER_DEVICE  *ParentController;
+  UINT8                     HubPort;
+  EFI_STATUS                Status;
+  EFI_USB_IO_PROTOCOL       *UsbIo;
+  EFI_USB_PORT_STATUS       PortStatus;
+  EFI_USB_HC_PROTOCOL       *UsbHCInterface;
 
-  ParentController = UsbIoController->Parent;
-  ParentIoDev = ParentController->UsbDevice;
-  UsbIoDev = UsbIoController->UsbDevice;
-  HubPort = UsbIoController->ParentPort;
+  ParentController  = UsbIoController->Parent;
+  ParentIoDev       = ParentController->UsbDevice;
+  UsbIoDev          = UsbIoController->UsbDevice;
+  HubPort           = UsbIoController->ParentPort;
 
   if (ParentIoDev->DeviceAddress == 1) {
     //
@@ -2409,26 +2501,26 @@ IsDeviceDisconnected (
     //
     UsbHCInterface = ParentIoDev->BusController->UsbHCInterface;
     Status = UsbHCInterface->GetRootHubPortStatus (
-                               UsbHCInterface, 
-                               HubPort, 
-                               &PortStatus
-                               );
-  
+                              UsbHCInterface,
+                              HubPort,
+                              &PortStatus
+                              );
+
   } else {
     UsbIo = &UsbIoController->UsbIo;
     Status = HubGetPortStatus (
-               UsbIo,
-               HubPort,
-               (UINT32 *)&PortStatus
-               );
- 
-  if (EFI_ERROR (Status)) {
-    return IsDeviceDisconnected (ParentController, Disconnected);
+              UsbIo,
+              HubPort,
+              (UINT32 *) &PortStatus
+              );
+
+    if (EFI_ERROR (Status)) {
+      return IsDeviceDisconnected (ParentController, Disconnected);
     }
   }
 
   *Disconnected = FALSE;
-  
+
   if (!IsPortConnect (PortStatus.PortStatus)) {
     *Disconnected = TRUE;
     DEBUG ((EFI_D_ERROR, "Hub is disconnected\n"));

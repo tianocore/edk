@@ -20,7 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
  
   
 --*/
- 
+
 #ifndef _USB_UTIL_H
 #define _USB_UTIL_H
 
@@ -30,32 +30,128 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 BOOLEAN
 IsPortConnect (
   IN UINT16  PortStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortEnable (
   IN UINT16  PortStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortInReset (
   IN UINT16  PortStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortPowerApplied (
   IN UINT16  PortStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortLowSpeedDeviceAttached (
   IN UINT16  PortStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortSuspend (
   IN UINT16  PortStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // Following APIs are used to query Port Change Status
@@ -63,21 +159,85 @@ IsPortSuspend (
 BOOLEAN
 IsPortConnectChange (
   IN UINT16  PortChangeStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortChangeStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortEnableDisableChange (
   IN UINT16  PortChangeStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortChangeStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortResetChange (
   IN UINT16  PortChangeStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortChangeStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
 IsPortSuspendChange (
   IN UINT16  PortChangeStatus
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PortChangeStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

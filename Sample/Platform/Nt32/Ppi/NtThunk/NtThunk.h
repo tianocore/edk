@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  WinNt Thunk interface PPI as defined in EFI 2.0
+  WinNt Thunk interface PPI
 
 --*/
 
@@ -25,28 +25,35 @@ Abstract:
 #include "Tiano.h"
 #include "PeiHob.h"
 
-#define PEI_WIN_NT_THUNK_PRIVATE_GUID \
-  { 0x98c281e5, 0xf906, 0x43dd, 0xa9, 0x2b, 0xb0, 0x3, 0xbf, 0x27, 0x65, 0xda }
+#define PEI_NT_THUNK_GUID \
+  { \
+    0x98c281e5, 0xf906, 0x43dd, 0xa9, 0x2b, 0xb0, 0x3, 0xbf, 0x27, 0x65, 0xda \
+  }
 
 typedef
 EFI_STATUS
-(EFIAPI *PEI_NT_WIN_NT_THUNK_INTERFACE) (
+(EFIAPI *PEI_NT_THUNK_INTERFACE) (
   IN OUT UINT64                *InterfaceSize,
-  IN OUT EFI_PHYSICAL_ADDRESS  *InterfaceBase
+  IN OUT EFI_PHYSICAL_ADDRESS  * InterfaceBase
   );
 
-EFI_FORWARD_DECLARATION (PEI_NT_WIN_NT_THUNK_CALLBACK_PROTOCOL);
+/*++
 
-typedef struct _PEI_NT_WIN_NT_THUNK_CALLBACK_PROTOCOL {
-  //
-  //  OK, so now load all of the stuff that was formerly GLOBAL in the
-  //  SecMain utility.  This stuff was only consumed by this protocol.
-  //  This protocol thing needs to be declared, but members can be privately
-  //  scoped.  
-  //
-  PEI_NT_WIN_NT_THUNK_INTERFACE  NtThunk;
-} PEI_NT_WIN_NT_THUNK_CALLBACK_PROTOCOL;
+Routine Description:
+  Export of EFI_WIN_NT_THUNK_PROTOCOL from the Windows SEC.
 
-extern EFI_GUID gPeiWinNtThunkGuid;
+Arguments:
+  InterfaceSize - sizeof (EFI_WIN_NT_THUNK_PROTOCOL);
+  InterfaceBase - Address of the EFI_WIN_NT_THUNK_PROTOCOL
+
+Returns:
+  EFI_SUCCESS - Data returned
+
+--*/
+typedef struct {
+  PEI_NT_THUNK_INTERFACE  NtThunk;
+} PEI_NT_THUNK_PPI;
+
+extern EFI_GUID gPeiNtThunkPpiGuid;
 
 #endif

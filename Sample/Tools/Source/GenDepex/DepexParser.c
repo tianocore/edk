@@ -104,10 +104,9 @@ Abstract:
 
   It's invalid for an extra "AND" in the end.
 
-  Complies with EFI 2.0 C Coding Standards Document, version 0.33, 16 Aug 2001.
+  Complies with Tiano C Coding Standards Document, version 0.33, 16 Aug 2001.
 
 --*/
-
 
 #include "DepexParser.h"
 
@@ -165,14 +164,15 @@ Returns:
 
 
 --*/
-
 {
-  while (((*Pindex) < (Pbegin+length)) && ((strncmp (*Pindex, " " , 1) == 0) || (strncmp (*Pindex, "\n" , 1) == 0) || (strncmp (*Pindex, "\r" , 1) == 0))) {
+  while
+  (
+    ((*Pindex) < (Pbegin + length)) &&
+    ((strncmp (*Pindex, " ", 1) == 0) || (strncmp (*Pindex, "\n", 1) == 0) || (strncmp (*Pindex, "\r", 1) == 0))
+  ) {
     (*Pindex)++;
-  }  
+  }
 }
-
-
 
 BOOLEAN
 ParseHexdigit (
@@ -200,18 +200,18 @@ Returns:
 --*/
 {
   //
-  //<hexdigit> ::= [0-9] | [a-f] | [A-F]
+  // <hexdigit> ::= [0-9] | [a-f] | [A-F]
   //
-
-  if (((**Pindex) >= '0' && (**Pindex)<= '9' ) || ((**Pindex) >= 'a' && (**Pindex) <= 'f') || ((**Pindex) >= 'A' && (**Pindex) <= 'F')) {
+  if (((**Pindex) >= '0' && (**Pindex) <= '9') ||
+      ((**Pindex) >= 'a' && (**Pindex) <= 'f') ||
+      ((**Pindex) >= 'A' && (**Pindex) <= 'F')
+      ) {
     (*Pindex)++;
     return TRUE;
   } else {
     return FALSE;
   }
 }
-
-
 
 BOOLEAN
 ParseHex32 (
@@ -237,15 +237,14 @@ Returns:
 
 
 --*/
-
 {
   INT32 Index;
-  INT8 *Pin;
+  INT8  *Pin;
 
-  Index=0;
-  Pin = *Pindex;
+  Index = 0;
+  Pin   = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
-  
+
   if ((strncmp (*Pindex, "0x", 2) != 0) && (strncmp (*Pindex, "0X", 2) != 0)) {
     return FALSE;
   }
@@ -262,8 +261,6 @@ Returns:
     return FALSE;
   }
 }
-
-
 
 BOOLEAN
 ParseHex16 (
@@ -289,19 +286,18 @@ Returns:
 
 
 --*/
-
 {
-  int Index;
-  INT8 *Pin;
-  
-  Index=0;
-  Pin=*Pindex;
+  int   Index;
+  INT8  *Pin;
+
+  Index = 0;
+  Pin   = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
-  
+
   if ((strncmp (*Pindex, "0x", 2) != 0) && (strncmp (*Pindex, "0X", 2) != 0)) {
     return FALSE;
   }
-  (*Pindex)+=2;
+  (*Pindex) += 2;
 
   while (ParseHexdigit (Pbegin, length, Pindex)) {
     Index++;
@@ -314,8 +310,6 @@ Returns:
     return FALSE;
   }
 }
-
-
 
 BOOLEAN
 ParseHex8 (
@@ -341,15 +335,14 @@ Returns:
 
 
 --*/
-
 {
-  int Index;
-  INT8 *Pin;
-  
-  Index=0;
-  Pin = *Pindex;
+  int   Index;
+  INT8  *Pin;
+
+  Index = 0;
+  Pin   = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
-  
+
   if ((strncmp (*Pindex, "0x", 2) != 0) && (strncmp (*Pindex, "0X", 2) != 0)) {
     return FALSE;
   }
@@ -366,8 +359,6 @@ Returns:
     return FALSE;
   }
 }
-
-
 
 BOOLEAN
 ParseGuid (
@@ -395,35 +386,36 @@ Returns:
 
 
 --*/
-
 {
   INT32 Index;
-  INT8 *Pin;
+  INT8  *Pin;
   Pin = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
   if (strncmp (*Pindex, "{", 1) != 0) {
     return FALSE;
   }
-  (*Pindex)++;  
+  (*Pindex)++;
 
   LeftTrim (Pbegin, length, Pindex);
   if (!ParseHex32 (Pbegin, length, Pindex)) {
     *Pindex = Pin;
     return FALSE;
   }
+
   LeftTrim (Pbegin, length, Pindex);
   if (strncmp (*Pindex, ",", 1) != 0) {
-      return FALSE;
+    return FALSE;
   } else {
     (*Pindex)++;
   }
-  
-  for (Index=0; Index<2; Index++) {
+
+  for (Index = 0; Index < 2; Index++) {
     LeftTrim (Pbegin, length, Pindex);
     if (!ParseHex16 (Pbegin, length, Pindex)) {
       *Pindex = Pin;
       return FALSE;
     }
+
     LeftTrim (Pbegin, length, Pindex);
     if (strncmp (*Pindex, ",", 1) != 0) {
       return FALSE;
@@ -432,12 +424,13 @@ Returns:
     }
   }
 
-  for (Index=0; Index<7; Index++) {
+  for (Index = 0; Index < 7; Index++) {
     LeftTrim (Pbegin, length, Pindex);
     if (!ParseHex8 (Pbegin, length, Pindex)) {
       *Pindex = Pin;
       return FALSE;
     }
+
     LeftTrim (Pbegin, length, Pindex);
     if (strncmp (*Pindex, ",", 1) != 0) {
       return FALSE;
@@ -457,7 +450,8 @@ Returns:
     return FALSE;
   } else {
     (*Pindex)++;
-  }   
+  }
+
   return TRUE;
 }
 
@@ -485,23 +479,20 @@ Returns:
 
 
 --*/
-
 {
-  INT8 *Pin; 
-  
+  INT8  *Pin;
+
   Pin = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
 
-  
   //
   // <rightfactor> ::=AND <term> <rightbool> <rightfactor>
   //
-
   if (strncmp (*Pindex, OPERATOR_AND, strlen (OPERATOR_AND)) == 0) {
     *Pindex += strlen (OPERATOR_AND);
     LeftTrim (Pbegin, length, Pindex);
 
-    if (ParseTerm (Pbegin, length, Pindex)) {  
+    if (ParseTerm (Pbegin, length, Pindex)) {
       LeftTrim (Pbegin, length, Pindex);
 
       if (ParseRightBool (Pbegin, length, Pindex)) {
@@ -510,23 +501,22 @@ Returns:
           return TRUE;
         } else {
           *Pindex = Pin;
-        } 
+        }
       } else {
-        *Pindex = Pin;          
+        *Pindex = Pin;
       }
     } else {
-      *Pindex = Pin;          
+      *Pindex = Pin;
     }
-  }  
+  }
   //
   // <rightfactor> ::=OR <term> <rightbool> <rightfactor>
   //
-
   if (strncmp (*Pindex, OPERATOR_OR, strlen (OPERATOR_OR)) == 0) {
     *Pindex += strlen (OPERATOR_OR);
     LeftTrim (Pbegin, length, Pindex);
 
-    if (ParseTerm (Pbegin, length, Pindex)) {  
+    if (ParseTerm (Pbegin, length, Pindex)) {
       LeftTrim (Pbegin, length, Pindex);
 
       if (ParseRightBool (Pbegin, length, Pindex)) {
@@ -535,18 +525,17 @@ Returns:
           return TRUE;
         } else {
           *Pindex = Pin;
-        } 
+        }
       } else {
-        *Pindex = Pin;          
+        *Pindex = Pin;
       }
     } else {
-      *Pindex = Pin;          
+      *Pindex = Pin;
     }
-  } 
+  }
   //
   // <rightfactor> ::= ''
   //
-
   *Pindex = Pin;
   return TRUE;
 }
@@ -576,7 +565,7 @@ Returns:
 
 --*/
 {
-  INT8 *Pin;
+  INT8  *Pin;
 
   Pin = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
@@ -584,54 +573,47 @@ Returns:
   //
   // <rightbool>::= AND <term><rightbool>
   //
-
   if (strncmp (*Pindex, OPERATOR_AND, strlen (OPERATOR_AND)) == 0) {
     *Pindex += strlen (OPERATOR_AND);
     LeftTrim (Pbegin, length, Pindex);
 
-    if (ParseTerm (Pbegin, length, Pindex)) {  
+    if (ParseTerm (Pbegin, length, Pindex)) {
       LeftTrim (Pbegin, length, Pindex);
 
       if (ParseRightBool (Pbegin, length, Pindex)) {
         return TRUE;
       } else {
-        *Pindex = Pin;          
+        *Pindex = Pin;
       }
     } else {
-      *Pindex = Pin;          
+      *Pindex = Pin;
     }
   }
-
   //
   // <rightbool>::=  OR <term><rightbool>
   //
-
   if (strncmp (*Pindex, OPERATOR_OR, strlen (OPERATOR_OR)) == 0) {
     *Pindex += strlen (OPERATOR_OR);
     LeftTrim (Pbegin, length, Pindex);
 
-    if (ParseTerm (Pbegin, length, Pindex)) {  
+    if (ParseTerm (Pbegin, length, Pindex)) {
       LeftTrim (Pbegin, length, Pindex);
 
       if (ParseRightBool (Pbegin, length, Pindex)) {
         return TRUE;
       } else {
-        *Pindex = Pin;          
+        *Pindex = Pin;
       }
     } else {
-      *Pindex = Pin;          
+      *Pindex = Pin;
     }
   }
-
   //
-  //<rightbool>::= ''
+  // <rightbool>::= ''
   //
-
   *Pindex = Pin;
   return TRUE;
 }
-
-
 
 BOOLEAN
 ParseFactor (
@@ -658,7 +640,7 @@ Returns:
 
 --*/
 {
-  INT8 *Pin;
+  INT8  *Pin;
 
   Pin = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
@@ -666,13 +648,12 @@ Returns:
   //
   // <factor>   ::= '('<bool>')'<rightfactor>
   //
-
   if (strncmp (*Pindex, OPERATOR_LEFT_PARENTHESIS, strlen (OPERATOR_LEFT_PARENTHESIS)) == 0) {
     *Pindex += strlen (OPERATOR_LEFT_PARENTHESIS);
     LeftTrim (Pbegin, length, Pindex);
 
     if (!ParseBool (Pbegin, length, Pindex)) {
-      *Pindex = Pin;      
+      *Pindex = Pin;
     } else {
       LeftTrim (Pbegin, length, Pindex);
 
@@ -680,19 +661,17 @@ Returns:
         *Pindex += strlen (OPERATOR_RIGHT_PARENTHESIS);
         LeftTrim (Pbegin, length, Pindex);
 
-        if (ParseRightFactor(Pbegin, length, Pindex)) {
+        if (ParseRightFactor (Pbegin, length, Pindex)) {
           return TRUE;
         } else {
-          *Pindex = Pin;          
+          *Pindex = Pin;
         }
       }
     }
   }
-
   //
   // <factor>   ::= NOT <factor> <rightbool> <rightfactor>
   //
-
   if (strncmp (*Pindex, OPERATOR_NOT, strlen (OPERATOR_NOT)) == 0) {
     *Pindex += strlen (OPERATOR_NOT);
     LeftTrim (Pbegin, length, Pindex);
@@ -702,7 +681,7 @@ Returns:
 
       if (ParseRightBool (Pbegin, length, Pindex)) {
         LeftTrim (Pbegin, length, Pindex);
-        
+
         if (ParseRightFactor (Pbegin, length, Pindex)) {
           return TRUE;
         } else {
@@ -712,60 +691,52 @@ Returns:
         *Pindex = Pin;
       }
     } else {
-       *Pindex = Pin;
+      *Pindex = Pin;
     }
-  }  
-  
+  }
   //
   // <factor>   ::= TRUE <rightfactor>
   //
-
   if (strncmp (*Pindex, OPERATOR_TRUE, strlen (OPERATOR_TRUE)) == 0) {
     *Pindex += strlen (OPERATOR_TRUE);
     LeftTrim (Pbegin, length, Pindex);
 
     if (ParseRightFactor (Pbegin, length, Pindex)) {
-      return TRUE;      
+      return TRUE;
     } else {
-       *Pindex = Pin;
+      *Pindex = Pin;
     }
-  } 
-
+  }
   //
   // <factor>   ::= FALSE <rightfactor>
   //
-
   if (strncmp (*Pindex, OPERATOR_FALSE, strlen (OPERATOR_FALSE)) == 0) {
     *Pindex += strlen (OPERATOR_FALSE);
     LeftTrim (Pbegin, length, Pindex);
 
     if (ParseRightFactor (Pbegin, length, Pindex)) {
-      return TRUE;      
+      return TRUE;
     } else {
-       *Pindex = Pin;
+      *Pindex = Pin;
     }
   }
-
   //
   // <factor>   ::= <guid> <rightfactor>
   //
-
-  if (ParseGuid (Pbegin, length, Pindex)) {    
+  if (ParseGuid (Pbegin, length, Pindex)) {
     LeftTrim (Pbegin, length, Pindex);
 
     if (ParseRightFactor (Pbegin, length, Pindex)) {
-      return TRUE;      
+      return TRUE;
     } else {
-       *Pindex = Pin;
-       return FALSE;
+      *Pindex = Pin;
+      return FALSE;
     }
-  }else {
-       *Pindex = Pin;
-       return FALSE;
+  } else {
+    *Pindex = Pin;
+    return FALSE;
   }
 }
-
-
 
 BOOLEAN
 ParseTerm (
@@ -792,7 +763,7 @@ Returns:
 
 --*/
 {
-  INT8 *Pin;
+  INT8  *Pin;
 
   Pin = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
@@ -800,31 +771,26 @@ Returns:
   //
   // <term>     ::= NOT <factor>
   //
-
   if (strncmp (*Pindex, OPERATOR_NOT, strlen (OPERATOR_NOT)) == 0) {
     *Pindex += strlen (OPERATOR_NOT);
     LeftTrim (Pbegin, length, Pindex);
 
     if (!ParseFactor (Pbegin, length, Pindex)) {
-      *Pindex = Pin;      
+      *Pindex = Pin;
     } else {
       return TRUE;
     }
-  } 
-  
+  }
   //
   // <term>     ::=<factor>
   //
-
   if (ParseFactor (Pbegin, length, Pindex)) {
     return TRUE;
-  } else{
-     *Pindex = Pin;
-     return FALSE;
+  } else {
+    *Pindex = Pin;
+    return FALSE;
   }
 }
-
-
 
 BOOLEAN
 ParseBool (
@@ -851,7 +817,7 @@ Returns:
 
 --*/
 {
-  INT8 *Pin;
+  INT8  *Pin;
   Pin = *Pindex;
   LeftTrim (Pbegin, length, Pindex);
 
@@ -867,14 +833,13 @@ Returns:
   } else {
     *Pindex = Pin;
     return FALSE;
-  }  
+  }
 }
-
 
 BOOLEAN
 ParseDepex (
   IN      INT8      *Pbegin,
-  IN      UINT32    length  
+  IN      UINT32    length
   )
 /*++
 
@@ -898,18 +863,18 @@ Returns:
   INT8    **Pindex;
   INT8    *temp;
 
-  Result = FALSE;
-  temp = Pbegin;
-  Pindex = &temp;  
+  Result  = FALSE;
+  temp    = Pbegin;
+  Pindex  = &temp;
 
   LeftTrim (Pbegin, length, Pindex);
   if (strncmp (*Pindex, OPERATOR_BEFORE, strlen (OPERATOR_BEFORE)) == 0) {
     (*Pindex) += strlen (OPERATOR_BEFORE);
-    Result = ParseGuid(Pbegin, length, Pindex);
+    Result = ParseGuid (Pbegin, length, Pindex);
 
   } else if (strncmp (*Pindex, OPERATOR_AFTER, strlen (OPERATOR_AFTER)) == 0) {
     (*Pindex) += strlen (OPERATOR_AFTER);
-    Result =  ParseGuid(Pbegin, length, Pindex);
+    Result = ParseGuid (Pbegin, length, Pindex);
 
   } else if (strncmp (*Pindex, OPERATOR_SOR, strlen (OPERATOR_SOR)) == 0) {
     (*Pindex) += strlen (OPERATOR_SOR);
@@ -921,12 +886,5 @@ Returns:
   }
 
   LeftTrim (Pbegin, length, Pindex);
-  return (BOOLEAN)(Result && (*Pindex) >= (Pbegin + length));
-} 
-
-
-
-
-
-
-
+  return (BOOLEAN) (Result && (*Pindex) >= (Pbegin + length));
+}

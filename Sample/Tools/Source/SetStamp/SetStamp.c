@@ -21,8 +21,7 @@ Abstract:
 #include <string.h>
 #include <time.h>
 
-#define LINE_MAXLEN         80
-
+#define LINE_MAXLEN 80
 
 void
 PrintUsage (
@@ -33,7 +32,7 @@ Routine Description:
   print usage of setstamp command
 
 Arguments:
-  None
+  void
 
 Returns:
   None
@@ -44,7 +43,6 @@ Returns:
   //
   printf ("Usage: SetStamp <PE-File> <TIME-File>\n");
 }
-
 
 int
 GetDateTime (
@@ -66,15 +64,14 @@ Returns:
   = -1            - Failed
 --*/
 {
-  char          buffer[LINE_MAXLEN];
-  struct tm     stime;
-  struct tm     *now;
+  char      buffer[LINE_MAXLEN];
+  struct tm stime;
+  struct tm *now;
 
   if (fgets (buffer, LINE_MAXLEN, fp) == NULL) {
     printf ("Error: Cannot read TIME file.\n");
     return -1;
   }
-
   //
   // compare the value with "NOW NOW", write TIME file if equal
   //
@@ -94,7 +91,6 @@ Returns:
       printf ("Error: Cannot format time string.\n");
       return -1;
     }
-
     //
     // write TIME file
     //
@@ -107,23 +103,27 @@ Returns:
       printf ("Error: Cannot write time string to TIME file.\n");
       return -1;
     }
-
     //
     // ltime has been set as current time and date, return
     //
     return 0;
   }
-
   //
   // get the date and time from buffer
   //
-  if (6 != sscanf (buffer, "%d-%d-%d %d:%d:%d",
-             &stime.tm_year, &stime.tm_mon, &stime.tm_mday,
-             &stime.tm_hour, &stime.tm_min, &stime.tm_sec)) {
+  if (6 != sscanf (
+            buffer,
+            "%d-%d-%d %d:%d:%d",
+            &stime.tm_year,
+            &stime.tm_mon,
+            &stime.tm_mday,
+            &stime.tm_hour,
+            &stime.tm_min,
+            &stime.tm_sec
+            )) {
     printf ("Error: Invaild date or time!\n");
     return -1;
   }
-
   //
   // in struct, Month (0 - 11; Jan = 0). So decrease 1 from it
   //
@@ -133,7 +133,6 @@ Returns:
   // in struct, Year (current year minus 1900)
   // and only the dates can be handled from Jan 1, 1970 to Jan 18, 2038
   //
-
   //
   // convert 0 -> 100 (2000), 1 -> 101 (2001), ..., 38 -> 138 (2038)
   //
@@ -146,19 +145,17 @@ Returns:
   else if (stime.tm_year >= 1970) {
     stime.tm_year -= 1900;
   }
-
   //
   // convert the date and time to time_t format
   //
   *ltime = mktime (&stime);
-  if (*ltime == (time_t) -1) {
+  if (*ltime == (time_t) - 1) {
     printf ("Error: Invalid date or time!\n");
     return -1;
   }
 
   return 0;
 }
-
 
 int
 ReadFromFile (
@@ -189,7 +186,6 @@ Returns:
     printf ("Error: Cannot move the current location of the file.\n");
     return -1;
   }
-
   //
   // read data from the file
   //
@@ -200,7 +196,6 @@ Returns:
 
   return 0;
 }
-
 
 int
 WriteToFile (
@@ -231,7 +226,6 @@ Returns:
     printf ("Error: Cannot move the current location of the file.\n");
     return -1;
   }
-
   //
   // write data to the file
   //
@@ -242,7 +236,6 @@ Returns:
 
   return 0;
 }
-
 
 int
 SetStamp (
@@ -262,11 +255,11 @@ Returns:
   = -1            - Failed
 --*/
 {
-  unsigned char   header[4];
-  unsigned long   offset;
-  unsigned long   NumberOfRvaAndSizes;
-  unsigned int    nvalue;
-  unsigned long   lvalue;
+  unsigned char header[4];
+  unsigned long offset;
+  unsigned long NumberOfRvaAndSizes;
+  unsigned int  nvalue;
+  unsigned long lvalue;
 
   //
   // read the header of file
@@ -274,7 +267,6 @@ Returns:
   if (ReadFromFile (fp, 0, header, 2) != 0) {
     return -1;
   }
-
   //
   // "MZ" -- the header of image file (PE)
   //
@@ -282,8 +274,6 @@ Returns:
     printf ("Error: Invalid Image file.\n");
     return -1;
   }
-
-
   //
   // At location 0x3C, the stub has the file offset to the
   // PE signature.
@@ -291,14 +281,12 @@ Returns:
   if (ReadFromFile (fp, 0x3C, &offset, 4) != 0) {
     return -1;
   }
-
   //
   // read the header of optional
   //
   if (ReadFromFile (fp, offset, header, 4) != 0) {
     return -1;
   }
-
   //
   // "PE\0\0" -- the signature of optional header
   //
@@ -306,7 +294,6 @@ Returns:
     printf ("Error: Invalid PE format file.\n");
     return -1;
   }
-
   //
   // Add 8 to skip PE signature (4-byte), Machine (2-byte) and
   // NumberOfSection (2-byte)
@@ -316,8 +303,6 @@ Returns:
   if (WriteToFile (fp, offset, &ltime, 4) != 0) {
     return -1;
   }
-
-
   //
   // Add 16 to skip COFF file header, and get to optional header.
   //
@@ -329,7 +314,6 @@ Returns:
   if (ReadFromFile (fp, offset, &nvalue, 2) != 0) {
     return -1;
   }
-
   //
   // If this is PE32 image file, offset of NumberOfRvaAndSizes is 92.
   // Else it is 108.
@@ -338,28 +322,27 @@ Returns:
   case 0x10B:
     offset += 92;
     break;
+
   case 0x20B:
     offset += 108;
     break;
+
   default:
     printf ("Error: Sorry! The Magic value is unknown.\n");
     return -1;
   }
-
   //
   // get the value of NumberOfRvaAndSizes
   //
   if (ReadFromFile (fp, offset, &NumberOfRvaAndSizes, 4) != 0) {
     return -1;
   }
-
   //
   // Date/time stamp exists in Export Table, Import Table, Resource Table,
   // Debug Table and Delay Import Table. And in Import Table and Delay Import
   // Table, it will be set when bound. So here only set the date/time stamp
   // of Export Table, Resource Table and Debug Table.
   //
-
   //
   // change date/time stamp of Export Table, the offset of Export Table
   // is 4 + 0 * 8 = 4. And the offset of stamp is 4.
@@ -375,7 +358,6 @@ Returns:
       }
     }
   }
-
   //
   // change date/time stamp of Resource Table, the offset of Resource Table
   // is 4 + 2 * 8 = 20. And the offset of stamp is 4.
@@ -391,7 +373,6 @@ Returns:
       }
     }
   }
-
   //
   // change date/time stamp of Debug Table, offset of Debug Table
   // is 4 + 6 * 8 = 52. And the offset of stamp is 4.
@@ -406,21 +387,18 @@ Returns:
         return -1;
       }
     }
-
     //
     // change the date/time stamp of Debug Data
     //
     if (ReadFromFile (fp, lvalue + 24, &lvalue, 4) != 0) {
       return -1;
     }
-
     //
     // get the signature of debug data
     //
     if (ReadFromFile (fp, lvalue, header, 2) != 0) {
       return -1;
     }
-
     //
     // "NB" - the signature of Debug Data
     // Need Review: (From Spec. is "NB05", From .dll is "NB10")
@@ -435,15 +413,14 @@ Returns:
   return 0;
 }
 
-
 int
 main (
   int       argc,
   char      *argv[]
   )
 {
-  FILE        *fp;
-  time_t      ltime;
+  FILE    *fp;
+  time_t  ltime;
 
   //
   // check the number of parameters
@@ -452,7 +429,6 @@ main (
     PrintUsage ();
     return -1;
   }
-
   //
   // open the TIME file, if not exists, return
   //
@@ -460,7 +436,6 @@ main (
   if (fp == NULL) {
     return 0;
   }
-
   //
   // get time and date from file
   //
@@ -468,7 +443,6 @@ main (
     fclose (fp);
     return -1;
   }
-
   //
   // close the TIME file
   //
@@ -482,7 +456,6 @@ main (
     printf ("Error: Cannot open the PE file!\n");
     return -1;
   }
-
   //
   // set time and date stamp to the PE file
   //

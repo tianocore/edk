@@ -20,9 +20,9 @@ Abstract:
 Revision History
 
 --*/
+
 #include "efikey.h"
 #include "keyboard.h"
-
 
 //
 // Prototypes
@@ -60,35 +60,36 @@ USBKeyboardDriverBindingStop (
   IN  EFI_HANDLE                     *ChildHandleBuffer
   );
 
-
 //
 // Simple Text In Protocol Interface
 //
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBKeyboardReset (
-    IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This, 
-    IN  BOOLEAN                     ExtendedVerification
-    );
+  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This,
+  IN  BOOLEAN                      ExtendedVerification
+  );
 
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBKeyboardReadKeyStroke (
-    IN  EFI_SIMPLE_TEXT_IN_PROTOCOL   *This, 
-    OUT EFI_INPUT_KEY                 *Key
-    );
+  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL   *This,
+  OUT EFI_INPUT_KEY                 *Key
+  );
 
 STATIC
-VOID 
+VOID
 EFIAPI
 USBKeyboardWaitForKey (
-    IN  EFI_EVENT               Event,
-    IN  VOID                    *Context
-    );
-    
+  IN  EFI_EVENT               Event,
+  IN  VOID                    *Context
+  );
+
+//
 //  Helper functions
+//
 
 STATIC
 EFI_STATUS
@@ -99,7 +100,7 @@ USBKeyboardCheckForKey (
 EFI_GUID  gEfiUsbKeyboardDriverGuid = {
   0xa05f5f78, 0xfb3, 0x4d10, 0x90, 0x90, 0xac, 0x4, 0x6e, 0xeb, 0x7c, 0x3c
 };
-  
+
 //
 // USB Keyboard Driver Global Variables
 //
@@ -113,8 +114,7 @@ EFI_DRIVER_BINDING_PROTOCOL gUsbKeyboardDriverBinding = {
   NULL
 };
 
-
-EFI_DRIVER_ENTRY_POINT(USBKeyboardDriverBindingEntryPoint)
+EFI_DRIVER_ENTRY_POINT (USBKeyboardDriverBindingEntryPoint)
 
 EFI_STATUS
 EFIAPI
@@ -133,19 +133,20 @@ USBKeyboardDriverBindingEntryPoint (
   Returns:
     EFI_STATUS
   
---*/       
+--*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gUsbKeyboardDriverBinding, 
-           ImageHandle,
-           &gUsbKeyboardComponentName,
-           NULL,
-           NULL
-         );
+          ImageHandle,
+          SystemTable,
+          &gUsbKeyboardDriverBinding,
+          ImageHandle,
+          &gUsbKeyboardComponentName,
+          NULL,
+          NULL
+          );
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -153,7 +154,7 @@ USBKeyboardDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
-  )  
+  )
 /*++
   
   Routine Description:
@@ -165,11 +166,14 @@ USBKeyboardDriverBindingSupported (
   Returns:
     EFI_STATUS
   
---*/ 
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS            OpenStatus;
-  EFI_USB_IO_PROTOCOL   *UsbIo;
-  EFI_STATUS            Status;
+  EFI_STATUS          OpenStatus;
+  EFI_USB_IO_PROTOCOL *UsbIo;
+  EFI_STATUS          Status;
 
   //
   // Check if USB_IO protocol is attached on the controller handle.
@@ -181,7 +185,7 @@ USBKeyboardDriverBindingSupported (
                       This->DriverBindingHandle,
                       Controller,
                       EFI_OPEN_PROTOCOL_BY_DRIVER
-                 );
+                      );
   if (EFI_ERROR (OpenStatus)) {
     return OpenStatus;
   }
@@ -192,20 +196,19 @@ USBKeyboardDriverBindingSupported (
   //
   Status = EFI_SUCCESS;
 
-  if(!IsUSBKeyboard(UsbIo)) {
-    Status =  EFI_UNSUPPORTED;
+  if (!IsUSBKeyboard (UsbIo)) {
+    Status = EFI_UNSUPPORTED;
   }
 
   gBS->CloseProtocol (
-         Controller,  
-         &gEfiUsbIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
+        Controller,
+        &gEfiUsbIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   return Status;
-} 
-
+}
 
 EFI_STATUS
 EFIAPI
@@ -225,37 +228,42 @@ USBKeyboardDriverBindingStart (
   Returns:
     EFI_STATUS
   
---*/       
-{ 
-  EFI_STATUS                    Status;
-  EFI_USB_IO_PROTOCOL           *UsbIo;
-  USB_KB_DEV                    *UsbKeyboardDevice;
-  UINT8                         EndpointNumber;
-  EFI_USB_ENDPOINT_DESCRIPTOR   EndpointDescriptor;
-  UINT8                         Index;
-  UINT8                         EndpointAddr;
-  UINT8                         PollingInterval;
-  UINT8                         PacketSize;
-  BOOLEAN                       Found;
-  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
+  EFI_STATUS                  Status;
+  EFI_USB_IO_PROTOCOL         *UsbIo;
+  USB_KB_DEV                  *UsbKeyboardDevice;
+  UINT8                       EndpointNumber;
+  EFI_USB_ENDPOINT_DESCRIPTOR EndpointDescriptor;
+  UINT8                       Index;
+  UINT8                       EndpointAddr;
+  UINT8                       PollingInterval;
+  UINT8                       PacketSize;
+  BOOLEAN                     Found;
+
   UsbKeyboardDevice = NULL;
-  Found = FALSE;
-  
+  Found             = FALSE;
+
   //
   // Open USB_IO Protocol
   //
   Status = gBS->OpenProtocol (
-                  Controller, 
-                  &gEfiUsbIoProtocolGuid, 
+                  Controller,
+                  &gEfiUsbIoProtocolGuid,
                   &UsbIo,
-                  This->DriverBindingHandle,   
-                  Controller,   
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if (EFI_ERROR (Status)) {    
+  if (EFI_ERROR (Status)) {
     return Status;
-  } 
-  
+  }  
     
   //
   // Report that the usb keyboard is being enabled
@@ -266,97 +274,97 @@ USBKeyboardDriverBindingStart (
     EFI_PROGRESS_CODE,
     (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_ENABLE)
     );
-    
+
   UsbKeyboardDevice = EfiLibAllocateZeroPool (sizeof (USB_KB_DEV));
-  if(UsbKeyboardDevice == NULL) {
+  if (UsbKeyboardDevice == NULL) {
     gBS->CloseProtocol (
-            Controller, 
-            &gEfiUsbIoProtocolGuid, 
-            This->DriverBindingHandle,   
-            Controller   
-         );
+          Controller,
+          &gEfiUsbIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return EFI_OUT_OF_RESOURCES;
   }
 
- //
+  //
   // This is pretty close to keyboard detection, so log progress
   //
   KbdReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_PRESENCE_DETECT)
-      );
-  
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_PRESENCE_DETECT)
+    );
+
   //
   // Initialize UsbKeyboardDevice
   //
   UsbKeyboardDevice->UsbIo = UsbIo;
-  
+
   //
   // Get interface & endpoint descriptor
   //
-  UsbIo->UsbGetInterfaceDescriptor(
-                UsbIo,
-                &UsbKeyboardDevice->InterfaceDescriptor
-                );
+  UsbIo->UsbGetInterfaceDescriptor (
+          UsbIo,
+          &UsbKeyboardDevice->InterfaceDescriptor
+          );
 
   EndpointNumber = UsbKeyboardDevice->InterfaceDescriptor.NumEndpoints;
 
-  for(Index = 0; Index < EndpointNumber; Index ++) {
-    
-    UsbIo->UsbGetEndpointDescriptor(
+  for (Index = 0; Index < EndpointNumber; Index++) {
+
+    UsbIo->UsbGetEndpointDescriptor (
             UsbIo,
             Index,
             &EndpointDescriptor
             );
 
-    if((EndpointDescriptor.Attributes & 0x03) == 0x03) {
+    if ((EndpointDescriptor.Attributes & 0x03) == 0x03) {
       //
       // We only care interrupt endpoint here
       //
-      UsbKeyboardDevice->IntEndpointDescriptor = EndpointDescriptor;
+      UsbKeyboardDevice->IntEndpointDescriptor  = EndpointDescriptor;
       Found = TRUE;
     }
   }
 
-  if(!Found) {
+  if (!Found) {
     //
     // No interrupt endpoint found, then return unsupported.
-    //    
-    gBS->FreePool(UsbKeyboardDevice);
+    //
+    gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
-            Controller, 
-            &gEfiUsbIoProtocolGuid, 
-            This->DriverBindingHandle,   
-            Controller   
-         );
+          Controller,
+          &gEfiUsbIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return EFI_UNSUPPORTED;
   }
-  
-  UsbKeyboardDevice->Signature = USB_KB_DEV_SIGNATURE;
-  UsbKeyboardDevice->SimpleInput.Reset = USBKeyboardReset;
-  UsbKeyboardDevice->SimpleInput.ReadKeyStroke = USBKeyboardReadKeyStroke;
+
+  UsbKeyboardDevice->Signature                  = USB_KB_DEV_SIGNATURE;
+  UsbKeyboardDevice->SimpleInput.Reset          = USBKeyboardReset;
+  UsbKeyboardDevice->SimpleInput.ReadKeyStroke  = USBKeyboardReadKeyStroke;
   Status = gBS->CreateEvent (
-                    EFI_EVENT_NOTIFY_WAIT,
-                    EFI_TPL_NOTIFY,
-                    USBKeyboardWaitForKey,
-                    UsbKeyboardDevice,
-                    &(UsbKeyboardDevice->SimpleInput.WaitForKey)
-                    );
-    
-  if(EFI_ERROR(Status)) {
-    gBS->FreePool(UsbKeyboardDevice);
+                  EFI_EVENT_NOTIFY_WAIT,
+                  EFI_TPL_NOTIFY,
+                  USBKeyboardWaitForKey,
+                  UsbKeyboardDevice,
+                  &(UsbKeyboardDevice->SimpleInput.WaitForKey)
+                  );
+
+  if (EFI_ERROR (Status)) {
+    gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
-            Controller, 
-            &gEfiUsbIoProtocolGuid, 
-            This->DriverBindingHandle,   
-            Controller   
-         );
+          Controller,
+          &gEfiUsbIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return Status;
-  }   
+  }
        
   //
-  // Install simple txt in protocol interface 
+  // Install simple txt in protocol interface
   // for the usb keyboard device.
   // Usb keyboard is a hot plug device, and expected to work immediately
   // when plugging into system, so a HotPlugDeviceGuid is installed onto
@@ -364,61 +372,60 @@ USBKeyboardDriverBindingStart (
   // console devices.
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
-                    &Controller,
-                    &gEfiSimpleTextInProtocolGuid, 
-                    &UsbKeyboardDevice->SimpleInput,
-                    &gEfiHotPlugDeviceGuid,
-                    NULL,
-                    NULL
-                    );
-  if (EFI_ERROR(Status)) {
-    gBS->CloseEvent(UsbKeyboardDevice->SimpleInput.WaitForKey);
+                  &Controller,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &UsbKeyboardDevice->SimpleInput,
+                  &gEfiHotPlugDeviceGuid,
+                  NULL,
+                  NULL
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->CloseEvent (UsbKeyboardDevice->SimpleInput.WaitForKey);
     gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
-            Controller, 
-            &gEfiUsbIoProtocolGuid, 
-            This->DriverBindingHandle,   
-            Controller   
-         );
+          Controller,
+          &gEfiUsbIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return Status;
   }
     
   //
   // Reset USB Keyboard Device
   //
-  Status = UsbKeyboardDevice->SimpleInput.Reset(
-                          &UsbKeyboardDevice->SimpleInput,
-                          TRUE
-                          ); 
-  if(EFI_ERROR(Status)) {
+  Status = UsbKeyboardDevice->SimpleInput.Reset (
+                                            &UsbKeyboardDevice->SimpleInput,
+                                            TRUE
+                                            );
+  if (EFI_ERROR (Status)) {
     gBS->UninstallMultipleProtocolInterfaces (
-                 Controller,
-                 &gEfiSimpleTextInProtocolGuid,
-                 &UsbKeyboardDevice->SimpleInput,
-                 &gEfiHotPlugDeviceGuid,
-                 NULL,
-                 NULL
-                 );
-    gBS->CloseEvent(UsbKeyboardDevice->SimpleInput.WaitForKey);
-    gBS->FreePool(UsbKeyboardDevice);
+          Controller,
+          &gEfiSimpleTextInProtocolGuid,
+          &UsbKeyboardDevice->SimpleInput,
+          &gEfiHotPlugDeviceGuid,
+          NULL,
+          NULL
+          );
+    gBS->CloseEvent (UsbKeyboardDevice->SimpleInput.WaitForKey);
+    gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
-            Controller, 
-            &gEfiUsbIoProtocolGuid, 
-            This->DriverBindingHandle,   
-            Controller   
-         );
+          Controller,
+          &gEfiUsbIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return Status;
-  } 
+  }
 
   //
   // submit async interrupt transfer
   //
   EndpointAddr    = UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress;
   PollingInterval = UsbKeyboardDevice->IntEndpointDescriptor.Interval;
-  PacketSize      = 
-        (UINT8)(UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);  
- 
-  Status = UsbIo->UsbAsyncInterruptTransfer(
+  PacketSize      = (UINT8) (UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);
+
+  Status = UsbIo->UsbAsyncInterruptTransfer (
                     UsbIo,
                     EndpointAddr,
                     TRUE,
@@ -426,45 +433,44 @@ USBKeyboardDriverBindingStart (
                     PacketSize,
                     KeyboardHandler,
                     UsbKeyboardDevice
-              );
-    
-  if(EFI_ERROR(Status)) {
-    
+                    );
+
+  if (EFI_ERROR (Status)) {
+
     gBS->UninstallMultipleProtocolInterfaces (
-                 Controller,
-                 &gEfiSimpleTextInProtocolGuid,
-                 &UsbKeyboardDevice->SimpleInput,
-                 &gEfiHotPlugDeviceGuid,
-                 NULL,
-                 NULL
-                 );
-    gBS->CloseEvent(UsbKeyboardDevice->SimpleInput.WaitForKey);    
-    gBS->FreePool(UsbKeyboardDevice);
+          Controller,
+          &gEfiSimpleTextInProtocolGuid,
+          &UsbKeyboardDevice->SimpleInput,
+          &gEfiHotPlugDeviceGuid,
+          NULL,
+          NULL
+          );
+    gBS->CloseEvent (UsbKeyboardDevice->SimpleInput.WaitForKey);
+    gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
-            Controller, 
-            &gEfiUsbIoProtocolGuid, 
-            This->DriverBindingHandle,   
-            Controller   
-         );
+          Controller,
+          &gEfiUsbIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return Status;
   }
 
   UsbKeyboardDevice->ControllerNameTable = NULL;
   EfiLibAddUnicodeString (
-    "eng", 
-    gUsbKeyboardComponentName.SupportedLanguages, 
+    "eng",
+    gUsbKeyboardComponentName.SupportedLanguages,
     &UsbKeyboardDevice->ControllerNameTable,
     L"Generic Usb Keyboard"
-  );
-      
+    );
+
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
 USBKeyboardDriverBindingStop (
-  IN  EFI_DRIVER_BINDING_PROTOCOL   *This,
+  IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
   IN  UINTN                          NumberOfChildren,
   IN  EFI_HANDLE                     *ChildHandleBuffer
@@ -480,21 +486,26 @@ USBKeyboardDriverBindingStop (
   Returns:
     EFI_STATUS
   
---*/       
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  EFI_STATUS                      Status;
-  EFI_SIMPLE_TEXT_IN_PROTOCOL     *SimpleInput;
-  USB_KB_DEV                      *UsbKeyboardDevice;
-  EFI_USB_IO_PROTOCOL             *UsbIo;
+  EFI_STATUS                  Status;
+  EFI_SIMPLE_TEXT_IN_PROTOCOL *SimpleInput;
+  USB_KB_DEV                  *UsbKeyboardDevice;
+  EFI_USB_IO_PROTOCOL         *UsbIo;
 
   Status = gBS->OpenProtocol (
-                    Controller, 
-                    &gEfiSimpleTextInProtocolGuid, 
-                    &SimpleInput,
-                    This->DriverBindingHandle,   
-                    Controller,   
-                    EFI_OPEN_PROTOCOL_BY_DRIVER
-                    );                     
+                  Controller,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &SimpleInput,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
@@ -503,77 +514,76 @@ USBKeyboardDriverBindingStop (
   // Get USB_KB_DEV instance.
   //
   UsbKeyboardDevice = USB_KB_DEV_FROM_THIS (SimpleInput);
-    
-  gBS->CloseProtocol(
-            Controller,
-            &gEfiSimpleTextInProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
-  
+
+  gBS->CloseProtocol (
+        Controller,
+        &gEfiSimpleTextInProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
   UsbIo = UsbKeyboardDevice->UsbIo;
   //
-  // Uninstall the Asyn Interrupt Transfer from this device 
+  // Uninstall the Asyn Interrupt Transfer from this device
   // will disable the key data input from this device
   //
   KbdReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_DISABLE)
-      );
-  
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_DISABLE)
+    );
+
   //
   // Destroy asynchronous interrupt transfer
   //
-  UsbKeyboardDevice->UsbIo->UsbAsyncInterruptTransfer(
-                 UsbKeyboardDevice->UsbIo,
-                 UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-                 FALSE,
-                 UsbKeyboardDevice->IntEndpointDescriptor.Interval,
-                 0,
-                 NULL,
-                 NULL
-                 );
-      
+  UsbKeyboardDevice->UsbIo->UsbAsyncInterruptTransfer (
+                              UsbKeyboardDevice->UsbIo,
+                              UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+                              FALSE,
+                              UsbKeyboardDevice->IntEndpointDescriptor.Interval,
+                              0,
+                              NULL,
+                              NULL
+                              );
+
   gBS->CloseProtocol (
-              Controller, 
-              &gEfiUsbIoProtocolGuid, 
-              This->DriverBindingHandle, 
-              Controller
-           ); 
-  
+        Controller,
+        &gEfiUsbIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
   Status = gBS->UninstallMultipleProtocolInterfaces (
-                 Controller,
-                 &gEfiSimpleTextInProtocolGuid,
-                 &UsbKeyboardDevice->SimpleInput,
-                 &gEfiHotPlugDeviceGuid,
-                 NULL,
-                 NULL
-                 );
+                  Controller,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &UsbKeyboardDevice->SimpleInput,
+                  &gEfiHotPlugDeviceGuid,
+                  NULL,
+                  NULL
+                  );
   //
   // free all the resources.
   //
-  gBS->CloseEvent(UsbKeyboardDevice->RepeatTimer);
-  gBS->CloseEvent(UsbKeyboardDevice->DelayedRecoveryEvent);
-  gBS->CloseEvent((UsbKeyboardDevice->SimpleInput).WaitForKey);
-  
+  gBS->CloseEvent (UsbKeyboardDevice->RepeatTimer);
+  gBS->CloseEvent (UsbKeyboardDevice->DelayedRecoveryEvent);
+  gBS->CloseEvent ((UsbKeyboardDevice->SimpleInput).WaitForKey);
+
   if (UsbKeyboardDevice->ControllerNameTable != NULL) {
     EfiLibFreeUnicodeStringTable (UsbKeyboardDevice->ControllerNameTable);
   }
-      
-  gBS->FreePool (UsbKeyboardDevice);
-  
-  return Status;
-  
-}
 
+  gBS->FreePool (UsbKeyboardDevice);
+
+  return Status;
+
+}
 
 EFI_STATUS
 EFIAPI
 USBKeyboardReset (
-    IN  EFI_SIMPLE_TEXT_IN_PROTOCOL   *This, 
-    IN  BOOLEAN             ExtendedVerification
-    )
+  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL   *This,
+  IN  BOOLEAN                       ExtendedVerification
+  )
 /*++
 
   Routine Description:
@@ -587,37 +597,42 @@ USBKeyboardReset (
     
   Returns:  
 
---*/      
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ExtendedVerification - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS            Status;
-  USB_KB_DEV            *UsbKeyboardDevice;
-  EFI_USB_IO_PROTOCOL   *UsbIo;
-  
+  EFI_STATUS          Status;
+  USB_KB_DEV          *UsbKeyboardDevice;
+  EFI_USB_IO_PROTOCOL *UsbIo;
+
   UsbKeyboardDevice = USB_KB_DEV_FROM_THIS (This);
-  
-  UsbIo = UsbKeyboardDevice->UsbIo;
-  
+
+  UsbIo             = UsbKeyboardDevice->UsbIo;
+
   KbdReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_RESET)
-      );
-  
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_KEYBOARD | EFI_P_PC_RESET)
+    );
+
   //
   // Non Exhaustive reset:
   // only reset private data structures.
   //
-  if(!ExtendedVerification) {
+  if (!ExtendedVerification) {
     //
     // Clear the key buffer of this Usb keyboard
     //
     KbdReportStatusCode (
-        UsbIo,
-        EFI_PROGRESS_CODE,
-        (EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_CLEAR_BUFFER)
-        );
-    
-    InitUSBKeyBuffer(&(UsbKeyboardDevice->KeyboardBuffer));
+      UsbIo,
+      EFI_PROGRESS_CODE,
+      (EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_CLEAR_BUFFER)
+      );
+
+    InitUSBKeyBuffer (&(UsbKeyboardDevice->KeyboardBuffer));
     UsbKeyboardDevice->CurKeyChar = 0;
     return EFI_SUCCESS;
   }
@@ -625,23 +640,22 @@ USBKeyboardReset (
   //
   // Exhaustive reset
   //
-  Status = InitUSBKeyboard(UsbKeyboardDevice);
+  Status                        = InitUSBKeyboard (UsbKeyboardDevice);
   UsbKeyboardDevice->CurKeyChar = 0;
-  if(EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   return EFI_SUCCESS;
-}     
-    
+}
 
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBKeyboardReadKeyStroke (
-    IN  EFI_SIMPLE_TEXT_IN_PROTOCOL   *This, 
-    OUT EFI_INPUT_KEY                 *Key
-    )
+  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL   *This,
+  OUT EFI_INPUT_KEY                 *Key
+  )
 /*++
 
   Routine Description:
@@ -654,48 +668,50 @@ USBKeyboardReadKeyStroke (
     
   Returns:  
 
---*/       
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Key - add argument and description to function comment
 {
-  USB_KB_DEV      *UsbKeyboardDevice;
-  EFI_STATUS      Status;
-  UINT8           KeyChar;
-  
-  UsbKeyboardDevice = USB_KB_DEV_FROM_THIS(This);
-  
+  USB_KB_DEV  *UsbKeyboardDevice;
+  EFI_STATUS  Status;
+  UINT8       KeyChar;
+
+  UsbKeyboardDevice = USB_KB_DEV_FROM_THIS (This);
+
   //
-  // if there is no saved ASCII byte, fetch it 
+  // if there is no saved ASCII byte, fetch it
   // by calling USBKeyboardCheckForKey().
   //
-  if(UsbKeyboardDevice->CurKeyChar == 0) {
-    Status = USBKeyboardCheckForKey(UsbKeyboardDevice);
-    if(EFI_ERROR(Status)) {
+  if (UsbKeyboardDevice->CurKeyChar == 0) {
+    Status = USBKeyboardCheckForKey (UsbKeyboardDevice);
+    if (EFI_ERROR (Status)) {
       return Status;
     }
   }
 
-  Key->UnicodeChar = 0;
-  Key->ScanCode = SCAN_NULL;
+  Key->UnicodeChar              = 0;
+  Key->ScanCode                 = SCAN_NULL;
 
-  KeyChar = UsbKeyboardDevice->CurKeyChar;
-  
+  KeyChar                       = UsbKeyboardDevice->CurKeyChar;
+
   UsbKeyboardDevice->CurKeyChar = 0;
-  
+
   //
   // Translate saved ASCII byte into EFI_INPUT_KEY
   //
-  Status = USBKeyCodeToEFIScanCode(UsbKeyboardDevice, KeyChar,Key);
-  
-  return Status;  
-  
-}     
+  Status = USBKeyCodeToEFIScanCode (UsbKeyboardDevice, KeyChar, Key);
+
+  return Status;
+
+}
 
 STATIC
-VOID 
+VOID
 EFIAPI
 USBKeyboardWaitForKey (
-    IN  EFI_EVENT               Event,
-    IN  VOID                    *Context
-    )
+  IN  EFI_EVENT               Event,
+  IN  VOID                    *Context
+  )
 /*++
 
   Routine Description:
@@ -707,24 +723,24 @@ USBKeyboardWaitForKey (
     
   Returns:  
 
---*/       
+--*/
+// TODO:    Context - add argument and description to function comment
 {
-  USB_KB_DEV        *UsbKeyboardDevice;
-  
-  UsbKeyboardDevice = (USB_KB_DEV*)Context;
-  
-  if(UsbKeyboardDevice->CurKeyChar == 0) {
-    
-    if (EFI_ERROR(USBKeyboardCheckForKey(UsbKeyboardDevice))) {
-      return;
+  USB_KB_DEV  *UsbKeyboardDevice;
+
+  UsbKeyboardDevice = (USB_KB_DEV *) Context;
+
+  if (UsbKeyboardDevice->CurKeyChar == 0) {
+
+    if (EFI_ERROR (USBKeyboardCheckForKey (UsbKeyboardDevice))) {
+      return ;
     }
   }
   //
   // If has key pending, signal the event.
   //
-  gBS->SignalEvent(Event);
+  gBS->SignalEvent (Event);
 }
-
 
 STATIC
 EFI_STATUS
@@ -741,29 +757,32 @@ USBKeyboardCheckForKey (
     
   Returns:  
 
---*/       
+--*/
+// TODO:    UsbKeyboardDevice - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS      Status;
-  UINT8           KeyChar;
-  
+  EFI_STATUS  Status;
+  UINT8       KeyChar;
+
   //
   // Fetch raw data from the USB keyboard input,
   // and translate it into ASCII data.
   //
-  Status = USBParseKey(UsbKeyboardDevice,&KeyChar);
-  if(EFI_ERROR(Status)) {
+  Status = USBParseKey (UsbKeyboardDevice, &KeyChar);
+  if (EFI_ERROR (Status)) {
     return Status;
   }
+
   UsbKeyboardDevice->CurKeyChar = KeyChar;
   return EFI_SUCCESS;
-}    
+}
 
 VOID
 KbdReportStatusCode (
   IN  EFI_USB_IO_PROTOCOL       *UsbIo,
   IN  EFI_STATUS_CODE_TYPE      CodeType,
   IN  EFI_STATUS_CODE_VALUE     Value
-)
+  )
 /*++
 
   Routine Description:
@@ -778,16 +797,17 @@ KbdReportStatusCode (
     None
 
 --*/
+// TODO:    Value - add argument and description to function comment
 {
-  USB_IO_CONTROLLER_DEVICE        *UsbIoController;
-  
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (UsbIo);
 
   ReportStatusCodeWithDevicePath (
-        CodeType,
-        Value,
-        0,
-        &gEfiUsbKeyboardDriverGuid,
-        UsbIoController->DevicePath
-        );
+    CodeType,
+    Value,
+    0,
+    &gEfiUsbKeyboardDriverGuid,
+    UsbIoController->DevicePath
+    );
 }

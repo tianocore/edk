@@ -130,7 +130,11 @@ Returns:
           //
           // Fill list of found Peims for later list of those not installed
           //
-          PeiCoreCopyMem (&DebugFoundPeimList[DispatchData->CurrentPeim], &DispatchData->CurrentPeimAddress->Name, sizeof(EFI_GUID));
+          PeiCoreCopyMem (
+            &DebugFoundPeimList[DispatchData->CurrentPeim],
+            &DispatchData->CurrentPeimAddress->Name,
+            sizeof (EFI_GUID)
+            );
 
         )
 
@@ -260,8 +264,9 @@ Returns:
                      NULL,
                      &DispatchData->FindFv
                      );
-          if (Status != EFI_SUCCESS)
+          if (Status != EFI_SUCCESS) {
             break;
+          }
         }
         NextFvFound = FALSE;
         while (!NextFvFound) {     
@@ -356,7 +361,11 @@ Returns:
       //
       while (DebugNotDispatchedBitmap != 0) {
         if ((DebugNotDispatchedBitmap & 1) != 0) {
-          PEI_DEBUG((&PrivateData->PS, EFI_D_INFO, "WARNING -> InstallPpi: Not Installed: %g\n", &DebugFoundPeimList[DebugFoundPeimPoint]));
+          PEI_DEBUG (
+            (&PrivateData->PS, EFI_D_INFO, 
+             "WARNING -> InstallPpi: Not Installed: %g\n", 
+             &DebugFoundPeimList[DebugFoundPeimPoint])
+            );
         }
         DebugFoundPeimPoint++;
         DebugNotDispatchedBitmap >>= 1;

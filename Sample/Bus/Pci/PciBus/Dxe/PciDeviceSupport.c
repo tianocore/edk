@@ -27,13 +27,13 @@ Revision History
 //
 // This device structure is serviced as a header.
 // Its Next field points to the first root bridge device node
-// 
-EFI_LIST_ENTRY       gPciDevicePool;
+//
+EFI_LIST_ENTRY  gPciDevicePool;
 
 EFI_STATUS
-InitializePciDevicePool(
+InitializePciDevicePool (
   VOID
-)
+  )
 /*++
 
 Routine Description:
@@ -47,16 +47,17 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  InitializeListHead(&gPciDevicePool);
+  InitializeListHead (&gPciDevicePool);
 
   return EFI_SUCCESS;
 }
 
-EFI_STATUS 
+EFI_STATUS
 InsertRootBridge (
   PCI_IO_DEVICE *RootBridge
-)
+  )
 /*++
 
 Routine Description:
@@ -72,6 +73,7 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
 
   InsertTailList (&gPciDevicePool, &(RootBridge->Link));
@@ -79,12 +81,11 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 InsertPciDevice (
   PCI_IO_DEVICE *Bridge,
   PCI_IO_DEVICE *PciDeviceNode
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -101,21 +102,19 @@ Returns:
   None
 
 --*/
-
-
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
 
-  InsertTailList(&Bridge->ChildList, &(PciDeviceNode->Link));
+  InsertTailList (&Bridge->ChildList, &(PciDeviceNode->Link));
   PciDeviceNode->Parent = Bridge;
 
   return EFI_SUCCESS;
 }
 
-
-EFI_STATUS 
-DestroyRootBridge ( 
-   IN PCI_IO_DEVICE *RootBridge 
-) 
+EFI_STATUS
+DestroyRootBridge (
+  IN PCI_IO_DEVICE *RootBridge
+  )
 /*++
 
 Routine Description:
@@ -130,19 +129,19 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   DestroyPciDeviceTree (RootBridge);
 
-  FreePciDevice (RootBridge);  
-  
+  FreePciDevice (RootBridge);
+
   return EFI_SUCCESS;
 }
 
-
-EFI_STATUS 
-FreePciDevice ( 
-   IN PCI_IO_DEVICE *PciIoDevice 
-) 
+EFI_STATUS
+FreePciDevice (
+  IN PCI_IO_DEVICE *PciIoDevice
+  )
 /*++
 
 Routine Description:
@@ -159,29 +158,29 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
 
   //
   // Assume all children have been removed underneath this device
   //
   if (PciIoDevice->ResourcePaddingDescriptors != NULL) {
-    gBS->FreePool(PciIoDevice->ResourcePaddingDescriptors);
-  }    
-  
+    gBS->FreePool (PciIoDevice->ResourcePaddingDescriptors);
+  }
+
   if (PciIoDevice->DevicePath != NULL) {
-     gBS->FreePool(PciIoDevice->DevicePath);
-  }    
-  
-  gBS->FreePool(PciIoDevice);
-  
+    gBS->FreePool (PciIoDevice->DevicePath);
+  }
+
+  gBS->FreePool (PciIoDevice);
+
   return EFI_SUCCESS;
 }
-  
-  
-EFI_STATUS 
-DestroyPciDeviceTree ( 
-   IN PCI_IO_DEVICE *Bridge 
-) 
+
+EFI_STATUS
+DestroyPciDeviceTree (
+  IN PCI_IO_DEVICE *Bridge
+  )
 /*++
 
 Routine Description:
@@ -198,37 +197,36 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_LIST_ENTRY  *CurrentLink;
   PCI_IO_DEVICE   *Temp;
-  
 
-  while (!IsListEmpty(&Bridge->ChildList)) {
+  while (!IsListEmpty (&Bridge->ChildList)) {
 
     CurrentLink = Bridge->ChildList.ForwardLink;
 
     //
     // Remove this node from the linked list
     //
-    RemoveEntryList(CurrentLink);
+    RemoveEntryList (CurrentLink);
 
-    Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
-    
-    if (!IsListEmpty(&Temp->ChildList)) {
+    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+
+    if (!IsListEmpty (&Temp->ChildList)) {
       DestroyPciDeviceTree (Temp);
     }
 
-    FreePciDevice (Temp);  
+    FreePciDevice (Temp);
   }
-  
+
   return EFI_SUCCESS;
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 DestroyRootBridgeByHandle (
-   EFI_HANDLE Controller
-)
+  EFI_HANDLE Controller
+  )
 /*++
 
 Routine Description:
@@ -246,6 +244,8 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
 
   EFI_LIST_ENTRY  *CurrentLink;
@@ -258,11 +258,11 @@ Returns:
 
     if (Temp->Handle == Controller) {
 
-      RemoveEntryList(CurrentLink);
+      RemoveEntryList (CurrentLink);
 
-      DestroyPciDeviceTree(Temp);
+      DestroyPciDeviceTree (Temp);
 
-      FreePciDevice (Temp);  
+      FreePciDevice (Temp);
 
       return EFI_SUCCESS;
     }
@@ -273,12 +273,12 @@ Returns:
   return EFI_NOT_FOUND;
 }
 
-EFI_STATUS 
-RegisterPciDevice ( 
+EFI_STATUS
+RegisterPciDevice (
   IN  EFI_HANDLE                     Controller,
   IN  PCI_IO_DEVICE                  *PciIoDevice,
   OUT EFI_HANDLE                     *Handle
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -298,70 +298,73 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS            Status;
-  VOID                  *PlatformOpRomBuffer;
-  UINTN                 PlatformOpRomSize;
-  UINT8                 PciExpressCapRegOffset;
-  EFI_PCI_IO_PROTOCOL  *PciIo;
-  
+  EFI_STATUS          Status;
+  VOID                *PlatformOpRomBuffer;
+  UINTN               PlatformOpRomSize;
+  UINT8               PciExpressCapRegOffset;
+  EFI_PCI_IO_PROTOCOL *PciIo;
+
   //
   // Install the pciio protocol, device path protocol
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
-                  &PciIoDevice->Handle,             
-                  &gEfiDevicePathProtocolGuid,               PciIoDevice->DevicePath,
-                  &gEfiPciIoProtocolGuid,                    &PciIoDevice->PciIo,
+                  &PciIoDevice->Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  PciIoDevice->DevicePath,
+                  &gEfiPciIoProtocolGuid,
+                  &PciIoDevice->PciIo,
                   NULL
                   );
   if (EFI_ERROR (Status)) {
     return Status;
-  } 
+  }
 
   //
-  //Detect if PCI Express Device
+  // Detect if PCI Express Device
   //
   Status = LocateCapabilityRegBlock (
-             PciIoDevice,
-             EFI_PCI_CAPABILITY_ID_PCIEXP,
-             &PciExpressCapRegOffset,
-             NULL
-             );
-  if (!EFI_ERROR(Status)) {
-      PciIoDevice->IsPciExp = TRUE;
+            PciIoDevice,
+            EFI_PCI_CAPABILITY_ID_PCIEXP,
+            &PciExpressCapRegOffset,
+            NULL
+            );
+  if (!EFI_ERROR (Status)) {
+    PciIoDevice->IsPciExp = TRUE;
   }
   
   //
   // Force Interrupt line to zero for cards that come up randomly
   //
   PciIo = &(PciIoDevice->PciIo);
-  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, 0x3C, 1, &gAllZero); 
+  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, 0x3C, 1, &gAllZero);
   //
   // Process Platform OpRom
   //
-  if ( gPciPlatformProtocol != NULL && !PciIoDevice->AllOpRomProcessed) {
-    PciIoDevice->AllOpRomProcessed = TRUE;  
+  if (gPciPlatformProtocol != NULL && !PciIoDevice->AllOpRomProcessed) {
+    PciIoDevice->AllOpRomProcessed = TRUE;
 
-    Status = gPciPlatformProtocol -> GetPciRom (
-                                       gPciPlatformProtocol,
-                                       PciIoDevice->Handle,
-                                       &PlatformOpRomBuffer,
-                                       &PlatformOpRomSize             
-                                       );
+    Status = gPciPlatformProtocol->GetPciRom (
+                                    gPciPlatformProtocol,
+                                    PciIoDevice->Handle,
+                                    &PlatformOpRomBuffer,
+                                    &PlatformOpRomSize
+                                    );
 
-    if ( !EFI_ERROR (Status) ) {
+    if (!EFI_ERROR (Status)) {
 
       //
       // Have Platform OpRom
       //
-      PciIoDevice->RomSize = PlatformOpRomSize;
-      PciIoDevice->PciIo.RomSize = PlatformOpRomSize;
+      PciIoDevice->RomSize        = PlatformOpRomSize;
+      PciIoDevice->PciIo.RomSize  = PlatformOpRomSize;
       PciIoDevice->PciIo.RomImage = PlatformOpRomBuffer;
 
       //
       // Process Image
       //
-      ProcessOpRomImage(PciIoDevice);  
+      ProcessOpRomImage (PciIoDevice);
     }
   }
 
@@ -370,29 +373,31 @@ Returns:
     // Install BusSpecificDriverOverride Protocol
     //
     Status = gBS->InstallMultipleProtocolInterfaces (
-                    &PciIoDevice->Handle,             
-                    &gEfiBusSpecificDriverOverrideProtocolGuid,&PciIoDevice->PciDriverOverride,
+                    &PciIoDevice->Handle,
+                    &gEfiBusSpecificDriverOverrideProtocolGuid,
+                    &PciIoDevice->PciDriverOverride,
                     NULL
                     );
     if (EFI_ERROR (Status)) {
       gBS->UninstallMultipleProtocolInterfaces (
-             &PciIoDevice->Handle,             
-             &gEfiDevicePathProtocolGuid,               PciIoDevice->DevicePath,
-             &gEfiPciIoProtocolGuid,                    &PciIoDevice->PciIo,
-             NULL
-             );
+            &PciIoDevice->Handle,
+            &gEfiDevicePathProtocolGuid,
+            PciIoDevice->DevicePath,
+            &gEfiPciIoProtocolGuid,
+            &PciIoDevice->PciIo,
+            NULL
+            );
 
       return Status;
     }
-  } 
+  }
 
-  
   Status = gBS->OpenProtocol (
-                  Controller,           
-                  &gEfiPciRootBridgeIoProtocolGuid, 
-                  (VOID **)&(PciIoDevice->PciRootBridgeIo),
+                  Controller,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  (VOID **) &(PciIoDevice->PciRootBridgeIo),
                   gPciBusDriverBinding.DriverBindingHandle,
-                  PciIoDevice->Handle,   
+                  PciIoDevice->Handle,
                   EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                   );
   if (EFI_ERROR (Status)) {
@@ -403,7 +408,7 @@ Returns:
   // Install Pccard Hotplug GUID for Pccard device so that
   // to notify CardBus driver to stop the device when de-register happens
   //
-  InstallPciHotplugGuid(PciIoDevice);
+  InstallPciHotplugGuid (PciIoDevice);
 
   if (Handle != NULL) {
     *Handle = PciIoDevice->Handle;
@@ -413,16 +418,15 @@ Returns:
   // Indicate the pci device is registered
   //
   PciIoDevice->Registered = TRUE;
-  
+
   return EFI_SUCCESS;
 }
 
-
-EFI_STATUS        
-RemoveAllPciDeviceOnBridge(
+EFI_STATUS
+RemoveAllPciDeviceOnBridge (
   EFI_HANDLE               RootBridgeHandle,
   PCI_IO_DEVICE            *Bridge
-)
+  )
 /*++
 
 Routine Description:
@@ -439,45 +443,45 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
- 
+
   EFI_LIST_ENTRY  *CurrentLink;
   PCI_IO_DEVICE   *Temp;
-    
-  while (!IsListEmpty(&Bridge->ChildList)) {
-  
+
+  while (!IsListEmpty (&Bridge->ChildList)) {
+
     CurrentLink = Bridge->ChildList.ForwardLink;
-    Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
-    
+    Temp        = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+
     //
     // Check if the current node has been deregistered before
     // If it is not, then deregister it
-    //    
+    //
     if (Temp->Registered) {
-      DeRegisterPciDevice(RootBridgeHandle,Temp->Handle);
+      DeRegisterPciDevice (RootBridgeHandle, Temp->Handle);
     }
     
     //
     // Remove this node from the linked list
     //
-    RemoveEntryList(CurrentLink);  
-    
-    if (!IsListEmpty(&Temp->ChildList)) {    
-      RemoveAllPciDeviceOnBridge(RootBridgeHandle,Temp);
+    RemoveEntryList (CurrentLink);
+
+    if (!IsListEmpty (&Temp->ChildList)) {
+      RemoveAllPciDeviceOnBridge (RootBridgeHandle, Temp);
     }
-    
-    FreePciDevice (Temp);  
+
+    FreePciDevice (Temp);
   }
-  
-  return EFI_SUCCESS;   
+
+  return EFI_SUCCESS;
 }
 
-
-EFI_STATUS 
-DeRegisterPciDevice ( 
+EFI_STATUS
+DeRegisterPciDevice (
   IN  EFI_HANDLE                     Controller,
   IN  EFI_HANDLE                     Handle
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -496,27 +500,30 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_PCI_IO_PROTOCOL               *PciIo;
-  EFI_STATUS                        Status;
-  PCI_IO_DEVICE                     *PciIoDevice;
-  PCI_IO_DEVICE                     *Node;
-  EFI_LIST_ENTRY                    *CurrentLink;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *PciRootBridgeIo;
+  EFI_PCI_IO_PROTOCOL             *PciIo;
+  EFI_STATUS                      Status;
+  PCI_IO_DEVICE                   *PciIoDevice;
+  PCI_IO_DEVICE                   *Node;
+  EFI_LIST_ENTRY                  *CurrentLink;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
 
   Status = gBS->OpenProtocol (
                   Handle,
-                  &gEfiPciIoProtocolGuid,  
-                  (VOID **)&PciIo,
+                  &gEfiPciIoProtocolGuid,
+                  (VOID **) &PciIo,
                   gPciBusDriverBinding.DriverBindingHandle,
-                  Controller,   
+                  Controller,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (!EFI_ERROR (Status)) {
     PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (PciIo);
 
     //
-    // If it is already de-registered 
+    // If it is already de-registered
     //
     if (!PciIoDevice->Registered) {
       return EFI_SUCCESS;
@@ -525,33 +532,33 @@ Returns:
     //
     // If it is PPB, first de-register its children
     //
-    //if (IS_PCI_BRIDGE (&(PciIoDevice->Pci))) {
-    if (!IsListEmpty(&PciIoDevice->ChildList)) {
+
+    if (!IsListEmpty (&PciIoDevice->ChildList)) {
 
       CurrentLink = PciIoDevice->ChildList.ForwardLink;
 
       while (CurrentLink && CurrentLink != &PciIoDevice->ChildList) {
-        Node = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
-        Status = DeRegisterPciDevice (Controller, Node->Handle);
+        Node    = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+        Status  = DeRegisterPciDevice (Controller, Node->Handle);
 
         if (EFI_ERROR (Status)) {
           return Status;
         }
+
         CurrentLink = CurrentLink->ForwardLink;
       }
     }
-
     //
     // Uninstall Pccard Hotplug GUID for Pccard device
     //
-    UninstallPciHotplugGuid(PciIoDevice);
-        
+    UninstallPciHotplugGuid (PciIoDevice);
+
     //
     // Close the child handle
     //
     Status = gBS->CloseProtocol (
-                    Controller, 
-                    &gEfiPciRootBridgeIoProtocolGuid, 
+                    Controller,
+                    &gEfiPciRootBridgeIoProtocolGuid,
                     gPciBusDriverBinding.DriverBindingHandle,
                     Handle
                     );
@@ -561,41 +568,45 @@ Returns:
     //
     if (PciIoDevice->BusOverride) {
       Status = gBS->UninstallMultipleProtocolInterfaces (
-                      Handle, 
-                      &gEfiDevicePathProtocolGuid,                PciIoDevice->DevicePath,
-                      &gEfiPciIoProtocolGuid,                     &PciIoDevice->PciIo,
-                      &gEfiBusSpecificDriverOverrideProtocolGuid, &PciIoDevice->PciDriverOverride,
+                      Handle,
+                      &gEfiDevicePathProtocolGuid,
+                      PciIoDevice->DevicePath,
+                      &gEfiPciIoProtocolGuid,
+                      &PciIoDevice->PciIo,
+                      &gEfiBusSpecificDriverOverrideProtocolGuid,
+                      &PciIoDevice->PciDriverOverride,
                       NULL
                       );
     } else {
       Status = gBS->UninstallMultipleProtocolInterfaces (
-                      Handle, 
-                      &gEfiDevicePathProtocolGuid,      PciIoDevice->DevicePath,
-                      &gEfiPciIoProtocolGuid,           &PciIoDevice->PciIo,
+                      Handle,
+                      &gEfiDevicePathProtocolGuid,
+                      PciIoDevice->DevicePath,
+                      &gEfiPciIoProtocolGuid,
+                      &PciIoDevice->PciIo,
                       NULL
                       );
     }
 
     if (EFI_ERROR (Status)) {
       gBS->OpenProtocol (
-             Controller,
-             &gEfiPciRootBridgeIoProtocolGuid, 
-             (VOID **)&PciRootBridgeIo,
-             gPciBusDriverBinding.DriverBindingHandle,
-             Handle,   
-             EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-             );
+            Controller,
+            &gEfiPciRootBridgeIoProtocolGuid,
+            (VOID **) &PciRootBridgeIo,
+            gPciBusDriverBinding.DriverBindingHandle,
+            Handle,
+            EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+            );
       return Status;
     }
     
-       
     //
-    // The Device Driver should disable this device after disconnect  
+    // The Device Driver should disable this device after disconnect
     // so the Pci Bus driver will not touch this device any more.
     // Restore the register field to the original value
     //
     PciIoDevice->Registered = FALSE;
-    PciIoDevice->Handle = NULL;
+    PciIoDevice->Handle     = NULL;
   } else {
 
     //
@@ -607,14 +618,14 @@ Returns:
   return EFI_SUCCESS;
 }
 
-EFI_STATUS 
-StartPciDevicesOnBridge ( 
- IN EFI_HANDLE                          Controller,
- IN PCI_IO_DEVICE                       *RootBridge,
- IN EFI_DEVICE_PATH_PROTOCOL            *RemainingDevicePath,
- IN OUT UINT8                           *NumberOfChildren,
- IN OUT EFI_HANDLE                      *ChildHandleBuffer
- ) 
+EFI_STATUS
+StartPciDevicesOnBridge (
+  IN EFI_HANDLE                          Controller,
+  IN PCI_IO_DEVICE                       *RootBridge,
+  IN EFI_DEVICE_PATH_PROTOCOL            *RemainingDevicePath,
+  IN OUT UINT8                           *NumberOfChildren,
+  IN OUT EFI_HANDLE                      *ChildHandleBuffer
+  )
 /*++
 
 Routine Description:
@@ -634,6 +645,10 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_NOT_READY - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
   PCI_IO_DEVICE             *Temp;
   PCI_IO_DEVICE             *PciIoDevice;
@@ -642,14 +657,14 @@ Returns:
   EFI_STATUS                Status;
   EFI_LIST_ENTRY            *CurrentLink;
   UINT64                    Supports;
-    
+
   CurrentLink = RootBridge->ChildList.ForwardLink;
 
   while (CurrentLink && CurrentLink != &RootBridge->ChildList) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
     if (RemainingDevicePath != NULL) {
-      
+
       Node.DevPath = RemainingDevicePath;
 
       if (Node.Pci->Device != Temp->DeviceNumber || 
@@ -662,9 +677,8 @@ Returns:
       // Check if the device has been assigned with required resource
       //
       if (!Temp->Allocated) {
-        return  EFI_NOT_READY;
+        return EFI_NOT_READY;
       }
-
       
       //
       // Check if the current node has been registered before
@@ -674,17 +688,16 @@ Returns:
         PciIoDevice = Temp;
 
         Status = RegisterPciDevice (
-                   Controller,
-                   PciIoDevice,
-                   NULL
-                   );
+                  Controller,
+                  PciIoDevice,
+                  NULL
+                  );
 
-        
       }
 
       if (NumberOfChildren != NULL && ChildHandleBuffer != NULL && Temp->Registered) {
         ChildHandleBuffer[*NumberOfChildren] = Temp->Handle;
-        (*NumberOfChildren) ++;
+        (*NumberOfChildren)++;
       }
       
       //
@@ -696,44 +709,44 @@ Returns:
       }
   
       //
-      //If it is a PPB
+      // If it is a PPB
       //
-      if (!IsListEmpty(&Temp->ChildList)) {
+      if (!IsListEmpty (&Temp->ChildList)) {
         Status = StartPciDevicesOnBridge (
-                   Controller,
-                   Temp,
-                   CurrentDevicePath,
-                   NumberOfChildren,
-                   ChildHandleBuffer
-                   );
+                  Controller,
+                  Temp,
+                  CurrentDevicePath,
+                  NumberOfChildren,
+                  ChildHandleBuffer
+                  );
 
-        Temp->PciIo.Attributes(
+        Temp->PciIo.Attributes (
                       &(Temp->PciIo),
                       EfiPciIoAttributeOperationSupported,
                       0,
                       &Supports
                       );
         Supports &= EFI_PCI_DEVICE_ENABLE;
-        Temp->PciIo.Attributes(
+        Temp->PciIo.Attributes (
                       &(Temp->PciIo),
                       EfiPciIoAttributeOperationEnable,
                       Supports,
                       NULL
                       );
-        
+
         return Status;
       } else {
 
         //
-        // Currently, the PCI bus driver only support PCI-PCI bridge 
+        // Currently, the PCI bus driver only support PCI-PCI bridge
         //
         return EFI_UNSUPPORTED;
       }
-       
+
     } else {
 
       //
-      // If remaining device path is NULL, 
+      // If remaining device path is NULL,
       // try to enable all the pci devices under this bridge
       //
 
@@ -742,42 +755,41 @@ Returns:
         PciIoDevice = Temp;
 
         Status = RegisterPciDevice (
-                   Controller,
-                   PciIoDevice,
-                   NULL
-                   );
+                  Controller,
+                  PciIoDevice,
+                  NULL
+                  );
 
       }
 
       if (NumberOfChildren != NULL && ChildHandleBuffer != NULL && Temp->Registered) {
         ChildHandleBuffer[*NumberOfChildren] = Temp->Handle;
-        (*NumberOfChildren) ++;
+        (*NumberOfChildren)++;
       }
 
+      if (!IsListEmpty (&Temp->ChildList)) {
+        Status = StartPciDevicesOnBridge (
+                  Controller,
+                  Temp,
+                  RemainingDevicePath,
+                  NumberOfChildren,
+                  ChildHandleBuffer
+                  );
 
-       if (!IsListEmpty(&Temp->ChildList)) {
-          Status = StartPciDevicesOnBridge ( 
-                     Controller,
-                     Temp,
-                     RemainingDevicePath,
-                     NumberOfChildren,
-                     ChildHandleBuffer
-                     );
+        Temp->PciIo.Attributes (
+                      &(Temp->PciIo),
+                      EfiPciIoAttributeOperationSupported,
+                      0,
+                      &Supports
+                      );
+        Supports &= EFI_PCI_DEVICE_ENABLE;
+        Temp->PciIo.Attributes (
+                      &(Temp->PciIo),
+                      EfiPciIoAttributeOperationEnable,
+                      Supports,
+                      NULL
+                      );
 
-          Temp->PciIo.Attributes(
-                        &(Temp->PciIo),
-                        EfiPciIoAttributeOperationSupported,
-                        0,
-                        &Supports
-                        );
-          Supports &= EFI_PCI_DEVICE_ENABLE;
-          Temp->PciIo.Attributes(
-                        &(Temp->PciIo),
-                        EfiPciIoAttributeOperationEnable,
-                        Supports,
-                        NULL
-                        );
-       
       }
 
       CurrentLink = CurrentLink->ForwardLink;
@@ -788,9 +800,8 @@ Returns:
   return EFI_NOT_FOUND;
 }
 
-
-EFI_STATUS 
-StartPciDevices ( 
+EFI_STATUS
+StartPciDevices (
   IN EFI_HANDLE                         Controller,
   IN EFI_DEVICE_PATH_PROTOCOL           *RemainingDevicePath
   )
@@ -811,6 +822,8 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_DEV_PATH_PTR  Node;
   PCI_IO_DEVICE     *RootBridge;
@@ -823,23 +836,24 @@ Returns:
     //
     Node.DevPath = RemainingDevicePath;
     if (Node.DevPath->Type != HARDWARE_DEVICE_PATH ||
-          Node.DevPath->SubType != HW_PCI_DP &&
-          DevicePathNodeLength (Node.DevPath) != sizeof (PCI_DEVICE_PATH)) {
+        Node.DevPath->SubType != HW_PCI_DP         &&
+        DevicePathNodeLength (Node.DevPath) != sizeof (PCI_DEVICE_PATH)
+        ) {
       return EFI_UNSUPPORTED;
     }
   }
-    
+
   CurrentLink = gPciDevicePool.ForwardLink;
 
   while (CurrentLink && CurrentLink != &gPciDevicePool) {
 
-    RootBridge = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    RootBridge = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
     //
     // Locate the right root bridge to start
     //
     if (RootBridge->Handle == Controller) {
-      StartPciDevicesOnBridge ( 
-        Controller, 
+      StartPciDevicesOnBridge (
+        Controller,
         RootBridge,
         RemainingDevicePath,
         NULL,
@@ -853,11 +867,10 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 PCI_IO_DEVICE *
 CreateRootBridge (
-  IN EFI_HANDLE RootBridgeHandle 
- )
+  IN EFI_HANDLE RootBridgeHandle
+  )
 /*++
 
 Routine Description:
@@ -871,35 +884,33 @@ Returns:
   None
 
 --*/
-
 {
 
-  EFI_STATUS    Status;
-  PCI_IO_DEVICE *Dev;
-  EFI_DEVICE_PATH_PROTOCOL *ParentDevicePath;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL     *PciRootBridgeIo;
+  EFI_STATUS                      Status;
+  PCI_IO_DEVICE                   *Dev;
+  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
 
   Dev = NULL;
   Status = gBS->AllocatePool (
-                  EfiBootServicesData, 
-                  sizeof(PCI_IO_DEVICE) ,
-                  (VOID **)&Dev
+                  EfiBootServicesData,
+                  sizeof (PCI_IO_DEVICE),
+                  (VOID **) &Dev
                   );
 
   if (EFI_ERROR (Status)) {
-      return NULL;
+    return NULL;
   }
 
-  EfiZeroMem (Dev, sizeof(PCI_IO_DEVICE));
-  Dev->Signature = PCI_IO_DEVICE_SIGNATURE;
-  Dev->Handle = RootBridgeHandle;
-  InitializeListHead(&Dev->ChildList);
-
+  EfiZeroMem (Dev, sizeof (PCI_IO_DEVICE));
+  Dev->Signature  = PCI_IO_DEVICE_SIGNATURE;
+  Dev->Handle     = RootBridgeHandle;
+  InitializeListHead (&Dev->ChildList);
 
   Status = gBS->OpenProtocol (
                   RootBridgeHandle,
                   &gEfiDevicePathProtocolGuid,
-                  (VOID **)&ParentDevicePath,
+                  (VOID **) &ParentDevicePath,
                   gPciBusDriverBinding.DriverBindingHandle,
                   RootBridgeHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -913,15 +924,15 @@ Returns:
   //
   // Record the root bridge parent device path
   //
-  Dev->DevicePath = EfiDuplicateDevicePath(ParentDevicePath);
+  Dev->DevicePath = EfiDuplicateDevicePath (ParentDevicePath);
 
   //
   // Get the pci root bridge io protocol
   //
   Status = gBS->OpenProtocol (
-                  RootBridgeHandle,           
+                  RootBridgeHandle,
                   &gEfiPciRootBridgeIoProtocolGuid,
-                  (VOID **)&PciRootBridgeIo,
+                  (VOID **) &PciRootBridgeIo,
                   gPciBusDriverBinding.DriverBindingHandle,
                   RootBridgeHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -933,27 +944,27 @@ Returns:
   }
 
   Dev->PciRootBridgeIo = PciRootBridgeIo;
-  
+
   //
   // Initialize the PCI I/O instance structure
-  //  
-  Status = InitializePciIoInstance (Dev);  
-  Status = InitializePciDriverOverrideInstance(Dev);
-  
   //
-  // Initialize reserved resource list and 
+  Status  = InitializePciIoInstance (Dev);
+  Status  = InitializePciDriverOverrideInstance (Dev);
+
+  //
+  // Initialize reserved resource list and
   // option rom driver list
-  //  
-  InitializeListHead(&Dev->ReservedResourceList);
-  InitializeListHead(&Dev->OptionRomDriverList);
-  
+  //
+  InitializeListHead (&Dev->ReservedResourceList);
+  InitializeListHead (&Dev->OptionRomDriverList);
+
   return Dev;
 }
 
-PCI_IO_DEVICE* 
+PCI_IO_DEVICE *
 GetRootBridgeByHandle (
-   EFI_HANDLE RootBridgeHandle
-)
+  EFI_HANDLE RootBridgeHandle
+  )
 /*++
 
 Routine Description:
@@ -969,28 +980,28 @@ Returns:
 
 --*/
 {
-  PCI_IO_DEVICE     *RootBridgeDev;
-  EFI_LIST_ENTRY    *CurrentLink;
+  PCI_IO_DEVICE   *RootBridgeDev;
+  EFI_LIST_ENTRY  *CurrentLink;
 
   CurrentLink = gPciDevicePool.ForwardLink;
-  
+
   while (CurrentLink && CurrentLink != &gPciDevicePool) {
 
-    RootBridgeDev = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    RootBridgeDev = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
     if (RootBridgeDev->Handle == RootBridgeHandle) {
       return RootBridgeDev;
     }
+
     CurrentLink = CurrentLink->ForwardLink;
   }
 
   return NULL;
 }
 
-
-BOOLEAN 
-RootBridgeExisted( 
-  IN EFI_HANDLE RootBridgeHandle 
-)
+BOOLEAN
+RootBridgeExisted (
+  IN EFI_HANDLE RootBridgeHandle
+  )
 /*++
 
 Routine Description:
@@ -1009,25 +1020,23 @@ Returns:
   None
 
 --*/
- 
 {
-  PCI_IO_DEVICE     *Bridge;
+  PCI_IO_DEVICE *Bridge;
 
-  Bridge = GetRootBridgeByHandle(RootBridgeHandle);
+  Bridge = GetRootBridgeByHandle (RootBridgeHandle);
 
   if (Bridge != NULL) {
     return TRUE;
   }
-  
+
   return FALSE;
 }
 
-
-BOOLEAN 
-PciDeviceExisted( 
+BOOLEAN
+PciDeviceExisted (
   IN PCI_IO_DEVICE    *Bridge,
   IN PCI_IO_DEVICE    *PciIoDevice
-)
+  )
 /*++
 
 Routine Description:
@@ -1042,38 +1051,37 @@ Returns:
   None
 
 --*/
- 
 {
 
-  PCI_IO_DEVICE     *Temp;
-  EFI_LIST_ENTRY    *CurrentLink;
+  PCI_IO_DEVICE   *Temp;
+  EFI_LIST_ENTRY  *CurrentLink;
 
   CurrentLink = Bridge->ChildList.ForwardLink;
 
   while (CurrentLink && CurrentLink != &Bridge->ChildList) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
     if (Temp == PciIoDevice) {
       return TRUE;
     }
 
-    if (!IsListEmpty(&Temp->ChildList)) {
-      if (PciDeviceExisted(Temp,PciIoDevice)) {
+    if (!IsListEmpty (&Temp->ChildList)) {
+      if (PciDeviceExisted (Temp, PciIoDevice)) {
         return TRUE;
       }
     }
-    
+
     CurrentLink = CurrentLink->ForwardLink;
   }
- 
+
   return FALSE;
 }
 
-PCI_IO_DEVICE*
-ActiveVGADeviceOnTheSameSegment(
+PCI_IO_DEVICE *
+ActiveVGADeviceOnTheSameSegment (
   IN PCI_IO_DEVICE        *VgaDevice
-)
+  )
 /*++
 
 Routine Description:
@@ -1088,14 +1096,14 @@ Returns:
 
 --*/
 {
-  EFI_LIST_ENTRY            *CurrentLink;
-  PCI_IO_DEVICE             *Temp;
+  EFI_LIST_ENTRY  *CurrentLink;
+  PCI_IO_DEVICE   *Temp;
 
   CurrentLink = gPciDevicePool.ForwardLink;
 
   while (CurrentLink && CurrentLink != &gPciDevicePool) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
     if (Temp->PciRootBridgeIo->SegmentNumber == VgaDevice->PciRootBridgeIo->SegmentNumber) {
 
@@ -1112,11 +1120,10 @@ Returns:
   return NULL;
 }
 
-
-PCI_IO_DEVICE*
-ActiveVGADeviceOnTheRootBridge(
+PCI_IO_DEVICE *
+ActiveVGADeviceOnTheRootBridge (
   IN PCI_IO_DEVICE        *RootBridge
-)
+  )
 /*++
 
 Routine Description:
@@ -1131,21 +1138,21 @@ Returns:
 
 --*/
 {
-  EFI_LIST_ENTRY            *CurrentLink;
-  PCI_IO_DEVICE             *Temp;
- 
+  EFI_LIST_ENTRY  *CurrentLink;
+  PCI_IO_DEVICE   *Temp;
+
   CurrentLink = RootBridge->ChildList.ForwardLink;
 
   while (CurrentLink && CurrentLink != &RootBridge->ChildList) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
     if (IS_PCI_VGA(&Temp->Pci) && 
-      (Temp->Attributes & (EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_IO))) {
+        (Temp->Attributes & (EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_IO))) {
       return Temp;
     }
 
-    if (IS_PCI_BRIDGE(&Temp->Pci)) {
+    if (IS_PCI_BRIDGE (&Temp->Pci)) {
 
       Temp = ActiveVGADeviceOnTheRootBridge (Temp);
 
@@ -1165,7 +1172,7 @@ GetHpcPciAddress (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
   IN  EFI_DEVICE_PATH_PROTOCOL         *HpcDevicePath,
   OUT UINT64                           *PciAddress
-)
+  )
 /*++
 
 Routine Description:
@@ -1181,19 +1188,23 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
-  EFI_DEVICE_PATH_PROTOCOL *CurrentDevicePath;
-  EFI_DEV_PATH_PTR  Node;
-  EFI_LIST_ENTRY    *CurrentLink;
-  PCI_IO_DEVICE     *RootBridge;
-  EFI_STATUS        Status;
-  
+  EFI_DEVICE_PATH_PROTOCOL  *CurrentDevicePath;
+  EFI_DEV_PATH_PTR          Node;
+  EFI_LIST_ENTRY            *CurrentLink;
+  PCI_IO_DEVICE             *RootBridge;
+  EFI_STATUS                Status;
+
   CurrentDevicePath = HpcDevicePath;
 
   //
   // Get the remaining device path for this PCI device, if it is a PCI device
   //
-  while (!EfiIsDevicePathEnd(CurrentDevicePath)) {
+  while (!EfiIsDevicePathEnd (CurrentDevicePath)) {
 
     Node.DevPath = CurrentDevicePath;
 
@@ -1201,10 +1212,10 @@ Returns:
     // Check if it is PCI device Path?
     //
     if (Node.DevPath->Type != HARDWARE_DEVICE_PATH ||
-          Node.DevPath->SubType != HW_PCI_DP &&
-          DevicePathNodeLength (Node.DevPath) != sizeof (PCI_DEVICE_PATH)) {
+        Node.DevPath->SubType != HW_PCI_DP         &&
+        DevicePathNodeLength (Node.DevPath) != sizeof (PCI_DEVICE_PATH)) {
       CurrentDevicePath = EfiNextDevicePathNode (CurrentDevicePath);
-      continue; 
+      continue;
     }
 
     break;
@@ -1213,7 +1224,7 @@ Returns:
   //
   // Check if it is not PCI device path
   //
-  if (EfiIsDevicePathEnd(CurrentDevicePath)) {
+  if (EfiIsDevicePathEnd (CurrentDevicePath)) {
     return EFI_NOT_FOUND;
   }
 
@@ -1221,17 +1232,17 @@ Returns:
 
   while (CurrentLink && CurrentLink != &gPciDevicePool) {
 
-    RootBridge = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
+    RootBridge = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
     //
     // Locate the right root bridge to start
     //
     if (RootBridge->PciRootBridgeIo == PciRootBridgeIo) {
       Status = GetHpcPciAddressFromRootBridge (
-                    RootBridge,
-                    CurrentDevicePath,
-                    PciAddress
-                  );
-      if (EFI_ERROR(Status)) {
+                RootBridge,
+                CurrentDevicePath,
+                PciAddress
+                );
+      if (EFI_ERROR (Status)) {
         return EFI_NOT_FOUND;
       }
 
@@ -1250,7 +1261,7 @@ GetHpcPciAddressFromRootBridge (
   IN  PCI_IO_DEVICE                    *RootBridge,
   IN  EFI_DEVICE_PATH_PROTOCOL         *RemainingDevicePath,
   OUT UINT64                           *PciAddress
-)
+  )
 /*++
 
 Routine Description:
@@ -1266,6 +1277,11 @@ Returns:
   None
 
 --*/
+// TODO:    RootBridge - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_DEV_PATH_PTR          Node;
   PCI_IO_DEVICE             *Temp;
@@ -1273,23 +1289,22 @@ Returns:
   EFI_LIST_ENTRY            *CurrentLink;
   BOOLEAN                   MisMatch;
 
-  MisMatch = FALSE;
-  
-  
+  MisMatch          = FALSE;
+
   CurrentDevicePath = RemainingDevicePath;
-  Node.DevPath = CurrentDevicePath;
-  Temp = NULL;
+  Node.DevPath      = CurrentDevicePath;
+  Temp              = NULL;
 
-  while (!EfiIsDevicePathEnd(CurrentDevicePath)) {
+  while (!EfiIsDevicePathEnd (CurrentDevicePath)) {
 
-    CurrentLink = RootBridge->ChildList.ForwardLink;
-    Node.DevPath = CurrentDevicePath;
+    CurrentLink   = RootBridge->ChildList.ForwardLink;
+    Node.DevPath  = CurrentDevicePath;
 
     while (CurrentLink && CurrentLink != &RootBridge->ChildList) {
-      Temp = PCI_IO_DEVICE_FROM_LINK(CurrentLink);
-     
-      if (Node.Pci->Device == Temp->DeviceNumber &&
-        Node.Pci->Function == Temp->FunctionNumber) {
+      Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+
+      if (Node.Pci->Device   == Temp->DeviceNumber &&
+          Node.Pci->Function == Temp->FunctionNumber) {
         RootBridge = Temp;
         break;
       }
@@ -1304,7 +1319,7 @@ Returns:
 
       MisMatch = TRUE;
       break;
-      
+
     }
 
     CurrentDevicePath = EfiNextDevicePathNode (CurrentDevicePath);
@@ -1314,15 +1329,15 @@ Returns:
 
     CurrentDevicePath = EfiNextDevicePathNode (CurrentDevicePath);
 
-    if (EfiIsDevicePathEnd(CurrentDevicePath)) {
-      *PciAddress = EFI_PCI_ADDRESS(RootBridge->BusNumber, Node.Pci->Device, Node.Pci->Function, 0);
+    if (EfiIsDevicePathEnd (CurrentDevicePath)) {
+      *PciAddress = EFI_PCI_ADDRESS (RootBridge->BusNumber, Node.Pci->Device, Node.Pci->Function, 0);
       return EFI_SUCCESS;
     }
 
     return EFI_NOT_FOUND;
-  } 
+  }
 
-  *PciAddress = EFI_PCI_ADDRESS(Temp->BusNumber, Temp->DeviceNumber, Temp->FunctionNumber, 0);
+  *PciAddress = EFI_PCI_ADDRESS (Temp->BusNumber, Temp->DeviceNumber, Temp->FunctionNumber, 0);
 
   return EFI_SUCCESS;
 

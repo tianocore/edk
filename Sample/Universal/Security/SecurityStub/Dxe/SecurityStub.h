@@ -34,18 +34,20 @@ Abstract:
 // Function prototypes
 //
 EFI_STATUS
-EFIAPI 
+EFIAPI
 SecurityStubAuthenticateState (
-  IN EFI_SECURITY_ARCH_PROTOCOL  *This,
+  IN EFI_SECURITY_ARCH_PROTOCOL          *This,
   IN UINT32                              AuthenticationStatus,
   IN  EFI_DEVICE_PATH_PROTOCOL           *File
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 SecurityStubInitialize (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-  );
+  )
+;
 
 #endif

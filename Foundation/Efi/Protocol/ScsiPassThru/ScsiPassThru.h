@@ -23,7 +23,9 @@ Abstract:
 #define __SCSI_PT_H__
 
 #define EFI_SCSI_PASS_THRU_PROTOCOL_GUID \
-  { 0xa59e8fcf, 0xbda0, 0x43bb, 0x90, 0xb1, 0xd3, 0x73, 0x2e, 0xca, 0xa8, 0x77 }
+  { \
+    0xa59e8fcf, 0xbda0, 0x43bb, 0x90, 0xb1, 0xd3, 0x73, 0x2e, 0xca, 0xa8, 0x77 \
+  }
 
 //
 // Forward reference for pure ANSI compatability
@@ -31,68 +33,66 @@ Abstract:
 EFI_FORWARD_DECLARATION (EFI_SCSI_PASS_THRU_PROTOCOL);
 
 #define EFI_SCSI_PASS_THRU_ATTRIBUTES_PHYSICAL    0x0001
-#define EFI_SCSI_PASS_THRU_ATTRIBUTES_LOGICAL      0x0002
+#define EFI_SCSI_PASS_THRU_ATTRIBUTES_LOGICAL     0x0002
 #define EFI_SCSI_PASS_THRU_ATTRIBUTES_NONBLOCKIO  0x0004
 
 //
 // SCSI Host Adapter Status definition
 //
 #define EFI_SCSI_STATUS_HOST_ADAPTER_OK                     0x00
-#define EFI_SCSI_STATUS_HOST_ADAPTER_TIMEOUT_COMMAND        0x09    // timeout when processing the command
-#define EFI_SCSI_STATUS_HOST_ADAPTER_TIMEOUT                0x0b    // timeout when waiting for the command processing
-#define EFI_SCSI_STATUS_HOST_ADAPTER_MESSAGE_REJECT         0x0d    // a message reject was received when processing command
-#define EFI_SCSI_STATUS_HOST_ADAPTER_BUS_RESET              0x0e    // a bus reset was detected
+#define EFI_SCSI_STATUS_HOST_ADAPTER_TIMEOUT_COMMAND        0x09  // timeout when processing the command
+#define EFI_SCSI_STATUS_HOST_ADAPTER_TIMEOUT                0x0b  // timeout when waiting for the command processing
+#define EFI_SCSI_STATUS_HOST_ADAPTER_MESSAGE_REJECT         0x0d  // a message reject was received when processing command
+#define EFI_SCSI_STATUS_HOST_ADAPTER_BUS_RESET              0x0e  // a bus reset was detected
 #define EFI_SCSI_STATUS_HOST_ADAPTER_PARITY_ERROR           0x0f
-#define EFI_SCSI_STATUS_HOST_ADAPTER_REQUEST_SENSE_FAILED   0x10    // the adapter failed in issuing request sense command
-#define EFI_SCSI_STATUS_HOST_ADAPTER_SELECTION_TIMEOUT      0x11    // selection timeout
-#define EFI_SCSI_STATUS_HOST_ADAPTER_DATA_OVERRUN_UNDERRUN  0x12    // data overrun or data underrun
-#define EFI_SCSI_STATUS_HOST_ADAPTER_BUS_FREE               0x13    // Unexepected bus free
-#define EFI_SCSI_STATUS_HOST_ADAPTER_PHASE_ERROR            0x14    // Target bus phase sequence failure
+#define EFI_SCSI_STATUS_HOST_ADAPTER_REQUEST_SENSE_FAILED   0x10  // the adapter failed in issuing request sense command
+#define EFI_SCSI_STATUS_HOST_ADAPTER_SELECTION_TIMEOUT      0x11  // selection timeout
+#define EFI_SCSI_STATUS_HOST_ADAPTER_DATA_OVERRUN_UNDERRUN  0x12  // data overrun or data underrun
+#define EFI_SCSI_STATUS_HOST_ADAPTER_BUS_FREE               0x13  // Unexepected bus free
+#define EFI_SCSI_STATUS_HOST_ADAPTER_PHASE_ERROR            0x14  // Target bus phase sequence failure
 #define EFI_SCSI_STATUS_HOST_ADAPTER_OTHER                  0x7f
-
 
 //
 // SCSI Target Status definition
 //
-#define EFI_SCSI_STATUS_TARGET_GOOD                         0x00
-#define EFI_SCSI_STATUS_TARGET_CHECK_CONDITION              0x02    // check condition
-#define EFI_SCSI_STATUS_TARGET_CONDITION_MET                0x04    // condition met
-#define EFI_SCSI_STATUS_TARGET_BUSY                         0x08    // busy
-#define EFI_SCSI_STATUS_TARGET_INTERMEDIATE                 0x10    // intermediate
-#define EFI_SCSI_STATUS_TARGET_INTERMEDIATE_CONDITION_MET   0x14    // intermediate-condition met
-#define EFI_SCSI_STATUS_TARGET_RESERVATION_CONFLICT         0x18    // reservation conflict
-#define EFI_SCSI_STATUS_TARGET_COMMOND_TERMINATED           0x22    // command terminated
-#define EFI_SCSI_STATUS_TARGET_QUEUE_FULL                   0x28    // queue full
-
-typedef struct {    
-  UINT64    Timeout;
-  VOID      *DataBuffer;  
-  VOID      *SenseData; 
-  VOID      *Cdb;
-  UINT32    TransferLength;
-  UINT8     CdbLength;
-  UINT8     DataDirection;
-  UINT8     HostAdapterStatus;
-  UINT8     TargetStatus;  
-  UINT8     SenseDataLength;
+#define EFI_SCSI_STATUS_TARGET_GOOD                       0x00
+#define EFI_SCSI_STATUS_TARGET_CHECK_CONDITION            0x02  // check condition
+#define EFI_SCSI_STATUS_TARGET_CONDITION_MET              0x04  // condition met
+#define EFI_SCSI_STATUS_TARGET_BUSY                       0x08  // busy
+#define EFI_SCSI_STATUS_TARGET_INTERMEDIATE               0x10  // intermediate
+#define EFI_SCSI_STATUS_TARGET_INTERMEDIATE_CONDITION_MET 0x14  // intermediate-condition met
+#define EFI_SCSI_STATUS_TARGET_RESERVATION_CONFLICT       0x18  // reservation conflict
+#define EFI_SCSI_STATUS_TARGET_COMMOND_TERMINATED         0x22  // command terminated
+#define EFI_SCSI_STATUS_TARGET_QUEUE_FULL                 0x28  // queue full
+typedef struct {
+  UINT64  Timeout;
+  VOID    *DataBuffer;
+  VOID    *SenseData;
+  VOID    *Cdb;
+  UINT32  TransferLength;
+  UINT8   CdbLength;
+  UINT8   DataDirection;
+  UINT8   HostAdapterStatus;
+  UINT8   TargetStatus;
+  UINT8   SenseDataLength;
 } EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET;
 
 typedef struct {
-  CHAR16    *ControllerName;
-  CHAR16    *ChannelName;
-  UINT32    AdapterId;
-  UINT32    Attributes;
-  UINT32    IoAlign;
+  CHAR16  *ControllerName;
+  CHAR16  *ChannelName;
+  UINT32  AdapterId;
+  UINT32  Attributes;
+  UINT32  IoAlign;
 } EFI_SCSI_PASS_THRU_MODE;
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SCSI_PASS_THRU_PASSTHRU) (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL          *This,
-  IN UINT32                                       Target,
-  IN UINT64                                       Lun,
-  IN OUT EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET  *Packet,
-  IN EFI_EVENT                                    Event   OPTIONAL
+  IN EFI_SCSI_PASS_THRU_PROTOCOL                          * This,
+  IN UINT32                                               Target,
+  IN UINT64                                               Lun,
+  IN OUT EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET           * Packet,
+  IN EFI_EVENT                                            Event   OPTIONAL
   )
 /*++
 
@@ -155,7 +155,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SCSI_PASS_THRU_GET_NEXT_DEVICE) (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL    *This,
+  IN EFI_SCSI_PASS_THRU_PROTOCOL            * This,
   IN OUT UINT32                             *Target,
   IN OUT UINT64                             *Lun
   )
@@ -190,7 +190,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SCSI_PASS_THRU_BUILD_DEVICE_PATH) (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL    *This,
+  IN EFI_SCSI_PASS_THRU_PROTOCOL            * This,
   IN     UINT32                             Target,
   IN     UINT64                             Lun,
   IN OUT EFI_DEVICE_PATH_PROTOCOL           **DevicePath
@@ -229,8 +229,8 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SCSI_PASS_THRU_GET_TARGET_LUN) (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL    *This,
-  IN  EFI_DEVICE_PATH_PROTOCOL              *DevicePath,
+  IN EFI_SCSI_PASS_THRU_PROTOCOL            * This,
+  IN  EFI_DEVICE_PATH_PROTOCOL              * DevicePath,
   OUT UINT32                                *Target,
   OUT UINT64                                *Lun
   )
@@ -264,7 +264,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SCSI_PASS_THRU_RESET_CHANNEL) (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL             *This
+  IN EFI_SCSI_PASS_THRU_PROTOCOL             * This
   )
 /*++
 
@@ -289,7 +289,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SCSI_PASS_THRU_RESET_TARGET) (
-  IN EFI_SCSI_PASS_THRU_PROTOCOL     *This,
+  IN EFI_SCSI_PASS_THRU_PROTOCOL             * This,
   IN UINT32                                  Target,
   IN UINT64                                  Lun
   )

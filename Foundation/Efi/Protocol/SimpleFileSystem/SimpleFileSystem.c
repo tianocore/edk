@@ -28,8 +28,6 @@ Abstract:
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (SimpleFileSystem)
 
-
-EFI_GUID gEfiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+EFI_GUID  gEfiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiSimpleFileSystemProtocolGuid, "Filesystem Protocol", "EFI 1.0 Simple FileSystem Protocol");
-

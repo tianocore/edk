@@ -22,8 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(SecPlatformInformation)
+#include EFI_PPI_DEFINITION (SecPlatformInformation)
 
-EFI_GUID gEfiSecPlatformInformationPpiGuid = EFI_SEC_PLATFORM_INFORMATION_GUID;
+EFI_GUID  gEfiSecPlatformInformationPpiGuid = EFI_SEC_PLATFORM_INFORMATION_GUID;
 
 EFI_GUID_STRING(&gEfiSecPlatformInformationPpiGuid, "SecPlatformInformation", "Sec Platform Information");

@@ -23,7 +23,9 @@ Abstract:
 #include "bdsplatform.h"
 
 EFI_STATUS
-Var_DelBootOption ()
+Var_DelBootOption (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -38,27 +40,29 @@ Returns:
   EFI_SUCCESS
   Others
   
---*/  
+--*/
 {
   BM_MENU_ENTRY   *NewMenuEntry;
   BM_LOAD_CONTEXT *NewLoadContext;
-  
+
   UINT16          BootString[10];
   EFI_STATUS      Status;
   UINTN           Index;
   UINTN           Index2;
 
-  Status = EFI_SUCCESS;
-  Index2 = 0;  
-  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index ++) {
+  Status  = EFI_SUCCESS;
+  Index2  = 0;
+  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
     NewMenuEntry = BOpt_GetMenuEntry (&BootOptionMenu, (Index - Index2));
     if (NULL == NewMenuEntry) {
       return EFI_NOT_FOUND;
     }
+
     NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
     if (!NewLoadContext->Deleted) {
       continue;
     }
+
     SPrint (
       BootString,
       sizeof (BootString),
@@ -67,7 +71,7 @@ Returns:
       );
 
     EfiLibDeleteVariable (BootString, &gEfiGlobalVariableGuid);
-    Index2 ++;
+    Index2++;
     //
     // If current Load Option is the same as BootNext,
     // must delete BootNext in order to make sure
@@ -76,7 +80,7 @@ Returns:
     if (NewLoadContext->IsBootNext) {
       EfiLibDeleteVariable (L"BootNext", &gEfiGlobalVariableGuid);
     }
-    
+
     RemoveEntryList (&NewMenuEntry->Link);
     BOpt_DestroyMenuEntry (NewMenuEntry);
     NewMenuEntry = NULL;
@@ -84,12 +88,14 @@ Returns:
 
   BootOptionMenu.MenuNumber -= Index2;
 
-  Status = Var_ChangeBootOrder();
+  Status = Var_ChangeBootOrder ();
   return Status;
 }
 
 EFI_STATUS
-Var_ChangeBootOrder ()
+Var_ChangeBootOrder (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -104,27 +110,27 @@ Returns:
   EFI_SUCCESS
   Others
   
---*/  
+--*/
 {
-  
-  EFI_STATUS              Status;
-  BM_MENU_ENTRY           *NewMenuEntry;
-  UINT16                  *BootOrderList;
-  UINT16                  *BootOrderListPtr;
-  UINTN                   BootOrderListSize;
-  UINTN                   Index;
-  
-  BootOrderList = NULL;
+
+  EFI_STATUS    Status;
+  BM_MENU_ENTRY *NewMenuEntry;
+  UINT16        *BootOrderList;
+  UINT16        *BootOrderListPtr;
+  UINTN         BootOrderListSize;
+  UINTN         Index;
+
+  BootOrderList     = NULL;
   BootOrderListSize = 0;
 
   //
   // First check whether BootOrder is present in current configuration
   //
   BootOrderList = BdsLibGetVariableAndSize (
-                    L"BootOrder", 
-                    &gEfiGlobalVariableGuid, 
+                    L"BootOrder",
+                    &gEfiGlobalVariableGuid,
                     &BootOrderListSize
-                    ); 
+                    );
 
   //
   // If exists, delete it to hold new BootOrder
@@ -134,20 +140,19 @@ Returns:
     SafeFreePool (BootOrderList);
     BootOrderList = NULL;
   }
-
-    //
-    // Maybe here should be some check method to ensure that
-    // no new added boot options will be added
-    // but the setup engine now will give only one callback
-    // that is to say, user are granted only one chance to
-    // decide whether the boot option will be added or not
-    // there should be no indictor to show whether this
-    // is a "new" boot option
-    //
+  //
+  // Maybe here should be some check method to ensure that
+  // no new added boot options will be added
+  // but the setup engine now will give only one callback
+  // that is to say, user are granted only one chance to
+  // decide whether the boot option will be added or not
+  // there should be no indictor to show whether this
+  // is a "new" boot option
+  //
   BootOrderListSize = BootOptionMenu.MenuNumber;
-  
+
   if (BootOrderListSize > 0) {
-    BootOrderList = EfiAllocateZeroPool (BootOrderListSize * sizeof(UINT16));
+    BootOrderList = EfiAllocateZeroPool (BootOrderListSize * sizeof (UINT16));
     ASSERT (BootOrderList != NULL);
     BootOrderListPtr = BootOrderList;
 
@@ -156,10 +161,10 @@ Returns:
     // OptionNumber in each BM_LOAD_OPTION is really its
     // #### value.
     //
-    for (Index = 0; Index < BootOrderListSize; Index ++) {
-      NewMenuEntry = BOpt_GetMenuEntry (&BootOptionMenu, Index);
-      *BootOrderList = (UINT16) NewMenuEntry->OptionNumber;
-      BootOrderList ++;
+    for (Index = 0; Index < BootOrderListSize; Index++) {
+      NewMenuEntry    = BOpt_GetMenuEntry (&BootOptionMenu, Index);
+      *BootOrderList  = (UINT16) NewMenuEntry->OptionNumber;
+      BootOrderList++;
     }
 
     BootOrderList = BootOrderListPtr;
@@ -168,22 +173,23 @@ Returns:
     // After building the BootOrderList, write it back
     //
     Status = gRT->SetVariable (
-                    L"BootOrder", 
+                    L"BootOrder",
                     &gEfiGlobalVariableGuid,
                     VAR_FLAG,
-                    BootOrderListSize * sizeof(UINT16), 
+                    BootOrderListSize * sizeof (UINT16),
                     BootOrderList
                     );
     if (EFI_ERROR (Status)) {
       return Status;
     }
-  }//end if
-  
-  return EFI_SUCCESS; 
-}  
+  }
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
-Var_DelDriverOption ()
+Var_DelDriverOption (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -198,27 +204,29 @@ Returns:
   EFI_SUCCESS
   Others
   
---*/  
+--*/
 {
   BM_MENU_ENTRY   *NewMenuEntry;
   BM_LOAD_CONTEXT *NewLoadContext;
-  
+
   UINT16          DriverString[12];
   EFI_STATUS      Status;
   UINTN           Index;
   UINTN           Index2;
 
-  Status = EFI_SUCCESS;
-  Index2 = 0;
-  for (Index = 0; Index < DriverOptionMenu.MenuNumber; Index ++) {
+  Status  = EFI_SUCCESS;
+  Index2  = 0;
+  for (Index = 0; Index < DriverOptionMenu.MenuNumber; Index++) {
     NewMenuEntry = BOpt_GetMenuEntry (&DriverOptionMenu, (Index - Index2));
     if (NULL == NewMenuEntry) {
       return EFI_NOT_FOUND;
     }
+
     NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
     if (!NewLoadContext->Deleted) {
       continue;
     }
+
     SPrint (
       DriverString,
       sizeof (DriverString),
@@ -227,7 +235,7 @@ Returns:
       );
 
     EfiLibDeleteVariable (DriverString, &gEfiGlobalVariableGuid);
-    Index2 ++;
+    Index2++;
 
     RemoveEntryList (&NewMenuEntry->Link);
     BOpt_DestroyMenuEntry (NewMenuEntry);
@@ -241,7 +249,9 @@ Returns:
 }
 
 EFI_STATUS
-Var_ChangeDriverOrder ()
+Var_ChangeDriverOrder (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -257,26 +267,26 @@ Returns:
   EFI_SUCCESS
   Others
   
---*/  
+--*/
 {
-  EFI_STATUS              Status;
-  BM_MENU_ENTRY           *NewMenuEntry;
-  UINT16                  *DriverOrderList;
-  UINT16                  *DriverOrderListPtr;
-  UINTN                   DriverOrderListSize;
-  UINTN                   Index;
-  
-  DriverOrderList = NULL;
+  EFI_STATUS    Status;
+  BM_MENU_ENTRY *NewMenuEntry;
+  UINT16        *DriverOrderList;
+  UINT16        *DriverOrderListPtr;
+  UINTN         DriverOrderListSize;
+  UINTN         Index;
+
+  DriverOrderList     = NULL;
   DriverOrderListSize = 0;
 
   //
   // First check whether DriverOrder is present in current configuration
   //
   DriverOrderList = BdsLibGetVariableAndSize (
-                      L"DriverOrder", 
-                      &gEfiGlobalVariableGuid, 
+                      L"DriverOrder",
+                      &gEfiGlobalVariableGuid,
                       &DriverOrderListSize
-                      ); 
+                      );
 
   //
   // If exists, delete it to hold new DriverOrder
@@ -288,9 +298,9 @@ Returns:
   }
 
   DriverOrderListSize = DriverOptionMenu.MenuNumber;
-  
+
   if (DriverOrderListSize > 0) {
-    DriverOrderList = EfiAllocateZeroPool (DriverOrderListSize * sizeof(UINT16));
+    DriverOrderList = EfiAllocateZeroPool (DriverOrderListSize * sizeof (UINT16));
     ASSERT (DriverOrderList != NULL);
     DriverOrderListPtr = DriverOrderList;
 
@@ -299,10 +309,10 @@ Returns:
     // OptionNumber in each BM_LOAD_OPTION is really its
     // #### value.
     //
-    for (Index = 0; Index < DriverOrderListSize; Index ++) {
-      NewMenuEntry = BOpt_GetMenuEntry (&DriverOptionMenu, Index);
-      *DriverOrderList = (UINT16) NewMenuEntry->OptionNumber;
-      DriverOrderList ++;
+    for (Index = 0; Index < DriverOrderListSize; Index++) {
+      NewMenuEntry      = BOpt_GetMenuEntry (&DriverOptionMenu, Index);
+      *DriverOrderList  = (UINT16) NewMenuEntry->OptionNumber;
+      DriverOrderList++;
     }
 
     DriverOrderList = DriverOrderListPtr;
@@ -311,66 +321,68 @@ Returns:
     // After building the DriverOrderList, write it back
     //
     Status = gRT->SetVariable (
-                    L"DriverOrder", 
+                    L"DriverOrder",
                     &gEfiGlobalVariableGuid,
                     VAR_FLAG,
-                    DriverOrderListSize * sizeof(UINT16), 
+                    DriverOrderListSize * sizeof (UINT16),
                     DriverOrderList
                     );
     if (EFI_ERROR (Status)) {
       return Status;
     }
-  }//end if
-  
-  return EFI_SUCCESS; 
-}  
-VOID 
-Var_UpdateAllConsoleOption ()
+  }
+  return EFI_SUCCESS;
+}
+
+VOID
+Var_UpdateAllConsoleOption (
+  VOID
+  )
 {
-  EFI_DEVICE_PATH_PROTOCOL      *OutDevicePath;
-  EFI_DEVICE_PATH_PROTOCOL      *InpDevicePath;
-  EFI_DEVICE_PATH_PROTOCOL      *ErrDevicePath;
-  EFI_STATUS  Status;
-  
+  EFI_DEVICE_PATH_PROTOCOL  *OutDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *InpDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *ErrDevicePath;
+  EFI_STATUS                Status;
+
   OutDevicePath = EfiLibGetVariable (L"ConOut", &gEfiGlobalVariableGuid);
   InpDevicePath = EfiLibGetVariable (L"ConIn", &gEfiGlobalVariableGuid);
   ErrDevicePath = EfiLibGetVariable (L"ErrOut", &gEfiGlobalVariableGuid);
   if (OutDevicePath) {
     ChangeVariableDevicePath (OutDevicePath);
     Status = gRT->SetVariable (
-                    L"ConOut", 
+                    L"ConOut",
                     &gEfiGlobalVariableGuid,
                     VAR_FLAG,
-                    EfiDevicePathSize(OutDevicePath), 
+                    EfiDevicePathSize (OutDevicePath),
                     OutDevicePath
                     );
-    ASSERT (!EFI_ERROR(Status));
+    ASSERT (!EFI_ERROR (Status));
   }
-  
+
   if (InpDevicePath) {
     ChangeVariableDevicePath (InpDevicePath);
     Status = gRT->SetVariable (
-                    L"ConIn", 
+                    L"ConIn",
                     &gEfiGlobalVariableGuid,
                     VAR_FLAG,
-                    EfiDevicePathSize(InpDevicePath), 
+                    EfiDevicePathSize (InpDevicePath),
                     InpDevicePath
                     );
-    ASSERT (!EFI_ERROR(Status)); 
+    ASSERT (!EFI_ERROR (Status));
   }
-      
+
   if (ErrDevicePath) {
     ChangeVariableDevicePath (ErrDevicePath);
     Status = gRT->SetVariable (
-                    L"ErrOut", 
+                    L"ErrOut",
                     &gEfiGlobalVariableGuid,
                     VAR_FLAG,
-                    EfiDevicePathSize(ErrDevicePath), 
+                    EfiDevicePathSize (ErrDevicePath),
                     ErrDevicePath
                     );
-    ASSERT (!EFI_ERROR(Status));
+    ASSERT (!EFI_ERROR (Status));
   }
-}    
+}
 
 EFI_STATUS
 Var_UpdateConsoleOption (
@@ -379,15 +391,15 @@ Var_UpdateConsoleOption (
   IN UINT16                     UpdatePageId
   )
 {
-  EFI_DEVICE_PATH_PROTOCOL      *ConDevicePath;
-  BM_MENU_ENTRY                 *NewMenuEntry;
-  BM_CONSOLE_CONTEXT            *NewConsoleContext;
-  BM_TERMINAL_CONTEXT           *NewTerminalContext;
-  EFI_STATUS                    Status;
-  VENDOR_DEVICE_PATH            Vendor;
-  EFI_DEVICE_PATH_PROTOCOL      *TerminalDevicePath;
-  UINTN                         Index;
-  UINT16                        *Temp;
+  EFI_DEVICE_PATH_PROTOCOL  *ConDevicePath;
+  BM_MENU_ENTRY             *NewMenuEntry;
+  BM_CONSOLE_CONTEXT        *NewConsoleContext;
+  BM_TERMINAL_CONTEXT       *NewTerminalContext;
+  EFI_STATUS                Status;
+  VENDOR_DEVICE_PATH        Vendor;
+  EFI_DEVICE_PATH_PROTOCOL  *TerminalDevicePath;
+  UINTN                     Index;
+  UINT16                    *Temp;
 
   ConDevicePath = EfiLibGetVariable (ConsoleName, &gEfiGlobalVariableGuid);
   if (ConDevicePath != NULL) {
@@ -399,11 +411,12 @@ Var_UpdateConsoleOption (
   //
   // First add all console input device to it from console input menu
   //
-  for (Index = 0; Index < ConsoleMenu->MenuNumber; Index ++) {
+  for (Index = 0; Index < ConsoleMenu->MenuNumber; Index++) {
     NewMenuEntry = BOpt_GetMenuEntry (ConsoleMenu, Index);
     if (NULL == NewMenuEntry) {
       return EFI_NOT_FOUND;
     }
+
     NewConsoleContext = (BM_CONSOLE_CONTEXT *) NewMenuEntry->VariableContext;
     if (NewConsoleContext->IsActive) {
       ConDevicePath = EfiAppendDevicePathInstance (
@@ -413,34 +426,36 @@ Var_UpdateConsoleOption (
     }
   }
 
-  for (Index = 0; Index < TerminalMenu.MenuNumber; Index ++) {
+  for (Index = 0; Index < TerminalMenu.MenuNumber; Index++) {
     NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Index);
     if (NULL == NewMenuEntry) {
       return EFI_NOT_FOUND;
     }
+
     NewTerminalContext = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
     if ((NewTerminalContext->IsConIn && (UpdatePageId == FORM_CON_IN_ID)) ||
         (NewTerminalContext->IsConOut && (UpdatePageId == FORM_CON_OUT_ID)) ||
-        (NewTerminalContext->IsStdErr && (UpdatePageId == FORM_CON_ERR_ID))) {
-      Vendor.Header.Type = MESSAGING_DEVICE_PATH;
+        (NewTerminalContext->IsStdErr && (UpdatePageId == FORM_CON_ERR_ID))
+        ) {
+      Vendor.Header.Type    = MESSAGING_DEVICE_PATH;
       Vendor.Header.SubType = MSG_VENDOR_DP;
       EfiCopyMem (
-        &Vendor.Guid, 
-        &Guid[NewTerminalContext->TerminalType], 
-        sizeof(EFI_GUID)
+        &Vendor.Guid,
+        &Guid[NewTerminalContext->TerminalType],
+        sizeof (EFI_GUID)
         );
-      SetDevicePathNodeLength (&Vendor.Header, sizeof(VENDOR_DEVICE_PATH));
+      SetDevicePathNodeLength (&Vendor.Header, sizeof (VENDOR_DEVICE_PATH));
       TerminalDevicePath = EfiAppendDevicePathNode (
-                             NewTerminalContext->DevicePath,
-                             (EFI_DEVICE_PATH_PROTOCOL *) &Vendor
-                             );
-      ChangeTerminalDevicePath(TerminalDevicePath, TRUE);
-      Temp = DevicePathToStr(TerminalDevicePath);
+                            NewTerminalContext->DevicePath,
+                            (EFI_DEVICE_PATH_PROTOCOL *) &Vendor
+                            );
+      ChangeTerminalDevicePath (TerminalDevicePath, TRUE);
+      Temp = DevicePathToStr (TerminalDevicePath);
       ConDevicePath = EfiAppendDevicePathInstance (
                         ConDevicePath,
                         TerminalDevicePath
                         );
-    }  
+    }
   }
 
   if (ConDevicePath) {
@@ -455,24 +470,31 @@ Var_UpdateConsoleOption (
       return Status;
     }
   }
+
   return EFI_SUCCESS;
 
 }
- 
+
 EFI_STATUS
-Var_UpdateConsoleInpOption ()
+Var_UpdateConsoleInpOption (
+  VOID
+  )
 {
   return Var_UpdateConsoleOption (L"ConIn", &ConsoleInpMenu, FORM_CON_IN_ID);
 }
 
 EFI_STATUS
-Var_UpdateConsoleOutOption ()
+Var_UpdateConsoleOutOption (
+  VOID
+  )
 {
   return Var_UpdateConsoleOption (L"ConOut", &ConsoleOutMenu, FORM_CON_OUT_ID);
 }
 
 EFI_STATUS
-Var_UpdateErrorOutOption ()
+Var_UpdateErrorOutOption (
+  VOID
+  )
 {
   return Var_UpdateConsoleOption (L"ErrOut", &ConsoleErrMenu, FORM_CON_ERR_ID);
 }
@@ -486,42 +508,40 @@ Var_UpdateDriverOption (
   IN  UINT8                     ForceReconnect
   )
 {
-  UINT16                              Index;
-  UINT16                              *DriverOrderList;
-  UINT16                              *NewDriverOrderList;
-  UINT16                              DriverString[12];
-  UINTN                               DriverOrderListSize;
-  VOID                                *Buffer;
-  UINTN                               BufferSize;
-  UINT8                               *Ptr;
-  BM_MENU_ENTRY                       *NewMenuEntry;
-  BM_LOAD_CONTEXT                     *NewLoadContext;
-  BOOLEAN                             OptionalDataExist;
-  EFI_STATUS                          Status;
+  UINT16          Index;
+  UINT16          *DriverOrderList;
+  UINT16          *NewDriverOrderList;
+  UINT16          DriverString[12];
+  UINTN           DriverOrderListSize;
+  VOID            *Buffer;
+  UINTN           BufferSize;
+  UINT8           *Ptr;
+  BM_MENU_ENTRY   *NewMenuEntry;
+  BM_LOAD_CONTEXT *NewLoadContext;
+  BOOLEAN         OptionalDataExist;
+  EFI_STATUS      Status;
 
   OptionalDataExist = FALSE;
-  
-  Index = BOpt_GetDriverOptionNumber();
+
+  Index             = BOpt_GetDriverOptionNumber ();
   SPrint (
-    DriverString, 
-    sizeof (DriverString), 
-    L"Driver%04x", 
+    DriverString,
+    sizeof (DriverString),
+    L"Driver%04x",
     Index
     );
 
   if (*DescriptionData == 0x0000) {
     EfiStrCpy (DescriptionData, DriverString);
   }
-  BufferSize = sizeof (UINT32) +
-               sizeof (UINT16) +
-               EfiStrSize (DescriptionData) +
-               EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
+
+  BufferSize = sizeof (UINT32) + sizeof (UINT16) + EfiStrSize (DescriptionData) + EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
 
   if (*OptionalData != 0x0000) {
     OptionalDataExist = TRUE;
     BufferSize += EfiStrSize (OptionalData);
   }
-  
+
   Buffer = EfiAllocateZeroPool (BufferSize);
   if (NULL == Buffer) {
     return EFI_OUT_OF_RESOURCES;
@@ -532,85 +552,78 @@ Var_UpdateDriverOption (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
-  NewLoadContext->Deleted = FALSE;
-  NewLoadContext->LoadOptionSize = BufferSize;
-  Ptr = (UINT8 *)Buffer;
+  NewLoadContext                  = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
+  NewLoadContext->Deleted         = FALSE;
+  NewLoadContext->LoadOptionSize  = BufferSize;
+  Ptr = (UINT8 *) Buffer;
   NewLoadContext->LoadOption = Ptr;
-  *((UINT32 *) Ptr) = LOAD_OPTION_ACTIVE | (ForceReconnect<< 1);
+  *((UINT32 *) Ptr) = LOAD_OPTION_ACTIVE | (ForceReconnect << 1);
   NewLoadContext->Attributes = *((UINT32 *) Ptr);
   NewLoadContext->IsActive = TRUE;
-  NewLoadContext->ForceReconnect = (BOOLEAN) 
-    (NewLoadContext->Attributes & LOAD_OPTION_FORCE_RECONNECT);
+  NewLoadContext->ForceReconnect = (BOOLEAN) (NewLoadContext->Attributes & LOAD_OPTION_FORCE_RECONNECT);
 
   Ptr += sizeof (UINT32);
-  *((UINT16 *) Ptr) = (UINT16)EfiDevicePathSize(
-                                CallbackData->LoadContext->FilePathList
-                                );
+  *((UINT16 *) Ptr) = (UINT16) EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
   NewLoadContext->FilePathListLength = *((UINT16 *) Ptr);
 
   Ptr += sizeof (UINT16);
   EfiCopyMem (
-    Ptr, 
+    Ptr,
     DescriptionData,
     EfiStrSize (DescriptionData)
     );
 
-  NewLoadContext->Description = EfiAllocateZeroPool (
-                                  EfiStrSize(DescriptionData)
-                                  );
+  NewLoadContext->Description = EfiAllocateZeroPool (EfiStrSize (DescriptionData));
   ASSERT (NewLoadContext->Description != NULL);
   NewMenuEntry->DisplayString = NewLoadContext->Description;
-  EfiCopyMem(
+  EfiCopyMem (
     NewLoadContext->Description,
     (VOID *) Ptr,
     EfiStrSize (DescriptionData)
     );
 
-  Ptr += EfiStrSize(DescriptionData);
+  Ptr += EfiStrSize (DescriptionData);
   EfiCopyMem (
     Ptr,
     CallbackData->LoadContext->FilePathList,
     EfiDevicePathSize (CallbackData->LoadContext->FilePathList)
     );
 
-  NewLoadContext->FilePathList = EfiAllocateZeroPool (
-    EfiDevicePathSize (CallbackData->LoadContext->FilePathList)
-    );
+  NewLoadContext->FilePathList = EfiAllocateZeroPool (EfiDevicePathSize (CallbackData->LoadContext->FilePathList));
   ASSERT (NewLoadContext->FilePathList != NULL);
 
   EfiCopyMem (
-    NewLoadContext->FilePathList, 
-    (VOID *)Ptr,
+    NewLoadContext->FilePathList,
+    (VOID *) Ptr,
     EfiDevicePathSize (CallbackData->LoadContext->FilePathList)
     );
 
-  NewMenuEntry->HelpString = DevicePathToStr(NewLoadContext->FilePathList);
-  NewMenuEntry->OptionNumber = Index;
+  NewMenuEntry->HelpString    = DevicePathToStr (NewLoadContext->FilePathList);
+  NewMenuEntry->OptionNumber  = Index;
   NewMenuEntry->DisplayStringToken = GetStringTokenFromDepository (
-                                       CallbackData,
-                                       DriverOptionStrDepository
-                                       );
+                                      CallbackData,
+                                      DriverOptionStrDepository
+                                      );
   CallbackData->Hii->NewString (
-                       CallbackData->Hii,
-                       NULL,
-                       HiiHandle,
-                       &NewMenuEntry->DisplayStringToken,
-                       NewMenuEntry->DisplayString
-                       );
+                      CallbackData->Hii,
+                      NULL,
+                      HiiHandle,
+                      &NewMenuEntry->DisplayStringToken,
+                      NewMenuEntry->DisplayString
+                      );
 
   NewMenuEntry->HelpStringToken = GetStringTokenFromDepository (
                                     CallbackData,
                                     DriverOptionHelpStrDepository
                                     );
   CallbackData->Hii->NewString (
-                       CallbackData->Hii,
-                       NULL,
-                       HiiHandle,
-                       &NewMenuEntry->HelpStringToken,
-                       NewMenuEntry->HelpString
-                       );
-                                   
+                      CallbackData->Hii,
+                      NULL,
+                      HiiHandle,
+                      &NewMenuEntry->HelpStringToken,
+                      NewMenuEntry->HelpString
+                      );
+
   if (OptionalDataExist) {
     Ptr += (UINT8) EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
 
@@ -619,7 +632,8 @@ Var_UpdateDriverOption (
       OptionalData,
       EfiStrSize (OptionalData)
       );
-  }        
+  }
+
   Status = gRT->SetVariable (
                   DriverString,
                   &gEfiGlobalVariableGuid,
@@ -628,19 +642,18 @@ Var_UpdateDriverOption (
                   Buffer
                   );
   DriverOrderList = BdsLibGetVariableAndSize (
-                      L"DriverOrder", 
-                      &gEfiGlobalVariableGuid, 
+                      L"DriverOrder",
+                      &gEfiGlobalVariableGuid,
                       &DriverOrderListSize
                       );
-  NewDriverOrderList = EfiAllocateZeroPool (
-                         DriverOrderListSize + sizeof (UINT16)
-                         );
+  NewDriverOrderList = EfiAllocateZeroPool (DriverOrderListSize + sizeof (UINT16));
   ASSERT (NewDriverOrderList != NULL);
-  EfiCopyMem (NewDriverOrderList, DriverOrderList, DriverOrderListSize);                        
-  NewDriverOrderList[DriverOrderListSize/sizeof(UINT16)] = Index;
+  EfiCopyMem (NewDriverOrderList, DriverOrderList, DriverOrderListSize);
+  NewDriverOrderList[DriverOrderListSize / sizeof (UINT16)] = Index;
   if (DriverOrderList != NULL) {
     EfiLibDeleteVariable (L"DriverOrder", &gEfiGlobalVariableGuid);
   }
+
   Status = gRT->SetVariable (
                   L"DriverOrder",
                   &gEfiGlobalVariableGuid,
@@ -653,10 +666,10 @@ Var_UpdateDriverOption (
   SafeFreePool (NewDriverOrderList);
   NewDriverOrderList = NULL;
   InsertTailList (&DriverOptionMenu.Head, &NewMenuEntry->Link);
-  DriverOptionMenu.MenuNumber ++;
+  DriverOptionMenu.MenuNumber++;
 
-  *DescriptionData = 0x0000;
-  *OptionalData = 0x0000;
+  *DescriptionData  = 0x0000;
+  *OptionalData     = 0x0000;
   return EFI_SUCCESS;
 }
 
@@ -666,38 +679,35 @@ Var_UpdateBootOption (
   IN  FILE_EXPLORER_NV_DATA               *NvRamMap
   )
 {
-  UINT16                              *BootOrderList;
-  UINT16                              *NewBootOrderList;
-  UINTN                               BootOrderListSize;
-  UINT16                              BootString[10];
-  VOID                                *Buffer;
-  UINTN                               BufferSize;
-  UINT8                               *Ptr;
-  UINT16                              Index;
-  BM_MENU_ENTRY                       *NewMenuEntry;
-  BM_LOAD_CONTEXT                     *NewLoadContext;
-  BOOLEAN                             OptionalDataExist;
-  EFI_STATUS                          Status;
+  UINT16          *BootOrderList;
+  UINT16          *NewBootOrderList;
+  UINTN           BootOrderListSize;
+  UINT16          BootString[10];
+  VOID            *Buffer;
+  UINTN           BufferSize;
+  UINT8           *Ptr;
+  UINT16          Index;
+  BM_MENU_ENTRY   *NewMenuEntry;
+  BM_LOAD_CONTEXT *NewLoadContext;
+  BOOLEAN         OptionalDataExist;
+  EFI_STATUS      Status;
 
   OptionalDataExist = FALSE;
-  
-  Index = BOpt_GetBootOptionNumber();
+
+  Index             = BOpt_GetBootOptionNumber ();
   SPrint (BootString, sizeof (BootString), L"Boot%04x", Index);
 
   if (NvRamMap->DescriptionData[0] == 0x0000) {
     EfiStrCpy (NvRamMap->DescriptionData, BootString);
   }
 
-  BufferSize = sizeof (UINT32) +
-               sizeof (UINT16) +
-               EfiStrSize (NvRamMap->DescriptionData) +
-               EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
+  BufferSize = sizeof (UINT32) + sizeof (UINT16) + EfiStrSize (NvRamMap->DescriptionData) + EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
 
   if (NvRamMap->OptionalData[0] != 0x0000) {
     OptionalDataExist = TRUE;
     BufferSize += EfiStrSize (NvRamMap->OptionalData);
   }
-  
+
   Buffer = EfiAllocateZeroPool (BufferSize);
   if (NULL == Buffer) {
     return EFI_OUT_OF_RESOURCES;
@@ -708,72 +718,66 @@ Var_UpdateBootOption (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
-  NewLoadContext->Deleted = FALSE;
-  NewLoadContext->LoadOptionSize = BufferSize;
-  Ptr = (UINT8 *)Buffer;
+  NewLoadContext                  = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
+  NewLoadContext->Deleted         = FALSE;
+  NewLoadContext->LoadOptionSize  = BufferSize;
+  Ptr = (UINT8 *) Buffer;
   NewLoadContext->LoadOption = Ptr;
   *((UINT32 *) Ptr) = LOAD_OPTION_ACTIVE;
   NewLoadContext->Attributes = *((UINT32 *) Ptr);
   NewLoadContext->IsActive = TRUE;
-  NewLoadContext->ForceReconnect = (BOOLEAN) 
-                    (NewLoadContext->Attributes & LOAD_OPTION_FORCE_RECONNECT);
+  NewLoadContext->ForceReconnect = (BOOLEAN) (NewLoadContext->Attributes & LOAD_OPTION_FORCE_RECONNECT);
 
   Ptr += sizeof (UINT32);
-  *((UINT16 *) Ptr) = (UINT16)EfiDevicePathSize(
-                        CallbackData->LoadContext->FilePathList
-                        );
+  *((UINT16 *) Ptr) = (UINT16) EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
   NewLoadContext->FilePathListLength = *((UINT16 *) Ptr);
   Ptr += sizeof (UINT16);
 
   EfiCopyMem (
-    Ptr, 
+    Ptr,
     NvRamMap->DescriptionData,
     EfiStrSize (NvRamMap->DescriptionData)
     );
 
-  NewLoadContext->Description = EfiAllocateZeroPool (
-                                  EfiStrSize(NvRamMap->DescriptionData)
-                                  );
+  NewLoadContext->Description = EfiAllocateZeroPool (EfiStrSize (NvRamMap->DescriptionData));
   ASSERT (NewLoadContext->Description != NULL);
-  
+
   NewMenuEntry->DisplayString = NewLoadContext->Description;
-  EfiCopyMem(
+  EfiCopyMem (
     NewLoadContext->Description,
     (VOID *) Ptr,
     EfiStrSize (NvRamMap->DescriptionData)
     );
 
-  Ptr += EfiStrSize(NvRamMap->DescriptionData);
+  Ptr += EfiStrSize (NvRamMap->DescriptionData);
   EfiCopyMem (
     Ptr,
     CallbackData->LoadContext->FilePathList,
     EfiDevicePathSize (CallbackData->LoadContext->FilePathList)
     );
 
-  NewLoadContext->FilePathList = EfiAllocateZeroPool (
-    EfiDevicePathSize (CallbackData->LoadContext->FilePathList));
+  NewLoadContext->FilePathList = EfiAllocateZeroPool (EfiDevicePathSize (CallbackData->LoadContext->FilePathList));
   ASSERT (NewLoadContext->FilePathList != NULL);
 
   EfiCopyMem (
-    NewLoadContext->FilePathList, 
-    (VOID *)Ptr,
+    NewLoadContext->FilePathList,
+    (VOID *) Ptr,
     EfiDevicePathSize (CallbackData->LoadContext->FilePathList)
     );
 
-  NewMenuEntry->HelpString = DevicePathToStr(NewLoadContext->FilePathList);
-  NewMenuEntry->OptionNumber = Index;
+  NewMenuEntry->HelpString    = DevicePathToStr (NewLoadContext->FilePathList);
+  NewMenuEntry->OptionNumber  = Index;
   NewMenuEntry->DisplayStringToken = GetStringTokenFromDepository (
-                                       CallbackData,
-                                       BootOptionStrDepository
-                                       );
+                                      CallbackData,
+                                      BootOptionStrDepository
+                                      );
   CallbackData->Hii->NewString (
-                       CallbackData->Hii,
-                       NULL,
-                       CallbackData->FeHiiHandle,
-                       &NewMenuEntry->DisplayStringToken,
-                       NewMenuEntry->DisplayString
-                       );
+                      CallbackData->Hii,
+                      NULL,
+                      CallbackData->FeHiiHandle,
+                      &NewMenuEntry->DisplayStringToken,
+                      NewMenuEntry->DisplayString
+                      );
 
   NewMenuEntry->HelpStringToken = GetStringTokenFromDepository (
                                     CallbackData,
@@ -781,13 +785,13 @@ Var_UpdateBootOption (
                                     );
 
   CallbackData->Hii->NewString (
-                       CallbackData->Hii,
-                       NULL,
-                       CallbackData->FeHiiHandle,
-                       &NewMenuEntry->HelpStringToken,
-                       NewMenuEntry->HelpString
-                       );
-                                   
+                      CallbackData->Hii,
+                      NULL,
+                      CallbackData->FeHiiHandle,
+                      &NewMenuEntry->HelpStringToken,
+                      NewMenuEntry->HelpString
+                      );
+
   if (OptionalDataExist) {
     Ptr += (UINT8) EfiDevicePathSize (CallbackData->LoadContext->FilePathList);
 
@@ -803,19 +807,20 @@ Var_UpdateBootOption (
                   );
 
   BootOrderList = BdsLibGetVariableAndSize (
-                    L"BootOrder", 
-                    &gEfiGlobalVariableGuid, 
+                    L"BootOrder",
+                    &gEfiGlobalVariableGuid,
                     &BootOrderListSize
                     );
 
   NewBootOrderList = EfiAllocateZeroPool (BootOrderListSize + sizeof (UINT16));
   ASSERT (NewBootOrderList != NULL);
-  EfiCopyMem (NewBootOrderList, BootOrderList, BootOrderListSize);                        
-  NewBootOrderList[BootOrderListSize/sizeof(UINT16)] = Index;
+  EfiCopyMem (NewBootOrderList, BootOrderList, BootOrderListSize);
+  NewBootOrderList[BootOrderListSize / sizeof (UINT16)] = Index;
 
   if (BootOrderList != NULL) {
     EfiLibDeleteVariable (L"BootOrder", &gEfiGlobalVariableGuid);
   }
+
   Status = gRT->SetVariable (
                   L"BootOrder",
                   &gEfiGlobalVariableGuid,
@@ -829,10 +834,10 @@ Var_UpdateBootOption (
   SafeFreePool (NewBootOrderList);
   NewBootOrderList = NULL;
   InsertTailList (&BootOptionMenu.Head, &NewMenuEntry->Link);
-  BootOptionMenu.MenuNumber ++;
+  BootOptionMenu.MenuNumber++;
 
-  NvRamMap->DescriptionData[0] = 0x0000;
-  NvRamMap->OptionalData[0] = 0x0000;
+  NvRamMap->DescriptionData[0]  = 0x0000;
+  NvRamMap->OptionalData[0]     = 0x0000;
   return EFI_SUCCESS;
 }
 
@@ -841,22 +846,22 @@ Var_UpdateBootNext (
   IN BMM_CALLBACK_DATA            *CallbackData
   )
 {
-  BM_MENU_ENTRY             *NewMenuEntry;
-  BM_LOAD_CONTEXT           *NewLoadContext;
-  BMM_FAKE_NV_DATA          *CurrentFakeNVMap;
-  UINT16                    Index;
-  EFI_STATUS                Status;
-  
-  Status = EFI_SUCCESS;
-  CurrentFakeNVMap = CallbackData->BmmFakeNvData;
-  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index ++) {
+  BM_MENU_ENTRY     *NewMenuEntry;
+  BM_LOAD_CONTEXT   *NewLoadContext;
+  BMM_FAKE_NV_DATA  *CurrentFakeNVMap;
+  UINT16            Index;
+  EFI_STATUS        Status;
+
+  Status            = EFI_SUCCESS;
+  CurrentFakeNVMap  = CallbackData->BmmFakeNvData;
+  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
     NewMenuEntry = BOpt_GetMenuEntry (&BootOptionMenu, Index);
     if (NULL == NewMenuEntry) {
       return EFI_NOT_FOUND;
     }
 
-    NewLoadContext = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
-    NewLoadContext->IsBootNext = FALSE;
+    NewLoadContext              = (BM_LOAD_CONTEXT *) NewMenuEntry->VariableContext;
+    NewLoadContext->IsBootNext  = FALSE;
   }
 
   if (CurrentFakeNVMap->BootNext == BootOptionMenu.MenuNumber) {
@@ -865,9 +870,9 @@ Var_UpdateBootNext (
   }
 
   NewMenuEntry = BOpt_GetMenuEntry (
-                   &BootOptionMenu, 
-                   CurrentFakeNVMap->BootNext
-                   );
+                  &BootOptionMenu,
+                  CurrentFakeNVMap->BootNext
+                  );
   if (NULL == NewMenuEntry) {
     return EFI_NOT_FOUND;
   }
@@ -880,7 +885,7 @@ Var_UpdateBootNext (
                   sizeof (UINT16),
                   &NewMenuEntry->OptionNumber
                   );
-  NewLoadContext->IsBootNext = TRUE;
+  NewLoadContext->IsBootNext              = TRUE;
   CallbackData->BmmOldFakeNVData.BootNext = CurrentFakeNVMap->BootNext;
   return Status;
 }
@@ -890,31 +895,34 @@ Var_UpdateBootOrder (
   IN BMM_CALLBACK_DATA            *CallbackData
   )
 {
-  EFI_STATUS              Status;
-  UINT16                  Index;
-  UINT16                  *BootOrderList;
-  UINT16                  *NewBootOrderList;
-  UINTN                   BootOrderListSize;
-  UINT8                   *Map;
-     
-  BootOrderList = NULL;
+  EFI_STATUS  Status;
+  UINT16      Index;
+  UINT16      *BootOrderList;
+  UINT16      *NewBootOrderList;
+  UINTN       BootOrderListSize;
+  UINT8       *Map;
+
+  BootOrderList     = NULL;
   BootOrderListSize = 0;
 
   //
   // First check whether BootOrder is present in current configuration
   //
   BootOrderList = BdsLibGetVariableAndSize (
-                    L"BootOrder", 
-                    &gEfiGlobalVariableGuid, 
+                    L"BootOrder",
+                    &gEfiGlobalVariableGuid,
                     &BootOrderListSize
-                    ); 
+                    );
 
-  NewBootOrderList = EfiAllocateZeroPool (BootOrderListSize);  
+  NewBootOrderList = EfiAllocateZeroPool (BootOrderListSize);
   if (!NewBootOrderList) {
     return EFI_OUT_OF_RESOURCES;
   }
+
   Map = EfiAllocateZeroPool (BootOrderListSize / sizeof (UINT16));
-  if (!Map) return EFI_OUT_OF_RESOURCES;
+  if (!Map) {
+    return EFI_OUT_OF_RESOURCES;
+  }
   //
   // If exists, delete it to hold new BootOrder
   //
@@ -922,29 +930,29 @@ Var_UpdateBootOrder (
     EfiLibDeleteVariable (L"BootOrder", &gEfiGlobalVariableGuid);
   }
 
-  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index ++) {
+  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
     NewBootOrderList[Index] = CallbackData->BmmFakeNvData->OptionOrder[Index] - 1;
   }
-  
+
   Status = gRT->SetVariable (
-                  L"BootOrder", 
+                  L"BootOrder",
                   &gEfiGlobalVariableGuid,
                   VAR_FLAG,
-                  BootOrderListSize, 
+                  BootOrderListSize,
                   NewBootOrderList
                   );
   SafeFreePool (BootOrderList);
   SafeFreePool (NewBootOrderList);
   SafeFreePool (Map);
-  if (EFI_ERROR (Status)) {    
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
   BOpt_FreeMenu (&BootOptionMenu);
   BOpt_GetBootOptions (CallbackData);
 
-  return EFI_SUCCESS; 
-  
+  return EFI_SUCCESS;
+
 }
 
 EFI_STATUS
@@ -952,26 +960,26 @@ Var_UpdateDriverOrder (
   IN BMM_CALLBACK_DATA            *CallbackData
   )
 {
-  EFI_STATUS              Status;
-  UINT16                  Index;
-  UINT16                  *DriverOrderList;
-  UINT16                  *NewDriverOrderList;
-  UINTN                   DriverOrderListSize;
+  EFI_STATUS  Status;
+  UINT16      Index;
+  UINT16      *DriverOrderList;
+  UINT16      *NewDriverOrderList;
+  UINTN       DriverOrderListSize;
 
-  DriverOrderList = NULL;
+  DriverOrderList     = NULL;
   DriverOrderListSize = 0;
 
   //
   // First check whether DriverOrder is present in current configuration
   //
   DriverOrderList = BdsLibGetVariableAndSize (
-                      L"DriverOrder", 
-                      &gEfiGlobalVariableGuid, 
+                      L"DriverOrder",
+                      &gEfiGlobalVariableGuid,
                       &DriverOrderListSize
-                      ); 
+                      );
 
   NewDriverOrderList = EfiAllocateZeroPool (DriverOrderListSize);
-  
+
   if (!NewDriverOrderList) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -982,21 +990,21 @@ Var_UpdateDriverOrder (
     EfiLibDeleteVariable (L"DriverOrder", &gEfiGlobalVariableGuid);
   }
 
-  for (Index = 0; Index < DriverOrderListSize; Index ++) {
+  for (Index = 0; Index < DriverOrderListSize; Index++) {
     NewDriverOrderList[Index] = CallbackData->BmmFakeNvData->OptionOrder[Index] - 1;
   }
 
   Status = gRT->SetVariable (
-                  L"DriverOrder", 
+                  L"DriverOrder",
                   &gEfiGlobalVariableGuid,
                   VAR_FLAG,
-                  DriverOrderListSize, 
+                  DriverOrderListSize,
                   NewDriverOrderList
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   SafeFreePool (DriverOrderList);
 
   BOpt_FreeMenu (&DriverOptionMenu);
@@ -1022,7 +1030,7 @@ Var_UpdateBBSOption (
   UINT8                       *NewOptionPtr;
   UINT8                       *TempPtr;
   UINT32                      *Attribute;
-  
+
   BM_MENU_OPTION              *OptionMenu;
   BM_LEGACY_DEVICE_CONTEXT    *LegacyDeviceContext;
   UINT8                       *LegacyDev;
@@ -1030,7 +1038,7 @@ Var_UpdateBBSOption (
   UINTN                       VarSize;
   BM_MENU_ENTRY               *NewMenuEntry;
   BM_LEGACY_DEV_ORDER_CONTEXT *DevOrder;
-  UINT8                       *OriginalPtr;  
+  UINT8                       *OriginalPtr;
   UINT8                       *DisMap;
   UINTN                       Pos;
   UINTN                       Bit;
@@ -1038,76 +1046,77 @@ Var_UpdateBBSOption (
   UINT16                      Tmp;
 
   LegacyDeviceContext = NULL;
-  DisMap = NULL;
-  NewOrder = NULL;
-    
+  DisMap              = NULL;
+  NewOrder            = NULL;
+
   if (FORM_SET_FD_ORDER_ID == CallbackData->BmmPreviousPageId) {
-    OptionMenu = (BM_MENU_OPTION *) &LegacyFDMenu;
-    LegacyDev = CallbackData->BmmFakeNvData->LegacyFD;
+    OptionMenu            = (BM_MENU_OPTION *) &LegacyFDMenu;
+    LegacyDev             = CallbackData->BmmFakeNvData->LegacyFD;
     CallbackData->BbsType = BBS_FLOPPY;
   } else {
     if (FORM_SET_HD_ORDER_ID == CallbackData->BmmPreviousPageId) {
-      OptionMenu = (BM_MENU_OPTION *) &LegacyHDMenu;
-      LegacyDev = CallbackData->BmmFakeNvData->LegacyHD;
+      OptionMenu            = (BM_MENU_OPTION *) &LegacyHDMenu;
+      LegacyDev             = CallbackData->BmmFakeNvData->LegacyHD;
       CallbackData->BbsType = BBS_HARDDISK;
     } else {
       if (FORM_SET_CD_ORDER_ID == CallbackData->BmmPreviousPageId) {
-        OptionMenu = (BM_MENU_OPTION *) &LegacyCDMenu;
-        LegacyDev = CallbackData->BmmFakeNvData->LegacyCD;
+        OptionMenu            = (BM_MENU_OPTION *) &LegacyCDMenu;
+        LegacyDev             = CallbackData->BmmFakeNvData->LegacyCD;
         CallbackData->BbsType = BBS_CDROM;
       } else {
         if (FORM_SET_NET_ORDER_ID == CallbackData->BmmPreviousPageId) {
-          OptionMenu = (BM_MENU_OPTION *) &LegacyNETMenu;
-          LegacyDev = CallbackData->BmmFakeNvData->LegacyNET;
+          OptionMenu            = (BM_MENU_OPTION *) &LegacyNETMenu;
+          LegacyDev             = CallbackData->BmmFakeNvData->LegacyNET;
           CallbackData->BbsType = BBS_EMBED_NETWORK;
         } else {
-          OptionMenu = (BM_MENU_OPTION *) &LegacyBEVMenu;
-          LegacyDev = CallbackData->BmmFakeNvData->LegacyBEV;
+          OptionMenu            = (BM_MENU_OPTION *) &LegacyBEVMenu;
+          LegacyDev             = CallbackData->BmmFakeNvData->LegacyBEV;
           CallbackData->BbsType = BBS_BEV_DEVICE;
         }
       }
     }
   }
 
-  DisMap = CallbackData->BmmOldFakeNVData.DisableMap;
-  Status = EFI_SUCCESS;
+  DisMap  = CallbackData->BmmOldFakeNVData.DisableMap;
+  Status  = EFI_SUCCESS;
 
   //
-  // Find the first device's context 
+  // Find the first device's context
   // If all devices are disabled( 0xFF == LegacyDev[0]), LegacyDeviceContext can be set to any VariableContext
   // because we just use it to fill the desc string, and user can not see the string in UI
-  // 
+  //
   for (Index = 0; Index < OptionMenu->MenuNumber; Index++) {
-    NewMenuEntry = BOpt_GetMenuEntry (OptionMenu, Index);
-    LegacyDeviceContext = (BM_LEGACY_DEVICE_CONTEXT *)NewMenuEntry->VariableContext;
-    if (0xFF != LegacyDev[0] && LegacyDev[0] == LegacyDeviceContext->Index) {      
-      DEBUG ((EFI_D_ERROR, "DescStr: %s\n", LegacyDeviceContext->Description));      
+    NewMenuEntry        = BOpt_GetMenuEntry (OptionMenu, Index);
+    LegacyDeviceContext = (BM_LEGACY_DEVICE_CONTEXT *) NewMenuEntry->VariableContext;
+    if (0xFF != LegacyDev[0] && LegacyDev[0] == LegacyDeviceContext->Index) {
+      DEBUG ((EFI_D_ERROR, "DescStr: %s\n", LegacyDeviceContext->Description));
       break;
     }
   }
-
   //
   // Update the Variable "LegacyDevOrder"
   //
-  VarData = (UINT8 *)BdsLibGetVariableAndSize (
-                       VarLegacyDevOrder,
-                       &EfiLegacyDevOrderGuid,
-                       &VarSize
-                       );
-  
+  VarData = (UINT8 *) BdsLibGetVariableAndSize (
+                        VarLegacyDevOrder,
+                        &EfiLegacyDevOrderGuid,
+                        &VarSize
+                        );
+
   if (NULL == VarData) {
     return EFI_NOT_FOUND;
   }
+
   OriginalPtr = VarData;
-  DevOrder = (BM_LEGACY_DEV_ORDER_CONTEXT *) VarData;
-  
+  DevOrder    = (BM_LEGACY_DEV_ORDER_CONTEXT *) VarData;
+
   while (VarData < VarData + VarSize) {
     if (DevOrder->BbsType == CallbackData->BbsType) {
       break;
     }
+
     VarData += sizeof (BBS_TYPE);
-    VarData += * (UINT16 *)VarData;
-    DevOrder = (BM_LEGACY_DEV_ORDER_CONTEXT *) VarData;      
+    VarData += *(UINT16 *) VarData;
+    DevOrder = (BM_LEGACY_DEV_ORDER_CONTEXT *) VarData;
   }
 
   if (VarData >= VarData + VarSize) {
@@ -1115,16 +1124,17 @@ Var_UpdateBBSOption (
     return EFI_NOT_FOUND;
   }
 
-  NewOrder = (UINT16*)EfiAllocateZeroPool (DevOrder->Length - sizeof (UINT16));
+  NewOrder = (UINT16 *) EfiAllocateZeroPool (DevOrder->Length - sizeof (UINT16));
   if (NULL == NewOrder) {
     SafeFreePool (VarData);
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   for (Index = 0; Index < OptionMenu->MenuNumber; Index++) {
     if (0xFF == LegacyDev[Index]) {
       break;
     }
+
     NewOrder[Index] = LegacyDev[Index];
   }
   //
@@ -1134,22 +1144,23 @@ Var_UpdateBBSOption (
   // so we use DisMap to set en/dis state of each item in NewOrder array
   //
   for (Index2 = 0; Index2 < OptionMenu->MenuNumber; Index2++) {
-    Tmp = *(UINT16*)((UINT8*)DevOrder + sizeof (BBS_TYPE) + sizeof (UINT16) + Index2 * sizeof (UINT16));
+    Tmp = *(UINT16 *) ((UINT8 *) DevOrder + sizeof (BBS_TYPE) + sizeof (UINT16) + Index2 * sizeof (UINT16));
     Tmp &= 0xFF;
     Pos = Tmp / 8;
-    Bit = 7 - (Tmp % 8 );
+    Bit = 7 - (Tmp % 8);
     if (DisMap[Pos] & (1 << Bit)) {
-      NewOrder[Index] = (UINT16)(0xFF00 | Tmp);
+      NewOrder[Index] = (UINT16) (0xFF00 | Tmp);
       Index++;
     }
   }
+
   EfiCopyMem (
-    (UINT8*)DevOrder + sizeof (BBS_TYPE) + sizeof (UINT16), 
-    NewOrder, 
+    (UINT8 *) DevOrder + sizeof (BBS_TYPE) + sizeof (UINT16),
+    NewOrder,
     DevOrder->Length - sizeof (UINT16)
     );
   SafeFreePool (NewOrder);
- 
+
   Status = gRT->SetVariable (
                   VarLegacyDevOrder,
                   &EfiLegacyDevOrderGuid,
@@ -1157,40 +1168,40 @@ Var_UpdateBBSOption (
                   VarSize,
                   OriginalPtr
                   );
-  
+
   SafeFreePool (OriginalPtr);
-  
+
   //
   // Update Optional Data of Boot####
-  // 
-  BootOptionVar = GetLegacyBootOptionVar(CallbackData->BbsType, &Index, &OptionSize);
-    
-  if (NULL != BootOptionVar)
-  {
+  //
+  BootOptionVar = GetLegacyBootOptionVar (CallbackData->BbsType, &Index, &OptionSize);
+
+  if (NULL != BootOptionVar) {
     EfiCopyMem (
       DescString,
       LegacyDeviceContext->Description,
       EfiStrSize (LegacyDeviceContext->Description)
       );
-       
-    NewOptionSize = sizeof(UINT32) + sizeof(UINT16) + EfiStrSize (DescString) + sizeof (BBS_TABLE) + sizeof (UINT16);
+
+    NewOptionSize = sizeof (UINT32) + sizeof (UINT16) + EfiStrSize (DescString) + sizeof (BBS_TABLE) + sizeof (UINT16);
 
     SPrint (VarName, 100, L"Boot%04x", Index);
 
-    Ptr = BootOptionVar;
+    Ptr       = BootOptionVar;
 
-    Attribute = (UINT32 *)Ptr;
-    *Attribute |= LOAD_OPTION_ACTIVE; 
+    Attribute = (UINT32 *) Ptr;
+    *Attribute |= LOAD_OPTION_ACTIVE;
     if (0xFF == LegacyDev[0]) {
       //
       // Disable this legacy boot option
       //
       *Attribute &= ~LOAD_OPTION_ACTIVE;
     }
-    Ptr += sizeof(UINT32);
 
-    FilePathSize = *(UINT16 *)Ptr;
-    Ptr += sizeof(UINT16);
+    Ptr += sizeof (UINT32);
+
+    FilePathSize = *(UINT16 *) Ptr;
+    Ptr += sizeof (UINT16);
 
     NewOptionSize += FilePathSize;
 
@@ -1200,17 +1211,17 @@ Var_UpdateBBSOption (
     }
 
     TempPtr = NewOptionPtr;
-    
+
     //
     // Copy previous option data to new option except the description string
     //
     EfiCopyMem (
       TempPtr,
       BootOptionVar,
-      sizeof(UINT32) + sizeof(UINT16)
+      sizeof (UINT32) + sizeof (UINT16)
       );
 
-    TempPtr += (sizeof(UINT32) + sizeof(UINT16));
+    TempPtr += (sizeof (UINT32) + sizeof (UINT16));
 
     EfiCopyMem (
       TempPtr,
@@ -1221,9 +1232,9 @@ Var_UpdateBBSOption (
     TempPtr += EfiStrSize (DescString);
 
     //
-    //Description = (CHAR16 *)Ptr;
+    // Description = (CHAR16 *)Ptr;
     //
-    Ptr += EfiStrSize ((CHAR16 *)Ptr);
+    Ptr += EfiStrSize ((CHAR16 *) Ptr);
 
     EfiCopyMem (
       TempPtr,
@@ -1234,7 +1245,7 @@ Var_UpdateBBSOption (
     TempPtr += FilePathSize;
 
     //
-    //DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)Ptr;
+    // DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)Ptr;
     //
     Ptr += FilePathSize;
 
@@ -1246,21 +1257,21 @@ Var_UpdateBBSOption (
       LegacyDeviceContext->BbsTable,
       sizeof (BBS_TABLE)
       );
-    
+
     TempPtr += sizeof (BBS_TABLE);
-    *((UINT16*)TempPtr) = (UINT16)LegacyDeviceContext->Index;
-    
+    *((UINT16 *) TempPtr) = (UINT16) LegacyDeviceContext->Index;
+
     Status = gRT->SetVariable (
-      VarName,
-      &gEfiGlobalVariableGuid,
-      VAR_FLAG,
-      NewOptionSize,
-      NewOptionPtr
-      );
+                    VarName,
+                    &gEfiGlobalVariableGuid,
+                    VAR_FLAG,
+                    NewOptionSize,
+                    NewOptionPtr
+                    );
 
     SafeFreePool (NewOptionPtr);
     SafeFreePool (BootOptionVar);
-  }  
+  }
 
   BOpt_GetBootOptions (CallbackData);
   return Status;

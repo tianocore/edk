@@ -45,7 +45,7 @@ UhciComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gUhciComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gUhciComponentName = {
   UhciComponentNameGetDriverName,
   UhciComponentNameGetControllerName,
   "eng"
@@ -53,9 +53,8 @@ EFI_COMPONENT_NAME_PROTOCOL gUhciComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mUhciDriverNameTable[] = {
   { "eng", L"Usb Uhci Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
-
 
 EFI_STATUS
 EFIAPI
@@ -92,11 +91,11 @@ UhciComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gUhciComponentName.SupportedLanguages,
-           mUhciDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gUhciComponentName.SupportedLanguages,
+          mUhciDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
@@ -154,25 +153,24 @@ UhciComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                    Status;
-  USB_HC_DEV                    *UhciDev;
-  EFI_USB_HC_PROTOCOL           *UsbHc;
-  
+  EFI_STATUS          Status;
+  USB_HC_DEV          *UhciDev;
+  EFI_USB_HC_PROTOCOL *UsbHc;
+
   //
   // This is a device driver, so ChildHandle must be NULL.
   //
   if (ChildHandle != NULL) {
     return EFI_UNSUPPORTED;
   }
-  
   //
   // Get the device context
   //
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiUsbHcProtocolGuid,
-                  (VOID **)&UsbHc,
-                  gUhciDriverBinding.DriverBindingHandle,  
+                  (VOID **) &UsbHc,
+                  gUhciDriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
@@ -181,13 +179,13 @@ UhciComponentNameGetControllerName (
     return Status;
   }
 
-  UhciDev = USB_HC_DEV_FROM_THIS(UsbHc);
-  
+  UhciDev = USB_HC_DEV_FROM_THIS (UsbHc);
+
   return EfiLibLookupUnicodeString (
-           Language, 
-           gUhciComponentName.SupportedLanguages,
-           UhciDev->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gUhciComponentName.SupportedLanguages,
+          UhciDev->ControllerNameTable,
+          ControllerName
+          );
 
 }

@@ -25,8 +25,8 @@ Revision History
 #include "ConsoleLib.h"
 
 typedef struct {
-  CHAR16                                  WChar;
-  UINT32                                  Width;
+  CHAR16  WChar;
+  UINT32  Width;
 } UNICODE_WIDTH_ENTRY;
 
 UNICODE_WIDTH_ENTRY mUnicodeWidthTable[] = {
@@ -76,7 +76,7 @@ UNICODE_WIDTH_ENTRY mUnicodeWidthTable[] = {
   {0x1FFF,  1},       // Greek extended. 0x1F00-0x1FFF
   *
   */
-  
+
   //
   // Symbol area
   //
@@ -153,8 +153,7 @@ UNICODE_WIDTH_ENTRY mUnicodeWidthTable[] = {
   // Reserved
   //
   {0xABFF,  0},       // Reserved. 0xA000-0xA490 as Yi syllables. 0xA490-0xA4D0
-                      // as Yi radicals in ver3.0. 0xA000-0xABFF
-
+  // as Yi radicals in ver3.0. 0xA000-0xABFF
   //
   // Hangul syllables
   //
@@ -208,11 +207,9 @@ GetGlyphWidth (
   
   Arguments:
   
-    IN  CHAR16                            UnicodeChar
-        The unicode character to be inquired
+    UnicodeChar - The unicode character to be inquired
 
-    OUT UINT32                            *GlyphWidth
-        The returning width of the character
+    GlyphWidth  - The returning width of the character
 
   Returns:
   
@@ -224,28 +221,29 @@ GetGlyphWidth (
                 
 --*/
 {
-  UINTN                                   Index;
-  UINTN                                   Low;
-  UINTN                                   High;
-  UNICODE_WIDTH_ENTRY                     *Item;
+  UINTN               Index;
+  UINTN               Low;
+  UINTN               High;
+  UNICODE_WIDTH_ENTRY *Item;
 
-  Item = NULL;
+  Item  = NULL;
   Low   = 0;
   High  = (sizeof (mUnicodeWidthTable)) / (sizeof (UNICODE_WIDTH_ENTRY)) - 1;
-  while ( Low <= High ) {
+  while (Low <= High) {
     Index = (Low + High) >> 1;
-    Item = &(mUnicodeWidthTable[Index]);
-    if ( Index == 0 ) {
-      if ( UnicodeChar <= Item->WChar ) {
+    Item  = &(mUnicodeWidthTable[Index]);
+    if (Index == 0) {
+      if (UnicodeChar <= Item->WChar) {
         break;
       }
+
       return EFI_UNSUPPORTED;
     }
 
-    if ( UnicodeChar > Item->WChar ) {
-      Low   = Index + 1;
-    } else if ( UnicodeChar <= mUnicodeWidthTable[Index - 1].WChar ) {
-      High  = Index - 1;
+    if (UnicodeChar > Item->WChar) {
+      Low = Index + 1;
+    } else if (UnicodeChar <= mUnicodeWidthTable[Index - 1].WChar) {
+      High = Index - 1;
     } else {
       //
       // Index - 1 < UnicodeChar <= Index. Found
@@ -254,9 +252,9 @@ GetGlyphWidth (
     }
   }
 
-  if ( Low <= High ) {
+  if (Low <= High) {
     *GlyphWidth = Item->Width;
-    if ( *GlyphWidth != 0 ) {
+    if (*GlyphWidth != 0) {
       return EFI_SUCCESS;
     }
   }
@@ -276,11 +274,9 @@ UnicodeStrDisplayLen (
   
   Arguments:
   
-    IN  CHAR16                            *UnicodeStr
-        The unicode character to be inquired
+    UnicodeStr - The unicode character to be inquired
 
-    OUT UINT32                            *DisplayLength
-        The returning width of the character
+    DisplayLength - The returning width of the character
 
   Returns:
   
@@ -292,27 +288,26 @@ UnicodeStrDisplayLen (
 
 --*/
 {
-  UINT32                                  Length;
-  UINT32                                  Width;
-  EFI_STATUS                              Status;
+  UINT32      Length;
+  UINT32      Width;
+  EFI_STATUS  Status;
 
   //
   // bugbug. Shall the control characters such as "BackSpace",
   // "LineFeed" etc be considered?
   //
   Length = 0;
-  while ( *UnicodeStr ) {
+  while (*UnicodeStr) {
     Status = GetGlyphWidth (*UnicodeStr, &Width);
-    if ( EFI_ERROR(Status) ) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
+
     Length += Width;
-    UnicodeStr ++;
+    UnicodeStr++;
   }
 
   *DisplayLength = Length;
-    
+
   return EFI_SUCCESS;
 }
-
-

@@ -23,7 +23,6 @@ Revision History
 
 #include "PciBus.h"
 
-
 //
 // PCI Bus Support Function Prototypes
 //
@@ -66,7 +65,7 @@ EFI_DRIVER_ENTRY_POINT (PciBusEntryPoint)
 // PCI Bus Driver Global Variables
 //
 
-EFI_DRIVER_BINDING_PROTOCOL gPciBusDriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL                   gPciBusDriverBinding = {
   PciBusDriverBindingSupported,
   PciBusDriverBindingStart,
   PciBusDriverBindingStop,
@@ -75,22 +74,21 @@ EFI_DRIVER_BINDING_PROTOCOL gPciBusDriverBinding = {
   NULL
 };
 
+EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL  *gEfiIncompatiblePciDeviceSupport = NULL;
+EFI_HANDLE                                    gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
+UINTN                                         gPciHostBridgeNumber;
+BOOLEAN                                       gFullEnumeration;
+UINT64                                        gAllOne   = 0xFFFFFFFFFFFFFFFF;
+UINT64                                        gAllZero  = 0;
 
-EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL *gEfiIncompatiblePciDeviceSupport = NULL;
-EFI_HANDLE           gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
-UINTN                gPciHostBridgeNumber;
-BOOLEAN              gFullEnumeration;
-UINT64               gAllOne  = 0xFFFFFFFFFFFFFFFF;
-UINT64               gAllZero = 0;
-
-EFI_PCI_PLATFORM_PROTOCOL  *gPciPlatformProtocol;
+EFI_PCI_PLATFORM_PROTOCOL                     *gPciPlatformProtocol;
 
 //
 // PCI Bus Driver Support Functions
 //
 EFI_STATUS
 PciBusEntryPoint (
-  IN EFI_HANDLE     ImageHandle,
+  IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
   )
 /*++
@@ -111,29 +109,31 @@ Returns:
   EFI_DEVICE_ERROR 
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
-  EFI_STATUS         Status;
+  EFI_STATUS  Status;
 
   //
   // Initialize the EFI Driver Library
   //
   Status = INSTALL_ALL_DRIVER_PROTOCOLS (
-             ImageHandle, 
-             SystemTable, 
-             &gPciBusDriverBinding,
-             ImageHandle,
-             &gPciBusComponentName,
-             NULL,
-             NULL
-             );
+            ImageHandle,
+            SystemTable,
+            &gPciBusDriverBinding,
+            ImageHandle,
+            &gPciBusComponentName,
+            NULL,
+            NULL
+            );
 
-  InitializePciDevicePool();
+  InitializePciDevicePool ();
 
-  gFullEnumeration = TRUE;
-  
-  gPciHostBridgeNumber = 0;  
-  
-  InstallHotPlugRequestProtocol(&Status); 
+  gFullEnumeration      = TRUE;
+
+  gPciHostBridgeNumber  = 0;
+
+  InstallHotPlugRequestProtocol (&Status);
   return Status;
 }
 
@@ -160,65 +160,72 @@ Returns:
   EFI_SUCCESS
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  EFI_STATUS                       Status;
-  EFI_DEVICE_PATH_PROTOCOL         *ParentDevicePath;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo;
-  EFI_DEV_PATH_PTR                 Node;
+  EFI_STATUS                      Status;
+  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
+  EFI_DEV_PATH_PTR                Node;
 
   if (RemainingDevicePath != NULL) {
     Node.DevPath = RemainingDevicePath;
     if (Node.DevPath->Type != HARDWARE_DEVICE_PATH ||
-        Node.DevPath->SubType != HW_PCI_DP ||
+        Node.DevPath->SubType != HW_PCI_DP         ||
         DevicePathNodeLength(Node.DevPath) != sizeof(PCI_DEVICE_PATH)) {
       return EFI_UNSUPPORTED;
     }
   }
-
   //
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  Controller      ,   
-                  &gEfiDevicePathProtocolGuid,  
-                  (VOID **)&ParentDevicePath,
-                  This->DriverBindingHandle,     
-                  Controller,   
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &ParentDevicePath,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
     return EFI_SUCCESS;
   }
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
   gBS->CloseProtocol (
-         Controller,           
-         &gEfiDevicePathProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller
-         );
+        Controller,
+        &gEfiDevicePathProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   Status = gBS->OpenProtocol (
-                  Controller,           
-                  &gEfiPciRootBridgeIoProtocolGuid, 
-                  (VOID **)&PciRootBridgeIo,
-                  This->DriverBindingHandle,   
-                  Controller,   
+                  Controller,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  (VOID **) &PciRootBridgeIo,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
     return EFI_SUCCESS;
   }
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
   gBS->CloseProtocol (
-         Controller,           
-         &gEfiPciRootBridgeIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller
-         );
+        Controller,
+        &gEfiPciRootBridgeIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   return EFI_SUCCESS;
 }
@@ -246,13 +253,17 @@ Returns:
  
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                          Status;
+  EFI_STATUS  Status;
 
   Status = gBS->LocateProtocol (
-                  &gEfiIncompatiblePciDeviceSupportProtocolGuid, 
+                  &gEfiIncompatiblePciDeviceSupportProtocolGuid,
                   NULL,
-                  (VOID **)&gEfiIncompatiblePciDeviceSupport
+                  (VOID **) &gEfiIncompatiblePciDeviceSupport
                   );
 
   //
@@ -261,15 +272,13 @@ Returns:
   //
   gPciPlatformProtocol = NULL;
   gBS->LocateProtocol (
-         &gEfiPciPlatformProtocolGuid, 
-         NULL,
-         (VOID **)&gPciPlatformProtocol
-         );
+        &gEfiPciPlatformProtocolGuid,
+        NULL,
+        (VOID **) &gPciPlatformProtocol
+        );
 
+  gFullEnumeration = (BOOLEAN) ((SearchHostBridgeHandle (Controller) ? FALSE : TRUE));
 
-  
-  gFullEnumeration =(BOOLEAN)((SearchHostBridgeHandle(Controller) ? FALSE : TRUE));  
-  
   //
   // Enumerate the entire host bridge
   // After enumeration, a database that records all the device information will be created
@@ -279,7 +288,7 @@ Returns:
 
   if (EFI_ERROR (Status)) {
     return Status;
-  }  
+  }
   
   //
   // Enable PCI device specified by remaining device path. BDS or other driver can call the
@@ -290,7 +299,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -318,32 +326,39 @@ Returns:
 
   
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                    Status;
-  UINTN                         Index;
-  BOOLEAN                       AllChildrenStopped;
+  EFI_STATUS  Status;
+  UINTN       Index;
+  BOOLEAN     AllChildrenStopped;
 
   if (NumberOfChildren == 0) {
     //
     // Close the bus driver
     //
     gBS->CloseProtocol (
-           Controller,       
-           &gEfiDevicePathProtocolGuid, 
-           This->DriverBindingHandle,   
-           Controller   
-           );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->CloseProtocol (
-           Controller, 
-           &gEfiPciRootBridgeIoProtocolGuid, 
-           This->DriverBindingHandle, 
-           Controller
-           );
+          Controller,
+          &gEfiPciRootBridgeIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
 
     DestroyRootBridgeByHandle (
-        Controller
-    );
-    
+      Controller
+      );
+
     return EFI_SUCCESS;
   }
 
@@ -356,10 +371,10 @@ Returns:
   for (Index = 0; Index < NumberOfChildren; Index++) {
 
     //
-    // De register all the pci device 
+    // De register all the pci device
     //
     Status = DeRegisterPciDevice (Controller, ChildHandleBuffer[Index]);
-    
+
     if (EFI_ERROR (Status)) {
       AllChildrenStopped = FALSE;
     }
@@ -371,4 +386,3 @@ Returns:
 
   return EFI_SUCCESS;
 }
-

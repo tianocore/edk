@@ -76,14 +76,14 @@ Routine Description:
 
 Arguments:
 
-  ControllerHandle - Handle of the controller to be connected.
+  ControllerHandle            - Handle of the controller to be connected.
 
-  ContextDriverImageHandles  -DriverImageHandle A pointer to an ordered list of driver image handles.
+  DriverImageHandle           - DriverImageHandle A pointer to an ordered list of driver image handles.
 
-  RemainingDevicePath  -RemainingDevicePath A pointer to the device path that specifies a child of the
-                        controller specified by ControllerHandle.
+  RemainingDevicePath         - RemainingDevicePath A pointer to the device path that specifies a child of the
+                                controller specified by ControllerHandle.
     
-  Recursive - Whether the function would be called recursively or not.
+  Recursive                   - Whether the function would be called recursively or not.
 
 Returns:
 
@@ -269,7 +269,11 @@ Arguments:
     
 Returns:
 
-  Status code.
+  EFI_NOT_FOUND           - Handles or drivers not found.
+  
+  EFI_OUT_OF_RESOURCES    - No enough buffer to allocate.
+  
+  EFI_SUCCESS             - Successfully connect a controller to a driver.
 
 --*/
 {
@@ -794,6 +798,26 @@ GetHandleFromDriverBinding (
   IN   EFI_DRIVER_BINDING_PROTOCOL           *DriverBindingNeed,
   OUT  EFI_HANDLE                            *Handle 
  )
+/*++
+
+Routine Description:
+
+  Locate the driver binding handle which a specified driver binding protocol installed on.
+
+Arguments:
+
+  DriverBindingNeed  - The specified driver binding protocol.
+  
+  Handle             - The driver binding handle which the protocol installed on.
+  
+
+Returns:
+
+  EFI_NOT_FOUND         - Could not find the handle.
+  
+  EFI_SUCCESS           - Successfully find the associated driver binding handle.
+  
+--*/ 
  {
   EFI_STATUS                          Status ;
   EFI_DRIVER_BINDING_PROTOCOL         *DriverBinding;

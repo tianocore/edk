@@ -23,7 +23,7 @@ Revision History
 
 extern EFI_GUID gTerminalDriverGuid;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConInReset (
   IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This,
@@ -38,11 +38,9 @@ TerminalConInReset (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
-        Indicates the calling context.
+    This - Indicates the calling context.
     
-    BOOLEAN             IN    ExtendedVerification
-        Skip by this driver.
+    ExtendedVerification - Skip by this driver.
         
   Returns:
   
@@ -52,25 +50,25 @@ TerminalConInReset (
     EFI_DEVICE_ERROR
       The dependent serial port reset fails.
                 
---*/    
+--*/
 {
   EFI_STATUS    Status;
   TERMINAL_DEV  *TerminalDevice;
 
-  TerminalDevice = TERMINAL_CON_IN_DEV_FROM_THIS(This);
+  TerminalDevice = TERMINAL_CON_IN_DEV_FROM_THIS (This);
 
   //
   // Report progress code here
   //
   Status = ReportStatusCodeWithDevicePath (
-                          EFI_PROGRESS_CODE,
-                          EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_PC_RESET,
-                          0,
-                          &gTerminalDriverGuid,
-                          TerminalDevice->DevicePath
-                          );
+            EFI_PROGRESS_CODE,
+            EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_PC_RESET,
+            0,
+            &gTerminalDriverGuid,
+            TerminalDevice->DevicePath
+            );
 
-  Status = TerminalDevice->SerialIo->Reset(TerminalDevice->SerialIo);
+  Status = TerminalDevice->SerialIo->Reset (TerminalDevice->SerialIo);
 
   //
   // clear all the internal buffer for keys
@@ -79,24 +77,23 @@ TerminalConInReset (
   InitializeUnicodeFiFo (TerminalDevice);
   InitializeEfiKeyFiFo (TerminalDevice);
 
-  if ( EFI_ERROR (Status) ) {
+  if (EFI_ERROR (Status)) {
     ReportStatusCodeWithDevicePath (
-                            EFI_ERROR_CODE | EFI_ERROR_MINOR,
-                            EFI_PERIPHERAL_LOCAL_CONSOLE | EFI_P_EC_CONTROLLER_ERROR,
-                            0,
-                            &gTerminalDriverGuid,
-                            TerminalDevice->DevicePath
-                            );
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      EFI_PERIPHERAL_LOCAL_CONSOLE | EFI_P_EC_CONTROLLER_ERROR,
+      0,
+      &gTerminalDriverGuid,
+      TerminalDevice->DevicePath
+      );
   }
-  
+
   return Status;
 }
 
-
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 TerminalConInReadKeyStroke (
-  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This, 
+  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This,
   OUT EFI_INPUT_KEY                *Key
   )
 /*++
@@ -106,11 +103,9 @@ TerminalConInReadKeyStroke (
       
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
-        Indicates the calling context.
+    This - Indicates the calling context.
     
-    EFI_INPUT_KEY         OUT   *Key
-        A pointer to a buffer that is filled in with the keystroke
+    Key  - A pointer to a buffer that is filled in with the keystroke
         information for the key that was sent from terminal.        
         
   Returns:
@@ -124,32 +119,31 @@ TerminalConInReadKeyStroke (
     EFI_DEVICE_ERROR
       The dependent serial device encounters error.
                 
---*/    
+--*/
 {
-  TERMINAL_DEV            *TerminalDevice;
-  EFI_STATUS              Status;  
-  
+  TERMINAL_DEV  *TerminalDevice;
+  EFI_STATUS    Status;
+
   //
   // Initialize *Key to nonsense value.
   //
-  Key->ScanCode = SCAN_NULL;
-  Key->UnicodeChar = 0;
+  Key->ScanCode     = SCAN_NULL;
+  Key->UnicodeChar  = 0;
   //
   //  get TERMINAL_DEV from "This" parameter.
   //
-  TerminalDevice = TERMINAL_CON_IN_DEV_FROM_THIS(This);     
+  TerminalDevice  = TERMINAL_CON_IN_DEV_FROM_THIS (This);
 
-  Status = TerminalConInCheckForKey (This);
-  if (EFI_ERROR(Status)) {
+  Status          = TerminalConInCheckForKey (This);
+  if (EFI_ERROR (Status)) {
     return EFI_NOT_READY;
   }
-  
-  EfiKeyFiFoRemoveOneKey (TerminalDevice,Key);
-  
+
+  EfiKeyFiFoRemoveOneKey (TerminalDevice, Key);
+
   return EFI_SUCCESS;
 
 }
-
 
 VOID
 TranslateRawDataToEfiKey (
@@ -159,36 +153,35 @@ TranslateRawDataToEfiKey (
     Step1: Turn raw data into Unicode (according to different encode).
     Step2: Translate Unicode into key information. 
     (according to different terminal standard).
---*/  
+--*/
 {
   switch (TerminalDevice->TerminalType) {
-  
-    case PcAnsiType:
-    case VT100Type:
-    case VT100PlusType:
-      AnsiRawDataToUnicode (TerminalDevice);
-      UnicodeToEfiKey (TerminalDevice);
-      break;
-      
-    case VTUTF8Type:
-      //
-      // Process all the raw data in the RawFIFO,
-      // put the processed key into UnicodeFIFO.
-      //
-      VTUTF8RawDataToUnicode (TerminalDevice);
-  
-      //
-      // Translate all the Unicode data in the UnicodeFIFO to Efi key,
-      // then put into EfiKeyFIFO.
-      //
-      UnicodeToEfiKey (TerminalDevice);
-      
-      break;
-  }   
-}   
 
+  case PcAnsiType:
+  case VT100Type:
+  case VT100PlusType:
+    AnsiRawDataToUnicode (TerminalDevice);
+    UnicodeToEfiKey (TerminalDevice);
+    break;
 
-VOID 
+  case VTUTF8Type:
+    //
+    // Process all the raw data in the RawFIFO,
+    // put the processed key into UnicodeFIFO.
+    //
+    VTUTF8RawDataToUnicode (TerminalDevice);
+
+    //
+    // Translate all the Unicode data in the UnicodeFIFO to Efi key,
+    // then put into EfiKeyFIFO.
+    //
+    UnicodeToEfiKey (TerminalDevice);
+
+    break;
+  }
+}
+
+VOID
 EFIAPI
 TerminalConInWaitForKey (
   IN  EFI_EVENT       Event,
@@ -202,35 +195,31 @@ TerminalConInWaitForKey (
   
   Arguments:
   
-    EFI_EVENT  IN    Event
-        Indicates the event that invoke this function.
+    Event - Indicates the event that invoke this function.
     
-    VOID     IN    *Context
-        Indicates the calling context.
+    Context - Indicates the calling context.
         
   Returns:
   
     N/A
                 
---*/      
+--*/
 {
-  
   //
   // Someone is waiting on the keystroke event, if there's
   // a key pending, signal the event
   //
-  // Context is the pointer to EFI_SIMPLE_TEXT_IN_PROTOCOL 
+  // Context is the pointer to EFI_SIMPLE_TEXT_IN_PROTOCOL
+  //
+  if (!EFI_ERROR (TerminalConInCheckForKey (Context))) {
 
-  if (!EFI_ERROR(TerminalConInCheckForKey(Context))) {
-    
-    gBS->SignalEvent(Event);
+    gBS->SignalEvent (Event);
   }
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 TerminalConInCheckForKey (
-  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This 
+  IN  EFI_SIMPLE_TEXT_IN_PROTOCOL  *This
   )
 /*++
   Routine Description:
@@ -239,8 +228,7 @@ TerminalConInCheckForKey (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_IN_PROTOCOL  IN    *This
-        Indicates the calling context.
+    This - Indicates the calling context.
         
   Returns:
   
@@ -249,115 +237,112 @@ TerminalConInCheckForKey (
     
     EFI_NOT_READY
       There is no key pending.
+      
+    EFI_DEVICE_ERROR
                 
---*/      
-{ 
+--*/
+{
   EFI_STATUS              Status;
   TERMINAL_DEV            *TerminalDevice;
   UINT32                  Control;
   UINT8                   Input;
   EFI_SERIAL_IO_MODE      *Mode;
   EFI_SERIAL_IO_PROTOCOL  *SerialIo;
-  UINTN                   SerialInTimeOut;    
+  UINTN                   SerialInTimeOut;
 
-  TerminalDevice = TERMINAL_CON_IN_DEV_FROM_THIS(This);
-  
-  SerialIo = TerminalDevice->SerialIo;  
+  TerminalDevice  = TERMINAL_CON_IN_DEV_FROM_THIS (This);
+
+  SerialIo        = TerminalDevice->SerialIo;
   if (SerialIo == NULL) {
     return EFI_DEVICE_ERROR;
   }
   //
   //  if current timeout value for serial device is not identical with
-  //  the value saved in TERMINAL_DEV structure, then recalculate the 
-  //  timeout value again and set serial attribute according to this value. 
+  //  the value saved in TERMINAL_DEV structure, then recalculate the
+  //  timeout value again and set serial attribute according to this value.
   //
   Mode = SerialIo->Mode;
   if (Mode->Timeout != TerminalDevice->SerialInTimeOut) {
 
     SerialInTimeOut = 0;
     if (Mode->BaudRate != 0) {
-      SerialInTimeOut = (1 + Mode->DataBits + Mode->StopBits) 
-                          * 2 * 1000000 / (UINTN) Mode->BaudRate;
+      SerialInTimeOut = (1 + Mode->DataBits + Mode->StopBits) * 2 * 1000000 / (UINTN) Mode->BaudRate;
     }
-      
-    Status = SerialIo->SetAttributes(
-                            SerialIo,Mode->BaudRate,
-                            Mode->ReceiveFifoDepth,
-                            (UINT32)SerialInTimeOut,
-                            Mode->Parity,
-                            (UINT8)Mode->DataBits,
-                            Mode->StopBits
-                            );
-    
-    if(EFI_ERROR(Status)) {
-      TerminalDevice->SerialInTimeOut = 0 ;
+
+    Status = SerialIo->SetAttributes (
+                        SerialIo,
+                        Mode->BaudRate,
+                        Mode->ReceiveFifoDepth,
+                        (UINT32) SerialInTimeOut,
+                        Mode->Parity,
+                        (UINT8) Mode->DataBits,
+                        Mode->StopBits
+                        );
+
+    if (EFI_ERROR (Status)) {
+      TerminalDevice->SerialInTimeOut = 0;
     } else {
       TerminalDevice->SerialInTimeOut = SerialInTimeOut;
-    }  
+    }
   }
-  
   //
   //  check whether serial buffer is empty
   //
-  Status = SerialIo->GetControl(SerialIo,&Control);
+  Status = SerialIo->GetControl (SerialIo, &Control);
 
-  if (Control & EFI_SERIAL_INPUT_BUFFER_EMPTY) { 
-  
+  if (Control & EFI_SERIAL_INPUT_BUFFER_EMPTY) {
     //
     // Translate all the raw data in RawFIFO into EFI Key,
     // according to different terminal type supported.
     //
-    TranslateRawDataToEfiKey (TerminalDevice) ;
+    TranslateRawDataToEfiKey (TerminalDevice);
 
     //
     //  if there is pre-fetched Efi Key in EfiKeyFIFO buffer,
     //  return directly.
     //
-    if (!IsEfiKeyFiFoEmpty(TerminalDevice)) {
+    if (!IsEfiKeyFiFoEmpty (TerminalDevice)) {
       return EFI_SUCCESS;
     } else {
       return EFI_NOT_READY;
     }
   }
-
   //
   // Fetch all the keys in the serial buffer,
   // and insert the byte stream into RawFIFO.
   //
   do {
-    
-    Status = GetOneKeyFromSerial (TerminalDevice->SerialIo,&Input);
-    
-    if (EFI_ERROR(Status)) {
-      if ( Status == EFI_DEVICE_ERROR ) {
+
+    Status = GetOneKeyFromSerial (TerminalDevice->SerialIo, &Input);
+
+    if (EFI_ERROR (Status)) {
+      if (Status == EFI_DEVICE_ERROR) {
         ReportStatusCodeWithDevicePath (
-                                EFI_ERROR_CODE | EFI_ERROR_MINOR,
-                                EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_INPUT_ERROR,
-                                0,
-                                &gTerminalDriverGuid,
-                                TerminalDevice->DevicePath
-                                );
+          EFI_ERROR_CODE | EFI_ERROR_MINOR,
+          EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_INPUT_ERROR,
+          0,
+          &gTerminalDriverGuid,
+          TerminalDevice->DevicePath
+          );
       }
       break;
     }
-    
-    RawFiFoInsertOneKey (TerminalDevice,Input);   
+
+    RawFiFoInsertOneKey (TerminalDevice, Input);
   } while (TRUE);
 
   //
   // Translate all the raw data in RawFIFO into EFI Key,
   // according to different terminal type supported.
   //
-  TranslateRawDataToEfiKey (TerminalDevice) ;
+  TranslateRawDataToEfiKey (TerminalDevice);
 
-  
   if (IsEfiKeyFiFoEmpty (TerminalDevice)) {
     return EFI_NOT_READY;
   }
-  
+
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 GetOneKeyFromSerial (
@@ -370,30 +355,30 @@ GetOneKeyFromSerial (
     if reading serial buffer encounter error, returns EFI_DEVICE_ERROR;
     if reading serial buffer successfully, put the fetched key to 
     the parameter "Input", and return EFI_SUCCESS.
---*/  
+--*/
 {
   EFI_STATUS  Status;
   UINTN       Size;
 
   Size    = 1;
   *Input  = 0;
-  
-  Status = SerialIo->Read (SerialIo,&Size,Input);
 
-  if (EFI_ERROR(Status)) {
-    
+  Status  = SerialIo->Read (SerialIo, &Size, Input);
+
+  if (EFI_ERROR (Status)) {
+
     if (Status == EFI_TIMEOUT) {
       return EFI_NOT_READY;
     }
-      
+
     return EFI_DEVICE_ERROR;
-    
+
   }
 
   if (*Input == 0) {
     return EFI_NOT_READY;
   }
- 
+
   return EFI_SUCCESS;
 }
 
@@ -406,24 +391,22 @@ RawFiFoInsertOneKey (
     Insert one byte raw data into the Raw Data FIFO.
     If FIFO is FULL before data insertion,
     return FALSE, and the key is lost.
---*/  
+--*/
 {
   UINT8 Tail;
 
   Tail = TerminalDevice->RawFiFo.Tail;
-  
+
   if (IsRawFiFoFull (TerminalDevice)) {
-   
     //
     // Raw FIFO is full
     //
     return FALSE;
   }
 
-  TerminalDevice->RawFiFo.Data[Tail] = Input;
+  TerminalDevice->RawFiFo.Data[Tail]  = Input;
 
-  TerminalDevice->RawFiFo.Tail = (UINT8)((Tail + 1) 
-                                  % (RAW_FIFO_MAX_NUMBER + 1));
+  TerminalDevice->RawFiFo.Tail        = (UINT8) ((Tail + 1) % (RAW_FIFO_MAX_NUMBER + 1));
 
   return TRUE;
 }
@@ -437,14 +420,13 @@ RawFiFoRemoveOneKey (
     Remove one byte raw data out of the Raw Data FIFO.
     If FIFO buffer is empty before remove operation,
     return FALSE.
---*/  
+--*/
 {
   UINT8 Head;
-  
+
   Head = TerminalDevice->RawFiFo.Head;
 
-  if (IsRawFiFoEmpty(TerminalDevice)) {
-  
+  if (IsRawFiFoEmpty (TerminalDevice)) {
     //
     //  FIFO is empty
     //
@@ -452,10 +434,9 @@ RawFiFoRemoveOneKey (
     return FALSE;
   }
 
-  *Output = TerminalDevice->RawFiFo.Data[Head] ;
+  *Output                       = TerminalDevice->RawFiFo.Data[Head];
 
-  TerminalDevice->RawFiFo.Head = (UINT8)((Head + 1) 
-                                  % (RAW_FIFO_MAX_NUMBER + 1));
+  TerminalDevice->RawFiFo.Head  = (UINT8) ((Head + 1) % (RAW_FIFO_MAX_NUMBER + 1));
 
   return TRUE;
 }
@@ -466,12 +447,11 @@ IsRawFiFoEmpty (
   )
 /*++
     Clarify whether FIFO buffer is empty.
---*/  
+--*/
 {
   if (TerminalDevice->RawFiFo.Head == TerminalDevice->RawFiFo.Tail) {
     return TRUE;
-  }
-  else {
+  } else {
     return FALSE;
   }
 }
@@ -482,16 +462,16 @@ IsRawFiFoFull (
   )
 /*++
     Clarify whether FIFO buffer is full.
---*/  
+--*/
 {
-  UINT8   Tail;
-  UINT8   Head;
+  UINT8 Tail;
+  UINT8 Head;
 
-  Tail = TerminalDevice->RawFiFo.Tail ;
-  Head = TerminalDevice->RawFiFo.Head ;
+  Tail  = TerminalDevice->RawFiFo.Tail;
+  Head  = TerminalDevice->RawFiFo.Head;
 
   if (((Tail + 1) % (RAW_FIFO_MAX_NUMBER + 1)) == Head) {
-    
+
     return TRUE;
   }
 
@@ -507,13 +487,13 @@ EfiKeyFiFoInsertOneKey (
     Insert one pre-fetched key into the FIFO buffer.
     If FIFO buffer is FULL before key insertion,
     return FALSE, and the key is lost.
---*/  
+--*/
 {
   UINT8 Tail;
 
   Tail = TerminalDevice->EfiKeyFiFo.Tail;
-    
-  if (IsEfiKeyFiFoFull(TerminalDevice)) {
+
+  if (IsEfiKeyFiFoFull (TerminalDevice)) {
     //
     // Efi Key FIFO is full
     //
@@ -522,7 +502,7 @@ EfiKeyFiFoInsertOneKey (
 
   TerminalDevice->EfiKeyFiFo.Data[Tail] = Key;
 
-  TerminalDevice->EfiKeyFiFo.Tail = (UINT8)((Tail + 1) % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->EfiKeyFiFo.Tail       = (UINT8) ((Tail + 1) % (FIFO_MAX_NUMBER + 1));
 
   return TRUE;
 }
@@ -536,25 +516,24 @@ EfiKeyFiFoRemoveOneKey (
     Remove one pre-fetched key out of the FIFO buffer.
     If FIFO buffer is empty before remove operation,
     return FALSE.
---*/  
+--*/
 {
   UINT8 Head;
-  
+
   Head = TerminalDevice->EfiKeyFiFo.Head;
 
-  if (IsEfiKeyFiFoEmpty(TerminalDevice)) {
-  
+  if (IsEfiKeyFiFoEmpty (TerminalDevice)) {
     //
     //  FIFO is empty
     //
-    Output->ScanCode = SCAN_NULL;
+    Output->ScanCode    = SCAN_NULL;
     Output->UnicodeChar = 0;
     return FALSE;
   }
 
-  *Output = TerminalDevice->EfiKeyFiFo.Data[Head] ;
+  *Output                         = TerminalDevice->EfiKeyFiFo.Data[Head];
 
-  TerminalDevice->EfiKeyFiFo.Head = (UINT8)((Head + 1) % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->EfiKeyFiFo.Head = (UINT8) ((Head + 1) % (FIFO_MAX_NUMBER + 1));
 
   return TRUE;
 }
@@ -565,12 +544,11 @@ IsEfiKeyFiFoEmpty (
   )
 /*++
     Clarify whether FIFO buffer is empty.
---*/  
+--*/
 {
   if (TerminalDevice->EfiKeyFiFo.Head == TerminalDevice->EfiKeyFiFo.Tail) {
     return TRUE;
-  }
-  else {
+  } else {
     return FALSE;
   }
 }
@@ -581,16 +559,16 @@ IsEfiKeyFiFoFull (
   )
 /*++
     Clarify whether FIFO buffer is full.
---*/  
+--*/
 {
-  UINT8   Tail;
-  UINT8   Head;
+  UINT8 Tail;
+  UINT8 Head;
 
-  Tail = TerminalDevice->EfiKeyFiFo.Tail ;
-  Head = TerminalDevice->EfiKeyFiFo.Head ;
+  Tail  = TerminalDevice->EfiKeyFiFo.Tail;
+  Head  = TerminalDevice->EfiKeyFiFo.Head;
 
   if (((Tail + 1) % (FIFO_MAX_NUMBER + 1)) == Head) {
-    
+
     return TRUE;
   }
 
@@ -606,24 +584,22 @@ UnicodeFiFoInsertOneKey (
     Insert one pre-fetched key into the FIFO buffer.
     If FIFO buffer is FULL before key insertion,
     return FALSE, and the key is lost.
---*/  
+--*/
 {
   UINT8 Tail;
 
   Tail = TerminalDevice->UnicodeFiFo.Tail;
-  
-  if (IsUnicodeFiFoFull(TerminalDevice)) {
-    
+
+  if (IsUnicodeFiFoFull (TerminalDevice)) {
     //
     // Unicode FIFO is full
     //
     return FALSE;
   }
 
-  TerminalDevice->UnicodeFiFo.Data[Tail] = Input;
+  TerminalDevice->UnicodeFiFo.Data[Tail]  = Input;
 
-  TerminalDevice->UnicodeFiFo.Tail = (UINT8)((Tail + 1) 
-                                     % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->UnicodeFiFo.Tail        = (UINT8) ((Tail + 1) % (FIFO_MAX_NUMBER + 1));
 
   return TRUE;
 }
@@ -637,14 +613,13 @@ UnicodeFiFoRemoveOneKey (
     Remove one pre-fetched key out of the FIFO buffer.
     If FIFO buffer is empty before remove operation,
     return FALSE.
---*/  
+--*/
 {
   UINT8 Head;
-  
+
   Head = TerminalDevice->UnicodeFiFo.Head;
 
-  if (IsUnicodeFiFoEmpty(TerminalDevice)) {
-  
+  if (IsUnicodeFiFoEmpty (TerminalDevice)) {
     //
     //  FIFO is empty
     //
@@ -652,10 +627,9 @@ UnicodeFiFoRemoveOneKey (
     return FALSE;
   }
 
-  *Output = TerminalDevice->UnicodeFiFo.Data[Head] ;
+  *Output = TerminalDevice->UnicodeFiFo.Data[Head];
 
-  TerminalDevice->UnicodeFiFo.Head = (UINT8)((Head + 1) 
-                                      % (FIFO_MAX_NUMBER + 1)) ;
+  TerminalDevice->UnicodeFiFo.Head = (UINT8) ((Head + 1) % (FIFO_MAX_NUMBER + 1));
 
   return TRUE;
 }
@@ -666,12 +640,11 @@ IsUnicodeFiFoEmpty (
   )
 /*++
     Clarify whether FIFO buffer is empty.
---*/  
+--*/
 {
   if (TerminalDevice->UnicodeFiFo.Head == TerminalDevice->UnicodeFiFo.Tail) {
     return TRUE;
-  }
-  else {
+  } else {
     return FALSE;
   }
 }
@@ -682,16 +655,16 @@ IsUnicodeFiFoFull (
   )
 /*++
     Clarify whether FIFO buffer is full.
---*/  
+--*/
 {
-  UINT8   Tail;
-  UINT8   Head;
+  UINT8 Tail;
+  UINT8 Head;
 
-  Tail = TerminalDevice->UnicodeFiFo.Tail ;
-  Head = TerminalDevice->UnicodeFiFo.Head ;
+  Tail  = TerminalDevice->UnicodeFiFo.Tail;
+  Head  = TerminalDevice->UnicodeFiFo.Head;
 
   if (((Tail + 1) % (FIFO_MAX_NUMBER + 1)) == Head) {
-    
+
     return TRUE;
   }
 
@@ -702,69 +675,65 @@ UINT8
 UnicodeFiFoGetKeyCount (
   TERMINAL_DEV    *TerminalDevice
   )
-/*++
---*/
 {
-  UINT8   Tail;
-  UINT8   Head;
-  
-  Tail = TerminalDevice->UnicodeFiFo.Tail ;
-  Head = TerminalDevice->UnicodeFiFo.Head ;
-  
+  UINT8 Tail;
+  UINT8 Head;
+
+  Tail  = TerminalDevice->UnicodeFiFo.Tail;
+  Head  = TerminalDevice->UnicodeFiFo.Head;
+
   if (Tail >= Head) {
-    return (UINT8)(Tail - Head);
+    return (UINT8) (Tail - Head);
   } else {
-    return (UINT8)(Tail + FIFO_MAX_NUMBER + 1 - Head);
+    return (UINT8) (Tail + FIFO_MAX_NUMBER + 1 - Head);
   }
-}   
+}
 
 VOID
 UnicodeToEfiKeyFlushState (
   IN  TERMINAL_DEV    *TerminalDevice
   )
-
 {
-  EFI_INPUT_KEY  Key;
+  EFI_INPUT_KEY Key;
 
   if (TerminalDevice->InputState & INPUT_STATE_ESC) {
-    Key.ScanCode = SCAN_ESC;
-    Key.UnicodeChar = 0 ;
-    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+    Key.ScanCode    = SCAN_ESC;
+    Key.UnicodeChar = 0;
+    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
   }
 
   if (TerminalDevice->InputState & INPUT_STATE_CSI) {
-    Key.ScanCode = SCAN_NULL;
+    Key.ScanCode    = SCAN_NULL;
     Key.UnicodeChar = CSI;
-    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
   }
 
   if (TerminalDevice->InputState & INPUT_STATE_LEFTOPENBRACKET) {
-    Key.ScanCode = SCAN_NULL;
+    Key.ScanCode    = SCAN_NULL;
     Key.UnicodeChar = LEFTOPENBRACKET;
-    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
   }
 
   if (TerminalDevice->InputState & INPUT_STATE_O) {
-    Key.ScanCode = SCAN_NULL;
+    Key.ScanCode    = SCAN_NULL;
     Key.UnicodeChar = 'O';
-    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
   }
 
   if (TerminalDevice->InputState & INPUT_STATE_2) {
-    Key.ScanCode = SCAN_NULL;
+    Key.ScanCode    = SCAN_NULL;
     Key.UnicodeChar = '2';
-    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
   }
 
-  gBS->SetTimer(
-         TerminalDevice->TwoSecondTimeOut,
-         TimerCancel,
-         0
-         );
+  gBS->SetTimer (
+        TerminalDevice->TwoSecondTimeOut,
+        TimerCancel,
+        0
+        );
 
   TerminalDevice->InputState = INPUT_STATE_DEFAULT;
 }
-
 
 VOID
 UnicodeToEfiKey (
@@ -836,12 +805,12 @@ ESC R ESC r ESC R = Reset System
 
 --*/
 {
-  EFI_STATUS          Status;
-  EFI_STATUS          TimerStatus;
-  UINT16              UnicodeChar;
-  EFI_INPUT_KEY       Key;
-  BOOLEAN             SetDefaultResetState;
-  
+  EFI_STATUS    Status;
+  EFI_STATUS    TimerStatus;
+  UINT16        UnicodeChar;
+  EFI_INPUT_KEY Key;
+  BOOLEAN       SetDefaultResetState;
+
   TimerStatus = gBS->CheckEvent (TerminalDevice->TwoSecondTimeOut);
 
   if (!EFI_ERROR (TimerStatus)) {
@@ -849,8 +818,8 @@ ESC R ESC r ESC R = Reset System
     TerminalDevice->ResetState = RESET_STATE_DEFAULT;
   }
 
-  while (!IsUnicodeFiFoEmpty(TerminalDevice)) {
-    
+  while (!IsUnicodeFiFoEmpty (TerminalDevice)) {
+
     if (TerminalDevice->InputState != INPUT_STATE_DEFAULT) {
       //
       // Check to see if the 2 second timer has expired
@@ -861,11 +830,10 @@ ESC R ESC r ESC R = Reset System
         TerminalDevice->ResetState = RESET_STATE_DEFAULT;
       }
     }
-
     //
     // Fetch one Unicode character from the Unicode FIFO
     //
-    UnicodeFiFoRemoveOneKey (TerminalDevice,&UnicodeChar);
+    UnicodeFiFoRemoveOneKey (TerminalDevice, &UnicodeChar);
 
     SetDefaultResetState = TRUE;
 
@@ -889,37 +857,93 @@ ESC R ESC r ESC R = Reset System
       }
 
       switch (UnicodeChar) {
-      case '1': Key.ScanCode = SCAN_F1;         break;
-      case '2': Key.ScanCode = SCAN_F2;         break;
-      case '3': Key.ScanCode = SCAN_F3;         break;
-      case '4': Key.ScanCode = SCAN_F4;         break;
-      case '5': Key.ScanCode = SCAN_F5;         break;
-      case '6': Key.ScanCode = SCAN_F6;         break;
-      case '7': Key.ScanCode = SCAN_F7;         break;
-      case '8': Key.ScanCode = SCAN_F8;         break;
-      case '9': Key.ScanCode = SCAN_F9;         break;
-      case '0': Key.ScanCode = SCAN_F10;        break;
-      case 'h': Key.ScanCode = SCAN_HOME;       break;
-      case 'k': Key.ScanCode = SCAN_END;        break;
-      case '+': Key.ScanCode = SCAN_INSERT;     break;
-      case '-': Key.ScanCode = SCAN_DELETE;     break;
-      case '/': Key.ScanCode = SCAN_PAGE_DOWN;  break;
-      case '?': Key.ScanCode = SCAN_PAGE_UP;    break;
-      case 'R': if (TerminalDevice->ResetState == RESET_STATE_DEFAULT) {
-                  TerminalDevice->ResetState = RESET_STATE_ESC_R;
-                  SetDefaultResetState = FALSE;
-                } else if (TerminalDevice->ResetState == RESET_STATE_ESC_R_ESC_r) {
-                  gRT->ResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
-                }
-                Key.ScanCode = SCAN_NULL;
-                break;
-      case 'r': if (TerminalDevice->ResetState == RESET_STATE_ESC_R) {
-                  TerminalDevice->ResetState = RESET_STATE_ESC_R_ESC_r;
-                  SetDefaultResetState = FALSE;
-                }
-                Key.ScanCode = SCAN_NULL;
-                break;
-      default : Key.ScanCode = SCAN_NULL;       break;
+      case '1':
+        Key.ScanCode = SCAN_F1;
+        break;
+
+      case '2':
+        Key.ScanCode = SCAN_F2;
+        break;
+
+      case '3':
+        Key.ScanCode = SCAN_F3;
+        break;
+
+      case '4':
+        Key.ScanCode = SCAN_F4;
+        break;
+
+      case '5':
+        Key.ScanCode = SCAN_F5;
+        break;
+
+      case '6':
+        Key.ScanCode = SCAN_F6;
+        break;
+
+      case '7':
+        Key.ScanCode = SCAN_F7;
+        break;
+
+      case '8':
+        Key.ScanCode = SCAN_F8;
+        break;
+
+      case '9':
+        Key.ScanCode = SCAN_F9;
+        break;
+
+      case '0':
+        Key.ScanCode = SCAN_F10;
+        break;
+
+      case 'h':
+        Key.ScanCode = SCAN_HOME;
+        break;
+
+      case 'k':
+        Key.ScanCode = SCAN_END;
+        break;
+
+      case '+':
+        Key.ScanCode = SCAN_INSERT;
+        break;
+
+      case '-':
+        Key.ScanCode = SCAN_DELETE;
+        break;
+
+      case '/':
+        Key.ScanCode = SCAN_PAGE_DOWN;
+        break;
+
+      case '?':
+        Key.ScanCode = SCAN_PAGE_UP;
+        break;
+
+      case 'R':
+        if (TerminalDevice->ResetState == RESET_STATE_DEFAULT) {
+          TerminalDevice->ResetState  = RESET_STATE_ESC_R;
+          SetDefaultResetState        = FALSE;
+        } else if (TerminalDevice->ResetState == RESET_STATE_ESC_R_ESC_r) {
+          gRT->ResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
+        }
+
+        Key.ScanCode = SCAN_NULL;
+        break;
+
+      case 'r':
+        if (TerminalDevice->ResetState == RESET_STATE_ESC_R) {
+          TerminalDevice->ResetState  = RESET_STATE_ESC_R_ESC_r;
+          SetDefaultResetState        = FALSE;
+        }
+
+        Key.ScanCode = SCAN_NULL;
+        break;
+
+      default:
+        Key.ScanCode = SCAN_NULL;
+        break;
       }
 
       if (SetDefaultResetState) {
@@ -928,7 +952,7 @@ ESC R ESC r ESC R = Reset System
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -943,22 +967,54 @@ ESC R ESC r ESC R = Reset System
       TerminalDevice->ResetState = RESET_STATE_DEFAULT;
 
       switch (UnicodeChar) {
-      case 'P': Key.ScanCode = SCAN_F1;         break;
-      case 'Q': Key.ScanCode = SCAN_F2;         break;
-      case 'R': Key.ScanCode = SCAN_F3;         break;
-      case 'S': Key.ScanCode = SCAN_F4;         break;
-      case 'T': Key.ScanCode = SCAN_F5;         break;
-      case 'U': Key.ScanCode = SCAN_F6;         break;
-      case 'V': Key.ScanCode = SCAN_F7;         break;
-      case 'W': Key.ScanCode = SCAN_F8;         break;
-      case 'X': Key.ScanCode = SCAN_F9;         break;
-      case 'Y': Key.ScanCode = SCAN_F10;        break;
-      default : Key.ScanCode = SCAN_NULL;       break;
+      case 'P':
+        Key.ScanCode = SCAN_F1;
+        break;
+
+      case 'Q':
+        Key.ScanCode = SCAN_F2;
+        break;
+
+      case 'R':
+        Key.ScanCode = SCAN_F3;
+        break;
+
+      case 'S':
+        Key.ScanCode = SCAN_F4;
+        break;
+
+      case 'T':
+        Key.ScanCode = SCAN_F5;
+        break;
+
+      case 'U':
+        Key.ScanCode = SCAN_F6;
+        break;
+
+      case 'V':
+        Key.ScanCode = SCAN_F7;
+        break;
+
+      case 'W':
+        Key.ScanCode = SCAN_F8;
+        break;
+
+      case 'X':
+        Key.ScanCode = SCAN_F9;
+        break;
+
+      case 'Y':
+        Key.ScanCode = SCAN_F10;
+        break;
+
+      default:
+        Key.ScanCode = SCAN_NULL;
+        break;
       }
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -984,26 +1040,58 @@ ESC R ESC r ESC R = Reset System
       }
 
       switch (UnicodeChar) {
-      case 'A': Key.ScanCode = SCAN_UP;         break;
-      case 'B': Key.ScanCode = SCAN_DOWN;       break;
-      case 'C': Key.ScanCode = SCAN_RIGHT;      break;
-      case 'D': Key.ScanCode = SCAN_LEFT;       break;
-      case 'H': Key.ScanCode = SCAN_HOME;       break;
-      case 'K': Key.ScanCode = SCAN_END;        break;
-      case 'L':   
-      case '@': Key.ScanCode = SCAN_INSERT;     break;
-      case 'P': Key.ScanCode = SCAN_DELETE;     break;
-      case 'M':   
-      case 'V':   
-      case '?': Key.ScanCode = SCAN_PAGE_UP;    break;
-      case 'U':   
-      case '/': Key.ScanCode = SCAN_PAGE_DOWN;  break;
-      default : Key.ScanCode = SCAN_NULL;       break;
+      case 'A':
+        Key.ScanCode = SCAN_UP;
+        break;
+
+      case 'B':
+        Key.ScanCode = SCAN_DOWN;
+        break;
+
+      case 'C':
+        Key.ScanCode = SCAN_RIGHT;
+        break;
+
+      case 'D':
+        Key.ScanCode = SCAN_LEFT;
+        break;
+
+      case 'H':
+        Key.ScanCode = SCAN_HOME;
+        break;
+
+      case 'K':
+        Key.ScanCode = SCAN_END;
+        break;
+
+      case 'L':
+      case '@':
+        Key.ScanCode = SCAN_INSERT;
+        break;
+
+      case 'P':
+        Key.ScanCode = SCAN_DELETE;
+        break;
+
+      case 'M':
+      case 'V':
+      case '?':
+        Key.ScanCode = SCAN_PAGE_UP;
+        break;
+
+      case 'U':
+      case '/':
+        Key.ScanCode = SCAN_PAGE_DOWN;
+        break;
+
+      default:
+        Key.ScanCode = SCAN_NULL;
+        break;
       }
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -1021,7 +1109,7 @@ ESC R ESC r ESC R = Reset System
       if (UnicodeChar == 'J') {
         Key.ScanCode    = SCAN_PAGE_DOWN;
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -1037,30 +1125,62 @@ ESC R ESC r ESC R = Reset System
       TerminalDevice->ResetState = RESET_STATE_DEFAULT;
 
       switch (UnicodeChar) {
-      case 'P': Key.ScanCode = SCAN_F1;   break;
-      case 'Q': Key.ScanCode = SCAN_F2;   break;
-      case 'R': 
-      case 'w': Key.ScanCode = SCAN_F3;   break;
+      case 'P':
+        Key.ScanCode = SCAN_F1;
+        break;
+
+      case 'Q':
+        Key.ScanCode = SCAN_F2;
+        break;
+
+      case 'R':
+      case 'w':
+        Key.ScanCode = SCAN_F3;
+        break;
+
       case 'S':
-      case 'x': Key.ScanCode = SCAN_F4;   break;
+      case 'x':
+        Key.ScanCode = SCAN_F4;
+        break;
+
       case 'T':
-      case 't': Key.ScanCode = SCAN_F5;   break;
+      case 't':
+        Key.ScanCode = SCAN_F5;
+        break;
+
       case 'U':
-      case 'u': Key.ScanCode = SCAN_F6;   break;
+      case 'u':
+        Key.ScanCode = SCAN_F6;
+        break;
+
       case 'V':
-      case 'q': Key.ScanCode = SCAN_F7;   break;
+      case 'q':
+        Key.ScanCode = SCAN_F7;
+        break;
+
       case 'W':
-      case 'r': Key.ScanCode = SCAN_F8;   break;
+      case 'r':
+        Key.ScanCode = SCAN_F8;
+        break;
+
       case 'X':
-      case 'p': Key.ScanCode = SCAN_F9;   break;
+      case 'p':
+        Key.ScanCode = SCAN_F9;
+        break;
+
       case 'Y':
-      case 'M': Key.ScanCode = SCAN_F10;  break;
-      default : Key.ScanCode = SCAN_NULL; break;
+      case 'M':
+        Key.ScanCode = SCAN_F10;
+        break;
+
+      default:
+        Key.ScanCode = SCAN_NULL;
+        break;
       }
 
       if (Key.ScanCode != SCAN_NULL) {
         Key.UnicodeChar = 0;
-        EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+        EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
         TerminalDevice->InputState = INPUT_STATE_DEFAULT;
         UnicodeToEfiKeyFlushState (TerminalDevice);
         continue;
@@ -1084,14 +1204,16 @@ ESC R ESC r ESC R = Reset System
     if (UnicodeChar == ESC) {
       TerminalDevice->InputState = INPUT_STATE_ESC;
     }
+
     if (UnicodeChar == CSI) {
       TerminalDevice->InputState = INPUT_STATE_CSI;
     }
+
     if (TerminalDevice->InputState != INPUT_STATE_DEFAULT) {
-      Status = gBS->SetTimer(
+      Status = gBS->SetTimer (
                       TerminalDevice->TwoSecondTimeOut,
                       TimerRelative,
-                      (UINT64)20000000
+                      (UINT64) 20000000
                       );
       continue;
     }
@@ -1108,7 +1230,6 @@ ESC R ESC r ESC R = Reset System
       Key.UnicodeChar = UnicodeChar;
     }
 
-    EfiKeyFiFoInsertOneKey (TerminalDevice,Key);
+    EfiKeyFiFoInsertOneKey (TerminalDevice, Key);
   }
-}   
-
+}

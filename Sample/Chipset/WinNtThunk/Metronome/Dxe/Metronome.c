@@ -24,7 +24,7 @@ Abstract:
 //
 // Global Variables
 //
-EFI_METRONOME_ARCH_PROTOCOL  mMetronome = {
+EFI_METRONOME_ARCH_PROTOCOL mMetronome = {
   WinNtMetronomeDriverWaitForTick,
   TICK_PERIOD
 };
@@ -35,7 +35,7 @@ EFI_METRONOME_ARCH_PROTOCOL  mMetronome = {
 
 EFI_STATUS
 EFIAPI
-WinNtMetronomeDriverWaitForTick(
+WinNtMetronomeDriverWaitForTick (
   IN EFI_METRONOME_ARCH_PROTOCOL  *This,
   IN UINT32                       TickNumber
   )
@@ -71,14 +71,14 @@ Returns:
 
 --*/
 {
-  UINT64     SleepTime;
+  UINT64  SleepTime;
 
   //
-  //Calculate the time to sleep.  Win API smallest unit to sleep is 1 millisec
-  //Tick Period is in 100ns units, divide by 10000 to convert to ms
+  // Calculate the time to sleep.  Win API smallest unit to sleep is 1 millisec
+  // Tick Period is in 100ns units, divide by 10000 to convert to ms
   //
-  SleepTime = DivU64x32 (MultU64x32 ((UINT64)TickNumber, TICK_PERIOD),  10000, NULL);
-  gWinNt->Sleep ((UINT32)SleepTime);
+  SleepTime = DivU64x32 (MultU64x32 ((UINT64) TickNumber, TICK_PERIOD), 10000, NULL);
+  gWinNt->Sleep ((UINT32) SleepTime);
 
   return EFI_SUCCESS;
 }
@@ -129,7 +129,7 @@ Returns:
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
                   &Handle,
-                  &gEfiMetronomeArchProtocolGuid, 
+                  &gEfiMetronomeArchProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &mMetronome
                   );

@@ -22,14 +22,9 @@ Abstract:
 #ifndef _TIANO_ERROR_H_
 #define _TIANO_ERROR_H_
 
-
 #include "EfiError.h"
 #include "TianoSpecError.h"
 
-
-
-#define EFI_WARN_RETURN_FROM_LONG_JUMP  EFIWARN(5)
-
-
+#define EFI_WARN_RETURN_FROM_LONG_JUMP  EFIWARN (5)
 
 #endif

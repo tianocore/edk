@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  WinNt Autoscan PPI as defined in EFI 2.0
+Nt Autoscan PPI
 
 --*/
 
@@ -25,28 +25,43 @@ Abstract:
 #include "Tiano.h"
 #include "PeiHob.h"
 
-#define PEI_AUTOSCAN_PRIVATE_GUID \
-  { 0xdce384d, 0x7c, 0x4ba5, 0x94, 0xbd, 0xf, 0x6e, 0xb6, 0x4d, 0x2a, 0xa9 }
+#define PEI_NT_AUTOSCAN_PPI_GUID \
+  { \
+    0xdce384d, 0x7c, 0x4ba5, 0x94, 0xbd, 0xf, 0x6e, 0xb6, 0x4d, 0x2a, 0xa9 \
+  }
 
 typedef
 EFI_STATUS
 (EFIAPI *PEI_NT_AUTOSCAN) (
-  IN OUT UINT64                *MemorySize,
-  IN OUT EFI_PHYSICAL_ADDRESS  *MemoryBase
+  IN  UINTN                 Index,
+  OUT EFI_PHYSICAL_ADDRESS  * MemoryBase,
+  OUT UINT64                *MemorySize
   );
 
-EFI_FORWARD_DECLARATION (PEI_NT_AUTOSCAN_CALLBACK_PROTOCOL);
+/*++
 
-typedef struct _PEI_NT_AUTOSCAN_CALLBACK_PROTOCOL {
-  //
-  //  OK, so now load all of the stuff that was formerly GLOBAL in the
-  //  SecMain utility.  This stuff was only consumed by this protocol.
-  //  This protocol thing needs to be declared, but members can be privately
-  //  scoped.  
-  //
-  PEI_NT_AUTOSCAN  NtAutoScan;
-} PEI_NT_AUTOSCAN_CALLBACK_PROTOCOL;
+Routine Description:
+  This service is called from Index == 0 until it returns EFI_UNSUPPORTED.
+  It allows discontiguous memory regions to be supported by the emulator.
+  It uses gSystemMemory[] and gSystemMemoryCount that were created by
+  parsing the Windows environment variable EFI_MEMORY_SIZE.
+  The size comes from the varaible and the address comes from the call to
+  WinNtOpenFile. 
 
-extern EFI_GUID gPeiAutoScanGuid;
+Arguments:
+  Index      - Which memory region to use
+  MemoryBase - Return Base address of memory region
+  MemorySize - Return size in bytes of the memory region
+
+Returns:
+  EFI_SUCCESS - If memory region was mapped
+  EFI_UNSUPPORTED - If Index is not supported
+
+--*/
+typedef struct {
+  PEI_NT_AUTOSCAN NtAutoScan;
+} PEI_NT_AUTOSCAN_PPI;
+
+extern EFI_GUID gPeiNtAutoScanPpiGuid;
 
 #endif

@@ -22,42 +22,66 @@ Abstract:
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gConSplitterConInComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gConSplitterConInComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterConInComponentNameGetControllerName,
   "eng"
 };
 
-EFI_COMPONENT_NAME_PROTOCOL gConSplitterConOutComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gConSplitterConOutComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterConOutComponentNameGetControllerName,
   "eng"
 };
 
-EFI_COMPONENT_NAME_PROTOCOL gConSplitterStdErrComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gConSplitterStdErrComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterStdErrComponentNameGetControllerName,
   "eng"
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterDriverNameTable[] = {
-  { "eng", L"Console Splitter Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Console Splitter Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterConInControllerNameTable[] = {
-  { "eng", L"Primary Console Input Device" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Primary Console Input Device"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterConOutControllerNameTable[] = {
-  { "eng", L"Primary Console Output Device" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Primary Console Output Device"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterStdErrControllerNameTable[] = {
-  { "eng", L"Primary Standard Error Device" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Primary Standard Error Device"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -95,21 +119,21 @@ ConSplitterComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gConSplitterConInComponentName.SupportedLanguages,
-           mConSplitterDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gConSplitterConInComponentName.SupportedLanguages,
+          mConSplitterDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 ConSplitterConInComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -157,19 +181,19 @@ ConSplitterConInComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                       Status;
-  EFI_SIMPLE_TEXT_IN_PROTOCOL      *TextIn; 
+  EFI_STATUS                  Status;
+  EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
   //
   // here ChildHandle is not an Optional parameter.
   //
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-  
+
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiSimpleTextInProtocolGuid,  
-                  (VOID **)&TextIn,
+                  ControllerHandle,
+                  &gEfiSimpleTextInProtocolGuid,
+                  (VOID **) &TextIn,
                   NULL,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -177,23 +201,23 @@ ConSplitterConInComponentNameGetControllerName (
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
-  
+
   return EfiLibLookupUnicodeString (
-           Language,
-           gConSplitterConInComponentName.SupportedLanguages,
-           mConSplitterConInControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gConSplitterConInComponentName.SupportedLanguages,
+          mConSplitterConInControllerNameTable,
+          ControllerName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 ConSplitterConOutComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -241,19 +265,19 @@ ConSplitterConOutComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                       Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *TextOut;
+  EFI_STATUS                    Status;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
   //
   // here ChildHandle is not an Optional parameter.
   //
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-  
+
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiSimpleTextOutProtocolGuid,  
-                  (VOID **)&TextOut,
+                  ControllerHandle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  (VOID **) &TextOut,
                   NULL,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -261,23 +285,23 @@ ConSplitterConOutComponentNameGetControllerName (
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
-  
+
   return EfiLibLookupUnicodeString (
-           Language,
-           gConSplitterConOutComponentName.SupportedLanguages,
-           mConSplitterConOutControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gConSplitterConOutComponentName.SupportedLanguages,
+          mConSplitterConOutControllerNameTable,
+          ControllerName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 ConSplitterStdErrComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -325,19 +349,19 @@ ConSplitterStdErrComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                       Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *ErrOut;
+  EFI_STATUS                    Status;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ErrOut;
   //
   // here ChildHandle is not an Optional parameter.
   //
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-  
+
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiSimpleTextOutProtocolGuid,  
-                  (VOID **)&ErrOut,
+                  ControllerHandle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  (VOID **) &ErrOut,
                   NULL,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -345,12 +369,11 @@ ConSplitterStdErrComponentNameGetControllerName (
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
-  
-  return EfiLibLookupUnicodeString (
-           Language,
-           gConSplitterStdErrComponentName.SupportedLanguages,
-           mConSplitterStdErrControllerNameTable, 
-           ControllerName
-           );
-}
 
+  return EfiLibLookupUnicodeString (
+          Language,
+          gConSplitterStdErrComponentName.SupportedLanguages,
+          mConSplitterStdErrControllerNameTable,
+          ControllerName
+          );
+}

@@ -43,21 +43,20 @@ Abstract:
 //
 // Globals only work at BootService Time. NOT at Runtime!
 //
-
-EFI_REPORT_STATUS_CODE    mPeiReportStatusCode; 
+EFI_REPORT_STATUS_CODE  mPeiReportStatusCode;
 
 //
 // Function implementations
 //
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 RtPlatformReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -75,14 +74,14 @@ Returns:
 
 --*/
 {
-  RtMemoryReportStatusCode  (CodeType, Value, Instance, CallerId, Data);
+  RtMemoryReportStatusCode (CodeType, Value, Instance, CallerId, Data);
   if (EfiAtRuntime ()) {
     //
     // For now all we do is post code at runtime
     //
     return EFI_SUCCESS;
   }
-  
+
   BsDataHubReportStatusCode (CodeType, Value, Instance, CallerId, Data);
 
   //
@@ -93,7 +92,7 @@ Returns:
     return mPeiReportStatusCode (CodeType, Value, Instance, CallerId, Data);
   }
 
-  return EFI_SUCCESS; 
+  return EFI_SUCCESS;
 }
 
 EFI_BOOTSERVICE
@@ -123,7 +122,7 @@ Returns:
   VOID        *HobList;
   VOID        *Pointer;
 
-  RtMemoryInitializeStatusCode  (ImageHandle, SystemTable);
+  RtMemoryInitializeStatusCode (ImageHandle, SystemTable);
   BsDataHubInitializeStatusCode (ImageHandle, SystemTable);
 
   //
@@ -132,16 +131,16 @@ Returns:
   PlaybackStatusCodes (BsDataHubReportStatusCode);
 
   //
-  // If PEI has a ReportStatusCode callback find it and use it before StdErr 
+  // If PEI has a ReportStatusCode callback find it and use it before StdErr
   // is connected.
   //
-  mPeiReportStatusCode = NULL;
+  mPeiReportStatusCode  = NULL;
 
-  Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
+  Status                = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
   if (!EFI_ERROR (Status)) {
     Status = GetNextGuidHob (&HobList, &gEfiStatusCodeArchProtocolGuid, &Pointer, NULL);
     if (!EFI_ERROR (Status)) {
-      mPeiReportStatusCode = (EFI_REPORT_STATUS_CODE)(*(UINTN *)Pointer);
+      mPeiReportStatusCode = (EFI_REPORT_STATUS_CODE) (*(UINTN *) Pointer);
     }
   }
 }

@@ -42,143 +42,156 @@ Revision History
 //
 // Glyph database
 //
-#define GLYPH_WIDTH  8
-#define GLYPH_HEIGHT 19
+#define GLYPH_WIDTH   8
+#define GLYPH_HEIGHT  19
 
 typedef union {
-  EFI_NARROW_GLYPH    NarrowGlyph;
-  EFI_WIDE_GLYPH      WideGlyph;
+  EFI_NARROW_GLYPH  NarrowGlyph;
+  EFI_WIDE_GLYPH    WideGlyph;
 } GLYPH_UNION;
 
 extern EFI_NARROW_GLYPH UsStdNarrowGlyphData[];
-extern EFI_WIDE_GLYPH UsStdWideGlyphData[];
+extern EFI_WIDE_GLYPH   UsStdWideGlyphData[];
 
 //
 // Device Structure
 //
-#define GRAPHICS_CONSOLE_DEV_SIGNATURE   EFI_SIGNATURE_32('g','s','t','o')
+#define GRAPHICS_CONSOLE_DEV_SIGNATURE  EFI_SIGNATURE_32 ('g', 's', 't', 'o')
 
 typedef struct {
-  UINTN           Columns;
-  UINTN           Rows;
-  INTN            DeltaX;
-  INTN            DeltaY;
-  UINT32          UgaWidth;
-  UINT32          UgaHeight;
+  UINTN   Columns;
+  UINTN   Rows;
+  INTN    DeltaX;
+  INTN    DeltaY;
+  UINT32  UgaWidth;
+  UINT32  UgaHeight;
 } GRAPHICS_CONSOLE_MODE_DATA;
 
 #define GRAPHICS_MAX_MODE 3
 
 typedef struct {
-  UINTN                                Signature;
-  EFI_UGA_DRAW_PROTOCOL                *UgaDraw;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL         SimpleTextOutput;
-  EFI_SIMPLE_TEXT_OUTPUT_MODE          SimpleTextOutputMode;
-  GRAPHICS_CONSOLE_MODE_DATA           ModeData[GRAPHICS_MAX_MODE];
-  EFI_UGA_PIXEL                        *LineBuffer;
-  EFI_HII_HANDLE                       HiiHandle;
+  UINTN                         Signature;
+  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  SimpleTextOutput;
+  EFI_SIMPLE_TEXT_OUTPUT_MODE   SimpleTextOutputMode;
+  GRAPHICS_CONSOLE_MODE_DATA    ModeData[GRAPHICS_MAX_MODE];
+  EFI_UGA_PIXEL                 *LineBuffer;
+  EFI_HII_HANDLE                HiiHandle;
 } GRAPHICS_CONSOLE_DEV;
 
-#define GRAPHICS_CONSOLE_CON_OUT_DEV_FROM_THIS(a) CR(a, GRAPHICS_CONSOLE_DEV, SimpleTextOutput, GRAPHICS_CONSOLE_DEV_SIGNATURE)
+#define GRAPHICS_CONSOLE_CON_OUT_DEV_FROM_THIS(a) \
+  CR (a, \
+      GRAPHICS_CONSOLE_DEV, \
+      SimpleTextOutput, \
+      GRAPHICS_CONSOLE_DEV_SIGNATURE \
+      )
 
 //
 // Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL gGraphicsConsoleDriverBinding;
+extern EFI_DRIVER_BINDING_PROTOCOL  gGraphicsConsoleDriverBinding;
 
 //
 // Prototypes
 //
-
 UINTN
 ReturnNarrowFontSize (
   VOID
-  );
+  )
+;
 
 UINTN
 ReturnWideFontSize (
   VOID
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 InitializeGraphicsConsole (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutReset (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *This,
   IN  BOOLEAN                         ExtendedVerification
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutOutputString (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  CHAR16                        *WString
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutTestString (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  CHAR16                        *WString
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutQueryMode (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  UINTN                         ModeNumber,
   OUT UINTN                         *Columns,
   OUT UINTN                         *Rows
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutSetMode (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  UINTN                         ModeNumber
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutSetAttribute (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  UINTN                         Attribute
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutClearScreen (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutSetCursorPosition (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  UINTN                         Column,
   IN  UINTN                         Row
-  );
+  )
+;
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 GraphicsConsoleConOutEnableCursor (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
   IN  BOOLEAN                       Visible
-  );
+  )
+;
 
 EFI_STATUS
 EfiLocateHiiProtocol (
   VOID
-  );
+  )
+;
 
 #endif
-
-
-
-

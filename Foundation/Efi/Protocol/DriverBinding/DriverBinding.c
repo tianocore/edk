@@ -22,8 +22,8 @@ Revision History
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
 
-EFI_GUID gEfiDriverBindingProtocolGuid = EFI_DRIVER_BINDING_PROTOCOL_GUID;
+EFI_GUID  gEfiDriverBindingProtocolGuid = EFI_DRIVER_BINDING_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiDriverBindingProtocolGuid, "Controller Driver Protocol", "EFI 1.1 Controller Driver Protocol");

@@ -23,9 +23,8 @@ Revision History
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(EfiOEMBadging)
+#include EFI_PROTOCOL_DEFINITION (EfiOEMBadging)
 
-EFI_GUID gEfiOEMBadgingProtocolGuid = EFI_OEM_BADGING_PROTOCOL_GUID;
+EFI_GUID  gEfiOEMBadgingProtocolGuid = EFI_OEM_BADGING_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiOEMBadgingProtocolGuid, "EFI OEM Badging Protocol", "EFI 1.1 OEM Badging Protocol");
-
+EFI_GUID_STRING(&gEfiOEMBadgingProtocolGuid, "OEM Badging Protocol", "OEM Badging Protocol");

@@ -46,7 +46,7 @@ Abstract:
 
 //
 // The Depex grammer needs the string "TRUE" and "FALSE" we must
-// undo any pre-processor redefinitions 
+// undo any pre-processor redefinitions
 //
 #undef TRUE
 #undef FALSE

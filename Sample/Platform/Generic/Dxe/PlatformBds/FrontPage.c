@@ -26,20 +26,20 @@ Revision History
 #include "BdsPlatform.h"
 #include "FrontPage.h"
 
-EFI_GUID   mProcessorSubClass = EFI_PROCESSOR_SUBCLASS_GUID;
-EFI_GUID   mMemorySubClass    = EFI_MEMORY_SUBCLASS_GUID;
-EFI_GUID   mMiscSubClass      = EFI_MISC_SUBCLASS_GUID;
+EFI_GUID                    mProcessorSubClass  = EFI_PROCESSOR_SUBCLASS_GUID;
+EFI_GUID                    mMemorySubClass     = EFI_MEMORY_SUBCLASS_GUID;
+EFI_GUID                    mMiscSubClass       = EFI_MISC_SUBCLASS_GUID;
 
-UINT16                          mLastSelection;
-EFI_HII_HANDLE                  gFrontPageHandle;
-EFI_HANDLE                      FrontPageCallbackHandle;
-EFI_FORM_CALLBACK_PROTOCOL      FrontPageCallback;
-EFI_FORM_BROWSER_PROTOCOL       *gBrowser;
-UINTN                           gCallbackKey;
-BOOLEAN                         gConnectAllHappened = FALSE;
+UINT16                      mLastSelection;
+EFI_HII_HANDLE              gFrontPageHandle;
+EFI_HANDLE                  FrontPageCallbackHandle;
+EFI_FORM_CALLBACK_PROTOCOL  FrontPageCallback;
+EFI_FORM_BROWSER_PROTOCOL   *gBrowser;
+UINTN                       gCallbackKey;
+BOOLEAN                     gConnectAllHappened = FALSE;
 
-extern EFI_HII_HANDLE           gFrontPageHandle;
-extern EFI_GUID                 gBdsStringPackGuid;
+extern EFI_HII_HANDLE       gFrontPageHandle;
+extern EFI_GUID             gBdsStringPackGuid;
 
 EFI_STATUS
 FrontPageCallbackRoutine (
@@ -68,16 +68,16 @@ Returns:
 
 --*/
 {
-  CHAR16                          *LanguageString;
-  UINTN                           Count;
-  CHAR16                          UnicodeLang[3];
-  CHAR8                           Lang[3];
-  EFI_STATUS                      Status;
-  UINTN                           Index;
-  CHAR16                          *TmpStr;
-  EFI_UGA_PIXEL                   Foreground;
-  EFI_UGA_PIXEL                   Background;
-  EFI_UGA_PIXEL                   Color;
+  CHAR16        *LanguageString;
+  UINTN         Count;
+  CHAR16        UnicodeLang[3];
+  CHAR8         Lang[3];
+  EFI_STATUS    Status;
+  UINTN         Index;
+  CHAR16        *TmpStr;
+  EFI_UGA_PIXEL Foreground;
+  EFI_UGA_PIXEL Background;
+  EFI_UGA_PIXEL Color;
 
   EfiSetMem (&Foreground, sizeof (EFI_UGA_PIXEL), 0xff);
   EfiSetMem (&Background, sizeof (EFI_UGA_PIXEL), 0x0);
@@ -86,104 +86,107 @@ Returns:
   Count = 0;
 
   //
-  // The first 4 entries in the Front Page are to be GUARANTEED to remain constant so IHV's can 
+  // The first 4 entries in the Front Page are to be GUARANTEED to remain constant so IHV's can
   // describe to their customers in documentation how to find their setup information (namely
   // under the device manager and specific buckets)
   //
   switch (KeyValue) {
-    case 0x0001:
-      //
-      // This is the continue - clear the screen and return an error to get out of FrontPage loop
-      //
-      gCallbackKey = 1;
-      break;
+  case 0x0001:
+    //
+    // This is the continue - clear the screen and return an error to get out of FrontPage loop
+    //
+    gCallbackKey = 1;
+    break;
 
-    case 0x1234:
-      //
-      // Collect the languages from what our current Language support is based on our VFR
-      //
-      Hii->GetPrimaryLanguages(Hii, gFrontPageHandle, &LanguageString);
+  case 0x1234:
+    //
+    // Collect the languages from what our current Language support is based on our VFR
+    //
+    Hii->GetPrimaryLanguages (Hii, gFrontPageHandle, &LanguageString);
 
-      //
-      // Based on the DataArray->Data->Data value, we can determine
-      // which language was chosen by the user
-      //
-      for (Index = 0; Count != (UINTN)DataArray->Data->Data; Index += 3) {
-        Count++;
-      }
+    //
+    // Based on the DataArray->Data->Data value, we can determine
+    // which language was chosen by the user
+    //
+    for (Index = 0; Count != (UINTN) DataArray->Data->Data; Index += 3) {
+      Count++;
+    }
+    //
+    // Preserve the choice the user made
+    //
+    mLastSelection = (UINT16) Count;
 
-      //
-      // Preserve the choice the user made
-      //
-      mLastSelection = (UINT16)Count;
+    //
+    // The Language (in Unicode format) the user chose
+    //
+    EfiCopyMem (UnicodeLang, &LanguageString[Index], 6);
 
-      //
-      // The Language (in Unicode format) the user chose
-      //
-      EfiCopyMem(UnicodeLang, &LanguageString[Index], 6);
+    //
+    // Convert Unicode to ASCII (Since the ISO standard assumes ASCII equivalent abbreviations
+    // we can be safe in converting this Unicode stream to ASCII without any loss in meaning.
+    //
+    for (Index = 0; Index < 3; Index++) {
+      Lang[Index] = (CHAR8) UnicodeLang[Index];
+    }
 
-      // 
-      // Convert Unicode to ASCII (Since the ISO standard assumes ASCII equivalent abbreviations
-      // we can be safe in converting this Unicode stream to ASCII without any loss in meaning.
-      //
-      for (Index = 0; Index < 3; Index++) {
-        Lang[Index] = (CHAR8)UnicodeLang[Index];
-      }
+    Status = gRT->SetVariable (
+                    L"Lang",
+                    &gEfiGlobalVariableGuid,
+                    EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                    3,
+                    Lang
+                    );
 
-      Status = gRT->SetVariable (
-                      L"Lang",
-                      &gEfiGlobalVariableGuid,
-                      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                      3,
-                      Lang
-                      );
+    gBS->FreePool (LanguageString);
+    gCallbackKey = 2;
+    break;
 
-      gBS->FreePool(LanguageString);
-      gCallbackKey = 2;
-      break;
+  case 0x1064:
+    //
+    // Boot Manager
+    //
+    gCallbackKey = 3;
+    break;
 
-    case 0x1064:
-      //
-      // Boot Manager
-      //
-      gCallbackKey = 3;
-      break;
+  case 0x8567:
+    //
+    // Device Manager
+    //
+    gCallbackKey = 4;
+    break;
 
-    case 0x8567:
-      //
-      // Device Manager
-      //
-      gCallbackKey = 4;
-      break;
+  case 0x9876:
+    //
+    // Boot Maintenance Manager
+    //
+    gCallbackKey = 5;
+    break;
 
-    case 0x9876:
-      //
-      // Boot Maintenance Manager
-      //
-      gCallbackKey = 5;
-      break;
+  case 0xFFFE:
 
-    case 0xFFFE:
+    break;
 
-      break;
+  case 0xFFFF:
+    //
+    // FrontPage TimeOut Callback
+    //
+    TmpStr = GetStringById (STRING_TOKEN (STR_START_BOOT_OPTION));
+    if (TmpStr != NULL) {
+      PlatformBdsShowProgress (
+        Foreground,
+        Background,
+        TmpStr,
+        Color,
+        (UINTN) DataArray->Data->Data,
+        0
+        );
+      gBS->FreePool (TmpStr);
+    }
+    break;
 
-    case 0xFFFF:
-      //
-      // FrontPage TimeOut Callback
-      //
-      TmpStr = GetStringById (STRING_TOKEN(STR_START_BOOT_OPTION));
-      if (TmpStr != NULL) {
-        PlatformBdsShowProgress (Foreground, Background, 
-                            TmpStr,
-                            Color,
-                            (UINTN)DataArray->Data->Data, 0);
-        gBS->FreePool(TmpStr);
-      }
-      break;
-
-    default:
-      gCallbackKey = 0;
-      break;
+  default:
+    gCallbackKey = 0;
+    break;
   }
 
   return EFI_SUCCESS;
@@ -206,24 +209,24 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
-  EFI_HII_PACKAGES                *PackageList;
-  EFI_HII_UPDATE_DATA             *UpdateData;
-  IFR_OPTION                      *OptionList;
-  CHAR16                          *LanguageString;
-  UINTN                           OptionCount;
-  UINTN                           Index;
-  STRING_REF                      Token;
-  UINT16                          Key;
-  CHAR8                           AsciiLang[4];
-  CHAR16                          UnicodeLang[4];
-  CHAR16                          Lang[4];
-  CHAR16                          *StringBuffer;
-  UINTN                           BufferSize;
-  UINT8                           *TempBuffer;
+  EFI_STATUS          Status;
+  EFI_HII_PACKAGES    *PackageList;
+  EFI_HII_UPDATE_DATA *UpdateData;
+  IFR_OPTION          *OptionList;
+  CHAR16              *LanguageString;
+  UINTN               OptionCount;
+  UINTN               Index;
+  STRING_REF          Token;
+  UINT16              Key;
+  CHAR8               AsciiLang[4];
+  CHAR16              UnicodeLang[4];
+  CHAR16              Lang[4];
+  CHAR16              *StringBuffer;
+  UINTN               BufferSize;
+  UINT8               *TempBuffer;
 
-  UpdateData = NULL;
-  OptionList = NULL;
+  UpdateData  = NULL;
+  OptionList  = NULL;
 
   if (ReInitializeStrings) {
     //
@@ -231,25 +234,24 @@ Returns:
     //
     goto ReInitStrings;
   }
-
   //
   // Go ahead and initialize the Device Manager
   //
-  InitializeDeviceManager();
+  InitializeDeviceManager ();
 
   //
   // BugBug: if FrontPageVfrBin is generated by a tool, why are we patching it here
   //
-  TempBuffer = (UINT8 *)FrontPageVfrBin;
-  TempBuffer = TempBuffer + sizeof (EFI_HII_PACK_HEADER);
-  TempBuffer = (UINT8 *)&((EFI_IFR_FORM_SET *)TempBuffer)->NvDataSize;
-  *TempBuffer = 1;
+  TempBuffer    = (UINT8 *) FrontPageVfrBin;
+  TempBuffer    = TempBuffer + sizeof (EFI_HII_PACK_HEADER);
+  TempBuffer    = (UINT8 *) &((EFI_IFR_FORM_SET *) TempBuffer)->NvDataSize;
+  *TempBuffer   = 1;
 
-  gCallbackKey = 0;
+  gCallbackKey  = 0;
 
-  PackageList = PreparePackages (1, &gBdsStringPackGuid, FrontPageVfrBin);
+  PackageList   = PreparePackages (1, &gBdsStringPackGuid, FrontPageVfrBin);
 
-  Status = Hii->NewPack (Hii, PackageList, &gFrontPageHandle);
+  Status        = Hii->NewPack (Hii, PackageList, &gFrontPageHandle);
 
   gBS->FreePool (PackageList);
 
@@ -265,23 +267,23 @@ Returns:
                   );
 
   //
-  // This example does not implement worker functions 
+  // This example does not implement worker functions
   // for the NV accessor functions.  Only a callback evaluator
   //
-  FrontPageCallback.NvRead   = NULL;
-  FrontPageCallback.NvWrite  = NULL;
-  FrontPageCallback.Callback = FrontPageCallbackRoutine;
+  FrontPageCallback.NvRead    = NULL;
+  FrontPageCallback.NvWrite   = NULL;
+  FrontPageCallback.Callback  = FrontPageCallbackRoutine;
 
   //
   // Install protocol interface
   //
   FrontPageCallbackHandle = NULL;
   Status = gBS->InstallProtocolInterface (
-                 &FrontPageCallbackHandle,
-                 &gEfiFormCallbackProtocolGuid, 
-                 EFI_NATIVE_INTERFACE,
-                 &FrontPageCallback
-                 );
+                  &FrontPageCallbackHandle,
+                  &gEfiFormCallbackProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &FrontPageCallback
+                  );
   ASSERT_EFI_ERROR (Status);
 
 ReInitStrings:
@@ -289,14 +291,16 @@ ReInitStrings:
   // BugBug: This logic is in BdsInitLanguage. It should not be in two places!
   //
   BufferSize = 4;
-  Status = gRT->GetVariable (L"Lang",
-                             &gEfiGlobalVariableGuid,
-                             NULL,
-                             &BufferSize,
-                             AsciiLang);
+  Status = gRT->GetVariable (
+                  L"Lang",
+                  &gEfiGlobalVariableGuid,
+                  NULL,
+                  &BufferSize,
+                  AsciiLang
+                  );
 
   for (Index = 0; Index < 3; Index++) {
-    UnicodeLang[Index] = (CHAR16)AsciiLang[Index];
+    UnicodeLang[Index] = (CHAR16) AsciiLang[Index];
   }
 
   UnicodeLang[3] = 0;
@@ -306,15 +310,21 @@ ReInitStrings:
   //
   UpdateData = EfiLibAllocateZeroPool (0x1000);
   ASSERT (UpdateData != NULL);
-  
+
   OptionList = EfiLibAllocateZeroPool (0x1000);
   ASSERT (OptionList != NULL);
 
-  UpdateData->FormSetUpdate = TRUE;                                               // Flag update pending in FormSet
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS)FrontPageCallbackHandle; // Register CallbackHandle data for FormSet
-  UpdateData->FormUpdate = FALSE;              
-  UpdateData->FormTitle = 0;
-  UpdateData->DataCount = 1;
+  //
+  // Flag update pending in FormSet
+  //
+  UpdateData->FormSetUpdate = TRUE;
+  //
+  // Register CallbackHandle data for FormSet
+  //
+  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) FrontPageCallbackHandle;
+  UpdateData->FormUpdate  = FALSE;
+  UpdateData->FormTitle   = 0;
+  UpdateData->DataCount   = 1;
 
   //
   // Collect the languages from what our current Language support is based on our VFR
@@ -339,19 +349,21 @@ ReInitStrings:
     EfiCopyMem (Lang, &LanguageString[Index], 6);
     Lang[3] = 0;
 
-    if (!EfiStrCmp(Lang, UnicodeLang)) {
-      mLastSelection = (UINT16)OptionCount;
+    if (!EfiStrCmp (Lang, UnicodeLang)) {
+      mLastSelection = (UINT16) OptionCount;
     }
-    Status = Hii->GetString(Hii, gStringPackHandle, 1, TRUE, Lang, (UINT16 *)&BufferSize, StringBuffer);
-    Hii->NewString(Hii, NULL, gStringPackHandle, &Token, StringBuffer);
+
+    Status = Hii->GetString (Hii, gStringPackHandle, 1, TRUE, Lang, (UINT16 *) &BufferSize, StringBuffer);
+    Hii->NewString (Hii, NULL, gStringPackHandle, &Token, StringBuffer);
     EfiCopyMem (&OptionList[OptionCount].StringToken, &Token, sizeof (UINT16));
-    EfiCopyMem (&OptionList[OptionCount].Value,  &OptionCount, sizeof (UINT16));
+    EfiCopyMem (&OptionList[OptionCount].Value, &OptionCount, sizeof (UINT16));
     Key = 0x1234;
     EfiCopyMem (&OptionList[OptionCount].Key, &Key, sizeof (UINT16));
     OptionList[OptionCount].Flags = EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS;
     OptionCount++;
   }
-  gBS->FreePool(LanguageString);
+
+  gBS->FreePool (LanguageString);
 
   if (ReInitializeStrings) {
     gBS->FreePool (StringBuffer);
@@ -360,24 +372,26 @@ ReInitStrings:
   }
 
   Status = CreateOneOfOpCode (
-                            FRONT_PAGE_QUESTION_ID,               // Question ID
-                            FRONT_PAGE_DATA_WIDTH,                // Data Width
-                            (STRING_REF)STRING_TOKEN(STR_LANGUAGE_SELECT),      // Prompt Token
-                            (STRING_REF)STRING_TOKEN(STR_LANGUAGE_SELECT_HELP), // Help Token
-                            OptionList,                           // List of Options
-                            OptionCount,                          // Number of Options
-                            &UpdateData->Data                     // Data Buffer
-                            );
+            FRONT_PAGE_QUESTION_ID,                               // Question ID
+            FRONT_PAGE_DATA_WIDTH,                                // Data Width
+            (STRING_REF) STRING_TOKEN (STR_LANGUAGE_SELECT),      // Prompt Token
+            (STRING_REF) STRING_TOKEN (STR_LANGUAGE_SELECT_HELP), // Help Token
+            OptionList,       // List of Options
+            OptionCount,      // Number of Options
+            &UpdateData->Data // Data Buffer
+            );
 
   //
   // Assign the number of options and the oneof and endoneof op-codes to count
   //
-  UpdateData->DataCount = (UINT8)(OptionCount + 2);
+  UpdateData->DataCount = (UINT8) (OptionCount + 2);
 
-  Hii->UpdateForm(Hii, gFrontPageHandle, (EFI_FORM_LABEL)0x0002, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gFrontPageHandle, (EFI_FORM_LABEL) 0x0002, TRUE, UpdateData);
 
   gBS->FreePool (UpdateData);
-  //gBS->FreePool (OptionList);
+  //
+  // gBS->FreePool (OptionList);
+  //
   gBS->FreePool (StringBuffer);
   return Status;
 }
@@ -400,44 +414,43 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  UINT8                   FakeNvRamMap[1];
+  EFI_STATUS  Status;
+  UINT8       FakeNvRamMap[1];
 
   //
   // Begin waiting for USER INPUT
   //
   gRT->ReportStatusCode (
-         EFI_PROGRESS_CODE,
-         (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_INPUT_WAIT),
-         0,
-         &gEfiBdsArchProtocolGuid,
-         NULL
-         );
+        EFI_PROGRESS_CODE,
+        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_INPUT_WAIT),
+        0,
+        &gEfiBdsArchProtocolGuid,
+        NULL
+        );
 
   //
   // Drop the TPL level from EFI_TPL_DRIVER to EFI_TPL_APPLICATION
   //
   gBS->RestoreTPL (EFI_TPL_APPLICATION);
 
-  FakeNvRamMap[0] = (UINT8)mLastSelection;
+  FakeNvRamMap[0] = (UINT8) mLastSelection;
   Status = gBrowser->SendForm (
-                       gBrowser,                     
-                       TRUE,                                 // Use the database 
-                       &gFrontPageHandle,                    // The HII Handle
-                       1,
-                       NULL,
-                       FrontPageCallbackHandle,              // This is the handle that the interface to the callback was installed on
-                       FakeNvRamMap,
-                       NULL,
-                       NULL
-                       );
+                      gBrowser,
+                      TRUE,                     // Use the database
+                      &gFrontPageHandle,        // The HII Handle
+                      1,
+                      NULL,
+                      FrontPageCallbackHandle,  // This is the handle that the interface to the callback was installed on
+                      FakeNvRamMap,
+                      NULL,
+                      NULL
+                      );
 
   Hii->ResetStrings (Hii, gFrontPageHandle);
 
   gBS->RaiseTPL (EFI_TPL_DRIVER);
   return Status;
 }
-
 
 EFI_STATUS
 GetStringFromToken (
@@ -461,67 +474,68 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  UINT16            HandleBufferLength;
-  EFI_HII_HANDLE    *HiiHandleBuffer;
-  UINT16            StringBufferLength;
-  UINTN             NumberOfHiiHandles;
-  UINTN             Index;
-  UINT16            Length;
-  EFI_GUID          HiiGuid;
-  
-  HandleBufferLength = 0x1000;
-  HiiHandleBuffer = NULL;
-  
+  EFI_STATUS      Status;
+  UINT16          HandleBufferLength;
+  EFI_HII_HANDLE  *HiiHandleBuffer;
+  UINT16          StringBufferLength;
+  UINTN           NumberOfHiiHandles;
+  UINTN           Index;
+  UINT16          Length;
+  EFI_GUID        HiiGuid;
+
+  HandleBufferLength  = 0x1000;
+  HiiHandleBuffer     = NULL;
+
   //
   // Get all the Hii handles
   //
   HiiHandleBuffer = EfiLibAllocateZeroPool (HandleBufferLength);
 
-  Status = Hii->FindHandles (Hii, &HandleBufferLength, HiiHandleBuffer);
-  ASSERT_EFI_ERROR(Status);
-  
+  Status          = Hii->FindHandles (Hii, &HandleBufferLength, HiiHandleBuffer);
+  ASSERT_EFI_ERROR (Status);
+
   //
   // Get the Hii Handle that matches the StructureNode->ProducerName
   //
   NumberOfHiiHandles = HandleBufferLength / sizeof (EFI_HII_HANDLE);
-  for (Index = 0; Index < NumberOfHiiHandles; Index ++) {
+  for (Index = 0; Index < NumberOfHiiHandles; Index++) {
     Length = 0;
-    Status = ExtractDataFromHiiHandle (HiiHandleBuffer[Index],
-                                       &Length,
-                                       NULL,
-                                       &HiiGuid
-                                       );
+    Status = ExtractDataFromHiiHandle (
+              HiiHandleBuffer[Index],
+              &Length,
+              NULL,
+              &HiiGuid
+              );
     if (EfiCompareGuid (ProducerGuid, &HiiGuid)) {
       break;
     }
   }
-  
   //
   // Find the string based on the current language
   //
-  StringBufferLength = 0x100;
-  *String = EfiLibAllocateZeroPool (0x100);
-  Status = Hii->GetString (Hii,
-                           HiiHandleBuffer[Index],
-                           Token,
-                           FALSE,
-                           NULL,
-                           &StringBufferLength,
-                           *String
-                           );
+  StringBufferLength  = 0x100;
+  *String             = EfiLibAllocateZeroPool (0x100);
+  Status = Hii->GetString (
+                  Hii,
+                  HiiHandleBuffer[Index],
+                  Token,
+                  FALSE,
+                  NULL,
+                  &StringBufferLength,
+                  *String
+                  );
 
-  if (EFI_ERROR(Status)) {
-    gBS->FreePool(*String);
-    *String = GetStringById(STRING_TOKEN(STR_MISSING_STRING));
+  if (EFI_ERROR (Status)) {
+    gBS->FreePool (*String);
+    *String = GetStringById (STRING_TOKEN (STR_MISSING_STRING));
   }
-  
-  gBS->FreePool (HiiHandleBuffer);  
+
+  gBS->FreePool (HiiHandleBuffer);
   return EFI_SUCCESS;
 }
 
 VOID
-ConvertProcessorToString(
+ConvertProcessorToString (
   IN  EFI_PROCESSOR_CORE_FREQUENCY_DATA *ProcessorFrequency,
   OUT CHAR16                            **String
   )
@@ -540,9 +554,9 @@ Returns:
 
 --*/
 {
-  CHAR16        *StringBuffer;
-  UINTN         Index;
-  UINT32        FreqMhz;
+  CHAR16  *StringBuffer;
+  UINTN   Index;
+  UINT32  FreqMhz;
 
   if (ProcessorFrequency->Exponent >= 6) {
     FreqMhz = ProcessorFrequency->Value;
@@ -555,18 +569,18 @@ Returns:
 
   StringBuffer = EfiLibAllocateZeroPool (0x20);
   ASSERT (StringBuffer != NULL);
-  Index = EfiValueToString (StringBuffer, FreqMhz/1000, LEFT_JUSTIFY, 3);
+  Index = EfiValueToString (StringBuffer, FreqMhz / 1000, LEFT_JUSTIFY, 3);
   EfiStrCat (StringBuffer, L".");
-  EfiValueToString (StringBuffer + Index + 1, (FreqMhz%1000)/10, PREFIX_ZERO, 2);
+  EfiValueToString (StringBuffer + Index + 1, (FreqMhz % 1000) / 10, PREFIX_ZERO, 2);
   EfiStrCat (StringBuffer, L" GHz");
 
-  *String = (CHAR16 *)StringBuffer;
+  *String = (CHAR16 *) StringBuffer;
 
-  return;
+  return ;
 }
 
 VOID
-ConvertMemorySizeToString(
+ConvertMemorySizeToString (
   IN  UINT32          MemorySize,
   OUT CHAR16          **String
   )
@@ -585,21 +599,20 @@ Returns:
 
 --*/
 {
-  CHAR16        *StringBuffer;
+  CHAR16  *StringBuffer;
 
   StringBuffer = EfiLibAllocateZeroPool (0x20);
   ASSERT (StringBuffer != NULL);
   EfiValueToString (StringBuffer, MemorySize, LEFT_JUSTIFY, 6);
   EfiStrCat (StringBuffer, L" MB RAM");
 
-  *String = (CHAR16 *)StringBuffer;
+  *String = (CHAR16 *) StringBuffer;
 
-  return;
+  return ;
 }
 
-
 VOID
-UpdateFrontPageStrings(
+UpdateFrontPageStrings (
   VOID
   )
 /*++
@@ -616,35 +629,35 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
-  STRING_REF                      TokenToUpdate;
-  CHAR16                          *NewString;
-  UINT64                          MonotonicCount;
-  EFI_DATA_HUB_PROTOCOL           *DataHub;
-  EFI_DATA_RECORD_HEADER          *Record;
-  EFI_SUBCLASS_TYPE1_HEADER       *DataHeader;
-  EFI_MISC_BIOS_VENDOR            *BiosVendor;
-  EFI_MISC_SYSTEM_MANUFACTURER    *SystemManufacturer;      
-  EFI_PROCESSOR_VERSION_DATA      *ProcessorVersion;
+  EFI_STATUS                        Status;
+  STRING_REF                        TokenToUpdate;
+  CHAR16                            *NewString;
+  UINT64                            MonotonicCount;
+  EFI_DATA_HUB_PROTOCOL             *DataHub;
+  EFI_DATA_RECORD_HEADER            *Record;
+  EFI_SUBCLASS_TYPE1_HEADER         *DataHeader;
+  EFI_MISC_BIOS_VENDOR              *BiosVendor;
+  EFI_MISC_SYSTEM_MANUFACTURER      *SystemManufacturer;
+  EFI_PROCESSOR_VERSION_DATA        *ProcessorVersion;
   EFI_PROCESSOR_CORE_FREQUENCY_DATA *ProcessorFrequency;
-  EFI_MEMORY_ARRAY_START_ADDRESS  *MemoryArray;
-  CHAR8                           LangCode[3];
-  CHAR16                          Lang[3];
-  UINTN                           Size;
-  UINTN                           Index;
-  BOOLEAN                         Find[5];
-  
+  EFI_MEMORY_ARRAY_START_ADDRESS    *MemoryArray;
+  CHAR8                             LangCode[3];
+  CHAR16                            Lang[3];
+  UINTN                             Size;
+  UINTN                             Index;
+  BOOLEAN                           Find[5];
+
   EfiZeroMem (Find, sizeof (Find));
-  
+
   //
   // Update Front Page strings
   //
   Status = gBS->LocateProtocol (
                   &gEfiDataHubProtocolGuid,
-                  NULL, 
+                  NULL,
                   &DataHub
                   );
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   Size = 3;
 
@@ -657,67 +670,75 @@ Returns:
                   );
 
   for (Index = 0; Index < 3; Index++) {
-    Lang[Index] = (CHAR16)LangCode[Index];
+    Lang[Index] = (CHAR16) LangCode[Index];
   }
 
   MonotonicCount  = 0;
-  Record = NULL;
+  Record          = NULL;
   do {
     Status = DataHub->GetNextRecord (DataHub, &MonotonicCount, NULL, &Record);
     if (Record->DataRecordClass == EFI_DATA_RECORD_CLASS_DATA) {
-      DataHeader  = (EFI_SUBCLASS_TYPE1_HEADER *)(Record + 1);
-      if (EfiCompareGuid(&Record->DataRecordGuid, &mMiscSubClass) &&
-                 (DataHeader->RecordType == EFI_MISC_BIOS_VENDOR_RECORD_NUMBER)) {
-        BiosVendor  = (EFI_MISC_BIOS_VENDOR  *)(DataHeader + 1);
-        GetStringFromToken(&Record->ProducerName, BiosVendor->BiosVersion, &NewString);
-        TokenToUpdate = (STRING_REF)STR_FRONT_PAGE_BIOS_VERSION;
-        Hii->NewString(Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
-        gBS->FreePool(NewString);
+      DataHeader = (EFI_SUBCLASS_TYPE1_HEADER *) (Record + 1);
+      if (EfiCompareGuid (&Record->DataRecordGuid, &mMiscSubClass) &&
+          (DataHeader->RecordType == EFI_MISC_BIOS_VENDOR_RECORD_NUMBER)
+          ) {
+        BiosVendor = (EFI_MISC_BIOS_VENDOR *) (DataHeader + 1);
+        GetStringFromToken (&Record->ProducerName, BiosVendor->BiosVersion, &NewString);
+        TokenToUpdate = (STRING_REF) STR_FRONT_PAGE_BIOS_VERSION;
+        Hii->NewString (Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
+        gBS->FreePool (NewString);
         Find[0] = TRUE;
       }
-      if (EfiCompareGuid(&Record->DataRecordGuid, &mMiscSubClass) &&
-                 (DataHeader->RecordType == EFI_MISC_SYSTEM_MANUFACTURER_RECORD_NUMBER)) {
-        SystemManufacturer = (EFI_MISC_SYSTEM_MANUFACTURER *)(DataHeader + 1);
-        GetStringFromToken(&Record->ProducerName, SystemManufacturer->SystemProductName, &NewString);
-        TokenToUpdate = (STRING_REF)STR_FRONT_PAGE_COMPUTER_MODEL;
-        Hii->NewString(Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
-        gBS->FreePool(NewString);
+
+      if (EfiCompareGuid (&Record->DataRecordGuid, &mMiscSubClass) &&
+          (DataHeader->RecordType == EFI_MISC_SYSTEM_MANUFACTURER_RECORD_NUMBER)
+          ) {
+        SystemManufacturer = (EFI_MISC_SYSTEM_MANUFACTURER *) (DataHeader + 1);
+        GetStringFromToken (&Record->ProducerName, SystemManufacturer->SystemProductName, &NewString);
+        TokenToUpdate = (STRING_REF) STR_FRONT_PAGE_COMPUTER_MODEL;
+        Hii->NewString (Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
+        gBS->FreePool (NewString);
         Find[1] = TRUE;
       }
-      if (EfiCompareGuid(&Record->DataRecordGuid, &mProcessorSubClass) &&
-                 (DataHeader->RecordType == ProcessorVersionRecordType)) {
-        ProcessorVersion = (EFI_PROCESSOR_VERSION_DATA *)(DataHeader + 1);
-        GetStringFromToken(&Record->ProducerName, *ProcessorVersion, &NewString);
-        TokenToUpdate = (STRING_REF)STR_FRONT_PAGE_CPU_MODEL;
-        Hii->NewString(Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
-        gBS->FreePool(NewString);
+
+      if (EfiCompareGuid (&Record->DataRecordGuid, &mProcessorSubClass) &&
+          (DataHeader->RecordType == ProcessorVersionRecordType)
+          ) {
+        ProcessorVersion = (EFI_PROCESSOR_VERSION_DATA *) (DataHeader + 1);
+        GetStringFromToken (&Record->ProducerName, *ProcessorVersion, &NewString);
+        TokenToUpdate = (STRING_REF) STR_FRONT_PAGE_CPU_MODEL;
+        Hii->NewString (Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
+        gBS->FreePool (NewString);
         Find[2] = TRUE;
       }
-      if (EfiCompareGuid(&Record->DataRecordGuid, &mProcessorSubClass) &&
-                 (DataHeader->RecordType == ProcessorCoreFrequencyRecordType)) {
-        ProcessorFrequency = (EFI_PROCESSOR_CORE_FREQUENCY_DATA *)(DataHeader + 1);
-        ConvertProcessorToString(ProcessorFrequency, &NewString);
-        TokenToUpdate = (STRING_REF)STR_FRONT_PAGE_CPU_SPEED;
-        Hii->NewString(Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
-        gBS->FreePool(NewString);
+
+      if (EfiCompareGuid (&Record->DataRecordGuid, &mProcessorSubClass) &&
+          (DataHeader->RecordType == ProcessorCoreFrequencyRecordType)
+          ) {
+        ProcessorFrequency = (EFI_PROCESSOR_CORE_FREQUENCY_DATA *) (DataHeader + 1);
+        ConvertProcessorToString (ProcessorFrequency, &NewString);
+        TokenToUpdate = (STRING_REF) STR_FRONT_PAGE_CPU_SPEED;
+        Hii->NewString (Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
+        gBS->FreePool (NewString);
         Find[3] = TRUE;
       }
-      if (EfiCompareGuid(&Record->DataRecordGuid, &mMemorySubClass) &&
-                 (DataHeader->RecordType == EFI_MEMORY_ARRAY_START_ADDRESS_RECORD_NUMBER)) {
-        MemoryArray = (EFI_MEMORY_ARRAY_START_ADDRESS *)(DataHeader + 1);
+
+      if (EfiCompareGuid (&Record->DataRecordGuid, &mMemorySubClass) &&
+          (DataHeader->RecordType == EFI_MEMORY_ARRAY_START_ADDRESS_RECORD_NUMBER)
+          ) {
+        MemoryArray = (EFI_MEMORY_ARRAY_START_ADDRESS *) (DataHeader + 1);
         ConvertMemorySizeToString((UINT32)(RShiftU64((MemoryArray->MemoryArrayEndAddress - 
                                   MemoryArray->MemoryArrayStartAddress + 1), 20)),
                                   &NewString);
-        TokenToUpdate = (STRING_REF)STR_FRONT_PAGE_MEMORY_SIZE;
-        Hii->NewString(Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
-        gBS->FreePool(NewString);
+        TokenToUpdate = (STRING_REF) STR_FRONT_PAGE_MEMORY_SIZE;
+        Hii->NewString (Hii, Lang, gFrontPageHandle, &TokenToUpdate, NewString);
+        gBS->FreePool (NewString);
         Find[4] = TRUE;
       }
     }
-  } while (!EFI_ERROR(Status) && (MonotonicCount != 0) && 
-      !(Find[0] && Find[1] && Find[2] && Find[3] && Find[4]));
+  } while (!EFI_ERROR (Status) && (MonotonicCount != 0) && !(Find[0] && Find[1] && Find[2] && Find[3] && Find[4]));
 
-  return;
+  return ;
 }
 
 VOID
@@ -726,61 +747,65 @@ PlatformBdsEnterFrontPage (
   IN BOOLEAN                      ConnectAllHappened
   )
 {
-  EFI_STATUS                      Status;
-  EFI_HII_UPDATE_DATA             *UpdateData;
-  EFI_CONSOLE_CONTROL_PROTOCOL    *ConsoleControl;
-  
+  EFI_STATUS                    Status;
+  EFI_HII_UPDATE_DATA           *UpdateData;
+  EFI_CONSOLE_CONTROL_PROTOCOL  *ConsoleControl;
+
   //
   // Indicate if we need connect all in the platform setup
   //
   if (ConnectAllHappened) {
     gConnectAllHappened = TRUE;
   }
-  
   //
   // Allocate space for creation of Buffer
   //
   UpdateData = EfiLibAllocateZeroPool (0x1000);
   ASSERT (UpdateData != NULL);
 
-  UpdateData->FormSetUpdate = FALSE;   
-  UpdateData->FormCallbackHandle = 0;  
-  UpdateData->FormUpdate = FALSE;
-  UpdateData->FormTitle = 0;
-  UpdateData->DataCount = 1;
+  UpdateData->FormSetUpdate       = FALSE;
+  UpdateData->FormCallbackHandle  = 0;
+  UpdateData->FormUpdate          = FALSE;
+  UpdateData->FormTitle           = 0;
+  UpdateData->DataCount           = 1;
 
   //
   // Remove Banner Op-code if any at this label
   //
-  Hii->UpdateForm (Hii, gFrontPageHandle, (EFI_FORM_LABEL)0xFFFF, FALSE, UpdateData);
+  Hii->UpdateForm (Hii, gFrontPageHandle, (EFI_FORM_LABEL) 0xFFFF, FALSE, UpdateData);
 
   //
   // Create Banner Op-code which reflects correct timeout value
   //
-  CreateBannerOpCode (STRING_TOKEN(STR_TIME_OUT_PROMPT), TimeoutDefault, (UINT8)EFI_IFR_BANNER_TIMEOUT, &UpdateData->Data);
+  CreateBannerOpCode (
+    STRING_TOKEN (STR_TIME_OUT_PROMPT),
+    TimeoutDefault,
+    (UINT8) EFI_IFR_BANNER_TIMEOUT,
+    &UpdateData->Data
+    );
 
   //
   // Add Banner Op-code at this label
   //
-  Hii->UpdateForm (Hii, gFrontPageHandle, (EFI_FORM_LABEL)0xFFFF, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gFrontPageHandle, (EFI_FORM_LABEL) 0xFFFF, TRUE, UpdateData);
 
   do {
 
-    InitializeFrontPage(TRUE);
+    InitializeFrontPage (TRUE);
 
     //
     // Update Front Page strings
     //
-    UpdateFrontPageStrings();
+    UpdateFrontPageStrings ();
 
     gCallbackKey = 0;
-    PERF_START (0, L"BdsTimeOut", L"BDS", 0) ;
+    PERF_START (0, L"BdsTimeOut", L"BDS", 0);
     Status = CallFrontPage ();
-    PERF_END (0, L"BdsTimeOut", L"BDS", 0) ;
+    PERF_END (0, L"BdsTimeOut", L"BDS", 0);
 
     //
     // If gCallbackKey is greater than 1 and less or equal to 5,
-    // it will lauch configuration utilities. 
+    // it will lauch configuration utilities.
     // 2 = set language
     // 3 = boot manager
     // 4 = device manager
@@ -788,20 +813,19 @@ PlatformBdsEnterFrontPage (
     //
     if ((gCallbackKey > 0x0001) && (gCallbackKey <= 0x0005)) {
       gRT->ReportStatusCode (
-             EFI_PROGRESS_CODE,
-             (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_USER_SETUP),
-             0,
-             &gEfiBdsArchProtocolGuid,
-             NULL
-             );
+            EFI_PROGRESS_CODE,
+            (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_USER_SETUP),
+            0,
+            &gEfiBdsArchProtocolGuid,
+            NULL
+            );
     }
-
     //
     // Based on the key that was set, we can determine what to do
     //
     switch (gCallbackKey) {
     //
-    // The first 4 entries in the Front Page are to be GUARANTEED to remain constant so IHV's can 
+    // The first 4 entries in the Front Page are to be GUARANTEED to remain constant so IHV's can
     // describe to their customers in documentation how to find their setup information (namely
     // under the device manager and specific buckets)
     //
@@ -809,7 +833,7 @@ PlatformBdsEnterFrontPage (
     //
     case 0x0001:
       //
-      // User hit continue 
+      // User hit continue
       //
       break;
 
@@ -830,13 +854,13 @@ PlatformBdsEnterFrontPage (
       //
       // Display the Device Manager
       //
-      CallDeviceManager();
+      CallDeviceManager ();
       break;
 
     case 0x0005:
       //
       // Display the Boot Maintenance Manager
-      //                
+      //
       BdsStartBootMaint ();
       break;
     }
@@ -849,6 +873,6 @@ PlatformBdsEnterFrontPage (
   // takes affect
   //
   Status = gBS->LocateProtocol (&gEfiConsoleControlProtocolGuid, NULL, &ConsoleControl);
-  ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenText);    
+  ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenText);
 
 }

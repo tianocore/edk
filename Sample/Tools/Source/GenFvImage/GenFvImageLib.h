@@ -20,53 +20,51 @@ Abstract:
 
 --*/
 
-#ifndef   _EFI_GEN_FV_IMAGE_LIB_H
-#define   _EFI_GEN_FV_IMAGE_LIB_H
+#ifndef _EFI_GEN_FV_IMAGE_LIB_H
+#define _EFI_GEN_FV_IMAGE_LIB_H
 
 //
 // Include files
 //
-
 #include "Efi2WinNT.h"
 #include "ParseInf.h"
 
 //
 // Following definition is used for FIT in IPF
 //
+#define COMP_TYPE_FIT_PEICORE 0x10
+#define COMP_TYPE_FIT_UNUSED  0x7F
 
-#define   COMP_TYPE_FIT_PEICORE         0x10
-#define   COMP_TYPE_FIT_UNUSED          0x7F
+#define FIT_TYPE_MASK         0x7F
+#define CHECKSUM_BIT_MASK     0x80
 
-#define   FIT_TYPE_MASK                 0x7F
-#define   CHECKSUM_BIT_MASK             0x80
-
-#pragma pack (1)
+#pragma pack(1)
 
 typedef struct {
-  UINT64      CompAddress;
-  UINT32      CompSize;
-  UINT16      CompVersion;
-  UINT8       CvAndType;
-  UINT8       CheckSum;
+  UINT64  CompAddress;
+  UINT32  CompSize;
+  UINT16  CompVersion;
+  UINT8   CvAndType;
+  UINT8   CheckSum;
 } FIT_TABLE;
 
-#pragma pack ()
-
+#pragma pack()
 //
 // Exported function prototypes
 //
-
 EFI_STATUS
 GenerateFvImage (
   IN CHAR8    *InfFileImage,
-  IN UINTN   InfFileSize,
+  IN UINTN    InfFileSize,
   OUT UINT8   **FvImage,
   OUT UINTN   *FvImageSize,
   OUT CHAR8   **FvFileName,
   OUT UINT8   **SymImage,
   OUT UINTN   *SymImageSize,
   OUT CHAR8   **SymFileName
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -92,12 +90,13 @@ Returns:
   EFI_INVALID_PARAMETER   A required parameter was NULL.
 
 --*/
-
 EFI_STATUS
 UpdatePeiCoreEntryInFit (
   IN FIT_TABLE     *FitTablePtr,
   IN UINT64        PeiCorePhysicalAddress
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -116,11 +115,12 @@ Returns:
   EFI_NOT_FOUND           - Not found the PEI_CORE FIT entry.
 
 --*/
-
 VOID
 UpdateFitCheckSum (
   IN FIT_TABLE   *FitTablePtr
-  );
+  )
+;
+
 /*++
 
 Routine Description:

@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 
 //
@@ -33,13 +32,14 @@ Abstract:
 //
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 RtPort80ReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
-#endif 
+#endif

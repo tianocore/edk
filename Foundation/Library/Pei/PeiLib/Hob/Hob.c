@@ -394,15 +394,15 @@ PeiBuildHobBspStore (
 
 Routine Description:
 
-  Builds a HOB for the Stack
+  Builds a HOB for the bsp store
 
 Arguments:
 
   PeiServices               - The PEI core services table.
 
-  BaseAddress               - The 64 bit physical address of the Stack
+  BaseAddress               - The 64 bit physical address of the bsp
 
-  Length                    - The length of the stack in bytes
+  Length                    - The length of the bsp store in bytes
 
   MemoryType                - Memory type
 
@@ -447,7 +447,7 @@ PeiBuildHobMemoryAllocation (
 
 Routine Description:
 
-  Builds a HOB for the Stack
+  Builds a HOB for the memory allocation.
 
 Arguments:
 

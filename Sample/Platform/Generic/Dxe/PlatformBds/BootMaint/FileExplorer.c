@@ -24,7 +24,6 @@ Revision History
 #include "bootmaint.h"
 #include "BdsPlatform.h"
 
-
 VOID
 UpdateFileExplorePage (
   IN BMM_CALLBACK_DATA            *CallbackData,
@@ -42,15 +41,15 @@ Returns:
 
 --*/
 {
-  UINT8                        *Location;
-  UINTN                        Index;
-  BM_MENU_ENTRY                *NewMenuEntry;
-  BM_FILE_CONTEXT              *NewFileContext;
-  FORM_ID                      FormId;
-  
-  NewMenuEntry = NULL;
-  NewFileContext = NULL;
-  FormId = 0;
+  UINT8           *Location;
+  UINTN           Index;
+  BM_MENU_ENTRY   *NewMenuEntry;
+  BM_FILE_CONTEXT *NewFileContext;
+  FORM_ID         FormId;
+
+  NewMenuEntry    = NULL;
+  NewFileContext  = NULL;
+  FormId          = 0;
 
   //
   // Clean up file explore page.
@@ -61,25 +60,25 @@ Returns:
   // Remove all op-codes from dynamic page
   //
   CallbackData->Hii->UpdateForm (
-                       CallbackData->Hii, 
-                       CallbackData->FeHiiHandle,
-                       FORM_FILE_EXPLORER_ID,
-                       FALSE,                      
-                       UpdateData                  
-                       );
+                      CallbackData->Hii,
+                      CallbackData->FeHiiHandle,
+                      FORM_FILE_EXPLORER_ID,
+                      FALSE,
+                      UpdateData
+                      );
 
   RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) CallbackData->FeCallbackHandle, FALSE, 0, 0);
 
   Location = (UINT8 *) &UpdateData->Data;
 
-  for (Index = 0; Index < MenuOption->MenuNumber; Index ++) {
-    NewMenuEntry = BOpt_GetMenuEntry (MenuOption, Index);
-    NewFileContext = (BM_FILE_CONTEXT *) NewMenuEntry->VariableContext;
+  for (Index = 0; Index < MenuOption->MenuNumber; Index++) {
+    NewMenuEntry    = BOpt_GetMenuEntry (MenuOption, Index);
+    NewFileContext  = (BM_FILE_CONTEXT *) NewMenuEntry->VariableContext;
 
     if (NewFileContext->IsBootLegacy) {
       continue;
     }
-    
+
     if ((NewFileContext->IsDir) || (BOOT_FROM_FILE_STATE == CallbackData->FeCurrentState)) {
       //
       // Create Text opcode for directory, also create Text opcode for file in BOOT_FROM_FILE_STATE.
@@ -87,7 +86,7 @@ Returns:
       CreateTextOpCode (
         NewMenuEntry->DisplayStringToken,
         STR_NULL_STRING,
-        STR_NULL_STRING,                      
+        STR_NULL_STRING,
         EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
         (UINT16) (FILE_OPTION_OFFSET + Index),
         Location
@@ -111,17 +110,18 @@ Returns:
         Location
         );
     }
-    UpdateData->DataCount ++;                      
-    Location = Location + ((EFI_IFR_OP_HEADER *)Location)->Length;
+
+    UpdateData->DataCount++;
+    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
   }
 
   CallbackData->Hii->UpdateForm (
-                       CallbackData->Hii, 
-                       CallbackData->FeHiiHandle, 
-                       FORM_FILE_EXPLORER_ID, 
-                       TRUE, 
-                       UpdateData
-                       );  
+                      CallbackData->Hii,
+                      CallbackData->FeHiiHandle,
+                      FORM_FILE_EXPLORER_ID,
+                      TRUE,
+                      UpdateData
+                      );
 }
 
 BOOLEAN
@@ -144,24 +144,24 @@ Returns:
 
 --*/
 {
-  UINT16            FileOptionMask;
-  BM_MENU_ENTRY     *NewMenuEntry;
-  BM_FILE_CONTEXT   *NewFileContext;
-  FORM_ID           FormId;
-  BOOLEAN           ExitFileExplorer;
-  
-  NewMenuEntry = NULL;
-  NewFileContext = NULL;
-  ExitFileExplorer = FALSE;
+  UINT16          FileOptionMask;
+  BM_MENU_ENTRY   *NewMenuEntry;
+  BM_FILE_CONTEXT *NewFileContext;
+  FORM_ID         FormId;
+  BOOLEAN         ExitFileExplorer;
 
-  FileOptionMask = (UINT16) (FILE_OPTION_MASK & KeyValue);
+  NewMenuEntry      = NULL;
+  NewFileContext    = NULL;
+  ExitFileExplorer  = FALSE;
+
+  FileOptionMask    = (UINT16) (FILE_OPTION_MASK & KeyValue);
 
   if (UNKNOWN_CONTEXT == CallbackData->FeDisplayContext) {
     //
     // First in, display file system.
     //
     BOpt_FreeMenu (&FsOptionMenu);
-    BOpt_FindFileSystem(CallbackData);
+    BOpt_FindFileSystem (CallbackData);
     CreateMenuStringToken (CallbackData, CallbackData->FeHiiHandle, &FsOptionMenu);
 
     UpdateFileExplorePage (CallbackData, &FsOptionMenu);
@@ -173,84 +173,84 @@ Returns:
     } else if (DIRECTORY == CallbackData->FeDisplayContext) {
       NewMenuEntry = BOpt_GetMenuEntry (&DirectoryMenu, FileOptionMask);
     }
-  
-    CallbackData->FeDisplayContext = DIRECTORY;
 
-    NewFileContext = (BM_FILE_CONTEXT *) NewMenuEntry->VariableContext;
-    
-    if (NewFileContext->IsDir || 
-        (NewFileContext->IsRemovableMedia && 
-         CallbackData->FeCurrentState == BOOT_FROM_FILE_STATE)) {
+    CallbackData->FeDisplayContext  = DIRECTORY;
+
+    NewFileContext                  = (BM_FILE_CONTEXT *) NewMenuEntry->VariableContext;
+
+    if (NewFileContext->IsDir ||
+        (NewFileContext->IsRemovableMedia && CallbackData->FeCurrentState == BOOT_FROM_FILE_STATE)
+        ) {
       RemoveEntryList (&NewMenuEntry->Link);
       BOpt_FreeMenu (&DirectoryMenu);
       BOpt_FindFiles (CallbackData, NewMenuEntry);
       CreateMenuStringToken (CallbackData, CallbackData->FeHiiHandle, &DirectoryMenu);
-      BOpt_DestroyMenuEntry (NewMenuEntry); 
+      BOpt_DestroyMenuEntry (NewMenuEntry);
 
       UpdateFileExplorePage (CallbackData, &DirectoryMenu);
-  
+
     } else {
       switch (CallbackData->FeCurrentState) {
-        case BOOT_FROM_FILE_STATE:
-          //
-          // Here boot from file
-          //
-          BootThisFile(NewFileContext);
-          ExitFileExplorer = TRUE;
-          break;
-      
-        case ADD_BOOT_OPTION_STATE:
-        case ADD_DRIVER_OPTION_STATE:
-          if (ADD_BOOT_OPTION_STATE == CallbackData->FeCurrentState) {
-            FormId = FORM_BOOT_ADD_DESCRIPTION_ID;
-          } else {
-            FormId = FORM_DRIVER_ADD_FILE_DESCRIPTION_ID;
-          }
+      case BOOT_FROM_FILE_STATE:
+        //
+        // Here boot from file
+        //
+        BootThisFile (NewFileContext);
+        ExitFileExplorer = TRUE;
+        break;
 
-          CallbackData->MenuEntry = NewMenuEntry;
-          CallbackData->LoadContext->FilePathList = ((BM_FILE_CONTEXT *) 
-            (CallbackData->MenuEntry->VariableContext))->DevicePath;
+      case ADD_BOOT_OPTION_STATE:
+      case ADD_DRIVER_OPTION_STATE:
+        if (ADD_BOOT_OPTION_STATE == CallbackData->FeCurrentState) {
+          FormId = FORM_BOOT_ADD_DESCRIPTION_ID;
+        } else {
+          FormId = FORM_DRIVER_ADD_FILE_DESCRIPTION_ID;
+        }
 
-          //
-          // Clean up file explore page.
-          //
-          RefreshUpdateData (FALSE, 0, FALSE, 0, 1);
+        CallbackData->MenuEntry = NewMenuEntry;
+        CallbackData->LoadContext->FilePathList = ((BM_FILE_CONTEXT *) (CallbackData->MenuEntry->VariableContext))->DevicePath;
 
-          //
-          // Remove the Subtitle op-code.
-          //
-          CallbackData->Hii->UpdateForm (
-                               CallbackData->Hii, 
-                               CallbackData->FeHiiHandle,
-                               FormId,
-                               FALSE,                      
-                               UpdateData                  
-                               );
+        //
+        // Clean up file explore page.
+        //
+        RefreshUpdateData (FALSE, 0, FALSE, 0, 1);
 
-          //
-          // Create Subtitle op-code for the display string of the option.
-          //
-          RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) CallbackData->FeCallbackHandle, FALSE, 0, 1);
-              
-          CreateSubTitleOpCode ( 
-            NewMenuEntry->DisplayStringToken,
-            &UpdateData->Data
-            );
+        //
+        // Remove the Subtitle op-code.
+        //
+        CallbackData->Hii->UpdateForm (
+                            CallbackData->Hii,
+                            CallbackData->FeHiiHandle,
+                            FormId,
+                            FALSE,
+                            UpdateData
+                            );
 
-          CallbackData->Hii->UpdateForm (
-                               CallbackData->Hii, 
-                               CallbackData->FeHiiHandle, 
-                               FormId, 
-                               TRUE, 
-                               UpdateData
-                               );
-          break;
+        //
+        // Create Subtitle op-code for the display string of the option.
+        //
+        RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) CallbackData->FeCallbackHandle, FALSE, 0, 1);
 
-        default:
-          break;
+        CreateSubTitleOpCode (
+          NewMenuEntry->DisplayStringToken,
+          &UpdateData->Data
+          );
+
+        CallbackData->Hii->UpdateForm (
+                            CallbackData->Hii,
+                            CallbackData->FeHiiHandle,
+                            FormId,
+                            TRUE,
+                            UpdateData
+                            );
+        break;
+
+      default:
+        break;
       }
     }
   }
+
   return ExitFileExplorer;
 }
 
@@ -277,14 +277,14 @@ Returns:
   
 --*/
 {
-  BMM_CALLBACK_DATA         *Private;
-  FILE_EXPLORER_NV_DATA               *NvRamMap;
-  EFI_STATUS                          Status;
+  BMM_CALLBACK_DATA     *Private;
+  FILE_EXPLORER_NV_DATA *NvRamMap;
+  EFI_STATUS            Status;
 
-  Status = EFI_SUCCESS;
-  Private = FE_CALLBACK_DATA_FROM_THIS (This);
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) Private->FeCallbackHandle;
-  NvRamMap = (FILE_EXPLORER_NV_DATA *)Data->NvRamMap;
+  Status                          = EFI_SUCCESS;
+  Private                         = FE_CALLBACK_DATA_FROM_THIS (This);
+  UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) Private->FeCallbackHandle;
+  NvRamMap                        = (FILE_EXPLORER_NV_DATA *) Data->NvRamMap;
 
   if (KEY_VALUE_SAVE_AND_EXIT == KeyValue) {
     //
@@ -295,36 +295,39 @@ Returns:
       if (EFI_ERROR (Status)) {
         return Status;
       }
+
       BOpt_GetBootOptions (Private);
       CreateMenuStringToken (Private, Private->FeHiiHandle, &BootOptionMenu);
     } else if (ADD_DRIVER_OPTION_STATE == Private->FeCurrentState) {
       Status = Var_UpdateDriverOption (
-                 Private,
-                 Private->FeHiiHandle,
-                 NvRamMap->DescriptionData,
-                 NvRamMap->OptionalData,
-                 NvRamMap->ForceReconnect
-                 );
+                Private,
+                Private->FeHiiHandle,
+                NvRamMap->DescriptionData,
+                NvRamMap->OptionalData,
+                NvRamMap->ForceReconnect
+                );
       if (EFI_ERROR (Status)) {
         return Status;
       }
+
       BOpt_GetDriverOptions (Private);
       CreateMenuStringToken (Private, Private->FeHiiHandle, &DriverOptionMenu);
     }
+
     CreateCallbackPacket (Packet, EXIT_REQUIRED | NV_NOT_CHANGED);
   } else if (KEY_VALUE_NO_SAVE_AND_EXIT == KeyValue) {
     //
     // Discard changes and exit formset.
     //
-    NvRamMap->OptionalData[0] = 0x0000;
-    NvRamMap->DescriptionData[0] = 0x0000;
+    NvRamMap->OptionalData[0]     = 0x0000;
+    NvRamMap->DescriptionData[0]  = 0x0000;
     CreateCallbackPacket (Packet, EXIT_REQUIRED | NV_NOT_CHANGED);
   } else if (KeyValue < FILE_OPTION_OFFSET) {
     //
     // Exit File Explorer formset.
     //
     CreateCallbackPacket (Packet, EXIT_REQUIRED);
-  } else { 
+  } else {
     if (UpdateFileExplorer (Private, KeyValue)) {
       CreateCallbackPacket (Packet, EXIT_REQUIRED);
     }

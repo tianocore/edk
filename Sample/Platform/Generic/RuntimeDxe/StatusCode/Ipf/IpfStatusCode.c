@@ -39,7 +39,7 @@ ReportStatusCodeEsalServicesClassCommonEntry (
   IN  SAL_EXTENDED_SAL_PROC     ExtendedSalProc,
   IN   BOOLEAN                  VirtualMode,
   IN  VOID                      *Global
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -66,28 +66,27 @@ Returns:
 
 --*/
 {
-  SAL_RETURN_REGS   ReturnVal;
+  SAL_RETURN_REGS ReturnVal;
 
   switch (FunctionId) {
 
   case ReportStatusCode:
     ReturnVal.Status = StatusCodeReportStatusCode (
-                         (EFI_STATUS_CODE_TYPE)    Arg2,
-                         (EFI_STATUS_CODE_VALUE)   Arg3,
-                         (UINT32)                  Arg4,
-                         (EFI_GUID *)              Arg5,
-                         (EFI_STATUS_CODE_DATA *)  Arg6  
-                         );
+                        (EFI_STATUS_CODE_TYPE) Arg2,
+                        (EFI_STATUS_CODE_VALUE) Arg3,
+                        (UINT32) Arg4,
+                        (EFI_GUID *) Arg5,
+                        (EFI_STATUS_CODE_DATA *) Arg6
+                        );
     break;
-  
+
   default:
     ReturnVal.Status = EFI_SAL_INVALID_ARGUMENT;
     break;
   }
-  
+
   return ReturnVal;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -112,7 +111,6 @@ Returns:
 
 --*/
 {
-
   //
   // Initialize RT status code
   //
@@ -127,13 +125,12 @@ Returns:
   // Initialize ESAL capabilities
   //
   RegisterEsalClass (
-    &gEfiExtendedSalStatusCodeServicesProtocolGuid,  NULL, 
-    ReportStatusCodeEsalServicesClassCommonEntry,    StatusCode,
+    &gEfiExtendedSalStatusCodeServicesProtocolGuid,
+    NULL,
+    ReportStatusCodeEsalServicesClassCommonEntry,
+    StatusCode,
     NULL
     );
 
   return EFI_SUCCESS;
 }
-
-
-

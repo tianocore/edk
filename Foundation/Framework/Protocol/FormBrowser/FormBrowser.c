@@ -26,7 +26,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (FormBrowser)
 
-EFI_GUID gEfiFormBrowserProtocolGuid = EFI_FORM_BROWSER_PROTOCOL_GUID;
+EFI_GUID  gEfiFormBrowserProtocolGuid = EFI_FORM_BROWSER_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiFormBrowserProtocolGuid, "Form Browser Protocol", "Form Browser 1.0 protocol");
-

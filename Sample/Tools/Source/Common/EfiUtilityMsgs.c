@@ -18,7 +18,7 @@ Abstract:
   EFI tools utility functions to display warning, error, and informational
   messages.
   
---*/  
+--*/
 
 #include <stdio.h>
 #include <string.h>
@@ -28,26 +28,26 @@ Abstract:
 #include "Tiano.h"
 #include "EfiUtilityMsgs.h"
 
-#define MAX_LINE_LEN    200
+#define MAX_LINE_LEN  200
 
 //
 // Declare module globals for keeping track of the the utility's
 // name and other settings.
 //
-static STATUS mStatus                   = STATUS_SUCCESS;
-static INT8   mUtilityName[50]          = { 0 };
-static UINT32 mDebugMsgMask             = 0;
-static INT8   *mSourceFileName          = NULL;
-static UINT32 mSourceFileLineNum        = 0;
-static UINT32 mErrorCount               = 0;
-static UINT32 mWarningCount             = 0;
-static UINT32 mMaxErrors                = 0;
-static UINT32 mMaxWarnings              = 0;
-static UINT32 mMaxWarningsPlusErrors    = 0;
-static INT8   mPrintLimitsSet           = 0;
+static STATUS mStatus                 = STATUS_SUCCESS;
+static INT8   mUtilityName[50]        = { 0 };
+static UINT32 mDebugMsgMask           = 0;
+static INT8   *mSourceFileName        = NULL;
+static UINT32 mSourceFileLineNum      = 0;
+static UINT32 mErrorCount             = 0;
+static UINT32 mWarningCount           = 0;
+static UINT32 mMaxErrors              = 0;
+static UINT32 mMaxWarnings            = 0;
+static UINT32 mMaxWarningsPlusErrors  = 0;
+static INT8   mPrintLimitsSet         = 0;
 
 static
-void 
+void
 PrintMessage (
   INT8    *Type,
   INT8    *FileName,
@@ -60,9 +60,11 @@ PrintMessage (
 
 static
 void
-PrintLimitExceeded (); 
+PrintLimitExceeded (
+  VOID
+  );
 
-void 
+void
 Error (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -133,7 +135,7 @@ Notes:
     if (mMaxWarningsPlusErrors != 0) {
       if (mErrorCount + mWarningCount > mMaxWarningsPlusErrors) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
     //
@@ -142,14 +144,15 @@ Notes:
     if (mMaxErrors != 0) {
       if (mErrorCount > mMaxErrors) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
   }
+
   mErrorCount++;
   va_start (List, MsgFmt);
   PrintMessage ("error", FileName, LineNumber, MessageCode, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -157,7 +160,8 @@ Notes:
     mStatus = STATUS_ERROR;
   }
 }
-void 
+
+void
 ParserError (
   UINT32  MessageCode,
   INT8    *Text,
@@ -172,7 +176,7 @@ Routine Description:
 
 Arguments:
   MessageCode   - application-specific error code
-  OffendingText - text to print in the error message
+  Text          - text to print in the error message
   MsgFmt        - format string to print at the end of the error message
 
 Returns:
@@ -191,7 +195,7 @@ Returns:
     if (mMaxWarningsPlusErrors != 0) {
       if (mErrorCount + mWarningCount > mMaxWarningsPlusErrors) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
     //
@@ -200,14 +204,15 @@ Returns:
     if (mMaxErrors != 0) {
       if (mErrorCount > mMaxErrors) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
   }
+
   mErrorCount++;
   va_start (List, MsgFmt);
   PrintMessage ("error", mSourceFileName, mSourceFileLineNum, MessageCode, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -215,7 +220,8 @@ Returns:
     mStatus = STATUS_ERROR;
   }
 }
-void 
+
+void
 ParserWarning (
   UINT32  ErrorCode,
   INT8    *OffendingText,
@@ -249,7 +255,7 @@ Returns:
     if (mMaxWarningsPlusErrors != 0) {
       if (mErrorCount + mWarningCount > mMaxWarningsPlusErrors) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
     //
@@ -258,14 +264,15 @@ Returns:
     if (mMaxWarnings != 0) {
       if (mWarningCount > mMaxWarnings) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
   }
+
   mWarningCount++;
   va_start (List, MsgFmt);
   PrintMessage ("warning", mSourceFileName, mSourceFileLineNum, ErrorCode, OffendingText, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -273,7 +280,8 @@ Returns:
     mStatus = STATUS_WARNING;
   }
 }
-void 
+
+void
 Warning (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -318,7 +326,7 @@ Returns:
     if (mMaxWarningsPlusErrors != 0) {
       if (mErrorCount + mWarningCount > mMaxWarningsPlusErrors) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
     //
@@ -327,14 +335,15 @@ Returns:
     if (mMaxWarnings != 0) {
       if (mWarningCount > mMaxWarnings) {
         PrintLimitExceeded ();
-        return;
+        return ;
       }
     }
   }
+
   mWarningCount++;
   va_start (List, MsgFmt);
   PrintMessage ("warning", FileName, LineNumber, MessageCode, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -342,7 +351,8 @@ Returns:
     mStatus = STATUS_WARNING;
   }
 }
-void 
+
+void
 DebugMsg (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -376,18 +386,20 @@ Returns:
 --*/
 {
   va_list List;
-  // 
-  // If the debug mask is not applicable, then do nothing. 
+  //
+  // If the debug mask is not applicable, then do nothing.
   //
   if ((MsgMask != 0) && ((mDebugMsgMask & MsgMask) == 0)) {
-    return;
+    return ;
   }
+
   va_start (List, MsgFmt);
   PrintMessage ("debug", FileName, LineNumber, 0, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
 }
+
 static
-void 
+void
 PrintMessage (
   INT8    *Type,
   INT8    *FileName,
@@ -446,10 +458,10 @@ Notes:
 
 --*/
 {
-  INT8    Line[MAX_LINE_LEN];
-  INT8    Line2[MAX_LINE_LEN];
-  INT8    *Cptr;
-  // 
+  INT8  Line[MAX_LINE_LEN];
+  INT8  Line2[MAX_LINE_LEN];
+  INT8  *Cptr;
+  //
   // If given a filename, then add it (and the line number) to the string.
   // If there's no filename, then use the program name if provided.
   //
@@ -459,7 +471,8 @@ Notes:
     Cptr = mUtilityName;
   } else {
     Cptr = "Unknown utility";
-  } 
+  }
+
   strcpy (Line, Cptr);
   if (LineNumber != 0) {
     sprintf (Line2, "(%d)", LineNumber);
@@ -469,9 +482,9 @@ Notes:
   // Have to print an error code or Visual Studio won't find the
   // message for you. It has to be decimal digits too.
   //
-  sprintf (Line2, " : %s %c%04d", Type, toupper(Type[0]), MessageCode);
+  sprintf (Line2, " : %s %c%04d", Type, toupper (Type[0]), MessageCode);
   strcat (Line, Line2);
-  fprintf (stdout, "%s", Line);  
+  fprintf (stdout, "%s", Line);
   //
   // If offending text was provided, then print it
   //
@@ -485,8 +498,10 @@ Notes:
     vsprintf (Line2, MsgFmt, List);
     fprintf (stdout, ": %s", Line2);
   }
+
   fprintf (stdout, "\n");
 }
+
 void
 ParserSetPosition (
   INT8    *SourceFileName,
@@ -507,9 +522,10 @@ Returns:
 
 --*/
 {
-  mSourceFileName = SourceFileName;
-  mSourceFileLineNum = LineNum;
+  mSourceFileName     = SourceFileName;
+  mSourceFileLineNum  = LineNum;
 }
+
 void
 SetUtilityName (
   INT8    *UtilityName
@@ -539,9 +555,9 @@ Returns:
   if (UtilityName != NULL) {
     if (strlen (UtilityName) >= sizeof (mUtilityName)) {
       Error (UtilityName, 0, 0, "application error", "utility name length exceeds internal buffer size");
-      strncpy (mUtilityName, UtilityName, sizeof(mUtilityName) - 1);
-      mUtilityName[sizeof(mUtilityName) - 1] = 0;
-      return;
+      strncpy (mUtilityName, UtilityName, sizeof (mUtilityName) - 1);
+      mUtilityName[sizeof (mUtilityName) - 1] = 0;
+      return ;
     } else {
       strcpy (mUtilityName, UtilityName);
     }
@@ -549,8 +565,11 @@ Returns:
     Error (NULL, 0, 0, "application error", "SetUtilityName() called with NULL utility name");
   }
 }
+
 STATUS
-GetUtilityStatus ()
+GetUtilityStatus (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -569,6 +588,7 @@ Returns:
 {
   return mStatus;
 }
+
 void
 SetDebugMsgMask (
   UINT32  DebugMask
@@ -589,6 +609,7 @@ Returns:
 {
   mDebugMsgMask = DebugMask;
 }
+
 void
 SetPrintLimits (
   UINT32  MaxErrors,
@@ -617,9 +638,12 @@ Returns:
   mMaxWarningsPlusErrors  = MaxWarningsPlusErrors;
   mPrintLimitsSet         = 1;
 }
+
 static
 void
-PrintLimitExceeded ()
+PrintLimitExceeded (
+  VOID
+  )
 {
   static INT8 mPrintLimitExceeded = 0;
   //
@@ -638,13 +662,17 @@ PrintLimitExceeded ()
     mMaxWarningsPlusErrors--;
   }
 }
+
 #if 0
-void 
-TestUtilityMessages ()
+void
+TestUtilityMessages (
+  VOID
+  )
 {
   char *ArgStr = "ArgString";
-  int  ArgInt  = 0x12345678;
+  int  ArgInt;
 
+  ArgInt  = 0x12345678;
   //
   // Test without setting utility name
   //
@@ -702,30 +730,27 @@ TestUtilityMessages ()
   // Test parser prints
   //
   fprintf (stdout, "** Test parser errors\n");
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserError (1234, NULL, NULL);
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserError (1234, "Text1", NULL);
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserError (1234, NULL, "Text2");
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserError (1234, "Text1", "Text2");
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserError (1234, "Text1", "Text2 %s 0x%X", ArgStr, ArgInt);
 
   fprintf (stdout, "** Test parser warnings\n");
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserWarning (4321, NULL, NULL);
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserWarning (4321, "Text1", NULL);
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserWarning (4321, NULL, "Text2");
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserWarning (4321, "Text1", "Text2");
-  ParserSetPosition (__FILE__, __LINE__ + 1 );
+  ParserSetPosition (__FILE__, __LINE__ + 1);
   ParserWarning (4321, "Text1", "Text2 %s 0x%X", ArgStr, ArgInt);
 }
 #endif
-
-
-

@@ -16,14 +16,14 @@ Module Name:
 
 Abstract:
 
-  EFI 2.0 Miscellaneous Services InstallConfigurationTable service
+  Tiano Miscellaneous Services InstallConfigurationTable service
 
 --*/
 
 #include "Tiano.h"
 #include "DxeCore.h"
 
-#define   CONFIG_TABLE_SIZE_INCREASED       0x10
+#define CONFIG_TABLE_SIZE_INCREASED 0x10
 
 UINTN mSystemTableAllocateSize = 0;
 
@@ -31,17 +31,25 @@ UINTN mSystemTableAllocateSize = 0;
 EFI_STATUS
 CoreGetConfigTable (
   IN EFI_GUID *Guid,
-  OUT VOID    **Table  
+  OUT VOID    **Table
   )
 /*++
 
 Routine Description:
 
+  Find a config table by name in system table's ConfigurationTable.
+
 Arguments:
+
+  Guid        - The table name to look for
+  
+  Table       - Pointer of the config table
 
 Returns: 
 
-  None
+  EFI_NOT_FOUND       - Could not find the table in system table's ConfigurationTable.
+  
+  EFI_SUCCESS         - Table successfully found.
 
 --*/
 {
@@ -53,6 +61,7 @@ Returns:
       return EFI_SUCCESS;
     }
   }
+
   return EFI_NOT_FOUND;
 }
 
@@ -73,9 +82,9 @@ Routine Description:
 
 Arguments:
 
-  Guid:   Pointer to the GUID for the entry to add, update, or remove
-  Table:  Pointer to the configuration table for the entry to add, update, or
-          remove, may be NULL.
+  Guid     -  Pointer to the GUID for the entry to add, update, or remove
+  Table    -  Pointer to the configuration table for the entry to add, update, or
+              remove, may be NULL.
 
 Returns:
   
@@ -86,8 +95,8 @@ Returns:
 
 --*/
 {
-  UINTN                    Index;
-  EFI_CONFIGURATION_TABLE  *EfiConfigurationTable;
+  UINTN                   Index;
+  EFI_CONFIGURATION_TABLE *EfiConfigurationTable;
 
   //
   // If Guid is NULL, then this operation cannot be performed
@@ -98,7 +107,7 @@ Returns:
 
   EfiConfigurationTable = gST->ConfigurationTable;
 
-  // 
+  //
   // Search all the table for an entry that matches Guid
   //
   for (Index = 0; Index < gST->NumberOfTableEntries; Index++) {
@@ -108,11 +117,11 @@ Returns:
   }
 
   if (Index < gST->NumberOfTableEntries) {
-    // 
+    //
     // A match was found, so this is either a modify or a delete operation
     //
     if (Table != NULL) {
-      // 
+      //
       // If Table is not NULL, then this is a modify operation.
       // Modify the table enty and return.
       //
@@ -120,7 +129,7 @@ Returns:
       return EFI_SUCCESS;
     }
 
-    // 
+    //
     // A match was found and Table is NULL, so this is a delete operation.
     //
     gST->NumberOfTableEntries--;
@@ -129,19 +138,19 @@ Returns:
     // Copy over deleted entry
     //
     EfiCommonLibCopyMem (
-       &(EfiConfigurationTable[Index]),  
-       &(gST->ConfigurationTable[Index+1]),
-       (gST->NumberOfTableEntries - Index) * sizeof(EFI_CONFIGURATION_TABLE)
-       );
+      &(EfiConfigurationTable[Index]),
+      &(gST->ConfigurationTable[Index + 1]),
+      (gST->NumberOfTableEntries - Index) * sizeof (EFI_CONFIGURATION_TABLE)
+      );
 
   } else {
 
-    // 
+    //
     // No matching GUIDs were found, so this is an add operation.
     //
 
     if (Table == NULL) {
-      // 
+      //
       // If Table is NULL on an add operation, then return an error.
       //
       return EFI_NOT_FOUND;
@@ -150,26 +159,26 @@ Returns:
     //
     // Assume that Index == gST->NumberOfTableEntries
     //
-    if ((Index * sizeof(EFI_CONFIGURATION_TABLE)) >= mSystemTableAllocateSize) {    
-      // 
+    if ((Index * sizeof (EFI_CONFIGURATION_TABLE)) >= mSystemTableAllocateSize) {
+      //
       // Allocate a table with one additional entry.
       //
-      mSystemTableAllocateSize += (CONFIG_TABLE_SIZE_INCREASED * sizeof(EFI_CONFIGURATION_TABLE));
+      mSystemTableAllocateSize += (CONFIG_TABLE_SIZE_INCREASED * sizeof (EFI_CONFIGURATION_TABLE));
       EfiConfigurationTable = CoreAllocateRuntimePool (mSystemTableAllocateSize);
       if (EfiConfigurationTable == NULL) {
-        // 
+        //
         // If a new table could not be allocated, then return an error.
         //
         return EFI_OUT_OF_RESOURCES;
       }
 
-      if (gST->ConfigurationTable != NULL) { 
-        // 
+      if (gST->ConfigurationTable != NULL) {
+        //
         // Copy the old table to the new table.
         //
         EfiCommonLibCopyMem (
-          EfiConfigurationTable,  
-          gST->ConfigurationTable,  
+          EfiConfigurationTable,
+          gST->ConfigurationTable,
           Index * sizeof (EFI_CONFIGURATION_TABLE)
           );
 
@@ -183,16 +192,16 @@ Returns:
       // Update System Table
       //
       gST->ConfigurationTable = EfiConfigurationTable;
-    } 
+    }
 
-    // 
+    //
     // Fill in the new entry
     //
-    EfiConfigurationTable[Index].VendorGuid  = *Guid;
-    EfiConfigurationTable[Index].VendorTable = Table;
+    EfiConfigurationTable[Index].VendorGuid   = *Guid;
+    EfiConfigurationTable[Index].VendorTable  = Table;
 
     //
-    // This is an add operation, so increment the number of table entries 
+    // This is an add operation, so increment the number of table entries
     //
     gST->NumberOfTableEntries++;
   }
@@ -204,4 +213,3 @@ Returns:
 
   return EFI_SUCCESS;
 }
-

@@ -26,17 +26,18 @@ Abstract:
 #define _SERIAL_IO_H_
 
 #define EFI_SERIAL_IO_PROTOCOL_GUID \
-  { 0xBB25CF6F, 0xF1D4, 0x11D2, 0x9A, 0x0C, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0xFD }
+  { \
+    0xBB25CF6F, 0xF1D4, 0x11D2, 0x9A, 0x0C, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0xFD \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_SERIAL_IO_PROTOCOL);
 
 //
 // Serial IO Data structures
 //
-
 typedef enum {
-  DefaultParity,      
-  NoParity,           
+  DefaultParity,
+  NoParity,
   EvenParity,
   OddParity,
   MarkParity,
@@ -44,51 +45,45 @@ typedef enum {
 } EFI_PARITY_TYPE;
 
 typedef enum {
-  DefaultStopBits,        
-  OneStopBit,         
-  OneFiveStopBits,    
-  TwoStopBits         
+  DefaultStopBits,
+  OneStopBit,
+  OneFiveStopBits,
+  TwoStopBits
 } EFI_STOP_BITS_TYPE;
-
-
 
 //
 // define for Control bits, grouped by read only, write only, and read write
 //
-
 //
 // Read Only
 //
-#define EFI_SERIAL_CLEAR_TO_SEND                   0x00000010  
-#define EFI_SERIAL_DATA_SET_READY                  0x00000020  
-#define EFI_SERIAL_RING_INDICATE                   0x00000040  
-#define EFI_SERIAL_CARRIER_DETECT                  0x00000080  
-#define EFI_SERIAL_INPUT_BUFFER_EMPTY              0x00000100  
-#define EFI_SERIAL_OUTPUT_BUFFER_EMPTY             0x00000200  
+#define EFI_SERIAL_CLEAR_TO_SEND        0x00000010
+#define EFI_SERIAL_DATA_SET_READY       0x00000020
+#define EFI_SERIAL_RING_INDICATE        0x00000040
+#define EFI_SERIAL_CARRIER_DETECT       0x00000080
+#define EFI_SERIAL_INPUT_BUFFER_EMPTY   0x00000100
+#define EFI_SERIAL_OUTPUT_BUFFER_EMPTY  0x00000200
 
 //
 // Write Only
 //
-#define EFI_SERIAL_REQUEST_TO_SEND                 0x00000002  
-#define EFI_SERIAL_DATA_TERMINAL_READY             0x00000001  
+#define EFI_SERIAL_REQUEST_TO_SEND      0x00000002
+#define EFI_SERIAL_DATA_TERMINAL_READY  0x00000001
 
 //
 // Read Write
 //
-#define EFI_SERIAL_HARDWARE_LOOPBACK_ENABLE        0x00001000  
-#define EFI_SERIAL_SOFTWARE_LOOPBACK_ENABLE        0x00002000  
-#define EFI_SERIAL_HARDWARE_FLOW_CONTROL_ENABLE    0x00004000  
-
-
+#define EFI_SERIAL_HARDWARE_LOOPBACK_ENABLE     0x00001000
+#define EFI_SERIAL_SOFTWARE_LOOPBACK_ENABLE     0x00002000
+#define EFI_SERIAL_HARDWARE_FLOW_CONTROL_ENABLE 0x00004000
 
 //
 // Serial IO Member Functions
 //
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SERIAL_RESET) (
-  IN EFI_SERIAL_IO_PROTOCOL *This
+  IN EFI_SERIAL_IO_PROTOCOL * This
   )
 /*++
 
@@ -108,7 +103,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SERIAL_SET_ATTRIBUTES) (
-  IN EFI_SERIAL_IO_PROTOCOL *This,
+  IN EFI_SERIAL_IO_PROTOCOL         * This,
   IN UINT64                         BaudRate,
   IN UINT32                         ReceiveFifoDepth,
   IN UINT32                         Timeout,
@@ -148,11 +143,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SERIAL_SET_CONTROL_BITS) (
-  IN EFI_SERIAL_IO_PROTOCOL *This,
+  IN EFI_SERIAL_IO_PROTOCOL         * This,
   IN UINT32                         Control
   )
 /*++
@@ -172,11 +166,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SERIAL_GET_CONTROL_BITS) (
-  IN EFI_SERIAL_IO_PROTOCOL *This,
+  IN EFI_SERIAL_IO_PROTOCOL         * This,
   OUT UINT32                        *Control
   )
 /*++
@@ -196,11 +189,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SERIAL_WRITE) (
-  IN EFI_SERIAL_IO_PROTOCOL *This,
+  IN EFI_SERIAL_IO_PROTOCOL         * This,
   IN OUT UINTN                      *BufferSize,
   IN VOID                           *Buffer
   )
@@ -226,7 +218,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SERIAL_READ) (
-  IN EFI_SERIAL_IO_PROTOCOL *This,
+  IN EFI_SERIAL_IO_PROTOCOL         * This,
   IN OUT UINTN                      *BufferSize,
   OUT VOID                          *Buffer
   )
@@ -248,7 +240,6 @@ EFI_STATUS
 
 --*/
 ;
-
 
 /*++
 
@@ -273,34 +264,33 @@ EFI_STATUS
 
 --*/
 typedef struct {
-  UINT32                  ControlMask;
+  UINT32  ControlMask;
 
   //
   // current Attributes
   //
-  UINT32                  Timeout;
-  UINT64                  BaudRate;
-  UINT32                  ReceiveFifoDepth;
-  UINT32                  DataBits;
-  UINT32                  Parity;
-  UINT32                  StopBits;
+  UINT32  Timeout;
+  UINT64  BaudRate;
+  UINT32  ReceiveFifoDepth;
+  UINT32  DataBits;
+  UINT32  Parity;
+  UINT32  StopBits;
 } EFI_SERIAL_IO_MODE;
 
-#define SERIAL_IO_INTERFACE_REVISION    0x00010000
+#define SERIAL_IO_INTERFACE_REVISION  0x00010000
 
 typedef struct _EFI_SERIAL_IO_PROTOCOL {
-  UINT32                       Revision;
-  EFI_SERIAL_RESET             Reset;
-  EFI_SERIAL_SET_ATTRIBUTES    SetAttributes;
-  EFI_SERIAL_SET_CONTROL_BITS  SetControl;
-  EFI_SERIAL_GET_CONTROL_BITS  GetControl;
-  EFI_SERIAL_WRITE             Write;
-  EFI_SERIAL_READ              Read;
+  UINT32                      Revision;
+  EFI_SERIAL_RESET            Reset;
+  EFI_SERIAL_SET_ATTRIBUTES   SetAttributes;
+  EFI_SERIAL_SET_CONTROL_BITS SetControl;
+  EFI_SERIAL_GET_CONTROL_BITS GetControl;
+  EFI_SERIAL_WRITE            Write;
+  EFI_SERIAL_READ             Read;
 
-  EFI_SERIAL_IO_MODE           *Mode;
+  EFI_SERIAL_IO_MODE          *Mode;
 } EFI_SERIAL_IO_PROTOCOL;
 
-extern EFI_GUID  gEfiSerialIoProtocolGuid;
+extern EFI_GUID gEfiSerialIoProtocolGuid;
 
 #endif
-

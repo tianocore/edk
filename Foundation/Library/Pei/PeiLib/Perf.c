@@ -202,8 +202,7 @@ Returns:
           if ((((INT32 *)Guid)[0] == ((INT32 *)CheckGuid)[0]) &&
               (((INT32 *)Guid)[1] == ((INT32 *)CheckGuid)[1]) &&
               (((INT32 *)Guid)[2] == ((INT32 *)CheckGuid)[2]) &&
-              (((INT32 *)Guid)[3] == ((INT32 *)CheckGuid)[3]))
-          {
+              (((INT32 *)Guid)[3] == ((INT32 *)CheckGuid)[3]))  {
             if (Value != 0) {
               Log->StopTimeCount = Value;
             } else {

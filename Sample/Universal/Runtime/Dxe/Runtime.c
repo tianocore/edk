@@ -54,25 +54,25 @@ Revision History:
 #include "Runtime.h"
 
 //
-// Bugbug: This is a only short term solution 
+// Bugbug: This is a only short term solution
 // The final solution requres DXE core changes.
 //
-#define MAX_RUNTIME_IMAGE_NUM    (64)
-#define MAX_RUNTIME_EVENT_NUM    (64)
-RUNTIME_IMAGE_RELOCATION_DATA *mRuntimeImageBuffer = NULL;
-RUNTIME_NOTIFY_EVENT_DATA     *mRuntimeEventBuffer = NULL;
-UINTN                          mRuntimeImageNumber;
-UINTN                          mRuntimeEventNumber;
+#define MAX_RUNTIME_IMAGE_NUM (64)
+#define MAX_RUNTIME_EVENT_NUM (64)
+RUNTIME_IMAGE_RELOCATION_DATA *mRuntimeImageBuffer  = NULL;
+RUNTIME_NOTIFY_EVENT_DATA     *mRuntimeEventBuffer  = NULL;
+UINTN                         mRuntimeImageNumber;
+UINTN                         mRuntimeEventNumber;
 
 //
 // The handle onto which the Runtime Architectural Protocol instance is installed
 //
-EFI_HANDLE mRuntimeHandle = NULL;
+EFI_HANDLE                    mRuntimeHandle = NULL;
 
 //
 // The Runtime Architectural Protocol instance produced by this driver
 //
-EFI_RUNTIME_ARCH_PROTOCOL mRuntime = {
+EFI_RUNTIME_ARCH_PROTOCOL     mRuntime = {
   RuntimeDriverRegisterImage,
   RuntimeDriverRegisterEvent
 };
@@ -80,22 +80,21 @@ EFI_RUNTIME_ARCH_PROTOCOL mRuntime = {
 //
 // Global Variables
 //
-EFI_LIST_ENTRY             mRelocationList            = INITIALIZE_LIST_HEAD_VARIABLE (mRelocationList);
-EFI_LIST_ENTRY             mEventList                 = INITIALIZE_LIST_HEAD_VARIABLE (mEventList);
-BOOLEAN                    mEfiVirtualMode            = FALSE;
-EFI_GUID                   mLocalEfiUgaIoProtocolGuid = EFI_UGA_IO_PROTOCOL_GUID;
-EFI_MEMORY_DESCRIPTOR      *mVirtualMap               = NULL;
-UINTN                      mVirtualMapDescriptorSize;
-UINTN                      mVirtualMapMaxIndex;
+EFI_LIST_ENTRY                mRelocationList             = INITIALIZE_LIST_HEAD_VARIABLE(mRelocationList);
+EFI_LIST_ENTRY                mEventList                  = INITIALIZE_LIST_HEAD_VARIABLE(mEventList);
+BOOLEAN                       mEfiVirtualMode             = FALSE;
+EFI_GUID                      mLocalEfiUgaIoProtocolGuid  = EFI_UGA_IO_PROTOCOL_GUID;
+EFI_MEMORY_DESCRIPTOR         *mVirtualMap                = NULL;
+UINTN                         mVirtualMapDescriptorSize;
+UINTN                         mVirtualMapMaxIndex;
 
-EFI_LOADED_IMAGE_PROTOCOL  *mMyLoadedImage;
-EFI_SYSTEM_TABLE           *mMyST;
-EFI_RUNTIME_SERVICES       *mMyRT;
+EFI_LOADED_IMAGE_PROTOCOL     *mMyLoadedImage;
+EFI_SYSTEM_TABLE              *mMyST;
+EFI_RUNTIME_SERVICES          *mMyRT;
 
 //
 // Worker Functions
 //
-
 VOID
 RuntimeDriverCalculateEfiHdrCrc (
   IN OUT EFI_TABLE_HEADER  *Hdr
@@ -118,23 +117,22 @@ Returns:
 
 --*/
 {
-  UINT32 Crc;
+  UINT32  Crc;
 
-  Hdr->CRC32 = 0;
-  
-  Crc = 0;
-  RuntimeDriverCalculateCrc32 ((UINT8 *)Hdr, Hdr->HeaderSize, &Crc);
-  Hdr->CRC32 = Crc; 
+  Hdr->CRC32  = 0;
+
+  Crc         = 0;
+  RuntimeDriverCalculateCrc32 ((UINT8 *) Hdr, Hdr->HeaderSize, &Crc);
+  Hdr->CRC32 = Crc;
 }
-
 
 EFI_STATUS
 EFIAPI
 RuntimeDriverRegisterImage (
   IN  EFI_RUNTIME_ARCH_PROTOCOL  *This,
-  IN  EFI_PHYSICAL_ADDRESS       ImageBase,   
-  IN  UINTN                      ImageSize,      
-  IN  VOID                       *RelocationData    
+  IN  EFI_PHYSICAL_ADDRESS       ImageBase,
+  IN  UINTN                      ImageSize,
+  IN  VOID                       *RelocationData
   )
 /*++
 
@@ -175,7 +173,7 @@ Returns:
 {
   RUNTIME_IMAGE_RELOCATION_DATA *RuntimeImage;
 
-  if (mMyLoadedImage->ImageBase == (VOID *)(UINTN)ImageBase) {
+  if (mMyLoadedImage->ImageBase == (VOID *) (UINTN) ImageBase) {
     //
     // We don't want to relocate our selves, as we only run in physical mode.
     //
@@ -184,17 +182,16 @@ Returns:
 
   RuntimeImage = mRuntimeImageBuffer++;
   mRuntimeImageNumber++;
-  ASSERT(mRuntimeImageNumber < MAX_RUNTIME_IMAGE_NUM);
-  
-  RuntimeImage->Valid          = TRUE;
-  RuntimeImage->ImageBase      = ImageBase;
-  RuntimeImage->ImageSize      = ImageSize;
-  RuntimeImage->RelocationData = RelocationData;
+  ASSERT (mRuntimeImageNumber < MAX_RUNTIME_IMAGE_NUM);
+
+  RuntimeImage->Valid           = TRUE;
+  RuntimeImage->ImageBase       = ImageBase;
+  RuntimeImage->ImageSize       = ImageSize;
+  RuntimeImage->RelocationData  = RelocationData;
 
   InsertTailList (&mRelocationList, &RuntimeImage->Link);
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -245,23 +242,22 @@ Returns:
 
   RuntimeEvent = mRuntimeEventBuffer++;
   mRuntimeEventNumber++;
-  ASSERT(mRuntimeEventNumber < MAX_RUNTIME_EVENT_NUM);
+  ASSERT (mRuntimeEventNumber < MAX_RUNTIME_EVENT_NUM);
 
-  RuntimeEvent->Type           = Type;
-  RuntimeEvent->NotifyTpl      = NotifyTpl;
-  RuntimeEvent->NotifyFunction = NotifyFunction;
-  RuntimeEvent->NotifyContext  = NotifyContext;
-  RuntimeEvent->Event          = Event;
+  RuntimeEvent->Type            = Type;
+  RuntimeEvent->NotifyTpl       = NotifyTpl;
+  RuntimeEvent->NotifyFunction  = NotifyFunction;
+  RuntimeEvent->NotifyContext   = NotifyContext;
+  RuntimeEvent->Event           = Event;
 
   InsertTailList (&mEventList, &RuntimeEvent->Link);
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 RuntimeDriverConvertPointer (
-  IN     UINTN  DebugDisposition,    
+  IN     UINTN  DebugDisposition,
   IN OUT VOID   **ConvertAddress
   )
 {
@@ -277,7 +273,6 @@ RuntimeDriverConvertPointer (
   if (ConvertAddress == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Get the address to convert
   //
@@ -290,37 +285,37 @@ RuntimeDriverConvertPointer (
     if (DebugDisposition & EFI_OPTIONAL_POINTER) {
       return EFI_SUCCESS;
     }
+
     return EFI_INVALID_PARAMETER;
   }
 
-  PlabelConvertAddress = NULL;
-  VirtEntry = mVirtualMap;
+  PlabelConvertAddress  = NULL;
+  VirtEntry             = mVirtualMap;
   for (Index = 0; Index < mVirtualMapMaxIndex; Index++) {
-
     //
-    // To prevent the inclusion of 64-bit math functions a UINTN was placed in 
+    // To prevent the inclusion of 64-bit math functions a UINTN was placed in
     //  front of VirtEntry->NumberOfPages to cast it to a 32-bit thing on IA-32
-    //  platforms. If you get this ASSERT remove the UINTN and do a 64-bit 
+    //  platforms. If you get this ASSERT remove the UINTN and do a 64-bit
     //  multiply.
     //
-    ASSERT ((VirtEntry->NumberOfPages < 0xffffffff) || (sizeof(UINTN) > 4));
-    
+    ASSERT ((VirtEntry->NumberOfPages < 0xffffffff) || (sizeof (UINTN) > 4));
+
     if ((VirtEntry->Attribute & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
       if (Address >= VirtEntry->PhysicalStart) {
-        VirtEndOfRange = VirtEntry->PhysicalStart + (((UINTN)VirtEntry->NumberOfPages) * EFI_PAGE_SIZE);
+        VirtEndOfRange = VirtEntry->PhysicalStart + (((UINTN) VirtEntry->NumberOfPages) * EFI_PAGE_SIZE);
         if (Address < VirtEndOfRange) {
           //
           // Compute new address
           //
-          *ConvertAddress = (VOID *)(Address - (UINTN)VirtEntry->PhysicalStart + (UINTN)VirtEntry->VirtualStart);
-          return EFI_SUCCESS; 
+          *ConvertAddress = (VOID *) (Address - (UINTN) VirtEntry->PhysicalStart + (UINTN) VirtEntry->VirtualStart);
+          return EFI_SUCCESS;
         } else if (Address < (VirtEndOfRange + 0x200000)) {
           //
-          // On Itanium GP defines a window +/- 2 MB inside an image. 
+          // On Itanium GP defines a window +/- 2 MB inside an image.
           // The compiler may asign a GP value outside of the image. Thus
           // it could fall out side of any of our valid regions
           //
-          PlabelConvertAddress = (VOID *)(Address - (UINTN)VirtEntry->PhysicalStart + (UINTN)VirtEntry->VirtualStart);
+          PlabelConvertAddress = (VOID *) (Address - (UINTN) VirtEntry->PhysicalStart + (UINTN) VirtEntry->VirtualStart);
         }
       }
     }
@@ -341,7 +336,6 @@ RuntimeDriverConvertPointer (
   return EFI_NOT_FOUND;
 }
 
-
 EFI_STATUS
 RuntimeDriverConvertInternalPointer (
   IN OUT VOID   **ConvertAddress
@@ -349,7 +343,6 @@ RuntimeDriverConvertInternalPointer (
 {
   return RuntimeDriverConvertPointer (EFI_INTERNAL_FUNCTION, ConvertAddress);
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -360,36 +353,32 @@ RuntimeDriverSetVirtualAddressMap (
   IN EFI_MEMORY_DESCRIPTOR  *VirtualMap
   )
 {
-  RUNTIME_NOTIFY_EVENT_DATA      *RuntimeEvent;
-  RUNTIME_IMAGE_RELOCATION_DATA  *RuntimeImage;
-  EFI_LIST_ENTRY                 *Link;
-  UINTN                          Index;
-  UINTN                          Index1;
-  EFI_DRIVER_OS_HANDOFF_HEADER   *DriverOsHandoffHeader;
-  EFI_DRIVER_OS_HANDOFF          *DriverOsHandoff;
+  RUNTIME_NOTIFY_EVENT_DATA     *RuntimeEvent;
+  RUNTIME_IMAGE_RELOCATION_DATA *RuntimeImage;
+  EFI_LIST_ENTRY                *Link;
+  UINTN                         Index;
+  UINTN                         Index1;
+  EFI_DRIVER_OS_HANDOFF_HEADER  *DriverOsHandoffHeader;
+  EFI_DRIVER_OS_HANDOFF         *DriverOsHandoff;
 
   //
   // Can only switch to virtual addresses once the memory map is locked down,
   // and can only set it once
-  //    
-  if (!EfiAtRuntime ()  ||  mEfiVirtualMode) {
+  //
+  if (!EfiAtRuntime () || mEfiVirtualMode) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Only understand the original descriptor format
   //
-  if (DescriptorVersion != EFI_MEMORY_DESCRIPTOR_VERSION ||
-    DescriptorSize < sizeof (EFI_MEMORY_DESCRIPTOR) ) {
+  if (DescriptorVersion != EFI_MEMORY_DESCRIPTOR_VERSION || DescriptorSize < sizeof (EFI_MEMORY_DESCRIPTOR)) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // BugBug: Add code here to verify the memory map. We should
   //  cache a copy of the system memory map in the EFI System Table
   //  as a GUID pointer pair.
   //
-
   //
   // Make sure all virtual translations are satisfied
   //
@@ -399,17 +388,14 @@ RuntimeDriverSetVirtualAddressMap (
   // BugBug :The following code does not work hence commented out.
   // Need to be replaced by something that works.
   //
-
-//  VirtEntry = VirtualMap;
-//  for (Index = 0; Index < mVirtualMapMaxIndex; Index++) {
-//    if (((VirtEntry->Attribute & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) && 
-//        (VirtEntry->VirtualStart != 0) ) {
-//        return EFI_NO_MAPPING;
-//    }
-
-//    VirtEntry = NextMemoryDescriptor(VirtEntry, DescriptorSize);
-//  }
-
+  //  VirtEntry = VirtualMap;
+  //  for (Index = 0; Index < mVirtualMapMaxIndex; Index++) {
+  //    if (((VirtEntry->Attribute & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) &&
+  //        (VirtEntry->VirtualStart != 0) ) {
+  //        return EFI_NO_MAPPING;
+  //    }
+  //    VirtEntry = NextMemoryDescriptor(VirtEntry, DescriptorSize);
+  //  }
   //
   // We are now committed to go to virtual mode, so lets get to it!
   //
@@ -420,26 +406,25 @@ RuntimeDriverSetVirtualAddressMap (
   // globals we need to parse the virtual address map.
   //
   mVirtualMapDescriptorSize = DescriptorSize;
-  mVirtualMap = VirtualMap;
+  mVirtualMap               = VirtualMap;
 
   //
   // Signal all the EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE events.
-  // The core call RuntimeDriverRegisterEvent() for 
+  // The core call RuntimeDriverRegisterEvent() for
   // every runtime event and we stored them in the mEventList
   //
-
   //
-  // Currently the bug in StatusCode/RuntimeLib has been fixed, it will 
-  // check whether in Runtime or not (this is judged by looking at 
+  // Currently the bug in StatusCode/RuntimeLib has been fixed, it will
+  // check whether in Runtime or not (this is judged by looking at
   // mEfiAtRuntime global So this ReportStatusCode will work
   //
-
-  mMyRT->ReportStatusCode (EFI_PROGRESS_CODE,
-                          (EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_RS_PC_SET_VIRTUAL_ADDRESS_MAP),
-                           0,
-                           &gEfiCallerIdGuid,
-                           NULL);
-        
+  mMyRT->ReportStatusCode (
+          EFI_PROGRESS_CODE,
+          (EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_RS_PC_SET_VIRTUAL_ADDRESS_MAP),
+          0,
+          &gEfiCallerIdGuid,
+          NULL
+          );
 
   //
   // BugBug - Commented out for now because the status code driver is not
@@ -448,11 +433,11 @@ RuntimeDriverSetVirtualAddressMap (
   // on the way.
   //
   //  gRT->ReportStatusCode (
-  //        EfiProgressCode,  EfiMaxErrorSeverity,  
+  //        EfiProgressCode,  EfiMaxErrorSeverity,
   //        0x03, 0x01, 12, // ReadyToBoot Progress code
   //        0x00, 30, L"ConvertPointer"
   //        );
-
+  //
   for (Link = mEventList.ForwardLink; Link != &mEventList; Link = Link->ForwardLink) {
     RuntimeEvent = _CR (Link, RUNTIME_NOTIFY_EVENT_DATA, Link);
     if ((RuntimeEvent->Type & EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) == EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) {
@@ -462,34 +447,31 @@ RuntimeDriverSetVirtualAddressMap (
                       );
     }
   }
-
-
   //
   // Relocate runtime images. Runtime images loaded before the runtime AP was
   // started will not be relocated, since they would not have gotten registered.
   // This includes the code in this file.
   //
   for (Link = mRelocationList.ForwardLink; Link != &mRelocationList; Link = Link->ForwardLink) {
-    RuntimeImage = _CR(Link, RUNTIME_IMAGE_RELOCATION_DATA, Link);
+    RuntimeImage = _CR (Link, RUNTIME_IMAGE_RELOCATION_DATA, Link);
     if (RuntimeImage->Valid) {
       RelocatePeImageForRuntime (RuntimeImage);
     }
   }
-
   //
   // Convert all the Runtime Services except ConvertPointer() and SetVirtualAddressMap()
   // and recompute the CRC-32
   //
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->GetTime);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->SetTime);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->GetWakeupTime);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->SetWakeupTime);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->ResetSystem);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->ReportStatusCode);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->GetNextHighMonotonicCount);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->GetVariable);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->SetVariable);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyRT->GetNextVariableName);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetTime);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->SetTime);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetWakeupTime);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->SetWakeupTime);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->ResetSystem);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->ReportStatusCode);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetNextHighMonotonicCount);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetVariable);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->SetVariable);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetNextVariableName);
   RuntimeDriverCalculateEfiHdrCrc (&mMyRT->Hdr);
 
   //
@@ -499,27 +481,32 @@ RuntimeDriverSetVirtualAddressMap (
     if (EfiCompareGuid (&mLocalEfiUgaIoProtocolGuid, &(mMyST->ConfigurationTable[Index].VendorGuid))) {
       DriverOsHandoffHeader = mMyST->ConfigurationTable[Index].VendorTable;
       for (Index1 = 0; Index1 < DriverOsHandoffHeader->NumberOfEntries; Index1++) {
-        DriverOsHandoff = (EFI_DRIVER_OS_HANDOFF *)((UINTN)DriverOsHandoffHeader + DriverOsHandoffHeader->HeaderSize + Index1 * DriverOsHandoffHeader->SizeOfEntries);
+        DriverOsHandoff = (EFI_DRIVER_OS_HANDOFF *)
+          (
+            (UINTN) DriverOsHandoffHeader +
+            DriverOsHandoffHeader->HeaderSize +
+            Index1 *
+            DriverOsHandoffHeader->SizeOfEntries
+          );
         RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &DriverOsHandoff->DevicePath);
         RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &DriverOsHandoff->PciRomImage);
       }
+
       RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index].VendorTable));
     }
   }
-
   //
   // Convert the runtime fields of the EFI System Table and recompute the CRC-32
   //
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyST->FirmwareVendor);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyST->ConfigurationTable);
-  RuntimeDriverConvertInternalPointer ((VOID **)&mMyST->RuntimeServices);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyST->FirmwareVendor);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyST->ConfigurationTable);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyST->RuntimeServices);
   RuntimeDriverCalculateEfiHdrCrc (&mMyST->Hdr);
 
   //
   // At this point, mMyRT and mMyST are physical pointers, but the contents of these tables
   // have been converted to runtime.
   //
-
   //
   // mVirtualMap is only valid during SetVirtualAddressMap() call
   //
@@ -528,8 +515,7 @@ RuntimeDriverSetVirtualAddressMap (
   return EFI_SUCCESS;
 }
 
-
-EFI_DRIVER_ENTRY_POINT(RuntimeDriverInitialize)
+EFI_DRIVER_ENTRY_POINT (RuntimeDriverInitialize)
 
 EFI_STATUS
 RuntimeDriverInitialize (
@@ -569,12 +555,12 @@ Returns:
   mMyRT = SystemTable->RuntimeServices;
 
   //
-  // This image needs to be exclued from relocation for virtual mode, so cache 
+  // This image needs to be exclued from relocation for virtual mode, so cache
   // a copy of the Loaded Image protocol to test later.
   //
   Status = gBS->HandleProtocol (
-                  ImageHandle, 
-                  &gEfiLoadedImageProtocolGuid, 
+                  ImageHandle,
+                  &gEfiLoadedImageProtocolGuid,
                   &mMyLoadedImage
                   );
   ASSERT_EFI_ERROR (Status);
@@ -596,7 +582,8 @@ Returns:
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mRuntimeHandle,
-                  &gEfiRuntimeArchProtocolGuid, &mRuntime,
+                  &gEfiRuntimeArchProtocolGuid,
+                  &mRuntime,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
@@ -606,19 +593,19 @@ Returns:
   // Allocate the runtime memory in advance
   //
   Status = gBS->AllocatePool (
-                  EfiRuntimeServicesData, 
-                  sizeof(RUNTIME_IMAGE_RELOCATION_DATA) * MAX_RUNTIME_IMAGE_NUM,                   
+                  EfiRuntimeServicesData,
+                  sizeof (RUNTIME_IMAGE_RELOCATION_DATA) * MAX_RUNTIME_IMAGE_NUM,
                   &mRuntimeImageBuffer
                   );
   ASSERT_EFI_ERROR (Status);
-                   
+
   Status = gBS->AllocatePool (
-                  EfiRuntimeServicesData, 
-                  sizeof(RUNTIME_NOTIFY_EVENT_DATA)* MAX_RUNTIME_EVENT_NUM,                   
+                  EfiRuntimeServicesData,
+                  sizeof (RUNTIME_NOTIFY_EVENT_DATA) * MAX_RUNTIME_EVENT_NUM,
                   &mRuntimeEventBuffer
                   );
   ASSERT_EFI_ERROR (Status);
-  
+
   mRuntimeImageNumber = 0;
   mRuntimeEventNumber = 0;
 

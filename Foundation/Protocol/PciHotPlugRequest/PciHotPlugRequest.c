@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(PciHotPlugRequest)
+#include EFI_PROTOCOL_DEFINITION (PciHotPlugRequest)
 
+EFI_GUID  gEfiPciHotPlugRequestProtocolGuid = EFI_PCI_HOTPLUG_REQUEST_PROTOCOL_GUID;
 
-EFI_GUID gEfiPciHotPlugRequestProtocolGuid = EFI_PCI_HOTPLUG_REQUEST_PROTOCOL_GUID;
-
-EFI_GUID_STRING(&gEfiPciHotPlugRequestProtocolGuid, "Pci Hot Plug Request Protocol", "EFI 2.0 Hot Plug Request Protocol");
+EFI_GUID_STRING(&gEfiPciHotPlugRequestProtocolGuid, "Pci Hot Plug Request Protocol", "Tiano Hot Plug Request Protocol");

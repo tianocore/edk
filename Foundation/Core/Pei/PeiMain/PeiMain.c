@@ -54,11 +54,13 @@ static EFI_PEI_PPI_DESCRIPTOR mMemoryDiscoveredPpi = {
 // 
 //
 static EFI_PEI_SERVICES  mPS = {
-  { PEI_SERVICES_SIGNATURE,
+  {
+    PEI_SERVICES_SIGNATURE,
     PEI_SERVICES_REVISION,
     sizeof (EFI_TABLE_HEADER),
     0,
-    0 },
+    0
+  },
   PeiInstallPpi,
   PeiReInstallPpi,
   PeiLocatePpi,
@@ -143,6 +145,7 @@ Arguments:
 Returns:
 
   This function never returns
+  EFI_NOT_FOUND        - Never reach
 
 --*/
 {
@@ -202,13 +205,27 @@ Returns:
         UINTN  StackValue;
 
         StackValue = INIT_CAR_VALUE;
-        for (StackPointer = (UINTN*)OldCoreData->MaxTopOfCarHeap; ((UINTN)StackPointer < ((UINTN)OldCoreData->BottomOfCarHeap + OldCoreData->SizeOfCacheAsRam)) && StackValue == INIT_CAR_VALUE; StackPointer++) {
-          StackValue = *StackPointer;
-        }
+      for (StackPointer = (UINTN *) OldCoreData->MaxTopOfCarHeap;
+           ((UINTN) StackPointer < ((UINTN) OldCoreData->BottomOfCarHeap + OldCoreData->SizeOfCacheAsRam)) 
+           && StackValue == INIT_CAR_VALUE;
+           StackPointer++) {
+        StackValue = *StackPointer;
+      }
 
-        PEI_DEBUG ((&PrivateData.PS, EFI_D_INFO, "Total Cache as RAM:    %d bytes.\n", OldCoreData->SizeOfCacheAsRam));
-        PEI_DEBUG ((&PrivateData.PS, EFI_D_INFO, "  CAR stack ever used: %d bytes.\n", ((UINTN)OldCoreData->TopOfCarHeap - (UINTN)StackPointer)));
-        PEI_DEBUG ((&PrivateData.PS, EFI_D_INFO, "  CAR heap used:       %d bytes.\n", ((UINTN)OldCoreData->HobList.HandoffInformationTable->EfiFreeMemoryBottom - (UINTN)OldCoreData->HobList.Raw)));
+      PEI_DEBUG ((&PrivateData.PS, EFI_D_INFO, "Total Cache as RAM:    %d bytes.\n", OldCoreData->SizeOfCacheAsRam));
+      PEI_DEBUG (
+        (
+        &PrivateData.PS, EFI_D_INFO, "  CAR stack ever used: %d bytes.\n",
+        ((UINTN) OldCoreData->TopOfCarHeap - (UINTN) StackPointer)
+        )
+        );
+        PEI_DEBUG (
+        (
+        &PrivateData.PS, EFI_D_INFO, "  CAR heap used:       %d bytes.\n",
+        ((UINTN) OldCoreData->HobList.HandoffInformationTable->EfiFreeMemoryBottom -
+         (UINTN) OldCoreData->HobList.Raw)
+        )
+        );
       }
     )
 

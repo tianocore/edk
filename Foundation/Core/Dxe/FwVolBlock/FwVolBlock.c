@@ -118,6 +118,7 @@ Returns:
   EFI_SUCCESS -  The firmware volume attributes were returned.
   EFI_INVALID_PARAMETER  -  The attributes requested are in conflict with the capabilities as
                              declared in the firmware volume header.
+  EFI_UNSUPPORTED        -  Not supported.
 --*/
 {
   return EFI_UNSUPPORTED;
@@ -151,6 +152,7 @@ Returns:
   EFI_DEVICE_ERROR    -  The block device is not functioning correctly and could not be
                          written. The firmware device may have been partially erased.
   EFI_INVALID_PARAMETER  -  One or more of the LBAs listed in the variable argument list do
+  EFI_UNSUPPORTED        -  Not supported.
     
 --*/
 {
@@ -167,6 +169,27 @@ FwVolBlockReadBlock (
   IN OUT UINTN                                  *NumBytes,
   IN     UINT8                                  *Buffer
   )
+/*++
+
+Routine Description:
+  Read the specified number of bytes from the block to the input buffer.
+
+Arguments:
+  This          -  Indicates the calling context.
+  Lba           -  The starting logical block index to read.
+  Offset        -  Offset into the block at which to begin reading.
+  NumBytes      -  Pointer to a UINT32. At entry, *NumBytes contains the
+                   total size of the buffer. At exit, *NumBytes contains the
+                   total number of bytes actually read.
+  Buffer        -  Pinter to a caller-allocated buffer that contains the destine
+                   for the read.    
+
+Returns:      
+  EFI_SUCCESS  -  The firmware volume was read successfully.
+  EFI_BAD_BUFFER_SIZE -  The read was attempted across an LBA boundary.
+  EFI_ACCESS_DENIED  -  Access denied.
+  EFI_DEVICE_ERROR   -  The block device is malfunctioning and could not be read.
+--*/
 {
   EFI_FW_VOL_BLOCK_DEVICE               *FvbDevice;
   EFI_FIRMWARE_VOLUME_HEADER            *FwVolHeader;
@@ -251,12 +274,13 @@ Arguments:
   Buffer        -  Pinter to a caller-allocated buffer that contains the source
                    for the write.    
 
-Return      
+Returns:     
   EFI_SUCCESS  -  The firmware volume was written successfully.
   EFI_BAD_BUFFER_SIZE -  The write was attempted across an LBA boundary. On output,
                          NumBytes contains the total number of bytes actually written.
   EFI_ACCESS_DENIED  -  The firmware volume is in the WriteDisabled state.
   EFI_DEVICE_ERROR   -  The block device is malfunctioning and could not be written.
+  EFI_UNSUPPORTED    -  Not supported.
 --*/
 {
   return EFI_UNSUPPORTED;
@@ -269,6 +293,19 @@ FwVolBlockGetPhysicalAddress (
   IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *This,
   OUT EFI_PHYSICAL_ADDRESS                        *Address
   )
+/*++
+
+Routine Description:
+  Get Fvb's base address.
+
+Arguments:
+  This          -  Indicates the calling context.
+  Address       -  Fvb device base address.
+
+Returns:     
+  EFI_SUCCESS  -  Successfully got Fvb's base address.
+  EFI_UNSUPPORTED -  Not supported.
+--*/
 {
   EFI_FW_VOL_BLOCK_DEVICE               *FvbDevice;
   
@@ -369,6 +406,12 @@ Arguments:
     ParentHandle    - handle of parent firmware volume, if this
                       image came from an FV image file in another
                       firmware volume (ala capsules)
+    FvProtocol      - Firmware volume block protocol produced.
+    
+Returns:
+    EFI_VOLUME_CORRUPTED    - Volume corrupted.
+    EFI_OUT_OF_RESOURCES    - No enough buffer to be allocated.
+    EFI_SUCCESS             - Successfully produced a FVB protocol on given buffer.
                      
 --*/
 {
@@ -474,8 +517,10 @@ Routine Description:
     libraries, consumes FV hobs and NT_NON_MM_FV environment variable and
     produces instances of FW_VOL_BLOCK_PROTOCOL as appropriate.
 Arguments:
-    Standard EFI image entry point args.
-
+    ImageHandle   - The image handle.
+    SystemTable   - The system table.
+Returns:
+    EFI_SUCCESS   - Successfully initialized firmware volume block driver.
 --*/
 {
   EFI_STATUS                    Status;
@@ -532,7 +577,7 @@ Routine Description:
 Arguments:
     FvHeader              - pointer to a firmware volume header
     Size                  - the size of the buffer pointed to by FvHeader
-    FirmwareVolumeHandle  - the handle on which a firmware volume protocol
+    FVProtocolHandle      - the handle on which a firmware volume protocol
                             was produced for the firmware volume passed in.
 
 Returns:

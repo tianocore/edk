@@ -23,9 +23,8 @@ Revision History
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(PciHotPlugInit)
+#include EFI_PROTOCOL_DEFINITION (PciHotPlugInit)
 
-EFI_GUID gEfiPciHotPlugInitProtocolGuid = EFI_PCI_HOT_PLUG_INIT_PROTOCOL_GUID;
+EFI_GUID  gEfiPciHotPlugInitProtocolGuid = EFI_PCI_HOT_PLUG_INIT_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiPciHotPlugInitProtocolGuid, "PCI Hot Plug Init Protocol", "EFI 1.1 PCI Hot Plug Init Protocol");
-
+EFI_GUID_STRING(&gEfiPciHotPlugInitProtocolGuid, "PCI Hot Plug Init Protocol", "PCI Hot Plug Init Protocol");

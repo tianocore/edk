@@ -26,14 +26,14 @@ Revision History
 //
 // Global Variables
 //
-PXE_SW_UNDI               *pxe;      // 3.0 entry point
-PXE_SW_UNDI               *pxe_31;   // 3.1 entry
-UNDI32_DEV                *UNDI32DeviceList[MAX_NIC_INTERFACES];
+PXE_SW_UNDI             *pxe;     // 3.0 entry point
+PXE_SW_UNDI             *pxe_31;  // 3.1 entry
+UNDI32_DEV              *UNDI32DeviceList[MAX_NIC_INTERFACES];
 
 //
 // external Global Variables
 //
-extern UNDI_CALL_TABLE    api_table[];
+extern UNDI_CALL_TABLE  api_table[];
 
 //
 // function prototypes
@@ -52,14 +52,14 @@ InitializeUNDIDriver (
 VOID
 UNDI_notify_virtual (
   EFI_EVENT event,
-  VOID *context
+  VOID      *context
   );
 
 VOID
 UndiNotifyExitBs (
   EFI_EVENT Event,
   VOID      *Context
-);
+  );
 
 EFI_STATUS
 UndiDriverSupported (
@@ -87,12 +87,11 @@ EFI_STATUS
 AppendMac2DevPath (
   IN OUT  EFI_DEVICE_PATH_PROTOCOL **DevPtr,
   IN      EFI_DEVICE_PATH_PROTOCOL *BaseDevPtr,
-  IN      NIC_DATA_INSTANCE *AdapterInfo
+  IN      NIC_DATA_INSTANCE        *AdapterInfo
   );
 //
 // end function prototypes
 //
-
 VOID
 UndiNotifyVirtual (
   EFI_EVENT Event,
@@ -114,40 +113,41 @@ Returns:
   None
 
 --*/
+// TODO:    Context - add argument and description to function comment
 {
   UINT16  Index;
   VOID    *Pxe31Pointer;
 
   if (pxe_31 != NULL) {
-    Pxe31Pointer = (VOID *)pxe_31;
+    Pxe31Pointer = (VOID *) pxe_31;
 
     EfiConvertPointer (
       EFI_INTERNAL_POINTER | EFI_OPTIONAL_POINTER,
-      (void **)&Pxe31Pointer
+      (void **) &Pxe31Pointer
       );
 
     //
     // UNDI32DeviceList is an array of pointers
     //
-    for (Index=0; Index < pxe_31->IFcnt; Index++) {
-      UNDI32DeviceList[Index]->NIIProtocol_31.ID = (UINT64)Pxe31Pointer;
+    for (Index = 0; Index < pxe_31->IFcnt; Index++) {
+      UNDI32DeviceList[Index]->NIIProtocol_31.ID = (UINT64) Pxe31Pointer;
       EfiConvertPointer (
         EFI_INTERNAL_POINTER | EFI_OPTIONAL_POINTER,
-        (void **)&(UNDI32DeviceList[Index])
+        (void **) &(UNDI32DeviceList[Index])
         );
     }
 
     EfiConvertPointer (
       EFI_INTERNAL_POINTER | EFI_OPTIONAL_POINTER,
-      (void **)&(pxe_31->EntryPoint)
+      (void **) &(pxe_31->EntryPoint)
       );
     pxe_31 = Pxe31Pointer;
   }
 
-  for (Index=0; Index <= PXE_OPCODE_LAST_VALID; Index++) {
+  for (Index = 0; Index <= PXE_OPCODE_LAST_VALID; Index++) {
     EfiConvertPointer (
       EFI_INTERNAL_POINTER | EFI_OPTIONAL_POINTER,
-      (void **)&api_table[Index].api_ptr
+      (void **) &api_table[Index].api_ptr
       );
   }
 }
@@ -173,15 +173,14 @@ Returns:
   None
 
 --*/
+// TODO:    Context - add argument and description to function comment
 {
   InstallConfigTable ();
 }
-
 //
 // UNDI Class Driver Global Variables
 //
-
-static EFI_DRIVER_BINDING_PROTOCOL mUndiDriverBinding = {
+static EFI_DRIVER_BINDING_PROTOCOL  mUndiDriverBinding = {
   UndiDriverSupported,
   UndiDriverStart,
   UndiDriverStop,
@@ -189,7 +188,6 @@ static EFI_DRIVER_BINDING_PROTOCOL mUndiDriverBinding = {
   NULL,
   NULL
 };
-
 
 EFI_DRIVER_ENTRY_POINT (InitializeUNDIDriver)
 
@@ -218,16 +216,16 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                        Status;
-  EFI_EVENT                         Event;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
 
   //
   // Initialize the EFI Driver Library
   //
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, UndiNotifyVirtual);
 
-  mUndiDriverBinding.ImageHandle = ImageHandle;
-  mUndiDriverBinding.DriverBindingHandle = ImageHandle;
+  mUndiDriverBinding.ImageHandle          = ImageHandle;
+  mUndiDriverBinding.DriverBindingHandle  = ImageHandle;
 
   Status = gBS->InstallProtocolInterface (
                   &ImageHandle,
@@ -246,7 +244,6 @@ Returns:
 
   return Status;
 }
-
 
 EFI_STATUS
 UndiDriverSupported (
@@ -280,9 +277,9 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
-  EFI_PCI_IO_PROTOCOL             *PciIo;
-  PCI_TYPE00                      Pci;
+  EFI_STATUS          Status;
+  EFI_PCI_IO_PROTOCOL *PciIo;
+  PCI_TYPE00          Pci;
 
   Status = gBS->OpenProtocol (
                   Controller,
@@ -299,7 +296,7 @@ Returns:
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiPciIoProtocolGuid,
-                  (VOID **)&PciIo,
+                  (VOID **) &PciIo,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -316,10 +313,10 @@ Returns:
                         &Pci
                         );
 
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     Status = EFI_UNSUPPORTED;
 
-    if (Pci.Hdr.ClassCode[2] == 0x02 && Pci.Hdr.VendorId  == PCI_VENDOR_ID_INTEL) {
+    if (Pci.Hdr.ClassCode[2] == 0x02 && Pci.Hdr.VendorId == PCI_VENDOR_ID_INTEL) {
       switch (Pci.Hdr.DeviceId) {
       case D100_DEVICE_ID:
       case D102_DEVICE_ID:
@@ -353,15 +350,14 @@ Returns:
   }
 
   gBS->CloseProtocol (
-         Controller,
-         &gEfiPciIoProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   return Status;
 }
-
 
 EFI_STATUS
 UndiDriverStart (
@@ -394,18 +390,18 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                        Status;
-  EFI_DEVICE_PATH_PROTOCOL          *UndiDevicePath;
-  PCI_CONFIG_HEADER                 *CfgHdr;
-  UNDI32_DEV                        *UNDI32Device;
-  UINT16                            NewCommand;
-  UINT8                             *TmpPxePointer;
-  EFI_PCI_IO_PROTOCOL               *PciIoFncs;
+  EFI_STATUS                Status;
+  EFI_DEVICE_PATH_PROTOCOL  *UndiDevicePath;
+  PCI_CONFIG_HEADER         *CfgHdr;
+  UNDI32_DEV                *UNDI32Device;
+  UINT16                    NewCommand;
+  UINT8                     *TmpPxePointer;
+  EFI_PCI_IO_PROTOCOL       *PciIoFncs;
 
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiPciIoProtocolGuid,
-                  (VOID**)&PciIoFncs,
+                  (VOID **) &PciIoFncs,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -418,7 +414,7 @@ Returns:
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiDevicePathProtocolGuid,
-                  (VOID**)&UndiDevicePath,
+                  (VOID **) &UndiDevicePath,
                   This->DriverBindingHandle,
                   Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
@@ -426,11 +422,11 @@ Returns:
 
   if (EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
+          Controller,
+          &gEfiPciIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
 
     return Status;
   }
@@ -441,11 +437,11 @@ Returns:
                   &UNDI32Device
                   );
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     goto UndiError;
   }
 
-  EfiZeroMem ((CHAR8 *)UNDI32Device, sizeof (UNDI32_DEV));
+  EfiZeroMem ((CHAR8 *) UNDI32Device, sizeof (UNDI32_DEV));
 
   //
   // allocate and initialize both (old and new) the !pxe structures here,
@@ -466,6 +462,7 @@ Returns:
     if (EFI_ERROR (Status)) {
       goto UndiErrorDeleteDevice;
     }
+
     EfiZeroMem (
       TmpPxePointer,
       sizeof (PXE_SW_UNDI) + sizeof (PXE_SW_UNDI) + 32
@@ -474,26 +471,26 @@ Returns:
     // check for paragraph alignment here, assuming that the pointer is
     // already 8 byte aligned.
     //
-    if (((UINTN)TmpPxePointer & 0x0F) != 0) {
-      pxe_31 = (PXE_SW_UNDI *)((UINTN)(TmpPxePointer + 8));
+    if (((UINTN) TmpPxePointer & 0x0F) != 0) {
+      pxe_31 = (PXE_SW_UNDI *) ((UINTN) (TmpPxePointer + 8));
     } else {
-      pxe_31 = (PXE_SW_UNDI *)TmpPxePointer;
+      pxe_31 = (PXE_SW_UNDI *) TmpPxePointer;
     }
     //
     // assuming that the sizeof pxe_31 is a 16 byte multiple
     //
-    pxe = (PXE_SW_UNDI *)((CHAR8 *)(pxe_31) + sizeof(PXE_SW_UNDI));
+    pxe = (PXE_SW_UNDI *) ((CHAR8 *) (pxe_31) + sizeof (PXE_SW_UNDI));
 
     PxeStructInit (pxe, 0x30);
     PxeStructInit (pxe_31, 0x31);
   }
 
-  UNDI32Device->NIIProtocol.ID = (UINT64)(pxe);
-  UNDI32Device->NIIProtocol_31.ID = (UINT64)(pxe_31);
+  UNDI32Device->NIIProtocol.ID    = (UINT64) (pxe);
+  UNDI32Device->NIIProtocol_31.ID = (UINT64) (pxe_31);
 
-  Status = PciIoFncs->Attributes ( 
-                        PciIoFncs, 
-                        EfiPciIoAttributeOperationEnable, 
+  Status = PciIoFncs->Attributes (
+                        PciIoFncs,
+                        EfiPciIoAttributeOperationEnable,
                         EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_IO | EFI_PCI_IO_ATTRIBUTE_BUS_MASTER,
                         NULL
                         );
@@ -508,21 +505,21 @@ Returns:
                             &UNDI32Device->NicInfo.Config
                             );
 
-  CfgHdr = (PCI_CONFIG_HEADER *)&(UNDI32Device->NicInfo.Config[0]);
+  CfgHdr = (PCI_CONFIG_HEADER *) &(UNDI32Device->NicInfo.Config[0]);
 
   //
   // make sure that this device is a PCI bus master
   //
 
-  NewCommand = (UINT16)(CfgHdr->Command | PCI_COMMAND_MASTER|PCI_COMMAND_IO);
+  NewCommand = (UINT16) (CfgHdr->Command | PCI_COMMAND_MASTER | PCI_COMMAND_IO);
   if (CfgHdr->Command != NewCommand) {
     PciIoFncs->Pci.Write (
-                     PciIoFncs,
-                     EfiPciIoWidthUint16,
-                     PCI_COMMAND,
-                     1,
-                     &NewCommand
-                     );
+                    PciIoFncs,
+                    EfiPciIoWidthUint16,
+                    PCI_COMMAND,
+                    1,
+                    &NewCommand
+                    );
     CfgHdr->Command = NewCommand;
   }
 
@@ -532,67 +529,67 @@ Returns:
   if (CfgHdr->LatencyTimer < 32) {
     CfgHdr->LatencyTimer = 32;
     PciIoFncs->Pci.Write (
-                     PciIoFncs,
-                     EfiPciIoWidthUint8,
-                     PCI_LATENCY_TIMER,
-                     1,
-                     &CfgHdr->LatencyTimer
-                     );
+                    PciIoFncs,
+                    EfiPciIoWidthUint8,
+                    PCI_LATENCY_TIMER,
+                    1,
+                    &CfgHdr->LatencyTimer
+                    );
   }
   //
   // the IfNum index for the current interface will be the total number
   // of interfaces initialized so far
   //
-  UNDI32Device->NIIProtocol.IfNum = pxe->IFcnt;
-  UNDI32Device->NIIProtocol_31.IfNum = pxe_31->IFcnt;
+  UNDI32Device->NIIProtocol.IfNum     = pxe->IFcnt;
+  UNDI32Device->NIIProtocol_31.IfNum  = pxe_31->IFcnt;
 
   PxeUpdate (&UNDI32Device->NicInfo, pxe);
   PxeUpdate (&UNDI32Device->NicInfo, pxe_31);
 
-  UNDI32Device->NicInfo.Io_Function = PciIoFncs;
+  UNDI32Device->NicInfo.Io_Function                 = PciIoFncs;
   UNDI32DeviceList[UNDI32Device->NIIProtocol.IfNum] = UNDI32Device;
-  UNDI32Device->Undi32BaseDevPath = UndiDevicePath;
+  UNDI32Device->Undi32BaseDevPath                   = UndiDevicePath;
 
   Status = AppendMac2DevPath (
-             &UNDI32Device->Undi32DevPath,
-             UNDI32Device->Undi32BaseDevPath,
-             &UNDI32Device->NicInfo
-             );
+            &UNDI32Device->Undi32DevPath,
+            UNDI32Device->Undi32BaseDevPath,
+            &UNDI32Device->NicInfo
+            );
 
   if (Status != 0) {
     goto UndiErrorDeletePxe;
   }
 
-  UNDI32Device->Signature = UNDI_DEV_SIGNATURE;
+  UNDI32Device->Signature                     = UNDI_DEV_SIGNATURE;
 
-  UNDI32Device->NIIProtocol.Revision = EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_REVISION;
-  UNDI32Device->NIIProtocol.Type = EfiNetworkInterfaceUndi;
-  UNDI32Device->NIIProtocol.MajorVer = PXE_ROMID_MAJORVER;
-  UNDI32Device->NIIProtocol.MinorVer = PXE_ROMID_MINORVER;
-  UNDI32Device->NIIProtocol.ImageSize = 0;
-  UNDI32Device->NIIProtocol.ImageAddr = 0;
-  UNDI32Device->NIIProtocol.Ipv6Supported = FALSE;
+  UNDI32Device->NIIProtocol.Revision          = EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_REVISION;
+  UNDI32Device->NIIProtocol.Type              = EfiNetworkInterfaceUndi;
+  UNDI32Device->NIIProtocol.MajorVer          = PXE_ROMID_MAJORVER;
+  UNDI32Device->NIIProtocol.MinorVer          = PXE_ROMID_MINORVER;
+  UNDI32Device->NIIProtocol.ImageSize         = 0;
+  UNDI32Device->NIIProtocol.ImageAddr         = 0;
+  UNDI32Device->NIIProtocol.Ipv6Supported     = FALSE;
 
-  UNDI32Device->NIIProtocol.StringId[0] = 'U';
-  UNDI32Device->NIIProtocol.StringId[1] = 'N';
-  UNDI32Device->NIIProtocol.StringId[2] = 'D';
-  UNDI32Device->NIIProtocol.StringId[3] = 'I';
+  UNDI32Device->NIIProtocol.StringId[0]       = 'U';
+  UNDI32Device->NIIProtocol.StringId[1]       = 'N';
+  UNDI32Device->NIIProtocol.StringId[2]       = 'D';
+  UNDI32Device->NIIProtocol.StringId[3]       = 'I';
 
-  UNDI32Device->NIIProtocol_31.Revision = EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_REVISION_31;
-  UNDI32Device->NIIProtocol_31.Type = EfiNetworkInterfaceUndi;
-  UNDI32Device->NIIProtocol_31.MajorVer = PXE_ROMID_MAJORVER;
-  UNDI32Device->NIIProtocol_31.MinorVer = PXE_ROMID_MINORVER_31;
-  UNDI32Device->NIIProtocol_31.ImageSize = 0;
-  UNDI32Device->NIIProtocol_31.ImageAddr = 0;
-  UNDI32Device->NIIProtocol_31.Ipv6Supported = FALSE;
+  UNDI32Device->NIIProtocol_31.Revision       = EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_REVISION_31;
+  UNDI32Device->NIIProtocol_31.Type           = EfiNetworkInterfaceUndi;
+  UNDI32Device->NIIProtocol_31.MajorVer       = PXE_ROMID_MAJORVER;
+  UNDI32Device->NIIProtocol_31.MinorVer       = PXE_ROMID_MINORVER_31;
+  UNDI32Device->NIIProtocol_31.ImageSize      = 0;
+  UNDI32Device->NIIProtocol_31.ImageAddr      = 0;
+  UNDI32Device->NIIProtocol_31.Ipv6Supported  = FALSE;
 
-  UNDI32Device->NIIProtocol_31.StringId[0] = 'U';
-  UNDI32Device->NIIProtocol_31.StringId[1] = 'N';
-  UNDI32Device->NIIProtocol_31.StringId[2] = 'D';
-  UNDI32Device->NIIProtocol_31.StringId[3] = 'I';
+  UNDI32Device->NIIProtocol_31.StringId[0]    = 'U';
+  UNDI32Device->NIIProtocol_31.StringId[1]    = 'N';
+  UNDI32Device->NIIProtocol_31.StringId[2]    = 'D';
+  UNDI32Device->NIIProtocol_31.StringId[3]    = 'I';
 
-  UNDI32Device->DeviceHandle = NULL;
-  
+  UNDI32Device->DeviceHandle                  = NULL;
+
   //
   // install both the 3.0 and 3.1 NII protocols.
   //
@@ -617,7 +614,7 @@ Returns:
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiPciIoProtocolGuid,
-                  (VOID**)&PciIoFncs,
+                  (VOID **) &PciIoFncs,
                   This->DriverBindingHandle,
                   UNDI32Device->DeviceHandle,
                   EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
@@ -632,30 +629,31 @@ UndiErrorDeleteDevicePath:
 UndiErrorDeletePxe:
   PxeUpdate (NULL, pxe);
   PxeUpdate (NULL, pxe_31);
-  if (TmpPxePointer != NULL)
+  if (TmpPxePointer != NULL) {
     gBS->FreePool (TmpPxePointer);
+
+  }
 
 UndiErrorDeleteDevice:
   gBS->FreePool (UNDI32Device);
 
 UndiError:
   gBS->CloseProtocol (
-         Controller,
-         &gEfiDevicePathProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
+        Controller,
+        &gEfiDevicePathProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   gBS->CloseProtocol (
-         Controller,
-         &gEfiPciIoProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   return Status;
 }
-
 
 EFI_STATUS
 UndiDriverStop (
@@ -681,6 +679,7 @@ Returns:
   other             - This driver was not removed from this device.
 
 --*/
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   EFI_STATUS                                Status;
   BOOLEAN                                   AllChildrenStopped;
@@ -722,21 +721,21 @@ Returns:
     Status = gBS->OpenProtocol (
                     ChildHandleBuffer[Index],
                     &gEfiNetworkInterfaceIdentifierProtocolGuid,
-                    (VOID**)&NIIProtocol,
+                    (VOID **) &NIIProtocol,
                     This->DriverBindingHandle,
                     Controller,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
-    if (!EFI_ERROR(Status)) {
+    if (!EFI_ERROR (Status)) {
 
       UNDI32Device = UNDI_DEV_FROM_THIS (NIIProtocol);
 
-      Status =  gBS->CloseProtocol (
-                       Controller,
-                       &gEfiPciIoProtocolGuid,
-                       This->DriverBindingHandle,
-                       ChildHandleBuffer[Index]
-                       );
+      Status = gBS->CloseProtocol (
+                      Controller,
+                      &gEfiPciIoProtocolGuid,
+                      This->DriverBindingHandle,
+                      ChildHandleBuffer[Index]
+                      );
 
       Status = gBS->UninstallMultipleProtocolInterfaces (
                       ChildHandleBuffer[Index],
@@ -751,20 +750,20 @@ Returns:
 
       if (EFI_ERROR (Status)) {
         gBS->OpenProtocol (
-               Controller,
-               &gEfiPciIoProtocolGuid,
-               (VOID **)&PciIo,
-               This->DriverBindingHandle,
-               ChildHandleBuffer[Index],
-               EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-               );
+              Controller,
+              &gEfiPciIoProtocolGuid,
+              (VOID **) &PciIo,
+              This->DriverBindingHandle,
+              ChildHandleBuffer[Index],
+              EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+              );
       } else {
         gBS->FreePool (UNDI32Device->Undi32DevPath);
         gBS->FreePool (UNDI32Device);
       }
     }
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       AllChildrenStopped = FALSE;
     }
   }
@@ -772,6 +771,7 @@ Returns:
   if (!AllChildrenStopped) {
     return EFI_DEVICE_ERROR;
   }
+
   return EFI_SUCCESS;
 
 }
@@ -779,7 +779,7 @@ Returns:
 VOID
 TmpDelay (
   IN UINT64 UnqId,
-  IN UINTN MicroSeconds
+  IN UINTN  MicroSeconds
   )
 /*++
 
@@ -801,15 +801,14 @@ Returns:
 
 --*/
 {
-  gBS->Stall ((UINT32)MicroSeconds);
+  gBS->Stall ((UINT32) MicroSeconds);
 }
-
 
 VOID
 TmpMemIo (
   IN UINT64 UnqId,
-  IN UINT8 ReadWrite,
-  IN UINT8 Len,
+  IN UINT8  ReadWrite,
+  IN UINT8  Len,
   IN UINT64 Port,
   IN UINT64 BuffAddr
   )
@@ -839,68 +838,78 @@ Returns:
 --*/
 {
   EFI_PCI_IO_PROTOCOL_WIDTH Width;
-  NIC_DATA_INSTANCE *AdapterInfo;
+  NIC_DATA_INSTANCE         *AdapterInfo;
 
-  Width = 0;
-  AdapterInfo = (NIC_DATA_INSTANCE *)(UINTN)UnqId;
+  Width       = 0;
+  AdapterInfo = (NIC_DATA_INSTANCE *) (UINTN) UnqId;
   switch (Len) {
-    case 2: Width = 1;
-      break;
-    case 4: Width = 2;
-      break;
-    case 8: Width = 3;
-      break;
+  case 2:
+    Width = 1;
+    break;
+
+  case 4:
+    Width = 2;
+    break;
+
+  case 8:
+    Width = 3;
+    break;
   }
+
   switch (ReadWrite) {
-    case PXE_IO_READ:
-      AdapterInfo->Io_Function->Io.Read (
-                                     AdapterInfo->Io_Function,
-                                     Width,
-                                     1,
-                                     Port,
-                                     1,
-                                     (VOID *)(UINTN)(BuffAddr)
-                                     );
-      break;
-    case PXE_IO_WRITE:
-      AdapterInfo->Io_Function->Io.Write (
-                                     AdapterInfo->Io_Function,
-                                     Width,
-                                     1,
-                                     Port,
-                                     1,
-                                     (VOID *)(UINTN)(BuffAddr)
-                                     );
-      break;
-    case PXE_MEM_READ:
-      AdapterInfo->Io_Function->Mem.Read (
-                                      AdapterInfo->Io_Function,
-                                      Width,
-                                      0,
-                                      Port,
-                                      1,
-                                      (VOID *)(UINTN)(BuffAddr)
-                                      );
-      break;
-    case PXE_MEM_WRITE:
-      AdapterInfo->Io_Function->Mem.Write (
-                                      AdapterInfo->Io_Function,
-                                      Width,
-                                      0,
-                                      Port,
-                                      1,
-                                      (VOID *)(UINTN)(BuffAddr)
-                                      );
-      break;
+  case PXE_IO_READ:
+    AdapterInfo->Io_Function->Io.Read (
+                                  AdapterInfo->Io_Function,
+                                  Width,
+                                  1,
+                                  Port,
+                                  1,
+                                  (VOID *) (UINTN) (BuffAddr)
+                                  );
+    break;
+
+  case PXE_IO_WRITE:
+    AdapterInfo->Io_Function->Io.Write (
+                                  AdapterInfo->Io_Function,
+                                  Width,
+                                  1,
+                                  Port,
+                                  1,
+                                  (VOID *) (UINTN) (BuffAddr)
+                                  );
+    break;
+
+  case PXE_MEM_READ:
+    AdapterInfo->Io_Function->Mem.Read (
+                                    AdapterInfo->Io_Function,
+                                    Width,
+                                    0,
+                                    Port,
+                                    1,
+                                    (VOID *) (UINTN) (BuffAddr)
+                                    );
+    break;
+
+  case PXE_MEM_WRITE:
+    AdapterInfo->Io_Function->Mem.Write (
+                                    AdapterInfo->Io_Function,
+                                    Width,
+                                    0,
+                                    Port,
+                                    1,
+                                    (VOID *) (UINTN) (BuffAddr)
+                                    );
+    break;
   }
-  return;
+
+  return ;
 }
 
 EFI_STATUS
 AppendMac2DevPath (
   IN OUT  EFI_DEVICE_PATH_PROTOCOL **DevPtr,
   IN      EFI_DEVICE_PATH_PROTOCOL *BaseDevPtr,
-  IN      NIC_DATA_INSTANCE *AdapterInfo
+  IN      NIC_DATA_INSTANCE        *AdapterInfo
   )
 /*++
 
@@ -944,57 +953,58 @@ Returns:
   // execute the other UNDI_ calls to get the mac address
   // we are using undi 3.1 style
   //
-  AdapterInfo->Delay = TmpDelay;
-  AdapterInfo->Virt2Phys = (VOID *)0;
-  AdapterInfo->Block = (VOID *)0;
-  AdapterInfo->Map_Mem = (VOID *)0;
-  AdapterInfo->UnMap_Mem = (VOID *)0;
-  AdapterInfo->Sync_Mem = (VOID *)0;
-  AdapterInfo->Mem_Io = TmpMemIo;
+  AdapterInfo->Delay      = TmpDelay;
+  AdapterInfo->Virt2Phys  = (VOID *) 0;
+  AdapterInfo->Block      = (VOID *) 0;
+  AdapterInfo->Map_Mem    = (VOID *) 0;
+  AdapterInfo->UnMap_Mem  = (VOID *) 0;
+  AdapterInfo->Sync_Mem   = (VOID *) 0;
+  AdapterInfo->Mem_Io     = TmpMemIo;
   //
   // these tmp call-backs follow 3.1 undi style
   // i.e. they have the unique_id parameter.
   //
-  AdapterInfo->VersionFlag = 0x31;
-  AdapterInfo->Unique_ID = (UINT64)AdapterInfo;
+  AdapterInfo->VersionFlag  = 0x31;
+  AdapterInfo->Unique_ID    = (UINT64) AdapterInfo;
 
   //
   // undi init portion
   //
-  CfgHdr = (PCI_CONFIG_HEADER *)&(AdapterInfo->Config[0]);
+  CfgHdr              = (PCI_CONFIG_HEADER *) &(AdapterInfo->Config[0]);
   AdapterInfo->ioaddr = 0;
-  AdapterInfo->RevID = CfgHdr->RevID;
+  AdapterInfo->RevID  = CfgHdr->RevID;
 
-  AddrLen = E100bGetEepromAddrLen (AdapterInfo);
+  AddrLen             = E100bGetEepromAddrLen (AdapterInfo);
 
-  for (Index=0, Index2=0; Index<3; Index++) {
-    Val = E100bReadEeprom (AdapterInfo, Index, AddrLen);
-    MACAddress.Addr[Index2++] = (UINT8)Val;
-    MACAddress.Addr[Index2++] = (UINT8)(Val >> 8);
+  for (Index = 0, Index2 = 0; Index < 3; Index++) {
+    Val                       = E100bReadEeprom (AdapterInfo, Index, AddrLen);
+    MACAddress.Addr[Index2++] = (UINT8) Val;
+    MACAddress.Addr[Index2++] = (UINT8) (Val >> 8);
   }
-  for (;Index2<sizeof (EFI_MAC_ADDRESS); Index2++) {
+
+  for (; Index2 < sizeof (EFI_MAC_ADDRESS); Index2++) {
     MACAddress.Addr[Index2] = 0;
   }
   //
   // stop undi
   //
-  AdapterInfo->Delay = (VOID *)0;
-  AdapterInfo->Mem_Io = (VOID *)0;
+  AdapterInfo->Delay  = (VOID *) 0;
+  AdapterInfo->Mem_Io = (VOID *) 0;
 
   //
   // fill the mac address node first
   //
-  EfiZeroMem ((CHAR8 *)&MacAddrNode, sizeof MacAddrNode);
+  EfiZeroMem ((CHAR8 *) &MacAddrNode, sizeof MacAddrNode);
   EfiCopyMem (
-    (CHAR8 *)&MacAddrNode.MacAddress,
-    (CHAR8 *)&MACAddress,
+    (CHAR8 *) &MacAddrNode.MacAddress,
+    (CHAR8 *) &MACAddress,
     sizeof (EFI_MAC_ADDRESS)
     );
 
-  MacAddrNode.Header.Type = MESSAGING_DEVICE_PATH;
-  MacAddrNode.Header.SubType = MSG_MAC_ADDR_DP;
-  MacAddrNode.Header.Length[0] = sizeof (MacAddrNode);
-  MacAddrNode.Header.Length[1] = 0;
+  MacAddrNode.Header.Type       = MESSAGING_DEVICE_PATH;
+  MacAddrNode.Header.SubType    = MSG_MAC_ADDR_DP;
+  MacAddrNode.Header.Length[0]  = sizeof (MacAddrNode);
+  MacAddrNode.Header.Length[1]  = 0;
 
   //
   // find the size of the base dev path.
@@ -1005,12 +1015,12 @@ Returns:
     EndNode = NextDevicePathNode (EndNode);
   }
 
-  BasePathLen = (UINT16)((UINTN)(EndNode) - (UINTN)(BaseDevPtr));
+  BasePathLen = (UINT16) ((UINTN) (EndNode) - (UINTN) (BaseDevPtr));
 
   //
   // create space for full dev path
   //
-  TotalPathLen = (UINT16)(BasePathLen + sizeof (MacAddrNode) + sizeof (EFI_DEVICE_PATH_PROTOCOL));
+  TotalPathLen = (UINT16) (BasePathLen + sizeof (MacAddrNode) + sizeof (EFI_DEVICE_PATH_PROTOCOL));
 
   Status = gBS->AllocatePool (
                   EfiRuntimeServicesData,
@@ -1024,12 +1034,12 @@ Returns:
   //
   // copy the base path, mac addr and end_dev_path nodes
   //
-  *DevPtr = (EFI_DEVICE_PATH_PROTOCOL *)DevicePtr;
-  EfiCopyMem (DevicePtr, (CHAR8 *)BaseDevPtr, BasePathLen);
+  *DevPtr = (EFI_DEVICE_PATH_PROTOCOL *) DevicePtr;
+  EfiCopyMem (DevicePtr, (CHAR8 *) BaseDevPtr, BasePathLen);
   DevicePtr += BasePathLen;
-  EfiCopyMem (DevicePtr, (CHAR8 *)&MacAddrNode, sizeof (MacAddrNode));
+  EfiCopyMem (DevicePtr, (CHAR8 *) &MacAddrNode, sizeof (MacAddrNode));
   DevicePtr += sizeof (MacAddrNode);
-  EfiCopyMem (DevicePtr, (CHAR8 *)EndNode, sizeof (EFI_DEVICE_PATH_PROTOCOL));
+  EfiCopyMem (DevicePtr, (CHAR8 *) EndNode, sizeof (EFI_DEVICE_PATH_PROTOCOL));
 
   return EFI_SUCCESS;
 }
@@ -1055,14 +1065,15 @@ Returns:
   other             - Did not successfully install the GUID/Pointer pair into the configuration table.
 
 --*/
+// TODO:    VOID - add argument and description to function comment
 {
-  EFI_STATUS                        Status;
-  EFI_CONFIGURATION_TABLE           *CfgPtr;
-  NII_TABLE                         *TmpData;
-  UINTN                             Len;
-  UINT16                            Index;
-  NII_TABLE                         *UndiData;
-  
+  EFI_STATUS              Status;
+  EFI_CONFIGURATION_TABLE *CfgPtr;
+  NII_TABLE               *TmpData;
+  UINTN                   Len;
+  UINT16                  Index;
+  NII_TABLE               *UndiData;
+
   if (pxe_31 == NULL) {
     return EFI_SUCCESS;
   }
@@ -1072,17 +1083,17 @@ Returns:
   //
   // there is no table registered yet!
   //
-  Status = gBS->AllocatePool (EfiRuntimeServicesData, Len, (VOID**)&UndiData);
+  Status = gBS->AllocatePool (EfiRuntimeServicesData, Len, (VOID **) &UndiData);
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  UndiData->NumEntries = pxe_31->IFcnt;
-  UndiData->NextLink = NULL;
+  UndiData->NumEntries  = pxe_31->IFcnt;
+  UndiData->NextLink    = NULL;
 
-  for (Index=0; Index < pxe_31->IFcnt; Index++) {
-    UndiData->NiiEntry[Index].InterfacePointer = &UNDI32DeviceList[Index]->NIIProtocol_31;
+  for (Index = 0; Index < pxe_31->IFcnt; Index++) {
+    UndiData->NiiEntry[Index].InterfacePointer  = &UNDI32DeviceList[Index]->NIIProtocol_31;
     UndiData->NiiEntry[Index].DevicePathPointer = UNDI32DeviceList[Index]->Undi32DevPath;
   }
 
@@ -1091,19 +1102,20 @@ Returns:
   //
   CfgPtr = gST->ConfigurationTable;
 
-  for (Index=0; Index < gST->NumberOfTableEntries; Index++) {
+  for (Index = 0; Index < gST->NumberOfTableEntries; Index++) {
     Status = EfiCompareGuid (
-               &CfgPtr->VendorGuid,
-               &gEfiNetworkInterfaceIdentifierProtocolGuid_31
-               );
+              &CfgPtr->VendorGuid,
+              &gEfiNetworkInterfaceIdentifierProtocolGuid_31
+              );
     if (Status != EFI_SUCCESS) {
       break;
     }
+
     CfgPtr++;
   }
 
   if (Index < gST->NumberOfTableEntries) {
-    TmpData = (NII_TABLE *)CfgPtr->VendorTable;
+    TmpData = (NII_TABLE *) CfgPtr->VendorTable;
 
     //
     // go to the last link
@@ -1117,7 +1129,7 @@ Returns:
     //
     // 1st one in chain
     //
-    UndiData = (NII_TABLE *)CfgPtr->VendorTable;
+    UndiData = (NII_TABLE *) CfgPtr->VendorTable;
   }
 
   //
@@ -1129,4 +1141,3 @@ Returns:
                   );
   return Status;
 }
-

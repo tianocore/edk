@@ -90,8 +90,8 @@ Returns:
   CHAR8 *Destination8;
   CHAR8 *Source8;
 
-  Destination8 = Destination;
-  Source8 = Source;
+  Destination8  = Destination;
+  Source8       = Source;
   while (Length--) {
     *(Destination8++) = *(Source8++);
   }
@@ -126,8 +126,8 @@ Returns:
   CHAR8 *Destination8;
   CHAR8 *Source8;
 
-  Destination8 = Destination;
-  Source8 = Source;
+  Destination8  = Destination;
+  Source8       = Source;
   while (Length--) {
     *(Destination8++) = *(Source8++);
   }
@@ -155,15 +155,15 @@ Returns:
 
 --*/
 {
-  if ((((INT32 *)Guid1)[0] - ((INT32 *)Guid2)[0]) == 0) { 
-    if ((((INT32 *)Guid1)[1] - ((INT32 *)Guid2)[1]) == 0) { 
-      if ((((INT32 *)Guid1)[2] - ((INT32 *)Guid2)[2]) == 0) { 
-        if ((((INT32 *)Guid1)[3] - ((INT32 *)Guid2)[3]) == 0) { 
+  if ((((INT32 *) Guid1)[0] - ((INT32 *) Guid2)[0]) == 0) {
+    if ((((INT32 *) Guid1)[1] - ((INT32 *) Guid2)[1]) == 0) {
+      if ((((INT32 *) Guid1)[2] - ((INT32 *) Guid2)[2]) == 0) {
+        if ((((INT32 *) Guid1)[3] - ((INT32 *) Guid2)[3]) == 0) {
           return TRUE;
         }
       }
     }
   }
+
   return FALSE;
 }
-

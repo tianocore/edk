@@ -22,8 +22,9 @@ Revision History
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(DriverConfiguration)
+#include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
 
-EFI_GUID gEfiDriverConfigurationProtocolGuid = EFI_DRIVER_CONFIGURATION_PROTOCOL_GUID;
+EFI_GUID  gEfiDriverConfigurationProtocolGuid = EFI_DRIVER_CONFIGURATION_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiDriverConfigurationProtocolGuid, "Driver Configuration Protocol", "EFI 1.1 Driver Configuration Protocol");
+EFI_GUID_STRING
+  (&gEfiDriverConfigurationProtocolGuid, "Driver Configuration Protocol", "EFI 1.1 Driver Configuration Protocol");

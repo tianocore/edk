@@ -23,8 +23,8 @@ Revision History
 
 #include "idebus.h"
 
-#define PCI_CLASS_MASS_STORAGE    0x01
-#define PCI_SUB_CLASS_IDE         0x01
+#define PCI_CLASS_MASS_STORAGE  0x01
+#define PCI_SUB_CLASS_IDE       0x01
 
 //
 // IDE Bus Driver GUID
@@ -45,16 +45,15 @@ EFI_DRIVER_BINDING_PROTOCOL gIDEBusDriverBinding = {
   NULL
 };
 
-
 EFI_DRIVER_ENTRY_POINT (IDEBusControllerDriverEntryPoint)
 
 //
-//***********************************************************************************
+// ***********************************************************************************
 // IDEBusControllerDriverEntryPoint
-//***********************************************************************************
+// ***********************************************************************************
 //
 EFI_STATUS
-IDEBusControllerDriverEntryPoint(
+IDEBusControllerDriverEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
   )
@@ -66,22 +65,24 @@ IDEBusControllerDriverEntryPoint(
   
   Returns:
   
---*/                
+--*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return INSTALL_ALL_DRIVER_PROTOCOLS (
-             ImageHandle, 
-             SystemTable, 
-             &gIDEBusDriverBinding, 
-             ImageHandle, 
-             &gIDEBusComponentName,
-             NULL,
-             NULL
-             );
-} 
+          ImageHandle,
+          SystemTable,
+          &gIDEBusDriverBinding,
+          ImageHandle,
+          &gIDEBusComponentName,
+          NULL,
+          NULL
+          );
+}
 //
-//***********************************************************************************
+// ***********************************************************************************
 // IDEBusDriverBindingSupported
-//***********************************************************************************
+// ***********************************************************************************
 //
 EFI_STATUS
 IDEBusDriverBindingSupported (
@@ -102,15 +103,17 @@ Arguments:
 Returns: 
   EFI_SUCCESS - Driver loaded.
   other       - Driver not loaded.
---*/                
+--*/
+// TODO:    Controller - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  EFI_STATUS                         Status;
-  EFI_DEVICE_PATH_PROTOCOL           *ParentDevicePath;
-  EFI_DEV_PATH                       *Node;  
-  EFI_IDE_CONTROLLER_INIT_PROTOCOL   *IdeInit;
+  EFI_STATUS                        Status;
+  EFI_DEVICE_PATH_PROTOCOL          *ParentDevicePath;
+  EFI_DEV_PATH                      *Node;
+  EFI_IDE_CONTROLLER_INIT_PROTOCOL  *IdeInit;
 
   if (RemainingDevicePath != NULL) {
-    Node = (EFI_DEV_PATH *)RemainingDevicePath;
+    Node = (EFI_DEV_PATH *) RemainingDevicePath;
     if (Node->DevPath.Type != MESSAGING_DEVICE_PATH ||
         Node->DevPath.SubType != MSG_ATAPI_DP ||
         DevicePathNodeLength(&Node->DevPath) != sizeof(ATAPI_DEVICE_PATH)) {
@@ -122,16 +125,17 @@ Returns:
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  Controller      ,   
-                  &gEfiDevicePathProtocolGuid,  
-                  (VOID**)&ParentDevicePath,
-                  This->DriverBindingHandle,     
-                  Controller,   
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &ParentDevicePath,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
-               );
+                  );
   if (Status == EFI_ALREADY_STARTED) {
     return EFI_SUCCESS;
   }
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -140,30 +144,30 @@ Returns:
   // Clsoe protocol, don't use device path protocol in the .Support() function
   //
   gBS->CloseProtocol (
-         Controller,           
-         &gEfiDevicePathProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller
-         );
+        Controller,
+        &gEfiDevicePathProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   //
-  // Verify the Ide Controller Init Protocol, which installed by the 
-  // IdeController module. 
-  // Note 1: PciIo protocol has been opened BY_DRIVER by ide_init, so We can't 
+  // Verify the Ide Controller Init Protocol, which installed by the
+  // IdeController module.
+  // Note 1: PciIo protocol has been opened BY_DRIVER by ide_init, so We can't
   //         open BY_DRIVER here) That's why we don't check pciio protocol
   // Note 2: ide_init driver check ide controller's pci config space, so we dont
   //         check here any more to save code size
-  // 
+  //
   Status = gBS->OpenProtocol (
-                  Controller,           
-                  &gEfiIdeControllerInitProtocolGuid, 
-                  (VOID**)&IdeInit,           
-                  This->DriverBindingHandle,  
-                  Controller,   
+                  Controller,
+                  &gEfiIdeControllerInitProtocolGuid,
+                  (VOID **) &IdeInit,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
 
- if (Status == EFI_ALREADY_STARTED) {
+  if (Status == EFI_ALREADY_STARTED) {
     return EFI_SUCCESS;
   }
 
@@ -171,19 +175,19 @@ Returns:
   // If protocols were opened normally, closed it
   //
   gBS->CloseProtocol (
-         Controller,  
-         &gEfiIdeControllerInitProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
+        Controller,
+        &gEfiIdeControllerInitProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
-  return Status;    
-}   
+  return Status;
+}
 
 //
-//***********************************************************************************
+// ***********************************************************************************
 // IDEBusDriverBindingStart
-//***********************************************************************************
+// ***********************************************************************************
 //
 EFI_STATUS
 IDEBusDriverBindingStart (
@@ -207,33 +211,32 @@ IDEBusDriverBindingStart (
     EFI_ALREADY_STARTED - This driver is already running on ControllerHandle.
     other               - This driver does not support this device.
 
---*/                
+--*/
 {
-  EFI_STATUS                      Status;
-  EFI_STATUS                      SavedStatus;
-  EFI_PCI_IO_PROTOCOL             *PciIo;
-  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
-  EFI_DEV_PATH                    *Node;
-  UINT8                           IdeChannel;
-  UINT8                           BeginningIdeChannel;
-  UINT8                           EndIdeChannel;
-  UINT8                           IdeDevice;
-  UINT8                           BeginningIdeDevice;
-  UINT8                           EndIdeDevice;
-  IDE_BLK_IO_DEV                  *IdeBlkIoDevice[IdeMaxChannel][IdeMaxDevice];
-  IDE_BLK_IO_DEV                  *IdeBlkIoDevicePtr;
-  IDE_REGISTERS_BASE_ADDR         IdeRegsBaseAddr[IdeMaxChannel];
-  ATA_TRANSFER_MODE               TransferMode;
-  ATA_DRIVE_PARMS                 DriveParameters;
-  EFI_DEV_PATH                    NewNode;
-  UINT8                           ConfigurationOptions;
-  UINT16                          CommandBlockBaseAddr;
-  UINT16                          ControlBlockBaseAddr;
-  UINTN                           DataSize;
-  UINT32                          Attributes;
-  IDE_BUS_DRIVER_PRIVATE_DATA     *IdeBusDriverPrivateData;
-  
-  
+  EFI_STATUS                        Status;
+  EFI_STATUS                        SavedStatus;
+  EFI_PCI_IO_PROTOCOL               *PciIo;
+  EFI_DEVICE_PATH_PROTOCOL          *ParentDevicePath;
+  EFI_DEV_PATH                      *Node;
+  UINT8                             IdeChannel;
+  UINT8                             BeginningIdeChannel;
+  UINT8                             EndIdeChannel;
+  UINT8                             IdeDevice;
+  UINT8                             BeginningIdeDevice;
+  UINT8                             EndIdeDevice;
+  IDE_BLK_IO_DEV                    *IdeBlkIoDevice[IdeMaxChannel][IdeMaxDevice];
+  IDE_BLK_IO_DEV                    *IdeBlkIoDevicePtr;
+  IDE_REGISTERS_BASE_ADDR           IdeRegsBaseAddr[IdeMaxChannel];
+  ATA_TRANSFER_MODE                 TransferMode;
+  ATA_DRIVE_PARMS                   DriveParameters;
+  EFI_DEV_PATH                      NewNode;
+  UINT8                             ConfigurationOptions;
+  UINT16                            CommandBlockBaseAddr;
+  UINT16                            ControlBlockBaseAddr;
+  UINTN                             DataSize;
+  UINT32                            Attributes;
+  IDE_BUS_DRIVER_PRIVATE_DATA       *IdeBusDriverPrivateData;
+
   //
   // Local variables declaration for IdeControllerInit support
   //
@@ -246,69 +249,69 @@ IDEBusDriverBindingStart (
   EFI_ATA_COLLECTIVE_MODE           *SupportedModes;
 
   IdeBusDriverPrivateData = NULL;
-  SupportedModes = NULL;
-  
+  SupportedModes          = NULL;
+
   //
   // Perform IdeBus initialization
   //
   Status = gBS->OpenProtocol (
-                  Controller,   
-                  &gEfiDevicePathProtocolGuid,  
-                  (VOID**)&ParentDevicePath,
-                  This->DriverBindingHandle,     
-                  Controller,   
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &ParentDevicePath,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if ((EFI_ERROR(Status)) && (Status != EFI_ALREADY_STARTED)) {
+  if ((EFI_ERROR (Status)) && (Status != EFI_ALREADY_STARTED)) {
     return Status;
   }
   
   //
-  // Now open the IDE_CONTROLLER_INIT protocol. Step7.1 
+  // Now open the IDE_CONTROLLER_INIT protocol. Step7.1
   //
   Status = gBS->OpenProtocol (
-                  Controller,                 
-                  &gEfiIdeControllerInitProtocolGuid, 
-                  (VOID**)&IdeInit,           
-                  This->DriverBindingHandle,  
-                  Controller,   
+                  Controller,
+                  &gEfiIdeControllerInitProtocolGuid,
+                  (VOID **) &IdeInit,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  
+
   //
-  // The following OpenProtocol function with _GET_PROTOCOL attribute and 
+  // The following OpenProtocol function with _GET_PROTOCOL attribute and
   // will not return EFI_ALREADY_STARTED, so save it for now
   //
-  SavedStatus = Status; 
+  SavedStatus = Status;
 
   if ((EFI_ERROR (Status)) && (Status != EFI_ALREADY_STARTED)) {
-     DEBUG ((EFI_D_ERROR,"Open Init, Status=%x", Status)); 
-     //
-     // open protocol is not SUCCESS or not ALREADY_STARTED, error exit
-     //
-     goto ErrorExit;  
+    DEBUG ((EFI_D_ERROR, "Open Init, Status=%x", Status));
+    //
+    // open protocol is not SUCCESS or not ALREADY_STARTED, error exit
+    //
+    goto ErrorExit;
   }
 
   //
-  // Save Enumall and ChannelCount. Step7.2 
+  // Save Enumall and ChannelCount. Step7.2
   //
-  EnumAll = IdeInit->EnumAll;
-  ChannelCount = IdeInit->ChannelCount;
+  EnumAll       = IdeInit->EnumAll;
+  ChannelCount  = IdeInit->ChannelCount;
 
   //
-  // Consume PCI I/O protocol. Note that the OpenProtocol with _GET_PROTOCOL 
-  // attribute will not return EFI_ALREADY_STARTED 
+  // Consume PCI I/O protocol. Note that the OpenProtocol with _GET_PROTOCOL
+  // attribute will not return EFI_ALREADY_STARTED
   //
   Status = gBS->OpenProtocol (
-                  Controller,                   
-                  &gEfiPciIoProtocolGuid,       
-                  (VOID**)&PciIo,               
-                  This->DriverBindingHandle,    
-                  Controller,   
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL 
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  (VOID **) &PciIo,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-  if (EFI_ERROR (Status) ) {
-    DEBUG ((EFI_D_ERROR,"Open PciIo, Status=%x", Status)); 
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "Open PciIo, Status=%x", Status));
     goto ErrorExit;
   }
 
@@ -325,7 +328,8 @@ IDEBusDriverBindingStart (
     EfiZeroMem (IdeBusDriverPrivateData, sizeof (IDE_BUS_DRIVER_PRIVATE_DATA));
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &Controller,
-                    &gIDEBusDriverGuid, IdeBusDriverPrivateData,
+                    &gIDEBusDriverGuid,
+                    IdeBusDriverPrivateData,
                     NULL
                     );
     if (EFI_ERROR (Status)) {
@@ -334,23 +338,23 @@ IDEBusDriverBindingStart (
 
   } else {
     Status = gBS->OpenProtocol (
-                    Controller, 
-                    &gIDEBusDriverGuid, 
-                    (VOID**)&IdeBusDriverPrivateData,
-                    This->DriverBindingHandle,   
-                    Controller,   
+                    Controller,
+                    &gIDEBusDriverGuid,
+                    (VOID **) &IdeBusDriverPrivateData,
+                    This->DriverBindingHandle,
+                    Controller,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       IdeBusDriverPrivateData = NULL;
       goto ErrorExit;
     }
   }
-  
+
   Status = PciIo->Attributes (
-                    PciIo, 
-                    EfiPciIoAttributeOperationEnable, 
-                    EFI_PCI_DEVICE_ENABLE, 
+                    PciIo,
+                    EfiPciIoAttributeOperationEnable,
+                    EFI_PCI_DEVICE_ENABLE,
                     NULL
                     );
   if (EFI_ERROR (Status)) {
@@ -358,21 +362,21 @@ IDEBusDriverBindingStart (
   }
 
   //
-  // Read the environment variable that contains the IDEBus Driver's 
+  // Read the environment variable that contains the IDEBus Driver's
   // Config options that were set by the Driver Configuration Protocol
   //
   DataSize = sizeof (ConfigurationOptions);
   Status = gRT->GetVariable (
-                  L"Configuration", 
-                  &gIDEBusDriverGuid, 
-                  &Attributes, 
-                  &DataSize, 
+                  L"Configuration",
+                  &gIDEBusDriverGuid,
+                  &Attributes,
+                  &DataSize,
                   &ConfigurationOptions
                   );
   if (EFI_ERROR (Status)) {
     ConfigurationOptions = 0x0f;
   }
-    
+
   if (EnumAll) {
     //
     // If IdeInit->EnumAll is TRUE, must enumerate all IDE device anyway
@@ -380,27 +384,27 @@ IDEBusDriverBindingStart (
     BeginningIdeChannel = IdePrimary;
     EndIdeChannel       = IdeSecondary;
     BeginningIdeDevice  = IdeMaster;
-    EndIdeDevice        = IdeSlave; 
+    EndIdeDevice        = IdeSlave;
   } else if (RemainingDevicePath == NULL) {
     //
     // RemainingDevicePath is NULL, scan IDE bus for each device;
-    //  
+    //
     BeginningIdeChannel = IdePrimary;
     EndIdeChannel       = IdeSecondary;
     BeginningIdeDevice  = IdeMaster;
     //
     // default, may be redefined by IdeInit
     //
-    EndIdeDevice        = IdeSlave; 
+    EndIdeDevice = IdeSlave;
   } else {
     //
     // RemainingDevicePath is not NULL, only scan the specified device.
     //
-    Node                = (EFI_DEV_PATH*)RemainingDevicePath;
+    Node                = (EFI_DEV_PATH *) RemainingDevicePath;
     BeginningIdeChannel = Node->Atapi.PrimarySecondary;
     EndIdeChannel       = BeginningIdeChannel;
     BeginningIdeDevice  = Node->Atapi.SlaveMaster;
-    EndIdeDevice        = BeginningIdeDevice;    
+    EndIdeDevice        = BeginningIdeDevice;
   }
 
   //
@@ -421,32 +425,33 @@ IDEBusDriverBindingStart (
     &gIDEBusDriverGuid,
     ParentDevicePath
     );
-  
+
   //
   // Strictly follow the enumeration based on IDE_CONTROLLER_INIT protocol
   //
-  for (IdeChannel = BeginningIdeChannel;IdeChannel <= EndIdeChannel;IdeChannel++) {
+  for (IdeChannel = BeginningIdeChannel; IdeChannel <= EndIdeChannel; IdeChannel++) {
 
     IdeInit->NotifyPhase (IdeInit, EfiIdeBeforeChannelEnumeration, IdeChannel);
 
     //
-    // now obtain channel information fron IdeControllerInit protocol. Step9 
+    // now obtain channel information fron IdeControllerInit protocol. Step9
     //
-    Status = IdeInit->GetChannelInfo(
+    Status = IdeInit->GetChannelInfo (
                         IdeInit,
-                        IdeChannel, 
+                        IdeChannel,
                         &ChannelEnabled,
                         &MaxDevices
                         );
-    if (EFI_ERROR(Status) ) { 
-      DEBUG ((EFI_D_ERROR,"[GetChannel, Status=%x]",Status));
-      continue;        
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "[GetChannel, Status=%x]", Status));
+      continue;
     }
-    
-    if (!ChannelEnabled) 
-      continue;      
 
-    EndIdeDevice = (UINT8)EFI_MIN ((MaxDevices - 1), EndIdeDevice); 
+    if (!ChannelEnabled) {
+      continue;
+    }
+
+    EndIdeDevice = (UINT8) EFI_MIN ((MaxDevices - 1), EndIdeDevice);
 
     //
     // Now inform the IDE Controller Init Module. Sept10
@@ -456,18 +461,18 @@ IDEBusDriverBindingStart (
     //
     // No reset channel function implemented. Sept11
     //
-    IdeInit->NotifyPhase(IdeInit, EfiIdeAfterChannelReset, IdeChannel);
+    IdeInit->NotifyPhase (IdeInit, EfiIdeAfterChannelReset, IdeChannel);
 
     //
     // Step13
     //
-    IdeInit->NotifyPhase(
-               IdeInit,
-               EfiIdeBusBeforeDevicePresenceDetection,
-               IdeChannel                             
-               );
+    IdeInit->NotifyPhase (
+              IdeInit,
+              EfiIdeBusBeforeDevicePresenceDetection,
+              IdeChannel
+              );
     //
-    //-- 1st inner loop --- Master/Slave ------------  Step14
+    // -- 1st inner loop --- Master/Slave ------------  Step14
     //
     for (IdeDevice = BeginningIdeDevice; IdeDevice <= EndIdeDevice; IdeDevice++) {
       //
@@ -496,16 +501,16 @@ IDEBusDriverBindingStart (
       IdeBlkIoDevicePtr = IdeBlkIoDevice[IdeChannel][IdeDevice];
 
       EfiZeroMem (IdeBlkIoDevicePtr, sizeof (IDE_BLK_IO_DEV));
-  
-      IdeBlkIoDevicePtr->Signature = IDE_BLK_IO_DEV_SIGNATURE;
-      IdeBlkIoDevicePtr->Channel   = IdeChannel;
-      IdeBlkIoDevicePtr->Device    = IdeDevice;
-  
+
+      IdeBlkIoDevicePtr->Signature  = IDE_BLK_IO_DEV_SIGNATURE;
+      IdeBlkIoDevicePtr->Channel    = IdeChannel;
+      IdeBlkIoDevicePtr->Device     = IdeDevice;
+
       //
       // initialize Block IO interface's Media pointer
       //
       IdeBlkIoDevicePtr->BlkIo.Media = &IdeBlkIoDevicePtr->BlkMedia;
-      
+
       //
       // Initialize IDE IO port addresses, including Command Block registers
       // and Control Block registers
@@ -514,26 +519,26 @@ IDEBusDriverBindingStart (
       if (IdeBlkIoDevicePtr->IoPort == NULL) {
         continue;
       }
-            
-      EfiZeroMem (IdeBlkIoDevicePtr->IoPort, sizeof(IDE_BASE_REGISTERS));
+
+      EfiZeroMem (IdeBlkIoDevicePtr->IoPort, sizeof (IDE_BASE_REGISTERS));
       CommandBlockBaseAddr = IdeRegsBaseAddr[IdeChannel].CommandBlockBaseAddr;
       ControlBlockBaseAddr = IdeRegsBaseAddr[IdeChannel].ControlBlockBaseAddr;
-      
-      IdeBlkIoDevicePtr->IoPort->Data               = CommandBlockBaseAddr;
-      (*(UINT16 *)&IdeBlkIoDevicePtr->IoPort->Reg1) = (UINT16)(CommandBlockBaseAddr + 0x01);
-      IdeBlkIoDevicePtr->IoPort->SectorCount        = (UINT16)(CommandBlockBaseAddr + 0x02);
-      IdeBlkIoDevicePtr->IoPort->SectorNumber       = (UINT16)(CommandBlockBaseAddr + 0x03);
-      IdeBlkIoDevicePtr->IoPort->CylinderLsb        = (UINT16)(CommandBlockBaseAddr + 0x04);
-      IdeBlkIoDevicePtr->IoPort->CylinderMsb        = (UINT16)(CommandBlockBaseAddr + 0x05);
-      IdeBlkIoDevicePtr->IoPort->Head               = (UINT16)(CommandBlockBaseAddr + 0x06);
-      (*(UINT16 *)&IdeBlkIoDevicePtr->IoPort->Reg)  = (UINT16)(CommandBlockBaseAddr + 0x07);
-      
-      (*(UINT16 *)&IdeBlkIoDevicePtr->IoPort->Alt)  = ControlBlockBaseAddr;
-      IdeBlkIoDevicePtr->IoPort->DriveAddress       = (UINT16)(ControlBlockBaseAddr + 0x01);
-    
-      IdeBlkIoDevicePtr->IoPort->MasterSlave        = (UINT16)((IdeDevice == IdeMaster) ? 1 : 0);
 
-      IdeBlkIoDevicePtr->PciIo  = PciIo;
+      IdeBlkIoDevicePtr->IoPort->Data = CommandBlockBaseAddr;
+      (*(UINT16 *) &IdeBlkIoDevicePtr->IoPort->Reg1) = (UINT16) (CommandBlockBaseAddr + 0x01);
+      IdeBlkIoDevicePtr->IoPort->SectorCount = (UINT16) (CommandBlockBaseAddr + 0x02);
+      IdeBlkIoDevicePtr->IoPort->SectorNumber = (UINT16) (CommandBlockBaseAddr + 0x03);
+      IdeBlkIoDevicePtr->IoPort->CylinderLsb = (UINT16) (CommandBlockBaseAddr + 0x04);
+      IdeBlkIoDevicePtr->IoPort->CylinderMsb = (UINT16) (CommandBlockBaseAddr + 0x05);
+      IdeBlkIoDevicePtr->IoPort->Head = (UINT16) (CommandBlockBaseAddr + 0x06);
+      (*(UINT16 *) &IdeBlkIoDevicePtr->IoPort->Reg) = (UINT16) (CommandBlockBaseAddr + 0x07);
+
+      (*(UINT16 *) &IdeBlkIoDevicePtr->IoPort->Alt) = ControlBlockBaseAddr;
+      IdeBlkIoDevicePtr->IoPort->DriveAddress = (UINT16) (ControlBlockBaseAddr + 0x01);
+
+      IdeBlkIoDevicePtr->IoPort->MasterSlave = (UINT16) ((IdeDevice == IdeMaster) ? 1 : 0);
+
+      IdeBlkIoDevicePtr->PciIo = PciIo;
       IdeBlkIoDevicePtr->IdeBusDriverPrivateData = IdeBusDriverPrivateData;
       IdeBlkIoDevicePtr->IoPort->BusMasterBaseAddr = IdeRegsBaseAddr[IdeChannel].BusMasterBaseAddr;
 
@@ -547,30 +552,30 @@ IDEBusDriverBindingStart (
         &gIDEBusDriverGuid,
         IdeBlkIoDevicePtr->DevicePath
         );
-      
+
       //
       // Discover device, now!
       //
-      PERF_START(0, L"DiscoverIdeDevice", L"IDE", 0);
-      Status = DiscoverIdeDevice (IdeBlkIoDevicePtr);  
-      PERF_END(0, L"DiscoverIdeDevice", L"IDE", 0);
-      
-      IdeBusDriverPrivateData->HaveScannedDevice[IdeChannel * 2 + IdeDevice] = TRUE;
-      IdeBusDriverPrivateData->DeviceProcessed[IdeChannel * 2 + IdeDevice] = FALSE;
+      PERF_START (0, L"DiscoverIdeDevice", L"IDE", 0);
+      Status = DiscoverIdeDevice (IdeBlkIoDevicePtr);
+      PERF_END (0, L"DiscoverIdeDevice", L"IDE", 0);
+
+      IdeBusDriverPrivateData->HaveScannedDevice[IdeChannel * 2 + IdeDevice]  = TRUE;
+      IdeBusDriverPrivateData->DeviceProcessed[IdeChannel * 2 + IdeDevice]    = FALSE;
 
       if (!EFI_ERROR (Status)) {
         //
         // Set Device Path
-        //    
-        EfiZeroMem (&NewNode, sizeof(NewNode));
+        //
+        EfiZeroMem (&NewNode, sizeof (NewNode));
         NewNode.DevPath.Type    = MESSAGING_DEVICE_PATH;
         NewNode.DevPath.SubType = MSG_ATAPI_DP;
-        SetDevicePathNodeLength (&NewNode.DevPath, sizeof(ATAPI_DEVICE_PATH));
+        SetDevicePathNodeLength (&NewNode.DevPath, sizeof (ATAPI_DEVICE_PATH));
 
-        NewNode.Atapi.PrimarySecondary = (UINT8)IdeBlkIoDevicePtr->Channel;
-        NewNode.Atapi.SlaveMaster      = (UINT8)IdeBlkIoDevicePtr->Device;
-        NewNode.Atapi.Lun              = IdeBlkIoDevicePtr->Lun;
-        IdeBlkIoDevicePtr->DevicePath  = EfiAppendDevicePathNode (
+        NewNode.Atapi.PrimarySecondary  = (UINT8) IdeBlkIoDevicePtr->Channel;
+        NewNode.Atapi.SlaveMaster       = (UINT8) IdeBlkIoDevicePtr->Device;
+        NewNode.Atapi.Lun               = IdeBlkIoDevicePtr->Lun;
+        IdeBlkIoDevicePtr->DevicePath = EfiAppendDevicePathNode (
                                           ParentDevicePath,
                                           &NewNode.DevPath
                                           );
@@ -582,7 +587,7 @@ IDEBusDriverBindingStart (
         //
         // Submit identify data to IDE controller init driver
         //
-        IdentifyData = *IdeBlkIoDevicePtr->pIdData;
+        IdentifyData  = *IdeBlkIoDevicePtr->pIdData;
         IdeBusDriverPrivateData->DeviceFound[IdeChannel * 2 + IdeDevice] = TRUE;
         IdeInit->SubmitData (IdeInit, IdeChannel, IdeDevice, &IdentifyData);
       } else {
@@ -593,23 +598,23 @@ IDEBusDriverBindingStart (
         IdeInit->SubmitData (IdeInit, IdeChannel, IdeDevice, NULL);
         ReleaseIdeResources (IdeBlkIoDevicePtr);
         IdeBlkIoDevicePtr = NULL;
-      } 
+      }
+      //
+      // end of 1st inner loop ---
+      //
+    }
     //
-    // end of 1st inner loop ---
+    // end of 1st outer loop =========
     //
-    } 
-  //
-  // end of 1st outer loop =========
-  //
-  } 
+  }
 
   //
-  //= 2nd outer loop == Primary/Secondary =================
+  // = 2nd outer loop == Primary/Secondary =================
   //
-  for (IdeChannel = BeginningIdeChannel;IdeChannel <= EndIdeChannel;IdeChannel++) {
+  for (IdeChannel = BeginningIdeChannel; IdeChannel <= EndIdeChannel; IdeChannel++) {
 
     //
-    //-- 2nd inner loop --- Master/Slave --------
+    // -- 2nd inner loop --- Master/Slave --------
     //
     for (IdeDevice = BeginningIdeDevice; IdeDevice <= EndIdeDevice; IdeDevice++) {
 
@@ -622,16 +627,16 @@ IDEBusDriverBindingStart (
       }
 
       Status = IdeInit->CalculateMode (
-                          IdeInit,        
-                          IdeChannel,     
-                          IdeDevice,      
-                          &SupportedModes 
+                          IdeInit,
+                          IdeChannel,
+                          IdeDevice,
+                          &SupportedModes
                           );
-      if (EFI_ERROR(Status) ) { 
-         DEBUG ((EFI_D_ERROR,"[bStStp20S=%x]",Status));
-         continue;        
+      if (EFI_ERROR (Status)) {
+        DEBUG ((EFI_D_ERROR, "[bStStp20S=%x]", Status));
+        continue;
       }
-      
+
       IdeBlkIoDevicePtr = IdeBlkIoDevice[IdeChannel][IdeDevice];
 
       //
@@ -641,30 +646,32 @@ IDEBusDriverBindingStart (
       // PIO mode at boot time. DMA modes are used by certain kind of OS booting
       //
       if (SupportedModes->UdmaMode.Valid) {
-        
-        TransferMode.ModeCategory = ATA_MODE_CATEGORY_UDMA;
-        TransferMode.ModeNumber   = (UINT8)(SupportedModes->UdmaMode.Mode);
-        Status = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
 
-        if (EFI_ERROR(Status)) {    
+        TransferMode.ModeCategory = ATA_MODE_CATEGORY_UDMA;
+        TransferMode.ModeNumber   = (UINT8) (SupportedModes->UdmaMode.Mode);
+        Status                    = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
+
+        if (EFI_ERROR (Status)) {
           IdeBusDriverPrivateData->DeviceFound[IdeChannel * 2 + IdeDevice] = FALSE;
           ReleaseIdeResources (IdeBlkIoDevicePtr);
           IdeBlkIoDevicePtr = NULL;
           continue;
         }
+
         EnableInterrupt (IdeBlkIoDevicePtr);
       } else if (SupportedModes->MultiWordDmaMode.Valid) {
 
         TransferMode.ModeCategory = ATA_MODE_CATEGORY_MDMA;
-        TransferMode.ModeNumber   = (UINT8)SupportedModes->MultiWordDmaMode.Mode;
-        Status = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
+        TransferMode.ModeNumber   = (UINT8) SupportedModes->MultiWordDmaMode.Mode;
+        Status                    = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
 
-        if (EFI_ERROR(Status)) {    
+        if (EFI_ERROR (Status)) {
           IdeBusDriverPrivateData->DeviceFound[IdeChannel * 2 + IdeDevice] = FALSE;
           ReleaseIdeResources (IdeBlkIoDevicePtr);
           IdeBlkIoDevicePtr = NULL;
           continue;
         }
+
         EnableInterrupt (IdeBlkIoDevicePtr);
       }
 
@@ -677,10 +684,10 @@ IDEBusDriverBindingStart (
         TransferMode.ModeCategory = ATA_MODE_CATEGORY_FLOW_PIO;
       }
 
-      TransferMode.ModeNumber = (UINT8)(SupportedModes->PioMode.Mode);
-      Status = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
+      TransferMode.ModeNumber = (UINT8) (SupportedModes->PioMode.Mode);
+      Status                  = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
 
-      if (EFI_ERROR(Status)) {    
+      if (EFI_ERROR (Status)) {
         IdeBusDriverPrivateData->DeviceFound[IdeChannel * 2 + IdeDevice] = FALSE;
         ReleaseIdeResources (IdeBlkIoDevicePtr);
         IdeBlkIoDevicePtr = NULL;
@@ -690,9 +697,9 @@ IDEBusDriverBindingStart (
       //
       // Init driver parameters
       //
-      DriveParameters.Sector = (UINT8) IdeBlkIoDevicePtr->pIdData->AtaData.sectors_per_track;
-      DriveParameters.Heads = (UINT8) (IdeBlkIoDevicePtr->pIdData->AtaData.heads - 1);
-      DriveParameters.MultipleSector = (UINT8) IdeBlkIoDevicePtr->pIdData->AtaData.multi_sector_cmd_max_sct_cnt;
+      DriveParameters.Sector          = (UINT8) IdeBlkIoDevicePtr->pIdData->AtaData.sectors_per_track;
+      DriveParameters.Heads           = (UINT8) (IdeBlkIoDevicePtr->pIdData->AtaData.heads - 1);
+      DriveParameters.MultipleSector  = (UINT8) IdeBlkIoDevicePtr->pIdData->AtaData.multi_sector_cmd_max_sct_cnt;
       //
       // Set Parameters for the device:
       // 1) Init
@@ -707,20 +714,20 @@ IDEBusDriverBindingStart (
       //
       IdeBlkIoDevicePtr->PioMode = SupportedModes->PioMode.Mode;
 
-      // 
-      // Set IDE controller Timing Blocks in the PCI Configuration Space 
+      //
+      // Set IDE controller Timing Blocks in the PCI Configuration Space
       //
       IdeInit->SetTiming (IdeInit, IdeChannel, IdeDevice, SupportedModes);
-      
+
       //
       // Add Component Name for the IDE/ATAPI device that was discovered.
       //
       IdeBlkIoDevicePtr->ControllerNameTable = NULL;
       ADD_NAME (IdeBlkIoDevicePtr);
-      
+
       Status = gBS->InstallMultipleProtocolInterfaces (
-                      &IdeBlkIoDevicePtr->Handle,           
-                      &gEfiDevicePathProtocolGuid, 
+                      &IdeBlkIoDevicePtr->Handle,
+                      &gEfiDevicePathProtocolGuid,
                       IdeBlkIoDevicePtr->DevicePath,
                       &gEfiBlockIoProtocolGuid,
                       &IdeBlkIoDevicePtr->BlkIo,
@@ -734,14 +741,14 @@ IDEBusDriverBindingStart (
       }
 
       gBS->OpenProtocol (
-             Controller,   
-             &gEfiPciIoProtocolGuid,
-             (VOID**)&PciIo,
-             This->DriverBindingHandle,
-             IdeBlkIoDevicePtr->Handle,
-             EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-             );
-      
+            Controller,
+            &gEfiPciIoProtocolGuid,
+            (VOID **) &PciIo,
+            This->DriverBindingHandle,
+            IdeBlkIoDevicePtr->Handle,
+            EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+            );
+
       IdeBusDriverPrivateData->DeviceProcessed[IdeChannel * 2 + IdeDevice] = TRUE;
 
       //
@@ -754,31 +761,31 @@ IDEBusDriverBindingStart (
         &gIDEBusDriverGuid,
         IdeBlkIoDevicePtr->DevicePath
         );
+      //
+      // end of 2nd inner loop ----
+      //
+    }
     //
-    // end of 2nd inner loop ----
+    // end of 2nd outer loop ==========
     //
-    } 
-  //
-  // end of 2nd outer loop ==========
-  //
-  } 
+  }
   
   //
-  // All configurations done! Notify IdeController to do post initialization 
+  // All configurations done! Notify IdeController to do post initialization
   // work such as saving IDE controller PCI settings for S3 resume
-  // 
+  //
   IdeInit->NotifyPhase (IdeInit, EfiIdeBusPhaseMaximum, 0);
-  
+
   if (SupportedModes != NULL) {
     gBS->FreePool (SupportedModes);
   }
-  
-  PERF_START(0, L"Finish IDE detection", L"IDE", 1);
-  PERF_END(0, L"Finish IDE detection", L"IDE", 0);
+
+  PERF_START (0, L"Finish IDE detection", L"IDE", 1);
+  PERF_END (0, L"Finish IDE detection", L"IDE", 0);
 
   return EFI_SUCCESS;
 
-ErrorExit:  
+ErrorExit:
 
   //
   // Report error code: controller error
@@ -792,48 +799,49 @@ ErrorExit:
     );
 
   gBS->CloseProtocol (
-         Controller,  
-         &gEfiIdeControllerInitProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
+        Controller,
+        &gEfiIdeControllerInitProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   gBS->UninstallMultipleProtocolInterfaces (
-         Controller,
-         &gIDEBusDriverGuid, IdeBusDriverPrivateData,
-         NULL
-         );
-  
+        Controller,
+        &gIDEBusDriverGuid,
+        IdeBusDriverPrivateData,
+        NULL
+        );
+
   if (IdeBusDriverPrivateData != NULL) {
     gBS->FreePool (IdeBusDriverPrivateData);
   }
-  
+
   if (SupportedModes != NULL) {
     gBS->FreePool (SupportedModes);
   }
-           
-  gBS->CloseProtocol (
-         Controller, 
-         &gEfiPciIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
 
   gBS->CloseProtocol (
-         Controller, 
-         &gEfiDevicePathProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
-  
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
+  gBS->CloseProtocol (
+        Controller,
+        &gEfiDevicePathProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
   return Status;
-  
+
 }
 
 //
-//***********************************************************************************
+// ***********************************************************************************
 // IDEBusDriverBindingStop
-//***********************************************************************************
+// ***********************************************************************************
 //
 EFI_STATUS
 IDEBusDriverBindingStop (
@@ -857,84 +865,87 @@ IDEBusDriverBindingStop (
     EFI_SUCCESS       - This driver is removed DeviceHandle
     other             - This driver was not removed from this device
   
---*/                
+--*/
+// TODO:    Controller - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  EFI_STATUS                    Status;
-  EFI_PCI_IO_PROTOCOL           *PciIo;
-  BOOLEAN                       AllChildrenStopped;
-  UINTN                         Index;  
-  IDE_BUS_DRIVER_PRIVATE_DATA   *IdeBusDriverPrivateData;
-  
-  IdeBusDriverPrivateData       = NULL;
-  
+  EFI_STATUS                  Status;
+  EFI_PCI_IO_PROTOCOL         *PciIo;
+  BOOLEAN                     AllChildrenStopped;
+  UINTN                       Index;
+  IDE_BUS_DRIVER_PRIVATE_DATA *IdeBusDriverPrivateData;
+
+  IdeBusDriverPrivateData = NULL;
+
   if (NumberOfChildren == 0) {
 
     Status = gBS->OpenProtocol (
-                    Controller, 
-                    &gEfiPciIoProtocolGuid, 
-                    (VOID**)&PciIo,
-                    This->DriverBindingHandle,   
-                    Controller,   
+                    Controller,
+                    &gEfiPciIoProtocolGuid,
+                    (VOID **) &PciIo,
+                    This->DriverBindingHandle,
+                    Controller,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (!EFI_ERROR (Status)) {
       PciIo->Attributes (
-               PciIo, 
-               EfiPciIoAttributeOperationDisable, 
-               EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE, 
-               NULL
-               );
+              PciIo,
+              EfiPciIoAttributeOperationDisable,
+              EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
+              NULL
+              );
     }
-    
+
     gBS->OpenProtocol (
-           Controller, 
-           &gIDEBusDriverGuid, 
-           (VOID**)&IdeBusDriverPrivateData,
-           This->DriverBindingHandle,   
-           Controller,   
-           EFI_OPEN_PROTOCOL_GET_PROTOCOL
-           );
-                  
+          Controller,
+          &gIDEBusDriverGuid,
+          (VOID **) &IdeBusDriverPrivateData,
+          This->DriverBindingHandle,
+          Controller,
+          EFI_OPEN_PROTOCOL_GET_PROTOCOL
+          );
+
     gBS->UninstallMultipleProtocolInterfaces (
-           Controller,
-           &gIDEBusDriverGuid, IdeBusDriverPrivateData,
-           NULL
-           );
-           
+          Controller,
+          &gIDEBusDriverGuid,
+          IdeBusDriverPrivateData,
+          NULL
+          );
+
     if (IdeBusDriverPrivateData != NULL) {
       gBS->FreePool (IdeBusDriverPrivateData);
     }
     //
     // Close the bus driver
     //
-   gBS->CloseProtocol (
-          Controller,  
-          &gEfiIdeControllerInitProtocolGuid, 
-          This->DriverBindingHandle,   
-          Controller   
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiIdeControllerInitProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
           );
     gBS->CloseProtocol (
-           Controller, 
-           &gEfiPciIoProtocolGuid, 
-           This->DriverBindingHandle, 
-           Controller
-           );
+          Controller,
+          &gEfiPciIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     gBS->CloseProtocol (
-           Controller, 
-           &gEfiDevicePathProtocolGuid, 
-           This->DriverBindingHandle,   
-           Controller   
-           );
+          Controller,
+          &gEfiDevicePathProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
 
     return EFI_SUCCESS;
   }
-  
+
   AllChildrenStopped = TRUE;
 
   for (Index = 0; Index < NumberOfChildren; Index++) {
-    
+
     Status = DeRegisterIdeDevice (This, Controller, ChildHandleBuffer[Index]);
-    
+
     if (EFI_ERROR (Status)) {
       AllChildrenStopped = FALSE;
     }
@@ -943,21 +954,21 @@ IDEBusDriverBindingStop (
   if (!AllChildrenStopped) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   return EFI_SUCCESS;
 }
 
 //
-//***********************************************************************************
+// ***********************************************************************************
 // DeRegisterIdeDevice
-//***********************************************************************************
+// ***********************************************************************************
 //
-EFI_STATUS 
-DeRegisterIdeDevice ( 
+EFI_STATUS
+DeRegisterIdeDevice (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
   IN  EFI_HANDLE                     Handle
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -975,19 +986,20 @@ Returns:
   EFI_STATUS
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                      Status;
-  EFI_BLOCK_IO_PROTOCOL           *BlkIo;
-  IDE_BLK_IO_DEV                  *IdeBlkIoDevice;
-  EFI_PCI_IO_PROTOCOL             *PciIo;
-  UINTN                           Index;
+  EFI_STATUS            Status;
+  EFI_BLOCK_IO_PROTOCOL *BlkIo;
+  IDE_BLK_IO_DEV        *IdeBlkIoDevice;
+  EFI_PCI_IO_PROTOCOL   *PciIo;
+  UINTN                 Index;
 
   Status = gBS->OpenProtocol (
                   Handle,
-                  &gEfiBlockIoProtocolGuid,  
-                  (VOID**)&BlkIo,
-                  This->DriverBindingHandle,             
-                  Controller,   
+                  &gEfiBlockIoProtocolGuid,
+                  (VOID **) &BlkIo,
+                  This->DriverBindingHandle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -1007,34 +1019,36 @@ Returns:
     IdeBlkIoDevice->DevicePath
     );
 
-
   //
   // Close the child handle
   //
   Status = gBS->CloseProtocol (
-                  Controller, 
-                  &gEfiPciIoProtocolGuid, 
-                  This->DriverBindingHandle, 
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  This->DriverBindingHandle,
                   Handle
                   );
 
   Status = gBS->UninstallMultipleProtocolInterfaces (
-                  Handle, 
-                  &gEfiDevicePathProtocolGuid, IdeBlkIoDevice->DevicePath,
-                  &gEfiBlockIoProtocolGuid,    &IdeBlkIoDevice->BlkIo,
-                  &gEfiDiskInfoProtocolGuid,   &IdeBlkIoDevice->DiskInfo,
+                  Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  IdeBlkIoDevice->DevicePath,
+                  &gEfiBlockIoProtocolGuid,
+                  &IdeBlkIoDevice->BlkIo,
+                  &gEfiDiskInfoProtocolGuid,
+                  &IdeBlkIoDevice->DiskInfo,
                   NULL
                   );
-  
+
   if (EFI_ERROR (Status)) {
     gBS->OpenProtocol (
-           Controller,   
-           &gEfiPciIoProtocolGuid,  
-           (VOID**)&PciIo,
-           This->DriverBindingHandle,   
-           Handle,
-           EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-           );
+          Controller,
+          &gEfiPciIoProtocolGuid,
+          (VOID **) &PciIo,
+          This->DriverBindingHandle,
+          Handle,
+          EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+          );
     return Status;
   }
   
@@ -1045,17 +1059,17 @@ Returns:
   IdeBlkIoDevice->IdeBusDriverPrivateData->HaveScannedDevice[Index] = FALSE;
 
   ReleaseIdeResources (IdeBlkIoDevice);
-  
+
   return EFI_SUCCESS;
 }
 
 //
-//***********************************************************************************
+// ***********************************************************************************
 // IDEBlkIoReset
-//***********************************************************************************
+// ***********************************************************************************
 //
 EFI_STATUS
-IDEBlkIoReset(
+IDEBlkIoReset (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  BOOLEAN                 ExtendedVerification
   )
@@ -1070,40 +1084,43 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ExtendedVerification - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_BLK_IO_DEV              *IdeBlkIoDevice;
-  EFI_STATUS                  Status;
-    
-  IdeBlkIoDevice              = IDE_BLOCK_IO_DEV_FROM_THIS (This);
+  IDE_BLK_IO_DEV  *IdeBlkIoDevice;
+  EFI_STATUS      Status;
+
+  IdeBlkIoDevice = IDE_BLOCK_IO_DEV_FROM_THIS (This);
   //
   // Requery IDE IO resources in case of the switch of native and legacy modes
   //
   ReassignIdeResources (IdeBlkIoDevice);
-  
+
   //
   // for ATA device, using ATA reset method
-  //    
-  if(IdeBlkIoDevice->Type == IdeHardDisk) {
-    return AtaSoftReset(IdeBlkIoDevice);
+  //
+  if (IdeBlkIoDevice->Type == IdeHardDisk) {
+    return AtaSoftReset (IdeBlkIoDevice);
   }
 
-  if(IdeBlkIoDevice->Type == IdeUnknown) {
+  if (IdeBlkIoDevice->Type == IdeUnknown) {
     return EFI_DEVICE_ERROR;
   }
   
   //
   // for ATAPI device, using ATAPI reset method
   //
-  Status = AtapiSoftReset(IdeBlkIoDevice);
+  Status = AtapiSoftReset (IdeBlkIoDevice);
   if (ExtendedVerification) {
-    Status = AtaSoftReset(IdeBlkIoDevice);
+    Status = AtaSoftReset (IdeBlkIoDevice);
   }
-  return Status;
-}   
 
-  
+  return Status;
+}
+
 EFI_STATUS
-IDEBlkIoReadBlocks(
+IDEBlkIoReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
   IN  EFI_LBA                 LBA,
@@ -1129,50 +1146,50 @@ Returns:
   read data status
 
 --*/
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   IDE_BLK_IO_DEV  *IdeBlkIoDevice;
-    
+
   IdeBlkIoDevice = IDE_BLOCK_IO_DEV_FROM_THIS (This);
-  
+
   //
   // Requery IDE IO resources in case of the switch of native and legacy modes
   //
   ReassignIdeResources (IdeBlkIoDevice);
-  
+
   //
   // For ATA compatible device, use ATA read block's mechanism
-  //  
+  //
   if (IdeBlkIoDevice->Type == IdeHardDisk ||
       IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
-    return AtaBlkIoReadBlocks(
-             IdeBlkIoDevice,
-             MediaId,
-             LBA,
-             BufferSize,
-             Buffer
-             );
+    return AtaBlkIoReadBlocks (
+            IdeBlkIoDevice,
+            MediaId,
+            LBA,
+            BufferSize,
+            Buffer
+            );
   }
 
-  if (IdeBlkIoDevice->Type == IdeUnknown) {        
+  if (IdeBlkIoDevice->Type == IdeUnknown) {
     return EFI_DEVICE_ERROR;
   }
   
   //
   // for ATAPI device, using ATAPI read block's mechanism
   //
-  return AtapiBlkIoReadBlocks(
-           IdeBlkIoDevice,
-           MediaId,
-           LBA,
-           BufferSize,
-           Buffer
-           );
- 
+  return AtapiBlkIoReadBlocks (
+          IdeBlkIoDevice,
+          MediaId,
+          LBA,
+          BufferSize,
+          Buffer
+          );
+
 }
 
-  
 EFI_STATUS
-IDEBlkIoWriteBlocks(
+IDEBlkIoWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
   IN  EFI_LBA                 LBA,
@@ -1198,53 +1215,54 @@ Returns:
   write data status
 
 --*/
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   IDE_BLK_IO_DEV  *IdeBlkIoDevice;
-    
+
   IdeBlkIoDevice = IDE_BLOCK_IO_DEV_FROM_THIS (This);
   //
   // Requery IDE IO resources in case of the switch of native and legacy modes
   //
   ReassignIdeResources (IdeBlkIoDevice);
-  
+
   //
   // for ATA device, using ATA write block's mechanism
   //
   if (IdeBlkIoDevice->Type == IdeHardDisk ||
       IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {        
 
-    return AtaBlkIoWriteBlocks(
-             IdeBlkIoDevice,
-             MediaId,
-             LBA,
-             BufferSize,
-             Buffer
-             );
+    return AtaBlkIoWriteBlocks (
+            IdeBlkIoDevice,
+            MediaId,
+            LBA,
+            BufferSize,
+            Buffer
+            );
   }
 
-  if (IdeBlkIoDevice->Type == IdeUnknown) {        
+  if (IdeBlkIoDevice->Type == IdeUnknown) {
     return EFI_DEVICE_ERROR;
   }
   
   //
   // for ATAPI device, using ATAPI write block's mechanism
   //
-  return AtapiBlkIoWriteBlocks(
-           IdeBlkIoDevice,
-           MediaId,
-           LBA,
-           BufferSize,
-           Buffer
-           );
+  return AtapiBlkIoWriteBlocks (
+          IdeBlkIoDevice,
+          MediaId,
+          LBA,
+          BufferSize,
+          Buffer
+          );
 }
 
 //
-//***********************************************************************************
+// ***********************************************************************************
 // IDEBlkIoFlushBlocks
-//***********************************************************************************
+// ***********************************************************************************
 //
 EFI_STATUS
-IDEBlkIoFlushBlocks(
+IDEBlkIoFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
   )
 /*++
@@ -1258,13 +1276,14 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   //
   // return directly
   //
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 IDEDiskInfoInquiry (
@@ -1291,9 +1310,9 @@ IDEDiskInfoInquiry (
 
 --*/
 {
-  IDE_BLK_IO_DEV                  *IdeBlkIoDevice;
-    
-  IdeBlkIoDevice                  = IDE_BLOCK_IO_DEV_FROM_DISK_INFO_THIS (This);
+  IDE_BLK_IO_DEV  *IdeBlkIoDevice;
+
+  IdeBlkIoDevice = IDE_BLOCK_IO_DEV_FROM_DISK_INFO_THIS (This);
 
   if (*InquiryDataSize < sizeof (INQUIRY_DATA)) {
     *InquiryDataSize = sizeof (INQUIRY_DATA);
@@ -1335,9 +1354,9 @@ IDEDiskInfoIdentify (
 
 --*/
 {
-  IDE_BLK_IO_DEV                  *IdeBlkIoDevice;
-    
-  IdeBlkIoDevice                  = IDE_BLOCK_IO_DEV_FROM_DISK_INFO_THIS (This);
+  IDE_BLK_IO_DEV  *IdeBlkIoDevice;
+
+  IdeBlkIoDevice = IDE_BLOCK_IO_DEV_FROM_DISK_INFO_THIS (This);
 
   if (*IdentifyDataSize < sizeof (EFI_IDENTIFY_DATA)) {
     *IdentifyDataSize = sizeof (EFI_IDENTIFY_DATA);
@@ -1407,12 +1426,11 @@ IDEDiskInfoWhichIde (
 
 --*/
 {
-  IDE_BLK_IO_DEV              *IdeBlkIoDevice;
-    
-  IdeBlkIoDevice              = IDE_BLOCK_IO_DEV_FROM_DISK_INFO_THIS (This);
-  *IdeChannel                 = IdeBlkIoDevice->Channel;
-  *IdeDevice                  = IdeBlkIoDevice->Device;
+  IDE_BLK_IO_DEV  *IdeBlkIoDevice;
+
+  IdeBlkIoDevice  = IDE_BLOCK_IO_DEV_FROM_DISK_INFO_THIS (This);
+  *IdeChannel     = IdeBlkIoDevice->Channel;
+  *IdeDevice      = IdeBlkIoDevice->Device;
 
   return EFI_SUCCESS;
 }
-

@@ -21,7 +21,6 @@ Abstract:
 
 #include "HiiDatabase.h"
 
-
 EFI_STATUS
 HiiGetKeyboardLayout (
   IN     EFI_HII_PROTOCOL   *This,

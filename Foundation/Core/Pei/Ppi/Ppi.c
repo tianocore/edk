@@ -179,7 +179,7 @@ Returns:
     // Continue until the end of the PPI List.
     //
     if ((PpiList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) ==  
-                          EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+        EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
       break;
     }
     PpiList++;
@@ -189,12 +189,14 @@ Returns:
   //
   // Dispatch any callback level notifies for newly installed PPIs.
   //
-  DispatchNotify (PeiServices,
-                  EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
-                  LastCallbackInstall,
-                  PrivateData->PpiData.PpiListEnd,
-                  PrivateData->PpiData.DispatchListEnd,                 
-                  PrivateData->PpiData.NotifyListEnd);
+  DispatchNotify (
+    PeiServices,
+    EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
+    LastCallbackInstall,
+    PrivateData->PpiData.PpiListEnd,
+    PrivateData->PpiData.DispatchListEnd,                 
+    PrivateData->PpiData.NotifyListEnd
+    );
 
 
   return EFI_SUCCESS;
@@ -266,12 +268,14 @@ Returns:
   //
   // Dispatch any callback level notifies for the newly installed PPI.
   //
-  DispatchNotify (PeiServices,
-                  EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
-                  Index,
-                  Index+1,
-                  PrivateData->PpiData.DispatchListEnd,                 
-                  PrivateData->PpiData.NotifyListEnd);
+  DispatchNotify (
+    PeiServices,
+    EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
+    Index,
+    Index+1,
+    PrivateData->PpiData.DispatchListEnd,                 
+    PrivateData->PpiData.NotifyListEnd
+    );
 
 
   return EFI_SUCCESS;
@@ -331,8 +335,7 @@ Returns:
     if ((((INT32 *)Guid)[0] == ((INT32 *)CheckGuid)[0]) &&
         (((INT32 *)Guid)[1] == ((INT32 *)CheckGuid)[1]) &&
         (((INT32 *)Guid)[2] == ((INT32 *)CheckGuid)[2]) &&
-        (((INT32 *)Guid)[3] == ((INT32 *)CheckGuid)[3]))
-    {
+        (((INT32 *)Guid)[3] == ((INT32 *)CheckGuid)[3])) {
       if (Instance == 0) {
 
         if (PpiDescriptor != NULL) {
@@ -433,7 +436,7 @@ Returns:
     PrivateData->PpiData.NotifyListEnd--;
     PEI_DEBUG((PeiServices, EFI_D_INFO, "Register PPI Notify: %g\n", NotifyList->Guid));
     if ((NotifyList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) ==
-                             EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+        EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
       break;
     }
     //
@@ -465,12 +468,14 @@ Returns:
   //
   // Dispatch any callback level notifies for all previously installed PPIs.
   //
-  DispatchNotify (PeiServices,
-                  EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
-                  0,
-                  PrivateData->PpiData.PpiListEnd,
-                  LastCallbackNotify,
-                  PrivateData->PpiData.NotifyListEnd);
+  DispatchNotify (
+    PeiServices,
+    EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK,
+    0,
+    PrivateData->PpiData.PpiListEnd,
+    LastCallbackNotify,
+    PrivateData->PpiData.NotifyListEnd
+    );
   
   
   return  EFI_SUCCESS;
@@ -512,12 +517,14 @@ Returns:
     //
     while (PrivateData->PpiData.LastDispatchedNotify != PrivateData->PpiData.DispatchListEnd) {
       TempValue = PrivateData->PpiData.DispatchListEnd;
-      DispatchNotify (PeiServices,
-                      EFI_PEI_PPI_DESCRIPTOR_NOTIFY_DISPATCH,
-                      0,
-                      PrivateData->PpiData.LastDispatchedInstall,
-                      PrivateData->PpiData.LastDispatchedNotify,
-                      PrivateData->PpiData.DispatchListEnd);
+      DispatchNotify (
+        PeiServices,
+        EFI_PEI_PPI_DESCRIPTOR_NOTIFY_DISPATCH,
+        0,
+        PrivateData->PpiData.LastDispatchedInstall,
+        PrivateData->PpiData.LastDispatchedNotify,
+        PrivateData->PpiData.DispatchListEnd
+        );
       PrivateData->PpiData.LastDispatchedNotify = TempValue;
     }
     
@@ -531,12 +538,14 @@ Returns:
     //
     while (PrivateData->PpiData.LastDispatchedInstall != PrivateData->PpiData.PpiListEnd) {
       TempValue = PrivateData->PpiData.PpiListEnd;
-      DispatchNotify (PeiServices,
-                      EFI_PEI_PPI_DESCRIPTOR_NOTIFY_DISPATCH,
-                      PrivateData->PpiData.LastDispatchedInstall,
-                      PrivateData->PpiData.PpiListEnd,
-                      MAX_PPI_DESCRIPTORS-1,
-                      PrivateData->PpiData.DispatchListEnd);
+      DispatchNotify (
+        PeiServices,
+        EFI_PEI_PPI_DESCRIPTOR_NOTIFY_DISPATCH,
+        PrivateData->PpiData.LastDispatchedInstall,
+        PrivateData->PpiData.PpiListEnd,
+        MAX_PPI_DESCRIPTORS-1,
+        PrivateData->PpiData.DispatchListEnd
+        );
       PrivateData->PpiData.LastDispatchedInstall = TempValue;
     }
     
@@ -603,13 +612,21 @@ Returns:  None
       if ((((INT32 *)SearchGuid)[0] == ((INT32 *)CheckGuid)[0]) &&
           (((INT32 *)SearchGuid)[1] == ((INT32 *)CheckGuid)[1]) &&
           (((INT32 *)SearchGuid)[2] == ((INT32 *)CheckGuid)[2]) &&
-          (((INT32 *)SearchGuid)[3] == ((INT32 *)CheckGuid)[3]))
-      {
-        PEI_DEBUG((PeiServices, EFI_D_INFO, "Notify: PPI Guid: %g, Peim notify entry point: %x\n", SearchGuid, NotifyDescriptor->Notify));
-        NotifyDescriptor->Notify (PeiServices,
-                                  NotifyDescriptor,
-                                  (PrivateData->PpiData.PpiListPtrs[Index2].Ppi)->Ppi
-                                  );
+          (((INT32 *)SearchGuid)[3] == ((INT32 *)CheckGuid)[3])) {
+        PEI_DEBUG (
+          (
+            PeiServices, 
+            EFI_D_INFO, 
+            "Notify: PPI Guid: %g, Peim notify entry point: %x\n", 
+            SearchGuid, 
+            NotifyDescriptor->Notify
+          )
+        );
+        NotifyDescriptor->Notify (
+                            PeiServices,
+                            NotifyDescriptor,
+                            (PrivateData->PpiData.PpiListPtrs[Index2].Ppi)->Ppi
+                            );
       }
     }
   }

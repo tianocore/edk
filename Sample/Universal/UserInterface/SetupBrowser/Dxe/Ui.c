@@ -31,7 +31,7 @@ VOID
 SetUnicodeMem (
   IN VOID   *Buffer,
   IN UINTN  Size,
-  IN CHAR16 Value    
+  IN CHAR16 Value
   )
 /*++
 
@@ -63,17 +63,20 @@ Returns:
 
 VOID
 StrnCpy (
-    IN CHAR16   *Dest,
-    IN CHAR16   *Src,
-    IN UINTN    Length
-    )
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src,
+  IN UINTN    Length
+  )
+//
 // copy strings
+//
 {
-    while (*Src && Length) {
-        *(Dest++) = *(Src++);
-        Length--;
-    }
-    *Dest = 0;
+  while (*Src && Length) {
+    *(Dest++) = *(Src++);
+    Length--;
+  }
+
+  *Dest = 0;
 }
 
 VOID
@@ -94,7 +97,6 @@ Returns:
   InitializeListHead (&Menu);
 }
 
-
 VOID
 UiInitMenuList (
   VOID
@@ -113,12 +115,11 @@ Returns:
   InitializeListHead (&gMenuList);
 }
 
-
 VOID
 UiRemoveMenuListEntry (
   IN  UI_MENU_OPTION    *Selection,
   OUT UI_MENU_OPTION    **PreviousSelection
-)
+  )
 /*++
 
 Routine Description:
@@ -130,19 +131,19 @@ Returns:
 
 --*/
 {
-  UI_MENU_LIST    *UiMenuList;
+  UI_MENU_LIST  *UiMenuList;
 
   *PreviousSelection = EfiLibAllocateZeroPool (sizeof (UI_MENU_OPTION));
   ASSERT (*PreviousSelection != NULL);
 
   if (!IsListEmpty (&gMenuList)) {
-    UiMenuList = CR(gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
-    (*PreviousSelection)->IfrNumber    = UiMenuList->Selection.IfrNumber;
-    (*PreviousSelection)->FormId       = UiMenuList->Selection.FormId;
-    (*PreviousSelection)->Tags         = UiMenuList->Selection.Tags;
-    (*PreviousSelection)->ThisTag      = UiMenuList->Selection.ThisTag;
-    (*PreviousSelection)->Handle       = UiMenuList->Selection.Handle;
-    gEntryNumber = UiMenuList->FormerEntryNumber;
+    UiMenuList                      = CR (gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
+    (*PreviousSelection)->IfrNumber = UiMenuList->Selection.IfrNumber;
+    (*PreviousSelection)->FormId    = UiMenuList->Selection.FormId;
+    (*PreviousSelection)->Tags      = UiMenuList->Selection.Tags;
+    (*PreviousSelection)->ThisTag   = UiMenuList->Selection.ThisTag;
+    (*PreviousSelection)->Handle    = UiMenuList->Selection.Handle;
+    gEntryNumber                    = UiMenuList->FormerEntryNumber;
     RemoveEntryList (&UiMenuList->MenuLink);
     gBS->FreePool (UiMenuList);
   }
@@ -166,7 +167,7 @@ Returns:
   UI_MENU_LIST  *UiMenuList;
 
   while (!IsListEmpty (&gMenuList)) {
-    UiMenuList = CR(gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
+    UiMenuList = CR (gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
     RemoveEntryList (&UiMenuList->MenuLink);
     gBS->FreePool (UiMenuList);
   }
@@ -187,7 +188,7 @@ Returns:
 
 --*/
 {
-  UI_MENU_LIST    *UiMenuList;
+  UI_MENU_LIST  *UiMenuList;
 
   UiMenuList = EfiLibAllocateZeroPool (sizeof (UI_MENU_LIST));
   ASSERT (UiMenuList != NULL);
@@ -197,7 +198,6 @@ Returns:
 
   InsertHeadList (&gMenuList, &UiMenuList->MenuLink);
 }
-
 
 VOID
 UiFreeMenu (
@@ -228,8 +228,7 @@ Returns:
   }
 }
 
-
-VOID 
+VOID
 UpdateDateAndTime (
   VOID
   )
@@ -244,10 +243,10 @@ Returns:
 
 --*/
 {
-  CHAR16                          *OptionString;
-  MENU_REFRESH_ENTRY              *MenuRefreshEntry;
-  UINTN                           Index;
-  UINTN                           Loop;
+  CHAR16              *OptionString;
+  MENU_REFRESH_ENTRY  *MenuRefreshEntry;
+  UINTN               Index;
+  UINTN               Loop;
 
   OptionString = NULL;
 
@@ -261,33 +260,35 @@ Returns:
 
       if (OptionString != NULL) {
         //
-        // If leading spaces on OptionString - increment the column number and remove the spaces
+        // If leading spaces on OptionString - remove the spaces
         //
-        for (Index = 0; OptionString[Index] == L' '; Index++);
-        
+        for (Index = 0; OptionString[Index] == L' '; Index++)
+          ;
+
         for (Loop = 0; OptionString[Index] != CHAR_NULL; Index++) {
           OptionString[Loop] = OptionString[Index];
           Loop++;
         }
+
         OptionString[Loop] = CHAR_NULL;
 
         PrintStringAt (MenuRefreshEntry->CurrentColumn, MenuRefreshEntry->CurrentRow, OptionString);
       }
-  
+
       MenuRefreshEntry = MenuRefreshEntry->Next;
 
     } while (MenuRefreshEntry != NULL);
   }
 
   if (OptionString != NULL) {
-    gBS->FreePool(OptionString);
+    gBS->FreePool (OptionString);
   }
 }
 
 EFI_STATUS
 UiWaitForSingleEvent (
-  IN EFI_EVENT        Event,
-  IN UINT64           Timeout OPTIONAL
+  IN EFI_EVENT                Event,
+  IN UINT64                   Timeout OPTIONAL
   )
 /*++
 
@@ -306,10 +307,10 @@ Returns:
 
 --*/
 {
-  EFI_STATUS          Status;
-  UINTN               Index;
-  EFI_EVENT           TimerEvent;
-  EFI_EVENT           WaitList[2];
+  EFI_STATUS  Status;
+  UINTN       Index;
+  EFI_EVENT   TimerEvent;
+  EFI_EVENT   WaitList[2];
 
   if (Timeout) {
     //
@@ -317,13 +318,12 @@ Returns:
     //
     Status = gBS->CreateEvent (EFI_EVENT_TIMER, 0, NULL, NULL, &TimerEvent);
     if (!EFI_ERROR (Status)) {
-
       //
       // Set the timer event
       //
       gBS->SetTimer (
-            TimerEvent, 
-            TimerRelative, 
+            TimerEvent,
+            TimerRelative,
             Timeout
             );
 
@@ -332,20 +332,19 @@ Returns:
       //
       WaitList[0] = Event;
       WaitList[1] = TimerEvent;
-      Status = gBS->WaitForEvent (2, WaitList, &Index);
+      Status      = gBS->WaitForEvent (2, WaitList, &Index);
       gBS->CloseEvent (TimerEvent);
 
       //
       // If the timer expired, change the return to timed out
       //
-      if (!EFI_ERROR (Status)  &&  Index == 1) {
+      if (!EFI_ERROR (Status) && Index == 1) {
         Status = EFI_TIMEOUT;
       }
     }
   } else {
-
     //
-    // Update screen every second 
+    // Update screen every second
     //
     Timeout = ONE_SECOND;
 
@@ -356,8 +355,8 @@ Returns:
       // Set the timer event
       //
       gBS->SetTimer (
-            TimerEvent, 
-            TimerRelative, 
+            TimerEvent,
+            TimerRelative,
             Timeout
             );
 
@@ -366,14 +365,14 @@ Returns:
       //
       WaitList[0] = Event;
       WaitList[1] = TimerEvent;
-      Status = gBS->WaitForEvent (2, WaitList, &Index);
+      Status      = gBS->WaitForEvent (2, WaitList, &Index);
 
       //
       // If the timer expired, update anything that needs a refresh and keep waiting
       //
-      if (!EFI_ERROR (Status)  &&  Index == 1) {
+      if (!EFI_ERROR (Status) && Index == 1) {
         Status = EFI_TIMEOUT;
-        UpdateDateAndTime();
+        UpdateDateAndTime ();
       }
 
       gBS->CloseEvent (TimerEvent);
@@ -407,22 +406,21 @@ Returns:
   UI_MENU_OPTION  *MenuOption;
 
   MenuOption = EfiLibAllocateZeroPool (sizeof (UI_MENU_OPTION));
-  ASSERT(MenuOption);
+  ASSERT (MenuOption);
 
-  MenuOption->Signature = UI_MENU_OPTION_SIGNATURE;
+  MenuOption->Signature   = UI_MENU_OPTION_SIGNATURE;
   MenuOption->Description = String;
-  MenuOption->Handle = Handle;
-  MenuOption->FormBinary = FormBinary;
-  MenuOption->IfrNumber = IfrNumber;
-  MenuOption->Skip = 1;
-  MenuOption->Tags = Tags;
-  MenuOption->TagIndex = 0;
-  MenuOption->ThisTag = &(MenuOption->Tags[MenuOption->TagIndex]);
-  MenuOption->EntryNumber = (UINT16)IfrNumber;
+  MenuOption->Handle      = Handle;
+  MenuOption->FormBinary  = FormBinary;
+  MenuOption->IfrNumber   = IfrNumber;
+  MenuOption->Skip        = 1;
+  MenuOption->Tags        = Tags;
+  MenuOption->TagIndex    = 0;
+  MenuOption->ThisTag     = &(MenuOption->Tags[MenuOption->TagIndex]);
+  MenuOption->EntryNumber = (UINT16) IfrNumber;
 
   InsertTailList (&Menu, &MenuOption->Link);
 }
-
 
 VOID
 UiAddSubMenuOption (
@@ -449,19 +447,19 @@ Returns:
   UI_MENU_OPTION  *MenuOption;
 
   MenuOption = EfiLibAllocateZeroPool (sizeof (UI_MENU_OPTION));
-  ASSERT(MenuOption);
+  ASSERT (MenuOption);
 
-  MenuOption->Signature = UI_MENU_OPTION_SIGNATURE;
+  MenuOption->Signature   = UI_MENU_OPTION_SIGNATURE;
   MenuOption->Description = String;
-  MenuOption->Handle = Handle;
-  MenuOption->Skip = Tags[TagIndex].NumberOfLines;
-  MenuOption->IfrNumber = gActiveIfr;
-  MenuOption->Tags = Tags;
-  MenuOption->TagIndex = TagIndex;
-  MenuOption->ThisTag = &(MenuOption->Tags[MenuOption->TagIndex]);
+  MenuOption->Handle      = Handle;
+  MenuOption->Skip        = Tags[TagIndex].NumberOfLines;
+  MenuOption->IfrNumber   = gActiveIfr;
+  MenuOption->Tags        = Tags;
+  MenuOption->TagIndex    = TagIndex;
+  MenuOption->ThisTag     = &(MenuOption->Tags[MenuOption->TagIndex]);
   MenuOption->Consistency = Tags[TagIndex].Consistency;
-  MenuOption->FormId = FormId;
-  MenuOption->GrayOut = Tags[TagIndex].GrayOut;
+  MenuOption->FormId      = FormId;
+  MenuOption->GrayOut     = Tags[TagIndex].GrayOut;
   MenuOption->EntryNumber = MenuItemCount;
 
   InsertTailList (&Menu, &MenuOption->Link);
@@ -500,35 +498,35 @@ Returns:
 
 --*/
 {
-  VA_LIST                         Marker;
-  UINTN                           Count;
-  EFI_INPUT_KEY                   Key;
-  UINTN                           LargestString;
-  CHAR16                          *TempString;
-  CHAR16                          *BufferedString;
-  CHAR16                          *StackString;
-  CHAR16                          KeyPad[2];
-  UINTN                           Start;
-  UINTN                           Top;
-  UINTN                           Index;
-  EFI_STATUS                      Status;
-  BOOLEAN                         SelectionComplete;
-  UINTN                           InputOffset;
-  UINTN                           CurrentAttribute;
-  UINTN                           DimensionsWidth;
-  UINTN                           DimensionsHeight;
+  VA_LIST       Marker;
+  UINTN         Count;
+  EFI_INPUT_KEY Key;
+  UINTN         LargestString;
+  CHAR16        *TempString;
+  CHAR16        *BufferedString;
+  CHAR16        *StackString;
+  CHAR16        KeyPad[2];
+  UINTN         Start;
+  UINTN         Top;
+  UINTN         Index;
+  EFI_STATUS    Status;
+  BOOLEAN       SelectionComplete;
+  UINTN         InputOffset;
+  UINTN         CurrentAttribute;
+  UINTN         DimensionsWidth;
+  UINTN         DimensionsHeight;
 
-  DimensionsWidth = gScreenDimensions.RightColumn - gScreenDimensions.LeftColumn;
-  DimensionsHeight = gScreenDimensions.BottomRow - gScreenDimensions.TopRow;
+  DimensionsWidth   = gScreenDimensions.RightColumn - gScreenDimensions.LeftColumn;
+  DimensionsHeight  = gScreenDimensions.BottomRow - gScreenDimensions.TopRow;
 
   SelectionComplete = FALSE;
-  InputOffset = 0;
-  TempString = EfiLibAllocateZeroPool (MaximumStringSize * 2);
-  BufferedString = EfiLibAllocateZeroPool (MaximumStringSize * 2);
-  CurrentAttribute = gST->ConOut->Mode->Attribute;
+  InputOffset       = 0;
+  TempString        = EfiLibAllocateZeroPool (MaximumStringSize * 2);
+  BufferedString    = EfiLibAllocateZeroPool (MaximumStringSize * 2);
+  CurrentAttribute  = gST->ConOut->Mode->Attribute;
 
-  ASSERT(TempString);
-  ASSERT(BufferedString);
+  ASSERT (TempString);
+  ASSERT (BufferedString);
 
   VA_START (Marker, String);
 
@@ -546,39 +544,37 @@ Returns:
       return EFI_INVALID_PARAMETER;
     }
   }
-
   //
   // Disable cursor
   //
   gST->ConOut->EnableCursor (gST->ConOut, FALSE);
 
-  LargestString = (GetStringWidth(String)/2);
+  LargestString = (GetStringWidth (String) / 2);
 
   if (LargestString == L' ') {
     InputOffset = 1;
   }
-
   //
   // Determine the largest string in the dialog box
   // Notice we are starting with 1 since String is the first string
   //
-  for (Count = 1;Count < NumberOfLines;Count++) {
+  for (Count = 1; Count < NumberOfLines; Count++) {
     StackString = VA_ARG (Marker, CHAR16 *);
 
     if (StackString[0] == L' ') {
       InputOffset = Count + 1;
     }
 
-    if ((GetStringWidth(StackString)/2) > LargestString) {
+    if ((GetStringWidth (StackString) / 2) > LargestString) {
       //
       // Size of the string visually and subtract the width by one for the null-terminator
       //
-      LargestString = (GetStringWidth(StackString)/2);
+      LargestString = (GetStringWidth (StackString) / 2);
     }
   }
 
-  Start = (DimensionsWidth - LargestString - 2)/2 + gScreenDimensions.LeftColumn + 1;
-  Top = ((DimensionsHeight - NumberOfLines - 2)/2) + gScreenDimensions.TopRow - 1;
+  Start = (DimensionsWidth - LargestString - 2) / 2 + gScreenDimensions.LeftColumn + 1;
+  Top   = ((DimensionsHeight - NumberOfLines - 2) / 2) + gScreenDimensions.TopRow - 1;
 
   Count = 0;
 
@@ -599,77 +595,75 @@ Returns:
       Status = WaitForKeyStroke (&Key);
 
       switch (Key.UnicodeChar) {
-        case CHAR_NULL:
-          switch (Key.ScanCode) {
-            case SCAN_ESC:
-              gBS->FreePool(TempString);
-              gBS->FreePool(BufferedString);
-              gST->ConOut->SetAttribute (gST->ConOut, CurrentAttribute);
-              gST->ConOut->EnableCursor (gST->ConOut, TRUE);
-              return EFI_DEVICE_ERROR;
-
-            default:
-              break;
-          }
-
-          break;
-        case CHAR_CARRIAGE_RETURN:
-          SelectionComplete = TRUE;
-          gBS->FreePool(TempString);
-          gBS->FreePool(BufferedString);
+      case CHAR_NULL:
+        switch (Key.ScanCode) {
+        case SCAN_ESC:
+          gBS->FreePool (TempString);
+          gBS->FreePool (BufferedString);
           gST->ConOut->SetAttribute (gST->ConOut, CurrentAttribute);
           gST->ConOut->EnableCursor (gST->ConOut, TRUE);
-          return EFI_SUCCESS;
-          break;
-
-        case CHAR_BACKSPACE:
-          if (StringBuffer[0] != CHAR_NULL) {
-            for (Index = 0; StringBuffer[Index] != CHAR_NULL; Index++) {
-              TempString[Index] = StringBuffer[Index];
-            }
-            //
-            // Effectively truncate string by 1 character
-            //
-            TempString[Index-1] = CHAR_NULL;
-            EfiStrCpy(StringBuffer, TempString);
-          }
+          return EFI_DEVICE_ERROR;
 
         default:
-          //
-          // If it is the beginning of the string, don't worry about checking maximum limits
-          //
-          if ((StringBuffer[0] == CHAR_NULL) && (Key.UnicodeChar != CHAR_BACKSPACE)) {
-            StrnCpy (StringBuffer, &Key.UnicodeChar, 1);
-            StrnCpy (TempString, &Key.UnicodeChar, 1);
-          } else if ((GetStringWidth(StringBuffer) < MaximumStringSize) &&
-                    (Key.UnicodeChar != CHAR_BACKSPACE)) {
-            KeyPad[0] = Key.UnicodeChar;
-            KeyPad[1] = CHAR_NULL;
-            EfiStrCat (StringBuffer, KeyPad);
-            EfiStrCat (TempString, KeyPad);
-          } 
-
-          //
-          // If the width of the input string is now larger than the screen, we nee to
-          // adjust the index to start printing portions of the string
-          //
-          SetUnicodeMem (BufferedString, LargestString, L' ');
-            
-      
-          PrintStringAt (Start + 1, Top + InputOffset, BufferedString);
-
-          if ((GetStringWidth(StringBuffer)/2) > (DimensionsWidth- 2)) {
-            Index = (GetStringWidth(StringBuffer)/2) - DimensionsWidth + 2;
-          } else {
-            Index = 0;
-          }
-
-          for (Count = 0; Index+1 < GetStringWidth(StringBuffer)/2; Index++, Count++) {
-            BufferedString[Count] = StringBuffer[Index];
-          }
-
-          PrintStringAt (Start + 1, Top + InputOffset, BufferedString);
           break;
+        }
+
+        break;
+
+      case CHAR_CARRIAGE_RETURN:
+        SelectionComplete = TRUE;
+        gBS->FreePool (TempString);
+        gBS->FreePool (BufferedString);
+        gST->ConOut->SetAttribute (gST->ConOut, CurrentAttribute);
+        gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+        return EFI_SUCCESS;
+        break;
+
+      case CHAR_BACKSPACE:
+        if (StringBuffer[0] != CHAR_NULL) {
+          for (Index = 0; StringBuffer[Index] != CHAR_NULL; Index++) {
+            TempString[Index] = StringBuffer[Index];
+          }
+          //
+          // Effectively truncate string by 1 character
+          //
+          TempString[Index - 1] = CHAR_NULL;
+          EfiStrCpy (StringBuffer, TempString);
+        }
+
+      default:
+        //
+        // If it is the beginning of the string, don't worry about checking maximum limits
+        //
+        if ((StringBuffer[0] == CHAR_NULL) && (Key.UnicodeChar != CHAR_BACKSPACE)) {
+          StrnCpy (StringBuffer, &Key.UnicodeChar, 1);
+          StrnCpy (TempString, &Key.UnicodeChar, 1);
+        } else if ((GetStringWidth (StringBuffer) < MaximumStringSize) && (Key.UnicodeChar != CHAR_BACKSPACE)) {
+          KeyPad[0] = Key.UnicodeChar;
+          KeyPad[1] = CHAR_NULL;
+          EfiStrCat (StringBuffer, KeyPad);
+          EfiStrCat (TempString, KeyPad);
+        }
+        //
+        // If the width of the input string is now larger than the screen, we nee to
+        // adjust the index to start printing portions of the string
+        //
+        SetUnicodeMem (BufferedString, LargestString, L' ');
+
+        PrintStringAt (Start + 1, Top + InputOffset, BufferedString);
+
+        if ((GetStringWidth (StringBuffer) / 2) > (DimensionsWidth - 2)) {
+          Index = (GetStringWidth (StringBuffer) / 2) - DimensionsWidth + 2;
+        } else {
+          Index = 0;
+        }
+
+        for (Count = 0; Index + 1 < GetStringWidth (StringBuffer) / 2; Index++, Count++) {
+          BufferedString[Count] = StringBuffer[Index];
+        }
+
+        PrintStringAt (Start + 1, Top + InputOffset, BufferedString);
+        break;
       }
     } while (!SelectionComplete);
   }
@@ -679,7 +673,6 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 VOID
 CreateSharedPopUp (
   IN  UINTN                       RequestedWidth,
@@ -687,49 +680,49 @@ CreateSharedPopUp (
   IN  CHAR16                      **ArrayOfStrings
   )
 {
-  UINTN                           Index;
-  UINTN                           Count;
-  CHAR16                          Character;
-  UINTN                           Start;
-  UINTN                           End;
-  UINTN                           Top;
-  UINTN                           Bottom;
-  CHAR16                          *String;
+  UINTN   Index;
+  UINTN   Count;
+  CHAR16  Character;
+  UINTN   Start;
+  UINTN   End;
+  UINTN   Top;
+  UINTN   Bottom;
+  CHAR16  *String;
 
-  UINTN                           DimensionsWidth;
-  UINTN                           DimensionsHeight;
-  
-  DimensionsWidth = gScreenDimensions.RightColumn - gScreenDimensions.LeftColumn;
-  DimensionsHeight = gScreenDimensions.BottomRow - gScreenDimensions.TopRow;
+  UINTN   DimensionsWidth;
+  UINTN   DimensionsHeight;
 
-  Count = 0;
+  DimensionsWidth   = gScreenDimensions.RightColumn - gScreenDimensions.LeftColumn;
+  DimensionsHeight  = gScreenDimensions.BottomRow - gScreenDimensions.TopRow;
+
+  Count             = 0;
 
   gST->ConOut->SetAttribute (gST->ConOut, POPUP_TEXT | POPUP_BACKGROUND);
 
-  if ((RequestedWidth + 2)> DimensionsWidth) {
+  if ((RequestedWidth + 2) > DimensionsWidth) {
     RequestedWidth = DimensionsWidth - 2;
-  } 
-
+  }
   //
   // Subtract the PopUp width from total Columns, allow for one space extra on
   // each end plus a border.
   //
-  Start = (DimensionsWidth - RequestedWidth - 2)/2 + gScreenDimensions.LeftColumn + 1;
-  End = Start + RequestedWidth + 1;
+  Start     = (DimensionsWidth - RequestedWidth - 2) / 2 + gScreenDimensions.LeftColumn + 1;
+  End       = Start + RequestedWidth + 1;
 
-  Top = ((DimensionsHeight - NumberOfLines - 2)/2) + gScreenDimensions.TopRow - 1;
-  Bottom = Top + NumberOfLines + 2;
+  Top       = ((DimensionsHeight - NumberOfLines - 2) / 2) + gScreenDimensions.TopRow - 1;
+  Bottom    = Top + NumberOfLines + 2;
 
   Character = BOXDRAW_DOWN_RIGHT;
   PrintCharAt (Start, Top, Character);
   Character = BOXDRAW_HORIZONTAL;
-  for (Index = Start; Index+2 < End; Index++ ) {
+  for (Index = Start; Index + 2 < End; Index++) {
     PrintChar (Character);
   }
+
   Character = BOXDRAW_DOWN_LEFT;
   PrintChar (Character);
   Character = BOXDRAW_VERTICAL;
-  for (Index = Top; Index + 2 < Bottom; Index++ ) {
+  for (Index = Top; Index + 2 < Bottom; Index++) {
     String = ArrayOfStrings[Count];
     Count++;
 
@@ -738,39 +731,42 @@ CreateSharedPopUp (
     // here before us.  This differs from the next clear in that it used the non-reverse
     // video for normal printing.
     //
-    if (GetStringWidth(String)/2 > 1) {
-      ClearLines(Start, End, Index + 1, Index + 1, POPUP_TEXT | POPUP_BACKGROUND);
+    if (GetStringWidth (String) / 2 > 1) {
+      ClearLines (Start, End, Index + 1, Index + 1, POPUP_TEXT | POPUP_BACKGROUND);
     }
-    
     //
     // Passing in a space results in the assumption that this is where typing will occur
     //
     if (String[0] == L' ') {
-      ClearLines(Start + 1, End - 1, Index + 1, Index + 1, POPUP_INVERSE_TEXT | POPUP_INVERSE_BACKGROUND);
+      ClearLines (Start + 1, End - 1, Index + 1, Index + 1, POPUP_INVERSE_TEXT | POPUP_INVERSE_BACKGROUND);
     }
-
     //
     // Passing in a NULL results in a blank space
     //
     if (String[0] == CHAR_NULL) {
-      ClearLines(Start, End, Index + 1, Index + 1, POPUP_TEXT | POPUP_BACKGROUND);
+      ClearLines (Start, End, Index + 1, Index + 1, POPUP_TEXT | POPUP_BACKGROUND);
     }
 
-    PrintStringAt (((DimensionsWidth - GetStringWidth(String)/2)/2) + gScreenDimensions.LeftColumn + 1, Index + 1, String);
+    PrintStringAt (
+      ((DimensionsWidth - GetStringWidth (String) / 2) / 2) + gScreenDimensions.LeftColumn + 1,
+      Index + 1,
+      String
+      );
     gST->ConOut->SetAttribute (gST->ConOut, POPUP_TEXT | POPUP_BACKGROUND);
     PrintCharAt (Start, Index + 1, Character);
     PrintCharAt (End - 1, Index + 1, Character);
   }
+
   Character = BOXDRAW_UP_RIGHT;
   PrintCharAt (Start, Bottom - 1, Character);
   Character = BOXDRAW_HORIZONTAL;
-  for (Index = Start; Index+2 < End; Index++ ) {
+  for (Index = Start; Index + 2 < End; Index++) {
     PrintChar (Character);
   }
+
   Character = BOXDRAW_UP_LEFT;
   PrintChar (Character);
 }
-
 
 VOID
 CreatePopUp (
@@ -790,60 +786,78 @@ UpdateStatusBar (
   IN  BOOLEAN                     State
   )
 {
-  UINTN                           Index;
-  STATIC BOOLEAN                  InputError;
-  CHAR16                          *NvUpdateMessage;
-  CHAR16                          *InputErrorMessage;
+  UINTN           Index;
+  STATIC BOOLEAN  InputError;
+  CHAR16          *NvUpdateMessage;
+  CHAR16          *InputErrorMessage;
 
-  NvUpdateMessage = GetToken(STRING_TOKEN(NV_UPDATE_MESSAGE), gHiiHandle);
-  InputErrorMessage = GetToken(STRING_TOKEN(INPUT_ERROR_MESSAGE), gHiiHandle);
+  NvUpdateMessage   = GetToken (STRING_TOKEN (NV_UPDATE_MESSAGE), gHiiHandle);
+  InputErrorMessage = GetToken (STRING_TOKEN (INPUT_ERROR_MESSAGE), gHiiHandle);
 
   switch (MessageType) {
-    case INPUT_ERROR:
+  case INPUT_ERROR:
+    if (State) {
+      gST->ConOut->SetAttribute (gST->ConOut, ERROR_TEXT);
+      PrintStringAt (
+        gScreenDimensions.LeftColumn + gPromptBlockWidth,
+        gScreenDimensions.BottomRow - 1,
+        InputErrorMessage
+        );
+      InputError = TRUE;
+    } else {
+      gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_HIGHLIGHT);
+      for (Index = 0; Index < (GetStringWidth (InputErrorMessage) - 2) / 2; Index++) {
+        PrintAt (gScreenDimensions.LeftColumn + gPromptBlockWidth + Index, gScreenDimensions.BottomRow - 1, L"  ");
+      }
+
+      InputError = FALSE;
+    }
+    break;
+
+  case NV_UPDATE_REQUIRED:
+    if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
       if (State) {
-        gST->ConOut->SetAttribute (gST->ConOut, ERROR_TEXT);
-        PrintStringAt (gScreenDimensions.LeftColumn + gPromptBlockWidth, gScreenDimensions.BottomRow - 1, InputErrorMessage);
-        InputError = TRUE;
+        gST->ConOut->SetAttribute (gST->ConOut, INFO_TEXT);
+        PrintStringAt (
+          gScreenDimensions.LeftColumn + gPromptBlockWidth + gOptionBlockWidth,
+          gScreenDimensions.BottomRow - 1,
+          NvUpdateMessage
+          );
+        gResetRequired    = (BOOLEAN) (gResetRequired | (Flags & RESET_REQUIRED));
+
+        gNvUpdateRequired = TRUE;
       } else {
         gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_HIGHLIGHT);
-        for (Index = 0; Index < (GetStringWidth(InputErrorMessage) - 2)/2; Index++) {
-          PrintAt(gScreenDimensions.LeftColumn + gPromptBlockWidth + Index, gScreenDimensions.BottomRow - 1, L"  ");
+        for (Index = 0; Index < (GetStringWidth (NvUpdateMessage) - 2) / 2; Index++) {
+          PrintAt (
+            (gScreenDimensions.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + Index),
+            gScreenDimensions.BottomRow - 1,
+            L"  "
+            );
         }
-        InputError = FALSE;
-      }
-      break;
-    case NV_UPDATE_REQUIRED:
-      if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
-        if (State) {
-          gST->ConOut->SetAttribute (gST->ConOut, INFO_TEXT);
-          PrintStringAt (gScreenDimensions.LeftColumn + gPromptBlockWidth + gOptionBlockWidth, gScreenDimensions.BottomRow - 1, NvUpdateMessage);
-          gResetRequired = (BOOLEAN)(gResetRequired | (Flags & RESET_REQUIRED));
 
-          gNvUpdateRequired = TRUE;
-        } else {
-          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_HIGHLIGHT);
-          for (Index = 0; Index < (GetStringWidth(NvUpdateMessage) - 2)/2; Index++) {
-            PrintAt((gScreenDimensions.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + Index), gScreenDimensions.BottomRow - 1, L"  ");
-          }
-          gNvUpdateRequired = FALSE;
-        }
+        gNvUpdateRequired = FALSE;
       }
-      break;
-    case REFRESH_STATUS_BAR:
-      if (InputError) {
-        UpdateStatusBar (INPUT_ERROR, Flags, TRUE);
-      }
-      if (gNvUpdateRequired) {
-        UpdateStatusBar (NV_UPDATE_REQUIRED, Flags, TRUE);
-      }
-      break;
-    default:
-      break;
+    }
+    break;
+
+  case REFRESH_STATUS_BAR:
+    if (InputError) {
+      UpdateStatusBar (INPUT_ERROR, Flags, TRUE);
+    }
+
+    if (gNvUpdateRequired) {
+      UpdateStatusBar (NV_UPDATE_REQUIRED, Flags, TRUE);
+    }
+    break;
+
+  default:
+    break;
   }
 
-  gBS->FreePool(InputErrorMessage);
-  gBS->FreePool(NvUpdateMessage);
-  return;
+  gBS->FreePool (InputErrorMessage);
+  gBS->FreePool (NvUpdateMessage);
+  return ;
 }
 
 VOID
@@ -864,30 +878,29 @@ Returns:
 
 --*/
 {
-  EFI_FILE_FORM_TAGS              *FileForm;
-  EFI_FILE_FORM_TAGS              *PreviousFileForm;
-  EFI_FORM_TAGS                   *FormTags;
-  EFI_FORM_TAGS                   *PreviousFormTags;
-  EFI_IFR_BINARY                  *IfrBinary;
-  EFI_IFR_BINARY                  *PreviousIfrBinary;
-  EFI_INCONSISTENCY_DATA          *Inconsistent;
-  EFI_VARIABLE_DEFINITION         *VariableDefinition;
-  EFI_VARIABLE_DEFINITION         *PreviousVariableDefinition;
-  VOID                            *Buffer;
-  UINTN                           Index;
+  EFI_FILE_FORM_TAGS      *FileForm;
+  EFI_FILE_FORM_TAGS      *PreviousFileForm;
+  EFI_FORM_TAGS           *FormTags;
+  EFI_FORM_TAGS           *PreviousFormTags;
+  EFI_IFR_BINARY          *IfrBinary;
+  EFI_IFR_BINARY          *PreviousIfrBinary;
+  EFI_INCONSISTENCY_DATA  *Inconsistent;
+  EFI_VARIABLE_DEFINITION *VariableDefinition;
+  EFI_VARIABLE_DEFINITION *PreviousVariableDefinition;
+  VOID                    *Buffer;
+  UINTN                   Index;
 
   FileForm = FileFormTagsHead;
 
   if (FormattedString != NULL) {
-    gBS->FreePool(FormattedString);
+    gBS->FreePool (FormattedString);
   }
 
   if (OptionString != NULL) {
-    gBS->FreePool(OptionString);
+    gBS->FreePool (OptionString);
   }
 
-
-  for (; FileForm != NULL; ) {
+  for (; FileForm != NULL;) {
     PreviousFileForm = NULL;
 
     //
@@ -899,9 +912,9 @@ Returns:
 
     FormTags = &FileForm->FormTags;
 
-    for (; FormTags != NULL; ) {
-      FormTags = &FileForm->FormTags;
-      PreviousFormTags = NULL;
+    for (; FormTags != NULL;) {
+      FormTags          = &FileForm->FormTags;
+      PreviousFormTags  = NULL;
 
       //
       // Advance FormTags to the last entry
@@ -909,7 +922,6 @@ Returns:
       for (; FormTags->Next != NULL; FormTags = FormTags->Next) {
         PreviousFormTags = FormTags;
       }
-
       //
       // Walk through each of the tags and free the IntList allocation
       //
@@ -922,21 +934,20 @@ Returns:
         }
 
         if (FormTags->Tags[Index].IntList != NULL) {
-          gBS->FreePool(FormTags->Tags[Index].IntList);
+          gBS->FreePool (FormTags->Tags[Index].IntList);
         }
       }
 
       if (PreviousFormTags != NULL) {
-        gBS->FreePool(FormTags->Tags);
+        gBS->FreePool (FormTags->Tags);
         FormTags = PreviousFormTags;
-        gBS->FreePool(FormTags->Next);
+        gBS->FreePool (FormTags->Next);
         FormTags->Next = NULL;
       } else {
-        gBS->FreePool(FormTags->Tags);
+        gBS->FreePool (FormTags->Tags);
         FormTags = NULL;
       }
     }
-
     //
     // Last FileForm entry's Inconsistent database
     //
@@ -945,30 +956,31 @@ Returns:
     //
     // Advance Inconsistent to the last entry
     //
-    for (; Inconsistent->Next != NULL; Inconsistent = Inconsistent->Next);
-  
+    for (; Inconsistent->Next != NULL; Inconsistent = Inconsistent->Next)
+      ;
+
     for (; Inconsistent != NULL;) {
       //
       // Preserve the Previous pointer
       //
-      Buffer = (VOID *)Inconsistent->Previous;
+      Buffer = (VOID *) Inconsistent->Previous;
 
       //
       // Free the current entry
       //
-      gBS->FreePool(Inconsistent);
+      gBS->FreePool (Inconsistent);
 
       //
       // Restore the Previous pointer
       //
-      Inconsistent = (EFI_INCONSISTENCY_DATA *)Buffer;
+      Inconsistent = (EFI_INCONSISTENCY_DATA *) Buffer;
     }
 
     VariableDefinition = FileForm->VariableDefinitions;
 
-    for (; VariableDefinition != NULL; ) {
-      VariableDefinition = FileForm->VariableDefinitions;
-      PreviousVariableDefinition = NULL;
+    for (; VariableDefinition != NULL;) {
+      VariableDefinition          = FileForm->VariableDefinitions;
+      PreviousVariableDefinition  = NULL;
 
       //
       // Advance VariableDefinitions to the last entry
@@ -977,34 +989,34 @@ Returns:
         PreviousVariableDefinition = VariableDefinition;
       }
 
-      gBS->FreePool(VariableDefinition->VariableName);
-      gBS->FreePool(VariableDefinition->NvRamMap);
-      gBS->FreePool(VariableDefinition->FakeNvRamMap);
+      gBS->FreePool (VariableDefinition->VariableName);
+      gBS->FreePool (VariableDefinition->NvRamMap);
+      gBS->FreePool (VariableDefinition->FakeNvRamMap);
 
       if (PreviousVariableDefinition != NULL) {
         VariableDefinition = PreviousVariableDefinition;
-        gBS->FreePool(VariableDefinition->Next);
+        gBS->FreePool (VariableDefinition->Next);
         VariableDefinition->Next = NULL;
       } else {
-        gBS->FreePool(VariableDefinition);
+        gBS->FreePool (VariableDefinition);
         VariableDefinition = NULL;
       }
     }
 
     if (PreviousFileForm != NULL) {
       FileForm = PreviousFileForm;
-      gBS->FreePool(FileForm->NextFile);
+      gBS->FreePool (FileForm->NextFile);
       FileForm->NextFile = NULL;
     } else {
-      gBS->FreePool(FileForm);
+      gBS->FreePool (FileForm);
       FileForm = NULL;
     }
   }
 
   IfrBinary = gBinaryDataHead;
 
-  for (; IfrBinary != NULL; ) {
-    IfrBinary = gBinaryDataHead;
+  for (; IfrBinary != NULL;) {
+    IfrBinary         = gBinaryDataHead;
     PreviousIfrBinary = NULL;
 
     //
@@ -1014,41 +1026,41 @@ Returns:
       PreviousIfrBinary = IfrBinary;
     }
 
-    gBS->FreePool(IfrBinary->IfrPackage);
+    gBS->FreePool (IfrBinary->IfrPackage);
 
     if (PreviousIfrBinary != NULL) {
       IfrBinary = PreviousIfrBinary;
-      gBS->FreePool(IfrBinary->Next);
+      gBS->FreePool (IfrBinary->Next);
       IfrBinary->Next = NULL;
     } else {
-      gBS->FreePool(IfrBinary);
+      gBS->FreePool (IfrBinary);
       IfrBinary = NULL;
     }
   }
 
-  gBS->FreePool(gPreviousValue);
+  gBS->FreePool (gPreviousValue);
   gPreviousValue = NULL;
 
   //
   // Free Browser Strings
   //
-  gBS->FreePool(gPressEnter);
-  gBS->FreePool(gConfirmError);
-  gBS->FreePool(gConfirmPassword);
-  gBS->FreePool(gPromptForNewPassword);
-  gBS->FreePool(gPromptForPassword);
-  gBS->FreePool(gToggleCheckBox);
-  gBS->FreePool(gNumericInput);
-  gBS->FreePool(gMakeSelection);
-  gBS->FreePool(gMoveHighlight);
-  gBS->FreePool(gEscapeString);
-  gBS->FreePool(gEnterCommitString);
-  gBS->FreePool(gEnterString);
-  gBS->FreePool(gFunctionOneString);
-  gBS->FreePool(gFunctionTwoString);
-  gBS->FreePool(gFunctionNineString);
-  gBS->FreePool(gFunctionTenString);
-  return;
+  gBS->FreePool (gPressEnter);
+  gBS->FreePool (gConfirmError);
+  gBS->FreePool (gConfirmPassword);
+  gBS->FreePool (gPromptForNewPassword);
+  gBS->FreePool (gPromptForPassword);
+  gBS->FreePool (gToggleCheckBox);
+  gBS->FreePool (gNumericInput);
+  gBS->FreePool (gMakeSelection);
+  gBS->FreePool (gMoveHighlight);
+  gBS->FreePool (gEscapeString);
+  gBS->FreePool (gEnterCommitString);
+  gBS->FreePool (gEnterString);
+  gBS->FreePool (gFunctionOneString);
+  gBS->FreePool (gFunctionTwoString);
+  gBS->FreePool (gFunctionNineString);
+  gBS->FreePool (gFunctionTenString);
+  return ;
 }
 
 BOOLEAN
@@ -1068,62 +1080,64 @@ Returns:
 
 --*/
 {
-  EFI_LIST_ENTRY                  *Link;
-  EFI_TAG                         *Tag;
-  EFI_FILE_FORM_TAGS              *FileFormTags;
-  CHAR16                          *StringPtr;
-  CHAR16                          NullCharacter;
-  EFI_STATUS                      Status;
-  UINTN                           Index;
-  UINT16                          *NvRamMap;
-  STRING_REF                      PopUp;
-  EFI_INPUT_KEY                   Key;
-  EFI_VARIABLE_DEFINITION         *VariableDefinition;
+  EFI_LIST_ENTRY          *Link;
+  EFI_TAG                 *Tag;
+  EFI_FILE_FORM_TAGS      *FileFormTags;
+  CHAR16                  *StringPtr;
+  CHAR16                  NullCharacter;
+  EFI_STATUS              Status;
+  UINTN                   Index;
+  UINT16                  *NvRamMap;
+  STRING_REF              PopUp;
+  EFI_INPUT_KEY           Key;
+  EFI_VARIABLE_DEFINITION *VariableDefinition;
 
-  StringPtr = L"\0";
+  StringPtr     = L"\0";
   NullCharacter = CHAR_NULL;
 
-  FileFormTags = FileFormTagsHead;
+  FileFormTags  = FileFormTagsHead;
 
   for (Index = 0; Index < MenuOption->IfrNumber; Index++) {
     FileFormTags = FileFormTags->NextFile;
   }
 
   for (Link = Menu.ForwardLink; Link != &Menu; Link = Link->ForwardLink) {
-    MenuOption = CR(Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+    MenuOption  = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
-    Tag = MenuOption->ThisTag;
+    Tag         = MenuOption->ThisTag;
 
     ExtractRequestedNvMap (FileFormTags, Tag->VariableNumber, &VariableDefinition);
-    NvRamMap = (UINT16 *)&VariableDefinition->NvRamMap[Tag->StorageStart];
+    NvRamMap = (UINT16 *) &VariableDefinition->NvRamMap[Tag->StorageStart];
 
     //
     // If the op-code has a late check, ensure consistency checks are now applied
     //
     if (Tag->Flags & EFI_IFR_FLAG_LATE_CHECK) {
-      if (ValueIsNotValid(TRUE, 0, Tag, FileFormTags, &PopUp)) {
+      if (ValueIsNotValid (TRUE, 0, Tag, FileFormTags, &PopUp)) {
         if (PopUp != 0x0000) {
-          StringPtr = GetToken(PopUp, MenuOption->Handle);
+          StringPtr = GetToken (PopUp, MenuOption->Handle);
 
-          CreatePopUp (GetStringWidth(StringPtr)/2, 3, &NullCharacter, StringPtr, &NullCharacter);
+          CreatePopUp (GetStringWidth (StringPtr) / 2, 3, &NullCharacter, StringPtr, &NullCharacter);
 
           do {
             Status = WaitForKeyStroke (&Key);
 
             switch (Key.UnicodeChar) {
 
-              case CHAR_CARRIAGE_RETURN:
-                //
-                // Since the value can be one byte long or two bytes long, do a CopyMem based on StorageWidth
-                //
-                EfiCopyMem(NvRamMap, &Tag->OldValue, Tag->StorageWidth); 
-                gBS->FreePool(StringPtr);
-                break;
-              default:
-                break;
+            case CHAR_CARRIAGE_RETURN:
+              //
+              // Since the value can be one byte long or two bytes long, do a CopyMem based on StorageWidth
+              //
+              EfiCopyMem (NvRamMap, &Tag->OldValue, Tag->StorageWidth);
+              gBS->FreePool (StringPtr);
+              break;
+
+            default:
+              break;
             }
           } while (Key.UnicodeChar != CHAR_CARRIAGE_RETURN);
         }
+
         return FALSE;
       }
     }
@@ -1152,8 +1166,8 @@ Returns:
 
 --*/
 {
-  CHAR16                            *String;
-  UINTN                             Size;
+  CHAR16  *String;
+  UINTN   Size;
 
   Size = 0x00;
 
@@ -1161,8 +1175,8 @@ Returns:
   // See if the second text parameter is really NULL
   //
   if ((Tag->Operand == EFI_IFR_TEXT_OP) && (Tag->TextTwo != 0)) {
-    String = GetToken(Tag->TextTwo, Handle);
-    Size = EfiStrLen(String);
+    String  = GetToken (Tag->TextTwo, Handle);
+    Size    = EfiStrLen (String);
     gBS->FreePool (String);
   }
 
@@ -1171,14 +1185,16 @@ Returns:
       (Tag->Operand == EFI_IFR_PASSWORD_OP) ||
       (Tag->Operand == EFI_IFR_STRING_OP) ||
       (Tag->Operand == EFI_IFR_INVENTORY_OP) ||
-      ((Tag->Operand == EFI_IFR_TEXT_OP) && (Size == 0x0000)) // Allow a wide display if text op-code and no secondary text op-code
-     ) {
-    return (UINT16)(gPromptBlockWidth + gOptionBlockWidth);
+      //
+      // Allow a wide display if text op-code and no secondary text op-code
+      //
+      ((Tag->Operand == EFI_IFR_TEXT_OP) && (Size == 0x0000))
+      ) {
+    return (UINT16) (gPromptBlockWidth + gOptionBlockWidth);
   } else {
-    return (UINT16)gPromptBlockWidth;
+    return (UINT16) gPromptBlockWidth;
   }
 }
-
 
 UINT16
 GetLineByWidth (
@@ -1205,41 +1221,42 @@ Returns:
 
 --*/
 {
-  static BOOLEAN                      Finished;
-  UINT16                              Count;
-  UINT16                              Count2;
+  static BOOLEAN  Finished;
+  UINT16          Count;
+  UINT16          Count2;
 
   if (Finished) {
     Finished = FALSE;
-    return (UINT16)0;
+    return (UINT16) 0;
   }
 
-  Count = LineWidth;
-  Count2 = 0;
+  Count         = LineWidth;
+  Count2        = 0;
 
-  *OutputString = EfiLibAllocateZeroPool (((UINTN)(LineWidth + 1) * 2));
+  *OutputString = EfiLibAllocateZeroPool (((UINTN) (LineWidth + 1) * 2));
 
   //
   // Ensure we have got a valid buffer
   //
   if (*OutputString != NULL) {
-
     //
     // Fast-forward the string and see if there is a carriage-return in the string
     //
-    for (; (InputString[*Index + Count2] != CHAR_CARRIAGE_RETURN) && (Count2 != LineWidth); Count2++);
+    for (; (InputString[*Index + Count2] != CHAR_CARRIAGE_RETURN) && (Count2 != LineWidth); Count2++)
+      ;
 
     //
-    // Copy the desired LineWidth of data to the output buffer.  
+    // Copy the desired LineWidth of data to the output buffer.
     // Also make sure that we don't copy more than the string.
     // Also make sure that if there are linefeeds, we account for them.
     //
-    if ((EfiStrSize(&InputString[*Index]) <= ((UINTN)(LineWidth + 1) * 2)) &&
-        (EfiStrSize(&InputString[*Index]) <= ((UINTN)(Count2 + 1) * 2))) {
+    if ((EfiStrSize (&InputString[*Index]) <= ((UINTN) (LineWidth + 1) * 2)) &&
+        (EfiStrSize (&InputString[*Index]) <= ((UINTN) (Count2 + 1) * 2))
+        ) {
       //
       // Convert to CHAR16 value and show that we are done with this operation
       //
-      LineWidth = (UINT16)((EfiStrSize(&InputString[*Index]) - 2) / 2);
+      LineWidth = (UINT16) ((EfiStrSize (&InputString[*Index]) - 2) / 2);
       if (LineWidth != 0) {
         Finished = TRUE;
       }
@@ -1248,7 +1265,8 @@ Returns:
         //
         // Rewind the string from the maximum size until we see a space to break the line
         //
-        for (; (InputString[*Index + LineWidth] != CHAR_SPACE) && (LineWidth != 0); LineWidth--);
+        for (; (InputString[*Index + LineWidth] != CHAR_SPACE) && (LineWidth != 0); LineWidth--)
+          ;
         if (LineWidth == 0) {
           LineWidth = Count;
         }
@@ -1262,11 +1280,15 @@ Returns:
     //
     // If currently pointing to a space, increment the index to the first non-space character
     //
-    for (;(InputString[*Index + LineWidth] == CHAR_SPACE) || (InputString[*Index + LineWidth] == CHAR_CARRIAGE_RETURN); (*Index)++);
-    *Index = (UINT16)(*Index + LineWidth);
+    for (;
+         (InputString[*Index + LineWidth] == CHAR_SPACE) || (InputString[*Index + LineWidth] == CHAR_CARRIAGE_RETURN);
+         (*Index)++
+        )
+      ;
+    *Index = (UINT16) (*Index + LineWidth);
     return LineWidth;
   } else {
-    return (UINT16)0;
+    return (UINT16) 0;
   }
 }
 
@@ -1279,41 +1301,37 @@ UpdateOptionSkipLines (
   IN UINTN                        SkipValue
   )
 {
-  UINTN                           Index;
-  UINTN                           Loop;
-  UINT16                          Width;
-  UINTN                           Row;
-  UINTN                           OriginalRow;
-  CHAR16                          *OutputString;
-  CHAR16                          *OptionString;
+  UINTN   Index;
+  UINTN   Loop;
+  UINT16  Width;
+  UINTN   Row;
+  UINTN   OriginalRow;
+  CHAR16  *OutputString;
+  CHAR16  *OptionString;
 
-  Row = 0;
-  OptionString = *OptionalString;
-  OutputString = NULL;
+  Row           = 0;
+  OptionString  = *OptionalString;
+  OutputString  = NULL;
 
   ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
 
   if (OptionString != NULL) {
     //
-    // If leading spaces on OptionString - increment the column number and remove the spaces
+    // If leading spaces on OptionString - remove the spaces
     //
-    if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
-        (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
-      for (Index = 0; OptionString[Index] == L' '; Index++);
-      } else {
-      for (Index = 0; OptionString[Index] == L' '; Index++) {
-        MenuOption->OptCol++;
-      }
-    }
+    for (Index = 0; OptionString[Index] == L' '; Index++)
+    ;
+
     for (Loop = 0; OptionString[Index] != CHAR_NULL; Index++) {
       OptionString[Loop] = OptionString[Index];
       Loop++;
     }
-    OptionString[Loop] = CHAR_NULL;
 
-    Width = (UINT16)gOptionBlockWidth;
+    OptionString[Loop]  = CHAR_NULL;
 
-    OriginalRow = Row;
+    Width               = (UINT16) gOptionBlockWidth;
+
+    OriginalRow         = Row;
 
     for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
       //
@@ -1334,6 +1352,7 @@ UpdateOptionSkipLines (
           }
         }
       }
+
       gBS->FreePool (OutputString);
       if (SkipValue != 0) {
         SkipValue--;
@@ -1342,36 +1361,60 @@ UpdateOptionSkipLines (
 
     Row = OriginalRow;
   }
+
   *OptionalString = OptionString;
 }
-
+//
 // Search table for UiDisplayMenu()
-SCAN_CODE_TO_SCREEN_OPERATION  gScanCodeToOperation[] = {
-    SCAN_UP,        UiUp,
-    SCAN_DOWN,      UiDown,
-    SCAN_PAGE_UP,   UiPageUp,
-    SCAN_PAGE_DOWN, UiPageDown,
-    SCAN_ESC,       UiReset,
-    SCAN_F2,        UiPrevious,
-    SCAN_LEFT,      UiLeft,
-    SCAN_RIGHT,     UiRight,
-    SCAN_F9,        UiDefault,
-    SCAN_F10,       UiSave
+//
+SCAN_CODE_TO_SCREEN_OPERATION     gScanCodeToOperation[] = {
+  SCAN_UP,
+  UiUp,
+  SCAN_DOWN,
+  UiDown,
+  SCAN_PAGE_UP,
+  UiPageUp,
+  SCAN_PAGE_DOWN,
+  UiPageDown,
+  SCAN_ESC,
+  UiReset,
+  SCAN_F2,
+  UiPrevious,
+  SCAN_LEFT,
+  UiLeft,
+  SCAN_RIGHT,
+  UiRight,
+  SCAN_F9,
+  UiDefault,
+  SCAN_F10,
+  UiSave
 };
 
 SCREEN_OPERATION_T0_CONTROL_FLAG  gScreenOperationToControlFlag[] = {
-    UiNoOperation, CfUiNoOperation,
-    UiDefault,     CfUiDefault,
-    UiSelect,      CfUiSelect,
-    UiUp,          CfUiUp,
-    UiDown,        CfUiDown,
-    UiLeft,        CfUiLeft,
-    UiRight,       CfUiRight,
-    UiReset,       CfUiReset,
-    UiSave,        CfUiSave,
-    UiPrevious,    CfUiPrevious,
-    UiPageUp,      CfUiPageUp,
-    UiPageDown,    CfUiPageDown
+  UiNoOperation,
+  CfUiNoOperation,
+  UiDefault,
+  CfUiDefault,
+  UiSelect,
+  CfUiSelect,
+  UiUp,
+  CfUiUp,
+  UiDown,
+  CfUiDown,
+  UiLeft,
+  CfUiLeft,
+  UiRight,
+  CfUiRight,
+  UiReset,
+  CfUiReset,
+  UiSave,
+  CfUiSave,
+  UiPrevious,
+  CfUiPrevious,
+  UiPageUp,
+  CfUiPageUp,
+  UiPageDown,
+  CfUiPageDown
 };
 
 UI_MENU_OPTION *
@@ -1396,83 +1439,83 @@ Returns:
 
 --*/
 {
-  INTN                            SkipValue;
-  INTN                            Difference;
-  INTN                            OldSkipValue;
-  UINTN                           Row;
-  UINTN                           Col;
-  UINTN                           Temp;
-  UINTN                           Temp2;
-  UINTN                           TopRow;
-  UINTN                           BottomRow;
-  UINTN                           OriginalRow;
-  UINTN                           Index;
-  UINTN                           DataAndTimeLineNumberPad;
-  UINT32                          Count;
-  UINT16                          OriginalTimeOut;
-  UINT8                           *Location;
-  UINT16                          Width;
-  CHAR16                          *StringPtr;
-  CHAR16                          *OptionString;
-  CHAR16                          *OutputString;
-  CHAR16                          *FormattedString;
-  CHAR16                          YesResponse;
-  CHAR16                          NoResponse;
-  BOOLEAN                         NewLine;
-  BOOLEAN                         Repaint;
-  BOOLEAN                         SavedValue;
-  EFI_STATUS                      Status;
-  UI_MENU_LIST                    *UiMenuList;
-  EFI_INPUT_KEY                   Key;
-  EFI_LIST_ENTRY                  *Link;
-  EFI_LIST_ENTRY                  *NewPos;
-  EFI_LIST_ENTRY                  *TopOfScreen;
-  EFI_LIST_ENTRY                  *SavedListEntry;
-  UI_MENU_OPTION                  *Selection;
-  UI_MENU_OPTION                  *MenuOption;
-  UI_MENU_OPTION                  *NextMenuOption;
-  UI_MENU_OPTION                  *SavedMenuOption;
-  UI_MENU_OPTION                  *PreviousMenuOption;
-  EFI_IFR_BINARY                  *IfrBinary;
-  UI_CONTROL_FLAG                 ControlFlag;
-  SCREEN_DESCRIPTOR               LocalScreen;
-  EFI_FILE_FORM_TAGS              *FileFormTags;
-  MENU_REFRESH_ENTRY              *MenuRefreshEntry;
-  MENU_REFRESH_ENTRY              *OldMenuRefreshEntry;
-  UI_SCREEN_OPERATION             ScreenOperation;
-  EFI_VARIABLE_DEFINITION         *VariableDefinition;
-  EFI_FORM_CALLBACK_PROTOCOL      *FormCallback;
+  INTN                        SkipValue;
+  INTN                        Difference;
+  INTN                        OldSkipValue;
+  UINTN                       Row;
+  UINTN                       Col;
+  UINTN                       Temp;
+  UINTN                       Temp2;
+  UINTN                       TopRow;
+  UINTN                       BottomRow;
+  UINTN                       OriginalRow;
+  UINTN                       Index;
+  UINTN                       DataAndTimeLineNumberPad;
+  UINT32                      Count;
+  UINT16                      OriginalTimeOut;
+  UINT8                       *Location;
+  UINT16                      Width;
+  CHAR16                      *StringPtr;
+  CHAR16                      *OptionString;
+  CHAR16                      *OutputString;
+  CHAR16                      *FormattedString;
+  CHAR16                      YesResponse;
+  CHAR16                      NoResponse;
+  BOOLEAN                     NewLine;
+  BOOLEAN                     Repaint;
+  BOOLEAN                     SavedValue;
+  EFI_STATUS                  Status;
+  UI_MENU_LIST                *UiMenuList;
+  EFI_INPUT_KEY               Key;
+  EFI_LIST_ENTRY              *Link;
+  EFI_LIST_ENTRY              *NewPos;
+  EFI_LIST_ENTRY              *TopOfScreen;
+  EFI_LIST_ENTRY              *SavedListEntry;
+  UI_MENU_OPTION              *Selection;
+  UI_MENU_OPTION              *MenuOption;
+  UI_MENU_OPTION              *NextMenuOption;
+  UI_MENU_OPTION              *SavedMenuOption;
+  UI_MENU_OPTION              *PreviousMenuOption;
+  EFI_IFR_BINARY              *IfrBinary;
+  UI_CONTROL_FLAG             ControlFlag;
+  SCREEN_DESCRIPTOR           LocalScreen;
+  EFI_FILE_FORM_TAGS          *FileFormTags;
+  MENU_REFRESH_ENTRY          *MenuRefreshEntry;
+  MENU_REFRESH_ENTRY          *OldMenuRefreshEntry;
+  UI_SCREEN_OPERATION         ScreenOperation;
+  EFI_VARIABLE_DEFINITION     *VariableDefinition;
+  EFI_FORM_CALLBACK_PROTOCOL  *FormCallback;
 
   EfiCopyMem (&LocalScreen, &gScreenDimensions, sizeof (SCREEN_DESCRIPTOR));
 
-  VariableDefinition = NULL;
-  Status = EFI_SUCCESS;
-  FormattedString = NULL;
-  OptionString = NULL;
-  ScreenOperation = UiNoOperation;
-  NewLine = TRUE;
-  FormCallback = NULL;
-  FileFormTags = NULL;
-  OutputString = NULL;
-  gUpArrow = FALSE;
-  gDownArrow = FALSE;
-  SkipValue = 0;
-  OldSkipValue = 0;
-  MenuRefreshEntry = gMenuRefreshHead;
+  VariableDefinition  = NULL;
+  Status              = EFI_SUCCESS;
+  FormattedString     = NULL;
+  OptionString        = NULL;
+  ScreenOperation     = UiNoOperation;
+  NewLine             = TRUE;
+  FormCallback        = NULL;
+  FileFormTags        = NULL;
+  OutputString        = NULL;
+  gUpArrow            = FALSE;
+  gDownArrow          = FALSE;
+  SkipValue           = 0;
+  OldSkipValue        = 0;
+  MenuRefreshEntry    = gMenuRefreshHead;
   OldMenuRefreshEntry = gMenuRefreshHead;
-  NextMenuOption = NULL;
-  PreviousMenuOption = NULL;
-  SavedMenuOption = NULL;
-  IfrBinary = NULL;
+  NextMenuOption      = NULL;
+  PreviousMenuOption  = NULL;
+  SavedMenuOption     = NULL;
+  IfrBinary           = NULL;
 
   EfiZeroMem (&Key, sizeof (EFI_INPUT_KEY));
 
   if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
-    TopRow = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
-    Row = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
+    TopRow  = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
+    Row     = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
   } else {
-    TopRow = LocalScreen.TopRow + NONE_FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
-    Row = LocalScreen.TopRow + NONE_FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
+    TopRow  = LocalScreen.TopRow + NONE_FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
+    Row     = LocalScreen.TopRow + NONE_FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
   }
 
   if (SubMenu) {
@@ -1481,775 +1524,71 @@ Returns:
     Col = LocalScreen.LeftColumn + LEFT_SKIPPED_COLUMNS;
   }
 
-  BottomRow = LocalScreen.BottomRow - STATUS_BAR_HEIGHT - FOOTER_HEIGHT - SCROLL_ARROW_HEIGHT - 1;
+  BottomRow   = LocalScreen.BottomRow - STATUS_BAR_HEIGHT - FOOTER_HEIGHT - SCROLL_ARROW_HEIGHT - 1;
 
   TopOfScreen = Menu.ForwardLink;
-  Repaint = TRUE;
-  MenuOption = NULL;
+  Repaint     = TRUE;
+  MenuOption  = NULL;
 
   //
   // Get user's selection
   //
   Selection = NULL;
-  NewPos = Menu.ForwardLink;
+  NewPos    = Menu.ForwardLink;
   gST->ConOut->EnableCursor (gST->ConOut, FALSE);
 
-  UpdateStatusBar (REFRESH_STATUS_BAR, (UINT8)0, TRUE);
+  UpdateStatusBar (REFRESH_STATUS_BAR, (UINT8) 0, TRUE);
 
   ControlFlag = CfInitialization;
 
   while (TRUE) {
     switch (ControlFlag) {
-      case CfInitialization:
-        ControlFlag = CfCheckSelection;
-        if (gExitRequired) {
-          ScreenOperation = UiReset;
-          ControlFlag = CfScreenOperation;
-        } else if (gSaveRequired) {
-          ScreenOperation = UiSave;
-          ControlFlag = CfScreenOperation;
-        } else if (IsListEmpty (&Menu)) {
-          ControlFlag = CfReadKey;
-        }
-        break;
-
-      case CfCheckSelection:
-        if (Selection != NULL) {
-          ControlFlag = CfExit;
-        } else {
-          ControlFlag = CfRepaint;
-        }
-        
-        FileFormTags = FileFormTagsHead;
-        break;
-
-      case CfRepaint:
-        ControlFlag = CfRefreshHighLight;
-
-        if (Repaint) {
-          //
-          // Display menu
-          //
-          SavedMenuOption = MenuOption;
-          gDownArrow = FALSE;
-          gUpArrow = FALSE;
-          Row = TopRow;
-
-          Temp = SkipValue;
-          Temp2 = SkipValue;
-
-          ClearLines(LocalScreen.LeftColumn, LocalScreen.RightColumn, TopRow - SCROLL_ARROW_HEIGHT, BottomRow + SCROLL_ARROW_HEIGHT, FIELD_TEXT | FIELD_BACKGROUND);
-
-          while (gMenuRefreshHead != NULL) {
-            OldMenuRefreshEntry = gMenuRefreshHead->Next;
-
-            gBS->FreePool (gMenuRefreshHead);
-
-            gMenuRefreshHead = OldMenuRefreshEntry;
-          }
-
-          for (Link = TopOfScreen; Link != &Menu; Link = Link->ForwardLink) {
-            MenuOption = CR(Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            MenuOption->Row = Row;
-            OriginalRow = Row;
-            MenuOption->Col = Col;
-            MenuOption->OptCol = gPromptBlockWidth + 1 + LocalScreen.LeftColumn;
-
-            if (SubMenu) {
-              if (MenuOption->ThisTag->GrayOut) {
-                gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | FIELD_BACKGROUND);
-              } else {
-              if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) {
-                  gST->ConOut->SetAttribute (gST->ConOut, SUBTITLE_TEXT | FIELD_BACKGROUND);
-                }
-              }
-
-              Width = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
-              
-              OriginalRow = Row;
-              
-              for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
-                if ((Temp == 0) && (Row <= BottomRow)) {
-                  PrintStringAt (Col, Row, OutputString);
-                }
-
-                //
-                // If there is more string to process print on the next row and increment the Skip value
-                //
-                if (EfiStrLen (&MenuOption->Description[Index])) {
-                  if (Temp == 0) {
-                    Row++;
-                  }
-                }
-                gBS->FreePool (OutputString);
-                if (Temp != 0) {
-                  Temp--;
-                }
-              }
-              Temp = 0;
-
-              Row = OriginalRow;
-     
-              gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-              ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
-
-              if (OptionString != NULL) {
-                //
-                // If leading spaces on OptionString - increment the column number and remove the spaces
-                //
-                for (Index = 0; OptionString[Index] == L' '; Index++) {
-                  MenuOption->OptCol++;
-                }
-                for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-                  OptionString[Count] = OptionString[Index];
-                  Count++;
-                }
-                OptionString[Count] = CHAR_NULL;
-
-                //
-                // If this is a date or time op-code and is used to reflect an RTC, register the op-code
-                //
-                if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
-                     MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP) &&
-                    (MenuOption->ThisTag->StorageStart >= FileFormTags->FormTags.Tags[0].NvDataSize)) {
-
-                  if (gMenuRefreshHead == NULL) {
-                    MenuRefreshEntry = EfiLibAllocateZeroPool (sizeof(MENU_REFRESH_ENTRY));
-                    ASSERT (MenuRefreshEntry != NULL);
-                    MenuRefreshEntry->MenuOption = MenuOption;
-                    MenuRefreshEntry->FileFormTagsHead = FileFormTagsHead;
-                    MenuRefreshEntry->CurrentColumn = MenuOption->OptCol;
-                    MenuRefreshEntry->CurrentRow = MenuOption->Row;
-                    MenuRefreshEntry->CurrentAttribute = FIELD_TEXT | FIELD_BACKGROUND;
-                    gMenuRefreshHead = MenuRefreshEntry;
-                  } else {
-                    //
-                    // Advance to the last entry
-                    //
-                    for (MenuRefreshEntry = gMenuRefreshHead; MenuRefreshEntry->Next != NULL; MenuRefreshEntry = MenuRefreshEntry->Next);
-                    MenuRefreshEntry->Next = EfiLibAllocateZeroPool (sizeof(MENU_REFRESH_ENTRY));
-                    ASSERT (MenuRefreshEntry->Next != NULL);
-                    MenuRefreshEntry = MenuRefreshEntry->Next;
-                    MenuRefreshEntry->MenuOption = MenuOption;
-                    MenuRefreshEntry->FileFormTagsHead = FileFormTagsHead;
-                    MenuRefreshEntry->CurrentColumn = MenuOption->OptCol;
-                    MenuRefreshEntry->CurrentRow = MenuOption->Row;
-                    MenuRefreshEntry->CurrentAttribute = FIELD_TEXT | FIELD_BACKGROUND;
-                  }
-                }
-
-                Width = (UINT16)gOptionBlockWidth;
-
-                OriginalRow = Row;
-
-                for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
-                  if ((Temp2 == 0) && (Row <= BottomRow)) {
-                    PrintStringAt (MenuOption->OptCol, Row, OutputString);
-                  }
-
-                  //
-                  // If there is more string to process print on the next row and increment the Skip value
-                  //
-                  if (EfiStrLen (&OptionString[Index])) {
-                    if (Temp2 == 0) {
-                      Row++;
-                      //
-                      // Since the Number of lines for this menu entry may or may not be reflected accurately
-                      // since the prompt might be 1 lines and option might be many, and vice versa, we need to do
-                      // some testing to ensure we are keeping this in-sync.
-                      //
-                      // If the difference in rows is greater than or equal to the skip value, increase the skip value
-                      //
-                      if ((Row - OriginalRow) >= MenuOption->Skip) {
-                        MenuOption->Skip++;
-                      }
-                    }
-                  }
-                  gBS->FreePool (OutputString);
-                  if (Temp2 != 0) {
-                    Temp2--;
-                  }
-                }
-                Temp2 = 0;
-                Row = OriginalRow;
-              }
-     
-              //
-              // If this is a text op with secondary text information
-              //
-              if ((MenuOption->ThisTag->Operand == EFI_IFR_TEXT_OP) &&
-                  (MenuOption->ThisTag->TextTwo != 0)) {
-                StringPtr = GetToken(MenuOption->ThisTag->TextTwo, MenuOption->Handle);
-
-                Width = (UINT16)gOptionBlockWidth;
-     
-                OriginalRow = Row;
-
-                for (Index = 0; GetLineByWidth (StringPtr, Width, &Index, &OutputString) != 0x0000;) {
-                  if ((Temp == 0) && (Row <= BottomRow)) {
-                    PrintStringAt (MenuOption->OptCol, Row, OutputString);
-                  }
-
-                  //
-                  // If there is more string to process print on the next row and increment the Skip value
-                  //
-                  if (EfiStrLen (&StringPtr[Index])) {
-                    if (Temp2 == 0) {
-                      Row++;
-                      //
-                      // Since the Number of lines for this menu entry may or may not be reflected accurately
-                      // since the prompt might be 1 lines and option might be many, and vice versa, we need to do
-                      // some testing to ensure we are keeping this in-sync.
-                      //
-                      // If the difference in rows is greater than or equal to the skip value, increase the skip value
-                      //
-                      if ((Row - OriginalRow) >= MenuOption->Skip) {
-                        MenuOption->Skip++;
-                      }
-                    }
-                  }
-                  gBS->FreePool (OutputString);
-                  if (Temp2 != 0) {
-                    Temp2--;
-                  }
-                }
-
-                Row = OriginalRow;
-                gBS->FreePool(StringPtr);
-              }
-            } else {
-              //
-              // For now, assume left-justified 72 width max setup entries
-              //
-              PrintStringAt (Col, Row, MenuOption->Description);
-            }
-
-            //
-            // Tracker 6210 - need to handle the bottom of the display
-            //
-            if (MenuOption->Skip > 1) {
-              Row += MenuOption->Skip - SkipValue;
-              SkipValue = 0;
-            } else {
-              Row += MenuOption->Skip;
-            }
-
-            if (Row > BottomRow) {
-              if ( !ValueIsScroll(FALSE,Link) ) {
-                gDownArrow = TRUE;
-              }
-              Row = BottomRow + 1;
-              break;
-            }
-          }
-      
-          if ( !ValueIsScroll(TRUE, TopOfScreen) ) {
-            gUpArrow = TRUE;
-          }
-
-          if (gUpArrow) {
-            gST->ConOut->SetAttribute (gST->ConOut, ARROW_TEXT | ARROW_BACKGROUND);
-            PrintAt(LocalScreen.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + 1, TopRow - SCROLL_ARROW_HEIGHT, L"%c", ARROW_UP);
-            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-          }
-
-          if (gDownArrow) {
-            gST->ConOut->SetAttribute (gST->ConOut, ARROW_TEXT | ARROW_BACKGROUND);
-            PrintAt(LocalScreen.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + 1, BottomRow + SCROLL_ARROW_HEIGHT, L"%c", ARROW_DOWN);
-            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-          }
-
-          if (SavedMenuOption != NULL) {
-            MenuOption = SavedMenuOption;
-          }
-        }
-        break;
-
-      case CfRefreshHighLight:
-        ControlFlag = CfUpdateHelpString;
-        //
-        // Repaint flag is normally reset when finish processing CfUpdateHelpString. Temporarily 
-        // reset Repaint flag because we may break halfway and skip CfUpdateHelpString processing.
-        //
-        SavedValue = Repaint;
-        Repaint = FALSE;
-
-        if (NewPos != NULL) {
-          gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
-          if (SubMenu) {
-            if (gLastOpr && (gEntryNumber != -1)) {
-              MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-              if (gEntryNumber != MenuOption->EntryNumber) {
-                ScreenOperation = UiDown;
-                ControlFlag = CfScreenOperation;
-                break;
-              } else {
-                gLastOpr = FALSE;
-              }
-            }
-
-            ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
-            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-            if (OptionString != NULL) {
-              //
-              // If leading spaces on OptionString - increment the column number and remove the spaces
-              //
-              for (Index = 0; OptionString[Index] == L' '; Index++);
-
-              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-                OptionString[Count] = OptionString[Index];
-                Count++;
-              }
-              OptionString[Count] = CHAR_NULL;
-
-              Width = (UINT16)gOptionBlockWidth;
-
-              OriginalRow = MenuOption->Row;
-
-              for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
-                if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
-                  PrintStringAt (MenuOption->OptCol, MenuOption->Row, OutputString);
-                }
-
-                //
-                // If there is more string to process print on the next row and increment the Skip value
-                //       
-                if (EfiStrLen (&OptionString[Index])) {
-                  MenuOption->Row++;
-                }
-                gBS->FreePool (OutputString);
-              }
-
-              MenuOption->Row = OriginalRow;
-            } else {
-              if (NewLine) {
-                if (MenuOption->ThisTag->GrayOut) {
-                  gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | FIELD_BACKGROUND);
-                } else {
-                  if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) {
-                    gST->ConOut->SetAttribute (gST->ConOut, SUBTITLE_TEXT | FIELD_BACKGROUND);
-                  }
-                }
-
-                OriginalRow = MenuOption->Row;
-                Width = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
-
-                for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
-                  if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
-                    PrintStringAt (Col, MenuOption->Row, OutputString);
-                  }
-
-                  //
-                  // If there is more string to process print on the next row and increment the Skip value
-                  //
-                  if (EfiStrLen (&MenuOption->Description[Index])) {
-                    MenuOption->Row++;
-                  }
-                  gBS->FreePool (OutputString);
-                }
-                MenuOption->Row = OriginalRow;
-                gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-              }
-            }
-          } else {
-            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-            gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
-          }
-
-          MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-
-          if ((gPriorMenuEntry != 0) && (MenuOption->EntryNumber != gPriorMenuEntry)
-            && (NewPos->ForwardLink != &Menu)) {
-            ScreenOperation = UiDown;
-            ControlFlag = CfScreenOperation;
-            break;
-          } else {
-            gPriorMenuEntry = 0;
-          }
-
-          //
-          // This is only possible if we entered this page and the first menu option is
-          // a "non-menu" item.  In that case, force it UiDown
-          //
-          if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP ||
-              MenuOption->ThisTag->GrayOut) {
-            //
-            // If we previously hit an UP command and we are still sitting on a text operation
-            // we must continue going up
-            //
-            if (ScreenOperation == UiUp) {
-              ControlFlag = CfScreenOperation;
-              break;
-            } else {
-              ScreenOperation = UiDown;
-              ControlFlag = CfScreenOperation;
-              break;
-            }
-          }
-
-          //
-          // Set reverse attribute
-          //
-          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_HIGHLIGHT | FIELD_BACKGROUND_HIGHLIGHT);
-          gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
-
-          //
-          // Assuming that we have a refresh linked-list created, lets annotate the
-          // appropriate entry that we are highlighting with its new attribute.  Just prior to this
-          // lets reset all of the entries' attribute so we do not get multiple highlights in he refresh
-          //
-          if (gMenuRefreshHead != NULL) {
-            for (MenuRefreshEntry = gMenuRefreshHead; MenuRefreshEntry != NULL; MenuRefreshEntry = MenuRefreshEntry->Next) {
-              MenuRefreshEntry->CurrentAttribute = FIELD_TEXT | FIELD_BACKGROUND;
-              if (MenuRefreshEntry->MenuOption == MenuOption) {
-                MenuRefreshEntry->CurrentAttribute = FIELD_TEXT_HIGHLIGHT | FIELD_BACKGROUND_HIGHLIGHT;
-              }
-            }
-          }
-
-          if (SubMenu) {
-            ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
-            if (OptionString != NULL) {
-              //
-              // If leading spaces on OptionString - increment the column number and remove the spaces
-              //
-              for (Index = 0; OptionString[Index] == L' '; Index++);
-
-              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-                OptionString[Count] = OptionString[Index];
-                Count++;
-              }
-              OptionString[Count] = CHAR_NULL;
-
-              Width = (UINT16)gOptionBlockWidth;
-
-              OriginalRow = MenuOption->Row;
-
-              for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
-                if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
-                  PrintStringAt (MenuOption->OptCol, MenuOption->Row, OutputString);
-                }
-
-                //
-                // If there is more string to process print on the next row and increment the Skip value
-                //
-                if (EfiStrLen (&OptionString[Index])) {
-                  MenuOption->Row++;
-                }
-                gBS->FreePool (OutputString);
-              }
-
-              MenuOption->Row = OriginalRow;
-            } else {
-              if (NewLine) {
-                OriginalRow = MenuOption->Row;
-
-                Width = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
-
-                for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
-                  if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
-                    PrintStringAt (Col, MenuOption->Row, OutputString);
-                  }
-
-                  //
-                  // If there is more string to process print on the next row and increment the Skip value
-                  //
-                  if (EfiStrLen (&MenuOption->Description[Index])) {
-                    MenuOption->Row++;
-                  }
-                  gBS->FreePool (OutputString);
-                }
-                MenuOption->Row = OriginalRow;
-
-              }
-            }
-            if (((NewPos->ForwardLink != &Menu) && (ScreenOperation == UiDown)) ||
-                ((NewPos->BackLink != &Menu) && (ScreenOperation == UiUp)) ||
-                (ScreenOperation == UiNoOperation)) {
-              UpdateKeyHelp (MenuOption, FALSE);
-            }
-          } else {
-            gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
-          }
-
-          //
-          // Clear reverse attribute
-          //
-          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-        }
-
-        //
-        // Repaint flag will be used when process CfUpdateHelpString, so restore its value
-        // if we didn't break halfway when process CfRefreshHighLight.
-        //
-        Repaint = SavedValue;
-        break;
-
-      case CfUpdateHelpString:
-        ControlFlag = CfPrepareToReadKey;
-
-        if (SubMenu && 
-            (Repaint || NewLine || 
-             (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
-             (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) && 
-            !(gClassOfVfr == EFI_GENERAL_APPLICATION_SUBCLASS)) {
-          //
-          // Don't print anything if it is a NULL help token
-          //
-          if (MenuOption->ThisTag->Help == 0x00000000) {
-            StringPtr = L"\0";
-          } else {
-            StringPtr = GetToken(MenuOption->ThisTag->Help, MenuOption->Handle);
-          }
-
-          ProcessHelpString (StringPtr, &FormattedString, BottomRow - TopRow);
-
-          gST->ConOut->SetAttribute (gST->ConOut, HELP_TEXT | FIELD_BACKGROUND);
-
-          for (Index = 0; Index < BottomRow - TopRow; Index++) {
-            //
-            // Pad String with spaces to simulate a clearing of the previous line
-            //
-            for (; GetStringWidth (&FormattedString[Index*gHelpBlockWidth])/2 < gHelpBlockWidth;) {
-              EfiStrCat (&FormattedString[Index*gHelpBlockWidth], L" ");
-            }
-
-            PrintStringAt (LocalScreen.RightColumn-gHelpBlockWidth, Index + TopRow, &FormattedString[Index*gHelpBlockWidth]);
-          }
-        }
-        //
-        // Reset this flag every time we finish using it.
-        //
-        Repaint = FALSE;
-        NewLine = FALSE;
-        break;
-
-      case CfPrepareToReadKey:
+    case CfInitialization:
+      ControlFlag = CfCheckSelection;
+      if (gExitRequired) {
+        ScreenOperation = UiReset;
+        ControlFlag     = CfScreenOperation;
+      } else if (gSaveRequired) {
+        ScreenOperation = UiSave;
+        ControlFlag     = CfScreenOperation;
+      } else if (IsListEmpty (&Menu)) {
         ControlFlag = CfReadKey;
+      }
+      break;
 
-        for (Index = 0; Index < MenuOption->IfrNumber; Index++) {
-          FileFormTags = FileFormTags->NextFile;
-        }
+    case CfCheckSelection:
+      if (Selection != NULL) {
+        ControlFlag = CfExit;
+      } else {
+        ControlFlag = CfRepaint;
+      }
 
-        ScreenOperation = UiNoOperation;
-        
-        Status = gBS->HandleProtocol (
-                        (VOID *)(UINTN)FileFormTags->FormTags.Tags[0].CallbackHandle,
-                        &gEfiFormCallbackProtocolGuid, 
-                        &FormCallback
-                        );
-        
-        break;
+      FileFormTags = FileFormTagsHead;
+      break;
 
-      case CfReadKey:
-        ControlFlag = CfScreenOperation;
+    case CfRepaint:
+      ControlFlag = CfRefreshHighLight;
 
-        OriginalTimeOut = FrontPageTimeOutValue;
-        do {
-          if (FrontPageTimeOutValue >= 0 && (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) && FrontPageTimeOutValue != 0xFFFF) {
-            //
-            // Remember that if set to 0, must immediately boot an option
-            //
-            if (FrontPageTimeOutValue == 0) {
-              FrontPageTimeOutValue = 0xFFFF;
-              Status = gBS->CheckEvent (gST->ConIn->WaitForKey);          
-              if (EFI_ERROR (Status)) {
-                Status = EFI_TIMEOUT;
-              }                    
-              break;
-            }
-
-            Status = UiWaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
-            if (Status == EFI_TIMEOUT) {
-              PageData->EntryCount = 1;
-              Count = (UINT32)((OriginalTimeOut - FrontPageTimeOutValue) * 100 / OriginalTimeOut);
-              EfiCopyMem(&PageData->Data->Data, &Count, sizeof (UINT32));
-
-              if ((FormCallback != NULL) && (FormCallback->Callback != NULL)) {
-                FormCallback->Callback (
-                                FormCallback,
-                                0xFFFF,
-                                (EFI_IFR_DATA_ARRAY *)PageData,
-                                NULL
-                                );
-              }
-              //
-              // Count down 1 second
-              //
-              FrontPageTimeOutValue--;
-
-            } else {          
-              ASSERT (!EFI_ERROR (Status));
-              PageData->EntryCount = 0;
-              if ((FormCallback != NULL) && (FormCallback->Callback != NULL)) {
-                FormCallback->Callback (
-                                FormCallback,
-                                0xFFFE,
-                                (EFI_IFR_DATA_ARRAY *)PageData,
-                                NULL
-                                );
-              }
-              FrontPageTimeOutValue = 0xFFFF;
-            }
-          } else {
-            //
-            // Wait for user's selection, no auto boot
-            //
-            Status = UiWaitForSingleEvent (gST->ConIn->WaitForKey, 0);
-          }
-        } while (Status == EFI_TIMEOUT);
-
-        if (gFirstIn) {
-          gFirstIn = FALSE;
-          gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
-          DisableQuietBoot ();
-        }
-
-        if (Status == EFI_TIMEOUT) {
-          Key.UnicodeChar = CHAR_CARRIAGE_RETURN;
-        } else {
-          Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-          ASSERT (!EFI_ERROR (Status));
-        }
-        
-        switch (Key.UnicodeChar) {
-        case CHAR_CARRIAGE_RETURN:
-          Selection = MenuOption;
-          ScreenOperation = UiSelect;
-          gDirection = 0;
-          break;
-
+      if (Repaint) {
         //
-        // We will push the adjustment of these numeric values directly to the input handler
+        // Display menu
         //
-        case '+':
-        case '-':
-          if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
-              (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
+        SavedMenuOption = MenuOption;
+        gDownArrow      = FALSE;
+        gUpArrow        = FALSE;
+        Row             = TopRow;
 
-            if (Key.UnicodeChar == '+') {
-              gDirection = SCAN_RIGHT;
-            } else {
-              gDirection = SCAN_LEFT;
-            }
-            Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, NULL, &OptionString);
-          }
-          break;
-      
-        case '^':
-          ScreenOperation = UiUp;
-          break;
-        case 'V':
-        case 'v':
-          ScreenOperation = UiDown;
-          break;
-        case ' ':
-          if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
-            if (SubMenu) {
-              if (MenuOption->ThisTag->Operand == EFI_IFR_CHECKBOX_OP &&
-                  !(MenuOption->ThisTag->GrayOut)) {
-                gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
-                gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
-                Selection = MenuOption;
-                ScreenOperation = UiSelect;
-              }
-            }
-          }
-          break;
-        case CHAR_NULL:
-          if (((Key.ScanCode == SCAN_F1) && ((gFunctionKeySetting & FUNCTION_ONE) != FUNCTION_ONE)) ||
-              ((Key.ScanCode == SCAN_F2) && ((gFunctionKeySetting & FUNCTION_TWO) != FUNCTION_TWO)) ||
-              ((Key.ScanCode == SCAN_F9) && ((gFunctionKeySetting & FUNCTION_NINE) != FUNCTION_NINE)) ||
-              ((Key.ScanCode == SCAN_F10) && ((gFunctionKeySetting & FUNCTION_TEN) != FUNCTION_TEN)) ) {
-            //
-            // If the function key has been disabled, just ignore the key.
-            //
-          } else {
-            for (Index = 0; Index < sizeof(gScanCodeToOperation)/sizeof(gScanCodeToOperation[0]); Index++) {
-              if (Key.ScanCode == gScanCodeToOperation[Index].ScanCode) {
-                if ((Key.ScanCode == SCAN_F9) || (Key.ScanCode == SCAN_F10)) {
-                  if (SubMenu) {
-                    ScreenOperation = gScanCodeToOperation[Index].ScreenOperation;
-                  }
-                } else {
-                  ScreenOperation = gScanCodeToOperation[Index].ScreenOperation;
-                }
-              }
-            }
-          }
-          break;
-        }
-        break;
+        Temp            = SkipValue;
+        Temp2           = SkipValue;
 
-      case CfScreenOperation:
-        IfrBinary = gBinaryDataHead;
+        ClearLines (
+          LocalScreen.LeftColumn,
+          LocalScreen.RightColumn,
+          TopRow - SCROLL_ARROW_HEIGHT,
+          BottomRow + SCROLL_ARROW_HEIGHT,
+          FIELD_TEXT | FIELD_BACKGROUND
+          );
 
-        //
-        // Advance to the Ifr we are using
-        //
-        for (Index=0; Index < gActiveIfr; Index++) {
-          IfrBinary = IfrBinary->Next;
-        }
-
-
-        if (ScreenOperation != UiPrevious && ScreenOperation != UiReset) {
-          //
-          // If the screen has no menu items, and the user didn't select UiPrevious, or UiReset
-          // ignore the selection and go back to reading keys.
-          //
-          if (IsListEmpty (&Menu)) {
-            ControlFlag = CfReadKey;
-            break;
-          }
-
-          //
-          // if there is nothing logical to place a cursor on, just move on to wait for a key.
-          //
-          for (Link = Menu.ForwardLink; Link != &Menu; Link = Link->ForwardLink) {
-            NextMenuOption = CR(Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            if (!(NextMenuOption->ThisTag->GrayOut) &&
-                (NextMenuOption->ThisTag->Operand != EFI_IFR_SUBTITLE_OP)) {
-              break;
-            }
-          }
-
-          if (Link == &Menu) {
-            ControlFlag = CfPrepareToReadKey;
-            break;
-          }
-        }
-
-        for (Index = 0; Index < sizeof(gScreenOperationToControlFlag)/sizeof(gScreenOperationToControlFlag[0]); Index++) {
-          if (ScreenOperation == gScreenOperationToControlFlag[Index].ScreenOperation) {
-            ControlFlag = gScreenOperationToControlFlag[Index].ControlFlag;
-          }
-        }
-        
-        break;
-
-      case CfUiPrevious:
-        ControlFlag = CfCheckSelection;
-        //
-        // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
-        //
-        if (MenuOption != NULL) {
-          if (!SelectionsAreValid(MenuOption, FileFormTagsHead)) {
-            Selection = NULL;
-            Repaint = TRUE;
-            break;
-          }
-        }
-
-        if (IsListEmpty (&gMenuList)) {
-          Selection = NULL;
-          if (IsListEmpty (&Menu)) {
-            ControlFlag = CfReadKey;
-          }
-          break;
-        }
-
-        gLastOpr = TRUE;
-        
         while (gMenuRefreshHead != NULL) {
           OldMenuRefreshEntry = gMenuRefreshHead->Next;
 
@@ -2258,25 +1597,760 @@ Returns:
           gMenuRefreshHead = OldMenuRefreshEntry;
         }
 
-        //
-        // Remove the Cached page entry, free and init the menus, flag Selection as jumping to previous page and a valid Tag
-        //
-        if (SubMenu) {
-          UiRemoveMenuListEntry(MenuOption, &Selection);
-          Selection->Previous = TRUE;
-          UiFreeMenu();
-          UiInitMenu();
+        for (Link = TopOfScreen; Link != &Menu; Link = Link->ForwardLink) {
+          MenuOption          = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          MenuOption->Row     = Row;
+          OriginalRow         = Row;
+          MenuOption->Col     = Col;
+          MenuOption->OptCol  = gPromptBlockWidth + 1 + LocalScreen.LeftColumn;
+
+          if (SubMenu) {
+            if (MenuOption->ThisTag->GrayOut) {
+              gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | FIELD_BACKGROUND);
+            } else {
+              if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) {
+                gST->ConOut->SetAttribute (gST->ConOut, SUBTITLE_TEXT | FIELD_BACKGROUND);
+              }
+            }
+
+            Width       = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
+
+            OriginalRow = Row;
+
+            for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
+              if ((Temp == 0) && (Row <= BottomRow)) {
+                PrintStringAt (Col, Row, OutputString);
+              }
+              //
+              // If there is more string to process print on the next row and increment the Skip value
+              //
+              if (EfiStrLen (&MenuOption->Description[Index])) {
+                if (Temp == 0) {
+                  Row++;
+                }
+              }
+
+              gBS->FreePool (OutputString);
+              if (Temp != 0) {
+                Temp--;
+              }
+            }
+
+            Temp  = 0;
+
+            Row   = OriginalRow;
+
+            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+            ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
+
+            if (OptionString != NULL) {
+              //
+              // If leading spaces on OptionString - remove the spaces
+              //
+              for (Index = 0; OptionString[Index] == L' '; Index++) {
+                MenuOption->OptCol++;
+              }
+
+              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+                OptionString[Count] = OptionString[Index];
+                Count++;
+              }
+
+              OptionString[Count] = CHAR_NULL;
+
+              //
+              // If this is a date or time op-code and is used to reflect an RTC, register the op-code
+              //
+                if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
+                     MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP) &&
+                    (MenuOption->ThisTag->StorageStart >= FileFormTags->FormTags.Tags[0].NvDataSize)) {
+
+                if (gMenuRefreshHead == NULL) {
+                  MenuRefreshEntry = EfiLibAllocateZeroPool (sizeof (MENU_REFRESH_ENTRY));
+                  ASSERT (MenuRefreshEntry != NULL);
+                  MenuRefreshEntry->MenuOption        = MenuOption;
+                  MenuRefreshEntry->FileFormTagsHead  = FileFormTagsHead;
+                  MenuRefreshEntry->CurrentColumn     = MenuOption->OptCol;
+                  MenuRefreshEntry->CurrentRow        = MenuOption->Row;
+                  MenuRefreshEntry->CurrentAttribute  = FIELD_TEXT | FIELD_BACKGROUND;
+                  gMenuRefreshHead                    = MenuRefreshEntry;
+                } else {
+                  //
+                  // Advance to the last entry
+                  //
+                  for (MenuRefreshEntry = gMenuRefreshHead;
+                       MenuRefreshEntry->Next != NULL;
+                       MenuRefreshEntry = MenuRefreshEntry->Next
+                      )
+                    ;
+                  MenuRefreshEntry->Next = EfiLibAllocateZeroPool (sizeof (MENU_REFRESH_ENTRY));
+                  ASSERT (MenuRefreshEntry->Next != NULL);
+                  MenuRefreshEntry                    = MenuRefreshEntry->Next;
+                  MenuRefreshEntry->MenuOption        = MenuOption;
+                  MenuRefreshEntry->FileFormTagsHead  = FileFormTagsHead;
+                  MenuRefreshEntry->CurrentColumn     = MenuOption->OptCol;
+                  MenuRefreshEntry->CurrentRow        = MenuOption->Row;
+                  MenuRefreshEntry->CurrentAttribute  = FIELD_TEXT | FIELD_BACKGROUND;
+                }
+              }
+
+              Width       = (UINT16) gOptionBlockWidth;
+
+              OriginalRow = Row;
+
+              for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
+                if ((Temp2 == 0) && (Row <= BottomRow)) {
+                  PrintStringAt (MenuOption->OptCol, Row, OutputString);
+                }
+                //
+                // If there is more string to process print on the next row and increment the Skip value
+                //
+                if (EfiStrLen (&OptionString[Index])) {
+                  if (Temp2 == 0) {
+                    Row++;
+                    //
+                    // Since the Number of lines for this menu entry may or may not be reflected accurately
+                    // since the prompt might be 1 lines and option might be many, and vice versa, we need to do
+                    // some testing to ensure we are keeping this in-sync.
+                    //
+                    // If the difference in rows is greater than or equal to the skip value, increase the skip value
+                    //
+                    if ((Row - OriginalRow) >= MenuOption->Skip) {
+                      MenuOption->Skip++;
+                    }
+                  }
+                }
+
+                gBS->FreePool (OutputString);
+                if (Temp2 != 0) {
+                  Temp2--;
+                }
+              }
+
+              Temp2 = 0;
+              Row   = OriginalRow;
+            }
+            //
+            // If this is a text op with secondary text information
+            //
+            if ((MenuOption->ThisTag->Operand == EFI_IFR_TEXT_OP) && (MenuOption->ThisTag->TextTwo != 0)) {
+              StringPtr   = GetToken (MenuOption->ThisTag->TextTwo, MenuOption->Handle);
+
+              Width       = (UINT16) gOptionBlockWidth;
+
+              OriginalRow = Row;
+
+              for (Index = 0; GetLineByWidth (StringPtr, Width, &Index, &OutputString) != 0x0000;) {
+                if ((Temp == 0) && (Row <= BottomRow)) {
+                  PrintStringAt (MenuOption->OptCol, Row, OutputString);
+                }
+                //
+                // If there is more string to process print on the next row and increment the Skip value
+                //
+                if (EfiStrLen (&StringPtr[Index])) {
+                  if (Temp2 == 0) {
+                    Row++;
+                    //
+                    // Since the Number of lines for this menu entry may or may not be reflected accurately
+                    // since the prompt might be 1 lines and option might be many, and vice versa, we need to do
+                    // some testing to ensure we are keeping this in-sync.
+                    //
+                    // If the difference in rows is greater than or equal to the skip value, increase the skip value
+                    //
+                    if ((Row - OriginalRow) >= MenuOption->Skip) {
+                      MenuOption->Skip++;
+                    }
+                  }
+                }
+
+                gBS->FreePool (OutputString);
+                if (Temp2 != 0) {
+                  Temp2--;
+                }
+              }
+
+              Row = OriginalRow;
+              gBS->FreePool (StringPtr);
+            }
+          } else {
+            //
+            // For now, assume left-justified 72 width max setup entries
+            //
+            PrintStringAt (Col, Row, MenuOption->Description);
+          }
+          //
+          // Tracker 6210 - need to handle the bottom of the display
+          //
+          if (MenuOption->Skip > 1) {
+            Row += MenuOption->Skip - SkipValue;
+            SkipValue = 0;
+          } else {
+            Row += MenuOption->Skip;
+          }
+
+          if (Row > BottomRow) {
+            if (!ValueIsScroll (FALSE, Link)) {
+              gDownArrow = TRUE;
+            }
+
+            Row = BottomRow + 1;
+            break;
+          }
         }
 
-        gActiveIfr = Selection->IfrNumber;
-        return Selection;
+        if (!ValueIsScroll (TRUE, TopOfScreen)) {
+          gUpArrow = TRUE;
+        }
 
-      case CfUiSelect:
-        ControlFlag = CfCheckSelection;
+        if (gUpArrow) {
+          gST->ConOut->SetAttribute (gST->ConOut, ARROW_TEXT | ARROW_BACKGROUND);
+          PrintAt (
+            LocalScreen.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + 1,
+            TopRow - SCROLL_ARROW_HEIGHT,
+            L"%c",
+            ARROW_UP
+            );
+          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+        }
 
-        ExtractRequestedNvMap (FileFormTags, MenuOption->ThisTag->VariableNumber, &VariableDefinition);
+        if (gDownArrow) {
+          gST->ConOut->SetAttribute (gST->ConOut, ARROW_TEXT | ARROW_BACKGROUND);
+          PrintAt (
+            LocalScreen.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + 1,
+            BottomRow + SCROLL_ARROW_HEIGHT,
+            L"%c",
+            ARROW_DOWN
+            );
+          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+        }
+
+        if (SavedMenuOption != NULL) {
+          MenuOption = SavedMenuOption;
+        }
+      }
+      break;
+
+    case CfRefreshHighLight:
+      ControlFlag = CfUpdateHelpString;
+      //
+      // Repaint flag is normally reset when finish processing CfUpdateHelpString. Temporarily
+      // reset Repaint flag because we may break halfway and skip CfUpdateHelpString processing.
+      //
+      SavedValue  = Repaint;
+      Repaint     = FALSE;
+
+      if (NewPos != NULL) {
+        gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
+        if (SubMenu) {
+          if (gLastOpr && (gEntryNumber != -1)) {
+            MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+            if (gEntryNumber != MenuOption->EntryNumber) {
+              ScreenOperation = UiDown;
+              ControlFlag     = CfScreenOperation;
+              break;
+            } else {
+              gLastOpr = FALSE;
+            }
+          }
+
+          ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
+          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+          if (OptionString != NULL) {
+            //
+            // If leading spaces on OptionString - increment the column number and remove the spaces
+            //
+            for (Index = 0; OptionString[Index] == L' '; Index++)
+              ;
+
+            for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+              OptionString[Count] = OptionString[Index];
+              Count++;
+            }
+
+            OptionString[Count] = CHAR_NULL;
+
+            Width               = (UINT16) gOptionBlockWidth;
+
+            OriginalRow         = MenuOption->Row;
+
+            for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
+              if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
+                PrintStringAt (MenuOption->OptCol, MenuOption->Row, OutputString);
+              }
+              //
+              // If there is more string to process print on the next row and increment the Skip value
+              //
+              if (EfiStrLen (&OptionString[Index])) {
+                MenuOption->Row++;
+              }
+
+              gBS->FreePool (OutputString);
+            }
+
+            MenuOption->Row = OriginalRow;
+          } else {
+            if (NewLine) {
+              if (MenuOption->ThisTag->GrayOut) {
+                gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | FIELD_BACKGROUND);
+              } else {
+                if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) {
+                  gST->ConOut->SetAttribute (gST->ConOut, SUBTITLE_TEXT | FIELD_BACKGROUND);
+                }
+              }
+
+              OriginalRow = MenuOption->Row;
+              Width       = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
+
+              for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
+                if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
+                  PrintStringAt (Col, MenuOption->Row, OutputString);
+                }
+                //
+                // If there is more string to process print on the next row and increment the Skip value
+                //
+                if (EfiStrLen (&MenuOption->Description[Index])) {
+                  MenuOption->Row++;
+                }
+
+                gBS->FreePool (OutputString);
+              }
+
+              MenuOption->Row = OriginalRow;
+              gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+            }
+          }
+        } else {
+          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+          gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
+        }
+
+        MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+
+        if ((gPriorMenuEntry != 0) && (MenuOption->EntryNumber != gPriorMenuEntry) && (NewPos->ForwardLink != &Menu)) {
+          ScreenOperation = UiDown;
+          ControlFlag     = CfScreenOperation;
+          break;
+        } else {
+          gPriorMenuEntry = 0;
+        }
+        //
+        // This is only possible if we entered this page and the first menu option is
+        // a "non-menu" item.  In that case, force it UiDown
+        //
+        if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || MenuOption->ThisTag->GrayOut) {
+          //
+          // If we previously hit an UP command and we are still sitting on a text operation
+          // we must continue going up
+          //
+          if (ScreenOperation == UiUp) {
+            ControlFlag = CfScreenOperation;
+            break;
+          } else {
+            ScreenOperation = UiDown;
+            ControlFlag     = CfScreenOperation;
+            break;
+          }
+        }
+        //
+        // Set reverse attribute
+        //
+        gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_HIGHLIGHT | FIELD_BACKGROUND_HIGHLIGHT);
+        gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
+
+        //
+        // Assuming that we have a refresh linked-list created, lets annotate the
+        // appropriate entry that we are highlighting with its new attribute.  Just prior to this
+        // lets reset all of the entries' attribute so we do not get multiple highlights in he refresh
+        //
+        if (gMenuRefreshHead != NULL) {
+          for (MenuRefreshEntry = gMenuRefreshHead; MenuRefreshEntry != NULL; MenuRefreshEntry = MenuRefreshEntry->Next) {
+            MenuRefreshEntry->CurrentAttribute = FIELD_TEXT | FIELD_BACKGROUND;
+            if (MenuRefreshEntry->MenuOption == MenuOption) {
+              MenuRefreshEntry->CurrentAttribute = FIELD_TEXT_HIGHLIGHT | FIELD_BACKGROUND_HIGHLIGHT;
+            }
+          }
+        }
 
         if (SubMenu) {
+          ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
+          if (OptionString != NULL) {
+            //
+            // If leading spaces on OptionString - remove the spaces
+            //
+            for (Index = 0; OptionString[Index] == L' '; Index++)
+              ;
+
+            for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+              OptionString[Count] = OptionString[Index];
+              Count++;
+            }
+
+            OptionString[Count] = CHAR_NULL;
+
+            Width               = (UINT16) gOptionBlockWidth;
+
+            OriginalRow         = MenuOption->Row;
+
+            for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
+              if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
+                PrintStringAt (MenuOption->OptCol, MenuOption->Row, OutputString);
+              }
+              //
+              // If there is more string to process print on the next row and increment the Skip value
+              //
+              if (EfiStrLen (&OptionString[Index])) {
+                MenuOption->Row++;
+              }
+
+              gBS->FreePool (OutputString);
+            }
+
+            MenuOption->Row = OriginalRow;
+          } else {
+            if (NewLine) {
+              OriginalRow = MenuOption->Row;
+
+              Width       = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
+
+              for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
+                if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
+                  PrintStringAt (Col, MenuOption->Row, OutputString);
+                }
+                //
+                // If there is more string to process print on the next row and increment the Skip value
+                //
+                if (EfiStrLen (&MenuOption->Description[Index])) {
+                  MenuOption->Row++;
+                }
+
+                gBS->FreePool (OutputString);
+              }
+
+              MenuOption->Row = OriginalRow;
+
+            }
+          }
+
+          if (((NewPos->ForwardLink != &Menu) && (ScreenOperation == UiDown)) ||
+              ((NewPos->BackLink != &Menu) && (ScreenOperation == UiUp)) ||
+              (ScreenOperation == UiNoOperation)
+              ) {
+            UpdateKeyHelp (MenuOption, FALSE);
+          }
+        } else {
+          gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
+        }
+        //
+        // Clear reverse attribute
+        //
+        gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+      }
+      //
+      // Repaint flag will be used when process CfUpdateHelpString, so restore its value
+      // if we didn't break halfway when process CfRefreshHighLight.
+      //
+      Repaint = SavedValue;
+      break;
+
+    case CfUpdateHelpString:
+      ControlFlag = CfPrepareToReadKey;
+
+        if (SubMenu && 
+            (Repaint || NewLine || 
+             (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
+             (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) && 
+            !(gClassOfVfr == EFI_GENERAL_APPLICATION_SUBCLASS)) {
+        //
+        // Don't print anything if it is a NULL help token
+        //
+        if (MenuOption->ThisTag->Help == 0x00000000) {
+          StringPtr = L"\0";
+        } else {
+          StringPtr = GetToken (MenuOption->ThisTag->Help, MenuOption->Handle);
+        }
+
+        ProcessHelpString (StringPtr, &FormattedString, BottomRow - TopRow);
+
+        gST->ConOut->SetAttribute (gST->ConOut, HELP_TEXT | FIELD_BACKGROUND);
+
+        for (Index = 0; Index < BottomRow - TopRow; Index++) {
+          //
+          // Pad String with spaces to simulate a clearing of the previous line
+          //
+          for (; GetStringWidth (&FormattedString[Index * gHelpBlockWidth]) / 2 < gHelpBlockWidth;) {
+            EfiStrCat (&FormattedString[Index * gHelpBlockWidth], L" ");
+          }
+
+          PrintStringAt (
+            LocalScreen.RightColumn - gHelpBlockWidth,
+            Index + TopRow,
+            &FormattedString[Index * gHelpBlockWidth]
+            );
+        }
+      }
+      //
+      // Reset this flag every time we finish using it.
+      //
+      Repaint = FALSE;
+      NewLine = FALSE;
+      break;
+
+    case CfPrepareToReadKey:
+      ControlFlag = CfReadKey;
+
+      for (Index = 0; Index < MenuOption->IfrNumber; Index++) {
+        FileFormTags = FileFormTags->NextFile;
+      }
+
+      ScreenOperation = UiNoOperation;
+
+      Status = gBS->HandleProtocol (
+                      (VOID *) (UINTN) FileFormTags->FormTags.Tags[0].CallbackHandle,
+                      &gEfiFormCallbackProtocolGuid,
+                      &FormCallback
+                      );
+
+      break;
+
+    case CfReadKey:
+      ControlFlag     = CfScreenOperation;
+
+      OriginalTimeOut = FrontPageTimeOutValue;
+      do {
+        if (FrontPageTimeOutValue >= 0 && (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) && FrontPageTimeOutValue != 0xFFFF) {
+          //
+          // Remember that if set to 0, must immediately boot an option
+          //
+          if (FrontPageTimeOutValue == 0) {
+            FrontPageTimeOutValue = 0xFFFF;
+            Status                = gBS->CheckEvent (gST->ConIn->WaitForKey);
+            if (EFI_ERROR (Status)) {
+              Status = EFI_TIMEOUT;
+            }
+            break;
+          }
+
+          Status = UiWaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
+          if (Status == EFI_TIMEOUT) {
+            PageData->EntryCount  = 1;
+            Count                 = (UINT32) ((OriginalTimeOut - FrontPageTimeOutValue) * 100 / OriginalTimeOut);
+            EfiCopyMem (&PageData->Data->Data, &Count, sizeof (UINT32));
+
+            if ((FormCallback != NULL) && (FormCallback->Callback != NULL)) {
+              FormCallback->Callback (
+                              FormCallback,
+                              0xFFFF,
+                              (EFI_IFR_DATA_ARRAY *) PageData,
+                              NULL
+                              );
+            }
+            //
+            // Count down 1 second
+            //
+            FrontPageTimeOutValue--;
+
+          } else {
+            ASSERT (!EFI_ERROR (Status));
+            PageData->EntryCount = 0;
+            if ((FormCallback != NULL) && (FormCallback->Callback != NULL)) {
+              FormCallback->Callback (
+                              FormCallback,
+                              0xFFFE,
+                              (EFI_IFR_DATA_ARRAY *) PageData,
+                              NULL
+                              );
+            }
+
+            FrontPageTimeOutValue = 0xFFFF;
+          }
+        } else {
+          //
+          // Wait for user's selection, no auto boot
+          //
+          Status = UiWaitForSingleEvent (gST->ConIn->WaitForKey, 0);
+        }
+      } while (Status == EFI_TIMEOUT);
+
+      if (gFirstIn) {
+        gFirstIn = FALSE;
+        gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
+        DisableQuietBoot ();
+      }
+
+      if (Status == EFI_TIMEOUT) {
+        Key.UnicodeChar = CHAR_CARRIAGE_RETURN;
+      } else {
+        Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+        ASSERT (!EFI_ERROR (Status));
+      }
+
+      switch (Key.UnicodeChar) {
+      case CHAR_CARRIAGE_RETURN:
+        Selection       = MenuOption;
+        ScreenOperation = UiSelect;
+        gDirection      = 0;
+        break;
+
+      //
+      // We will push the adjustment of these numeric values directly to the input handler
+      //
+      case '+':
+      case '-':
+        if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
+
+          if (Key.UnicodeChar == '+') {
+            gDirection = SCAN_RIGHT;
+          } else {
+            gDirection = SCAN_LEFT;
+          }
+
+          Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, NULL, &OptionString);
+        }
+        break;
+
+      case '^':
+        ScreenOperation = UiUp;
+        break;
+
+      case 'V':
+      case 'v':
+        ScreenOperation = UiDown;
+        break;
+
+      case ' ':
+        if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
+          if (SubMenu) {
+            if (MenuOption->ThisTag->Operand == EFI_IFR_CHECKBOX_OP && !(MenuOption->ThisTag->GrayOut)) {
+              gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
+              gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
+              Selection       = MenuOption;
+              ScreenOperation = UiSelect;
+            }
+          }
+        }
+        break;
+
+      case CHAR_NULL:
+        if (((Key.ScanCode == SCAN_F1) && ((gFunctionKeySetting & FUNCTION_ONE) != FUNCTION_ONE)) ||
+            ((Key.ScanCode == SCAN_F2) && ((gFunctionKeySetting & FUNCTION_TWO) != FUNCTION_TWO)) ||
+            ((Key.ScanCode == SCAN_F9) && ((gFunctionKeySetting & FUNCTION_NINE) != FUNCTION_NINE)) ||
+            ((Key.ScanCode == SCAN_F10) && ((gFunctionKeySetting & FUNCTION_TEN) != FUNCTION_TEN))
+            ) {
+          //
+          // If the function key has been disabled, just ignore the key.
+          //
+        } else {
+          for (Index = 0; Index < sizeof (gScanCodeToOperation) / sizeof (gScanCodeToOperation[0]); Index++) {
+            if (Key.ScanCode == gScanCodeToOperation[Index].ScanCode) {
+              if ((Key.ScanCode == SCAN_F9) || (Key.ScanCode == SCAN_F10)) {
+                if (SubMenu) {
+                  ScreenOperation = gScanCodeToOperation[Index].ScreenOperation;
+                }
+              } else {
+                ScreenOperation = gScanCodeToOperation[Index].ScreenOperation;
+              }
+            }
+          }
+        }
+        break;
+      }
+      break;
+
+    case CfScreenOperation:
+      IfrBinary = gBinaryDataHead;
+
+      //
+      // Advance to the Ifr we are using
+      //
+      for (Index = 0; Index < gActiveIfr; Index++) {
+        IfrBinary = IfrBinary->Next;
+      }
+
+      if (ScreenOperation != UiPrevious && ScreenOperation != UiReset) {
+        //
+        // If the screen has no menu items, and the user didn't select UiPrevious, or UiReset
+        // ignore the selection and go back to reading keys.
+        //
+        if (IsListEmpty (&Menu)) {
+          ControlFlag = CfReadKey;
+          break;
+        }
+        //
+        // if there is nothing logical to place a cursor on, just move on to wait for a key.
+        //
+        for (Link = Menu.ForwardLink; Link != &Menu; Link = Link->ForwardLink) {
+          NextMenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          if (!(NextMenuOption->ThisTag->GrayOut) && (NextMenuOption->ThisTag->Operand != EFI_IFR_SUBTITLE_OP)) {
+            break;
+          }
+        }
+
+        if (Link == &Menu) {
+          ControlFlag = CfPrepareToReadKey;
+          break;
+        }
+      }
+
+      for (Index = 0;
+           Index < sizeof (gScreenOperationToControlFlag) / sizeof (gScreenOperationToControlFlag[0]);
+           Index++
+          ) {
+        if (ScreenOperation == gScreenOperationToControlFlag[Index].ScreenOperation) {
+          ControlFlag = gScreenOperationToControlFlag[Index].ControlFlag;
+        }
+      }
+
+      break;
+
+    case CfUiPrevious:
+      ControlFlag = CfCheckSelection;
+      //
+      // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
+      //
+      if (MenuOption != NULL) {
+        if (!SelectionsAreValid (MenuOption, FileFormTagsHead)) {
+          Selection = NULL;
+          Repaint   = TRUE;
+          break;
+        }
+      }
+
+      if (IsListEmpty (&gMenuList)) {
+        Selection = NULL;
+        if (IsListEmpty (&Menu)) {
+          ControlFlag = CfReadKey;
+        }
+        break;
+      }
+
+      gLastOpr = TRUE;
+
+      while (gMenuRefreshHead != NULL) {
+        OldMenuRefreshEntry = gMenuRefreshHead->Next;
+
+        gBS->FreePool (gMenuRefreshHead);
+
+        gMenuRefreshHead = OldMenuRefreshEntry;
+      }
+      //
+      // Remove the Cached page entry, free and init the menus, flag Selection as jumping to previous page and a valid Tag
+      //
+      if (SubMenu) {
+        UiRemoveMenuListEntry (MenuOption, &Selection);
+        Selection->Previous = TRUE;
+        UiFreeMenu ();
+        UiInitMenu ();
+      }
+
+      gActiveIfr = Selection->IfrNumber;
+      return Selection;
+
+    case CfUiSelect:
+      ControlFlag = CfCheckSelection;
+
+      ExtractRequestedNvMap (FileFormTags, MenuOption->ThisTag->VariableNumber, &VariableDefinition);
+
+      if (SubMenu) {
         if ((MenuOption->ThisTag->Operand == EFI_IFR_TEXT_OP && 
             !(MenuOption->ThisTag->Flags & EFI_IFR_FLAG_INTERACTIVE)) ||
             (MenuOption->ThisTag->GrayOut) ||
@@ -2286,660 +2360,665 @@ Returns:
             break;
           }
 
-          NewLine = TRUE;
-          UpdateKeyHelp (MenuOption, TRUE);
-          Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, PageData, &OptionString);
+        NewLine = TRUE;
+        UpdateKeyHelp (MenuOption, TRUE);
+        Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, PageData, &OptionString);
 
-          if (EFI_ERROR(Status)) {
-            Selection = NULL;
-            Repaint = TRUE;
-            break;
-          }
-
-          if (OptionString != NULL) {
-            PrintStringAt (LocalScreen.LeftColumn + gPromptBlockWidth + 1, MenuOption->Row, OptionString);
-          }
-
-          if (MenuOption->ThisTag->Flags & EFI_IFR_FLAG_INTERACTIVE) {
-            Selection = MenuOption;
-          }
-
-          if (Selection == NULL) {
-            break;
-          }
-
-          Location = (UINT8 *)&PageData->EntryCount;
-
-          //
-          // If not a goto, dump single piece of data, otherwise dump everything
-          //
-          if (Selection->ThisTag->Operand == EFI_IFR_REF_OP) {
-
-            //
-            // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
-            //
-            if (!SelectionsAreValid(MenuOption, FileFormTagsHead)) {
-              Selection = NULL;
-              Repaint = TRUE;
-              break;
-            }
-
-            UiAddMenuListEntry(Selection);
-            gPriorMenuEntry = 0;
-
-            //
-            // Now that we added a menu entry specific to a goto, we can always go back when someone hits the UiPrevious
-            //
-            UiMenuList = CR(gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
-            UiMenuList->FormerEntryNumber = MenuOption->EntryNumber;
-
-            gLastOpr = FALSE;
-
-            //
-            // Rewind to the beginning of the menu
-            //
-            for (; NewPos->BackLink != &Menu; NewPos = NewPos->BackLink);
-
-            //
-            // Get Total Count of Menu entries
-            //
-            for (Count = 1; NewPos->ForwardLink != &Menu; NewPos = NewPos->ForwardLink) {
-              Count++;
-            }
-
-            //
-            // Rewind to the beginning of the menu
-            //
-            for (; NewPos->BackLink != &Menu; NewPos = NewPos->BackLink);
-
-            //
-            // Copy the number of entries being described to the PageData location
-            //
-            EfiCopyMem(&Location[0], &Count, sizeof(UINT32));
-
-            for (Index = 4; NewPos->ForwardLink != &Menu;Index = Index + MenuOption->ThisTag->StorageWidth + 2) {
-
-              MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-              Location[Index] = MenuOption->ThisTag->Operand;
-              Location[Index+1] = (UINT8)(MenuOption->ThisTag->StorageWidth + 4);
-              EfiCopyMem(&Location[Index+4], 
-                &VariableDefinition->NvRamMap[MenuOption->ThisTag->StorageStart], 
-                MenuOption->ThisTag->StorageWidth
-                );
-              NewPos = NewPos->ForwardLink;
-            }
-          } else {
-
-            gPriorMenuEntry = MenuOption->EntryNumber;
-
-            Count = 1;
-
-            //
-            // Copy the number of entries being described to the PageData location
-            //
-            EfiCopyMem(&Location[0], &Count, sizeof(UINT32));
-
-            //
-            // Start at PageData[4] since the EntryCount is a UINT32
-            //
-            Index = 4;
-
-            //
-            // Copy data to destination
-            //
-            Location[Index] = MenuOption->ThisTag->Operand;
-            Location[Index+1] = (UINT8)(MenuOption->ThisTag->StorageWidth + 4);
-            EfiCopyMem(&Location[Index+4], 
-              &VariableDefinition->NvRamMap[MenuOption->ThisTag->StorageStart], 
-              MenuOption->ThisTag->StorageWidth
-              );
-          }
-        }
-        break;
-
-      case CfUiReset:
-        ControlFlag = CfCheckSelection;
-        gLastOpr = FALSE;
-        if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
+        if (EFI_ERROR (Status)) {
+          Selection = NULL;
+          Repaint   = TRUE;
           break;
         }
 
-        //
-        // If NV flag is up, prompt user
-        //
-        if (gNvUpdateRequired) {
-          Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-
-          YesResponse = gYesResponse[0];
-          NoResponse = gNoResponse[0];
-
-          do {
-            CreateDialog (3, TRUE, 0, NULL, &Key, gEmptyString, gAreYouSure, gEmptyString);
-          }while ((Key.ScanCode != SCAN_ESC) &&
-                  ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (NoResponse | UPPER_LOWER_CASE_OFFSET)) &&
-                  ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (YesResponse | UPPER_LOWER_CASE_OFFSET)) );
-
-          //
-          // If the user hits the YesResponse key
-          //
-          if ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) == (YesResponse | UPPER_LOWER_CASE_OFFSET)) {
-          } else {
-            Repaint = TRUE;
-            NewLine = TRUE;
-            break;
-          }
+        if (OptionString != NULL) {
+          PrintStringAt (LocalScreen.LeftColumn + gPromptBlockWidth + 1, MenuOption->Row, OptionString);
         }
 
+        if (MenuOption->ThisTag->Flags & EFI_IFR_FLAG_INTERACTIVE) {
+          Selection = MenuOption;
+        }
+
+        if (Selection == NULL) {
+          break;
+        }
+
+        Location = (UINT8 *) &PageData->EntryCount;
+
         //
-        // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
+        // If not a goto, dump single piece of data, otherwise dump everything
         //
-        if (MenuOption != NULL) {
-          if (!SelectionsAreValid(MenuOption, FileFormTagsHead)) {
+        if (Selection->ThisTag->Operand == EFI_IFR_REF_OP) {
+          //
+          // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
+          //
+          if (!SelectionsAreValid (MenuOption, FileFormTagsHead)) {
             Selection = NULL;
-            Repaint = TRUE;
-            NewLine = TRUE;
+            Repaint   = TRUE;
             break;
           }
+
+          UiAddMenuListEntry (Selection);
+          gPriorMenuEntry = 0;
+
+          //
+          // Now that we added a menu entry specific to a goto, we can always go back when someone hits the UiPrevious
+          //
+          UiMenuList                    = CR (gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
+          UiMenuList->FormerEntryNumber = MenuOption->EntryNumber;
+
+          gLastOpr                      = FALSE;
+
+          //
+          // Rewind to the beginning of the menu
+          //
+          for (; NewPos->BackLink != &Menu; NewPos = NewPos->BackLink)
+            ;
+
+          //
+          // Get Total Count of Menu entries
+          //
+          for (Count = 1; NewPos->ForwardLink != &Menu; NewPos = NewPos->ForwardLink) {
+            Count++;
+          }
+          //
+          // Rewind to the beginning of the menu
+          //
+          for (; NewPos->BackLink != &Menu; NewPos = NewPos->BackLink)
+            ;
+
+          //
+          // Copy the number of entries being described to the PageData location
+          //
+          EfiCopyMem (&Location[0], &Count, sizeof (UINT32));
+
+          for (Index = 4; NewPos->ForwardLink != &Menu; Index = Index + MenuOption->ThisTag->StorageWidth + 2) {
+
+            MenuOption          = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+            Location[Index]     = MenuOption->ThisTag->Operand;
+            Location[Index + 1] = (UINT8) (MenuOption->ThisTag->StorageWidth + 4);
+            EfiCopyMem (
+              &Location[Index + 4],
+              &VariableDefinition->NvRamMap[MenuOption->ThisTag->StorageStart],
+              MenuOption->ThisTag->StorageWidth
+              );
+            NewPos = NewPos->ForwardLink;
+          }
+        } else {
+
+          gPriorMenuEntry = MenuOption->EntryNumber;
+
+          Count           = 1;
+
+          //
+          // Copy the number of entries being described to the PageData location
+          //
+          EfiCopyMem (&Location[0], &Count, sizeof (UINT32));
+
+          //
+          // Start at PageData[4] since the EntryCount is a UINT32
+          //
+          Index = 4;
+
+          //
+          // Copy data to destination
+          //
+          Location[Index]     = MenuOption->ThisTag->Operand;
+          Location[Index + 1] = (UINT8) (MenuOption->ThisTag->StorageWidth + 4);
+          EfiCopyMem (
+            &Location[Index + 4],
+            &VariableDefinition->NvRamMap[MenuOption->ThisTag->StorageStart],
+            MenuOption->ThisTag->StorageWidth
+            );
+        }
+      }
+      break;
+
+    case CfUiReset:
+      ControlFlag = CfCheckSelection;
+      gLastOpr    = FALSE;
+      if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
+        break;
+      }
+      //
+      // If NV flag is up, prompt user
+      //
+      if (gNvUpdateRequired) {
+        Status      = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+
+        YesResponse = gYesResponse[0];
+        NoResponse  = gNoResponse[0];
+
+        do {
+          CreateDialog (3, TRUE, 0, NULL, &Key, gEmptyString, gAreYouSure, gEmptyString);
+        } while
+        (
+          (Key.ScanCode != SCAN_ESC) &&
+          ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (NoResponse | UPPER_LOWER_CASE_OFFSET)) &&
+          ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (YesResponse | UPPER_LOWER_CASE_OFFSET))
+        );
+
+        //
+        // If the user hits the YesResponse key
+        //
+        if ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) == (YesResponse | UPPER_LOWER_CASE_OFFSET)) {
+        } else {
+          Repaint = TRUE;
+          NewLine = TRUE;
+          break;
+        }
+      }
+      //
+      // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
+      //
+      if (MenuOption != NULL) {
+        if (!SelectionsAreValid (MenuOption, FileFormTagsHead)) {
+          Selection = NULL;
+          Repaint   = TRUE;
+          NewLine   = TRUE;
+          break;
+        }
+      }
+
+      gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
+      gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+
+      if (SubMenu) {
+        UiFreeMenuList ();
+        gST->ConOut->ClearScreen (gST->ConOut);
+        return NULL;
+      }
+
+      UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
+      UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, FALSE);
+
+      if (IfrBinary->UnRegisterOnExit) {
+        Hii->RemovePack (Hii, MenuOption->Handle);
+      }
+
+      UiFreeMenu ();
+
+      //
+      // Clean up the allocated data buffers
+      //
+      FreeData (FileFormTagsHead, FormattedString, OptionString);
+
+      gST->ConOut->ClearScreen (gST->ConOut);
+      return NULL;
+
+    case CfUiLeft:
+      ControlFlag = CfCheckSelection;
+      if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
+        if (MenuOption->Skip == 1) {
+          //
+          // In the tail of the Date/Time op-code set, go left.
+          //
+          NewPos = NewPos->BackLink;
+        } else {
+          //
+          // In the middle of the Data/Time op-code set, go left.
+          //
+          NextMenuOption = CR (NewPos->ForwardLink, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          if (NextMenuOption->Skip == 1) {
+            NewPos = NewPos->BackLink;
+          }
+        }
+      }
+      break;
+
+    case CfUiRight:
+      ControlFlag = CfCheckSelection;
+      if ((MenuOption->Skip == 0) &&
+          ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP))
+          ) {
+        //
+        // We are in the head or middle of the Date/Time op-code set, advance right.
+        //
+        NewPos = NewPos->ForwardLink;
+      }
+      break;
+
+    case CfUiUp:
+      ControlFlag = CfCheckSelection;
+
+      if (NewPos->BackLink != &Menu) {
+        NewLine = TRUE;
+        //
+        // Adjust Date/Time position before we advance forward.
+        //
+        AdjustDateAndTimePosition (TRUE, &NewPos);
+
+        //
+        // Caution that we have already rewind to the top, don't go backward in this situation.
+        //
+        if (NewPos->BackLink != &Menu) {
+          NewPos = NewPos->BackLink;
         }
 
-        gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
-        gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+        PreviousMenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+
+        //
+        // Since the behavior of hitting the up arrow on a Date/Time op-code is intended
+        // to be one that back to the previous set of op-codes, we need to advance to the sencond
+        // Date/Time op-code and leave the remaining logic in UiDown intact so the appropriate
+        // checking can be done.
+        //
+        DataAndTimeLineNumberPad = AdjustDateAndTimePosition (TRUE, &NewPos);
 
         if (SubMenu) {
-          UiFreeMenuList();
-          gST->ConOut->ClearScreen (gST->ConOut);
-          return NULL;
+          //
+          // If the previous MenuOption contains a display-only op-code, skip to the next one
+          //
+          if (PreviousMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || PreviousMenuOption->ThisTag->GrayOut) {
+            //
+            // This is ok as long as not at the end of the list
+            //
+            if (NewPos->BackLink == &Menu) {
+              //
+              // If we are at the start of the list, then this list must start with a display only
+              // piece of data, so do not allow the backward motion
+              //
+              ScreenOperation = UiDown;
+
+              if (PreviousMenuOption->Row <= TopRow) {
+                if (TopOfScreen->BackLink != &Menu) {
+                  TopOfScreen = TopOfScreen->BackLink;
+                  Repaint     = TRUE;
+                }
+              }
+
+              UpdateStatusBar (INPUT_ERROR, PreviousMenuOption->ThisTag->Flags, FALSE);
+              break;
+            }
+          }
+        }
+        //
+        // Check the previous menu entry to see if it was a zero-length advance.  If it was,
+        // don't worry about a redraw.
+        //
+        if ((MenuOption->Row - PreviousMenuOption->Skip - DataAndTimeLineNumberPad < TopRow) ||
+            (PreviousMenuOption->Skip > MenuOption->Row)
+            ) {
+          do {
+            if (TopOfScreen->BackLink == &Menu) {
+              break;
+            }
+
+            Repaint = TRUE;
+
+            //
+            // Is the current top of screen a zero-advance op-code?
+            // If so, keep moving forward till we hit a >0 advance op-code
+            //
+            SavedMenuOption = CR (TopOfScreen->BackLink, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+            TopOfScreen     = TopOfScreen->BackLink;
+          } while (SavedMenuOption->Skip == 0);
+          //
+          // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
+          //
+          AdjustDateAndTimePosition (TRUE, &TopOfScreen);
         }
 
         UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
-        UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, FALSE);
+      } else {
+        if (SubMenu) {
+          SavedMenuOption = MenuOption;
+          MenuOption      = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || MenuOption->ThisTag->GrayOut) {
+            //
+            // If we are at the end of the list and sitting on a text op, we need to more forward
+            //
+            ScreenOperation = UiDown;
+            ControlFlag     = CfScreenOperation;
+            break;
+          }
 
-        if (IfrBinary->UnRegisterOnExit) {
-          Hii->RemovePack (Hii, MenuOption->Handle);
+          MenuOption = SavedMenuOption;
+        }
+      }
+      break;
+
+    case CfUiPageUp:
+      ControlFlag     = CfCheckSelection;
+
+      SavedListEntry  = NewPos;
+      Link            = TopOfScreen;
+      for (Index = BottomRow; Index >= TopRow + 1; Index -= MenuOption->Skip) {
+        if (Link->BackLink == &Menu) {
+          TopOfScreen = Link;
+          Link        = SavedListEntry;
+          MenuOption  = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          break;
         }
 
-        UiFreeMenu();
+        NewLine         = TRUE;
+        Repaint         = TRUE;
+        Link            = Link->BackLink;
+        MenuOption      = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+        TopOfScreen     = Link;
+        SavedListEntry  = Link;
+      }
 
-        //
-        // Clean up the allocated data buffers
-        //
-        FreeData (FileFormTagsHead, FormattedString, OptionString);
+      NewPos = Link;
 
-        gST->ConOut->ClearScreen (gST->ConOut);
-        return NULL;
+      //
+      // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
+      // Don't do this when we are already in the first page.
+      //
+      if (Repaint) {
+        AdjustDateAndTimePosition (TRUE, &TopOfScreen);
+        AdjustDateAndTimePosition (TRUE, &NewPos);
+        MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+      }
+      break;
 
-      case CfUiLeft:
-        ControlFlag = CfCheckSelection;
-        if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
-          (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
-          if (MenuOption->Skip == 1) {
-            //
-            // In the tail of the Date/Time op-code set, go left.
-            //
-            NewPos = NewPos->BackLink;
-          } else {
-            //
-            // In the middle of the Data/Time op-code set, go left.
-            //
-            NextMenuOption = CR(NewPos->ForwardLink, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            if (NextMenuOption->Skip == 1) {
-              NewPos = NewPos->BackLink;
-            }
-          }
+    case CfUiPageDown:
+      ControlFlag     = CfCheckSelection;
+
+      SavedListEntry  = NewPos;
+      Link            = TopOfScreen;
+      NewPos          = TopOfScreen;
+      for (Index = TopRow; Index <= BottomRow - 1; Index += MenuOption->Skip) {
+        if (NewPos->ForwardLink == &Menu) {
+          NewPos      = SavedListEntry;
+          MenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          Link        = TopOfScreen;
+          NewLine     = FALSE;
+          Repaint     = FALSE;
+          break;
         }
-        break;
 
-      case CfUiRight:
-        ControlFlag = CfCheckSelection;
-        if ((MenuOption->Skip == 0) &&
-            ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
-             (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP))) {
-          //
-          // We are in the head or middle of the Date/Time op-code set, advance right.
-          //
-          NewPos = NewPos->ForwardLink;
-        }
-        break;
+        NewLine     = TRUE;
+        Repaint     = TRUE;
+        MenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+        NewPos      = NewPos->ForwardLink;
+        Link        = NewPos;
+      }
 
-      case CfUiUp:
-        ControlFlag = CfCheckSelection;
+      TopOfScreen = Link;
 
-        if (NewPos->BackLink != &Menu) {
-          NewLine = TRUE;
-          //
-          // Adjust Date/Time position before we advance forward.
-          //
-          AdjustDateAndTimePosition (TRUE, &NewPos);
+      //
+      // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
+      // Don't do this when we are already in the last page.
+      //
+      if (Repaint) {
+        AdjustDateAndTimePosition (TRUE, &TopOfScreen);
+        AdjustDateAndTimePosition (TRUE, &NewPos);
+        MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+      }
+      break;
 
-          //
-          // Caution that we have already rewind to the top, don't go backward in this situation.
-          //
-          if (NewPos->BackLink != &Menu) {
-            NewPos = NewPos->BackLink;
-          }
+    case CfUiDown:
+      ControlFlag = CfCheckSelection;
+      //
+      // Since the behavior of hitting the down arrow on a Date/Time op-code is intended
+      // to be one that progresses to the next set of op-codes, we need to advance to the last
+      // Date/Time op-code and leave the remaining logic in UiDown intact so the appropriate
+      // checking can be done.  The only other logic we need to introduce is that if a Date/Time
+      // op-code is the last entry in the menu, we need to rewind back to the first op-code of
+      // the Date/Time op-code.
+      //
+      DataAndTimeLineNumberPad = AdjustDateAndTimePosition (FALSE, &NewPos);
 
-          PreviousMenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+      if (NewPos->ForwardLink != &Menu) {
+        NewLine         = TRUE;
+        NewPos          = NewPos->ForwardLink;
+        NextMenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
+        if (SubMenu) {
           //
-          // Since the behavior of hitting the up arrow on a Date/Time op-code is intended
-          // to be one that back to the previous set of op-codes, we need to advance to the sencond
-          // Date/Time op-code and leave the remaining logic in UiDown intact so the appropriate 
-          // checking can be done.
+          // If the next MenuOption contains a display-only op-code, skip to the next one
+          // Also if the next MenuOption is date or time,
+          //
+          if (NextMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || NextMenuOption->ThisTag->GrayOut) {
             //
-          DataAndTimeLineNumberPad = AdjustDateAndTimePosition (TRUE, &NewPos);
-
-          if (SubMenu) {
+            // This is ok as long as not at the end of the list
             //
-            // If the previous MenuOption contains a display-only op-code, skip to the next one
-            //
-            if (PreviousMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP ||
-                PreviousMenuOption->ThisTag->GrayOut) {
+            if (NewPos == &Menu) {
               //
-              // This is ok as long as not at the end of the list
+              // If we are at the end of the list, then this list must end with a display only
+              // piece of data, so do not allow the forward motion
               //
-              if (NewPos->BackLink == &Menu) {
-                //
-                // If we are at the start of the list, then this list must start with a display only
-                // piece of data, so do not allow the backward motion
-                //
-                ScreenOperation = UiDown;
-
-                if (PreviousMenuOption->Row <= TopRow) {
-                  if (TopOfScreen->BackLink != &Menu) {
-                    TopOfScreen = TopOfScreen->BackLink;
-                    Repaint = TRUE;
-                  } 
-                }
-
-                UpdateStatusBar (INPUT_ERROR, PreviousMenuOption->ThisTag->Flags, FALSE);
-                break;
-              }
-            }
-          }
-          
-          //
-          // Check the previous menu entry to see if it was a zero-length advance.  If it was,
-          // don't worry about a redraw. 
-          //
-          if ((MenuOption->Row - PreviousMenuOption->Skip - DataAndTimeLineNumberPad < TopRow) ||
-              (PreviousMenuOption->Skip > MenuOption->Row)) {
-            do {
-              if (TopOfScreen->BackLink == &Menu) {
-                break;
-              }
-
-              Repaint = TRUE;
-
-              //
-              // Is the current top of screen a zero-advance op-code?  
-              // If so, keep moving forward till we hit a >0 advance op-code
-              //
-              SavedMenuOption = CR(TopOfScreen->BackLink, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-              TopOfScreen = TopOfScreen->BackLink;
-            } while (SavedMenuOption->Skip == 0);
-            //
-            // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
-            //
-            AdjustDateAndTimePosition (TRUE, &TopOfScreen);
-          }
-
-          UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
-        } else {
-          if (SubMenu) {
-            SavedMenuOption = MenuOption;
-            MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP ||
-                MenuOption->ThisTag->GrayOut) {
-              //
-              // If we are at the end of the list and sitting on a text op, we need to more forward
-              //
-              ScreenOperation = UiDown;
-              ControlFlag = CfScreenOperation;
+              UpdateStatusBar (INPUT_ERROR, NextMenuOption->ThisTag->Flags, FALSE);
+              NewPos          = NewPos->BackLink;
+              ScreenOperation = UiUp;
               break;
             }
-            MenuOption = SavedMenuOption;
           }
         }
-        break;
+        //
+        // An option might be multi-line, so we need to reflect that data in the overall skip value
+        //
+        UpdateOptionSkipLines (PageData, NextMenuOption, FileFormTagsHead, &OptionString, SkipValue);
 
-      case CfUiPageUp:
-        ControlFlag = CfCheckSelection;
-
-        SavedListEntry = NewPos;
-        Link = TopOfScreen;
-        for ( Index = BottomRow; Index >= TopRow + 1; Index -= MenuOption->Skip ) {
-          if ( Link->BackLink == &Menu ) {
-            TopOfScreen = Link;            
-            Link = SavedListEntry;
-            MenuOption = CR(Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            break;
-          }
-          NewLine = TRUE;
-          Repaint = TRUE;
-          Link = Link->BackLink;
-          MenuOption = CR(Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-          TopOfScreen = Link;
-          SavedListEntry = Link;
+        if (NextMenuOption->Skip > 1) {
+          Temp = MenuOption->Row + MenuOption->Skip + NextMenuOption->Skip - 1;
+        } else {
+          Temp = MenuOption->Row + MenuOption->Skip + DataAndTimeLineNumberPad;
         }
-
-        NewPos = Link;
-
         //
-        // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
-        // Don't do this when we are already in the first page.
+        // If we are going to scroll
         //
-        if (Repaint) {
-          AdjustDateAndTimePosition (TRUE, &TopOfScreen);
-          AdjustDateAndTimePosition (TRUE, &NewPos);
-          MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-        }
-        break;
-
-      case CfUiPageDown:
-        ControlFlag = CfCheckSelection;
-
-        SavedListEntry = NewPos;
-        Link = TopOfScreen;
-        NewPos = TopOfScreen;
-        for ( Index = TopRow; Index <= BottomRow - 1; Index += MenuOption->Skip ) {
-          if ( NewPos->ForwardLink == &Menu ) {
-            NewPos = SavedListEntry;
-            MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            Link = TopOfScreen;
-            NewLine = FALSE;
-            Repaint = FALSE;
-            break;
-          }
-          NewLine = TRUE;
-          Repaint = TRUE;
-          MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-          NewPos = NewPos->ForwardLink;
-        Link = NewPos;
-        }
-        
-        TopOfScreen = Link;
-
-        //
-        // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
-        // Don't do this when we are already in the last page.
-        //
-        if (Repaint) {
-          AdjustDateAndTimePosition (TRUE, &TopOfScreen);
-          AdjustDateAndTimePosition (TRUE, &NewPos);
-          MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-        }
-        break;
-
-      case CfUiDown:
-        ControlFlag = CfCheckSelection;
-        //
-        // Since the behavior of hitting the down arrow on a Date/Time op-code is intended
-        // to be one that progresses to the next set of op-codes, we need to advance to the last
-        // Date/Time op-code and leave the remaining logic in UiDown intact so the appropriate 
-        // checking can be done.  The only other logic we need to introduce is that if a Date/Time
-        // op-code is the last entry in the menu, we need to rewind back to the first op-code of
-        // the Date/Time op-code.
-        //
-        DataAndTimeLineNumberPad = AdjustDateAndTimePosition (FALSE, &NewPos);
-
-        if (NewPos->ForwardLink != &Menu) {
-          NewLine = TRUE;
-          NewPos = NewPos->ForwardLink;
-          NextMenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-          
-          if (SubMenu) {
+        if (Temp > BottomRow) {
+          do {
             //
-            // If the next MenuOption contains a display-only op-code, skip to the next one
-            // Also if the next MenuOption is date or time, 
+            // Is the current top of screen a zero-advance op-code?
+            // If so, keep moving forward till we hit a >0 advance op-code
             //
-            if (NextMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP ||
-                NextMenuOption->ThisTag->GrayOut) {
+            SavedMenuOption = CR (TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+
+            //
+            // If bottom op-code is more than one line or top op-code is more than one line
+            //
+            if ((NextMenuOption->Skip > 1) || (MenuOption->Skip > 1)) {
               //
-              // This is ok as long as not at the end of the list
+              // Is the bottom op-code greater than or equal in size to the top op-code?
               //
-              if (NewPos == &Menu) {
+              if ((Temp - BottomRow) >= (SavedMenuOption->Skip - OldSkipValue)) {
                 //
-                // If we are at the end of the list, then this list must end with a display only
-                // piece of data, so do not allow the forward motion
+                // Skip the top op-code
                 //
-                UpdateStatusBar (INPUT_ERROR, NextMenuOption->ThisTag->Flags, FALSE);
-                NewPos = NewPos->BackLink;
-                ScreenOperation = UiUp;
-                break;
-              }
-            }
-          }
+                TopOfScreen     = TopOfScreen->ForwardLink;
+                Difference      = (Temp - BottomRow) - (SavedMenuOption->Skip - OldSkipValue);
 
-          //
-          // An option might be multi-line, so we need to reflect that data in the overall skip value
-          //
-          UpdateOptionSkipLines (PageData, NextMenuOption, FileFormTagsHead, &OptionString, SkipValue);
+                OldSkipValue    = Difference;
 
-          if (NextMenuOption->Skip > 1) {
-            Temp = MenuOption->Row + MenuOption->Skip + NextMenuOption->Skip - 1;
-          } else {
-            Temp = MenuOption->Row + MenuOption->Skip + DataAndTimeLineNumberPad;
-          }
+                SavedMenuOption = CR (TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
-          //
-          // If we are going to scroll
-          //
-          if (Temp > BottomRow) {
-            do {
-              //
-              // Is the current top of screen a zero-advance op-code?  
-              // If so, keep moving forward till we hit a >0 advance op-code
-              //
-              SavedMenuOption = CR(TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-
-              //
-              // If bottom op-code is more than one line or top op-code is more than one line
-              //
-              if ((NextMenuOption->Skip > 1) || (MenuOption->Skip > 1)) {
                 //
-                // Is the bottom op-code greater than or equal in size to the top op-code?
+                // If we have a remainder, skip that many more op-codes until we drain the remainder
                 //
-                if ((Temp - BottomRow) >= (SavedMenuOption->Skip-OldSkipValue)) {
+                for (;
+                     Difference >= (INTN) SavedMenuOption->Skip;
+                     Difference = Difference - (INTN) SavedMenuOption->Skip
+                    ) {
                   //
-                  // Skip the top op-code
+                  // Since the Difference is greater than or equal to this op-code's skip value, skip it
                   //
-                  TopOfScreen = TopOfScreen->ForwardLink;
-                  Difference = (Temp - BottomRow) - (SavedMenuOption->Skip - OldSkipValue );
-                          
-                  OldSkipValue = Difference;
-
-                  SavedMenuOption = CR(TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-
-                  //
-                  // If we have a remainder, skip that many more op-codes until we drain the remainder
-                  //
-                  for (;Difference >= (INTN)SavedMenuOption->Skip;Difference = Difference - (INTN)SavedMenuOption->Skip) {
-                    //
-                    // Since the Difference is greater than or equal to this op-code's skip value, skip it
-                    //
-                    TopOfScreen = TopOfScreen->ForwardLink;
-                    SavedMenuOption = CR(TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-                    if (Difference < (INTN)SavedMenuOption->Skip) {
-                      Difference = SavedMenuOption->Skip - Difference - 1;
+                  TopOfScreen     = TopOfScreen->ForwardLink;
+                  SavedMenuOption = CR (TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+                  if (Difference < (INTN) SavedMenuOption->Skip) {
+                    Difference = SavedMenuOption->Skip - Difference - 1;
+                    break;
+                  } else {
+                    if (Difference == (INTN) SavedMenuOption->Skip) {
+                      TopOfScreen     = TopOfScreen->ForwardLink;
+                      SavedMenuOption = CR (TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+                      Difference      = SavedMenuOption->Skip - Difference;
                       break;
-                    } else {
-                      if ( Difference == (INTN)SavedMenuOption->Skip ) {
-                        TopOfScreen = TopOfScreen->ForwardLink;
-                        SavedMenuOption = CR(TopOfScreen, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-                        Difference = SavedMenuOption->Skip - Difference;
-                        break;
-                      }
                     }
                   }
-
-                  //
-                  // Since we will act on this op-code in the next routine, and increment the 
-                  // SkipValue, set the skips to one less than what is required.
-                  //
-                  SkipValue = Difference - 1;
-                  
-
-                } else {
-                  //
-                  // Since we will act on this op-code in the next routine, and increment the 
-                  // SkipValue, set the skips to one less than what is required.
-                  //
-                  SkipValue = OldSkipValue + (Temp - BottomRow) - 1;
                 }
+                //
+                // Since we will act on this op-code in the next routine, and increment the
+                // SkipValue, set the skips to one less than what is required.
+                //
+                SkipValue = Difference - 1;
+
               } else {
-                if ((OldSkipValue + 1) == (INTN)SavedMenuOption->Skip) {
-                  TopOfScreen = TopOfScreen->ForwardLink;
-                  break;
-                } else {
-                  SkipValue = OldSkipValue;
-                }
+                //
+                // Since we will act on this op-code in the next routine, and increment the
+                // SkipValue, set the skips to one less than what is required.
+                //
+                SkipValue = OldSkipValue + (Temp - BottomRow) - 1;
               }
-              
-              //
-              // If the op-code at the top of the screen is more than one line, let's not skip it yet
-              // Let's set a skip flag to smoothly scroll the top of the screen.
-              //
-              if (SavedMenuOption->Skip > 1) {
-                if (SavedMenuOption == NextMenuOption)
-                {
-                  SkipValue = 0;
-                } else {
-                  SkipValue++;
-                }
-              } else {
-                SkipValue = 0;
+            } else {
+              if ((OldSkipValue + 1) == (INTN) SavedMenuOption->Skip) {
                 TopOfScreen = TopOfScreen->ForwardLink;
+                break;
+              } else {
+                SkipValue = OldSkipValue;
               }
-            } while (SavedMenuOption->Skip == 0);
-
-            Repaint = TRUE;
-            OldSkipValue = SkipValue;
-          }
-
-          UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
-
-        } else {
-          if (SubMenu) {
-            SavedMenuOption = MenuOption;
-            MenuOption = CR(NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP ||
-                MenuOption->ThisTag->GrayOut) {
-              //
-              // If we are at the end of the list and sitting on a text op, we need to more forward
-              //
-              ScreenOperation = UiUp;
-              ControlFlag = CfScreenOperation;
-              break;
             }
-            MenuOption = SavedMenuOption;
             //
-            // If we are at the end of the list and sitting on a Date/Time op, rewind to the head.
+            // If the op-code at the top of the screen is more than one line, let's not skip it yet
+            // Let's set a skip flag to smoothly scroll the top of the screen.
             //
-            AdjustDateAndTimePosition (TRUE, &NewPos);
-          }
-        }
-        break;
+            if (SavedMenuOption->Skip > 1) {
+              if (SavedMenuOption == NextMenuOption) {
+                SkipValue = 0;
+              } else {
+                SkipValue++;
+              }
+            } else {
+              SkipValue   = 0;
+              TopOfScreen = TopOfScreen->ForwardLink;
+            }
+          } while (SavedMenuOption->Skip == 0);
 
-      case CfUiSave:
-        ControlFlag = CfCheckSelection;
-        //
-        // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
-        //
-        if (MenuOption != NULL) {
-          if (!SelectionsAreValid(MenuOption, FileFormTagsHead)) {
-            Selection = NULL;
-            Repaint = TRUE;
+          Repaint       = TRUE;
+          OldSkipValue  = SkipValue;
+        }
+
+        UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
+
+      } else {
+        if (SubMenu) {
+          SavedMenuOption = MenuOption;
+          MenuOption      = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || MenuOption->ThisTag->GrayOut) {
+            //
+            // If we are at the end of the list and sitting on a text op, we need to more forward
+            //
+            ScreenOperation = UiUp;
+            ControlFlag     = CfScreenOperation;
             break;
           }
-        }
 
-        //
-        // If callbacks are active, and the callback has a Write method, try to use it
-        //
-        if (FileFormTags->VariableDefinitions->VariableName == NULL) {
+          MenuOption = SavedMenuOption;
+          //
+          // If we are at the end of the list and sitting on a Date/Time op, rewind to the head.
+          //
+          AdjustDateAndTimePosition (TRUE, &NewPos);
+        }
+      }
+      break;
+
+    case CfUiSave:
+      ControlFlag = CfCheckSelection;
+      //
+      // Check for tags that might have LATE_CHECK enabled.  If they do, we can't switch pages or save NV data.
+      //
+      if (MenuOption != NULL) {
+        if (!SelectionsAreValid (MenuOption, FileFormTagsHead)) {
+          Selection = NULL;
+          Repaint   = TRUE;
+          break;
+        }
+      }
+      //
+      // If callbacks are active, and the callback has a Write method, try to use it
+      //
+      if (FileFormTags->VariableDefinitions->VariableName == NULL) {
+        if ((FormCallback != NULL) && (FormCallback->NvWrite != NULL)) {
+          Status = FormCallback->NvWrite (
+                                  FormCallback,
+                                  L"Setup",
+                                  &FileFormTags->FormTags.Tags[0].GuidValue,
+                                  EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                                  VariableDefinition->VariableSize,
+                                  (VOID *) VariableDefinition->NvRamMap,
+                                  &gResetRequired
+                                  );
+
+        } else {
+          Status = gRT->SetVariable (
+                          L"Setup",
+                          &FileFormTags->FormTags.Tags[0].GuidValue,
+                          EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                          VariableDefinition->VariableSize,
+                          (VOID *) VariableDefinition->NvRamMap
+                          );
+        }
+      } else {
+        VariableDefinition = FileFormTags->VariableDefinitions;
+
+        for (; VariableDefinition != NULL; VariableDefinition = VariableDefinition->Next) {
           if ((FormCallback != NULL) && (FormCallback->NvWrite != NULL)) {
             Status = FormCallback->NvWrite (
                                     FormCallback,
-                                    L"Setup",
-                                    &FileFormTags->FormTags.Tags[0].GuidValue,
+                                    VariableDefinition->VariableName,
+                                    &VariableDefinition->Guid,
                                     EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
                                     VariableDefinition->VariableSize,
-                                    (VOID *)VariableDefinition->NvRamMap,
+                                    (VOID *) VariableDefinition->NvRamMap,
                                     &gResetRequired
                                     );
 
           } else {
             Status = gRT->SetVariable (
-                            L"Setup",
-                            &FileFormTags->FormTags.Tags[0].GuidValue,
+                            VariableDefinition->VariableName,
+                            &VariableDefinition->Guid,
                             EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
                             VariableDefinition->VariableSize,
-                            (VOID *)VariableDefinition->NvRamMap
+                            (VOID *) VariableDefinition->NvRamMap
                             );
           }
-        } else {
-          VariableDefinition = FileFormTags->VariableDefinitions;
-
-          for ( ;VariableDefinition != NULL; VariableDefinition = VariableDefinition->Next) {
-            if ((FormCallback != NULL) && (FormCallback->NvWrite != NULL)) {
-              Status = FormCallback->NvWrite (
-                                      FormCallback,
-                                      VariableDefinition->VariableName,
-                                      &VariableDefinition->Guid,
-                                      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                                      VariableDefinition->VariableSize,
-                                      (VOID *)VariableDefinition->NvRamMap,
-                                      &gResetRequired
-                                      );
-
-            } else {
-              Status = gRT->SetVariable (
-                              VariableDefinition->VariableName,
-                              &VariableDefinition->Guid,
-                              EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                              VariableDefinition->VariableSize,
-                              (VOID *)VariableDefinition->NvRamMap
-                              );
-            }
-          }
         }
-        UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
-        UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, FALSE);
-        break;
+      }
 
-      case CfUiDefault:
-        ControlFlag = CfCheckSelection;
-        Hii->GetDefaultImage(Hii, MenuOption->Handle, EFI_IFR_FLAG_DEFAULT, (UINT16 *)&FileFormTags->VariableDefinitions->VariableSize, FileFormTags->VariableDefinitions->NvRamMap);
-        UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, TRUE);
-        Repaint = TRUE;
-        //
-        // After the repaint operation, we should refresh the highlight.
-        //
-        NewLine = TRUE;
-        break;
+      UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
+      UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, FALSE);
+      break;
 
-      case CfUiNoOperation:
-        ControlFlag = CfCheckSelection;
-        break;
+    case CfUiDefault:
+      ControlFlag = CfCheckSelection;
+      Hii->GetDefaultImage (
+            Hii,
+            MenuOption->Handle,
+            EFI_IFR_FLAG_DEFAULT,
+            (UINT16 *) &FileFormTags->VariableDefinitions->VariableSize,
+            FileFormTags->VariableDefinitions->NvRamMap
+            );
+      UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, TRUE);
+      Repaint = TRUE;
+      //
+      // After the repaint operation, we should refresh the highlight.
+      //
+      NewLine = TRUE;
+      break;
 
-      case CfExit:
-        while (gMenuRefreshHead != NULL) {
-          OldMenuRefreshEntry = gMenuRefreshHead->Next;
+    case CfUiNoOperation:
+      ControlFlag = CfCheckSelection;
+      break;
 
-          gBS->FreePool (gMenuRefreshHead);
+    case CfExit:
+      while (gMenuRefreshHead != NULL) {
+        OldMenuRefreshEntry = gMenuRefreshHead->Next;
 
-          gMenuRefreshHead = OldMenuRefreshEntry;
-        }
+        gBS->FreePool (gMenuRefreshHead);
 
-        gST->ConOut->SetCursorPosition (gST->ConOut, 0, Row + 4);
-        gST->ConOut->EnableCursor (gST->ConOut, TRUE);
-        gST->ConOut->OutputString (gST->ConOut, L"\n");
+        gMenuRefreshHead = OldMenuRefreshEntry;
+      }
 
-        gActiveIfr = MenuOption->IfrNumber;
-        return Selection;
+      gST->ConOut->SetCursorPosition (gST->ConOut, 0, Row + 4);
+      gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+      gST->ConOut->OutputString (gST->ConOut, L"\n");
 
-      default:
-        break;
+      gActiveIfr = MenuOption->IfrNumber;
+      return Selection;
+
+    default:
+      break;
     }
   }
 }
@@ -2948,7 +3027,7 @@ BOOLEAN
 ValueIsScroll (
   IN  BOOLEAN                     Direction,
   IN  EFI_LIST_ENTRY              *CurrentPos
- )
+  )
 /*++
 
 Routine Description:
@@ -2962,23 +3041,23 @@ Returns:
   TRUE  -- the menu is the last menu that can be selected.
 --*/
 {
-  EFI_LIST_ENTRY    *Temp;
-  UI_MENU_OPTION    *MenuOption;
-  MenuOption = NULL;
-  
-  Temp = Direction?CurrentPos->BackLink:CurrentPos->ForwardLink;
-  
+  EFI_LIST_ENTRY  *Temp;
+  UI_MENU_OPTION  *MenuOption;
+  MenuOption  = NULL;
+
+  Temp        = Direction ? CurrentPos->BackLink : CurrentPos->ForwardLink;
+
   if (Temp == &Menu) {
     return TRUE;
   }
 
-  for (; Temp != &Menu; Temp = Direction?Temp->BackLink:Temp->ForwardLink) {
+  for (; Temp != &Menu; Temp = Direction ? Temp->BackLink : Temp->ForwardLink) {
     MenuOption = CR (Temp, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-    if ( !(MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP ||
-      MenuOption->ThisTag->GrayOut)) {
+    if (!(MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || MenuOption->ThisTag->GrayOut)) {
       return FALSE;
     }
   }
+
   return TRUE;
 }
 
@@ -2986,7 +3065,7 @@ UINTN
 AdjustDateAndTimePosition (
   IN  BOOLEAN                     DirectionUp,
   IN  EFI_LIST_ENTRY              **CurrentPosition
- )
+  )
 /*++
 Routine Description:
   Adjust Data and Time tag position accordingly.
@@ -3002,35 +3081,34 @@ Returns:
   data or time opcode, so pad one line when we judge if we are going to scroll outside.
 --*/
 {
-  UINTN                       Count;
-  EFI_LIST_ENTRY              *NewPosition;
-  UI_MENU_OPTION              *MenuOption;
-  UINTN                       PadLineNumber;
+  UINTN           Count;
+  EFI_LIST_ENTRY  *NewPosition;
+  UI_MENU_OPTION  *MenuOption;
+  UINTN           PadLineNumber;
 
   PadLineNumber = 0;
-  NewPosition = *CurrentPosition;
-  MenuOption = CR(NewPosition, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+  NewPosition   = *CurrentPosition;
+  MenuOption    = CR (NewPosition, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
-  if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
-      (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
+  if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
     //
     // Calculate the distance from current position to the last Date/Time op-code.
     //
     Count = 0;
     while (MenuOption->ThisTag->NumberOfLines == 0) {
       Count++;
-      NewPosition = NewPosition->ForwardLink;
-      MenuOption = CR(NewPosition, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+      NewPosition   = NewPosition->ForwardLink;
+      MenuOption    = CR (NewPosition, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
       PadLineNumber = 1;
     }
-    
+
     NewPosition = *CurrentPosition;
     if (DirectionUp) {
       //
       // Since the behavior of hitting the up arrow on a Date/Time op-code is intended
       // to be one that back to the previous set of op-codes, we need to advance to the first
-      // Date/Time op-code and leave the remaining logic in CfUiUp intact so the appropriate 
-      // checking can be done. 
+      // Date/Time op-code and leave the remaining logic in CfUiUp intact so the appropriate
+      // checking can be done.
       //
       while (Count++ < 2) {
         NewPosition = NewPosition->BackLink;
@@ -3039,15 +3117,16 @@ Returns:
       //
       // Since the behavior of hitting the down arrow on a Date/Time op-code is intended
       // to be one that progresses to the next set of op-codes, we need to advance to the last
-      // Date/Time op-code and leave the remaining logic in CfUiDown intact so the appropriate 
+      // Date/Time op-code and leave the remaining logic in CfUiDown intact so the appropriate
       // checking can be done.
       //
       while (Count-- > 0) {
         NewPosition = NewPosition->ForwardLink;
       }
     }
+
     *CurrentPosition = NewPosition;
   }
-  
+
   return PadLineNumber;
 }

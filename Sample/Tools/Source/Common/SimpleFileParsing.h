@@ -18,75 +18,101 @@ Abstract:
   Function prototypes and defines for the simple file parsing routines.
 
 --*/
+
 #ifndef _SIMPLE_FILE_PARSING_H_
 #define _SIMPLE_FILE_PARSING_H_
 
-#define T_CHAR      char
+#define T_CHAR  char
 
 STATUS
-SFPInit ();
+SFPInit (
+  VOID
+  )
+;
 
 STATUS
 SFPOpenFile (
   char    *FileName
-  );
+  )
+;
 
 BOOLEAN
 SFPIsKeyword (
   T_CHAR *Str
-  );
+  )
+;
 
 BOOLEAN
 SFPIsToken (
   T_CHAR *Str
-  );
+  )
+;
 
 BOOLEAN
 SFPGetNextToken (
   T_CHAR        *Str,
   unsigned int  Len
-  );
+  )
+;
 
 BOOLEAN
 SFPGetGuidToken (
   T_CHAR *Str,
   UINT32 Len
-  );
+  )
+;
 
-#define PARSE_GUID_STYLE_5_FIELDS  0
+#define PARSE_GUID_STYLE_5_FIELDS 0
 
 BOOLEAN
 SFPGetGuid (
   int         GuidStyle,
   EFI_GUID    *Value
-  );
+  )
+;
 
 BOOLEAN
 SFPSkipToToken (
   T_CHAR *Str
-  );
+  )
+;
 
 BOOLEAN
 SFPGetNumber (
   unsigned int   *Value
-  );
+  )
+;
 
 BOOLEAN
 SFPGetQuotedString (
   T_CHAR      *Str,
   int         Length
-  );
+  )
+;
 
 BOOLEAN
-SFPIsEOF ();
+SFPIsEOF (
+  VOID
+  )
+;
 
 STATUS
-SFPCloseFile();
+SFPCloseFile (
+  VOID
+  )
+;
 
-unsigned int
-SFPGetLineNumber ();
+unsigned
+int
+SFPGetLineNumber (
+  VOID
+  )
+;
 
-T_CHAR *
-SFPGetFileName ();
+T_CHAR  *
+SFPGetFileName (
+  VOID
+  )
+;
 
 #endif // #ifndef _SIMPLE_FILE_PARSING_H_

@@ -22,11 +22,7 @@ Abstract:
 #ifndef _TIANO_SPEC_ERROR_H_
 #define _TIANO_SPEC_ERROR_H_
 
-
-
-#define EFI_NOT_AVAILABLE_YET           EFIERR(28)
-#define EFI_UNLOAD_IMAGE                EFIERR(29)
-
-
+#define EFI_NOT_AVAILABLE_YET EFIERR (28)
+#define EFI_UNLOAD_IMAGE      EFIERR (29)
 
 #endif

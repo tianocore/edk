@@ -23,23 +23,20 @@ Abstract:
 // Include files
 //
 #include "FvLib.h"
-//#include <stdio.h>
 #include "CommonLib.h"
 #include "EfiUtilityMsgs.h"
 
-#include EFI_GUID_DEFINITION(FirmwareFileSystem)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 
 //
 // Module global variables
 //
-
-EFI_FIRMWARE_VOLUME_HEADER  *mFvHeader = NULL;
-UINT32                      mFvLength = 0;
+EFI_FIRMWARE_VOLUME_HEADER  *mFvHeader  = NULL;
+UINT32                      mFvLength   = 0;
 
 //
 // External function implementations
 //
-
 EFI_STATUS
 InitializeFvLib (
   IN VOID                         *Fv,
@@ -71,9 +68,9 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  mFvHeader = (EFI_FIRMWARE_VOLUME_HEADER*) Fv;
+  mFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) Fv;
   mFvLength = FvLength;
-  
+
   return EFI_SUCCESS;
 }
 
@@ -107,7 +104,6 @@ Returns:
   if (mFvHeader == NULL || mFvLength == 0) {
     return EFI_ABORTED;
   }
-
   //
   // Verify input arguments
   //
@@ -153,40 +149,36 @@ Returns:
   if (mFvHeader == NULL || mFvLength == 0) {
     return EFI_ABORTED;
   }
-
   //
   // Verify input arguments
   //
   if (NextFile == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Verify FV header
   //
   Status = VerifyFv (mFvHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
-  
   //
   // Get first file
   //
   if (CurrentFile == NULL) {
-    CurrentFile = (EFI_FFS_FILE_HEADER*) ((UINTN) mFvHeader + mFvHeader->HeaderLength);
+    CurrentFile = (EFI_FFS_FILE_HEADER *) ((UINTN) mFvHeader + mFvHeader->HeaderLength);
 
     //
     // Verify file is valid
     //
     Status = VerifyFfsFile (CurrentFile);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       //
       // no files in this FV
       //
       *NextFile = NULL;
       return EFI_SUCCESS;
     } else {
-
       //
       // Verify file is in this FV.
       //
@@ -199,22 +191,18 @@ Returns:
       return EFI_SUCCESS;
     }
   }
-  
   //
   // Verify current file is in range
   //
   if (((UINTN) CurrentFile < (UINTN) mFvHeader + sizeof (EFI_FIRMWARE_VOLUME_HEADER)) ||
       ((UINTN) CurrentFile >= (UINTN) mFvHeader + mFvLength - sizeof (EFI_FIRMWARE_VOLUME_HEADER))
-     )
-  {
+      ) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Get next file, compensate for 8 byte alignment if necessary.
   //
-
-  *NextFile = (EFI_FFS_FILE_HEADER*) (((UINTN) CurrentFile + GetLength (CurrentFile->Size) + 0x07) & (-1 << 3));
+  *NextFile = (EFI_FFS_FILE_HEADER *) (((UINTN) CurrentFile + GetLength (CurrentFile->Size) + 0x07) & (-1 << 3));
 
   //
   // Verify file is in this FV.
@@ -223,12 +211,11 @@ Returns:
     *NextFile = NULL;
     return EFI_SUCCESS;
   }
-
   //
   // Verify file is valid
   //
   Status = VerifyFfsFile (*NextFile);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     //
     // no more files in this FV
     //
@@ -263,8 +250,8 @@ Returns:
 
 --*/
 {
-  EFI_FFS_FILE_HEADER         *CurrentFile;
-  EFI_STATUS                  Status;
+  EFI_FFS_FILE_HEADER *CurrentFile;
+  EFI_STATUS          Status;
 
   //
   // Verify library has been initialized.
@@ -272,27 +259,24 @@ Returns:
   if (mFvHeader == NULL || mFvLength == 0) {
     return EFI_ABORTED;
   }
-
   //
   // Verify input parameters
   //
   if (FileName == NULL || File == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Verify FV header
   //
   Status = VerifyFv (mFvHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
-
   //
   // Get the first file
   //
   Status = GetNextFile (NULL, &CurrentFile);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     Error (NULL, 0, 0, "error parsing the FV", NULL);
     return EFI_ABORTED;
   }
@@ -304,13 +288,13 @@ Returns:
       *File = CurrentFile;
       return EFI_SUCCESS;
     }
+
     Status = GetNextFile (CurrentFile, &CurrentFile);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       Error (NULL, 0, 0, "error parsing the FV", NULL);
       return EFI_ABORTED;
     }
   }
-  
   //
   // File not found in this FV.
   //
@@ -346,9 +330,9 @@ Returns:
 
 --*/
 {
-  EFI_FFS_FILE_HEADER         *CurrentFile;
-  EFI_STATUS                  Status;
-  UINTN                       FileCount;
+  EFI_FFS_FILE_HEADER *CurrentFile;
+  EFI_STATUS          Status;
+  UINTN               FileCount;
 
   //
   // Verify library has been initialized.
@@ -356,22 +340,19 @@ Returns:
   if (mFvHeader == NULL || mFvLength == 0) {
     return EFI_ABORTED;
   }
-
   //
   // Verify input parameters
   //
   if (File == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Verify FV header
   //
   Status = VerifyFv (mFvHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
-
   //
   // Initialize the number of matching files found.
   //
@@ -381,11 +362,10 @@ Returns:
   // Get the first file
   //
   Status = GetNextFile (NULL, &CurrentFile);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     Error (NULL, 0, 0, "error parsing FV", NULL);
     return EFI_ABORTED;
   }
-
   //
   // Loop as long as we have a valid file
   //
@@ -393,14 +373,14 @@ Returns:
     if (FileType == EFI_FV_FILETYPE_ALL || CurrentFile->Type == FileType) {
       FileCount++;
     }
-    
+
     if (FileCount == Instance) {
       *File = CurrentFile;
       return EFI_SUCCESS;
     }
-    
+
     Status = GetNextFile (CurrentFile, &CurrentFile);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       Error (NULL, 0, 0, "error parsing the FV", NULL);
       return EFI_ABORTED;
     }
@@ -437,29 +417,27 @@ Returns:
   EFI_SUCCESS             The function completed successfully.
   EFI_ABORTED             An error was encountered.
   EFI_INVALID_PARAMETER   One of the parameters was NULL.
-
+  EFI_NOT_FOUND           No found.
 --*/
 {
-  EFI_FILE_SECTION_POINTER    CurrentSection;
-  EFI_STATUS                  Status;
-  UINTN                       SectionCount;
-  
+  EFI_FILE_SECTION_POINTER  CurrentSection;
+  EFI_STATUS                Status;
+  UINTN                     SectionCount;
+
   //
   // Verify input parameters
   //
   if (File == NULL || Instance == 0) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Verify FFS header
   //
   Status = VerifyFfsFile (File);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     Error (NULL, 0, 0, "invalid FFS file", NULL);
     return EFI_ABORTED;
   }
-
   //
   // Initialize the number of matching sections found.
   //
@@ -468,7 +446,7 @@ Returns:
   //
   // Get the first section
   //
-  CurrentSection.CommonHeader = (EFI_COMMON_SECTION_HEADER*) ((UINTN) File + sizeof (EFI_FFS_FILE_HEADER));
+  CurrentSection.CommonHeader = (EFI_COMMON_SECTION_HEADER *) ((UINTN) File + sizeof (EFI_FFS_FILE_HEADER));
 
   //
   // Loop as long as we have a valid file
@@ -482,22 +460,20 @@ Returns:
       *Section = CurrentSection;
       return EFI_SUCCESS;
     }
-
     //
     // Find next section (including compensating for alignment issues.
     //
-    CurrentSection.CommonHeader = (EFI_COMMON_SECTION_HEADER*) ((((UINTN) CurrentSection.CommonHeader) + GetLength (CurrentSection.CommonHeader->Size) + 0x03) & (-1 << 2));
+    CurrentSection.CommonHeader = (EFI_COMMON_SECTION_HEADER *) ((((UINTN) CurrentSection.CommonHeader) + GetLength (CurrentSection.CommonHeader->Size) + 0x03) & (-1 << 2));
   }
-
   //
   // Section not found
   //
   (*Section).Code16Section = NULL;
   return EFI_NOT_FOUND;
 }
-
+//
 // will not parse compressed sections
-
+//
 EFI_STATUS
 VerifyFv (
   IN EFI_FIRMWARE_VOLUME_HEADER   *FvHeader
@@ -517,10 +493,11 @@ Returns:
   EFI_SUCCESS             The FV header is valid.
   EFI_VOLUME_CORRUPTED    The FV header is not valid.
   EFI_INVALID_PARAMETER   A required parameter was NULL.
+  EFI_ABORTED             Operation aborted.
 
 --*/
 {
-  UINT16                Checksum;
+  UINT16  Checksum;
 
   //
   // Verify input parameters
@@ -533,11 +510,10 @@ Returns:
     Error (NULL, 0, 0, "invalid FV header signature", NULL);
     return EFI_VOLUME_CORRUPTED;
   }
-
   //
   // Verify header checksum
   //
-  Checksum = CalculateSum16 ((UINT16*) FvHeader, FvHeader->HeaderLength / sizeof (UINT16));
+  Checksum = CalculateSum16 ((UINT16 *) FvHeader, FvHeader->HeaderLength / sizeof (UINT16));
 
   if (Checksum != 0) {
     Error (NULL, 0, 0, "invalid FV header checksum", NULL);
@@ -570,17 +546,17 @@ Returns:
 
 --*/
 {
-  BOOLEAN               ErasePolarity;
-  EFI_STATUS            Status;
-  EFI_FFS_FILE_HEADER   BlankHeader;
-  UINT8                 Checksum;
-  UINT32                FileLength;
-  UINT32                OccupiedFileLength;
-  EFI_FFS_FILE_TAIL     *Tail;
-  UINT8                 SavedChecksum;
-  UINT8                 SavedState;
-  UINT8                 FileGuidString[80];
-  UINT32                TailSize;
+  BOOLEAN             ErasePolarity;
+  EFI_STATUS          Status;
+  EFI_FFS_FILE_HEADER BlankHeader;
+  UINT8               Checksum;
+  UINT32              FileLength;
+  UINT32              OccupiedFileLength;
+  EFI_FFS_FILE_TAIL   *Tail;
+  UINT8               SavedChecksum;
+  UINT8               SavedState;
+  UINT8               FileGuidString[80];
+  UINT32              TailSize;
   //
   // Verify library has been initialized.
   //
@@ -591,14 +567,14 @@ Returns:
   // Verify FV header
   //
   Status = VerifyFv (mFvHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
   //
   // Get the erase polarity.
   //
   Status = GetErasePolarity (&ErasePolarity);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
   //
@@ -609,6 +585,7 @@ Returns:
   } else {
     memset (&BlankHeader, 0, sizeof (EFI_FFS_FILE_HEADER));
   }
+
   if (memcmp (&BlankHeader, FfsHeader, sizeof (EFI_FFS_FILE_HEADER)) == 0) {
     return EFI_NOT_FOUND;
   }
@@ -629,14 +606,13 @@ Returns:
   FfsHeader->State = 0;
   SavedChecksum = FfsHeader->IntegrityCheck.Checksum.File;
   FfsHeader->IntegrityCheck.Checksum.File = 0;
-  Checksum = CalculateSum8 ((UINT8*) FfsHeader, sizeof(EFI_FFS_FILE_HEADER));
+  Checksum = CalculateSum8 ((UINT8 *) FfsHeader, sizeof (EFI_FFS_FILE_HEADER));
   FfsHeader->State = SavedState;
   FfsHeader->IntegrityCheck.Checksum.File = SavedChecksum;
   if (Checksum != 0) {
     Error (NULL, 0, 0, FileGuidString, "invalid FFS file header checksum");
     return EFI_ABORTED;
   }
-
   //
   // Verify file checksum
   //
@@ -644,16 +620,15 @@ Returns:
     //
     // Verify file data checksum
     //
-    FileLength = GetLength (FfsHeader->Size);
-    OccupiedFileLength = (FileLength + 0x07) & (-1 << 3);
-    Checksum = CalculateSum8 ((UINT8*) FfsHeader, FileLength - TailSize);
-    Checksum = (UINT8) (Checksum - FfsHeader->State);
+    FileLength          = GetLength (FfsHeader->Size);
+    OccupiedFileLength  = (FileLength + 0x07) & (-1 << 3);
+    Checksum            = CalculateSum8 ((UINT8 *) FfsHeader, FileLength - TailSize);
+    Checksum            = (UINT8) (Checksum - FfsHeader->State);
     if (Checksum != 0) {
       Error (NULL, 0, 0, FileGuidString, "invalid FFS file checksum");
       return EFI_ABORTED;
     }
   } else {
-
     //
     // File does not have a checksum
     // Verify contents are 0x5A as spec'd
@@ -663,7 +638,6 @@ Returns:
       return EFI_ABORTED;
     }
   }
-
   //
   // Check if the tail is present and verify it if it is.
   //
@@ -672,7 +646,7 @@ Returns:
     // Verify tail is complement of integrity check field in the header.
     //
     Tail = (EFI_FFS_FILE_TAIL *) ((UINTN) FfsHeader + GetLength (FfsHeader->Size) - sizeof (EFI_FFS_FILE_TAIL));
-    if (FfsHeader->IntegrityCheck.TailReference != (EFI_FFS_FILE_TAIL) ~(*Tail)) {
+    if (FfsHeader->IntegrityCheck.TailReference != (EFI_FFS_FILE_TAIL)~(*Tail)) {
       Error (NULL, 0, 0, FileGuidString, "invalid FFS file tail");
       return EFI_ABORTED;
     }
@@ -702,13 +676,13 @@ Returns:
 --*/
 {
   UINT32  Length;
-  
+
   if (ThreeByteLength == NULL) {
     return 0;
   }
 
-  Length = *((UINT32*) ThreeByteLength);
-  Length = Length & 0x00FFFFFF;
+  Length  = *((UINT32 *) ThreeByteLength);
+  Length  = Length & 0x00FFFFFF;
 
   return Length;
 }
@@ -732,10 +706,11 @@ Returns:
 
   EFI_SUCCESS              The function completed successfully.
   EFI_INVALID_PARAMETER    One of the input parameters was invalid.
-
+  EFI_ABORTED              Operation aborted.
+  
 --*/
 {
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
   //
   // Verify library has been initialized.
@@ -743,23 +718,20 @@ Returns:
   if (mFvHeader == NULL || mFvLength == 0) {
     return EFI_ABORTED;
   }
-
   //
   // Verify FV header
   //
   Status = VerifyFv (mFvHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
-  
   //
   // Verify input parameters.
   //
-
   if (ErasePolarity == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (mFvHeader->Attributes & EFI_FVB_ERASE_POLARITY) {
     *ErasePolarity = TRUE;
   } else {
@@ -792,8 +764,8 @@ Returns:
 
 --*/
 {
-  UINT8           FileState;
-  UINT8           HighestBit;
+  UINT8 FileState;
+  UINT8 HighestBit;
 
   FileState = FfsHeader->State;
 

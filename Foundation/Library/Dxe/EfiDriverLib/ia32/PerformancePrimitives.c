@@ -26,8 +26,22 @@ EFI_STATUS
 GetTimerValue (
   OUT UINT64    *TimerValue
   )
+/*++
+
+Routine Description:
+
+  Set TimerValue with current tick.
+
+Arguments:
+
+  TimerValue  - Timer value to be set
+
+Returns:
+
+  EFI_SUCCESS - TimerValue is set.
+
+--*/
 {
-  *TimerValue = EfiReadTsc();
+  *TimerValue = EfiReadTsc ();
   return EFI_SUCCESS;
 }
-

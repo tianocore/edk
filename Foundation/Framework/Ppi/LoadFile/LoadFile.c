@@ -22,9 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(LoadFile)
+#include EFI_PPI_DEFINITION (LoadFile)
 
-EFI_GUID gPeiFvFileLoaderPpiGuid = EFI_PEI_FV_FILE_LOADER_GUID;
+EFI_GUID  gPeiFvFileLoaderPpiGuid = EFI_PEI_FV_FILE_LOADER_GUID;
 
 EFI_GUID_STRING(&gPeiFvFileLoaderPpiGuid, "FvFileLoader", "Fv File Loader Support PPI");
-

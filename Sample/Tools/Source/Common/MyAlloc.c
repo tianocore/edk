@@ -22,7 +22,6 @@ Abstract:
 #include "MyAlloc.h"
 
 #if USE_MYALLOC
-
 //
 // Get back to original alloc/free calls.
 //
@@ -30,27 +29,28 @@ Abstract:
 #undef calloc
 #undef realloc
 #undef free
-
 //
 // Start of allocation list.
 //
-static MY_ALLOC_STRUCT *MyAllocData = NULL;
+static MY_ALLOC_STRUCT  *MyAllocData = NULL;
 
 //
 //
 //
-static UINT32 MyAllocHeadMagik = MYALLOC_HEAD_MAGIK;
-static UINT32 MyAllocTailMagik = MYALLOC_TAIL_MAGIK;
+static UINT32           MyAllocHeadMagik  = MYALLOC_HEAD_MAGIK;
+static UINT32           MyAllocTailMagik  = MYALLOC_TAIL_MAGIK;
 
-//////////////////////////////////////////////////////////////////////////////
+//
+// ////////////////////////////////////////////////////////////////////////////
 //
 //
 VOID
-MyCheck(
-  BOOLEAN Final,
-  UINT8   File[],
-  UINTN   Line)
-//*++
+MyCheck (
+  BOOLEAN      Final,
+  UINT8        File[],
+  UINTN        Line
+  )
+// *++
 // Description:
 //
 //  Check for corruptions in the allocated memory chain.  If a corruption
@@ -72,7 +72,8 @@ MyCheck(
 //
 //  n/a
 //
-//--*/
+// --*/
+//
 {
   MY_ALLOC_STRUCT *Tmp;
 
@@ -80,81 +81,93 @@ MyCheck(
   // Check parameters.
   //
   if (File == NULL || Line == 0) {
-    printf(
+    printf (
       "\nMyCheck(Final=%u, File=%xh, Line=%u)"
       "Invalid parameter(s).\n",
-      Final, File, Line);
+      Final,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
 
-  if (strlen(File) == 0) {
-    printf(
+  if (strlen (File) == 0) {
+    printf (
       "\nMyCheck(Final=%u, File=%s, Line=%u)"
       "Invalid parameter.\n",
-      Final, File, Line);
+      Final,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // Check structure contents.
   //
   for (Tmp = MyAllocData; Tmp != NULL; Tmp = Tmp->Next) {
     if (memcmp(Tmp->Buffer, &MyAllocHeadMagik, sizeof MyAllocHeadMagik) ||
-      memcmp(&Tmp->Buffer[Tmp->Size + sizeof(UINT32)], &MyAllocTailMagik,
-        sizeof MyAllocTailMagik))
-    {
+        memcmp(&Tmp->Buffer[Tmp->Size + sizeof(UINT32)], &MyAllocTailMagik, sizeof MyAllocTailMagik)) {
       break;
     }
   }
-
   //
   // If Tmp is not NULL, the structure is corrupt.
   //
   if (Tmp != NULL) {
-    printf(
-      "\nMyCheck(Final=%u, File=%s, Line=%u)"
-      "\nStructure corrupted!"
+    printf (
+      "\nMyCheck(Final=%u, File=%s, Line=%u)""\nStructure corrupted!"
       "\nFile=%s, Line=%u, nSize=%u, Head=%xh, Tail=%xh\n",
-      Final, File, Line,
-      Tmp->File, Tmp->Line, Tmp->Size,
-      *(UINT32 *)(Tmp->Buffer),
-      *(UINT32 *)(&Tmp->Buffer[Tmp->Size + sizeof(UINT32)]));
+      Final,
+      File,
+      Line,
+      Tmp->File,
+      Tmp->Line,
+      Tmp->Size,
+      *(UINT32 *) (Tmp->Buffer),
+      *(UINT32 *) (&Tmp->Buffer[Tmp->Size + sizeof (UINT32)])
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // If Final is TRUE, display the state of the structure chain.
   //
   if (Final) {
     if (MyAllocData != NULL) {
-      printf(
+      printf (
         "\nMyCheck(Final=%u, File=%s, Line=%u)"
         "\nSome allocated items have not been freed.\n",
-        Final, File, Line);
+        Final,
+        File,
+        Line
+        );
 
       for (Tmp = MyAllocData; Tmp != NULL; Tmp = Tmp->Next) {
-        printf(
+        printf (
           "File=%s, Line=%u, nSize=%u, Head=%xh, Tail=%xh\n",
-          Tmp->File, Tmp->Line, Tmp->Size,
-          *(UINT32 *)(Tmp->Buffer),
-          *(UINT32 *)(&Tmp->Buffer[Tmp->Size + sizeof(UINT32)]));
+          Tmp->File,
+          Tmp->Line,
+          Tmp->Size,
+          *(UINT32 *) (Tmp->Buffer),
+          *(UINT32 *) (&Tmp->Buffer[Tmp->Size + sizeof (UINT32)])
+          );
       }
     }
   }
 }
-
-//////////////////////////////////////////////////////////////////////////////
+//
+// ////////////////////////////////////////////////////////////////////////////
 //
 //
 VOID *
-MyAlloc(
-  UINTN Size,
+MyAlloc (
+  UINTN      Size,
   UINT8 File[],
-  UINTN Line)
-//*++
+  UINTN      Line
+  )
+// *++
 // Description:
 //
 //  Allocate a new link in the allocation chain along with enough storage
@@ -175,7 +188,8 @@ MyAlloc(
 //
 //  Pointer to the caller's buffer.
 //
-//--*/
+// --*/
+//
 {
   MY_ALLOC_STRUCT *Tmp;
   UINTN           Len;
@@ -184,77 +198,89 @@ MyAlloc(
   // Check for invalid parameters.
   //
   if (Size == 0 || File == NULL || Line == 0) {
-    printf(
+    printf (
       "\nMyAlloc(Size=%u, File=%xh, Line=%u)"
       "\nInvalid parameter(s).\n",
-      Size, File, Line);
+      Size,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
 
-  Len = strlen(File);
+  Len = strlen (File);
   if (Len == 0) {
-    printf(
+    printf (
       "\nMyAlloc(Size=%u, File=%s, Line=%u)"
       "\nInvalid parameter.\n",
-      Size, File, Line);
+      Size,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // Check the allocation list for corruption.
   //
-  MyCheck(0, __FILE__, __LINE__);
+  MyCheck (0, __FILE__, __LINE__);
 
   //
   // Allocate a new entry.
   //
-  Tmp = calloc(1, sizeof(MY_ALLOC_STRUCT) + Len + 1 + sizeof(UINT64) + Size +
-    (sizeof MyAllocHeadMagik) + (sizeof MyAllocTailMagik));
+  Tmp = calloc (
+          1,
+          sizeof (MY_ALLOC_STRUCT) + Len + 1 + sizeof (UINT64) + Size + (sizeof MyAllocHeadMagik) + (sizeof MyAllocTailMagik)
+          );
 
   if (Tmp == NULL) {
-    printf(
+    printf (
       "\nMyAlloc(Size=%u, File=%s, Line=%u)"
       "\nOut of memory.\n",
-      Size, File, Line);
+      Size,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // Fill in the new entry.
   //
-  Tmp->File = ((UINT8 *)Tmp) + sizeof(MY_ALLOC_STRUCT);
-  strcpy(Tmp->File, File);
-  Tmp->Line = Line;
-  Tmp->Size = Size;
-  Tmp->Buffer = (UINT8 *)(((UINTN)Tmp + Len + 9) & ~7);
+  Tmp->File = ((UINT8 *) Tmp) + sizeof (MY_ALLOC_STRUCT);
+  strcpy (Tmp->File, File);
+  Tmp->Line   = Line;
+  Tmp->Size   = Size;
+  Tmp->Buffer = (UINT8 *) (((UINTN) Tmp + Len + 9) &~7);
 
-  memcpy(Tmp->Buffer, &MyAllocHeadMagik, sizeof MyAllocHeadMagik);
+  memcpy (Tmp->Buffer, &MyAllocHeadMagik, sizeof MyAllocHeadMagik);
 
-  memcpy(&Tmp->Buffer[Size + sizeof(UINT32)], &MyAllocTailMagik,
-    sizeof MyAllocTailMagik);
+  memcpy (
+    &Tmp->Buffer[Size + sizeof (UINT32)],
+    &MyAllocTailMagik,
+    sizeof MyAllocTailMagik
+    );
 
-  Tmp->Next = MyAllocData;
-  Tmp->Cksum = (UINTN)Tmp + (UINTN)(Tmp->Next) + Tmp->Line + Tmp->Size +
-    (UINTN)(Tmp->File) + (UINTN)(Tmp->Buffer);
+  Tmp->Next   = MyAllocData;
+  Tmp->Cksum  = (UINTN) Tmp + (UINTN) (Tmp->Next) + Tmp->Line + Tmp->Size + (UINTN) (Tmp->File) + (UINTN) (Tmp->Buffer);
 
   MyAllocData = Tmp;
 
-  return Tmp->Buffer + sizeof(UINT32);
+  return Tmp->Buffer + sizeof (UINT32);
 }
-
-//////////////////////////////////////////////////////////////////////////////
+//
+// ////////////////////////////////////////////////////////////////////////////
 //
 //
 VOID *
-MyRealloc(
-  VOID *Ptr,
-  UINTN Size,
+MyRealloc (
+  VOID       *Ptr,
+  UINTN      Size,
   UINT8 File[],
-  UINTN Line)
-//*++
+  UINTN      Line
+  )
+// *++
 // Description:
 //
 //  This does a MyAlloc(), memcpy() and MyFree().  There is no optimization
@@ -275,7 +301,8 @@ MyRealloc(
 //
 //  Pointer to new caller's buffer.
 //
-//--*/
+// --*/
+//
 {
   MY_ALLOC_STRUCT *Tmp;
   VOID            *Buffer;
@@ -284,69 +311,83 @@ MyRealloc(
   // Check for invalid parameter(s).
   //
   if (Size == 0 || File == NULL || Line == 0) {
-    printf(
+    printf (
       "\nMyRealloc(Ptr=%xh, Size=%u, File=%xh, Line=%u)"
       "\nInvalid parameter(s).\n",
-      Ptr, Size, File, Line);
+      Ptr,
+      Size,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
 
-  if (strlen(File) == 0) {
-    printf(
+  if (strlen (File) == 0) {
+    printf (
       "\nMyRealloc(Ptr=%xh, Size=%u, File=%s, Line=%u)"
       "\nInvalid parameter.\n",
-      Ptr, Size, File, Line);
+      Ptr,
+      Size,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // Find existing buffer in allocation list.
   //
   if (Ptr == NULL) {
     Tmp = NULL;
-  } else if (&MyAllocData->Buffer[sizeof(UINT32)] == Ptr) {
+  } else if (&MyAllocData->Buffer[sizeof (UINT32)] == Ptr) {
     Tmp = MyAllocData;
   } else {
-    for (Tmp = MyAllocData; ; Tmp = Tmp->Next) {
+    for (Tmp = MyAllocData;; Tmp = Tmp->Next) {
       if (Tmp->Next == NULL) {
-        printf(
+        printf (
           "\nMyRealloc(Ptr=%xh, Size=%u, File=%s, Line=%u)"
           "\nCould not find buffer.\n",
-          Ptr, Size, File, Line);
+          Ptr,
+          Size,
+          File,
+          Line
+          );
 
-        exit(1);
+        exit (1);
       }
 
       Tmp = Tmp->Next;
     }
   }
-
   //
   // Allocate new buffer, copy old data, free old buffer.
   //
-  Buffer = MyAlloc(Size, File, Line);
+  Buffer = MyAlloc (Size, File, Line);
 
   if (Buffer != NULL && Tmp != NULL) {
-    memcpy(Buffer, &Tmp->Buffer[sizeof(UINT32)],
-      ((Size <= Tmp->Size) ? Size : Tmp->Size));
+    memcpy (
+      Buffer,
+      &Tmp->Buffer[sizeof (UINT32)],
+      ((Size <= Tmp->Size) ? Size : Tmp->Size)
+      );
 
-    MyFree(Ptr, __FILE__, __LINE__);
+    MyFree (Ptr, __FILE__, __LINE__);
   }
 
   return Buffer;
 }
-
-//////////////////////////////////////////////////////////////////////////////
+//
+// ////////////////////////////////////////////////////////////////////////////
 //
 //
 VOID
-MyFree(
-  VOID  *Ptr,
+MyFree (
+  VOID       *Ptr,
   UINT8 File[],
-  UINTN Line)
-//*++
+  UINTN      Line
+  )
+// *++
 // Description:
 //
 //  Release a previously allocated buffer.  Invalid parameters will cause
@@ -365,7 +406,8 @@ MyFree(
 //
 //  n/a
 //
-//--*/
+// --*/
+//
 {
   MY_ALLOC_STRUCT *Tmp;
   MY_ALLOC_STRUCT *Tmp2;
@@ -374,94 +416,101 @@ MyFree(
   // Check for invalid parameter(s).
   //
   if (File == NULL || Line == 0) {
-    printf(
+    printf (
       "\nMyFree(Ptr=%xh, File=%xh, Line=%u)"
       "\nInvalid parameter(s).\n",
-      Ptr, File, Line);
+      Ptr,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
 
-  if (strlen(File) == 0) {
-    printf(
+  if (strlen (File) == 0) {
+    printf (
       "\nMyFree(Ptr=%xh, File=%s, Line=%u)"
       "\nInvalid parameter.\n",
-      Ptr, File, Line);
+      Ptr,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // Freeing NULL is always valid.
   //
   if (Ptr == NULL) {
-    return;
+    return ;
   }
-
   //
   // Fail if nothing is allocated.
   //
   if (MyAllocData == NULL) {
-    printf(
+    printf (
       "\nMyFree(Ptr=%xh, File=%s, Line=%u)"
       "\nCalled before memory allocated.\n",
-      Ptr, File, Line);
+      Ptr,
+      File,
+      Line
+      );
 
-    exit(1);
+    exit (1);
   }
-
   //
   // Check for corrupted allocation list.
   //
-  MyCheck(0, __FILE__, __LINE__);
+  MyCheck (0, __FILE__, __LINE__);
 
   //
   // Need special check for first item in list.
   //
-  if (&MyAllocData->Buffer[sizeof(UINT32)] == Ptr) {
+  if (&MyAllocData->Buffer[sizeof (UINT32)] == Ptr) {
     //
     // Unlink first item in list.
     //
-    Tmp = MyAllocData;
+    Tmp         = MyAllocData;
     MyAllocData = MyAllocData->Next;
   } else {
     //
     // Walk list looking for matching item.
     //
-    for (Tmp = MyAllocData; ; Tmp = Tmp->Next) {
+    for (Tmp = MyAllocData;; Tmp = Tmp->Next) {
       //
       // Fail if end of list is reached.
       //
       if (Tmp->Next == NULL) {
-        printf(
+        printf (
           "\nMyFree(Ptr=%xh, File=%s, Line=%u)\n"
           "\nNot found.\n",
-          Ptr, File, Line);
+          Ptr,
+          File,
+          Line
+          );
 
-        exit(1);
+        exit (1);
       }
-
       //
       // Leave loop when match is found.
       //
-      if (&Tmp->Next->Buffer[sizeof(UINT32)] == Ptr) {
+      if (&Tmp->Next->Buffer[sizeof (UINT32)] == Ptr) {
         break;
       }
     }
-
     //
     // Unlink item from list.
     //
-    Tmp2 = Tmp->Next;
+    Tmp2      = Tmp->Next;
     Tmp->Next = Tmp->Next->Next;
-    Tmp = Tmp2;
+    Tmp       = Tmp2;
   }
-
   //
   // Release item.
   //
-  free(Tmp);
+  free (Tmp);
 }
 
 #endif /* USE_MYALLOC */
+
 /* eof - MyAlloc.c */

@@ -27,9 +27,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(SimpleNetwork)
+#include EFI_PROTOCOL_DEFINITION (SimpleNetwork)
 
-
-EFI_GUID gEfiSimpleNetworkProtocolGuid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
+EFI_GUID  gEfiSimpleNetworkProtocolGuid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiSimpleNetworkProtocolGuid, "Simple Network Protocol", "EFI 1.0 Simple Network Protocol");

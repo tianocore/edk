@@ -28,7 +28,11 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 
-extern BOOLEAN EfiAtRuntime(VOID);
+extern
+BOOLEAN
+EfiAtRuntime (
+  VOID
+  );
 
 VOID
 EfiInitializeLock (
@@ -56,11 +60,10 @@ Returns:
 
 --*/
 {
-  Lock->Tpl = Priority;
-  Lock->OwnerTpl = 0;  
-  Lock->Lock = 0;
+  Lock->Tpl       = Priority;
+  Lock->OwnerTpl  = 0;
+  Lock->Lock      = 0;
 }
-
 
 EFI_STATUS
 EfiAcquireLockOrFail (
@@ -90,18 +93,18 @@ Returns:
     //
     return EFI_ACCESS_DENIED;
   }
-  if (!EfiAtRuntime()) {
-      //
-      // The check is just debug code for core inplementation. It must
-      //  always be true in a driver
-      //
+
+  if (!EfiAtRuntime ()) {
+    //
+    // The check is just debug code for core inplementation. It must
+    //  always be true in a driver
+    //
     Lock->OwnerTpl = gBS->RaiseTPL (Lock->Tpl);
   }
-  
+
   Lock->Lock += 1;
   return EFI_SUCCESS;
 }
-
 
 VOID
 EfiAcquireLock (
@@ -126,13 +129,12 @@ Returns:
   EFI_STATUS  Status;
 
   Status = EfiAcquireLockOrFail (Lock);
-  
+
   //
   // Lock was already locked.
   //
   ASSERT_EFI_ERROR (Status);
 }
-
 
 VOID
 EfiReleaseLock (
@@ -154,18 +156,18 @@ Returns:
 
 --*/
 {
-  EFI_TPL     Tpl;
+  EFI_TPL Tpl;
 
   Tpl = Lock->OwnerTpl;
-  
+
   ASSERT (Lock->Lock == 1);
   Lock->Lock -= 1;
-  
-  if (!EfiAtRuntime()) {
+
+  if (!EfiAtRuntime ()) {
     //
     // The check is just debug code for core inplementation. It must
     //  always be true in a driver
     //
-   gBS->RestoreTPL (Tpl);
+    gBS->RestoreTPL (Tpl);
   }
 }

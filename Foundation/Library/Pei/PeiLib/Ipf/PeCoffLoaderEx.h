@@ -22,6 +22,9 @@ Revision History
 
 --*/
 
+#ifndef _PE_COFF_LOADER_EX_H_
+#define _PE_COFF_LOADER_EX_H_
+
 //
 // Define macro to determine if the machine type is supported.
 // Returns 0 if the machine is not supported, Not 0 otherwise.
@@ -34,7 +37,31 @@ Revision History
 EFI_STATUS
 PeCoffLoaderRelocateImageEx (
   IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup, 
+  IN OUT CHAR8   *Fixup,
   IN OUT CHAR8   **FixupData,
   IN UINT64      Adjust
-  );
+  )
+/*++
+
+Routine Description:
+
+  Performs an Itanium-based specific relocation fixup
+
+Arguments:
+
+  Reloc      - Pointer to the relocation record
+
+  Fixup      - Pointer to the address to fix up
+
+  FixupData  - Pointer to a buffer to log the fixups
+
+  Adjust     - The offset to adjust the fixup
+
+Returns:
+
+  Status code
+
+--*/
+;
+
+#endif

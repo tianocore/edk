@@ -23,8 +23,8 @@ Revision History
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(IsaIo)
+#include EFI_PROTOCOL_DEFINITION (IsaIo)
 
-EFI_GUID gEfiIsaIoProtocolGuid = EFI_ISA_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiIsaIoProtocolGuid = EFI_ISA_IO_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiIsaIoProtocolGuid, "ISA IO Protocol", "EFI 1.1 ISA IO Protocol");
+EFI_GUID_STRING(&gEfiIsaIoProtocolGuid, "ISA IO Protocol", "ISA IO Protocol");

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Reset PPI as defined in EFI 2.0
+  Reset PPI as defined in Tiano
 
   Used to reset the platform from PEI
 
@@ -25,11 +25,15 @@ Abstract:
 #define _PEI_RESET_H_
 
 #define PEI_RESET_PPI_GUID \
-  {0xef398d58, 0x9dfd, 0x4103, 0xbf, 0x94, 0x78, 0xc6, 0xf4, 0xfe, 0x71, 0x2f}
+  { \
+    0xef398d58, 0x9dfd, 0x4103, 0xbf, 0x94, 0x78, 0xc6, 0xf4, 0xfe, 0x71, 0x2f \
+  }
 
-//*******************************************************
+//
+// *******************************************************
 // PEI_RESET_TYPE
-//*******************************************************
+// *******************************************************
+//
 typedef enum {
   PeiResetCold,
   PeiResetWarm,

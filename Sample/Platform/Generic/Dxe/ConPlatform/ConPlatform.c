@@ -17,7 +17,6 @@ Abstract:
 
 --*/
 
-
 #include "ConPlatform.h"
 
 EFI_DRIVER_BINDING_PROTOCOL gConPlatformTextInDriverBinding = {
@@ -57,34 +56,33 @@ Returns:
 
 --*/
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
   //
   // Install driver binding protocols and component name protocols
   //
-  
   Status = INSTALL_ALL_DRIVER_PROTOCOLS (
-             ImageHandle, 
-             SystemTable, 
-             &gConPlatformTextOutDriverBinding, 
-             ImageHandle,
-             &gConPlatformComponentName,
-             NULL,
-             NULL
-             );
+            ImageHandle,
+            SystemTable,
+            &gConPlatformTextOutDriverBinding,
+            ImageHandle,
+            &gConPlatformComponentName,
+            NULL,
+            NULL
+            );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   return INSTALL_ALL_DRIVER_PROTOCOLS (
-           ImageHandle, 
-           SystemTable, 
-           &gConPlatformTextInDriverBinding, 
-           NULL,
-           &gConPlatformComponentName,
-           NULL,
-           NULL
-           );
+          ImageHandle,
+          SystemTable,
+          &gConPlatformTextInDriverBinding,
+          NULL,
+          &gConPlatformComponentName,
+          NULL,
+          NULL
+          );
 }
 
 STATIC
@@ -109,12 +107,12 @@ Returns:
 
 --*/
 {
-  return ConPlatformDriverBindingSupported ( 
-            This,
-            ControllerHandle,
-            RemainingDevicePath,
-            &gEfiSimpleTextInProtocolGuid
-            );
+  return ConPlatformDriverBindingSupported (
+          This,
+          ControllerHandle,
+          RemainingDevicePath,
+          &gEfiSimpleTextInProtocolGuid
+          );
 }
 
 STATIC
@@ -139,12 +137,12 @@ Returns:
 
 --*/
 {
-  return ConPlatformDriverBindingSupported ( 
-            This,
-            ControllerHandle,
-            RemainingDevicePath,
-            &gEfiSimpleTextOutProtocolGuid
-            );
+  return ConPlatformDriverBindingSupported (
+          This,
+          ControllerHandle,
+          RemainingDevicePath,
+          &gEfiSimpleTextOutProtocolGuid
+          );
 }
 
 EFI_STATUS
@@ -168,34 +166,33 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  VOID                          *Interface;
+  EFI_STATUS  Status;
+  VOID        *Interface;
 
   //
-  // Test to see if this is a physical device by checking to see if 
+  // Test to see if this is a physical device by checking to see if
   // it has a Device Path Protocol
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiDevicePathProtocolGuid, 
+                  ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
                   NULL,
                   This->DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Test to see if this device supports the Simple Text Output Protocol
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  ProtocolGuid, 
-                  (VOID **)&Interface,
+                  ControllerHandle,
+                  ProtocolGuid,
+                  (VOID **) &Interface,
                   This->DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
@@ -203,11 +200,11 @@ Returns:
   }
 
   gBS->CloseProtocol (
-         ControllerHandle, 
-         ProtocolGuid, 
-         This->DriverBindingHandle,
-         ControllerHandle 
-         );
+        ControllerHandle,
+        ProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   return EFI_SUCCESS;
 }
@@ -233,40 +230,38 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_DEVICE_PATH_PROTOCOL      *DevicePath; 
-  EFI_SIMPLE_TEXT_IN_PROTOCOL   *TextIn;
+  EFI_STATUS                  Status;
+  EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
+  EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
 
   //
   // Get the Device Path Protocol so the environment variables can be updated
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiDevicePathProtocolGuid, 
-                  (VOID **)&DevicePath,
+                  ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &DevicePath,
                   This->DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Open the Simple Input Protocol BY_DRIVER
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiSimpleTextInProtocolGuid, 
-                  (VOID **)&TextIn,
+                  ControllerHandle,
+                  &gEfiSimpleTextInProtocolGuid,
+                  (VOID **) &TextIn,
                   This->DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Check the device handle, if it is a hot plug device,
   // do not put the device path into ConInDev, and install
@@ -275,43 +270,45 @@ Returns:
   //
   if (IsHotPlugDevice (This->DriverBindingHandle, ControllerHandle)) {
     gBS->InstallMultipleProtocolInterfaces (
-                    &ControllerHandle,
-                    &gEfiConsoleInDeviceGuid, NULL,
-                    NULL
-                    );
+          &ControllerHandle,
+          &gEfiConsoleInDeviceGuid,
+          NULL,
+          NULL
+          );
   } else {
     //
     // Append the device path to the ConInDev environment variable
     //
     ConPlatformUpdateDeviceVariable (
-                VarConsoleInpDev,
-                DevicePath,
-                APPEND
-                );
-  
+      VarConsoleInpDev,
+      DevicePath,
+      APPEND
+      );
+
     //
-    // If the device path is an instance in the ConIn environment variable, 
+    // If the device path is an instance in the ConIn environment variable,
     // then install EfiConsoleInDeviceGuid onto ControllerHandle
     //
     Status = ConPlatformUpdateDeviceVariable (
-                      VarConsoleInp,
-                      DevicePath,
-                      CHECK
-                      );
+              VarConsoleInp,
+              DevicePath,
+              CHECK
+              );
 
     if (!EFI_ERROR (Status)) {
       gBS->InstallMultipleProtocolInterfaces (
-                      &ControllerHandle,
-                      &gEfiConsoleInDeviceGuid, NULL,
-                      NULL
-                      );
+            &ControllerHandle,
+            &gEfiConsoleInDeviceGuid,
+            NULL,
+            NULL
+            );
     } else {
       gBS->CloseProtocol (
-                  ControllerHandle, 
-                  &gEfiSimpleTextInProtocolGuid, 
-                  This->DriverBindingHandle,
-                  ControllerHandle 
-                  );
+            ControllerHandle,
+            &gEfiSimpleTextInProtocolGuid,
+            This->DriverBindingHandle,
+            ControllerHandle
+            );
     }
   }
 
@@ -340,43 +337,41 @@ Returns:
 --*/
 {
   EFI_STATUS                    Status;
-  EFI_DEVICE_PATH_PROTOCOL      *DevicePath; 
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
-  
-  BOOLEAN       NeedClose;
-  
+
+  BOOLEAN                       NeedClose;
+
   NeedClose = TRUE;
 
   //
   // Get the Device Path Protocol so the environment variables can be updated
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiDevicePathProtocolGuid, 
-                  (VOID **)&DevicePath,
+                  ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &DevicePath,
                   This->DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Open the Simple Text Output Protocol BY_DRIVER
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiSimpleTextOutProtocolGuid, 
-                  (VOID **)&TextOut,
+                  ControllerHandle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  (VOID **) &TextOut,
                   This->DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
   //
   // Check the device handle, if it is a hot plug device,
   // do not put the device path into ConOutDev and StdErrDev,
@@ -385,72 +380,74 @@ Returns:
   //
   if (IsHotPlugDevice (This->DriverBindingHandle, ControllerHandle)) {
     gBS->InstallMultipleProtocolInterfaces (
-                      &ControllerHandle,
-                      &gEfiConsoleOutDeviceGuid, NULL,
-                      NULL
-                      );
+          &ControllerHandle,
+          &gEfiConsoleOutDeviceGuid,
+          NULL,
+          NULL
+          );
   } else {
     //
     // Append the device path to the ConOutDev environment variable
     //
     ConPlatformUpdateDeviceVariable (
-                                  VarConsoleOutDev, 
-                                  DevicePath, 
-                                  APPEND
-                                  );  
+      VarConsoleOutDev,
+      DevicePath,
+      APPEND
+      );
     //
     // Append the device path to the StdErrDev environment variable
     //
     ConPlatformUpdateDeviceVariable (
-                                  VarErrorOutDev,
-                                  DevicePath,
-                                  APPEND
-                                  );
-  
+      VarErrorOutDev,
+      DevicePath,
+      APPEND
+      );
+
     //
-    // If the device path is an instance in the ConOut environment variable, 
+    // If the device path is an instance in the ConOut environment variable,
     // then install EfiConsoleOutDeviceGuid onto ControllerHandle
     //
     Status = ConPlatformUpdateDeviceVariable (
-                                  VarConsoleOut,
-                                  DevicePath,
-                                  CHECK
-                                  );
+              VarConsoleOut,
+              DevicePath,
+              CHECK
+              );
     if (!EFI_ERROR (Status)) {
       NeedClose = FALSE;
       Status = gBS->InstallMultipleProtocolInterfaces (
                       &ControllerHandle,
-                      &gEfiConsoleOutDeviceGuid, NULL,
+                      &gEfiConsoleOutDeviceGuid,
+                      NULL,
                       NULL
                       );
     }
-
     //
     // If the device path is an instance in the StdErr environment variable,
     // then install EfiStandardErrorDeviceGuid onto ControllerHandle
     //
     Status = ConPlatformUpdateDeviceVariable (
-                                  VarErrorOut,
-                                  DevicePath,
-                                  CHECK
-                                  );
+              VarErrorOut,
+              DevicePath,
+              CHECK
+              );
     if (!EFI_ERROR (Status)) {
       NeedClose = FALSE;
       gBS->InstallMultipleProtocolInterfaces (
-                      &ControllerHandle,
-                      &gEfiStandardErrorDeviceGuid, NULL,
-                      NULL
-                      );
+            &ControllerHandle,
+            &gEfiStandardErrorDeviceGuid,
+            NULL,
+            NULL
+            );
     }
-    
+
     if (NeedClose) {
       gBS->CloseProtocol (
-                  ControllerHandle, 
-                  &gEfiSimpleTextOutProtocolGuid, 
-                  This->DriverBindingHandle,
-                  ControllerHandle 
-                  );
-    }    
+            ControllerHandle,
+            &gEfiSimpleTextOutProtocolGuid,
+            This->DriverBindingHandle,
+            ControllerHandle
+            );
+    }
   }
 
   return EFI_SUCCESS;
@@ -478,24 +475,23 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_DEVICE_PATH_PROTOCOL      *DevicePath; 
-  
+  EFI_STATUS                Status;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+
   //
   // hot plug device is not included into the console associated variables,
   // so no need to check variable for those hot plug devices.
   //
   if (!IsHotPlugDevice (This->DriverBindingHandle, ControllerHandle)) {
-
     //
     // Get the Device Path Protocol so the environment variables can be updated
     //
     Status = gBS->OpenProtocol (
-                    ControllerHandle, 
-                    &gEfiDevicePathProtocolGuid, 
-                    (VOID **)&DevicePath,
+                    ControllerHandle,
+                    &gEfiDevicePathProtocolGuid,
+                    (VOID **) &DevicePath,
                     This->DriverBindingHandle,
-                    ControllerHandle, 
+                    ControllerHandle,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (!EFI_ERROR (Status)) {
@@ -503,60 +499,59 @@ Returns:
       // Remove DevicePath from ConInDev, ConOutDev, and StdErrDev
       //
       ConPlatformUpdateDeviceVariable (
-                                  VarConsoleInpDev,
-                                  DevicePath,
-                                  DELETE
-                                  );
+        VarConsoleInpDev,
+        DevicePath,
+        DELETE
+        );
       ConPlatformUpdateDeviceVariable (
-                                  VarConsoleOutDev,
-                                  DevicePath,
-                                  DELETE
-                                  );
+        VarConsoleOutDev,
+        DevicePath,
+        DELETE
+        );
       ConPlatformUpdateDeviceVariable (
-                                  VarErrorOutDev,
-                                  DevicePath,
-                                  DELETE
-                                  );
+        VarErrorOutDev,
+        DevicePath,
+        DELETE
+        );
     }
   }
-  
   //
   // Uninstall the Console Device GUIDs from Controller Handle
   //
   ConPlatformUnInstallProtocol (
-                This,
-                ControllerHandle,
-                &gEfiConsoleInDeviceGuid
-                );
+    This,
+    ControllerHandle,
+    &gEfiConsoleInDeviceGuid
+    );
 
   ConPlatformUnInstallProtocol (
-                This,
-                ControllerHandle,
-                &gEfiConsoleOutDeviceGuid
-                );
+    This,
+    ControllerHandle,
+    &gEfiConsoleOutDeviceGuid
+    );
 
   ConPlatformUnInstallProtocol (
-                This,
-                ControllerHandle,
-                &gEfiStandardErrorDeviceGuid
-                );
+    This,
+    ControllerHandle,
+    &gEfiStandardErrorDeviceGuid
+    );
 
   //
   // Close the Simple Input and Simple Text Output Protocols
   //
   gBS->CloseProtocol (
-                  ControllerHandle, 
-                  &gEfiSimpleTextInProtocolGuid, 
-                  This->DriverBindingHandle,
-                  ControllerHandle 
-                  );
+        ControllerHandle,
+        &gEfiSimpleTextInProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   gBS->CloseProtocol (
-                  ControllerHandle, 
-                  &gEfiSimpleTextOutProtocolGuid, 
-                  This->DriverBindingHandle,
-                  ControllerHandle 
-                  );
+        ControllerHandle,
+        &gEfiSimpleTextOutProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   return EFI_SUCCESS;
 }
@@ -568,27 +563,27 @@ ConPlatformUnInstallProtocol (
   IN  EFI_GUID                     *ProtocolGuid
   )
 {
-  EFI_STATUS                        Status;
+  EFI_STATUS  Status;
 
   Status = gBS->OpenProtocol (
-                Handle, 
-                ProtocolGuid,
-                NULL,
-                This->DriverBindingHandle,
-                Handle,
-                EFI_OPEN_PROTOCOL_TEST_PROTOCOL
-                );
+                  Handle,
+                  ProtocolGuid,
+                  NULL,
+                  This->DriverBindingHandle,
+                  Handle,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
 
   if (!EFI_ERROR (Status)) {
     gBS->UninstallMultipleProtocolInterfaces (
-                Handle,
-                ProtocolGuid,
-                NULL,
-                NULL
-                );
+          Handle,
+          ProtocolGuid,
+          NULL,
+          NULL
+          );
   }
 
-  return;
+  return ;
 }
 
 VOID *
@@ -616,20 +611,20 @@ Returns:
   VOID        *Buffer;
   UINTN       BufferSize;
 
-  BufferSize    = 0;
-  Buffer        = NULL;
+  BufferSize  = 0;
+  Buffer      = NULL;
 
   //
   // Test to see if the variable exists.  If it doesn't reuturn NULL
   //
   Status = gRT->GetVariable (
-                    Name,
-                    &gEfiGlobalVariableGuid,
-                    NULL,
-                    &BufferSize,
-                    Buffer
-                    );
-  
+                  Name,
+                  &gEfiGlobalVariableGuid,
+                  NULL,
+                  &BufferSize,
+                  Buffer
+                  );
+
   if (Status == EFI_BUFFER_TOO_SMALL) {
     //
     // Allocate the buffer to return
@@ -638,20 +633,19 @@ Returns:
     if (EFI_ERROR (Status)) {
       return NULL;
     }
-
     //
     // Read variable into the allocated buffer.
     //
     Status = gRT->GetVariable (
-                      Name,
-                      &gEfiGlobalVariableGuid,
-                      NULL,
-                      &BufferSize,
-                      Buffer
-                      );
-    if ( EFI_ERROR (Status)) {
+                    Name,
+                    &gEfiGlobalVariableGuid,
+                    NULL,
+                    &BufferSize,
+                    Buffer
+                    );
+    if (EFI_ERROR (Status)) {
       gBS->FreePool (Buffer);
-      Buffer  = NULL;
+      Buffer = NULL;
     }
   }
 
@@ -660,9 +654,9 @@ Returns:
 
 EFI_STATUS
 ConPlatformMatchDevicePaths (
-  IN  EFI_DEVICE_PATH_PROTOCOL  *Multi,
-  IN  EFI_DEVICE_PATH_PROTOCOL  *Single,
-  IN  EFI_DEVICE_PATH_PROTOCOL  **NewDevicePath  OPTIONAL,
+  IN  EFI_DEVICE_PATH_PROTOCOL  * Multi,
+  IN  EFI_DEVICE_PATH_PROTOCOL  * Single,
+  IN  EFI_DEVICE_PATH_PROTOCOL  **NewDevicePath OPTIONAL,
   IN  BOOLEAN                   Delete
   )
 /*++
@@ -692,17 +686,17 @@ Returns:
 --*/
 {
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
-  EFI_DEVICE_PATH_PROTOCOL  *TempDevicePath1, *TempDevicePath2;
+  EFI_DEVICE_PATH_PROTOCOL  *TempDevicePath1;
+  EFI_DEVICE_PATH_PROTOCOL  *TempDevicePath2;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePathInst;
   UINTN                     Size;
 
   //
   // The passed in DevicePath should not be NULL
   //
-  if ( ( !Multi ) || ( !Single ) ) {
+  if ((!Multi) || (!Single)) {
     return EFI_NOT_FOUND;
   }
-
   //
   // if performing Delete operation, the NewDevicePath must not be NULL.
   //
@@ -714,7 +708,7 @@ Returns:
   //
   // search for the match of 'Single' in 'Multi'
   //
-  while ( DevicePathInst ) {
+  while (DevicePathInst) {
     if (EfiCompareMem (Single, DevicePathInst, Size) == 0) {
       if (!Delete) {
         gBS->FreePool (DevicePathInst);
@@ -723,19 +717,20 @@ Returns:
     } else {
       if (Delete) {
         TempDevicePath2 = EfiAppendDevicePathInstance (
-                                  TempDevicePath1, 
-                                  DevicePathInst
-                                  );          
+                            TempDevicePath1,
+                            DevicePathInst
+                            );
         gBS->FreePool (TempDevicePath1);
         TempDevicePath1 = TempDevicePath2;
       }
     }
-    gBS->FreePool(DevicePathInst);
+
+    gBS->FreePool (DevicePathInst);
     DevicePathInst = EfiDevicePathInstance (&DevicePath, &Size);
   }
 
   if (Delete) {
-    *NewDevicePath  = TempDevicePath1;
+    *NewDevicePath = TempDevicePath1;
     return EFI_SUCCESS;
   }
 
@@ -759,15 +754,15 @@ Returns:
 
   None
 
---*/  
+--*/
 {
   EFI_STATUS                Status;
   EFI_DEVICE_PATH_PROTOCOL  *VariableDevicePath;
   EFI_DEVICE_PATH_PROTOCOL  *NewVariableDevicePath;
-  
+
   VariableDevicePath    = NULL;
   NewVariableDevicePath = NULL;
-  
+
   //
   // Get Variable according to variable name.
   // The memory for Variable is allocated within ConPlatformGetVarible(),
@@ -775,16 +770,16 @@ Returns:
   //
   VariableDevicePath = ConPlatformGetVariable (VariableName);
 
-  if ( Operation != DELETE ) {
-    
+  if (Operation != DELETE) {
+
     Status = ConPlatformMatchDevicePaths (
-                          VariableDevicePath, 
-                          DevicePath, 
-                          NULL,
-                          FALSE
-                          );
-    
-    if ( ( Operation == CHECK ) || (!EFI_ERROR(Status)) ) {
+              VariableDevicePath,
+              DevicePath,
+              NULL,
+              FALSE
+              );
+
+    if ((Operation == CHECK) || (!EFI_ERROR (Status))) {
       //
       // The device path is already in the variable
       //
@@ -792,31 +787,30 @@ Returns:
 
       return Status;
     }
-
     //
-    // The device path is not in variable. Append DevicePath to the 
+    // The device path is not in variable. Append DevicePath to the
     // environment variable that is a multi-instance device path.
     //
-    Status                = EFI_SUCCESS;
+    Status = EFI_SUCCESS;
     NewVariableDevicePath = EfiAppendDevicePathInstance (
-                                VariableDevicePath,
-                                DevicePath
-                                );
+                              VariableDevicePath,
+                              DevicePath
+                              );
     if (NewVariableDevicePath == NULL) {
-      Status              = EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
     }
 
   } else {
     //
-    // Remove DevicePath from the environment variable that 
+    // Remove DevicePath from the environment variable that
     // is a multi-instance device path.
     //
     Status = ConPlatformMatchDevicePaths (
-                                VariableDevicePath, 
-                                DevicePath, 
-                                &NewVariableDevicePath,
-                                TRUE
-                                );
+              VariableDevicePath,
+              DevicePath,
+              &NewVariableDevicePath,
+              TRUE
+              );
   }
 
   gBS->FreePool (VariableDevicePath);
@@ -826,10 +820,10 @@ Returns:
   }
 
   Status = gRT->SetVariable (
-                  VariableName, 
+                  VariableName,
                   &gEfiGlobalVariableGuid,
                   EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                  EfiDevicePathSize (NewVariableDevicePath), 
+                  EfiDevicePathSize (NewVariableDevicePath),
                   NewVariableDevicePath
                   );
 
@@ -844,22 +838,22 @@ IsHotPlugDevice (
   EFI_HANDLE    ControllerHandle
   )
 {
-  EFI_STATUS    Status;
-  
+  EFI_STATUS  Status;
+
   //
   // HotPlugDeviceGuid indicates ControllerHandle stands for a hot plug device.
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiHotPlugDeviceGuid, 
+                  ControllerHandle,
+                  &gEfiHotPlugDeviceGuid,
                   NULL,
                   DriverBindingHandle,
-                  ControllerHandle, 
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return FALSE;
   }
-  
+
   return TRUE;
 }

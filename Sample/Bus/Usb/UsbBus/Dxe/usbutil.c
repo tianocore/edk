@@ -46,6 +46,9 @@ IsPortConnect (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 0 value of PortStatus
@@ -74,6 +77,9 @@ IsPortEnable (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 1 value of PortStatus
@@ -102,6 +108,9 @@ IsPortInReset (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 4 value of PortStatus
@@ -130,6 +139,9 @@ IsPortPowerApplied (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 8 value of PortStatus
@@ -158,6 +170,9 @@ IsPortLowSpeedDeviceAttached (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 9 value of PortStatus
@@ -186,6 +201,9 @@ IsPortSuspend (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortStatus - add argument and description to function comment
 {
   //
   // return the bit 2 value of PortStatus
@@ -196,8 +214,6 @@ IsPortSuspend (
     return FALSE;
   }
 }
-
-
 //
 // Following APIs are used to query Port Change Status
 //
@@ -218,6 +234,9 @@ IsPortConnectChange (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 0 value of PortChangeStatus
@@ -246,6 +265,9 @@ IsPortEnableDisableChange (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 1 value of PortChangeStatus
@@ -274,6 +296,9 @@ IsPortResetChange (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 4 value of PortChangeStatus
@@ -284,7 +309,6 @@ IsPortResetChange (
     return FALSE;
   }
 }
-
 
 BOOLEAN
 IsPortSuspendChange (
@@ -303,6 +327,9 @@ IsPortSuspendChange (
     FALSE
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    PortChangeStatus - add argument and description to function comment
 {
   //
   // return the bit 2 value of PortChangeStatus

@@ -53,10 +53,10 @@ FfsAttributes2FvFileAttributes (
   Routine Description:
     Convert the FFS File Attributes to FV File Attributes
     
-  Parameters:
+  Arguments:
     FfsAttributes   -   The attributes of UINT8 type.
     
-  Return Value:
+  Returns:
     The attributes of EFI_FV_FILE_ATTRIBUTES
     
 --*/
@@ -114,11 +114,11 @@ Arguments:
                       *Size is not modified if no file is found.
 
 Returns:
-    EFI_SUCCESS
-    EFI_DEVICE_ERROR
-    EFI_ACCESS_DENIED
-    EFI_NOT_FOUND
-    EFI_INVALID_PARAMETER
+    EFI_SUCCESS                 - Successfully find the file.
+    EFI_DEVICE_ERROR            - Device error.
+    EFI_ACCESS_DENIED           - Fv could not read.
+    EFI_NOT_FOUND               - No matching file found.
+    EFI_INVALID_PARAMETER       - Invalid parameter
 
 --*/
 {
@@ -153,8 +153,7 @@ Returns:
   }
 
   KeyValue = (UINTN *)Key;
-  for (;;)
-  {
+  for (;;) {
     if (*KeyValue == 0) {
       //
       // Search for 1st matching file
@@ -273,11 +272,13 @@ Arguments:
                           allocated UINTN in which the authentication status
                           is returned.
 Returns:
-    EFI_SUCCESS
-    EFI_WARN_BUFFER_TOO_SMALL
-    EFI_NOT_FOUND
-    EFI_DEVICE_ERROR
-    EFI_ACCESS_DENIED
+    EFI_SUCCESS                   - Successfully read to memory buffer.
+    EFI_WARN_BUFFER_TOO_SMALL     - Buffer too small.
+    EFI_NOT_FOUND                 - Not found.
+    EFI_DEVICE_ERROR              - Device error.
+    EFI_ACCESS_DENIED             - Could not read.
+    EFI_INVALID_PARAMETER         - Invalid parameter.
+    EFI_OUT_OF_RESOURCES          - Not enough buffer to be allocated.
 
 --*/
 {
@@ -405,11 +406,12 @@ FvReadFileSection (
                           is returned.
 
   Returns:
-    EFI_SUCCESS
-    EFI_WARN_BUFFER_TOO_SMALL
-    EFI_NOT_FOUND
-    EFI_DEVICE_ERROR
-    EFI_ACCESS_DENIED
+    EFI_SUCCESS                     - Successfully read the file section into buffer.
+    EFI_WARN_BUFFER_TOO_SMALL       - Buffer too small.
+    EFI_NOT_FOUND                   - Section not found.
+    EFI_DEVICE_ERROR                - Device error.
+    EFI_ACCESS_DENIED               - Could not read.
+    EFI_INVALID_PARAMETER           - Invalid parameter.
 
 --*/
 {
@@ -471,11 +473,12 @@ FvReadFileSection (
     //
     ASSERT_EFI_ERROR (Status);
 
-    Status = Sep->OpenSectionStream (Sep,
-                                     FileSize,
-                                     FileBuffer,
-                                     &FfsEntry->StreamHandle
-                                     );
+    Status = Sep->OpenSectionStream (
+                    Sep,
+                    FileSize,
+                    FileBuffer,
+                    &FfsEntry->StreamHandle
+                    );
     if (EFI_ERROR (Status)) {
       goto Done;
     }
@@ -491,7 +494,8 @@ FvReadFileSection (
   //
   // If SectionType == 0 We need the whole section stream
   //
-  Status = Sep->GetSection (Sep,
+  Status = Sep->GetSection (
+                  Sep,
                             FfsEntry->StreamHandle,
                             (SectionType == 0) ? NULL : &SectionType,
                             NULL,

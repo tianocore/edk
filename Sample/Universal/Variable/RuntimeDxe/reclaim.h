@@ -32,25 +32,25 @@ Revision History
 // Driver Consumed Protocol Prototypes
 //
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variable)
-#include EFI_PROTOCOL_DEFINITION(FirmwareVolumeBlock)
-#include EFI_PROTOCOL_DEFINITION(FaultTolerantWriteLite)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
+#include EFI_PROTOCOL_DEFINITION (FaultTolerantWriteLite)
 
 //
 // Functions
 //
-
 EFI_STATUS
 GetFvbHandleByAddress (
   IN  EFI_PHYSICAL_ADDRESS   VariableStoreBase,
   OUT EFI_HANDLE             *FvbHandle
-  );
+  )
+;
 
 EFI_STATUS
 FtwVariableSpace (
   IN EFI_PHYSICAL_ADDRESS   VariableBaseAddress,
   IN UINT8                  *Buffer,
   IN UINTN                  BufferSize
-  );
+  )
+;
 
-
-#endif 
+#endif

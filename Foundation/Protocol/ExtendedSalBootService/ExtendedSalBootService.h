@@ -102,9 +102,9 @@ EFI_STATUS
   IN  VOID                                        *PhysicalModuleGlobal
   );
 
-
+//
 // Extended Sal Boot Service Protocol Interface
-
+//
 typedef struct _EXTENDED_SAL_BOOT_SERVICE_PROTOCOL{
   EXTENDED_SAL_ADD_SST_INFO                       AddSalSystemTableInfo;
   EXTENDED_SAL_ADD_SST_ENTRY                      AddSalSystemTableEntry;

@@ -35,15 +35,14 @@ Abstract:
 #include "Tiano.h"
 #include "efidriverlib.h"
 #include "print.h"
-#include "efistdarg.h"                     
-#include EFI_PROTOCOL_DEFINITION(Hii)
-
+#include "efistdarg.h"
+#include EFI_PROTOCOL_DEFINITION (Hii)
 
 STATIC
-CHAR16 *
+CHAR16  *
 GetFlagsAndWidth (
-  IN  CHAR16      *Format, 
-  OUT UINTN       *Flags, 
+  IN  CHAR16      *Format,
+  OUT UINTN       *Flags,
   OUT UINTN       *Width,
   IN OUT  VA_LIST *Marker
   );
@@ -58,8 +57,8 @@ GuidToString (
 
 UINTN
 ValueToString (
-  IN  OUT CHAR16  *Buffer, 
-  IN  BOOLEAN     Flags, 
+  IN  OUT CHAR16  *Buffer,
+  IN  BOOLEAN     Flags,
   IN  INT64       Value
   );
 
@@ -79,32 +78,34 @@ _IPrint (
   IN CHAR16                           *fmt,
   IN VA_LIST                          args
   )
+//
 // Display string worker for: Print, PrintAt, IPrint, IPrintAt
+//
 {
-  CHAR16                              *Buffer;
-  CHAR16                              *BackupBuffer;
-  UINTN                               Index;
-  UINTN                               PreviousIndex;
+  CHAR16  *Buffer;
+  CHAR16  *BackupBuffer;
+  UINTN   Index;
+  UINTN   PreviousIndex;
 
   //
   // For now, allocate an arbitrarily long buffer
   //
-  Buffer = EfiLibAllocateZeroPool (0x10000);
-  BackupBuffer = EfiLibAllocateZeroPool (0x10000);
-  ASSERT(Buffer);
-  ASSERT(BackupBuffer);
+  Buffer        = EfiLibAllocateZeroPool (0x10000);
+  BackupBuffer  = EfiLibAllocateZeroPool (0x10000);
+  ASSERT (Buffer);
+  ASSERT (BackupBuffer);
 
   if (Column != (UINTN) -1) {
-    Out->SetCursorPosition(Out, Column, Row);
+    Out->SetCursorPosition (Out, Column, Row);
   }
 
   VSPrint (Buffer, 0x10000, fmt, args);
 
   Out->Mode->Attribute = Out->Mode->Attribute & 0x7f;
 
-  Out->SetAttribute(Out, Out->Mode->Attribute);
+  Out->SetAttribute (Out, Out->Mode->Attribute);
 
-  Index = 0;
+  Index         = 0;
   PreviousIndex = 0;
 
   do {
@@ -115,7 +116,6 @@ _IPrint (
     if (Buffer[Index] == 0) {
       break;
     }
-
     //
     // Null-terminate the temporary string
     //
@@ -139,13 +139,13 @@ _IPrint (
       // Preserve bits 0 - 6 and zero out the rest
       //
       Out->Mode->Attribute = Out->Mode->Attribute & 0x7f;
-      Out->SetAttribute(Out, Out->Mode->Attribute);
+      Out->SetAttribute (Out, Out->Mode->Attribute);
     } else {
       //
       // Must be wide, set bit 7 ON
       //
       Out->Mode->Attribute = Out->Mode->Attribute | EFI_WIDE_ATTRIBUTE;
-      Out->SetAttribute(Out, Out->Mode->Attribute);
+      Out->SetAttribute (Out, Out->Mode->Attribute);
     }
 
     Index++;
@@ -154,14 +154,13 @@ _IPrint (
 
   //
   // We hit the end of the string - print it
-  // 
+  //
   Out->OutputString (Out, &BackupBuffer[PreviousIndex]);
 
   gBS->FreePool (Buffer);
   gBS->FreePool (BackupBuffer);
   return EFI_SUCCESS;
 }
-
 
 UINTN
 Print (
@@ -184,7 +183,7 @@ Returns:
 
 --*/
 {
-  VA_LIST     args;
+  VA_LIST args;
 
   VA_START (args, fmt);
   return _IPrint ((UINTN) -1, (UINTN) -1, gST->ConOut, fmt, args);
@@ -283,7 +282,6 @@ PrintToken (
 }
 
 */
-
 UINTN
 PrintAt (
   IN UINTN     Column,
@@ -310,7 +308,7 @@ Returns:
 
 --*/
 {
-  VA_LIST     args;
+  VA_LIST args;
 
   VA_START (args, fmt);
   return _IPrint (Column, Row, gST->ConOut, fmt, args);
@@ -341,7 +339,7 @@ Returns:
 
 --*/
 {
-  return PrintAt(Column, Row, L"%s", String);
+  return PrintAt (Column, Row, L"%s", String);
 }
 
 UINTN
@@ -408,7 +406,7 @@ Returns:
   VA_START (Marker, Format);
   Return = VSPrint (Buffer, BufferSize, Format, Marker);
   VA_END (Marker);
-  
+
   return Return;
 }
 
@@ -444,22 +442,21 @@ Returns:
 
 --*/
 {
-  CHAR16  TmpBuffer[40];
-  CHAR16  *Buffer;
-  CHAR16  *UnicodeStr;
-  CHAR16  *Format;
-  UINTN   Index;
-  UINTN   Flags;
-  UINTN   Width;
-  UINT64  Value;
-  EFI_GUID *TmpGUID;
+  CHAR16    TmpBuffer[40];
+  CHAR16    *Buffer;
+  CHAR16    *UnicodeStr;
+  CHAR16    *Format;
+  UINTN     Index;
+  UINTN     Flags;
+  UINTN     Width;
+  UINT64    Value;
+  EFI_GUID  *TmpGUID;
 
   //
   // Process the format string. Stop if Buffer is over run.
   //
-
-  Buffer = StartOfBuffer;
-  Format = (CHAR16 *)FormatString; 
+  Buffer  = StartOfBuffer;
+  Format  = (CHAR16 *) FormatString;
   for (Index = 0; (*Format != '\0') && (Index < BufferSize - 1); Format++) {
     if (*Format != '%') {
       if (*Format == '\n' && Index < BufferSize - 2) {
@@ -468,10 +465,10 @@ Returns:
         //
         Buffer[Index++] = '\r';
       }
+
       Buffer[Index++] = *Format;
       continue;
     }
-
     //
     // Now it's time to parse what follows after %
     //
@@ -501,7 +498,7 @@ Returns:
       if ((Flags & LONG_TYPE) == LONG_TYPE) {
         Value = VA_ARG (Marker, UINT64);
       } else {
-        Value = (UINTN)VA_ARG (Marker, UINTN);
+        Value = (UINTN) VA_ARG (Marker, UINTN);
       }
 
 #if 0
@@ -515,7 +512,7 @@ Returns:
 
     case 's':
     case 'S':
-      UnicodeStr = (CHAR16 *)VA_ARG (Marker, CHAR16 *);
+      UnicodeStr = (CHAR16 *) VA_ARG (Marker, CHAR16 *);
 
       if (UnicodeStr == NULL) {
         UnicodeStr = L"<null string>";
@@ -524,26 +521,26 @@ Returns:
       break;
 
     case 'c':
-      Buffer[Index++] = (CHAR16)VA_ARG (Marker, UINTN);
+      Buffer[Index++] = (CHAR16) VA_ARG (Marker, UINTN);
       continue;
 
     case 'g':
-      TmpGUID = VA_ARG (Marker, EFI_GUID *); 
+      TmpGUID = VA_ARG (Marker, EFI_GUID *);
 
       if (TmpGUID != NULL) {
         Index += GuidToString (
-                  TmpGUID, 
-                  &Buffer[Index], 
-                  BufferSize - Index);
+                  TmpGUID,
+                  &Buffer[Index],
+                  BufferSize - Index
+                  );
       }
 
       continue;
 
     case '%':
-      //
-      // Fall through...
-      //
-  
+    //
+    // Fall through...
+    //
     default:
       //
       // if the type is unknown print it to the screen
@@ -552,23 +549,21 @@ Returns:
       continue;
     }
 
-    for ( ;*UnicodeStr != '\0' && Index < BufferSize - 1; UnicodeStr++) {
+    for (; *UnicodeStr != '\0' && Index < BufferSize - 1; UnicodeStr++) {
       Buffer[Index++] = *UnicodeStr;
     }
   }
 
-  Buffer[Index++] = '\0'; 
-   
+  Buffer[Index++] = '\0';
+
   return &Buffer[Index] - StartOfBuffer;
 }
-
-
 
 STATIC
 CHAR16 *
 GetFlagsAndWidth (
-  IN  CHAR16      *Format, 
-  OUT UINTN       *Flags, 
+  IN  CHAR16      *Format,
+  OUT UINTN       *Flags,
   OUT UINTN       *Width,
   IN OUT  VA_LIST *Marker
   )
@@ -600,15 +595,16 @@ Returns:
   UINTN   Count;
   BOOLEAN Done;
 
-  *Flags = 0;
-  *Width = 0;
-  for (Done = FALSE; !Done; ) {
+  *Flags  = 0;
+  *Width  = 0;
+  for (Done = FALSE; !Done;) {
     Format++;
 
     switch (*Format) {
 
     case '0':
       *Flags |= PREFIX_ZERO;
+
     case '1':
     case '2':
     case '3':
@@ -620,9 +616,9 @@ Returns:
     case '9':
       Count = 0;
       do {
-        Count = (Count * 10) + *Format - '0';
+        Count = (Count * 10) +*Format - '0';
         Format++;
-      } while ((*Format >= '0')  &&  (*Format <= '9'));
+      } while ((*Format >= '0') && (*Format <= '9'));
       Format--;
       *Width = Count;
       break;
@@ -631,6 +627,7 @@ Returns:
       Done = TRUE;
     }
   }
+
   return Format;
 }
 
@@ -664,20 +661,21 @@ Returns:
   UINTN Size;
 
   Size = SPrint (
-            Buffer, BufferSize, 
-            L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-            Guid->Data1,                    
-            Guid->Data2,
-            Guid->Data3,
-            Guid->Data4[0],
-            Guid->Data4[1],
-            Guid->Data4[2],
-            Guid->Data4[3],
-            Guid->Data4[4],
-            Guid->Data4[5],
-            Guid->Data4[6],
-            Guid->Data4[7]
-            );
+          Buffer,
+          BufferSize,
+          L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+          Guid->Data1,
+          Guid->Data2,
+          Guid->Data3,
+          Guid->Data4[0],
+          Guid->Data4[1],
+          Guid->Data4[2],
+          Guid->Data4[3],
+          Guid->Data4[4],
+          Guid->Data4[5],
+          Guid->Data4[6],
+          Guid->Data4[7]
+          );
 
   //
   // SPrint will null terminate the string. The -1 skips the null
@@ -687,8 +685,8 @@ Returns:
 
 UINTN
 ValueToString (
-  IN  OUT CHAR16  *Buffer, 
-  IN  BOOLEAN     Flags, 
+  IN  OUT CHAR16  *Buffer,
+  IN  BOOLEAN     Flags,
   IN  INT64       Value
   )
 /*++
@@ -717,19 +715,19 @@ Returns:
   UINTN   Count;
   UINTN   Remainder;
 
-  TempStr = TempBuffer;
+  TempStr   = TempBuffer;
   BufferPtr = Buffer;
-  Count = 0;
+  Count     = 0;
 
   if (Value < 0) {
-    *(BufferPtr++) = '-';
-    Value = -Value;
+    *(BufferPtr++)  = '-';
+    Value           = -Value;
     Count++;
   }
 
   do {
-    Value = (INT64)DivU64x32 ((UINT64)Value, 10, &Remainder);
-    *(TempStr++) = (CHAR16)(Remainder + '0');
+    Value         = (INT64) DivU64x32 ((UINT64) Value, 10, &Remainder);
+    *(TempStr++)  = (CHAR16) (Remainder + '0');
     Count++;
     if ((Flags & COMMA_TYPE) == COMMA_TYPE) {
       if (Count % 3 == 0) {
@@ -743,7 +741,7 @@ Returns:
   //
   while (TempStr != TempBuffer) {
     *(BufferPtr++) = *(--TempStr);
-  }  
+  }
 
   *BufferPtr = 0;
   return Count;

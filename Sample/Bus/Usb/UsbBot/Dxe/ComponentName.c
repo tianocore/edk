@@ -35,17 +35,17 @@ UsbBotComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UsbBotComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gUsbBotComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gUsbBotComponentName = {
   UsbBotComponentNameGetDriverName,
   UsbBotComponentNameGetControllerName,
   "eng"
@@ -53,9 +53,8 @@ EFI_COMPONENT_NAME_PROTOCOL gUsbBotComponentName = {
 
 STATIC EFI_UNICODE_STRING_TABLE mUsbBotDriverNameTable[] = {
   { "eng", L"Usb Bot Mass Storage Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
-
 
 EFI_STATUS
 EFIAPI
@@ -92,21 +91,21 @@ UsbBotComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gUsbBotComponentName.SupportedLanguages,
-           mUsbBotDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gUsbBotComponentName.SupportedLanguages,
+          mUsbBotDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 UsbBotComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -153,10 +152,10 @@ UsbBotComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                    Status;
-  USB_BOT_DEVICE                *UsbBotDev;
-  EFI_USB_ATAPI_PROTOCOL        *UsbAtapi;
-  
+  EFI_STATUS              Status;
+  USB_BOT_DEVICE          *UsbBotDev;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapi;
+
   //
   // This is a device driver, so ChildHandle must be NULL.
   //
@@ -170,23 +169,23 @@ UsbBotComponentNameGetControllerName (
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiUsbAtapiProtocolGuid,
-                  (VOID **)&UsbAtapi,
-                  gUsbBotDriverBinding.DriverBindingHandle,  
+                  (VOID **) &UsbAtapi,
+                  gUsbBotDriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                );
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   UsbBotDev = USB_BOT_DEVICE_FROM_THIS (UsbAtapi);
-  
+
   return EfiLibLookupUnicodeString (
-           Language, 
-           gUsbBotComponentName.SupportedLanguages,
-           UsbBotDev->ControllerNameTable, 
-           ControllerName
-         );
+          Language,
+          gUsbBotComponentName.SupportedLanguages,
+          UsbBotDev->ControllerNameTable,
+          ControllerName
+          );
 
 }

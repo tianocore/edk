@@ -28,9 +28,5 @@ Abstract:
 
 EFI_GUID gEfiFirmwareVolumeDispatchProtocolGuid = EFI_FIRMWARE_VOLUME_DISPATCH_PROTOCOL_GUID;
 
-EFI_GUID_STRING (                            \
-  &gEfiFirmwareVolumeDispatchProtocolGuid,   \
-  "FirmwareVolumeDispatch Protocol",         \
-  "Firmware Volume Dispatch protocol"
-);
-
+EFI_GUID_STRING (&gEfiFirmwareVolumeDispatchProtocolGuid, "FirmwareVolumeDispatch Protocol", 
+                 "Firmware Volume Dispatch protocol");

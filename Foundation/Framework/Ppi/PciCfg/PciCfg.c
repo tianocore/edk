@@ -21,8 +21,8 @@ Abstract:
 
 #include "Tiano.h"
 #include "Pei.h"
-#include EFI_PPI_DEFINITION(PciCfg)
+#include EFI_PPI_DEFINITION (PciCfg)
 
-EFI_GUID gPeiPciCfgPpiInServiceTableGuid = PEI_PCI_CFG_PPI_GUID;
+EFI_GUID  gPeiPciCfgPpiInServiceTableGuid = PEI_PCI_CFG_PPI_GUID;
 
 EFI_GUID_STRING(&gPeiPciCfgPpiInServiceTableGuid, "PciCfg", "PciCfg PPI");

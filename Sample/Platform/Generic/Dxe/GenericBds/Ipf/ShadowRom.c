@@ -26,23 +26,28 @@ Revision History
 
 #include EFI_PROTOCOL_DEFINITION (LegacyBios)
 
-UINT8        mShadowRomFlag = 0;
+UINT8 mShadowRomFlag = 0;
 
 VOID
 ShadowAllOptionRom()
 {
-  EFI_STATUS                      Status;
-  EFI_LEGACY_BIOS_PROTOCOL        *LegacyBios;
+  EFI_STATUS                Status;
+  EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
   //
   // Rom shadow only do once.
   //
   if (mShadowRomFlag == 0) {
-    Status = gBS->LocateProtocol (&gEfiLegacyBiosProtocolGuid,
-                            NULL, &LegacyBios);
+    Status = gBS->LocateProtocol (
+                    &gEfiLegacyBiosProtocolGuid,
+                    NULL,
+                    &LegacyBios
+                    );
     if (!EFI_ERROR (Status)) {
-      LegacyBios->PrepareToBootEfi(LegacyBios, NULL, NULL);
+      LegacyBios->PrepareToBootEfi (LegacyBios, NULL, NULL);
     }
+
     mShadowRomFlag = 1;
   }
-  return;
-} 
+
+  return ;
+}

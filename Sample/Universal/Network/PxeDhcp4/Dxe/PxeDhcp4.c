@@ -19,48 +19,48 @@ Abstract:
 #include "PxeDhcp4.h"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // Prototypes
 // Driver model protocol interface
 //
-
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverEntryPoint(
+PxeDhcp4DriverEntryPoint (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
-);
+  );
 
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverBindingSupported(
+PxeDhcp4DriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     ControllerHandle,
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
-);
+  );
 
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverBindingStart(
+PxeDhcp4DriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     ControllerHandle,
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
-);
+  );
 
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverBindingStop(
+PxeDhcp4DriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     ControllerHandle,
   IN  UINTN                          NumberOfChildren,
   IN  EFI_HANDLE                     *ChildHandleBuffer
-);
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // PXE DHCP Protocol Interface
 //
-
 EFI_DRIVER_BINDING_PROTOCOL gPxeDhcp4DriverBinding = {
   PxeDhcp4DriverBindingSupported,
   PxeDhcp4DriverBindingStart,
@@ -71,21 +71,20 @@ EFI_DRIVER_BINDING_PROTOCOL gPxeDhcp4DriverBinding = {
 };
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-//
-//
-//
-
-EFI_DRIVER_ENTRY_POINT(PxeDhcp4DriverEntryPoint)
 
 //
 //
 //
-
-EFI_STATUS EFIAPI
-PxeDhcp4DriverEntryPoint(
+EFI_DRIVER_ENTRY_POINT (PxeDhcp4DriverEntryPoint)
+//
+//
+//
+EFI_STATUS
+EFIAPI
+PxeDhcp4DriverEntryPoint (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-)
+  )
 /*++
 
 Routine Description:
@@ -100,24 +99,25 @@ Returns:
 
 --*/
 {
-  return EfiLibInstallAllDriverProtocols(
-    ImageHandle, 
-    SystemTable, 
-    &gPxeDhcp4DriverBinding,
-    ImageHandle,
-    &gPxeDhcp4ComponentName,
-    NULL,
-    NULL);
+  return EfiLibInstallAllDriverProtocols (
+          ImageHandle,
+          SystemTable,
+          &gPxeDhcp4DriverBinding,
+          ImageHandle,
+          &gPxeDhcp4ComponentName,
+          NULL,
+          NULL
+          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverBindingSupported(
-  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+PxeDhcp4DriverBindingSupported (
+  IN EFI_DRIVER_BINDING_PROTOCOL  * This,
   IN EFI_HANDLE                   ControllerHandle,
-  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath  OPTIONAL
-)
+  IN EFI_DEVICE_PATH_PROTOCOL     * RemainingDevicePath OPTIONAL
+  )
 /*++
 
   Routine Description:
@@ -138,44 +138,43 @@ PxeDhcp4DriverBindingSupported(
 
 --*/
 {
-  EFI_STATUS Status;
-  EFI_PXE_BASE_CODE_PROTOCOL*PxeBc;
+  EFI_STATUS                  Status;
+  EFI_PXE_BASE_CODE_PROTOCOL  *PxeBc;
 
   //
   // Open the IO Abstraction(s) needed to perform the supported test.
   //
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiPxeBaseCodeProtocolGuid,
+                  (VOID **) &PxeBc,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
 
-  Status = gBS->OpenProtocol(
-    ControllerHandle,  
-    &gEfiPxeBaseCodeProtocolGuid, 
-    (VOID **)&PxeBc,
-    This->DriverBindingHandle,   
-    ControllerHandle,   
-    EFI_OPEN_PROTOCOL_BY_DRIVER);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Close the I/O Abstraction(s) used to perform the supported test.
   //
-
-  return gBS->CloseProtocol(
-    ControllerHandle,  
-    &gEfiPxeBaseCodeProtocolGuid, 
-    This->DriverBindingHandle,   
-    ControllerHandle);
+  return gBS->CloseProtocol (
+                ControllerHandle,
+                &gEfiPxeBaseCodeProtocolGuid,
+                This->DriverBindingHandle,
+                ControllerHandle
+                );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverBindingStart(
-  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+PxeDhcp4DriverBindingStart (
+  IN EFI_DRIVER_BINDING_PROTOCOL  * This,
   IN EFI_HANDLE                   ControllerHandle,
-  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath  OPTIONAL
-)
+  IN EFI_DEVICE_PATH_PROTOCOL     * RemainingDevicePath OPTIONAL
+  )
 /*++
 
   Routine Description:
@@ -196,110 +195,107 @@ PxeDhcp4DriverBindingStart(
 
 --*/
 {
-  EFI_STATUS Status;
-  EFI_PXE_BASE_CODE_PROTOCOL *PxeBc;
+  EFI_STATUS                  Status;
+  EFI_PXE_BASE_CODE_PROTOCOL  *PxeBc;
   EFI_SIMPLE_NETWORK_PROTOCOL *Snp;
-  PXE_DHCP4_PRIVATE_DATA *Private;
+  PXE_DHCP4_PRIVATE_DATA      *Private;
 
   //
   // Connect to the PxeBaseCode interface on ControllerHandle.
   //
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiPxeBaseCodeProtocolGuid,
+                  (VOID **) &PxeBc,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
 
-  Status = gBS->OpenProtocol(
-    ControllerHandle, 
-    &gEfiPxeBaseCodeProtocolGuid, 
-    (VOID **)&PxeBc,
-    This->DriverBindingHandle,   
-    ControllerHandle,   
-    EFI_OPEN_PROTOCOL_BY_DRIVER);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // BaseCode has already grabbed the SimpleNetwork interface
   // so just do a HandleProtocol() to get it.
   //
+  Status = gBS->HandleProtocol (
+                  ControllerHandle,
+                  &gEfiSimpleNetworkProtocolGuid,
+                  &Snp
+                  );
 
-  Status = gBS->HandleProtocol(
-    ControllerHandle,
-    &gEfiSimpleNetworkProtocolGuid,
-    &Snp);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     goto error_exit;
   }
 
-  ASSERT(Snp);
+  ASSERT (Snp);
 
   //
   // Initialize the PXE DHCP device instance.
   //
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  sizeof (PXE_DHCP4_PRIVATE_DATA),
+                  (VOID **) &Private
+                  );
 
-  Status = gBS->AllocatePool(
-    EfiBootServicesData,
-    sizeof(PXE_DHCP4_PRIVATE_DATA),
-    (VOID **)&Private);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     goto error_exit;
   }
-
   //
   //
   //
+  EfiZeroMem (Private, sizeof (PXE_DHCP4_PRIVATE_DATA));
 
-  EfiZeroMem(Private, sizeof(PXE_DHCP4_PRIVATE_DATA));
+  Private->Signature          = PXE_DHCP4_PRIVATE_DATA_SIGNATURE;
+  Private->PxeBc              = PxeBc;
+  Private->Snp                = Snp;
+  Private->Handle             = ControllerHandle;
+  Private->PxeDhcp4.Revision  = EFI_PXE_DHCP4_PROTOCOL_REVISION;
+  Private->PxeDhcp4.Run       = PxeDhcp4Run;
+  Private->PxeDhcp4.Setup     = PxeDhcp4Setup;
+  Private->PxeDhcp4.Init      = PxeDhcp4Init;
+  Private->PxeDhcp4.Select    = PxeDhcp4Select;
+  Private->PxeDhcp4.Renew     = PxeDhcp4Renew;
+  Private->PxeDhcp4.Rebind    = PxeDhcp4Rebind;
+  Private->PxeDhcp4.Release   = PxeDhcp4Release;
+  Private->PxeDhcp4.Data      = NULL;
 
-  Private->Signature = PXE_DHCP4_PRIVATE_DATA_SIGNATURE;
-  Private->PxeBc = PxeBc;
-  Private->Snp = Snp;
-  Private->Handle = ControllerHandle;
-  Private->PxeDhcp4.Revision = EFI_PXE_DHCP4_PROTOCOL_REVISION;
-  Private->PxeDhcp4.Run = PxeDhcp4Run;
-  Private->PxeDhcp4.Setup = PxeDhcp4Setup;
-  Private->PxeDhcp4.Init = PxeDhcp4Init;
-  Private->PxeDhcp4.Select = PxeDhcp4Select;
-  Private->PxeDhcp4.Renew = PxeDhcp4Renew;
-  Private->PxeDhcp4.Rebind = PxeDhcp4Rebind;
-  Private->PxeDhcp4.Release = PxeDhcp4Release;
-  Private->PxeDhcp4.Data = NULL;
-   
   //
   // Install protocol interfaces for the PXE DHCP device.
   //
+  Status = gBS->InstallProtocolInterface (
+                  &ControllerHandle,
+                  &gEfiPxeDhcp4ProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &Private->PxeDhcp4
+                  );
 
-  Status = gBS->InstallProtocolInterface(
-    &ControllerHandle, 
-    &gEfiPxeDhcp4ProtocolGuid, 
-    EFI_NATIVE_INTERFACE, 
-    &Private->PxeDhcp4);
-
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     return Status;
   }
 
-error_exit:;
-  gBS->CloseProtocol(
-    ControllerHandle, 
-    &gEfiPxeBaseCodeProtocolGuid, 
-    This->DriverBindingHandle,   
-    ControllerHandle);
+error_exit: ;
+  gBS->CloseProtocol (
+        ControllerHandle,
+        &gEfiPxeBaseCodeProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   return Status;
 }
 
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 EFI_STATUS
 EFIAPI
-PxeDhcp4DriverBindingStop(
+PxeDhcp4DriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     ControllerHandle,
   IN  UINTN                          NumberOfChildren,
   IN  EFI_HANDLE                     *ChildHandleBuffer
-)
+  )
 /*++
 
   Routine Description:
@@ -320,69 +316,64 @@ PxeDhcp4DriverBindingStop(
 
 --*/
 {
-  EFI_STATUS Status;
-  EFI_PXE_DHCP4_PROTOCOL *PxeDhcp4;
-  PXE_DHCP4_PRIVATE_DATA *Private;
+  EFI_STATUS              Status;
+  EFI_PXE_DHCP4_PROTOCOL  *PxeDhcp4;
+  PXE_DHCP4_PRIVATE_DATA  *Private;
 
   //
   // Get our context back.
   //
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiPxeDhcp4ProtocolGuid,
+                  (VOID **) &PxeDhcp4,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
 
-  Status = gBS->OpenProtocol(
-    ControllerHandle, 
-    &gEfiPxeDhcp4ProtocolGuid,  
-    (VOID **)&PxeDhcp4,
-    This->DriverBindingHandle,   
-    ControllerHandle,   
-    EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
-  Private = PXE_DHCP4_PRIVATE_DATA_FROM_THIS(PxeDhcp4);
+  Private = PXE_DHCP4_PRIVATE_DATA_FROM_THIS (PxeDhcp4);
 
   //
   // Release allocated resources
   //
-
   if (Private->PxeDhcp4.Data) {
-    gBS->FreePool(Private->PxeDhcp4.Data);
+    gBS->FreePool (Private->PxeDhcp4.Data);
     Private->PxeDhcp4.Data = NULL;
   }
-
   //
   // Uninstall our protocol
   //
+  Status = gBS->UninstallProtocolInterface (
+                  ControllerHandle,
+                  &gEfiPxeDhcp4ProtocolGuid,
+                  &Private->PxeDhcp4
+                  );
 
-  Status = gBS->UninstallProtocolInterface(
-    ControllerHandle, 
-    &gEfiPxeDhcp4ProtocolGuid, 
-    &Private->PxeDhcp4);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Close any consumed protocols
   //
+  Status = gBS->CloseProtocol (
+                  ControllerHandle,
+                  &gEfiPxeBaseCodeProtocolGuid,
+                  This->DriverBindingHandle,
+                  ControllerHandle
+                  );
 
-  Status = gBS->CloseProtocol(
-    ControllerHandle, 
-          &gEfiPxeBaseCodeProtocolGuid, 
-          This->DriverBindingHandle,   
-          ControllerHandle);
-
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Release our private data
   //
-
-  gBS->FreePool(Private);
+  gBS->FreePool (Private);
 
   return Status;
 }

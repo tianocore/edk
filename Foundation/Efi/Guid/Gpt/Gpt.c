@@ -23,19 +23,16 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_GUID_DEFINITION(Gpt)
+#include EFI_GUID_DEFINITION (Gpt)
 
-
-EFI_GUID gEfiPartTypeUnusedGuid     = EFI_PART_TYPE_UNUSED_GUID;
+EFI_GUID  gEfiPartTypeUnusedGuid = EFI_PART_TYPE_UNUSED_GUID;
 
 EFI_GUID_STRING(&gEfiPartTypeUnusedGuid, "G0", "Null Partition Type GUID");
 
-
-EFI_GUID gEfiPartTypeSystemPartGuid = EFI_PART_TYPE_EFI_SYSTEM_PART_GUID;
+EFI_GUID  gEfiPartTypeSystemPartGuid = EFI_PART_TYPE_EFI_SYSTEM_PART_GUID;
 
 EFI_GUID_STRING(&gEfiPartTypeSystemPartGuid, "ESP", "EFI System Partition GUID");
 
-
-EFI_GUID gEfiPartTypeLegacyMbrGuid  = EFI_PART_TYPE_LEGACY_MBR_GUID;
+EFI_GUID  gEfiPartTypeLegacyMbrGuid = EFI_PART_TYPE_LEGACY_MBR_GUID;
 
 EFI_GUID_STRING(&gEfiPartTypeLegacyMbrGuid, "Legacy MBR", "Legacy Master Boot Record Partition GUID");

@@ -23,8 +23,12 @@ Revision History
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(IncompatiblePciDeviceSupport)
+#include EFI_PROTOCOL_DEFINITION (IncompatiblePciDeviceSupport)
 
-EFI_GUID gEfiIncompatiblePciDeviceSupportProtocolGuid = EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL_GUID;
+EFI_GUID  gEfiIncompatiblePciDeviceSupportProtocolGuid = EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiIncompatiblePciDeviceSupportProtocolGuid, "Incompatible PCI Device Support Protocol", "EFI 2.0 Incompatible PCI Device Support Protocol");
+EFI_GUID_STRING
+  (
+    &gEfiIncompatiblePciDeviceSupportProtocolGuid, "Incompatible PCI Device Support Protocol",
+      "Tiano Incompatible PCI Device Support Protocol"
+  );

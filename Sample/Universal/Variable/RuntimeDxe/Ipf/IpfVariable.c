@@ -25,8 +25,7 @@ Revision History
 //
 // Don't use module globals after the SetVirtualAddress map is signaled
 //
-extern ESAL_VARIABLE_GLOBAL   *mVariableModuleGlobal;
-
+extern ESAL_VARIABLE_GLOBAL *mVariableModuleGlobal;
 
 SAL_RETURN_REGS
 EsalVariableCommonEntry (
@@ -52,42 +51,50 @@ Returns:
 
 --*/
 {
-  SAL_RETURN_REGS           ReturnVal;
+  SAL_RETURN_REGS ReturnVal;
 
   switch (FunctionId) {
   case EsalGetVariable:
-    ReturnVal.Status = GetVariable ((CHAR16*) Arg2,
-                                    (EFI_GUID*) Arg3,
-                                    (UINT32*) Arg4,
-                                    (UINTN*) Arg5,
-                                    (VOID*) Arg6,
-                                    &Global->VariableBase[VirtualMode],
-                                    Global->FvbInstance);
+    ReturnVal.Status = GetVariable (
+                        (CHAR16 *) Arg2,
+                        (EFI_GUID *) Arg3,
+                        (UINT32 *) Arg4,
+                        (UINTN *) Arg5,
+                        (VOID *) Arg6,
+                        &Global->VariableBase[VirtualMode],
+                        Global->FvbInstance
+                        );
     return ReturnVal;
+
   case EsalGetNextVariableName:
-    ReturnVal.Status = GetNextVariableName ((UINTN*) Arg2,
-                                            (CHAR16*) Arg3,
-                                            (EFI_GUID*) Arg4,
-                                            &Global->VariableBase[VirtualMode],
-                                            Global->FvbInstance);
+    ReturnVal.Status = GetNextVariableName (
+                        (UINTN *) Arg2,
+                        (CHAR16 *) Arg3,
+                        (EFI_GUID *) Arg4,
+                        &Global->VariableBase[VirtualMode],
+                        Global->FvbInstance
+                        );
     return ReturnVal;
+
   case EsalSetVariable:
-    ReturnVal.Status = SetVariable ((CHAR16*) Arg2,
-                                    (EFI_GUID*) Arg3,
-                                    (UINT32) Arg4,
-                                    (UINTN) Arg5,
-                                    (VOID*) Arg6,
-                                    &Global->VariableBase[VirtualMode],
-                                    (UINTN*) &Global->VolatileLastVariableOffset,
-                                    (UINTN*) &Global->NonVolatileLastVariableOffset,
-                                    Global->FvbInstance);
+    ReturnVal.Status = SetVariable (
+                        (CHAR16 *) Arg2,
+                        (EFI_GUID *) Arg3,
+                        (UINT32) Arg4,
+                        (UINTN) Arg5,
+                        (VOID *) Arg6,
+                        &Global->VariableBase[VirtualMode],
+                        (UINTN *) &Global->VolatileLastVariableOffset,
+                        (UINTN *) &Global->NonVolatileLastVariableOffset,
+                        Global->FvbInstance
+                        );
     return ReturnVal;
+
   default:
     ReturnVal.Status = EFI_SAL_INVALID_ARGUMENT;
     return ReturnVal;
   }
 }
-
 
 EFI_RUNTIMESERVICE
 VOID
@@ -105,15 +112,22 @@ Returns:
 
 --*/
 {
-  EfiCopyMem (&mVariableModuleGlobal->VariableBase[Virtual],
-              &mVariableModuleGlobal->VariableBase[Physical],
-              sizeof (VARIABLE_GLOBAL));
-              
-  EfiConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mVariableModuleGlobal->VariableBase[Virtual].NonVolatileVariableBase);
-  EfiConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mVariableModuleGlobal->VariableBase[Virtual].VolatileVariableBase);
+  EfiCopyMem (
+    &mVariableModuleGlobal->VariableBase[Virtual],
+    &mVariableModuleGlobal->VariableBase[Physical],
+    sizeof (VARIABLE_GLOBAL)
+    );
+
+  EfiConvertPointer (
+    EFI_INTERNAL_POINTER,
+    (VOID **) &mVariableModuleGlobal->VariableBase[Virtual].NonVolatileVariableBase
+    );
+  EfiConvertPointer (
+    EFI_INTERNAL_POINTER,
+    (VOID **) &mVariableModuleGlobal->VariableBase[Virtual].VolatileVariableBase
+    );
   EfiConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mVariableModuleGlobal);
 }
-
 
 EFI_STATUS
 VariableServiceInitialize (
@@ -139,10 +153,14 @@ Returns:
   //  Register All the Functions with Extended Sal.
   //
   RegisterEsalClass (
-    &gEfiExtendedSalVariableServicesProtocolGuid, mVariableModuleGlobal,
-    EsalVariableCommonEntry,                      EsalGetVariable,
-    EsalVariableCommonEntry,                      EsalGetNextVariableName,
-    EsalVariableCommonEntry,                      EsalSetVariable,
+    &gEfiExtendedSalVariableServicesProtocolGuid,
+    mVariableModuleGlobal,
+    EsalVariableCommonEntry,
+    EsalGetVariable,
+    EsalVariableCommonEntry,
+    EsalGetNextVariableName,
+    EsalVariableCommonEntry,
+    EsalSetVariable,
     NULL
     );
 

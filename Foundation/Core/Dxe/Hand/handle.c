@@ -43,6 +43,21 @@ VOID
 CoreAcquireProtocolLock (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Acquire lock on gProtocolDatabaseLock.
+  
+Arguments:
+
+  None
+  
+Returns:
+
+  None
+
+--*/
 {
   CoreAcquireLock (&gProtocolDatabaseLock);
 }
@@ -52,6 +67,21 @@ VOID
 CoreReleaseProtocolLock (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Release lock on gProtocolDatabaseLock.
+  
+Arguments:
+
+  None
+  
+Returns:
+
+  None
+
+--*/
 {
   CoreReleaseLock (&gProtocolDatabaseLock);
 }
@@ -61,7 +91,23 @@ EFI_STATUS
 CoreValidateHandle (
   IN  EFI_HANDLE                UserHandle
   )
+/*++
 
+Routine Description:
+
+  Check whether a handle is a valid EFI_HANDLE
+  
+Arguments:
+
+  UserHandle    - The handle to check
+  
+Returns:
+
+  EFI_INVALID_PARAMETER   - The handle is NULL or not a valid EFI_HANDLE.
+
+  EFI_SUCCESS             - The handle is valid EFI_HANDLE.
+
+--*/
 {
   IHANDLE             *Handle;
 
@@ -112,9 +158,9 @@ Returns:
   //
 
   ProtEntry = NULL;
-  for (Link=mProtocolDatabase.ForwardLink; 
-     Link != &mProtocolDatabase; 
-     Link=Link->ForwardLink) {
+  for (Link = mProtocolDatabase.ForwardLink; 
+       Link != &mProtocolDatabase; 
+       Link = Link->ForwardLink) {
 
     Item = CR(Link, PROTOCOL_ENTRY, AllEntries, PROTOCOL_ENTRY_SIGNATURE);
     if (EfiCompareGuid (&Item->ProtocolID, Protocol)) {
@@ -321,7 +367,7 @@ Routine Description:
 
 Arguments:
 
-  Handle         - The handle to install the protocol handler on,
+  UserHandle     - The handle to install the protocol handler on,
                     or NULL if a new handle is to be allocated
 
   Protocol       - The protocol to add to the handle
@@ -361,7 +407,7 @@ Routine Description:
 
 Arguments:
 
-  Handle         - The handle to install the protocol handler on,
+  UserHandle     - The handle to install the protocol handler on,
                    or NULL if a new handle is to be allocated
 
   Protocol       - The protocol to add to the handle
@@ -372,9 +418,14 @@ Arguments:
 
   Notify         - indicates whether notify the notification list 
                    for this protocol
+
 Returns:
 
-  Status code    
+  EFI_INVALID_PARAMETER     - Invalid parameter
+  
+  EFI_OUT_OF_RESOURCES       - No enough buffer to allocate
+  
+  EFI_SUCCESS               - Protocol interface successfully installed
 
 --*/
 {
@@ -559,7 +610,9 @@ Arguments:
 
 Returns:
 
-  Status code    
+  EFI_INVALID_PARAMETER       - Handle is NULL.
+  
+  EFI_SUCCESS                 - Protocol interfaces successfully installed.
 
 --*/
 {
@@ -681,8 +734,7 @@ Returns:
     ItemFound = FALSE;
     for ( Link = Prot->OpenList.ForwardLink;
           (Link != &Prot->OpenList) && !ItemFound;
-          Link = Link->ForwardLink
-          ) {
+          Link = Link->ForwardLink ) {
       OpenData = CR (Link, OPEN_PROTOCOL_DATA, Link, OPEN_PROTOCOL_DATA_SIGNATURE);
       if (OpenData->Attributes & EFI_OPEN_PROTOCOL_BY_DRIVER) {
         ItemFound = TRUE;
@@ -705,10 +757,10 @@ Returns:
       ItemFound = FALSE;
       for ( Link = Prot->OpenList.ForwardLink;
             (Link != &Prot->OpenList) && !ItemFound;
-            Link = Link->ForwardLink
-            ) {
+            Link = Link->ForwardLink ) {
         OpenData = CR (Link, OPEN_PROTOCOL_DATA, Link, OPEN_PROTOCOL_DATA_SIGNATURE);
-        if (OpenData->Attributes & (EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL | EFI_OPEN_PROTOCOL_GET_PROTOCOL | EFI_OPEN_PROTOCOL_TEST_PROTOCOL)) {
+        if (OpenData->Attributes & 
+            (EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL | EFI_OPEN_PROTOCOL_GET_PROTOCOL | EFI_OPEN_PROTOCOL_TEST_PROTOCOL)) {
           ItemFound = TRUE;
           RemoveEntryList (&OpenData->Link);  
           Prot->OpenListCount--;
@@ -749,15 +801,17 @@ Routine Description:
 
 Arguments:
 
-  Handle          - The handle to remove the protocol handler from
+  UserHandle      - The handle to remove the protocol handler from
 
-  ProtocolHandle  - The protocol, of protocol:interface, to remove
+  Protocol        - The protocol, of protocol:interface, to remove
 
   Interface       - The interface, of protocol:interface, to remove
 
 Returns:
 
-  Status code    
+  EFI_INVALID_PARAMETER       - Protocol is NULL.
+  
+  EFI_SUCCESS                 - Protocol interface successfully uninstalled.
 
 --*/
 {
@@ -1040,17 +1094,19 @@ Arguments:
 
   Interface      - The location to return the protocol interface
 
-  AgentHandle    - The handle of the agent that is opening the protocol interface
+  ImageHandle       - The handle of the Image that is opening the protocol interface
                     specified by Protocol and Interface.
   
-  NotifyFunction - controller handle or NULL
+  ControllerHandle  - The controller handle that is requiring this interface.
 
   Attributes     - The open mode of the protocol interface specified by Handle
                     and Protocol.
 
 Returns:
 
-  The requested protocol interface for the handle
+  EFI_INVALID_PARAMETER       - Protocol is NULL.
+  
+  EFI_SUCCESS                 - Get the protocol interface.
   
 --*/
 {
@@ -1278,6 +1334,7 @@ Arguments:
 
 Returns:
 
+  EFI_INVALID_PARAMETER     - Protocol is NULL.
   
 --*/
 {
@@ -1561,6 +1618,21 @@ UINT64
 CoreGetHandleDatabaseKey (
   VOID
   )
+/*++
+
+Routine Description:
+
+  return handle database key.
+
+Arguments:
+
+  None
+  
+Returns:
+  
+  Handle database key.
+  
+--*/
 {
   return gHandleDatabaseKey;
 }

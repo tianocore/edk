@@ -28,8 +28,8 @@ Revision History
 #ifndef EFI_SIZE_REDUCTION_APPLIED
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
-                                         
-extern EFI_COMPONENT_NAME_PROTOCOL gPciBusComponentName;
+
+extern EFI_COMPONENT_NAME_PROTOCOL  gPciBusComponentName;
 
 #endif
 
@@ -42,17 +42,54 @@ PciBusComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  Language    - TODO: add argument description
+  DriverName  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
 PciBusComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-  );
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  ControllerHandle  - TODO: add argument description
+  ChildHandle       - TODO: add argument description
+  Language          - TODO: add argument description
+  ControllerName    - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif
-

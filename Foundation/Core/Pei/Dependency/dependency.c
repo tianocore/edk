@@ -80,7 +80,8 @@ Returns:
                              &PpiGuid,        // GUID
                              0,               // INSTANCE
                              NULL,            // EFI_PEI_PPI_DESCRIPTOR
-                             &PeiInstance);   // PPI
+                             &PeiInstance     // PPI
+                             );
 
   if (EFI_ERROR(Status)) {
     return FALSE;
@@ -109,11 +110,13 @@ Routine Description:
 
 Arguments:
 
-  Pointer to a dependency expression.  The Grammar adheres to the BNF
-    described above and is stored in postfix notation.
-  Runnable is True if the driver can be scheduled and False if the driver 
-    cannot be scheduled.  This is the value that the schedulers should use
-    for deciding the state of the driver.
+  PeiServices               - Calling context.
+
+  DependencyExpression      - Pointer to a dependency expression.  The Grammar adheres to 
+                              the BNF described above and is stored in postfix notation.
+  Runnable                  - is True if the driver can be scheduled and False if the driver 
+                              cannot be scheduled.  This is the value that the schedulers 
+                              should use for deciding the state of the driver.
 
 Returns:
 

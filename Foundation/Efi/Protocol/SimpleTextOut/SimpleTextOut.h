@@ -28,15 +28,15 @@ Abstract:
 #define _SIMPLE_TEXT_OUT_H_
 
 #define EFI_SIMPLE_TEXT_OUT_PROTOCOL_GUID \
-  { 0x387477c2, 0x69c7, 0x11d2, 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b }
+  { \
+    0x387477c2, 0x69c7, 0x11d2, 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_SIMPLE_TEXT_OUT_PROTOCOL);
-
 
 //
 // Define's for required EFI Unicode Box Draw characters
 //
-
 #define BOXDRAW_HORIZONTAL                  0x2500
 #define BOXDRAW_VERTICAL                    0x2502
 #define BOXDRAW_DOWN_RIGHT                  0x250c
@@ -81,56 +81,56 @@ EFI_FORWARD_DECLARATION (EFI_SIMPLE_TEXT_OUT_PROTOCOL);
 //
 // EFI Required Block Elements Code Chart
 //
-#define BLOCKELEMENT_FULL_BLOCK             0x2588
-#define BLOCKELEMENT_LIGHT_SHADE            0x2591
+#define BLOCKELEMENT_FULL_BLOCK   0x2588
+#define BLOCKELEMENT_LIGHT_SHADE  0x2591
 
 //
 // EFI Required Geometric Shapes Code Chart
 //
-#define GEOMETRICSHAPE_UP_TRIANGLE           0x25b2
-#define GEOMETRICSHAPE_RIGHT_TRIANGLE        0x25ba
-#define GEOMETRICSHAPE_DOWN_TRIANGLE         0x25bc
-#define GEOMETRICSHAPE_LEFT_TRIANGLE         0x25c4
+#define GEOMETRICSHAPE_UP_TRIANGLE    0x25b2
+#define GEOMETRICSHAPE_RIGHT_TRIANGLE 0x25ba
+#define GEOMETRICSHAPE_DOWN_TRIANGLE  0x25bc
+#define GEOMETRICSHAPE_LEFT_TRIANGLE  0x25c4
 
 //
 // EFI Required Arrow shapes
 //
-#define ARROW_LEFT                          0x2190
-#define ARROW_UP                            0x2191
-#define ARROW_RIGHT                         0x2192
-#define ARROW_DOWN                          0x2193
+#define ARROW_LEFT  0x2190
+#define ARROW_UP    0x2191
+#define ARROW_RIGHT 0x2192
+#define ARROW_DOWN  0x2193
 
 //
 // EFI Console Colours
 //
-#define EFI_BLACK   0x00
-#define EFI_BLUE    0x01
-#define EFI_GREEN   0x02
-#define EFI_CYAN            (EFI_BLUE | EFI_GREEN)
-#define EFI_RED     0x04
-#define EFI_MAGENTA         (EFI_BLUE | EFI_RED)
-#define EFI_BROWN           (EFI_GREEN | EFI_RED)
-#define EFI_LIGHTGRAY       (EFI_BLUE | EFI_GREEN | EFI_RED)
-#define EFI_BRIGHT  0x08
-#define EFI_DARKGRAY        (EFI_BRIGHT)
-#define EFI_LIGHTBLUE       (EFI_BLUE | EFI_BRIGHT)
-#define EFI_LIGHTGREEN      (EFI_GREEN | EFI_BRIGHT)
-#define EFI_LIGHTCYAN       (EFI_CYAN | EFI_BRIGHT)
-#define EFI_LIGHTRED        (EFI_RED | EFI_BRIGHT)
-#define EFI_LIGHTMAGENTA    (EFI_MAGENTA | EFI_BRIGHT)
-#define EFI_YELLOW          (EFI_BROWN | EFI_BRIGHT)
-#define EFI_WHITE           (EFI_BLUE | EFI_GREEN | EFI_RED | EFI_BRIGHT)
+#define EFI_BLACK                 0x00
+#define EFI_BLUE                  0x01
+#define EFI_GREEN                 0x02
+#define EFI_CYAN                  (EFI_BLUE | EFI_GREEN)
+#define EFI_RED                   0x04
+#define EFI_MAGENTA               (EFI_BLUE | EFI_RED)
+#define EFI_BROWN                 (EFI_GREEN | EFI_RED)
+#define EFI_LIGHTGRAY             (EFI_BLUE | EFI_GREEN | EFI_RED)
+#define EFI_BRIGHT                0x08
+#define EFI_DARKGRAY              (EFI_BRIGHT)
+#define EFI_LIGHTBLUE             (EFI_BLUE | EFI_BRIGHT)
+#define EFI_LIGHTGREEN            (EFI_GREEN | EFI_BRIGHT)
+#define EFI_LIGHTCYAN             (EFI_CYAN | EFI_BRIGHT)
+#define EFI_LIGHTRED              (EFI_RED | EFI_BRIGHT)
+#define EFI_LIGHTMAGENTA          (EFI_MAGENTA | EFI_BRIGHT)
+#define EFI_YELLOW                (EFI_BROWN | EFI_BRIGHT)
+#define EFI_WHITE                 (EFI_BLUE | EFI_GREEN | EFI_RED | EFI_BRIGHT)
 
-#define EFI_TEXT_ATTR(f,b)  ((f) | ((b) << 4))
+#define EFI_TEXT_ATTR(f, b)       ((f) | ((b) << 4))
 
-#define EFI_BACKGROUND_BLACK        0x00
-#define EFI_BACKGROUND_BLUE         0x10
-#define EFI_BACKGROUND_GREEN        0x20
-#define EFI_BACKGROUND_CYAN         (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_GREEN)
-#define EFI_BACKGROUND_RED          0x40
-#define EFI_BACKGROUND_MAGENTA      (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_RED)
-#define EFI_BACKGROUND_BROWN        (EFI_BACKGROUND_GREEN | EFI_BACKGROUND_RED)
-#define EFI_BACKGROUND_LIGHTGRAY    (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_GREEN | EFI_BACKGROUND_RED)
+#define EFI_BACKGROUND_BLACK      0x00
+#define EFI_BACKGROUND_BLUE       0x10
+#define EFI_BACKGROUND_GREEN      0x20
+#define EFI_BACKGROUND_CYAN       (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_GREEN)
+#define EFI_BACKGROUND_RED        0x40
+#define EFI_BACKGROUND_MAGENTA    (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_RED)
+#define EFI_BACKGROUND_BROWN      (EFI_BACKGROUND_GREEN | EFI_BACKGROUND_RED)
+#define EFI_BACKGROUND_LIGHTGRAY  (EFI_BACKGROUND_BLUE | EFI_BACKGROUND_GREEN | EFI_BACKGROUND_RED)
 
 //
 // We currently define attributes from 0 - 7F for color manipulations
@@ -140,12 +140,12 @@ EFI_FORWARD_DECLARATION (EFI_SIMPLE_TEXT_OUT_PROTOCOL);
 // If bit 7 is off, the narrow glyph database will be used.  This does NOT affect information that is sent to
 // non-local displays (e.g. serial or LAN consoles).
 //
-#define EFI_WIDE_ATTRIBUTE          0x80
+#define EFI_WIDE_ATTRIBUTE  0x80
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_RESET) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN BOOLEAN                                ExtendedVerification
   )
 /*++
@@ -169,7 +169,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_OUTPUT_STRING) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN CHAR16                                 *String
   )
 /*++
@@ -199,7 +199,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_TEST_STRING) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN CHAR16                                 *String
   )
 /*++
@@ -225,7 +225,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_QUERY_MODE) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN UINTN                                  ModeNumber,
   OUT UINTN                                 *Columns,
   OUT UINTN                                 *Rows
@@ -253,7 +253,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_SET_MODE) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN UINTN                                  ModeNumber
   )
 /*++
@@ -276,7 +276,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_SET_ATTRIBUTE) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN UINTN                                  Attribute
   )
 /*++
@@ -296,14 +296,13 @@ EFI_STATUS
     EFI_DEVICE_ERROR - The device had an error and could not complete the request.
     EFI_UNSUPPORTED - The attribute requested is not defined.
 
---*/  
+--*/
 ;
-
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_CLEAR_SCREEN) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   * This
   )
 /*++
 
@@ -319,14 +318,13 @@ EFI_STATUS
     EFI_DEVICE_ERROR - The device had an error and could not complete the request.
     EFI_UNSUPPORTED - The output device is not in a valid text mode.
 
---*/  
+--*/
 ;
-
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_SET_CURSOR_POSITION) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN UINTN                                  Column,
   IN UINTN                                  Row
   )
@@ -347,13 +345,13 @@ EFI_STATUS
     EFI_UNSUPPORTED - The output device is not in a valid text mode, or the 
                        cursor position is invalid for the current mode.
 
---*/  
+--*/
 ;
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_TEXT_ENABLE_CURSOR) (
-  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL   *This,
+  IN EFI_SIMPLE_TEXT_OUT_PROTOCOL           * This,
   IN BOOLEAN                                Enable
   )
 /*++
@@ -373,9 +371,8 @@ EFI_STATUS
                         the cursor mode.
     EFI_UNSUPPORTED - The output device is not in a valid text mode.
 
---*/  
+--*/
 ;
-
 
 /*++
   Mode Structure pointed to by Simple Text Out protocol.
@@ -389,36 +386,36 @@ EFI_STATUS
   
 --*/
 typedef struct {
-  INT32                           MaxMode;
+  INT32   MaxMode;
 
   //
   // current settings
   //
-  INT32                           Mode;
-  INT32                           Attribute;
-  INT32                           CursorColumn;
-  INT32                           CursorRow;
-  BOOLEAN                         CursorVisible;
+  INT32   Mode;
+  INT32   Attribute;
+  INT32   CursorColumn;
+  INT32   CursorRow;
+  BOOLEAN CursorVisible;
 } EFI_SIMPLE_TEXT_OUTPUT_MODE;
 
 typedef struct _EFI_SIMPLE_TEXT_OUT_PROTOCOL {
-  EFI_TEXT_RESET                  Reset;
+  EFI_TEXT_RESET                Reset;
 
-  EFI_TEXT_OUTPUT_STRING          OutputString;
-  EFI_TEXT_TEST_STRING            TestString;
+  EFI_TEXT_OUTPUT_STRING        OutputString;
+  EFI_TEXT_TEST_STRING          TestString;
 
-  EFI_TEXT_QUERY_MODE             QueryMode;
-  EFI_TEXT_SET_MODE               SetMode;
-  EFI_TEXT_SET_ATTRIBUTE          SetAttribute;
+  EFI_TEXT_QUERY_MODE           QueryMode;
+  EFI_TEXT_SET_MODE             SetMode;
+  EFI_TEXT_SET_ATTRIBUTE        SetAttribute;
 
-  EFI_TEXT_CLEAR_SCREEN           ClearScreen;
-  EFI_TEXT_SET_CURSOR_POSITION    SetCursorPosition;
-  EFI_TEXT_ENABLE_CURSOR          EnableCursor;
+  EFI_TEXT_CLEAR_SCREEN         ClearScreen;
+  EFI_TEXT_SET_CURSOR_POSITION  SetCursorPosition;
+  EFI_TEXT_ENABLE_CURSOR        EnableCursor;
 
   //
   // Current mode
   //
-  EFI_SIMPLE_TEXT_OUTPUT_MODE     *Mode;
+  EFI_SIMPLE_TEXT_OUTPUT_MODE   *Mode;
 } EFI_SIMPLE_TEXT_OUT_PROTOCOL;
 
 extern EFI_GUID gEfiSimpleTextOutProtocolGuid;

@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  LibGlobals.c
+  LibGlobalSt.c
 
 Abstract:
 
@@ -29,7 +29,6 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 
-EFI_SYSTEM_TABLE          *gST = NULL;
-EFI_BOOT_SERVICES         *gBS = NULL;
-EFI_RUNTIME_SERVICES      *gRT = NULL;
-
+EFI_SYSTEM_TABLE      *gST  = NULL;
+EFI_BOOT_SERVICES     *gBS  = NULL;
+EFI_RUNTIME_SERVICES  *gRT  = NULL;

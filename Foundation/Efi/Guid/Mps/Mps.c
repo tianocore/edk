@@ -26,10 +26,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_GUID_DEFINITION(Mps)
+#include EFI_GUID_DEFINITION (Mps)
 
-
-EFI_GUID gEfiMpsTableGuid  = EFI_MPS_TABLE_GUID;
+EFI_GUID  gEfiMpsTableGuid = EFI_MPS_TABLE_GUID;
 
 EFI_GUID_STRING(&gEfiMpsTableGuid, "MPS Table", "MPS Table GUID in EFI System Table");
-

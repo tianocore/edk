@@ -33,17 +33,17 @@ ScsiDiskComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ScsiDiskComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gScsiDiskComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gScsiDiskComponentName = {
   ScsiDiskComponentNameGetDriverName,
   ScsiDiskComponentNameGetControllerName,
   "eng"
@@ -51,9 +51,8 @@ EFI_COMPONENT_NAME_PROTOCOL gScsiDiskComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mScsiDiskDriverNameTable[] = {
   { "eng", L"Scsi Disk Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
-
 
 EFI_STATUS
 EFIAPI
@@ -90,21 +89,21 @@ ScsiDiskComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gScsiDiskComponentName.SupportedLanguages,
-           mScsiDiskDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gScsiDiskComponentName.SupportedLanguages,
+          mScsiDiskDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 ScsiDiskComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -152,10 +151,10 @@ ScsiDiskComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                    Status;
-  SCSI_DISK_DEV                 *ScsiDiskDevice;
-  EFI_BLOCK_IO_PROTOCOL         *BlockIo;
-  
+  EFI_STATUS            Status;
+  SCSI_DISK_DEV         *ScsiDiskDevice;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
+
   //
   // This is a device driver, so ChildHandle must be NULL.
   //
@@ -169,23 +168,23 @@ ScsiDiskComponentNameGetControllerName (
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiBlockIoProtocolGuid,
-                  (VOID **)&BlockIo,
-                  gScsiDiskDriverBinding.DriverBindingHandle,  
+                  (VOID **) &BlockIo,
+                  gScsiDiskDriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                );
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_THIS (BlockIo);
-  
+
   return EfiLibLookupUnicodeString (
-           Language, 
-           gScsiDiskComponentName.SupportedLanguages,
-           ScsiDiskDevice->ControllerNameTable, 
-           ControllerName
-         );
+          Language,
+          gScsiDiskComponentName.SupportedLanguages,
+          ScsiDiskDevice->ControllerNameTable,
+          ControllerName
+          );
 
 }

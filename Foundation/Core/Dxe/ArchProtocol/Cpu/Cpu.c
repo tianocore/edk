@@ -15,14 +15,14 @@ Module Name:
 
 Abstract:
 
-  CPU Architectural Protocol GUID as defined in EFI 2.0
+  CPU Architectural Protocol GUID as defined in Tiano
 
 
 --*/
 
 #include "Tiano.h"
-#include EFI_ARCH_PROTOCOL_DEFINITION(Cpu)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Cpu)
 
-EFI_GUID gEfiCpuArchProtocolGuid = EFI_CPU_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiCpuArchProtocolGuid = EFI_CPU_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiCpuArchProtocolGuid, "CPU", "CPU Arch Protocol");

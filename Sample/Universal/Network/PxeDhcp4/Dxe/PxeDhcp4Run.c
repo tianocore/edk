@@ -20,35 +20,32 @@ Abstract:
 #include "PxeDhcp4.h"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-EFI_STATUS EFIAPI
-PxeDhcp4Run(
+EFI_STATUS
+EFIAPI
+PxeDhcp4Run (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN OPTIONAL UINTN OpLen,
-  IN OPTIONAL VOID *OpList)
+  IN OPTIONAL UINTN                  OpLen,
+  IN OPTIONAL VOID                   *OpList
+  )
 {
-  PXE_DHCP4_PRIVATE_DATA *Private;
-  DHCP4_PACKET *offer_list;
-  EFI_STATUS efi_status;
-  EFI_IP_ADDRESS zero_ip;
-  UINTN offers;
-  UINTN timeout;
-  UINTN n;
-  UINT16 seconds;
+  PXE_DHCP4_PRIVATE_DATA  *Private;
+  DHCP4_PACKET            *offer_list;
+  EFI_STATUS              efi_status;
+  EFI_IP_ADDRESS          zero_ip;
+  UINTN                   offers;
+  UINTN                   timeout;
+  UINTN                   n;
+  UINT16                  seconds;
 
   //
   // Validate parameters.
   //
-
-  if (This == NULL ||
-    (OpLen != 0 && OpList == NULL) ||
-    (OpLen == 0 && OpList != NULL))
-  {
+  if (This == NULL || (OpLen != 0 && OpList == NULL) || (OpLen == 0 && OpList != NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  for (n = 0; n < OpLen; ) {
-    switch (((UINT8 *)OpList)[n]) {
+  for (n = 0; n < OpLen;) {
+    switch (((UINT8 *) OpList)[n]) {
     case DHCP4_PAD:
       ++n;
       continue;
@@ -58,7 +55,7 @@ PxeDhcp4Run(
       break;
 
     default:
-      n += 2 + ((UINT8 *)OpList)[n + 1];
+      n += 2 + ((UINT8 *) OpList)[n + 1];
       continue;
     }
 
@@ -68,12 +65,10 @@ PxeDhcp4Run(
   if (n != OpLen) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Get pointer to instance data.
   //
-
-  Private = PXE_DHCP4_PRIVATE_DATA_FROM_THIS(This);
+  Private = PXE_DHCP4_PRIVATE_DATA_FROM_THIS (This);
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -82,19 +77,17 @@ PxeDhcp4Run(
   if (Private->PxeBc == NULL) {
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Initialize DHCP discover packet.
   //
+  efi_status = PxeDhcp4Setup (This, NULL);
 
-  efi_status = PxeDhcp4Setup(This, NULL);
-
-  if (EFI_ERROR(efi_status)) {
+  if (EFI_ERROR (efi_status)) {
     return efi_status;
   }
 
-  for (n = 0; n < OpLen; ) {
-    switch (((UINT8 *)OpList)[n]) {
+  for (n = 0; n < OpLen;) {
+    switch (((UINT8 *) OpList)[n]) {
     case DHCP4_PAD:
       ++n;
       continue;
@@ -104,34 +97,33 @@ PxeDhcp4Run(
       break;
 
     default:
-      efi_status = add_opt(&This->Data->Discover,
-        (DHCP4_OP *)&(((UINT8 *)OpList)[n]));
+      efi_status = add_opt (
+                    &This->Data->Discover,
+                    (DHCP4_OP *) &(((UINT8 *) OpList)[n])
+                    );
 
-      if (EFI_ERROR(efi_status)) {
+      if (EFI_ERROR (efi_status)) {
         return efi_status;
       }
 
-      n += 2 + ((UINT8 *)OpList)[n + 1];
+      n += 2 + ((UINT8 *) OpList)[n + 1];
       continue;
     }
 
     break;
   }
- 
   //
   // Basic DHCP D.O.R.A.
   // 1, 2, 4, 8, 16 & 32 second timeouts.
   // Callback routine can be used to break out earlier.
   //
+  EfiZeroMem (&zero_ip, sizeof (EFI_IP_ADDRESS));
 
-  EfiZeroMem(&zero_ip, sizeof(EFI_IP_ADDRESS));
-
-  for (timeout = 1; ; ) {
+  for (timeout = 1;;) {
     //
     // Broadcast DHCP discover and wait for DHCP offers.
     //
-
-    efi_status = PxeDhcp4Init(This, timeout, &offers, &offer_list);
+    efi_status = PxeDhcp4Init (This, timeout, &offers, &offer_list);
 
     switch (efi_status) {
     case EFI_NO_RESPONSE:
@@ -143,71 +135,60 @@ PxeDhcp4Run(
     default:
       return efi_status;
     }
-
     //
     // Try to select from each DHCP or BOOTP offer.
     //
-
     for (n = 0; n < offers; ++n) {
       //
       // Ignore proxyDHCP offers.
       //
-
-      if (!EfiCompareMem(&offer_list[n].dhcp4.yiaddr, &zero_ip, 4))
-      {
+      if (!EfiCompareMem (&offer_list[n].dhcp4.yiaddr, &zero_ip, 4)) {
         continue;
       }
-
       //
       // Issue DHCP Request and wait for DHCP Ack/Nak.
       //
+      efi_status = PxeDhcp4Select (
+                    This,
+                    timeout,
+                    &offer_list[n]
+                    );
 
-      efi_status = PxeDhcp4Select(This, timeout,
-        &offer_list[n]);
-
-      if (EFI_ERROR(efi_status)) {
+      if (EFI_ERROR (efi_status)) {
         continue;
       }
-
       //
       // Exit when we have got our DHCP Ack.
       //
-
       if (This->Data->IsAck) {
         return EFI_SUCCESS;
       }
     }
-
     //
     // No DHCP Acks.  Release DHCP Offer list storage.
     //
-
     if (offer_list != NULL) {
-      gBS->FreePool(offer_list);
+      gBS->FreePool (offer_list);
       offer_list = NULL;
     }
-
     //
     // Try again until we have used up >= DHCP4_MAX_SECONDS.
     //
-
     if ((timeout <<= 1) > DHCP4_MAX_SECONDS) {
-      if (!EFI_ERROR(efi_status)) {
+      if (!EFI_ERROR (efi_status)) {
         efi_status = EFI_TIMEOUT;
       }
 
       return efi_status;
     }
-
     //
     // Next timeout value.
     //
+    EfiCopyMem (&seconds, &This->Data->Discover.dhcp4.secs, 2);
 
-    EfiCopyMem(&seconds, &This->Data->Discover.dhcp4.secs, 2);
+    seconds = htons (htons (seconds) + timeout);
 
-    seconds = htons(htons(seconds) + timeout);
-
-    EfiCopyMem(&This->Data->Discover.dhcp4.secs, &seconds, 2);
+    EfiCopyMem (&This->Data->Discover.dhcp4.secs, &seconds, 2);
   }
 }
 

@@ -19,9 +19,9 @@ Abstract:
 Revision History
 ++*/
 
+// TODO: fix comment to end with --*/
 #ifndef _USB_FLP_H
 #define _USB_FLP_H
-
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
@@ -29,50 +29,46 @@ Revision History
 //
 // Driver Consumed Protocol Prototypes
 //
-#include EFI_PROTOCOL_DEFINITION(DriverBinding)
-#include EFI_PROTOCOL_DEFINITION(DevicePath)
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
-#include EFI_PROTOCOL_DEFINITION(UsbAtapi)
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
+#include EFI_PROTOCOL_DEFINITION (UsbAtapi)
 
 //
 // Driver Produced Protocol Prototypes
 //
-#include EFI_PROTOCOL_DEFINITION(BlockIo)
-
+#include EFI_PROTOCOL_DEFINITION (BlockIo)
 
 #include "usb.h"
 #include "UsbDxeLib.h"
 
 #include "UsbMassStorageData.h"
 
+#define CLASS_MASSTORAGE          8
+#define SUBCLASS_UFI              4
+#define SUBCLASS_8070             5
+#define PROTOCOL_BOT              0x50
+#define PROTOCOL_CBI0             0
+#define PROTOCOL_CBI1             1
 
-#define CLASS_MASSTORAGE        8
-#define SUBCLASS_UFI        4
-#define SUBCLASS_8070              5
-#define PROTOCOL_BOT        0x50
-#define PROTOCOL_CBI0       0
-#define PROTOCOL_CBI1       1
+#define USBFLOPPY                 1
+#define USBFLOPPY2                2 // for those that use ReadCapacity(0x25) command to retrieve media capacity
+#define USBCDROM                  3
 
-#define USBFLOPPY           1
-#define USBFLOPPY2          2   // for those that use ReadCapacity(0x25) command to retrieve media capacity
-#define USBCDROM            3
+#define USB_FLOPPY_DEV_SIGNATURE  EFI_SIGNATURE_32 ('u', 'f', 'l', 'p')
 
-#define USB_FLOPPY_DEV_SIGNATURE  EFI_SIGNATURE_32('u','f','l','p')
+typedef struct {
+  UINTN                   Signature;
 
-typedef struct
-{
-  UINTN                     Signature;
-  
-  EFI_HANDLE                Handle;
-  EFI_BLOCK_IO_PROTOCOL     BlkIo;
-  EFI_BLOCK_IO_MEDIA        BlkMedia;
-  EFI_USB_ATAPI_PROTOCOL    *AtapiProtocol;
-  
-  
-  REQUEST_SENSE_DATA        *SenseData;
-  UINT8                     SenseDataNumber;
-  UINT8                     DeviceType;
-  
+  EFI_HANDLE              Handle;
+  EFI_BLOCK_IO_PROTOCOL   BlkIo;
+  EFI_BLOCK_IO_MEDIA      BlkMedia;
+  EFI_USB_ATAPI_PROTOCOL  *AtapiProtocol;
+
+  REQUEST_SENSE_DATA      *SenseData;
+  UINT8                   SenseDataNumber;
+  UINT8                   DeviceType;
+
 } USB_FLOPPY_DEV;
 
 #define USB_FLOPPY_DEV_FROM_THIS(a) \

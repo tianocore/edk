@@ -27,33 +27,36 @@ Revision History
 //
 // Global ID for the Driver Configuration Protocol
 //
-#define EFI_DRIVER_CONFIGURATION_PROTOCOL_GUID    \
-  { 0x107a772b, 0xd5e1, 0x11d4, 0x9a, 0x46, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d }
-  
+#define EFI_DRIVER_CONFIGURATION_PROTOCOL_GUID \
+  { \
+    0x107a772b, 0xd5e1, 0x11d4, 0x9a, 0x46, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d \
+  }
+
 EFI_FORWARD_DECLARATION (EFI_DRIVER_CONFIGURATION_PROTOCOL);
 
 typedef enum {
-  EfiDriverConfigurationActionNone               = 0,
-  EfiDriverConfigurationActionStopController     = 1,
-  EfiDriverConfigurationActionRestartController  = 2,
-  EfiDriverConfigurationActionRestartPlatform    = 3,
+  EfiDriverConfigurationActionNone              = 0,
+  EfiDriverConfigurationActionStopController    = 1,
+  EfiDriverConfigurationActionRestartController = 2,
+  EfiDriverConfigurationActionRestartPlatform   = 3,
   EfiDriverConfigurationActionMaximum
 } EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED;
 
-#define EFI_DRIVER_CONFIGURATION_SAFE_DEFAULTS           0x00000000
-#define EFI_DRIVER_CONFIGURATION_MANUFACTURING_DEFAULTS  0x00000001
-#define EFI_DRIVER_CONFIGURATION_CUSTOM_DEFAULTS         0x00000002
-#define EFI_DRIVER_CONFIGURATION_PERORMANCE_DEFAULTS     0x00000003
+#define EFI_DRIVER_CONFIGURATION_SAFE_DEFAULTS          0x00000000
+#define EFI_DRIVER_CONFIGURATION_MANUFACTURING_DEFAULTS 0x00000001
+#define EFI_DRIVER_CONFIGURATION_CUSTOM_DEFAULTS        0x00000002
+#define EFI_DRIVER_CONFIGURATION_PERORMANCE_DEFAULTS    0x00000003
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_CONFIGURATION_SET_OPTIONS) (
-  IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                                 ControllerHandle,
-  IN  EFI_HANDLE                                 ChildHandle  OPTIONAL,
-  IN  CHAR8                                      *Language,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED   *ActionRequired
+  IN EFI_DRIVER_CONFIGURATION_PROTOCOL                        * This,
+  IN  EFI_HANDLE                                              ControllerHandle,
+  IN  EFI_HANDLE                                              ChildHandle  OPTIONAL,
+  IN  CHAR8                                                   *Language,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED                * ActionRequired
   );
+
 /*++
 
   Routine Description:
@@ -100,14 +103,14 @@ EFI_STATUS
                             by ControllerHandle and ChildHandle.
 
 --*/
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_CONFIGURATION_OPTIONS_VALID) (
-  IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                                 ControllerHandle,
-  IN  EFI_HANDLE                                 ChildHandle  OPTIONAL
+  IN EFI_DRIVER_CONFIGURATION_PROTOCOL                        * This,
+  IN  EFI_HANDLE                                              ControllerHandle,
+  IN  EFI_HANDLE                                              ChildHandle  OPTIONAL
   );
+
 /*++
 
   Routine Description:
@@ -141,16 +144,16 @@ EFI_STATUS
                             options.
 
 --*/
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_CONFIGURATION_FORCE_DEFAULTS) (
-  IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                                 ControllerHandle,
-  IN  EFI_HANDLE                                 ChildHandle  OPTIONAL,
-  IN  UINT32                                     DefaultType,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED   *ActionRequired
+  IN EFI_DRIVER_CONFIGURATION_PROTOCOL                        * This,
+  IN  EFI_HANDLE                                              ControllerHandle,
+  IN  EFI_HANDLE                                              ChildHandle  OPTIONAL,
+  IN  UINT32                                                  DefaultType,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED                * ActionRequired
   );
+
 /*++
 
   Routine Description:
@@ -178,12 +181,11 @@ EFI_STATUS
 //
 // Interface structure for the Driver Configuration Protocol
 //
-
 typedef struct _EFI_DRIVER_CONFIGURATION_PROTOCOL {
-  EFI_DRIVER_CONFIGURATION_SET_OPTIONS      SetOptions;
-  EFI_DRIVER_CONFIGURATION_OPTIONS_VALID    OptionsValid;
-  EFI_DRIVER_CONFIGURATION_FORCE_DEFAULTS   ForceDefaults;
-  CHAR8                                     *SupportedLanguages;
+  EFI_DRIVER_CONFIGURATION_SET_OPTIONS    SetOptions;
+  EFI_DRIVER_CONFIGURATION_OPTIONS_VALID  OptionsValid;
+  EFI_DRIVER_CONFIGURATION_FORCE_DEFAULTS ForceDefaults;
+  CHAR8                                   *SupportedLanguages;
 } EFI_DRIVER_CONFIGURATION_PROTOCOL;
 
 /*++
@@ -204,7 +206,6 @@ typedef struct _EFI_DRIVER_CONFIGURATION_PROTOCOL {
                          codes that this protocol supports.
 
 --*/
-
 extern EFI_GUID gEfiDriverConfigurationProtocolGuid;
 
 #endif

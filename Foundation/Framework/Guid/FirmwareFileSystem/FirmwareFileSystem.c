@@ -21,10 +21,10 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_GUID_DEFINITION(FirmwareFileSystem)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 
-EFI_GUID gEfiFirmwareFileSystemGuid         = EFI_FIRMWARE_FILE_SYSTEM_GUID;
-EFI_GUID gEfiFirmwareVolumeTopFileGuid      = EFI_FFS_VOLUME_TOP_FILE_GUID;
+EFI_GUID  gEfiFirmwareFileSystemGuid    = EFI_FIRMWARE_FILE_SYSTEM_GUID;
+EFI_GUID  gEfiFirmwareVolumeTopFileGuid = EFI_FFS_VOLUME_TOP_FILE_GUID;
 
 EFI_GUID_STRING(&gEfiFirmwareFileSystemGuid, "Firmware File System GUID", "EFI Firmware File System GUID");
 EFI_GUID_STRING(&gEfiFirmwareVolumeTopFileGuid, "Firmware Volume Top File GUID", "EFI FFS Volume Top File GUID");

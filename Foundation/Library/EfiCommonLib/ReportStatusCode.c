@@ -87,7 +87,11 @@ Arguments:
   
 Returns:
   
-  None
+  Status code
+  
+  EFI_BUFFER_TOO_SMALL    - Format too big to fit in buffer
+  
+  EFI_SUCCESS             - Successfully printed
 
 --*/
 {
@@ -159,7 +163,7 @@ Routine Description:
 
 Arguments:
 
-  FileName    - File name of failing routine.
+  Filename    - File name of failing routine.
 
   LineNumber  - Line number of failing ASSERT().
 
@@ -171,7 +175,11 @@ Arguments:
 
 Returns:
   
-  None
+  Status code
+  
+  EFI_BUFFER_TOO_SMALL      - Buffer not large enough
+  
+  EFI_SUCCESS               - Function successfully done.
 
 --*/
 {
@@ -226,6 +234,28 @@ ReportStatusCodeExtractAssertInfo (
   OUT CHAR8                   **Description,
   OUT UINT32                  *LineNumber
   )
+/*++
+
+Routine Description:
+
+  Extract assert information from status code data.
+
+Arguments:
+
+  CodeType    - Code type
+  Value       - Code value
+  Data        - Optional data associated with this status code.
+  Filename    - Filename extracted from Data
+  Description - Description extracted from Data
+  LineNumber  - Line number extracted from Data
+
+Returns:
+
+  TRUE      - Successfully extracted
+  
+  FALSE     - Extraction failed
+
+--*/
 {
   EFI_DEBUG_ASSERT_DATA   *AssertData;
 
@@ -261,6 +291,26 @@ ReportStatusCodeExtractDebugInfo (
   OUT VA_LIST                 *Marker,
   OUT CHAR8                   **Format
   )
+/*++
+
+Routine Description:
+
+  Extract debug information from status code data.
+
+Arguments:
+
+  Data        - Optional data associated with status code.
+  ErrorLevel  - Error level extracted from Data
+  Marker      - VA_LIST extracted from Data
+  Format      - Format string extracted from Data
+
+Returns:
+
+  TRUE      - Successfully extracted
+  
+  FALSE     - Extraction failed
+
+--*/
 {
   EFI_DEBUG_INFO      *DebugInfo;
 
@@ -281,5 +331,3 @@ ReportStatusCodeExtractDebugInfo (
 
   return TRUE;
 }
-
-

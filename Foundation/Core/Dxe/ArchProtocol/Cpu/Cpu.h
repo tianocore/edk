@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  CPU Architectural Protocol as defined in EFI 2.0
+  CPU Architectural Protocol as defined in Tiano
 
   This code abstracts the DXE core from processor implementation details.
 
@@ -46,18 +46,19 @@ typedef enum {
 typedef
 VOID
 (*EFI_CPU_INTERRUPT_HANDLER) (
-  IN EFI_EXCEPTION_TYPE                 InterruptType, 
+  IN EFI_EXCEPTION_TYPE                 InterruptType,
   IN EFI_SYSTEM_CONTEXT                 SystemContext
   );
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_FLUSH_DATA_CACHE) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This,
+  IN EFI_CPU_ARCH_PROTOCOL              * This,
   IN EFI_PHYSICAL_ADDRESS               Start,
   IN UINT64                             Length,
   IN EFI_CPU_FLUSH_TYPE                 FlushType
   );
+
 /*++
 
 Routine Description:
@@ -93,11 +94,12 @@ Returns:
                        
 --*/
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_ENABLE_INTERRUPT) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This
+  IN EFI_CPU_ARCH_PROTOCOL              * This
   );
+
 /*++
 
 Routine Description:
@@ -115,11 +117,12 @@ Returns:
                        
 --*/
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_DISABLE_INTERRUPT) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This
+  IN EFI_CPU_ARCH_PROTOCOL              * This
   );
+
 /*++
 
 Routine Description:
@@ -140,9 +143,10 @@ Returns:
 typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_GET_INTERRUPT_STATE) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This,
+  IN EFI_CPU_ARCH_PROTOCOL              * This,
   OUT BOOLEAN                           *State
   );
+
 /*++
 
 Routine Description:
@@ -163,12 +167,13 @@ Returns:
                        
 --*/
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_INIT) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This,
+  IN EFI_CPU_ARCH_PROTOCOL              * This,
   IN EFI_CPU_INIT_TYPE                  InitType
   );
+
 /*++
 
 Routine Description:
@@ -193,13 +198,14 @@ Returns:
                        
 --*/
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_REGISTER_INTERRUPT_HANDLER) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This,
+  IN EFI_CPU_ARCH_PROTOCOL              * This,
   IN EFI_EXCEPTION_TYPE                 InterruptType,
   IN EFI_CPU_INTERRUPT_HANDLER          InterruptHandler
   );
+
 /*++
 
 Routine Description:
@@ -228,14 +234,15 @@ Returns:
                     
 --*/
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_GET_TIMER_VALUE) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This,
+  IN EFI_CPU_ARCH_PROTOCOL              * This,
   IN UINT32                             TimerIndex,
   OUT UINT64                            *TimerValue,
-  OUT UINT64                            *TimerPeriod  OPTIONAL
+  OUT UINT64                            *TimerPeriod OPTIONAL
   );
+
 /*++
 
 Routine Description:
@@ -262,11 +269,12 @@ Returns:
 typedef
 EFI_STATUS
 (EFIAPI *EFI_CPU_SET_MEMORY_ATTRIBUTES) (
-  IN EFI_CPU_ARCH_PROTOCOL              *This,
+  IN EFI_CPU_ARCH_PROTOCOL              * This,
   IN  EFI_PHYSICAL_ADDRESS              BaseAddress,
   IN  UINT64                            Length,
   IN  UINT64                            Attributes
   );
+
 /*++
 
 Routine Description:
@@ -297,17 +305,18 @@ Returns:
 --*/
 
 typedef struct _EFI_CPU_ARCH_PROTOCOL {
-  EFI_CPU_FLUSH_DATA_CACHE              FlushDataCache;
-  EFI_CPU_ENABLE_INTERRUPT              EnableInterrupt;
-  EFI_CPU_DISABLE_INTERRUPT             DisableInterrupt;
-  EFI_CPU_GET_INTERRUPT_STATE           GetInterruptState;
-  EFI_CPU_INIT                          Init;
-  EFI_CPU_REGISTER_INTERRUPT_HANDLER    RegisterInterruptHandler;
-  EFI_CPU_GET_TIMER_VALUE               GetTimerValue;
-  EFI_CPU_SET_MEMORY_ATTRIBUTES         SetMemoryAttributes;
-  UINT32                                NumberOfTimers;
-  UINT32                                DmaBufferAlignment;
+  EFI_CPU_FLUSH_DATA_CACHE            FlushDataCache;
+  EFI_CPU_ENABLE_INTERRUPT            EnableInterrupt;
+  EFI_CPU_DISABLE_INTERRUPT           DisableInterrupt;
+  EFI_CPU_GET_INTERRUPT_STATE         GetInterruptState;
+  EFI_CPU_INIT                        Init;
+  EFI_CPU_REGISTER_INTERRUPT_HANDLER  RegisterInterruptHandler;
+  EFI_CPU_GET_TIMER_VALUE             GetTimerValue;
+  EFI_CPU_SET_MEMORY_ATTRIBUTES       SetMemoryAttributes;
+  UINT32                              NumberOfTimers;
+  UINT32                              DmaBufferAlignment;
 } EFI_CPU_ARCH_PROTOCOL;
+
 /*++
 
 Protocol Description:
@@ -347,6 +356,6 @@ Parameters:
   
 --*/
 
-extern EFI_GUID       gEfiCpuArchProtocolGuid;
+extern EFI_GUID gEfiCpuArchProtocolGuid;
 
 #endif

@@ -124,7 +124,21 @@ POOL *
 LookupPoolHead (
   IN EFI_MEMORY_TYPE  MemoryType
   )
+/*++
 
+Routine Description:
+
+  Look up pool head for specified memory type.
+
+Arguments:
+
+  MemoryType      - Memory type of which pool head is looked for
+
+Returns:
+
+  Pointer of Corresponding pool head.
+
+--*/
 {
   EFI_LIST_ENTRY  *Link;
   POOL            *Pool;
@@ -188,7 +202,11 @@ Arguments:
 
 Returns:
 
-  Status
+  EFI_INVALID_PARAMETER     - PoolType not valid
+  
+  EFI_OUT_OF_RESOURCES      - Size exceeds max pool size or allocation failed.  
+  
+  EFI_SUCCESS               - Pool successfully allocated.
 
 --*/
 {
@@ -357,12 +375,14 @@ Done:
     Buffer          = Head->Data;
     DEBUG_SET_MEMORY (Buffer, Size - POOL_OVERHEAD);
 
-    DEBUG ((EFI_D_POOL, "AllcocatePoolI: Type %x, Addr %x (len %x) %,d\n", 
-              PoolType, 
-              Buffer, 
-              Size - POOL_OVERHEAD, 
-              Pool->Used
-              ));
+    DEBUG (
+      (EFI_D_POOL,
+      "AllcocatePoolI: Type %x, Addr %x (len %x) %,d\n",
+       PoolType, 
+       Buffer, 
+       Size - POOL_OVERHEAD, 
+      Pool->Used)
+      );
 
     //
     // Account the allocation
@@ -395,7 +415,9 @@ Arguments:
 
 Returns:
 
-  Status
+  EFI_INVALID_PARAMETER   - Buffer is not a valid value.
+  
+  EFI_SUCCESS             - Pool successfully freed.
 
 --*/
 {
@@ -431,7 +453,9 @@ Arguments:
 
 Returns:
 
-  None
+  EFI_INVALID_PARAMETER     - Buffer not valid
+  
+  EFI_SUCCESS               - Buffer successfully freed.
 
 --*/
 {
@@ -455,7 +479,7 @@ Returns:
   ASSERT(NULL != Head);
 
   if (Head->Signature != POOL_HEAD_SIGNATURE) {
-    return (EFI_INVALID_PARAMETER);
+    return EFI_INVALID_PARAMETER;
   }
 
   Tail = HEAD_TO_TAIL (Head);
@@ -469,11 +493,11 @@ Returns:
   ASSERT_LOCKED (&gMemoryLock);
 
   if (Tail->Signature != POOL_TAIL_SIGNATURE) {
-    return (EFI_INVALID_PARAMETER);
+    return EFI_INVALID_PARAMETER;
   }
 
   if (Head->Size != Tail->Size) {
-    return (EFI_INVALID_PARAMETER);
+    return EFI_INVALID_PARAMETER;
   }
 
   //

@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 #include "Pei.h"
 #include "TianoCommon.h"
@@ -43,4 +42,4 @@ Abstract:
 //
 #include EFI_GUID_DEFINITION (Hob)
 
-#endif 
+#endif

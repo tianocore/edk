@@ -19,37 +19,38 @@ Abstract:
 
 #include "IDEBus.h"
 
-CHAR16 *OptionString[4] = { L"Enable Primary Master    (Y/N)? -->",
-                            L"Enable Primary Slave     (Y/N)? -->",
-                            L"Enable Secondary Master  (Y/N)? -->",
-                            L"Enable Secondary Slave   (Y/N)? -->"
-                          };
+CHAR16 *OptionString[4] = {
+  L"Enable Primary Master    (Y/N)? -->",
+  L"Enable Primary Slave     (Y/N)? -->",
+  L"Enable Secondary Master  (Y/N)? -->",
+  L"Enable Secondary Slave   (Y/N)? -->"
+};
 //
 // EFI Driver Configuration Functions
 //
 EFI_STATUS
 IDEBusDriverConfigurationSetOptions (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  CHAR8                                     *Language,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  CHAR8                                                  *Language,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   );
 
 EFI_STATUS
 IDEBusDriverConfigurationOptionsValid (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                         ControllerHandle,
-  IN  EFI_HANDLE                         ChildHandle  OPTIONAL
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle  OPTIONAL
   );
 
 EFI_STATUS
 IDEBusDriverConfigurationForceDefaults (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  UINT32                                    DefaultType,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  UINT32                                                 DefaultType,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   );
 
 //
@@ -66,10 +67,26 @@ EFI_STATUS
 GetResponse (
   VOID
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  None
+
+Returns:
+
+  EFI_ABORTED - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+  EFI_NOT_FOUND - TODO: Add description for return value
+
+--*/
 {
-  EFI_STATUS     Status;
-  EFI_INPUT_KEY  Key;
+  EFI_STATUS    Status;
+  EFI_INPUT_KEY Key;
 
   while (TRUE) {
     Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
@@ -77,30 +94,37 @@ GetResponse (
       if (Key.ScanCode == SCAN_ESC) {
         return EFI_ABORTED;
       }
+
       switch (Key.UnicodeChar) {
-      
-      case L'y' : // fall through
-      case L'Y' :
+
+      //
+      // fall through
+      //
+      case L'y':
+      case L'Y':
         gST->ConOut->OutputString (gST->ConOut, L"Y\n");
         return EFI_SUCCESS;
-        
-      case L'n' : // fall through
-      case L'N' :
+
+      //
+      // fall through
+      //
+      case L'n':
+      case L'N':
         gST->ConOut->OutputString (gST->ConOut, L"N\n");
         return EFI_NOT_FOUND;
       }
-      
+
     }
   }
 }
 
 EFI_STATUS
 IDEBusDriverConfigurationSetOptions (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  CHAR8                                     *Language,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  CHAR8                                                  *Language,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   )
 /*++
 
@@ -165,12 +189,12 @@ IDEBusDriverConfigurationSetOptions (
 
   *ActionRequired = EfiDriverConfigurationActionNone;
 
-  DataSize = sizeof (Value);
+  DataSize        = sizeof (Value);
   Status = gRT->GetVariable (
-                  L"Configuration", 
-                  &gIDEBusDriverGuid, 
-                  &Attributes, 
-                  &DataSize, 
+                  L"Configuration",
+                  &gIDEBusDriverGuid,
+                  &Attributes,
+                  &DataSize,
                   &Value
                   );
 
@@ -179,26 +203,26 @@ IDEBusDriverConfigurationSetOptions (
 
   NewValue = 0;
   for (Index = 0; Index < 4; Index++) {
-    gST->ConOut->OutputString (gST->ConOut, OptionString[Index]);  
+    gST->ConOut->OutputString (gST->ConOut, OptionString[Index]);
 
-    Status = GetResponse();
+    Status = GetResponse ();
     if (Status == EFI_ABORTED) {
       return EFI_SUCCESS;
     }
 
     if (!EFI_ERROR (Status)) {
-      NewValue |= (UINT8)(1 << Index);
+      NewValue |= (UINT8) (1 << Index);
     }
   }
-  
+
   if (EFI_ERROR (Status) || (NewValue != Value)) {
-    gRT->SetVariable (  
-           L"Configuration", 
-           &gIDEBusDriverGuid,
-           EFI_VARIABLE_NON_VOLATILE  | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-           sizeof (NewValue),
-           &NewValue
-           );
+    gRT->SetVariable (
+          L"Configuration",
+          &gIDEBusDriverGuid,
+          EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+          sizeof (NewValue),
+          &NewValue
+          );
 
     *ActionRequired = EfiDriverConfigurationActionRestartController;
   } else {
@@ -210,9 +234,9 @@ IDEBusDriverConfigurationSetOptions (
 
 EFI_STATUS
 IDEBusDriverConfigurationOptionsValid (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                         ControllerHandle,
-  IN  EFI_HANDLE                         ChildHandle  OPTIONAL
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle  OPTIONAL
   )
 /*++
 
@@ -263,10 +287,10 @@ IDEBusDriverConfigurationOptionsValid (
 
   DataSize = sizeof (Value);
   Status = gRT->GetVariable (
-                  L"Configuration", 
-                  &gIDEBusDriverGuid, 
-                  &Attributes, 
-                  &DataSize, 
+                  L"Configuration",
+                  &gIDEBusDriverGuid,
+                  &Attributes,
+                  &DataSize,
                   &Value
                   );
   if (EFI_ERROR (Status) || Value > 0x0f) {
@@ -278,11 +302,11 @@ IDEBusDriverConfigurationOptionsValid (
 
 EFI_STATUS
 IDEBusDriverConfigurationForceDefaults (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  UINT32                                    DefaultType,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  UINT32                                                 DefaultType,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   )
 /*++
 
@@ -335,20 +359,20 @@ IDEBusDriverConfigurationForceDefaults (
 
 --*/
 {
-  UINT8       Value;
+  UINT8 Value;
 
   if (ChildHandle != NULL) {
     return EFI_UNSUPPORTED;
   }
 
   Value = 0x0f;
-  gRT->SetVariable (  
-         L"Configuration", 
-         &gIDEBusDriverGuid,
-         EFI_VARIABLE_NON_VOLATILE  | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-         sizeof (Value),
-         &Value
-         );
+  gRT->SetVariable (
+        L"Configuration",
+        &gIDEBusDriverGuid,
+        EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+        sizeof (Value),
+        &Value
+        );
   *ActionRequired = EfiDriverConfigurationActionRestartController;
   return EFI_SUCCESS;
 }

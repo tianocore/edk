@@ -38,17 +38,19 @@ DeviceManagerCallbackRoutine (
   IN UINT16                           KeyValue,
   IN EFI_IFR_DATA_ARRAY               *DataArray,
   OUT EFI_HII_CALLBACK_PACKET         **Packet
-  );
-  
+  )
+;
+
 EFI_STATUS
 InitializeDeviceManager (
   VOID
-  );
+  )
+;
 
 EFI_STATUS
 CallDeviceManager (
   VOID
-  );
+  )
+;
 
-  
 #endif

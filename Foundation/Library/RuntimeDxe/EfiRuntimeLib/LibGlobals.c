@@ -31,9 +31,7 @@ Abstract:
 //
 // Lib globals that can ONLY be used at BootServices time!
 //
-EFI_BOOT_SERVICES   *gBS;
-EFI_SYSTEM_TABLE    *gST;
-EFI_DXE_SERVICES    *gDS = NULL;
-UINTN               gRtErrorLevel = EFI_DBUG_MASK | EFI_D_LOAD;
-
-
+EFI_BOOT_SERVICES *gBS;
+EFI_SYSTEM_TABLE  *gST;
+EFI_DXE_SERVICES  *gDS          = NULL;
+UINTN             gRtErrorLevel = EFI_DBUG_MASK | EFI_D_LOAD;

@@ -22,17 +22,16 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 // Static (possibly build generated) Bios Vendor data.
 //
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_NUMBER_OF_INSTALLABLE_LANGUAGES, NumberOfInstallableLanguages) = {
-  1,                                  // NumberOfInstallableLanguages
-  {                                   // LanguageFlags
-    0,                                // AbbreviatedLanguageFormat
-    0                                 // Reserved
+  1,    // NumberOfInstallableLanguages
+  {     // LanguageFlags
+    0,  // AbbreviatedLanguageFormat
+    0   // Reserved
   },
-  0,                                  // CurrentLanguageNumber
+  0,    // CurrentLanguageNumber
 };
 
 /* eof - MiscNumberOfInstallableLanguagesData.c */

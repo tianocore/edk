@@ -63,7 +63,7 @@ Returns:
     PrivateData->PeiMemoryInstalled = FALSE;
 
     PrivateData->BottomOfCarHeap = (VOID *) (((UINTN)(VOID *)(&PrivateData))
-            & (~((PeiStartupDescriptor->SizeOfCacheAsRam) - 1))); 
+                                   & (~((PeiStartupDescriptor->SizeOfCacheAsRam) - 1))); 
     PrivateData->TopOfCarHeap = (VOID *)((UINTN)(PrivateData->BottomOfCarHeap) + PeiStartupDescriptor->SizeOfCacheAsRam);
     //
     // SizeOfCarHeap is 1/2 (arbitrary) of CacheAsRam Size.
@@ -74,8 +74,7 @@ Returns:
     PEI_DEBUG_CODE (
       {
         PrivateData->SizeOfCacheAsRam = PeiStartupDescriptor->SizeOfCacheAsRam;
-        PrivateData->MaxTopOfCarHeap = (VOID *) ((UINTN)PrivateData->BottomOfCarHeap +
-                                         (UINTN) SizeOfCarHeap);
+        PrivateData->MaxTopOfCarHeap  = (VOID *) ((UINTN) PrivateData->BottomOfCarHeap + (UINTN) SizeOfCarHeap);
       }
     )
 
@@ -95,8 +94,7 @@ Returns:
     // Set PS to point to ServiceTableShadow in Cache
     //
     PrivateData->PS = &(PrivateData->ServiceTableShadow);
-  }
-  else {                                                                  
+  } else {
   //                                                                    
   // Set PS to point to ServiceTableShadow in Cache one time after the  
   // stack switched to main memory                                      
@@ -199,7 +197,7 @@ PeiAllocatePages (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_MEMORY_TYPE            MemoryType,
   IN UINTN                      Pages,
-  OUT EFI_PHYSICAL_ADDRESS      *Memory
+  IN OUT EFI_PHYSICAL_ADDRESS   *Memory
   )
 /*++
 
@@ -256,7 +254,8 @@ Returns:
   //
   // Verify that there is sufficient memory to satisfy the allocation
   //
-  if (Hob.HandoffInformationTable->EfiFreeMemoryTop - ((Pages * EFI_PAGE_SIZE) + sizeof (EFI_HOB_MEMORY_ALLOCATION)) < Hob.HandoffInformationTable->EfiFreeMemoryBottom) {
+  if (Hob.HandoffInformationTable->EfiFreeMemoryTop - ((Pages * EFI_PAGE_SIZE) + sizeof (EFI_HOB_MEMORY_ALLOCATION)) < 
+      Hob.HandoffInformationTable->EfiFreeMemoryBottom) {
     return  EFI_OUT_OF_RESOURCES;
   } else {
     //

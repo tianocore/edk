@@ -39,7 +39,7 @@ typedef struct {
 //
 // Generic Attribute Controller Register Settings
 //
-static UINT8 AttributeController[21] = {
+static UINT8                          AttributeController[21] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
   0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 
   0x41, 0x00, 0x0F, 0x00, 0x00
@@ -55,14 +55,14 @@ static UINT8 GraphicsController[9] = {
 //
 // 640 x 480 x 256 color @ 60 Hertz
 //
-static UINT8 Crtc_640_480_256_60[28] = {
+static UINT8                          Crtc_640_480_256_60[28] = {
   0x5d, 0x4f, 0x50, 0x82, 0x53, 0x9f, 0x00, 0x3e,
   0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
   0xe1, 0x83, 0xdf, 0x50, 0x00, 0xe7, 0x04, 0xe3,
   0xff, 0x00, 0x00, 0x22
 };
 
-static UINT16 Seq_640_480_256_60[15] = {
+static UINT16                         Seq_640_480_256_60[15] = {
   0x0100, 0x0101, 0x0f02, 0x0003, 0x0e04, 0x1107, 0x0008, 0x4a0b, 
   0x5b0c, 0x450d, 0x7e0e, 0x2b1b, 0x2f1c, 0x301d, 0x331e
 };
@@ -70,14 +70,14 @@ static UINT16 Seq_640_480_256_60[15] = {
 //
 // 800 x 600 x 256 color @ 60 Hertz
 //
-static UINT8 Crtc_800_600_256_60[28] = {
+static UINT8                          Crtc_800_600_256_60[28] = {
   0x7F, 0x63, 0x64, 0x80, 0x6B, 0x1B, 0x72, 0xF0, 
   0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
   0x58, 0x8C, 0x57, 0x64, 0x00, 0x5F, 0x91, 0xE3,
   0xFF, 0x00, 0x00, 0x22
 };
 
-static UINT16 Seq_800_600_256_60[15] = {
+static UINT16                         Seq_800_600_256_60[15] = {
   0x0100, 0x0101, 0x0f02, 0x0003, 0x0e04, 0x1107, 0x0008, 0x4a0b, 
   0x5b0c, 0x450d, 0x510e, 0x2b1b, 0x2f1c, 0x301d, 0x3a1e
 };
@@ -85,14 +85,14 @@ static UINT16 Seq_800_600_256_60[15] = {
 //
 // 1024 x 768 x 256 color @ 60 Hertz
 //
-static UINT8 Crtc_1024_768_256_60[28] = {
+static UINT8                          Crtc_1024_768_256_60[28] = {
   0xA3, 0x7F, 0x80, 0x86, 0x85, 0x96, 0x24, 0xFD, 
   0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
   0x02, 0x88, 0xFF, 0x80, 0x00, 0x00, 0x24, 0xE3,
   0xFF, 0x4A, 0x00, 0x22
 };
 
-static UINT16 Seq_1024_768_256_60[15] = {
+static UINT16                         Seq_1024_768_256_60[15] = {
   0x0100, 0x0101, 0x0f02, 0x0003, 0x0e04, 0x1107, 0x0008, 0x4a0b, 
   0x5b0c, 0x450d, 0x760e, 0x2b1b, 0x2f1c, 0x301d, 0x341e
 };
@@ -100,7 +100,7 @@ static UINT16 Seq_1024_768_256_60[15] = {
 //
 // Table of supported video modes
 //
-static CIRRUS_LOGIC_5430_VIDEO_MODES CirrusLogic5430VideoModes[] = {
+static CIRRUS_LOGIC_5430_VIDEO_MODES  CirrusLogic5430VideoModes[] = {
   {  640, 480, 8, 60, Crtc_640_480_256_60,  Seq_640_480_256_60,  0xe3 },
   {  800, 600, 8, 60, Crtc_800_600_256_60,  Seq_800_600_256_60,  0xef }, 
   { 1024, 768, 8, 60, Crtc_1024_768_256_60, Seq_1024_768_256_60, 0xef } 
@@ -166,7 +166,6 @@ inw (
   UINTN                           Address
   );
 
-
 //
 // UGA Draw Protocol Member Functions
 //
@@ -179,7 +178,27 @@ CirrusLogic5430UgaDrawGetMode (
   OUT UINT32                *ColorDepth,
   OUT UINT32                *RefreshRate
   )
-  
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                  - TODO: add argument description
+  HorizontalResolution  - TODO: add argument description
+  VerticalResolution    - TODO: add argument description
+  ColorDepth            - TODO: add argument description
+  RefreshRate           - TODO: add argument description
+
+Returns:
+
+  EFI_NOT_STARTED - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
 
@@ -188,12 +207,14 @@ CirrusLogic5430UgaDrawGetMode (
   if (Private->HardwareNeedsStarting) {
     return EFI_NOT_STARTED;
   }
-  
-  if ((HorizontalResolution == NULL) || (VerticalResolution == NULL)
-      || (ColorDepth == NULL) || (RefreshRate == NULL)) {
+
+  if ((HorizontalResolution == NULL) ||
+      (VerticalResolution == NULL)   ||
+      (ColorDepth == NULL)           ||
+      (RefreshRate == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   *HorizontalResolution = Private->ModeData[Private->CurrentMode].HorizontalResolution;
   *VerticalResolution   = Private->ModeData[Private->CurrentMode].VerticalResolution;
   *ColorDepth           = Private->ModeData[Private->CurrentMode].ColorDepth;
@@ -211,7 +232,27 @@ CirrusLogic5430UgaDrawSetMode (
   IN  UINT32                ColorDepth,
   IN  UINT32                RefreshRate
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                  - TODO: add argument description
+  HorizontalResolution  - TODO: add argument description
+  VerticalResolution    - TODO: add argument description
+  ColorDepth            - TODO: add argument description
+  RefreshRate           - TODO: add argument description
+
+Returns:
+
+  EFI_OUT_OF_RESOURCES - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+  EFI_NOT_FOUND - TODO: Add description for return value
+
+--*/
 {
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
   UINTN                           Index;
@@ -223,12 +264,15 @@ CirrusLogic5430UgaDrawSetMode (
     if (HorizontalResolution != Private->ModeData[Index].HorizontalResolution) {
       continue;
     }
+
     if (VerticalResolution != Private->ModeData[Index].VerticalResolution) {
       continue;
     }
+
     if (ColorDepth != Private->ModeData[Index].ColorDepth) {
       continue;
     }
+
     if (RefreshRate != Private->ModeData[Index].RefreshRate) {
       continue;
     }
@@ -242,12 +286,12 @@ CirrusLogic5430UgaDrawSetMode (
     if (Private->LineBuffer == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
- 
+
     InitializeGraphicsMode (Private, &CirrusLogic5430VideoModes[Index]);
 
-    Private->CurrentMode = Index;
+    Private->CurrentMode            = Index;
 
-    Private->HardwareNeedsStarting = FALSE;
+    Private->HardwareNeedsStarting  = FALSE;
 
     return EFI_SUCCESS;
   }
@@ -259,7 +303,7 @@ EFI_STATUS
 EFIAPI
 CirrusLogic5430UgaDrawBlt (
   IN  EFI_UGA_DRAW_PROTOCOL     *This,
-  IN  EFI_UGA_PIXEL             *BltBuffer,   OPTIONAL
+  IN  EFI_UGA_PIXEL             *BltBuffer, OPTIONAL
   IN  EFI_UGA_BLT_OPERATION     BltOperation,
   IN  UINTN                     SourceX,
   IN  UINTN                     SourceY,
@@ -267,9 +311,38 @@ CirrusLogic5430UgaDrawBlt (
   IN  UINTN                     DestinationY,
   IN  UINTN                     Width,
   IN  UINTN                     Height,
-  IN  UINTN                     Delta         
+  IN  UINTN                     Delta
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This          - TODO: add argument description
+  BltBuffer     - TODO: add argument description
+  BltOperation  - TODO: add argument description
+  SourceX       - TODO: add argument description
+  SourceY       - TODO: add argument description
+  DestinationX  - TODO: add argument description
+  DestinationY  - TODO: add argument description
+  Width         - TODO: add argument description
+  Height        - TODO: add argument description
+  Delta         - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
   EFI_TPL                         OriginalTPL;
@@ -285,7 +358,7 @@ CirrusLogic5430UgaDrawBlt (
 
   Private = CIRRUS_LOGIC_5430_PRIVATE_DATA_FROM_UGA_DRAW_THIS (This);
 
-  if ((BltOperation < 0 ) || (BltOperation >= EfiUgaBltMax)) {
+  if ((BltOperation < 0) || (BltOperation >= EfiUgaBltMax)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -294,8 +367,8 @@ CirrusLogic5430UgaDrawBlt (
   }
 
   //
-  // If Delta is zero, then the entire BltBuffer is being used, so Delta 
-  // is the number of bytes in each row of BltBuffer.  Since BltBuffer is Width pixels size, 
+  // If Delta is zero, then the entire BltBuffer is being used, so Delta
+  // is the number of bytes in each row of BltBuffer.  Since BltBuffer is Width pixels size,
   // the number of bytes in each row can be computed.
   //
   if (Delta == 0) {
@@ -319,6 +392,7 @@ CirrusLogic5430UgaDrawBlt (
     if (SourceY + Height > Private->ModeData[Private->CurrentMode].VerticalResolution) {
       return EFI_INVALID_PARAMETER;
     }
+
     if (SourceX + Width > Private->ModeData[Private->CurrentMode].HorizontalResolution) {
       return EFI_INVALID_PARAMETER;
     }
@@ -329,13 +403,13 @@ CirrusLogic5430UgaDrawBlt (
     if (DestinationY + Height > Private->ModeData[Private->CurrentMode].VerticalResolution) {
       return EFI_INVALID_PARAMETER;
     }
+
     if (DestinationX + Width > Private->ModeData[Private->CurrentMode].HorizontalResolution) {
       return EFI_INVALID_PARAMETER;
     }
   }
-
   //
-  // We have to raise to TPL Notify, so we make an atomic write the frame buffer. 
+  // We have to raise to TPL Notify, so we make an atomic write the frame buffer.
   // We would not want a timer based event (Cursor, ...) to come in while we are
   // doing this operation.
   //
@@ -370,61 +444,64 @@ CirrusLogic5430UgaDrawBlt (
       }
 
       for (X = 0; X < Width; X++) {
-        Blt = (EFI_UGA_PIXEL *)((UINT8 *)BltBuffer + (DstY * Delta) + (DestinationX + X) * sizeof (EFI_UGA_PIXEL));
+        Blt         = (EFI_UGA_PIXEL *) ((UINT8 *) BltBuffer + (DstY * Delta) + (DestinationX + X) * sizeof (EFI_UGA_PIXEL));
 
-        Blt->Red   = (UINT8)(Private->LineBuffer[X] & 0xe0);
-        Blt->Green = (UINT8)((Private->LineBuffer[X] & 0x1c) << 3);
-        Blt->Blue  = (UINT8)((Private->LineBuffer[X] & 0x03) << 6);
+        Blt->Red    = (UINT8) (Private->LineBuffer[X] & 0xe0);
+        Blt->Green  = (UINT8) ((Private->LineBuffer[X] & 0x1c) << 3);
+        Blt->Blue   = (UINT8) ((Private->LineBuffer[X] & 0x03) << 6);
       }
     }
     break;
+
   case EfiUgaVideoToVideo:
     //
     // Perform hardware acceleration for Video to Video operations
     //
-    ScreenWidth  = Private->ModeData[Private->CurrentMode].HorizontalResolution;
-    SourceOffset = (SourceY * Private->ModeData[Private->CurrentMode].HorizontalResolution) + (SourceX);
-    Offset       = (DestinationY * Private->ModeData[Private->CurrentMode].HorizontalResolution) + (DestinationX);
+    ScreenWidth   = Private->ModeData[Private->CurrentMode].HorizontalResolution;
+    SourceOffset  = (SourceY * Private->ModeData[Private->CurrentMode].HorizontalResolution) + (SourceX);
+    Offset        = (DestinationY * Private->ModeData[Private->CurrentMode].HorizontalResolution) + (DestinationX);
 
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0000);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0010);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0012);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0014);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0000);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0010);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0012);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0014);
 
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0001);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0011);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0013);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0015);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0001);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0011);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0013);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0015);
 
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)(((Width << 8) & 0xff00)  | 0x20));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)( (Width & 0xff00)        | 0x21));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)(((Height << 8) & 0xff00) | 0x22));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)( (Height & 0xff00)       | 0x23));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)(((ScreenWidth << 8) & 0xff00) | 0x24));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)( (ScreenWidth & 0xff00)       | 0x25));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)(((ScreenWidth << 8) & 0xff00) | 0x26));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)( (ScreenWidth & 0xff00)       | 0x27));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)((((Offset) << 8) & 0xff00) | 0x28));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)((((Offset) >> 0) & 0xff00) | 0x29));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)((((Offset) >> 8) & 0xff00) | 0x2a));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)((((SourceOffset) << 8) & 0xff00) | 0x2c));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)((((SourceOffset) >> 0) & 0xff00) | 0x2d));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  (UINT16)((((SourceOffset) >> 8) & 0xff00) | 0x2e));
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x002f);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0030);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0d32);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0033);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0034);
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0035);
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) (((Width << 8) & 0xff00) | 0x20));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((Width & 0xff00) | 0x21));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) (((Height << 8) & 0xff00) | 0x22));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((Height & 0xff00) | 0x23));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) (((ScreenWidth << 8) & 0xff00) | 0x24));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((ScreenWidth & 0xff00) | 0x25));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) (((ScreenWidth << 8) & 0xff00) | 0x26));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((ScreenWidth & 0xff00) | 0x27));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((((Offset) << 8) & 0xff00) | 0x28));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((((Offset) >> 0) & 0xff00) | 0x29));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((((Offset) >> 8) & 0xff00) | 0x2a));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((((SourceOffset) << 8) & 0xff00) | 0x2c));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((((SourceOffset) >> 0) & 0xff00) | 0x2d));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((((SourceOffset) >> 8) & 0xff00) | 0x2e));
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x002f);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0030);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0d32);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0033);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0034);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0035);
 
-    outw (Private, GRAPH_ADDRESS_REGISTER,  0x0231);
+    outw (Private, GRAPH_ADDRESS_REGISTER, 0x0231);
 
-    outb (Private, GRAPH_ADDRESS_REGISTER,  0x31);
-    while ((inb(Private, GRAPH_DATA_REGISTER) & 0x01) == 0x01);
+    outb (Private, GRAPH_ADDRESS_REGISTER, 0x31);
+    while ((inb (Private, GRAPH_DATA_REGISTER) & 0x01) == 0x01)
+      ;
     break;
+
   case EfiUgaVideoFill:
-    Blt = BltBuffer;
-    Pixel = (UINT8)((Blt->Red & 0xe0) | ((Blt->Green >> 3) & 0x1c) | ((Blt->Blue >> 6) & 0x03));
+    Blt       = BltBuffer;
+    Pixel     = (UINT8) ((Blt->Red & 0xe0) | ((Blt->Green >> 3) & 0x1c) | ((Blt->Blue >> 6) & 0x03));
     WidePixel = (Pixel << 8) | Pixel;
     WidePixel = (WidePixel << 16) | WidePixel;
 
@@ -474,12 +551,13 @@ CirrusLogic5430UgaDrawBlt (
       }
     }
     break;
+
   case EfiUgaBltBufferToVideo:
     for (SrcY = SourceY, DstY = DestinationY; SrcY < (Height + SourceY); SrcY++, DstY++) {
 
-      for (X = 0; X< Width; X++) {
-        Blt = (EFI_UGA_PIXEL *)((UINT8 *)BltBuffer + (SrcY * Delta) + (SourceX + X) * sizeof (EFI_UGA_PIXEL));
-        Private->LineBuffer[X] = (UINT8)((Blt->Red & 0xe0) | ((Blt->Green >> 3) & 0x1c) | ((Blt->Blue >> 6) & 0x03));
+      for (X = 0; X < Width; X++) {
+        Blt                     = (EFI_UGA_PIXEL *) ((UINT8 *) BltBuffer + (SrcY * Delta) + (SourceX + X) * sizeof (EFI_UGA_PIXEL));
+        Private->LineBuffer[X]  = (UINT8) ((Blt->Red & 0xe0) | ((Blt->Green >> 3) & 0x1c) | ((Blt->Blue >> 6) & 0x03));
       }
 
       Offset = (DstY * Private->ModeData[Private->CurrentMode].HorizontalResolution) + DestinationX;
@@ -489,7 +567,7 @@ CirrusLogic5430UgaDrawBlt (
                               Private->PciIo,
                               EfiPciIoWidthUint32,
                               0,
-                              Offset, 
+                              Offset,
                               Width >> 2,
                               Private->LineBuffer
                               );
@@ -498,7 +576,7 @@ CirrusLogic5430UgaDrawBlt (
                               Private->PciIo,
                               EfiPciIoWidthUint8,
                               0,
-                              Offset, 
+                              Offset,
                               Width,
                               Private->LineBuffer
                               );
@@ -531,43 +609,46 @@ Returns:
   None
 
 --*/
+// TODO:    Private - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_UGA_DRAW_PROTOCOL  *UgaDraw;
-  UINTN                  Index;
+  EFI_UGA_DRAW_PROTOCOL *UgaDraw;
+  UINTN                 Index;
 
   //
   // Fill in Private->UgaDraw protocol
   //
-  UgaDraw = &Private->UgaDraw;
+  UgaDraw           = &Private->UgaDraw;
 
-  UgaDraw->GetMode = CirrusLogic5430UgaDrawGetMode;
-  UgaDraw->SetMode = CirrusLogic5430UgaDrawSetMode;
-  UgaDraw->Blt     = CirrusLogic5430UgaDrawBlt;
+  UgaDraw->GetMode  = CirrusLogic5430UgaDrawGetMode;
+  UgaDraw->SetMode  = CirrusLogic5430UgaDrawSetMode;
+  UgaDraw->Blt      = CirrusLogic5430UgaDrawBlt;
 
   //
   // Initialize the private data
   //
-  Private->MaxMode     = CIRRUS_LOGIC_5430_UGA_DRAW_MODE_COUNT;
-  Private->CurrentMode = 0;
+  Private->MaxMode      = CIRRUS_LOGIC_5430_UGA_DRAW_MODE_COUNT;
+  Private->CurrentMode  = 0;
   for (Index = 0; Index < Private->MaxMode; Index++) {
     Private->ModeData[Index].HorizontalResolution = CirrusLogic5430VideoModes[Index].Width;
     Private->ModeData[Index].VerticalResolution   = CirrusLogic5430VideoModes[Index].Height;
     Private->ModeData[Index].ColorDepth           = 32;
     Private->ModeData[Index].RefreshRate          = CirrusLogic5430VideoModes[Index].RefreshRate;
   }
-  Private->HardwareNeedsStarting = TRUE;
-  Private->LineBuffer            = NULL;
+
+  Private->HardwareNeedsStarting  = TRUE;
+  Private->LineBuffer             = NULL;
 
   //
   // Initialize the hardware
   //
   UgaDraw->SetMode (
-             UgaDraw,
-             Private->ModeData[Private->CurrentMode].HorizontalResolution,
-             Private->ModeData[Private->CurrentMode].VerticalResolution,
-             Private->ModeData[Private->CurrentMode].ColorDepth,
-             Private->ModeData[Private->CurrentMode].RefreshRate
-             );
+            UgaDraw,
+            Private->ModeData[Private->CurrentMode].HorizontalResolution,
+            Private->ModeData[Private->CurrentMode].VerticalResolution,
+            Private->ModeData[Private->CurrentMode].ColorDepth,
+            Private->ModeData[Private->CurrentMode].RefreshRate
+            );
   DrawLogo (Private);
 
   return EFI_SUCCESS;
@@ -588,6 +669,8 @@ Returns:
   None
 
 --*/
+// TODO:    Private - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   return EFI_SUCCESS;
 }
@@ -598,15 +681,32 @@ outb (
   UINTN                           Address,
   UINT8                           Data
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+  Address - TODO: add argument description
+  Data    - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   Private->PciIo->Io.Write (
-                       Private->PciIo,
-                       EfiPciIoWidthUint8,
-                       EFI_PCI_IO_PASS_THROUGH_BAR,
-                       Address,
-                       1,
-                       &Data
-                       );
+                      Private->PciIo,
+                      EfiPciIoWidthUint8,
+                      EFI_PCI_IO_PASS_THROUGH_BAR,
+                      Address,
+                      1,
+                      &Data
+                      );
 }
 
 VOID
@@ -615,15 +715,32 @@ outw (
   UINTN                           Address,
   UINT16                          Data
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+  Address - TODO: add argument description
+  Data    - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   Private->PciIo->Io.Write (
-                       Private->PciIo,
-                       EfiPciIoWidthUint16,
-                       EFI_PCI_IO_PASS_THROUGH_BAR,
-                       Address,
-                       1,
-                       &Data
-                       );
+                      Private->PciIo,
+                      EfiPciIoWidthUint16,
+                      EFI_PCI_IO_PASS_THROUGH_BAR,
+                      Address,
+                      1,
+                      &Data
+                      );
 }
 
 UINT8
@@ -631,17 +748,33 @@ inb (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private,
   UINTN                           Address
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+  Address - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  UINT8  Data;
+  UINT8 Data;
 
   Private->PciIo->Io.Read (
-                       Private->PciIo,
-                       EfiPciIoWidthUint8,
-                       EFI_PCI_IO_PASS_THROUGH_BAR,
-                       Address,
-                       1,
-                       &Data
-                       );
+                      Private->PciIo,
+                      EfiPciIoWidthUint8,
+                      EFI_PCI_IO_PASS_THROUGH_BAR,
+                      Address,
+                      1,
+                      &Data
+                      );
   return Data;
 }
 
@@ -650,52 +783,100 @@ inw (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private,
   UINTN                           Address
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+  Address - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   UINT16  Data;
 
   Private->PciIo->Io.Read (
-                       Private->PciIo,
-                       EfiPciIoWidthUint16,
-                       EFI_PCI_IO_PASS_THROUGH_BAR,
-                       Address,
-                       1,
-                       &Data
-                       );
+                      Private->PciIo,
+                      EfiPciIoWidthUint16,
+                      EFI_PCI_IO_PASS_THROUGH_BAR,
+                      Address,
+                      1,
+                      &Data
+                      );
   return Data;
 }
 
 VOID
-SetPaletteColor ( 
+SetPaletteColor (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private,
   UINTN                           Index,
   UINT8                           Red,
   UINT8                           Green,
   UINT8                           Blue
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+  Index   - TODO: add argument description
+  Red     - TODO: add argument description
+  Green   - TODO: add argument description
+  Blue    - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  outb (Private, PALETTE_INDEX_REGISTER, (UINT8)Index);
-  outb (Private, PALETTE_DATA_REGISTER,  (UINT8)(Red>>2));
-  outb (Private, PALETTE_DATA_REGISTER,  (UINT8)(Green>>2));
-  outb (Private, PALETTE_DATA_REGISTER,  (UINT8)(Blue>>2));
+  outb (Private, PALETTE_INDEX_REGISTER, (UINT8) Index);
+  outb (Private, PALETTE_DATA_REGISTER, (UINT8) (Red >> 2));
+  outb (Private, PALETTE_DATA_REGISTER, (UINT8) (Green >> 2));
+  outb (Private, PALETTE_DATA_REGISTER, (UINT8) (Blue >> 2));
 }
 
 VOID
 SetDefaultPalette (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  UINTN  Index;
-  UINTN  RedIndex;
-  UINTN  GreenIndex;
-  UINTN  BlueIndex;
+  UINTN Index;
+  UINTN RedIndex;
+  UINTN GreenIndex;
+  UINTN BlueIndex;
 
   Index = 0;
   for (RedIndex = 0; RedIndex < 8; RedIndex++) {
     for (GreenIndex = 0; GreenIndex < 8; GreenIndex++) {
       for (BlueIndex = 0; BlueIndex < 4; BlueIndex++) {
-        SetPaletteColor (Private, Index, (UINT8)(RedIndex << 5), (UINT8)(GreenIndex << 5), (UINT8)(BlueIndex << 6));
+        SetPaletteColor (Private, Index, (UINT8) (RedIndex << 5), (UINT8) (GreenIndex << 5), (UINT8) (BlueIndex << 6));
         Index++;
       }
     }
@@ -707,7 +888,21 @@ VOID
 ClearScreen (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   UINT32  Color;
 
@@ -716,7 +911,7 @@ ClearScreen (
                         Private->PciIo,
                         EfiPciIoWidthFillUint32,
                         0,
-                        0, 
+                        0,
                         0x100000 >> 2,
                         &Color
                         );
@@ -726,29 +921,44 @@ VOID
 DrawLogo (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  UINTN  Offset;
-  UINTN  X;
-  UINTN  Y;
-  UINTN  ScreenWidth;
-  UINTN  ScreenHeight;
-  UINT8  Color;
+  UINTN Offset;
+  UINTN X;
+  UINTN Y;
+  UINTN ScreenWidth;
+  UINTN ScreenHeight;
+  UINT8 Color;
 
-  ScreenWidth  = Private->ModeData[Private->CurrentMode].HorizontalResolution;
-  ScreenHeight = Private->ModeData[Private->CurrentMode].VerticalResolution;
+  ScreenWidth   = Private->ModeData[Private->CurrentMode].HorizontalResolution;
+  ScreenHeight  = Private->ModeData[Private->CurrentMode].VerticalResolution;
 
-  Offset = 0;
+  Offset        = 0;
   for (Y = 0; Y < ScreenHeight; Y++) {
-    for (X = 0; X < ScreenWidth ; X++) {
-      Color = (UINT8)(256 * (X + Y) / (ScreenWidth + ScreenHeight));
-      Private->LineBuffer[X] = Color;
+    for (X = 0; X < ScreenWidth; X++) {
+      Color                   = (UINT8) (256 * (X + Y) / (ScreenWidth + ScreenHeight));
+      Private->LineBuffer[X]  = Color;
     }
+
     Private->PciIo->Mem.Write (
                           Private->PciIo,
                           EfiPciIoWidthUint32,
                           0,
-                          Offset + (Y*ScreenWidth), 
+                          Offset + (Y * ScreenWidth),
                           ScreenWidth >> 2,
                           Private->LineBuffer
                           );
@@ -756,14 +966,29 @@ DrawLogo (
 }
 
 VOID
-InitializeGraphicsMode(
+InitializeGraphicsMode (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private,
   CIRRUS_LOGIC_5430_VIDEO_MODES   *ModeData
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private   - TODO: add argument description
+  ModeData  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  UINT8  Byte;
-  UINTN  Index;
+  UINT8 Byte;
+  UINTN Index;
 
   outw (Private, SEQ_ADDRESS_REGISTER, 0x1206);
   outw (Private, SEQ_ADDRESS_REGISTER, 0x0012);
@@ -773,36 +998,36 @@ InitializeGraphicsMode(
   }
 
   outb (Private, SEQ_ADDRESS_REGISTER, 0x0f);
-  Byte = (UINT8)((inb (Private,SEQ_DATA_REGISTER) & 0xc7) ^ 0x30);
+  Byte = (UINT8) ((inb (Private, SEQ_DATA_REGISTER) & 0xc7) ^ 0x30);
   outb (Private, SEQ_DATA_REGISTER, Byte);
 
-  outb (Private, MISC_OUTPUT_REGISTER  , ModeData->MiscSetting);
+  outb (Private, MISC_OUTPUT_REGISTER, ModeData->MiscSetting);
   outw (Private, GRAPH_ADDRESS_REGISTER, 0x0506);
-  outw (Private, SEQ_ADDRESS_REGISTER  , 0x0300);
-  outw (Private, CRTC_ADDRESS_REGISTER , 0x2011);
+  outw (Private, SEQ_ADDRESS_REGISTER, 0x0300);
+  outw (Private, CRTC_ADDRESS_REGISTER, 0x2011);
 
   for (Index = 0; Index < 28; Index++) {
-    outw (Private, CRTC_ADDRESS_REGISTER, (UINT16)((ModeData->CrtcSettings[Index] << 8) | Index));
+    outw (Private, CRTC_ADDRESS_REGISTER, (UINT16) ((ModeData->CrtcSettings[Index] << 8) | Index));
   }
 
   for (Index = 0; Index < 9; Index++) {
-    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16)((GraphicsController[Index] << 8) | Index));
+    outw (Private, GRAPH_ADDRESS_REGISTER, (UINT16) ((GraphicsController[Index] << 8) | Index));
   }
 
   inb (Private, INPUT_STATUS_1_REGISTER);
 
   for (Index = 0; Index < 21; Index++) {
-    outb (Private, ATT_ADDRESS_REGISTER, (UINT8)Index);
+    outb (Private, ATT_ADDRESS_REGISTER, (UINT8) Index);
     outb (Private, ATT_ADDRESS_REGISTER, AttributeController[Index]);
   }
+
   outb (Private, ATT_ADDRESS_REGISTER, 0x20);
 
-  outw (Private, GRAPH_ADDRESS_REGISTER,  0x0009);
-  outw (Private, GRAPH_ADDRESS_REGISTER,  0x000a);
-  outw (Private, GRAPH_ADDRESS_REGISTER,  0x000b);
+  outw (Private, GRAPH_ADDRESS_REGISTER, 0x0009);
+  outw (Private, GRAPH_ADDRESS_REGISTER, 0x000a);
+  outw (Private, GRAPH_ADDRESS_REGISTER, 0x000b);
   outb (Private, DAC_PIXEL_MASK_REGISTER, 0xff);
 
   SetDefaultPalette (Private);
   ClearScreen (Private);
 }
-

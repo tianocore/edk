@@ -33,25 +33,31 @@ PartitionComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 PartitionComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gPartitionComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gPartitionComponentName = {
   PartitionComponentNameGetDriverName,
   PartitionComponentNameGetControllerName,
   "eng"
 };
 
 static EFI_UNICODE_STRING_TABLE mPartitionDriverNameTable[] = {
-  { "eng", L"Partition Driver(MBR/GPT/El Torito)" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Partition Driver(MBR/GPT/El Torito)"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -89,21 +95,21 @@ PartitionComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gPartitionComponentName.SupportedLanguages,
-           mPartitionDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gPartitionComponentName.SupportedLanguages,
+          mPartitionDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 PartitionComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

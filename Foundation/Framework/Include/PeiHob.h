@@ -27,7 +27,6 @@ Abstract:
 
 #include "BootMode.h"
 
-
 //
 // Every Hob must start with this data structure.
 //
@@ -45,15 +44,15 @@ typedef struct {
 //
 // Handoff Information Table HOB
 //
-#define EFI_HOB_TYPE_HANDOFF  0x0001
+#define EFI_HOB_TYPE_HANDOFF          0x0001
 
-#define EFI_HOB_HANDOFF_TABLE_VERSION  0x0009
+#define EFI_HOB_HANDOFF_TABLE_VERSION 0x0009
 
-typedef UINT32 EFI_BOOT_MODE;
+typedef UINT32  EFI_BOOT_MODE;
 
-typedef struct { 
+typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;
-  UINT32                  Version; 
+  UINT32                  Version;
   EFI_BOOT_MODE           BootMode;
   EFI_PHYSICAL_ADDRESS    EfiMemoryTop;
   EFI_PHYSICAL_ADDRESS    EfiMemoryBottom;
@@ -71,17 +70,17 @@ typedef struct {
   EFI_GUID              Name;
   EFI_PHYSICAL_ADDRESS  MemoryBaseAddress;
   UINT64                MemoryLength;
-  EFI_MEMORY_TYPE       MemoryType;  
-  UINT8                 Reserved[4]; 
+  EFI_MEMORY_TYPE       MemoryType;
+  UINT8                 Reserved[4];
 } EFI_HOB_MEMORY_ALLOCATION_HEADER;
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER            Header;
   EFI_HOB_MEMORY_ALLOCATION_HEADER  AllocDescriptor;
-//
-// Additional data pertaining to the "Name" Guid memory
-// may go here.
-//
+  //
+  // Additional data pertaining to the "Name" Guid memory
+  // may go here.
+  //
 } EFI_HOB_MEMORY_ALLOCATION;
 
 typedef struct {
@@ -101,21 +100,20 @@ typedef struct {
   EFI_PHYSICAL_ADDRESS              EntryPoint;
 } EFI_HOB_MEMORY_ALLOCATION_MODULE;
 
-
 #define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR  0x0003
 
-typedef UINT32 EFI_RESOURCE_TYPE;
+typedef UINT32  EFI_RESOURCE_TYPE;
 
-#define EFI_RESOURCE_SYSTEM_MEMORY         0
-#define EFI_RESOURCE_MEMORY_MAPPED_IO      1
-#define EFI_RESOURCE_IO                    2
-#define EFI_RESOURCE_FIRMWARE_DEVICE       3
-#define EFI_RESOURCE_MEMORY_MAPPED_IO_PORT 4
-#define EFI_RESOURCE_MEMORY_RESERVED       5
-#define EFI_RESOURCE_IO_RESERVED           6
-#define EFI_RESOURCE_MAX_MEMORY_TYPE       7
+#define EFI_RESOURCE_SYSTEM_MEMORY          0
+#define EFI_RESOURCE_MEMORY_MAPPED_IO       1
+#define EFI_RESOURCE_IO                     2
+#define EFI_RESOURCE_FIRMWARE_DEVICE        3
+#define EFI_RESOURCE_MEMORY_MAPPED_IO_PORT  4
+#define EFI_RESOURCE_MEMORY_RESERVED        5
+#define EFI_RESOURCE_IO_RESERVED            6
+#define EFI_RESOURCE_MAX_MEMORY_TYPE        7
 
-typedef UINT32 EFI_RESOURCE_ATTRIBUTE_TYPE;
+typedef UINT32  EFI_RESOURCE_ATTRIBUTE_TYPE;
 
 #define EFI_RESOURCE_ATTRIBUTE_PRESENT                  0x00000001
 #define EFI_RESOURCE_ATTRIBUTE_INITIALIZED              0x00000002
@@ -137,19 +135,19 @@ typedef UINT32 EFI_RESOURCE_ATTRIBUTE_TYPE;
 #define EFI_RESOURCE_ATTRIBUTE_UNCACHED_EXPORTED        0x00020000
 
 typedef struct {
-  EFI_HOB_GENERIC_HEADER       Header;
-  EFI_GUID                     Owner;
-  EFI_RESOURCE_TYPE            ResourceType;
-  EFI_RESOURCE_ATTRIBUTE_TYPE  ResourceAttribute;
-  EFI_PHYSICAL_ADDRESS         PhysicalStart;
-  UINT64                       ResourceLength;
+  EFI_HOB_GENERIC_HEADER      Header;
+  EFI_GUID                    Owner;
+  EFI_RESOURCE_TYPE           ResourceType;
+  EFI_RESOURCE_ATTRIBUTE_TYPE ResourceAttribute;
+  EFI_PHYSICAL_ADDRESS        PhysicalStart;
+  UINT64                      ResourceLength;
 } EFI_HOB_RESOURCE_DESCRIPTOR;
 
 //
 // GUID Extension HOB
 // The HobLength is variable as it includes the GUID specific data.
 //
-#define EFI_HOB_TYPE_GUID_EXTENSION     0x0004
+#define EFI_HOB_TYPE_GUID_EXTENSION 0x0004
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;
@@ -163,7 +161,7 @@ typedef struct {
 //
 // Firmware Volume HOB
 //
-#define EFI_HOB_TYPE_FV   0x0005
+#define EFI_HOB_TYPE_FV 0x0005
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;
@@ -174,7 +172,7 @@ typedef struct {
 //
 // CPU HOB
 //
-#define EFI_HOB_TYPE_CPU   0x0006
+#define EFI_HOB_TYPE_CPU  0x0006
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;
@@ -188,7 +186,7 @@ typedef struct {
 // The HobLength is variable as the HOB contains pool allocations by
 // the PeiServices AllocatePool function
 //
-#define EFI_HOB_TYPE_PEI_MEMORY_POOL     0x0007
+#define EFI_HOB_TYPE_PEI_MEMORY_POOL  0x0007
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;
@@ -197,7 +195,7 @@ typedef struct {
 //
 // Capsule volume HOB -- identical to a firmware volume
 //
-#define EFI_HOB_TYPE_CV                 0x0008
+#define EFI_HOB_TYPE_CV 0x0008
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;
@@ -205,30 +203,30 @@ typedef struct {
   UINT64                  Length;
 } EFI_HOB_CAPSULE_VOLUME;
 
-#define EFI_HOB_TYPE_UNUSED              0xFFFE
+#define EFI_HOB_TYPE_UNUSED 0xFFFE
 
 //
 // Union of all the possible HOB Types
 //
 typedef union {
-  EFI_HOB_GENERIC_HEADER               *Header;
-  EFI_HOB_HANDOFF_INFO_TABLE    *HandoffInformationTable;
-  EFI_HOB_MEMORY_ALLOCATION            *MemoryAllocation;
-  EFI_HOB_MEMORY_ALLOCATION_BSP_STORE  *MemoryAllocationBspStore;
-  EFI_HOB_MEMORY_ALLOCATION_STACK      *MemoryAllocationStack;
-  EFI_HOB_MEMORY_ALLOCATION_MODULE     *MemoryAllocationModule;
-  EFI_HOB_RESOURCE_DESCRIPTOR          *ResourceDescriptor;
-  EFI_HOB_GUID_TYPE                    *Guid; 
-  EFI_HOB_FIRMWARE_VOLUME              *FirmwareVolume;
-  EFI_HOB_CPU                          *Cpu;
-  EFI_HOB_MEMORY_POOL                  *Pool;
-  EFI_HOB_CAPSULE_VOLUME               *CapsuleVolume;
-  UINT8                                *Raw;
+  EFI_HOB_GENERIC_HEADER              *Header;
+  EFI_HOB_HANDOFF_INFO_TABLE          *HandoffInformationTable;
+  EFI_HOB_MEMORY_ALLOCATION           *MemoryAllocation;
+  EFI_HOB_MEMORY_ALLOCATION_BSP_STORE *MemoryAllocationBspStore;
+  EFI_HOB_MEMORY_ALLOCATION_STACK     *MemoryAllocationStack;
+  EFI_HOB_MEMORY_ALLOCATION_MODULE    *MemoryAllocationModule;
+  EFI_HOB_RESOURCE_DESCRIPTOR         *ResourceDescriptor;
+  EFI_HOB_GUID_TYPE                   *Guid;
+  EFI_HOB_FIRMWARE_VOLUME             *FirmwareVolume;
+  EFI_HOB_CPU                         *Cpu;
+  EFI_HOB_MEMORY_POOL                 *Pool;
+  EFI_HOB_CAPSULE_VOLUME              *CapsuleVolume;
+  UINT8                               *Raw;
 } EFI_PEI_HOB_POINTERS;
 
-#define GET_HOB_TYPE(Hob)          ((Hob).Header->HobType)
-#define GET_HOB_LENGTH(Hob)        ((Hob).Header->HobLength)
-#define GET_NEXT_HOB(Hob)          ((Hob).Raw + GET_HOB_LENGTH(Hob))
-#define END_OF_HOB_LIST(Hob)       (GET_HOB_TYPE(Hob) == EFI_HOB_TYPE_END_OF_HOB_LIST)
+#define GET_HOB_TYPE(Hob)     ((Hob).Header->HobType)
+#define GET_HOB_LENGTH(Hob)   ((Hob).Header->HobLength)
+#define GET_NEXT_HOB(Hob)     ((Hob).Raw + GET_HOB_LENGTH (Hob))
+#define END_OF_HOB_LIST(Hob)  (GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_END_OF_HOB_LIST)
 
 #endif

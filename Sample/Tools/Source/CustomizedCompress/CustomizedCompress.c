@@ -18,12 +18,13 @@ Abstract:
   Header file for Customized compression routine
   
 --*/
+
 #include "TianoCommon.h"
 
 EFI_STATUS
 SetCustomizedCompressionType (
   IN  CHAR8   *Type
-)
+  )
 /*++
 
 Routine Description:
@@ -67,6 +68,7 @@ Returns:
     
   EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successull retrieved.
   EFI_INVALID_PARAMETER - The source data is corrupted
+  EFI_UNSUPPORTED       - The operation is unsupported.
 
     
 --*/
@@ -80,7 +82,7 @@ CustomizedDecompress (
   IN      UINT32  SrcSize,
   IN OUT  VOID    *Destination,
   IN      UINT32  DstSize,
-  IN OUT  VOID   *Scratch,
+  IN OUT  VOID    *Scratch,
   IN      UINT32  ScratchSize
   )
 /*++
@@ -103,6 +105,7 @@ Returns:
 
   EFI_SUCCESS           - Decompression is successfull
   EFI_INVALID_PARAMETER - The source data is corrupted
+  EFI_UNSUPPORTED       - The operation is unsupported.
 
 --*/
 {
@@ -136,7 +139,8 @@ Returns:
                 DstSize contains the size needed.
   EFI_SUCCESS           - Compression is successful.
 
+  EFI_UNSUPPORTED       - The operation is unsupported.
 --*/
 {
- return EFI_UNSUPPORTED;
+  return EFI_UNSUPPORTED;
 }

@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(Decompress)
+#include EFI_PROTOCOL_DEFINITION (Decompress)
 
-EFI_GUID gEfiDecompressProtocolGuid = EFI_DECOMPRESS_PROTOCOL_GUID;
+EFI_GUID  gEfiDecompressProtocolGuid = EFI_DECOMPRESS_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiDecompressProtocolGuid, "Decompress", "Decompression Protocol");
-

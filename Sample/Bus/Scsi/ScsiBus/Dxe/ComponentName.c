@@ -33,17 +33,17 @@ ScsiBusComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ScsiBusComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gScsiBusComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gScsiBusComponentName = {
   ScsiBusComponentNameGetDriverName,
   ScsiBusComponentNameGetControllerName,
   "eng"
@@ -51,9 +51,8 @@ EFI_COMPONENT_NAME_PROTOCOL gScsiBusComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mScsiBusDriverNameTable[] = {
   { "eng", L"SCSI Bus Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
-
 
 EFI_STATUS
 EFIAPI
@@ -90,21 +89,21 @@ ScsiBusComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gScsiBusComponentName.SupportedLanguages,
-           mScsiBusDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gScsiBusComponentName.SupportedLanguages,
+          mScsiBusDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 ScsiBusComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

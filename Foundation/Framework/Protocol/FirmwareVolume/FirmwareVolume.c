@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Firmware Volume protocol as defined in the EFI 2.0 Firmware Volume
+  Firmware Volume protocol as defined in the Tiano Firmware Volume
   specification.
 
   File level access layered on top of Firmware File System protocol.  This
@@ -23,10 +23,9 @@ Abstract:
  
 --*/
 
-#include "Tiano.h"                  
+#include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 
-EFI_GUID gEfiFirmwareVolumeProtocolGuid = EFI_FIRMWARE_VOLUME_PROTOCOL_GUID;
+EFI_GUID  gEfiFirmwareVolumeProtocolGuid = EFI_FIRMWARE_VOLUME_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiFirmwareVolumeProtocolGuid, "FirmwareVolume Protocol", "Firmware Volume protocol");
-

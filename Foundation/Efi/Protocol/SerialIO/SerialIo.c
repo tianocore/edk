@@ -23,9 +23,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(SerialIo)
+#include EFI_PROTOCOL_DEFINITION (SerialIo)
 
 EFI_GUID  gEfiSerialIoProtocolGuid = EFI_SERIAL_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiSerialIoProtocolGuid, "SerialIo Protocol", "EFI 1.0 Serial IO Protocol");
-

@@ -70,7 +70,7 @@ Returns:
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
                   &gEfiFirmwareVolumeProtocolGuid,
-                  NULL, 
+                  NULL,
                   &FvProtocolCount,
                   &FvHandles
                   );
@@ -80,21 +80,21 @@ Returns:
 
   for (Index = 0; Index < FvProtocolCount; Index++) {
     Status = gBS->HandleProtocol (
-                    FvHandles[Index], 
+                    FvHandles[Index],
                     &gEfiFirmwareVolumeProtocolGuid,
-                    (VOID **)&Fv
+                    (VOID **) &Fv
                     );
 
     //
     // Assuming Image and ImageSize are correct on input.
     //
     Status = Fv->ReadSection (
-                  Fv, 
-                  &gEfiDefaultBmpLogoGuid, 
+                  Fv,
+                  &gEfiDefaultBmpLogoGuid,
                   EFI_SECTION_RAW,
                   0,
-                  Image, 
-                  ImageSize, 
+                  Image,
+                  ImageSize,
                   &AuthenticationStatus
                   );
     if (!EFI_ERROR (Status)) {
@@ -149,21 +149,22 @@ Returns:
   EFI_UNSUPPORTED       - BmpImage is not a valid *.BMP image
   EFI_BUFFER_TOO_SMALL  - The passed in UgaBlt buffer is not big enough.
                           UgaBltSize will contain the required size.
+  EFI_OUT_OF_RESOURCES  - No enough buffer to allocate
 
 --*/
 {
-  UINT8                   *Image;
-  BMP_IMAGE_HEADER        *BmpHeader;
-  BMP_COLOR_MAP           *BmpColorMap;
-  EFI_UGA_PIXEL           *BltBuffer, *Blt;
-  UINTN                   BltBufferSize;
-  UINTN                   Index;
-  UINTN                   Height;
-  UINTN                   Width;
-  UINTN                   ImageIndex;
+  UINT8             *Image;
+  BMP_IMAGE_HEADER  *BmpHeader;
+  BMP_COLOR_MAP     *BmpColorMap;
+  EFI_UGA_PIXEL     *BltBuffer;
+  EFI_UGA_PIXEL     *Blt;
+  UINTN             BltBufferSize;
+  UINTN             Index;
+  UINTN             Height;
+  UINTN             Width;
+  UINTN             ImageIndex;
 
-
-  BmpHeader = (BMP_IMAGE_HEADER *)BmpImage;
+  BmpHeader = (BMP_IMAGE_HEADER *) BmpImage;
   if (BmpHeader->CharB != 'B' || BmpHeader->CharM != 'M') {
     return EFI_UNSUPPORTED;
   }
@@ -175,18 +176,18 @@ Returns:
   //
   // Calculate Color Map offset in the image.
   //
-  Image = BmpImage;
-  BmpColorMap = (BMP_COLOR_MAP *)(Image + sizeof (BMP_IMAGE_HEADER));
+  Image       = BmpImage;
+  BmpColorMap = (BMP_COLOR_MAP *) (Image + sizeof (BMP_IMAGE_HEADER));
 
   //
   // Calculate graphics image data address in the image
   //
-  Image = ((UINT8 *)BmpImage) + BmpHeader->ImageOffset;
+  Image         = ((UINT8 *) BmpImage) + BmpHeader->ImageOffset;
 
   BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_UGA_PIXEL);
   if (*UgaBlt == NULL) {
     *UgaBltSize = BltBufferSize;
-    *UgaBlt = EfiLibAllocatePool (*UgaBltSize);
+    *UgaBlt     = EfiLibAllocatePool (*UgaBltSize);
     if (*UgaBlt == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
@@ -197,9 +198,8 @@ Returns:
     }
   }
 
-  *PixelWidth = BmpHeader->PixelWidth;
-  *PixelHeight = BmpHeader->PixelHeight;
-
+  *PixelWidth   = BmpHeader->PixelWidth;
+  *PixelHeight  = BmpHeader->PixelHeight;
 
   //
   // Convert image from BMP to Blt buffer format
@@ -213,32 +213,35 @@ Returns:
         //
         // Convert BMP Palette to 24-bit color
         //
-        Index = (*Image) >> 4;
-        Blt->Red   = BmpColorMap[Index].Red;
-        Blt->Green = BmpColorMap[Index].Green;
-        Blt->Blue  = BmpColorMap[Index].Blue;
+        Index       = (*Image) >> 4;
+        Blt->Red    = BmpColorMap[Index].Red;
+        Blt->Green  = BmpColorMap[Index].Green;
+        Blt->Blue   = BmpColorMap[Index].Blue;
         if (Width < (BmpHeader->PixelWidth - 1)) {
           Blt++;
           Width++;
-          Index = (*Image) & 0x0f;
-          Blt->Red   = BmpColorMap[Index].Red;
-          Blt->Green = BmpColorMap[Index].Green;
-          Blt->Blue  = BmpColorMap[Index].Blue;
+          Index       = (*Image) & 0x0f;
+          Blt->Red    = BmpColorMap[Index].Red;
+          Blt->Green  = BmpColorMap[Index].Green;
+          Blt->Blue   = BmpColorMap[Index].Blue;
         }
         break;
+
       case 8:
         //
         // Convert BMP Palette to 24-bit color
         //
-        Blt->Red   = BmpColorMap[*Image].Red;
-        Blt->Green = BmpColorMap[*Image].Green;
-        Blt->Blue  = BmpColorMap[*Image].Blue;
-      break;
-      case 24:
-        Blt->Blue = *Image++;
-        Blt->Green = *Image++;
-        Blt->Red = *Image;
+        Blt->Red    = BmpColorMap[*Image].Red;
+        Blt->Green  = BmpColorMap[*Image].Green;
+        Blt->Blue   = BmpColorMap[*Image].Blue;
         break;
+
+      case 24:
+        Blt->Blue   = *Image++;
+        Blt->Green  = *Image++;
+        Blt->Red    = *Image;
+        break;
+
       default:
         return EFI_UNSUPPORTED;
         break;
@@ -246,7 +249,7 @@ Returns:
 
     }
 
-    ImageIndex = (UINTN)(Image - BmpHeader->ImageOffset);
+    ImageIndex = (UINTN) (Image - BmpHeader->ImageOffset);
     if ((ImageIndex % 4) != 0) {
       //
       // Bmp Image starts each row on a 32-bit boundary!
@@ -296,7 +299,6 @@ Returns:
 }
 
 
-
 EFI_STATUS
 EnableQuietBoot (
   IN  EFI_GUID  *LogoFile
@@ -337,13 +339,13 @@ Returns:
   EFI_UGA_PIXEL                 *UgaBlt;
   UINTN                         UgaBltSize;
 
-  UINT32                         Instance;
-  EFI_BADGING_FORMAT             Format;
-  EFI_BADGING_DISPLAY_ATTRIBUTE  Attribute;
-  UINTN                          CoordinateX;
-  UINTN                          CoordinateY;  
-  UINTN                          Height;
-  UINTN                          Width;
+  UINT32                        Instance;
+  EFI_BADGING_FORMAT            Format;
+  EFI_BADGING_DISPLAY_ATTRIBUTE Attribute;
+  UINTN                         CoordinateX;
+  UINTN                         CoordinateY;
+  UINTN                         Height;
+  UINTN                         Width;
 
   Status = gBS->LocateProtocol (&gEfiConsoleControlProtocolGuid, NULL, &ConsoleControl);
   if (EFI_ERROR (Status)) {
@@ -356,8 +358,8 @@ Returns:
   }
 
   Badging = NULL;
-  Status = gBS->LocateProtocol (&gEfiOEMBadgingProtocolGuid, NULL, &Badging);
-  
+  Status  = gBS->LocateProtocol (&gEfiOEMBadgingProtocolGuid, NULL, &Badging);
+
   ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenGraphics);
 
   Status = UgaDraw->GetMode (UgaDraw, &SizeOfX, &SizeOfY, &ColorDepth, &RefreshRate);
@@ -365,28 +367,28 @@ Returns:
     return EFI_UNSUPPORTED;
   }
 
-
   Instance = 0;
-  while (1) {  
+  while (1) {
     ImageData = NULL;
     ImageSize = 0;
-    
+
     if (Badging != NULL) {
-      Status = Badging->GetImage (Badging,
-                &Instance,
-            &Format,
-            &ImageData,
-            &ImageSize,
-            &Attribute,
-            &CoordinateX,
-            &CoordinateY
-            );
-      if (EFI_ERROR(Status)) {
+      Status = Badging->GetImage (
+                          Badging,
+                          &Instance,
+                          &Format,
+                          &ImageData,
+                          &ImageSize,
+                          &Attribute,
+                          &CoordinateX,
+                          &CoordinateY
+                          );
+      if (EFI_ERROR (Status)) {
         return Status;
       }
 
       //
-      //Currently only support BMP format
+      // Currently only support BMP format
       //
       if (Format != EfiBadgingFormatBMP) {
         gBS->FreePool (ImageData);
@@ -397,87 +399,103 @@ Returns:
       if (EFI_ERROR (Status)) {
         return EFI_UNSUPPORTED;
       }
+
       CoordinateX = 0;
       CoordinateY = 0;
-      Attribute = EfiBadgingDisplayAttributeCenter;
+      Attribute   = EfiBadgingDisplayAttributeCenter;
     }
 
-
     UgaBlt = NULL;
-    Status = ConvertBmpToUgaBlt (ImageData,
-                                 ImageSize,
-                                 &UgaBlt,
-                                 &UgaBltSize,
-                                 &Height,
-                                 &Width
-                                 );
+    Status = ConvertBmpToUgaBlt (
+              ImageData,
+              ImageSize,
+              &UgaBlt,
+              &UgaBltSize,
+              &Height,
+              &Width
+              );
     if (EFI_ERROR (Status)) {
       gBS->FreePool (ImageData);
       continue;
     }
+
     switch (Attribute) {
-      case EfiBadgingDisplayAttributeLeftTop:
-        DestX = CoordinateX;
-        DestY = CoordinateY;
-        break;
-      case EfiBadgingDisplayAttributeCenterTop:
-        DestX = (SizeOfX - Width)/2;
-        DestY = CoordinateY;
-        break;
-      case EfiBadgingDisplayAttributeRightTop:
-        DestX = (SizeOfX - Width - CoordinateX);
-        DestY = CoordinateY;;
-        break;
-      case EfiBadgingDisplayAttributeCenterRight:
-        DestX = (SizeOfX - Width - CoordinateX);
-        DestY = (SizeOfY - Height)/2;
-        break;
-      case EfiBadgingDisplayAttributeRightBottom:
-        DestX = (SizeOfX - Width - CoordinateX);
-        DestY = (SizeOfY - Height - CoordinateY);
-        break;
-      case EfiBadgingDisplayAttributeCenterBottom:
-        DestX = (SizeOfX - Width)/2;
-        DestY = (SizeOfY - Height - CoordinateY);
-        break;
-      case EfiBadgingDisplayAttributeLeftBottom:
-        DestX = CoordinateX;
-        DestY = (SizeOfY - Height - CoordinateY);
-        break;
-      case EfiBadgingDisplayAttributeCenterLeft:
-        DestX = CoordinateX;
-        DestY = (SizeOfY - Height)/2;
-        break;
-      case EfiBadgingDisplayAttributeCenter:
-        DestX = (SizeOfX - Width)/2;
-        DestY = (SizeOfY - Height)/2;
-        break;
-      default:
-        DestX = CoordinateX;
-        DestY = CoordinateY;
-        break;
+    case EfiBadgingDisplayAttributeLeftTop:
+      DestX = CoordinateX;
+      DestY = CoordinateY;
+      break;
+
+    case EfiBadgingDisplayAttributeCenterTop:
+      DestX = (SizeOfX - Width) / 2;
+      DestY = CoordinateY;
+      break;
+
+    case EfiBadgingDisplayAttributeRightTop:
+      DestX = (SizeOfX - Width - CoordinateX);
+      DestY = CoordinateY;;
+      break;
+
+    case EfiBadgingDisplayAttributeCenterRight:
+      DestX = (SizeOfX - Width - CoordinateX);
+      DestY = (SizeOfY - Height) / 2;
+      break;
+
+    case EfiBadgingDisplayAttributeRightBottom:
+      DestX = (SizeOfX - Width - CoordinateX);
+      DestY = (SizeOfY - Height - CoordinateY);
+      break;
+
+    case EfiBadgingDisplayAttributeCenterBottom:
+      DestX = (SizeOfX - Width) / 2;
+      DestY = (SizeOfY - Height - CoordinateY);
+      break;
+
+    case EfiBadgingDisplayAttributeLeftBottom:
+      DestX = CoordinateX;
+      DestY = (SizeOfY - Height - CoordinateY);
+      break;
+
+    case EfiBadgingDisplayAttributeCenterLeft:
+      DestX = CoordinateX;
+      DestY = (SizeOfY - Height) / 2;
+      break;
+
+    case EfiBadgingDisplayAttributeCenter:
+      DestX = (SizeOfX - Width) / 2;
+      DestY = (SizeOfY - Height) / 2;
+      break;
+
+    default:
+      DestX = CoordinateX;
+      DestY = CoordinateY;
+      break;
     }
-    if ((DestX >= 0) && (DestY >= 0)) { 
+
+    if ((DestX >= 0) && (DestY >= 0)) {
       Status = UgaDraw->Blt (
-            UgaDraw,
-            UgaBlt,               EfiUgaBltBufferToVideo,           
-            0,                    0,
-            (UINTN)DestX, (UINTN)DestY,
-            Width,                Height,
-            Width * sizeof (EFI_UGA_PIXEL)
-            );
+                          UgaDraw,
+                          UgaBlt,
+                          EfiUgaBltBufferToVideo,
+                          0,
+                          0,
+                          (UINTN) DestX,
+                          (UINTN) DestY,
+                          Width,
+                          Height,
+                          Width * sizeof (EFI_UGA_PIXEL)
+                          );
     }
+
     gBS->FreePool (ImageData);
     gBS->FreePool (UgaBlt);
-    
+
     if (Badging == NULL) {
       break;
     }
   }
-      
+
   return Status;
 }
-
 
 
 EFI_STATUS
@@ -512,17 +530,3 @@ Returns:
 
   return ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenText);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

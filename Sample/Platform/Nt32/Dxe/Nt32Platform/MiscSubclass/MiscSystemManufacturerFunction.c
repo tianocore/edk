@@ -22,11 +22,12 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 //
 //
-MISC_SUBCLASS_TABLE_FUNCTION(MiscSystemManufacturer)
+MISC_SUBCLASS_TABLE_FUNCTION (
+  MiscSystemManufacturer
+  )
 /*++
 Description:
 
@@ -68,7 +69,7 @@ Returns:
       LogRecordData was NULL.
 --*/
 {
-  STATIC BOOLEAN Done = FALSE;
+  STATIC BOOLEAN  Done = FALSE;
 
   //
   // First check for invalid parameters.
@@ -76,14 +77,12 @@ Returns:
   if (*RecordLen == 0 || RecordData == NULL || LogRecordData == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Then check for unsupported RecordType.
   //
   if (RecordType != EFI_MISC_SYSTEM_MANUFACTURER_RECORD_NUMBER) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Is this the first time through this function?
   //
@@ -92,23 +91,20 @@ Returns:
     // Yes, this is the first time.  Inspect/Change the contents of the
     // RecordData structure.
     //
-
     //
     // Set system GUID.
     //
     // ((EFI_MISC_SYSTEM_MANUFACTURER *)RecordData)->SystemUuid = %%TBD
-
     //
     // Set power-on type.
     //
     // ((EFI_MISC_SYSTEM_MANUFACTURER *)RecordData)->SystemWakeupType = %%TBD
-
     //
     // Set Done flag to TRUE for next pass through this function.
     // Set *LogRecordData to TRUE so data will get logged to Data Hub.
     //
-    Done = TRUE;
-    *LogRecordData = TRUE;
+    Done            = TRUE;
+    *LogRecordData  = TRUE;
   } else {
     //
     // No, this is the second time.  Reset the state of the Done flag
@@ -116,8 +112,8 @@ Returns:
     // to be logged for this record type.  If any memory allocations
     // were made by earlier passes, they must be released now.
     //
-    Done = FALSE;
-    *LogRecordData = FALSE;
+    Done            = FALSE;
+    *LogRecordData  = FALSE;
   }
 
   return EFI_SUCCESS;

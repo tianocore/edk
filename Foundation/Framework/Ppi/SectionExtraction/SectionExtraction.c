@@ -23,6 +23,6 @@ Abstract:
 #include "Pei.h"
 #include EFI_PPI_DEFINITION (SectionExtraction)
 
-EFI_GUID gPeiSectionExtractionPpiGuid = EFI_PEI_SECTION_EXTRACTION_PPI_GUID;
+EFI_GUID  gPeiSectionExtractionPpiGuid = EFI_PEI_SECTION_EXTRACTION_PPI_GUID;
 
-EFI_GUID_STRING (&gPeiSectionExtractionPpiGuid, "Section Extraction PPI", "Section Extraction PPI");
+EFI_GUID_STRING(&gPeiSectionExtractionPpiGuid, "Section Extraction PPI", "Section Extraction PPI");

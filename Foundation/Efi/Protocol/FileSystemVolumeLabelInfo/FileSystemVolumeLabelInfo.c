@@ -28,8 +28,7 @@ Abstract:
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (FileSystemVolumeLabelInfo)
 
+EFI_GUID  gEfiFileSystemVolumeLabelInfoIdGuid = EFI_FILE_SYSTEM_VOLUME_LABEL_INFO_ID_GUID;
 
-EFI_GUID gEfiFileSystemVolumeLabelInfoIdGuid = EFI_FILE_SYSTEM_VOLUME_LABEL_INFO_ID_GUID;
-
-EFI_GUID_STRING(&gEfiFileSystemVolumeLabelInfoIdGuid, "File System Vol Label ID", "EFI File System Volume Label Info ID GUID");
-
+EFI_GUID_STRING
+  (&gEfiFileSystemVolumeLabelInfoIdGuid, "File System Vol Label ID", "EFI File System Volume Label Info ID GUID");

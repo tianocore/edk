@@ -30,7 +30,9 @@ Abstract:
 #include "EfiUtilityMsgs.h"
 
 VOID
-PrintUtilityInfo ()
+PrintUtilityInfo (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -47,17 +49,18 @@ Returns:
 
 --*/
 {
-  printf ("%s - Tiano Firmware Volume Generation Utility."
-          " Version %i.%i\n\n",
-          UTILITY_NAME,
-          UTILITY_MAJOR_VERSION,
-          UTILITY_MINOR_VERSION
-          );
+  printf (
+    "%s - Tiano Firmware Volume Generation Utility."" Version %i.%i\n\n",
+    UTILITY_NAME,
+    UTILITY_MAJOR_VERSION,
+    UTILITY_MINOR_VERSION
+    );
 }
 
-
-VOID 
-PrintUsage ()
+VOID
+PrintUsage (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -79,10 +82,9 @@ Returns:
   printf ("\tFvInfFileName is the name of the image description file.\n\n");
 }
 
-
 EFI_STATUS
 main (
-  IN INTN   argc, 
+  IN INTN   argc,
   IN CHAR8  **argv
   )
 /*++
@@ -118,14 +120,17 @@ Returns:
   UINTN       FvImageSize;
   UINT8       Index;
   CHAR8       FvFileNameBuffer[_MAX_PATH];
-  CHAR8       *FvFileName = FvFileNameBuffer;
+  CHAR8       *FvFileName;
   FILE        *FvFile;
   FILE        *SymFile;
   CHAR8       SymFileNameBuffer[_MAX_PATH];
-  CHAR8       *SymFileName = SymFileNameBuffer;
+  CHAR8       *SymFileName;
   UINT8       *SymImage;
   UINTN       SymImageSize;
   CHAR8       *CurrentSymString;
+
+  FvFileName  = FvFileNameBuffer;
+  SymFileName = SymFileNameBuffer;
 
   SetUtilityName (UTILITY_NAME);
   //
@@ -135,24 +140,21 @@ Returns:
 
   //
   // Verify the correct number of arguments
-  // 
+  //
   if (argc != MAX_ARGS) {
     Error (NULL, 0, 0, "invalid number of input parameters specified", NULL);
     PrintUsage ();
     return GetUtilityStatus ();
   }
-
   //
   // Initialize variables
-  //  
+  //
   strcpy (InfFileName, "");
 
   //
   // Parse the command line arguments
   //
-
   for (Index = 1; Index < MAX_ARGS; Index += 2) {
-
     //
     // Make sure argument pair begin with - or /
     //
@@ -161,7 +163,6 @@ Returns:
       PrintUsage ();
       return GetUtilityStatus ();
     }
-
     //
     // Make sure argument specifier is only one letter
     //
@@ -170,7 +171,6 @@ Returns:
       PrintUsage ();
       return GetUtilityStatus ();
     }
-
     //
     // Determine argument to read
     //
@@ -179,9 +179,9 @@ Returns:
     case 'I':
     case 'i':
       if (strlen (InfFileName) == 0) {
-        strcpy (InfFileName, argv[Index+1]);
+        strcpy (InfFileName, argv[Index + 1]);
       } else {
-        Error (NULL, 0, 0, argv[Index+1], "FvInfFileName may only be specified once");
+        Error (NULL, 0, 0, argv[Index + 1], "FvInfFileName may only be specified once");
         PrintUsage ();
         return GetUtilityStatus ();
       }
@@ -194,22 +194,28 @@ Returns:
       break;
     }
   }
-
   //
   // Read the INF file image
   //
-
   Status = GetFileImage (InfFileName, &InfFileImage, &InfFileSize);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return STATUS_ERROR;
   }
-  
   //
   // Call the GenFvImage lib
-  //  
-  Status = GenerateFvImage (InfFileImage, InfFileSize, &FvImage, &FvImageSize, &FvFileName, &SymImage, &SymImageSize, &SymFileName);
+  //
+  Status = GenerateFvImage (
+            InfFileImage,
+            InfFileSize,
+            &FvImage,
+            &FvImageSize,
+            &FvFileName,
+            &SymImage,
+            &SymImageSize,
+            &SymFileName
+            );
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     switch (Status) {
 
     case EFI_INVALID_PARAMETER:
@@ -243,11 +249,9 @@ Returns:
       break;
     }
   }
-
   //
   // Write file
   //
-
   FvFile = fopen (FvFileName, "wb");
   if (FvFile == NULL) {
     Error (NULL, 0, 0, FvFileName, "could not open output file");
@@ -270,7 +274,6 @@ Returns:
   //
   // Write symbol file
   //
-
   if (strcmp (SymFileName, "")) {
     SymFile = fopen (SymFileName, "wt");
     if (SymFile == NULL) {
@@ -280,11 +283,11 @@ Returns:
     }
 
     fprintf (SymFile, "TEXTSYM format | V1.0\n");
-    
+
     CurrentSymString = SymImage;
-    while (((UINTN)CurrentSymString - (UINTN)SymImage) < SymImageSize) {
+    while (((UINTN) CurrentSymString - (UINTN) SymImage) < SymImageSize) {
       fprintf (SymFile, "%s", CurrentSymString);
-      CurrentSymString = (CHAR8*) (((UINTN)CurrentSymString) + strlen (CurrentSymString) + 1);
+      CurrentSymString = (CHAR8 *) (((UINTN) CurrentSymString) + strlen (CurrentSymString) + 1);
     }
 
     fclose (SymFile);
@@ -294,5 +297,3 @@ Returns:
 
   return GetUtilityStatus ();
 }
-
-

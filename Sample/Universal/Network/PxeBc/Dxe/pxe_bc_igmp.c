@@ -19,40 +19,41 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // Definitions for internet group management protocol version 2 message
 // structure Per RFC 2236, November 1997
 //
-
-STATIC UINT8      RouterAlertOption[4] = {0x80 | 20, 4, 0, 0};
-STATIC IPV4_ADDR  AllRoutersGroup = {224,0,0,2};
+STATIC UINT8      RouterAlertOption[4]  = { 0x80 | 20, 4, 0, 0 };
+STATIC IPV4_ADDR  AllRoutersGroup       = { 224, 0, 0, 2 };
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-STATIC VOID
-ClearGroupTimer(
+STATIC
+VOID
+ClearGroupTimer (
   PXE_BASECODE_DEVICE *Private,
-  UINTN               TimerId)
+  UINTN               TimerId
+  )
 {
   if (Private == NULL) {
-    return;
+    return ;
   }
 
   if (TimerId >= Private->MCastGroupCount) {
-    return;
+    return ;
   }
 
   if (Private->IgmpGroupEvent[TimerId] == NULL) {
-    return;
+    return ;
   }
 
-  gBS->CloseEvent(Private->IgmpGroupEvent[TimerId]);
+  gBS->CloseEvent (Private->IgmpGroupEvent[TimerId]);
   Private->IgmpGroupEvent[TimerId] = NULL;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-STATIC VOID
-SetGroupTimer(
+STATIC
+VOID
+SetGroupTimer (
   PXE_BASECODE_DEVICE *Private,
   UINTN               TimerId,
-  UINTN               MaxRespTime)
+  UINTN               MaxRespTime
+  )
 /*++
 Routine description:
   Set IGMP response timeout value.
@@ -65,50 +66,53 @@ Parameters:
 Returns:
 --*/
 {
-  EFI_STATUS EfiStatus;
+  EFI_STATUS  EfiStatus;
 
   if (Private == NULL) {
-    return;
+    return ;
   }
 
   if (TimerId >= Private->MCastGroupCount) {
-    return;
+    return ;
   }
 
   if (Private->IgmpGroupEvent[TimerId] != NULL) {
-    gBS->CloseEvent(Private->IgmpGroupEvent[TimerId]);
+    gBS->CloseEvent (Private->IgmpGroupEvent[TimerId]);
   }
 
-  EfiStatus = gBS->CreateEvent(
-    EFI_EVENT_TIMER,
-    EFI_TPL_CALLBACK,
-    NULL,
-    NULL,
-    &Private->IgmpGroupEvent[TimerId]);
+  EfiStatus = gBS->CreateEvent (
+                    EFI_EVENT_TIMER,
+                    EFI_TPL_CALLBACK,
+                    NULL,
+                    NULL,
+                    &Private->IgmpGroupEvent[TimerId]
+                    );
 
-  if (EFI_ERROR(EfiStatus)) {
+  if (EFI_ERROR (EfiStatus)) {
     Private->IgmpGroupEvent[TimerId] = NULL;
-    return;
+    return ;
   }
 
-  EfiStatus = gBS->SetTimer(
-    Private->IgmpGroupEvent[TimerId],
-    TimerRelative,
-    MaxRespTime * 1000000 + Random(Private) % RAND_MAX);
+  EfiStatus = gBS->SetTimer (
+                    Private->IgmpGroupEvent[TimerId],
+                    TimerRelative,
+                    MaxRespTime * 1000000 + Random (Private) % RAND_MAX
+                    );
 
-  if (EFI_ERROR(EfiStatus)) {
-    gBS->CloseEvent(Private->IgmpGroupEvent[TimerId]);
+  if (EFI_ERROR (EfiStatus)) {
+    gBS->CloseEvent (Private->IgmpGroupEvent[TimerId]);
     Private->IgmpGroupEvent[TimerId] = NULL;
   }
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-STATIC VOID
-SendIgmpMessage(
+STATIC
+VOID
+SendIgmpMessage (
   PXE_BASECODE_DEVICE *Private,
   UINT8               Type,
-  INTN                GroupId)
+  INTN                GroupId
+  )
 /*++
 Routine description:
   Send an IGMP message
@@ -121,32 +125,35 @@ Parameters:
 Returns:
 --*/
 {
-  Private->IgmpMessage.Type = Type;
-  Private->IgmpMessage.MaxRespTime = 0;
-  Private->IgmpMessage.Checksum = 0;
+  Private->IgmpMessage.Type         = Type;
+  Private->IgmpMessage.MaxRespTime  = 0;
+  Private->IgmpMessage.Checksum     = 0;
   Private->IgmpMessage.GroupAddress = Private->MCastGroup[GroupId];
-  Private->IgmpMessage.Checksum = IpChecksum((UINT16 *)&Private->IgmpMessage,
-    sizeof Private->IgmpMessage);
+  Private->IgmpMessage.Checksum = IpChecksum (
+                                    (UINT16 *) &Private->IgmpMessage,
+                                    sizeof Private->IgmpMessage
+                                    );
 
-  Ipv4SendWOp(
+  Ipv4SendWOp (
     Private,
     0,
-    (UINT8 *)&Private->IgmpMessage,
+    (UINT8 *) &Private->IgmpMessage,
     sizeof Private->IgmpMessage,
     PROT_IGMP,
     RouterAlertOption,
-    sizeof RouterAlertOption, 
-    ((Type == IGMP_TYPE_LEAVE_GROUP) ?
-      AllRoutersGroup.L : Private->IgmpMessage.GroupAddress),
-    EFI_PXE_BASE_CODE_FUNCTION_IGMP);
+    sizeof RouterAlertOption,
+    ((Type == IGMP_TYPE_LEAVE_GROUP) ? AllRoutersGroup.L : Private->IgmpMessage.GroupAddress),
+    EFI_PXE_BASE_CODE_FUNCTION_IGMP
+    );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-STATIC VOID
-ReportIgmp(
+STATIC
+VOID
+ReportIgmp (
   PXE_BASECODE_DEVICE *Private,
-  INTN                GroupId)
+  INTN                GroupId
+  )
 /*++
 Routine description:
   Send an IGMP report message.
@@ -158,28 +165,30 @@ Parameters:
 Returns:
 --*/
 {
+  //
   // if version 1 querier, send v1 report
+  //
   UINT8 Type;
 
   if (Private->Igmpv1TimeoutEvent != NULL) {
-    if (!EFI_ERROR(gBS->CheckEvent(Private->Igmpv1TimeoutEvent))) {
-      gBS->CloseEvent(Private->Igmpv1TimeoutEvent);
+    if (!EFI_ERROR (gBS->CheckEvent (Private->Igmpv1TimeoutEvent))) {
+      gBS->CloseEvent (Private->Igmpv1TimeoutEvent);
       Private->Igmpv1TimeoutEvent = NULL;
       Private->UseIgmpv1Reporting = TRUE;
     }
   }
 
-  Type = (UINT8)(Private->UseIgmpv1Reporting ?
-    IGMP_TYPE_V1REPORT : IGMP_TYPE_REPORT);
+  Type = (UINT8) (Private->UseIgmpv1Reporting ? IGMP_TYPE_V1REPORT : IGMP_TYPE_REPORT);
 
-  SendIgmpMessage(Private, Type, GroupId);
-  ClearGroupTimer(Private, GroupId);
+  SendIgmpMessage (Private, Type, GroupId);
+  ClearGroupTimer (Private, GroupId);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-IgmpCheckTimers(PXE_BASECODE_DEVICE *Private)
+IgmpCheckTimers (
+  PXE_BASECODE_DEVICE *Private
+  )
 /*++
 Routine description:
   Check IGMP timers and send reports for all groups that have expired.
@@ -189,10 +198,10 @@ Parameters:
 Returns:
 --*/
 {
-  UINTN   GroupId;
+  UINTN GroupId;
 
   if (Private == NULL) {
-    return;
+    return ;
   }
 
   for (GroupId = 0; GroupId < Private->MCastGroupCount; ++GroupId) {
@@ -200,18 +209,22 @@ Returns:
       continue;
     }
 
-    if (!EFI_ERROR(gBS->CheckEvent(Private->IgmpGroupEvent[GroupId]))) {
-      ReportIgmp(Private, GroupId);     // send a report
+    if (!EFI_ERROR (gBS->CheckEvent (Private->IgmpGroupEvent[GroupId]))) {
+      //
+      // send a report
+      //
+      ReportIgmp (Private, GroupId);
     }
   }
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-STATIC INTN 
-FindMulticastGroup(
+STATIC
+INTN
+FindMulticastGroup (
   PXE_BASECODE_DEVICE *Private,
-  UINT32              GroupAddress)
+  UINT32              GroupAddress
+  )
 /*++
 Routine description:
   Fund group ID# (index).
@@ -237,11 +250,11 @@ Returns:
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-IgmpJoinGroup(
+IgmpJoinGroup (
   PXE_BASECODE_DEVICE  *Private,
-  EFI_IP_ADDRESS       *GroupPtr)
+  EFI_IP_ADDRESS       *GroupPtr
+  )
 /*++
 Routine description:
   Join multicast group.
@@ -253,39 +266,46 @@ Parameters:
 Returns:
 --*/
 {
-  UINT32 Grp;
+  UINT32  Grp;
 
-  Grp = *(UINT32 *)GroupPtr;
+  Grp = *(UINT32 *) GroupPtr;
 
 #if SUPPORT_IPV6
   if (Private->EfiBc.Mode->UsingIpv6) {
+    //
     // TBD
+    //
   }
 #endif
-
+  //
   // see if we already have it or if we can't take anymore
-  if (FindMulticastGroup(Private, Grp) ||
-    Private->MCastGroupCount == MAX_MCAST_GROUPS)
-  {
-    return;
+  //
+  if (FindMulticastGroup (Private, Grp) || Private->MCastGroupCount == MAX_MCAST_GROUPS) {
+    return ;
   }
-
+  //
   // add the group
+  //
   Private->MCastGroup[Private->MCastGroupCount] = Grp;
 
-  ReportIgmp(Private, Private->MCastGroupCount);     // send a report
-
+  ReportIgmp (Private, Private->MCastGroupCount);
+  //
+  // send a report
   // so it will get sent again per RFC 2236
-  SetGroupTimer(Private, Private->MCastGroupCount++,
-    UNSOLICITED_REPORT_INTERVAL * 10);
+  //
+  SetGroupTimer (
+    Private,
+    Private->MCastGroupCount++,
+    UNSOLICITED_REPORT_INTERVAL * 10
+    );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-IgmpLeaveGroup(
+IgmpLeaveGroup (
   PXE_BASECODE_DEVICE       *Private,
-  EFI_IP_ADDRESS            *GroupPtr)
+  EFI_IP_ADDRESS            *GroupPtr
+  )
 /*++
 Routine description:
   Leave multicast group.
@@ -300,35 +320,39 @@ Returns:
   UINT32  Grp;
   UINTN   GroupId;
 
-  Grp = *(UINT32 *)GroupPtr;
+  Grp = *(UINT32 *) GroupPtr;
 
 #if SUPPORT_IPV6
   if (Private->EfiBc.Mode->UsingIpv6) {
+    //
     // TBD
+    //
   }
 #endif
-
+  //
   // if not in group, ignore
-  GroupId = FindMulticastGroup(Private, Grp);
+  //
+  GroupId = FindMulticastGroup (Private, Grp);
 
   if (GroupId == 0) {
-    return;
+    return ;
   }
-
+  //
   // if not v1 querrier, send leave group IGMP message
+  //
   if (Private->Igmpv1TimeoutEvent != NULL) {
-    if (!EFI_ERROR(gBS->CheckEvent(Private->Igmpv1TimeoutEvent))) {
-      gBS->CloseEvent(Private->Igmpv1TimeoutEvent);
+    if (!EFI_ERROR (gBS->CheckEvent (Private->Igmpv1TimeoutEvent))) {
+      gBS->CloseEvent (Private->Igmpv1TimeoutEvent);
       Private->Igmpv1TimeoutEvent = NULL;
       Private->UseIgmpv1Reporting = TRUE;
     } else {
-      SendIgmpMessage(Private, IGMP_TYPE_LEAVE_GROUP, GroupId-1);
+      SendIgmpMessage (Private, IGMP_TYPE_LEAVE_GROUP, GroupId - 1);
     }
   }
 
   while (GroupId < Private->MCastGroupCount) {
-    Private->MCastGroup[GroupId-1] = Private->MCastGroup[GroupId];
-    Private->IgmpGroupEvent[GroupId-1] = Private->IgmpGroupEvent[GroupId];
+    Private->MCastGroup[GroupId - 1]      = Private->MCastGroup[GroupId];
+    Private->IgmpGroupEvent[GroupId - 1]  = Private->IgmpGroupEvent[GroupId];
     ++GroupId;
   }
 
@@ -336,12 +360,12 @@ Returns:
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-HandleIgmp(
+HandleIgmp (
   PXE_BASECODE_DEVICE *Private,
   IGMPV2_MESSAGE      *IgmpMessagePtr,
-  UINTN               IgmpLength)
+  UINTN               IgmpLength
+  )
 /*++
 Routine description:
   Handle received IGMP packet
@@ -359,71 +383,88 @@ Returns:
   INTN        MaxRespTime;
 
   if (Private == NULL) {
-    return;
+    return ;
   }
 
   if (Private->MCastGroupCount == 0) {
-    return; // if we don't belong to any multicast groups, ignore
+    //
+    // if we don't belong to any multicast groups, ignore
+    //
+    return ;
   }
-
+  //
   // verify checksum
-  if (IpChecksum((UINT16 *)IgmpMessagePtr, IgmpLength)) {
-    return;  // bad checksum - ignore packet
+  //
+  if (IpChecksum ((UINT16 *) IgmpMessagePtr, IgmpLength)) {
+    //
+    // bad checksum - ignore packet
+    //
+    return ;
   }
 
   switch (IgmpMessagePtr->Type) {
   case IGMP_TYPE_QUERY:
+    //
     // if a version 1 querier, note the fact and set max resp time
+    //
     MaxRespTime = IgmpMessagePtr->MaxRespTime;
 
     if (MaxRespTime == 0) {
       Private->UseIgmpv1Reporting = TRUE;
 
       if (Private->Igmpv1TimeoutEvent != NULL) {
-        gBS->CloseEvent(Private->Igmpv1TimeoutEvent);
+        gBS->CloseEvent (Private->Igmpv1TimeoutEvent);
       }
 
-      EfiStatus = gBS->CreateEvent(
-        EFI_EVENT_TIMER,
-        EFI_TPL_CALLBACK,
-        NULL,
-        NULL,
-        &Private->Igmpv1TimeoutEvent);
+      EfiStatus = gBS->CreateEvent (
+                        EFI_EVENT_TIMER,
+                        EFI_TPL_CALLBACK,
+                        NULL,
+                        NULL,
+                        &Private->Igmpv1TimeoutEvent
+                        );
 
-      if (EFI_ERROR(EfiStatus)) {
+      if (EFI_ERROR (EfiStatus)) {
         Private->Igmpv1TimeoutEvent = NULL;
       } else {
-        EfiStatus = gBS->SetTimer(
-          Private->Igmpv1TimeoutEvent,
-          TimerRelative,
-          (UINT64)V1ROUTER_PRESENT_TIMEOUT * 10000000);
+        EfiStatus = gBS->SetTimer (
+                          Private->Igmpv1TimeoutEvent,
+                          TimerRelative,
+                          (UINT64) V1ROUTER_PRESENT_TIMEOUT * 10000000
+                          );
       }
 
       MaxRespTime = IGMP_DEFAULT_MAX_RESPONSE_TIME * 10;
     }
-
+    //
     // if a general query (!GroupAddress), set all our group timers
+    //
     if (!IgmpMessagePtr->GroupAddress) {
       for (GroupId = 0; GroupId < Private->MCastGroupCount; ++GroupId) {
-        SetGroupTimer(Private, GroupId, MaxRespTime);
+        SetGroupTimer (Private, GroupId, MaxRespTime);
       }
-    } else {  // specific query - set only specific group
-      GroupId = FindMulticastGroup(Private, IgmpMessagePtr->GroupAddress);
+    } else {
+      //
+      // specific query - set only specific group
+      //
+      GroupId = FindMulticastGroup (Private, IgmpMessagePtr->GroupAddress);
 
       if (GroupId != 0) {
-        SetGroupTimer(Private, GroupId-1, MaxRespTime);
+        SetGroupTimer (Private, GroupId - 1, MaxRespTime);
       }
     }
 
     break;
 
+  //
   // if we have a timer running for this group, clear it
+  //
   case IGMP_TYPE_V1REPORT:
   case IGMP_TYPE_REPORT:
-    GroupId = FindMulticastGroup(Private, IgmpMessagePtr->GroupAddress);
+    GroupId = FindMulticastGroup (Private, IgmpMessagePtr->GroupAddress);
 
     if (GroupId != 0) {
-      ClearGroupTimer(Private, GroupId-1);
+      ClearGroupTimer (Private, GroupId - 1);
     }
 
     break;

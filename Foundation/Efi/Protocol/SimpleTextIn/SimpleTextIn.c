@@ -23,9 +23,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(SimpleTextIn)
+#include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
 
-
-EFI_GUID gEfiSimpleTextInProtocolGuid = EFI_SIMPLE_TEXT_IN_PROTOCOL_GUID;
+EFI_GUID  gEfiSimpleTextInProtocolGuid = EFI_SIMPLE_TEXT_IN_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiSimpleTextInProtocolGuid, "Simple Text In Protocol", "EFI 1.0 Simple Text In Protocol");

@@ -23,9 +23,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_GUID_DEFINITION(SalSystemTable)
+#include EFI_GUID_DEFINITION (SalSystemTable)
 
-
-EFI_GUID gEfiSalSystemTableGuid = EFI_SAL_SYSTEM_TABLE_GUID;
+EFI_GUID  gEfiSalSystemTableGuid = EFI_SAL_SYSTEM_TABLE_GUID;
 
 EFI_GUID_STRING(&gEfiSalSystemTableGuid, "SAL System Table", "SAL System Table GUID in EFI System Table");

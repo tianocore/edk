@@ -28,10 +28,10 @@ Revision History:
 
 #include "Runtime.h"
 
-UINT32 mCrcTable[256];
+UINT32  mCrcTable[256];
 
 EFI_STATUS
-EFIAPI  
+EFIAPI
 RuntimeDriverCalculateCrc32 (
   IN  VOID    *Data,
   IN  UINTN   DataSize,
@@ -59,6 +59,7 @@ Returns:
   for (Index = 0, Ptr = Data; Index < DataSize; Index++, Ptr++) {
     Crc = (Crc >> 8) ^ mCrcTable[(UINT8) Crc ^ *Ptr];
   }
+
   *CrcOut = Crc ^ 0xffffffff;
   return EFI_SUCCESS;
 }
@@ -86,6 +87,7 @@ Returns:
       NewValue = NewValue | (1 << (31 - Index));
     }
   }
+
   return NewValue;
 }
 
@@ -103,12 +105,12 @@ Returns:
 
 --*/
 {
-  UINTN  TableEntry;
-  UINTN  Index;
-  UINT32 Value;
+  UINTN   TableEntry;
+  UINTN   Index;
+  UINT32  Value;
 
   for (TableEntry = 0; TableEntry < 256; TableEntry++) {
-    Value = ReverseBits ((UINT32)TableEntry);
+    Value = ReverseBits ((UINT32) TableEntry);
     for (Index = 0; Index < 8; Index++) {
       if (Value & 0x80000000) {
         Value = (Value << 1) ^ 0x04c11db7;
@@ -116,6 +118,7 @@ Returns:
         Value = Value << 1;
       }
     }
+
     mCrcTable[TableEntry] = ReverseBits (Value);
   }
 }

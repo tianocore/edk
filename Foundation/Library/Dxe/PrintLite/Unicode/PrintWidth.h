@@ -24,8 +24,8 @@ Abstract:
 #ifndef _PRINT_WIDTH_H_
 #define _PRINT_WIDTH_H_
 
-typedef CHAR16        CHAR_W;
-#define STRING_W(_s)  L##_s
+typedef CHAR16  CHAR_W;
+#define STRING_W(_s)                                  L##_s
 
 #define USPrint(Buffer, BufferSize, Format)           SPrint (Buffer, BufferSize, Format)
 #define UvSPrint(Buffer, BufferSize, Format, Marker)  VSPrint (Buffer, BufferSize, Format, Marker)

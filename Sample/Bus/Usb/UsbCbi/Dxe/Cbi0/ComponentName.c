@@ -21,7 +21,7 @@ Abstract:
 #include "EfiDriverLib.h"
 #include "..\cbi.h"
 
-extern EFI_DRIVER_BINDING_PROTOCOL gUsbCbi0DriverBinding;
+extern EFI_DRIVER_BINDING_PROTOCOL  gUsbCbi0DriverBinding;
 
 //
 // EFI Component Name Functions
@@ -37,27 +37,26 @@ UsbCbi0ComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UsbCbi0ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gUsbCbi0ComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL         gUsbCbi0ComponentName = {
   UsbCbi0ComponentNameGetDriverName,
   UsbCbi0ComponentNameGetControllerName,
   "eng"
 };
 
-STATIC EFI_UNICODE_STRING_TABLE mUsbCbi0DriverNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE     mUsbCbi0DriverNameTable[] = {
   { "eng", L"Usb Cbi0 Mass Storage Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
-
 
 EFI_STATUS
 EFIAPI
@@ -94,21 +93,21 @@ UsbCbi0ComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gUsbCbi0ComponentName.SupportedLanguages,
-           mUsbCbi0DriverNameTable, 
-           DriverName
-           );
+          Language,
+          gUsbCbi0ComponentName.SupportedLanguages,
+          mUsbCbi0DriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 UsbCbi0ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -155,10 +154,10 @@ UsbCbi0ComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                    Status;
-  USB_CBI_DEVICE                *UsbCbiDev;
-  EFI_USB_ATAPI_PROTOCOL        *UsbAtapi;
-  
+  EFI_STATUS              Status;
+  USB_CBI_DEVICE          *UsbCbiDev;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapi;
+
   //
   // This is a device driver, so ChildHandle must be NULL.
   //
@@ -172,23 +171,23 @@ UsbCbi0ComponentNameGetControllerName (
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiUsbAtapiProtocolGuid,
-                  (VOID **)&UsbAtapi,
-                  gUsbCbi0DriverBinding.DriverBindingHandle,  
+                  (VOID **) &UsbAtapi,
+                  gUsbCbi0DriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                );
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   UsbCbiDev = USB_CBI_DEVICE_FROM_THIS (UsbAtapi);
-  
+
   return EfiLibLookupUnicodeString (
-           Language, 
-           gUsbCbi0ComponentName.SupportedLanguages,
-           UsbCbiDev->ControllerNameTable, 
-           ControllerName
-         );
+          Language,
+          gUsbCbi0ComponentName.SupportedLanguages,
+          UsbCbiDev->ControllerNameTable,
+          ControllerName
+          );
 
 }

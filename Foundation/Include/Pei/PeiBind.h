@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  EFI 2.0 PEI core and PEIM binding macros
+  Tiano PEI core and PEIM binding macros
 
 --*/
 

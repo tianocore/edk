@@ -30,7 +30,28 @@ ErrorPrint (
   IN CONST CHAR16 *ErrorString,
   IN CONST CHAR8  *Format,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+  Print function for a maximum of EFI_DRIVER_LIB_MAX_PRINT_BUFFER ascii 
+  characters.
+
+Arguments:
+
+  ErrorString   - Error message printed first
+
+  Format - Ascii format string see file header for more details.
+
+  ...    - Vararg list consumed by processing Format.
+
+Returns: 
+
+  Number of characters printed.
+
+--*/
+;
 
 VOID
 ErrorDumpHex (
@@ -38,13 +59,48 @@ ErrorDumpHex (
   IN UINTN        Offset,
   IN UINTN        DataSize,
   IN VOID         *UserData
-  );
+  )
+/*++
+
+Routine Description:
+
+  Dump error info by hex.
+
+Arguments:
+
+  Indent    - Indent number
+  Offset    - Offset number
+  DataSize  - Size of user data
+  UserData  - User data to dump
+
+Returns:
+
+  None
+
+--*/
+;
 
 UINTN
 Print (
   IN CONST CHAR16  *Format,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+    Prints a formatted unicode string to the default console
+
+Arguments:
+
+    fmt         - Format string
+
+Returns:
+
+    Length of string printed to the console
+
+--*/
+;
 
 UINTN
 PrintXY (
@@ -54,19 +110,83 @@ PrintXY (
   IN EFI_UGA_PIXEL                    *Background, OPTIONAL
   IN CHAR16                           *Fmt,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+    Prints a formatted unicode string to the default console
+
+Arguments:
+
+    X           - X coordinate to start printing
+    
+    Y           - Y coordinate to start printing
+    
+    ForeGround  - Foreground color
+    
+    BackGround  - Background color
+
+    Fmt         - Format string
+    
+    ...         - Print arguments
+
+Returns:
+
+    Length of string printed to the console
+
+--*/
+;
 
 UINTN
 Aprint (
   IN CONST CHAR8  *Format,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+  Print function for a maximum of EFI_DRIVER_LIB_MAX_PRINT_BUFFER ascii 
+  characters.
+
+Arguments:
+
+  Format - Ascii format string see file header for more details.
+
+  ...    - Vararg list consumed by processing Format.
+
+Returns: 
+
+  Number of characters printed.
+
+--*/
+;
 
 UINTN
 UPrint (
   IN CONST CHAR16  *Format,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+  Print function for a maximum of EFI_DRIVER_LIB_MAX_PRINT_BUFFER ascii 
+  characters.
+
+Arguments:
+
+  Format - Ascii format string see file header for more details.
+
+  ...    - Vararg list consumed by processing Format.
+
+Returns: 
+
+  Number of characters printed.
+
+--*/
+;
 
 UINTN
 VSPrint (
@@ -74,7 +194,27 @@ VSPrint (
   IN  UINTN         StrLen,
   IN  CONST CHAR16  *Format,
   IN  VA_LIST       Marker
-  );
+  )
+/*++
+
+Routine Description:
+
+    Prints a formatted unicode string to a buffer
+
+Arguments:
+
+    StartOfBuffer   - Output buffer to print the formatted string into
+    StrLen          - Size of Str.  String is truncated to this size.
+                      A size of 0 means there is no limit
+    Format          - The format string
+    Marker          - Vararg list consumed by processing Format.
+
+Returns:
+
+    String length returned in buffer
+
+--*/
+;
 
 UINTN
 SPrint (
@@ -82,8 +222,30 @@ SPrint (
   IN UINTN        BufferSize,
   IN CONST CHAR16 *Format,
   ...
-  );
+  )
+/*++
 
+Routine Description:
+
+  SPrint function to process format and place the results in Buffer.
+
+Arguments:
+
+  Buffer     - Wide char buffer to print the results of the parsing of Format into.
+
+  BufferSize - Maximum number of characters to put into buffer. Zero means no 
+               limit.
+
+  Format - Format string see file header for more details.
+
+  ...    - Vararg list consumed by processing Format.
+
+Returns: 
+
+  Number of characters printed.
+
+--*/
+;
 
 //
 // BoxDraw support
@@ -91,19 +253,73 @@ SPrint (
 BOOLEAN
 IsValidEfiCntlChar (
   IN  CHAR16  CharC
-  );
+  )
+/*++
+
+Routine Description:
+
+  Test whether a wide char is a valid control char.
+
+Arguments:
+
+  CharC - A char
+
+Returns:
+
+  TRUE    - A control char
+  
+  FALSE   - Not a control char
+
+--*/
+;
 
 BOOLEAN
 IsValidAscii (
   IN  CHAR16  Ascii
-  );
+  )
+/*++
+
+Routine Description:
+
+  Test whether a wide char is a normal printable char
+
+Arguments:
+
+  Ascii - A char
+
+Returns:
+
+  True      - A normal, printable char
+  FALSE     - Not a normal, printable char
+
+--*/
+;
 
 BOOLEAN
 LibIsValidTextGraphics (
   IN  CHAR16  Graphic,
   OUT CHAR8   *PcAnsi,    OPTIONAL
   OUT CHAR8   *Ascii      OPTIONAL
-  );
+  )
+/*++
 
+Routine Description:
+
+    Detects if a Unicode char is for Box Drawing text graphics.
+
+Arguments:
+
+    Graphic - Unicode char to test.
+
+    PcAnsi  - Optional pointer to return PCANSI equivalent of Graphic.
+
+    Ascii   - Optional pointer to return Ascii equivalent of Graphic.
+
+Returns:
+
+    TRUE if Gpaphic is a supported Unicode Box Drawing character.
+
+--*/
+;
 
 #endif

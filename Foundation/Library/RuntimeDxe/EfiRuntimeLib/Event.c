@@ -22,7 +22,6 @@ Abstract:
 #include "Tiano.h"
 #include "EfiRuntimeLib.h"
 
-
 EFI_EVENT
 RtEfiLibCreateProtocolNotifyEvent (
   IN EFI_GUID             *ProtocolGuid,
@@ -41,9 +40,9 @@ Arguments:
 
   ProtocolGuid    - Protocol to register notification event on.
 
-  NotifTpl        - Maximum TPL to single the NotifyFunction.
+  NotifyTpl       - Maximum TPL to single the NotifyFunction.
 
-  NotifyFunciton  - EFI notification routine.
+  NotifyFunction  - EFI notification routine.
 
   NotifyContext   - Context passed into Event when it is created.
 
@@ -56,13 +55,12 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  EFI_EVENT               Event;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
 
   //
   // Create the event
   //
-
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
                   NotifyTpl,
@@ -70,29 +68,26 @@ Returns:
                   NotifyContext,
                   &Event
                   );
-  ASSERT (!EFI_ERROR(Status));
+  ASSERT (!EFI_ERROR (Status));
 
   //
   // Register for protocol notifactions on this event
   //
-
   Status = gBS->RegisterProtocolNotify (
-                  ProtocolGuid, 
-                  Event, 
+                  ProtocolGuid,
+                  Event,
                   Registration
                   );
 
-  ASSERT (!EFI_ERROR(Status));
+  ASSERT (!EFI_ERROR (Status));
 
   //
   // Kick the event so we will perform an initial pass of
   // current installed drivers
   //
-
   gBS->SignalEvent (Event);
   return Event;
 }
-
 
 EFI_STATUS
 EfiLibGetSystemConfigurationTable (
@@ -125,9 +120,9 @@ Returns:
       return EFI_SUCCESS;
     }
   }
+
   return EFI_NOT_FOUND;
 }
-
 
 EFI_STATUS
 EfiConvertList (
@@ -152,30 +147,27 @@ Returns:
 
 --*/
 {
-  EFI_LIST_ENTRY    *Link;
-  EFI_LIST_ENTRY    *NextLink;
+  EFI_LIST_ENTRY  *Link;
+  EFI_LIST_ENTRY  *NextLink;
 
   //
   // Convert all the ForwardLink & BackLink pointers in the list
   //
-
   Link = ListHead;
   do {
     NextLink = Link->ForwardLink;
 
     EfiConvertPointer (
-      Link->ForwardLink == ListHead ? DebugDisposition : 0, 
-      (VOID **)&Link->ForwardLink
+      Link->ForwardLink == ListHead ? DebugDisposition : 0,
+      (VOID **) &Link->ForwardLink
       );
 
     EfiConvertPointer (
-      Link->BackLink == ListHead ? DebugDisposition : 0, 
-      (VOID **)&Link->BackLink
+      Link->BackLink == ListHead ? DebugDisposition : 0,
+      (VOID **) &Link->BackLink
       );
 
     Link = NextLink;
   } while (Link != ListHead);
   return EFI_SUCCESS;
 }
-
-

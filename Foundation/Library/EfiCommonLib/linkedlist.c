@@ -92,7 +92,7 @@ Routine Description:
     
 Arguments:
 
-  Node - Element to remove from the list.
+  Entry - Element to remove from the list.
    
 Returns:
   
@@ -129,9 +129,9 @@ Routine Description:
     
 Arguments:
 
-  List - Head of doubly linked list
+  ListHead - Head of doubly linked list
 
-  Node - Element to insert at the end of the list.
+  Entry    - Element to insert at the end of the list.
    
 Returns:
   
@@ -166,9 +166,9 @@ Routine Description:
     
 Arguments:
 
-  List - Head of doubly linked list
+  ListHead - Head of doubly linked list
 
-  Node - Element to insert to beginning of list
+  Entry    - Element to insert to beginning of list
    
 Returns:
   
@@ -202,9 +202,9 @@ Routine Description:
     
 Arguments:
 
-  Node1 - Element in the doubly linked list in front of Node2. 
+  Entry1 - Element in the doubly linked list in front of Node2. 
 
-  Node2 - Element in the doubly linked list behind Node1.
+  Entry2 - Element in the doubly linked list behind Node1.
    
 Returns:
   

@@ -25,24 +25,24 @@ Abstract:
 //
 // Predefined platform default time out value
 //
-UINT16  gPlatformBootTimeOutDefault = 10;
+UINT16                      gPlatformBootTimeOutDefault = 10;
 
 //
 // Platform specific keyboard device path
 //
 NT_PLATFORM_UGA_DEVICE_PATH gUgaDevicePath0 = {
-  { 
+  {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8)((sizeof(VENDOR_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
     EFI_WIN_NT_THUNK_PROTOCOL_GUID
   },
   {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)),
-    (UINT8)((sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
+    (UINT8) (sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)),
+    (UINT8) ((sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
     EFI_WIN_NT_UGA_GUID,
     0
   },
@@ -50,18 +50,18 @@ NT_PLATFORM_UGA_DEVICE_PATH gUgaDevicePath0 = {
 };
 
 NT_PLATFORM_UGA_DEVICE_PATH gUgaDevicePath1 = {
-  { 
+  {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8)((sizeof(VENDOR_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
     EFI_WIN_NT_THUNK_PROTOCOL_GUID
   },
   {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)),
-    (UINT8)((sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
+    (UINT8) (sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)),
+    (UINT8) ((sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
     EFI_WIN_NT_UGA_GUID,
     1
   },
@@ -71,74 +71,74 @@ NT_PLATFORM_UGA_DEVICE_PATH gUgaDevicePath1 = {
 //
 // Platform specific serial device path
 //
-NT_ISA_SERIAL_DEVICE_PATH gNtSerialDevicePath0 = {
-  { 
+NT_ISA_SERIAL_DEVICE_PATH   gNtSerialDevicePath0 = {
+  {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8)((sizeof(VENDOR_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
     EFI_WIN_NT_THUNK_PROTOCOL_GUID
   },
   {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)),
-    (UINT8)((sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
+    (UINT8) (sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)),
+    (UINT8) ((sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
     EFI_WIN_NT_SERIAL_PORT_GUID
   },
-  { 
+  {
     MESSAGING_DEVICE_PATH,
     MSG_UART_DP,
-    (UINT8)(sizeof(UART_DEVICE_PATH)),
-    (UINT8)((sizeof(UART_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (UART_DEVICE_PATH)),
+    (UINT8) ((sizeof (UART_DEVICE_PATH)) >> 8),
     0,
     115200,
     8,
     1,
     1
   },
-  { 
+  {
     MESSAGING_DEVICE_PATH,
     MSG_VENDOR_DP,
-    (UINT8)(sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8)((sizeof(VENDOR_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
     DEVICE_PATH_MESSAGING_PC_ANSI
   },
   gEndEntire
 };
 
-NT_ISA_SERIAL_DEVICE_PATH gNtSerialDevicePath1 = {
-  { 
+NT_ISA_SERIAL_DEVICE_PATH   gNtSerialDevicePath1 = {
+  {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8)((sizeof(VENDOR_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
     EFI_WIN_NT_THUNK_PROTOCOL_GUID
   },
   {
     HARDWARE_DEVICE_PATH,
     HW_VENDOR_DP,
-    (UINT8)(sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)),
-    (UINT8)((sizeof(WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
+    (UINT8) (sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)),
+    (UINT8) ((sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
     EFI_WIN_NT_SERIAL_PORT_GUID,
     1
   },
-  { 
+  {
     MESSAGING_DEVICE_PATH,
     MSG_UART_DP,
-    (UINT8)(sizeof(UART_DEVICE_PATH)),
-    (UINT8)((sizeof(UART_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (UART_DEVICE_PATH)),
+    (UINT8) ((sizeof (UART_DEVICE_PATH)) >> 8),
     0,
     115200,
     8,
     1,
     1
   },
-  { 
+  {
     MESSAGING_DEVICE_PATH,
     MSG_VENDOR_DP,
-    (UINT8)(sizeof(VENDOR_DEVICE_PATH)),
-    (UINT8)((sizeof(VENDOR_DEVICE_PATH)) >> 8),
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
     DEVICE_PATH_MESSAGING_PC_ANSI
   },
   gEndEntire
@@ -147,27 +147,35 @@ NT_ISA_SERIAL_DEVICE_PATH gNtSerialDevicePath1 = {
 //
 // Predefined platform default console device path
 //
-BDS_CONSOLE_CONNECT_ENTRY gPlatformConsole [] = {
-  {(EFI_DEVICE_PATH_PROTOCOL*)&gNtSerialDevicePath0, (CONSOLE_OUT | CONSOLE_IN)},
-  {(EFI_DEVICE_PATH_PROTOCOL*)&gNtSerialDevicePath1, (CONSOLE_OUT | CONSOLE_IN)},
-  {(EFI_DEVICE_PATH_PROTOCOL*)&gUgaDevicePath0, (CONSOLE_OUT | CONSOLE_IN)},
-  {(EFI_DEVICE_PATH_PROTOCOL*)&gUgaDevicePath1, (CONSOLE_OUT | CONSOLE_IN)},
-  {NULL, 0}
+BDS_CONSOLE_CONNECT_ENTRY   gPlatformConsole[] = {
+  {
+    (EFI_DEVICE_PATH_PROTOCOL *) &gNtSerialDevicePath0,
+    (CONSOLE_OUT | CONSOLE_IN)
+  },
+  {
+    (EFI_DEVICE_PATH_PROTOCOL *) &gNtSerialDevicePath1,
+    (CONSOLE_OUT | CONSOLE_IN)
+  },
+  {
+    (EFI_DEVICE_PATH_PROTOCOL *) &gUgaDevicePath0,
+    (CONSOLE_OUT | CONSOLE_IN)
+  },
+  {
+    (EFI_DEVICE_PATH_PROTOCOL *) &gUgaDevicePath1,
+    (CONSOLE_OUT | CONSOLE_IN)
+  },
+  {
+    NULL,
+    0
+  }
 };
 
 //
 // Predefined platform specific driver option
 //
-EFI_DEVICE_PATH_PROTOCOL* gPlatformDriverOption [] = {
-  NULL
-};
+EFI_DEVICE_PATH_PROTOCOL    *gPlatformDriverOption[] = { NULL };
 
 //
 // Predefined platform connect sequence
 //
-EFI_DEVICE_PATH_PROTOCOL* gPlatformConnectSequence [] = {
-  NULL
-};
-
-
-
+EFI_DEVICE_PATH_PROTOCOL    *gPlatformConnectSequence[] = { NULL };

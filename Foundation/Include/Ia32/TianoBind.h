@@ -23,9 +23,7 @@ Abstract:
 #ifndef _TIANO_BIND_H_
 #define _TIANO_BIND_H_
 
-
 #include "EfiBind.h"
-
 
 #ifdef EFI_DEBUG
 
@@ -78,13 +76,12 @@ Abstract:
           {                                                   \
               return InitFunction(ImageHandle, Smst, CommunicationBuffer, SourceSize);  \
           }
-          
+
 #else
 
-#define EFI_DXE_ENTRY_POINT(InitFunction)                     
-#define EFI_SMI_HANDLER_ENTRY_POINT(InitFunction)             
+#define EFI_DXE_ENTRY_POINT(InitFunction)
+#define EFI_SMI_HANDLER_ENTRY_POINT(InitFunction)
 
 #endif
-
 
 #endif

@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  CPU IO PPI GUID as defined
+  CPU IO PPI GUID as defined in Tiano
 
 
 --*/
 
 #include "Tiano.h"
 #include "Pei.h"
-#include EFI_PPI_DEFINITION(CpuIo)
+#include EFI_PPI_DEFINITION (CpuIo)
 
-EFI_GUID gPeiCpuIoPpiInServiceTableGuid = PEI_CPU_IO_PPI_GUID;
+EFI_GUID  gPeiCpuIoPpiInServiceTableGuid = PEI_CPU_IO_PPI_GUID;
 
 EFI_GUID_STRING(&gPeiCpuIoPpiInServiceTableGuid, "CPU IO", "CPU IO PPI");

@@ -20,20 +20,21 @@ Abstract:
 Revision History
 
 --*/
+
 #include "BootManager.h"
 
-UINT16                                 mKeyInput;
-EFI_LIST_ENTRY                         *mBootOptionsList;
-BDS_COMMON_OPTION                      *gOption;
-EFI_HII_HANDLE                         gBootManagerHandle;
-EFI_HANDLE                             BootManagerCallbackHandle;
-EFI_FORM_CALLBACK_PROTOCOL             BootManagerCallback;
-EFI_GUID                               gBmGuid = BOOT_MANAGER_GUID;
+UINT16                            mKeyInput;
+EFI_LIST_ENTRY                    *mBootOptionsList;
+BDS_COMMON_OPTION                 *gOption;
+EFI_HII_HANDLE                    gBootManagerHandle;
+EFI_HANDLE                        BootManagerCallbackHandle;
+EFI_FORM_CALLBACK_PROTOCOL        BootManagerCallback;
+EFI_GUID                          gBmGuid = BOOT_MANAGER_GUID;
 
-extern EFI_FORM_BROWSER_PROTOCOL       *gBrowser;
-extern UINT8                           BootManagerVfrBin[];
-extern UINT8                           BdsStrings[];
-extern BOOLEAN                         gConnectAllHappened;
+extern EFI_FORM_BROWSER_PROTOCOL  *gBrowser;
+extern UINT8                      BootManagerVfrBin[];
+extern UINT8                      BdsStrings[];
+extern BOOLEAN                    gConnectAllHappened;
 
 EFI_STATUS
 BootManagerCallbackRoutine (
@@ -62,10 +63,10 @@ Returns:
 
 --*/
 {
-  BDS_COMMON_OPTION             *Option;
-  EFI_LIST_ENTRY                *Link;
-  UINT16                        KeyCount;
-  EFI_HII_CALLBACK_PACKET       *DataPacket;
+  BDS_COMMON_OPTION       *Option;
+  EFI_LIST_ENTRY          *Link;
+  UINT16                  KeyCount;
+  EFI_HII_CALLBACK_PACKET *DataPacket;
 
   //
   // Initialize the key count
@@ -73,7 +74,7 @@ Returns:
   KeyCount = 0;
 
   for (Link = mBootOptionsList->ForwardLink; Link != mBootOptionsList; Link = Link->ForwardLink) {
-    Option = CR(Link, BDS_COMMON_OPTION, Link, BDS_LOAD_OPTION_SIGNATURE);
+    Option = CR (Link, BDS_COMMON_OPTION, Link, BDS_LOAD_OPTION_SIGNATURE);
 
     KeyCount++;
 
@@ -88,23 +89,23 @@ Returns:
       //
       mKeyInput = KeyValue;
 
-      *Packet = EfiLibAllocateZeroPool (sizeof (EFI_HII_CALLBACK_PACKET) + 2);
+      *Packet   = EfiLibAllocateZeroPool (sizeof (EFI_HII_CALLBACK_PACKET) + 2);
       ASSERT (*Packet != NULL);
 
       //
       // Assign the buffer address to DataPacket
       //
-      DataPacket = *Packet;
+      DataPacket                        = *Packet;
 
-      DataPacket->DataArray.EntryCount = 1;
-      DataPacket->DataArray.NvRamMap = NULL;
+      DataPacket->DataArray.EntryCount  = 1;
+      DataPacket->DataArray.NvRamMap    = NULL;
       DataPacket->DataArray.Data->Flags = EXIT_REQUIRED | NV_NOT_CHANGED;
       return EFI_SUCCESS;
     } else {
       continue;
     }
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -127,20 +128,20 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_HII_PACKAGES              *PackageList;
-  BDS_COMMON_OPTION             *Option;
-  EFI_LIST_ENTRY                *Link;
-  EFI_HII_UPDATE_DATA           *UpdateData;
-  CHAR16                        *ExitData;
-  UINTN                         ExitDataSize;
-  STRING_REF                    Token;
-  STRING_REF                    LastToken;
-  EFI_INPUT_KEY                 Key;
-  UINT8                         *Location;
-  EFI_GUID                      BmGuid;
-  EFI_LIST_ENTRY                BdsBootOptionList;
-  
+  EFI_STATUS          Status;
+  EFI_HII_PACKAGES    *PackageList;
+  BDS_COMMON_OPTION   *Option;
+  EFI_LIST_ENTRY      *Link;
+  EFI_HII_UPDATE_DATA *UpdateData;
+  CHAR16              *ExitData;
+  UINTN               ExitDataSize;
+  STRING_REF          Token;
+  STRING_REF          LastToken;
+  EFI_INPUT_KEY       Key;
+  UINT8               *Location;
+  EFI_GUID            BmGuid;
+  EFI_LIST_ENTRY      BdsBootOptionList;
+
   gOption = NULL;
   InitializeListHead (&BdsBootOptionList);
 
@@ -151,35 +152,34 @@ Returns:
     BdsLibConnectAllDriversToAllControllers ();
     gConnectAllHappened = TRUE;
   }
-
   //
   // BugBug: Here we can not remove the legacy refresh macro, so we need
   // get the boot order every time from "BootOrder" variable.
   // Recreate the boot option list base on the BootOrder variable
   //
   BdsLibEnumerateAllBootOption (&BdsBootOptionList);
-  
+
   //
   // This GUID must be the same as what is defined in BootManagerVfr.vfr
   //
-  BmGuid = gBmGuid;
- 
-  mBootOptionsList = &BdsBootOptionList;
+  BmGuid            = gBmGuid;
+
+  mBootOptionsList  = &BdsBootOptionList;
 
   //
   // Post our VFR to the HII database
   //
   PackageList = PreparePackages (2, &BmGuid, BootManagerVfrBin, BdsStrings);
-  Status = Hii->NewPack (Hii, PackageList, &gBootManagerHandle);
+  Status      = Hii->NewPack (Hii, PackageList, &gBootManagerHandle);
   gBS->FreePool (PackageList);
-  
+
   //
-  // This example does not implement worker functions 
+  // This example does not implement worker functions
   // for the NV accessor functions.  Only a callback evaluator
   //
-  BootManagerCallback.NvRead = NULL;
-  BootManagerCallback.NvWrite = NULL;
-  BootManagerCallback.Callback = BootManagerCallbackRoutine;
+  BootManagerCallback.NvRead    = NULL;
+  BootManagerCallback.NvWrite   = NULL;
+  BootManagerCallback.Callback  = BootManagerCallbackRoutine;
 
   //
   // Install protocol interface
@@ -187,7 +187,7 @@ Returns:
   BootManagerCallbackHandle = NULL;
   Status = gBS->InstallProtocolInterface (
                   &BootManagerCallbackHandle,
-                  &gEfiFormCallbackProtocolGuid, 
+                  &gEfiFormCallbackProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &BootManagerCallback
                   );
@@ -202,11 +202,17 @@ Returns:
   UpdateData = EfiLibAllocateZeroPool (0x1000);
   ASSERT (UpdateData != NULL);
 
-  UpdateData->FormSetUpdate = TRUE;                                                 // Flag update pending in FormSet
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS)BootManagerCallbackHandle; // Register CallbackHandle data for FormSet
-  UpdateData->FormUpdate = FALSE;              
-  UpdateData->FormTitle = 0;
-  UpdateData->DataCount = 1;
+  //
+  // Flag update pending in FormSet
+  //
+  UpdateData->FormSetUpdate = TRUE;
+  //
+  // Register CallbackHandle data for FormSet
+  //
+  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) BootManagerCallbackHandle;
+  UpdateData->FormUpdate  = FALSE;
+  UpdateData->FormTitle   = 0;
+  UpdateData->DataCount   = 1;
 
   //
   // Create blank space.  Since when we update the contents of IFR data at a label, it is
@@ -214,63 +220,63 @@ Returns:
   // space afterwards, you need to add the space first and then the string like below.
   //
   Status = CreateSubTitleOpCode (
-             LastToken,              // Token Value for the string
-             &UpdateData->Data       // Buffer containing created op-code
-             );
+            LastToken,        // Token Value for the string
+            &UpdateData->Data // Buffer containing created op-code
+            );
 
-  Hii->UpdateForm(Hii, gBootManagerHandle, (EFI_FORM_LABEL)0x0000, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gBootManagerHandle, (EFI_FORM_LABEL) 0x0000, TRUE, UpdateData);
 
   //
   // Create "Boot Option Menu" title
   //
   Status = CreateSubTitleOpCode (
-             STRING_TOKEN(STR_BOOT_OPTION_BANNER), // Token Value for the string
-             &UpdateData->Data                     // Buffer containing created op-code
-             );
+            STRING_TOKEN (STR_BOOT_OPTION_BANNER),  // Token Value for the string
+            &UpdateData->Data                       // Buffer containing created op-code
+            );
 
-  Hii->UpdateForm(Hii, gBootManagerHandle, (EFI_FORM_LABEL)0x0000, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gBootManagerHandle, (EFI_FORM_LABEL) 0x0000, TRUE, UpdateData);
 
-  Token = LastToken;
-  mKeyInput = 0;
+  Token                 = LastToken;
+  mKeyInput             = 0;
 
   UpdateData->DataCount = 0;
-  Location = (UINT8 *) &UpdateData->Data;
+  Location              = (UINT8 *) &UpdateData->Data;
 
   for (Link = BdsBootOptionList.ForwardLink; Link != &BdsBootOptionList; Link = Link->ForwardLink) {
-    Option = CR(Link, BDS_COMMON_OPTION, Link, BDS_LOAD_OPTION_SIGNATURE);
+    Option = CR (Link, BDS_COMMON_OPTION, Link, BDS_LOAD_OPTION_SIGNATURE);
 
     //
     // At this stage we are creating a menu entry, thus the Keys are reproduceable
     //
     mKeyInput++;
     Token++;
-    
-    Status = Hii->NewString(Hii, NULL, gBootManagerHandle, &Token, Option->Description);
-        
+
+    Status = Hii->NewString (Hii, NULL, gBootManagerHandle, &Token, Option->Description);
+
     //
     // If we got an error it is almost certainly due to the token value being invalid.
     // Therefore we will set the Token to 0 to automatically add a token.
     //
-    if (EFI_ERROR(Status)) {
-      Token = 0;
-      Status = Hii->NewString(Hii, NULL, gBootManagerHandle, &Token, Option->Description);
+    if (EFI_ERROR (Status)) {
+      Token   = 0;
+      Status  = Hii->NewString (Hii, NULL, gBootManagerHandle, &Token, Option->Description);
     }
 
-    Status = CreateGotoOpCode ( 
-               0x1000,                                            // Form ID                          
-               Token,                                             // Token Value for the string       
-               0,                                                 // Help String (none)               
-               EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS, // The Op-Code flags                
-               mKeyInput,                                         // The Key to get a callback on     
-               Location                                           // Buffer containing created op-code
-               );
+    Status = CreateGotoOpCode (
+              0x1000, // Form ID
+              Token,  // Token Value for the string
+              0,      // Help String (none)
+              EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,  // The Op-Code flags
+              mKeyInput,                                          // The Key to get a callback on
+              Location  // Buffer containing created op-code
+              );
 
-    UpdateData->DataCount ++;
-    Location = Location + ((EFI_IFR_OP_HEADER *)Location)->Length;
+    UpdateData->DataCount++;
+    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
 
   }
 
-  Hii->UpdateForm(Hii, gBootManagerHandle, (EFI_FORM_LABEL)0x0001, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gBootManagerHandle, (EFI_FORM_LABEL) 0x0001, TRUE, UpdateData);
 
   UpdateData->DataCount = 1;
 
@@ -278,20 +284,20 @@ Returns:
   // Create "Boot Option Menu" title
   //
   Status = CreateSubTitleOpCode (
-             STRING_TOKEN(STR_HELP_FOOTER),        // Token Value for the string
-             &UpdateData->Data                     // Buffer containing created op-code
-             );
+            STRING_TOKEN (STR_HELP_FOOTER), // Token Value for the string
+            &UpdateData->Data               // Buffer containing created op-code
+            );
 
-  Hii->UpdateForm(Hii, gBootManagerHandle, (EFI_FORM_LABEL)0x0002, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gBootManagerHandle, (EFI_FORM_LABEL) 0x0002, TRUE, UpdateData);
 
   Status = CreateSubTitleOpCode (
-             LastToken,              // Token Value for the string
-             &UpdateData->Data       // Buffer containing created op-code
-             );
+            LastToken,                      // Token Value for the string
+            &UpdateData->Data               // Buffer containing created op-code
+            );
 
-  Hii->UpdateForm(Hii, gBootManagerHandle, (EFI_FORM_LABEL)0x0002, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, gBootManagerHandle, (EFI_FORM_LABEL) 0x0002, TRUE, UpdateData);
 
-  gBS->FreePool(UpdateData);
+  gBS->FreePool (UpdateData);
 
   //
   // Drop the TPL level from EFI_TPL_DRIVER to EFI_TPL_APPLICATION
@@ -305,9 +311,8 @@ Returns:
   Hii->ResetStrings (Hii, gBootManagerHandle);
 
   if (gOption == NULL) {
-    return;
+    return ;
   }
-
   //
   // BugBug: This code looks repeated from the BDS. Need to save code space.
   //
@@ -317,16 +322,18 @@ Returns:
   //
   Status = BdsLibBootViaBootOption (gOption, gOption->DevicePath, &ExitDataSize, &ExitData);
 
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     PlatformBdsBootSuccess (gOption);
   } else {
     PlatformBdsBootFail (gOption, Status, ExitData, ExitDataSize);
     gST->ConOut->OutputString (
-                   gST->ConOut, 
-                   GetStringById (STRING_TOKEN(STR_ANY_KEY_CONTINUE))
-                   );
+                  gST->ConOut,
+                  GetStringById (STRING_TOKEN (STR_ANY_KEY_CONTINUE))
+                  );
     gBS->RestoreTPL (EFI_TPL_APPLICATION);
-    //BdsLibUiWaitForSingleEvent (gST->ConIn->WaitForKey, 0);
+    //
+    // BdsLibUiWaitForSingleEvent (gST->ConIn->WaitForKey, 0);
+    //
     gBS->RaiseTPL (EFI_TPL_DRIVER);
     gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
   }

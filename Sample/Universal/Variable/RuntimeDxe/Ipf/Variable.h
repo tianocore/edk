@@ -23,7 +23,6 @@ Abstract:
 //
 // Statements that include other header files
 //
-
 #include "Tiano.h"
 #include "EfiRuntimeLib.h"
 #include "EsalRuntimeLib.h"
@@ -38,8 +37,8 @@ Abstract:
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variable)
 #include EFI_ARCH_PROTOCOL_DEFINITION (VariableWrite)
 
-#define VARIABLE_STORE_SIZE     (64 * 1024)
-#define SCRATCH_SIZE            (4 * 1024)
+#define VARIABLE_STORE_SIZE (64 * 1024)
+#define SCRATCH_SIZE        (4 * 1024)
 
 //
 // Define GET_PAD_SIZE to optimize compiler
@@ -47,10 +46,10 @@ Abstract:
 #if ((ALIGNMENT == 0) || (ALIGNMENT == 1))
 #define GET_PAD_SIZE(a) (0)
 #else
-#define GET_PAD_SIZE(a) (((~a)+1) & (ALIGNMENT - 1))
+#define GET_PAD_SIZE(a) (((~a) + 1) & (ALIGNMENT - 1))
 #endif
 
-#define GET_VARIABLE_NAME_PTR(a)   (CHAR16*)((UINTN)(a) + sizeof (VARIABLE_HEADER))
+#define GET_VARIABLE_NAME_PTR(a)  (CHAR16 *) ((UINTN) (a) + sizeof (VARIABLE_HEADER))
 
 typedef enum {
   Physical,
@@ -58,22 +57,22 @@ typedef enum {
 } VARIABLE_POINTER_TYPE;
 
 typedef struct {
-  VARIABLE_HEADER       *CurrPtr;
-  VARIABLE_HEADER       *EndPtr;
-  VARIABLE_HEADER       *StartPtr;
-  BOOLEAN               Volatile;    
+  VARIABLE_HEADER *CurrPtr;
+  VARIABLE_HEADER *EndPtr;
+  VARIABLE_HEADER *StartPtr;
+  BOOLEAN         Volatile;
 } VARIABLE_POINTER_TRACK;
 
 typedef struct {
-  EFI_PHYSICAL_ADDRESS    VolatileVariableBase;
-  EFI_PHYSICAL_ADDRESS    NonVolatileVariableBase;
-} VARIABLE_GLOBAL;  
+  EFI_PHYSICAL_ADDRESS  VolatileVariableBase;
+  EFI_PHYSICAL_ADDRESS  NonVolatileVariableBase;
+} VARIABLE_GLOBAL;
 
 typedef struct {
-  VARIABLE_GLOBAL   VariableBase[2];
-  UINTN             VolatileLastVariableOffset;
-  UINTN             NonVolatileLastVariableOffset;
-  UINT32            FvbInstance;
+  VARIABLE_GLOBAL VariableBase[2];
+  UINTN           VolatileLastVariableOffset;
+  UINTN           NonVolatileLastVariableOffset;
+  UINT32          FvbInstance;
 } ESAL_VARIABLE_GLOBAL;
 
 //
@@ -84,32 +83,36 @@ EFIAPI
 VariableCommonInitialize (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-);
+  )
+;
 
 EFI_STATUS
 VariableServiceInitialize (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-);
+  )
+;
 
 EFI_RUNTIMESERVICE
 VOID
 VariableClassAddressChangeEvent (
   IN EFI_EVENT        Event,
   IN VOID             *Context
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 GetVariable (
   IN      CHAR16            *VariableName,
-  IN      EFI_GUID          *VendorGuid,
+  IN      EFI_GUID          * VendorGuid,
   OUT     UINT32            *Attributes OPTIONAL,
   IN OUT  UINTN             *DataSize,
   OUT     VOID              *Data,
-  IN      VARIABLE_GLOBAL   *Global,
-  IN      UINT32            Instance  
-  );
+  IN      VARIABLE_GLOBAL   * Global,
+  IN      UINT32            Instance
+  )
+;
 
 EFI_STATUS
 EFIAPI
@@ -118,8 +121,9 @@ GetNextVariableName (
   IN OUT  CHAR16            *VariableName,
   IN OUT  EFI_GUID          *VendorGuid,
   IN      VARIABLE_GLOBAL   *Global,
-  IN      UINT32            Instance  
-  );
+  IN      UINT32            Instance
+  )
+;
 
 EFI_STATUS
 EFIAPI
@@ -132,7 +136,8 @@ SetVariable (
   IN VARIABLE_GLOBAL         *Global,
   IN UINTN                   *VolatileOffset,
   IN UINTN                   *NonVolatileOffset,
-  IN UINT32                  Instance  
-  );
+  IN UINT32                  Instance
+  )
+;
 
 #endif

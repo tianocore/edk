@@ -15,29 +15,26 @@ Module Name:
 
 Abstract:
 
-  Disk IO protocol as defined in the EFI 1.0 specification.
+  Disk Info protocol is used to export Inquiry Data for a drive.
+  Its needed to support low level formating of drives in a mannor
+  thats DOS compatible.
 
-  The Disk IO protocol is used to convert block oriented devices into byte
-  oriented devices. The Disk IO protocol is intended to layer on top of the
-  Block IO protocol.
- 
 --*/
 
 #ifndef __DISK_INFO_H__
 #define __DISK_INFO_H__
 
-
 #define EFI_DISK_INFO_PROTOCOL_GUID \
-  { 0xd432a67f, 0x14dc, 0x484b, 0xb3, 0xbb, 0x3f, 0x2, 0x91, 0x84, 0x93, 0x27 }
-
+  { \
+    0xd432a67f, 0x14dc, 0x484b, 0xb3, 0xbb, 0x3f, 0x2, 0x91, 0x84, 0x93, 0x27 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_DISK_INFO_PROTOCOL);
-
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DISK_INFO_INQUIRY) (
-  IN EFI_DISK_INFO_PROTOCOL   *This,
+  IN EFI_DISK_INFO_PROTOCOL           * This,
   IN OUT VOID                         *InquiryData,
   IN OUT UINT32                       *IntquiryDataSize
   )
@@ -61,11 +58,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DISK_INFO_IDENTIFY) (
-  IN EFI_DISK_INFO_PROTOCOL   *This,
+  IN EFI_DISK_INFO_PROTOCOL           * This,
   IN OUT VOID                         *IdentifyData,
   IN OUT UINT32                       *IdentifyDataSize
   )
@@ -89,11 +85,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DISK_INFO_SENSE_DATA) (
-  IN EFI_DISK_INFO_PROTOCOL   *This,
+  IN EFI_DISK_INFO_PROTOCOL           * This,
   IN OUT VOID                         *SenseData,
   IN OUT UINT32                       *SenseDataSize,
   OUT UINT8                           *SenseDataNumber
@@ -119,11 +114,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DISK_INFO_WHICH_IDE) (
-  IN EFI_DISK_INFO_PROTOCOL   *This,
+  IN EFI_DISK_INFO_PROTOCOL           * This,
   OUT UINT32                          *IdeChannel,
   OUT UINT32                          *IdeDevice
   )
@@ -150,26 +144,30 @@ EFI_STATUS
 // buffers returned by member functions
 //
 #define EFI_DISK_INFO_IDE_INTERFACE_GUID \
-  { 0x5e948fe3, 0x26d3, 0x42b5, 0xaf, 0x17, 0x61, 0x2, 0x87, 0x18, 0x8d, 0xec }
+  { \
+    0x5e948fe3, 0x26d3, 0x42b5, 0xaf, 0x17, 0x61, 0x2, 0x87, 0x18, 0x8d, 0xec \
+  }
 extern EFI_GUID gEfiDiskInfoIdeInterfaceGuid;
 
 #define EFI_DISK_INFO_SCSI_INTERFACE_GUID \
-  { 0x8f74baa, 0xea36, 0x41d9, 0x95, 0x21, 0x21, 0xa7, 0xf, 0x87, 0x80, 0xbc }
+  { \
+    0x8f74baa, 0xea36, 0x41d9, 0x95, 0x21, 0x21, 0xa7, 0xf, 0x87, 0x80, 0xbc \
+  }
 extern EFI_GUID gEfiDiskInfoScsiInterfaceGuid;
 
 #define EFI_DISK_INFO_USB_INTERFACE_GUID \
-  { 0xcb871572, 0xc11a, 0x47b5, 0xb4, 0x92, 0x67, 0x5e, 0xaf, 0xa7, 0x77, 0x27 }
+  { \
+    0xcb871572, 0xc11a, 0x47b5, 0xb4, 0x92, 0x67, 0x5e, 0xaf, 0xa7, 0x77, 0x27 \
+  }
 extern EFI_GUID gEfiDiskInfoUsbInterfaceGuid;
 
-
 typedef struct _EFI_DISK_INFO_PROTOCOL {
-  EFI_GUID                    Interface;
-  EFI_DISK_INFO_INQUIRY       Inquiry;
-  EFI_DISK_INFO_IDENTIFY      Identify;
-  EFI_DISK_INFO_SENSE_DATA    SenseData;
-  EFI_DISK_INFO_WHICH_IDE     WhichIde;
+  EFI_GUID                  Interface;
+  EFI_DISK_INFO_INQUIRY     Inquiry;
+  EFI_DISK_INFO_IDENTIFY    Identify;
+  EFI_DISK_INFO_SENSE_DATA  SenseData;
+  EFI_DISK_INFO_WHICH_IDE   WhichIde;
 } EFI_DISK_INFO_PROTOCOL;
-
 
 extern EFI_GUID gEfiDiskInfoProtocolGuid;
 

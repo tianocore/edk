@@ -29,7 +29,7 @@ public:
   VfrOpcodeHandler (
     VOID
     )
-/*++
+  /*++
 
 Routine Description:
   Constructor for the VFR opcode handling class.
@@ -41,11 +41,11 @@ Returns:
   None
 
 --*/
-;
+  ;
   ~VfrOpcodeHandler (
     VOID
     )
-/*++
+  /*++
 
 Routine Description:
   Destructor for the VFR opcode handler. Free up memory allocated
@@ -58,12 +58,12 @@ Returns:
   None
 
 --*/
-;
+  ;
   void
   WriteIfrBytes (
     VOID
     )
-/*++
+  /*++
 
 Routine Description:
   This function is invoked at the end of parsing. Its purpose
@@ -77,13 +77,13 @@ Returns:
   None
 
 --*/
-;
+  ;
   int
   AddOpcodeByte (
     UINT8  OpcodeByte,
     UINT32 LineNum
     )
-/*++
+  /*++
 
 Routine Description:
   This function is invoked by the parser when a new IFR
@@ -98,13 +98,13 @@ Returns:
   0 always
 
 --*/
-;
+  ;
   void
   AddByte (
     UINT8 ByteVal,
     UINT8 KeyByte
     )
-/*++
+  /*++
 
 Routine Description:
   This function is invoked by the parser when it determines
@@ -119,12 +119,12 @@ Returns:
   None
 
 --*/
-;
+  ;
   void
   SetVarStoreId (
     UINT16 VarStoreId
     )
-/*++
+  /*++
 
 Routine Description:
   This function is invoked by the parser when a variable is referenced in the 
@@ -138,12 +138,12 @@ Returns:
   None
 
 --*/
-;
+  ;
   void
   SetSecondaryVarStoreId (
     UINT16 VarStoreId
     )
-/*++
+  /*++
 
 Routine Description:
   This function is invoked by the parser when a secondary variable is 
@@ -158,15 +158,15 @@ Returns:
   None
 
 --*/
-;
+  ;
 
-
+/* */
 private:
   int
   FlushQueue (
     VOID
     )
-/*++
+  /*++
 
 Routine Description:
   This function is invoked to flush the internal IFR buffer.
@@ -178,14 +178,14 @@ Returns:
   0 always
 
 --*/
-;
+  ;
   int
   IAddByte (
     UINT8  ByteVal,
     UINT8  KeyByte,
     UINT32 LineNum
     )
-/*++
+  /*++
 
 Routine Description:
   This internal function is used to add actual IFR bytes to
@@ -204,7 +204,7 @@ Returns:
   1 - failed due to memory allocation failure
 
 --*/
-;
+  ;
 
 /* */
 private:

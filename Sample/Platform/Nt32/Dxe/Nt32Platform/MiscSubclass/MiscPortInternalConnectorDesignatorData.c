@@ -22,19 +22,17 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 // Static (possibly build generated) Bios Vendor data.
 //
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR, MiscPortInternalConnectorDesignator) = {
   STRING_TOKEN(STR_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR),  // PortInternalConnectorDesignator
   STRING_TOKEN(STR_MISC_PORT_EXTERNAL_CONNECTOR_DESIGNATOR),  // PortExternalConnectorDesignator
-  EfiPortConnectorTypeOther,                    // PortInternalConnectorType
-  EfiPortConnectorTypeOther,                    // PortExternalConnectorType
-  EfiPortTypeNone,                              // PortType
-  0                                             // PortPath
+  EfiPortConnectorTypeOther,  // PortInternalConnectorType
+  EfiPortConnectorTypeOther,  // PortExternalConnectorType
+  EfiPortTypeNone,            // PortType
+  0                           // PortPath
 };
-
 
 //
 // Static (possibly build generated) Bios Vendor data.
@@ -42,20 +40,22 @@ MISC_SUBCLASS_TABLE_DATA(EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR, MiscPortIn
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR, MiscPortKeyboard) = {
   STRING_TOKEN (STR_MISC_PORT_INTERNAL_KEYBOARD),   // PortInternalConnectorDesignator
   STRING_TOKEN (STR_MISC_PORT_EXTERNAL_KEYBOARD),   // PortExternalConnectorDesignator
-  EfiPortConnectorTypeNone,                         // PortInternalConnectorType
-  EfiPortConnectorTypePS2,                          // PortExternalConnectorType
-  EfiPortTypeKeyboard,                              // PortType
-  //mPs2KbyboardDevicePath                          // PortPath 
-    0
+  EfiPortConnectorTypeNone, // PortInternalConnectorType
+  EfiPortConnectorTypePS2,  // PortExternalConnectorType
+  EfiPortTypeKeyboard,      // PortType
+  // mPs2KbyboardDevicePath                          // PortPath
+  //
+  0
 };
 
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR, MiscPortMouse) = {
   STRING_TOKEN (STR_MISC_PORT_INTERNAL_MOUSE),      // PortInternalConnectorDesignator
   STRING_TOKEN (STR_MISC_PORT_EXTERNAL_MOUSE),      // PortExternalConnectorDesignator
-  EfiPortConnectorTypeNone,              // PortInternalConnectorType
-  EfiPortConnectorTypePS2,              // PortExternalConnectorType
-  EfiPortTypeMouse,                  // PortType
-  //mPs2MouseDevicePath                // PortPath
+  EfiPortConnectorTypeNone, // PortInternalConnectorType
+  EfiPortConnectorTypePS2,  // PortExternalConnectorType
+  EfiPortTypeMouse,         // PortType
+  // mPs2MouseDevicePath                // PortPath
+  //
   0
 };
 

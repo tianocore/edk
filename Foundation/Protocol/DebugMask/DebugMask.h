@@ -23,7 +23,9 @@ Abstract:
 #ifndef _DEBUG_MASK_H_
 #define _DEBUG_MASK_H_
 
+//
 //4C8A2451-C207-405b-9694-99EA13251341
+//
 #define EFI_DEBUG_MASK_PROTOCOL_GUID \
   { 0x4c8a2451, 0xc207, 0x405b, 0x96, 0x94, 0x99, 0xea, 0x13, 0x25, 0x13, 0x41 }
 

@@ -22,7 +22,6 @@ Abstract:
 #ifndef _TIANO_SPEC_TYPES_H_
 #define _TIANO_SPEC_TYPES_H_
 
-
 //
 // Modifier for EFI DXE Services
 //
@@ -36,8 +35,6 @@ typedef struct {
   UINT16    Size;
   EFI_GUID  Type;
 } EFI_STATUS_CODE_DATA;
-
-
 
 //
 // Global Coherencey Domain types
@@ -83,8 +80,5 @@ typedef struct {
   EFI_HANDLE            ImageHandle;
   EFI_HANDLE            DeviceHandle;
 } EFI_GCD_IO_SPACE_DESCRIPTOR;
-
-
-
 
 #endif

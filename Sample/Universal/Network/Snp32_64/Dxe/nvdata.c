@@ -42,44 +42,51 @@ Returns:
 --*/
 {
   PXE_DB_NVDATA *db;
-  
-  db = snp->db;
-  snp->cdb.OpCode = PXE_OPCODE_NVDATA;
 
-  snp->cdb.OpFlags = PXE_OPFLAGS_NVDATA_READ;
+  db                  = snp->db;
+  snp->cdb.OpCode     = PXE_OPCODE_NVDATA;
 
-  snp->cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  snp->cdb.CPBaddr = PXE_CPBADDR_NOT_USED;
+  snp->cdb.OpFlags    = PXE_OPFLAGS_NVDATA_READ;
 
-  snp->cdb.DBsize = sizeof (PXE_DB_NVDATA);
-  snp->cdb.DBaddr = (UINT64)db;
+  snp->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
+  snp->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
 
-  snp->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  snp->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  snp->cdb.IFnum = snp->if_num;
-  snp->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  snp->cdb.DBsize     = sizeof (PXE_DB_NVDATA);
+  snp->cdb.DBaddr     = (UINT64) db;
+
+  snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  snp->cdb.IFnum      = snp->if_num;
+  snp->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
   //
   // Issue UNDI command and check result.
   //
+  DEBUG ((EFI_D_NET, "\nsnp->undi.nvdata ()  "));
 
-  DEBUG((EFI_D_NET, "\nsnp->undi.nvdata ()  "));
-
-  (*snp->issue_undi32_command) ((UINT64)&snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
 
   switch (snp->cdb.StatCode) {
   case PXE_STATCODE_SUCCESS:
     break;
 
   case PXE_STATCODE_UNSUPPORTED:
-    DEBUG((EFI_D_NET, "\nsnp->undi.nvdata()  %xh:%xh\n",
-      snp->cdb.StatFlags, snp->cdb.StatCode));
+    DEBUG (
+      (EFI_D_NET,
+      "\nsnp->undi.nvdata()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
     return EFI_UNSUPPORTED;
 
   default:
-    DEBUG((EFI_D_NET, "\nsnp->undi.nvdata()  %xh:%xh\n",
-      snp->cdb.StatFlags, snp->cdb.StatCode));
+    DEBUG (
+      (EFI_D_NET,
+      "\nsnp->undi.nvdata()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
     return EFI_DEVICE_ERROR;
   }
@@ -92,11 +99,11 @@ Returns:
 EFI_STATUS
 snp_undi32_nvdata (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
-  IN BOOLEAN ReadOrWrite,
-  IN UINTN RegOffset,
-  IN UINTN NumBytes,
-  IN OUT VOID *BufferPtr
-)
+  IN BOOLEAN                     ReadOrWrite,
+  IN UINTN                       RegOffset,
+  IN UINTN                       NumBytes,
+  IN OUT VOID                    *BufferPtr
+  )
 /*++
 
 Routine Description:
@@ -115,26 +122,23 @@ Returns:
 
 --*/
 {
-  SNP_DRIVER *snp;
+  SNP_DRIVER  *snp;
 
   //
   // Get pointer to SNP driver instance for *this.
   //
-
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS(this);
+  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
   if (snp == NULL) {
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Return error if the SNP is not initialized.
   //
-
   switch (snp->mode.State) {
   case EfiSimpleNetworkInitialized:
     break;
@@ -148,35 +152,30 @@ Returns:
   default:
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Return error if non-volatile memory variables are not valid.
-  // 
-
+  //
   if (snp->mode.NvRamSize == 0 || snp->mode.NvRamAccessSize == 0) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Check for invalid parameter combinations.
   //
-
-  if ( (NumBytes == 0) ||
-       (BufferPtr == NULL) ||
-       (RegOffset >= snp->mode.NvRamSize) ||
-       (RegOffset + NumBytes > snp->mode.NvRamSize) ||
-       (NumBytes % snp->mode.NvRamAccessSize != 0) ||
-       (RegOffset % snp->mode.NvRamAccessSize != 0) )
-  {
+  if ((NumBytes == 0) ||
+      (BufferPtr == NULL) ||
+      (RegOffset >= snp->mode.NvRamSize) ||
+      (RegOffset + NumBytes > snp->mode.NvRamSize) ||
+      (NumBytes % snp->mode.NvRamAccessSize != 0) ||
+      (RegOffset % snp->mode.NvRamAccessSize != 0)
+      ) {
     return EFI_INVALID_PARAMETER;
   }
-
+  //
   // check the implementation flags of undi if we can write the nvdata!
-
+  //
   if (!ReadOrWrite) {
     return EFI_UNSUPPORTED;
   } else {
     return pxe_nvdata_read (snp, RegOffset, NumBytes, BufferPtr);
   }
 }
-

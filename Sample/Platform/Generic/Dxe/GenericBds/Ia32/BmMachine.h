@@ -26,6 +26,6 @@ Revision History
 #ifndef _BM_MACHINE_H
 #define _BM_MACHINE_H
 
-#define DEFAULT_REMOVABLE_FILE_NAME     L"\\EFI\\BOOT\\BOOTIA32.EFI"
+#define DEFAULT_REMOVABLE_FILE_NAME L"\\EFI\\BOOT\\BOOTIA32.EFI"
 
 #endif

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Flash Map PPI GUID as defined in EFI 2.0
+  Flash Map PPI GUID as defined in Tiano
 
 --*/
 
@@ -23,6 +23,6 @@ Abstract:
 #include "Pei.h"
 #include EFI_PPI_DEFINITION (FlashMap)
 
-EFI_GUID gPeiFlashMapPpiGuid = PEI_FLASH_MAP_PPI_GUID;
+EFI_GUID  gPeiFlashMapPpiGuid = PEI_FLASH_MAP_PPI_GUID;
 
-EFI_GUID_STRING (&gPeiFlashMapPpiGuid, "Flash Map", "Flash Map PPI");
+EFI_GUID_STRING(&gPeiFlashMapPpiGuid, "Flash Map", "Flash Map PPI");

@@ -145,8 +145,7 @@ EFI_STATUS
 (EFIAPI *EFI_PLATFORM_MEMTEST_NOTIFY_PHASE) (
   IN EFI_PLATFORM_MEMTEST_PROTOCOL    *This,
   IN EFI_MEMTEST_PHASE                        Phase
-  )
-;
+  );
 
 typedef
 EFI_STATUS
@@ -158,18 +157,14 @@ EFI_STATUS
   OUT  EFI_MEMTEST_DATA_PATTERN               *MemoryPattern,
   OUT  UINT32                                 *EntryCount,
   OUT  EFI_MEMTEST_POLICY_ENTRY               **PolicyGrid
-  )
-;
+  );
 
 typedef
 EFI_STATUS
 (EFIAPI * EFI_PLATFORM_MEMTEST_GET_NEXT_DIMM_INFO) (
   IN EFI_PLATFORM_MEMTEST_PROTOCOL         *This,
   IN OUT EFI_MEMTEST_DIMM_INFO                    *DimmInfo
-)
-;
-
-
+  );
 
 typedef
 EFI_STATUS
@@ -177,8 +172,7 @@ EFI_STATUS
   IN EFI_PLATFORM_MEMTEST_PROTOCOL    *This,
   IN EFI_PHYSICAL_ADDRESS                     Start,
   IN EFI_PHYSICAL_ADDRESS                     Size
-  )
-;
+  );
 
 typedef
 EFI_STATUS
@@ -189,15 +183,13 @@ EFI_STATUS
   IN EFI_PHYSICAL_ADDRESS                   Size,
   OUT UINTN                                 *ErrorCount,
   OUT EFI_PLATFORM_MEMTEST_ERROR            **ErrorInfo
-)
-;
+  );
 
 typedef
 EFI_STATUS
 (EFIAPI * EFI_PLATFORM_MEMTEST_FLUSH_BUFFER) (
   IN EFI_PLATFORM_MEMTEST_PROTOCOL   *This
-)
-;
+  );
 
 typedef
 EFI_STATUS
@@ -206,8 +198,7 @@ EFI_STATUS
   OUT  UINT32                                *ErrorCount,
   OUT EFI_PLATFORM_MEMTEST_ERROR             **ErrorInfo
 
-)
-;
+  );
 
 typedef
 EFI_STATUS
@@ -218,15 +209,13 @@ EFI_STATUS
   IN  UINT8                                 Found,
   OUT  UINT32                               *ErrorInfoCount,
   OUT EFI_PLATFORM_MEMTEST_ERROR            **ErrorInfoBuffer
-)
-;
+  );
 
 typedef
 EFI_STATUS
 (EFIAPI * EFI_PLATFORM_MEMTEST_CLEAR_ERROR) (
   IN EFI_PLATFORM_MEMTEST_PROTOCOL   *This
-)
-;
+  );
 
 typedef
 EFI_STATUS
@@ -236,9 +225,7 @@ EFI_STATUS
   IN EFI_DIMM_ID                            *DimmIds,
   IN BOOLEAN                                 RebootRequired
 
-  )
-;
-
+  );
 
 typedef
 EFI_STATUS
@@ -248,8 +235,7 @@ EFI_STATUS
   IN  EFI_PHYSICAL_ADDRESS                  start,
   IN  EFI_PHYSICAL_ADDRESS                  Size,
   OUT BOOLEAN                               *Overlap
-)
-;
+  );
 
 typedef struct _EFI_PLATFORM_MEMTEST_PROTOCOL {
   EFI_PLATFORM_MEMTEST_NOTIFY_PHASE       NotifyPhase;

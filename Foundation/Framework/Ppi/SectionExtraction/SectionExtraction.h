@@ -22,18 +22,20 @@ Abstract:
 #ifndef _SECTION_EXTRACTION_PPI_H_
 #define _SECTION_EXTRACTION_PPI_H_
 
-#define EFI_PEI_SECTION_EXTRACTION_PPI_GUID  \
- {0x4F89E208, 0xE144, 0x4804, 0x9E, 0xC8, 0x0F, 0x89, 0x4F, 0x7E, 0x36, 0xD7}
+#define EFI_PEI_SECTION_EXTRACTION_PPI_GUID \
+  { \
+    0x4F89E208, 0xE144, 0x4804, 0x9E, 0xC8, 0x0F, 0x89, 0x4F, 0x7E, 0x36, 0xD7 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_PEI_SECTION_EXTRACTION_PPI);
 
 typedef
 EFI_STATUS
-(EFIAPI *EFI_PEI_GET_SECTION)(
+(EFIAPI *EFI_PEI_GET_SECTION) (
   IN EFI_PEI_SERVICES                         **PeiServices,
-  IN EFI_PEI_SECTION_EXTRACTION_PPI   *This,
-  IN EFI_SECTION_TYPE                         *SectionType,
-  IN EFI_GUID                                 *SectionDefinitionGuid,  OPTIONAL
+  IN EFI_PEI_SECTION_EXTRACTION_PPI           * This,
+  IN EFI_SECTION_TYPE                         * SectionType,
+  IN EFI_GUID                                 * SectionDefinitionGuid, OPTIONAL
   IN UINTN                                    SectionInstance,
   IN VOID                                     **Buffer,
   IN OUT UINT32                               *BufferSize,
@@ -41,16 +43,15 @@ EFI_STATUS
   );
 
 //
-// Bit values for AuthenticationStatus 
+// Bit values for AuthenticationStatus
 //
-#define EFI_PEI_AUTH_STATUS_PLATFORM_OVERRIDE  0x01
-#define EFI_PEI_AUTH_STATUS_IMAGE_SIGNED       0x02
-#define EFI_PEI_AUTH_STATUS_NOT_TESTED         0x04
-#define EFI_PEI_AUTH_STATUS_TEST_FAILED        0x08
-
+#define EFI_PEI_AUTH_STATUS_PLATFORM_OVERRIDE 0x01
+#define EFI_PEI_AUTH_STATUS_IMAGE_SIGNED      0x02
+#define EFI_PEI_AUTH_STATUS_NOT_TESTED        0x04
+#define EFI_PEI_AUTH_STATUS_TEST_FAILED       0x08
 
 typedef struct _EFI_PEI_SECTION_EXTRACTION_PPI {
-  EFI_PEI_GET_SECTION           PeiGetSection;
+  EFI_PEI_GET_SECTION PeiGetSection;
 } EFI_PEI_SECTION_EXTRACTION_PPI;
 
 extern EFI_GUID gPeiSectionExtractionPpiGuid;

@@ -19,7 +19,7 @@ Abstract:
   Provides auxilliary support routines for the VM. That is, routines
   that are not particularly related to VM execution of EBC instructions.
   
---*/  
+--*/
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
@@ -27,34 +27,33 @@ Abstract:
 //
 // To support the EFI debug support protocol
 //
-#include EFI_PROTOCOL_DEFINITION(Ebc)
-#include EFI_PROTOCOL_DEFINITION(DebugSupport)
+#include EFI_PROTOCOL_DEFINITION (Ebc)
+#include EFI_PROTOCOL_DEFINITION (DebugSupport)
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
 
 //
-// We'll keep track of all thunks we create in a linked list. Each 
-// thunk is tied to an image handle, so we have a linked list of 
+// We'll keep track of all thunks we create in a linked list. Each
+// thunk is tied to an image handle, so we have a linked list of
 // image handles, with each having a linked list of thunks allocated
-// to that image handle. 
+// to that image handle.
 //
 typedef struct _EBC_THUNK_LIST {
-  VOID                      *ThunkBuffer;
-  struct _EBC_THUNK_LIST    *Next;
+  VOID                    *ThunkBuffer;
+  struct _EBC_THUNK_LIST  *Next;
 } EBC_THUNK_LIST;
-  
+
 typedef struct _EBC_IMAGE_LIST {
-  struct _EBC_IMAGE_LIST    *Next;
-  EFI_HANDLE                ImageHandle;
-  EBC_THUNK_LIST            *ThunkList;
+  struct _EBC_IMAGE_LIST  *Next;
+  EFI_HANDLE              ImageHandle;
+  EBC_THUNK_LIST          *ThunkList;
 } EBC_IMAGE_LIST;
 
-// 
+//
 // Function prototypes
 //
-
-EFI_STATUS 
+EFI_STATUS
 InitializeEbcDriver (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -62,7 +61,7 @@ InitializeEbcDriver (
 
 STATIC
 EFI_STATUS
-EbcTest  (
+EbcTest (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
@@ -82,7 +81,7 @@ EbcUnloadImage (
   );
 
 STATIC
-EFI_STATUS 
+EFI_STATUS
 EbcCreateThunk (
   IN EFI_EBC_PROTOCOL     *This,
   IN EFI_HANDLE           ImageHandle,
@@ -98,7 +97,7 @@ EbcGetVersion (
   );
 
 //
-// These two functions and the  GUID are used to produce an EBC test protocol. 
+// These two functions and the  GUID are used to produce an EBC test protocol.
 // This functionality is definitely not required for execution.
 //
 STATIC
@@ -109,11 +108,15 @@ InitEbcVmTestProtocol (
 
 STATIC
 EFI_STATUS
-EbcVmTestUnsupported ();
+EbcVmTestUnsupported (
+  VOID
+  );
 
 STATIC
 UINT64
-EbcInterpret ();
+EbcInterpret (
+  VOID
+  );
 
 STATIC
 EFI_STATUS
@@ -161,21 +164,21 @@ EbcDebugInvalidateInstructionCache (
 // also be global since the execution of an EBC image does not provide
 // a This pointer.
 //
-static EBC_IMAGE_LIST      *mEbcImageList = NULL;
+static EBC_IMAGE_LIST         *mEbcImageList = NULL;
 
 //
 // Callback function to flush the icache after thunk creation
 //
-static EBC_ICACHE_FLUSH   mEbcICacheFlush;
+static EBC_ICACHE_FLUSH       mEbcICacheFlush;
 
 //
-// These get set via calls by the debug agent 
+// These get set via calls by the debug agent
 //
-static EFI_PERIODIC_CALLBACK  mDebugPeriodicCallback  = NULL;
-static EFI_EXCEPTION_CALLBACK mDebugExceptionCallback = NULL;
-static EFI_GUID mEfiEbcVmTestProtocolGuid             = EFI_EBC_VM_TEST_PROTOCOL_GUID;
+static EFI_PERIODIC_CALLBACK  mDebugPeriodicCallback    = NULL;
+static EFI_EXCEPTION_CALLBACK mDebugExceptionCallback   = NULL;
+static EFI_GUID               mEfiEbcVmTestProtocolGuid = EFI_EBC_VM_TEST_PROTOCOL_GUID;
 
-EFI_DRIVER_ENTRY_POINT (InitializeEbcDriver); 
+EFI_DRIVER_ENTRY_POINT (InitializeEbcDriver)
 
 EFI_STATUS
 InitializeEbcDriver (
@@ -199,13 +202,14 @@ Returns:
 
 --*/
 {
-  EFI_EBC_PROTOCOL              *EbcProtocol, *OldEbcProtocol;
-  EFI_STATUS                    Status;
-  EFI_DEBUG_SUPPORT_PROTOCOL    *EbcDebugProtocol;
-  EFI_HANDLE                    *HandleBuffer;
-  UINTN                         NumHandles;
-  UINTN                         Index;
-  BOOLEAN                       Installed;
+  EFI_EBC_PROTOCOL            *EbcProtocol;
+  EFI_EBC_PROTOCOL            *OldEbcProtocol;
+  EFI_STATUS                  Status;
+  EFI_DEBUG_SUPPORT_PROTOCOL  *EbcDebugProtocol;
+  EFI_HANDLE                  *HandleBuffer;
+  UINTN                       NumHandles;
+  UINTN                       Index;
+  BOOLEAN                     Installed;
   //
   // Initialize the library
   //
@@ -213,47 +217,56 @@ Returns:
   //
   // Allocate memory for our protocol. Then fill in the blanks.
   //
-  Status = gBS->AllocatePool (EfiBootServicesData,
-                              sizeof (EFI_EBC_PROTOCOL),
-                              (VOID **)&EbcProtocol);
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  sizeof (EFI_EBC_PROTOCOL),
+                  (VOID **) &EbcProtocol
+                  );
   if (Status != EFI_SUCCESS) {
     return EFI_OUT_OF_RESOURCES;
   }
-  EbcProtocol->CreateThunk             = EbcCreateThunk;
-  EbcProtocol->UnloadImage             = EbcUnloadImage;
-  EbcProtocol->RegisterICacheFlush     = EbcRegisterICacheFlush;
-  EbcProtocol->GetVersion              = EbcGetVersion;
-  mEbcICacheFlush = NULL;
+
+  EbcProtocol->CreateThunk          = EbcCreateThunk;
+  EbcProtocol->UnloadImage          = EbcUnloadImage;
+  EbcProtocol->RegisterICacheFlush  = EbcRegisterICacheFlush;
+  EbcProtocol->GetVersion           = EbcGetVersion;
+  mEbcICacheFlush                   = NULL;
 
   //
   // Find any already-installed EBC protocols and uninstall them
   //
   Installed     = FALSE;
   HandleBuffer  = NULL;
-  Status = gBS->LocateHandleBuffer (ByProtocol, 
-                                    &gEfiEbcProtocolGuid, 
-                                    NULL, 
-                                    &NumHandles, 
-                                    &HandleBuffer); 
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiEbcProtocolGuid,
+                  NULL,
+                  &NumHandles,
+                  &HandleBuffer
+                  );
   if (Status == EFI_SUCCESS) {
     //
-    // Loop through the handles 
+    // Loop through the handles
     //
     for (Index = 0; Index < NumHandles; Index++) {
-      Status = gBS->HandleProtocol (HandleBuffer[Index], 
-                                    &gEfiEbcProtocolGuid, 
-                                    (VOID **)&OldEbcProtocol
-                                  );
+      Status = gBS->HandleProtocol (
+                      HandleBuffer[Index],
+                      &gEfiEbcProtocolGuid,
+                      (VOID **) &OldEbcProtocol
+                      );
       if (Status == EFI_SUCCESS) {
-        if (gBS->ReinstallProtocolInterface (HandleBuffer[Index], 
-                                            &gEfiEbcProtocolGuid, 
-                                            OldEbcProtocol, 
-                                            EbcProtocol) == EFI_SUCCESS) {
+        if (gBS->ReinstallProtocolInterface (
+                  HandleBuffer[Index],
+                  &gEfiEbcProtocolGuid,
+                  OldEbcProtocol,
+                  EbcProtocol
+                  ) == EFI_SUCCESS) {
           Installed = TRUE;
         }
       }
     }
   }
+
   if (HandleBuffer != NULL) {
     gBS->FreePool (HandleBuffer);
     HandleBuffer = NULL;
@@ -262,12 +275,13 @@ Returns:
   // Add the protocol so someone can locate us if we haven't already.
   //
   if (!Installed) {
-    Status = gBS->InstallProtocolInterface ( &ImageHandle,
-                                             &gEfiEbcProtocolGuid,
-                                             EFI_NATIVE_INTERFACE,
-                                             EbcProtocol
-                                             );
-    if (EFI_ERROR(Status)) {
+    Status = gBS->InstallProtocolInterface (
+                    &ImageHandle,
+                    &gEfiEbcProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
+                    EbcProtocol
+                    );
+    if (EFI_ERROR (Status)) {
       gBS->FreePool (EbcProtocol);
       return Status;
     }
@@ -275,12 +289,15 @@ Returns:
   //
   // Allocate memory for our debug protocol. Then fill in the blanks.
   //
-  Status = gBS->AllocatePool (EfiBootServicesData,
-                              sizeof (EFI_DEBUG_SUPPORT_PROTOCOL),
-                              (VOID **)&EbcDebugProtocol);
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  sizeof (EFI_DEBUG_SUPPORT_PROTOCOL),
+                  (VOID **) &EbcDebugProtocol
+                  );
   if (Status != EFI_SUCCESS) {
     return EFI_OUT_OF_RESOURCES;
   }
+
   EbcDebugProtocol->Isa                         = IsaEbc;
   EbcDebugProtocol->GetMaximumProcessorIndex    = EbcDebugGetMaximumProcessorIndex;
   EbcDebugProtocol->RegisterPeriodicCallback    = EbcDebugRegisterPeriodicCallback;
@@ -290,15 +307,16 @@ Returns:
   //
   // Add the protocol so the debug agent can find us
   //
-  Status = gBS->InstallProtocolInterface ( &ImageHandle,
-                                           &gEfiDebugSupportProtocolGuid,
-                                           EFI_NATIVE_INTERFACE,
-                                           EbcDebugProtocol
-                                           );
+  Status = gBS->InstallProtocolInterface (
+                  &ImageHandle,
+                  &gEfiDebugSupportProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  EbcDebugProtocol
+                  );
   //
   // This is recoverable, so free the memory and continue.
   //
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     gBS->FreePool (EbcDebugProtocol);
   }
   //
@@ -307,11 +325,12 @@ Returns:
   DEBUG_CODE (
     InitEbcVmTestProtocol (&ImageHandle);
   )
+
   return Status;
 }
 
 STATIC
-EFI_STATUS 
+EFI_STATUS
 EbcCreateThunk (
   IN EFI_EBC_PROTOCOL   *This,
   IN EFI_HANDLE         ImageHandle,
@@ -341,12 +360,15 @@ Returns:
   EFI_STATUS
 
 --*/
-
 {
-  EFI_STATUS   Status;
+  EFI_STATUS  Status;
 
-  Status = EbcCreateThunks (ImageHandle, EbcEntryPoint, 
-                            Thunk, FLAG_THUNK_ENTRY_POINT);
+  Status = EbcCreateThunks (
+            ImageHandle,
+            EbcEntryPoint,
+            Thunk,
+            FLAG_THUNK_ENTRY_POINT
+            );
   return Status;
 }
 
@@ -375,8 +397,8 @@ Returns:
 --*/
 {
   *MaxProcessorIndex = 0;
-  return (EFI_SUCCESS);
-}  
+  return EFI_SUCCESS;
+}
 
 STATIC
 EFI_STATUS
@@ -462,8 +484,8 @@ Returns:
 
 --*/
 {
-  return (EFI_SUCCESS);
-}  
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
 EbcDebugSignalException (
@@ -496,27 +518,27 @@ Returns:
   //
   VmPtr->ExceptionFlags |= ExceptionFlags;
   VmPtr->LastException = ExceptionType;
-  // 
-  // If it's a fatal exception, then flag it in the VM context in case an 
+  //
+  // If it's a fatal exception, then flag it in the VM context in case an
   // attached debugger tries to return from it.
-  //  
+  //
   if (ExceptionFlags & EXCEPTION_FLAG_FATAL) {
     VmPtr->StopFlags |= STOPFLAG_APP_DONE;
   }
   //
   // Initialize the context structure
   //
-  EbcContext.R0 = VmPtr->R[0];
-  EbcContext.R1 = VmPtr->R[1];
-  EbcContext.R2 = VmPtr->R[2];
-  EbcContext.R3 = VmPtr->R[3];
-  EbcContext.R4 = VmPtr->R[4];
-  EbcContext.R5 = VmPtr->R[5];
-  EbcContext.R6 = VmPtr->R[6];
-  EbcContext.R7 = VmPtr->R[7];
-  EbcContext.Ip = (UINT64)VmPtr->Ip;
-  EbcContext.Flags = VmPtr->Flags;
-  SystemContext.SystemContextEbc = &EbcContext;
+  EbcContext.R0                   = VmPtr->R[0];
+  EbcContext.R1                   = VmPtr->R[1];
+  EbcContext.R2                   = VmPtr->R[2];
+  EbcContext.R3                   = VmPtr->R[3];
+  EbcContext.R4                   = VmPtr->R[4];
+  EbcContext.R5                   = VmPtr->R[5];
+  EbcContext.R6                   = VmPtr->R[6];
+  EbcContext.R7                   = VmPtr->R[7];
+  EbcContext.Ip                   = (UINT64) VmPtr->Ip;
+  EbcContext.Flags                = VmPtr->Flags;
+  SystemContext.SystemContextEbc  = &EbcContext;
   //
   // If someone's registered for exception callbacks, then call them.
   // Otherwise report the status code via the status code API
@@ -535,36 +557,46 @@ Returns:
   case EXCEPT_EBC_UNDEFINED:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_UNDEFINED;
     break;
+
   case EXCEPT_EBC_DIVIDE_ERROR:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_DIVIDE_ERROR;
     break;
+
   case EXCEPT_EBC_DEBUG:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_DEBUG;
-    Report = (BOOLEAN)((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
+    Report          = (BOOLEAN) ((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
     break;
+
   case EXCEPT_EBC_BREAKPOINT:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_BREAKPOINT;
-    Report = (BOOLEAN)((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
+    Report          = (BOOLEAN) ((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
     break;
+
   case EXCEPT_EBC_INVALID_OPCODE:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_INVALID_OPCODE;
     break;
+
   case EXCEPT_EBC_STACK_FAULT:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_STACK_FAULT;
     break;
+
   case EXCEPT_EBC_ALIGNMENT_CHECK:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_ALIGNMENT_CHECK;
     break;
+
   case EXCEPT_EBC_INSTRUCTION_ENCODING:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_INSTRUCTION_ENCODING;
     break;
+
   case EXCEPT_EBC_BAD_BREAK:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_BAD_BREAK;
     break;
+
   case EXCEPT_EBC_STEP:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_STEP;
-    Report = (BOOLEAN)((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
+    Report          = (BOOLEAN) ((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
     break;
+
   default:
     StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_NON_SPECIFIC;
     break;
@@ -575,60 +607,73 @@ Returns:
   if (Report) {
     gRT->ReportStatusCode (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED, StatusCodeValue, 0, &gEfiEbcProtocolGuid, NULL);
   }
+
   switch (ExceptionType) {
   //
   // If ReportStatusCode returned, then for most exceptions we do an assert. The
   // ExceptionType++ is done simply to force the ASSERT() condition to be met.
-  // For breakpoints, assume a debugger did not insert a software breakpoint 
+  // For breakpoints, assume a debugger did not insert a software breakpoint
   // and skip the instruction.
   //
   case EXCEPT_EBC_BREAKPOINT:
     VmPtr->Ip += 2;
     break;
+
   case EXCEPT_EBC_STEP:
     break;
+
   case EXCEPT_EBC_UNDEFINED:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_UNDEFINED);
     break;
+
   case EXCEPT_EBC_DIVIDE_ERROR:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_DIVIDE_ERROR);
     break;
+
   case EXCEPT_EBC_DEBUG:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_DEBUG);
     break;
+
   case EXCEPT_EBC_INVALID_OPCODE:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_INVALID_OPCODE);
     break;
+
   case EXCEPT_EBC_STACK_FAULT:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_STACK_FAULT);
     break;
+
   case EXCEPT_EBC_ALIGNMENT_CHECK:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_ALIGNMENT_CHECK);
     break;
+
   case EXCEPT_EBC_INSTRUCTION_ENCODING:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_INSTRUCTION_ENCODING);
     break;
+
   case EXCEPT_EBC_BAD_BREAK:
     ExceptionType++;
     ASSERT (ExceptionType == EXCEPT_EBC_BAD_BREAK);
     break;
+
   default:
     //
     // Unknown
     //
-    ASSERT(0);
-    break;    
+    ASSERT (0);
+    break;
   }
+
   return EFI_SUCCESS;
 }
-EFI_STATUS 
+
+EFI_STATUS
 EbcDebugPeriodic (
   IN VM_CONTEXT *VmPtr
   )
@@ -651,7 +696,8 @@ Returns:
 {
   return EFI_SUCCESS;
 }
-STATIC 
+
+STATIC
 EFI_STATUS
 EbcUnloadImage (
   IN EFI_EBC_PROTOCOL   *This,
@@ -677,12 +723,11 @@ Returns:
   EFI_STATUS             - completed successfully
 
 --*/
-
 {
-  EBC_THUNK_LIST         *ThunkList;
-  EBC_THUNK_LIST         *NextThunkList;
-  EBC_IMAGE_LIST         *ImageList;
-  EBC_IMAGE_LIST         *PrevImageList;
+  EBC_THUNK_LIST  *ThunkList;
+  EBC_THUNK_LIST  *NextThunkList;
+  EBC_IMAGE_LIST  *ImageList;
+  EBC_IMAGE_LIST  *PrevImageList;
   //
   // First go through our list of known image handles and see if we've already
   // created an image list element for this image handle.
@@ -697,11 +742,12 @@ Returns:
     //
     PrevImageList = ImageList;
   }
+
   if (ImageList == NULL) {
     return EFI_INVALID_PARAMETER;
   }
   //
-  // Free up all the thunk buffers and thunks list elements for this image 
+  // Free up all the thunk buffers and thunks list elements for this image
   // handle.
   //
   ThunkList = ImageList->ThunkList;
@@ -725,14 +771,14 @@ Returns:
   //
   // Now free up the image list element
   //
-  gBS->FreePool (ImageList);  
+  gBS->FreePool (ImageList);
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 EbcAddImageThunk (
-  IN EFI_HANDLE     ImageHandle,
-  IN VOID           *ThunkBuffer,
+  IN EFI_HANDLE      ImageHandle,
+  IN VOID            *ThunkBuffer,
   IN UINT32          ThunkSize
   )
 /*++
@@ -765,7 +811,7 @@ Returns:
   //
   if (mEbcICacheFlush != NULL) {
     Status = mEbcICacheFlush ((EFI_PHYSICAL_ADDRESS) (UINTN) ThunkBuffer, ThunkSize);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
   }
@@ -778,36 +824,42 @@ Returns:
       break;
     }
   }
+
   if (ImageList == NULL) {
     //
     // Allocate a new one
     //
-    Status = gBS->AllocatePool (EfiBootServicesData,
-                                sizeof (EBC_IMAGE_LIST),
-                                (VOID **)&ImageList);
+    Status = gBS->AllocatePool (
+                    EfiBootServicesData,
+                    sizeof (EBC_IMAGE_LIST),
+                    (VOID **) &ImageList
+                    );
     if (Status != EFI_SUCCESS) {
       return EFI_OUT_OF_RESOURCES;
     }
-    ImageList->ThunkList = NULL;
-    ImageList->ImageHandle = ImageHandle;
-    ImageList->Next = mEbcImageList;
-    mEbcImageList = ImageList;    
+
+    ImageList->ThunkList    = NULL;
+    ImageList->ImageHandle  = ImageHandle;
+    ImageList->Next         = mEbcImageList;
+    mEbcImageList           = ImageList;
   }
   //
   // Ok, now create a new thunk element to add to the list
   //
-  Status = gBS->AllocatePool (EfiBootServicesData,
-                              sizeof (EBC_THUNK_LIST),
-                              (VOID **)&ThunkList);
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  sizeof (EBC_THUNK_LIST),
+                  (VOID **) &ThunkList
+                  );
   if (Status != EFI_SUCCESS) {
     return EFI_OUT_OF_RESOURCES;
   }
   //
   // Add it to the head of the list
   //
-  ThunkList->Next = ImageList->ThunkList;    
-  ThunkList->ThunkBuffer = ThunkBuffer;
-  ImageList->ThunkList = ThunkList;
+  ThunkList->Next         = ImageList->ThunkList;
+  ThunkList->ThunkBuffer  = ThunkBuffer;
+  ImageList->ThunkList    = ThunkList;
   return EFI_SUCCESS;
 }
 
@@ -832,6 +884,7 @@ EbcGetVersion (
   if (Version == NULL) {
     return EFI_INVALID_PARAMETER;
   }
+
   *Version = GetVmVersion ();
   return EFI_SUCCESS;
 }
@@ -860,34 +913,28 @@ Returns:
 
 --*/
 {
-  EFI_HANDLE                    Handle;
-  EFI_STATUS                    Status;
-  EFI_EBC_VM_TEST_PROTOCOL      *EbcVmTestProtocol;
+  EFI_HANDLE Handle;
+  EFI_STATUS Status;
+  EFI_EBC_VM_TEST_PROTOCOL *EbcVmTestProtocol;
 
   //
   // Allocate memory for the protocol, then fill in the fields
   //
-  Status = gBS->AllocatePool (EfiBootServicesData,
-                              sizeof (EFI_EBC_VM_TEST_PROTOCOL),
-                              (VOID **)&EbcVmTestProtocol);
+  Status = gBS->AllocatePool (EfiBootServicesData, sizeof (EFI_EBC_VM_TEST_PROTOCOL), (VOID **) &EbcVmTestProtocol);
   if (Status != EFI_SUCCESS) {
-    return EFI_OUT_OF_RESOURCES;
+  return EFI_OUT_OF_RESOURCES;
   }
-  EbcVmTestProtocol->Execute      = (EBC_VM_TEST_EXECUTE)EbcExecuteInstructions;
-  EbcVmTestProtocol->Assemble     = (EBC_VM_TEST_ASM)EbcVmTestUnsupported;
-  EbcVmTestProtocol->Disassemble  = (EBC_VM_TEST_DASM)EbcVmTestUnsupported;
+  EbcVmTestProtocol->Execute      = (EBC_VM_TEST_EXECUTE) EbcExecuteInstructions;
+  EbcVmTestProtocol->Assemble     = (EBC_VM_TEST_ASM) EbcVmTestUnsupported;
+  EbcVmTestProtocol->Disassemble  = (EBC_VM_TEST_DASM) EbcVmTestUnsupported;
   //
   // Publish the protocol
   //
-  Handle = NULL;
-  Status = gBS->InstallProtocolInterface ( &Handle,
-                                           &mEfiEbcVmTestProtocolGuid,
-                                           EFI_NATIVE_INTERFACE,
-                                           EbcVmTestProtocol
-                                           );
-  if (EFI_ERROR(Status)) {
-     gBS->FreePool (EbcVmTestProtocol);
-  }
+  Handle  = NULL;
+  Status  = gBS->InstallProtocolInterface (&Handle, &mEfiEbcVmTestProtocolGuid, EFI_NATIVE_INTERFACE, EbcVmTestProtocol);
+  if (EFI_ERROR (Status)) {
+  gBS->FreePool (EbcVmTestProtocol);
+}
   return Status;
 }
 STATIC

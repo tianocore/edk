@@ -15,13 +15,14 @@ Module Name:
     
 Abstract:
 
-  EFI 2.0 Guid used for all Compatible Memory Range Tested GUID.  
+  Tiano Guid used for all Compatible Memory Range Tested GUID.  
 
 --*/
 
 #include "Tiano.h"
-#include EFI_GUID_DEFINITION(CompatibleMemoryTested)
+#include EFI_GUID_DEFINITION (CompatibleMemoryTested)
 
-EFI_GUID gEfiCompatibleMemoryTestedGuid = EFI_COMPATIBLE_MEMORY_TESTED_PROTOCOL_GUID;
-         
-EFI_GUID_STRING (&gEfiCompatibleMemoryTestedGuid, "CompatibleMemoryTested Protocol", "EFI 2.0 Generic Memory Test Protocol");
+EFI_GUID  gEfiCompatibleMemoryTestedGuid = EFI_COMPATIBLE_MEMORY_TESTED_PROTOCOL_GUID;
+
+EFI_GUID_STRING
+  (&gEfiCompatibleMemoryTestedGuid, "CompatibleMemoryTested Protocol", "Tiano Generic Memory Test Protocol");

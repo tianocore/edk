@@ -33,8 +33,7 @@ Revision History
 #include "EfiCompNameSupport.h"
 #include "ComponentName.h"
 
-
-#include EFI_GUID_DEFINITION(PciHotplugDevice)
+#include EFI_GUID_DEFINITION (PciHotplugDevice)
 
 //
 // Driver Consumed Protocol Prototypes
@@ -62,20 +61,18 @@ Revision History
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 
-
 //
 // Driver Produced Protocol Prototypes
 //
 
+#define VGABASE1  0x3B0
+#define VGALIMIT1 0x3BB
 
-#define VGABASE1               0x3B0
-#define VGALIMIT1              0x3BB
+#define VGABASE2  0x3C0
+#define VGALIMIT2 0x3DF
 
-#define VGABASE2               0x3C0
-#define VGALIMIT2              0x3DF
-
-#define ISABASE                0x100
-#define ISALIMIT               0x3FF
+#define ISABASE   0x100
+#define ISALIMIT  0x3FF
 
 typedef enum {
   PciBarTypeUnknown = 0,
@@ -100,144 +97,142 @@ typedef struct {
   UINT8         Offset;
 } PCI_BAR;
 
-#define PPB_BAR_0 0
-#define PPB_BAR_1 1
-#define PPB_IO_RANGE 2
-#define PPB_MEM32_RANGE 3
-#define PPB_PMEM32_RANGE 4
-#define PPB_PMEM64_RANGE 5
-#define PPB_MEM64_RANGE 0xFF
+#define PPB_BAR_0                             0
+#define PPB_BAR_1                             1
+#define PPB_IO_RANGE                          2
+#define PPB_MEM32_RANGE                       3
+#define PPB_PMEM32_RANGE                      4
+#define PPB_PMEM64_RANGE                      5
+#define PPB_MEM64_RANGE                       0xFF
 
-#define P2C_BAR_0 0
-#define P2C_MEM_1 1
-#define P2C_MEM_2 2
-#define P2C_IO_1 3
-#define P2C_IO_2 4
+#define P2C_BAR_0                             0
+#define P2C_MEM_1                             1
+#define P2C_MEM_2                             2
+#define P2C_IO_1                              3
+#define P2C_IO_2                              4
 
-#define PCI_IO_DEVICE_SIGNATURE   EFI_SIGNATURE_32 ('p','c','i','o')
+#define PCI_IO_DEVICE_SIGNATURE               EFI_SIGNATURE_32 ('p', 'c', 'i', 'o')
 
-#define EFI_BRIDGE_IO32_DECODE_SUPPORTED        0x0001 
-#define EFI_BRIDGE_PMEM32_DECODE_SUPPORTED      0x0002 
-#define EFI_BRIDGE_PMEM64_DECODE_SUPPORTED      0x0004 
-#define EFI_BRIDGE_IO16_DECODE_SUPPORTED        0x0008  
-#define EFI_BRIDGE_PMEM_MEM_COMBINE_SUPPORTED   0x0010  
-#define EFI_BRIDGE_MEM64_DECODE_SUPPORTED       0x0020
-#define EFI_BRIDGE_MEM32_DECODE_SUPPORTED       0x0040
+#define EFI_BRIDGE_IO32_DECODE_SUPPORTED      0x0001
+#define EFI_BRIDGE_PMEM32_DECODE_SUPPORTED    0x0002
+#define EFI_BRIDGE_PMEM64_DECODE_SUPPORTED    0x0004
+#define EFI_BRIDGE_IO16_DECODE_SUPPORTED      0x0008
+#define EFI_BRIDGE_PMEM_MEM_COMBINE_SUPPORTED 0x0010
+#define EFI_BRIDGE_MEM64_DECODE_SUPPORTED     0x0020
+#define EFI_BRIDGE_MEM32_DECODE_SUPPORTED     0x0040
 
-#define PCI_MAX_HOST_BRIDGE_NUM                 0x0010
+#define PCI_MAX_HOST_BRIDGE_NUM               0x0010
 //
-// Define resource status constant 
+// Define resource status constant
 //
-#define EFI_RESOURCE_NONEXISTENT   0xFFFFFFFFFFFFFFFF
-#define EFI_RESOURCE_LESS          0xFFFFFFFFFFFFFFFE
-#define EFI_RESOURCE_SATISFIED     0x0000000000000000
+#define EFI_RESOURCE_NONEXISTENT  0xFFFFFFFFFFFFFFFF
+#define EFI_RESOURCE_LESS         0xFFFFFFFFFFFFFFFE
+#define EFI_RESOURCE_SATISFIED    0x0000000000000000
 
 //
 // Define option for attribute
 //
-#define EFI_SET_SUPPORTS           0
-#define EFI_SET_ATTRIBUTES         1
+#define EFI_SET_SUPPORTS    0
+#define EFI_SET_ATTRIBUTES  1
 
 typedef struct _PCI_IO_DEVICE {
-  UINT32                                      Signature;
-  EFI_HANDLE                                  Handle;
-  EFI_PCI_IO_PROTOCOL                         PciIo;
-  EFI_LIST_ENTRY                              Link;
- 
-  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL   PciDriverOverride;
-  EFI_DEVICE_PATH_PROTOCOL                    *DevicePath;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL             *PciRootBridgeIo;
+  UINT32                                    Signature;
+  EFI_HANDLE                                Handle;
+  EFI_PCI_IO_PROTOCOL                       PciIo;
+  EFI_LIST_ENTRY                            Link;
+
+  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL PciDriverOverride;
+  EFI_DEVICE_PATH_PROTOCOL                  *DevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL           *PciRootBridgeIo;
 
   //
-  // PCI configuration space header type               
+  // PCI configuration space header type
   //
-  PCI_TYPE00                                  Pci;
+  PCI_TYPE00                                Pci;
 
   //
   // Bus number, Device number, Function number
   //
-  UINT8                                       BusNumber;
-  UINT8                                       DeviceNumber;
-  UINT8                                       FunctionNumber;
+  UINT8                                     BusNumber;
+  UINT8                                     DeviceNumber;
+  UINT8                                     FunctionNumber;
 
   //
   // BAR for this PCI Device
   //
-  PCI_BAR                                     PciBar[PCI_MAX_BAR];
+  PCI_BAR                                   PciBar[PCI_MAX_BAR];
 
   //
   // The bridge device this pci device is subject to
   //
-  struct _PCI_IO_DEVICE                       *Parent;
+  struct _PCI_IO_DEVICE                     *Parent;
 
   //
   // A linked list for children Pci Device if it is bridge device
   //
-  EFI_LIST_ENTRY                              ChildList;
-
+  EFI_LIST_ENTRY                            ChildList;
 
   //
   // TURE if the PCI bus driver creates the handle for this PCI device
   //
-  BOOLEAN                                     Registered;
+  BOOLEAN                                   Registered;
 
   //
   // TRUE if the PCI bus driver successfully allocates the resource required by
   // this PCI device
   //
-  BOOLEAN                                     Allocated;
+  BOOLEAN                                   Allocated;
 
   //
   // The attribute this PCI device currently set
   //
-  UINT64                                      Attributes;
-
+  UINT64                                    Attributes;
 
   //
   // The attributes this PCI device actually supports
   //
-  UINT64                                      Supports;
+  UINT64                                    Supports;
 
   //
   // The resource decode the bridge supports
   //
-  UINT32                                      Decodes;
+  UINT32                                    Decodes;
 
   //
   // The OptionRom Size
   //
-  UINT64                                      RomSize;
+  UINT64                                    RomSize;
 
   //
   // The OptionRom Size
   //
-  UINT64                                      RomBase;
+  UINT64                                    RomBase;
 
   //
   // TRUE if all OpROM (in device or in platform specific position) have been processed
   //
-  BOOLEAN                                     AllOpRomProcessed;
+  BOOLEAN                                   AllOpRomProcessed;
 
   //
   // TRUE if there is any EFI driver in the OptionRom
   //
-  BOOLEAN                                     BusOverride;
+  BOOLEAN                                   BusOverride;
 
   //
   //  A list tracking reserved resource on a bridge device
   //
-  EFI_LIST_ENTRY                              ReservedResourceList;
-  
+  EFI_LIST_ENTRY                            ReservedResourceList;
+
   //
   // A list tracking image handle of platform specific overriding driver
   //
-  EFI_LIST_ENTRY                              OptionRomDriverList;
+  EFI_LIST_ENTRY                            OptionRomDriverList;
 
-  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR           *ResourcePaddingDescriptors; 
-  EFI_HPC_PADDING_ATTRIBUTES                  PaddingAttributes;
-  
-  BOOLEAN                                     IsPciExp;
-  
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR         *ResourcePaddingDescriptors;
+  EFI_HPC_PADDING_ATTRIBUTES                PaddingAttributes;
+
+  BOOLEAN                                   IsPciExp;
+
 } PCI_IO_DEVICE;
 
 
@@ -254,17 +249,16 @@ typedef struct _PCI_IO_DEVICE {
 // Global Variables
 //
 extern EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL *gEfiIncompatiblePciDeviceSupport;
-extern EFI_DRIVER_BINDING_PROTOCOL gPciBusDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gPciBusComponentName;
-extern EFI_LIST_ENTRY       gPciDevicePool;
-extern BOOLEAN              gFullEnumeration;
-extern UINTN                gPciHostBridgeNumber;
-extern EFI_HANDLE           gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
-extern UINT64               gAllOne;
-extern UINT64               gAllZero;
+extern EFI_DRIVER_BINDING_PROTOCOL                  gPciBusDriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL                  gPciBusComponentName;
+extern EFI_LIST_ENTRY                               gPciDevicePool;
+extern BOOLEAN                                      gFullEnumeration;
+extern UINTN                                        gPciHostBridgeNumber;
+extern EFI_HANDLE                                   gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
+extern UINT64                                       gAllOne;
+extern UINT64                                       gAllZero;
 
-extern EFI_PCI_PLATFORM_PROTOCOL  *gPciPlatformProtocol;
-
+extern EFI_PCI_PLATFORM_PROTOCOL                    *gPciPlatformProtocol;
 
 #include "PciIo.h"
 #include "PciCommand.h"

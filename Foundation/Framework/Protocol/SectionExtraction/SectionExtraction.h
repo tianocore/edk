@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Section extraction protocol as defined in the EFI 2.0 File Image Format specification.
+  Section extraction protocol as defined in the Tiano File Image Format specification.
 
   This interface provides a means of decoding a set of sections into a linked list of
   leaf sections.  This provides for an extensible and flexible file format.
@@ -30,9 +30,10 @@ Abstract:
 //
 // Protocol GUID definition
 //
-
-#define EFI_SECTION_EXTRACTION_PROTOCOL_GUID  \
-    { 0x448F5DA4, 0x6DD7, 0x4FE1, 0x93, 0x07, 0x69, 0x22, 0x41, 0x92, 0x21, 0x5D }
+#define EFI_SECTION_EXTRACTION_PROTOCOL_GUID \
+  { \
+    0x448F5DA4, 0x6DD7, 0x4FE1, 0x93, 0x07, 0x69, 0x22, 0x41, 0x92, 0x21, 0x5D \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_SECTION_EXTRACTION_PROTOCOL);
 
@@ -42,7 +43,7 @@ EFI_FORWARD_DECLARATION (EFI_SECTION_EXTRACTION_PROTOCOL);
 typedef
 EFI_STATUS
 (EFIAPI *EFI_OPEN_SECTION_STREAM) (
-  IN  EFI_SECTION_EXTRACTION_PROTOCOL                   *This,
+  IN  EFI_SECTION_EXTRACTION_PROTOCOL                   * This,
   IN  UINTN                                             SectionStreamLength,
   IN  VOID                                              *SectionStream,
   OUT UINTN                                             *SectionStreamHandle
@@ -51,10 +52,10 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_GET_SECTION) (
-  IN EFI_SECTION_EXTRACTION_PROTOCOL                    *This,
+  IN EFI_SECTION_EXTRACTION_PROTOCOL                    * This,
   IN UINTN                                              SectionStreamHandle,
-  IN EFI_SECTION_TYPE                                   *SectionType,
-  IN EFI_GUID                                           *SectionDefinitionGuid,
+  IN EFI_SECTION_TYPE                                   * SectionType,
+  IN EFI_GUID                                           * SectionDefinitionGuid,
   IN UINTN                                              SectionInstance,
   IN VOID                                               **Buffer,
   IN OUT UINTN                                          *BufferSize,
@@ -63,8 +64,8 @@ EFI_STATUS
 
 typedef
 EFI_STATUS
-(EFIAPI *EFI_CLOSE_SECTION_STREAM)(
-  IN EFI_SECTION_EXTRACTION_PROTOCOL                    *This,
+(EFIAPI *EFI_CLOSE_SECTION_STREAM) (
+  IN EFI_SECTION_EXTRACTION_PROTOCOL                    * This,
   IN UINTN                                              SectionStreamHandle
   );
 
@@ -72,12 +73,11 @@ EFI_STATUS
 // Protocol definition
 //
 typedef struct _EFI_SECTION_EXTRACTION_PROTOCOL {
-  EFI_OPEN_SECTION_STREAM           OpenSectionStream;
-  EFI_GET_SECTION                   GetSection;
-  EFI_CLOSE_SECTION_STREAM          CloseSectionStream;
+  EFI_OPEN_SECTION_STREAM   OpenSectionStream;
+  EFI_GET_SECTION           GetSection;
+  EFI_CLOSE_SECTION_STREAM  CloseSectionStream;
 } EFI_SECTION_EXTRACTION_PROTOCOL;
 
-extern EFI_GUID           gEfiSectionExtractionProtocolGuid;
+extern EFI_GUID gEfiSectionExtractionProtocolGuid;
 
 #endif
-

@@ -22,8 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(BootMode)
+#include EFI_PPI_DEFINITION (BootMode)
 
-EFI_GUID gPeiMasterBootModePpiGuid = PEI_MASTER_BOOT_MODE_PEIM_PPI;
+EFI_GUID  gPeiMasterBootModePpiGuid = PEI_MASTER_BOOT_MODE_PEIM_PPI;
 
 EFI_GUID_STRING(&gPeiMasterBootModePpiGuid, "BootMode", "Master Boot Mode PPI");

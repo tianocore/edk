@@ -26,21 +26,19 @@ Abstract:
 //
 // HID Item general structure
 //
-typedef struct _hid_item 
-{
+typedef struct _hid_item {
   UINT16  Format;
   UINT8   Size;
   UINT8   Type;
   UINT8   Tag;
-  union 
-  {
-      UINT8   U8;
-      UINT16  U16;
-      UINT32  U32;
-      INT8    I8;
-      INT16   I16;
-      INT32   I32;
-      UINT8   *LongData;
+  union {
+    UINT8   U8;
+    UINT16  U16;
+    UINT32  U32;
+    INT8    I8;
+    INT16   I16;
+    INT32   I32;
+    UINT8   *LongData;
   } Data;
 } HID_ITEM;
 
@@ -51,14 +49,14 @@ typedef struct {
   INT32   PhysicalMin;
   INT32   PhysicalMax;
   UINT16  UnitExp;
-  UINT16  UINT;
-  UINT16  ReportId;
-  UINT16  ReportSize;
-  UINT16  ReportCount;
+  UINT16 UINT;
+  UINT16 ReportId;
+  UINT16 ReportSize;
+  UINT16 ReportCount;
 } HID_GLOBAL;
 
 typedef struct {
-  UINT16  Usage[16]; /* usage array */
+  UINT16  Usage[16];  /* usage array */
   UINT16  UsageIndex;
   UINT16  UsageMin;
 } HID_LOCAL;
@@ -82,6 +80,24 @@ ParseMouseReportDescriptor (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  UINT8           *ReportDescriptor,
   IN  UINTN           ReportSize
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbMouse          - TODO: add argument description
+  ReportDescriptor  - TODO: add argument description
+  ReportSize        - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

@@ -28,7 +28,7 @@ Abstract:
 //
 // Pointer to the CPU Architectural Protocol instance
 //
-EFI_CPU_ARCH_PROTOCOL  *mCpu;
+EFI_CPU_ARCH_PROTOCOL   *mCpu;
 
 //
 // The Timer Architectural Protocol that this driver produces
@@ -44,53 +44,75 @@ EFI_TIMER_ARCH_PROTOCOL mTimer = {
 // Define a global that we can use to shut down the NT timer thread when
 // the timer is canceled.
 //
-BOOLEAN  mCancelTimerThread = FALSE;
+BOOLEAN                 mCancelTimerThread = FALSE;
 
 //
 // The notification function to call on every timer interrupt
 //
-EFI_TIMER_NOTIFY  mTimerNotifyFunction = NULL;
+EFI_TIMER_NOTIFY        mTimerNotifyFunction = NULL;
 
 //
 // The current period of the timer interrupt
 //
-UINT64  mTimerPeriod;
+UINT64                  mTimerPeriod;
 
 //
 // The thread handle for this driver
 //
-HANDLE  mNtMainThreadHandle;
-
+HANDLE                  mNtMainThreadHandle;
 
 //
 // The timer value from the last timer interrupt
 //
-UINT32  mNtLastTick;
+UINT32                  mNtLastTick;
 
 //
 // Critical section used to update varibles shared between the main thread and
 // the timer interrupt thread.
 //
-CRITICAL_SECTION  mNtCriticalSection;
+CRITICAL_SECTION        mNtCriticalSection;
 
 //
 // Worker Functions
 //
+UINT                    mMMTimerThreadID = 0;
 
+VOID
+CALLBACK
+MMTimerThread (
+  UINT  wTimerID,
+  UINT  msg,
+  DWORD dwUser,
+  DWORD dw1,
+  DWORD dw2
+  )
+/*++
 
-UINT  mMMTimerThreadID = 0;
+Routine Description:
 
+  TODO: Add function description
 
-VOID CALLBACK MMTimerThread(UINT wTimerID, UINT msg, DWORD dwUser, DWORD dw1, DWORD dw2)
+Arguments:
+
+  wTimerID  - TODO: add argument description
+  msg       - TODO: add argument description
+  dwUser    - TODO: add argument description
+  dw1       - TODO: add argument description
+  dw2       - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   EFI_TPL           OriginalTPL;
   UINT32            CurrentTick;
-  UINT32            Delta;  
+  UINT32            Delta;
   EFI_TIMER_NOTIFY  CallbackFunction;
   BOOLEAN           InterruptState;
 
-
-  if (!mCancelTimerThread) {          
+  if (!mCancelTimerThread) {
   
     //
     //  Suspend the main thread until we are done
@@ -105,9 +127,9 @@ VOID CALLBACK MMTimerThread(UINT wTimerID, UINT msg, DWORD dwUser, DWORD dw1, DW
     //
     if (mCancelTimerThread) {
       gWinNt->ResumeThread (mNtMainThreadHandle);
-      gWinNt->timeKillEvent(wTimerID);
+      gWinNt->timeKillEvent (wTimerID);
       mMMTimerThreadID = 0;
-      return;
+      return ;
     }
 
     mCpu->GetInterruptState (mCpu, &InterruptState);
@@ -122,7 +144,7 @@ VOID CALLBACK MMTimerThread(UINT wTimerID, UINT msg, DWORD dwUser, DWORD dw1, DW
       //
       mCpu->GetInterruptState (mCpu, &InterruptState);
       while (!InterruptState) {
-        gWinNt->Sleep(0);
+        gWinNt->Sleep (0);
         mCpu->GetInterruptState (mCpu, &InterruptState);
       }
        
@@ -133,21 +155,21 @@ VOID CALLBACK MMTimerThread(UINT wTimerID, UINT msg, DWORD dwUser, DWORD dw1, DW
       mCpu->GetInterruptState (mCpu, &InterruptState);
     }
 
-    // 
+    //
     //  Get the current system tick
     //
     CurrentTick = gWinNt->GetTickCount ();
-    Delta = CurrentTick - mNtLastTick;
+    Delta       = CurrentTick - mNtLastTick;
     mNtLastTick = CurrentTick;
 
-    // 
+    //
     //  If delay was more then 1 second, ignore it (probably debugging case)
     //
     if (Delta < 1000) {
 
       OriginalTPL = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
 
-      // 
+      //
       //  Inform the firmware of an "timer interrupt".  The time
       //  expired since the last call is 10,000 times the number
       //  of ms.  (or 100ns units)
@@ -173,16 +195,15 @@ VOID CALLBACK MMTimerThread(UINT wTimerID, UINT msg, DWORD dwUser, DWORD dw1, DW
     //
     gWinNt->ResumeThread (mNtMainThreadHandle);
   } else {
-    gWinNt->timeKillEvent(wTimerID);
+    gWinNt->timeKillEvent (wTimerID);
     mMMTimerThreadID = 0;
   }
-  
+
 }
 
-
-
-UINT 
-CreateNtTimer (  
+UINT
+CreateNtTimer (
+  VOID
   )
 /*++
 
@@ -196,17 +217,18 @@ Returns:
   Timer ID
 
 --*/
+// TODO: function comment is missing 'Arguments:'
 {
-  UINT32            SleepCount;
+  UINT32  SleepCount;
 
   //
   //  Set our thread priority higher than the "main" thread.
   //
   gWinNt->SetThreadPriority (
-            gWinNt->GetCurrentThread(), 
+            gWinNt->GetCurrentThread (),
             THREAD_PRIORITY_HIGHEST
             );
-            
+
   //
   //  Calc the appropriate interval
   //
@@ -214,15 +236,20 @@ Returns:
   SleepCount = (UINT32) (mTimerPeriod + 5000) / 10000;
   gWinNt->LeaveCriticalSection (&mNtCriticalSection);
 
-  return gWinNt->timeSetEvent(SleepCount, 0, MMTimerThread, (DWORD_PTR)NULL, TIME_PERIODIC | TIME_KILL_SYNCHRONOUS | TIME_CALLBACK_FUNCTION);
- 
-}
+  return gWinNt->timeSetEvent (
+                  SleepCount,
+                  0,
+                  MMTimerThread,
+                  (DWORD_PTR) NULL,
+                  TIME_PERIODIC | TIME_KILL_SYNCHRONOUS | TIME_CALLBACK_FUNCTION
+                  );
 
+}
 
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverRegisterHandler (
-  IN EFI_TIMER_ARCH_PROTOCOL  *This,
+  IN EFI_TIMER_ARCH_PROTOCOL           *This,
   IN EFI_TIMER_NOTIFY                  NotifyFunction
   )
 /*++
@@ -273,12 +300,13 @@ Returns:
   if (NotifyFunction == NULL && mTimerNotifyFunction == NULL) {
     return EFI_INVALID_PARAMETER;
   }
+
   if (NotifyFunction != NULL && mTimerNotifyFunction != NULL) {
     return EFI_ALREADY_STARTED;
   }
 
   //
-  // Use Critical Section to update the notification function that is 
+  // Use Critical Section to update the notification function that is
   // used from the timer interrupt thread.
   //
   gWinNt->EnterCriticalSection (&mNtCriticalSection);
@@ -289,7 +317,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -353,8 +380,9 @@ Returns:
     //
 
     if (mMMTimerThreadID) {
-      gWinNt->timeKillEvent(mMMTimerThreadID);
+      gWinNt->timeKillEvent (mMMTimerThreadID);
     }
+
     mMMTimerThreadID = 0;
 
     //
@@ -368,42 +396,42 @@ Returns:
 
     //
     // NULL out the thread handle so it will be re-created if the timer is enabled again
-    //    
+    //
 
-  } else if ((TimerPeriod > TIMER_MINIMUM_VALUE) && (TimerPeriod < TIMER_MAXIMUM_VALUE)) {   
+  } else if ((TimerPeriod > TIMER_MINIMUM_VALUE) && (TimerPeriod < TIMER_MAXIMUM_VALUE)) {
     //
     // If the TimerPeriod is valid, then create and/or adjust the period of the timer thread
     //
     gWinNt->EnterCriticalSection (&mNtCriticalSection);
 
-    mTimerPeriod = TimerPeriod;
+    mTimerPeriod        = TimerPeriod;
 
-    mCancelTimerThread = FALSE;
+    mCancelTimerThread  = FALSE;
 
-    gWinNt->LeaveCriticalSection (&mNtCriticalSection);    
-    
-    // 
+    gWinNt->LeaveCriticalSection (&mNtCriticalSection);
+
+    //
     //  Get the starting tick location if we are just starting the timer thread
-    //      
+    //
     mNtLastTick = gWinNt->GetTickCount ();
 
     if (mMMTimerThreadID) {
-      gWinNt->timeKillEvent(mMMTimerThreadID);
+      gWinNt->timeKillEvent (mMMTimerThreadID);
     }
-    mMMTimerThreadID = 0;
-    
-    mMMTimerThreadID = CreateNtTimer();                
-    
+
+    mMMTimerThreadID  = 0;
+
+    mMMTimerThreadID  = CreateNtTimer ();
+
   }
 
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverGetTimerPeriod (
-  IN EFI_TIMER_ARCH_PROTOCOL  *This,
+  IN EFI_TIMER_ARCH_PROTOCOL            *This,
   OUT UINT64                            *TimerPeriod
   )
 /*++
@@ -468,10 +496,10 @@ Returns:
 
 --*/
 {
-  return EFI_UNSUPPORTED;  
+  return EFI_UNSUPPORTED;
 }
 
-EFI_DRIVER_ENTRY_POINT(WinNtTimerDriverInitialize)
+EFI_DRIVER_ENTRY_POINT (WinNtTimerDriverInitialize)
 
 EFI_STATUS
 EFIAPI
@@ -526,14 +554,14 @@ Returns:
   //  Get our handle so the timer tick thread can suspend
   //
   Result = gWinNt->DuplicateHandle (
-                     gWinNt->GetCurrentProcess (),  
-                     gWinNt->GetCurrentThread (),   
-                     gWinNt->GetCurrentProcess (),  
-                     &mNtMainThreadHandle,          
-                     0,                    
-                     FALSE,                
-                     DUPLICATE_SAME_ACCESS 
-                     );
+                    gWinNt->GetCurrentProcess (),
+                    gWinNt->GetCurrentThread (),
+                    gWinNt->GetCurrentProcess (),
+                    &mNtMainThreadHandle,
+                    0,
+                    FALSE,
+                    DUPLICATE_SAME_ACCESS
+                    );
   if (Result == 0) {
     return EFI_DEVICE_ERROR;
   }
@@ -558,11 +586,11 @@ Returns:
   //
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
-                   &Handle,
-                   &gEfiTimerArchProtocolGuid, 
-                   EFI_NATIVE_INTERFACE,
-                   &mTimer
-                   );
+                  &Handle,
+                  &gEfiTimerArchProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &mTimer
+                  );
   if (EFI_ERROR (Status)) {
     //
     // Cancel the timer

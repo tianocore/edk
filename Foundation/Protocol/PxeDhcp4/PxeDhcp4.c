@@ -19,13 +19,10 @@ Abstract:
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(PxeDhcp4)
+#include EFI_PROTOCOL_DEFINITION (PxeDhcp4)
 
-EFI_GUID gEfiPxeDhcp4ProtocolGuid = EFI_PXE_DHCP4_PROTOCOL_GUID;
+EFI_GUID  gEfiPxeDhcp4ProtocolGuid = EFI_PXE_DHCP4_PROTOCOL_GUID;
 
-EFI_GUID_STRING(
-  &gEfiPxeDhcp4ProtocolGuid,
-  "PXE DHCP4 Protocol",
-  "EFI 1.1 PXE DHCPv4 Protocol");
+EFI_GUID_STRING(&gEfiPxeDhcp4ProtocolGuid, "PXE DHCP4 Protocol", "PXE DHCPv4 Protocol");
 
 /* EOF - PxeDhcp4.c */

@@ -24,9 +24,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(DeviceIo)
+#include EFI_PROTOCOL_DEFINITION (DeviceIo)
 
-
-EFI_GUID gEfiDeviceIoProtocolGuid = EFI_DEVICE_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiDeviceIoProtocolGuid = EFI_DEVICE_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiDeviceIoProtocolGuid, "DeviceIo Protocol", "EFI 1.0 Device IO Protocol");

@@ -20,6 +20,7 @@ Abstract:
 Revision History
 
 --*/
+
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
 
@@ -32,7 +33,7 @@ Revision History
 #include EFI_GUID_DEFINITION (GlobalVariable)
 
 #ifndef ISO_639_2_ENTRY_SIZE
-  #define ISO_639_2_ENTRY_SIZE    3
+#define ISO_639_2_ENTRY_SIZE  3
 #endif
 
 VOID

@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  Boot Script Executer PPI GUID as defined in EFI 2.0
+  Boot Script Executer PPI GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(S3Resume)
+#include EFI_PPI_DEFINITION (S3Resume)
 
-EFI_GUID gPeiS3ResumePpiGuid = PEI_S3_RESUME_PPI_GUID;
+EFI_GUID  gPeiS3ResumePpiGuid = PEI_S3_RESUME_PPI_GUID;
 
 EFI_GUID_STRING(&gPeiS3ResumePpiGuid, "S3Resume", "S3 Resume PPI");

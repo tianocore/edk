@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  Dependency.h
+  EfiDependency.h
 
 Abstract:
    
@@ -29,8 +29,8 @@ Abstract:
 // EFI_DEP_AFTER        - If present, it must be the first and only opcode
 // EFI_DEP_SOR          - If present, it must be the first opcode
 // EFI_DEP_REPLACE_TRUE - Used to dynamically patch the dependecy expression
-//                        to save time.  A EFI_DEP_PUSH is evauated one an 
-//                        replaced with EFI_DEP_REPLACE_TRUE        
+//                        to save time.  A EFI_DEP_PUSH is evauated one an
+//                        replaced with EFI_DEP_REPLACE_TRUE
 //
 #define EFI_DEP_BEFORE        0x00
 #define EFI_DEP_AFTER         0x01
@@ -42,7 +42,7 @@ Abstract:
 #define EFI_DEP_FALSE         0x07
 #define EFI_DEP_END           0x08
 #define EFI_DEP_SOR           0x09
-#define EFI_DEP_REPLACE_TRUE  0xff  
+#define EFI_DEP_REPLACE_TRUE  0xff
 
 //
 // Define the initial size of the dependency expression evaluation stack

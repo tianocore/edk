@@ -37,6 +37,9 @@ Routine Description:
   
 Arguments:
 
+  This              - Indicates calling context 
+  CurrentDebugMask  - Ptr to store current debug mask
+
 Returns:
   EFI_SUCCESS - Debug mask is retrieved successfully
   EFI_INVALID_PARAMETER - CurrentDebugMask is NULL.
@@ -74,6 +77,9 @@ Routine Description:
   
 Arguments:
 
+  This          - Calling context
+  NewDebugMask  - New Debug Mask value to set
+
 Returns:
   EFI_SUCCESS - Debug mask is updated with the new value successfully
   EFI_UNSUPPORTED - The handle on which this protocol is installed is not an image handle.
@@ -98,9 +104,19 @@ InstallDebugMaskProtocol(
 
 Routine Description:
 
+  Install debug mask protocol on an image handle.
+
 Arguments:
 
+  ImageHandle     - Image handle which debug mask protocol will install on
+
 Returns:
+
+  EFI_INVALID_PARAMETER   - Invalid image handle
+  
+  EFI_OUT_OF_RESOURCES    - No enough buffer could be allocated
+  
+  EFI_SUCCESS             - Debug mask protocol successfully installed
 
 --*/
 {
@@ -109,7 +125,7 @@ Returns:
   DEBUG_MASK_PRIVATE_DATA    *DebugMaskPrivate;
 
   if (ImageHandle == NULL) {
-    return (EFI_INVALID_PARAMETER);
+    return EFI_INVALID_PARAMETER;
   }
   //
   // Check Image Handle
@@ -121,7 +137,7 @@ Returns:
                   );
                   
   if (EFI_ERROR (Status)) {
-    return (EFI_INVALID_PARAMETER);
+    return EFI_INVALID_PARAMETER;
   }
   //
   // Create Pool for Private Data
@@ -129,7 +145,7 @@ Returns:
   DebugMaskPrivate = CoreAllocateZeroBootServicesPool (sizeof (DEBUG_MASK_PRIVATE_DATA));
   
   if (DebugMaskPrivate == NULL) {
-    return (EFI_OUT_OF_RESOURCES);
+    return EFI_OUT_OF_RESOURCES;
   }
   //
   // Fill in private data structure
@@ -160,9 +176,17 @@ UninstallDebugMaskProtocol(
 
 Routine Description:
 
+  Uninstall debug mask protocol on an image handle.
+
 Arguments:
 
+  ImageHandle     - Image handle which debug mask protocol will uninstall on
+
 Returns:
+
+  EFI_INVALID_PARAMETER   - Invalid image handle
+  
+  EFI_SUCCESS             - Debug mask protocol successfully uninstalled
 
 --*/
 {
@@ -171,7 +195,7 @@ Returns:
   DEBUG_MASK_PRIVATE_DATA    *DebugMaskPrivate;
   
   if (ImageHandle == NULL) {
-    return (EFI_INVALID_PARAMETER);
+    return EFI_INVALID_PARAMETER;
   }
   //
   // Get Protocol from ImageHandle

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-    EFI 2.0 Miscellaneous Services SetWatchdogTimer service implementation
+    Tiano Miscellaneous Services SetWatchdogTimer service implementation
 
 --*/
 
@@ -31,7 +31,7 @@ CoreSetWatchdogTimer (
   IN UINTN    Timeout,
   IN UINT64   WatchdogCode,
   IN UINTN    DataSize,
-  IN CHAR16   *WatchdogData   OPTIONAL
+  IN CHAR16   *WatchdogData OPTIONAL
   )
 /*++
 
@@ -59,7 +59,7 @@ Returns:
 
 --*/
 {
-  EFI_STATUS          Status;
+  EFI_STATUS  Status;
 
   //
   // Check our architectural protocol
@@ -71,8 +71,8 @@ Returns:
   //
   // Attempt to set the timeout
   //
-  Status = gWatchdogTimer->SetTimerPeriod (gWatchdogTimer, MultU64x32(Timeout, WATCHDOG_TIMER_CALIBRATE_PER_SECOND));
-  
+  Status = gWatchdogTimer->SetTimerPeriod (gWatchdogTimer, MultU64x32 (Timeout, WATCHDOG_TIMER_CALIBRATE_PER_SECOND));
+
   //
   // Check for errors
   //
@@ -82,4 +82,3 @@ Returns:
 
   return EFI_SUCCESS;
 }
-

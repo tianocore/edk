@@ -15,14 +15,14 @@ Module Name:
 
 Abstract:
 
-  CPU IO Protocol GUID as defined in EFI 2.0
+  CPU IO Protocol GUID as defined in Tiano
 
 
 --*/
 
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(CpuIo)
+#include EFI_PROTOCOL_DEFINITION (CpuIo)
 
-EFI_GUID gEfiCpuIoProtocolGuid = EFI_CPU_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiCpuIoProtocolGuid = EFI_CPU_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiCpuIoProtocolGuid, "CPU IO", "CPU IO Protocol");

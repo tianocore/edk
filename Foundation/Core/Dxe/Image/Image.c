@@ -110,6 +110,8 @@ Arguments:
 
 Returns:
 
+  Status code.
+
 --*/
 {
   EFI_STATUS                      Status;
@@ -189,6 +191,21 @@ EFI_STATUS
 CoreShutdownImageServices (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Transfer control of runtime images to runtime service
+
+Arguments:
+
+  None
+
+Returns:
+
+  EFI_SUCCESS       - Function successfully returned
+
+--*/
 {
   EFI_LIST_ENTRY              *Link;
   LOADED_IMAGE_PRIVATE_DATA   *Image;
@@ -232,7 +249,7 @@ Routine Description:
 
 Arguments:
 
-  Pe32Data         - The base address of the PE/COFF file that is to be loaded, relocated, and invoked
+  Pe32Handle       - The handle of PE32 image
   Image            - PE image to be loaded
   DstBuffer        - The buffer to store the image
   EntryPoint       - A pointer to the entry point
@@ -243,6 +260,10 @@ Returns:
   EFI_SUCCESS          - The file was loaded, relocated, and invoked
 
   EFI_OUT_OF_RESOURCES - There was not enough memory to load and relocate the PE/COFF file
+
+  EFI_INVALID_PARAMETER - Invalid parameter
+  
+  EFI_BUFFER_TOO_SMALL  - Buffer for image is too small
 
 --*/
 {
@@ -317,7 +338,8 @@ Returns:
     }
 
     if (Image->NumberOfPages != 0 &&
-        Image->NumberOfPages < (EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment))){
+        Image->NumberOfPages < 
+        (EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment))) {
       Image->NumberOfPages = EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment); 
       return EFI_BUFFER_TOO_SMALL;
     }
@@ -472,7 +494,8 @@ Returns:
       DEBUG ((EFI_D_INFO | EFI_D_LOAD, "%a", EfiFileName)); // &Image->ImageContext.PdbPointer[StartIndex]));
     }
     DEBUG ((EFI_D_INFO | EFI_D_LOAD, "\n"));
-  });
+  }
+  );
 
   return EFI_SUCCESS;
 
@@ -493,9 +516,15 @@ CoreLoadedImageInfo (
 
 Routine Description:
 
+  Get the image's private data from its handle.
+
 Arguments:
 
+  ImageHandle     - The image handle
+  
 Returns:
+
+  Return the image private data associated with ImageHandle.
 
 --*/
 {
@@ -836,10 +865,31 @@ CoreLoadImageEx (
 
 Routine Description:
 
+  Loads an EFI image into memory and returns a handle to the image with extended parameters.
+
 Arguments:
+
+  This                - Calling context
+  ParentImageHandle   - The caller's image handle.
+  FilePath            - The specific file path from which the image is loaded.
+  SourceBuffer        - If not NULL, a pointer to the memory location containing a copy of 
+                        the image to be loaded.
+  SourceSize          - The size in bytes of SourceBuffer.
+  DstBuffer           - The buffer to store the image.
+  NumberOfPages       - For input, specifies the space size of the image by caller if not NULL.
+                        For output, specifies the actual space size needed.
+  ImageHandle         - Image handle for output.
+  EntryPoint          - Image entry point for output.
+  Attribute           - The bit mask of attributes to set for the load PE image.
 
 Returns:
 
+  EFI_SUCCESS            - The image was loaded into memory.
+  EFI_NOT_FOUND          - The FilePath was not found.
+  EFI_INVALID_PARAMETER  - One of the parameters has an invalid value.
+  EFI_UNSUPPORTED        - The image type is not supported, or the device path cannot be 
+                           parsed to locate the proper protocol for loading the file.
+  EFI_OUT_OF_RESOURCES   - Image was not loaded due to insufficient resources.
 --*/
 {
   return CoreLoadImageCommon (
@@ -870,9 +920,26 @@ CoreStartImage (
 
 Routine Description:
 
+  Transfer control to a loaded image's entry point.
+
 Arguments:
 
+  ImageHandle     - Handle of image to be started.
+  
+  ExitDataSize    - Pointer of the size to ExitData
+  
+  ExitData        - Pointer to a pointer to a data buffer that includes a Null-terminated
+                    Unicode string, optionally followed by additional binary data. The string
+                    is a description that the caller may use to further indicate the reason for
+                    the image¡¯s exit.
+
 Returns:
+
+  EFI_INVALID_PARAMETER     - Invalid parameter
+  
+  EFI_OUT_OF_RESOURCES       - No enough buffer to allocate
+  
+  EFI_SUCCESS               - Successfully transfer control to the image's entry point.
 
 --*/
 {
@@ -966,10 +1033,12 @@ Returns:
   DEBUG_CODE (
     if (Image->ExitDataSize != 0 || Image->ExitData != NULL) {
 
-      DEBUG ((EFI_D_LOAD, "StartImage: ExitDataSize %d, ExitData %x",
-                          Image->ExitDataSize,
-                          Image->ExitData
-                          ));
+      DEBUG (
+        (EFI_D_LOAD,
+        "StartImage: ExitDataSize %d, ExitData %x",
+                            Image->ExitDataSize,
+        Image->ExitData)
+        );
       if (Image->ExitData != NULL) {
         DEBUG ((EFI_D_LOAD, " (%hs)", Image->ExitData));
       } 
@@ -1029,6 +1098,8 @@ Arguments:
   FreePage   - Free allocated pages
 
 Returns:
+
+  None
 
 --*/
 {
@@ -1168,9 +1239,29 @@ CoreExit (
 
 Routine Description:
 
+  Terminates the currently loaded EFI image and returns control to boot services.
+
 Arguments:
 
+  ImageHandle       - Handle that identifies the image. This parameter is passed to the image 
+                      on entry.
+  Status            - The image¡¯s exit code.
+  ExitDataSize      - The size, in bytes, of ExitData. Ignored if ExitStatus is
+                      EFI_SUCCESS.
+  ExitData          - Pointer to a data buffer that includes a Null-terminated Unicode string,
+                      optionally followed by additional binary data. The string is a 
+                      description that the caller may use to further indicate the reason for
+                      the image¡¯s exit.
+
 Returns:
+
+  EFI_INVALID_PARAMETER     - Image handle is NULL or it is not current image.
+  
+  EFI_SUCCESS               - Successfully terminates the currently loaded EFI image.
+  
+  EFI_ACCESS_DENIED         - Should never reach there.
+
+  EFI_OUT_OF_RESOURCES      - Could not allocate pool
 
 --*/
 {
@@ -1247,7 +1338,7 @@ Returns:
 
  EFI_SUCCESS            - The image has been unloaded.
  EFI_UNSUPPORTED        - The image has been sarted, and does not support unload.
- EFI_INVALID_PARAPETER  - ImageHandle is not a valid image handle.
+ EFI_INVALID_PARAMPETER - ImageHandle is not a valid image handle.
 
 --*/
 {
@@ -1300,9 +1391,21 @@ CoreUnloadImageEx (
 
 Routine Description:
 
+  Unload the specified image.
+
 Arguments:
 
+  This              - Indicates the calling context.
+
+  ImageHandle       - The specified image handle.
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Image handle is NULL.
+  
+  EFI_UNSUPPORTED             - Attempt to unload an unsupported image.
+  
+  EFI_SUCCESS                 - Image successfully unloaded.
 
 --*/
 {
@@ -1323,6 +1426,21 @@ CoreFlushICache (
   IN EFI_PHYSICAL_ADDRESS     Start,
   IN UINT64                   Length
   )
+/*++
+
+Routine Description:
+
+  flush the processor instruction cache.
+
+Arguments:
+
+  Start             - Start adddress in memory to flush.
+
+  Length            - Length of memory to flush.
+
+Returns:
+
+--*/
 {
   return gEfiPeiFlushInstructionCache->Flush (
                                          gEfiPeiFlushInstructionCache,

@@ -28,32 +28,49 @@ Revision History
 #include "Pci22.h"
 #include "EfiDriverLib.h"
 
-#include EFI_PROTOCOL_DEFINITION(PciHostBridgeResourceAllocation)
+#include EFI_PROTOCOL_DEFINITION (PciHostBridgeResourceAllocation)
 
-#define HOST_BRIDGE_NUMBER  1
+#define HOST_BRIDGE_NUMBER        1
 
-#define PCI_HOST_BRIDGE_SIGNATURE  EFI_SIGNATURE_32('e', 'h', 's', 't')
+#define PCI_HOST_BRIDGE_SIGNATURE EFI_SIGNATURE_32 ('e', 'h', 's', 't')
 typedef struct {
-  UINTN               Signature;
-  EFI_HANDLE          HostBridgeHandle;
-  UINTN               RootBridgeNumber;
-  EFI_LIST_ENTRY      Head;
-  BOOLEAN             ResourceSubmited;  
-  BOOLEAN             CanRestarted;  
-  
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL        ResAlloc;
+  UINTN                                             Signature;
+  EFI_HANDLE                                        HostBridgeHandle;
+  UINTN                                             RootBridgeNumber;
+  EFI_LIST_ENTRY                                    Head;
+  BOOLEAN                                           ResourceSubmited;
+  BOOLEAN                                           CanRestarted;
+
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL  ResAlloc;
 } PCI_HOST_BRIDGE_INSTANCE;
 
 #define INSTANCE_FROM_RESOURCE_ALLOCATION_THIS(a) \
   CR(a, PCI_HOST_BRIDGE_INSTANCE, ResAlloc, PCI_HOST_BRIDGE_SIGNATURE)
 
-extern PCI_CONFIG_ACCESS_CF8 gConfigData;
+extern PCI_CONFIG_ACCESS_CF8  gConfigData;
 
 EFI_STATUS
 InitializePciHostBridge (
   IN EFI_HANDLE       ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  SystemTable - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 //  HostBridge Resource Allocation interface
@@ -62,48 +79,172 @@ EFI_STATUS
 NotifyPhase (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE    Phase
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This  - TODO: add argument description
+  Phase - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 GetNextRootBridge (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN OUT EFI_HANDLE                                   *RootBridgeHandle
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 GetAttributes (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
   OUT UINT64                                          *Attributes
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+  Attributes        - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 StartBusEnumeration (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
   OUT VOID                                            **Configuration
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+  Configuration     - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 SetBusNumbers (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
   IN VOID                                             *Configuration
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+  Configuration     - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 SubmitResources (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
   IN VOID                                             *Configuration
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+  Configuration     - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 GetProposedResources (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
   OUT VOID                                            **Configuration
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+  Configuration     - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 PreprocessController (
@@ -111,6 +252,25 @@ PreprocessController (
   IN  EFI_HANDLE                                        RootBridgeHandle,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS       PciAddress,
   IN  EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE      Phase
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  RootBridgeHandle  - TODO: add argument description
+  PciAddress        - TODO: add argument description
+  Phase             - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 #endif

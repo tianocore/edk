@@ -28,68 +28,83 @@ Abstract:
 #include EFI_GUID_DEFINITION (FirmwareFileSystem)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 
-#define FIRMWARE_BLOCK_SIZE       0x10000
+#define FIRMWARE_BLOCK_SIZE 0x10000
 
 typedef struct {
   UINT64                      FvLength;
   EFI_FIRMWARE_VOLUME_HEADER  FvbInfo;
   //
-  //EFI_FV_BLOCK_MAP_ENTRY    ExtraBlockMap[n];//n=0
+  // EFI_FV_BLOCK_MAP_ENTRY    ExtraBlockMap[n];//n=0
   //
   EFI_FV_BLOCK_MAP_ENTRY      End[1];
 } EFI_FVB_MEDIA_INFO;
 
-#define FVB_MEDIA_BLOCK_SIZE     FIRMWARE_BLOCK_SIZE
-#define RECOVERY_BOIS_BLOCK_NUM  FIRMWARE_BLOCK_NUMBER
-#define SYSTEM_NV_BLOCK_NUM      2
+#define FVB_MEDIA_BLOCK_SIZE    FIRMWARE_BLOCK_SIZE
+#define RECOVERY_BOIS_BLOCK_NUM FIRMWARE_BLOCK_NUMBER
+#define SYSTEM_NV_BLOCK_NUM     2
 
-EFI_FVB_MEDIA_INFO mPlatformFvbMediaInfo[] = {
+EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
   //
   // Recovery BOIS FVB
   //
   {
     EFI_WINNT_FIRMWARE_LENGTH,
     {
-      {0,}, //ZeroVector[16]
+      {
+        0,
+      },  // ZeroVector[16]
       EFI_FIRMWARE_FILE_SYSTEM_GUID,
       FVB_MEDIA_BLOCK_SIZE * RECOVERY_BOIS_BLOCK_NUM,
       EFI_FVH_SIGNATURE,
-      EFI_FVB_READ_ENABLED_CAP | EFI_FVB_READ_STATUS | EFI_FVB_WRITE_ENABLED_CAP | EFI_FVB_WRITE_STATUS | EFI_FVB_ERASE_POLARITY,
+      EFI_FVB_READ_ENABLED_CAP |
+        EFI_FVB_READ_STATUS |
+        EFI_FVB_WRITE_ENABLED_CAP |
+        EFI_FVB_WRITE_STATUS |
+        EFI_FVB_ERASE_POLARITY,
       sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
-      0,    //CheckSum
-      {0,}, //Reserved[3]
-      1,    //Revision
+      0,  // CheckSum
+      {
+        0,
+      },  // Reserved[3]
+      1,  // Revision
       {
         RECOVERY_BOIS_BLOCK_NUM,
         FVB_MEDIA_BLOCK_SIZE,
       }
-    }, 
+    },
     {
       0,
       0
     }
   },
-
   //
   // Systen NvStorage FVB
   //
   {
-    EFI_WINNT_RUNTIME_UPDATABLE_LENGTH + EFI_WINNT_FTW_SPARE_BLOCK_LENGTH, 
+    EFI_WINNT_RUNTIME_UPDATABLE_LENGTH + EFI_WINNT_FTW_SPARE_BLOCK_LENGTH,
     {
-      {0,},//ZeroVector[16]
+      {
+        0,
+      },  // ZeroVector[16]
       EFI_SYSTEM_NV_DATA_HOB_GUID,
       FVB_MEDIA_BLOCK_SIZE * SYSTEM_NV_BLOCK_NUM,
       EFI_FVH_SIGNATURE,
-      EFI_FVB_READ_ENABLED_CAP | EFI_FVB_READ_STATUS | EFI_FVB_WRITE_ENABLED_CAP | EFI_FVB_WRITE_STATUS | EFI_FVB_ERASE_POLARITY,
+      EFI_FVB_READ_ENABLED_CAP |
+        EFI_FVB_READ_STATUS |
+        EFI_FVB_WRITE_ENABLED_CAP |
+        EFI_FVB_WRITE_STATUS |
+        EFI_FVB_ERASE_POLARITY,
       sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
-      0,    //CheckSum
-      {0,}, //Reserved[3]
-      1,    //Revision
+      0,  // CheckSum
+      {
+        0,
+      },  // Reserved[3]
+      1,  // Revision
       {
         SYSTEM_NV_BLOCK_NUM,
         FVB_MEDIA_BLOCK_SIZE,
       }
-    }, 
+    },
     {
       0,
       0
@@ -97,19 +112,20 @@ EFI_FVB_MEDIA_INFO mPlatformFvbMediaInfo[] = {
   }
 };
 
-EFI_STATUS 
+EFI_STATUS
 GetFvbInfo (
   IN  UINT64                        FvLength,
   OUT EFI_FIRMWARE_VOLUME_HEADER    **FvbInfo
-  ) 
+  )
 {
-  UINTN   Index;
+  UINTN Index;
 
-  for (Index=0; Index < sizeof (mPlatformFvbMediaInfo)/sizeof (EFI_FVB_MEDIA_INFO); Index += 1) {
+  for (Index = 0; Index < sizeof (mPlatformFvbMediaInfo) / sizeof (EFI_FVB_MEDIA_INFO); Index += 1) {
     if (mPlatformFvbMediaInfo[Index].FvLength == FvLength) {
       *FvbInfo = &mPlatformFvbMediaInfo[Index].FvbInfo;
       return EFI_SUCCESS;
     }
   }
+
   return EFI_NOT_FOUND;
 }

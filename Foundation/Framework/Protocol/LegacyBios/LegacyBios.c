@@ -25,7 +25,6 @@ Revision History
 
 #include EFI_PROTOCOL_DEFINITION (LegacyBios)
 
-EFI_GUID gEfiLegacyBiosProtocolGuid = EFI_LEGACY_BIOS_PROTOCOL_GUID;
+EFI_GUID  gEfiLegacyBiosProtocolGuid = EFI_LEGACY_BIOS_PROTOCOL_GUID;
 
-EFI_GUID_STRING (&gEfiLegacyBiosProtocolGuid, "Legacy BIOS Protocol", "Legacy BIOS Protocol");
-
+EFI_GUID_STRING(&gEfiLegacyBiosProtocolGuid, "Legacy BIOS Protocol", "Legacy BIOS Protocol");

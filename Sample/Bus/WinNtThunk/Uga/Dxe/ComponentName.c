@@ -33,17 +33,17 @@ WinNtUgaComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtUgaComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gWinNtUgaComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gWinNtUgaComponentName = {
   WinNtUgaComponentNameGetDriverName,
   WinNtUgaComponentNameGetControllerName,
   "eng"
@@ -51,7 +51,7 @@ EFI_COMPONENT_NAME_PROTOCOL gWinNtUgaComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mWinNtUgaDriverNameTable[] = {
   { "eng", L"Windows Universal Graphics Adapter Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -89,21 +89,21 @@ WinNtUgaComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gWinNtUgaComponentName.SupportedLanguages,
-           mWinNtUgaDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gWinNtUgaComponentName.SupportedLanguages,
+          mWinNtUgaDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 WinNtUgaComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -150,9 +150,9 @@ WinNtUgaComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS             Status;
-  EFI_UGA_DRAW_PROTOCOL  *UgaDraw;
-  UGA_PRIVATE_DATA       *Private;
+  EFI_STATUS            Status;
+  EFI_UGA_DRAW_PROTOCOL *UgaDraw;
+  UGA_PRIVATE_DATA      *Private;
 
   //
   // This is a device driver, so ChildHandle must be NULL.
@@ -165,11 +165,11 @@ WinNtUgaComponentNameGetControllerName (
   // Get our context back
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiUgaDrawProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiUgaDrawProtocolGuid,
                   &UgaDraw,
-                  gWinNtUgaDriverBinding.DriverBindingHandle,   
-                  ControllerHandle,   
+                  gWinNtUgaDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -179,9 +179,9 @@ WinNtUgaComponentNameGetControllerName (
   Private = UGA_DRAW_PRIVATE_DATA_FROM_THIS (UgaDraw);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gWinNtUgaComponentName.SupportedLanguages,
-           Private->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gWinNtUgaComponentName.SupportedLanguages,
+          Private->ControllerNameTable,
+          ControllerName
+          );
 }

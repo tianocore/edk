@@ -32,7 +32,7 @@ Revision History
 #define EFI_MISC_SUBCLASS_VERSION     0x0100
 
 #pragma pack(1)
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Last PCI Bus Number
@@ -43,7 +43,7 @@ typedef struct {
   UINT8   LastPciBus;
 } EFI_MISC_LAST_PCI_BUS;
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. BIOS Vendor - SMBIOS Type 0
@@ -111,7 +111,7 @@ typedef struct {
   EFI_MISC_BIOS_CHARACTERISTICS_EXTENSION  BiosCharacteristics2;
 } EFI_MISC_BIOS_VENDOR;       
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. System Manufacturer - SMBIOS Type 1
@@ -139,7 +139,7 @@ typedef struct {
   EFI_MISC_SYSTEM_WAKEUP_TYPE     SystemWakeupType;
 } EFI_MISC_SYSTEM_MANUFACTURER;       
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Base Board Manufacturer - SMBIOS Type 2
@@ -185,7 +185,7 @@ typedef struct {
   EFI_INTER_LINK_DATA             LinkN;
 } EFI_MISC_BASE_BOARD_MANUFACTURER;       
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. System/Chassis Enclosure - SMBIOS Type 3
@@ -274,7 +274,7 @@ typedef struct {
   EFI_MISC_ELEMENTS               ChassisElements;
 } EFI_MISC_CHASSIS_MANUFACTURER;
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Port Connector Information - SMBIOS Type 8
@@ -369,11 +369,10 @@ typedef struct {
   EFI_MISC_PORT_CONNECTOR_TYPE  PortInternalConnectorType;
   EFI_MISC_PORT_CONNECTOR_TYPE  PortExternalConnectorType;
   EFI_MISC_PORT_TYPE            PortType;
-  //EFI_DEVICE_PATH_PROTOCOL      PortPath;
   EFI_MISC_PORT_DEVICE_PATH      PortPath;
 } EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR;      
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. System Slots - SMBIOS Type 9
@@ -457,7 +456,7 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL      SlotDevicePath;
 } EFI_MISC_SYSTEM_SLOT_DESIGNATION;      
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Onboard Device - SMBIOS Type 10
@@ -486,7 +485,7 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        OnBoardDevicePath;
 } EFI_MISC_ONBOARD_DEVICE;
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. BIOS Language Information - SMBIOS Type 11
@@ -497,7 +496,7 @@ typedef struct {
   STRING_REF                          OemStringRef[1];
 } EFI_MISC_OEM_STRING;
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. System Options - SMBIOS Type 12
@@ -508,7 +507,7 @@ typedef struct {
 
 #define EFI_MISC_SYSTEM_OPTION_STRING_RECORD_NUMBER 0x0000000A
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Number of Installable Languages - SMBIOS Type 13
@@ -526,7 +525,7 @@ typedef struct {
   UINT16                              CurrentLanguageNumber;
 } EFI_MISC_NUMBER_OF_INSTALLABLE_LANGUAGES;       
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. System Language String
@@ -538,7 +537,7 @@ typedef struct {
   STRING_REF                          SystemLanguageString;
 } EFI_MISC_SYSTEM_LANGUAGE_STRING;      
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 //  Misc. Pointing Device Type - SMBIOS Type 21
@@ -578,7 +577,7 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL            PointingDevicePath;
 } EFI_MISC_ONBOARD_DEVICE_TYPE_DATA;      
 
-
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Reset Capabilities - SMBIOS Type 23
@@ -609,6 +608,7 @@ typedef struct {
     UINT16                        ResetTimeout;
 } EFI_MISC_RESET_CAPABILITIES_DATA;       
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Hardware Security - SMBIOS Type 24
@@ -634,6 +634,7 @@ typedef struct {
   EFI_MISC_HARDWARE_SECURITY_SETTINGS HardwareSecuritySettings;
 } EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA;       
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. BIS Entry Point - SMBIOS Type 31
@@ -644,6 +645,7 @@ typedef struct {
   EFI_PHYSICAL_ADDRESS       BisEntryPoint;
 } EFI_MISC_BIS_ENTRY_POINT;    
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // Misc. Boot Information - SMBIOS Type 32
@@ -670,6 +672,7 @@ typedef struct {
     UINT8                                 BootInformationData[9];
 } EFI_MISC_BOOT_INFORMATION_STATUS;
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // IPMI Data Record - SMBIOS Type 38
@@ -698,6 +701,7 @@ typedef struct {
        
 #define EFI_MISC_IPMI_INTERFACE_TYPE_RECORD_NUMBER  0x0000001D
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 //System Power supply Record - SMBIOS Type 39
@@ -729,6 +733,7 @@ typedef struct {
 } EFI_MISC_SYSTEM_POWER_SUPPLY;
 #define EFI_MISC_SYSTEM_POWER_SUPPLY_RECORD_NUMBER 0x0000001E
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 // OEM Data Record - SMBIOS Type 0x80-0xFF
@@ -746,6 +751,7 @@ typedef struct {
 
 #define EFI_MISC_SMBIOS_STRUCT_ENCAP_RECORD_NUMBER  0x0000001F 
 
+//
 //////////////////////////////////////////////////////////////////////////////
 //
 //

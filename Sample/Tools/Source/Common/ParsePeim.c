@@ -28,7 +28,6 @@ Abstract:
 //
 // Function implementations
 //
-
 EFI_STATUS
 FfsFindExportTable (
   IN EFI_FFS_FILE_HEADER            *FfsHeader,
@@ -55,34 +54,27 @@ Returns:
 
 --*/
 {
-  EFI_PEIM_HEADER_ISA   PeimHeader;
-  EFI_STATUS            Status;
+  EFI_PEIM_HEADER_ISA PeimHeader;
+  EFI_STATUS          Status;
 
   //
   // Check for invalid argument
   //
-  
-  if (FfsHeader == NULL ||
-      ExportTableEntry == NULL
-      ) {
+  if (FfsHeader == NULL || ExportTableEntry == NULL) {
     printf ("ERROR: Invalid parameter to FindExportTable.\n");
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Retrieve a pointer to the PEIM_HEADER
   //
-
   Status = FindPeimHeader (FfsHeader, &PeimHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     printf ("ERROR: FindExportTable could not find the PEIM header.\n");
     return EFI_ABORTED;
   }
-
   //
   // Find the export table in the peim
   //
-
   Status = PeimFindExportTable (&PeimHeader, ExportTableEntry);
 
   return Status;
@@ -117,30 +109,25 @@ Returns:
   //
   // Check for invalid argument
   //
-  
-  if (PeimHeader == NULL ||
-      ExportTableEntry == NULL
-      ) {
+  if (PeimHeader == NULL || ExportTableEntry == NULL) {
     printf ("ERROR: Invalid parameter to PeimFindExportTable.\n");
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find the export table offset and update the return pointer to the export table.
   //
-  
   switch (PeimHeader->PeimHeader->InstructionSet) {
   case EFI_IA32_INSTRUCTION_SET:
     if (PeimHeader->Ia32PeimHeader->ExportTable == 0) {
       ExportTableEntry->Ia32ExportEntry = 0;
     } else {
-
       //
       //  Fixed - warning C4133: '=' : incompatible types - from 'struct _EFI_IMPORT_TABLE_ENTRY_IA32 *' to 'struct _EFI_EXPORT_TABLE_ENTRY_IA32 *'
       //
-      ExportTableEntry->Ia32ExportEntry = (EFI_EXPORT_TABLE_ENTRY_IA32*) ((UINTN)PeimHeader->PeimHeader + PeimHeader->Ia32PeimHeader->ExportTable);
+      ExportTableEntry->Ia32ExportEntry = (EFI_EXPORT_TABLE_ENTRY_IA32 *) ((UINTN) PeimHeader->PeimHeader + PeimHeader->Ia32PeimHeader->ExportTable);
     }
     break;
+
   case EFI_IA64_INSTRUCTION_SET:
     if (PeimHeader->Ia64PeimHeader->ExportTable == 0) {
       ExportTableEntry->Ia64ExportEntry = 0;
@@ -148,9 +135,10 @@ Returns:
       //
       //  Fixed - warning C4133: '=' : incompatible types - from 'struct _EFI_IMPORT_TABLE_ENTRY_IA64 *' to 'struct _EFI_EXPORT_TABLE_ENTRY_IA64 *'
       //
-      ExportTableEntry->Ia64ExportEntry = (EFI_EXPORT_TABLE_ENTRY_IA64*) (UINTN) ((UINTN)PeimHeader->PeimHeader + PeimHeader->Ia64PeimHeader->ExportTable);
+      ExportTableEntry->Ia64ExportEntry = (EFI_EXPORT_TABLE_ENTRY_IA64 *) (UINTN) ((UINTN) PeimHeader->PeimHeader + PeimHeader->Ia64PeimHeader->ExportTable);
     }
     break;
+
   default:
     printf ("ERROR: Unrecognized instruction set in a PEIM_HEADER.\n");
     return EFI_ABORTED;
@@ -185,34 +173,27 @@ Returns:
 
 --*/
 {
-  EFI_PEIM_HEADER_ISA   PeimHeader;
-  EFI_STATUS            Status;
+  EFI_PEIM_HEADER_ISA PeimHeader;
+  EFI_STATUS          Status;
 
   //
   // Check for invalid argument
   //
-  
-  if (FfsHeader == NULL ||
-      ImportTableEntry == NULL
-      ) {
+  if (FfsHeader == NULL || ImportTableEntry == NULL) {
     printf ("ERROR: Invalid parameter to FindImportTable.\n");
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Retrieve a pointer to the PEIM_HEADER
   //
-
   Status = FindPeimHeader (FfsHeader, &PeimHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     printf ("ERROR: FindImportTable could not find the PEIM header.\n");
     return EFI_ABORTED;
   }
-
   //
   // Find the import table in the peim
   //
-
   Status = PeimFindImportTable (&PeimHeader, ImportTableEntry);
 
   return Status;
@@ -247,33 +228,36 @@ Returns:
   //
   // Check for invalid argument
   //
-  
-  if (PeimHeader == NULL ||
-      ImportTableEntry == NULL
-      ) {
+  if (PeimHeader == NULL || ImportTableEntry == NULL) {
     printf ("ERROR: Invalid parameter to FindImportTable.\n");
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find the import table offset and update the return pointer to the import table.
   //
-  
   switch (PeimHeader->PeimHeader->InstructionSet) {
   case EFI_IA32_INSTRUCTION_SET:
     if (PeimHeader->Ia32PeimHeader->ImportTable == 0) {
       ImportTableEntry->Ia32ImportEntry = 0;
     } else {
-      ImportTableEntry->Ia32ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA32*) ((UINTN)PeimHeader->PeimHeader + PeimHeader->Ia32PeimHeader->ImportTable);  // original      ImportTableEntry->Ia32ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA32*) ((UINT32)PeimHeader->PeimHeader + PeimHeader->Ia32PeimHeader->ImportTable);
+      //
+      // original      ImportTableEntry->Ia32ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA32*) ((UINT32)PeimHeader->PeimHeader + PeimHeader->Ia32PeimHeader->ImportTable);
+      //
+      ImportTableEntry->Ia32ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA32 *) ((UINTN) PeimHeader->PeimHeader + PeimHeader->Ia32PeimHeader->ImportTable);
     }
     break;
+
   case EFI_IA64_INSTRUCTION_SET:
     if (PeimHeader->Ia64PeimHeader->ImportTable == 0) {
       ImportTableEntry->Ia64ImportEntry = 0;
     } else {
-      ImportTableEntry->Ia64ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA64*) (UINTN) ((UINTN)PeimHeader->PeimHeader + PeimHeader->Ia64PeimHeader->ImportTable);  // original       ImportTableEntry->Ia64ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA64*) (UINTN) ((UINT64)PeimHeader->PeimHeader + PeimHeader->Ia64PeimHeader->ImportTable);
+      //
+      // original       ImportTableEntry->Ia64ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA64*) (UINTN) ((UINT64)PeimHeader->PeimHeader + PeimHeader->Ia64PeimHeader->ImportTable);
+      //
+      ImportTableEntry->Ia64ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA64 *) (UINTN) ((UINTN) PeimHeader->PeimHeader + PeimHeader->Ia64PeimHeader->ImportTable);
     }
     break;
+
   default:
     printf ("ERROR: Unrecognized instruction set in a PEIM_HEADER.\n");
     return EFI_ABORTED;
@@ -305,29 +289,23 @@ Returns:
 
 --*/
 {
-  EFI_FILE_SECTION_POINTER    PicSection;
-  EFI_STATUS                  Status;
+  EFI_FILE_SECTION_POINTER  PicSection;
+  EFI_STATUS                Status;
 
   //
   // Validate input parameters
   //
-  
-  if (FfsHeader == NULL || 
-      PeimHeader == NULL 
-      ) {
+  if (FfsHeader == NULL || PeimHeader == NULL) {
     printf ("ERROR: Invalid parameter passed to the FindPeimHeader function.\n");
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Verify that we have a PEIM file
   //
-
   if (FfsHeader->Type != EFI_FV_FILETYPE_PEIM) {
     printf ("ERROR: FFS file passed to FindPeimHeader is not a PEIM file.\n");
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find PIC section
   //
@@ -335,12 +313,12 @@ Returns:
   if (Status == EFI_NOT_FOUND) {
     printf ("ERROR: Could not find PIC section, cannot fixup PEIM.\n");
     return Status;
-  } else if (EFI_ERROR(Status)) {
+  } else if (EFI_ERROR (Status)) {
     printf ("ERROR: Could not parse the sections in the FFS file, cannot be fixed up.\n");
     return Status;
   }
-  
-  PeimHeader->PeimHeader = (EFI_PEIM_HEADER_COMMON*)((UINT8*) PicSection.PicSection + sizeof (EFI_PIC_SECTION));
+
+  PeimHeader->PeimHeader = (EFI_PEIM_HEADER_COMMON *) ((UINT8 *) PicSection.PicSection + sizeof (EFI_PIC_SECTION));
 
   return EFI_SUCCESS;
 }
@@ -367,144 +345,111 @@ Returns:
 
   EFI_SUCCESS             The function completed successfully.
   EFI_INVALID_PARAMETER   One of the input parameters was NULL.
-
+  EFI_ABORTED             Operation aborted.
+  EFI_NOT_FOUND           Not found.
 --*/
 {
-  EFI_PEIM_HEADER_ISA   PeimHeader;
-  EFI_STATUS            Status;
+  EFI_PEIM_HEADER_ISA PeimHeader;
+  EFI_STATUS          Status;
 
   //
   // Check parameters
   //
-
-  if (FfsImage == NULL ||
-      ImportGuid == NULL ||
-      ImportTableEntry == NULL
-      ) {
+  if (FfsImage == NULL || ImportGuid == NULL || ImportTableEntry == NULL) {
     printf ("ERROR: NULL pointer passed to FindImportTableEntry.\n");
     return EFI_INVALID_PARAMETER;
   }
-  
   //
   // Retrieve a pointer to the PEIM_HEADER
   //
-
   Status = FindPeimHeader (FfsImage, &PeimHeader);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     printf ("ERROR: FindImportTableEntry could not find the PEIM header.\n");
     return EFI_ABORTED;
   }
-
   //
   // Find the import table offset and update the return pointer to the import table.
   //
-  
   switch (PeimHeader.PeimHeader->InstructionSet) {
   case EFI_IA32_INSTRUCTION_SET:
-    
     //
     // Find the import table
     //
     if (PeimHeader.Ia32PeimHeader->ImportTable == 0) {
-      
       //
       // No import table, return a failure
       //
-
       return EFI_NOT_FOUND;
 
     } else {
-
       //
       // Get the first entry.
       //
-
-      ImportTableEntry->Ia32ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA32*) (((UINT8*)PeimHeader.PeimHeader) + PeimHeader.Ia32PeimHeader->ImportTable);
+      ImportTableEntry->Ia32ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA32 *) (((UINT8 *) PeimHeader.PeimHeader) + PeimHeader.Ia32PeimHeader->ImportTable);
     }
 
     while (ImportTableEntry->Ia32ImportEntry != NULL) {
-      
       //
       // If our entry is found, we are done (good)
       //
-      
       if (memcmp (&ImportTableEntry->Ia32ImportEntry->Guid, ImportGuid, sizeof (EFI_GUID)) == 0) {
         return EFI_SUCCESS;
       }
-
       //
       // If the last entry is found, we are done (bad)
       //
-
       if (ImportTableEntry->Ia32ImportEntry->Flags & IMPORT_FLAG_LAST_ENTRY) {
         break;
       }
-
       //
       // Increment our table entry
       //
-
       ImportTableEntry->Ia32ImportEntry++;;
     }
-
     //
     // Could not find our entry
     //
-
     ImportTableEntry->ImportEntry = NULL;
     return EFI_NOT_FOUND;
-  
+
   case EFI_IA64_INSTRUCTION_SET:
-    
     //
     // Get the import table
     //
-
     if (PeimHeader.Ia64PeimHeader->ImportTable == 0) {
-      
       //
       // No import table, return an error
       //
-
       ImportTableEntry->ImportEntry = NULL;
       return EFI_NOT_FOUND;
     } else {
-
       //
       // Get the first entry in the import table
       //
-
-      ImportTableEntry->Ia64ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA64*) (((UINT8*)PeimHeader.PeimHeader) + PeimHeader.Ia64PeimHeader->ImportTable);
+      ImportTableEntry->Ia64ImportEntry = (EFI_IMPORT_TABLE_ENTRY_IA64 *) (((UINT8 *) PeimHeader.PeimHeader) + PeimHeader.Ia64PeimHeader->ImportTable);
     }
+
     while (ImportTableEntry->Ia64ImportEntry != NULL) {
-      
       //
       // If our entry is found, we are done (good)
       //
-
       if (memcmp (&ImportTableEntry->Ia64ImportEntry->Guid, ImportGuid, sizeof (EFI_GUID)) == 0) {
         return EFI_SUCCESS;
       }
-
       //
       // If the last entry is found, we are done (bad)
       //
-      
       if (ImportTableEntry->Ia64ImportEntry->Flags & IMPORT_FLAG_LAST_ENTRY) {
         break;
       }
-
       //
       // Increment our table entry
       //
-
       ImportTableEntry->Ia64ImportEntry++;
     }
-
     //
     // Could not find our entry
     //
-
     ImportTableEntry->ImportEntry = NULL;
     return EFI_NOT_FOUND;
 
@@ -540,37 +485,29 @@ Returns:
 
 --*/
 {
-  EFI_PEIM_HEADER_ISA   PeimHeader;
+  EFI_PEIM_HEADER_ISA PeimHeader;
 
   //
   // Verify input
   //
-
   if (FfsImage == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Make sure the input file is a PEIM.
   //
-  
   if (FfsImage->Type != EFI_FV_FILETYPE_PEIM) {
     return EFI_ABORTED;
   }
-  
   //
   // Find the PEIM header
   //
- 
-  if (EFI_ERROR(FindPeimHeader (FfsImage, &PeimHeader))) {
+  if (EFI_ERROR (FindPeimHeader (FfsImage, &PeimHeader))) {
     return EFI_ABORTED;
   }
-  
   //
   // Return the instruction set
   //
-
   *InstructionSet = PeimHeader.PeimHeader->InstructionSet;
   return EFI_SUCCESS;
 }
-

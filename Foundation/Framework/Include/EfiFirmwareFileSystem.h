@@ -27,26 +27,29 @@ Abstract:
 //
 // GUIDs defined by the FFS specification.
 //
-#define EFI_FIRMWARE_FILE_SYSTEM_GUID   \
-  { 0x7A9354D9, 0x0468, 0x444a, 0x81, 0xCE, 0x0B, 0xF6, 0x17, 0xD8, 0x90, 0xDF }
+#define EFI_FIRMWARE_FILE_SYSTEM_GUID \
+  { \
+    0x7A9354D9, 0x0468, 0x444a, 0x81, 0xCE, 0x0B, 0xF6, 0x17, 0xD8, 0x90, 0xDF \
+  }
 
 #define EFI_FFS_VOLUME_TOP_FILE_GUID \
-  { 0x1BA0062E, 0xC779, 0x4582, 0x85, 0x66, 0x33, 0x6A, 0xE8, 0xF7, 0x8F, 0x9 }
+  { \
+    0x1BA0062E, 0xC779, 0x4582, 0x85, 0x66, 0x33, 0x6A, 0xE8, 0xF7, 0x8F, 0x9 \
+  }
 
 //
 // FFS specific file types
 //
-#define EFI_FV_FILETYPE_FFS_PAD              0xF0
+#define EFI_FV_FILETYPE_FFS_PAD 0xF0
 
 //
 // FFS File Attributes
 //
-
-#define FFS_ATTRIB_TAIL_PRESENT              0x01
-#define FFS_ATTRIB_RECOVERY                  0x02
-#define FFS_ATTRIB_HEADER_EXTENSION          0x04
-#define FFS_ATTRIB_DATA_ALIGNMENT            0x38
-#define FFS_ATTRIB_CHECKSUM                  0x40
+#define FFS_ATTRIB_TAIL_PRESENT     0x01
+#define FFS_ATTRIB_RECOVERY         0x02
+#define FFS_ATTRIB_HEADER_EXTENSION 0x04
+#define FFS_ATTRIB_DATA_ALIGNMENT   0x38
+#define FFS_ATTRIB_CHECKSUM         0x40
 
 //
 // FFS_FIXED_CHECKSUM is the default checksum value used when the
@@ -54,39 +57,44 @@ Abstract:
 // note this is NOT an architecturally defined value, but is in this file for
 // implementation convenience
 //
-#define FFS_FIXED_CHECKSUM                   0x5A
+#define FFS_FIXED_CHECKSUM  0x5A
 
 //
 // File state definitions
 //
-#define EFI_FILE_HEADER_CONSTRUCTION            0x01
-#define EFI_FILE_HEADER_VALID                   0x02
-#define EFI_FILE_DATA_VALID                     0x04
-#define EFI_FILE_MARKED_FOR_UPDATE              0x08
-#define EFI_FILE_DELETED                        0x10
-#define EFI_FILE_HEADER_INVALID                 0x20
+#define EFI_FILE_HEADER_CONSTRUCTION  0x01
+#define EFI_FILE_HEADER_VALID         0x02
+#define EFI_FILE_DATA_VALID           0x04
+#define EFI_FILE_MARKED_FOR_UPDATE    0x08
+#define EFI_FILE_DELETED              0x10
+#define EFI_FILE_HEADER_INVALID       0x20
 
-#define EFI_FILE_ALL_STATE_BITS                 ( EFI_FILE_HEADER_CONSTRUCTION  |  \
-                                                  EFI_FILE_HEADER_VALID         |  \
-                                                  EFI_FILE_DATA_VALID           |  \
-                                                  EFI_FILE_MARKED_FOR_UPDATE    |  \
-                                                  EFI_FILE_DELETED              |  \
-                                                  EFI_FILE_HEADER_INVALID )
+#define EFI_FILE_ALL_STATE_BITS       (EFI_FILE_HEADER_CONSTRUCTION | \
+                                 EFI_FILE_HEADER_VALID | \
+                                 EFI_FILE_DATA_VALID | \
+                                 EFI_FILE_MARKED_FOR_UPDATE | \
+                                 EFI_FILE_DELETED | \
+                                 EFI_FILE_HEADER_INVALID \
+          )
 
 #define EFI_TEST_FFS_ATTRIBUTES_BIT(FvbAttributes, TestAttributes, Bit) \
-  ((BOOLEAN)((FvbAttributes & EFI_FVB_ERASE_POLARITY) ? (((~TestAttributes) & Bit) == Bit) : ((TestAttributes & Bit) == Bit)))
+    ( \
+      (BOOLEAN) ( \
+          (FvbAttributes & EFI_FVB_ERASE_POLARITY) ? (((~TestAttributes) & Bit) == Bit) : ((TestAttributes & Bit) == Bit) \
+        ) \
+    )
 
 //
 // FFS file integrity check structure
 //
-typedef UINT16 EFI_FFS_FILE_TAIL; 
+typedef UINT16  EFI_FFS_FILE_TAIL;
 
 typedef union {
   struct {
-    UINT8   Header;
-    UINT8   File;
-  }             Checksum;
-  UINT16        TailReference;
+    UINT8 Header;
+    UINT8 File;
+  } Checksum;
+  UINT16  TailReference;
 } EFI_FFS_INTEGRITY_CHECK;
 
 //
@@ -96,12 +104,12 @@ typedef UINT8 EFI_FFS_FILE_ATTRIBUTES;
 typedef UINT8 EFI_FFS_FILE_STATE;
 
 typedef struct {
-  EFI_GUID                   Name;
-  EFI_FFS_INTEGRITY_CHECK    IntegrityCheck;
-  EFI_FV_FILETYPE            Type;
-  EFI_FFS_FILE_ATTRIBUTES    Attributes;
-  UINT8                      Size[3];
-  EFI_FFS_FILE_STATE         State;
+  EFI_GUID                Name;
+  EFI_FFS_INTEGRITY_CHECK IntegrityCheck;
+  EFI_FV_FILETYPE         Type;
+  EFI_FFS_FILE_ATTRIBUTES Attributes;
+  UINT8                   Size[3];
+  EFI_FFS_FILE_STATE      State;
 } EFI_FFS_FILE_HEADER;
 
 #endif

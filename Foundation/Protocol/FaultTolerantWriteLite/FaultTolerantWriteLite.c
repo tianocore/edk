@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  SimpleFaultTolerantWrite.c
+  FaultTolerantWriteLite.c
 
 Abstract:
 
@@ -25,9 +25,5 @@ Abstract:
 
 EFI_GUID gEfiFaultTolerantWriteLiteProtocolGuid = EFI_FTW_LITE_PROTOCOL_GUID;
 
-EFI_GUID_STRING (                         \
-  &gEfiFaultTolerantWriteLiteProtocolGuid,  \
-  "FaultTolerantWriteLite Protocol",        \
-  "Fault Tolerant Write Lite protocol"
-);
-
+EFI_GUID_STRING (&gEfiFaultTolerantWriteLiteProtocolGuid, "FaultTolerantWriteLite Protocol", 
+                 "Fault Tolerant Write Lite protocol");

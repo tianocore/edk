@@ -25,8 +25,8 @@ Abstract:
 
 #include "EfiSpec.h"
 
-#include EFI_PROTOCOL_DEFINITION(PciRootBridgeIo)
+#include EFI_PROTOCOL_DEFINITION (PciRootBridgeIo)
 
-EFI_GUID gEfiPciRootBridgeIoProtocolGuid = EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiPciRootBridgeIoProtocolGuid = EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiPciRootBridgeIoProtocolGuid, "PciRootBridgeIo Protocol", "EFI 1.1 Pci Root Bridge IO Protocol");

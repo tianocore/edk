@@ -35,7 +35,9 @@ Routine Description:
 
 Arguments:
 
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  ImageHandle     - Standard EFI Image entry parameter
+  
+  SystemTable     - Standard EFI Image entry parameter
 
 Returns: 
 
@@ -47,9 +49,8 @@ Returns:
 
   Status = EfiInitializeDriverLib (ImageHandle, SystemTable);
   if (!EFI_ERROR (Status)) {
-    Status = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **)&gDS);
+    Status = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **) &gDS);
   }
 
   return Status;
 }
-

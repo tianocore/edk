@@ -31,11 +31,19 @@ EfiLibGetSystemConfigurationTable (
 
 Routine Description:
 
+  Get table from configuration table by name
+
 Arguments:
+
+  TableGuid       - Table name to search
+  
+  Table           - Pointer to the table caller wants
 
 Returns: 
 
-  None
+  EFI_NOT_FOUND   - Not found the table
+  
+  EFI_SUCCESS     - Found the table
 
 --*/
 {
@@ -48,6 +56,6 @@ Returns:
       return EFI_SUCCESS;
     }
   }
+
   return EFI_NOT_FOUND;
 }
-

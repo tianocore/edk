@@ -24,5 +24,6 @@ Abstract:
 
 EFI_GUID gEfiPeiFlushInstructionCacheGuid  = EFI_PEI_FLUSH_INSTRUCTION_CACHE_GUID;
 
-EFI_GUID_STRING(&gEfiPeiFlushInstructionCacheGuid, "PEI Flush Instruction Cache", "Flush Instruction Cache APIs from PEI");
+EFI_GUID_STRING(&gEfiPeiFlushInstructionCacheGuid, "PEI Flush Instruction Cache", 
+                "Flush Instruction Cache APIs from PEI");
 

@@ -22,9 +22,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(SimplePointer)
+#include EFI_PROTOCOL_DEFINITION (SimplePointer)
 
-
-EFI_GUID gEfiSimplePointerProtocolGuid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
+EFI_GUID  gEfiSimplePointerProtocolGuid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiSimplePointerProtocolGuid, "Simple Pointer Protocol", "EFI 1.1 Simple Pointer Protocol");

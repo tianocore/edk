@@ -16,6 +16,7 @@ Module Name:
 Abstract:
 
 --*/
+
 #ifndef _BOT_H
 #define _BOT_H
 
@@ -31,28 +32,28 @@ Abstract:
 #pragma pack(1)
 
 //
-//Bulk Only device protocol
+// Bulk Only device protocol
 //
 typedef struct {
-  UINT32 dCBWSignature ;
-  UINT32 dCBWTag ;
-  UINT32 dCBWDataTransferLength ;
-  UINT8  bmCBWFlags ;
-  UINT8  bCBWLUN ;
-  UINT8  bCBWCBLength ;
-  UINT8  CBWCB[16] ;
-} CBW ;
+  UINT32  dCBWSignature;
+  UINT32  dCBWTag;
+  UINT32  dCBWDataTransferLength;
+  UINT8   bmCBWFlags;
+  UINT8   bCBWLUN;
+  UINT8   bCBWCBLength;
+  UINT8   CBWCB[16];
+} CBW;
 
 typedef struct {
-  UINT32 dCSWSignature ;
-  UINT32 dCSWTag ;
-  UINT32 dCSWDataResidue ;
-  UINT8  bCSWStatus ;
-} CSW ;
+  UINT32  dCSWSignature;
+  UINT32  dCSWTag;
+  UINT32  dCSWDataResidue;
+  UINT8   bCSWStatus;
+} CSW;
 
 #pragma pack()
 
-#define USB_BOT_DEVICE_SIGNATURE   EFI_SIGNATURE_32('u','b','o','t')
+#define USB_BOT_DEVICE_SIGNATURE  EFI_SIGNATURE_32 ('u', 'b', 'o', 't')
 
 typedef struct {
   UINTN                         Signature;
@@ -71,9 +72,8 @@ typedef struct {
 //
 // Status code, see Usb Bot device spec
 //
-#define CSWSIG 0x53425355
-#define CBWSIG 0x43425355
-
+#define CSWSIG  0x53425355
+#define CBWSIG  0x43425355
 
 //
 // Global Variables

@@ -27,7 +27,7 @@ Revision History
 EFI_STATUS
 PeHotRelocateImageEx (
   IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup, 
+  IN OUT CHAR8   *Fixup,
   IN OUT CHAR8   **FixupData,
   IN UINT64      Adjust
   )
@@ -49,12 +49,10 @@ Arguments:
 
 Returns:
 
-  None
+  EFI_SUCCESS
 
 --*/
 {
   return EFI_SUCCESS;
 
 }
-
-

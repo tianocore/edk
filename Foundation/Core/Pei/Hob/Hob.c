@@ -44,8 +44,9 @@ Arguments:
 
 Returns:
 
-  Status  - EFI_SUCCESS
-          - EFI_NOT_AVAILABLE_YET the HOB List is not yet published
+  EFI_SUCCESS                 - Get the pointer of HOB List
+  EFI_NOT_AVAILABLE_YET       - the HOB List is not yet published
+  EFI_INVALID_PARAMETER       - HobList is NULL (in debug mode)
             
 --*/
 {

@@ -21,8 +21,7 @@ Revision History
 
 #include "idebus.h"
 
-
-BOOLEAN SlaveDeviceExist = FALSE;
+BOOLEAN SlaveDeviceExist  = FALSE;
 BOOLEAN MasterDeviceExist = FALSE;
 
 UINT8
@@ -30,27 +29,44 @@ IDEReadPortB (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
   IN  UINT16                Port
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIo - TODO: add argument description
+  Port  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  UINT8         Data;
-  
+  UINT8 Data;
+
   Data = 0;
   //
   // perform 1-byte data read from register
   //
-  PciIo->Io.Read(PciIo,
-                 EfiPciIoWidthUint8,
-                 EFI_PCI_IO_PASS_THROUGH_BAR,
-                 (UINT64)Port,
-                 1,
-                 &Data
-                 );
-  return Data;                 
-}   
+  PciIo->Io.Read (
+              PciIo,
+              EfiPciIoWidthUint8,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
+  return Data;
+}
 
 VOID
 IDEReadPortWMultiple (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
-  IN  UINT16                Port, 
+  IN  UINT16                Port,
   IN  UINTN                 Count,
   IN  VOID                  *Buffer
   )
@@ -68,28 +84,30 @@ Arguments:
   Count   - No. of UINT16's to read
   Buffer  - Pointer to the data buffer for read
 
-++*/ 
+++*/
+// TODO: function comment should end with '--*/'
+// TODO: function comment is missing 'Returns:'
 {
-  UINT16    *AllignedBuffer;
-  UINT32    *Buffer32;
-  UINTN     Size;
-    
+  UINT16  *AllignedBuffer;
+  UINT32  *Buffer32;
+  UINTN   Size;
+
   //
   // Prepare an 16-bit alligned working buffer. CpuIo will return failure and
   // not perform actual I/O operations if buffer pointer passed in is not at
   // natural boundary. The "Buffer" argument is passed in by user and may not
   // at 16-bit natural boundary.
   //
-  Size = sizeof(UINT16) * Count;
+  Size = sizeof (UINT16) * Count;
 
   gBS->AllocatePool (
-         EfiBootServicesData,
-         Size + 32,
-         (VOID**)&AllignedBuffer
-         );
-  
-  Buffer32 = (UINT32*)(((UINTN)AllignedBuffer + 0x1F) & (~0x1F));
-  
+        EfiBootServicesData,
+        Size + 32,
+        (VOID **) &AllignedBuffer
+        );
+
+  Buffer32 = (UINT32 *) (((UINTN) AllignedBuffer + 0x1F) & (~0x1F));
+
   //
   // Perform UINT16 data read from FIFO
   //
@@ -97,62 +115,97 @@ Arguments:
               PciIo,
               EfiPciIoWidthFifoUint32,
               EFI_PCI_IO_PASS_THROUGH_BAR,
-              (UINT64)Port,
+              (UINT64) Port,
               (Count + 1) >> 1,
-              (UINT16*)Buffer32
+              (UINT16 *) Buffer32
               );
-  
+
   //
   // Copy data to user buffer
   //
-  EfiCopyMem (Buffer, (UINT16*)Buffer32, Size);
+  EfiCopyMem (Buffer, (UINT16 *) Buffer32, Size);
   gBS->FreePool (AllignedBuffer);
 }
-
 
 VOID
 IDEWritePortB (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
-  IN  UINT16                Port, 
+  IN  UINT16                Port,
   IN  UINT8                 Data
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIo - TODO: add argument description
+  Port  - TODO: add argument description
+  Data  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   //
   // perform 1-byte data write to register
-  //  
-  PciIo->Io.Write(PciIo,
-                  EfiPciIoWidthUint8,
-                  EFI_PCI_IO_PASS_THROUGH_BAR,
-                  (UINT64)Port,
-                  1,
-                  &Data
-                  );  
+  //
+  PciIo->Io.Write (
+              PciIo,
+              EfiPciIoWidthUint8,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
 
-}   
+}
 
 VOID
 IDEWritePortW (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
-  IN  UINT16                Port, 
+  IN  UINT16                Port,
   IN  UINT16                Data
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIo - TODO: add argument description
+  Port  - TODO: add argument description
+  Data  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   //
   // perform 1-word data write to register
   //
-  PciIo->Io.Write(PciIo,
-                  EfiPciIoWidthUint16,
-                  EFI_PCI_IO_PASS_THROUGH_BAR,
-                  (UINT64)Port,
-                  1,
-                  &Data
-                  );
-}   
+  PciIo->Io.Write (
+              PciIo,
+              EfiPciIoWidthUint16,
+              EFI_PCI_IO_PASS_THROUGH_BAR,
+              (UINT64) Port,
+              1,
+              &Data
+              );
+}
 
 VOID
 IDEWritePortWMultiple (
   IN  EFI_PCI_IO_PROTOCOL   *PciIo,
-  IN  UINT16                Port, 
+  IN  UINT16                Port,
   IN  UINTN                 Count,
   IN  VOID                  *Buffer
   )
@@ -171,10 +224,12 @@ Arguments:
   Buffer  - Pointer to the data buffer for read
 
 ++*/
+// TODO: function comment should end with '--*/'
+// TODO: function comment is missing 'Returns:'
 {
-  UINT16    *AllignedBuffer;
-  UINT32    *Buffer32;
-  UINTN     Size;
+  UINT16  *AllignedBuffer;
+  UINT32  *Buffer32;
+  UINTN   Size;
 
   //
   // Prepare an 16-bit alligned working buffer. CpuIo will return failure and
@@ -182,21 +237,21 @@ Arguments:
   // natural boundary. The "Buffer" argument is passed in by user and may not
   // at 16-bit natural boundary.
   //
-  Size = sizeof(UINT16) * Count;
+  Size = sizeof (UINT16) * Count;
 
   gBS->AllocatePool (
-         EfiBootServicesData,
-         Size + 32,
-         (VOID**)&AllignedBuffer
-         );
-  
-  Buffer32 = (UINT32*)(((UINTN)AllignedBuffer + 0x1F) & (~0x1F));
+        EfiBootServicesData,
+        Size + 32,
+        (VOID **) &AllignedBuffer
+        );
+
+  Buffer32 = (UINT32 *) (((UINTN) AllignedBuffer + 0x1F) & (~0x1F));
 
   //
   // Copy data from user buffer to working buffer
   //
-  EfiCopyMem ((UINT16*)Buffer32, Buffer, Size);
-  
+  EfiCopyMem ((UINT16 *) Buffer32, Buffer, Size);
+
   //
   // perform UINT16 data write to the FIFO
   //
@@ -204,67 +259,88 @@ Arguments:
               PciIo,
               EfiPciIoWidthFifoUint32,
               EFI_PCI_IO_PASS_THROUGH_BAR,
-              (UINT64)Port,
+              (UINT64) Port,
               (Count + 1) >> 1,
-              (UINT16*)Buffer32
-             );
-  
+              (UINT16 *) Buffer32
+              );
+
   gBS->FreePool (AllignedBuffer);
 }
-
 
 BOOLEAN
 BadIdeDeviceCheck (
   IN IDE_BLK_IO_DEV *IdeDev
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  IdeDev  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   //
   //  check whether all registers return 0xff,
   //  if so, deem the channel is disabled.
   //
-#ifdef EFI_DEBUG  
+#ifdef EFI_DEBUG
 
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Data) != 0xff) {
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Data) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg1.Feature) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Head) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Head) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Command) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command) != 0xff) {
     return FALSE;
   }
-  if (IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Alt.AltStatus) != 0xff) {
+
+  if (IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.AltStatus) != 0xff) {
     return FALSE;
   }
 
   return TRUE;
-  
+
 #else
 
   return FALSE;
-  
+
 #endif
-}    
+}
 
-
-//****************************************************************************
-// GetIdeRegistersBaseAddr 
-//****************************************************************************
+//
+// GetIdeRegistersBaseAddr
+//
 EFI_STATUS
 GetIdeRegistersBaseAddr (
   IN  EFI_PCI_IO_PROTOCOL         *PciIo,
@@ -322,27 +398,30 @@ Arguments:
 Returns:
     
 --*/
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS      Status;
-  PCI_TYPE00      PciData;
-  
+  EFI_STATUS  Status;
+  PCI_TYPE00  PciData;
+
   Status = PciIo->Pci.Read (
                         PciIo,
                         EfiPciIoWidthUint8,
                         0,
-                        sizeof(PciData),
+                        sizeof (PciData),
                         &PciData
                         );
-           
-  if ( EFI_ERROR(Status) ) {
+
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
   if ((PciData.Hdr.ClassCode[0] & IDE_PRIMARY_OPERATING_MODE) == 0) {
     IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  = 0x1f0;
     IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  = 0x3f6;
-    IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr = 
-                                  (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
+    IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     = 
+    (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
   } else {
     //
     // The BARs should be of IO type
@@ -351,38 +430,39 @@ Returns:
         (PciData.Device.Bar[1] & bit0) == 0) {
       return EFI_UNSUPPORTED;
     }
-    
-    IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr = 
-                                  (UINT16)(PciData.Device.Bar[0] & 0x0000fff8);
-    IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr = 
-                                  (UINT16)((PciData.Device.Bar[1] & 0x0000fffc) + 2);
-    IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr = 
-                                  (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
+
+    IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  =
+    (UINT16) (PciData.Device.Bar[0] & 0x0000fff8);
+    IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  =
+    (UINT16) ((PciData.Device.Bar[1] & 0x0000fffc) + 2);
+    IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     =
+    (UINT16) ((PciData.Device.Bar[4] & 0x0000fff0));
   }
-  
+
   if ((PciData.Hdr.ClassCode[0] & IDE_SECONDARY_OPERATING_MODE) == 0) {
     IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  = 0x170;
     IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  = 0x376;
-    IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr = 
-                                   (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
+    IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     =
+    (UINT16) ((PciData.Device.Bar[4] & 0x0000fff0));
   } else {
+    //
     // The BARs should be of IO type
-    if ((PciData.Device.Bar[2] & bit0) == 0 || 
+    //
+    if ((PciData.Device.Bar[2] & bit0) == 0 ||
         (PciData.Device.Bar[3] & bit0) == 0) {
       return EFI_UNSUPPORTED;
     }
-    
-    IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr = 
-                                  (UINT16)(PciData.Device.Bar[2] & 0x0000fff8);
-    IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr = 
-                                    (UINT16)((PciData.Device.Bar[3] & 0x0000fffc) + 2);
-    IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr = 
-                                    (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
+
+    IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  =
+    (UINT16) (PciData.Device.Bar[2] & 0x0000fff8);
+    IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  =
+    (UINT16) ((PciData.Device.Bar[3] & 0x0000fffc) + 2);
+    IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     =
+    (UINT16) ((PciData.Device.Bar[4] & 0x0000fff0));
   }
-  
+
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 ReassignIdeResources (
@@ -400,43 +480,45 @@ Arguments:
   IdeDev - The BLK_IO private data which specifies the IDE device
   
 ++*/
+// TODO: function comment should end with '--*/'
+// TODO: function comment is missing 'Returns:'
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                  Status;
-  IDE_REGISTERS_BASE_ADDR     IdeRegsBaseAddr[IdeMaxChannel]; 
-  UINT16                      CommandBlockBaseAddr;
-  UINT16                      ControlBlockBaseAddr;
-  
+  EFI_STATUS              Status;
+  IDE_REGISTERS_BASE_ADDR IdeRegsBaseAddr[IdeMaxChannel];
+  UINT16                  CommandBlockBaseAddr;
+  UINT16                  ControlBlockBaseAddr;
+
   //
-  // Requery IDE IO port registers' base addresses in case of the switch of 
+  // Requery IDE IO port registers' base addresses in case of the switch of
   // native and legacy modes
   //
   Status = GetIdeRegistersBaseAddr (IdeDev->PciIo, IdeRegsBaseAddr);
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
-  EfiZeroMem (IdeDev->IoPort, sizeof(IDE_BASE_REGISTERS));
-  CommandBlockBaseAddr = IdeRegsBaseAddr[IdeDev->Channel].CommandBlockBaseAddr;
-  ControlBlockBaseAddr = IdeRegsBaseAddr[IdeDev->Channel].ControlBlockBaseAddr;
-      
-  IdeDev->IoPort->Data = CommandBlockBaseAddr;
-  (*(UINT16 *)&IdeDev->IoPort->Reg1) = (UINT16)(CommandBlockBaseAddr + 0x01);
-  IdeDev->IoPort->SectorCount  = (UINT16)(CommandBlockBaseAddr + 0x02);
-  IdeDev->IoPort->SectorNumber = (UINT16)(CommandBlockBaseAddr + 0x03);
-  IdeDev->IoPort->CylinderLsb  = (UINT16)(CommandBlockBaseAddr + 0x04);
-  IdeDev->IoPort->CylinderMsb  = (UINT16)(CommandBlockBaseAddr + 0x05);
-  IdeDev->IoPort->Head         = (UINT16)(CommandBlockBaseAddr + 0x06);
-  
-  (*(UINT16 *)&IdeDev->IoPort->Reg) = (UINT16)(CommandBlockBaseAddr + 0x07);
-  (*(UINT16 *)&IdeDev->IoPort->Alt) = ControlBlockBaseAddr;
-  IdeDev->IoPort->DriveAddress      = (UINT16)(ControlBlockBaseAddr + 0x01);
-  IdeDev->IoPort->MasterSlave       = (UINT16)((IdeDev->Device == IdeMaster) ? 1 : 0); 
- 
-  IdeDev->IoPort->BusMasterBaseAddr = IdeRegsBaseAddr[IdeDev->Channel].BusMasterBaseAddr;
+
+  EfiZeroMem (IdeDev->IoPort, sizeof (IDE_BASE_REGISTERS));
+  CommandBlockBaseAddr                = IdeRegsBaseAddr[IdeDev->Channel].CommandBlockBaseAddr;
+  ControlBlockBaseAddr                = IdeRegsBaseAddr[IdeDev->Channel].ControlBlockBaseAddr;
+
+  IdeDev->IoPort->Data                = CommandBlockBaseAddr;
+  (*(UINT16 *) &IdeDev->IoPort->Reg1) = (UINT16) (CommandBlockBaseAddr + 0x01);
+  IdeDev->IoPort->SectorCount         = (UINT16) (CommandBlockBaseAddr + 0x02);
+  IdeDev->IoPort->SectorNumber        = (UINT16) (CommandBlockBaseAddr + 0x03);
+  IdeDev->IoPort->CylinderLsb         = (UINT16) (CommandBlockBaseAddr + 0x04);
+  IdeDev->IoPort->CylinderMsb         = (UINT16) (CommandBlockBaseAddr + 0x05);
+  IdeDev->IoPort->Head                = (UINT16) (CommandBlockBaseAddr + 0x06);
+
+  (*(UINT16 *) &IdeDev->IoPort->Reg)  = (UINT16) (CommandBlockBaseAddr + 0x07);
+  (*(UINT16 *) &IdeDev->IoPort->Alt)  = ControlBlockBaseAddr;
+  IdeDev->IoPort->DriveAddress        = (UINT16) (ControlBlockBaseAddr + 0x01);
+  IdeDev->IoPort->MasterSlave         = (UINT16) ((IdeDev->Device == IdeMaster) ? 1 : 0);
+
+  IdeDev->IoPort->BusMasterBaseAddr   = IdeRegsBaseAddr[IdeDev->Channel].BusMasterBaseAddr;
   return EFI_SUCCESS;
 }
 
-//*******************************************************************************
 EFI_STATUS
 CheckPowerMode (
   IDE_BLK_IO_DEV    *IdeDev
@@ -451,15 +533,19 @@ CheckPowerMode (
   IdeDev - The BLK_IO private data which specifies the IDE device
   
 ++*/
-
+// TODO: function comment should end with '--*/'
+// TODO: function comment is missing 'Returns:'
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
   UINT8       ErrorRegister;
-  EFI_STATUS  Status;  
+  EFI_STATUS  Status;
 
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0 )
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0)
     );
 
   //
@@ -468,35 +554,31 @@ CheckPowerMode (
   // no device
   //
   Status = WaitForBSYClear (IdeDev, 31000);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_NOT_FOUND;
-  } 
+  }
 
   //
-  // select device, read error register 
+  // select device, read error register
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0 )
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0)
     );
-  Status = DRDYReady (IdeDev,200);
+  Status        = DRDYReady (IdeDev, 200);
 
-  ErrorRegister = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg1.Error);
+  ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
   if ((ErrorRegister == 0x01) || (ErrorRegister == 0x81)) {
     return EFI_SUCCESS;
-  }  else {
+  } else {
     return EFI_NOT_FOUND;
   }
 }
 
-//********************************************************************************
-
-
-
-//****************************************************************************
+//
 // DiscoverIdeDevice
-//****************************************************************************
+//
 EFI_STATUS
 DiscoverIdeDevice (
   IN IDE_BLK_IO_DEV *IdeDev
@@ -511,9 +593,14 @@ DiscoverIdeDevice (
   IdeDev - The BLK_IO private data which specifies the IDE device
   
 ++*/
+// TODO: function comment should end with '--*/'
+// TODO: function comment is missing 'Returns:'
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS      Status;
-  BOOLEAN         SataFlag;
+  EFI_STATUS  Status;
+  BOOLEAN     SataFlag;
 
   SataFlag = FALSE;
   //
@@ -525,26 +612,25 @@ DiscoverIdeDevice (
   }
     
   //
-  //If a channel has not been checked, check it now. Then set it to "checked" state
-  //After this step, all devices in this channel have been checked.
+  // If a channel has not been checked, check it now. Then set it to "checked" state
+  // After this step, all devices in this channel have been checked.
   //
-  Status = DetectIDEController(IdeDev);
- 
-  if((EFI_ERROR(Status)) && !SataFlag) {    
+  Status = DetectIDEController (IdeDev);
+
+  if ((EFI_ERROR (Status)) && !SataFlag) {
     return EFI_NOT_FOUND;
   }
   
   //
-  // Device exists. test if it is an ATA device 
+  // Device exists. test if it is an ATA device
   //
-  //gBS->Stall(4000000);
   Status = ATAIdentify (IdeDev);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     //
     // if not ATA device, test if it is an ATAPI device
     //
     Status = ATAPIIdentify (IdeDev);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       //
       // if not ATAPI device either, return error.
       //
@@ -555,31 +641,31 @@ DiscoverIdeDevice (
   //
   // Init Block I/O interface
   //
-  IdeDev->BlkIo.Revision    = EFI_BLOCK_IO_PROTOCOL_REVISION;
-  IdeDev->BlkIo.Reset       = IDEBlkIoReset;
-  IdeDev->BlkIo.ReadBlocks  = IDEBlkIoReadBlocks;
-  IdeDev->BlkIo.WriteBlocks = IDEBlkIoWriteBlocks;
-  IdeDev->BlkIo.FlushBlocks = IDEBlkIoFlushBlocks;  
+  IdeDev->BlkIo.Revision            = EFI_BLOCK_IO_PROTOCOL_REVISION;
+  IdeDev->BlkIo.Reset               = IDEBlkIoReset;
+  IdeDev->BlkIo.ReadBlocks          = IDEBlkIoReadBlocks;
+  IdeDev->BlkIo.WriteBlocks         = IDEBlkIoWriteBlocks;
+  IdeDev->BlkIo.FlushBlocks         = IDEBlkIoFlushBlocks;
 
-  IdeDev->BlkMedia.LogicalPartition = FALSE ;
-  IdeDev->BlkMedia.WriteCaching     = FALSE ;
+  IdeDev->BlkMedia.LogicalPartition = FALSE;
+  IdeDev->BlkMedia.WriteCaching     = FALSE;
 
   //
   // Init Disk Info interface
   //
   gBS->CopyMem (&IdeDev->DiskInfo.Interface, &gEfiDiskInfoIdeInterfaceGuid, sizeof (EFI_GUID));
-  IdeDev->DiskInfo.Inquiry   = IDEDiskInfoInquiry;
-  IdeDev->DiskInfo.Identify  = IDEDiskInfoIdentify;
-  IdeDev->DiskInfo.SenseData = IDEDiskInfoSenseData;
-  IdeDev->DiskInfo.WhichIde  = IDEDiskInfoWhichIde;
-  
+  IdeDev->DiskInfo.Inquiry    = IDEDiskInfoInquiry;
+  IdeDev->DiskInfo.Identify   = IDEDiskInfoIdentify;
+  IdeDev->DiskInfo.SenseData  = IDEDiskInfoSenseData;
+  IdeDev->DiskInfo.WhichIde   = IDEDiskInfoWhichIde;
+
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 DetectIDEController (
   IN  IDE_BLK_IO_DEV  *IdeDev
-)
+  )
 /*++
   
   Name: DetectIDEController
@@ -619,28 +705,33 @@ DetectIDEController (
 
   Notes:
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
-  EFI_STATUS    Status;  
-  UINT8         ErrorReg;
-  UINT8         StatusReg;
-  UINT8         InitStatusReg;
-  EFI_STATUS    DeviceStatus;
+  EFI_STATUS  Status;
+  UINT8       ErrorReg;
+  UINT8       StatusReg;
+  UINT8       InitStatusReg;
+  EFI_STATUS  DeviceStatus;
 
   //
-  //Slave device has been detected with master device.
+  // Slave device has been detected with master device.
   //
   if ((IdeDev->Device) == 1) {
     if (SlaveDeviceExist) {
       //
-      //If master not exists but slave exists, slave have to wait a while 
+      // If master not exists but slave exists, slave have to wait a while
       //
-      if (!MasterDeviceExist) {  
+      if (!MasterDeviceExist) {
         //
         // if single slave can't be detected, add delay 4s here.
         //
-        gBS->Stall(4000000);
+        gBS->Stall (4000000);
       }
-      
+
       return EFI_SUCCESS;
     } else {
       return EFI_NOT_FOUND;
@@ -652,59 +743,57 @@ DetectIDEController (
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((1 << 4) | 0xe0 )
+    IdeDev->IoPort->Head,
+    (UINT8) ((1 << 4) | 0xe0)
     );
   gBS->Stall (100);
 
   //
-  //Save the init slave status register
+  // Save the init slave status register
   //
-  InitStatusReg = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
-
+  InitStatusReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
 
   //
-  //Select master back
+  // Select master back
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((0 << 4) | 0xe0 )
+    IdeDev->IoPort->Head,
+    (UINT8) ((0 << 4) | 0xe0)
     );
   gBS->Stall (100);
   //
-  //Send ATA Device Execut Diagnostic command. 
-  //This command should work no matter DRDY is ready or not
+  // Send ATA Device Execut Diagnostic command.
+  // This command should work no matter DRDY is ready or not
   //
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Command, 0x90);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, 0x90);
 
-  Status = WaitForBSYClear (IdeDev, 3500);
+  Status    = WaitForBSYClear (IdeDev, 3500);
 
-  ErrorReg = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg1.Error);
-
+  ErrorReg  = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
 
   //
-  //Master Error register is 0x01. D0 passed, D1 passed or not present.
-  //Master Error register is 0x81. D0 passed, D1 failed. Return.
-  //Master Error register is other value. D0 failed, D1 passed or not present..
+  // Master Error register is 0x01. D0 passed, D1 passed or not present.
+  // Master Error register is 0x81. D0 passed, D1 failed. Return.
+  // Master Error register is other value. D0 failed, D1 passed or not present..
   //
   if (ErrorReg == 0x01) {
     MasterDeviceExist = TRUE;
-    DeviceStatus = EFI_SUCCESS;
+    DeviceStatus      = EFI_SUCCESS;
   } else if (ErrorReg == 0x81) {
-  
+
     MasterDeviceExist = TRUE;
-    DeviceStatus = EFI_SUCCESS;
-    SlaveDeviceExist = FALSE;
-    
+    DeviceStatus      = EFI_SUCCESS;
+    SlaveDeviceExist  = FALSE;
+
     return DeviceStatus;
   } else {
     MasterDeviceExist = FALSE;
-    DeviceStatus = EFI_NOT_FOUND;
+    DeviceStatus      = EFI_NOT_FOUND;
   }
     
   //
-  //Master Error register is not 0x81, Go on check Slave
+  // Master Error register is not 0x81, Go on check Slave
   //
 
   //
@@ -712,53 +801,52 @@ DetectIDEController (
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((1 << 4) | 0xe0 )
+    IdeDev->IoPort->Head,
+    (UINT8) ((1 << 4) | 0xe0)
     );
 
   gBS->Stall (300);
-  ErrorReg = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg1.Error);
+  ErrorReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
 
   //
-  //Slave Error register is not 0x01, D1 failed. Return.
+  // Slave Error register is not 0x01, D1 failed. Return.
   //
   if (ErrorReg != 0x01) {
     SlaveDeviceExist = FALSE;
     return DeviceStatus;
   }
 
-  StatusReg = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+  StatusReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
 
   //
-  //Most ATAPI devices don't set DRDY bit, so test with a slow but accurate  
+  // Most ATAPI devices don't set DRDY bit, so test with a slow but accurate
   //   "ATAPI TEST UNIT READY" command
   //
   if (((StatusReg & DRDY) == 0) && ((InitStatusReg & DRDY) == 0)) {
     Status = AtapiTestUnitReady (IdeDev);
 
     //
-    //Still fail, Slave doesn't exist.
+    // Still fail, Slave doesn't exist.
     //
     if (EFI_ERROR (Status)) {
       SlaveDeviceExist = FALSE;
       return DeviceStatus;
-    }    
+    }
   }
 
   //
-  //Error reg is 0x01 and DRDY is ready, 
-  //  or ATAPI test unit ready success, 
+  // Error reg is 0x01 and DRDY is ready,
+  //  or ATAPI test unit ready success,
   //  or  init Slave status DRDY is ready
-  //Slave exists.
+  // Slave exists.
   //
   SlaveDeviceExist = TRUE;
- 
+
   return DeviceStatus;
 
 }
 
-
-EFI_STATUS  
+EFI_STATUS
 DRQClear (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           TimeoutInMilliSeconds
@@ -791,27 +879,32 @@ DRQClear (
 
   Notes:
         Read Status Register will clear interrupt status.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
 {
-  UINT32        Delay;
-  UINT8         StatusRegister;
-  UINT8         ErrorRegister;
-  
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
+  UINT32  Delay;
+  UINT8   StatusRegister;
+  UINT8   ErrorRegister;
+
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
-    
-    StatusRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
-    
+
+    StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
+
     //
     // wait for BSY == 0 and DRQ == 0
     //
-    if ( (StatusRegister & (DRQ | BSY) ) == 0) {
+    if ((StatusRegister & (DRQ | BSY)) == 0) {
       break;
     }
-    
-    if ((StatusRegister & (BSY | ERR)) == ERR ) {
-      
-      ErrorRegister =  IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Error); 
+
+    if ((StatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
       if ((ErrorRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
@@ -820,23 +913,20 @@ DRQClear (
     //
     //  Stall for 30 us
     //
-    gBS->Stall(30);
-    
-    Delay --;
+    gBS->Stall (30);
+
+    Delay--;
 
   } while (Delay);
-  
+
   if (Delay == 0) {
-    return  EFI_TIMEOUT;
-  } 
+    return EFI_TIMEOUT;
+  }
 
   return EFI_SUCCESS;
 }
 
-
-
-
-EFI_STATUS  
+EFI_STATUS
 DRQClear2 (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           TimeoutInMilliSeconds
@@ -870,48 +960,54 @@ DRQClear2 (
 
   Notes:
         Read Alternate Status Register will not clear interrupt status.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
 {
-  UINT32      Delay;
-  UINT8       AltRegister;
-  UINT8       ErrorRegister;
-  
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
+  UINT32  Delay;
+  UINT8   AltRegister;
+  UINT8   ErrorRegister;
+
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
-     
-    AltRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Alt.AltStatus);
-    
+
+    AltRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.AltStatus);
+
     //
     //  wait for BSY == 0 and DRQ == 0
     //
-    if ( (AltRegister & (DRQ | BSY) ) == 0) {
+    if ((AltRegister & (DRQ | BSY)) == 0) {
       break;
     }
-    
-    if ((AltRegister & (BSY | ERR)) == ERR ) {
-      
-      ErrorRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Error); 
+
+    if ((AltRegister & (BSY | ERR)) == ERR) {
+
+      ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
       if ((ErrorRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
 
-    gBS->Stall(30); // Stall for 30 us
-    
-    Delay --;
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
+    Delay--;
 
   } while (Delay);
-  
+
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-
-
-EFI_STATUS  
+EFI_STATUS
 DRQReady (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           TimeoutInMilliSeconds
@@ -950,49 +1046,54 @@ DRQReady (
   Notes:
         Read Status Register will clear interrupt status.
 
---*/ 
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
 {
-  UINT32      Delay; 
-  UINT8       StatusRegister;
-  UINT8       ErrorRegister;
+  UINT32  Delay;
+  UINT8   StatusRegister;
+  UINT8   ErrorRegister;
 
-
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
     //
     //  read Status Register will clear interrupt
     //
-    StatusRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status);   
-    
+    StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
+
     //
     //  BSY==0,DRQ==1
     //
-    if ( (StatusRegister & (BSY | DRQ )) == DRQ) {
+    if ((StatusRegister & (BSY | DRQ)) == DRQ) {
       break;
     }
-    
-    if ((StatusRegister & (BSY | ERR)) == ERR ) {
-      
-      ErrorRegister =  IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Error); 
+
+    if ((StatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
       if ((ErrorRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
-   
-    gBS->Stall(30); // Stall for 30 us
-    
-    Delay --;
+
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
+    Delay--;
   } while (Delay);
 
   if (Delay == 0) {
-    return  EFI_TIMEOUT;
-  } 
+    return EFI_TIMEOUT;
+  }
 
   return EFI_SUCCESS;
 }
 
-
-EFI_STATUS  
+EFI_STATUS
 DRQReady2 (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           TimeoutInMilliSeconds
@@ -1028,49 +1129,54 @@ DRQReady2 (
 
   Notes:
         Read Alternate Status Register will not clear interrupt status.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
 {
-  UINT32      Delay; 
-  UINT8       AltRegister;
-  UINT8       ErrorRegister;
+  UINT32  Delay;
+  UINT8   AltRegister;
+  UINT8   ErrorRegister;
 
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
 
   do {
     //
     //  Read Alternate Status Register will not clear interrupt status
     //
-    AltRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Alt.AltStatus); 
+    AltRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.AltStatus);
     //
-    //BSY == 0 , DRQ == 1
+    // BSY == 0 , DRQ == 1
     //
-    if ( (AltRegister & (BSY | DRQ )) == DRQ) {
+    if ((AltRegister & (BSY | DRQ)) == DRQ) {
       break;
-    }    
-    
-    if ((AltRegister & (BSY | ERR)) == ERR ) {
-      
-      ErrorRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Error); 
+    }
+
+    if ((AltRegister & (BSY | ERR)) == ERR) {
+
+      ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
       if ((ErrorRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
 
-    gBS->Stall(30); // Stall for 30 us
-    
-    Delay --;
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
+    Delay--;
   } while (Delay);
-  
+
   if (Delay == 0) {
-    return  EFI_TIMEOUT;
-  } 
+    return EFI_TIMEOUT;
+  }
 
   return EFI_SUCCESS;
 }
 
-
-
-EFI_STATUS  
+EFI_STATUS
 WaitForBSYClear (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           TimeoutInMilliSeconds
@@ -1104,37 +1210,42 @@ WaitForBSYClear (
 
   Notes:
         Read Status Register will clear interrupt status.
---*/ 
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
 {
-  UINT32        Delay; 
-  UINT8         StatusRegister;
-  
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) +  1);
+  UINT32  Delay;
+  UINT8   StatusRegister;
+
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
 
-    StatusRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status); 
-    if ( (StatusRegister & BSY) == 0x00) {
+    StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
+    if ((StatusRegister & BSY) == 0x00) {
       break;
     }
-    
-    gBS->Stall(30); // Stall for 30 us
-    
-    Delay --;
+
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
+    Delay--;
 
   } while (Delay);
 
-  if (Delay == 0){
+  if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
-
-
-//****************************************************************************
+//
 // WaitForBSYClear2
-//****************************************************************************
-EFI_STATUS  
+//
+EFI_STATUS
 WaitForBSYClear2 (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           TimeoutInMilliSeconds
@@ -1168,35 +1279,39 @@ WaitForBSYClear2 (
 
   Notes:
         Read Alternate Status Register will not clear interrupt status.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
 {
-  UINT32        Delay; 
-  UINT8         AltRegister;
-  
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) +  1);
+  UINT32  Delay;
+  UINT8   AltRegister;
+
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
-    AltRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Alt.AltStatus); 
-    if ( (AltRegister & BSY) == 0x00) {
+    AltRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.AltStatus);
+    if ((AltRegister & BSY) == 0x00) {
       break;
     }
 
-    gBS->Stall(30); 
-    
-    Delay --;
+    gBS->Stall (30);
+
+    Delay--;
 
   } while (Delay);
-  
+
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-//****************************************************************************
+//
 // DRDYReady
-//****************************************************************************
-EFI_STATUS  
+//
+EFI_STATUS
 DRDYReady (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           DelayInMilliSeconds
@@ -1231,47 +1346,51 @@ DRDYReady (
 
   Notes:
         Read Status Register will clear interrupt status.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DelayInMilliSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
 {
-  UINT32      Delay; 
-  UINT8       StatusRegister;
-  UINT8       ErrorRegister;
-  
-  Delay = (UINT32)(((DelayInMilliSeconds * STALL_1_MILLI_SECOND)  / 30) + 1);
+  UINT32  Delay;
+  UINT8   StatusRegister;
+  UINT8   ErrorRegister;
+
+  Delay = (UINT32) (((DelayInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
-    StatusRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status); 
+    StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
     //
     //  BSY == 0 , DRDY == 1
     //
-    if ( (StatusRegister & (DRDY | BSY) ) == DRDY) {
+    if ((StatusRegister & (DRDY | BSY)) == DRDY) {
       break;
     }
-    
-    if ((StatusRegister & (BSY | ERR)) == ERR ) {
-      
-      ErrorRegister =  IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Error); 
+
+    if ((StatusRegister & (BSY | ERR)) == ERR) {
+
+      ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
       if ((ErrorRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
 
-    gBS->Stall(15); 
+    gBS->Stall (15);
 
-    Delay --;
+    Delay--;
   } while (Delay);
 
   if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-
-//****************************************************************************
+//
 // DRDYReady2
-//****************************************************************************
-EFI_STATUS  
+//
+EFI_STATUS
 DRDYReady2 (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINTN           DelayInMilliSeconds
@@ -1306,51 +1425,56 @@ DRDYReady2 (
 
   Notes:
         Read Alternate Status Register will clear interrupt status.
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    IdeDev - add argument and description to function comment
+// TODO:    DelayInMilliSeconds - add argument and description to function comment
+// TODO:    EFI_ABORTED - add return value to function comment
 {
-  UINT32        Delay; 
-  UINT8         AltRegister;
-  UINT8       ErrorRegister;
-  
-  Delay = (UINT32)(((DelayInMilliSeconds * STALL_1_MILLI_SECOND)  / 30) + 1);
+  UINT32  Delay;
+  UINT8   AltRegister;
+  UINT8   ErrorRegister;
+
+  Delay = (UINT32) (((DelayInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
-    AltRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Alt.AltStatus); 
+    AltRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.AltStatus);
     //
     //  BSY == 0 , DRDY == 1
     //
-    if ( (AltRegister & (DRDY | BSY) ) == DRDY){
+    if ((AltRegister & (DRDY | BSY)) == DRDY) {
       break;
     }
-    
-    if ((AltRegister & (BSY | ERR)) == ERR ) {
-      
-      ErrorRegister = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg1.Error); 
+
+    if ((AltRegister & (BSY | ERR)) == ERR) {
+
+      ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
       if ((ErrorRegister & ABRT_ERR) == ABRT_ERR) {
         return EFI_ABORTED;
       }
     }
-    
-    gBS->Stall(30); 
-    
-    Delay --;
+
+    gBS->Stall (30);
+
+    Delay--;
   } while (Delay);
-  
-  if (Delay == 0){
+
+  if (Delay == 0) {
     return EFI_TIMEOUT;
-  } 
+  }
 
   return EFI_SUCCESS;
 }
 
-//****************************************************************************
+//
 // SwapStringChars
-//****************************************************************************
+//
 VOID
-SwapStringChars ( 
-  IN CHAR8  *Destination,  
-  IN CHAR8  *Source,   
-  IN UINT32 Size  
-  )         
+SwapStringChars (
+  IN CHAR8  *Destination,
+  IN CHAR8  *Source,
+  IN UINT32 Size
+  )
 /*++
   Name:
         SwapStringChars
@@ -1385,22 +1509,27 @@ SwapStringChars (
 
   Notes:
 
---*/  
+--*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO:    Destination - add argument and description to function comment
+// TODO:    Source - add argument and description to function comment
+// TODO:    Size - add argument and description to function comment
 {
   UINT32  Index;
   CHAR8   Temp;
 
   for (Index = 0; Index < Size; Index += 2) {
-    
-    Temp = Source[Index + 1];
-    Destination[Index + 1] = Source[Index];
-    Destination[Index] = Temp;
+
+    Temp                    = Source[Index + 1];
+    Destination[Index + 1]  = Source[Index];
+    Destination[Index]      = Temp;
   }
 }
 
-//****************************************************************************
+//
 // ReleaseIdeResources
-//****************************************************************************
+//
 VOID
 ReleaseIdeResources (
   IN  IDE_BLK_IO_DEV  *IdeBlkIoDevice
@@ -1420,35 +1549,36 @@ Returns:
     NONE
     
 ---*/
+// TODO: function comment is missing 'Routine Description:'
 {
   if (IdeBlkIoDevice == NULL) {
-    return;
+    return ;
   }
 
   //
-  //Release all the resourses occupied by the IDE_BLK_IO_DEV
+  // Release all the resourses occupied by the IDE_BLK_IO_DEV
   //
   
   if (IdeBlkIoDevice->SenseData != NULL) {
     gBS->FreePool (IdeBlkIoDevice->SenseData);
     IdeBlkIoDevice->SenseData = NULL;
   }
-  
+
   if (IdeBlkIoDevice->Cache != NULL) {
     gBS->FreePool (IdeBlkIoDevice->Cache);
     IdeBlkIoDevice->Cache = NULL;
   }
-  
+
   if (IdeBlkIoDevice->pIdData != NULL) {
     gBS->FreePool (IdeBlkIoDevice->pIdData);
     IdeBlkIoDevice->pIdData = NULL;
   }
-  
+
   if (IdeBlkIoDevice->pInquiryData != NULL) {
     gBS->FreePool (IdeBlkIoDevice->pInquiryData);
     IdeBlkIoDevice->pInquiryData = NULL;
   }
-  
+
   if (IdeBlkIoDevice->ControllerNameTable != NULL) {
     EfiLibFreeUnicodeStringTable (IdeBlkIoDevice->ControllerNameTable);
     IdeBlkIoDevice->ControllerNameTable = NULL;
@@ -1457,23 +1587,22 @@ Returns:
   if (IdeBlkIoDevice->IoPort != NULL) {
     gBS->FreePool (IdeBlkIoDevice->IoPort);
   }
-  
+
   if (IdeBlkIoDevice->DevicePath != NULL) {
     gBS->FreePool (IdeBlkIoDevice->DevicePath);
   }
-  
+
   gBS->FreePool (IdeBlkIoDevice);
   IdeBlkIoDevice = NULL;
-  
-  return;
+
+  return ;
 }
 
-
-//*******************************************************************************
+//
 // SetDeviceTransferMode
-//*******************************************************************************
+//
 EFI_STATUS
-SetDeviceTransferMode(
+SetDeviceTransferMode (
   IN IDE_BLK_IO_DEV       *IdeDev,
   IN ATA_TRANSFER_MODE    *TransferMode
   )
@@ -1492,36 +1621,36 @@ Returns:
     Set transfer mode Command execute status
     
 ---*/
-{ 
+// TODO: function comment is missing 'Routine Description:'
+{
   EFI_STATUS  Status;
   UINT8       DeviceSelect;
   UINT8       SectorCount;
-    
-  DeviceSelect = 0;
-  DeviceSelect = (UINT8)((IdeDev->Device) << 4);
-  SectorCount  = *((UINT8 *)TransferMode);
+
+  DeviceSelect  = 0;
+  DeviceSelect  = (UINT8) ((IdeDev->Device) << 4);
+  SectorCount   = *((UINT8 *) TransferMode);
 
   //
   // Send SET FEATURE command (sub command 0x03) to set pio mode.
   //
   Status = AtaNonDataCommandIn (
-             IdeDev, 
-             SET_FEATURES_CMD, 
-             DeviceSelect, 
-             0x03,
-             SectorCount,
-             0,
-             0,
-             0            
-             );
-  
+            IdeDev,
+            SET_FEATURES_CMD,
+            DeviceSelect,
+            0x03,
+            SectorCount,
+            0,
+            0,
+            0
+            );
+
   return Status;
 }
 
-
 EFI_STATUS
 AtaNonDataCommandIn (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINT8           AtaCommand,
   IN  UINT8           Device,
   IN  UINT8           Feature,
@@ -1559,7 +1688,7 @@ Returns:
   UINT8       StatusRegister;
 
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if(EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -1568,15 +1697,15 @@ Returns:
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0)
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0)
     );
 
   //
   // ATA commands for ATA device must be issued when DRDY is set
   //
-  Status = DRDYReady(IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
+  Status = DRDYReady (IdeDev, ATATIMEOUT);
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -1585,11 +1714,11 @@ Returns:
   //
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Head, Device);
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, Feature);
-  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount); 
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount);
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMiddle); 
-  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh); 
-  
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMiddle);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
+
   //
   // Send command via Command Register
   //
@@ -1599,24 +1728,24 @@ Returns:
   // Wait for command completion
   //
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if(EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  StatusRegister = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+  StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
   if ((StatusRegister & ERR) == ERR) {
     //
     // Failed to execute command, abort operation
     //
     return EFI_ABORTED;
   }
-  
+
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 AtaNonDataCommandInExt (
-  IN  IDE_BLK_IO_DEV  *IdeDev, 
+  IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINT8           AtaCommand,
   IN  UINT8           Device,
   IN  UINT16          Feature,
@@ -1655,7 +1784,7 @@ Returns:
   UINT8       LbaHigh;
 
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if(EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -1664,15 +1793,15 @@ Returns:
   //
   IDEWritePortB (
     IdeDev->PciIo,
-    IdeDev->IoPort->Head, 
-    (UINT8)((IdeDev->Device << 4) | 0xe0)
+    IdeDev->IoPort->Head,
+    (UINT8) ((IdeDev->Device << 4) | 0xe0)
     );
 
   //
   // ATA commands for ATA device must be issued when DRDY is set
   //
-  Status = DRDYReady(IdeDev, ATATIMEOUT);
-  if (EFI_ERROR(Status)) {
+  Status = DRDYReady (IdeDev, ATATIMEOUT);
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -1680,42 +1809,42 @@ Returns:
   // Pass parameter into device register block
   //
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Head, Device);
-  
+
   //
   // Fill the feature register, which is a two-byte FIFO. Need write twice.
   //
-  Feature8 = (UINT8)(Feature >> 8);
+  Feature8 = (UINT8) (Feature >> 8);
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, Feature8);
-  
-  Feature8 = (UINT8)Feature;
+
+  Feature8 = (UINT8) Feature;
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Feature, Feature8);
 
   //
   // Fill the sector count register, which is a two-byte FIFO. Need write twice.
   //
-  SectorCount8 = (UINT8)(SectorCount >> 8);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
-  SectorCount8 = (UINT8)SectorCount;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorCount, SectorCount8); 
-  
+  SectorCount8 = (UINT8) (SectorCount >> 8);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
+  SectorCount8 = (UINT8) SectorCount;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorCount, SectorCount8);
+
   //
   // Fill the start LBA registers, which are also two-byte FIFO
   //
-  LbaLow  = (UINT8)RShiftU64 (LbaAddress, 24);
-  LbaMid  = (UINT8)RShiftU64 (LbaAddress, 32);
-  LbaHigh = (UINT8)RShiftU64 (LbaAddress, 40); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
+  LbaLow  = (UINT8) RShiftU64 (LbaAddress, 24);
+  LbaMid  = (UINT8) RShiftU64 (LbaAddress, 32);
+  LbaHigh = (UINT8) RShiftU64 (LbaAddress, 40);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
 
-  LbaLow  = (UINT8)LbaAddress;
-  LbaMid  = (UINT8)RShiftU64 (LbaAddress, 8);
-  LbaHigh = (UINT8)RShiftU64 (LbaAddress, 16); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->SectorNumber, LbaLow);
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderLsb,  LbaMid); 
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->CylinderMsb,  LbaHigh); 
-  
+  LbaLow  = (UINT8) LbaAddress;
+  LbaMid  = (UINT8) RShiftU64 (LbaAddress, 8);
+  LbaHigh = (UINT8) RShiftU64 (LbaAddress, 16);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->SectorNumber, LbaLow);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderLsb, LbaMid);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->CylinderMsb, LbaHigh);
+
   //
   // Send command via Command Register
   //
@@ -1725,26 +1854,26 @@ Returns:
   // Wait for command completion
   //
   Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
-  if(EFI_ERROR(Status)){
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  StatusRegister = IDEReadPortB (IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+  StatusRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
   if ((StatusRegister & ERR) == ERR) {
     //
     // Failed to execute command, abort operation
     //
     return EFI_ABORTED;
   }
-  
+
   return EFI_SUCCESS;
 }
 
-//*******************************************************************************
+//
 // SetDriveParameters
-//*******************************************************************************
+//
 EFI_STATUS
-SetDriveParameters(
+SetDriveParameters (
   IN IDE_BLK_IO_DEV       *IdeDev,
   IN ATA_DRIVE_PARMS      *DriveParameters
   )
@@ -1763,42 +1892,42 @@ Returns:
   SetParameters Command execute status
     
 --*/
-{ 
+{
   EFI_STATUS  Status;
   UINT8       DeviceSelect;
-    
-  DeviceSelect = 0;
-  DeviceSelect = (UINT8)((IdeDev->Device) << 4);
+
+  DeviceSelect  = 0;
+  DeviceSelect  = (UINT8) ((IdeDev->Device) << 4);
 
   //
   // Send Init drive parameters
   //
   Status = AtaPioDataIn (
-             IdeDev, 
-             NULL,
-             0,
-             INIT_DRIVE_PARAM_CMD,
-             (UINT8) (DeviceSelect + DriveParameters->Heads), 
-             DriveParameters->Sector,
-             0,
-             0,
-             0
-             );
-  
+            IdeDev,
+            NULL,
+            0,
+            INIT_DRIVE_PARAM_CMD,
+            (UINT8) (DeviceSelect + DriveParameters->Heads),
+            DriveParameters->Sector,
+            0,
+            0,
+            0
+            );
+
   //
   // Send Set Multiple parameters
   //
   Status = AtaPioDataIn (
-             IdeDev, 
-             NULL,
-             0,
-             SET_MULTIPLE_MODE_CMD,
-             DeviceSelect, 
-             DriveParameters->MultipleSector,
-             0,
-             0,
-             0
-             );
+            IdeDev,
+            NULL,
+            0,
+            SET_MULTIPLE_MODE_CMD,
+            DeviceSelect,
+            DriveParameters->MultipleSector,
+            0,
+            0,
+            0
+            );
 
   return Status;
 }
@@ -1806,15 +1935,30 @@ Returns:
 EFI_STATUS
 EnableInterrupt (
   IN IDE_BLK_IO_DEV       *IdeDev
-)
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  IdeDev  - TODO: add argument description
+
+Returns:
+
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
-  UINT8     DeviceControl;
-  
+  UINT8 DeviceControl;
+
   //
   // Enable interrupt for DMA operation
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo,IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   return EFI_SUCCESS;
 }

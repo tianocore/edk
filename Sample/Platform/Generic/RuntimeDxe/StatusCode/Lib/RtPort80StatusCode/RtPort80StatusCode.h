@@ -25,10 +25,9 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 #include "EfiCommonLib.h"
 #include "EfiRuntimeLib.h"
 #include "EfiStatusCode.h"
 
-#endif 
+#endif

@@ -51,6 +51,7 @@ Abstract:
     '%' - Print a %
 
 --*/
+
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "TianoCommon.h"
@@ -61,10 +62,10 @@ Abstract:
 
 #ifndef EFI_PRINT_LITE
 STATIC
-CHAR_W *
+CHAR_W  *
 GetFlagsAndWidth (
-  IN  CHAR_W      *Format, 
-  OUT UINTN       *Flags, 
+  IN  CHAR_W      *Format,
+  OUT UINTN       *Flags,
   OUT UINTN       *Width,
   IN OUT  VA_LIST *Marker
   );
@@ -100,8 +101,6 @@ Atoi (
   CHAR_W  *String
   );
 
-
-
 UINTN
 SPrint (
   OUT CHAR_W        *Buffer,
@@ -117,12 +116,12 @@ Routine Description:
 
 Arguments:
 
-  Buffer     - Ascii buffer to print the results of the parsing of Format into.
+  Buffer     - Wide char buffer to print the results of the parsing of Format into.
 
   BufferSize - Maximum number of characters to put into buffer. Zero means no 
                limit.
 
-  Format - Ascii format string see file header for more details.
+  Format - Format string see file header for more details.
 
   ...    - Vararg list consumed by processing Format.
 
@@ -138,7 +137,7 @@ Returns:
   VA_START (Marker, Format);
   Return = VSPrint (Buffer, BufferSize, Format, Marker);
   VA_END (Marker);
-  
+
   return Return;
 }
 
@@ -174,20 +173,22 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_PRINT_PROTOCOL            *PrintProtocol;
-  
-  Status = gBS->LocateProtocol (&gEfiPrintProtocolGuid, 
-                                NULL, 
-                                &PrintProtocol
-                                );
+  EFI_STATUS          Status;
+  EFI_PRINT_PROTOCOL  *PrintProtocol;
+
+  Status = gBS->LocateProtocol (
+                  &gEfiPrintProtocolGuid,
+                  NULL,
+                  &PrintProtocol
+                  );
   if (EFI_ERROR (Status)) {
     return 0;
   } else {
-    return PrintProtocol->VSPrint (StartOfBuffer, 
-                                     BufferSize,
-                                     FormatString,
-                                     Marker
-                                    );
-  }                                    
+    return PrintProtocol->VSPrint (
+                            StartOfBuffer,
+                            BufferSize,
+                            FormatString,
+                            Marker
+                            );
+  }
 }

@@ -26,8 +26,8 @@ Abstract:
 #include "EfiRuntimeLib.h"
 #include EFI_PROTOCOL_DEFINITION (ExtendedSalGuid)
 
-typedef 
-EFI_STATUS 
+typedef
+EFI_STATUS
 (EFIAPI *COMMON_PROC_ENTRY) (
   IN  UINTN                      FunctionId,
   IN  UINTN                      Arg2,
@@ -40,24 +40,72 @@ EFI_STATUS
   );
 
 typedef struct {
-  COMMON_PROC_ENTRY               CommonProcEntry;
+  COMMON_PROC_ENTRY CommonProcEntry;
 } COMMON_PROC_ENTRY_STRUCT;
-
 
 EFI_STATUS
 InstallPlatformRuntimeLib (
   IN  EFI_GUID                      *Guid,
   IN  COMMON_PROC_ENTRY_STRUCT      *CommonEntry
-);
+  )
+/*++
+
+Routine Description:
+
+  Install platform runtime lib.
+
+Arguments:
+
+  Guid                  - Guid for runtime lib
+  CommonEntry           - Common entry
+
+Returns: 
+
+  Status code
+
+--*/
+;
 
 EFI_STATUS
 GetPlatformRuntimeLib (
   IN EFI_SYSTEM_TABLE     *SystemTable
-);
+  )
+/*++
+
+Routine Description:
+
+  Get platform runtime lib.
+
+Arguments:
+
+  SystemTable           - Pointer to system table
+
+Returns: 
+
+  Status code
+
+--*/
+;
 
 EFI_STATUS
 ConvertPlatformRuntimeLibPtr (
   IN EFI_RUNTIME_SERVICES  *mRT
-);
+  )
+/*++
+
+Routine Description:
+
+  Convert platform runtime lib pointer.  
+
+Arguments:
+
+  mRT                   - Pointer to runtime service table.
+
+Returns: 
+
+  Status code
+
+--*/
+;
 
 #endif

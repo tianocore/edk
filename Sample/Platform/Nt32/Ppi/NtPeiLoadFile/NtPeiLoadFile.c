@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  Abstraction for the NT Load Image PPI GUID as defined in EFI 2.0
+  Abstraction for the NT Load Image PPI GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(NtPeiLoadFile)
+#include EFI_PPI_DEFINITION (NtPeiLoadFile)
 
-EFI_GUID gPeiLoadFileGuid = PEI_LOAD_FILE_PRIVATE_GUID; 
+EFI_GUID  gNtPeiLoadFileGuid = NT_PEI_LOAD_FILE_GUID;
 
-EFI_GUID_STRING(&gPeiLoadFileGuid, "NtPeiLoadFile", "NT PEI LOAD FILE PPI");
+EFI_GUID_STRING(&gNtPeiLoadFileGuid, "NtPeiLoadFile", "NT PEI LOAD FILE PPI");

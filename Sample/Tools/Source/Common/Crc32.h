@@ -19,12 +19,16 @@ Abstract:
   
 --*/
 
+#ifndef _CRC32_H
+#define _CRC32_H
 EFI_STATUS
 CalculateCrc32 (
   IN  UINT8                             *Data,
   IN  UINTN                             DataSize,
   IN OUT UINT32                         *CrcOut
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -44,4 +48,4 @@ Returns:
   EFI_INVALID_PARAMETER     - Data / CrcOut = NULL, or DataSize = 0
 
 --*/
- 
+#endif

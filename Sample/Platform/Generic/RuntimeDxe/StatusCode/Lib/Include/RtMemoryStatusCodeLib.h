@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 
 //
@@ -37,21 +36,23 @@ EFIAPI
 RtMemoryInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  );
+  )
+;
 
 //
 // Status code reporting function
 //
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 RtMemoryReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
 //
 // Playback all prior status codes to a listener
@@ -61,6 +62,7 @@ VOID
 EFIAPI
 PlaybackStatusCodes (
   IN EFI_REPORT_STATUS_CODE   ReportStatusCode
-  );
+  )
+;
 
-#endif 
+#endif

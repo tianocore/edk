@@ -46,15 +46,13 @@ typedef struct {
   UINT8   DhcpOptions[56];
 } EFI_PXE_BASE_CODE_DHCPV4_PACKET;
 
-
-typedef union { 
-  UINT8                               Raw[1472];
-  EFI_PXE_BASE_CODE_DHCPV4_PACKET     Dhcpv4;
+typedef union {
+  UINT8                           Raw[1472];
+  EFI_PXE_BASE_CODE_DHCPV4_PACKET Dhcpv4;
 
   //
   //  EFI_PXE_BASE_CODE_DHCPV6_PACKET     Dhcpv6;
   //
-
 } EFI_PXE_BASE_CODE_PACKET;
 
 #endif

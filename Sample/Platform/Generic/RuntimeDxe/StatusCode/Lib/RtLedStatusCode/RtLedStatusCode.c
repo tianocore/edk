@@ -28,62 +28,117 @@ Abstract:
 // Prepare the data to initialize LPC chipset for Server Io Configuration
 // This is hardcoded init value and would vary from platform to platform.
 //
-static SIO_INIT_DATA mSioInitData[] = {
+static SIO_INIT_DATA  mSioInitData[] = {
   //
   // Program magic values in ServerI/O configuration registers
   //
-  { REG_SERVERIO_CNF1,    0x19                      },
-  { REG_SERVERIO_CNF2,    0x22                      },
-  { REG_SERVERIO_CNF3,    0x76                      },
-  { REG_SERVERIO_CNF4,    0x26                      },
+  {
+    REG_SERVERIO_CNF1,
+    0x19
+  },
+  {
+    REG_SERVERIO_CNF2,
+    0x22
+  },
+  {
+    REG_SERVERIO_CNF3,
+    0x76
+  },
+  {
+    REG_SERVERIO_CNF4,
+    0x26
+  },
   //
   // Force the parallel port to be disabled, override reg 30 setting
-  // 
-  { REG_SERVERIO_CNF6,    0x02                      },
-  
-
+  //
+  {
+    REG_SERVERIO_CNF6,
+    0x02
+  },
   //
   // Select GPIO device and setup GPIO base address
-  //         
-  { REG_LOGICAL_DEVICE,   SIO_GPIO                    },
-  { ACTIVATE,             LOGICAL_DEVICE_OFF          },
-  { BASE_ADDRESS_HIGH,    SIO_GPIO_HIGH               },
-  { BASE_ADDRESS_LOW,     SIO_GPIO_LOW                },
-  { ACTIVATE,             LOGICAL_DEVICE_ON           },
   //
-  // Select DLED STB, post code LED, ZZ_POST_CLK_LED_L 
+  {
+    REG_LOGICAL_DEVICE,
+    SIO_GPIO
+  },
+  {
+    ACTIVATE,
+    LOGICAL_DEVICE_OFF
+  },
+  {
+    BASE_ADDRESS_HIGH,
+    SIO_GPIO_HIGH
+  },
+  {
+    BASE_ADDRESS_LOW,
+    SIO_GPIO_LOW
+  },
+  {
+    ACTIVATE,
+    LOGICAL_DEVICE_ON
+  },
   //
-  { GPIO_GPSEL,           0x43                        },
+  // Select DLED STB, post code LED, ZZ_POST_CLK_LED_L
+  //
+  {
+    GPIO_GPSEL,
+    0x43
+  },
   //
   // Push pull output enable
   //
-  { GPIO_GPCFG1,          PUSH_PULL | OUTPUT_BUFFER_EN},
+  {
+    GPIO_GPCFG1,
+    PUSH_PULL | OUTPUT_BUFFER_EN
+  },
   //
   // Disable Event IRQ routing
   //
-  { GPIO_GPEVR,           GPIO_EVENT_OFF              },
+  {
+    GPIO_GPEVR,
+    GPIO_EVENT_OFF
+  },
   //
   // Select DLED STB, ZZ_POST_DATA_LED_L
   //
-  { GPIO_GPSEL,           0x54                        },
+  {
+    GPIO_GPSEL,
+    0x54
+  },
   //
   // Push pull output enable
   //
-  { GPIO_GPCFG1,          PUSH_PULL | OUTPUT_BUFFER_EN },
+  {
+    GPIO_GPCFG1,
+    PUSH_PULL | OUTPUT_BUFFER_EN
+  },
   //
   // Disable Event IRQ routing
   //
-  { GPIO_GPEVR,           GPIO_EVENT_OFF              },
+  {
+    GPIO_GPEVR,
+    GPIO_EVENT_OFF
+  },
   //
   // Select Select ACPI_MODE_IND_L
   //
-  { GPIO_GPSEL,           0x63                        },
+  {
+    GPIO_GPSEL,
+    0x63
+  },
   //
   // Push pull output enable
   //
-  { GPIO_GPCFG1,          PUSH_PULL | OUTPUT_BUFFER_EN},
+  {
+    GPIO_GPCFG1,
+    PUSH_PULL | OUTPUT_BUFFER_EN
+  },
 
-  { 0xff,                 0xff                          }
+  {
+    0xff,
+    0xff
+  }
 };
 
 EFI_BOOTSERVICE
@@ -109,34 +164,33 @@ Returns:
 
 --*/
 {
-  UINT8           OutputData;
-  UINT16          ConfigPort;
-  UINT16          DataPort;    
-  UINT32          Index;
+  UINT8   OutputData;
+  UINT16  ConfigPort;
+  UINT16  DataPort;
+  UINT32  Index;
 
   //
   // hard code for sio init
   //
-  ConfigPort = CONFIG_PORT0;
-  DataPort   = DATA_PORT0;
-
+  ConfigPort  = CONFIG_PORT0;
+  DataPort    = DATA_PORT0;
 
   //
-  // Initialize Sio from table to enable SererIoCfg and GPIO 
+  // Initialize Sio from table to enable SererIoCfg and GPIO
   //
   Index = 0;
   while ((mSioInitData[Index]).RegAddress != 0xff) {
-    OutputData  = (UINT8) mSioInitData[Index].RegAddress ;
-    
+    OutputData = (UINT8) mSioInitData[Index].RegAddress;
+
     IoWrite8 (ConfigPort, OutputData);
 
-    OutputData  = (UINT8) mSioInitData[Index].RegValue ;
+    OutputData = (UINT8) mSioInitData[Index].RegValue;
     IoWrite8 (DataPort, OutputData);
 
     Index++;
   }
 
-  return;
+  return ;
 }
 
 BOOLEAN
@@ -149,11 +203,12 @@ CodeTypeToProgressCode (
   //
   // Convert Value to an 8 bit post code
   //
-  if (((CodeType & EFI_STATUS_CODE_TYPE_MASK)== EFI_PROGRESS_CODE)) {
-    *PostCode = (UINT8)(((Value & EFI_STATUS_CODE_CLASS_MASK) >> 24) << 5);
-    *PostCode |= (UINT8)(((Value & EFI_STATUS_CODE_SUBCLASS_MASK) >> 16) & 0x1f);
+  if (((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE)) {
+    *PostCode = (UINT8) (((Value & EFI_STATUS_CODE_CLASS_MASK) >> 24) << 5);
+    *PostCode |= (UINT8) (((Value & EFI_STATUS_CODE_SUBCLASS_MASK) >> 16) & 0x1f);
     return TRUE;
   }
+
   return FALSE;
 }
 
@@ -178,7 +233,7 @@ Returns:
 
 --*/
 {
-  UINT8   PinData;
+  UINT8 PinData;
 
   //
   // Read current Pin State of GPIO54
@@ -201,7 +256,6 @@ Returns:
   IoWrite8 (DataOffset, PinData);
 }
 
-
 StrobeData (
   IN  UINT16  StrobeOffset
   )
@@ -222,7 +276,7 @@ Returns:
 
 --*/
 {
-  UINT8   StrobeData;
+  UINT8 StrobeData;
 
   StrobeData = IoRead8 (StrobeOffset);
 
@@ -231,14 +285,14 @@ Returns:
   //
   StrobeData &= 0xF7;
 
-  IoWrite8(StrobeOffset, StrobeData);
+  IoWrite8 (StrobeOffset, StrobeData);
 
   //
   // Make bit 3 as 1 to perform the strobe to shift the data in 74HCT164
   //
   StrobeData |= STROBE_MASK_BIT;
 
-  IoWrite8(StrobeOffset, StrobeData);
+  IoWrite8 (StrobeOffset, StrobeData);
 }
 
 VOID
@@ -246,36 +300,35 @@ SendDataToLed (
   UINT8                   Data
   )
 {
-  UINT16    GpioBase;
-  UINT16    DataOffset;
-  UINT16    StrobeOffset;
-  UINTN     Index;
-  UINTN     DataBitPosition;
-  UINT8     TempData;
+  UINT16  GpioBase;
+  UINT16  DataOffset;
+  UINT16  StrobeOffset;
+  UINTN   Index;
+  UINTN   DataBitPosition;
+  UINT8   TempData;
 
-  GpioBase = GPIO_BASE(SIO_GPIO_HIGH,SIO_GPIO_LOW);
+  GpioBase        = GPIO_BASE (SIO_GPIO_HIGH, SIO_GPIO_LOW);
 
-  DataOffset = (UINT16)(GpioBase + LED_DATA_OFFSET );
+  DataOffset      = (UINT16) (GpioBase + LED_DATA_OFFSET);
 
-  StrobeOffset = (UINT16)(GpioBase + LED_STROBE_OFFSET);
+  StrobeOffset    = (UINT16) (GpioBase + LED_STROBE_OFFSET);
 
   DataBitPosition = 7;
 
-  Data = (UINT8)(~Data);
+  Data            = (UINT8) (~Data);
 
-  TempData = Data;
+  TempData        = Data;
 
   for (Index = 0; Index < 8; Index++) {
-    SendDataToPort ((UINT8)(TempData >> DataBitPosition), DataOffset);
+    SendDataToPort ((UINT8) (TempData >> DataBitPosition), DataOffset);
     StrobeData (StrobeOffset);
     DataBitPosition--;
   }
-  
   //
   // To fix 5 Volt leakage problem
   //
   SendDataToPort (0, DataOffset);
-  
+
 }
 
 EFI_RUNTIMESERVICE
@@ -285,8 +338,8 @@ RtLedReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -305,10 +358,11 @@ Returns:
 
 --*/
 {
-  UINT8   ProgressCode;
+  UINT8 ProgressCode;
 
-  if (CodeTypeToProgressCode (CodeType,Value, &ProgressCode)) {
+  if (CodeTypeToProgressCode (CodeType, Value, &ProgressCode)) {
     SendDataToLed (ProgressCode);
   }
-  return  EFI_SUCCESS;
+
+  return EFI_SUCCESS;
 }

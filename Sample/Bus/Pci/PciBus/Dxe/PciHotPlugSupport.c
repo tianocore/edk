@@ -24,17 +24,16 @@ Revision History
 #include "Pcibus.h"
 #include "PciHotPlugSupport.h"
 
+EFI_PCI_HOT_PLUG_INIT_PROTOCOL  *gPciHotPlugInit;
+EFI_HPC_LOCATION                *gPciRootHpcPool;
+UINTN                           gPciRootHpcCount;
+ROOT_HPC_DATA                   *gPciRootHpcData;
 
-EFI_PCI_HOT_PLUG_INIT_PROTOCOL *gPciHotPlugInit;
-EFI_HPC_LOCATION              *gPciRootHpcPool;
-UINTN                          gPciRootHpcCount;
-ROOT_HPC_DATA                  *gPciRootHpcData;
-
-VOID 
+VOID
 PciHPCInitialized (
   IN EFI_EVENT    Event,
   IN VOID         *Context
-)
+  )
 /*++
 
 Routine Description:
@@ -46,22 +45,21 @@ Returns:
   None
 
 --*/
-
+// TODO:    Event - add argument and description to function comment
+// TODO:    Context - add argument and description to function comment
 {
   ROOT_HPC_DATA *HpcData;
 
-  HpcData = (ROOT_HPC_DATA *)Context;
-  HpcData->Initialized = TRUE;
+  HpcData               = (ROOT_HPC_DATA *) Context;
+  HpcData->Initialized  = TRUE;
 
 }
-
-
 
 BOOLEAN
 EfiCompareDevicePath (
   IN EFI_DEVICE_PATH_PROTOCOL *DevicePath1,
   IN EFI_DEVICE_PATH_PROTOCOL *DevicePath2
-)
+  )
 /*++
 
 Routine Description:
@@ -73,10 +71,11 @@ Returns:
   None
 
 --*/
+// TODO:    DevicePath1 - add argument and description to function comment
+// TODO:    DevicePath2 - add argument and description to function comment
 {
-  UINTN  Size1;
-  UINTN  Size2;
-  
+  UINTN Size1;
+  UINTN Size2;
 
   Size1 = EfiDevicePathSize (DevicePath1);
   Size2 = EfiDevicePathSize (DevicePath2);
@@ -93,9 +92,9 @@ Returns:
 }
 
 EFI_STATUS
-InitializeHotPlugSupport(
-    VOID
-)
+InitializeHotPlugSupport (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -107,12 +106,14 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS  Status;
-  EFI_HPC_LOCATION *HpcList;
+  EFI_STATUS        Status;
+  EFI_HPC_LOCATION  *HpcList;
   UINTN             HpcCount;
 
-  
   //
   // Locate the PciHotPlugInit Protocol
   // If it doesn't exist, that means there is no
@@ -121,36 +122,34 @@ Returns:
   // is an optional feature, so absence of the protocol
   // won't incur the penalty
   //
-  gPciHotPlugInit = NULL;
-  gPciRootHpcPool = NULL;
-  gPciRootHpcCount = 0;
-  gPciRootHpcData = NULL;
-
+  gPciHotPlugInit   = NULL;
+  gPciRootHpcPool   = NULL;
+  gPciRootHpcCount  = 0;
+  gPciRootHpcData   = NULL;
 
   Status = gBS->LocateProtocol (
-                  &gEfiPciHotPlugInitProtocolGuid, 
+                  &gEfiPciHotPlugInitProtocolGuid,
                   NULL,
-                  (VOID **)&gPciHotPlugInit
+                  (VOID **) &gPciHotPlugInit
                   );
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
-  
   Status = gPciHotPlugInit->GetRootHpcList (
                               gPciHotPlugInit,
                               &HpcCount,
                               &HpcList
-                            );
-  
-  if (!EFI_ERROR(Status)) {
+                              );
 
-    gPciRootHpcPool = HpcList;
-    gPciRootHpcCount = HpcCount;
-    gPciRootHpcData = EfiLibAllocateZeroPool (sizeof(ROOT_HPC_DATA) * gPciRootHpcCount);
-      if (gPciRootHpcData == NULL) {
-        return EFI_OUT_OF_RESOURCES;
+  if (!EFI_ERROR (Status)) {
+
+    gPciRootHpcPool   = HpcList;
+    gPciRootHpcCount  = HpcCount;
+    gPciRootHpcData   = EfiLibAllocateZeroPool (sizeof (ROOT_HPC_DATA) * gPciRootHpcCount);
+    if (gPciRootHpcData == NULL) {
+      return EFI_OUT_OF_RESOURCES;
     }
   }
 
@@ -161,7 +160,7 @@ BOOLEAN
 IsRootPciHotPlugBus (
   IN EFI_DEVICE_PATH_PROTOCOL         *HpbDevicePath,
   OUT UINTN                           *HpIndex
-)
+  )
 /*++
 
 Routine Description:
@@ -176,8 +175,9 @@ Returns:
   None
 
 --*/
+// TODO:    HpbDevicePath - add argument and description to function comment
 {
-  UINTN          Index;
+  UINTN Index;
 
   for (Index = 0; Index < gPciRootHpcCount; Index++) {
 
@@ -186,9 +186,11 @@ Returns:
       if (HpIndex != NULL) {
         *HpIndex = Index;
       }
+
       return TRUE;
     }
   }
+
   return FALSE;
 }
 
@@ -196,7 +198,7 @@ BOOLEAN
 IsRootPciHotPlugController (
   IN EFI_DEVICE_PATH_PROTOCOL         *HpcDevicePath,
   OUT UINTN                           *HpIndex
-)
+  )
 /*++
 
 Routine Description:
@@ -212,7 +214,7 @@ Returns:
 
 --*/
 {
-  UINTN          Index;
+  UINTN Index;
 
   for (Index = 0; Index < gPciRootHpcCount; Index++) {
 
@@ -221,9 +223,11 @@ Returns:
       if (HpIndex != NULL) {
         *HpIndex = Index;
       }
+
       return TRUE;
     }
   }
+
   return FALSE;
 }
 
@@ -231,7 +235,7 @@ EFI_STATUS
 CreateEventForHpc (
   IN UINTN       HpIndex,
   OUT EFI_EVENT  *Event
-)
+  )
 /*++
 
 Routine Description:
@@ -243,18 +247,20 @@ Returns:
   None
 
 --*/
+// TODO:    HpIndex - add argument and description to function comment
+// TODO:    Event - add argument and description to function comment
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
-  Status = gBS->CreateEvent(
-                   EFI_EVENT_NOTIFY_SIGNAL,
-                   EFI_TPL_CALLBACK,
-                   PciHPCInitialized,
-                   gPciRootHpcData + HpIndex,
-                   &((gPciRootHpcData + HpIndex)->Event)
-                 );
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_CALLBACK,
+                  PciHPCInitialized,
+                  gPciRootHpcData + HpIndex,
+                  &((gPciRootHpcData + HpIndex)->Event)
+                  );
 
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     *Event = (gPciRootHpcData + HpIndex)->Event;
   }
 
@@ -263,8 +269,8 @@ Returns:
 
 EFI_STATUS
 AllRootHPCInitialized (
-   IN  UINTN           TimeoutInMilliSeconds
-)
+  IN  UINTN           TimeoutInMilliSeconds
+  )
 /*++
 
 Routine Description:
@@ -276,40 +282,43 @@ Returns:
   None
 
 --*/
+// TODO:    TimeoutInMilliSeconds - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
 {
-  UINT32        Delay; 
-  UINTN         Index;
- 
-  Delay = (UINT32)(((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) +  1);
+  UINT32  Delay;
+  UINTN   Index;
+
+  Delay = (UINT32) (((TimeoutInMilliSeconds * STALL_1_MILLI_SECOND) / 30) + 1);
   do {
 
-    for (Index = 0; Index < gPciRootHpcCount; Index ++) {
+    for (Index = 0; Index < gPciRootHpcCount; Index++) {
 
       if (!gPciRootHpcData[Index].Initialized) {
         break;
       }
     }
 
-    if (Index == gPciRootHpcCount){
+    if (Index == gPciRootHpcCount) {
       return EFI_SUCCESS;
     }
 
-    
-    gBS->Stall(30); // Stall for 30 us
-    
-    Delay --;
+    //
+    // Stall for 30 us
+    //
+    gBS->Stall (30);
+
+    Delay--;
 
   } while (Delay);
 
   return EFI_TIMEOUT;
 }
 
-
-  
 EFI_STATUS
 IsSHPC (
   PCI_IO_DEVICE                       *PciIoDevice
-)
+  )
 /*++
 
 Routine Description:
@@ -321,39 +330,42 @@ Returns:
   None
 
 --*/
+// TODO:    PciIoDevice - add argument and description to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
-  
-  EFI_STATUS     Status;
-  UINT8          Offset;
+
+  EFI_STATUS  Status;
+  UINT8       Offset;
 
   if (!PciIoDevice) {
     return EFI_NOT_FOUND;
   }
 
-  Offset = 0;  
+  Offset = 0;
   Status = LocateCapabilityRegBlock (
-                      PciIoDevice,
-                      EFI_PCI_CAPABILITY_ID_HOTPLUG,
-                      &Offset,
-                      NULL
-                      );
+            PciIoDevice,
+            EFI_PCI_CAPABILITY_ID_HOTPLUG,
+            &Offset,
+            NULL
+            );
 
   //
   // If the PPB has the hot plug controller build-in,
-  // then return TRUE; 
+  // then return TRUE;
   //
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     return EFI_SUCCESS;
   }
 
   return EFI_NOT_FOUND;
 }
 
-  
 EFI_STATUS
 GetResourcePaddingForHpb (
   IN PCI_IO_DEVICE *PciIoDevice
-) 
+  )
 /*++
 
 Routine Description:
@@ -365,34 +377,38 @@ Returns:
   None
 
 --*/
+// TODO:    PciIoDevice - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
-  EFI_STATUS Status;  
-  EFI_HPC_STATE    State;
-  UINT64            PciAddress;
-  EFI_HPC_PADDING_ATTRIBUTES Attributes;
-  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR                 *Descriptors;
-  
+  EFI_STATUS                        Status;
+  EFI_HPC_STATE                     State;
+  UINT64                            PciAddress;
+  EFI_HPC_PADDING_ATTRIBUTES        Attributes;
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Descriptors;
+
   Status = IsPciHotPlugBus (PciIoDevice);
 
-  if (!EFI_ERROR(Status)) {    
-    PciAddress = EFI_PCI_ADDRESS(PciIoDevice->BusNumber, PciIoDevice->DeviceNumber, PciIoDevice->FunctionNumber, 0);
+  if (!EFI_ERROR (Status)) {
+    PciAddress = EFI_PCI_ADDRESS (PciIoDevice->BusNumber, PciIoDevice->DeviceNumber, PciIoDevice->FunctionNumber, 0);
     Status = gPciHotPlugInit->GetResourcePadding (
-                                    gPciHotPlugInit,
-                                    PciIoDevice->DevicePath,
-                                    PciAddress,
-                                    &State,
-                                    (VOID **)&Descriptors,
-                                    &Attributes 
-                                  );
+                                gPciHotPlugInit,
+                                PciIoDevice->DevicePath,
+                                PciAddress,
+                                &State,
+                                (VOID **) &Descriptors,
+                                &Attributes
+                                );
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
 
     if ((State & EFI_HPC_STATE_ENABLED) && (State & EFI_HPC_STATE_INITIALIZED)) {
       PciIoDevice->ResourcePaddingDescriptors = Descriptors;
-      PciIoDevice->PaddingAttributes = Attributes;
+      PciIoDevice->PaddingAttributes          = Attributes;
     }
+
     return EFI_SUCCESS;
   }
 
@@ -402,7 +418,7 @@ Returns:
 EFI_STATUS
 IsPciHotPlugBus (
   PCI_IO_DEVICE                       *PciIoDevice
-)
+  )
 /*++
 
 Routine Description:
@@ -414,27 +430,31 @@ Returns:
   None
 
 --*/
-{  
-  BOOLEAN        Result;
-  EFI_STATUS     Status;
+// TODO:    PciIoDevice - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+{
+  BOOLEAN     Result;
+  EFI_STATUS  Status;
 
-  Status  = IsSHPC (PciIoDevice);
+  Status = IsSHPC (PciIoDevice);
 
   //
   // If the PPB has the hot plug controller build-in,
-  // then return TRUE; 
+  // then return TRUE;
   //
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     return EFI_SUCCESS;
   }
 
   //
   // Otherwise, see if it is a Root HPC
   //
-  Result = IsRootPciHotPlugBus(PciIoDevice->DevicePath, NULL);
+  Result = IsRootPciHotPlugBus (PciIoDevice->DevicePath, NULL);
 
   if (Result) {
-    return EFI_SUCCESS;    
+    return EFI_SUCCESS;
   }
 
   return EFI_NOT_FOUND;

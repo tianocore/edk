@@ -27,10 +27,10 @@ Abstract:
 #include "EfiRuntimeLib.h"
 #include EFI_PROTOCOL_DEFINITION (CpuIO)
 
-#define IA32_MAX_IO_ADDRESS       0xFFFF
-#define IA32_MAX_MEM_ADDRESS      0xFFFFFFFF
+#define IA32_MAX_IO_ADDRESS   0xFFFF
+#define IA32_MAX_MEM_ADDRESS  0xFFFFFFFF
 
-EFI_CPU_IO_PROTOCOL    mCpuIoProtocol;
+EFI_CPU_IO_PROTOCOL mCpuIoProtocol;
 
 EFI_STATUS
 CpuIoCheckAddressRange (
@@ -40,7 +40,6 @@ CpuIoCheckAddressRange (
   IN  VOID                              *Buffer,
   IN  UINT64                            Limit
   );
-
 
 EFI_STATUS
 EFIAPI
@@ -78,9 +77,10 @@ Returns:
                             and Count is not valid for this EFI System.
 
 --*/
+// TODO:    This - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  
+  EFI_STATUS  Status;
+
   if (!Buffer) {
     return EFI_INVALID_PARAMETER;
   }
@@ -92,17 +92,14 @@ Returns:
 
   //
   // Do nothing for Nt32 version
-  // 
+  //
   return EFI_SUCCESS;
 }
 
-
-
-
 EFI_STATUS
 EFIAPI
-CpuMemoryServiceWrite  (
-  IN EFI_CPU_IO_PROTOCOL       *This,
+CpuMemoryServiceWrite (
+  IN EFI_CPU_IO_PROTOCOL                *This,
   IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
   IN  UINT64                            Address,
   IN  UINTN                             Count,
@@ -134,9 +131,10 @@ Returns:
                             Count is not valid for this EFI System.
 
 --*/
+// TODO:    This - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  
+  EFI_STATUS  Status;
+
   if (!Buffer) {
     return EFI_INVALID_PARAMETER;
   }
@@ -148,15 +146,14 @@ Returns:
 
   //
   // Do nothing for Nt32 version
-  // 
+  //
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
 CpuIoServiceRead (
-  IN EFI_CPU_IO_PROTOCOL       *This,
+  IN EFI_CPU_IO_PROTOCOL                *This,
   IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
   IN  UINT64                            UserAddress,
   IN  UINTN                             Count,
@@ -186,16 +183,19 @@ Returns:
   EFI_UNSUPPORTED         - The address range specified by Address, Width, and 
                             Count is not valid for this EFI System.
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    UserAddress - add argument and description to function comment
+// TODO:    UserBuffer - add argument and description to function comment
 {
-  UINTN                    Address;
-  EFI_STATUS               Status;
+  UINTN       Address;
+  EFI_STATUS  Status;
 
   if (!UserBuffer) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Address    = (UINTN)  UserAddress;
-  
+  Address = (UINTN) UserAddress;
+
   if (Width >= EfiCpuIoWidthMaximum) {
     return EFI_INVALID_PARAMETER;
   }
@@ -207,15 +207,14 @@ Returns:
 
   //
   // Do nothing for Nt32 version
-  // 
+  //
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
-CpuIoServiceWrite  (
-  IN EFI_CPU_IO_PROTOCOL       *This,
+CpuIoServiceWrite (
+  IN EFI_CPU_IO_PROTOCOL                *This,
   IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
   IN  UINT64                            UserAddress,
   IN  UINTN                             Count,
@@ -249,16 +248,19 @@ Returns:
                             Count is not valid for this EFI System.
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    UserAddress - add argument and description to function comment
+// TODO:    UserBuffer - add argument and description to function comment
 {
-  UINTN                    Address;
-  EFI_STATUS               Status;
+  UINTN       Address;
+  EFI_STATUS  Status;
 
   if (!UserBuffer) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Address    = (UINTN)  UserAddress;
-  
+  Address = (UINTN) UserAddress;
+
   if (Width >= EfiCpuIoWidthMaximum) {
     return EFI_INVALID_PARAMETER;
   }
@@ -273,8 +275,6 @@ Returns:
   //
   return EFI_SUCCESS;
 }
-
-
 
 VOID
 EFIAPI
@@ -294,13 +294,13 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    Context - add argument and description to function comment
 {
   EfiConvertPointer (EFI_INTERNAL_POINTER, &mCpuIoProtocol.Mem.Read);
   EfiConvertPointer (EFI_INTERNAL_POINTER, &mCpuIoProtocol.Mem.Write);
   EfiConvertPointer (EFI_INTERNAL_POINTER, &mCpuIoProtocol.Io.Read);
   EfiConvertPointer (EFI_INTERNAL_POINTER, &mCpuIoProtocol.Io.Write);
 }
-
 
 EFI_STATUS
 CpuIoCheckAddressRange (
@@ -309,9 +309,31 @@ CpuIoCheckAddressRange (
   IN  UINTN                             Count,
   IN  VOID                              *Buffer,
   IN  UINT64                            Limit
-)
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Width   - TODO: add argument description
+  Address - TODO: add argument description
+  Count   - TODO: add argument description
+  Buffer  - TODO: add argument description
+  Limit   - TODO: add argument description
+
+Returns:
+
+  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
-  UINTN                     AlignMask;
+  UINTN AlignMask;
 
   if (Address > Limit) {
     return EFI_UNSUPPORTED;
@@ -323,17 +345,17 @@ CpuIoCheckAddressRange (
   if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
     Count = 1;
   }
-  
+
   Width = Width & 0x03;
   if (Address - 1 + (1 << Width) * Count > Limit) {
     return EFI_UNSUPPORTED;
   }
-  
+
   AlignMask = (1 << Width) - 1;
-  if ((UINTN)Buffer & AlignMask) {
+  if ((UINTN) Buffer & AlignMask) {
     return EFI_UNSUPPORTED;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -365,10 +387,10 @@ Returns:
   EFI_OUT_OF_RESOURCES  - cannot allocate protocol data structure
 
 --*/
+// TODO:    SystemTable - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  EFI_HANDLE    NewHandle;
-
+  EFI_STATUS  Status;
+  EFI_HANDLE  NewHandle;
 
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, CpuIoVirtualAddressChangeEvent);
 
@@ -377,10 +399,10 @@ Returns:
   mCpuIoProtocol.Io.Read    = CpuIoServiceRead;
   mCpuIoProtocol.Io.Write   = CpuIoServiceWrite;
 
-  NewHandle = NULL;
+  NewHandle                 = NULL;
   Status = gBS->InstallProtocolInterface (
                   &NewHandle,
-                  &gEfiCpuIoProtocolGuid, 
+                  &gEfiCpuIoProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &mCpuIoProtocol
                   );

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
   
---*/  
+--*/
 
 #ifndef _CAPSULE_PEIM_H
 #define _CAPSULE_PEIM_H
@@ -23,7 +23,6 @@ Abstract:
 //
 // If capsule data is passed via a variable, then this name should be used.
 //
-#define EFI_CAPSULE_VARIABLE_NAME     L"CapsuleUpdateData"
+#define EFI_CAPSULE_VARIABLE_NAME L"CapsuleUpdateData"
 
 #endif
-

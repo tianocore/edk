@@ -24,5 +24,6 @@ Abstract:
 
 EFI_GUID gEfiMemoryTypeInformationGuid  = EFI_MEMORY_TYPE_INFORMATION_GUID;
 
-EFI_GUID_STRING(&gEfiMemoryTypeInformationGuid, "Memory Type Information", "Memory Type Information HOB GUID for HOB list.");
+EFI_GUID_STRING(&gEfiMemoryTypeInformationGuid, "Memory Type Information", 
+                "Memory Type Information HOB GUID for HOB list.");
 

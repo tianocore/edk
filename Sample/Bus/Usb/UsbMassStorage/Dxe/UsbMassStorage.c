@@ -24,7 +24,7 @@ Revision History
 #include "UsbMassStorage.h"
 #include "UsbMassStorageHelper.h"
 
-extern EFI_COMPONENT_NAME_PROTOCOL gUsbMassStorageComponentName;
+extern EFI_COMPONENT_NAME_PROTOCOL  gUsbMassStorageComponentName;
 
 //
 // Prototypes
@@ -66,47 +66,47 @@ USBFloppyDriverBindingStop (
 // Block I/O Protocol Interface
 //
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyReset (
-    IN  EFI_BLOCK_IO_PROTOCOL  *This, 
-    IN  BOOLEAN                 ExtendedVerification
-    );
+  IN  EFI_BLOCK_IO_PROTOCOL   *This,
+  IN  BOOLEAN                 ExtendedVerification
+  );
 
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
-  IN  UINT32            MediaId,
-  IN  EFI_LBA           LBA,
-  IN  UINTN           BufferSize,
-  OUT VOID            *Buffer
-    );
+  IN  UINT32                  MediaId,
+  IN  EFI_LBA                 LBA,
+  IN  UINTN                   BufferSize,
+  OUT VOID                    *Buffer
+  );
 
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
-  IN  UINT32            MediaId,
-  IN  EFI_LBA           LBA,
-  IN  UINTN           BufferSize,
-  IN  VOID            *Buffer
-    );
-    
+  IN  UINT32                  MediaId,
+  IN  EFI_LBA                 LBA,
+  IN  UINTN                   BufferSize,
+  IN  VOID                    *Buffer
+  );
+
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
-  );    
+  );
 
 //
 // USB Floppy Driver Global Variables
 //
 
-EFI_DRIVER_BINDING_PROTOCOL gUSBFloppyDriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL         gUSBFloppyDriverBinding = {
   USBFloppyDriverBindingSupported,
   USBFloppyDriverBindingStart,
   USBFloppyDriverBindingStop,
@@ -115,8 +115,7 @@ EFI_DRIVER_BINDING_PROTOCOL gUSBFloppyDriverBinding = {
   NULL
 };
 
-
-EFI_DRIVER_ENTRY_POINT(USBMassStorageDriverBindingEntryPoint)
+EFI_DRIVER_ENTRY_POINT (USBMassStorageDriverBindingEntryPoint)
 
 EFI_STATUS
 EFIAPI
@@ -135,7 +134,9 @@ USBMassStorageDriverBindingEntryPoint (
   Returns:
     EFI_STATUS
   
---*/       
+--*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_STATUS  Status;
 
@@ -143,26 +144,25 @@ USBMassStorageDriverBindingEntryPoint (
   // Install driver binding protocol
   //
   Status = EfiLibInstallAllDriverProtocols (
-            ImageHandle, 
-            SystemTable, 
-            &gUSBFloppyDriverBinding, 
+            ImageHandle,
+            SystemTable,
+            &gUSBFloppyDriverBinding,
             ImageHandle,
             &gUsbMassStorageComponentName,
             NULL,
             NULL
-           );
+            );
 
   return Status;
 }
 
-
 EFI_STATUS
 EFIAPI
 USBFloppyDriverBindingSupported (
-  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
   IN EFI_DEVICE_PATH_PROTOCOL       *RemainingDevicePath
-  )  
+  )
 /*++
   
   Routine Description:
@@ -174,37 +174,40 @@ USBFloppyDriverBindingSupported (
   Returns:
     EFI_STATUS
   
---*/ 
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                OpenStatus;
-  EFI_USB_ATAPI_PROTOCOL    *AtapiProtocol;
+  EFI_STATUS              OpenStatus;
+  EFI_USB_ATAPI_PROTOCOL  *AtapiProtocol;
 
   //
   // check whether EFI_USB_ATAPI_PROTOCOL exists, if it does,
   // then the controller must be a USB Mass Storage Controller
   //
   OpenStatus = gBS->OpenProtocol (
-                          Controller,       
-                          &gEfiUsbAtapiProtocolGuid, 
-                          &AtapiProtocol,
-                          This->DriverBindingHandle,   
-                          Controller,   
-                          EFI_OPEN_PROTOCOL_BY_DRIVER
-                          );
-  if (EFI_ERROR(OpenStatus)) {
+                      Controller,
+                      &gEfiUsbAtapiProtocolGuid,
+                      &AtapiProtocol,
+                      This->DriverBindingHandle,
+                      Controller,
+                      EFI_OPEN_PROTOCOL_BY_DRIVER
+                      );
+  if (EFI_ERROR (OpenStatus)) {
     return OpenStatus;
   }
-  
-  gBS->CloseProtocol (
-         Controller,  
-         &gEfiUsbAtapiProtocolGuid, 
-         This->DriverBindingHandle,   
-         Controller   
-         );
-  
-  return EFI_SUCCESS;
-} 
 
+  gBS->CloseProtocol (
+        Controller,
+        &gEfiUsbAtapiProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
 EFIAPI
@@ -224,45 +227,49 @@ USBFloppyDriverBindingStart (
   Returns:
     EFI_STATUS
   
---*/       
-{ 
-  EFI_STATUS                Status; 
-  EFI_USB_ATAPI_PROTOCOL    *AtapiProtocol;
-  USB_FLOPPY_DEV      *UsbFloppyDevice;
-  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
+  EFI_STATUS              Status;
+  EFI_USB_ATAPI_PROTOCOL  *AtapiProtocol;
+  USB_FLOPPY_DEV          *UsbFloppyDevice;
+
   UsbFloppyDevice = NULL;
   //
   // Check whether Usb Atapi Protocol attached on the controller handle.
-  //  
+  //
   Status = gBS->OpenProtocol (
-                      Controller,   
-                      &gEfiUsbAtapiProtocolGuid,  
-                      &AtapiProtocol,
-                      This->DriverBindingHandle,     
-                      Controller,   
-                      EFI_OPEN_PROTOCOL_BY_DRIVER
-                    );                              
-  if(EFI_ERROR(Status)) {
-    return Status;
-  }
-  
-  Status = gBS->AllocatePool(
-                  EfiBootServicesData,
-                  sizeof(USB_FLOPPY_DEV),
-                  &UsbFloppyDevice
+                  Controller,
+                  &gEfiUsbAtapiProtocolGuid,
+                  &AtapiProtocol,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  if(EFI_ERROR(Status)) {
-    gBS->CloseProtocol (  
-        Controller,
-        &gEfiUsbAtapiProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        ); 
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  EfiZeroMem(UsbFloppyDevice,sizeof(USB_FLOPPY_DEV));   
-  
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  sizeof (USB_FLOPPY_DEV),
+                  &UsbFloppyDevice
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiUsbAtapiProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
+    return Status;
+  }
+
+  EfiZeroMem (UsbFloppyDevice, sizeof (USB_FLOPPY_DEV));
+
   UsbFloppyDevice->Handle             = Controller;
   UsbFloppyDevice->BlkIo.Media        = &UsbFloppyDevice->BlkMedia;
   UsbFloppyDevice->Signature          = USB_FLOPPY_DEV_SIGNATURE;
@@ -275,48 +282,48 @@ USBFloppyDriverBindingStart (
   //
   // Identify drive type and retrieve media information.
   //
-  Status = USBFloppyIdentify(UsbFloppyDevice);
-  if(EFI_ERROR(Status)) {
+  Status = USBFloppyIdentify (UsbFloppyDevice);
+  if (EFI_ERROR (Status)) {
     if (UsbFloppyDevice->SenseData != NULL) {
-      gBS->FreePool(UsbFloppyDevice->SenseData);
+      gBS->FreePool (UsbFloppyDevice->SenseData);
     }
-    gBS->FreePool(UsbFloppyDevice);    
-    gBS->CloseProtocol (  
-        Controller,
-        &gEfiUsbAtapiProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        );
-    return Status;
-  }    
 
+    gBS->FreePool (UsbFloppyDevice);
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiUsbAtapiProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
+    return Status;
+  }
   //
   // Install Block I/O protocol for the usb floppy device.
   //
-  Status = gBS->InstallProtocolInterface(
+  Status = gBS->InstallProtocolInterface (
                   &Controller,
                   &gEfiBlockIoProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &UsbFloppyDevice->BlkIo
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     if (UsbFloppyDevice->SenseData != NULL) {
-      gBS->FreePool(UsbFloppyDevice->SenseData);
+      gBS->FreePool (UsbFloppyDevice->SenseData);
     }
-    gBS->FreePool(UsbFloppyDevice);    
-    gBS->CloseProtocol (  
-        Controller,
-        &gEfiUsbAtapiProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        );
+
+    gBS->FreePool (UsbFloppyDevice);
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiUsbAtapiProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
     return Status;
   }
 
   return EFI_SUCCESS;
-  
-}
 
+}
 
 EFI_STATUS
 EFIAPI
@@ -337,66 +344,70 @@ USBFloppyDriverBindingStop (
   Returns:
     EFI_STATUS
   
---*/       
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Controller - add argument and description to function comment
+// TODO:    NumberOfChildren - add argument and description to function comment
+// TODO:    ChildHandleBuffer - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS              Status;
-  USB_FLOPPY_DEV          *UsbFloppyDevice;
-  EFI_BLOCK_IO_PROTOCOL   *BlkIo;
+  EFI_STATUS            Status;
+  USB_FLOPPY_DEV        *UsbFloppyDevice;
+  EFI_BLOCK_IO_PROTOCOL *BlkIo;
 
   //
   // First find USB_FLOPPY_DEV
   //
 
-  gBS->OpenProtocol(
-             Controller,   
-             &gEfiBlockIoProtocolGuid,  
-             &BlkIo,
-             This->DriverBindingHandle,     
-             Controller,   
-             EFI_OPEN_PROTOCOL_GET_PROTOCOL
-             );
+  gBS->OpenProtocol (
+        Controller,
+        &gEfiBlockIoProtocolGuid,
+        &BlkIo,
+        This->DriverBindingHandle,
+        Controller,
+        EFI_OPEN_PROTOCOL_GET_PROTOCOL
+        );
 
-  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS(BlkIo);
+  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS (BlkIo);
 
   //
   // Uninstall Block I/O protocol from the device handle
   //
-  Status = gBS->UninstallProtocolInterface(
+  Status = gBS->UninstallProtocolInterface (
                   Controller,
-                  &gEfiBlockIoProtocolGuid,    
+                  &gEfiBlockIoProtocolGuid,
                   &UsbFloppyDevice->BlkIo
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  //  
+  //
   // Stop using EFI_USB_ATAPI_PROTOCOL
   //
   gBS->CloseProtocol (
-           Controller, 
-           &gEfiUsbAtapiProtocolGuid, 
-           This->DriverBindingHandle,   
-           Controller   
-           );
+        Controller,
+        &gEfiUsbAtapiProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
 
   if (UsbFloppyDevice->SenseData != NULL) {
     gBS->FreePool (UsbFloppyDevice->SenseData);
   }
 
   gBS->FreePool (UsbFloppyDevice);
-      
+
   return EFI_SUCCESS;
 }
 
-
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyReset (
-    IN  EFI_BLOCK_IO_PROTOCOL   *This, 
-    IN  BOOLEAN                 ExtendedVerification
-    )
+  IN  EFI_BLOCK_IO_PROTOCOL   *This,
+  IN  BOOLEAN                 ExtendedVerification
+  )
 /*++
 
   Routine Description:
@@ -411,27 +422,29 @@ USBFloppyReset (
     
   Returns:  
 
---*/      
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ExtendedVerification - add argument and description to function comment
 {
-  USB_FLOPPY_DEV              *UsbFloppyDevice;
-  EFI_USB_ATAPI_PROTOCOL      *UsbAtapiInterface;
-  EFI_STATUS                  Status;
-  
-  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS(This);
-  
+  USB_FLOPPY_DEV          *UsbFloppyDevice;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
+  EFI_STATUS              Status;
+
+  UsbFloppyDevice   = USB_FLOPPY_DEV_FROM_THIS (This);
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
   //
   // directly calling EFI_USB_ATAPI_PROTOCOL.Reset() to implement reset.
   //
-  Status = UsbAtapiInterface->UsbAtapiReset(UsbAtapiInterface, TRUE);
-  
+  Status = UsbAtapiInterface->UsbAtapiReset (UsbAtapiInterface, TRUE);
+
   return Status;
-} 
+}
 
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
@@ -457,123 +470,127 @@ USBFloppyReadBlocks (
   
   Returns:  
 
- --*/      
+ --*/
+// TODO:    MediaId - add argument and description to function comment
+// TODO:    LBA - add argument and description to function comment
+// TODO:    BufferSize - add argument and description to function comment
 {
-  USB_FLOPPY_DEV        *UsbFloppyDevice;
-  EFI_STATUS            Status;  
-  EFI_BLOCK_IO_MEDIA    *Media;
-  UINTN                 BlockSize;            
-  UINTN                 NumberOfBlocks ;
-  BOOLEAN               MediaChange;
-  EFI_TPL               OldTpl;
-  UINT32                Retry;
-  
-  OldTpl = gBS->RaiseTPL(EFI_TPL_NOTIFY);
-  Status = EFI_SUCCESS;
-  MediaChange = FALSE;
-  Retry = 0;
-  
-  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS(This);
-  
+  USB_FLOPPY_DEV      *UsbFloppyDevice;
+  EFI_STATUS          Status;
+  EFI_BLOCK_IO_MEDIA  *Media;
+  UINTN               BlockSize;
+  UINTN               NumberOfBlocks;
+  BOOLEAN             MediaChange;
+  EFI_TPL             OldTpl;
+  UINT32              Retry;
+
+  OldTpl          = gBS->RaiseTPL (EFI_TPL_NOTIFY);
+  Status          = EFI_SUCCESS;
+  MediaChange     = FALSE;
+  Retry           = 0;
+
+  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS (This);
+
   //
   // Check parameters
   //
-  if (!Buffer) {    
+  if (!Buffer) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  
-  if (BufferSize == 0) {    
+
+  if (BufferSize == 0) {
     Status = EFI_SUCCESS;
     goto Done;
-  }  
-        
+  }
+
   UsbFloppyTestUnitReady (UsbFloppyDevice);
-  
-  Status = UsbFloppyDetectMedia(UsbFloppyDevice,&MediaChange);
-  if(EFI_ERROR(Status)){
-        
+
+  Status = UsbFloppyDetectMedia (UsbFloppyDevice, &MediaChange);
+  if (EFI_ERROR (Status)) {
+
     Status = EFI_DEVICE_ERROR;
     goto Done;
   }
-  
+
   if (MediaChange) {
-    gBS->RestoreTPL(OldTpl);    
-    gBS->ReinstallProtocolInterface (UsbFloppyDevice->Handle,
-      &gEfiBlockIoProtocolGuid,
-      &UsbFloppyDevice->BlkIo,
-      &UsbFloppyDevice->BlkIo
-      );
-    gBS->RaiseTPL(EFI_TPL_NOTIFY);
+    gBS->RestoreTPL (OldTpl);
+    gBS->ReinstallProtocolInterface (
+          UsbFloppyDevice->Handle,
+          &gEfiBlockIoProtocolGuid,
+          &UsbFloppyDevice->BlkIo,
+          &UsbFloppyDevice->BlkIo
+          );
+    gBS->RaiseTPL (EFI_TPL_NOTIFY);
   }
-  
-  Media     = UsbFloppyDevice->BlkIo.Media ;
-  BlockSize = Media->BlockSize ;
-  NumberOfBlocks = BufferSize / BlockSize ;
-  
-  if ( !(Media -> MediaPresent)) {
+
+  Media           = UsbFloppyDevice->BlkIo.Media;
+  BlockSize       = Media->BlockSize;
+  NumberOfBlocks  = BufferSize / BlockSize;
+
+  if (!(Media->MediaPresent)) {
     Status = EFI_NO_MEDIA;
     goto Done;
-  }    
-  
+  }
+
   if (MediaId != Media->MediaId) {
     Status = EFI_MEDIA_CHANGED;
     goto Done;
   }
-  
+
   if (BufferSize % BlockSize != 0) {
     Status = EFI_BAD_BUFFER_SIZE;
     goto Done;
   }
-  
+
   if (LBA > Media->LastBlock) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  
+
   if ((LBA + NumberOfBlocks - 1) > Media->LastBlock) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
-  }   
+  }
 
-  if ((Media->IoAlign > 1) && (((UINTN)Buffer & (Media->IoAlign - 1)) != 0)) {
+  if ((Media->IoAlign > 1) && (((UINTN) Buffer & (Media->IoAlign - 1)) != 0)) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  
-  if (!EFI_ERROR(Status)) {
-    
+
+  if (!EFI_ERROR (Status)) {
+
     Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, 1);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
       goto Done;
     }
-    
+
     LBA += 1;
     NumberOfBlocks -= 1;
-    Buffer = (UINT8*)Buffer + This->Media->BlockSize;
-    
+    Buffer = (UINT8 *) Buffer + This->Media->BlockSize;
+
     if (NumberOfBlocks == 0) {
       Status = EFI_SUCCESS;
       goto Done;
     }
-    
-    Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks );
-    if (EFI_ERROR(Status)) {
+
+    Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks);
+    if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
     }
   }
-  
+
 Done:
-  gBS->RestoreTPL(OldTpl);
-  return Status;  
-}     
+  gBS->RestoreTPL (OldTpl);
+  return Status;
+}
 
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
@@ -601,127 +618,131 @@ USBFloppyWriteBlocks (
   
   Returns:  
 
---*/        
+--*/
+// TODO:    MediaId - add argument and description to function comment
+// TODO:    LBA - add argument and description to function comment
+// TODO:    BufferSize - add argument and description to function comment
 {
-  USB_FLOPPY_DEV        *UsbFloppyDevice;
-  EFI_STATUS            Status;  
-  EFI_BLOCK_IO_MEDIA    *Media;
-  UINTN                 BlockSize;            
-  UINTN                 NumberOfBlocks ;
-  BOOLEAN               MediaChange;
-  EFI_TPL               OldTpl;
-  UINT32                Retry;
-  
-  OldTpl = gBS->RaiseTPL(EFI_TPL_NOTIFY);
-  Status = EFI_SUCCESS;
-  MediaChange = FALSE;
-  Retry = 0;
-  
-  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS(This);
+  USB_FLOPPY_DEV      *UsbFloppyDevice;
+  EFI_STATUS          Status;
+  EFI_BLOCK_IO_MEDIA  *Media;
+  UINTN               BlockSize;
+  UINTN               NumberOfBlocks;
+  BOOLEAN             MediaChange;
+  EFI_TPL             OldTpl;
+  UINT32              Retry;
+
+  OldTpl          = gBS->RaiseTPL (EFI_TPL_NOTIFY);
+  Status          = EFI_SUCCESS;
+  MediaChange     = FALSE;
+  Retry           = 0;
+
+  UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS (This);
 
   //
   // Check parameters
   //
-  if (!Buffer) {    
+  if (!Buffer) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  
-  if (BufferSize == 0) {    
+
+  if (BufferSize == 0) {
     Status = EFI_SUCCESS;
     goto Done;
-  }  
-        
+  }
+
   UsbFloppyTestUnitReady (UsbFloppyDevice);
-  
-  Status = UsbFloppyDetectMedia(UsbFloppyDevice,&MediaChange);
-  if(EFI_ERROR(Status)){
-     
+
+  Status = UsbFloppyDetectMedia (UsbFloppyDevice, &MediaChange);
+  if (EFI_ERROR (Status)) {
+
     Status = EFI_DEVICE_ERROR;
     goto Done;
   }
-  
+
   if (MediaChange) {
-    gBS->RestoreTPL(OldTpl);    
-    gBS->ReinstallProtocolInterface (UsbFloppyDevice->Handle,
-      &gEfiBlockIoProtocolGuid,
-      &UsbFloppyDevice->BlkIo,
-      &UsbFloppyDevice->BlkIo
-      );
-    gBS->RaiseTPL(EFI_TPL_NOTIFY);
+    gBS->RestoreTPL (OldTpl);
+    gBS->ReinstallProtocolInterface (
+          UsbFloppyDevice->Handle,
+          &gEfiBlockIoProtocolGuid,
+          &UsbFloppyDevice->BlkIo,
+          &UsbFloppyDevice->BlkIo
+          );
+    gBS->RaiseTPL (EFI_TPL_NOTIFY);
   }
-  
-  Media     = UsbFloppyDevice->BlkIo.Media ;
-  BlockSize = Media->BlockSize ;
-  NumberOfBlocks = BufferSize / BlockSize ;
-  
-  if ( !(Media -> MediaPresent)) {
+
+  Media           = UsbFloppyDevice->BlkIo.Media;
+  BlockSize       = Media->BlockSize;
+  NumberOfBlocks  = BufferSize / BlockSize;
+
+  if (!(Media->MediaPresent)) {
     Status = EFI_NO_MEDIA;
     goto Done;
-  }    
-  
+  }
+
   if (MediaId != Media->MediaId) {
     Status = EFI_MEDIA_CHANGED;
     goto Done;
   }
-  
+
   if (BufferSize % BlockSize != 0) {
     Status = EFI_BAD_BUFFER_SIZE;
     goto Done;
   }
-  
+
   if (LBA > Media->LastBlock) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  
+
   if ((LBA + NumberOfBlocks - 1) > Media->LastBlock) {
     Status = EFI_INVALID_PARAMETER;
     goto Done;
-  }   
+  }
 
-  if ((Media->IoAlign > 1) && (((UINTN)Buffer & (Media->IoAlign - 1)) != 0)) {
-    Status =  EFI_INVALID_PARAMETER;
+  if ((Media->IoAlign > 1) && (((UINTN) Buffer & (Media->IoAlign - 1)) != 0)) {
+    Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-  
+
   if (UsbFloppyDevice->BlkMedia.ReadOnly) {
-    Status =  EFI_WRITE_PROTECTED;
+    Status = EFI_WRITE_PROTECTED;
     goto Done;
   }
-  
-  if (!EFI_ERROR(Status)) {
+
+  if (!EFI_ERROR (Status)) {
     Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, 1);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
       goto Done;
     }
-    
+
     LBA += 1;
     NumberOfBlocks -= 1;
-    Buffer = (UINT8*)Buffer + This->Media->BlockSize;
-    
+    Buffer = (UINT8 *) Buffer + This->Media->BlockSize;
+
     if (NumberOfBlocks == 0) {
       Status = EFI_SUCCESS;
       goto Done;
     }
-    
-    Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks );
-    if (EFI_ERROR(Status)) {
+
+    Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks);
+    if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
     }
   }
-  
+
 Done:
-  gBS->RestoreTPL(OldTpl);
-  return Status;  
-}     
-    
+  gBS->RestoreTPL (OldTpl);
+  return Status;
+}
+
 STATIC
-EFI_STATUS 
-EFIAPI 
+EFI_STATUS
+EFIAPI
 USBFloppyFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
   )
@@ -736,7 +757,9 @@ USBFloppyFlushBlocks (
   
   Returns:  
 
---*/    
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   return EFI_SUCCESS;
-}   
+}

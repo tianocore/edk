@@ -25,36 +25,48 @@ Abstract:
 
 #include "TianoDevicePath.h"
 
-
-
 #pragma pack(1)
+//
+// USB
+//
 
-//USB
 /* For reference:
 #define USB1_1_STR  "ACPI(PNP0A03,0)/PCI(1D,0)."
 #define USB1_2_STR  "ACPI(PNP0A03,0)/PCI(1D,1)."
 #define USB1_3_STR  "ACPI(PNP0A03,0)/PCI(1D,2)."
 #define USB2_1_STR  "ACPI(PNP0A03,0)/PCI(1D,7)." 
 */
-//#define acpi { 0x02, 0x01, 0x00, 0x0C, 0x0a0341d0, 0x00000000 }
-//#define pci( device,function)  { 0x01, 0x01, 0x00, 0x06, device, function }
-//#define end  { 0xFF, 0xFF, 0x00, 0x04 }
 
-#define ACPI { ACPI_DEVICE_PATH,\
-    ACPI_DP, (UINT8) (sizeof (ACPI_HID_DEVICE_PATH)),\
-   (UINT8) ((sizeof (ACPI_HID_DEVICE_PATH)) >> 8), EISA_PNP_ID(0x0A03), 0 }
-#define PCI( device,function)  { HARDWARE_DEVICE_PATH,\
-    HW_PCI_DP, (UINT8) (sizeof (PCI_DEVICE_PATH)),\
-    (UINT8) ((sizeof (PCI_DEVICE_PATH)) >> 8), function, device }
-#define END  { END_DEVICE_PATH_TYPE, \
-    END_ENTIRE_DEVICE_PATH_SUBTYPE, END_DEVICE_PATH_LENGTH, 0 }
+//
+// #define acpi { 0x02, 0x01, 0x00, 0x0C, 0x0a0341d0, 0x00000000 }
+// #define pci( device,function)  { 0x01, 0x01, 0x00, 0x06, device, function }
+// #define end  { 0xFF, 0xFF, 0x00, 0x04 }
+//
+#define ACPI \
+  { \
+    ACPI_DEVICE_PATH, ACPI_DP, (UINT8) (sizeof (ACPI_HID_DEVICE_PATH)), (UINT8) \
+      ((sizeof (ACPI_HID_DEVICE_PATH)) >> 8), EISA_PNP_ID (0x0A03), 0 \
+  }
+#define PCI(device, function) \
+  { \
+    HARDWARE_DEVICE_PATH, HW_PCI_DP, (UINT8) (sizeof (PCI_DEVICE_PATH)), (UINT8) \
+      ((sizeof (PCI_DEVICE_PATH)) >> 8), function, device \
+  }
+#define END \
+  { \
+    END_DEVICE_PATH_TYPE, END_ENTIRE_DEVICE_PATH_SUBTYPE, END_DEVICE_PATH_LENGTH, 0 \
+  }
 
-#define LPC(eisaid,function ){ ACPI_DEVICE_PATH, \
-ACPI_DP,(UINT8) (sizeof (ACPI_HID_DEVICE_PATH)),\
-(UINT8) ((sizeof (ACPI_HID_DEVICE_PATH)) >> 8),EISA_PNP_ID(eisaid), function }
- 
+#define LPC(eisaid, function) \
+  { \
+    ACPI_DEVICE_PATH, ACPI_DP, (UINT8) (sizeof (ACPI_HID_DEVICE_PATH)), (UINT8) \
+      ((sizeof (ACPI_HID_DEVICE_PATH)) >> 8), EISA_PNP_ID (eisaid), function \
+  }
 
-//Shanmu >> moved to TianoDevicePath.h 
+//
+// Shanmu >> moved to TianoDevicePath.h
+//
+
 /*
 typedef struct _USB_PORT_DEVICE_PATH
 {
@@ -155,9 +167,10 @@ typedef struct _FLOOPY_CONN_DEVICE_PATH
 //static FLOOPY_CONN_DEVICE_PATH mFloopyBDevicePath   = { acpi, pci( 0x1F,0x00 ),lpc( 0x0604,1 ), end };
 
 */
-//End Shanmu
 
-#pragma pack( )
-
+//
+// End Shanmu
+//
+#pragma pack()
 
 #endif

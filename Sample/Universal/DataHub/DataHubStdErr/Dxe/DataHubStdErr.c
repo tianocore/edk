@@ -29,7 +29,6 @@ Abstract:
 #include EFI_GUID_DEFINITION (StatusCode)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 
-
 EFI_DATA_HUB_PROTOCOL *mDataHub = NULL;
 
 EFI_EVENT             mDataHubStdErrEvent;
@@ -39,7 +38,7 @@ VOID
 EFIAPI
 DataHubStdErrEventHandler (
   IN EFI_EVENT Event,
-  IN VOID     *Context
+  IN VOID      *Context
   )
 /*++
 
@@ -50,6 +49,9 @@ Routine Description:
 Arguments:
   Event    - The event that occured, not used
   Context  - DataHub Protocol Pointer
+  
+Returns:
+  None.
 
 --*/
 {
@@ -61,23 +63,22 @@ Arguments:
   EFI_SIMPLE_TEXT_OUT_PROTOCOL      *Sto;
   INT32                             OldAttribute;
 
-  DataHub = (EFI_DATA_HUB_PROTOCOL *)Context;
+  DataHub = (EFI_DATA_HUB_PROTOCOL *) Context;
 
   //
-  // If StdErr is not yet initialized just return a DEBUG print in the BDS 
-  // after consoles are connect will make sure data gets flushed properly 
+  // If StdErr is not yet initialized just return a DEBUG print in the BDS
+  // after consoles are connect will make sure data gets flushed properly
   // when StdErr is availible.
   //
   if (gST == NULL) {
-    return;
+    return ;
   }
 
   if (gST->StdErr == NULL) {
-    return;
+    return ;
   }
-  
   //
-  // Mtc of zero means return the next record that has not been read by the 
+  // Mtc of zero means return the next record that has not been read by the
   // event handler.
   //
   Mtc = 0;
@@ -85,17 +86,17 @@ Arguments:
     Status = DataHub->GetNextRecord (DataHub, &Mtc, &mDataHubStdErrEvent, &Record);
     if (!EFI_ERROR (Status)) {
       if (EfiCompareGuid (&Record->DataRecordGuid, &gEfiStatusCodeGuid)) {
-        DataRecord = (DATA_HUB_STATUS_CODE_DATA_RECORD *)(((CHAR8 *)Record) + Record->HeaderSize);
+        DataRecord = (DATA_HUB_STATUS_CODE_DATA_RECORD *) (((CHAR8 *) Record) + Record->HeaderSize);
 
         if (DataRecord->Data.HeaderSize > 0) {
           if (EfiCompareGuid (&DataRecord->Data.Type, &gEfiStatusCodeDataTypeDebugGuid)) {
             //
             // If the Data record is from a DEBUG () then send it to Standard Error
             //
-            Sto = gST->StdErr;
-            OldAttribute = Sto->Mode->Attribute;
+            Sto           = gST->StdErr;
+            OldAttribute  = Sto->Mode->Attribute;
             Sto->SetAttribute (Sto, EFI_TEXT_ATTR (EFI_MAGENTA, EFI_BLACK));
-            Sto->OutputString (Sto, (CHAR16 *)(DataRecord + 1));
+            Sto->OutputString (Sto, (CHAR16 *) (DataRecord + 1));
             Sto->SetAttribute (Sto, OldAttribute);
           }
         }
@@ -103,7 +104,6 @@ Arguments:
     }
   } while ((Mtc != 0) && !EFI_ERROR (Status));
 }
-
 
 EFI_DRIVER_ENTRY_POINT (DataHubStdErrInitialize)
 
@@ -154,7 +154,7 @@ Returns:
                   EFI_EVENT_NOTIFY_SIGNAL,
                   EFI_TPL_CALLBACK,
                   DataHubStdErrEventHandler,
-                  mDataHub, 
+                  mDataHub,
                   &mDataHubStdErrEvent
                   );
   if (EFI_ERROR (Status)) {
@@ -163,16 +163,15 @@ Returns:
 
   DataClass = EFI_DATA_RECORD_CLASS_DEBUG | EFI_DATA_RECORD_CLASS_ERROR;
   Status = mDataHub->RegisterFilterDriver (
-                       mDataHub, 
-                       mDataHubStdErrEvent, 
-                       EFI_TPL_CALLBACK, 
-                       DataClass,
-                       NULL
-                       );
+                      mDataHub,
+                      mDataHubStdErrEvent,
+                      EFI_TPL_CALLBACK,
+                      DataClass,
+                      NULL
+                      );
   if (EFI_ERROR (Status)) {
     gBS->CloseEvent (mDataHubStdErrEvent);
   }
 
   return Status;
 }
-

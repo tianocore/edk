@@ -25,7 +25,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define _HID_H
 
 #include "usb.h"
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
 
 //
 // HID constants definition, see HID rev1.0
@@ -45,10 +45,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // HID report descriptor item type (prefix bit 2,3)
 //
-#define HID_ITEM_TYPE_MAIN          0
-#define HID_ITEM_TYPE_GLOBAL        1
-#define HID_ITEM_TYPE_LOCAL         2
-#define HID_ITEM_TYPE_RESERVED      3
+#define HID_ITEM_TYPE_MAIN      0
+#define HID_ITEM_TYPE_GLOBAL    1
+#define HID_ITEM_TYPE_LOCAL     2
+#define HID_ITEM_TYPE_RESERVED  3
 
 //
 // HID report descriptor main item tags
@@ -62,22 +62,22 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // HID report descriptor main item contents
 //
-#define HID_MAIN_ITEM_CONSTANT              0x001
-#define HID_MAIN_ITEM_VARIABLE              0x002
-#define HID_MAIN_ITEM_RELATIVE              0x004
-#define HID_MAIN_ITEM_WRAP                  0x008 
-#define HID_MAIN_ITEM_NONLINEAR             0x010
-#define HID_MAIN_ITEM_NO_PREFERRED          0x020
-#define HID_MAIN_ITEM_NULL_STATE            0x040
-#define HID_MAIN_ITEM_VOLATILE              0x080
-#define HID_MAIN_ITEM_BUFFERED_BYTE         0x100
+#define HID_MAIN_ITEM_CONSTANT      0x001
+#define HID_MAIN_ITEM_VARIABLE      0x002
+#define HID_MAIN_ITEM_RELATIVE      0x004
+#define HID_MAIN_ITEM_WRAP          0x008
+#define HID_MAIN_ITEM_NONLINEAR     0x010
+#define HID_MAIN_ITEM_NO_PREFERRED  0x020
+#define HID_MAIN_ITEM_NULL_STATE    0x040
+#define HID_MAIN_ITEM_VOLATILE      0x080
+#define HID_MAIN_ITEM_BUFFERED_BYTE 0x100
 
 //
 // HID report descriptor collection item types
 //
-#define HID_COLLECTION_PHYSICAL             0
-#define HID_COLLECTION_APPLICATION          1
-#define HID_COLLECTION_LOGICAL              2
+#define HID_COLLECTION_PHYSICAL     0
+#define HID_COLLECTION_APPLICATION  1
+#define HID_COLLECTION_LOGICAL      2
 
 //
 // HID report descriptor global item tags
@@ -146,19 +146,19 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // HID class protocol request
 //
-#define EFI_USB_GET_REPORT_REQUEST      0x01
-#define EFI_USB_GET_IDLE_REQUEST        0x02
-#define EFI_USB_GET_PROTOCOL_REQUEST    0x03
-#define EFI_USB_SET_REPORT_REQUEST      0x09
-#define EFI_USB_SET_IDLE_REQUEST        0x0a
-#define EFI_USB_SET_PROTOCOL_REQUEST    0x0b
+#define EFI_USB_GET_REPORT_REQUEST    0x01
+#define EFI_USB_GET_IDLE_REQUEST      0x02
+#define EFI_USB_GET_PROTOCOL_REQUEST  0x03
+#define EFI_USB_SET_REPORT_REQUEST    0x09
+#define EFI_USB_SET_IDLE_REQUEST      0x0a
+#define EFI_USB_SET_PROTOCOL_REQUEST  0x0b
 
 #pragma pack(1)
 
 //
 // Descriptor header for Report/Physical Descriptors
 //
-typedef struct hid_class_descriptor{
+typedef struct hid_class_descriptor {
   UINT8   DescriptorType;
   UINT16  DescriptorLength;
 } EFI_USB_HID_CLASS_DESCRIPTOR;
@@ -174,12 +174,30 @@ typedef struct hid_descriptor {
 
 #pragma pack()
 
-EFI_STATUS 
+EFI_STATUS
 UsbGetHidDescriptor (
   IN  EFI_USB_IO_PROTOCOL        *UsbIo,
   IN  UINT8                      InterfaceNum,
   OUT EFI_USB_HID_DESCRIPTOR     *HidDescriptor
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo         - TODO: add argument description
+  InterfaceNum  - TODO: add argument description
+  HidDescriptor - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbGetReportDescriptor (
@@ -187,23 +205,76 @@ UsbGetReportDescriptor (
   IN  UINT8                   InterfaceNum,
   IN  UINT16                  DescriptorSize,
   OUT UINT8                   *DescriptorBuffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo             - TODO: add argument description
+  InterfaceNum      - TODO: add argument description
+  DescriptorSize    - TODO: add argument description
+  DescriptorBuffer  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbGetProtocolRequest (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Interface,
   IN UINT8                   *Protocol
-  );
+  )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Interface - TODO: add argument description
+  Protocol  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbSetProtocolRequest (
   IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Interface,
   IN UINT8                   Protocol
-  );
+  )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Interface - TODO: add argument description
+  Protocol  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbSetIdleRequest (
@@ -211,7 +282,26 @@ UsbSetIdleRequest (
   IN UINT8                   Interface,
   IN UINT8                   ReportId,
   IN UINT8                   Duration
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Interface - TODO: add argument description
+  ReportId  - TODO: add argument description
+  Duration  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbGetIdleRequest (
@@ -219,7 +309,26 @@ UsbGetIdleRequest (
   IN  UINT8                   Interface,
   IN  UINT8                   ReportId,
   OUT UINT8                   *Duration
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Interface - TODO: add argument description
+  ReportId  - TODO: add argument description
+  Duration  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbSetReportRequest (
@@ -229,7 +338,28 @@ UsbSetReportRequest (
   IN UINT8                   ReportType,
   IN UINT16                  ReportLen,
   IN UINT8                   *Report
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo       - TODO: add argument description
+  Interface   - TODO: add argument description
+  ReportId    - TODO: add argument description
+  ReportType  - TODO: add argument description
+  ReportLen   - TODO: add argument description
+  Report      - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 UsbGetReportRequest (
@@ -239,6 +369,27 @@ UsbGetReportRequest (
   IN UINT8                   ReportType,
   IN UINT16                  ReportLen,
   IN UINT8                   *Report
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo       - TODO: add argument description
+  Interface   - TODO: add argument description
+  ReportId    - TODO: add argument description
+  ReportType  - TODO: add argument description
+  ReportLen   - TODO: add argument description
+  Report      - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

@@ -22,4 +22,5 @@ Abstract:
 
 EFI_GUID  gEfiPrimaryConsoleOutDeviceGuid = EFI_PRIMARY_CONSOLE_OUT_DEVICE_GUID;
 
-EFI_GUID_STRING(&gEfiPrimaryConsoleOutDeviceGuid, "Primary Console Out Device Guid", "EFI Primary Console Out Device Guid");
+EFI_GUID_STRING(&gEfiPrimaryConsoleOutDeviceGuid, "Primary Console Out Device Guid", 
+                "EFI Primary Console Out Device Guid");

@@ -33,17 +33,17 @@ WinNtConsoleComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtConsoleComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gWinNtConsoleComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gWinNtConsoleComponentName = {
   WinNtConsoleComponentNameGetDriverName,
   WinNtConsoleComponentNameGetControllerName,
   "eng"
@@ -51,7 +51,7 @@ EFI_COMPONENT_NAME_PROTOCOL gWinNtConsoleComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mWinNtConsoleDriverNameTable[] = {
   { "eng", L"Windows Text Console Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -89,21 +89,21 @@ WinNtConsoleComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gWinNtConsoleComponentName.SupportedLanguages,
-           mWinNtConsoleDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gWinNtConsoleComponentName.SupportedLanguages,
+          mWinNtConsoleDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 WinNtConsoleComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -150,9 +150,9 @@ WinNtConsoleComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                        Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL      *SimpleTextOut;
-  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA   *Private;
+  EFI_STATUS                      Status;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *SimpleTextOut;
+  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private;
 
   //
   // This is a device driver, so ChildHandle must be NULL.
@@ -165,23 +165,23 @@ WinNtConsoleComponentNameGetControllerName (
   // Get out context back
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiSimpleTextOutProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiSimpleTextOutProtocolGuid,
                   &SimpleTextOut,
-                  gWinNtConsoleDriverBinding.DriverBindingHandle,   
-                  ControllerHandle,   
+                  gWinNtConsoleDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
   Private = WIN_NT_SIMPLE_TEXT_OUT_PRIVATE_DATA_FROM_THIS (SimpleTextOut);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gWinNtConsoleComponentName.SupportedLanguages,
-           Private->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gWinNtConsoleComponentName.SupportedLanguages,
+          Private->ControllerNameTable,
+          ControllerName
+          );
 }

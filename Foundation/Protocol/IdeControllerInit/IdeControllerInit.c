@@ -23,9 +23,8 @@ Revision History
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(IdeControllerInit)
+#include EFI_PROTOCOL_DEFINITION (IdeControllerInit)
 
-EFI_GUID gEfiIdeControllerInitProtocolGuid = EFI_IDE_CONTROLLER_INIT_PROTOCOL_GUID;
+EFI_GUID  gEfiIdeControllerInitProtocolGuid = EFI_IDE_CONTROLLER_INIT_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiIdeControllerInitProtocolGuid, "IDE Controller Init Protocol", "EFI 1.1 Platform IDE Init Protocol");
-
+EFI_GUID_STRING(&gEfiIdeControllerInitProtocolGuid, "IDE Controller Init Protocol", "Platform IDE Init Protocol");

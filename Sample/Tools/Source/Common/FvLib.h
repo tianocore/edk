@@ -30,37 +30,41 @@ Abstract:
 #include "EfiFirmwareFileSystem.h"
 #include <string.h>
 
-
 EFI_STATUS
 InitializeFvLib (
   IN VOID                         *Fv,
   IN UINT32                       FvLength
-  );
+  )
+;
 
 EFI_STATUS
 GetFvHeader (
   OUT EFI_FIRMWARE_VOLUME_HEADER  **FvHeader,
   OUT UINT32                      *FvLength
-  );
+  )
+;
 
 EFI_STATUS
 GetNextFile (
   IN EFI_FFS_FILE_HEADER          *CurrentFile,
   OUT EFI_FFS_FILE_HEADER         **NextFile
-  );
+  )
+;
 
 EFI_STATUS
 GetFileByName (
   IN EFI_GUID                     *FileName,
   OUT EFI_FFS_FILE_HEADER         **File
-  );
+  )
+;
 
 EFI_STATUS
 GetFileByType (
   IN EFI_FV_FILETYPE              FileType,
   IN UINTN                        Instance,
   OUT EFI_FFS_FILE_HEADER         **File
-  );
+  )
+;
 
 EFI_STATUS
 GetSectionByType (
@@ -68,18 +72,23 @@ GetSectionByType (
   IN EFI_SECTION_TYPE             SectionType,
   IN UINTN                        Instance,
   OUT EFI_FILE_SECTION_POINTER    *Section
-  );
+  )
+;
+//
 // will not parse compressed sections
-
+//
 EFI_STATUS
 VerifyFv (
   IN EFI_FIRMWARE_VOLUME_HEADER   *FvHeader
-  );
+  )
+;
 
 EFI_STATUS
 VerifyFfsFile (
   IN EFI_FFS_FILE_HEADER          *FfsHeader
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -97,11 +106,12 @@ Returns:
   EFI_VOLUME_CORRUPTED  The Ffs header is not valid.
 
 --*/
-
 UINT32
 GetLength (
   UINT8                           *ThreeByteLength
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -117,11 +127,12 @@ Returns:
   UINT32      Size of the section
 
 --*/
-
 EFI_STATUS
 GetErasePolarity (
   OUT BOOLEAN   *ErasePolarity
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -139,12 +150,13 @@ Returns:
   EFI_INVALID_PARAMETER    One of the input parameters was invalid.
 
 --*/
-
 UINT8
 GetFileState (
   IN BOOLEAN              ErasePolarity,
   IN EFI_FFS_FILE_HEADER  *FfsHeader
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -162,5 +174,4 @@ Returns:
   UINT8   The hightest set state of the file.
 
 --*/
-
 #endif

@@ -20,10 +20,10 @@ Abstract:
 #include "PxeDhcp4.h"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // EFI Component Name Functions
 //
-
 EFI_STATUS
 EFIAPI
 PxeDhcp4ComponentNameGetDriverName (
@@ -35,37 +35,43 @@ PxeDhcp4ComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 PxeDhcp4ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // EFI Component Name Protocol
 //
-
-EFI_COMPONENT_NAME_PROTOCOL gPxeDhcp4ComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gPxeDhcp4ComponentName = {
   PxeDhcp4ComponentNameGetDriverName,
   PxeDhcp4ComponentNameGetControllerName,
   "eng"
 };
 
 static EFI_UNICODE_STRING_TABLE mPxeDhcp4DriverNameTable[] = {
-  { "eng", L"PXE DHCPv4 Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"PXE DHCPv4 Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
 EFIAPI
 PxeDhcp4ComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
-  OUT CHAR16                       **DriverName)
+  OUT CHAR16                       **DriverName
+  )
 /*++
 
   Routine Description:
@@ -94,23 +100,22 @@ PxeDhcp4ComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gPxeDhcp4ComponentName.SupportedLanguages,
-           mPxeDhcp4DriverNameTable, 
-           DriverName
-           );
+          Language,
+          gPxeDhcp4ComponentName.SupportedLanguages,
+          mPxeDhcp4DriverNameTable,
+          DriverName
+          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 EFI_STATUS
 EFIAPI
 PxeDhcp4ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

@@ -27,13 +27,13 @@ Abstract:
 
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 RtPort80ReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -51,7 +51,7 @@ Returns:
 
 --*/
 {
-  UINT8                   Port80Code;
+  UINT8 Port80Code;
 
   //
   // Progress or error code, Output Port 80h card
@@ -60,11 +60,12 @@ Returns:
     IoWrite8 (0x80, Port80Code);
   }
 
-  if (((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE) ||  
+  if (((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE) ||
       ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_ERROR_CODE) ||
-      ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_DEBUG_CODE) ) {
-    IoWrite8 (0x81, (UINT8)CodeType);
+      ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_DEBUG_CODE)
+      ) {
+    IoWrite8 (0x81, (UINT8) CodeType);
   }
 
-  return  EFI_SUCCESS;
+  return EFI_SUCCESS;
 }

@@ -19,13 +19,28 @@ Abstract:
 
 --*/
 
-#include "Tiano.h"    // for ASSERT macro
+#include "Tiano.h"  // for ASSERT macro
 #include "TianoCommon.h"
 
 EFI_STATUS
 GetTimerValue (
   OUT UINT64    *TimerValue
   )
+/*++
+
+Routine Description:
+
+  Set TimerValue to 0, which is not expected to be run.
+
+Arguments:
+
+  TimerValue  - Timer value for output
+
+Returns:
+
+  EFI_SUCCESS - Should not be reached.
+
+--*/
 {
   //
   // Should not be used for EBC, so assert.

@@ -15,13 +15,13 @@ Module Name:
 
 Abstract:
 
-  Real Time clock Architectural Protocol GUID as defined in EFI 2.0
+  Real Time clock Architectural Protocol GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
-#include EFI_ARCH_PROTOCOL_DEFINITION(RealTimeClock)
+#include EFI_ARCH_PROTOCOL_DEFINITION (RealTimeClock)
 
-EFI_GUID gEfiRealTimeClockArchProtocolGuid = EFI_REAL_TIME_CLOCK_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiRealTimeClockArchProtocolGuid = EFI_REAL_TIME_CLOCK_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiRealTimeClockArchProtocolGuid, "RTC", "Real Time Clock Arch Protocol");

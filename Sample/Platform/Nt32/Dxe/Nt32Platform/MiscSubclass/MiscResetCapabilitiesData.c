@@ -22,22 +22,21 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 // Static (possibly build generated) Bios Vendor data.
 //
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_RESET_CAPABILITIES, MiscResetCapabilities) = {
-  {         // ResetCapabilities
-    0,      // Status
-    0,      // BootOption
-    0,      // BootOptionOnLimit
-    0,      // WatchdogTimerPresent
-    0       // Reserved
+  {     // ResetCapabilities
+    0,  // Status
+    0,  // BootOption
+    0,  // BootOptionOnLimit
+    0,  // WatchdogTimerPresent
+    0   // Reserved
   },
-  0,        // ResetCount
-  0,        // ResetLimit
-  0,        // ResetTimerInterval
-  0         // ResetTimeout
+  0,    // ResetCount
+  0,    // ResetLimit
+  0,    // ResetTimerInterval
+  0     // ResetTimeout
 };
 
 /* eof - MiscResetCapabilities.c */

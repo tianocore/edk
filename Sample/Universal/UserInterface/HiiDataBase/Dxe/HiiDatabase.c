@@ -21,8 +21,7 @@ Abstract:
 
 #include "HiiDatabase.h"
 
-EFI_DRIVER_ENTRY_POINT(InitializeHiiDatabase)
-
+EFI_DRIVER_ENTRY_POINT (InitializeHiiDatabase)
 
 EFI_STATUS
 InitializeHiiDatabase (
@@ -43,13 +42,13 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                              Status;
-  EFI_HII_DATA                            *HiiData;
-  EFI_HII_GLOBAL_DATA                     *GlobalData;
-  EFI_HANDLE                              *HandleBuffer;
-  EFI_HANDLE                              Handle;
-  UINTN                                   HandleCount;
-  UINTN                                   Index;
+  EFI_STATUS          Status;
+  EFI_HII_DATA        *HiiData;
+  EFI_HII_GLOBAL_DATA *GlobalData;
+  EFI_HANDLE          *HandleBuffer;
+  EFI_HANDLE          Handle;
+  UINTN               HandleCount;
+  UINTN               Index;
 
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
@@ -59,47 +58,46 @@ Returns:
   // again.  Fail that scenario.
   //
   Status = gBS->LocateHandleBuffer (
-                 ByProtocol,
-                 &gEfiHiiProtocolGuid,
-                 NULL,
-                 &HandleCount,
-                 &HandleBuffer
-                 );
+                  ByProtocol,
+                  &gEfiHiiProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
 
   //
   // If there was no error, assume there is an installation and fail to load
   //
-  if (!EFI_ERROR(Status)) {
+  if (!EFI_ERROR (Status)) {
     if (HandleBuffer != NULL) {
-      gBS->FreePool(HandleBuffer);
+      gBS->FreePool (HandleBuffer);
     }
+
     return EFI_DEVICE_ERROR;
   }
 
-  HiiData = EfiLibAllocatePool (sizeof(EFI_HII_DATA));
+  HiiData = EfiLibAllocatePool (sizeof (EFI_HII_DATA));
 
   ASSERT (HiiData);
 
-  GlobalData = EfiLibAllocateZeroPool (sizeof(EFI_HII_GLOBAL_DATA));
+  GlobalData = EfiLibAllocateZeroPool (sizeof (EFI_HII_GLOBAL_DATA));
 
   ASSERT (GlobalData);
 
   //
   // Seed the Font Database with a known non-character glyph
   //
-
   for (Index = 0; Index <= MAX_GLYPH_COUNT; Index++) {
     //
     // Seeding the UnicodeWeight with 0 signifies that it is uninitialized
     //
     GlobalData->NarrowGlyphs[Index].UnicodeWeight = 0;
-    GlobalData->WideGlyphs[Index].UnicodeWeight = 0;
-    GlobalData->NarrowGlyphs[Index].Attributes = 0;
-    GlobalData->WideGlyphs[Index].Attributes = 0;
-    EfiCopyMem(GlobalData->NarrowGlyphs[Index].GlyphCol1, &mUnknownGlyph, NARROW_GLYPH_ARRAY_SIZE);
-    EfiCopyMem(GlobalData->WideGlyphs[Index].GlyphCol1, &mUnknownGlyph, WIDE_GLYPH_ARRAY_SIZE);
+    GlobalData->WideGlyphs[Index].UnicodeWeight   = 0;
+    GlobalData->NarrowGlyphs[Index].Attributes    = 0;
+    GlobalData->WideGlyphs[Index].Attributes      = 0;
+    EfiCopyMem (GlobalData->NarrowGlyphs[Index].GlyphCol1, &mUnknownGlyph, NARROW_GLYPH_ARRAY_SIZE);
+    EfiCopyMem (GlobalData->WideGlyphs[Index].GlyphCol1, &mUnknownGlyph, WIDE_GLYPH_ARRAY_SIZE);
   }
-
   //
   // Fill in HII data
   //
@@ -130,22 +128,21 @@ Returns:
   //
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
-                 &Handle,
-                 &gEfiHiiProtocolGuid, 
-                 EFI_NATIVE_INTERFACE,
-                 &HiiData->Hii
-                 );
+                  &Handle,
+                  &gEfiHiiProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &HiiData->Hii
+                  );
 
   ASSERT_EFI_ERROR (Status);
 
   return Status;
 }
 
-
 EFI_STATUS
 HiiFindHandles (
-  IN     EFI_HII_PROTOCOL *This,
-  IN OUT UINT16           *HandleBufferLength,
+  IN     EFI_HII_PROTOCOL         *This,
+  IN OUT UINT16                   *HandleBufferLength,
   OUT    EFI_HII_HANDLE   Handle[1]
   )
 /*++
@@ -159,20 +156,20 @@ Returns:
 
 --*/
 {
-  EFI_HII_GLOBAL_DATA             *GlobalData;
-  EFI_HII_HANDLE_DATABASE         *Database;
-  EFI_HII_DATA                    *HiiData;
-  UINTN                           HandleCount;
+  EFI_HII_GLOBAL_DATA     *GlobalData;
+  EFI_HII_HANDLE_DATABASE *Database;
+  EFI_HII_DATA            *HiiData;
+  UINTN                   HandleCount;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData     = EFI_HII_DATA_FROM_THIS (This);
 
-  GlobalData = HiiData->GlobalData;
+  GlobalData  = HiiData->GlobalData;
 
-  Database = HiiData->DatabaseHead;
+  Database    = HiiData->DatabaseHead;
 
   if (Database == NULL) {
     *HandleBufferLength = 0;
@@ -182,7 +179,6 @@ Returns:
   for (HandleCount = 0; Database != NULL; HandleCount++) {
     Database = Database->NextHandleDatabase;
   }
-
   //
   // Is there a sufficient buffer for the data being passed back?
   //
@@ -193,28 +189,27 @@ Returns:
     // Copy the Head information
     //
     if (Database->Handle != 0) {
-      EfiCopyMem(&Handle[0], &Database->Handle, sizeof (EFI_HII_HANDLE));
+      EfiCopyMem (&Handle[0], &Database->Handle, sizeof (EFI_HII_HANDLE));
       Database = Database->NextHandleDatabase;
     }
-
     //
     // Copy more data if appropriate
     //
     for (HandleCount = 1; Database != NULL; HandleCount++) {
-      EfiCopyMem(&Handle[HandleCount], &Database->Handle, sizeof (EFI_HII_HANDLE));
+      EfiCopyMem (&Handle[HandleCount], &Database->Handle, sizeof (EFI_HII_HANDLE));
       Database = Database->NextHandleDatabase;
     }
-    *HandleBufferLength = (UINT16)(sizeof (EFI_HII_HANDLE) * HandleCount);
+
+    *HandleBufferLength = (UINT16) (sizeof (EFI_HII_HANDLE) * HandleCount);
     return EFI_SUCCESS;
   } else {
     //
     // Insufficient buffer length
     //
-    *HandleBufferLength = (UINT16)(sizeof (EFI_HII_HANDLE) * HandleCount);
+    *HandleBufferLength = (UINT16) (sizeof (EFI_HII_HANDLE) * HandleCount);
     return EFI_BUFFER_TOO_SMALL;
   }
 }
-
 
 EFI_STATUS
 HiiGetPrimaryLanguages (
@@ -234,26 +229,30 @@ Returns:
 
 --*/
 {
-  UINTN                           Count;
-  EFI_HII_PACKAGE_INSTANCE        *PackageInstance;
-  EFI_HII_PACKAGE_INSTANCE        *StringPackageInstance;
-  EFI_HII_DATA                    *HiiData;
-  EFI_HII_HANDLE_DATABASE         *HandleDatabase;
-  EFI_HII_STRING_PACK             *StringPack;
-  EFI_HII_STRING_PACK             *Location;
-  UINT32                          Length;
-  RELOFST                         Token;
+  UINTN                     Count;
+  EFI_HII_PACKAGE_INSTANCE  *PackageInstance;
+  EFI_HII_PACKAGE_INSTANCE  *StringPackageInstance;
+  EFI_HII_DATA              *HiiData;
+  EFI_HII_HANDLE_DATABASE   *HandleDatabase;
+  EFI_HII_STRING_PACK       *StringPack;
+  EFI_HII_STRING_PACK       *Location;
+  UINT32                    Length;
+  RELOFST                   Token;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+
+  HiiData         = EFI_HII_DATA_FROM_THIS (This);
 
   PackageInstance = NULL;
   //
   // Find matching handle in the handle database. Then get the package instance.
   //
-  for (HandleDatabase = HiiData->DatabaseHead ; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
+  for (HandleDatabase = HiiData->DatabaseHead;
+       HandleDatabase != NULL;
+       HandleDatabase = HandleDatabase->NextHandleDatabase
+      ) {
     if (Handle == HandleDatabase->Handle) {
       PackageInstance = HandleDatabase->Buffer;
     }
@@ -264,6 +263,7 @@ Returns:
   if (PackageInstance == NULL) {
     return EFI_INVALID_PARAMETER;
   }
+
   ValidatePack (This, PackageInstance, &StringPackageInstance, NULL);
 
   //
@@ -271,41 +271,41 @@ Returns:
   // what the location is of the beginning of the string data.
   //
   if (StringPackageInstance->IfrSize > 0) {
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
   } else {
-    StringPack = (EFI_HII_STRING_PACK *)(&StringPackageInstance->IfrData);
+    StringPack = (EFI_HII_STRING_PACK *) (&StringPackageInstance->IfrData);
   }
+
   Location = StringPack;
   //
   // Remember that the string packages are formed into contiguous blocks of language data.
   //
-  EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-  for ( Count = 0; Length != 0; Count = Count + 3) {
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+  EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  for (Count = 0; Length != 0; Count = Count + 3) {
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
   }
 
   *LanguageString = EfiLibAllocateZeroPool (2 * (Count + 1));
 
   ASSERT (*LanguageString);
 
-  StringPack = (EFI_HII_STRING_PACK *)Location;
+  StringPack = (EFI_HII_STRING_PACK *) Location;
 
   //
   // Copy the 6 bytes to LanguageString - keep concatenating it.  Shouldn't we just store uint8's since the ISO
   // standard defines the lettering as all US English characters anyway?  Save a few bytes.
   //
-  EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-  for ( Count = 0; Length != 0; Count = Count + 3) {
-    EfiCopyMem(&Token, &StringPack->LanguageNameString, sizeof (RELOFST));
-    EfiCopyMem (*LanguageString + Count, (VOID *)((CHAR8 *)(StringPack) + Token), 6);
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+  EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  for (Count = 0; Length != 0; Count = Count + 3) {
+    EfiCopyMem (&Token, &StringPack->LanguageNameString, sizeof (RELOFST));
+    EfiCopyMem (*LanguageString + Count, (VOID *) ((CHAR8 *) (StringPack) + Token), 6);
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
   }
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 HiiGetSecondaryLanguages (
@@ -327,26 +327,29 @@ Returns:
 
 --*/
 {
-  UINTN                           Count;
-  EFI_HII_PACKAGE_INSTANCE        *PackageInstance;
-  EFI_HII_PACKAGE_INSTANCE        *StringPackageInstance;
-  EFI_HII_DATA                    *HiiData;
-  EFI_HII_HANDLE_DATABASE         *HandleDatabase;
-  EFI_HII_STRING_PACK             *StringPack;
-  EFI_HII_STRING_PACK             *Location;
-  RELOFST                         Token;
-  UINT32                          Length;
+  UINTN                     Count;
+  EFI_HII_PACKAGE_INSTANCE  *PackageInstance;
+  EFI_HII_PACKAGE_INSTANCE  *StringPackageInstance;
+  EFI_HII_DATA              *HiiData;
+  EFI_HII_HANDLE_DATABASE   *HandleDatabase;
+  EFI_HII_STRING_PACK       *StringPack;
+  EFI_HII_STRING_PACK       *Location;
+  RELOFST                   Token;
+  UINT32                    Length;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData = EFI_HII_DATA_FROM_THIS (This);
   //
   // Check numeric value against the head of the database
   //
   PackageInstance = NULL;
-  for (HandleDatabase = HiiData->DatabaseHead; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
+  for (HandleDatabase = HiiData->DatabaseHead;
+       HandleDatabase != NULL;
+       HandleDatabase = HandleDatabase->NextHandleDatabase
+      ) {
     //
     // Match the numeric value with the database entry - if matched, extract PackageInstance
     //
@@ -354,7 +357,6 @@ Returns:
       PackageInstance = HandleDatabase->Buffer;
     }
   }
-
   //
   // No handle was found - error condition
   //
@@ -364,15 +366,14 @@ Returns:
 
   ValidatePack (This, PackageInstance, &StringPackageInstance, NULL);
 
-
   //
   // Based on if there is IFR data in this package instance, determine
   // what the location is of the beginning of the string data.
   //
   if (StringPackageInstance->IfrSize > 0) {
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
   } else {
-    StringPack = (EFI_HII_STRING_PACK *)(&StringPackageInstance->IfrData);
+    StringPack = (EFI_HII_STRING_PACK *) (&StringPackageInstance->IfrData);
   }
 
   Location = StringPack;
@@ -380,49 +381,50 @@ Returns:
   //
   // Remember that the string packages are formed into contiguous blocks of language data.
   //
-  for ( ; StringPack->Header.Length != 0; ) {
+  for (; StringPack->Header.Length != 0;) {
     //
     // Find the PrimaryLanguage being requested
     //
     Token = StringPack->LanguageNameString;
-    if (EfiCompareMem((VOID *)((CHAR8 *)(StringPack) + Token), PrimaryLanguage, 3) == 0) {
+    if (EfiCompareMem ((VOID *) ((CHAR8 *) (StringPack) + Token), PrimaryLanguage, 3) == 0) {
       //
-      // Now that we found the primary, the secondary languages will follow immediately 
+      // Now that we found the primary, the secondary languages will follow immediately
       // or the next character is a NULL if there are no secondary languages.  We determine
       // the number by getting the stringsize based on the StringPack origination + the LanguageNameString
       // offset + 6 (which is the size of the first 3 letter ISO primary language name).  If we get 2, there
       // are no secondary languages (2 = null-terminator).
       //
-      Count = EfiStrSize ((VOID *)((CHAR8 *)(StringPack) + Token + 6));
+      Count           = EfiStrSize ((VOID *) ((CHAR8 *) (StringPack) + Token + 6));
 
       *LanguageString = EfiLibAllocateZeroPool (2 * (Count + 1));
 
       ASSERT (*LanguageString);
 
-      EfiCopyMem (*LanguageString, (VOID *)((CHAR8 *)(StringPack) + Token + 6), Count);
+      EfiCopyMem (*LanguageString, (VOID *) ((CHAR8 *) (StringPack) + Token + 6), Count);
       break;
     }
 
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
   }
 
   return EFI_SUCCESS;
 }
 
-
 VOID
 StrnCpy (
-    IN CHAR16   *Dest,
-    IN CHAR16   *Src,
-    IN UINTN    Length
-    )
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src,
+  IN UINTN    Length
+  )
+//
 // copy strings
+//
 {
-    while (*Src && Length) {
-        *(Dest++) = *(Src++);
-        Length--;
-    }
-    *Dest = 0;
-}
+  while (*Src && Length) {
+    *(Dest++) = *(Src++);
+    Length--;
+  }
 
+  *Dest = 0;
+}

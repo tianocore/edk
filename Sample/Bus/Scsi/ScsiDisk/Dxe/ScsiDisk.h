@@ -41,37 +41,37 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 
-#define IsDeviceFixed(a)  (a)->FixedDevice ? 1:0
+#define IsDeviceFixed(a)        (a)->FixedDevice ? 1 : 0
 
-#define SCSI_DISK_DEV_SIGNATURE   EFI_SIGNATURE_32('s','c','d','k')
+#define SCSI_DISK_DEV_SIGNATURE EFI_SIGNATURE_32 ('s', 'c', 'd', 'k')
 
 typedef struct {
-  UINT32          Signature;
-  
-  EFI_HANDLE      Handle;
-  
+  UINT32                    Signature;
+
+  EFI_HANDLE                Handle;
+
   EFI_BLOCK_IO_PROTOCOL     BlkIo;
   EFI_BLOCK_IO_MEDIA        BlkIoMedia;
   EFI_SCSI_IO_PROTOCOL      *ScsiIo;
   UINT8                     DeviceType;
   BOOLEAN                   FixedDevice;
   UINT16                    Reserved;
-  
+
   EFI_SCSI_SENSE_DATA       *SenseData;
   UINTN                     SenseDataNumber;
   EFI_SCSI_INQUIRY_DATA     InquiryData;
-  
+
   EFI_UNICODE_STRING_TABLE  *ControllerNameTable;
-  
+
 } SCSI_DISK_DEV;
 
-#define SCSI_DISK_DEV_FROM_THIS(a) CR(a, SCSI_DISK_DEV,BlkIo, SCSI_DISK_DEV_SIGNATURE)
+#define SCSI_DISK_DEV_FROM_THIS(a)  CR (a, SCSI_DISK_DEV, BlkIo, SCSI_DISK_DEV_SIGNATURE)
 
 //
 // Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL gScsiDiskDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gScsiDiskComponentName;
+extern EFI_DRIVER_BINDING_PROTOCOL  gScsiDiskDriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL  gScsiDiskComponentName;
 //
 // action code used in detect media process
 //
@@ -83,8 +83,25 @@ EFI_STATUS
 ScsiDiskReset (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  BOOLEAN                 ExtendedVerification
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                  - TODO: add argument description
+  ExtendedVerification  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
@@ -92,8 +109,28 @@ ScsiDiskReadBlocks (
   IN  EFI_LBA                 LBA,
   IN  UINTN                   BufferSize,
   OUT VOID                    *Buffer
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  MediaId     - TODO: add argument description
+  LBA         - TODO: add argument description
+  BufferSize  - TODO: add argument description
+  Buffer      - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
@@ -101,54 +138,197 @@ ScsiDiskWriteBlocks (
   IN  EFI_LBA                 LBA,
   IN  UINTN                   BufferSize,
   IN  VOID                    *Buffer
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  MediaId     - TODO: add argument description
+  LBA         - TODO: add argument description
+  BufferSize  - TODO: add argument description
+  Buffer      - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskDetectMedia (
   SCSI_DISK_DEV   *ScsiDiskDevice,
   BOOLEAN         MustReadCap,
   BOOLEAN         *MediaChange
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+  MustReadCap     - TODO: add argument description
+  MediaChange     - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskTestUnitReady (
   SCSI_DISK_DEV   *ScsiDiskDevice,
   BOOLEAN         *NeedRetry,
   VOID            **SenseDataArray,
   UINTN           *NumberOfSenseKeys
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice    - TODO: add argument description
+  NeedRetry         - TODO: add argument description
+  SenseDataArray    - TODO: add argument description
+  NumberOfSenseKeys - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 DetectMediaParsingSenseKeys (
   SCSI_DISK_DEV           *ScsiDiskDevice,
   EFI_SCSI_SENSE_DATA     *SenseData,
   UINTN                   NumberOfSenseKeys,
   UINTN                   *Action
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice    - TODO: add argument description
+  SenseData         - TODO: add argument description
+  NumberOfSenseKeys - TODO: add argument description
+  Action            - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskReadCapacity (
   SCSI_DISK_DEV   *ScsiDiskDevice,
   BOOLEAN         *NeedRetry,
   VOID            **SenseDataArray,
   UINTN           *NumberOfSenseKeys
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice    - TODO: add argument description
+  NeedRetry         - TODO: add argument description
+  SenseDataArray    - TODO: add argument description
+  NumberOfSenseKeys - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 CheckHostAdapterStatus (
   UINT8   HostAdapterStatus
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  HostAdapterStatus - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 CheckTargetStatus (
   UINT8   TargetStatus
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  TargetStatus  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskRequestSenseKeys (
   SCSI_DISK_DEV           *ScsiDiskDevice,
@@ -156,34 +336,125 @@ ScsiDiskRequestSenseKeys (
   EFI_SCSI_SENSE_DATA     **SenseDataArray,
   UINTN                   *NumberOfSenseKeys,
   BOOLEAN                 AskResetIfError
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice    - TODO: add argument description
+  NeedRetry         - TODO: add argument description
+  SenseDataArray    - TODO: add argument description
+  NumberOfSenseKeys - TODO: add argument description
+  AskResetIfError   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 ScsiDiskInquiryDevice (
   SCSI_DISK_DEV   *ScsiDiskDevice,
   BOOLEAN         *NeedRetry
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+  NeedRetry       - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 VOID
 ParseInquiryData (
   SCSI_DISK_DEV   *ScsiDiskDevice
-  );
-      
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskReadSectors (
   SCSI_DISK_DEV     *ScsiDiskDevice,
   VOID              *Buffer,
   EFI_LBA           Lba,
   UINTN             NumberOfBlocks
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+  Buffer          - TODO: add argument description
+  Lba             - TODO: add argument description
+  NumberOfBlocks  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 ScsiDiskWriteSectors (
   SCSI_DISK_DEV     *ScsiDiskDevice,
   VOID              *Buffer,
   EFI_LBA           Lba,
   UINTN             NumberOfBlocks
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+  Buffer          - TODO: add argument description
+  Lba             - TODO: add argument description
+  NumberOfBlocks  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 ScsiDiskRead10 (
@@ -196,7 +467,31 @@ ScsiDiskRead10 (
   UINT32                *DataLength,
   UINT32                StartLba,
   UINT32                SectorSize
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice    - TODO: add argument description
+  NeedRetry         - TODO: add argument description
+  SenseDataArray    - TODO: add argument description
+  NumberOfSenseKeys - TODO: add argument description
+  Timeout           - TODO: add argument description
+  DataBuffer        - TODO: add argument description
+  DataLength        - TODO: add argument description
+  StartLba          - TODO: add argument description
+  SectorSize        - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 ScsiDiskWrite10 (
@@ -209,63 +504,237 @@ ScsiDiskWrite10 (
   UINT32                *DataLength,
   UINT32                StartLba,
   UINT32                SectorSize
-  );
-    
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice    - TODO: add argument description
+  NeedRetry         - TODO: add argument description
+  SenseDataArray    - TODO: add argument description
+  NumberOfSenseKeys - TODO: add argument description
+  Timeout           - TODO: add argument description
+  DataBuffer        - TODO: add argument description
+  DataLength        - TODO: add argument description
+  StartLba          - TODO: add argument description
+  SectorSize        - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 VOID
 GetMediaInfo (
   SCSI_DISK_DEV                 *ScsiDiskDevice,
   EFI_SCSI_DISK_CAPACITY_DATA   *Capacity
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+  Capacity        - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
-ScsiDiskIsNoMedia(
+ScsiDiskIsNoMedia (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
-ScsiDiskIsMediaError(
+ScsiDiskIsMediaError (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts
-  );
+  )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
-ScsiDiskIsHardwareError(
+ScsiDiskIsHardwareError (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 BOOLEAN
-ScsiDiskIsMediaChange(
+ScsiDiskIsMediaChange (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts
-  );
+  )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
-ScsiDiskIsResetBefore(
+ScsiDiskIsResetBefore (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts
-  );
+  )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
-ScsiDiskIsDriveReady(
+ScsiDiskIsDriveReady (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts,
   OUT BOOLEAN               *NeedRetry
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+  NeedRetry   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 BOOLEAN
-ScsiDiskHaveSenseKey(
+ScsiDiskHaveSenseKey (
   IN  EFI_SCSI_SENSE_DATA   *SenseData,
   IN  UINTN                 SenseCounts
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 VOID
 ReleaseScsiDiskDeviceResources (
   IN  SCSI_DISK_DEV   *ScsiDiskDevice
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ScsiDiskDevice  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 #endif

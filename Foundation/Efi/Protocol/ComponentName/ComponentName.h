@@ -27,18 +27,21 @@ Revision History
 //
 // Global ID for the Component Name Protocol
 //
-#define EFI_COMPONENT_NAME_PROTOCOL_GUID    \
-  { 0x107a772c, 0xd5e1, 0x11d4, 0x9a, 0x46, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d }
+#define EFI_COMPONENT_NAME_PROTOCOL_GUID \
+  { \
+    0x107a772c, 0xd5e1, 0x11d4, 0x9a, 0x46, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_COMPONENT_NAME_PROTOCOL);
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_COMPONENT_NAME_GET_DRIVER_NAME) (
-  IN EFI_COMPONENT_NAME_PROTOCOL  *This,
+  IN EFI_COMPONENT_NAME_PROTOCOL           * This,
   IN  CHAR8                                *Language,
   OUT CHAR16                               **DriverName
   );
+
 /*++
 
   Routine Description:
@@ -65,16 +68,16 @@ EFI_STATUS
                             language specified by Language.
 
 --*/
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_COMPONENT_NAME_GET_CONTROLLER_NAME) (
-  IN EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                           ControllerHandle,
-  IN  EFI_HANDLE                           ChildHandle        OPTIONAL,
-  IN  CHAR8                                *Language,
-  OUT CHAR16                               **ControllerName
+  IN EFI_COMPONENT_NAME_PROTOCOL                              * This,
+  IN  EFI_HANDLE                                              ControllerHandle,
+  IN  EFI_HANDLE                                              ChildHandle        OPTIONAL,
+  IN  CHAR8                                                   *Language,
+  OUT CHAR16                                                  **ControllerName
   );
+
 /*++
 
   Routine Description:
@@ -123,7 +126,6 @@ EFI_STATUS
 //
 // Interface structure for the Component Name Protocol
 //
-
 typedef struct _EFI_COMPONENT_NAME_PROTOCOL {
   EFI_COMPONENT_NAME_GET_DRIVER_NAME      GetDriverName;
   EFI_COMPONENT_NAME_GET_CONTROLLER_NAME  GetControllerName;

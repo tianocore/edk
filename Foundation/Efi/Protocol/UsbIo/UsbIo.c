@@ -23,9 +23,8 @@ Revision History
 
 #include "EfiSpec.h"
 
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
 
-EFI_GUID gEfiUsbIoProtocolGuid = EFI_USB_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiUsbIoProtocolGuid = EFI_USB_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiUsbIoProtocolGuid, "Usb IO Protocol", "EFI 1.1 Usb IO Protocol");
-

@@ -19,21 +19,21 @@ Abstract:
 
 #include "IDEBus.h"
 
-#define IDE_BUS_DIAGNOSTIC_ERROR L"PCI IDE/ATAPI Driver Diagnostics Failed"
+#define IDE_BUS_DIAGNOSTIC_ERROR  L"PCI IDE/ATAPI Driver Diagnostics Failed"
 
 //
 // EFI Driver Diagnostics Functions
 //
 EFI_STATUS
 IDEBusDriverDiagnosticsRunDiagnostics (
-  IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL  *This,
-  IN  EFI_HANDLE                       ControllerHandle,
-  IN  EFI_HANDLE                       ChildHandle  OPTIONAL,
-  IN  EFI_DRIVER_DIAGNOSTIC_TYPE       DiagnosticType,
-  IN  CHAR8                            *Language,
-  OUT EFI_GUID                         **ErrorType,
-  OUT UINTN                            *BufferSize, 
-  OUT CHAR16                           **Buffer
+  IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
+  IN  EFI_HANDLE                                    ControllerHandle,
+  IN  EFI_HANDLE                                    ChildHandle  OPTIONAL,
+  IN  EFI_DRIVER_DIAGNOSTIC_TYPE                    DiagnosticType,
+  IN  CHAR8                                         *Language,
+  OUT EFI_GUID                                      **ErrorType,
+  OUT UINTN                                         *BufferSize,
+  OUT CHAR16                                        **Buffer
   );
 
 //
@@ -46,14 +46,14 @@ EFI_DRIVER_DIAGNOSTICS_PROTOCOL gIDEBusDriverDiagnostics = {
 
 EFI_STATUS
 IDEBusDriverDiagnosticsRunDiagnostics (
-  IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL  *This,
-  IN  EFI_HANDLE                       ControllerHandle,
-  IN  EFI_HANDLE                       ChildHandle  OPTIONAL,
-  IN  EFI_DRIVER_DIAGNOSTIC_TYPE       DiagnosticType,
-  IN  CHAR8                            *Language,
-  OUT EFI_GUID                         **ErrorType,
-  OUT UINTN                            *BufferSize, 
-  OUT CHAR16                           **Buffer
+  IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
+  IN  EFI_HANDLE                                    ControllerHandle,
+  IN  EFI_HANDLE                                    ChildHandle  OPTIONAL,
+  IN  EFI_DRIVER_DIAGNOSTIC_TYPE                    DiagnosticType,
+  IN  CHAR8                                         *Language,
+  OUT EFI_GUID                                      **ErrorType,
+  OUT UINTN                                         *BufferSize,
+  OUT CHAR16                                        **Buffer
   )
 /*++
 
@@ -117,12 +117,12 @@ IDEBusDriverDiagnosticsRunDiagnostics (
 
 --*/
 {
-  EFI_STATUS                    Status;
-  EFI_PCI_IO_PROTOCOL           *PciIo;
-  EFI_BLOCK_IO_PROTOCOL         *BlkIo;
-  IDE_BLK_IO_DEV                *IdeBlkIoDevice;
-  UINT32                        VendorDeviceId;
-  VOID                          *BlockBuffer;
+  EFI_STATUS            Status;
+  EFI_PCI_IO_PROTOCOL   *PciIo;
+  EFI_BLOCK_IO_PROTOCOL *BlkIo;
+  IDE_BLK_IO_DEV        *IdeBlkIoDevice;
+  UINT32                VendorDeviceId;
+  VOID                  *BlockBuffer;
 
   *ErrorType  = NULL;
   *BufferSize = 0;
@@ -130,10 +130,10 @@ IDEBusDriverDiagnosticsRunDiagnostics (
   if (ChildHandle == NULL) {
     Status = gBS->OpenProtocol (
                     ControllerHandle,
-                    &gIDEBusDriverGuid,  
+                    &gIDEBusDriverGuid,
                     NULL,
-                    gIDEBusDriverBinding.DriverBindingHandle,             
-                    ControllerHandle,   
+                    gIDEBusDriverBinding.DriverBindingHandle,
+                    ControllerHandle,
                     EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                     );
     if (EFI_ERROR (Status)) {
@@ -142,10 +142,10 @@ IDEBusDriverDiagnosticsRunDiagnostics (
 
     Status = gBS->OpenProtocol (
                     ControllerHandle,
-                    &gEfiPciIoProtocolGuid,  
-                    (VOID **)&PciIo,
-                    gIDEBusDriverBinding.DriverBindingHandle,             
-                    ControllerHandle,   
+                    &gEfiPciIoProtocolGuid,
+                    (VOID **) &PciIo,
+                    gIDEBusDriverBinding.DriverBindingHandle,
+                    ControllerHandle,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (EFI_ERROR (Status)) {
@@ -155,7 +155,7 @@ IDEBusDriverDiagnosticsRunDiagnostics (
     //
     // Use services of PCI I/O Protocol to test the PCI IDE/ATAPI Controller
     // The following test simply reads the Device ID and Vendor ID.
-    // It should never fail.  A real test would perform more advanced 
+    // It should never fail.  A real test would perform more advanced
     // diagnostics.
     //
 
@@ -169,10 +169,10 @@ IDEBusDriverDiagnosticsRunDiagnostics (
 
   Status = gBS->OpenProtocol (
                   ChildHandle,
-                  &gEfiBlockIoProtocolGuid,  
-                  (VOID**)&BlkIo,
-                  gIDEBusDriverBinding.DriverBindingHandle,             
-                  ChildHandle,   
+                  &gEfiBlockIoProtocolGuid,
+                  (VOID **) &BlkIo,
+                  gIDEBusDriverBinding.DriverBindingHandle,
+                  ChildHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -187,28 +187,28 @@ IDEBusDriverDiagnosticsRunDiagnostics (
   Status = gBS->AllocatePool (
                   EfiBootServicesData,
                   IdeBlkIoDevice->BlkMedia.BlockSize,
-                  (VOID **)&BlockBuffer
+                  (VOID **) &BlockBuffer
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   Status = IdeBlkIoDevice->BlkIo.ReadBlocks (
-                                   &IdeBlkIoDevice->BlkIo,
-                                   IdeBlkIoDevice->BlkMedia.MediaId,
-                                   0,
-                                   IdeBlkIoDevice->BlkMedia.BlockSize,
-                                   BlockBuffer
-                                   );
+                                  &IdeBlkIoDevice->BlkIo,
+                                  IdeBlkIoDevice->BlkMedia.MediaId,
+                                  0,
+                                  IdeBlkIoDevice->BlkMedia.BlockSize,
+                                  BlockBuffer
+                                  );
 
   if (EFI_ERROR (Status)) {
-    *ErrorType = &gIDEBusDriverGuid;
+    *ErrorType  = &gIDEBusDriverGuid;
     *BufferSize = sizeof (IDE_BUS_DIAGNOSTIC_ERROR);
 
     Status = gBS->AllocatePool (
-                    EfiBootServicesData, 
-                    (UINTN)(*BufferSize), 
-                    (VOID**)Buffer
+                    EfiBootServicesData,
+                    (UINTN) (*BufferSize),
+                    (VOID **) Buffer
                     );
     if (EFI_ERROR (Status)) {
       return Status;
@@ -220,7 +220,6 @@ IDEBusDriverDiagnosticsRunDiagnostics (
   }
 
   gBS->FreePool (BlockBuffer);
-  
+
   return Status;
 }
-

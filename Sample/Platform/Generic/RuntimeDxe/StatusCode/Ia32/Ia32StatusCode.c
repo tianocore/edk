@@ -24,7 +24,7 @@ Abstract:
 //
 //
 //
-EFI_HANDLE gStatusCodeHandle = NULL;
+EFI_HANDLE  gStatusCodeHandle = NULL;
 
 //
 // Define the driver entry point
@@ -67,11 +67,11 @@ Returns:
 
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &gStatusCodeHandle,
-                  &gEfiStatusCodeArchProtocolGuid, NULL,
+                  &gEfiStatusCodeArchProtocolGuid,
+                  NULL,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
- 
+
   return Status;
 }
-

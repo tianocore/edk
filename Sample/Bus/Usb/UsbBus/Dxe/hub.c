@@ -20,22 +20,23 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   Revision History
 
 --*/
+
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "usb.h"
 
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
 
 #include "usbbus.h"
 #include "UsbDxeLib.h"
 #include "hub.h"
 
-EFI_STATUS 
+EFI_STATUS
 HubGetPortStatus (
-  IN  EFI_USB_IO_PROTOCOL     *UsbIo, 
-  IN  UINT8                   Port, 
-  OUT UINT32                  *PortStatus 
-  ) 
+  IN  EFI_USB_IO_PROTOCOL     *UsbIo,
+  IN  UINT8                   Port,
+  OUT UINT32                  *PortStatus
+  )
 /*++
   
   Routine Description:
@@ -58,38 +59,38 @@ HubGetPortStatus (
   EFI_STATUS              EfiStatus;
   UINT32                  UsbStatus;
   UINT32                  Timeout;
-    
-  EfiZeroMem ( &DevReq, sizeof(EFI_USB_DEVICE_REQUEST));
-  
+
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
+
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = HUB_GET_PORT_STATUS_REQ_TYPE;
-  DevReq.Request = HUB_GET_PORT_STATUS;
-  DevReq.Value = 0;
-  DevReq.Index = Port;
-  DevReq.Length = sizeof(UINT32);
+  DevReq.RequestType  = HUB_GET_PORT_STATUS_REQ_TYPE;
+  DevReq.Request      = HUB_GET_PORT_STATUS;
+  DevReq.Value        = 0;
+  DevReq.Index        = Port;
+  DevReq.Length       = sizeof (UINT32);
 
-  Timeout = 3000;
-  
-  EfiStatus = UsbIo->UsbControlTransfer(
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbDataIn,
-                       Timeout,
-                       PortStatus,
-                       sizeof(UINT32),
-                       &UsbStatus
-                       );
+  Timeout             = 3000;
+
+  EfiStatus = UsbIo->UsbControlTransfer (
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbDataIn,
+                      Timeout,
+                      PortStatus,
+                      sizeof (UINT32),
+                      &UsbStatus
+                      );
 
   return EfiStatus;
-} 
+}
 
-EFI_STATUS 
-HubSetPortFeature ( 
-  IN EFI_USB_IO_PROTOCOL     *UsbIo, 
-  IN UINT8                   Port, 
-  IN UINT8                   Value 
+EFI_STATUS
+HubSetPortFeature (
+  IN EFI_USB_IO_PROTOCOL     *UsbIo,
+  IN UINT8                   Port,
+  IN UINT8                   Value
   )
 /*++
   
@@ -108,43 +109,41 @@ HubSetPortFeature (
     EFI_INVALID_PARAMETER
   
 --*/
-
 {
-  EFI_USB_DEVICE_REQUEST      DevReq;
-  EFI_STATUS                  EfiStatus;
-  UINT32                      UsbStatus;
-  UINT32                      Timeout;
+  EFI_USB_DEVICE_REQUEST  DevReq;
+  EFI_STATUS              EfiStatus;
+  UINT32                  UsbStatus;
+  UINT32                  Timeout;
 
-  EfiZeroMem (&DevReq, sizeof(EFI_USB_DEVICE_REQUEST)) ;
-  
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
+
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = HUB_SET_PORT_FEATURE_REQ_TYPE ;
-  DevReq.Request = HUB_SET_PORT_FEATURE ;
-  DevReq.Value = Value;
-  DevReq.Index = Port;
-  DevReq.Length = 0;
+  DevReq.RequestType  = HUB_SET_PORT_FEATURE_REQ_TYPE;
+  DevReq.Request      = HUB_SET_PORT_FEATURE;
+  DevReq.Value        = Value;
+  DevReq.Index        = Port;
+  DevReq.Length       = 0;
 
-  Timeout = 3000;
-  EfiStatus = UsbIo->UsbControlTransfer(
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbNoData,
-                       Timeout,
-                       NULL,
-                       0,
-                       &UsbStatus
-                       );
+  Timeout             = 3000;
+  EfiStatus = UsbIo->UsbControlTransfer (
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbNoData,
+                      Timeout,
+                      NULL,
+                      0,
+                      &UsbStatus
+                      );
 
   return EfiStatus;
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 HubClearPortFeature (
-  IN EFI_USB_IO_PROTOCOL     *UsbIo, 
-  IN UINT8                   Port, 
+  IN EFI_USB_IO_PROTOCOL     *UsbIo,
+  IN UINT8                   Port,
   IN UINT8                   Value
   )
 /*++
@@ -166,41 +165,41 @@ HubClearPortFeature (
   
 --*/
 {
-  EFI_USB_DEVICE_REQUEST      DevReq;
-  EFI_STATUS                  EfiStatus;
-  UINT32                      UsbStatus;
-  UINT32                      Timeout;
+  EFI_USB_DEVICE_REQUEST  DevReq;
+  EFI_STATUS              EfiStatus;
+  UINT32                  UsbStatus;
+  UINT32                  Timeout;
 
-  EfiZeroMem ( &DevReq, sizeof(EFI_USB_DEVICE_REQUEST)) ;
-  
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
+
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = HUB_CLEAR_FEATURE_PORT_REQ_TYPE ;
-  DevReq.Request = HUB_CLEAR_FEATURE_PORT ;
-  DevReq.Value = Value;
-  DevReq.Index = Port;
-  DevReq.Length = 0;
+  DevReq.RequestType  = HUB_CLEAR_FEATURE_PORT_REQ_TYPE;
+  DevReq.Request      = HUB_CLEAR_FEATURE_PORT;
+  DevReq.Value        = Value;
+  DevReq.Index        = Port;
+  DevReq.Length       = 0;
 
-  Timeout = 3000;
-  EfiStatus = UsbIo->UsbControlTransfer(
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbNoData,
-                       Timeout,
-                       NULL,
-                       0,
-                       &UsbStatus
-                       );
+  Timeout             = 3000;
+  EfiStatus = UsbIo->UsbControlTransfer (
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbNoData,
+                      Timeout,
+                      NULL,
+                      0,
+                      &UsbStatus
+                      );
 
   return EfiStatus;
 }
 
-EFI_STATUS 
+EFI_STATUS
 HubGetHubStatus (
-  IN  EFI_USB_IO_PROTOCOL     *UsbIo, 
-  OUT UINT32                  *HubStatus 
-  ) 
+  IN  EFI_USB_IO_PROTOCOL     *UsbIo,
+  OUT UINT32                  *HubStatus
+  )
 /*++
   
   Routine Description:
@@ -221,35 +220,35 @@ HubGetHubStatus (
   EFI_STATUS              EfiStatus;
   UINT32                  UsbStatus;
   UINT32                  Timeout;
-    
-  EfiZeroMem (&DevReq, sizeof(EFI_USB_DEVICE_REQUEST));
-  
+
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
+
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = HUB_GET_HUB_STATUS_REQ_TYPE;
-  DevReq.Request = HUB_GET_HUB_STATUS;
-  DevReq.Value = 0;
-  DevReq.Index = 0;
-  DevReq.Length = sizeof(UINT32);
+  DevReq.RequestType  = HUB_GET_HUB_STATUS_REQ_TYPE;
+  DevReq.Request      = HUB_GET_HUB_STATUS;
+  DevReq.Value        = 0;
+  DevReq.Index        = 0;
+  DevReq.Length       = sizeof (UINT32);
 
-  Timeout = 3000;
+  Timeout             = 3000;
   EfiStatus = UsbIo->UsbControlTransfer (
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbDataIn,
-                       Timeout,
-                       HubStatus,
-                       sizeof(UINT32),
-                       &UsbStatus
-                       );
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbDataIn,
+                      Timeout,
+                      HubStatus,
+                      sizeof (UINT32),
+                      &UsbStatus
+                      );
 
   return EfiStatus;
 }
 
-EFI_STATUS 
+EFI_STATUS
 HubSetHubFeature (
-  IN EFI_USB_IO_PROTOCOL     *UsbIo, 
+  IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Value
   )
 /*++
@@ -268,40 +267,39 @@ HubSetHubFeature (
   
 --*/
 {
-  EFI_USB_DEVICE_REQUEST      DevReq;
-  EFI_STATUS                  EfiStatus;
-  UINT32                      UsbStatus;
-  UINT32                      Timeout;
-  
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EFI_USB_DEVICE_REQUEST  DevReq;
+  EFI_STATUS              EfiStatus;
+  UINT32                  UsbStatus;
+  UINT32                  Timeout;
+
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = HUB_SET_HUB_FEATURE_REQ_TYPE ;
-  DevReq.Request = HUB_SET_HUB_FEATURE ;
-  DevReq.Value = Value ;
-  DevReq.Index = 0 ;
-  DevReq.Length = 0 ;
+  DevReq.RequestType  = HUB_SET_HUB_FEATURE_REQ_TYPE;
+  DevReq.Request      = HUB_SET_HUB_FEATURE;
+  DevReq.Value        = Value;
+  DevReq.Index        = 0;
+  DevReq.Length       = 0;
 
-  Timeout = 3000;
+  Timeout             = 3000;
   EfiStatus = UsbIo->UsbControlTransfer (
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbNoData,
-                       Timeout,
-                       NULL,
-                       0,
-                       &UsbStatus
-                       );
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbNoData,
+                      Timeout,
+                      NULL,
+                      0,
+                      &UsbStatus
+                      );
 
   return EfiStatus;
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 HubClearHubFeature (
-  IN EFI_USB_IO_PROTOCOL     *UsbIo, 
+  IN EFI_USB_IO_PROTOCOL     *UsbIo,
   IN UINT8                   Value
   )
 /*++
@@ -320,38 +318,38 @@ HubClearHubFeature (
   
 --*/
 {
-  EFI_USB_DEVICE_REQUEST      DevReq;
-  EFI_STATUS                  EfiStatus;
-  UINT32                      UsbStatus;
-  UINT32                      Timeout;
+  EFI_USB_DEVICE_REQUEST  DevReq;
+  EFI_STATUS              EfiStatus;
+  UINT32                  UsbStatus;
+  UINT32                  Timeout;
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = HUB_CLEAR_FEATURE_REQ_TYPE ;
-  DevReq.Request = HUB_CLEAR_FEATURE ;
-  DevReq.Value = Value ;
-  DevReq.Index = 0 ;
-  DevReq.Length = 0 ;
+  DevReq.RequestType  = HUB_CLEAR_FEATURE_REQ_TYPE;
+  DevReq.Request      = HUB_CLEAR_FEATURE;
+  DevReq.Value        = Value;
+  DevReq.Index        = 0;
+  DevReq.Length       = 0;
 
-  Timeout = 3000;
+  Timeout             = 3000;
   EfiStatus = UsbIo->UsbControlTransfer (
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbNoData,
-                       Timeout,
-                       NULL,
-                       0,
-                       &UsbStatus
-                       );
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbNoData,
+                      Timeout,
+                      NULL,
+                      0,
+                      &UsbStatus
+                      );
 
   return EfiStatus;
 
 }
 
-EFI_STATUS 
+EFI_STATUS
 GetHubDescriptor (
   IN  EFI_USB_IO_PROTOCOL        *UsbIo,
   IN  UINTN                      DescriptorSize,
@@ -375,32 +373,32 @@ GetHubDescriptor (
   
 --*/
 {
-  EFI_USB_DEVICE_REQUEST      DevReq ;
-  EFI_STATUS                  EfiStatus;
-  UINT32                      UsbStatus;
-  UINT32                      Timeout;
+  EFI_USB_DEVICE_REQUEST  DevReq;
+  EFI_STATUS              EfiStatus;
+  UINT32                  UsbStatus;
+  UINT32                  Timeout;
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   //
   // Fill Device request packet
   //
-  DevReq.RequestType = USB_RT_HUB | 0x80;
-  DevReq.Request = HUB_GET_DESCRIPTOR ;
-  DevReq.Value = USB_DT_HUB << 8 ;
-  DevReq.Index = 0 ;
-  DevReq.Length = (UINT16)DescriptorSize;
+  DevReq.RequestType  = USB_RT_HUB | 0x80;
+  DevReq.Request      = HUB_GET_DESCRIPTOR;
+  DevReq.Value        = USB_DT_HUB << 8;
+  DevReq.Index        = 0;
+  DevReq.Length       = (UINT16) DescriptorSize;
 
-  Timeout = 3000;
-  EfiStatus = UsbIo->UsbControlTransfer(
-                       UsbIo,
-                       &DevReq,
-                       EfiUsbDataIn,
-                       Timeout,
-                       HubDescriptor,
-                       (UINT16)DescriptorSize,
-                       &UsbStatus
-                       );
+  Timeout             = 3000;
+  EfiStatus = UsbIo->UsbControlTransfer (
+                      UsbIo,
+                      &DevReq,
+                      EfiUsbDataIn,
+                      Timeout,
+                      HubDescriptor,
+                      (UINT16) DescriptorSize,
+                      &UsbStatus
+                      );
 
   return EfiStatus;
 
@@ -425,16 +423,16 @@ DoHubConfig (
     
 --*/
 {
-  EFI_USB_IO_PROTOCOL       *UsbIo;
-  EFI_USB_HUB_DESCRIPTOR    HubDescriptor;
-  EFI_STATUS                Status;
-  EFI_USB_HUB_STATUS        HubStatus;
-  UINTN                     Index;
-  UINT32                    PortStatus;
+  EFI_USB_IO_PROTOCOL     *UsbIo;
+  EFI_USB_HUB_DESCRIPTOR  HubDescriptor;
+  EFI_STATUS              Status;
+  EFI_USB_HUB_STATUS      HubStatus;
+  UINTN                   Index;
+  UINT32                  PortStatus;
 
   UsbIo = &HubController->UsbIo;
 
-  EfiZeroMem(&HubDescriptor, sizeof (HubDescriptor));
+  EfiZeroMem (&HubDescriptor, sizeof (HubDescriptor));
 
   //
   // First get the hub descriptor length
@@ -449,17 +447,17 @@ DoHubConfig (
   // get the number of hub ports
   //
   Status = GetHubDescriptor (
-              UsbIo, 
-              HubDescriptor.Length, 
-              &HubDescriptor
-              );
+            UsbIo,
+            HubDescriptor.Length,
+            &HubDescriptor
+            );
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  HubController->DownstreamPorts = HubDescriptor.NbrPorts;
-  
-  Status = HubGetHubStatus (UsbIo, (UINT32*)&HubStatus);
+  HubController->DownstreamPorts  = HubDescriptor.NbrPorts;
+
+  Status                          = HubGetHubStatus (UsbIo, (UINT32 *) &HubStatus);
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
@@ -468,8 +466,8 @@ DoHubConfig (
   //  Get all hub ports status
   //
   for (Index = 0; Index < HubController->DownstreamPorts; Index++) {
-            
-    Status = HubGetPortStatus (UsbIo, (UINT8)(Index + 1), &PortStatus);
+
+    Status = HubGetPortStatus (UsbIo, (UINT8) (Index + 1), &PortStatus);
     if (EFI_ERROR (Status)) {
       continue;
     }
@@ -478,12 +476,12 @@ DoHubConfig (
   //
   //  Power all the hub ports
   //
-  for(Index = 0; Index < HubController->DownstreamPorts; Index++) {
+  for (Index = 0; Index < HubController->DownstreamPorts; Index++) {
     Status = HubSetPortFeature (
-                UsbIo, 
-                (UINT8)(Index + 1), 
-                EfiUsbPortPower
-                );
+              UsbIo,
+              (UINT8) (Index + 1),
+              EfiUsbPortPower
+              );
     if (EFI_ERROR (Status)) {
       continue;
     }
@@ -492,7 +490,7 @@ DoHubConfig (
   //
   // Clear Hub Status Change
   //
-  Status = HubGetHubStatus (UsbIo, (UINT32*)&HubStatus);
+  Status = HubGetHubStatus (UsbIo, (UINT32 *) &HubStatus);
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   } else {
@@ -510,7 +508,7 @@ DoHubConfig (
       HubClearHubFeature (UsbIo, C_HUB_OVER_CURRENT);
     }
   }
-  
+
   return EFI_SUCCESS;
 
 }

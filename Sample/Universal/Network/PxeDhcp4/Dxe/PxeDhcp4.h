@@ -1,6 +1,3 @@
-#ifndef _PXEDHCP4_H
-#define _PXEDHCP4_H
-
 /*++
 
 Copyright 2004, Intel Corporation                                                         
@@ -19,221 +16,314 @@ Abstract:
   Common header for PxeDhcp4 protocol driver
 
 --*/
+#ifndef _PXEDHCP4_H
+#define _PXEDHCP4_H
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "EfiPrintLib.h"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // Driver Consumed Protocol Prototypes
 //
-
-#include EFI_PROTOCOL_DEFINITION(PxeBaseCode)
-#include EFI_PROTOCOL_DEFINITION(SimpleNetwork)
-#include EFI_PROTOCOL_DEFINITION(PxeDhcp4Callback)
+#include EFI_PROTOCOL_DEFINITION (PxeBaseCode)
+#include EFI_PROTOCOL_DEFINITION (SimpleNetwork)
+#include EFI_PROTOCOL_DEFINITION (PxeDhcp4Callback)
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // Driver Produced Protocol Prototypes
 //
-
-#include EFI_PROTOCOL_DEFINITION(DriverBinding)
-#include EFI_PROTOCOL_DEFINITION(ComponentName)
-#include EFI_PROTOCOL_DEFINITION(PxeDhcp4)
+#include EFI_PROTOCOL_DEFINITION (DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (PxeDhcp4)
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // PxeDhcp4 protocol instance data
 //
 typedef struct {
-
   //
   // Signature field used to locate beginning of containment record.
   //
   UINTN Signature;
 
-#define PXE_DHCP4_PRIVATE_DATA_SIGNATURE \
-  EFI_SIGNATURE_32('p','x','D','4')
-
+#define PXE_DHCP4_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32 ('p', 'x', 'D', '4')
   //
   // Device handle the protocol is bound to.
   //
-  EFI_HANDLE Handle;
+  EFI_HANDLE                      Handle;
 
   //
   // Public PxeDhcp4 protocol interface.
   //
-  EFI_PXE_DHCP4_PROTOCOL PxeDhcp4;
+  EFI_PXE_DHCP4_PROTOCOL          PxeDhcp4;
 
   //
   // Consumed PxeBc, Snp and PxeDhcp4Callback protocol interfaces.
   //
-  EFI_PXE_BASE_CODE_PROTOCOL *PxeBc;
-  EFI_SIMPLE_NETWORK_PROTOCOL *Snp;
+  EFI_PXE_BASE_CODE_PROTOCOL      *PxeBc;
+  EFI_SIMPLE_NETWORK_PROTOCOL     *Snp;
   EFI_PXE_DHCP4_CALLBACK_PROTOCOL *callback;
 
   //
   // PxeDhcp4 called function for PxeDhcp4Callback.
   //
-  EFI_PXE_DHCP4_FUNCTION function;
+  EFI_PXE_DHCP4_FUNCTION          function;
 
   //
   // Timeout event and flag for PxeDhcp4Callback.
   //
-  EFI_EVENT TimeoutEvent;
-  BOOLEAN TimeoutOccurred;
+  EFI_EVENT                       TimeoutEvent;
+  BOOLEAN                         TimeoutOccurred;
 
   //
   // Periodic event and flag for PxeDhcp4Callback.
   //
-  EFI_EVENT PeriodicEvent;
-  BOOLEAN PeriodicOccurred;
+  EFI_EVENT                       PeriodicEvent;
+  BOOLEAN                         PeriodicOccurred;
 
   //
   // DHCP server IP address.
   //
-  UINT32 ServerIp;
+  UINT32                          ServerIp;
 
   //
   // DHCP renewal and rebinding times, in seconds.
   //
-  UINT32 RenewTime;
-  UINT32 RebindTime;
-  UINT32 LeaseTime;
+  UINT32                          RenewTime;
+  UINT32                          RebindTime;
+  UINT32                          LeaseTime;
 
   //
   // Number of offers received & allocated offer list.
   //
-  UINTN offers;
-  DHCP4_PACKET *offer_list;
+  UINTN                           offers;
+  DHCP4_PACKET                    *offer_list;
 
   //
-  // 
   //
-  BOOLEAN StopPxeBc;
+  //
+  BOOLEAN                         StopPxeBc;
 
 } PXE_DHCP4_PRIVATE_DATA;
 
-#define PXE_DHCP4_PRIVATE_DATA_FROM_THIS(a) \
-  CR(a, PXE_DHCP4_PRIVATE_DATA, PxeDhcp4, PXE_DHCP4_PRIVATE_DATA_SIGNATURE)
+#define PXE_DHCP4_PRIVATE_DATA_FROM_THIS(a) CR (a, PXE_DHCP4_PRIVATE_DATA, PxeDhcp4, PXE_DHCP4_PRIVATE_DATA_SIGNATURE)
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // Protocol function prototypes.
 //
-
-extern EFI_STATUS EFIAPI PxeDhcp4Run(
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Run (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN OPTIONAL UINTN OpLen,
-  IN OPTIONAL VOID *OpList);
+  IN OPTIONAL UINTN                  OpLen,
+  IN OPTIONAL VOID                   *OpList
+  )
+;
 
-extern EFI_STATUS EFIAPI PxeDhcp4Setup(
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Setup (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN EFI_PXE_DHCP4_DATA *Data);
+  IN EFI_PXE_DHCP4_DATA     *Data
+  )
+;
 
-extern EFI_STATUS EFIAPI PxeDhcp4Init(
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Init (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN UINTN seconds_timeout,
-  OUT UINTN *offer_list_entries,
-  OUT DHCP4_PACKET **offer_list);
+  IN UINTN                  seconds_timeout,
+  OUT UINTN                 *offer_list_entries,
+  OUT DHCP4_PACKET          **offer_list
+  )
+;
 
-extern EFI_STATUS EFIAPI PxeDhcp4Select(
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Select (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN UINTN seconds_timeout,
-  IN DHCP4_PACKET *offer_list);
+  IN UINTN                  seconds_timeout,
+  IN DHCP4_PACKET           *offer_list
+  )
+;
 
-extern EFI_STATUS EFIAPI PxeDhcp4Renew(
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Renew (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  UINTN seconds_timeout);
+  UINTN                     seconds_timeout
+  )
+;
 
-extern EFI_STATUS EFIAPI PxeDhcp4Rebind(
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Rebind (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  UINTN seconds_timeout);
+  UINTN                     seconds_timeout
+  )
+;
 
-extern EFI_STATUS EFIAPI PxeDhcp4Release(
-  IN EFI_PXE_DHCP4_PROTOCOL *This);
+extern
+EFI_STATUS
+EFIAPI
+PxeDhcp4Release (
+  IN EFI_PXE_DHCP4_PROTOCOL *This
+  )
+;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // Support function prototypes.
 //
+extern
+UINT16
+htons (
+  UINTN n
+  )
+;
 
-extern UINT16 htons(UINTN n);
+extern
+UINT32
+htonl (
+  UINTN n
+  )
+;
 
-extern UINT32 htonl(UINTN n);
-
-extern VOID timeout_notify(
+extern
+VOID
+timeout_notify (
   IN EFI_EVENT Event,
-  IN VOID *Context);
+  IN VOID      *Context
+  )
+;
 
-extern VOID periodic_notify(
+extern
+VOID
+periodic_notify (
   IN EFI_EVENT Event,
-  IN VOID *Context);
+  IN VOID      *Context
+  )
+;
 
-extern EFI_STATUS find_opt(
+extern
+EFI_STATUS
+find_opt (
   IN DHCP4_PACKET *Packet,
-  IN UINT8 OpCode,
-  IN UINTN Skip,
-  OUT DHCP4_OP **OpPtr);
+  IN UINT8        OpCode,
+  IN UINTN        Skip,
+  OUT DHCP4_OP    **OpPtr
+  )
+;
 
-extern EFI_STATUS add_opt(
+extern
+EFI_STATUS
+add_opt (
   IN DHCP4_PACKET *Packet,
-  IN DHCP4_OP *OpPtr);
+  IN DHCP4_OP     *OpPtr
+  )
+;
 
-extern EFI_STATUS start_udp(
+extern
+EFI_STATUS
+start_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN OPTIONAL EFI_IP_ADDRESS *station_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *subnet_mask);
+  IN OPTIONAL EFI_IP_ADDRESS         *station_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *subnet_mask
+  )
+;
 
-extern VOID stop_udp(
-  IN PXE_DHCP4_PRIVATE_DATA *Private);
+extern
+VOID
+stop_udp (
+  IN PXE_DHCP4_PRIVATE_DATA *Private
+  )
+;
 
-extern EFI_STATUS start_receive_events(
+extern
+EFI_STATUS
+start_receive_events (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN UINTN seconds_timeout);
+  IN UINTN                  seconds_timeout
+  )
+;
 
-extern VOID stop_receive_events(
-  IN PXE_DHCP4_PRIVATE_DATA *Private);
+extern
+VOID
+stop_receive_events (
+  IN PXE_DHCP4_PRIVATE_DATA *Private
+  )
+;
 
-extern EFI_STATUS tx_udp(
+extern
+EFI_STATUS
+tx_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN EFI_IP_ADDRESS *dest_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *gateway_ip,
-  IN EFI_IP_ADDRESS *src_ip,
-  IN VOID *buffer,
-  IN UINTN BufferSize);
+  IN EFI_IP_ADDRESS         *dest_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *gateway_ip,
+  IN EFI_IP_ADDRESS         *src_ip,
+  IN VOID                   *buffer,
+  IN UINTN                  BufferSize
+  )
+;
 
-extern EFI_STATUS rx_udp(
+extern
+EFI_STATUS
+rx_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  OUT VOID *buffer,
-  OUT UINTN *BufferSize,
-  IN OUT EFI_IP_ADDRESS *dest_ip,
-  IN OUT EFI_IP_ADDRESS *src_ip,
-  IN UINT16 op_flags);
+  OUT VOID                  *buffer,
+  OUT UINTN                 *BufferSize,
+  IN OUT EFI_IP_ADDRESS     *dest_ip,
+  IN OUT EFI_IP_ADDRESS     *src_ip,
+  IN UINT16                 op_flags
+  )
+;
 
-extern EFI_STATUS tx_rx_udp(
+extern
+EFI_STATUS
+tx_rx_udp (
   IN PXE_DHCP4_PRIVATE_DATA *Private,
-  IN OUT EFI_IP_ADDRESS *ServerIp,
-  IN OPTIONAL EFI_IP_ADDRESS *gateway_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *client_ip,
-  IN OPTIONAL EFI_IP_ADDRESS *subnet_mask,
-  IN DHCP4_PACKET *tx_pkt,
-  OUT DHCP4_PACKET *rx_pkt,
-  IN UINTN (*rx_vfy)(
-    IN PXE_DHCP4_PRIVATE_DATA *Private,
-    IN DHCP4_PACKET *tx_pkt,
-    IN DHCP4_PACKET *rx_pkt,
-    IN UINTN rx_pkt_size),
-  IN UINTN seconds_timeout);
+  IN OUT EFI_IP_ADDRESS     *ServerIp,
+  IN OPTIONAL EFI_IP_ADDRESS         *gateway_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *client_ip,
+  IN OPTIONAL EFI_IP_ADDRESS         *subnet_mask,
+  IN DHCP4_PACKET           *tx_pkt,
+  OUT DHCP4_PACKET          *rx_pkt,
+  IN UINTN
+    (
+  *rx_vfy)
+    (
+      IN PXE_DHCP4_PRIVATE_DATA *Private,
+      IN DHCP4_PACKET *tx_pkt,
+      IN DHCP4_PACKET *rx_pkt,
+      IN UINTN rx_pkt_size
+    ),
+  IN UINTN seconds_timeout
+  )
+;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 //
 // Global variable definitions.
 //
-
-extern EFI_DRIVER_BINDING_PROTOCOL gPxeDhcp4DriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gPxeDhcp4ComponentName;
+extern EFI_DRIVER_BINDING_PROTOCOL  gPxeDhcp4DriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL  gPxeDhcp4ComponentName;
 
 #endif /* _PXEDHCP4_H */
+
 /* EOF - PxeDhcp4.h */

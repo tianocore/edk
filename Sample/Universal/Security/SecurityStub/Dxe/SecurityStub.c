@@ -24,21 +24,18 @@ Abstract:
 //
 // Handle for the Security Architectural Protocol instance produced by this driver
 //
-EFI_HANDLE mSecurityArchProtocolHandle = NULL;
+EFI_HANDLE                  mSecurityArchProtocolHandle = NULL;
 
 //
 // Security Architectural Protocol instance produced by this driver
 //
-EFI_SECURITY_ARCH_PROTOCOL  mSecurityStub = {
-  SecurityStubAuthenticateState
-};
+EFI_SECURITY_ARCH_PROTOCOL  mSecurityStub = { SecurityStubAuthenticateState };
 
 //
 // Worker functions
 //
-
 EFI_STATUS
-EFIAPI 
+EFIAPI
 SecurityStubAuthenticateState (
   IN EFI_SECURITY_ARCH_PROTOCOL  *This,
   IN UINT32                      AuthenticationStatus,
@@ -153,7 +150,8 @@ Returns:
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mSecurityArchProtocolHandle,
-                  &gEfiSecurityArchProtocolGuid, &mSecurityStub,
+                  &gEfiSecurityArchProtocolGuid,
+                  &mSecurityStub,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);

@@ -50,55 +50,55 @@ Abstract:
 #include EFI_GUID_DEFINITION (GlobalVariable)
 
 //
-// Platform specific function Declarations.  These must be implemented in a 
+// Platform specific function Declarations.  These must be implemented in a
 // subdirectory named PlatformName in a file named PlatformStatusCode.c.
-// See D845GRG\PlatformStatusCode.c for an example of a simple status code 
+// See D845GRG\PlatformStatusCode.c for an example of a simple status code
 // implementation.
 // See Nt32\PlatformStatusCode.c for an example of a status code implementation
 // that relocates itself into memory.
 //
-
 //
 // This is the driver entry point and must be defined.
 //
 EFI_STATUS
-EFIAPI 
+EFIAPI
 InstallMonoStatusCode (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
-  );
+  )
+;
 
 //
-// This is the platform function to initialize the listeners desired by the 
+// This is the platform function to initialize the listeners desired by the
 // platform.
 //
 VOID
-EFIAPI 
+EFIAPI
 PlatformInitializeStatusCode (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
-  );
+  )
+;
 
 //
 // This is the platform function that calls all of the listeners desired by the
 // platform.
 //
 EFI_STATUS
-EFIAPI 
+EFIAPI
 PlatformReportStatusCode (
   IN EFI_PEI_SERVICES         **PeiServices,
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
-
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
 //
 // Platform independent function Declarations
 //
-
 //
 // Initialize the status code listeners and publish the status code PPI.
 //
@@ -107,7 +107,8 @@ EFIAPI
 InitializeMonoStatusCode (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
-  );
+  )
+;
 
 //
 // Convert a DXE status code call into a PEI status code call.
@@ -118,9 +119,10 @@ TranslateDxeStatusCodeToPeiStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
 //
 // Publish a HOB that contains the listener to be used by DXE.
@@ -129,6 +131,7 @@ EFI_STATUS
 EFIAPI
 InitializeDxeReportStatusCode (
   IN EFI_PEI_SERVICES       **PeiServices
-  );
+  )
+;
 
 #endif

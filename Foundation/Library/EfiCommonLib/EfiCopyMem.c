@@ -54,17 +54,16 @@ Returns:
   CHAR8 *Source8;
 
   if (Source < Destination) {
-    Destination8 = (CHAR8 *)Destination + Length - 1;
-    Source8 = (CHAR8 *)Source + Length - 1;
+    Destination8  = (CHAR8 *) Destination + Length - 1;
+    Source8       = (CHAR8 *) Source + Length - 1;
     while (Length--) {
       *(Destination8--) = *(Source8--);
     }
   } else {
-    Destination8 = (CHAR8 *)Destination;
-    Source8 = (CHAR8 *)Source;
+    Destination8  = (CHAR8 *) Destination;
+    Source8       = (CHAR8 *) Source;
     while (Length--) {
       *(Destination8++) = *(Source8++);
     }
   }
 }
-

@@ -24,8 +24,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(DiskIo)
+#include EFI_PROTOCOL_DEFINITION (DiskIo)
 
-EFI_GUID gEfiDiskIoProtocolGuid = EFI_DISK_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiDiskIoProtocolGuid = EFI_DISK_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiDiskIoProtocolGuid, "DiskIo Protocol", "EFI 1.0 Disk IO Protocol");

@@ -97,6 +97,18 @@ VOID
 CoreAcquireGcdMemoryLock (
   VOID
   )
+/*++
+
+Routine Description:
+    Acquire memory lock on mGcdMemorySpaceLock
+
+Arguments:
+    None
+
+Returns:
+    None
+
+--*/
 {
   CoreAcquireLock (&mGcdMemorySpaceLock);
 }
@@ -106,6 +118,18 @@ VOID
 CoreReleaseGcdMemoryLock (
   VOID
   )
+/*++
+
+Routine Description:
+    Release memory lock on mGcdMemorySpaceLock
+
+Arguments:
+    None
+
+Returns:
+    None
+
+--*/
 {
   CoreReleaseLock (&mGcdMemorySpaceLock);
 }
@@ -116,6 +140,18 @@ VOID
 CoreAcquireGcdIoLock (
   VOID
   )
+/*++
+
+Routine Description:
+    Acquire memory lock on mGcdIoSpaceLock
+
+Arguments:
+    None
+
+Returns:
+    None
+
+--*/
 {
   CoreAcquireLock (&mGcdIoSpaceLock);
 }
@@ -125,6 +161,18 @@ VOID
 CoreReleaseGcdIoLock (
   VOID
   )
+/*++
+
+Routine Description:
+    Release memory lock on mGcdIoSpaceLock
+
+Arguments:
+    None
+
+Returns:
+    None
+
+--*/
 {
   CoreReleaseLock (&mGcdIoSpaceLock);
 }
@@ -172,6 +220,21 @@ UINT64
 PageAlignAddress (
   IN UINT64 Value
   )
+/*++
+
+Routine Description:
+
+  Aligns address to the page boundary.
+
+Arguments:
+
+  Value     - 64 bit address to align
+
+Returns:
+
+  A 64 bit value is the aligned to the value nearest Value with an alignment by Alignment.
+
+--*/
 {
   return AlignValue (Value, EFI_PAGE_SHIFT, TRUE);
 }
@@ -180,6 +243,21 @@ UINT64
 PageAlignLength (
   IN UINT64 Value
   )
+/*++
+
+Routine Description:
+
+  Aligns length to the page boundary.
+
+Arguments:
+
+  Value     - 64 bit length to align
+
+Returns:
+
+  A 64 bit value is the aligned to the value nearest Value with an alignment by Alignment.
+
+--*/
 {
   return AlignValue (Value, EFI_PAGE_SHIFT, FALSE);
 }
@@ -196,9 +274,17 @@ CoreAllocateGcdMapEntry (
 
 Routine Description:
 
+  Allocate pool for two entries.
+
 Arguments:
 
+  TopEntry      - An entry of GCD map
+  BottomEntry   - An entry of GCD map
+
 Returns:
+
+  EFI_OUT_OF_RESOURCES    - No enough buffer to be allocated.
+  EFI_SUCCESS             - Both entries successfully allocated.
 
 --*/
 {
@@ -282,9 +368,21 @@ CoreMergeGcdMapEntry (
 
 Routine Description:
 
+  Merge the Gcd region specified by Link and its adjacent entry
+
 Arguments:
 
+  Link      - Specify the entry to be merged (with its adjacent entry).
+  
+  Forward   - Direction (forward or backward).
+  
+  Map       - Boundary.
+
 Returns:
+
+  EFI_SUCCESS     - Successfully returned.
+  
+  EFI_UNSUPPORTED - These adjacent regions could not merge.
 
 --*/
 {
@@ -353,9 +451,23 @@ CoreCleanupGcdMapEntry (
 
 Routine Description:
 
+  Merge adjacent entries on total chain.
+
 Arguments:
 
+  TopEntry      - Top entry of GCD map.
+  
+  BottomEntry   - Bottom entry of GCD map.
+  
+  StartLink     - Start link of the list for this loop.
+  
+  EndLink       - End link of the list for this loop.
+  
+  Map           - Boundary.
+
 Returns:
+
+  EFI_SUCCESS   - GCD map successfully cleaned up.
 
 --*/
 {
@@ -390,9 +502,25 @@ CoreSearchGcdMapEntry (
 
 Routine Description:
 
+  Search a segment of memory space in GCD map. The result is a range of GCD entry list.
+
 Arguments:
 
+  BaseAddress       - The start address of the segment.
+  
+  Length            - The length of the segment.
+  
+  StartLink         - The first GCD entry involves this segment of memory space.
+  
+  EndLink           - The first GCD entry involves this segment of memory space.
+  
+  Map               - Points to the start entry to search.
+
 Returns:
+
+  EFI_SUCCESS       - Successfully found the entry.
+  
+  EFI_NOT_FOUND     - Not found.
 
 --*/
 {
@@ -430,9 +558,15 @@ CoreCountGcdMapEntry (
 
 Routine Description:
 
+  Count the amount of GCD map entries.
+
 Arguments:
 
+  Map       - Points to the start entry to do the count loop.
+
 Returns:
+
+  The count.
 
 --*/
 {
@@ -453,7 +587,23 @@ Returns:
 UINT64
 ConverToCpuArchAttributes (
   UINT64 Attributes
-  ) {
+  ) 
+/*++
+
+Routine Description:
+
+  Return the memory attribute specified by Attributes
+
+Arguments:
+
+  Attributes        - A num with some attribute bits on.
+
+Returns:
+
+  The enum value of memory attribute.
+
+--*/
+{
   if ( (Attributes & EFI_MEMORY_UC) == EFI_MEMORY_UC) {
     return EFI_MEMORY_UC;
   }
@@ -493,7 +643,38 @@ CoreConvertSpace (
 
 Routine Description:
 
+  Do operation on a segment of memory space specified (add, free, remove, change attribute ...).
+
 Arguments:
+
+  Operation       - The type of the operation
+  
+  GcdMemoryType   - Additional information for the operation
+  
+  GcdIoType       - Additional information for the operation
+  
+  BaseAddress     - Start address of the segment
+  
+  Length          - length of the segment
+  
+  Capabilities    - The alterable attributes of a newly added entry
+  
+  Attributes      - The attributes needs to be set
+  
+Returns:
+
+  EFI_INVALID_PARAMETER       - Length is 0 or address (length) not aligned when setting attribute.
+  
+  EFI_SUCCESS                 - Action successfully done.
+  
+  EFI_UNSUPPORTED             - Could not find the proper descriptor on this segment or 
+                                set an upsupported attribute.
+  
+  EFI_ACCESS_DENIED           - Operate on an space non-exist or is used for an image.
+  
+  EFI_NOT_FOUND               - Free a non-using space or remove a non-exist space, and so on.
+  
+  EFI_OUT_OF_RESOURCES        - No buffer could be allocated.
 
 Returns:
 
@@ -726,9 +907,25 @@ CoreAllocateSpaceCheckEntry (
 
 Routine Description:
 
+  Check whether an entry could be used to allocate space.
+
 Arguments:
 
+  Operation       - Allocate memory or IO
+  
+  Entry           - The entry to be tested
+  
+  GcdMemoryType   - The desired memory type
+  
+  GcdIoType       - The desired IO type
+  
 Returns:
+
+  EFI_NOT_FOUND   - The memory type does not match or there's an image handle on the entry.
+  
+  EFI_UNSUPPORTED - The operation unsupported.
+  
+  EFI_SUCCESS     - It's ok for this entry to be used to allocate space.
 
 --*/
 {
@@ -768,9 +965,35 @@ CoreAllocateSpace (
 
 Routine Description:
 
+  Allocate space on specified address and length.
+
 Arguments:
 
+  Operation         - The type of operation (memory or IO)
+  
+  GcdAllocateType   - The type of allocate operation
+  
+  GcdMemoryType     - The desired memory type
+  
+  GcdIoType         - The desired IO type
+  
+  Alignment         - Align with 2^Alignment
+  
+  Length            - Length to allocate
+  
+  BaseAddress       - Base address to allocate
+  
+  ImageHandle       - The image handle consume the allocated space.
+  
+  DeviceHandle      - The device handle consume the allocated space.
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Invalid parameter.
+  
+  EFI_NOT_FOUND               - No descriptor for the desired space exists.
+  
+  EFI_SUCCESS                 - Space successfully allocated.
 
 --*/
 {
@@ -1006,9 +1229,23 @@ CoreInternalAddMemorySpace (
 
 Routine Description:
 
+  Add a segment of memory to GCD map.
+
 Arguments:
 
+  GcdMemoryType     - Memory type of the segment.
+  
+  BaseAddress       - Base address of the segment.
+  
+  Length            - Length of the segment.
+  
+  Capabilities      - alterable attributes of the segment.
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Invalid parameters.
+  
+  EFI_SUCCESS                 - Successfully add a segment of memory space.
 
 --*/
 {
@@ -1039,9 +1276,32 @@ CoreAllocateMemorySpace (
 
 Routine Description:
 
+  Allocates nonexistent memory, reserved memory, system memory, or memorymapped
+I/O resources from the global coherency domain of the processor.
+
 Arguments:
 
+  GcdAllocateType   - The type of allocate operation
+  
+  GcdMemoryType     - The desired memory type
+  
+  Alignment         - Align with 2^Alignment
+  
+  Length            - Length to allocate
+  
+  BaseAddress       - Base address to allocate
+  
+  ImageHandle       - The image handle consume the allocated space.
+  
+  DeviceHandle      - The device handle consume the allocated space.
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Invalid parameter.
+  
+  EFI_NOT_FOUND               - No descriptor contains the desired space.
+  
+  EFI_SUCCESS                 - Memory space successfully allocated.
 
 --*/
 {
@@ -1069,9 +1329,22 @@ CoreAddMemorySpace (
 
 Routine Description:
 
+  Adds reserved memory, system memory, or memory-mapped I/O resources to the
+global coherency domain of the processor.
+
 Arguments:
 
+  GcdMemoryType     - Memory type of the memory space.
+  
+  BaseAddress       - Base address of the memory space.
+  
+  Length            - Length of the memory space.
+  
+  Capabilities      - alterable attributes of the memory space.
+
 Returns:
+
+  EFI_SUCCESS       - Merged this memory space into GCD map.  
 
 --*/
 {
@@ -1138,9 +1411,18 @@ CoreFreeMemorySpace (
 
 Routine Description:
 
+  Frees nonexistent memory, reserved memory, system memory, or memory-mapped
+I/O resources from the global coherency domain of the processor.
+
 Arguments:
 
+  BaseAddress       - Base address of the memory space.
+  
+  Length            - Length of the memory space.
+  
 Returns:
+
+  EFI_SUCCESS       - Space successfully freed.
 
 --*/
 {
@@ -1156,9 +1438,18 @@ CoreRemoveMemorySpace (
 
 Routine Description:
 
+  Removes reserved memory, system memory, or memory-mapped I/O resources from
+the global coherency domain of the processor.
+
 Arguments:
 
+  BaseAddress       - Base address of the memory space.
+  
+  Length            - Length of the memory space.
+  
 Returns:
+
+  EFI_SUCCESS       - Successfully remove a segment of memory space.
 
 --*/
 {
@@ -1167,16 +1458,24 @@ Returns:
 
 VOID
 BuildMemoryDescriptor (
-  IN EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *Descriptor,
+  IN OUT EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *Descriptor,
   IN EFI_GCD_MAP_ENTRY                *Entry
   )
 /*++
 
 Routine Description:
 
+  Build a memory descriptor according to an entry.
+
 Arguments:
 
+  Descriptor          - The descriptor to be built
+  
+  Entry               - According to this entry
+
 Returns:
+
+  None
 
 --*/
 {
@@ -1198,9 +1497,19 @@ CoreGetMemorySpaceDescriptor (
 
 Routine Description:
 
+  Retrieves the descriptor for a memory region containing a specified address.
+
 Arguments:
 
+  BaseAddress       - Specified start address
+  
+  Descriptor        - Specified length
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Invalid parameter
+  
+  EFI_SUCCESS                 - Successfully get memory space descriptor.
 
 --*/
 {
@@ -1247,9 +1556,20 @@ CoreSetMemorySpaceAttributes (
 
 Routine Description:
 
+  Modifies the attributes for a memory region in the global coherency domain of the
+processor.
+
 Arguments:
 
+  BaseAddress       - Specified start address
+  
+  Length            - Specified length
+  
+  Attributes        - Specified attributes
+
 Returns:
+
+  EFI_SUCCESS       - Successfully set attribute of a segment of memory space.
 
 --*/
 {
@@ -1265,9 +1585,22 @@ CoreGetMemorySpaceMap (
 
 Routine Description:
 
+  Returns a map of the memory resources in the global coherency domain of the
+processor.
+
 Arguments:
 
+  NumberOfDescriptors       - Number of descriptors.
+  
+  MemorySpaceMap            - Descriptor array
+
 Returns:
+
+  EFI_INVALID_PARAMETER     - Invalid parameter
+  
+  EFI_OUT_OF_RESOURCES      - No enough buffer to allocate
+  
+  EFI_SUCCESS               - Successfully get memory space map.
 
 --*/
 {
@@ -1330,9 +1663,20 @@ CoreAddIoSpace (
 
 Routine Description:
 
+  Adds reserved I/O or I/O resources to the global coherency domain of the processor.
+
 Arguments:
 
+  GcdIoType         - IO type of the segment.
+  
+  BaseAddress       - Base address of the segment.
+  
+  Length            - Length of the segment.
+
 Returns:
+
+  EFI_SUCCESS       - Merged this segment into GCD map.
+  EFI_INVALID_PARAMETER    - Parameter not valid
 
 --*/
 {
@@ -1359,9 +1703,32 @@ CoreAllocateIoSpace (
 
 Routine Description:
 
+  Allocates nonexistent I/O, reserved I/O, or I/O resources from the global coherency
+domain of the processor.
+
 Arguments:
 
+  GcdAllocateType   - The type of allocate operation
+  
+  GcdIoType         - The desired IO type
+  
+  Alignment         - Align with 2^Alignment
+  
+  Length            - Length to allocate
+  
+  BaseAddress       - Base address to allocate
+  
+  ImageHandle       - The image handle consume the allocated space.
+  
+  DeviceHandle      - The device handle consume the allocated space.
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Invalid parameter.
+  
+  EFI_NOT_FOUND               - No descriptor contains the desired space.
+  
+  EFI_SUCCESS                 - IO space successfully allocated.
 
 --*/
 {
@@ -1387,9 +1754,18 @@ CoreFreeIoSpace (
 
 Routine Description:
 
+  Frees nonexistent I/O, reserved I/O, or I/O resources from the global coherency
+domain of the processor.
+
 Arguments:
 
+  BaseAddress       - Base address of the segment.
+  
+  Length            - Length of the segment.
+  
 Returns:
+
+  EFI_SUCCESS       - Space successfully freed.
 
 --*/
 {
@@ -1405,9 +1781,18 @@ CoreRemoveIoSpace (
 
 Routine Description:
 
+  Removes reserved I/O or I/O resources from the global coherency domain of the
+processor.
+
 Arguments:
 
+  BaseAddress       - Base address of the segment.
+  
+  Length            - Length of the segment.
+  
 Returns:
+
+  EFI_SUCCESS       - Successfully removed a segment of IO space.
 
 --*/
 {
@@ -1423,9 +1808,17 @@ BuildIoDescriptor (
 
 Routine Description:
 
+  Build a IO descriptor according to an entry.
+
 Arguments:
 
+  Descriptor          - The descriptor to be built
+  
+  Entry               - According to this entry
+
 Returns:
+
+  None
 
 --*/
 {
@@ -1445,9 +1838,19 @@ CoreGetIoSpaceDescriptor (
 
 Routine Description:
 
+  Retrieves the descriptor for an I/O region containing a specified address.
+
 Arguments:
 
+  BaseAddress       - Specified start address
+  
+  Descriptor        - Specified length
+
 Returns:
+
+  EFI_INVALID_PARAMETER       - Descriptor is NULL.
+  
+  EFI_SUCCESS                 - Successfully get the IO space descriptor.
 
 --*/
 {
@@ -1493,9 +1896,21 @@ CoreGetIoSpaceMap (
 
 Routine Description:
 
+  Returns a map of the I/O resources in the global coherency domain of the processor.
+
 Arguments:
 
+  NumberOfDescriptors       - Number of descriptors.
+  
+  IoSpaceMap                - Descriptor array
+
 Returns:
+
+  EFI_INVALID_PARAMETER     - Invalid parameter
+  
+  EFI_OUT_OF_RESOURCES      - No enough buffer to allocate
+  
+  EFI_SUCCESS               - Successfully get IO space map.
 
 --*/
 {
@@ -1562,6 +1977,8 @@ Routine Description:
 
 Arguments:
 
+  GcdMemoryType - Memory type
+
   Attributes - The attributes mask from the Resource Descriptor HOB
 
 Returns:
@@ -1588,9 +2005,9 @@ Returns:
 
 EFI_STATUS
 CoreInitializeMemoryServices (
-  IN VOID                  **HobStart,
-  IN EFI_PHYSICAL_ADDRESS  *MemoryBaseAddress,
-  IN UINT64                *MemoryLength
+  IN  VOID                  **HobStart,
+  OUT EFI_PHYSICAL_ADDRESS  *MemoryBaseAddress,
+  OUT UINT64                *MemoryLength
   )
 /*++
 
@@ -1605,9 +2022,15 @@ Routine Description:
 
 Arguments:
 
-  HobStart - The start address of the HOB
+  HobStart - The start address of the HOB.
+  
+  MemoryBaseAddress   - Start address of memory region found to init DXE core.
+  
+  MemoryLength        - Length of memory region found to init DXE core.
 
 Returns:
+
+  EFI_SUCCESS         - Memory services successfully initialized.
 
 --*/
 {
@@ -1665,7 +2088,10 @@ Returns:
   // See if a Memory Type Information HOB is available
   //
   Status = GetNextGuidHob (&Hob.Raw, &gEfiMemoryTypeInformationGuid, &EfiMemoryTypeInformation, &DataSize);
-  if (!EFI_ERROR (Status) && EfiMemoryTypeInformation != NULL && DataSize > 0 && DataSize < EfiMaxMemoryType * sizeof (EFI_MEMORY_TYPE_INFORMATION)) {
+  if (!EFI_ERROR (Status) &&
+      EfiMemoryTypeInformation != NULL &&
+      DataSize > 0 &&
+      DataSize < EfiMaxMemoryType * sizeof (EFI_MEMORY_TYPE_INFORMATION)) {
     gBS->CopyMem (&gMemoryTypeInformation, EfiMemoryTypeInformation, DataSize);
   }
 
@@ -1822,7 +2248,14 @@ Arguments:
 
   HobStart - The start address of the HOB
 
+  MemoryBaseAddress   - Start address of memory region found to init DXE core.
+  
+  MemoryLength        - Length of memory region found to init DXE core.
+
+
 Returns:
+
+  EFI_SUCCESS         - GCD services successfully initialized.
 
 --*/
 {

@@ -480,8 +480,6 @@ struct Krn_Mem{
 #define CFIG_BYTE_COUNT    0x16       // 22 Configuration Bytes
 
 //- Byte 1  (Default Value = 88h)
-// #define CFIG_RX_FIFO_LIMIT  8h
-// #define CFIG_TX_FIFO_LIMIT  8h
 #define CFIG_TXRX_FIFO_LIMIT  0x88
 
 //- Byte 2  (Default Value = 0)
@@ -496,7 +494,6 @@ struct Krn_Mem{
 
 //- Byte 5  (Default Value = 80h. Default implies that Tx DMA cannot be
 //-          preempted. However, setting these counters is enabled.)
-//#define CFIG_TXDMA_BYTE_COUNT      0
 #define CFIG_DMBC_ENABLE            0x80
 
 //- Byte 6  (Default Value = 33h. Late SCB enabled, No TNO interrupts,

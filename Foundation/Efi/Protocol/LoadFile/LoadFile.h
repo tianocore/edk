@@ -29,15 +29,17 @@ Abstract:
 #define _LOAD_FILE_H_
 
 #define LOAD_FILE_PROTOCOL_GUID \
-  { 0x56EC3091, 0x954C, 0x11d2, 0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B }
+  { \
+    0x56EC3091, 0x954C, 0x11d2, 0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_LOAD_FILE_PROTOCOL);
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LOAD_FILE) (
-  IN EFI_LOAD_FILE_PROTOCOL   *This,
-  IN EFI_DEVICE_PATH_PROTOCOL         *FilePath,
+  IN EFI_LOAD_FILE_PROTOCOL           * This,
+  IN EFI_DEVICE_PATH_PROTOCOL         * FilePath,
   IN BOOLEAN                          BootPolicy,
   IN OUT UINTN                        *BufferSize,
   IN VOID                             *Buffer OPTIONAL
@@ -77,10 +79,9 @@ EFI_STATUS
 ;
 
 typedef struct _EFI_LOAD_FILE_PROTOCOL {
-  EFI_LOAD_FILE       LoadFile;
+  EFI_LOAD_FILE LoadFile;
 } EFI_LOAD_FILE_PROTOCOL;
 
 extern EFI_GUID gEfiLoadFileProtocolGuid;
 
 #endif
-

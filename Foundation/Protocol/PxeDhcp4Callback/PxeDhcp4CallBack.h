@@ -1,6 +1,3 @@
-#ifndef _PXE_DHCP4CALLBACK_H
-#define _PXE_DHCP4CALLBACK_H
-
 /*++
 
 Copyright 2004, Intel Corporation                                                         
@@ -19,6 +16,9 @@ Abstract:
   EFI PXE DHCP4 Callback protocol definition.
 
 --*/
+
+#ifndef _PXE_DHCP4CALLBACK_H
+#define _PXE_DHCP4CALLBACK_H
 
 #include "..\PxeDhcp4\PxeDhcp4.h"
 

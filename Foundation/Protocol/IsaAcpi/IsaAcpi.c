@@ -23,9 +23,8 @@ Revision History
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(IsaAcpi)
+#include EFI_PROTOCOL_DEFINITION (IsaAcpi)
 
-EFI_GUID gEfiIsaAcpiProtocolGuid = EFI_ISA_ACPI_PROTOCOL_GUID;
+EFI_GUID  gEfiIsaAcpiProtocolGuid = EFI_ISA_ACPI_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiIsaAcpiProtocolGuid, "ISA Acpi Protocol", "EFI 1.1 ISA Acpi Protocol");
-
+EFI_GUID_STRING(&gEfiIsaAcpiProtocolGuid, "ISA Acpi Protocol", "ISA Acpi Protocol");

@@ -28,23 +28,20 @@ Abstract:
 //
 // Module globals
 //
-static
-PEI_READ_ONLY_VARIABLE_PPI
-mVariablePpi = {
+static PEI_READ_ONLY_VARIABLE_PPI mVariablePpi = {
   PeiGetVariable,
   PeiGetNextVariableName
 };
 
-static
-EFI_PEI_PPI_DESCRIPTOR mPpiListVariable = {
+static EFI_PEI_PPI_DESCRIPTOR     mPpiListVariable = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gPeiReadOnlyVariablePpiGuid,
   &mVariablePpi
 };
 
-EFI_GUID gEfiVariableIndexTableGuid = EFI_VARIABLE_INDEX_TABLE_GUID;
+EFI_GUID                          gEfiVariableIndexTableGuid = EFI_VARIABLE_INDEX_TABLE_GUID;
 
-EFI_PEIM_ENTRY_POINT (PeimInitializeVariableServices);
+EFI_PEIM_ENTRY_POINT (PeimInitializeVariableServices)
 
 EFI_STATUS
 EFIAPI
@@ -103,14 +100,15 @@ Returns:
     if (*s1 != *s2) {
       break;
     }
+
     s1 += 1;
     s2 += 1;
   }
 
-  return *s1 - *s2;
+  return *s1 -*s2;
 }
 
-VARIABLE_HEADER*
+VARIABLE_HEADER *
 GetNextVariablePtr (
   IN VARIABLE_HEADER  *Variable
   )
@@ -128,8 +126,8 @@ Returns:
   FALSE           Variable header is not valid.
 
 --*/
-{ 
-  return  (VARIABLE_HEADER*)((UINTN)GET_VARIABLE_DATA_PTR (Variable) + Variable->DataSize + GET_PAD_SIZE (Variable->DataSize));
+{
+  return (VARIABLE_HEADER *) ((UINTN) GET_VARIABLE_DATA_PTR (Variable) + Variable->DataSize + GET_PAD_SIZE (Variable->DataSize));
 }
 
 BOOLEAN
@@ -153,14 +151,14 @@ Returns:
 --*/
 {
   if (Variable == NULL ||
-      Variable->StartId != VARIABLE_DATA || 
-      (sizeof (VARIABLE_HEADER) + Variable->DataSize + Variable->NameSize) > MAX_VARIABLE_SIZE) {
+      Variable->StartId != VARIABLE_DATA ||
+      (sizeof (VARIABLE_HEADER) + Variable->DataSize + Variable->NameSize) > MAX_VARIABLE_SIZE
+      ) {
     return FALSE;
   }
-  
+
   return TRUE;
 }
-
 
 VARIABLE_STORE_STATUS
 EFIAPI
@@ -187,30 +185,31 @@ Returns:
 {
   if (VarStoreHeader->Signature == VARIABLE_STORE_SIGNATURE &&
       VarStoreHeader->Format == VARIABLE_STORE_FORMATTED &&
-      VarStoreHeader->State == VARIABLE_STORE_HEALTHY) {
-    
+      VarStoreHeader->State == VARIABLE_STORE_HEALTHY
+      ) {
+
     return EfiValid;
   }
-  
+
   if (VarStoreHeader->Signature == 0xffffffff &&
       VarStoreHeader->Size == 0xffffffff &&
       VarStoreHeader->Format == 0xff &&
-      VarStoreHeader->State == 0xff) {
-        
-    return EfiRaw;
-  } else {  
-     return EfiInvalid;
-  }  
-}
+      VarStoreHeader->State == 0xff
+      ) {
 
+    return EfiRaw;
+  } else {
+    return EfiInvalid;
+  }
+}
 
 EFI_STATUS
 GetFirstGuidHob (
   IN     VOID      **HobStart,
-  IN     EFI_GUID  *Guid,
+  IN     EFI_GUID  * Guid,
   OUT    VOID      **Buffer,
-  OUT    UINTN     *BufferSize  OPTIONAL
-  ) 
+  OUT    UINTN     *BufferSize OPTIONAL
+  )
 /*++
 
 Routine Description:
@@ -231,24 +230,25 @@ Returns:
  
 --*/
 {
-  EFI_STATUS        Status;
+  EFI_STATUS            Status;
   EFI_PEI_HOB_POINTERS  GuidHob;
-  
+
   GuidHob.Raw = *HobStart;
 
-  for (Status = EFI_NOT_FOUND; EFI_ERROR (Status); ) {
-    
+  for (Status = EFI_NOT_FOUND; EFI_ERROR (Status);) {
+
     if (END_OF_HOB_LIST (GuidHob)) {
       return EFI_NOT_FOUND;
     }
-    
-    if (GuidHob.Header->HobType == EFI_HOB_TYPE_GUID_EXTENSION) {            
-      if ( ((INT32 *)Guid)[0] == ((INT32 *)&GuidHob.Guid->Name)[0] &&
-           ((INT32 *)Guid)[1] == ((INT32 *)&GuidHob.Guid->Name)[1] &&
-           ((INT32 *)Guid)[2] == ((INT32 *)&GuidHob.Guid->Name)[2] &&
-           ((INT32 *)Guid)[3] == ((INT32 *)&GuidHob.Guid->Name)[3] ) {
-        Status = EFI_SUCCESS;
-        *Buffer = (VOID *)((UINT8 *)(&GuidHob.Guid->Name) + sizeof (EFI_GUID));
+
+    if (GuidHob.Header->HobType == EFI_HOB_TYPE_GUID_EXTENSION) {
+      if (((INT32 *) Guid)[0] == ((INT32 *) &GuidHob.Guid->Name)[0] &&
+          ((INT32 *) Guid)[1] == ((INT32 *) &GuidHob.Guid->Name)[1] &&
+          ((INT32 *) Guid)[2] == ((INT32 *) &GuidHob.Guid->Name)[2] &&
+          ((INT32 *) Guid)[3] == ((INT32 *) &GuidHob.Guid->Name)[3]
+          ) {
+        Status  = EFI_SUCCESS;
+        *Buffer = (VOID *) ((UINT8 *) (&GuidHob.Guid->Name) + sizeof (EFI_GUID));
         if (BufferSize != NULL) {
           *BufferSize = GuidHob.Header->HobLength - sizeof (EFI_HOB_GUID_TYPE);
         }
@@ -260,8 +260,6 @@ Returns:
 
   return Status;
 }
-
-
 
 EFI_STATUS
 CompareWithValidVariable (
@@ -300,20 +298,20 @@ Returns:
     // Instead we compare the GUID a UINT32 at a time and branch
     // on the first failed comparison.
     //
-    if ((((INT32 *)VendorGuid)[0] == ((INT32 *)&Variable->VendorGuid)[0]) &&
-        (((INT32 *)VendorGuid)[1] == ((INT32 *)&Variable->VendorGuid)[1]) &&
-        (((INT32 *)VendorGuid)[2] == ((INT32 *)&Variable->VendorGuid)[2]) &&
-        (((INT32 *)VendorGuid)[3] == ((INT32 *)&Variable->VendorGuid)[3])) {
+    if ((((INT32 *) VendorGuid)[0] == ((INT32 *) &Variable->VendorGuid)[0]) &&
+        (((INT32 *) VendorGuid)[1] == ((INT32 *) &Variable->VendorGuid)[1]) &&
+        (((INT32 *) VendorGuid)[2] == ((INT32 *) &Variable->VendorGuid)[2]) &&
+        (((INT32 *) VendorGuid)[3] == ((INT32 *) &Variable->VendorGuid)[3])
+        ) {
       if (!StrCmp (VariableName, GET_VARIABLE_NAME_PTR (Variable))) {
         PtrTrack->CurrPtr = Variable;
         return EFI_SUCCESS;
       }
     }
   }
-  
+
   return EFI_NOT_FOUND;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -345,89 +343,84 @@ Returns:
 
 --*/
 {
-  PEI_FLASH_MAP_PPI         *FlashMapPpi;
-  EFI_FLASH_SUBAREA_ENTRY   *VariableStoreEntry;
-  UINT32                    NumEntries;
+  PEI_FLASH_MAP_PPI       *FlashMapPpi;
+  EFI_FLASH_SUBAREA_ENTRY *VariableStoreEntry;
+  UINT32                  NumEntries;
 
-  VARIABLE_STORE_HEADER     *VariableStoreHeader;
-  VARIABLE_HEADER           *Variable;
+  VARIABLE_STORE_HEADER   *VariableStoreHeader;
+  VARIABLE_HEADER         *Variable;
 
-  EFI_STATUS                Status;
-  
-  EFI_PEI_HOB_POINTERS      Hob;  
-  VARIABLE_HEADER           *MaxIndex;
-  VARIABLE_INDEX_TABLE      *IndexTable;  
-  UINT32                    Count;    
-  
-  if (VariableName != 0 && VendorGuid == NULL) {                
+  EFI_STATUS              Status;
+
+  EFI_PEI_HOB_POINTERS    Hob;
+  VARIABLE_HEADER         *MaxIndex;
+  VARIABLE_INDEX_TABLE    *IndexTable;
+  UINT32                  Count;
+
+  if (VariableName != 0 && VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
-  }   
-  
+  }
   //
   // First, Let's go through index table in HOB
-  //  
-    
-  Status = (*PeiServices)->GetHobList (PeiServices, &(Hob.Raw)); 
-  
+  //
+  Status = (*PeiServices)->GetHobList (PeiServices, &(Hob.Raw));
+
   ASSERT_PEI_ERROR (PeiServices, Status);
-  
+
   //
   // No Variable Address equals zero, so 0 as initial value is safe.
   //
   MaxIndex = 0;
-  
-  if(EFI_ERROR (GetFirstGuidHob (&(Hob.Raw), &gEfiVariableIndexTableGuid, &IndexTable, NULL) ) ) {        
+
+  if (EFI_ERROR (GetFirstGuidHob (&(Hob.Raw), &gEfiVariableIndexTableGuid, &IndexTable, NULL))) {
     PeiBuildHobGuid (PeiServices, &gEfiVariableIndexTableGuid, sizeof (VARIABLE_INDEX_TABLE), &(Hob.Raw));
-    IndexTable = (VARIABLE_INDEX_TABLE *) ((UINT8 *)&Hob.Guid->Name + sizeof (EFI_GUID));
-    
-    IndexTable->Length = 0;
-    IndexTable->StartPtr = NULL;
-    IndexTable->EndPtr = NULL;
-    IndexTable->GoneThrough = 0;    
-  }
-  else {            
-    for (Count = 0; Count < IndexTable->Length; Count++) {
-      #if ALIGNMENT <= 1
-        MaxIndex = (VARIABLE_HEADER *) ( IndexTable->Index[Count] + ((UINT32)IndexTable->StartPtr & 0xFFFF0000) );
-      #else
-        #if ALIGNMENT >= 4
-          MaxIndex = (VARIABLE_HEADER *) ((((UINT32)IndexTable->Index[Count]) << 2) + ((UINT32)IndexTable->StartPtr & 0xFFFC0000) );       
-        #endif
-      #endif
-      if (CompareWithValidVariable (MaxIndex, VariableName, VendorGuid, PtrTrack) == EFI_SUCCESS) {  
-        PtrTrack->StartPtr = IndexTable->StartPtr;
-        PtrTrack->EndPtr = IndexTable->EndPtr;      
-        
-        return EFI_SUCCESS;       
-      }               
-    }     
-    
-    if (IndexTable->GoneThrough) {                
-      return EFI_NOT_FOUND;   
+    IndexTable              = (VARIABLE_INDEX_TABLE *) ((UINT8 *) &Hob.Guid->Name + sizeof (EFI_GUID));
+
+    IndexTable->Length      = 0;
+    IndexTable->StartPtr    = NULL;
+    IndexTable->EndPtr      = NULL;
+    IndexTable->GoneThrough = 0;
+  } else {
+    for (Count = 0; Count < IndexTable->Length; Count++)
+    {
+#if ALIGNMENT <= 1
+      MaxIndex = (VARIABLE_HEADER *) (IndexTable->Index[Count] + ((UINT32) IndexTable->StartPtr & 0xFFFF0000));
+#else
+#if ALIGNMENT >= 4
+      MaxIndex = (VARIABLE_HEADER *) ((((UINT32) IndexTable->Index[Count]) << 2) + ((UINT32) IndexTable->StartPtr & 0xFFFC0000));
+#endif
+#endif
+      if (CompareWithValidVariable (MaxIndex, VariableName, VendorGuid, PtrTrack) == EFI_SUCCESS) {
+        PtrTrack->StartPtr  = IndexTable->StartPtr;
+        PtrTrack->EndPtr    = IndexTable->EndPtr;
+
+        return EFI_SUCCESS;
+      }
     }
-  }  
-    
+
+    if (IndexTable->GoneThrough) {
+      return EFI_NOT_FOUND;
+    }
+  }
   //
   // If not found in HOB, then let's start from the MaxIndex we've found.
-  //  
-    
+  //
   if (MaxIndex != NULL) {
     Variable = GetNextVariablePtr (MaxIndex);
   } else {
-    if( IndexTable->StartPtr || IndexTable->EndPtr) {
-      Variable = IndexTable->StartPtr;    
+    if (IndexTable->StartPtr || IndexTable->EndPtr) {
+      Variable = IndexTable->StartPtr;
     } else {
-
       //
       // Locate FlashMap PPI
       //
       Status = (**PeiServices).LocatePpi (
-                                 PeiServices,
-                                 &gPeiFlashMapPpiGuid,
-                                 0,
-                                 NULL,
-                                 &FlashMapPpi
-                                 );
+                                PeiServices,
+                                &gPeiFlashMapPpiGuid,
+                                0,
+                                NULL,
+                                &FlashMapPpi
+                                );
       ASSERT_PEI_ERROR (PeiServices, Status);
 
       //
@@ -449,79 +442,75 @@ Returns:
         return EFI_UNSUPPORTED;
       }
 
-      VariableStoreHeader = (VARIABLE_STORE_HEADER*) (UINTN) (VariableStoreEntry->Base);
+      VariableStoreHeader = (VARIABLE_STORE_HEADER *) (UINTN) (VariableStoreEntry->Base);
 
       if (GetVariableStoreStatus (VariableStoreHeader) != EfiValid) {
         return EFI_UNSUPPORTED;
       }
-  
+
       if (~VariableStoreHeader->Size == 0) {
         return EFI_NOT_FOUND;
       }
-      
       //
       // Find the variable by walk through non-volatile variable store
       //
-      IndexTable->StartPtr = (VARIABLE_HEADER*) (VariableStoreHeader + 1);
-      IndexTable->EndPtr = (VARIABLE_HEADER*) ((UINTN) VariableStoreHeader + VariableStoreHeader->Size);
-      
+      IndexTable->StartPtr  = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
+      IndexTable->EndPtr    = (VARIABLE_HEADER *) ((UINTN) VariableStoreHeader + VariableStoreHeader->Size);
+
       //
       // Start Pointers for the variable.
       // Actual Data Pointer where data can be written.
       //
-      Variable = IndexTable->StartPtr;  
+      Variable = IndexTable->StartPtr;
     }
   }
   //
   // Find the variable by walk through non-volatile variable store
   //
-  PtrTrack->StartPtr = IndexTable->StartPtr;
-  PtrTrack->EndPtr = IndexTable->EndPtr;
-  
+  PtrTrack->StartPtr  = IndexTable->StartPtr;
+  PtrTrack->EndPtr    = IndexTable->EndPtr;
+
   while (IsValidVariableHeader (Variable) && (Variable <= IndexTable->EndPtr)) {
-    if (Variable->State == VAR_ADDED) {     
+    if (Variable->State == VAR_ADDED) {
       //
       // Record Variable in VariableIndex HOB
-      //      
-      if (IndexTable->Length < VARIABLE_INDEX_TABLE_VOLUME) {     
-        #if ALIGNMENT <= 1
-          IndexTable->Index[IndexTable->Length++] = (UINT16) (UINT32) Variable;
-        #else
-          #if ALIGNMENT >= 4            
-            IndexTable->Index[IndexTable->Length++] = (UINT16) (((UINT32) Variable) >> 2);
-          #endif
-        #endif
+      //
+      if (IndexTable->Length < VARIABLE_INDEX_TABLE_VOLUME)
+      {
+#if ALIGNMENT <= 1
+        IndexTable->Index[IndexTable->Length++] = (UINT16) (UINT32) Variable;
+#else
+#if ALIGNMENT >= 4
+        IndexTable->Index[IndexTable->Length++] = (UINT16) (((UINT32) Variable) >> 2);
+#endif
+#endif
       }
-      
-      if (CompareWithValidVariable (Variable, VariableName, VendorGuid, PtrTrack ) == EFI_SUCCESS ) {               
+
+      if (CompareWithValidVariable (Variable, VariableName, VendorGuid, PtrTrack) == EFI_SUCCESS) {
         return EFI_SUCCESS;
       }
     }
 
     Variable = GetNextVariablePtr (Variable);
-  } 
-  
-    
+  }
   //
   // If gone through the VariableStore, that means we never find in Firmware any more.
   //
-  if (IndexTable->Length < VARIABLE_INDEX_TABLE_VOLUME) {    
+  if (IndexTable->Length < VARIABLE_INDEX_TABLE_VOLUME) {
     IndexTable->GoneThrough = 1;
-  }   
+  }
 
-  PtrTrack->CurrPtr = NULL;  
-  
-   
+  PtrTrack->CurrPtr = NULL;
+
   return EFI_NOT_FOUND;
 }
-
 
 EFI_STATUS
 EFIAPI
 PeiGetVariable (
   IN EFI_PEI_SERVICES             **PeiServices,
   IN CHAR16                       *VariableName,
-  IN EFI_GUID                     *VendorGuid,
+  IN EFI_GUID                     * VendorGuid,
   OUT UINT32                      *Attributes OPTIONAL,
   IN OUT UINTN                    *DataSize,
   OUT VOID                        *Data
@@ -556,14 +545,13 @@ Returns:
 
 --*/
 {
-  VARIABLE_POINTER_TRACK          Variable;
-  UINTN                           VarDataSize;
-  EFI_STATUS                      Status;
+  VARIABLE_POINTER_TRACK  Variable;
+  UINTN                   VarDataSize;
+  EFI_STATUS              Status;
 
   if (VariableName == NULL || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Find existing variable
   //
@@ -572,7 +560,6 @@ Returns:
   if (Variable.CurrPtr == NULL || Status != EFI_SUCCESS) {
     return Status;
   }
-
   //
   // Get data size
   //
@@ -583,6 +570,7 @@ Returns:
     if (Attributes != NULL) {
       *Attributes = Variable.CurrPtr->Attributes;
     }
+
     *DataSize = VarDataSize;
     return EFI_SUCCESS;
   } else {
@@ -626,10 +614,10 @@ Returns:
 
 --*/
 {
-  VARIABLE_POINTER_TRACK          Variable;
-  UINTN                           VarNameSize;
-  EFI_STATUS                      Status;
-  
+  VARIABLE_POINTER_TRACK  Variable;
+  UINTN                   VarNameSize;
+  EFI_STATUS              Status;
+
   if (VariableName == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -639,28 +627,28 @@ Returns:
   if (Variable.CurrPtr == NULL || Status != EFI_SUCCESS) {
     return Status;
   }
-  
+
   if (VariableName[0] != 0) {
     //
     // If variable name is not NULL, get next variable
     //
     Variable.CurrPtr = GetNextVariablePtr (Variable.CurrPtr);
-  } 
- 
+  }
 
-  while (!(Variable.CurrPtr >= Variable.EndPtr || Variable.CurrPtr == NULL)) {   
-    if (IsValidVariableHeader (Variable.CurrPtr) ) { 
+  while (!(Variable.CurrPtr >= Variable.EndPtr || Variable.CurrPtr == NULL)) {
+    if (IsValidVariableHeader (Variable.CurrPtr)) {
       if (Variable.CurrPtr->State == VAR_ADDED) {
-        VarNameSize = (UINTN) Variable.CurrPtr->NameSize;        
+        VarNameSize = (UINTN) Variable.CurrPtr->NameSize;
         if (VarNameSize <= *VariableNameSize) {
-          (*PeiServices)->CopyMem (VariableName,GET_VARIABLE_NAME_PTR (Variable.CurrPtr) , VarNameSize);
-        
+          (*PeiServices)->CopyMem (VariableName, GET_VARIABLE_NAME_PTR (Variable.CurrPtr), VarNameSize);
+
           (*PeiServices)->CopyMem (VendorGuid, &Variable.CurrPtr->VendorGuid, sizeof (EFI_GUID));
-        
+
           Status = EFI_SUCCESS;
         } else {
           Status = EFI_BUFFER_TOO_SMALL;
         }
+
         *VariableNameSize = VarNameSize;
         return Status;
         //
@@ -671,8 +659,8 @@ Returns:
       }
     } else {
       break;
-    }   
-  }  
-  
+    }
+  }
+
   return EFI_NOT_FOUND;
 }

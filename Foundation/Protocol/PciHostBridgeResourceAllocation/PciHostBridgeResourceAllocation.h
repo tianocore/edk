@@ -40,12 +40,15 @@ EFI_FORWARD_DECLARATION (EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL);
 // support separate windows for Non-prefetchable and Prefetchable 
 // memory. A PCI bus driver needs to include requests for Prefetchable 
 // memory in the Non-prefetchable memory pool.
+//
 #define EFI_PCI_HOST_BRIDGE_COMBINE_MEM_PMEM  1
 
+//
 // If this bit is set, then the PCI Root Bridge supports 
 // 64 bit memory windows.  If this bit is not set, 
 // the PCI bus driver needs to include requests for 64 bit 
 // memory address in the corresponding 32 bit memory pool. 
+//
 #define EFI_PCI_HOST_BRIDGE_MEM64_DECODE   2
 
 
@@ -111,6 +114,7 @@ typedef enum {
   EfiPciBeforeResourceCollection
 } EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE;
 
+//
 // EfiPciBeforeChildBusEnumeration
 // This notification is only applicable to PCI-PCI bridges and 
 // indicates that the PCI enumerator is about to begin enumerating 
@@ -345,22 +349,14 @@ Returns:
 
 
 typedef struct _EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL {
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_NOTIFY_PHASE
-                                         NotifyPhase;
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_NEXT_ROOT_BRIDGE
-                                         GetNextRootBridge;
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_ATTRIBUTES
-                                         GetAllocAttributes; 
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_START_BUS_ENUMERATION
-                                         StartBusEnumeration;
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SET_BUS_NUMBERS
-                                         SetBusNumbers;
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SUBMIT_RESOURCES
-                                         SubmitResources;          
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_PROPOSED_RESOURCES
-                                         GetProposedResources;
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_PREPROCESS_CONTROLLER
-                                         PreprocessController;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_NOTIFY_PHASE           NotifyPhase;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_NEXT_ROOT_BRIDGE   GetNextRootBridge;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_ATTRIBUTES         GetAllocAttributes;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_START_BUS_ENUMERATION  StartBusEnumeration;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SET_BUS_NUMBERS        SetBusNumbers;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SUBMIT_RESOURCES       SubmitResources;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_PROPOSED_RESOURCES GetProposedResources;
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_PREPROCESS_CONTROLLER  PreprocessController;
 } EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL;
 
 extern EFI_GUID gEfiPciHostBridgeResourceAllocationProtocolGuid;

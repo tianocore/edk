@@ -21,15 +21,30 @@ Abstract:
 #include "TianoCommon.h"
 #include "CustomizedDecompress.h"
 
-EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL mCustomizedDecompress = {
+EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL  mCustomizedDecompress = {
   CustomizedGetInfo,
   CustomizedDecompress
 };
 
 EFI_STATUS
-InstallCustomizedDecompress(
+InstallCustomizedDecompress (
   EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL  **This
   )
+/*++
+
+Routine Description:
+
+  Install customeized decompress protocol.
+
+Arguments:
+
+  This                  - The protocol that needs to be installed.
+
+Returns:
+
+  EFI_SUCCESS           - Always success
+
+--*/
 {
   *This = &mCustomizedDecompress;
   return EFI_SUCCESS;
@@ -39,10 +54,10 @@ EFI_STATUS
 EFIAPI
 CustomizedGetInfo (
   IN EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL     *This,
-  IN      VOID    *Source,
-  IN      UINT32  SrcSize,
-  OUT     UINT32  *DstSize,
-  OUT     UINT32  *ScratchSize
+  IN      VOID                              *Source,
+  IN      UINT32                            SrcSize,
+  OUT     UINT32                            *DstSize,
+  OUT     UINT32                            *ScratchSize
   )
 /*++
 
@@ -51,7 +66,7 @@ Routine Description:
   The implementation of Customized GetInfo().
 
 Arguments:
-
+  This        - The EFI customized decompress protocol
   Source      - The source buffer containing the compressed data.
   SrcSize     - The size of source buffer
   DstSize     - The size of destination buffer.
@@ -61,6 +76,7 @@ Returns:
 
   EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successull retrieved.
   EFI_INVALID_PARAMETER - The source data is corrupted
+  EFI_UNSUPPORTED       - Not supported
 
 --*/
 {
@@ -71,12 +87,12 @@ EFI_STATUS
 EFIAPI
 CustomizedDecompress (
   IN EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL     *This,
-  IN      VOID    *Source,
-  IN      UINT32  SrcSize,
-  IN OUT  VOID    *Destination,
-  IN      UINT32  DstSize,
-  IN OUT  VOID   *Scratch,
-  IN      UINT32  ScratchSize
+  IN      VOID                              *Source,
+  IN      UINT32                            SrcSize,
+  IN OUT  VOID                              *Destination,
+  IN      UINT32                            DstSize,
+  IN OUT  VOID                              *Scratch,
+  IN      UINT32                            ScratchSize
   )
 /*++
 
@@ -98,6 +114,7 @@ Returns:
 
   EFI_SUCCESS           - Decompression is successfull
   EFI_INVALID_PARAMETER - The source data is corrupted
+  EFI_UNSUPPORTED       - Not supported
 
 --*/
 {

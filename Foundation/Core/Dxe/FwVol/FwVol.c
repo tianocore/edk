@@ -77,7 +77,8 @@ Arguments:
                   header is returned.
 
 Returns:
-  Status code.
+  EFI_OUT_OF_RESOURCES    - No enough buffer could be allocated.
+  EFI_SUCCESS             - Successfully read volume header to the allocated buffer.
 
 --*/
 
@@ -192,7 +193,9 @@ Arguments:
   FvDevice - pointer to the FvDevice to be checked.
 
 Returns:
-  Status code.
+  EFI_OUT_OF_RESOURCES    - No enough buffer could be allocated.
+  EFI_SUCCESS             - FV is consistent and cache is allocated.
+  EFI_VOLUME_CORRUPTED    - File system is corrupted.
 
 --*/
 {
@@ -386,8 +389,8 @@ STATIC
 VOID
 EFIAPI
 NotifyFwVolBlock (
-  EFI_EVENT Event,
-  VOID      *Context
+  IN  EFI_EVENT Event,
+  IN  VOID      *Context
   )
 /*++
 
@@ -400,6 +403,10 @@ Routine Description:
 Arguments:
     Event - The event that occured
     Context - For EFI compatiblity.  Not used.
+
+Returns:
+
+    None.
 
 --*/
 {
@@ -525,8 +532,13 @@ Routine Description:
     This routine is the driver initialization entry point.  It initializes the
     libraries, and registers two notification functions.  These notification
     functions are responsible for building the FV stack dynamically.
+    
 Arguments:
-    Standard EFI image entry point args.
+    ImageHandle   - The image handle.
+    SystemTable   - The system table.
+    
+Returns:
+    EFI_SUCCESS   - Function successfully returned.
 
 --*/
 {

@@ -26,7 +26,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 #include "Pei.h"
 #include "PeiLib.h"
@@ -38,48 +37,54 @@ Abstract:
 //
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 
-//---------------------------------------------
+//
+// ---------------------------------------------
 // UART Register Offsets
-//---------------------------------------------
-#define BAUD_LOW_OFFSET         0x00
-#define BAUD_HIGH_OFFSET        0x01
-#define IER_OFFSET              0x01
-#define LCR_SHADOW_OFFSET       0x01
-#define FCR_SHADOW_OFFSET       0x02
-#define IR_CONTROL_OFFSET       0x02
-#define FCR_OFFSET              0x02
-#define EIR_OFFSET              0x02
-#define BSR_OFFSET              0x03
-#define LCR_OFFSET              0x03
-#define MCR_OFFSET              0x04
-#define LSR_OFFSET              0x05
-#define MSR_OFFSET              0x06
+// ---------------------------------------------
+//
+#define BAUD_LOW_OFFSET   0x00
+#define BAUD_HIGH_OFFSET  0x01
+#define IER_OFFSET        0x01
+#define LCR_SHADOW_OFFSET 0x01
+#define FCR_SHADOW_OFFSET 0x02
+#define IR_CONTROL_OFFSET 0x02
+#define FCR_OFFSET        0x02
+#define EIR_OFFSET        0x02
+#define BSR_OFFSET        0x03
+#define LCR_OFFSET        0x03
+#define MCR_OFFSET        0x04
+#define LSR_OFFSET        0x05
+#define MSR_OFFSET        0x06
 
-//---------------------------------------------
+//
+// ---------------------------------------------
 // UART Register Bit Defines
-//---------------------------------------------
-#define LSR_TXRDY               0x20
-#define LSR_RXDA                0x01
-#define DLAB                    0x01
+// ---------------------------------------------
+//
+#define LSR_TXRDY 0x20
+#define LSR_RXDA  0x01
+#define DLAB      0x01
 
 //
 // Globals for Serial Port settings
 //
-extern UINT16  gComBase;
-extern UINTN   gBps;
-extern UINT8   gData;
-extern UINT8   gStop;
-extern UINT8   gParity;
-extern UINT8   gBreakSet;
+extern UINT16 gComBase;
+extern UINTN  gBps;
+extern UINT8  gData;
+extern UINT8  gStop;
+extern UINT8  gParity;
+extern UINT8  gBreakSet;
 
 VOID
 DebugSerialPrint (
   IN UINT8    *OutputString
-  );
+  )
+;
 
 VOID
 DebugSerialWrite (
   IN UINT8  Character
-  );
+  )
+;
 
-#endif 
+#endif

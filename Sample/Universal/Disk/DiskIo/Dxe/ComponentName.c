@@ -33,25 +33,31 @@ DiskIoComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 DiskIoComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gDiskIoComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gDiskIoComponentName = {
   DiskIoComponentNameGetDriverName,
   DiskIoComponentNameGetControllerName,
   "eng"
 };
 
 static EFI_UNICODE_STRING_TABLE mDiskIoDriverNameTable[] = {
-  { "eng", L"Generic Disk I/O Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Generic Disk I/O Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -89,21 +95,21 @@ DiskIoComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gDiskIoComponentName.SupportedLanguages,
-           mDiskIoDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gDiskIoComponentName.SupportedLanguages,
+          mDiskIoDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 DiskIoComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

@@ -33,17 +33,17 @@ CirrusLogic5430ComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 CirrusLogic5430ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gCirrusLogic5430ComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gCirrusLogic5430ComponentName = {
   CirrusLogic5430ComponentNameGetDriverName,
   CirrusLogic5430ComponentNameGetControllerName,
   "eng"
@@ -51,12 +51,12 @@ EFI_COMPONENT_NAME_PROTOCOL gCirrusLogic5430ComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mCirrusLogic5430DriverNameTable[] = {
   { "eng", L"Cirrus Logic 5430 UGA Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 static EFI_UNICODE_STRING_TABLE mCirrusLogic5430ControllerNameTable[] = {
   { "eng", L"Cirrus Logic 5430 PCI Adapter" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -94,21 +94,21 @@ CirrusLogic5430ComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gCirrusLogic5430ComponentName.SupportedLanguages,
-           mCirrusLogic5430DriverNameTable, 
-           DriverName
-           );
+          Language,
+          gCirrusLogic5430ComponentName.SupportedLanguages,
+          mCirrusLogic5430DriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 CirrusLogic5430ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -171,20 +171,20 @@ CirrusLogic5430ComponentNameGetControllerName (
   // Check Controller's handle
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
+                  ControllerHandle,
                   &gEfiPciIoProtocolGuid,
-                  (VOID **)&PciIoProtocol,
-                  gCirrusLogic5430DriverBinding.DriverBindingHandle,  
-                  ControllerHandle, 
+                  (VOID **) &PciIoProtocol,
+                  gCirrusLogic5430DriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (!EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-                  ControllerHandle, 
-                  &gEfiPciIoProtocolGuid,
-                  gCirrusLogic5430DriverBinding.DriverBindingHandle,  
-                  ControllerHandle
-                  );
+          ControllerHandle,
+          &gEfiPciIoProtocolGuid,
+          gCirrusLogic5430DriverBinding.DriverBindingHandle,
+          ControllerHandle
+          );
 
     return EFI_UNSUPPORTED;
   }
@@ -197,9 +197,9 @@ CirrusLogic5430ComponentNameGetControllerName (
   // Get the UGA Draw Protocol on Controller
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiUgaDrawProtocolGuid,  
-                  (VOID **)&UgaDraw,
+                  ControllerHandle,
+                  &gEfiUgaDrawProtocolGuid,
+                  (VOID **) &UgaDraw,
                   gCirrusLogic5430DriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -214,9 +214,9 @@ CirrusLogic5430ComponentNameGetControllerName (
   Private = CIRRUS_LOGIC_5430_PRIVATE_DATA_FROM_UGA_DRAW_THIS (UgaDraw);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gCirrusLogic5430ComponentName.SupportedLanguages,
-           mCirrusLogic5430ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gCirrusLogic5430ComponentName.SupportedLanguages,
+          mCirrusLogic5430ControllerNameTable,
+          ControllerName
+          );
 }

@@ -28,15 +28,35 @@ CodeTypeToPostCode (
   IN  EFI_STATUS_CODE_VALUE   Value,
   OUT UINT8                   *PostCode
   )
+/*++
+
+Routine Description:
+
+  Convert code value to an 8 bit post code
+
+Arguments:
+
+  CodeType  - Code type
+  Value     - Code value
+  PostCode  - Post code as output
+
+Returns:
+
+  TRUE    - Successfully converted
+  
+  FALSE   - Convertion failed
+
+--*/
 {
   //
   // Convert Value to an 8 bit post code
   //
-  if (((CodeType & EFI_STATUS_CODE_TYPE_MASK)== EFI_PROGRESS_CODE) ||
+  if (((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE) ||
       ((CodeType & EFI_STATUS_CODE_TYPE_MASK)== EFI_ERROR_CODE)) {
-    *PostCode = (UINT8)(((Value & EFI_STATUS_CODE_CLASS_MASK) >> 24) << 5);
-    *PostCode |= (UINT8)(((Value & EFI_STATUS_CODE_SUBCLASS_MASK) >> 16) & 0x1f);
+    *PostCode = (UINT8) (((Value & EFI_STATUS_CODE_CLASS_MASK) >> 24) << 5);
+    *PostCode |= (UINT8) (((Value & EFI_STATUS_CODE_SUBCLASS_MASK) >> 16) & 0x1f);
     return TRUE;
   }
+
   return FALSE;
 }

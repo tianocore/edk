@@ -17,16 +17,16 @@ Abstract:
 
   Defines and function prototypes for the ProcessDsc utility.
   
---*/  
+--*/
 
 #ifndef _DSC_FILE_H_
 #define _DSC_FILE_H_
 
 typedef struct _SECTION_LINE {
-  struct _SECTION_LINE    *Next;
-  char                    *Line;
-  char                    *FileName;
-  UINT32                  LineNum;
+  struct _SECTION_LINE  *Next;
+  char                  *Line;
+  char                  *FileName;
+  UINT32                LineNum;
 } SECTION_LINE;
 
 //
@@ -35,8 +35,8 @@ typedef struct _SECTION_LINE {
 // the error and print a useful message.
 //
 typedef struct _DSC_FILE_NAME {
-  struct _DSC_FILE_NAME     *Next;
-  char                      *FileName;
+  struct _DSC_FILE_NAME *Next;
+  char                  *FileName;
 } DSC_FILE_NAME;
 
 //
@@ -44,34 +44,66 @@ typedef struct _DSC_FILE_NAME {
 // Use this structure.
 //
 typedef struct _SECTION {
-  struct _SECTION     *Next;
-  char                *Name;
-  SECTION_LINE        *FirstLine;
+  struct _SECTION *Next;
+  char            *Name;
+  SECTION_LINE    *FirstLine;
 } SECTION;
 
-#define MAX_SAVES      4
+#define MAX_SAVES 4
 
 typedef struct {
-  SECTION_LINE    *SavedPosition[MAX_SAVES];
-  int             SavedPositionIndex;
-  SECTION         *Sections;
-  SECTION_LINE    *Lines;
-  SECTION         *LastSection;
-  SECTION_LINE    *LastLine;
-  SECTION_LINE    *CurrentLine;
-  DSC_FILE_NAME   *FileName;
-  DSC_FILE_NAME   *LastFileName;
+  SECTION_LINE  *SavedPosition[MAX_SAVES];
+  int           SavedPositionIndex;
+  SECTION       *Sections;
+  SECTION_LINE  *Lines;
+  SECTION       *LastSection;
+  SECTION_LINE  *LastLine;
+  SECTION_LINE  *CurrentLine;
+  DSC_FILE_NAME *FileName;
+  DSC_FILE_NAME *LastFileName;
 } DSC_FILE;
 
 //
 // Function prototypes
 //
-int       DSCFileSetFile (DSC_FILE *DSC, char *FileName);
-SECTION   *DSCFileFindSection (DSC_FILE *DSC, char *Name);
-int       DSCFileSavePosition (DSC_FILE *DSC);
-int       DSCFileRestorePosition (DSC_FILE *DSC);
-char      *DSCFileGetLine (DSC_FILE *DSC, char *Line, int LineLen);
-int       DSCFileInit (DSC_FILE *DSC);
-int       DSCFileDestroy (DSC_FILE *DSC);
+int
+DSCFileSetFile (
+  DSC_FILE *DSC,
+  char     *FileName
+  )
+;
+SECTION *
+DSCFileFindSection (
+  DSC_FILE *DSC,
+  char     *Name
+  )
+;
+int
+DSCFileSavePosition (
+  DSC_FILE *DSC
+  )
+;
+int
+DSCFileRestorePosition (
+  DSC_FILE *DSC
+  )
+;
+char    *
+DSCFileGetLine (
+  DSC_FILE *DSC,
+  char     *Line,
+  int      LineLen
+  )
+;
+int
+DSCFileInit (
+  DSC_FILE *DSC
+  )
+;
+int
+DSCFileDestroy (
+  DSC_FILE *DSC
+  )
+;
 
 #endif // ifndef _DSC_FILE_H_

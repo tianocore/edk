@@ -24,15 +24,14 @@ Revision History
 #ifndef _EFI_PCI_DRIVER_OVERRRIDE_H
 #define _EFI_PCI_DRIVER_OVERRRIDE_H
 
-#include EFI_PROTOCOL_DEFINITION(BusSpecificDriverOverride)
+#include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 
-
-#define DRIVER_OVERRIDE_SIGNATURE   EFI_SIGNATURE_32 ('d','r','o','v')
+#define DRIVER_OVERRIDE_SIGNATURE EFI_SIGNATURE_32 ('d', 'r', 'o', 'v')
 
 typedef struct {
-  UINT32                         Signature;
-  EFI_LIST_ENTRY                 Link ;
-  EFI_HANDLE                     DriverImageHandle;
+  UINT32          Signature;
+  EFI_LIST_ENTRY  Link;
+  EFI_HANDLE      DriverImageHandle;
 } PCI_DRIVER_OVERRIDE_LIST;
 
 
@@ -43,19 +42,69 @@ typedef struct {
 EFI_STATUS
 InitializePciDriverOverrideInstance (
   PCI_IO_DEVICE  *PciIoDevice
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
-AddDriver(
+AddDriver (
   IN PCI_IO_DEVICE     *PciIoDevice,
   IN EFI_HANDLE        DriverImageHandle
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice       - TODO: add argument description
+  DriverImageHandle - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
-GetDriver(
-  IN EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL  *This,
+GetDriver (
+  IN EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL              *This,
   IN OUT EFI_HANDLE                                         *DriverImageHandle
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  DriverImageHandle - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

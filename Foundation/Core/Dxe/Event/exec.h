@@ -81,18 +81,71 @@ typedef struct {
 VOID
 CoreDispatchEventNotifies (
   IN EFI_TPL      Priority
-  );
+  )
+/*++
+
+Routine Description:
+
+  Dispatches all pending events. 
+
+Arguments:
+
+  Priority - The task priority level of event notifications to dispatch
+    
+Returns:
+
+  None
+
+--*/
+;
+
 
 UINTN
 CoreHighestSetBit (
   IN UINTN         Number
-  );
+  )
+/*++
+
+Routine Description:
+  
+  Return the highest set bit
+  
+Arguments:
+  
+  Number - The value to check
+  
+Returns:
+  
+  Bit position of the highest set bit
+
+--*/
+;
 
 
 BOOLEAN
 GetInterruptState (
   VOID               
-  );
+  )
+/*++
+
+Routine Description:
+
+  Disables CPU interrupts.
+
+Arguments:
+
+  This                - Protocol instance structure
+
+  State               - Pointer to the CPU's current interrupt state
+
+Returns: 
+
+  EFI_SUCCESS           - If interrupts were disabled in the CPU.
+
+  EFI_INVALID_PARAMETER - State is NULL.
+  
+--*/
+;
 
 //
 // Exported functions
@@ -101,12 +154,45 @@ GetInterruptState (
 VOID
 CoreEventVirtualAddressFixup (
   VOID
-  );
+  )
+/*++
+
+Routine Description:
+
+  A function out of date, should be removed.
+
+Arguments:
+
+  None
+    
+Returns:
+
+  None
+
+--*/
+;
+
 
 VOID
 CoreInitializeTimer (
   VOID
-  );
+  )
+/*++
+
+Routine Description:
+
+  Initializes timer support
+
+Arguments:
+
+  None
+    
+Returns:
+
+  None
+
+--*/
+;
 
 //
 // extern data declarations

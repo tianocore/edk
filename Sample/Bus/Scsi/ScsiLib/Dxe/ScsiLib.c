@@ -65,15 +65,15 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[6];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,6);
-  
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[6];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 6);
+
   CommandPacket.Timeout         = Timeout;
   CommandPacket.DataBuffer      = NULL;
   CommandPacket.SenseData       = SenseData;
@@ -83,18 +83,18 @@ Returns:
   // Fill Cdb for Test Unit Ready Command
   //
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
-  
+
   Cdb[0]                        = EFI_SCSI_OP_TEST_UNIT_READY;
-  Cdb[1]                        = (UINT8)(Lun & 0xe0);
-  CommandPacket.CdbLength       = (UINT8)6;
+  Cdb[1]                        = (UINT8) (Lun & 0xe0);
+  CommandPacket.CdbLength       = (UINT8) 6;
   CommandPacket.SenseDataLength = *SenseDataLength;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus = CommandPacket.HostAdapterStatus;
-  *TargetStatus = CommandPacket.TargetStatus;
-  *SenseDataLength = CommandPacket.SenseDataLength;
-  
+
+  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
+  *TargetStatus                 = CommandPacket.TargetStatus;
+  *SenseDataLength              = CommandPacket.SenseDataLength;
+
   return Status;
 }
 
@@ -148,45 +148,45 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[6];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,6);
-  
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[6];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 6);
+
   CommandPacket.Timeout         = Timeout;
   CommandPacket.DataBuffer      = InquiryDataBuffer;
   CommandPacket.TransferLength  = *InquiryDataLength;
   CommandPacket.SenseData       = SenseData;
   CommandPacket.SenseDataLength = *SenseDataLength;
   CommandPacket.Cdb             = Cdb;
-  
+
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
-  
-  Cdb[0]                        = EFI_SCSI_OP_INQUIRY;
-  Cdb[1]                        = (UINT8)(Lun & 0xe0);
+
+  Cdb[0]  = EFI_SCSI_OP_INQUIRY;
+  Cdb[1]  = (UINT8) (Lun & 0xe0);
   if (EnableVitalProductData) {
     Cdb[1] |= 0x01;
   }
-  
+
   if (*InquiryDataLength > 0xff) {
     *InquiryDataLength = 0xff;
   }
-  
-  Cdb[4]                  = (UINT8)(*InquiryDataLength);
-  CommandPacket.CdbLength = (UINT8)6;
+
+  Cdb[4]                      = (UINT8) (*InquiryDataLength);
+  CommandPacket.CdbLength     = (UINT8) 6;
   CommandPacket.DataDirection = EFI_SCSI_DATA_IN;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus  = CommandPacket.HostAdapterStatus;
-  *TargetStatus       = CommandPacket.TargetStatus;
-  *SenseDataLength    = CommandPacket.SenseDataLength;
-  *InquiryDataLength  = CommandPacket.TransferLength;
-  
+
+  Status                      = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus          = CommandPacket.HostAdapterStatus;
+  *TargetStatus               = CommandPacket.TargetStatus;
+  *SenseDataLength            = CommandPacket.SenseDataLength;
+  *InquiryDataLength          = CommandPacket.TransferLength;
+
   return Status;
 }
 
@@ -200,7 +200,7 @@ SubmitModeSense10Command (
   OUT UINT8                   *TargetStatus,
   IN  VOID                    *DataBuffer,
   IN OUT UINT32               *DataLength,
-  IN  UINT8                   DBDField,   OPTIONAL
+  IN  UINT8                   DBDField, OPTIONAL
   IN  UINT8                   PageControl,
   IN  UINT8                   PageCode
   )
@@ -244,15 +244,15 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[10];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,10);
-  
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[10];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 10);
+
   CommandPacket.Timeout         = Timeout;
   CommandPacket.DataBuffer      = DataBuffer;
   CommandPacket.SenseData       = SenseData;
@@ -262,24 +262,24 @@ Returns:
   // Fill Cdb for Mode Sense (10) Command
   //
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
-  
-  Cdb[0]           = EFI_SCSI_OP_MODE_SEN10;
-  Cdb[1]           = (UINT8)(Lun & 0xe0 + (DBDField << 3) & 0x08);
-  Cdb[2]           = (UINT8)((PageControl & 0xc0)| (PageCode & 0x3f));
-  Cdb[7]           = (UINT8)(*DataLength >> 8);
-  Cdb[8]           = (UINT8)(*DataLength);
 
-  CommandPacket.CdbLength        = 10;
-  CommandPacket.DataDirection    = EFI_SCSI_DATA_IN;
-  CommandPacket.SenseDataLength  = *SenseDataLength;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus  = CommandPacket.HostAdapterStatus;
-  *TargetStatus       = CommandPacket.TargetStatus;
-  *SenseDataLength    = CommandPacket.SenseDataLength;
-  *DataLength         = CommandPacket.TransferLength;
-  
+  Cdb[0]                        = EFI_SCSI_OP_MODE_SEN10;
+  Cdb[1]                        = (UINT8) (Lun & 0xe0 + (DBDField << 3) & 0x08);
+  Cdb[2]                        = (UINT8) ((PageControl & 0xc0) | (PageCode & 0x3f));
+  Cdb[7]                        = (UINT8) (*DataLength >> 8);
+  Cdb[8]                        = (UINT8) (*DataLength);
+
+  CommandPacket.CdbLength       = 10;
+  CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
+  CommandPacket.SenseDataLength = *SenseDataLength;
+
+  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
+  *TargetStatus                 = CommandPacket.TargetStatus;
+  *SenseDataLength              = CommandPacket.SenseDataLength;
+  *DataLength                   = CommandPacket.TransferLength;
+
   return Status;
 }
 
@@ -327,43 +327,43 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[6];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,6);
-  
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[6];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 6);
+
   if (*SenseDataLength > 0xff) {
     *SenseDataLength = 0xff;
   }
-  
-  CommandPacket.Timeout          = Timeout;
-  CommandPacket.DataBuffer       = SenseData;
-  CommandPacket.SenseData        = NULL;
-  CommandPacket.TransferLength   = *SenseDataLength;
-  CommandPacket.Cdb              = Cdb;
+
+  CommandPacket.Timeout         = Timeout;
+  CommandPacket.DataBuffer      = SenseData;
+  CommandPacket.SenseData       = NULL;
+  CommandPacket.TransferLength  = *SenseDataLength;
+  CommandPacket.Cdb             = Cdb;
   //
   // Fill Cdb for Request Sense Command
   //
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
-  
-  Cdb[0] = EFI_SCSI_OP_REQUEST_SENSE;
-  Cdb[1] = (UINT8)(Lun & 0xe0);
-  Cdb[4] = (UINT8)(*SenseDataLength);
 
-  CommandPacket.CdbLength        = (UINT8)6;
-  CommandPacket.DataDirection    = EFI_SCSI_DATA_IN;
-  CommandPacket.SenseDataLength  = 0;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus  = CommandPacket.HostAdapterStatus;
-  *TargetStatus       = CommandPacket.TargetStatus;
-  *SenseDataLength    = (UINT8)CommandPacket.TransferLength;
-  
+  Cdb[0]                        = EFI_SCSI_OP_REQUEST_SENSE;
+  Cdb[1]                        = (UINT8) (Lun & 0xe0);
+  Cdb[4]                        = (UINT8) (*SenseDataLength);
+
+  CommandPacket.CdbLength       = (UINT8) 6;
+  CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
+  CommandPacket.SenseDataLength = 0;
+
+  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
+  *TargetStatus                 = CommandPacket.TargetStatus;
+  *SenseDataLength              = (UINT8) CommandPacket.TransferLength;
+
   return Status;
 }
 
@@ -377,7 +377,7 @@ SubmitReadCapacityCommand (
   OUT UINT8                 *TargetStatus,
   OUT VOID                  *DataBuffer,
   IN OUT UINT32             *DataLength,
-  IN  BOOLEAN               PMI  
+  IN  BOOLEAN               PMI
   )
 /*++
 
@@ -417,14 +417,14 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[10];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,10);
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[10];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 10);
 
   CommandPacket.Timeout         = Timeout;
   CommandPacket.DataBuffer      = DataBuffer;
@@ -436,28 +436,28 @@ Returns:
   //
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
 
-  Cdb[0]           = EFI_SCSI_OP_READ_CAPACITY;
-  Cdb[1]           = (UINT8)(Lun & 0xe0);
+  Cdb[0]  = EFI_SCSI_OP_READ_CAPACITY;
+  Cdb[1]  = (UINT8) (Lun & 0xe0);
   if (!PMI) {
     //
     // Partial medium indicator,if PMI is FALSE, the Cdb.2 ~ Cdb.5 MUST BE ZERO.
     //
-    EfiZeroMem ((Cdb + 2),4);
+    EfiZeroMem ((Cdb + 2), 4);
   } else {
     Cdb[8] |= 0x01;
   }
 
-  CommandPacket.CdbLength        = 10;
-  CommandPacket.DataDirection    = EFI_SCSI_DATA_IN;
-  CommandPacket.SenseDataLength  = *SenseDataLength;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus  = CommandPacket.HostAdapterStatus;
-  *TargetStatus       = CommandPacket.TargetStatus;
-  *SenseDataLength    = CommandPacket.SenseDataLength;
-  *DataLength         = CommandPacket.TransferLength;
-  
+  CommandPacket.CdbLength       = 10;
+  CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
+  CommandPacket.SenseDataLength = *SenseDataLength;
+
+  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
+  *TargetStatus                 = CommandPacket.TargetStatus;
+  *SenseDataLength              = CommandPacket.SenseDataLength;
+  *DataLength                   = CommandPacket.TransferLength;
+
   return Status;
 }
 
@@ -513,15 +513,15 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[10];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,10);
-  
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[10];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 10);
+
   CommandPacket.Timeout         = Timeout;
   CommandPacket.DataBuffer      = DataBuffer;
   CommandPacket.SenseData       = SenseData;
@@ -531,27 +531,27 @@ Returns:
   // Fill Cdb for Read (10) Command
   //
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
-  
-  Cdb[0] = EFI_SCSI_OP_READ10;
-  Cdb[1] = (UINT8)(Lun & 0xe0);
-  Cdb[2] = (UINT8)(StartLba >> 24);
-  Cdb[3] = (UINT8)(StartLba >> 16);
-  Cdb[4] = (UINT8)(StartLba >> 8);
-  Cdb[5] = (UINT8)StartLba;
-  Cdb[7] = (UINT8)(SectorSize >> 8);
-  Cdb[8] = (UINT8)SectorSize;
 
-  CommandPacket.CdbLength        = 10;
-  CommandPacket.DataDirection    = EFI_SCSI_DATA_IN;
-  CommandPacket.SenseDataLength  = *SenseDataLength;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus  = CommandPacket.HostAdapterStatus;
-  *TargetStatus       = CommandPacket.TargetStatus;
-  *SenseDataLength    = CommandPacket.SenseDataLength;
-  *DataLength         = CommandPacket.TransferLength;
-  
+  Cdb[0]                        = EFI_SCSI_OP_READ10;
+  Cdb[1]                        = (UINT8) (Lun & 0xe0);
+  Cdb[2]                        = (UINT8) (StartLba >> 24);
+  Cdb[3]                        = (UINT8) (StartLba >> 16);
+  Cdb[4]                        = (UINT8) (StartLba >> 8);
+  Cdb[5]                        = (UINT8) StartLba;
+  Cdb[7]                        = (UINT8) (SectorSize >> 8);
+  Cdb[8]                        = (UINT8) SectorSize;
+
+  CommandPacket.CdbLength       = 10;
+  CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
+  CommandPacket.SenseDataLength = *SenseDataLength;
+
+  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
+  *TargetStatus                 = CommandPacket.TargetStatus;
+  *SenseDataLength              = CommandPacket.SenseDataLength;
+  *DataLength                   = CommandPacket.TransferLength;
+
   return Status;
 }
 
@@ -607,15 +607,15 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_IO_SCSI_REQUEST_PACKET   CommandPacket;
-  UINT64                            Lun;
-  UINT32                            Target;
-  EFI_STATUS                        Status;
-  UINT8                             Cdb[10];
-  
-  EfiZeroMem (&CommandPacket,sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
-  EfiZeroMem (Cdb,10);
-  
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET CommandPacket;
+  UINT64                          Lun;
+  UINT32                          Target;
+  EFI_STATUS                      Status;
+  UINT8                           Cdb[10];
+
+  EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
+  EfiZeroMem (Cdb, 10);
+
   CommandPacket.Timeout         = Timeout;
   CommandPacket.DataBuffer      = DataBuffer;
   CommandPacket.SenseData       = SenseData;
@@ -626,25 +626,25 @@ Returns:
   //
   ScsiIo->GetDeviceLocation (ScsiIo, &Target, &Lun);
 
-  Cdb[0] = EFI_SCSI_OP_WRITE10;
-  Cdb[1] = (UINT8)(Lun & 0xe0);
-  Cdb[2] = (UINT8)(StartLba >> 24);
-  Cdb[3] = (UINT8)(StartLba >> 16);
-  Cdb[4] = (UINT8)(StartLba >> 8);
-  Cdb[5] = (UINT8)StartLba;
-  Cdb[7] = (UINT8)(SectorSize >> 8);
-  Cdb[8] = (UINT8)SectorSize;
+  Cdb[0]                        = EFI_SCSI_OP_WRITE10;
+  Cdb[1]                        = (UINT8) (Lun & 0xe0);
+  Cdb[2]                        = (UINT8) (StartLba >> 24);
+  Cdb[3]                        = (UINT8) (StartLba >> 16);
+  Cdb[4]                        = (UINT8) (StartLba >> 8);
+  Cdb[5]                        = (UINT8) StartLba;
+  Cdb[7]                        = (UINT8) (SectorSize >> 8);
+  Cdb[8]                        = (UINT8) SectorSize;
 
-  CommandPacket.CdbLength        = 10;
-  CommandPacket.DataDirection    = EFI_SCSI_DATA_OUT;
-  CommandPacket.SenseDataLength  = *SenseDataLength;
-  
-  Status = ScsiIo->ExecuteSCSICommand (ScsiIo,&CommandPacket,NULL);
-  
-  *HostAdapterStatus  = CommandPacket.HostAdapterStatus;
-  *TargetStatus       = CommandPacket.TargetStatus;
-  *SenseDataLength    = CommandPacket.SenseDataLength;
-  *DataLength         = CommandPacket.TransferLength;
-  
+  CommandPacket.CdbLength       = 10;
+  CommandPacket.DataDirection   = EFI_SCSI_DATA_OUT;
+  CommandPacket.SenseDataLength = *SenseDataLength;
+
+  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+
+  *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
+  *TargetStatus                 = CommandPacket.TargetStatus;
+  *SenseDataLength              = CommandPacket.SenseDataLength;
+  *DataLength                   = CommandPacket.TransferLength;
+
   return Status;
 }

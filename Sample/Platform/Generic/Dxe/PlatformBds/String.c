@@ -20,16 +20,17 @@ Abstract:
 Revision History
 
 --*/
+
 #include "Bds.h"
 #include "Language.h"
 
-extern UINT8        BdsStrings[];
+extern UINT8  BdsStrings[];
 
-EFI_GUID gBdsStringPackGuid = { 0x7bac95d3, 0xddf, 0x42f3, 0x9e, 0x24, 0x7c, 0x64, 0x49, 0x40, 0x37, 0x9a };
+EFI_GUID      gBdsStringPackGuid = { 0x7bac95d3, 0xddf, 0x42f3, 0x9e, 0x24, 0x7c, 0x64, 0x49, 0x40, 0x37, 0x9a };
 
 EFI_STATUS
 InitializeStringSupport (
-  VOID  
+  VOID
   )
 /*++
 
@@ -45,25 +46,24 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
-  EFI_HII_PACKAGES                *PackageList;
+  EFI_STATUS        Status;
+  EFI_HII_PACKAGES  *PackageList;
   //
   // There should only ever be one HII protocol
   //
   Status = gBS->LocateProtocol (
-                 &gEfiHiiProtocolGuid, 
-                 NULL,
-                 &Hii
-                 );
+                  &gEfiHiiProtocolGuid,
+                  NULL,
+                  &Hii
+                  );
   if (!EFI_ERROR (Status)) {
-    PackageList= PreparePackages (1, &gBdsStringPackGuid, BdsStrings);
-    Status = Hii->NewPack (Hii, PackageList, &gStringPackHandle);
+    PackageList = PreparePackages (1, &gBdsStringPackGuid, BdsStrings);
+    Status      = Hii->NewPack (Hii, PackageList, &gStringPackHandle);
     gBS->FreePool (PackageList);
   }
 
   return Status;
 }
-
 
 CHAR16 *
 GetStringById (
@@ -84,42 +84,41 @@ Returns:
 
 --*/
 {
-  CHAR16                        *String;
-  UINT16                        StringLength;
-  EFI_STATUS                    Status;
+  CHAR16      *String;
+  UINT16      StringLength;
+  EFI_STATUS  Status;
 
   //
   // Set default string size assumption at no more than 256 bytes
   //
-  StringLength = 0x100;
+  StringLength  = 0x100;
 
-  String = EfiLibAllocateZeroPool(StringLength);
+  String        = EfiLibAllocateZeroPool (StringLength);
   if (String == NULL) {
     //
     // If this happens, we are oh-so-dead, but return a NULL in any case.
     //
     return NULL;
   }
-
   //
   // Get the current string for the current Language
   //
-  Status = Hii->GetString(Hii, gStringPackHandle, Id, FALSE, NULL, &StringLength, String);
-  if (EFI_ERROR(Status)) {
+  Status = Hii->GetString (Hii, gStringPackHandle, Id, FALSE, NULL, &StringLength, String);
+  if (EFI_ERROR (Status)) {
     if (Status == EFI_BUFFER_TOO_SMALL) {
       //
       // Free the old pool
       //
-      gBS->FreePool(String);
+      gBS->FreePool (String);
 
       //
       // Allocate new pool with correct value
       //
-      String = EfiLibAllocatePool(StringLength);
+      String = EfiLibAllocatePool (StringLength);
       ASSERT (String != NULL);
 
-      Status = Hii->GetString(Hii, gStringPackHandle, Id, FALSE, NULL, &StringLength, String);
-      if (!EFI_ERROR(Status)) {
+      Status = Hii->GetString (Hii, gStringPackHandle, Id, FALSE, NULL, &StringLength, String);
+      if (!EFI_ERROR (Status)) {
         return String;
       }
     }
@@ -127,5 +126,5 @@ Returns:
     return NULL;
   }
 
- return String;
+  return String;
 }

@@ -15,14 +15,14 @@ Module Name:
 
 Abstract:
 
-  Reset Service PPI GUID as defined in EFI 2.0
+  Reset Service PPI GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include "Pei.h"
-#include EFI_PPI_DEFINITION(Reset)
+#include EFI_PPI_DEFINITION (Reset)
 
-EFI_GUID gPeiResetPpiGuid = PEI_RESET_PPI_GUID;
+EFI_GUID  gPeiResetPpiGuid = PEI_RESET_PPI_GUID;
 
 EFI_GUID_STRING(&gPeiResetPpiGuid, "Reset", "Reset PPI");

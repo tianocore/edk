@@ -26,6 +26,22 @@ VOID
 CoreSetInterruptState (
   IN BOOLEAN      Enable
   )
+/*++
+
+Routine Description:
+  
+  Set Interrupt State
+  
+Arguments:
+  
+  Enable - The state of enable or disable interrupt
+  
+Returns:
+  
+  None
+
+--*/
+
 {
   if (gCpu != NULL) {
     if (Enable) {
@@ -62,8 +78,9 @@ Returns:
   UINTN   msb;
   
   msb = 31;
-  while ((msb > 0) && ((Number & (1 << msb)) == 0)) 
+  while ((msb > 0) && ((Number & (1 << msb)) == 0)) {
     msb--;
+  }
 
   return msb;
 }

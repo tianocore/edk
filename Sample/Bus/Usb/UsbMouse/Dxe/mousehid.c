@@ -20,190 +20,259 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include EFI_PROTOCOL_DEFINITION(SimplePointer)
+#include EFI_PROTOCOL_DEFINITION (SimplePointer)
 #include "hid.h"
 #include "mousehid.h"
 
 //
 // Get an item from report descriptor
 //
-STATIC 
-UINT8 *GetNextItem(
-  IN  UINT8   *StartPos, 
-  IN  UINT8   *EndPos,
+STATIC
+UINT8 *
+GetNextItem (
+  IN  UINT8    *StartPos,
+  IN  UINT8    *EndPos,
   OUT HID_ITEM *HidItem
   )
-{
-  UINT8   Temp;
+/*++
 
-  if((EndPos - StartPos) <= 0) {
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  StartPos  - TODO: add argument description
+  EndPos    - TODO: add argument description
+  HidItem   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+{
+  UINT8 Temp;
+
+  if ((EndPos - StartPos) <= 0) {
     return NULL;
   }
-  
+
   Temp = *StartPos;
   StartPos++;
-  
-  HidItem->Type = (UINT8)((Temp >> 2) & 0x03); //bit 2,3
-  HidItem->Tag = (UINT8)((Temp >> 4) & 0x0F);  //bit 4-7
+  //
+  // bit 2,3
+  //
+  HidItem->Type = (UINT8) ((Temp >> 2) & 0x03);
+  //
+  // bit 4-7
+  //
+  HidItem->Tag = (UINT8) ((Temp >> 4) & 0x0F);
 
-  if(HidItem->Tag == HID_ITEM_TAG_LONG) 
-  {
-  //
-  // Long Items are not supported by HID rev1.0,
-  // although we try to parse it.
-  //
+  if (HidItem->Tag == HID_ITEM_TAG_LONG) {
+    //
+    // Long Items are not supported by HID rev1.0,
+    // although we try to parse it.
+    //
     HidItem->Format = HID_ITEM_FORMAT_LONG;
 
-    if ((EndPos - StartPos) >= 2) 
-    {
+    if ((EndPos - StartPos) >= 2) {
       HidItem->Size = *StartPos++;
       HidItem->Tag  = *StartPos++;
 
-      if((EndPos - StartPos) >= HidItem->Size) 
-      {
+      if ((EndPos - StartPos) >= HidItem->Size) {
         HidItem->Data.LongData = StartPos;
         StartPos += HidItem->Size;
         return StartPos;
       }
     }
-  } 
-  else 
-  {
+  } else {
     HidItem->Format = HID_ITEM_FORMAT_SHORT;
-    HidItem->Size = (UINT8)(Temp & 0x03); //bit 0, 1
-
-    switch (HidItem->Size) 
-    {
+    //
+    // bit 0, 1
+    //
+    HidItem->Size   = (UINT8) (Temp & 0x03);
+    switch (HidItem->Size) {
     case 0:
       //
       // No data
       //
       return StartPos;
 
-    case 1: 
+    case 1:
       //
       // One byte data
       //
-      if ((EndPos - StartPos) >= 1) 
-      {
+      if ((EndPos - StartPos) >= 1) {
         HidItem->Data.U8 = *StartPos++;
         return StartPos;
       }
 
-    case 2: 
+    case 2:
       //
       // Two byte data
       //
-      if ((EndPos - StartPos) >= 2) 
-      {
+      if ((EndPos - StartPos) >= 2) {
         EfiCopyMem (&HidItem->Data.U16, StartPos, sizeof (UINT16));
         StartPos += 2;
         return StartPos;
       }
 
-    case 3: 
+    case 3:
       //
       // 4 byte data, adjust size
       //
       HidItem->Size++;
-      if ((EndPos - StartPos) >= 4) 
-      {
+      if ((EndPos - StartPos) >= 4) {
         EfiCopyMem (&HidItem->Data.U32, StartPos, sizeof (UINT32));
         StartPos += 4;
         return StartPos;
       }
     }
   }
+
   return NULL;
 }
 
-STATIC 
-UINT32 
-GetItemData(
+STATIC
+UINT32
+GetItemData (
   IN  HID_ITEM *HidItem
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  HidItem - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   //
   // Get Data from HID_ITEM structure
   //
   switch (HidItem->Size) {
-    case 1: return HidItem->Data.U8;
-    case 2: return HidItem->Data.U16;
-    case 4: return HidItem->Data.U32;
+  case 1:
+    return HidItem->Data.U8;
+
+  case 2:
+    return HidItem->Data.U16;
+
+  case 4:
+    return HidItem->Data.U32;
   }
+
   return 0;
 }
 
-
-STATIC 
+STATIC
 VOID
-ParseLocalItem(
+ParseLocalItem (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  HID_ITEM        *LocalItem
   )
-{
-  UINT32 Data;
+/*++
 
-  if (LocalItem->Size == 0) 
-  {
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbMouse  - TODO: add argument description
+  LocalItem - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+{
+  UINT32  Data;
+
+  if (LocalItem->Size == 0) {
     //
     // No expected data for local item
     //
-    return;
+    return ;
   }
 
-  Data = GetItemData(LocalItem);
+  Data = GetItemData (LocalItem);
 
-  switch (LocalItem->Tag) 
-  {
+  switch (LocalItem->Tag) {
   case HID_LOCAL_ITEM_TAG_DELIMITER:
-
     //
     // we don't support delimiter here
     //
-    return;
+    return ;
 
   case HID_LOCAL_ITEM_TAG_USAGE:
-    return;
+    return ;
 
   case HID_LOCAL_ITEM_TAG_USAGE_MINIMUM:
-    if(UsbMouse->PrivateData.ButtonDetected) {
-      UsbMouse->PrivateData.ButtonMinIndex = (UINT8)Data;
+    if (UsbMouse->PrivateData.ButtonDetected) {
+      UsbMouse->PrivateData.ButtonMinIndex = (UINT8) Data;
     }
-    return;
+
+    return ;
 
   case HID_LOCAL_ITEM_TAG_USAGE_MAXIMUM:
     {
-      if(UsbMouse->PrivateData.ButtonDetected) {
-        UsbMouse->PrivateData.ButtonMaxIndex = (UINT8)Data;
+      if (UsbMouse->PrivateData.ButtonDetected) {
+        UsbMouse->PrivateData.ButtonMaxIndex = (UINT8) Data;
       }
-      return;
+
+      return ;
     }
   }
 }
 
-STATIC 
+STATIC
 VOID
-ParseGlobalItem(
+ParseGlobalItem (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  HID_ITEM        *GlobalItem
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbMouse    - TODO: add argument description
+  GlobalItem  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  UINT8  UsagePage;
-  
-  switch (GlobalItem->Tag) 
-  {
+  UINT8 UsagePage;
+
+  switch (GlobalItem->Tag) {
   case HID_GLOBAL_ITEM_TAG_USAGE_PAGE:
     {
-      UsagePage = (UINT8)GetItemData(GlobalItem);
+      UsagePage = (UINT8) GetItemData (GlobalItem);
 
       //
       // We only care Button Page here
       //
-      if(UsagePage == 0x09) //Button Page
-      {
+      if (UsagePage == 0x09) {
+        //
+        // Button Page
+        //
         UsbMouse->PrivateData.ButtonDetected = TRUE;
-        return;
+        return ;
       }
       break;
     }
@@ -213,49 +282,79 @@ ParseGlobalItem(
 
 STATIC
 VOID
-ParseMainItem(
+ParseMainItem (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  HID_ITEM        *MainItem
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbMouse  - TODO: add argument description
+  MainItem  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-    //
-    // we don't care any main items, just skip
-    //
-    return;
+  //
+  // we don't care any main items, just skip
+  //
+  return ;
 }
 
 STATIC
 VOID
-ParseHidItem(
+ParseHidItem (
   IN  USB_MOUSE_DEV   *UsbMouse,
   IN  HID_ITEM        *HidItem
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbMouse  - TODO: add argument description
+  HidItem   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  switch(HidItem->Type)
-  {
+  switch (HidItem->Type) {
   case HID_ITEM_TYPE_MAIN:
     //
     // For Main Item, parse main item
     //
-    ParseMainItem(UsbMouse, HidItem);
+    ParseMainItem (UsbMouse, HidItem);
     break;
 
   case HID_ITEM_TYPE_GLOBAL:
     //
     // For global Item, parse global item
     //
-    ParseGlobalItem(UsbMouse, HidItem);
+    ParseGlobalItem (UsbMouse, HidItem);
     break;
 
   case HID_ITEM_TYPE_LOCAL:
     //
     // For Local Item, parse local item
     //
-    ParseLocalItem(UsbMouse, HidItem);
+    ParseLocalItem (UsbMouse, HidItem);
     break;
   }
 }
-
 
 //
 // A simple parse just read some field we are interested in
@@ -266,34 +365,49 @@ ParseMouseReportDescriptor (
   IN  UINT8           *ReportDescriptor,
   IN  UINTN           ReportSize
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbMouse          - TODO: add argument description
+  ReportDescriptor  - TODO: add argument description
+  ReportSize        - TODO: add argument description
+
+Returns:
+
+  EFI_DEVICE_ERROR - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
-  UINT8       *DescriptorEnd;
-  UINT8       *ptr;
-  HID_ITEM    HidItem;
+  UINT8     *DescriptorEnd;
+  UINT8     *ptr;
+  HID_ITEM  HidItem;
 
   DescriptorEnd = ReportDescriptor + ReportSize;
 
-  ptr = GetNextItem(ReportDescriptor, DescriptorEnd, &HidItem);
+  ptr           = GetNextItem (ReportDescriptor, DescriptorEnd, &HidItem);
 
-  while (ptr != NULL) 
-  {
-    if (HidItem.Format != HID_ITEM_FORMAT_SHORT) 
-    {
+  while (ptr != NULL) {
+    if (HidItem.Format != HID_ITEM_FORMAT_SHORT) {
       //
       // Long Format Item is not supported at current HID revision
       //
       return EFI_DEVICE_ERROR;
     }
 
-    ParseHidItem(UsbMouse, &HidItem);
+    ParseHidItem (UsbMouse, &HidItem);
 
-    ptr = GetNextItem(ptr, DescriptorEnd, &HidItem);
+    ptr = GetNextItem (ptr, DescriptorEnd, &HidItem);
   }
 
-  UsbMouse->NumberOfButtons = (UINT8)(UsbMouse->PrivateData.ButtonMaxIndex - UsbMouse->PrivateData.ButtonMinIndex + 1);
-  UsbMouse->XLogicMax = UsbMouse->YLogicMax = 127;
-  UsbMouse->XLogicMin = UsbMouse->YLogicMin = -127;
+  UsbMouse->NumberOfButtons                 = (UINT8) (UsbMouse->PrivateData.ButtonMaxIndex - UsbMouse->PrivateData.ButtonMinIndex + 1);
+  UsbMouse->XLogicMax                       = UsbMouse->YLogicMax = 127;
+  UsbMouse->XLogicMin                       = UsbMouse->YLogicMin = -127;
 
   return EFI_SUCCESS;
 }
-

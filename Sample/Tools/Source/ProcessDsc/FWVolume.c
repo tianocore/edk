@@ -22,11 +22,10 @@ Abstract:
 
 --*/
 
-#include <windows.h>  // for max_path definition
+#include <windows.h>                        // for max_path definition
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>   // for malloc()
-
+#include <stdlib.h>                         // for malloc()
 #include "Common.h"
 #include "DSCFile.h"
 #include "FWVolume.h"
@@ -36,37 +35,34 @@ Abstract:
 #define EFI_BASE_ADDRESS    "EFI_BASE_ADDRESS"
 #define DEFAULT_FV_INF_DIR  "FV"            // where we create the INF file
 #define DEFAULT_FV_DIR      "$(BUILD_DIR)"  // where the FV file comes from
-
-#define MALLOC(size)    malloc(size)
-#define FREE(ptr)       free(ptr)
+#define MALLOC(size)        malloc (size)
+#define FREE(ptr)           free (ptr)
 
 //
 // Disable warning for unused function arguments
 //
-#pragma warning ( disable : 4100 )
-
+#pragma warning(disable : 4100)
 //
 // Disable warning for while(1) code
 //
-//#pragma warning (disable : 4127)
-
+// #pragma warning (disable : 4127)
+//
 typedef struct {
-  char        *ComponentType;
-  char        *Extension;
+  char  *ComponentType;
+  char  *Extension;
 } COMP_TYPE_EXTENSION;
 
 //
 // Use a linked list of these to keep track of all the FV names used
 //
-typedef struct _FV_LIST
-{
+typedef struct _FV_LIST {
   struct _FV_LIST *Next;
   char            FVFileName[MAX_PATH];
   char            BaseAddress[MAX_LINE_LEN];
   FILE            *FVFilePtr;
   FILE            *AprioriFilePtr;
   char            *Processor;
-  int             ComponentsInstance;   // highest [components.n] section with a file for this FV
+  int             ComponentsInstance; // highest [components.n] section with a file for this FV
 } FV_LIST;
 
 //
@@ -74,36 +70,34 @@ typedef struct _FV_LIST
 // we're done, we turn the info into the FV INF files used to build the
 // firmware volumes.
 //
-typedef struct _FILE_LIST
-{
+typedef struct _FILE_LIST {
   struct _FILE_LIST *Next;
   char              *FileName;
   char              *BaseFileName;
-  char              *FVs;                 // from FV=x,y,z
-  char              *BaseName;            // only needed for duplicate basename check
-  char              *Processor;           // only needed for duplicate basename check
-  char              Apriori[100];         // of format "FVRecovery:1,FVMain:2" from APRIORI define
-  char              *Guid;                // guid string
-  int               ComponentsInstance;   // which [components.n] section it's in
+  char              *FVs;               // from FV=x,y,z
+  char              *BaseName;          // only needed for duplicate basename check
+  char              *Processor;         // only needed for duplicate basename check
+  char              Apriori[100];       // of format "FVRecovery:1,FVMain:2" from APRIORI define
+  char              *Guid;              // guid string
+  int               ComponentsInstance; // which [components.n] section it's in
 } FILE_LIST;
 
-typedef struct _LINKED_LIST
-{
-  struct _LINKED_LIST   *Next;
-  void                  *Data;
+typedef struct _LINKED_LIST {
+  struct _LINKED_LIST *Next;
+  void                *Data;
 } LINKED_LIST;
 
-static  FILE_LIST   *mFileList;
-static  FILE_LIST   *mLastFile;
-static  char        *mXRefFileName = NULL;
-static  FV_LIST     *mNonFfsFVList = NULL;
+static FILE_LIST                  *mFileList;
+static FILE_LIST                  *mLastFile;
+static char                       *mXRefFileName  = NULL;
+static FV_LIST                    *mNonFfsFVList  = NULL;
 
 //
 // Whenever an FV name is referenced, then add it to our list of known
 // FV's using these.
 //
-static  FV_LIST     *mFVList       = NULL;
-static  FV_LIST     *mFVListLast   = NULL;
+static FV_LIST                    *mFVList      = NULL;
+static FV_LIST                    *mFVListLast  = NULL;
 
 //
 // We use this list so that from a given component type, we can determine
@@ -112,32 +106,81 @@ static  FV_LIST     *mFVListLast   = NULL;
 // up "bs_driver" in this array and know that the file (after it's built)
 // name is GUID-BASENAME.DXE
 //
-static const COMP_TYPE_EXTENSION mCompTypeExtension[] =
-{
-  {"bs_driver",             ".dxe" },
-  {"rt_driver",             ".dxe" },
-  {"sal_rt_driver",         ".dxe" },
-  {"security_core",         ".sec" },
-  {"pei_core",              ".pei" },
-  {"pic_peim",              ".pei" },
-  {"pe32_peim",             ".pei" },
-  {"relocatable_peim",      ".pei" },
-  {"binary",                ".ffs" },
-  {"application",           ".app" },
-  {"file",                  ".ffs" },
-  {"fvimagefile",           ".fvi" },
-  {"raw_file",              ".raw" },
-  {"apriori",               ".ffs" },
-  {"combined_peim_driver",  ".pei" },
-  { NULL,                   NULL }
+static const COMP_TYPE_EXTENSION  mCompTypeExtension[] = {
+  {
+    "bs_driver",
+    ".dxe"
+  },
+  {
+    "rt_driver",
+    ".dxe"
+  },
+  {
+    "sal_rt_driver",
+    ".dxe"
+  },
+  {
+    "security_core",
+    ".sec"
+  },
+  {
+    "pei_core",
+    ".pei"
+  },
+  {
+    "pic_peim",
+    ".pei"
+  },
+  {
+    "pe32_peim",
+    ".pei"
+  },
+  {
+    "relocatable_peim",
+    ".pei"
+  },
+  {
+    "binary",
+    ".ffs"
+  },
+  {
+    "application",
+    ".app"
+  },
+  {
+    "file",
+    ".ffs"
+  },
+  {
+    "fvimagefile",
+    ".fvi"
+  },
+  {
+    "raw_file",
+    ".raw"
+  },
+  {
+    "apriori",
+    ".ffs"
+  },
+  {
+    "combined_peim_driver",
+    ".pei"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 static
 void
-CFVFreeFileList ();
+CFVFreeFileList (
+  VOID
+  );
 
 static
-char *
+char                              *
 UpperCaseString (
   char *Str
   );
@@ -164,7 +207,10 @@ GetBaseAddress (
   char *BaseAddress
   )
 {
-  char  *Start, *Cptr, CSave, *Value;
+  char  *Start;
+  char  *Cptr;
+  char  CSave;
+  char  *Value;
 
   Start = Name;
   while (*Name && isspace (*Name)) {
@@ -177,7 +223,8 @@ GetBaseAddress (
   //
   // Find the end of the name. Either space or a '='.
   //
-  for (Value = Name; *Value && !isspace (*Value) && (*Value != '='); Value++);
+  for (Value = Name; *Value && !isspace (*Value) && (*Value != '='); Value++)
+    ;
   if (!*Value) {
     return STATUS_ERROR;
   }
@@ -188,6 +235,7 @@ GetBaseAddress (
   while (*Value && (*Value != '=')) {
     Value++;
   }
+
   if (!*Value) {
     return STATUS_ERROR;
   }
@@ -196,9 +244,10 @@ GetBaseAddress (
   //
   CSave = *Cptr;
   *Cptr = 0;
-  if (stricmp (Name, EFI_BASE_ADDRESS)!= 0) {
+  if (stricmp (Name, EFI_BASE_ADDRESS) != 0) {
     return STATUS_ERROR;
   }
+
   *Cptr = CSave;
   //
   // Skip over the = and then any spaces
@@ -207,17 +256,17 @@ GetBaseAddress (
   while (*Value && isspace (*Value)) {
     Value++;
   }
-
   //
   // Find end of string, checking for quoted string
   //
   if (*Value == '\"') {
     Value++;
-    for (Cptr = Value; *Cptr && *Cptr != '\"'; Cptr++);
+    for (Cptr = Value; *Cptr && *Cptr != '\"'; Cptr++)
+      ;
   } else {
-    for (Cptr = Value; *Cptr && !isspace (*Cptr); Cptr++);
+    for (Cptr = Value; *Cptr && !isspace (*Cptr); Cptr++)
+      ;
   }
-
   //
   // Null terminate the value string
   //
@@ -230,7 +279,7 @@ GetBaseAddress (
 }
 
 int
-CFVAddFVFile  (
+CFVAddFVFile (
   char  *Name,
   char  *ComponentType,
   char  *FVs,
@@ -278,7 +327,6 @@ Returns:
   if ((FVs == NULL) || (FVs[0] == 0)) {
     return STATUS_SUCCESS;
   }
-
   //
   // If they provided a filename extension for this type of file, then use it.
   // If they did not provide a filename extension, search our list for a
@@ -301,7 +349,13 @@ Returns:
     // the need to define "FFS_EXT = raw" in the component INF file.
     //
     if (mCompTypeExtension[i].ComponentType == NULL) {
-      Error (NULL, 0, 0, ComponentType, "unknown component type - must define FFS_EXT for built filename extension in component INF file");
+      Error (
+        NULL,
+        0,
+        0,
+        ComponentType,
+        "unknown component type - must define FFS_EXT for built filename extension in component INF file"
+        );
       return STATUS_ERROR;
     }
   }
@@ -324,6 +378,7 @@ Returns:
     } else {
       sprintf (Str, "%s\\%s\\%s%s", Sym, Processor, Name, FFSExt);
     }
+
     ExpandMacros (Str, FileName, sizeof (FileName), 0);
   } else {
     strcpy (FileName, Name);
@@ -335,82 +390,89 @@ Returns:
   //
   Ptr = mFileList;
   while (Ptr != NULL) {
-    if ((Ptr->BaseName != NULL) && (BaseName != NULL) &&
-              (stricmp (BaseName, Ptr->BaseName) == 0)) {
-      if ((Ptr->Processor != NULL) && (Processor != NULL) &&
-              (stricmp (Processor, Ptr->Processor) == 0)) {
+    if ((Ptr->BaseName != NULL) && (BaseName != NULL) && (stricmp (BaseName, Ptr->BaseName) == 0)) {
+      if ((Ptr->Processor != NULL) && (Processor != NULL) && (stricmp (Processor, Ptr->Processor) == 0)) {
         Error (NULL, 0, 0, BaseName, "duplicate base name specified");
         return STATUS_ERROR;
       }
     }
+
     Ptr = Ptr->Next;
   }
   //
   // Allocate a new structure so we can add this file to the list of
   // files.
   //
-  Ptr = (FILE_LIST *)malloc (sizeof (FILE_LIST));
+  Ptr = (FILE_LIST *) malloc (sizeof (FILE_LIST));
   if (Ptr == NULL) {
     Error (NULL, 0, 0, NULL, "failed to allocate memory");
     return STATUS_ERROR;
   }
-  memset ((char *)Ptr, 0, sizeof (FILE_LIST));
-  Ptr->FileName = (char *)malloc (strlen (FileName) + 1);
+
+  memset ((char *) Ptr, 0, sizeof (FILE_LIST));
+  Ptr->FileName = (char *) malloc (strlen (FileName) + 1);
   if (Ptr->FileName == NULL) {
     Error (NULL, 0, 0, NULL, "failed to allocate memory");
     return STATUS_ERROR;
   }
+
   strcpy (Ptr->FileName, FileName);
   Ptr->ComponentsInstance = ComponentsInstance;
   //
   // Allocate memory to save the FV list if it's going into an FV.
   //
   if ((FVs != NULL) && (FVs[0] != 0)) {
-    Ptr->FVs = (char *)malloc (strlen (FVs) + 1);
+    Ptr->FVs = (char *) malloc (strlen (FVs) + 1);
     if (Ptr->FVs == NULL) {
       Error (NULL, 0, 0, NULL, "failed to allocate memory");
       return STATUS_ERROR;
     }
+
     strcpy (Ptr->FVs, FVs);
   }
-  Ptr->BaseFileName = (char *)malloc (strlen (Name) + 1);
+
+  Ptr->BaseFileName = (char *) malloc (strlen (Name) + 1);
   if (Ptr->BaseFileName == NULL) {
     Error (NULL, 0, 0, NULL, "failed to allocate memory");
     return STATUS_ERROR;
   }
+
   strcpy (Ptr->BaseFileName, Name);
   //
   // Allocate memory for the basename if they gave us one. May not have one
   // if the user is simply adding pre-existing binary files to the image.
   //
   if (BaseName != NULL) {
-    Ptr->BaseName = (char *)malloc (strlen (BaseName) + 1);
+    Ptr->BaseName = (char *) malloc (strlen (BaseName) + 1);
     if (Ptr->BaseName == NULL) {
       Error (NULL, 0, 0, NULL, "failed to allocate memory");
       return STATUS_ERROR;
     }
+
     strcpy (Ptr->BaseName, BaseName);
   }
   //
   // Allocate memory for the processor name
   //
   if (Processor != NULL) {
-    Ptr->Processor = (char *)malloc (strlen (Processor) + 1);
+    Ptr->Processor = (char *) malloc (strlen (Processor) + 1);
     if (Ptr->Processor == NULL) {
       Error (NULL, 0, 0, NULL, "failed to allocate memory");
       return STATUS_ERROR;
     }
+
     strcpy (Ptr->Processor, Processor);
   }
   //
   // Allocate memory for the guid name
   //
   if (Guid != NULL) {
-    Ptr->Guid = (char *)malloc (strlen (Guid) + 1);
+    Ptr->Guid = (char *) malloc (strlen (Guid) + 1);
     if (Ptr->Guid == NULL) {
       Error (NULL, 0, 0, NULL, "failed to allocate memory");
       return STATUS_ERROR;
     }
+
     strcpy (Ptr->Guid, Guid);
   }
   //
@@ -419,11 +481,13 @@ Returns:
   if (Apriori != NULL) {
     strcpy (Ptr->Apriori, Apriori);
   }
+
   if (mFileList == NULL) {
     mFileList = Ptr;
   } else {
     mLastFile->Next = Ptr;
   }
+
   mLastFile = Ptr;
   //
   // Add these firmware volumes to the list of known firmware
@@ -433,16 +497,22 @@ Returns:
 
   return STATUS_SUCCESS;
 }
+
 void
-CFVConstructor  () // CFirmwareVolume()
+CFVConstructor (
+  VOID
+  )
 {
   mFileList = NULL;
   mLastFile = NULL;
 }
+
 void
-CFVDestructor () // ~CFirmwareVolume()
+CFVDestructor (
+  VOID
+  )
 {
-  CFVFreeFileList();
+  CFVFreeFileList ();
   //
   // Free up our firmware volume list
   //
@@ -452,37 +522,46 @@ CFVDestructor () // ~CFirmwareVolume()
     mFVList = mFVListLast;
   }
 }
+
 static
 void
-CFVFreeFileList ()
+CFVFreeFileList (
+  VOID
+  )
 {
   FILE_LIST *Next;
   while (mFileList != NULL) {
     if (mFileList->FileName != NULL) {
       free (mFileList->FileName);
     }
+
     if (mFileList->FVs != NULL) {
       free (mFileList->FVs);
     }
+
     free (mFileList->BaseFileName);
     if (mFileList->BaseName != NULL) {
       free (mFileList->BaseName);
     }
+
     if (mFileList->Processor != NULL) {
       free (mFileList->Processor);
     }
+
     if (mFileList->Guid != NULL) {
       free (mFileList->Guid);
     }
+
     Next = mFileList->Next;
     free (mFileList);
     mFileList = Next;
   }
+
   mFileList = NULL;
 }
 
 int
-CFVWriteInfFiles  (
+CFVWriteInfFiles (
   DSC_FILE  *DSC,
   FILE      *MakeFptr
   )
@@ -512,24 +591,30 @@ Returns:
 --*/
 {
   FILE_LIST *FileListPtr;
-  FV_LIST   *FVList, *LastFVList, *FVPtr;
+  FV_LIST   *FVList;
+  FV_LIST   *LastFVList;
+  FV_LIST   *FVPtr;
   SECTION   *Section;
-  char      *StartCptr, *EndCptr, CSave;
+  char      *StartCptr;
+  char      *EndCptr;
+  char      CSave;
   char      Str[MAX_PATH];
   char      Line[MAX_LINE_LEN];
   char      ExpandedLine[MAX_LINE_LEN];
   char      FVDir[MAX_PATH];
   FILE      *XRefFptr;
-  int       AprioriCounter, AprioriCount;
+  int       AprioriCounter;
+  int       AprioriCount;
   int       AprioriPosition;
   BOOLEAN   AprioriFound;
-  int       ComponentsInstance, ComponentCount;
+  int       ComponentsInstance;
+  int       ComponentCount;
 
   //
   // Use this to keep track of all the firmware volume names
   //
-  FVList          = NULL;
-  LastFVList      = NULL;
+  FVList      = NULL;
+  LastFVList  = NULL;
   //
   // See if they specified a FV directory to dump the FV files out to. If not,
   // then use the default. Then create the output directory.
@@ -548,12 +633,11 @@ Returns:
   if ((CSave != '\\') && (CSave != '/')) {
     strcat (FVDir, "\\");
   }
-
   //
   // Traverse the list of all files, determine which FV each is in, then
   // write out the file's name to the output FVxxx.inf file.
   //
-  for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next)  {
+  for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next) {
     //
     // Parse all the "FV1,FV2..." in the FVs
     //
@@ -564,16 +648,20 @@ Returns:
       StartCptr = FileListPtr->FVs;
       while (*StartCptr) {
         EndCptr = StartCptr;
-        while (*EndCptr && (*EndCptr != ',')) EndCptr++;
-        CSave = *EndCptr;
-        *EndCptr = 0;
+        while (*EndCptr && (*EndCptr != ',')) {
+          EndCptr++;
+        }
+
+        CSave     = *EndCptr;
+        *EndCptr  = 0;
         //
         // Ok, we have a fv name, now see if we've already opened
         // an fv output file of this name.
         //
         for (FVPtr = FVList; FVPtr != NULL; FVPtr = FVPtr->Next) {
-          if (stricmp(FVPtr->FVFileName, StartCptr) == 0)
+          if (stricmp (FVPtr->FVFileName, StartCptr) == 0) {
             break;
+          }
         }
         //
         // If we didn't find one, then create a new one
@@ -587,7 +675,8 @@ Returns:
             Error (NULL, 0, 0, NULL, "failed to allocate memory for FV");
             return STATUS_ERROR;
           }
-          memset ((char *)FVPtr, 0, sizeof(FV_LIST));
+
+          memset ((char *) FVPtr, 0, sizeof (FV_LIST));
           //
           // Add it to the end of our list
           //
@@ -596,6 +685,7 @@ Returns:
           } else {
             LastFVList->Next = FVPtr;
           }
+
           LastFVList = FVPtr;
           //
           // Save the FV name in the FileName pointer so we can compare
@@ -631,9 +721,13 @@ Returns:
           Section = DSCFileFindSection (DSC, Str);
           if (Section != NULL) {
             fprintf (FVPtr->FVFilePtr, "[options]\n");
-            while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
-              ExpandMacros (Line, ExpandedLine, sizeof (ExpandedLine),
-                          EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR);
+            while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
+              ExpandMacros (
+                Line,
+                ExpandedLine,
+                sizeof (ExpandedLine),
+                EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+                );
               fprintf (FVPtr->FVFilePtr, ExpandedLine);
               GetBaseAddress (ExpandedLine, FVPtr->BaseAddress);
             }
@@ -647,7 +741,7 @@ Returns:
           Section = DSCFileFindSection (DSC, Str);
           if (Section != NULL) {
             fprintf (FVPtr->FVFilePtr, "[attributes]\n");
-            while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
+            while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
               fprintf (FVPtr->FVFilePtr, Line);
             }
           } else {
@@ -667,7 +761,7 @@ Returns:
         //
         // Next FV on the FV list
         //
-        *EndCptr = CSave;
+        *EndCptr  = CSave;
         StartCptr = EndCptr;
         if (*StartCptr) {
           StartCptr++;
@@ -687,14 +781,21 @@ Returns:
     // skipped an apriori index for a given FV.
     //
     AprioriCount = 0;
-    for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next)  {
+    for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next) {
       if (OrderInFvList (FileListPtr->Apriori, FVPtr->FVFileName, &AprioriPosition)) {
         //
         // Emit an error if the index was 0, or they didn't give one.
         //
         if (AprioriPosition == 0) {
-          Error (GetSymbolValue (DSC_FILENAME), 1, 0, "apriori indexes are 1-based", "component %s:APRIORI=%s",
-             FileListPtr->BaseName, FileListPtr->Apriori);
+          Error (
+            GetSymbolValue (DSC_FILENAME),
+            1,
+            0,
+            "apriori indexes are 1-based",
+            "component %s:APRIORI=%s",
+            FileListPtr->BaseName,
+            FileListPtr->Apriori
+            );
         } else {
           AprioriCount++;
         }
@@ -708,13 +809,14 @@ Returns:
     do {
       AprioriFound = 0;
       AprioriCounter++;
-      for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next)  {
+      for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next) {
         //
         // If in the apriori list for this fv, print the name. Open the
         // file first if we have to.
         //
         if ((FileListPtr->Apriori[0] != 0) &&
-            (OrderInFvList (FileListPtr->Apriori, FVPtr->FVFileName, &AprioriPosition))) {
+            (OrderInFvList (FileListPtr->Apriori, FVPtr->FVFileName, &AprioriPosition))
+            ) {
           if (AprioriPosition == AprioriCounter) {
             //
             // If we've already found one for this index, emit an error. Decrement the
@@ -722,10 +824,18 @@ Returns:
             // a miscount below.
             //
             if (AprioriFound) {
-              Error (GetSymbolValue (DSC_FILENAME), 1, 0, "duplicate apriori index found", "%s:%d",
-                          FVPtr->FVFileName, AprioriCounter);
+              Error (
+                GetSymbolValue (DSC_FILENAME),
+                1,
+                0,
+                "duplicate apriori index found",
+                "%s:%d",
+                FVPtr->FVFileName,
+                AprioriCounter
+                );
               AprioriCount--;
             }
+
             AprioriFound = 1;
             //
             // Open the apriori output file if we haven't already
@@ -739,6 +849,7 @@ Returns:
                 return STATUS_ERROR;
               }
             }
+
             fprintf (FVPtr->AprioriFilePtr, "%s\n", FileListPtr->BaseFileName);
           }
         }
@@ -748,8 +859,15 @@ Returns:
     // See if they skipped an apriori position for this FV
     //
     if (AprioriCount != (AprioriCounter - 1)) {
-      Error (GetSymbolValue (DSC_FILENAME), 1, 0, "apriori index skipped", "%s:%d",
-                  FVPtr->FVFileName, AprioriCounter);
+      Error (
+        GetSymbolValue (DSC_FILENAME),
+        1,
+        0,
+        "apriori index skipped",
+        "%s:%d",
+        FVPtr->FVFileName,
+        AprioriCounter
+        );
     }
   }
   //
@@ -761,13 +879,17 @@ Returns:
   //
   if (mXRefFileName != NULL) {
     if ((XRefFptr = fopen (mXRefFileName, "w")) == NULL) {
-      Message (0, "Failed to open cross-reference file '%s' for writing\n",
-        mXRefFileName);
+      Message (
+        0,
+        "Failed to open cross-reference file '%s' for writing\n",
+        mXRefFileName
+        );
     }
   } else {
     XRefFptr = NULL;
   }
-  for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next)  {
+
+  for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next) {
     //
     // Parse all the "FV1,FV2..." in the FV field that came from FV=FVa,FVb,... on the
     // component line in the DSC file.
@@ -777,14 +899,14 @@ Returns:
       // If generating a cross-reference file, dump the data
       //
       if (XRefFptr != NULL) {
-        if ((FileListPtr->Guid != NULL) &&
-            (FileListPtr->BaseName != NULL) &&
-            (FileListPtr->Processor)) {
-          fprintf (XRefFptr, "%s %s %s\n",
-                            FileListPtr->Guid,
-                            FileListPtr->BaseName,
-                            FileListPtr->Processor
-                            );
+        if ((FileListPtr->Guid != NULL) && (FileListPtr->BaseName != NULL) && (FileListPtr->Processor)) {
+          fprintf (
+            XRefFptr,
+            "%s %s %s\n",
+            FileListPtr->Guid,
+            FileListPtr->BaseName,
+            FileListPtr->Processor
+            );
         }
       }
       //
@@ -798,15 +920,23 @@ Returns:
       StartCptr = FileListPtr->FVs;
       while (*StartCptr) {
         EndCptr = StartCptr;
-        while (*EndCptr && (*EndCptr != ',')) EndCptr++;
-        CSave = *EndCptr;
-        *EndCptr = 0;
-        fprintf (MakeFptr, "%s_FILES = $(%s_FILES) %s\n", StartCptr, StartCptr,
-            FileListPtr->FileName);
+        while (*EndCptr && (*EndCptr != ',')) {
+          EndCptr++;
+        }
+
+        CSave     = *EndCptr;
+        *EndCptr  = 0;
+        fprintf (
+          MakeFptr,
+          "%s_FILES = $(%s_FILES) %s\n",
+          StartCptr,
+          StartCptr,
+          FileListPtr->FileName
+          );
         //
         // Next FV on the FV list
         //
-        *EndCptr = CSave;
+        *EndCptr  = CSave;
         StartCptr = EndCptr;
         if (*StartCptr) {
           StartCptr++;
@@ -814,6 +944,7 @@ Returns:
       }
     }
   }
+
   fprintf (MakeFptr, "\n");
 
   //
@@ -828,6 +959,7 @@ Returns:
       fprintf (MakeFptr, " %s%s.fv", FVDir, FVPtr->FVFileName);
       FVPtr = FVPtr->Next;
     }
+
     fprintf (MakeFptr, "\n\n");
     FVPtr = mNonFfsFVList;
     while (FVPtr != NULL) {
@@ -844,11 +976,19 @@ Returns:
         sprintf (Str, "build.fv");
         Section = DSCFileFindSection (DSC, Str);
       }
-      if (Section == NULL) {
-        Warning (NULL, 0, 0, NULL, "No [build.fv.%s] nor [%s] section found in description file for building %s",
-          FVPtr->FVFileName, Str, FVPtr->FVFileName);
-      } else {
 
+      if (Section == NULL) {
+        Warning (
+          NULL,
+          0,
+          0,
+          NULL,
+          "No [build.fv.%s] nor [%s] section found in description file for building %s",
+          FVPtr->FVFileName,
+          Str,
+          FVPtr->FVFileName
+          );
+      } else {
         //
         // Add a symbol for the FV filename
         //
@@ -859,18 +999,22 @@ Returns:
         //
         // Now copy the build commands from the section to the makefile
         //
-        while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
-          ExpandMacros (Line, ExpandedLine, sizeof (ExpandedLine),
-                      EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR);
+        while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
+          ExpandMacros (
+            Line,
+            ExpandedLine,
+            sizeof (ExpandedLine),
+            EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+            );
 
           fprintf (MakeFptr, ExpandedLine);
         }
       }
+
       FVPtr = FVPtr->Next;
       DSCFileRestorePosition (DSC);
     }
   }
-
   //
   // Go through our list of firmware volumes and create an "fvs" target that
   // builds everything. It has to be a mix of components and FV's in order.
@@ -884,14 +1028,16 @@ Returns:
     // First see if we have any components for this section. If we don't,
     // then we're done
     //
-    for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next)  {
+    for (FileListPtr = mFileList; FileListPtr != NULL; FileListPtr = FileListPtr->Next) {
       if (FileListPtr->ComponentsInstance == ComponentsInstance) {
         break;
       }
     }
+
     if (FileListPtr == NULL) {
       break;
     }
+
     fprintf (MakeFptr, " components_%d", ComponentsInstance);
     ComponentCount++;
     //
@@ -902,8 +1048,10 @@ Returns:
         fprintf (MakeFptr, " %s%s.fv", FVDir, FVPtr->FVFileName);
       }
     }
+
     ComponentsInstance++;
   }
+
   fprintf (MakeFptr, "\n\n");
 
   //
@@ -916,9 +1064,9 @@ Returns:
     for (ComponentsInstance = 0; ComponentsInstance < ComponentCount; ComponentsInstance++) {
       fprintf (MakeFptr, " components_%d", ComponentsInstance);
     }
+
     fprintf (MakeFptr, "\n\n");
   }
-
   //
   // Now go through the list of all FV's defined and search for
   // a [build.fv.$(FV)] or [build.fv] command and emit the commands to the
@@ -940,11 +1088,19 @@ Returns:
         sprintf (Str, "build.fv");
         Section = DSCFileFindSection (DSC, Str);
       }
-      if (Section == NULL) {
-        Error (NULL, 0, 0, NULL, "no [build.fv.%s] nor [%s] section found in description file for building %s",
-          FVPtr->FVFileName, Str, FVPtr->FVFileName);
-      } else {
 
+      if (Section == NULL) {
+        Error (
+          NULL,
+          0,
+          0,
+          NULL,
+          "no [build.fv.%s] nor [%s] section found in description file for building %s",
+          FVPtr->FVFileName,
+          Str,
+          FVPtr->FVFileName
+          );
+      } else {
         //
         // Add a symbol for the FV filename
         //
@@ -955,17 +1111,22 @@ Returns:
         //
         // Now copy the build commands from the section to the makefile
         //
-        while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
-          ExpandMacros (Line, ExpandedLine, sizeof (ExpandedLine),
-                      EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR);
+        while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
+          ExpandMacros (
+            Line,
+            ExpandedLine,
+            sizeof (ExpandedLine),
+            EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+            );
           fprintf (MakeFptr, ExpandedLine);
         }
       }
+
       DSCFileRestorePosition (DSC);
     }
+
     FVPtr = FVPtr->Next;
   }
-
   //
   // Close all the files and free up the memory
   //
@@ -974,20 +1135,25 @@ Returns:
     if (FVList->FVFilePtr != NULL) {
       fclose (FVList->FVFilePtr);
     }
+
     if (FVList->AprioriFilePtr != NULL) {
       fclose (FVList->AprioriFilePtr);
     }
+
     free (FVList);
     FVList = FVPtr;
   }
+
   while (mNonFfsFVList != NULL) {
     FVPtr = mNonFfsFVList->Next;
     free (mNonFfsFVList);
     mNonFfsFVList = FVPtr;
   }
+
   if (XRefFptr != NULL) {
     fclose (XRefFptr);
   }
+
   return STATUS_SUCCESS;
 }
 
@@ -1015,13 +1181,15 @@ Returns:
 
 --*/
 {
-  FV_LIST   *FVPtr;
-  SECTION   *Section;
-  char      *StartCptr, *EndCptr, CSave;
-  char      Str[MAX_PATH];
-  char      Line[MAX_LINE_LEN];
-  char      ExpandedLine[MAX_LINE_LEN];
-  char      FVDir[MAX_PATH];
+  FV_LIST *FVPtr;
+  SECTION *Section;
+  char    *StartCptr;
+  char    *EndCptr;
+  char    CSave;
+  char    Str[MAX_PATH];
+  char    Line[MAX_LINE_LEN];
+  char    ExpandedLine[MAX_LINE_LEN];
+  char    FVDir[MAX_PATH];
 
   //
   // See if they specified a FV directory to dump the FV files out to. If not,
@@ -1046,16 +1214,20 @@ Returns:
   StartCptr = FileName;
   while (*StartCptr) {
     EndCptr = StartCptr;
-    while (*EndCptr && (*EndCptr != ',')) EndCptr++;
-    CSave = *EndCptr;
-    *EndCptr = 0;
+    while (*EndCptr && (*EndCptr != ',')) {
+      EndCptr++;
+    }
+
+    CSave     = *EndCptr;
+    *EndCptr  = 0;
     //
     // Ok, we have a fv name, now see if we've already opened
     // an fv output file of this name.
     //
     for (FVPtr = mNonFfsFVList; FVPtr != NULL; FVPtr = FVPtr->Next) {
-      if (stricmp(FVPtr->FVFileName, StartCptr) == 0)
+      if (stricmp (FVPtr->FVFileName, StartCptr) == 0) {
         break;
+      }
     }
     //
     // If there is already one with the same name, wrong
@@ -1073,8 +1245,9 @@ Returns:
       DSCFileRestorePosition (DSC);
       return STATUS_ERROR;
     }
-    memset ((char *)FVPtr, 0, sizeof(FV_LIST));
-    FVPtr->Next = mNonFfsFVList;
+
+    memset ((char *) FVPtr, 0, sizeof (FV_LIST));
+    FVPtr->Next   = mNonFfsFVList;
     mNonFfsFVList = FVPtr;
     //
     // Save the FV name in the FileName pointer so we can compare
@@ -1101,7 +1274,7 @@ Returns:
     MakeFilePath (Str);
     if ((FVPtr->FVFilePtr = fopen (Str, "w")) == NULL) {
       //
-      //FatalError ("Could not open FV output file %s", Str);
+      // FatalError ("Could not open FV output file %s", Str);
       //
       DSCFileRestorePosition (DSC);
       return STATUS_ERROR;
@@ -1113,15 +1286,19 @@ Returns:
     Section = DSCFileFindSection (DSC, Str);
     if (Section != NULL) {
       fprintf (FVPtr->FVFilePtr, "[options]\n");
-      while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
-        ExpandMacros (Line, ExpandedLine, sizeof (ExpandedLine),
-                    EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR);
+      while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
+        ExpandMacros (
+          Line,
+          ExpandedLine,
+          sizeof (ExpandedLine),
+          EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+          );
         fprintf (FVPtr->FVFilePtr, ExpandedLine);
         GetBaseAddress (ExpandedLine, FVPtr->BaseAddress);
       }
     } else {
       //
-      //Warning ("Could not find FV section '%s' in description file", Str);
+      // Warning ("Could not find FV section '%s' in description file", Str);
       //
       Warning (NULL, 0, 0, NULL, "Could not find FV section '%s' in description file", Str);
     }
@@ -1132,7 +1309,7 @@ Returns:
     Section = DSCFileFindSection (DSC, Str);
     if (Section != NULL) {
       fprintf (FVPtr->FVFilePtr, "[attributes]\n");
-      while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
+      while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
         fprintf (FVPtr->FVFilePtr, Line);
       }
     } else {
@@ -1145,9 +1322,13 @@ Returns:
     Section = DSCFileFindSection (DSC, Str);
     if (Section != NULL) {
       fprintf (FVPtr->FVFilePtr, "[components]\n");
-      while (DSCFileGetLine (DSC, Line, sizeof(Line)) != NULL) {
-        ExpandMacros (Line, ExpandedLine, sizeof (ExpandedLine),
-                    EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR);
+      while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
+        ExpandMacros (
+          Line,
+          ExpandedLine,
+          sizeof (ExpandedLine),
+          EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+          );
         fprintf (FVPtr->FVFilePtr, ExpandedLine);
       }
     } else {
@@ -1162,15 +1343,17 @@ Returns:
     //
     // Next FV in FileName
     //
-    *EndCptr = CSave;
+    *EndCptr  = CSave;
     StartCptr = EndCptr;
     if (*StartCptr) {
       StartCptr++;
     }
   }
+
   DSCFileRestorePosition (DSC);
   return STATUS_SUCCESS;
 }
+
 static
 void
 AddFirmwareVolumes (
@@ -1179,8 +1362,10 @@ AddFirmwareVolumes (
   FILE_LIST     *FileListPtr
   )
 {
-  FV_LIST   *FvPtr;
-  char      *StartPtr, *EndPtr, SaveChar;
+  FV_LIST *FvPtr;
+  char    *StartPtr;
+  char    *EndPtr;
+  char    SaveChar;
 
   if ((FVs != NULL) && (FVs[0] != 0)) {
     //
@@ -1189,9 +1374,12 @@ AddFirmwareVolumes (
     StartPtr = FVs;
     while (*StartPtr != 0) {
       EndPtr = StartPtr;
-      while (*EndPtr && (*EndPtr != ',')) EndPtr++;
-      SaveChar = *EndPtr;
-      *EndPtr = 0;
+      while (*EndPtr && (*EndPtr != ',')) {
+        EndPtr++;
+      }
+
+      SaveChar  = *EndPtr;
+      *EndPtr   = 0;
       //
       // Look through our list of known firmware volumes and see if we've
       // already added it.
@@ -1208,8 +1396,9 @@ AddFirmwareVolumes (
         FvPtr = MALLOC (sizeof (FV_LIST));
         if (FvPtr == NULL) {
           Error (__FILE__, __LINE__, 0, "application error", "memory allocation failed");
-          return;
+          return ;
         }
+
         memset (FvPtr, 0, sizeof (FV_LIST));
         strcpy (FvPtr->FVFileName, StartPtr);
         if (mFVList == NULL) {
@@ -1217,6 +1406,7 @@ AddFirmwareVolumes (
         } else {
           mFVListLast->Next = FvPtr;
         }
+
         mFVListLast = FvPtr;
       }
       //
@@ -1231,14 +1421,15 @@ AddFirmwareVolumes (
       // Always restore the original string's contents.
       //
       if (SaveChar != 0) {
-        *EndPtr = SaveChar;
-        StartPtr = EndPtr + 1;
+        *EndPtr   = SaveChar;
+        StartPtr  = EndPtr + 1;
       } else {
         StartPtr = EndPtr;
       }
     }
   }
 }
+
 static
 BOOLEAN
 OrderInFvList (
@@ -1282,6 +1473,7 @@ OrderInFvList (
       FvList++;
     }
   }
+
   return FALSE;
 }
 
@@ -1291,13 +1483,15 @@ UpperCaseString (
   char *Str
   )
 {
-  char *Cptr;
+  char  *Cptr;
 
   for (Cptr = Str; *Cptr; Cptr++) {
-    *Cptr = (char)toupper (*Cptr);
+    *Cptr = (char) toupper (*Cptr);
   }
+
   return Str;
 }
+
 int
 CFVSetXRefFileName (
   char    *FileName
@@ -1306,4 +1500,3 @@ CFVSetXRefFileName (
   mXRefFileName = FileName;
   return 0;
 }
-

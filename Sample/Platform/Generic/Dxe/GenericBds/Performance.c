@@ -37,8 +37,9 @@ ConvertChar16ToChar8 (
   )
 {
   while (*Src) {
-    *Dest ++ = (UINT8) (*Src ++);
+    *Dest++ = (UINT8) (*Src++);
   }
+
   *Dest = 0;
 }
 
@@ -58,21 +59,23 @@ Returns:
 
 --*/
 {
-  UINTN  Index;
-  UINTN  Index1;
-  UINTN  StartIndex;
-  UINTN  EndIndex;
+  UINTN Index;
+  UINTN Index1;
+  UINTN StartIndex;
+  UINTN EndIndex;
 
   if (PdbFileName == NULL) {
     EfiAsciiStrCpy (GaugeString, " ");
   } else {
     StartIndex = 0;
-    for (EndIndex = 0; PdbFileName[EndIndex] != 0; EndIndex++);
-    
+    for (EndIndex = 0; PdbFileName[EndIndex] != 0; EndIndex++)
+      ;
+
     for (Index = 0; PdbFileName[Index] != 0; Index++) {
       if (PdbFileName[Index] == '\\') {
-        StartIndex = Index+1;
+        StartIndex = Index + 1;
       }
+
       if (PdbFileName[Index] == '.') {
         EndIndex = Index;
       }
@@ -81,15 +84,16 @@ Returns:
     Index1 = 0;
     for (Index = StartIndex; Index < EndIndex; Index++) {
       GaugeString[Index1] = PdbFileName[Index];
-      Index1 ++;
+      Index1++;
       if (Index1 == EFI_PERF_TOKEN_LENGTH - 1) {
         break;
       }
     }
+
     GaugeString[Index1] = 0;
   }
-  
-  return;
+
+  return ;
 }
 
 STATIC
@@ -123,46 +127,40 @@ Returns:
   EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *DebugEntry;
   VOID                            *CodeViewEntryPointer;
 
-  CodeViewEntryPointer = NULL;
-  PdbPath = NULL;
-  DosHdr = ImageBase;
+  CodeViewEntryPointer  = NULL;
+  PdbPath               = NULL;
+  DosHdr                = ImageBase;
 
   if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
-    NtHdr = (EFI_IMAGE_NT_HEADERS *)((UINT8 *)DosHdr + DosHdr->e_lfanew);
-    OptionalHdr = (VOID *) &NtHdr->OptionalHeader;
-    DirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *)&(OptionalHdr->DataDirectory\
-                                             [EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    NtHdr           = (EFI_IMAGE_NT_HEADERS *) ((UINT8 *) DosHdr + DosHdr->e_lfanew);
+    OptionalHdr     = (VOID *) &NtHdr->OptionalHeader;
+    DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
     if (DirectoryEntry->VirtualAddress != 0) {
       for (DirCount = 0;
-           (DirCount < DirectoryEntry->Size /
-                            sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY))
-                                         && CodeViewEntryPointer == NULL;
-                                                                   DirCount++) {
-        DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *) (
-                      DirectoryEntry->VirtualAddress +
-                      (UINTN) ImageBase +
-                      DirCount * sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)
-                      );
+           (DirCount < DirectoryEntry->Size / sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) && CodeViewEntryPointer == NULL;
+           DirCount++
+          ) {
+        DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *) (DirectoryEntry->VirtualAddress + (UINTN) ImageBase + DirCount * sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY));
         if (DebugEntry->Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
-          CodeViewEntryPointer = (VOID *) ((UINTN) DebugEntry->RVA +
-                                                             (UINTN) ImageBase);
-          switch (* (UINT32 *) CodeViewEntryPointer) {
-            case CODEVIEW_SIGNATURE_NB10:
-              PdbPath = (CHAR8 *) CodeViewEntryPointer +
-                                   sizeof (EFI_IMAGE_DEBUG_CODEVIEW_NB10_ENTRY);
-              break;
-            case CODEVIEW_SIGNATURE_RSDS:
-              PdbPath = (CHAR8 *) CodeViewEntryPointer +
-                                   sizeof (EFI_IMAGE_DEBUG_CODEVIEW_RSDS_ENTRY);
-              break;
-            default:
-              break;
+          CodeViewEntryPointer = (VOID *) ((UINTN) DebugEntry->RVA + (UINTN) ImageBase);
+          switch (*(UINT32 *) CodeViewEntryPointer) {
+          case CODEVIEW_SIGNATURE_NB10:
+            PdbPath = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_NB10_ENTRY);
+            break;
+
+          case CODEVIEW_SIGNATURE_RSDS:
+            PdbPath = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_RSDS_ENTRY);
+            break;
+
+          default:
+            break;
           }
         }
       }
     }
   }
-  return (PdbPath);
+
+  return PdbPath;
 }
 
 STATIC
@@ -172,15 +170,15 @@ GetNameFromHandle (
   OUT CHAR8          *GaugeString
   )
 {
-  EFI_STATUS                   Status;
-  EFI_LOADED_IMAGE_PROTOCOL    *Image;
-  CHAR8                        *PdbFileName;
-  EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding;
-  
+  EFI_STATUS                  Status;
+  EFI_LOADED_IMAGE_PROTOCOL   *Image;
+  CHAR8                       *PdbFileName;
+  EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
+
   EfiAsciiStrCpy (GaugeString, " ");
 
   //
-  //Get handle name from image protocol
+  // Get handle name from image protocol
   //
   Status = gBS->HandleProtocol (
                   Handle,
@@ -192,16 +190,16 @@ GetNameFromHandle (
     Status = gBS->OpenProtocol (
                     Handle,
                     &gEfiDriverBindingProtocolGuid,
-                    (VOID **)&DriverBinding,
+                    (VOID **) &DriverBinding,
                     NULL,
                     NULL,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (EFI_ERROR (Status)) {
-      return;
+      return ;
     }
     //
-    //Get handle name from image protocol
+    // Get handle name from image protocol
     //
     Status = gBS->HandleProtocol (
                     DriverBinding->ImageHandle,
@@ -216,9 +214,8 @@ GetNameFromHandle (
     GetShortPdbFileName (PdbFileName, GaugeString);
   }
 
-  return;
+  return ;
 }
-
 
 VOID
 WriteBootToOsPerformanceData (
@@ -239,71 +236,69 @@ Returns:
   None
 
 --*/
-
 {
-  EFI_STATUS                        Status;
-  EFI_CPU_ARCH_PROTOCOL             *Cpu ;
-  EFI_PERFORMANCE_PROTOCOL          *DrvPerf;
-  EFI_PHYSICAL_ADDRESS              mAcpiLowMemoryBase;
-  UINT32                            mAcpiLowMemoryLength;
-  UINT32                            LimitCount;
-  EFI_PERF_HEADER                   mPerfHeader;
-  EFI_PERF_DATA                     mPerfData;
-  EFI_GAUGE_DATA                    *DumpData;
-  EFI_HANDLE                        *Handles;
-  UINTN                             NoHandles;
-  CHAR8                             GaugeString[EFI_PERF_TOKEN_LENGTH];
-  UINT8                             *Ptr;
-  UINT32                            mIndex;
-  UINT64                            Ticker;
-  UINT64                            Freq;
-  UINT32                            Duration;
-  UINT64                            CurrentTicker;
-  UINT64                            TimerPeriod;
+  EFI_STATUS                Status;
+  EFI_CPU_ARCH_PROTOCOL     *Cpu;
+  EFI_PERFORMANCE_PROTOCOL  *DrvPerf;
+  EFI_PHYSICAL_ADDRESS      mAcpiLowMemoryBase;
+  UINT32                    mAcpiLowMemoryLength;
+  UINT32                    LimitCount;
+  EFI_PERF_HEADER           mPerfHeader;
+  EFI_PERF_DATA             mPerfData;
+  EFI_GAUGE_DATA            *DumpData;
+  EFI_HANDLE                *Handles;
+  UINTN                     NoHandles;
+  CHAR8                     GaugeString[EFI_PERF_TOKEN_LENGTH];
+  UINT8                     *Ptr;
+  UINT32                    mIndex;
+  UINT64                    Ticker;
+  UINT64                    Freq;
+  UINT32                    Duration;
+  UINT64                    CurrentTicker;
+  UINT64                    TimerPeriod;
 
   //
-  //Retrive time stamp count as early as possilbe
+  // Retrive time stamp count as early as possilbe
   //
-  Ticker = EfiReadTsc();
+  Ticker = EfiReadTsc ();
 
   //
-  //Allocate a block of memory that contain performance data to OS
+  // Allocate a block of memory that contain performance data to OS
   //
   Status = gBS->AllocatePages (
                   AllocateAnyPages,
-                  EfiACPIReclaimMemory, 
-                  4, 
+                  EfiACPIReclaimMemory,
+                  4,
                   &mAcpiLowMemoryBase
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return ;
   }
 
-  mAcpiLowMemoryLength = 0x1000;
-  
-  Ptr = (UINT8*)((UINT32)mAcpiLowMemoryBase + sizeof (EFI_PERF_HEADER));
-  LimitCount = (mAcpiLowMemoryLength - sizeof (EFI_PERF_HEADER)) / sizeof (EFI_PERF_DATA);
-  
+  mAcpiLowMemoryLength  = 0x1000;
+
+  Ptr                   = (UINT8 *) ((UINT32) mAcpiLowMemoryBase + sizeof (EFI_PERF_HEADER));
+  LimitCount            = (mAcpiLowMemoryLength - sizeof (EFI_PERF_HEADER)) / sizeof (EFI_PERF_DATA);
+
   //
-  //Get performance architecture protocol
+  // Get performance architecture protocol
   //
   Status = gBS->LocateProtocol (
                   &gEfiPerformanceProtocolGuid,
                   NULL,
                   &DrvPerf
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     gBS->FreePages (mAcpiLowMemoryBase, 1);
-    return;
+    return ;
   }
-
   //
-  //Initialize performance data structure
+  // Initialize performance data structure
   //
   EfiZeroMem (&mPerfHeader, sizeof (EFI_PERF_HEADER));
-  
+
   //
-  //Get CPU frequency
+  // Get CPU frequency
   //
   Status = gBS->LocateProtocol (
                   &gEfiCpuArchProtocolGuid,
@@ -312,30 +307,28 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
     gBS->FreePages (mAcpiLowMemoryBase, 1);
-    return;
+    return ;
   }
-
-
   //
-  //Get Cpu Frequency
+  // Get Cpu Frequency
   //
-  Status = Cpu -> GetTimerValue (Cpu, 0, &(CurrentTicker), &TimerPeriod) ;
-  if (EFI_ERROR(Status)) {
+  Status = Cpu->GetTimerValue (Cpu, 0, &(CurrentTicker), &TimerPeriod);
+  if (EFI_ERROR (Status)) {
     gBS->FreePages (mAcpiLowMemoryBase, 1);
-    return;
+    return ;
   }
 
-  Freq = DivU64x32 (1000000000000, (UINTN)TimerPeriod , NULL) ;
+  Freq                = DivU64x32 (1000000000000, (UINTN) TimerPeriod, NULL);
 
   mPerfHeader.CpuFreq = Freq;
 
   //
-  //Record BDS raw performance data
+  // Record BDS raw performance data
   //
   mPerfHeader.BDSRaw = Ticker;
-  
+
   //
-  //Put Detailed performance data into memory
+  // Put Detailed performance data into memory
   //
   Handles = NULL;
   Status = gBS->LocateHandleBuffer (
@@ -345,37 +338,35 @@ Returns:
                   &NoHandles,
                   &Handles
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     gBS->FreePages (mAcpiLowMemoryBase, 1);
-    return;
-   }
-
+    return ;
+  }
   //
-  //Get DXE drivers performance
+  // Get DXE drivers performance
   //
   for (mIndex = 0; mIndex < NoHandles; mIndex++) {
-    
+
     Ticker = 0;
 
     DumpData = DrvPerf->GetGauge (
-                          DrvPerf,     //Context
-                          NULL,        //Handle
-                          NULL,        //Token
-                          NULL,        //Host
-                          NULL         //PrecGauge
+                          DrvPerf,    // Context
+                          NULL,       // Handle
+                          NULL,       // Token
+                          NULL,       // Host
+                          NULL        // PrecGauge
                           );
     while (DumpData) {
-      if ((DumpData->Handle == Handles[mIndex]) &&\
-          (DumpData->StartTick < DumpData->EndTick)) {
+      if ((DumpData->Handle == Handles[mIndex]) && (DumpData->StartTick < DumpData->EndTick)) {
         Ticker += (DumpData->EndTick - DumpData->StartTick);
       }
 
       DumpData = DrvPerf->GetGauge (
-                            DrvPerf,   //Context
-                            NULL,        //Handle
-                            NULL,        //Token
-                            NULL,        //Host
-                            DumpData     //PrecGauge
+                            DrvPerf,  // Context
+                            NULL,     // Handle
+                            NULL,     // Token
+                            NULL,     // Host
+                            DumpData  // PrecGauge
                             );
     }
 
@@ -384,7 +375,7 @@ Returns:
                           (UINT32) Freq,
                           NULL
                           );
-                                   
+
     if (Duration > 0) {
       EfiZeroMem (&mPerfData, sizeof (EFI_PERF_DATA));
 
@@ -396,39 +387,40 @@ Returns:
       EfiCopyMem (Ptr, &mPerfData, sizeof (EFI_PERF_DATA));
       Ptr += sizeof (EFI_PERF_DATA);
 
-      mPerfHeader.Count ++;
+      mPerfHeader.Count++;
       if (mPerfHeader.Count == LimitCount) {
         goto Done;
       }
     }
   }
+
   gBS->FreePool (Handles);
-  
+
   //
-  //Get inserted performance data
+  // Get inserted performance data
   //
   DumpData = DrvPerf->GetGauge (
-                        DrvPerf,   //Context
-                        NULL,        //Handle
-                        NULL,        //Token
-                        NULL,        //Host
-                        NULL         //PrecGauge
+                        DrvPerf,      // Context
+                        NULL,         // Handle
+                        NULL,         // Token
+                        NULL,         // Host
+                        NULL          // PrecGauge
                         );
   while (DumpData) {
     if ((DumpData->Handle) || (DumpData->StartTick > DumpData->EndTick)) {
       DumpData = DrvPerf->GetGauge (
-                            DrvPerf,   //Context
-                            NULL,        //Handle
-                            NULL,        //Token
-                            NULL,        //Host
-                            DumpData     //PrecGauge
+                            DrvPerf,  // Context
+                            NULL,     // Handle
+                            NULL,     // Token
+                            NULL,     // Host
+                            DumpData  // PrecGauge
                             );
       continue;
     }
 
     EfiZeroMem (&mPerfData, sizeof (EFI_PERF_DATA));
 
-    ConvertChar16ToChar8 ((UINT8*)mPerfData.Token, DumpData->Token);
+    ConvertChar16ToChar8 ((UINT8 *) mPerfData.Token, DumpData->Token);
     mPerfData.Duration = (UINT32) DivU64x32 (
                                     DumpData->EndTick - DumpData->StartTick,
                                     (UINT32) Freq,
@@ -438,43 +430,43 @@ Returns:
     EfiCopyMem (Ptr, &mPerfData, sizeof (EFI_PERF_DATA));
     Ptr += sizeof (EFI_PERF_DATA);
 
-    mPerfHeader.Count ++;
+    mPerfHeader.Count++;
     if (mPerfHeader.Count == LimitCount) {
       goto Done;
     }
 
     DumpData = DrvPerf->GetGauge (
-                          DrvPerf,   //Context
-                          NULL,        //Handle
-                          NULL,        //Token
-                          NULL,        //Host
-                          DumpData     //PrecGauge
+                          DrvPerf,    // Context
+                          NULL,       // Handle
+                          NULL,       // Token
+                          NULL,       // Host
+                          DumpData    // PrecGauge
                           );
   }
 
 Done:
 
   ClearDebugRegisters ();
-  
+
   mPerfHeader.Signiture = 0x66726550;
 
   //
-  //Put performance data to memory
+  // Put performance data to memory
   //
   EfiCopyMem (
-    (UINT32*)(UINT32)mAcpiLowMemoryBase,
+    (UINT32 *) (UINT32) mAcpiLowMemoryBase,
     &mPerfHeader,
     sizeof (EFI_PERF_HEADER)
-    ); 
-  
+    );
+
   gRT->SetVariable (
-         L"PerfDataMemAddr", 
-         &gEfiGlobalVariableGuid,
-         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-         sizeof (UINT32), 
-         (VOID*)&mAcpiLowMemoryBase
-         );
-  
-  return;
+        L"PerfDataMemAddr",
+        &gEfiGlobalVariableGuid,
+        EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+        sizeof (UINT32),
+        (VOID *) &mAcpiLowMemoryBase
+        );
+
+  return ;
 }
 #endif

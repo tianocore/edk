@@ -20,26 +20,24 @@ Abstract:
 #ifndef _PXE_BASE_CODE_CALLBACK_H_
 #define _PXE_BASE_CODE_CALLBACK_H_
 
-
 #include "Pxe.h"
 
 //
 // Call Back Definitions
 //
-
 #define EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL_GUID \
-  { 0x245dca21, 0xfb7b, 0x11d3, 0x8f, 0x01, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b }
+  { \
+    0x245dca21, 0xfb7b, 0x11d3, 0x8f, 0x01, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b \
+  }
 
 //
 // Revision Number
 //
-
-#define EFI_PXE_BASE_CODE_CALLBACK_INTERFACE_REVISION   0x00010000
+#define EFI_PXE_BASE_CODE_CALLBACK_INTERFACE_REVISION 0x00010000
 
 //
 // Protocol definition
 //
-
 EFI_FORWARD_DECLARATION (EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL);
 
 typedef enum {
@@ -63,23 +61,22 @@ typedef enum {
   EFI_PXE_BASE_CODE_CALLBACK_STATUS_LAST
 } EFI_PXE_BASE_CODE_CALLBACK_STATUS;
 
-typedef
-EFI_PXE_BASE_CODE_CALLBACK_STATUS
-(EFIAPI *EFI_PXE_CALLBACK) (
-  IN EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL   *This,
-  IN EFI_PXE_BASE_CODE_FUNCTION                    Function,
-  IN BOOLEAN                                       Received,
-  IN UINT32                                        PacketLen,
-  IN EFI_PXE_BASE_CODE_PACKET                      *Packet     OPTIONAL
+typedef EFI_PXE_BASE_CODE_CALLBACK_STATUS (EFIAPI *EFI_PXE_CALLBACK)
+  (
+    IN EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL * This,
+    IN EFI_PXE_BASE_CODE_FUNCTION Function,
+    IN BOOLEAN Received,
+    IN UINT32 PacketLen,
+    IN EFI_PXE_BASE_CODE_PACKET * Packet OPTIONAL
   );
 
-
 typedef struct _EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL {
-  UINT64                      Revision;
-  EFI_PXE_CALLBACK            Callback;
+  UINT64            Revision;
+  EFI_PXE_CALLBACK  Callback;
 } EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL;
 
 extern EFI_GUID gEfiPxeBaseCodeCallbackProtocolGuid;
 
 #endif /* _EFIPXEBC_H */
+
 /* EOF - PxeBaseCodeCallBack.h */

@@ -24,7 +24,7 @@ Abstract:
 #include "DxeIpl.h"
 
 EFI_STATUS
-CreateArchSpecificHobs(
+CreateArchSpecificHobs (
   IN  EFI_PEI_SERVICES          **PeiServices,
   OUT EFI_PHYSICAL_ADDRESS      *BspStore
   )
@@ -50,9 +50,9 @@ Returns:
 
 --*/
 {
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
-  Status        = EFI_SUCCESS;
+  Status = EFI_SUCCESS;
 
   PEI_ASSERT (PeiServices, (NULL != PeiServices));
   PEI_ASSERT (PeiServices, (NULL != *PeiServices));
@@ -64,20 +64,21 @@ Returns:
   // Allocate 16KB for the BspStore
   //
   Status = (*PeiServices)->AllocatePages (
-                                PeiServices,
-                                EfiBootServicesData,  
-                                EFI_BSP_STORE_SIZE / EFI_PAGE_SIZE  + 1,
-                                BspStore);
+                            PeiServices,
+                            EfiBootServicesData,
+                            EFI_BSP_STORE_SIZE / EFI_PAGE_SIZE + 1,
+                            BspStore
+                            );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   Status = PeiBuildHobBspStore (
-                PeiServices,
-                *BspStore,
-                EFI_BSP_STORE_SIZE,
-                EfiBootServicesData
-                );
+            PeiServices,
+            *BspStore,
+            EFI_BSP_STORE_SIZE,
+            EfiBootServicesData
+            );
 
   return Status;
 }

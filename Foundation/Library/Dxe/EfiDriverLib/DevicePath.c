@@ -28,8 +28,7 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include EFI_PROTOCOL_DEFINITION(DevicePath)
-
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
 
 EFI_DEVICE_PATH_PROTOCOL *
 EfiDevicePathInstance (
@@ -55,14 +54,15 @@ Returns:
 
 --*/
 {
-  EFI_DEVICE_PATH_PROTOCOL    *DevPath;
-  EFI_DEVICE_PATH_PROTOCOL    *ReturnValue;
-  UINT8                       Temp;
+  EFI_DEVICE_PATH_PROTOCOL  *DevPath;
+  EFI_DEVICE_PATH_PROTOCOL  *ReturnValue;
+  UINT8                     Temp;
 
   if (*DevicePath == NULL) {
     if (Size != NULL) {
       *Size = 0;
     }
+
     return NULL;
   }
 
@@ -78,19 +78,19 @@ Returns:
   // Compute the size of the device path instance
   //
   if (Size != NULL) {
-    *Size = ((UINTN)DevPath - (UINTN)(*DevicePath)) + sizeof(EFI_DEVICE_PATH_PROTOCOL);
+    *Size = ((UINTN) DevPath - (UINTN) (*DevicePath)) + sizeof (EFI_DEVICE_PATH_PROTOCOL);
   }
 
   //
   // Make a copy and return the device path instance
   //
-  Temp = DevPath->SubType;
-  DevPath->SubType = END_ENTIRE_DEVICE_PATH_SUBTYPE;
-  ReturnValue = EfiDuplicateDevicePath (*DevicePath);
-  DevPath->SubType = Temp;
+  Temp              = DevPath->SubType;
+  DevPath->SubType  = END_ENTIRE_DEVICE_PATH_SUBTYPE;
+  ReturnValue       = EfiDuplicateDevicePath (*DevicePath);
+  DevPath->SubType  = Temp;
 
   //
-  // If DevPath is the end of an entire device path, then another instance 
+  // If DevPath is the end of an entire device path, then another instance
   // does not follow, so *DevicePath is set to NULL.
   //
   if (DevicePathSubType (DevPath) == END_ENTIRE_DEVICE_PATH_SUBTYPE) {
@@ -101,7 +101,6 @@ Returns:
 
   return ReturnValue;
 }
-
 
 BOOLEAN
 EfiIsDevicePathMultiInstance (
@@ -122,7 +121,7 @@ Returns:
 
 --*/
 {
-  EFI_DEVICE_PATH_PROTOCOL *Node;
+  EFI_DEVICE_PATH_PROTOCOL  *Node;
 
   if (DevicePath == NULL) {
     return FALSE;
@@ -133,18 +132,34 @@ Returns:
     if (EfiIsDevicePathEndInstance (Node)) {
       return TRUE;
     }
+
     Node = EfiNextDevicePathNode (Node);
   }
+
   return FALSE;
 }
-
 
 UINTN
 EfiDevicePathSize (
   IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath
   )
+/*++
+
+Routine Description:
+
+  Calculate the space size of a device path.
+
+Arguments:
+
+  DevicePath  - A specified device path
+
+Returns:
+
+  The size.
+
+--*/
 {
-  EFI_DEVICE_PATH_PROTOCOL     *Start;
+  EFI_DEVICE_PATH_PROTOCOL  *Start;
 
   if (DevicePath == NULL) {
     return 0;
@@ -161,32 +176,59 @@ EfiDevicePathSize (
   //
   // Compute the size and add back in the size of the end device path structure
   //
-  return ((UINTN)DevicePath - (UINTN)Start) + sizeof(EFI_DEVICE_PATH_PROTOCOL);
+  return ((UINTN) DevicePath - (UINTN) Start) + sizeof (EFI_DEVICE_PATH_PROTOCOL);
 }
-
-
 
 EFI_DEVICE_PATH_PROTOCOL *
 EfiDevicePathFromHandle (
   IN EFI_HANDLE  Handle
   )
+/*++
+
+Routine Description:
+
+  Get the device path protocol interface installed on a specified handle.
+
+Arguments:
+
+  Handle  - a specified handle
+
+Returns:
+
+  The device path protocol interface installed on that handle.
+
+--*/
 {
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
 
   DevicePath = NULL;
   gBS->HandleProtocol (
-         Handle,
-         &gEfiDevicePathProtocolGuid,
-         (VOID*)&DevicePath
-         );
+        Handle,
+        &gEfiDevicePathProtocolGuid,
+        (VOID *) &DevicePath
+        );
   return DevicePath;
 }
-
 
 EFI_DEVICE_PATH_PROTOCOL *
 EfiDuplicateDevicePath (
   IN EFI_DEVICE_PATH_PROTOCOL   *DevicePath
   )
+/*++
+
+Routine Description:
+
+  Duplicate a device path structure.
+
+Arguments:
+
+  DevicePath  - The device path to duplicated.
+
+Returns:
+
+  The duplicated device path.
+
+--*/
 {
   EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
   UINTN                     Size;
@@ -211,7 +253,6 @@ EfiDuplicateDevicePath (
   return NewDevicePath;
 }
 
-
 EFI_DEVICE_PATH_PROTOCOL *
 EfiAppendDevicePath (
   IN EFI_DEVICE_PATH_PROTOCOL  *Src1,
@@ -235,11 +276,11 @@ Returns:
 
 --*/
 {
-  UINTN                       Size;
-  UINTN                       Size1;
-  UINTN                       Size2;
-  EFI_DEVICE_PATH_PROTOCOL    *NewDevicePath;
-  EFI_DEVICE_PATH_PROTOCOL    *SecondDevicePath;
+  UINTN                     Size;
+  UINTN                     Size1;
+  UINTN                     Size2;
+  EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *SecondDevicePath;
 
   //
   // If there's only 1 path, just duplicate it
@@ -258,24 +299,23 @@ Returns:
   // Allocate space for the combined device path. It only has one end node of
   // length EFI_DEVICE_PATH_PROTOCOL
   //
-  Size1 = EfiDevicePathSize (Src1);
-  Size2 = EfiDevicePathSize (Src2);
-  Size = Size1 + Size2 - sizeof(EFI_DEVICE_PATH_PROTOCOL);
+  Size1         = EfiDevicePathSize (Src1);
+  Size2         = EfiDevicePathSize (Src2);
+  Size          = Size1 + Size2 - sizeof (EFI_DEVICE_PATH_PROTOCOL);
 
   NewDevicePath = EfiLibAllocateCopyPool (Size, Src1);
 
   if (NewDevicePath != NULL) {
 
-     //
-     // Over write Src1 EndNode and do the copy
-     //
-     SecondDevicePath = (EFI_DEVICE_PATH_PROTOCOL *)((CHAR8 *)NewDevicePath + (Size1 - sizeof(EFI_DEVICE_PATH_PROTOCOL)));
-     EfiCopyMem (SecondDevicePath, Src2, Size2);
+    //
+    // Over write Src1 EndNode and do the copy
+    //
+    SecondDevicePath = (EFI_DEVICE_PATH_PROTOCOL *) ((CHAR8 *) NewDevicePath + (Size1 - sizeof (EFI_DEVICE_PATH_PROTOCOL)));
+    EfiCopyMem (SecondDevicePath, Src2, Size2);
   }
 
   return NewDevicePath;
 }
-
 
 EFI_DEVICE_PATH_PROTOCOL *
 EfiAppendDevicePathNode (
@@ -300,17 +340,17 @@ Returns:
 
 --*/
 {
-  EFI_DEVICE_PATH_PROTOCOL      *Temp;
-  EFI_DEVICE_PATH_PROTOCOL      *NextNode;
-  EFI_DEVICE_PATH_PROTOCOL      *NewDevicePath;
-  UINTN                         NodeLength;
+  EFI_DEVICE_PATH_PROTOCOL  *Temp;
+  EFI_DEVICE_PATH_PROTOCOL  *NextNode;
+  EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
+  UINTN                     NodeLength;
 
   //
   // Build a Node that has a terminator on it
   //
-  NodeLength = DevicePathNodeLength(Node);
+  NodeLength  = DevicePathNodeLength (Node);
 
-  Temp = EfiLibAllocateCopyPool (NodeLength + sizeof(EFI_DEVICE_PATH_PROTOCOL), Node);
+  Temp        = EfiLibAllocateCopyPool (NodeLength + sizeof (EFI_DEVICE_PATH_PROTOCOL), Node);
   if (Temp == NULL) {
     return NULL;
   }
@@ -329,11 +369,10 @@ Returns:
   return NewDevicePath;
 }
 
-
 EFI_DEVICE_PATH_PROTOCOL *
 EfiFileDevicePath (
-  IN EFI_HANDLE       Device  OPTIONAL,
-  IN CHAR16           *FileName
+  IN EFI_HANDLE               Device  OPTIONAL,
+  IN CHAR16                   *FileName
   )
 /*++
 
@@ -357,24 +396,25 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL  *Eop;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
 
-  for(Size = 0; FileName[Size] != 0; Size++);
-  Size = (Size+1) * 2;
+  for (Size = 0; FileName[Size] != 0; Size++)
+    ;
+  Size        = (Size + 1) * 2;
 
-  FilePath = EfiLibAllocateZeroPool (Size + SIZE_OF_FILEPATH_DEVICE_PATH + sizeof(EFI_DEVICE_PATH_PROTOCOL));
+  FilePath    = EfiLibAllocateZeroPool (Size + SIZE_OF_FILEPATH_DEVICE_PATH + sizeof (EFI_DEVICE_PATH_PROTOCOL));
 
-  DevicePath = NULL;
+  DevicePath  = NULL;
 
   if (FilePath != NULL) {
 
     //
     // Build a file path
     //
-    FilePath->Header.Type = MEDIA_DEVICE_PATH;
-    FilePath->Header.SubType = MEDIA_FILEPATH_DP;
+    FilePath->Header.Type     = MEDIA_DEVICE_PATH;
+    FilePath->Header.SubType  = MEDIA_FILEPATH_DP;
     SetDevicePathNodeLength (&FilePath->Header, Size + SIZE_OF_FILEPATH_DEVICE_PATH);
     EfiCopyMem (FilePath->PathName, FileName, Size);
-    Eop = NextDevicePathNode(&FilePath->Header);
-    SetDevicePathEndNode(Eop);
+    Eop = NextDevicePathNode (&FilePath->Header);
+    SetDevicePathEndNode (Eop);
 
     //
     // Append file path to device's device path
@@ -383,23 +423,38 @@ Returns:
     DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) FilePath;
     if (Device != NULL) {
       DevicePath = EfiAppendDevicePath (
-                     EfiDevicePathFromHandle(Device),
-                     DevicePath
-                     );
+                    EfiDevicePathFromHandle (Device),
+                    DevicePath
+                    );
 
-      gBS->FreePool(FilePath);
+      gBS->FreePool (FilePath);
     }
   }
 
   return DevicePath;
 }
 
-
 EFI_DEVICE_PATH_PROTOCOL *
 EfiAppendDevicePathInstance (
   IN EFI_DEVICE_PATH_PROTOCOL  *Src,
   IN EFI_DEVICE_PATH_PROTOCOL  *Instance
   )
+/*++
+
+Routine Description:
+
+  Append a device path instance to another.
+
+Arguments:
+
+  Src       - The device path instance to be appended with.
+  Instance  - The device path instance appending the other.
+
+Returns:
+
+  The contaction of these two.
+
+--*/
 {
   UINT8                     *Ptr;
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
@@ -410,29 +465,27 @@ EfiAppendDevicePathInstance (
     return EfiDuplicateDevicePath (Instance);
   }
 
-  SrcSize      = EfiDevicePathSize(Src);
-  InstanceSize = EfiDevicePathSize(Instance);
+  SrcSize       = EfiDevicePathSize (Src);
+  InstanceSize  = EfiDevicePathSize (Instance);
 
-  Ptr = EfiLibAllocateCopyPool (SrcSize + InstanceSize, Src);
+  Ptr           = EfiLibAllocateCopyPool (SrcSize + InstanceSize, Src);
   if (Ptr != NULL) {
 
-    DevPath = (EFI_DEVICE_PATH_PROTOCOL *)Ptr;
+    DevPath = (EFI_DEVICE_PATH_PROTOCOL *) Ptr;
 
-    while (!IsDevicePathEnd(DevPath)) {
-      DevPath = NextDevicePathNode(DevPath);
+    while (!IsDevicePathEnd (DevPath)) {
+      DevPath = NextDevicePathNode (DevPath);
     }
     //
     // Convert the End to an End Instance, since we are
     //  appending another instacne after this one its a good
     //  idea.
     //
-    DevPath->SubType = END_INSTANCE_DEVICE_PATH_SUBTYPE;
+    DevPath->SubType  = END_INSTANCE_DEVICE_PATH_SUBTYPE;
 
-    DevPath = NextDevicePathNode(DevPath);
+    DevPath           = NextDevicePathNode (DevPath);
     EfiCopyMem (DevPath, Instance, InstanceSize);
   }
 
-  return (EFI_DEVICE_PATH_PROTOCOL *)Ptr;
+  return (EFI_DEVICE_PATH_PROTOCOL *) Ptr;
 }
-
-

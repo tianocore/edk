@@ -25,42 +25,43 @@ Abstract:
 #define _SIMPLE_POINTER_H_
 
 #define EFI_SIMPLE_POINTER_PROTOCOL_GUID \
-    {0x31878c87,0xb75,0x11d5,0x9a,0x4f,0x0,0x90,0x27,0x3f,0xc1,0x4d}
+  { \
+    0x31878c87, 0xb75, 0x11d5, 0x9a, 0x4f, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_SIMPLE_POINTER_PROTOCOL);
 
 //
 // Data structures
 //
-
 typedef struct {
-  INT32       RelativeMovementX;
-  INT32       RelativeMovementY;
-  INT32       RelativeMovementZ;
-  BOOLEAN     LeftButton;
-  BOOLEAN     RightButton;
+  INT32   RelativeMovementX;
+  INT32   RelativeMovementY;
+  INT32   RelativeMovementZ;
+  BOOLEAN LeftButton;
+  BOOLEAN RightButton;
 } EFI_SIMPLE_POINTER_STATE;
 
 typedef struct {
-  UINT64      ResolutionX;
-  UINT64      ResolutionY;
-  UINT64      ResolutionZ;
-  BOOLEAN     LeftButton;
-  BOOLEAN     RightButton;
+  UINT64  ResolutionX;
+  UINT64  ResolutionY;
+  UINT64  ResolutionZ;
+  BOOLEAN LeftButton;
+  BOOLEAN RightButton;
 } EFI_SIMPLE_POINTER_MODE;
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SIMPLE_POINTER_RESET) (
-  IN EFI_SIMPLE_POINTER_PROTOCOL    *This,
+  IN EFI_SIMPLE_POINTER_PROTOCOL            * This,
   IN BOOLEAN                                ExtendedVerification
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SIMPLE_POINTER_GET_STATE) (
-  IN EFI_SIMPLE_POINTER_PROTOCOL  *This,
-  IN OUT EFI_SIMPLE_POINTER_STATE         *State
+  IN EFI_SIMPLE_POINTER_PROTOCOL          * This,
+  IN OUT EFI_SIMPLE_POINTER_STATE         * State
   );
 
 typedef struct _EFI_SIMPLE_POINTER_PROTOCOL {

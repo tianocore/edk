@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
   
-  SerialStatusCodeLib.h
+  BsSerialStatusCodeLib.h
    
 Abstract:
 
@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 
 //
@@ -37,20 +36,22 @@ EFIAPI
 BsSerialInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  );
+  )
+;
 
 //
 // Status code reporting function
 //
 EFI_BOOTSERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 BsSerialReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
-#endif 
+#endif

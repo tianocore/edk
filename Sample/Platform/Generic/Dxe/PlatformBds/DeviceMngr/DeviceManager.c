@@ -23,22 +23,22 @@ Revision History
 
 #include "DeviceManager.h"
 
-STATIC UINT16                    mTokenCount;
-EFI_FRONTPAGE_CALLBACK_INFO      FPCallbackInfo;
-extern UINTN                     gCallbackKey;
-extern EFI_FORM_BROWSER_PROTOCOL *gBrowser;
-extern EFI_GUID                  gBdsStringPackGuid;
-extern BOOLEAN                   gConnectAllHappened;
+STATIC UINT16                     mTokenCount;
+EFI_FRONTPAGE_CALLBACK_INFO       FPCallbackInfo;
+extern UINTN                      gCallbackKey;
+extern EFI_FORM_BROWSER_PROTOCOL  *gBrowser;
+extern EFI_GUID                   gBdsStringPackGuid;
+extern BOOLEAN                    gConnectAllHappened;
 
-STRING_REF gStringTokenTable[] = { 
-  STR_VIDEO_DEVICE, 
+STRING_REF                        gStringTokenTable[] = {
+  STR_VIDEO_DEVICE,
   STR_NETWORK_DEVICE,
-  STR_INPUT_DEVICE, 
-  STR_ON_BOARD_DEVICE, 
-  STR_OTHER_DEVICE, 
-  STR_EMPTY_STRING, 
-  0xFFFF 
-  };
+  STR_INPUT_DEVICE,
+  STR_ON_BOARD_DEVICE,
+  STR_OTHER_DEVICE,
+  STR_EMPTY_STRING,
+  0xFFFF
+};
 
 EFI_STATUS
 DeviceManagerCallbackRoutine (
@@ -70,24 +70,25 @@ Returns:
   //
   // The KeyValue corresponds in this case to the handle which was requested to be displayed
   //
-  EFI_FRONTPAGE_CALLBACK_INFO      *CallbackInfo;
+  EFI_FRONTPAGE_CALLBACK_INFO *CallbackInfo;
 
   CallbackInfo = EFI_FP_CALLBACK_DATA_FROM_THIS (This);
   switch (KeyValue) {
   case 0x2000:
-    CallbackInfo->Data.VideoBIOS = (UINT8)(UINTN)DataArray->Data[0].Data;
+    CallbackInfo->Data.VideoBIOS = (UINT8) (UINTN) DataArray->Data[0].Data;
     gRT->SetVariable (
-           L"VBIOS",
-           &gEfiGlobalVariableGuid,
-           EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-           sizeof (UINT8),
-           &CallbackInfo->Data.VideoBIOS
-           );
+          L"VBIOS",
+          &gEfiGlobalVariableGuid,
+          EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+          sizeof (UINT8),
+          &CallbackInfo->Data.VideoBIOS
+          );
     break;
-    
-  default:    
+
+  default:
     break;
-  }  
+  }
+
   gCallbackKey = KeyValue;
   return EFI_SUCCESS;
 }
@@ -109,51 +110,56 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                      Status;
-  EFI_HII_PACKAGES                *PackageList;
-  EFI_HII_UPDATE_DATA             *UpdateData;
+  EFI_STATUS          Status;
+  EFI_HII_PACKAGES    *PackageList;
+  EFI_HII_UPDATE_DATA *UpdateData;
 
   //
   // Allocate space for creation of UpdateData Buffer
   //
   UpdateData = EfiLibAllocateZeroPool (0x1000);
   ASSERT (UpdateData != NULL);
-  
+
   PackageList = PreparePackages (1, &gBdsStringPackGuid, DeviceManagerVfrBin);
-  Status = Hii->NewPack (Hii, PackageList, &FPCallbackInfo.DevMgrHiiHandle);
+  Status      = Hii->NewPack (Hii, PackageList, &FPCallbackInfo.DevMgrHiiHandle);
   gBS->FreePool (PackageList);
 
   //
   // This example does not implement worker functions for the NV accessor functions.  Only a callback evaluator
   //
-  FPCallbackInfo.Signature = EFI_FP_CALLBACK_DATA_SIGNATURE;
-  FPCallbackInfo.DevMgrCallback.NvRead   = NULL;
-  FPCallbackInfo.DevMgrCallback.NvWrite  = NULL;
-  FPCallbackInfo.DevMgrCallback.Callback = DeviceManagerCallbackRoutine;
+  FPCallbackInfo.Signature                = EFI_FP_CALLBACK_DATA_SIGNATURE;
+  FPCallbackInfo.DevMgrCallback.NvRead    = NULL;
+  FPCallbackInfo.DevMgrCallback.NvWrite   = NULL;
+  FPCallbackInfo.DevMgrCallback.Callback  = DeviceManagerCallbackRoutine;
 
   //
   // Install protocol interface
   //
-  FPCallbackInfo.CallbackHandle= NULL;
+  FPCallbackInfo.CallbackHandle = NULL;
 
   Status = gBS->InstallProtocolInterface (
-                 &FPCallbackInfo.CallbackHandle,
-                 &gEfiFormCallbackProtocolGuid, 
-                 EFI_NATIVE_INTERFACE,
-                 &FPCallbackInfo.DevMgrCallback
-                 );
+                  &FPCallbackInfo.CallbackHandle,
+                  &gEfiFormCallbackProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &FPCallbackInfo.DevMgrCallback
+                  );
 
   ASSERT_EFI_ERROR (Status);
 
-  UpdateData->FormSetUpdate = TRUE;                                                     // Flag update pending in FormSet
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS)FPCallbackInfo.CallbackHandle; // Register CallbackHandle data for FormSet
-
+  //
+  // Flag update pending in FormSet
+  //
+  UpdateData->FormSetUpdate = TRUE;
+  //
+  // Register CallbackHandle data for FormSet
+  //
+  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) FPCallbackInfo.CallbackHandle;
   //
   // Simply registering the callback handle
   //
-  Hii->UpdateForm(Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)0x0000, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL) 0x0000, TRUE, UpdateData);
 
-  gBS->FreePool(UpdateData);
+  gBS->FreePool (UpdateData);
   return Status;
 }
 
@@ -175,26 +181,26 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  UINTN                   BufferSize;
-  UINTN                   Count;
-  EFI_HII_HANDLE          Index;
-  UINT8                   *Buffer;
-  EFI_IFR_FORM_SET        *FormSetData;
-  CHAR16                  *String;
-  UINT16                  StringLength;
-  EFI_HII_UPDATE_DATA     *UpdateData;
-  STRING_REF              Token;
-  STRING_REF              TokenHelp;
-  IFR_OPTION              *IfrOptionList;
-  UINT8                   *VideoOption;
-  UINTN                   VideoOptionSize;
-  EFI_HII_HANDLE          *HiiHandles;
-  UINT16                  HandleBufferLength;
+  EFI_STATUS          Status;
+  UINTN               BufferSize;
+  UINTN               Count;
+  EFI_HII_HANDLE      Index;
+  UINT8               *Buffer;
+  EFI_IFR_FORM_SET    *FormSetData;
+  CHAR16              *String;
+  UINT16              StringLength;
+  EFI_HII_UPDATE_DATA *UpdateData;
+  STRING_REF          Token;
+  STRING_REF          TokenHelp;
+  IFR_OPTION          *IfrOptionList;
+  UINT8               *VideoOption;
+  UINTN               VideoOptionSize;
+  EFI_HII_HANDLE      *HiiHandles;
+  UINT16              HandleBufferLength;
 
-  IfrOptionList = NULL;
-  VideoOption = NULL;
-  HandleBufferLength = 0;
+  IfrOptionList       = NULL;
+  VideoOption         = NULL;
+  HandleBufferLength  = 0;
 
   //
   // Connect all prior to entering the platform setup menu.
@@ -203,28 +209,27 @@ Returns:
     BdsLibConnectAllDriversToAllControllers ();
     gConnectAllHappened = TRUE;
   }
-
   //
   // Allocate space for creation of UpdateData Buffer
   //
   UpdateData = EfiLibAllocateZeroPool (0x1000);
   ASSERT (UpdateData != NULL);
 
-  Status = EFI_SUCCESS;
-  Buffer = NULL;
-  FormSetData = NULL;
-  gCallbackKey = 0;
+  Status        = EFI_SUCCESS;
+  Buffer        = NULL;
+  FormSetData   = NULL;
+  gCallbackKey  = 0;
   if (mTokenCount == 0) {
     Hii->NewString (Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &mTokenCount, L" ");
   }
-  Token = mTokenCount;
-  TokenHelp = (UINT16)(Token + 1);
+
+  Token     = mTokenCount;
+  TokenHelp = (UINT16) (Token + 1);
 
   //
   // Reset the menu
-  //  
-  for (Index = 0, Count = 1;Count < 0x10000; Count <<= 1, Index++) {
-    
+  //
+  for (Index = 0, Count = 1; Count < 0x10000; Count <<= 1, Index++) {
     //
     // We will strip off all previous menu entries
     //
@@ -233,7 +238,7 @@ Returns:
     //
     // Erase entries on this label
     //
-    Hii->UpdateForm(Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)Count, FALSE, UpdateData);
+    Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL) Count, FALSE, UpdateData);
 
     //
     // Did we reach the end of the Token Table?
@@ -251,96 +256,93 @@ Returns:
     //
     // Add default title for this label
     //
-    Hii->UpdateForm(Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)Count, TRUE, UpdateData);
+    Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL) Count, TRUE, UpdateData);
   }
-
   //
   // Add a space and an exit string.  Remember since we add things at the label and push other things beyond the
   // label down, we add this in reverse order
   //
-  CreateSubTitleOpCode (STRING_TOKEN(STR_EXIT_STRING), &UpdateData->Data);
-  Hii->UpdateForm(Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)Count, TRUE, UpdateData);
+  CreateSubTitleOpCode (STRING_TOKEN (STR_EXIT_STRING), &UpdateData->Data);
+  Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL) Count, TRUE, UpdateData);
   CreateSubTitleOpCode (STR_EMPTY_STRING, &UpdateData->Data);
-  Hii->UpdateForm(Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)Count, TRUE, UpdateData);
+  Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL) Count, TRUE, UpdateData);
 
-  HiiHandles = EfiLibAllocateZeroPool(HandleBufferLength);
+  HiiHandles = EfiLibAllocateZeroPool (HandleBufferLength);
   Hii->FindHandles (Hii, &HandleBufferLength, HiiHandles);
-  
-  for (Index = 1, BufferSize = 0; Index < HandleBufferLength; Index++) {
 
+  for (Index = 1, BufferSize = 0; Index < HandleBufferLength; Index++) {
     //
     // Am not initializing Buffer since the first thing checked is the size
     // this way I can get the real buffersize in the smallest code size
     //
-    Status = Hii->GetForms (Hii, Index, 0, (UINT16 *)&BufferSize, Buffer);
+    Status = Hii->GetForms (Hii, Index, 0, (UINT16 *) &BufferSize, Buffer);
 
     if (Status != EFI_NOT_FOUND) {
-
       //
       // BufferSize should have the real size of the forms now
       //
       Buffer = EfiLibAllocateZeroPool (BufferSize);
       ASSERT (Buffer != NULL);
-  
+
       //
       // Am not initializing Buffer since the first thing checked is the size
       // this way I can get the real buffersize in the smallest code size
       //
-      Status = Hii->GetForms (Hii, Index, 0, (UINT16 *)&BufferSize, Buffer);
-      
+      Status = Hii->GetForms (Hii, Index, 0, (UINT16 *) &BufferSize, Buffer);
+
       //
       // Skip EFI_HII_PACK_HEADER, advance to EFI_IFR_FORM_SET data.
       //
       FormSetData = (EFI_IFR_FORM_SET *) (Buffer + sizeof (EFI_HII_PACK_HEADER));
-  
+
       //
       // If this formset belongs in the device manager, add it to the menu
       //
       if (FormSetData->Class != EFI_NON_DEVICE_CLASS) {
-  
-        StringLength = 0x1000;
-        String = EfiLibAllocateZeroPool (StringLength);
+
+        StringLength  = 0x1000;
+        String        = EfiLibAllocateZeroPool (StringLength);
         ASSERT (String != NULL);
-  
-        Status = Hii->GetString(Hii, Index, FormSetData->FormSetTitle, TRUE, NULL, &StringLength, String);
-        Status = Hii->NewString(Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &Token, String);
-  
-        // 
+
+        Status  = Hii->GetString (Hii, Index, FormSetData->FormSetTitle, TRUE, NULL, &StringLength, String);
+        Status  = Hii->NewString (Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &Token, String);
+
+        //
         // If token value exceeded real token value - we need to add a new token values
         //
         if (Status == EFI_INVALID_PARAMETER) {
-          Token = 0; 
+          Token     = 0;
           TokenHelp = 0;
-          Status = Hii->NewString(Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &Token, String);
+          Status    = Hii->NewString (Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &Token, String);
         }
-  
+
         StringLength = 0x1000;
         if (FormSetData->Help == 0) {
           TokenHelp = 0;
         } else {
-          Status = Hii->GetString(Hii, Index, FormSetData->Help, TRUE, NULL, &StringLength, String);
+          Status = Hii->GetString (Hii, Index, FormSetData->Help, TRUE, NULL, &StringLength, String);
           if (StringLength == 0x02) {
             TokenHelp = 0;
           } else {
-            Status = Hii->NewString(Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &TokenHelp, String);
+            Status = Hii->NewString (Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &TokenHelp, String);
             if (Status == EFI_INVALID_PARAMETER) {
               TokenHelp = 0;
-              Status = Hii->NewString(Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &TokenHelp, String);
+              Status    = Hii->NewString (Hii, NULL, FPCallbackInfo.DevMgrHiiHandle, &TokenHelp, String);
             }
           }
         }
-  
+
         gBS->FreePool (String);
-  
+
         CreateGotoOpCode (
-          0x1000,                                               // Device Manager Page
-          Token,                                                // Description String Token
-          TokenHelp,                                            // Description Help String Token
-          EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,    // Flag designating callback is active
-          (UINT16)Index,                                        // Callback key value
-          &UpdateData->Data                                     // Buffer to fill with op-code
+          0x1000,     // Device Manager Page
+          Token,      // Description String Token
+          TokenHelp,  // Description Help String Token
+          EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,  // Flag designating callback is active
+          (UINT16) Index,                                     // Callback key value
+          &UpdateData->Data                                   // Buffer to fill with op-code
           );
-  
+
         //
         // In the off-chance that we have lots of extra tokens allocated to the DeviceManager
         // this ensures we are fairly re-using the tokens instead of constantly growing the token
@@ -354,10 +356,9 @@ Returns:
           //
           Token++;
         } else {
-          Token = (UINT16)(Token + 2);
-          TokenHelp = (UINT16)(TokenHelp + 2);
+          Token     = (UINT16) (Token + 2);
+          TokenHelp = (UINT16) (TokenHelp + 2);
         }
-  
         //
         // This for loop basically will take the Class value which is a bitmask and
         // update the form for every active bit.  There will be a label at each bit
@@ -365,66 +366,72 @@ Returns:
         // EFI_ON_BOARD_DEVICE_CLASS, this routine will unwind that mask and drop the menu entry
         // on each corresponding label.
         //
-        for (Count = 1;Count < 0x10000; Count <<= 1) {
+        for (Count = 1; Count < 0x10000; Count <<= 1) {
           //
           // This is an active bit, so update the form
           //
           if (FormSetData->Class & Count) {
-            Hii->UpdateForm(Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)(FormSetData->Class & Count), TRUE, UpdateData);
+            Hii->UpdateForm (
+                  Hii,
+                  FPCallbackInfo.DevMgrHiiHandle,
+                  (EFI_FORM_LABEL) (FormSetData->Class & Count),
+                  TRUE,
+                  UpdateData
+                  );
           }
         }
       }
-  
+
       BufferSize = 0;
       //
       // Reset Buffer pointer to original location
       //
-      gBS->FreePool(Buffer);
+      gBS->FreePool (Buffer);
     }
   }
-
   //
   // Add oneof for video BIOS selection
-  //  
-  VideoOption = BdsLibGetVariableAndSize (L"VBIOS", 
-                             &gEfiGlobalVariableGuid, 
-                             &VideoOptionSize
-                             );
+  //
+  VideoOption = BdsLibGetVariableAndSize (
+                  L"VBIOS",
+                  &gEfiGlobalVariableGuid,
+                  &VideoOptionSize
+                  );
   if (NULL == VideoOption) {
     FPCallbackInfo.Data.VideoBIOS = 0;
   } else {
     FPCallbackInfo.Data.VideoBIOS = VideoOption[0];
     gBS->FreePool (VideoOption);
   }
-  
-  ASSERT(FPCallbackInfo.Data.VideoBIOS <= 1); 
-  
-  Status = gBS->AllocatePool (EfiBootServicesData, 2 * sizeof (IFR_OPTION), &IfrOptionList);  
+
+  ASSERT (FPCallbackInfo.Data.VideoBIOS <= 1);
+
+  Status = gBS->AllocatePool (EfiBootServicesData, 2 * sizeof (IFR_OPTION), &IfrOptionList);
   if (IfrOptionList != NULL) {
-    IfrOptionList[0].Flags = EFI_IFR_FLAG_INTERACTIVE;
-    IfrOptionList[0].Key = SET_VIDEO_BIOS_TYPE_QUESTION_ID + 0x2000;
-    IfrOptionList[0].StringToken = STRING_TOKEN(STR_ONE_OF_PCI);
-    IfrOptionList[0].Value = 0;
+    IfrOptionList[0].Flags        = EFI_IFR_FLAG_INTERACTIVE;
+    IfrOptionList[0].Key          = SET_VIDEO_BIOS_TYPE_QUESTION_ID + 0x2000;
+    IfrOptionList[0].StringToken  = STRING_TOKEN (STR_ONE_OF_PCI);
+    IfrOptionList[0].Value        = 0;
     IfrOptionList[0].OptionString = NULL;
-    IfrOptionList[1].Flags = EFI_IFR_FLAG_INTERACTIVE;
-    IfrOptionList[1].Key = SET_VIDEO_BIOS_TYPE_QUESTION_ID + 0x2000;
-    IfrOptionList[1].StringToken = STRING_TOKEN(STR_ONE_OF_AGP);
-    IfrOptionList[1].Value = 1;
+    IfrOptionList[1].Flags        = EFI_IFR_FLAG_INTERACTIVE;
+    IfrOptionList[1].Key          = SET_VIDEO_BIOS_TYPE_QUESTION_ID + 0x2000;
+    IfrOptionList[1].StringToken  = STRING_TOKEN (STR_ONE_OF_AGP);
+    IfrOptionList[1].Value        = 1;
     IfrOptionList[1].OptionString = NULL;
     IfrOptionList[FPCallbackInfo.Data.VideoBIOS].Flags |= EFI_IFR_FLAG_DEFAULT;
 
     CreateOneOfOpCode (
       SET_VIDEO_BIOS_TYPE_QUESTION_ID,
-      (UINT8)1,
+      (UINT8) 1,
       STRING_TOKEN (STR_ONE_OF_VBIOS),
       STRING_TOKEN (STR_ONE_OF_VBIOS_HELP),
       IfrOptionList,
       2,
       &UpdateData->Data
       );
-    
+
     UpdateData->DataCount = 4;
-    Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL)EFI_VBIOS_CLASS, TRUE, UpdateData);
+    Hii->UpdateForm (Hii, FPCallbackInfo.DevMgrHiiHandle, (EFI_FORM_LABEL) EFI_VBIOS_CLASS, TRUE, UpdateData);
     gBS->FreePool (IfrOptionList);
   }
   //
@@ -432,50 +439,48 @@ Returns:
   //
   gBS->RestoreTPL (EFI_TPL_APPLICATION);
 
+  Status = gBrowser->SendForm (
+                      gBrowser,
+                      TRUE,                             // Use the database
+                      &FPCallbackInfo.DevMgrHiiHandle,  // The HII Handle
+                      1,
+                      NULL,
+                      FPCallbackInfo.CallbackHandle,
+                      (UINT8 *) &FPCallbackInfo.Data,
+                      NULL,
+                      NULL
+                      );
+
+  Hii->ResetStrings (Hii, FPCallbackInfo.DevMgrHiiHandle);
+
+  //
+  // We will have returned from processing a callback - user either hit ESC to exit, or selected
+  // a target to display
+  //
+  if (gCallbackKey != 0 && gCallbackKey < 0x2000) {
     Status = gBrowser->SendForm (
-                         gBrowser,                     
-                         TRUE,                                      // Use the database 
-                         &FPCallbackInfo.DevMgrHiiHandle,           // The HII Handle
-                         1,
-                         NULL,
-                         FPCallbackInfo.CallbackHandle,
-                         (UINT8*)&FPCallbackInfo.Data,
-                         NULL,
-                         NULL
-                         );
-
-    Hii->ResetStrings (Hii, FPCallbackInfo.DevMgrHiiHandle);
+                        gBrowser,
+                        TRUE,                             // Use the database
+                        (EFI_HII_HANDLE *) &gCallbackKey, // The HII Handle
+                        1,
+                        NULL,
+                        NULL,                             // This is the handle that the interface to the callback was installed on
+                        NULL,
+                        NULL,
+                        NULL
+                        );
 
     //
-    // We will have returned from processing a callback - user either hit ESC to exit, or selected
-    // a target to display
+    // Force return to Device Manager
     //
-    
-    if (gCallbackKey != 0 && gCallbackKey < 0x2000) {
-      Status = gBrowser->SendForm (
-                           gBrowser,                     
-                           TRUE,                             // Use the database 
-                           (EFI_HII_HANDLE *)&gCallbackKey,  // The HII Handle
-                           1,
-                           NULL,
-                           NULL,                             // This is the handle that the interface to the callback was installed on
-                           NULL,
-                           NULL,
-                           NULL
-                           );    
+    gCallbackKey = 4;
+  }
 
-      //
-      // Force return to Device Manager
-      //
-      gCallbackKey = 4;
-    }
-  
   if (gCallbackKey >= 0x2000) {
     gCallbackKey = 4;
   }
-  
+
   gBS->FreePool (UpdateData);
   gBS->RaiseTPL (EFI_TPL_DRIVER);
   return Status;
 }
-

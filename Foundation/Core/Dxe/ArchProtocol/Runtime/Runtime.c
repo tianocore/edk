@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  Runtime Architectural Protocol as defined in EFI 2.0
+  Runtime Architectural Protocol as defined in Tiano
 
   This code is used to produce the EFI 1.0 runtime virtual switch over
 
 --*/
 
 #include "Tiano.h"
-#include EFI_ARCH_PROTOCOL_DEFINITION(Runtime)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Runtime)
 
-EFI_GUID gEfiRuntimeArchProtocolGuid = EFI_RUNTIME_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiRuntimeArchProtocolGuid = EFI_RUNTIME_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiRuntimeArchProtocolGuid, "Runtime", "Runtime Arch Protocol");

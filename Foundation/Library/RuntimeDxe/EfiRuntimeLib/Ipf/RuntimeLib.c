@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Light weight lib to support EFI 2.0 Sal drivers.
+  Light weight lib to support Tiano Sal drivers.
 
 --*/
 
@@ -29,7 +29,6 @@ Abstract:
 //
 // Worker functions in EsalLib.s
 //
-
 SAL_RETURN_REGS
 GetEsalEntryPoint (
   VOID
@@ -53,18 +52,15 @@ SalFlushCache (
   IN UINT64                Length
   );
 
-
 //
-// Module Globals. It's not valid to use these after the 
+// Module Globals. It's not valid to use these after the
 // EfiRuntimeLibVirtualNotifyEvent has fired.
 //
-static EFI_EVENT                            mEfiVirtualNotifyEvent;
-static EFI_RUNTIME_SERVICES                 *mRT;
-static EFI_PLABEL                           mPlabel;
-static EXTENDED_SAL_BOOT_SERVICE_PROTOCOL   *mEsalBootService;
-static BOOLEAN                              mRuntimeLibInitialized = FALSE;
-
-
+static EFI_EVENT                          mEfiVirtualNotifyEvent;
+static EFI_RUNTIME_SERVICES               *mRT;
+static EFI_PLABEL                         mPlabel;
+static EXTENDED_SAL_BOOT_SERVICE_PROTOCOL *mEsalBootService;
+static BOOLEAN                            mRuntimeLibInitialized = FALSE;
 
 VOID
 EFIAPI
@@ -82,7 +78,9 @@ Routine Description:
 
 Arguments:
 
-  (Standard EFI notify event - EFI_EVENT_NOTIFY)
+  Event   - The Event that is being processed
+  
+  Context - Event Context
 
 Returns: 
 
@@ -96,13 +94,13 @@ Returns:
     //
     // Call child event
     //
-    ChildNotify = (EFI_EVENT_NOTIFY)(UINTN)Context;
+    ChildNotify = (EFI_EVENT_NOTIFY) (UINTN) Context;
     ChildNotify (Event, NULL);
   }
 
   mRT->ConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mPlabel.EntryPoint);
   mRT->ConvertPointer (EFI_INTERNAL_POINTER | EFI_IPF_GP_POINTER, (VOID **) &mPlabel.GP);
-  
+
   SetEsalVirtualEntryPoint (mPlabel.EntryPoint, mPlabel.GP);
 
   //
@@ -117,8 +115,6 @@ Returns:
   //
 }
 
-
-
 EFI_STATUS
 EfiInitializeRuntimeDriverLib (
   IN EFI_HANDLE           ImageHandle,
@@ -131,33 +127,35 @@ Routine Description:
 
   Intialize runtime Driver Lib if it has not yet been initialized. 
 
-  GoVirtualChildEvent - Caller can register a virtual notification event.
-
 Arguments:
 
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  ImageHandle     - The firmware allocated handle for the EFI image.
+  
+  SystemTable     - A pointer to the EFI System Table.
+
+  GoVirtualChildEvent - Caller can register a virtual notification event.
 
 Returns: 
 
-  EFI_STATUS always returns EFI_SUCCESS
+  EFI_STATUS always returns EFI_SUCCESS except EFI_ALREADY_STARTED if already started.
 
 --*/
 {
-  EFI_STATUS                          Status;
-  EFI_PLABEL                          *Plabel;
+  EFI_STATUS  Status;
+  EFI_PLABEL  *Plabel;
 
   if (mRuntimeLibInitialized) {
     return EFI_ALREADY_STARTED;
   }
 
-  mRuntimeLibInitialized = TRUE;
+  mRuntimeLibInitialized  = TRUE;
 
-  gST = SystemTable;
-  gBS = SystemTable->BootServices;
-  mRT = SystemTable->RuntimeServices;
-  Status = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **)&gDS);
+  gST                     = SystemTable;
+  gBS                     = SystemTable->BootServices;
+  mRT                     = SystemTable->RuntimeServices;
+  Status                  = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **) &gDS);
   ASSERT_EFI_ERROR (Status);
- 
+
   //
   // The protocol contains a function pointer, which is an indirect procedure call.
   // An indirect procedure call goes through a plabel, and pointer to a function is
@@ -169,10 +167,10 @@ Returns:
   Status = gBS->LocateProtocol (&gEfiExtendedSalBootServiceProtocolGuid, NULL, &mEsalBootService);
   ASSERT_EFI_ERROR (Status);
 
-  Plabel = (EFI_PLABEL *)(UINTN)mEsalBootService->ExtendedSalProc;
+  Plabel              = (EFI_PLABEL *) (UINTN) mEsalBootService->ExtendedSalProc;
 
-  mPlabel.EntryPoint = Plabel->EntryPoint;
-  mPlabel.GP = Plabel->GP;
+  mPlabel.EntryPoint  = Plabel->EntryPoint;
+  mPlabel.GP          = Plabel->GP;
 
   SetEsalPhysicalEntryPoint (mPlabel.EntryPoint, mPlabel.GP);
 
@@ -181,18 +179,16 @@ Returns:
   // GoVirtualChildEvent so it's get passed to the event as contex.
   //
   Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE, 
+                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
                   EFI_TPL_NOTIFY,
                   EfiRuntimeLibVirtualNotifyEvent,
-                  (VOID *)GoVirtualChildEvent,
+                  (VOID *) GoVirtualChildEvent,
                   &mEfiVirtualNotifyEvent
                   );
-  ASSERT_EFI_ERROR (Status);  
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }
-
-
 
 EFI_STATUS
 RegisterEsalFunction (
@@ -220,10 +216,13 @@ Returns:
 --*/
 {
   return mEsalBootService->AddExtendedSalProc (
-                            mEsalBootService, ClassGuid, FunctionId, Function, ModuleGlobal
+                            mEsalBootService,
+                            ClassGuid,
+                            FunctionId,
+                            Function,
+                            ModuleGlobal
                             );
 }
-
 
 EFI_STATUS
 RegisterEsalClass (
@@ -241,14 +240,14 @@ Routine Description:
 Arguments:
   ClassGuid     - GUID of function class 
   ModuleGlobal  - Module global for Function.
-  ..            - SAL_INTERNAL_EXTENDED_SAL_PROC and FunctionId pairs. NULL 
+  ...           - SAL_INTERNAL_EXTENDED_SAL_PROC and FunctionId pairs. NULL 
                   indicates the end of the list.
 
 Returns: 
   EFI_SUCCESS - All members of ClassGuid registered
 
 --*/
-{ 
+{
   VA_LIST                         Args;
   EFI_STATUS                      Status;
   SAL_INTERNAL_EXTENDED_SAL_PROC  Function;
@@ -264,9 +263,9 @@ Returns:
       break;
     }
 
-    FunctionId = VA_ARG (Args, UINT64);
+    FunctionId  = VA_ARG (Args, UINT64);
 
-    Status = RegisterEsalFunction (FunctionId, ClassGuid, Function, ModuleGlobal);
+    Status      = RegisterEsalFunction (FunctionId, ClassGuid, Function, ModuleGlobal);
   }
 
   if (EFI_ERROR (Status)) {
@@ -275,10 +274,12 @@ Returns:
 
   NewHandle = NULL;
   return gBS->InstallProtocolInterface (
-                &NewHandle, ClassGuid, EFI_NATIVE_INTERFACE, NULL
+                &NewHandle,
+                ClassGuid,
+                EFI_NATIVE_INTERFACE,
+                NULL
                 );
 }
-
 
 SAL_RETURN_REGS
 EfiCallEsalService (
@@ -291,7 +292,7 @@ EfiCallEsalService (
   IN  UINT64                                        Arg6,
   IN  UINT64                                        Arg7,
   IN  UINT64                                        Arg8
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -317,8 +318,8 @@ Returns:
 
 --*/
 {
-  SAL_RETURN_REGS         ReturnReg;
-  SAL_EXTENDED_SAL_PROC   EsalProc;
+  SAL_RETURN_REGS       ReturnReg;
+  SAL_EXTENDED_SAL_PROC EsalProc;
 
   ReturnReg = GetEsalEntryPoint ();
   if (ReturnReg.Status != EFI_SAL_SUCCESS) {
@@ -329,35 +330,57 @@ Returns:
     //
     // Virtual mode plabel to entry point
     //
-    EsalProc = (SAL_EXTENDED_SAL_PROC)ReturnReg.r10;
+    EsalProc = (SAL_EXTENDED_SAL_PROC) ReturnReg.r10;
   } else {
     //
     // Physical mode plabel to entry point
     //
-    EsalProc = (SAL_EXTENDED_SAL_PROC)ReturnReg.r9;
+    EsalProc = (SAL_EXTENDED_SAL_PROC) ReturnReg.r9;
   }
 
   return EsalProc (
-          ClassGuid, FunctionId, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8
+          ClassGuid,
+          FunctionId,
+          Arg2,
+          Arg3,
+          Arg4,
+          Arg5,
+          Arg6,
+          Arg7,
+          Arg8
           );
 }
-
-
 
 EFI_STATUS
 EfiConvertPointer (
   IN UINTN                     DebugDisposition,
   IN OUT VOID                  *Address
   )
+/*++
+
+Routine Description:
+
+  Determines the new virtual address that is to be used on subsequent memory accesses.
+
+Arguments:
+
+  DebugDisposition  - Supplies type information for the pointer being converted.
+  Address           - A pointer to a pointer that is to be fixed to be the value needed
+                      for the new virtual address mappings being applied.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->ConvertPointer (DebugDisposition, Address);
 }
 
-
 BOOLEAN
 EfiGoneVirtual (
   VOID
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -372,18 +395,17 @@ Returns:
 --*/
 {
   EFI_GUID Guid = EFI_EXTENDED_SAL_VIRTUAL_SERVICES_PROTOCOL_GUID;
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
-  ReturnReg = EfiCallEsalService (&Guid, IsVirtual, 0 , 0 , 0 , 0 , 0 , 0 , 0);
+  ReturnReg = EfiCallEsalService (&Guid, IsVirtual, 0, 0, 0, 0, 0, 0, 0);
 
-  return (BOOLEAN)(ReturnReg.r9 == 1);
+  return (BOOLEAN) (ReturnReg.r9 == 1);
 }
-
 
 BOOLEAN
 EfiAtRuntime (
   VOID
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -398,38 +420,63 @@ Returns:
 --*/
 {
   EFI_GUID Guid = EFI_EXTENDED_SAL_VIRTUAL_SERVICES_PROTOCOL_GUID;
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
-  ReturnReg = EfiCallEsalService (&Guid, IsEfiRuntime, 0 , 0 , 0 , 0 , 0 , 0 , 0);
+  ReturnReg = EfiCallEsalService (&Guid, IsEfiRuntime, 0, 0, 0, 0, 0, 0, 0);
 
-  return (BOOLEAN)(ReturnReg.r9 == 1);
+  return (BOOLEAN) (ReturnReg.r9 == 1);
 }
-
-
-
 
 EFI_STATUS
 EfiReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
-  IN EFI_STATUS_CODE_VALUE    Value,  
+  IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
+/*++
+
+Routine Description:
+
+  Status Code reporter
+
+Arguments:
+
+  CodeType    - Type of Status Code.
+  
+  Value       - Value to output for Status Code.
+  
+  Instance    - Instance Number of this status code.
+  
+  CallerId    - ID of the caller of this status code.
+  
+  Data        - Optional data associated with this status code.
+
+Returns:
+
+  Status code
+
+--*/
 {
   EFI_GUID Guid = EFI_EXTENDED_SAL_STATUS_CODE_SERVICES_PROTOCOL_GUID;
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
+
 
   ReturnReg = EfiCallEsalService (
-                &Guid, StatusCode, (UINT64)CodeType , (UINT64) Value , 
-                (UINT64) Instance , (UINT64) CallerId , (UINT64)Data , 0 , 0
+                &Guid,
+                StatusCode,
+                (UINT64) CodeType,
+                (UINT64) Value,
+                (UINT64) Instance,
+                (UINT64) CallerId,
+                (UINT64) Data,
+                0,
+                0
                 );
 
-  return (EFI_STATUS)ReturnReg.Status;
+  return (EFI_STATUS) ReturnReg.Status;
 }
-
-
-
 //
 //  Sal Reset Driver Class
 //
@@ -440,52 +487,120 @@ EfiResetSystem (
   IN UINTN              DataSize,
   IN CHAR16             *ResetData
   )
+/*++
+
+Routine Description:
+
+  Resets the entire platform.
+
+Arguments:
+
+  ResetType   - The type of reset to perform.
+  ResetStatus - The status code for the reset.
+  DataSize    - The size, in bytes, of ResetData.
+  ResetData   - A data buffer that includes a Null-terminated Unicode string, optionally
+                followed by additional binary data.
+
+Returns:
+
+  None
+
+--*/
 {
   EFI_GUID Guid = EFI_EXTENDED_SAL_RESET_SERVICES_PROTOCOL_GUID;
 
   EfiCallEsalService (
-    &Guid, ResetSystem, (UINT64)ResetType , (UINT64) ResetStatus , 
-    (UINT64) DataSize , (UINT64) ResetData , 0 , 0 , 0
+    &Guid,
+    ResetSystem,
+    (UINT64) ResetType,
+    (UINT64) ResetStatus,
+    (UINT64) DataSize,
+    (UINT64) ResetData,
+    0,
+    0,
+    0
     );
 }
-
 //
 //  Sal MTC Driver Class
 //
-
 EFI_STATUS
 EfiGetNextHighMonotonicCount (
   OUT UINT32      *HighCount
   )
+/*++
+
+Routine Description:
+
+  Returns the next high 32 bits of the platform¡¯s monotonic counter.
+
+Arguments:
+
+  HighCount - Pointer to returned value.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_MTC_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, GetNextHighMonotonicCount, (UINT64)HighCount , 0, 0, 0, 0, 0, 0);
-  return (EFI_STATUS)ReturnReg.Status;
+  ReturnReg = EfiCallEsalService (&Guid, GetNextHighMonotonicCount, (UINT64) HighCount, 0, 0, 0, 0, 0, 0);
+  return (EFI_STATUS) ReturnReg.Status;
 }
-
 //
 // Sal Variable Driver Class
 //
-
 EFI_STATUS
 EfiGetVariable (
   IN CHAR16                       *VariableName,
-  IN EFI_GUID                     *VendorGuid,
+  IN EFI_GUID                     * VendorGuid,
   OUT UINT32                      *Attributes OPTIONAL,
   IN OUT UINTN                    *DataSize,
   OUT VOID                        *Data
   )
+/*++
+
+Routine Description:
+
+  Returns the value of a variable.
+
+Arguments:
+
+  VariableName  - A Null-terminated Unicode string that is the name of the
+                  vendor¡¯s variable.
+  VendorGuid    - A unique identifier for the vendor.
+  Attributes    - If not NULL, a pointer to the memory location to return the
+                  attributes bitmask for the variable.
+  DataSize      - On input, the size in bytes of the return Data buffer.
+                  On output the size of data returned in Data.
+  Data          - The buffer to return the contents of the variable.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
   EFI_GUID Guid = EFI_EXTENDED_SAL_VARIABLE_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, EsalGetVariable, (UINT64)VariableName, (UINT64)VendorGuid, (UINT64)Attributes, (UINT64)DataSize, (UINT64)Data, 0, 0);
-  return (EFI_STATUS)ReturnReg.Status;
+  ReturnReg = EfiCallEsalService (
+                &Guid,
+                EsalGetVariable,
+                (UINT64) VariableName,
+                (UINT64) VendorGuid,
+                (UINT64) Attributes,
+                (UINT64) DataSize,
+                (UINT64) Data,
+                0,
+                0
+                );
+  return (EFI_STATUS) ReturnReg.Status;
 }
-
 
 EFI_STATUS
 EfiGetNextVariableName (
@@ -493,14 +608,45 @@ EfiGetNextVariableName (
   IN OUT CHAR16                   *VariableName,
   IN OUT EFI_GUID                 *VendorGuid
   )
+/*++
+
+Routine Description:
+
+  Enumerates the current variable names.
+
+Arguments:
+
+  VariableNameSize  - The size of the VariableName buffer.
+  VariableName      - On input, supplies the last VariableName that was returned
+                      by GetNextVariableName(). 
+                      On output, returns the Nullterminated Unicode string of the
+                      current variable.
+  VendorGuid        - On input, supplies the last VendorGuid that was returned by
+                      GetNextVariableName(). 
+                      On output, returns the VendorGuid of the current variable.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
   EFI_GUID Guid = EFI_EXTENDED_SAL_VARIABLE_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, EsalGetNextVariableName, (UINT64)VariableNameSize, (UINT64)VariableName, (UINT64)VendorGuid, 0, 0, 0, 0);
-  return (EFI_STATUS)ReturnReg.Status;
+  ReturnReg = EfiCallEsalService (
+                &Guid,
+                EsalGetNextVariableName,
+                (UINT64) VariableNameSize,
+                (UINT64) VariableName,
+                (UINT64) VendorGuid,
+                0,
+                0,
+                0,
+                0
+                );
+  return (EFI_STATUS) ReturnReg.Status;
 }
-
 
 EFI_STATUS
 EfiSetVariable (
@@ -510,46 +656,104 @@ EfiSetVariable (
   IN UINTN                        DataSize,
   IN VOID                         *Data
   )
+/*++
+
+Routine Description:
+
+  Sets the value of a variable.
+
+Arguments:
+
+  VariableName  - A Null-terminated Unicode string that is the name of the
+                  vendor¡¯s variable.
+  VendorGuid    - A unique identifier for the vendor.
+  Attributes    - Attributes bitmask to set for the variable.
+  DataSize      - The size in bytes of the Data buffer.
+  Data          - The contents for the variable.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
   EFI_GUID Guid = EFI_EXTENDED_SAL_VARIABLE_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, EsalSetVariable, (UINT64)VariableName, (UINT64)VendorGuid, (UINT64)Attributes, (UINT64)DataSize, (UINT64)Data, 0, 0);
-  return (EFI_STATUS)ReturnReg.Status;
+  ReturnReg = EfiCallEsalService (
+                &Guid,
+                EsalSetVariable,
+                (UINT64) VariableName,
+                (UINT64) VendorGuid,
+                (UINT64) Attributes,
+                (UINT64) DataSize,
+                (UINT64) Data,
+                0,
+                0
+                );
+  return (EFI_STATUS) ReturnReg.Status;
 }
-
-
 //
 //  Sal RTC Driver Class.
 //
-
 EFI_STATUS
 EfiGetTime (
   OUT EFI_TIME              *Time,
-  OUT EFI_TIME_CAPABILITIES *Capabilities 
+  OUT EFI_TIME_CAPABILITIES *Capabilities
   )
+/*++
+
+Routine Description:
+
+  Returns the current time and date information, and the time-keeping 
+  capabilities of the hardware platform.
+
+Arguments:
+
+  Time          - A pointer to storage to receive a snapshot of the current time.
+  Capabilities  - An optional pointer to a buffer to receive the real time clock device¡¯s
+                  capabilities.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
   EFI_GUID Guid = EFI_EXTENDED_SAL_RTC_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, GetTime, (UINT64) Time , (UINT64) Capabilities, 0, 0, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, GetTime, (UINT64) Time, (UINT64) Capabilities, 0, 0, 0, 0, 0);
   return ReturnReg.Status;
 }
-
 
 EFI_STATUS
 EfiSetTime (
   OUT EFI_TIME              *Time
   )
+/*++
+
+Routine Description:
+
+  Sets the current local time and date information.
+
+Arguments:
+
+  Time  - A pointer to the current time.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_RTC_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, SetTime, (UINT64) Time , 0, 0, 0, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, SetTime, (UINT64) Time, 0, 0, 0, 0, 0, 0);
   return ReturnReg.Status;
 }
-
 
 EFI_STATUS
 EfiGetWakeupTime (
@@ -557,27 +761,60 @@ EfiGetWakeupTime (
   OUT BOOLEAN       *Pending,
   OUT EFI_TIME      *Time
   )
+/*++
+
+Routine Description:
+
+  Returns the current wakeup alarm clock setting.
+
+Arguments:
+
+  Enabled - Indicates if the alarm is currently enabled or disabled.
+  Pending - Indicates if the alarm signal is pending and requires acknowledgement.
+  Time    - The current alarm setting.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_RTC_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, GetWakeupTime, (UINT64) Enabled , (UINT64) Pending, (UINT64) Time, 0, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, GetWakeupTime, (UINT64) Enabled, (UINT64) Pending, (UINT64) Time, 0, 0, 0, 0);
   return ReturnReg.Status;
 }
-
 
 EFI_STATUS
 EfiSetWakeupTime (
   IN BOOLEAN        Enable,
   IN EFI_TIME       *Time
   )
+/*++
+
+Routine Description:
+
+  Sets the system wakeup alarm clock time.
+
+Arguments:
+
+  Enable  - Enable or disable the wakeup alarm.
+  Time    - If Enable is TRUE, the time to set the wakeup alarm for.
+            If Enable is FALSE, then this parameter is optional, and may be NULL.
+
+Returns:
+
+  Status code
+
+--*/
 {
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_RTC_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, SetWakeupTime, (UINT64) Enable , (UINT64) Time, 0, 0, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, SetWakeupTime, (UINT64) Enable, (UINT64) Time, 0, 0, 0, 0, 0);
   return ReturnReg.Status;
 }
 
@@ -586,7 +823,6 @@ EfiSetWakeupTime (
 //
 //  Base IO Services
 //
-
 EFI_STATUS
 EfiIoRead (
   IN     EFI_CPU_IO_PROTOCOL_WIDTH  Width,
@@ -594,16 +830,31 @@ EfiIoRead (
   IN     UINTN                      Count,
   IN OUT VOID                       *Buffer
   )
+/*++
+
+Routine Description:
+  Perform an IO read into Buffer.
+
+Arguments:
+  Width   - Width of read transaction, and repeat operation to use
+  Address - IO address to read
+  Count   - Number of times to read the IO address.
+  Buffer  - Buffer to read data into. size is Width * Count
+
+Returns:
+  Status code
+
+--*/
 {
 
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_BASE_IO_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, IoRead, (UINT64) Width , Address, Count, (UINT64) Buffer, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, IoRead, (UINT64) Width, Address, Count, (UINT64) Buffer, 0, 0, 0);
 
   return ReturnReg.Status;
-  
+
 }
 
 EFI_STATUS
@@ -613,16 +864,31 @@ EfiIoWrite (
   IN     UINTN                      Count,
   IN OUT VOID                       *Buffer
   )
+/*++
+
+Routine Description:
+  Perform an IO write into Buffer.
+
+Arguments:
+  Width   - Width of write transaction, and repeat operation to use
+  Address - IO address to write
+  Count   - Number of times to write the IO address.
+  Buffer  - Buffer to write data from. size is Width * Count
+
+Returns:
+  Status code
+
+--*/
 {
 
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_BASE_IO_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, IoWrite, (UINT64) Width , Address, Count, (UINT64) Buffer, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, IoWrite, (UINT64) Width, Address, Count, (UINT64) Buffer, 0, 0, 0);
 
   return ReturnReg.Status;
-  
+
 }
 
 EFI_STATUS
@@ -632,16 +898,31 @@ EfiMemRead (
   IN     UINTN                      Count,
   IN  OUT VOID                      *Buffer
   )
+/*++
+
+Routine Description:
+  Perform a Memory mapped IO read into Buffer.
+
+Arguments:
+  Width   - Width of each read transaction.
+  Address - Memory mapped IO address to read
+  Count   - Number of Width quanta to read
+  Buffer  - Buffer to read data into. size is Width * Count
+
+Returns:
+  Status code
+
+--*/
 {
 
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_BASE_IO_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, MemRead, (UINT64) Width , Address, Count, (UINT64) Buffer, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, MemRead, (UINT64) Width, Address, Count, (UINT64) Buffer, 0, 0, 0);
 
   return ReturnReg.Status;
-  
+
 }
 
 EFI_STATUS
@@ -651,21 +932,36 @@ EfiMemWrite (
   IN     UINTN                      Count,
   IN OUT VOID                       *Buffer
   )
+/*++
+
+Routine Description:
+  Perform a memory mapped IO write into Buffer.
+
+Arguments:
+  Width   - Width of write transaction, and repeat operation to use
+  Address - IO address to write
+  Count   - Number of times to write the IO address.
+  Buffer  - Buffer to write data from. size is Width * Count
+
+Returns:
+  Status code
+
+--*/
 {
 
-  SAL_RETURN_REGS         ReturnReg;
+  SAL_RETURN_REGS ReturnReg;
 
   EFI_GUID Guid = EFI_EXTENDED_SAL_BASE_IO_SERVICES_PROTOCOL_GUID;
 
-  ReturnReg = EfiCallEsalService (&Guid, MemWrite, (UINT64) Width , Address, Count, (UINT64) Buffer, 0, 0, 0);
+  ReturnReg = EfiCallEsalService (&Guid, MemWrite, (UINT64) Width, Address, Count, (UINT64) Buffer, 0, 0, 0);
 
   return ReturnReg.Status;
-  
+
 }
 
 
 #define EFI_PCI_ADDRESS_IPF(_seg, _bus, _devfunc, _reg) \
-  ( ((_seg) << 24) | ((_bus) << 16) | ((_devfunc) << 8) | (_reg) ) & 0xFFFFFFFF
+    (((_seg) << 24) | ((_bus) << 16) | ((_devfunc) << 8) | (_reg)) & 0xFFFFFFFF
 
 //
 //  PCI Class Functions
@@ -677,15 +973,30 @@ PciRead8 (
   UINT8   DevFunc,
   UINT8   Register
   )
+/*++
+
+Routine Description:
+  Perform an one byte PCI config cycle read
+
+Arguments:
+  Segment   - PCI Segment ACPI _SEG
+  Bus       - PCI Bus
+  DevFunc   - PCI Device(7:3) and Func(2:0)
+  Register  - PCI config space register
+
+Returns:
+  Data read from PCI config space
+
+--*/
 {
   EFI_GUID        Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
   UINT64          Address;
   SAL_RETURN_REGS Return;
-  
-  Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
-  Return = EfiCallEsalService (&Guid, SalPciConfigRead, Address, 1, 0, 0, 0, 0, 0);
 
-  return (UINT8)Return.r9;
+  Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
+  Return  = EfiCallEsalService (&Guid, SalPciConfigRead, Address, 1, 0, 0, 0, 0, 0);
+
+  return (UINT8) Return.r9;
 }
 
 
@@ -696,17 +1007,31 @@ PciRead16 (
   UINT8   DevFunc,
   UINT8   Register
   )
+/*++
+
+Routine Description:
+  Perform an two byte PCI config cycle read
+
+Arguments:
+  Segment   - PCI Segment ACPI _SEG
+  Bus       - PCI Bus
+  DevFunc   - PCI Device(7:3) and Func(2:0)
+  Register  - PCI config space register
+
+Returns:
+  Data read from PCI config space
+
+--*/
 {
   EFI_GUID        Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
   UINT64          Address;
   SAL_RETURN_REGS Return;
-  
+
   Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
-  Return = EfiCallEsalService (&Guid, SalPciConfigRead, Address, 2, 0, 0, 0, 0, 0);
+  Return  = EfiCallEsalService (&Guid, SalPciConfigRead, Address, 2, 0, 0, 0, 0, 0);
 
-  return (UINT16)Return.r9;
+  return (UINT16) Return.r9;
 }
-
 
 UINT32
 PciRead32 (
@@ -715,17 +1040,31 @@ PciRead32 (
   UINT8   DevFunc,
   UINT8   Register
   )
+/*++
+
+Routine Description:
+  Perform an four byte PCI config cycle read
+
+Arguments:
+  Segment   - PCI Segment ACPI _SEG
+  Bus       - PCI Bus
+  DevFunc   - PCI Device(7:3) and Func(2:0)
+  Register  - PCI config space register
+
+Returns:
+  Data read from PCI config space
+
+--*/
 {
   EFI_GUID        Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
   UINT64          Address;
   SAL_RETURN_REGS Return;
-  
+
   Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
-  Return = EfiCallEsalService (&Guid, SalPciConfigRead, Address, 4, 0, 0, 0, 0, 0);
+  Return  = EfiCallEsalService (&Guid, SalPciConfigRead, Address, 4, 0, 0, 0, 0, 0);
 
-  return (UINT32)Return.r9;
+  return (UINT32) Return.r9;
 }
-
 
 VOID
 PciWrite8 (
@@ -735,14 +1074,29 @@ PciWrite8 (
   UINT8   Register,
   UINT8   Data
   )
+/*++
+
+Routine Description:
+  Perform an one byte PCI config cycle write
+
+Arguments:
+  Segment   - PCI Segment ACPI _SEG
+  Bus       - PCI Bus
+  DevFunc   - PCI Device(7:3) and Func(2:0)
+  Register  - PCI config space register
+  Data      - Data to write
+
+Returns:
+  NONE
+
+--*/
 {
   EFI_GUID        Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
-  UINT64          Address;
-  
+  UINT64    Address;
+
   Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
   EfiCallEsalService (&Guid, SalPciConfigWrite, Address, 1, Data, 0, 0, 0, 0);
 }
-
 
 VOID
 PciWrite16 (
@@ -752,10 +1106,26 @@ PciWrite16 (
   UINT8   Register,
   UINT16  Data
   )
+/*++
+
+Routine Description:
+  Perform an two byte PCI config cycle write
+
+Arguments:
+  Segment   - PCI Segment ACPI _SEG
+  Bus       - PCI Bus
+  DevFunc   - PCI Device(7:3) and Func(2:0)
+  Register  - PCI config space register
+  Data      - Data to write
+
+Returns:
+  None.
+
+--*/
 {
   EFI_GUID        Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
-  UINT64          Address;
-  
+  UINT64    Address;
+
   Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
   EfiCallEsalService (&Guid, SalPciConfigWrite, Address, 2, Data, 0, 0, 0, 0);
 }
@@ -768,10 +1138,26 @@ PciWrite32 (
   UINT8   Register,
   UINT32  Data
   )
+/*++
+
+Routine Description:
+  Perform an four byte PCI config cycle write
+
+Arguments:
+  Segment   - PCI Segment ACPI _SEG
+  Bus       - PCI Bus
+  DevFunc   - PCI Device(7:3) and Func(2:0)
+  Register  - PCI config space register
+  Data      - Data to write
+
+Returns:
+  NONE
+
+--*/
 {
-  EFI_GUID        Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
-  UINT64          Address;
-  
+  EFI_GUID  Guid = EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID;
+  UINT64    Address;
+
   Address = EFI_PCI_ADDRESS_IPF (Segment, Bus, DevFunc, Register);
   EfiCallEsalService (&Guid, SalPciConfigWrite, Address, 4, Data, 0, 0, 0, 0);
 }
@@ -783,6 +1169,18 @@ VOID
 EfiStall (
   IN  UINTN   Microseconds
   )
+/*++
+
+Routine Description:
+ Delay for at least the request number of microseconds
+
+Arguments:
+  Microseconds - Number of microseconds to delay.
+
+Returns:
+  NONE
+
+--*/
 {
   EFI_GUID        Guid = EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID;
 
@@ -792,20 +1190,33 @@ EfiStall (
     gBS->Stall (Microseconds);
   }
 }
-
 //
 // Cache Flush Routine.
 //
-
 EFI_STATUS
 EfiCpuFlushCache (
   IN EFI_PHYSICAL_ADDRESS          Start,
   IN UINT64                        Length
   )
+/*++
+
+Routine Description:
+
+  Flush cache with specified range.
+
+Arguments:
+
+  Start   - Start address
+  Length  - Length in bytes
+
+Returns:
+
+  Status code
+  
+  EFI_SUCCESS - success
+
+--*/
 {
   SalFlushCache (Start, Length);
-  return  EFI_SUCCESS; 
+  return EFI_SUCCESS;
 }
-
-
-

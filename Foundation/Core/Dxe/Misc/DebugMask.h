@@ -46,11 +46,49 @@ typedef struct {
 EFI_STATUS
 InstallDebugMaskProtocol (
   IN EFI_HANDLE      ImageHandle
-  );
+  )
+/*++
+
+Routine Description:
+
+  Install debug mask protocol on an image handle.
+
+Arguments:
+
+  ImageHandle     - Image handle which debug mask protocol will install on
+
+Returns:
+
+  EFI_INVALID_PARAMETER   - Invalid image handle
+  
+  EFI_OUT_OF_RESOURCES    - No enough buffer could be allocated
+  
+  EFI_SUCCESS             - Debug mask protocol successfully installed
+
+--*/
+;
   
 EFI_STATUS
 UninstallDebugMaskProtocol (
   IN EFI_HANDLE      ImageHandle
-  );
+  )
+/*++
+
+Routine Description:
+
+  Uninstall debug mask protocol on an image handle.
+
+Arguments:
+
+  ImageHandle     - Image handle which debug mask protocol will uninstall on
+
+Returns:
+
+  EFI_INVALID_PARAMETER   - Invalid image handle
+  
+  EFI_SUCCESS             - Debug mask protocol successfully uninstalled
+
+--*/
+;
 
 #endif

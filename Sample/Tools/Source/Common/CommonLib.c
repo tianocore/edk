@@ -17,7 +17,7 @@ Abstract:
 
   Common Library Functions
  
---*/ 
+--*/
 
 #include "TianoCommon.h"
 #include "PeiHob.h"
@@ -86,8 +86,8 @@ Returns:
   CHAR8 *Destination8;
   CHAR8 *Source8;
 
-  Destination8 = Destination;
-  Source8 = Source;
+  Destination8  = Destination;
+  Source8       = Source;
   while (Length--) {
     *(Destination8++) = *(Source8++);
   }
@@ -102,7 +102,6 @@ ZeroMem (
   PeiZeroMem (Buffer, Size);
 }
 
-
 VOID
 CopyMem (
   IN VOID   *Destination,
@@ -112,7 +111,7 @@ CopyMem (
 {
   PeiCopyMem (Destination, Source, Length);
 }
-  
+
 INTN
 CompareGuid (
   IN EFI_GUID     *Guid1,
@@ -135,17 +134,17 @@ Returns:
 
 --*/
 {
-  INT32  *g1;
-  INT32  *g2;
-  INT32  r;
+  INT32 *g1;
+  INT32 *g2;
+  INT32 r;
 
-  // 
+  //
   // Compare 32 bits at a time
   //
-  g1 = (INT32 *) Guid1;
-  g2 = (INT32 *) Guid2;
+  g1  = (INT32 *) Guid1;
+  g2  = (INT32 *) Guid2;
 
-  r  = g1[0] - g2[0];
+  r   = g1[0] - g2[0];
   r |= g1[1] - g2[1];
   r |= g1[2] - g2[2];
   r |= g1[3] - g2[3];
@@ -177,72 +176,58 @@ Returns:
   EFI_SUCCESS              The function completed successfully.
   EFI_INVALID_PARAMETER    One of the input parameters was invalid.
   EFI_ABORTED              An error occurred.
+  EFI_OUT_OF_RESOURCES     No resource to complete operations.
 
 --*/
 {
   FILE    *InputFile;
   UINT32  FileSize;
-  
+
   //
   // Verify input parameters.
   //
-
-  if (InputFileName == NULL ||
-      strlen (InputFileName) == 0 ||
-      InputFileImage == NULL
-      ) {
+  if (InputFileName == NULL || strlen (InputFileName) == 0 || InputFileImage == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Open the file and copy contents into a memory buffer.
   //
-
   //
   // Open the file
   //
-  
   InputFile = fopen (InputFileName, "rb");
   if (InputFile == NULL) {
     printf ("ERROR: Could not open input file \"%s\".\n", InputFileName);
     return EFI_ABORTED;
   }
-
   //
   // Go to the end so that we can determine the file size
   //
-
   if (fseek (InputFile, 0, SEEK_END)) {
     printf ("ERROR: System error reading input file \"%s\".\n", InputFileName);
     fclose (InputFile);
     return EFI_ABORTED;
   }
-
   //
   // Get the file size
   //
-
   FileSize = ftell (InputFile);
   if (FileSize == -1) {
     printf ("ERROR: System error parsing input file \"%s\".\n", InputFileName);
     fclose (InputFile);
     return EFI_ABORTED;
   }
-
   //
   // Allocate a buffer
   //
-  
   *InputFileImage = malloc (FileSize);
   if (*InputFileImage == NULL) {
     fclose (InputFile);
     return EFI_OUT_OF_RESOURCES;
   }
-
   //
   // Reset to the beginning of the file
   //
-
   if (fseek (InputFile, 0, SEEK_SET)) {
     printf ("ERROR: System error reading input file \"%s\".\n", InputFileName);
     fclose (InputFile);
@@ -250,11 +235,9 @@ Returns:
     *InputFileImage = NULL;
     return EFI_ABORTED;
   }
-
   //
   // Read all of the file contents.
   //
-  
   *BytesRead = fread (*InputFileImage, sizeof (UINT8), FileSize, InputFile);
   if (*BytesRead != sizeof (UINT8) * FileSize) {
     printf ("ERROR: Reading file \"%s\"%i.\n", InputFileName);
@@ -263,11 +246,9 @@ Returns:
     *InputFileImage = NULL;
     return EFI_ABORTED;
   }
-
   //
   // Close the file
   //
-
   fclose (InputFile);
 
   return EFI_SUCCESS;
@@ -280,16 +261,16 @@ CalculateChecksum8 (
   )
 /*++
   
-Description:
+Routine Description:
 
   This function calculates the value needed for a valid UINT8 checksum
 
-Input:
+Arguments:
 
   Buffer      Pointer to buffer containing byte data of component.
   Size        Size of the buffer
 
-Return:
+Returns:
 
   The 8 bit checksum value needed.
 
@@ -305,23 +286,23 @@ CalculateSum8 (
   )
 /*++
   
-Description:
+Routine Description::
 
   This function calculates the UINT8 sum for the requested region.
 
-Input:
+Arguments:
 
   Buffer      Pointer to buffer containing byte data of component.
   Size        Size of the buffer
 
-Return:
+Returns:
 
   The 8 bit checksum value needed.
 
 --*/
 {
-  UINTN   Index;
-  UINT8   Sum;
+  UINTN Index;
+  UINT8 Sum;
 
   Sum = 0;
 
@@ -342,16 +323,16 @@ CalculateChecksum16 (
   )
 /*++
   
-Description:
+Routine Description::
 
   This function calculates the value needed for a valid UINT16 checksum
 
-Input:
+Arguments:
 
   Buffer      Pointer to buffer containing byte data of component.
   Size        Size of the buffer
 
-Return:
+Returns:
 
   The 16 bit checksum value needed.
 
@@ -367,16 +348,16 @@ CalculateSum16 (
   )
 /*++
   
-Description:
+Routine Description:
 
   This function calculates the UINT16 sum for the requested region.
 
-Input:
+Arguments:
 
   Buffer      Pointer to buffer containing byte data of component.
   Size        Size of the buffer
 
-Return:
+Returns:
 
   The 16 bit checksum
 
@@ -393,7 +374,7 @@ Return:
   for (Index = 0; Index < Size; Index++) {
     Sum = (UINT16) (Sum + Buffer[Index]);
   }
-  
+
   return (UINT16) Sum;
 }
 
@@ -423,21 +404,23 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  printf ("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n", 
-          Guid->Data1, 
-          Guid->Data2, 
-          Guid->Data3, 
-          Guid->Data4[0], 
-          Guid->Data4[1], 
-          Guid->Data4[2], 
-          Guid->Data4[3], 
-          Guid->Data4[4],
-          Guid->Data4[5], 
-          Guid->Data4[6], 
-          Guid->Data4[7]
-          );
+  printf (
+    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+    Guid->Data1,
+    Guid->Data2,
+    Guid->Data3,
+    Guid->Data4[0],
+    Guid->Data4[1],
+    Guid->Data4[2],
+    Guid->Data4[3],
+    Guid->Data4[4],
+    Guid->Data4[5],
+    Guid->Data4[6],
+    Guid->Data4[7]
+    );
   return EFI_SUCCESS;
 }
+
 EFI_STATUS
 PrintGuidToBuffer (
   IN EFI_GUID     *Guid,
@@ -456,6 +439,7 @@ Arguments:
   Guid      - Pointer to a GUID to print.
   Buffer    - Pointer to a user-provided buffer to print to
   BufferLen - Size of the Buffer
+  Uppercase - If use upper case.
 
 Returns:
 
@@ -469,38 +453,45 @@ Returns:
     printf ("ERROR: PrintGuidToBuffer() called with a NULL value\n");
     return EFI_INVALID_PARAMETER;
   }
+
   if (BufferLen < PRINTED_GUID_BUFFER_SIZE) {
-    printf ("ERORR: PrintGuidToBuffer() called with invalid buffer size\n"); 
+    printf ("ERORR: PrintGuidToBuffer() called with invalid buffer size\n");
     return EFI_BUFFER_TOO_SMALL;
   }
+
   if (Uppercase) {
-    sprintf (Buffer, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-          Guid->Data1, 
-          Guid->Data2, 
-          Guid->Data3, 
-          Guid->Data4[0], 
-          Guid->Data4[1], 
-          Guid->Data4[2], 
-          Guid->Data4[3], 
-          Guid->Data4[4],
-          Guid->Data4[5], 
-          Guid->Data4[6], 
-          Guid->Data4[7]
-          );
+    sprintf (
+      Buffer,
+      "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+      Guid->Data1,
+      Guid->Data2,
+      Guid->Data3,
+      Guid->Data4[0],
+      Guid->Data4[1],
+      Guid->Data4[2],
+      Guid->Data4[3],
+      Guid->Data4[4],
+      Guid->Data4[5],
+      Guid->Data4[6],
+      Guid->Data4[7]
+      );
   } else {
-    sprintf (Buffer, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-          Guid->Data1, 
-          Guid->Data2, 
-          Guid->Data3, 
-          Guid->Data4[0], 
-          Guid->Data4[1], 
-          Guid->Data4[2], 
-          Guid->Data4[3], 
-          Guid->Data4[4],
-          Guid->Data4[5], 
-          Guid->Data4[6], 
-          Guid->Data4[7]
-          );
+    sprintf (
+      Buffer,
+      "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+      Guid->Data1,
+      Guid->Data2,
+      Guid->Data3,
+      Guid->Data4[0],
+      Guid->Data4[1],
+      Guid->Data4[2],
+      Guid->Data4[3],
+      Guid->Data4[4],
+      Guid->Data4[5],
+      Guid->Data4[6],
+      Guid->Data4[7]
+      );
   }
+
   return EFI_SUCCESS;
 }

@@ -20,7 +20,7 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(DebugPort)
+#include EFI_PROTOCOL_DEFINITION (DebugPort)
 
 EFI_GUID  gEfiDebugPortProtocolGuid = EFI_DEBUGPORT_PROTOCOL_GUID;
 

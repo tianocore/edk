@@ -28,14 +28,38 @@ CHAR8 *mEngLowerMap;
 CHAR8 *mEngInfoMap;
 
 CHAR8 mOtherChars[] = {
-        '0','1','2','3','4','5','6','7',
-        '8','9','\\','.','_','^','$','~',
-        '!','#','%','&','-','{','}','(',
-        ')','@','`','\'', '\0'
-        };
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '\\',
+  '.',
+  '_',
+  '^',
+  '$',
+  '~',
+  '!',
+  '#',
+  '%',
+  '&',
+  '-',
+  '{',
+  '}',
+  '(',
+  ')',
+  '@',
+  '`',
+  '\'',
+  '\0'
+};
 
-
-EFI_DRIVER_ENTRY_POINT (InitializeUnicodeCollationEng);
+EFI_DRIVER_ENTRY_POINT (InitializeUnicodeCollationEng)
 
 //
 //
@@ -59,15 +83,16 @@ Arguments:
   
 Returns:
 
-  None
+  EFI_SUCCESS
+  EFI_OUT_OF_RESOURCES
 
 --*/
 {
-  EFI_STATUS          Status;
-  EFI_HANDLE          Handle;
-  UINTN               Index;
-  UINTN               Index2;
-  CHAR8               *CaseMap;
+  EFI_STATUS  Status;
+  EFI_HANDLE  Handle;
+  UINTN       Index;
+  UINTN       Index2;
+  CHAR8       *CaseMap;
 
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
@@ -75,34 +100,32 @@ Returns:
   // Initialize mapping tables for the supported languages
   //
   Status = gBS->AllocatePool (
-          EfiBootServicesData,
-          0x300,
-          &CaseMap
-          );
-          
+                  EfiBootServicesData,
+                  0x300,
+                  &CaseMap
+                  );
+
   if (EFI_ERROR (Status)) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   EfiZeroMem (CaseMap, 0x300);
 
-  mEngUpperMap = CaseMap + 0;
-  mEngLowerMap = CaseMap + 0x100;
-  mEngInfoMap  = CaseMap + 0x200;
+  mEngUpperMap  = CaseMap + 0;
+  mEngLowerMap  = CaseMap + 0x100;
+  mEngInfoMap   = CaseMap + 0x200;
 
   for (Index = 0; Index < 0x100; Index++) {
-    
+
     mEngUpperMap[Index] = (CHAR8) Index;
     mEngLowerMap[Index] = (CHAR8) Index;
-    mEngInfoMap[Index] = 0;
+    mEngInfoMap[Index]  = 0;
 
-    if ((Index >= 'a'   &&  Index <= 'z')  ||
-        (Index >= 0xe0  &&  Index <= 0xf6) ||
-        (Index >= 0xf8  &&  Index <= 0xfe)) {
+    if ((Index >= 'a' && Index <= 'z') || (Index >= 0xe0 && Index <= 0xf6) || (Index >= 0xf8 && Index <= 0xfe)) {
 
-      Index2 = Index - 0x20;
-      mEngUpperMap[Index] = (CHAR8) Index2;
-      mEngLowerMap[Index2] = (CHAR8) Index;
+      Index2                = Index - 0x20;
+      mEngUpperMap[Index]   = (CHAR8) Index2;
+      mEngLowerMap[Index2]  = (CHAR8) Index;
 
       mEngInfoMap[Index] |= CHAR_FAT_VALID;
       mEngInfoMap[Index2] |= CHAR_FAT_VALID;
@@ -113,20 +136,23 @@ Returns:
     Index2 = mOtherChars[Index];
     mEngInfoMap[Index2] |= CHAR_FAT_VALID;
   }
-
   //
   // Create a handle for the device
   //
   Handle = NULL;
-  Status = gBS->InstallProtocolInterface (&Handle, &gEfiUnicodeCollationProtocolGuid, EFI_NATIVE_INTERFACE, &UnicodeEng);
-  
+  Status = gBS->InstallProtocolInterface (
+                  &Handle,
+                  &gEfiUnicodeCollationProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &UnicodeEng
+                  );
+
   return Status;
 }
 
-
 INTN
 EngStriColl (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *s1,
   IN CHAR16                           *s2
   )
@@ -138,12 +164,16 @@ Routine Description:
   
 Arguments:
 
+  This
+  s1
+  s2
+  
 Returns:
 
 --*/
 {
   while (*s1) {
-    if (ToUpper(*s1) != ToUpper(*s2)) {
+    if (ToUpper (*s1) != ToUpper (*s2)) {
       break;
     }
 
@@ -151,13 +181,12 @@ Returns:
     s2 += 1;
   }
 
-  return ToUpper(*s1) - ToUpper(*s2);
+  return ToUpper (*s1) - ToUpper (*s2);
 }
-
 
 VOID
 EngStrLwr (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN OUT CHAR16                       *Str
   )
 /*++
@@ -169,7 +198,7 @@ Routine Description:
 
 Arguments:
 
-  *This - A pointer to the EFI_UNICODE_COLLATION_PROTOCOL instance.
+  This - A pointer to the EFI_UNICODE_COLLATION_PROTOCOL instance.
   Str1  - A pointer to a Null-terminated Unicode string.
   Str2  - A pointer to a Null-terminated Unicode string.
 
@@ -182,15 +211,14 @@ Returns:
 --*/
 {
   while (*Str) {
-    *Str = ToLower(*Str);
+    *Str = ToLower (*Str);
     Str += 1;
   }
 }
 
-
 VOID
 EngStrUpr (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN OUT CHAR16                       *Str
   )
 /*++
@@ -201,21 +229,23 @@ Routine Description:
   Unicode string to upper case Unicode characters.
 
 Arguments:
+  This
+  Str
 
 Returns:
-
+  None
+  
 --*/
 {
   while (*Str) {
-    *Str = ToUpper(*Str);
+    *Str = ToUpper (*Str);
     Str += 1;
   }
 }
 
-
 BOOLEAN
 EngMetaiMatch (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *String,
   IN CHAR16                           *Pattern
   )
@@ -231,9 +261,9 @@ Routine Description:
 
 Arguments:
 
-  *This     - A pointer to the EFI_UNICODE_COLLATION_PROTOCOL instance.
-  *String   - A pointer to a Null-terminated Unicode string.
-  *Pattern  - A pointer to a Null-terminated Unicode pattern string.
+  This     - A pointer to the EFI_UNICODE_COLLATION_PROTOCOL instance.
+  String   - A pointer to a Null-terminated Unicode string.
+  Pattern  - A pointer to a Null-terminated Unicode pattern string.
 
 Returns:
 
@@ -246,23 +276,22 @@ Returns:
   CHAR16  CharP;
   CHAR16  Index3;
 
-  for (; ;) {
+  for (;;) {
     CharP = *Pattern;
     Pattern += 1;
 
     switch (CharP) {
     case 0:
-        
       //
       // End of pattern.  If end of string, TRUE match
       //
       if (*String) {
         return FALSE;
       } else {
-        return TRUE ;
+        return TRUE;
       }
 
-    case '*':                               
+    case '*':
       //
       // Match zero or more chars
       //
@@ -270,21 +299,24 @@ Returns:
         if (EngMetaiMatch (This, String, Pattern)) {
           return TRUE;
         }
+
         String += 1;
       }
+
       return EngMetaiMatch (This, String, Pattern);
 
-    case '?':                               
+    case '?':
       //
       // Match any one char
       //
       if (!*String) {
         return FALSE;
       }
+
       String += 1;
       break;
-      
-    case '[':                               
+
+    case '[':
       //
       // Match char set
       //
@@ -293,45 +325,46 @@ Returns:
         //
         // syntax problem
         //
-        return FALSE;                       
+        return FALSE;
       }
 
-      Index3 = 0;
-      CharP = *Pattern++;
-      while ( CharP ) {
+      Index3  = 0;
+      CharP   = *Pattern++;
+      while (CharP) {
         if (CharP == ']') {
           return FALSE;
         }
 
-        if (CharP == '-') {  
-          //   
+        if (CharP == '-') {
+          //
           // if range of chars, get high range
           //
-          CharP = *Pattern;                   
+          CharP = *Pattern;
           if (CharP == 0 || CharP == ']') {
             //
             // syntax problem
             //
-            return FALSE;               
+            return FALSE;
           }
-          if (ToUpper(CharC) >= ToUpper(Index3) && ToUpper(CharC) <= ToUpper(CharP)) {         // if in range, 
+
+          if (ToUpper (CharC) >= ToUpper (Index3) && ToUpper (CharC) <= ToUpper (CharP)) {
             //
-            // it's a match
+            // if in range, it's a match
             //
-            break;                      
+            break;
           }
         }
-                
+
         Index3 = CharP;
-        if (ToUpper(CharC) == ToUpper(CharP)) {  
-          // 
+        if (ToUpper (CharC) == ToUpper (CharP)) {
+          //
           // if char matches
           //
-          break;                          
+          break;
         }
+
         CharP = *Pattern++;
       }
-
       //
       // skip to end of match char set
       //
@@ -345,7 +378,7 @@ Returns:
 
     default:
       CharC = *String;
-      if (ToUpper(CharC) != ToUpper(CharP)) {
+      if (ToUpper (CharC) != ToUpper (CharP)) {
         return FALSE;
       }
 
@@ -355,10 +388,9 @@ Returns:
   }
 }
 
-
 VOID
 EngFatToStr (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN UINTN                            FatSize,
   IN CHAR8                            *Fat,
   OUT CHAR16                          *String
@@ -373,7 +405,11 @@ Routine Description:
   BUGBUG: Function has to expand DBCS FAT chars, currently not.
 
 Arguments:
-
+  This
+  FatSize
+  Fat
+  String
+  
 Returns:
 
 --*/
@@ -387,13 +423,13 @@ Returns:
     Fat += 1;
     FatSize -= 1;
   }
+
   *String = 0;
 }
 
-
 BOOLEAN
 EngStrToFat (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *String,
   IN UINTN                            FatSize,
   OUT CHAR8                           *Fat
@@ -409,21 +445,24 @@ Routine Description:
   any chars that can't be represented in the fat name.
 
 Arguments:
+  This
+  String
+  FatSize
+  Fat
 
 Returns:
-
+  TRUE
+  FALSE
 --*/
 {
-  BOOLEAN             SpecialCharExist;
+  BOOLEAN SpecialCharExist;
 
   SpecialCharExist = FALSE;
   while (*String && FatSize) {
-
     //
     // Skip '.' or ' ' when making a fat name
     //
     if (*String != '.' && *String != ' ') {
-    
       //
       // If this is a valid fat char, move it.
       // Otherwise, move a '_' and flag the fact that the name needs an Lfn
@@ -431,8 +470,8 @@ Returns:
       if (*String < 0x100 && (mEngInfoMap[*String] & CHAR_FAT_VALID)) {
         *Fat = mEngUpperMap[*String];
       } else {
-        *Fat = '_';
-        SpecialCharExist = TRUE;
+        *Fat              = '_';
+        SpecialCharExist  = TRUE;
       }
 
       Fat += 1;
@@ -441,7 +480,6 @@ Returns:
 
     String += 1;
   }
-
   //
   // Do not terminate that fat string
   //

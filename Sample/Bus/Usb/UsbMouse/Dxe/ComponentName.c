@@ -35,17 +35,17 @@ UsbMouseComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UsbMouseComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gUsbMouseComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gUsbMouseComponentName = {
   UsbMouseComponentNameGetDriverName,
   UsbMouseComponentNameGetControllerName,
   "eng"
@@ -53,9 +53,8 @@ EFI_COMPONENT_NAME_PROTOCOL gUsbMouseComponentName = {
 
 STATIC EFI_UNICODE_STRING_TABLE mUsbMouseDriverNameTable[] = {
   { "eng", L"Usb Mouse Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
-
 
 EFI_STATUS
 EFIAPI
@@ -92,21 +91,21 @@ UsbMouseComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gUsbMouseComponentName.SupportedLanguages,
-           mUsbMouseDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gUsbMouseComponentName.SupportedLanguages,
+          mUsbMouseDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 UsbMouseComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -153,11 +152,11 @@ UsbMouseComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                    Status;
-  USB_MOUSE_DEV                 *UsbMouseDev;
-  EFI_SIMPLE_POINTER_PROTOCOL   *SimplePointerProtocol;
-  EFI_USB_IO_PROTOCOL           *UsbIoProtocol;
-  
+  EFI_STATUS                  Status;
+  USB_MOUSE_DEV               *UsbMouseDev;
+  EFI_SIMPLE_POINTER_PROTOCOL *SimplePointerProtocol;
+  EFI_USB_IO_PROTOCOL         *UsbIoProtocol;
+
   //
   // This is a device driver, so ChildHandle must be NULL.
   //
@@ -169,20 +168,20 @@ UsbMouseComponentNameGetControllerName (
   // Check Controller's handle
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
+                  ControllerHandle,
                   &gEfiUsbIoProtocolGuid,
-                  (VOID **)&UsbIoProtocol,
-                  gUsbMouseDriverBinding.DriverBindingHandle,  
-                  ControllerHandle, 
+                  (VOID **) &UsbIoProtocol,
+                  gUsbMouseDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (!EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-                  ControllerHandle, 
-                  &gEfiUsbIoProtocolGuid,
-                  gUsbMouseDriverBinding.DriverBindingHandle,  
-                  ControllerHandle
-                  );
+          ControllerHandle,
+          &gEfiUsbIoProtocolGuid,
+          gUsbMouseDriverBinding.DriverBindingHandle,
+          ControllerHandle
+          );
 
     return EFI_UNSUPPORTED;
   }
@@ -197,23 +196,23 @@ UsbMouseComponentNameGetControllerName (
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiSimplePointerProtocolGuid,
-                  (VOID **)&SimplePointerProtocol,
-                  gUsbMouseDriverBinding.DriverBindingHandle,  
+                  (VOID **) &SimplePointerProtocol,
+                  gUsbMouseDriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                );
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   UsbMouseDev = USB_MOUSE_DEV_FROM_MOUSE_PROTOCOL (SimplePointerProtocol);
-  
+
   return EfiLibLookupUnicodeString (
-           Language, 
-           gUsbMouseComponentName.SupportedLanguages,
-           UsbMouseDev->ControllerNameTable, 
-           ControllerName
-         );
+          Language,
+          gUsbMouseComponentName.SupportedLanguages,
+          UsbMouseDev->ControllerNameTable,
+          ControllerName
+          );
 
 }

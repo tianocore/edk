@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Real Time clock Architectural Protocol as defined in EFI 2.0
+  Real Time clock Architectural Protocol as defined in Tiano
 
   This code abstracts time and data functions. Used to provide
   Time and date related EFI runtime services.

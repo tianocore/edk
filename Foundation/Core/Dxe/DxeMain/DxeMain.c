@@ -29,7 +29,7 @@ Abstract:
 VOID
 EFIAPI
 DxeMain (
-  VOID *HobStart
+  IN  VOID *HobStart
   );
 
 EFI_STATUS
@@ -87,8 +87,8 @@ CoreGetPeiProtocol (
 PERF_CODE (                    
   EFI_STATUS
   GetTimerValue (
-    OUT UINT64    *TimerValue
-  );
+   OUT UINT64    *TimerValue
+    );
 )
 
 //
@@ -361,11 +361,13 @@ Returns:
   //
   // Report Status Code here for DXE_ENTRY_POINT once it is available
   //
-  gRT->ReportStatusCode (EFI_PROGRESS_CODE,
-                        (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_ENTRY_POINT),
-                         0,
-                         &gEfiCallerIdGuid,
-                         NULL);
+  gRT->ReportStatusCode (
+        EFI_PROGRESS_CODE,
+        (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_ENTRY_POINT),
+        0,
+        &gEfiCallerIdGuid,
+        NULL
+        );
 
   //
   // Create the aligned system table pointer structure that is used by external
@@ -516,12 +518,13 @@ Returns:
   //
   // Report Status code before transfer control to BDS
   //
-  gRT->ReportStatusCode (EFI_PROGRESS_CODE,
-                        (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_HANDOFF_TO_NEXT),
-                        0,
-                        &gEfiCallerIdGuid,
-                        NULL
-                        );
+  gRT->ReportStatusCode (
+        EFI_PROGRESS_CODE,
+        (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_HANDOFF_TO_NEXT),
+        0,
+        &gEfiCallerIdGuid,
+        NULL
+        );
   //
   // Display any drivers that were not dispatched because dependency expression
   // evaluated to false if this is a debug build
@@ -586,7 +589,7 @@ Routine Description:
 
 Arguments:
 
-  None
+  Arg1        - Undefined
 
 Returns:
 
@@ -617,7 +620,9 @@ Routine Description:
 
 Arguments:
 
-  None
+  Arg1        - Undefined
+  
+  Arg2        - Undefined
 
 Returns:
 
@@ -649,7 +654,11 @@ Routine Description:
 
 Arguments:
 
-  None
+  Arg1        - Undefined
+  
+  Arg2        - Undefined
+  
+  Arg3        - Undefined
 
 Returns:
 
@@ -682,7 +691,13 @@ Routine Description:
 
 Arguments:
 
-  None
+  Arg1        - Undefined
+  
+  Arg2        - Undefined
+  
+  Arg3        - Undefined
+  
+  Arg4        - Undefined
 
 Returns:
 
@@ -716,7 +731,15 @@ Routine Description:
 
 Arguments:
 
-  None
+  Arg1        - Undefined
+  
+  Arg2        - Undefined
+  
+  Arg3        - Undefined
+  
+  Arg4        - Undefined
+  
+  Arg5        - Undefined
 
 Returns:
 
@@ -827,7 +850,7 @@ Routine Description:
 
 Arguments:
 
-  ImageHandler - Handle that represents the identity of the calling image
+  ImageHandle  - Handle that represents the identity of the calling image
 
   MapKey -Key to the latest memory map.
 

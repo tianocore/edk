@@ -20,12 +20,13 @@ Abstract:
 Revision History
 
 --*/
+
 #include "keyboard.h"
 #include "hid.h"
 
 //
-//USB Key Code to Efi key mapping table
-//Format:<efi scan code>, <unicode without shift>, <unicode with shift>
+// USB Key Code to Efi key mapping table
+// Format:<efi scan code>, <unicode without shift>, <unicode with shift>
 //
 STATIC
 UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
@@ -129,9 +130,9 @@ UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
     SCAN_NULL,      0x00,     0x00,     // 0x65 Keyboard Application
     SCAN_NULL,      0x00,     0x00,     // 0x66 Keyboard Power
     SCAN_NULL,      '=' ,     '='      // 0x67 Keypad =
- }; 
-    
-STATIC KB_MODIFIER KB_Mod[8] = {
+};
+
+STATIC KB_MODIFIER  KB_Mod[8] = {
   { MOD_CONTROL_L,  0xe0 }, // 11100000 
   { MOD_CONTROL_R,  0xe4 }, // 11100100 
   { MOD_SHIFT_L,    0xe1 }, // 11100001 
@@ -142,9 +143,8 @@ STATIC KB_MODIFIER KB_Mod[8] = {
   { MOD_WIN_R,      0xe7 }, // 11100111 
 };
 
-
 BOOLEAN
-IsUSBKeyboard(
+IsUSBKeyboard (
   IN  EFI_USB_IO_PROTOCOL       *UsbIo
   )
 /*++
@@ -157,37 +157,38 @@ IsUSBKeyboard(
     
   Returns:
   
---*/  
+--*/
+// TODO:    UsbIo - add argument and description to function comment
 {
-  EFI_STATUS                      Status;
-  EFI_USB_INTERFACE_DESCRIPTOR    InterfaceDescriptor;
+  EFI_STATUS                    Status;
+  EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
 
   //
-  // Get the Default interface descriptor, currently we 
+  // Get the Default interface descriptor, currently we
   // assume it is interface 1
   //
-  Status = UsbIo->UsbGetInterfaceDescriptor(
-                        UsbIo,
-                        &InterfaceDescriptor
-                        );
+  Status = UsbIo->UsbGetInterfaceDescriptor (
+                    UsbIo,
+                    &InterfaceDescriptor
+                    );
 
-  if(EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return FALSE;
-  }    
-
-  if (InterfaceDescriptor.InterfaceClass == CLASS_HID &&
-    InterfaceDescriptor.InterfaceSubClass == SUBCLASS_BOOT &&
-    InterfaceDescriptor.InterfaceProtocol == PROTOCOL_KEYBOARD) {
-        
-        return TRUE;
   }
 
-  return FALSE; 
+  if (InterfaceDescriptor.InterfaceClass == CLASS_HID &&
+      InterfaceDescriptor.InterfaceSubClass == SUBCLASS_BOOT &&
+      InterfaceDescriptor.InterfaceProtocol == PROTOCOL_KEYBOARD
+      ) {
+
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
-
 EFI_STATUS
-InitUSBKeyboard(
+InitUSBKeyboard (
   IN USB_KB_DEV   *UsbKeyboardDevice
   )
 /*++
@@ -201,6 +202,9 @@ InitUSBKeyboard(
   Returns:
   
 --*/
+// TODO:    UsbKeyboardDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   UINT8               ConfigValue;
   UINT8               Protocol;
@@ -213,113 +217,123 @@ InitUSBKeyboard(
   UsbIo = UsbKeyboardDevice->UsbIo;
 
   KbdReportStatusCode (
-      UsbIo,
-      EFI_PROGRESS_CODE,
-      (EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_SELF_TEST)
-      );
+    UsbIo,
+    EFI_PROGRESS_CODE,
+    (EFI_PERIPHERAL_KEYBOARD | EFI_P_KEYBOARD_PC_SELF_TEST)
+    );
 
-  InitUSBKeyBuffer(&(UsbKeyboardDevice->KeyboardBuffer));
-  
-  ConfigValue = 0x01;   // default configurations
-  
+  InitUSBKeyBuffer (&(UsbKeyboardDevice->KeyboardBuffer));
+
+  //
+  // default configurations
+  //
+  ConfigValue = 0x01;
+
   //
   // Uses default configuration to configure the USB Keyboard device.
   //
   Status = UsbSetDeviceConfiguration (
-            UsbKeyboardDevice->UsbIo, 
-            (UINT16)ConfigValue,
+            UsbKeyboardDevice->UsbIo,
+            (UINT16) ConfigValue,
             &TransferResult
             );
-  if(EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
 
     //
-    // If configuration could not be set here, it means 
+    // If configuration could not be set here, it means
     // the keyboard interface has some errors and could
     // not be initialized
     //
     KbdReportStatusCode (
-        UsbIo,
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INTERFACE_ERROR)
-        );
-        
+      UsbIo,
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INTERFACE_ERROR)
+      );
+
     return EFI_DEVICE_ERROR;
   }
-  
-  UsbGetProtocolRequest(UsbKeyboardDevice->UsbIo,
-                        UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
-                        &Protocol
-                        );
+
+  UsbGetProtocolRequest (
+    UsbKeyboardDevice->UsbIo,
+    UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
+    &Protocol
+    );
   //
   // Sets boot protocol for the USB Keyboard.
   // This driver only supports boot protocol.
   // !!BugBug: How about the device that does not support boot protocol?
   //
-  if(Protocol != BOOT_PROTOCOL) {
-    UsbSetProtocolRequest(
-          UsbKeyboardDevice->UsbIo,
-          UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
-          BOOT_PROTOCOL
-          );
-  }   
-  
+  if (Protocol != BOOT_PROTOCOL) {
+    UsbSetProtocolRequest (
+      UsbKeyboardDevice->UsbIo,
+      UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
+      BOOT_PROTOCOL
+      );
+  }
   //
   // the duration is indefinite, so the endpoint will inhibit reporting forever,
   // and only reporting when a change is detected in the report data.
   //
-  ReportId = 0;       // idle value for all report ID
-  Duration = 0;   // idle forever until there is a key pressed and released.
-  UsbSetIdleRequest(
-                 UsbKeyboardDevice->UsbIo,
-                 UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
-                 ReportId,
-                 Duration
-                 );
-  
+
+  //
+  // idle value for all report ID
+  //
+  ReportId = 0;
+  //
+  // idle forever until there is a key pressed and released.
+  //
+  Duration = 0;
+  UsbSetIdleRequest (
+    UsbKeyboardDevice->UsbIo,
+    UsbKeyboardDevice->InterfaceDescriptor.InterfaceNumber,
+    ReportId,
+    Duration
+    );
+
   UsbKeyboardDevice->CtrlOn     = 0;
   UsbKeyboardDevice->AltOn      = 0;
   UsbKeyboardDevice->ShiftOn    = 0;
-  UsbKeyboardDevice->NumLockOn  = 0 ;
-  UsbKeyboardDevice->CapsOn     = 0 ;
-  EfiZeroMem(UsbKeyboardDevice->LastKeyCodeArray, sizeof(UINT8)*8);
-  
+  UsbKeyboardDevice->NumLockOn  = 0;
+  UsbKeyboardDevice->CapsOn     = 0;
+  EfiZeroMem (UsbKeyboardDevice->LastKeyCodeArray, sizeof (UINT8) * 8);
+
   //
   // Set a timer for repeat keys' generation.
   //
-  if(UsbKeyboardDevice->RepeatTimer) {
-    gBS->CloseEvent(UsbKeyboardDevice->RepeatTimer);
+  if (UsbKeyboardDevice->RepeatTimer) {
+    gBS->CloseEvent (UsbKeyboardDevice->RepeatTimer);
     UsbKeyboardDevice->RepeatTimer = 0;
-  }  
+  }
+
   Status = gBS->CreateEvent (
-            EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL, 
-            EFI_TPL_NOTIFY, 
-            USBKeyboardRepeatHandler, 
-            UsbKeyboardDevice, 
-            &UsbKeyboardDevice->RepeatTimer
-            ) ;
- 
-  if(UsbKeyboardDevice->DelayedRecoveryEvent) {
+                  EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_NOTIFY,
+                  USBKeyboardRepeatHandler,
+                  UsbKeyboardDevice,
+                  &UsbKeyboardDevice->RepeatTimer
+                  );
+
+  if (UsbKeyboardDevice->DelayedRecoveryEvent) {
     gBS->CloseEvent (UsbKeyboardDevice->DelayedRecoveryEvent);
     UsbKeyboardDevice->DelayedRecoveryEvent = 0;
   }
-  
+
   Status = gBS->CreateEvent (
-            EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL, 
-            EFI_TPL_NOTIFY, 
-            USBKeyboardRecoveryHandler, 
-            UsbKeyboardDevice, 
-            &UsbKeyboardDevice->DelayedRecoveryEvent
-            ) ;
+                  EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_NOTIFY,
+                  USBKeyboardRecoveryHandler,
+                  UsbKeyboardDevice,
+                  &UsbKeyboardDevice->DelayedRecoveryEvent
+                  );
 
   return EFI_SUCCESS;
-} 
-
+}
 
 EFI_STATUS
-KeyboardHandler(
+KeyboardHandler (
   IN  VOID          *Data,
   IN  UINTN         DataLength,
-  IN  VOID          *Context,  
+  IN  VOID          *Context,
   IN  UINT32        Result
   )
 /*++
@@ -336,173 +350,186 @@ KeyboardHandler(
     
   Returns:
   
---*/  
+--*/
+// TODO:    Data - add argument and description to function comment
+// TODO:    DataLength - add argument and description to function comment
+// TODO:    Context - add argument and description to function comment
+// TODO:    Result - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_KB_DEV              *UsbKeyboardDevice;
-  EFI_USB_IO_PROTOCOL     *UsbIo;
-  UINT8                   *CurKeyCodeBuffer;
-  UINT8                   *OldKeyCodeBuffer;
-  UINT8                   CurModifierMap;
-  UINT8                   OldModifierMap;
-  UINT8                   Index;
-  UINT8                   Index2;
-  BOOLEAN                 Down;
-  EFI_STATUS              Status;
-  BOOLEAN                 KeyRelease;
-  BOOLEAN                 KeyPress;
-  UINT8                   SavedTail;
-  USB_KEY                 UsbKey;  
-  UINT8                   NewRepeatKey;
-  UINT32                  UsbStatus;
-  UINT8                   *DataPtr;
-  UINT8                    PacketSize;
-  
-  NewRepeatKey = 0;
-  DataPtr = (UINT8 *) Data;
- 
-  UsbKeyboardDevice = (USB_KB_DEV*)Context;
-  ASSERT(UsbKeyboardDevice);
-  
+  USB_KB_DEV          *UsbKeyboardDevice;
+  EFI_USB_IO_PROTOCOL *UsbIo;
+  UINT8               *CurKeyCodeBuffer;
+  UINT8               *OldKeyCodeBuffer;
+  UINT8               CurModifierMap;
+  UINT8               OldModifierMap;
+  UINT8               Index;
+  UINT8               Index2;
+  BOOLEAN             Down;
+  EFI_STATUS          Status;
+  BOOLEAN             KeyRelease;
+  BOOLEAN             KeyPress;
+  UINT8               SavedTail;
+  USB_KEY             UsbKey;
+  UINT8               NewRepeatKey;
+  UINT32              UsbStatus;
+  UINT8               *DataPtr;
+  UINT8               PacketSize;
+
+  NewRepeatKey      = 0;
+  DataPtr           = (UINT8 *) Data;
+
+  UsbKeyboardDevice = (USB_KB_DEV *) Context;
+  ASSERT (UsbKeyboardDevice);
+
   UsbIo = UsbKeyboardDevice->UsbIo;
-  
+
   //
   // Analyzes the Result and performs corresponding action.
   //
-  if (Result != EFI_USB_NOERROR) {    
+  if (Result != EFI_USB_NOERROR) {
     //
     // Some errors happen during the process
     //
     KbdReportStatusCode (
-        UsbIo,
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INPUT_ERROR)
-        );
-    
+      UsbIo,
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      (EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_INPUT_ERROR)
+      );
+
     //
     // stop the repeat key generation if any
     //
     UsbKeyboardDevice->RepeatKey = 0;
-    
-    gBS->SetTimer(UsbKeyboardDevice->RepeatTimer, 
-                  TimerCancel, 
-                  USBKBD_REPEAT_RATE
-                  );
-    
+
+    gBS->SetTimer (
+          UsbKeyboardDevice->RepeatTimer,
+          TimerCancel,
+          USBKBD_REPEAT_RATE
+          );
+
     if ((Result & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
       UsbClearEndpointHalt (
-                UsbIo,
-                UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-                &UsbStatus
-                );
+        UsbIo,
+        UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+        &UsbStatus
+        );
     }
     
     //
     // Delete & Submit this interrupt again
     //
     
-    Status = UsbIo->UsbAsyncInterruptTransfer(
-             UsbIo,
-             UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-             FALSE,
-             0,
-             0,
-             NULL,
-             NULL
-           );
+    Status = UsbIo->UsbAsyncInterruptTransfer (
+                      UsbIo,
+                      UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+                      FALSE,
+                      0,
+                      0,
+                      NULL,
+                      NULL
+                      );
 
-    if(Result == (EFI_USB_ERR_STALL | EFI_USB_ERR_TIMEOUT) ) {
-    UsbKeyboardDevice = (USB_KB_DEV*)Context;
-    UsbIo = UsbKeyboardDevice->UsbIo;
-    PacketSize =  (UINT8)(UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);    
-    UsbIo->UsbAsyncInterruptTransfer(
-                    UsbIo,
-                    UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-                    TRUE,
-                    UsbKeyboardDevice->IntEndpointDescriptor.Interval,
-                    PacketSize,
-                    KeyboardHandler,
-                    UsbKeyboardDevice
-                    );
-  return EFI_DEVICE_ERROR;
-    
-  }
-    gBS->SetTimer(UsbKeyboardDevice->DelayedRecoveryEvent, 
-                  TimerRelative, 
-                  EFI_USB_INTERRUPT_DELAY
-                  );
+    if (Result == (EFI_USB_ERR_STALL | EFI_USB_ERR_TIMEOUT)) {
+      UsbKeyboardDevice = (USB_KB_DEV *) Context;
+      UsbIo             = UsbKeyboardDevice->UsbIo;
+      PacketSize        = (UINT8) (UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);
+      UsbIo->UsbAsyncInterruptTransfer (
+              UsbIo,
+              UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+              TRUE,
+              UsbKeyboardDevice->IntEndpointDescriptor.Interval,
+              PacketSize,
+              KeyboardHandler,
+              UsbKeyboardDevice
+              );
+      return EFI_DEVICE_ERROR;
+
+    }
+
+    gBS->SetTimer (
+          UsbKeyboardDevice->DelayedRecoveryEvent,
+          TimerRelative,
+          EFI_USB_INTERRUPT_DELAY
+          );
 
     return EFI_DEVICE_ERROR;
   }
-  
-  if(DataLength == 0 || Data == NULL) {
+
+  if (DataLength == 0 || Data == NULL) {
     return EFI_SUCCESS;
   }
-  
-  CurKeyCodeBuffer = (UINT8*)Data;    
-  OldKeyCodeBuffer = UsbKeyboardDevice->LastKeyCodeArray ;
-  
+
+  CurKeyCodeBuffer  = (UINT8 *) Data;
+  OldKeyCodeBuffer  = UsbKeyboardDevice->LastKeyCodeArray;
+
   //
   // checks for new key stroke.
   // if no new key got, return immediately.
   //
-  for (Index = 0; Index < 8; Index ++) {
-    if(OldKeyCodeBuffer[Index] != CurKeyCodeBuffer[Index]) {
+  for (Index = 0; Index < 8; Index++) {
+    if (OldKeyCodeBuffer[Index] != CurKeyCodeBuffer[Index]) {
       break;
     }
   }
-  if(Index == 8) {
+
+  if (Index == 8) {
     return EFI_SUCCESS;
   }
   
   //
   // Parse the modifier key
   //
-  
-  CurModifierMap = CurKeyCodeBuffer[0];
-  OldModifierMap = OldKeyCodeBuffer[0];
+  CurModifierMap  = CurKeyCodeBuffer[0];
+  OldModifierMap  = OldKeyCodeBuffer[0];
 
   //
   // handle modifier key's pressing or releasing situation.
   //
-  for (Index = 0; Index < 8; Index ++) {
+  for (Index = 0; Index < 8; Index++) {
 
     if ((CurModifierMap & KB_Mod[Index].Mask) != 
                       (OldModifierMap & KB_Mod[Index].Mask)) {
       //
-      // if current modifier key is up, then 
+      // if current modifier key is up, then
       // CurModifierMap & KB_Mod[Index].Mask = 0;
       // otherwize it is a non-zero value.
       // Inserts the pressed modifier key into key buffer.
       //
-      Down = (UINT8)(CurModifierMap & KB_Mod[Index].Mask);
-      InsertKeyCode(&(UsbKeyboardDevice->KeyboardBuffer),KB_Mod[Index].Key,Down);
-    } 
+      Down = (UINT8) (CurModifierMap & KB_Mod[Index].Mask);
+      InsertKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), KB_Mod[Index].Key, Down);
+    }
   }
   
   //
   // handle normal key's releasing situation
-  //  
+  //
   KeyRelease = FALSE;
-  for (Index = 2; Index < 8; Index ++) {
-    
-    if(!USBKBD_VALID_KEYCODE(OldKeyCodeBuffer[Index])) {
+  for (Index = 2; Index < 8; Index++) {
+
+    if (!USBKBD_VALID_KEYCODE (OldKeyCodeBuffer[Index])) {
       continue;
     }
-    
+
     KeyRelease = TRUE;
-    for (Index2 = 2; Index2 < 8; Index2 ++) {
-      
-      if(!USBKBD_VALID_KEYCODE(CurKeyCodeBuffer[Index2])) {
+    for (Index2 = 2; Index2 < 8; Index2++) {
+
+      if (!USBKBD_VALID_KEYCODE (CurKeyCodeBuffer[Index2])) {
         continue;
       }
-        
+
       if (OldKeyCodeBuffer[Index] == CurKeyCodeBuffer[Index2]) {
         KeyRelease = FALSE;
         break;
       }
     }
+
     if (KeyRelease) {
-      InsertKeyCode(&(UsbKeyboardDevice->KeyboardBuffer),OldKeyCodeBuffer[Index],0);
+      InsertKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), OldKeyCodeBuffer[Index], 0);
       //
       // the original reapeat key is released.
       //
@@ -511,46 +538,47 @@ KeyboardHandler(
       }
     }
   }
-  
-  
+    
   //
   // original repeat key is released, cancel the repeat timer
   //
   if (UsbKeyboardDevice->RepeatKey == 0) {
-    gBS->SetTimer(UsbKeyboardDevice->RepeatTimer, 
-                  TimerCancel, 
-                  USBKBD_REPEAT_RATE
-                  );
+    gBS->SetTimer (
+          UsbKeyboardDevice->RepeatTimer,
+          TimerCancel,
+          USBKBD_REPEAT_RATE
+          );
   }
   
   //
   // handle normal key's pressing situation
   //
   KeyPress = FALSE;
-  for (Index = 2; Index < 8; Index ++) {
-    
-    if(!USBKBD_VALID_KEYCODE(CurKeyCodeBuffer[Index])) {
+  for (Index = 2; Index < 8; Index++) {
+
+    if (!USBKBD_VALID_KEYCODE (CurKeyCodeBuffer[Index])) {
       continue;
     }
-    
+
     KeyPress = TRUE;
-    for (Index2 = 2; Index2 < 8; Index2 ++) {
-      
-      if(!USBKBD_VALID_KEYCODE(OldKeyCodeBuffer[Index2])) {
+    for (Index2 = 2; Index2 < 8; Index2++) {
+
+      if (!USBKBD_VALID_KEYCODE (OldKeyCodeBuffer[Index2])) {
         continue;
       }
-        
+
       if (CurKeyCodeBuffer[Index] == OldKeyCodeBuffer[Index2]) {
         KeyPress = FALSE;
         break;
       }
     }
-    if(KeyPress) {    
-      InsertKeyCode(&(UsbKeyboardDevice->KeyboardBuffer),CurKeyCodeBuffer[Index],1);
+
+    if (KeyPress) {
+      InsertKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), CurKeyCodeBuffer[Index], 1);
       //
       // NumLock pressed or CapsLock pressed
       //
-      if(CurKeyCodeBuffer[Index] == 0x53 || CurKeyCodeBuffer[Index] == 0x39) {
+      if (CurKeyCodeBuffer[Index] == 0x53 || CurKeyCodeBuffer[Index] == 0x39) {
         UsbKeyboardDevice->RepeatKey = 0;
       } else {
         NewRepeatKey = CurKeyCodeBuffer[Index];
@@ -559,14 +587,14 @@ KeyboardHandler(
         //
         UsbKeyboardDevice->RepeatKey = 0;
       }
-    }   
-  } 
+    }
+  }
   
   //
-  // Update LastKeycodeArray[] buffer in the 
+  // Update LastKeycodeArray[] buffer in the
   // Usb Keyboard Device data structure.
   //
-  for (Index = 0; Index < 8; Index ++) {
+  for (Index = 0; Index < 8; Index++) {
     UsbKeyboardDevice->LastKeyCodeArray[Index] = CurKeyCodeBuffer[Index];
   }
   
@@ -575,77 +603,80 @@ KeyboardHandler(
   // and judge whether it will invoke reset event.
   //
   SavedTail = UsbKeyboardDevice->KeyboardBuffer.bTail;
-  Index = UsbKeyboardDevice->KeyboardBuffer.bHead;
-  while(Index != SavedTail) {
-    RemoveKeyCode(&(UsbKeyboardDevice->KeyboardBuffer),&UsbKey);
-    
-    switch(UsbKey.KeyCode) {
-      case 0xe0:
-      case 0xe4:
-        if(UsbKey.Down) {
-          UsbKeyboardDevice->CtrlOn = 1;
-        } else {
-          UsbKeyboardDevice->CtrlOn = 0;
+  Index     = UsbKeyboardDevice->KeyboardBuffer.bHead;
+  while (Index != SavedTail) {
+    RemoveKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), &UsbKey);
+
+    switch (UsbKey.KeyCode) {
+    case 0xe0:
+    case 0xe4:
+      if (UsbKey.Down) {
+        UsbKeyboardDevice->CtrlOn = 1;
+      } else {
+        UsbKeyboardDevice->CtrlOn = 0;
+      }
+      break;
+
+    case 0xe2:
+    case 0xe6:
+      if (UsbKey.Down) {
+        UsbKeyboardDevice->AltOn = 1;
+      } else {
+        UsbKeyboardDevice->AltOn = 0;
+      }
+      break;
+
+    //
+    // Del Key Code
+    //
+    case 0x4c:
+    case 0x63:
+      if (UsbKey.Down) {
+        if (UsbKeyboardDevice->CtrlOn && UsbKeyboardDevice->AltOn) {
+          gRT->ResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
         }
-        break;
-      
-      case 0xe2:
-      case 0xe6:
-        if(UsbKey.Down) {
-          UsbKeyboardDevice->AltOn = 1;
-        } else {
-          UsbKeyboardDevice->AltOn = 0;
-        }
-        break;
-      
-      case 0x4c:      // Del Key Code
-      case 0x63:
-        if(UsbKey.Down) {
-          if(UsbKeyboardDevice->CtrlOn && UsbKeyboardDevice->AltOn) {
-            gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);         
-          } 
-        }
-        break;
-        
-      default:
-        break;
+      }
+      break;
+
+    default:
+      break;
     }
     
     //
-    // insert the key back to the buffer. 
+    // insert the key back to the buffer.
     // so the key sequence will not be destroyed.
     //
-    InsertKeyCode(&(UsbKeyboardDevice->KeyboardBuffer),
-                  UsbKey.KeyCode,
-                  UsbKey.Down
-                  );
+    InsertKeyCode (
+      &(UsbKeyboardDevice->KeyboardBuffer),
+      UsbKey.KeyCode,
+      UsbKey.Down
+      );
     Index = UsbKeyboardDevice->KeyboardBuffer.bHead;
-     
+
   }
-  
   //
   // If have new key pressed, update the RepeatKey value, and set the
   // timer to repeate delay timer
   //
-  if(NewRepeatKey != 0) {    
+  if (NewRepeatKey != 0) {
     //
     // sets trigger time to "Repeat Delay Time",
     // to trigger the repeat timer when the key is hold long
     // enough time.
     //
-    gBS->SetTimer(UsbKeyboardDevice->RepeatTimer, 
-                  TimerRelative, 
-                  USBKBD_REPEAT_DELAY
-                  );
+    gBS->SetTimer (
+          UsbKeyboardDevice->RepeatTimer,
+          TimerRelative,
+          USBKBD_REPEAT_DELAY
+          );
     UsbKeyboardDevice->RepeatKey = NewRepeatKey;
-  } 
+  }
 
   return EFI_SUCCESS;
-}   
-
+}
 
 EFI_STATUS
-USBParseKey(
+USBParseKey (
   IN OUT  USB_KB_DEV  *UsbKeyboardDevice,
   OUT     UINT8       *KeyChar
   )
@@ -660,120 +691,164 @@ USBParseKey(
     
   Returns:
   
---*/  
+--*/
+// TODO:    UsbKeyboardDevice - add argument and description to function comment
+// TODO:    KeyChar - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_NOT_READY - add return value to function comment
 {
-  USB_KEY   UsbKey;
-  
+  USB_KEY UsbKey;
+
   *KeyChar = 0;
-  
-  while (!IsUSBKeyboardBufferEmpty(UsbKeyboardDevice->KeyboardBuffer)) {
+
+  while (!IsUSBKeyboardBufferEmpty (UsbKeyboardDevice->KeyboardBuffer)) {
     //
     // pops one raw data off.
     //
-    RemoveKeyCode(&(UsbKeyboardDevice->KeyboardBuffer),&UsbKey);
-    
+    RemoveKeyCode (&(UsbKeyboardDevice->KeyboardBuffer), &UsbKey);
+
     if (!UsbKey.Down) {
-      switch(UsbKey.KeyCode) {
-        case 0xe0:  // fall through
-        case 0xe4:
-          UsbKeyboardDevice->CtrlOn = 0;
-          break;
-      
-        case 0xe1:  // fall through
-        case 0xe5:
-          UsbKeyboardDevice->ShiftOn = 0;
-          break;
-        
-        case 0xe2:  // fall through
-        case 0xe6:
-          UsbKeyboardDevice->AltOn = 0;
-          break;
-        
-        default:          
-          break;
+      switch (UsbKey.KeyCode) {
+
+      //
+      // fall through
+      //
+      case 0xe0:
+      case 0xe4:
+        UsbKeyboardDevice->CtrlOn = 0;
+        break;
+
+      //
+      // fall through
+      //
+      case 0xe1:
+      case 0xe5:
+        UsbKeyboardDevice->ShiftOn = 0;
+        break;
+
+      //
+      // fall through
+      //
+      case 0xe2:
+      case 0xe6:
+        UsbKeyboardDevice->AltOn = 0;
+        break;
+
+      default:
+        break;
       }
-      
+
       continue;
     }
     
     //
     // Analyzes key pressing situation
-    //  
+    //
     switch (UsbKey.KeyCode) {
-      case 0xe0:  // fall through
-      case 0xe4:
-        UsbKeyboardDevice->CtrlOn = 1;
-        continue;
-        break;
-      
-      case 0xe1:  // fall through
-      case 0xe5:
-        UsbKeyboardDevice->ShiftOn = 1;
-        continue;
-        break;
-        
-      case 0xe2:  // fall through
-      case 0xe6:
-        UsbKeyboardDevice->AltOn = 1;
-        continue;
-        break;
-        
-      case 0xe3:  // fall through
-      case 0xe7:
-        continue;       
-        break;
-        
-      case 0x53:
-        UsbKeyboardDevice->NumLockOn ^= 1;
-        SetKeyLED(UsbKeyboardDevice);
-        continue;
-        break;
-        
-      case 0x39:
-        UsbKeyboardDevice->CapsOn ^= 1;        
-        SetKeyLED(UsbKeyboardDevice);
-        continue;
-        break;
-        
-      //
-      // F11,F12,PrintScreen,ScrollLock,Pause,Application,Power
-      // keys are not valid EFI key
-      //  
-      case 0x44:  // fall through
-      case 0x45:  // fall through
-      case 0x46:  // fall through
-      case 0x47:  // fall through
-      case 0x48:  // fall through
-      case 0x65:  // fall through
-      case 0x66: 
-        continue;
-        break;
-          
-      default:
-        break;
+    //
+    // fall through
+    //
+    case 0xe0:
+    case 0xe4:
+      UsbKeyboardDevice->CtrlOn = 1;
+      continue;
+      break;
+
+    //
+    // fall through
+    //
+    case 0xe1:
+    case 0xe5:
+      UsbKeyboardDevice->ShiftOn = 1;
+      continue;
+      break;
+
+    //
+    // fall through
+    //
+    case 0xe2:
+    case 0xe6:
+      UsbKeyboardDevice->AltOn = 1;
+      continue;
+      break;
+
+    //
+    // fall through
+    //
+    case 0xe3:
+    case 0xe7:
+      continue;
+      break;
+
+    case 0x53:
+      UsbKeyboardDevice->NumLockOn ^= 1;
+      SetKeyLED (UsbKeyboardDevice);
+      continue;
+      break;
+
+    case 0x39:
+      UsbKeyboardDevice->CapsOn ^= 1;
+      SetKeyLED (UsbKeyboardDevice);
+      continue;
+      break;
+
+    //
+    // F11,F12,PrintScreen,ScrollLock,Pause,Application,Power
+    // keys are not valid EFI key
+    //
+
+    //
+    // fall through
+    //
+    case 0x44:
+    //
+    // fall through
+    //
+    case 0x45:
+    //
+    // fall through
+    //
+    case 0x46:
+    //
+    // fall through
+    //
+    case 0x47:
+    //
+    // fall through
+    //
+    case 0x48:
+    //
+    // fall through
+    //
+    case 0x65:
+    case 0x66:
+      continue;
+      break;
+
+    default:
+      break;
     }
     
     //
     // When encountered Del Key...
     //
     if (UsbKey.KeyCode == 0x4c || UsbKey.KeyCode == 0x63) {
-      if(UsbKeyboardDevice->CtrlOn && UsbKeyboardDevice->AltOn) {
-        gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL); 
+      if (UsbKeyboardDevice->CtrlOn && UsbKeyboardDevice->AltOn) {
+        gRT->ResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
       }
     }
-    
+
     *KeyChar = UsbKey.KeyCode;
-    return EFI_SUCCESS;   
+    return EFI_SUCCESS;
   }
-  
+
   return EFI_NOT_READY;
-    
+
 }
 
-
 EFI_STATUS
-USBKeyCodeToEFIScanCode(
-  IN  USB_KB_DEV      *UsbKeyboardDevice, 
+USBKeyCodeToEFIScanCode (
+  IN  USB_KB_DEV      *UsbKeyboardDevice,
   IN  UINT8           KeyChar,
   OUT EFI_INPUT_KEY   *Key
   )
@@ -791,69 +866,75 @@ USBKeyCodeToEFIScanCode(
   Returns:
   
 --*/
+// TODO:    UsbKeyboardDevice - add argument and description to function comment
+// TODO:    KeyChar - add argument and description to function comment
+// TODO:    Key - add argument and description to function comment
+// TODO:    EFI_NOT_READY - add return value to function comment
+// TODO:    EFI_NOT_READY - add return value to function comment
+// TODO:    EFI_NOT_READY - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  UINT8     Index;
-  
-  if (!USBKBD_VALID_KEYCODE(KeyChar)) {
+  UINT8 Index;
+
+  if (!USBKBD_VALID_KEYCODE (KeyChar)) {
     return EFI_NOT_READY;
   }
   
   //
   // valid USB Key Code starts from 4
   //
-  Index = (UINT8)(KeyChar - 4);
-  
-  if (Index >= USB_KEYCODE_MAX_MAKE){
+  Index = (UINT8) (KeyChar - 4);
+
+  if (Index >= USB_KEYCODE_MAX_MAKE) {
     return EFI_NOT_READY;
-  }    
-  
+  }
+
   Key->ScanCode = KeyConvertionTable[Index][0];
-  
+
   if (UsbKeyboardDevice->ShiftOn) {
-    
+
     Key->UnicodeChar = KeyConvertionTable[Index][2];
-  
+
   } else {
-    
+
     Key->UnicodeChar = KeyConvertionTable[Index][1];
   }
-  
+
   if (UsbKeyboardDevice->CapsOn) {
-    
+
     if (Key->UnicodeChar >= 'a' && Key->UnicodeChar <= 'z') {
-    
+
       Key->UnicodeChar = KeyConvertionTable[Index][2];
-    
+
     } else if (Key->UnicodeChar >= 'A' && Key->UnicodeChar <= 'Z') {
-    
+
       Key->UnicodeChar = KeyConvertionTable[Index][1];
-    
+
     }
   }
-  
-  if (KeyChar >= 0x59 && KeyChar <=0x63) {
-    
+
+  if (KeyChar >= 0x59 && KeyChar <= 0x63) {
+
     if (UsbKeyboardDevice->NumLockOn && !UsbKeyboardDevice->ShiftOn) {
-    
+
       Key->ScanCode = SCAN_NULL;
-    
+
     } else {
-      
+
       Key->UnicodeChar = 0x00;
     }
   }
-  
-  if(Key->UnicodeChar == 0 && Key->ScanCode == SCAN_NULL) {
+
+  if (Key->UnicodeChar == 0 && Key->ScanCode == SCAN_NULL) {
     return EFI_NOT_READY;
   }
-  
-  return EFI_SUCCESS;    
-  
+
+  return EFI_SUCCESS;
+
 }
 
-
 EFI_STATUS
-InitUSBKeyBuffer(
+InitUSBKeyBuffer (
   IN OUT  USB_KB_BUFFER   *KeyboardBuffer
   )
 /*++
@@ -866,17 +947,19 @@ InitUSBKeyBuffer(
     
   Returns:
   
---*/  
+--*/
+// TODO:    KeyboardBuffer - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EfiZeroMem(KeyboardBuffer,sizeof(USB_KB_BUFFER));
-  
+  EfiZeroMem (KeyboardBuffer, sizeof (USB_KB_BUFFER));
+
   KeyboardBuffer->bHead = KeyboardBuffer->bTail;
-  
+
   return EFI_SUCCESS;
 }
 
 BOOLEAN
-IsUSBKeyboardBufferEmpty(
+IsUSBKeyboardBufferEmpty (
   IN  USB_KB_BUFFER   KeyboardBuffer
   )
 /*++
@@ -890,16 +973,16 @@ IsUSBKeyboardBufferEmpty(
   Returns:
   
 --*/
+// TODO:    KeyboardBuffer - add argument and description to function comment
 {
   //
   // meet FIFO empty condition
   //
-  return (BOOLEAN)(KeyboardBuffer.bHead == KeyboardBuffer.bTail);
+  return (BOOLEAN) (KeyboardBuffer.bHead == KeyboardBuffer.bTail);
 }
 
-
 BOOLEAN
-IsUSBKeyboardBufferFull(
+IsUSBKeyboardBufferFull (
   IN  USB_KB_BUFFER   KeyboardBuffer
   )
 /*++
@@ -913,14 +996,14 @@ IsUSBKeyboardBufferFull(
   Returns:
   
 --*/
+// TODO:    KeyboardBuffer - add argument and description to function comment
 {
   return (BOOLEAN)(((KeyboardBuffer.bTail + 1) % (MAX_KEY_ALLOWED + 1)) == 
                                                         KeyboardBuffer.bHead);
 }
 
-
 EFI_STATUS
-InsertKeyCode(
+InsertKeyCode (
   IN OUT  USB_KB_BUFFER *KeyboardBuffer,
   IN      UINT8         Key,
   IN      UINT8         Down
@@ -936,31 +1019,34 @@ InsertKeyCode(
   Returns:
   
 --*/
+// TODO:    KeyboardBuffer - add argument and description to function comment
+// TODO:    Key - add argument and description to function comment
+// TODO:    Down - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_KEY         UsbKey;
-  
+  USB_KEY UsbKey;
+
   //
-  // if keyboard buffer is full, throw the 
+  // if keyboard buffer is full, throw the
   // first key out of the keyboard buffer.
-  //  
+  //
   if (IsUSBKeyboardBufferFull (*KeyboardBuffer)) {
-    RemoveKeyCode(KeyboardBuffer,&UsbKey);
+    RemoveKeyCode (KeyboardBuffer, &UsbKey);
   }
-    
+
   KeyboardBuffer->buffer[KeyboardBuffer->bTail].KeyCode = Key;
-  KeyboardBuffer->buffer[KeyboardBuffer->bTail].Down = Down;
-  
+  KeyboardBuffer->buffer[KeyboardBuffer->bTail].Down    = Down;
+
   //
   // adjust the tail pointer of the FIFO keyboard buffer.
   //
-  KeyboardBuffer->bTail = (UINT8)((KeyboardBuffer->bTail + 1) 
-                                          % (MAX_KEY_ALLOWED + 1)) ;
-  
+  KeyboardBuffer->bTail = (UINT8) ((KeyboardBuffer->bTail + 1) % (MAX_KEY_ALLOWED + 1));
+
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
-RemoveKeyCode(
+RemoveKeyCode (
   IN OUT  USB_KB_BUFFER *KeyboardBuffer,
   OUT     USB_KEY       *UsbKey
   )
@@ -975,26 +1061,29 @@ RemoveKeyCode(
   
   Returns:
   
---*/  
+--*/
+// TODO:    KeyboardBuffer - add argument and description to function comment
+// TODO:    UsbKey - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   if (IsUSBKeyboardBufferEmpty (*KeyboardBuffer)) {
     return EFI_DEVICE_ERROR;
   }
-    
+
   UsbKey->KeyCode = KeyboardBuffer->buffer[KeyboardBuffer->bHead].KeyCode;
-  UsbKey->Down = KeyboardBuffer->buffer[KeyboardBuffer->bHead].Down;
-  
+  UsbKey->Down    = KeyboardBuffer->buffer[KeyboardBuffer->bHead].Down;
+
   //
   // adjust the head pointer of the FIFO keyboard buffer.
   //
-  KeyboardBuffer->bHead = (UINT8)((KeyboardBuffer->bHead + 1) % 
-                                                (MAX_KEY_ALLOWED + 1)) ;
-  
+  KeyboardBuffer->bHead = (UINT8) ((KeyboardBuffer->bHead + 1) % (MAX_KEY_ALLOWED + 1));
+
   return EFI_SUCCESS;
-}   
+}
 
 EFI_STATUS
-SetKeyLED(
+SetKeyLED (
   IN  USB_KB_DEV    *UsbKeyboardDevice
   )
 /*++
@@ -1007,19 +1096,21 @@ SetKeyLED(
   
   Returns:
   
---*/  
+--*/
+// TODO:    UsbKeyboardDevice - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  LED_MAP     Led;
-  UINT8       ReportId;
-  
+  LED_MAP Led;
+  UINT8   ReportId;
+
   //
   // Set each field in Led map.
-  //  
-  Led.NumLock = (UINT8)UsbKeyboardDevice->NumLockOn;
-  Led.CapsLock = (UINT8)UsbKeyboardDevice->CapsOn;
-  Led.Resrvd = 0;    
-  
-  ReportId = 0;
+  //
+  Led.NumLock   = (UINT8) UsbKeyboardDevice->NumLockOn;
+  Led.CapsLock  = (UINT8) UsbKeyboardDevice->CapsOn;
+  Led.Resrvd    = 0;
+
+  ReportId      = 0;
   //
   // call Set Report Request to lighten the LED.
   //
@@ -1029,14 +1120,14 @@ SetKeyLED(
     ReportId,
     HID_OUTPUT_REPORT,
     1,
-    (CHAR8 *)&Led
+    (CHAR8 *) &Led
     );
-    
+
   return EFI_SUCCESS;
-}   
+}
 
 VOID
-USBKeyboardRepeatHandler(
+USBKeyboardRepeatHandler (
   IN    EFI_EVENT    Event,
   IN    VOID         *Context
   )
@@ -1051,38 +1142,41 @@ USBKeyboardRepeatHandler(
     
   Returns:
   
---*/    
+--*/
+// TODO:    Event - add argument and description to function comment
+// TODO:    Context - add argument and description to function comment
 {
   USB_KB_DEV  *UsbKeyboardDevice;
-  
-  UsbKeyboardDevice = (USB_KB_DEV*)Context;
-  
+
+  UsbKeyboardDevice = (USB_KB_DEV *) Context;
+
   //
   // Do nothing when there is no repeat key.
   //
-  if(UsbKeyboardDevice->RepeatKey != 0) {
+  if (UsbKeyboardDevice->RepeatKey != 0) {
     //
     // Inserts one Repeat key into keyboard buffer,
     //
-    InsertKeyCode(
-            &(UsbKeyboardDevice->KeyboardBuffer),
-            UsbKeyboardDevice->RepeatKey,
-            1
-            );
-    
+    InsertKeyCode (
+      &(UsbKeyboardDevice->KeyboardBuffer),
+      UsbKeyboardDevice->RepeatKey,
+      1
+      );
+
     //
     // set repeate rate for repeat key generation.
     //
-   gBS->SetTimer(UsbKeyboardDevice->RepeatTimer, 
-                  TimerRelative, 
-                  USBKBD_REPEAT_RATE
-                  ) ; 
-    
+    gBS->SetTimer (
+          UsbKeyboardDevice->RepeatTimer,
+          TimerRelative,
+          USBKBD_REPEAT_RATE
+          );
+
   }
 }
 
 VOID
-USBKeyboardRecoveryHandler(
+USBKeyboardRecoveryHandler (
   IN    EFI_EVENT    Event,
   IN    VOID         *Context
   )
@@ -1097,26 +1191,28 @@ USBKeyboardRecoveryHandler(
     
   Returns:
   
---*/    
+--*/
+// TODO:    Event - add argument and description to function comment
+// TODO:    Context - add argument and description to function comment
 {
 
-  USB_KB_DEV               *UsbKeyboardDevice;
-  EFI_USB_IO_PROTOCOL      *UsbIo;
-  UINT8                    PacketSize;
-  
-  UsbKeyboardDevice = (USB_KB_DEV*)Context;
-  
-  UsbIo = UsbKeyboardDevice->UsbIo;
-  
-  PacketSize =  (UINT8)(UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);
-      
-  UsbIo->UsbAsyncInterruptTransfer(
-                    UsbIo,
-                    UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
-                    TRUE,
-                    UsbKeyboardDevice->IntEndpointDescriptor.Interval,
-                    PacketSize,
-                    KeyboardHandler,
-                    UsbKeyboardDevice
-                    );
+  USB_KB_DEV          *UsbKeyboardDevice;
+  EFI_USB_IO_PROTOCOL *UsbIo;
+  UINT8               PacketSize;
+
+  UsbKeyboardDevice = (USB_KB_DEV *) Context;
+
+  UsbIo             = UsbKeyboardDevice->UsbIo;
+
+  PacketSize        = (UINT8) (UsbKeyboardDevice->IntEndpointDescriptor.MaxPacketSize);
+
+  UsbIo->UsbAsyncInterruptTransfer (
+          UsbIo,
+          UsbKeyboardDevice->IntEndpointDescriptor.EndpointAddress,
+          TRUE,
+          UsbKeyboardDevice->IntEndpointDescriptor.Interval,
+          PacketSize,
+          KeyboardHandler,
+          UsbKeyboardDevice
+          );
 }

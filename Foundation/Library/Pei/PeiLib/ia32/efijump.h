@@ -23,12 +23,12 @@ Abstract:
 #define _EFI_JUMP_H_
 
 typedef struct {
-  UINT32 ebx;
-  UINT32 esi;
-  UINT32 edi;
-  UINT32 ebp;
-  UINT32 esp;
-  UINT32 eip;
+  UINT32  ebx;
+  UINT32  esi;
+  UINT32  edi;
+  UINT32  ebp;
+  UINT32  esp;
+  UINT32  eip;
 } EFI_JUMP_BUFFER;
 
 #endif

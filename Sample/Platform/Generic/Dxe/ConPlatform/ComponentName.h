@@ -16,6 +16,7 @@ Module Name:
 Abstract:
 
 --*/
+
 #ifndef CON_MANAGE_COMPONENT_NAME_H_
 #define CON_MANAGE_COMPONENT_NAME_H_
 
@@ -24,8 +25,8 @@ Abstract:
 #ifndef EFI_SIZE_REDUCTION_APPLIED
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
-       
-extern EFI_COMPONENT_NAME_PROTOCOL gConPlatformComponentName;
+
+extern EFI_COMPONENT_NAME_PROTOCOL  gConPlatformComponentName;
 
 #endif
 
@@ -43,12 +44,11 @@ ConPlatformComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ConPlatformComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 #endif
-

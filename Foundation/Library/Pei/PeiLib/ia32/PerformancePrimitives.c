@@ -26,8 +26,22 @@ EFI_STATUS
 GetTimerValue (
   OUT UINT64    *TimerValue
   )
+/*++
+
+Routine Description:
+
+  Get timer value.
+
+Arguments:
+
+  TimerValue  - Pointer to the returned timer value
+
+Returns:
+
+  EFI_SUCCESS - Successfully got timer value
+
+--*/
 {
-  *TimerValue = EfiReadTsc();
+  *TimerValue = EfiReadTsc ();
   return EFI_SUCCESS;
 }
-

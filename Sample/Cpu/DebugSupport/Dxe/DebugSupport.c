@@ -49,7 +49,7 @@ Revision History
 //
 // This is a global that is the actual interface
 //
-EFI_DEBUG_SUPPORT_PROTOCOL gDebugSupportProtocolInterface = {
+EFI_DEBUG_SUPPORT_PROTOCOL  gDebugSupportProtocolInterface = {
   EFI_ISA,
   GetMaximumProcessorIndex,
   RegisterPeriodicCallback,
@@ -80,10 +80,13 @@ Returns:
   EFI_STATUS
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_LOADED_IMAGE_PROTOCOL   *LoadedImageProtocolPtr;
   EFI_STATUS                  Status;
-  EFI_HANDLE                  Handle, *HandlePtr;
+  EFI_HANDLE                  Handle;
+  EFI_HANDLE                  *HandlePtr;
   UINTN                       NumHandles;
   EFI_DEBUG_SUPPORT_PROTOCOL  *DebugSupportProtocolPtr;
 
@@ -106,18 +109,25 @@ Returns:
   // First check to see that the debug support protocol for this processor
   // type is not already installed
   //
-  Status = gBS->LocateHandleBuffer(ByProtocol, &gEfiDebugSupportProtocolGuid,
-                              NULL, &NumHandles, &HandlePtr);
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiDebugSupportProtocolGuid,
+                  NULL,
+                  &NumHandles,
+                  &HandlePtr
+                  );
 
-  if ( Status != EFI_NOT_FOUND ) {
+  if (Status != EFI_NOT_FOUND) {
     do {
       NumHandles--;
-      Status = gBS->OpenProtocol (HandlePtr[NumHandles],
-                                 &gEfiDebugSupportProtocolGuid,
-                                 (VOID **)&DebugSupportProtocolPtr,
-                                 ImageHandle,
-                                 NULL,
-                                 EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+      Status = gBS->OpenProtocol (
+                      HandlePtr[NumHandles],
+                      &gEfiDebugSupportProtocolGuid,
+                      (VOID **) &DebugSupportProtocolPtr,
+                      ImageHandle,
+                      NULL,
+                      EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                      );
       if (Status == EFI_SUCCESS && DebugSupportProtocolPtr->Isa == EFI_ISA) {
         gBS->FreePool (HandlePtr);
         Status = EFI_ALREADY_STARTED;
@@ -130,23 +140,26 @@ Returns:
   //
   // Get our image information and install platform specific unload handler
   //
-  Status = gBS->OpenProtocol (ImageHandle,
-                             &gEfiLoadedImageProtocolGuid,
-                             (VOID **)&LoadedImageProtocolPtr,
-                             ImageHandle,
-                             NULL,
-                             EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-  ASSERT (!EFI_ERROR(Status));
+  Status = gBS->OpenProtocol (
+                  ImageHandle,
+                  &gEfiLoadedImageProtocolGuid,
+                  (VOID **) &LoadedImageProtocolPtr,
+                  ImageHandle,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  ASSERT (!EFI_ERROR (Status));
   if (Status != EFI_SUCCESS) {
     goto ErrExit;
   }
+
   LoadedImageProtocolPtr->Unload = plUnloadDebugSupportDriver;
 
   //
   // Call hook for platform specific initialization
   //
   Status = plInitializeDebugSupportDriver ();
-  ASSERT (!EFI_ERROR(Status));
+  ASSERT (!EFI_ERROR (Status));
   if (Status != EFI_SUCCESS) {
     goto ErrExit;
   }
@@ -155,11 +168,13 @@ Returns:
   // Install DebugSupport protocol to new handle
   //
   Handle = NULL;
-  Status = gBS->InstallProtocolInterface (&Handle,
-                                         &gEfiDebugSupportProtocolGuid,
-                                         EFI_NATIVE_INTERFACE,
-                                         &gDebugSupportProtocolInterface);
-  ASSERT (!EFI_ERROR(Status));
+  Status = gBS->InstallProtocolInterface (
+                  &Handle,
+                  &gEfiDebugSupportProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &gDebugSupportProtocolInterface
+                  );
+  ASSERT (!EFI_ERROR (Status));
   if (Status != EFI_SUCCESS) {
     goto ErrExit;
   }
@@ -167,5 +182,3 @@ Returns:
 ErrExit:
   return Status;
 }
-
-

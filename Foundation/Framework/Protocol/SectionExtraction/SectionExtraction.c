@@ -15,15 +15,14 @@ Module Name:
 
 Abstract:
 
-  Section Extraction protocol as defined in the EFI 2.0 File Image Format
+  Section Extraction protocol as defined in the Tiano File Image Format
   specification.
 
 --*/
 
-#include "Tiano.h"                  
-#include EFI_PROTOCOL_DEFINITION(SectionExtraction)
+#include "Tiano.h"
+#include EFI_PROTOCOL_DEFINITION (SectionExtraction)
 
-EFI_GUID gEfiSectionExtractionProtocolGuid = EFI_SECTION_EXTRACTION_PROTOCOL_GUID;
+EFI_GUID  gEfiSectionExtractionProtocolGuid = EFI_SECTION_EXTRACTION_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiSectionExtractionProtocolGuid, "Section Extraction Protocol", "EFI 2.0 Section Extraction Protocol");
-
+EFI_GUID_STRING(&gEfiSectionExtractionProtocolGuid, "Section Extraction Protocol", "Tiano Section Extraction Protocol");

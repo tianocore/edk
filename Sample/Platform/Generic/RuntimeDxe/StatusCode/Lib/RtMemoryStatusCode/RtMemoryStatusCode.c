@@ -24,21 +24,20 @@ Abstract:
 //
 // Global variables
 //
-PEI_STATUS_CODE_MEMORY_PPI mStatusCodeMemoryPpi = {0, 0, 0, 0};
+PEI_STATUS_CODE_MEMORY_PPI  mStatusCodeMemoryPpi = { 0, 0, 0, 0 };
 
 //
 // Function implementations
 //
-
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 RtMemoryReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
 
@@ -57,8 +56,8 @@ Returns:
 
 --*/
 {
-  EFI_STATUS_CODE_ENTRY         *CurrentEntry;
-  UINTN                         MaxEntry;
+  EFI_STATUS_CODE_ENTRY *CurrentEntry;
+  UINTN                 MaxEntry;
 
   //
   // We don't care to log debug codes.
@@ -66,37 +65,35 @@ Returns:
   if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_DEBUG_CODE) {
     return EFI_SUCCESS;
   }
-
   //
   // Update the latest entry in the journal.
   //
-
   MaxEntry = mStatusCodeMemoryPpi.Length / sizeof (EFI_STATUS_CODE_ENTRY);
   if (!MaxEntry) {
     //
-    // If we don't have any entries, then we can return.  
+    // If we don't have any entries, then we can return.
     // This effectively means that no memory buffer was passed forward from PEI.
     //
     return EFI_SUCCESS;
   }
 
-  CurrentEntry = (EFI_STATUS_CODE_ENTRY*) (UINTN) (mStatusCodeMemoryPpi.Address + (mStatusCodeMemoryPpi.LastEntry * sizeof (EFI_STATUS_CODE_ENTRY)));
-  
+  CurrentEntry = (EFI_STATUS_CODE_ENTRY *) (UINTN) (mStatusCodeMemoryPpi.Address + (mStatusCodeMemoryPpi.LastEntry * sizeof (EFI_STATUS_CODE_ENTRY)));
+
   mStatusCodeMemoryPpi.LastEntry = (mStatusCodeMemoryPpi.LastEntry + 1) % MaxEntry;
   if (mStatusCodeMemoryPpi.LastEntry == mStatusCodeMemoryPpi.FirstEntry) {
     mStatusCodeMemoryPpi.FirstEntry = (mStatusCodeMemoryPpi.FirstEntry + 1) % MaxEntry;
   }
 
-  CurrentEntry->Type = CodeType;
-  CurrentEntry->Value = Value;
-  CurrentEntry->Instance = Instance;
+  CurrentEntry->Type      = CodeType;
+  CurrentEntry->Value     = Value;
+  CurrentEntry->Instance  = Instance;
 
-  return  EFI_SUCCESS;
+  return EFI_SUCCESS;
 }
 
 EFI_BOOTSERVICE
 VOID
-EFIAPI 
+EFIAPI
 RtMemoryInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -121,32 +118,32 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                    Status;
-  VOID                          *HobList;
-  PEI_STATUS_CODE_MEMORY_PPI    **StatusCodeMemoryPpi;
+  EFI_STATUS                  Status;
+  VOID                        *HobList;
+  PEI_STATUS_CODE_MEMORY_PPI  **StatusCodeMemoryPpi;
 
   //
   // Locate the HOB that contains the PPI structure for the memory journal
   // We don't check for more than one.
   //
   EfiLibGetSystemConfigurationTable (
-    &gEfiHobListGuid, 
+    &gEfiHobListGuid,
     &HobList
     );
   Status = GetNextGuidHob (
-    &HobList,
-    &gPeiStatusCodeMemoryPpiGuid,
-    (VOID**)&StatusCodeMemoryPpi,
-    NULL
-    );
+            &HobList,
+            &gPeiStatusCodeMemoryPpiGuid,
+            (VOID **) &StatusCodeMemoryPpi,
+            NULL
+            );
   if (EFI_ERROR (Status)) {
-    return;
+    return ;
   }
-
   //
   // Copy data to our structure since the HOB will go away at runtime
   //
   // BUGBUG: Virtualize for RT
+  //
   mStatusCodeMemoryPpi.FirstEntry = (*StatusCodeMemoryPpi)->FirstEntry;
   mStatusCodeMemoryPpi.LastEntry  = (*StatusCodeMemoryPpi)->LastEntry;
   mStatusCodeMemoryPpi.Address    = (*StatusCodeMemoryPpi)->Address;
@@ -176,14 +173,13 @@ Returns:
 
 --*/
 {
-  UINTN                         MaxEntry;
-  EFI_STATUS_CODE_ENTRY         *CurrentEntry;
-  UINTN                         Counter;
+  UINTN                 MaxEntry;
+  EFI_STATUS_CODE_ENTRY *CurrentEntry;
+  UINTN                 Counter;
 
   if (ReportStatusCode == RtMemoryReportStatusCode) {
-    return;
+    return ;
   }
-
   //
   // Playback prior status codes to current listeners
   //
@@ -198,7 +194,7 @@ Returns:
     //
     // Play current entry
     //
-    CurrentEntry = (EFI_STATUS_CODE_ENTRY*) (UINTN) (mStatusCodeMemoryPpi.Address + (Counter * sizeof (EFI_STATUS_CODE_ENTRY)));
+    CurrentEntry = (EFI_STATUS_CODE_ENTRY *) (UINTN) (mStatusCodeMemoryPpi.Address + (Counter * sizeof (EFI_STATUS_CODE_ENTRY)));
     ReportStatusCode (
       CurrentEntry->Type,
       CurrentEntry->Value,

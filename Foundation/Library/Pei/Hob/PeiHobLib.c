@@ -76,6 +76,17 @@ Routine Description:
 
 Arguments:
 
+  HobStart      - Start pointer of hob list
+  Version       - The version number pertaining to the PHIT HOB definition.
+  BootMode      - The system boot mode as determined during the HOB producer phase.
+  EfiMemoryTop  - The highest address location of memory that is allocated for use by the HOB
+                  producer phase.
+  EfiMemoryBottom   - The lowest address location of memory that is allocated for use by the HOB
+                      producer phase.
+  EfiFreeMemoryTop  - The highest address location of free memory that is currently available for use
+                      by the HOB producer phase.
+  EfiFreeMemoryBottom   - The lowest address location of free memory that is available for 
+                          use by the HOB producer phase.
   
 Returns:
 
@@ -126,7 +137,7 @@ Routine Description:
 
 Arguments:
 
-  PeiServices               - The PEI core services table.
+  HobStart                  - Start pointer of hob list
 
   ModuleName                - The GUID File Name of the HON from the Firmware Volume
 
@@ -183,11 +194,11 @@ Routine Description:
 
 Arguments:
 
-  PeiServices     - The PEI core services table.
+  HobStart          - Start pointer of hob list
 
-  MemoryType      - The type of memory described by this HOB
+  ResourceType      - The type of memory described by this HOB
 
-  MemoryAttribute - The memory attributes of the memory described by this HOB
+  ResourceAttribute - The memory attributes of the memory described by this HOB
 
   PhysicalStart   - The 64 bit physical address of memory described by this HOB
 
@@ -236,7 +247,7 @@ Routine Description:
 
 Arguments:
 
-  PeiServices - The PEI core services table.
+  HobStart    - Start pointer of hob list
 
   Guid        - The GUID of the custome HOB type
 
@@ -287,7 +298,7 @@ Routine Description:
 
 Arguments:
 
-  PeiServices - The PEI core services table.
+  HobStart    - Start pointer of hob list
 
   BaseAddress - The base address of the Firmware Volume
 
@@ -334,7 +345,7 @@ Routine Description:
 
 Arguments:
 
-  PeiServices               - The PEI core services table.
+  HobStart                  - Start pointer of hob list
 
   SizeOfMemorySpace         - Identifies the maximum 
                               physical memory addressibility of the processor.
@@ -384,7 +395,7 @@ Routine Description:
 
 Arguments:
 
-  PeiServices               - The PEI core services table.
+  HobStart                  - Start pointer of hob list
 
   BaseAddress               - The 64 bit physical address of the Stack
 
@@ -431,15 +442,17 @@ BuildHobBspStore (
 
 Routine Description:
 
-  Builds a HOB for the Stack
+  Builds a HOB for the bsp store
 
 Arguments:
 
-  PeiServices               - The PEI core services table.
+  HobStart                  - Start pointer of hob list
 
-  BaseAddress               - The 64 bit physical address of the Stack
+  BaseAddress               - The 64 bit physical address of bsp store
 
-  Length                    - The length of the stack in bytes
+  Length                    - The length of the bsp store in bytes
+  
+  MemoryType                - Memory type of the bsp store
 
 Returns:
 
@@ -481,15 +494,20 @@ BuildMemoryAllocationHob (
 
 Routine Description:
 
-  Builds a HOB for the Stack
+  Builds a HOB for memory allocation
 
 Arguments:
 
-  PeiServices               - The PEI core services table.
+  HobStart                  - Start pointer of hob list
 
-  BaseAddress               - The 64 bit physical address of the Stack
+  BaseAddress               - The base address of memory allocated by this HOB.
 
-  Length                    - The length of the stack in bytes
+  Length                    - The length in bytes of memory allocated by this HOB.
+  
+  Name                      - A GUID that defines the memory allocation region¡¯s type and purpose, 
+                              as well as other fields within the memory allocation HOB.
+                              
+  MemoryType                - Defines the type of memory allocated by this HOB.
 
 Returns:
 

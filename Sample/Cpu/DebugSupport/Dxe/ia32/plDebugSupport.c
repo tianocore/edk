@@ -41,17 +41,18 @@ Revision History
 //
 #include "plDebugSupport.h"
 
+//
 // This the global main table to keep track of the interrupts
-//IDT_ENTRY                   IdtEntryTable[NUM_IDT_ENTRIES];
-IDT_ENTRY                   *IdtEntryTable = NULL;
-DESCRIPTOR                  NullDesc = 0;
-
+//
+IDT_ENTRY   *IdtEntryTable  = NULL;
+DESCRIPTOR  NullDesc        = 0;
 
 #ifndef EFI_NT_EMULATOR
-STATIC EFI_STATUS
+STATIC
+EFI_STATUS
 CreateEntryStub (
   IN EFI_EXCEPTION_TYPE     ExceptionType,
-  OUT VOID **               Stub
+  OUT VOID                  **Stub
   )
 /*++
 
@@ -68,8 +69,8 @@ Returns:
 
 --*/
 {
-  EFI_STATUS Status;
-  UINT8 * StubCopy;
+  EFI_STATUS  Status;
+  UINT8       *StubCopy;
 
   //
   // First, allocate a new buffer and copy the stub code into it
@@ -100,15 +101,16 @@ Returns:
     //
     // fixup the jump target to point to the common entry
     //
-    *(UINT32* ) &StubCopy[0x0e] =  (UINT32) CommonIdtEntry - (UINT32) &StubCopy[StubSize];
+    *(UINT32 *) &StubCopy[0x0e] = (UINT32) CommonIdtEntry - (UINT32) &StubCopy[StubSize];
   }
+
   return Status;
 }
 
-
-STATIC EFI_STATUS
+STATIC
+EFI_STATUS
 HookEntry (
-  IN EFI_EXCEPTION_TYPE           ExceptionType,
+  IN EFI_EXCEPTION_TYPE            ExceptionType,
   IN VOID                         (*NewCallback) ()
   )
 /*++
@@ -130,28 +132,30 @@ Returns:
   Other possibilities are passed through by CreateEntryStub
 
 --*/
+// TODO:    ) - add argument and description to function comment
 {
-  BOOLEAN OldIntFlagState;
-  EFI_STATUS Status;
+  BOOLEAN     OldIntFlagState;
+  EFI_STATUS  Status;
 
   Status = CreateEntryStub (ExceptionType, (VOID **) &IdtEntryTable[ExceptionType].StubEntry);
   if (Status == EFI_SUCCESS) {
-    OldIntFlagState = WriteInterruptFlag(0);
+    OldIntFlagState = WriteInterruptFlag (0);
     ReadIdt (ExceptionType, &(IdtEntryTable[ExceptionType].OrigDesc));
 
-    ((UINT16 *) &IdtEntryTable[ExceptionType].OrigVector)[0] = ((UINT16 *) &IdtEntryTable[ExceptionType].OrigDesc)[0];
-    ((UINT16 *) &IdtEntryTable[ExceptionType].OrigVector)[1] = ((UINT16 *) &IdtEntryTable[ExceptionType].OrigDesc)[3];
+    ((UINT16 *) &IdtEntryTable[ExceptionType].OrigVector)[0]  = ((UINT16 *) &IdtEntryTable[ExceptionType].OrigDesc)[0];
+    ((UINT16 *) &IdtEntryTable[ExceptionType].OrigVector)[1]  = ((UINT16 *) &IdtEntryTable[ExceptionType].OrigDesc)[3];
 
     Vect2Desc (&IdtEntryTable[ExceptionType].NewDesc, IdtEntryTable[ExceptionType].StubEntry);
     IdtEntryTable[ExceptionType].RegisteredCallback = NewCallback;
     WriteIdt (ExceptionType, &(IdtEntryTable[ExceptionType].NewDesc));
-    WriteInterruptFlag(OldIntFlagState);
+    WriteInterruptFlag (OldIntFlagState);
   }
+
   return Status;
 }
 
-
-STATIC EFI_STATUS
+STATIC
+EFI_STATUS
 UnhookEntry (
   IN EFI_EXCEPTION_TYPE           ExceptionType
   )
@@ -169,19 +173,18 @@ Returns:
 
 --*/
 {
-  BOOLEAN OldIntFlagState;
-  EFI_STATUS Status;
+  BOOLEAN     OldIntFlagState;
+  EFI_STATUS  Status;
 
-  OldIntFlagState = WriteInterruptFlag(0);
+  OldIntFlagState = WriteInterruptFlag (0);
   WriteIdt (ExceptionType, &(IdtEntryTable[ExceptionType].OrigDesc));
-  Status = gBS->FreePool ((VOID *)(UINTN)IdtEntryTable[ExceptionType].StubEntry);
+  Status = gBS->FreePool ((VOID *) (UINTN) IdtEntryTable[ExceptionType].StubEntry);
   EfiZeroMem (&IdtEntryTable[ExceptionType], sizeof (IDT_ENTRY));
-  WriteInterruptFlag(OldIntFlagState);
+  WriteInterruptFlag (OldIntFlagState);
 
   return (Status);
 }
-#endif  
-
+#endif
 
 EFI_STATUS
 ManageIdtEntryTable (
@@ -211,29 +214,41 @@ Returns:
   Other possible return values are passed through from UnHookEntry and HookEntry.
 
 --*/
+// TODO:    ) - add argument and description to function comment
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
   Status = EFI_SUCCESS;
 
 #ifndef EFI_NT_EMULATOR
-  if (CompareDescriptor (&IdtEntryTable[ExceptionType].NewDesc, &NullDesc)) {  // we've already installed to this vector
-    if (NewCallback != NULL) {   // if the input handler is non-null, error
+  if (CompareDescriptor (&IdtEntryTable[ExceptionType].NewDesc, &NullDesc)) {
+    //
+    // we've already installed to this vector
+    //
+    if (NewCallback != NULL) {
+      //
+      // if the input handler is non-null, error
+      //
       Status = EFI_ALREADY_STARTED;
     } else {
       Status = UnhookEntry (ExceptionType);
     }
-  } else {                      // no user handler installed on this vector
-    if (NewCallback == NULL) {   // if the input handler is null, error
+  } else {
+    //
+    // no user handler installed on this vector
+    //
+    if (NewCallback == NULL) {
+      //
+      // if the input handler is null, error
+      //
       Status = EFI_INVALID_PARAMETER;
     } else {
       Status = HookEntry (ExceptionType, NewCallback);
     }
   }
-#endif  
+#endif
   return Status;
 }
-
 
 EFI_STATUS
 GetMaximumProcessorIndex (
@@ -249,6 +264,8 @@ Arguments:
 Returns: Always returns EFI_SUCCESS with *MaxProcessorIndex set to 0
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    MaxProcessorIndex - add argument and description to function comment
 {
   *MaxProcessorIndex = 0;
   return (EFI_SUCCESS);
@@ -269,10 +286,12 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ProcessorIndex - add argument and description to function comment
+// TODO:    PeriodicCallback - add argument and description to function comment
 {
   return ManageIdtEntryTable (PeriodicCallback, SYSTEM_TIMER_VECTOR);
 }
-
 
 EFI_STATUS
 RegisterExceptionCallback (
@@ -295,10 +314,13 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ProcessorIndex - add argument and description to function comment
+// TODO:    NewCallback - add argument and description to function comment
+// TODO:    ExceptionType - add argument and description to function comment
 {
   return ManageIdtEntryTable (NewCallback, ExceptionType);
 }
-
 
 EFI_STATUS
 InvalidateInstructionCache (
@@ -320,12 +342,19 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    ProcessorIndex - add argument and description to function comment
+// TODO:    Start - add argument and description to function comment
+// TODO:    Length - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
-plInitializeDebugSupportDriver (VOID)
+plInitializeDebugSupportDriver (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -342,11 +371,11 @@ Returns:
                     the context save will fail, so these processor's are not supported.
 
 --*/
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
 {
-  if (!FxStorSupport()) {
+  if (!FxStorSupport ()) {
     return EFI_UNSUPPORTED;
-  }
-  else {
+  } else {
     IdtEntryTable = EfiLibAllocateZeroPool (sizeof (IDT_ENTRY) * NUM_IDT_ENTRIES);
     if (IdtEntryTable != NULL) {
       return EFI_SUCCESS;
@@ -355,7 +384,6 @@ Returns:
     }
   }
 }
-
 
 EFI_STATUS
 plUnloadDebugSupportDriver (
@@ -378,16 +406,17 @@ Returns:
   None
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_EXCEPTION_TYPE      ExceptionType;
+  EFI_EXCEPTION_TYPE  ExceptionType;
 
   for (ExceptionType = 0; ExceptionType < NUM_IDT_ENTRIES; ExceptionType++) {
     ManageIdtEntryTable (NULL, ExceptionType);
   }
+
   gBS->FreePool (IdtEntryTable);
   return EFI_SUCCESS;
 }
-
 
 VOID
 InterruptDistrubutionHub (
@@ -407,6 +436,8 @@ Returns:
   None
 
 --*/
+// TODO:    ExceptionType - add argument and description to function comment
+// TODO:    ContextRecord - add argument and description to function comment
 {
   if (IdtEntryTable[ExceptionType].RegisteredCallback != NULL) {
     if (ExceptionType != SYSTEM_TIMER_VECTOR) {
@@ -417,7 +448,3 @@ Returns:
     }
   }
 }
-
-
-
-

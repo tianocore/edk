@@ -25,7 +25,9 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
 
 #define EFI_USB_HC_PROTOCOL_GUID \
-  {0xf5089266, 0x1aa0, 0x4953, 0x97, 0xd8, 0x56, 0x2f, 0x8a, 0x73, 0xb5, 0x19}
+  { \
+    0xf5089266, 0x1aa0, 0x4953, 0x97, 0xd8, 0x56, 0x2f, 0x8a, 0x73, 0xb5, 0x19 \
+  }
 
 //
 // Forward reference for pure ANSI compatability
@@ -39,8 +41,8 @@ typedef enum {
   EfiUsbHcStateMaximum
 } EFI_USB_HC_STATE;
 
-#define EFI_USB_HC_RESET_GLOBAL             0x0001
-#define EFI_USB_HC_RESET_HOST_CONTROLLER    0x0002
+#define EFI_USB_HC_RESET_GLOBAL           0x0001
+#define EFI_USB_HC_RESET_HOST_CONTROLLER  0x0002
 
 //
 // Protocol definitions
@@ -48,73 +50,73 @@ typedef enum {
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_RESET) (
-  IN EFI_USB_HC_PROTOCOL    *This,
+  IN EFI_USB_HC_PROTOCOL    * This,
   IN UINT16                 Attributes
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_GET_STATE) (
-  IN  EFI_USB_HC_PROTOCOL    *This,
-  OUT EFI_USB_HC_STATE       *State
+  IN  EFI_USB_HC_PROTOCOL    * This,
+  OUT EFI_USB_HC_STATE       * State
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_SET_STATE) (
-  IN EFI_USB_HC_PROTOCOL    *This,
+  IN EFI_USB_HC_PROTOCOL    * This,
   IN EFI_USB_HC_STATE       State
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_CONTROL_TRANSFER) (
-  IN     EFI_USB_HC_PROTOCOL       *This,
+  IN     EFI_USB_HC_PROTOCOL       * This,
   IN     UINT8                     DeviceAddress,
   IN     BOOLEAN                   IsSlowDevice,
   IN     UINT8                     MaximumPacketLength,
-  IN     EFI_USB_DEVICE_REQUEST    *Request,
+  IN     EFI_USB_DEVICE_REQUEST    * Request,
   IN     EFI_USB_DATA_DIRECTION    TransferDirection,
-  IN OUT VOID                      *Data                 OPTIONAL,
-  IN OUT UINTN                     *DataLength           OPTIONAL,  
+  IN OUT VOID                      *Data OPTIONAL,
+  IN OUT UINTN                     *DataLength OPTIONAL,
   IN     UINTN                     TimeOut,
   OUT    UINT32                    *TransferResult
   );
-  
+
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_BULK_TRANSFER) (
-  IN     EFI_USB_HC_PROTOCOL    *This,
+  IN     EFI_USB_HC_PROTOCOL    * This,
   IN     UINT8                  DeviceAddress,
   IN     UINT8                  EndPointAddress,
   IN     UINT8                  MaximumPacketLength,
-  IN OUT VOID                   *Data,          
-  IN OUT UINTN                  *DataLength,    
-  IN OUT UINT8                  *DataToggle,    
-  IN     UINTN                  TimeOut,        
+  IN OUT VOID                   *Data,
+  IN OUT UINTN                  *DataLength,
+  IN OUT UINT8                  *DataToggle,
+  IN     UINTN                  TimeOut,
   OUT    UINT32                 *TransferResult
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_ASYNC_INTERRUPT_TRANSFER) (
-  IN     EFI_USB_HC_PROTOCOL                *This,
-  IN     UINT8                              DeviceAddress,
-  IN     UINT8                              EndPointAddress,
-  IN     BOOLEAN                            IsSlowDevice,
-  IN     UINT8                              MaxiumPacketLength,
-  IN     BOOLEAN                            IsNewTransfer,
-  IN OUT UINT8                              *DataToggle,      
-  IN     UINTN                              PollingInterval  OPTIONAL,
-  IN     UINTN                              DataLength       OPTIONAL,
-  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK    CallBackFunction OPTIONAL,
-  IN     VOID                               *Context         OPTIONAL  
+  IN     EFI_USB_HC_PROTOCOL                                 * This,
+  IN     UINT8                                               DeviceAddress,
+  IN     UINT8                                               EndPointAddress,
+  IN     BOOLEAN                                             IsSlowDevice,
+  IN     UINT8                                               MaxiumPacketLength,
+  IN     BOOLEAN                                             IsNewTransfer,
+  IN OUT UINT8                                               *DataToggle,
+  IN     UINTN                                               PollingInterval  OPTIONAL,
+  IN     UINTN                                               DataLength       OPTIONAL,
+  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK                     CallBackFunction OPTIONAL,
+  IN     VOID                                                *Context OPTIONAL
   );
-  
+
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_SYNC_INTERRUPT_TRANSFER) (
-  IN     EFI_USB_HC_PROTOCOL    *This,
+  IN     EFI_USB_HC_PROTOCOL    * This,
   IN     UINT8                  DeviceAddress,
   IN     UINT8                  EndPointAddress,
   IN     BOOLEAN                IsSlowDevice,
@@ -129,7 +131,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_ISOCHRONOUS_TRANSFER) (
-  IN     EFI_USB_HC_PROTOCOL    *This,
+  IN     EFI_USB_HC_PROTOCOL    * This,
   IN     UINT8                  DeviceAddress,
   IN     UINT8                  EndPointAddress,
   IN     UINT8                  MaximumPacketLength,
@@ -141,49 +143,48 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_ASYNC_ISOCHRONOUS_TRANSFER) (
-  IN     EFI_USB_HC_PROTOCOL                *This,
+  IN     EFI_USB_HC_PROTOCOL                * This,
   IN     UINT8                              DeviceAddress,
   IN     UINT8                              EndPointAddress,
   IN     UINT8                              MaximumPacketLength,
   IN OUT VOID                               *Data,
   IN     UINTN                              DataLength,
   IN     EFI_ASYNC_USB_TRANSFER_CALLBACK    IsochronousCallBack,
-  IN     VOID                               *Context   OPTIONAL
+  IN     VOID                               *Context OPTIONAL
   );
 
-
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_GET_ROOTHUB_PORT_NUMBER) (
-  IN EFI_USB_HC_PROTOCOL    *This,
+  IN EFI_USB_HC_PROTOCOL    * This,
   OUT UINT8                 *PortNumber
   );
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_GET_ROOTHUB_PORT_STATUS) (
-  IN EFI_USB_HC_PROTOCOL     *This,
+  IN EFI_USB_HC_PROTOCOL     * This,
   IN  UINT8                  PortNumber,
-  OUT EFI_USB_PORT_STATUS    *PortStatus
+  OUT EFI_USB_PORT_STATUS    * PortStatus
   );
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_SET_ROOTHUB_PORT_FEATURE) (
-  IN EFI_USB_HC_PROTOCOL     *This,
+  IN EFI_USB_HC_PROTOCOL     * This,
   IN UINT8                   PortNumber,
   IN EFI_USB_PORT_FEATURE    PortFeature
   );
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_USB_HC_PROTOCOL_CLEAR_ROOTHUB_PORT_FEATURE) (
-  IN EFI_USB_HC_PROTOCOL     *This,
+  IN EFI_USB_HC_PROTOCOL     * This,
   IN UINT8                   PortNumber,
   IN EFI_USB_PORT_FEATURE    PortFeature
   );
 
-typedef struct _EFI_USB_HC_PROTOCOL {  
+typedef struct _EFI_USB_HC_PROTOCOL {
   EFI_USB_HC_PROTOCOL_RESET                       Reset;
   EFI_USB_HC_PROTOCOL_GET_STATE                   GetState;
   EFI_USB_HC_PROTOCOL_SET_STATE                   SetState;
@@ -194,12 +195,12 @@ typedef struct _EFI_USB_HC_PROTOCOL {
   EFI_USB_HC_PROTOCOL_ISOCHRONOUS_TRANSFER        IsochronousTransfer;
   EFI_USB_HC_PROTOCOL_ASYNC_ISOCHRONOUS_TRANSFER  AsyncIsochronousTransfer;
   EFI_USB_HC_PROTOCOL_GET_ROOTHUB_PORT_NUMBER     GetRootHubPortNumber;
-  EFI_USB_HC_PROTOCOL_GET_ROOTHUB_PORT_STATUS     GetRootHubPortStatus; 
+  EFI_USB_HC_PROTOCOL_GET_ROOTHUB_PORT_STATUS     GetRootHubPortStatus;
   EFI_USB_HC_PROTOCOL_SET_ROOTHUB_PORT_FEATURE    SetRootHubPortFeature;
   EFI_USB_HC_PROTOCOL_CLEAR_ROOTHUB_PORT_FEATURE  ClearRootHubPortFeature;
   UINT16                                          MajorRevision;
   UINT16                                          MinorRevision;
-  } EFI_USB_HC_PROTOCOL;
+} EFI_USB_HC_PROTOCOL;
 
 extern EFI_GUID gEfiUsbHcProtocolGuid;
 

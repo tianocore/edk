@@ -27,19 +27,19 @@ Abstract:
 //
 // Modular variable used by common libiary in PEI phase
 //
-EFI_GUID  mPeiCpuIoPpiGuid  = PEI_CPU_IO_PPI_GUID;
-EFI_GUID  mPeiPciCfgPpiGuid = PEI_PCI_CFG_PPI_GUID;
+EFI_GUID              mPeiCpuIoPpiGuid  = PEI_CPU_IO_PPI_GUID;
+EFI_GUID              mPeiPciCfgPpiGuid = PEI_PCI_CFG_PPI_GUID;
 
-EFI_PEI_SERVICES    **mPeiServices = NULL;
-PEI_CPU_IO_PPI      *CpuIoPpi      = NULL;
-PEI_PCI_CFG_PPI     *PciCfgPpi     = NULL;
+EFI_PEI_SERVICES      **mPeiServices    = NULL;
+PEI_CPU_IO_PPI        *CpuIoPpi         = NULL;
+PEI_PCI_CFG_PPI       *PciCfgPpi        = NULL;
 
 //
 // Modular variable used by common libiary in DXE phase
 //
-EFI_SYSTEM_TABLE          *mST = NULL;
-EFI_BOOT_SERVICES         *mBS = NULL;
-EFI_RUNTIME_SERVICES      *mRT = NULL;
+EFI_SYSTEM_TABLE      *mST  = NULL;
+EFI_BOOT_SERVICES     *mBS  = NULL;
+EFI_RUNTIME_SERVICES  *mRT  = NULL;
 
 EFI_STATUS
 EfiInitializeCommonDriverLib (
@@ -54,26 +54,30 @@ Routine Description:
   
 Arguments:
 
+  ImageHandle     - The firmware allocated handle for the EFI image.
+  
+  SystemTable     - A pointer to the EFI System Table.
+
 Returns: 
 
   EFI_STATUS always returns EFI_SUCCESS
 
 --*/
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
-  mPeiServices = NULL;
-  CpuIoPpi = NULL;
-  PciCfgPpi = NULL;
+  mPeiServices  = NULL;
+  CpuIoPpi      = NULL;
+  PciCfgPpi     = NULL;
 
   if (ImageHandle == NULL) {
     //
     // The function is called in PEI phase, use PEI interfaces
     //
-    mPeiServices = (EFI_PEI_SERVICES **)SystemTable;
+    mPeiServices = (EFI_PEI_SERVICES **) SystemTable;
     ASSERT (mPeiServices == NULL);
 
-    CpuIoPpi = (**mPeiServices).CpuIo;
+    CpuIoPpi  = (**mPeiServices).CpuIo;
     PciCfgPpi = (**mPeiServices).PciCfg;
 
   } else {
@@ -84,17 +88,17 @@ Returns:
     ASSERT (mST != NULL);
 
     mBS = mST->BootServices;
-    mRT = mST->RuntimeServices;   
+    mRT = mST->RuntimeServices;
     ASSERT (mBS != NULL);
     ASSERT (mRT != NULL);
 
     //
     // Should be at EFI_D_INFO, but lets us know things are running
     //
-    DEBUG((EFI_D_INFO, "EfiInitializeCommonDriverLib: Started in DXE\n"));
+    DEBUG ((EFI_D_INFO, "EfiInitializeCommonDriverLib: Started in DXE\n"));
     return EFI_SUCCESS;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -110,27 +114,34 @@ EfiCommonIoWrite (
 
 Routine Description:
 
+  Io write operation.
+
 Arguments:
+
+  Width   - Width of write operation
+  Address - Start IO address to write
+  Count   - Write count
+  Buffer  - Buffer to write to the address
 
 Returns: 
 
-  EFI_STATUS always returns EFI_SUCCESS
+  Status code
 
 --*/
 {
-  EFI_STATUS                         Status;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL    *RootBridgeIo;
+  EFI_STATUS                      Status;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
   if (mPeiServices == NULL) {
     //
     // The function is called in PEI phase, use PEI interfaces
     //
     Status = CpuIoPpi->Io.Write (
-                            mPeiServices, 
-                            CpuIoPpi, 
+                            mPeiServices,
+                            CpuIoPpi,
                             Width,
                             Address,
-                            Count, 
+                            Count,
                             Buffer
                             );
   } else {
@@ -138,15 +149,15 @@ Returns:
     // The function is called in DXE phase
     //
     Status = mBS->LocateProtocol (
-                    &gEfiPciRootBridgeIoProtocolGuid, 
-                     NULL, 
-                    (VOID **)&RootBridgeIo
-                     );
+                    &gEfiPciRootBridgeIoProtocolGuid,
+                    NULL,
+                    (VOID **) &RootBridgeIo
+                    );
     if (EFI_ERROR (Status)) {
       return Status;
     }
 
-   Status = RootBridgeIo->Io.Write(RootBridgeIo, Width, Address, Count, Buffer);
+    Status = RootBridgeIo->Io.Write (RootBridgeIo, Width, Address, Count, Buffer);
   }
 
   return Status;
@@ -164,25 +175,34 @@ EfiCommonIoRead (
 
 Routine Description:
 
+  Io read operation.
+
 Arguments:
+
+  Width   - Width of read operation
+  Address - Start IO address to read
+  Count   - Read count
+  Buffer  - Buffer to store result
 
 Returns: 
 
+  Status code
+
 --*/
 {
-  EFI_STATUS                         Status;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL    *RootBridgeIo;
+  EFI_STATUS                      Status;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
   if (mPeiServices == NULL) {
     //
     // The function is called in PEI phase, use PEI interfaces
     //
-    Status = CpuIoPpi->Io.Read(
-                            mPeiServices, 
-                            CpuIoPpi, 
+    Status = CpuIoPpi->Io.Read (
+                            mPeiServices,
+                            CpuIoPpi,
                             Width,
                             Address,
-                            Count, 
+                            Count,
                             Buffer
                             );
   } else {
@@ -190,15 +210,15 @@ Returns:
     // The function is called in DXE phase
     //
     Status = mBS->LocateProtocol (
-                    &gEfiPciRootBridgeIoProtocolGuid, 
-                     NULL, 
-                    (VOID **)&RootBridgeIo
-                     );
+                    &gEfiPciRootBridgeIoProtocolGuid,
+                    NULL,
+                    (VOID **) &RootBridgeIo
+                    );
     if (EFI_ERROR (Status)) {
       return Status;
     }
 
-    Status = RootBridgeIo->Io.Read(RootBridgeIo, Width, Address, Count, Buffer);
+    Status = RootBridgeIo->Io.Read (RootBridgeIo, Width, Address, Count, Buffer);
   }
 
   return Status;
@@ -216,16 +236,25 @@ EfiCommonPciWrite (
 
 Routine Description:
 
+  Pci write operation
+
 Arguments:
+
+  Width   - Width of PCI write
+  Address - PCI address to write
+  Count   - Write count
+  Buffer  - Buffer to write to the address
 
 Returns: 
 
+  Status code
+
 --*/
 {
-  EFI_STATUS                         Status;
-  UINTN                              Index;
-  UINT8                              *Buffer8;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL    *RootBridgeIo;
+  EFI_STATUS                      Status;
+  UINTN                           Index;
+  UINT8                           *Buffer8;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
   if (mPeiServices == NULL) {
     //
@@ -233,43 +262,43 @@ Returns:
     //
     Buffer8 = Buffer;
     for (Index = 0; Index < Count; Index++) {
-      Status = PciCfgPpi->Write(
-                            mPeiServices, 
-                            PciCfgPpi, 
+      Status = PciCfgPpi->Write (
+                            mPeiServices,
+                            PciCfgPpi,
                             Width,
                             Address,
                             Buffer8
                             );
 
-      if (EFI_ERROR(Status)) {
+      if (EFI_ERROR (Status)) {
         return Status;
       }
 
       Buffer8 += Width;
-    }  
-    
+    }
+
   } else {
     //
     // The function is called in DXE phase
     //
     Status = mBS->LocateProtocol (
-                    &gEfiPciRootBridgeIoProtocolGuid, 
-                     NULL, 
-                    (VOID **)&RootBridgeIo
-                     );
+                    &gEfiPciRootBridgeIoProtocolGuid,
+                    NULL,
+                    (VOID **) &RootBridgeIo
+                    );
     if (EFI_ERROR (Status)) {
       return Status;
     }
 
     Status = RootBridgeIo->Pci.Write (
-                                 RootBridgeIo, 
-                                 Width, 
-                                 Address,
-                                 Count,
-                                 Buffer
-                                 );
+                                RootBridgeIo,
+                                Width,
+                                Address,
+                                Count,
+                                Buffer
+                                );
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -284,16 +313,25 @@ EfiCommonPciRead (
 
 Routine Description:
 
+  Pci read operation
+
 Arguments:
+
+  Width   - Width of PCI read
+  Address - PCI address to read
+  Count   - Read count
+  Buffer  - Output buffer for the read
 
 Returns: 
 
+  Status code
+
 --*/
 {
-  EFI_STATUS                         Status;
-  UINTN                              Index;
-  UINT8                              *Buffer8;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL    *RootBridgeIo;
+  EFI_STATUS                      Status;
+  UINTN                           Index;
+  UINT8                           *Buffer8;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
   if (mPeiServices == NULL) {
     //
@@ -301,43 +339,42 @@ Returns:
     //
     Buffer8 = Buffer;
     for (Index = 0; Index < Count; Index++) {
-      Status = PciCfgPpi->Read(
-                            mPeiServices, 
-                            PciCfgPpi, 
+      Status = PciCfgPpi->Read (
+                            mPeiServices,
+                            PciCfgPpi,
                             Width,
                             Address,
                             Buffer8
                             );
 
-      if (EFI_ERROR(Status)) {
+      if (EFI_ERROR (Status)) {
         return Status;
       }
 
       Buffer8 += Width;
     }
-    
+
   } else {
     //
     // The function is called in DXE phase
     //
     Status = mBS->LocateProtocol (
-                      &gEfiPciRootBridgeIoProtocolGuid, 
-                      NULL, 
-                      (VOID **)&RootBridgeIo
-                      );
+                    &gEfiPciRootBridgeIoProtocolGuid,
+                    NULL,
+                    (VOID **) &RootBridgeIo
+                    );
     if (EFI_ERROR (Status)) {
       return Status;
     }
 
     Status = RootBridgeIo->Pci.Read (
-                                 RootBridgeIo, 
-                                 Width, 
-                                 Address,
-                                 Count,
-                                 Buffer
-                                 );
+                                RootBridgeIo,
+                                Width,
+                                Address,
+                                Count,
+                                Buffer
+                                );
   }
 
   return EFI_SUCCESS;
 }
-

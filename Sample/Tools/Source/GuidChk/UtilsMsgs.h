@@ -17,20 +17,29 @@ Abstract:
 
   Prototypes for the EFI tools utility functions.
   
---*/  
+--*/
+
 #ifndef _UTILS_MESSAGES_H_
 #define _UTILS_MESSAGES_H_
 
-STATUS GetUtilityStatus ();
+STATUS
+GetUtilityStatus (
+  VOID
+  )
+;
 
 //
 // If someone prints an error message and didn't specify a source file name,
 // then we print the utility name instead. However they must tell us the
-// utility name early on via this function. 
+// utility name early on via this function.
 //
-void SetUtilityName (INT8 *ProgramName);
+VOID
+SetUtilityName (
+  INT8 *ProgramName
+  )
+;
 
-void 
+void
 Error (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -38,9 +47,10 @@ Error (
   INT8    *OffendingText,
   INT8    *MsgFmt,
   ...
-  );
+  )
+;
 
-void 
+void
 Warning (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -48,9 +58,10 @@ Warning (
   INT8    *OffendingText,
   INT8    *MsgFmt,
   ...
-  );
+  )
+;
 
-void 
+void
 DebugMsg (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -58,34 +69,38 @@ DebugMsg (
   INT8    *OffendingText,
   INT8    *MsgFmt,
   ...
-  );
+  )
+;
 
 void
 SetDebugMsgMask (
   UINT32    MsgMask
-  );
+  )
+;
 
 void
 ParserSetPosition (
   INT8    *SourceFileName,
   UINT32  LineNum
-  );
+  )
+;
 
-void 
+void
 ParserError (
   UINT32  ErrorCode,
   INT8    *OffendingText,
   INT8    *MsgFmt,
   ...
-  );
+  )
+;
 
-void 
+void
 ParserWarning (
   UINT32  ErrorCode,
   INT8    *OffendingText,
   INT8    *MsgFmt,
   ...
-  );
+  )
+;
 
 #endif
-

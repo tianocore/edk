@@ -51,16 +51,17 @@ Returns:
 
 --*/
 {
-  CHAR8   *Destination8;
-  CHAR8   *Source8;
-  UINTN   Length;
+  CHAR8 *Destination8;
+  CHAR8 *Source8;
+  UINTN Length;
 
-  Destination8 = Buffer;
-  Source8 = (CHAR8 *)((UINTN)FileHandle + FileOffset);
-  Length = *ReadSize;
+  Destination8  = Buffer;
+  Source8       = (CHAR8 *) ((UINTN) FileHandle + FileOffset);
+  Length        = *ReadSize;
   while (Length--) {
     *(Destination8++) = *(Source8++);
   }
+
   return EFI_SUCCESS;
 }
 
@@ -70,9 +71,7 @@ GetImageReadFunction (
   IN  EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext,
   IN  EFI_PHYSICAL_ADDRESS                  *TopOfMemory
   )
-
 {
   ImageContext->ImageRead = PeiImageRead;
   return EFI_SUCCESS;
 }
-

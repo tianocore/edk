@@ -109,6 +109,8 @@ Routine Description:
 Arguments:
   String - String to process
 
+  String2 - The other string to process
+
 Returns:
   Number of bytes in String
 
@@ -310,8 +312,9 @@ HexStringToBuf (
     *Len = 0;
     return EFI_SUCCESS;
   }
-
+  //
   // Two Unicode characters make up 1 buffer byte. Round up.
+  //
   BufferLength = (HexCnt + 1) / 2; 
 
   //
@@ -393,8 +396,10 @@ BufToHexString (
   }
 
   *HexStringBufferLength = StrLen + 1;
-
-  Str[StrLen] = L'\0'; // Ends the string.
+  //
+  // Ends the string.
+  //
+  Str[StrLen] = L'\0'; 
 
   for (Idx = 0; Idx < Len; Idx++) {
 
@@ -427,7 +432,8 @@ Returns:
 
 --*/
 {
-  CHAR16  *p1, *p2;
+  CHAR16  *p1;
+  CHAR16  *p2;
   
   if (*str == 0) {
     return;

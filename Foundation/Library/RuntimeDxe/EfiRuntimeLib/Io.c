@@ -23,7 +23,6 @@ Abstract:
 #include "Tiano.h"
 #include "EfiRuntimeLib.h"
 
-
 UINT8
 IoRead8 (
   IN  UINT64    Address
@@ -41,12 +40,11 @@ Returns:
 
 --*/
 {
-  UINT8   Buffer;
+  UINT8 Buffer;
 
   EfiIoRead (EfiCpuIoWidthUint8, Address, 1, &Buffer);
   return Buffer;
 }
-
 
 UINT16
 IoRead16 (
@@ -65,12 +63,11 @@ Returns:
 
 --*/
 {
-  UINT16    Buffer;
+  UINT16  Buffer;
 
   EfiIoRead (EfiCpuIoWidthUint16, Address, 1, &Buffer);
   return Buffer;
 }
-
 
 UINT32
 IoRead32 (
@@ -89,12 +86,11 @@ Returns:
 
 --*/
 {
-  UINT32    Buffer;
+  UINT32  Buffer;
 
   EfiIoRead (EfiCpuIoWidthUint32, Address, 1, &Buffer);
   return Buffer;
 }
-
 
 VOID
 IoWrite8 (
@@ -118,7 +114,6 @@ Returns:
   EfiIoWrite (EfiCpuIoWidthUint8, Address, 1, &Data);
 }
 
-
 VOID
 IoWrite16 (
   IN  UINT64    Address,
@@ -140,7 +135,6 @@ Returns:
 {
   EfiIoWrite (EfiCpuIoWidthUint16, Address, 1, &Data);
 }
-
 
 VOID
 IoWrite32 (
@@ -164,9 +158,6 @@ Returns:
   EfiIoWrite (EfiCpuIoWidthUint32, Address, 1, &Data);
 }
 
-
-
-
 UINT32
 MemRead32 (
   IN  UINT64    Address
@@ -184,12 +175,11 @@ Returns:
 
 --*/
 {
-  UINT32    Buffer;
+  UINT32  Buffer;
 
   EfiMemRead (EfiCpuIoWidthUint32, Address, 1, &Buffer);
   return Buffer;
 }
-
 
 UINT64
 MemRead64 (
@@ -208,13 +198,11 @@ Returns:
 
 --*/
 {
-  UINT64    Buffer;
+  UINT64  Buffer;
 
   EfiMemRead (EfiCpuIoWidthUint64, Address, 1, &Buffer);
   return Buffer;
 }
-
-
 
 VOID
 MemWrite32 (
@@ -238,7 +226,6 @@ Returns:
   EfiMemWrite (EfiCpuIoWidthUint32, Address, 1, &Data);
 }
 
-
 VOID
 MemWrite64 (
   IN  UINT64    Address,
@@ -260,4 +247,3 @@ Returns:
 {
   EfiMemWrite (EfiCpuIoWidthUint64, Address, 1, &Data);
 }
-

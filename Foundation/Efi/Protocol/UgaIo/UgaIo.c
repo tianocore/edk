@@ -24,8 +24,6 @@ Abstract:
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (UgaIo)
 
+EFI_GUID  gEfiUgaIoProtocolGuid = EFI_UGA_IO_PROTOCOL_GUID;
 
-EFI_GUID gEfiUgaIoProtocolGuid = EFI_UGA_IO_PROTOCOL_GUID;
-
-EFI_GUID_STRING (&gEfiUgaIoProtocolGuid, "UGA Protocol", "EFI 1.1 UGA Protocol");
-
+EFI_GUID_STRING(&gEfiUgaIoProtocolGuid, "UGA Protocol", "EFI 1.1 UGA Protocol");

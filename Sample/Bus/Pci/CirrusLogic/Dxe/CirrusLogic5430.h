@@ -47,7 +47,7 @@ Revision History
 //
 // Cirrus Logic Graphical Mode Data
 //
-#define CIRRUS_LOGIC_5430_UGA_DRAW_MODE_COUNT  3  
+#define CIRRUS_LOGIC_5430_UGA_DRAW_MODE_COUNT 3
 
 typedef struct {
   UINT32  HorizontalResolution;
@@ -59,13 +59,13 @@ typedef struct {
 //
 // Cirrus Logic 5440 Private Data Structure
 //
-#define CIRRUS_LOGIC_5430_PRIVATE_DATA_SIGNATURE EFI_SIGNATURE_32('C','L','5','4')
+#define CIRRUS_LOGIC_5430_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32 ('C', 'L', '5', '4')
 
 typedef struct {
-  UINT64                              Signature;
-  EFI_HANDLE                          Handle;
-  EFI_PCI_IO_PROTOCOL                 *PciIo;
-  EFI_UGA_DRAW_PROTOCOL               UgaDraw;
+  UINT64                                Signature;
+  EFI_HANDLE                            Handle;
+  EFI_PCI_IO_PROTOCOL                   *PciIo;
+  EFI_UGA_DRAW_PROTOCOL                 UgaDraw;
 
   //
   // UGA Draw Private Data
@@ -77,30 +77,30 @@ typedef struct {
   UINT8                                 *LineBuffer;
 } CIRRUS_LOGIC_5430_PRIVATE_DATA;
 
-#define CIRRUS_LOGIC_5430_PRIVATE_DATA_FROM_UGA_DRAW_THIS(a)  \
+#define CIRRUS_LOGIC_5430_PRIVATE_DATA_FROM_UGA_DRAW_THIS(a) \
   CR(a, CIRRUS_LOGIC_5430_PRIVATE_DATA, UgaDraw, CIRRUS_LOGIC_5430_PRIVATE_DATA_SIGNATURE)
 
 //
 // Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL gCirrusLogic5430DriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gCirrusLogic5430ComponentName;
+extern EFI_DRIVER_BINDING_PROTOCOL  gCirrusLogic5430DriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL  gCirrusLogic5430ComponentName;
 
 //
 // Io Registers defined by VGA
 //
-#define CRTC_ADDRESS_REGISTER    0x3d4
-#define CRTC_DATA_REGISTER       0x3d5
-#define SEQ_ADDRESS_REGISTER     0x3c4
-#define SEQ_DATA_REGISTER        0x3c5
-#define GRAPH_ADDRESS_REGISTER   0x3ce
-#define GRAPH_DATA_REGISTER      0x3cf
-#define ATT_ADDRESS_REGISTER     0x3c0
-#define MISC_OUTPUT_REGISTER     0x3c2
-#define INPUT_STATUS_1_REGISTER  0x3da
-#define DAC_PIXEL_MASK_REGISTER  0x3c6
-#define PALETTE_INDEX_REGISTER   0x3c8
-#define PALETTE_DATA_REGISTER    0x3c9
+#define CRTC_ADDRESS_REGISTER   0x3d4
+#define CRTC_DATA_REGISTER      0x3d5
+#define SEQ_ADDRESS_REGISTER    0x3c4
+#define SEQ_DATA_REGISTER       0x3c5
+#define GRAPH_ADDRESS_REGISTER  0x3ce
+#define GRAPH_DATA_REGISTER     0x3cf
+#define ATT_ADDRESS_REGISTER    0x3c0
+#define MISC_OUTPUT_REGISTER    0x3c2
+#define INPUT_STATUS_1_REGISTER 0x3da
+#define DAC_PIXEL_MASK_REGISTER 0x3c6
+#define PALETTE_INDEX_REGISTER  0x3c8
+#define PALETTE_DATA_REGISTER   0x3c9
 
 //
 // UGA Draw Hardware abstraction internal worker functions
@@ -108,12 +108,44 @@ extern EFI_COMPONENT_NAME_PROTOCOL gCirrusLogic5430ComponentName;
 EFI_STATUS
 CirrusLogic5430UgaDrawConstructor (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 CirrusLogic5430UgaDrawDestructor (
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Private - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // EFI 1.1 driver model prototypes for Cirrus Logic 5430 UGA Draw
@@ -123,7 +155,24 @@ EFIAPI
 CirrusLogic5430DriverEntryPoint (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  SystemTable - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // EFI_DRIVER_BINDING_PROTOCOL Protocol Interface
@@ -134,7 +183,25 @@ CirrusLogic5430ControllerDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
   IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                - TODO: add argument description
+  Controller          - TODO: add argument description
+  RemainingDevicePath - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
@@ -142,7 +209,25 @@ CirrusLogic5430ControllerDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
   IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                - TODO: add argument description
+  Controller          - TODO: add argument description
+  RemainingDevicePath - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
@@ -151,7 +236,25 @@ CirrusLogic5430ControllerDriverStop (
   IN EFI_HANDLE                   Controller,
   IN UINTN                        NumberOfChildren,
   IN EFI_HANDLE                   *ChildHandleBuffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  Controller        - TODO: add argument description
+  NumberOfChildren  - TODO: add argument description
+  ChildHandleBuffer - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif
-

@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  Abstraction for the NT Load Image PPI GUID as defined in EFI 2.0
+  Abstraction for the NT Load Image PPI GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(NtAutoScan)
+#include EFI_PPI_DEFINITION (NtAutoScan)
 
-EFI_GUID gPeiAutoScanGuid = PEI_AUTOSCAN_PRIVATE_GUID; 
+EFI_GUID  gPeiNtAutoScanPpiGuid = PEI_NT_AUTOSCAN_PPI_GUID;
 
-EFI_GUID_STRING(&gPeiAutoScanGuid, "NtAutoScan", "NT PEI AUTOSCAN PPI");
+EFI_GUID_STRING(&gPeiNtAutoScanPpiGuid, "NtAutoScan", "NT PEI AUTOSCAN PPI");

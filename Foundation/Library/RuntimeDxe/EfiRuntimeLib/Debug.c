@@ -24,8 +24,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 
-#define EFI_STATUS_CODE_DATA_MAX_SIZE64   (EFI_STATUS_CODE_DATA_MAX_SIZE/8)
-
+#define EFI_STATUS_CODE_DATA_MAX_SIZE64 (EFI_STATUS_CODE_DATA_MAX_SIZE / 8)
 
 VOID
 EfiDebugAssert (
@@ -56,23 +55,21 @@ Returns:
 {
   UINT64  Buffer[EFI_STATUS_CODE_DATA_MAX_SIZE64];
 
-  EfiDebugAssertWorker (FileName, LineNumber,Description, sizeof (Buffer), Buffer);
+  EfiDebugAssertWorker (FileName, LineNumber, Description, sizeof (Buffer), Buffer);
 
   EfiReportStatusCode (
     (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED),
     (EFI_SOFTWARE_DXE_RT_DRIVER | EFI_SW_EC_ILLEGAL_SOFTWARE_STATE),
     0,
     &gEfiCallerIdGuid,
-    (EFI_STATUS_CODE_DATA *)Buffer
+    (EFI_STATUS_CODE_DATA *) Buffer
     );
-
 
   //
   // Put break point in module that contained the error.
   //
   EFI_BREAKPOINT ();
 }
-
 
 VOID
 EfiDebugVPrint (
@@ -104,21 +101,20 @@ Returns:
   UINT64  Buffer[EFI_STATUS_CODE_DATA_MAX_SIZE64];
 
   if (!(gRtErrorLevel & ErrorLevel)) {
-    return;
+    return ;
   }
 
   EfiDebugVPrintWorker (ErrorLevel, Format, Marker, sizeof (Buffer), Buffer);
 
   EfiReportStatusCode (
-        EFI_DEBUG_CODE,
-        (EFI_SOFTWARE_DXE_RT_DRIVER | EFI_DC_UNSPECIFIED),
-        0,
-        &gEfiCallerIdGuid,
-        (EFI_STATUS_CODE_DATA *)Buffer
-        );
-     
-     
-  return;
+    EFI_DEBUG_CODE,
+    (EFI_SOFTWARE_DXE_RT_DRIVER | EFI_DC_UNSPECIFIED),
+    0,
+    &gEfiCallerIdGuid,
+    (EFI_STATUS_CODE_DATA *) Buffer
+    );
+
+  return ;
 }
 
 VOID
@@ -150,11 +146,9 @@ Returns:
 
 --*/
 {
-  VA_LIST   Marker;
+  VA_LIST Marker;
 
   VA_START (Marker, Format);
   EfiDebugVPrint (ErrorLevel, Format, Marker);
   VA_END (Marker);
 }
-
-

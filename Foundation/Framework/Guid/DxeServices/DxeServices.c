@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_GUID_DEFINITION(DxeServices)
+#include EFI_GUID_DEFINITION (DxeServices)
 
-EFI_GUID gEfiDxeServicesTableGuid = EFI_DXE_SERVICES_TABLE_GUID;
+EFI_GUID  gEfiDxeServicesTableGuid = EFI_DXE_SERVICES_TABLE_GUID;
 
 EFI_GUID_STRING(&gEfiDxeServicesTableGuid, "DXE Services Table", "DXE Services Table GUID in EFI System Table");
-

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  CPU IO Protocol as defined in EFI 2.0
+  CPU IO Protocol as defined in Tiano
 
   This code abstracts the CPU IO Protocol
 
@@ -24,16 +24,18 @@ Abstract:
 #ifndef _CPUIO_H_
 #define _CPUIO_H_
 
-#define EFI_CPU_IO_PROTOCOL_GUID  \
-  {0xB0732526, 0x38C8, 0x4b40, 0x88, 0x77, 0x61, 0xC7, 0xB0, 0x6A, 0xAC, 0x45}
+#define EFI_CPU_IO_PROTOCOL_GUID \
+  { \
+    0xB0732526, 0x38C8, 0x4b40, 0x88, 0x77, 0x61, 0xC7, 0xB0, 0x6A, 0xAC, 0x45 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_CPU_IO_PROTOCOL);
 
-
-//*******************************************************
+//
+// *******************************************************
 // EFI_CPU_IO_PROTOCOL_WIDTH
-//*******************************************************
-
+// *******************************************************
+//
 typedef enum {
   EfiCpuIoWidthUint8,
   EfiCpuIoWidthUint16,
@@ -50,39 +52,42 @@ typedef enum {
   EfiCpuIoWidthMaximum
 } EFI_CPU_IO_PROTOCOL_WIDTH;
 
-//*******************************************************
+//
+// *******************************************************
 // EFI_CPU_IO_PROTOCOL_IO_MEM
-//*******************************************************
-
+// *******************************************************
+//
 typedef
 EFI_STATUS
 EFI_RUNTIMESERVICE
 (EFIAPI *EFI_CPU_IO_PROTOCOL_IO_MEM) (
-  IN EFI_CPU_IO_PROTOCOL       *This,
+  IN EFI_CPU_IO_PROTOCOL                * This,
   IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
   IN  UINT64                            Address,
   IN  UINTN                             Count,
   IN  OUT VOID                          *Buffer
   );
 
-//*******************************************************
+//
+// *******************************************************
 // EFI_CPU_IO_PROTOCOL_ACCESS
-//*******************************************************
-
+// *******************************************************
+//
 typedef struct {
-  EFI_CPU_IO_PROTOCOL_IO_MEM            Read;
-  EFI_CPU_IO_PROTOCOL_IO_MEM            Write;
+  EFI_CPU_IO_PROTOCOL_IO_MEM  Read;
+  EFI_CPU_IO_PROTOCOL_IO_MEM  Write;
 } EFI_CPU_IO_PROTOCOL_ACCESS;
 
-//*******************************************************
+//
+// *******************************************************
 // EFI_CPU_IO_PROTOCOL
-//*******************************************************
-
+// *******************************************************
+//
 typedef struct _EFI_CPU_IO_PROTOCOL {
-  EFI_CPU_IO_PROTOCOL_ACCESS            Mem;
-  EFI_CPU_IO_PROTOCOL_ACCESS            Io;
+  EFI_CPU_IO_PROTOCOL_ACCESS  Mem;
+  EFI_CPU_IO_PROTOCOL_ACCESS  Io;
 } EFI_CPU_IO_PROTOCOL;
 
-extern EFI_GUID                         gEfiCpuIoProtocolGuid;
+extern EFI_GUID gEfiCpuIoProtocolGuid;
 
 #endif

@@ -24,7 +24,7 @@ Abstract:
 #include "DxeIpl.h"
 
 EFI_STATUS
-CreateArchSpecificHobs(
+CreateArchSpecificHobs (
   IN  EFI_PEI_SERVICES          **PeiServices,
   OUT EFI_PHYSICAL_ADDRESS      *BspStore
   )

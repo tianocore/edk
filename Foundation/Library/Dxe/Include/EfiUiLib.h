@@ -26,14 +26,9 @@ Revision History:
 #include "TianoTypes.h"
 #include "EfiDriverLib.h"
 
-
-
-
-
-
-CHAR16*
+CHAR16  *
 StrHzToString (
-  OUT CHAR16        *String,
+  OUT CHAR16         *String,
   IN  UINT64         Val
   )
 /*++
@@ -46,15 +41,15 @@ Arguments:
   String - string that will contain the frequency.
   Val    - value to convert, minimum is  100000 i.e., 0.1 MHz.
 
+Returns:
+  String that contains the frequency.
+
 --*/
 ;
 
-
-
-
-CHAR16*
+CHAR16  *
 StrBytesToString (
-  OUT CHAR16        *String,
+  OUT CHAR16         *String,
   IN  UINT64         Val
   )
 /*++
@@ -67,15 +62,15 @@ Arguments:
   String - string that will contain the value
   Val    - value to convert in bytes
 
+Returns:
+  String that contains the value.
+
 --*/
 ;
 
-
-
-
-CHAR16*
+CHAR16  *
 StrVersionToString (
-  OUT CHAR16         *String,
+  OUT CHAR16          *String,
   IN  UINT8           Version
   )
 /*++
@@ -86,19 +81,19 @@ Routine Description:
   The output format is <major>.<minor>.
 
 Arguments:
-  String  - string that will contain the value
-  Version - value to convert
+  String  - string that will contain the version value
+  Version - Version value to convert
+  
+Returns:
+  String that contains the version value.
 
 --*/
 ;
 
-
-
-
-CHAR16*
+CHAR16  *
 StrMacToString (
-  OUT CHAR16             *String,
-  IN  EFI_MAC_ADDRESS    *MacAddr,
+  OUT CHAR16              *String,
+  IN  EFI_MAC_ADDRESS     *MacAddr,
   IN  UINT32              AddrSize
   )
 /*++
@@ -110,15 +105,16 @@ Routine Description:
 
 Arguments:
   String - string that will contain the value
-  Val    - value to convert
+  MacAddr     - MAC address to convert
+  AddrSize    - Size of address
+  
+Returns:
+  String that contains the value.
 
 --*/
 ;
 
-
-
-
-CHAR16*
+CHAR16  *
 StrIp4AdrToString (
   OUT CHAR16             *String,
   IN  EFI_IPv4_ADDRESS   *Ip4Addr
@@ -132,13 +128,14 @@ Routine Description:
 
 Arguments:
   String  - string that will contain the value
-  Ip4Addr - value to convert from
+  Ip4Addr - IP v4 address to convert from
+
+Returns:
+
+  String that contain the value
 
 --*/
 ;
-
-
-
 
 EFI_STATUS
 StrStringToIp4Adr (
@@ -164,10 +161,7 @@ Returns:
 --*/
 ;
 
-
-
-
-CHAR16*
+CHAR16  *
 Ascii2Unicode (
   OUT CHAR16         *UnicodeStr,
   IN  CHAR8          *AsciiStr
@@ -187,10 +181,7 @@ Returns:
 --*/
 ;
 
-
-
-
-CHAR8*
+CHAR8   *
 Unicode2Ascii (
   OUT CHAR8          *AsciiStr,
   IN  CHAR16         *UnicodeStr
@@ -211,9 +202,4 @@ Returns:
 --*/
 ;
 
-
-
-
 #endif
-
-

@@ -20,51 +20,52 @@ Abstract:
 Revision History
 
 --*/
+
 #include "UsbMassStorageHelper.h"
 
 STATIC
 BOOLEAN
-IsNoMedia(
+IsNoMedia (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   );
 
 STATIC
 BOOLEAN
-IsMediaError(
+IsMediaError (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   );
 
 STATIC
 BOOLEAN
-IsMediaChange(
+IsMediaChange (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   );
 
 STATIC
 BOOLEAN
-IsDriveReady(
+IsDriveReady (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts,
   OUT BOOLEAN               *NeedRetry
   );
 
-STATIC    
+STATIC
 BOOLEAN
-IsMediaWriteProtected(
+IsMediaWriteProtected (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   );
 
-STATIC  
+STATIC
 BOOLEAN
 IsLogicalUnitCommunicationOverRun (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   );
-  
+
 EFI_STATUS
 USBFloppyPacketCommand (
   USB_FLOPPY_DEV            *UsbFloppyDevice,
@@ -90,11 +91,18 @@ USBFloppyPacketCommand (
   
   Returns:  
 
---*/    
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    Command - add argument and description to function comment
+// TODO:    CommandSize - add argument and description to function comment
+// TODO:    DataBuffer - add argument and description to function comment
+// TODO:    BufferLength - add argument and description to function comment
+// TODO:    Direction - add argument and description to function comment
+// TODO:    TimeOutInMilliSeconds - add argument and description to function comment
 {
-  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
-  EFI_STATUS                Status;
-  
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
+  EFI_STATUS              Status;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
   //
   // Directly calling EFI_USB_ATAPI_PROTOCOL.UsbAtapiPacketCmd()
@@ -109,12 +117,12 @@ USBFloppyPacketCommand (
                                 Direction,
                                 TimeOutInMilliSeconds
                                 );
-    
+
   return Status;
-}         
+}
 
 EFI_STATUS
-USBFloppyIdentify (                                                    
+USBFloppyIdentify (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
   )
 /*++
@@ -127,13 +135,17 @@ USBFloppyIdentify (
       
   Returns:  
 
---*/    
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
 
-  EFI_STATUS            Status ; 
-  USB_INQUIRY_DATA      *Idata;  
-  BOOLEAN               MediaChange;
-
+  EFI_STATUS        Status;
+  USB_INQUIRY_DATA  *Idata;
+  BOOLEAN           MediaChange;
 
   //
   // Send Inquiry Packet Command to get INQUIRY data.
@@ -146,66 +158,65 @@ USBFloppyIdentify (
   //
   // Get media removable info from INQUIRY data.
   //
-  UsbFloppyDevice->BlkIo.Media->RemovableMedia = 
-                                  (UINT8)((Idata->RMB & 0x80) == 0x80);
+  UsbFloppyDevice->BlkIo.Media->RemovableMedia = (UINT8) ((Idata->RMB & 0x80) == 0x80);
 
   //
   // Identify device type via INQUIRY data.
   //
-  switch ((Idata->peripheral_type) & 0x1f)  {
+  switch ((Idata->peripheral_type) & 0x1f) {
   //
   // Floppy
   //
   case 0x00:
-    UsbFloppyDevice->DeviceType = USBFLOPPY;
-    UsbFloppyDevice->BlkIo.Media->MediaId = 0;
-    UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;    
-    UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
-    UsbFloppyDevice->BlkIo.Media->BlockSize = 0x200; 
+    UsbFloppyDevice->DeviceType                 = USBFLOPPY;
+    UsbFloppyDevice->BlkIo.Media->MediaId       = 0;
+    UsbFloppyDevice->BlkIo.Media->MediaPresent  = FALSE;
+    UsbFloppyDevice->BlkIo.Media->LastBlock     = 0;
+    UsbFloppyDevice->BlkIo.Media->BlockSize     = 0x200;
     break;
 
   //
   // CD-ROM
   //
-  case 0x05:  
-    UsbFloppyDevice->DeviceType = USBCDROM;
-    UsbFloppyDevice->BlkIo.Media->MediaId = 0;
-    UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
-    UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
-    UsbFloppyDevice->BlkIo.Media->BlockSize = 0x800; 
-    UsbFloppyDevice->BlkIo.Media->ReadOnly = TRUE;
+  case 0x05:
+    UsbFloppyDevice->DeviceType                 = USBCDROM;
+    UsbFloppyDevice->BlkIo.Media->MediaId       = 0;
+    UsbFloppyDevice->BlkIo.Media->MediaPresent  = FALSE;
+    UsbFloppyDevice->BlkIo.Media->LastBlock     = 0;
+    UsbFloppyDevice->BlkIo.Media->BlockSize     = 0x800;
+    UsbFloppyDevice->BlkIo.Media->ReadOnly      = TRUE;
     break;
-    
+
   default:
     gBS->FreePool (Idata);
     return EFI_DEVICE_ERROR;
   };
-  
+
   //
   // Initialize some device specific data.
   //
   //
-  // original sense data numbers 
+  // original sense data numbers
   //
-  UsbFloppyDevice->SenseDataNumber = 6;  
-  
+  UsbFloppyDevice->SenseDataNumber = 6;
+
   if (UsbFloppyDevice->SenseData != NULL) {
     gBS->FreePool (UsbFloppyDevice->SenseData);
     UsbFloppyDevice->SenseData = NULL;
   }
-  
+
   UsbFloppyDevice->SenseData = EfiLibAllocatePool (UsbFloppyDevice->SenseDataNumber * sizeof (REQUEST_SENSE_DATA));
 
-  if(UsbFloppyDevice->SenseData == NULL) {
-    gBS->FreePool (Idata);    
-    return EFI_DEVICE_ERROR ;
+  if (UsbFloppyDevice->SenseData == NULL) {
+    gBS->FreePool (Idata);
+    return EFI_DEVICE_ERROR;
   }
   
   //
   // Get media information.
   //
   UsbFloppyDetectMedia (UsbFloppyDevice, &MediaChange);
-  
+
   gBS->FreePool (Idata);
 
   return EFI_SUCCESS;
@@ -228,50 +239,56 @@ USBFloppyInquiry (
       
   Returns:  
 
---*/      
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    Idata - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  ATAPI_PACKET_COMMAND      Packet;
-  EFI_STATUS                Status;
-  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
-  
+  ATAPI_PACKET_COMMAND    Packet;
+  EFI_STATUS              Status;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
-  
+
   //
   // prepare command packet for the Inquiry Packet Command.
   //
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
-  Packet.Inquiry.opcode             = INQUIRY;  
+  Packet.Inquiry.opcode             = INQUIRY;
   Packet.Inquiry.page_code          = 0;
-  Packet.Inquiry.allocation_length  = sizeof(USB_INQUIRY_DATA);
+  Packet.Inquiry.allocation_length  = sizeof (USB_INQUIRY_DATA);
 
   *Idata = EfiLibAllocateZeroPool (sizeof (USB_INQUIRY_DATA));
-  if (*Idata == NULL) {    
-    return EFI_DEVICE_ERROR ;
+  if (*Idata == NULL) {
+    return EFI_DEVICE_ERROR;
   }
   //
-  // Send command packet and retrieve requested Inquiry Data. 
+  // Send command packet and retrieve requested Inquiry Data.
   //
   Status = USBFloppyPacketCommand (
-             UsbFloppyDevice, 
-             &Packet,
-             sizeof (ATAPI_PACKET_COMMAND), 
-             (VOID *)(*Idata), 
-             sizeof (USB_INQUIRY_DATA),
-             EfiUsbDataIn,
-             USBFLPTIMEOUT * 3
-             );
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (ATAPI_PACKET_COMMAND),
+            (VOID *) (*Idata),
+            sizeof (USB_INQUIRY_DATA),
+            EfiUsbDataIn,
+            USBFLPTIMEOUT * 3
+            );
   if (EFI_ERROR (Status)) {
-   gBS->FreePool (Idata);
-   return EFI_DEVICE_ERROR;
+    gBS->FreePool (Idata);
+    return EFI_DEVICE_ERROR;
   }
+
   return EFI_SUCCESS;
-} 
+}
 
 EFI_STATUS
-USBFloppyRead10(
+USBFloppyRead10 (
   IN    USB_FLOPPY_DEV    *UsbFloppyDevice,
-  IN    VOID              *Buffer, 
-  IN    EFI_LBA           Lba, 
+  IN    VOID              *Buffer,
+  IN    EFI_LBA           Lba,
   IN    UINTN             NumberOfBlocks
   )
 /*++
@@ -292,94 +309,100 @@ USBFloppyRead10(
       
   Returns:  
 
---*/      
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    Lba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  ATAPI_PACKET_COMMAND      Packet;
-  READ10_CMD                *Read10Packet;
-  UINT16                    MaxBlock ;
-  UINT16                    BlocksRemaining;
-  UINT16                    SectorCount;
-  UINT32                    Lba32;
-  UINT32                    BlockSize;
-  UINT32                    ByteCount;
-  VOID                      *ptrBuffer;
-  EFI_STATUS                Status;
-  UINT16                    TimeOut;
-  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
-  UINTN                     SenseCounts;
-  
+  ATAPI_PACKET_COMMAND    Packet;
+  READ10_CMD              *Read10Packet;
+  UINT16                  MaxBlock;
+  UINT16                  BlocksRemaining;
+  UINT16                  SectorCount;
+  UINT32                  Lba32;
+  UINT32                  BlockSize;
+  UINT32                  ByteCount;
+  VOID                    *ptrBuffer;
+  EFI_STATUS              Status;
+  UINT16                  TimeOut;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
+  UINTN                   SenseCounts;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
   //
   // prepare command packet for the Inquiry Packet Command.
   //
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
-  Read10Packet = &Packet.Read10;
-  Lba32 = (UINT32)Lba;
-  ptrBuffer = Buffer;
-  BlockSize = UsbFloppyDevice->BlkIo.Media->BlockSize;
+  Read10Packet    = &Packet.Read10;
+  Lba32           = (UINT32) Lba;
+  ptrBuffer       = Buffer;
+  BlockSize       = UsbFloppyDevice->BlkIo.Media->BlockSize;
 
-  MaxBlock = (UINT16)(65536 / BlockSize);  
-  BlocksRemaining = (UINT16)NumberOfBlocks;
+  MaxBlock        = (UINT16) (65536 / BlockSize);
+  BlocksRemaining = (UINT16) NumberOfBlocks;
 
-  Status = EFI_SUCCESS;
-  while (BlocksRemaining > 0) {   
+  Status          = EFI_SUCCESS;
+  while (BlocksRemaining > 0) {
     if (BlocksRemaining <= MaxBlock) {
-      SectorCount = BlocksRemaining ;   
-    } else {   
-      SectorCount = MaxBlock ;
+      SectorCount = BlocksRemaining;
+    } else {
+      SectorCount = MaxBlock;
     }
 
     //
     // fill the Packet data structure
     //
-
     Read10Packet->opcode = READ_10;
 
     //
     // Lba0 ~ Lba3 specify the start logical block address of the data transfer.
-    // Lba0 is MSB, Lba3 is LSB   
+    // Lba0 is MSB, Lba3 is LSB
     //
-    Read10Packet->Lba3 = (UINT8)(Lba32 & 0xff);          
-    Read10Packet->Lba2 = (UINT8)(Lba32 >> 8);          
-    Read10Packet->Lba1 = (UINT8)(Lba32 >> 16);          
-    Read10Packet->Lba0 = (UINT8)(Lba32 >> 24); 
-      
+    Read10Packet->Lba3  = (UINT8) (Lba32 & 0xff);
+    Read10Packet->Lba2  = (UINT8) (Lba32 >> 8);
+    Read10Packet->Lba1  = (UINT8) (Lba32 >> 16);
+    Read10Packet->Lba0  = (UINT8) (Lba32 >> 24);
+
     //
     // TranLen0 ~ TranLen1 specify the transfer length in block unit.
-    // TranLen0 is MSB, TranLen is LSB 
+    // TranLen0 is MSB, TranLen is LSB
     //
-    Read10Packet->TranLen1 = (UINT8)(SectorCount & 0xff);   
-    Read10Packet->TranLen0 = (UINT8)(SectorCount >> 8);    
+    Read10Packet->TranLen1  = (UINT8) (SectorCount & 0xff);
+    Read10Packet->TranLen0  = (UINT8) (SectorCount >> 8);
 
-    ByteCount = SectorCount * BlockSize;
-    
-    TimeOut = (UINT16)(SectorCount * USBFLPTIMEOUT);
-    
+    ByteCount               = SectorCount * BlockSize;
+
+    TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
+
     Status = USBFloppyPacketCommand (
-               UsbFloppyDevice, 
-               &Packet,
-               sizeof (ATAPI_PACKET_COMMAND), 
-               (VOID *)ptrBuffer,
-               ByteCount,
-               EfiUsbDataIn,
-               TimeOut
-               );
+              UsbFloppyDevice,
+              &Packet,
+              sizeof (ATAPI_PACKET_COMMAND),
+              (VOID *) ptrBuffer,
+              ByteCount,
+              EfiUsbDataIn,
+              TimeOut
+              );
     if (EFI_ERROR (Status)) {
-      
+
       Status = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
-      if (!EFI_ERROR(Status)) {
+      if (!EFI_ERROR (Status)) {
         if (IsLogicalUnitCommunicationOverRun (
               UsbFloppyDevice->SenseData,
               SenseCounts
               )) {
-          Lba32 = (UINT32)Lba;
-          ptrBuffer = Buffer;
-          BlocksRemaining = (UINT16)NumberOfBlocks;
-          MaxBlock = (UINT16)(MaxBlock / 4);
+          Lba32           = (UINT32) Lba;
+          ptrBuffer       = Buffer;
+          BlocksRemaining = (UINT16) NumberOfBlocks;
+          MaxBlock        = (UINT16) (MaxBlock / 4);
           if (MaxBlock < 1) {
             MaxBlock = 1;
           }
+
           continue;
         }
       } else {
@@ -390,29 +413,28 @@ USBFloppyRead10(
       // retry read10 command
       //
       Status = USBFloppyPacketCommand (
-                 UsbFloppyDevice, 
-                 &Packet,
-                 sizeof (ATAPI_PACKET_COMMAND), 
-                 (VOID *)ptrBuffer,
-                 ByteCount,
-                 EfiUsbDataIn,
-                 TimeOut
-                 );
+                UsbFloppyDevice,
+                &Packet,
+                sizeof (ATAPI_PACKET_COMMAND),
+                (VOID *) ptrBuffer,
+                ByteCount,
+                EfiUsbDataIn,
+                TimeOut
+                );
       if (EFI_ERROR (Status)) {
         return EFI_DEVICE_ERROR;
       }
     }
-    
+
     Lba32 += SectorCount;
-    ptrBuffer = (UINT8 *)ptrBuffer + SectorCount * BlockSize ;
-    BlocksRemaining = (UINT16)(BlocksRemaining - SectorCount);
+    ptrBuffer       = (UINT8 *) ptrBuffer + SectorCount * BlockSize;
+    BlocksRemaining = (UINT16) (BlocksRemaining - SectorCount);
   }
-  
+
   return Status;
-}     
+}
 
-
-EFI_STATUS 
+EFI_STATUS
 USBFloppyReadCapacity (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
   )
@@ -427,55 +449,57 @@ USBFloppyReadCapacity (
       
   Returns:  
 
---*/        
-{ 
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
   //
   // status returned by Read Capacity Packet Command
   //
-  EFI_STATUS                Status;       
-  ATAPI_PACKET_COMMAND      Packet;
-  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
-  
+  EFI_STATUS              Status;
+  ATAPI_PACKET_COMMAND    Packet;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
+
   //
   // used for capacity data returned from Usb Floppy
   //
-  READ_CAPACITY_DATA        Data ;
-  
-  EfiZeroMem (&Data, sizeof(Data));
-  
+  READ_CAPACITY_DATA      Data;
+
+  EfiZeroMem (&Data, sizeof (Data));
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
-  
+
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
-  Packet.Inquiry.opcode = READ_CAPACITY;  
+  Packet.Inquiry.opcode = READ_CAPACITY;
   Status = USBFloppyPacketCommand (
-  	         UsbFloppyDevice, 
-             &Packet,
-             sizeof(ATAPI_PACKET_COMMAND),
-             (VOID *)&Data, 
-             sizeof(READ_CAPACITY_DATA), 
-             EfiUsbDataIn,
-             USBFLPTIMEOUT
-             );
-  
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (ATAPI_PACKET_COMMAND),
+            (VOID *) &Data,
+            sizeof (READ_CAPACITY_DATA),
+            EfiUsbDataIn,
+            USBFLPTIMEOUT
+            );
+
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-    
+
   UsbFloppyDevice->BlkIo.Media->LastBlock = (Data.LastLba3 << 24) |
-                                            (Data.LastLba2 << 16) | 
-                                            (Data.LastLba1 << 8)  |
-                                             Data.LastLba0;
+    (Data.LastLba2 << 16) |
+    (Data.LastLba1 << 8) |
+    Data.LastLba0;
 
-  UsbFloppyDevice->BlkIo.Media->MediaPresent = TRUE;
+  UsbFloppyDevice->BlkIo.Media->MediaPresent  = TRUE;
 
-  UsbFloppyDevice->BlkIo.Media->BlockSize = 0x800 ;
+  UsbFloppyDevice->BlkIo.Media->BlockSize     = 0x800;
 
-  return EFI_SUCCESS ;  
+  return EFI_SUCCESS;
 
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 USBFloppyReadFormatCapacity (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
   )
@@ -490,73 +514,76 @@ USBFloppyReadFormatCapacity (
       
   Returns:  
 
---*/         
-{ 
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
   //
   // status returned by Read Capacity Packet Command
   //
-  EFI_STATUS                Status;       
+  EFI_STATUS                Status;
   ATAPI_PACKET_COMMAND      Packet;
   EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
-  
+
   //
   // used for capacity data returned from Usb Floppy
   //
-  READ_FORMAT_CAPACITY_DATA   FormatData ;
+  READ_FORMAT_CAPACITY_DATA FormatData;
 
-  EfiZeroMem(&FormatData, sizeof (FormatData));
+  EfiZeroMem (&FormatData, sizeof (FormatData));
 
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
-    
-  EfiZeroMem(&Packet,sizeof(ATAPI_PACKET_COMMAND));
-  Packet.ReadFormatCapacity.opcode = READ_FORMAT_CAPACITY ;
-  Packet.ReadFormatCapacity.allocation_length_lo = 12 ;
+
+  EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
+  Packet.ReadFormatCapacity.opcode                = READ_FORMAT_CAPACITY;
+  Packet.ReadFormatCapacity.allocation_length_lo  = 12;
   Status = USBFloppyPacketCommand (
-             UsbFloppyDevice, 
-             &Packet,
-             sizeof (ATAPI_PACKET_COMMAND),
-             (VOID *)&FormatData, 
-             sizeof (READ_FORMAT_CAPACITY_DATA), 
-             EfiUsbDataIn,
-             USBFLPTIMEOUT
-             );
-  
-  if(EFI_ERROR (Status)) {
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (ATAPI_PACKET_COMMAND),
+            (VOID *) &FormatData,
+            sizeof (READ_FORMAT_CAPACITY_DATA),
+            EfiUsbDataIn,
+            USBFLPTIMEOUT
+            );
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
-  if(FormatData.DesCode == 3) {
+
+  if (FormatData.DesCode == 3) {
     //
     // Media is not present
-    //      
-    UsbFloppyDevice->BlkIo.Media->MediaId = 0 ;
-    UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
-    UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
+    //
+    UsbFloppyDevice->BlkIo.Media->MediaId       = 0;
+    UsbFloppyDevice->BlkIo.Media->MediaPresent  = FALSE;
+    UsbFloppyDevice->BlkIo.Media->LastBlock     = 0;
   } else {
-        
+
     UsbFloppyDevice->BlkIo.Media->LastBlock = (FormatData.LastLba3 << 24) |
                                               (FormatData.LastLba2 << 16) | 
                                               (FormatData.LastLba1 << 8)  |
                                                FormatData.LastLba0;
 
-    UsbFloppyDevice->BlkIo.Media->LastBlock--;      
-                  
-    UsbFloppyDevice->BlkIo.Media->BlockSize =  (FormatData.BlockSize2 << 16) |
-                                               (FormatData.BlockSize1 << 8)  |
-                                                FormatData.BlockSize0;
- 
-    UsbFloppyDevice->BlkIo.Media->MediaPresent = TRUE;
+    UsbFloppyDevice->BlkIo.Media->LastBlock--;
 
-    UsbFloppyDevice->BlkIo.Media->BlockSize = 0x200 ;
+    UsbFloppyDevice->BlkIo.Media->BlockSize = (FormatData.BlockSize2 << 16) |
+      (FormatData.BlockSize1 << 8) |
+      FormatData.BlockSize0;
+
+    UsbFloppyDevice->BlkIo.Media->MediaPresent  = TRUE;
+
+    UsbFloppyDevice->BlkIo.Media->BlockSize     = 0x200;
 
   }
 
-  return EFI_SUCCESS ;  
+  return EFI_SUCCESS;
 
 }
 
-EFI_STATUS  
-UsbFloppyRequestSense ( 
+EFI_STATUS
+UsbFloppyRequestSense (
   IN  USB_FLOPPY_DEV  *UsbFloppyDevice,
   OUT UINTN           *SenseCounts
   )
@@ -572,52 +599,61 @@ UsbFloppyRequestSense (
       
   Returns:  
 
---*/         
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    SenseCounts - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                Status;
-  REQUEST_SENSE_DATA        *Sense;
-  UINT8                     *Ptr ;
-  BOOLEAN                   SenseReq;
-  ATAPI_PACKET_COMMAND      Packet;
-  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
+  EFI_STATUS              Status;
+  REQUEST_SENSE_DATA      *Sense;
+  UINT8                   *Ptr;
+  BOOLEAN                 SenseReq;
+  ATAPI_PACKET_COMMAND    Packet;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
 
-  
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
-  
-  *SenseCounts = 0 ;
-  
-  EfiZeroMem(UsbFloppyDevice->SenseData, 
-             sizeof(REQUEST_SENSE_DATA) * (UsbFloppyDevice->SenseDataNumber));
+
+  *SenseCounts      = 0;
+
+  EfiZeroMem (
+    UsbFloppyDevice->SenseData,
+    sizeof (REQUEST_SENSE_DATA) * (UsbFloppyDevice->SenseDataNumber)
+    );
   //
   // fill command packet for Request Sense Packet Command
   //
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
-  Packet.RequestSense.opcode = REQUEST_SENSE; 
-  Packet.RequestSense.allocation_length = sizeof(REQUEST_SENSE_DATA);
-
-  Ptr = (UINT8*)(UsbFloppyDevice->SenseData) ; // initialize pointer
+  Packet.RequestSense.opcode            = REQUEST_SENSE;
+  Packet.RequestSense.allocation_length = sizeof (REQUEST_SENSE_DATA);
+  
+  //
+  // initialize pointer
+  //
+  Ptr = (UINT8 *) (UsbFloppyDevice->SenseData);
 
   //
-  //  request sense data from device continuously 
+  //  request sense data from device continuously
   //  until no sense data exists in the device.
   //
-  for (SenseReq = TRUE; SenseReq; ) {
-    
-    Sense = (REQUEST_SENSE_DATA *) Ptr ;
+  for (SenseReq = TRUE; SenseReq;) {
+
+    Sense = (REQUEST_SENSE_DATA *) Ptr;
 
     //
     // send out Request Sense Packet Command and get one Sense
     // data from device.
     //
     Status = USBFloppyPacketCommand (
-               UsbFloppyDevice, 
-               &Packet,
-               sizeof (ATAPI_PACKET_COMMAND),
-               (VOID*)Ptr,
-               sizeof (REQUEST_SENSE_DATA),
-               EfiUsbDataIn,
-               USBFLPTIMEOUT
-               );
+              UsbFloppyDevice,
+              &Packet,
+              sizeof (ATAPI_PACKET_COMMAND),
+              (VOID *) Ptr,
+              sizeof (REQUEST_SENSE_DATA),
+              EfiUsbDataIn,
+              USBFLPTIMEOUT
+              );
     //
     // failed to get Sense data
     //
@@ -629,52 +665,53 @@ UsbFloppyRequestSense (
                                         UsbFloppyDevice->AtapiProtocol,
                                         TRUE
                                         );
-      
+
       if (*SenseCounts == 0) {
-      //
-      // never retrieved any sense data from device,
-      // just return error.
-      //
+        //
+        // never retrieved any sense data from device,
+        // just return error.
+        //
         return EFI_DEVICE_ERROR;
       } else {
-      //
-      // has retrieved some sense data from device,
-      // so return success.
-      // 
-        return EFI_SUCCESS ;
+        //
+        // has retrieved some sense data from device,
+        // so return success.
+        //
+        return EFI_SUCCESS;
       }
     }
-    
-    if (Sense->sense_key != SK_NO_SENSE) {       
-      
-      Ptr += sizeof (REQUEST_SENSE_DATA)  ; // Ptr is byte based pointer
-      (*SenseCounts) ++;
-  
-      
+
+    if (Sense->sense_key != SK_NO_SENSE) {
+      //
+      // Ptr is byte based pointer
+      //
+      Ptr += sizeof (REQUEST_SENSE_DATA);
+
+      (*SenseCounts)++;
+
     } else {
       //
       // when no sense key, skip out the loop
       //
-      SenseReq = FALSE;   
+      SenseReq = FALSE;
     }
   
     //
     // If the sense key numbers exceed Sense Data Buffer size,
     // just skip the loop and do not fetch the sense key in this function.
     //
-    if (*SenseCounts == UsbFloppyDevice->SenseDataNumber ) {
-       SenseReq = FALSE;
-    }       
+    if (*SenseCounts == UsbFloppyDevice->SenseDataNumber) {
+      SenseReq = FALSE;
+    }
   }
-  
-  return EFI_SUCCESS; 
-} 
 
+  return EFI_SUCCESS;
+}
 
-EFI_STATUS                                                         
+EFI_STATUS
 UsbFloppyTestUnitReady (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
-  ) 
+  )
 /*++
 
   Routine Description:
@@ -685,18 +722,20 @@ UsbFloppyTestUnitReady (
       
   Returns:  
 
---*/  
-{ 
-  ATAPI_PACKET_COMMAND      Packet; 
-  EFI_STATUS                Status;
-  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
-  UINT32                    RetryIndex;
-  UINT32                    MaximumRetryTimes;
-  
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+{
+  ATAPI_PACKET_COMMAND    Packet;
+  EFI_STATUS              Status;
+  EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
+  UINT32                  RetryIndex;
+  UINT32                  MaximumRetryTimes;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
   MaximumRetryTimes = 2;
   //
-  // fill command packet  //
+  // fill command packet  
+  //
 
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
   Packet.TestUnitReady.opcode = TEST_UNIT_READY;
@@ -706,33 +745,32 @@ UsbFloppyTestUnitReady (
   //
 
   Status = EFI_DEVICE_ERROR;
-  
-  for (RetryIndex = 0; RetryIndex < MaximumRetryTimes && EFI_ERROR (Status); RetryIndex ++) {
-    
+
+  for (RetryIndex = 0; RetryIndex < MaximumRetryTimes && EFI_ERROR (Status); RetryIndex++) {
+
     Status = USBFloppyPacketCommand (
-               UsbFloppyDevice, 
-               &Packet,
-               sizeof (ATAPI_PACKET_COMMAND), 
-               NULL, 
-               0,
-               EfiUsbNoData,
-               USBFLPTIMEOUT
-               );
-    
-    if(EFI_ERROR (Status)) {    
-      gBS->Stall (100 * STALL_1_MILLI_SECOND);   
+              UsbFloppyDevice,
+              &Packet,
+              sizeof (ATAPI_PACKET_COMMAND),
+              NULL,
+              0,
+              EfiUsbNoData,
+              USBFLPTIMEOUT
+              );
+
+    if (EFI_ERROR (Status)) {
+      gBS->Stall (100 * STALL_1_MILLI_SECOND);
     }
   }
+
   return Status;
-} 
-
-
+}
 
 EFI_STATUS
-USBFloppyWrite10(
+USBFloppyWrite10 (
   IN    USB_FLOPPY_DEV    *UsbFloppyDevice,
-  IN    VOID              *Buffer, 
-  IN    EFI_LBA           Lba, 
+  IN    VOID              *Buffer,
+  IN    EFI_LBA           Lba,
   IN    UINTN             NumberOfBlocks
   )
 /*++
@@ -753,11 +791,16 @@ USBFloppyWrite10(
       
   Returns:  
 
---*/      
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    Lba - add argument and description to function comment
+// TODO:    NumberOfBlocks - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
   ATAPI_PACKET_COMMAND    Packet;
   READ10_CMD              *Write10Packet;
-  UINT16                  MaxBlock ;
+  UINT16                  MaxBlock;
   UINT16                  BlocksRemaining;
   UINT16                  SectorCount;
   UINT32                  Lba32;
@@ -768,30 +811,30 @@ USBFloppyWrite10(
   UINT16                  TimeOut;
   EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
   UINTN                   SenseCounts;
-  
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
   //
   // prepare command packet for the Write10 Packet Command.
   //
   EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
-  Write10Packet = &Packet.Read10;
-  Lba32 = (UINT32)Lba;
-  ptrBuffer = Buffer;
-  BlockSize = UsbFloppyDevice->BlkIo.Media->BlockSize;
-  
-  MaxBlock = (UINT16)(65536 / BlockSize);  
-  BlocksRemaining = (UINT16)NumberOfBlocks;
-  
-  Status = EFI_SUCCESS;
+  Write10Packet   = &Packet.Read10;
+  Lba32           = (UINT32) Lba;
+  ptrBuffer       = Buffer;
+  BlockSize       = UsbFloppyDevice->BlkIo.Media->BlockSize;
+
+  MaxBlock        = (UINT16) (65536 / BlockSize);
+  BlocksRemaining = (UINT16) NumberOfBlocks;
+
+  Status          = EFI_SUCCESS;
   while (BlocksRemaining > 0) {
-    
+
     if (BlocksRemaining <= MaxBlock) {
-      
-      SectorCount = BlocksRemaining ;
+
+      SectorCount = BlocksRemaining;
     } else {
-      
-      SectorCount = MaxBlock ;
+
+      SectorCount = MaxBlock;
     }
 
     //
@@ -801,35 +844,35 @@ USBFloppyWrite10(
     Write10Packet->opcode = WRITE_10;
 
     //
-    // Lba0 ~ Lba3 specify the start logical block address 
+    // Lba0 ~ Lba3 specify the start logical block address
     // of the data transfer.
-    // Lba0 is MSB, Lba3 is LSB   
+    // Lba0 is MSB, Lba3 is LSB
     //
-    Write10Packet->Lba3 = (UINT8)(Lba32 & 0xff);          
-    Write10Packet->Lba2 = (UINT8)(Lba32 >> 8);          
-    Write10Packet->Lba1 = (UINT8)(Lba32 >> 16);          
-    Write10Packet->Lba0 = (UINT8)(Lba32 >> 24); 
-      
+    Write10Packet->Lba3 = (UINT8) (Lba32 & 0xff);
+    Write10Packet->Lba2 = (UINT8) (Lba32 >> 8);
+    Write10Packet->Lba1 = (UINT8) (Lba32 >> 16);
+    Write10Packet->Lba0 = (UINT8) (Lba32 >> 24);
+
     //
     // TranLen0 ~ TranLen1 specify the transfer length in block unit.
-    // TranLen0 is MSB, TranLen is LSB 
+    // TranLen0 is MSB, TranLen is LSB
     //
-    Write10Packet->TranLen1 = (UINT8)(SectorCount & 0xff);   
-    Write10Packet->TranLen0 = (UINT8)(SectorCount >> 8);    
+    Write10Packet->TranLen1 = (UINT8) (SectorCount & 0xff);
+    Write10Packet->TranLen0 = (UINT8) (SectorCount >> 8);
 
-    ByteCount = SectorCount * BlockSize;
-    
-    TimeOut = (UINT16)(SectorCount * USBFLPTIMEOUT);
- 
+    ByteCount               = SectorCount * BlockSize;
+
+    TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
+
     Status = USBFloppyPacketCommand (
-               UsbFloppyDevice, 
-               &Packet,
-               sizeof (ATAPI_PACKET_COMMAND), 
-               (VOID *)ptrBuffer,
-               ByteCount,
-               EfiUsbDataOut,
-               TimeOut
-               );
+              UsbFloppyDevice,
+              &Packet,
+              sizeof (ATAPI_PACKET_COMMAND),
+              (VOID *) ptrBuffer,
+              ByteCount,
+              EfiUsbDataOut,
+              TimeOut
+              );
     if (EFI_ERROR (Status)) {
       Status = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
       if (!EFI_ERROR (Status)) {
@@ -837,13 +880,14 @@ USBFloppyWrite10(
               UsbFloppyDevice->SenseData,
               SenseCounts
               )) {
-          Lba32 = (UINT32)Lba;
-          ptrBuffer = Buffer;
-          BlocksRemaining = (UINT16)NumberOfBlocks;
-          MaxBlock = (UINT16)(MaxBlock / 4);
+          Lba32           = (UINT32) Lba;
+          ptrBuffer       = Buffer;
+          BlocksRemaining = (UINT16) NumberOfBlocks;
+          MaxBlock        = (UINT16) (MaxBlock / 4);
           if (MaxBlock < 1) {
             MaxBlock = 1;
           }
+
           continue;
         }
       }
@@ -851,28 +895,28 @@ USBFloppyWrite10(
       // retry write10 command
       //
       Status = USBFloppyPacketCommand (
-                 UsbFloppyDevice, 
-                 &Packet,
-                 sizeof (ATAPI_PACKET_COMMAND), 
-                 (VOID *)ptrBuffer,
-                 ByteCount,
-                 EfiUsbDataOut,
-                 TimeOut
-                 );
+                UsbFloppyDevice,
+                &Packet,
+                sizeof (ATAPI_PACKET_COMMAND),
+                (VOID *) ptrBuffer,
+                ByteCount,
+                EfiUsbDataOut,
+                TimeOut
+                );
       if (EFI_ERROR (Status)) {
         return EFI_DEVICE_ERROR;
       }
-    } 
-    
-    Lba32 += SectorCount;
-    ptrBuffer = (UINT8 *)ptrBuffer + SectorCount * BlockSize;
-    BlocksRemaining = (UINT16)(BlocksRemaining - SectorCount);
-  }
-  
-  return Status;
-}     
+    }
 
-EFI_STATUS 
+    Lba32 += SectorCount;
+    ptrBuffer       = (UINT8 *) ptrBuffer + SectorCount * BlockSize;
+    BlocksRemaining = (UINT16) (BlocksRemaining - SectorCount);
+  }
+
+  return Status;
+}
+
+EFI_STATUS
 UsbFloppyDetectMedia (
   IN  USB_FLOPPY_DEV  *UsbFloppyDevice,
   OUT BOOLEAN         *MediaChange
@@ -888,70 +932,76 @@ UsbFloppyDetectMedia (
       
   Returns:  
 
---*/        
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    MediaChange - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS          Status;
   EFI_STATUS          FloppyStatus;
   //
   // the following variables are used to record previous media information
   //
-  EFI_BLOCK_IO_MEDIA    OldMediaInfo;
-  UINTN                            SenseCounts;
-  UINTN                            RetryIndex;
-  UINTN                            RetryTimes;
-  UINTN                            MaximumRetryTimes;
-  BOOLEAN                       NeedRetry;
- 
+  EFI_BLOCK_IO_MEDIA  OldMediaInfo;
+  UINTN               SenseCounts;
+  UINTN               RetryIndex;
+  UINTN               RetryTimes;
+  UINTN               MaximumRetryTimes;
+  BOOLEAN             NeedRetry;
+
   //
   // a flag used to determine whether need to perform Read Capacity command.
   //
-  BOOLEAN                       NeedReadCapacity;
+  BOOLEAN             NeedReadCapacity;
 
   REQUEST_SENSE_DATA  *SensePtr;
 
   //
-  // init 
+  // init
   //
   Status            = EFI_SUCCESS;
   FloppyStatus      = EFI_SUCCESS;
   OldMediaInfo      = *UsbFloppyDevice->BlkIo.Media;
-  *MediaChange      = FALSE ;
+  *MediaChange      = FALSE;
   NeedReadCapacity  = TRUE;
-  
+
   //
   // if there is no media present,or media not changed,
   // the request sense command will detect faster than read capacity command.
   // read capacity command can be bypassed, thus improve performance.
   //
   SenseCounts = 0;
-  Status = UsbFloppyRequestSense(UsbFloppyDevice, &SenseCounts);
-  
-  if (!EFI_ERROR(Status)) {
-  
+  Status      = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
+
+  if (!EFI_ERROR (Status)) {
+
     SensePtr = UsbFloppyDevice->SenseData;
 
     //
     // No Media
     //
-    if(IsNoMedia (UsbFloppyDevice->SenseData,SenseCounts)) {
-        
-      NeedReadCapacity = FALSE ;
-      UsbFloppyDevice->BlkIo.Media->MediaId = 0 ;
+    if (IsNoMedia (UsbFloppyDevice->SenseData, SenseCounts)) {
+
+      NeedReadCapacity = FALSE;
+      UsbFloppyDevice->BlkIo.Media->MediaId = 0;
       UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
       UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
-    } else {        
+    } else {
       //
       // Media Changed
       //
-      if (IsMediaChange (UsbFloppyDevice->SenseData,SenseCounts)) {
+      if (IsMediaChange (UsbFloppyDevice->SenseData, SenseCounts)) {
         UsbFloppyDevice->BlkIo.Media->MediaId++;
-      } 
+      }
         
       //
       // Media Write-protected
       //
-      if(IsMediaWriteProtected(UsbFloppyDevice->SenseData,SenseCounts)) {
-        UsbFloppyDevice->BlkIo.Media->ReadOnly = TRUE;        
+      if (IsMediaWriteProtected (UsbFloppyDevice->SenseData, SenseCounts)) {
+        UsbFloppyDevice->BlkIo.Media->ReadOnly = TRUE;
       }
         
       //
@@ -960,110 +1010,115 @@ UsbFloppyDetectMedia (
       if (IsMediaError (UsbFloppyDevice->SenseData, SenseCounts)) {
         //
         // if media error encountered, make it look like no media present.
-        // 
-        UsbFloppyDevice->BlkIo.Media->MediaId = 0 ;
-        UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
-        UsbFloppyDevice->BlkIo.Media->LastBlock = 0;        
+        //
+        UsbFloppyDevice->BlkIo.Media->MediaId       = 0;
+        UsbFloppyDevice->BlkIo.Media->MediaPresent  = FALSE;
+        UsbFloppyDevice->BlkIo.Media->LastBlock     = 0;
       }
 
     }
-    
+
   }
-  
+
   if (NeedReadCapacity) {
     //
     // at most retry 5 times
     //
     MaximumRetryTimes = 5;
-    RetryTimes = 2 ;      // initial retry twice
+    //
+    // initial retry twice
+    //
+    RetryTimes        = 2;
 
-    for (RetryIndex = 0; (RetryIndex < RetryTimes) && (RetryIndex < MaximumRetryTimes); RetryIndex ++) {
+    for (RetryIndex = 0; (RetryIndex < RetryTimes) && (RetryIndex < MaximumRetryTimes); RetryIndex++) {
       //
       // Using different command to retrieve media capacity.
       //
-      switch (UsbFloppyDevice->DeviceType)  {
-        case USBCDROM:
-          Status = USBFloppyReadCapacity(UsbFloppyDevice);
-          break;
-        
-        case USBFLOPPY:
-          UsbMassStorageModeSense(UsbFloppyDevice);
-          Status = USBFloppyReadFormatCapacity(UsbFloppyDevice);
+      switch (UsbFloppyDevice->DeviceType) {
+      case USBCDROM:
+        Status = USBFloppyReadCapacity (UsbFloppyDevice);
+        break;
+
+      case USBFLOPPY:
+        UsbMassStorageModeSense (UsbFloppyDevice);
+        Status = USBFloppyReadFormatCapacity (UsbFloppyDevice);
           if (EFI_ERROR(Status) || 
               !UsbFloppyDevice->BlkMedia.MediaPresent) {            
-            //
-            // retry the ReadCapacity command
-            //
-            UsbFloppyDevice->DeviceType = USBFLOPPY2;
-            Status = EFI_DEVICE_ERROR;
-          }
-          break;
-        
-        case USBFLOPPY2:        
-          UsbMassStorageModeSense (UsbFloppyDevice);
-          Status = USBFloppyReadCapacity(UsbFloppyDevice);          
-          if (EFI_ERROR(Status)) {            
-            //
-            // retry the ReadFormatCapacity command
-            //
-            UsbFloppyDevice->DeviceType = USBFLOPPY;
-          }
           //
-          // force the BlockSize to be 0x200.
+          // retry the ReadCapacity command
           //
-          UsbFloppyDevice->BlkIo.Media->BlockSize = 0x200;
-          break;
-          
-        default:
-          return EFI_INVALID_PARAMETER;
+          UsbFloppyDevice->DeviceType = USBFLOPPY2;
+          Status                      = EFI_DEVICE_ERROR;
+        }
+        break;
+
+      case USBFLOPPY2:
+        UsbMassStorageModeSense (UsbFloppyDevice);
+        Status = USBFloppyReadCapacity (UsbFloppyDevice);
+        if (EFI_ERROR (Status)) {
+          //
+          // retry the ReadFormatCapacity command
+          //
+          UsbFloppyDevice->DeviceType = USBFLOPPY;
+        }
+        //
+        // force the BlockSize to be 0x200.
+        //
+        UsbFloppyDevice->BlkIo.Media->BlockSize = 0x200;
+        break;
+
+      default:
+        return EFI_INVALID_PARAMETER;
       }
-      
-      if (!EFI_ERROR(Status)) {
+
+      if (!EFI_ERROR (Status)) {
         //
         // skip the loop when read capacity succeeds.
         //
         break;
-      } 
-  
-      SenseCounts = 0 ;
-      
-      FloppyStatus = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
-       
+      }
+
+      SenseCounts   = 0;
+
+      FloppyStatus  = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
+
       //
       // If Request Sense data failed,retry.
       //
-      if (EFI_ERROR(FloppyStatus)) {          
-        RetryTimes ++ ;     // retry once more
-        continue ;
+      if (EFI_ERROR (FloppyStatus)) {
+        //
+        // retry once more
+        //
+        RetryTimes++;
+        continue;
       }
-        
       //
       // No Media
       //
-      if (IsNoMedia (UsbFloppyDevice->SenseData,SenseCounts)) {
-          
-        UsbFloppyDevice->BlkIo.Media->MediaId = 0 ;
-        UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
-        UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
-        break; 
-      }
+      if (IsNoMedia (UsbFloppyDevice->SenseData, SenseCounts)) {
 
-      if( IsMediaError (UsbFloppyDevice->SenseData,SenseCounts)) {
-        //
-        // if media error encountered, make it look like no media present.
-        // 
-        UsbFloppyDevice->BlkIo.Media->MediaId = 0 ;
-        UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
-        UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
+        UsbFloppyDevice->BlkIo.Media->MediaId       = 0;
+        UsbFloppyDevice->BlkIo.Media->MediaPresent  = FALSE;
+        UsbFloppyDevice->BlkIo.Media->LastBlock     = 0;
         break;
       }
-        
-      if(IsMediaWriteProtected(UsbFloppyDevice->SenseData,SenseCounts)) {
+
+      if (IsMediaError (UsbFloppyDevice->SenseData, SenseCounts)) {
+        //
+        // if media error encountered, make it look like no media present.
+        //
+        UsbFloppyDevice->BlkIo.Media->MediaId       = 0;
+        UsbFloppyDevice->BlkIo.Media->MediaPresent  = FALSE;
+        UsbFloppyDevice->BlkIo.Media->LastBlock     = 0;
+        break;
+      }
+
+      if (IsMediaWriteProtected (UsbFloppyDevice->SenseData, SenseCounts)) {
         UsbFloppyDevice->BlkIo.Media->ReadOnly = TRUE;
         continue;
       }
 
-      if (!IsDriveReady (UsbFloppyDevice->SenseData,SenseCounts,&NeedRetry)) {
+      if (!IsDriveReady (UsbFloppyDevice->SenseData, SenseCounts, &NeedRetry)) {
           
         //
         // Drive not ready: if NeedRetry, then retry once more;
@@ -1073,42 +1128,45 @@ UsbFloppyDetectMedia (
           //
           // Stall 0.1 second to wait for drive becoming ready
           //
-          gBS->Stall(100 * STALL_1_MILLI_SECOND); 
+          gBS->Stall (100 * STALL_1_MILLI_SECOND);
           //
-          // reset retry variable to zero, 
+          // reset retry variable to zero,
           // to make it retry for "drive in progress of becoming ready".
           //
           RetryIndex = 0;
-          continue ;
-        } else {            
+          continue;
+        } else {
           return EFI_DEVICE_ERROR;
         }
       }
-        
       //
       // if read capacity fail not for above reasons, retry once more
       //
-      RetryTimes ++;
+      RetryTimes++;
 
-    }     // ENDFOR
-  
+    }
+    //
+    // ENDFOR
+    //
+
     //
     // tell whether the readcapacity process is successful or not
-    // ("Status" variable record the latest status returned 
+    // ("Status" variable record the latest status returned
     // by ReadCapacity AND "FloppyStatus" record the latest status
     // returned by RequestSense)
     //
-    if (EFI_ERROR(Status) && EFI_ERROR(FloppyStatus)) {
+    if (EFI_ERROR (Status) && EFI_ERROR (FloppyStatus)) {
       return EFI_DEVICE_ERROR;
     }
 
   }
 
   if (UsbFloppyDevice->BlkIo.Media->MediaPresent != OldMediaInfo.MediaPresent) {
-   
+
     if (UsbFloppyDevice->BlkIo.Media->MediaPresent) {
       UsbFloppyDevice->BlkIo.Media->MediaId = 1;
     }
+
     *MediaChange = TRUE;
   }
 
@@ -1131,10 +1189,8 @@ UsbFloppyDetectMedia (
     *MediaChange = TRUE;
   }
 
-  return EFI_SUCCESS; 
+  return EFI_SUCCESS;
 }
-
-
 
 EFI_STATUS
 UsbFloppyModeSense5APage5 (
@@ -1151,12 +1207,15 @@ UsbFloppyModeSense5APage5 (
       
   Returns:  
 
---*/         
-{ 
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
   //
   // status returned by Read Capacity Packet Command
   //
-  EFI_STATUS                Status;       
+  EFI_STATUS                Status;
   ATAPI_PACKET_COMMAND      Packet;
   EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
   UFI_MODE_PARAMETER_PAGE_5 ModePage5;
@@ -1165,51 +1224,58 @@ UsbFloppyModeSense5APage5 (
   UINT32                    NumberOfCylinders;
   UINT32                    NumberOfHeads;
   UINT32                    DataBytesPerSector;
-  
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
-  
-  EfiZeroMem (&ModePage5,sizeof(UFI_MODE_PARAMETER_PAGE_5));
-  
-  EfiZeroMem (&Packet,sizeof(ATAPI_PACKET_COMMAND));
-  Packet.ModeSenseUFI.opcode = UFI_MODE_SENSE5A ;
-  Packet.ModeSenseUFI.page_code = 5 ;    // Flexible Disk Page
-  Packet.ModeSenseUFI.page_control = 0;  // current values
-  Packet.ModeSenseUFI.parameter_list_length_hi = 0;
-  Packet.ModeSenseUFI.parameter_list_length_lo = sizeof (UFI_MODE_PARAMETER_PAGE_5); 
-  Status = USBFloppyPacketCommand (UsbFloppyDevice, 
-                                    &Packet,
-                                    sizeof(ATAPI_PACKET_COMMAND),
-                                    (VOID *)&ModePage5, 
-                                    sizeof(UFI_MODE_PARAMETER_PAGE_5), 
-                                    EfiUsbDataIn,
-                                    USBFLPTIMEOUT
-                                    ) ;
-  
-  if(EFI_ERROR(Status)) {
+
+  EfiZeroMem (&ModePage5, sizeof (UFI_MODE_PARAMETER_PAGE_5));
+
+  EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
+  Packet.ModeSenseUFI.opcode    = UFI_MODE_SENSE5A;
+  //
+  // Flexible Disk Page
+  //
+  Packet.ModeSenseUFI.page_code = 5;
+  //
+  // current values
+  //
+  Packet.ModeSenseUFI.page_control = 0;
+  Packet.ModeSenseUFI.parameter_list_length_hi  = 0;
+  Packet.ModeSenseUFI.parameter_list_length_lo  = sizeof (UFI_MODE_PARAMETER_PAGE_5);
+  Status = USBFloppyPacketCommand (
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (ATAPI_PACKET_COMMAND),
+            (VOID *) &ModePage5,
+            sizeof (UFI_MODE_PARAMETER_PAGE_5),
+            EfiUsbDataIn,
+            USBFLPTIMEOUT
+            );
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
-  NumberOfHeads = ModePage5.flex_disk_page.number_of_heads;
+
+  NumberOfHeads   = ModePage5.flex_disk_page.number_of_heads;
   SectorsPerTrack = ModePage5.flex_disk_page.sectors_per_track;
-  NumberOfCylinders = ModePage5.flex_disk_page.number_of_cylinders_msb << 8 
-                        | ModePage5.flex_disk_page.number_of_cylinders_lsb;
-                        
+  NumberOfCylinders = ModePage5.flex_disk_page.number_of_cylinders_msb << 8 |
+                      ModePage5.flex_disk_page.number_of_cylinders_lsb;
+
   LastBlock = SectorsPerTrack * NumberOfHeads * NumberOfCylinders;
-  DataBytesPerSector = ModePage5.flex_disk_page.databytes_per_sector_msb << 8 
-                        | ModePage5.flex_disk_page.databytes_per_sector_lsb;
-                        
+  DataBytesPerSector = ModePage5.flex_disk_page.databytes_per_sector_msb << 8 |
+                       ModePage5.flex_disk_page.databytes_per_sector_lsb;
+
   UsbFloppyDevice->BlkIo.Media->LastBlock = LastBlock;
 
-  UsbFloppyDevice->BlkIo.Media->LastBlock--;      
-                  
-  UsbFloppyDevice->BlkIo.Media->BlockSize = DataBytesPerSector;
- 
-  UsbFloppyDevice->BlkIo.Media->MediaPresent = TRUE;
+  UsbFloppyDevice->BlkIo.Media->LastBlock--;
 
-  UsbFloppyDevice->BlkIo.Media->ReadOnly = 
-    ModePage5.mode_param_header.write_protected;
+  UsbFloppyDevice->BlkIo.Media->BlockSize     = DataBytesPerSector;
 
-  return EFI_SUCCESS ;
+  UsbFloppyDevice->BlkIo.Media->MediaPresent  = TRUE;
+
+  UsbFloppyDevice->BlkIo.Media->ReadOnly      =
+  ModePage5.mode_param_header.write_protected;
+
+  return EFI_SUCCESS;
 
 }
 
@@ -1228,43 +1294,52 @@ UsbFloppyModeSense5APage1C (
       
   Returns:  
 
---*/         
-{ 
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
   //
   // status returned by Read Capacity Packet Command
   //
-  EFI_STATUS                    Status;       
-  ATAPI_PACKET_COMMAND          Packet;
-  EFI_USB_ATAPI_PROTOCOL        *UsbAtapiInterface;
-  UFI_MODE_PARAMETER_PAGE_1C    ModePage1C;
-  
+  EFI_STATUS                  Status;
+  ATAPI_PACKET_COMMAND        Packet;
+  EFI_USB_ATAPI_PROTOCOL      *UsbAtapiInterface;
+  UFI_MODE_PARAMETER_PAGE_1C  ModePage1C;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
-  
-  EfiZeroMem (&ModePage1C,sizeof(UFI_MODE_PARAMETER_PAGE_1C));
-  
-  EfiZeroMem (&Packet,sizeof(ATAPI_PACKET_COMMAND));
-  Packet.ModeSenseUFI.opcode = UFI_MODE_SENSE5A ;
-  Packet.ModeSenseUFI.page_code = 0x1C;    // Flexible Disk Page
-  Packet.ModeSenseUFI.page_control = 0;  // current values
-  Packet.ModeSenseUFI.parameter_list_length_hi = 0;
-  Packet.ModeSenseUFI.parameter_list_length_lo = sizeof (UFI_MODE_PARAMETER_PAGE_1C); 
-  Status = USBFloppyPacketCommand (UsbFloppyDevice, 
-                                    &Packet,
-                                    sizeof(ATAPI_PACKET_COMMAND),
-                                    (VOID *)&ModePage1C, 
-                                    sizeof(UFI_MODE_PARAMETER_PAGE_1C), 
-                                    EfiUsbDataIn,
-                                    USBFLPTIMEOUT
-                                    ) ;
-  
-  if(EFI_ERROR(Status)) {
+
+  EfiZeroMem (&ModePage1C, sizeof (UFI_MODE_PARAMETER_PAGE_1C));
+
+  EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
+  Packet.ModeSenseUFI.opcode    = UFI_MODE_SENSE5A;
+  //
+  // Flexible Disk Page
+  //
+  Packet.ModeSenseUFI.page_code = 0x1C;
+  //
+  // current values
+  //
+  Packet.ModeSenseUFI.page_control = 0;
+  Packet.ModeSenseUFI.parameter_list_length_hi  = 0;
+  Packet.ModeSenseUFI.parameter_list_length_lo  = sizeof (UFI_MODE_PARAMETER_PAGE_1C);
+  Status = USBFloppyPacketCommand (
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (ATAPI_PACKET_COMMAND),
+            (VOID *) &ModePage1C,
+            sizeof (UFI_MODE_PARAMETER_PAGE_1C),
+            EfiUsbDataIn,
+            USBFLPTIMEOUT
+            );
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-  
-  UsbFloppyDevice->BlkIo.Media->ReadOnly = 
-    ModePage1C.mode_param_header.write_protected;
 
-  return EFI_SUCCESS ;
+  UsbFloppyDevice->BlkIo.Media->ReadOnly = ModePage1C.mode_param_header.write_protected;
+
+  return EFI_SUCCESS;
 
 }
 
@@ -1272,11 +1347,26 @@ EFI_STATUS
 UsbMassStorageModeSense (
   IN  USB_FLOPPY_DEV    *UsbFloppyDevice
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbFloppyDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   if (UsbFloppyDevice->AtapiProtocol->CommandProtocol == EFI_USB_SUBCLASS_SCSI) {
-    return UsbSCSIModeSense1APage3F(UsbFloppyDevice);
+    return UsbSCSIModeSense1APage3F (UsbFloppyDevice);
   } else {
-   return UsbFloppyModeSense5APage3F(UsbFloppyDevice);
+    return UsbFloppyModeSense5APage3F (UsbFloppyDevice);
   }
 }
 
@@ -1295,44 +1385,47 @@ UsbFloppyModeSense5APage3F (
       
   Returns:  
 
---*/         
-{ 
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
   //
   // status returned by Read Capacity Packet Command
   //
-  EFI_STATUS                   Status;       
-  ATAPI_PACKET_COMMAND         Packet;
-  EFI_USB_ATAPI_PROTOCOL       *UsbAtapiInterface;
-  UFI_MODE_PARAMETER_HEADER    Header;
-  UINT32                       Size;
-   
+  EFI_STATUS                Status;
+  ATAPI_PACKET_COMMAND      Packet;
+  EFI_USB_ATAPI_PROTOCOL    *UsbAtapiInterface;
+  UFI_MODE_PARAMETER_HEADER Header;
+  UINT32                    Size;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
-  Size = sizeof(UFI_MODE_PARAMETER_HEADER);
-  
-  EfiZeroMem (&Packet,sizeof(ATAPI_PACKET_COMMAND));
-  Packet.ModeSenseUFI.opcode = UFI_MODE_SENSE5A;
-  Packet.ModeSenseUFI.page_code = 0x3F;    
-  Packet.ModeSenseUFI.page_control = 0;    
-  Packet.ModeSenseUFI.parameter_list_length_hi = 0;
-  Packet.ModeSenseUFI.parameter_list_length_lo = (UINT8) Size; 
-  Status = USBFloppyPacketCommand (UsbFloppyDevice, 
-                                    &Packet,
-                                    sizeof(ATAPI_PACKET_COMMAND),
-                                    &Header, 
-                                    Size, 
-                                    EfiUsbDataIn,
-                                    USBFLPTIMEOUT
-                                    ) ;
-  
-  if(EFI_ERROR(Status)) {
+  Size              = sizeof (UFI_MODE_PARAMETER_HEADER);
+
+  EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
+  Packet.ModeSenseUFI.opcode                    = UFI_MODE_SENSE5A;
+  Packet.ModeSenseUFI.page_code                 = 0x3F;
+  Packet.ModeSenseUFI.page_control              = 0;
+  Packet.ModeSenseUFI.parameter_list_length_hi  = 0;
+  Packet.ModeSenseUFI.parameter_list_length_lo  = (UINT8) Size;
+  Status = USBFloppyPacketCommand (
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (ATAPI_PACKET_COMMAND),
+            &Header,
+            Size,
+            EfiUsbDataIn,
+            USBFLPTIMEOUT
+            );
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  UsbFloppyDevice->BlkIo.Media->ReadOnly = 
-    Header.write_protected;
+  UsbFloppyDevice->BlkIo.Media->ReadOnly = Header.write_protected;
 
-  return EFI_SUCCESS ;
+  return EFI_SUCCESS;
 
 }
 
@@ -1351,45 +1444,47 @@ UsbSCSIModeSense1APage3F (
       
   Returns:  
 
---*/  
-{ 
+--*/
+// TODO:    UsbFloppyDevice - add argument and description to function comment
+// TODO:    EFI_DEVICE_ERROR - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
   //
   // status returned by Read Capacity Packet Command
   //
-  EFI_STATUS                   Status;       
-  ATAPI_PACKET_COMMAND         Packet;
-  EFI_USB_ATAPI_PROTOCOL       *UsbAtapiInterface;
-  SCSI_MODE_PARAMETER_HEADER6  Header;
-  UINT32                       Size;
-   
+  EFI_STATUS                  Status;
+  ATAPI_PACKET_COMMAND        Packet;
+  EFI_USB_ATAPI_PROTOCOL      *UsbAtapiInterface;
+  SCSI_MODE_PARAMETER_HEADER6 Header;
+  UINT32                      Size;
+
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
-  Size = sizeof(SCSI_MODE_PARAMETER_HEADER6);
-  
-  EfiZeroMem (&Packet,sizeof(ATAPI_PACKET_COMMAND));
-  Packet.ModeSenseSCSI.opcode = SCSI_MODE_SENSE1A;
-  Packet.ModeSenseSCSI.page_code = 0x3F;    
-  Packet.ModeSenseSCSI.page_control = 0;    
-  Packet.ModeSenseSCSI.allocation_length = (UINT8) Size; 
-  Status = USBFloppyPacketCommand (UsbFloppyDevice, 
-                                    &Packet,
-                                    sizeof(MODE_SENSE_CMD_SCSI),
-                                    &Header, 
-                                    Size, 
-                                    EfiUsbDataIn,
-                                    USBFLPTIMEOUT
-                                    ) ;
-  
-  if(EFI_ERROR(Status)) {
+  Size              = sizeof (SCSI_MODE_PARAMETER_HEADER6);
+
+  EfiZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
+  Packet.ModeSenseSCSI.opcode             = SCSI_MODE_SENSE1A;
+  Packet.ModeSenseSCSI.page_code          = 0x3F;
+  Packet.ModeSenseSCSI.page_control       = 0;
+  Packet.ModeSenseSCSI.allocation_length  = (UINT8) Size;
+  Status = USBFloppyPacketCommand (
+            UsbFloppyDevice,
+            &Packet,
+            sizeof (MODE_SENSE_CMD_SCSI),
+            &Header,
+            Size,
+            EfiUsbDataIn,
+            USBFLPTIMEOUT
+            );
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  UsbFloppyDevice->BlkIo.Media->ReadOnly = 
-    Header.write_protected;
-  return EFI_SUCCESS ;
+  UsbFloppyDevice->BlkIo.Media->ReadOnly = Header.write_protected;
+  return EFI_SUCCESS;
 
 }
-
 
 /*++
 
@@ -1399,188 +1494,268 @@ UsbSCSIModeSense1APage3F (
 --*/
 
 BOOLEAN
-IsNoMedia(
+IsNoMedia (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  REQUEST_SENSE_DATA    *SensePtr;
-  UINTN                 Index;
-  BOOLEAN               NoMedia;
+  REQUEST_SENSE_DATA  *SensePtr;
+  UINTN               Index;
+  BOOLEAN             NoMedia;
 
-  NoMedia = FALSE ;
+  NoMedia   = FALSE;
 
-  SensePtr = SenseData;
+  SensePtr  = SenseData;
 
-  for ( Index = 0 ; Index < SenseCounts ; Index ++ ) {
+  for (Index = 0; Index < SenseCounts; Index++) {
 
-    if ((SensePtr->sense_key == SK_NOT_READY)
-        && (SensePtr->addnl_sense_code == ASC_NO_MEDIA)) {
-      
+    if ((SensePtr->sense_key == SK_NOT_READY) && 
+        (SensePtr->addnl_sense_code == ASC_NO_MEDIA)) {
+
       NoMedia = TRUE;
     }
-            
-    SensePtr ++;
+
+    SensePtr++;
   }
 
   return NoMedia;
 }
 
-
 BOOLEAN
-IsMediaError(
+IsMediaError (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   REQUEST_SENSE_DATA  *SensePtr;
   UINTN               Index;
   BOOLEAN             IsError;
-  
-  IsError = FALSE;
-  SensePtr = SenseData;
 
-  for ( Index = 0 ; Index < SenseCounts ; Index ++ ) {
-  
+  IsError   = FALSE;
+  SensePtr  = SenseData;
+
+  for (Index = 0; Index < SenseCounts; Index++) {
+
     switch (SensePtr->sense_key) {
       
-      //
-      // Medium error case
-      //      
-      case SK_MEDIUM_ERROR:
-        switch (SensePtr->addnl_sense_code) {
-          case ASC_MEDIA_ERR1:  
-          case ASC_MEDIA_ERR2:  
-          case ASC_MEDIA_ERR3:  
-          case ASC_MEDIA_ERR4:  
-            IsError = TRUE;
-            break;
-          
-          default:
-            break;
-        }
-        
-        break;
-      //
-      // Medium upside-down case
-      //
-      case SK_NOT_READY:
-        switch (SensePtr->addnl_sense_code) {
-          case ASC_MEDIA_UPSIDE_DOWN:
-            IsError = TRUE;
-            break;
-
-          default:
-            break;
-        }
+    //
+    // Medium error case
+    //
+    case SK_MEDIUM_ERROR:
+      switch (SensePtr->addnl_sense_code) {
+      case ASC_MEDIA_ERR1:
+      case ASC_MEDIA_ERR2:
+      case ASC_MEDIA_ERR3:
+      case ASC_MEDIA_ERR4:
+        IsError = TRUE;
         break;
 
       default:
-        break; 
+        break;
+      }
+
+      break;
+
+    //
+    // Medium upside-down case
+    //
+    case SK_NOT_READY:
+      switch (SensePtr->addnl_sense_code) {
+      case ASC_MEDIA_UPSIDE_DOWN:
+        IsError = TRUE;
+        break;
+
+      default:
+        break;
+      }
+      break;
+
+    default:
+      break;
     }
-            
-    SensePtr ++;
+
+    SensePtr++;
   }
 
   return IsError;
 }
 
 BOOLEAN
-IsMediaChange(
+IsMediaChange (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  REQUEST_SENSE_DATA    *SensePtr;
-  UINTN                 Index;
-  BOOLEAN               MediaChanged;
+  REQUEST_SENSE_DATA  *SensePtr;
+  UINTN               Index;
+  BOOLEAN             MediaChanged;
 
-  MediaChanged = FALSE;
-  SensePtr = SenseData;
+  MediaChanged  = FALSE;
+  SensePtr      = SenseData;
 
-  for ( Index = 0 ; Index < SenseCounts ; Index ++ ) {
-    
-    if ((SensePtr->sense_key == SK_UNIT_ATTENTION)
-        && (SensePtr->addnl_sense_code == ASC_MEDIA_CHANGE)) {
-      
+  for (Index = 0; Index < SenseCounts; Index++) {
+
+    if ((SensePtr->sense_key == SK_UNIT_ATTENTION) &&
+        (SensePtr->addnl_sense_code == ASC_MEDIA_CHANGE)) {
+
       MediaChanged = TRUE;
     }
-            
-    SensePtr ++ ;
+
+    SensePtr++;
   }
 
   return MediaChanged;
 }
 
 BOOLEAN
-IsDriveReady(
+IsDriveReady (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts,
   OUT BOOLEAN               *NeedRetry
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+  NeedRetry   - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  REQUEST_SENSE_DATA    *SensePtr;
-  UINTN                 Index;
-  BOOLEAN               IsReady;
+  REQUEST_SENSE_DATA  *SensePtr;
+  UINTN               Index;
+  BOOLEAN             IsReady;
 
-  IsReady = TRUE;
-  *NeedRetry = FALSE;
-  SensePtr = SenseData;
+  IsReady     = TRUE;
+  *NeedRetry  = FALSE;
+  SensePtr    = SenseData;
 
-  for ( Index = 0 ; Index < SenseCounts ; Index ++ ) {
-    
-    if ((SensePtr->sense_key == SK_NOT_READY)
-        && (SensePtr->addnl_sense_code == ASC_NOT_READY)) {
-          
+  for (Index = 0; Index < SenseCounts; Index++) {
+
+    if ((SensePtr->sense_key == SK_NOT_READY) &&
+        (SensePtr->addnl_sense_code == ASC_NOT_READY)) {
+
       switch (SensePtr->addnl_sense_code_qualifier) {
-        case ASCQ_IN_PROGRESS:
-        case ASCQ_DEVICE_BUSY:
-          IsReady = FALSE;
-          *NeedRetry = TRUE;
-          break;
-                
-        default:
-          //
-          // Drive is in error condition,
-          // no need to retry.
-          //
-          IsReady = FALSE;
-          *NeedRetry = FALSE;
-          break;
-      }               
+      case ASCQ_IN_PROGRESS:
+      case ASCQ_DEVICE_BUSY:
+        IsReady     = FALSE;
+        *NeedRetry  = TRUE;
+        break;
+
+      default:
+        //
+        // Drive is in error condition,
+        // no need to retry.
+        //
+        IsReady     = FALSE;
+        *NeedRetry  = FALSE;
+        break;
+      }
     }
-                
-    SensePtr ++ ;
+
+    SensePtr++;
   }
 
   return IsReady;
 }
 
 BOOLEAN
-IsMediaWriteProtected(
+IsMediaWriteProtected (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  REQUEST_SENSE_DATA    *SensePtr;
-  UINTN                 Index;
-  BOOLEAN               IsWriteProtected;
+  REQUEST_SENSE_DATA  *SensePtr;
+  UINTN               Index;
+  BOOLEAN             IsWriteProtected;
 
-  IsWriteProtected = FALSE;
-  SensePtr = SenseData;
+  IsWriteProtected  = FALSE;
+  SensePtr          = SenseData;
 
-  for ( Index = 0 ; Index < SenseCounts ; Index ++ ) {
-    
+  for (Index = 0; Index < SenseCounts; Index++) {
     //
     // catch media write-protected condition.
     //
-    if ((SensePtr->sense_key == SK_DATA_PROTECT)
-        && (SensePtr->addnl_sense_code == ASC_WRITE_PROTECTED)) {
-      
+    if ((SensePtr->sense_key == SK_DATA_PROTECT) &&
+        (SensePtr->addnl_sense_code == ASC_WRITE_PROTECTED)) {
+
       IsWriteProtected = TRUE;
     }
-  
-    SensePtr ++;
+
+    SensePtr++;
   }
 
   return IsWriteProtected;
@@ -1591,23 +1766,39 @@ IsLogicalUnitCommunicationOverRun (
   IN  REQUEST_SENSE_DATA    *SenseData,
   IN  UINTN                 SenseCounts
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  SenseData   - TODO: add argument description
+  SenseCounts - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  REQUEST_SENSE_DATA    *SensePtr;
-  UINTN                 Index;
-  BOOLEAN               IsOverRun;
-  
+  REQUEST_SENSE_DATA  *SensePtr;
+  UINTN               Index;
+  BOOLEAN             IsOverRun;
+
   IsOverRun = FALSE;
-  SensePtr = SenseData;
-  
-  for ( Index = 0 ; Index < SenseCounts ; Index ++ ) {
-    
-    if ((SensePtr->sense_key == SK_NOT_READY)
-        && (SensePtr->addnl_sense_code == ASC_LOGICAL_UNIT_STATUS)
-        && (SensePtr->addnl_sense_code_qualifier == ASCQ_LOGICAL_UNIT_OVERRUN)) {
-          IsOverRun = TRUE;
+  SensePtr  = SenseData;
+
+  for (Index = 0; Index < SenseCounts; Index++) {
+
+    if ((SensePtr->sense_key == SK_NOT_READY) &&
+        (SensePtr->addnl_sense_code == ASC_LOGICAL_UNIT_STATUS) &&
+        (SensePtr->addnl_sense_code_qualifier == ASCQ_LOGICAL_UNIT_OVERRUN)) {
+      IsOverRun = TRUE;
     }
-    
-    SensePtr ++;
+
+    SensePtr++;
   }
 
   return IsOverRun;

@@ -30,7 +30,7 @@ Abstract:
 #include "crc32.h"
 #include "GenFfsFile.h"
 #include <stdio.h>
-#include <ctype.h>               // for isalpha()
+#include <ctype.h>  // for isalpha()
 //
 // include file for _spawnv
 //
@@ -41,9 +41,9 @@ Abstract:
 #include "EfiUtilityMsgs.h"
 #include "SimpleFileParsing.h"
 
-#define UTILITY_NAME        "GenFfsFile"
-#define TOOLVERSION         "0.32"
-#define MAX_ARRAY_SIZE      100
+#define UTILITY_NAME    "GenFfsFile"
+#define TOOLVERSION     "0.32"
+#define MAX_ARRAY_SIZE  100
 
 static
 INT32
@@ -51,7 +51,7 @@ GetNextLine (
   OUT CHAR8       *Destination,
   IN FILE         *Package,
   IN OUT UINT32   *LineNumber
-);
+  );
 
 static
 void
@@ -80,19 +80,19 @@ static
 void
 PrintUsage (
   void
-);
+  );
 
 //
 // Keep globals in this structure
 //
 static struct {
-  UINT8     BuildDirectory[_MAX_PATH];
-  UINT8     PrimaryPackagePath[_MAX_PATH];
-  UINT8     OverridePackagePath[_MAX_PATH];
-  BOOLEAN   Verbose;
+  UINT8   BuildDirectory[_MAX_PATH];
+  UINT8   PrimaryPackagePath[_MAX_PATH];
+  UINT8   OverridePackagePath[_MAX_PATH];
+  BOOLEAN Verbose;
 } mGlobals;
 
-static EFI_GUID  mZeroGuid = {0};
+static EFI_GUID mZeroGuid = { 0 };
 
 static
 void
@@ -119,20 +119,21 @@ Returns:
   UINTN Index2;
   UINTN StrLen;
 
-  Index2 = strspn (String, "\" \t\n");
-  StrLen = strlen(String);
+  Index2  = strspn (String, "\" \t\n");
+  StrLen  = strlen (String);
 
   for (Index = Index2; String[Index] != '\"', Index < StrLen; Index++) {
-    String[Index-Index2] = String[Index];
+    String[Index - Index2] = String[Index];
   }
-  String[Index-Index2] = 0;
+
+  String[Index - Index2] = 0;
 }
 
 static
 void
 PrintUsage (
   void
-)
+  )
 /*++
 
 Routine Description:
@@ -141,7 +142,7 @@ Routine Description:
 
 Arguments:
 
-  None
+  void
 
 Returns:
 
@@ -167,7 +168,7 @@ INT32
 TestComment (
   IN CHAR8  *String,
   IN FILE   *In
-)
+  )
 /*++
 
 Routine Description:
@@ -188,7 +189,7 @@ Returns:
 
 --*/
 {
-  CHAR8   CharBuffer;
+  CHAR8 CharBuffer;
 
   CharBuffer = 0;
   if ((String[0] == '/') && (String[1] == '/')) {
@@ -201,6 +202,7 @@ Returns:
   } else {
     return 0;
   }
+
   return 1;
 }
 
@@ -210,7 +212,7 @@ BreakString (
   IN CONST CHAR8 *Source,
   OUT CHAR8      *Destination,
   IN INTN        Direction
-)
+  )
 /*++
 
 Routine Description:
@@ -232,45 +234,42 @@ Returns:
 
 --*/
 {
-  UINTN   Index;
-  UINTN   Index2;
+  UINTN Index;
+  UINTN Index2;
 
-  Index = 0;
-  Index2 = 0;
+  Index   = 0;
+  Index2  = 0;
 
-  if (strchr(Source, '=') == NULL) {
+  if (strchr (Source, '=') == NULL) {
     strcpy (Destination, Source);
 
-    return;
+    return ;
   }
 
   if (Direction == 0) {
-
     //
     // return part of string before =
     //
-
     while (Source[Index] != '=') {
       Destination[Index] = Source[Index++];
     }
 
     Destination[Index] = 0;
   } else {
-
     //
     // return part of string after =
     //
-
     strcpy (Destination, strchr (Source, '=') + 1);
   }
 }
+
 static
 INT32
 GetNextLine (
   OUT CHAR8       *Destination,
   IN FILE         *Package,
   IN OUT UINT32   *LineNumber
-)
+  )
 /*++
 
 Routine Description:
@@ -282,6 +281,8 @@ Arguments:
   Destination - Where to put string
 
   Package     - Package to get string from
+  
+  LineNumber  - The actual line number.
 
 Returns:
 
@@ -295,12 +296,14 @@ Returns:
   if (feof (Package)) {
     return -1;
   }
-  while (TestComment (String, Package)==1) {
+
+  while (TestComment (String, Package) == 1) {
     fscanf (Package, "%s", &String);
     if (feof (Package)) {
       return -1;
     }
   }
+
   strcpy (Destination, String);
   return 0;
 }
@@ -311,7 +314,7 @@ CheckSlash (
   IN OUT CHAR8  *String,
   IN FILE       *In,
   IN OUT UINT32 *LineNumber
-)
+  )
 /*++
 
 Routine Description:
@@ -323,6 +326,8 @@ Arguments:
   String      - String to test
 
   In          - Open file to move pointer within
+  
+  LineNumber  - The line number.
 
 Returns:
 
@@ -335,40 +340,41 @@ Returns:
 
   switch (String[0]) {
 
-    case '\\':
-      while (String[0] == '\\') {
-        while (ByteBuffer != '\n') {
-          fscanf (In, "%c", &ByteBuffer);
-        }
-        (*LineNumber)++;
-        if (GetNextLine (String, In, LineNumber) == -1) {
-          return;
-        }
+  case '\\':
+    while (String[0] == '\\') {
+      while (ByteBuffer != '\n') {
+        fscanf (In, "%c", &ByteBuffer);
       }
-      break;
-
-    case '\n':
       (*LineNumber)++;
-      while (String[0] == '\n') {
-        if (GetNextLine (String, In, LineNumber) == -1) {
-          return;
-        }
+      if (GetNextLine (String, In, LineNumber) == -1) {
+        return ;
       }
-      break;
+    }
+    break;
 
-    default:
-      break;
+  case '\n':
+    (*LineNumber)++;
+    while (String[0] == '\n') {
+      if (GetNextLine (String, In, LineNumber) == -1) {
+        return ;
+      }
+    }
+    break;
+
+  default:
+    break;
 
   }
 
 }
+
 static
 INT32
 FindSectionInPackage (
   IN CHAR8        *BuildDirectory,
   IN FILE         *OverridePackage,
   IN OUT UINT32   *LineNumber
-)
+  )
 /*++
 
 Routine Description:
@@ -380,6 +386,8 @@ Arguments:
   BuildDirectory  - name of section to find
 
   OverridePackage - Package file to search within
+  
+  LineNumber      - The line number.
 
 Returns:
 
@@ -396,27 +404,28 @@ Returns:
     if (GetNextLine (NewString, OverridePackage, LineNumber) != 0) {
       return -1;
     }
+
     if (NewString[0] == '[') {
       if (NewString[strlen (NewString) - 1] != ']') {
-
         //
         // have to construct string.
         //
-
         strcpy (String, NewString + 1);
 
-        while(1) {
+        while (1) {
           fscanf (OverridePackage, "%s", &NewString);
           if (feof (OverridePackage)) {
             return -1;
           }
+
           if (NewString[0] != ']') {
             if (strlen (String) != 0) {
               strcat (String, " ");
             }
+
             strcat (String, NewString);
-            if (String[strlen(String) - 1] == ']') {
-              String[strlen(String) - 1] = 0;
+            if (String[strlen (String) - 1] == ']') {
+              String[strlen (String) - 1] = 0;
               break;
             }
           } else {
@@ -429,6 +438,7 @@ Returns:
       }
     }
   }
+
   return 0;
 }
 
@@ -440,7 +450,7 @@ GenSimpleGuidSection (
   IN UINT32     DataSize,
   IN EFI_GUID   SignGuid,
   IN UINT16     GuidedSectionAttributes
-)
+  )
 /*++
 
 Routine Description:
@@ -458,21 +468,24 @@ Arguments:
   DataSize    - Length of data to Sign
 
   SignGuid    - Guid to be add.
+  
+  GuidedSectionAttributes - The section attribute.
 
 Returns:
 
-  EFI_SUCCESS - Successful
+  EFI_SUCCESS           - Successful
+  EFI_OUT_OF_RESOURCES  - Not enough resource.
 
 --*/
 {
-  UINT32                TotalSize;
+  UINT32                    TotalSize;
 
   EFI_GUID_DEFINED_SECTION  GuidSectionHeader;
-  UINT8                 *SwapBuffer;
+  UINT8                     *SwapBuffer;
 
-  SwapBuffer    = NULL;
+  SwapBuffer = NULL;
 
-  if ( DataSize == 0 ) {
+  if (DataSize == 0) {
     *BufferSize = 0;
 
     return EFI_SUCCESS;
@@ -480,15 +493,15 @@ Returns:
 
   TotalSize = DataSize + sizeof (EFI_GUID_DEFINED_SECTION);
   GuidSectionHeader.CommonHeader.Type     = EFI_SECTION_GUID_DEFINED;
-  GuidSectionHeader.CommonHeader.Size[0]  = (UINT8)(TotalSize & 0xff);
-  GuidSectionHeader.CommonHeader.Size[1]  = (UINT8)((TotalSize & 0xff00) >> 8);
-  GuidSectionHeader.CommonHeader.Size[2]  = (UINT8)((TotalSize & 0xff0000) >> 16);
-  memcpy (&(GuidSectionHeader.SectionDefinitionGuid), &SignGuid, sizeof(EFI_GUID));
-  GuidSectionHeader.Attributes            = GuidedSectionAttributes;
-  GuidSectionHeader.DataOffset            = sizeof (EFI_GUID_DEFINED_SECTION);
+  GuidSectionHeader.CommonHeader.Size[0]  = (UINT8) (TotalSize & 0xff);
+  GuidSectionHeader.CommonHeader.Size[1]  = (UINT8) ((TotalSize & 0xff00) >> 8);
+  GuidSectionHeader.CommonHeader.Size[2]  = (UINT8) ((TotalSize & 0xff0000) >> 16);
+  memcpy (&(GuidSectionHeader.SectionDefinitionGuid), &SignGuid, sizeof (EFI_GUID));
+  GuidSectionHeader.Attributes  = GuidedSectionAttributes;
+  GuidSectionHeader.DataOffset  = sizeof (EFI_GUID_DEFINED_SECTION);
 
-  SwapBuffer  = (UINT8 *)malloc(DataSize);
-  if ( SwapBuffer == NULL ) {
+  SwapBuffer                    = (UINT8 *) malloc (DataSize);
+  if (SwapBuffer == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -520,7 +533,7 @@ CompressSection (
   UINT32 *BufferSize,
   UINT32 DataSize,
   CHAR8  *Type
-)
+  )
 /*++
 
 Routine Description:
@@ -546,80 +559,80 @@ Returns:
 
   EFI_BUFFER_TOO_SMALL - Buffer size is too small.
   EFI_UNSUPPORTED      - Compress type can not be supported.
-  EFI_SUCCESS          - Successful.
+  EFI_SUCCESS          - Successful
+  EFI_OUT_OF_RESOURCES - Not enough resource.
 
 --*/
 {
-  EFI_STATUS            Status;
-  UINT8                 *CompData;
-  UINT32                CompSize;
-  UINT32                TotalSize;
-  EFI_COMPRESSION_SECTION  CompressionSet;
-  UINT8                 CompressionType;
-  COMPRESS_FUNCTION     CompressFunction;
+  EFI_STATUS              Status;
+  UINT8                   *CompData;
+  UINT32                  CompSize;
+  UINT32                  TotalSize;
+  EFI_COMPRESSION_SECTION CompressionSet;
+  UINT8                   CompressionType;
+  COMPRESS_FUNCTION       CompressFunction;
 
-  Status = EFI_SUCCESS;
-  CompData = NULL;
-  CompSize = 0;
-  TotalSize = 0;
-  CompressFunction = NULL;
-  
+  Status            = EFI_SUCCESS;
+  CompData          = NULL;
+  CompSize          = 0;
+  TotalSize         = 0;
+  CompressFunction  = NULL;
+
   //
   // Get the compress type
-  //   
+  //
   if (strcmpi (Type, "Dummy") == 0) {
     //
     // Added "Dummy" to keep backward compatibility.
-    //    
-    CompressionType  = EFI_STANDARD_COMPRESSION;
-    CompressFunction = (COMPRESS_FUNCTION)Compress;
-    
+    //
+    CompressionType   = EFI_STANDARD_COMPRESSION;
+    CompressFunction  = (COMPRESS_FUNCTION) Compress;
+
   } else if (strcmpi (Type, "LZH") == 0) {
     //
     // EFI stardard compression (LZH)
-    //    
-    CompressionType = EFI_STANDARD_COMPRESSION;
-    CompressFunction = (COMPRESS_FUNCTION)Compress;
-    
+    //
+    CompressionType   = EFI_STANDARD_COMPRESSION;
+    CompressFunction  = (COMPRESS_FUNCTION) Compress;
+
   } else {
     //
     // Customized compression
-    //  
-    Status = SetCustomizedCompressionType(Type);
-    if (EFI_ERROR(Status)) {
+    //
+    Status = SetCustomizedCompressionType (Type);
+    if (EFI_ERROR (Status)) {
       return Status;
-    }  
-    CompressionType = EFI_CUSTOMIZED_COMPRESSION;
-    CompressFunction = (COMPRESS_FUNCTION)CustomizedCompress;	
+    }
+
+    CompressionType   = EFI_CUSTOMIZED_COMPRESSION;
+    CompressFunction  = (COMPRESS_FUNCTION) CustomizedCompress;
   }
-  
   //
   // Compress the raw data
   //
-  
   Status = CompressFunction (FileBuffer, DataSize, CompData, &CompSize);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     CompData = malloc (CompSize);
     if (!CompData) {
       return EFI_OUT_OF_RESOURCES;
     }
-    
+
     Status = CompressFunction (FileBuffer, DataSize, CompData, &CompSize);
   }
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     if (CompData != NULL) {
       free (CompData);
     }
+
     return Status;
   }
-  
+
   TotalSize = CompSize + sizeof (EFI_COMPRESSION_SECTION);
-  
+
   //
   // Buffer too small?
   //
-  
   if (TotalSize > *BufferSize) {
     *BufferSize = TotalSize;
     if (CompData != NULL) {
@@ -628,22 +641,21 @@ Returns:
 
     return EFI_BUFFER_TOO_SMALL;
   }
-
   //
   // Add the section header for the compressed data
   //
-  CompressionSet.CommonHeader.Type = EFI_SECTION_COMPRESSION;
-  CompressionSet.CommonHeader.Size[0] = (UINT8)(TotalSize & 0xff);
-  CompressionSet.CommonHeader.Size[1] = (UINT8)((TotalSize & 0xff00) >> 8);
-  CompressionSet.CommonHeader.Size[2] = (UINT8)((TotalSize & 0xff0000) >> 16);
-  CompressionSet.CompressionType = CompressionType;
-  CompressionSet.UncompressedLength = DataSize;
+  CompressionSet.CommonHeader.Type    = EFI_SECTION_COMPRESSION;
+  CompressionSet.CommonHeader.Size[0] = (UINT8) (TotalSize & 0xff);
+  CompressionSet.CommonHeader.Size[1] = (UINT8) ((TotalSize & 0xff00) >> 8);
+  CompressionSet.CommonHeader.Size[2] = (UINT8) ((TotalSize & 0xff0000) >> 16);
+  CompressionSet.CompressionType      = CompressionType;
+  CompressionSet.UncompressedLength   = DataSize;
 
   //
   // Copy header and data to the buffer
   //
   memcpy (FileBuffer, &CompressionSet, sizeof (EFI_COMPRESSION_SECTION));
-  memcpy (FileBuffer + sizeof(CompressionSet), CompData, CompSize);
+  memcpy (FileBuffer + sizeof (CompressionSet), CompData, CompSize);
 
   //
   // Make sure section ends on a DWORD boundary
@@ -666,7 +678,7 @@ static
 void
 StripParens (
   IN OUT CHAR8 *String
-)
+  )
 /*++
 
 Routine Description:
@@ -685,26 +697,27 @@ Returns:
 {
   INT32 Index;
 
-  if ( String[0] != '(' ) {
-    return;
+  if (String[0] != '(') {
+    return ;
   }
 
-  for (Index=1; String[Index] != ')'; Index++) {
+  for (Index = 1; String[Index] != ')'; Index++) {
     String[Index - 1] = String[Index];
-    if ( String[Index] == 0 ) {
-      return;
+    if (String[Index] == 0) {
+      return ;
     }
   }
+
   String[Index - 1] = 0;
 
-  return;
+  return ;
 }
 
 static
 void
 StripEqualMark (
   IN OUT CHAR8 *String
-)
+  )
 /*++
 
 Routine Description:
@@ -723,31 +736,32 @@ Returns:
 {
   INT32 Index;
 
-  if ( String[0] != '=' && String[strlen(String) - 1] != '=') {
-    return;
+  if (String[0] != '=' && String[strlen (String) - 1] != '=') {
+    return ;
   }
 
   if (String[0] == '=') {
 
-    for (Index = 1; String[Index] != 0; Index ++) {
-      String[Index - 1] = String [Index];
+    for (Index = 1; String[Index] != 0; Index++) {
+      String[Index - 1] = String[Index];
     }
 
     String[Index - 1] = 0;
   }
 
-  if (String [strlen (String) - 1] == '=') {
-    String [strlen (String) - 1] = 0;
+  if (String[strlen (String) - 1] == '=') {
+    String[strlen (String) - 1] = 0;
   }
 
-  return;
+  return ;
 }
+
 static
 INT32
 ProcessEnvironmentVariable (
-  IN CHAR8 *Buffer,
+  IN CHAR8  *Buffer,
   OUT CHAR8 *NewBuffer
-)
+  )
 /*++
 
 Routine Description:
@@ -771,14 +785,14 @@ Returns:
   INT32 Index2;
   CHAR8 VariableBuffer[_MAX_PATH];
 
-  Index = 2;
-  Index2 = 0;
+  Index   = 2;
+  Index2  = 0;
 
   while (Buffer[Index] != ')') {
-    VariableBuffer[Index-2] = Buffer[Index++];
+    VariableBuffer[Index - 2] = Buffer[Index++];
   }
 
-  VariableBuffer[Index-2] = 0;
+  VariableBuffer[Index - 2] = 0;
   Index++;
 
   if (getenv (VariableBuffer) != NULL) {
@@ -793,8 +807,8 @@ Returns:
 static
 void
 SplitAttributesField (
-  IN CHAR8   *Buffer,
-  IN CHAR8   *AttributesArray[],
+  IN CHAR8       *Buffer,
+  IN CHAR8       *AttributesArray[],
   IN OUT UINT32  *NumberOfAttributes
   )
 /*
@@ -804,30 +818,30 @@ SplitAttributesField (
                       stored in AttributesArray.
 */
 {
-  UINT32    Index;
-  UINT32    Index2;
-  UINT32    z;
-  CHAR8     *CharBuffer;
+  UINT32  Index;
+  UINT32  Index2;
+  UINT32  z;
+  CHAR8   *CharBuffer;
 
-  CharBuffer = NULL;
-  CharBuffer = (CHAR8*)malloc (_MAX_PATH);
+  CharBuffer  = NULL;
+  CharBuffer  = (CHAR8 *) malloc (_MAX_PATH);
   ZeroMem (CharBuffer, _MAX_PATH);
 
-  for (Index = 0, z = 0, Index2 = 0; Index < strlen (Buffer); Index ++) {
+  for (Index = 0, z = 0, Index2 = 0; Index < strlen (Buffer); Index++) {
 
     if (Buffer[Index] != '|') {
       CharBuffer[z] = Buffer[Index];
-      z ++;
+      z++;
     } else {
 
       CharBuffer[z] = 0;
       AttributesArray[*NumberOfAttributes + Index2] = CharBuffer;
-      Index2 ++;
+      Index2++;
 
       //
       // allocate new char buffer for the next attributes string
       //
-      CharBuffer = (CHAR8*)malloc (_MAX_PATH);
+      CharBuffer = (CHAR8 *) malloc (_MAX_PATH);
       ZeroMem (CharBuffer, _MAX_PATH);
       z = 0;
     }
@@ -838,11 +852,11 @@ SplitAttributesField (
   // record the last attributes string in the Buffer
   //
   AttributesArray[*NumberOfAttributes + Index2] = CharBuffer;
-  Index2 ++;
+  Index2++;
 
   *NumberOfAttributes += Index2;
 
-  return;
+  return ;
 }
 
 static
@@ -877,22 +891,26 @@ GetToolArguments (
   UINT32      LineNumber;
   Buffer[_MAX_PATH];
 
-  ArgumentsFlag = FALSE;
-  InputFlag = FALSE;
-  OutputFlag = FALSE;
-  GuidFlag = FALSE;
-  AttributesFlag = FALSE;
-  argc = 1;  // Start at 1, since ToolArgumentsArray[0]
-             // is the program name.
-  Index2 = 0;
-  z = 0;
-  ReturnValue = 0;
-  NumberOfAttributes = 0;
-  InputFileName = NULL;
-  OutputFileName = NULL;
+  ArgumentsFlag   = FALSE;
+  InputFlag       = FALSE;
+  OutputFlag      = FALSE;
+  GuidFlag        = FALSE;
+  AttributesFlag  = FALSE;
+  //
+  // Start at 1, since ToolArgumentsArray[0]
+  // is the program name.
+  //
+  argc            = 1;
+  Index2              = 0;
 
-  ZeroMem (Buffer,_MAX_PATH);
-  ZeroMem (AttributesArray, sizeof (CHAR8*) * MAX_ARRAY_SIZE);
+  z                   = 0;
+  ReturnValue         = 0;
+  NumberOfAttributes  = 0;
+  InputFileName       = NULL;
+  OutputFileName      = NULL;
+
+  ZeroMem (Buffer, _MAX_PATH);
+  ZeroMem (AttributesArray, sizeof (CHAR8 *) * MAX_ARRAY_SIZE);
   LineNumber = 0;
   while (Buffer[0] != ')') {
 
@@ -908,29 +926,29 @@ GetToolArguments (
       break;
     } else if (strcmpi (Buffer, "ARGS") == 0) {
 
-      ArgumentsFlag = TRUE;
-      AttributesFlag = FALSE;
+      ArgumentsFlag   = TRUE;
+      AttributesFlag  = FALSE;
       continue;
 
     } else if (strcmpi (Buffer, "INPUT") == 0) {
 
-      InputFlag = TRUE;
-      ArgumentsFlag = FALSE;
-      AttributesFlag = FALSE;
+      InputFlag       = TRUE;
+      ArgumentsFlag   = FALSE;
+      AttributesFlag  = FALSE;
       continue;
 
     } else if (strcmpi (Buffer, "OUTPUT") == 0) {
 
-      OutputFlag = TRUE;
-      ArgumentsFlag = FALSE;
-      AttributesFlag = FALSE;
+      OutputFlag      = TRUE;
+      ArgumentsFlag   = FALSE;
+      AttributesFlag  = FALSE;
       continue;
 
     } else if (strcmpi (Buffer, "GUID") == 0) {
 
-      GuidFlag = TRUE;
-      ArgumentsFlag = FALSE;
-      AttributesFlag = FALSE;
+      GuidFlag        = TRUE;
+      ArgumentsFlag   = FALSE;
+      AttributesFlag  = FALSE;
       //
       // fetch the GUID for the section
       //
@@ -938,8 +956,8 @@ GetToolArguments (
 
     } else if (strcmpi (Buffer, "ATTRIBUTES") == 0) {
 
-      AttributesFlag = TRUE;
-      ArgumentsFlag = FALSE;
+      AttributesFlag  = TRUE;
+      ArgumentsFlag   = FALSE;
       //
       // fetch the GUIDed Section's Attributes
       //
@@ -948,7 +966,6 @@ GetToolArguments (
     } else if (strcmpi (Buffer, "") == 0) {
       continue;
     }
-
     //
     // get all command arguments into ToolArgumentsArray
     //
@@ -956,11 +973,12 @@ GetToolArguments (
 
       StripEqualMark (Buffer);
 
-      CharBuffer = (CHAR8*)malloc (_MAX_PATH);
+      CharBuffer = (CHAR8 *) malloc (_MAX_PATH);
       if (CharBuffer == NULL) {
         goto ErrorExit;
       }
-      ZeroMem (CharBuffer,sizeof (_MAX_PATH));
+
+      ZeroMem (CharBuffer, sizeof (_MAX_PATH));
 
       ToolArgumentsArray[argc] = CharBuffer;
 
@@ -969,11 +987,11 @@ GetToolArguments (
         //
         // if there is string after the environment variable, cat it.
         //
-        if ((UINT32)Index < strlen (Buffer)) {
-          strcat (ToolArgumentsArray[argc],&Buffer[Index]);
+        if ((UINT32) Index < strlen (Buffer)) {
+          strcat (ToolArgumentsArray[argc], &Buffer[Index]);
         }
       } else {
-        strcpy (ToolArgumentsArray[argc],Buffer);
+        strcpy (ToolArgumentsArray[argc], Buffer);
       }
 
       argc += 1;
@@ -985,19 +1003,20 @@ GetToolArguments (
 
       StripEqualMark (Buffer);
 
-      InputFileName = (CHAR8*)malloc (_MAX_PATH);
+      InputFileName = (CHAR8 *) malloc (_MAX_PATH);
       if (InputFileName == NULL) {
         goto ErrorExit;
       }
-      ZeroMem (InputFileName,sizeof (_MAX_PATH));
+
+      ZeroMem (InputFileName, sizeof (_MAX_PATH));
 
       if (Buffer[0] == '$') {
         Index = ProcessEnvironmentVariable (&Buffer[0], InputFileName);
         //
         // if there is string after the environment variable, cat it.
         //
-        if ((UINT32)Index < strlen (Buffer)) {
-          strcat (InputFileName,&Buffer[Index]);
+        if ((UINT32) Index < strlen (Buffer)) {
+          strcat (InputFileName, &Buffer[Index]);
         }
       } else {
         strcpy (InputFileName, Buffer);
@@ -1011,22 +1030,23 @@ GetToolArguments (
 
       StripEqualMark (Buffer);
 
-      OutputFileName = (CHAR8*)malloc (_MAX_PATH);
+      OutputFileName = (CHAR8 *) malloc (_MAX_PATH);
       if (OutputFileName == NULL) {
         goto ErrorExit;
       }
-      ZeroMem (OutputFileName,sizeof (_MAX_PATH));
+
+      ZeroMem (OutputFileName, sizeof (_MAX_PATH));
 
       if (Buffer[0] == '$') {
         Index = ProcessEnvironmentVariable (&Buffer[0], OutputFileName);
         //
         // if there is string after the environment variable, cat it.
         //
-        if ((UINT32)Index < strlen (Buffer)) {
-          strcat (OutputFileName,&Buffer[Index]);
+        if ((UINT32) Index < strlen (Buffer)) {
+          strcat (OutputFileName, &Buffer[Index]);
         }
       } else {
-        strcpy (OutputFileName,Buffer);
+        strcpy (OutputFileName, Buffer);
       }
 
       OutputFlag = FALSE;
@@ -1037,8 +1057,8 @@ GetToolArguments (
 
       StripEqualMark (Buffer);
 
-      Status = StringToGuid (Buffer,Guid);
-      if (EFI_ERROR(Status)) {
+      Status = StringToGuid (Buffer, Guid);
+      if (EFI_ERROR (Status)) {
         ReturnValue = -1;
         goto ErrorExit;
       }
@@ -1055,14 +1075,14 @@ GetToolArguments (
       // split them aside and return each attribute string
       // in the AttributesArray
       //
-      SplitAttributesField (Buffer,AttributesArray,&NumberOfAttributes);
+      SplitAttributesField (Buffer, AttributesArray, &NumberOfAttributes);
     }
   }
-
-  //ReplaceVariableInBuffer (ToolArgumentsArray,&i,"INPUT",InputVariable,j);
-  //ReplaceVariableInBuffer (ToolArgumentsArray,&i,"OUTPUT",&TargetFileName,1);
-
-  for (z = 0; z < NumberOfAttributes; z ++) {
+  //
+  // ReplaceVariableInBuffer (ToolArgumentsArray,&i,"INPUT",InputVariable,j);
+  // ReplaceVariableInBuffer (ToolArgumentsArray,&i,"OUTPUT",&TargetFileName,1);
+  //
+  for (z = 0; z < NumberOfAttributes; z++) {
     if (strcmpi (AttributesArray[z], "PROCESSING_REQUIRED") == 0) {
       *GuidedSectionAttributes |= EFI_GUIDED_SECTION_PROCESSING_REQUIRED;
     } else if (strcmpi (AttributesArray[z], "AUTH_STATUS_VALID") == 0) {
@@ -1072,7 +1092,7 @@ GetToolArguments (
 
 ErrorExit:
 
-  for (Index2 = 0; Index2 < MAX_ARRAY_SIZE; Index2 ++) {
+  for (Index2 = 0; Index2 < MAX_ARRAY_SIZE; Index2++) {
     if (AttributesArray[Index2] == NULL) {
       break;
     }
@@ -1080,19 +1100,20 @@ ErrorExit:
     free (AttributesArray[Index2]);
   }
 
-  *PtrInputFileName = InputFileName;
-  *PtrOutputFileName = OutputFileName;
+  *PtrInputFileName   = InputFileName;
+  *PtrOutputFileName  = OutputFileName;
 
   return ReturnValue;
 }
+
 static
 INT32
 ProcessScript (
-  IN OUT UINT8  *FileBuffer,
-  IN FILE       *Package,
-  IN CHAR8      *BuildDirectory,
+  IN OUT UINT8   *FileBuffer,
+  IN FILE        *Package,
+  IN CHAR8       *BuildDirectory,
   IN BOOLEAN     ForceUncompress
-)
+  )
 /*++
 
 Routine Description:
@@ -1106,6 +1127,8 @@ Arguments:
   Package     - Points to curly brace in Image Script
 
   BuildDirectory     - Name of the source directory parameter
+  
+  ForceUncompress   - Whether to force uncompress.
 
 Returns:
 
@@ -1120,29 +1143,38 @@ Returns:
   CHAR8       Type[_MAX_PATH];
   CHAR8       FileName[_MAX_PATH];
   CHAR8       NewBuffer[_MAX_PATH];
-  INT32       Index3, Index2;
+  INT32       Index3;
+  INT32       Index2;
   UINT32      ReturnValue;
   UINT8       ByteBuffer;
   FILE        *InFile;
   UINT32      SourceDataSize;
   CHAR8       *ToolArgumentsArray[MAX_ARRAY_SIZE];
-  CHAR8       *OutputFileName = NULL;
-  CHAR8       *InputFileName = NULL;
+  CHAR8       *OutputFileName;
+  CHAR8       *InputFileName;
   CHAR8       ToolName[_MAX_PATH];
-  FILE        *OutputFile = NULL;
-  FILE        *InputFile = NULL;
+  FILE        *OutputFile;
+  FILE        *InputFile;
   UINT8       Temp;
   int         returnint;
   INT32       Index;
   UINT32      LineNumber;
-  BOOLEAN     IsError = FALSE;
+  BOOLEAN     IsError;
   EFI_GUID    SignGuid;
-  UINT16      GuidedSectionAttributes = 0;
-  UINT8       *TargetFileBuffer = NULL;
+  UINT16      GuidedSectionAttributes;
+  UINT8       *TargetFileBuffer;
 
-  Size          = 0;
-  LineNumber    = 0;
-  Buffer[0]     = 0;
+  OutputFileName          = NULL;
+  InputFileName           = NULL;
+  OutputFile              = NULL;
+  InputFile               = NULL;
+  IsError                 = FALSE;
+  GuidedSectionAttributes = 0;
+  TargetFileBuffer        = NULL;
+
+  Size                    = 0;
+  LineNumber              = 0;
+  Buffer[0]               = 0;
   for (Index3 = 0; Index3 < MAX_ARRAY_SIZE; ++Index3) {
     ToolArgumentsArray[Index3] = NULL;
   }
@@ -1151,34 +1183,31 @@ Returns:
     if (GetNextLine (Buffer, Package, &LineNumber) != -1) {
       CheckSlash (Buffer, Package, &LineNumber);
     } else {
-      printf("ERROR in IMAGE SCRIPT!\n");
+      printf ("ERROR in IMAGE SCRIPT!\n");
       IsError = TRUE;
       goto Done;
     }
 
     if (strcmpi (Buffer, "Compress") == 0) {
-
       //
       // Handle compress
       //
-
       //
       // read compression type
       //
       if (GetNextLine (Buffer, Package, &LineNumber) != -1) {
-          CheckSlash (Buffer, Package, &LineNumber);
+        CheckSlash (Buffer, Package, &LineNumber);
       }
+
       StripParens (Buffer);
       if (Buffer[0] == '$') {
         ProcessEnvironmentVariable (&Buffer[0], Type);
       } else {
         strcpy (Type, Buffer);
       }
-
       //
       // build buffer
       //
-
       while (Buffer[0] != '{') {
         if (GetNextLine (Buffer, Package, &LineNumber) != -1) {
           CheckSlash (Buffer, Package, &LineNumber);
@@ -1186,57 +1215,53 @@ Returns:
       }
 
       ReturnValue = ProcessScript (&FileBuffer[Size], Package, BuildDirectory, ForceUncompress);
-      if (ReturnValue == -1){
+      if (ReturnValue == -1) {
         IsError = TRUE;
         goto Done;
       }
-
       //
       // Call compress routine on buffer.
       // Occasionally, compressed data + section header would
       // be largere than the source and EFI_BUFFER_TOO_SMALL is
       // returned from CompressSection()
       //
-
       SourceDataSize = ReturnValue;
 
       if (!ForceUncompress) {
 
-
-      Status = CompressSection (
-                    &FileBuffer[Size],
-                    &ReturnValue,
-                    SourceDataSize,
-                    Type
-                    );
-
-      if (Status == EFI_BUFFER_TOO_SMALL) {
         Status = CompressSection (
+                  &FileBuffer[Size],
+                  &ReturnValue,
+                  SourceDataSize,
+                  Type
+                  );
+
+        if (Status == EFI_BUFFER_TOO_SMALL) {
+          Status = CompressSection (
                     &FileBuffer[Size],
                     &ReturnValue,
                     SourceDataSize,
                     Type
                     );
-      }
+        }
 
-      if (EFI_ERROR(Status)) {
-        IsError = TRUE;
-        goto Done;
+        if (EFI_ERROR (Status)) {
+          IsError = TRUE;
+          goto Done;
+        }
       }
-     }
 
       Size += ReturnValue;
 
     } else if (strcmpi (Buffer, "Tool") == 0) {
 
-      ZeroMem (ToolName,_MAX_PATH);
-      ZeroMem (ToolArgumentsArray,sizeof (CHAR8*) * MAX_ARRAY_SIZE);
+      ZeroMem (ToolName, _MAX_PATH);
+      ZeroMem (ToolArgumentsArray, sizeof (CHAR8 *) * MAX_ARRAY_SIZE);
       ZeroMem (&SignGuid, sizeof (EFI_GUID));
 
       //
       // handle signing Tool
       //
-
       while (Buffer[0] != '(') {
         if (GetNextLine (Buffer, Package, &LineNumber) != -1) {
           CheckSlash (Buffer, Package, &LineNumber);
@@ -1245,7 +1270,7 @@ Returns:
 
       if (strcmpi (Buffer, "(") == 0) {
         if (GetNextLine (Buffer, Package, &LineNumber) != -1) {
-          CheckSlash (Buffer,Package, &LineNumber);
+          CheckSlash (Buffer, Package, &LineNumber);
         }
       }
 
@@ -1256,8 +1281,8 @@ Returns:
         //
         // if there is string after the environment variable, cat it.
         //
-        if ((UINT32)Index < strlen (Buffer)) {
-          strcat (ToolName,&Buffer[Index]);
+        if ((UINT32) Index < strlen (Buffer)) {
+          strcat (ToolName, &Buffer[Index]);
         }
       } else {
         strcpy (ToolName, Buffer);
@@ -1268,15 +1293,17 @@ Returns:
       //
       // read ARGS
       //
-      if (GetToolArguments (ToolArgumentsArray,
-                            Package,
-                            &InputFileName,
-                            &OutputFileName,
-                            &SignGuid,&GuidedSectionAttributes) == -1) {
+      if (GetToolArguments (
+            ToolArgumentsArray,
+            Package,
+            &InputFileName,
+            &OutputFileName,
+            &SignGuid,
+            &GuidedSectionAttributes
+            ) == -1) {
         IsError = TRUE;
         goto Done;
       }
-
       //
       // if the tool need input file,
       // dump the file buffer to the specified input file.
@@ -1288,43 +1315,42 @@ Returns:
           IsError = TRUE;
           goto Done;
         }
-        fwrite (FileBuffer,sizeof (UINT8),Size,InputFile);
+
+        fwrite (FileBuffer, sizeof (UINT8), Size, InputFile);
         fclose (InputFile);
         InputFile = NULL;
         free (InputFileName);
         InputFileName = NULL;
       }
-
       //
       // dispatch signing tool
       //
-      returnint = _spawnv (_P_WAIT,ToolName,ToolArgumentsArray);
+      returnint = _spawnv (_P_WAIT, ToolName, ToolArgumentsArray);
       if (returnint != 0) {
         Error (NULL, 0, 0, ToolName, "external tool failed");
         IsError = TRUE;
         goto Done;
       }
-
       //
       // if the tool has output file,
       // dump the output file to the file buffer
       //
       if (OutputFileName != NULL) {
 
-        OutputFile = fopen (OutputFileName,"rb");
+        OutputFile = fopen (OutputFileName, "rb");
         if (OutputFile == NULL) {
           Error (NULL, 0, 0, OutputFileName, "failed to open output file for writing");
           IsError = TRUE;
           goto Done;
         }
 
-        TargetFileBuffer = &FileBuffer[Size];
-        SourceDataSize = Size;
+        TargetFileBuffer  = &FileBuffer[Size];
+        SourceDataSize    = Size;
 
-        fread (&Temp,sizeof (UINT8),1,OutputFile);
-        while (!feof(OutputFile)) {
+        fread (&Temp, sizeof (UINT8), 1, OutputFile);
+        while (!feof (OutputFile)) {
           FileBuffer[Size++] = Temp;
-          fread (&Temp,sizeof (UINT8),1,OutputFile);
+          fread (&Temp, sizeof (UINT8), 1, OutputFile);
         }
 
         while ((Size & 0x03) != 0) {
@@ -1341,22 +1367,28 @@ Returns:
 
         if (CompareGuid (&SignGuid, &mZeroGuid) != 0) {
           ReturnValue = SourceDataSize;
-          Status = GenSimpleGuidSection (TargetFileBuffer,&ReturnValue,SourceDataSize,SignGuid,GuidedSectionAttributes);
-          if (EFI_ERROR(Status)) {
+          Status = GenSimpleGuidSection (
+                    TargetFileBuffer,
+                    &ReturnValue,
+                    SourceDataSize,
+                    SignGuid,
+                    GuidedSectionAttributes
+                    );
+          if (EFI_ERROR (Status)) {
             IsError = TRUE;
             goto Done;
           }
+
           Size = ReturnValue;
         }
       }
 
-    } else if (Buffer[0]!='}') {
-
+    } else if (Buffer[0] != '}') {
       //
       // if we are here, we should see either a file name,
       // or a }.
       //
-      Index3 = 0;
+      Index3      = 0;
       FileName[0] = 0;
       //
       // Prepend the build directory to the file name if the
@@ -1365,17 +1397,19 @@ Returns:
       if (!isalpha (Buffer[0]) || (Buffer[1] != ':')) {
         sprintf (FileName, "%s\\", BuildDirectory);
       }
+
       while (Buffer[Index3] != '\n') {
         if (Buffer[Index3] == '$') {
           Index3 += ProcessEnvironmentVariable (&Buffer[Index3], NewBuffer);
           strcat (FileName, NewBuffer);
         }
+
         if (Buffer[Index3] == 0) {
           break;
         } else {
-          Index2 = strlen (FileName);
-          FileName[Index2++] = Buffer[Index3++];
-          FileName[Index2] = 0;
+          Index2              = strlen (FileName);
+          FileName[Index2++]  = Buffer[Index3++];
+          FileName[Index2]    = 0;
         }
       }
 
@@ -1387,7 +1421,7 @@ Returns:
       }
 
       fread (&ByteBuffer, sizeof (UINT8), 1, InFile);
-      while (!feof(InFile)) {
+      while (!feof (InFile)) {
         FileBuffer[Size++] = ByteBuffer;
         fread (&ByteBuffer, sizeof (UINT8), 1, InFile);
       }
@@ -1407,19 +1441,22 @@ Returns:
   }
 
 Done:
-  for (Index3 = 1 ; Index3 < MAX_ARRAY_SIZE; Index3 ++) {
+  for (Index3 = 1; Index3 < MAX_ARRAY_SIZE; Index3++) {
     if (ToolArgumentsArray[Index3] == NULL) {
       break;
     }
 
     free (ToolArgumentsArray[Index3]);
   }
+
   if (IsError) {
     return -1;
   }
+
   return Size;
 
 }
+
 static
 UINT8
 StringToType (
@@ -1484,6 +1521,7 @@ Returns:
 
   return EFI_FV_FILETYPE_ALL;
 }
+
 static
 UINT32
 AdjustFileSize (
@@ -1507,27 +1545,26 @@ Returns:
 
 --*/
 {
-  UINT32                      TotalLength;
-  UINT32                      CurrentLength;
-  UINT32                      SectionLength;
-  UINT32                      SectionStreamLength;
-  EFI_COMMON_SECTION_HEADER   *SectionHeader;
-  EFI_COMMON_SECTION_HEADER   *NextSectionHeader;
+  UINT32                    TotalLength;
+  UINT32                    CurrentLength;
+  UINT32                    SectionLength;
+  UINT32                    SectionStreamLength;
+  EFI_COMMON_SECTION_HEADER *SectionHeader;
+  EFI_COMMON_SECTION_HEADER *NextSectionHeader;
 
-  TotalLength = 0;
-  CurrentLength = 0;
+  TotalLength         = 0;
+  CurrentLength       = 0;
   SectionStreamLength = FileSize;
 
-  SectionHeader = (EFI_COMMON_SECTION_HEADER *) FileBuffer;
+  SectionHeader       = (EFI_COMMON_SECTION_HEADER *) FileBuffer;
 
   while (TotalLength < SectionStreamLength) {
     SectionLength = *((UINT32 *) SectionHeader->Size) & 0x00ffffff;
     TotalLength += SectionLength;
 
     if (TotalLength == SectionStreamLength) {
-      return (TotalLength);
+      return TotalLength;
     }
-
     //
     // Move to the next byte following the section...
     //
@@ -1538,11 +1575,12 @@ Returns:
     // Figure out where the next section begins
     //
     NextSectionHeader = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) SectionHeader + 3);
-    NextSectionHeader = (EFI_COMMON_SECTION_HEADER *) ((UINTN) NextSectionHeader & ~(UINTN)3);
+    NextSectionHeader = (EFI_COMMON_SECTION_HEADER *) ((UINTN) NextSectionHeader &~ (UINTN) 3);
     TotalLength += (UINTN) NextSectionHeader - (UINTN) SectionHeader;
     SectionHeader = NextSectionHeader;
   }
-  return (CurrentLength);
+
+  return CurrentLength;
 }
 
 static
@@ -1571,35 +1609,36 @@ Returns:
 
 --*/
 {
-  FILE                      *PrimaryPackage;
-  FILE                      *OverridePackage;
-  FILE                      *Out;
-  CHAR8                     BaseName[_MAX_PATH];
-  EFI_GUID                  FfsGuid;
-  CHAR8                     GuidString[_MAX_PATH];
-  EFI_FFS_FILE_HEADER       FileHeader;
-  CHAR8                     FileType[_MAX_PATH];
-  EFI_FFS_FILE_ATTRIBUTES   FfsAttrib, FfsAttribDefined;
-  UINT64                    FfsAlignment;
-  UINT32                    FfsAlignment32;
-  CHAR8                     InputString[_MAX_PATH];
-  BOOLEAN                   ImageScriptInOveride;
-  UINT32                    FileSize;
-  UINT8                     *FileBuffer;
-  EFI_STATUS                Status;
-  UINT32                    LineNumber;
-  EFI_FFS_FILE_TAIL         TailValue;
+  FILE                    *PrimaryPackage;
+  FILE                    *OverridePackage;
+  FILE                    *Out;
+  CHAR8                   BaseName[_MAX_PATH];
+  EFI_GUID                FfsGuid;
+  CHAR8                   GuidString[_MAX_PATH];
+  EFI_FFS_FILE_HEADER     FileHeader;
+  CHAR8                   FileType[_MAX_PATH];
+  EFI_FFS_FILE_ATTRIBUTES FfsAttrib;
+  EFI_FFS_FILE_ATTRIBUTES FfsAttribDefined;
+  UINT64                  FfsAlignment;
+  UINT32                  FfsAlignment32;
+  CHAR8                   InputString[_MAX_PATH];
+  BOOLEAN                 ImageScriptInOveride;
+  UINT32                  FileSize;
+  UINT8                   *FileBuffer;
+  EFI_STATUS              Status;
+  UINT32                  LineNumber;
+  EFI_FFS_FILE_TAIL       TailValue;
 
-  BaseName[0]             = 0;
-  FileType[0]             = 0;
-  FfsAttrib               = 0;
-  FfsAttribDefined        = 0;
-  FfsAlignment            = 0;
-  FfsAlignment32          = 0;
-  PrimaryPackage          = NULL;
-  Out                     = NULL;
-  OverridePackage         = NULL;
-  FileBuffer              = NULL;
+  BaseName[0]       = 0;
+  FileType[0]       = 0;
+  FfsAttrib         = 0;
+  FfsAttribDefined  = 0;
+  FfsAlignment      = 0;
+  FfsAlignment32    = 0;
+  PrimaryPackage    = NULL;
+  Out               = NULL;
+  OverridePackage   = NULL;
+  FileBuffer        = NULL;
 
   strcpy (GuidString, "00000000-0000-0000-0000-000000000000");
   Status = StringToGuid (GuidString, &FfsGuid);
@@ -1607,14 +1646,15 @@ Returns:
     Error (NULL, 0, 0, GuidString, "error parsing GUID string");
     return STATUS_ERROR;
   }
-  GuidString[0] = 0;
-  ImageScriptInOveride = FALSE;
+
+  GuidString[0]         = 0;
+  ImageScriptInOveride  = FALSE;
   //
   // Initialize the simple file parsing routines. Then open
   // the primary package file for parsing.
   //
-  SFPInit();
-  if (SFPOpenFile(mGlobals.PrimaryPackagePath) != STATUS_SUCCESS) {
+  SFPInit ();
+  if (SFPOpenFile (mGlobals.PrimaryPackagePath) != STATUS_SUCCESS) {
     Error (NULL, 0, 0, mGlobals.PrimaryPackagePath, "unable to open primary package file");
     goto Done;
   }
@@ -1622,7 +1662,7 @@ Returns:
   // First token in the file must be "PACKAGE.INF"
   //
   if (!SFPIsToken ("PACKAGE.INF")) {
-    Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected 'PACKAGE.INF'", NULL);
+    Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'PACKAGE.INF'", NULL);
     goto Done;
   }
   //
@@ -1647,15 +1687,17 @@ Returns:
       //   BASE_NAME = MyBaseName
       //
       if (BaseName[0] != 0) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "BASE_NAME already defined", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "BASE_NAME already defined", NULL);
         goto Done;
       }
+
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (!SFPGetNextToken (BaseName, sizeof (BaseName))) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected valid base name", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected valid base name", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("IMAGE_SCRIPT")) {
@@ -1669,165 +1711,214 @@ Returns:
       //   FFS_FILEGUID = F7845C4F-EDF5-42C5-BD8F-A02AF63DD93A
       //
       if (GuidString[0] != 0) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_FILEGUID already defined", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "FFS_FILEGUID already defined", NULL);
         goto Done;
       }
+
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (SFPGetGuidToken (GuidString, sizeof (GuidString)) != TRUE) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected file GUID", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected file GUID", NULL);
         goto Done;
       }
+
       Status = StringToGuid (GuidString, &FfsGuid);
       if (Status != 0) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected valid file GUID", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected valid file GUID", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("FFS_FILETYPE")) {
-      //***********************************************************************
+      //
+      // ***********************************************************************
       //
       // Found FFS_FILETYPE, format:
       //  FFS_FILETYPE = EFI_FV_FILETYPE_APPLICATION
       //
       if (FileType[0] != 0) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_FILETYPE previously defined", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "FFS_FILETYPE previously defined", NULL);
         goto Done;
       }
+
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (!SFPGetNextToken (FileType, sizeof (FileType))) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected valid FFS_FILETYPE", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected valid FFS_FILETYPE", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("FFS_ATTRIB_HEADER_EXTENSION")) {
-      //***********************************************************************
+      //
+      // ***********************************************************************
       //
       // Found: FFS_ATTRIB_HEADER_EXTENSION = FALSE
       // Spec says the bit is for future expansion, and must be false.
       //
       if (FfsAttribDefined & FFS_ATTRIB_HEADER_EXTENSION) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_ATTRIB_HEADER_EXTENSION previously defined", NULL);
+        Error (
+          mGlobals.PrimaryPackagePath,
+          SFPGetLineNumber (),
+          0,
+          "FFS_ATTRIB_HEADER_EXTENSION previously defined",
+          NULL
+          );
         goto Done;
       }
+
       FfsAttribDefined |= FFS_ATTRIB_HEADER_EXTENSION;
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (SFPIsToken ("TRUE")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "only FFS_ATTRIB_HEADER_EXTENSION = FALSE is supported", NULL);
+        Error (
+          mGlobals.PrimaryPackagePath,
+          SFPGetLineNumber (),
+          0,
+          "only FFS_ATTRIB_HEADER_EXTENSION = FALSE is supported",
+          NULL
+          );
         goto Done;
       } else if (SFPIsToken ("FALSE")) {
+        //
         // Default is FALSE
+        //
       } else {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected 'FALSE'", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'FALSE'", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("FFS_ATTRIB_TAIL_PRESENT")) {
-      //***********************************************************************
+      //
+      // ***********************************************************************
       //
       // Found: FFS_ATTRIB_TAIL_PRESENT = TRUE | FALSE
       //
       if (FfsAttribDefined & FFS_ATTRIB_TAIL_PRESENT) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_ATTRIB_TAIL_PRESENT previously defined", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "FFS_ATTRIB_TAIL_PRESENT previously defined", NULL);
         goto Done;
       }
+
       FfsAttribDefined |= FFS_ATTRIB_TAIL_PRESENT;
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (SFPIsToken ("TRUE")) {
         FfsAttrib |= FFS_ATTRIB_TAIL_PRESENT;
       } else if (SFPIsToken ("FALSE")) {
+        //
         // Default is FALSE
+        //
       } else {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected 'TRUE' or 'FALSE'", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'TRUE' or 'FALSE'", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("FFS_ATTRIB_RECOVERY")) {
-      //***********************************************************************
+      //
+      // ***********************************************************************
       //
       // Found: FFS_ATTRIB_RECOVERY = TRUE | FALSE
       //
       if (FfsAttribDefined & FFS_ATTRIB_RECOVERY) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_ATTRIB_RECOVERY previously defined", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "FFS_ATTRIB_RECOVERY previously defined", NULL);
         goto Done;
       }
+
       FfsAttribDefined |= FFS_ATTRIB_RECOVERY;
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (SFPIsToken ("TRUE")) {
         FfsAttrib |= FFS_ATTRIB_RECOVERY;
       } else if (SFPIsToken ("FALSE")) {
+        //
         // Default is FALSE
+        //
       } else {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected 'TRUE' or 'FALSE'", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'TRUE' or 'FALSE'", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("FFS_ATTRIB_CHECKSUM")) {
-      //***********************************************************************
+      //
+      // ***********************************************************************
       //
       // Found: FFS_ATTRIB_CHECKSUM = TRUE | FALSE
       //
       if (FfsAttribDefined & FFS_ATTRIB_CHECKSUM) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_ATTRIB_CHECKSUM previously defined", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "FFS_ATTRIB_CHECKSUM previously defined", NULL);
         goto Done;
       }
+
       FfsAttribDefined |= FFS_ATTRIB_CHECKSUM;
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (SFPIsToken ("TRUE")) {
         FfsAttrib |= FFS_ATTRIB_CHECKSUM;
       } else if (SFPIsToken ("FALSE")) {
+        //
         // Default is FALSE
+        //
       } else {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected 'TRUE' or 'FALSE'", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'TRUE' or 'FALSE'", NULL);
         goto Done;
       }
     } else if (SFPIsToken ("FFS_ALIGNMENT") || SFPIsToken ("FFS_ATTRIB_DATA_ALIGNMENT")) {
-      //***********************************************************************
+      //
+      // ***********************************************************************
       //
       // Found FFS_ALIGNMENT, formats:
       //   FFS_ALIGNMENT = 0-7
       //   FFS_ATTRIB_DATA_ALIGNMENT = 0-7
       //
       if (FfsAttribDefined & FFS_ATTRIB_DATA_ALIGNMENT) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "FFS_ALIGNMENT/FFS_ATTRIB_DATA_ALIGNMENT previously defined", NULL);
+        Error (
+          mGlobals.PrimaryPackagePath,
+          SFPGetLineNumber (),
+          0,
+          "FFS_ALIGNMENT/FFS_ATTRIB_DATA_ALIGNMENT previously defined",
+          NULL
+          );
         goto Done;
       }
+
       FfsAttribDefined |= FFS_ATTRIB_DATA_ALIGNMENT;
       if (!SFPIsToken ("=")) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected '='", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
         goto Done;
       }
+
       if (!SFPGetNumber (&FfsAlignment32)) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected numeric value for alignment", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected numeric value for alignment", NULL);
         goto Done;
       }
+
       if (FfsAlignment32 > 7) {
-        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, "expected 0 <= alignment <= 7", NULL);
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 0 <= alignment <= 7", NULL);
         goto Done;
       }
+
       FfsAttrib |= (((EFI_FFS_FILE_ATTRIBUTES) FfsAlignment32) << 3);
     } else {
       SFPGetNextToken (InputString, sizeof (InputString));
-      Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber(), 0, InputString, "unrecognized/unexpected token");
+      Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, InputString, "unrecognized/unexpected token");
       goto Done;
     }
   }
   //
   // Close the primary package file
   //
-  SFPCloseFile();
+  SFPCloseFile ();
   //
   // TODO: replace code below with basically a copy of the code above. Don't
   // forget to reset the FfsAttribDefined variable first. Also, you'll need
@@ -1850,6 +1941,7 @@ Returns:
   } else {
     OverridePackage = NULL;
   }
+
 #ifdef OVERRIDE_SUPPORTED
   if (OverridePackage != NULL) {
     //
@@ -1871,80 +1963,66 @@ Returns:
     InputString[0] = 0;
     while ((InputString[0] != '[') && (!feof (OverridePackage))) {
       if (GetNextLine (InputString, OverridePackage, &LineNumber) != -1) {
-        if (InputString[0] != '[' ) {
+        if (InputString[0] != '[') {
 here:
-        if (strcmpi (InputString, "BASE_NAME")==0) {
-
-          //
-          // found BASE_NAME, next is = and string.
-          //
-
-          fscanf (OverridePackage, "%s", &InputString);
-          CheckSlash (InputString, OverridePackage, &LineNumber);
-          if (strlen (InputString) == 1) {
-
+          if (strcmpi (InputString, "BASE_NAME") == 0) {
             //
-            // string is just =
+            // found BASE_NAME, next is = and string.
             //
-
-            fscanf (OverridePackage, "%s", &InputString);
-            CheckSlash (InputString, OverridePackage, &LineNumber);
-            strcpy (BaseName, InputString);
-          } else {
-            BreakString (InputString, InputString, 1);
-            strcpy (BaseName, InputString);
-          }
-        } else if (strcmpi (InputString, "IMAGE_SCRIPT")==0) {
-
-          //
-          // found IMAGE_SCRIPT, come back later to process it
-          //
-
-          ImageScriptInOveride = TRUE;
-          fscanf (OverridePackage, "%s", &InputString);
-        } else if (strcmpi (InputString, "FFS_FILEGUID")==0) {
-
-          //
-          // found FILEGUID, next is = and string.
-          //
-
-          fscanf (OverridePackage, "%s", &InputString);
-          CheckSlash (InputString, OverridePackage, &LineNumber);
-          if (strlen (InputString) == 1) {
-
-            //
-            // string is just =
-            //
-
-            fscanf (OverridePackage, "%s", &InputString);
-            CheckSlash (InputString, OverridePackage, &LineNumber);
-            Status = StringToGuid (InputString, &FfsGuid);
-            if (Status != 0) {
-              Error (mGlobals.OverridePackagePath, 1, 0, InputString, "bad FFS_FILEGUID format");
-              goto Done;
-            }
-          } else {
-            BreakString (InputString, InputString, 1);
-            Status = StringToGuid (InputString, &FfsGuid);
-            if (Status != 0) {
-              Error (mGlobals.OverridePackagePath, 1, 0, InputString, "bad FFS_FILEGUID format");
-              goto Done;
-            }
-          }
-        } else if (strcmpi (InputString, "FFS_FILETYPE")==0) {
-
-            //
-            // found FILETYPE, next is = and string.
-            //
-
             fscanf (OverridePackage, "%s", &InputString);
             CheckSlash (InputString, OverridePackage, &LineNumber);
             if (strlen (InputString) == 1) {
-
               //
               // string is just =
               //
-
+              fscanf (OverridePackage, "%s", &InputString);
+              CheckSlash (InputString, OverridePackage, &LineNumber);
+              strcpy (BaseName, InputString);
+            } else {
+              BreakString (InputString, InputString, 1);
+              strcpy (BaseName, InputString);
+            }
+          } else if (strcmpi (InputString, "IMAGE_SCRIPT") == 0) {
+            //
+            // found IMAGE_SCRIPT, come back later to process it
+            //
+            ImageScriptInOveride = TRUE;
+            fscanf (OverridePackage, "%s", &InputString);
+          } else if (strcmpi (InputString, "FFS_FILEGUID") == 0) {
+            //
+            // found FILEGUID, next is = and string.
+            //
+            fscanf (OverridePackage, "%s", &InputString);
+            CheckSlash (InputString, OverridePackage, &LineNumber);
+            if (strlen (InputString) == 1) {
+              //
+              // string is just =
+              //
+              fscanf (OverridePackage, "%s", &InputString);
+              CheckSlash (InputString, OverridePackage, &LineNumber);
+              Status = StringToGuid (InputString, &FfsGuid);
+              if (Status != 0) {
+                Error (mGlobals.OverridePackagePath, 1, 0, InputString, "bad FFS_FILEGUID format");
+                goto Done;
+              }
+            } else {
+              BreakString (InputString, InputString, 1);
+              Status = StringToGuid (InputString, &FfsGuid);
+              if (Status != 0) {
+                Error (mGlobals.OverridePackagePath, 1, 0, InputString, "bad FFS_FILEGUID format");
+                goto Done;
+              }
+            }
+          } else if (strcmpi (InputString, "FFS_FILETYPE") == 0) {
+            //
+            // found FILETYPE, next is = and string.
+            //
+            fscanf (OverridePackage, "%s", &InputString);
+            CheckSlash (InputString, OverridePackage, &LineNumber);
+            if (strlen (InputString) == 1) {
+              //
+              // string is just =
+              //
               fscanf (OverridePackage, "%s", &InputString);
               CheckSlash (InputString, OverridePackage, &LineNumber);
               strcpy (FileType, InputString);
@@ -1953,87 +2031,77 @@ here:
               strcpy (FileType, InputString);
             }
 
-          } else if (strcmpi (InputString, "FFS_ATTRIB_RECOVERY")==0) {
-
+          } else if (strcmpi (InputString, "FFS_ATTRIB_RECOVERY") == 0) {
+            //
+            // found FFS_ATTRIB_RECOVERY, next is = and string.
+            //
+            fscanf (OverridePackage, "%s", &InputString);
+            CheckSlash (InputString, OverridePackage, &LineNumber);
+            if (strlen (InputString) == 1) {
               //
-              // found FFS_ATTRIB_RECOVERY, next is = and string.
+              // string is just =
               //
-
               fscanf (OverridePackage, "%s", &InputString);
               CheckSlash (InputString, OverridePackage, &LineNumber);
-              if (strlen (InputString) == 1) {
-
-                //
-                // string is just =
-                //
-
-                fscanf (OverridePackage, "%s", &InputString);
-                CheckSlash (InputString, OverridePackage, &LineNumber);
-                if (strcmpi (InputString, "TRUE") == 0) {
-                  FfsAttrib |= FFS_ATTRIB_RECOVERY;
-                }
-              } else {
-                BreakString (InputString, InputString, 1);
-                if (strcmpi (InputString, "TRUE") == 0) {
-                  FfsAttrib |= FFS_ATTRIB_RECOVERY;
-                }
+              if (strcmpi (InputString, "TRUE") == 0) {
+                FfsAttrib |= FFS_ATTRIB_RECOVERY;
               }
-          } else if (strcmpi (InputString, "FFS_ATTRIB_CHECKSUM")==0) {
-
-              //
-              // found FFS_ATTRIB_CHECKSUM, next is = and string.
-              //
-
-              fscanf (OverridePackage, "%s", &InputString);
-              CheckSlash (InputString, OverridePackage, &LineNumber);
-              if (strlen (InputString) == 1) {
-
-                //
-                // string is just =
-                //
-
-                fscanf (OverridePackage, "%s", &InputString);
-                CheckSlash (InputString, OverridePackage, &LineNumber);
-                if (strcmpi (InputString, "TRUE") == 0) {
-                  FfsAttrib |= FFS_ATTRIB_CHECKSUM;
-                }
-              } else {
-                BreakString (InputString, InputString, 1);
-                if (strcmpi (InputString, "TRUE") == 0) {
-                  FfsAttrib |= FFS_ATTRIB_CHECKSUM;
-                }
+            } else {
+              BreakString (InputString, InputString, 1);
+              if (strcmpi (InputString, "TRUE") == 0) {
+                FfsAttrib |= FFS_ATTRIB_RECOVERY;
               }
-          } else if (strcmpi (InputString, "FFS_ALIGNMENT")==0) {
-
-              //
-              // found FFS_ALIGNMENT, next is = and string.
-              //
-
-              fscanf (OverridePackage, "%s", &InputString);
-              CheckSlash (InputString, OverridePackage, &LineNumber);
-              if (strlen (InputString) == 1) {
-
-                //
-                // string is just =
-                //
-
-                fscanf (OverridePackage, "%s", &InputString);
-                CheckSlash (InputString, OverridePackage, &LineNumber);
-              } else {
-                BreakString (InputString, InputString, 1);
-              }
-              AsciiStringToUint64 (InputString, FALSE, &FfsAlignment);
-              if (FfsAlignment > 7) {
-                Error (mGlobals.OverridePackagePath, 1, 0, InputString, "invalid FFS_ALIGNMENT value");
-                goto Done;
-              }
-              FfsAttrib |= (((EFI_FFS_FILE_ATTRIBUTES) FfsAlignment) << 3);
-            } else if (strchr(InputString, '=') != NULL) {
-                BreakString (InputString, String, 1);
-                fseek (OverridePackage, (-1 * (strlen (String) + 1)), SEEK_CUR);
-                BreakString (InputString, InputString, 0);
-                goto here;
             }
+          } else if (strcmpi (InputString, "FFS_ATTRIB_CHECKSUM") == 0) {
+            //
+            // found FFS_ATTRIB_CHECKSUM, next is = and string.
+            //
+            fscanf (OverridePackage, "%s", &InputString);
+            CheckSlash (InputString, OverridePackage, &LineNumber);
+            if (strlen (InputString) == 1) {
+              //
+              // string is just =
+              //
+              fscanf (OverridePackage, "%s", &InputString);
+              CheckSlash (InputString, OverridePackage, &LineNumber);
+              if (strcmpi (InputString, "TRUE") == 0) {
+                FfsAttrib |= FFS_ATTRIB_CHECKSUM;
+              }
+            } else {
+              BreakString (InputString, InputString, 1);
+              if (strcmpi (InputString, "TRUE") == 0) {
+                FfsAttrib |= FFS_ATTRIB_CHECKSUM;
+              }
+            }
+          } else if (strcmpi (InputString, "FFS_ALIGNMENT") == 0) {
+            //
+            // found FFS_ALIGNMENT, next is = and string.
+            //
+            fscanf (OverridePackage, "%s", &InputString);
+            CheckSlash (InputString, OverridePackage, &LineNumber);
+            if (strlen (InputString) == 1) {
+              //
+              // string is just =
+              //
+              fscanf (OverridePackage, "%s", &InputString);
+              CheckSlash (InputString, OverridePackage, &LineNumber);
+            } else {
+              BreakString (InputString, InputString, 1);
+            }
+
+            AsciiStringToUint64 (InputString, FALSE, &FfsAlignment);
+            if (FfsAlignment > 7) {
+              Error (mGlobals.OverridePackagePath, 1, 0, InputString, "invalid FFS_ALIGNMENT value");
+              goto Done;
+            }
+
+            FfsAttrib |= (((EFI_FFS_FILE_ATTRIBUTES) FfsAlignment) << 3);
+          } else if (strchr (InputString, '=') != NULL) {
+            BreakString (InputString, String, 1);
+            fseek (OverridePackage, (-1 * (strlen (String) + 1)), SEEK_CUR);
+            BreakString (InputString, InputString, 0);
+            goto here;
+          }
         }
       }
     }
@@ -2050,11 +2118,12 @@ here:
   //
   // Build Header and process image script
   //
-  FileBuffer = (UINT8 *) malloc((1024 * 1024 * 16) * sizeof (UINT8));
+  FileBuffer = (UINT8 *) malloc ((1024 * 1024 * 16) * sizeof (UINT8));
   if (FileBuffer == NULL) {
     Error (__FILE__, __LINE__, 0, "memory allocation failed", NULL);
     goto Done;
   }
+
   FileSize = 0;
   if (ImageScriptInOveride) {
 #ifdef OVERRIDE_SUPORTED
@@ -2064,10 +2133,11 @@ here:
     while (strcmpi (InputString, "IMAGE_SCRIPT") != 0) {
       GetNextLine (InputString, OverridePackage, &LineNumber);
       CheckSlash (InputString, OverridePackage, &LineNumber);
-      if (strchr(InputString, '=') != NULL) {
+      if (strchr (InputString, '=') != NULL) {
         BreakString (InputString, InputString, 0);
       }
     }
+
     while (InputString[0] != '{') {
       GetNextLine (InputString, OverridePackage, &LineNumber);
       CheckSlash (InputString, OverridePackage, &LineNumber);
@@ -2079,11 +2149,15 @@ here:
     if (FileSize == -1) {
       return -1;
     }
+
     if (StringToType (FileType) != EFI_FV_FILETYPE_RAW) {
       FileSize = AdjustFileSize (FileBuffer, FileSize);
     }
-    if (BaseName[0] == '\"')
-      StripQuotes(BaseName);
+
+    if (BaseName[0] == '\"') {
+      StripQuotes (BaseName);
+    }
+
     if (BaseName[0] != 0) {
       sprintf (InputString, "%s-%s", GuidString, BaseName);
     } else {
@@ -2133,34 +2207,38 @@ here:
       Error (NULL, 0, 0, InputString, "could not open output file for writing");
       goto Done;
     }
-
     //
     // create ffs header
     //
-    memset (&FileHeader, 0, sizeof(EFI_FFS_FILE_HEADER));
+    memset (&FileHeader, 0, sizeof (EFI_FFS_FILE_HEADER));
     memcpy (&FileHeader.Name, &FfsGuid, sizeof (EFI_GUID));
-    FileHeader.Type = StringToType (FileType);
+    FileHeader.Type       = StringToType (FileType);
     FileHeader.Attributes = FfsAttrib;
     //
     // Now FileSize includes the EFI_FFS_FILE_HEADER
     //
-    FileSize += sizeof(EFI_FFS_FILE_HEADER);
-    FileHeader.Size[0] = (UINT8) (FileSize & 0xFF);
-    FileHeader.Size[1] = (UINT8) ((FileSize & 0xFF00) >> 8);
-    FileHeader.Size[2] = (UINT8) ((FileSize & 0xFF0000) >> 16);
+    FileSize += sizeof (EFI_FFS_FILE_HEADER);
+    FileHeader.Size[0]  = (UINT8) (FileSize & 0xFF);
+    FileHeader.Size[1]  = (UINT8) ((FileSize & 0xFF00) >> 8);
+    FileHeader.Size[2]  = (UINT8) ((FileSize & 0xFF0000) >> 16);
     //
     // Fill in checksums and state, these must be zero for checksumming
     //
-    //FileHeader.IntegrityCheck.Checksum.Header = 0;
-    //FileHeader.IntegrityCheck.Checksum.File = 0;
-    //FileHeader.State = 0;
-    FileHeader.IntegrityCheck.Checksum.Header = CalculateChecksum8 ((UINT8*) &FileHeader, sizeof (EFI_FFS_FILE_HEADER));
+    // FileHeader.IntegrityCheck.Checksum.Header = 0;
+    // FileHeader.IntegrityCheck.Checksum.File = 0;
+    // FileHeader.State = 0;
+    //
+    FileHeader.IntegrityCheck.Checksum.Header = CalculateChecksum8 (
+                                                  (UINT8 *) &FileHeader,
+                                                  sizeof (EFI_FFS_FILE_HEADER)
+                                                  );
     if (FileHeader.Attributes & FFS_ATTRIB_CHECKSUM) {
-      FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8*) &FileHeader, FileSize);
+      FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) &FileHeader, FileSize);
     } else {
       FileHeader.IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
     }
-    FileHeader.State =  EFI_FILE_HEADER_CONSTRUCTION | EFI_FILE_HEADER_VALID | EFI_FILE_DATA_VALID;
+
+    FileHeader.State = EFI_FILE_HEADER_CONSTRUCTION | EFI_FILE_HEADER_VALID | EFI_FILE_DATA_VALID;
     //
     // write header
     //
@@ -2175,6 +2253,7 @@ here:
       Error (NULL, 0, 0, "failed to write all bytes to output file", NULL);
       goto Done;
     }
+
     fclose (Out);
     Out = NULL;
 #endif // #ifdef OVERRIDE_SUPPORTED
@@ -2187,15 +2266,17 @@ here:
       Error (NULL, 0, 0, mGlobals.PrimaryPackagePath, "unable to open primary package file");
       goto Done;
     }
+
     LineNumber = 1;
     FindSectionInPackage (".", PrimaryPackage, &LineNumber);
     while (strcmpi (InputString, "IMAGE_SCRIPT") != 0) {
       GetNextLine (InputString, PrimaryPackage, &LineNumber);
       CheckSlash (InputString, PrimaryPackage, &LineNumber);
-      if (strchr(InputString, '=') != NULL) {
+      if (strchr (InputString, '=') != NULL) {
         BreakString (InputString, InputString, 0);
       }
     }
+
     while (InputString[0] != '{') {
       GetNextLine (InputString, PrimaryPackage, &LineNumber);
       CheckSlash (InputString, PrimaryPackage, &LineNumber);
@@ -2207,11 +2288,15 @@ here:
     if (FileSize == -1) {
       goto Done;
     }
+
     if (StringToType (FileType) != EFI_FV_FILETYPE_RAW) {
       FileSize = AdjustFileSize (FileBuffer, FileSize);
     }
-    if (BaseName[0] == '\"')
-      StripQuotes(BaseName);
+
+    if (BaseName[0] == '\"') {
+      StripQuotes (BaseName);
+    }
+
     if (BaseName[0] != 0) {
       sprintf (InputString, "%s-%s", GuidString, BaseName);
     } else {
@@ -2255,6 +2340,7 @@ here:
     if (ForceUncompress) {
       strcat (InputString, ".ORG");
     }
+
     Out = fopen (InputString, "wb");
     if (Out == NULL) {
       Error (NULL, 0, 0, InputString, "failed to open output file for writing");
@@ -2263,14 +2349,14 @@ here:
     //
     // Initialize the FFS file header
     //
-    memset (&FileHeader, 0, sizeof(EFI_FFS_FILE_HEADER));
+    memset (&FileHeader, 0, sizeof (EFI_FFS_FILE_HEADER));
     memcpy (&FileHeader.Name, &FfsGuid, sizeof (EFI_GUID));
-    FileHeader.Type = StringToType (FileType);
+    FileHeader.Type       = StringToType (FileType);
     FileHeader.Attributes = FfsAttrib;
     //
     // From this point on FileSize includes the size of the EFI_FFS_FILE_HEADER
     //
-    FileSize += sizeof(EFI_FFS_FILE_HEADER);
+    FileSize += sizeof (EFI_FFS_FILE_HEADER);
     //
     // If using a tail, then it adds two bytes
     //
@@ -2278,32 +2364,49 @@ here:
       //
       // Tail is not allowed for pad and 0-length files
       //
-      if ((FileHeader.Type == EFI_FV_FILETYPE_FFS_PAD) ||
-          (FileSize == sizeof (EFI_FFS_FILE_HEADER))) {
-        Error (mGlobals.PrimaryPackagePath, 1, 0, "FFS_ATTRIB_TAIL_PRESENT=TRUE is invalid for PAD or 0-length files", NULL);
+      if ((FileHeader.Type == EFI_FV_FILETYPE_FFS_PAD) || (FileSize == sizeof (EFI_FFS_FILE_HEADER))) {
+        Error (
+          mGlobals.PrimaryPackagePath,
+          1,
+          0,
+          "FFS_ATTRIB_TAIL_PRESENT=TRUE is invalid for PAD or 0-length files",
+          NULL
+          );
         goto Done;
       }
+
       FileSize += sizeof (EFI_FFS_FILE_TAIL);
     }
-    FileHeader.Size[0] = (UINT8) (FileSize & 0xFF);
-    FileHeader.Size[1] = (UINT8) ((FileSize & 0xFF00) >> 8);
-    FileHeader.Size[2] = (UINT8) ((FileSize & 0xFF0000) >> 16);
+
+    FileHeader.Size[0]  = (UINT8) (FileSize & 0xFF);
+    FileHeader.Size[1]  = (UINT8) ((FileSize & 0xFF00) >> 8);
+    FileHeader.Size[2]  = (UINT8) ((FileSize & 0xFF0000) >> 16);
     //
     // Fill in checksums and state, they must be 0 for checksumming.
     //
-    //FileHeader.IntegrityCheck.Checksum.Header = 0;
-    //FileHeader.IntegrityCheck.Checksum.File = 0;
-    //FileHeader.State = 0;
-    FileHeader.IntegrityCheck.Checksum.Header = CalculateChecksum8 ((UINT8*) &FileHeader, sizeof (EFI_FFS_FILE_HEADER));
+    // FileHeader.IntegrityCheck.Checksum.Header = 0;
+    // FileHeader.IntegrityCheck.Checksum.File = 0;
+    // FileHeader.State = 0;
+    //
+    FileHeader.IntegrityCheck.Checksum.Header = CalculateChecksum8 (
+                                                  (UINT8 *) &FileHeader,
+                                                  sizeof (EFI_FFS_FILE_HEADER)
+                                                  );
     if (FileHeader.Attributes & FFS_ATTRIB_CHECKSUM) {
       //
       // Cheating here.  Since the header checksums, just calculate the checksum of the body.
       // Checksum does not include the tail
       //
       if (FileHeader.Attributes & FFS_ATTRIB_TAIL_PRESENT) {
-        FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 (FileBuffer, FileSize - sizeof (EFI_FFS_FILE_HEADER) - sizeof (EFI_FFS_FILE_TAIL));
+        FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 (
+                                                    FileBuffer,
+                                                    FileSize - sizeof (EFI_FFS_FILE_HEADER) - sizeof (EFI_FFS_FILE_TAIL)
+                                                    );
       } else {
-        FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 (FileBuffer, FileSize - sizeof (EFI_FFS_FILE_HEADER));
+        FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 (
+                                                    FileBuffer,
+                                                    FileSize - sizeof (EFI_FFS_FILE_HEADER)
+                                                    );
       }
     } else {
       FileHeader.IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
@@ -2317,10 +2420,12 @@ here:
     //
     if (FileHeader.Attributes & FFS_ATTRIB_TAIL_PRESENT) {
       TailValue = FileHeader.IntegrityCheck.TailReference;
-      TailValue = (UINT16)(~TailValue);
-      memcpy ((UINT8 *)FileBuffer + FileSize - sizeof (EFI_FFS_FILE_HEADER) - sizeof (EFI_FFS_FILE_TAIL),
-              &TailValue,
-              sizeof (TailValue));
+      TailValue = (UINT16) (~TailValue);
+      memcpy (
+        (UINT8 *) FileBuffer + FileSize - sizeof (EFI_FFS_FILE_HEADER) - sizeof (EFI_FFS_FILE_TAIL),
+        &TailValue,
+        sizeof (TailValue)
+        );
     }
     //
     // Write the FFS file header
@@ -2337,22 +2442,28 @@ here:
       goto Done;
     }
   }
+
 Done:
   SFPCloseFile ();
   if (Out != NULL) {
     fclose (Out);
   }
+
   if (PrimaryPackage != NULL) {
     fclose (PrimaryPackage);
   }
+
   if (FileBuffer != NULL) {
     free (FileBuffer);
   }
+
   if (OverridePackage != NULL) {
     fclose (OverridePackage);
   }
+
   return GetUtilityStatus ();
 }
+
 int
 main (
   INT32 argc,
@@ -2375,7 +2486,7 @@ Returns:
 
 --*/
 {
-  STATUS Status;
+  STATUS  Status;
   //
   // Set the name of our utility for error reporting purposes.
   //
@@ -2384,6 +2495,7 @@ Returns:
   if (Status != STATUS_SUCCESS) {
     return Status;
   }
+
   Status = MainEntry (argc, argv, TRUE);
   if (Status == STATUS_SUCCESS) {
     MainEntry (argc, argv, FALSE);
@@ -2424,6 +2536,7 @@ Returns:
     PrintUsage ();
     return STATUS_ERROR;
   }
+
   memset (&mGlobals, 0, sizeof (mGlobals));
   Argc--;
   Argv++;
@@ -2437,10 +2550,12 @@ Returns:
         Error (NULL, 0, 0, "-b option requires the build directory name", NULL);
         return STATUS_ERROR;
       }
+
       if (mGlobals.BuildDirectory[0]) {
         Error (NULL, 0, 0, Argv[0], "option can only be specified once");
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.BuildDirectory, Argv[1]);
       Argc--;
       Argv++;
@@ -2453,10 +2568,12 @@ Returns:
         Error (NULL, 0, 0, Argv[0], "option requires the primary package file name");
         return STATUS_ERROR;
       }
+
       if (mGlobals.PrimaryPackagePath[0]) {
         Error (NULL, 0, 0, Argv[0], "option can only be specified once");
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.PrimaryPackagePath, Argv[1]);
       Argc--;
       Argv++;
@@ -2469,10 +2586,12 @@ Returns:
         Error (NULL, 0, 0, Argv[0], "option requires the override package file name");
         return STATUS_ERROR;
       }
+
       if (mGlobals.OverridePackagePath[0]) {
         Error (NULL, 0, 0, Argv[0], "option can only be specified once");
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.OverridePackagePath, Argv[1]);
       Argc--;
       Argv++;
@@ -2498,6 +2617,7 @@ Returns:
       PrintUsage ();
       return STATUS_ERROR;
     }
+
     Argv++;
     Argc--;
   }
@@ -2508,5 +2628,6 @@ Returns:
     Error (NULL, 0, 0, "must specify primary package file", NULL);
     return STATUS_ERROR;
   }
+
   return STATUS_SUCCESS;
 }

@@ -33,17 +33,17 @@ WinNtBlockIoComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtBlockIoComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gWinNtBlockIoComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gWinNtBlockIoComponentName = {
   WinNtBlockIoComponentNameGetDriverName,
   WinNtBlockIoComponentNameGetControllerName,
   "eng"
@@ -51,7 +51,7 @@ EFI_COMPONENT_NAME_PROTOCOL gWinNtBlockIoComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mWinNtBlockIoDriverNameTable[] = {
   { "eng", L"Windows Block I/O Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -89,21 +89,21 @@ WinNtBlockIoComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gWinNtBlockIoComponentName.SupportedLanguages,
-           mWinNtBlockIoDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gWinNtBlockIoComponentName.SupportedLanguages,
+          mWinNtBlockIoDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 WinNtBlockIoComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -150,9 +150,9 @@ WinNtBlockIoComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS               Status;
-  EFI_BLOCK_IO_PROTOCOL    *BlockIo;
-  WIN_NT_BLOCK_IO_PRIVATE  *Private;
+  EFI_STATUS              Status;
+  EFI_BLOCK_IO_PROTOCOL   *BlockIo;
+  WIN_NT_BLOCK_IO_PRIVATE *Private;
 
   //
   // This is a device driver, so ChildHandle must be NULL.
@@ -165,11 +165,11 @@ WinNtBlockIoComponentNameGetControllerName (
   // Get our context back
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiBlockIoProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiBlockIoProtocolGuid,
                   &BlockIo,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,   
-                  ControllerHandle,   
+                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -179,9 +179,9 @@ WinNtBlockIoComponentNameGetControllerName (
   Private = WIN_NT_BLOCK_IO_PRIVATE_DATA_FROM_THIS (BlockIo);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gWinNtBlockIoComponentName.SupportedLanguages,
-           Private->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gWinNtBlockIoComponentName.SupportedLanguages,
+          Private->ControllerNameTable,
+          ControllerName
+          );
 }

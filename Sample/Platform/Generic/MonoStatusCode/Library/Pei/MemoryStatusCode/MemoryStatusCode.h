@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 #include "Pei.h"
 #include "SimpleCpuIoLib.h"
@@ -46,7 +45,6 @@ Abstract:
 //
 // Private data
 //
-
 //
 // Define the amount of heap to use before memory is allocated
 //
@@ -56,26 +54,36 @@ Abstract:
 //
 // Define the number of 4K pages of BS memory to allocate (1MB)
 //
-#define PEI_STATUS_CODE_RT_PAGES        (128)
-#define PEI_STATUS_CODE_RT_LENGTH       (PEI_STATUS_CODE_RT_PAGES * 1024 * 4)
-#define PEI_STATUS_CODE_MAX_RT_ENTRY    (PEI_STATUS_CODE_RT_LENGTH / sizeof (EFI_STATUS_CODE_ENTRY))
+#define PEI_STATUS_CODE_RT_PAGES      (128)
+#define PEI_STATUS_CODE_RT_LENGTH     (PEI_STATUS_CODE_RT_PAGES * 1024 * 4)
+#define PEI_STATUS_CODE_MAX_RT_ENTRY  (PEI_STATUS_CODE_RT_LENGTH / sizeof (EFI_STATUS_CODE_ENTRY))
 
 //
 // Define a private data structure
 //
-#define MEMORY_STATUS_CODE_SIGNATURE   EFI_SIGNATURE_32('M','S','C','S')
+#define MEMORY_STATUS_CODE_SIGNATURE  EFI_SIGNATURE_32 ('M', 'S', 'C', 'S')
 
 typedef struct _MEMORY_STATUS_CODE_INSTANCE {
-  UINT32                                Signature;
-  struct _MEMORY_STATUS_CODE_INSTANCE   *This;
-  EFI_FFS_FILE_HEADER                   *FfsHeader;
-  EFI_PEI_PPI_DESCRIPTOR                    PpiDescriptor;
-  PEI_STATUS_CODE_MEMORY_PPI            StatusCodeMemoryPpi;
-  EFI_PEI_NOTIFY_DESCRIPTOR                 NotifyDescriptor;
+  UINT32                              Signature;
+  struct _MEMORY_STATUS_CODE_INSTANCE *This;
+  EFI_FFS_FILE_HEADER                 *FfsHeader;
+  EFI_PEI_PPI_DESCRIPTOR              PpiDescriptor;
+  PEI_STATUS_CODE_MEMORY_PPI          StatusCodeMemoryPpi;
+  EFI_PEI_NOTIFY_DESCRIPTOR           NotifyDescriptor;
 } MEMORY_STATUS_CODE_INSTANCE;
 
-#define MEMORY_STATUS_CODE_FROM_DESCRIPTOR_THIS(a) PEI_CR (a, MEMORY_STATUS_CODE_INSTANCE, PpiDescriptor, MEMORY_STATUS_CODE_SIGNATURE)
-#define MEMORY_STATUS_CODE_FROM_NOTIFY_THIS(a) PEI_CR (a, MEMORY_STATUS_CODE_INSTANCE, NotifyDescriptor, MEMORY_STATUS_CODE_SIGNATURE)
+#define MEMORY_STATUS_CODE_FROM_DESCRIPTOR_THIS(a) \
+  PEI_CR (a, \
+          MEMORY_STATUS_CODE_INSTANCE, \
+          PpiDescriptor, \
+          MEMORY_STATUS_CODE_SIGNATURE \
+      )
+#define MEMORY_STATUS_CODE_FROM_NOTIFY_THIS(a) \
+  PEI_CR (a, \
+          MEMORY_STATUS_CODE_INSTANCE, \
+          NotifyDescriptor, \
+          MEMORY_STATUS_CODE_SIGNATURE \
+      )
 
 //
 // Private function declarations
@@ -83,9 +91,10 @@ typedef struct _MEMORY_STATUS_CODE_INSTANCE {
 EFI_STATUS
 EFIAPI
 LoadImageCallback (
-  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,
-  IN VOID                   *Ppi
-  );
+  IN VOID                       *Ppi
+  )
+;
 
-#endif 
+#endif

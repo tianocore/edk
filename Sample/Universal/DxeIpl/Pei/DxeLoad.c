@@ -25,48 +25,46 @@ Abstract:
 #include "DxeIpl.h"
 #include "EfiHobLib.h"
 
-EFI_PEI_SERVICES                          **gPeiServices;
+EFI_PEI_SERVICES                  **gPeiServices;
 
 //
 // Interface and GUID for the Decompression APIs shared between PEI and DXE
 //
-EFI_GUID  mPeiEfiDecompressProtocolGuid = EFI_DECOMPRESS_PROTOCOL_GUID;
+EFI_GUID                          mPeiEfiDecompressProtocolGuid = EFI_DECOMPRESS_PROTOCOL_GUID;
 
 //
 // Interface and GUID for the Tiano Decompression APIs shared between PEI and DXE
 //
-EFI_GUID  mPeiEfiTianoDecompressProtocolGuid = EFI_TIANO_DECOMPRESS_PROTOCOL_GUID;
+EFI_GUID                          mPeiEfiTianoDecompressProtocolGuid = EFI_TIANO_DECOMPRESS_PROTOCOL_GUID;
 
 //
 // Interface and GUID for the user customized Decompression APIs shared between PEI and DXE
 //
-EFI_GUID  mPeiEfiCustomizedDecompressProtocolGuid = EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL_GUID;
+EFI_GUID                          mPeiEfiCustomizedDecompressProtocolGuid = EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL_GUID;
 
 //
 // Interface and GUID for the Instruction Cache Flushing APIs shared between PEI and DXE
 //
-EFI_GUID  mPeiEfiPeiFlushInstructionCacheGuid = EFI_PEI_FLUSH_INSTRUCTION_CACHE_GUID;
+EFI_GUID                          mPeiEfiPeiFlushInstructionCacheGuid = EFI_PEI_FLUSH_INSTRUCTION_CACHE_GUID;
 
 //
 // Interface and GUID for the PE/COFF Loader APIs shared between PEI and DXE
 //
-EFI_GUID  mPeiEfiPeiPeCoffLoaderGuid = EFI_PEI_PE_COFF_LOADER_GUID;
+EFI_GUID                          mPeiEfiPeiPeCoffLoaderGuid = EFI_PEI_PE_COFF_LOADER_GUID;
 
 //
 // Interface and GUID for the setjump()/longjump() APIs shared between PEI and DXE
 //
-EFI_GUID  mPeiEfiPeiTransferControlGuid = EFI_PEI_TRANSFER_CONTROL_GUID;
+EFI_GUID                          mPeiEfiPeiTransferControlGuid = EFI_PEI_TRANSFER_CONTROL_GUID;
 
 //
 // GUID for the Firmware Volume type that PEI supports
 //
 // EFI_GUID  mPeiFwFileSysTypeGuid = EFI_FIRMWARE_FILE_SYSTEM_GUID;
-
 //
 // Module Globals used in the DXE to PEI handoff
 // These must be module globals, so the stack can be switched
 //
-
 EFI_STATUS
 DxeIplLoadFile (
   IN EFI_PEI_FV_FILE_LOADER_PPI                 *This,
@@ -74,7 +72,7 @@ DxeIplLoadFile (
   OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
   OUT UINT64                                    *ImageSize,
   OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
-);
+  );
 
 EFI_STATUS
 ShadowDxeIpl (
@@ -82,7 +80,7 @@ ShadowDxeIpl (
   IN EFI_FFS_FILE_HEADER                       *DxeIpl,
   IN EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
   IN EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache
-);
+  );
 
 EFI_STATUS
 DxeLoadCore (
@@ -111,25 +109,25 @@ static EFI_PEI_FV_FILE_LOADER_PPI mLoadFilePpi = {
   DxeIplLoadFile
 };
 
-static EFI_PEI_PPI_DESCRIPTOR mPpiLoadFile = {
+static EFI_PEI_PPI_DESCRIPTOR     mPpiLoadFile = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gPeiFvFileLoaderPpiGuid,
   &mLoadFilePpi
 };
 
-static EFI_PEI_PPI_DESCRIPTOR mPpiList = {
+static EFI_PEI_PPI_DESCRIPTOR     mPpiList = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEfiDxeIplPpiGuid,
   &mDxeIplPpi
 };
 
-static EFI_PEI_PPI_DESCRIPTOR mPpiPeiInMemory = {
+static EFI_PEI_PPI_DESCRIPTOR     mPpiPeiInMemory = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gPeiInMemoryGuid,
   NULL
 };
 
-static EFI_PEI_PPI_DESCRIPTOR mPpiSignal = {
+static EFI_PEI_PPI_DESCRIPTOR     mPpiSignal = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEndOfPeiSignalPpiGuid,
   NULL
@@ -142,13 +140,13 @@ GetOccupiedSize (
   IN UINTN   Alignment
   )
 {
-  UINTN   OccupiedSize;
-  
+  UINTN OccupiedSize;
+
   OccupiedSize = ActualSize;
   while ((OccupiedSize & (Alignment - 1)) != 0) {
     OccupiedSize++;
   }
-  
+
   return OccupiedSize;
 }
 
@@ -159,14 +157,14 @@ PeimInitializeDxeIpl (
   IN EFI_PEI_SERVICES          **PeiServices
   );
 
-EFI_PEIM_ENTRY_POINT(PeimInitializeDxeIpl);
+EFI_PEIM_ENTRY_POINT (PeimInitializeDxeIpl)
 
 typedef
 EFI_STATUS
 (EFIAPI *DXE_IPL_ENTRYPOINT) (
-  IN EFI_FFS_FILE_HEADER       *FfsHeader,
+  IN EFI_FFS_FILE_HEADER       * FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
-);
+  );
 
 EFI_STATUS
 EFIAPI
@@ -187,7 +185,7 @@ Arguments:
     
 Returns:
 
-  None
+  EFI_SUCCESS
 
 --*/
 {
@@ -200,13 +198,13 @@ Returns:
   Status = (*PeiServices)->GetBootMode (PeiServices, &BootMode);
 
   if (!EFI_ERROR (Status) && (BootMode == BOOT_ON_S3_RESUME)) {
-    Status =  (*PeiServices)->LocatePpi ( 
-                                PeiServices,
-                                &gPeiS3ResumePpiGuid,
-                                0,             
-                                NULL,
-                                &S3Resume
-                                );
+    Status = (*PeiServices)->LocatePpi (
+                              PeiServices,
+                              &gPeiS3ResumePpiGuid,
+                              0,
+                              NULL,
+                              &S3Resume
+                              );
 
     if (!EFI_ERROR (Status)) {
 
@@ -221,15 +219,15 @@ Returns:
 
       return EFI_SUCCESS;
     }
-  } 
-    
-  Status = (*PeiServices)->LocatePpi ( 
-                             PeiServices,
-                             &gPeiInMemoryGuid,
-                             0,             
-                             NULL,
-                             NULL
-                             );
+  }
+
+  Status = (*PeiServices)->LocatePpi (
+                            PeiServices,
+                            &gPeiInMemoryGuid,
+                            0,
+                            NULL,
+                            NULL
+                            );
 
   if (EFI_ERROR (Status)) {
     //
@@ -238,28 +236,26 @@ Returns:
     InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
     InstallEfiPeiPeCoffLoader (PeiServices, &PeiEfiPeiPeCoffLoader, NULL);
 
-
     //
     // Shadow DxeIpl and then re-run its entry point
     //
     Status = ShadowDxeIpl (
-               PeiServices,
-               FfsHeader,
-               PeiEfiPeiPeCoffLoader,
-               PeiEfiPeiFlushInstructionCache
-               );
+              PeiServices,
+              FfsHeader,
+              PeiEfiPeiPeCoffLoader,
+              PeiEfiPeiFlushInstructionCache
+              );
 
     if (EFI_ERROR (Status)) {
       return Status;
     }
-
 
   } else {
     //
     // The DxeIpl has been shadowed
     //
     gPeiServices = PeiServices;
-    
+
     //
     // Install LoadFile PPI
     //
@@ -268,7 +264,6 @@ Returns:
     if (EFI_ERROR (Status)) {
       return Status;
     }
-
     //
     // Install DxeIpl PPI
     //
@@ -282,7 +277,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 DxeLoadCore (
@@ -327,26 +321,26 @@ Returns:
   EFI_BOOT_MODE                             BootMode;
   PEI_RECOVERY_MODULE_INTERFACE             *PeiRecovery;
   PEI_S3_RESUME_PPI                         *S3Resume;
-  
-  PEI_PERF_START(PeiServices, L"DxeIpl", NULL, 0);
+
+  PEI_PERF_START (PeiServices, L"DxeIpl", NULL, 0);
 
   TopOfStack  = 0;
   BaseOfStack = 0;
-  BspStore    = 0; 
+  BspStore    = 0;
 
   //
   // if in S3 Resume, restore configure
-  // 
+  //
   Status = (*PeiServices)->GetBootMode (PeiServices, &BootMode);
 
   if (!EFI_ERROR (Status) && (BootMode == BOOT_ON_S3_RESUME)) {
-    Status =  (*PeiServices)->LocatePpi ( 
-                                PeiServices,
-                                &gPeiS3ResumePpiGuid,
-                                0,             
-                                NULL,
-                                &S3Resume
-                                );
+    Status = (*PeiServices)->LocatePpi (
+                              PeiServices,
+                              &gPeiS3ResumePpiGuid,
+                              0,
+                              NULL,
+                              &S3Resume
+                              );
 
     ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -354,7 +348,6 @@ Returns:
 
     ASSERT_PEI_ERROR (PeiServices, Status);
   }
-  
 
   Status = EFI_SUCCESS;
 
@@ -375,7 +368,7 @@ Returns:
   //
   // Get the user Customized decompress functions for possible usage
   //
-  Status = InstallCustomizedDecompress          (&PeiEfiCustomizedDecompress);
+  Status = InstallCustomizedDecompress (&PeiEfiCustomizedDecompress);
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -383,7 +376,7 @@ Returns:
   // Install the PEI Protocols that are shared between PEI and DXE
   //
   PeiEfiPeiPeCoffLoader = NULL;
-  Status = InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
+  Status                = InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -395,20 +388,19 @@ Returns:
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
-  
   //
   // Allocate 128KB for the Stack
   //
   Status = (*PeiServices)->AllocatePages (
-                             PeiServices,
-                             EfiBootServicesData,  
-                             EFI_SIZE_TO_PAGES (EFI_STACK_SIZE),
-                             &BaseOfStack
-                             );
-  
+                            PeiServices,
+                            EfiBootServicesData,
+                            EFI_SIZE_TO_PAGES (EFI_STACK_SIZE),
+                            &BaseOfStack
+                            );
+
   ASSERT_PEI_ERROR (PeiServices, Status);
   //
-  // Compute the top of the stack we were allocated. Pre-allocate a UINTN 
+  // Compute the top of the stack we were allocated. Pre-allocate a UINTN
   // for safety.
   //
   TopOfStack = BaseOfStack + EFI_SIZE_TO_PAGES (EFI_STACK_SIZE) * EFI_PAGE_SIZE - sizeof (UINTN);
@@ -416,51 +408,51 @@ Returns:
   // Add architecture-specifc HOBs (including the BspStore HOB)
   //
   Status = CreateArchSpecificHobs (
-             PeiServices,
-             &BspStore
-             );
-  
+            PeiServices,
+            &BspStore
+            );
+
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Add HOB for the EFI Decompress Protocol
   //
-  Interface = (VOID *)PeiEfiDecompress;
+  Interface = (VOID *) PeiEfiDecompress;
 
   Status = PeiBuildHobGuidData (
-             PeiServices,
-             &mPeiEfiDecompressProtocolGuid,
-             &Interface,
-             sizeof (VOID *)
-             );
+            PeiServices,
+            &mPeiEfiDecompressProtocolGuid,
+            &Interface,
+            sizeof (VOID *)
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Add HOB for the Tiano Decompress Protocol
   //
-  Interface = (VOID *)PeiEfiTianoDecompress;
+  Interface = (VOID *) PeiEfiTianoDecompress;
 
   Status = PeiBuildHobGuidData (
-             PeiServices,
-             &mPeiEfiTianoDecompressProtocolGuid,
-             &Interface,
-             sizeof (VOID *)
-             );
+            PeiServices,
+            &mPeiEfiTianoDecompressProtocolGuid,
+            &Interface,
+            sizeof (VOID *)
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
-  
+
   //
   // Add HOB for the user customized Decompress Protocol
   //
-  Interface = (VOID *)PeiEfiCustomizedDecompress;
+  Interface = (VOID *) PeiEfiCustomizedDecompress;
 
   Status = PeiBuildHobGuidData (
-             PeiServices,
-             &mPeiEfiCustomizedDecompressProtocolGuid,
-             &Interface,
-             sizeof (VOID *)
-             );
+            PeiServices,
+            &mPeiEfiCustomizedDecompressProtocolGuid,
+            &Interface,
+            sizeof (VOID *)
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -470,56 +462,56 @@ Returns:
   Interface = (VOID *) PeiEfiPeiFlushInstructionCache;
 
   Status = PeiBuildHobGuidData (
-             PeiServices,
-             &mPeiEfiPeiFlushInstructionCacheGuid,
-             &Interface, 
-             sizeof (VOID *)
-             );
+            PeiServices,
+            &mPeiEfiPeiFlushInstructionCacheGuid,
+            &Interface,
+            sizeof (VOID *)
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Add HOB for the PE/COFF Loader Protocol
   //
-  Interface = (VOID *)PeiEfiPeiPeCoffLoader;
-  
+  Interface = (VOID *) PeiEfiPeiPeCoffLoader;
+
   Status = PeiBuildHobGuidData (
-             PeiServices,
-             &mPeiEfiPeiPeCoffLoaderGuid,
-             &Interface, 
-             sizeof (VOID *)
-             );
+            PeiServices,
+            &mPeiEfiPeiPeCoffLoaderGuid,
+            &Interface,
+            sizeof (VOID *)
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Add HOB for the Transfer Control Protocol
   //
-  Interface = (VOID *)PeiEfiPeiTransferControl;
+  Interface = (VOID *) PeiEfiPeiTransferControl;
 
   Status = PeiBuildHobGuidData (
-             PeiServices,
-             &mPeiEfiPeiTransferControlGuid,
-             &Interface, 
-             sizeof (VOID *)
-             );
+            PeiServices,
+            &mPeiEfiPeiTransferControlGuid,
+            &Interface,
+            sizeof (VOID *)
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // See if we are in crisis recovery
-  // 
+  //
   Status = (*PeiServices)->GetBootMode (PeiServices, &BootMode);
-  
+
   if (!EFI_ERROR (Status) && (BootMode == BOOT_IN_RECOVERY_MODE)) {
-    
-    Status =  (*PeiServices)->LocatePpi ( 
-                                PeiServices,
-                                &gPeiRecoveryModulePpiGuid,
-                                0,             
-                                NULL,
-                                &PeiRecovery
-                                );
+
+    Status = (*PeiServices)->LocatePpi (
+                              PeiServices,
+                              &gPeiRecoveryModulePpiGuid,
+                              0,
+                              NULL,
+                              &PeiRecovery
+                              );
 
     ASSERT_PEI_ERROR (PeiServices, Status);
     Status = PeiRecovery->LoadRecoveryCapsule (PeiServices, PeiRecovery);
@@ -529,63 +521,57 @@ Returns:
     // Now should have a HOB with the DXE core w/ the old HOB destroyed
     //
   }
-
   //
   // Find the DXE Core in a Firmware Volume
   //
   Status = PeiFindFile (
-             PeiServices,
-             EFI_FV_FILETYPE_DXE_CORE,
-             EFI_SECTION_PE32,
-             &DxeCoreFileName,
-             &Pe32Data
-             );
+            PeiServices,
+            EFI_FV_FILETYPE_DXE_CORE,
+            EFI_SECTION_PE32,
+            &DxeCoreFileName,
+            &Pe32Data
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Load the DXE Core from a Firmware Volume
   //
-
   Status = PeiLoadFile (
-             PeiServices,
-             PeiEfiPeiPeCoffLoader,
-             PeiEfiPeiFlushInstructionCache,
-             Pe32Data,
-             &DxeCoreAddress,
-             &DxeCoreSize,
-             &DxeCoreEntryPoint
-             );
+            PeiServices,
+            PeiEfiPeiPeCoffLoader,
+            PeiEfiPeiFlushInstructionCache,
+            Pe32Data,
+            &DxeCoreAddress,
+            &DxeCoreSize,
+            &DxeCoreEntryPoint
+            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
-  
 
   //
   // Transfer control to the DXE Core
   // The handoff state is simply a pointer to the HOB list
   //
-  
-  PEI_PERF_END(PeiServices, L"DxeIpl", NULL, 0);
+  PEI_PERF_END (PeiServices, L"DxeIpl", NULL, 0);
 
   Status = (*PeiServices)->InstallPpi (PeiServices, &mPpiSignal);
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
-  
   //
   // Add HOB for the DXE Core
   //
-
   Status = PeiBuildHobModule (
-             PeiServices,
-             &DxeCoreFileName,
-             DxeCoreAddress,
-             DxeCoreSize,
-             DxeCoreEntryPoint
-             );
- 
+            PeiServices,
+            &DxeCoreFileName,
+            DxeCoreAddress,
+            DxeCoreSize,
+            DxeCoreEntryPoint
+            );
+
   ASSERT_PEI_ERROR (PeiServices, Status);
-  
+
   //
   // Report Status Code EFI_SW_PEI_PC_HANDOFF_TO_NEXT
   //
@@ -597,13 +583,13 @@ Returns:
                     NULL,
                     NULL
                     );
-  
+
   PEI_DEBUG ((PeiServices, EFI_D_INFO, "DXE Core Entry\n"));
   SwitchStacks (
-    (VOID *)(UINTN) DxeCoreEntryPoint, 
-    (UINTN)(HobList.Raw), 
-    (VOID *)(UINTN)TopOfStack, 
-    (VOID *)(UINTN)BspStore
+    (VOID *) (UINTN) DxeCoreEntryPoint,
+    (UINTN) (HobList.Raw),
+    (VOID *) (UINTN) TopOfStack,
+    (VOID *) (UINTN) BspStore
     );
 
   //
@@ -613,7 +599,6 @@ Returns:
 
   return EFI_OUT_OF_RESOURCES;
 }
-
 
 EFI_STATUS
 PeiFindFile (
@@ -653,82 +638,79 @@ Returns:
 
 --*/
 {
-  EFI_FIRMWARE_VOLUME_HEADER      *FwVolHeader;
-  EFI_FFS_FILE_HEADER             *FfsFileHeader;
-  VOID                            *SectionData;
-  EFI_STATUS                      Status;
-  BOOLEAN                         Found;
-  UINTN                           Index;
-  EFI_PEI_HOB_POINTERS            Hob;
-    
+  EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
+  EFI_FFS_FILE_HEADER         *FfsFileHeader;
+  VOID                        *SectionData;
+  EFI_STATUS                  Status;
+  BOOLEAN                     Found;
+  UINTN                       Index;
+  EFI_PEI_HOB_POINTERS        Hob;
+
   Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Index = 0;
+  Index         = 0;
 
-  Found = FALSE;
+  Found         = FALSE;
 
-  Status = EFI_SUCCESS;
+  Status        = EFI_SUCCESS;
 
   FwVolHeader   = NULL;
   FfsFileHeader = NULL;
   SectionData   = NULL;
 
   //
-  // Foreach Firmware Volume, look for a file of Type 
+  // Foreach Firmware Volume, look for a file of Type
   // DXE Core and break out when one is found
   //
-  Index = 0;
-  Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw) ;
+  Index   = 0;
+  Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
   if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
     return EFI_NOT_FOUND;
   }
-  
-  while (!END_OF_HOB_LIST(Hob)) {
-    
-    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)(Hob.FirmwareVolume->BaseAddress);
+
+  while (!END_OF_HOB_LIST (Hob)) {
+
+    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) (Hob.FirmwareVolume->BaseAddress);
 
     Status = (*PeiServices)->FfsFindNextFile (
-                               PeiServices,
-                               EFI_FV_FILETYPE_DXE_CORE,
-                               FwVolHeader,
-                               &FfsFileHeader
-                               );    
+                              PeiServices,
+                              EFI_FV_FILETYPE_DXE_CORE,
+                              FwVolHeader,
+                              &FfsFileHeader
+                              );
 
     if (EFI_ERROR (Status)) {
-      Hob.Raw = GET_NEXT_HOB(Hob);
-      Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw) ;
+      Hob.Raw = GET_NEXT_HOB (Hob);
+      Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
       if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
         break;
       }
-      
+
       continue;
     } else {
 
-
       (*PeiServices)->CopyMem (
-                        FileName, 
-                        &FfsFileHeader->Name, 
+                        FileName,
+                        &FfsFileHeader->Name,
                         sizeof (EFI_GUID)
                         );
 
-
       Status = PeiProcessFile (
-                 PeiServices,
-                 SectionType,
-                 FfsFileHeader,
-                 Pe32Data
-                 );      
+                PeiServices,
+                SectionType,
+                FfsFileHeader,
+                Pe32Data
+                );
       return Status;
     }
   }
-  
+
   return EFI_NOT_FOUND;
 }
-
 
 EFI_STATUS
 PeiLoadFile (
@@ -776,12 +758,12 @@ Returns:
   EFI_PHYSICAL_ADDRESS                  MemoryBuffer;
 
   (*PeiServices)->SetMem (
-                    &ImageContext, 
-                    sizeof (ImageContext), 
+                    &ImageContext,
+                    sizeof (ImageContext),
                     0
                     );
   ImageContext.Handle = Pe32Data;
-  Status = GetImageReadFunction (PeiServices, &ImageContext);
+  Status              = GetImageReadFunction (PeiServices, &ImageContext);
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -789,16 +771,15 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Allocate Memory for the image
   //
   Status = (*PeiServices)->AllocatePages (
-                             PeiServices,
-                             EfiBootServicesData,  
-                             EFI_SIZE_TO_PAGES ((UINT32)ImageContext.ImageSize),
-                             &MemoryBuffer
-                             );
+                            PeiServices,
+                            EfiBootServicesData,
+                            EFI_SIZE_TO_PAGES ((UINT32) ImageContext.ImageSize),
+                            &MemoryBuffer
+                            );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -821,10 +802,10 @@ Returns:
   // Flush the instruction cache so the image data is written before we execute it
   //
   Status = PeiEfiPeiFlushInstructionCache->Flush (
-                                             PeiEfiPeiFlushInstructionCache,
-                                             ImageContext.ImageAddress,
-                                             ImageContext.ImageSize
-                                             );
+                                            PeiEfiPeiFlushInstructionCache,
+                                            ImageContext.ImageAddress,
+                                            ImageContext.ImageSize
+                                            );
 
   if (EFI_ERROR (Status)) {
     return Status;
@@ -837,15 +818,13 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
-
 EFI_STATUS
 ShadowDxeIpl (
   IN EFI_PEI_SERVICES                          **PeiServices,
   IN EFI_FFS_FILE_HEADER                       *DxeIpl,
   IN EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
   IN EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache
-)
+  )
 /*++
 
 Routine Description:
@@ -873,38 +852,35 @@ Returns:
 
 --*/
 {
-  UINTN                                     SectionLength;
-  UINTN                                     OccupiedSectionLength;
-  EFI_PHYSICAL_ADDRESS                      DxeIplAddress;
-  UINT64                                    DxeIplSize;
-  EFI_PHYSICAL_ADDRESS                      DxeIplEntryPoint;
-  EFI_STATUS                                Status;
-  EFI_COMMON_SECTION_HEADER                 *Section;
+  UINTN                     SectionLength;
+  UINTN                     OccupiedSectionLength;
+  EFI_PHYSICAL_ADDRESS      DxeIplAddress;
+  UINT64                    DxeIplSize;
+  EFI_PHYSICAL_ADDRESS      DxeIplEntryPoint;
+  EFI_STATUS                Status;
+  EFI_COMMON_SECTION_HEADER *Section;
 
-  
-  Section = (EFI_COMMON_SECTION_HEADER *)(DxeIpl + 1);
-  
+  Section = (EFI_COMMON_SECTION_HEADER *) (DxeIpl + 1);
+
   while ((Section->Type != EFI_SECTION_PE32) && (Section->Type != EFI_SECTION_TE)) {
-    SectionLength = *(UINT32 *)(Section->Size) & 0x00ffffff;
+    SectionLength         = *(UINT32 *) (Section->Size) & 0x00ffffff;
     OccupiedSectionLength = GetOccupiedSize (SectionLength, 4);
-    Section = (EFI_COMMON_SECTION_HEADER *)((UINT8 *)Section + OccupiedSectionLength);
+    Section               = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) Section + OccupiedSectionLength);
   }
-
   //
   // Relocate DxeIpl into memory by using loadfile service
   //
   Status = PeiLoadFile (
-             PeiServices,
-             PeiEfiPeiPeCoffLoader,
-             PeiEfiPeiFlushInstructionCache,
-             (VOID*)(Section + 1),
-             &DxeIplAddress,
-             &DxeIplSize,
-             &DxeIplEntryPoint
-             );
+            PeiServices,
+            PeiEfiPeiPeCoffLoader,
+            PeiEfiPeiFlushInstructionCache,
+            (VOID *) (Section + 1),
+            &DxeIplAddress,
+            &DxeIplSize,
+            &DxeIplEntryPoint
+            );
 
   if (Status == EFI_SUCCESS) {
-      
     //
     // Install PeiInMemory to indicate the Dxeipl is shadowed
     //
@@ -914,12 +890,11 @@ Returns:
       return Status;
     }
 
-    Status = ((DXE_IPL_ENTRYPOINT)(UINTN)DxeIplEntryPoint)(DxeIpl, PeiServices);
+    Status = ((DXE_IPL_ENTRYPOINT) (UINTN) DxeIplEntryPoint) (DxeIpl, PeiServices);
   }
 
   return Status;
 }
-
 
 EFI_STATUS
 DxeIplLoadFile (
@@ -967,15 +942,15 @@ Returns:
   InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
   InstallEfiPeiPeCoffLoader (gPeiServices, &PeiEfiPeiPeCoffLoader, NULL);
   //
-  // Preprocess the FFS file to get a pointer to the PE32 information 
+  // Preprocess the FFS file to get a pointer to the PE32 information
   // in the enclosed PE32 image.
   //
   Status = PeiProcessFile (
-             gPeiServices,
-             EFI_SECTION_PE32,
-             FfsHeader,
-             &Pe32Data
-             );
+            gPeiServices,
+            EFI_SECTION_PE32,
+            FfsHeader,
+            &Pe32Data
+            );
 
   if (EFI_ERROR (Status)) {
     return Status;
@@ -984,14 +959,14 @@ Returns:
   // Load the PE image from the FFS file
   //
   Status = PeiLoadFile (
-             gPeiServices,
-             PeiEfiPeiPeCoffLoader,
-             PeiEfiPeiFlushInstructionCache,
-             Pe32Data,
-             ImageAddress,
-             ImageSize,
-             EntryPoint
-             );
+            gPeiServices,
+            PeiEfiPeiPeCoffLoader,
+            PeiEfiPeiFlushInstructionCache,
+            Pe32Data,
+            ImageAddress,
+            ImageSize,
+            EntryPoint
+            );
 
   return Status;
 }
@@ -1009,7 +984,7 @@ Routine Description:
   
 Arguments:
 
-  PeiService        - General purpose services available to every PEIM.
+  PeiServices        - General purpose services available to every PEIM.
 
   SectionType       - The type of section in the FFS file to process.
 
@@ -1052,13 +1027,13 @@ Returns:
   EFI_GUID                        TempGuid;
   EFI_FIRMWARE_VOLUME_HEADER      *FvHeader;
   EFI_COMPRESSION_SECTION         *CompressionSection;
-    
+
   Status = (*PeiServices)->FfsFindSectionData (
-                             PeiServices,
-                             EFI_SECTION_COMPRESSION,
-                             FfsFileHeader,
-                             &SectionData
-                             );
+                            PeiServices,
+                            EFI_SECTION_COMPRESSION,
+                            FfsFileHeader,
+                            &SectionData
+                            );
 
   //
   // Upon finding a DXE Core file, see if there is first a compression section
@@ -1067,13 +1042,13 @@ Returns:
     //
     // Yes, there is a compression section, so extract the contents
     // Decompress the image here
-    // 
-    Section = (EFI_COMMON_SECTION_HEADER *)(UINTN)(VOID*)((UINT8*)(FfsFileHeader) + (UINTN)sizeof(EFI_FFS_FILE_HEADER));
+    //
+    Section = (EFI_COMMON_SECTION_HEADER *) (UINTN) (VOID *) ((UINT8 *) (FfsFileHeader) + (UINTN) sizeof (EFI_FFS_FILE_HEADER));
 
     do {
-      SectionLength = *(UINT32 *)(Section->Size) & 0x00ffffff;
+      SectionLength         = *(UINT32 *) (Section->Size) & 0x00ffffff;
       OccupiedSectionLength = GetOccupiedSize (SectionLength, 4);
-              
+
       //
       // Was the DXE Core file encapsulated in a GUID'd section?
       //
@@ -1081,77 +1056,73 @@ Returns:
         //
         // Locate the GUID'd Section Extractor
         //
-        GuidedSectionHeader = (VOID *)(Section +1);
+        GuidedSectionHeader = (VOID *) (Section + 1);
 
         //
         // This following code constitutes the addition of the security model
         // to the DXE IPL.
         //
-
         //
         // Set a default authenticatino state
         //
         AuthenticationStatus = 0;
 
-        Status =  (*PeiServices)->LocatePpi (
-                                    PeiServices,
-                                    &gPeiSectionExtractionPpiGuid,
-                                    0,
-                                    NULL,
-                                    &SectionExtract
-                                    );
+        Status = (*PeiServices)->LocatePpi (
+                                  PeiServices,
+                                  &gPeiSectionExtractionPpiGuid,
+                                  0,
+                                  NULL,
+                                  &SectionExtract
+                                  );
 
         if (EFI_ERROR (Status)) {
           return Status;
         }
-
+        //
         // Verify Authentication State
         //
-
         (*PeiServices)->CopyMem (&TempGuid, Section + 1, sizeof (EFI_GUID));
 
         Status = SectionExtract->PeiGetSection (
-                                   PeiServices, 
-                                   SectionExtract,
-                                   (EFI_SECTION_TYPE *) &SectionType,
-                                   &TempGuid,
-                                   0,
-                                   (VOID **) &Buffer,
-                                   &BufferSize,
-                                   &AuthenticationStatus
-                                   );
+                                  PeiServices,
+                                  SectionExtract,
+                                  (EFI_SECTION_TYPE *) &SectionType,
+                                  &TempGuid,
+                                  0,
+                                  (VOID **) &Buffer,
+                                  &BufferSize,
+                                  &AuthenticationStatus
+                                  );
 
         if (EFI_ERROR (Status)) {
           return Status;
         }
-
         //
         // If not ask the Security PPI, if exists, for disposition
         //
         //
-        Status =  (*PeiServices)->LocatePpi (
-                                    PeiServices,
-                                    &gPeiSecurityPpiGuid,
-                                    0,             
-                                    NULL,
-                                    &Security
-                                    );
+        Status = (*PeiServices)->LocatePpi (
+                                  PeiServices,
+                                  &gPeiSecurityPpiGuid,
+                                  0,
+                                  NULL,
+                                  &Security
+                                  );
         if (EFI_ERROR (Status)) {
           return Status;
         }
 
         Status = Security->AuthenticationState (
-                             PeiServices,
-                             (struct _PEI_SECURITY_PPI *) Security,
-                             AuthenticationStatus,
-                             FfsFileHeader,
-                             &StartCrisisRecovery
-                             );
+                            PeiServices,
+                            (struct _PEI_SECURITY_PPI *) Security,
+                            AuthenticationStatus,
+                            FfsFileHeader,
+                            &StartCrisisRecovery
+                            );
 
         if (EFI_ERROR (Status)) {
           return Status;
         }
-
         //
         // If there is a security violation, report to caller and have
         // the upper-level logic possible engender a crisis recovery
@@ -1160,43 +1131,42 @@ Returns:
           return EFI_SECURITY_VIOLATION;
         }
       }
-       
+
       if (Section->Type == EFI_SECTION_PE32) {
         //
         // This is what we want
         //
-        *Pe32Data = (VOID *)(Section +1);
-        return EFI_SUCCESS;        
+        *Pe32Data = (VOID *) (Section + 1);
+        return EFI_SUCCESS;
       } else if (Section->Type == EFI_SECTION_COMPRESSION) {
         //
         // This is a compression set, expand it
         //
-        CompressionSection = (EFI_COMPRESSION_SECTION *)Section;
-        DecompressProtocol = NULL;
-        
+        CompressionSection  = (EFI_COMPRESSION_SECTION *) Section;
+        DecompressProtocol  = NULL;
+
         switch (CompressionSection->CompressionType) {
-          case EFI_STANDARD_COMPRESSION:                
-            Status = InstallTianoDecompress (&DecompressProtocol);
-            break;
-                  
-          case EFI_CUSTOMIZED_COMPRESSION:
-            //
-            // Load user customized compression protocol.
-            //            
-            Status = InstallCustomizedDecompress ((EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL **)&DecompressProtocol);            
-            break;
-          
-          case EFI_NOT_COMPRESSED:
-            //
-            // Need to support not compressed file
-            //
-            Status = EFI_UNSUPPORTED;
-            break;
-            
-          default:
-            Status = EFI_UNSUPPORTED;
+        case EFI_STANDARD_COMPRESSION:
+          Status = InstallTianoDecompress (&DecompressProtocol);
+          break;
+
+        case EFI_CUSTOMIZED_COMPRESSION:
+          //
+          // Load user customized compression protocol.
+          //
+          Status = InstallCustomizedDecompress ((EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL **) &DecompressProtocol);
+          break;
+
+        case EFI_NOT_COMPRESSED:
+          //
+          // Need to support not compressed file
+          //
+          Status = EFI_UNSUPPORTED;
+          break;
+
+        default:
+          Status = EFI_UNSUPPORTED;
         }
-        
         //
         // Unsupport compression type
         //
@@ -1204,79 +1174,77 @@ Returns:
           ASSERT_PEI_ERROR (PeiServices, Status);
           return EFI_NOT_FOUND;
         }
-        
+
         Status = (*PeiServices)->AllocatePages (
-                                   PeiServices,
-                                   EfiBootServicesData,  
-                                   1, //EFI_PAGE_SIZE,
-                                   &OldTopOfMemory
-                                   );
+                                  PeiServices,
+                                  EfiBootServicesData,
+                                  1,  // EFI_PAGE_SIZE,
+                                  &OldTopOfMemory
+                                  );
 
         if (EFI_ERROR (Status)) {
           return EFI_OUT_OF_RESOURCES;
         }
 
-        DstBufferSize = 0;
+        DstBufferSize     = 0;
         ScratchBufferSize = 0;
-        DstBuffer = (UINT8*)(UINTN)(OldTopOfMemory);
-        ScratchBuffer = (UINT8*)(UINTN)(OldTopOfMemory);
+        DstBuffer         = (UINT8 *) (UINTN) (OldTopOfMemory);
+        ScratchBuffer     = (UINT8 *) (UINTN) (OldTopOfMemory);
         Status = DecompressProtocol->GetInfo (
-                                       DecompressProtocol,
-                                       (UINT8 *)((EFI_COMPRESSION_SECTION*)Section + 1),
-                                       (UINT32) SectionLength - sizeof (EFI_COMPRESSION_SECTION),
-                                       (UINT32 *) &DstBufferSize,
-                                       (UINT32 *) &ScratchBufferSize
-                                       );           
-        
+                                      DecompressProtocol,
+                                      (UINT8 *) ((EFI_COMPRESSION_SECTION *) Section + 1),
+                                      (UINT32) SectionLength - sizeof (EFI_COMPRESSION_SECTION),
+                                      (UINT32 *) &DstBufferSize,
+                                      (UINT32 *) &ScratchBufferSize
+                                      );
+
         if (EFI_SUCCESS == Status) {
-            
           //
           // This is a compression set, expand it
           //
           Status = (*PeiServices)->AllocatePages (
-                                     PeiServices,
-                                     EfiBootServicesData,  
-                                     EFI_SIZE_TO_PAGES (ScratchBufferSize),
-                                     &OldTopOfMemory
-                                     );
+                                    PeiServices,
+                                    EfiBootServicesData,
+                                    EFI_SIZE_TO_PAGES (ScratchBufferSize),
+                                    &OldTopOfMemory
+                                    );
 
           if (EFI_ERROR (Status)) {
             return EFI_OUT_OF_RESOURCES;
           }
 
-          ScratchBuffer = (UINT8*)(UINTN)(OldTopOfMemory);
+          ScratchBuffer = (UINT8 *) (UINTN) (OldTopOfMemory);
 
           //
           // Allocate destination buffer
           //
-
           Status = (*PeiServices)->AllocatePages (
-                                     PeiServices,
-                                     EfiBootServicesData,  
-                                     EFI_SIZE_TO_PAGES (DstBufferSize),
-                                     &OldTopOfMemory
-                                     );
+                                    PeiServices,
+                                    EfiBootServicesData,
+                                    EFI_SIZE_TO_PAGES (DstBufferSize),
+                                    &OldTopOfMemory
+                                    );
 
           if (EFI_ERROR (Status)) {
             return EFI_OUT_OF_RESOURCES;
           }
 
-          DstBuffer = (UINT8*)(UINTN)(OldTopOfMemory);
+          DstBuffer = (UINT8 *) (UINTN) (OldTopOfMemory);
 
-                        
           //
           // Call decompress function
           //
           Status = DecompressProtocol->Decompress (
-                                         DecompressProtocol,
-                                         (CHAR8 *)((EFI_COMPRESSION_SECTION*)Section + 1),
-                                         (UINT32) SectionLength - sizeof (EFI_COMPRESSION_SECTION),
-                                         DstBuffer,
-                                         (UINT32) DstBufferSize,
-                                         ScratchBuffer,
-                                         (UINT32) ScratchBufferSize
-                                         );
-        }           
+                                        DecompressProtocol,
+                                        (CHAR8 *) ((EFI_COMPRESSION_SECTION *) Section + 1),
+                                        (UINT32) SectionLength - sizeof (EFI_COMPRESSION_SECTION),
+                                        DstBuffer,
+                                        (UINT32) DstBufferSize,
+                                        ScratchBuffer,
+                                        (UINT32) ScratchBufferSize
+                                        );
+        }
+
         if (EFI_ERROR (Status)) {
           //
           // Decompress failed
@@ -1284,87 +1252,85 @@ Returns:
           return EFI_NOT_FOUND;
         }
 
-        CmpSection = (EFI_COMMON_SECTION_HEADER *)DstBuffer;
-        if ( CmpSection->Type == EFI_SECTION_RAW ) {
-          
+        CmpSection = (EFI_COMMON_SECTION_HEADER *) DstBuffer;
+        if (CmpSection->Type == EFI_SECTION_RAW) {
           //
-          // Skip the section header and 
+          // Skip the section header and
           // adjust the pointer alignment to 16
           //
-          FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(DstBuffer + 16);
-          
-          if (FvHeader->Signature == EFI_FVH_SIGNATURE) {                                                                         
+          FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (DstBuffer + 16);
+
+          if (FvHeader->Signature == EFI_FVH_SIGNATURE) {
             FfsFileHeader = NULL;
-            Status =  PeiBuildHobFv (PeiServices, (EFI_PHYSICAL_ADDRESS)(UINTN)FvHeader, FvHeader->FvLength);
+            Status        = PeiBuildHobFv (PeiServices, (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader, FvHeader->FvLength);
             Status = (*PeiServices)->FfsFindNextFile (
-                                       PeiServices,
-                                       EFI_FV_FILETYPE_DXE_CORE,
-                                       FvHeader,
-                                       &FfsFileHeader
-                                       );    
+                                      PeiServices,
+                                      EFI_FV_FILETYPE_DXE_CORE,
+                                      FvHeader,
+                                      &FfsFileHeader
+                                      );
 
             if (EFI_ERROR (Status)) {
-              return EFI_NOT_FOUND;                  
-            }             
-            return PeiProcessFile (PeiServices, SectionType, FfsFileHeader, Pe32Data);                
+              return EFI_NOT_FOUND;
+            }
+
+            return PeiProcessFile (PeiServices, SectionType, FfsFileHeader, Pe32Data);
           }
         }
-        
         //
         // Decompress successfully.
         // Loop the decompressed data searching for expected section.
-        //        
-        CmpFileData = (VOID *)DstBuffer;
+        //
+        CmpFileData = (VOID *) DstBuffer;
         CmpFileSize = DstBufferSize;
         do {
-          CmpSectionLength = *(UINT32 *)(CmpSection->Size) & 0x00ffffff;
+          CmpSectionLength = *(UINT32 *) (CmpSection->Size) & 0x00ffffff;
           if (CmpSection->Type == EFI_SECTION_PE32) {
             //
             // This is what we want
             //
-            *Pe32Data = (VOID *)(CmpSection + 1);
+            *Pe32Data = (VOID *) (CmpSection + 1);
             return EFI_SUCCESS;
           }
-          OccupiedCmpSectionLength = GetOccupiedSize (CmpSectionLength, 4);
-          CmpSection = (EFI_COMMON_SECTION_HEADER *)((UINT8 *)CmpSection + OccupiedCmpSectionLength);
-        } while (CmpSection->Type != 0 && 
-          (UINTN)((UINT8 *)CmpSection - (UINT8 *)CmpFileData) < CmpFileSize);
+
+          OccupiedCmpSectionLength  = GetOccupiedSize (CmpSectionLength, 4);
+          CmpSection                = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) CmpSection + OccupiedCmpSectionLength);
+        } while (CmpSection->Type != 0 && (UINTN) ((UINT8 *) CmpSection - (UINT8 *) CmpFileData) < CmpFileSize);
       }
 
-                    
-      Section = (EFI_COMMON_SECTION_HEADER *)((UINT8 *)Section + OccupiedSectionLength);
-      FileSize = FfsFileHeader->Size[0] & 0xFF;
-      FileSize += (FfsFileHeader->Size[1] << 8) & 0xFF00; 
+      Section   = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) Section + OccupiedSectionLength);
+      FileSize  = FfsFileHeader->Size[0] & 0xFF;
+      FileSize += (FfsFileHeader->Size[1] << 8) & 0xFF00;
       FileSize += (FfsFileHeader->Size[2] << 16) & 0xFF0000;
       FileSize &= 0x00FFFFFF;
-    } while (Section->Type != 0 && (UINTN)((UINT8 *)Section - (UINT8 *)FfsFileHeader) < FileSize);
+    } while (Section->Type != 0 && (UINTN) ((UINT8 *) Section - (UINT8 *) FfsFileHeader) < FileSize);
 
-    // 
+    //
     // End of the decompression activity
-    //      
+    //
   } else {
-        
+
     Status = (*PeiServices)->FfsFindSectionData (
-                               PeiServices,
-                               EFI_SECTION_PE32,
-                               FfsFileHeader,
-                               &SectionData
-                               );
+                              PeiServices,
+                              EFI_SECTION_PE32,
+                              FfsFileHeader,
+                              &SectionData
+                              );
 
     if (EFI_ERROR (Status)) {
       Status = (*PeiServices)->FfsFindSectionData (
-                                 PeiServices,
-                                 EFI_SECTION_TE,
-                                 FfsFileHeader,
-                                 &SectionData
-                                 );
-      if (EFI_ERROR(Status)) {
+                                PeiServices,
+                                EFI_SECTION_TE,
+                                FfsFileHeader,
+                                &SectionData
+                                );
+      if (EFI_ERROR (Status)) {
         return Status;
-      }      
+      }
     }
   }
+
   *Pe32Data = SectionData;
 
-  return EFI_SUCCESS;  
+  return EFI_SUCCESS;
 }
-

@@ -26,27 +26,27 @@ Abstract:
 // Global ID for the Bus Specific Driver Override Protocol
 //
 #define EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL_GUID \
-  { 0x3bc1b285, 0x8a15, 0x4a82, 0xaa, 0xbf, 0x4d, 0x7d, 0x13, 0xfb, 0x32, 0x65 }
+  { \
+    0x3bc1b285, 0x8a15, 0x4a82, 0xaa, 0xbf, 0x4d, 0x7d, 0x13, 0xfb, 0x32, 0x65 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL);
 
 //
 // Prototypes for the Bus Specific Driver Override Protocol
 //
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_GET_DRIVER) (
-  IN EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL  *This,
-  IN OUT EFI_HANDLE                                         *DriverImageHandle
+  IN EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL              * This,
+  IN OUT EFI_HANDLE                                         * DriverImageHandle
   );
 
 //
 // Interface structure for the Bus Specific Driver Override Protocol
 //
-
 typedef struct _EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL {
-  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_GET_DRIVER  GetDriver;
+  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_GET_DRIVER GetDriver;
 } EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL;
 
 extern EFI_GUID gEfiBusSpecificDriverOverrideProtocolGuid;

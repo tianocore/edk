@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  // TBD defined in the EFI 2.0 specification??
+  // TBD defined in the Tiano specification??
 
   The Platform memory test protocol is used to provide platform specific
   information and functionality for memory test
@@ -23,10 +23,8 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(PlatformMemTest)
- 
+#include EFI_PROTOCOL_DEFINITION (PlatformMemTest)
 
-EFI_GUID gEfiPlatformMemTestGuid = EFI_PLATFORM_MEMTEST_PROTOCOL_GUID;
+EFI_GUID  gEfiPlatformMemTestGuid = EFI_PLATFORM_MEMTEST_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiPlatformMemTestGuid, "Platform Memory Test Protocol", "EFI 1.1 Platform MemTest protocol");
-
+EFI_GUID_STRING(&gEfiPlatformMemTestGuid, "Platform Memory Test Protocol", "Platform MemTest protocol");

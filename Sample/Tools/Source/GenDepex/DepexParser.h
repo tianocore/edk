@@ -15,16 +15,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
           This file contains the relevant declarations required
           to generate a binary Dependency File
 
-  Complies with EFI 2.0 C Coding Standards Document, version 0.31, 12 Dec 2000.
+  Complies with Tiano C Coding Standards Document, version 0.31, 12 Dec 2000.
 
 --*/
-#ifndef   _EFI_DEPEX_PARSER_H_
-#define   _EFI_DEPEX_PARSER_H_
+
+// TODO: fix comment to set correct module name: DepexParser.h
+#ifndef _EFI_DEPEX_PARSER_H_
+#define _EFI_DEPEX_PARSER_H_
 #include "GenDepex.h"
 #endif
-
-
-
-
-
-

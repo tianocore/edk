@@ -25,11 +25,11 @@ Revision History
 
 EFI_STATUS
 PeCoffLoaderRelocateImageEx (
-    IN UINT16      *Reloc,
-    IN OUT CHAR8   *Fixup, 
-    IN OUT CHAR8   **FixupData,
-    IN UINT64      Adjust
-    )
+  IN UINT16      *Reloc,
+  IN OUT CHAR8   *Fixup,
+  IN OUT CHAR8   **FixupData,
+  IN UINT64      Adjust
+  )
 /*++
 
 Routine Description:
@@ -48,7 +48,7 @@ Arguments:
 
 Returns:
 
-  None
+  EFI_UNSUPPORTED   - Unsupported now
 
 --*/
 {

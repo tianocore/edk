@@ -25,5 +25,5 @@ Abstract:
 EFI_GUID  gEfiPeiPerformanceHobGuid  = EFI_PEI_PERFORMANCE_HOB_GUID;
 
 EFI_GUID_STRING (&gEfiPeiPerformanceHobGuid, "PEI Performance HOB",
-                                             "Guid for PEI Performance Measurement HOB");
+                 "Guid for PEI Performance Measurement HOB");
 

@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  FindFv PPI GUID as defined in EFI 2.0
+  FindFv PPI GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(FindFv)
+#include EFI_PPI_DEFINITION (FindFv)
 
-EFI_GUID gEfiFindFvPpiGuid = EFI_FIND_FV_PPI_GUID;
+EFI_GUID  gEfiFindFvPpiGuid = EFI_FIND_FV_PPI_GUID;
 
 EFI_GUID_STRING(&gEfiFindFvPpiGuid, "FindFv", "FindFv PPI");

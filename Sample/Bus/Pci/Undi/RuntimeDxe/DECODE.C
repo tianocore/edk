@@ -18,6 +18,7 @@ Revision history:
 
 --*/
 
+// TODO: fix comment to add: Module Name: DECODE.C
 #include "undi32.h"
 
 #if UNDI_DEBUG
@@ -29,9 +30,9 @@ extern VOID (*break_pt) ();
 //
 // Global variables defined outside this file
 //
-extern PXE_SW_UNDI *pxe = 0;    // !pxe structure
-extern PXE_SW_UNDI *pxe_31 = 0;  // !pxe structure for 3.1 drivers
-extern UNDI32_DEV  *UNDI32DeviceList[MAX_NIC_INTERFACES];
+extern PXE_SW_UNDI  *pxe    = 0;  // !pxe structure
+extern PXE_SW_UNDI  *pxe_31 = 0;  // !pxe structure for 3.1 drivers
+extern UNDI32_DEV   *UNDI32DeviceList[MAX_NIC_INTERFACES];
 
 //
 // Global variables defined in this file
@@ -62,7 +63,7 @@ UNDI_CALL_TABLE api_table[PXE_OPCODE_LAST_VALID+1] = { \
 //
 
 VOID
-UNDI_GetState(
+UNDI_GetState (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -92,12 +93,11 @@ Returns:
 --*/
 {
   CdbPtr->StatFlags |= AdapterInfo->State;
-  return;
+  return ;
 }
 
-
 VOID
-UNDI_Start(
+UNDI_Start (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -139,25 +139,25 @@ Returns:
   //
   if (AdapterInfo->State != PXE_STATFLAGS_GET_STATE_STOPPED) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_ALREADY_STARTED;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_ALREADY_STARTED;
+    return ;
   }
 
   if (CdbPtr->CPBsize != sizeof(PXE_CPB_START) &&
       CdbPtr->CPBsize != sizeof(PXE_CPB_START_31)) {
 
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
-  CpbPtr = (PXE_CPB_START *)(UINTN)(CdbPtr->CPBaddr);
-  CpbPtr_31 = (PXE_CPB_START_31 *)(UINTN)(CdbPtr->CPBaddr);
+  CpbPtr    = (PXE_CPB_START *) (UINTN) (CdbPtr->CPBaddr);
+  CpbPtr_31 = (PXE_CPB_START_31 *) (UINTN) (CdbPtr->CPBaddr);
 
   if (AdapterInfo->VersionFlag == 0x30) {
-    AdapterInfo->Delay_30 = (bsptr_30)(UINTN)CpbPtr->Delay;
-    AdapterInfo->Virt2Phys_30 = (virtphys_30)(UINTN)CpbPtr->Virt2Phys;
-    AdapterInfo->Block_30 = (block_30)(UINTN)CpbPtr->Block;
+    AdapterInfo->Delay_30     = (bsptr_30) (UINTN) CpbPtr->Delay;
+    AdapterInfo->Virt2Phys_30 = (virtphys_30) (UINTN) CpbPtr->Virt2Phys;
+    AdapterInfo->Block_30     = (block_30) (UINTN) CpbPtr->Block;
     //
     // patch for old buggy 3.0 code:
     // In EFI1.0 undi used to provide the full (absolute) I/O address to the
@@ -167,41 +167,41 @@ Returns:
     // and memory address is abstracted by the device specific PciIoFncs and
     // UNDI only uses the offset values. Since UNDI3.0 cannot provide any
     // identification to SNP, SNP cannot use nic specific PciIoFncs callback!
-    // 
+    //
     // To fix this and make undi3.0 work with SNP in EFI1.1 we
     // use a TmpMemIo function that is defined in init.c
     // This breaks the runtime driver feature of undi, but what to do
     // if we have to provide the 3.0 compatibility (including the 3.0 bugs)
     //
-    // This TmpMemIo function also takes a UniqueId parameter 
+    // This TmpMemIo function also takes a UniqueId parameter
     // (as in undi3.1 design) and so initialize the UniqueId as well here
     // Note: AdapterInfo->Mem_Io_30 is just filled for consistency with other
     // parameters but never used, we only use Mem_Io field in the In/Out routines
     // inside e100b.c.
     //
-    AdapterInfo->Mem_Io_30 = (mem_io_30)(UINTN)CpbPtr->Mem_IO;
-    AdapterInfo->Mem_Io = (mem_io)(UINTN)TmpMemIo;
-    AdapterInfo->Unique_ID = (UINT64)AdapterInfo;
+    AdapterInfo->Mem_Io_30  = (mem_io_30) (UINTN) CpbPtr->Mem_IO;
+    AdapterInfo->Mem_Io     = (mem_io) (UINTN) TmpMemIo;
+    AdapterInfo->Unique_ID  = (UINT64) AdapterInfo;
 
   } else {
-    AdapterInfo->Delay = (bsptr)(UINTN)CpbPtr_31->Delay;
-    AdapterInfo->Virt2Phys = (virtphys)(UINTN)CpbPtr_31->Virt2Phys;
-    AdapterInfo->Block = (block)(UINTN)CpbPtr_31->Block;
-    AdapterInfo->Mem_Io = (mem_io)(UINTN)CpbPtr_31->Mem_IO;
+    AdapterInfo->Delay      = (bsptr) (UINTN) CpbPtr_31->Delay;
+    AdapterInfo->Virt2Phys  = (virtphys) (UINTN) CpbPtr_31->Virt2Phys;
+    AdapterInfo->Block      = (block) (UINTN) CpbPtr_31->Block;
+    AdapterInfo->Mem_Io     = (mem_io) (UINTN) CpbPtr_31->Mem_IO;
 
-    AdapterInfo->Map_Mem = (map_mem)(UINTN)CpbPtr_31->Map_Mem;
-    AdapterInfo->UnMap_Mem = (unmap_mem)(UINTN)CpbPtr_31->UnMap_Mem;
-    AdapterInfo->Sync_Mem = (sync_mem)(UINTN)CpbPtr_31->Sync_Mem;
-    AdapterInfo->Unique_ID = CpbPtr_31->Unique_ID;
+    AdapterInfo->Map_Mem    = (map_mem) (UINTN) CpbPtr_31->Map_Mem;
+    AdapterInfo->UnMap_Mem  = (unmap_mem) (UINTN) CpbPtr_31->UnMap_Mem;
+    AdapterInfo->Sync_Mem   = (sync_mem) (UINTN) CpbPtr_31->Sync_Mem;
+    AdapterInfo->Unique_ID  = CpbPtr_31->Unique_ID;
   }
 
   AdapterInfo->State = PXE_STATFLAGS_GET_STATE_STARTED;
 
-  return;
+  return ;
 }
 
 VOID
-UNDI_Stop(
+UNDI_Stop (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -228,29 +228,29 @@ Returns:
 {
   if (AdapterInfo->State == PXE_STATFLAGS_GET_STATE_INITIALIZED) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_NOT_SHUTDOWN;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_NOT_SHUTDOWN;
+    return ;
   }
 
-  AdapterInfo->Delay_30 = 0;
+  AdapterInfo->Delay_30     = 0;
   AdapterInfo->Virt2Phys_30 = 0;
-  AdapterInfo->Block_30 = 0;
+  AdapterInfo->Block_30     = 0;
 
-  AdapterInfo->Delay = 0;
-  AdapterInfo->Virt2Phys = 0;
-  AdapterInfo->Block = 0;
+  AdapterInfo->Delay        = 0;
+  AdapterInfo->Virt2Phys    = 0;
+  AdapterInfo->Block        = 0;
 
-  AdapterInfo->Map_Mem = 0;
-  AdapterInfo->UnMap_Mem = 0;
-  AdapterInfo->Sync_Mem = 0;
+  AdapterInfo->Map_Mem      = 0;
+  AdapterInfo->UnMap_Mem    = 0;
+  AdapterInfo->Sync_Mem     = 0;
 
-  AdapterInfo->State = PXE_STATFLAGS_GET_STATE_STOPPED;
+  AdapterInfo->State        = PXE_STATFLAGS_GET_STATE_STOPPED;
 
-  return;
+  return ;
 }
 
 VOID
-UNDI_GetInitInfo(
+UNDI_GetInitInfo (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -277,7 +277,7 @@ Returns:
 {
   PXE_DB_GET_INIT_INFO  *DbPtr;
 
-  DbPtr = (PXE_DB_GET_INIT_INFO *)(UINTN)(CdbPtr->DBaddr);
+  DbPtr = (PXE_DB_GET_INIT_INFO *) (UINTN) (CdbPtr->DBaddr);
 
   DbPtr->MemoryRequired = MEMORY_NEEDED;
   DbPtr->FrameDataLen = PXE_MAX_TXRX_UNIT_ETHER;
@@ -297,16 +297,16 @@ Returns:
 
   DbPtr->IFtype = PXE_IFTYPE_ETHERNET;
   DbPtr->Duplex = PXE_DUPLEX_ENABLE_FULL_SUPPORTED |
-            PXE_DUPLEX_FORCE_FULL_SUPPORTED;
+                  PXE_DUPLEX_FORCE_FULL_SUPPORTED;
   DbPtr->LoopBack = PXE_LOOPBACK_INTERNAL_SUPPORTED |
-              PXE_LOOPBACK_EXTERNAL_SUPPORTED;
+                    PXE_LOOPBACK_EXTERNAL_SUPPORTED;
 
   CdbPtr->StatFlags |= PXE_STATFLAGS_CABLE_DETECT_SUPPORTED;
-  return;
+  return ;
 }
 
 VOID
-UNDI_GetConfigInfo(
+UNDI_GetConfigInfo (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -333,22 +333,22 @@ Returns:
   UINT16                  Index;
   PXE_DB_GET_CONFIG_INFO  *DbPtr;
 
-  DbPtr = (PXE_DB_GET_CONFIG_INFO *)(UINTN)(CdbPtr->DBaddr);
+  DbPtr               = (PXE_DB_GET_CONFIG_INFO *) (UINTN) (CdbPtr->DBaddr);
 
-  DbPtr->pci.BusType = PXE_BUSTYPE_PCI;
-  DbPtr->pci.Bus = AdapterInfo->Bus;
-  DbPtr->pci.Device = AdapterInfo->Device;
+  DbPtr->pci.BusType  = PXE_BUSTYPE_PCI;
+  DbPtr->pci.Bus      = AdapterInfo->Bus;
+  DbPtr->pci.Device   = AdapterInfo->Device;
   DbPtr->pci.Function = AdapterInfo->Function;
 
   for (Index = 0; Index < MAX_PCI_CONFIG_LEN; Index++) {
     DbPtr->pci.Config.Dword[Index] = AdapterInfo->Config[Index];
   }
 
-  return;
+  return ;
 }
 
 VOID
-UNDI_Initialize(
+UNDI_Initialize (
   IN  PXE_CDB       *CdbPtr,
   NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -385,8 +385,8 @@ Returns:
   if ((CdbPtr->OpFlags != PXE_OPFLAGS_INITIALIZE_DETECT_CABLE) &&
       (CdbPtr->OpFlags != PXE_OPFLAGS_INITIALIZE_DO_NOT_DETECT_CABLE)) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
   //
@@ -394,42 +394,43 @@ Returns:
   //
   if (AdapterInfo->State == PXE_STATFLAGS_GET_STATE_INITIALIZED) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_ALREADY_INITIALIZED;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_ALREADY_INITIALIZED;
+    return ;
   }
 
-  CpbPtr = (PXE_CPB_INITIALIZE *)(UINTN)CdbPtr->CPBaddr;
-  DbPtr = (PXE_DB_INITIALIZE *)(UINTN)CdbPtr->DBaddr;
+  CpbPtr  = (PXE_CPB_INITIALIZE *) (UINTN) CdbPtr->CPBaddr;
+  DbPtr   = (PXE_DB_INITIALIZE *) (UINTN) CdbPtr->DBaddr;
 
   if (CpbPtr->MemoryLength < (UINT32) MEMORY_NEEDED) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CPB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CPB;
+    return ;
   }
 
   //
-  // default behaviour is to detect the cable, if the 3rd param is 1, 
+  // default behaviour is to detect the cable, if the 3rd param is 1,
   // do not do that
   //
-  AdapterInfo->CableDetect = (UINT8)((CdbPtr->OpFlags == (UINT16)PXE_OPFLAGS_INITIALIZE_DO_NOT_DETECT_CABLE) ? (UINT8)0 : (UINT8)1);
-  AdapterInfo->LinkSpeedReq = (UINT16)CpbPtr->LinkSpeed;
-  AdapterInfo->DuplexReq = CpbPtr->Duplex;
-  AdapterInfo->LoopBack = CpbPtr->LoopBack;
-  AdapterInfo->MemoryPtr = CpbPtr->MemoryAddr;
+  AdapterInfo->CableDetect = (UINT8) ((CdbPtr->OpFlags == (UINT16) PXE_OPFLAGS_INITIALIZE_DO_NOT_DETECT_CABLE) ? (UINT8) 0 : (UINT8) 1);
+  AdapterInfo->LinkSpeedReq = (UINT16) CpbPtr->LinkSpeed;
+  AdapterInfo->DuplexReq    = CpbPtr->Duplex;
+  AdapterInfo->LoopBack     = CpbPtr->LoopBack;
+  AdapterInfo->MemoryPtr    = CpbPtr->MemoryAddr;
   AdapterInfo->MemoryLength = CpbPtr->MemoryLength;
 
-  CdbPtr->StatCode = (PXE_STATCODE)E100bInit(AdapterInfo);
+  CdbPtr->StatCode          = (PXE_STATCODE) E100bInit (AdapterInfo);
 
   if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
   } else {
     AdapterInfo->State = PXE_STATFLAGS_GET_STATE_INITIALIZED;
   }
-  return;
+
+  return ;
 }
 
 VOID
-UNDI_Reset(
+UNDI_Reset (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -455,18 +456,19 @@ Returns:
       CdbPtr->OpFlags != PXE_OPFLAGS_RESET_DISABLE_FILTERS ) {
 
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
-  CdbPtr->StatCode = (UINT16)E100bReset(AdapterInfo,CdbPtr->OpFlags);
+  CdbPtr->StatCode = (UINT16) E100bReset (AdapterInfo, CdbPtr->OpFlags);
 
-  if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS)
+  if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
+  }
 }
 
 VOID
-UNDI_Shutdown(
+UNDI_Shutdown (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -495,18 +497,19 @@ Returns:
   //
   // do the shutdown stuff here
   //
-  CdbPtr->StatCode = (UINT16)E100bShutdown(AdapterInfo);
+  CdbPtr->StatCode = (UINT16) E100bShutdown (AdapterInfo);
 
   if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
   } else {
     AdapterInfo->State = PXE_STATFLAGS_GET_STATE_STARTED;
   }
-  return;
+
+  return ;
 }
 
 VOID
-UNDI_Interrupt(
+UNDI_Interrupt (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -537,48 +540,56 @@ Returns:
                                               PXE_OPFLAGS_INTERRUPT_SOFTWARE));
 
   switch (CdbPtr->OpFlags & PXE_OPFLAGS_INTERRUPT_OPMASK) {
-    case PXE_OPFLAGS_INTERRUPT_READ:
-      break;
-    case PXE_OPFLAGS_INTERRUPT_ENABLE:
-      if (IntMask == 0) {
-        CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-        CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-        return;
-      }
+  case PXE_OPFLAGS_INTERRUPT_READ:
+    break;
 
-      AdapterInfo->int_mask = IntMask;
-      E100bSetInterruptState(AdapterInfo);
-      break;
-
-    case PXE_OPFLAGS_INTERRUPT_DISABLE:
-      if (IntMask != 0) {
-        AdapterInfo->int_mask &= ~(IntMask);
-        E100bSetInterruptState(AdapterInfo);
-        break;
-      }
-      //
-      // else fall thru.
-      //
-    default:
+  case PXE_OPFLAGS_INTERRUPT_ENABLE:
+    if (IntMask == 0) {
       CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-      CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-      return;
+      CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+      return ;
+    }
+
+    AdapterInfo->int_mask = IntMask;
+    E100bSetInterruptState (AdapterInfo);
+    break;
+
+  case PXE_OPFLAGS_INTERRUPT_DISABLE:
+    if (IntMask != 0) {
+      AdapterInfo->int_mask &= ~(IntMask);
+      E100bSetInterruptState (AdapterInfo);
+      break;
+    }
+
+  //
+  // else fall thru.
+  //
+  default:
+    CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
-  if ( (AdapterInfo->int_mask & PXE_OPFLAGS_INTERRUPT_RECEIVE) != 0)
+  if ((AdapterInfo->int_mask & PXE_OPFLAGS_INTERRUPT_RECEIVE) != 0) {
     CdbPtr->StatFlags |= PXE_STATFLAGS_INTERRUPT_RECEIVE;
 
-  if ( (AdapterInfo->int_mask & PXE_OPFLAGS_INTERRUPT_TRANSMIT) != 0)
+  }
+
+  if ((AdapterInfo->int_mask & PXE_OPFLAGS_INTERRUPT_TRANSMIT) != 0) {
     CdbPtr->StatFlags |= PXE_STATFLAGS_INTERRUPT_TRANSMIT;
 
-  if ( (AdapterInfo->int_mask & PXE_OPFLAGS_INTERRUPT_COMMAND) != 0)
+  }
+
+  if ((AdapterInfo->int_mask & PXE_OPFLAGS_INTERRUPT_COMMAND) != 0) {
     CdbPtr->StatFlags |= PXE_STATFLAGS_INTERRUPT_COMMAND;
 
-  return;
+  }
+
+  return ;
 }
 
 VOID
-UNDI_RecFilter(
+UNDI_RecFilter (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -605,111 +616,115 @@ Returns:
   UINT16                  Index;
   UINT16                  copy_len;
   UINT8                   *ptr1;
-  UINT8                   *ptr2;        
-  OpFlags = CdbPtr->OpFlags;
-  NewFilter = (UINT16)(OpFlags & 0x1F);
+  UINT8                   *ptr2;
+  OpFlags   = CdbPtr->OpFlags;
+  NewFilter = (UINT16) (OpFlags & 0x1F);
 
   switch (OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_OPMASK) {
-    case PXE_OPFLAGS_RECEIVE_FILTER_READ:
+  case PXE_OPFLAGS_RECEIVE_FILTER_READ:
 
-      //
-      // not expecting a cpb, not expecting any filter bits
-      //
-      if ((NewFilter != 0) || (CdbPtr->CPBsize != 0))
-        goto BadCdb;
+    //
+    // not expecting a cpb, not expecting any filter bits
+    //
+    if ((NewFilter != 0) || (CdbPtr->CPBsize != 0)) {
+      goto BadCdb;
 
-      if ((NewFilter & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) == 0)
-        goto JustRead;
+    }
 
-      NewFilter |= AdapterInfo->Rx_Filter;
-      //
-      // all other flags are ignored except mcast_reset
-      //
-      break;
+    if ((NewFilter & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) == 0) {
+      goto JustRead;
 
-    case PXE_OPFLAGS_RECEIVE_FILTER_ENABLE:
-      //
-      // there should be atleast one other filter bit set.
-      //
-      if (NewFilter == 0) {
-        //
-        // nothing to enable
-        //
-        goto BadCdb;
-      }
+    }
 
-      if (CdbPtr->CPBsize != 0) {
-        //
-        // this must be a multicast address list!
-        // don't accept the list unless selective_mcast is set
-        // don't accept confusing mcast settings with this
-        //
-        if (
-          ((NewFilter & PXE_OPFLAGS_RECEIVE_FILTER_FILTERED_MULTICAST) == 0) ||
+    NewFilter |= AdapterInfo->Rx_Filter;
+    //
+    // all other flags are ignored except mcast_reset
+    //
+    break;
+
+  case PXE_OPFLAGS_RECEIVE_FILTER_ENABLE:
+    //
+    // there should be atleast one other filter bit set.
+    //
+    if (NewFilter == 0) {
+      //
+      // nothing to enable
+      //
+      goto BadCdb;
+    }
+
+    if (CdbPtr->CPBsize != 0) {
+      //
+      // this must be a multicast address list!
+      // don't accept the list unless selective_mcast is set
+      // don't accept confusing mcast settings with this
+      //
+      if (((NewFilter & PXE_OPFLAGS_RECEIVE_FILTER_FILTERED_MULTICAST) == 0) ||
           ((NewFilter & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) != 0) ||
           ((NewFilter & PXE_OPFLAGS_RECEIVE_FILTER_ALL_MULTICAST) != 0) ||
-          ((CdbPtr->CPBsize % sizeof(PXE_MAC_ADDR)) != 0)
-        ) {
-          goto BadCdb;
-        }
-
-        MacAddr = (UINT8 *)((UINTN)(CdbPtr->CPBaddr));
-        MacCount = CdbPtr->CPBsize / sizeof(PXE_MAC_ADDR);
-
-        for ( ; MacCount-- != 0; MacAddr += sizeof(PXE_MAC_ADDR)) {
-          if (MacAddr[0] != 0x01 || MacAddr[1] != 0x00 || MacAddr[2] != 0x5E || (MacAddr[3] & 0x80) != 0) {
-            CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-            CdbPtr->StatCode = PXE_STATCODE_INVALID_CPB;
-            return;
-          }
-        }
+          ((CdbPtr->CPBsize % sizeof (PXE_MAC_ADDR)) != 0) ) {
+        goto BadCdb;
       }
 
-      //
-      // check selective mcast case enable case
-      //
-      if ( (OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_FILTERED_MULTICAST) != 0) {
-        if ( ((OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) != 0) ||
-           ((OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_ALL_MULTICAST) != 0) )
-          goto BadCdb;
+      MacAddr   = (UINT8 *) ((UINTN) (CdbPtr->CPBaddr));
+      MacCount  = CdbPtr->CPBsize / sizeof (PXE_MAC_ADDR);
 
-        //
-        // if no cpb, make sure we have an old list
-        //
-        if ((CdbPtr->CPBsize == 0)  && (AdapterInfo->mcast_list.list_len == 0))
-          goto BadCdb;
+      for (; MacCount-- != 0; MacAddr += sizeof (PXE_MAC_ADDR)) {
+        if (MacAddr[0] != 0x01 || MacAddr[1] != 0x00 || MacAddr[2] != 0x5E || (MacAddr[3] & 0x80) != 0) {
+          CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
+          CdbPtr->StatCode  = PXE_STATCODE_INVALID_CPB;
+          return ;
+        }
       }
+    }
 
+    //
+    // check selective mcast case enable case
+    //
+    if ((OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_FILTERED_MULTICAST) != 0) {
+      if (((OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) != 0) ||
+          ((OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_ALL_MULTICAST) != 0) ) {
+        goto BadCdb;
+
+      }
       //
-      // if you want to enable anything, you got to have unicast
-      // and you have what you already enabled!
+      // if no cpb, make sure we have an old list
       //
-      NewFilter |= (PXE_OPFLAGS_RECEIVE_FILTER_UNICAST | AdapterInfo->Rx_Filter);
+      if ((CdbPtr->CPBsize == 0) && (AdapterInfo->mcast_list.list_len == 0)) {
+        goto BadCdb;
+      }
+    }
+    //
+    // if you want to enable anything, you got to have unicast
+    // and you have what you already enabled!
+    //
+    NewFilter |= (PXE_OPFLAGS_RECEIVE_FILTER_UNICAST | AdapterInfo->Rx_Filter);
 
-      break;
+    break;
 
-    case PXE_OPFLAGS_RECEIVE_FILTER_DISABLE:
+  case PXE_OPFLAGS_RECEIVE_FILTER_DISABLE:
 
-      //
-      // mcast list not expected, i.e. no cpb here!
-      //
-      if (CdbPtr->CPBsize != PXE_CPBSIZE_NOT_USED)
-        goto BadCdb;  // db with all_multi??
-
-      NewFilter = (UINT16)((~(CdbPtr->OpFlags & 0x1F)) & AdapterInfo->Rx_Filter);
-
-      break;
-
-    default:
+    //
+    // mcast list not expected, i.e. no cpb here!
+    //
+    if (CdbPtr->CPBsize != PXE_CPBSIZE_NOT_USED) {
       goto BadCdb;
+    }
+
+    NewFilter = (UINT16) ((~(CdbPtr->OpFlags & 0x1F)) & AdapterInfo->Rx_Filter);
+
+    break;
+
+  default:
+    goto BadCdb;
   }
 
-  if ( (OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) != 0) {
+  if ((OpFlags & PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST) != 0) {
     AdapterInfo->mcast_list.list_len = 0;
     NewFilter &= (~PXE_OPFLAGS_RECEIVE_FILTER_FILTERED_MULTICAST);
   }
 
-  E100bSetfilter(AdapterInfo, NewFilter, CdbPtr->CPBaddr, CdbPtr->CPBsize);
+  E100bSetfilter (AdapterInfo, NewFilter, CdbPtr->CPBaddr, CdbPtr->CPBsize);
 
 JustRead:
   //
@@ -720,36 +735,41 @@ JustRead:
     // copy the mc list to db
     //
 
-    DbPtr = (PXE_DB_RECEIVE_FILTERS *)(UINTN)CdbPtr->DBaddr;
-    ptr1 = (UINT8 *)(&DbPtr->MCastList[0]);
+    DbPtr = (PXE_DB_RECEIVE_FILTERS *) (UINTN) CdbPtr->DBaddr;
+    ptr1  = (UINT8 *) (&DbPtr->MCastList[0]);
 
     //
     // DbPtr->mc_count = AdapterInfo->mcast_list.list_len;
     //
-    copy_len = (UINT16)(AdapterInfo->mcast_list.list_len * PXE_MAC_LENGTH);
+    copy_len = (UINT16) (AdapterInfo->mcast_list.list_len * PXE_MAC_LENGTH);
 
-    if (copy_len > CdbPtr->DBsize)
+    if (copy_len > CdbPtr->DBsize) {
       copy_len = CdbPtr->DBsize;
 
-    ptr2 = (UINT8 *)(&AdapterInfo->mcast_list.mc_list[0]);
-    for (Index=0; Index<copy_len; Index++)
+    }
+
+    ptr2 = (UINT8 *) (&AdapterInfo->mcast_list.mc_list[0]);
+    for (Index = 0; Index < copy_len; Index++) {
       ptr1[Index] = ptr2[Index];
+    }
   }
   //
   // give the stat flags here
   //
-  if (AdapterInfo->Receive_Started)
+  if (AdapterInfo->Receive_Started) {
     CdbPtr->StatFlags |= AdapterInfo->Rx_Filter;
 
-  return;
+  }
+
+  return ;
 
 BadCdb:
   CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-  CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
+  CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
 }
 
 VOID
-UNDI_StnAddr(
+UNDI_StnAddr (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -777,40 +797,48 @@ Returns:
     // configure the permanent address.
     // change the AdapterInfo->CurrentNodeAddress field.
     //
-    if (EfiCompareMem(&AdapterInfo->CurrentNodeAddress[0],
-            &AdapterInfo->PermNodeAddress[0], PXE_MAC_LENGTH) != 0) {
-      for (Index=0; Index<PXE_MAC_LENGTH; Index++) {
+    if (EfiCompareMem (
+          &AdapterInfo->CurrentNodeAddress[0],
+          &AdapterInfo->PermNodeAddress[0],
+          PXE_MAC_LENGTH
+          ) != 0) {
+      for (Index = 0; Index < PXE_MAC_LENGTH; Index++) {
         AdapterInfo->CurrentNodeAddress[Index] = AdapterInfo->PermNodeAddress[Index];
       }
-      E100bSetupIAAddr(AdapterInfo);
+
+      E100bSetupIAAddr (AdapterInfo);
     }
   }
+
   if (CdbPtr->CPBaddr != (UINT64) 0) {
-    CpbPtr = (PXE_CPB_STATION_ADDRESS *)(UINTN)(CdbPtr->CPBaddr);
+    CpbPtr = (PXE_CPB_STATION_ADDRESS *) (UINTN) (CdbPtr->CPBaddr);
     //
     // configure the new address
     //
-    for (Index=0; Index<PXE_MAC_LENGTH; Index++) {
+    for (Index = 0; Index < PXE_MAC_LENGTH; Index++) {
       AdapterInfo->CurrentNodeAddress[Index] = CpbPtr->StationAddr[Index];
     }
-    E100bSetupIAAddr(AdapterInfo);
+
+    E100bSetupIAAddr (AdapterInfo);
   }
-  if (CdbPtr->DBaddr != (UINT64)0) {
-    DbPtr = (PXE_DB_STATION_ADDRESS *)(UINTN)(CdbPtr->DBaddr);
+
+  if (CdbPtr->DBaddr != (UINT64) 0) {
+    DbPtr = (PXE_DB_STATION_ADDRESS *) (UINTN) (CdbPtr->DBaddr);
     //
     // fill it with the new values
     //
-    for (Index=0; Index<PXE_MAC_LENGTH; Index++) {
-      DbPtr->StationAddr[Index] = AdapterInfo->CurrentNodeAddress[Index];
+    for (Index = 0; Index < PXE_MAC_LENGTH; Index++) {
+      DbPtr->StationAddr[Index]   = AdapterInfo->CurrentNodeAddress[Index];
       DbPtr->BroadcastAddr[Index] = AdapterInfo->BroadcastNodeAddress[Index];
       DbPtr->PermanentAddr[Index] = AdapterInfo->PermNodeAddress[Index];
     }
   }
-  return;
+
+  return ;
 }
 
 VOID
-UNDI_Statistics(
+UNDI_Statistics (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -841,27 +869,26 @@ Returns:
 
 --*/
 {
-  if ((CdbPtr->OpFlags & ~(PXE_OPFLAGS_STATISTICS_RESET)) != 0) {
+  if ((CdbPtr->OpFlags &~(PXE_OPFLAGS_STATISTICS_RESET)) != 0) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
   if ((CdbPtr->OpFlags & PXE_OPFLAGS_STATISTICS_RESET) != 0) {
     //
     // Reset the statistics
     //
-    CdbPtr->StatCode = (UINT16)E100bStatistics(AdapterInfo, 0, 0);
+    CdbPtr->StatCode = (UINT16) E100bStatistics (AdapterInfo, 0, 0);
   } else {
-    CdbPtr->StatCode = (UINT16)E100bStatistics(AdapterInfo, CdbPtr->DBaddr, CdbPtr->DBsize);
+    CdbPtr->StatCode = (UINT16) E100bStatistics (AdapterInfo, CdbPtr->DBaddr, CdbPtr->DBsize);
   }
 
-  return;
+  return ;
 }
 
-
 VOID
-UNDI_ip2mac(
+UNDI_ip2mac (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -884,54 +911,46 @@ Returns:
 {
   PXE_CPB_MCAST_IP_TO_MAC *CpbPtr;
   PXE_DB_MCAST_IP_TO_MAC  *DbPtr;
-  //UINT32                  IPAddr;
   UINT8                   *TmpPtr;
 
-  CpbPtr = (PXE_CPB_MCAST_IP_TO_MAC *)(UINTN)CdbPtr->CPBaddr;
-  DbPtr = (PXE_DB_MCAST_IP_TO_MAC *)(UINTN)CdbPtr->DBaddr;
+  CpbPtr  = (PXE_CPB_MCAST_IP_TO_MAC *) (UINTN) CdbPtr->CPBaddr;
+  DbPtr   = (PXE_DB_MCAST_IP_TO_MAC *) (UINTN) CdbPtr->DBaddr;
 
   if ((CdbPtr->OpFlags & PXE_OPFLAGS_MCAST_IPV6_TO_MAC) != 0) {
-
     //
     // for now this is not supported
     //
-
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_UNSUPPORTED;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_UNSUPPORTED;
+    return ;
   }
 
-  TmpPtr = (UINT8 *)(&CpbPtr->IP.IPv4);
-  //IPAddr = CpbPtr->IP.IPv4;
-  //TmpPtr = (UINT8 *)(&IPAddr);
-
+  TmpPtr = (UINT8 *) (&CpbPtr->IP.IPv4);
   //
   // check if the ip given is a mcast IP
   //
   if ((TmpPtr[0] & 0xF0) != 0xE0) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CPB;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CPB;
   }
-
   //
   // take the last 23 bits in IP.
   // be very careful. accessing word on a non-word boundary will hang motherboard codenamed Big Sur
   // casting the mac array (in the middle) to a UINT32 pointer and accessing
   // the UINT32 content hung the system...
   //
-
   DbPtr->MAC[0] = 0x01;
   DbPtr->MAC[1] = 0x00;
   DbPtr->MAC[2] = 0x5e;
-  DbPtr->MAC[3] = (UINT8)(TmpPtr[1] & 0x7f);
-  DbPtr->MAC[4] = (UINT8)TmpPtr[2];
-  DbPtr->MAC[5] = (UINT8)TmpPtr[3];
+  DbPtr->MAC[3] = (UINT8) (TmpPtr[1] & 0x7f);
+  DbPtr->MAC[4] = (UINT8) TmpPtr[2];
+  DbPtr->MAC[5] = (UINT8) TmpPtr[3];
 
-  return;
+  return ;
 }
 
 VOID
-UNDI_NVData(
+UNDI_NVData (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -959,27 +978,30 @@ Returns:
 
     if ((CdbPtr->DBsize == PXE_DBSIZE_NOT_USED) != 0) {
       CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-      CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-      return;
+      CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+      return ;
     }
 
-    DbPtr = (PXE_DB_NVDATA *)(UINTN)CdbPtr->DBaddr;
+    DbPtr = (PXE_DB_NVDATA *) (UINTN) CdbPtr->DBaddr;
 
-    for (Index = 0; Index < MAX_PCI_CONFIG_LEN; Index++)
+    for (Index = 0; Index < MAX_PCI_CONFIG_LEN; Index++) {
       DbPtr->Data.Dword[Index] = AdapterInfo->NVData[Index];
+
+    }
 
   } else {
     //
     // no write for now
     //
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_UNSUPPORTED;
+    CdbPtr->StatCode  = PXE_STATCODE_UNSUPPORTED;
   }
-  return;
+
+  return ;
 }
 
 VOID
-UNDI_Status(
+UNDI_Status (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -1029,12 +1051,12 @@ Returns:
   // Fill in size of next available receive packet and
   // reserved field in caller's DB storage.
   //
-  DbPtr = (PXE_DB_GET_STATUS *)(UINTN)CdbPtr->DBaddr;
+  DbPtr = (PXE_DB_GET_STATUS *) (UINTN) CdbPtr->DBaddr;
 
-  if (CdbPtr->DBsize > 0 && CdbPtr->DBsize < sizeof(UINT32) * 2) {
-    EfiCopyMem(DbPtr, &TmpGetStatus, CdbPtr->DBsize);
+  if (CdbPtr->DBsize > 0 && CdbPtr->DBsize < sizeof (UINT32) * 2) {
+    EfiCopyMem (DbPtr, &TmpGetStatus, CdbPtr->DBsize);
   } else {
-    EfiCopyMem(DbPtr, &TmpGetStatus, sizeof(UINT32) * 2);
+    EfiCopyMem (DbPtr, &TmpGetStatus, sizeof (UINT32) * 2);
   }
 
   //
@@ -1046,78 +1068,78 @@ Returns:
     //
     if (CdbPtr->DBsize == 0) {
       CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-      CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-      return;
+      CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+      return ;
     }
 
     //
     // remember this b4 we overwrite
     //
-    NumEntries = (UINT16)(CdbPtr->DBsize - sizeof(UINT64));
+    NumEntries = (UINT16) (CdbPtr->DBsize - sizeof (UINT64));
 
     //
     // We already filled in 2 UINT32s.
     //
-    CdbPtr->DBsize = sizeof(UINT32) * 2;
+    CdbPtr->DBsize = sizeof (UINT32) * 2;
 
     //
     // will claim any hanging free CBs
     //
-    CheckCBList(AdapterInfo);
+    CheckCBList (AdapterInfo);
 
     if (AdapterInfo->xmit_done_head == AdapterInfo->xmit_done_tail) {
       CdbPtr->StatFlags |= PXE_STATFLAGS_GET_STATUS_TXBUF_QUEUE_EMPTY;
     } else {
-      for (Index=0; NumEntries >= sizeof(UINT64); Index++, NumEntries -= sizeof(UINT64)) {
+      for (Index = 0; NumEntries >= sizeof (UINT64); Index++, NumEntries -= sizeof (UINT64)) {
         if (AdapterInfo->xmit_done_head != AdapterInfo->xmit_done_tail) {
-          DbPtr->TxBuffer[Index] = AdapterInfo->xmit_done[AdapterInfo->xmit_done_head];
-          AdapterInfo->xmit_done_head = next(AdapterInfo->xmit_done_head);
-          CdbPtr->DBsize += sizeof(UINT64);
+          DbPtr->TxBuffer[Index]      = AdapterInfo->xmit_done[AdapterInfo->xmit_done_head];
+          AdapterInfo->xmit_done_head = next (AdapterInfo->xmit_done_head);
+          CdbPtr->DBsize += sizeof (UINT64);
         } else {
           break;
         }
       }
     }
 
-    //
-    // do we have more to recycle???
-    //
-    if (AdapterInfo->xmit_done_head != AdapterInfo->xmit_done_tail)
+    if (AdapterInfo->xmit_done_head != AdapterInfo->xmit_done_tail) {
       CdbPtr->StatFlags |= PXE_STATFLAGS_DB_WRITE_TRUNCATED;
 
+    }
     //
     // check for a receive buffer and give it's size in db
     //
   }
-
   //
   //
   //
   if ((CdbPtr->OpFlags & PXE_OPFLAGS_GET_INTERRUPT_STATUS) != 0) {
 
-    Status = InWord(AdapterInfo, AdapterInfo->ioaddr + SCBStatus);
+    Status = InWord (AdapterInfo, AdapterInfo->ioaddr + SCBStatus);
     AdapterInfo->Int_Status |= Status;
 
     //
-    //acknoledge the interrupts
+    // acknoledge the interrupts
     //
-    OutWord(AdapterInfo, (UINT16)(Status & 0xfc00), (UINT32)(AdapterInfo->ioaddr + SCBStatus));
+    OutWord (AdapterInfo, (UINT16) (Status & 0xfc00), (UINT32) (AdapterInfo->ioaddr + SCBStatus));
 
     //
     // report all the outstanding interrupts
     //
     Status = AdapterInfo->Int_Status;
-    if ((Status & SCB_STATUS_FR) != 0)
+    if ((Status & SCB_STATUS_FR) != 0) {
       CdbPtr->StatFlags |= PXE_STATFLAGS_GET_STATUS_RECEIVE;
-    if ((Status & SCB_STATUS_SWI) != 0)
+    }
+
+    if ((Status & SCB_STATUS_SWI) != 0) {
       CdbPtr->StatFlags |= PXE_STATFLAGS_GET_STATUS_SOFTWARE;
+    }
   }
 
-  return;
+  return ;
 }
 
 VOID
-UNDI_FillHeader(
+UNDI_FillHeader (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -1137,63 +1159,62 @@ Returns:
 
 --*/
 {
-  PXE_CPB_FILL_HEADER            *Cpb;
-  PXE_CPB_FILL_HEADER_FRAGMENTED *Cpbf;
-  EtherHeader                    *MacHeader;
-  UINTN                          Index;
+  PXE_CPB_FILL_HEADER             *Cpb;
+  PXE_CPB_FILL_HEADER_FRAGMENTED  *Cpbf;
+  EtherHeader                     *MacHeader;
+  UINTN                           Index;
 
   if (CdbPtr->CPBsize == PXE_CPBSIZE_NOT_USED) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
   if ((CdbPtr->OpFlags & PXE_OPFLAGS_FILL_HEADER_FRAGMENTED) != 0) {
-    Cpbf = (PXE_CPB_FILL_HEADER_FRAGMENTED *)(UINTN)CdbPtr->CPBaddr;
+    Cpbf = (PXE_CPB_FILL_HEADER_FRAGMENTED *) (UINTN) CdbPtr->CPBaddr;
 
     //
     // assume 1st fragment is big enough for the mac header
     //
-    if ( (Cpbf->FragCnt == 0) || 
-         (Cpbf->FragDesc[0].FragLen < PXE_MAC_HEADER_LEN_ETHER) ) {
+    if ((Cpbf->FragCnt == 0) || (Cpbf->FragDesc[0].FragLen < PXE_MAC_HEADER_LEN_ETHER)) {
       //
       // no buffers given
       //
       CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-      CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-      return;
+      CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+      return ;
     }
 
-    MacHeader = (EtherHeader *)(UINTN)Cpbf->FragDesc[0].FragAddr;
+    MacHeader = (EtherHeader *) (UINTN) Cpbf->FragDesc[0].FragAddr;
     //
     // we don't swap the protocol bytes
     //
     MacHeader->type = Cpbf->Protocol;
 
-    for (Index=0; Index<PXE_HWADDR_LEN_ETHER; Index++) {
-      MacHeader->dest_addr[Index] =  Cpbf->DestAddr[Index];
-      MacHeader->src_addr[Index] = Cpbf->SrcAddr[Index];
+    for (Index = 0; Index < PXE_HWADDR_LEN_ETHER; Index++) {
+      MacHeader->dest_addr[Index] = Cpbf->DestAddr[Index];
+      MacHeader->src_addr[Index]  = Cpbf->SrcAddr[Index];
     }
   } else {
-    Cpb = (PXE_CPB_FILL_HEADER *)(UINTN)CdbPtr->CPBaddr;
+    Cpb       = (PXE_CPB_FILL_HEADER *) (UINTN) CdbPtr->CPBaddr;
 
-    MacHeader = (EtherHeader *)(UINTN)Cpb->MediaHeader;
+    MacHeader = (EtherHeader *) (UINTN) Cpb->MediaHeader;
     //
     // we don't swap the protocol bytes
     //
     MacHeader->type = Cpb->Protocol;
 
-    for (Index=0; Index<PXE_HWADDR_LEN_ETHER; Index++) {
-      MacHeader->dest_addr[Index] =  Cpb->DestAddr[Index];
-      MacHeader->src_addr[Index] = Cpb->SrcAddr[Index];
+    for (Index = 0; Index < PXE_HWADDR_LEN_ETHER; Index++) {
+      MacHeader->dest_addr[Index] = Cpb->DestAddr[Index];
+      MacHeader->src_addr[Index]  = Cpb->SrcAddr[Index];
     }
   }
 
-  return;
+  return ;
 }
 
 VOID
-UNDI_Transmit(
+UNDI_Transmit (
   IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
@@ -1230,21 +1251,22 @@ Returns:
 
   if (CdbPtr->CPBsize == PXE_CPBSIZE_NOT_USED) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
-  CdbPtr->StatCode = (PXE_STATCODE)E100bTransmit(AdapterInfo, CdbPtr->CPBaddr, CdbPtr->OpFlags);
+  CdbPtr->StatCode = (PXE_STATCODE) E100bTransmit (AdapterInfo, CdbPtr->CPBaddr, CdbPtr->OpFlags);
 
   if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
   }
-  return;
+
+  return ;
 }
 
 VOID
-UNDI_Receive(
-  IN  PXE_CDB *CdbPtr,
+UNDI_Receive (
+  IN  PXE_CDB           *CdbPtr,
   IN  NIC_DATA_INSTANCE *AdapterInfo
   )
 /*++
@@ -1270,21 +1292,23 @@ Returns:
   //
   if (!AdapterInfo->Receive_Started) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_NOT_INITIALIZED;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_NOT_INITIALIZED;
+    return ;
   }
 
-  cpbptr = (PXE_CPB_RECEIVE *)(UINTN)CdbPtr->CPBaddr;
+  cpbptr            = (PXE_CPB_RECEIVE *) (UINTN) CdbPtr->CPBaddr;
 
-  CdbPtr->StatCode = (UINT16)E100bReceive(AdapterInfo, CdbPtr->CPBaddr, CdbPtr->DBaddr);
-  if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS)
+  CdbPtr->StatCode  = (UINT16) E100bReceive (AdapterInfo, CdbPtr->CPBaddr, CdbPtr->DBaddr);
+  if (CdbPtr->StatCode != PXE_STATCODE_SUCCESS) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
 
-  return;
+  }
+
+  return ;
 }
 
 VOID
-UNDI_APIEntry_old(
+UNDI_APIEntry_old (
   IN  UINT64 cdb
   )
 /*++
@@ -1303,28 +1327,35 @@ Returns:
   None
 
 --*/
+// TODO:    cdb - add argument and description to function comment
 {
   PXE_CDB           *CdbPtr;
   NIC_DATA_INSTANCE *AdapterInfo;
 
-  if (cdb == (UINT64) 0)
-    return;
+  if (cdb == (UINT64) 0) {
+    return ;
 
-  CdbPtr = (PXE_CDB *)(UINTN)cdb;
+  }
+
+  CdbPtr = (PXE_CDB *) (UINTN) cdb;
 
   if (CdbPtr->IFnum >= pxe->IFcnt) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
-    AdapterInfo = &(UNDI32DeviceList[CdbPtr->IFnum]->NicInfo);
-  AdapterInfo->VersionFlag = 0x30;  // entering from older entry point
-  UNDI_APIEntry_Common(cdb);
+  AdapterInfo               = &(UNDI32DeviceList[CdbPtr->IFnum]->NicInfo);
+  
+  //
+  // entering from older entry point
+  //
+  AdapterInfo->VersionFlag  = 0x30;
+  UNDI_APIEntry_Common (cdb);
 }
 
 VOID
-UNDI_APIEntry_new(
+UNDI_APIEntry_new (
   IN  UINT64 cdb
   )
 /*++
@@ -1343,28 +1374,34 @@ Returns:
   None
 
 --*/
+// TODO:    cdb - add argument and description to function comment
 {
   PXE_CDB           *CdbPtr;
   NIC_DATA_INSTANCE *AdapterInfo;
 
-  if (cdb == (UINT64) 0)
-    return;
+  if (cdb == (UINT64) 0) {
+    return ;
 
-  CdbPtr = (PXE_CDB *)(UINTN)cdb;
+  }
+
+  CdbPtr = (PXE_CDB *) (UINTN) cdb;
 
   if (CdbPtr->IFnum >= pxe_31->IFcnt) {
     CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+    CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+    return ;
   }
 
-    AdapterInfo = &(UNDI32DeviceList[CdbPtr->IFnum]->NicInfo);
-  AdapterInfo->VersionFlag = 0x31;  // entering from older entry point
-  UNDI_APIEntry_Common(cdb);
+  AdapterInfo               = &(UNDI32DeviceList[CdbPtr->IFnum]->NicInfo);
+  //
+  // entering from older entry point
+  //
+  AdapterInfo->VersionFlag  = 0x31;
+  UNDI_APIEntry_Common (cdb);
 }
 
 VOID
-UNDI_APIEntry_Common(
+UNDI_APIEntry_Common (
   IN  UINT64 cdb
   )
 /*++
@@ -1383,32 +1420,37 @@ Returns:
   None
 
 --*/
+// TODO:    cdb - add argument and description to function comment
 {
-  PXE_CDB             *CdbPtr;
-  NIC_DATA_INSTANCE   *AdapterInfo;
-  UNDI_CALL_TABLE     *tab_ptr;
+  PXE_CDB           *CdbPtr;
+  NIC_DATA_INSTANCE *AdapterInfo;
+  UNDI_CALL_TABLE   *tab_ptr;
 
-  CdbPtr = (PXE_CDB *)(UINTN)cdb;
+  CdbPtr = (PXE_CDB *) (UINTN) cdb;
 
   //
   // check the OPCODE range
   //
   if ((CdbPtr->OpCode > PXE_OPCODE_LAST_VALID) ||
-    (CdbPtr->StatCode != PXE_STATCODE_INITIALIZE) ||
-    (CdbPtr->StatFlags != PXE_STATFLAGS_INITIALIZE) ||
-    (CdbPtr->IFnum >= pxe_31->IFcnt))
-      goto badcdb;
+      (CdbPtr->StatCode != PXE_STATCODE_INITIALIZE) ||
+      (CdbPtr->StatFlags != PXE_STATFLAGS_INITIALIZE) ||
+      (CdbPtr->IFnum >= pxe_31->IFcnt) ) {
+    goto badcdb;
+
+  }
 
   if (CdbPtr->CPBsize == PXE_CPBSIZE_NOT_USED) {
-    if (CdbPtr->CPBaddr != PXE_CPBADDR_NOT_USED)
+    if (CdbPtr->CPBaddr != PXE_CPBADDR_NOT_USED) {
       goto badcdb;
+    }
   } else if (CdbPtr->CPBaddr == PXE_CPBADDR_NOT_USED) {
     goto badcdb;
   }
 
   if (CdbPtr->DBsize == PXE_DBSIZE_NOT_USED) {
-    if (CdbPtr->DBaddr != PXE_DBADDR_NOT_USED)
+    if (CdbPtr->DBaddr != PXE_DBADDR_NOT_USED) {
       goto badcdb;
+    }
   } else if (CdbPtr->DBaddr == PXE_DBADDR_NOT_USED) {
     goto badcdb;
   }
@@ -1419,35 +1461,41 @@ Returns:
   //
   tab_ptr = &api_table[CdbPtr->OpCode];
 
-  if (tab_ptr->cpbsize != (UINT16)(DONT_CHECK) && tab_ptr->cpbsize != CdbPtr->CPBsize)
+  if (tab_ptr->cpbsize != (UINT16) (DONT_CHECK) && tab_ptr->cpbsize != CdbPtr->CPBsize) {
     goto badcdb;
-  if (tab_ptr->dbsize != (UINT16)(DONT_CHECK) && tab_ptr->dbsize != CdbPtr->DBsize)
+  }
+
+  if (tab_ptr->dbsize != (UINT16) (DONT_CHECK) && tab_ptr->dbsize != CdbPtr->DBsize) {
     goto badcdb;
-  if (tab_ptr->opflags != (UINT16)(DONT_CHECK) && tab_ptr->opflags != CdbPtr->OpFlags)
+  }
+
+  if (tab_ptr->opflags != (UINT16) (DONT_CHECK) && tab_ptr->opflags != CdbPtr->OpFlags) {
     goto badcdb;
+
+  }
 
   AdapterInfo = &(UNDI32DeviceList[CdbPtr->IFnum]->NicInfo);
 
   //
   // check if UNDI_State is valid for this call
   //
-  if (tab_ptr->state != (UINT16)(-1)) {
+  if (tab_ptr->state != (UINT16) (-1)) {
     //
     // should atleast be started
     //
     if (AdapterInfo->State == PXE_STATFLAGS_GET_STATE_STOPPED) {
       CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-      CdbPtr->StatCode = PXE_STATCODE_NOT_STARTED;
-      return;
+      CdbPtr->StatCode  = PXE_STATCODE_NOT_STARTED;
+      return ;
     }
     //
     // check if it should be initialized
     //
     if (tab_ptr->state == 2) {
       if (AdapterInfo->State != PXE_STATFLAGS_GET_STATE_INITIALIZED) {
-        CdbPtr->StatCode = PXE_STATCODE_NOT_INITIALIZED;
+        CdbPtr->StatCode  = PXE_STATCODE_NOT_INITIALIZED;
         CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-        return;
+        return ;
       }
     }
   }
@@ -1455,20 +1503,21 @@ Returns:
   // set the return variable for success case here
   //
   CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_COMPLETE;
-  CdbPtr->StatCode = PXE_STATCODE_SUCCESS;
+  CdbPtr->StatCode  = PXE_STATCODE_SUCCESS;
 
-  tab_ptr->api_ptr(CdbPtr, AdapterInfo);
-  return;
-  // %% AVL - check for command linking!
-
+  tab_ptr->api_ptr (CdbPtr, AdapterInfo);
+  return ;
+  //
+  // %% AVL - check for command linking
+  //
 badcdb:
-    CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
-    CdbPtr->StatCode = PXE_STATCODE_INVALID_CDB;
-    return;
+  CdbPtr->StatFlags = PXE_STATFLAGS_COMMAND_FAILED;
+  CdbPtr->StatCode  = PXE_STATCODE_INVALID_CDB;
+  return ;
 }
 
 UINT8
-ChkSum(
+ChkSum (
   IN  VOID   *Buffer,
   IN  UINT16 Len
   )
@@ -1491,18 +1540,21 @@ Returns:
   INT8  *Bp;
 
   Chksum = 0;
-  if ((Bp = Buffer) != NULL)
-    while (Len--)
-      Chksum = (UINT8)(Chksum + *Bp++);
+  if ((Bp = Buffer) != NULL) {
+    while (Len--) {
+      Chksum = (UINT8) (Chksum +*Bp++);
+
+    }
+
+  }
 
   return Chksum;
 }
 
-
 VOID
-PxeUpdate(
+PxeUpdate (
   IN  NIC_DATA_INSTANCE *NicPtr,
-  IN PXE_SW_UNDI *PxePtr
+  IN PXE_SW_UNDI        *PxePtr
   )
 /*++
 
@@ -1519,25 +1571,33 @@ Returns:
   None
 
 --*/
+// TODO:    PxePtr - add argument and description to function comment
 {
   if (NicPtr == NULL) {
-    if (PxePtr->IFcnt > 0)
-      PxePtr->IFcnt--;  // number of NICs this undi supports
+    if (PxePtr->IFcnt > 0) {
+      //
+      // number of NICs this undi supports
+      //
+      PxePtr->IFcnt--;
+    }
 
-    PxePtr->Fudge = (UINT8)(PxePtr->Fudge - ChkSum((VOID *)PxePtr, PxePtr->Len));
-    return;
+    PxePtr->Fudge = (UINT8) (PxePtr->Fudge - ChkSum ((VOID *) PxePtr, PxePtr->Len));
+    return ;
   }
 
-  PxePtr->IFcnt++;  // number of NICs this undi supports
-    PxePtr->Fudge = (UINT8)(PxePtr->Fudge - ChkSum((VOID *)PxePtr, PxePtr->Len));
+  //
+  // number of NICs this undi supports
+  //
+  PxePtr->IFcnt++;
+  PxePtr->Fudge = (UINT8) (PxePtr->Fudge - ChkSum ((VOID *) PxePtr, PxePtr->Len));
 
-  return;
+  return ;
 }
 
 VOID
 PxeStructInit (
   IN PXE_SW_UNDI *PxePtr,
-  IN UINTN VersionFlag
+  IN UINTN       VersionFlag
   )
 /*++
 
@@ -1552,44 +1612,53 @@ Returns:
   other               - This driver does not support this device.
 
 --*/
+// TODO:    PxePtr - add argument and description to function comment
+// TODO:    VersionFlag - add argument and description to function comment
 {
   //
   // Initialize the !PXE structure
   //
   PxePtr->Signature = PXE_ROMID_SIGNATURE;
-  PxePtr->Len = sizeof(PXE_SW_UNDI);
-  PxePtr->Fudge = 0;  //cksum
-  PxePtr->IFcnt = 0;  // number of NICs this undi supports
-  PxePtr->Rev = PXE_ROMID_REV;
-  PxePtr->MajorVer = PXE_ROMID_MAJORVER;
-  PxePtr->MinorVer = PXE_ROMID_MINORVER;
+  PxePtr->Len       = sizeof (PXE_SW_UNDI);
+  //
+  // cksum
+  //
+  PxePtr->Fudge     = 0;
+  //
+  // number of NICs this undi supports
+  //
+  PxePtr->IFcnt = 0;
+  PxePtr->Rev       = PXE_ROMID_REV;
+  PxePtr->MajorVer  = PXE_ROMID_MAJORVER;
+  PxePtr->MinorVer  = PXE_ROMID_MINORVER;
   PxePtr->reserved1 = 0;
 
   PxePtr->Implementation = PXE_ROMID_IMP_SW_VIRT_ADDR |
-                           PXE_ROMID_IMP_FRAG_SUPPORTED |
-                           PXE_ROMID_IMP_CMD_LINK_SUPPORTED |
-                           PXE_ROMID_IMP_NVDATA_READ_ONLY |
-                           PXE_ROMID_IMP_STATION_ADDR_SETTABLE |
-                           PXE_ROMID_IMP_PROMISCUOUS_MULTICAST_RX_SUPPORTED |
-                           PXE_ROMID_IMP_PROMISCUOUS_RX_SUPPORTED |
-                           PXE_ROMID_IMP_BROADCAST_RX_SUPPORTED |
-                           PXE_ROMID_IMP_FILTERED_MULTICAST_RX_SUPPORTED |
-                           PXE_ROMID_IMP_SOFTWARE_INT_SUPPORTED |
-                           PXE_ROMID_IMP_PACKET_RX_INT_SUPPORTED;
+    PXE_ROMID_IMP_FRAG_SUPPORTED |
+    PXE_ROMID_IMP_CMD_LINK_SUPPORTED |
+    PXE_ROMID_IMP_NVDATA_READ_ONLY |
+    PXE_ROMID_IMP_STATION_ADDR_SETTABLE |
+    PXE_ROMID_IMP_PROMISCUOUS_MULTICAST_RX_SUPPORTED |
+    PXE_ROMID_IMP_PROMISCUOUS_RX_SUPPORTED |
+    PXE_ROMID_IMP_BROADCAST_RX_SUPPORTED |
+    PXE_ROMID_IMP_FILTERED_MULTICAST_RX_SUPPORTED |
+    PXE_ROMID_IMP_SOFTWARE_INT_SUPPORTED |
+    PXE_ROMID_IMP_PACKET_RX_INT_SUPPORTED;
 
   if (VersionFlag == 0x30) {
-       PxePtr->EntryPoint = (UINT64)UNDI_APIEntry_old;
+    PxePtr->EntryPoint = (UINT64) UNDI_APIEntry_old;
   } else {
-       PxePtr->EntryPoint = (UINT64)UNDI_APIEntry_new;
-       PxePtr->MinorVer = PXE_ROMID_MINORVER_31;
+    PxePtr->EntryPoint  = (UINT64) UNDI_APIEntry_new;
+    PxePtr->MinorVer    = PXE_ROMID_MINORVER_31;
   }
 
-    PxePtr->reserved2[0] = 0;
-    PxePtr->reserved2[1] = 0;
-    PxePtr->reserved2[2] = 0;
-    PxePtr->BusCnt = 1;
-    PxePtr->BusType[0] = PXE_BUSTYPE_PCI;
+  PxePtr->reserved2[0]  = 0;
+  PxePtr->reserved2[1]  = 0;
+  PxePtr->reserved2[2]  = 0;
+  PxePtr->BusCnt        = 1;
+  PxePtr->BusType[0]    = PXE_BUSTYPE_PCI;
 
-  PxePtr->Fudge = (UINT8)(PxePtr->Fudge - ChkSum((VOID *)PxePtr, PxePtr->Len));
+  PxePtr->Fudge         = (UINT8) (PxePtr->Fudge - ChkSum ((VOID *) PxePtr, PxePtr->Len));
 }
+
 #pragma data_seg()

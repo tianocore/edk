@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_GUID_DEFINITION(GlobalVariable)
+#include EFI_GUID_DEFINITION (GlobalVariable)
 
-EFI_GUID gEfiGlobalVariableGuid = EFI_GLOBAL_VARIABLE_GUID;
+EFI_GUID  gEfiGlobalVariableGuid = EFI_GLOBAL_VARIABLE_GUID;
 
 EFI_GUID_STRING(&gEfiGlobalVariableGuid, "Efi", "Efi Variable GUID")
-

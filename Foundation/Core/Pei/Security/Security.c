@@ -118,7 +118,7 @@ Routine Description:
 Arguments:
 
   PeiServices          - The PEI core services table.
-  CurrntPeimAddress    - Pointer to the Firmware File under investigation.
+  CurrentPeimAddress   - Pointer to the Firmware File under investigation.
 
 Returns:
 

@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 //
-// Module Coded to EFI 2.0 Coding Conventions
+// Module Coded to Tiano Coding Conventions
 //
-
 #ifndef _EFI_GEN_FFSFILE_H
 #define _EFI_GEN_FFSFILE_H
 
@@ -34,4 +33,3 @@ Abstract:
 #include "MyAlloc.h"
 
 #endif
-

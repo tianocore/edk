@@ -26,47 +26,46 @@ Revision History:
 //
 // The Monotonic Counter Handle
 //
-EFI_HANDLE mMonotonicCounterHandle = NULL;
+EFI_HANDLE  mMonotonicCounterHandle = NULL;
 
 //
 // The current Monotonic count value
 //
-UINT64 mEfiMtc;
+UINT64      mEfiMtc;
 
 //
 // Boolean flag that is FALSE before ExitBootServices() and TRUE after ExitBootServices()
 //
-BOOLEAN mEfiAtRuntime = FALSE;
+BOOLEAN     mEfiAtRuntime = FALSE;
 
 //
 // Event to use when ExitBootServices() is called
 //
-EFI_EVENT mMonotonicCounterNotifyEvent;
+EFI_EVENT   mMonotonicCounterNotifyEvent;
 
 //
 // Event to use when SetVirtualAddressMap() is called
 //
-EFI_EVENT mMonotonicCounterSetVirtualAddressMapNotifyEvent;
+EFI_EVENT   mMonotonicCounterSetVirtualAddressMapNotifyEvent;
 
 //
 // Event to use to update the Mtc's high part when wrapping
 //
-EFI_EVENT mEfiMtcEvent;
+EFI_EVENT   mEfiMtcEvent;
 
 //
 // EfiMtcName - Variable name of the MTC value
 //
-CHAR16 *mEfiMtcName = L"MTC";
+CHAR16      *mEfiMtcName = L"MTC";
 
 //
 // EfiMtcGuid - Guid of the MTC value
 //
-EFI_GUID mEfiMtcGuid = { 0xeb704011, 0x1402, 0x11d3, 0x8e, 0x77, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b };
+EFI_GUID    mEfiMtcGuid = { 0xeb704011, 0x1402, 0x11d3, 0x8e, 0x77, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b };
 
 //
 // Worker functions
 //
-
 EFI_BOOTSERVICE
 EFI_STATUS
 MonotonicCounterDriverGetNextMonotonicCount (
@@ -82,7 +81,7 @@ Returns:
 
 --*/
 {
-  EFI_TPL  OldTpl;
+  EFI_TPL OldTpl;
 
   //
   // Can not be called after ExitBootServices()
@@ -90,19 +89,17 @@ Returns:
   if (mEfiAtRuntime) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Check input parameters
   //
   if (Count == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Update the monotonic counter with a lock
   //
-  OldTpl = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
-  *Count = mEfiMtc;
+  OldTpl  = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
+  *Count  = mEfiMtc;
   mEfiMtc++;
   gBS->RestoreTPL (OldTpl);
 
@@ -111,12 +108,11 @@ Returns:
   // part needs updated now
   //
   if ((((UINT32) mEfiMtc) ^ ((UINT32) *Count)) & 0x80000000) {
-    gBS->SignalEvent (mEfiMtcEvent);                     
+    gBS->SignalEvent (mEfiMtcEvent);
   }
 
   return EFI_SUCCESS;
 }
-
 
 EFI_RUNTIMESERVICE
 EFI_STATUS
@@ -147,15 +143,14 @@ Returns:
     //
     // Use a lock if called before ExitBootServices()
     //
-    OldTpl = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
-    *HighCount = (UINT32) RShiftU64(mEfiMtc, 32) + 1;
-    mEfiMtc    = LShiftU64(*HighCount, 32);
+    OldTpl      = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
+    *HighCount  = (UINT32) RShiftU64 (mEfiMtc, 32) + 1;
+    mEfiMtc     = LShiftU64 (*HighCount, 32);
     gBS->RestoreTPL (OldTpl);
   } else {
-    *HighCount = (UINT32) RShiftU64(mEfiMtc, 32) + 1;
-    mEfiMtc    = LShiftU64(*HighCount, 32);
+    *HighCount  = (UINT32) RShiftU64 (mEfiMtc, 32) + 1;
+    mEfiMtc     = LShiftU64 (*HighCount, 32);
   }
-
   //
   // Update the NvRam store to match the new high part
   //
@@ -163,13 +158,12 @@ Returns:
                   mEfiMtcName,
                   &mEfiMtcGuid,
                   EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-                  sizeof(UINT32),
+                  sizeof (UINT32),
                   HighCount
                   );
 
   return Status;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -199,7 +193,6 @@ Returns:
 
   return MonotonicCounterDriverGetNextHighMonotonicCount (&HighCount);
 }
-
 
 VOID
 EFIAPI
@@ -236,10 +229,10 @@ Returns:
 
 --*/
 {
-  gRT->ConvertPointer (EFI_OPTIONAL_POINTER, (VOID **)&gRT);
+  gRT->ConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &gRT);
 }
 
-EFI_DRIVER_ENTRY_POINT(MonotonicCounterDriverInitialize)
+EFI_DRIVER_ENTRY_POINT (MonotonicCounterDriverInitialize)
 
 EFI_STATUS
 MonotonicCounterDriverInitialize (
@@ -272,7 +265,7 @@ Returns:
   // Register our ExitBootServices notify function
   //
   Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES, 
+                  EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
                   EFI_TPL_NOTIFY,
                   MonotonicCounterDriverExitBootServices,
                   NULL,
@@ -284,7 +277,7 @@ Returns:
   // Register our SetVirtualAddressMap notify function
   //
   Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE, 
+                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
                   EFI_TPL_NOTIFY,
                   MonotonicCounterDriverSetVirtualAddressMap,
                   NULL,
@@ -307,7 +300,7 @@ Returns:
   //
   // Read the last high part
   //
-  BufferSize = sizeof(UINT32);
+  BufferSize = sizeof (UINT32);
   Status = gRT->GetVariable (
                   mEfiMtcName,
                   &mEfiMtcGuid,
@@ -315,14 +308,13 @@ Returns:
                   &BufferSize,
                   &HighCount
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     HighCount = 0;
   }
-
   //
   // Set the current value
   //
-  mEfiMtc = LShiftU64(HighCount, 32);
+  mEfiMtc = LShiftU64 (HighCount, 32);
 
   //
   // Increment the upper 32 bits for this boot
@@ -334,19 +326,19 @@ Returns:
   //
   // Fill in the EFI Boot Services and EFI Runtime Services Monotonic Counter Fields
   //
-  gBS->GetNextMonotonicCount     = MonotonicCounterDriverGetNextMonotonicCount;
-  gRT->GetNextHighMonotonicCount = MonotonicCounterDriverGetNextHighMonotonicCount;
+  gBS->GetNextMonotonicCount      = MonotonicCounterDriverGetNextMonotonicCount;
+  gRT->GetNextHighMonotonicCount  = MonotonicCounterDriverGetNextHighMonotonicCount;
 
   //
   // Install the Monotonic Counter Architctural Protocol onto a new handle
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mMonotonicCounterHandle,
-                  &gEfiMonotonicCounterArchProtocolGuid, NULL,
+                  &gEfiMonotonicCounterArchProtocolGuid,
+                  NULL,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }
-

@@ -20,8 +20,12 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(BusSpecificDriverOverride)
+#include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 
-EFI_GUID gEfiBusSpecificDriverOverrideProtocolGuid = EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL_GUID;
+EFI_GUID  gEfiBusSpecificDriverOverrideProtocolGuid = EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiBusSpecificDriverOverrideProtocolGuid, "Bus Specific Driver Override Protocol", "EFI 1.1 Bus Specific Driver Override Protocol");
+EFI_GUID_STRING
+  (
+    &gEfiBusSpecificDriverOverrideProtocolGuid, "Bus Specific Driver Override Protocol",
+      "EFI 1.1 Bus Specific Driver Override Protocol"
+  );

@@ -25,7 +25,6 @@ Abstract:
 #include "EfiTypes.h"
 #include "TianoSpecTypes.h"
 
-
 //
 // attributes for reserved memory before it is promoted to system memory
 //
@@ -36,19 +35,14 @@ Abstract:
 //
 // range for memory mapped port I/O on IPF
 //
-#define EFI_MEMORY_PORT_IO      0x4000000000000000
-
-
+#define EFI_MEMORY_PORT_IO  0x4000000000000000
 
 //
-// A pointer to a function in IPF points to a plabel. 
+// A pointer to a function in IPF points to a plabel.
 //
 typedef struct {
-  UINT64 EntryPoint;
-  UINT64 GP;
+  UINT64  EntryPoint;
+  UINT64  GP;
 } EFI_PLABEL;
-
-
-
 
 #endif

@@ -24,5 +24,7 @@ Abstract:
 
 EFI_GUID gEfiBootStateGuid = EFI_BOOT_STATE_VARIABLE_GUID;
 
+//
 // GUID for frequency selection HOB
+//
 EFI_GUID_STRING(&gEfiBootStateGuid, "Boot State", "Boot State");

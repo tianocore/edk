@@ -15,7 +15,7 @@ Module Name:
    
 Abstract:
 
-  EFI 2.0 PEIM to provide the platform support functionality within Windows
+  Tiano PEIM to provide the platform support functionality within Windows
 
 --*/
 
@@ -27,13 +27,13 @@ Abstract:
 //
 // Module globals
 //
-EFI_PEI_PPI_DESCRIPTOR mPpiListBootMode = {
+EFI_PEI_PPI_DESCRIPTOR  mPpiListBootMode = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gPeiMasterBootModePpiGuid,
   NULL
 };
 
-EFI_PEI_PPI_DESCRIPTOR mPpiListRecoveryBootMode = {
+EFI_PEI_PPI_DESCRIPTOR  mPpiListRecoveryBootMode = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gPeiBootInRecoveryModePpiGuid,
   NULL
@@ -60,27 +60,28 @@ Returns:
   Status -  EFI_SUCCESS if the boot mode could be set
 
 --*/
+// TODO:    FfsHeader - add argument and description to function comment
 {
-  EFI_STATUS        Status;
-  UINTN             BootMode;
+  EFI_STATUS  Status;
+  UINTN       BootMode;
   //
   // Let's assume things are OK if not told otherwise
   // Should we read an environment variable in order to easily change this?
   //
-  BootMode = BOOT_WITH_FULL_CONFIGURATION;
+  BootMode  = BOOT_WITH_FULL_CONFIGURATION;
 
-  Status = (**PeiServices).SetBootMode (PeiServices, (UINT8) BootMode);
+  Status    = (**PeiServices).SetBootMode (PeiServices, (UINT8) BootMode);
 
-  ASSERT_PEI_ERROR (PeiServices, Status);    
+  ASSERT_PEI_ERROR (PeiServices, Status);
 
   Status = (**PeiServices).InstallPpi (PeiServices, &mPpiListBootMode);
 
-  ASSERT_PEI_ERROR (PeiServices, Status);    
+  ASSERT_PEI_ERROR (PeiServices, Status);
 
   if (BootMode == BOOT_IN_RECOVERY_MODE) {
     Status = (**PeiServices).InstallPpi (PeiServices, &mPpiListRecoveryBootMode);
-    ASSERT_PEI_ERROR (PeiServices, Status);    
+    ASSERT_PEI_ERROR (PeiServices, Status);
   }
+
   return Status;
 }
-

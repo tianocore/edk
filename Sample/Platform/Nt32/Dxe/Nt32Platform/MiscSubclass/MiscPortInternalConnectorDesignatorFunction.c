@@ -22,11 +22,12 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 //
 //
-MISC_SUBCLASS_TABLE_FUNCTION(MiscPortInternalConnectorDesignator)
+MISC_SUBCLASS_TABLE_FUNCTION (
+  MiscPortInternalConnectorDesignator
+  )
 /*++
 Description:
 
@@ -68,41 +69,42 @@ Returns:
       LogRecordData was NULL.
 --*/
 {
-  STATIC BOOLEAN Done = FALSE;
-  STATIC PS2_CONN_DEVICE_PATH    mPs2KeyboardDevicePath    = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0303,0 ), END };
-  STATIC PS2_CONN_DEVICE_PATH    mPs2MouseDevicePath        = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0303,1 ), END };
-  STATIC SERIAL_CONN_DEVICE_PATH  mCom1DevicePath          = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0501,0 ), END };
-  STATIC SERIAL_CONN_DEVICE_PATH  mCom2DevicePath          = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0501,1 ), END };
-  STATIC PARALLEL_CONN_DEVICE_PATH  mLpt1DevicePath        = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0401,0 ), END };
-  STATIC FLOOPY_CONN_DEVICE_PATH  mFloopyADevicePath      = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0604,0 ), END };
-  STATIC FLOOPY_CONN_DEVICE_PATH  mFloopyBDevicePath      = { ACPI, PCI( 0x1F,0x00 ),LPC( 0x0604,1 ), END };
-  STATIC USB_PORT_DEVICE_PATH    mUsb0DevicePath            = { ACPI, PCI( 0x1d,0x00 ), END };
-  STATIC USB_PORT_DEVICE_PATH    mUsb1DevicePath            = { ACPI, PCI( 0x1d,0x01 ), END };
-  STATIC USB_PORT_DEVICE_PATH    mUsb2DevicePath            = { ACPI, PCI( 0x1d,0x02 ), END };
-  STATIC USB_PORT_DEVICE_PATH    mUsb3DevicePath            = { ACPI, PCI( 0x1d,0x07 ), END };
-  STATIC IDE_DEVICE_PATH  mIdeDevicePath                  = { ACPI, PCI( 0x1F,0x01 ), END };
-  STATIC GB_NIC_DEVICE_PATH    mGbNicDevicePath            = { ACPI, PCI( 0x03,0x00 ),PCI( 0x1F,0x00 ),PCI( 0x07,0x00 ), END };
-  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath                  = END;
+  STATIC BOOLEAN                    Done                    = FALSE;
+  STATIC PS2_CONN_DEVICE_PATH       mPs2KeyboardDevicePath  = { ACPI, PCI (0x1F, 0x00), LPC (0x0303, 0), END };
+  STATIC PS2_CONN_DEVICE_PATH       mPs2MouseDevicePath     = { ACPI, PCI (0x1F, 0x00), LPC (0x0303, 1), END };
+  STATIC SERIAL_CONN_DEVICE_PATH    mCom1DevicePath         = { ACPI, PCI (0x1F, 0x00), LPC (0x0501, 0), END };
+  STATIC SERIAL_CONN_DEVICE_PATH    mCom2DevicePath         = { ACPI, PCI (0x1F, 0x00), LPC (0x0501, 1), END };
+  STATIC PARALLEL_CONN_DEVICE_PATH  mLpt1DevicePath         = { ACPI, PCI (0x1F, 0x00), LPC (0x0401, 0), END };
+  STATIC FLOOPY_CONN_DEVICE_PATH    mFloopyADevicePath      = { ACPI, PCI (0x1F, 0x00), LPC (0x0604, 0), END };
+  STATIC FLOOPY_CONN_DEVICE_PATH    mFloopyBDevicePath      = { ACPI, PCI (0x1F, 0x00), LPC (0x0604, 1), END };
+  STATIC USB_PORT_DEVICE_PATH       mUsb0DevicePath         = { ACPI, PCI (0x1d, 0x00), END };
+  STATIC USB_PORT_DEVICE_PATH       mUsb1DevicePath         = { ACPI, PCI (0x1d, 0x01), END };
+  STATIC USB_PORT_DEVICE_PATH       mUsb2DevicePath         = { ACPI, PCI (0x1d, 0x02), END };
+  STATIC USB_PORT_DEVICE_PATH       mUsb3DevicePath         = { ACPI, PCI (0x1d, 0x07), END };
+  STATIC IDE_DEVICE_PATH            mIdeDevicePath          = { ACPI, PCI (0x1F, 0x01), END };
+  STATIC GB_NIC_DEVICE_PATH         mGbNicDevicePath            = { ACPI, PCI( 0x03,0x00 ),PCI( 0x1F,0x00 ),PCI( 0x07,0x00 ), END };
+  EFI_DEVICE_PATH_PROTOCOL          EndDevicePath           = END;
 
-  //EFI_DEADLOOP();//breakpoint
-
+  //
+  // EFI_DEADLOOP();//breakpoint
   //
   // First check for invalid parameters.
   //
-  //Shanmu >> to fix the Device Path Issue...
-  //if (RecordLen == 0 || RecordData == NULL || LogRecordData == NULL) {
+  // Shanmu >> to fix the Device Path Issue...
+  // if (RecordLen == 0 || RecordData == NULL || LogRecordData == NULL) {
+  //
   if (*RecordLen == 0 || RecordData == NULL || LogRecordData == NULL) {
-  //End Shanmu
+    //
+    // End Shanmu
+    //
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Then check for unsupported RecordType.
   //
   if (RecordType != EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR_RECORD_NUMBER) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Is this the first time through this function?
   //
@@ -112,10 +114,11 @@ Returns:
     // RecordData structure.
     //
     //
-    //Device path is only updated here as it was not taking that in static data
+    // Device path is only updated here as it was not taking that in static data
+    //
+    // Shanmu >> to fix the Device Path Issue...
     //
 
-    //Shanmu >> to fix the Device Path Issue...
     /*
     switch (((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortInternalConnectorDesignator) 
     {
@@ -173,50 +176,81 @@ Returns:
         }break;    
     }
     */
+    switch (((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortInternalConnectorDesignator) {
+    case STR_MISC_PORT_INTERNAL_MOUSE:
+      {
+        EfiCopyMem (
+          &((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortPath,
+          &mPs2MouseDevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mPs2MouseDevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mPs2MouseDevicePath);
+      }
+      break;
 
-    
-    switch (((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortInternalConnectorDesignator) 
-    {
-      case STR_MISC_PORT_INTERNAL_MOUSE:
-        {
-          EfiCopyMem(&((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortPath, &mPs2MouseDevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mPs2MouseDevicePath));
-          *RecordLen = *RecordLen - sizeof(EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mPs2MouseDevicePath);
-        }break;
-      case STR_MISC_PORT_INTERNAL_KEYBOARD:
-        {
-          EfiCopyMem(&((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortPath, &mPs2KeyboardDevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mPs2KeyboardDevicePath));
-          *RecordLen = *RecordLen - sizeof(EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mPs2KeyboardDevicePath);
-        }break;
-      case STR_MISC_PORT_INTERNAL_COM1:
-        {
-          EfiCopyMem(&((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortPath, &mCom1DevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mCom1DevicePath));
-          *RecordLen = *RecordLen - sizeof(EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mCom1DevicePath);
-        }break;
-      case STR_MISC_PORT_INTERNAL_COM2:
-        {
-          EfiCopyMem(&((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortPath, &mCom2DevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mCom2DevicePath));
-          *RecordLen = *RecordLen - sizeof(EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mCom2DevicePath);
-        }break;
-      case STR_MISC_PORT_INTERNAL_FLOPPY:
-        {
-          EfiCopyMem(&((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortPath, &mFloopyADevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mFloopyADevicePath));
-          *RecordLen = *RecordLen - sizeof(EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mFloopyADevicePath);
-        }break;
-      default:
-        {
-          EfiCopyMem(&((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *)RecordData)->PortPath, &EndDevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&EndDevicePath));
-          *RecordLen = *RecordLen - sizeof(EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&EndDevicePath);
-        }break;    
+    case STR_MISC_PORT_INTERNAL_KEYBOARD:
+      {
+        EfiCopyMem (
+          &((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortPath,
+          &mPs2KeyboardDevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mPs2KeyboardDevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mPs2KeyboardDevicePath);
+      }
+      break;
+
+    case STR_MISC_PORT_INTERNAL_COM1:
+      {
+        EfiCopyMem (
+          &((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortPath,
+          &mCom1DevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mCom1DevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mCom1DevicePath);
+      }
+      break;
+
+    case STR_MISC_PORT_INTERNAL_COM2:
+      {
+        EfiCopyMem (
+          &((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortPath,
+          &mCom2DevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mCom2DevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mCom2DevicePath);
+      }
+      break;
+
+    case STR_MISC_PORT_INTERNAL_FLOPPY:
+      {
+        EfiCopyMem (
+          &((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortPath,
+          &mFloopyADevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mFloopyADevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mFloopyADevicePath);
+      }
+      break;
+
+    default:
+      {
+        EfiCopyMem (
+          &((EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR *) RecordData)->PortPath,
+          &EndDevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &EndDevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_MISC_PORT_DEVICE_PATH) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &EndDevicePath);
+      }
+      break;
     }
-
-    //End Shanmu
-
+    //
+    // End Shanmu
     //
     // Set Done flag to TRUE for next pass through this function.
     // Set *LogRecordData to TRUE so data will get logged to Data Hub.
-    // 
-    Done = TRUE;
-    *LogRecordData = TRUE;
+    //
+    Done            = TRUE;
+    *LogRecordData  = TRUE;
   } else {
     //
     // No, this is the second time.  Reset the state of the Done flag
@@ -224,8 +258,8 @@ Returns:
     // to be logged for this record type.  If any memory allocations
     // were made by earlier passes, they must be released now.
     //
-    Done = FALSE;
-    *LogRecordData = FALSE;
+    Done            = FALSE;
+    *LogRecordData  = FALSE;
   }
 
   return EFI_SUCCESS;

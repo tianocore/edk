@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Light weight lib to support EFI 2.0 drivers.
+  Light weight lib to support Tiano drivers.
 
 --*/
 
@@ -23,29 +23,46 @@ Abstract:
 #include "EfiRuntimeLib.h"
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
-#include EFI_GUID_DEFINITION(StatusCodeCallerId)
+#include EFI_GUID_DEFINITION (StatusCodeCallerId)
 
 //
 // Driver Lib Module Globals
 //
-static EFI_RUNTIME_SERVICES  *mRT;
-static EFI_EVENT             mRuntimeNotifyEvent;
-static EFI_EVENT             mEfiVirtualNotifyEvent;
-static BOOLEAN               mRuntimeLibInitialized = FALSE;
-static BOOLEAN               mEfiGoneVirtual = FALSE;
+static EFI_RUNTIME_SERVICES *mRT;
+static EFI_EVENT            mRuntimeNotifyEvent;
+static EFI_EVENT            mEfiVirtualNotifyEvent;
+static BOOLEAN              mRuntimeLibInitialized  = FALSE;
+static BOOLEAN              mEfiGoneVirtual         = FALSE;
 
 //
 // Runtime Global, but you should use the Lib functions
 //
-EFI_CPU_IO_PROTOCOL  *gCpuIo;
-BOOLEAN               mEfiAtRuntime = FALSE;
-FVB_ENTRY             *mFvbEntry;
+EFI_CPU_IO_PROTOCOL         *gCpuIo;
+BOOLEAN                     mEfiAtRuntime = FALSE;
+FVB_ENTRY                   *mFvbEntry;
 
 EFI_STATUS
 EfiConvertPointer (
   IN UINTN                     DebugDisposition,
   IN OUT VOID                  *Address
   )
+/*++
+
+Routine Description:
+
+  Determines the new virtual address that is to be used on subsequent memory accesses.
+
+Arguments:
+
+  DebugDisposition  - Supplies type information for the pointer being converted.
+  Address           - A pointer to a pointer that is to be fixed to be the value needed
+                      for the new virtual address mappings being applied.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->ConvertPointer (DebugDisposition, Address);
 }
@@ -54,6 +71,22 @@ EFI_STATUS
 EfiConvertInternalPointer (
   IN OUT VOID                  *Address
   )
+/*++
+
+Routine Description:
+
+  Call EfiConvertPointer() to convert internal pointer.
+
+Arguments:
+
+  Address - A pointer to a pointer that is to be fixed to be the value needed
+            for the new virtual address mappings being applied.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return EfiConvertPointer (EFI_INTERNAL_POINTER, Address);
 }
@@ -64,27 +97,46 @@ EfiRuntimeLibFvbVirtualNotifyEvent (
   IN EFI_EVENT        Event,
   IN VOID             *Context
   )
+/*++
+
+Routine Description:
+
+  Convert all pointers in mFvbEntry after ExitBootServices.
+
+Arguments:
+
+  Event   - The Event that is being processed
+  
+  Context - Event Context
+
+Returns:
+
+  None
+
+--*/
 {
-  UINTN                                   Index;
+  UINTN Index;
   if (mFvbEntry != NULL) {
-    for (Index = 0; Index < MAX_FVB_COUNT; Index ++) {
+    for (Index = 0; Index < MAX_FVB_COUNT; Index++) {
       if (NULL != mFvbEntry[Index].Fvb) {
         EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->GetBlockSize);
         EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->GetPhysicalAddress);
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->GetVolumeAttributes);      
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->SetVolumeAttributes);      
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->Read);      
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->Write);      
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->EraseBlocks);      
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->GetVolumeAttributes);
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->SetVolumeAttributes);
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->Read);
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->Write);
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb->EraseBlocks);
         EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].Fvb);
       }
+
       if (NULL != mFvbEntry[Index].FvbExtension) {
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].FvbExtension->EraseFvbCustomBlock);      
-        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].FvbExtension);      
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].FvbExtension->EraseFvbCustomBlock);
+        EfiConvertInternalPointer ((VOID **) &mFvbEntry[Index].FvbExtension);
       }
     }
+
     EfiConvertInternalPointer ((VOID **) &mFvbEntry);
-  } 
+  }
 }
 
 VOID
@@ -97,11 +149,13 @@ RuntimeDriverExitBootServices (
 
 Routine Description:
 
-  Set Runtime Global
+  Set AtRuntime flag as TRUE after ExitBootServices
 
 Arguments:
 
-  (Standard EFI notify event - EFI_EVENT_NOTIFY)
+  Event   - The Event that is being processed
+  
+  Context - Event Context
 
 Returns: 
 
@@ -112,8 +166,7 @@ Returns:
   mEfiAtRuntime = TRUE;
 }
 
-
-extern BOOLEAN gEfiFvbInitialized;
+extern BOOLEAN  gEfiFvbInitialized;
 
 VOID
 EFIAPI
@@ -131,7 +184,9 @@ Routine Description:
 
 Arguments:
 
-  (Standard EFI notify event - EFI_EVENT_NOTIFY)
+  Event   - The Event that is being processed
+  
+  Context - Event Context
 
 Returns: 
 
@@ -142,14 +197,13 @@ Returns:
   EFI_EVENT_NOTIFY  ChildNotifyEventHandler;
 
   if (Context != NULL) {
-    ChildNotifyEventHandler = (EFI_EVENT_NOTIFY)(UINTN)Context;
+    ChildNotifyEventHandler = (EFI_EVENT_NOTIFY) (UINTN) Context;
     ChildNotifyEventHandler (Event, NULL);
   }
 
   if (gEfiFvbInitialized) {
     EfiRuntimeLibFvbVirtualNotifyEvent (Event, Context);
   }
-
   //
   // Update global for Runtime Services Table and IO
   //
@@ -159,12 +213,10 @@ Returns:
   //
   // Clear out BootService globals
   //
-  gBS = NULL;
-  gST = NULL;
+  gBS             = NULL;
+  gST             = NULL;
   mEfiGoneVirtual = TRUE;
 }
-
-
 
 EFI_STATUS
 EfiInitializeRuntimeDriverLib (
@@ -180,13 +232,15 @@ Routine Description:
 
 Arguments:
 
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  ImageHandle     - The firmware allocated handle for the EFI image.
+  
+  SystemTable     - A pointer to the EFI System Table.
 
   GoVirtualChildEvent - Caller can register a virtual notification event.
 
 Returns: 
 
-  EFI_STATUS always returns EFI_SUCCESS
+  EFI_STATUS always returns EFI_SUCCESS except EFI_ALREADY_STARTED if already started.
 
 --*/
 {
@@ -196,15 +250,15 @@ Returns:
     return EFI_ALREADY_STARTED;
   }
 
-  mRuntimeLibInitialized = TRUE;
+  mRuntimeLibInitialized  = TRUE;
 
-  mRT = SystemTable->RuntimeServices;
-  
+  mRT                     = SystemTable->RuntimeServices;
+
   if ((SystemTable != NULL) && (SystemTable->BootServices != NULL)) {
 
-    gST = SystemTable;
-    gBS = SystemTable->BootServices;
-    Status = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **)&gDS);
+    gST     = SystemTable;
+    gBS     = SystemTable->BootServices;
+    Status  = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **) &gDS);
     ASSERT_EFI_ERROR (Status);
 
     Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
@@ -212,30 +266,29 @@ Returns:
     if (EFI_ERROR (Status)) {
       gCpuIo = NULL;
     }
-
     //
     // Register our ExitBootServices () notify function
     //
     Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES, 
-                  EFI_TPL_NOTIFY,
-                  RuntimeDriverExitBootServices,
-                  NULL,
-                  &mRuntimeNotifyEvent
-                  );
-    ASSERT_EFI_ERROR  (Status);
+                    EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                    EFI_TPL_NOTIFY,
+                    RuntimeDriverExitBootServices,
+                    NULL,
+                    &mRuntimeNotifyEvent
+                    );
+    ASSERT_EFI_ERROR (Status);
 
     //
     // Register SetVirtualAddressMap () notify function
     //
     Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE, 
-                  EFI_TPL_NOTIFY,
-                  EfiRuntimeLibVirtualNotifyEvent,
-                  (VOID *)(UINTN)GoVirtualChildEvent,
-                  &mEfiVirtualNotifyEvent
-                  );
-    ASSERT_EFI_ERROR (Status);  
+                    EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
+                    EFI_TPL_NOTIFY,
+                    EfiRuntimeLibVirtualNotifyEvent,
+                    (VOID *) (UINTN) GoVirtualChildEvent,
+                    &mEfiVirtualNotifyEvent
+                    );
+    ASSERT_EFI_ERROR (Status);
 
   }
 
@@ -255,13 +308,15 @@ Routine Description:
 
 Arguments:
 
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  ImageHandle     - The firmware allocated handle for the EFI image.
+  
+  SystemTable     - A pointer to the EFI System Table.
 
   GoVirtualChildEvent - Caller can register a virtual notification event.
 
 Returns: 
 
-  EFI_STATUS always returns EFI_SUCCESS
+  EFI_STATUS always returns EFI_SUCCESS except EFI_ALREADY_STARTED if already started.
 
 --*/
 {
@@ -271,16 +326,16 @@ Returns:
     return EFI_ALREADY_STARTED;
   }
 
-  mRuntimeLibInitialized = TRUE;
+  mRuntimeLibInitialized  = TRUE;
 
-  mRT = SystemTable->RuntimeServices;
-  
+  mRT                     = SystemTable->RuntimeServices;
+
   if ((SystemTable != NULL) && (SystemTable->BootServices != NULL)) {
 
-    gST = SystemTable;
-    gBS = SystemTable->BootServices;
+    gST     = SystemTable;
+    gBS     = SystemTable->BootServices;
 
-    Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
+    Status  = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
 
     if (EFI_ERROR (Status)) {
       gCpuIo = NULL;
@@ -290,12 +345,10 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
-
 BOOLEAN
 EfiAtRuntime (
   VOID
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -312,11 +365,10 @@ Returns:
   return mEfiAtRuntime;
 }
 
-
 BOOLEAN
 EfiGoneVirtual (
   VOID
-  ) 
+  )
 /*++
 
 Routine Description:
@@ -332,33 +384,59 @@ Returns:
 {
   return mEfiGoneVirtual;
 }
-
-
-
 //
-// The following functions hide the mRT local global from the call to 
+// The following functions hide the mRT local global from the call to
 // runtime service in the EFI system table.
 //
-
 EFI_STATUS
 EfiGetTime (
   OUT EFI_TIME                    *Time,
-  OUT EFI_TIME_CAPABILITIES       *Capabilities 
+  OUT EFI_TIME_CAPABILITIES       *Capabilities
   )
+/*++
+
+Routine Description:
+
+  Returns the current time and date information, and the time-keeping 
+  capabilities of the hardware platform.
+
+Arguments:
+
+  Time          - A pointer to storage to receive a snapshot of the current time.
+  Capabilities  - An optional pointer to a buffer to receive the real time clock device¡¯s
+                  capabilities.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->GetTime (Time, Capabilities);
 }
-
-
 
 EFI_STATUS
 EfiSetTime (
   IN EFI_TIME                   *Time
   )
+/*++
+
+Routine Description:
+
+  Sets the current local time and date information.
+
+Arguments:
+
+  Time  - A pointer to the current time.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->SetTime (Time);
 }
-
 
 EFI_STATUS
 EfiGetWakeupTime (
@@ -366,33 +444,86 @@ EfiGetWakeupTime (
   OUT BOOLEAN                     *Pending,
   OUT EFI_TIME                    *Time
   )
+/*++
+
+Routine Description:
+
+  Returns the current wakeup alarm clock setting.
+
+Arguments:
+
+  Enabled - Indicates if the alarm is currently enabled or disabled.
+  Pending - Indicates if the alarm signal is pending and requires acknowledgement.
+  Time    - The current alarm setting.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->GetWakeupTime (Enabled, Pending, Time);
 }
 
-
 EFI_STATUS
 EfiSetWakeupTime (
   IN BOOLEAN                      Enable,
-  IN EFI_TIME                    *Time      
+  IN EFI_TIME                     *Time
   )
+/*++
+
+Routine Description:
+
+  Sets the system wakeup alarm clock time.
+
+Arguments:
+
+  Enable  - Enable or disable the wakeup alarm.
+  Time    - If Enable is TRUE, the time to set the wakeup alarm for.
+            If Enable is FALSE, then this parameter is optional, and may be NULL.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->SetWakeupTime (Enable, Time);
 }
 
-
 EFI_STATUS
 EfiGetVariable (
   IN CHAR16                       *VariableName,
-  IN EFI_GUID                     *VendorGuid,
+  IN EFI_GUID                     * VendorGuid,
   OUT UINT32                      *Attributes OPTIONAL,
   IN OUT UINTN                    *DataSize,
   OUT VOID                        *Data
   )
+/*++
+
+Routine Description:
+
+  Returns the value of a variable.
+
+Arguments:
+
+  VariableName  - A Null-terminated Unicode string that is the name of the
+                  vendor¡¯s variable.
+  VendorGuid    - A unique identifier for the vendor.
+  Attributes    - If not NULL, a pointer to the memory location to return the
+                  attributes bitmask for the variable.
+  DataSize      - On input, the size in bytes of the return Data buffer.
+                  On output the size of data returned in Data.
+  Data          - The buffer to return the contents of the variable.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->GetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
 }
-
 
 EFI_STATUS
 EfiGetNextVariableName (
@@ -400,10 +531,31 @@ EfiGetNextVariableName (
   IN OUT CHAR16                   *VariableName,
   IN OUT EFI_GUID                 *VendorGuid
   )
+/*++
+
+Routine Description:
+
+  Enumerates the current variable names.
+
+Arguments:
+
+  VariableNameSize  - The size of the VariableName buffer.
+  VariableName      - On input, supplies the last VariableName that was returned
+                      by GetNextVariableName(). 
+                      On output, returns the Nullterminated Unicode string of the
+                      current variable.
+  VendorGuid        - On input, supplies the last VendorGuid that was returned by
+                      GetNextVariableName(). 
+                      On output, returns the VendorGuid of the current variable.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->GetNextVariableName (VariableNameSize, VariableName, VendorGuid);
 }
-
 
 EFI_STATUS
 EfiSetVariable (
@@ -413,19 +565,52 @@ EfiSetVariable (
   IN UINTN                        DataSize,
   IN VOID                         *Data
   )
-{
-  return mRT->SetVariable(VariableName, VendorGuid, Attributes, DataSize, Data);
-}
+/*++
 
+Routine Description:
+
+  Sets the value of a variable.
+
+Arguments:
+
+  VariableName  - A Null-terminated Unicode string that is the name of the
+                  vendor¡¯s variable.
+  VendorGuid    - A unique identifier for the vendor.
+  Attributes    - Attributes bitmask to set for the variable.
+  DataSize      - The size in bytes of the Data buffer.
+  Data          - The contents for the variable.
+
+Returns:
+
+  Status code
+
+--*/
+{
+  return mRT->SetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
+}
 
 EFI_STATUS
 EfiGetNextHighMonotonicCount (
   OUT UINT32                      *HighCount
   )
+/*++
+
+Routine Description:
+
+  Returns the next high 32 bits of the platform¡¯s monotonic counter.
+
+Arguments:
+
+  HighCount - Pointer to returned value.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->GetNextHighMonotonicCount (HighCount);
 }
-
 
 VOID
 EfiResetSystem (
@@ -434,40 +619,95 @@ EfiResetSystem (
   IN UINTN                        DataSize,
   IN CHAR16                       *ResetData
   )
+/*++
+
+Routine Description:
+
+  Resets the entire platform.
+
+Arguments:
+
+  ResetType   - The type of reset to perform.
+  ResetStatus - The status code for the reset.
+  DataSize    - The size, in bytes, of ResetData.
+  ResetData   - A data buffer that includes a Null-terminated Unicode string, optionally
+                followed by additional binary data.
+
+Returns:
+
+  None
+
+--*/
 {
   mRT->ResetSystem (ResetType, ResetStatus, DataSize, ResetData);
 }
 
-
 EFI_STATUS
 EfiReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
-  IN EFI_STATUS_CODE_VALUE    Value,  
+  IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
+/*++
+
+Routine Description:
+
+  Status Code reporter
+
+Arguments:
+
+  CodeType    - Type of Status Code.
+  
+  Value       - Value to output for Status Code.
+  
+  Instance    - Instance Number of this status code.
+  
+  CallerId    - ID of the caller of this status code.
+  
+  Data        - Optional data associated with this status code.
+
+Returns:
+
+  Status code
+
+--*/
 {
   return mRT->ReportStatusCode (
                 CodeType,
-                Value,  
+                Value,
                 Instance,
                 CallerId,
-                Data 
+                Data
                 );
 }
-
-
 //
 // Cache Flush Routine.
 //
-
 EFI_STATUS
 EfiCpuFlushCache (
   IN EFI_PHYSICAL_ADDRESS          Start,
   IN UINT64                        Length
   )
-{
-  return EFI_SUCCESS; 
-}
+/*++
 
+Routine Description:
+
+  Flush cache with specified range.
+
+Arguments:
+
+  Start   - Start address
+  Length  - Length in bytes
+
+Returns:
+
+  Status code
+  
+  EFI_SUCCESS - success
+
+--*/
+{
+  return EFI_SUCCESS;
+}

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  UGA Splash protocol from the EFI 1.1 specification.
+  UGA Splash protocol.
 
   Abstraction of a very simple graphics device splash screen.
 
@@ -24,8 +24,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
 
+EFI_GUID  gEfiUgaSplashProtocolGuid = EFI_UGA_SPLASH_PROTOCOL_GUID;
 
-EFI_GUID gEfiUgaSplashProtocolGuid = EFI_UGA_SPLASH_PROTOCOL_GUID;
-
-EFI_GUID_STRING (&gEfiUgaSplashProtocolGuid, "UGA Splash Protocol", "EFI 1.1 UGA Splash Protocol");
-
+EFI_GUID_STRING(&gEfiUgaSplashProtocolGuid, "UGA Splash Protocol", "UGA Splash Protocol");

@@ -135,8 +135,8 @@ CoreInsertOnScheduledQueueWhileProcessingBeforeAndAfter (
 VOID
 EFIAPI
 CoreFwVolEventProtocolNotify (
-  EFI_EVENT       Event,
-  VOID            *Context
+  IN  EFI_EVENT       Event,
+  IN  VOID            *Context
   );
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -167,6 +167,22 @@ VOID
 CoreAcquireDispatcherLock (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Enter critical section by gaining lock on mDispatcherLock
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
+
 {
   CoreAcquireLock (&mDispatcherLock);
 }
@@ -175,6 +191,21 @@ VOID
 CoreReleaseDispatcherLock (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Exit critical section by releasing lock on mDispatcherLock
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
 {
   CoreReleaseLock (&mDispatcherLock);
 }
@@ -412,10 +443,11 @@ Returns:
                       sizeof (EFI_DEVICE_HANDLE_EXTENDED_DATA) -
                       sizeof (EFI_STATUS_CODE_DATA);
 
-  EfiCommonLibCopyMem (&DeviceHandleExtData->DataHeader.Type, 
-                       &gEfiStatusCodeSpecificDataGuid, 
-                       sizeof (EFI_GUID)
-                       );
+  EfiCommonLibCopyMem (
+    &DeviceHandleExtData->DataHeader.Type,
+    &gEfiStatusCodeSpecificDataGuid, 
+    sizeof (EFI_GUID)
+    );
 
   if (mDispatcherRunning) {
     //
@@ -433,7 +465,12 @@ Returns:
     // Drain the Scheduled Queue
     //
     while (!IsListEmpty (&mScheduledQueue)) {
-      DriverEntry = CR (mScheduledQueue.ForwardLink, EFI_CORE_DRIVER_ENTRY, ScheduledLink, EFI_CORE_DRIVER_ENTRY_SIGNATURE);
+      DriverEntry = CR (
+                      mScheduledQueue.ForwardLink,
+                      EFI_CORE_DRIVER_ENTRY,
+                      ScheduledLink,
+                      EFI_CORE_DRIVER_ENTRY_SIGNATURE
+                      );
 
       //
       // Load the DXE Driver image into memory. If the Driver was transitioned from
@@ -495,11 +532,11 @@ Returns:
       // Report Status Code here to notify drivers has 
       // been initialized (INIT_BEGIN)
       //
- 
-      EfiCommonLibCopyMem (&DeviceHandleExtData->Handle,
-                           &DriverEntry->ImageHandle,
-                           sizeof (EFI_HANDLE)
-                           );
+      EfiCommonLibCopyMem (
+        &DeviceHandleExtData->Handle,
+        &DriverEntry->ImageHandle,
+        sizeof (EFI_HANDLE)
+        );
 
       CoreReportProgressCodeSpecific (EFI_SOFTWARE_DXE_CORE | EFI_SW_PC_INIT_BEGIN, DriverEntry->ImageHandle);
 
@@ -803,6 +840,28 @@ CoreProcessFvImageFile (
   IN  EFI_HANDLE                      FvHandle,
   IN  EFI_GUID                        *DriverName
   )
+/*++
+
+Routine Description:
+
+  Get the driver from the FV through driver name, and produce a FVB protocol on FvHandle.
+
+Arguments:
+
+  Fv          - The FIRMWARE_VOLUME protocol installed on the FV.
+  FvHandle    - The handle which FVB protocol installed on.
+  DriverName  - The driver guid specified.
+
+Returns:
+
+  EFI_OUT_OF_RESOURCES    - No enough memory or other resource.
+  
+  EFI_VOLUME_CORRUPTED    - Corrupted volume.
+  
+  EFI_SUCCESS             - Function successfully returned.
+  
+
+--*/
 {
   EFI_STATUS                          Status;
   EFI_SECTION_TYPE                    SectionType;
@@ -852,8 +911,8 @@ CoreProcessFvImageFile (
 VOID
 EFIAPI
 CoreFwVolEventProtocolNotify (
-  EFI_EVENT       Event,
-  VOID            *Context
+  IN  EFI_EVENT       Event,
+  IN  VOID            *Context
   )
 /*++
 
@@ -1009,10 +1068,11 @@ Returns:
             //
             if (gDxeCoreLoadedImage->FilePath == NULL) {
               if (EfiCompareGuid (&NameGuid, gDxeCoreFileName)) {
-                EfiCommonLibCopyMem (&mFvDevicePathTemplate.File.NameGuid, 
-                                     &NameGuid, 
-                                     sizeof (EFI_GUID)
-                                     );
+                EfiCommonLibCopyMem (
+                  &mFvDevicePathTemplate.File.NameGuid,
+                  &NameGuid, 
+                  sizeof (EFI_GUID)
+                  );
 
                 gDxeCoreLoadedImage->FilePath = CoreDuplicateDevicePath (
                                                   (EFI_DEVICE_PATH_PROTOCOL *)&mFvDevicePathTemplate

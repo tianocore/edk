@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Status code Architectural Protocol as defined in EFI 2.0
+  Status code Architectural Protocol as defined in Tiano
 
   This code abstracts Status Code reporting.
 
@@ -24,6 +24,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
-EFI_GUID gEfiStatusCodeArchProtocolGuid = EFI_STATUS_CODE_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiStatusCodeArchProtocolGuid = EFI_STATUS_CODE_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiStatusCodeArchProtocolGuid, "Status Code", "Status Code Arch Protocol");

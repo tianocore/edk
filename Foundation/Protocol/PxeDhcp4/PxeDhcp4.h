@@ -1,6 +1,3 @@
-#ifndef _PXEDHCP4_H_
-#define _PXEDHCP4_H_
-
 /*++
 
 Copyright 2004, Intel Corporation                                                         
@@ -19,6 +16,10 @@ Abstract:
   EFI PXE DHCPv4 protocol definition
 
 --*/
+
+#ifndef _PXEDHCP4_H_
+#define _PXEDHCP4_H_
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 //
@@ -262,52 +263,66 @@ typedef struct {
 } EFI_PXE_DHCP4_DATA;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_RUN)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_RUN) (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN OPTIONAL UINTN OpLen,
-  IN OPTIONAL VOID *OpList);
+  IN OPTIONAL UINTN         OpLen,
+  IN OPTIONAL VOID          *OpList
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_SETUP)(
-  IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN OPTIONAL EFI_PXE_DHCP4_DATA *NewData);
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_SETUP) (
+  IN EFI_PXE_DHCP4_PROTOCOL          *This,
+  IN OPTIONAL EFI_PXE_DHCP4_DATA     * NewData
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_INIT)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_INIT) (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN UINTN SecondsTimeout,
-  OUT UINTN *Offers,
-  OUT DHCP4_PACKET **OfferList);
+  IN UINTN                  SecondsTimeout,
+  OUT UINTN                 *Offers,
+  OUT DHCP4_PACKET          **OfferList
+  );
 
 #define DHCP4_MIN_SECONDS   1
 #define DHCP4_MAX_SECONDS   60
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_SELECT)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_SELECT) (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN UINTN SecondsTimeout,
-  IN DHCP4_PACKET *offer);
+  IN UINTN                  SecondsTimeout,
+  IN DHCP4_PACKET           * offer
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_RENEW)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_RENEW) (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  UINTN seconds_timeout);
+  UINTN                     seconds_timeout
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_REBIND)(
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_REBIND) (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  UINTN seconds_timeout);
+  UINTN                     seconds_timeout
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-typedef EFI_STATUS (EFIAPI *EFI_PXE_DHCP4_RELEASE)(
-  IN EFI_PXE_DHCP4_PROTOCOL *This);
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PXE_DHCP4_RELEASE) (
+  IN EFI_PXE_DHCP4_PROTOCOL * This
+  );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 

@@ -28,11 +28,10 @@ Revision History
 #ifndef EFI_SIZE_REDUCTION_APPLIED
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
-       
-extern EFI_COMPONENT_NAME_PROTOCOL gGraphicsConsoleComponentName;
+
+extern EFI_COMPONENT_NAME_PROTOCOL  gGraphicsConsoleComponentName;
 
 #endif
-
 //
 // EFI Component Name Functions
 //
@@ -42,16 +41,18 @@ GraphicsConsoleComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 GraphicsConsoleComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-  );
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
+;
 
 #endif

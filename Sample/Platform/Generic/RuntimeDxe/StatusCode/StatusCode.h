@@ -25,7 +25,6 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 #include "EfiRuntimeLib.h"
 #include "RtPlatformStatusCodeLib.h"
@@ -33,9 +32,8 @@ Abstract:
 //
 // Produced protocols
 //
-
 #include EFI_ARCH_PROTOCOL_PRODUCER (StatusCode)
-#include EFI_PROTOCOL_PRODUCER      (DebugAssert)
+#include EFI_PROTOCOL_PRODUCER (DebugAssert)
 
 //
 // GUID definitions
@@ -49,25 +47,28 @@ Abstract:
 //
 EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI 
+EFIAPI
 StatusCodeReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
 EFI_STATUS
 InitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  );
+  )
+;
 
 EFI_STATUS
 InstallStatusCodeDebugAssert (
   VOID
-  );
+  )
+;
 
 //
 // Driver entry point
@@ -76,6 +77,7 @@ EFI_STATUS
 InstallStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
-  );
+  )
+;
 
 #endif

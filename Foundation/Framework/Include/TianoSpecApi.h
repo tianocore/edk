@@ -20,18 +20,13 @@ Abstract:
 
 --*/
 
-
 #ifndef _TIANO_SPEC_API_H_
 #define _TIANO_SPEC_API_H_
 
+#define EFI_EVENT_NOTIFY_SIGNAL_ALL     0x00000400
 
-
-#define EFI_EVENT_NOTIFY_SIGNAL_ALL               0x00000400
-
-#define EFI_EVENT_SIGNAL_READY_TO_BOOT            0x00000203
-#define EFI_EVENT_SIGNAL_LEGACY_BOOT              0x00000204
-
-
+#define EFI_EVENT_SIGNAL_READY_TO_BOOT  0x00000203
+#define EFI_EVENT_SIGNAL_LEGACY_BOOT    0x00000204
 
 typedef
 EFI_BOOTSERVICE
@@ -70,13 +65,13 @@ typedef
 EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_ALLOCATE_MEMORY_SPACE) (
-  IN     EFI_GCD_ALLOCATE_TYPE  GcdAllocateType,
-  IN     EFI_GCD_MEMORY_TYPE    GcdMemoryType,
-  IN     UINTN                  Alignment,
-  IN     UINT64                 Length,
-  IN OUT EFI_PHYSICAL_ADDRESS   *BaseAddress,
-  IN     EFI_HANDLE             ImageHandle,
-  IN     EFI_HANDLE             DeviceHandle OPTIONAL
+  IN     EFI_GCD_ALLOCATE_TYPE               GcdAllocateType,
+  IN     EFI_GCD_MEMORY_TYPE                 GcdMemoryType,
+  IN     UINTN                               Alignment,
+  IN     UINT64                              Length,
+  IN OUT EFI_PHYSICAL_ADDRESS                * BaseAddress,
+  IN     EFI_HANDLE                          ImageHandle,
+  IN     EFI_HANDLE                          DeviceHandle OPTIONAL
   )
 /*++
 
@@ -171,7 +166,7 @@ EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_GET_MEMORY_SPACE_DESCRIPTOR) (
   IN  EFI_PHYSICAL_ADDRESS             BaseAddress,
-  OUT EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *Descriptor
+  OUT EFI_GCD_MEMORY_SPACE_DESCRIPTOR  * Descriptor
   )
 /*++
 
@@ -288,13 +283,13 @@ typedef
 EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_ALLOCATE_IO_SPACE) (
-  IN     EFI_GCD_ALLOCATE_TYPE  GcdAllocateType,
-  IN     EFI_GCD_IO_TYPE        GcdIoType,
-  IN     UINTN                  Alignment,
-  IN     UINT64                 Length,
-  IN OUT EFI_PHYSICAL_ADDRESS   *BaseAddress,
-  IN     EFI_HANDLE             ImageHandle,
-  IN     EFI_HANDLE             DeviceHandle OPTIONAL
+  IN     EFI_GCD_ALLOCATE_TYPE               GcdAllocateType,
+  IN     EFI_GCD_IO_TYPE                     GcdIoType,
+  IN     UINTN                               Alignment,
+  IN     UINT64                              Length,
+  IN OUT EFI_PHYSICAL_ADDRESS                * BaseAddress,
+  IN     EFI_HANDLE                          ImageHandle,
+  IN     EFI_HANDLE                          DeviceHandle OPTIONAL
   )
 /*++
 
@@ -389,7 +384,7 @@ EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_GET_IO_SPACE_DESCRIPTOR) (
   IN  EFI_PHYSICAL_ADDRESS         BaseAddress,
-  OUT EFI_GCD_IO_SPACE_DESCRIPTOR  *Descriptor
+  OUT EFI_GCD_IO_SPACE_DESCRIPTOR  * Descriptor
   )
 /*++
 
@@ -440,13 +435,12 @@ Returns:
   EFI_SUCCESS               - Successfully get IO space map.
 
 --*/
-;  
+;
 
 typedef
 EFI_BOOTSERVICE
 EFI_STATUS
-(EFIAPI *EFI_DISPATCH) (
-  )
+(EFIAPI *EFI_DISPATCH) (VOID)
 /*++
 
 Routine Description:
@@ -469,7 +463,7 @@ EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_SCHEDULE) (
   IN EFI_HANDLE  FirmwareVolumeHandle,
-  IN EFI_GUID    *DriverName
+  IN EFI_GUID    * DriverName
   )
 /*++
 
@@ -495,7 +489,7 @@ EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_TRUST) (
   IN EFI_HANDLE  FirmwareVolumeHandle,
-  IN EFI_GUID    *DriverName
+  IN EFI_GUID    * DriverName
   )
 /*++
 
@@ -521,8 +515,8 @@ EFI_BOOTSERVICE
 EFI_STATUS
 (EFIAPI *EFI_PROCESS_FIRMWARE_VOLUME) (
   IN VOID                             *FvHeader,
-  IN UINTN                            Size, 
-  OUT EFI_HANDLE                      *FirmwareVolumeHandle
+  IN UINTN                            Size,
+  OUT EFI_HANDLE                      * FirmwareVolumeHandle
   )
 /*++
 
@@ -543,46 +537,42 @@ Returns:
 --*/
 ;
 
-
-
 //
 // DXE Services Table
 //
-
 #define EFI_DXE_SERVICES_SIGNATURE  0x565245535f455844
-#define EFI_DXE_SERVICES_REVISION   ((0<<16) | (25))
+#define EFI_DXE_SERVICES_REVISION   ((0 << 16) | (25))
 
 typedef struct {
-  EFI_TABLE_HEADER                 Hdr;
+  EFI_TABLE_HEADER                Hdr;
 
   //
   // Global Coherency Domain Services
   //
-  EFI_ADD_MEMORY_SPACE             AddMemorySpace;
-  EFI_ALLOCATE_MEMORY_SPACE        AllocateMemorySpace;
-  EFI_FREE_MEMORY_SPACE            FreeMemorySpace;
-  EFI_REMOVE_MEMORY_SPACE          RemoveMemorySpace;
-  EFI_GET_MEMORY_SPACE_DESCRIPTOR  GetMemorySpaceDescriptor;
-  EFI_SET_MEMORY_SPACE_ATTRIBUTES  SetMemorySpaceAttributes;
-  EFI_GET_MEMORY_SPACE_MAP         GetMemorySpaceMap;
-  EFI_ADD_IO_SPACE                 AddIoSpace;
-  EFI_ALLOCATE_IO_SPACE            AllocateIoSpace;
-  EFI_FREE_IO_SPACE                FreeIoSpace;
-  EFI_REMOVE_IO_SPACE              RemoveIoSpace;
-  EFI_GET_IO_SPACE_DESCRIPTOR      GetIoSpaceDescriptor;
-  EFI_GET_IO_SPACE_MAP             GetIoSpaceMap;
+  EFI_ADD_MEMORY_SPACE            AddMemorySpace;
+  EFI_ALLOCATE_MEMORY_SPACE       AllocateMemorySpace;
+  EFI_FREE_MEMORY_SPACE           FreeMemorySpace;
+  EFI_REMOVE_MEMORY_SPACE         RemoveMemorySpace;
+  EFI_GET_MEMORY_SPACE_DESCRIPTOR GetMemorySpaceDescriptor;
+  EFI_SET_MEMORY_SPACE_ATTRIBUTES SetMemorySpaceAttributes;
+  EFI_GET_MEMORY_SPACE_MAP        GetMemorySpaceMap;
+  EFI_ADD_IO_SPACE                AddIoSpace;
+  EFI_ALLOCATE_IO_SPACE           AllocateIoSpace;
+  EFI_FREE_IO_SPACE               FreeIoSpace;
+  EFI_REMOVE_IO_SPACE             RemoveIoSpace;
+  EFI_GET_IO_SPACE_DESCRIPTOR     GetIoSpaceDescriptor;
+  EFI_GET_IO_SPACE_MAP            GetIoSpaceMap;
 
   //
   // Dispatcher Services
   //
-  EFI_DISPATCH                     Dispatch;
-  EFI_SCHEDULE                     Schedule;
-  EFI_TRUST                        Trust;
+  EFI_DISPATCH                    Dispatch;
+  EFI_SCHEDULE                    Schedule;
+  EFI_TRUST                       Trust;
   //
   // Service to process a single firmware volume found in a capsule
   //
   EFI_PROCESS_FIRMWARE_VOLUME     ProcessFirmwareVolume;
 } EFI_DXE_SERVICES;
-  
-  
+
 #endif

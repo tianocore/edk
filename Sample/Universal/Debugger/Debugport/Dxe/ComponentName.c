@@ -20,8 +20,14 @@ Abstract:
 #include "DebugPort.h"
 
 static EFI_UNICODE_STRING_TABLE mDebugPortDriverNameTable[] = {
-  { "eng", L"DebugPort Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"DebugPort Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -59,21 +65,21 @@ DebugPortComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gDebugPortDevice->ComponentNameInterface.SupportedLanguages,
-           mDebugPortDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gDebugPortDevice->ComponentNameInterface.SupportedLanguages,
+          mDebugPortDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 DebugPortComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

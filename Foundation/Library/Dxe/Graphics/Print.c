@@ -59,13 +59,13 @@ Abstract:
 #include "PrintWidth.h"
 #include "EfiPrintLib.h"
 #include "Print.h"
-#include EFI_PROTOCOL_DEFINITION(Hii)
+#include EFI_PROTOCOL_DEFINITION (Hii)
 
 STATIC
-CHAR_W *
+CHAR_W                *
 GetFlagsAndWidth (
-  IN  CHAR_W      *Format, 
-  OUT UINTN       *Flags, 
+  IN  CHAR_W      *Format,
+  OUT UINTN       *Flags,
   OUT UINTN       *Width,
   IN OUT  VA_LIST *Marker
   );
@@ -100,7 +100,7 @@ Atoi (
   CHAR_W  *String
   );
 
-static EFI_UGA_PIXEL mEfiColors[16] = {
+static EFI_UGA_PIXEL  mEfiColors[16] = {
   0x00, 0x00, 0x00, 0x00,
   0x98, 0x00, 0x00, 0x00,
   0x00, 0x98, 0x00, 0x00,
@@ -131,23 +131,51 @@ _IPrint (
   IN CHAR16                           *fmt,
   IN VA_LIST                          args
   )
-// Display string worker for: Print, PrintAt, IPrint, IPrintAt
-{
-  VOID                                *Buffer;
-  EFI_STATUS                          Status;
-  UINT16                              GlyphWidth;
-  UINT32                              GlyphStatus;
-  UINT16                              StringIndex;
-  UINTN                               Index;
-  CHAR16                              *UnicodeWeight;
-  EFI_NARROW_GLYPH                    *Glyph;
-  EFI_HII_PROTOCOL                    *Hii;
-  EFI_UGA_PIXEL                       *LineBuffer;
-  UINT32                              HorizontalResolution;
-  UINT32                              VerticalResolution;
-  UINT32                              ColorDepth;
-  UINT32                              RefreshRate;
+/*++
 
+Routine Description:
+
+  Display string worker for: Print, PrintAt, IPrint, IPrintAt
+
+Arguments:
+
+  UgaDraw         - UGA draw protocol interface
+  
+  Sto             - Simple text out protocol interface
+  
+  X               - X coordinate to start printing
+  
+  Y               - Y coordinate to start printing
+  
+  Foreground      - Foreground color
+  
+  Background      - Background color
+  
+  fmt             - Format string
+  
+  args            - Print arguments
+
+Returns: 
+
+  EFI_SUCCESS             -  success
+  EFI_OUT_OF_RESOURCES    -  out of resources
+
+--*/
+{
+  VOID              *Buffer;
+  EFI_STATUS        Status;
+  UINT16            GlyphWidth;
+  UINT32            GlyphStatus;
+  UINT16            StringIndex;
+  UINTN             Index;
+  CHAR16            *UnicodeWeight;
+  EFI_NARROW_GLYPH  *Glyph;
+  EFI_HII_PROTOCOL  *Hii;
+  EFI_UGA_PIXEL     *LineBuffer;
+  UINT32            HorizontalResolution;
+  UINT32            VerticalResolution;
+  UINT32            ColorDepth;
+  UINT32            RefreshRate;
 
   GlyphStatus = 0;
 
@@ -159,11 +187,11 @@ _IPrint (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  UgaDraw->GetMode(UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
+  UgaDraw->GetMode (UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
 
-  LineBuffer = EfiLibAllocatePool (sizeof(EFI_UGA_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
+  LineBuffer = EfiLibAllocatePool (sizeof (EFI_UGA_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
   if (LineBuffer == NULL) {
-    gBS->FreePool(Buffer);
+    gBS->FreePool (Buffer);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -174,27 +202,45 @@ _IPrint (
 
   VSPrint (Buffer, 0x10000, fmt, args);
 
-  UnicodeWeight = (CHAR16 *)Buffer;
+  UnicodeWeight = (CHAR16 *) Buffer;
 
   for (Index = 0; UnicodeWeight[Index] != 0; Index++) {
     if (UnicodeWeight[Index] == CHAR_BACKSPACE ||
-        UnicodeWeight[Index] == CHAR_LINEFEED ||
+        UnicodeWeight[Index] == CHAR_LINEFEED  ||
         UnicodeWeight[Index] == CHAR_CARRIAGE_RETURN) {
       UnicodeWeight[Index] = 0;
     }
   }
 
-  for (Index = 0; Index < EfiStrLen(Buffer); Index++) {
-    StringIndex = (UINT16)Index;
-    Status = Hii->GetGlyph (Hii, UnicodeWeight, &StringIndex, (UINT8 **)&Glyph, &GlyphWidth, &GlyphStatus);
+  for (Index = 0; Index < EfiStrLen (Buffer); Index++) {
+    StringIndex = (UINT16) Index;
+    Status      = Hii->GetGlyph (Hii, UnicodeWeight, &StringIndex, (UINT8 **) &Glyph, &GlyphWidth, &GlyphStatus);
     if (EFI_ERROR (Status)) {
       goto Error;
     }
 
     if (Foreground == NULL || Background == NULL) {
-      Status = Hii->GlyphToBlt (Hii, (UINT8 *)Glyph, mEfiColors[Sto->Mode->Attribute & 0x0f], mEfiColors[Sto->Mode->Attribute >> 4], EfiStrLen(Buffer), GlyphWidth, GLYPH_HEIGHT, &LineBuffer[Index * GLYPH_WIDTH]);
+      Status = Hii->GlyphToBlt (
+                      Hii,
+                      (UINT8 *) Glyph,
+                      mEfiColors[Sto->Mode->Attribute & 0x0f],
+                      mEfiColors[Sto->Mode->Attribute >> 4],
+                      EfiStrLen (Buffer),
+                      GlyphWidth,
+                      GLYPH_HEIGHT,
+                      &LineBuffer[Index * GLYPH_WIDTH]
+                      );
     } else {
-      Status = Hii->GlyphToBlt (Hii, (UINT8 *)Glyph, *Foreground, *Background, EfiStrLen(Buffer), GlyphWidth, GLYPH_HEIGHT, &LineBuffer[Index * GLYPH_WIDTH]);
+      Status = Hii->GlyphToBlt (
+                      Hii,
+                      (UINT8 *) Glyph,
+                      *Foreground,
+                      *Background,
+                      EfiStrLen (Buffer),
+                      GlyphWidth,
+                      GLYPH_HEIGHT,
+                      &LineBuffer[Index * GLYPH_WIDTH]
+                      );
     }
   }
 
@@ -202,21 +248,21 @@ _IPrint (
   // Blt a character to the screen
   //
   Status = UgaDraw->Blt (
-                      UgaDraw, 
+                      UgaDraw,
                       LineBuffer,
-                      EfiUgaBltBufferToVideo, 
+                      EfiUgaBltBufferToVideo,
                       0,
                       0,
-                      X, 
-                      Y, 
-                      GLYPH_WIDTH * EfiStrLen(Buffer), 
-                      GLYPH_HEIGHT, 
-                      GLYPH_WIDTH * EfiStrLen(Buffer) * sizeof (EFI_UGA_PIXEL)
+                      X,
+                      Y,
+                      GLYPH_WIDTH * EfiStrLen (Buffer),
+                      GLYPH_HEIGHT,
+                      GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_UGA_PIXEL)
                       );
 
-Error:  
-  gBS->FreePool(LineBuffer);
-  gBS->FreePool(Buffer);
+Error:
+  gBS->FreePool (LineBuffer);
+  gBS->FreePool (Buffer);
   return Status;
 }
 
@@ -225,8 +271,8 @@ UINTN
 PrintXY (
   IN UINTN                            X,
   IN UINTN                            Y,
-  IN EFI_UGA_PIXEL                    *ForeGround,  OPTIONAL
-  IN EFI_UGA_PIXEL                    *BackGround,  OPTIONAL
+  IN EFI_UGA_PIXEL                    *ForeGround, OPTIONAL
+  IN EFI_UGA_PIXEL                    *BackGround, OPTIONAL
   IN CHAR_W                           *Fmt,
   ...
   )
@@ -238,7 +284,17 @@ Routine Description:
 
 Arguments:
 
+    X           - X coordinate to start printing
+    
+    Y           - Y coordinate to start printing
+    
+    ForeGround  - Foreground color
+    
+    BackGround  - Background color
+
     Fmt         - Format string
+
+    ...         - Print arguments
 
 Returns:
 
@@ -246,31 +302,31 @@ Returns:
 
 --*/
 {
-  EFI_HANDLE                          Handle;
-  EFI_UGA_DRAW_PROTOCOL               *UgaDraw;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL        *Sto;
-  EFI_STATUS                          Status;
-  VA_LIST                             Args;
+  EFI_HANDLE                    Handle;
+  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *Sto;
+  EFI_STATUS                    Status;
+  VA_LIST                       Args;
 
   VA_START (Args, Fmt);
 
   Handle = gST->ConsoleOutHandle;
 
   Status = gBS->HandleProtocol (
-                Handle,
-                &gEfiUgaDrawProtocolGuid,
-                &UgaDraw
-                );
+                  Handle,
+                  &gEfiUgaDrawProtocolGuid,
+                  &UgaDraw
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   Status = gBS->HandleProtocol (
-                Handle,
-                &gEfiSimpleTextOutProtocolGuid,
-                &Sto
-                );
+                  Handle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  &Sto
+                  );
 
   if (EFI_ERROR (Status)) {
     return Status;
@@ -295,12 +351,12 @@ Routine Description:
 
 Arguments:
 
-  Buffer     - Ascii buffer to print the results of the parsing of Format into.
+  Buffer     - Wide char buffer to print the results of the parsing of Format into.
 
   BufferSize - Maximum number of characters to put into buffer. Zero means no 
                limit.
 
-  Format - Ascii format string see file header for more details.
+  Format - Format string see file header for more details.
 
   ...    - Vararg list consumed by processing Format.
 
@@ -316,7 +372,7 @@ Returns:
   VA_START (Marker, Format);
   Return = VSPrint (Buffer, BufferSize, Format, Marker);
   VA_END (Marker);
-  
+
   return Return;
 }
 
@@ -353,38 +409,39 @@ Returns:
 --*/
 {
   CHAR16    TempBuffer[CHARACTER_NUMBER_FOR_VALUE];
-  CHAR_W  *Buffer;
-  CHAR8   *AsciiStr;
-  CHAR16  *UnicodeStr;
-  CHAR_W  *Format;
-  UINTN   Index;
-  UINTN   Flags;
-  UINTN   Width;
+  CHAR_W    *Buffer;
+  CHAR8     *AsciiStr;
+  CHAR16    *UnicodeStr;
+  CHAR_W    *Format;
+  UINTN     Index;
+  UINTN     Flags;
+  UINTN     Width;
   UINTN     Count;
   UINTN     NumberOfCharacters;
   UINTN     BufferLeft;
-  UINT64  Value;
-  EFI_GUID *TmpGUID;
+  UINT64    Value;
+  EFI_GUID  *TmpGUID;
 
   //
   // Process the format string. Stop if Buffer is over run.
   //
 
-  Buffer = StartOfBuffer;
-  Format = (CHAR_W *)FormatString; 
-  NumberOfCharacters = BufferSize/sizeof(CHAR_W);
-  BufferLeft = BufferSize;
+  Buffer              = StartOfBuffer;
+  Format              = (CHAR_W *) FormatString;
+  NumberOfCharacters  = BufferSize / sizeof (CHAR_W);
+  BufferLeft          = BufferSize;
   for (Index = 0; (*Format != '\0') && (Index < NumberOfCharacters - 1); Format++) {
     if (*Format != '%') {
-      if ((*Format == '\n') && (Index < NumberOfCharacters - 2)) {                  
+      if ((*Format == '\n') && (Index < NumberOfCharacters - 2)) {
         //
         // If carage return add line feed
         //
         Buffer[Index++] = '\r';
-        BufferLeft -= sizeof(CHAR_W);
+        BufferLeft -= sizeof (CHAR_W);
       }
+
       Buffer[Index++] = *Format;
-      BufferLeft -= sizeof(CHAR_W);
+      BufferLeft -= sizeof (CHAR_W);
     } else {
       
       //
@@ -395,9 +452,10 @@ Returns:
       case 'X':
         Flags |= PREFIX_ZERO;
         Width = sizeof (UINT64) * 2;
-        //
-        // break skiped on purpose
-        //
+
+      //
+      // break skiped on purpose
+      //
       case 'x':
         if ((Flags & LONG_TYPE) == LONG_TYPE) {
           Value = VA_ARG (Marker, UINT64);
@@ -408,7 +466,7 @@ Returns:
         EfiValueToHexStr (TempBuffer, Value, Flags, Width);
         UnicodeStr = TempBuffer;
 
-        for ( ;(*UnicodeStr != '\0') && (Index < NumberOfCharacters - 1); UnicodeStr++) {
+        for (; (*UnicodeStr != '\0') && (Index < NumberOfCharacters - 1); UnicodeStr++) {
           Buffer[Index++] = *UnicodeStr;
         }
         break;
@@ -417,24 +475,25 @@ Returns:
         if ((Flags & LONG_TYPE) == LONG_TYPE) {
           Value = VA_ARG (Marker, UINT64);
         } else {
-          Value = (UINTN)VA_ARG (Marker, UINTN);
+          Value = (UINTN) VA_ARG (Marker, UINTN);
         }
 
         EfiValueToString (TempBuffer, Value, Flags, Width);
-        UnicodeStr = TempBuffer;                              
+        UnicodeStr = TempBuffer;
 
-        for ( ;(*UnicodeStr != '\0') && (Index < NumberOfCharacters - 1); UnicodeStr++) {
+        for (; (*UnicodeStr != '\0') && (Index < NumberOfCharacters - 1); UnicodeStr++) {
           Buffer[Index++] = *UnicodeStr;
         }
         break;
 
       case 's':
       case 'S':
-        UnicodeStr = (CHAR16 *)VA_ARG (Marker, CHAR_W *);
+        UnicodeStr = (CHAR16 *) VA_ARG (Marker, CHAR_W *);
         if (UnicodeStr == NULL) {
           UnicodeStr = L"<null string>";
         }
-        for (Count = 0 ;(*UnicodeStr != '\0') && (Index < NumberOfCharacters - 1); UnicodeStr++, Count++) {
+
+        for (Count = 0; (*UnicodeStr != '\0') && (Index < NumberOfCharacters - 1); UnicodeStr++, Count++) {
           Buffer[Index++] = *UnicodeStr;
         }
         //
@@ -447,31 +506,32 @@ Returns:
         break;
 
       case 'a':
-        AsciiStr = (CHAR8 *)VA_ARG (Marker, CHAR8 *);
+        AsciiStr = (CHAR8 *) VA_ARG (Marker, CHAR8 *);
         if (AsciiStr == NULL) {
           AsciiStr = "<null string>";
         }
-        for (Count = 0 ;(*AsciiStr != '\0') && (Index < NumberOfCharacters - 1); AsciiStr++, Count++) {
-          Buffer[Index++] = (CHAR_W)*AsciiStr;
+
+        for (Count = 0; (*AsciiStr != '\0') && (Index < NumberOfCharacters - 1); AsciiStr++, Count++) {
+          Buffer[Index++] = (CHAR_W) * AsciiStr;
         }
         //
         // Add padding if needed
         //
-        for (;(Count < Width) && (Index < NumberOfCharacters - 1); Count++) {
+        for (; (Count < Width) && (Index < NumberOfCharacters - 1); Count++) {
           Buffer[Index++] = ' ';
         }
         break;
 
       case 'c':
-        Buffer[Index++] = (CHAR_W)VA_ARG (Marker, UINTN);
+        Buffer[Index++] = (CHAR_W) VA_ARG (Marker, UINTN);
         break;
 
       case 'g':
-        TmpGUID = VA_ARG (Marker, EFI_GUID *); 
+        TmpGUID = VA_ARG (Marker, EFI_GUID *);
         if (TmpGUID != NULL) {
           Index += GuidToString (
-                    TmpGUID, 
-                    &Buffer[Index], 
+                    TmpGUID,
+                    &Buffer[Index],
                     BufferLeft
                     );
         }
@@ -480,7 +540,7 @@ Returns:
       case 't':
         Index += TimeToString (
                   VA_ARG (Marker, EFI_TIME *), 
-                  &Buffer[Index], 
+                  &Buffer[Index],
                   BufferLeft
                   );
         break;
@@ -488,7 +548,7 @@ Returns:
       case 'r':
         Index += EfiStatusToString (
                   VA_ARG (Marker, EFI_STATUS), 
-                  &Buffer[Index], 
+                  &Buffer[Index],
                   BufferLeft
                   );
         break;
@@ -496,26 +556,28 @@ Returns:
       case '%':
         Buffer[Index++] = *Format;
         break;
-    
+
       default:
         //
         // if the type is unknown print it to the screen
         //
         Buffer[Index++] = *Format;
       }
-      BufferLeft = BufferSize - Index * sizeof(CHAR_W) ;
-    } 
+
+      BufferLeft = BufferSize - Index * sizeof (CHAR_W);
+    }
   }
-  Buffer[Index++] = '\0'; 
-   
+
+  Buffer[Index++] = '\0';
+
   return &Buffer[Index] - StartOfBuffer;
 }
 
 STATIC
 CHAR_W *
 GetFlagsAndWidth (
-  IN  CHAR_W      *Format, 
-  OUT UINTN       *Flags, 
+  IN  CHAR_W      *Format,
+  OUT UINTN       *Flags,
   OUT UINTN       *Width,
   IN OUT  VA_LIST *Marker
   )
@@ -547,19 +609,33 @@ Returns:
   UINTN   Count;
   BOOLEAN Done;
 
-  *Flags = 0;
-  *Width = 0;
-  for (Done = FALSE; !Done; ) {
+  *Flags  = 0;
+  *Width  = 0;
+  for (Done = FALSE; !Done;) {
     Format++;
 
     switch (*Format) {
 
-    case '-': *Flags |= LEFT_JUSTIFY; break;
-    case '+': *Flags |= PREFIX_SIGN;  break;
-    case ' ': *Flags |= PREFIX_BLANK; break;
-    case ',': *Flags |= COMMA_TYPE;   break;
+    case '-':
+      *Flags |= LEFT_JUSTIFY;
+      break;
+
+    case '+':
+      *Flags |= PREFIX_SIGN;
+      break;
+
+    case ' ':
+      *Flags |= PREFIX_BLANK;
+      break;
+
+    case ',':
+      *Flags |= COMMA_TYPE;
+      break;
+
     case 'L':
-    case 'l': *Flags |= LONG_TYPE;    break;
+    case 'l':
+      *Flags |= LONG_TYPE;
+      break;
 
     case '*':
       *Width = VA_ARG (*Marker, UINTN);
@@ -567,6 +643,7 @@ Returns:
 
     case '0':
       *Flags |= PREFIX_ZERO;
+
     case '1':
     case '2':
     case '3':
@@ -578,9 +655,9 @@ Returns:
     case '9':
       Count = 0;
       do {
-        Count = (Count * 10) + *Format - '0';
+        Count = (Count * 10) +*Format - '0';
         Format++;
-      } while ((*Format >= '0')  &&  (*Format <= '9'));
+      } while ((*Format >= '0') && (*Format <= '9'));
       Format--;
       *Width = Count;
       break;
@@ -589,6 +666,7 @@ Returns:
       Done = TRUE;
     }
   }
+
   return Format;
 }
 
@@ -622,20 +700,21 @@ Returns:
   UINTN Size;
 
   Size = SPrint (
-            Buffer, BufferSize, 
-            STRING_W ("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"),
-            Guid->Data1,                    
-            Guid->Data2,
-            Guid->Data3,
-            Guid->Data4[0],
-            Guid->Data4[1],
-            Guid->Data4[2],
-            Guid->Data4[3],
-            Guid->Data4[4],
-            Guid->Data4[5],
-            Guid->Data4[6],
-            Guid->Data4[7]
-            );
+          Buffer,
+          BufferSize,
+          STRING_W ("%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"),
+          Guid->Data1,
+          Guid->Data2,
+          Guid->Data3,
+          Guid->Data4[0],
+          Guid->Data4[1],
+          Guid->Data4[2],
+          Guid->Data4[3],
+          Guid->Data4[4],
+          Guid->Data4[5],
+          Guid->Data4[6],
+          Guid->Data4[7]
+          );
 
   //
   // SPrint will null terminate the string. The -1 skips the null
@@ -670,28 +749,29 @@ Returns:
   Number of characters printed.  
 
 --*/
-{ 
+{
   UINTN Size;
 
   Size = SPrint (
-            Buffer, BufferSize, 
-            STRING_W ("%02d/%02d/%04d  %02d:%02d"),
-            Time->Month,
-            Time->Day,
-            Time->Year,
-            Time->Hour,
-            Time->Minute
-            );
+          Buffer,
+          BufferSize,
+          STRING_W ("%02d/%02d/%04d  %02d:%02d"),
+          Time->Month,
+          Time->Day,
+          Time->Year,
+          Time->Hour,
+          Time->Minute
+          );
 
   //
   // SPrint will null terminate the string. The -1 skips the null
   //
   return Size - 1;
-} 
+}
 
 struct {
-  EFI_STATUS      Status;
-  CHAR8           *String;
+  EFI_STATUS  Status;
+  CHAR8       *String;
 } StatusString[] = {
   EFI_SUCCESS, "Success",
   EFI_LOAD_ERROR, "Load Error",
@@ -759,16 +839,16 @@ Returns:
   BOOLEAN Found;
 
   Index = 0;
-  Desc = NULL;
+  Desc  = NULL;
   Found = FALSE;
   while (!Found) {
     if (Status == StatusString[Index].Status || 
         EFI_MAX_BIT == StatusString[Index].Status) {
       Found = TRUE;
-      Desc = StatusString[Index].String;
+      Desc  = StatusString[Index].String;
       break;
     } else {
-      Index ++;
+      Index++;
     }
   }
   //
@@ -780,5 +860,6 @@ Returns:
   } else {
     Size = SPrint (Buffer, BufferSize, STRING_W ("%X"), Status);
   }
+
   return Size - 1;
 }

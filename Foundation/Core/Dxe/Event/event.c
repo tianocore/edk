@@ -427,8 +427,8 @@ Returns:
     // Check for an invalid NotifyFunction or NotifyTpl
     //
     if ((NotifyFunction == NULL) || 
-         NotifyTpl < EFI_TPL_APPLICATION || 
-         NotifyTpl >= EFI_TPL_HIGH_LEVEL) {
+        (NotifyTpl < EFI_TPL_APPLICATION) || 
+       (NotifyTpl >= EFI_TPL_HIGH_LEVEL)) {
       return EFI_INVALID_PARAMETER;
     }
 
@@ -515,6 +515,8 @@ Arguments:
     
 Returns:
 
+  EFI_INVALID_PARAMETER - Parameters are not valid.
+  
   EFI_SUCCESS - The event was signaled.
 
 --*/
@@ -719,6 +721,8 @@ Arguments:
     
 Returns:
 
+  EFI_INVALID_PARAMETER - Parameters are not valid.
+  
   EFI_SUCCESS - The event has been closed
 
 --*/

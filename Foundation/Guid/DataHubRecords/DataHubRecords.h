@@ -70,8 +70,9 @@ extern  EFI_GUID gMemoryProducerGuid;
 #define EFI_MEMORY_PRODUCER_GUID \
   { 0x1d7add6e, 0xb2da, 0x4b0b, 0xb2, 0x9f, 0x49, 0xcb, 0x42, 0xf4, 0x63, 0x56 }
 
+//
 // ... need memory sub classes here...
-
+//
 extern EFI_GUID  gEfiMemorySubClassGuid;
 
 
@@ -92,8 +93,9 @@ extern  EFI_GUID gMiscProducerGuid;
 
 
 
+//
 // ... need misc sub classes here...
-
+//
 extern EFI_GUID  gEfiMiscSubClassGuid;
 
 

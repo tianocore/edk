@@ -22,26 +22,25 @@ Abstract:
 #ifndef _UNICODE_COLLATION_H_
 #define _UNICODE_COLLATION_H_
 
-
 #define EFI_UNICODE_COLLATION_PROTOCOL_GUID \
-  { 0x1d85cd7f, 0xf43d, 0x11d2, 0x9a, 0xc,  0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d }
+  { \
+    0x1d85cd7f, 0xf43d, 0x11d2, 0x9a, 0xc, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_UNICODE_COLLATION_PROTOCOL);
 
 //
 // Protocol data structures and defines
 //
-
-#define EFI_UNICODE_BYTE_ORDER_MARK (CHAR16)(0xfeff)
+#define EFI_UNICODE_BYTE_ORDER_MARK (CHAR16) (0xfeff)
 
 //
 // Protocol member functions
 //
-
 typedef
 INTN
 (EFIAPI *EFI_UNICODE_COLLATION_STRICOLL) (
-  IN EFI_UNICODE_COLLATION_PROTOCOL *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL         * This,
   IN CHAR16                                 *Str1,
   IN CHAR16                                 *Str2
   )
@@ -64,11 +63,10 @@ INTN
 --*/
 ;
 
-
 typedef
 BOOLEAN
 (EFIAPI *EFI_UNICODE_COLLATION_METAIMATCH) (
-  IN EFI_UNICODE_COLLATION_PROTOCOL *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL         * This,
   IN CHAR16                                 *String,
   IN CHAR16                                 *Pattern
   )
@@ -90,11 +88,10 @@ BOOLEAN
 --*/
 ;
 
-
 typedef
 VOID
 (EFIAPI *EFI_UNICODE_COLLATION_STRLWR) (
-  IN EFI_UNICODE_COLLATION_PROTOCOL *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL         * This,
   IN OUT CHAR16                             *Str
   )
 /*++
@@ -116,7 +113,7 @@ VOID
 typedef
 VOID
 (EFIAPI *EFI_UNICODE_COLLATION_STRUPR) (
-  IN EFI_UNICODE_COLLATION_PROTOCOL *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL         * This,
   IN OUT CHAR16                             *Str
   )
 /*++
@@ -138,7 +135,7 @@ VOID
 typedef
 VOID
 (EFIAPI *EFI_UNICODE_COLLATION_FATTOSTR) (
-  IN EFI_UNICODE_COLLATION_PROTOCOL *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL         * This,
   IN UINTN                                  FatSize,
   IN CHAR8                                  *Fat,
   OUT CHAR16                                *String
@@ -165,7 +162,7 @@ VOID
 typedef
 BOOLEAN
 (EFIAPI *EFI_UNICODE_COLLATION_STRTOFAT) (
-  IN EFI_UNICODE_COLLATION_PROTOCOL *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL         * This,
   IN CHAR16                                 *String,
   IN UINTN                                  FatSize,
   OUT CHAR8                                 *Fat
@@ -187,28 +184,26 @@ BOOLEAN
     TRUE  - Fat is a Long File Name
     FALSE - Fat is an 8.3 file name
 
---*/;
-
+--*/
+;
 
 typedef struct _EFI_UNICODE_COLLATION_PROTOCOL {
-
   //
   // general
   //
-  EFI_UNICODE_COLLATION_STRICOLL                StriColl;
-  EFI_UNICODE_COLLATION_METAIMATCH              MetaiMatch;
-  EFI_UNICODE_COLLATION_STRLWR                  StrLwr;
-  EFI_UNICODE_COLLATION_STRUPR                  StrUpr;
+  EFI_UNICODE_COLLATION_STRICOLL    StriColl;
+  EFI_UNICODE_COLLATION_METAIMATCH  MetaiMatch;
+  EFI_UNICODE_COLLATION_STRLWR      StrLwr;
+  EFI_UNICODE_COLLATION_STRUPR      StrUpr;
 
   //
   // for supporting fat volumes
   //
-  EFI_UNICODE_COLLATION_FATTOSTR                FatToStr;
-  EFI_UNICODE_COLLATION_STRTOFAT                StrToFat;
+  EFI_UNICODE_COLLATION_FATTOSTR    FatToStr;
+  EFI_UNICODE_COLLATION_STRTOFAT    StrToFat;
 
-  CHAR8                               *SupportedLanguages;
+  CHAR8                             *SupportedLanguages;
 } EFI_UNICODE_COLLATION_PROTOCOL;
-
 
 extern EFI_GUID gEfiUnicodeCollationProtocolGuid;
 

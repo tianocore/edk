@@ -22,9 +22,7 @@ Abstract:
 
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (UsbHostController)
- 
 
-EFI_GUID gEfiUsbHcProtocolGuid = EFI_USB_HC_PROTOCOL_GUID;
+EFI_GUID  gEfiUsbHcProtocolGuid = EFI_USB_HC_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiUsbHcProtocolGuid, "Usb Host Controller Protocol", "USB 1.1 Host Controller");
-

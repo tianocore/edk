@@ -35,17 +35,17 @@ UsbMassStorageComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UsbMassStorageComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gUsbMassStorageComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gUsbMassStorageComponentName = {
   UsbMassStorageComponentNameGetDriverName,
   UsbMassStorageComponentNameGetControllerName,
   "eng"
@@ -53,7 +53,7 @@ EFI_COMPONENT_NAME_PROTOCOL gUsbMassStorageComponentName = {
 
 STATIC EFI_UNICODE_STRING_TABLE mUsbMassStorageDriverNameTable[] = {
   { "eng", L"Generic USB Mass Storage Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -91,21 +91,21 @@ UsbMassStorageComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gUsbMassStorageComponentName.SupportedLanguages,
-           mUsbMassStorageDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gUsbMassStorageComponentName.SupportedLanguages,
+          mUsbMassStorageDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 UsbMassStorageComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

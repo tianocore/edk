@@ -31,8 +31,7 @@ Abstract:
 // You would think you should divid by sizeof (UINT64), but EBC does not like
 // that!
 //
-#define EFI_STATUS_CODE_DATA_MAX_SIZE64   (EFI_STATUS_CODE_DATA_MAX_SIZE/8)
-
+#define EFI_STATUS_CODE_DATA_MAX_SIZE64 (EFI_STATUS_CODE_DATA_MAX_SIZE / 8)
 
 VOID
 EfiDebugAssert (
@@ -65,14 +64,14 @@ Returns:
 {
   UINT64  Buffer[EFI_STATUS_CODE_DATA_MAX_SIZE];
 
-  EfiDebugAssertWorker (FileName, LineNumber,Description, sizeof (Buffer), Buffer);
+  EfiDebugAssertWorker (FileName, LineNumber, Description, sizeof (Buffer), Buffer);
 
   gRT->ReportStatusCode (
         (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED),
         (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_ILLEGAL_SOFTWARE_STATE),
         0,
         &gEfiCallerIdGuid,
-        (EFI_STATUS_CODE_DATA *)Buffer
+        (EFI_STATUS_CODE_DATA *) Buffer
         );
 
   //
@@ -111,20 +110,20 @@ Returns:
 --*/
 {
   UINT64  Buffer[EFI_STATUS_CODE_DATA_MAX_SIZE];
-  UINTN                          ImageDebugMask;
-  
+  UINTN   ImageDebugMask;
+
   //
   // Check driver debug mask value and global mask
   //
-  if( gDebugMaskInterface != NULL ) {  
-    gDebugMaskInterface->GetDebugMask(gDebugMaskInterface, &ImageDebugMask);
-    if(!((ErrorLevel & ImageDebugMask) & gErrorLevel)) {  
-      return;
+  if (gDebugMaskInterface != NULL) {
+    gDebugMaskInterface->GetDebugMask (gDebugMaskInterface, &ImageDebugMask);
+    if (!((ErrorLevel & ImageDebugMask) & gErrorLevel)) {
+      return ;
     }
   }
 
   if (!(gErrorLevel & ErrorLevel)) {
-    return;
+    return ;
   }
 
   EfiDebugVPrintWorker (ErrorLevel, Format, Marker, sizeof (Buffer), Buffer);
@@ -136,10 +135,10 @@ Returns:
         (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_DC_UNSPECIFIED),
         0,
         &gEfiCallerIdGuid,
-        (EFI_STATUS_CODE_DATA *)Buffer
+        (EFI_STATUS_CODE_DATA *) Buffer
         );
-     
-  return;
+
+  return ;
 }
 
 VOID
@@ -160,6 +159,8 @@ Arguments:
 
   Format     - String to use for the print, followed by Print arguments.
 
+  ...        - Print arguments.
+
   
 Returns:
   
@@ -167,11 +168,9 @@ Returns:
 
 --*/
 {
-  VA_LIST   Marker;
+  VA_LIST Marker;
 
   VA_START (Marker, Format);
   EfiDebugVPrint (ErrorLevel, Format, Marker);
   VA_END (Marker);
 }
-
-

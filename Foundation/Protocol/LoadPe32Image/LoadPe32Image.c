@@ -26,8 +26,8 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_PROTOCOL_DEFINITION(LoadPe32Image)
+#include EFI_PROTOCOL_DEFINITION (LoadPe32Image)
 
-EFI_GUID gEfiLoadPeImageGuid = PE32_IMAGE_PROTOCOL_GUID;
+EFI_GUID  gEfiLoadPeImageGuid = PE32_IMAGE_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiLoadPeImageGuid, "LoadPe32Image Protocol", "EFI 2.0 Load Pe32 Image Protocol");
+EFI_GUID_STRING(&gEfiLoadPeImageGuid, "LoadPe32Image Protocol", "Tiano Load Pe32 Image Protocol");

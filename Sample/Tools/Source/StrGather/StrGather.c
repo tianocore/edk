@@ -29,43 +29,42 @@ Abstract:
 #include "StrGather.h"
 #include "StringDB.h"
 
-#define TOOL_VERSION                  "0.31"
+#define TOOL_VERSION  "0.31"
 
-typedef UINT16    WCHAR;
+typedef UINT16  WCHAR;
 
-#define MAX_PATH                      255
-#define MAX_NEST_DEPTH                20    // just in case we get in an endless loop.
-#define MAX_STRING_IDENTIFIER_NAME    100   // number of wchars
-
-#define MAX_LINE_LEN            200
-#define STRING_TOKEN            "STRING_TOKEN"
-#define DEFAULT_BASE_NAME       "BaseName"
+#define MAX_PATH                    255
+#define MAX_NEST_DEPTH              20  // just in case we get in an endless loop.
+#define MAX_STRING_IDENTIFIER_NAME  100 // number of wchars
+#define MAX_LINE_LEN                200
+#define STRING_TOKEN                "STRING_TOKEN"
+#define DEFAULT_BASE_NAME           "BaseName"
 //
 // Operational modes for this utility
 //
-#define MODE_UNKNOWN    0
-#define MODE_PARSE      1
-#define MODE_SCAN       2
-#define MODE_DUMP       3
+#define MODE_UNKNOWN  0
+#define MODE_PARSE    1
+#define MODE_SCAN     2
+#define MODE_DUMP     3
 
 //
 // We keep a linked list of these for the source files we process
 //
 typedef struct _SOURCE_FILE {
-  FILE                    *Fptr;
-  WCHAR                   *FileBuffer;
-  WCHAR                   *FileBufferPtr;
-  UINT32                  FileSize;
-  INT8                    FileName[MAX_PATH];
-  UINT32                  LineNum;
-  BOOLEAN                 EndOfFile;
-  BOOLEAN                 SkipToHash;
-  struct _SOURCE_FILE     *Previous;
-  struct _SOURCE_FILE     *Next;
-  WCHAR                   ControlCharacter;
+  FILE                *Fptr;
+  WCHAR               *FileBuffer;
+  WCHAR               *FileBufferPtr;
+  UINT32              FileSize;
+  INT8                FileName[MAX_PATH];
+  UINT32              LineNum;
+  BOOLEAN             EndOfFile;
+  BOOLEAN             SkipToHash;
+  struct _SOURCE_FILE *Previous;
+  struct _SOURCE_FILE *Next;
+  WCHAR               ControlCharacter;
 } SOURCE_FILE;
 
-#define DEFAULT_CONTROL_CHARACTER        UNICODE_SLASH
+#define DEFAULT_CONTROL_CHARACTER UNICODE_SLASH
 
 //
 // Here's all our globals. We need a linked list of include paths, a linked
@@ -74,11 +73,11 @@ typedef struct _SOURCE_FILE {
 //
 static struct {
   SOURCE_FILE                 SourceFiles;
-  TEXT_STRING_LIST            *IncludePaths;              // all include paths to search
+  TEXT_STRING_LIST            *IncludePaths;                    // all include paths to search
   TEXT_STRING_LIST            *LastIncludePath;
   TEXT_STRING_LIST            *ScanFileName;
   TEXT_STRING_LIST            *LastScanFileName;
-  TEXT_STRING_LIST            *SkipExt;                   // if -skipext .uni
+  TEXT_STRING_LIST            *SkipExt;                         // if -skipext .uni
   TEXT_STRING_LIST            *LastSkipExt;
   TEXT_STRING_LIST            *IndirectionFileName;
   TEXT_STRING_LIST            *LastIndirectionFileName;
@@ -86,15 +85,15 @@ static struct {
   TEXT_STRING_LIST            *LastDatabaseFileName;
   WCHAR_STRING_LIST           *Language;
   WCHAR_STRING_LIST           *LastLanguage;
-  WCHAR_MATCHING_STRING_LIST  *IndirectionList;           // from indirection file(s)
+  WCHAR_MATCHING_STRING_LIST  *IndirectionList;                 // from indirection file(s)
   WCHAR_MATCHING_STRING_LIST  *LastIndirectionList;
-  BOOLEAN                     Verbose;                    // for more detailed output
-  BOOLEAN                     VerboseDatabaseWrite;       // for more detailed output when writing database
-  BOOLEAN                     VerboseDatabaseRead;        // for more detailed output when reading database
-  BOOLEAN                     NewDatabase;                // to start from scratch
-  BOOLEAN                     IgnoreNotFound;             // when scanning
+  BOOLEAN                     Verbose;                          // for more detailed output
+  BOOLEAN                     VerboseDatabaseWrite;             // for more detailed output when writing database
+  BOOLEAN                     VerboseDatabaseRead;              // for more detailed output when reading database
+  BOOLEAN                     NewDatabase;                      // to start from scratch
+  BOOLEAN                     IgnoreNotFound;                   // when scanning
   BOOLEAN                     VerboseScan;
-  BOOLEAN                     UnquotedStrings;            // -uqs option
+  BOOLEAN                     UnquotedStrings;                  // -uqs option
   INT8                        OutputDatabaseFileName[MAX_PATH];
   INT8                        StringHFileName[MAX_PATH];
   INT8                        StringCFileName[MAX_PATH];        // output .C filename
@@ -104,20 +103,20 @@ static struct {
   UINT32                      Mode;
 } mGlobals;
 
-static 
+static
 BOOLEAN
 IsValidIdentifierChar (
   INT8      Char,
   BOOLEAN   FirstChar
   );
 
-static 
+static
 void
 RewindFile (
   SOURCE_FILE *SourceFile
   );
 
-static 
+static
 BOOLEAN
 SkipTo (
   SOURCE_FILE *SourceFile,
@@ -125,7 +124,7 @@ SkipTo (
   BOOLEAN     StopAfterNewline
   );
 
-static 
+static
 UINT32
 SkipWhiteSpace (
   SOURCE_FILE *SourceFile
@@ -149,7 +148,7 @@ PreprocessFile (
   SOURCE_FILE *SourceFile
   );
 
-static 
+static
 UINT32
 GetStringIdentifierName (
   IN SOURCE_FILE  *SourceFile,
@@ -157,7 +156,7 @@ GetStringIdentifierName (
   IN UINT32       StringIdentifierNameLen
   );
 
-static 
+static
 UINT32
 GetLanguageIdentifierName (
   IN SOURCE_FILE  *SourceFile,
@@ -166,7 +165,7 @@ GetLanguageIdentifierName (
   IN BOOLEAN      Optional
   );
 
-static 
+static
 WCHAR *
 GetPrintableLanguageName (
   IN SOURCE_FILE  *SourceFile
@@ -175,8 +174,8 @@ GetPrintableLanguageName (
 static
 STATUS
 AddCommandLineLanguage (
- IN INT8          *Language
- );
+  IN INT8          *Language
+  );
 
 static
 WCHAR *
@@ -198,8 +197,8 @@ ParseFile (
   SOURCE_FILE *SourceFile
   );
 
-static 
-FILE *
+static
+FILE  *
 FindFile (
   IN INT8     *FileName,
   OUT INT8    *FoundFileName,
@@ -209,7 +208,7 @@ FindFile (
 static
 STATUS
 ProcessArgs (
-  int   Argc, 
+  int   Argc,
   char  *Argv[]
   );
 
@@ -219,46 +218,50 @@ ProcessFile (
   SOURCE_FILE *SourceFile
   );
 
-static 
-UINT32 
+static
+UINT32
 wstrcmp (
-  WCHAR *Buffer, 
+  WCHAR *Buffer,
   WCHAR *Str
   );
 
 static
 void
-Usage ();
+Usage (
+  VOID
+  );
 
-static 
+static
 void
-FreeLists ( );
+FreeLists (
+  VOID
+  );
 
-static 
+static
 void
 ProcessTokenString (
   SOURCE_FILE *SourceFile
   );
 
-static 
+static
 void
 ProcessTokenInclude (
   SOURCE_FILE *SourceFile
   );
 
-static 
+static
 void
 ProcessTokenScope (
   SOURCE_FILE *SourceFile
   );
 
-static 
+static
 void
 ProcessTokenLanguage (
   SOURCE_FILE *SourceFile
   );
 
-static 
+static
 void
 ProcessTokenLangDef (
   SOURCE_FILE *SourceFile
@@ -270,7 +273,7 @@ ScanFiles (
   TEXT_STRING_LIST *ScanFiles
   );
 
-static 
+static
 STATUS
 ParseIndirectionFiles (
   TEXT_STRING_LIST    *Files
@@ -281,7 +284,7 @@ StringDBCreateHiiExportPack (
   INT8                *OutputFileName
   );
 
-int 
+int
 main (
   int   Argc,
   char  *Argv[]
@@ -294,7 +297,8 @@ Routine Description:
   
 Arguments:
 
-  Standard C main() argc and argv.
+  Argc - Standard C main() argc and argv.
+  Argv - Standard C main() argc and argv.
 
 Returns:
 
@@ -303,7 +307,7 @@ Returns:
   
 --*/
 {
-  STATUS      Status;
+  STATUS  Status;
 
   SetUtilityName (PROGRAM_NAME);
   //
@@ -312,7 +316,7 @@ Returns:
   Status = ProcessArgs (Argc, Argv);
   if (Status != STATUS_SUCCESS) {
     return Status;
-  }  
+  }
   //
   // Initialize the database manager
   //
@@ -325,9 +329,10 @@ Returns:
     //
     // Read all databases specified.
     //
-    for (mGlobals.LastDatabaseFileName = mGlobals.DatabaseFileName; 
+    for (mGlobals.LastDatabaseFileName = mGlobals.DatabaseFileName;
          mGlobals.LastDatabaseFileName != NULL;
-         mGlobals.LastDatabaseFileName = mGlobals.LastDatabaseFileName->Next ) {
+         mGlobals.LastDatabaseFileName = mGlobals.LastDatabaseFileName->Next
+        ) {
       Status = StringDBReadDatabase (mGlobals.LastDatabaseFileName->Str, TRUE, mGlobals.VerboseDatabaseRead);
       if (Status != STATUS_SUCCESS) {
         return Status;
@@ -335,12 +340,11 @@ Returns:
     }
   }
   //
-  // Read indirection file(s) if specified 
+  // Read indirection file(s) if specified
   //
   if (ParseIndirectionFiles (mGlobals.IndirectionFileName) != STATUS_SUCCESS) {
     goto Finish;
   }
-
   //
   // If scanning source files, do that now
   //
@@ -370,7 +374,12 @@ Returns:
   // Dump the strings to a .c file if there have still been no errors.
   //
   if ((mGlobals.StringCFileName[0] != 0) && (GetUtilityStatus () < STATUS_ERROR)) {
-    Status = StringDBDumpCStrings (mGlobals.StringCFileName, mGlobals.BaseName, mGlobals.Language, mGlobals.IndirectionList);
+    Status = StringDBDumpCStrings (
+              mGlobals.StringCFileName,
+              mGlobals.BaseName,
+              mGlobals.Language,
+              mGlobals.IndirectionList
+              );
     if (Status != EFI_SUCCESS) {
       goto Finish;
     }
@@ -398,10 +407,12 @@ Returns:
     } else {
       Status = StringDBWriteDatabase (mGlobals.DatabaseFileName->Str, mGlobals.VerboseDatabaseWrite);
     }
+
     if (Status != EFI_SUCCESS) {
       goto Finish;
     }
   }
+
 Finish:
   //
   // Free up memory
@@ -410,6 +421,7 @@ Finish:
   StringDBDestructor ();
   return GetUtilityStatus ();
 }
+
 static
 STATUS
 ProcessIncludeFile (
@@ -433,10 +445,10 @@ Returns:
   
 --*/
 {
-  static UINT32   NestDepth = 0;
-  INT8            FoundFileName[MAX_PATH];
-  STATUS          Status;
-  
+  static UINT32 NestDepth = 0;
+  INT8          FoundFileName[MAX_PATH];
+  STATUS        Status;
+
   Status = STATUS_SUCCESS;
   NestDepth++;
   //
@@ -447,7 +459,7 @@ Returns:
     fprintf (stdout, "%*cProcessing file '%s'\n", NestDepth * 2, ' ', SourceFile->FileName);
   }
 
-  // 
+  //
   // Make sure we didn't exceed our maximum nesting depth
   //
   if (NestDepth > MAX_NEST_DEPTH) {
@@ -468,6 +480,7 @@ Returns:
       Error (NULL, 0, 0, SourceFile->FileName, "file not found");
       return STATUS_ERROR;
     }
+
     SourceFile->Fptr = FindFile (SourceFile->FileName, FoundFileName, sizeof (FoundFileName));
     if (SourceFile->Fptr == NULL) {
       Error (ParentSourceFile->FileName, ParentSourceFile->LineNum, 0, SourceFile->FileName, "include file not found");
@@ -485,8 +498,10 @@ Finish:
   if (SourceFile->Fptr != NULL) {
     fclose (SourceFile->Fptr);
   }
+
   return Status;
 }
+
 static
 STATUS
 ProcessFile (
@@ -500,12 +515,13 @@ ProcessFile (
   fseek (SourceFile->Fptr, 0, SEEK_END);
   SourceFile->FileSize = ftell (SourceFile->Fptr);
   fseek (SourceFile->Fptr, 0, SEEK_SET);
-  SourceFile->FileBuffer = (WCHAR *)malloc (SourceFile->FileSize + sizeof (WCHAR));
+  SourceFile->FileBuffer = (WCHAR *) malloc (SourceFile->FileSize + sizeof (WCHAR));
   if (SourceFile->FileBuffer == NULL) {
     Error (NULL, 0, 0, "memory allocation failure", NULL);
     return STATUS_ERROR;
   }
-  fread ((VOID *)SourceFile->FileBuffer, SourceFile->FileSize, 1, SourceFile->Fptr);
+
+  fread ((VOID *) SourceFile->FileBuffer, SourceFile->FileSize, 1, SourceFile->Fptr);
   SourceFile->FileBuffer[(SourceFile->FileSize / sizeof (WCHAR))] = UNICODE_NULL;
   //
   // Pre-process the file to replace comments with spaces
@@ -518,6 +534,7 @@ ProcessFile (
   free (SourceFile->FileBuffer);
   return STATUS_SUCCESS;
 }
+
 static
 STATUS
 ParseFile (
@@ -526,14 +543,15 @@ ParseFile (
 {
   BOOLEAN InComment;
   UINT32  Len;
-  
+
   //
   // First character of a unicode file is special. Make sure
   //
   if (SourceFile->FileBufferPtr[0] != UNICODE_FILE_START) {
-    Error (SourceFile->FileName, 1, 0, SourceFile->FileName,  "file does not appear to be a unicode file");
+    Error (SourceFile->FileName, 1, 0, SourceFile->FileName, "file does not appear to be a unicode file");
     return STATUS_ERROR;
   }
+
   SourceFile->FileBufferPtr++;
   InComment = FALSE;
   //
@@ -561,45 +579,52 @@ ParseFile (
       if (mGlobals.Verbose) {
         printf ("%d: %S\n", SourceFile->LineNum, SourceFile->FileBufferPtr);
       }
+
       InComment = FALSE;
     } else if (SourceFile->FileBufferPtr[0] == 0) {
       SourceFile->FileBufferPtr++;
     } else if (InComment) {
       SourceFile->FileBufferPtr++;
-    } else if ((SourceFile->FileBufferPtr[0] == UNICODE_SLASH) &&
-               (SourceFile->FileBufferPtr[1] == UNICODE_SLASH)) {
+    } else if ((SourceFile->FileBufferPtr[0] == UNICODE_SLASH) && (SourceFile->FileBufferPtr[1] == UNICODE_SLASH)) {
       SourceFile->FileBufferPtr += 2;
       InComment = TRUE;
     } else if (SourceFile->SkipToHash && (SourceFile->FileBufferPtr[0] != SourceFile->ControlCharacter)) {
       SourceFile->FileBufferPtr++;
     } else {
       SourceFile->SkipToHash = FALSE;
-      if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-          ((Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"include")) > 0)) {
+      if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+          ((Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"include")) > 0)
+          ) {
         SourceFile->FileBufferPtr += Len + 1;
         ProcessTokenInclude (SourceFile);
-      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-                 (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"scope")) > 0) {
+      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+               (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"scope")) > 0
+              ) {
         SourceFile->FileBufferPtr += Len + 1;
         ProcessTokenScope (SourceFile);
-      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-                 (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"language")) > 0) {
+      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+               (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"language")) > 0
+              ) {
         SourceFile->FileBufferPtr += Len + 1;
         ProcessTokenLanguage (SourceFile);
-      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-                 (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"langdef")) > 0) {
+      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+               (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"langdef")) > 0
+              ) {
         SourceFile->FileBufferPtr += Len + 1;
         ProcessTokenLangDef (SourceFile);
-      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-                 (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"string")) > 0) {
+      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+               (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"string")) > 0
+              ) {
         SourceFile->FileBufferPtr += Len + 1;
         ProcessTokenString (SourceFile);
-      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-                 (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"EFI_BREAKPOINT()")) > 0) {
+      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+               (Len = wstrcmp (SourceFile->FileBufferPtr + 1, L"EFI_BREAKPOINT()")) > 0
+              ) {
         SourceFile->FileBufferPtr += Len;
-        EFI_BREAKPOINT();
-      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) && 
-                 (SourceFile->FileBufferPtr[1] == UNICODE_EQUAL_SIGN)) {
+        EFI_BREAKPOINT ();
+      } else if ((SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter) &&
+               (SourceFile->FileBufferPtr[1] == UNICODE_EQUAL_SIGN)
+              ) {
         SourceFile->ControlCharacter = SourceFile->FileBufferPtr[2];
         SourceFile->FileBufferPtr += 3;
       } else {
@@ -610,9 +635,11 @@ ParseFile (
         InComment = TRUE;
       }
     }
-  }    
-  return STATUS_SUCCESS;  
+  }
+
+  return STATUS_SUCCESS;
 }
+
 static
 void
 PreprocessFile (
@@ -653,8 +680,7 @@ Returns:
     } else if (InComment) {
       SourceFile->FileBufferPtr[0] = UNICODE_SPACE;
       SourceFile->FileBufferPtr++;
-    } else if ((SourceFile->FileBufferPtr[0] == UNICODE_SLASH) &&
-               (SourceFile->FileBufferPtr[1] == UNICODE_SLASH)) {
+    } else if ((SourceFile->FileBufferPtr[0] == UNICODE_SLASH) && (SourceFile->FileBufferPtr[1] == UNICODE_SLASH)) {
       SourceFile->FileBufferPtr += 2;
       InComment = TRUE;
     } else {
@@ -667,21 +693,32 @@ Returns:
   //
   RewindFile (SourceFile);
 }
-static 
+
+static
 WCHAR *
 GetPrintableLanguageName (
   IN SOURCE_FILE  *SourceFile
   )
 {
-  WCHAR   *String, *Start, *Ptr;
+  WCHAR   *String;
+  WCHAR   *Start;
+  WCHAR   *Ptr;
   UINT32  Len;
 
-  SkipWhiteSpace(SourceFile);
+  SkipWhiteSpace (SourceFile);
   if (SourceFile->FileBufferPtr[0] != UNICODE_DOUBLE_QUOTE) {
-    Error (SourceFile->FileName, SourceFile->LineNum, 0, "expected quoted printable language name", "%S", SourceFile->FileBufferPtr);
+    Error (
+      SourceFile->FileName,
+      SourceFile->LineNum,
+      0,
+      "expected quoted printable language name",
+      "%S",
+      SourceFile->FileBufferPtr
+      );
     SourceFile->SkipToHash = TRUE;
     return NULL;
   }
+
   Len = 0;
   SourceFile->FileBufferPtr++;
   Start = Ptr = SourceFile->FileBufferPtr;
@@ -692,18 +729,27 @@ GetPrintableLanguageName (
     } else if (SourceFile->FileBufferPtr[0] == UNICODE_DOUBLE_QUOTE) {
       break;
     }
+
     SourceFile->FileBufferPtr++;
     Len++;
   }
+
   if (SourceFile->FileBufferPtr[0] != UNICODE_DOUBLE_QUOTE) {
-    Warning (SourceFile->FileName, SourceFile->LineNum, 0, "missing closing quote on printable language name string", "%S", Start);
+    Warning (
+      SourceFile->FileName,
+      SourceFile->LineNum,
+      0,
+      "missing closing quote on printable language name string",
+      "%S",
+      Start
+      );
   } else {
     SourceFile->FileBufferPtr++;
   }
   //
   // Now allocate memory for the string and save it off
   //
-  String = (WCHAR *)malloc ((Len + 1) * sizeof (WCHAR));
+  String = (WCHAR *) malloc ((Len + 1) * sizeof (WCHAR));
   if (String == NULL) {
     Error (NULL, 0, 0, "memory allocation failed", NULL);
     return NULL;
@@ -719,6 +765,7 @@ GetPrintableLanguageName (
     Ptr++;
     Len--;
   }
+
   *Ptr = 0;
   //
   // Now format the string to convert \wide and \narrow controls
@@ -726,6 +773,7 @@ GetPrintableLanguageName (
   StringDBFormatString (String);
   return String;
 }
+
 static
 WCHAR *
 GetQuotedString (
@@ -733,18 +781,23 @@ GetQuotedString (
   BOOLEAN     Optional
   )
 {
-  WCHAR   *String, *Start, *Ptr;
+  WCHAR   *String;
+  WCHAR   *Start;
+  WCHAR   *Ptr;
   UINT32  Len;
   BOOLEAN PreviousBackslash;
+
   if (SourceFile->FileBufferPtr[0] != UNICODE_DOUBLE_QUOTE) {
     if (!Optional) {
       Error (SourceFile->FileName, SourceFile->LineNum, 0, "expected quoted string", "%S", SourceFile->FileBufferPtr);
     }
+
     return NULL;
   }
+
   Len = 0;
   SourceFile->FileBufferPtr++;
-  Start = Ptr = SourceFile->FileBufferPtr;
+  Start             = Ptr = SourceFile->FileBufferPtr;
   PreviousBackslash = FALSE;
   while (!EndOfFile (SourceFile)) {
     if ((SourceFile->FileBufferPtr[0] == UNICODE_DOUBLE_QUOTE) && (!PreviousBackslash)) {
@@ -757,9 +810,11 @@ GetQuotedString (
     } else {
       PreviousBackslash = FALSE;
     }
+
     SourceFile->FileBufferPtr++;
     Len++;
   }
+
   if (SourceFile->FileBufferPtr[0] != UNICODE_DOUBLE_QUOTE) {
     Warning (SourceFile->FileName, SourceFile->LineNum, 0, "missing closing quote on string", "%S", Start);
   } else {
@@ -768,7 +823,7 @@ GetQuotedString (
   //
   // Now allocate memory for the string and save it off
   //
-  String = (WCHAR *)malloc ((Len + 1) * sizeof (WCHAR));
+  String = (WCHAR *) malloc ((Len + 1) * sizeof (WCHAR));
   if (String == NULL) {
     Error (NULL, 0, 0, "memory allocation failed", NULL);
     return NULL;
@@ -784,6 +839,7 @@ GetQuotedString (
     Ptr++;
     Len--;
   }
+
   *Ptr = 0;
   return String;
 }
@@ -794,7 +850,7 @@ GetQuotedString (
 // All we can do is call the string database to add the string identifier. Unfortunately
 // he'll have to keep track of the last identifier we added.
 //
-static 
+static
 void
 ProcessTokenString (
   SOURCE_FILE *SourceFile
@@ -815,6 +871,7 @@ ProcessTokenString (
     SourceFile->SkipToHash = TRUE;
   }
 }
+
 static
 BOOLEAN
 EndOfFile (
@@ -829,13 +886,15 @@ EndOfFile (
     SourceFile->EndOfFile = TRUE;
     return TRUE;
   }
+
   if (SourceFile->EndOfFile) {
     return TRUE;
   }
+
   return FALSE;
 }
 
-static 
+static
 UINT32
 GetStringIdentifierName (
   IN SOURCE_FILE  *SourceFile,
@@ -860,10 +919,11 @@ GetStringIdentifierName (
   //
   Len = 0;
   StringIdentifierNameLen /= 2;
-  From = SourceFile->FileBufferPtr;
+  From  = SourceFile->FileBufferPtr;
   Start = SourceFile->FileBufferPtr;
   if (((SourceFile->FileBufferPtr[0] >= UNICODE_A) && (SourceFile->FileBufferPtr[0] <= UNICODE_Z)) ||
-      ((SourceFile->FileBufferPtr[0] >= UNICODE_z) && (SourceFile->FileBufferPtr[0] <= UNICODE_z))) {
+      ((SourceFile->FileBufferPtr[0] >= UNICODE_z) && (SourceFile->FileBufferPtr[0] <= UNICODE_z))
+      ) {
     //
     // Do nothing
     //
@@ -871,16 +931,19 @@ GetStringIdentifierName (
     Error (SourceFile->FileName, SourceFile->LineNum, 0, "invalid character in string identifier name", "%S", Start);
     return 0;
   }
+
   while (!EndOfFile (SourceFile)) {
     if (((SourceFile->FileBufferPtr[0] >= UNICODE_A) && (SourceFile->FileBufferPtr[0] <= UNICODE_Z)) ||
-        ((SourceFile->FileBufferPtr[0] >= UNICODE_z) && (SourceFile->FileBufferPtr[0] <= UNICODE_z))   ||
+        ((SourceFile->FileBufferPtr[0] >= UNICODE_z) && (SourceFile->FileBufferPtr[0] <= UNICODE_z)) ||
         ((SourceFile->FileBufferPtr[0] >= UNICODE_0) && (SourceFile->FileBufferPtr[0] <= UNICODE_9)) ||
-         (SourceFile->FileBufferPtr[0] == UNICODE_UNDERSCORE)) {
+        (SourceFile->FileBufferPtr[0] == UNICODE_UNDERSCORE)
+        ) {
       Len++;
       if (Len >= StringIdentifierNameLen) {
         Error (SourceFile->FileName, SourceFile->LineNum, 0, "string identifier name too long", "%S", Start);
         return 0;
       }
+
       *StringIdentifierName = SourceFile->FileBufferPtr[0];
       StringIdentifierName++;
       SourceFile->FileBufferPtr++;
@@ -897,7 +960,8 @@ GetStringIdentifierName (
   *StringIdentifierName = 0;
   return Len;
 }
-static 
+
+static
 UINT32
 GetLanguageIdentifierName (
   IN SOURCE_FILE  *SourceFile,
@@ -915,9 +979,15 @@ GetLanguageIdentifierName (
   SkipWhiteSpace (SourceFile);
   if (SourceFile->EndOfFile) {
     if (!Optional) {
-      Error (SourceFile->FileName, SourceFile->LineNum, 0, 
-        "end-of-file encountered", "expected language identifier");
+      Error (
+        SourceFile->FileName,
+        SourceFile->LineNum,
+        0,
+        "end-of-file encountered",
+        "expected language identifier"
+        );
     }
+
     return 0;
   }
   //
@@ -930,16 +1000,23 @@ GetLanguageIdentifierName (
       return 0;
     }
   }
+
   Len = 0;
   LanguageIdentifierNameLen /= 2;
   //
   // Internal error if we weren't given at least 4 WCHAR's to work with.
   //
   if (LanguageIdentifierNameLen < LANGUAGE_IDENTIFIER_NAME_LEN + 1) {
-    Error (SourceFile->FileName, SourceFile->LineNum, 0, 
-      "app error -- language identifier name length is invalid", NULL);
+    Error (
+      SourceFile->FileName,
+      SourceFile->LineNum,
+      0,
+      "app error -- language identifier name length is invalid",
+      NULL
+      );
   }
-  From = SourceFile->FileBufferPtr;
+
+  From  = SourceFile->FileBufferPtr;
   Start = SourceFile->FileBufferPtr;
   while (!EndOfFile (SourceFile)) {
     if (((SourceFile->FileBufferPtr[0] >= UNICODE_a) && (SourceFile->FileBufferPtr[0] <= UNICODE_z))) {
@@ -948,6 +1025,7 @@ GetLanguageIdentifierName (
         Error (SourceFile->FileName, SourceFile->LineNum, 0, "language identifier name too long", "%S", Start);
         return 0;
       }
+
       *LanguageIdentifierName = SourceFile->FileBufferPtr[0];
       SourceFile->FileBufferPtr++;
       LanguageIdentifierName++;
@@ -959,22 +1037,23 @@ GetLanguageIdentifierName (
     }
   }
   //
-  // Terminate the copy of the string. 
+  // Terminate the copy of the string.
   //
   *LanguageIdentifierName = 0;
   return Len;
 }
-static 
+
+static
 void
 ProcessTokenInclude (
   SOURCE_FILE *SourceFile
   )
 {
-  INT8          IncludeFileName[MAX_PATH];
-  INT8          *To;
-  UINT32        Len;
-  BOOLEAN       ReportedError;
-  SOURCE_FILE   IncludedSourceFile;
+  INT8        IncludeFileName[MAX_PATH];
+  INT8        *To;
+  UINT32      Len;
+  BOOLEAN     ReportedError;
+  SOURCE_FILE IncludedSourceFile;
 
   ReportedError = FALSE;
   if (SkipWhiteSpace (SourceFile) == 0) {
@@ -987,17 +1066,19 @@ ProcessTokenInclude (
     Error (SourceFile->FileName, SourceFile->LineNum, 0, "expected quoted include file name", NULL);
     goto FailDone;
   }
+
   SourceFile->FileBufferPtr++;
   //
   // Copy the filename as ascii to our local string
   //
-  To = IncludeFileName;
+  To  = IncludeFileName;
   Len = 0;
   while (!EndOfFile (SourceFile)) {
     if ((SourceFile->FileBufferPtr[0] == UNICODE_CR) || (SourceFile->FileBufferPtr[0] == UNICODE_LF)) {
       Error (SourceFile->FileName, SourceFile->LineNum, 0, "end-of-line found in quoted include file name", NULL);
       goto FailDone;
     }
+
     if (SourceFile->FileBufferPtr[0] == UNICODE_DOUBLE_QUOTE) {
       SourceFile->FileBufferPtr++;
       break;
@@ -1010,28 +1091,35 @@ ProcessTokenInclude (
       Error (SourceFile->FileName, SourceFile->LineNum, 0, "length of include file name exceeds limit", NULL);
       ReportedError = TRUE;
     }
+
     if (!ReportedError) {
-      *To = UNICODE_TO_ASCII(SourceFile->FileBufferPtr[0]);
+      *To = UNICODE_TO_ASCII (SourceFile->FileBufferPtr[0]);
       To++;
     }
+
     SourceFile->FileBufferPtr++;
   }
+
   if (!ReportedError) {
     *To = 0;
-    memset ((char *)&IncludedSourceFile, 0, sizeof (SOURCE_FILE));
+    memset ((char *) &IncludedSourceFile, 0, sizeof (SOURCE_FILE));
     strcpy (IncludedSourceFile.FileName, IncludeFileName);
     IncludedSourceFile.ControlCharacter = DEFAULT_CONTROL_CHARACTER;
     ProcessIncludeFile (&IncludedSourceFile, SourceFile);
-    //printf ("including file '%s'\n", IncludeFileName);
+    //
+    // printf ("including file '%s'\n", IncludeFileName);
+    //
   }
-  return;
+
+  return ;
 FailDone:
   //
   // Error recovery -- skip to next #
   //
   SourceFile->SkipToHash = TRUE;
 }
-static 
+
+static
 void
 ProcessTokenScope (
   SOURCE_FILE *SourceFile
@@ -1049,7 +1137,7 @@ ProcessTokenScope (
 // Parse:  #langdef eng "English"
 //         #langdef chn "\wideChinese"
 //
-static 
+static
 void
 ProcessTokenLangDef (
   SOURCE_FILE *SourceFile
@@ -1073,7 +1161,7 @@ ProcessTokenLangDef (
       ParserSetPosition (SourceFile->FileName, SourceFile->LineNum);
       StringDBAddLanguage (LanguageIdentifier, PrintableName);
       free (PrintableName);
-      return;
+      return ;
     }
   }
   //
@@ -1081,6 +1169,7 @@ ProcessTokenLangDef (
   //
   SourceFile->SkipToHash = TRUE;
 }
+
 static
 BOOLEAN
 ApparentQuotedString (
@@ -1091,56 +1180,64 @@ ApparentQuotedString (
   //
   // See if the first and last nonblank characters on the line are double quotes
   //
-  for (Ptr = SourceFile->FileBufferPtr; *Ptr && (*Ptr == UNICODE_SPACE); Ptr++);
+  for (Ptr = SourceFile->FileBufferPtr; *Ptr && (*Ptr == UNICODE_SPACE); Ptr++)
+    ;
   if (*Ptr != UNICODE_DOUBLE_QUOTE) {
     return FALSE;
   }
+
   while (*Ptr) {
     Ptr++;
   }
+
   Ptr--;
-  for (; *Ptr && (*Ptr == UNICODE_SPACE); Ptr--);
+  for (; *Ptr && (*Ptr == UNICODE_SPACE); Ptr--)
+    ;
   if (*Ptr != UNICODE_DOUBLE_QUOTE) {
     return FALSE;
   }
+
   return TRUE;
 }
-
 //
 // Parse:
 //   #language eng "some string " "more string"
 //
-static 
+static
 void
 ProcessTokenLanguage (
   SOURCE_FILE *SourceFile
   )
 {
-  WCHAR   *String, *SecondString, *TempString, *From, *To;
-  WCHAR   Language[LANGUAGE_IDENTIFIER_NAME_LEN+1];
+  WCHAR   *String;
+  WCHAR   *SecondString;
+  WCHAR   *TempString;
+  WCHAR   *From;
+  WCHAR   *To;
+  WCHAR   Language[LANGUAGE_IDENTIFIER_NAME_LEN + 1];
   UINT32  Len;
   BOOLEAN PreviousNewline;
   //
   // Get the language identifier
   //
   Language[0] = 0;
-  Len = GetLanguageIdentifierName (SourceFile, Language, sizeof (Language), TRUE);
+  Len         = GetLanguageIdentifierName (SourceFile, Language, sizeof (Language), TRUE);
   if (Len != LANGUAGE_IDENTIFIER_NAME_LEN) {
     Error (SourceFile->FileName, SourceFile->LineNum, 0, "invalid or missing language identifier", "%S", Language);
     SourceFile->SkipToHash = TRUE;
-    return;
+    return ;
   }
   //
   // Extract the string value. It's either a quoted string that starts on the current line, or
-  // an unquoted string that starts on the following line and continues until the next control 
-  // character in column 1. 
+  // an unquoted string that starts on the following line and continues until the next control
+  // character in column 1.
   // Look ahead to find a quote or a newline
   //
   if (SkipTo (SourceFile, UNICODE_DOUBLE_QUOTE, TRUE)) {
     String = GetQuotedString (SourceFile, FALSE);
     if (String != NULL) {
       //
-      // Set the position in the file of where we are parsing for error 
+      // Set the position in the file of where we are parsing for error
       // reporting purposes. Then start looking ahead for additional
       // quoted strings, and concatenate them until we get a failure
       // back from the string parser.
@@ -1152,11 +1249,12 @@ ProcessTokenLanguage (
         SecondString = GetQuotedString (SourceFile, TRUE);
         if (SecondString != NULL) {
           Len += wcslen (SecondString);
-          TempString = (WCHAR *)malloc (Len * sizeof (WCHAR));
+          TempString = (WCHAR *) malloc (Len * sizeof (WCHAR));
           if (TempString == NULL) {
             Error (NULL, 0, 0, "application error", "failed to allocate memory");
-            return;
+            return ;
           }
+
           wcscpy (TempString, String);
           wcscat (TempString, SecondString);
           free (String);
@@ -1168,7 +1266,7 @@ ProcessTokenLanguage (
       free (String);
     } else {
       //
-      // Error was reported at lower level. Error recovery mode. 
+      // Error was reported at lower level. Error recovery mode.
       //
       SourceFile->SkipToHash = TRUE;
     }
@@ -1180,15 +1278,21 @@ ProcessTokenLanguage (
       // quotes, so they need to put the quoted string on the end of the previous line
       //
       if (ApparentQuotedString (SourceFile)) {
-        Warning (SourceFile->FileName, SourceFile->LineNum, 0, "unexpected quoted string on line", "specify -uqs option if necessary");
+        Warning (
+          SourceFile->FileName,
+          SourceFile->LineNum,
+          0,
+          "unexpected quoted string on line",
+          "specify -uqs option if necessary"
+          );
       }
     }
     //
-    // Found end-of-line (hopefully). Skip over it and start taking in characters 
+    // Found end-of-line (hopefully). Skip over it and start taking in characters
     // until we find a control character at the start of a line.
     //
-    Len = 0;
-    From = SourceFile->FileBufferPtr;
+    Len             = 0;
+    From            = SourceFile->FileBufferPtr;
     PreviousNewline = FALSE;
     while (!EndOfFile (SourceFile)) {
       if (SourceFile->FileBufferPtr[0] == UNICODE_LF) {
@@ -1199,77 +1303,89 @@ ProcessTokenLanguage (
         if (PreviousNewline && (SourceFile->FileBufferPtr[0] == SourceFile->ControlCharacter)) {
           break;
         }
+
         PreviousNewline = FALSE;
       }
+
       SourceFile->FileBufferPtr++;
     }
+
     if ((Len == 0) && EndOfFile (SourceFile)) {
       Error (SourceFile->FileName, SourceFile->LineNum, 0, "unexpected end of file", NULL);
       SourceFile->SkipToHash = TRUE;
-      return;
+      return ;
     }
     //
     // Now allocate a buffer, copy the characters, and add the string.
     //
-    String = (WCHAR *)malloc ((Len + 1) * sizeof (WCHAR));
+    String = (WCHAR *) malloc ((Len + 1) * sizeof (WCHAR));
     if (String == NULL) {
       Error (NULL, 0, 0, "application error", "failed to allocate memory");
-      return;
+      return ;
     }
+
     To = String;
     while (From < SourceFile->FileBufferPtr) {
       switch (*From) {
       case UNICODE_LF:
       case 0:
         break;
+
       default:
         *To = *From;
         To++;
         break;
       }
+
       From++;
     }
-    *To = 0; // String[Len] = 0;
+
+    //
+    // String[Len] = 0;
+    //
+    *To = 0;
     StringDBAddString (Language, NULL, NULL, String, TRUE, 0);
   }
 }
+
 static
 BOOLEAN
 IsWhiteSpace (
   SOURCE_FILE *SourceFile
   )
 {
-  switch (SourceFile->FileBufferPtr[0])
-  {
-    case UNICODE_NULL:
-    case UNICODE_CR:
-    case UNICODE_SPACE:
-    case UNICODE_TAB:
-    case UNICODE_LF:
-      return TRUE;
-    default:
-      return FALSE;
+  switch (SourceFile->FileBufferPtr[0]) {
+  case UNICODE_NULL:
+  case UNICODE_CR:
+  case UNICODE_SPACE:
+  case UNICODE_TAB:
+  case UNICODE_LF:
+    return TRUE;
+
+  default:
+    return FALSE;
   }
 }
-static 
+
+static
 UINT32
 SkipWhiteSpace (
   SOURCE_FILE *SourceFile
   )
 {
-  UINT32 Count;
+  UINT32  Count;
 
   Count = 0;
   while (!EndOfFile (SourceFile)) {
     Count++;
-    switch (*SourceFile->FileBufferPtr)
-    {
+    switch (*SourceFile->FileBufferPtr) {
     case UNICODE_NULL:
     case UNICODE_CR:
     case UNICODE_SPACE:
     case UNICODE_TAB:
       SourceFile->FileBufferPtr++;
       break;
+
     case UNICODE_LF:
       SourceFile->FileBufferPtr++;
       SourceFile->LineNum++;
@@ -1277,6 +1393,7 @@ SkipWhiteSpace (
         printf ("%d: %S\n", SourceFile->LineNum, SourceFile->FileBufferPtr);
       }
       break;
+
     default:
       return Count - 1;
     }
@@ -1288,16 +1405,18 @@ SkipWhiteSpace (
   if ((Count == 0) && (EndOfFile (SourceFile))) {
     Count++;
   }
+
   return Count;
 }
-static 
-UINT32 
+
+static
+UINT32
 wstrcmp (
-  WCHAR *Buffer, 
+  WCHAR *Buffer,
   WCHAR *Str
   )
 {
-  UINT32 Len;
+  UINT32  Len;
 
   Len = 0;
   while (*Str == *Buffer) {
@@ -1305,15 +1424,17 @@ wstrcmp (
     Str++;
     Len++;
   }
+
   if (*Str) {
     return 0;
   }
+
   return Len;
 }
 //
 // Given a filename, try to find it along the include paths.
 //
-static 
+static
 FILE *
 FindFile (
   IN INT8    *FileName,
@@ -1347,6 +1468,7 @@ FindFile (
       //
       return Fptr;
     }
+
     List = List->Next;
   }
   //
@@ -1361,15 +1483,15 @@ FindFile (
 static
 STATUS
 ProcessArgs (
-  int   Argc, 
+  int   Argc,
   char  *Argv[]
   )
 {
-  TEXT_STRING_LIST            *NewList;
+  TEXT_STRING_LIST  *NewList;
   //
   // Clear our globals
   //
-  memset ((char *)&mGlobals, 0, sizeof (mGlobals));
+  memset ((char *) &mGlobals, 0, sizeof (mGlobals));
   strcpy (mGlobals.BaseName, DEFAULT_BASE_NAME);
   //
   // Skip program name
@@ -1381,9 +1503,10 @@ ProcessArgs (
     Usage ();
     return STATUS_ERROR;
   }
+
   mGlobals.Mode = MODE_UNKNOWN;
   //
-  // Process until no more -args. 
+  // Process until no more -args.
   //
   while ((Argc > 0) && (Argv[0][0] == '-')) {
     //
@@ -1394,35 +1517,38 @@ ProcessArgs (
         Error (NULL, 0, 0, "only one of -parse/-scan/-dump allowed", NULL);
         return STATUS_ERROR;
       }
+
       mGlobals.Mode = MODE_PARSE;
-    //
-    // -scan option
-    //
+      //
+      // -scan option
+      //
     } else if (stricmp (Argv[0], "-scan") == 0) {
       if (mGlobals.Mode != MODE_UNKNOWN) {
         Error (NULL, 0, 0, "only one of -parse/-scan/-dump allowed", NULL);
         return STATUS_ERROR;
       }
+
       mGlobals.Mode = MODE_SCAN;
-    //
-    // -vscan verbose scanning option
-    //
+      //
+      // -vscan verbose scanning option
+      //
     } else if (stricmp (Argv[0], "-vscan") == 0) {
       mGlobals.VerboseScan = TRUE;
-    //
-    // -dump option
-    //
+      //
+      // -dump option
+      //
     } else if (stricmp (Argv[0], "-dump") == 0) {
       if (mGlobals.Mode != MODE_UNKNOWN) {
         Error (NULL, 0, 0, "only one of -parse/-scan/-dump allowed", NULL);
         return STATUS_ERROR;
       }
+
       mGlobals.Mode = MODE_DUMP;
     } else if (stricmp (Argv[0], "-uqs") == 0) {
       mGlobals.UnquotedStrings = TRUE;
-    //
-    // -i path    add include search path when parsing
-    //
+      //
+      // -i path    add include search path when parsing
+      //
     } else if (stricmp (Argv[0], "-i") == 0) {
       //
       // check for one more arg
@@ -1441,13 +1567,15 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
-      memset ((char *)NewList, 0, sizeof (TEXT_STRING_LIST));
+
+      memset ((char *) NewList, 0, sizeof (TEXT_STRING_LIST));
       NewList->Str = malloc (strlen (Argv[1]) + 2);
       if (NewList->Str == NULL) {
         free (NewList);
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
+
       strcpy (NewList->Str, Argv[1]);
       if (NewList->Str[strlen (NewList->Str) - 1] != '\\') {
         strcat (NewList->Str, "\\");
@@ -1460,6 +1588,7 @@ ProcessArgs (
       } else {
         mGlobals.LastIncludePath->Next = NewList;
       }
+
       mGlobals.LastIncludePath = NewList;
       Argc--;
       Argv++;
@@ -1481,13 +1610,15 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
-      memset ((char *)NewList, 0, sizeof (TEXT_STRING_LIST));
+
+      memset ((char *) NewList, 0, sizeof (TEXT_STRING_LIST));
       NewList->Str = malloc (strlen (Argv[1]) + 1);
       if (NewList->Str == NULL) {
         free (NewList);
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
+
       strcpy (NewList->Str, Argv[1]);
       //
       // Add it to our linked list
@@ -1497,11 +1628,12 @@ ProcessArgs (
       } else {
         mGlobals.LastIndirectionFileName->Next = NewList;
       }
+
       mGlobals.LastIndirectionFileName = NewList;
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-db") == 0) {
-      // 
+      //
       // -db option to specify a database file.
       // Check for one more arg (the database file name)
       //
@@ -1509,18 +1641,21 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing database file name");
         return STATUS_ERROR;
       }
+
       NewList = malloc (sizeof (TEXT_STRING_LIST));
       if (NewList == NULL) {
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
-      memset ((char *)NewList, 0, sizeof (TEXT_STRING_LIST));
+
+      memset ((char *) NewList, 0, sizeof (TEXT_STRING_LIST));
       NewList->Str = malloc (strlen (Argv[1]) + 1);
       if (NewList->Str == NULL) {
         free (NewList);
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
+
       strcpy (NewList->Str, Argv[1]);
       //
       // Add it to our linked list
@@ -1530,11 +1665,12 @@ ProcessArgs (
       } else {
         mGlobals.LastDatabaseFileName->Next = NewList;
       }
+
       mGlobals.LastDatabaseFileName = NewList;
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-ou") == 0) {
-      // 
+      //
       // -ou option to specify an output unicode file to
       // which we can dump our database.
       //
@@ -1542,43 +1678,47 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing database dump output file name");
         return STATUS_ERROR;
       }
+
       if (mGlobals.DumpUFileName[0] == 0) {
         strcpy (mGlobals.DumpUFileName, Argv[1]);
       } else {
         Error (PROGRAM_NAME, 0, 0, Argv[1], "-ou option already specified with '%s'", mGlobals.DumpUFileName);
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-hpk") == 0) {
-      // 
+      //
       // -hpk option to create an HII export pack of the input database file
       //
       if ((Argc <= 1) || (Argv[1][0] == '-')) {
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing raw string data dump output file name");
         return STATUS_ERROR;
       }
+
       if (mGlobals.HiiExportPackFileName[0] == 0) {
         strcpy (mGlobals.HiiExportPackFileName, Argv[1]);
       } else {
         Error (PROGRAM_NAME, 0, 0, Argv[1], "-or option already specified with '%s'", mGlobals.HiiExportPackFileName);
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if ((stricmp (Argv[0], "-?") == 0) || (stricmp (Argv[0], "-h") == 0)) {
       Usage ();
       return STATUS_ERROR;
     } else if (stricmp (Argv[0], "-v") == 0) {
-       mGlobals.Verbose = 1;
+      mGlobals.Verbose = 1;
     } else if (stricmp (Argv[0], "-vdbw") == 0) {
-       mGlobals.VerboseDatabaseWrite = 1;
+      mGlobals.VerboseDatabaseWrite = 1;
     } else if (stricmp (Argv[0], "-vdbr") == 0) {
-       mGlobals.VerboseDatabaseRead = 1;
+      mGlobals.VerboseDatabaseRead = 1;
     } else if (stricmp (Argv[0], "-newdb") == 0) {
-       mGlobals.NewDatabase = 1;
+      mGlobals.NewDatabase = 1;
     } else if (stricmp (Argv[0], "-ignorenotfound") == 0) {
-       mGlobals.IgnoreNotFound = 1;
+      mGlobals.IgnoreNotFound = 1;
     } else if (stricmp (Argv[0], "-oc") == 0) {
       //
       // check for one more arg
@@ -1587,6 +1727,7 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing output C filename");
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.StringCFileName, Argv[1]);
       Argc--;
       Argv++;
@@ -1599,6 +1740,7 @@ ProcessArgs (
         Usage ();
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.BaseName, Argv[1]);
       Argc--;
       Argv++;
@@ -1610,6 +1752,7 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing output .h filename");
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.StringHFileName, Argv[1]);
       Argc--;
       Argv++;
@@ -1631,25 +1774,30 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
-      memset ((char *)NewList, 0, sizeof (TEXT_STRING_LIST));
+
+      memset ((char *) NewList, 0, sizeof (TEXT_STRING_LIST));
       NewList->Str = malloc (strlen (Argv[1]) + 2);
       if (NewList->Str == NULL) {
         free (NewList);
         Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
         return STATUS_ERROR;
       }
+
       if (Argv[1][0] == '.') {
         strcpy (NewList->Str, Argv[1]);
       } else {
         NewList->Str[0] = '.';
         strcpy (NewList->Str + 1, Argv[1]);
       }
+      //
       // Add it to our linked list
+      //
       if (mGlobals.SkipExt == NULL) {
         mGlobals.SkipExt = NewList;
       } else {
         mGlobals.LastSkipExt->Next = NewList;
       }
+
       mGlobals.LastSkipExt = NewList;
       Argc--;
       Argv++;
@@ -1662,9 +1810,11 @@ ProcessArgs (
         Usage ();
         return STATUS_ERROR;
       }
+
       if (AddCommandLineLanguage (Argv[1]) != STATUS_SUCCESS) {
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-od") == 0) {
@@ -1675,6 +1825,7 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing output database file name");
         return STATUS_ERROR;
       }
+
       strcpy (mGlobals.OutputDatabaseFileName, Argv[1]);
       Argv++;
       Argc--;
@@ -1683,9 +1834,10 @@ ProcessArgs (
       // Unrecognized arg
       //
       Error (PROGRAM_NAME, 0, 0, Argv[0], "unrecognized option");
-      Usage ();      
+      Usage ();
       return STATUS_ERROR;
     }
+
     Argv++;
     Argc--;
   }
@@ -1715,10 +1867,12 @@ ProcessArgs (
     if ((mGlobals.DumpUFileName[0] == 0) &&
         (mGlobals.StringHFileName[0] == 0) &&
         (mGlobals.StringCFileName[0] == 0) &&
-        (mGlobals.HiiExportPackFileName[0] == 0)) {
+        (mGlobals.HiiExportPackFileName[0] == 0)
+        ) {
       Error (NULL, 0, 0, "-dump without -oc/-oh/-ou/-hpk is a NOP", NULL);
       return STATUS_ERROR;
     }
+
     return STATUS_SUCCESS;
   }
   //
@@ -1727,7 +1881,7 @@ ProcessArgs (
   if (mGlobals.Mode == MODE_SCAN) {
     if (Argc < 1) {
       Error (PROGRAM_NAME, 0, 0, NULL, "must specify at least one source file to scan with -scan");
-      Usage ();      
+      Usage ();
       return STATUS_ERROR;
     }
     //
@@ -1739,18 +1893,21 @@ ProcessArgs (
         Error (PROGRAM_NAME, 0, 0, "memory allocation failure", NULL);
         return STATUS_ERROR;
       }
+
       memset (NewList, 0, sizeof (TEXT_STRING_LIST));
-      NewList->Str = (UINT8 *)malloc (strlen (Argv[0]) + 1);
+      NewList->Str = (UINT8 *) malloc (strlen (Argv[0]) + 1);
       if (NewList->Str == NULL) {
         Error (PROGRAM_NAME, 0, 0, "memory allocation failure", NULL);
         return STATUS_ERROR;
       }
+
       strcpy (NewList->Str, Argv[0]);
       if (mGlobals.ScanFileName == NULL) {
         mGlobals.ScanFileName = NewList;
       } else {
         mGlobals.LastScanFileName->Next = NewList;
       }
+
       mGlobals.LastScanFileName = NewList;
       Argc--;
       Argv++;
@@ -1761,25 +1918,28 @@ ProcessArgs (
     //
     if (Argc < 1) {
       Error (PROGRAM_NAME, 0, 0, NULL, "must specify input unicode string file name with -parse");
-      Usage ();      
+      Usage ();
       return STATUS_ERROR;
     }
+
     strcpy (mGlobals.SourceFiles.FileName, Argv[0]);
   }
+
   return STATUS_SUCCESS;
 }
 //
-// Found "-lang eng,spa+cat" on the command line. Parse the 
+// Found "-lang eng,spa+cat" on the command line. Parse the
 // language list and save the setting for later processing.
 //
 static
 STATUS
 AddCommandLineLanguage (
- IN INT8          *Language
- )
+  IN INT8          *Language
+  )
 {
-  WCHAR_STRING_LIST           *WNewList;
-  WCHAR                       *From, *To;
+  WCHAR_STRING_LIST *WNewList;
+  WCHAR             *From;
+  WCHAR             *To;
   //
   // Keep processing the input string until we find the end.
   //
@@ -1793,7 +1953,8 @@ AddCommandLineLanguage (
       Error (PROGRAM_NAME, 0, 0, NULL, "memory allocation failure");
       return STATUS_ERROR;
     }
-    memset ((char *)WNewList, 0, sizeof (WCHAR_STRING_LIST));
+
+    memset ((char *) WNewList, 0, sizeof (WCHAR_STRING_LIST));
     WNewList->Str = malloc ((strlen (Language) + 1) * sizeof (WCHAR));
     if (WNewList->Str == NULL) {
       free (WNewList);
@@ -1801,7 +1962,7 @@ AddCommandLineLanguage (
       return STATUS_ERROR;
     }
     //
-    // Copy it as unicode to our new structure. Then remove the 
+    // Copy it as unicode to our new structure. Then remove the
     // plus signs in it, and verify each language name is 3 characters
     // long. If we find a comma, then we're done with this group, so
     // break out.
@@ -1809,18 +1970,23 @@ AddCommandLineLanguage (
     swprintf (WNewList->Str, L"%S", Language);
     From = To = WNewList->Str;
     while (*From) {
-      if (*From == L',')  {
+      if (*From == L',') {
         break;
       }
-      if ((wcslen (From) < LANGUAGE_IDENTIFIER_NAME_LEN) || 
-          ((From[LANGUAGE_IDENTIFIER_NAME_LEN] != 0) && 
-            (From[LANGUAGE_IDENTIFIER_NAME_LEN] != UNICODE_PLUS_SIGN) &&
-            (From[LANGUAGE_IDENTIFIER_NAME_LEN] != L','))) {
+
+      if ((wcslen (From) < LANGUAGE_IDENTIFIER_NAME_LEN) ||
+            (
+              (From[LANGUAGE_IDENTIFIER_NAME_LEN] != 0) &&
+              (From[LANGUAGE_IDENTIFIER_NAME_LEN] != UNICODE_PLUS_SIGN) &&
+              (From[LANGUAGE_IDENTIFIER_NAME_LEN] != L',')
+            )
+          ) {
         Error (PROGRAM_NAME, 0, 0, Language, "invalid format for language name on command line");
         FREE (WNewList->Str);
         FREE (WNewList);
         return STATUS_ERROR;
       }
+
       wcsncpy (To, From, LANGUAGE_IDENTIFIER_NAME_LEN);
       To += LANGUAGE_IDENTIFIER_NAME_LEN;
       From += LANGUAGE_IDENTIFIER_NAME_LEN;
@@ -1828,6 +1994,7 @@ AddCommandLineLanguage (
         From++;
       }
     }
+
     *To = 0;
     //
     // Add it to our linked list
@@ -1837,6 +2004,7 @@ AddCommandLineLanguage (
     } else {
       mGlobals.LastLanguage->Next = WNewList;
     }
+
     mGlobals.LastLanguage = WNewList;
     //
     // Skip to next entry (comma-separated list)
@@ -1846,20 +2014,20 @@ AddCommandLineLanguage (
         Language++;
         break;
       }
+
       Language++;
     }
   }
+
   return STATUS_SUCCESS;
 }
-
-
 //
 // The contents of the text file are expected to be (one per line)
 //   STRING_IDENTIFIER_NAME   ScopeName
 // For example:
 //   STR_ID_MY_FAVORITE_STRING   IBM
 //
-static 
+static
 STATUS
 ParseIndirectionFiles (
   TEXT_STRING_LIST    *Files
@@ -1867,19 +2035,22 @@ ParseIndirectionFiles (
 {
   FILE                        *Fptr;
   INT8                        Line[200];
-  INT8                        *StringName, *ScopeName, *End;
+  INT8                        *StringName;
+  INT8                        *ScopeName;
+  INT8                        *End;
   UINT32                      LineCount;
   WCHAR_MATCHING_STRING_LIST  *NewList;
 
   Line[sizeof (Line) - 1] = 0;
-  Fptr = NULL;
+  Fptr                    = NULL;
   while (Files != NULL) {
-    Fptr = fopen (Files->Str, "r");
+    Fptr      = fopen (Files->Str, "r");
     LineCount = 0;
     if (Fptr == NULL) {
       Error (NULL, 0, 0, Files->Str, "failed to open input indirection file for reading");
       return STATUS_ERROR;
     }
+
     while (fgets (Line, sizeof (Line), Fptr) != NULL) {
       //
       // remove terminating newline for error printing purposes.
@@ -1887,26 +2058,38 @@ ParseIndirectionFiles (
       if (Line[strlen (Line) - 1] == '\n') {
         Line[strlen (Line) - 1] = 0;
       }
+
       LineCount++;
       if (Line[sizeof (Line) - 1] != 0) {
         Error (Files->Str, LineCount, 0, "line length exceeds maximum supported", NULL);
         goto Done;
       }
+
       StringName = Line;
       while (*StringName && (isspace (*StringName))) {
         StringName++;
       }
+
       if (*StringName) {
         if ((*StringName == '_') || isalpha (*StringName)) {
           End = StringName;
-          while ((*End) && (*End == '_') || (isalnum (*End))) End++;
+          while ((*End) && (*End == '_') || (isalnum (*End))) {
+            End++;
+          }
+
           if (isspace (*End)) {
             *End = 0;
             End++;
-            while (isspace (*End)) End++;
+            while (isspace (*End)) {
+              End++;
+            }
+
             if (*End) {
               ScopeName = End;
-              while (*End && !isspace (*End)) End++;
+              while (*End && !isspace (*End)) {
+                End++;
+              }
+
               *End = 0;
               //
               // Add the string name/scope pair
@@ -1916,13 +2099,15 @@ ParseIndirectionFiles (
                 Error (NULL, 0, 0, "memory allocation error", NULL);
                 goto Done;
               }
+
               memset (NewList, 0, sizeof (WCHAR_MATCHING_STRING_LIST));
-              NewList->Str1 = (WCHAR *)malloc ((strlen (StringName) + 1) * sizeof (WCHAR));
-              NewList->Str2 = (WCHAR *)malloc ((strlen (ScopeName) + 1) * sizeof (WCHAR));
+              NewList->Str1 = (WCHAR *) malloc ((strlen (StringName) + 1) * sizeof (WCHAR));
+              NewList->Str2 = (WCHAR *) malloc ((strlen (ScopeName) + 1) * sizeof (WCHAR));
               if ((NewList->Str1 == NULL) || (NewList->Str2 == NULL)) {
                 Error (NULL, 0, 0, "memory allocation error", NULL);
                 goto Done;
               }
+
               swprintf (NewList->Str1, L"%S", StringName);
               swprintf (NewList->Str2, L"%S", ScopeName);
               if (mGlobals.IndirectionList == NULL) {
@@ -1930,6 +2115,7 @@ ParseIndirectionFiles (
               } else {
                 mGlobals.LastIndirectionList->Next = NewList;
               }
+
               mGlobals.LastIndirectionList = NewList;
             } else {
               Error (Files->Str, LineCount, 0, StringName, "invalid line : expected 'StringIdentifier Scope'");
@@ -1945,15 +2131,18 @@ ParseIndirectionFiles (
         }
       }
     }
+
     fclose (Fptr);
-    Fptr = NULL;
+    Fptr  = NULL;
     Files = Files->Next;
   }
+
 Done:
   if (Fptr != NULL) {
     fclose (Fptr);
     return STATUS_ERROR;
   }
+
   return STATUS_SUCCESS;
 }
 
@@ -1963,16 +2152,18 @@ ScanFiles (
   TEXT_STRING_LIST *ScanFiles
   )
 {
-  char                Line[MAX_LINE_LEN];
-  FILE                *Fptr;
-  UINT32              LineNum;
-  char                *Cptr, *SavePtr, *TermPtr;  
-  char                *StringTokenPos;
-  TEXT_STRING_LIST    *SList;
-  BOOLEAN             SkipIt;
+  char              Line[MAX_LINE_LEN];
+  FILE              *Fptr;
+  UINT32            LineNum;
+  char              *Cptr;
+  char              *SavePtr;
+  char              *TermPtr;
+  char              *StringTokenPos;
+  TEXT_STRING_LIST  *SList;
+  BOOLEAN           SkipIt;
 
-  // 
-  // Put a null-terminator at the end of the line. If we read in 
+  //
+  // Put a null-terminator at the end of the line. If we read in
   // a line longer than we support, then we can catch it.
   //
   Line[MAX_LINE_LEN - 1] = 0;
@@ -1983,26 +2174,32 @@ ScanFiles (
   while (ScanFiles != NULL) {
     SkipIt = FALSE;
     for (SList = mGlobals.SkipExt; SList != NULL; SList = SList->Next) {
-      if ((strlen (ScanFiles->Str) > strlen (SList->Str)) && 
-          (strcmp (ScanFiles->Str + strlen (ScanFiles->Str) - strlen (SList->Str), SList->Str) == 0)) {
+      if ((strlen (ScanFiles->Str) > strlen (SList->Str)) &&
+          (strcmp (ScanFiles->Str + strlen (ScanFiles->Str) - strlen (SList->Str), SList->Str) == 0)
+          ) {
         SkipIt = TRUE;
-        //printf ("Match: %s : %s\n", ScanFiles->Str, SList->Str);
+        //
+        // printf ("Match: %s : %s\n", ScanFiles->Str, SList->Str);
+        //
         break;
       }
     }
+
     if (!SkipIt) {
       if (mGlobals.VerboseScan) {
         printf ("Scanning %s\n", ScanFiles->Str);
       }
+
       Fptr = fopen (ScanFiles->Str, "r");
       if (Fptr == NULL) {
         Error (NULL, 0, 0, ScanFiles->Str, "failed to open input file for scanning");
         return STATUS_ERROR;
       }
+
       LineNum = 0;
       while (fgets (Line, sizeof (Line), Fptr) != NULL) {
         LineNum++;
-        if (Line[MAX_LINE_LEN-1] != 0) {
+        if (Line[MAX_LINE_LEN - 1] != 0) {
           Error (ScanFiles->Str, LineNum, 0, "line length exceeds maximum supported by tool", NULL);
           fclose (Fptr);
           return STATUS_ERROR;
@@ -2020,46 +2217,58 @@ ScanFiles (
         if (Cptr != NULL) {
           *Cptr = 0;
         }
+
         Cptr = Line;
         while ((Cptr = strstr (Cptr, STRING_TOKEN)) != NULL) {
           //
           // Found "STRING_TOKEN". Make sure we don't have NUM_STRING_TOKENS or
           // something like that. Then make sure it's followed by
-          // an open parenthesis, a string identifier, and then a closing 
-          // parenthesis. 
+          // an open parenthesis, a string identifier, and then a closing
+          // parenthesis.
           //
           if (mGlobals.VerboseScan) {
             printf (" %d: %s", LineNum, Cptr);
           }
-          if (((Cptr == Line) || (!IsValidIdentifierChar (*(Cptr - 1), FALSE))) && 
-               (!IsValidIdentifierChar (*(Cptr + sizeof (STRING_TOKEN) - 1), FALSE))) {
-            StringTokenPos = Cptr;
-            SavePtr = Cptr;
+
+          if (((Cptr == Line) || (!IsValidIdentifierChar (*(Cptr - 1), FALSE))) &&
+              (!IsValidIdentifierChar (*(Cptr + sizeof (STRING_TOKEN) - 1), FALSE))
+              ) {
+            StringTokenPos  = Cptr;
+            SavePtr         = Cptr;
             Cptr += strlen (STRING_TOKEN);
             while (*Cptr && isspace (*Cptr) && (*Cptr != '(')) {
               Cptr++;
             }
+
             if (*Cptr != '(') {
-              Warning (ScanFiles->Str, LineNum, 0, StringTokenPos, "expected " STRING_TOKEN "(identifier)");
+              Warning (ScanFiles->Str, LineNum, 0, StringTokenPos, "expected "STRING_TOKEN "(identifier)");
             } else {
               //
               // Skip over the open-parenthesis and find the next non-blank character
               //
               Cptr++;
-              while (isspace (*Cptr)) Cptr++;
+              while (isspace (*Cptr)) {
+                Cptr++;
+              }
+
               SavePtr = Cptr;
               if ((*Cptr == '_') || isalpha (*Cptr)) {
-                while ((*Cptr == '_') || (isalnum (*Cptr))) Cptr++;
+                while ((*Cptr == '_') || (isalnum (*Cptr))) {
+                  Cptr++;
+                }
+
                 TermPtr = Cptr;
                 while (*Cptr && isspace (*Cptr)) {
                   Cptr++;
                 }
+
                 if (*Cptr != ')') {
-                  Warning (ScanFiles->Str, LineNum, 0, StringTokenPos, "expected " STRING_TOKEN "(identifier)");
+                  Warning (ScanFiles->Str, LineNum, 0, StringTokenPos, "expected "STRING_TOKEN "(identifier)");
                 }
+
                 if (*TermPtr) {
-                  *TermPtr = 0;
-                  Cptr = TermPtr+1;
+                  *TermPtr  = 0;
+                  Cptr      = TermPtr + 1;
                 } else {
                   Cptr = TermPtr;
                 }
@@ -2081,12 +2290,14 @@ ScanFiles (
             //
             Cptr++;
           }
+
           if (mGlobals.VerboseScan) {
             printf ("\n");
           }
         }
       }
-      fclose (Fptr);    
+
+      fclose (Fptr);
     } else {
       //
       // Skipping this file type
@@ -2095,17 +2306,20 @@ ScanFiles (
         printf ("Skip scanning of %s\n", ScanFiles->Str);
       }
     }
+
     ScanFiles = ScanFiles->Next;
   }
+
   return STATUS_SUCCESS;
 }
-
 //
 // Free the global string lists we allocated memory for
 //
-static 
+static
 void
-FreeLists ( )
+FreeLists (
+  VOID
+  )
 {
   TEXT_STRING_LIST  *Temp;
   WCHAR_STRING_LIST *WTemp;
@@ -2158,14 +2372,16 @@ FreeLists ( )
     free (mGlobals.IndirectionList);
     mGlobals.IndirectionList = mGlobals.LastIndirectionList;
   }
+
   while (mGlobals.IndirectionFileName != NULL) {
     mGlobals.LastIndirectionFileName = mGlobals.IndirectionFileName->Next;
     free (mGlobals.IndirectionFileName->Str);
     free (mGlobals.IndirectionFileName);
     mGlobals.IndirectionFileName = mGlobals.LastIndirectionFileName;
   }
-}  
-static 
+}
+
+static
 BOOLEAN
 IsValidIdentifierChar (
   INT8      Char,
@@ -2189,19 +2405,22 @@ IsValidIdentifierChar (
       return TRUE;
     }
   }
+
   return FALSE;
 }
-static 
+
+static
 void
 RewindFile (
   SOURCE_FILE *SourceFile
   )
 {
-  SourceFile->LineNum = 1;
+  SourceFile->LineNum       = 1;
   SourceFile->FileBufferPtr = SourceFile->FileBuffer;
-  SourceFile->EndOfFile = 0;
+  SourceFile->EndOfFile     = 0;
 }
-static 
+
+static
 BOOLEAN
 SkipTo (
   SOURCE_FILE *SourceFile,
@@ -2223,17 +2442,23 @@ SkipTo (
           if (SourceFile->FileBufferPtr[0] == 0) {
             SourceFile->FileBufferPtr++;
           }
+
           return FALSE;
         }
       }
+
       SourceFile->FileBufferPtr++;
     }
-  }    
+  }
+
   return FALSE;
 }
+
 static
 void
-Usage ()
+Usage (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -2250,18 +2475,18 @@ Returns:
   
 --*/
 {
-  int Index;
+  int               Index;
   static const char *Str[] = {
     "",
-    PROGRAM_NAME " version " TOOL_VERSION " -- process unicode strings file",
-    "  Usage: " PROGRAM_NAME " -parse {parse options} [FileNames]",
-    "         " PROGRAM_NAME " -scan {scan options} [FileName]",
-    "         " PROGRAM_NAME " -dump {dump options}",
+    PROGRAM_NAME " version "TOOL_VERSION " -- process unicode strings file",
+    "  Usage: "PROGRAM_NAME " -parse {parse options} [FileNames]",
+    "         "PROGRAM_NAME " -scan {scan options} [FileName]",
+    "         "PROGRAM_NAME " -dump {dump options}",
     "    Common options include:",
     "      -h or -?         for this help information",
     "      -db Database     required name of output/input database file",
     "      -bn BaseName     for use in the .h and .c output files",
-    "                       Default = " DEFAULT_BASE_NAME,
+    "                       Default = "DEFAULT_BASE_NAME,
     "      -v               for verbose output",
     "      -vdbw            for verbose output when writing database",
     "      -vdbr            for verbose output when reading database",
@@ -2297,5 +2522,4 @@ Returns:
   for (Index = 0; Str[Index] != NULL; Index++) {
     fprintf (stdout, "%s\n", Str[Index]);
   }
-}  
-    
+}

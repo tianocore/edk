@@ -15,13 +15,13 @@ Module Name:
 
 Abstract:
 
-  Timer Architectural Protocol GUID as defined in EFI 2.0
+  Timer Architectural Protocol GUID as defined in Tiano
 
 --*/
 
 #include "Tiano.h"
-#include EFI_ARCH_PROTOCOL_DEFINITION(Timer)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Timer)
 
-EFI_GUID gEfiTimerArchProtocolGuid = EFI_TIMER_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiTimerArchProtocolGuid = EFI_TIMER_ARCH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiTimerArchProtocolGuid, "Timer", "Timer Arch Protocol");

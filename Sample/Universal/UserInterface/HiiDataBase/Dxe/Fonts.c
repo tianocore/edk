@@ -25,9 +25,46 @@ Abstract:
 // We only need to define a wide glyph, since we will seed the narrow glyph with EFI_NARROW_GLYPH size of
 // this data structure
 //
-UINT8 mUnknownGlyph[38] = 
-              {0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xAA, \
-               0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xaa,0x55,0xAA};
+UINT8 mUnknownGlyph[38] = {
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xAA,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xaa,
+  0x55,
+  0xAA
+};
 
 EFI_STATUS
 HiiGetGlyph (
@@ -35,8 +72,8 @@ HiiGetGlyph (
   IN     CHAR16             *Source,
   IN OUT UINT16             *Index,
   OUT    UINT8              **GlyphBuffer,
-  OUT    UINT16             *BitWidth,      
-  IN OUT UINT32             *InternalStatus 
+  OUT    UINT16             *BitWidth,
+  IN OUT UINT32             *InternalStatus
   )
 /*++
 
@@ -58,34 +95,32 @@ Returns:
 
 --*/
 {
-  EFI_HII_GLOBAL_DATA             *GlobalData;
-  EFI_HII_DATA                    *HiiData;
-  UINTN                           Count;
-  BOOLEAN                         Narrow;
-  UINTN                           Location;
-  UINTN                           SearchLocation;
-  UINTN                           Value;
-  CHAR16                          Character;
-  UINTN                           Attributes;
+  EFI_HII_GLOBAL_DATA *GlobalData;
+  EFI_HII_DATA        *HiiData;
+  UINTN               Count;
+  BOOLEAN             Narrow;
+  UINTN               Location;
+  UINTN               SearchLocation;
+  UINTN               Value;
+  CHAR16              Character;
+  UINTN               Attributes;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData         = EFI_HII_DATA_FROM_THIS (This);
 
-  GlobalData = HiiData->GlobalData;
-  Count = sizeof (GlobalData->NarrowGlyphs->GlyphCol1);
+  GlobalData      = HiiData->GlobalData;
+  Count           = sizeof (GlobalData->NarrowGlyphs->GlyphCol1);
 
-  Location = *Index;
-  SearchLocation = *Index;
-  Narrow = TRUE;
+  Location        = *Index;
+  SearchLocation  = *Index;
+  Narrow          = TRUE;
 
-  if (Source[Location] == NARROW_CHAR ||
-      Source[Location] == WIDE_CHAR) {
+  if (Source[Location] == NARROW_CHAR || Source[Location] == WIDE_CHAR) {
     *InternalStatus = 0;
   }
-
   //
   // We don't know what glyph database to look in - let's figure it out
   //
@@ -94,33 +129,32 @@ Returns:
     // Determine if we are looking for narrow or wide glyph data
     //
     do {
-      if (Source[SearchLocation] == NARROW_CHAR ||
-          Source[SearchLocation] == WIDE_CHAR) {
+      if (Source[SearchLocation] == NARROW_CHAR || Source[SearchLocation] == WIDE_CHAR) {
         //
         // We found something that identifies what glyph database to look in
-        //        
+        //
         if (Source[SearchLocation] == WIDE_CHAR) {
-          Narrow = FALSE;
-          *BitWidth = WIDE_WIDTH;
+          Narrow          = FALSE;
+          *BitWidth       = WIDE_WIDTH;
           *InternalStatus = WIDE_CHAR;
           Location++;
           break;
         } else {
-          Narrow = TRUE;
-          *BitWidth = NARROW_WIDTH;
+          Narrow          = TRUE;
+          *BitWidth       = NARROW_WIDTH;
           *InternalStatus = NARROW_CHAR;
           Location++;
           break;
         }
-      }    
+      }
     } while (SearchLocation-- > 0);
-  } 
-  
+  }
+
   if (*InternalStatus == NARROW_CHAR) {
-    Narrow = TRUE;
+    Narrow    = TRUE;
     *BitWidth = NARROW_WIDTH;
   } else if (*InternalStatus == WIDE_CHAR) {
-    Narrow = FALSE;
+    Narrow    = FALSE;
     *BitWidth = WIDE_WIDTH;
   } else {
     //
@@ -128,7 +162,7 @@ Returns:
     // we wouldn't be able to determine the width of the data.)
     // BUGBUG - do we go to wide database and if exist, ignore narrow?  Check Unicode spec....
     //
-    Narrow = TRUE;
+    Narrow    = TRUE;
     *BitWidth = NARROW_WIDTH;
   }
 
@@ -136,14 +170,14 @@ Returns:
 
   if (Narrow) {
     if (GlobalData->NarrowGlyphs[Character].UnicodeWeight != 0x0000) {
-      *GlyphBuffer = (UINT8 *)(&GlobalData->NarrowGlyphs[Character]);
-      Attributes = GlobalData->NarrowGlyphs[Character].Attributes & GLYPH_NON_SPACING;
+      *GlyphBuffer  = (UINT8 *) (&GlobalData->NarrowGlyphs[Character]);
+      Attributes    = GlobalData->NarrowGlyphs[Character].Attributes & GLYPH_NON_SPACING;
     } else {
       //
       // Glyph is uninitialized - return an error, but hand back the glyph
       //
-      *GlyphBuffer = (UINT8 *)(&GlobalData->NarrowGlyphs[Character]);
-      *Index = (UINT16)(Location + 1);
+      *GlyphBuffer  = (UINT8 *) (&GlobalData->NarrowGlyphs[Character]);
+      *Index        = (UINT16) (Location + 1);
       return EFI_NOT_FOUND;
     }
   } else {
@@ -151,23 +185,22 @@ Returns:
     // Wide character
     //
     if (GlobalData->WideGlyphs[Character].UnicodeWeight != 0x0000) {
-      *GlyphBuffer = (UINT8 *)(&GlobalData->WideGlyphs[Character]);
-      Attributes = GlobalData->WideGlyphs[Character].Attributes & GLYPH_NON_SPACING;
+      *GlyphBuffer  = (UINT8 *) (&GlobalData->WideGlyphs[Character]);
+      Attributes    = GlobalData->WideGlyphs[Character].Attributes & GLYPH_NON_SPACING;
     } else {
       //
       // Glyph is uninitialized - return an error, but hand back the glyph
       //
-      *GlyphBuffer = (UINT8 *)(&GlobalData->WideGlyphs[Character]);
-      *Index = (UINT16)(Location + 1);
+      *GlyphBuffer  = (UINT8 *) (&GlobalData->WideGlyphs[Character]);
+      *Index        = (UINT16) (Location + 1);
       return EFI_NOT_FOUND;
     }
   }
-
   //
   // This is a non-spacing character.  It will be followed by either more non-spacing
   // characters or a regular character.  We need to OR together the data associated with each.
   //
-  for ( ;Attributes !=0; Location++) {
+  for (; Attributes != 0; Location++) {
     //
     // Character is the Unicode value which is the index into the Glyph array.
     //
@@ -177,23 +210,23 @@ Returns:
       for (Value = 0; Value != Count; Value++) {
         *GlyphBuffer[Location + Value] |= GlobalData->NarrowGlyphs[Character].GlyphCol1[Value];
       }
+
       Attributes = GlobalData->NarrowGlyphs[Character].Attributes & GLYPH_NON_SPACING;
     } else {
       for (Value = 0; Value != Count; Value++) {
         *GlyphBuffer[Location + Value] |= GlobalData->WideGlyphs[Character].GlyphCol1[Value];
         *GlyphBuffer[Location + Value + Count] |= GlobalData->WideGlyphs[Character].GlyphCol2[Value];
       }
+
       Attributes = GlobalData->WideGlyphs[Character].Attributes & GLYPH_NON_SPACING;
     }
   }
-
   //
   // Source[*Index] should point to the next character to process
   //
-  *Index = (UINT16)(Location + 1);
+  *Index = (UINT16) (Location + 1);
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 HiiGlyphToBlt (
@@ -205,17 +238,17 @@ HiiGlyphToBlt (
   IN     UINTN              Width,
   IN     UINTN              Height,
   IN OUT EFI_UGA_PIXEL      *BltBuffer
-)
+  )
 {
-  UINTN                     X;
-  UINTN                     Y;
+  UINTN X;
+  UINTN Y;
 
   //
   // Convert Monochrome bitmap of the Glyph to BltBuffer structure
   //
   for (Y = 0; Y < Height; Y++) {
     for (X = 0; X < Width; X++) {
-      if ((((EFI_NARROW_GLYPH *)GlyphBuffer)->GlyphCol1[Y] & (1 << X)) != 0) {
+      if ((((EFI_NARROW_GLYPH *) GlyphBuffer)->GlyphCol1[Y] & (1 << X)) != 0) {
         BltBuffer[Y * Width * Count + (Width - X - 1)] = Foreground;
       } else {
         BltBuffer[Y * Width * Count + (Width - X - 1)] = Background;
@@ -225,4 +258,3 @@ HiiGlyphToBlt (
 
   return EFI_SUCCESS;
 }
-

@@ -27,13 +27,49 @@ Abstract:
 
 BOOLEAN
 EfiInSmm (
-);
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Test whether in Smm mode currently.
+
+Arguments:
+
+  None
+
+Returns:
+
+  TRUE      - In Smm mode
+  FALSE     - Not in Smm mode
+
+--*/
+;
 
 EFI_STATUS
 RegisterSmmRuntimeDriver (
   IN EFI_HANDLE             ImageHandle,
   IN EFI_SYSTEM_TABLE       *SystemTable,
-  OUT EFI_HANDLE            *SmmImageHandle  
-);
+  OUT EFI_HANDLE            *SmmImageHandle
+  )
+/*++
+
+Routine Description:
+
+  Registers a Driver with the SMM.
+
+Arguments:
+
+  ImageHandle     - The firmware allocated handle for the EFI image.  
+  SystemTable     - A pointer to the EFI System Table.
+  SmmImageHandle  - Image handle returned by the SMM driver.
+
+Returns:
+
+  Status code
+
+--*/
+;
 
 #endif

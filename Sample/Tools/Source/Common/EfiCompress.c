@@ -28,226 +28,229 @@ Abstract:
 #include "TianoCommon.h"
 #include "EfiCompress.h"
 
-
 //
 // Macro Definitions
 //
-
-typedef INT32             NODE;
-#define UINT8_MAX         0xff
-#define UINT8_BIT         8
-#define THRESHOLD         3
-#define INIT_CRC          0
-#define WNDBIT            19
-#define WNDSIZ            (1U << WNDBIT)
-#define MAXMATCH          256
-#define BLKSIZ            (1U << 14) //16 * 1024U
-#define PERC_FLAG         0x80000000U
-#define CODE_BIT          16
-#define NIL               0
-#define MAX_HASH_VAL      (3 * WNDSIZ + (WNDSIZ / 512 + 1) * UINT8_MAX)
-#define HASH(p, c)        ((p) + ((c) << (WNDBIT - 9)) + WNDSIZ * 2)
-#define CRCPOLY           0xA001
-#define UPDATE_CRC(c)     mCrc = mCrcTable[(mCrc ^ (c)) & 0xFF] ^ (mCrc >> UINT8_BIT)
+typedef INT32 NODE;
+#define UINT8_MAX     0xff
+#define UINT8_BIT     8
+#define THRESHOLD     3
+#define INIT_CRC      0
+#define WNDBIT        19
+#define WNDSIZ        (1U << WNDBIT)
+#define MAXMATCH      256
+#define BLKSIZ        (1U << 14)  // 16 * 1024U
+#define PERC_FLAG     0x80000000U
+#define CODE_BIT      16
+#define NIL           0
+#define MAX_HASH_VAL  (3 * WNDSIZ + (WNDSIZ / 512 + 1) * UINT8_MAX)
+#define HASH(p, c)    ((p) + ((c) << (WNDBIT - 9)) + WNDSIZ * 2)
+#define CRCPOLY       0xA001
+#define UPDATE_CRC(c) mCrc = mCrcTable[(mCrc ^ (c)) & 0xFF] ^ (mCrc >> UINT8_BIT)
 
 //
 // C: the Char&Len Set; P: the Position Set; T: the exTra Set
 //
-
-#define NC                (UINT8_MAX + MAXMATCH + 2 - THRESHOLD)
-#define CBIT              9
-#define NP                (WNDBIT + 1)
-#define PBIT              5
-#define NT                (CODE_BIT + 3)
-#define TBIT              5
+#define NC    (UINT8_MAX + MAXMATCH + 2 - THRESHOLD)
+#define CBIT  9
+#define NP    (WNDBIT + 1)
+#define PBIT  5
+#define NT    (CODE_BIT + 3)
+#define TBIT  5
 #if NT > NP
-  #define                 NPT NT
+#define NPT NT
 #else
-  #define                 NPT NP
+#define NPT NP
 #endif
-
 //
 // Function Prototypes
 //
+STATIC VOID PutDword(IN UINT32 Data);
 
 STATIC
-VOID 
-PutDword(
-  IN UINT32 Data
-  );
-
-STATIC
-EFI_STATUS 
+EFI_STATUS
 AllocateMemory (
+  VOID
   );
 
 STATIC
 VOID
 FreeMemory (
+  VOID
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 InitSlide (
+  VOID
   );
 
-STATIC 
-NODE 
+STATIC
+NODE
 Child (
-  IN NODE NodeQ, 
+  IN NODE   NodeQ,
   IN UINT8  CharC
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 MakeChild (
-  IN NODE NodeQ, 
-  IN UINT8 CharC, 
-  IN NODE NodeR
+  IN NODE  NodeQ,
+  IN UINT8 CharC,
+  IN NODE  NodeR
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 Split (
   IN NODE Old
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 InsertNode (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 DeleteNode (
+  VOID
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 GetNextMatch (
+  VOID
   );
-  
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 Encode (
+  VOID
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 CountTFreq (
+  VOID
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 WritePTLen (
-  IN INT32 Number, 
-  IN INT32 nbit, 
+  IN INT32 Number,
+  IN INT32 nbit,
   IN INT32 Special
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 WriteCLen (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 EncodeC (
   IN INT32 Value
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 EncodeP (
   IN UINT32 Value
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 SendBlock (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 Output (
-  IN UINT32 c, 
+  IN UINT32 c,
   IN UINT32 p
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 HufEncodeStart (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 HufEncodeEnd (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 MakeCrcTable (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 PutBits (
-  IN INT32 Number, 
+  IN INT32  Number,
   IN UINT32 Value
   );
-  
-STATIC 
-INT32 
+
+STATIC
+INT32
 FreadCrc (
-  OUT UINT8 *Pointer, 
+  OUT UINT8 *Pointer,
   IN  INT32 Number
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 InitPutBits (
+  VOID
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 CountLen (
   IN INT32 Index
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 MakeLen (
   IN INT32 Root
   );
-  
-STATIC 
-VOID 
+
+STATIC
+VOID
 DownHeap (
   IN INT32 Index
   );
 
-STATIC 
-VOID 
+STATIC
+VOID
 MakeCode (
-  IN  INT32 Number, 
-  IN  UINT8 Len[], 
+  IN  INT32       Number,
+  IN  UINT8 Len[  ],
   OUT UINT16 Code[]
   );
-  
-STATIC 
-INT32 
+
+STATIC
+INT32
 MakeTree (
-  IN  INT32   NParm, 
-  IN  UINT16  FreqParm[], 
-  OUT UINT8   LenParm[], 
+  IN  INT32            NParm,
+  IN  UINT16  FreqParm[],
+  OUT UINT8   LenParm[ ],
   OUT UINT16  CodeParm[]
   );
-
 
 //
 //  Global Variables
 //
-
 static UINT8  *mSrc, *mDst, *mSrcUpperLimit, *mDstUpperLimit;
 
 static UINT8  *mLevel, *mText, *mChildCount, *mBuf, mCLen[NC], mPTLen[NPT], *mLen;
@@ -256,17 +259,14 @@ static INT32  mRemainder, mMatchLen, mBitCount, mHeapSize, mN;
 static UINT32 mBufSiz = 0, mOutputPos, mOutputMask, mSubBitBuf, mCrc;
 static UINT32 mCompSize, mOrigSize;
 
-static UINT16 *mFreq, *mSortPtr, mLenCnt[17], mLeft[2 * NC - 1], mRight[2 * NC - 1],
-              mCrcTable[UINT8_MAX + 1], mCFreq[2 * NC - 1], mCTable[4096], mCCode[NC],
-              mPFreq[2 * NP - 1], mPTCode[NPT], mTFreq[2 * NT - 1];
+static UINT16 *mFreq, *mSortPtr, mLenCnt[17], mLeft[2 * NC - 1], mRight[2 * NC - 1], mCrcTable[UINT8_MAX + 1],
+  mCFreq[2 * NC - 1], mCTable[4096], mCCode[NC], mPFreq[2 * NP - 1], mPTCode[NPT], mTFreq[2 * NT - 1];
 
 static NODE   mPos, mMatchPos, mAvail, *mPosition, *mParent, *mPrev, *mNext = NULL;
-
 
 //
 // functions
 //
-
 EFI_STATUS
 Compress (
   IN      UINT8   *SrcBuffer,
@@ -293,66 +293,61 @@ Returns:
   EFI_BUFFER_TOO_SMALL  - The DstBuffer is too small. In this case,
                 DstSize contains the size needed.
   EFI_SUCCESS           - Compression is successful.
+  EFI_OUT_OF_RESOURCES  - No resource to complete function.
 
 --*/
 {
-  EFI_STATUS Status;
-  
+  EFI_STATUS  Status;
+
   //
   // Initializations
   //
-  
-  mBufSiz = 0;
-  mBuf = NULL;
-  mText       = NULL;
-  mLevel      = NULL;
-  mChildCount = NULL;
-  mPosition   = NULL;
-  mParent     = NULL;
-  mPrev       = NULL;
-  mNext       = NULL;
+  mBufSiz         = 0;
+  mBuf            = NULL;
+  mText           = NULL;
+  mLevel          = NULL;
+  mChildCount     = NULL;
+  mPosition       = NULL;
+  mParent         = NULL;
+  mPrev           = NULL;
+  mNext           = NULL;
 
-  
-  mSrc = SrcBuffer;
-  mSrcUpperLimit = mSrc + SrcSize;
-  mDst = DstBuffer;
-  mDstUpperLimit = mDst + *DstSize;
+  mSrc            = SrcBuffer;
+  mSrcUpperLimit  = mSrc + SrcSize;
+  mDst            = DstBuffer;
+  mDstUpperLimit  = mDst +*DstSize;
 
-  PutDword(0L);
-  PutDword(0L);
-  
+  PutDword (0L);
+  PutDword (0L);
+
   MakeCrcTable ();
 
-  mOrigSize = mCompSize = 0;
-  mCrc = INIT_CRC;
-  
+  mOrigSize             = mCompSize = 0;
+  mCrc                  = INIT_CRC;
+
   //
   // Compress it
   //
-  
-  Status = Encode();
+  Status = Encode ();
   if (EFI_ERROR (Status)) {
     return EFI_OUT_OF_RESOURCES;
   }
-  
   //
   // Null terminate the compressed data
   //
   if (mDst < mDstUpperLimit) {
     *mDst++ = 0;
   }
-  
   //
   // Fill in compressed size and original size
   //
   mDst = DstBuffer;
-  PutDword(mCompSize+1);
-  PutDword(mOrigSize);
+  PutDword (mCompSize + 1);
+  PutDword (mOrigSize);
 
   //
   // Return
   //
-  
   if (mCompSize + 1 + 8 > *DstSize) {
     *DstSize = mCompSize + 1 + 8;
     return EFI_BUFFER_TOO_SMALL;
@@ -363,9 +358,9 @@ Returns:
 
 }
 
-STATIC 
-VOID 
-PutDword(
+STATIC
+VOID
+PutDword (
   IN UINT32 Data
   )
 /*++
@@ -383,32 +378,35 @@ Returns: (VOID)
 --*/
 {
   if (mDst < mDstUpperLimit) {
-    *mDst++ = (UINT8)(((UINT8)(Data        )) & 0xff);
+    *mDst++ = (UINT8) (((UINT8) (Data)) & 0xff);
   }
 
   if (mDst < mDstUpperLimit) {
-    *mDst++ = (UINT8)(((UINT8)(Data >> 0x08)) & 0xff);
+    *mDst++ = (UINT8) (((UINT8) (Data >> 0x08)) & 0xff);
   }
 
   if (mDst < mDstUpperLimit) {
-    *mDst++ = (UINT8)(((UINT8)(Data >> 0x10)) & 0xff);
+    *mDst++ = (UINT8) (((UINT8) (Data >> 0x10)) & 0xff);
   }
 
   if (mDst < mDstUpperLimit) {
-    *mDst++ = (UINT8)(((UINT8)(Data >> 0x18)) & 0xff);
+    *mDst++ = (UINT8) (((UINT8) (Data >> 0x18)) & 0xff);
   }
 }
 
 STATIC
 EFI_STATUS
-AllocateMemory ()
+AllocateMemory (
+  VOID
+  )
 /*++
 
 Routine Description:
 
   Allocate memory spaces for data structures used in compression process
   
-Argements: (VOID)
+Argements: 
+  VOID
 
 Returns:
 
@@ -417,36 +415,40 @@ Returns:
 
 --*/
 {
-  UINT32      Index;
+  UINT32  Index;
 
-  mText       = malloc (WNDSIZ * 2 + MAXMATCH);
-  for (Index = 0 ; Index < WNDSIZ * 2 + MAXMATCH; Index ++) {
+  mText = malloc (WNDSIZ * 2 + MAXMATCH);
+  for (Index = 0; Index < WNDSIZ * 2 + MAXMATCH; Index++) {
     mText[Index] = 0;
   }
 
-  mLevel      = malloc ((WNDSIZ + UINT8_MAX + 1) * sizeof(*mLevel));
-  mChildCount = malloc ((WNDSIZ + UINT8_MAX + 1) * sizeof(*mChildCount));
-  mPosition   = malloc ((WNDSIZ + UINT8_MAX + 1) * sizeof(*mPosition));
-  mParent     = malloc (WNDSIZ * 2 * sizeof(*mParent));
-  mPrev       = malloc (WNDSIZ * 2 * sizeof(*mPrev));
-  mNext       = malloc ((MAX_HASH_VAL + 1) * sizeof(*mNext));
-  
-  mBufSiz = BLKSIZ;
-  mBuf = malloc(mBufSiz);
+  mLevel      = malloc ((WNDSIZ + UINT8_MAX + 1) * sizeof (*mLevel));
+  mChildCount = malloc ((WNDSIZ + UINT8_MAX + 1) * sizeof (*mChildCount));
+  mPosition   = malloc ((WNDSIZ + UINT8_MAX + 1) * sizeof (*mPosition));
+  mParent     = malloc (WNDSIZ * 2 * sizeof (*mParent));
+  mPrev       = malloc (WNDSIZ * 2 * sizeof (*mPrev));
+  mNext       = malloc ((MAX_HASH_VAL + 1) * sizeof (*mNext));
+
+  mBufSiz     = BLKSIZ;
+  mBuf        = malloc (mBufSiz);
   while (mBuf == NULL) {
     mBufSiz = (mBufSiz / 10U) * 9U;
     if (mBufSiz < 4 * 1024U) {
       return EFI_OUT_OF_RESOURCES;
     }
-    mBuf = malloc(mBufSiz);
+
+    mBuf = malloc (mBufSiz);
   }
+
   mBuf[0] = 0;
-  
+
   return EFI_SUCCESS;
 }
 
 VOID
-FreeMemory ()
+FreeMemory (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -462,42 +464,43 @@ Returns: (VOID)
   if (mText != NULL) {
     free (mText);
   }
-  
+
   if (mLevel != NULL) {
     free (mLevel);
   }
-  
+
   if (mChildCount != NULL) {
     free (mChildCount);
   }
-  
+
   if (mPosition != NULL) {
     free (mPosition);
   }
-  
+
   if (mParent != NULL) {
     free (mParent);
   }
-  
+
   if (mPrev != NULL) {
     free (mPrev);
   }
-  
+
   if (mNext != NULL) {
     free (mNext);
   }
-  
+
   if (mBuf != NULL) {
     free (mBuf);
-  }  
+  }
 
-  return;
+  return ;
 }
 
-
-STATIC 
-VOID 
-InitSlide ()
+STATIC
+VOID
+InitSlide (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -510,31 +513,32 @@ Returns: (VOID)
 
 --*/
 {
-  NODE Index;
+  NODE  Index;
 
   for (Index = WNDSIZ; Index <= WNDSIZ + UINT8_MAX; Index++) {
-    mLevel[Index] = 1;
-    mPosition[Index] = NIL;  /* sentinel */
+    mLevel[Index]     = 1;
+    mPosition[Index]  = NIL;  /* sentinel */
   }
+
   for (Index = WNDSIZ; Index < WNDSIZ * 2; Index++) {
     mParent[Index] = NIL;
-  }  
+  }
+
   mAvail = 1;
   for (Index = 1; Index < WNDSIZ - 1; Index++) {
-    mNext[Index] = (NODE)(Index + 1);
+    mNext[Index] = (NODE) (Index + 1);
   }
-  
+
   mNext[WNDSIZ - 1] = NIL;
   for (Index = WNDSIZ * 2; Index <= MAX_HASH_VAL; Index++) {
     mNext[Index] = NIL;
-  }  
+  }
 }
 
-
-STATIC 
-NODE 
+STATIC
+NODE
 Child (
-  IN NODE NodeQ, 
+  IN NODE  NodeQ,
   IN UINT8 CharC
   )
 /*++
@@ -554,26 +558,26 @@ Returns:
   
 --*/
 {
-  NODE NodeR;
-  
-  NodeR = mNext[HASH(NodeQ, CharC)];
+  NODE  NodeR;
+
+  NodeR = mNext[HASH (NodeQ, CharC)];
   //
-  // sentinel 
+  // sentinel
   //
-  mParent[NIL] = NodeQ; 
+  mParent[NIL] = NodeQ;
   while (mParent[NodeR] != NodeQ) {
     NodeR = mNext[NodeR];
   }
-  
+
   return NodeR;
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 MakeChild (
-  IN NODE Parent, 
-  IN UINT8 CharC, 
-  IN NODE Child
+  IN NODE  Parent,
+  IN UINT8 CharC,
+  IN NODE  Child
   )
 /*++
 
@@ -591,20 +595,21 @@ Returns: (VOID)
 
 --*/
 {
-  NODE Node1, Node2;
-  
-  Node1 = (NODE)HASH(Parent, CharC);
-  Node2 = mNext[Node1];
-  mNext[Node1] = Child;
-  mNext[Child] = Node2;
-  mPrev[Node2] = Child;
-  mPrev[Child] = Node1;
-  mParent[Child] = Parent;
+  NODE  Node1;
+  NODE  Node2;
+
+  Node1           = (NODE) HASH (Parent, CharC);
+  Node2           = mNext[Node1];
+  mNext[Node1]    = Child;
+  mNext[Child]    = Node2;
+  mPrev[Node2]    = Child;
+  mPrev[Child]    = Node1;
+  mParent[Child]  = Parent;
   mChildCount[Parent]++;
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 Split (
   NODE Old
   )
@@ -622,27 +627,30 @@ Returns: (VOID)
 
 --*/
 {
-  NODE New, TempNode;
+  NODE  New;
+  NODE  TempNode;
 
-  New = mAvail;
-  mAvail = mNext[New];
-  mChildCount[New] = 0;
-  TempNode = mPrev[Old];
-  mPrev[New] = TempNode;
-  mNext[TempNode] = New;
-  TempNode = mNext[Old];
-  mNext[New] = TempNode;
-  mPrev[TempNode] = New;
-  mParent[New] = mParent[Old];
-  mLevel[New] = (UINT8)mMatchLen;
-  mPosition[New] = mPos;
-  MakeChild(New, mText[mMatchPos + mMatchLen], Old);
-  MakeChild(New, mText[mPos + mMatchLen], mPos);
+  New               = mAvail;
+  mAvail            = mNext[New];
+  mChildCount[New]  = 0;
+  TempNode          = mPrev[Old];
+  mPrev[New]        = TempNode;
+  mNext[TempNode]   = New;
+  TempNode          = mNext[Old];
+  mNext[New]        = TempNode;
+  mPrev[TempNode]   = New;
+  mParent[New]      = mParent[Old];
+  mLevel[New]       = (UINT8) mMatchLen;
+  mPosition[New]    = mPos;
+  MakeChild (New, mText[mMatchPos + mMatchLen], Old);
+  MakeChild (New, mText[mPos + mMatchLen], mPos);
 }
 
-STATIC 
-VOID 
-InsertNode ()
+STATIC
+VOID
+InsertNode (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -655,11 +663,15 @@ Returns: (VOID)
 
 --*/
 {
-  NODE NodeQ, NodeR, Index2, NodeT;
-  UINT8 CharC, *t1, *t2;
+  NODE  NodeQ;
+  NODE  NodeR;
+  NODE  Index2;
+  NODE  NodeT;
+  UINT8 CharC;
+  UINT8 *t1;
+  UINT8 *t2;
 
   if (mMatchLen >= 4) {
-    
     //
     // We have just got a long match, the target tree
     // can be located by MatchPos + 1. Travese the tree
@@ -667,101 +679,110 @@ Returns: (VOID)
     // The usage of PERC_FLAG ensures proper node deletion
     // in DeleteNode() later.
     //
-    
     mMatchLen--;
-    NodeR = (NODE)((mMatchPos + 1) | WNDSIZ);
+    NodeR = (NODE) ((mMatchPos + 1) | WNDSIZ);
     NodeQ = mParent[NodeR];
     while (NodeQ == NIL) {
       NodeR = mNext[NodeR];
       NodeQ = mParent[NodeR];
     }
+
     while (mLevel[NodeQ] >= mMatchLen) {
-      NodeR = NodeQ;  NodeQ = mParent[NodeQ];
+      NodeR = NodeQ;
+      NodeQ = mParent[NodeQ];
     }
+
     NodeT = NodeQ;
     while (mPosition[NodeT] < 0) {
-      mPosition[NodeT] = mPos;
-      NodeT = mParent[NodeT];
+      mPosition[NodeT]  = mPos;
+      NodeT             = mParent[NodeT];
     }
+
     if (NodeT < WNDSIZ) {
-      mPosition[NodeT] = (NODE)(mPos | (UINT32)PERC_FLAG);
-    }    
+      mPosition[NodeT] = (NODE) (mPos | (UINT32) PERC_FLAG);
+    }
   } else {
-    
     //
     // Locate the target tree
     //
-    
-    NodeQ = (NODE)(mText[mPos] + WNDSIZ);
+    NodeQ = (NODE) (mText[mPos] + WNDSIZ);
     CharC = mText[mPos + 1];
-    NodeR = Child(NodeQ, CharC);
+    NodeR = Child (NodeQ, CharC);
     if (NodeR == NIL) {
-      MakeChild(NodeQ, CharC, mPos);
+      MakeChild (NodeQ, CharC, mPos);
       mMatchLen = 1;
-      return;
+      return ;
     }
+
     mMatchLen = 2;
   }
-  
   //
   // Traverse down the tree to find a match.
   // Update Position value along the route.
   // Node split or creation is involved.
   //
-  
-  for ( ; ; ) {
+  for (;;) {
     if (NodeR >= WNDSIZ) {
-      Index2 = MAXMATCH;
+      Index2    = MAXMATCH;
       mMatchPos = NodeR;
     } else {
-      Index2 = mLevel[NodeR];
-      mMatchPos = (NODE)(mPosition[NodeR] & (UINT32)~PERC_FLAG);
+      Index2    = mLevel[NodeR];
+      mMatchPos = (NODE) (mPosition[NodeR] & (UINT32)~PERC_FLAG);
     }
+
     if (mMatchPos >= mPos) {
       mMatchPos -= WNDSIZ;
-    }    
-    t1 = &mText[mPos + mMatchLen];
-    t2 = &mText[mMatchPos + mMatchLen];
+    }
+
+    t1  = &mText[mPos + mMatchLen];
+    t2  = &mText[mMatchPos + mMatchLen];
     while (mMatchLen < Index2) {
       if (*t1 != *t2) {
-        Split(NodeR);
-        return;
+        Split (NodeR);
+        return ;
       }
+
       mMatchLen++;
       t1++;
       t2++;
     }
+
     if (mMatchLen >= MAXMATCH) {
       break;
     }
-    mPosition[NodeR] = mPos;
-    NodeQ = NodeR;
-    NodeR = Child(NodeQ, *t1);
+
+    mPosition[NodeR]  = mPos;
+    NodeQ             = NodeR;
+    NodeR             = Child (NodeQ, *t1);
     if (NodeR == NIL) {
-      MakeChild(NodeQ, *t1, mPos);
-      return;
+      MakeChild (NodeQ, *t1, mPos);
+      return ;
     }
+
     mMatchLen++;
   }
-  NodeT = mPrev[NodeR];
-  mPrev[mPos] = NodeT;
-  mNext[NodeT] = mPos;
-  NodeT = mNext[NodeR];
-  mNext[mPos] = NodeT;
-  mPrev[NodeT] = mPos;
-  mParent[mPos] = NodeQ;
-  mParent[NodeR] = NIL;
-  
+
+  NodeT           = mPrev[NodeR];
+  mPrev[mPos]     = NodeT;
+  mNext[NodeT]    = mPos;
+  NodeT           = mNext[NodeR];
+  mNext[mPos]     = NodeT;
+  mPrev[NodeT]    = mPos;
+  mParent[mPos]   = NodeQ;
+  mParent[NodeR]  = NIL;
+
   //
   // Special usage of 'next'
   //
   mNext[NodeR] = mPos;
-  
+
 }
 
-STATIC 
-VOID 
-DeleteNode ()
+STATIC
+VOID
+DeleteNode (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -775,74 +796,88 @@ Returns: (VOID)
 
 --*/
 {
-  NODE NodeQ, NodeR, NodeS, NodeT, NodeU;
+  NODE  NodeQ;
+  NODE  NodeR;
+  NODE  NodeS;
+  NODE  NodeT;
+  NODE  NodeU;
 
   if (mParent[mPos] == NIL) {
-    return;
+    return ;
   }
-  
-  NodeR = mPrev[mPos];
-  NodeS = mNext[mPos];
-  mNext[NodeR] = NodeS;
-  mPrev[NodeS] = NodeR;
-  NodeR = mParent[mPos];
+
+  NodeR         = mPrev[mPos];
+  NodeS         = mNext[mPos];
+  mNext[NodeR]  = NodeS;
+  mPrev[NodeS]  = NodeR;
+  NodeR         = mParent[mPos];
   mParent[mPos] = NIL;
   if (NodeR >= WNDSIZ) {
-    return;
+    return ;
   }
-  mChildCount[NodeR] --;
+
+  mChildCount[NodeR]--;
   if (mChildCount[NodeR] > 1) {
-    return;
+    return ;
   }
-  
-  NodeT = (NODE)(mPosition[NodeR] & (UINT32)~PERC_FLAG);
+
+  NodeT = (NODE) (mPosition[NodeR] & (UINT32)~PERC_FLAG);
   if (NodeT >= mPos) {
     NodeT -= WNDSIZ;
   }
+
   NodeS = NodeT;
   NodeQ = mParent[NodeR];
   NodeU = mPosition[NodeQ];
-  while (NodeU & (UINT32)PERC_FLAG) {
+  while (NodeU & (UINT32) PERC_FLAG) {
     NodeU &= (UINT32)~PERC_FLAG;
     if (NodeU >= mPos) {
       NodeU -= WNDSIZ;
     }
+
     if (NodeU > NodeS) {
       NodeS = NodeU;
     }
-    mPosition[NodeQ] = (NODE)(NodeS | WNDSIZ);
-    NodeQ = mParent[NodeQ];
-    NodeU = mPosition[NodeQ];
+
+    mPosition[NodeQ]  = (NODE) (NodeS | WNDSIZ);
+    NodeQ             = mParent[NodeQ];
+    NodeU             = mPosition[NodeQ];
   }
+
   if (NodeQ < WNDSIZ) {
     if (NodeU >= mPos) {
       NodeU -= WNDSIZ;
     }
+
     if (NodeU > NodeS) {
       NodeS = NodeU;
     }
-    mPosition[NodeQ] = (NODE)(NodeS | WNDSIZ | (UINT32)PERC_FLAG);
+
+    mPosition[NodeQ] = (NODE) (NodeS | WNDSIZ | (UINT32) PERC_FLAG);
   }
-  NodeS = Child(NodeR, mText[NodeT + mLevel[NodeR]]);
-  NodeT = mPrev[NodeS];
-  NodeU = mNext[NodeS];
-  mNext[NodeT] = NodeU;
-  mPrev[NodeU] = NodeT;
-  NodeT = mPrev[NodeR];
-  mNext[NodeT] = NodeS;
-  mPrev[NodeS] = NodeT;
-  NodeT = mNext[NodeR];
-  mPrev[NodeT] = NodeS;
-  mNext[NodeS] = NodeT;
-  mParent[NodeS] = mParent[NodeR];
-  mParent[NodeR] = NIL;
-  mNext[NodeR] = mAvail;
-  mAvail = NodeR;
+
+  NodeS           = Child (NodeR, mText[NodeT + mLevel[NodeR]]);
+  NodeT           = mPrev[NodeS];
+  NodeU           = mNext[NodeS];
+  mNext[NodeT]    = NodeU;
+  mPrev[NodeU]    = NodeT;
+  NodeT           = mPrev[NodeR];
+  mNext[NodeT]    = NodeS;
+  mPrev[NodeS]    = NodeT;
+  NodeT           = mNext[NodeR];
+  mPrev[NodeT]    = NodeS;
+  mNext[NodeS]    = NodeT;
+  mParent[NodeS]  = mParent[NodeR];
+  mParent[NodeR]  = NIL;
+  mNext[NodeR]    = mAvail;
+  mAvail          = NodeR;
 }
 
-STATIC 
-VOID 
-GetNextMatch ()
+STATIC
+VOID
+GetNextMatch (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -861,18 +896,21 @@ Returns: (VOID)
   mRemainder--;
   mPos++;
   if (mPos == WNDSIZ * 2) {
-    memmove(&mText[0], &mText[WNDSIZ], WNDSIZ + MAXMATCH);
-    Number = FreadCrc(&mText[WNDSIZ + MAXMATCH], WNDSIZ);
+    memmove (&mText[0], &mText[WNDSIZ], WNDSIZ + MAXMATCH);
+    Number = FreadCrc (&mText[WNDSIZ + MAXMATCH], WNDSIZ);
     mRemainder += Number;
     mPos = WNDSIZ;
   }
-  DeleteNode();
-  InsertNode();
+
+  DeleteNode ();
+  InsertNode ();
 }
 
 STATIC
 EFI_STATUS
-Encode ()
+Encode (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -892,74 +930,77 @@ Returns:
   INT32       LastMatchLen;
   NODE        LastMatchPos;
 
-  Status = AllocateMemory();
-  if (EFI_ERROR(Status)) {
-    FreeMemory();
+  Status = AllocateMemory ();
+  if (EFI_ERROR (Status)) {
+    FreeMemory ();
     return Status;
   }
 
-  InitSlide();
-  
-  HufEncodeStart();
+  InitSlide ();
 
-  mRemainder = FreadCrc(&mText[WNDSIZ], WNDSIZ + MAXMATCH);
-  
-  mMatchLen = 0;
-  mPos = WNDSIZ;
-  InsertNode();
+  HufEncodeStart ();
+
+  mRemainder  = FreadCrc (&mText[WNDSIZ], WNDSIZ + MAXMATCH);
+
+  mMatchLen   = 0;
+  mPos        = WNDSIZ;
+  InsertNode ();
   if (mMatchLen > mRemainder) {
     mMatchLen = mRemainder;
   }
+
   while (mRemainder > 0) {
-    LastMatchLen = mMatchLen;
-    LastMatchPos = mMatchPos;
-    GetNextMatch();
+    LastMatchLen  = mMatchLen;
+    LastMatchPos  = mMatchPos;
+    GetNextMatch ();
     if (mMatchLen > mRemainder) {
       mMatchLen = mRemainder;
     }
-    
+
     if (mMatchLen > LastMatchLen || LastMatchLen < THRESHOLD) {
-      
       //
       // Not enough benefits are gained by outputting a pointer,
       // so just output the original character
-      //      
-      Output(mText[mPos - 1], 0);
+      //
+      Output (mText[mPos - 1], 0);
 
     } else {
 
-      if (LastMatchLen == THRESHOLD) {              
-        if ( ((mPos - LastMatchPos - 2) & (WNDSIZ - 1)) > (1U<<11) ) {
-          Output(mText[mPos - 1], 0);      
+      if (LastMatchLen == THRESHOLD) {
+        if (((mPos - LastMatchPos - 2) & (WNDSIZ - 1)) > (1U << 11)) {
+          Output (mText[mPos - 1], 0);
           continue;
         }
-      }        
-          
+      }
       //
       // Outputting a pointer is beneficial enough, do it.
       //
-      
-      Output(LastMatchLen + (UINT8_MAX + 1 - THRESHOLD),
-             (mPos - LastMatchPos - 2) & (WNDSIZ - 1));
-      LastMatchLen --;
+      Output (
+        LastMatchLen + (UINT8_MAX + 1 - THRESHOLD),
+        (mPos - LastMatchPos - 2) & (WNDSIZ - 1)
+        );
+      LastMatchLen--;
       while (LastMatchLen > 0) {
-        GetNextMatch();
-        LastMatchLen --;
+        GetNextMatch ();
+        LastMatchLen--;
       }
+
       if (mMatchLen > mRemainder) {
         mMatchLen = mRemainder;
       }
     }
   }
-  
-  HufEncodeEnd();
-  FreeMemory();
+
+  HufEncodeEnd ();
+  FreeMemory ();
   return EFI_SUCCESS;
 }
 
-STATIC 
-VOID 
-CountTFreq ()
+STATIC
+VOID
+CountTFreq (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -974,16 +1015,18 @@ Returns: (VOID)
 {
   INT32 Index;
   INT32 Index3;
-  INT32  Number;
-  INT32  Count;
+  INT32 Number;
+  INT32 Count;
 
   for (Index = 0; Index < NT; Index++) {
     mTFreq[Index] = 0;
   }
+
   Number = NC;
   while (Number > 0 && mCLen[Number - 1] == 0) {
     Number--;
   }
+
   Index = 0;
   while (Index < Number) {
     Index3 = mCLen[Index++];
@@ -993,8 +1036,9 @@ Returns: (VOID)
         Index++;
         Count++;
       }
+
       if (Count <= 2) {
-        mTFreq[0] = (UINT16)(mTFreq[0] + Count);
+        mTFreq[0] = (UINT16) (mTFreq[0] + Count);
       } else if (Count <= 18) {
         mTFreq[1]++;
       } else if (Count == 19) {
@@ -1009,11 +1053,11 @@ Returns: (VOID)
   }
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 WritePTLen (
-  IN INT32 Number, 
-  IN INT32 nbit, 
+  IN INT32 Number,
+  IN INT32 nbit,
   IN INT32 Special
   )
 /*++
@@ -1032,32 +1076,38 @@ Returns: (VOID)
 
 --*/
 {
-  INT32 Index, Index3;
+  INT32 Index;
+  INT32 Index3;
 
   while (Number > 0 && mPTLen[Number - 1] == 0) {
     Number--;
   }
-  PutBits(nbit, Number);
+
+  PutBits (nbit, Number);
   Index = 0;
   while (Index < Number) {
     Index3 = mPTLen[Index++];
     if (Index3 <= 6) {
-      PutBits(3, Index3);
+      PutBits (3, Index3);
     } else {
-      PutBits(Index3 - 3, (1U << (Index3 - 3)) - 2);
+      PutBits (Index3 - 3, (1U << (Index3 - 3)) - 2);
     }
+
     if (Index == Special) {
       while (Index < 6 && mPTLen[Index] == 0) {
         Index++;
       }
-      PutBits(2, (Index - 3) & 3);
+
+      PutBits (2, (Index - 3) & 3);
     }
   }
 }
 
-STATIC 
-VOID 
-WriteCLen ()
+STATIC
+VOID
+WriteCLen (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -1079,7 +1129,8 @@ Returns: (VOID)
   while (Number > 0 && mCLen[Number - 1] == 0) {
     Number--;
   }
-  PutBits(CBIT, Number);
+
+  PutBits (CBIT, Number);
   Index = 0;
   while (Index < Number) {
     Index3 = mCLen[Index++];
@@ -1089,38 +1140,39 @@ Returns: (VOID)
         Index++;
         Count++;
       }
+
       if (Count <= 2) {
         for (Index3 = 0; Index3 < Count; Index3++) {
-          PutBits(mPTLen[0], mPTCode[0]);
+          PutBits (mPTLen[0], mPTCode[0]);
         }
       } else if (Count <= 18) {
-        PutBits(mPTLen[1], mPTCode[1]);
-        PutBits(4, Count - 3);
+        PutBits (mPTLen[1], mPTCode[1]);
+        PutBits (4, Count - 3);
       } else if (Count == 19) {
-        PutBits(mPTLen[0], mPTCode[0]);
-        PutBits(mPTLen[1], mPTCode[1]);
-        PutBits(4, 15);
+        PutBits (mPTLen[0], mPTCode[0]);
+        PutBits (mPTLen[1], mPTCode[1]);
+        PutBits (4, 15);
       } else {
-        PutBits(mPTLen[2], mPTCode[2]);
-        PutBits(CBIT, Count - 20);
+        PutBits (mPTLen[2], mPTCode[2]);
+        PutBits (CBIT, Count - 20);
       }
     } else {
-      PutBits(mPTLen[Index3 + 2], mPTCode[Index3 + 2]);
+      PutBits (mPTLen[Index3 + 2], mPTCode[Index3 + 2]);
     }
   }
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 EncodeC (
   IN INT32 Value
   )
 {
-  PutBits(mCLen[Value], mCCode[Value]);
+  PutBits (mCLen[Value], mCCode[Value]);
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 EncodeP (
   IN UINT32 Value
   )
@@ -1134,56 +1186,70 @@ EncodeP (
     NodeQ >>= 1;
     Index++;
   }
-  PutBits(mPTLen[Index], mPTCode[Index]);
+
+  PutBits (mPTLen[Index], mPTCode[Index]);
   if (Index > 1) {
-    PutBits(Index - 1, Value & (0xFFFFFFFFU >> (32 - Index + 1)));
+    PutBits (Index - 1, Value & (0xFFFFFFFFU >> (32 - Index + 1)));
   }
 }
 
-STATIC 
-VOID 
-SendBlock ()
+STATIC
+VOID
+SendBlock (
+  VOID
+  )
 /*++
 
 Routine Description:
 
   Huffman code the block and output it.
   
-Argument: (VOID)
+Arguments: 
+  (VOID)
 
-Returns: (VOID)
+Returns: 
+  (VOID)
 
 --*/
 {
-  UINT32 Index, Index2, Index3, Flags, Root, Pos, Size;
+  UINT32  Index;
+  UINT32  Index2;
+  UINT32  Index3;
+  UINT32  Flags;
+  UINT32  Root;
+  UINT32  Pos;
+  UINT32  Size;
   Flags = 0;
 
-  Root = MakeTree(NC, mCFreq, mCLen, mCCode);
-  Size = mCFreq[Root];
-  PutBits(16, Size);
+  Root  = MakeTree (NC, mCFreq, mCLen, mCCode);
+  Size  = mCFreq[Root];
+  PutBits (16, Size);
   if (Root >= NC) {
-    CountTFreq();
-    Root = MakeTree(NT, mTFreq, mPTLen, mPTCode);
+    CountTFreq ();
+    Root = MakeTree (NT, mTFreq, mPTLen, mPTCode);
     if (Root >= NT) {
-      WritePTLen(NT, TBIT, 3);
+      WritePTLen (NT, TBIT, 3);
     } else {
-      PutBits(TBIT, 0);
-      PutBits(TBIT, Root);
+      PutBits (TBIT, 0);
+      PutBits (TBIT, Root);
     }
-    WriteCLen();
+
+    WriteCLen ();
   } else {
-    PutBits(TBIT, 0);
-    PutBits(TBIT, 0);
-    PutBits(CBIT, 0);
-    PutBits(CBIT, Root);
+    PutBits (TBIT, 0);
+    PutBits (TBIT, 0);
+    PutBits (CBIT, 0);
+    PutBits (CBIT, Root);
   }
-  Root = MakeTree(NP, mPFreq, mPTLen, mPTCode);
+
+  Root = MakeTree (NP, mPFreq, mPTLen, mPTCode);
   if (Root >= NP) {
-    WritePTLen(NP, PBIT, -1);
+    WritePTLen (NP, PBIT, -1);
   } else {
-    PutBits(PBIT, 0);
-    PutBits(PBIT, Root);
+    PutBits (PBIT, 0);
+    PutBits (PBIT, Root);
   }
+
   Pos = 0;
   for (Index = 0; Index < Size; Index++) {
     if (Index % UINT8_BIT == 0) {
@@ -1191,31 +1257,34 @@ Returns: (VOID)
     } else {
       Flags <<= 1;
     }
+
     if (Flags & (1U << (UINT8_BIT - 1))) {
-      EncodeC(mBuf[Pos++] + (1U << UINT8_BIT));
+      EncodeC (mBuf[Pos++] + (1U << UINT8_BIT));
       Index3 = mBuf[Pos++];
       for (Index2 = 0; Index2 < 3; Index2++) {
         Index3 <<= UINT8_BIT;
         Index3 += mBuf[Pos++];
       }
-      EncodeP(Index3);
+
+      EncodeP (Index3);
     } else {
-      EncodeC(mBuf[Pos++]);
+      EncodeC (mBuf[Pos++]);
     }
   }
+
   for (Index = 0; Index < NC; Index++) {
     mCFreq[Index] = 0;
   }
+
   for (Index = 0; Index < NP; Index++) {
     mPFreq[Index] = 0;
   }
 }
 
-
-STATIC 
-VOID 
+STATIC
+VOID
 Output (
-  IN UINT32 CharC, 
+  IN UINT32 CharC,
   IN UINT32 Pos
   )
 /*++
@@ -1238,71 +1307,83 @@ Returns: (VOID)
   if ((mOutputMask >>= 1) == 0) {
     mOutputMask = 1U << (UINT8_BIT - 1);
     //
-    // Check the buffer overflow per outputing UINT8_BIT symbols 
-    // which is an Original Character or a Pointer. The biggest 
+    // Check the buffer overflow per outputing UINT8_BIT symbols
+    // which is an Original Character or a Pointer. The biggest
     // symbol is a Pointer which occupies 5 bytes.
     //
     if (mOutputPos >= mBufSiz - 5 * UINT8_BIT) {
-      SendBlock();
+      SendBlock ();
       mOutputPos = 0;
     }
-    CPos = mOutputPos++;  
-    mBuf[CPos] = 0;
+
+    CPos        = mOutputPos++;
+    mBuf[CPos]  = 0;
   }
+
   mBuf[mOutputPos++] = (UINT8) CharC;
   mCFreq[CharC]++;
   if (CharC >= (1U << UINT8_BIT)) {
     mBuf[CPos] |= mOutputMask;
-    mBuf[mOutputPos++] = (UINT8)(Pos >> 24);
-    mBuf[mOutputPos++] = (UINT8)(Pos >> 16);
-    mBuf[mOutputPos++] = (UINT8)(Pos >> (UINT8_BIT));
-    mBuf[mOutputPos++] = (UINT8)Pos;
-    CharC = 0;
+    mBuf[mOutputPos++]  = (UINT8) (Pos >> 24);
+    mBuf[mOutputPos++]  = (UINT8) (Pos >> 16);
+    mBuf[mOutputPos++]  = (UINT8) (Pos >> (UINT8_BIT));
+    mBuf[mOutputPos++]  = (UINT8) Pos;
+    CharC               = 0;
     while (Pos) {
       Pos >>= 1;
       CharC++;
     }
+
     mPFreq[CharC]++;
   }
 }
 
 STATIC
 VOID
-HufEncodeStart ()
+HufEncodeStart (
+  VOID
+  )
 {
   INT32 Index;
 
   for (Index = 0; Index < NC; Index++) {
     mCFreq[Index] = 0;
   }
+
   for (Index = 0; Index < NP; Index++) {
     mPFreq[Index] = 0;
   }
+
   mOutputPos = mOutputMask = 0;
-  InitPutBits();
-  return;
+  InitPutBits ();
+  return ;
 }
 
-STATIC 
-VOID 
-HufEncodeEnd ()
+STATIC
+VOID
+HufEncodeEnd (
+  VOID
+  )
 {
-  SendBlock();
-  
+  SendBlock ();
+
   //
   // Flush remaining bits
   //
-  PutBits(UINT8_BIT - 1, 0);
-  
-  return;
+  PutBits (UINT8_BIT - 1, 0);
+
+  return ;
 }
 
-
-STATIC 
-VOID 
-MakeCrcTable ()
+STATIC
+VOID
+MakeCrcTable (
+  VOID
+  )
 {
-  UINT32 Index, Index2, Temp;
+  UINT32  Index;
+  UINT32  Index2;
+  UINT32  Temp;
 
   for (Index = 0; Index <= UINT8_MAX; Index++) {
     Temp = Index;
@@ -1313,14 +1394,15 @@ MakeCrcTable ()
         Temp >>= 1;
       }
     }
-    mCrcTable[Index] = (UINT16)Temp;    
+
+    mCrcTable[Index] = (UINT16) Temp;
   }
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 PutBits (
-  IN INT32 Number, 
+  IN INT32  Number,
   IN UINT32 Value
   )
 /*++
@@ -1329,7 +1411,7 @@ Routine Description:
 
   Outputs rightmost n bits of x
 
-Argments:
+Arguments:
 
   Number   - the rightmost n bits of the data is used
   x   - the data 
@@ -1338,25 +1420,29 @@ Returns: (VOID)
 
 --*/
 {
-  UINT8 Temp;  
-  
+  UINT8 Temp;
+
   while (Number >= mBitCount) {
-    Temp = (UINT8)(mSubBitBuf | (Value >> (Number -= mBitCount))); // Number -= mBitCount should never equal to 32
+    //
+    // Number -= mBitCount should never equal to 32
+    //
+    Temp = (UINT8) (mSubBitBuf | (Value >> (Number -= mBitCount)));
     if (mDst < mDstUpperLimit) {
       *mDst++ = Temp;
     }
+
     mCompSize++;
-    mSubBitBuf = 0;
-    mBitCount = UINT8_BIT;
+    mSubBitBuf  = 0;
+    mBitCount   = UINT8_BIT;
   }
-  
+
   mSubBitBuf |= Value << (mBitCount -= Number);
 }
 
-STATIC 
-INT32 
+STATIC
+INT32
 FreadCrc (
-  OUT UINT8 *Pointer, 
+  OUT UINT8 *Pointer,
   IN  INT32 Number
   )
 /*++
@@ -1381,29 +1467,32 @@ Returns:
   for (Index = 0; mSrc < mSrcUpperLimit && Index < Number; Index++) {
     *Pointer++ = *mSrc++;
   }
+
   Number = Index;
 
   Pointer -= Number;
   mOrigSize += Number;
-  Index --;
+  Index--;
   while (Index >= 0) {
-    UPDATE_CRC(*Pointer++);
-    Index --;
+    UPDATE_CRC (*Pointer++);
+    Index--;
   }
+
   return Number;
 }
 
-
-STATIC 
-VOID 
-InitPutBits ()
+STATIC
+VOID
+InitPutBits (
+  VOID
+  )
 {
-  mBitCount = UINT8_BIT;  
-  mSubBitBuf = 0;
+  mBitCount   = UINT8_BIT;
+  mSubBitBuf  = 0;
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 CountLen (
   IN INT32 Index
   )
@@ -1421,20 +1510,20 @@ Returns: (VOID)
 
 --*/
 {
-  static INT32 Depth = 0;
+  static INT32  Depth = 0;
 
   if (Index < mN) {
     mLenCnt[(Depth < 16) ? Depth : 16]++;
   } else {
     Depth++;
-    CountLen(mLeft [Index]);
-    CountLen(mRight[Index]);
+    CountLen (mLeft[Index]);
+    CountLen (mRight[Index]);
     Depth--;
   }
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 MakeLen (
   IN INT32 Root
   )
@@ -1447,80 +1536,91 @@ Routine Description:
 Arguments:
 
   Root   - the root of the tree
+  
+Returns:
+
+  VOID
 
 --*/
 {
-  INT32 Index, Index3;
-  UINT32 Cum;
+  INT32   Index;
+  INT32   Index3;
+  UINT32  Cum;
 
   for (Index = 0; Index <= 16; Index++) {
     mLenCnt[Index] = 0;
   }
-  CountLen(Root);
-  
+
+  CountLen (Root);
+
   //
   // Adjust the length count array so that
   // no code will be generated longer than its designated length
   //
-  
   Cum = 0;
   for (Index = 16; Index > 0; Index--) {
     Cum += mLenCnt[Index] << (16 - Index);
   }
+
   while (Cum != (1U << 16)) {
     mLenCnt[16]--;
     for (Index = 15; Index > 0; Index--) {
       if (mLenCnt[Index] != 0) {
         mLenCnt[Index]--;
-        mLenCnt[Index+1] += 2;
+        mLenCnt[Index + 1] += 2;
         break;
       }
     }
+
     Cum--;
   }
+
   for (Index = 16; Index > 0; Index--) {
     Index3 = mLenCnt[Index];
-    Index3 --;
+    Index3--;
     while (Index3 >= 0) {
-      mLen[*mSortPtr++] = (UINT8)Index;
+      mLen[*mSortPtr++] = (UINT8) Index;
       Index3--;
     }
   }
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 DownHeap (
   IN INT32 Index
   )
 {
-  INT32 Index2, Index3;
+  INT32 Index2;
+  INT32 Index3;
 
   //
   // priority queue: send Index-th entry down heap
   //
-  
-  Index3 = mHeap[Index];
-  Index2 = 2 * Index;
+  Index3  = mHeap[Index];
+  Index2  = 2 * Index;
   while (Index2 <= mHeapSize) {
     if (Index2 < mHeapSize && mFreq[mHeap[Index2]] > mFreq[mHeap[Index2 + 1]]) {
       Index2++;
     }
+
     if (mFreq[Index3] <= mFreq[mHeap[Index2]]) {
       break;
     }
-    mHeap[Index] = mHeap[Index2];
-    Index = Index2;
-    Index2 = 2 * Index;
+
+    mHeap[Index]  = mHeap[Index2];
+    Index         = Index2;
+    Index2        = 2 * Index;
   }
-  mHeap[Index] = (INT16)Index3;
+
+  mHeap[Index] = (INT16) Index3;
 }
 
-STATIC 
-VOID 
+STATIC
+VOID
 MakeCode (
-  IN  INT32 Number, 
-  IN  UINT8 Len[], 
+  IN  INT32       Number,
+  IN  UINT8 Len[  ],
   OUT UINT16 Code[]
   )
 /*++
@@ -1539,24 +1639,25 @@ Returns: (VOID)
 
 --*/
 {
-  INT32    Index;
-  UINT16   Start[18];
+  INT32   Index;
+  UINT16  Start[18];
 
   Start[1] = 0;
   for (Index = 1; Index <= 16; Index++) {
-    Start[Index + 1] = (UINT16)((Start[Index] + mLenCnt[Index]) << 1);
+    Start[Index + 1] = (UINT16) ((Start[Index] + mLenCnt[Index]) << 1);
   }
+
   for (Index = 0; Index < Number; Index++) {
     Code[Index] = Start[Len[Index]]++;
   }
 }
 
-STATIC 
-INT32 
+STATIC
+INT32
 MakeTree (
-  IN  INT32   NParm, 
-  IN  UINT16  FreqParm[], 
-  OUT UINT8   LenParm[], 
+  IN  INT32            NParm,
+  IN  UINT16  FreqParm[],
+  OUT UINT8   LenParm[ ],
   OUT UINT16  CodeParm[]
   )
 /*++
@@ -1582,59 +1683,62 @@ Returns:
   INT32 Index2;
   INT32 Index3;
   INT32 Avail;
-  
+
   //
   // make tree, calculate len[], return root
   //
-
-  mN = NParm;
-  mFreq = FreqParm;
-  mLen = LenParm;
-  Avail = mN;
+  mN        = NParm;
+  mFreq     = FreqParm;
+  mLen      = LenParm;
+  Avail     = mN;
   mHeapSize = 0;
-  mHeap[1] = 0;
+  mHeap[1]  = 0;
   for (Index = 0; Index < mN; Index++) {
     mLen[Index] = 0;
     if (mFreq[Index]) {
-      mHeapSize ++;
-      mHeap[mHeapSize] = (INT16)Index;
-    }    
+      mHeapSize++;
+      mHeap[mHeapSize] = (INT16) Index;
+    }
   }
+
   if (mHeapSize < 2) {
     CodeParm[mHeap[1]] = 0;
     return mHeap[1];
   }
+
   for (Index = mHeapSize / 2; Index >= 1; Index--) {
-    
     //
-    // make priority queue 
+    // make priority queue
     //
-    DownHeap(Index);
+    DownHeap (Index);
   }
+
   mSortPtr = CodeParm;
   do {
     Index = mHeap[1];
     if (Index < mN) {
-      *mSortPtr++ = (UINT16)Index;
+      *mSortPtr++ = (UINT16) Index;
     }
+
     mHeap[1] = mHeap[mHeapSize--];
-    DownHeap(1);
+    DownHeap (1);
     Index2 = mHeap[1];
     if (Index2 < mN) {
-      *mSortPtr++ = (UINT16)Index2;
+      *mSortPtr++ = (UINT16) Index2;
     }
-    Index3 = Avail++;
-    mFreq[Index3] = (UINT16)(mFreq[Index] + mFreq[Index2]);
-    mHeap[1] = (INT16)Index3;
-    DownHeap(1);
-    mLeft[Index3] = (UINT16)Index;
-    mRight[Index3] = (UINT16)Index2;
+
+    Index3        = Avail++;
+    mFreq[Index3] = (UINT16) (mFreq[Index] + mFreq[Index2]);
+    mHeap[1]      = (INT16) Index3;
+    DownHeap (1);
+    mLeft[Index3]   = (UINT16) Index;
+    mRight[Index3]  = (UINT16) Index2;
   } while (mHeapSize > 1);
-  
+
   mSortPtr = CodeParm;
-  MakeLen(Index3);
-  MakeCode(NParm, LenParm, CodeParm);
-  
+  MakeLen (Index3);
+  MakeCode (NParm, LenParm, CodeParm);
+
   //
   // return root
   //

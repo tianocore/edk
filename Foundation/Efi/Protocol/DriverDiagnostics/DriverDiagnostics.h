@@ -27,30 +27,33 @@ Revision History
 //
 // Global ID for the Driver Diagnostics Protocol
 //
-#define EFI_DRIVER_DIAGNOSTICS_PROTOCOL_GUID    \
-  { 0x0784924f, 0xe296, 0x11d4, 0x9a, 0x49, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d }
-  
+#define EFI_DRIVER_DIAGNOSTICS_PROTOCOL_GUID \
+  { \
+    0x0784924f, 0xe296, 0x11d4, 0x9a, 0x49, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d \
+  }
+
 EFI_FORWARD_DECLARATION (EFI_DRIVER_DIAGNOSTICS_PROTOCOL);
 
 typedef enum {
-  EfiDriverDiagnosticTypeStandard               = 0,
-  EfiDriverDiagnosticTypeExtended               = 1,
-  EfiDriverDiagnosticTypeManufacturing          = 2,
+  EfiDriverDiagnosticTypeStandard     = 0,
+  EfiDriverDiagnosticTypeExtended     = 1,
+  EfiDriverDiagnosticTypeManufacturing= 2,
   EfiDriverDiagnosticTypeMaximum
 } EFI_DRIVER_DIAGNOSTIC_TYPE;
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_DIAGNOSTICS_RUN_DIAGNOSTICS) (
-  IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL  *This,
-  IN  EFI_HANDLE                               ControllerHandle,
-  IN  EFI_HANDLE                               ChildHandle  OPTIONAL,
-  IN  EFI_DRIVER_DIAGNOSTIC_TYPE               DiagnosticType,
-  IN  CHAR8                                    *Language,
-  OUT EFI_GUID                                 **ErrorType,
-  OUT UINTN                                    *BufferSize, 
-  OUT CHAR16                                   **Buffer
+  IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL                        * This,
+  IN  EFI_HANDLE                                            ControllerHandle,
+  IN  EFI_HANDLE                                            ChildHandle  OPTIONAL,
+  IN  EFI_DRIVER_DIAGNOSTIC_TYPE                            DiagnosticType,
+  IN  CHAR8                                                 *Language,
+  OUT EFI_GUID                                              **ErrorType,
+  OUT UINTN                                                 *BufferSize,
+  OUT CHAR16                                                **Buffer
   );
+
 /*++
 
   Routine Description:
@@ -113,7 +116,6 @@ EFI_STATUS
 //
 // Interface structure for the Driver Diagnostics Protocol
 //
-
 typedef struct _EFI_DRIVER_DIAGNOSTICS_PROTOCOL {
   EFI_DRIVER_DIAGNOSTICS_RUN_DIAGNOSTICS  RunDiagnostics;
   CHAR8                                   *SupportedLanguages;
@@ -131,7 +133,6 @@ typedef struct _EFI_DRIVER_DIAGNOSTICS_PROTOCOL {
                          codes that this protocol supports.
 
 --*/
-
 extern EFI_GUID gEfiDriverDiagnosticsProtocolGuid;
 
 #endif

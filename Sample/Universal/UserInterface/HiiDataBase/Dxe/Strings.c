@@ -21,23 +21,21 @@ Abstract:
 
 #include "HiiDatabase.h"
 
-
 VOID
 AsciiToUnicode (
   IN    UINT8     *Lang,
   IN    UINT16    *Language
   )
 {
-  UINT8           Count;
+  UINT8 Count;
 
   //
   // Convert the ASCII Lang variable to a Unicode Language variable
   //
-  for ( Count = 0; Count < 3; Count++) {
-    Language[Count] = (CHAR16)Lang[Count];
+  for (Count = 0; Count < 3; Count++) {
+    Language[Count] = (CHAR16) Lang[Count];
   }
 }
-
 
 EFI_STATUS
 HiiTestString (
@@ -57,25 +55,24 @@ Returns:
 
 --*/
 {
-  EFI_HII_GLOBAL_DATA             *GlobalData;
-  EFI_HII_DATA                    *HiiData;
-  UINTN                           Count;
-  BOOLEAN                         Narrow;
-  UINTN                           Location;
-  UINT8                           GlyphCol1[19];
-
+  EFI_HII_GLOBAL_DATA *GlobalData;
+  EFI_HII_DATA        *HiiData;
+  UINTN               Count;
+  BOOLEAN             Narrow;
+  UINTN               Location;
+  UINT8               GlyphCol1[19];
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData     = EFI_HII_DATA_FROM_THIS (This);
 
-  GlobalData = HiiData->GlobalData;
-  Count = 0;
-  Narrow = TRUE;
+  GlobalData  = HiiData->GlobalData;
+  Count       = 0;
+  Narrow      = TRUE;
 
-  EfiZeroMem(GlyphCol1, sizeof(GlyphCol1));
+  EfiZeroMem (GlyphCol1, sizeof (GlyphCol1));
 
   //
   // Walk through the string until you hit the null terminator
@@ -85,9 +82,8 @@ Returns:
     //
     // Rewind through the string looking for a glyph width identifier
     //
-    for (;Location != 0;Location--) {
-      if (StringToTest[Location] == NARROW_CHAR ||
-          StringToTest[Location] == WIDE_CHAR) {
+    for (; Location != 0; Location--) {
+      if (StringToTest[Location] == NARROW_CHAR || StringToTest[Location] == WIDE_CHAR) {
         //
         // We found something that identifies what glyph database to look in
         //
@@ -100,7 +96,12 @@ Returns:
     }
 
     if (Narrow) {
-      if (EfiCompareMem(GlobalData->NarrowGlyphs[StringToTest[*FirstMissing]].GlyphCol1, &mUnknownGlyph, NARROW_GLYPH_ARRAY_SIZE) == 0) {
+      if (EfiCompareMem (
+          GlobalData->NarrowGlyphs[StringToTest[*FirstMissing]].GlyphCol1,
+          &mUnknownGlyph,
+          NARROW_GLYPH_ARRAY_SIZE
+          ) == 0
+          ) {
         //
         // Break since this glyph isn't defined
         //
@@ -110,24 +111,30 @@ Returns:
       //
       // Can compare wide glyph against only GlyphCol1 since GlyphCol1 and GlyphCol2 are contiguous - just give correct size
       //
-      if (EfiCompareMem(GlobalData->WideGlyphs[StringToTest[*FirstMissing]].GlyphCol1, &mUnknownGlyph, WIDE_GLYPH_ARRAY_SIZE) == 0) {
+      if (EfiCompareMem (
+          GlobalData->WideGlyphs[StringToTest[*FirstMissing]].GlyphCol1,
+          &mUnknownGlyph,
+          WIDE_GLYPH_ARRAY_SIZE
+          ) == 0
+          ) {
         //
         // Break since this glyph isn't defined
         //
         return EFI_NOT_FOUND;
       }
     }
+
     Count++;
   }
 
   if (Narrow) {
-    *GlyphBufferSize = (UINT32)(Count * sizeof (EFI_NARROW_GLYPH));
+    *GlyphBufferSize = (UINT32) (Count * sizeof (EFI_NARROW_GLYPH));
   } else {
-    *GlyphBufferSize = (UINT32)(Count * sizeof (EFI_WIDE_GLYPH));
+    *GlyphBufferSize = (UINT32) (Count * sizeof (EFI_WIDE_GLYPH));
   }
+
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 HiiNewString2 (
@@ -164,48 +171,48 @@ Returns:
 
 --*/
 {
-  EFI_HII_PACKAGE_INSTANCE        *PackageInstance;
-  EFI_HII_PACKAGE_INSTANCE        *StringPackageInstance;
-  EFI_HII_DATA                    *HiiData;
-  EFI_HII_STRING_PACK             *StringPack;
-  EFI_HII_STRING_PACK             *NewStringPack;
-  EFI_HII_HANDLE_DATABASE         *HandleDatabase;
-  EFI_HII_PACKAGE_INSTANCE        *NewBuffer;
-  UINT8                           *Location;
-  UINT8                           *StringLocation;
-  RELOFST                         *StringPointer;
-  UINTN                           Count;
-  UINTN                           Size;
-  UINTN                           Index;
-  UINTN                           SecondIndex;
-  BOOLEAN                         AddString;
-  EFI_STATUS                      Status;
-  UINTN                           Increment;
-  UINTN                           StringCount;
-  UINT32                          TotalStringCount;
-  UINT32                          OriginalStringCount;
-  RELOFST                         StringSize;
-  UINT32                          Length;
-  RELOFST                         Offset;
+  EFI_HII_PACKAGE_INSTANCE  *PackageInstance;
+  EFI_HII_PACKAGE_INSTANCE  *StringPackageInstance;
+  EFI_HII_DATA              *HiiData;
+  EFI_HII_STRING_PACK       *StringPack;
+  EFI_HII_STRING_PACK       *NewStringPack;
+  EFI_HII_HANDLE_DATABASE   *HandleDatabase;
+  EFI_HII_PACKAGE_INSTANCE  *NewBuffer;
+  UINT8                     *Location;
+  UINT8                     *StringLocation;
+  RELOFST                   *StringPointer;
+  UINTN                     Count;
+  UINTN                     Size;
+  UINTN                     Index;
+  UINTN                     SecondIndex;
+  BOOLEAN                   AddString;
+  EFI_STATUS                Status;
+  UINTN                     Increment;
+  UINTN                     StringCount;
+  UINT32                    TotalStringCount;
+  UINT32                    OriginalStringCount;
+  RELOFST                   StringSize;
+  UINT32                    Length;
+  RELOFST                   Offset;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData             = EFI_HII_DATA_FROM_THIS (This);
 
-  HandleDatabase = HiiData->DatabaseHead;
-  PackageInstance = NULL;
-  AddString = FALSE;
-  Increment = 0;
-  StringCount = 0;
-  TotalStringCount = 0;
+  HandleDatabase      = HiiData->DatabaseHead;
+  PackageInstance     = NULL;
+  AddString           = FALSE;
+  Increment           = 0;
+  StringCount         = 0;
+  TotalStringCount    = 0;
   OriginalStringCount = 0;
 
   //
   // Check numeric value against the head of the database
   //
-  for ( ; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
+  for (; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
     //
     // Match the numeric value with the database entry - if matched, extract PackageInstance
     //
@@ -217,7 +224,6 @@ Returns:
       break;
     }
   }
-
   //
   // No handle was found - error condition
   //
@@ -234,7 +240,7 @@ Returns:
 
   //
   // This is the size of the complete series of string packs
-  // 
+  //
   Size = StringPackageInstance->StringSize;
 
   //
@@ -242,11 +248,10 @@ Returns:
   // what the location is of the beginning of the string data.
   //
   if (StringPackageInstance->IfrSize > 0) {
-    Location = (CHAR8 *)(&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize;
+    Location = (CHAR8 *) (&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize;
   } else {
-    Location = (CHAR8 *)(&StringPackageInstance->IfrData);
+    Location = (CHAR8 *) (&StringPackageInstance->IfrData);
   }
-
   //
   // We allocate a buffer which is big enough for both adding and resetting string.
   // The size is slightly larger than the real size of the packages when we are resetting a string.
@@ -257,27 +262,27 @@ Returns:
                 StringPackageInstance->IfrSize +
                 StringPackageInstance->StringSize +
                 sizeof (RELOFST) +
-                EfiStrSize(NewString)
+                EfiStrSize (NewString)
                 );
   ASSERT (NewBuffer);
 
   //
   // Copy data to new buffer
   //
-  NewBuffer->Handle = StringPackageInstance->Handle;
-  NewBuffer->IfrSize = StringPackageInstance->IfrSize;
+  NewBuffer->Handle   = StringPackageInstance->Handle;
+  NewBuffer->IfrSize  = StringPackageInstance->IfrSize;
 
   //
   // The worst case scenario for sizing is that we are adding a new string (not replacing one) and there was not a string
   // package to begin with.
   //
-  NewBuffer->StringSize = StringPackageInstance->StringSize + EfiStrSize(NewString) + sizeof (EFI_HII_STRING_PACK);
+  NewBuffer->StringSize = StringPackageInstance->StringSize + EfiStrSize (NewString) + sizeof (EFI_HII_STRING_PACK);
 
   if (StringPackageInstance->IfrSize > 0) {
     EfiCopyMem (&NewBuffer->IfrData, &StringPackageInstance->IfrData, StringPackageInstance->IfrSize);
   }
 
-  StringPack = (EFI_HII_STRING_PACK *)Location;
+  StringPack = (EFI_HII_STRING_PACK *) Location;
 
   //
   // There may be multiple instances packed together of strings
@@ -285,26 +290,25 @@ Returns:
   // what we are looking for.  In the meantime, copy everything we encounter
   // to the new buffer.
   //
-  EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32)); 
-  for ( ; Length != 0; ) {
+  EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  for (; Length != 0;) {
     //
     // If passed in Language ISO value is in this string pack's language string
     // then we are dealing with the strings we want.
     //
-    EfiCopyMem(&Offset, &StringPack->LanguageNameString, sizeof (RELOFST));
-    Status = CompareLanguage ((CHAR16 *)((CHAR8 *)(StringPack) + Offset), Language);
+    EfiCopyMem (&Offset, &StringPack->LanguageNameString, sizeof (RELOFST));
+    Status = CompareLanguage ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset), Language);
 
-    if (!EFI_ERROR(Status)) {
+    if (!EFI_ERROR (Status)) {
       break;
-    }    
-    
-    EfiCopyMem (((CHAR8 *)(&NewBuffer->IfrData) + Count), StringPack, Length);
-      
-    Count = Count + Length;
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32)); 
-  }
+    }
 
+    EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), StringPack, Length);
+
+    Count       = Count + Length;
+    StringPack  = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  }
   //
   // Found the language pack to update on a particular handle
   // We need to Copy the Contents of this pack and adjust the offset values associated
@@ -314,25 +318,36 @@ Returns:
   //
   // Copy the string package up to the string data
   //
-  StringPointer = (RELOFST *)(StringPack + 1);
-  EfiCopyMem (((CHAR8 *)(&NewBuffer->IfrData) + Count), StringPack, (UINTN)((UINTN)(StringPointer) - (UINTN)(StringPack)));
+  StringPointer = (RELOFST *) (StringPack + 1);
+  EfiCopyMem (
+    ((CHAR8 *) (&NewBuffer->IfrData) + Count),
+    StringPack,
+    (UINTN) ((UINTN) (StringPointer) - (UINTN) (StringPack))
+    );
 
   //
   // Determine the number of StringPointers
   //
   if (!ResetStrings) {
-    EfiCopyMem(&TotalStringCount, &StringPack->NumStringPointers, sizeof (RELOFST));
+    EfiCopyMem (&TotalStringCount, &StringPack->NumStringPointers, sizeof (RELOFST));
   } else {
     //
     // If we are resetting the strings, use the original value when exported
     //
     EfiCopyMem (&OriginalStringCount, &StringPack->NumStringPointers, sizeof (RELOFST));
-    ((EFI_HII_STRING_PACK *)((CHAR8 *)(&NewBuffer->IfrData) + Count))->LanguageNameString -= ((RELOFST)(OriginalStringCount - TotalStringCount) * sizeof(RELOFST));
-    ((EFI_HII_STRING_PACK *)((CHAR8 *)(&NewBuffer->IfrData) + Count))->PrintableLanguageName -= ((RELOFST)(OriginalStringCount - TotalStringCount) * sizeof(RELOFST));
-    ((EFI_HII_STRING_PACK *)((CHAR8 *)(&NewBuffer->IfrData) + Count))->NumStringPointers = TotalStringCount;
-    *Reference = (STRING_REF)(TotalStringCount);
+    ((EFI_HII_STRING_PACK *) ((CHAR8 *) (&NewBuffer->IfrData) + Count))->LanguageNameString -=
+      (
+        (RELOFST) (OriginalStringCount - TotalStringCount) *
+        sizeof (RELOFST)
+      );
+    ((EFI_HII_STRING_PACK *) ((CHAR8 *) (&NewBuffer->IfrData) + Count))->PrintableLanguageName -=
+      (
+        (RELOFST) (OriginalStringCount - TotalStringCount) *
+        sizeof (RELOFST)
+      );
+    ((EFI_HII_STRING_PACK *) ((CHAR8 *) (&NewBuffer->IfrData) + Count))->NumStringPointers  = TotalStringCount;
+    *Reference = (STRING_REF) (TotalStringCount);
   }
-  
   //
   // If the token value is not valid, error out
   //
@@ -340,134 +355,133 @@ Returns:
     gBS->FreePool (NewBuffer);
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // If Reference is 0, update it with what the new token reference will be and turn the AddString flag on
   //
   if (*Reference == 0) {
-    *Reference = (STRING_REF)(TotalStringCount);
-    AddString = TRUE;
-  } 
-
-  if (AddString) {
-    ((EFI_HII_STRING_PACK *)((CHAR8 *)(&NewBuffer->IfrData) + Count))->LanguageNameString += sizeof(RELOFST);
-    ((EFI_HII_STRING_PACK *)((CHAR8 *)(&NewBuffer->IfrData) + Count))->PrintableLanguageName += sizeof(RELOFST);
-    ((EFI_HII_STRING_PACK *)((CHAR8 *)(&NewBuffer->IfrData) + Count))->NumStringPointers++;
+    *Reference  = (STRING_REF) (TotalStringCount);
+    AddString   = TRUE;
   }
 
+  if (AddString) {
+    ((EFI_HII_STRING_PACK *) ((CHAR8 *) (&NewBuffer->IfrData) + Count))->LanguageNameString += sizeof (RELOFST);
+    ((EFI_HII_STRING_PACK *) ((CHAR8 *) (&NewBuffer->IfrData) + Count))->PrintableLanguageName += sizeof (RELOFST);
+    ((EFI_HII_STRING_PACK *) ((CHAR8 *) (&NewBuffer->IfrData) + Count))->NumStringPointers++;
+  }
   //
   // Increment offset by amount of copied data
   //
-  Count = Count + ((UINTN)(StringPointer) - (UINTN)StringPack);
+  Count = Count + ((UINTN) (StringPointer) - (UINTN) StringPack);
 
-  for ( Index = 0; Index < TotalStringCount; Index++) {
+  for (Index = 0; Index < TotalStringCount; Index++) {
     //
     // If we are pointing to the size of the changing string value
     // then cache the old string value so you know what the difference is
     //
     if (Index == *Reference) {
-      EfiCopyMem(&Offset, &StringPointer[Index], sizeof (RELOFST));
+      EfiCopyMem (&Offset, &StringPointer[Index], sizeof (RELOFST));
 
-      StringLocation = ((CHAR8 *)(StringPack) + Offset);
-      for (SecondIndex = 0; (StringLocation[SecondIndex] != 0) || (StringLocation[SecondIndex+1] != 0); SecondIndex = SecondIndex + 2);
+      StringLocation = ((CHAR8 *) (StringPack) + Offset);
+      for (SecondIndex = 0;
+           (StringLocation[SecondIndex] != 0) || (StringLocation[SecondIndex + 1] != 0);
+           SecondIndex = SecondIndex + 2
+          )
+        ;
       SecondIndex = SecondIndex + 2;
 
-      Size = SecondIndex;
+      Size        = SecondIndex;
 
       //
       // NewString is a passed in local string which is assumed to be aligned
       //
       Size = EfiStrSize (NewString) - Size;
     }
-
     //
     // If we are about to copy the offset of the string that follows the changed string make
     // sure that the offsets are adjusted accordingly
     //
     if ((Index > *Reference) && !ResetStrings) {
-      EfiCopyMem(&Offset, &StringPointer[Index], sizeof (RELOFST));
-      Offset = (RELOFST)(Offset + Size);
-      EfiCopyMem(&StringPointer[Index], &Offset, sizeof (RELOFST));
+      EfiCopyMem (&Offset, &StringPointer[Index], sizeof (RELOFST));
+      Offset = (RELOFST) (Offset + Size);
+      EfiCopyMem (&StringPointer[Index], &Offset, sizeof (RELOFST));
     }
-
     //
     // If we are adding a string that means we will have an extra string pointer that will affect all string offsets
     //
     if (AddString) {
-      EfiCopyMem(&Offset, &StringPointer[Index], sizeof (RELOFST));
-      Offset = (UINT32)(Offset + sizeof (RELOFST));
-      EfiCopyMem(&StringPointer[Index], &Offset, sizeof (RELOFST));
+      EfiCopyMem (&Offset, &StringPointer[Index], sizeof (RELOFST));
+      Offset = (UINT32) (Offset + sizeof (RELOFST));
+      EfiCopyMem (&StringPointer[Index], &Offset, sizeof (RELOFST));
     }
-
     //
     // If resetting the strings, we need to reduce the offset by the difference in the strings
     //
     if (ResetStrings) {
       EfiCopyMem (&Length, &StringPointer[Index], sizeof (RELOFST));
-      Length = Length - ((RELOFST)(OriginalStringCount - TotalStringCount) * sizeof(RELOFST));
+      Length = Length - ((RELOFST) (OriginalStringCount - TotalStringCount) * sizeof (RELOFST));
       EfiCopyMem (&StringPointer[Index], &Length, sizeof (RELOFST));
     }
-
     //
     // Notice that if the string was being added as a new token, we don't have to worry about the
     // offsets changing in the other indexes
     //
-    EfiCopyMem (((CHAR8 *)(&NewBuffer->IfrData) + Count), &StringPointer[Index], sizeof (RELOFST));
+    EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), &StringPointer[Index], sizeof (RELOFST));
     Count = Count + sizeof (RELOFST);
     StringCount++;
   }
-
   //
   // If we are adding a new string the above for loop did not copy the offset for us
   //
   if (AddString) {
-    // 
+    //
     // Since the Index is pointing to the beginning of the first string, we need to gather the size of the previous
     // offset's string and create an offset to our new string.
     //
-    EfiCopyMem(&Offset, &StringPointer[Index-1], sizeof (RELOFST));
-    StringLocation = (CHAR8 *)StringPack;
-    StringLocation = StringLocation + Offset - sizeof(RELOFST);
+    EfiCopyMem (&Offset, &StringPointer[Index - 1], sizeof (RELOFST));
+    StringLocation  = (CHAR8 *) StringPack;
+    StringLocation  = StringLocation + Offset - sizeof (RELOFST);
 
     //
     // Since StringPack is a packed structure, we need to size it carefully (byte-wise) to avoid alignment issues
     //
-    for (Length = 0; (StringLocation[Length] != 0) || (StringLocation[Length+1] != 0); Length = (RELOFST)(Length + 2));
-    Length = (RELOFST)(Length + 2);
+    for (Length = 0;
+         (StringLocation[Length] != 0) || (StringLocation[Length + 1] != 0);
+         Length = (RELOFST) (Length + 2)
+        )
+      ;
+    Length      = (RELOFST) (Length + 2);
 
-    StringSize = (RELOFST)(Offset + Length);
+    StringSize  = (RELOFST) (Offset + Length);
 
     //
     // Copy the new string offset
     //
-    EfiCopyMem (((CHAR8 *)(&NewBuffer->IfrData) + Count), &StringSize, sizeof (RELOFST));
+    EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), &StringSize, sizeof (RELOFST));
     Count = Count + sizeof (RELOFST);
 
     EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
     Length = Length + sizeof (RELOFST);
-    EfiCopyMem(&StringPack->Header.Length, &Length, sizeof (UINT32));
+    EfiCopyMem (&StringPack->Header.Length, &Length, sizeof (UINT32));
   }
-
   //
   // Set Location to the First String
   //
   if (ResetStrings) {
     Index = OriginalStringCount;
   }
-
   //
   // Set Location to the First String
   //
-  Location = (UINT8 *)&StringPointer[Index];
-  Index = 0;
+  Location  = (UINT8 *) &StringPointer[Index];
+  Index     = 0;
 
   //
   // Keep copying strings until you run into two CHAR16's in a row that are NULL
   //
   do {
     if ((*Reference == Increment) && !AddString) {
-      StringLocation = ((CHAR8 *)(&NewBuffer->IfrData) + Count);
-      EfiCopyMem(StringLocation, NewString, EfiStrSize (NewString));
+      StringLocation = ((CHAR8 *) (&NewBuffer->IfrData) + Count);
+      EfiCopyMem (StringLocation, NewString, EfiStrSize (NewString));
 
       //
       // Advance the destination location by Count number of bytes
@@ -482,26 +496,33 @@ Returns:
       //
       // Since StringPack is a packed structure, we need to size it carefully (byte-wise) to avoid alignment issues
       //
-      StringLocation = (UINT8 *)&Location[Index];
-      for (Offset = 0; (StringLocation[Offset] != 0) || (StringLocation[Offset+1] != 0); Offset = (RELOFST)(Offset + 2));
-      Offset = (RELOFST)(Offset + 2);
+      StringLocation = (UINT8 *) &Location[Index];
+      for (Offset = 0;
+           (StringLocation[Offset] != 0) || (StringLocation[Offset + 1] != 0);
+           Offset = (RELOFST) (Offset + 2)
+          )
+        ;
+      Offset  = (RELOFST) (Offset + 2);
 
-      Length = Length + (UINT32)EfiStrSize (NewString) - Offset;
+      Length  = Length + (UINT32) EfiStrSize (NewString) - Offset;
 
       EfiCopyMem (&StringPack->Header.Length, &Length, sizeof (UINT32));
     } else {
-      StringLocation = (UINT8 *)&Location[Index];
-      for (Offset = 0; (StringLocation[Offset] != 0) || (StringLocation[Offset+1] != 0); Offset = (RELOFST)(Offset + 2));
-      Offset = (RELOFST)(Offset + 2);
+      StringLocation = (UINT8 *) &Location[Index];
+      for (Offset = 0;
+           (StringLocation[Offset] != 0) || (StringLocation[Offset + 1] != 0);
+           Offset = (RELOFST) (Offset + 2)
+          )
+        ;
+      Offset = (RELOFST) (Offset + 2);
 
-      EfiCopyMem(((CHAR8 *)(&NewBuffer->IfrData) + Count), StringLocation, Offset);
+      EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), StringLocation, Offset);
 
       //
       // Advance the destination location by Count number of bytes
       //
       Count = Count + Offset;
     }
-
     //
     // Retrieve the number of characters to advance the index - should land at beginning of next string
     //
@@ -515,13 +536,13 @@ Returns:
   // If we are adding a new string, then the above do/while will not suffice
   //
   if (AddString) {
-    Offset = (RELOFST)EfiStrSize(NewString);
-    EfiCopyMem(((CHAR8 *)(&NewBuffer->IfrData) + Count), NewString, Offset);
+    Offset = (RELOFST) EfiStrSize (NewString);
+    EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), NewString, Offset);
 
     Count = Count + EfiStrSize (NewString);
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-    Length = Length + (UINT32)EfiStrSize (NewString);
-    EfiCopyMem(&StringPack->Header.Length, &Length, sizeof (UINT32));
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+    Length = Length + (UINT32) EfiStrSize (NewString);
+    EfiCopyMem (&StringPack->Header.Length, &Length, sizeof (UINT32));
   }
 
   if (ResetStrings) {
@@ -530,85 +551,90 @@ Returns:
     //
     StringCount = OriginalStringCount - TotalStringCount;
 
-     while (StringCount > 0) {
-      StringLocation = (UINT8 *)&Location[Index];
-      for (Offset = 0; (StringLocation[Offset] != 0) || (StringLocation[Offset+1] != 0); Offset = (RELOFST)(Offset + 2));
-      Offset = (RELOFST)(Offset + 2);
-      Index = Index + Offset;
+    while (StringCount > 0) {
+      StringLocation = (UINT8 *) &Location[Index];
+      for (Offset = 0;
+           (StringLocation[Offset] != 0) || (StringLocation[Offset + 1] != 0);
+           Offset = (RELOFST) (Offset + 2)
+          )
+        ;
+      Offset  = (RELOFST) (Offset + 2);
+      Index   = Index + Offset;
       StringCount--;
-  
+
       //
       // Adjust the size of the string pack by the string size we just skipped.
       // Also reduce the length by the size of a RelativeOffset value since we
       // obviously would have skipped that as well.
       //
-      EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+      EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
       Length = Length - Offset - sizeof (RELOFST);
-      EfiCopyMem(&StringPack->Header.Length, &Length, sizeof (UINT32));
+      EfiCopyMem (&StringPack->Header.Length, &Length, sizeof (UINT32));
     }
   }
 
-  StringPack = (EFI_HII_STRING_PACK *)&Location[Index];
+  StringPack = (EFI_HII_STRING_PACK *) &Location[Index];
 
-  EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-  for ( ; Length != 0; ) {
+  EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  for (; Length != 0;) {
 
-    EfiCopyMem (((CHAR8 *)(&NewBuffer->IfrData) + Count), StringPack, Length);
-      
-    Count = Count + Length;
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+    EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), StringPack, Length);
+
+    Count       = Count + Length;
+    StringPack  = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
   }
-
   //
   // Copy the null terminator to the new buffer
   //
-  EfiCopyMem (((CHAR8 *)(&NewBuffer->IfrData) + Count), StringPack, sizeof(EFI_HII_STRING_PACK));
-
+  EfiCopyMem (((CHAR8 *) (&NewBuffer->IfrData) + Count), StringPack, sizeof (EFI_HII_STRING_PACK));
 
   //
   // Based on if there is IFR data in this package instance, determine
   // what the location is of the beginning of the string data.
   //
   if (StringPackageInstance->IfrSize > 0) {
-    Location = (CHAR8 *)(&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize;
-    StringPack = (EFI_HII_STRING_PACK *)Location;
-    Location = (CHAR8 *)(&NewBuffer->IfrData) + NewBuffer->IfrSize;
-    NewStringPack = (EFI_HII_STRING_PACK *)Location;
+    Location      = (CHAR8 *) (&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize;
+    StringPack    = (EFI_HII_STRING_PACK *) Location;
+    Location      = (CHAR8 *) (&NewBuffer->IfrData) + NewBuffer->IfrSize;
+    NewStringPack = (EFI_HII_STRING_PACK *) Location;
   } else {
-    StringPack = (EFI_HII_STRING_PACK *)(&StringPackageInstance->IfrData);
-    NewStringPack = (EFI_HII_STRING_PACK *)(&NewBuffer->IfrData);
+    StringPack    = (EFI_HII_STRING_PACK *) (&StringPackageInstance->IfrData);
+    NewStringPack = (EFI_HII_STRING_PACK *) (&NewBuffer->IfrData);
   }
 
-  EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-  for ( ; Length != 0; ) {
+  EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  for (; Length != 0;) {
     //
     // Since we updated the old version of the string data as we moved things over
     // And we had a chicken-egg problem with the data we copied, let's post-fix the new
     // buffer with accurate length data.
     //
-    EfiCopyMem(&Count, &NewStringPack->Header.Length, sizeof (UINT32));
-    EfiCopyMem(&NewStringPack->Header.Length, &StringPack->Header.Length, sizeof (UINT32));
-    EfiCopyMem(&StringPack->Header.Length, &Count, sizeof (UINT32));
+    EfiCopyMem (&Count, &NewStringPack->Header.Length, sizeof (UINT32));
+    EfiCopyMem (&NewStringPack->Header.Length, &StringPack->Header.Length, sizeof (UINT32));
+    EfiCopyMem (&StringPack->Header.Length, &Count, sizeof (UINT32));
 
-    EfiCopyMem(&Count, &NewStringPack->Header.Length, sizeof (UINT32));
-    NewStringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(NewStringPack) + Count);
-    EfiCopyMem(&Count, &StringPack->Header.Length, sizeof (UINT32));
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Count);
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+    EfiCopyMem (&Count, &NewStringPack->Header.Length, sizeof (UINT32));
+    NewStringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (NewStringPack) + Count);
+    EfiCopyMem (&Count, &StringPack->Header.Length, sizeof (UINT32));
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Count);
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
   }
-    
-  GetPackSize ((VOID *)((CHAR8 *)(&NewBuffer->IfrData) + NewBuffer->IfrSize), &NewBuffer->StringSize, NULL);
+
+  GetPackSize ((VOID *) ((CHAR8 *) (&NewBuffer->IfrData) + NewBuffer->IfrSize), &NewBuffer->StringSize, NULL);
 
   //
   // Search through the handles until the requested handle is found.
   //
-  for ( HandleDatabase = HiiData->DatabaseHead ; HandleDatabase->Handle != 0; HandleDatabase = HandleDatabase->NextHandleDatabase) {
+  for (HandleDatabase = HiiData->DatabaseHead;
+       HandleDatabase->Handle != 0;
+       HandleDatabase = HandleDatabase->NextHandleDatabase
+      ) {
     if (HandleDatabase->Handle == StringPackageInstance->Handle) {
       //
       // Free the previous buffer associated with this handle, and assign the new buffer to the handle
       //
-      gBS->FreePool(HandleDatabase->Buffer);
+      gBS->FreePool (HandleDatabase->Buffer);
       HandleDatabase->Buffer = NewBuffer;
       break;
     }
@@ -616,7 +642,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 HiiNewString (
@@ -641,11 +666,11 @@ Returns:
 
 --*/
 {
-  UINTN                     Index;
-  CHAR16                    *LangCodes;
-  CHAR16                    Lang[4];
-  STRING_REF                OriginalValue;
-  EFI_STATUS                Status;
+  UINTN       Index;
+  CHAR16      *LangCodes;
+  CHAR16      Lang[4];
+  STRING_REF  OriginalValue;
+  EFI_STATUS  Status;
 
   //
   // To avoid a warning 4 uninitialized variable warning
@@ -653,41 +678,41 @@ Returns:
   Status = EFI_SUCCESS;
 
   Status = HiiGetPrimaryLanguages (
-                        This,
-                        Handle,
-                        &LangCodes
-                        );
-  
-  if (!EFI_ERROR(Status)) {
+            This,
+            Handle,
+            &LangCodes
+            );
+
+  if (!EFI_ERROR (Status)) {
     OriginalValue = *Reference;
 
     if (Language == NULL) {
-      for (Index = 0; LangCodes[Index] != 0; Index +=3) {
+      for (Index = 0; LangCodes[Index] != 0; Index += 3) {
         *Reference = OriginalValue;
-        EfiCopyMem(Lang, &LangCodes[Index], 6);
+        EfiCopyMem (Lang, &LangCodes[Index], 6);
         Lang[3] = 0;
         Status = HiiNewString2 (
-                              This,
-                              Lang,
-                              Handle,
-                              Reference,
-                              NewString,
-                              FALSE
-                              );
+                  This,
+                  Lang,
+                  Handle,
+                  Reference,
+                  NewString,
+                  FALSE
+                  );
 
       }
     } else {
       Status = HiiNewString2 (
-                            This,
-                            Language,
-                            Handle,
-                            Reference,
-                            NewString,
-                            FALSE
-                            );
+                This,
+                Language,
+                Handle,
+                Reference,
+                NewString,
+                FALSE
+                );
     }
 
-    gBS->FreePool(LangCodes);
+    gBS->FreePool (LangCodes);
   }
 
   return Status;
@@ -697,7 +722,7 @@ EFI_STATUS
 HiiResetStrings (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle
-)
+  )
 /*++
 
 Routine Description:
@@ -710,37 +735,37 @@ Returns:
 
 --*/
 {
-  UINTN                     Index;
-  CHAR16                    *LangCodes;
-  CHAR16                    Lang[4];
-  STRING_REF                Reference;
-  CHAR16                    NewString;
-  EFI_STATUS                Status;
+  UINTN       Index;
+  CHAR16      *LangCodes;
+  CHAR16      Lang[4];
+  STRING_REF  Reference;
+  CHAR16      NewString;
+  EFI_STATUS  Status;
 
   Reference = 1;
   NewString = 0;
 
   HiiGetPrimaryLanguages (
-                        This,
-                        Handle,
-                        &LangCodes
-                        );
+    This,
+    Handle,
+    &LangCodes
+    );
 
-  for (Index = 0; LangCodes[Index] != 0; Index +=3) {
-    EfiCopyMem(Lang, &LangCodes[Index], 6);
+  for (Index = 0; LangCodes[Index] != 0; Index += 3) {
+    EfiCopyMem (Lang, &LangCodes[Index], 6);
     Lang[3] = 0;
     Status = HiiNewString2 (
-                          This,
-                          Lang,
-                          Handle,
-                          &Reference,
-                          &NewString, 
-                          TRUE
-                          );
+              This,
+              Lang,
+              Handle,
+              &Reference,
+              &NewString,
+              TRUE
+              );
 
   }
 
-  gBS->FreePool(LangCodes);
+  gBS->FreePool (LangCodes);
   return EFI_SUCCESS;
 }
 
@@ -753,7 +778,7 @@ HiiGetString (
   IN     CHAR16             *LanguageString,
   IN OUT UINT16             *BufferLength,
   OUT    EFI_STRING         StringBuffer
-)
+  )
 /*++
 
 Routine Description:
@@ -766,37 +791,37 @@ Returns:
 
 --*/
 {
-  INTN                            Count;
-  EFI_HII_PACKAGE_INSTANCE        *PackageInstance;
-  EFI_HII_PACKAGE_INSTANCE        *StringPackageInstance;
-  EFI_HII_DATA                    *HiiData;
-  EFI_HII_HANDLE_DATABASE         *HandleDatabase;
-  EFI_HII_STRING_PACK             *StringPack;
-  RELOFST                         *StringPointer;
-  EFI_STATUS                      Status;
-  EFI_STRING                      OriginalStringBuffer;
-  UINTN                           DataSize;
-  CHAR8                           Lang[3];
-  CHAR16                          Language[3];
-  UINT32                          Length;
-  INTN                            Index;
-  RELOFST                         Offset;
-  UINT16                          *Local;
-  UINT16                          Zero;
-  UINT16                          Narrow;
-  UINT16                          Wide;
-  UINT16                          NoBreak;
-  BOOLEAN                         LangFound;
+  INTN                      Count;
+  EFI_HII_PACKAGE_INSTANCE  *PackageInstance;
+  EFI_HII_PACKAGE_INSTANCE  *StringPackageInstance;
+  EFI_HII_DATA              *HiiData;
+  EFI_HII_HANDLE_DATABASE   *HandleDatabase;
+  EFI_HII_STRING_PACK       *StringPack;
+  RELOFST                   *StringPointer;
+  EFI_STATUS                Status;
+  EFI_STRING                OriginalStringBuffer;
+  UINTN                     DataSize;
+  CHAR8                     Lang[3];
+  CHAR16                    Language[3];
+  UINT32                    Length;
+  INTN                      Index;
+  RELOFST                   Offset;
+  UINT16                    *Local;
+  UINT16                    Zero;
+  UINT16                    Narrow;
+  UINT16                    Wide;
+  UINT16                    NoBreak;
+  BOOLEAN                   LangFound;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  LangFound = TRUE;
+  LangFound       = TRUE;
 
-  DataSize = sizeof (Lang);
+  DataSize        = sizeof (Lang);
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData         = EFI_HII_DATA_FROM_THIS (This);
 
   PackageInstance = NULL;
   Zero            = 0;
@@ -807,7 +832,10 @@ Returns:
   //
   // Check numeric value against the head of the database
   //
-  for (HandleDatabase = HiiData->DatabaseHead ; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
+  for (HandleDatabase = HiiData->DatabaseHead;
+       HandleDatabase != NULL;
+       HandleDatabase = HandleDatabase->NextHandleDatabase
+      ) {
     //
     // Match the numeric value with the database entry - if matched, extract PackageInstance
     //
@@ -816,7 +844,6 @@ Returns:
       break;
     }
   }
-
   //
   // No handle was found - error condition
   //
@@ -834,92 +861,90 @@ Returns:
     // Get system default language
     //
     Status = gRT->GetVariable (
-                    L"Lang", 
-                    &gEfiGlobalVariableGuid, 
-                    NULL, 
-                    &DataSize, 
+                    L"Lang",
+                    &gEfiGlobalVariableGuid,
+                    NULL,
+                    &DataSize,
                     Lang
                     );
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       //
       // If Lang doesn't exist, just use the first language you find
       //
       LangFound = FALSE;
       goto LangNotFound;
     }
-    
     //
     // Convert the ASCII Lang variable to a Unicode Language variable
     //
-    AsciiToUnicode(Lang, Language);
+    AsciiToUnicode (Lang, Language);
   } else {
     //
     // Copy input ISO value to Language variable
     //
-    EfiCopyMem(Language, LanguageString, 6);
+    EfiCopyMem (Language, LanguageString, 6);
   }
-
   //
   // Based on if there is IFR data in this package instance, determine
   // what the location is of the beginning of the string data.
   //
 LangNotFound:
   if (StringPackageInstance->IfrSize > 0) {
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
   } else {
-    StringPack = (EFI_HII_STRING_PACK *)(&StringPackageInstance->IfrData);
+    StringPack = (EFI_HII_STRING_PACK *) (&StringPackageInstance->IfrData);
   }
-
   //
   // If Token is 0, extract entire string package
   //
   if (Token == 0) {
     OriginalStringBuffer = StringBuffer;
-    EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
     //
     // If trying to get the entire string package and have insufficient space.  Return error
     //
     if (Length > *BufferLength) {
-      EfiCopyMem(BufferLength, &Length, sizeof(UINT16));
+      EfiCopyMem (BufferLength, &Length, sizeof (UINT16));
       return EFI_INVALID_PARAMETER;
     }
-    for ( ; Length != 0; ) {
+
+    for (; Length != 0;) {
       EfiCopyMem (StringBuffer, StringPack, Length);
-      StringBuffer = (CHAR16 *)((CHAR8 *)(StringBuffer) + Length);
-      StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
-      EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+      StringBuffer  = (CHAR16 *) ((CHAR8 *) (StringBuffer) + Length);
+      StringPack    = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
+      EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
     }
+
     StringBuffer = OriginalStringBuffer;
     return EFI_SUCCESS;
   }
-
   //
   // There may be multiple instances packed together of strings
   // so we must walk the self describing structures until we encounter
   // what we are looking for, and then extract the string we are looking for
   //
-  EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
-  for ( ; Length != 0; ) {
+  EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
+  for (; Length != 0;) {
     //
     // If passed in Language ISO value is in this string pack's language string
     // then we are dealing with the strings we want.
     //
-    EfiCopyMem(&Offset, &StringPack->LanguageNameString, sizeof (RELOFST));
-    Status = CompareLanguage ((CHAR16 *)((CHAR8 *)(StringPack) + Offset), Language);
+    EfiCopyMem (&Offset, &StringPack->LanguageNameString, sizeof (RELOFST));
+    Status = CompareLanguage ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset), Language);
 
     //
     // If we cannot find the lang variable, we skip this check and use the first language available
     //
     if (LangFound) {
-      if (EFI_ERROR(Status)) {
-        StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + Length);
-        EfiCopyMem(&Length, &StringPack->Header.Length, sizeof (UINT32));
+      if (EFI_ERROR (Status)) {
+        StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
+        EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
         continue;
       }
     }
 
-    StringPointer = (RELOFST *)(StringPack + 1);
+    StringPointer = (RELOFST *) (StringPack + 1);
 
     //
     // We have the right string package - size it, and copy it to the StringBuffer
@@ -927,17 +952,17 @@ LangNotFound:
     if (Token >= StringPack->NumStringPointers) {
       return EFI_INVALID_PARAMETER;
     } else {
-      EfiCopyMem(&Offset, &StringPointer[Token], sizeof (RELOFST));
+      EfiCopyMem (&Offset, &StringPointer[Token], sizeof (RELOFST));
     }
-    
     //
     // Since StringPack is a packed structure, we need to determine the string's
     // size safely, thus byte-wise.  Post-increment the size to include the null-terminator
     //
-    Local = (CHAR16 *)((CHAR8 *)(StringPack) + Offset);
-    for (Count = 0; EfiCompareMem(&Local[Count], &Zero, 2); Count++);
+    Local = (CHAR16 *) ((CHAR8 *) (StringPack) + Offset);
+    for (Count = 0; EfiCompareMem (&Local[Count], &Zero, 2); Count++)
+      ;
     Count++;
-    
+
     Count = Count * sizeof (CHAR16);;
 
     if (*BufferLength >= Count) {
@@ -945,38 +970,43 @@ LangNotFound:
       // Copy the string to the user's buffer
       //
       if (Raw) {
-        EfiCopyMem(StringBuffer, (VOID *)((CHAR8 *)(StringPack) + Offset), Count);
+        EfiCopyMem (StringBuffer, (VOID *) ((CHAR8 *) (StringPack) + Offset), Count);
       } else {
         Index = 0;
         Count = -1;
         do {
           Count++;
-          for (; EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Narrow, 2) &&
-                 EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Wide, 2) &&
-                 EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &NoBreak, 2) &&
-                 EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Zero, 2); Index++, Count++) {
-            EfiCopyMem(&StringBuffer[Index], (VOID *)((CHAR8 *)(StringPack) + Offset + Count * 2), 2);
+          for (; 
+               EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Narrow, 2) &&
+               EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Wide, 2) &&
+               EfiCompareMem ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset + Count * 2), &NoBreak, 2) &&
+               EfiCompareMem ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset + Count * 2), &Zero, 2);
+               Index++, Count++
+              ) {
+            EfiCopyMem (&StringBuffer[Index], (VOID *) ((CHAR8 *) (StringPack) + Offset + Count * 2), 2);
           }
-        } while (EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Zero, 2));
+        } while (EfiCompareMem ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset + Count * 2), &Zero, 2));
 
-        EfiCopyMem(&StringBuffer[Index], (VOID *)((CHAR8 *)(StringPack) + Offset + Count * 2), 2);
-        
-        for (Count = 0; StringBuffer[Count] != 0; Count++);
+        EfiCopyMem (&StringBuffer[Index], (VOID *) ((CHAR8 *) (StringPack) + Offset + Count * 2), 2);
+
+        for (Count = 0; StringBuffer[Count] != 0; Count++)
+          ;
         Count++;
         Count = Count * 2;
       }
-      *BufferLength = (UINT16)Count;
+
+      *BufferLength = (UINT16) Count;
       return EFI_SUCCESS;
     } else {
-      *BufferLength = (UINT16)Count;
+      *BufferLength = (UINT16) Count;
       return EFI_BUFFER_TOO_SMALL;
     }
 
   }
+
   LangFound = FALSE;
   goto LangNotFound;
 }
-
 
 EFI_STATUS
 HiiGetLine (
@@ -1003,34 +1033,34 @@ Returns:
 
 --*/
 {
-  UINTN                           Count;
-  EFI_HII_PACKAGE_INSTANCE        *PackageInstance;
-  EFI_HII_PACKAGE_INSTANCE        *StringPackageInstance;
-  EFI_HII_DATA                    *HiiData;
-  EFI_HII_HANDLE_DATABASE         *HandleDatabase;
-  EFI_HII_STRING_PACK             *StringPack;
-  RELOFST                         *StringPointer;
-  CHAR16                          *Location;
-  EFI_STATUS                      Status;
-  UINTN                           DataSize;
-  CHAR8                           Lang[3];
-  CHAR16                          Language[3];
+  UINTN                     Count;
+  EFI_HII_PACKAGE_INSTANCE  *PackageInstance;
+  EFI_HII_PACKAGE_INSTANCE  *StringPackageInstance;
+  EFI_HII_DATA              *HiiData;
+  EFI_HII_HANDLE_DATABASE   *HandleDatabase;
+  EFI_HII_STRING_PACK       *StringPack;
+  RELOFST                   *StringPointer;
+  CHAR16                    *Location;
+  EFI_STATUS                Status;
+  UINTN                     DataSize;
+  CHAR8                     Lang[3];
+  CHAR16                    Language[3];
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HiiData = EFI_HII_DATA_FROM_THIS(This);
+  HiiData         = EFI_HII_DATA_FROM_THIS (This);
 
-  HandleDatabase = HiiData->DatabaseHead;
+  HandleDatabase  = HiiData->DatabaseHead;
 
   PackageInstance = NULL;
-  DataSize = 4;
+  DataSize        = 4;
 
   //
   // Check numeric value against the head of the database
   //
-  for ( ; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
+  for (; HandleDatabase != NULL; HandleDatabase = HandleDatabase->NextHandleDatabase) {
     //
     // Match the numeric value with the database entry - if matched, extract PackageInstance
     //
@@ -1038,7 +1068,6 @@ Returns:
       PackageInstance = HandleDatabase->Buffer;
     }
   }
-
   //
   // No handle was found - error condition
   //
@@ -1056,87 +1085,86 @@ Returns:
     // Get system default language
     //
     Status = gRT->GetVariable (
-                    L"Lang", 
-                    &gEfiGlobalVariableGuid, 
-                    NULL, 
-                    &DataSize, 
+                    L"Lang",
+                    &gEfiGlobalVariableGuid,
+                    NULL,
+                    &DataSize,
                     Lang
                     );
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
-    
     //
     // Convert the ASCII Lang variable to a Unicode Language variable
     //
-    AsciiToUnicode(Lang, Language);
+    AsciiToUnicode (Lang, Language);
   } else {
     //
     // Copy input ISO value to Language variable
     //
-    EfiCopyMem(Language, LanguageString, 6);
+    EfiCopyMem (Language, LanguageString, 6);
   }
-
   //
   // Based on if there is IFR data in this package instance, determine
   // what the location is of the beginning of the string data.
   //
   if (StringPackageInstance->IfrSize > 0) {
-    StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
+    StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (&StringPackageInstance->IfrData) + StringPackageInstance->IfrSize);
   } else {
-    StringPack = (EFI_HII_STRING_PACK *)(&StringPackageInstance->IfrData);
+    StringPack = (EFI_HII_STRING_PACK *) (&StringPackageInstance->IfrData);
   }
 
-  StringPointer = (RELOFST *)(StringPack + 1);
+  StringPointer = (RELOFST *) (StringPack + 1);
 
   //
   // There may be multiple instances packed together of strings
   // so we must walk the self describing structures until we encounter
   // what we are looking for, and then extract the string we are looking for
   //
-  for ( ; StringPack->Header.Length != 0; ) {
+  for (; StringPack->Header.Length != 0;) {
     //
     // If passed in Language ISO value is in this string pack's language string
     // then we are dealing with the strings we want.
     //
-    Status = CompareLanguage ((CHAR16 *)((CHAR8 *)(StringPack) + StringPack->LanguageNameString), Language);
+    Status = CompareLanguage ((CHAR16 *) ((CHAR8 *) (StringPack) + StringPack->LanguageNameString), Language);
 
-    if (EFI_ERROR(Status)) {
-      StringPack = (EFI_HII_STRING_PACK *)((CHAR8 *)(StringPack) + StringPack->Header.Length);
+    if (EFI_ERROR (Status)) {
+      StringPack = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + StringPack->Header.Length);
       continue;
     }
 
-    Location = (CHAR16 *)((CHAR8 *)(StringPack) + StringPointer[Token] + *Index * 2);
+    Location = (CHAR16 *) ((CHAR8 *) (StringPack) + StringPointer[Token] +*Index * 2);
 
     //
     // If the size of the remaining string is less than the LineWidth
     // then copy the entire thing
     //
-    if (EfiStrSize(Location) <= LineWidth) {
-      if (*BufferLength >= EfiStrSize(Location)) { 
-        EfiStrCpy(StringBuffer, Location);
+    if (EfiStrSize (Location) <= LineWidth) {
+      if (*BufferLength >= EfiStrSize (Location)) {
+        EfiStrCpy (StringBuffer, Location);
         return EFI_SUCCESS;
       } else {
-        *BufferLength = (UINT16)EfiStrSize(Location);
+        *BufferLength = (UINT16) EfiStrSize (Location);
         return EFI_BUFFER_TOO_SMALL;
       }
     } else {
       //
       // Rewind the string from the maximum size until we see a space the break the line
       //
-      for (Count = LineWidth; Location[Count] != 0x0020; Count--);
+      for (Count = LineWidth; Location[Count] != 0x0020; Count--)
+        ;
 
       //
       // Put the index at the next character
       //
-      *Index = (UINT16)(Count + 1);
+      *Index = (UINT16) (Count + 1);
 
       if (*BufferLength >= Count) {
-        StrnCpy(StringBuffer, Location, Count);
+        StrnCpy (StringBuffer, Location, Count);
         return EFI_SUCCESS;
       } else {
-        *BufferLength = (UINT16)Count;
+        *BufferLength = (UINT16) Count;
         return EFI_BUFFER_TOO_SMALL;
       }
     }
@@ -1145,17 +1173,16 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 CompareLanguage (
   IN  CHAR16                *LanguageStringLocation,
   IN  CHAR16                *Language
   )
 {
-  UINT8                     *Local;
-  UINTN                     Index;
-  CHAR16                    *InputString;
-  CHAR16                    *OriginalInputString;
+  UINT8   *Local;
+  UINTN   Index;
+  CHAR16  *InputString;
+  CHAR16  *OriginalInputString;
 
   //
   // Allocate a temporary buffer for InputString
@@ -1166,36 +1193,35 @@ CompareLanguage (
 
   OriginalInputString = InputString;
 
-  Local = (UINT8 *)LanguageStringLocation;
+  Local               = (UINT8 *) LanguageStringLocation;
 
   //
   // Determine the size of this packed string safely (e.g. access by byte), post-increment
   // to include the null-terminator
   //
-  for (Index = 0; Local[Index] != 0; Index = Index + 2);
-//MARMAR  Index = Index + 2;
-
+  for (Index = 0; Local[Index] != 0; Index = Index + 2)
+    ;
+  //
+  // MARMAR  Index = Index + 2;
   //
   // This is a packed structure that this location comes from, so let's make sure
   // the value is aligned by copying it to a local variable and working on it.
   //
-  EfiCopyMem(InputString, LanguageStringLocation, Index);
+  EfiCopyMem (InputString, LanguageStringLocation, Index);
 
   for (Index = 0; Index < 3; Index++) {
-    InputString[Index] = (CHAR16)(InputString[Index] | 0x20);
-    Language[Index]    = (CHAR16)(Language[Index] | 0x20);
+    InputString[Index]  = (CHAR16) (InputString[Index] | 0x20);
+    Language[Index]     = (CHAR16) (Language[Index] | 0x20);
   }
-
   //
   // If the Language is the same return success
   //
-  if (EfiCompareMem(LanguageStringLocation, Language, 6) == 0) {
-    gBS->FreePool(InputString);
+  if (EfiCompareMem (LanguageStringLocation, Language, 6) == 0) {
+    gBS->FreePool (InputString);
     return EFI_SUCCESS;
   }
-
   //
-  // Skip the first three letters that comprised the primary language, 
+  // Skip the first three letters that comprised the primary language,
   // see if what is being compared against is a secondary language
   //
   InputString = InputString + 3;
@@ -1208,17 +1234,15 @@ CompareLanguage (
     //
     // Getting in here means we have a secondary language
     //
-    if (EfiCompareMem(&InputString[Index], Language, 6) == 0) {
-      gBS->FreePool(InputString);
+    if (EfiCompareMem (&InputString[Index], Language, 6) == 0) {
+      gBS->FreePool (InputString);
       return EFI_SUCCESS;
     }
   }
-
   //
   // If nothing was found, return the error
   //
-  gBS->FreePool(OriginalInputString);
+  gBS->FreePool (OriginalInputString);
   return EFI_NOT_FOUND;
 
 }
-

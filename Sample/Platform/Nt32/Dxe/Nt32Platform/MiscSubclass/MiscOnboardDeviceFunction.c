@@ -25,21 +25,22 @@ Abstract:
 #include "winntio\winntio.h"
 #include "winntthunk\winntthunk.h"
 
-
-#pragma pack (1)
+#pragma pack(1)
 
 typedef struct _VENDOR_DEVICE {
   EFI_DEVICE_PATH_PROTOCOL  Platform;
-  EFI_GUID          PlatformGuid;
+  EFI_GUID                  PlatformGuid;
   EFI_DEVICE_PATH_PROTOCOL  Device;
-  EFI_GUID          DeviceGuid;
-  UINT8            DeviceData[4];
+  EFI_GUID                  DeviceGuid;
+  UINT8                     DeviceData[4];
   EFI_DEVICE_PATH_PROTOCOL  End;
 
 } VENDOR_DEVICE;
-#pragma pack ()
+#pragma pack()
 
-MISC_SUBCLASS_TABLE_FUNCTION(MiscOnboardDeviceVideo)
+MISC_SUBCLASS_TABLE_FUNCTION (
+  MiscOnboardDeviceVideo
+  )
 /*++
 Description:
 
@@ -81,38 +82,40 @@ Returns:
       LogRecordData was NULL.
 --*/
 {
-  STATIC VENDOR_DEVICE  mVideoDevicePath = { { HARDWARE_DEVICE_PATH, 
-                         HW_VENDOR_DP,
-                         0x14 },
-                         EFI_WIN_NT_THUNK_PROTOCOL_GUID,
-                         { HARDWARE_DEVICE_PATH, 
-                         HW_VENDOR_DP,
-                         0x18 },
-                         EFI_WIN_NT_UGA_GUID,
-                         0, 0, 0, 0,
-                         END
-                        };
-                         
-                         
+  STATIC VENDOR_DEVICE  mVideoDevicePath = {
+    {
+      HARDWARE_DEVICE_PATH,
+      HW_VENDOR_DP,
+      0x14
+    },
+    EFI_WIN_NT_THUNK_PROTOCOL_GUID,
+    {
+      HARDWARE_DEVICE_PATH,
+      HW_VENDOR_DP,
+      0x18
+    },
+    EFI_WIN_NT_UGA_GUID,
+    0,
+    0,
+    0,
+    0,
+    END
+  };
 
+  STATIC BOOLEAN        Done = FALSE;
 
-  STATIC BOOLEAN Done = FALSE;
-
-  
   //
   // First check for invalid parameters.
   //
   if (RecordLen == 0 || RecordData == NULL || LogRecordData == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
   //
   // Then check for unsupported RecordType.
   //
   if (RecordType != EFI_MISC_ONBOARD_DEVICE_RECORD_NUMBER) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // Is this the first time through this function?
   //
@@ -121,38 +124,38 @@ Returns:
     // Yes, this is the first time.  Inspect/Change the contents of the
     // RecordData structure.
     //
-
     //
     // Any time changes?
     //
     // %%TBD
-
     //
     // Set Done flag to TRUE for next pass through this function.
     // Set *LogRecordData to TRUE so data will get logged to Data Hub.
     //
-    
-    switch (((EFI_MISC_ONBOARD_DEVICE *)RecordData)->OnBoardDeviceDescription) 
-    {
-      case STR_MISC_ONBOARD_DEVICE_VIDEO_DESCRIPTION:
+    switch (((EFI_MISC_ONBOARD_DEVICE *) RecordData)->OnBoardDeviceDescription) {
+    case STR_MISC_ONBOARD_DEVICE_VIDEO_DESCRIPTION:
       {
-        EfiCopyMem(&((EFI_MISC_ONBOARD_DEVICE *)RecordData)->OnBoardDevicePath, &mVideoDevicePath, EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mVideoDevicePath));
-        *RecordLen = *RecordLen - sizeof(EFI_DEVICE_PATH_PROTOCOL) + EfiDevicePathSize((EFI_DEVICE_PATH_PROTOCOL *)&mVideoDevicePath);
-      } 
-    break;
+        EfiCopyMem (
+          &((EFI_MISC_ONBOARD_DEVICE *) RecordData)->OnBoardDevicePath,
+          &mVideoDevicePath,
+          EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mVideoDevicePath)
+          );
+        *RecordLen = *RecordLen - sizeof (EFI_DEVICE_PATH_PROTOCOL) + EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) &mVideoDevicePath);
+      }
+      break;
     }
-    Done = TRUE;
-    *LogRecordData = TRUE;
-  } 
-  else {
+
+    Done            = TRUE;
+    *LogRecordData  = TRUE;
+  } else {
     //
     // No, this is the second time.  Reset the state of the Done flag
     // to FALSE and tell the data logger that there is no more data
     // to be logged for this record type.  If any memory allocations
     // were made by earlier passes, they must be released now.
     //
-    Done = FALSE;
-    *LogRecordData = FALSE;
+    Done            = FALSE;
+    *LogRecordData  = FALSE;
   }
 
   return EFI_SUCCESS;

@@ -116,52 +116,217 @@ PROTOCOL_ENTRY  *
 CoreFindProtocolEntry (
   IN EFI_GUID     *Protocol,
   IN BOOLEAN      Create
-  );
+  )
+/*++
+
+Routine Description:
+
+  Finds the protocol entry for the requested protocol.
+  
+  N.B.  The gProtocolDatabaseLock must be owned
+
+Arguments:
+  
+  Protocol  - The ID of the protocol 
+
+  Create    - Create a new entry if not found
+
+Returns:
+
+  Protocol entry
+
+--*/
+;
 
 VOID
 CoreNotifyProtocolEntry (
   IN PROTOCOL_ENTRY       *ProtEntry
-  );
+  )
+/*++
+
+Routine Description:
+
+  Signal event for every protocol in protocol entry.
+
+Arguments:
+
+  ProtEntry     - Protocol entry
+
+Returns:
+
+--*/
+;
 
 PROTOCOL_INTERFACE *
 CoreFindProtocolInterface (
   IN IHANDLE              *Handle,
   IN EFI_GUID             *Protocol,
   IN VOID                 *Interface
-  );
+  )
+/*++
+
+Routine Description:
+
+  Finds the protocol instance for the requested handle and protocol.
+  
+  Note: This function doesn't do parameters checking, it's caller's responsibility 
+        to pass in valid parameters.
+  
+Arguments:
+  
+  Handle    - The handle to search the protocol on
+  
+  Protocol  - GUID of the protocol
+
+  Interface - The interface for the protocol being searched
+
+Returns:
+
+  Protocol instance (NULL: Not found)
+
+--*/
+;
 
 PROTOCOL_INTERFACE *
 CoreRemoveInterfaceFromProtocol (
   IN IHANDLE              *Handle,
   IN EFI_GUID             *Protocol,
   IN VOID                 *Interface
-  );
+  )
+/*++
+
+Routine Description:
+
+  Removes Protocol from the protocol list (but not the handle list).
+
+Arguments:
+
+  Handle -  The handle to remove protocol on.
+
+  Protocol  -  GUID of the protocol to be moved
+
+  Interface - The interface of the protocol
+
+Returns:
+
+  Protocol Entry
+
+--*/
+;
 
 EFI_STATUS
 CoreUnregisterProtocolNotify (
   IN EFI_EVENT            Event
-  );
+  )
+/*++
+
+Routine Description:
+
+  Removes all the events in the protocol database that match Event.
+
+Arguments:
+  
+  Event   - The event to search for in the protocol database.
+
+Returns:
+
+  EFI_SUCCESS when done searching the entire database.
+
+--*/
+;
 
 EFI_STATUS
 CoreDisconnectControllersUsingProtocolInterface (
   IN EFI_HANDLE           UserHandle,
   IN PROTOCOL_INTERFACE   *Prot
-  );
+  )
+/*++
+
+Routine Description:
+
+  Attempts to disconnect all drivers that are using the protocol interface being queried.
+  If failed, reconnect all drivers disconnected.
+  
+  Note: This function doesn't do parameters checking, it's caller's responsibility 
+        to pass in valid parameters.
+
+Arguments:
+
+  UserHandle  - The handle on which the protocol is installed 
+  Prot        - The protocol to disconnect drivers from
+
+Returns:
+
+  EFI_SUCCESS       - Drivers using the protocol interface are all disconnected
+  EFI_ACCESS_DENIED - Failed to disconnect one or all of the drivers
+
+--*/
+;
 
 VOID
 CoreAcquireProtocolLock (
   VOID
-  );
+  )
+/*++
+
+Routine Description:
+
+  Acquire lock on gProtocolDatabaseLock.
+  
+Arguments:
+
+  None
+  
+Returns:
+
+  None
+
+--*/
+;
 
 VOID
 CoreReleaseProtocolLock (
   VOID
-  );
+  )
+/*++
+
+Routine Description:
+
+  Release lock on gProtocolDatabaseLock.
+  
+Arguments:
+
+  None
+  
+Returns:
+
+  None
+
+--*/
+;
 
 EFI_STATUS
 CoreValidateHandle (
   IN  EFI_HANDLE                UserHandle
-  );
+  )
+/*++
+
+Routine Description:
+
+  Check whether a handle is a valid EFI_HANDLE
+  
+Arguments:
+
+  UserHandle		-	The handle to check
+  
+Returns:
+
+  EFI_INVALID_PARAMETER		-	The handle is NULL or not a valid EFI_HANDLE.
+  
+  EFI_SUCCESS							-	The handle is valid EFI_HANDLE.
+
+--*/
+;
 
 //
 // Externs

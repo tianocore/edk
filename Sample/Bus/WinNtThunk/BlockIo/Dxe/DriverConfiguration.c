@@ -24,27 +24,27 @@ Abstract:
 //
 EFI_STATUS
 WinNtBlockIoDriverConfigurationSetOptions (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  CHAR8                                     *Language,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  CHAR8                                                  *Language,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   );
 
 EFI_STATUS
 WinNtBlockIoDriverConfigurationOptionsValid (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                         ControllerHandle,
-  IN  EFI_HANDLE                         ChildHandle  OPTIONAL
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle  OPTIONAL
   );
 
 EFI_STATUS
 WinNtBlockIoDriverConfigurationForceDefaults (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  UINT32                                    DefaultType,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  UINT32                                                 DefaultType,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   );
 
 //
@@ -59,11 +59,11 @@ EFI_DRIVER_CONFIGURATION_PROTOCOL gWinNtBlockIoDriverConfiguration = {
 
 EFI_STATUS
 WinNtBlockIoDriverConfigurationSetOptions (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  CHAR8                                     *Language,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  CHAR8                                                  *Language,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   )
 /*++
 
@@ -112,25 +112,26 @@ WinNtBlockIoDriverConfigurationSetOptions (
 
 --*/
 {
-  EFI_STATUS               Status;
-  EFI_BLOCK_IO_PROTOCOL    *BlockIo;
-  CHAR8                    *SupportedLanguage;
-  
+  EFI_STATUS            Status;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
+  CHAR8                 *SupportedLanguage;
+
   SupportedLanguage = This->SupportedLanguages;
 
-  Status = EFI_UNSUPPORTED;
+  Status            = EFI_UNSUPPORTED;
   while (*SupportedLanguage != 0) {
-    if (EfiLibCompareLanguage(Language, SupportedLanguage)) {
+    if (EfiLibCompareLanguage (Language, SupportedLanguage)) {
       Status = EFI_SUCCESS;
     }
+
     SupportedLanguage += 3;
   }
 
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  if (ActionRequired == NULL  || ControllerHandle == NULL) {
+  if (ActionRequired == NULL || ControllerHandle == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -139,24 +140,24 @@ WinNtBlockIoDriverConfigurationSetOptions (
   }
 
   //
-  //Validate controller handle
+  // Validate controller handle
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiWinNtIoProtocolGuid,
                   &BlockIo,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,   
-                  ControllerHandle,   
+                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
 
   if (!EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-                  ControllerHandle,
-                  &gEfiWinNtIoProtocolGuid,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
-                  ControllerHandle
-                  );
+          ControllerHandle,
+          &gEfiWinNtIoProtocolGuid,
+          gWinNtBlockIoDriverBinding.DriverBindingHandle,
+          ControllerHandle
+          );
 
     return EFI_UNSUPPORTED;
   }
@@ -167,16 +168,15 @@ WinNtBlockIoDriverConfigurationSetOptions (
     return EFI_INVALID_PARAMETER;
   }
 
-
   *ActionRequired = EfiDriverConfigurationActionNone;
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 WinNtBlockIoDriverConfigurationOptionsValid (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL  *This,
-  IN  EFI_HANDLE                         ControllerHandle,
-  IN  EFI_HANDLE                         ChildHandle  OPTIONAL
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle  OPTIONAL
   )
 /*++
 
@@ -212,8 +212,8 @@ WinNtBlockIoDriverConfigurationOptionsValid (
 
 --*/
 {
-  EFI_STATUS               Status;
-  EFI_BLOCK_IO_PROTOCOL    *BlockIo;
+  EFI_STATUS            Status;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
 
   if (ChildHandle != NULL) {
     return EFI_UNSUPPORTED;
@@ -224,24 +224,24 @@ WinNtBlockIoDriverConfigurationOptionsValid (
   }
 
   //
-  //Validate controller handle
+  // Validate controller handle
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiWinNtIoProtocolGuid,
                   &BlockIo,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,   
-                  ControllerHandle,   
+                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
 
   if (!EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-                  ControllerHandle,
-                  &gEfiWinNtIoProtocolGuid,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
-                  ControllerHandle
-                  );
+          ControllerHandle,
+          &gEfiWinNtIoProtocolGuid,
+          gWinNtBlockIoDriverBinding.DriverBindingHandle,
+          ControllerHandle
+          );
 
     return EFI_UNSUPPORTED;
   }
@@ -252,17 +252,16 @@ WinNtBlockIoDriverConfigurationOptionsValid (
     return EFI_INVALID_PARAMETER;
   }
 
-
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 WinNtBlockIoDriverConfigurationForceDefaults (
-  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL         *This,
-  IN  EFI_HANDLE                                ControllerHandle,
-  IN  EFI_HANDLE                                ChildHandle  OPTIONAL,
-  IN  UINT32                                    DefaultType,
-  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED  *ActionRequired
+  IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+  IN  EFI_HANDLE                                             ControllerHandle,
+  IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
+  IN  UINT32                                                 DefaultType,
+  OUT EFI_DRIVER_CONFIGURATION_ACTION_REQUIRED               *ActionRequired
   )
 /*++
 
@@ -288,11 +287,10 @@ WinNtBlockIoDriverConfigurationForceDefaults (
 
 --*/
 {
-  EFI_STATUS               Status;
-  EFI_BLOCK_IO_PROTOCOL    *BlockIo;
+  EFI_STATUS            Status;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
 
-
-  if (ChildHandle != NULL ) {
+  if (ChildHandle != NULL) {
     return EFI_UNSUPPORTED;
   }
 
@@ -301,24 +299,24 @@ WinNtBlockIoDriverConfigurationForceDefaults (
   }
 
   //
-  //Validate controller handle
+  // Validate controller handle
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  ControllerHandle,
+                  &gEfiWinNtIoProtocolGuid,
                   &BlockIo,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,   
-                  ControllerHandle,   
+                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
 
   if (!EFI_ERROR (Status)) {
     gBS->CloseProtocol (
-                  ControllerHandle,
-                  &gEfiWinNtIoProtocolGuid,
-                  gWinNtBlockIoDriverBinding.DriverBindingHandle,
-                  ControllerHandle
-                  );
+          ControllerHandle,
+          &gEfiWinNtIoProtocolGuid,
+          gWinNtBlockIoDriverBinding.DriverBindingHandle,
+          ControllerHandle
+          );
 
     return EFI_UNSUPPORTED;
   }
@@ -328,7 +326,6 @@ WinNtBlockIoDriverConfigurationForceDefaults (
   } else if (Status != EFI_ALREADY_STARTED) {
     return EFI_INVALID_PARAMETER;
   }
-
 
   *ActionRequired = EfiDriverConfigurationActionNone;
   return EFI_SUCCESS;

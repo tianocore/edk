@@ -22,15 +22,21 @@ Abstract:
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gConPlatformComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gConPlatformComponentName = {
   ConPlatformComponentNameGetDriverName,
   ConPlatformComponentNameGetControllerName,
   "eng"
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mConPlatformDriverNameTable[] = {
-  { "eng", L"Platform Console Management Driver" },
-  { NULL, NULL }
+  {
+    "eng",
+    L"Platform Console Management Driver"
+  },
+  {
+    NULL,
+    NULL
+  }
 };
 
 EFI_STATUS
@@ -68,21 +74,21 @@ ConPlatformComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gConPlatformComponentName.SupportedLanguages,
-           mConPlatformDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gConPlatformComponentName.SupportedLanguages,
+          mConPlatformDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 ConPlatformComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 

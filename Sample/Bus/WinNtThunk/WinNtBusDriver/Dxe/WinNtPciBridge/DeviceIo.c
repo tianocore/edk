@@ -22,13 +22,16 @@ Abstract:
 #include "pci22.h"
 
 typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL          DeviceIoRootPath;
-  EFI_DEVICE_PATH_PROTOCOL          EndDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  DeviceIoRootPath;
+  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath;
 } EFI_DEV_IO_DEFAULT_DEVICE_PATH;
 
-static EFI_DEV_IO_DEFAULT_DEVICE_PATH  mEndDevicePath = {
-    END_DEVICE_PATH_TYPE, END_ENTIRE_DEVICE_PATH_SUBTYPE, END_DEVICE_PATH_LENGTH, 0
-   };
+static EFI_DEV_IO_DEFAULT_DEVICE_PATH mEndDevicePath = {
+  END_DEVICE_PATH_TYPE,
+  END_ENTIRE_DEVICE_PATH_SUBTYPE,
+  END_DEVICE_PATH_LENGTH,
+  0
+};
 
 //
 // Prototypes
@@ -136,11 +139,10 @@ DeviceIoFreeBuffer (
   IN EFI_PHYSICAL_ADDRESS     HostAddress
   );
 
-
-
 EFI_STATUS
 EFIAPI
 DeviceIoConstructor (
+  VOID
   )
 /*++
 
@@ -155,16 +157,17 @@ DeviceIoConstructor (
     other               - This driver does not support this device.
 
 --*/
+// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
-  EFI_STATUS                        Status;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *PciRootBridgeIo;
-  EFI_DEVICE_PATH_PROTOCOL          *DevicePath;
-  DEVICE_IO_PRIVATE_DATA            *Private;
-  EFI_HANDLE                        Handle;
-  EFI_HANDLE                        *HandleBuffer;
-  UINTN                             HandleCount;
-  
-  Handle = NULL;
+  EFI_STATUS                      Status;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
+  EFI_DEVICE_PATH_PROTOCOL        *DevicePath;
+  DEVICE_IO_PRIVATE_DATA          *Private;
+  EFI_HANDLE                      Handle;
+  EFI_HANDLE                      *HandleBuffer;
+  UINTN                           HandleCount;
+
+  Handle  = NULL;
   Private = NULL;
 
   //
@@ -174,42 +177,43 @@ DeviceIoConstructor (
   ASSERT_EFI_ERROR (Status);
 
   Status = gBS->LocateHandleBuffer (
-                        ByProtocol,   
-                        &gEfiPciRootBridgeIoProtocolGuid, 
-                        NULL,
-                        &HandleCount, 
-                        &HandleBuffer
-                        );
+                  ByProtocol,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
   if (EFI_ERROR (Status) || HandleCount == 0) {
     return EFI_NOT_FOUND;
   }
+
   Status = gBS->HandleProtocol (
-              HandleBuffer[0], 
-              &gEfiDevicePathProtocolGuid, 
-              (VOID*)(&DevicePath)
-              );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  } 
-  
-  //
-  // Initialize the Device IO device instance.
-  //
-  Status = gBS->AllocatePool(
-                  EfiBootServicesData,
-                  sizeof (DEVICE_IO_PRIVATE_DATA),
-                  (VOID **)&Private
+                  HandleBuffer[0],
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID *) (&DevicePath)
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  EfiZeroMem (Private, sizeof(DEVICE_IO_PRIVATE_DATA));
+  //
+  // Initialize the Device IO device instance.
+  //
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  sizeof (DEVICE_IO_PRIVATE_DATA),
+                  (VOID **) &Private
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
-  Private->Signature        = DEVICE_IO_PRIVATE_DATA_SIGNATURE;
-  Private->PciRootBridgeIo  = PciRootBridgeIo;
-  Private->DevicePath       = DevicePath;
-  Private->PrimaryBus       = 0;
-  Private->SubordinateBus   = 255;
+  EfiZeroMem (Private, sizeof (DEVICE_IO_PRIVATE_DATA));
+
+  Private->Signature                = DEVICE_IO_PRIVATE_DATA_SIGNATURE;
+  Private->PciRootBridgeIo          = PciRootBridgeIo;
+  Private->DevicePath               = DevicePath;
+  Private->PrimaryBus               = 0;
+  Private->SubordinateBus           = 255;
 
   Private->DeviceIo.Mem.Read        = DeviceIoMemRead;
   Private->DeviceIo.Mem.Write       = DeviceIoMemWrite;
@@ -223,24 +227,25 @@ DeviceIoConstructor (
   Private->DeviceIo.AllocateBuffer  = DeviceIoAllocateBuffer;
   Private->DeviceIo.Flush           = DeviceIoFlush;
   Private->DeviceIo.FreeBuffer      = DeviceIoFreeBuffer;
-   
+
   //
   // Install protocol interfaces for the Device IO device.
   //
-  Status =  gBS->InstallMultipleProtocolInterfaces (
+  Status = gBS->InstallMultipleProtocolInterfaces (
                   &Handle,
-                  &gEfiDeviceIoProtocolGuid, &Private->DeviceIo,
-                  &gEfiDevicePathProtocolGuid, &mEndDevicePath,
+                  &gEfiDeviceIoProtocolGuid,
+                  &Private->DeviceIo,
+                  &gEfiDevicePathProtocolGuid,
+                  &mEndDevicePath,
                   NULL
-                 );
+                  );
   if (EFI_ERROR (Status)) {
-    gBS->FreePool(Private);
+    gBS->FreePool (Private);
     return Status;
   }
 
   return Status;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -260,6 +265,12 @@ DeviceIoMemRead (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
@@ -269,29 +280,28 @@ DeviceIoMemRead (
   if (Width > MMIO_COPY_UINT64) {
     return EFI_INVALID_PARAMETER;
   }
+
   if (Width >= MMIO_COPY_UINT8) {
     Width = Width - MMIO_COPY_UINT8;
     Status = Private->PciRootBridgeIo->CopyMem (
-                                         Private->PciRootBridgeIo, 
-                                         (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                         (UINT64)Buffer, 
-                                         Address, 
-                                         Count
-                                         );
+                                        Private->PciRootBridgeIo,
+                                        (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                        (UINT64) Buffer,
+                                        Address,
+                                        Count
+                                        );
   } else {
     Status = Private->PciRootBridgeIo->Mem.Read (
-                                             Private->PciRootBridgeIo, 
-                                             (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                             Address, 
-                                             Count, 
-                                             Buffer
-                                             );
+                                            Private->PciRootBridgeIo,
+                                            (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                            Address,
+                                            Count,
+                                            Buffer
+                                            );
   }
- 
+
   return Status;
 }
-
-
 
 EFI_STATUS
 DeviceIoMemWrite (
@@ -310,32 +320,39 @@ DeviceIoMemWrite (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
+
   if (Width > MMIO_COPY_UINT64) {
     return EFI_INVALID_PARAMETER;
   }
+
   if (Width >= MMIO_COPY_UINT8) {
     Width = Width - MMIO_COPY_UINT8;
     Status = Private->PciRootBridgeIo->CopyMem (
-                                         Private->PciRootBridgeIo, 
-                                         (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                         Address, 
-                                         (UINT64)Buffer, 
-                                         Count
-                                         );
+                                        Private->PciRootBridgeIo,
+                                        (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                        Address,
+                                        (UINT64) Buffer,
+                                        Count
+                                        );
   } else {
     Status = Private->PciRootBridgeIo->Mem.Write (
-                                             Private->PciRootBridgeIo, 
-                                             (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                             Address, 
-                                             Count, 
-                                             Buffer
-                                             );
+                                            Private->PciRootBridgeIo,
+                                            (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                            Address,
+                                            Count,
+                                            Buffer
+                                            );
   }
 
   return Status;
@@ -358,21 +375,27 @@ DeviceIoIoRead (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
+
   if (Width >= MMIO_COPY_UINT8) {
     return EFI_INVALID_PARAMETER;
   }
 
   Status = Private->PciRootBridgeIo->Io.Read (
-                                          Private->PciRootBridgeIo, 
-                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                          Address, 
-                                          Count, 
+                                          Private->PciRootBridgeIo,
+                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                          Address,
+                                          Count,
                                           Buffer
                                           );
 
@@ -396,21 +419,27 @@ DeviceIoIoWrite (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
+
   if (Width >= MMIO_COPY_UINT8) {
     return EFI_INVALID_PARAMETER;
   }
 
   Status = Private->PciRootBridgeIo->Io.Write (
-                                          Private->PciRootBridgeIo, 
-                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                          Address, 
-                                          Count, 
+                                          Private->PciRootBridgeIo,
+                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                          Address,
+                                          Count,
                                           Buffer
                                           );
 
@@ -434,6 +463,12 @@ DeviceIoPciRead (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
@@ -445,13 +480,13 @@ DeviceIoPciRead (
   }
 
   Status = Private->PciRootBridgeIo->Pci.Read (
-                                           Private->PciRootBridgeIo, 
-                                           (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                           Address, 
-                                           Count, 
-                                           Buffer
-                                           );
- 
+                                          Private->PciRootBridgeIo,
+                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                          Address,
+                                          Count,
+                                          Buffer
+                                          );
+
   return Status;
 }
 
@@ -472,23 +507,29 @@ DeviceIoPciWrite (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
+
   if (Width < 0 || Width >= MMIO_COPY_UINT8) {
     return EFI_INVALID_PARAMETER;
   }
 
   Status = Private->PciRootBridgeIo->Pci.Write (
-                                           Private->PciRootBridgeIo, 
-                                           (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH)Width, 
-                                           Address, 
-                                           Count, 
-                                           Buffer
-                                           );
+                                          Private->PciRootBridgeIo,
+                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) Width,
+                                          Address,
+                                          Count,
+                                          Buffer
+                                          );
 
   return Status;
 }
@@ -499,7 +540,7 @@ AppendPciDevicePath (
   IN     UINT8                     Bus,
   IN     UINT8                     Device,
   IN     UINT8                     Function,
-  IN     EFI_DEVICE_PATH_PROTOCOL  *DevicePath, 
+  IN     EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
   IN OUT UINT16                    *BridgePrimaryBus,
   IN OUT UINT16                    *BridgeSubordinateBus
   )
@@ -512,56 +553,64 @@ AppendPciDevicePath (
   Returns:
 
 --*/
+// TODO:    Private - add argument and description to function comment
+// TODO:    Bus - add argument and description to function comment
+// TODO:    Device - add argument and description to function comment
+// TODO:    Function - add argument and description to function comment
+// TODO:    DevicePath - add argument and description to function comment
+// TODO:    BridgePrimaryBus - add argument and description to function comment
+// TODO:    BridgeSubordinateBus - add argument and description to function comment
 {
-  UINT16              ThisBus; 
-  UINT8               ThisDevice;
-  UINT8               ThisFunc;
-  UINT64              Address;
-  PCI_TYPE01          PciBridge;
-  PCI_TYPE01          *PciPtr;
+  UINT16                    ThisBus;
+  UINT8                     ThisDevice;
+  UINT8                     ThisFunc;
+  UINT64                    Address;
+  PCI_TYPE01                PciBridge;
+  PCI_TYPE01                *PciPtr;
   EFI_DEVICE_PATH_PROTOCOL  *ReturnDevicePath;
-  PCI_DEVICE_PATH           PciNode;    
-  
+  PCI_DEVICE_PATH           PciNode;
+
   PciPtr = &PciBridge;
   for (ThisBus = *BridgePrimaryBus; ThisBus <= *BridgeSubordinateBus; ThisBus++) {
     for (ThisDevice = 0; ThisDevice <= PCI_MAX_DEVICE; ThisDevice++) {
       for (ThisFunc = 0; ThisFunc <= PCI_MAX_FUNC; ThisFunc++) {
         Address = EFI_PCI_ADDRESS (ThisBus, ThisDevice, ThisFunc, 0);
-        EfiZeroMem(PciPtr, sizeof(PCI_TYPE01));
+        EfiZeroMem (PciPtr, sizeof (PCI_TYPE01));
         Private->DeviceIo.Pci.Read (
-                                &Private->DeviceIo, 
-                                IO_UINT32, 
-                                Address, 
-                                1, 
+                                &Private->DeviceIo,
+                                IO_UINT32,
+                                Address,
+                                1,
                                 &(PciPtr->Hdr.VendorId)
                                 );
         if (PciPtr->Hdr.VendorId == 0xffff) {
           break;
         } else {
           Private->DeviceIo.Pci.Read (
-                                  &Private->DeviceIo, 
-                                  IO_UINT32, 
-                                  Address, 
-                                  sizeof(PCI_TYPE01)/sizeof(UINT32), 
+                                  &Private->DeviceIo,
+                                  IO_UINT32,
+                                  Address,
+                                  sizeof (PCI_TYPE01) / sizeof (UINT32),
                                   PciPtr
                                   );
-          if (IS_PCI_BRIDGE(PciPtr)) {
+          if (IS_PCI_BRIDGE (PciPtr)) {
             if (Bus >= PciPtr->Bridge.SecondaryBus && 
                 Bus <= PciPtr->Bridge.SubordinateBus) {
 
-              PciNode.Header.Type    = HARDWARE_DEVICE_PATH;
-              PciNode.Header.SubType = HW_PCI_DP;
-              SetDevicePathNodeLength (&PciNode.Header, sizeof(PciNode));
+              PciNode.Header.Type     = HARDWARE_DEVICE_PATH;
+              PciNode.Header.SubType  = HW_PCI_DP;
+              SetDevicePathNodeLength (&PciNode.Header, sizeof (PciNode));
 
-              PciNode.Device   = ThisDevice;
-              PciNode.Function = ThisFunc;
-              ReturnDevicePath = EfiAppendDevicePathNode (DevicePath, &PciNode.Header);
+              PciNode.Device        = ThisDevice;
+              PciNode.Function      = ThisFunc;
+              ReturnDevicePath      = EfiAppendDevicePathNode (DevicePath, &PciNode.Header);
 
               *BridgePrimaryBus     = PciPtr->Bridge.SecondaryBus;
               *BridgeSubordinateBus = PciPtr->Bridge.SubordinateBus;
               return ReturnDevicePath;
             }
           }
+
           if (ThisFunc == 0 && !(PciPtr->Hdr.HeaderType & HEADER_TYPE_MULTI_FUNCTION)) {
             //
             // Skip sub functions, this is not a multi function device
@@ -573,14 +622,14 @@ AppendPciDevicePath (
     }
   }
 
-  EfiZeroMem (&PciNode, sizeof(PciNode));
-  PciNode.Header.Type    = HARDWARE_DEVICE_PATH;
-  PciNode.Header.SubType = HW_PCI_DP;
-  SetDevicePathNodeLength (&PciNode.Header, sizeof(PciNode));
-  PciNode.Device   = Device;
-  PciNode.Function = Function;
+  EfiZeroMem (&PciNode, sizeof (PciNode));
+  PciNode.Header.Type     = HARDWARE_DEVICE_PATH;
+  PciNode.Header.SubType  = HW_PCI_DP;
+  SetDevicePathNodeLength (&PciNode.Header, sizeof (PciNode));
+  PciNode.Device        = Device;
+  PciNode.Function      = Function;
 
-  ReturnDevicePath = EfiAppendDevicePathNode (DevicePath, &PciNode.Header);
+  ReturnDevicePath      = EfiAppendDevicePathNode (DevicePath, &PciNode.Header);
 
   *BridgePrimaryBus     = 0xffff;
   *BridgeSubordinateBus = 0xffff;
@@ -602,19 +651,25 @@ DeviceIoPciDevicePath (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    PciDevicePath - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   DEVICE_IO_PRIVATE_DATA  *Private;
   UINT16                  PrimaryBus;
-  UINT16                  SubordinateBus; 
+  UINT16                  SubordinateBus;
   UINT8                   Bus;
   UINT8                   Device;
   UINT8                   Func;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
-  Bus    = (UINT8)(((UINT32)Address >> 24) & 0xff);
-  Device = (UINT8)(((UINT32)Address >> 16) & 0xff);
-  Func   = (UINT8)(((UINT32)Address >> 8) & 0xff);
+
+  Bus     = (UINT8) (((UINT32) Address >> 24) & 0xff);
+  Device  = (UINT8) (((UINT32) Address >> 16) & 0xff);
+  Func    = (UINT8) (((UINT32) Address >> 8) & 0xff);
 
   if (Bus < Private->PrimaryBus || Bus > Private->SubordinateBus) {
     return EFI_UNSUPPORTED;
@@ -625,14 +680,14 @@ DeviceIoPciDevicePath (
   SubordinateBus  = Private->SubordinateBus;
   do {
     *PciDevicePath = AppendPciDevicePath (
-                       Private,
-                       Bus, 
-                       Device, 
-                       Func, 
-                       *PciDevicePath,
-                       &PrimaryBus, 
-                       &SubordinateBus 
-                       );
+                      Private,
+                      Bus,
+                      Device,
+                      Func,
+                      *PciDevicePath,
+                      &PrimaryBus,
+                      &SubordinateBus
+                      );
     if (*PciDevicePath == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
@@ -659,29 +714,36 @@ DeviceIoMap (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Operation - add argument and description to function comment
+// TODO:    HostAddress - add argument and description to function comment
+// TODO:    NumberOfBytes - add argument and description to function comment
+// TODO:    DeviceAddress - add argument and description to function comment
+// TODO:    Mapping - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
 
-  if(Operation < 0 || Operation > EfiBusMasterCommonBuffer) {
+  if (Operation < 0 || Operation > EfiBusMasterCommonBuffer) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if(((UINTN)(*HostAddress) != (*HostAddress)) && Operation == EfiBusMasterCommonBuffer)  {
+  if (((UINTN) (*HostAddress) != (*HostAddress)) && Operation == EfiBusMasterCommonBuffer) {
     return EFI_UNSUPPORTED;
   }
- 
- 
+
   Status = Private->PciRootBridgeIo->Map (
-                                       Private->PciRootBridgeIo, 
-                                       (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION)Operation, 
-                                       (VOID *)(UINTN)(*HostAddress), 
-                                       NumberOfBytes, 
-                                       DeviceAddress, 
-                                       Mapping
-                                       );
+                                      Private->PciRootBridgeIo,
+                                      (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION) Operation,
+                                      (VOID *) (UINTN) (*HostAddress),
+                                      NumberOfBytes,
+                                      DeviceAddress,
+                                      Mapping
+                                      );
 
   return Status;
 }
@@ -700,16 +762,18 @@ DeviceIoUnmap (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Mapping - add argument and description to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
+
   Status = Private->PciRootBridgeIo->Unmap (
-                                       Private->PciRootBridgeIo, 
-                                       Mapping
-                                       );
+                                      Private->PciRootBridgeIo,
+                                      Mapping
+                                      );
 
   return Status;
 }
@@ -731,38 +795,44 @@ DeviceIoAllocateBuffer (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Type - add argument and description to function comment
+// TODO:    MemoryType - add argument and description to function comment
+// TODO:    Pages - add argument and description to function comment
+// TODO:    PhysicalAddress - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS              Status;
-  EFI_PHYSICAL_ADDRESS                    HostAddress;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  HostAddress;
 
   HostAddress = *PhysicalAddress;
-
 
   if (MemoryType != EfiBootServicesData && MemoryType != EfiRuntimeServicesData) {
     return EFI_INVALID_PARAMETER;
   }
-  if (Type>=MaxAllocateType || Type<AllocateAnyPages){
-        return EFI_UNSUPPORTED;
-  }
 
-  if  ( (Type == AllocateAddress)  
-    && ( HostAddress+ EFI_PAGES_TO_SIZE(Pages)-1  > MAX_COMMON_BUFFER )
-    ) {
+  if (Type >= MaxAllocateType || Type < AllocateAnyPages) {
     return EFI_UNSUPPORTED;
   }
 
-  if (AllocateAnyPages == Type||
-    (AllocateMaxAddress == Type && HostAddress > MAX_COMMON_BUFFER)
-    ) {
-    Type = AllocateMaxAddress;
+  if ((Type == AllocateAddress) &&
+      (HostAddress + EFI_PAGES_TO_SIZE (Pages) - 1 > MAX_COMMON_BUFFER)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  if (AllocateAnyPages == Type || 
+      (AllocateMaxAddress == Type && HostAddress > MAX_COMMON_BUFFER)) {
+    Type        = AllocateMaxAddress;
     HostAddress = MAX_COMMON_BUFFER;
   }
 
   Status = gBS->AllocatePages (Type, MemoryType, Pages, &HostAddress);
-  if (EFI_ERROR (Status))  {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
-
 
   *PhysicalAddress = HostAddress;
 
@@ -782,13 +852,14 @@ DeviceIoFlush (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
 {
   EFI_STATUS              Status;
   DEVICE_IO_PRIVATE_DATA  *Private;
 
   Private = DEVICE_IO_PRIVATE_DATA_FROM_THIS (This);
- 
-  Status = Private->PciRootBridgeIo->Flush (Private->PciRootBridgeIo);
+
+  Status  = Private->PciRootBridgeIo->Flush (Private->PciRootBridgeIo);
 
   return Status;
 }
@@ -808,10 +879,14 @@ DeviceIoFreeBuffer (
   Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Pages - add argument and description to function comment
+// TODO:    HostAddress - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
- if (((HostAddress & EFI_PAGE_MASK) !=0) || (Pages <= 0)){
-   return EFI_INVALID_PARAMETER;
- }
+  if (((HostAddress & EFI_PAGE_MASK) != 0) || (Pages <= 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
-  return  gBS->FreePages ( HostAddress, Pages);
+  return gBS->FreePages (HostAddress, Pages);
 }

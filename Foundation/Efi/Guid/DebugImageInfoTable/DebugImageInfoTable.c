@@ -20,9 +20,9 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_GUID_DEFINITION(DebugImageInfoTable)
-
+#include EFI_GUID_DEFINITION (DebugImageInfoTable)
 
 EFI_GUID  gEfiDebugImageInfoTableGuid = EFI_DEBUG_IMAGE_INFO_TABLE_GUID;
 
-EFI_GUID_STRING(&gEfiDebugImageInfoTableGuid, "Debug Image Info Table", "Debug Image Info Table GUID in EFI System Table");
+EFI_GUID_STRING
+  (&gEfiDebugImageInfoTableGuid, "Debug Image Info Table", "Debug Image Info Table GUID in EFI System Table");

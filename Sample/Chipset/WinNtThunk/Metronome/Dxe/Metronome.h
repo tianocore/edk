@@ -19,6 +19,7 @@ Abstract:
 
 --*/
 
+// TODO: add protective #ifndef
 #include "Efi2WinNT.h"
 #include "EfiWinNtLib.h"
 #include "EfiDriverLib.h"
@@ -29,7 +30,7 @@ Abstract:
 #include EFI_ARCH_PROTOCOL_PRODUCER (Metronome)
 
 //
-//Period of on tick in 100 nanosecond units
+// Period of on tick in 100 nanosecond units
 //
 #define TICK_PERIOD 10000
 
@@ -41,11 +42,45 @@ EFI_STATUS
 WinNtMetronomeDriverInitialize (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  SystemTable - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
-WinNtMetronomeDriverWaitForTick(
+WinNtMetronomeDriverWaitForTick (
   IN EFI_METRONOME_ARCH_PROTOCOL  *This,
   IN UINT32                       TickNumber
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  TickNumber  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;

@@ -15,15 +15,15 @@ Module Name:
 
 Abstract:
 
-  Abstraction for the NT Callback PPI GUID as defined in EFI 2.0
+  Abstraction for the NT Thunk PPI
 
 --*/
 
 #include "Tiano.h"
 #include "PeiBind.h"
 #include "PeiApi.h"
-#include EFI_PPI_DEFINITION(NtThunk)
+#include EFI_PPI_DEFINITION (NtThunk)
 
-EFI_GUID gPeiWinNtThunkGuid = PEI_WIN_NT_THUNK_PRIVATE_GUID;
+EFI_GUID  gPeiNtThunkPpiGuid = PEI_NT_THUNK_GUID;
 
-EFI_GUID_STRING(&gPeiWinntThunkGuid, "NtThunk", "NT PEI WINNT THUNK PPI");
+EFI_GUID_STRING(&gPeiNtThunkPpiGuid, "NtThunk", "NT PEI WINNT THUNK PPI");

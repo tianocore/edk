@@ -22,20 +22,22 @@ Abstract:
 //
 // EFI Component Name Functions
 //
-EFI_STATUS EFIAPI
+EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
 
-EFI_STATUS EFIAPI
+EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
-  IN  EFI_HANDLE                                      ControllerHandle,
-  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
-  IN  CHAR8                                           *Language,
-  OUT CHAR16                                          **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                                        *This,
+  IN  EFI_HANDLE                                                         ControllerHandle,
+  IN  EFI_HANDLE                                                         ChildHandle        OPTIONAL,
+  IN  CHAR8                                                              *Language,
+  OUT CHAR16                                                             **ControllerName
   );
 
 //
@@ -58,7 +60,8 @@ static EFI_UNICODE_STRING_TABLE mWinNtSimpleFileSystemDriverNameTable[] = {
   }
 };
 
-EFI_STATUS EFIAPI
+EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
@@ -99,13 +102,14 @@ WinNtSimpleFileSystemComponentNameGetDriverName (
           );
 }
 
-EFI_STATUS EFIAPI
+EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
-  IN  EFI_HANDLE                                      ControllerHandle,
-  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
-  IN  CHAR8                                           *Language,
-  OUT CHAR16                                          **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                                        *This,
+  IN  EFI_HANDLE                                                         ControllerHandle,
+  IN  EFI_HANDLE                                                         ChildHandle        OPTIONAL,
+  IN  CHAR8                                                              *Language,
+  OUT CHAR16                                                             **ControllerName
   )
 /*++
 

@@ -51,33 +51,32 @@ Revision History
 //
 // Partition private data
 //
-#define PARTITION_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32('P','a','r','t')
+#define PARTITION_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32 ('P', 'a', 'r', 't')
 typedef struct {
-  UINT64                        Signature;
+  UINT64                    Signature;
 
-  EFI_HANDLE                    Handle;
-  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
-  EFI_BLOCK_IO_PROTOCOL         BlockIo;
-  EFI_BLOCK_IO_MEDIA            Media;
+  EFI_HANDLE                Handle;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  EFI_BLOCK_IO_PROTOCOL     BlockIo;
+  EFI_BLOCK_IO_MEDIA        Media;
 
-  EFI_DISK_IO_PROTOCOL          *DiskIo;
-  EFI_BLOCK_IO_PROTOCOL         *ParentBlockIo;
-  UINT64                        Start;
-  UINT64                        End;
-  UINT32                        BlockSize;
+  EFI_DISK_IO_PROTOCOL      *DiskIo;
+  EFI_BLOCK_IO_PROTOCOL     *ParentBlockIo;
+  UINT64                    Start;
+  UINT64                    End;
+  UINT32                    BlockSize;
 
-  EFI_GUID                      *EspGuid;
+  EFI_GUID                  *EspGuid;
 
 } PARTITION_PRIVATE_DATA;
 
-#define PARTITION_DEVICE_FROM_BLOCK_IO_THIS(a) \
-  CR(a, PARTITION_PRIVATE_DATA, BlockIo, PARTITION_PRIVATE_DATA_SIGNATURE)
+#define PARTITION_DEVICE_FROM_BLOCK_IO_THIS(a)  CR (a, PARTITION_PRIVATE_DATA, BlockIo, PARTITION_PRIVATE_DATA_SIGNATURE)
 
 //
 // Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL gPartitionDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gPartitionComponentName;
+extern EFI_DRIVER_BINDING_PROTOCOL  gPartitionDriverBinding;
+extern EFI_COMPONENT_NAME_PROTOCOL  gPartitionComponentName;
 
 //
 // Extract INT32 from char array
@@ -107,7 +106,8 @@ PartitionInstallChildHandle (
   IN  UINT64                       End,
   IN  UINT32                       BlockSize,
   IN  BOOLEAN                      InstallEspGuid
-  );
+  )
+;
 
 BOOLEAN
 PartitionInstallGptChildHandles (
@@ -116,7 +116,8 @@ PartitionInstallGptChildHandles (
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
   IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
-  );
+  )
+;
 
 BOOLEAN
 PartitionInstallElToritoChildHandles (
@@ -125,7 +126,8 @@ PartitionInstallElToritoChildHandles (
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
   IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
-  );
+  )
+;
 
 BOOLEAN
 PartitionInstallMbrChildHandles (
@@ -134,6 +136,7 @@ PartitionInstallMbrChildHandles (
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
   IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
-  );
+  )
+;
 
 #endif

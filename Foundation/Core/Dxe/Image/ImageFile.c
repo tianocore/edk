@@ -66,7 +66,13 @@ Arguments:
     
 Returns:
 
-    A handle to access the file
+    EFI_SUCCESS     - Image file successfully opened.
+    
+    EFI_LOAD_ERROR  - If the caller passed a copy of the file, and SourceSize is 0.
+    
+    EFI_INVALID_PARAMETER   - File path is not valid.
+    
+    EFI_NOT_FOUND   - File not found.
 
 --*/
 {
@@ -346,9 +352,23 @@ CoreReadImageFile (
 
 Routine Description:
 
+  Read image file (specified by UserHandle) into user specified buffer with specified offset
+  and length.
+
 Arguments:
 
+  UserHandle      - Image file handle
+  
+  Offset          - Offset to the source file
+  
+  ReadSize        - For input, pointer of size to read;
+                    For output, pointer of size actually read.
+  
+  Buffer          - Buffer to write into
+
 Returns:
+
+  EFI_SUCCESS     - Successfully read the specified part of file into buffer.
 
 --*/
 {
@@ -380,6 +400,28 @@ CoreDevicePathToInterface (
   OUT VOID                        **Interface,
   OUT EFI_HANDLE                  *Handle
   )
+/*++
+
+Routine Description:
+
+  Search a handle to a device on a specified device path that supports a specified protocol,
+  interface of that protocol on that handle is another output.
+
+Arguments:
+
+  Protocol      - The protocol to search for
+  
+  FilePath      - The specified device path
+  
+  Interface     - Interface of the protocol on the handle
+  
+  Handle        - The handle to the device on the specified device path that supports the protocol.
+  
+Returns:
+
+  Status code.
+
+--*/
 {
   EFI_STATUS                      Status;
 
@@ -396,6 +438,23 @@ CoreDevicePathToFileName (
   IN  FILEPATH_DEVICE_PATH      *FilePath,
   OUT CHAR16                    **String
   )
+/*++
+
+Routine Description:
+
+  Transfer a device's full path a string.
+
+Arguments:
+
+  FilePath      - Device path
+  
+  String        - The string represent the device's full path
+
+Returns:
+
+  None
+
+--*/
 {
   UINTN                     StringSize;
   FILEPATH_DEVICE_PATH      *FilePathNode;

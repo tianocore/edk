@@ -22,7 +22,6 @@ Abstract:
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (FileSystemInfo)
 
-EFI_GUID gEfiFileSystemInfoGuid = EFI_FILE_SYSTEM_INFO_ID_GUID;
+EFI_GUID  gEfiFileSystemInfoGuid = EFI_FILE_SYSTEM_INFO_ID_GUID;
 
 EFI_GUID_STRING(&gEfiFileSystemInfoGuid, "File System Info ID", "EFI File System Info ID GUID");
-

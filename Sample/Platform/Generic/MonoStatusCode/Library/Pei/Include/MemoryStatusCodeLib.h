@@ -25,14 +25,13 @@ Abstract:
 //
 // Statements that include other files
 //
-
 #include "Tiano.h"
 #include "Pei.h"
 
 //
 // Publicly exported data
 //
-extern BOOLEAN mRunningFromMemory;
+extern BOOLEAN  mRunningFromMemory;
 
 //
 // Initialization function
@@ -41,20 +40,22 @@ VOID
 MemoryInitializeStatusCode (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
-  );
+  )
+;
 
 //
 // Status code reporting function
 //
 EFI_STATUS
-EFIAPI 
+EFIAPI
 MemoryReportStatusCode (
   IN EFI_PEI_SERVICES         **PeiServices,
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 *CallerId,
-  IN EFI_STATUS_CODE_DATA     *Data OPTIONAL
-  );
+  IN EFI_GUID                 * CallerId,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  )
+;
 
-#endif 
+#endif

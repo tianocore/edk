@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  EfiDriverLib.c
+  EfiDriverModelLib.c
 
 Abstract:
 
@@ -60,9 +60,9 @@ Returns:
 {
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
-  DriverBinding->ImageHandle = ImageHandle;
-  
-  DriverBinding->DriverBindingHandle = DriverBindingHandle;
+  DriverBinding->ImageHandle          = ImageHandle;
+
+  DriverBinding->DriverBindingHandle  = DriverBindingHandle;
 
   return gBS->InstallProtocolInterface (
                 &DriverBinding->DriverBindingHandle,
@@ -75,12 +75,12 @@ Returns:
 EFI_STATUS
 EfiLibInstallAllDriverProtocols (
   IN EFI_HANDLE                         ImageHandle,
-  IN EFI_SYSTEM_TABLE                   *SystemTable,
-  IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
+  IN EFI_SYSTEM_TABLE                   * SystemTable,
+  IN EFI_DRIVER_BINDING_PROTOCOL        * DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
-  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,        OPTIONAL
-  IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration,  OPTIONAL
-  IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics     OPTIONAL
+  IN EFI_COMPONENT_NAME_PROTOCOL        * ComponentName, OPTIONAL
+  IN EFI_DRIVER_CONFIGURATION_PROTOCOL  * DriverConfiguration, OPTIONAL
+  IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    * DriverDiagnostics OPTIONAL
   )
 /*++
 
@@ -127,8 +127,8 @@ Returns:
   if (ComponentName != NULL) {
     Status = gBS->InstallProtocolInterface (
                     &DriverBinding->DriverBindingHandle,
-                    &gEfiComponentNameProtocolGuid, 
-                    EFI_NATIVE_INTERFACE, 
+                    &gEfiComponentNameProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
                     ComponentName
                     );
     if (EFI_ERROR (Status)) {
@@ -139,8 +139,8 @@ Returns:
   if (DriverConfiguration != NULL) {
     Status = gBS->InstallProtocolInterface (
                     &DriverBinding->DriverBindingHandle,
-                    &gEfiDriverConfigurationProtocolGuid, 
-                    EFI_NATIVE_INTERFACE, 
+                    &gEfiDriverConfigurationProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
                     DriverConfiguration
                     );
     if (EFI_ERROR (Status)) {
@@ -151,14 +151,14 @@ Returns:
   if (DriverDiagnostics != NULL) {
     Status = gBS->InstallProtocolInterface (
                     &DriverBinding->DriverBindingHandle,
-                    &gEfiDriverDiagnosticsProtocolGuid, 
-                    EFI_NATIVE_INTERFACE, 
+                    &gEfiDriverDiagnosticsProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
                     DriverDiagnostics
                     );
     if (EFI_ERROR (Status)) {
       return Status;
     }
   }
+
   return EFI_SUCCESS;
 }
-

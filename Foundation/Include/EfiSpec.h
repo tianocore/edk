@@ -36,8 +36,7 @@ Abstract:
 //
 // EFI Specification Revision information
 //
-#define EFI_SPECIFICATION_MAJOR_REVISION 1
-#define EFI_SPECIFICATION_MINOR_REVISION 10
+#define EFI_SPECIFICATION_MAJOR_REVISION  1
+#define EFI_SPECIFICATION_MINOR_REVISION  10
 
 #endif
-

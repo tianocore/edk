@@ -24,7 +24,6 @@ Revision History
 
 #include "reclaim.h"
 
-
 EFI_STATUS
 GetFvbHandleByAddress (
   IN  EFI_PHYSICAL_ADDRESS   Address,
@@ -38,35 +37,34 @@ GetFvbHandleByAddress (
   EFI_PHYSICAL_ADDRESS                FvbBaseAddress;
   EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *Fvb;
   EFI_FIRMWARE_VOLUME_HEADER          *FwVolHeader;
-  
+
   *FvbHandle = NULL;
   //
   // Locate all handles of Fvb protocol
-  //  
+  //
   Status = gBS->LocateHandleBuffer (
-                       ByProtocol,
-                       &gEfiFirmwareVolumeBlockProtocolGuid, 
-                       NULL,
-                       &HandleCount,
-                       &HandleBuffer
-                       );
+                  ByProtocol,
+                  &gEfiFirmwareVolumeBlockProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
   if (EFI_ERROR (Status)) {
     return EFI_NOT_FOUND;
   }
-
   //
   // Get the FVB to access variable store
   //
   for (Index = 0; Index < HandleCount; Index += 1) {
     Status = gBS->HandleProtocol (
-                      HandleBuffer[Index],
-                      &gEfiFirmwareVolumeBlockProtocolGuid,
-                      (VOID **)&Fvb);
+                    HandleBuffer[Index],
+                    &gEfiFirmwareVolumeBlockProtocolGuid,
+                    (VOID **) &Fvb
+                    );
     if (EFI_ERROR (Status)) {
       Status = EFI_NOT_FOUND;
       break;
     }
-
     //
     // Compare the address and select the right one
     //
@@ -74,10 +72,11 @@ GetFvbHandleByAddress (
     if (EFI_ERROR (Status)) {
       continue;
     }
-    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN)FvbBaseAddress);
+
+    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvbBaseAddress);
     if ((Address >= FvbBaseAddress) && (Address <= (FvbBaseAddress + FwVolHeader->FvLength))) {
-      *FvbHandle = HandleBuffer[Index];
-      Status = EFI_SUCCESS;
+      *FvbHandle  = HandleBuffer[Index];
+      Status      = EFI_SUCCESS;
       break;
     }
   }
@@ -101,7 +100,7 @@ GetLbaAndOffsetByAddress (
   EFI_FV_BLOCK_MAP_ENTRY              *FvbMapEntry;
   UINT32                              LbaIndex;
 
-  *Lba = (EFI_LBA)(-1);
+  *Lba    = (EFI_LBA) (-1);
   *Offset = 0;
 
   //
@@ -111,15 +110,15 @@ GetLbaAndOffsetByAddress (
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
   Status = gBS->HandleProtocol (
-                  FvbHandle, 
+                  FvbHandle,
                   &gEfiFirmwareVolumeBlockProtocolGuid,
                   &Fvb
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Get the Base Address of FV
   //
@@ -127,7 +126,8 @@ GetLbaAndOffsetByAddress (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN)FvbBaseAddress);
+
+  FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvbBaseAddress);
 
   //
   // Get the (LBA, Offset) of Address
@@ -141,10 +141,10 @@ GetLbaAndOffsetByAddress (
       for (LbaIndex = 1; LbaIndex <= FvbMapEntry->NumBlocks; LbaIndex += 1) {
         if (Address < (FvbBaseAddress + FvbMapEntry->BlockLength * LbaIndex)) {
           //
-          // Found the (Lba, Offset) 
+          // Found the (Lba, Offset)
           //
-          *Lba = LbaIndex - 1;
-          *Offset = (UINTN)(Address - (FvbBaseAddress + FvbMapEntry->BlockLength * (LbaIndex - 1)));
+          *Lba    = LbaIndex - 1;
+          *Offset = (UINTN) (Address - (FvbBaseAddress + FvbMapEntry->BlockLength * (LbaIndex - 1)));
           return EFI_SUCCESS;
         }
       }
@@ -153,7 +153,6 @@ GetLbaAndOffsetByAddress (
 
   return EFI_ABORTED;
 }
-
 
 EFI_STATUS
 FtwVariableSpace (
@@ -178,13 +177,13 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                        Status;
-  EFI_HANDLE                        FvbHandle;  
-  EFI_FTW_LITE_PROTOCOL             *FtwLiteProtocol;
-  EFI_LBA                           VarLba;
-  UINTN                             VarOffset;
-  UINT8                             *FtwBuffer;
-  UINTN                             FtwBufferSize;
+  EFI_STATUS            Status;
+  EFI_HANDLE            FvbHandle;
+  EFI_FTW_LITE_PROTOCOL *FtwLiteProtocol;
+  EFI_LBA               VarLba;
+  UINTN                 VarOffset;
+  UINT8                 *FtwBuffer;
+  UINTN                 FtwBufferSize;
 
   //
   // Locate fault tolerant write protocol
@@ -195,9 +194,8 @@ Returns:
                   &FtwLiteProtocol
                   );
   if (EFI_ERROR (Status)) {
-    return  EFI_NOT_FOUND;
+    return EFI_NOT_FOUND;
   }
-
   //
   // Locate Fvb handle by address
   //
@@ -205,7 +203,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
   //
   // Get LBA and Offset by address
   //
@@ -213,15 +210,15 @@ Returns:
   if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
-
   //
   // Prepare for the variable data
   //
-  FtwBufferSize = ((VARIABLE_STORE_HEADER *)((UINTN)VariableBase))->Size;
-  Status = gBS->AllocatePool (EfiRuntimeServicesData, FtwBufferSize, &FtwBuffer);
+  FtwBufferSize = ((VARIABLE_STORE_HEADER *) ((UINTN) VariableBase))->Size;
+  Status        = gBS->AllocatePool (EfiRuntimeServicesData, FtwBufferSize, &FtwBuffer);
   if (EFI_ERROR (Status)) {
     return EFI_OUT_OF_RESOURCES;
   }
+
   EfiSetMem (FtwBuffer, FtwBufferSize, (UINT8) 0xff);
   EfiCopyMem (FtwBuffer, Buffer, BufferSize);
 
@@ -229,13 +226,13 @@ Returns:
   // FTW write record
   //
   Status = FtwLiteProtocol->Write (
-                  FtwLiteProtocol,
-                  FvbHandle,
-                  VarLba,        //LBA
-                  VarOffset,     //Offset
-                  &FtwBufferSize,//NumBytes,
-                  FtwBuffer
-                  );
+                              FtwLiteProtocol,
+                              FvbHandle,
+                              VarLba,         // LBA
+                              VarOffset,      // Offset
+                              &FtwBufferSize, // NumBytes,
+                              FtwBuffer
+                              );
 
   gBS->FreePool (FtwBuffer);
   return Status;

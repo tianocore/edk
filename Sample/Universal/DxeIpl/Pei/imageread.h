@@ -17,11 +17,14 @@ Abstract:
 
 --*/
 
+#ifndef _IMAGEREAD_H
+#define _IMAGEREAD_H
 EFI_STATUS
 GetImageReadFunction (
   IN      EFI_PEI_SERVICES                      **PeiServices,
   IN      EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  );
+  )
+;
 
 EFI_STATUS
 PeiImageRead (
@@ -29,14 +32,19 @@ PeiImageRead (
   IN     UINTN   FileOffset,
   IN OUT UINTN   *ReadSize,
   OUT    VOID    *Buffer
-  );
+  )
+;
 
 EFI_STATUS
-InstallEfiPeiTransferControl(
+InstallEfiPeiTransferControl (
   IN OUT EFI_PEI_TRANSFER_CONTROL_PROTOCOL **This
-  );
+  )
+;
 
 EFI_STATUS
-InstallEfiPeiFlushInstructionCache(
+InstallEfiPeiFlushInstructionCache (
   IN OUT EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  **This
-  );
+  )
+;
+
+#endif

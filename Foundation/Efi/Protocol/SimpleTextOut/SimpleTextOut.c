@@ -23,10 +23,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(SimpleTextOut)
+#include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
 
-
-EFI_GUID gEfiSimpleTextOutProtocolGuid = EFI_SIMPLE_TEXT_OUT_PROTOCOL_GUID;
+EFI_GUID  gEfiSimpleTextOutProtocolGuid = EFI_SIMPLE_TEXT_OUT_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiSimpleTextOutProtocolGuid, "Simple Text Out Protocol", "EFI 1.0 Simple Text Out Protocol");
-

@@ -19,27 +19,18 @@ Abstract:
 
 --*/
 
-
 #ifndef _TIANO_SPEC_DEVICE_PATH_H
 #define _TIANO_SPEC_DEVICE_PATH_H
 
-
-
 #pragma pack(1)
-
-
-
 //
 // EFI Specification extension on Media Device Path
 //
-#define MEDIA_FV_FILEPATH_DP      0x06
+#define MEDIA_FV_FILEPATH_DP  0x06
 typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL        Header;
-  EFI_GUID                        NameGuid;
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  EFI_GUID                  NameGuid;
 } MEDIA_FW_VOL_FILEPATH_DEVICE_PATH;
-
-
-
 
 #pragma pack()
 

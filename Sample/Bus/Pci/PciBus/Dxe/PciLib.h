@@ -26,33 +26,133 @@ Revision History
 #ifndef _EFI_PCI_LIB_H
 #define _EFI_PCI_LIB_H
 
-VOID InstallHotPlugRequestProtocol(
+VOID
+InstallHotPlugRequestProtocol (
   IN  EFI_STATUS                    *Status
-);
+  )
+/*++
 
-VOID InstallPciHotplugGuid(
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Status  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+VOID
+InstallPciHotplugGuid (
   IN  PCI_IO_DEVICE                  *PciIoDevice
-);
+  )
+/*++
 
+Routine Description:
 
-VOID UninstallPciHotplugGuid(
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+VOID
+UninstallPciHotplugGuid (
   IN  PCI_IO_DEVICE                  *PciIoDevice
-);
+  )
+/*++
 
-VOID GetBackPcCardBar(
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+VOID
+GetBackPcCardBar (
   IN  PCI_IO_DEVICE                  *PciIoDevice
-);
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 RemoveRejectedPciDevices (
   EFI_HANDLE        RootBridgeHandle,
   IN PCI_IO_DEVICE  *Bridge
-);
+  )
+/*++
 
-EFI_STATUS 
-PciHostBridgeResourceAllocator (  
-  IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *PciResAlloc 
-);
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  RootBridgeHandle  - TODO: add argument description
+  Bridge            - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+EFI_STATUS
+PciHostBridgeResourceAllocator (
+  IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *PciResAlloc
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciResAlloc - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 PciScanBus (
@@ -60,21 +160,88 @@ PciScanBus (
   IN UINT8                              StartBusNumber,
   OUT UINT8                             *SubBusNumber,
   OUT UINT8                             *PaddedBusRange
-);
+  )
+/*++
 
-EFI_STATUS 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Bridge          - TODO: add argument description
+  StartBusNumber  - TODO: add argument description
+  SubBusNumber    - TODO: add argument description
+  PaddedBusRange  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+EFI_STATUS
 PciRootBridgeP2CProcess (
-  IN PCI_IO_DEVICE *Bridge 
-);
+  IN PCI_IO_DEVICE *Bridge
+  )
+/*++
 
-EFI_STATUS 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Bridge  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+EFI_STATUS
 PciHostBridgeP2CProcess (
-  IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *PciResAlloc   
-);
+  IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *PciResAlloc
+  )
+/*++
 
-EFI_STATUS 
-PciHostBridgeEnumerator (  
-  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL  *PciResAlloc 
-);
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciResAlloc - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
+EFI_STATUS
+PciHostBridgeEnumerator (
+  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL  *PciResAlloc
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciResAlloc - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

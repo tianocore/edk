@@ -132,6 +132,21 @@ VOID
 CoreAcquireMemoryLock (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Enter critical section by gaining lock on gMemoryLock
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
 {
   CoreAcquireLock (&gMemoryLock);
 }
@@ -141,6 +156,21 @@ VOID
 CoreReleaseMemoryLock (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Exit critical section by releasing lock on gMemoryLock
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
 {
   CoreReleaseLock (&gMemoryLock);
 }
@@ -149,6 +179,21 @@ VOID
 PromoteMemoryResource (
   VOID
   )
+/*++
+
+Routine Description:
+
+  Find untested but initialized memory regions in GCD map and convert them to be DXE allocatable.
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/
 {
   EFI_LIST_ENTRY                   *Link;
   EFI_GCD_MAP_ENTRY                *Entry;
@@ -162,9 +207,10 @@ PromoteMemoryResource (
 
     Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
 
-    if (Entry->GcdMemoryType == EfiGcdMemoryTypeReserved && Entry->EndAddress < EFI_MAX_ADDRESS &&
-        (Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) == (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)) {
-      
+    if (Entry->GcdMemoryType == EfiGcdMemoryTypeReserved &&
+        Entry->EndAddress < EFI_MAX_ADDRESS &&
+        (Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
+          (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)) {
       //
       // Update the GCD map
       //
@@ -486,7 +532,8 @@ Returns:
 
 --*/
 {
-  MEMORY_MAP      *Entry, *Entry2;
+  MEMORY_MAP      *Entry;
+  MEMORY_MAP      *Entry2;
   EFI_LIST_ENTRY  *Link2;
 
   ASSERT_LOCKED (&gMemoryLock);
@@ -608,7 +655,12 @@ Arguments:
 
 Returns:
 
-  Status
+  EFI_INVALID_PARAMETER   - Invalid parameter
+  
+  EFI_NOT_FOUND           - Could not find a descriptor cover the specified range 
+                            or convertion not allowed.
+  
+  EFI_SUCCESS             - Successfully converts the memory range to the specified type.
 
 --*/
 {
@@ -678,7 +730,8 @@ Returns:
     // Update counters for the number of pages allocated to each memory type
     //
     if (Entry->Type >= 0 && Entry->Type < EfiMaxMemoryType) {
-      if (Start >= mMemoryTypeStatistics[Entry->Type].BaseAddress && Start <= mMemoryTypeStatistics[Entry->Type].MaximumAddress) {
+      if (Start >= mMemoryTypeStatistics[Entry->Type].BaseAddress && 
+          Start <= mMemoryTypeStatistics[Entry->Type].MaximumAddress) {
         if (NumberOfPages > mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages) {
           mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages = 0;
         } else {
@@ -690,7 +743,8 @@ Returns:
     if (NewType >= 0 && NewType < EfiMaxMemoryType) {
       if (Start >= mMemoryTypeStatistics[NewType].BaseAddress && Start <= mMemoryTypeStatistics[NewType].MaximumAddress) {
         mMemoryTypeStatistics[NewType].CurrentNumberOfPages += NumberOfPages;
-        if (mMemoryTypeStatistics[NewType].CurrentNumberOfPages > gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages) {
+        if (mMemoryTypeStatistics[NewType].CurrentNumberOfPages > 
+            gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages) {
           gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages = (UINT32)mMemoryTypeStatistics[NewType].CurrentNumberOfPages;
         }
       }
@@ -803,6 +857,8 @@ Arguments:
   NumberOfPages - Number of pages needed
 
   NewType       - The type of memory the range is going to be turned into
+
+  Alignment     - Bits to align with
 
 Returns:
 
@@ -931,6 +987,8 @@ Arguments:
 
     NewType             - The type of memory the range is going to be turned into
 
+    Alignment           - Bits to align with
+
 Returns:
 
     The base address of the range, or 0 if the range was not found.
@@ -999,6 +1057,14 @@ Returns:
 
   Status. On success, Memory is filled in with the base address allocated
 
+  EFI_INVALID_PARAMETER     - Parameters violate checking rules defined in spec.
+  
+  EFI_NOT_FOUND             - Could not allocate pages match the requirement.
+  
+  EFI_OUT_OF_RESOURCES      - No enough pages to allocate.
+  
+  EFI_SUCCESS               - Pages successfully allocated.
+
 --*/
 {
   EFI_STATUS      Status;
@@ -1020,7 +1086,7 @@ Returns:
   if  (MemoryType == EfiACPIReclaimMemory   ||
        MemoryType == EfiACPIMemoryNVS       ||
        MemoryType == EfiRuntimeServicesCode ||
-       MemoryType == EfiRuntimeServicesData    ) {
+       MemoryType == EfiRuntimeServicesData) {
 
     Alignment = EFI_ACPI_RUNTIME_PAGE_ALLOCATION_ALIGNMENT;
   }
@@ -1099,7 +1165,11 @@ Arguments:
 
 Returns:
 
-  Status
+  EFI_NOT_FOUND       - Could not find the entry that covers the range
+  
+  EFI_INVALID_PARAMETER   - Address not aligned
+  
+  EFI_SUCCESS         -Pages successfully freed.
 
 --*/
 {
@@ -1133,7 +1203,7 @@ Returns:
   if  (Entry->Type == EfiACPIReclaimMemory   ||
        Entry->Type == EfiACPIMemoryNVS       ||
        Entry->Type == EfiRuntimeServicesCode ||
-       Entry->Type == EfiRuntimeServicesData    ) {
+       Entry->Type == EfiRuntimeServicesData) {
 
     Alignment = EFI_ACPI_RUNTIME_PAGE_ALLOCATION_ALIGNMENT;
 
@@ -1236,7 +1306,7 @@ Returns:
   NumberOfRuntimeEntries = 0;
   for (Index = 0; Index < NumberOfDescriptors; Index++) {
     if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved       ||
-        MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo    ) {
+        MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo) {
       if ((MemorySpaceMap[Index].Attributes & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
         NumberOfRuntimeEntries++;
       }
@@ -1309,7 +1379,7 @@ Returns:
 
   for (Index = 0; Index < NumberOfDescriptors; Index++) {
     if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeReserved       ||
-        MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo    ) {
+        MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMemoryMappedIo) {
       if ((MemorySpaceMap[Index].Attributes & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
 
         MemoryMap->PhysicalStart = MemorySpaceMap[Index].BaseAddress;
@@ -1374,6 +1444,8 @@ Arguments:
 
   NumberOfPages - No of pages to allocate
 
+  Alignment     - Bits to align.
+
 Returns:
 
   The allocated memory, or NULL
@@ -1431,6 +1503,24 @@ EFI_STATUS
 CoreTerminateMemoryMap (
   IN UINTN          MapKey
   )
+/*++
+
+Routine Description:
+
+  Make sure the memory map is following all the construction rules, 
+  it is the last time to check memory map error before exit boot services.
+
+Arguments:
+
+  MapKey        - Memory map key
+
+Returns:
+
+  EFI_INVALID_PARAMETER       - Memory map not consistent with construction rules.
+  
+  EFI_SUCCESS                 - Valid memory map.
+
+--*/
 {
   EFI_STATUS        Status;
   EFI_LIST_ENTRY    *Link;

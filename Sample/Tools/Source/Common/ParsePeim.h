@@ -30,12 +30,13 @@ Abstract:
 //
 // Function declarations
 //
-
 EFI_STATUS
 FindPeimHeader (
   IN EFI_FFS_FILE_HEADER          *FfsHeader,
   OUT EFI_PEIM_HEADER_ISA         *PeimHeader
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -53,12 +54,13 @@ Returns:
   EFI_INVALID_PARAMETER   One of the input parameters was NULL.
 
 --*/
-
 EFI_STATUS
 FfsFindExportTable (
   IN EFI_FFS_FILE_HEADER            *FfsHeader,
   OUT EFI_EXPORT_TABLE_ENTRY_ISA    *ExportTableEntry
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -79,12 +81,13 @@ Returns:
   EFI_ABORTED             Error parsing the file.
 
 --*/
-
 EFI_STATUS
 PeimFindExportTable (
   IN EFI_PEIM_HEADER_ISA          *PeimHeader,
   OUT EFI_EXPORT_TABLE_ENTRY_ISA  *ExportTableEntry
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -105,12 +108,13 @@ Returns:
   EFI_ABORTED             Error parsing the file.
 
 --*/
-
 EFI_STATUS
 FfsFindImportTable (
   IN EFI_FFS_FILE_HEADER            *FfsHeader,
   OUT EFI_IMPORT_TABLE_ENTRY_ISA    *ImportTableEntry
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -131,12 +135,13 @@ Returns:
   EFI_ABORTED             Error parsing the file.
 
 --*/
-
 EFI_STATUS
 PeimFindImportTable (
   IN EFI_PEIM_HEADER_ISA            *PeimHeader,
   OUT EFI_IMPORT_TABLE_ENTRY_ISA    *ImportTableEntry
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -157,13 +162,14 @@ Returns:
   EFI_ABORTED             Error parsing the file.
 
 --*/
-
 EFI_STATUS
 FindImportTableEntry (
   IN EFI_FFS_FILE_HEADER          *FfsImage,
   IN EFI_GUID                     *ImportGuid,
   OUT EFI_IMPORT_TABLE_ENTRY_ISA  *ImportTableEntry
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -182,12 +188,13 @@ Returns:
   EFI_INVALID_PARAMETER   One of the input parameters was NULL.
 
 --*/
-
 EFI_STATUS
 DeterminePeimIsa (
   IN EFI_FFS_FILE_HEADER          *FfsImage,
   OUT UINT16                      *InstructionSet
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -208,6 +215,4 @@ Returns:
   EFI_ABORTED             Not a valid FFS or PEIM.
 
 --*/
-
 #endif
-

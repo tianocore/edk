@@ -15,14 +15,14 @@ Module Name:
 
 Abstract:
 
-  Light weight lib to support EFI 2.0 drivers.
+  Light weight lib to support Tiano drivers.
 
 --*/
 
 #include "Tiano.h"
 #include "EfiRuntimeLib.h"
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
- 
+
 extern EFI_CPU_IO_PROTOCOL  *gCpuIo;
 
 EFI_STATUS
@@ -51,8 +51,6 @@ Returns:
   return gCpuIo->Io.Read (gCpuIo, Width, Address, Count, Buffer);
 }
 
-
-
 EFI_STATUS
 EfiIoWrite (
   IN  EFI_CPU_IO_PROTOCOL_WIDTH   Width,
@@ -78,8 +76,6 @@ Returns:
 {
   return gCpuIo->Io.Write (gCpuIo, Width, Address, Count, Buffer);
 }
-
-
 
 EFI_STATUS
 EfiMemRead (
@@ -107,8 +103,6 @@ Returns:
   return gCpuIo->Mem.Read (gCpuIo, Width, Address, Count, Buffer);
 }
 
-
-
 EFI_STATUS
 EfiMemWrite (
   IN  EFI_CPU_IO_PROTOCOL_WIDTH    Width,
@@ -134,4 +128,3 @@ Returns:
 {
   return gCpuIo->Mem.Write (gCpuIo, Width, Address, Count, Buffer);
 }
-

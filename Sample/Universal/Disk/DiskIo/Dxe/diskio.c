@@ -36,9 +36,8 @@ Abstract:
 // Prototypes
 // Driver model protocol interface
 //
-
 EFI_STATUS
-DiskIoDriverEntryPoint(
+DiskIoDriverEntryPoint (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
@@ -71,7 +70,6 @@ DiskIoDriverBindingStop (
 //
 // Disk I/O Protocol Interface
 //
-
 EFI_STATUS
 EFIAPI
 DiskIoReadDisk (
@@ -101,7 +99,7 @@ EFI_DRIVER_BINDING_PROTOCOL gDiskIoDriverBinding = {
   NULL
 };
 
-DISK_IO_PRIVATE_DATA gDiskIoPrivateDataTemplate = {
+DISK_IO_PRIVATE_DATA        gDiskIoPrivateDataTemplate = {
   DISK_IO_PRIVATE_DATA_SIGNATURE,
   {
     EFI_DISK_IO_PROTOCOL_REVISION,
@@ -111,12 +109,11 @@ DISK_IO_PRIVATE_DATA gDiskIoPrivateDataTemplate = {
   NULL
 };
 
-
 EFI_DRIVER_ENTRY_POINT (DiskIoDriverEntryPoint)
 
 EFI_STATUS
 EFIAPI
-DiskIoDriverEntryPoint(
+DiskIoDriverEntryPoint (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
@@ -135,22 +132,22 @@ Returns:
 --*/
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gDiskIoDriverBinding,
-           ImageHandle,
-           &gDiskIoComponentName,
-           NULL,
-           NULL
-           );
+          ImageHandle,
+          SystemTable,
+          &gDiskIoDriverBinding,
+          ImageHandle,
+          &gDiskIoComponentName,
+          NULL,
+          NULL
+          );
 }
 
 EFI_STATUS
 EFIAPI
 DiskIoDriverBindingSupported (
-  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_DRIVER_BINDING_PROTOCOL  * This,
   IN EFI_HANDLE                   ControllerHandle,
-  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath  OPTIONAL
+  IN EFI_DEVICE_PATH_PROTOCOL     * RemainingDevicePath OPTIONAL
   )
 /*++
 
@@ -170,33 +167,32 @@ DiskIoDriverBindingSupported (
 
 --*/
 {
-  EFI_STATUS             Status;
-  EFI_BLOCK_IO_PROTOCOL  *BlockIo;
+  EFI_STATUS            Status;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
 
   //
   // Open the IO Abstraction(s) needed to perform the supported test.
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle,  
-                  &gEfiBlockIoProtocolGuid, 
-                  (VOID **)&BlockIo,
-                  This->DriverBindingHandle,   
-                  ControllerHandle,   
+                  ControllerHandle,
+                  &gEfiBlockIoProtocolGuid,
+                  (VOID **) &BlockIo,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Close the I/O Abstraction(s) used to perform the supported test.
   //
   gBS->CloseProtocol (
-         ControllerHandle,  
-         &gEfiBlockIoProtocolGuid, 
-         This->DriverBindingHandle,   
-         ControllerHandle   
-         );
+        ControllerHandle,
+        &gEfiBlockIoProtocolGuid,
+        This->DriverBindingHandle,
+        ControllerHandle
+        );
 
   return EFI_SUCCESS;
 }
@@ -204,9 +200,9 @@ DiskIoDriverBindingSupported (
 EFI_STATUS
 EFIAPI
 DiskIoDriverBindingStart (
-  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_DRIVER_BINDING_PROTOCOL  * This,
   IN EFI_HANDLE                   ControllerHandle,
-  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath  OPTIONAL
+  IN EFI_DEVICE_PATH_PROTOCOL     * RemainingDevicePath OPTIONAL
   )
 /*++
 
@@ -226,8 +222,8 @@ DiskIoDriverBindingStart (
 
 --*/
 {
-  EFI_STATUS              Status;
-  DISK_IO_PRIVATE_DATA    *Private;
+  EFI_STATUS            Status;
+  DISK_IO_PRIVATE_DATA  *Private;
 
   Private = NULL;
 
@@ -235,34 +231,31 @@ DiskIoDriverBindingStart (
   // Connect to the Block IO interface on ControllerHandle.
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiBlockIoProtocolGuid, 
-                  (VOID **)&gDiskIoPrivateDataTemplate.BlockIo,
-                  This->DriverBindingHandle,   
-                  ControllerHandle,   
+                  ControllerHandle,
+                  &gEfiBlockIoProtocolGuid,
+                  (VOID **) &gDiskIoPrivateDataTemplate.BlockIo,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
   //
   // Initialize the Disk IO device instance.
   //
-
   Private = EfiLibAllocateCopyPool (sizeof (DISK_IO_PRIVATE_DATA), &gDiskIoPrivateDataTemplate);
   if (Private == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
     goto ErrorExit;
   }
- 
   //
   // Install protocol interfaces for the Disk IO device.
   //
   Status = gBS->InstallProtocolInterface (
-                  &ControllerHandle, 
-                  &gEfiDiskIoProtocolGuid, 
-                  EFI_NATIVE_INTERFACE, 
+                  &ControllerHandle,
+                  &gEfiDiskIoProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
                   &Private->DiskIo
                   );
 
@@ -270,20 +263,19 @@ ErrorExit:
   if (EFI_ERROR (Status)) {
 
     if (Private != NULL) {
-      gBS->FreePool(Private);
+      gBS->FreePool (Private);
     }
 
     gBS->CloseProtocol (
-           ControllerHandle, 
-           &gEfiBlockIoProtocolGuid, 
-           This->DriverBindingHandle,   
-           ControllerHandle   
-           );
+          ControllerHandle,
+          &gEfiBlockIoProtocolGuid,
+          This->DriverBindingHandle,
+          ControllerHandle
+          );
   }
 
   return Status;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -308,22 +300,23 @@ DiskIoDriverBindingStop (
   Returns:
     EFI_SUCCESS         - This driver is removed ControllerHandle.
     other               - This driver was not removed from this device.
+    EFI_UNSUPPORTED
 
 --*/
 {
   EFI_STATUS            Status;
   EFI_DISK_IO_PROTOCOL  *DiskIo;
-  DISK_IO_PRIVATE_DATA           *Private;
+  DISK_IO_PRIVATE_DATA  *Private;
 
   //
   // Get our context back.
   //
   Status = gBS->OpenProtocol (
-                  ControllerHandle, 
-                  &gEfiDiskIoProtocolGuid,  
-                  (VOID **)&DiskIo,
-                  This->DriverBindingHandle,   
-                  ControllerHandle,   
+                  ControllerHandle,
+                  &gEfiDiskIoProtocolGuid,
+                  (VOID **) &DiskIo,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -333,20 +326,20 @@ DiskIoDriverBindingStop (
   Private = DISK_IO_PRIVATE_DATA_FROM_THIS (DiskIo);
 
   Status = gBS->UninstallProtocolInterface (
-                  ControllerHandle, 
-                  &gEfiDiskIoProtocolGuid, 
+                  ControllerHandle,
+                  &gEfiDiskIoProtocolGuid,
                   &Private->DiskIo
                   );
   if (!EFI_ERROR (Status)) {
 
     Status = gBS->CloseProtocol (
-                    ControllerHandle, 
-                    &gEfiBlockIoProtocolGuid, 
-                    This->DriverBindingHandle,   
+                    ControllerHandle,
+                    &gEfiBlockIoProtocolGuid,
+                    This->DriverBindingHandle,
                     ControllerHandle
                     );
   }
-  
+
   if (!EFI_ERROR (Status)) {
     gBS->FreePool (Private);
   }
@@ -393,6 +386,7 @@ DiskIoReadDisk (
     EFI_MEDIA_CHNAGED     - The MediaId does not matched the current device.
     EFI_INVALID_PARAMETER - The read request contains device addresses that are not 
                             valid for the device.
+    EFI_OUT_OF_RESOURCES
 
 --*/
 {
@@ -415,7 +409,7 @@ DiskIoReadDisk (
   UINTN                 DataBufferSize;
   BOOLEAN               LastRead;
 
-  Private = DISK_IO_PRIVATE_DATA_FROM_THIS (This);
+  Private   = DISK_IO_PRIVATE_DATA_FROM_THIS (This);
 
   BlockIo   = Private->BlockIo;
   Media     = BlockIo->Media;
@@ -425,66 +419,64 @@ DiskIoReadDisk (
     return EFI_MEDIA_CHANGED;
   }
 
-  WorkingBuffer = Buffer;
+  WorkingBuffer     = Buffer;
   WorkingBufferSize = BufferSize;
 
   //
   // Allocate a temporary buffer for operation
-  // 
-
+  //
   DataBufferSize = BlockSize * DATA_BUFFER_BLOCK_NUM;
 
   if (Media->IoAlign > 1) {
-    PreData = EfiLibAllocatePool (DataBufferSize + Media->IoAlign);    
-    Data = PreData - ((UINTN)PreData & (Media->IoAlign - 1)) + Media->IoAlign;
+    PreData = EfiLibAllocatePool (DataBufferSize + Media->IoAlign);
+    Data    = PreData - ((UINTN) PreData & (Media->IoAlign - 1)) + Media->IoAlign;
   } else {
     PreData = EfiLibAllocatePool (DataBufferSize);
-    Data = PreData;
+    Data    = PreData;
   }
-  
+
   if (PreData == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Lba = DivU64x32 (Offset, BlockSize, &UnderRun);
- 
-  Length = BlockSize - UnderRun;
+  Lba                 = DivU64x32 (Offset, BlockSize, &UnderRun);
+
+  Length              = BlockSize - UnderRun;
   TransactionComplete = FALSE;
 
-  Status = EFI_SUCCESS;
+  Status              = EFI_SUCCESS;
   if (UnderRun != 0) {
     //
     // Offset starts in the middle of an Lba, so read the entire block.
     //
     Status = BlockIo->ReadBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        BlockSize, 
+                        BlockIo,
+                        MediaId,
+                        Lba,
+                        BlockSize,
                         Data
                         );
 
     if (EFI_ERROR (Status)) {
       goto Done;
     }
-    
+
     if (Length > BufferSize) {
-      Length = BufferSize;
+      Length              = BufferSize;
       TransactionComplete = TRUE;
     }
 
     EfiCopyMem (WorkingBuffer, Data + UnderRun, Length);
-    
+
     WorkingBuffer += Length;
-    
-    WorkingBufferSize  -= Length;
-    if (WorkingBufferSize == 0) {      
+
+    WorkingBufferSize -= Length;
+    if (WorkingBufferSize == 0) {
       goto Done;
     }
 
     Lba += 1;
   }
-
 
   OverRunLba = Lba + DivU64x32 (WorkingBufferSize, BlockSize, &OverRun);
 
@@ -495,25 +487,22 @@ DiskIoReadDisk (
     if (OverRun != 0) {
       WorkingBufferSize -= OverRun;
     }
-
     //
     // Check buffer alignment
     //
-    IsBufferAligned = (UINTN)WorkingBuffer & (UINTN)(Media->IoAlign - 1);
+    IsBufferAligned = (UINTN) WorkingBuffer & (UINTN) (Media->IoAlign - 1);
 
     if (Media->IoAlign <= 1 || IsBufferAligned == 0) {
-
       //
       // Alignment is satisfied, so read them together
-      //      
-
+      //
       Status = BlockIo->ReadBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        WorkingBufferSize, 
-                        WorkingBuffer
-                        );
+                          BlockIo,
+                          MediaId,
+                          Lba,
+                          WorkingBufferSize,
+                          WorkingBuffer
+                          );
 
       if (EFI_ERROR (Status)) {
         goto Done;
@@ -522,52 +511,49 @@ DiskIoReadDisk (
       WorkingBuffer += WorkingBufferSize;
 
     } else {
-
       //
       // Use the allocated buffer instead of the original buffer
       // to avoid alignment issue.
       // Here, the allocated buffer (8-byte align) can satisfy the alignment
       //
-
       LastRead = FALSE;
       do {
         if (WorkingBufferSize <= DataBufferSize) {
-
           //
           // It is the last calling to readblocks in this loop
           //
-          DataBufferSize = WorkingBufferSize;          
-          LastRead       = TRUE;            
-        } 
+          DataBufferSize  = WorkingBufferSize;
+          LastRead        = TRUE;
+        }
 
         Status = BlockIo->ReadBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        DataBufferSize, 
-                        Data
-                        );
+                            BlockIo,
+                            MediaId,
+                            Lba,
+                            DataBufferSize,
+                            Data
+                            );
         if (EFI_ERROR (Status)) {
           goto Done;
         }
+
         EfiCopyMem (WorkingBuffer, Data, DataBufferSize);
         WorkingBufferSize -= DataBufferSize;
-        WorkingBuffer     += DataBufferSize;
-        Lba               += DATA_BUFFER_BLOCK_NUM;
+        WorkingBuffer += DataBufferSize;
+        Lba += DATA_BUFFER_BLOCK_NUM;
       } while (!LastRead);
-    } 
+    }
   }
-
 
   if (!TransactionComplete && OverRun != 0) {
     //
     // Last read is not a complete block.
     //
     Status = BlockIo->ReadBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        OverRunLba, 
-                        BlockSize, 
+                        BlockIo,
+                        MediaId,
+                        OverRunLba,
+                        BlockSize,
                         Data
                         );
 
@@ -575,13 +561,14 @@ DiskIoReadDisk (
       goto Done;
     }
 
-    EfiCopyMem (WorkingBuffer, Data, OverRun);    
+    EfiCopyMem (WorkingBuffer, Data, OverRun);
   }
 
 Done:
   if (PreData != NULL) {
     gBS->FreePool (PreData);
   }
+
   return Status;
 }
 
@@ -625,6 +612,7 @@ DiskIoWriteDisk (
     EFI_MEDIA_CHNAGED     - The MediaId does not matched the current device.
     EFI_INVALID_PARAMETER - The write request contains device addresses that are not 
                             valid for the device.
+    EFI_OUT_OF_RESOURCES
 
 --*/
 {
@@ -647,7 +635,7 @@ DiskIoWriteDisk (
   UINTN                 DataBufferSize;
   BOOLEAN               LastWrite;
 
-  Private = DISK_IO_PRIVATE_DATA_FROM_THIS (This);
+  Private   = DISK_IO_PRIVATE_DATA_FROM_THIS (This);
 
   BlockIo   = Private->BlockIo;
   Media     = BlockIo->Media;
@@ -665,34 +653,34 @@ DiskIoWriteDisk (
 
   if (Media->IoAlign > 1) {
     PreData = EfiLibAllocatePool (DataBufferSize + Media->IoAlign);
-    Data = PreData - ((UINTN)PreData & (Media->IoAlign - 1)) + Media->IoAlign;
+    Data    = PreData - ((UINTN) PreData & (Media->IoAlign - 1)) + Media->IoAlign;
   } else {
     PreData = EfiLibAllocatePool (DataBufferSize);
-    Data = PreData;
+    Data    = PreData;
   }
 
   if (PreData == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  WorkingBuffer = Buffer;
-  WorkingBufferSize = BufferSize;
+  WorkingBuffer       = Buffer;
+  WorkingBufferSize   = BufferSize;
 
-  Lba = DivU64x32 (Offset, BlockSize, &UnderRun);
- 
-  Length = BlockSize - UnderRun;
+  Lba                 = DivU64x32 (Offset, BlockSize, &UnderRun);
+
+  Length              = BlockSize - UnderRun;
   TransactionComplete = FALSE;
 
-  Status = EFI_SUCCESS;
+  Status              = EFI_SUCCESS;
   if (UnderRun != 0) {
     //
     // Offset starts in the middle of an Lba, so do read modify write.
     //
     Status = BlockIo->ReadBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        BlockSize, 
+                        BlockIo,
+                        MediaId,
+                        Lba,
+                        BlockSize,
                         Data
                         );
 
@@ -701,26 +689,25 @@ DiskIoWriteDisk (
     }
 
     if (Length > BufferSize) {
-      Length = BufferSize;
+      Length              = BufferSize;
       TransactionComplete = TRUE;
     }
 
     EfiCopyMem (Data + UnderRun, WorkingBuffer, Length);
 
     Status = BlockIo->WriteBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        BlockSize, 
+                        BlockIo,
+                        MediaId,
+                        Lba,
+                        BlockSize,
                         Data
                         );
     if (EFI_ERROR (Status)) {
       goto Done;
     }
-    
-    
+
     WorkingBuffer += Length;
-    WorkingBufferSize  -= Length;
+    WorkingBufferSize -= Length;
     if (WorkingBufferSize == 0) {
       goto Done;
     }
@@ -737,25 +724,22 @@ DiskIoWriteDisk (
     if (OverRun != 0) {
       WorkingBufferSize -= OverRun;
     }
-    
     //
     // Check buffer alignment
     //
-    IsBufferAligned = (UINTN)WorkingBuffer & (UINTN)(Media->IoAlign - 1);
+    IsBufferAligned = (UINTN) WorkingBuffer & (UINTN) (Media->IoAlign - 1);
 
     if (Media->IoAlign <= 1 || IsBufferAligned == 0) {
-
       //
       // Alignment is satisfied, so write them together
       //
-
       Status = BlockIo->WriteBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        WorkingBufferSize, 
-                        WorkingBuffer
-                        );
+                          BlockIo,
+                          MediaId,
+                          Lba,
+                          WorkingBufferSize,
+                          WorkingBuffer
+                          );
 
       if (EFI_ERROR (Status)) {
         goto Done;
@@ -772,32 +756,30 @@ DiskIoWriteDisk (
       LastWrite = FALSE;
       do {
         if (WorkingBufferSize <= DataBufferSize) {
-
           //
           // It is the last calling to writeblocks in this loop
           //
-
-          DataBufferSize = WorkingBufferSize;          
-          LastWrite      = TRUE;  
+          DataBufferSize  = WorkingBufferSize;
+          LastWrite       = TRUE;
         }
-        
+
         EfiCopyMem (Data, WorkingBuffer, DataBufferSize);
         Status = BlockIo->WriteBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        Lba, 
-                        DataBufferSize, 
-                        Data
-                        );
+                            BlockIo,
+                            MediaId,
+                            Lba,
+                            DataBufferSize,
+                            Data
+                            );
         if (EFI_ERROR (Status)) {
           goto Done;
         }
-        
+
         WorkingBufferSize -= DataBufferSize;
-        WorkingBuffer     += DataBufferSize;
-        Lba               += DATA_BUFFER_BLOCK_NUM;
+        WorkingBuffer += DataBufferSize;
+        Lba += DATA_BUFFER_BLOCK_NUM;
       } while (!LastWrite);
-    } 
+    }
   }
 
   if (!TransactionComplete && OverRun != 0) {
@@ -805,10 +787,10 @@ DiskIoWriteDisk (
     // Last bit is not a complete block, so do a read modify write.
     //
     Status = BlockIo->ReadBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        OverRunLba, 
-                        BlockSize, 
+                        BlockIo,
+                        MediaId,
+                        OverRunLba,
+                        BlockSize,
                         Data
                         );
 
@@ -816,13 +798,13 @@ DiskIoWriteDisk (
       goto Done;
     }
 
-    EfiCopyMem (Data, WorkingBuffer, OverRun);    
+    EfiCopyMem (Data, WorkingBuffer, OverRun);
 
     Status = BlockIo->WriteBlocks (
-                        BlockIo, 
-                        MediaId, 
-                        OverRunLba, 
-                        BlockSize, 
+                        BlockIo,
+                        MediaId,
+                        OverRunLba,
+                        BlockSize,
                         Data
                         );
     if (EFI_ERROR (Status)) {
@@ -833,6 +815,7 @@ DiskIoWriteDisk (
 Done:
   if (PreData != NULL) {
     gBS->FreePool (PreData);
-  }  
+  }
+
   return Status;
 }

@@ -22,8 +22,8 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 
-#include EFI_PROTOCOL_DEFINITION(Ebc)
-#include EFI_PROTOCOL_DEFINITION(DebugSupport)
+#include EFI_PROTOCOL_DEFINITION (Ebc)
+#include EFI_PROTOCOL_DEFINITION (DebugSupport)
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
@@ -31,195 +31,571 @@ Abstract:
 //
 // VM major/minor version
 //
-#define VM_MAJOR_VERSION          1
-#define VM_MINOR_VERSION          0
+#define VM_MAJOR_VERSION  1
+#define VM_MINOR_VERSION  0
 
 //
 // Define some useful data size constants to allow switch statements based on
 // size of operands or data.
 //
-#define DATA_SIZE_INVALID     0
-#define DATA_SIZE_8           1
-#define DATA_SIZE_16          2
-#define DATA_SIZE_32          4
-#define DATA_SIZE_64          8
-#define DATA_SIZE_N           48   // 4 or 8
-
+#define DATA_SIZE_INVALID 0
+#define DATA_SIZE_8       1
+#define DATA_SIZE_16      2
+#define DATA_SIZE_32      4
+#define DATA_SIZE_64      8
+#define DATA_SIZE_N       48  // 4 or 8
 //
 // Structure we'll use to dispatch opcodes to execute functions.
 //
 typedef struct {
-  EFI_STATUS    (*ExecuteFunction)(IN VM_CONTEXT *VmPtr);
-} VM_TABLE_ENTRY;
+  EFI_STATUS (*ExecuteFunction) (IN VM_CONTEXT * VmPtr);
+}
+VM_TABLE_ENTRY;
 
-typedef UINT64 (*DATA_MANIP_EXEC_FUNCTION)(IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
+typedef
+UINT64
+(*DATA_MANIP_EXEC_FUNCTION) (
+  IN VM_CONTEXT * VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
 
-STATIC INT16 VmReadIndex16 (IN VM_CONTEXT *VmPtr, IN UINT32 CodeOffset);
-STATIC INT32 VmReadIndex32 (IN VM_CONTEXT *VmPtr, IN UINT32 CodeOffset);
-STATIC INT64 VmReadIndex64 (IN VM_CONTEXT *VmPtr, IN UINT32 CodeOffset);
+STATIC
+INT16
+VmReadIndex16 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     CodeOffset
+  );
 
-STATIC UINT8  VmReadMem8 (IN VM_CONTEXT *VmPtr, IN UINTN Addr);
-STATIC UINT16 VmReadMem16 (IN VM_CONTEXT *VmPtr, IN UINTN Addr);
-STATIC UINT32 VmReadMem32 (IN VM_CONTEXT *VmPtr, IN UINTN Addr);
-STATIC UINT64 VmReadMem64 (IN VM_CONTEXT *VmPtr, IN UINTN Addr);
-STATIC UINTN  VmReadMemN (IN VM_CONTEXT *VmPtr, IN UINTN Addr);
+STATIC
+INT32
+VmReadIndex32 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     CodeOffset
+  );
 
-STATIC EFI_STATUS VmWriteMem8 (IN VM_CONTEXT *VmPtr, UINTN Addr, IN UINT8 Data);
-STATIC EFI_STATUS VmWriteMem16 (IN VM_CONTEXT *VmPtr, UINTN Addr, IN UINT16 Data);
-STATIC EFI_STATUS VmWriteMem32 (IN VM_CONTEXT *VmPtr, UINTN Addr, IN UINT32 Data);
-STATIC EFI_STATUS VmWriteMemN (IN VM_CONTEXT *VmPtr, UINTN Addr, IN UINTN Data);
-STATIC EFI_STATUS VmWriteMem64 (IN VM_CONTEXT *VmPtr, UINTN Addr, IN UINT64 Data);
+STATIC
+INT64
+VmReadIndex64 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     CodeOffset
+  );
 
-STATIC UINT16 VmReadCode16 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
-STATIC UINT32 VmReadCode32 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
-STATIC UINT64 VmReadCode64 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
+STATIC
+UINT8
+VmReadMem8 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINTN      Addr
+  );
 
-STATIC INT8  VmReadImmed8 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
-STATIC INT16 VmReadImmed16 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
-STATIC INT32 VmReadImmed32 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
-STATIC INT64 VmReadImmed64 (IN VM_CONTEXT *VmPtr, IN UINT32 Offset);
+STATIC
+UINT16
+VmReadMem16 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINTN      Addr
+  );
 
-STATIC 
-UINTN 
+STATIC
+UINT32
+VmReadMem32 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINTN      Addr
+  );
+
+STATIC
+UINT64
+VmReadMem64 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINTN      Addr
+  );
+
+STATIC
+UINTN
+VmReadMemN (
+  IN VM_CONTEXT *VmPtr,
+  IN UINTN      Addr
+  );
+
+STATIC
+EFI_STATUS
+VmWriteMem8 (
+  IN VM_CONTEXT *VmPtr,
+  UINTN         Addr,
+  IN UINT8      Data
+  );
+
+STATIC
+EFI_STATUS
+VmWriteMem16 (
+  IN VM_CONTEXT *VmPtr,
+  UINTN         Addr,
+  IN UINT16     Data
+  );
+
+STATIC
+EFI_STATUS
+VmWriteMem32 (
+  IN VM_CONTEXT *VmPtr,
+  UINTN         Addr,
+  IN UINT32     Data
+  );
+
+STATIC
+EFI_STATUS
+VmWriteMemN (
+  IN VM_CONTEXT *VmPtr,
+  UINTN         Addr,
+  IN UINTN      Data
+  );
+
+STATIC
+EFI_STATUS
+VmWriteMem64 (
+  IN VM_CONTEXT *VmPtr,
+  UINTN         Addr,
+  IN UINT64     Data
+  );
+
+STATIC
+UINT16
+VmReadCode16 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+UINT32
+VmReadCode32 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+UINT64
+VmReadCode64 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+INT8
+VmReadImmed8 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+INT16
+VmReadImmed16 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+INT32
+VmReadImmed32 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+INT64
+VmReadImmed64 (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT32     Offset
+  );
+
+STATIC
+UINTN
 ConvertStackAddr (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINTN        Addr
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 ExecuteDataManip (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN BOOLEAN      IsSignedOperation
   );
 
 //
 // Functions that execute VM opcodes
 //
-STATIC EFI_STATUS ExecuteBREAK (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteJMP (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteJMP8 (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteCALL (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteRET (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteCMP (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteCMPI (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteMOVxx (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteMOVI (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteMOVIn (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteMOVREL (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecutePUSHn (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecutePUSH (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecutePOPn (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecutePOP (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteSignedDataManip (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteUnsignedDataManip (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteLOADSP (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteSTORESP (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteMOVsnd (IN VM_CONTEXT *VmPtr);
-STATIC EFI_STATUS ExecuteMOVsnw (IN VM_CONTEXT *VmPtr);
+STATIC
+EFI_STATUS
+ExecuteBREAK (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteJMP (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteJMP8 (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteCALL (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteRET (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteCMP (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteCMPI (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteMOVxx (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteMOVI (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteMOVIn (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteMOVREL (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecutePUSHn (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecutePUSH (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecutePOPn (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecutePOP (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteSignedDataManip (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteUnsignedDataManip (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteLOADSP (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteSTORESP (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteMOVsnd (
+  IN VM_CONTEXT *VmPtr
+  );
+
+STATIC
+EFI_STATUS
+ExecuteMOVsnw (
+  IN VM_CONTEXT *VmPtr
+  );
 
 //
 // Data manipulation subfunctions
 //
-STATIC UINT64 ExecuteNOT (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteNEG (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteADD (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteSUB (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteMUL (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteMULU (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteDIV (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteDIVU (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteMOD (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteMODU (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteAND (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteOR (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteXOR (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteSHL (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteSHR (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteASHR (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteEXTNDB (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteEXTNDW (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
-STATIC UINT64 ExecuteEXTNDD (IN VM_CONTEXT *VmPtr, IN UINT64 Op1, IN UINT64 Op2);
+STATIC
+UINT64
+ExecuteNOT (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteNEG (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteADD (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteSUB (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteMUL (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteMULU (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteDIV (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteDIVU (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteMOD (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteMODU (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteAND (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteOR (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteXOR (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteSHL (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteSHR (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteASHR (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteEXTNDB (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteEXTNDW (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
+
+STATIC
+UINT64
+ExecuteEXTNDD (
+  IN VM_CONTEXT *VmPtr,
+  IN UINT64     Op1,
+  IN UINT64     Op2
+  );
 
 //
 // Once we retrieve the operands for the data manipulation instructions,
 // call these functions to perform the operation.
 //
 static CONST DATA_MANIP_EXEC_FUNCTION mDataManipDispatchTable[] = {
-  ExecuteNOT,   ExecuteNEG,     ExecuteADD,     ExecuteSUB,     ExecuteMUL,
-  ExecuteMULU,  ExecuteDIV,     ExecuteDIVU,    ExecuteMOD,     ExecuteMODU,
-  ExecuteAND,   ExecuteOR,      ExecuteXOR,     ExecuteSHL,     ExecuteSHR,
-  ExecuteASHR,  ExecuteEXTNDB,  ExecuteEXTNDW,  ExecuteEXTNDD,
+  ExecuteNOT,
+  ExecuteNEG,
+  ExecuteADD,
+  ExecuteSUB,
+  ExecuteMUL,
+  ExecuteMULU,
+  ExecuteDIV,
+  ExecuteDIVU,
+  ExecuteMOD,
+  ExecuteMODU,
+  ExecuteAND,
+  ExecuteOR,
+  ExecuteXOR,
+  ExecuteSHL,
+  ExecuteSHR,
+  ExecuteASHR,
+  ExecuteEXTNDB,
+  ExecuteEXTNDW,
+  ExecuteEXTNDD,
 };
 
-static CONST VM_TABLE_ENTRY  mVmOpcodeTable[] = 
-{
-  ExecuteBREAK,                 // opcode 0x00
-  ExecuteJMP,                   // opcode 0x01
-  ExecuteJMP8,                  // opcode 0x02
-  ExecuteCALL,                  // opcode 0x03
-  ExecuteRET,                   // opcode 0x04
-  ExecuteCMP,                   // opcode 0x05 CMPeq
-  ExecuteCMP,                   // opcode 0x06 CMPlte
-  ExecuteCMP,                   // opcode 0x07 CMPgte
-  ExecuteCMP,                   // opcode 0x08 CMPulte
-  ExecuteCMP,                   // opcode 0x09 CMPugte
-  ExecuteUnsignedDataManip,     // opcode 0x0A NOT
-  ExecuteSignedDataManip,       // opcode 0x0B NEG
-  ExecuteSignedDataManip,       // opcode 0x0C ADD
-  ExecuteSignedDataManip,       // opcode 0x0D SUB
-  ExecuteSignedDataManip,       // opcode 0x0E MUL
-  ExecuteUnsignedDataManip,     // opcode 0x0F MULU
-  ExecuteSignedDataManip,       // opcode 0x10 DIV
-  ExecuteUnsignedDataManip,     // opcode 0x11 DIVU
-  ExecuteSignedDataManip,       // opcode 0x12 MOD
-  ExecuteUnsignedDataManip,     // opcode 0x13 MODU
-  ExecuteUnsignedDataManip,     // opcode 0x14 AND
-  ExecuteUnsignedDataManip,     // opcode 0x15 OR
-  ExecuteUnsignedDataManip,     // opcode 0x16 XOR
-  ExecuteUnsignedDataManip,     // opcode 0x17 SHL
-  ExecuteUnsignedDataManip,     // opcode 0x18 SHR
-  ExecuteSignedDataManip,       // opcode 0x19 ASHR
-  ExecuteUnsignedDataManip,     // opcode 0x1A EXTNDB
-  ExecuteUnsignedDataManip,     // opcode 0x1B EXTNDW
-  ExecuteUnsignedDataManip,     // opcode 0x1C EXTNDD
-  ExecuteMOVxx,                 // opcode 0x1D MOVBW
-  ExecuteMOVxx,                 // opcode 0x1E MOVWW
-  ExecuteMOVxx,                 // opcode 0x1F MOVDW
-  ExecuteMOVxx,                 // opcode 0x20 MOVQW
-  ExecuteMOVxx,                 // opcode 0x21 MOVBD
-  ExecuteMOVxx,                 // opcode 0x22 MOVWD
-  ExecuteMOVxx,                 // opcode 0x23 MOVDD
-  ExecuteMOVxx,                 // opcode 0x24 MOVQD
-  ExecuteMOVsnw,                // opcode 0x25 MOVsnw
-  ExecuteMOVsnd,                // opcode 0x26 MOVsnd
-  NULL,                         // opcode 0x27
-  ExecuteMOVxx,                 // opcode 0x28 MOVqq
-  ExecuteLOADSP,                // opcode 0x29 LOADSP SP1, R2
-  ExecuteSTORESP,               // opcode 0x2A STORESP R1, SP2
-  ExecutePUSH,                  // opcode 0x2B PUSH {@}R1 [imm16]
-  ExecutePOP,                   // opcode 0x2C POP {@}R1 [imm16]
-  ExecuteCMPI,                  // opcode 0x2D CMPIEQ
-  ExecuteCMPI,                  // opcode 0x2E CMPILTE
-  ExecuteCMPI,                  // opcode 0x2F CMPIGTE
-  ExecuteCMPI,                  // opcode 0x30 CMPIULTE
-  ExecuteCMPI,                  // opcode 0x31 CMPIUGTE
-  ExecuteMOVxx,                 // opcode 0x32 MOVN 
-  ExecuteMOVxx,                 // opcode 0x33 MOVND
-  NULL,                         // opcode 0x34
-  ExecutePUSHn,                 // opcode 0x35
-  ExecutePOPn,                  // opcode 0x36
-  ExecuteMOVI,                  // opcode 0x37 - mov immediate data
-  ExecuteMOVIn,                 // opcode 0x38 - mov immediate natural
-  ExecuteMOVREL,                // opcode 0x39 - move data relative to PC
+static CONST VM_TABLE_ENTRY           mVmOpcodeTable[] = {
+  ExecuteBREAK,             // opcode 0x00
+  ExecuteJMP,               // opcode 0x01
+  ExecuteJMP8,              // opcode 0x02
+  ExecuteCALL,              // opcode 0x03
+  ExecuteRET,               // opcode 0x04
+  ExecuteCMP,               // opcode 0x05 CMPeq
+  ExecuteCMP,               // opcode 0x06 CMPlte
+  ExecuteCMP,               // opcode 0x07 CMPgte
+  ExecuteCMP,               // opcode 0x08 CMPulte
+  ExecuteCMP,               // opcode 0x09 CMPugte
+  ExecuteUnsignedDataManip, // opcode 0x0A NOT
+  ExecuteSignedDataManip,   // opcode 0x0B NEG
+  ExecuteSignedDataManip,   // opcode 0x0C ADD
+  ExecuteSignedDataManip,   // opcode 0x0D SUB
+  ExecuteSignedDataManip,   // opcode 0x0E MUL
+  ExecuteUnsignedDataManip, // opcode 0x0F MULU
+  ExecuteSignedDataManip,   // opcode 0x10 DIV
+  ExecuteUnsignedDataManip, // opcode 0x11 DIVU
+  ExecuteSignedDataManip,   // opcode 0x12 MOD
+  ExecuteUnsignedDataManip, // opcode 0x13 MODU
+  ExecuteUnsignedDataManip, // opcode 0x14 AND
+  ExecuteUnsignedDataManip, // opcode 0x15 OR
+  ExecuteUnsignedDataManip, // opcode 0x16 XOR
+  ExecuteUnsignedDataManip, // opcode 0x17 SHL
+  ExecuteUnsignedDataManip, // opcode 0x18 SHR
+  ExecuteSignedDataManip,   // opcode 0x19 ASHR
+  ExecuteUnsignedDataManip, // opcode 0x1A EXTNDB
+  ExecuteUnsignedDataManip, // opcode 0x1B EXTNDW
+  ExecuteUnsignedDataManip, // opcode 0x1C EXTNDD
+  ExecuteMOVxx,             // opcode 0x1D MOVBW
+  ExecuteMOVxx,             // opcode 0x1E MOVWW
+  ExecuteMOVxx,             // opcode 0x1F MOVDW
+  ExecuteMOVxx,             // opcode 0x20 MOVQW
+  ExecuteMOVxx,             // opcode 0x21 MOVBD
+  ExecuteMOVxx,             // opcode 0x22 MOVWD
+  ExecuteMOVxx,             // opcode 0x23 MOVDD
+  ExecuteMOVxx,             // opcode 0x24 MOVQD
+  ExecuteMOVsnw,            // opcode 0x25 MOVsnw
+  ExecuteMOVsnd,            // opcode 0x26 MOVsnd
+  NULL,                     // opcode 0x27
+  ExecuteMOVxx,             // opcode 0x28 MOVqq
+  ExecuteLOADSP,            // opcode 0x29 LOADSP SP1, R2
+  ExecuteSTORESP,           // opcode 0x2A STORESP R1, SP2
+  ExecutePUSH,              // opcode 0x2B PUSH {@}R1 [imm16]
+  ExecutePOP,               // opcode 0x2C POP {@}R1 [imm16]
+  ExecuteCMPI,              // opcode 0x2D CMPIEQ
+  ExecuteCMPI,              // opcode 0x2E CMPILTE
+  ExecuteCMPI,              // opcode 0x2F CMPIGTE
+  ExecuteCMPI,              // opcode 0x30 CMPIULTE
+  ExecuteCMPI,              // opcode 0x31 CMPIUGTE
+  ExecuteMOVxx,             // opcode 0x32 MOVN
+  ExecuteMOVxx,             // opcode 0x33 MOVND
+  NULL,                     // opcode 0x34
+  ExecutePUSHn,             // opcode 0x35
+  ExecutePOPn,              // opcode 0x36
+  ExecuteMOVI,              // opcode 0x37 - mov immediate data
+  ExecuteMOVIn,             // opcode 0x38 - mov immediate natural
+  ExecuteMOVREL,            // opcode 0x39 - move data relative to PC
 };
 
 //
 // Length of JMP instructions, depending on upper two bits of opcode.
 //
-static CONST UINT8 mJMPLen[] = { 2, 2, 6, 10 };
+static CONST UINT8                    mJMPLen[] = { 2, 2, 6, 10 };
 
-EFI_STATUS 
+EFI_STATUS
 EbcExecuteInstructions (
   IN EFI_EBC_VM_TEST_PROTOCOL *This,
   IN VM_CONTEXT               *VmPtr,
@@ -240,7 +616,8 @@ Arguments:
 
 Returns:
 
-  EFI_STATUS
+  EFI_UNSUPPORTED
+  EFI_SUCCESS
 
 --*/
 {
@@ -248,17 +625,18 @@ Returns:
   EFI_STATUS  Status;
   UINTN       InstructionsLeft;
   UINTN       SavedInstructionCount;
-      
+
   Status = EFI_SUCCESS;
-    
+
   if (*InstructionCount == 0) {
     InstructionsLeft = 1;
   } else {
     InstructionsLeft = *InstructionCount;
   }
+
   SavedInstructionCount = *InstructionCount;
-  *InstructionCount = 0;
-    
+  *InstructionCount     = 0;
+
   //
   // Index into the opcode table using the opcode byte for this instruction.
   // This gives you the execute function, which we first test for null, then
@@ -266,24 +644,26 @@ Returns:
   //
   while (InstructionsLeft != 0) {
     ExecFunc = (UINTN) mVmOpcodeTable[(*VmPtr->Ip & 0x3F)].ExecuteFunction;
-    if (ExecFunc == (UINTN)NULL) {
+    if (ExecFunc == (UINTN) NULL) {
       EbcDebugSignalException (EXCEPT_EBC_INVALID_OPCODE, EXCEPTION_FLAG_FATAL, VmPtr);
       return EFI_UNSUPPORTED;
-    } else { 
+    } else {
       mVmOpcodeTable[(*VmPtr->Ip & 0x3F)].ExecuteFunction (VmPtr);
-      *InstructionCount = *InstructionCount + 1;      
+      *InstructionCount = *InstructionCount + 1;
     }
-    // 
+
+    //
     // Decrement counter if applicable
     //
     if (SavedInstructionCount != 0) {
       InstructionsLeft--;
     }
   }
+
   return Status;
 }
 
-EFI_STATUS 
+EFI_STATUS
 EbcExecute (
   IN VM_CONTEXT *VmPtr
   )
@@ -307,40 +687,46 @@ Returns:
   UINT8       StackCorrupted;
   EFI_STATUS  Status;
   DEBUG_CODE (
-    EFI_GUID    EbcSimpleDebuggerProtocolGuid = EFI_EBC_SIMPLE_DEBUGGER_PROTOCOL_GUID;
-    EFI_EBC_SIMPLE_DEBUGGER_PROTOCOL  *EbcSimpleDebugger;
-  ) // end DEBUG_CODE
-
-  Status = EFI_SUCCESS;
-  StackCorrupted = 0;
+    EFI_GUID EbcSimpleDebuggerProtocolGuid = EFI_EBC_SIMPLE_DEBUGGER_PROTOCOL_GUID;
+    EFI_EBC_SIMPLE_DEBUGGER_PROTOCOL * EbcSimpleDebugger;
+  )
+  //
+  // end DEBUG_CODE
+  //
+  Status          = EFI_SUCCESS;
+  StackCorrupted  = 0;
 
   //
   // Make sure the magic value has been put on the stack before we got here.
   //
-  if (*VmPtr->StackMagicPtr != (UINTN)VM_STACK_KEY_VALUE) {
+  if (*VmPtr->StackMagicPtr != (UINTN) VM_STACK_KEY_VALUE) {
     StackCorrupted = 1;
   }
 
-  VmPtr->FramePtr = (VOID *)((UINT8 *)(UINTN)VmPtr->R[0] + 8);
-     
+  VmPtr->FramePtr = (VOID *) ((UINT8 *) (UINTN) VmPtr->R[0] + 8);
+
   //
   // Try to get the debug support for EBC
   //
   DEBUG_CODE (
-    Status = gBS->LocateProtocol (&EbcSimpleDebuggerProtocolGuid, 
-                                  NULL, 
-                                  (VOID **)&EbcSimpleDebugger);
-    if (EFI_ERROR(Status)) {
-      EbcSimpleDebugger = NULL;
-    }
-  ) // end DEBUG_CODE
+    Status = gBS->LocateProtocol (
+                    &EbcSimpleDebuggerProtocolGuid,
+                    NULL,
+                    (VOID **) &EbcSimpleDebugger
+                    );
+    if (EFI_ERROR (Status)) {
+    EbcSimpleDebugger = NULL;
+  }
+  )
+  //
+  // end DEBUG_CODE
   //
   // Save the start IP for debug. For example, if we take an exception we
   // can print out the location of the exception relative to the entry point,
   // which could then be used in a disassembly listing to find the problem.
   //
-  VmPtr->EntryPoint = (VOID *)VmPtr->Ip;
-  
+  VmPtr->EntryPoint = (VOID *) VmPtr->Ip;
+
   //
   // We'll wait for this flag to know when we're done. The RET
   // instruction sets it if it runs out of stack.
@@ -352,59 +738,59 @@ Returns:
     //
     DEBUG_CODE (
       if (EbcSimpleDebugger != NULL) {
-        EbcSimpleDebugger->Debugger (EbcSimpleDebugger, VmPtr);
-      }
+      EbcSimpleDebugger->Debugger (EbcSimpleDebugger, VmPtr);
+    }
     ) // end DEBUG_CODE
     //
     // Verify the opcode is in range. Otherwise generate an exception.
     //
-    if ((*VmPtr->Ip & OPCODE_M_OPCODE) >= 
-            (sizeof (mVmOpcodeTable) / sizeof (mVmOpcodeTable[0]))) {
+    if ((*VmPtr->Ip & OPCODE_M_OPCODE) >= (sizeof (mVmOpcodeTable) / sizeof (mVmOpcodeTable[0]))) {
       EbcDebugSignalException (EXCEPT_EBC_INVALID_OPCODE, EXCEPTION_FLAG_FATAL, VmPtr);
       Status = EFI_UNSUPPORTED;
       goto Done;
     }
     //
-    // Use the opcode bits to index into the opcode dispatch table. If the 
+    // Use the opcode bits to index into the opcode dispatch table. If the
     // function pointer is null then generate an exception.
     //
     ExecFunc = (UINTN) mVmOpcodeTable[(*VmPtr->Ip & OPCODE_M_OPCODE)].ExecuteFunction;
-    if (ExecFunc == (UINTN)NULL)  {
+    if (ExecFunc == (UINTN) NULL) {
       EbcDebugSignalException (EXCEPT_EBC_INVALID_OPCODE, EXCEPTION_FLAG_FATAL, VmPtr);
       Status = EFI_UNSUPPORTED;
       goto Done;
     }
-
     //
     // The EBC VM is a strongly ordered processor, so perform a fence operation before
     // and after each instruction is executed.
     //
-    MEMORY_FENCE();
+    MEMORY_FENCE ();
 
     mVmOpcodeTable[(*VmPtr->Ip & OPCODE_M_OPCODE)].ExecuteFunction (VmPtr);
 
-    MEMORY_FENCE();
+    MEMORY_FENCE ();
 
     //
     // If the step flag is set, signal an exception and continue. We don't
     // clear it here. Assuming the debugger is responsible for clearing it.
     //
-    if (VMFLAG_ISSET(VmPtr, VMFLAGS_STEP)) {
+    if (VMFLAG_ISSET (VmPtr, VMFLAGS_STEP)) {
       EbcDebugSignalException (EXCEPT_EBC_STEP, EXCEPTION_FLAG_NONE, VmPtr);
     }
     //
     // Make sure stack has not been corrupted. Only report it once though.
     //
-    if (!StackCorrupted && (*VmPtr->StackMagicPtr != (UINTN)VM_STACK_KEY_VALUE)) {
+    if (!StackCorrupted && (*VmPtr->StackMagicPtr != (UINTN) VM_STACK_KEY_VALUE)) {
       EbcDebugSignalException (EXCEPT_EBC_STACK_FAULT, EXCEPTION_FLAG_FATAL, VmPtr);
       StackCorrupted = 1;
     }
   }
+
 Done:
   return Status;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteMOVxx (
   IN VM_CONTEXT *VmPtr
   )
@@ -420,7 +806,8 @@ Arguments:
 
 Returns:
 
-  EFI_STATUS
+  EFI_UNSUPPORTED
+  EFI_SUCCESS
 
 Instruction format:
   
@@ -450,13 +837,13 @@ Instruction format:
   UINTN   Source;
 
   Opcode    = GETOPCODE (VmPtr);
-  OpcMasked = (UINT8)(Opcode & OPCODE_M_OPCODE);
-      
+  OpcMasked = (UINT8) (Opcode & OPCODE_M_OPCODE);
+
   //
   // Get the operands byte so we can get R1 and R2
   //
-  Operands = GETOPERANDS (VmPtr); 
-  
+  Operands = GETOPERANDS (VmPtr);
+
   //
   // Assume no indexes
   //
@@ -479,13 +866,14 @@ Instruction format:
       // Get one or both index values.
       //
       if (Opcode & OPCODE_M_IMMED_OP1) {
-        Index16 = VmReadIndex16 (VmPtr, 2);
-        Index64Op1 = (INT64)Index16;
+        Index16     = VmReadIndex16 (VmPtr, 2);
+        Index64Op1  = (INT64) Index16;
         Size += sizeof (UINT16);
       }
+
       if (Opcode & OPCODE_M_IMMED_OP2) {
-        Index16 = VmReadIndex16 (VmPtr, Size);
-        Index64Op2 = (INT64)Index16;
+        Index16     = VmReadIndex16 (VmPtr, Size);
+        Index64Op2  = (INT64) Index16;
         Size += sizeof (UINT16);
       }
     } else if ((OpcMasked <= OPCODE_MOVQD) || (OpcMasked == OPCODE_MOVND)) {
@@ -493,13 +881,14 @@ Instruction format:
       // MOVBD, MOVWD, MOVDD, MOVQD, and MOVND have 32-bit immediate index
       //
       if (Opcode & OPCODE_M_IMMED_OP1) {
-        Index32 = VmReadIndex32 (VmPtr, 2);
-        Index64Op1 = (INT64)Index32;
+        Index32     = VmReadIndex32 (VmPtr, 2);
+        Index64Op1  = (INT64) Index32;
         Size += sizeof (UINT32);
       }
+
       if (Opcode & OPCODE_M_IMMED_OP2) {
-        Index32 = VmReadIndex32 (VmPtr, Size);
-        Index64Op2 = (INT64)Index32;
+        Index32     = VmReadIndex32 (VmPtr, Size);
+        Index64Op2  = (INT64) Index32;
         Size += sizeof (UINT32);
       }
     } else if (OpcMasked == OPCODE_MOVQQ) {
@@ -510,6 +899,7 @@ Instruction format:
         Index64Op1 = VmReadIndex64 (VmPtr, 2);
         Size += sizeof (UINT64);
       }
+
       if (Opcode & OPCODE_M_IMMED_OP2) {
         Index64Op2 = VmReadIndex64 (VmPtr, Size);
         Size += sizeof (UINT64);
@@ -518,9 +908,11 @@ Instruction format:
       //
       // Obsolete MOVBQ, MOVWQ, MOVDQ, and MOVNQ have 64-bit immediate index
       //
-      EbcDebugSignalException ( EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                                EXCEPTION_FLAG_FATAL, 
-                                VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
   }
@@ -529,28 +921,27 @@ Instruction format:
   // clear unused bits.
   //
   if ((OpcMasked == OPCODE_MOVBW) || (OpcMasked == OPCODE_MOVBD)) {
-    MoveSize = DATA_SIZE_8;
-    DataMask = 0xFF;
+    MoveSize  = DATA_SIZE_8;
+    DataMask  = 0xFF;
   } else if ((OpcMasked == OPCODE_MOVWW) || (OpcMasked == OPCODE_MOVWD)) {
-    MoveSize = DATA_SIZE_16;
-    DataMask = 0xFFFF;
+    MoveSize  = DATA_SIZE_16;
+    DataMask  = 0xFFFF;
   } else if ((OpcMasked == OPCODE_MOVDW) || (OpcMasked == OPCODE_MOVDD)) {
-    MoveSize = DATA_SIZE_32;
-    DataMask = 0xFFFFFFFF;
+    MoveSize  = DATA_SIZE_32;
+    DataMask  = 0xFFFFFFFF;
   } else if ((OpcMasked == OPCODE_MOVQW) || (OpcMasked == OPCODE_MOVQD) || (OpcMasked == OPCODE_MOVQQ)) {
-    MoveSize = DATA_SIZE_64;
-    DataMask = (UINT64)~0;
+    MoveSize  = DATA_SIZE_64;
+    DataMask  = (UINT64)~0;
   } else if ((OpcMasked == OPCODE_MOVNW) || (OpcMasked == OPCODE_MOVND)) {
-    MoveSize = DATA_SIZE_N;
-    DataMask = (UINT64)~0 >> (64 - 8 * sizeof (UINTN));
+    MoveSize  = DATA_SIZE_N;
+    DataMask  = (UINT64)~0 >> (64 - 8 * sizeof (UINTN));
   } else {
     //
     // We were dispatched to this function and we don't recognize the opcode
     //
     EbcDebugSignalException (EXCEPT_EBC_UNDEFINED, EXCEPTION_FLAG_FATAL, VmPtr);
     return EFI_UNSUPPORTED;
-  }    
-
+  }
   //
   // Now get the source address
   //
@@ -558,30 +949,36 @@ Instruction format:
     //
     // Indirect form @R2. Compute address of operand2
     //
-    Source = (UINTN)(VmPtr->R[OPERAND2_REGNUM (Operands)] + Index64Op2);
+    Source = (UINTN) (VmPtr->R[OPERAND2_REGNUM (Operands)] + Index64Op2);
     //
     // Now get the data from the source. Always 0-extend and let the compiler
     // sign-extend where required.
     //
-    switch (MoveSize) 
-    {
+    switch (MoveSize) {
     case DATA_SIZE_8:
-      Data64 = (UINT64)(UINT8)VmReadMem8 (VmPtr, Source);
+      Data64 = (UINT64) (UINT8) VmReadMem8 (VmPtr, Source);
       break;
+
     case DATA_SIZE_16:
-      Data64 = (UINT64)(UINT16)VmReadMem16 (VmPtr, Source); 
+      Data64 = (UINT64) (UINT16) VmReadMem16 (VmPtr, Source);
       break;
+
     case DATA_SIZE_32:
-      Data64 = (UINT64)(UINT32)VmReadMem32 (VmPtr, Source);
+      Data64 = (UINT64) (UINT32) VmReadMem32 (VmPtr, Source);
       break;
+
     case DATA_SIZE_64:
-      Data64 = (UINT64)VmReadMem64 (VmPtr, Source); 
+      Data64 = (UINT64) VmReadMem64 (VmPtr, Source);
       break;
+
     case DATA_SIZE_N:
-      Data64 = (UINT64)(UINTN)VmReadMemN (VmPtr, Source);
+      Data64 = (UINT64) (UINTN) VmReadMemN (VmPtr, Source);
       break;
+
     default:
+      //
       // not reached
+      //
       break;
     }
   } else {
@@ -595,9 +992,9 @@ Instruction format:
     //
     if (Opcode & OPCODE_M_IMMED_OP2) {
       //
-      // NOTE: need to find a way to fix this, most likely by changing the VM 
-      // implementation to remove the stack gap. To do that, we'd need to 
-      // allocate stack space for the VM and actually set the system 
+      // NOTE: need to find a way to fix this, most likely by changing the VM
+      // implementation to remove the stack gap. To do that, we'd need to
+      // allocate stack space for the VM and actually set the system
       // stack pointer to the allocated buffer when the VM starts.
       //
       // Special case -- if someone took the address of a function parameter
@@ -607,16 +1004,16 @@ Instruction format:
       // Situations that to be aware of:
       //   * stack adjustments at beginning and end of functions R0 = R0 += stacksize
       //
-      if ((OPERAND2_REGNUM (Operands) == 0) && 
-          (!OPERAND2_INDIRECT(Operands)) &&
-          (Index64Op2 > 0) && 
+      if ((OPERAND2_REGNUM (Operands) == 0) &&
+          (!OPERAND2_INDIRECT (Operands)) &&
+          (Index64Op2 > 0) &&
           (OPERAND1_REGNUM (Operands) == 0) &&
-          (OPERAND1_INDIRECT(Operands))) {
-        Data64 = (UINT64)ConvertStackAddr (VmPtr, (UINTN)(INT64)Data64);
-      } 
+          (OPERAND1_INDIRECT (Operands))
+          ) {
+        Data64 = (UINT64) ConvertStackAddr (VmPtr, (UINTN) (INT64) Data64);
+      }
     }
   }
-
   //
   // Now write it back
   //
@@ -624,44 +1021,52 @@ Instruction format:
     //
     // Reuse the Source variable to now be dest.
     //
-    Source = (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index64Op1);
+    Source = (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index64Op1);
     //
     // Do the write based on the size
     //
-    switch (MoveSize) 
-    {
+    switch (MoveSize) {
     case DATA_SIZE_8:
-      VmWriteMem8 (VmPtr, Source, (UINT8)Data64);
+      VmWriteMem8 (VmPtr, Source, (UINT8) Data64);
       break;
+
     case DATA_SIZE_16:
-      VmWriteMem16 (VmPtr, Source, (UINT16)Data64);
+      VmWriteMem16 (VmPtr, Source, (UINT16) Data64);
       break;
+
     case DATA_SIZE_32:
-      VmWriteMem32 (VmPtr, Source, (UINT32)Data64);
+      VmWriteMem32 (VmPtr, Source, (UINT32) Data64);
       break;
+
     case DATA_SIZE_64:
       VmWriteMem64 (VmPtr, Source, Data64);
       break;
+
     case DATA_SIZE_N:
-      VmWriteMemN (VmPtr, Source, (UINTN)Data64);
+      VmWriteMemN (VmPtr, Source, (UINTN) Data64);
       break;
+
     default:
+      //
       // not reached
+      //
       break;
     }
   } else {
     //
-    // Operand1 direct. 
+    // Operand1 direct.
     // Make sure we didn't have an index on operand1.
     //
     if (Opcode & OPCODE_M_IMMED_OP1) {
-      EbcDebugSignalException ( EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                                EXCEPTION_FLAG_FATAL, 
-                                VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
     //
-    // Direct storage in register. Clear unused bits and store back to 
+    // Direct storage in register. Clear unused bits and store back to
     // register.
     //
     VmPtr->R[OPERAND1_REGNUM (Operands)] = Data64 & DataMask;
@@ -671,9 +1076,10 @@ Instruction format:
   //
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
-}  
-STATIC 
-EFI_STATUS 
+}
+
+STATIC
+EFI_STATUS
 ExecuteBREAK (
   IN VM_CONTEXT *VmPtr
   )
@@ -689,26 +1095,27 @@ Arguments:
 
 Returns:
 
-  Currently always success.
+  EFI_UNSUPPORTED
+  EFI_SUCCESS
 
 --*/
 {
   UINT8       Operands;
   VOID        *EbcEntryPoint;
   VOID        *Thunk;
-  EFI_STATUS  Status;    
+  EFI_STATUS  Status;
   UINT64      U64EbcEntryPoint;
   INT32       Offset;
 
-  Operands = GETOPERANDS(VmPtr);
-  switch (Operands) 
-  {
+  Operands = GETOPERANDS (VmPtr);
+  switch (Operands) {
   //
   // Runaway program break. Generate an exception and terminate
   //
   case 0:
     EbcDebugSignalException (EXCEPT_EBC_BAD_BREAK, EXCEPTION_FLAG_FATAL, VmPtr);
     break;
+
   //
   // Get VM version -- return VM revision number in R7
   //
@@ -721,6 +1128,7 @@ Returns:
     //
     VmPtr->R[7] = GetVmVersion ();
     break;
+
   //
   // Debugger breakpoint
   //
@@ -729,48 +1137,54 @@ Returns:
     //
     // See if someone has registered a handler
     //
-    EbcDebugSignalException (EXCEPT_EBC_BREAKPOINT, 
-                             EXCEPTION_FLAG_NONE,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_BREAKPOINT,
+      EXCEPTION_FLAG_NONE,
+      VmPtr
+      );
     //
     // Don't advance the IP
     //
     return EFI_UNSUPPORTED;
     break;
+
   //
   // System call, which there are none, so NOP it.
   //
   case 4:
     break;
+
   //
-  // Create a thunk for EBC code. R7 points to a 32-bit (in a 64-bit slot) 
-  // "offset from self" pointer to the EBC entry point. 
+  // Create a thunk for EBC code. R7 points to a 32-bit (in a 64-bit slot)
+  // "offset from self" pointer to the EBC entry point.
   // After we're done, *(UINT64 *)R7 will be the address of the new thunk.
   //
   case 5:
-    Offset = (INT32)VmReadMem32 (VmPtr, (UINTN)VmPtr->R[7]);
-    U64EbcEntryPoint = (UINT64)(VmPtr->R[7] + Offset + 4);
-    EbcEntryPoint = (VOID *)(UINTN)U64EbcEntryPoint;
-        
+    Offset            = (INT32) VmReadMem32 (VmPtr, (UINTN) VmPtr->R[7]);
+    U64EbcEntryPoint  = (UINT64) (VmPtr->R[7] + Offset + 4);
+    EbcEntryPoint     = (VOID *) (UINTN) U64EbcEntryPoint;
+
     //
     // Now create a new thunk
     //
     Status = EbcCreateThunks (VmPtr->ImageHandle, EbcEntryPoint, &Thunk, 0);
-    
+
     //
     // Finally replace the EBC entry point memory with the thunk address
     //
-    VmWriteMem64 (VmPtr, (UINTN)VmPtr->R[7], (UINT64)(UINTN)Thunk);
+    VmWriteMem64 (VmPtr, (UINTN) VmPtr->R[7], (UINT64) (UINTN) Thunk);
     break;
+
   //
   // Compiler setting version per value in R7
   //
   case 6:
-    VmPtr->CompilerVersion = (UINT32)VmPtr->R[7];
+    VmPtr->CompilerVersion = (UINT32) VmPtr->R[7];
     //
     // Check compiler version against VM version?
     //
     break;
+
   //
   // Unhandled break code. Signal exception.
   //
@@ -779,14 +1193,14 @@ Returns:
     break;
   }
   //
-  // Advance IP 
+  // Advance IP
   //
   VmPtr->Ip += 2;
   return EFI_SUCCESS;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 ExecuteJMP (
   IN VM_CONTEXT *VmPtr
   )
@@ -820,29 +1234,29 @@ Encoding:
 --*/
 {
   UINT8   Opcode;
-  UINT8   CompareSet;    
-  UINT8   ConditionFlag;    
-  UINT8   Size;    
-  UINT8   Operand;    
-  UINT64  Data64;        
+  UINT8   CompareSet;
+  UINT8   ConditionFlag;
+  UINT8   Size;
+  UINT8   Operand;
+  UINT64  Data64;
   INT32   Index32;
   UINTN   Addr;
-    
-  Operand = GETOPERANDS(VmPtr);
-  Opcode  = GETOPCODE(VmPtr);
+
+  Operand = GETOPERANDS (VmPtr);
+  Opcode  = GETOPCODE (VmPtr);
 
   //
   // Get instruction length from the opcode. The upper two bits are used here
   // to index into the length array.
   //
-  Size = mJMPLen[(Opcode >> 6) & 0x03]; 
+  Size = mJMPLen[(Opcode >> 6) & 0x03];
 
   //
   // Decode instruction conditions
   // If we haven't met the condition, then simply advance the IP and return.
   //
-  CompareSet    = (UINT8)((Operand & JMP_M_CS) ? 1 : 0);
-  ConditionFlag = (UINT8)VMFLAG_ISSET(VmPtr, VMFLAGS_CC); 
+  CompareSet    = (UINT8) ((Operand & JMP_M_CS) ? 1 : 0);
+  ConditionFlag = (UINT8) VMFLAG_ISSET (VmPtr, VMFLAGS_CC);
   if (Operand & CONDITION_M_CONDITIONAL) {
     if (CompareSet != ConditionFlag) {
       VmPtr->Ip += Size;
@@ -859,8 +1273,11 @@ Encoding:
     // then signal an exception
     //
     if (!(Opcode & OPCODE_M_IMMDATA)) {
-      EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                              EXCEPTION_FLAG_ERROR, VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_ERROR,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
     //
@@ -868,23 +1285,27 @@ Encoding:
     // check for alignment, and jump absolute.
     //
     Data64 = VmReadImmed64 (VmPtr, 2);
-    if (!IS_ALIGNED((UINTN)Data64, sizeof (UINT16))) {
-      EbcDebugSignalException (EXCEPT_EBC_ALIGNMENT_CHECK, 
-                               EXCEPTION_FLAG_FATAL,
-                               VmPtr);
-    
+    if (!IS_ALIGNED ((UINTN) Data64, sizeof (UINT16))) {
+      EbcDebugSignalException (
+        EXCEPT_EBC_ALIGNMENT_CHECK,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
+
       return EFI_UNSUPPORTED;
     }
-    // 
+
+    //
     // Take jump -- relative or absolute
     //
     if (Operand & JMP_M_RELATIVE) {
-      VmPtr->Ip += (UINTN)Data64 + Size;
+      VmPtr->Ip += (UINTN) Data64 + Size;
     } else {
-      VmPtr->Ip = (VMIP)(UINTN)Data64;
+      VmPtr->Ip = (VMIP) (UINTN) Data64;
     }
+
     return EFI_SUCCESS;
-  }    
+  }
   //
   // 32-bit forms:
   // Get the index if there is one. May be either an index, or an immediate
@@ -907,9 +1328,8 @@ Encoding:
   if (OPERAND1_REGNUM (Operand) == 0) {
     Data64 = 0;
   } else {
-    Data64 = OPERAND1_REGDATA(VmPtr, Operand);
+    Data64 = OPERAND1_REGDATA (VmPtr, Operand);
   }
-
   //
   // Decode the forms
   //
@@ -917,42 +1337,49 @@ Encoding:
     //
     // Form: JMP32 @Rx {Index32}
     //
-    Addr = VmReadMemN (VmPtr, (UINTN)Data64 + Index32);
-    if (!IS_ALIGNED((UINTN)Addr, sizeof (UINT16))) {
-      EbcDebugSignalException (EXCEPT_EBC_ALIGNMENT_CHECK, 
-                               EXCEPTION_FLAG_FATAL,
-                               VmPtr);
-    
+    Addr = VmReadMemN (VmPtr, (UINTN) Data64 + Index32);
+    if (!IS_ALIGNED ((UINTN) Addr, sizeof (UINT16))) {
+      EbcDebugSignalException (
+        EXCEPT_EBC_ALIGNMENT_CHECK,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
+
       return EFI_UNSUPPORTED;
     }
+
     if (Operand & JMP_M_RELATIVE) {
-      VmPtr->Ip += (UINTN)Addr + Size;
+      VmPtr->Ip += (UINTN) Addr + Size;
     } else {
-      VmPtr->Ip = (VMIP)Addr;
+      VmPtr->Ip = (VMIP) Addr;
     }
   } else {
     //
     // Form: JMP32 Rx {Immed32}
     //
-    Addr = (UINTN)(Data64 + Index32);
-    if (!IS_ALIGNED((UINTN)Addr, sizeof (UINT16))) {
-      EbcDebugSignalException (EXCEPT_EBC_ALIGNMENT_CHECK, 
-                               EXCEPTION_FLAG_FATAL,
-                               VmPtr);
-    
+    Addr = (UINTN) (Data64 + Index32);
+    if (!IS_ALIGNED ((UINTN) Addr, sizeof (UINT16))) {
+      EbcDebugSignalException (
+        EXCEPT_EBC_ALIGNMENT_CHECK,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
+
       return EFI_UNSUPPORTED;
     }
+
     if (Operand & JMP_M_RELATIVE) {
-      VmPtr->Ip += (UINTN)Addr + Size;
+      VmPtr->Ip += (UINTN) Addr + Size;
     } else {
-      VmPtr->Ip = (VMIP)Addr;
+      VmPtr->Ip = (VMIP) Addr;
     }
-  }    
+  }
+
   return EFI_SUCCESS;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 ExecuteJMP8 (
   IN VM_CONTEXT *VmPtr
   )
@@ -972,17 +1399,17 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     ConditionFlag;
-  UINT8     CompareSet;
-  INT8      Offset;
+  UINT8 Opcode;
+  UINT8 ConditionFlag;
+  UINT8 CompareSet;
+  INT8  Offset;
 
   //
   // Decode instruction.
   //
-  Opcode        = GETOPCODE(VmPtr);
-  CompareSet    = (UINT8)((Opcode & JMP_M_CS) ? 1 : 0);
-  ConditionFlag = (UINT8)VMFLAG_ISSET(VmPtr, VMFLAGS_CC);
+  Opcode        = GETOPCODE (VmPtr);
+  CompareSet    = (UINT8) ((Opcode & JMP_M_CS) ? 1 : 0);
+  ConditionFlag = (UINT8) VMFLAG_ISSET (VmPtr, VMFLAGS_CC);
 
   //
   // If we haven't met the condition, then simply advance the IP and return
@@ -1004,8 +1431,9 @@ Instruction syntax:
   VmPtr->Ip += (Offset * 2) + 2;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteMOVI (
   IN VM_CONTEXT *VmPtr
   )
@@ -1037,52 +1465,53 @@ Instruction syntax:
     
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT16     Index16;
-  INT64     ImmData64;
-  UINT64    Op1;
-  UINT64    Mask64;
-            
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT16   Index16;
+  INT64   ImmData64;
+  UINT64  Op1;
+  UINT64  Mask64;
+
   //
   // Get the opcode and operands byte so we can get R1 and R2
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
-    
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
+
   //
   // Get the index (16-bit) if present
   //
   if (Operands & MOVI_M_IMMDATA) {
     Index16 = VmReadIndex16 (VmPtr, 2);
-    Size = 4;
+    Size    = 4;
   } else {
     Index16 = 0;
-    Size = 2;
+    Size    = 2;
   }
   //
   // Extract the immediate data. Sign-extend always.
   //
   if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH16) {
-    ImmData64 = (INT64)(INT16)VmReadImmed16 (VmPtr, Size);
+    ImmData64 = (INT64) (INT16) VmReadImmed16 (VmPtr, Size);
     Size += 2;
   } else if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH32) {
-    ImmData64 = (INT64)(INT32)VmReadImmed32 (VmPtr, Size);
+    ImmData64 = (INT64) (INT32) VmReadImmed32 (VmPtr, Size);
     Size += 4;
   } else if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH64) {
-    ImmData64 = (INT64)VmReadImmed64 (VmPtr, Size);
-    Size += 8;                      
+    ImmData64 = (INT64) VmReadImmed64 (VmPtr, Size);
+    Size += 8;
   } else {
     //
-    // Invalid encoding 
+    // Invalid encoding
     //
-    EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                             EXCEPTION_FLAG_FATAL, 
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_INSTRUCTION_ENCODING,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
     return EFI_UNSUPPORTED;
   }
-
   //
   // Now write back the result
   //
@@ -1091,9 +1520,11 @@ Instruction syntax:
     // Operand1 direct. Make sure it didn't have an index.
     //
     if (Operands & MOVI_M_IMMDATA) {
-      EbcDebugSignalException ( EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                                EXCEPTION_FLAG_FATAL, 
-                                VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
     //
@@ -1108,20 +1539,21 @@ Instruction syntax:
     } else {
       Mask64 = (UINT64)~0;
     }
+
     VmPtr->R[OPERAND1_REGNUM (Operands)] = ImmData64 & Mask64;
   } else {
     //
     // Get the address then write back based on size of the move
     //
-    Op1 = (UINT64)VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
+    Op1 = (UINT64) VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
     if ((Operands & MOVI_M_MOVEWIDTH) == MOVI_MOVEWIDTH8) {
-      VmWriteMem8 (VmPtr, (UINTN)Op1, (UINT8)ImmData64);
+      VmWriteMem8 (VmPtr, (UINTN) Op1, (UINT8) ImmData64);
     } else if ((Operands & MOVI_M_MOVEWIDTH) == MOVI_MOVEWIDTH16) {
-      VmWriteMem16 (VmPtr, (UINTN)Op1, (UINT16)ImmData64);
+      VmWriteMem16 (VmPtr, (UINTN) Op1, (UINT16) ImmData64);
     } else if ((Operands & MOVI_M_MOVEWIDTH) == MOVI_MOVEWIDTH32) {
-      VmWriteMem32 (VmPtr, (UINTN)Op1, (UINT32)ImmData64);
+      VmWriteMem32 (VmPtr, (UINTN) Op1, (UINT32) ImmData64);
     } else {
-      VmWriteMem64 (VmPtr, (UINTN)Op1, ImmData64);
+      VmWriteMem64 (VmPtr, (UINTN) Op1, ImmData64);
     }
   }
   //
@@ -1130,9 +1562,10 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
-ExecuteMOVIn ( 
+
+STATIC
+EFI_STATUS
+ExecuteMOVIn (
   IN VM_CONTEXT *VmPtr
   )
 /*++
@@ -1156,52 +1589,54 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT16     Index16;
-  INT16     ImmedIndex16; 
-  INT32     ImmedIndex32;
-  INT64     ImmedIndex64;
-  UINT64    Op1;
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT16   Index16;
+  INT16   ImmedIndex16;
+  INT32   ImmedIndex32;
+  INT64   ImmedIndex64;
+  UINT64  Op1;
 
   //
   // Get the opcode and operands byte so we can get R1 and R2
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
-    
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
+
   //
   // Get the operand1 index (16-bit) if present
   //
   if (Operands & MOVI_M_IMMDATA) {
     Index16 = VmReadIndex16 (VmPtr, 2);
-    Size = 4;
+    Size    = 4;
   } else {
     Index16 = 0;
-    Size = 2;
+    Size    = 2;
   }
   //
-  // Extract the immediate data and convert to a 64-bit index. 
+  // Extract the immediate data and convert to a 64-bit index.
   //
   if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH16) {
-    ImmedIndex16 = VmReadIndex16 (VmPtr, Size);
-    ImmedIndex64 = (INT64)ImmedIndex16;
+    ImmedIndex16  = VmReadIndex16 (VmPtr, Size);
+    ImmedIndex64  = (INT64) ImmedIndex16;
     Size += 2;
   } else if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH32) {
-    ImmedIndex32 = VmReadIndex32 (VmPtr, Size);
-    ImmedIndex64 = (INT64)ImmedIndex32;
+    ImmedIndex32  = VmReadIndex32 (VmPtr, Size);
+    ImmedIndex64  = (INT64) ImmedIndex32;
     Size += 4;
   } else if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH64) {
     ImmedIndex64 = VmReadIndex64 (VmPtr, Size);
     Size += 8;
   } else {
     //
-    // Invalid encoding 
+    // Invalid encoding
     //
-    EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                             EXCEPTION_FLAG_FATAL, 
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_INSTRUCTION_ENCODING,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
     return EFI_UNSUPPORTED;
   }
   //
@@ -1209,22 +1644,25 @@ Instruction syntax:
   //
   if (!OPERAND1_INDIRECT (Operands)) {
     //
-    // Check for MOVIn R1 Index16, Immed (not indirect, with index), which 
+    // Check for MOVIn R1 Index16, Immed (not indirect, with index), which
     // is illegal
     //
     if (Operands & MOVI_M_IMMDATA) {
-      EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                               EXCEPTION_FLAG_FATAL,
-                               VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
-    }  
+    }
+
     VmPtr->R[OPERAND1_REGNUM (Operands)] = ImmedIndex64;
   } else {
     //
     // Get the address
     //
-    Op1 = (UINT64)VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
-    VmWriteMemN (VmPtr, (UINTN)Op1, (INTN)ImmedIndex64);
+    Op1 = (UINT64) VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
+    VmWriteMemN (VmPtr, (UINTN) Op1, (INTN) ImmedIndex64);
   }
   //
   // Advance the instruction pointer
@@ -1232,8 +1670,9 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
+
 STATIC
-EFI_STATUS 
+EFI_STATUS
 ExecuteMOVREL (
   IN VM_CONTEXT *VmPtr
   )
@@ -1258,77 +1697,79 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT16     Index16;
-  INT64     ImmData64;
-  UINT64    Op1;
-  UINT64    Op2;
-          
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT16   Index16;
+  INT64   ImmData64;
+  UINT64  Op1;
+  UINT64  Op2;
+
   //
   // Get the opcode and operands byte so we can get R1 and R2
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
-    
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
+
   //
   // Get the Operand 1 index (16-bit) if present
   //
   if (Operands & MOVI_M_IMMDATA) {
     Index16 = VmReadIndex16 (VmPtr, 2);
-    Size = 4;
+    Size    = 4;
   } else {
     Index16 = 0;
-    Size = 2;
+    Size    = 2;
   }
-
   //
   // Get the immediate data.
   //
   if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH16) {
-    ImmData64 = (INT64)VmReadImmed16 (VmPtr, Size);
+    ImmData64 = (INT64) VmReadImmed16 (VmPtr, Size);
     Size += 2;
   } else if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH32) {
-    ImmData64 = (INT64)VmReadImmed32 (VmPtr, Size);
+    ImmData64 = (INT64) VmReadImmed32 (VmPtr, Size);
     Size += 4;
   } else if ((Opcode & MOVI_M_DATAWIDTH) == MOVI_DATAWIDTH64) {
     ImmData64 = VmReadImmed64 (VmPtr, Size);
-    Size += 8;                      
+    Size += 8;
   } else {
     //
-    // Invalid encoding 
+    // Invalid encoding
     //
-    EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                             EXCEPTION_FLAG_FATAL,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_INSTRUCTION_ENCODING,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
     return EFI_UNSUPPORTED;
   }
-
   //
   // Compute the value and write back the result
   //
-  Op2 = (UINT64)((INT64)((UINT64)(UINTN)VmPtr->Ip) + 
-                                            (INT64)ImmData64 + Size);
+  Op2 = (UINT64) ((INT64) ((UINT64) (UINTN) VmPtr->Ip) + (INT64) ImmData64 + Size);
   if (!OPERAND1_INDIRECT (Operands)) {
     //
     // Check for illegal combination of operand1 direct with immediate data
     //
     if (Operands & MOVI_M_IMMDATA) {
-      EbcDebugSignalException ( EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                                EXCEPTION_FLAG_FATAL, 
-                                VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
-    VmPtr->R[OPERAND1_REGNUM (Operands)] = (VM_REGISTER)Op2;
+
+    VmPtr->R[OPERAND1_REGNUM (Operands)] = (VM_REGISTER) Op2;
   } else {
     //
     // Get the address = [Rx] + Index16
     // Write back the result. Always a natural size write, since
     // we're talking addresses here.
     //
-    Op1 = (UINT64)VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
-    VmWriteMemN (VmPtr, (UINTN)Op1, (UINTN)Op2);
+    Op1 = (UINT64) VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
+    VmWriteMemN (VmPtr, (UINTN) Op1, (UINTN) Op2);
   }
   //
   // Advance the instruction pointer
@@ -1336,8 +1777,9 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
+
 STATIC
-EFI_STATUS 
+EFI_STATUS
 ExecuteMOVsnw (
   IN VM_CONTEXT *VmPtr
   )
@@ -1367,21 +1809,21 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT16     Op1Index;
-  INT16     Op2Index;
-  UINT64    Op2;
-          
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT16   Op1Index;
+  INT16   Op2Index;
+  UINT64  Op2;
+
   //
   // Get the opcode and operand bytes
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
-    
-  Op1Index = Op2Index = 0;
-  
+  Opcode              = GETOPCODE (VmPtr);
+  Operands            = GETOPERANDS (VmPtr);
+
+  Op1Index            = Op2Index = 0;
+
   //
   // Get the indexes if present.
   //
@@ -1393,27 +1835,32 @@ Instruction syntax:
       //
       // Illegal form operand1 direct with index:  MOVsnw R1 Index16, {@}R2
       //
-      EbcDebugSignalException ( EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                                EXCEPTION_FLAG_FATAL, 
-                                VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
+
     Size += sizeof (UINT16);
   }
+
   if (Opcode & OPCODE_M_IMMED_OP2) {
     if (OPERAND2_INDIRECT (Operands)) {
       Op2Index = VmReadIndex16 (VmPtr, Size);
     } else {
       Op2Index = VmReadImmed16 (VmPtr, Size);
     }
+
     Size += sizeof (UINT16);
   }
   //
-  // Get the data from the source. 
+  // Get the data from the source.
   //
-  Op2 = (INT64)((INTN)(VmPtr->R[OPERAND2_REGNUM (Operands)] + Op2Index));
+  Op2 = (INT64) ((INTN) (VmPtr->R[OPERAND2_REGNUM (Operands)] + Op2Index));
   if (OPERAND2_INDIRECT (Operands)) {
-    Op2 = (INT64)(INTN)VmReadMemN (VmPtr, (UINTN)Op2);
+    Op2 = (INT64) (INTN) VmReadMemN (VmPtr, (UINTN) Op2);
   }
   //
   // Now write back the result.
@@ -1421,7 +1868,7 @@ Instruction syntax:
   if (!OPERAND1_INDIRECT (Operands)) {
     VmPtr->R[OPERAND1_REGNUM (Operands)] = Op2;
   } else {
-    VmWriteMemN (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Op1Index), (UINTN)Op2);
+    VmWriteMemN (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Op1Index), (UINTN) Op2);
   }
   //
   // Advance the instruction pointer
@@ -1429,8 +1876,9 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
+
 STATIC
-EFI_STATUS 
+EFI_STATUS
 ExecuteMOVsnd (
   IN VM_CONTEXT *VmPtr
   )
@@ -1460,20 +1908,20 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT32     Op1Index;
-  INT32     Op2Index;
-  UINT64    Op2;
-          
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT32   Op1Index;
+  INT32   Op2Index;
+  UINT64  Op2;
+
   //
   // Get the opcode and operand bytes
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
-    
-  Op1Index = Op2Index = 0;
+  Opcode              = GETOPCODE (VmPtr);
+  Operands            = GETOPERANDS (VmPtr);
+
+  Op1Index            = Op2Index = 0;
 
   //
   // Get the indexes if present.
@@ -1486,27 +1934,32 @@ Instruction syntax:
       //
       // Illegal form operand1 direct with index:  MOVsnd R1 Index16,..
       //
-      EbcDebugSignalException ( EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                                EXCEPTION_FLAG_FATAL, 
-                                VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
       return EFI_UNSUPPORTED;
     }
+
     Size += sizeof (UINT32);
   }
+
   if (Opcode & OPCODE_M_IMMED_OP2) {
     if (OPERAND2_INDIRECT (Operands)) {
       Op2Index = VmReadIndex32 (VmPtr, Size);
     } else {
       Op2Index = VmReadImmed32 (VmPtr, Size);
     }
+
     Size += sizeof (UINT32);
   }
   //
   // Get the data from the source.
   //
-  Op2 = (INT64)((INTN)(VmPtr->R[OPERAND2_REGNUM (Operands)] + Op2Index));
+  Op2 = (INT64) ((INTN) (VmPtr->R[OPERAND2_REGNUM (Operands)] + Op2Index));
   if (OPERAND2_INDIRECT (Operands)) {
-    Op2 = (INT64)(INTN)VmReadMemN (VmPtr, (UINTN)Op2);
+    Op2 = (INT64) (INTN) VmReadMemN (VmPtr, (UINTN) Op2);
   }
   //
   // Now write back the result.
@@ -1514,7 +1967,7 @@ Instruction syntax:
   if (!OPERAND1_INDIRECT (Operands)) {
     VmPtr->R[OPERAND1_REGNUM (Operands)] = Op2;
   } else {
-    VmWriteMemN (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Op1Index), (UINTN)Op2);
+    VmWriteMemN (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Op1Index), (UINTN) Op2);
   }
   //
   // Advance the instruction pointer
@@ -1522,8 +1975,9 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecutePUSHn (
   IN VM_CONTEXT *VmPtr
   )
@@ -1543,16 +1997,16 @@ Instruction syntax:
 
 --*/
 {
-  UINT8       Opcode;
-  UINT8       Operands;
-  INT16       Index16;
-  UINTN       DataN;
+  UINT8 Opcode;
+  UINT8 Operands;
+  INT16 Index16;
+  UINTN DataN;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
 
   //
   // Get index if present
@@ -1563,28 +2017,30 @@ Instruction syntax:
     } else {
       Index16 = VmReadImmed16 (VmPtr, 2);
     }
+
     VmPtr->Ip += 4;
   } else {
     Index16 = 0;
     VmPtr->Ip += 2;
-  }    
+  }
   //
   // Get the data to push
   //
   if (OPERAND1_INDIRECT (Operands)) {
-    DataN = VmReadMemN (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16));
+    DataN = VmReadMemN (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16));
   } else {
-    DataN = (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16);
+    DataN = (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16);
   }
   //
   // Adjust the stack down.
   //
   VmPtr->R[0] -= sizeof (UINTN);
-  VmWriteMemN (VmPtr, (UINTN)VmPtr->R[0], DataN);
+  VmWriteMemN (VmPtr, (UINTN) VmPtr->R[0], DataN);
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecutePUSH (
   IN VM_CONTEXT *VmPtr
   )
@@ -1604,17 +2060,17 @@ Instruction syntax:
 
 --*/
 {
-  UINT8       Opcode;
-  UINT8       Operands;
-  UINT32      Data32;
-  UINT64      Data64;
-  INT16       Index16;
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT32  Data32;
+  UINT64  Data64;
+  INT16   Index16;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
   //
   // Get immediate index if present, then advance the IP.
   //
@@ -1624,46 +2080,47 @@ Instruction syntax:
     } else {
       Index16 = VmReadImmed16 (VmPtr, 2);
     }
+
     VmPtr->Ip += 4;
   } else {
     Index16 = 0;
     VmPtr->Ip += 2;
-  }    
+  }
   //
   // Get the data to push
   //
   if (Opcode & PUSHPOP_M_64) {
     if (OPERAND1_INDIRECT (Operands)) {
-      Data64 = 
-        VmReadMem64 (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16));
+      Data64 = VmReadMem64 (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16));
     } else {
-      Data64 = (UINT64)VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
+      Data64 = (UINT64) VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
     }
     //
     // Adjust the stack down, then write back the data
     //
     VmPtr->R[0] -= sizeof (UINT64);
-    VmWriteMem64 (VmPtr, (UINTN)VmPtr->R[0], Data64);
+    VmWriteMem64 (VmPtr, (UINTN) VmPtr->R[0], Data64);
   } else {
     //
     // 32-bit data
     //
     if (OPERAND1_INDIRECT (Operands)) {
-      Data32 = 
-        VmReadMem32 (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16));
+      Data32 = VmReadMem32 (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16));
     } else {
-      Data32 = (UINT32)VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
+      Data32 = (UINT32) VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16;
     }
     //
     // Adjust the stack down and write the data
     //
     VmPtr->R[0] -= sizeof (UINT32);
-    VmWriteMem32 (VmPtr, (UINTN)VmPtr->R[0], Data32);
+    VmWriteMem32 (VmPtr, (UINTN) VmPtr->R[0], Data32);
   }
+
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecutePOPn (
   IN VM_CONTEXT *VmPtr
   )
@@ -1683,16 +2140,16 @@ Instruction syntax:
 
 --*/
 {
-  UINT8       Opcode;
-  UINT8       Operands;
-  INT16       Index16;
-  UINTN       DataN;
+  UINT8 Opcode;
+  UINT8 Operands;
+  INT16 Index16;
+  UINTN DataN;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
   //
   // Get immediate data if present, and advance the IP
   //
@@ -1702,28 +2159,31 @@ Instruction syntax:
     } else {
       Index16 = VmReadImmed16 (VmPtr, 2);
     }
+
     VmPtr->Ip += 4;
   } else {
     Index16 = 0;
     VmPtr->Ip += 2;
-  }    
+  }
   //
   // Read the data off the stack, then adjust the stack pointer
   //
-  DataN = VmReadMemN (VmPtr, (UINTN)VmPtr->R[0]);
+  DataN = VmReadMemN (VmPtr, (UINTN) VmPtr->R[0]);
   VmPtr->R[0] += sizeof (UINTN);
   //
   // Do the write-back
   //
   if (OPERAND1_INDIRECT (Operands)) {
-    VmWriteMemN (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16), DataN);
+    VmWriteMemN (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16), DataN);
   } else {
-    VmPtr->R[OPERAND1_REGNUM (Operands)] = (INT64)(UINT64)((UINTN)DataN + Index16);
+    VmPtr->R[OPERAND1_REGNUM (Operands)] = (INT64) (UINT64) ((UINTN) DataN + Index16);
   }
+
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecutePOP (
   IN VM_CONTEXT *VmPtr
   )
@@ -1743,17 +2203,17 @@ Instruction syntax:
 
 --*/
 {
-  UINT8       Opcode;
-  UINT8       Operands;
-  INT16       Index16;
-  INT32       Data32;
-  UINT64      Data64;
+  UINT8   Opcode;
+  UINT8   Operands;
+  INT16   Index16;
+  INT32   Data32;
+  UINT64  Data64;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
   //
   // Get immediate data if present, and advance the IP.
   //
@@ -1763,11 +2223,12 @@ Instruction syntax:
     } else {
       Index16 = VmReadImmed16 (VmPtr, 2);
     }
+
     VmPtr->Ip += 4;
   } else {
     Index16 = 0;
     VmPtr->Ip += 2;
-  }    
+  }
   //
   // Get the data off the stack, then write it to the appropriate location
   //
@@ -1775,13 +2236,13 @@ Instruction syntax:
     //
     // Read the data off the stack, then adjust the stack pointer
     //
-    Data64 = VmReadMem64 (VmPtr, (UINTN)VmPtr->R[0]);
+    Data64 = VmReadMem64 (VmPtr, (UINTN) VmPtr->R[0]);
     VmPtr->R[0] += sizeof (UINT64);
     //
     // Do the write-back
     //
     if (OPERAND1_INDIRECT (Operands)) {
-      VmWriteMem64 (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16), Data64);
+      VmWriteMem64 (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16), Data64);
     } else {
       VmPtr->R[OPERAND1_REGNUM (Operands)] = Data64 + Index16;
     }
@@ -1789,22 +2250,23 @@ Instruction syntax:
     //
     // 32-bit pop. Read it off the stack and adjust the stack pointer
     //
-    Data32 = (INT32)VmReadMem32 (VmPtr, (UINTN)VmPtr->R[0]);
+    Data32 = (INT32) VmReadMem32 (VmPtr, (UINTN) VmPtr->R[0]);
     VmPtr->R[0] += sizeof (UINT32);
     //
     // Do the write-back
     //
     if (OPERAND1_INDIRECT (Operands)) {
-      VmWriteMem32 (VmPtr, (UINTN)(VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16), Data32);
+      VmWriteMem32 (VmPtr, (UINTN) (VmPtr->R[OPERAND1_REGNUM (Operands)] + Index16), Data32);
     } else {
-      VmPtr->R[OPERAND1_REGNUM (Operands)] = (INT64)Data32 + Index16;
+      VmPtr->R[OPERAND1_REGNUM (Operands)] = (INT64) Data32 + Index16;
     }
   }
+
   return EFI_SUCCESS;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 ExecuteCALL (
   IN VM_CONTEXT *VmPtr
   )
@@ -1830,32 +2292,32 @@ Returns:
 
 --*/
 {
-  UINT8       Opcode;
-  UINT8       Operands;
-  INT32       Immed32;
-  UINT8       Size;
-  INT64       Immed64;
-  VOID        *FramePtr;
+  UINT8 Opcode;
+  UINT8 Operands;
+  INT32 Immed32;
+  UINT8 Size;
+  INT64 Immed64;
+  VOID  *FramePtr;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
   //
   // Assign these as well to avoid compiler warnings
   //
   Immed64   = 0;
   Immed32   = 0;
 
-  FramePtr = VmPtr->FramePtr;
+  FramePtr  = VmPtr->FramePtr;
   //
   // Determine the instruction size, and get immediate data if present
   //
   if (Opcode & OPCODE_M_IMMDATA) {
     if (Opcode & OPCODE_M_IMMDATA64) {
       Immed64 = VmReadImmed64 (VmPtr, 2);
-      Size = 10;
+      Size    = 10;
     } else {
       //
       // If register operand is indirect, then the immediate data is an index
@@ -1865,21 +2327,22 @@ Returns:
       } else {
         Immed32 = VmReadImmed32 (VmPtr, 2);
       }
+
       Size = 6;
     }
   } else {
     Size = 2;
-  }    
+  }
   //
   // If it's a call to EBC, adjust the stack pointer down 16 bytes and
   // put our return address and frame pointer on the VM stack.
   //
   if ((Operands & OPERAND_M_NATIVE_CALL) == 0) {
     VmPtr->R[0] -= 8;
-    VmWriteMemN (VmPtr, (UINTN)VmPtr->R[0], (UINTN)FramePtr);
-    VmPtr->FramePtr = (VOID *)(UINTN)VmPtr->R[0];
+    VmWriteMemN (VmPtr, (UINTN) VmPtr->R[0], (UINTN) FramePtr);
+    VmPtr->FramePtr = (VOID *) (UINTN) VmPtr->R[0];
     VmPtr->R[0] -= 8;
-    VmWriteMem64 (VmPtr, (UINTN)VmPtr->R[0], (UINT64)(VmPtr->Ip + Size));
+    VmWriteMem64 (VmPtr, (UINTN) VmPtr->R[0], (UINT64) (VmPtr->Ip + Size));
   }
   //
   // If 64-bit data, then absolute jump only
@@ -1889,29 +2352,29 @@ Returns:
     // Native or EBC call?
     //
     if ((Operands & OPERAND_M_NATIVE_CALL) == 0) {
-      VmPtr->Ip = (VMIP)(UINTN)Immed64;
+      VmPtr->Ip = (VMIP) (UINTN) Immed64;
     } else {
       //
       // Call external function, get the return value, and advance the IP
       //
-      EbcLLCALLEX ((UINTN)Immed64, (UINTN)VmPtr->R[0], FramePtr);
+      EbcLLCALLEX ((UINTN) Immed64, (UINTN) VmPtr->R[0], FramePtr);
       VmPtr->R[7] = EbcLLGetReturnValue ();
       VmPtr->Ip += Size;
     }
   } else {
     //
-    // Get the register data. If operand1 == 0, then ignore register and 
+    // Get the register data. If operand1 == 0, then ignore register and
     // take immediate data as relative or absolute address.
     // Compiler should take care of upper bits if 32-bit machine.
     //
     if (OPERAND1_REGNUM (Operands) != 0) {
-      Immed64 = (UINT64)(UINTN)VmPtr->R[OPERAND1_REGNUM (Operands)];
+      Immed64 = (UINT64) (UINTN) VmPtr->R[OPERAND1_REGNUM (Operands)];
     }
     //
     // Get final address
     //
     if (OPERAND1_INDIRECT (Operands)) {
-      Immed64 = (INT64)(UINT64)(UINTN)VmReadMemN (VmPtr, (UINTN)(Immed64 + Immed32));
+      Immed64 = (INT64) (UINT64) (UINTN) VmReadMemN (VmPtr, (UINTN) (Immed64 + Immed32));
     } else {
       Immed64 += Immed32;
     }
@@ -1926,19 +2389,20 @@ Returns:
       if (Operands & OPERAND_M_RELATIVE_ADDR) {
         VmPtr->Ip += Immed64 + Size;
       } else {
-        VmPtr->Ip = (VMIP)(UINTN)Immed64;
+        VmPtr->Ip = (VMIP) (UINTN) Immed64;
       }
     } else {
       //
-      // Native call. Relative or absolute? 
+      // Native call. Relative or absolute?
       //
       if (Operands & OPERAND_M_RELATIVE_ADDR) {
-        EbcLLCALLEX ((UINTN)(Immed64 + VmPtr->Ip + Size), (UINTN)VmPtr->R[0], FramePtr);
+        EbcLLCALLEX ((UINTN) (Immed64 + VmPtr->Ip + Size), (UINTN) VmPtr->R[0], FramePtr);
       } else {
-        if (VmPtr->StopFlags &  STOPFLAG_BREAK_ON_CALLEX) {
-          EFI_BREAKPOINT();
+        if (VmPtr->StopFlags & STOPFLAG_BREAK_ON_CALLEX) {
+          EFI_BREAKPOINT ();
         }
-        EbcLLCALLEX ((UINTN)Immed64, (UINTN)VmPtr->R[0], FramePtr);
+
+        EbcLLCALLEX ((UINTN) Immed64, (UINTN) VmPtr->R[0], FramePtr);
       }
       //
       // Get return value and advance the IP.
@@ -1947,10 +2411,12 @@ Returns:
       VmPtr->Ip += Size;
     }
   }
+
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteRET (
   IN VM_CONTEXT *VmPtr
   )
@@ -1974,30 +2440,34 @@ Instruction syntax:
   // If we're at the top of the stack, then simply set the done
   // flag and return
   //
-  if (VmPtr->StackRetAddr == (UINT64)VmPtr->R[0]) {
-     VmPtr->StopFlags |= STOPFLAG_APP_DONE;
+  if (VmPtr->StackRetAddr == (UINT64) VmPtr->R[0]) {
+    VmPtr->StopFlags |= STOPFLAG_APP_DONE;
   } else {
     //
-    // Pull the return address off the VM app's stack and set the IP 
+    // Pull the return address off the VM app's stack and set the IP
     // to it
     //
-    if (!IS_ALIGNED((UINTN)VmPtr->R[0], sizeof (UINT16))) {
-      EbcDebugSignalException (EXCEPT_EBC_ALIGNMENT_CHECK, 
-                               EXCEPTION_FLAG_FATAL,
-                               VmPtr);
+    if (!IS_ALIGNED ((UINTN) VmPtr->R[0], sizeof (UINT16))) {
+      EbcDebugSignalException (
+        EXCEPT_EBC_ALIGNMENT_CHECK,
+        EXCEPTION_FLAG_FATAL,
+        VmPtr
+        );
     }
     //
     // Restore the IP and frame pointer from the stack
     //
-    VmPtr->Ip = (VMIP)(UINTN)VmReadMem64 (VmPtr, (UINTN)VmPtr->R[0]);
+    VmPtr->Ip = (VMIP) (UINTN) VmReadMem64 (VmPtr, (UINTN) VmPtr->R[0]);
     VmPtr->R[0] += 8;
-    VmPtr->FramePtr = (VOID *)VmReadMemN (VmPtr, (UINTN)VmPtr->R[0]);
+    VmPtr->FramePtr = (VOID *) VmReadMemN (VmPtr, (UINTN) VmPtr->R[0]);
     VmPtr->R[0] += 8;
   }
+
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteCMP (
   IN VM_CONTEXT *VmPtr
   )
@@ -2017,19 +2487,19 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT16     Index16;
-  UINT32    Flag;
-  INT64     Op2;
-  INT64     Op1;
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT16   Index16;
+  UINT32  Flag;
+  INT64   Op2;
+  INT64   Op1;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
   //
   // Get the register data we're going to compare to
   //
@@ -2043,22 +2513,23 @@ Instruction syntax:
     } else {
       Index16 = VmReadImmed16 (VmPtr, 2);
     }
+
     Size = 4;
   } else {
     Index16 = 0;
-    Size = 2;
+    Size    = 2;
   }
   //
   // Now get Op2
   //
   if (OPERAND2_INDIRECT (Operands)) {
     if (Opcode & OPCODE_M_64BIT) {
-      Op2 = (INT64)VmReadMem64 (VmPtr, (UINTN)(VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16));
+      Op2 = (INT64) VmReadMem64 (VmPtr, (UINTN) (VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16));
     } else {
       //
       // 32-bit operations. 0-extend the values for all cases.
       //
-      Op2 = (INT64)(UINT64)((UINT32)VmReadMem32 (VmPtr, (UINTN)(VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16)));
+      Op2 = (INT64) (UINT64) ((UINT32) VmReadMem32 (VmPtr, (UINTN) (VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16)));
     }
   } else {
     Op2 = VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16;
@@ -2071,78 +2542,86 @@ Instruction syntax:
     //
     // 64-bit compares
     //
-    switch (Opcode & OPCODE_M_OPCODE) 
-    {
+    switch (Opcode & OPCODE_M_OPCODE) {
     case OPCODE_CMPEQ:
       if (Op1 == Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPLTE:
       if (Op1 <= Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPGTE:
       if (Op1 >= Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPULTE:
-      if ((UINT64)Op1 <= (UINT64)Op2) {
+      if ((UINT64) Op1 <= (UINT64) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPUGTE:
-      if ((UINT64)Op1 >= (UINT64)Op2) {
+      if ((UINT64) Op1 >= (UINT64) Op2) {
         Flag = 1;
       }
       break;
+
     default:
-      ASSERT(0);
+      ASSERT (0);
     }
   } else {
     //
     // 32-bit compares
     //
-    switch (Opcode & OPCODE_M_OPCODE) 
-    {
+    switch (Opcode & OPCODE_M_OPCODE) {
     case OPCODE_CMPEQ:
-      if ((INT32)Op1 == (INT32)Op2) {
+      if ((INT32) Op1 == (INT32) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPLTE:
-      if ((INT32)Op1 <= (INT32)Op2) {
+      if ((INT32) Op1 <= (INT32) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPGTE:
-      if ((INT32)Op1 >= (INT32)Op2) {
+      if ((INT32) Op1 >= (INT32) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPULTE:
-      if ((UINT32)Op1 <= (UINT32)Op2) {
+      if ((UINT32) Op1 <= (UINT32) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPUGTE:
-      if ((UINT32)Op1 >= (UINT32)Op2) {
+      if ((UINT32) Op1 >= (UINT32) Op2) {
         Flag = 1;
       }
       break;
+
     default:
-      ASSERT(0);
+      ASSERT (0);
     }
   }
   //
   // Now set the flag accordingly for the comparison
   //
   if (Flag) {
-    VMFLAG_SET(VmPtr, VMFLAGS_CC);
+    VMFLAG_SET (VmPtr, VMFLAGS_CC);
   } else {
-    VMFLAG_CLEAR(VmPtr, VMFLAGS_CC);
+    VMFLAG_CLEAR (VmPtr, VMFLAGS_CC);
   }
   //
   // Advance the IP
@@ -2150,8 +2629,9 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteCMPI (
   IN VM_CONTEXT *VmPtr
   )
@@ -2171,21 +2651,21 @@ Instruction syntax:
 
 --*/
 {
-  UINT8     Opcode;
-  UINT8     Operands;
-  UINT8     Size;
-  INT64     Op1;
-  INT64     Op2;
-  INT16     Index16;
-  UINT32    Flag;
+  UINT8   Opcode;
+  UINT8   Operands;
+  UINT8   Size;
+  INT64   Op1;
+  INT64   Op2;
+  INT16   Index16;
+  UINT32  Flag;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
 
-  // 
+  //
   // Get operand1 index if present
   //
   Size = 2;
@@ -2198,15 +2678,15 @@ Instruction syntax:
   //
   // Get operand1 data we're going to compare to
   //
-  Op1 = (INT64)VmPtr->R[OPERAND1_REGNUM (Operands)];
-  if (OPERAND1_INDIRECT(Operands)) {
+  Op1 = (INT64) VmPtr->R[OPERAND1_REGNUM (Operands)];
+  if (OPERAND1_INDIRECT (Operands)) {
     //
     // Indirect operand1. Fetch 32 or 64-bit value based on compare size.
     //
     if (Opcode & OPCODE_M_CMPI64) {
-      Op1 = (INT64)VmReadMem64 (VmPtr, (UINTN)Op1 + Index16);
+      Op1 = (INT64) VmReadMem64 (VmPtr, (UINTN) Op1 + Index16);
     } else {
-      Op1 = (INT64)VmReadMem32 (VmPtr, (UINTN)Op1 + Index16);
+      Op1 = (INT64) VmReadMem32 (VmPtr, (UINTN) Op1 + Index16);
     }
   } else {
     //
@@ -2214,25 +2694,26 @@ Instruction syntax:
     // is illegal.
     //
     if (Operands & OPERAND_M_CMPI_INDEX) {
-      EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                               EXCEPTION_FLAG_ERROR,
-                               VmPtr);
+      EbcDebugSignalException (
+        EXCEPT_EBC_INSTRUCTION_ENCODING,
+        EXCEPTION_FLAG_ERROR,
+        VmPtr
+        );
       VmPtr->Ip += Size;
       return EFI_UNSUPPORTED;
     }
   }
-
   //
   // Get immediate data -- 16- or 32-bit sign extended
   //
   if (Opcode & OPCODE_M_CMPI32_DATA) {
-    Op2 = (INT64)VmReadImmed32 (VmPtr, Size);
+    Op2 = (INT64) VmReadImmed32 (VmPtr, Size);
     Size += 4;
   } else {
     //
     // 16-bit immediate data. Sign extend always.
-    // 
-    Op2 = (INT64)((INT16)VmReadImmed16 (VmPtr, Size));
+    //
+    Op2 = (INT64) ((INT16) VmReadImmed16 (VmPtr, Size));
     Size += 2;
   }
   //
@@ -2243,78 +2724,86 @@ Instruction syntax:
     //
     // 64 bit comparison
     //
-    switch(Opcode & OPCODE_M_OPCODE) 
-    {
+    switch (Opcode & OPCODE_M_OPCODE) {
     case OPCODE_CMPIEQ:
-      if (Op1 == (INT64)Op2) {
+      if (Op1 == (INT64) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPILTE:
-      if (Op1 <= (INT64)Op2) {
+      if (Op1 <= (INT64) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPIGTE:
-      if (Op1 >= (INT64)Op2) {
+      if (Op1 >= (INT64) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPIULTE:
-      if ((UINT64)Op1 <= (UINT64)((UINT32)Op2)) {
+      if ((UINT64) Op1 <= (UINT64) ((UINT32) Op2)) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPIUGTE:
-      if ((UINT64)Op1 >= (UINT64)((UINT32)Op2)) {
+      if ((UINT64) Op1 >= (UINT64) ((UINT32) Op2)) {
         Flag = 1;
       }
       break;
+
     default:
-      ASSERT(0);
+      ASSERT (0);
     }
   } else {
     //
     // 32-bit comparisons
     //
-    switch(Opcode & OPCODE_M_OPCODE) 
-    {
+    switch (Opcode & OPCODE_M_OPCODE) {
     case OPCODE_CMPIEQ:
-      if ((INT32)Op1 == Op2) {
+      if ((INT32) Op1 == Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPILTE:
-      if ((INT32)Op1 <= Op2) {
+      if ((INT32) Op1 <= Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPIGTE:
-      if ((INT32)Op1 >= Op2) {
+      if ((INT32) Op1 >= Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPIULTE:
-      if ((UINT32)Op1 <= (UINT32)Op2) {
+      if ((UINT32) Op1 <= (UINT32) Op2) {
         Flag = 1;
       }
       break;
+
     case OPCODE_CMPIUGTE:
-      if ((UINT32)Op1 >= (UINT32)Op2) {
+      if ((UINT32) Op1 >= (UINT32) Op2) {
         Flag = 1;
       }
       break;
+
     default:
-      ASSERT(0);
+      ASSERT (0);
     }
   }
   //
   // Now set the flag accordingly for the comparison
   //
   if (Flag) {
-    VMFLAG_SET(VmPtr, VMFLAGS_CC);
+    VMFLAG_SET (VmPtr, VMFLAGS_CC);
   } else {
-    VMFLAG_CLEAR(VmPtr, VMFLAGS_CC);
+    VMFLAG_CLEAR (VmPtr, VMFLAGS_CC);
   }
   //
   // Advance the IP
@@ -2322,10 +2811,11 @@ Instruction syntax:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteNOT (
-  IN VM_CONTEXT     *VmPtr, 
+  IN VM_CONTEXT     *VmPtr,
   IN UINT64         Op1,
   IN UINT64         Op2
   )
@@ -2348,11 +2838,12 @@ Instruction syntax:
 --*/
 {
   return ~Op2;
-}  
-STATIC 
-UINT64 
+}
+
+STATIC
+UINT64
 ExecuteNEG (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2375,11 +2866,12 @@ Instruction syntax:
 --*/
 {
   return ~Op2 + 1;
-}  
-STATIC 
-UINT64 
+}
+
+STATIC
+UINT64
 ExecuteADD (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2403,11 +2895,12 @@ Instruction syntax:
 --*/
 {
   return Op1 + Op2;
-}  
-STATIC 
-UINT64 
+}
+
+STATIC
+UINT64
 ExecuteSUB (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2431,15 +2924,16 @@ Instruction syntax:
 --*/
 {
   if (*VmPtr->Ip & DATAMANIP_M_64) {
-    return (UINT64)((INT64)((INT64)Op1 - (INT64)Op2));
+    return (UINT64) ((INT64) ((INT64) Op1 - (INT64) Op2));
   } else {
-    return (UINT64)((INT64)((INT32)Op1 - (INT32)Op2));
+    return (UINT64) ((INT64) ((INT32) Op1 - (INT32) Op2));
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteMUL (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2462,18 +2956,19 @@ Instruction syntax:
 
 --*/
 {
-  INT64  ResultHigh;
-  
+  INT64 ResultHigh;
+
   if (*VmPtr->Ip & DATAMANIP_M_64) {
     return MulS64x64 (Op1, Op2, &ResultHigh);
   } else {
-    return (UINT64)((INT64)((INT32)Op1 * (INT32)Op2));
+    return (UINT64) ((INT64) ((INT32) Op1 * (INT32) Op2));
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteMULU (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2495,17 +2990,18 @@ Instruction syntax:
 
 --*/
 {
-  INT64  ResultHigh;
+  INT64 ResultHigh;
   if (*VmPtr->Ip & DATAMANIP_M_64) {
     return MulU64x64 (Op1, Op2, &ResultHigh);
   } else {
-    return (UINT64)((UINT32)Op1 * (UINT32)Op2);
+    return (UINT64) ((UINT32) Op1 * (UINT32) Op2);
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteDIV (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2528,30 +3024,33 @@ Instruction syntax:
 
 --*/
 {
-  INT64    Remainder;
-  UINT32   Error;
-    
+  INT64   Remainder;
+  UINT32  Error;
+
   //
   // Check for divide-by-0
   //
   if (Op2 == 0) {
-    EbcDebugSignalException (EXCEPT_EBC_DIVIDE_ERROR, 
-                             EXCEPTION_FLAG_FATAL,
-                             VmPtr);
-    
+    EbcDebugSignalException (
+      EXCEPT_EBC_DIVIDE_ERROR,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
+
     return 0;
   } else {
     if (*VmPtr->Ip & DATAMANIP_M_64) {
-      return (UINT64)(DivS64x64 (Op1, Op2, &Remainder, &Error));
+      return (UINT64) (DivS64x64 (Op1, Op2, &Remainder, &Error));
     } else {
-      return (UINT64)((INT64)((INT32)Op1 / (INT32)Op2));
+      return (UINT64) ((INT64) ((INT32) Op1 / (INT32) Op2));
     }
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteDIVU (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2580,25 +3079,28 @@ Instruction syntax:
   // Check for divide-by-0
   //
   if (Op2 == 0) {
-    EbcDebugSignalException (EXCEPT_EBC_DIVIDE_ERROR, 
-                             EXCEPTION_FLAG_FATAL,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_DIVIDE_ERROR,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
     return 0;
   } else {
     //
     // Get the destination register
     //
     if (*VmPtr->Ip & DATAMANIP_M_64) {
-      return (UINT64)(DivU64x64 (Op1, Op2, &Remainder, &Error));
+      return (UINT64) (DivU64x64 (Op1, Op2, &Remainder, &Error));
     } else {
-      return (UINT64)((UINT32)Op1 / (UINT32)Op2);
+      return (UINT64) ((UINT32) Op1 / (UINT32) Op2);
     }
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteMOD (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2622,24 +3124,27 @@ Instruction syntax:
 {
   INT64   Remainder;
   UINT32  Error;
-    
+
   //
   // Check for divide-by-0
   //
   if (Op2 == 0) {
-    EbcDebugSignalException (EXCEPT_EBC_DIVIDE_ERROR, 
-                             EXCEPTION_FLAG_FATAL,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_DIVIDE_ERROR,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
     return 0;
   } else {
-    DivS64x64 ((INT64)Op1, (INT64)Op2, &Remainder, &Error);
+    DivS64x64 ((INT64) Op1, (INT64) Op2, &Remainder, &Error);
     return Remainder;
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteMODU (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2661,26 +3166,29 @@ Instruction syntax:
   
 --*/
 {
-  UINT64    Remainder;
-  UINT32    Error;
-  
+  UINT64  Remainder;
+  UINT32  Error;
+
   //
   // Check for divide-by-0
   //
   if (Op2 == 0) {
-    EbcDebugSignalException (EXCEPT_EBC_DIVIDE_ERROR, 
-                             EXCEPTION_FLAG_FATAL,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_DIVIDE_ERROR,
+      EXCEPTION_FLAG_FATAL,
+      VmPtr
+      );
     return 0;
   } else {
     DivU64x64 (Op1, Op2, &Remainder, &Error);
     return Remainder;
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteAND (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2704,10 +3212,11 @@ Instruction syntax:
 {
   return Op1 & Op2;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteOR (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2731,10 +3240,11 @@ Instruction syntax:
 {
   return Op1 | Op2;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteXOR (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2758,10 +3268,11 @@ Instruction syntax:
 {
   return Op1 ^ Op2;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteSHL (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2787,13 +3298,14 @@ Instruction syntax:
   if (*VmPtr->Ip & DATAMANIP_M_64) {
     return LeftShiftU64 (Op1, Op2);
   } else {
-    return (UINT64)((UINT32)((UINT32)Op1 << (UINT32)Op2));
+    return (UINT64) ((UINT32) ((UINT32) Op1 << (UINT32) Op2));
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteSHR (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2816,15 +3328,16 @@ Instruction syntax:
 --*/
 {
   if (*VmPtr->Ip & DATAMANIP_M_64) {
-    return RightShiftU64 (Op1, Op2); 
+    return RightShiftU64 (Op1, Op2);
   } else {
-    return (UINT64)((UINT32)Op1 >> (UINT32)Op2);
+    return (UINT64) ((UINT32) Op1 >> (UINT32) Op2);
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteASHR (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2849,13 +3362,14 @@ Instruction syntax:
   if (*VmPtr->Ip & DATAMANIP_M_64) {
     return ARightShift64 (Op1, Op2);
   } else {
-    return (UINT64)((INT64)((INT32)Op1 >> (UINT32)Op2));
+    return (UINT64) ((INT64) ((INT32) Op1 >> (UINT32) Op2));
   }
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteEXTNDB (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2884,15 +3398,16 @@ Instruction syntax:
   // Convert to byte, then return as 64-bit signed value to let compiler
   // sign-extend the value
   //
-  Data8 = (INT8)Op2;
-  Data64 = (INT64)Data8;
-        
-  return (UINT64)Data64;
+  Data8   = (INT8) Op2;
+  Data64  = (INT64) Data8;
+
+  return (UINT64) Data64;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 ExecuteEXTNDW (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2915,18 +3430,17 @@ Instruction syntax:
   
 --*/
 {
-  INT16  Data16;
+  INT16 Data16;
   INT64 Data64;
   //
   // Convert to word, then return as 64-bit signed value to let compiler
   // sign-extend the value
   //
-  Data16 = (INT16)Op2;
-  Data64 = (INT64)Data16;
-        
-  return (UINT64)Data64;
-}
+  Data16  = (INT16) Op2;
+  Data64  = (INT64) Data16;
 
+  return (UINT64) Data64;
+}
 //
 // Execute the EBC EXTNDD instruction.
 //
@@ -2935,10 +3449,10 @@ Instruction syntax:
 //
 // Operation:  Dest <- SignExtended((DWORD)Source))
 //
-STATIC 
-UINT64 
+STATIC
+UINT64
 ExecuteEXTNDD (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINT64       Op1,
   IN UINT64       Op2
   )
@@ -2967,11 +3481,12 @@ Instruction syntax:
   // Convert to 32-bit value, then return as 64-bit signed value to let compiler
   // sign-extend the value
   //
-  Data32 = (INT32)Op2;
-  Data64 = (INT64)Data32;
-        
-  return (UINT64)Data64;
+  Data32  = (INT32) Op2;
+  Data64  = (INT64) Data32;
+
+  return (UINT64) Data64;
 }
+
 STATIC
 EFI_STATUS
 ExecuteSignedDataManip (
@@ -2984,6 +3499,7 @@ ExecuteSignedDataManip (
   //
   return ExecuteDataManip (VmPtr, TRUE);
 }
+
 STATIC
 EFI_STATUS
 ExecuteUnsignedDataManip (
@@ -2996,8 +3512,9 @@ ExecuteUnsignedDataManip (
   //
   return ExecuteDataManip (VmPtr, FALSE);
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteDataManip (
   IN VM_CONTEXT   *VmPtr,
   IN BOOLEAN      IsSignedOp
@@ -3023,18 +3540,18 @@ Format:
 
 --*/
 {
-  UINT8     Opcode;
-  INT16     Index16;
-  UINT8     Operands;
-  UINT8     Size;
-  UINT64    Op1;
-  UINT64    Op2;
+  UINT8   Opcode;
+  INT16   Index16;
+  UINT8   Operands;
+  UINT8   Size;
+  UINT64  Op1;
+  UINT64  Op2;
 
   //
   // Get opcode and operands
   //
-  Opcode    = GETOPCODE(VmPtr);
-  Operands  = GETOPERANDS(VmPtr);
+  Opcode    = GETOPCODE (VmPtr);
+  Operands  = GETOPERANDS (VmPtr);
 
   //
   // Determine if we have immediate data by the opcode
@@ -3047,81 +3564,84 @@ Format:
       Index16 = VmReadIndex16 (VmPtr, 2);
     } else {
       Index16 = VmReadImmed16 (VmPtr, 2);
-    }    
+    }
+
     Size = 4;
   } else {
     Index16 = 0;
-    Size = 2;
+    Size    = 2;
   }
-
   //
   // Now get operand2 (source). It's of format {@}R2 {Index16|Immed16}
   //
-  Op2 = (UINT64)VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16;
+  Op2 = (UINT64) VmPtr->R[OPERAND2_REGNUM (Operands)] + Index16;
   if (OPERAND2_INDIRECT (Operands)) {
     //
     // Indirect form: @R2 Index16. Fetch as 32- or 64-bit data
     //
     if (Opcode & DATAMANIP_M_64) {
-      Op2 = VmReadMem64 (VmPtr, (UINTN)Op2);
+      Op2 = VmReadMem64 (VmPtr, (UINTN) Op2);
     } else {
       //
-      // Read as signed value where appropriate. 
+      // Read as signed value where appropriate.
       //
       if (IsSignedOp) {
-        Op2 = (UINT64)(INT64)((INT32)VmReadMem32 (VmPtr, (UINTN)Op2));
+        Op2 = (UINT64) (INT64) ((INT32) VmReadMem32 (VmPtr, (UINTN) Op2));
       } else {
-        Op2 = (UINT64)VmReadMem32 (VmPtr, (UINTN)Op2);
+        Op2 = (UINT64) VmReadMem32 (VmPtr, (UINTN) Op2);
       }
     }
   } else {
     if ((Opcode & DATAMANIP_M_64) == 0) {
       if (IsSignedOp) {
-        Op2 = (UINT64)(INT64)((INT32)Op2);  
+        Op2 = (UINT64) (INT64) ((INT32) Op2);
       } else {
-        Op2 = (UINT64)((UINT32)Op2); 
-      }    
-    }    
+        Op2 = (UINT64) ((UINT32) Op2);
+      }
+    }
   }
   //
-  // Get operand1 (destination and sometimes also an actual operand) 
+  // Get operand1 (destination and sometimes also an actual operand)
   // of form {@}R1
   //
   Op1 = VmPtr->R[OPERAND1_REGNUM (Operands)];
   if (OPERAND1_INDIRECT (Operands)) {
     if (Opcode & DATAMANIP_M_64) {
-      Op1 = VmReadMem64 (VmPtr, (UINTN)Op1);
+      Op1 = VmReadMem64 (VmPtr, (UINTN) Op1);
     } else {
       if (IsSignedOp) {
-        Op1 = (UINT64)(INT64)((INT32)VmReadMem32 (VmPtr, (UINTN)Op1));
+        Op1 = (UINT64) (INT64) ((INT32) VmReadMem32 (VmPtr, (UINTN) Op1));
       } else {
-        Op1 = (UINT64)VmReadMem32 (VmPtr, (UINTN)Op1);
+        Op1 = (UINT64) VmReadMem32 (VmPtr, (UINTN) Op1);
       }
     }
   } else {
     if ((Opcode & DATAMANIP_M_64) == 0) {
       if (IsSignedOp) {
-        Op1 = (UINT64)(INT64)((INT32)Op1);  
+        Op1 = (UINT64) (INT64) ((INT32) Op1);
       } else {
-        Op1 = (UINT64)((UINT32)Op1); 
-      }    
-    }    
+        Op1 = (UINT64) ((UINT32) Op1);
+      }
+    }
   }
   //
   // Dispatch to the computation function
   //
-  if (((Opcode & OPCODE_M_OPCODE) - OPCODE_NOT) >= 
-      (sizeof (mDataManipDispatchTable) / sizeof (mDataManipDispatchTable[0]))) {
-    EbcDebugSignalException (EXCEPT_EBC_INVALID_OPCODE, 
-                             EXCEPTION_FLAG_ERROR,
-                             VmPtr);
-    // 
+  if (((Opcode & OPCODE_M_OPCODE) - OPCODE_NOT) >=
+        (sizeof (mDataManipDispatchTable) / sizeof (mDataManipDispatchTable[0]))
+        ) {
+    EbcDebugSignalException (
+      EXCEPT_EBC_INVALID_OPCODE,
+      EXCEPTION_FLAG_ERROR,
+      VmPtr
+      );
+    //
     // Advance and return
     //
     VmPtr->Ip += Size;
     return EFI_UNSUPPORTED;
   } else {
-    Op2 = mDataManipDispatchTable[(Opcode & OPCODE_M_OPCODE) - OPCODE_NOT] (VmPtr, Op1, Op2);
+    Op2 = mDataManipDispatchTable[(Opcode & OPCODE_M_OPCODE) - OPCODE_NOT](VmPtr, Op1, Op2);
   }
   //
   // Write back the result.
@@ -3129,9 +3649,9 @@ Format:
   if (OPERAND1_INDIRECT (Operands)) {
     Op1 = VmPtr->R[OPERAND1_REGNUM (Operands)];
     if (Opcode & DATAMANIP_M_64) {
-      VmWriteMem64 (VmPtr, (UINTN)Op1, Op2);
+      VmWriteMem64 (VmPtr, (UINTN) Op1, Op2);
     } else {
-      VmWriteMem32 (VmPtr, (UINTN)Op1, (UINT32)Op2);
+      VmWriteMem32 (VmPtr, (UINTN) Op1, (UINT32) Op2);
     }
   } else {
     //
@@ -3139,9 +3659,9 @@ Format:
     // the specification) if 32-bit operation.
     //
     VmPtr->R[OPERAND1_REGNUM (Operands)] = Op2;
-    if ((Opcode & DATAMANIP_M_64) == 0) { 
+    if ((Opcode & DATAMANIP_M_64) == 0) {
       VmPtr->R[OPERAND1_REGNUM (Operands)] &= 0xFFFFFFFF;
-    }    
+    }
   }
   //
   // Advance the instruction pointer
@@ -3149,8 +3669,9 @@ Format:
   VmPtr->Ip += Size;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteLOADSP (
   IN VM_CONTEXT *VmPtr
   )
@@ -3170,18 +3691,17 @@ Instruction syntax:
 
 --*/
 {
-  UINT8      Operands;
-  
+  UINT8 Operands;
+
   //
   // Get the operands
   //
-  Operands = GETOPERANDS(VmPtr);
+  Operands = GETOPERANDS (VmPtr);
 
   //
   // Do the operation
   //
-  switch (OPERAND1_REGNUM (Operands)) 
-  {
+  switch (OPERAND1_REGNUM (Operands)) {
   //
   // Set flags
   //
@@ -3190,21 +3710,25 @@ Instruction syntax:
     // Spec states that this instruction will not modify reserved bits in
     // the flags register.
     //
-    VmPtr->Flags = (VmPtr->Flags & ~VMFLAGS_ALL_VALID) | 
-                    (VmPtr->R[OPERAND2_REGNUM (Operands)] & VMFLAGS_ALL_VALID);
+    VmPtr->Flags = (VmPtr->Flags &~VMFLAGS_ALL_VALID) | (VmPtr->R[OPERAND2_REGNUM (Operands)] & VMFLAGS_ALL_VALID);
     break;
+
   default:
-    EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                             EXCEPTION_FLAG_WARNING,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_INSTRUCTION_ENCODING,
+      EXCEPTION_FLAG_WARNING,
+      VmPtr
+      );
     VmPtr->Ip += 2;
     return EFI_UNSUPPORTED;
   }
+
   VmPtr->Ip += 2;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 ExecuteSTORESP (
   IN VM_CONTEXT *VmPtr
   )
@@ -3224,18 +3748,17 @@ Instruction syntax:
 
 --*/
 {
-  UINT8      Operands;
-  
+  UINT8 Operands;
+
   //
   // Get the operands
   //
-  Operands = GETOPERANDS(VmPtr);
+  Operands = GETOPERANDS (VmPtr);
 
   //
   // Do the operation
   //
-  switch (OPERAND2_REGNUM (Operands)) 
-  {
+  switch (OPERAND2_REGNUM (Operands)) {
   //
   // Get flags
   //
@@ -3243,27 +3766,33 @@ Instruction syntax:
     //
     // Retrieve the value in the flags register, then clear reserved bits
     //
-    VmPtr->R[OPERAND1_REGNUM (Operands)] = (UINT64)(VmPtr->Flags & VMFLAGS_ALL_VALID);
+    VmPtr->R[OPERAND1_REGNUM (Operands)] = (UINT64) (VmPtr->Flags & VMFLAGS_ALL_VALID);
     break;
+
   //
   // Get IP -- address of following instruction
   //
   case 1:
-    VmPtr->R[OPERAND1_REGNUM (Operands)] = (UINT64)VmPtr->Ip + 2;
+    VmPtr->R[OPERAND1_REGNUM (Operands)] = (UINT64) VmPtr->Ip + 2;
     break;
+
   default:
-    EbcDebugSignalException (EXCEPT_EBC_INSTRUCTION_ENCODING, 
-                             EXCEPTION_FLAG_WARNING, 
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_INSTRUCTION_ENCODING,
+      EXCEPTION_FLAG_WARNING,
+      VmPtr
+      );
     VmPtr->Ip += 2;
     return EFI_UNSUPPORTED;
     break;
   }
+
   VmPtr->Ip += 2;
   return EFI_SUCCESS;
 }
-STATIC 
-INT16 
+
+STATIC
+INT16
 VmReadIndex16 (
   IN VM_CONTEXT     *VmPtr,
   IN UINT32         CodeOffset
@@ -3300,16 +3829,16 @@ Returns:
   INT16   N;
   INT16   NBits;
   INT16   Mask;
-  
+
   //
   // First read the index from the code stream
   //
   Index = VmReadCode16 (VmPtr, CodeOffset);
-     
+
   //
   // Get the mask for N. First get the number of bits from the index.
   //
-  NBits = (INT16)((Index & 0x7000) >> 12);
+  NBits = (INT16) ((Index & 0x7000) >> 12);
 
   //
   // Scale it for 16-bit indexes
@@ -3319,19 +3848,19 @@ Returns:
   //
   // Now using the number of bits, create a mask.
   //
-  Mask = (INT16)((INT16)~0 << NBits);
+  Mask = (INT16) ((INT16)~0 << NBits);
 
   //
   // Now using the mask, extract N from the lower bits of the index.
   //
-  N = (INT16)(Index & ~Mask);
+  N = (INT16) (Index &~Mask);
 
   //
   // Now compute C
   //
-  C = (INT16)(((Index & ~0xF000) & Mask) >> NBits);
+  C       = (INT16) (((Index &~0xF000) & Mask) >> NBits);
 
-  Offset = (INT16)(N * sizeof (UINTN) + C);
+  Offset  = (INT16) (N * sizeof (UINTN) + C);
 
   //
   // Now set the sign
@@ -3340,12 +3869,15 @@ Returns:
     //
     // Do it the hard way to work around a bogus compiler warning
     //
-    //Offset = -1 * Offset;
-    Offset = (INT16)((INT32)Offset * -1);
+    // Offset = -1 * Offset;
+    //
+    Offset = (INT16) ((INT32) Offset * -1);
   }
+
   return Offset;
 }
-STATIC 
+
+STATIC
 INT32
 VmReadIndex32 (
   IN VM_CONTEXT     *VmPtr,
@@ -3371,9 +3903,9 @@ Returns:
   INT32   N;
   INT32   NBits;
   INT32   Mask;
-  
+
   Index = VmReadImmed32 (VmPtr, CodeOffset);
-     
+
   //
   // Get the mask for N. First get the number of bits from the index.
   //
@@ -3392,14 +3924,14 @@ Returns:
   //
   // Now using the mask, extract N from the lower bits of the index.
   //
-  N = Index & ~Mask;
+  N = Index &~Mask;
 
   //
   // Now compute C
   //
-  C = ((Index & ~0xF0000000) & Mask) >> NBits;
+  C       = ((Index &~0xF0000000) & Mask) >> NBits;
 
-  Offset = N * sizeof (UINTN) + C;
+  Offset  = N * sizeof (UINTN) + C;
 
   //
   // Now set the sign
@@ -3407,9 +3939,11 @@ Returns:
   if (Index & 0x80000000) {
     Offset = Offset * -1;
   }
+
   return Offset;
 }
-STATIC 
+
+STATIC
 INT64
 VmReadIndex64 (
   IN VM_CONTEXT     *VmPtr,
@@ -3436,7 +3970,7 @@ Returns:
   INT64   N;
   INT64   NBits;
   INT64   Mask;
-     
+
   Index = VmReadCode64 (VmPtr, CodeOffset);
 
   //
@@ -3452,19 +3986,19 @@ Returns:
   //
   // Now using the number of bits, create a mask.
   //
-  Mask = (LeftShiftU64 ((UINT64)~0, (UINT64)NBits));
+  Mask = (LeftShiftU64 ((UINT64)~0, (UINT64) NBits));
 
   //
   // Now using the mask, extract N from the lower bits of the index.
   //
-  N = Index & ~Mask;
+  N = Index &~Mask;
 
   //
   // Now compute C
   //
-  C = ARightShift64 (((Index & ~0xF000000000000000) & Mask), (UINTN)NBits);
+  C       = ARightShift64 (((Index &~0xF000000000000000) & Mask), (UINTN) NBits);
 
-  Offset = MulU64x64 (N, sizeof (UINTN), &Remainder) + C;
+  Offset  = MulU64x64 (N, sizeof (UINTN), &Remainder) + C;
 
   //
   // Now set the sign
@@ -3472,13 +4006,15 @@ Returns:
   if (Index & 0x8000000000000000) {
     Offset = MulS64x64 (Offset, -1, &Index);
   }
+
   return Offset;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 VmWriteMem8 (
-  IN VM_CONTEXT   *VmPtr, 
-  IN UINTN         Addr, 
+  IN VM_CONTEXT    *VmPtr,
+  IN UINTN         Addr,
   IN UINT8         Data
   )
 /*++
@@ -3509,55 +4045,20 @@ Returns:
   //
   // Convert the address if it's in the stack gap
   //
-  Addr = ConvertStackAddr (VmPtr, Addr);
-  *(UINT8 *)Addr = Data;
+  Addr            = ConvertStackAddr (VmPtr, Addr);
+  *(UINT8 *) Addr = Data;
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 VmWriteMem16 (
-  IN VM_CONTEXT   *VmPtr, 
-  IN UINTN        Addr, 
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        Addr,
   IN UINT16       Data
   )
 {
-  EFI_STATUS Status;
-
-  //
-  // Convert the address if it's in the stack gap
-  //
-  Addr = ConvertStackAddr(VmPtr, Addr);
-
-  //
-  // Do a simple write if aligned
-  //
-  if (IS_ALIGNED(Addr, sizeof (UINT16))) {
-    *(UINT16 *)Addr = Data;  
-  } else {
-    //
-    // Write as two bytes 
-    //
-    MEMORY_FENCE();
-    if ((Status = VmWriteMem8 (VmPtr, Addr, (UINT8)Data)) != EFI_SUCCESS) {
-      return Status;
-    }
-    MEMORY_FENCE();
-    if ((Status = VmWriteMem8 (VmPtr, Addr + 1, (UINT8)(Data >> 8))) != EFI_SUCCESS) {
-      return Status;
-    }
-    MEMORY_FENCE();
-  }
-  return EFI_SUCCESS;
-}
-STATIC 
-EFI_STATUS 
-VmWriteMem32 (
-  IN VM_CONTEXT   *VmPtr, 
-  IN UINTN        Addr, 
-  IN UINT32       Data
-  )
-{
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
   //
   // Convert the address if it's in the stack gap
@@ -3567,29 +4068,73 @@ VmWriteMem32 (
   //
   // Do a simple write if aligned
   //
-  if (IS_ALIGNED(Addr, sizeof (UINT32))) {
-      *(UINT32 *)Addr = Data;
+  if (IS_ALIGNED (Addr, sizeof (UINT16))) {
+    *(UINT16 *) Addr = Data;
+  } else {
+    //
+    // Write as two bytes
+    //
+    MEMORY_FENCE ();
+    if ((Status = VmWriteMem8 (VmPtr, Addr, (UINT8) Data)) != EFI_SUCCESS) {
+      return Status;
+    }
+
+    MEMORY_FENCE ();
+    if ((Status = VmWriteMem8 (VmPtr, Addr + 1, (UINT8) (Data >> 8))) != EFI_SUCCESS) {
+      return Status;
+    }
+
+    MEMORY_FENCE ();
+  }
+
+  return EFI_SUCCESS;
+}
+
+STATIC
+EFI_STATUS
+VmWriteMem32 (
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        Addr,
+  IN UINT32       Data
+  )
+{
+  EFI_STATUS  Status;
+
+  //
+  // Convert the address if it's in the stack gap
+  //
+  Addr = ConvertStackAddr (VmPtr, Addr);
+
+  //
+  // Do a simple write if aligned
+  //
+  if (IS_ALIGNED (Addr, sizeof (UINT32))) {
+    *(UINT32 *) Addr = Data;
   } else {
     //
     // Write as two words
     //
-    MEMORY_FENCE();
-    if ((Status = VmWriteMem16 (VmPtr, Addr, (UINT16)Data)) != EFI_SUCCESS) {
+    MEMORY_FENCE ();
+    if ((Status = VmWriteMem16 (VmPtr, Addr, (UINT16) Data)) != EFI_SUCCESS) {
       return Status;
     }
-    MEMORY_FENCE();
-    if ((Status = VmWriteMem16 (VmPtr, Addr + sizeof (UINT16), (UINT16)(Data >> 16))) != EFI_SUCCESS) {
+
+    MEMORY_FENCE ();
+    if ((Status = VmWriteMem16 (VmPtr, Addr + sizeof (UINT16), (UINT16) (Data >> 16))) != EFI_SUCCESS) {
       return Status;
     }
-    MEMORY_FENCE();
+
+    MEMORY_FENCE ();
   }
+
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 VmWriteMem64 (
-  IN VM_CONTEXT   *VmPtr, 
-  IN UINTN        Addr, 
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        Addr,
   IN UINT64       Data
   )
 {
@@ -3604,39 +4149,42 @@ VmWriteMem64 (
   //
   // Do a simple write if aligned
   //
-  if (IS_ALIGNED(Addr, sizeof (UINT64))) {
-    *(UINT64 *)Addr = Data;
+  if (IS_ALIGNED (Addr, sizeof (UINT64))) {
+    *(UINT64 *) Addr = Data;
   } else {
     //
     // Write as two 32-bit words
     //
-    MEMORY_FENCE();
-    if ((Status = VmWriteMem32 (VmPtr, Addr, (UINT32)Data)) != EFI_SUCCESS) {
+    MEMORY_FENCE ();
+    if ((Status = VmWriteMem32 (VmPtr, Addr, (UINT32) Data)) != EFI_SUCCESS) {
       return Status;
     }
-    MEMORY_FENCE();
-    Data32 = (UINT32)(((UINT32 *)&Data)[1]);
+
+    MEMORY_FENCE ();
+    Data32 = (UINT32) (((UINT32 *) &Data)[1]);
     if ((Status = VmWriteMem32 (VmPtr, Addr + sizeof (UINT32), Data32)) != EFI_SUCCESS) {
       return Status;
     }
-    MEMORY_FENCE();
+
+    MEMORY_FENCE ();
   }
+
   return EFI_SUCCESS;
 }
-STATIC 
-EFI_STATUS 
+
+STATIC
+EFI_STATUS
 VmWriteMemN (
-  IN VM_CONTEXT   *VmPtr, 
-  IN UINTN        Addr, 
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        Addr,
   IN UINTN        Data
   )
 {
-  EFI_STATUS Status;
-  UINTN      Index;
-
+  EFI_STATUS  Status;
+  UINTN       Index;
 
   Status = EFI_SUCCESS;
-  
+
   //
   // Convert the address if it's in the stack gap
   //
@@ -3645,22 +4193,24 @@ VmWriteMemN (
   //
   // Do a simple write if aligned
   //
-  if (IS_ALIGNED(Addr, sizeof (UINTN))) {
-    *(UINTN *)Addr = Data;
+  if (IS_ALIGNED (Addr, sizeof (UINTN))) {
+    *(UINTN *) Addr = Data;
   } else {
-    for(Index = 0; Index < sizeof (UINTN) / sizeof (UINT32); Index++) {
-      MEMORY_FENCE();
-      Status = VmWriteMem32 (VmPtr, Addr + Index * sizeof (UINT32), (UINT32)Data);
-      MEMORY_FENCE();
+    for (Index = 0; Index < sizeof (UINTN) / sizeof (UINT32); Index++) {
+      MEMORY_FENCE ();
+      Status = VmWriteMem32 (VmPtr, Addr + Index * sizeof (UINT32), (UINT32) Data);
+      MEMORY_FENCE ();
       Data >>= 32;
     }
   }
+
   return Status;
 }
-STATIC 
-INT8 
+
+STATIC
+INT8
 VmReadImmed8 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 /*++
@@ -3684,59 +4234,64 @@ Returns:
   //
   // Simply return the data in flat memory space
   //
-  return *(INT8 *)(VmPtr->Ip + Offset);
+  return * (INT8 *) (VmPtr->Ip + Offset);
 }
-STATIC 
-INT16 
+
+STATIC
+INT16
 VmReadImmed16 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 {
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED((UINTN)VmPtr->Ip + Offset, sizeof (INT16))) {
-    return *(INT16 *)(VmPtr->Ip + Offset);
+  if (IS_ALIGNED ((UINTN) VmPtr->Ip + Offset, sizeof (INT16))) {
+    return * (INT16 *) (VmPtr->Ip + Offset);
   } else {
     //
     // All code word reads should be aligned
     //
-    EbcDebugSignalException (EXCEPT_EBC_ALIGNMENT_CHECK, 
-                             EXCEPTION_FLAG_WARNING,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_ALIGNMENT_CHECK,
+      EXCEPTION_FLAG_WARNING,
+      VmPtr
+      );
   }
   //
   // Return unaligned data
   //
-  return (INT16)(*(UINT8 *)(VmPtr->Ip + Offset) + (*(UINT8 *)(VmPtr->Ip + Offset + 1) << 8));
+  return (INT16) (*(UINT8 *) (VmPtr->Ip + Offset) + (*(UINT8 *) (VmPtr->Ip + Offset + 1) << 8));
 }
-STATIC 
-INT32 
+
+STATIC
+INT32
 VmReadImmed32 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 {
   UINT32  Data;
-  
+
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED((UINTN)VmPtr->Ip + Offset, sizeof (UINT32))) {
-    return *(INT32 *)(VmPtr->Ip + Offset);
+  if (IS_ALIGNED ((UINTN) VmPtr->Ip + Offset, sizeof (UINT32))) {
+    return * (INT32 *) (VmPtr->Ip + Offset);
   }
   //
   // Return unaligned data
   //
-  Data = (UINT32)VmReadCode16 (VmPtr, Offset);
-  Data |= (UINT32)(VmReadCode16(VmPtr, Offset + 2) << 16);
+  Data = (UINT32) VmReadCode16 (VmPtr, Offset);
+  Data |= (UINT32) (VmReadCode16 (VmPtr, Offset + 2) << 16);
   return Data;
 }
-STATIC 
-INT64 
+
+STATIC
+INT64
 VmReadImmed64 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 {
@@ -3747,24 +4302,25 @@ VmReadImmed64 (
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED((UINTN)VmPtr->Ip + Offset, sizeof (UINT64))) {
-    return *(UINT64 *)(VmPtr->Ip + Offset);
+  if (IS_ALIGNED ((UINTN) VmPtr->Ip + Offset, sizeof (UINT64))) {
+    return * (UINT64 *) (VmPtr->Ip + Offset);
   }
   //
   // Return unaligned data.
   //
-  Ptr = (UINT8 *)&Data64;
-  Data32 = VmReadCode32 (VmPtr, Offset);
-  *(UINT32 *)Ptr = Data32;
+  Ptr             = (UINT8 *) &Data64;
+  Data32          = VmReadCode32 (VmPtr, Offset);
+  *(UINT32 *) Ptr = Data32;
   Ptr += sizeof (Data32);
-  Data32 = VmReadCode32 (VmPtr, Offset + sizeof (UINT32));
-  *(UINT32 *)Ptr = Data32;
+  Data32          = VmReadCode32 (VmPtr, Offset + sizeof (UINT32));
+  *(UINT32 *) Ptr = Data32;
   return Data64;
 }
-STATIC 
-UINT16 
+
+STATIC
+UINT16
 VmReadCode16 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 /*++
@@ -3785,46 +4341,50 @@ Returns:
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED((UINTN)VmPtr->Ip + Offset, sizeof (UINT16))) {
-    return *(UINT16 *)(VmPtr->Ip + Offset);
+  if (IS_ALIGNED ((UINTN) VmPtr->Ip + Offset, sizeof (UINT16))) {
+    return * (UINT16 *) (VmPtr->Ip + Offset);
   } else {
     //
     // All code word reads should be aligned
     //
-    EbcDebugSignalException (EXCEPT_EBC_ALIGNMENT_CHECK, 
-                             EXCEPTION_FLAG_WARNING,
-                             VmPtr);
+    EbcDebugSignalException (
+      EXCEPT_EBC_ALIGNMENT_CHECK,
+      EXCEPTION_FLAG_WARNING,
+      VmPtr
+      );
   }
   //
   // Return unaligned data
   //
-  return (UINT16)(*(UINT8 *)(VmPtr->Ip + Offset) + (*(UINT8 *)(VmPtr->Ip + Offset + 1) << 8));
+  return (UINT16) (*(UINT8 *) (VmPtr->Ip + Offset) + (*(UINT8 *) (VmPtr->Ip + Offset + 1) << 8));
 }
-STATIC 
-UINT32 
+
+STATIC
+UINT32
 VmReadCode32 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 {
-  UINT32  Data;  
+  UINT32  Data;
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED((UINTN)VmPtr->Ip + Offset, sizeof (UINT32))) {
-    return *(UINT32 *)(VmPtr->Ip + Offset);
+  if (IS_ALIGNED ((UINTN) VmPtr->Ip + Offset, sizeof (UINT32))) {
+    return * (UINT32 *) (VmPtr->Ip + Offset);
   }
   //
   // Return unaligned data
   //
-  Data = (UINT32)VmReadCode16 (VmPtr, Offset);
+  Data = (UINT32) VmReadCode16 (VmPtr, Offset);
   Data |= (VmReadCode16 (VmPtr, Offset + 2) << 16);
   return Data;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 VmReadCode64 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINT32     Offset
   )
 {
@@ -3835,24 +4395,25 @@ VmReadCode64 (
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED((UINTN)VmPtr->Ip + Offset, sizeof (UINT64))) {
-    return *(UINT64 *)(VmPtr->Ip + Offset);
+  if (IS_ALIGNED ((UINTN) VmPtr->Ip + Offset, sizeof (UINT64))) {
+    return * (UINT64 *) (VmPtr->Ip + Offset);
   }
   //
   // Return unaligned data.
   //
-  Ptr = (UINT8 *)&Data64;
-  Data32 = VmReadCode32 (VmPtr, Offset);
-  *(UINT32 *)Ptr = Data32;
+  Ptr             = (UINT8 *) &Data64;
+  Data32          = VmReadCode32 (VmPtr, Offset);
+  *(UINT32 *) Ptr = Data32;
   Ptr += sizeof (Data32);
-  Data32 = VmReadCode32 (VmPtr, Offset + sizeof (UINT32));
-  *(UINT32 *)Ptr = Data32;
+  Data32          = VmReadCode32 (VmPtr, Offset + sizeof (UINT32));
+  *(UINT32 *) Ptr = Data32;
   return Data64;
 }
-STATIC 
-UINT8 
+
+STATIC
+UINT8
 VmReadMem8 (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINTN        Addr
   )
 {
@@ -3863,12 +4424,13 @@ VmReadMem8 (
   //
   // Simply return the data in flat memory space
   //
-  return *(UINT8 *)Addr;
+  return * (UINT8 *) Addr;
 }
-STATIC 
-UINT16 
+
+STATIC
+UINT16
 VmReadMem16 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINTN      Addr
   )
 {
@@ -3879,23 +4441,24 @@ VmReadMem16 (
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED(Addr, sizeof (UINT16))) {
-    return *(UINT16 *)Addr;
+  if (IS_ALIGNED (Addr, sizeof (UINT16))) {
+    return * (UINT16 *) Addr;
   }
   //
   // Return unaligned data
   //
-  return (UINT16)(*(UINT8 *)Addr + (*(UINT8 *)(Addr + 1) << 8));
+  return (UINT16) (*(UINT8 *) Addr + (*(UINT8 *) (Addr + 1) << 8));
 }
-STATIC 
-UINT32 
+
+STATIC
+UINT32
 VmReadMem32 (
-  IN VM_CONTEXT *VmPtr, 
+  IN VM_CONTEXT *VmPtr,
   IN UINTN      Addr
   )
 {
   UINT32  Data;
- 
+
   //
   // Convert the address if it's in the stack gap
   //
@@ -3903,20 +4466,21 @@ VmReadMem32 (
   //
   // Read direct if aligned
   //
-  if (IS_ALIGNED(Addr, sizeof (UINT32))) {
-    return *(UINT32 *)Addr;
+  if (IS_ALIGNED (Addr, sizeof (UINT32))) {
+    return * (UINT32 *) Addr;
   }
   //
   // Return unaligned data
   //
-  Data = (UINT32)VmReadMem16 (VmPtr, Addr);
+  Data = (UINT32) VmReadMem16 (VmPtr, Addr);
   Data |= (VmReadMem16 (VmPtr, Addr + 2) << 16);
   return Data;
 }
-STATIC 
-UINT64 
+
+STATIC
+UINT64
 VmReadMem64 (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT   *VmPtr,
   IN UINTN        Addr
   )
 {
@@ -3932,20 +4496,21 @@ VmReadMem64 (
   // Read direct if aligned
   //
   if (IS_ALIGNED (Addr, sizeof (UINT64))) {
-    return *(UINT64 *)Addr;
+    return * (UINT64 *) Addr;
   }
   //
   // Return unaligned data. Assume little endian.
   //
-  Data = (UINT64)VmReadMem32 (VmPtr, Addr);
-  Data32 = VmReadMem32 (VmPtr, Addr + sizeof (UINT32));
-  *(UINT32 *)((UINT32 *)&Data + 1) = Data32;
+  Data    = (UINT64) VmReadMem32 (VmPtr, Addr);
+  Data32  = VmReadMem32 (VmPtr, Addr + sizeof (UINT32));
+  *(UINT32 *) ((UINT32 *) &Data + 1) = Data32;
   return Data;
 }
-STATIC 
-UINTN 
+
+STATIC
+UINTN
 ConvertStackAddr (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT    *VmPtr,
   IN UINTN         Addr
   )
 /*++
@@ -3982,18 +4547,20 @@ Returns:
     // In the stack gap -- now make sure it's not in the VM itself, which
     // would be the case if it's accessing VM register contents.
     //
-    if ((Addr < (UINTN)VmPtr) || (Addr > (UINTN)VmPtr + sizeof (VM_CONTEXT))) {
-      VmPtr->LastAddrConverted = Addr;
+    if ((Addr < (UINTN) VmPtr) || (Addr > (UINTN) VmPtr + sizeof (VM_CONTEXT))) {
+      VmPtr->LastAddrConverted      = Addr;
       VmPtr->LastAddrConvertedValue = Addr - VmPtr->LowStackTop + VmPtr->HighStackBottom;
-      return (Addr - VmPtr->LowStackTop + VmPtr->HighStackBottom);
+      return Addr - VmPtr->LowStackTop + VmPtr->HighStackBottom;
     }
   }
+
   return Addr;
 }
-STATIC 
-UINTN 
+
+STATIC
+UINTN
 VmReadMemN (
-  IN VM_CONTEXT   *VmPtr, 
+  IN VM_CONTEXT    *VmPtr,
   IN UINTN         Addr
   )
 /*++
@@ -4012,7 +4579,8 @@ Returns:
 {
   UINTN   Data;
   UINT32  Size;
-  UINT8   *FromPtr, *ToPtr;
+  UINT8   *FromPtr;
+  UINT8   *ToPtr;
   //
   // Convert the address if it's in the stack gap
   //
@@ -4021,25 +4589,28 @@ Returns:
   // Read direct if aligned
   //
   if (IS_ALIGNED (Addr, sizeof (UINTN))) {
-    return *(UINTN *)Addr;
+    return * (UINTN *) Addr;
   }
   //
   // Return unaligned data
   //
-  Data = 0;
-  FromPtr = (UINT8 *)Addr;
-  ToPtr   = (UINT8 *)&Data;
+  Data    = 0;
+  FromPtr = (UINT8 *) Addr;
+  ToPtr   = (UINT8 *) &Data;
 
   for (Size = 0; Size < sizeof (Data); Size++) {
     *ToPtr = *FromPtr;
     ToPtr++;
     FromPtr++;
   }
+
   return Data;
 }
-UINT64 
-GetVmVersion ()
+
+UINT64
+GetVmVersion (
+  VOID
+  )
 {
-  return (UINT64)(((VM_MAJOR_VERSION & 0xFFFF) << 16) |
-                  ((VM_MINOR_VERSION & 0xFFFF)));
+  return (UINT64) (((VM_MAJOR_VERSION & 0xFFFF) << 16) | ((VM_MINOR_VERSION & 0xFFFF)));
 }

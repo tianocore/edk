@@ -22,12 +22,10 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 
-
-
 EFI_STATUS
 EfiLibLocateHandleProtocolByProtocols (
-  IN OUT EFI_HANDLE        *Handle,    OPTIONAL
-  OUT    VOID             **Interface, OPTIONAL
+  IN OUT EFI_HANDLE        * Handle, OPTIONAL
+  OUT    VOID              **Interface, OPTIONAL
   ...
   )
 /*++
@@ -61,29 +59,29 @@ Returns:
 
 --*/
 {
-  VA_LIST                   args;
-  EFI_STATUS                Status;
-  EFI_GUID                 *Protocol;
-  EFI_GUID                 *ProtocolFirst;
-  EFI_HANDLE               *HandleBuffer;
-  UINTN                     NumberOfHandles;
-  UINTN                     Idx;
-  VOID                     *AnInterface;
+  VA_LIST     args;
+  EFI_STATUS  Status;
+  EFI_GUID    *Protocol;
+  EFI_GUID    *ProtocolFirst;
+  EFI_HANDLE  *HandleBuffer;
+  UINTN       NumberOfHandles;
+  UINTN       Idx;
+  VOID        *AnInterface;
 
   AnInterface = NULL;
   VA_START (args, Interface);
-  ProtocolFirst = VA_ARG (args, EFI_GUID*);
+  ProtocolFirst = VA_ARG (args, EFI_GUID *);
 
   //
   // Get list of all handles that support the first protocol.
   //
   Status = gBS->LocateHandleBuffer (
-                ByProtocol,
-                ProtocolFirst,
-                NULL,
-                &NumberOfHandles,
-                &HandleBuffer
-                );
+                  ByProtocol,
+                  ProtocolFirst,
+                  NULL,
+                  &NumberOfHandles,
+                  &HandleBuffer
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -96,7 +94,7 @@ Returns:
     //
     // Leave the Idx just beyond the matching handle.
     //
-    for (; Idx < NumberOfHandles; ) {
+    for (; Idx < NumberOfHandles;) {
       if (*Handle == HandleBuffer[Idx++]) {
         break;
       }
@@ -112,14 +110,14 @@ Returns:
     // Start with the second protocol, the first one is sure on this handle.
     //
     VA_START (args, Interface);
-    VA_ARG   (args, EFI_GUID*);
+    VA_ARG (args, EFI_GUID *);
 
     //
     // Iterate protocols from the variable list.
     //
     while (TRUE) {
 
-      Protocol = VA_ARG (args, EFI_GUID*);
+      Protocol = VA_ARG (args, EFI_GUID *);
 
       if (Protocol == NULL) {
 
@@ -128,7 +126,7 @@ Returns:
         // finding each protocol on a single handle.
         //
 
-        Status  = EFI_SUCCESS;
+        Status = EFI_SUCCESS;
 
         //
         // OPTIONAL parameter returning the Handle.
@@ -142,21 +140,20 @@ Returns:
         //
         if (Interface != NULL) {
           Status = gBS->HandleProtocol (
-                        HandleBuffer[Idx],
-                        ProtocolFirst,
-                        Interface
-                        );
+                          HandleBuffer[Idx],
+                          ProtocolFirst,
+                          Interface
+                          );
         }
 
         goto lbl_out;
       }
 
-
       Status = gBS->HandleProtocol (
-                    HandleBuffer[Idx],
-                    Protocol,
-                    &AnInterface
-                    );
+                      HandleBuffer[Idx],
+                      Protocol,
+                      &AnInterface
+                      );
       if (EFI_ERROR (Status)) {
 
         //

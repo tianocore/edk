@@ -22,7 +22,6 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 // Static (possibly build generated) Bios Vendor data.
 //
@@ -30,59 +29,59 @@ MISC_SUBCLASS_TABLE_DATA(EFI_MISC_BIOS_VENDOR, MiscBiosVendor) = {
   STRING_TOKEN(STR_MISC_BIOS_VENDOR),       // BiosVendor
   STRING_TOKEN(STR_MISC_BIOS_VERSION),      // BiosVersion
   STRING_TOKEN(STR_MISC_BIOS_RELEASE_DATE), // BiosReleaseDate
-  0xBABE,   // BiosStartingAddress
-  {         // BiosPhysicalDeviceSize
-    2,      // Value
-    3,      // Exponent
+  0xBABE, // BiosStartingAddress
+  {       // BiosPhysicalDeviceSize
+    2,    // Value
+    3,    // Exponent
   },
-  {         // BiosCharacteristics1
-    0,      // Reserved1                         :2
-    0,      // Unknown                           :1
-    1,      // BiosCharacteristicsNotSupported   :1
-    0,      // IsaIsSupported                    :1
-    0,      // McaIsSupported                    :1
-    0,      // EisaIsSupported                   :1
-    0,      // PciIsSupported                    :1
-    0,      // PcmciaIsSupported                 :1
-    0,      // PlugAndPlayIsSupported            :1
-    0,      // ApmIsSupported                    :1
-    0,      // BiosIsUpgradable                  :1
-    0,      // BiosShadowingAllowed              :1
-    0,      // VlVesaIsSupported                 :1
-    0,      // EscdSupportIsAvailable            :1
-    0,      // BootFromCdIsSupported             :1
-    0,      // SelectableBootIsSupported         :1
-    0,      // RomBiosIsSocketed                 :1
-    0,      // BootFromPcmciaIsSupported         :1
-    0,      // EDDSpecificationIsSupported       :1
-    0,      // JapaneseNecFloppyIsSupported      :1
-    0,      // JapaneseToshibaFloppyIsSupported  :1
-    0,      // Floppy525_360IsSupported          :1
-    0,      // Floppy525_12IsSupported           :1
-    0,      // Floppy35_720IsSupported           :1
-    0,      // Floppy35_288IsSupported           :1
-    0,      // PrintScreenIsSupported            :1
-    0,      // Keyboard8042IsSupported           :1
-    0,      // SerialIsSupported                 :1
-    0,      // PrinterIsSupported                :1
-    0,      // CgaMonoIsSupported                :1
-    0,      // NecPc98                           :1
-    0,      // AcpiIsSupported                   :1
-    0,      // UsbLegacyIsSupported              :1
-    0,      // AgpIsSupported                    :1
-    0,      // I20BootIsSupported                :1
-    0,      // Ls120BootIsSupported              :1
-    0,      // AtapiZipDriveBootIsSupported      :1
-    0,      // Boot1394IsSupported               :1
-    0,      // SmartBatteryIsSupported           :1
-    0,      // BiosBootSpecIsSupported           :1
-    0,      // FunctionKeyNetworkBootIsSupported :1
-    0       // Reserved                          :22
+  {       // BiosCharacteristics1
+    0,    // Reserved1                         :2
+    0,    // Unknown                           :1
+    1,    // BiosCharacteristicsNotSupported   :1
+    0,    // IsaIsSupported                    :1
+    0,    // McaIsSupported                    :1
+    0,    // EisaIsSupported                   :1
+    0,    // PciIsSupported                    :1
+    0,    // PcmciaIsSupported                 :1
+    0,    // PlugAndPlayIsSupported            :1
+    0,    // ApmIsSupported                    :1
+    0,    // BiosIsUpgradable                  :1
+    0,    // BiosShadowingAllowed              :1
+    0,    // VlVesaIsSupported                 :1
+    0,    // EscdSupportIsAvailable            :1
+    0,    // BootFromCdIsSupported             :1
+    0,    // SelectableBootIsSupported         :1
+    0,    // RomBiosIsSocketed                 :1
+    0,    // BootFromPcmciaIsSupported         :1
+    0,    // EDDSpecificationIsSupported       :1
+    0,    // JapaneseNecFloppyIsSupported      :1
+    0,    // JapaneseToshibaFloppyIsSupported  :1
+    0,    // Floppy525_360IsSupported          :1
+    0,    // Floppy525_12IsSupported           :1
+    0,    // Floppy35_720IsSupported           :1
+    0,    // Floppy35_288IsSupported           :1
+    0,    // PrintScreenIsSupported            :1
+    0,    // Keyboard8042IsSupported           :1
+    0,    // SerialIsSupported                 :1
+    0,    // PrinterIsSupported                :1
+    0,    // CgaMonoIsSupported                :1
+    0,    // NecPc98                           :1
+    0,    // AcpiIsSupported                   :1
+    0,    // UsbLegacyIsSupported              :1
+    0,    // AgpIsSupported                    :1
+    0,    // I20BootIsSupported                :1
+    0,    // Ls120BootIsSupported              :1
+    0,    // AtapiZipDriveBootIsSupported      :1
+    0,    // Boot1394IsSupported               :1
+    0,    // SmartBatteryIsSupported           :1
+    0,    // BiosBootSpecIsSupported           :1
+    0,    // FunctionKeyNetworkBootIsSupported :1
+    0     // Reserved                          :22
   },
-  {         // BiosCharacteristics2
-    0,      // BiosReserved                      :16
-    0,      // SystemReserved                    :16
-    0       // Reserved                          :32
+  {       // BiosCharacteristics2
+    0,    // BiosReserved                      :16
+    0,    // SystemReserved                    :16
+    0     // Reserved                          :32
   },
 };
 

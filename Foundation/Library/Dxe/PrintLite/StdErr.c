@@ -74,9 +74,11 @@ Routine Description:
 
 Arguments:
 
-  Format - Ascii format string see file header for more details.
+  ErrorString - String of error infomation.
 
-  ...    - Vararg list consumed by processing Format.
+  Format      - Ascii format string see file header for more details.
+
+  ...         - Vararg list consumed by processing Format.
 
 Returns: 
 
@@ -90,33 +92,34 @@ Returns:
   UINTN   MaxIndex;
   CHAR16  Buffer[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
   CHAR16  UnicodeFormat[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
-  
-  MaxIndex = EfiAsciiStrLen ((CHAR8 *)Format);
+
+  MaxIndex = EfiAsciiStrLen ((CHAR8 *) Format);
   if (MaxIndex > EFI_DRIVER_LIB_MAX_PRINT_BUFFER) {
     //
     // Format string was too long for use to process.
     //
     return 0;
   }
-  
+
   if (ErrorString != '\0') {
     if (gST->StdErr != NULL) {
       //
       // To be extra safe make sure StdErr has been initialized
       //
-      gST->StdErr->SetAttribute (gST->StdErr, EFI_TEXT_ATTR(EFI_RED, EFI_BLACK));
-      gST->StdErr->OutputString (gST->StdErr, (CHAR16 *)ErrorString);
-      gST->StdErr->SetAttribute (gST->StdErr, EFI_TEXT_ATTR(EFI_WHITE, EFI_BLACK));
+      gST->StdErr->SetAttribute (gST->StdErr, EFI_TEXT_ATTR (EFI_RED, EFI_BLACK));
+      gST->StdErr->OutputString (gST->StdErr, (CHAR16 *) ErrorString);
+      gST->StdErr->SetAttribute (gST->StdErr, EFI_TEXT_ATTR (EFI_WHITE, EFI_BLACK));
     }
   }
 
   for (Index = 0; Index < MaxIndex; Index++) {
-    UnicodeFormat[Index] = (CHAR16)Format[Index];
+    UnicodeFormat[Index] = (CHAR16) Format[Index];
   }
+
   UnicodeFormat[Index] = 0;
 
-  VA_START(Marker, Format);
-  Return = VSPrint (Buffer, sizeof(Buffer), UnicodeFormat, Marker);
+  VA_START (Marker, Format);
+  Return = VSPrint (Buffer, sizeof (Buffer), UnicodeFormat, Marker);
   VA_END (Marker);
 
   //
@@ -164,21 +167,21 @@ Returns:
   UINTN   MaxIndex;
   CHAR16  Buffer[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
   CHAR16  UnicodeFormat[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
-  
-  MaxIndex = EfiAsciiStrLen ((CHAR8 *)Format);
+
+  MaxIndex = EfiAsciiStrLen ((CHAR8 *) Format);
   if (MaxIndex > EFI_DRIVER_LIB_MAX_PRINT_BUFFER) {
     //
     // Format string was too long for use to process.
     //
     return 0;
   }
-  
+
   for (Index = 0; Index < EFI_DRIVER_LIB_MAX_PRINT_BUFFER; Index++) {
-    UnicodeFormat[Index] = (CHAR16)Format[Index];
+    UnicodeFormat[Index] = (CHAR16) Format[Index];
   }
 
-  VA_START(Marker, Format);
-  Return = VSPrint (Buffer, sizeof(Buffer), UnicodeFormat, Marker);
+  VA_START (Marker, Format);
+  Return = VSPrint (Buffer, sizeof (Buffer), UnicodeFormat, Marker);
   VA_END (Marker);
 
   //
@@ -194,7 +197,7 @@ Returns:
 
   return Return;
 }
-            
+
 
 UINTN
 Print (
@@ -223,9 +226,9 @@ Returns:
   UINTN   Return;
   VA_LIST Marker;
   CHAR16  Buffer[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
-  
-  VA_START(Marker, Format);
-  Return = VSPrint (Buffer, sizeof(Buffer), Format, Marker);
+
+  VA_START (Marker, Format);
+  Return = VSPrint (Buffer, sizeof (Buffer), Format, Marker);
   VA_END (Marker);
 
   if (gST->ConOut != NULL) {
@@ -265,9 +268,9 @@ Returns:
   UINTN   Return;
   VA_LIST Marker;
   CHAR16  Buffer[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
-  
-  VA_START(Marker, Format);
-  Return = VSPrint (Buffer, sizeof(Buffer), Format, Marker);
+
+  VA_START (Marker, Format);
+  Return = VSPrint (Buffer, sizeof (Buffer), Format, Marker);
   VA_END (Marker);
 
   if (gST->ConOut != NULL) {
@@ -279,4 +282,3 @@ Returns:
 
   return Return;
 }
-

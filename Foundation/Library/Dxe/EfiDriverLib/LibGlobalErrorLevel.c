@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  LibGlobals.c
+  LibGlobalErrorLevel.c
 
 Abstract:
 
@@ -28,8 +28,7 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include EFI_GUID_DEFINITION(StatusCodeCallerId)
-#include EFI_GUID_DEFINITION(StatusCodeDataTypeId)
+#include EFI_GUID_DEFINITION (StatusCodeCallerId)
+#include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 
-UINTN                     gErrorLevel = EFI_DBUG_MASK | EFI_D_LOAD;
-
+UINTN gErrorLevel = EFI_DBUG_MASK | EFI_D_LOAD;

@@ -16,7 +16,7 @@ Module Name:
 Abstract:
 
   Header file for GuidedSection.c
-  Please refer to EFI 2.0 File Image Format specification 
+  Please refer to Tiano File Image Format specification 
   FV spec 0.3.6
   
 --*/
@@ -27,7 +27,7 @@ Abstract:
 //
 // Statements that include other header files
 //
-#include EFI_PROTOCOL_DEFINITION(GuidedSectionExtraction)
+#include EFI_PROTOCOL_DEFINITION (GuidedSectionExtraction)
 
 //
 // Function prototype declarations
@@ -36,6 +36,23 @@ EFI_STATUS
 GuidedSectionExtractionProtocolConstructor (
   OUT EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL      **GuidedSep,
   IN  EFI_EXTRACT_GUIDED_SECTION                  ExtractSection
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  GuidedSep       - TODO: add argument description
+  ExtractSection  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif

@@ -21,24 +21,26 @@ Abstract:
 
 #ifndef _PEI_FV_FILE_LOADER_PPI_H
 #define _PEI_FV_FILE_LOADER_PPI_H
-        
-#define EFI_PEI_FV_FILE_LOADER_GUID  \
-{ 0x7e1f0d85, 0x4ff, 0x4bb2, 0x86, 0x6a, 0x31, 0xa2, 0x99, 0x6a, 0x48, 0xa8 }
+
+#define EFI_PEI_FV_FILE_LOADER_GUID \
+  { \
+    0x7e1f0d85, 0x4ff, 0x4bb2, 0x86, 0x6a, 0x31, 0xa2, 0x99, 0x6a, 0x48, 0xa8 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_PEI_FV_FILE_LOADER_PPI);
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_PEI_FV_LOAD_FILE) (
-  IN EFI_PEI_FV_FILE_LOADER_PPI        *This,
-  IN  EFI_FFS_FILE_HEADER                       *FfsHeader,
-  OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
+  IN EFI_PEI_FV_FILE_LOADER_PPI                 * This,
+  IN  EFI_FFS_FILE_HEADER                       * FfsHeader,
+  OUT EFI_PHYSICAL_ADDRESS                      * ImageAddress,
   OUT UINT64                                    *ImageSize,
-  OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
+  OUT EFI_PHYSICAL_ADDRESS                      * EntryPoint
   );
 
 typedef struct _EFI_PEI_FV_FILE_LOADER_PPI {
-  EFI_PEI_FV_LOAD_FILE        FvLoadFile;
+  EFI_PEI_FV_LOAD_FILE  FvLoadFile;
 } EFI_PEI_FV_FILE_LOADER_PPI;
 
 extern EFI_GUID gPeiFvFileLoaderPpiGuid;

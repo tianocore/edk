@@ -347,7 +347,7 @@ Sample\Universal\Network\Snp32_64\Dxe\SNP.inf
 #
 # Fat File System driver. Uncomment if you would like to include the driver
 #
-#Other\Maintained\Universal\Disk\FileSystem\Fat\Dxe\Fat.inf
+Other\Maintained\Universal\Disk\FileSystem\Fat\Dxe\Fat.inf
 
 
 #

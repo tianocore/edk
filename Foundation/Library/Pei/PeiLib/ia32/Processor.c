@@ -19,8 +19,8 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiJump.h"
-#include EFI_GUID_DEFINITION(PeiFlushInstructionCache)
-#include EFI_GUID_DEFINITION(PeiTransferControl)
+#include EFI_GUID_DEFINITION (PeiFlushInstructionCache)
+#include EFI_GUID_DEFINITION (PeiTransferControl)
 
 //
 // Prototypes
@@ -50,10 +50,10 @@ FlushInstructionCacheFlush (
 //
 // Table declarations
 //
-EFI_PEI_TRANSFER_CONTROL_PROTOCOL mTransferControl = {
+EFI_PEI_TRANSFER_CONTROL_PROTOCOL         mTransferControl = {
   TransferControlSetJump,
   TransferControlLongJump,
-  sizeof(EFI_JUMP_BUFFER)
+  sizeof (EFI_JUMP_BUFFER)
 };
 
 EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  mFlushInstructionCache = {
@@ -63,7 +63,7 @@ EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  mFlushInstructionCache = {
 
 EFI_STATUS
 EFIAPI
-InstallEfiPeiTransferControl(
+InstallEfiPeiTransferControl (
   IN OUT EFI_PEI_TRANSFER_CONTROL_PROTOCOL **This
   )
 /*++
@@ -78,14 +78,13 @@ Arguments:
 
 Returns:
 
-  This       - Pointer to transfer control mechanism.
+  EFI_SUCCESS     - Successfully installed.
 
 --*/
 {
   *This = &mTransferControl;
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -104,14 +103,13 @@ Arguments:
 
 Returns:
 
-  This       - Pointer to flush instruction cache mechanism.
+  EFI_SUCCESS     - Successfully installed
 
 --*/
 {
   *This = &mFlushInstructionCache;
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -129,9 +127,9 @@ Routine Description:
 
 Arguments:
 
-  Pointer to CPU Architectural Protocol interface
-  Start adddress in memory to flush
-  Length of memory to flush
+  This      - Pointer to CPU Architectural Protocol interface
+  Start     - Start adddress in memory to flush
+  Length    - Length of memory to flush
 
 Returns:
 
@@ -142,4 +140,3 @@ Returns:
 {
   return EFI_SUCCESS;
 }
-

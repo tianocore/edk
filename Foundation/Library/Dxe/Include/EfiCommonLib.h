@@ -26,15 +26,33 @@ EFI_STATUS
 EfiLibGetSystemConfigurationTable (
   IN EFI_GUID *TableGuid,
   IN OUT VOID **Table
-  );
+  )
+/*++
+
+Routine Description:
+  
+  Return the EFI 1.0 System Tabl entry with TableGuid
+
+Arguments:
+
+  TableGuid - Name of entry to return in the system table
+  Table     - Pointer in EFI system table associated with TableGuid
+
+Returns: 
+
+  EFI_SUCCESS - Table returned;
+  EFI_NOT_FOUND - TableGuid not in EFI system table
+
+--*/
+;
 
 //
-//ASPrint and AvSPrint definitions you must include the specific library
-//to get the expected behavior from the two functions
-//PEI:  PeiLib
-//Graphics:  Dxe\Graphics\Unicode  Dxe\Graphics\ASCII
-//ASCII: Dxe\Print\ASCII
-//Unicode: Dxe\Print\Unicode
+// ASPrint and AvSPrint definitions you must include the specific library
+// to get the expected behavior from the two functions
+// PEI:  PeiLib
+// Graphics:  Dxe\Graphics\Unicode  Dxe\Graphics\ASCII
+// ASCII: Dxe\Print\ASCII
+// Unicode: Dxe\Print\Unicode
 //
 UINTN
 ASPrint (
@@ -42,7 +60,26 @@ ASPrint (
   IN UINTN        BufferSize,
   IN CONST CHAR8  *Format,
   ...
-  );
+  )
+/*++
+
+Routine Description:
+
+  Process format and place the results in Buffer for narrow chars.
+
+Arguments:
+
+  Buffer      - Narrow char buffer to print the results of the parsing of Format into.
+  BufferSize  - Maximum number of characters to put into buffer.
+  Format      - Format string
+  ...         - Vararg list consumed by processing Format.
+
+Returns:
+
+  Number of characters printed.
+
+--*/
+;
 
 UINTN
 AvSPrint (
@@ -50,8 +87,27 @@ AvSPrint (
   IN  UINTN       StrSize,
   IN  CONST CHAR8 *Format,
   IN  VA_LIST     Marker
-  );
+  )
+/*++
 
+Routine Description:
+
+  Internal implementation of ASPrint. 
+  Process format and place the results in Buffer for narrow chars.
+
+Arguments:
+
+  StartOfBuffer - Narrow char buffer to print the results of the parsing of Format into.
+  StrSize       - Maximum number of characters to put into buffer.
+  FormatString  - Format string
+  Marker        - Vararg list consumed by processing Format.
+
+Returns:
+
+  Number of characters printed.
+
+--*/
+;
 
 //
 // Lib functions which can be used in both PEI and DXE pahse
@@ -60,7 +116,25 @@ EFI_STATUS
 EfiInitializeCommonDriverLib (
   IN EFI_HANDLE   ImageHandle,
   IN VOID         *SystemTable
-  );
+  )
+/*++
+
+Routine Description:
+
+  Initialize lib function calling phase: PEI or DXE
+  
+Arguments:
+
+  ImageHandle     - The firmware allocated handle for the EFI image.
+  
+  SystemTable     - A pointer to the EFI System Table.
+
+Returns: 
+
+  EFI_STATUS always returns EFI_SUCCESS
+
+--*/
+;
 
 EFI_STATUS
 EfiCommonIoRead (
@@ -68,7 +142,26 @@ EfiCommonIoRead (
   IN  UINTN       Address,
   IN  UINTN       Count,
   IN  OUT VOID    *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Io read operation.
+
+Arguments:
+
+  Width   - Width of read operation
+  Address - Start IO address to read
+  Count   - Read count
+  Buffer  - Buffer to store result
+
+Returns:
+
+  Status code
+
+--*/
+;
 
 EFI_STATUS
 EfiCommonIoWrite (
@@ -76,7 +169,26 @@ EfiCommonIoWrite (
   IN  UINTN       Address,
   IN  UINTN       Count,
   IN  OUT VOID    *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Io write operation.
+
+Arguments:
+
+  Width   - Width of write operation
+  Address - Start IO address to write
+  Count   - Write count
+  Buffer  - Buffer to write to the address
+
+Returns:
+
+  Status code
+
+--*/
+;
 
 EFI_STATUS
 EfiCommonPciRead (
@@ -84,7 +196,26 @@ EfiCommonPciRead (
   IN  UINT64      Address,
   IN  UINTN       Count,
   IN  OUT VOID    *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Pci read operation
+
+Arguments:
+
+  Width   - Width of PCI read
+  Address - PCI address to read
+  Count   - Read count
+  Buffer  - Output buffer for the read
+
+Returns:
+
+  Status code
+
+--*/
+;
 
 EFI_STATUS
 EfiCommonPciWrite (
@@ -92,50 +223,165 @@ EfiCommonPciWrite (
   IN  UINT64      Address,
   IN  UINTN       Count,
   IN  OUT VOID    *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Pci write operation
+
+Arguments:
+
+  Width   - Width of PCI write
+  Address - PCI address to write
+  Count   - Write count
+  Buffer  - Buffer to write to the address
+
+Returns:
+
+  Status code
+
+--*/
+;
 
 BOOLEAN
 EfiCompareGuid (
   IN EFI_GUID *Guid1,
   IN EFI_GUID *Guid2
-  );
+  )
+/*++
 
+Routine Description:
+
+  Compares two GUIDs
+
+Arguments:
+
+  Guid1 - guid to compare
+
+  Guid2 - guid to compare
+
+Returns:
+  TRUE     if Guid1 == Guid2
+  FALSE    if Guid1 != Guid2
+
+--*/
+;
 
 VOID
 EfiCommonLibSetMem (
   IN VOID   *Buffer,
   IN UINTN  Size,
   IN UINT8  Value
-  );
+  )
+/*++
+
+Routine Description:
+
+  Set Buffer to Value for Size bytes.
+
+Arguments:
+
+  Buffer  - Memory to set.
+
+  Size    - Number of bytes to set
+
+  Value   - Value of the set operation.
+
+Returns:
+
+  None
+
+--*/
+;
 
 VOID
 EfiCommonLibCopyMem (
   IN VOID     *Destination,
   IN VOID     *Source,
   IN UINTN    Length
-  );
+  )
+/*++
+
+Routine Description:
+
+  Copy Length bytes from Source to Destination.
+
+Arguments:
+
+  Destination - Target of copy
+
+  Source      - Place to copy from
+
+  Length      - Number of bytes to copy
+
+Returns:
+
+  None
+
+--*/
+;
 
 INTN
 EfiCompareMem (
   IN VOID     *MemOne,
   IN VOID     *MemTwo,
   IN UINTN    Len
-  );
+  )
+/*++
+
+Routine Description:
+
+  Compares two memory buffers of a given length.
+
+Arguments:
+
+  MemOne - First memory buffer
+
+  MemTwo - Second memory buffer
+
+  Len    - Length of Mem1 and Mem2 memory regions to compare
+
+Returns:
+
+  = 0     if MemOne == MemTwo
+  
+  > 0     if MemOne > MemTwo
+  
+  < 0     if MemOne < MemTwo
+
+--*/
+;
 
 VOID
 EfiCommonLibZeroMem (
   IN VOID     *Buffer,
   IN UINTN    Size
-  );
+  )
+/*++
 
+Routine Description:
 
+  Set Buffer to 0 for Size bytes.
+
+Arguments:
+
+  Buffer  - Memory to set.
+
+  Size    - Number of bytes to set
+
+Returns:
+
+  None
+
+--*/
+;
 
 //
 // Min Max
 //
-#define EFI_MIN(a,b) (((a) < (b)) ? (a) : (b))
-#define EFI_MAX(a,b) (((a) > (b)) ? (a) : (b))
-
+#define EFI_MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define EFI_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 //
 // Align a pointer. The pointer represented by ptr is aligned to the bound.
@@ -144,34 +390,48 @@ EfiCommonLibZeroMem (
 // Valid values for bound are powers of two: 2, 4, 8, 16, 32 etc.
 // The returned pointer is VOID* this assignment-compatible with all pointer types.
 //
-#define EFI_ALIGN(ptr,bound)  ((VOID*)(((UINTN)(ptr) + ((UINTN)(bound) - 1)) & ~((UINTN)(bound) - 1)))
+#define EFI_ALIGN(ptr, bound) ((VOID *) (((UINTN) (ptr) + ((UINTN) (bound) - 1)) &~((UINTN) (bound) - 1)))
 
 //
 // Alignment tests.
 //
-#define EFI_UINTN_ALIGN_MASK  (sizeof (UINTN) - 1)
-#define EFI_UINTN_ALIGNED(ptr) (((UINTN)(ptr)) & EFI_UINTN_ALIGN_MASK)
-
+#define EFI_UINTN_ALIGN_MASK    (sizeof (UINTN) - 1)
+#define EFI_UINTN_ALIGNED(ptr)  (((UINTN) (ptr)) & EFI_UINTN_ALIGN_MASK)
 
 //
 // Integer division with rounding to the nearest rather than truncating.
 // For example 8/3=2 but EFI_IDIV_ROUND(8,3)=3. 1/3=0 and EFI_IDIV_ROUND(1,3)=0.
 // A half is rounded up e.g., EFI_IDIV_ROUND(1,2)=1 but 1/2=0.
 //
-#define EFI_IDIV_ROUND(r,s)   ((r)/(s) + (((2 * ((r) % (s))) < (s)) ? 0 : 1))
-
+#define EFI_IDIV_ROUND(r, s)  ((r) / (s) + (((2 * ((r) % (s))) < (s)) ? 0 : 1))
 
 //
 // ReportStatusCode.c init
 //
-
-VOID *
+VOID  *
 EfiConstructStatusCodeData (
   IN  UINT16                    DataSize,
   IN  EFI_GUID                  *TypeGuid,
   IN OUT  EFI_STATUS_CODE_DATA  *Data
-  );
+  )
+/*++
 
+Routine Description:
+
+  Construct stanader header for optional data passed into ReportStatusCode
+
+Arguments:
+
+  DataSize - Size of optional data. Does not include EFI_STATUS_CODE_DATA header
+  TypeGuid - GUID to place in EFI_STATUS_CODE_DATA
+  Data     - Buffer to use.
+
+Returns:
+
+  Return pointer to Data buffer pointing past the end of EFI_STATUS_CODE_DATA
+
+--*/
+;
 
 EFI_STATUS
 EfiDebugVPrintWorker (
@@ -180,7 +440,34 @@ EfiDebugVPrintWorker (
   IN  VA_LIST                 Marker,
   IN  UINTN                   BufferSize,
   IN OUT VOID                 *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Worker function for DEBUG(). If Error Logging hub is loaded log ASSERT
+  information. If Error Logging hub is not loaded do nothing.
+
+  We use UINT64 buffers due to IPF alignment concerns.
+
+Arguments:
+
+  ErrorLevel - If error level is set do the debug print.
+
+  Format     - String to use for the print, followed by Print arguments.
+
+  Marker     - VarArgs
+
+  BufferSize - Size of Buffer.
+
+  Buffer     - Caller allocated buffer, contains ReportStatusCode extended data
+  
+Returns:
+  
+  Status code
+
+--*/
+;
 
 EFI_STATUS
 EfiDebugAssertWorker (
@@ -189,7 +476,34 @@ EfiDebugAssertWorker (
   IN CHAR8                    *Description,
   IN UINTN                    BufferSize,
   IN OUT VOID                 *Buffer
-  );
+  )
+/*++
+
+Routine Description:
+
+  Worker function for ASSERT (). If Error Logging hub is loaded log ASSERT
+  information. If Error Logging hub is not loaded DEADLOOP ().
+
+  We use UINT64 buffers due to IPF alignment concerns.
+
+Arguments:
+
+  FileName    - File name of failing routine.
+
+  LineNumber  - Line number of failing ASSERT().
+
+  Description - Description, usually the assertion,
+  
+  BufferSize - Size of Buffer.
+
+  Buffer     - Caller allocated buffer, contains ReportStatusCode extendecd data
+
+Returns:
+  
+  Status code
+
+--*/
+;
 
 BOOLEAN
 ReportStatusCodeExtractAssertInfo (
@@ -199,7 +513,30 @@ ReportStatusCodeExtractAssertInfo (
   OUT CHAR8                   **Filename,
   OUT CHAR8                   **Description,
   OUT UINT32                  *LineNumber
-  );
+  )
+/*++
+
+Routine Description:
+
+  Extract assert information from status code data.
+
+Arguments:
+
+  CodeType    - Code type
+  Value       - Code value
+  Data        - Optional data associated with this status code.
+  Filename    - Filename extracted from Data
+  Description - Description extracted from Data
+  LineNumber  - Line number extracted from Data
+
+Returns:
+
+  TRUE      - Successfully extracted
+  
+  FALSE     - Extraction failed
+
+--*/
+;
 
 BOOLEAN
 ReportStatusCodeExtractDebugInfo (
@@ -207,116 +544,383 @@ ReportStatusCodeExtractDebugInfo (
   OUT UINT32                  *ErrorLevel,
   OUT VA_LIST                 *Marker,
   OUT CHAR8                   **Format
-  );
+  )
+/*++
 
+Routine Description:
+
+  Extract debug information from status code data.
+
+Arguments:
+
+  Data        - Optional data associated with status code.
+  ErrorLevel  - Error level extracted from Data
+  Marker      - VA_LIST extracted from Data
+  Format      - Format string extracted from Data
+
+Returns:
+
+  TRUE      - Successfully extracted
+  
+  FALSE     - Extraction failed
+
+--*/
+;
 
 BOOLEAN
 CodeTypeToPostCode (
   IN  EFI_STATUS_CODE_TYPE    CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   OUT UINT8                   *PostCode
-  );
+  )
+/*++
 
+Routine Description:
 
+  Convert code value to an 8 bit post code
+
+Arguments:
+
+  CodeType  - Code type
+  Value     - Code value
+  PostCode  - Post code as output
+
+Returns:
+
+  TRUE    - Successfully converted
+
+  FALSE   - Convertion failed
+
+--*/
+;
 
 //
 // math.c
 //
-
 UINT64
 MultU64x32 (
   IN  UINT64  Multiplicand,
   IN  UINTN   Multiplier
-  );
+  )
+/*++  
+  
+Routine Description:
+
+  This routine allows a 64 bit value to be multiplied with a 32 bit 
+  value returns 64bit result.
+  No checking if the result is greater than 64bits
+
+Arguments:
+
+  Multiplicand  - multiplicand
+  Multiplier    - multiplier
+
+Returns:
+
+  Multiplicand * Multiplier
+  
+--*/
+;
 
 UINT64
 DivU64x32 (
   IN  UINT64  Dividend,
   IN  UINTN   Divisor,
-  OUT UINTN   *Remainder  OPTIONAL
-  );
+  OUT UINTN   *Remainder OPTIONAL
+  )
+/*++
+
+Routine Description:
+
+  This routine allows a 64 bit value to be divided with a 32 bit value returns 
+  64bit result and the Remainder.
+
+Arguments:
+
+  Dividend  - dividend
+  Divisor   - divisor
+  Remainder - buffer for remainder
+ 
+Returns:
+
+  Dividend  / Divisor
+  Remainder = Dividend mod Divisor
+
+--*/
+;
 
 UINT64
 RShiftU64 (
   IN  UINT64  Operand,
   IN  UINTN   Count
-  );
+  )
+/*++
+
+Routine Description:
+
+  This routine allows a 64 bit value to be right shifted by 32 bits and returns the 
+  shifted value.
+  Count is valid up 63. (Only Bits 0-5 is valid for Count)
+
+Arguments:
+
+  Operand - Value to be shifted
+  Count   - Number of times to shift right.
+ 
+Returns:
+
+  Value shifted right identified by the Count.
+
+--*/
+;
 
 UINT64
 LShiftU64 (
   IN  UINT64  Operand,
   IN  UINTN   Count
-  );
+  )
+/*++
+
+Routine Description:
+
+  This routine allows a 64 bit value to be left shifted by 32 bits and 
+  returns the shifted value.
+  Count is valid up 63. (Only Bits 0-5 is valid for Count)
+
+Arguments:
+
+  Operand - Value to be shifted
+  Count   - Number of times to shift left.
+ 
+Returns:
+
+  Value shifted left identified by the Count.
+
+--*/
+;
 
 UINT64
 Power10U64 (
   IN UINT64   Operand,
   IN UINTN    Power
-  );
+  )
+/*++
+
+Routine Description:
+
+  Raise 10 to the power of Power, and multiply the result with Operand
+
+Arguments:
+
+  Operand  - multiplicand
+  Power    - power
+
+Returns:
+
+  Operand * 10 ^ Power
+
+--*/
+;
 
 UINT8
 Log2 (
   IN UINT64   Operand
-  );
+  )
+/*++
 
-UINT32  
+Routine Description:
+
+  Calculates and floors logarithms based on 2
+
+Arguments:
+
+  Operand - value to calculate logarithm
+ 
+Returns:
+
+  The largest integer that is less than or equal
+  to the logarithm of Operand based on 2 
+
+--*/
+;
+
+UINT32
 GetPowerOfTwo (
   IN  UINT32  Input
-  );
+  )
+/*++
+
+Routine Description:
+
+  Calculates the largest integer that is both 
+  a power of two and less than Input
+
+Arguments:
+
+  Input  - value to calculate power of two
+
+Returns:
+
+  the largest integer that is both  a power of 
+  two and less than Input
+
+--*/
+;
 
 //
 // Unicode String primatives
 //
-
 VOID
 EfiStrCpy (
   IN CHAR16   *Destination,
   IN CHAR16   *Source
-  );
+  )
+/*++
+
+Routine Description:
+  Copy the Unicode string Source to Destination.
+
+Arguments:
+  Destination - Location to copy string
+  Source      - String to copy
+
+Returns:
+  NONE
+
+--*/
+;
 
 UINTN
 EfiStrLen (
   IN CHAR16   *String
-  );
+  )
+/*++
+
+Routine Description:
+  Return the number of Unicode characters in String. This is not the same as
+  the length of the string in bytes.
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of Unicode characters in String
+
+--*/
+;
 
 UINTN
 EfiStrSize (
   IN CHAR16   *String
-  );
+  )
+/*++
+
+Routine Description:
+  Return the number bytes in the Unicode String. This is not the same as
+  the length of the string in characters. The string size includes the NULL
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of bytes in String
+
+--*/
+;
 
 INTN
 EfiStrCmp (
   IN CHAR16   *String,
   IN CHAR16   *String2
-  );
+  )
+/*++
+
+Routine Description:
+  Return the alphabetic relationship between two stirngs. 
+
+Arguments:
+  String - Compare to String2
+  
+  String2 - Compare to String
+
+Returns:
+  0     - Identical
+  
+  > 0   - String is alphabeticly greater than String2
+  
+  < 0   - String is alphabeticly less than String2
+
+--*/
+;
 
 VOID
 EfiStrCat (
   IN CHAR16   *Destination,
   IN CHAR16   *Source
-  );
+  )
+/*++
+
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Destination - String to added to the end of.
+  Source      - String to concatinate.
+
+Returns:
+  NONE
+
+--*/
+;
 
 UINTN
 EfiAsciiStrLen (
   IN CHAR8   *String
-  );
+  )
+/*++
+
+Routine Description:
+  Return the number of Ascii characters in String. This is not the same as
+  the length of the string in bytes.
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of Unicode characters in String
+
+--*/
+;
 
 CHAR8 *
 EfiAsciiStrCpy (
   IN CHAR8    *Destination,
   IN CHAR8    *Source
-  );
+  )
+/*++
+
+Routine Description:
+  Copy the Ascii string Source to Destination.
+
+Arguments:
+  Destination - Location to copy string
+  Source      - String to copy
+
+Returns:
+  Pointer just pass the end of Destination
+
+--*/
+;
 
 //
 // Print primitives
 //
-
-#define LEFT_JUSTIFY    0x01
-#define PREFIX_SIGN     0x02
-#define PREFIX_BLANK    0x04
-#define COMMA_TYPE      0x08
-#define LONG_TYPE       0x10
-#define PREFIX_ZERO     0x20
+#define LEFT_JUSTIFY  0x01
+#define PREFIX_SIGN   0x02
+#define PREFIX_BLANK  0x04
+#define COMMA_TYPE    0x08
+#define LONG_TYPE     0x10
+#define PREFIX_ZERO   0x20
 
 //
 // Length of temp string buffer to store value string.
@@ -329,7 +933,29 @@ EfiValueToHexStr (
   IN  UINT64      Value,
   IN  UINTN       Flags,
   IN  UINTN       Width
-  );
+  )
+/*++
+
+Routine Description:
+
+  VSPrint worker function that prints a Value as a hex number in Buffer
+
+Arguments:
+
+  Buffer - Location to place ascii hex string of Value.
+
+  Value  - Hex value to convert to a string in Buffer.
+
+  Flags  - Flags to use in printing Hex string, see file header for details.
+
+  Width  - Width of hex value.
+
+Returns: 
+
+  Number of characters printed.  
+
+--*/
+;
 
 UINTN
 EfiValueToString (
@@ -337,11 +963,33 @@ EfiValueToString (
   IN  INT64       Value,
   IN  UINTN       Flags,
   IN  UINTN       Width
-  );
+  )
+/*++
+
+Routine Description:
+
+  VSPrint worker function that prints a Value as a decimal number in Buffer
+
+Arguments:
+
+  Buffer - Location to place ascii decimal number string of Value.
+
+  Value  - Decimal value to convert to a string in Buffer.
+
+  Flags  - Flags to use in printing decimal string, see file header for details.
+
+  Width  - Width of hex value.
+
+Returns: 
+
+  Number of characters printed.  
+
+--*/
+;
 
 BOOLEAN
 IsHexDigit (
-  OUT UINT8      *Digit,
+  OUT UINT8       *Digit,
   IN  CHAR16      Char
   )
 /*++
@@ -381,10 +1029,10 @@ NibbleToHexChar (
 
 EFI_STATUS
 HexStringToBuf (
-  IN OUT UINT8                     *Buf,   
-  IN OUT UINTN                    *Len,
+  IN OUT UINT8                     *Buf,
+  IN OUT UINTN                     *Len,
   IN     CHAR16                    *Str,
-  OUT    UINTN                     *ConvertedStrLen  OPTIONAL
+  OUT    UINTN                     *ConvertedStrLen OPTIONAL
   )
 /*++
 
@@ -412,9 +1060,9 @@ HexStringToBuf (
 
 EFI_STATUS
 BufToHexString (
-  IN OUT CHAR16                    *Str,
-  IN OUT UINTN                     *HexStringBufferLength,
-  IN     UINT8                     *Buf,
+  IN OUT CHAR16                     *Str,
+  IN OUT UINTN                      *HexStringBufferLength,
+  IN     UINT8                      *Buf,
   IN     UINTN                      Len
   )
 /*++
@@ -438,12 +1086,28 @@ BufToHexString (
 --*/
 ;
 
-
-
 VOID
 EfiStrTrim (
   IN OUT CHAR16   *str,
   IN     CHAR16   CharC
-  );
+  )
+/*++
+
+Routine Description:
   
+  Removes (trims) specified leading and trailing characters from a string.
+  
+Arguments: 
+  
+  str     - Pointer to the null-terminated string to be trimmed. On return, 
+            str will hold the trimmed string. 
+  CharC       - Character will be trimmed from str.
+  
+Returns:
+
+  None
+
+--*/
+;
+
 #endif

@@ -50,6 +50,7 @@ COMPONENT_TYPE       = PE32_PEIM
   EdkNt32PpiLib
   EdkGuidLib
   PeiLib
+  EdkFrameworkProtocolLib
 
 [nmake.common]
   IMAGE_ENTRY_POINT=PeimInitializeFlashMap

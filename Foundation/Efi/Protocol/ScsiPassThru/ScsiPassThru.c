@@ -20,10 +20,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(ScsiPassThru)
- 
+#include EFI_PROTOCOL_DEFINITION (ScsiPassThru)
 
-EFI_GUID gEfiScsiPassThruProtocolGuid = EFI_SCSI_PASS_THRU_PROTOCOL_GUID;
+EFI_GUID  gEfiScsiPassThruProtocolGuid = EFI_SCSI_PASS_THRU_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiScsiPassThruProtocolGuid, "SCSI Pass Through Protocol", "EFI 1.0 SCSI Pass Through protocol");
-

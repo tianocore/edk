@@ -27,14 +27,16 @@ Abstract:
 #define __DISK_IO_H__
 
 #define EFI_DISK_IO_PROTOCOL_GUID \
-    { 0xce345171, 0xba0b, 0x11d2,  0x8e, 0x4f, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b }
+  { \
+    0xce345171, 0xba0b, 0x11d2, 0x8e, 0x4f, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_DISK_IO_PROTOCOL);
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DISK_READ) (
-  IN EFI_DISK_IO_PROTOCOL *This,
+  IN EFI_DISK_IO_PROTOCOL         * This,
   IN UINT32                       MediaId,
   IN UINT64                       Offset,
   IN UINTN                        BufferSize,
@@ -63,11 +65,10 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DISK_WRITE) (
-  IN EFI_DISK_IO_PROTOCOL *This,
+  IN EFI_DISK_IO_PROTOCOL         * This,
   IN UINT32                       MediaId,
   IN UINT64                       Offset,
   IN UINTN                        BufferSize,
@@ -97,15 +98,13 @@ EFI_STATUS
 --*/
 ;
 
-
 #define EFI_DISK_IO_PROTOCOL_REVISION 0x00010000
 
 typedef struct _EFI_DISK_IO_PROTOCOL {
-  UINT64              Revision;
-  EFI_DISK_READ       ReadDisk;
-  EFI_DISK_WRITE      WriteDisk;
+  UINT64          Revision;
+  EFI_DISK_READ   ReadDisk;
+  EFI_DISK_WRITE  WriteDisk;
 } EFI_DISK_IO_PROTOCOL;
-
 
 extern EFI_GUID gEfiDiskIoProtocolGuid;
 

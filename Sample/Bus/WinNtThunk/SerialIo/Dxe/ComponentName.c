@@ -33,17 +33,17 @@ WinNtSerialIoComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtSerialIoComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gWinNtSerialIoComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gWinNtSerialIoComponentName = {
   WinNtSerialIoComponentNameGetDriverName,
   WinNtSerialIoComponentNameGetControllerName,
   "eng"
@@ -51,7 +51,7 @@ EFI_COMPONENT_NAME_PROTOCOL gWinNtSerialIoComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mWinNtSerialIoDriverNameTable[] = {
   { "eng", L"Windows Serial I/O Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -89,21 +89,21 @@ WinNtSerialIoComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gWinNtSerialIoComponentName.SupportedLanguages,
-           mWinNtSerialIoDriverNameTable, 
-           DriverName
-           );
+          Language,
+          gWinNtSerialIoComponentName.SupportedLanguages,
+          mWinNtSerialIoDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 WinNtSerialIoComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -150,9 +150,9 @@ WinNtSerialIoComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS                     Status;
-  EFI_SERIAL_IO_PROTOCOL         *SerialIo;
-  WIN_NT_SERIAL_IO_PRIVATE_DATA  *Private;
+  EFI_STATUS                    Status;
+  EFI_SERIAL_IO_PROTOCOL        *SerialIo;
+  WIN_NT_SERIAL_IO_PRIVATE_DATA *Private;
 
   //
   // This is a bus driver, so ChildHandle must not be NULL.
@@ -165,11 +165,11 @@ WinNtSerialIoComponentNameGetControllerName (
   // Get our context back
   //
   Status = gBS->OpenProtocol (
-                  ChildHandle,   
-                  &gEfiSerialIoProtocolGuid,  
+                  ChildHandle,
+                  &gEfiSerialIoProtocolGuid,
                   &SerialIo,
-                  gWinNtSerialIoDriverBinding.DriverBindingHandle,   
-                  ChildHandle,   
+                  gWinNtSerialIoDriverBinding.DriverBindingHandle,
+                  ChildHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
@@ -179,9 +179,9 @@ WinNtSerialIoComponentNameGetControllerName (
   Private = WIN_NT_SERIAL_IO_PRIVATE_DATA_FROM_THIS (SerialIo);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gWinNtSerialIoComponentName.SupportedLanguages,
-           Private->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gWinNtSerialIoComponentName.SupportedLanguages,
+          Private->ControllerNameTable,
+          ControllerName
+          );
 }

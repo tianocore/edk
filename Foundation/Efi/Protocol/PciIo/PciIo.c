@@ -23,9 +23,8 @@ Revision History
 
 #include "EfiSpec.h"
 
-#include EFI_PROTOCOL_DEFINITION(PciIo)
+#include EFI_PROTOCOL_DEFINITION (PciIo)
 
-EFI_GUID gEfiPciIoProtocolGuid = EFI_PCI_IO_PROTOCOL_GUID;
+EFI_GUID  gEfiPciIoProtocolGuid = EFI_PCI_IO_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiPciIoProtocolGuid, "PCI IO Protocol", "EFI 1.1 PCI IO Protocol");
-

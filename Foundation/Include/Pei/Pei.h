@@ -32,7 +32,6 @@ Abstract:
 //
 // PEI Specification Revision information
 //
-
 #include "TianoCommon.h"
 
 #include "PeiBind.h"
@@ -43,8 +42,7 @@ Abstract:
 //
 // Enable code sharing with DXE by removing ASSERT and DEBUG
 //
-//#define ASSERT(a)
-//#define DEBUG (a)
-
+// #define ASSERT(a)
+// #define DEBUG (a)
+//
 #endif
-

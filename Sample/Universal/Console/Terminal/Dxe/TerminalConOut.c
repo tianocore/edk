@@ -21,7 +21,7 @@ Revision History
 
 #include "Terminal.h"
 
-extern EFI_GUID gTerminalDriverGuid;
+extern EFI_GUID         gTerminalDriverGuid;
 
 //
 // This list is used to define the valid extend chars.
@@ -29,8 +29,7 @@ extern EFI_GUID gTerminalDriverGuid;
 // ASCII. The ASCII mapping we just made up.
 //
 //
-
-STATIC UNICODE_TO_CHAR UnicodeToPcAnsiOrAscii[] = {
+STATIC UNICODE_TO_CHAR  UnicodeToPcAnsiOrAscii[] = {
     BOXDRAW_HORIZONTAL,                 0xc4, L'-', 
     BOXDRAW_VERTICAL,                   0xb3, L'|',
     BOXDRAW_DOWN_RIGHT,                 0xda, L'/',
@@ -83,25 +82,23 @@ STATIC UNICODE_TO_CHAR UnicodeToPcAnsiOrAscii[] = {
     ARROW_LEFT,                         0x3c, L'<',
 
     ARROW_UP,                           0x18, L'^',
-    
+
     ARROW_RIGHT,                        0x3e, L'>',
 
     ARROW_DOWN,                         0x19, L'v',
-    
+
     0x0000, 0x00
 };
 
-CHAR16 mSetModeString[]           = { ESC, '[', '=', '3', 'h' , 0 };
-CHAR16 mSetAttributeString[]      = { ESC, '[', '0', 'm', ESC, '[', '4', '0', 'm', ESC, '[', '4', '0', 'm', 0 };
-CHAR16 mClearScreenString[]       = { ESC, '[', '2', 'J' , 0 };
-CHAR16 mSetCursorPositionString[] = { ESC, '[', '0', '0', ';', '0', '0', 'H', 0 };
-
+CHAR16 mSetModeString[]            = { ESC, '[', '=', '3', 'h', 0 };
+CHAR16 mSetAttributeString[]       = { ESC, '[', '0', 'm', ESC, '[', '4', '0', 'm', ESC, '[', '4', '0', 'm', 0 };
+CHAR16 mClearScreenString[]        = { ESC, '[', '2', 'J', 0 };
+CHAR16 mSetCursorPositionString[]  = { ESC, '[', '0', '0', ';', '0', '0', 'H', 0 };
 
 //
 // Body of the ConOut functions
 //
-
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutReset (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -117,12 +114,10 @@ TerminalConOutReset (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
-        Indicates the calling context.
+    This - Indicates the calling context.
     
-    BOOLEAN             IN    ExtendedVerification
-        Indicates that the driver may perform a more exhaustive
-        verification operation of the device during reset.
+    ExtendedVerification - Indicates that the driver may perform a more exhaustive
+                           verification operation of the device during reset.
         
   Returns:
   
@@ -132,13 +127,13 @@ TerminalConOutReset (
     EFI_DEVICE_ERROR
       The terminal is not functioning correctly or the serial port reset fails.
                 
---*/  
+--*/
 {
-  EFI_STATUS   Status;
-  TERMINAL_DEV *TerminalDevice;
+  EFI_STATUS    Status;
+  TERMINAL_DEV  *TerminalDevice;
 
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);
-  
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
+
   //
   // Perform a more exhaustive reset by resetting the serial port.
   //
@@ -147,39 +142,38 @@ TerminalConOutReset (
     // Report progress code here
     //
     ReportStatusCodeWithDevicePath (
-                            EFI_PROGRESS_CODE,
-                            EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_PC_RESET,
-                            0,
-                            &gTerminalDriverGuid,
-                            TerminalDevice->DevicePath
-                            );
-    
-    Status = TerminalDevice->SerialIo->Reset (TerminalDevice->SerialIo);      
-    if (EFI_ERROR(Status)) {
+      EFI_PROGRESS_CODE,
+      EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_PC_RESET,
+      0,
+      &gTerminalDriverGuid,
+      TerminalDevice->DevicePath
+      );
+
+    Status = TerminalDevice->SerialIo->Reset (TerminalDevice->SerialIo);
+    if (EFI_ERROR (Status)) {
       //
       // Report error code here
       //
       ReportStatusCodeWithDevicePath (
-                              EFI_ERROR_CODE | EFI_ERROR_MINOR,
-                              EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_CONTROLLER_ERROR,
-                              0,
-                              &gTerminalDriverGuid,
-                              TerminalDevice->DevicePath
-                              );
-  
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_CONTROLLER_ERROR,
+        0,
+        &gTerminalDriverGuid,
+        TerminalDevice->DevicePath
+        );
+
       return Status;
     }
   }
-  
-  This->SetAttribute(This, EFI_TEXT_ATTR(This->Mode->Attribute & 0x0F, EFI_BACKGROUND_BLACK));  
-  
+
+  This->SetAttribute (This, EFI_TEXT_ATTR (This->Mode->Attribute & 0x0F, EFI_BACKGROUND_BLACK));
+
   Status = This->SetMode (This, 0);
-  
+
   return Status;
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutOutputString (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -195,12 +189,10 @@ TerminalConOutOutputString (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
-        Indicates the calling context.
+    This - Indicates the calling context.
     
-    CHAR16                        IN    *WString
-        The Null-terminated Unicode string to be displayed on 
-        the terminal screen.
+    WString - The Null-terminated Unicode string to be displayed on 
+              the terminal screen.
         
   Returns:
   
@@ -213,32 +205,34 @@ TerminalConOutOutputString (
     EFI_WARN_UNKNOWN_GLYPH
       Indicates that some of the characters in the Unicode string could not 
       be rendered and are skipped.          
+      
+    EFI_UNSUPPORTED
                 
---*/    
+--*/
 {
-  TERMINAL_DEV                  *TerminalDevice;
-  EFI_SIMPLE_TEXT_OUTPUT_MODE   *Mode;
-  UINTN                         MaxColumn;
-  UINTN                         MaxRow;
-  UINTN                         Length;
-  UTF8_CHAR                     Utf8Char;
-  CHAR8                         GraphicChar;
-  CHAR8                         AsciiChar;
-  EFI_STATUS                    Status;
-  UINT8                         ValidBytes;
+  TERMINAL_DEV                *TerminalDevice;
+  EFI_SIMPLE_TEXT_OUTPUT_MODE *Mode;
+  UINTN                       MaxColumn;
+  UINTN                       MaxRow;
+  UINTN                       Length;
+  UTF8_CHAR                   Utf8Char;
+  CHAR8                       GraphicChar;
+  CHAR8                       AsciiChar;
+  EFI_STATUS                  Status;
+  UINT8                       ValidBytes;
   //
   //  flag used to indicate whether condition happens which will cause
   //  return EFI_WARN_UNKNOWN_GLYPH
   //
-  BOOLEAN                       Warning;  
-  
-  ValidBytes = 0;
-  Warning = FALSE;
-  
+  BOOLEAN                     Warning;
+
+  ValidBytes  = 0;
+  Warning     = FALSE;
+
   //
   //  get Terminal device data structure pointer.
   //
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
 
   //
   //  get current display mode
@@ -248,142 +242,136 @@ TerminalConOutOutputString (
   if (Mode->Mode != 0) {
     return EFI_UNSUPPORTED;
   }
-  
-  This->QueryMode(
-      This, 
-      Mode->Mode, 
-      &MaxColumn, 
-      &MaxRow
-      );
 
-  for (;*WString != CHAR_NULL; WString++) {
+  This->QueryMode (
+          This,
+          Mode->Mode,
+          &MaxColumn,
+          &MaxRow
+          );
+
+  for (; *WString != CHAR_NULL; WString++) {
 
     switch (TerminalDevice->TerminalType) {
-    
-      case PcAnsiType:
-      case VT100Type:
-      case VT100PlusType:
 
-        if (!TerminalIsValidTextGraphics (*WString, &GraphicChar, &AsciiChar)) {
-          
+    case PcAnsiType:
+    case VT100Type:
+    case VT100PlusType:
+
+      if (!TerminalIsValidTextGraphics (*WString, &GraphicChar, &AsciiChar)) {
+        //
+        // If it's not a graphic character convert Unicode to ASCII.
+        //
+        GraphicChar = (CHAR8) *WString;
+
+        if (!(TerminalIsValidAscii (GraphicChar) || TerminalIsValidEfiCntlChar (GraphicChar))) {
           //
-          // If it's not a graphic character convert Unicode to ASCII.
+          // when this driver use the OutputString to output control string,
+          // TerminalDevice->OutputEscChar is set to let the Esc char
+          // to be output to the terminal emulation software.
           //
-          GraphicChar = (CHAR8)*WString;  
-    
-          if (!(TerminalIsValidAscii(GraphicChar) 
-              || TerminalIsValidEfiCntlChar(GraphicChar))) {
-            
-            //            
-            // when this driver use the OutputString to output control string,
-            // TerminalDevice->OutputEscChar is set to let the Esc char
-            // to be output to the terminal emulation software.
-            // 
-            if ((GraphicChar == 27) && TerminalDevice->OutputEscChar) {
-              GraphicChar = 27;
-            } else {
-              GraphicChar = '?';
-              Warning = TRUE;
-            }
+          if ((GraphicChar == 27) && TerminalDevice->OutputEscChar) {
+            GraphicChar = 27;
+          } else {
+            GraphicChar = '?';
+            Warning     = TRUE;
           }
-
-          AsciiChar = GraphicChar;
-             
-        } 
-        
-        if (TerminalDevice->TerminalType != PcAnsiType) {
-          GraphicChar = AsciiChar;
         }
 
-        Length = 1;
-        
-        Status = TerminalDevice->SerialIo->Write(
-                                    TerminalDevice->SerialIo, 
-                                    &Length, 
-                                    &GraphicChar
-                                    );
-        
-        if (EFI_ERROR(Status)) {
-          goto OutputError;
-        }
-        
-        break;
-      
-      case VTUTF8Type:
-        UnicodeToUtf8 (*WString,&Utf8Char,&ValidBytes);
-        Length = ValidBytes;
-        Status = TerminalDevice->SerialIo->Write(
-                                    TerminalDevice->SerialIo, 
-                                    &Length, 
-                                    (UINT8*)&Utf8Char
-                                    );
-        if (EFI_ERROR(Status)) {
-          goto OutputError;
-        }
-        break;
-    }    
-    
+        AsciiChar = GraphicChar;
+
+      }
+
+      if (TerminalDevice->TerminalType != PcAnsiType) {
+        GraphicChar = AsciiChar;
+      }
+
+      Length = 1;
+
+      Status = TerminalDevice->SerialIo->Write (
+                                          TerminalDevice->SerialIo,
+                                          &Length,
+                                          &GraphicChar
+                                          );
+
+      if (EFI_ERROR (Status)) {
+        goto OutputError;
+      }
+
+      break;
+
+    case VTUTF8Type:
+      UnicodeToUtf8 (*WString, &Utf8Char, &ValidBytes);
+      Length = ValidBytes;
+      Status = TerminalDevice->SerialIo->Write (
+                                          TerminalDevice->SerialIo,
+                                          &Length,
+                                          (UINT8 *) &Utf8Char
+                                          );
+      if (EFI_ERROR (Status)) {
+        goto OutputError;
+      }
+      break;
+    }
     //
     //  Update cursor position.
     //
     switch (*WString) {
-      
-      case CHAR_BACKSPACE : 
-        if (Mode->CursorColumn > 0) {
-          Mode->CursorColumn--;
-        }
-        break;
-        
-      case CHAR_LINEFEED :
-        if (Mode->CursorRow < (INT32)(MaxRow-1)) {
+
+    case CHAR_BACKSPACE:
+      if (Mode->CursorColumn > 0) {
+        Mode->CursorColumn--;
+      }
+      break;
+
+    case CHAR_LINEFEED:
+      if (Mode->CursorRow < (INT32) (MaxRow - 1)) {
+        Mode->CursorRow++;
+      }
+      break;
+
+    case CHAR_CARRIAGE_RETURN:
+      Mode->CursorColumn = 0;
+      break;
+
+    default:
+      if (Mode->CursorColumn < (INT32) (MaxColumn - 1)) {
+
+        Mode->CursorColumn++;
+
+      } else {
+
+        Mode->CursorColumn = 0;
+        if (Mode->CursorRow < (INT32) (MaxRow - 1)) {
           Mode->CursorRow++;
         }
-        break;
-        
-      case CHAR_CARRIAGE_RETURN:
-        Mode->CursorColumn = 0;
-        break;
-        
-      default:
-        if (Mode->CursorColumn < (INT32)(MaxColumn-1)) {
-          
-          Mode->CursorColumn++;
-          
-        } else {
-          
-          Mode->CursorColumn = 0;
-          if (Mode->CursorRow < (INT32)(MaxRow-1)) {
-            Mode->CursorRow++;
-          }
-          
-        }
-        break;
-        
+
+      }
+      break;
+
     };
-    
+
   }
-  
 
   if (Warning) {
     return EFI_WARN_UNKNOWN_GLYPH;
   }
 
   return EFI_SUCCESS;
-  
+
 OutputError:
   ReportStatusCodeWithDevicePath (
-                          EFI_ERROR_CODE | EFI_ERROR_MINOR,
-                          EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_OUTPUT_ERROR,
-                          0,
-                          &gTerminalDriverGuid,
-                          TerminalDevice->DevicePath
-                          );
+    EFI_ERROR_CODE | EFI_ERROR_MINOR,
+    EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_OUTPUT_ERROR,
+    0,
+    &gTerminalDriverGuid,
+    TerminalDevice->DevicePath
+    );
 
   return EFI_DEVICE_ERROR;
 }
 
-
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutTestString (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -401,11 +389,9 @@ TerminalConOutTestString (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
-        Indicates the calling context.
+    This - Indicates the calling context.
     
-    CHAR16                        IN    *WString
-        The Null-terminated Unicode string to be tested.
+    WString - The Null-terminated Unicode string to be tested.
         
   Returns:
   
@@ -415,37 +401,37 @@ TerminalConOutTestString (
     EFI_UNSUPPORTED
       Some of the characters in the Unicode string cannot be rendered.      
                 
---*/      
+--*/
 {
-  TERMINAL_DEV                  *TerminalDevice;
-  EFI_STATUS                    Status;  
-  
+  TERMINAL_DEV  *TerminalDevice;
+  EFI_STATUS    Status;
+
   //
   //  get Terminal device data structure pointer.
   //
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);
-        
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
+
   switch (TerminalDevice->TerminalType) {
-    
-    case PcAnsiType:
-    case VT100Type:
-    case VT100PlusType:
-      Status = AnsiTestString (TerminalDevice,WString);
-      break;
-      
-    case VTUTF8Type:
-      Status = VTUTF8TestString (TerminalDevice,WString);
-      break;
-      
-    default:
-      Status = EFI_UNSUPPORTED;
-      break;
+
+  case PcAnsiType:
+  case VT100Type:
+  case VT100PlusType:
+    Status = AnsiTestString (TerminalDevice, WString);
+    break;
+
+  case VTUTF8Type:
+    Status = VTUTF8TestString (TerminalDevice, WString);
+    break;
+
+  default:
+    Status = EFI_UNSUPPORTED;
+    break;
   }
-  
+
   return Status;
 }
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutQueryMode (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -465,16 +451,16 @@ TerminalConOutQueryMode (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
+    *This
         Indicates the calling context.
     
-    UINTN                         IN    ModeNumber
+    ModeNumber
         The mode number to return information on.
         
-    UINTN                         OUT   *Columns
+    Columns
         The returned columns of the requested mode.
         
-    UINTN                         OUT   *Rows
+    Rows
         The returned rows of the requested mode.                
         
   Returns:
@@ -484,25 +470,27 @@ TerminalConOutQueryMode (
     
     EFI_UNSUPPORTED
       The mode number is not valid.   
+      
+    EFI_DEVICE_ERROR
                 
---*/      
-{ 
+--*/
+{
   if (This->Mode->MaxMode > 1) {
     return EFI_DEVICE_ERROR;
   }
-  
+
   if (ModeNumber == 0) {
-    
-    *Columns = MODE0_COLUMN_COUNT;
-    *Rows = MODE0_ROW_COUNT;   
-    
+
+    *Columns  = MODE0_COLUMN_COUNT;
+    *Rows     = MODE0_ROW_COUNT;
+
     return EFI_SUCCESS;
-  } 
-  
+  }
+
   return EFI_UNSUPPORTED;
 }
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutSetMode (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -517,10 +505,10 @@ TerminalConOutSetMode (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
+    This
         Indicates the calling context.
     
-    UINTN                         IN    ModeNumber
+    ModeNumber
         The text mode to set.
         
   Returns:
@@ -534,44 +522,44 @@ TerminalConOutSetMode (
     EFI_UNSUPPORTED
       The text mode number is not valid.       
                 
---*/      
-{ 
-  EFI_STATUS    Status;  
+--*/
+{
+  EFI_STATUS    Status;
   TERMINAL_DEV  *TerminalDevice;
-  
+
   //
   //  get Terminal device data structure pointer.
   //
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);
-  
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
+
   if (ModeNumber != 0) {
     return EFI_UNSUPPORTED;
   }
-  
-  This->Mode->Mode = 0;
-    
-  This->ClearScreen(This);
-  
-  TerminalDevice->OutputEscChar = TRUE;
-  Status = This->OutputString(This, mSetModeString);
-  TerminalDevice->OutputEscChar = FALSE;
-  
-  if (EFI_ERROR(Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-    
+
   This->Mode->Mode = 0;
 
-  Status = This->ClearScreen(This);
-  if (EFI_ERROR(Status)) {
+  This->ClearScreen (This);
+
+  TerminalDevice->OutputEscChar = TRUE;
+  Status                        = This->OutputString (This, mSetModeString);
+  TerminalDevice->OutputEscChar = FALSE;
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-    
+
+  This->Mode->Mode  = 0;
+
+  Status            = This->ClearScreen (This);
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
+  }
+
   return EFI_SUCCESS;
-  
+
 }
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutSetAttribute (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -584,10 +572,10 @@ TerminalConOutSetAttribute (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
+    This
         Indicates the calling context.
     
-    UINTN                         IN    Attribute
+    Attribute
         The attribute to set. Only bit0..6 are valid, all other bits
         are undefined and must be zero.
         
@@ -602,109 +590,153 @@ TerminalConOutSetAttribute (
     EFI_UNSUPPORTED
       The attribute requested is not defined by EFI spec.   
                 
---*/      
+--*/
 {
-  UINT8           ForegroundControl;
-  UINT8           BackgroundControl;
-  UINT8           BrightControl;
-  INT32           SavedColumn;
-  INT32           SavedRow;
-  EFI_STATUS      Status;
-  TERMINAL_DEV    *TerminalDevice;
-  
+  UINT8         ForegroundControl;
+  UINT8         BackgroundControl;
+  UINT8         BrightControl;
+  INT32         SavedColumn;
+  INT32         SavedRow;
+  EFI_STATUS    Status;
+  TERMINAL_DEV  *TerminalDevice;
+
   SavedColumn = 0;
-  SavedRow = 0;
-  
+  SavedRow    = 0;
+
   //
   //  get Terminal device data structure pointer.
   //
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);  
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
 
   //
   //  only the bit0..6 of the Attribute is valid
-  //  
+  //
   if ((Attribute | 0x7f) != 0x7f) {
     return EFI_UNSUPPORTED;
   }
-  
   //
   //  convert Attribute value to terminal emulator
   //  understandable foreground color
   //
   switch (Attribute & 0x07) {
-      
-    case EFI_BLACK      : ForegroundControl = 30; break;
-    case EFI_BLUE       : ForegroundControl = 34; break;
-    case EFI_GREEN      : ForegroundControl = 32; break;
-    case EFI_CYAN       : ForegroundControl = 36; break;
-    case EFI_RED        : ForegroundControl = 31; break;
-    case EFI_MAGENTA    : ForegroundControl = 35; break;
-    case EFI_BROWN      : ForegroundControl = 33; break;
-    default:
-    case EFI_LIGHTGRAY  : ForegroundControl = 37; break;
+
+  case EFI_BLACK:
+    ForegroundControl = 30;
+    break;
+
+  case EFI_BLUE:
+    ForegroundControl = 34;
+    break;
+
+  case EFI_GREEN:
+    ForegroundControl = 32;
+    break;
+
+  case EFI_CYAN:
+    ForegroundControl = 36;
+    break;
+
+  case EFI_RED:
+    ForegroundControl = 31;
+    break;
+
+  case EFI_MAGENTA:
+    ForegroundControl = 35;
+    break;
+
+  case EFI_BROWN:
+    ForegroundControl = 33;
+    break;
+
+  default:
+
+  case EFI_LIGHTGRAY:
+    ForegroundControl = 37;
+    break;
 
   }
-  
   //
   //  bit4 of the Attribute indicates bright control
   //  of terminal emulator.
   //
-  BrightControl = (UINT8)((Attribute>>3) & 1);
+  BrightControl = (UINT8) ((Attribute >> 3) & 1);
 
   //
   //  convert Attribute value to terminal emulator
   //  understandable background color.
   //
-  switch ((Attribute>>4) & 0x07) {
-      
-    case EFI_BLACK     : BackgroundControl = 40; break;
-    case EFI_BLUE      : BackgroundControl = 44; break;
-    case EFI_GREEN     : BackgroundControl = 42; break;
-    case EFI_CYAN      : BackgroundControl = 46; break;
-    case EFI_RED       : BackgroundControl = 41; break;
-    case EFI_MAGENTA   : BackgroundControl = 45; break;
-    case EFI_BROWN     : BackgroundControl = 43; break;
-    default:
-    case EFI_LIGHTGRAY : BackgroundControl = 47; break;
+  switch ((Attribute >> 4) & 0x07) {
+
+  case EFI_BLACK:
+    BackgroundControl = 40;
+    break;
+
+  case EFI_BLUE:
+    BackgroundControl = 44;
+    break;
+
+  case EFI_GREEN:
+    BackgroundControl = 42;
+    break;
+
+  case EFI_CYAN:
+    BackgroundControl = 46;
+    break;
+
+  case EFI_RED:
+    BackgroundControl = 41;
+    break;
+
+  case EFI_MAGENTA:
+    BackgroundControl = 45;
+    break;
+
+  case EFI_BROWN:
+    BackgroundControl = 43;
+    break;
+
+  default:
+
+  case EFI_LIGHTGRAY:
+    BackgroundControl = 47;
+    break;
   }
-  
   //
   // terminal emulator's control sequence to set attributes
   //
-  mSetAttributeString[BRIGHT_CONTROL_OFFSET]         = (CHAR16)('0' + BrightControl);
-  mSetAttributeString[FOREGROUND_CONTROL_OFFSET + 0] = (CHAR16)('0' + (ForegroundControl / 10));
-  mSetAttributeString[FOREGROUND_CONTROL_OFFSET + 1] = (CHAR16)('0' + (ForegroundControl % 10));
-  mSetAttributeString[BACKGROUND_CONTROL_OFFSET + 0] = (CHAR16)('0' + (BackgroundControl / 10));
-  mSetAttributeString[BACKGROUND_CONTROL_OFFSET + 1] = (CHAR16)('0' + (BackgroundControl % 10));
- 
-  // 
-  // save current column and row 
+  mSetAttributeString[BRIGHT_CONTROL_OFFSET]          = (CHAR16) ('0' + BrightControl);
+  mSetAttributeString[FOREGROUND_CONTROL_OFFSET + 0]  = (CHAR16) ('0' + (ForegroundControl / 10));
+  mSetAttributeString[FOREGROUND_CONTROL_OFFSET + 1]  = (CHAR16) ('0' + (ForegroundControl % 10));
+  mSetAttributeString[BACKGROUND_CONTROL_OFFSET + 0]  = (CHAR16) ('0' + (BackgroundControl / 10));
+  mSetAttributeString[BACKGROUND_CONTROL_OFFSET + 1]  = (CHAR16) ('0' + (BackgroundControl % 10));
+
+  //
+  // save current column and row
   // for future scrolling back use.
   //
-  SavedColumn = This->Mode->CursorColumn;
-  SavedRow  = This->Mode->CursorRow;
-  
+  SavedColumn                   = This->Mode->CursorColumn;
+  SavedRow                      = This->Mode->CursorRow;
+
   TerminalDevice->OutputEscChar = TRUE;
-  Status = This->OutputString(This, mSetAttributeString);
+  Status                        = This->OutputString (This, mSetAttributeString);
   TerminalDevice->OutputEscChar = FALSE;
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
-  } 
-  
+  }
   //
   //  scroll back to saved cursor position.
   //
-  This->Mode->CursorColumn = SavedColumn;
-  This->Mode->CursorRow  = SavedRow;
+  This->Mode->CursorColumn  = SavedColumn;
+  This->Mode->CursorRow     = SavedRow;
 
-  This->Mode->Attribute = (INT32) Attribute; 
+  This->Mode->Attribute     = (INT32) Attribute;
 
   return EFI_SUCCESS;
-  
+
 }
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutClearScreen (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This
@@ -719,7 +751,7 @@ TerminalConOutClearScreen (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
+    This
         Indicates the calling context.
 
   Returns:
@@ -733,30 +765,30 @@ TerminalConOutClearScreen (
     EFI_UNSUPPORTED
       The terminal is not in a valid display mode.       
                 
---*/      
+--*/
 {
-  EFI_STATUS      Status;
-  TERMINAL_DEV    *TerminalDevice;
-  
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);
- 
+  EFI_STATUS    Status;
+  TERMINAL_DEV  *TerminalDevice;
+
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
+
   //
   //  control sequence for clear screen request
   //
   TerminalDevice->OutputEscChar = TRUE;
-  Status = This->OutputString(This, mClearScreenString);
+  Status                        = This->OutputString (This, mClearScreenString);
   TerminalDevice->OutputEscChar = FALSE;
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
-  Status = This->SetCursorPosition(This, 0, 0);
-  
-  return Status ;
+  Status = This->SetCursorPosition (This, 0, 0);
+
+  return Status;
 }
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutSetCursorPosition (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -770,13 +802,13 @@ TerminalConOutSetCursorPosition (
   
   Arguments:
   
-    EFI_SIMPLE_TEXT_OUT_PROTOCOL  IN    *This
+    This
         Indicates the calling context.
         
-    UINTN                         IN    Column
+    Column
         The row to set cursor to.
         
-    UINTN                         IN    Row
+    Row
         The column to set cursor to.                
 
   Returns:
@@ -791,70 +823,67 @@ TerminalConOutSetCursorPosition (
       The terminal is not in a valid text mode, or the cursor position
       is invalid for current mode.     
                 
---*/        
+--*/
 {
-  EFI_SIMPLE_TEXT_OUTPUT_MODE   *Mode;
-  UINTN                         MaxColumn;
-  UINTN                         MaxRow;
-  EFI_STATUS                    Status;
-  TERMINAL_DEV                  *TerminalDevice;
-  
-  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS(This);  
+  EFI_SIMPLE_TEXT_OUTPUT_MODE *Mode;
+  UINTN                       MaxColumn;
+  UINTN                       MaxRow;
+  EFI_STATUS                  Status;
+  TERMINAL_DEV                *TerminalDevice;
+
+  TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
 
   //
   //  get current mode
   //
   Mode = This->Mode;
-  
+
   //
   //  get geometry of current mode
   //
-  Status = This->QueryMode(
-        This, 
-        Mode->Mode, 
-        &MaxColumn, 
-        &MaxRow
-        );
-  if (EFI_ERROR(Status)) {
-    return EFI_UNSUPPORTED;          
+  Status = This->QueryMode (
+                  This,
+                  Mode->Mode,
+                  &MaxColumn,
+                  &MaxRow
+                  );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
   }
 
   if (Column >= MaxColumn || Row >= MaxRow) {
     return EFI_UNSUPPORTED;
   }
-
   //
   // control sequence to move the cursor
   //
+  mSetCursorPositionString[ROW_OFFSET + 0]    = (CHAR16) ('0' + ((Row + 1) / 10));
+  mSetCursorPositionString[ROW_OFFSET + 1]    = (CHAR16) ('0' + ((Row + 1) % 10));
+  mSetCursorPositionString[COLUMN_OFFSET + 0] = (CHAR16) ('0' + ((Column + 1) / 10));
+  mSetCursorPositionString[COLUMN_OFFSET + 1] = (CHAR16) ('0' + ((Column + 1) % 10));
 
-  mSetCursorPositionString[ROW_OFFSET + 0]    = (CHAR16)('0' + ((Row + 1) / 10));
-  mSetCursorPositionString[ROW_OFFSET + 1]    = (CHAR16)('0' + ((Row + 1) % 10));
-  mSetCursorPositionString[COLUMN_OFFSET + 0] = (CHAR16)('0' + ((Column + 1) / 10));
-  mSetCursorPositionString[COLUMN_OFFSET + 1] = (CHAR16)('0' + ((Column + 1) % 10));
-  
-  TerminalDevice->OutputEscChar = TRUE;
-  Status = This->OutputString(This, mSetCursorPositionString);
+  TerminalDevice->OutputEscChar               = TRUE;
+  Status = This->OutputString (This, mSetCursorPositionString);
   TerminalDevice->OutputEscChar = FALSE;
-  
-  if (EFI_ERROR(Status)) {
+
+  if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
-
   //
   //  update current cursor position
   //  in the Mode data structure.
   //
-  Mode->CursorColumn = (INT32) Column;
-  Mode->CursorRow    = (INT32) Row;
-  
+  Mode->CursorColumn  = (INT32) Column;
+  Mode->CursorRow     = (INT32) Row;
+
   return EFI_SUCCESS;
 }
 
-EFI_STATUS 
+EFI_STATUS
 EFIAPI
 TerminalConOutEnableCursor (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
-  IN  BOOLEAN             Visible
+  IN  BOOLEAN                       Visible
   )
 /*++
   Routine Description:
@@ -864,10 +893,10 @@ TerminalConOutEnableCursor (
   
   Arguments:
   
-    SERIAL_IO_PROTOCOL  IN    *This
+    This
         Indicates the calling context.
         
-    BOOLEAN                       IN    Visible
+    Visible
         If TRUE, the cursor is set to be visible,
         If FALSE, the cursor is set to be invisible.        
 
@@ -879,22 +908,21 @@ TerminalConOutEnableCursor (
     EFI_UNSUPPORTED
       The terminal does not support cursor hidden.   
                 
---*/        
+--*/
 {
   if (!Visible) {
     return EFI_UNSUPPORTED;
   }
-  
+
   return EFI_SUCCESS;
 }
 
-
 BOOLEAN
 TerminalIsValidTextGraphics (
-    IN  CHAR16  Graphic,
-    OUT CHAR8   *PcAnsi,    OPTIONAL
-    OUT CHAR8   *Ascii      OPTIONAL
-    )
+  IN  CHAR16  Graphic,
+  OUT CHAR8   *PcAnsi, OPTIONAL
+  OUT CHAR8   *Ascii OPTIONAL
+  )
 /*++
 
 Routine Description:
@@ -915,12 +943,11 @@ Returns:
 
 --*/
 {
-  UNICODE_TO_CHAR     *Table;
+  UNICODE_TO_CHAR *Table;
 
   if ((((Graphic & 0xff00) != 0x2500) && ((Graphic & 0xff00) != 0x2100))) {
-     
     //
-    // Unicode drawing code charts are all in the 0x25xx range, 
+    // Unicode drawing code charts are all in the 0x25xx range,
     //  arrows are 0x21xx
     //
     return FALSE;
@@ -929,44 +956,51 @@ Returns:
   for (Table = UnicodeToPcAnsiOrAscii; Table->Unicode != 0x0000; Table++) {
     if (Graphic == Table->Unicode) {
       if (PcAnsi != NULL) {
-        *PcAnsi = Table->PcAnsi; 
+        *PcAnsi = Table->PcAnsi;
       }
+
       if (Ascii != NULL) {
         *Ascii = Table->Ascii;
       }
+
       return TRUE;
     }
   }
-  
+
   return FALSE;
 }
 
 BOOLEAN
 TerminalIsValidAscii (
-    IN  CHAR16  Ascii
-    )
+  IN  CHAR16  Ascii
+  )
 {
   //
   // valid ascii code lies in the extent of 0x20 ~ 0x7f
   //
   if ((Ascii >= 0x20) && (Ascii <= 0x7f)) {
     return TRUE;
-  }              
+  }
+
   return FALSE;
 }
 
 BOOLEAN
 TerminalIsValidEfiCntlChar (
-    IN  CHAR16  CharC
-    )
+  IN  CHAR16  CharC
+  )
 {
   //
   // only support four control characters.
   //
-  if (CharC == CHAR_NULL || CharC == CHAR_BACKSPACE 
-      || CharC == CHAR_LINEFEED || CharC == CHAR_CARRIAGE_RETURN
-      || CharC == CHAR_TAB) {
+  if (CharC == CHAR_NULL ||
+      CharC == CHAR_BACKSPACE ||
+      CharC == CHAR_LINEFEED ||
+      CharC == CHAR_CARRIAGE_RETURN ||
+      CharC == CHAR_TAB
+      ) {
     return TRUE;
-  }              
+  }
+
   return FALSE;
 }

@@ -43,6 +43,8 @@ Routine Description:
   
 Arguments:
 
+  PeiServices - The PEI core services table.
+
   FileName    - File name of failing routine.
 
   LineNumber  - Line number of failing ASSERT().
@@ -55,9 +57,9 @@ Returns:
 
 --*/
 {
-  UINT64   Buffer[EFI_STATUS_CODE_DATA_MAX_SIZE];
+  UINT64  Buffer[EFI_STATUS_CODE_DATA_MAX_SIZE];
 
-  EfiDebugAssertWorker (FileName, LineNumber,Description, sizeof (Buffer), Buffer);
+  EfiDebugAssertWorker (FileName, LineNumber, Description, sizeof (Buffer), Buffer);
 
   (**PeiServices).PeiReportStatusCode (
                     PeiServices,
@@ -65,7 +67,7 @@ Returns:
                     (EFI_SOFTWARE_PEI_MODULE | EFI_SW_EC_ILLEGAL_SOFTWARE_STATE),
                     0,
                     &gEfiCallerIdGuid,
-                    (EFI_STATUS_CODE_DATA *)Buffer
+                    (EFI_STATUS_CODE_DATA *) Buffer
                     );
 
   EFI_DEADLOOP ();
@@ -88,11 +90,13 @@ Routine Description:
   
 Arguments:
 
+  PeiServices - The PEI core services table.
+
   ErrorLevel - If error level is set do the debug print.
 
   Format     - String to use for the print, followed by Print arguments.
 
-  Marker     - VarArgs
+  ...        - Print arguments
   
 Returns:
   
@@ -112,9 +116,8 @@ Returns:
                     (EFI_SOFTWARE_PEI_MODULE | EFI_DC_UNSPECIFIED),
                     0,
                     &gEfiCallerIdGuid,
-                    (EFI_STATUS_CODE_DATA *)Buffer
+                    (EFI_STATUS_CODE_DATA *) Buffer
                     );
-     
-  return;
-}
 
+  return ;
+}

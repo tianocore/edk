@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 //
-// Coded to EFI 2.0 Coding Standards
+// Coded to Tiano Coding Standards
 //
-
 #ifndef _EFI_GEN_FV_IMAGE_EXE_H
 #define _EFI_GEN_FV_IMAGE_EXE_H
 
@@ -39,9 +38,9 @@ Abstract:
 //
 // Utility version information
 //
-#define UTILITY_MAJOR_VERSION   0
-#define UTILITY_MINOR_VERSION   1
-#define UTILITY_DATE            __DATE__
+#define UTILITY_MAJOR_VERSION 0
+#define UTILITY_MINOR_VERSION 1
+#define UTILITY_DATE          __DATE__
 
 //
 // The maximum number of arguments accepted from the command line.
@@ -52,13 +51,48 @@ Abstract:
 // The function that displays general utility information
 //
 VOID
-PrintUtilityInfo ();
+PrintUtilityInfo (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  None
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 //
 // The function that displays the utility usage message.
 //
 VOID
-PrintUsage ();
+PrintUsage (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  None
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 #endif
-

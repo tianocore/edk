@@ -25,9 +25,9 @@ Abstract:
 
 #define _EFI_WIN_NT_H_
 
-#pragma warning ( disable : 4115 )
-#pragma warning ( disable : 4201 )
-#pragma warning ( disable : 4214 )
+#pragma warning(disable : 4115)
+#pragma warning(disable : 4201)
+#pragma warning(disable : 4214)
 
 #include "windows.h"
 #include "stdio.h"
@@ -35,13 +35,12 @@ Abstract:
 //
 // Set the warnings back on so the EFI code must be /W4.
 //
-#pragma warning ( default : 4115 )
-#pragma warning ( default : 4201 )
-#pragma warning ( default : 4214 )
+#pragma warning(default : 4115)
+#pragma warning(default : 4201)
+#pragma warning(default : 4214)
 
 #endif
 
 #include "Tiano.h"
 
 #endif
-

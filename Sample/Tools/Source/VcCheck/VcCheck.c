@@ -29,10 +29,9 @@ Abstract:
 
 #include <stdio.h>
 
+_int16  gGloba16;
 
-_int16 gGloba16;
-
-int 
+int
 CheckLostCode (
   int Value
   )
@@ -57,22 +56,28 @@ Returns:
     break;
 
   default:
-    _asm {
+    _asm
+    {
       mov bx, 1
       mov gGloba16, bx
     }
+
     return 1;
   }
-  
-  _asm {
+
+  _asm
+  {
     mov bx, 0
     mov gGloba16, bx
   }
+
   return 0;
 }
 
-
-int main ()
+int
+main (
+  void
+  )
 /*++
 
 Routine Description:
@@ -88,11 +93,11 @@ Returns:
 
 --*/
 {
-  int     result;
-  char    select;
+  int   result;
+  char  select;
 
-  gGloba16     = 0xFF;
-  result  = 0; 
+  gGloba16  = 0xFF;
+  result    = 0;
 
   CheckLostCode (0);
   result += (gGloba16 == 0) ? 0 : 1;
@@ -103,7 +108,7 @@ Returns:
   if (result != 0) {
     printf ("Warning: C2.dll is incorrect.\n Please see $(EFI_SOURCE)\\EFI2.0 Developer's Manual.doc for corrective action.\n");
     printf ("Would you want to continue?(Y/N)");
-    
+
     scanf ("%c", &select);
     if ((select == 'Y') || (select == 'y')) {
       return 0;
@@ -114,4 +119,3 @@ Returns:
 
   return 0;
 }
-

@@ -20,13 +20,13 @@ Abstract:
 --*/
 
 #ifndef _MYALLOC_H_
-# define _MYALLOC_H_
+#define _MYALLOC_H_
 
-# include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-# include "Tiano.h"
+#include "Tiano.h"
 
 //
 // Default operation is to use the memory allocation tracking functions.
@@ -34,20 +34,19 @@ Abstract:
 // source files as needed.  Or, just do not include this header file in
 // your project.
 //
-# ifndef USE_MYALLOC
-#  define USE_MYALLOC   1
-# endif
+#ifndef USE_MYALLOC
+#define USE_MYALLOC 1
+#endif
 
-# if USE_MYALLOC
-
+#if USE_MYALLOC
 //
 // Replace C library allocation routines with MyAlloc routines.
 //
-#  define malloc(size)          MyAlloc((size), __FILE__, __LINE__)
-#  define calloc(count, size)   MyAlloc((count) * (size), __FILE__, __LINE__)
-#  define realloc(ptr, size)    MyRealloc((ptr), (size), __FILE__, __LINE__)
-#  define free(ptr)             MyFree((ptr), __FILE__, __LINE__)
-#  define alloc_check(final)    MyCheck((final), __FILE__, __LINE__)
+#define malloc(size)        MyAlloc ((size), __FILE__, __LINE__)
+#define calloc(count, size) MyAlloc ((count) * (size), __FILE__, __LINE__)
+#define realloc(ptr, size)  MyRealloc ((ptr), (size), __FILE__, __LINE__)
+#define free(ptr)           MyFree ((ptr), __FILE__, __LINE__)
+#define alloc_check(final)  MyCheck ((final), __FILE__, __LINE__)
 
 //
 // Structure for checking/tracking memory allocations.
@@ -79,19 +78,21 @@ typedef struct MyAllocStruct {
 //           this will place the first caller address on a 64-bit
 //           boundary.
 //
-
 //
 // Signatures used to check for buffer overflow/underflow conditions.
 //
-#  define MYALLOC_HEAD_MAGIK  0xBADFACED
-#  define MYALLOC_TAIL_MAGIK  0xDEADBEEF
+#define MYALLOC_HEAD_MAGIK  0xBADFACED
+#define MYALLOC_TAIL_MAGIK  0xDEADBEEF
 
 VOID
-MyCheck(
-  BOOLEAN Final,
-  UINT8   File[],
-  UINTN   Line);
-//*++
+MyCheck (
+  BOOLEAN      Final,
+  UINT8        File[],
+  UINTN        Line
+  )
+;
+//
+// *++
 // Description:
 //
 //  Check for corruptions in the allocated memory chain.  If a corruption
@@ -113,14 +114,17 @@ MyCheck(
 //
 //  n/a
 //
-//--*/
-
-VOID *
-MyAlloc(
-  UINTN Size,
-  UINT8 File[],
-  UINTN Line);
-//*++
+// --*/
+//
+VOID  *
+MyAlloc (
+  UINTN      Size,
+  UINT8      File[],
+  UINTN      Line
+  )
+;
+//
+// *++
 // Description:
 //
 //  Allocate a new link in the allocation chain along with enough storage
@@ -141,15 +145,18 @@ MyAlloc(
 //
 //  Pointer to the caller's buffer.
 //
-//--*/
-
-VOID *
-MyRealloc(
-  VOID *Ptr,
-  UINTN Size,
-  UINT8 File[],
-  UINTN Line);
-//*++
+// --*/
+//
+VOID  *
+MyRealloc (
+  VOID       *Ptr,
+  UINTN      Size,
+  UINT8      File[],
+  UINTN      Line
+  )
+;
+//
+// *++
 // Description:
 //
 //  This does a MyAlloc(), memcpy() and MyFree().  There is no optimization
@@ -171,14 +178,17 @@ MyRealloc(
 //
 //  Pointer to new caller's buffer.
 //
-//--*/
-
+// --*/
+//
 VOID
-MyFree(
-  VOID  *Ptr,
-  UINT8 File[],
-  UINTN Line);
-//*++
+MyFree (
+  VOID       *Ptr,
+  UINT8      File[],
+  UINTN      Line
+  )
+;
+//
+// *++
 // Description:
 //
 //  Release a previously allocated buffer.  Invalid parameters will cause
@@ -197,16 +207,16 @@ MyFree(
 //
 //  n/a
 //
-//--*/
-
-# else /* USE_MYALLOC */
+// --*/
+//
+#else /* USE_MYALLOC */
 
 //
 // Nothing to do when USE_MYALLOC is zero.
 //
-#  define alloc_check(final)
+#define alloc_check(final)
 
-# endif /* USE_MYALLOC */
-
+#endif /* USE_MYALLOC */
 #endif /* _MYALLOC_H_ */
+
 /* eof - MyAlloc.h */

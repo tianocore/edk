@@ -21,9 +21,9 @@ Revision history:
 
 EFI_STATUS
 pxe_rcvfilter_enable (
-  SNP_DRIVER *snp,
-  UINT32 EnableFlags,
-  UINTN MCastAddressCount,
+  SNP_DRIVER      *snp,
+  UINT32          EnableFlags,
+  UINTN           MCastAddressCount,
   EFI_MAC_ADDRESS *MCastAddressList
   )
 /*++
@@ -41,16 +41,16 @@ Returns:
 
 --*/
 {
-  snp->cdb.OpCode = PXE_OPCODE_RECEIVE_FILTERS;
-  snp->cdb.OpFlags = PXE_OPFLAGS_RECEIVE_FILTER_ENABLE;
-  snp->cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  snp->cdb.DBsize = PXE_DBSIZE_NOT_USED;
-  snp->cdb.CPBaddr = PXE_CPBADDR_NOT_USED;
-  snp->cdb.DBaddr = PXE_DBADDR_NOT_USED;
-  snp->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  snp->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  snp->cdb.IFnum = snp->if_num;
-  snp->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  snp->cdb.OpCode     = PXE_OPCODE_RECEIVE_FILTERS;
+  snp->cdb.OpFlags    = PXE_OPFLAGS_RECEIVE_FILTER_ENABLE;
+  snp->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
+  snp->cdb.DBsize     = PXE_DBSIZE_NOT_USED;
+  snp->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
+  snp->cdb.DBaddr     = PXE_DBADDR_NOT_USED;
+  snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  snp->cdb.IFnum      = snp->if_num;
+  snp->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
   if ((EnableFlags & EFI_SIMPLE_NETWORK_RECEIVE_UNICAST) != 0) {
     snp->cdb.OpFlags |= PXE_OPFLAGS_RECEIVE_FILTER_UNICAST;
@@ -73,26 +73,27 @@ Returns:
   }
 
   if (MCastAddressCount != 0) {
-    snp->cdb.CPBsize = (UINT16)(MCastAddressCount * sizeof (EFI_MAC_ADDRESS));
-    snp->cdb.CPBaddr = (UINT64)snp->cpb;
+    snp->cdb.CPBsize  = (UINT16) (MCastAddressCount * sizeof (EFI_MAC_ADDRESS));
+    snp->cdb.CPBaddr  = (UINT64) snp->cpb;
     EfiCopyMem (snp->cpb, MCastAddressList, snp->cdb.CPBsize);
   }
-
   //
   // Issue UNDI command and check result.
   //
+  DEBUG ((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
 
-  DEBUG((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
-
-  (*snp->issue_undi32_command) ((UINT64)&snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     //
     // UNDI command failed.  Return UNDI status to caller.
     //
-
-    DEBUG((EFI_D_ERROR, "\nsnp->undi.receive_filters()  %xh:%xh\n",
-      snp->cdb.StatFlags, snp->cdb.StatCode));
+    DEBUG (
+      (EFI_D_ERROR,
+      "\nsnp->undi.receive_filters()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
     switch (snp->cdb.StatCode) {
     case PXE_STATCODE_INVALID_CDB:
@@ -113,8 +114,8 @@ Returns:
 EFI_STATUS
 pxe_rcvfilter_disable (
   SNP_DRIVER *snp,
-  UINT32 DisableFlags,
-  BOOLEAN ResetMCastList
+  UINT32     DisableFlags,
+  BOOLEAN    ResetMCastList
   )
 /*++
 
@@ -130,18 +131,17 @@ Returns:
 
 --*/
 {
-  snp->cdb.OpCode = PXE_OPCODE_RECEIVE_FILTERS;
-  snp->cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  snp->cdb.DBsize = PXE_DBSIZE_NOT_USED;
-  snp->cdb.CPBaddr = PXE_CPBADDR_NOT_USED;
-  snp->cdb.DBaddr = PXE_DBADDR_NOT_USED;
-  snp->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  snp->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  snp->cdb.IFnum = snp->if_num;
-  snp->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  snp->cdb.OpCode     = PXE_OPCODE_RECEIVE_FILTERS;
+  snp->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
+  snp->cdb.DBsize     = PXE_DBSIZE_NOT_USED;
+  snp->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
+  snp->cdb.DBaddr     = PXE_DBADDR_NOT_USED;
+  snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  snp->cdb.IFnum      = snp->if_num;
+  snp->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
-  snp->cdb.OpFlags = (UINT16)(DisableFlags ?
-    PXE_OPFLAGS_RECEIVE_FILTER_DISABLE : PXE_OPFLAGS_NOT_USED);
+  snp->cdb.OpFlags    = (UINT16) (DisableFlags ? PXE_OPFLAGS_RECEIVE_FILTER_DISABLE : PXE_OPFLAGS_NOT_USED);
 
   if (ResetMCastList) {
     snp->cdb.OpFlags |= PXE_OPFLAGS_RECEIVE_FILTER_RESET_MCAST_LIST;
@@ -166,22 +166,23 @@ Returns:
   if ((DisableFlags & EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST) != 0) {
     snp->cdb.OpFlags |= PXE_OPFLAGS_RECEIVE_FILTER_FILTERED_MULTICAST;
   }
-
   //
   // Issue UNDI command and check result.
   //
+  DEBUG ((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
 
-  DEBUG((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
-
-  (*snp->issue_undi32_command) ((UINT64)&snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     //
     // UNDI command failed.  Return UNDI status to caller.
     //
-
-    DEBUG((EFI_D_ERROR, "\nsnp->undi.receive_filters()  %xh:%xh\n",
-      snp->cdb.StatFlags, snp->cdb.StatCode));
+    DEBUG (
+      (EFI_D_ERROR,
+      "\nsnp->undi.receive_filters()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
     return EFI_DEVICE_ERROR;
   }
@@ -191,7 +192,8 @@ Returns:
 
 EFI_STATUS
 pxe_rcvfilter_read (
-  SNP_DRIVER *snp)
+  SNP_DRIVER *snp
+  )
 /*++
 
 Routine Description:
@@ -204,40 +206,43 @@ Returns:
 
 --*/
 {
-  snp->cdb.OpCode = PXE_OPCODE_RECEIVE_FILTERS;
-  snp->cdb.OpFlags = PXE_OPFLAGS_RECEIVE_FILTER_READ;
-  snp->cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  snp->cdb.DBsize = (UINT16)(snp->mode.MaxMCastFilterCount * sizeof (EFI_MAC_ADDRESS));
-  snp->cdb.CPBaddr = PXE_CPBADDR_NOT_USED;
+  snp->cdb.OpCode   = PXE_OPCODE_RECEIVE_FILTERS;
+  snp->cdb.OpFlags  = PXE_OPFLAGS_RECEIVE_FILTER_READ;
+  snp->cdb.CPBsize  = PXE_CPBSIZE_NOT_USED;
+  snp->cdb.DBsize   = (UINT16) (snp->mode.MaxMCastFilterCount * sizeof (EFI_MAC_ADDRESS));
+  snp->cdb.CPBaddr  = PXE_CPBADDR_NOT_USED;
   if (snp->cdb.DBsize == 0) {
-    snp->cdb.DBaddr = (UINT64)NULL;
+    snp->cdb.DBaddr = (UINT64) NULL;
   } else {
-    snp->cdb.DBaddr = (UINT64)snp->db;
-    EfiZeroMem(snp->db, snp->cdb.DBsize);
+    snp->cdb.DBaddr = (UINT64) snp->db;
+    EfiZeroMem (snp->db, snp->cdb.DBsize);
   }
-  snp->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  snp->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  snp->cdb.IFnum = snp->if_num;
-  snp->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
 
-  DEBUG((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
+  snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  snp->cdb.IFnum      = snp->if_num;
+  snp->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
-  (*snp->issue_undi32_command) ((UINT64)&snp->cdb);
+  DEBUG ((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
+
+  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     //
     // UNDI command failed.  Return UNDI status to caller.
     //
-
-    DEBUG((EFI_D_ERROR, "\nsnp->undi.receive_filters()  %xh:%xh\n",
-      snp->cdb.StatFlags, snp->cdb.StatCode));
+    DEBUG (
+      (EFI_D_ERROR,
+      "\nsnp->undi.receive_filters()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
     return EFI_DEVICE_ERROR;
   }
   //
   // Convert UNDI32 StatFlags to EFI SNP filter flags.
   //
-
   snp->mode.ReceiveFilterSetting = 0;
 
   if ((snp->cdb.StatFlags & PXE_STATFLAGS_RECEIVE_FILTER_UNICAST) != 0) {
@@ -265,7 +270,6 @@ Returns:
   //
   // Count number of active entries in multicast filter list.
   //
-
   {
     EFI_MAC_ADDRESS ZeroMacAddr;
 
@@ -273,11 +277,13 @@ Returns:
 
     for (snp->mode.MCastFilterCount = 0;
          snp->mode.MCastFilterCount < snp->mode.MaxMCastFilterCount;
-         snp->mode.MCastFilterCount++)
-    {
-      if (EfiCompareMem (&snp->mode.MCastFilter[snp->mode.MCastFilterCount],
-        &ZeroMacAddr, sizeof ZeroMacAddr) == 0)
-      {
+         snp->mode.MCastFilterCount++
+        ) {
+      if (EfiCompareMem (
+            &snp->mode.MCastFilter[snp->mode.MCastFilterCount],
+            &ZeroMacAddr,
+            sizeof ZeroMacAddr
+            ) == 0) {
         break;
       }
     }
@@ -286,15 +292,14 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 snp_undi32_receive_filters (
-  IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
-  IN UINT32 EnableFlags,
-  IN UINT32 DisableFlags,
-  IN BOOLEAN ResetMCastList,
-  IN UINTN MCastAddressCount OPTIONAL,
-  IN EFI_MAC_ADDRESS *MCastAddressList OPTIONAL
+  IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
+  IN UINT32                      EnableFlags,
+  IN UINT32                      DisableFlags,
+  IN BOOLEAN                     ResetMCastList,
+  IN UINTN                       MCastAddressCount OPTIONAL,
+  IN EFI_MAC_ADDRESS             * MCastAddressList OPTIONAL
   )
 /*++
 
@@ -317,48 +322,48 @@ Returns:
 
 --*/
 {
-  SNP_DRIVER *snp;
-  EFI_STATUS Status;
+  SNP_DRIVER  *snp;
+  EFI_STATUS  Status;
 
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS(this);
+  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
   if (snp == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
   switch (snp->mode.State) {
-    case EfiSimpleNetworkInitialized:
-        break;
+  case EfiSimpleNetworkInitialized:
+    break;
 
-    case EfiSimpleNetworkStopped:
-        return EFI_NOT_STARTED;
+  case EfiSimpleNetworkStopped:
+    return EFI_NOT_STARTED;
 
-    case EfiSimpleNetworkStarted:
-        return EFI_DEVICE_ERROR;
+  case EfiSimpleNetworkStarted:
+    return EFI_DEVICE_ERROR;
 
-    default:
-        return EFI_DEVICE_ERROR;
+  default:
+    return EFI_DEVICE_ERROR;
   }
   //
   // check if we are asked to enable or disable something that the UNDI
   // does not even support!
   //
-  if ((EnableFlags & ~snp->mode.ReceiveFilterMask) != 0) {
+  if ((EnableFlags &~snp->mode.ReceiveFilterMask) != 0) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((DisableFlags & ~snp->mode.ReceiveFilterMask) != 0) {
+  if ((DisableFlags &~snp->mode.ReceiveFilterMask) != 0) {
     return EFI_INVALID_PARAMETER;
   }
 
   if (ResetMCastList) {
     DisableFlags |= EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST & snp->mode.ReceiveFilterMask;
     MCastAddressCount = 0;
-    MCastAddressList = NULL;
+    MCastAddressList  = NULL;
   } else {
     if (MCastAddressCount != 0) {
       if (MCastAddressCount > snp->mode.MaxMCastFilterCount) {
@@ -371,23 +376,21 @@ Returns:
     }
   }
 
-  if (EnableFlags == 0 && DisableFlags == 0 &&
-      !ResetMCastList && MCastAddressCount == 0) {
+  if (EnableFlags == 0 && DisableFlags == 0 && !ResetMCastList && MCastAddressCount == 0) {
     return EFI_SUCCESS;
   }
 
-  if ((EnableFlags & EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST) != 0 &&
-        MCastAddressCount == 0) {
+  if ((EnableFlags & EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST) != 0 && MCastAddressCount == 0) {
     return EFI_INVALID_PARAMETER;
   }
 
   if ((EnableFlags != 0) || (MCastAddressCount != 0)) {
     Status = pxe_rcvfilter_enable (
-                      snp,
-                      EnableFlags,
-                      MCastAddressCount,
-                      MCastAddressList
-                      );
+              snp,
+              EnableFlags,
+              MCastAddressCount,
+              MCastAddressList
+              );
 
     if (Status != EFI_SUCCESS) {
       return Status;
@@ -402,5 +405,5 @@ Returns:
     }
   }
 
-  return (pxe_rcvfilter_read (snp));
+  return pxe_rcvfilter_read (snp);
 }

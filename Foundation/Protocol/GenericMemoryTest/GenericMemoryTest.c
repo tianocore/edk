@@ -24,8 +24,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (GenericMemoryTest)
 
-EFI_GUID gEfiGenericMemTestProtocolGuid = \
-         EFI_GENERIC_MEMORY_TEST_PROTOCOL_GUID;
+EFI_GUID  gEfiGenericMemTestProtocolGuid = EFI_GENERIC_MEMORY_TEST_PROTOCOL_GUID;
 
-EFI_GUID_STRING (&gEfiGenericMemTestProtocolGuid, \
-         "GenericMemoryTest Protocol", "EFI 2.0 Generic Memory Test Protocol");
+EFI_GUID_STRING(&gEfiGenericMemTestProtocolGuid, "GenericMemoryTest Protocol", "Tiano Generic Memory Test Protocol");

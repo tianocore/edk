@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  Reset Architectural Protocol as defined in EFI 2.0 under NT Emulation
+  Reset Architectural Protocol as defined in Tiano under NT Emulation
 
 --*/
 
@@ -40,7 +40,7 @@ WinNtResetSystem (
   IN CHAR16           *ResetData OPTIONAL
   );
 
-EFI_DRIVER_ENTRY_POINT(InitializeNtReset)
+EFI_DRIVER_ENTRY_POINT (InitializeNtReset)
 
 EFI_STATUS
 EFIAPI
@@ -62,9 +62,10 @@ Returns:
 
   Status
 --*/
+// TODO:    SystemTable - add argument and description to function comment
 {
-  EFI_STATUS Status;
-  EFI_HANDLE Handle;
+  EFI_STATUS  Status;
+  EFI_HANDLE  Handle;
 
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, NULL);
   EfiInitializeWinNtDriverLib (ImageHandle, SystemTable);
@@ -74,14 +75,14 @@ Returns:
   Handle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &Handle,
-                  &gEfiResetArchProtocolGuid, NULL,
+                  &gEfiResetArchProtocolGuid,
+                  NULL,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
 
   return Status;
 }
-
 
 STATIC
 EFI_STATUS
@@ -91,11 +92,28 @@ WinNtResetSystem (
   IN UINTN            DataSize,
   IN CHAR16           *ResetData OPTIONAL
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ResetType   - TODO: add argument description
+  ResetStatus - TODO: add argument description
+  DataSize    - TODO: add argument description
+  ResetData   - TODO: add argument description
+
+Returns:
+
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   //
   // BUGBUG Need to kill all console windows later
-  //   
-  
+  //
   //
   // Discard ResetType, always return 0 as exit code
   //

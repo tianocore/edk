@@ -18,13 +18,10 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(PxeBaseCode)
+#include EFI_PROTOCOL_DEFINITION (PxeBaseCode)
 
-EFI_GUID gEfiPxeBaseCodeProtocolGuid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
+EFI_GUID  gEfiPxeBaseCodeProtocolGuid = EFI_PXE_BASE_CODE_PROTOCOL_GUID;
 
-EFI_GUID_STRING(
-  &gEfiPxeBaseCodeProtocolGuid,
-  "PXE Base Code Protocol",
-  "EFI PXE Base Code Protocol");
+EFI_GUID_STRING(&gEfiPxeBaseCodeProtocolGuid, "PXE Base Code Protocol", "EFI PXE Base Code Protocol");
 
 /* EOF - PxeBaseCode.c */

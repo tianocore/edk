@@ -41,81 +41,81 @@ Revision History
 #define _EFI_LEGACY_BIOS_H
 
 #define EFI_LEGACY_BIOS_PROTOCOL_GUID \
-  { 0xdb9a1e3d, 0x45cb, 0x4abb, 0x85, 0x3b, 0xe5, 0x38, 0x7f, 0xdb, 0x2e, 0x2d }
+  { \
+    0xdb9a1e3d, 0x45cb, 0x4abb, 0x85, 0x3b, 0xe5, 0x38, 0x7f, 0xdb, 0x2e, 0x2d \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_LEGACY_BIOS_PROTOCOL);
 
 //
 // Convert from 32-bit address (_Adr) to Segment:Offset 16-bit form
 //
-#define EFI_SEGMENT(_Adr) (UINT16)((UINT16) (((UINT32)(_Adr)) >> 4) & 0xf000)
-#define EFI_OFFSET(_Adr)  (UINT16)(((UINT16)((UINT32)_Adr)) & 0xffff) 
-#define BYTE_GRANULARITY 0x01
-#define WORD_GRANULARITY 0x02
-#define DWORD_GRANULARITY 0x04
-#define QWORD_GRANULARITY 0x08
+#define EFI_SEGMENT(_Adr)     (UINT16) ((UINT16) (((UINT32) (_Adr)) >> 4) & 0xf000)
+#define EFI_OFFSET(_Adr)      (UINT16) (((UINT16) ((UINT32) _Adr)) & 0xffff)
+#define BYTE_GRANULARITY      0x01
+#define WORD_GRANULARITY      0x02
+#define DWORD_GRANULARITY     0x04
+#define QWORD_GRANULARITY     0x08
 #define PARAGRAPH_GRANULARITY 0x10
 
-#define CARRY_FLAG  0x01
+#define CARRY_FLAG            0x01
 
 typedef struct {
-  UINT16 CF:1;
-  UINT16 Reserved1:1;
-  UINT16 PF:1;
-  UINT16 Reserved2:1;
-  UINT16 AF:1;
-  UINT16 Reserved3:1;
-  UINT16 ZF:1;
-  UINT16 SF:1;
-  UINT16 TF:1;
-  UINT16 IF:1;
-  UINT16 DF:1;
-  UINT16 OF:1;
-  UINT16 IOPL:2;
-  UINT16 NT:1;
-  UINT16 Reserved4:1;
+  UINT16  CF : 1;
+  UINT16  Reserved1 : 1;
+  UINT16  PF : 1;
+  UINT16  Reserved2 : 1;
+  UINT16  AF : 1;
+  UINT16  Reserved3 : 1;
+  UINT16  ZF : 1;
+  UINT16  SF : 1;
+  UINT16  TF : 1;
+  UINT16  IF : 1;
+  UINT16  DF : 1;
+  UINT16  OF : 1;
+  UINT16  IOPL : 2;
+  UINT16  NT : 1;
+  UINT16  Reserved4 : 1;
 } EFI_FLAGS_REG;
 
-
 typedef struct {
-  UINT16          AX;
-  UINT16          BX;
-  UINT16          CX;
-  UINT16          DX;
-  UINT16          SI;
-  UINT16          DI;
-  EFI_FLAGS_REG   Flags;
-  UINT16          ES;
-  UINT16          CS;
-  UINT16          SS;
-  UINT16          DS;
-                  
-  UINT16          BP;
+  UINT16        AX;
+  UINT16        BX;
+  UINT16        CX;
+  UINT16        DX;
+  UINT16        SI;
+  UINT16        DI;
+  EFI_FLAGS_REG Flags;
+  UINT16        ES;
+  UINT16        CS;
+  UINT16        SS;
+  UINT16        DS;
+
+  UINT16        BP;
 } EFI_WORD_REGS;
 
-
 typedef struct {
-  UINT8   AL;
-  UINT8   AH;
-  UINT8   BL;
-  UINT8   BH;
-  UINT8   CL;
-  UINT8   CH;
-  UINT8   DL;
-  UINT8   DH;
+  UINT8 AL;
+  UINT8 AH;
+  UINT8 BL;
+  UINT8 BH;
+  UINT8 CL;
+  UINT8 CH;
+  UINT8 DL;
+  UINT8 DH;
 } EFI_BYTE_REGS;
 
 typedef union {
-  EFI_WORD_REGS   X;
-  EFI_BYTE_REGS   H;
+  EFI_WORD_REGS X;
+  EFI_BYTE_REGS H;
 } EFI_IA32_REGISTER_SET;
 
-#pragma pack (1)
+#pragma pack(1)
 //
 // $EFI table created by Legacy16 code and consumed by EFI Legacy driver
 //
 typedef struct {
-  UINT32  Signature;  // "$EFI"
+  UINT32  Signature;      // "$EFI"
   UINT8   TableChecksum;
   UINT8   TableLength;
   UINT8   EfiMajorRevision;
@@ -129,8 +129,7 @@ typedef struct {
   UINT16  PnPInstallationCheckSegment;
   UINT16  PnPInstallationCheckOffset;
 
-  UINT32  EfiSystemTable;               // IPF - CSM Integration
-
+  UINT32  EfiSystemTable; // IPF - CSM Integration
   UINT32  OemStringPointer;
   UINT32  AcpiRsdPtrPointer;
   UINT16  OemRevision;
@@ -159,78 +158,82 @@ typedef struct {
 #define MAX_HDD_ENTRIES 0x30
 
 typedef struct {
-  UINT16    Raw[256];
+  UINT16  Raw[256];
 } ATAPI_IDENTIFY;
 
+//
 // HDD_INFO status
-#define HDD_PRIMARY           0x01
-#define HDD_SECONDARY         0x02
-#define HDD_MASTER_ATAPI_CDROM      0x04
-#define HDD_SLAVE_ATAPI_CDROM       0x08
-#define HDD_MASTER_IDE        0x20
-#define HDD_SLAVE_IDE         0x40
-#define HDD_MASTER_ATAPI_ZIPDISK      0x10
-#define HDD_SLAVE_ATAPI_ZIPDISK       0x80
+//
+#define HDD_PRIMARY               0x01
+#define HDD_SECONDARY             0x02
+#define HDD_MASTER_ATAPI_CDROM    0x04
+#define HDD_SLAVE_ATAPI_CDROM     0x08
+#define HDD_MASTER_IDE            0x20
+#define HDD_SLAVE_IDE             0x40
+#define HDD_MASTER_ATAPI_ZIPDISK  0x10
+#define HDD_SLAVE_ATAPI_ZIPDISK   0x80
 
 typedef struct {
-  UINT16                    Status;
-  UINT32                    Bus;
-  UINT32                    Device;
-  UINT32                    Function;
-  UINT16                    CommandBaseAddress;
-  UINT16                    ControlBaseAddress;
-  UINT16                    BusMasterAddress;
-  UINT8                     HddIrq;
-  ATAPI_IDENTIFY  IdentifyDrive[2]; 
+  UINT16          Status;
+  UINT32          Bus;
+  UINT32          Device;
+  UINT32          Function;
+  UINT16          CommandBaseAddress;
+  UINT16          ControlBaseAddress;
+  UINT16          BusMasterAddress;
+  UINT8           HddIrq;
+  ATAPI_IDENTIFY  IdentifyDrive[2];
 } HDD_INFO;
 
 //
 // Parties data structures
 //
 typedef struct {
-   UINT8   DirectoryServiceValidity    : 1;
-   UINT8   RabcaUsedFlag               : 1;
-   UINT8   ExecuteHddDiagnosticsFlag   : 1;
-   UINT8   Reserved                    : 5;
+  UINT8 DirectoryServiceValidity : 1;
+  UINT8 RabcaUsedFlag : 1;
+  UINT8 ExecuteHddDiagnosticsFlag : 1;
+  UINT8 Reserved : 5;
 } UDC_ATTRIBUTES;
 
 typedef struct {
-   UDC_ATTRIBUTES    Attributes;
-   UINT8             DeviceNumber;
-   UINT8             BbsTableEntryNumberForParentDevice;
-   UINT8             BbsTableEntryNumberForBoot;
-   UINT8             BbsTableEntryNumberForHddDiag;
-   UINT8             BeerData[128];
-   UINT8             ServiceAreaData[64];
+  UDC_ATTRIBUTES  Attributes;
+  UINT8           DeviceNumber;
+  UINT8           BbsTableEntryNumberForParentDevice;
+  UINT8           BbsTableEntryNumberForBoot;
+  UINT8           BbsTableEntryNumberForHddDiag;
+  UINT8           BeerData[128];
+  UINT8           ServiceAreaData[64];
 } UD_TABLE;
 
+//
 // define BBS Device Types
-#define    BBS_FLOPPY        0x01
-#define    BBS_HARDDISK      0x02
-#define    BBS_CDROM         0x03
-#define    BBS_PCMCIA        0x04
-#define    BBS_USB           0x05
-#define    BBS_EMBED_NETWORK 0x06
-#define    BBS_BEV_DEVICE    0x80
-#define    BBS_UNKNOWN       0xff
+//
+#define BBS_FLOPPY        0x01
+#define BBS_HARDDISK      0x02
+#define BBS_CDROM         0x03
+#define BBS_PCMCIA        0x04
+#define BBS_USB           0x05
+#define BBS_EMBED_NETWORK 0x06
+#define BBS_BEV_DEVICE    0x80
+#define BBS_UNKNOWN       0xff
 
 typedef struct {
   UINT16  OldPosition : 4;
-  UINT16  Reserved1   : 4;
-  UINT16  Enabled     : 1;
-  UINT16  Failed      : 1;
-  UINT16  MediaPresent: 2;
-  UINT16  Reserved2   : 4;
-} BBS_STATUS_FLAGS ;
-
+  UINT16  Reserved1 : 4;
+  UINT16  Enabled : 1;
+  UINT16  Failed : 1;
+  UINT16  MediaPresent : 2;
+  UINT16  Reserved2 : 4;
+} BBS_STATUS_FLAGS;
 
 #define MAX_BBS_ENTRIES 0x100
+//
 // BBS_IGNORE_ENTRY is placed in the BootPriority field if the entry is to
 // be skipped.
-// BBS_UNPRIORITIZED_ENTRY is placed in the BootPriority field before 
+// BBS_UNPRIORITIZED_ENTRY is placed in the BootPriority field before
 // priority has been assigned but indicates valid entry.
-// BBS_LOWEST_PRIORITY is normally used for removable media with no media 
-//   inserted. This allows the 16-bit CSM to allocate a drive letter to 
+// BBS_LOWEST_PRIORITY is normally used for removable media with no media
+//   inserted. This allows the 16-bit CSM to allocate a drive letter to
 //   the device.
 // BBS_DO_NOT_BOOT_FROM is used for devices that the 16-bit CSM is to assign
 //   a drive letter to but never boot from.
@@ -241,47 +244,46 @@ typedef struct {
 //   2. For BBS compliant cards that hook IRQs in order to have their SETUP
 //      executed.
 //
-
-#define BBS_DO_NOT_BOOT_FROM     0xFFFC
-#define BBS_LOWEST_PRIORITY      0xFFFD
+#define BBS_DO_NOT_BOOT_FROM    0xFFFC
+#define BBS_LOWEST_PRIORITY     0xFFFD
 #define BBS_UNPRIORITIZED_ENTRY 0xFFFE
-#define BBS_IGNORE_ENTRY 0xFFFF
+#define BBS_IGNORE_ENTRY        0xFFFF
 
 typedef struct {
-  UINT16                BootPriority;
-  UINT32                Bus;
-  UINT32                Device;
-  UINT32                Function;
-  UINT8                 Class;
-  UINT8                 SubClass;
-  UINT16                MfgStringOffset;
-  UINT16                MfgStringSegment;
-  UINT16                DeviceType;
-  BBS_STATUS_FLAGS      StatusFlags;
-  UINT16                BootHandlerOffset;
-  UINT16                BootHandlerSegment;
-  UINT16                DescStringOffset;
-  UINT16                DescStringSegment;
-  UINT32                InitPerReserved;
-  UINT32                AdditionalIrq13Handler;
-  UINT32                AdditionalIrq18Handler;
-  UINT32                AdditionalIrq19Handler;
-  UINT32                AdditionalIrq40Handler;
-  UINT8                 AssignedDriveNumber;
-  UINT32                AdditionalIrq41Handler;
-  UINT32                AdditionalIrq46Handler;
-  UINT32                IBV1;
-  UINT32                IBV2;
+  UINT16            BootPriority;
+  UINT32            Bus;
+  UINT32            Device;
+  UINT32            Function;
+  UINT8             Class;
+  UINT8             SubClass;
+  UINT16            MfgStringOffset;
+  UINT16            MfgStringSegment;
+  UINT16            DeviceType;
+  BBS_STATUS_FLAGS  StatusFlags;
+  UINT16            BootHandlerOffset;
+  UINT16            BootHandlerSegment;
+  UINT16            DescStringOffset;
+  UINT16            DescStringSegment;
+  UINT32            InitPerReserved;
+  UINT32            AdditionalIrq13Handler;
+  UINT32            AdditionalIrq18Handler;
+  UINT32            AdditionalIrq19Handler;
+  UINT32            AdditionalIrq40Handler;
+  UINT8             AssignedDriveNumber;
+  UINT32            AdditionalIrq41Handler;
+  UINT32            AdditionalIrq46Handler;
+  UINT32            IBV1;
+  UINT32            IBV2;
 } BBS_TABLE;
 
-#pragma pack ()
+#pragma pack()
 
 typedef
 BOOLEAN
 (EFIAPI *EFI_LEGACY_BIOS_INT86) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   IN  UINT8                           BiosInt,
-  IN OUT  EFI_IA32_REGISTER_SET       *Regs
+  IN OUT  EFI_IA32_REGISTER_SET       * Regs
   )
 /*++
 
@@ -304,14 +306,13 @@ BOOLEAN
 --*/
 ;
 
-
 typedef
 BOOLEAN
 (EFIAPI *EFI_LEGACY_BIOS_FARCALL86) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   IN  UINT16                          Segment,
   IN  UINT16                          Offset,
-  IN  EFI_IA32_REGISTER_SET           *Regs,
+  IN  EFI_IA32_REGISTER_SET           * Regs,
   IN  VOID                            *Stack,
   IN  UINTN                           StackSize
   )
@@ -339,14 +340,13 @@ BOOLEAN
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_CHECK_ROM) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   IN  EFI_HANDLE                      PciHandle,
   OUT VOID                            **RomImage, OPTIONAL
-  OUT UINTN                           *RomSize,   OPTIONAL
+  OUT UINTN                           *RomSize, OPTIONAL
   OUT UINTN                           *Flags
 
   )
@@ -370,18 +370,17 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_INSTALL_ROM) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   IN  EFI_HANDLE                      PciHandle,
   IN  VOID                            **RomImage,
   OUT UINTN                           *Flags,
-  OUT UINT8                           *DiskStart,         OPTIONAL
-  OUT UINT8                           *DiskEnd,           OPTIONAL
+  OUT UINT8                           *DiskStart, OPTIONAL
+  OUT UINT8                           *DiskEnd, OPTIONAL
   OUT VOID                            **RomShadowAddress, OPTIONAL
-  OUT UINT32                          *ShadowedRomSize    OPTIONAL
+  OUT UINT32                          *ShadowedRomSize OPTIONAL
   )
 /*++
 
@@ -413,12 +412,11 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_BOOT) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
-  IN  BBS_BBS_DEVICE_PATH             *BootOption,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
+  IN  BBS_BBS_DEVICE_PATH             * BootOption,
   IN  UINT32                          LoadOptionsSize,
   IN  VOID                            *LoadOptions
   )
@@ -442,7 +440,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_UPDATE_KEYBOARD_LED_STATUS) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   IN  UINT8                           Leds
   )
 /*++
@@ -463,13 +461,12 @@ EFI_STATUS
 --*/
 ;
 
-
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_GET_BBS_INFO) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
-  OUT UINT16                          *HddCount, 
-  OUT HDD_INFO                        **HddInfo, 
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
+  OUT UINT16                          *HddCount,
+  OUT HDD_INFO                        **HddInfo,
   OUT UINT16                          *BbsCount,
   OUT IN BBS_TABLE                    **BbsTable
   )
@@ -494,7 +491,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_PREPARE_TO_BOOT_EFI) (
-  IN EFI_LEGACY_BIOS_PROTOCOL         *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   OUT UINT16                          *BbsCount,
   OUT IN BBS_TABLE                    **BbsTable
   )
@@ -518,7 +515,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_BOOT_UNCONVENTIONAL_DEVICE) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
+  IN EFI_LEGACY_BIOS_PROTOCOL         * This,
   IN UDC_ATTRIBUTES                   Attributes,
   IN UINTN                            BbsEntry,
   IN VOID                             *BeerData,
@@ -548,7 +545,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_SHADOW_ALL_LEGACY_OPROMS) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This
+  IN EFI_LEGACY_BIOS_PROTOCOL * This
   )
 /*++
 
@@ -568,11 +565,11 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_GET_LEGACY_REGION) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
-  IN    UINTN         LegacyMemorySize,                
-  IN    UINTN         Region,                
-  IN    UINTN         Alignment,
-  OUT   VOID          **LegacyMemoryAddress
+  IN EFI_LEGACY_BIOS_PROTOCOL * This,
+  IN    UINTN                 LegacyMemorySize,
+  IN    UINTN                 Region,
+  IN    UINTN                 Alignment,
+  OUT   VOID                  **LegacyMemoryAddress
   )
 /*++
 
@@ -602,10 +599,10 @@ Returns:
 typedef
 EFI_STATUS
 (EFIAPI *EFI_LEGACY_BIOS_COPY_LEGACY_REGION) (
-  IN EFI_LEGACY_BIOS_PROTOCOL *This,
-  IN    UINTN         LegacyMemorySize,                
-  IN    VOID          *LegacyMemoryAddress,
-  IN    VOID          *LegacyMemorySourceAddress
+  IN EFI_LEGACY_BIOS_PROTOCOL * This,
+  IN    UINTN                 LegacyMemorySize,
+  IN    VOID                  *LegacyMemoryAddress,
+  IN    VOID                  *LegacyMemorySourceAddress
   )
 /*++
 
@@ -629,20 +626,19 @@ Returns:
 ;
 
 typedef struct _EFI_LEGACY_BIOS_PROTOCOL {
-  EFI_LEGACY_BIOS_INT86                            Int86;
-  EFI_LEGACY_BIOS_FARCALL86                        FarCall86;
-  EFI_LEGACY_BIOS_CHECK_ROM                        CheckPciRom;
-  EFI_LEGACY_BIOS_INSTALL_ROM                      InstallPciRom;
-  EFI_LEGACY_BIOS_BOOT                             LegacyBoot;
-  EFI_LEGACY_BIOS_UPDATE_KEYBOARD_LED_STATUS       UpdateKeyboardLedStatus;
-  EFI_LEGACY_BIOS_GET_BBS_INFO                     GetBbsInfo;
-  EFI_LEGACY_BIOS_PREPARE_TO_BOOT_EFI              PrepareToBootEfi;
-  EFI_LEGACY_BIOS_SHADOW_ALL_LEGACY_OPROMS         ShadowAllLegacyOproms;
-  EFI_LEGACY_BIOS_GET_LEGACY_REGION                GetLegacyRegion;
-  EFI_LEGACY_BIOS_COPY_LEGACY_REGION               CopyLegacyRegion;
-  EFI_LEGACY_BIOS_BOOT_UNCONVENTIONAL_DEVICE       BootUnconventionalDevice;
+  EFI_LEGACY_BIOS_INT86                       Int86;
+  EFI_LEGACY_BIOS_FARCALL86                   FarCall86;
+  EFI_LEGACY_BIOS_CHECK_ROM                   CheckPciRom;
+  EFI_LEGACY_BIOS_INSTALL_ROM                 InstallPciRom;
+  EFI_LEGACY_BIOS_BOOT                        LegacyBoot;
+  EFI_LEGACY_BIOS_UPDATE_KEYBOARD_LED_STATUS  UpdateKeyboardLedStatus;
+  EFI_LEGACY_BIOS_GET_BBS_INFO                GetBbsInfo;
+  EFI_LEGACY_BIOS_PREPARE_TO_BOOT_EFI         PrepareToBootEfi;
+  EFI_LEGACY_BIOS_SHADOW_ALL_LEGACY_OPROMS    ShadowAllLegacyOproms;
+  EFI_LEGACY_BIOS_GET_LEGACY_REGION           GetLegacyRegion;
+  EFI_LEGACY_BIOS_COPY_LEGACY_REGION          CopyLegacyRegion;
+  EFI_LEGACY_BIOS_BOOT_UNCONVENTIONAL_DEVICE  BootUnconventionalDevice;
 } EFI_LEGACY_BIOS_PROTOCOL;
- 
 
 extern EFI_GUID gEfiLegacyBiosProtocolGuid;
 

@@ -26,10 +26,12 @@ Abstract:
 #ifndef _FORM_BROWSER_H_
 #define _FORM_BROWSER_H_
 
-#include EFI_PROTOCOL_DEFINITION (Hii) 
+#include EFI_PROTOCOL_DEFINITION (Hii)
 
-#define EFI_FORM_BROWSER_PROTOCOL_GUID  \
-   { 0xe5a1333e, 0xe1b4, 0x4d55, 0xce, 0xeb, 0x35, 0xc3, 0xef, 0x13, 0x34, 0x43 }
+#define EFI_FORM_BROWSER_PROTOCOL_GUID \
+  { \
+    0xe5a1333e, 0xe1b4, 0x4d55, 0xce, 0xeb, 0x35, 0xc3, 0xef, 0x13, 0x34, 0x43 \
+  }
 
 //
 // Forward reference for pure ANSI compatability
@@ -39,21 +41,21 @@ EFI_FORWARD_DECLARATION (EFI_FORM_BROWSER_PROTOCOL);
 typedef struct _EFI_FORM_BROWSER_PROTOCOL EFI_FORM_BROWSER_PROTOCOL;
 
 typedef struct {
-  UINT32                              Length;
-  UINT16                              Type;
-  UINT8                               Data[1];
+  UINT32  Length;
+  UINT16  Type;
+  UINT8   Data[1];
 } EFI_HII_PACKET;
 
 typedef struct {
-  EFI_HII_IFR_PACK                    *IfrData;
-  EFI_HII_STRING_PACK                 *StringData;
+  EFI_HII_IFR_PACK    *IfrData;
+  EFI_HII_STRING_PACK *StringData;
 } EFI_IFR_PACKET;
 
 typedef struct {
-  UINTN                               LeftColumn;
-  UINTN                               RightColumn;
-  UINTN                               TopRow;
-  UINTN                               BottomRow;
+  UINTN LeftColumn;
+  UINTN RightColumn;
+  UINTN TopRow;
+  UINTN BottomRow;
 } SCREEN_DESCRIPTOR;
 
 //
@@ -62,14 +64,14 @@ typedef struct {
 typedef
 EFI_STATUS
 (EFIAPI *EFI_SEND_FORM) (
-  IN  EFI_FORM_BROWSER_PROTOCOL       *This,
+  IN  EFI_FORM_BROWSER_PROTOCOL       * This,
   IN  BOOLEAN                         UseDatabase,
-  IN  EFI_HII_HANDLE                  *Handle,
+  IN  EFI_HII_HANDLE                  * Handle,
   IN  UINTN                           HandleCount,
-  IN  EFI_IFR_PACKET                  *Packet,
+  IN  EFI_IFR_PACKET                  * Packet,
   IN  EFI_HANDLE                      CallbackHandle,
   IN  UINT8                           *NvMapOverride,
-  IN SCREEN_DESCRIPTOR                *ScreenDimensions,
+  IN SCREEN_DESCRIPTOR                * ScreenDimensions,
   OUT BOOLEAN                         *ResetRequired OPTIONAL
   );
 
@@ -80,14 +82,14 @@ EFI_STATUS
   IN  BOOLEAN                         HotKey,
   IN  UINTN                           MaximumStringSize,
   OUT CHAR16                          *StringBuffer,
-  OUT EFI_INPUT_KEY                   *KeyValue,
+  OUT EFI_INPUT_KEY                   * KeyValue,
   IN  CHAR16                          *String,
   ...
   );
 
 typedef struct _EFI_FORM_BROWSER_PROTOCOL {
-  EFI_SEND_FORM                  SendForm;
-  EFI_CREATE_POP_UP             CreatePopUp;
+  EFI_SEND_FORM     SendForm;
+  EFI_CREATE_POP_UP CreatePopUp;
 } EFI_FORM_BROWSER_PROTOCOL;
 
 extern EFI_GUID gEfiFormBrowserProtocolGuid;

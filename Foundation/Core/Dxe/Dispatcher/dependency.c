@@ -41,6 +41,7 @@ BOOLEAN *mDepexEvaluationStackPointer = NULL;
 STATIC
 EFI_STATUS
 GrowDepexStack (
+  VOID
   )
 /*++
 
@@ -56,7 +57,11 @@ Arguments:
 
 Returns:
 
-  NONE 
+  EFI_SUCCESS          - Stack successfully growed.
+  
+  EFI_OUT_OF_RESOURCES - There is not enough system memory to grow the stack.
+  
+  
 
 --*/
 {

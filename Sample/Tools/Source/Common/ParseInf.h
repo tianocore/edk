@@ -29,23 +29,23 @@ Abstract:
 //
 // Common data structures
 //
-
 typedef struct {
-  CHAR8     *FileImage;
-  CHAR8     *Eof;
-  CHAR8     *CurrentFilePointer;
+  CHAR8 *FileImage;
+  CHAR8 *Eof;
+  CHAR8 *CurrentFilePointer;
 } MEMORY_FILE;
 
 //
 // Functions declarations
 //
-
-CHAR8*
+CHAR8 *
 ReadLine (
   IN MEMORY_FILE    *InputFile,
   IN OUT CHAR8      *InputBuffer,
   IN UINT32         MaxLength
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -69,12 +69,13 @@ Returns:
   InputBuffer otherwise
 
 --*/
-
 BOOLEAN
 FindSection (
   IN MEMORY_FILE    *InputFile,
   IN CHAR8          *Section
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -93,7 +94,6 @@ Returns:
   TRUE if section found
 
 --*/
-
 EFI_STATUS
 FindToken (
   IN MEMORY_FILE    *InputFile,
@@ -101,7 +101,9 @@ FindToken (
   IN CHAR8          *Token,
   IN UINTN          Instance,
   OUT CHAR8         *Value
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -125,12 +127,13 @@ Returns:
   EFI_NOT_FOUND           Section/Token/Value not found.
 
 --*/
-  
 EFI_STATUS
 StringToGuid (
   IN CHAR8        *AsciiGuidBuffer,
   OUT EFI_GUID    *GuidBuffer
-  );
+  )
+;
+
 /*++
 
 Routine Description: 
@@ -149,13 +152,14 @@ Returns:
   EFI_SUCCESS    The string was successfully converted
 
 --*/
-
 EFI_STATUS
 AsciiStringToUint64 (
   IN CONST CHAR8  *AsciiString,
   IN BOOLEAN      IsHex,
   OUT UINT64      *ReturnValue
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -177,12 +181,13 @@ Returns:
   EFI_ABORTED   Invalid character encountered.
 
 --*/
-
-CHAR8*
+CHAR8 *
 ReadLineInStream (
   IN FILE       *InputFile,
   IN OUT CHAR8  *InputBuffer
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -200,12 +205,13 @@ Returns:
   InputBuffer otherwise
 
 --*/
-
 BOOLEAN
 FindSectionInStream (
   IN FILE       *InputFile,
   IN CHAR8      *Section
-  );
+  )
+;
+
 /*++
 
 Routine Description:
@@ -224,5 +230,4 @@ Returns:
   TRUE if section found
 
 --*/
-
 #endif

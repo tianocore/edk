@@ -39,11 +39,15 @@ EFI_SOURCE = $(EDK_SOURCE)
 #
 SEC_OBJECTS =                                                     \
   $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\SecMain.obj              \
-  $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\Ia32\PeiSwitchStacks.obj \
-  $(PROCESSOR)\PeiLib.lib                                         \
+  $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\Ia32\SecSwitchStacks.obj \
+  $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\FwVol.obj                \
+  $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\WinNtThunk.obj           \
   $(PROCESSOR)\PeiHobLib.lib                                      \
   $(PROCESSOR)\CustomizedDecompress.lib                           \
-  $(PROCESSOR)\EdkNt32PpiLib.lib
+  $(PROCESSOR)\EdkNt32PpiLib.lib                                  \
+  $(PROCESSOR)\EdkGuidLib.lib                                     \
+  $(PROCESSOR)\PeiLib.lib                                         \
+  $(PROCESSOR)\EdkFrameworkPpiLib.lib                             
 
 NT_LIBS =                                     \
   Kernel32.lib                                \
@@ -195,11 +199,8 @@ components :
 
 #
 # Make a pseudo-target to simplify running of the NT emulation. 
-# You have to have these environmental variables set or it won't run.
 #
 run :
-  @set EFI_MEMORY_SIZE=20
-  @set EFI_FIRMWARE_VOLUMES=..\Fv\FvRecovery.fd
   cd $(PROCESSOR)
   secmain.exe
   cd ..

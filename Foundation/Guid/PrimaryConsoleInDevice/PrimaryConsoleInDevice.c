@@ -24,4 +24,5 @@ Abstract:
 
 EFI_GUID  gEfiPrimaryConsoleInDeviceGuid = EFI_PRIMARY_CONSOLE_IN_DEVICE_GUID;
 
-EFI_GUID_STRING(&gEfiPrimaryConsoleInDeviceGuid, "Primary Console In Device Guid", "EFI Primary Conosle In Device Guid");
+EFI_GUID_STRING(&gEfiPrimaryConsoleInDeviceGuid, "Primary Console In Device Guid", 
+                "EFI Primary Conosle In Device Guid");

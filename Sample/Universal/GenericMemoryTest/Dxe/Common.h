@@ -18,50 +18,52 @@ Abstract:
 
 --*/
 
+#ifndef _COMMON_H
+#define _COMMON_H
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "EfiHobLib.h"
 
-#include EFI_PROTOCOL_DEFINITION(GenericMemoryTest)
-#include EFI_ARCH_PROTOCOL_DEFINITION(Cpu)
+#include EFI_PROTOCOL_DEFINITION (GenericMemoryTest)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Cpu)
 
-#include EFI_GUID_DEFINITION(Hob)
-#include EFI_GUID_DEFINITION(StatusCodeDataTypeId)
-#include EFI_GUID_DEFINITION(CompatibleMemoryTested)
+#include EFI_GUID_DEFINITION (Hob)
+#include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
+#include EFI_GUID_DEFINITION (CompatibleMemoryTested)
 
+//
 // Some global define
-#define  GENERIC_CACHELINE_SIZE       0x40
+//
+#define GENERIC_CACHELINE_SIZE  0x40
 
 //
 // The SPARSE_SPAN_SIZE size can not small then the MonoTestSize
 //
-#define  TEST_BLOCK_SIZE              0x2000000
-#define  QUICK_SPAN_SIZE              (TEST_BLOCK_SIZE >> 2)
-#define  SPARSE_SPAN_SIZE             (TEST_BLOCK_SIZE >> 4)
+#define TEST_BLOCK_SIZE   0x2000000
+#define QUICK_SPAN_SIZE   (TEST_BLOCK_SIZE >> 2)
+#define SPARSE_SPAN_SIZE  (TEST_BLOCK_SIZE >> 4)
 
 //
-// This structure records every nontested memory range parsed through GCD 
-// service. 
+// This structure records every nontested memory range parsed through GCD
+// service.
 //
-#define EFI_NONTESTED_MEMORY_RANGE_SIGNATURE \
-                        EFI_SIGNATURE_32('N','T','M','E')
+#define EFI_NONTESTED_MEMORY_RANGE_SIGNATURE  EFI_SIGNATURE_32 ('N', 'T', 'M', 'E')
 typedef struct {
-  UINTN                                  Signature;
-  EFI_LIST_ENTRY                         Link;
-  EFI_PHYSICAL_ADDRESS                   StartAddress;
-  UINT64                                 Length;
-  UINT64                                 Capabilities;
-  BOOLEAN                                Above4G;
-  BOOLEAN                                AlreadyMapped;
+  UINTN                 Signature;
+  EFI_LIST_ENTRY        Link;
+  EFI_PHYSICAL_ADDRESS  StartAddress;
+  UINT64                Length;
+  UINT64                Capabilities;
+  BOOLEAN               Above4G;
+  BOOLEAN               AlreadyMapped;
 } NONTESTED_MEMORY_RANGE;
 
 #define NONTESTED_MEMORY_RANGE_FROM_LINK(link) \
-        CR(link, NONTESTED_MEMORY_RANGE, \
-        Link, EFI_NONTESTED_MEMORY_RANGE_SIGNATURE)
+        CR(link, NONTESTED_MEMORY_RANGE, Link, EFI_NONTESTED_MEMORY_RANGE_SIGNATURE)
 
 //
 // This is the memory test driver's structure definition
 //
-#define EFI_GENERIC_MEMORY_TEST_PRIVATE_SIGNATURE \
-                                 EFI_SIGNATURE_32('G','E','M','T')
-                                 
+#define EFI_GENERIC_MEMORY_TEST_PRIVATE_SIGNATURE EFI_SIGNATURE_32 ('G', 'E', 'M', 'T')
+
+#endif

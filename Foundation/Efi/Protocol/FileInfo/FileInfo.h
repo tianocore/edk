@@ -24,31 +24,34 @@ Abstract:
   EFI 1.0 can boot from any valid EFI image contained in a SimpleFileSystem
  
 --*/
+
 #ifndef _FILE_INFO_H_
 #define _FILE_INFO_H_
 
-#define EFI_FILE_INFO_ID   \
-  { 0x9576e92, 0x6d3f, 0x11d2, 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b }
+#define EFI_FILE_INFO_ID \
+  { \
+    0x9576e92, 0x6d3f, 0x11d2, 0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b \
+  }
 
 typedef struct {
-  UINT64                  Size;
-  UINT64                  FileSize;
-  UINT64                  PhysicalSize;
-  EFI_TIME                CreateTime;
-  EFI_TIME                LastAccessTime;
-  EFI_TIME                ModificationTime;
-  UINT64                  Attribute;
-  CHAR16                  FileName[1];
+  UINT64    Size;
+  UINT64    FileSize;
+  UINT64    PhysicalSize;
+  EFI_TIME  CreateTime;
+  EFI_TIME  LastAccessTime;
+  EFI_TIME  ModificationTime;
+  UINT64    Attribute;
+  CHAR16    FileName[1];
 } EFI_FILE_INFO;
 
 //
 // The FileName field of the EFI_FILE_INFO data structure is variable length.
 // Whenever code needs to know the size of the EFI_FILE_INFO data structure, it needs to
-// be the size of the data structure without the FileName field.  The following macro 
+// be the size of the data structure without the FileName field.  The following macro
 // computes this size correctly no matter how big the FileName array is declared.
-// This is required to make the EFI_FILE_INFO data structure ANSI compilant. 
+// This is required to make the EFI_FILE_INFO data structure ANSI compilant.
 //
-#define SIZE_OF_EFI_FILE_INFO EFI_FIELD_OFFSET(EFI_FILE_INFO,FileName)
+#define SIZE_OF_EFI_FILE_INFO EFI_FIELD_OFFSET (EFI_FILE_INFO, FileName)
 
 extern EFI_GUID gEfiFileInfoGuid;
 

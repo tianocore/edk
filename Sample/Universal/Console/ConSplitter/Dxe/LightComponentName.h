@@ -27,10 +27,10 @@ Abstract:
 #ifndef EFI_SIZE_REDUCTION_APPLIED
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
-       
-extern EFI_COMPONENT_NAME_PROTOCOL gConSplitterConInComponentName;
-extern EFI_COMPONENT_NAME_PROTOCOL gConSplitterConOutComponentName;
-extern EFI_COMPONENT_NAME_PROTOCOL gConSplitterStdErrComponentName;
+
+extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterConInComponentName;
+extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterConOutComponentName;
+extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterStdErrComponentName;
 
 //
 // EFI Component Name Functions
@@ -41,37 +41,41 @@ ConSplitterComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
-  );
+  )
+;
 
 EFI_STATUS
 EFIAPI
 ConSplitterConInComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-  );
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
+;
 
 EFI_STATUS
 EFIAPI
 ConSplitterConOutComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-  );
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
+;
 
 EFI_STATUS
 EFIAPI
 ConSplitterStdErrComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
-  );
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
+  )
+;
 
 #endif
 

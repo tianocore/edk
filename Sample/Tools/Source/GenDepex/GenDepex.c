@@ -71,18 +71,18 @@ Abstract:
   utility (GenFfsFile) to produce a DXE driver/core (.DXE) or 
   a DXE application (.APP) file.
 
-  Complies with EFI 2.0 C Coding Standards Document, version 0.31, 12 Dec 2000.
+  Complies with Tiano C Coding Standards Document, version 0.31, 12 Dec 2000.
 
 --*/
 
-
 #include "GenDepex.h"
 
-#define TOOL_NAME   "GenDepex"
+#define TOOL_NAME "GenDepex"
 
-extern ParseDepex
-  (IN      INT8      *Pbegin,
-  IN      UINT32    length  
+extern
+ParseDepex (
+  IN      INT8      *Pbegin,
+  IN      UINT32    length
   );
 
 VOID
@@ -104,7 +104,6 @@ Returns:
   None
 
 --*/
-
 {
   printf (
     "%s, Tiano Dependency Expression Generation Utility. Version %d.%d.\n",
@@ -112,12 +111,10 @@ Returns:
     UTILITY_MAJOR_VERSION,
     UTILITY_MINOR_VERSION
     );
-  printf("Copyright (C) 1996-2002 Intel Corporation.  All rights reserved.\n\n");
-} 
+  printf ("Copyright (C) 1996-2002 Intel Corporation.  All rights reserved.\n\n");
+}
 
-
-
-VOID 
+VOID
 PrintGenDepexUsageInfo (
   VOID
   )
@@ -136,24 +133,22 @@ Returns:
   None
 
 --*/
-
 {
-  printf ("Usage: %s -I <INFILE> -O <OUTFILE> [-P <Optional Boundary for padding up>] \n",
-          UTILITY_NAME);
+  printf (
+    "Usage: %s -I <INFILE> -O <OUTFILE> [-P <Optional Boundary for padding up>] \n",
+    UTILITY_NAME
+    );
   printf (" Where:\n");
   printf ("  <INFILE> is the input pre-processed dependency text files name.\n");
   printf ("  <OUTFILE> is the output binary dependency files name.\n");
   printf ("  <Optional Boundary for padding up> is the padding integer value.\n");
   printf ("    This is the boundary to align the output file size to.\n");
-}  
-
-
+}
 
 DEPENDENCY_OPCODE
 PopOpCode (
   IN OUT VOID **Stack
   )
-
 /*++
 
 Routine Description:
@@ -177,10 +172,8 @@ Returns:
   OpCodePtr = *Stack;
   OpCodePtr--;
   *Stack = OpCodePtr;
-  return (*OpCodePtr);
-}  
-
-
+  return *OpCodePtr;
+}
 
 VOID
 PushOpCode (
@@ -203,23 +196,20 @@ Returns:
   Stack     New top of the OpCode stack location
 
 --*/
-
 {
-  DEPENDENCY_OPCODE  *OpCodePtr;
+  DEPENDENCY_OPCODE *OpCodePtr;
 
-  OpCodePtr = *Stack;
-  *OpCodePtr = OpCode;
+  OpCodePtr   = *Stack;
+  *OpCodePtr  = OpCode;
   OpCodePtr++;
   *Stack = OpCodePtr;
-} 
-
-
+}
 
 EFI_STATUS
 GenerateDependencyExpression (
-  IN     FILE  *InFile,
-  IN OUT FILE  *OutFile,
-  IN     UINT8 Padding  OPTIONAL
+  IN     FILE           *InFile,
+  IN OUT FILE           *OutFile,
+  IN     UINT8          Padding  OPTIONAL
   )
 /*++
 
@@ -333,7 +323,7 @@ Returns:
 
   memset (Line, 0, LINESIZE);
 
-  OutFileSize = 0;
+  OutFileSize     = 0;
 
   EvaluationStack = (INT8 *) malloc (EVAL_STACK_SIZE);
 
@@ -382,19 +372,19 @@ Returns:
   if (Results != 0) {
     printf ("FSEEK failed - Aborted\n");
     return EFI_ABORTED;
-  } 
+  }
 
   fread (Buffer, FileSize, 1, InFile);
 
-  Ptrx = Buffer;
-  Pend = Ptrx + FileSize - strlen (DEPENDENCY_END);
-  Index = FileSize;
+  Ptrx    = Buffer;
+  Pend    = Ptrx + FileSize - strlen (DEPENDENCY_END);
+  Index   = FileSize;
 
   NotDone = TRUE;
-  while ((Index--) && NotDone) {    
+  while ((Index--) && NotDone) {
 
     if (strncmp (Pend, DEPENDENCY_END, strlen (DEPENDENCY_END)) == 0) {
-      NotDone = FALSE;     
+      NotDone = FALSE;
     } else {
       Pend--;
     }
@@ -413,21 +403,23 @@ Returns:
       printf ("FCLOSE failed\n");
     }
 
-    free(Buffer);
-    free(EvaluationStack);
+    free (Buffer);
+    free (EvaluationStack);
 
     return EFI_INVALID_PARAMETER;
   }
 
-  Index = FileSize;
+  Index   = FileSize;
 
   NotDone = TRUE;
   while ((Index--) && NotDone) {
 
     if (strncmp (Ptrx, DEPENDENCY_START, strlen (DEPENDENCY_START)) == 0) {
-      Ptrx += sizeof(DEPENDENCY_START);
+      Ptrx += sizeof (DEPENDENCY_START);
       NotDone = FALSE;
+      //
       // BUGBUG -- should Index be decremented by sizeof(DEPENDENCY_START)?
+      //
     } else {
       Ptrx++;
     }
@@ -446,17 +438,16 @@ Returns:
       printf ("FCLOSE failed\n");
     }
 
-    free(Buffer);
-    free(EvaluationStack);
+    free (Buffer);
+    free (EvaluationStack);
 
     return EFI_INVALID_PARAMETER;
-  }  
-
+  }
   //
   //  validate the syntax of expression
   //
-  if (!ParseDepex(Ptrx, Pend - Ptrx - 1)) {
-    printf ("The syntax of expression is wrong\n");    
+  if (!ParseDepex (Ptrx, Pend - Ptrx - 1)) {
+    printf ("The syntax of expression is wrong\n");
 
     Results = (UINTN) fclose (InFile);
     if (Results != 0) {
@@ -468,14 +459,14 @@ Returns:
       printf ("FCLOSE failed\n");
     }
 
-    free(Buffer);
-    free(EvaluationStack);
+    free (Buffer);
+    free (EvaluationStack);
 
     return EFI_INVALID_PARAMETER;
   }
 
   NotDone = TRUE;
-  
+
   while ((Index--) && NotDone) {
 
     if (*Ptrx == ' ') {
@@ -483,7 +474,6 @@ Returns:
     } else if (*Ptrx == '\n' || *Ptrx == '\r') {
       Ptrx++;
     } else if (strncmp (Ptrx, OPERATOR_SOR, strlen (OPERATOR_SOR)) == 0) {
-
       //
       //  Checks for some invalid dependencies
       //
@@ -522,7 +512,6 @@ Returns:
 
       }
     } else if (strncmp (Ptrx, OPERATOR_BEFORE, strlen (OPERATOR_BEFORE)) == 0) {
-
       //
       //  Checks for some invalid dependencies
       //
@@ -556,7 +545,6 @@ Returns:
         Before_Flag = TRUE;
       }
     } else if (strncmp (Ptrx, OPERATOR_AFTER, strlen (OPERATOR_AFTER)) == 0) {
-
       //
       //  Checks for some invalid dependencies
       //
@@ -587,7 +575,7 @@ Returns:
         fputc (EFI_DEP_AFTER, OutFile);
         OutFileSize++;
         Ptrx += sizeof (OPERATOR_AFTER);
-        Dep_Flag = TRUE;
+        Dep_Flag    = TRUE;
         After_Flag  = TRUE;
       }
     } else if (strncmp (Ptrx, OPERATOR_AND, strlen (OPERATOR_AND)) == 0) {
@@ -651,7 +639,7 @@ Returns:
 
     } else if (strncmp (Ptrx, OPERATOR_LEFT_PARENTHESIS, strlen (OPERATOR_LEFT_PARENTHESIS)) == 0) {
       PushOpCode ((VOID **) &StackPtr, DXE_DEP_LEFT_PARENTHESIS);
-      
+
       Ptrx += strlen (OPERATOR_LEFT_PARENTHESIS);
       Dep_Flag = TRUE;
 
@@ -675,11 +663,12 @@ Returns:
 
       OutFileSize++;
 
-      //OutFileSize += sizeof (EFI_DEP_TRUE);
-
+      //
+      // OutFileSize += sizeof (EFI_DEP_TRUE);
+      //
       Dep_Flag = TRUE;
 
-      Ptrx += strlen (OPERATOR_TRUE); 
+      Ptrx += strlen (OPERATOR_TRUE);
 
     } else if (strncmp (Ptrx, OPERATOR_FALSE, strlen (OPERATOR_FALSE)) == 0) {
 
@@ -687,8 +676,9 @@ Returns:
 
       OutFileSize++;
 
-      //OutFileSize += sizeof (EFI_DEP_FALSE);
-
+      //
+      // OutFileSize += sizeof (EFI_DEP_FALSE);
+      //
       Dep_Flag = TRUE;
 
       Ptrx += strlen (OPERATOR_FALSE);
@@ -701,22 +691,30 @@ Returns:
       }
 
       ArgCountParsed = sscanf (
-                        Ptrx,"%x, %x, %x, %x, %x, %x, %x, %x, %x, %x, %x",
-                        &Guid.Data1, &Guid.Data2, &Guid.Data3, &Guid.Data4[0],
-                        &Guid.Data4[1], &Guid.Data4[2], &Guid.Data4[3], &Guid.Data4[4],
-                        &Guid.Data4[5], &Guid.Data4[6], &Guid.Data4[7]
+                        Ptrx,
+                        "%x, %x, %x, %x, %x, %x, %x, %x, %x, %x, %x",
+                        &Guid.Data1,
+                        &Guid.Data2,
+                        &Guid.Data3,
+                        &Guid.Data4[0],
+                        &Guid.Data4[1],
+                        &Guid.Data4[2],
+                        &Guid.Data4[3],
+                        &Guid.Data4[4],
+                        &Guid.Data4[5],
+                        &Guid.Data4[6],
+                        &Guid.Data4[7]
                         );
 
       if (ArgCountParsed != 11) {
-        printf("We have found an illegal GUID\n");
-        printf("Fix your depex\n");
-        exit(-1);
+        printf ("We have found an illegal GUID\n");
+        printf ("Fix your depex\n");
+        exit (-1);
       }
 
       while (*Ptrx != '}') {
         Ptrx++;
       }
-
       //
       // Absorb the closing }
       //
@@ -747,7 +745,6 @@ Returns:
       return EFI_INVALID_PARAMETER;
     }
   }
-
   //
   //  DRAIN();
   //
@@ -793,19 +790,17 @@ Returns:
     printf ("FCLOSE failed\n");
   }
 
-  free(Buffer);
-  free(EvaluationStack);
+  free (Buffer);
+  free (EvaluationStack);
 
   return EFI_SUCCESS;
-}  // End GenerateDependencyExpression function
-
+} // End GenerateDependencyExpression function
 
 EFI_STATUS
 main (
   IN UINTN argc,
   IN CHAR8 *argv[]
   )
-
 /*++
 
 Routine Description:
@@ -825,22 +820,22 @@ Returns:
   EFI_ABORTED             Unable to open/create a file or a misc error.
 
 --*/
-
+// TODO:    ] - add argument and description to function comment
 {
-  FILE      *OutFile;
-  FILE      *InFile;
-  UINT8     Padding;
-  UINTN     Index;
-  BOOLEAN   Input_Flag;
-  BOOLEAN   Output_Flag;
-  BOOLEAN   Pad_Flag;
+  FILE    *OutFile;
+  FILE    *InFile;
+  UINT8   Padding;
+  UINTN   Index;
+  BOOLEAN Input_Flag;
+  BOOLEAN Output_Flag;
+  BOOLEAN Pad_Flag;
 
-  InFile            = NULL;
-  OutFile           = NULL;
-  Padding           = 0;
-  Input_Flag        = FALSE;
-  Output_Flag       = FALSE;
-  Pad_Flag          = FALSE;
+  InFile      = NULL;
+  OutFile     = NULL;
+  Padding     = 0;
+  Input_Flag  = FALSE;
+  Output_Flag = FALSE;
+  Pad_Flag    = FALSE;
 
   //
   //  Output the calling arguments
@@ -849,22 +844,23 @@ Returns:
   for (Index = 0; Index < argc; Index++) {
     printf ("%s ", argv[Index]);
   }
+
   printf ("\n\n");
 
   if (argc < 5) {
-    printf("Not enough arguments\n");
+    printf ("Not enough arguments\n");
     PrintGenDepexUsageInfo ();
     return EFI_INVALID_PARAMETER;
   }
-  
+
   for (Index = 1; Index < argc - 1; Index++) {
-  
+
     if ((strcmp (argv[Index], "-I") == 0) || (strcmp (argv[Index], "-i") == 0)) {
 
       if (!Input_Flag) {
 
-        InFile = fopen (argv[Index + 1], "rb");
-        Input_Flag = TRUE;
+        InFile      = fopen (argv[Index + 1], "rb");
+        Input_Flag  = TRUE;
 
       } else {
         printf ("GenDepex only allows one INPUT (-I) argument\n");
@@ -875,7 +871,7 @@ Returns:
 
       if (!Output_Flag) {
 
-        OutFile = fopen (argv[Index + 1], "wb");    
+        OutFile     = fopen (argv[Index + 1], "wb");
         Output_Flag = TRUE;
 
       } else {
@@ -887,8 +883,8 @@ Returns:
 
       if (!Pad_Flag) {
 
-        Padding = (UINT8) atoi (argv[Index + 1]);
-        Pad_Flag = TRUE;
+        Padding   = (UINT8) atoi (argv[Index + 1]);
+        Pad_Flag  = TRUE;
 
       } else {
         printf ("GenDepex only allows one PADDING (-P) argument\n");
@@ -900,16 +896,16 @@ Returns:
   PrintGenDepexUtilityInfo ();
 
   if (InFile == NULL) {
-    printf("Can not open <INFILE> for reading.\n");
+    printf ("Can not open <INFILE> for reading.\n");
     PrintGenDepexUsageInfo ();
     return EFI_ABORTED;
   }
 
   if (OutFile == NULL) {
-    printf("Can not open <OUTFILE> for writting.\n");
+    printf ("Can not open <OUTFILE> for writting.\n");
     PrintGenDepexUsageInfo ();
     return EFI_ABORTED;
   }
 
-  return (GenerateDependencyExpression (InFile, OutFile, Padding));
-}  
+  return GenerateDependencyExpression (InFile, OutFile, Padding);
+}

@@ -562,7 +562,8 @@ Returns:
   UINTN Size;
 
   Size = ASPrint (
-            Buffer, BufferSize, 
+            Buffer,
+            BufferSize, 
             "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
             Guid->Data1,                    
             Guid->Data2,
@@ -614,7 +615,8 @@ Returns:
   UINTN Size;
 
   Size = ASPrint (
-            Buffer, BufferSize, 
+            Buffer,
+            BufferSize, 
             "%02d/%02d/%04d  %02d:%02d",
             Time->Month,
             Time->Day,

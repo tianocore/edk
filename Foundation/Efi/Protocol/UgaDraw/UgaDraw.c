@@ -24,8 +24,6 @@ Abstract:
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
 
+EFI_GUID  gEfiUgaDrawProtocolGuid = EFI_UGA_DRAW_PROTOCOL_GUID;
 
-EFI_GUID gEfiUgaDrawProtocolGuid = EFI_UGA_DRAW_PROTOCOL_GUID;
-
-EFI_GUID_STRING (&gEfiUgaDrawProtocolGuid, "UGA Draw Protocol", "EFI 1.1 UGA Draw Protocol");
-
+EFI_GUID_STRING(&gEfiUgaDrawProtocolGuid, "UGA Draw Protocol", "EFI 1.1 UGA Draw Protocol");

@@ -32,18 +32,16 @@ Abstract:
 #include EFI_GUID_DEFINITION (StatusCode)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 
-
-
-#define DATA_HUB_INSTANCE_SIGNATURE   EFI_SIGNATURE_32('D','H','u','b') 
+#define DATA_HUB_INSTANCE_SIGNATURE EFI_SIGNATURE_32 ('D', 'H', 'u', 'b')
 typedef struct {
-  UINT32                          Signature;
+  UINT32                Signature;
 
-  EFI_HANDLE                      Handle;
+  EFI_HANDLE            Handle;
 
   //
   // Produced protocol(s)
   //
-  EFI_DATA_HUB_PROTOCOL           DataHub;
+  EFI_DATA_HUB_PROTOCOL DataHub;
 
   //
   // Private Data
@@ -52,37 +50,36 @@ typedef struct {
   // Updates to GlobalMonotonicCount, LogListHead, and FilterDriverListHead
   //  must be locked.
   //
-  EFI_LOCK        DataLock;
+  EFI_LOCK              DataLock;
 
   //
-  // Runing Monotonic Count to use for each error record. 
+  // Runing Monotonic Count to use for each error record.
   //  Increment AFTER use in an error record.
   //
-  UINT64          GlobalMonotonicCount;
+  UINT64                GlobalMonotonicCount;
 
   //
   // List of EFI_DATA_ENTRY structures. This is the data log! The list
   //  must be in assending order of LogMonotonicCount.
   //
-  EFI_LIST_ENTRY  DataListHead;
+  EFI_LIST_ENTRY        DataListHead;
 
   //
   // List of EFI_DATA_HUB_FILTER_DRIVER structures. Represents all
   //  the registered filter drivers.
   //
-  EFI_LIST_ENTRY  FilterDriverListHead;
+  EFI_LIST_ENTRY        FilterDriverListHead;
 
 } DATA_HUB_INSTANCE;
 
-#define DATA_HUB_INSTANCE_FROM_THIS(this) \
-  CR(this, DATA_HUB_INSTANCE, DataHub, DATA_HUB_INSTANCE_SIGNATURE)
+#define DATA_HUB_INSTANCE_FROM_THIS(this) CR (this, DATA_HUB_INSTANCE, DataHub, DATA_HUB_INSTANCE_SIGNATURE)
 
 //
 // Private data structure to contain the data log. One record per
-//  structure. Head pointer to the list is the Log member of 
+//  structure. Head pointer to the list is the Log member of
 //  EFI_DATA_ENTRY. Record is a copy of the data passed in.
 //
-#define EFI_DATA_ENTRY_SIGNATURE   EFI_SIGNATURE_32('D','r','e','c') 
+#define EFI_DATA_ENTRY_SIGNATURE  EFI_SIGNATURE_32 ('D', 'r', 'e', 'c')
 typedef struct {
   UINT32                  Signature;
   EFI_LIST_ENTRY          Link;
@@ -93,16 +90,13 @@ typedef struct {
 
 } EFI_DATA_ENTRY;
 
-#define DATA_ENTRY_FROM_LINK(link) \
-  CR(link, EFI_DATA_ENTRY, Link, EFI_DATA_ENTRY_SIGNATURE)
-
+#define DATA_ENTRY_FROM_LINK(link)  CR (link, EFI_DATA_ENTRY, Link, EFI_DATA_ENTRY_SIGNATURE)
 
 //
 // Private data to contain the filter driver Event and it's
 //  associated EFI_TPL.
 //
-#define EFI_DATA_HUB_FILTER_DRIVER_SIGNATURE \
-  EFI_SIGNATURE_32('D','h','F','d') 
+#define EFI_DATA_HUB_FILTER_DRIVER_SIGNATURE  EFI_SIGNATURE_32 ('D', 'h', 'F', 'd')
 
 typedef struct {
   UINT32          Signature;
@@ -126,14 +120,12 @@ typedef struct {
   UINT64          ClassFilter;
 
   //
-  // Filter driver will register what record guid filter should be used. 
+  // Filter driver will register what record guid filter should be used.
   //
   EFI_GUID        FilterDataRecordGuid;
 
 } DATA_HUB_FILTER_DRIVER;
 
-#define FILTER_ENTRY_FROM_LINK(link)  \
-  CR(link, DATA_HUB_FILTER_DRIVER, Link, EFI_DATA_HUB_FILTER_DRIVER_SIGNATURE)
-
+#define FILTER_ENTRY_FROM_LINK(link)  CR (link, DATA_HUB_FILTER_DRIVER, Link, EFI_DATA_HUB_FILTER_DRIVER_SIGNATURE)
 
 #endif

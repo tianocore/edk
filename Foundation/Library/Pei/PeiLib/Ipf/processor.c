@@ -20,20 +20,20 @@ Abstract:
 #include "Tiano.h"
 #include "EfiJump.h"
 #include "PeiHob.h"
-#include EFI_GUID_DEFINITION(PeiFlushInstructionCache)
-#include EFI_GUID_DEFINITION(PeiTransferControl)
+#include EFI_GUID_DEFINITION (PeiFlushInstructionCache)
+#include EFI_GUID_DEFINITION (PeiTransferControl)
 
 EFI_STATUS
 WinNtFlushInstructionCacheFlush (
-  IN EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *This,
+  IN EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL   *This,
   IN EFI_PHYSICAL_ADDRESS                       Start,
   IN UINT64                                     Length
   );
 
-EFI_PEI_TRANSFER_CONTROL_PROTOCOL mTransferControl = {
+EFI_PEI_TRANSFER_CONTROL_PROTOCOL         mTransferControl = {
   SetJump,
   LongJump,
-  sizeof(EFI_JUMP_BUFFER)
+  sizeof (EFI_JUMP_BUFFER)
 };
 
 EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  mFlushInstructionCache = {
@@ -41,20 +41,48 @@ EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  mFlushInstructionCache = {
 };
 
 EFI_STATUS
-InstallEfiPeiTransferControl(
+InstallEfiPeiTransferControl (
   IN OUT EFI_PEI_TRANSFER_CONTROL_PROTOCOL **This
   )
+/*++
 
+Routine Description:
+
+  Installs the pointer to the transfer control mechanism
+
+Arguments:
+
+  This       - Pointer to transfer control mechanism.
+
+Returns:
+
+  EFI_SUCCESS     - Successfully installed.
+
+--*/
 {
   *This = &mTransferControl;
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
-InstallEfiPeiFlushInstructionCache(
+InstallEfiPeiFlushInstructionCache (
   IN OUT EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  **This
   )
+/*++
 
+Routine Description:
+
+  Installs the pointer to the flush instruction cache mechanism
+
+Arguments:
+
+  This       - Pointer to flush instruction cache mechanism.
+
+Returns:
+
+  EFI_SUCCESS     - Successfully installed
+
+--*/
 {
   *This = &mFlushInstructionCache;
   return EFI_SUCCESS;
@@ -62,7 +90,7 @@ InstallEfiPeiFlushInstructionCache(
 
 EFI_STATUS
 WinNtFlushInstructionCacheFlush (
-  IN EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *This,
+  IN EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL   *This,
   IN EFI_PHYSICAL_ADDRESS                       Start,
   IN UINT64                                     Length
   )
@@ -74,9 +102,9 @@ Routine Description:
 
 Arguments:
 
-  Pointer to CPU Architectural Protocol interface
-  Start adddress in memory to flush
-  Length of memory to flush
+  This      - Pointer to CPU Architectural Protocol interface
+  Start     - Start adddress in memory to flush
+  Length    - Length of memory to flush
 
 Returns:
 
@@ -85,7 +113,6 @@ Returns:
 
 --*/
 {
-  RtPioICacheFlush ((UINT8 *)Start, (UINTN) Length);
+  RtPioICacheFlush ((UINT8 *) Start, (UINTN) Length);
   return EFI_SUCCESS;
 }
-

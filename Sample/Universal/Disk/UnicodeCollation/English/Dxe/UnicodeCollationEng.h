@@ -30,9 +30,7 @@ Revision History
 //
 // Driver Consumed Protocol Prototypes
 //
-
 // None.
-
 //
 // Driver Produced Protocol Prototypes
 //
@@ -41,68 +39,74 @@ Revision History
 //
 // Globals
 //
-extern CHAR8 *mEngUpperMap;
-extern CHAR8 *mEngLowerMap;
-extern CHAR8 *mEngInfoMap;
-extern CHAR8 mOtherChars[]; 
+extern CHAR8  *mEngUpperMap;
+extern CHAR8  *mEngLowerMap;
+extern CHAR8  *mEngInfoMap;
+extern CHAR8  mOtherChars[];
 
 //
 // Defines
 //
-#define CHAR_FAT_VALID      0x01
+#define CHAR_FAT_VALID  0x01
 
-#define ToUpper(a)  (CHAR16)(a <= 0xFF ? mEngUpperMap[a] : a)
-#define ToLower(a)  (CHAR16)(a <= 0xFF ? mEngLowerMap[a] : a)
+#define ToUpper(a)      (CHAR16) (a <= 0xFF ? mEngUpperMap[a] : a)
+#define ToLower(a)      (CHAR16) (a <= 0xFF ? mEngLowerMap[a] : a)
 
 //
 // Prototypes
 //
 INTN
 EngStriColl (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL           *This,
   IN CHAR16                                   *s1,
   IN CHAR16                                   *s2
-  );
+  )
+;
 
 BOOLEAN
 EngMetaiMatch (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN CHAR16                                  *String,
   IN CHAR16                                  *Pattern
-  );
+  )
+;
 
 VOID
 EngStrLwr (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN OUT CHAR16                              *Str
-  );
+  )
+;
 
 VOID
 EngStrUpr (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN OUT CHAR16                              *Str
-  );
+  )
+;
 
 VOID
 EngFatToStr (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN UINTN                                   FatSize,
   IN CHAR8                                   *Fat,
   OUT CHAR16                                 *String
-  );
+  )
+;
 
 BOOLEAN
 EngStrToFat (
-  IN EFI_UNICODE_COLLATION_PROTOCOL  *This,
+  IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN CHAR16                                  *String,
   IN UINTN                                   FatSize,
   OUT CHAR8                                  *Fat
-  );
+  )
+;
 
 //
 // Globals
 //
-EFI_UNICODE_COLLATION_PROTOCOL     UnicodeEng = {
+EFI_UNICODE_COLLATION_PROTOCOL  UnicodeEng = {
   EngStriColl,
   EngMetaiMatch,
   EngStrLwr,
@@ -110,12 +114,13 @@ EFI_UNICODE_COLLATION_PROTOCOL     UnicodeEng = {
   EngFatToStr,
   EngStrToFat,
   "eng"
-} ;
+};
 
 EFI_STATUS
 InitializeUnicodeCollationEng (
   IN EFI_HANDLE       ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable
-  );
+  )
+;
 
 #endif

@@ -37,33 +37,35 @@ Returns:
 
 --*/
 {
-  snp->cdb.OpCode = PXE_OPCODE_RESET;
-  snp->cdb.OpFlags = PXE_OPFLAGS_NOT_USED;
-  snp->cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  snp->cdb.DBsize = PXE_DBSIZE_NOT_USED;
-  snp->cdb.CPBaddr = PXE_CPBADDR_NOT_USED;
-  snp->cdb.DBaddr = PXE_DBADDR_NOT_USED;
-  snp->cdb.StatCode = PXE_STATCODE_INITIALIZE;
-  snp->cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
-  snp->cdb.IFnum = snp->if_num;
-  snp->cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  snp->cdb.OpCode     = PXE_OPCODE_RESET;
+  snp->cdb.OpFlags    = PXE_OPFLAGS_NOT_USED;
+  snp->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
+  snp->cdb.DBsize     = PXE_DBSIZE_NOT_USED;
+  snp->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
+  snp->cdb.DBaddr     = PXE_DBADDR_NOT_USED;
+  snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
+  snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
+  snp->cdb.IFnum      = snp->if_num;
+  snp->cdb.Control    = PXE_CONTROL_LAST_CDB_IN_LIST;
 
   //
   // Issue UNDI command and check result.
   //
+  DEBUG ((EFI_D_NET, "\nsnp->undi.reset()  "));
 
-  DEBUG((EFI_D_NET, "\nsnp->undi.reset()  "));
-
-  (*snp->issue_undi32_command) ((UINT64)&snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
 
   if (snp->cdb.StatCode != PXE_STATCODE_SUCCESS) {
-    DEBUG((EFI_D_WARN, "\nsnp->undi32.reset()  %xh:%xh\n",
-      snp->cdb.StatFlags, snp->cdb.StatCode));
+    DEBUG (
+      (EFI_D_WARN,
+      "\nsnp->undi32.reset()  %xh:%xh\n",
+      snp->cdb.StatFlags,
+      snp->cdb.StatCode)
+      );
 
     //
     // UNDI could not be reset. Return UNDI error.
     //
-
     return EFI_DEVICE_ERROR;
   }
 
@@ -73,8 +75,8 @@ Returns:
 EFI_STATUS
 snp_undi32_reset (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
-  IN BOOLEAN              ExtendedVerification
-)
+  IN BOOLEAN                     ExtendedVerification
+  )
 /*++
 
 Routine Description:
@@ -90,38 +92,36 @@ Returns:
 
 --*/
 {
-  SNP_DRIVER *snp;
+  SNP_DRIVER  *snp;
 
   //
   // Resolve Warning 4 unreferenced parameter problem
   //
-
   ExtendedVerification = 0;
 
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS(this);
+  snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
   if (snp == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
   switch (snp->mode.State) {
-    case EfiSimpleNetworkInitialized:
-        break;
+  case EfiSimpleNetworkInitialized:
+    break;
 
-    case EfiSimpleNetworkStopped:
-        return EFI_NOT_STARTED;
+  case EfiSimpleNetworkStopped:
+    return EFI_NOT_STARTED;
 
-    case EfiSimpleNetworkStarted:
-        return EFI_DEVICE_ERROR;
+  case EfiSimpleNetworkStarted:
+    return EFI_DEVICE_ERROR;
 
-    default:
-        return EFI_DEVICE_ERROR;
+  default:
+    return EFI_DEVICE_ERROR;
   }
-   
-  return (pxe_reset (snp));
-}
 
+  return pxe_reset (snp);
+}

@@ -143,9 +143,9 @@ Arguments:
 
 Returns:
 
-  Status code.
+  EFI_INVALID_PARAMETER       - Invalid parameter
 
-  On success, the registration record that has been added
+  EFI_SUCCESS                 - Successfully returned the registration record that has been added
   
 --*/
 {
@@ -179,7 +179,10 @@ Returns:
       ProtNotify->Signature = PROTOCOL_NOTIFY_SIGNATURE;
       ProtNotify->Protocol = ProtEntry;
       ProtNotify->Event = Event;
-      ProtNotify->Position = &ProtEntry->Protocols; // start at the begining
+      //
+      // start at the begining
+      //
+      ProtNotify->Position = &ProtEntry->Protocols; 
 
       InsertTailList (&ProtEntry->Notify, &ProtNotify->Link);
     }

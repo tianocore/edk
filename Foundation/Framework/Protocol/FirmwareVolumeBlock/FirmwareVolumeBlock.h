@@ -29,15 +29,17 @@ Abstract:
 #include "EfiFirmwareVolumeHeader.h"
 
 #define EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID \
-  { 0xDE28BC59, 0x6228, 0x41BD, 0xBD, 0xF6, 0xA3, 0xB9, 0xAD, 0xB5, 0x8D, 0xA1 }
+  { \
+    0xDE28BC59, 0x6228, 0x41BD, 0xBD, 0xF6, 0xA3, 0xB9, 0xAD, 0xB5, 0x8D, 0xA1 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL);
 
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_GET_ATTRIBUTES) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
-  OUT EFI_FVB_ATTRIBUTES                          *Attributes
+(EFIAPI *EFI_FVB_GET_ATTRIBUTES) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
+  OUT EFI_FVB_ATTRIBUTES                          * Attributes
   )
 /*++
 
@@ -57,9 +59,9 @@ Returns:
 
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_SET_ATTRIBUTES) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
-  IN OUT EFI_FVB_ATTRIBUTES                       *Attributes
+(EFIAPI *EFI_FVB_SET_ATTRIBUTES) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
+  IN OUT EFI_FVB_ATTRIBUTES                       * Attributes
   )
 /*++
 
@@ -78,12 +80,11 @@ Returns:
 --*/
 ;
 
-
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_GET_PHYSICAL_ADDRESS) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
-  OUT EFI_PHYSICAL_ADDRESS                        *Address
+(EFIAPI *EFI_FVB_GET_PHYSICAL_ADDRESS) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
+  OUT EFI_PHYSICAL_ADDRESS                        * Address
   )
 /*++
 
@@ -105,8 +106,8 @@ Returns:
 
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_GET_BLOCK_SIZE) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
+(EFIAPI *EFI_FVB_GET_BLOCK_SIZE) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
   IN EFI_LBA                                      Lba,
   OUT UINTN                                       *BlockSize,
   OUT UINTN                                       *NumberOfBlocks
@@ -133,11 +134,10 @@ Returns:
 --*/
 ;
 
-
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_READ) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
+(EFIAPI *EFI_FVB_READ) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
   IN EFI_LBA                                      Lba,
   IN UINTN                                        Offset,
   IN OUT UINTN                                    *NumBytes,
@@ -166,12 +166,12 @@ Returns:
   EFI_SUCCESS
 
 --*/
-  ;
+;
 
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_WRITE) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
+(EFIAPI *EFI_FVB_WRITE) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
   IN EFI_LBA                                      Lba,
   IN UINTN                                        Offset,
   IN OUT UINTN                                    *NumBytes,
@@ -201,15 +201,14 @@ Returns:
   EFI_SUCCESS
 
 --*/
-
 ;
 
 #define EFI_LBA_LIST_TERMINATOR 0xFFFFFFFFFFFFFFFF
 
 typedef
 EFI_STATUS
-(EFIAPI * EFI_FVB_ERASE_BLOCKS) (
-  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
+(EFIAPI *EFI_FVB_ERASE_BLOCKS) (
+  IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           * This,
   ...
   )
 /*++
@@ -234,17 +233,17 @@ Returns:
     EFI_ACCESS_DENIED
     
 --*/
-  ;
+;
 
 typedef struct _EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL {
-  EFI_FVB_GET_ATTRIBUTES                  GetVolumeAttributes;
-  EFI_FVB_SET_ATTRIBUTES                  SetVolumeAttributes;
-  EFI_FVB_GET_PHYSICAL_ADDRESS            GetPhysicalAddress;
-  EFI_FVB_GET_BLOCK_SIZE                  GetBlockSize;
-  EFI_FVB_READ                            Read;
-  EFI_FVB_WRITE                           Write;
-  EFI_FVB_ERASE_BLOCKS                    EraseBlocks;
-  EFI_HANDLE                              ParentHandle;
+  EFI_FVB_GET_ATTRIBUTES        GetVolumeAttributes;
+  EFI_FVB_SET_ATTRIBUTES        SetVolumeAttributes;
+  EFI_FVB_GET_PHYSICAL_ADDRESS  GetPhysicalAddress;
+  EFI_FVB_GET_BLOCK_SIZE        GetBlockSize;
+  EFI_FVB_READ                  Read;
+  EFI_FVB_WRITE                 Write;
+  EFI_FVB_ERASE_BLOCKS          EraseBlocks;
+  EFI_HANDLE                    ParentHandle;
 } EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL;
 
 extern EFI_GUID gEfiFirmwareVolumeBlockProtocolGuid;

@@ -40,42 +40,46 @@ Abstract:
 
 //
 // Exported Interfaces
-// 
+//
 #include EFI_PPI_DEFINITION (DxeIpl)
 #include EFI_PPI_DEFINITION (EndOfPeiSignal)
 #include EFI_PROTOCOL_DEFINITION (Decompress)
 #include EFI_PROTOCOL_DEFINITION (TianoDecompress)
-#include EFI_PROTOCOL_DEFINITION(CustomizedDecompress)
+#include EFI_PROTOCOL_DEFINITION (CustomizedDecompress)
 #include EFI_GUID_DEFINITION (PeiFlushInstructionCache)
 #include EFI_GUID_DEFINITION (PeiPeCoffLoader)
 
 #include "ImageRead.h"
 #include "peihoblib.h"
 
-#define PEI_DXEIPL_STACK_SIZE   0x10000
+#define PEI_DXEIPL_STACK_SIZE 0x10000
 
 EFI_STATUS
-InstallEfiDecompress(
+InstallEfiDecompress (
   EFI_DECOMPRESS_PROTOCOL  **This
-  );
+  )
+;
 
 EFI_STATUS
-InstallTianoDecompress(
+InstallTianoDecompress (
   EFI_TIANO_DECOMPRESS_PROTOCOL  **This
-  );
-  
+  )
+;
+
 EFI_STATUS
-InstallCustomizedDecompress(
+InstallCustomizedDecompress (
   EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL  **This
-  );
-  
+  )
+;
+
 VOID
 SwitchStacks (
   VOID  *EntryPoint,
   UINTN Parameter,
   VOID  *NewStack,
   VOID  *NewBsp
-  );
+  )
+;
 
 #ifdef EFI32
 VOID
@@ -85,20 +89,22 @@ SwitchIplStacks (
   UINTN Parameter2,
   VOID  *NewStack,
   VOID  *NewBsp
-  );
+  )
+;
 #endif
 
 EFI_STATUS
-PeiFindFile(
+PeiFindFile (
   IN  EFI_PEI_SERVICES       **PeiServices,
   IN  UINT8                  Type,
   IN  UINT16                 SectionType,
   OUT EFI_GUID               *FileName,
   OUT VOID                   **Pe32Data
-  );
+  )
+;
 
 EFI_STATUS
-PeiLoadFile(
+PeiLoadFile (
   IN  EFI_PEI_SERVICES                          **PeiServices,
   IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
   IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
@@ -106,29 +112,34 @@ PeiLoadFile(
   OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
   OUT UINT64                                    *ImageSize,
   OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
-  );
+  )
+;
 
 EFI_STATUS
 PeCoffLoaderGetImageInfo (
   IN     EFI_PEI_PE_COFF_LOADER_PROTOCOL       *This,
   IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  );
+  )
+;
 
 EFI_STATUS
 PeCoffLoaderRelocateImage (
   IN     EFI_PEI_PE_COFF_LOADER_PROTOCOL       *This,
   IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  );
+  )
+;
 
 EFI_STATUS
 PeCoffLoaderLoadImage (
   IN     EFI_PEI_PE_COFF_LOADER_PROTOCOL       *This,
   IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  );
+  )
+;
 
 EFI_STATUS
-CreateArchSpecificHobs(
+CreateArchSpecificHobs (
   IN  EFI_PEI_SERVICES          **PeiServices,
   OUT EFI_PHYSICAL_ADDRESS      *BspStore
-  );
+  )
+;
 #endif

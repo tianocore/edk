@@ -25,9 +25,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(DevicePath)
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
 
-
-EFI_GUID gEfiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+EFI_GUID  gEfiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiDevicePathProtocolGuid, "Device Path Protocol", "EFI 1.0 Device Path protocol");

@@ -25,97 +25,94 @@ Abstract:
 #include "Efi2WinNt.h"
 #include "CorePeim.h"
 
-#define EFI_IA32_INSTRUCTION_SET    0x00
-#define EFI_IA64_INSTRUCTION_SET    0x01
+#define EFI_IA32_INSTRUCTION_SET  0x00
+#define EFI_IA64_INSTRUCTION_SET  0x01
 
 //
 // IA32 PEI structures
 //
-
-#pragma pack (1)
+#pragma pack(1)
 
 typedef struct {
-  EFI_GUID            Guid;
-  EFI_PEIM_VERSION    Version;
-  UINT16              InstructionSet;
-  UINT32              Flags;
-  UINT32              Pass1Entry;
-  UINT32              Pass2Entry;
-  UINT32              ExportTable;
-  UINT32              ImportTable;
-  UINT32              RelocationInfo;
-  UINT32              AuthenticationInfo;
-  UINT32              ExtensionTable;
+  EFI_GUID          Guid;
+  EFI_PEIM_VERSION  Version;
+  UINT16            InstructionSet;
+  UINT32            Flags;
+  UINT32            Pass1Entry;
+  UINT32            Pass2Entry;
+  UINT32            ExportTable;
+  UINT32            ImportTable;
+  UINT32            RelocationInfo;
+  UINT32            AuthenticationInfo;
+  UINT32            ExtensionTable;
 } EFI_PEIM_HEADER_IA32;
 
 typedef struct {
-  PPI_FLAGS       Flags;
-  EFI_GUID        Guid;
-  UINT32          PpiOffset;
+  PPI_FLAGS Flags;
+  EFI_GUID  Guid;
+  UINT32    PpiOffset;
 } EFI_EXPORT_TABLE_ENTRY_IA32;
 
 typedef struct {
-  PPI_FLAGS       Flags;
-  EFI_GUID        Guid;
-  UINT32          PhysicalAddr;
+  PPI_FLAGS Flags;
+  EFI_GUID  Guid;
+  UINT32    PhysicalAddr;
 } EFI_IMPORT_TABLE_ENTRY_IA32;
 
 //
 // Intel?Itanium(TM) PEI structures
 //
-
 typedef struct {
-  EFI_GUID            Guid;
-  EFI_PEIM_VERSION    Version;
-  UINT64              InstructionSet;
-  UINT64              Flags;
-  UINT64              Pass1Entry;
-  UINT64              Pass2Entry;
-  UINT64              ExportTable;
-  UINT64              ImportTable;
-  UINT64              RelocationInfo;
-  UINT64              AuthenticationInfo;
-  UINT64              ExtensionTable;
+  EFI_GUID          Guid;
+  EFI_PEIM_VERSION  Version;
+  UINT64            InstructionSet;
+  UINT64            Flags;
+  UINT64            Pass1Entry;
+  UINT64            Pass2Entry;
+  UINT64            ExportTable;
+  UINT64            ImportTable;
+  UINT64            RelocationInfo;
+  UINT64            AuthenticationInfo;
+  UINT64            ExtensionTable;
 } EFI_PEIM_HEADER_IA64;
 
 typedef struct {
-  PPI_FLAGS       Flags;
-  UINT16          Reserved[3];
-  EFI_GUID        Guid;
-  UINT64          PpiOffset;
+  PPI_FLAGS Flags;
+  UINT16    Reserved[3];
+  EFI_GUID  Guid;
+  UINT64    PpiOffset;
 } EFI_EXPORT_TABLE_ENTRY_IA64;
 
 typedef struct {
-  PPI_FLAGS       Flags;
-  UINT16          Reserved[3];
-  EFI_GUID        Guid;
-  UINT64          PhysicalAddr;
+  PPI_FLAGS Flags;
+  UINT16    Reserved[3];
+  EFI_GUID  Guid;
+  UINT64    PhysicalAddr;
 } EFI_IMPORT_TABLE_ENTRY_IA64;
 
 //
 // Common between ISAs
 //
-
 typedef struct {
-  EFI_GUID            Guid;
-  EFI_PEIM_VERSION    Version;
-  UINT16              InstructionSet;
+  EFI_GUID          Guid;
+  EFI_PEIM_VERSION  Version;
+  UINT16            InstructionSet;
 } EFI_PEIM_HEADER_COMMON;
 
 typedef struct {
-  PPI_FLAGS       Flags;
+  PPI_FLAGS Flags;
 } EFI_EXPORT_TABLE_ENTRY_COMMON;
 
 typedef struct {
-  PPI_FLAGS       Flags;
+  PPI_FLAGS Flags;
 } EFI_IMPORT_TABLE_ENTRY_COMMON;
 
-#pragma pack ()
+#pragma pack()
 
 typedef union _EFI_PEIM_HEADER_ISA {
-  EFI_PEIM_HEADER_IA32          *Ia32PeimHeader;
-  EFI_PEIM_HEADER_IA64          *Ia64PeimHeader;
-  EFI_PEIM_HEADER_COMMON        *PeimHeader;
+  EFI_PEIM_HEADER_IA32    *Ia32PeimHeader;
+  EFI_PEIM_HEADER_IA64    *Ia64PeimHeader;
+  EFI_PEIM_HEADER_COMMON  *PeimHeader;
 } EFI_PEIM_HEADER_ISA;
 
 typedef union _EXPORT_TABLE_ENTRY_ISA {

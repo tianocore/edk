@@ -18,7 +18,7 @@ Abstract:
   EFI tools utility functions to display warning, error, and informational
   messages.
   
---*/  
+--*/
 
 #include <stdio.h>
 #include <string.h>
@@ -28,22 +28,22 @@ Abstract:
 #include "Tiano.h"
 #include "EfiUtilityMsgs.h"
 
-#define MAX_LINE_LEN    200
+#define MAX_LINE_LEN  200
 
 //
 // Declare module globals for keeping track of the the utility's
 // name and other settings.
 //
-static STATUS mStatus                   = STATUS_SUCCESS;
-static INT8   mUtilityName[50]          = { 0 };
-static INT8   *mSourceFileName          = NULL;
-static UINT32 mSourceFileLineNum        = 0;
-static UINT32 mErrorCount               = 0;
-static UINT32 mWarningCount             = 0;
-static UINT32 mDebugMsgMask             = 0;
+static STATUS mStatus             = STATUS_SUCCESS;
+static INT8   mUtilityName[50]    = { 0 };
+static INT8   *mSourceFileName    = NULL;
+static UINT32 mSourceFileLineNum  = 0;
+static UINT32 mErrorCount         = 0;
+static UINT32 mWarningCount       = 0;
+static UINT32 mDebugMsgMask       = 0;
 
 static
-void 
+void
 PrintMessage (
   INT8    *Type,
   INT8    *FileName,
@@ -54,7 +54,7 @@ PrintMessage (
   va_list List
   );
 
-void 
+void
 Error (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -118,7 +118,7 @@ Notes:
   mErrorCount++;
   va_start (List, MsgFmt);
   PrintMessage ("error", FileName, LineNumber, MessageCode, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -126,7 +126,8 @@ Notes:
     mStatus = STATUS_ERROR;
   }
 }
-void 
+
+void
 ParserError (
   UINT32  MessageCode,
   INT8    *Text,
@@ -141,8 +142,9 @@ Routine Description:
 
 Arguments:
   MessageCode   - application-specific error code
-  OffendingText - text to print in the error message
+  Text          - text to print in the error message
   MsgFmt        - format string to print at the end of the error message
+  ...
 
 Returns:
   NA
@@ -153,7 +155,7 @@ Returns:
   mErrorCount++;
   va_start (List, MsgFmt);
   PrintMessage ("error", mSourceFileName, mSourceFileLineNum, MessageCode, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -161,7 +163,8 @@ Returns:
     mStatus = STATUS_ERROR;
   }
 }
-void 
+
+void
 ParserWarning (
   UINT32  ErrorCode,
   INT8    *OffendingText,
@@ -178,6 +181,7 @@ Arguments:
   ErrorCode     - application-specific error code
   OffendingText - text to print in the warning message
   MsgFmt        - format string to print at the end of the warning message
+  ...
 
 Returns:
   NA
@@ -188,7 +192,7 @@ Returns:
   mWarningCount++;
   va_start (List, MsgFmt);
   PrintMessage ("warning", mSourceFileName, mSourceFileLineNum, ErrorCode, OffendingText, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -196,7 +200,8 @@ Returns:
     mStatus = STATUS_WARNING;
   }
 }
-void 
+
+void
 Warning (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -224,6 +229,8 @@ Arguments:
   
   MsgFmt      - the format string for the warning message. Can contain formatting
                 controls for use with varargs.
+                
+  ...
            
 Returns:
   None.
@@ -234,7 +241,7 @@ Returns:
   mWarningCount++;
   va_start (List, MsgFmt);
   PrintMessage ("warning", FileName, LineNumber, MessageCode, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
   //
   // Set status accordingly
   //
@@ -242,7 +249,8 @@ Returns:
     mStatus = STATUS_WARNING;
   }
 }
-void 
+
+void
 DebugMsg (
   INT8    *FileName,
   UINT32  LineNumber,
@@ -269,25 +277,28 @@ Arguments:
   
   MsgFmt      - the format string for the debug message. Can contain formatting
                 controls for use with varargs.
-           
+          
+  ... 
 Returns:
   None.
 
 --*/
 {
   va_list List;
-  // 
-  // If the debug mask is not applicable, then do nothing. 
+  //
+  // If the debug mask is not applicable, then do nothing.
   //
   if ((MsgMask != 0) && ((mDebugMsgMask & MsgMask) == 0)) {
-    return;
+    return ;
   }
+
   va_start (List, MsgFmt);
   PrintMessage ("debug", FileName, LineNumber, 0, Text, MsgFmt, List);
-  va_end(List);
+  va_end (List);
 }
+
 static
-void 
+void
 PrintMessage (
   INT8    *Type,
   INT8    *FileName,
@@ -322,7 +333,8 @@ Arguments:
   
   MsgFmt      - the format string for the message. Can contain formatting
                 controls for use with varargs.
-           
+
+  List        - Variable function parameter list.           
 Returns:
   None.
 
@@ -345,10 +357,10 @@ Notes:
 
 --*/
 {
-  INT8    Line[MAX_LINE_LEN];
-  INT8    Line2[MAX_LINE_LEN];
-  INT8    *Cptr;
-  // 
+  INT8  Line[MAX_LINE_LEN];
+  INT8  Line2[MAX_LINE_LEN];
+  INT8  *Cptr;
+  //
   // If given a filename, then add it (and the line number) to the string.
   // If there's no filename, then use the program name if provided.
   //
@@ -358,7 +370,8 @@ Notes:
     Cptr = mUtilityName;
   } else {
     Cptr = "Unknown utility";
-  } 
+  }
+
   strcpy (Line, Cptr);
   if (LineNumber != 0) {
     sprintf (Line2, "(%d)", LineNumber);
@@ -368,9 +381,9 @@ Notes:
   // Have to print an error code or Visual Studio won't find the
   // message for you. It has to be decimal digits too.
   //
-  sprintf (Line2, " : %s %c%04d", Type, toupper(Type[0]), MessageCode);
+  sprintf (Line2, " : %s %c%04d", Type, toupper (Type[0]), MessageCode);
   strcat (Line, Line2);
-  fprintf (stdout, "%s", Line);  
+  fprintf (stdout, "%s", Line);
   //
   // If offending text was provided, then print it
   //
@@ -384,8 +397,10 @@ Notes:
     vsprintf (Line2, MsgFmt, List);
     fprintf (stdout, ": %s", Line2);
   }
+
   fprintf (stdout, "\n");
 }
+
 void
 ParserSetPosition (
   INT8    *SourceFileName,
@@ -406,9 +421,10 @@ Returns:
 
 --*/
 {
-  mSourceFileName = SourceFileName;
-  mSourceFileLineNum = LineNum;
+  mSourceFileName     = SourceFileName;
+  mSourceFileLineNum  = LineNum;
 }
+
 void
 SetUtilityName (
   INT8    *UtilityName
@@ -438,9 +454,9 @@ Returns:
   if (UtilityName != NULL) {
     if (strlen (UtilityName) >= sizeof (mUtilityName)) {
       Error (UtilityName, 0, 0, "application error", "utility name length exceeds internal buffer size");
-      strncpy (mUtilityName, UtilityName, sizeof(mUtilityName) - 1);
-      mUtilityName[sizeof(mUtilityName) - 1] = 0;
-      return;
+      strncpy (mUtilityName, UtilityName, sizeof (mUtilityName) - 1);
+      mUtilityName[sizeof (mUtilityName) - 1] = 0;
+      return ;
     } else {
       strcpy (mUtilityName, UtilityName);
     }
@@ -448,8 +464,11 @@ Returns:
     Error (NULL, 0, 0, "application error", "SetUtilityName() called with NULL utility name");
   }
 }
+
 STATUS
-GetUtilityStatus ()
+GetUtilityStatus (
+  VOID
+  )
 /*++
 
 Routine Description:

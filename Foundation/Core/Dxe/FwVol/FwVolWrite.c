@@ -32,24 +32,26 @@ FvWriteFile (
   )
 /*++
 
-    Routine Descriptions:
+    Routine Description:
       Writes one or more files to the firmware volume.
 
-    Parameters:
-    This        - Indicates the calling context.
-    WritePolicy - WritePolicy indicates the level of reliability for
-                  the write in the event of a power failure or other
-                  system failure during the write operation.
-    FileData    - FileData is an pointer to an array of EFI_FV_WRITE_DATA.
-                  Each element of FileData[] represents a file to be written.
+    Arguments:
+    This            - Indicates the calling context.
+    NumberOfFiles   - Number of files.
+    WritePolicy     - WritePolicy indicates the level of reliability for
+                      the write in the event of a power failure or other
+                      system failure during the write operation.
+    FileData        - FileData is an pointer to an array of EFI_FV_WRITE_DATA.
+                      Each element of FileData[] represents a file to be written.
 
-    Return Value:
-      EFI_SUCCESS
-      EFI_OUT_OF_RESOURCES
-      EFI_DEVICE_ERROR
-      EFI_WRITE_PROTECTED
-      EFI_NOT_FOUND
-      EFI_INVALID_PARAMETER
+    Returns:
+      EFI_SUCCESS                   - Files successfully written to firmware volume
+      EFI_OUT_OF_RESOURCES          - Not enough buffer to be allocated.
+      EFI_DEVICE_ERROR              - Device error.
+      EFI_WRITE_PROTECTED           - Write protected.
+      EFI_NOT_FOUND                 - Not found.
+      EFI_INVALID_PARAMETER         - Invalid parameter.
+      EFI_UNSUPPORTED               - This function not supported.
 
 --*/
 { 

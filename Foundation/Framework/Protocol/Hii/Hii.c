@@ -24,9 +24,7 @@ Abstract:
 
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (Hii)
- 
 
-EFI_GUID gEfiHiiProtocolGuid = EFI_HII_PROTOCOL_GUID;
+EFI_GUID  gEfiHiiProtocolGuid = EFI_HII_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiHiiProtocolGuid, "Human Interface Infrastructure Protocol", "HII 1.0 protocol");
-

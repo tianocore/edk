@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  NT Emulation Architectural Protocol Driver as defined in EFI 2.0.
+  NT Emulation Architectural Protocol Driver as defined in Tiano.
   This Timer module uses an NT Thread to simulate the timer-tick driven
   timer service.
 
@@ -41,50 +41,133 @@ Abstract:
 //
 // Legal timer value range in 100 ns units
 //
-#define TIMER_MINIMUM_VALUE          0
-#define TIMER_MAXIMUM_VALUE          (0x100000000 - 1)
+#define TIMER_MINIMUM_VALUE 0
+#define TIMER_MAXIMUM_VALUE (0x100000000 - 1)
 
 //
 // Default timer value in 100 ns units (10 ms)
 //
-#define DEFAULT_TIMER_TICK_DURATION  100000
+#define DEFAULT_TIMER_TICK_DURATION 100000
 
 //
 // Function Prototypes
 //
-
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverInitialize (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  ImageHandle - TODO: add argument description
+  SystemTable - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverRegisterHandler (
   IN EFI_TIMER_ARCH_PROTOCOL  *This,
   IN EFI_TIMER_NOTIFY         NotifyFunction
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This            - TODO: add argument description
+  NotifyFunction  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverSetTimerPeriod (
   IN EFI_TIMER_ARCH_PROTOCOL  *This,
   IN UINT64                   TimerPeriod
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  TimerPeriod - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverGetTimerPeriod (
-  IN EFI_TIMER_ARCH_PROTOCOL  *This,
+  IN EFI_TIMER_ARCH_PROTOCOL   *This,
   OUT UINT64                   *TimerPeriod
-  );
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  TimerPeriod - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
 
 EFI_STATUS
 EFIAPI
 WinNtTimerDriverGenerateSoftInterrupt (
   IN EFI_TIMER_ARCH_PROTOCOL  *This
-  );
-  
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 #endif

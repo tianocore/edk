@@ -20,8 +20,12 @@ Abstract:
 
 #include "Tiano.h"
 
-#include EFI_PROTOCOL_DEFINITION(PciHostBridgeResourceAllocation)
+#include EFI_PROTOCOL_DEFINITION (PciHostBridgeResourceAllocation)
 
-EFI_GUID gEfiPciHostBridgeResourceAllocationProtocolGuid = EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GUID;
+EFI_GUID  gEfiPciHostBridgeResourceAllocationProtocolGuid = EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiPciHostBridgeResourceAllocationProtocolGuid, "PciHostBridgeRresourceAllocation Protocol", "EFI 1.1 Pci Host Bridge Resource Allocation Protocol");
+EFI_GUID_STRING
+  (
+    &gEfiPciHostBridgeResourceAllocationProtocolGuid, "PciHostBridgeRresourceAllocation Protocol",
+      "Pci Host Bridge Resource Allocation Protocol"
+  );

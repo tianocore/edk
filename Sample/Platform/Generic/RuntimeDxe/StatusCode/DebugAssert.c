@@ -25,7 +25,7 @@ Abstract:
 EFI_STATUS
 EFIAPI
 StatusCodeDebugAssert (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN CHAR8                              *FileName,
   IN INTN                               LineNumber,
   IN CHAR8                              *Description
@@ -34,7 +34,7 @@ StatusCodeDebugAssert (
 EFI_STATUS
 EFIAPI
 StatusCodeDebugPrint (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN UINTN                              ErrorLevel,
   IN CHAR8                              *Format,
   IN VA_LIST                            Marker
@@ -43,28 +43,24 @@ StatusCodeDebugPrint (
 EFI_STATUS
 EFIAPI
 StatusCodePostCode (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          * This,
   IN  UINT16                            PostCode,
-  IN  CHAR8                             *PostCodeString  OPTIONAL
+  IN  CHAR8                             *PostCodeString OPTIONAL
   );
 
 EFI_STATUS
 EFIAPI
 StatusCodeGetErrorLevel (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN  UINTN                             *ErrorLevel
   );
 
 EFI_STATUS
 EFIAPI
 StatusCodeSetErrorLevel (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN  UINTN                             ErrorLevel
   );
-
-
-
-
 
 //
 // Protocol instance, there can be only one.
@@ -81,11 +77,10 @@ EFI_DEBUG_ASSERT_PROTOCOL mDebugAssertProtocol = {
 //
 // Function implementations
 //
-
 EFI_STATUS
 EFIAPI
 StatusCodeDebugAssert (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN CHAR8                              *FileName,
   IN INTN                               LineNumber,
   IN CHAR8                              *Description
@@ -115,11 +110,10 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 StatusCodeDebugPrint (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN UINTN                              ErrorLevel,
   IN CHAR8                              *Format,
   IN VA_LIST                            Marker
@@ -148,13 +142,12 @@ Returns:
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 StatusCodePostCode (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          * This,
   IN  UINT16                            PostCode,
-  IN  CHAR8                             *PostCodeString  OPTIONAL
+  IN  CHAR8                             *PostCodeString OPTIONAL
   )
 /*++
 
@@ -174,17 +167,16 @@ Returns:
 
 --*/
 {
-  IoWrite8 (0x80, (UINT8)(PostCode & 0xff));
-  IoWrite8 (0x81, (UINT8)(PostCode >> 8));
+  IoWrite8 (0x80, (UINT8) (PostCode & 0xff));
+  IoWrite8 (0x81, (UINT8) (PostCode >> 8));
 
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 StatusCodeGetErrorLevel (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN  UINTN                             *ErrorLevel
   )
 {
@@ -192,18 +184,16 @@ StatusCodeGetErrorLevel (
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 EFIAPI
 StatusCodeSetErrorLevel (
-  IN EFI_DEBUG_ASSERT_PROTOCOL  *This,
+  IN EFI_DEBUG_ASSERT_PROTOCOL          *This,
   IN  UINTN                             ErrorLevel
   )
 {
   gRtErrorLevel = ErrorLevel;
   return EFI_SUCCESS;
 }
-
 
 EFI_STATUS
 InstallStatusCodeDebugAssert (
@@ -226,13 +216,14 @@ Returns:
 --*/
 {
 
-DEBUG_CODE (
-  gBS->InstallProtocolInterface (
-        &mHandle,
-        &gEfiDebugAssertProtocolGuid,
-        EFI_NATIVE_INTERFACE,
-        &mDebugAssertProtocol
-        );
-)
+  DEBUG_CODE (
+    gBS->InstallProtocolInterface (
+          &mHandle,
+          &gEfiDebugAssertProtocolGuid,
+          EFI_NATIVE_INTERFACE,
+          &mDebugAssertProtocol
+          );
+  )
+
   return EFI_SUCCESS;
 }

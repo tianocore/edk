@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  FindFv PPI as defined in EFI 2.0
+  FindFv PPI as defined in Tiano
 
   Used to locate FVs that contain PEIMs in PEI
 
@@ -26,15 +26,17 @@ Abstract:
 
 #include "EfiFirmwareVolumeHeader.h"
 
-#define EFI_FIND_FV_PPI_GUID  \
-  { 0x36164812, 0xa023, 0x44e5, 0xbd, 0x85, 0x5, 0xbf, 0x3c, 0x77, 0x0, 0xaa }
+#define EFI_FIND_FV_PPI_GUID \
+  { \
+    0x36164812, 0xa023, 0x44e5, 0xbd, 0x85, 0x5, 0xbf, 0x3c, 0x77, 0x0, 0xaa \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_FIND_FV_PPI);
 
-typedef 
+typedef
 EFI_STATUS
 (EFIAPI *EFI_FIND_FV_FINDFV) (
-  IN EFI_FIND_FV_PPI  *This,
+  IN EFI_FIND_FV_PPI          * This,
   IN EFI_PEI_SERVICES         **PeiServices,
   UINT8                       *FvNumber,
   EFI_FIRMWARE_VOLUME_HEADER  **FVAddress

@@ -33,17 +33,17 @@ WinNtBusDriverComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtBusDriverComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gWinNtBusDriverComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL     gWinNtBusDriverComponentName = {
   WinNtBusDriverComponentNameGetDriverName,
   WinNtBusDriverComponentNameGetControllerName,
   "eng"
@@ -51,7 +51,7 @@ EFI_COMPONENT_NAME_PROTOCOL gWinNtBusDriverComponentName = {
 
 static EFI_UNICODE_STRING_TABLE mWinNtBusDriverNameTable[] = {
   { "eng", L"Windows Bus Driver" },
-  { NULL, NULL }
+  { NULL , NULL }
 };
 
 EFI_STATUS
@@ -89,21 +89,21 @@ WinNtBusDriverComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-           Language,
-           gWinNtBusDriverComponentName.SupportedLanguages,
-           mWinNtBusDriverNameTable,
-           DriverName
-           );
+          Language,
+          gWinNtBusDriverComponentName.SupportedLanguages,
+          mWinNtBusDriverNameTable,
+          DriverName
+          );
 }
 
 EFI_STATUS
 EFIAPI
 WinNtBusDriverComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  EFI_HANDLE                   ControllerHandle,
-  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **ControllerName
+  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_HANDLE                                      ControllerHandle,
+  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
+  IN  CHAR8                                           *Language,
+  OUT CHAR16                                          **ControllerName
   )
 /*++
 
@@ -165,7 +165,7 @@ WinNtBusDriverComponentNameGetControllerName (
   // Get our context back
   //
   Status = gBS->OpenProtocol (
-                  ChildHandle,   
+                  ChildHandle,
                   &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
                   gWinNtBusDriverBinding.DriverBindingHandle,
@@ -179,9 +179,9 @@ WinNtBusDriverComponentNameGetControllerName (
   Private = WIN_NT_IO_DEVICE_FROM_THIS (WinNtIo);
 
   return EfiLibLookupUnicodeString (
-           Language, 
-           gWinNtBusDriverComponentName.SupportedLanguages,
-           Private->ControllerNameTable, 
-           ControllerName
-           );
+          Language,
+          gWinNtBusDriverComponentName.SupportedLanguages,
+          Private->ControllerNameTable,
+          ControllerName
+          );
 }

@@ -24,15 +24,13 @@ Revision History
 //
 // Don't use module globals after the SetVirtualAddress map is signaled
 //
-
-extern ESAL_VARIABLE_GLOBAL   *mVariableModuleGlobal;
-
+extern ESAL_VARIABLE_GLOBAL *mVariableModuleGlobal;
 
 EFI_STATUS
 EFIAPI
 Ia32GetVariable (
   IN CHAR16        *VariableName,
-  IN EFI_GUID      *VendorGuid,
+  IN EFI_GUID      * VendorGuid,
   OUT UINT32       *Attributes OPTIONAL,
   IN OUT UINTN     *DataSize,
   OUT VOID         *Data
@@ -47,15 +45,16 @@ Returns:
 
 --*/
 {
-  return GetVariable (VariableName,
-                      VendorGuid,
-                      Attributes OPTIONAL,
-                      DataSize,
-                      Data,
-                      &mVariableModuleGlobal->VariableBase[Physical],
-                      mVariableModuleGlobal->FvbInstance);
+  return GetVariable (
+          VariableName,
+          VendorGuid,
+          Attributes OPTIONAL,
+          DataSize,
+          Data,
+          &mVariableModuleGlobal->VariableBase[Physical],
+          mVariableModuleGlobal->FvbInstance
+          );
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -74,13 +73,14 @@ Returns:
 
 --*/
 {
-  return GetNextVariableName (VariableNameSize,
-                              VariableName,
-                              VendorGuid,
-                              &mVariableModuleGlobal->VariableBase[Physical],
-                              mVariableModuleGlobal->FvbInstance);
+  return GetNextVariableName (
+          VariableNameSize,
+          VariableName,
+          VendorGuid,
+          &mVariableModuleGlobal->VariableBase[Physical],
+          mVariableModuleGlobal->FvbInstance
+          );
 }
-
 
 EFI_STATUS
 EFIAPI
@@ -101,17 +101,18 @@ Returns:
 
 --*/
 {
-  return SetVariable (VariableName,
-                      VendorGuid,
-                      Attributes,
-                      DataSize,
-                      Data,
-                      &mVariableModuleGlobal->VariableBase[Physical],
-                      &mVariableModuleGlobal->VolatileLastVariableOffset,
-                      &mVariableModuleGlobal->NonVolatileLastVariableOffset,
-                      mVariableModuleGlobal->FvbInstance);
+  return SetVariable (
+          VariableName,
+          VendorGuid,
+          Attributes,
+          DataSize,
+          Data,
+          &mVariableModuleGlobal->VariableBase[Physical],
+          &mVariableModuleGlobal->VolatileLastVariableOffset,
+          &mVariableModuleGlobal->NonVolatileLastVariableOffset,
+          mVariableModuleGlobal->FvbInstance
+          );
 }
-
 
 EFI_RUNTIMESERVICE
 VOID
@@ -129,8 +130,14 @@ Returns:
 
 --*/
 {
-  EfiConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase);
-  EfiConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mVariableModuleGlobal->VariableBase[Physical].VolatileVariableBase);
+  EfiConvertPointer (
+    EFI_INTERNAL_POINTER,
+    (VOID **) &mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase
+    );
+  EfiConvertPointer (
+    EFI_INTERNAL_POINTER,
+    (VOID **) &mVariableModuleGlobal->VariableBase[Physical].VolatileVariableBase
+    );
   EfiConvertPointer (EFI_INTERNAL_POINTER, (VOID **) &mVariableModuleGlobal);
 }
 
@@ -167,8 +174,10 @@ Returns:
   NewHandle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &NewHandle,
-                  &gEfiVariableArchProtocolGuid, NULL,
-                  &gEfiVariableWriteArchProtocolGuid, NULL,
+                  &gEfiVariableArchProtocolGuid,
+                  NULL,
+                  &gEfiVariableWriteArchProtocolGuid,
+                  NULL,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);

@@ -17,7 +17,7 @@ Abstract:
 
 Revision History
 
---*/ 
+--*/
 
 #include "FWBlockService.h"
 
@@ -40,4 +40,3 @@ Returns:
 {
   return EFI_SUCCESS;
 }
-

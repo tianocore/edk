@@ -28,41 +28,122 @@ Abstract:
 //
 // Driver Lib Globals.
 //
-extern EFI_BOOT_SERVICES         *gBS;
-extern EFI_SYSTEM_TABLE          *gST;
-extern EFI_RUNTIME_SERVICES      *gRT;
-extern EFI_SMM_BASE_PROTOCOL     *gSMM;
+extern EFI_BOOT_SERVICES            *gBS;
+extern EFI_SYSTEM_TABLE             *gST;
+extern EFI_RUNTIME_SERVICES         *gRT;
+extern EFI_SMM_BASE_PROTOCOL        *gSMM;
 extern EFI_SMM_STATUS_CODE_PROTOCOL *mSmmDebug;
-extern UINTN               gErrorLevel;
+extern UINTN                        gErrorLevel;
 
 EFI_STATUS
 EfiInitializeSmmDriverLib (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable,
   IN OUT BOOLEAN          *InSmm
-  );
+  )
+/*++
+
+Routine Description:
+
+  Intialize Smm Driver Lib if it has not yet been initialized. 
+
+Arguments:
+
+  ImageHandle     - The firmware allocated handle for the EFI image.
+  
+  SystemTable     - A pointer to the EFI System Table.
+  
+  InSmm           - Currently in SMM mode or not?
+
+Returns: 
+
+  EFI_STATUS always returns EFI_SUCCESS
+
+--*/
+;
 
 VOID
 EfiDebugAssert (
   IN CHAR8    *FileName,
   IN INTN     LineNumber,
   IN CHAR8    *Description
-  );
-VOID
+  )
+/*++
 
+Routine Description:
+
+  Worker function for ASSERT (). If Error Logging hub is loaded log ASSERT
+  information. If Error Logging hub is not loaded DEADLOOP ().
+  
+Arguments:
+
+  FileName    - File name of failing routine.
+
+  LineNumber  - Line number of failing ASSERT().
+
+  Description - Description, usually the assertion,
+  
+Returns:
+  
+  None
+
+--*/
+;
+
+VOID
 EfiDebugVPrint (
   IN  UINTN   ErrorLevel,
   IN  CHAR8   *Format,
   IN  VA_LIST Marker
-  );
+  )
+/*++
+
+Routine Description:
+
+  Worker function for DEBUG(). If Error Logging hub is loaded log ASSERT
+  information. If Error Logging hub is not loaded do nothing.
+  
+Arguments:
+
+  ErrorLevel - If error level is set do the debug print.
+
+  Format     - String to use for the print, followed by Print arguments.
+
+  Marker     - VarArgs
+  
+Returns:
+  
+  None
+
+--*/
+;
 
 VOID
 EfiDebugPrint (
   IN  UINTN                   ErrorLevel,
   IN  CHAR8                   *Format,
   ...
-  );
+  )
+/*++
 
+Routine Description:
 
+  Worker function for DEBUG(). If Error Logging hub is loaded log ASSERT
+  information. If Error Logging hub is not loaded do nothing.
+
+Arguments:
+
+  ErrorLevel - If error level is set do the debug print.
+
+  Format     - String to use for the print, followed by Print arguments.
+
+  ...        - VAR args for Format
+
+Returns:
+  
+  None
+
+--*/
+;
 
 #endif

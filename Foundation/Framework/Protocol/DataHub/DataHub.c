@@ -27,6 +27,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 
-EFI_GUID gEfiDataHubProtocolGuid = EFI_DATA_HUB_PROTOCOL_GUID;
+EFI_GUID  gEfiDataHubProtocolGuid = EFI_DATA_HUB_PROTOCOL_GUID;
 
-EFI_GUID_STRING (&gEfiDataHubProtocolGuid, "DataHub Protocol", "EFI Data Hub Protocol");
+EFI_GUID_STRING(&gEfiDataHubProtocolGuid, "DataHub Protocol", "EFI Data Hub Protocol");

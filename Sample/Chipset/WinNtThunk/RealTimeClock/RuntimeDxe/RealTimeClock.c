@@ -15,14 +15,14 @@ Module Name:
 
 Abstract:
 
-  NT Emulation Architectural Protocol Driver as defined in EFI 2.0
+  NT Emulation Architectural Protocol Driver as defined in Tiano
 
 --*/
 
 #include "Efi2WinNT.h"
 #include "EfiWinNtLib.h"
 #include "EfiRuntimeLib.h"
-#include EFI_ARCH_PROTOCOL_DEFINITION(RealTimeClock)
+#include EFI_ARCH_PROTOCOL_DEFINITION (RealTimeClock)
 
 BOOLEAN
 DayValid (
@@ -50,8 +50,8 @@ EFI_RUNTIMESERVICE
 EFI_STATUS
 EFIAPI
 WinNtGetTime (
-  OUT EFI_TIME                                 *Time,
-  OUT EFI_TIME_CAPABILITIES                    *Capabilities OPTIONAL
+  OUT EFI_TIME                                 * Time,
+  OUT EFI_TIME_CAPABILITIES                    * Capabilities OPTIONAL
   )
 /*++
 
@@ -73,32 +73,35 @@ Returns:
                   thus you will always receive a EFI_SUCCESS on this.
 
 --*/
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  SYSTEMTIME                              SystemTime;
-  TIME_ZONE_INFORMATION                   TimeZone;
+  SYSTEMTIME            SystemTime;
+  TIME_ZONE_INFORMATION TimeZone;
 
   //
   // Check parameter for null pointer
   //
-  if (Time == NULL)
-    return (EFI_INVALID_PARAMETER);
+  if (Time == NULL) {
+    return EFI_INVALID_PARAMETER;
+
+  }
 
   gWinNt->GetLocalTime (&SystemTime);
   gWinNt->GetTimeZoneInformation (&TimeZone);
 
-  Time->Year  = (UINT16)  SystemTime.wYear;
-  Time->Month = (UINT8)   SystemTime.wMonth;
-  Time->Day   = (UINT8)   SystemTime.wDay;
-  Time->Hour  = (UINT8)   SystemTime.wHour;
-  Time->Minute= (UINT8)   SystemTime.wMinute;
-  Time->Second= (UINT8)   SystemTime.wSecond;
-  Time->Nanosecond = (UINT32) (SystemTime.wMilliseconds * 1000000);
-  Time->TimeZone = (INT16) TimeZone.Bias;
+  Time->Year        = (UINT16) SystemTime.wYear;
+  Time->Month       = (UINT8) SystemTime.wMonth;
+  Time->Day         = (UINT8) SystemTime.wDay;
+  Time->Hour        = (UINT8) SystemTime.wHour;
+  Time->Minute      = (UINT8) SystemTime.wMinute;
+  Time->Second      = (UINT8) SystemTime.wSecond;
+  Time->Nanosecond  = (UINT32) (SystemTime.wMilliseconds * 1000000);
+  Time->TimeZone    = (INT16) TimeZone.Bias;
 
   if (Capabilities != NULL) {
-    Capabilities->Resolution = 1; 
-    Capabilities->Accuracy = 50000000; 
-    Capabilities->SetsToZero = FALSE; 
+    Capabilities->Resolution  = 1;
+    Capabilities->Accuracy    = 50000000;
+    Capabilities->SetsToZero  = FALSE;
   }
 
   Time->Daylight = 0;
@@ -108,7 +111,6 @@ Returns:
 
   return EFI_SUCCESS;
 }
-
 
 STATIC
 EFI_RUNTIMESERVICE
@@ -136,17 +138,16 @@ Returns:
   EFI_DEVICE_ERROR      - The operation could not be complete due to a device error.
 
 --*/
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  TIME_ZONE_INFORMATION                   TimeZone;
-  EFI_STATUS                              Status;
-  SYSTEMTIME                              SystemTime;
-  BOOL                                    Flag;
-  
+  TIME_ZONE_INFORMATION TimeZone;
+  EFI_STATUS            Status;
+  SYSTEMTIME            SystemTime;
+  BOOL                  Flag;
+
   if (Time == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
-
   //
   // Make sure that the time fields are valid
   //
@@ -154,26 +155,23 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
   //
-  //Set Daylight savings time information and Time Zone
+  // Set Daylight savings time information and Time Zone
   //
   gWinNt->GetTimeZoneInformation (&TimeZone);
-  TimeZone.StandardDate.wMonth = Time->Daylight;
-  TimeZone.Bias = Time->TimeZone;
+  TimeZone.StandardDate.wMonth  = Time->Daylight;
+  TimeZone.Bias                 = Time->TimeZone;
   gWinNt->SetTimeZoneInformation (&TimeZone);
-  
-  SystemTime.wYear = Time->Year;
-  SystemTime.wMonth = Time->Month;
-  SystemTime.wDay = Time->Day;
-  SystemTime.wHour = Time->Hour;
-  SystemTime.wMinute = Time->Minute;
-  SystemTime.wSecond = Time->Second;
-  SystemTime.wMilliseconds = (INT16)(Time->Nanosecond / 1000000);
 
-  Flag = gWinNt->SetLocalTime (&SystemTime);
+  SystemTime.wYear          = Time->Year;
+  SystemTime.wMonth         = Time->Month;
+  SystemTime.wDay           = Time->Day;
+  SystemTime.wHour          = Time->Hour;
+  SystemTime.wMinute        = Time->Minute;
+  SystemTime.wSecond        = Time->Second;
+  SystemTime.wMilliseconds  = (INT16) (Time->Nanosecond / 1000000);
 
-
+  Flag                      = gWinNt->SetLocalTime (&SystemTime);
 
   if (!Flag) {
     return EFI_DEVICE_ERROR;
@@ -182,7 +180,6 @@ Returns:
   }
 }
 
-
 STATIC
 EFI_RUNTIMESERVICE
 EFI_STATUS
@@ -190,7 +187,7 @@ EFIAPI
 WinNtGetWakeupTime (
   OUT BOOLEAN        *Enabled,
   OUT BOOLEAN        *Pending,
-  OUT EFI_TIME      *Time
+  OUT EFI_TIME       *Time
   )
 /*++
 
@@ -219,7 +216,6 @@ Returns:
 {
   return EFI_UNSUPPORTED;
 }
-
 
 STATIC
 EFI_RUNTIMESERVICE
@@ -257,9 +253,7 @@ Returns:
   return EFI_UNSUPPORTED;
 }
 
-
-EFI_DRIVER_ENTRY_POINT(InitializeRealTimeClock)
-
+EFI_DRIVER_ENTRY_POINT (InitializeRealTimeClock)
 
 EFI_STATUS
 InitializeRealTimeClock (
@@ -279,9 +273,11 @@ Returns:
   EFI_SUCEESS - Real Time Clock Services are installed into the Runtime Services Table
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
-  EFI_STATUS    Status;
-  EFI_HANDLE    Handle;
+  EFI_STATUS  Status;
+  EFI_HANDLE  Handle;
 
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, NULL);
 
@@ -295,12 +291,12 @@ Returns:
   Handle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &Handle,
-                  &gEfiRealTimeClockArchProtocolGuid, NULL,
+                  &gEfiRealTimeClockArchProtocolGuid,
+                  NULL,
                   NULL
                   );
   return Status;
 }
-
 
 EFI_STATUS
 RtcTimeFieldsValid (
@@ -314,14 +310,19 @@ Routine Description:
  
   Returns: 
 --*/
+// TODO:    Time - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  if (Time->Year < 1998 || Time->Year > 2099          ||
-      Time->Month < 1 || Time->Month > 12             ||
-      (!DayValid(Time))                               ||
-      Time->Hour > 23                                 ||
-      Time->Minute > 59                               ||
-      Time->Second > 59                               ||
-      Time->Nanosecond > 999999999                    ||
+  if (Time->Year < 1998 ||
+      Time->Year > 2099 ||
+      Time->Month < 1 ||
+      Time->Month > 12 ||
+      (!DayValid (Time)) ||
+      Time->Hour > 23 ||
+      Time->Minute > 59 ||
+      Time->Second > 59 ||
+      Time->Nanosecond > 999999999 ||
       (!(Time->TimeZone == EFI_UNSPECIFIED_TIMEZONE || (Time->TimeZone >= -1440 && Time->TimeZone <= 1440))) ||
       (Time->Daylight & (~(EFI_TIME_ADJUST_DAYLIGHT | EFI_TIME_IN_DAYLIGHT)))
       ) {
@@ -331,19 +332,33 @@ Routine Description:
   return EFI_SUCCESS;
 }
 
-
 BOOLEAN
 DayValid (
   IN  EFI_TIME  *Time
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Time  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
 
- INTN DayOfMonth[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  INTN  DayOfMonth[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
   if (Time->Day < 1 ||
       Time->Day > DayOfMonth[Time->Month - 1] ||
-      (Time->Month == 2 && (!IsLeapYear(Time) && Time->Day > 28))
-    ) {
+      (Time->Month == 2 && (!IsLeapYear (Time) && Time->Day > 28))
+      ) {
     return FALSE;
   }
 
@@ -354,10 +369,25 @@ BOOLEAN
 IsLeapYear (
   IN EFI_TIME   *Time
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Time  - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
-  if ( Time->Year % 4 == 0 ) {
-    if ( Time->Year % 100 == 0 ) {
-      if ( Time->Year % 400 == 0 ) {
+  if (Time->Year % 4 == 0) {
+    if (Time->Year % 100 == 0) {
+      if (Time->Year % 400 == 0) {
         return TRUE;
       } else {
         return FALSE;
@@ -366,7 +396,6 @@ IsLeapYear (
       return TRUE;
     }
   } else {
-    return FALSE;  
+    return FALSE;
   }
 }
-

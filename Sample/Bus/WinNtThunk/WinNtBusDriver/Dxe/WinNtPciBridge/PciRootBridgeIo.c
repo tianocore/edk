@@ -23,11 +23,11 @@ Abstract:
 #include "Pci22.h"
 
 typedef struct {
-  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     SpaceDesp[TypeMax];
-  EFI_ACPI_END_TAG_DESCRIPTOR           EndDesp;
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR SpaceDesp[TypeMax];
+  EFI_ACPI_END_TAG_DESCRIPTOR       EndDesp;
 } RESOURCE_CONFIGURATION;
 
-RESOURCE_CONFIGURATION mConfiguration = {
+RESOURCE_CONFIGURATION  mConfiguration = {
   {{0x8A, 0x2B, 1, 0, 0, 0, 0, 0, 0, 0},
   {0x8A, 0x2B, 0, 0, 0, 32, 0, 0, 0, 0}, 
   {0x8A, 0x2B, 0, 0, 6, 32, 0, 0, 0, 0},
@@ -36,14 +36,13 @@ RESOURCE_CONFIGURATION mConfiguration = {
   {0x8A, 0x2B, 2, 0, 0, 0, 0, 0, 0, 0}},
   {0x79, 0}
 };
-  
 
 //
 // Protocol Member Function Prototypes
 //
 
 EFI_STATUS
-RootBridgeIoPollMem ( 
+RootBridgeIoPollMem (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -52,9 +51,9 @@ RootBridgeIoPollMem (
   IN  UINT64                                 Delay,
   OUT UINT64                                 *Result
   );
-  
+
 EFI_STATUS
-RootBridgeIoPollIo ( 
+RootBridgeIoPollIo (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -63,7 +62,7 @@ RootBridgeIoPollIo (
   IN  UINT64                                 Delay,
   OUT UINT64                                 *Result
   );
-  
+
 EFI_STATUS
 RootBridgeIoMemRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
@@ -177,8 +176,8 @@ RootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
   IN OUT UINT64                           *ResourceBase,
-  IN OUT UINT64                           *ResourceLength 
-  ); 
+  IN OUT UINT64                           *ResourceLength
+  );
 
 EFI_STATUS
 RootBridgeIoConfiguration (
@@ -191,12 +190,12 @@ RootBridgeIoConfiguration (
 //
 
 typedef union {
-  UINT8       VOLATILE    *buf;
-  UINT8       VOLATILE    *ui8;
-  UINT16      VOLATILE    *ui16;
-  UINT32      VOLATILE    *ui32;
-  UINT64      VOLATILE    *ui64;
-  UINTN       VOLATILE    ui;
+  UINT8 VOLATILE  *buf;
+  UINT8 VOLATILE  *ui8;
+  UINT16 VOLATILE *ui16;
+  UINT32 VOLATILE *ui32;
+  UINT64 VOLATILE *ui64;
+  UINTN VOLATILE  ui;
 } PTR;
 
 STATIC
@@ -215,7 +214,6 @@ RootBridgeIoPciRW (
 //
 EFI_METRONOME_ARCH_PROTOCOL *mMetronome;
 EFI_CPU_IO_PROTOCOL         *mCpuIo;
-
 
 EFI_STATUS
 RootBridgeConstructor (
@@ -239,19 +237,23 @@ Returns:
     None
 
 --*/
+// TODO:    HostBridgeHandle - add argument and description to function comment
+// TODO:    Attri - add argument and description to function comment
+// TODO:    ResAppeture - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS                        Status;
-  PCI_ROOT_BRIDGE_INSTANCE          *PrivateData;
-  PCI_RESOURCE_TYPE                 Index;
+  EFI_STATUS                Status;
+  PCI_ROOT_BRIDGE_INSTANCE  *PrivateData;
+  PCI_RESOURCE_TYPE         Index;
 
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(Protocol);
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (Protocol);
 
   //
   // The host to pci bridge, the host memory and io addresses are
   // direct mapped to pci addresses, so no need translate, set bases to 0.
   //
-  PrivateData->MemBase = ResAppeture.MemBase;
-  PrivateData->IoBase  = ResAppeture.IoBase;
+  PrivateData->MemBase  = ResAppeture.MemBase;
+  PrivateData->IoBase   = ResAppeture.IoBase;
 
   //
   // The host bridge only supports 32bit addressing for memory
@@ -265,71 +267,73 @@ Returns:
   //
   PrivateData->BusBase  = ResAppeture.BusBase;
   PrivateData->BusLimit = ResAppeture.BusLimit;
-  
+
   //
   // Specific for ea815 chipset
   //
   for (Index = TypeIo; Index < TypeMax; Index++) {
-    PrivateData->ResAllocNode[Index].Type      = Index;
-    PrivateData->ResAllocNode[Index].Base      = 0;
-    PrivateData->ResAllocNode[Index].Length    = 0;
-    PrivateData->ResAllocNode[Index].Status    = ResNone;
+    PrivateData->ResAllocNode[Index].Type   = Index;
+    PrivateData->ResAllocNode[Index].Base   = 0;
+    PrivateData->ResAllocNode[Index].Length = 0;
+    PrivateData->ResAllocNode[Index].Status = ResNone;
   }
-  
 
   EfiInitializeLock (&PrivateData->PciLock, EFI_TPL_HIGH_LEVEL);
-  PrivateData->PciAddress = 0xCF8;
-  PrivateData->PciData    = 0xCFC;
+  PrivateData->PciAddress       = 0xCF8;
+  PrivateData->PciData          = 0xCFC;
 
   PrivateData->RootBridgeAttrib = Attri;
-  
-  PrivateData->Attributes  = 0;
-  PrivateData->Supports    = EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO | \
-                             EFI_PCI_ATTRIBUTE_ISA_IO         | EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO   | \
-                             EFI_PCI_ATTRIBUTE_VGA_MEMORY     | EFI_PCI_ATTRIBUTE_VGA_IO;                             
 
-  Protocol->ParentHandle   = HostBridgeHandle;
-  
-  Protocol->PollMem        = RootBridgeIoPollMem;
-  Protocol->PollIo         = RootBridgeIoPollIo;
+  PrivateData->Attributes       = 0;
+  PrivateData->Supports = EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO   |
+                          EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO |
+                          EFI_PCI_ATTRIBUTE_ISA_IO           |
+                          EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO   |
+                          EFI_PCI_ATTRIBUTE_VGA_MEMORY       |
+                          EFI_PCI_ATTRIBUTE_VGA_IO;
 
-  Protocol->Mem.Read       = RootBridgeIoMemRead;
-  Protocol->Mem.Write      = RootBridgeIoMemWrite;
+  Protocol->ParentHandle    = HostBridgeHandle;
 
-  Protocol->Io.Read        = RootBridgeIoIoRead;
-  Protocol->Io.Write       = RootBridgeIoIoWrite;
+  Protocol->PollMem         = RootBridgeIoPollMem;
+  Protocol->PollIo          = RootBridgeIoPollIo;
 
-  Protocol->CopyMem        = RootBridgeIoCopyMem;
+  Protocol->Mem.Read        = RootBridgeIoMemRead;
+  Protocol->Mem.Write       = RootBridgeIoMemWrite;
 
-  Protocol->Pci.Read       = RootBridgeIoPciRead;
-  Protocol->Pci.Write      = RootBridgeIoPciWrite;
+  Protocol->Io.Read         = RootBridgeIoIoRead;
+  Protocol->Io.Write        = RootBridgeIoIoWrite;
 
-  Protocol->Map            = RootBridgeIoMap;
-  Protocol->Unmap          = RootBridgeIoUnmap;
+  Protocol->CopyMem         = RootBridgeIoCopyMem;
 
-  Protocol->AllocateBuffer = RootBridgeIoAllocateBuffer;
-  Protocol->FreeBuffer     = RootBridgeIoFreeBuffer;
+  Protocol->Pci.Read        = RootBridgeIoPciRead;
+  Protocol->Pci.Write       = RootBridgeIoPciWrite;
 
-  Protocol->Flush          = RootBridgeIoFlush;
+  Protocol->Map             = RootBridgeIoMap;
+  Protocol->Unmap           = RootBridgeIoUnmap;
 
-  Protocol->GetAttributes  = RootBridgeIoGetAttributes;
-  Protocol->SetAttributes  = RootBridgeIoSetAttributes;
+  Protocol->AllocateBuffer  = RootBridgeIoAllocateBuffer;
+  Protocol->FreeBuffer      = RootBridgeIoFreeBuffer;
 
-  Protocol->Configuration  = RootBridgeIoConfiguration;
+  Protocol->Flush           = RootBridgeIoFlush;
 
-  Protocol->SegmentNumber  = 0;
+  Protocol->GetAttributes   = RootBridgeIoGetAttributes;
+  Protocol->SetAttributes   = RootBridgeIoSetAttributes;
 
-  Status = gBS->LocateProtocol (&gEfiMetronomeArchProtocolGuid, NULL, &mMetronome);
+  Protocol->Configuration   = RootBridgeIoConfiguration;
+
+  Protocol->SegmentNumber   = 0;
+
+  Status                    = gBS->LocateProtocol (&gEfiMetronomeArchProtocolGuid, NULL, &mMetronome);
   ASSERT_EFI_ERROR (Status);
 
   Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &mCpuIo);
-  ASSERT_EFI_ERROR(Status);
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
-RootBridgeIoPollMem ( 
+RootBridgeIoPollMem (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -347,7 +351,20 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Mask - add argument and description to function comment
+// TODO:    Value - add argument and description to function comment
+// TODO:    Delay - add argument and description to function comment
+// TODO:    Result - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
 {
   EFI_STATUS  Status;
   UINT64      NumberOfTicks;
@@ -365,16 +382,17 @@ Returns:
   // No matter what, always do a single poll.
   //
   Status = This->Mem.Read (This, Width, Address, 1, Result);
-  if ( EFI_ERROR(Status) ) {
+  if (EFI_ERROR (Status)) {
     return Status;
-  }    
-  if ( (*Result & Mask) == Value ) {
+  }
+
+  if ((*Result & Mask) == Value) {
     return EFI_SUCCESS;
   }
 
-  if ( Delay == 0 ) {
+  if (Delay == 0) {
     return EFI_SUCCESS;
-  
+
   } else {
 
     //
@@ -384,32 +402,34 @@ Returns:
     // because we started in the middle of a tick.
     //
     NumberOfTicks = DivU64x32 (Delay, mMetronome->TickPeriod, &Remainder);
-    if ( Remainder !=0 ) {
+    if (Remainder != 0) {
       NumberOfTicks += 1;
     }
+
     NumberOfTicks += 1;
-  
-    while ( NumberOfTicks ) {
+
+    while (NumberOfTicks) {
 
       mMetronome->WaitForTick (mMetronome, 1);
-    
+
       Status = This->Mem.Read (This, Width, Address, 1, Result);
-      if ( EFI_ERROR(Status) ) {
+      if (EFI_ERROR (Status)) {
         return Status;
       }
-    
-      if ( (*Result & Mask) == Value ) {
+
+      if ((*Result & Mask) == Value) {
         return EFI_SUCCESS;
       }
 
       NumberOfTicks -= 1;
     }
   }
+
   return EFI_TIMEOUT;
 }
-  
+
 EFI_STATUS
-RootBridgeIoPollIo ( 
+RootBridgeIoPollIo (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
   IN  UINT64                                 Address,
@@ -427,7 +447,20 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Mask - add argument and description to function comment
+// TODO:    Value - add argument and description to function comment
+// TODO:    Delay - add argument and description to function comment
+// TODO:    Result - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_TIMEOUT - add return value to function comment
 {
   EFI_STATUS  Status;
   UINT64      NumberOfTicks;
@@ -444,18 +477,19 @@ Returns:
   if (Width < 0 || Width > EfiPciWidthUint64) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   Status = This->Io.Read (This, Width, Address, 1, Result);
-  if ( EFI_ERROR(Status) ) {
+  if (EFI_ERROR (Status)) {
     return Status;
-  }    
-  if ( (*Result & Mask) == Value ) {
+  }
+
+  if ((*Result & Mask) == Value) {
     return EFI_SUCCESS;
   }
 
-  if ( Delay == 0 ) {
+  if (Delay == 0) {
     return EFI_SUCCESS;
-  
+
   } else {
 
     //
@@ -464,28 +498,30 @@ Returns:
     // The "+1" to account for the possibility of the first tick being short
     // because we started in the middle of a tick.
     //
-    NumberOfTicks = DivU64x32 (Delay, (UINT32)mMetronome->TickPeriod, &Remainder);
-    if ( Remainder !=0 ) {
+    NumberOfTicks = DivU64x32 (Delay, (UINT32) mMetronome->TickPeriod, &Remainder);
+    if (Remainder != 0) {
       NumberOfTicks += 1;
     }
+
     NumberOfTicks += 1;
-  
-    while ( NumberOfTicks ) {
+
+    while (NumberOfTicks) {
 
       mMetronome->WaitForTick (mMetronome, 1);
-    
+
       Status = This->Io.Read (This, Width, Address, 1, Result);
-      if ( EFI_ERROR(Status) ) {
+      if (EFI_ERROR (Status)) {
         return Status;
       }
-    
-      if ( (*Result & Mask) == Value ) {
+
+      if ((*Result & Mask) == Value) {
         return EFI_SUCCESS;
       }
 
       NumberOfTicks -= 1;
     }
   }
+
   return EFI_TIMEOUT;
 }
 
@@ -506,16 +542,26 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  PCI_ROOT_BRIDGE_INSTANCE *PrivateData;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH     OldWidth;
-  UINTN                                     OldCount;
-  UINTN                                     AlignMask;
-  VOID                                      *Buf, *ptr;
-  EFI_STATUS                                Status;
-  
-  if ( Buffer == NULL ) {
+  PCI_ROOT_BRIDGE_INSTANCE              *PrivateData;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH OldWidth;
+  UINTN                                 OldCount;
+  UINTN                                 AlignMask;
+  VOID                                  *Buf;
+  VOID                                  *ptr;
+  EFI_STATUS                            Status;
+
+  if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -523,42 +569,54 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
 
   //
   // Check memory access limit
   //
-  if ( Address < PrivateData->MemBase ) {
+  if (Address < PrivateData->MemBase) {
     return EFI_INVALID_PARAMETER;
   }
 
-  OldWidth = Width;
-  OldCount = Count;
+  OldWidth  = Width;
+  OldCount  = Count;
   if (Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint64) {
     Count = 1;
   }
+
   Width &= 0x03;
-    
-  if ( Address + (1 << Width) * Count - 1 > PrivateData->MemLimit ) {
+
+  if (Address + (1 << Width) * Count - 1 > PrivateData->MemLimit) {
     return EFI_INVALID_PARAMETER;
   }
 
   AlignMask = (1 << Width) - 1;
-  if ((UINTN)Buffer & AlignMask) {  
+  if ((UINTN) Buffer & AlignMask) {
     Status = gBS->AllocatePool (
-                    EfiBootServicesData, 
-                    (1 << Width) * (OldCount + 1), 
+                    EfiBootServicesData,
+                    (1 << Width) * (OldCount + 1),
                     &Buf
                     );
-    ptr = (VOID *)(((UINTN)(((UINTN) Buf) & ~(AlignMask))) + (1 << Width));
-    Status = mCpuIo->Mem.Read (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address, OldCount, ptr);
-    EfiCopyMem(Buffer, ptr, (1 << Width) * OldCount);
+    ptr = (VOID *) (((UINTN) (((UINTN) Buf) &~(AlignMask))) + (1 << Width));
+    Status = mCpuIo->Mem.Read (
+                          mCpuIo,
+                          (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                          Address,
+                          OldCount,
+                          ptr
+                          );
+    EfiCopyMem (Buffer, ptr, (1 << Width) * OldCount);
     gBS->FreePool (Buf);
   } else {
-    Status = mCpuIo->Mem.Read (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address, OldCount, Buffer);
-  }                       
+    Status = mCpuIo->Mem.Read (
+                          mCpuIo,
+                          (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                          Address,
+                          OldCount,
+                          Buffer
+                          );
+  }
+
   return Status;
 }
 
@@ -579,16 +637,26 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  PCI_ROOT_BRIDGE_INSTANCE *PrivateData;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH       OldWidth;
-  UINTN                                     OldCount;
-  UINTN                                     AlignMask;
-  VOID                                      *Buf, *ptr;
-  EFI_STATUS                                Status;  
+  PCI_ROOT_BRIDGE_INSTANCE              *PrivateData;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH OldWidth;
+  UINTN                                 OldCount;
+  UINTN                                 AlignMask;
+  VOID                                  *Buf;
+  VOID                                  *ptr;
+  EFI_STATUS                            Status;
 
-  if ( Buffer == NULL ) {
+  if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -596,42 +664,54 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
 
   //
   // Check memory access limit
   //
-  if ( Address < PrivateData->MemBase ) {
+  if (Address < PrivateData->MemBase) {
     return EFI_INVALID_PARAMETER;
   }
 
-  OldWidth = Width;
-  OldCount = Count;
+  OldWidth  = Width;
+  OldCount  = Count;
   if (Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint64) {
     Count = 1;
   }
+
   Width &= 0x03;
-  
-  if ( Address + (1 << Width) * Count - 1 > PrivateData->MemLimit ) {
+
+  if (Address + (1 << Width) * Count - 1 > PrivateData->MemLimit) {
     return EFI_INVALID_PARAMETER;
   }
 
   AlignMask = (1 << Width) - 1;
-  if ((UINTN)Buffer & AlignMask) {
+  if ((UINTN) Buffer & AlignMask) {
     Status = gBS->AllocatePool (
-                    EfiBootServicesData, 
-                    (1 << Width) * (OldCount + 1), 
+                    EfiBootServicesData,
+                    (1 << Width) * (OldCount + 1),
                     &Buf
-                    );    
-    ptr = (VOID *)(((UINTN)(((UINTN) Buf) & ~(AlignMask))) + (1 << Width));
-    EfiCopyMem(ptr, Buffer, (1 << Width) * OldCount);
-    Status = mCpuIo->Mem.Write (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address, OldCount, ptr);
+                    );
+    ptr = (VOID *) (((UINTN) (((UINTN) Buf) &~(AlignMask))) + (1 << Width));
+    EfiCopyMem (ptr, Buffer, (1 << Width) * OldCount);
+    Status = mCpuIo->Mem.Write (
+                          mCpuIo,
+                          (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                          Address,
+                          OldCount,
+                          ptr
+                          );
     gBS->FreePool (Buf);
   } else {
-    Status = mCpuIo->Mem.Write (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address, OldCount, Buffer);
-  }                    
+    Status = mCpuIo->Mem.Write (
+                          mCpuIo,
+                          (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                          Address,
+                          OldCount,
+                          Buffer
+                          );
+  }
+
   return Status;
 }
 
@@ -652,83 +732,106 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  
-  
-  UINTN                                     AlignMask;
-  PCI_ROOT_BRIDGE_INSTANCE                  *PrivateData;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH     OldWidth;
-  UINTN                                     OldCount;
-  UINTN                                     Counter;
-  UINTN                                     InStride;
-  UINTN                                     OutStride;
-  CHAR8                                     Buf[16], *Ptr, *TempBuf;
-  EFI_STATUS                                Status;  
 
-  if ( Buffer == NULL ) {
+  UINTN                                 AlignMask;
+  PCI_ROOT_BRIDGE_INSTANCE              *PrivateData;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH OldWidth;
+  UINTN                                 OldCount;
+  UINTN                                 Counter;
+  UINTN                                 InStride;
+  UINTN                                 OutStride;
+  CHAR8                                 Buf[16];
+  CHAR8                                 *Ptr;
+  CHAR8                                 *TempBuf;
+  EFI_STATUS                            Status;
+
+  if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (Width < 0 || Width >= EfiPciWidthMaximum) {
     return EFI_INVALID_PARAMETER;
   }
-  
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
 
-  //AlignMask = (1 << Width) - 1;
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
+
   AlignMask = (1 << (Width & 0x03)) - 1;
 
   //
   // check Io access limit
   //
-  if ( Address < PrivateData->IoBase ) {
+  if (Address < PrivateData->IoBase) {
     return EFI_INVALID_PARAMETER;
   }
 
-  OldWidth = Width;
-  OldCount = Count;
+  OldWidth  = Width;
+  OldCount  = Count;
   if (Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint64) {
     Count = 1;
   }
+
   Width &= 0x03;
-  
-  if ( Address + (1 << Width) * Count - 1 >= PrivateData->IoLimit ) {
+
+  if (Address + (1 << Width) * Count - 1 >= PrivateData->IoLimit) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ( Address & AlignMask ) {
+  if (Address & AlignMask) {
     return EFI_INVALID_PARAMETER;
   }
 
-  
   Counter = OldCount;
   TempBuf = (CHAR8 *) Buffer;
-  Status = EFI_SUCCESS;
-  if ((UINTN)Buffer & AlignMask) {  
-    Ptr = (CHAR8 *)(((UINTN)(((UINTN) Buf) & ~(AlignMask))) + (1 << Width));
+  Status  = EFI_SUCCESS;
+  if ((UINTN) Buffer & AlignMask) {
+    Ptr = (CHAR8 *) (((UINTN) (((UINTN) Buf) &~(AlignMask))) + (1 << Width));
     while (Counter > 0) {
-      InStride = (OldCount - Counter) << Width;
+      InStride  = (OldCount - Counter) << Width;
       OutStride = (OldCount - Counter) << Width;
-      if (Width >=EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
+      if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
         InStride = 0;
       }
-      if (Width >=EfiCpuIoWidthFillUint8 && Width <= EfiCpuIoWidthFillUint64) {
+
+      if (Width >= EfiCpuIoWidthFillUint8 && Width <= EfiCpuIoWidthFillUint64) {
         OutStride = 0;
       }
-      Status = mCpuIo->Io.Read (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address + InStride, 1, (VOID *)Ptr);
-      if (EFI_ERROR(Status)) {
+
+      Status = mCpuIo->Io.Read (
+                            mCpuIo,
+                            (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                            Address + InStride,
+                            1,
+                            (VOID *) Ptr
+                            );
+      if (EFI_ERROR (Status)) {
         return Status;
       }
-      EfiCopyMem(TempBuf + OutStride, Ptr, (1 << Width));
+
+      EfiCopyMem (TempBuf + OutStride, Ptr, (1 << Width));
       Counter--;
     };
 
   } else {
-    Status = mCpuIo->Io.Read (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                      Address, OldCount, Buffer);
-  }                       
+    Status = mCpuIo->Io.Read (
+                          mCpuIo,
+                          (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                          Address,
+                          OldCount,
+                          Buffer
+                          );
+  }
 
   return Status;
 
@@ -751,19 +854,31 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  UINTN                                     AlignMask;
-  PCI_ROOT_BRIDGE_INSTANCE                  *PrivateData;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH     OldWidth;
-  UINTN                                     OldCount;
-  UINTN                                     Counter;
-  UINTN                                     InStride;
-  UINTN                                     OutStride;
-  CHAR8                                     Buf[16], *Ptr, *TempBuf;
-  EFI_STATUS                                Status;  
+  UINTN                                 AlignMask;
+  PCI_ROOT_BRIDGE_INSTANCE              *PrivateData;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH OldWidth;
+  UINTN                                 OldCount;
+  UINTN                                 Counter;
+  UINTN                                 InStride;
+  UINTN                                 OutStride;
+  CHAR8                                 Buf[16];
+  CHAR8                                 *Ptr;
+  CHAR8                                 *TempBuf;
+  EFI_STATUS                            Status;
 
-  if ( Buffer == NULL ) {
+  if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -771,59 +886,73 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
 
-  AlignMask = (1 << (Width & 0x03)) - 1;
+  AlignMask   = (1 << (Width & 0x03)) - 1;
 
   //
   // Check Io access limit
   //
-  if ( Address < PrivateData->IoBase ) {
+  if (Address < PrivateData->IoBase) {
     return EFI_INVALID_PARAMETER;
   }
 
-  OldWidth = Width;
-  OldCount = Count;
+  OldWidth  = Width;
+  OldCount  = Count;
   if (Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint64) {
     Count = 1;
   }
+
   Width &= 0x03;
-  
-  if ( Address + (1 << Width) * Count - 1 >= PrivateData->IoLimit ) {
+
+  if (Address + (1 << Width) * Count - 1 >= PrivateData->IoLimit) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ( Address & AlignMask ) {
+  if (Address & AlignMask) {
     return EFI_INVALID_PARAMETER;
   }
 
   Counter = OldCount;
   TempBuf = (CHAR8 *) Buffer;
-  Status = EFI_SUCCESS;  
-  if ((UINTN)Buffer & AlignMask) {  
-    Ptr = (CHAR8 *)(((UINTN)(((UINTN) Buf) & ~(AlignMask))) + (1 << Width));
+  Status  = EFI_SUCCESS;
+  if ((UINTN) Buffer & AlignMask) {
+    Ptr = (CHAR8 *) (((UINTN) (((UINTN) Buf) &~(AlignMask))) + (1 << Width));
     while (Counter > 0) {
-      InStride = (OldCount - Counter) << Width;
+      InStride  = (OldCount - Counter) << Width;
       OutStride = (OldCount - Counter) << Width;
-      if (Width >=EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
+      if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
         InStride = 0;
       }
-      if (Width >=EfiCpuIoWidthFillUint8 && Width <= EfiCpuIoWidthFillUint64) {
+
+      if (Width >= EfiCpuIoWidthFillUint8 && Width <= EfiCpuIoWidthFillUint64) {
         OutStride = 0;
-      }   
-      EfiCopyMem(Ptr, TempBuf + OutStride, (1 << Width));
-      Status = mCpuIo->Io.Write (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address + InStride, 1, (VOID *)Ptr);
-      if (EFI_ERROR(Status)) {
+      }
+
+      EfiCopyMem (Ptr, TempBuf + OutStride, (1 << Width));
+      Status = mCpuIo->Io.Write (
+                            mCpuIo,
+                            (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                            Address + InStride,
+                            1,
+                            (VOID *) Ptr
+                            );
+      if (EFI_ERROR (Status)) {
         return Status;
-      }                     
-      Counter--;  
+      }
+
+      Counter--;
     }
 
   } else {
-    Status = mCpuIo->Io.Write (mCpuIo, (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth, 
-                       Address, OldCount, Buffer);
-  }                       
+    Status = mCpuIo->Io.Write (
+                          mCpuIo,
+                          (EFI_CPU_IO_PROTOCOL_WIDTH) OldWidth,
+                          Address,
+                          OldCount,
+                          Buffer
+                          );
+  }
 
   return Status;
 
@@ -847,17 +976,25 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    DestAddress - add argument and description to function comment
+// TODO:    SrcAddress - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS  Status;
   BOOLEAN     Direction;
   UINTN       Stride;
   UINTN       Index;
   UINT8       Buffer[16];
-  UINT8*      Result;
+  UINT8       *Result;
 
   if (Width < 0 || Width > EfiPciWidthUint64) {
     return EFI_INVALID_PARAMETER;
-  }    
+  }
 
   if (DestAddress == SrcAddress) {
     return EFI_SUCCESS;
@@ -866,46 +1003,49 @@ Returns:
   //
   // Align result buffer
   //
-  Result = (UINT8*)((UINTN)(Buffer + 8) & (UINTN)(-8));
-  
-  Stride = 1 << Width;
+  Result    = (UINT8 *) ((UINTN) (Buffer + 8) & (UINTN) (-8));
+
+  Stride    = 1 << Width;
 
   Direction = TRUE;
   if ((DestAddress > SrcAddress) && (DestAddress < (SrcAddress + Count * Stride))) {
     Direction   = FALSE;
-    SrcAddress  = SrcAddress  + (Count-1) * Stride;
-    DestAddress = DestAddress + (Count-1) * Stride;
+    SrcAddress  = SrcAddress + (Count - 1) * Stride;
+    DestAddress = DestAddress + (Count - 1) * Stride;
   }
 
-  for (Index = 0;Index < Count;Index++) {
+  for (Index = 0; Index < Count; Index++) {
     Status = RootBridgeIoMemRead (
-               This,
-               Width,
-               SrcAddress,
-               1,
-               Result
-               );
+              This,
+              Width,
+              SrcAddress,
+              1,
+              Result
+              );
     if (EFI_ERROR (Status)) {
       return Status;
     }
+
     Status = RootBridgeIoMemWrite (
-               This,
-               Width,
-               DestAddress,
-               1,
-               Result
-               );
+              This,
+              Width,
+              DestAddress,
+              1,
+              Result
+              );
     if (EFI_ERROR (Status)) {
       return Status;
     }
+
     if (Direction) {
-      SrcAddress  += Stride;
+      SrcAddress += Stride;
       DestAddress += Stride;
     } else {
-      SrcAddress  -= Stride;
+      SrcAddress -= Stride;
       DestAddress -= Stride;
     }
   }
+
   return EFI_SUCCESS;
 }
 
@@ -926,9 +1066,16 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  
+
   if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -946,9 +1093,9 @@ EFI_STATUS
 RootBridgeIoPciWrite (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
-  IN UINT64                        Address,
-  IN UINTN                         Count,
-  IN OUT VOID                      *Buffer
+  IN UINT64                                 Address,
+  IN UINTN                                  Count,
+  IN OUT VOID                               *Buffer
   )
 /*++
 
@@ -959,7 +1106,14 @@ Arguments:
     
 Returns:
 
---*/  
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    Address - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    Buffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -983,7 +1137,29 @@ RootBridgeIoMap (
   OUT    EFI_PHYSICAL_ADDRESS                       *DeviceAddress,
   OUT    VOID                                       **Mapping
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This          - TODO: add argument description
+  Operation     - TODO: add argument description
+  HostAddress   - TODO: add argument description
+  NumberOfBytes - TODO: add argument description
+  DeviceAddress - TODO: add argument description
+  Mapping       - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  PhysicalAddress;
@@ -1011,11 +1187,11 @@ RootBridgeIoMap (
   // map the DMA transfer to a buffer below 4GB.
   //
   PhysicalAddress = (EFI_PHYSICAL_ADDRESS) (UINTN) HostAddress;
-  if ((PhysicalAddress + *NumberOfBytes) > 0x100000000) {
+  if ((PhysicalAddress +*NumberOfBytes) > 0x100000000) {
 
     //
     // Common Buffer operations can not be remapped.  If the common buffer
-    // if above 4GB, then it is not possible to generate a mapping, so return 
+    // if above 4GB, then it is not possible to generate a mapping, so return
     // an error.
     //
     if (Operation == EfiPciOperationBusMasterCommonBuffer || Operation == EfiPciOperationBusMasterCommonBuffer64) {
@@ -1027,8 +1203,8 @@ RootBridgeIoMap (
     // called later.
     //
     Status = gBS->AllocatePool (
-                    EfiBootServicesData, 
-                    sizeof(MAP_INFO), 
+                    EfiBootServicesData,
+                    sizeof (MAP_INFO),
                     &MapInfo
                     );
     if (EFI_ERROR (Status)) {
@@ -1044,22 +1220,22 @@ RootBridgeIoMap (
     //
     // Initialize the MAP_INFO structure
     //
-    MapInfo->Operation         = Operation;
-    MapInfo->NumberOfBytes     = *NumberOfBytes;
-    MapInfo->NumberOfPages     = EFI_SIZE_TO_PAGES(*NumberOfBytes);
-    MapInfo->HostAddress       = PhysicalAddress;
-    MapInfo->MappedHostAddress = 0x00000000ffffffff;
+    MapInfo->Operation          = Operation;
+    MapInfo->NumberOfBytes      = *NumberOfBytes;
+    MapInfo->NumberOfPages      = EFI_SIZE_TO_PAGES (*NumberOfBytes);
+    MapInfo->HostAddress        = PhysicalAddress;
+    MapInfo->MappedHostAddress  = 0x00000000ffffffff;
 
     //
     // Allocate a buffer below 4GB to map the transfer to.
     //
     Status = gBS->AllocatePages (
-                    AllocateMaxAddress, 
-                    EfiBootServicesData, 
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
                     MapInfo->NumberOfPages,
                     &MapInfo->MappedHostAddress
                     );
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       gBS->FreePool (MapInfo);
       *NumberOfBytes = 0;
       return Status;
@@ -1072,8 +1248,8 @@ RootBridgeIoMap (
     //
     if (Operation == EfiPciOperationBusMasterRead || Operation == EfiPciOperationBusMasterRead64) {
       EfiCopyMem (
-        (VOID *)(UINTN)MapInfo->MappedHostAddress, 
-        (VOID *)(UINTN)MapInfo->HostAddress,
+        (VOID *) (UINTN) MapInfo->MappedHostAddress,
+        (VOID *) (UINTN) MapInfo->HostAddress,
         MapInfo->NumberOfBytes
         );
     }
@@ -1097,9 +1273,24 @@ RootBridgeIoUnmap (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN VOID                             *Mapping
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This    - TODO: add argument description
+  Mapping - TODO: add argument description
+
+Returns:
+
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
-  MAP_INFO    *MapInfo;
+  MAP_INFO  *MapInfo;
 
   //
   // See if the Map() operation associated with this Unmap() required a mapping buffer.
@@ -1109,7 +1300,7 @@ RootBridgeIoUnmap (
     //
     // Get the MAP_INFO structure from Mapping
     //
-    MapInfo = (MAP_INFO *)Mapping;
+    MapInfo = (MAP_INFO *) Mapping;
 
     //
     // If this is a write operation from the Bus Master's point of view,
@@ -1118,8 +1309,8 @@ RootBridgeIoUnmap (
     //
     if (MapInfo->Operation == EfiPciOperationBusMasterWrite || MapInfo->Operation == EfiPciOperationBusMasterWrite64) {
       EfiCopyMem (
-        (VOID *)(UINTN)MapInfo->HostAddress, 
-        (VOID *)(UINTN)MapInfo->MappedHostAddress,
+        (VOID *) (UINTN) MapInfo->HostAddress,
+        (VOID *) (UINTN) MapInfo->MappedHostAddress,
         MapInfo->NumberOfBytes
         );
     }
@@ -1130,6 +1321,7 @@ RootBridgeIoUnmap (
     gBS->FreePages (MapInfo->MappedHostAddress, MapInfo->NumberOfPages);
     gBS->FreePool (Mapping);
   }
+
   return EFI_SUCCESS;
 }
 
@@ -1142,7 +1334,30 @@ RootBridgeIoAllocateBuffer (
   OUT VOID                             **HostAddress,
   IN  UINT64                           Attributes
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  Type        - TODO: add argument description
+  MemoryType  - TODO: add argument description
+  Pages       - TODO: add argument description
+  HostAddress - TODO: add argument description
+  Attributes  - TODO: add argument description
+
+Returns:
+
+  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_UNSUPPORTED - TODO: Add description for return value
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  PhysicalAddress;
@@ -1161,7 +1376,7 @@ RootBridgeIoAllocateBuffer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((EFI_PHYSICAL_ADDRESS)(*HostAddress) > 0xffffffff) {
+  if ((EFI_PHYSICAL_ADDRESS) (*HostAddress) > 0xffffffff) {
     return EFI_UNSUPPORTED;
   }
   
@@ -1175,14 +1390,14 @@ RootBridgeIoAllocateBuffer (
   //
   // Limit allocations to memory below 4GB
   //
-  PhysicalAddress = (EFI_PHYSICAL_ADDRESS)(0xffffffff);
+  PhysicalAddress = (EFI_PHYSICAL_ADDRESS) (0xffffffff);
 
-  Status = gBS->AllocatePages (AllocateMaxAddress, MemoryType, Pages, &PhysicalAddress);
+  Status          = gBS->AllocatePages (AllocateMaxAddress, MemoryType, Pages, &PhysicalAddress);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  *HostAddress = (VOID *)(UINTN)PhysicalAddress;
+  *HostAddress = (VOID *) (UINTN) PhysicalAddress;
 
   return EFI_SUCCESS;
 }
@@ -1193,7 +1408,23 @@ RootBridgeIoFreeBuffer (
   IN  UINTN                            Pages,
   OUT VOID                             *HostAddress
   )
+/*++
 
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This        - TODO: add argument description
+  Pages       - TODO: add argument description
+  HostAddress - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   return gBS->FreePages ((EFI_PHYSICAL_ADDRESS) (UINTN) HostAddress, Pages);
 }
@@ -1211,6 +1442,8 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   //
   // not supported yet
@@ -1233,10 +1466,15 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Supported - add argument and description to function comment
+// TODO:    Attributes - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  PCI_ROOT_BRIDGE_INSTANCE *PrivateData;
+  PCI_ROOT_BRIDGE_INSTANCE  *PrivateData;
 
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
 
   if (Attributes == NULL && Supported == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1246,13 +1484,13 @@ Returns:
   // Set the return value for Supported and Attributes
   //
   if (Supported) {
-    *Supported  = PrivateData->Supports; 
+    *Supported = PrivateData->Supports;
   }
 
   if (Attributes) {
     *Attributes = PrivateData->Attributes;
   }
-  
+
   return EFI_SUCCESS;
 }
 
@@ -1261,7 +1499,7 @@ RootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
   IN OUT UINT64                           *ResourceBase,
-  IN OUT UINT64                           *ResourceLength 
+  IN OUT UINT64                           *ResourceLength
   )
 /*++
 
@@ -1272,45 +1510,52 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Attributes - add argument and description to function comment
+// TODO:    ResourceBase - add argument and description to function comment
+// TODO:    ResourceLength - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  PCI_ROOT_BRIDGE_INSTANCE            *PrivateData;
-  UINT64                              Address;
-  UINT16                              Data;
-  
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
-  
+  PCI_ROOT_BRIDGE_INSTANCE  *PrivateData;
+  UINT64                    Address;
+  UINT16                    Data;
+
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
+
   if (Attributes) {
     if ((Attributes & (~(PrivateData->Supports))) != 0) {
       return EFI_UNSUPPORTED;
     }
   }
-    
+
   if (Attributes == PrivateData->Attributes) {
     return EFI_SUCCESS;
   }
   
   //
-  // Set IDE primary 
+  // Set IDE primary
   //
   if (Attributes & EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO) {
-    
-    Address = EFI_PCI_ADDRESS(0x0, 0x1f, 0x1, 0x40) ;
 
-    This->Pci.Read(This, EfiPciWidthUint16 , Address, 1, &Data);
+    Address = EFI_PCI_ADDRESS (0x0, 0x1f, 0x1, 0x40);
+
+    This->Pci.Read (This, EfiPciWidthUint16, Address, 1, &Data);
     Data |= 0x8000;
-    This->Pci.Write(This, EfiPciWidthUint16 , Address, 1, &Data);
+    This->Pci.Write (This, EfiPciWidthUint16, Address, 1, &Data);
   }
   
   //
   // Set IDE secondary
   //
   if (Attributes & EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO) {
-    
-    Address = EFI_PCI_ADDRESS(0x0, 0x1f, 0x1, 0x42) ;
 
-    This->Pci.Read(This, EfiPciWidthUint16 , Address, 1, &Data);
+    Address = EFI_PCI_ADDRESS (0x0, 0x1f, 0x1, 0x42);
+
+    This->Pci.Read (This, EfiPciWidthUint16, Address, 1, &Data);
     Data |= 0x8000;
-    This->Pci.Write(This, EfiPciWidthUint16 , Address, 1, &Data);
+    This->Pci.Write (This, EfiPciWidthUint16, Address, 1, &Data);
   }
   
   //
@@ -1318,7 +1563,7 @@ Returns:
   // otherwise it can impact on other devices
   //
   PrivateData->Attributes = Attributes;
-  
+
   return EFI_SUCCESS;
 }
 
@@ -1336,22 +1581,25 @@ Arguments:
 Returns:
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Resources - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  PCI_ROOT_BRIDGE_INSTANCE    *PrivateData;
-  UINTN                       Index;
-
+  PCI_ROOT_BRIDGE_INSTANCE  *PrivateData;
+  UINTN                     Index;
 
   PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
-  
+
   for (Index = 0; Index < TypeMax; Index++) {
     if (PrivateData->ResAllocNode[Index].Status == ResAllocated) {
       mConfiguration.SpaceDesp[Index].AddrRangeMin = PrivateData->ResAllocNode[Index].Base;
-      mConfiguration.SpaceDesp[Index].AddrRangeMax = PrivateData->ResAllocNode[Index].Base + PrivateData->ResAllocNode[Index].Length - 1;
+      mConfiguration.SpaceDesp[Index].AddrRangeMax =
+      PrivateData->ResAllocNode[Index].Base + PrivateData->ResAllocNode[Index].Length - 1;
       mConfiguration.SpaceDesp[Index].AddrLen = PrivateData->ResAllocNode[Index].Length;
-    }  
-  }  
-    
-  *Resources = &mConfiguration;      
+    }
+  }
+
+  *Resources = &mConfiguration;
   return EFI_SUCCESS;
 }
 
@@ -1377,73 +1625,91 @@ Arguments:
     
 Returns:
 
---*/   
+--*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Write - add argument and description to function comment
+// TODO:    Width - add argument and description to function comment
+// TODO:    UserAddress - add argument and description to function comment
+// TODO:    Count - add argument and description to function comment
+// TODO:    UserBuffer - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  PCI_CONFIG_ACCESS_CF8             Pci;
-  PCI_CONFIG_ACCESS_CF8             PciAligned;
-  UINT32                            InStride;
-  UINT32                            OutStride;
-  UINTN                             PciData;
-  UINTN                             PciDataStride;
-  PCI_ROOT_BRIDGE_INSTANCE          *PrivateData;
+  PCI_CONFIG_ACCESS_CF8     Pci;
+  PCI_CONFIG_ACCESS_CF8     PciAligned;
+  UINT32                    InStride;
+  UINT32                    OutStride;
+  UINTN                     PciData;
+  UINTN                     PciDataStride;
+  PCI_ROOT_BRIDGE_INSTANCE  *PrivateData;
 
   if ((Width & 0x03) >= EfiPciWidthUint64) {
     return EFI_INVALID_PARAMETER;
   }
 
-  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS(This);
+  PrivateData = DRIVER_INSTANCE_FROM_PCI_ROOT_BRIDGE_IO_THIS (This);
 
-  InStride = 1 << (Width & 0x03);
-  OutStride = InStride;
-  if (Width >=EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
+  InStride    = 1 << (Width & 0x03);
+  OutStride   = InStride;
+  if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
     InStride = 0;
   }
-  if (Width >=EfiCpuIoWidthFillUint8 && Width <= EfiCpuIoWidthFillUint64) {
+
+  if (Width >= EfiCpuIoWidthFillUint8 && Width <= EfiCpuIoWidthFillUint64) {
     OutStride = 0;
   }
 
-  if (((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &UserAddress)->ExtendedRegister != 0) {
+  if (((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *) &UserAddress)->ExtendedRegister != 0) {
     //
-    //For Pci bus driver has made parameter check before calling this function,
-    //there is no need to check the parameters again here
+    // For Pci bus driver has made parameter check before calling this function,
+    // there is no need to check the parameters again here
     //
     return EFI_UNSUPPORTED;
   } else {
-    Pci.Reg = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &UserAddress)->Register;
+    Pci.Reg = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *) &UserAddress)->Register;
   }
-  Pci.Func = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &UserAddress)->Function;
-  Pci.Dev = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &UserAddress)->Device;
-  Pci.Bus = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &UserAddress)->Bus;
-  Pci.Reserved = 0;
-  Pci.Enable = 1;
+
+  Pci.Func      = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *) &UserAddress)->Function;
+  Pci.Dev       = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *) &UserAddress)->Device;
+  Pci.Bus       = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *) &UserAddress)->Bus;
+  Pci.Reserved  = 0;
+  Pci.Enable    = 1;
 
   //
   // PCI Configure access are all 32-bit aligned, but by accessing the
   //  CONFIG_DATA_REGISTER (0xcfc) with different widths more cycle types
   //  are possible on PCI.
   //
-  // To read a byte of PCI configuration space you load 0xcf8 and 
+  // To read a byte of PCI configuration space you load 0xcf8 and
   //  read 0xcfc, 0xcfd, 0xcfe, 0xcff
   //
-  PciDataStride = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &UserAddress)->Register & 0x03;
+  PciDataStride = ((EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS *) &UserAddress)->Register & 0x03;
 
   while (Count) {
     PciAligned = Pci;
     PciAligned.Reg &= 0xfc;
     PciData = PrivateData->PciData + PciDataStride;
-    EfiAcquireLock(&PrivateData->PciLock);
-    This->Io.Write (This, EfiPciWidthUint32, \
-                    PrivateData->PciAddress, 1, &PciAligned);
+    EfiAcquireLock (&PrivateData->PciLock);
+    This->Io.Write (
+              This,
+              EfiPciWidthUint32,
+              PrivateData->PciAddress,
+              1,
+              &PciAligned
+              );
     if (Write) {
       This->Io.Write (This, Width, PciData, 1, UserBuffer);
     } else {
       This->Io.Read (This, Width, PciData, 1, UserBuffer);
     }
-    EfiReleaseLock(&PrivateData->PciLock);
-    UserBuffer = ((UINT8 *)UserBuffer) + OutStride;
+
+    EfiReleaseLock (&PrivateData->PciLock);
+    UserBuffer    = ((UINT8 *) UserBuffer) + OutStride;
     PciDataStride = (PciDataStride + InStride) % 4;
     Pci.Reg += InStride;
     Count -= 1;
   }
+
   return EFI_SUCCESS;
 }

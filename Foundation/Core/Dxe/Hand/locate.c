@@ -105,11 +105,11 @@ Arguments:
 
 Returns:
 
-  Status code.
-  On success, BufferSize and Buffer is returned
-  On EFI_BUFFER_TOO_SMALL, BufferSize is returned
+  EFI_BUFFER_TOO_SMALL      - Buffer too small, required buffer size is returned in BufferSize.
 
-  On succes, the registration record that has been added
+  EFI_INVALID_PARAMETER     - Invalid parameter
+  
+  EFI_SUCCESS               - Successfully found the requested handle(s) and returns them in Buffer.
   
 --*/
 {
@@ -544,9 +544,9 @@ EFI_BOOTSERVICE11
 EFI_STATUS
 EFIAPI
 CoreLocateProtocol (
-  EFI_GUID  *Protocol,
-  VOID      *Registration OPTIONAL,
-  VOID      **Interface
+  IN  EFI_GUID  *Protocol,
+  IN  VOID      *Registration OPTIONAL,
+  OUT VOID      **Interface
   )
 /*++
 
@@ -568,7 +568,10 @@ Arguments:
 Returns:
 
   EFI_SUCCESS - If a valid Interface is returned
-  other       - Interface not found and NULL is returned.
+  
+  EFI_INVALID_PARAMETER       - Invalid parameter
+  
+  EFI_NOT_FOUND               - Protocol interface not found
 
 --*/
 {
@@ -668,6 +671,7 @@ Returns:
   EFI_SUCCESS          - The result array of handles was returned.
   EFI_NOT_FOUND        - No handles match the search. 
   EFI_OUT_OF_RESOURCES - There is not enough pool memory to store the matching results.
+  EFI_INVALID_PARAMETER   - Invalid parameter
 
 --*/
 {

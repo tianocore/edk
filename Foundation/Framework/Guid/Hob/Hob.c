@@ -22,9 +22,8 @@ Abstract:
 --*/
 
 #include "Tiano.h"
-#include EFI_GUID_DEFINITION(Hob)
+#include EFI_GUID_DEFINITION (Hob)
 
-EFI_GUID gEfiHobListGuid  = EFI_HOB_LIST_GUID;
+EFI_GUID  gEfiHobListGuid = EFI_HOB_LIST_GUID;
 
 EFI_GUID_STRING(&gEfiHobListGuid, "HOB List", "HOB List GUID in EFI System Table");
-

@@ -20,9 +20,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
  Revision History
 
 --*/
+
 #include "UsbDxeLib.h"
 
-#define TIMEOUT_VALUE  3*1000
+#define TIMEOUT_VALUE 3 * 1000
 //
 // Get Device Descriptor
 //
@@ -35,6 +36,26 @@ UsbGetDescriptor (
   IN  VOID                    *Descriptor,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo             - TODO: add argument description
+  Value             - TODO: add argument description
+  Index             - TODO: add argument description
+  DescriptorLength  - TODO: add argument description
+  Descriptor        - TODO: add argument description
+  Status            - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -43,15 +64,15 @@ UsbGetDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_GET_DESCRIPTOR_REQ_TYPE ;
-  DevReq.Request = USB_DEV_GET_DESCRIPTOR ;
-  DevReq.Value = Value ;
-  DevReq.Index = Index ;
-  DevReq.Length = DescriptorLength ;
+  DevReq.RequestType  = USB_DEV_GET_DESCRIPTOR_REQ_TYPE;
+  DevReq.Request      = USB_DEV_GET_DESCRIPTOR;
+  DevReq.Value        = Value;
+  DevReq.Index        = Index;
+  DevReq.Length       = DescriptorLength;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -62,7 +83,6 @@ UsbGetDescriptor (
                   Status
                   );
 }
-
 //
 // Set Device Descriptor
 //
@@ -75,6 +95,26 @@ UsbSetDescriptor (
   IN  VOID                    *Descriptor,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo             - TODO: add argument description
+  Value             - TODO: add argument description
+  Index             - TODO: add argument description
+  DescriptorLength  - TODO: add argument description
+  Descriptor        - TODO: add argument description
+  Status            - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -83,15 +123,15 @@ UsbSetDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_SET_DESCRIPTOR_REQ_TYPE ;
-  DevReq.Request = USB_DEV_SET_DESCRIPTOR ;
-  DevReq.Value = Value ;
-  DevReq.Index = Index ;
-  DevReq.Length = DescriptorLength ;
+  DevReq.RequestType  = USB_DEV_SET_DESCRIPTOR_REQ_TYPE;
+  DevReq.Request      = USB_DEV_SET_DESCRIPTOR;
+  DevReq.Value        = Value;
+  DevReq.Index        = Index;
+  DevReq.Length       = DescriptorLength;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -102,7 +142,6 @@ UsbSetDescriptor (
                   Status
                   );
 }
-
 //
 // Set Address
 //
@@ -112,6 +151,23 @@ UsbSetDeviceAddress (
   IN  UINT16                  AddressValue,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo         - TODO: add argument description
+  AddressValue  - TODO: add argument description
+  Status        - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -120,15 +176,15 @@ UsbSetDeviceAddress (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_SET_ADDRESS_REQ_TYPE ;
-  DevReq.Request = USB_DEV_SET_ADDRESS ;
-  DevReq.Value = AddressValue ;
-  DevReq.Index = 0 ;
-  DevReq.Length = 0 ;
+  DevReq.RequestType  = USB_DEV_SET_ADDRESS_REQ_TYPE;
+  DevReq.Request      = USB_DEV_SET_ADDRESS;
+  DevReq.Value        = AddressValue;
+  DevReq.Index        = 0;
+  DevReq.Length       = 0;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -139,7 +195,6 @@ UsbSetDeviceAddress (
                   Status
                   );
 }
-
 //
 // Get device Interface
 //
@@ -150,6 +205,24 @@ UsbGetDeviceInterface (
   OUT UINT8                   *AltSetting,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo       - TODO: add argument description
+  Index       - TODO: add argument description
+  AltSetting  - TODO: add argument description
+  Status      - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -158,15 +231,15 @@ UsbGetDeviceInterface (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_GET_INTERFACE_REQ_TYPE ;
-  DevReq.Request = USB_DEV_GET_INTERFACE ;
-  DevReq.Value = 0 ;
-  DevReq.Index = Index ;
-  DevReq.Length = 1 ;
+  DevReq.RequestType  = USB_DEV_GET_INTERFACE_REQ_TYPE;
+  DevReq.Request      = USB_DEV_GET_INTERFACE;
+  DevReq.Value        = 0;
+  DevReq.Index        = Index;
+  DevReq.Length       = 1;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -177,7 +250,6 @@ UsbGetDeviceInterface (
                   Status
                   );
 }
-
 //
 // Set device interface
 //
@@ -188,6 +260,24 @@ UsbSetDeviceInterface (
   IN  UINT16                  AltSetting,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo       - TODO: add argument description
+  InterfaceNo - TODO: add argument description
+  AltSetting  - TODO: add argument description
+  Status      - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -196,15 +286,15 @@ UsbSetDeviceInterface (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_SET_INTERFACE_REQ_TYPE ;
-  DevReq.Request = USB_DEV_SET_INTERFACE ;
-  DevReq.Value = AltSetting ;
-  DevReq.Index = InterfaceNo ;
-  DevReq.Length = 0 ;
+  DevReq.RequestType  = USB_DEV_SET_INTERFACE_REQ_TYPE;
+  DevReq.Request      = USB_DEV_SET_INTERFACE;
+  DevReq.Value        = AltSetting;
+  DevReq.Index        = InterfaceNo;
+  DevReq.Length       = 0;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -215,7 +305,6 @@ UsbSetDeviceInterface (
                   Status
                   );
 }
-
 //
 // Get device configuration
 //
@@ -225,6 +314,23 @@ UsbGetDeviceConfiguration (
   OUT UINT8                   *ConfigValue,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo       - TODO: add argument description
+  ConfigValue - TODO: add argument description
+  Status      - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -233,15 +339,15 @@ UsbGetDeviceConfiguration (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_GET_CONFIGURATION_REQ_TYPE ;
-  DevReq.Request = USB_DEV_GET_CONFIGURATION ;
-  DevReq.Value = 0 ;
-  DevReq.Index = 0 ;
-  DevReq.Length = 1 ;
+  DevReq.RequestType  = USB_DEV_GET_CONFIGURATION_REQ_TYPE;
+  DevReq.Request      = USB_DEV_GET_CONFIGURATION;
+  DevReq.Value        = 0;
+  DevReq.Index        = 0;
+  DevReq.Length       = 1;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -252,7 +358,6 @@ UsbGetDeviceConfiguration (
                   Status
                   );
 }
-
 //
 // Set device configuration
 //
@@ -262,6 +367,23 @@ UsbSetDeviceConfiguration (
   IN  UINT16                  Value,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo   - TODO: add argument description
+  Value   - TODO: add argument description
+  Status  - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -270,15 +392,15 @@ UsbSetDeviceConfiguration (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
-  DevReq.RequestType = USB_DEV_SET_CONFIGURATION_REQ_TYPE ;
-  DevReq.Request = USB_DEV_SET_CONFIGURATION ;
-  DevReq.Value = Value ;
-  DevReq.Index = 0 ;
-  DevReq.Length = 0 ;
+  DevReq.RequestType  = USB_DEV_SET_CONFIGURATION_REQ_TYPE;
+  DevReq.Request      = USB_DEV_SET_CONFIGURATION;
+  DevReq.Value        = Value;
+  DevReq.Index        = 0;
+  DevReq.Length       = 0;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout             = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -289,7 +411,6 @@ UsbSetDeviceConfiguration (
                   Status
                   );
 }
-
 //
 //  Set Device Feature
 //
@@ -301,6 +422,25 @@ UsbSetDeviceFeature (
   IN  UINT16                  Target,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Recipient - TODO: add argument description
+  Value     - TODO: add argument description
+  Target    - TODO: add argument description
+  Status    - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -309,31 +449,31 @@ UsbSetDeviceFeature (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   switch (Recipient) {
   case EfiUsbDevice:
-    DevReq.RequestType = 0x00 ;
-    break ;
+    DevReq.RequestType = 0x00;
+    break;
 
   case EfiUsbInterface:
-    DevReq.RequestType = 0x01 ;
-    break ;
+    DevReq.RequestType = 0x01;
+    break;
 
   case EfiUsbEndpoint:
-    DevReq.RequestType = 0x02 ;
-    break ;
+    DevReq.RequestType = 0x02;
+    break;
   }
 
   //
   // Fill device request, see USB1.1 spec
   //
-  DevReq.Request = USB_DEV_SET_FEATURE ;
-  DevReq.Value = Value ;
-  DevReq.Index = Target ;
-  DevReq.Length = 0 ;
+  DevReq.Request  = USB_DEV_SET_FEATURE;
+  DevReq.Value    = Value;
+  DevReq.Index    = Target;
+  DevReq.Length   = 0;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout         = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -344,7 +484,6 @@ UsbSetDeviceFeature (
                   Status
                   );
 }
-
 
 //
 // Clear Device Feature
@@ -357,6 +496,25 @@ UsbClearDeviceFeature (
   IN  UINT16                  Target,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Recipient - TODO: add argument description
+  Value     - TODO: add argument description
+  Target    - TODO: add argument description
+  Status    - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -365,31 +523,31 @@ UsbClearDeviceFeature (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   switch (Recipient) {
   case EfiUsbDevice:
-    DevReq.RequestType = 0x00 ;
-    break ;
+    DevReq.RequestType = 0x00;
+    break;
 
   case EfiUsbInterface:
-    DevReq.RequestType = 0x01 ;
-    break ;
+    DevReq.RequestType = 0x01;
+    break;
 
   case EfiUsbEndpoint:
-    DevReq.RequestType = 0x02 ;
-    break ;
+    DevReq.RequestType = 0x02;
+    break;
   }
 
   //
   // Fill device request, see USB1.1 spec
   //
-  DevReq.Request = USB_DEV_CLEAR_FEATURE ;
-  DevReq.Value = Value ;
-  DevReq.Index = Target ;
-  DevReq.Length = 0 ;
+  DevReq.Request  = USB_DEV_CLEAR_FEATURE;
+  DevReq.Value    = Value;
+  DevReq.Index    = Target;
+  DevReq.Length   = 0;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout         = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -412,6 +570,25 @@ UsbGetDeviceStatus (
   OUT UINT16                  *DevStatus,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo     - TODO: add argument description
+  Recipient - TODO: add argument description
+  Target    - TODO: add argument description
+  DevStatus - TODO: add argument description
+  Status    - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
   EFI_USB_DEVICE_REQUEST  DevReq;
   UINT32                  Timeout;
@@ -420,31 +597,31 @@ UsbGetDeviceStatus (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST)) ;
+  EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   switch (Recipient) {
   case EfiUsbDevice:
-    DevReq.RequestType = 0x80 ;
-    break ;
+    DevReq.RequestType = 0x80;
+    break;
 
   case EfiUsbInterface:
-    DevReq.RequestType = 0x81 ;
-    break ;
+    DevReq.RequestType = 0x81;
+    break;
 
   case EfiUsbEndpoint:
-    DevReq.RequestType = 0x82 ;
-    break ;
+    DevReq.RequestType = 0x82;
+    break;
   }
 
   //
   // Fill device request, see USB1.1 spec
   //
-  DevReq.Request = USB_DEV_GET_STATUS ;
-  DevReq.Value = 0 ;
-  DevReq.Index = Target ;
-  DevReq.Length = 2 ;
+  DevReq.Request  = USB_DEV_GET_STATUS;
+  DevReq.Value    = 0;
+  DevReq.Index    = Target;
+  DevReq.Length   = 2;
 
-  Timeout = TIMEOUT_VALUE;
+  Timeout         = TIMEOUT_VALUE;
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,
@@ -460,7 +637,7 @@ UsbGetDeviceStatus (
 // Usb Get String
 //
 EFI_STATUS
-UsbGetString(
+UsbGetString (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   IN  UINT16                  LangID,
   IN  UINT8                   Index,
@@ -468,8 +645,28 @@ UsbGetString(
   IN  UINTN                   BufSize,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo   - TODO: add argument description
+  LangID  - TODO: add argument description
+  Index   - TODO: add argument description
+  Buf     - TODO: add argument description
+  BufSize - TODO: add argument description
+  Status  - TODO: add argument description
+
+Returns:
+
+  EFI_INVALID_PARAMETER - TODO: Add description for return value
+
+--*/
 {
-  UINT16 Value;
+  UINT16  Value;
 
   if (UsbIo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -478,16 +675,16 @@ UsbGetString(
   //
   // Fill value, see USB1.1 spec
   //
-  Value = (UINT16)((USB_DT_STRING << 8) | Index);
+  Value = (UINT16) ((USB_DT_STRING << 8) | Index);
 
   return UsbGetDescriptor (
-              UsbIo,
-              Value,
-              LangID,
-              (UINT16)BufSize,
-              Buf,
-              Status
-              );
+          UsbIo,
+          Value,
+          LangID,
+          (UINT16) BufSize,
+          Buf,
+          Status
+          );
 }
 
 //
@@ -499,6 +696,25 @@ UsbClearEndpointHalt (
   IN  UINT8                   EndpointNo,
   OUT UINT32                  *Status
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIo       - TODO: add argument description
+  EndpointNo  - TODO: add argument description
+  Status      - TODO: add argument description
+
+Returns:
+
+  EFI_NOT_FOUND - TODO: Add description for return value
+  EFI_DEVICE_ERROR - TODO: Add description for return value
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
 {
   EFI_STATUS                    Result;
   EFI_USB_ENDPOINT_DESCRIPTOR   EndpointDescriptor;
@@ -506,7 +722,7 @@ UsbClearEndpointHalt (
   EFI_USB_INTERFACE_DESCRIPTOR  InterfaceDescriptor;
   UINT8                         Index;
 
-  EfiZeroMem (&EndpointDescriptor,sizeof (EFI_USB_ENDPOINT_DESCRIPTOR));
+  EfiZeroMem (&EndpointDescriptor, sizeof (EFI_USB_ENDPOINT_DESCRIPTOR));
   //
   // First seach the endpoint descriptor for that endpoint addr
   //
@@ -541,12 +757,12 @@ UsbClearEndpointHalt (
   }
 
   Result = UsbClearDeviceFeature (
-             UsbIo,
-             EfiUsbEndpoint,
-             EfiUsbEndpointHalt,
-             EndpointDescriptor.EndpointAddress,
-             Status
-             );
+            UsbIo,
+            EfiUsbEndpoint,
+            EfiUsbEndpointHalt,
+            EndpointDescriptor.EndpointAddress,
+            Status
+            );
 
   if (EFI_ERROR (Result)) {
     return Result;
@@ -558,15 +774,15 @@ UsbClearEndpointHalt (
   // How to implement???
   //
   DevEndpointDescriptor = GetEndpointDescriptor (
-                            UsbIo, 
+                            UsbIo,
                             EndpointNo
                             );
   if (DevEndpointDescriptor == NULL) {
     return EFI_DEVICE_ERROR;
   }
-                          
-  *((UINT16 *)((UINT8 *)DevEndpointDescriptor - 2)) = 0;
-  
+
+  *((UINT16 *) ((UINT8 *) DevEndpointDescriptor - 2)) = 0;
+
   return EFI_SUCCESS;
 }
 
@@ -593,19 +809,22 @@ UsbGetDeviceDescriptor (
     EFI_SUCCESS
 
 --*/
+// TODO: function comment is missing 'Returns:'
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  USB_IO_DEVICE               *UsbIoDev;
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
 
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS(This);
-  UsbIoDev = UsbIoController->UsbDevice;
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
 
   if (!UsbIoDev->IsConfigured) {
     return EFI_NOT_FOUND;
   }
 
   //
-  // The device descriptor is in the UsbIoDev structure if it is 
+  // The device descriptor is in the UsbIoDev structure if it is
   // correctly configured.
   //
   *DeviceDescriptor = &UsbIoDev->DeviceDescriptor;
@@ -634,18 +853,18 @@ UsbGetActiveConfigDescriptor (
 
 --*/
 {
-  USB_IO_DEVICE               *UsbIoDev;
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
-  UsbIoDev = UsbIoController->UsbDevice;
+  UsbIoDev        = UsbIoController->UsbDevice;
 
   if (!UsbIoDev->IsConfigured) {
     return EFI_NOT_FOUND;
   }
 
   //
-  // The active configuration descriptor is in the UsbIoDev structure 
+  // The active configuration descriptor is in the UsbIoDev structure
   // if it is correctly configured.
   //
   *ConfigurationDescriptor = &(UsbIoDev->ActiveConfig->CongfigDescriptor);
@@ -674,49 +893,50 @@ UsbGetInterfaceDescriptor (
 
 --*/
 {
-  USB_IO_DEVICE               *UsbIoDev;
-  EFI_LIST_ENTRY              *InterfaceListHead;
-  CONFIG_DESC_LIST_ENTRY      *ConfigListEntry;
-  INTERFACE_DESC_LIST_ENTRY   *InterfaceListEntry;
-  EFI_USB_CONFIG_DESCRIPTOR   *ConfigurationDescriptor;
-  EFI_STATUS                  Status;
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  UINT8                       InterfaceNum;
+  USB_IO_DEVICE             *UsbIoDev;
+  EFI_LIST_ENTRY            *InterfaceListHead;
+  CONFIG_DESC_LIST_ENTRY    *ConfigListEntry;
+  INTERFACE_DESC_LIST_ENTRY *InterfaceListEntry;
+  EFI_USB_CONFIG_DESCRIPTOR *ConfigurationDescriptor;
+  EFI_STATUS                Status;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+  UINT8                     InterfaceNum;
 
   //
   // First get the active configuration descriptor
   //
   Status = UsbGetActiveConfigDescriptor (
-             This,
-             &ConfigurationDescriptor
-             );
+            This,
+            &ConfigurationDescriptor
+            );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS(This);
-  UsbIoDev = UsbIoController->UsbDevice;
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
 
   if (!UsbIoDev->IsConfigured) {
     return EFI_NOT_FOUND;
   }
 
-  InterfaceNum = UsbIoController->InterfaceNumber;
+  InterfaceNum        = UsbIoController->InterfaceNumber;
 
-  ConfigListEntry = (CONFIG_DESC_LIST_ENTRY *)((UINT8 *)ConfigurationDescriptor - sizeof (EFI_LIST_ENTRY));
+  ConfigListEntry     = (CONFIG_DESC_LIST_ENTRY *) ((UINT8 *) ConfigurationDescriptor - sizeof (EFI_LIST_ENTRY));
 
-  InterfaceListHead = (EFI_LIST_ENTRY *)(&ConfigListEntry->InterfaceDescListHead);
-  InterfaceListEntry = (INTERFACE_DESC_LIST_ENTRY *)(InterfaceListHead->ForwardLink);
+  InterfaceListHead   = (EFI_LIST_ENTRY *) (&ConfigListEntry->InterfaceDescListHead);
+  InterfaceListEntry  = (INTERFACE_DESC_LIST_ENTRY *) (InterfaceListHead->ForwardLink);
 
   //
   // Loop all interface descriptor to get match one.
   //
-  while (InterfaceListEntry != (INTERFACE_DESC_LIST_ENTRY *)InterfaceListHead) {
+  while (InterfaceListEntry != (INTERFACE_DESC_LIST_ENTRY *) InterfaceListHead) {
     if ((InterfaceListEntry->InterfaceDescriptor).InterfaceNumber == InterfaceNum) {
       *InterfaceDescriptor = &InterfaceListEntry->InterfaceDescriptor;
       return EFI_SUCCESS;
     }
-    InterfaceListEntry = (INTERFACE_DESC_LIST_ENTRY *)((EFI_LIST_ENTRY *)InterfaceListEntry)->ForwardLink;
+
+    InterfaceListEntry = (INTERFACE_DESC_LIST_ENTRY *) ((EFI_LIST_ENTRY *) InterfaceListEntry)->ForwardLink;
   }
 
   return EFI_NOT_FOUND;
@@ -755,7 +975,7 @@ UsbGetEndpointDescriptor (
   EFI_USB_INTERFACE_DESCRIPTOR  *InterfaceDescriptor;
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
-  UsbIoDev = UsbIoController->UsbDevice;
+  UsbIoDev        = UsbIoController->UsbDevice;
 
   if (!UsbIoDev->IsConfigured) {
     return EFI_NOT_FOUND;
@@ -765,9 +985,9 @@ UsbGetEndpointDescriptor (
   // First get the interface descriptor
   //
   Status = UsbGetInterfaceDescriptor (
-             This,
-             &InterfaceDescriptor
-             );
+            This,
+            &InterfaceDescriptor
+            );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -776,16 +996,16 @@ UsbGetEndpointDescriptor (
     return EFI_INVALID_PARAMETER;
   }
 
-  InterfaceListEntry = (INTERFACE_DESC_LIST_ENTRY *)((UINT8 *)InterfaceDescriptor - sizeof (EFI_LIST_ENTRY));
+  InterfaceListEntry  = (INTERFACE_DESC_LIST_ENTRY *) ((UINT8 *) InterfaceDescriptor - sizeof (EFI_LIST_ENTRY));
 
-  EndpointListHead = (EFI_LIST_ENTRY *)(&InterfaceListEntry->EndpointDescListHead);
-  EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *)(EndpointListHead->ForwardLink);
+  EndpointListHead    = (EFI_LIST_ENTRY *) (&InterfaceListEntry->EndpointDescListHead);
+  EndpointListEntry   = (ENDPOINT_DESC_LIST_ENTRY *) (EndpointListHead->ForwardLink);
 
   //
   // Loop all endpoint descriptor to get match one.
   //
   while (EndpointIndex != 0) {
-    EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *)((EndpointListEntry->Link).ForwardLink);
+    EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *) ((EndpointListEntry->Link).ForwardLink);
     EndpointIndex--;
   }
 
@@ -811,19 +1031,24 @@ GetEndpointDescriptor (
   Return Value:
 
 ++*/
+// TODO: function comment should end with '--*/'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIo - add argument and description to function comment
+// TODO:    EndpointAddr - add argument and description to function comment
 {
-  EFI_USB_INTERFACE_DESCRIPTOR    *InterfaceDescriptor;
-  EFI_USB_ENDPOINT_DESCRIPTOR     *EndpointDescriptor;
-  UINT8                           Index;
-  EFI_STATUS                      Status;
+  EFI_USB_INTERFACE_DESCRIPTOR  *InterfaceDescriptor;
+  EFI_USB_ENDPOINT_DESCRIPTOR   *EndpointDescriptor;
+  UINT8                         Index;
+  EFI_STATUS                    Status;
 
   //
   // First get the interface descriptor
   //
   Status = UsbGetInterfaceDescriptor (
-             UsbIo,
-             &InterfaceDescriptor
-             );
+            UsbIo,
+            &InterfaceDescriptor
+            );
   if (EFI_ERROR (Status)) {
     return NULL;
   }
@@ -833,16 +1058,16 @@ GetEndpointDescriptor (
   //
   for (Index = 0; Index < InterfaceDescriptor->NumEndpoints; Index++) {
     Status = UsbGetEndpointDescriptor (
-               UsbIo,
-               Index,
-               &EndpointDescriptor
-               );
+              UsbIo,
+              Index,
+              &EndpointDescriptor
+              );
     if (EFI_ERROR (Status)) {
       continue;
     }
 
     if (EndpointDescriptor->EndpointAddress == EndpointAddr) {
-       return EndpointDescriptor;
+      return EndpointDescriptor;
     }
   }
 
@@ -869,24 +1094,29 @@ GetDeviceEndPointMaxPacketLength (
     N/A
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoController - add argument and description to function comment
+// TODO:    EndpointAddr - add argument and description to function comment
+// TODO:    MaxPacketLength - add argument and description to function comment
 {
   EFI_USB_IO_PROTOCOL         *UsbIo;
   EFI_USB_ENDPOINT_DESCRIPTOR *EndpointDesc;
 
-  *MaxPacketLength = 0;
-  UsbIo = &UsbIoController->UsbIo;
+  *MaxPacketLength  = 0;
+  UsbIo             = &UsbIoController->UsbIo;
 
   //
   // Get the endpoint descriptor
   //
   EndpointDesc = GetEndpointDescriptor (UsbIo, EndpointAddr);
   if (EndpointDesc == NULL) {
-    return;
+    return ;
   }
 
-  *MaxPacketLength = (UINT8)(EndpointDesc->MaxPacketSize);
+  *MaxPacketLength = (UINT8) (EndpointDesc->MaxPacketSize);
 
-  return;
+  return ;
 }
 
 VOID
@@ -909,27 +1139,32 @@ GetDataToggleBit (
     N/A
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoController - add argument and description to function comment
+// TODO:    EndpointAddr - add argument and description to function comment
+// TODO:    DataToggle - add argument and description to function comment
 {
   EFI_USB_IO_PROTOCOL         *UsbIo;
   EFI_USB_ENDPOINT_DESCRIPTOR *EndpointDesc;
   ENDPOINT_DESC_LIST_ENTRY    *EndpointListEntry;
 
   *DataToggle = 0;
-  UsbIo = &UsbIoController->UsbIo;
+  UsbIo       = &UsbIoController->UsbIo;
 
   //
   // Get the endpoint descriptor
   //
   EndpointDesc = GetEndpointDescriptor (UsbIo, EndpointAddr);
   if (EndpointDesc == NULL) {
-    return;
+    return ;
   }
 
-  EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *)
-  ((UINT8 *)EndpointDesc - sizeof (UINT16) - sizeof (EFI_LIST_ENTRY));
+  EndpointListEntry =
+  (ENDPOINT_DESC_LIST_ENTRY *) ((UINT8 *) EndpointDesc - sizeof (UINT16) - sizeof (EFI_LIST_ENTRY));
 
-  *DataToggle = (UINT8)(EndpointListEntry->Toggle);
-  return;
+  *DataToggle       = (UINT8) (EndpointListEntry->Toggle);
+  return ;
 }
 
 VOID
@@ -952,6 +1187,11 @@ SetDataToggleBit (
     N/A
 
 --*/
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    UsbIoController - add argument and description to function comment
+// TODO:    EndpointAddr - add argument and description to function comment
+// TODO:    DataToggle - add argument and description to function comment
 {
   EFI_USB_IO_PROTOCOL         *UsbIo;
   EFI_USB_ENDPOINT_DESCRIPTOR *EndpointDesc;
@@ -964,12 +1204,12 @@ SetDataToggleBit (
   //
   EndpointDesc = GetEndpointDescriptor (UsbIo, EndpointAddr);
   if (EndpointDesc == NULL) {
-    return;
+    return ;
   }
 
-  EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *)
-  ((UINT8 *)EndpointDesc - sizeof (UINT16) - sizeof (EFI_LIST_ENTRY));
+  EndpointListEntry         =
+  (ENDPOINT_DESC_LIST_ENTRY *) ((UINT8 *) EndpointDesc - sizeof (UINT16) - sizeof (EFI_LIST_ENTRY));
 
   EndpointListEntry->Toggle = DataToggle;
-  return;
+  return ;
 }

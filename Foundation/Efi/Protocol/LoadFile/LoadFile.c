@@ -26,8 +26,8 @@ Abstract:
 --*/
 
 #include "EfiSpec.h"
-#include EFI_PROTOCOL_DEFINITION(LoadFile)
+#include EFI_PROTOCOL_DEFINITION (LoadFile)
 
-EFI_GUID gEfiLoadFileProtocolGuid = LOAD_FILE_PROTOCOL_GUID;
+EFI_GUID  gEfiLoadFileProtocolGuid = LOAD_FILE_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiLoadFileProtocolGuid, "LoadFile Protocol", "EFI 1.0 Load File Protocol");

@@ -38,7 +38,7 @@ Arguments:
     Attributes  - output buffer which contains attributes
 
 Returns:
-    EFI_SUCCESS
+    EFI_SUCCESS         - Successfully got volume attributes
 
 --*/
 {
@@ -90,7 +90,7 @@ Arguments:
       new value of FV
 
 Returns:
-    EFI_SUCCESS
+    EFI_UNSUPPORTED   - Could not be set.
 
 --*/
 {

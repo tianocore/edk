@@ -19,7 +19,7 @@ Abstract:
 
   This code abstracts Status Code reporting.
 
-  The StatusCode () EFI 2.0 service is added to the EFI system table and the 
+  The StatusCode () Tiano service is added to the EFI system table and the 
   EFI_STATUS_CODE_ARCH_PROTOCOL_GUID protocol is registered with a NULL 
   pointer.
 

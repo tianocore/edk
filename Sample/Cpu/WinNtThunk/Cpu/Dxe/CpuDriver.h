@@ -15,37 +15,39 @@ Module Name:
 
 Abstract:
 
-  NT Emulation Architectural Protocol Driver as defined in EFI 2.0.
+  NT Emulation Architectural Protocol Driver as defined in Tiano.
 
 --*/
 
 #ifndef _CPU_ARCHITECTURAL_PROTOCOL_DRIVER_H_
 #define _CPU_ARCHITECTURAL_PROTOCOL_DRIVER_H_
 
-extern UINT8 STRING_ARRAY_NAME[];
+extern UINT8  STRING_ARRAY_NAME[];
 
 //
 // Internal Data Structures
 //
-
-#define CPU_ARCH_PROT_PRIVATE_SIGNATURE   EFI_SIGNATURE_32('c','a','p','d')
+#define CPU_ARCH_PROT_PRIVATE_SIGNATURE EFI_SIGNATURE_32 ('c', 'a', 'p', 'd')
 
 typedef struct {
-  UINTN                       Signature;
-  EFI_HANDLE                  Handle;
+  UINTN                 Signature;
+  EFI_HANDLE            Handle;
 
-  EFI_CPU_ARCH_PROTOCOL       Cpu;
+  EFI_CPU_ARCH_PROTOCOL Cpu;
 
   //
   // Local Data for CPU interface goes here
   //
-  CRITICAL_SECTION            NtCriticalSection;
-  BOOLEAN                     InterruptState;
+  CRITICAL_SECTION      NtCriticalSection;
+  BOOLEAN               InterruptState;
 
 } CPU_ARCH_PROTOCOL_PRIVATE;
 
 #define CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS(a) \
-         CR(a, CPU_ARCH_PROTOCOL_PRIVATE, Cpu, CPU_ARCH_PROT_PRIVATE_SIGNATURE)
-
+  CR (a, \
+      CPU_ARCH_PROTOCOL_PRIVATE, \
+      Cpu, \
+      CPU_ARCH_PROT_PRIVATE_SIGNATURE \
+      )
 
 #endif

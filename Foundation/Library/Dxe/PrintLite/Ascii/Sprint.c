@@ -57,7 +57,6 @@ Abstract:
 #include "EfiPrintLib.h"
 #include "Print.h"
 
-
 UINTN
 USPrint (
   OUT CHAR16        *Buffer,
@@ -65,6 +64,24 @@ USPrint (
   IN  CONST CHAR16  *Format,
   ...
   )
+/*++
+
+Routine Description:
+
+  Process format and place the results in Buffer for wide chars.
+
+Arguments:
+
+  Buffer      - Wide char buffer to print the results of the parsing of Format into.
+  BufferSize  - Maximum number of characters to put into buffer.
+  Format      - Format string
+  ...         - Vararg list consumed by processing Format.
+
+Returns:
+
+  Number of characters printed.
+
+--*/
 {
   UINTN   Return;
   VA_LIST Marker;
@@ -72,10 +89,9 @@ USPrint (
   VA_START (Marker, Format);
   Return = UnicodeVSPrint (Buffer, BufferSize, Format, Marker);
   VA_END (Marker);
-  
+
   return Return;
 }
-
 
 UINTN
 UvSPrint (
@@ -84,23 +100,43 @@ UvSPrint (
   IN  CONST CHAR16  *FormatString,
   IN  VA_LIST       Marker
   )
+/*++
+
+Routine Description:
+
+  Internal implementation of USPrint. 
+  Process format and place the results in Buffer for wide chars.
+
+Arguments:
+
+  Buffer        - Wide char buffer to print the results of the parsing of Format into.
+  BufferSize    - Maximum number of characters to put into buffer.
+  FormatString  - Format string
+  Marker        - Vararg list consumed by processing Format.
+
+Returns:
+
+  Number of characters printed.
+
+--*/
 {
-  UINTN   Index;
-  CHAR8   AsciiFormat[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
-  CHAR8   AsciiResult[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
+  UINTN Index;
+  CHAR8 AsciiFormat[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
+  CHAR8 AsciiResult[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
 
   for (Index = 0; Index < EFI_DRIVER_LIB_MAX_PRINT_BUFFER && FormatString[Index] != '\0'; Index++) {
-    AsciiFormat[Index] = (CHAR8)FormatString[Index];
+    AsciiFormat[Index] = (CHAR8) FormatString[Index];
   }
-  AsciiFormat[Index] = '\0';
 
-  Index = VSPrint (AsciiResult, EFI_DRIVER_LIB_MAX_PRINT_BUFFER, AsciiFormat, Marker);
+  AsciiFormat[Index]  = '\0';
+
+  Index               = VSPrint (AsciiResult, EFI_DRIVER_LIB_MAX_PRINT_BUFFER, AsciiFormat, Marker);
 
   for (Index = 0; (Index < (BufferSize - 1)) && AsciiResult[Index] != '\0'; Index++) {
-    Buffer[Index] = (CHAR16)AsciiResult[Index];
+    Buffer[Index] = (CHAR16) AsciiResult[Index];
   }
+
   Buffer[Index] = '\0';
 
   return Index++;
 }
-

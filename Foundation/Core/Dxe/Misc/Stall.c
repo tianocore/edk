@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-    EFI 2.0 Miscellaneous Services Stall service implementation
+    Tiano Miscellaneous Services Stall service implementation
 
 --*/
 
@@ -51,9 +51,9 @@ Returns:
 
 --*/
 {
-  UINT32          Counter;
-  UINTN           Remainder;
-  
+  UINT32  Counter;
+  UINTN   Remainder;
+
   if (gMetronome == NULL) {
     return EFI_NOT_AVAILABLE_YET;
   }
@@ -64,17 +64,16 @@ Returns:
   // Calcullation is based on 100ns unit.
   //
   Counter = (UINT32) DivU64x32 ((Microseconds * 10), (UINTN) gMetronome->TickPeriod, &Remainder);
-  
+
   //
-  // Call WaitForTick for Counter + 1 ticks to try to guarantee Counter tick 
+  // Call WaitForTick for Counter + 1 ticks to try to guarantee Counter tick
   // periods, thus attempting to ensure Microseconds of stall time.
   //
   if (Remainder != 0) {
-    Counter ++;
+    Counter++;
   }
 
-  gMetronome->WaitForTick (gMetronome, Counter) ;
-  
+  gMetronome->WaitForTick (gMetronome, Counter);
+
   return EFI_SUCCESS;
 }
-

@@ -20,9 +20,8 @@ Abstract:
 --*/
 
 //
-// Module Coded to EFI 2.0 Coding Conventions
+// Module Coded to Tiano Coding Conventions
 //
-
 #ifndef _EFI_GEN_SECTION_H
 #define _EFI_GEN_SECTION_H
 
@@ -33,12 +32,11 @@ Abstract:
 #include "EfiImageFormat.h"
 
 typedef struct {
-  EFI_GUID_DEFINED_SECTION       GuidSectionHeader;
-  UINT32                         CRC32Checksum;
+  EFI_GUID_DEFINED_SECTION  GuidSectionHeader;
+  UINT32                    CRC32Checksum;
 } CRC32_SECTION_HEADER;
 
-#define EFI_SECTION_CRC32_GUID_DEFINED 0
-#define CRC32_SECTION_HEADER_SIZE (sizeof(CRC32_SECTION_HEADER))
+#define EFI_SECTION_CRC32_GUID_DEFINED  0
+#define CRC32_SECTION_HEADER_SIZE       (sizeof (CRC32_SECTION_HEADER))
 
 #endif
-

@@ -15,12 +15,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
           This file contains the relevant declarations required
           to generate a binary Dependency File
 
-  Complies with EFI 2.0 C Coding Standards Document, version 0.31, 12 Dec 2000.
+  Complies with Tiano C Coding Standards Document, version 0.31, 12 Dec 2000.
 
 --*/
 
-#ifndef   _EFI_GEN_DEPEX_H
-#define   _EFI_GEN_DEPEX_H
+#ifndef _EFI_GEN_DEPEX_H
+#define _EFI_GEN_DEPEX_H
 
 #include "TianoCommon.h"
 #include "EfiDependency.h"
@@ -47,26 +47,21 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define DXE_DEP_LEFT_PARENTHESIS    0x0a
 #define DXE_DEP_RIGHT_PARENTHESIS   0x0b
 
-#define LINESIZE          320
-#define SIZE_A_SYMBOL     60
-#define DEPENDENCY_OPCODE UINT8
-#define EVAL_STACK_SIZE   0x1024
-#define BUFFER_SIZE       0x100
+#define LINESIZE                    320
+#define SIZE_A_SYMBOL               60
+#define DEPENDENCY_OPCODE           UINT8
+#define EVAL_STACK_SIZE             0x1024
+#define BUFFER_SIZE                 0x100
 
 //
 // Utility Name
 //
-#define UTILITY_NAME      "GenDepex"
+#define UTILITY_NAME  "GenDepex"
 
 //
 // Utility version information
 //
-#define UTILITY_MAJOR_VERSION   0
-#define UTILITY_MINOR_VERSION   4
+#define UTILITY_MAJOR_VERSION 0
+#define UTILITY_MINOR_VERSION 4
 
 #endif
-
-
-
-
-

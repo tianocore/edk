@@ -22,32 +22,31 @@ Abstract:
 
 #include "MiscSubclassDriver.h"
 
-
 //
 // Static (possibly build generated) Bios Vendor data.
 //
 MISC_SUBCLASS_TABLE_DATA(EFI_MISC_SYSTEM_SLOT_DESIGNATION, MiscSystemSlotDesignation) = {
   STRING_TOKEN(STR_MISC_SYSTEM_SLOT_DESIGNATION),   // SlotDesignation
-  EfiSlotTypeOther,                   // SlotType
-  EfiSlotDataBusWidthOther,           // SlotDataBusWidth
-  EfiSlotUsageOther,                  // SlotUsage
-  EfiSlotLengthOther,                 // SlotLength
-  0,                                  // SlotId
-  {                                   // SlotCharacteristics
-    0,                                // CharacteristicsUnknown  :1;
-    0,                                // Provides50Volts         :1;
-    0,                                // Provides33Volts         :1;
-    0,                                // SharedSlot              :1;
-    0,                                // PcCard16Supported       :1;
-    0,                                // CardBusSupported        :1;
-    0,                                // ZoomVideoSupported      :1;
-    0,                                // ModemRingResumeSupported:1;
-    0,                                // PmeSignalSupported      :1;
-    0,                                // HotPlugDevicesSupported :1;
-    0,                                // SmbusSignalSupported    :1;
-    0                                 // Reserved                :21;
+  EfiSlotTypeOther,         // SlotType
+  EfiSlotDataBusWidthOther, // SlotDataBusWidth
+  EfiSlotUsageOther,        // SlotUsage
+  EfiSlotLengthOther,       // SlotLength
+  0,                        // SlotId
+  {                         // SlotCharacteristics
+    0,                      // CharacteristicsUnknown  :1;
+    0,                      // Provides50Volts         :1;
+    0,                      // Provides33Volts         :1;
+    0,                      // SharedSlot              :1;
+    0,                      // PcCard16Supported       :1;
+    0,                      // CardBusSupported        :1;
+    0,                      // ZoomVideoSupported      :1;
+    0,                      // ModemRingResumeSupported:1;
+    0,                      // PmeSignalSupported      :1;
+    0,                      // HotPlugDevicesSupported :1;
+    0,                      // SmbusSignalSupported    :1;
+    0                       // Reserved                :21;
   },
-  0                                   // SlotDevicePath
+  0                         // SlotDevicePath
 };
 
 /* eof - MiscSystemSlotsData.c */

@@ -24,7 +24,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 
-#include EFI_PROTOCOL_DEFINITION(UsbIo)
+#include EFI_PROTOCOL_DEFINITION (UsbIo)
 
 #include "usb.h"
 #include "usbbus.h"
@@ -33,8 +33,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // USB I/O Support Function Prototypes
 //
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbControlTransfer (
   IN       EFI_USB_IO_PROTOCOL        *This,
@@ -46,8 +46,8 @@ UsbControlTransfer (
   OUT      UINT32                     *Status
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbBulkTransfer (
   IN       EFI_USB_IO_PROTOCOL     *This,
@@ -58,11 +58,11 @@ UsbBulkTransfer (
   OUT      UINT32                  *Status
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbAsyncInterruptTransfer (
-  IN EFI_USB_IO_PROTOCOL                 *This,
+  IN EFI_USB_IO_PROTOCOL                 * This,
   IN UINT8                               DeviceEndpoint,
   IN BOOLEAN                             IsNewTransfer,
   IN UINTN                               PollingInterval, OPTIONAL
@@ -71,8 +71,8 @@ UsbAsyncInterruptTransfer (
   IN VOID                                *Context OPTIONAL
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbSyncInterruptTransfer (
   IN       EFI_USB_IO_PROTOCOL     *This,
@@ -83,8 +83,8 @@ UsbSyncInterruptTransfer (
   OUT      UINT32                  *Status
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbIsochronousTransfer (
   IN       EFI_USB_IO_PROTOCOL     *This,
@@ -94,18 +94,17 @@ UsbIsochronousTransfer (
   OUT      UINT32                  *Status
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbAsyncIsochronousTransfer (
-  IN        EFI_USB_IO_PROTOCOL                 *This,
+  IN        EFI_USB_IO_PROTOCOL                 * This,
   IN        UINT8                               DeviceEndpoint,
   IN OUT    VOID                                *Data,
   IN        UINTN                               DataLength,
   IN        EFI_ASYNC_USB_TRANSFER_CALLBACK     IsochronousCallBack,
   IN        VOID                                *Context OPTIONAL
   );
-
 
 extern
 EFI_STATUS
@@ -114,32 +113,32 @@ UsbPortReset (
   IN EFI_USB_IO_PROTOCOL     *This
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetDeviceDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
   OUT EFI_USB_DEVICE_DESCRIPTOR     *DeviceDescriptor
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetActiveConfigDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
   OUT EFI_USB_CONFIG_DESCRIPTOR     *ConfigurationDescriptor
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetInterfaceDescriptor (
   IN  EFI_USB_IO_PROTOCOL              *This,
   OUT EFI_USB_INTERFACE_DESCRIPTOR     *InterfaceDescriptor
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetEndpointDescriptor (
   IN  EFI_USB_IO_PROTOCOL             *This,
@@ -147,8 +146,8 @@ NewUsbGetEndpointDescriptor (
   OUT EFI_USB_ENDPOINT_DESCRIPTOR     *EndpointDescriptor
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbGetStringDescriptor (
   IN  EFI_USB_IO_PROTOCOL     *This,
@@ -157,8 +156,8 @@ UsbGetStringDescriptor (
   OUT CHAR16                  **String
   );
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbGetSupportedLanguages (
   IN  EFI_USB_IO_PROTOCOL      *This,
@@ -169,26 +168,41 @@ UsbGetSupportedLanguages (
 //
 // USB I/O Interface structure
 //
-STATIC EFI_USB_IO_PROTOCOL UsbIoInterface = {
-    UsbControlTransfer,
-    UsbBulkTransfer,
-    UsbAsyncInterruptTransfer,
-    UsbSyncInterruptTransfer,
-    UsbIsochronousTransfer,
-    UsbAsyncIsochronousTransfer,
-    NewUsbGetDeviceDescriptor,
-    NewUsbGetActiveConfigDescriptor,
-    NewUsbGetInterfaceDescriptor,
-    NewUsbGetEndpointDescriptor,
-    UsbGetStringDescriptor,
-    UsbGetSupportedLanguages,
-    UsbPortReset
+STATIC EFI_USB_IO_PROTOCOL  UsbIoInterface = {
+  UsbControlTransfer,
+  UsbBulkTransfer,
+  UsbAsyncInterruptTransfer,
+  UsbSyncInterruptTransfer,
+  UsbIsochronousTransfer,
+  UsbAsyncIsochronousTransfer,
+  NewUsbGetDeviceDescriptor,
+  NewUsbGetActiveConfigDescriptor,
+  NewUsbGetInterfaceDescriptor,
+  NewUsbGetEndpointDescriptor,
+  UsbGetStringDescriptor,
+  UsbGetSupportedLanguages,
+  UsbPortReset
 };
 
 VOID
 InitializeUsbIoInstance (
   IN USB_IO_CONTROLLER_DEVICE     *UsbIoController
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  UsbIoController - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
 {
   //
   // Copy EFI_USB_IO protocol instance
@@ -196,15 +210,15 @@ InitializeUsbIoInstance (
   EfiCopyMem (
     &UsbIoController->UsbIo,
     &UsbIoInterface,
-    sizeof(EFI_USB_IO_PROTOCOL)
+    sizeof (EFI_USB_IO_PROTOCOL)
     );
 }
 
 //
 // Implementation
 //
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbControlTransfer (
   IN       EFI_USB_IO_PROTOCOL        *This,
@@ -241,13 +255,13 @@ UsbControlTransfer (
 
 --*/
 {
-  USB_IO_CONTROLLER_DEVICE      *UsbIoController;
-  EFI_USB_HC_PROTOCOL           *UsbHCInterface;
-  EFI_STATUS                    RetStatus;
-  USB_IO_DEVICE                 *UsbIoDevice;
-  UINT8                         MaxPacketLength;
-  UINT32                        TransferResult;
-  
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+  EFI_USB_HC_PROTOCOL       *UsbHCInterface;
+  EFI_STATUS                RetStatus;
+  USB_IO_DEVICE             *UsbIoDevice;
+  UINT8                     MaxPacketLength;
+  UINT32                    TransferResult;
+
   //
   // Parameters Checking
   //
@@ -256,13 +270,13 @@ UsbControlTransfer (
   }
   
   //
-  // leave the HostController's ControlTransfer 
+  // leave the HostController's ControlTransfer
   // to perform other parameters checking
   //
 
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS(This);
-  UsbIoDevice = UsbIoController->UsbDevice;
-  UsbHCInterface = UsbIoDevice->BusController->UsbHCInterface;
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDevice     = UsbIoController->UsbDevice;
+  UsbHCInterface  = UsbIoDevice->BusController->UsbHCInterface;
   MaxPacketLength = UsbIoDevice->DeviceDescriptor.MaxPacketSize0;
 
   //
@@ -277,7 +291,7 @@ UsbControlTransfer (
                                 Direction,
                                 Data,
                                 &DataLength,
-                                (UINTN)Timeout,
+                                (UINTN) Timeout,
                                 &TransferResult
                                 );
   *Status = TransferResult;
@@ -285,8 +299,8 @@ UsbControlTransfer (
   return RetStatus;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbBulkTransfer (
   IN       EFI_USB_IO_PROTOCOL     *This,
@@ -322,6 +336,12 @@ UsbBulkTransfer (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Returns:'
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   USB_IO_DEVICE               *UsbIoDev;
   UINT8                       MaxPacketLength;
@@ -334,8 +354,8 @@ UsbBulkTransfer (
   UINT32                      TransferResult;
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
-  UsbIoDev = UsbIoController->UsbDevice;
-  UsbHCInterface = UsbIoDev->BusController->UsbHCInterface;
+  UsbIoDev        = UsbIoController->UsbDevice;
+  UsbHCInterface  = UsbIoDev->BusController->UsbHCInterface;
 
   //
   // Parameters Checking
@@ -347,7 +367,7 @@ UsbBulkTransfer (
   if ((DeviceEndpoint & 0x7F) > 15) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (Status == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -356,17 +376,17 @@ UsbBulkTransfer (
                       This,
                       DeviceEndpoint
                       );
-                      
+
   if (UsbEndpointDesc == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if ((UsbEndpointDesc->Attributes & 0x03) != 0x02) {
     return EFI_INVALID_PARAMETER;
   }
                         
   //
-  // leave the HostController's BulkTransfer 
+  // leave the HostController's BulkTransfer
   // to perform other parameters checking
   //
 
@@ -391,7 +411,7 @@ UsbBulkTransfer (
                                 UsbHCInterface,
                                 UsbIoDev->DeviceAddress,
                                 DeviceEndpoint,
-                                MaxPacketLength,                                
+                                MaxPacketLength,
                                 Data,
                                 DataLength,
                                 &DataToggle,
@@ -415,8 +435,8 @@ UsbBulkTransfer (
   return RetStatus;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbSyncInterruptTransfer (
   IN       EFI_USB_IO_PROTOCOL     *This,
@@ -452,6 +472,12 @@ UsbSyncInterruptTransfer (
     EFI_DEVICE_ERROR
 
 --*/
+// TODO: function comment is missing 'Returns:'
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
   USB_IO_DEVICE               *UsbIoDev;
   UINT8                       MaxPacketLength;
@@ -472,7 +498,7 @@ UsbSyncInterruptTransfer (
   if ((DeviceEndpoint & 0x7F) > 15) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if (Status == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -481,23 +507,23 @@ UsbSyncInterruptTransfer (
                       This,
                       DeviceEndpoint
                       );
-                      
+
   if (UsbEndpointDesc == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if ((UsbEndpointDesc->Attributes & 0x03) != 0x03) {
     return EFI_INVALID_PARAMETER;
   }
   
   //
-  // leave the HostController's SyncInterruptTransfer 
+  // leave the HostController's SyncInterruptTransfer
   // to perform other parameters checking
   //
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
-  UsbIoDev = UsbIoController->UsbDevice;
-  UsbHCInterface = UsbIoDev->BusController->UsbHCInterface;
+  UsbIoDev        = UsbIoController->UsbDevice;
+  UsbHCInterface  = UsbIoDev->BusController->UsbHCInterface;
 
   GetDeviceEndPointMaxPacketLength (
     UsbIoController,
@@ -518,7 +544,7 @@ UsbSyncInterruptTransfer (
   RetStatus = UsbHCInterface->SyncInterruptTransfer (
                                 UsbHCInterface,
                                 UsbIoDev->DeviceAddress,
-                                DeviceEndpoint,                                
+                                DeviceEndpoint,
                                 UsbIoDev->IsSlowDevice,
                                 MaxPacketLength,
                                 Data,
@@ -531,7 +557,7 @@ UsbSyncInterruptTransfer (
   if (OldToggle != DataToggle) {
     //
     // Write the toggle back
-    //    
+    //
     SetDataToggleBit (
       UsbIoController,
       DeviceEndpoint,
@@ -542,11 +568,11 @@ UsbSyncInterruptTransfer (
   return RetStatus;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbAsyncInterruptTransfer (
-  IN EFI_USB_IO_PROTOCOL                 *This,
+  IN EFI_USB_IO_PROTOCOL                 * This,
   IN UINT8                               DeviceEndpoint,
   IN BOOLEAN                             IsNewTransfer,
   IN UINTN                               PollingInterval, OPTIONAL
@@ -580,6 +606,7 @@ UsbAsyncInterruptTransfer (
     EFI_OUT_OF_RESOURCES
 
 --*/
+// TODO:    InterruptCallBack - add argument and description to function comment
 {
   USB_IO_DEVICE               *UsbIoDev;
   UINT8                       MaxPacketLength;
@@ -604,18 +631,18 @@ UsbAsyncInterruptTransfer (
                       This,
                       DeviceEndpoint
                       );
-                      
+
   if (UsbEndpointDesc == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   if ((UsbEndpointDesc->Attributes & 0x03) != 0x03) {
     return EFI_INVALID_PARAMETER;
   }
 
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS(This);
-  UsbIoDev = UsbIoController->UsbDevice;
-  UsbHCInterface = UsbIoDev->BusController->UsbHCInterface;
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
+  UsbHCInterface  = UsbIoDev->BusController->UsbHCInterface;
 
   if (!IsNewTransfer) {
     //
@@ -676,8 +703,8 @@ UsbAsyncInterruptTransfer (
   return RetStatus;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbIsochronousTransfer (
   IN       EFI_USB_IO_PROTOCOL     *This,
@@ -709,24 +736,7 @@ UsbIsochronousTransfer (
     EFI_DEVICE_ERROR
 
 --*/
-{
-    //
-    // Currently we don't support this transfer
-    //
-    return EFI_UNSUPPORTED;
-}
-
-STATIC 
-EFI_STATUS 
-EFIAPI
-UsbAsyncIsochronousTransfer (
-  IN        EFI_USB_IO_PROTOCOL                 *This,
-  IN        UINT8                               DeviceEndpoint,
-  IN OUT    VOID                                *Data,
-  IN        UINTN                               DataLength,
-  IN        EFI_ASYNC_USB_TRANSFER_CALLBACK     IsochronousCallBack,
-  IN        VOID                                *Context OPTIONAL
-  )
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   //
   // Currently we don't support this transfer
@@ -734,11 +744,48 @@ UsbAsyncIsochronousTransfer (
   return EFI_UNSUPPORTED;
 }
 
+STATIC
+EFI_STATUS
+EFIAPI
+UsbAsyncIsochronousTransfer (
+  IN        EFI_USB_IO_PROTOCOL                 * This,
+  IN        UINT8                               DeviceEndpoint,
+  IN OUT    VOID                                *Data,
+  IN        UINTN                               DataLength,
+  IN        EFI_ASYNC_USB_TRANSFER_CALLBACK     IsochronousCallBack,
+  IN        VOID                                *Context OPTIONAL
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This                - TODO: add argument description
+  DeviceEndpoint      - TODO: add argument description
+  Data                - TODO: add argument description
+  DataLength          - TODO: add argument description
+  IsochronousCallBack - TODO: add argument description
+  Context             - TODO: add argument description
+
+Returns:
+
+  EFI_UNSUPPORTED - TODO: Add description for return value
+
+--*/
+{
+  //
+  // Currently we don't support this transfer
+  //
+  return EFI_UNSUPPORTED;
+}
 //
 // Here is new definitions
 //
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetDeviceDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
@@ -760,13 +807,21 @@ NewUsbGetDeviceDescriptor (
     EFI_NOT_FOUND
 
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    This - add argument and description to function comment
+// TODO:    DeviceDescriptor - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_DEVICE_DESCRIPTOR   *UsbDeviceDescriptor;
-  EFI_STATUS                  Status;
+  EFI_USB_DEVICE_DESCRIPTOR *UsbDeviceDescriptor;
+  EFI_STATUS                Status;
 
   //
   // This function just wrapps UsbGetDeviceDescriptor.
-  // 
+  //
   
   if (DeviceDescriptor == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -780,14 +835,14 @@ NewUsbGetDeviceDescriptor (
   EfiCopyMem (
     DeviceDescriptor,
     UsbDeviceDescriptor,
-    sizeof(EFI_USB_DEVICE_DESCRIPTOR)
+    sizeof (EFI_USB_DEVICE_DESCRIPTOR)
     );
 
   return EFI_SUCCESS;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetActiveConfigDescriptor (
   IN  EFI_USB_IO_PROTOCOL           *This,
@@ -809,13 +864,21 @@ NewUsbGetActiveConfigDescriptor (
     EFI_NOT_FOUND
 
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    This - add argument and description to function comment
+// TODO:    ConfigurationDescriptor - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_CONFIG_DESCRIPTOR   *UsbConfigDescriptor;
-  EFI_STATUS                  Status;
+  EFI_USB_CONFIG_DESCRIPTOR *UsbConfigDescriptor;
+  EFI_STATUS                Status;
 
   //
   // This function just wrapps UsbGetActiveConfigDescriptor.
-  // 
+  //
   if (ConfigurationDescriptor == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -828,14 +891,14 @@ NewUsbGetActiveConfigDescriptor (
   EfiCopyMem (
     ConfigurationDescriptor,
     UsbConfigDescriptor,
-    sizeof(EFI_USB_CONFIG_DESCRIPTOR)
-  );
+    sizeof (EFI_USB_CONFIG_DESCRIPTOR)
+    );
 
   return EFI_SUCCESS;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetInterfaceDescriptor (
   IN  EFI_USB_IO_PROTOCOL              *This,
@@ -857,13 +920,21 @@ NewUsbGetInterfaceDescriptor (
     EFI_NOT_FOUND
 
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    This - add argument and description to function comment
+// TODO:    InterfaceDescriptor - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_USB_INTERFACE_DESCRIPTOR  *UsbInterfaceDescriptor;
   EFI_STATUS                    Status;
 
   //
   // This function just wrapps UsbGetInterfaceDescriptor.
-  // 
+  //
   if (InterfaceDescriptor == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -876,14 +947,14 @@ NewUsbGetInterfaceDescriptor (
   EfiCopyMem (
     InterfaceDescriptor,
     UsbInterfaceDescriptor,
-    sizeof(EFI_USB_INTERFACE_DESCRIPTOR)
+    sizeof (EFI_USB_INTERFACE_DESCRIPTOR)
     );
 
   return EFI_SUCCESS;
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 NewUsbGetEndpointDescriptor (
   IN  EFI_USB_IO_PROTOCOL             *This,
@@ -908,13 +979,23 @@ NewUsbGetEndpointDescriptor (
     EFI_NOT_FOUND
 
 --*/
+// TODO: function comment is missing 'Routine Description:'
+// TODO: function comment is missing 'Arguments:'
+// TODO: function comment is missing 'Returns:'
+// TODO:    This - add argument and description to function comment
+// TODO:    EndpointIndex - add argument and description to function comment
+// TODO:    EndpointDescriptor - add argument and description to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
+// TODO:    EFI_NOT_FOUND - add return value to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_USB_ENDPOINT_DESCRIPTOR  *UsbEndpointDescriptor;
-  EFI_STATUS                   Status;
+  EFI_USB_ENDPOINT_DESCRIPTOR *UsbEndpointDescriptor;
+  EFI_STATUS                  Status;
 
   //
   // This function just wrapps UsbGetEndpointDescriptor.
-  // 
+  //
 
   if (EndpointDescriptor == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -925,10 +1006,10 @@ NewUsbGetEndpointDescriptor (
   }
 
   Status = UsbGetEndpointDescriptor (
-             This,
-             EndpointIndex,
-             &UsbEndpointDescriptor
-             );
+            This,
+            EndpointIndex,
+            &UsbEndpointDescriptor
+            );
 
   if (EFI_ERROR (Status)) {
     return EFI_NOT_FOUND;
@@ -937,15 +1018,15 @@ NewUsbGetEndpointDescriptor (
   EfiCopyMem (
     EndpointDescriptor,
     UsbEndpointDescriptor,
-    sizeof(EFI_USB_ENDPOINT_DESCRIPTOR)
+    sizeof (EFI_USB_ENDPOINT_DESCRIPTOR)
     );
 
   return EFI_SUCCESS;
 
 }
 
-STATIC 
-EFI_STATUS 
+STATIC
+EFI_STATUS
 EFIAPI
 UsbGetSupportedLanguages (
   IN  EFI_USB_IO_PROTOCOL     *This,
@@ -968,20 +1049,20 @@ UsbGetSupportedLanguages (
 
 --*/
 {
-  USB_IO_DEVICE               *UsbIoDev;
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
-  UINTN                       Index;
-  BOOLEAN                     Found;
+  USB_IO_DEVICE             *UsbIoDev;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
+  UINTN                     Index;
+  BOOLEAN                   Found;
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
-  UsbIoDev = UsbIoController->UsbDevice;
+  UsbIoDev        = UsbIoController->UsbDevice;
 
-  Found = FALSE;
-  Index = 0;
+  Found           = FALSE;
+  Index           = 0;
   //
   // Loop language table
   //
-  while(UsbIoDev->LangID[Index]) {
+  while (UsbIoDev->LangID[Index]) {
     Found = TRUE;
     Index++;
   }
@@ -990,8 +1071,8 @@ UsbGetSupportedLanguages (
     return EFI_NOT_FOUND;
   }
 
-  *LangIDTable = UsbIoDev->LangID;
-  *TableSize = (UINT16)Index;
+  *LangIDTable  = UsbIoDev->LangID;
+  *TableSize    = (UINT16) Index;
 
   return EFI_SUCCESS;
 }
@@ -1025,22 +1106,23 @@ UsbGetStringDescriptor (
     EFI_OUT_OF_RESOURCES
 
 --*/
+// TODO:    StringIndex - add argument and description to function comment
+// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
-  UINT32                      Status;
-  EFI_STATUS                  Result;
-  EFI_USB_STRING_DESCRIPTOR   *StrDescriptor;
-  UINT8                       *Buffer;
-  CHAR16                      *UsbString;
-  UINT16                      TempBuffer;
-  USB_IO_DEVICE               *UsbIoDev;
-  UINT8                       Index;
-  BOOLEAN                     Found;
-  USB_IO_CONTROLLER_DEVICE    *UsbIoController;
+  UINT32                    Status;
+  EFI_STATUS                Result;
+  EFI_USB_STRING_DESCRIPTOR *StrDescriptor;
+  UINT8                     *Buffer;
+  CHAR16                    *UsbString;
+  UINT16                    TempBuffer;
+  USB_IO_DEVICE             *UsbIoDev;
+  UINT8                     Index;
+  BOOLEAN                   Found;
+  USB_IO_CONTROLLER_DEVICE  *UsbIoController;
 
   if (StringIndex == 0) {
     return EFI_NOT_FOUND;
   }
-
   //
   // Search LanguageID, check if it is supported by this device
   //
@@ -1048,16 +1130,17 @@ UsbGetStringDescriptor (
     return EFI_NOT_FOUND;
   }
 
-  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS(This);
-  UsbIoDev = UsbIoController->UsbDevice;
+  UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
+  UsbIoDev        = UsbIoController->UsbDevice;
 
-  Found = FALSE;
-  Index = 0;
+  Found           = FALSE;
+  Index           = 0;
   while (UsbIoDev->LangID[Index]) {
     if (UsbIoDev->LangID[Index] == LangID) {
       Found = TRUE;
       break;
     }
+
     Index++;
   }
 
@@ -1069,18 +1152,18 @@ UsbGetStringDescriptor (
   // Get String Length
   //
   Result = UsbGetString (
-             This,
-             LangID,
-             StringIndex,
-             &TempBuffer,
-             2,
-             &Status
-             );
+            This,
+            LangID,
+            StringIndex,
+            &TempBuffer,
+            2,
+            &Status
+            );
   if (EFI_ERROR (Result)) {
     return EFI_NOT_FOUND;
   }
 
-  StrDescriptor = (EFI_USB_STRING_DESCRIPTOR *)&TempBuffer;
+  StrDescriptor = (EFI_USB_STRING_DESCRIPTOR *) &TempBuffer;
 
   if (StrDescriptor->Length == 0) {
     return EFI_UNSUPPORTED;
@@ -1088,36 +1171,36 @@ UsbGetStringDescriptor (
 
   Buffer = EfiLibAllocateZeroPool (StrDescriptor->Length);
   if (Buffer == NULL) {
-     return EFI_OUT_OF_RESOURCES;
+    return EFI_OUT_OF_RESOURCES;
   }
 
   Result = UsbGetString (
-             This,
-             LangID,
-             StringIndex,
-             Buffer,
-             StrDescriptor->Length,
-             &Status
-             );
+            This,
+            LangID,
+            StringIndex,
+            Buffer,
+            StrDescriptor->Length,
+            &Status
+            );
 
   if (EFI_ERROR (Result)) {
     gBS->FreePool (Buffer);
     return EFI_NOT_FOUND;
   }
 
-  StrDescriptor = (EFI_USB_STRING_DESCRIPTOR *)Buffer;
+  StrDescriptor = (EFI_USB_STRING_DESCRIPTOR *) Buffer;
 
   //
   // UsbString is a UNICODE string
   //
   UsbString = EfiLibAllocateZeroPool (StrDescriptor->Length);
   if (UsbString == NULL) {
-    gBS->FreePool(Buffer);
+    gBS->FreePool (Buffer);
     return EFI_OUT_OF_RESOURCES;
   }
 
   EfiCopyMem (
-    (VOID *)UsbString,
+    (VOID *) UsbString,
     Buffer + 2,
     StrDescriptor->Length - 2
     );
@@ -1125,7 +1208,6 @@ UsbGetStringDescriptor (
   *String = UsbString;
 
   gBS->FreePool (Buffer);
-  
+
   return EFI_SUCCESS;
 }
-

@@ -33,9 +33,10 @@ STATIC struct {
 #pragma pack()
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-InitArpHeader(VOID)
+InitArpHeader (
+  VOID
+  )
 /*++
 Routine description:
   Initialize ARP packet header.
@@ -48,22 +49,22 @@ Returns:
 
 --*/
 {
-  ArpHeader.HwType     = HTONS(ETHERNET_ADD_SPC);
-  ArpHeader.ProtType   = HTONS(ETHER_TYPE_IP);
-  ArpHeader.HwAddLen   = ENET_HWADDLEN;
-  ArpHeader.ProtAddLen = IPV4_PROTADDLEN;
-  ArpHeader.OpCode     = HTONS(ARP_REQUEST);
+  ArpHeader.HwType      = HTONS (ETHERNET_ADD_SPC);
+  ArpHeader.ProtType    = HTONS (ETHER_TYPE_IP);
+  ArpHeader.HwAddLen    = ENET_HWADDLEN;
+  ArpHeader.ProtAddLen  = IPV4_PROTADDLEN;
+  ArpHeader.OpCode      = HTONS (ARP_REQUEST);
 
-  EfiCopyMem(&ArpReplyPacket.ArpHeader, &ArpHeader, sizeof(ARP_HEADER));
+  EfiCopyMem (&ArpReplyPacket.ArpHeader, &ArpHeader, sizeof (ARP_HEADER));
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 VOID
-HandleArpReceive(
+HandleArpReceive (
   IN PXE_BASECODE_DEVICE  *Private,
   IN ARP_PACKET           *ArpPacketPtr,
-  IN VOID                 *MediaHeader)
+  IN VOID                 *MediaHeader
+  )
 /*++
 Routine description:
   Process ARP packet.
@@ -89,81 +90,82 @@ Returns:
   //
   //
   PxeBcMode = Private->EfiBc.Mode;
-  SnpMode = Private->SimpleNetwork->Mode;
+  SnpMode   = Private->SimpleNetwork->Mode;
 
   //
   // For now only ethernet addresses are supported.
   // This will need to be updated when other media
   // layers are supported by PxeBc, Snp and UNDI.
   //
-  if (ArpPacketPtr->ArpHeader.HwType != HTONS(ETHERNET_ADD_SPC)) {
-    return;
+  if (ArpPacketPtr->ArpHeader.HwType != HTONS (ETHERNET_ADD_SPC)) {
+    return ;
   }
-
   //
   // For now only IP protocol addresses are supported.
   // This will need to be updated when other protocol
   // types are supported by PxeBc, Snp and UNDI.
   //
-  if (ArpPacketPtr->ArpHeader.ProtType != HTONS(ETHER_TYPE_IP)) {
-    return;
+  if (ArpPacketPtr->ArpHeader.ProtType != HTONS (ETHER_TYPE_IP)) {
+    return ;
   }
-
   //
   // For now only SNP hardware address sizes are supported.
   //
   if (ArpPacketPtr->ArpHeader.HwAddLen != SnpMode->HwAddressSize) {
-    return;
+    return ;
   }
-
   //
   // For now only PxeBc protocol address sizes are supported.
   //
   if (ArpPacketPtr->ArpHeader.ProtAddLen != Private->IpLength) {
-    return;
+    return ;
   }
-
   //
   // Ignore out of range opcodes
   //
   switch (ArpPacketPtr->ArpHeader.OpCode) {
-  case HTONS(ARP_REPLY):
-  case HTONS(ARP_REQUEST):
+  case HTONS (ARP_REPLY):
+  case HTONS (ARP_REQUEST):
     break;
 
   default:
-    return;
+    return ;
   }
-
   //
   // update entry in our ARP cache if we have it
   //
-  SrcHwAddr = (UINT8 *)&ArpPacketPtr->SrcHardwareAddr;
+  SrcHwAddr = (UINT8 *) &ArpPacketPtr->SrcHardwareAddr;
   SrcPrAddr = SrcHwAddr + SnpMode->HwAddressSize;
 
   for (Index = 0; Index < PxeBcMode->ArpCacheEntries; ++Index) {
-    if (EfiCompareMem(&PxeBcMode->ArpCache[Index].IpAddr,
-      SrcPrAddr, Private->IpLength))
-    {
+    if (EfiCompareMem (
+          &PxeBcMode->ArpCache[Index].IpAddr,
+          SrcPrAddr,
+          Private->IpLength
+          )) {
       continue;
     }
 
-    EfiCopyMem(&PxeBcMode->ArpCache[Index].MacAddr,
-      SrcHwAddr, SnpMode->HwAddressSize);
+    EfiCopyMem (
+      &PxeBcMode->ArpCache[Index].MacAddr,
+      SrcHwAddr,
+      SnpMode->HwAddressSize
+      );
 
     break;
   }
-
   //
   // Done if ARP packet was not for us.
   //
   DstHwAddr = SrcPrAddr + Private->IpLength;
   DstPrAddr = DstHwAddr + SnpMode->HwAddressSize;
 
-  if (EfiCompareMem(DstPrAddr, &PxeBcMode->StationIp, Private->IpLength)) {
-    return;   // not for us
+  if (EfiCompareMem (DstPrAddr, &PxeBcMode->StationIp, Private->IpLength)) {
+    return ;
+    //
+    // not for us
+    //
   }
-
   //
   // for us - if we did not update entry, add it
   //
@@ -181,94 +183,97 @@ Returns:
       ++PxeBcMode->ArpCacheEntries;
     }
 
-    EfiCopyMem(&PxeBcMode->ArpCache[Index].MacAddr,
+    EfiCopyMem (
+      &PxeBcMode->ArpCache[Index].MacAddr,
       SrcHwAddr,
-      SnpMode->HwAddressSize);
+      SnpMode->HwAddressSize
+      );
 
-    EfiCopyMem(&PxeBcMode->ArpCache[Index].IpAddr,
+    EfiCopyMem (
+      &PxeBcMode->ArpCache[Index].IpAddr,
       SrcPrAddr,
-      Private->IpLength);
+      Private->IpLength
+      );
   }
-
   //
   // if this is not a request or we don't yet have an IP, finished
   //
-  if (ArpPacketPtr->ArpHeader.OpCode != HTONS(ARP_REQUEST) ||
-    !Private->GoodStationIp)
-  {
-    return;
+  if (ArpPacketPtr->ArpHeader.OpCode != HTONS (ARP_REQUEST) || !Private->GoodStationIp) {
+    return ;
   }
-
   //
   // Assemble ARP reply.
   //
-
   //
   // Create media header.  [ dest mac | src mac | prot ]
   //
-  EfiCopyMem(
+  EfiCopyMem (
     &ArpReplyPacket.MediaHeader[0],
     SrcHwAddr,
-    SnpMode->HwAddressSize);
+    SnpMode->HwAddressSize
+    );
 
-  EfiCopyMem(
+  EfiCopyMem (
     &ArpReplyPacket.MediaHeader[SnpMode->HwAddressSize],
     &SnpMode->CurrentAddress,
-    SnpMode->HwAddressSize);
+    SnpMode->HwAddressSize
+    );
 
-  EfiCopyMem(
+  EfiCopyMem (
     &ArpReplyPacket.MediaHeader[2 * SnpMode->HwAddressSize],
-    &((UINT8 *)MediaHeader)[2 * SnpMode->HwAddressSize],
-    sizeof(UINT16));
+    &((UINT8 *) MediaHeader)[2 * SnpMode->HwAddressSize],
+    sizeof (UINT16)
+    );
 
   //
   // ARP reply header is almost filled in,
   // just insert the correct opcode.
   //
-  ArpReplyPacket.ArpHeader.OpCode = HTONS(ARP_REPLY);
+  ArpReplyPacket.ArpHeader.OpCode = HTONS (ARP_REPLY);
 
   //
   // Now fill in ARP data.  [ src mac | src prot | dest mac | dest prot ]
   //
   TmpPtr = ArpReplyPacket.ArpData;
-  EfiCopyMem(TmpPtr, &SnpMode->CurrentAddress, SnpMode->HwAddressSize);
+  EfiCopyMem (TmpPtr, &SnpMode->CurrentAddress, SnpMode->HwAddressSize);
 
   TmpPtr += SnpMode->HwAddressSize;
-  EfiCopyMem(TmpPtr, &PxeBcMode->StationIp, Private->IpLength);
+  EfiCopyMem (TmpPtr, &PxeBcMode->StationIp, Private->IpLength);
 
   TmpPtr += Private->IpLength;
-  EfiCopyMem(TmpPtr, SrcHwAddr, SnpMode->HwAddressSize);
+  EfiCopyMem (TmpPtr, SrcHwAddr, SnpMode->HwAddressSize);
 
   TmpPtr += SnpMode->HwAddressSize;
-  EfiCopyMem(TmpPtr, SrcPrAddr, Private->IpLength);
+  EfiCopyMem (TmpPtr, SrcPrAddr, Private->IpLength);
 
   //
   // Now send out the ARP reply.
   //
-  EfiCopyMem(&TmpMacAddr, SrcHwAddr, sizeof(EFI_MAC_ADDRESS));
+  EfiCopyMem (&TmpMacAddr, SrcHwAddr, sizeof (EFI_MAC_ADDRESS));
 
-  SendPacket(
+  SendPacket (
     Private,
     &ArpReplyPacket.MediaHeader,
     &ArpReplyPacket.ArpHeader,
-    sizeof(ARP_HEADER) + 2 * (Private->IpLength + SnpMode->HwAddressSize),
+    sizeof (ARP_HEADER) + 2 * (Private->IpLength + SnpMode->HwAddressSize),
     &TmpMacAddr,
     PXE_PROTOCOL_ETHERNET_ARP,
-    EFI_PXE_BASE_CODE_FUNCTION_ARP);
+    EFI_PXE_BASE_CODE_FUNCTION_ARP
+    );
 
   //
   // Give time (100 microseconds) for ARP reply to get onto wire.
   //
-  gBS->Stall(1000);
+  gBS->Stall (1000);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
 BOOLEAN
-GetHwAddr(
+GetHwAddr (
   IN PXE_BASECODE_DEVICE  *Private,
   IN EFI_IP_ADDRESS       *ProtocolAddrPtr,
-  OUT EFI_MAC_ADDRESS     *HardwareAddrPtr)
+  OUT EFI_MAC_ADDRESS     *HardwareAddrPtr
+  )
 /*++
 Routine description:
   Locate IP address in ARP cache and return MAC address.
@@ -287,15 +292,20 @@ Returns:
   UINTN                   HardwareAddrLength;
   UINTN                   Index;
 
-  PxeBcMode = Private->EfiBc.Mode;
-  HardwareAddrLength = Private->SimpleNetwork->Mode->HwAddressSize;
+  PxeBcMode           = Private->EfiBc.Mode;
+  HardwareAddrLength  = Private->SimpleNetwork->Mode->HwAddressSize;
 
   for (Index = 0; Index < PxeBcMode->ArpCacheEntries; ++Index) {
-    if (!EfiCompareMem(ProtocolAddrPtr, &PxeBcMode->ArpCache[Index].IpAddr,
-      Private->IpLength))
-    {
-      EfiCopyMem(HardwareAddrPtr, &PxeBcMode->ArpCache[Index].MacAddr,
-        HardwareAddrLength);
+    if (!EfiCompareMem (
+          ProtocolAddrPtr,
+          &PxeBcMode->ArpCache[Index].IpAddr,
+          Private->IpLength
+          )) {
+      EfiCopyMem (
+        HardwareAddrPtr,
+        &PxeBcMode->ArpCache[Index].MacAddr,
+        HardwareAddrLength
+        );
 
       return TRUE;
     }
@@ -305,12 +315,13 @@ Returns:
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-STATIC EFI_STATUS
-SendRequest(
+STATIC
+EFI_STATUS
+SendRequest (
   IN PXE_BASECODE_DEVICE  *Private,
   IN EFI_IP_ADDRESS       *ProtocolAddrPtr,
-  IN EFI_MAC_ADDRESS      *HardwareAddrPtr)
+  IN EFI_MAC_ADDRESS      *HardwareAddrPtr
+  )
 /*++
 Routine description:
   Transmit ARP request packet
@@ -337,47 +348,59 @@ Returns:
   //
   //
   //
-  PxeBcMode = Private->EfiBc.Mode;
-  SnpMode = Private->SimpleNetwork->Mode;
-  HardwareAddrLength = SnpMode->HwAddressSize;
+  PxeBcMode           = Private->EfiBc.Mode;
+  SnpMode             = Private->SimpleNetwork->Mode;
+  HardwareAddrLength  = SnpMode->HwAddressSize;
 
   //
   // Allocate ARP buffer
   //
   if (Private->ArpBuffer == NULL) {
-    Status = gBS->AllocatePool(
-      EfiBootServicesData,
-      SnpMode->MediaHeaderSize + sizeof(ARP_PACKET),
-      &Private->ArpBuffer);
+    Status = gBS->AllocatePool (
+                    EfiBootServicesData,
+                    SnpMode->MediaHeaderSize + sizeof (ARP_PACKET),
+                    &Private->ArpBuffer
+                    );
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       return Status;
     }
   }
 
-  ArpPacket = (VOID *)(Private->ArpBuffer + SnpMode->MediaHeaderSize);
+  ArpPacket = (VOID *) (Private->ArpBuffer + SnpMode->MediaHeaderSize);
 
+  //
   // for now, only handle one kind of hw and pr address
-  ArpPacket->ArpHeader = ArpHeader;
-  ArpPacket->ArpHeader.HwAddLen = (UINT8)HardwareAddrLength;
-  ArpPacket->ArpHeader.ProtAddLen = (UINT8)Private->IpLength;
+  //
+  ArpPacket->ArpHeader            = ArpHeader;
+  ArpPacket->ArpHeader.HwAddLen   = (UINT8) HardwareAddrLength;
+  ArpPacket->ArpHeader.ProtAddLen = (UINT8) Private->IpLength;
 
+  //
   // rest more generic
-  SrcProtocolAddrPtr = (UINT8 *)(&ArpPacket->SrcHardwareAddr) +
-    HardwareAddrLength;
+  //
+  SrcProtocolAddrPtr  = (UINT8 *) (&ArpPacket->SrcHardwareAddr) + HardwareAddrLength;
   DestHardwareAddrptr = SrcProtocolAddrPtr + Private->IpLength;
   DestProtocolAddrPtr = DestHardwareAddrptr + HardwareAddrLength;
 
-  EfiCopyMem(DestProtocolAddrPtr, ProtocolAddrPtr, Private->IpLength);
-  EfiCopyMem(DestHardwareAddrptr, HardwareAddrPtr, HardwareAddrLength);
-  EfiCopyMem(SrcProtocolAddrPtr, &PxeBcMode->StationIp, Private->IpLength);
-  EfiCopyMem(&ArpPacket->SrcHardwareAddr, &SnpMode->CurrentAddress,
-    HardwareAddrLength);
+  EfiCopyMem (DestProtocolAddrPtr, ProtocolAddrPtr, Private->IpLength);
+  EfiCopyMem (DestHardwareAddrptr, HardwareAddrPtr, HardwareAddrLength);
+  EfiCopyMem (SrcProtocolAddrPtr, &PxeBcMode->StationIp, Private->IpLength);
+  EfiCopyMem (
+    &ArpPacket->SrcHardwareAddr,
+    &SnpMode->CurrentAddress,
+    HardwareAddrLength
+    );
 
-  return SendPacket(Private, Private->ArpBuffer, ArpPacket,
-    sizeof(ARP_HEADER) + ((Private->IpLength + HardwareAddrLength) << 1), 
-    &SnpMode->BroadcastAddress,
-    PXE_PROTOCOL_ETHERNET_ARP, EFI_PXE_BASE_CODE_FUNCTION_ARP);
+  return SendPacket (
+          Private,
+          Private->ArpBuffer,
+          ArpPacket,
+          sizeof (ARP_HEADER) + ((Private->IpLength + HardwareAddrLength) << 1),
+          &SnpMode->BroadcastAddress,
+          PXE_PROTOCOL_ETHERNET_ARP,
+          EFI_PXE_BASE_CODE_FUNCTION_ARP
+          );
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -386,20 +409,19 @@ Returns:
 // check for address - if not there, send ARP request, wait and check again
 // not how it would be done in a full system
 //
-
-#define ARP_REQUEST_TIMEOUT_MS 500  // try for half a second
-
-////////////////////////////////////////////////////////////
+#define ARP_REQUEST_TIMEOUT_MS  500 // try for half a second
+  
+  ////////////////////////////////////////////////////////////
 //
 //  BC Arp Routine
 //
-
-EFI_STATUS EFIAPI
-BcArp(
-  IN EFI_PXE_BASE_CODE_PROTOCOL *This,
-  IN EFI_IP_ADDRESS             *ProtocolAddrPtr,
-  OUT EFI_MAC_ADDRESS           *HardwareAddrPtr OPTIONAL
-)
+EFI_STATUS
+EFIAPI
+BcArp (
+  IN EFI_PXE_BASE_CODE_PROTOCOL * This,
+  IN EFI_IP_ADDRESS             * ProtocolAddrPtr,
+  OUT EFI_MAC_ADDRESS           * HardwareAddrPtr OPTIONAL
+  )
 /*++
 Routine description:
   PxeBc ARP API.
@@ -419,40 +441,42 @@ Returns:
   //
   // Lock the instance data and make sure started
   //
-
   StatCode = EFI_SUCCESS;
 
   if (This == NULL) {
-    DEBUG((EFI_D_ERROR, "BC *This pointer == NULL"));
+    DEBUG ((EFI_D_ERROR, "BC *This pointer == NULL"));
     return EFI_INVALID_PARAMETER;
   }
 
-  Private = CR(This, PXE_BASECODE_DEVICE, EfiBc, PXE_BASECODE_DEVICE_SIGNATURE);
+  Private = CR (This, PXE_BASECODE_DEVICE, EfiBc, PXE_BASECODE_DEVICE_SIGNATURE);
 
   if (Private == NULL) {
-    DEBUG((EFI_D_ERROR, "PXE_BASECODE_DEVICE poiner == NULL"));
+    DEBUG ((EFI_D_ERROR, "PXE_BASECODE_DEVICE poiner == NULL"));
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock(&Private->Lock);
+  EfiAcquireLock (&Private->Lock);
 
   if (This->Mode == NULL || !This->Mode->Started) {
-    DEBUG((EFI_D_ERROR, "BC was not started."));
-    EfiReleaseLock(&Private->Lock);
+    DEBUG ((EFI_D_ERROR, "BC was not started."));
+    EfiReleaseLock (&Private->Lock);
     return EFI_NOT_STARTED;
   }
 
-  DEBUG((EFI_D_INFO, "\nBcArp()"));
+  DEBUG ((EFI_D_INFO, "\nBcArp()"));
 
   //
   // Issue BC command
   //
-
   if (ProtocolAddrPtr == NULL) {
-    DEBUG((EFI_D_INFO, "\nBcArp()  Exit #1  %Xh (%r)",
-      EFI_INVALID_PARAMETER, EFI_INVALID_PARAMETER));
+    DEBUG (
+      (EFI_D_INFO,
+      "\nBcArp()  Exit #1  %Xh (%r)",
+      EFI_INVALID_PARAMETER,
+      EFI_INVALID_PARAMETER)
+      );
 
-    EfiReleaseLock(&Private->Lock);
+    EfiReleaseLock (&Private->Lock);
     return EFI_INVALID_PARAMETER;
   }
 
@@ -460,32 +484,35 @@ Returns:
     HardwareAddrPtr = &Mac;
   }
 
-  EfiZeroMem(HardwareAddrPtr, Private->SimpleNetwork->Mode->HwAddressSize);
+  EfiZeroMem (HardwareAddrPtr, Private->SimpleNetwork->Mode->HwAddressSize);
 
-  if (GetHwAddr(Private, ProtocolAddrPtr, HardwareAddrPtr)) {
-    DEBUG((EFI_D_INFO, "\nBcArp()  Exit #2  %Xh (%r)",
-      EFI_SUCCESS, EFI_SUCCESS));
+  if (GetHwAddr (Private, ProtocolAddrPtr, HardwareAddrPtr)) {
+    DEBUG (
+      (EFI_D_INFO,
+      "\nBcArp()  Exit #2  %Xh (%r)",
+      EFI_SUCCESS,
+      EFI_SUCCESS)
+      );
 
-    EfiReleaseLock(&Private->Lock);
+    EfiReleaseLock (&Private->Lock);
     return EFI_SUCCESS;
   }
 
-  StatCode = DoArp(Private, ProtocolAddrPtr, HardwareAddrPtr);
+  StatCode = DoArp (Private, ProtocolAddrPtr, HardwareAddrPtr);
 
-  DEBUG((EFI_D_INFO, "\nBcArp()  Exit #3  %Xh (%r)", StatCode, StatCode));
+  DEBUG ((EFI_D_INFO, "\nBcArp()  Exit #3  %Xh (%r)", StatCode, StatCode));
 
-  EfiReleaseLock(&Private->Lock);
+  EfiReleaseLock (&Private->Lock);
   return StatCode;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-EFI_STATUS 
-DoArp(
+EFI_STATUS
+DoArp (
   IN PXE_BASECODE_DEVICE  *Private,
   IN EFI_IP_ADDRESS       *ProtocolAddrPtr,
   OUT EFI_MAC_ADDRESS     *HardwareAddrPtr
-)
+  )
 /*++
 Routine description:
   Internal ARP implementation.
@@ -506,50 +533,56 @@ Returns:
   UINTN       BufferSize;
   UINT16      Protocol;
 
-  DEBUG((EFI_D_INFO, "\nDoArp()"));
+  DEBUG ((EFI_D_INFO, "\nDoArp()"));
 
   //
   //
   //
-  StatCode = SendRequest(Private, ProtocolAddrPtr, HardwareAddrPtr);
+  StatCode = SendRequest (Private, ProtocolAddrPtr, HardwareAddrPtr);
 
-  if (EFI_ERROR(StatCode)) {
-    DEBUG((EFI_D_INFO, "\nDoArp()  Exit #1  %Xh (%r)", StatCode, StatCode));
+  if (EFI_ERROR (StatCode)) {
+    DEBUG ((EFI_D_INFO, "\nDoArp()  Exit #1  %Xh (%r)", StatCode, StatCode));
+    return StatCode;
+  }
+  //
+  //
+  //
+  StatCode = gBS->CreateEvent (
+                    EFI_EVENT_TIMER,
+                    EFI_TPL_CALLBACK,
+                    NULL,
+                    NULL,
+                    &TimeoutEvent
+                    );
+
+  if (EFI_ERROR (StatCode)) {
     return StatCode;
   }
 
-  //
-  //
-  //
-  StatCode = gBS->CreateEvent(
-    EFI_EVENT_TIMER,
-    EFI_TPL_CALLBACK,
-    NULL,
-    NULL,
-    &TimeoutEvent);
+  StatCode = gBS->SetTimer (
+                    TimeoutEvent,
+                    TimerRelative,
+                    ARP_REQUEST_TIMEOUT_MS * 10000
+                    );
 
-  if (EFI_ERROR(StatCode)) {
+  if (EFI_ERROR (StatCode)) {
+    gBS->CloseEvent (TimeoutEvent);
     return StatCode;
   }
-
-  StatCode = gBS->SetTimer(
-    TimeoutEvent,
-    TimerRelative,
-    ARP_REQUEST_TIMEOUT_MS * 10000);
-
-  if (EFI_ERROR(StatCode)) {
-    gBS->CloseEvent(TimeoutEvent);
-    return StatCode;
-  }
-
   //
   //
   //
   for (;;) {
-    StatCode = WaitForReceive(Private, EFI_PXE_BASE_CODE_FUNCTION_ARP,
-      TimeoutEvent, &HeaderSize, &BufferSize, &Protocol);
+    StatCode = WaitForReceive (
+                Private,
+                EFI_PXE_BASE_CODE_FUNCTION_ARP,
+                TimeoutEvent,
+                &HeaderSize,
+                &BufferSize,
+                &Protocol
+                );
 
-    if (EFI_ERROR(StatCode)) {
+    if (EFI_ERROR (StatCode)) {
       break;
     }
 
@@ -557,19 +590,25 @@ Returns:
       continue;
     }
 
-    HandleArpReceive(Private,
-      (ARP_PACKET *)(Private->ReceiveBufferPtr+HeaderSize),
-      Private->ReceiveBufferPtr);
+    HandleArpReceive (
+      Private,
+      (ARP_PACKET *) (Private->ReceiveBufferPtr + HeaderSize),
+      Private->ReceiveBufferPtr
+      );
 
-    if (GetHwAddr(Private, ProtocolAddrPtr, HardwareAddrPtr)) {
+    if (GetHwAddr (Private, ProtocolAddrPtr, HardwareAddrPtr)) {
       break;
     }
   }
 
-  DEBUG((EFI_D_INFO, "\nDoArp()  Exit #2  %Xh, (%r)",
-    StatCode, StatCode));
+  DEBUG (
+    (EFI_D_INFO,
+    "\nDoArp()  Exit #2  %Xh, (%r)",
+    StatCode,
+    StatCode)
+    );
 
-  gBS->CloseEvent(TimeoutEvent);
+  gBS->CloseEvent (TimeoutEvent);
 
   return StatCode;
 }

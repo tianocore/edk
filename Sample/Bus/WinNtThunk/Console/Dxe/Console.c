@@ -52,8 +52,7 @@ EFI_DRIVER_BINDING_PROTOCOL gWinNtConsoleDriverBinding = {
   NULL
 };
 
-
-EFI_DRIVER_ENTRY_POINT(InitializeWinNtConsole)
+EFI_DRIVER_ENTRY_POINT (InitializeWinNtConsole)
 
 EFI_STATUS
 InitializeWinNtConsole (
@@ -76,18 +75,19 @@ Returns:
   EFI_STATUS
 
 --*/
+// TODO:    ImageHandle - add argument and description to function comment
+// TODO:    SystemTable - add argument and description to function comment
 {
   return EfiLibInstallAllDriverProtocols (
-           ImageHandle, 
-           SystemTable, 
-           &gWinNtConsoleDriverBinding, 
-           ImageHandle,
-           &gWinNtConsoleComponentName,
-           NULL,
-           NULL
-           );
+          ImageHandle,
+          SystemTable,
+          &gWinNtConsoleDriverBinding,
+          ImageHandle,
+          &gWinNtConsoleComponentName,
+          NULL,
+          NULL
+          );
 }
-
 
 EFI_STATUS
 WinNtConsoleDriverBindingSupported (
@@ -106,19 +106,22 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS                        Status;
-  EFI_WIN_NT_IO_PROTOCOL *WinNtIo;
-  
+  EFI_STATUS              Status;
+  EFI_WIN_NT_IO_PROTOCOL  *WinNtIo;
+
   //
   // Open the IO Abstraction(s) needed to perform the supported test
   //
   Status = gBS->OpenProtocol (
-                  Handle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  Handle,
+                  &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
@@ -126,7 +129,7 @@ Returns:
   }
 
   //
-  // Make sure that the WinNt Thunk Protocol is valid 
+  // Make sure that the WinNt Thunk Protocol is valid
   //
   Status = EFI_UNSUPPORTED;
   if (WinNtIo->WinNtThunk->Signature == EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE) {
@@ -143,15 +146,14 @@ Returns:
   // Close the I/O Abstraction(s) used to perform the supported test
   //
   gBS->CloseProtocol (
-         Handle,   
-         &gEfiWinNtIoProtocolGuid,  
-         This->DriverBindingHandle,   
-         Handle   
-         );
+        Handle,
+        &gEfiWinNtIoProtocolGuid,
+        This->DriverBindingHandle,
+        Handle
+        );
 
   return Status;
 }
-
 
 EFI_STATUS
 WinNtConsoleDriverBindingStart (
@@ -170,29 +172,32 @@ Returns:
   None
 
 --*/
+// TODO:    This - add argument and description to function comment
+// TODO:    Handle - add argument and description to function comment
+// TODO:    RemainingDevicePath - add argument and description to function comment
 {
-  EFI_STATUS                        Status;
-  EFI_WIN_NT_IO_PROTOCOL *WinNtIo;
-  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA   *Private;
+  EFI_STATUS                      Status;
+  EFI_WIN_NT_IO_PROTOCOL          *WinNtIo;
+  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private;
 
   //
   // Grab the IO abstraction we need to get any work done
   //
   Status = gBS->OpenProtocol (
-                  Handle,   
-                  &gEfiWinNtIoProtocolGuid,  
+                  Handle,
+                  &gEfiWinNtIoProtocolGuid,
                   &WinNtIo,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Status = gBS->AllocatePool(
+  Status = gBS->AllocatePool (
                   EfiBootServicesData,
-                  sizeof (WIN_NT_SIMPLE_TEXT_PRIVATE_DATA), 
+                  sizeof (WIN_NT_SIMPLE_TEXT_PRIVATE_DATA),
                   &Private
                   );
   if (EFI_ERROR (Status)) {
@@ -210,21 +215,24 @@ Returns:
   WinNtSimpleTextInAttachToWindow (Private);
 
   Status = gBS->InstallMultipleProtocolInterfaces (
-                  &Handle,              
-                  &gEfiSimpleTextOutProtocolGuid, &Private->SimpleTextOut,
-                  &gEfiSimpleTextInProtocolGuid,  &Private->SimpleTextIn,
+                  &Handle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  &Private->SimpleTextOut,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &Private->SimpleTextIn,
                   NULL
                   );
   if (!EFI_ERROR (Status)) {
     return Status;
   }
+
 Done:
   gBS->CloseProtocol (
-         Handle,   
-         &gEfiWinNtIoProtocolGuid,  
-         This->DriverBindingHandle,   
-         Handle   
-         );
+        Handle,
+        &gEfiWinNtIoProtocolGuid,
+        This->DriverBindingHandle,
+        Handle
+        );
   if (Private != NULL) {
 
     EfiLibFreeUnicodeStringTable (Private->ControllerNameTable);
@@ -239,9 +247,9 @@ Done:
 
     gBS->FreePool (Private);
   }
+
   return Status;
 }
-
 
 EFI_STATUS
 WinNtConsoleDriverBindingStop (
@@ -250,23 +258,41 @@ WinNtConsoleDriverBindingStop (
   IN  UINTN                        NumberOfChildren,
   IN  EFI_HANDLE                   *ChildHandleBuffer
   )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  This              - TODO: add argument description
+  Handle            - TODO: add argument description
+  NumberOfChildren  - TODO: add argument description
+  ChildHandleBuffer - TODO: add argument description
+
+Returns:
+
+  EFI_UNSUPPORTED - TODO: Add description for return value
+
+--*/
 {
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL      *SimpleTextOut;
-  EFI_STATUS                        Status;
-  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA   *Private;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *SimpleTextOut;
+  EFI_STATUS                      Status;
+  WIN_NT_SIMPLE_TEXT_PRIVATE_DATA *Private;
 
   //
   // Kick people off our interface???
   //
   Status = gBS->OpenProtocol (
-                  Handle,   
-                  &gEfiSimpleTextOutProtocolGuid,  
+                  Handle,
+                  &gEfiSimpleTextOutProtocolGuid,
                   &SimpleTextOut,
-                  This->DriverBindingHandle,   
-                  Handle,   
+                  This->DriverBindingHandle,
+                  Handle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
@@ -275,9 +301,11 @@ WinNtConsoleDriverBindingStop (
   ASSERT (Private->Handle == Handle);
 
   Status = gBS->UninstallMultipleProtocolInterfaces (
-                  Handle,              
-                  &gEfiSimpleTextOutProtocolGuid, &Private->SimpleTextOut,
-                  &gEfiSimpleTextInProtocolGuid,  &Private->SimpleTextIn,
+                  Handle,
+                  &gEfiSimpleTextOutProtocolGuid,
+                  &Private->SimpleTextOut,
+                  &gEfiSimpleTextInProtocolGuid,
+                  &Private->SimpleTextIn,
                   NULL
                   );
   if (!EFI_ERROR (Status)) {
@@ -286,9 +314,9 @@ WinNtConsoleDriverBindingStop (
     // Shut down our device
     //
     Status = gBS->CloseProtocol (
-                    Handle, 
-                    &gEfiWinNtIoProtocolGuid, 
-                    This->DriverBindingHandle, 
+                    Handle,
+                    &gEfiWinNtIoProtocolGuid,
+                    This->DriverBindingHandle,
                     Handle
                     );
 
@@ -297,14 +325,13 @@ WinNtConsoleDriverBindingStop (
 
     Private->WinNtThunk->CloseHandle (Private->NtOutHandle);
     //
-    // DO NOT close Private->NtInHandle. It points to StdIn and not 
+    // DO NOT close Private->NtInHandle. It points to StdIn and not
     //  the Private->NtOutHandle is StdIn and should not be closed!
     //
-
     EfiLibFreeUnicodeStringTable (Private->ControllerNameTable);
 
     gBS->FreePool (Private);
   }
+
   return Status;
 }
-

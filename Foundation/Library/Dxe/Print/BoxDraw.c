@@ -159,6 +159,22 @@ BOOLEAN
 IsValidAscii (
   IN  CHAR16  Ascii
   )
+/*++
+
+Routine Description:
+
+  Is it valid ascii char?  
+
+Arguments:
+
+  Ascii                 - The char to check
+
+Returns: 
+
+  TRUE                  - Is a ascii char
+  FALSE                 - Not a ascii char
+
+--*/
 {
   if ((Ascii >= 0x20) && (Ascii <= 0x7f)) {
     return TRUE;
@@ -171,6 +187,22 @@ BOOLEAN
 IsValidEfiCntlChar (
   IN  CHAR16  CharC
   )
+/*++
+
+Routine Description:
+
+  Is it valid EFI control char?  
+
+Arguments:
+
+  Ascii                 - The char to check
+
+Returns: 
+
+  TRUE                  - Is a valid EFI control char
+  FALSE                 - Not a valid EFI control char
+
+--*/
 {
   if (CharC == CHAR_NULL || CharC == CHAR_BACKSPACE || CharC == CHAR_LINEFEED || CharC == CHAR_CARRIAGE_RETURN) {
     return TRUE;

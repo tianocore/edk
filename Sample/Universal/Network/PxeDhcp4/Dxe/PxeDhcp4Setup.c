@@ -18,19 +18,19 @@ Abstract:
 
 #include "PxeDhcp4.h"
 
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-EFI_STATUS EFIAPI
-PxeDhcp4Setup(
+EFI_STATUS
+EFIAPI
+PxeDhcp4Setup (
   IN EFI_PXE_DHCP4_PROTOCOL *This,
-  IN EFI_PXE_DHCP4_DATA     *Data)
+  IN EFI_PXE_DHCP4_DATA     *Data
+  )
 {
-  PXE_DHCP4_PRIVATE_DATA    *Private;
-  DHCP4_HEADER              *Packet;
-  EFI_STATUS                EfiStatus;
-  UINT8                     *OpLen;
-  UINT8                     *OpPtr;
+  PXE_DHCP4_PRIVATE_DATA  *Private;
+  DHCP4_HEADER            *Packet;
+  EFI_STATUS              EfiStatus;
+  UINT8                   *OpLen;
+  UINT8                   *OpPtr;
 
   //
   // Return error if parameters are invalid.
@@ -39,7 +39,7 @@ PxeDhcp4Setup(
     return EFI_INVALID_PARAMETER;
   }
 
-  Private = PXE_DHCP4_PRIVATE_DATA_FROM_THIS(This);
+  Private = PXE_DHCP4_PRIVATE_DATA_FROM_THIS (This);
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -52,7 +52,6 @@ PxeDhcp4Setup(
   if (Private->PxeBc == NULL) {
     return EFI_DEVICE_ERROR;
   }
-
   //
   // Check contents of provided Data structure.
   //
@@ -77,43 +76,53 @@ PxeDhcp4Setup(
         return EFI_INVALID_PARAMETER;
       }
     }
-
     //
     // Do packet content checks.
     //
     if (Data->SetupCompleted) {
+      //
       // %%TBD - check discover packet
+      //
     }
 
     if (Data->SelectCompleted) {
       if (Data->IsBootp) {
+        //
         // %%TBD - check offer packet
-
-        if (EfiCompareMem(&Data->Discover,
-          &Data->Request, sizeof(DHCP4_PACKET)))
-        {
+        //
+        if (EfiCompareMem (
+              &Data->Discover,
+              &Data->Request,
+              sizeof (DHCP4_PACKET)
+              )) {
           return EFI_INVALID_PARAMETER;
         }
 
-        if (EfiCompareMem(&Data->Offer,
-          &Data->AckNak, sizeof(DHCP4_PACKET)))
-        {
+        if (EfiCompareMem (
+              &Data->Offer,
+              &Data->AckNak,
+              sizeof (DHCP4_PACKET)
+              )) {
           return EFI_INVALID_PARAMETER;
         }
       } else {
+        //
         // %%TBD - check offer, request & acknak packets
+        //
       }
     }
   }
-
   //
   // Allocate data structure.  Return error
   // if there is not enough available memory.
   //
-  EfiStatus = gBS->AllocatePool(EfiBootServicesData,
-    sizeof(EFI_PXE_DHCP4_DATA), &This->Data);
+  EfiStatus = gBS->AllocatePool (
+                    EfiBootServicesData,
+                    sizeof (EFI_PXE_DHCP4_DATA),
+                    &This->Data
+                    );
 
-  if (EFI_ERROR(EfiStatus)) {
+  if (EFI_ERROR (EfiStatus)) {
     This->Data = NULL;
     return EfiStatus;
   }
@@ -121,18 +130,17 @@ PxeDhcp4Setup(
   if (This->Data == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-
   //
   // Start PxeBc because we want to use its UdpWrite, UdpRead and
   // SetFilter calls.
   //
-  EfiStatus = Private->PxeBc->Start(Private->PxeBc, FALSE);
+  EfiStatus = Private->PxeBc->Start (Private->PxeBc, FALSE);
 
-  if (EFI_ERROR(EfiStatus)) {
+  if (EFI_ERROR (EfiStatus)) {
     if (EfiStatus != EFI_ALREADY_STARTED) {
-      gBS->FreePool(This->Data);
+      gBS->FreePool (This->Data);
       This->Data = NULL;
-      Private->PxeBc->Stop(Private->PxeBc);
+      Private->PxeBc->Stop (Private->PxeBc);
       return EfiStatus;
     }
 
@@ -140,116 +148,118 @@ PxeDhcp4Setup(
   } else {
     Private->StopPxeBc = TRUE;
   }
-
   //
   // Use new data.
   //
   if (Data != NULL) {
-    EfiCopyMem(This->Data, Data, sizeof(EFI_PXE_DHCP4_DATA));
+    EfiCopyMem (This->Data, Data, sizeof (EFI_PXE_DHCP4_DATA));
     return EFI_SUCCESS;
   }
-
   //
   // Initialize new public data structure.
   //
-  EfiZeroMem(This->Data, sizeof(EFI_PXE_DHCP4_DATA));
+  EfiZeroMem (This->Data, sizeof (EFI_PXE_DHCP4_DATA));
 
   //
   // Fill in default DHCP discover packet.
   // Check for MAC addresses of strange lengths, just in case.
   //
-  Packet = &This->Data->Discover.dhcp4;
+  Packet        = &This->Data->Discover.dhcp4;
 
-  Packet->op = BOOTP_REQUEST;
+  Packet->op    = BOOTP_REQUEST;
 
   Packet->htype = Private->Snp->Mode->IfType;
 
   if (Private->Snp->Mode->HwAddressSize > 16) {
     Packet->hlen = 16;
   } else {
-    Packet->hlen = (UINT8)Private->Snp->Mode->HwAddressSize;
+    Packet->hlen = (UINT8) Private->Snp->Mode->HwAddressSize;
   }
 
-  Packet->hops = 0;  /* Set to zero per RFC 2131. */
+  Packet->hops = 0; /* Set to zero per RFC 2131. */
 
   if (Packet->hlen < sizeof Packet->xid) {
     if (Packet->hlen != 0) {
-      EfiCopyMem(&Packet->xid,
+      EfiCopyMem (
+        &Packet->xid,
         &Private->Snp->Mode->CurrentAddress,
-        Packet->hlen);
+        Packet->hlen
+        );
     }
   } else {
-    EfiCopyMem(&Packet->xid,
+    EfiCopyMem (
+      &Packet->xid,
       &Private->Snp->Mode->CurrentAddress.Addr[Packet->hlen - sizeof Packet->xid],
-      sizeof Packet->xid);
+      sizeof Packet->xid
+      );
   }
-
+  //
   // %%TBD - xid should be randomized
+  //
+  Packet->secs  = htons (DHCP4_INITIAL_SECONDS);
 
-  Packet->secs = htons(DHCP4_INITIAL_SECONDS);
-
-  Packet->flags = htons(DHCP4_BROADCAST_FLAG);
+  Packet->flags = htons (DHCP4_BROADCAST_FLAG);
 
   if (Packet->hlen != 0) {
-    EfiCopyMem(Packet->chaddr, &Private->Snp->Mode->CurrentAddress, Packet->hlen);
+    EfiCopyMem (Packet->chaddr, &Private->Snp->Mode->CurrentAddress, Packet->hlen);
   }
 
-  Packet->magik = htonl(DHCP4_MAGIK_NUMBER);
+  Packet->magik               = htonl (DHCP4_MAGIK_NUMBER);
 
-  OpPtr = Packet->options;
+  OpPtr                       = Packet->options;
 
-  *OpPtr++ = DHCP4_MESSAGE_TYPE;
-  *OpPtr++ = 1;
-  *OpPtr++ = DHCP4_MESSAGE_TYPE_DISCOVER;
+  *OpPtr++                    = DHCP4_MESSAGE_TYPE;
+  *OpPtr++                    = 1;
+  *OpPtr++                    = DHCP4_MESSAGE_TYPE_DISCOVER;
 
-  *OpPtr++ = DHCP4_MAX_MESSAGE_SIZE;
-  *OpPtr++ = 2;
-  *OpPtr++ = (UINT8)((DHCP4_DEFAULT_MAX_MESSAGE_SIZE >> 8) & 0xFF);
-  *OpPtr++ = (UINT8)(DHCP4_DEFAULT_MAX_MESSAGE_SIZE & 0xFF);
+  *OpPtr++                    = DHCP4_MAX_MESSAGE_SIZE;
+  *OpPtr++                    = 2;
+  *OpPtr++                    = (UINT8) ((DHCP4_DEFAULT_MAX_MESSAGE_SIZE >> 8) & 0xFF);
+  *OpPtr++                    = (UINT8) (DHCP4_DEFAULT_MAX_MESSAGE_SIZE & 0xFF);
 
-  *OpPtr++ = DHCP4_PARAMETER_REQUEST_LIST;
-  OpLen = OpPtr;
-  *OpPtr++ = 0;
-  *OpPtr++ = DHCP4_SUBNET_MASK;
-  *OpPtr++ = DHCP4_TIME_OFFSET;
-  *OpPtr++ = DHCP4_ROUTER_LIST;
-  *OpPtr++ = DHCP4_TIME_SERVERS;
-  *OpPtr++ = DHCP4_NAME_SERVERS;
-  *OpPtr++ = DHCP4_DNS_SERVERS;
-  *OpPtr++ = DHCP4_HOST_NAME;
-  *OpPtr++ = DHCP4_BOOT_FILE_SIZE;
-  *OpPtr++ = DHCP4_MESSAGE_TYPE;
-  *OpPtr++ = DHCP4_DOMAIN_NAME;
-  *OpPtr++ = DHCP4_ROOT_PATH;
-  *OpPtr++ = DHCP4_EXTENSION_PATH;
-  *OpPtr++ = DHCP4_MAX_DATAGRAM_SIZE;
-  *OpPtr++ = DHCP4_DEFAULT_TTL;
-  *OpPtr++ = DHCP4_BROADCAST_ADDRESS;
-  *OpPtr++ = DHCP4_NIS_DOMAIN_NAME;
-  *OpPtr++ = DHCP4_NIS_SERVERS;
-  *OpPtr++ = DHCP4_NTP_SERVERS;
-  *OpPtr++ = DHCP4_VENDOR_SPECIFIC;
-  *OpPtr++ = DHCP4_REQUESTED_IP_ADDRESS;
-  *OpPtr++ = DHCP4_LEASE_TIME;
-  *OpPtr++ = DHCP4_SERVER_IDENTIFIER;
-  *OpPtr++ = DHCP4_RENEWAL_TIME;
-  *OpPtr++ = DHCP4_REBINDING_TIME;
-  *OpPtr++ = DHCP4_CLASS_IDENTIFIER;
-  *OpPtr++ = DHCP4_TFTP_SERVER_NAME;
-  *OpPtr++ = DHCP4_BOOTFILE;
-  *OpPtr++ = 128; 
-  *OpPtr++ = 129; 
-  *OpPtr++ = 130; 
-  *OpPtr++ = 131; 
-  *OpPtr++ = 132;
-  *OpPtr++ = 133;
-  *OpPtr++ = 134; 
-  *OpPtr++ = 135;
-  *OpLen = (UINT8)((OpPtr - OpLen) - 1);
+  *OpPtr++                    = DHCP4_PARAMETER_REQUEST_LIST;
+  OpLen                       = OpPtr;
+  *OpPtr++                    = 0;
+  *OpPtr++                    = DHCP4_SUBNET_MASK;
+  *OpPtr++                    = DHCP4_TIME_OFFSET;
+  *OpPtr++                    = DHCP4_ROUTER_LIST;
+  *OpPtr++                    = DHCP4_TIME_SERVERS;
+  *OpPtr++                    = DHCP4_NAME_SERVERS;
+  *OpPtr++                    = DHCP4_DNS_SERVERS;
+  *OpPtr++                    = DHCP4_HOST_NAME;
+  *OpPtr++                    = DHCP4_BOOT_FILE_SIZE;
+  *OpPtr++                    = DHCP4_MESSAGE_TYPE;
+  *OpPtr++                    = DHCP4_DOMAIN_NAME;
+  *OpPtr++                    = DHCP4_ROOT_PATH;
+  *OpPtr++                    = DHCP4_EXTENSION_PATH;
+  *OpPtr++                    = DHCP4_MAX_DATAGRAM_SIZE;
+  *OpPtr++                    = DHCP4_DEFAULT_TTL;
+  *OpPtr++                    = DHCP4_BROADCAST_ADDRESS;
+  *OpPtr++                    = DHCP4_NIS_DOMAIN_NAME;
+  *OpPtr++                    = DHCP4_NIS_SERVERS;
+  *OpPtr++                    = DHCP4_NTP_SERVERS;
+  *OpPtr++                    = DHCP4_VENDOR_SPECIFIC;
+  *OpPtr++                    = DHCP4_REQUESTED_IP_ADDRESS;
+  *OpPtr++                    = DHCP4_LEASE_TIME;
+  *OpPtr++                    = DHCP4_SERVER_IDENTIFIER;
+  *OpPtr++                    = DHCP4_RENEWAL_TIME;
+  *OpPtr++                    = DHCP4_REBINDING_TIME;
+  *OpPtr++                    = DHCP4_CLASS_IDENTIFIER;
+  *OpPtr++                    = DHCP4_TFTP_SERVER_NAME;
+  *OpPtr++                    = DHCP4_BOOTFILE;
+  *OpPtr++                    = 128;
+  *OpPtr++                    = 129;
+  *OpPtr++                    = 130;
+  *OpPtr++                    = 131;
+  *OpPtr++                    = 132;
+  *OpPtr++                    = 133;
+  *OpPtr++                    = 134;
+  *OpPtr++                    = 135;
+  *OpLen                      = (UINT8) ((OpPtr - OpLen) - 1);
 
-  *OpPtr++ = DHCP4_END;
+  *OpPtr++                    = DHCP4_END;
 
-  This->Data->SetupCompleted = TRUE;
+  This->Data->SetupCompleted  = TRUE;
 
   return EFI_SUCCESS;
 }

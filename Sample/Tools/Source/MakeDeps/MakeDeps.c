@@ -32,31 +32,30 @@ Abstract:
 // Structure to maintain a linked list of strings
 //
 typedef struct _STRING_LIST {
-  struct _STRING_LIST     *Next;
-  char                    *Str;
+  struct _STRING_LIST *Next;
+  char                *Str;
 } STRING_LIST;
 
-#define UTILITY_NAME          "MakeDeps"
+#define UTILITY_NAME      "MakeDeps"
 
-#define MAX_LINE_LEN          2048
-#define MAX_PATH              2048
-#define START_NEST_DEPTH      1
-#define MAX_NEST_DEPTH        1000    // just in case we get in an endless loop.
-
+#define MAX_LINE_LEN      2048
+#define MAX_PATH          2048
+#define START_NEST_DEPTH  1
+#define MAX_NEST_DEPTH    1000  // just in case we get in an endless loop.
 //
 // Define the relative paths used by the special #include macros
 //
-#define PROTOCOL_DIR_PATH         "Protocol\\"
-#define GUID_DIR_PATH             "Guid\\"
-#define ARCH_PROTOCOL_DIR_PATH    "ArchProtocol\\"
-#define PPI_PROTOCOL_DIR_PATH     "Ppi\\"
+#define PROTOCOL_DIR_PATH       "Protocol\\"
+#define GUID_DIR_PATH           "Guid\\"
+#define ARCH_PROTOCOL_DIR_PATH  "ArchProtocol\\"
+#define PPI_PROTOCOL_DIR_PATH   "Ppi\\"
 
 //
 // Use this structure to keep track of all the special #include forms
 //
 typedef struct {
-  INT8      *IncludeMacroName;
-  INT8      *PathName;
+  INT8  *IncludeMacroName;
+  INT8  *PathName;
 } INCLUDE_MACRO_CONVERSION;
 
 //
@@ -66,26 +65,40 @@ typedef struct {
 //    #include Protocol/xxx/xxx.h
 //
 static const INCLUDE_MACRO_CONVERSION mMacroConversion[] = {
-  "EFI_PROTOCOL_DEFINITION",      PROTOCOL_DIR_PATH,
-  "EFI_GUID_DEFINITION",          GUID_DIR_PATH,
-  "EFI_ARCH_PROTOCOL_DEFINITION", ARCH_PROTOCOL_DIR_PATH,
-  "EFI_PROTOCOL_PRODUCER",        PROTOCOL_DIR_PATH,
-  "EFI_PROTOCOL_CONSUMER",        PROTOCOL_DIR_PATH,
-  "EFI_PROTOCOL_DEPENDENCY",      PROTOCOL_DIR_PATH,
-  "EFI_ARCH_PROTOCOL_PRODUCER",   ARCH_PROTOCOL_DIR_PATH,
-  "EFI_ARCH_PROTOCOL_CONSUMER",   ARCH_PROTOCOL_DIR_PATH,
-  "EFI_ARCH_PROTOCOL_DEPENDENCY", ARCH_PROTOCOL_DIR_PATH,
-  "EFI_PPI_DEFINITION",           PPI_PROTOCOL_DIR_PATH,
-  "EFI_PPI_PRODUCER",             PPI_PROTOCOL_DIR_PATH,
-  "EFI_PPI_CONSUMER",             PPI_PROTOCOL_DIR_PATH,
-  "EFI_PPI_DEPENDENCY",           PPI_PROTOCOL_DIR_PATH,
-  NULL, NULL
+  "EFI_PROTOCOL_DEFINITION",
+  PROTOCOL_DIR_PATH,
+  "EFI_GUID_DEFINITION",
+  GUID_DIR_PATH,
+  "EFI_ARCH_PROTOCOL_DEFINITION",
+  ARCH_PROTOCOL_DIR_PATH,
+  "EFI_PROTOCOL_PRODUCER",
+  PROTOCOL_DIR_PATH,
+  "EFI_PROTOCOL_CONSUMER",
+  PROTOCOL_DIR_PATH,
+  "EFI_PROTOCOL_DEPENDENCY",
+  PROTOCOL_DIR_PATH,
+  "EFI_ARCH_PROTOCOL_PRODUCER",
+  ARCH_PROTOCOL_DIR_PATH,
+  "EFI_ARCH_PROTOCOL_CONSUMER",
+  ARCH_PROTOCOL_DIR_PATH,
+  "EFI_ARCH_PROTOCOL_DEPENDENCY",
+  ARCH_PROTOCOL_DIR_PATH,
+  "EFI_PPI_DEFINITION",
+  PPI_PROTOCOL_DIR_PATH,
+  "EFI_PPI_PRODUCER",
+  PPI_PROTOCOL_DIR_PATH,
+  "EFI_PPI_CONSUMER",
+  PPI_PROTOCOL_DIR_PATH,
+  "EFI_PPI_DEPENDENCY",
+  PPI_PROTOCOL_DIR_PATH,
+  NULL,
+  NULL
 };
 
 typedef struct _SYMBOL {
-  struct _SYMBOL    *Next;
-  INT8              *Name;
-  INT8              *Value;
+  struct _SYMBOL  *Next;
+  INT8            *Name;
+  INT8            *Value;
 } SYMBOL;
 
 //
@@ -94,21 +107,21 @@ typedef struct _SYMBOL {
 // include path when searching), and flags to keep track of command-line options.
 //
 static struct {
-  STRING_LIST     *IncludePaths;            // all include paths to search
-  STRING_LIST     *SourceFiles;             // all source files to parse
-  STRING_LIST     *SubDirs;                 // appended to each include path when searching
-  SYMBOL          *SymbolTable;             // for replacement strings  
-  FILE            *OutFptr;                 // output dependencies to this file
-  BOOLEAN         Verbose;                  // for more detailed output
-  BOOLEAN         IgnoreNotFound;           // no warnings if files not found
-  BOOLEAN         QuietMode;                // -q - don't print missing file warnings
-  BOOLEAN         NoSystem;                 // don't process #include <system> files
-  BOOLEAN         NeverFail;                // always return success
-  BOOLEAN         NoDupes;                  // to not list duplicate dependency files (for timing purposes)
-  BOOLEAN         UseSumDeps;               // use summary dependency files if found
-  INT8            TargetFileName[MAX_PATH]; // target object filename
-  INT8            SumDepsPath[MAX_PATH];    // path to summary files
-  INT8            *OutFileName;             // -o option
+  STRING_LIST *IncludePaths;            // all include paths to search
+  STRING_LIST *SourceFiles;             // all source files to parse
+  STRING_LIST *SubDirs;                 // appended to each include path when searching
+  SYMBOL      *SymbolTable;             // for replacement strings
+  FILE        *OutFptr;                 // output dependencies to this file
+  BOOLEAN     Verbose;                  // for more detailed output
+  BOOLEAN     IgnoreNotFound;           // no warnings if files not found
+  BOOLEAN     QuietMode;                // -q - don't print missing file warnings
+  BOOLEAN     NoSystem;                 // don't process #include <system> files
+  BOOLEAN     NeverFail;                // always return success
+  BOOLEAN     NoDupes;                  // to not list duplicate dependency files (for timing purposes)
+  BOOLEAN     UseSumDeps;               // use summary dependency files if found
+  INT8        TargetFileName[MAX_PATH]; // target object filename
+  INT8        SumDepsPath[MAX_PATH];    // path to summary files
+  INT8        *OutFileName;             // -o option
 } mGlobals;
 
 static
@@ -120,8 +133,8 @@ ProcessFile (
   STRING_LIST     *ProcessedFiles
   );
 
-static 
-FILE *
+static
+FILE  *
 FindFile (
   INT8    *FileName,
   UINT32  FileNameLen
@@ -134,30 +147,33 @@ PrintDependency (
   INT8    *DependentFile
   );
 
-static 
+static
 void
 ReplaceSymbols (
   INT8    *Str,
   UINT32  StrSize
   );
-  
+
 static
 STATUS
 ProcessArgs (
-  int   Argc, 
+  int   Argc,
   char  *Argv[]
   );
 
 static
 void
-Usage ();
+Usage (
+  VOID
+  );
 
-static 
+static
 void
-FreeLists ( );
+FreeLists (
+  VOID
+  );
 
-
-int 
+int
 main (
   int   Argc,
   char  *Argv[]
@@ -171,7 +187,8 @@ Routine Description:
   
 Arguments:
 
-  Standard C main() argc and argv.
+  Argc - Standard C main() argc.
+  Argv - Standard C main() argv.
 
 Returns:
 
@@ -220,9 +237,11 @@ Returns:
       //
       // Find the .extension
       //
-      for (Cptr = TargetFileName + strlen (TargetFileName) - 1; 
-          (*Cptr != '\\') && (Cptr > TargetFileName) && (*Cptr != '.'); 
-            Cptr--);
+      for (Cptr = TargetFileName + strlen (TargetFileName) - 1;
+           (*Cptr != '\\') && (Cptr > TargetFileName) && (*Cptr != '.');
+           Cptr--
+          )
+        ;
       if (Cptr == TargetFileName) {
         Error (NULL, 0, 0, File->Str, "could not locate extension in filename");
         goto Finish;
@@ -237,12 +256,15 @@ Returns:
       //
       strcpy (TargetFileName, mGlobals.TargetFileName);
     }
+
     Status = ProcessFile (TargetFileName, File->Str, START_NEST_DEPTH, &ProcessedFiles);
     if (Status != STATUS_SUCCESS) {
       goto Finish;
     }
+
     File = File->Next;
   }
+
 Finish:
   //
   // Free up memory
@@ -264,6 +286,7 @@ Finish:
   if ((mGlobals.OutFptr != stdout) && (mGlobals.OutFptr != NULL)) {
     fclose (mGlobals.OutFptr);
   }
+
   if (mGlobals.NeverFail) {
     return STATUS_SUCCESS;
   }
@@ -274,6 +297,7 @@ Finish:
   if ((GetUtilityStatus () == STATUS_ERROR) && (mGlobals.OutFileName != NULL)) {
     remove (mGlobals.OutFileName);
   }
+
   return GetUtilityStatus ();
 }
 
@@ -296,6 +320,7 @@ Arguments:
   TargetFileName - name of the usually .obj target
   FileName       - name of the file to process
   NestDepth      - how deep we're nested in includes
+  ProcessedFiles - list of processed files.
 
 Returns:
 
@@ -303,20 +328,22 @@ Returns:
   
 --*/
 {
-  FILE          *Fptr;
-  INT8          Line[MAX_LINE_LEN];
-  INT8          *Cptr, *EndPtr, *SaveCptr;
-  INT8          EndChar;
-  INT8          FileNameCopy[MAX_PATH];
-  INT8          MacroIncludeFileName[MAX_LINE_LEN];
-  INT8          SumDepsFile[MAX_PATH];
-  STATUS        Status;
-  UINT32        Index;
-  UINT32        LineNum;
-  STRING_LIST   *ListPtr;
+  FILE        *Fptr;
+  INT8        Line[MAX_LINE_LEN];
+  INT8        *Cptr;
+  INT8        *EndPtr;
+  INT8        *SaveCptr;
+  INT8        EndChar;
+  INT8        FileNameCopy[MAX_PATH];
+  INT8        MacroIncludeFileName[MAX_LINE_LEN];
+  INT8        SumDepsFile[MAX_PATH];
+  STATUS      Status;
+  UINT32      Index;
+  UINT32      LineNum;
+  STRING_LIST *ListPtr;
 
-  Status = STATUS_SUCCESS;
-  Fptr   = NULL;
+  Status  = STATUS_SUCCESS;
+  Fptr    = NULL;
   //
   // Print the file being processed. Indent so you can tell the include nesting
   // depth.
@@ -332,9 +359,11 @@ Returns:
   if (mGlobals.UseSumDeps) {
     strcpy (SumDepsFile, mGlobals.SumDepsPath);
     strcat (SumDepsFile, FileName);
-    for (Cptr = SumDepsFile + strlen (SumDepsFile) - 1; 
-        (*Cptr != '\\') && (Cptr > SumDepsFile) && (*Cptr != '.'); 
-          Cptr--);
+    for (Cptr = SumDepsFile + strlen (SumDepsFile) - 1;
+         (*Cptr != '\\') && (Cptr > SumDepsFile) && (*Cptr != '.');
+         Cptr--
+        )
+      ;
     if (*Cptr == '.') {
       strcpy (Cptr, ".dep");
     } else {
@@ -350,7 +379,7 @@ Returns:
     }
   }
   //
-  // If we're not doing duplicates, and we've already seen this filename, 
+  // If we're not doing duplicates, and we've already seen this filename,
   // then return
   //
   if (mGlobals.NoDupes) {
@@ -370,15 +399,18 @@ Returns:
       if (mGlobals.Verbose) {
         DebugMsg (NULL, 0, 0, FileName, "duplicate include -- not processed again");
       }
+
       return STATUS_SUCCESS;
     }
-    ListPtr = malloc (sizeof (STRING_LIST));
-    ListPtr->Str = malloc (strlen (FileName) + 1);
+
+    ListPtr       = malloc (sizeof (STRING_LIST));
+    ListPtr->Str  = malloc (strlen (FileName) + 1);
     strcpy (ListPtr->Str, FileName);
-    ListPtr->Next = ProcessedFiles->Next;
-    ProcessedFiles->Next = ListPtr;
+    ListPtr->Next         = ProcessedFiles->Next;
+    ProcessedFiles->Next  = ListPtr;
   }
-  // 
+
+  //
   // Make sure we didn't exceed our maximum nesting depth
   //
   if (NestDepth > MAX_NEST_DEPTH) {
@@ -395,7 +427,7 @@ Returns:
   //
   if ((Fptr = fopen (FileNameCopy, "r")) == NULL) {
     //
-    // Try to find it among the paths. 
+    // Try to find it among the paths.
     //
     Fptr = FindFile (FileNameCopy, sizeof (FileNameCopy));
     if (Fptr == NULL) {
@@ -408,6 +440,7 @@ Returns:
           if (!mGlobals.QuietMode) {
             DebugMsg (NULL, 0, 0, FileNameCopy, "could not find file");
           }
+
           return STATUS_SUCCESS;
         } else {
           Error (NULL, 0, 0, FileNameCopy, "could not find file");
@@ -438,7 +471,9 @@ Returns:
     //
     // Skip preceeding spaces on the line
     //
-    while (*Cptr && (isspace (*Cptr))) Cptr++;
+    while (*Cptr && (isspace (*Cptr))) {
+      Cptr++;
+    }
     //
     // Check for # character
     //
@@ -447,19 +482,25 @@ Returns:
       //
       // Check for "include"
       //
-      while (*Cptr && (isspace (*Cptr))) Cptr++;
+      while (*Cptr && (isspace (*Cptr))) {
+        Cptr++;
+      }
+
       if (strncmp (Cptr, "include", 7) == 0) {
         //
         // Skip over "include" and move on to filename as "file" or <file>
         //
         Cptr += 7;
-        while (*Cptr && (isspace (*Cptr))) Cptr++;
+        while (*Cptr && (isspace (*Cptr))) {
+          Cptr++;
+        }
+
         if (*Cptr == '<') {
           EndChar = '>';
         } else if (*Cptr == '"') {
           EndChar = '"';
         } else {
-          // 
+          //
           // Handle special #include MACRO_NAME(file)
           // Set EndChar to null so we fall through on processing below.
           //
@@ -468,14 +509,16 @@ Returns:
           // Look for all the special include macros and convert accordingly.
           //
           for (Index = 0; mMacroConversion[Index].IncludeMacroName != NULL; Index++) {
-            // 
+            //
             // Save the start of the string in case some macros are substrings
             // of others.
             //
             SaveCptr = Cptr;
-            if (strncmp (Cptr, 
-                          mMacroConversion[Index].IncludeMacroName, 
-                          strlen (mMacroConversion[Index].IncludeMacroName)) == 0) {
+            if (strncmp (
+                  Cptr,
+                  mMacroConversion[Index].IncludeMacroName,
+                  strlen (mMacroConversion[Index].IncludeMacroName)
+                  ) == 0) {
               //
               // Skip over the macro name
               //
@@ -484,12 +527,21 @@ Returns:
               // Skip over open parenthesis, blank spaces, then find closing
               // parenthesis or blank space
               //
-              while (*Cptr && (isspace (*Cptr))) Cptr++;
+              while (*Cptr && (isspace (*Cptr))) {
+                Cptr++;
+              }
+
               if (*Cptr == '(') {
                 Cptr++;
-                while (*Cptr && (isspace (*Cptr))) Cptr++;
+                while (*Cptr && (isspace (*Cptr))) {
+                  Cptr++;
+                }
+
                 EndPtr = Cptr;
-                while (*EndPtr && !isspace (*EndPtr) && (*EndPtr != ')')) EndPtr++;
+                while (*EndPtr && !isspace (*EndPtr) && (*EndPtr != ')')) {
+                  EndPtr++;
+                }
+
                 *EndPtr = 0;
                 //
                 // Create the path
@@ -502,10 +554,10 @@ Returns:
                 //
                 // Process immediately, then break out of the outside FOR loop.
                 //
-                Status = ProcessFile (TargetFileName, MacroIncludeFileName, NestDepth+1, ProcessedFiles);
+                Status = ProcessFile (TargetFileName, MacroIncludeFileName, NestDepth + 1, ProcessedFiles);
                 break;
               }
-            } 
+            }
             //
             // Restore the start
             //
@@ -516,19 +568,24 @@ Returns:
           // file compiles anyway.
           //
           if (mMacroConversion[Index].IncludeMacroName == NULL) {
-            //Warning (FileNameCopy, LineNum, 0, "could not parse line", NULL);
-            //Status = STATUS_WARNING;
+            //
+            // Warning (FileNameCopy, LineNum, 0, "could not parse line", NULL);
+            // Status = STATUS_WARNING;
+            //
           }
         }
         //
         // Process "normal" includes. If the endchar is 0, then the
-        // file has already been processed. Otherwise look for the 
+        // file has already been processed. Otherwise look for the
         // endchar > or ", and process the include file.
         //
         if (EndChar != 0) {
           Cptr++;
           EndPtr = Cptr;
-          while (*EndPtr && (*EndPtr != EndChar)) EndPtr++;
+          while (*EndPtr && (*EndPtr != EndChar)) {
+            EndPtr++;
+          }
+
           if (*EndPtr == EndChar) {
             //
             // If we're processing it, do it
@@ -538,7 +595,7 @@ Returns:
               // Null terminate the filename and try to process it.
               //
               *EndPtr = 0;
-              Status = ProcessFile (TargetFileName, Cptr, NestDepth+1, ProcessedFiles);
+              Status  = ProcessFile (TargetFileName, Cptr, NestDepth + 1, ProcessedFiles);
             }
           } else {
             Warning (FileNameCopy, LineNum, 0, "malformed include", "missing closing %c", EndChar);
@@ -548,7 +605,8 @@ Returns:
         }
       }
     }
-  }  
+  }
+
 Finish:
   //
   // Close open files and return status
@@ -556,11 +614,11 @@ Finish:
   if (Fptr != NULL) {
     fclose (Fptr);
   }
+
   return Status;
 }
 
-
-static 
+static
 void
 PrintDependency (
   INT8    *TargetFileName,
@@ -587,8 +645,8 @@ Returns:
   
 --*/
 {
-  INT8    Str[MAX_PATH];
-  
+  INT8  Str[MAX_PATH];
+
   //
   // Go through the symbols and do replacements
   //
@@ -597,42 +655,44 @@ Returns:
   fprintf (mGlobals.OutFptr, "%s : ", Str);
   strcpy (Str, DependentFile);
   ReplaceSymbols (Str, sizeof (Str));
-  fprintf (mGlobals.OutFptr, "%s\n", Str);    
+  fprintf (mGlobals.OutFptr, "%s\n", Str);
 }
-static 
+
+static
 void
 ReplaceSymbols (
   INT8    *Str,
   UINT32  StrSize
   )
 {
-  SYMBOL    *Sym;
-  INT8      StrCopy[MAX_LINE_LEN];
-  INT8      *From, *To;
-  BOOLEAN   Replaced;
+  SYMBOL  *Sym;
+  INT8    StrCopy[MAX_LINE_LEN];
+  INT8    *From;
+  INT8    *To;
+  BOOLEAN Replaced;
 
-  //  
+  //
   // Go through the entire string to look for replacement strings at
   // every position.
   //
-  From = Str;
-  To = StrCopy;
+  From  = Str;
+  To    = StrCopy;
   while (*From) {
     //
     // Copy the character
     //
-    *To = *From;
-    Replaced = FALSE;
-    //    
+    *To       = *From;
+    Replaced  = FALSE;
+    //
     // Go through each symbol and try to find a string substitution
     //
     Sym = mGlobals.SymbolTable;
     while (Sym != NULL) {
       if (strnicmp (From, Sym->Value, strlen (Sym->Value)) == 0) {
         //
-        // Replace the string, then advance the pointers past the 
+        // Replace the string, then advance the pointers past the
         // replaced strings
-        // 
+        //
         strcpy (To, Sym->Name);
         To += strlen (Sym->Name);
         From += strlen (Sym->Value);
@@ -645,11 +705,12 @@ ReplaceSymbols (
         Sym = Sym->Next;
       }
     }
+
     if (!Replaced) {
       From++;
       To++;
     }
-  }    
+  }
   //
   // Null terminate, and return it
   //
@@ -661,17 +722,18 @@ ReplaceSymbols (
 //
 // Given a filename, try to find it along the include paths.
 //
-static 
+static
 FILE *
 FindFile (
   INT8    *FileName,
   UINT32  FileNameLen
   )
 {
-  FILE          *Fptr;
-  STRING_LIST   *List, *SubDir;
-  INT8          FullFileName[MAX_PATH*2];
-      
+  FILE        *Fptr;
+  STRING_LIST *List;
+  STRING_LIST *SubDir;
+  INT8        FullFileName[MAX_PATH * 2];
+
   //
   // Traverse the list of paths and try to find the file
   //
@@ -681,8 +743,15 @@ FindFile (
     // Put the path and filename together
     //
     if (strlen (List->Str) + strlen (FileName) + 1 > sizeof (FullFileName)) {
-      Error (__FILE__, __LINE__, 0, "application error", "cannot concatenate '%s' + '%s'",
-          List->Str, FileName);
+      Error (
+        __FILE__,
+        __LINE__,
+        0,
+        "application error",
+        "cannot concatenate '%s' + '%s'",
+        List->Str,
+        FileName
+        );
       return NULL;
     }
     //
@@ -696,9 +765,12 @@ FindFile (
       //
       if (FileNameLen <= strlen (FullFileName)) {
         Error (__FILE__, __LINE__, 0, "application error", "internal path name of insufficient length");
-        //fprintf (stdout, "File length > %d: %s\n", FileNameLen, FullFileName);
+        //
+        // fprintf (stdout, "File length > %d: %s\n", FileNameLen, FullFileName);
+        //
         return NULL;
       }
+
       strcpy (FileName, FullFileName);
       return Fptr;
     }
@@ -718,10 +790,12 @@ FindFile (
           Error (__FILE__, __LINE__, 0, "application error", "internal path name of insufficient length");
           return NULL;
         }
+
         strcpy (FileName, FullFileName);
         return Fptr;
       }
     }
+
     List = List->Next;
   }
   //
@@ -735,17 +809,19 @@ FindFile (
 static
 STATUS
 ProcessArgs (
-  int   Argc, 
+  int   Argc,
   char  *Argv[]
   )
 {
-  STRING_LIST   *NewList, *LastIncludePath, *LastSourceFile;
-  SYMBOL        *Symbol;
-  int           Index;
+  STRING_LIST *NewList;
+  STRING_LIST *LastIncludePath;
+  STRING_LIST *LastSourceFile;
+  SYMBOL      *Symbol;
+  int         Index;
   //
   // Clear our globals
   //
-  memset ((char *)&mGlobals, 0, sizeof (mGlobals));
+  memset ((char *) &mGlobals, 0, sizeof (mGlobals));
   mGlobals.NoDupes = TRUE;
   //
   // Skip program name
@@ -779,13 +855,15 @@ ProcessArgs (
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         NewList->Next = NULL;
-        NewList->Str = malloc (strlen (Argv[1]) + 2);
+        NewList->Str  = malloc (strlen (Argv[1]) + 2);
         if (NewList->Str == NULL) {
           free (NewList);
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         strcpy (NewList->Str, Argv[1]);
         if (NewList->Str[strlen (NewList->Str) - 1] != '\\') {
           strcat (NewList->Str, "\\");
@@ -798,17 +876,21 @@ ProcessArgs (
         } else {
           LastIncludePath->Next = NewList;
         }
+
         LastIncludePath = NewList;
-        //fprintf (stdout, "Added path: %s\n", NewList->Str);
+        //
+        // fprintf (stdout, "Added path: %s\n", NewList->Str);
+        //
       } else {
         Error (NULL, 0, 0, Argv[0], "option requires an include path");
         Usage ();
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-f") == 0) {
-      // 
+      //
       // Check for one more arg
       //
       if (Argc > 1) {
@@ -821,6 +903,7 @@ ProcessArgs (
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         NewList->Next = NULL;
         //
         // Allocate space to replace ".c" with ".obj", plus null termination
@@ -831,12 +914,14 @@ ProcessArgs (
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         strcpy (NewList->Str, Argv[1]);
         if (mGlobals.SourceFiles == NULL) {
           mGlobals.SourceFiles = NewList;
         } else {
           LastSourceFile->Next = NewList;
         }
+
         LastSourceFile = NewList;
       } else {
         Error (NULL, 0, 0, Argv[0], "option requires a file name");
@@ -845,7 +930,7 @@ ProcessArgs (
       }
       //
       // The C compiler first looks for #include files in the directory where
-      // the source file came from. Add the file's source directory to the 
+      // the source file came from. Add the file's source directory to the
       // list of include paths.
       //
       NewList = malloc (sizeof (STRING_LIST));
@@ -853,18 +938,21 @@ ProcessArgs (
         Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
         return STATUS_ERROR;
       }
+
       NewList->Next = NULL;
-      NewList->Str = malloc (strlen (Argv[1]) + 3);
+      NewList->Str  = malloc (strlen (Argv[1]) + 3);
       if (NewList->Str == NULL) {
         free (NewList);
         Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
         return STATUS_ERROR;
       }
+
       strcpy (NewList->Str, Argv[1]);
       //
       // Back up in the source file name to the last backslash and terminate after it.
       //
-      for (Index = strlen (NewList->Str) - 1; (Index > 0) && (NewList->Str[Index] != '\\'); Index--);
+      for (Index = strlen (NewList->Str) - 1; (Index > 0) && (NewList->Str[Index] != '\\'); Index--)
+        ;
       if (Index < 0) {
         strcpy (NewList->Str, ".\\");
       } else {
@@ -878,9 +966,11 @@ ProcessArgs (
       } else {
         LastIncludePath->Next = NewList;
       }
+
       if (mGlobals.Verbose) {
         fprintf (stdout, "Adding include path: %s\n", NewList->Str);
       }
+
       LastIncludePath = NewList;
       Argc--;
       Argv++;
@@ -892,7 +982,7 @@ ProcessArgs (
       if (Argc > 1) {
         //
         // Allocate memory for a new list element, fill it in, and
-        // add it to our list of subdirectory include paths. Always 
+        // add it to our list of subdirectory include paths. Always
         // make sure it has a "\" on the end of it.
         //
         NewList = malloc (sizeof (STRING_LIST));
@@ -900,23 +990,27 @@ ProcessArgs (
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         NewList->Str = malloc (strlen (Argv[1]) + 2);
         if (NewList->Str == NULL) {
           free (NewList);
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         strcpy (NewList->Str, Argv[1]);
         if (NewList->Str[strlen (NewList->Str) - 1] != '\\') {
           strcat (NewList->Str, "\\");
         }
-        NewList->Next = mGlobals.SubDirs;
-        mGlobals.SubDirs = NewList;
+
+        NewList->Next     = mGlobals.SubDirs;
+        mGlobals.SubDirs  = NewList;
       } else {
         Error (NULL, 0, 0, Argv[0], "option requires a subdirectory name");
         Usage ();
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-sub") == 0) {
@@ -931,7 +1025,7 @@ ProcessArgs (
         if (Symbol == NULL) {
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
-        }        
+        }
         //
         // Allocate memory for the symbol name and value, then save copies
         //
@@ -941,6 +1035,7 @@ ProcessArgs (
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
+
         strcpy (Symbol->Name, Argv[1]);
         Symbol->Value = malloc (strlen (Argv[2]) + 1);
         if (Symbol->Value == NULL) {
@@ -949,12 +1044,13 @@ ProcessArgs (
           Error (__FILE__, __LINE__, 0, "memory allocation failure", NULL);
           return STATUS_ERROR;
         }
-        strcpy (Symbol->Value, Argv[2]);        
+
+        strcpy (Symbol->Value, Argv[2]);
         //
         // Add it to the list
         //
-        Symbol->Next = mGlobals.SymbolTable;
-        mGlobals.SymbolTable = Symbol;
+        Symbol->Next          = mGlobals.SymbolTable;
+        mGlobals.SymbolTable  = Symbol;
       } else {
         Error (NULL, 0, 0, Argv[0], "option requires a symbol name and value");
         Usage ();
@@ -973,7 +1069,7 @@ ProcessArgs (
       mGlobals.NoDupes = TRUE;
     } else if (stricmp (Argv[0], "-target") == 0) {
       //
-      // -target TargetFileName  - Target object file (only one allowed right 
+      // -target TargetFileName  - Target object file (only one allowed right
       // now) is TargetFileName rather than SourceFile.obj
       //
       if (Argc > 1) {
@@ -983,13 +1079,14 @@ ProcessArgs (
         Usage ();
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-usesumdeps") == 0) {
       //
       // -usesumdeps Path - if we find an included file xxx.h, and file
       // Path/xxx.dep exists, list Path/xxx.dep as a dependency rather than
-      // xxx.h and don't parse xxx.h. This allows you to create a dependency 
+      // xxx.h and don't parse xxx.h. This allows you to create a dependency
       // file for a commonly included file, and have its dependency file updated
       // only if its included files are updated. Then anyone else including this
       // common include file can simply have a dependency on that file's .dep file
@@ -1009,9 +1106,10 @@ ProcessArgs (
         Usage ();
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
-      
+
     } else if (stricmp (Argv[0], "-o") == 0) {
       //
       // -o OutputFileName    - specify an output filename for dependency list
@@ -1025,12 +1123,14 @@ ProcessArgs (
           Error (NULL, 0, 0, Argv[1], "could not open file for writing");
           return STATUS_ERROR;
         }
+
         mGlobals.OutFileName = Argv[1];
       } else {
         Error (NULL, 0, 0, Argv[0], "option requires output file name");
         Usage ();
         return STATUS_ERROR;
       }
+
       Argc--;
       Argv++;
     } else if (stricmp (Argv[0], "-v") == 0) {
@@ -1049,6 +1149,7 @@ ProcessArgs (
       Usage ();
       return STATUS_ERROR;
     }
+
     Argc--;
     Argv++;
   }
@@ -1066,32 +1167,37 @@ ProcessArgs (
   if (mGlobals.OutFptr == NULL) {
     mGlobals.OutFptr = stdout;
   }
+
   return STATUS_SUCCESS;
 }
 //
 // Free the global string lists we allocated memory for
 //
-static 
+static
 void
-FreeLists ( )
+FreeLists (
+  VOID
+  )
 {
   STRING_LIST *Temp;
   SYMBOL      *NextSym;
 
-  //printf ("Free lists.....");
-
+  //
+  // printf ("Free lists.....");
   //
   // Traverse the include paths, freeing each
-  //printf ("freeing include paths\n");
+  // printf ("freeing include paths\n");
   //
   while (mGlobals.IncludePaths != NULL) {
     Temp = mGlobals.IncludePaths->Next;
     //
-    //printf ("Freeing include path string '%s' at 0x%X\n", 
+    // printf ("Freeing include path string '%s' at 0x%X\n",
     //  mGlobals.IncludePaths->Str, (int)(mGlobals.IncludePaths->Str));
     //
     free (mGlobals.IncludePaths->Str);
-    //printf ("Freeing include path object at 0x%X\n", (int)(mGlobals.IncludePaths));
+    //
+    // printf ("Freeing include path object at 0x%X\n", (int)(mGlobals.IncludePaths));
+    //
     free (mGlobals.IncludePaths);
     mGlobals.IncludePaths = Temp;
   }
@@ -1122,11 +1228,16 @@ FreeLists ( )
     free (mGlobals.SymbolTable->Value);
     mGlobals.SymbolTable = NextSym;
   }
-  //printf ("done\n");
-}  
+  //
+  // printf ("done\n");
+  //
+}
+
 static
 void
-Usage ()
+Usage (
+  VOID
+  )
 /*++
 
 Routine Description:
@@ -1143,7 +1254,7 @@ Returns:
   
 --*/
 {
-  int Index;
+  int               Index;
   static const char *Str[] = {
     UTILITY_NAME " -- make dependencies",
     "  Usage: MakeDeps [options]",
@@ -1157,10 +1268,12 @@ Returns:
     "      -ignorenotfound  don't warn for files not found",
     "      -target Target   for single SourceFile, target is Target, not SourceFile.obj",
     "      -q               quiet mode to not report files not found if ignored",
-    "      -sub sym str     replace all occurrances of 'str' with 'sym' in the output", 
+    "      -sub sym str     replace all occurrances of 'str' with 'sym' in the output",
     "      -nosystem        not process system <include> files",
     "      -neverfail       always return a success return code",
-//    "      -nodupes         keep track of include files, don't rescan duplicates",
+    //
+    //    "      -nodupes         keep track of include files, don't rescan duplicates",
+    //
     "      -usesumdeps path use summary dependency files in 'path' directory.",
     "",
     NULL
@@ -1168,5 +1281,4 @@ Returns:
   for (Index = 0; Str[Index] != NULL; Index++) {
     fprintf (stdout, "%s\n", Str[Index]);
   }
-}  
-    
+}

@@ -156,7 +156,8 @@ Returns:
 
 --*/
 {    
-  EFI_DEBUG_IMAGE_INFO      *Table, *NewTable;
+  EFI_DEBUG_IMAGE_INFO      *Table;
+  EFI_DEBUG_IMAGE_INFO      *NewTable;
   UINTN                     Index;
   UINTN                     MaxTableIndex;
   UINTN                     TableSize;

@@ -27,17 +27,19 @@ Revision History
 //
 // Global ID for the ControllerHandle Driver Protocol
 //
-#define EFI_DRIVER_BINDING_PROTOCOL_GUID    \
-  { 0x18a031ab, 0xb443, 0x4d1a, 0xa5, 0xc0, 0xc, 0x9, 0x26, 0x1e, 0x9f, 0x71 }
+#define EFI_DRIVER_BINDING_PROTOCOL_GUID \
+  { \
+    0x18a031ab, 0xb443, 0x4d1a, 0xa5, 0xc0, 0xc, 0x9, 0x26, 0x1e, 0x9f, 0x71 \
+  }
 
 EFI_FORWARD_DECLARATION (EFI_DRIVER_BINDING_PROTOCOL);
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_BINDING_SUPPORTED) (
-  IN EFI_DRIVER_BINDING_PROTOCOL    *This,
+  IN EFI_DRIVER_BINDING_PROTOCOL            * This,
   IN EFI_HANDLE                             ControllerHandle,
-  IN EFI_DEVICE_PATH_PROTOCOL               *RemainingDevicePath  OPTIONAL
+  IN EFI_DEVICE_PATH_PROTOCOL               * RemainingDevicePath OPTIONAL
   )
 /*++
 
@@ -61,9 +63,9 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_BINDING_START) (
-  IN EFI_DRIVER_BINDING_PROTOCOL    *This,
+  IN EFI_DRIVER_BINDING_PROTOCOL            * This,
   IN EFI_HANDLE                             ControllerHandle,
-  IN EFI_DEVICE_PATH_PROTOCOL               *RemainingDevicePath  OPTIONAL
+  IN EFI_DEVICE_PATH_PROTOCOL               * RemainingDevicePath OPTIONAL
   )
 /*++
 
@@ -87,10 +89,10 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_DRIVER_BINDING_STOP) (
-  IN EFI_DRIVER_BINDING_PROTOCOL   *This,
+  IN EFI_DRIVER_BINDING_PROTOCOL            * This,
   IN  EFI_HANDLE                            ControllerHandle,
   IN  UINTN                                 NumberOfChildren,
-  IN  EFI_HANDLE                            *ChildHandleBuffer
+  IN  EFI_HANDLE                            * ChildHandleBuffer
   )
 /*++
 
@@ -111,18 +113,16 @@ EFI_STATUS
 --*/
 ;
 
-
 //
 // Interface structure for the ControllerHandle Driver Protocol
 //
-
 typedef struct _EFI_DRIVER_BINDING_PROTOCOL {
-  EFI_DRIVER_BINDING_SUPPORTED    Supported;
-  EFI_DRIVER_BINDING_START        Start;
-  EFI_DRIVER_BINDING_STOP         Stop;
-  UINT32                          Version;
-  EFI_HANDLE                      ImageHandle;
-  EFI_HANDLE                      DriverBindingHandle;
+  EFI_DRIVER_BINDING_SUPPORTED  Supported;
+  EFI_DRIVER_BINDING_START      Start;
+  EFI_DRIVER_BINDING_STOP       Stop;
+  UINT32                        Version;
+  EFI_HANDLE                    ImageHandle;
+  EFI_HANDLE                    DriverBindingHandle;
 } EFI_DRIVER_BINDING_PROTOCOL;
 
 extern EFI_GUID gEfiDriverBindingProtocolGuid;

@@ -22,7 +22,6 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 
-
 EFI_EVENT
 EfiLibCreateProtocolNotifyEvent (
   IN EFI_GUID             *ProtocolGuid,
@@ -41,9 +40,9 @@ Arguments:
 
   ProtocolGuid    - Protocol to register notification event on.
 
-  NotifTpl        - Maximum TPL to single the NotifyFunction.
+  NotifyTpl       - Maximum TPL to single the NotifyFunction.
 
-  NotifyFunciton  - EFI notification routine.
+  NotifyFunction  - EFI notification routine.
 
   NotifyContext   - Context passed into Event when it is created.
 
@@ -56,8 +55,8 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  EFI_EVENT               Event;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
 
   //
   // Create the event
@@ -93,15 +92,13 @@ Returns:
   return Event;
 }
 
-
-
 EFI_STATUS
 EfiLibNamedEventListen (
-  IN EFI_GUID            *Name,
+  IN EFI_GUID             * Name,
   IN EFI_TPL              NotifyTpl,
   IN EFI_EVENT_NOTIFY     NotifyFunction,
-  IN VOID                *NotifyContext,
-  OUT VOID               *Registration OPTIONAL
+  IN VOID                 *NotifyContext,
+  OUT VOID                *Registration OPTIONAL
   )
 /*++
 
@@ -115,8 +112,8 @@ Routine Description:
 
 Arguments:
   Name            - Name to register the listener on.
-  NotifTpl        - Maximum TPL to singnal the NotifyFunction.
-  NotifyFunciton  - The listener routine.
+  NotifyTpl       - Maximum TPL to singnal the NotifyFunction.
+  NotifyFunction  - The listener routine.
   NotifyContext   - Context passed into the listener routine.
   Registration    - Registration key returned from RegisterProtocolNotify().
                     It could be NULL.
@@ -126,28 +123,29 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  EFI_EVENT               Event;
-  VOID                   *RegistrationLocal;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
+  VOID        *RegistrationLocal;
 
   //
   // Create event
   //
   Status = gBS->CreateEvent (
-                EFI_EVENT_NOTIFY_SIGNAL,
-                NotifyTpl,
-                NotifyFunction,
-                NotifyContext,
-                &Event
-                );
+                  EFI_EVENT_NOTIFY_SIGNAL,
+                  NotifyTpl,
+                  NotifyFunction,
+                  NotifyContext,
+                  &Event
+                  );
   ASSERT_EFI_ERROR (Status);
 
+  //
   // The Registration is not optional to RegisterProtocolNotify().
   // To make it optional to EfiLibNamedEventListen(), may need to substitute with a local.
+  //
   if (Registration != NULL) {
     RegistrationLocal = Registration;
-  }
-  else {
+  } else {
     RegistrationLocal = &RegistrationLocal;
   }
 
@@ -156,17 +154,14 @@ Returns:
   //
 
   Status = gBS->RegisterProtocolNotify (
-                Name,
-                Event,
-                RegistrationLocal
-                );
+                  Name,
+                  Event,
+                  RegistrationLocal
+                  );
   ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }
-
-
-
 
 EFI_STATUS
 EfiLibNamedEventSignal (
@@ -190,23 +185,23 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  EFI_HANDLE              Handle;
+  EFI_STATUS  Status;
+  EFI_HANDLE  Handle;
 
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
-                 &Handle,
-                 Name,
-                 EFI_NATIVE_INTERFACE,
-                 NULL
-                 );
+                  &Handle,
+                  Name,
+                  EFI_NATIVE_INTERFACE,
+                  NULL
+                  );
   ASSERT_EFI_ERROR (Status);
 
   Status = gBS->UninstallProtocolInterface (
-                 Handle,
-                 Name,
-                 NULL
-                 );
+                  Handle,
+                  Name,
+                  NULL
+                  );
   ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
