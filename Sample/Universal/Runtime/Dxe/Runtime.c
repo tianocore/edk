@@ -54,13 +54,14 @@ Revision History:
 #include "Runtime.h"
 
 //
-// Bugbug: This is a only short term solution
-// The final solution requres DXE core changes.
+// This is a only short term solution.
+// There is a change coming to the Runtime AP that
+// will make it so the Runtime driver will not have to allocate any buffers. 
 //
 #define MAX_RUNTIME_IMAGE_NUM (64)
 #define MAX_RUNTIME_EVENT_NUM (64)
-RUNTIME_IMAGE_RELOCATION_DATA *mRuntimeImageBuffer  = NULL;
-RUNTIME_NOTIFY_EVENT_DATA     *mRuntimeEventBuffer  = NULL;
+RUNTIME_IMAGE_RELOCATION_DATA mRuntimeImageBuffer[MAX_RUNTIME_IMAGE_NUM];
+RUNTIME_NOTIFY_EVENT_DATA     mRuntimeEventBuffer[MAX_RUNTIME_EVENT_NUM];
 UINTN                         mRuntimeImageNumber;
 UINTN                         mRuntimeEventNumber;
 
@@ -167,8 +168,6 @@ Returns:
 
   EFI_SUCCESS          - The ImageBase has been registered.
 
-  EFI_OUT_OF_RESOURCES - There are not enough resources to register ImageBase.
-
 --*/
 {
   RUNTIME_IMAGE_RELOCATION_DATA *RuntimeImage;
@@ -180,7 +179,7 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  RuntimeImage = mRuntimeImageBuffer++;
+  RuntimeImage = &mRuntimeImageBuffer[mRuntimeImageNumber];
   mRuntimeImageNumber++;
   ASSERT (mRuntimeImageNumber < MAX_RUNTIME_IMAGE_NUM);
 
@@ -234,13 +233,11 @@ Returns:
 
   EFI_SUCCESS          - The Event has been registered.
 
-  EFI_OUT_OF_RESOURCES - There are not enough resources to register Event.
-
 --*/
 {
   RUNTIME_NOTIFY_EVENT_DATA *RuntimeEvent;
 
-  RuntimeEvent = mRuntimeEventBuffer++;
+  RuntimeEvent = &mRuntimeEventBuffer[mRuntimeEventNumber];
   mRuntimeEventNumber++;
   ASSERT (mRuntimeEventNumber < MAX_RUNTIME_EVENT_NUM);
 
@@ -536,7 +533,7 @@ Returns:
 
   EFI_SUCEESS - Runtime Driver Architectural Protocol Installed
 
-  Other       - Return value from gBS->AllocatePool or gBS->InstallProtocolInterface
+  Other       - Return value from gBS->InstallMultipleProtocolInterfaces
 
 --*/
 {
@@ -585,24 +582,6 @@ Returns:
                   &gEfiRuntimeArchProtocolGuid,
                   &mRuntime,
                   NULL
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // It is a workaround
-  // Allocate the runtime memory in advance
-  //
-  Status = gBS->AllocatePool (
-                  EfiRuntimeServicesData,
-                  sizeof (RUNTIME_IMAGE_RELOCATION_DATA) * MAX_RUNTIME_IMAGE_NUM,
-                  &mRuntimeImageBuffer
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  Status = gBS->AllocatePool (
-                  EfiRuntimeServicesData,
-                  sizeof (RUNTIME_NOTIFY_EVENT_DATA) * MAX_RUNTIME_EVENT_NUM,
-                  &mRuntimeEventBuffer
                   );
   ASSERT_EFI_ERROR (Status);
 
