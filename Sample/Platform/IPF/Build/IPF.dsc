@@ -53,181 +53,12 @@ PLATFORM=$(PROJECT_NAME)
 
 
 
-
 [=============================================================================]
-#
-# These are the package descriptions. They are tagged as
-# [Package.$(COMPONENT_TYPE).$(PACKAGE)], where COMPONENT_TYPE is typically
-# defined in the component INF file, and PACKAGE is typically specified
-# in the [components] section below.
-#
+[Fv.Fv.Attributes]
 
+[Fv.Fv.options]
 
-[=============================================================================]
-[Package.FILE.AcpiTable]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_FREEFORM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress (Dummy) {
-    Tool (
-      $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\Fadt.sec
-               $(DEST_DIR)\Facs.sec
-               $(DEST_DIR)\Dsdt.sec
-               $(DEST_DIR)\Dsdt2.sec               
-               $(DEST_DIR)\Madt.sec               
-               $(DEST_DIR)\Spcr.sec
-               $(DEST_DIR)\$(BASE_NAME).ui
-            -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-[Package.BS_DRIVER.OpRomDriver]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_DRIVER
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress (Dummy) {
-    Tool (
-      $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\$(BASE_NAME).pe32
-            -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-[Package.RT_DRIVER.FpswaDriver]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_DRIVER
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress (Dummy) {
-    Tool (
-      $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\$(BASE_NAME).pe32
-            -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-[Package.RT_DRIVER.GigUndiDriver]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_DRIVER
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress (Dummy) {
-    Tool (
-      $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\$(BASE_NAME).pe32
-            -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-#
-# These get emitted to the output makefile for each FV being built.
-#
-
-[=============================================================================]
-[Build.Fv.FvNorth1]
-#
-# Recovery FV containing bootstrap files, PEI, and recovery components
-#
-
-[=============================================================================]
-[Build.Fv.FvNorth2]
-#
-# Recovery FV containing bootstrap files, PEI, and recovery components
-#
-
-[=============================================================================]
-[Build.Fv.FvSouth1,Build.Fv.FvRecoveryFloppy]
-#
-# Main FV containing DXE components
-#
-
-[=============================================================================]
-[Build.Fv.FvSouth2]
-#
-# Main FV containing DXE components
-#
-
-[=============================================================================]
-[Build.Fv.NvStorage]
-#
-# FV containing runtime updatable data
-#
-
-[=============================================================================]
-[Build.Fv.McaStorage]
-#
-# FV containing runtime updatable data
-#
-
-[=============================================================================]
-#
-# These control the generation of the FV files
-#
-
-[=============================================================================]
-[Fv.FvNorth1.Options]
-
-[=============================================================================]
-[Fv.FvNorth2.Options]
-
-[=============================================================================]
-[Fv.FvSouth1.Options]
-
-[=============================================================================]
-[Fv.FvSouth2.Options]
-
-[=============================================================================]
-[Fv.FvRecoveryFloppy.Options]
-
-[=============================================================================]
-[Fv.NvStorage.Options]
-
-[=============================================================================]
-[Fv.McaStorage.Options]
-
-[=============================================================================]
-[Fv.NvStorage.Components]
-
-[=============================================================================]
-[Fv.McaStorage.Components]
-
-[=============================================================================]
-[Fv.FvNorth1.Attributes,Fv.FvNorth2.Attributes,Fv.FvSouth1.Attributes,Fv.FvSouth2.Attributes,Fv.NvStorage.Attributes,Fv.McaStorage.Attributes,Fv.FvRecoveryFloppy.Attributes]
+[build.fv.Fv]
 
 
 [=============================================================================]
@@ -262,7 +93,7 @@ DEFINE PACKAGE=Default
 # By default components in this section belong in the recovery FV.
 # This FV primarily contains PEI code.
 #
-DEFINE FV=FvNorth1
+DEFINE FV=Fv
 
 #
 # SEC Core
@@ -274,22 +105,15 @@ DEFINE FV=FvNorth1
 # PEI core
 #
 
-
-DEFINE FV=FvNorth2
-
 #
 # PEIM
 #
-Sample\Universal\DxeIpl\Pei\DxeIpl.inf                                                 FV=FvNorth2
+Sample\Universal\DxeIpl\Pei\DxeIpl.inf                                               
 
 #
 # Remainder of files go to south firmware volume
 #
 
-#
-# Set default FV to both
-#
-DEFINE FV=FvSouth1,FvRecoveryFloppy
 
 #
 # DXE Core
@@ -311,10 +135,6 @@ Sample\Universal\FirmwareVolume\GuidedSectionExtraction\Crc32SectionExtract\Dxe\
 Sample\Universal\DataHub\DataHub\Dxe\DataHub.inf
 Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
 
-#
-# Set default FV to both
-#
-DEFINE FV=FvSouth2,FvRecoveryFloppy
 
 Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
 Sample\Universal\UserInterface\SetupBrowser\Dxe\setupbrowser.inf
@@ -327,8 +147,8 @@ Sample\Universal\Console\Terminal\Dxe\terminal.inf
 Sample\Platform\Generic\Dxe\ConPlatform\ConPlatform.inf
 Sample\Universal\Console\ConSplitter\Dxe\ConSplitter.inf
 Sample\Universal\WatchdogTimer\Dxe\WatchDogTimer.inf
-Sample\Universal\Variable\RuntimeDxe\Variable.inf                               FV=FvSouth2
-Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf                        FV=FvRecoveryFloppy
+Sample\Universal\Variable\RuntimeDxe\Variable.inf                              
+Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf                       
 Sample\Universal\Runtime\Dxe\Runtime.inf
 Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
 Other\Maintained\Application\Shell\Bin\Shell.inf
@@ -350,14 +170,20 @@ Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf
 #
 # The following components are used for network boot
 #
-Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                        FV=FvSouth2
-Sample\Universal\Network\PxeDhcp4\Dxe\Dhcp4.inf                FV=FvSouth2
-Sample\Universal\Network\Snp32_64\Dxe\Snp.inf                  FV=FvSouth2
-Sample\Universal\Network\PxeBc\Dxe\Bc.inf                      FV=FvSouth2    
+Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                       
+Sample\Universal\Network\PxeDhcp4\Dxe\Dhcp4.inf               
+Sample\Universal\Network\Snp32_64\Dxe\Snp.inf                 
+Sample\Universal\Network\PxeBc\Dxe\Bc.inf                      
+
+#
+# Fat File System driver. 
+#
+Other\Maintained\Universal\Disk\FileSystem\Fat\Dxe\Fat.inf
+
 
 #
 # NvStorage FV primarily contains private data of FTW and runtime updatable
 # data such as variable and event log. It does not contain any FFS file
 #
-DEFINE NONFFS_FV = NvStorage
+#DEFINE NONFFS_FV = NvStorage
 [=============================================================================]

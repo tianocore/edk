@@ -98,8 +98,8 @@ Arguments:
   DevicePath - Parent Device Path
 
 Returns:
-  TRUE       - some child handle(s) was added
-  FALSE      - no child handle was added
+  TRUE       - Valid GPT disk
+  FALSE      - Not a valid GPT disk
 
 --*/
 {
@@ -112,7 +112,7 @@ Returns:
   EFI_PARTITION_ENTRY         *PartEntry;
   EFI_PARTITION_ENTRY_STATUS  *PEntryStatus;
   UINTN                       Index;
-  BOOLEAN                     Found;
+  BOOLEAN                     GptValid;
   HARDDRIVE_DEVICE_PATH       HdDev;
 
   ProtectiveMbr = NULL;
@@ -127,16 +127,16 @@ Returns:
   DEBUG ((EFI_D_INFO, " BlockSize : %d \n", BlockSize));
   DEBUG ((EFI_D_INFO, " LastBlock : %x \n", LastBlock));
 
-  Found = FALSE;
+  GptValid = FALSE;
 
   //
   // Allocate a buffer for the Protective MBR
   //
   ProtectiveMbr = EfiLibAllocatePool (BlockSize);
-
   if (ProtectiveMbr == NULL) {
     return FALSE;
   }
+
   //
   // Read the Protective MBR from LBA #0
   //
@@ -159,15 +159,11 @@ Returns:
       ) {
     goto Done;
   }
-  //
-  // Free the Protective MBR buffer
-  //
-  // gBS->FreePool (ProtectiveMbr);
+
   //
   // Allocate the GPT structures
   //
   PrimaryHeader = EfiLibAllocateZeroPool (sizeof (EFI_PARTITION_TABLE_HEADER));
-
   if (PrimaryHeader == NULL) {
     goto Done;
   }
@@ -177,6 +173,7 @@ Returns:
   if (BackupHeader == NULL) {
     goto Done;
   }
+
   //
   // Check primary and backup partition tables
   //
@@ -216,7 +213,6 @@ Returns:
   // Read the EFI Partition Entries
   //
   PartEntry = EfiLibAllocatePool (PrimaryHeader->NumberOfPartitionEntries * sizeof (EFI_PARTITION_ENTRY));
-
   if (PartEntry == NULL) {
     DEBUG ((EFI_D_ERROR, "Allocate pool error\n"));
     goto Done;
@@ -229,7 +225,6 @@ Returns:
                     PrimaryHeader->NumberOfPartitionEntries * (PrimaryHeader->SizeOfPartitionEntry),
                     PartEntry
                     );
-
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_INFO, " Partition Entry ReadBlocks error\n"));
     goto Done;
@@ -240,15 +235,20 @@ Returns:
   DEBUG ((EFI_D_INFO, " Number of partition entries: %d\n", PrimaryHeader->NumberOfPartitionEntries));
 
   PEntryStatus = EfiLibAllocateZeroPool (PrimaryHeader->NumberOfPartitionEntries * sizeof (EFI_PARTITION_ENTRY_STATUS));
-
   if (PEntryStatus == NULL) {
     DEBUG ((EFI_D_ERROR, "Allocate pool error\n"));
     goto Done;
   }
+
   //
   // Check the integrity of partition entries
   //
   PartitionCheckGptEntry (PrimaryHeader, PartEntry, PEntryStatus);
+
+  //
+  // If we got this far the GPT layout of the disk is valid and we should return true
+  //
+  GptValid = TRUE;
 
   //
   // Create child device handles
@@ -295,21 +295,28 @@ Returns:
               BlockSize,
               EfiCompareGuid(&PartEntry[Index].PartitionTypeGUID, &gEfiPartTypeSystemPartGuid)
               );
-    if (!EFI_ERROR (Status)) {
-      Found = TRUE;
-    }
   }
 
   DEBUG ((EFI_D_INFO, "Prepare to Free Pool\n"));
 
 Done:
-  gBS->FreePool (ProtectiveMbr);
-  gBS->FreePool (PrimaryHeader);
-  gBS->FreePool (BackupHeader);
-  gBS->FreePool (PartEntry);
-  gBS->FreePool (PEntryStatus);
+  if (ProtectiveMbr != NULL) {
+    gBS->FreePool (ProtectiveMbr);
+  }
+  if (PrimaryHeader != NULL) {
+    gBS->FreePool (PrimaryHeader);
+  }
+  if (BackupHeader != NULL) {
+    gBS->FreePool (BackupHeader);
+  }
+  if (PartEntry != NULL) {
+    gBS->FreePool (PartEntry);
+  }
+  if (PEntryStatus != NULL) {
+    gBS->FreePool (PEntryStatus);
+  }
 
-  return Found;
+  return GptValid;
 }
 
 BOOLEAN

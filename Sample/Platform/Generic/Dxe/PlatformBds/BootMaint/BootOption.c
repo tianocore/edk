@@ -250,10 +250,8 @@ Returns:
 
 --*/
 {
-  UINTN                     NoBlkIoHandles;
   UINTN                     NoSimpleFsHandles;
   UINTN                     NoLoadFileHandles;
-  EFI_HANDLE                *BlkIoHandle;
   EFI_HANDLE                *SimpleFsHandle;
   EFI_HANDLE                *LoadFileHandle;
   UINT16                    *VolumeLabel;
@@ -264,65 +262,18 @@ Returns:
   BM_FILE_CONTEXT           *FileContext;
   UINT16                    *TempStr;
   UINTN                     OptionNumber;
-  VOID                      *Buffer;
-
   EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
   UINT16                    DeviceType;
   BBS_BBS_DEVICE_PATH       BbsDevicePathNode;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  BOOLEAN                   RemovableMedia;
+
 
   NoSimpleFsHandles = 0;
   NoLoadFileHandles = 0;
   OptionNumber      = 0;
   InitializeListHead (&FsOptionMenu.Head);
 
-  //
-  // Locate Handles that support BlockIo protocol
-  //
-  Status = gBS->LocateHandleBuffer (
-                  ByProtocol,
-                  &gEfiBlockIoProtocolGuid,
-                  NULL,
-                  &NoBlkIoHandles,
-                  &BlkIoHandle
-                  );
-  if (!EFI_ERROR (Status)) {
-
-    for (Index = 0; Index < NoBlkIoHandles; Index++) {
-      Status = gBS->HandleProtocol (
-                      BlkIoHandle[Index],
-                      &gEfiBlockIoProtocolGuid,
-                      &BlkIo
-                      );
-
-      if (EFI_ERROR (Status)) {
-        continue;
-      }
-
-      if (BlkIo->Media->RemovableMedia) {
-        Buffer = EfiAllocateZeroPool (BlkIo->Media->BlockSize);
-        if (NULL == Buffer) {
-          return EFI_OUT_OF_RESOURCES;
-        }
-
-        BlkIo->ReadBlocks (
-                BlkIo,
-                BlkIo->Media->MediaId,
-                0,
-                BlkIo->Media->BlockSize,
-                Buffer
-                );
-        SafeFreePool (Buffer);
-        Buffer = NULL;
-        gBS->ReinstallProtocolInterface (
-              BlkIoHandle[Index],
-              &gEfiBlockIoProtocolGuid,
-              BlkIo,
-              BlkIo
-              );
-      }
-    }
-  }
   //
   // Locate Handles that support Simple File System protocol
   //
@@ -335,8 +286,7 @@ Returns:
                   );
   if (!EFI_ERROR (Status)) {
     //
-    // Check whether it supports BlockIo protocol
-    // which is mandatory for current EFI load option
+    // Find all the instances of the File System prototocol
     //
     for (Index = 0; Index < NoSimpleFsHandles; Index++) {
       Status = gBS->HandleProtocol (
@@ -344,21 +294,29 @@ Returns:
                       &gEfiBlockIoProtocolGuid,
                       &BlkIo
                       );
-
       if (EFI_ERROR (Status)) {
-        continue;
+        //
+        // If no block IO exists assume it's NOT a removable media
+        //
+        RemovableMedia = FALSE;
+      } else {
+        //
+        // If block IO exists check to see if it's remobable media
+        //
+        RemovableMedia = BlkIo->Media->RemovableMedia; 
       }
+
       //
-      // Allocate pool for this removable media to be added as
-      // load option
+      // Allocate pool for this load option
       //
       MenuEntry = BOpt_CreateMenuEntry (BM_FILE_CONTEXT_SELECT);
       if (NULL == MenuEntry) {
+        SafeFreePool (SimpleFsHandle);    
         return EFI_OUT_OF_RESOURCES;
       }
 
       FileContext = (BM_FILE_CONTEXT *) MenuEntry->VariableContext;
-      if (BlkIo->Media->RemovableMedia) {
+      if (RemovableMedia) {
         FileContext->Handle   = SimpleFsHandle[Index];
         FileContext->FHandle  = EfiLibOpenRoot (FileContext->Handle);
         if (!FileContext->FHandle) {
@@ -388,14 +346,7 @@ Returns:
         MenuEntry->OptionNumber = OptionNumber;
         OptionNumber++;
         InsertTailList (&FsOptionMenu.Head, &MenuEntry->Link);
-        //
-        //  bugbug : until now boot from a file in removable
-        //           media is not supported since the media
-        //           may be really removed from system
-        //
-        //
-        // Just for test
-        //
+
         FileContext->IsDir    = FALSE;
         FileContext->IsRoot   = TRUE;
 
@@ -461,7 +412,7 @@ Returns:
     }
   }
 
-  if (NoSimpleFsHandles) {
+  if (NoSimpleFsHandles != 0) {
     SafeFreePool (SimpleFsHandle);
   }
   //
@@ -479,6 +430,7 @@ Returns:
     for (Index = 0; Index < NoLoadFileHandles; Index++) {
       MenuEntry = BOpt_CreateMenuEntry (BM_FILE_CONTEXT_SELECT);
       if (NULL == MenuEntry) {
+        SafeFreePool (LoadFileHandle);    
         return EFI_OUT_OF_RESOURCES;
       }
 
@@ -508,9 +460,10 @@ Returns:
     }
   }
 
-  if (NoLoadFileHandles) {
+  if (NoLoadFileHandles != 0) {
     SafeFreePool (LoadFileHandle);
   }
+
   //
   // Add Legacy Boot Option Support Here
   //
