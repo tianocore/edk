@@ -30,7 +30,6 @@ Abstract:
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
-#include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (UsbAtapi)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 

@@ -191,7 +191,7 @@ IsHub (
 
 EFI_STATUS
 UsbGetStringtable (
-  IN  USB_IO_DEVICE     *Dev
+  IN  USB_IO_DEVICE     *UsbIoDevice
   );
 
 EFI_STATUS
