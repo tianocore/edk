@@ -99,7 +99,7 @@ Returns:
   // If there isn't a security PPI installed, use the one from notification
   //
   if (PrivateData->PrivateSecurityPpi == NULL) {
-    PrivateData->PrivateSecurityPpi = (PEI_SECURITY_PPI *)&Ppi;
+    PrivateData->PrivateSecurityPpi = (PEI_SECURITY_PPI *)Ppi;
   }
   return EFI_SUCCESS;
 }
