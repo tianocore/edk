@@ -429,7 +429,7 @@ CoreLocateDevicePath (
 
 Routine Description:
 
-  Locates the handle to a device on the device path that bese matchs the specified protocol.
+  Locates the handle to a device on the device path that best matches the specified protocol.
 
 Arguments:
 
