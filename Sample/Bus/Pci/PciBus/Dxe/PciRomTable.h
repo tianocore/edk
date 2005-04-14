@@ -57,28 +57,6 @@ Returns:
 --*/
 ;
 
-EFI_STATUS
-PciRomLoadEfiDriversFromOptionRomTable (
-  IN EFI_DRIVER_BINDING_PROTOCOL      *This,
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  This            - TODO: add argument description
-  PciRootBridgeIo - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
 
 EFI_STATUS
 PciRomGetRomResourceFromPciOptionRomTable (
