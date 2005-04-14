@@ -69,4 +69,25 @@ Abstract:
 #define EFI_CACHE_WRITEPROTECTED      5
 #define EFI_CACHE_WRITEBACK           6
 
+UINT64
+EfiReadTsc (
+  VOID
+  )
+/*++                   
+                                                                                                       
+Routine Description:                                                
+
+  Read Time stamp.
+  
+Arguments:                
+
+  None                 
+  
+Returns:                                                            
+
+   Return the read data                                                
+   
+--*/
+;
+
 #endif
