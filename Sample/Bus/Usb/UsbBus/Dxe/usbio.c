@@ -934,16 +934,18 @@ UsbGetEndpointDescriptor (
     Retrieves the endpoint Descriptor for a given endpoint.
 
   Arguments:
-    This                -   Indicates the calling context.
-    EndpointIndex       -   Indicates which endpoint descriptor to retrieve.
-                            The valid range is 0..15.
-    EndpointDescriptor  -   A pointer to the caller allocated USB Endpoint
-                            Descriptor of a USB controller.
+    This                  -   Indicates the calling context.
+    EndpointIndex         -   Indicates which endpoint descriptor to retrieve.
+                              The valid range is 0..15.
+    EndpointDescriptor    -   A pointer to the caller allocated USB Endpoint
+                              Descriptor of a USB controller.
 
   Returns:
-    EFI_SUCCESS
-    EFI_INVALID_PARAMETER
-    EFI_NOT_FOUND
+    EFI_SUCCESS           -   The endpoint descriptor was retrieved successfully.
+    EFI_INVALID_PARAMETER -   EndpointIndex is not valid.
+                          -   EndpointDescriptor is NULL.
+    EFI_NOT_FOUND         -   The endpoint descriptor cannot be found.
+                              The device may not be correctly configured.
 
 --*/
 {
@@ -969,7 +971,7 @@ UsbGetEndpointDescriptor (
   EndpointListEntry = (ENDPOINT_DESC_LIST_ENTRY *) (EndpointListHead->ForwardLink);
 
   if (EndpointIndex >= InterfaceListEntry->InterfaceDescriptor.NumEndpoints) {
-    return EFI_INVALID_PARAMETER;
+    return EFI_NOT_FOUND;
   }
   //
   // Loop all endpoint descriptor to get match one.
@@ -986,7 +988,6 @@ UsbGetEndpointDescriptor (
     );
 
   return EFI_SUCCESS;
-
 }
 
 STATIC

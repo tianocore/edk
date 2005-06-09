@@ -132,11 +132,11 @@ UpdateFileExplorer (
 /*++
 
 Routine Description:
-  Hook to enable UI timeout override behavior.
+  Update the file explower page with the refershed file system.
 
 Arguments:
-  BdsDeviceList - Device List that BDS needs to connect.
-  Entry - Pointer to current Boot Entry.
+  CallbackData  -   BMM context data
+  KeyValue        - Key value to identify the type of data to expect.
 
 Returns:
   TRUE          - Inform the caller to create a callback packet to exit file explorer.
@@ -178,9 +178,7 @@ Returns:
 
     NewFileContext                  = (BM_FILE_CONTEXT *) NewMenuEntry->VariableContext;
 
-    if (NewFileContext->IsDir ||
-        (NewFileContext->IsRemovableMedia && CallbackData->FeCurrentState == BOOT_FROM_FILE_STATE)
-        ) {
+    if (NewFileContext->IsDir ) {
       RemoveEntryList (&NewMenuEntry->Link);
       BOpt_FreeMenu (&DirectoryMenu);
       BOpt_FindFiles (CallbackData, NewMenuEntry);

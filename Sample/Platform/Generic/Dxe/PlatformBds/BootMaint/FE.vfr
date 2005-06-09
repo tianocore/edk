@@ -27,7 +27,7 @@
 #pragma pack(1)
 typedef struct {
   UINT16                    DescriptionData[75];
-  UINT16                    OptionalData[75];
+  UINT16                    OptionalData[127];
   UINT8                     Active;
   UINT8                     ForceReconnect;  
 } FILE_EXPLORER_NV_DATA;
@@ -71,8 +71,8 @@ formset
        string    varid    = FILE_EXPLORER_NV_DATA.OptionalData,
        		prompt   = STRING_TOKEN(STR_OPTIONAL_DATA),
        		help     = STRING_TOKEN(STR_NULL_STRING),
-       		minsize  = 6,
-       		maxsize  = 75,
+       		minsize  = 0,
+       		maxsize  = 120,
        endstring;
 
        text 
@@ -108,8 +108,8 @@ formset
        string    varid    = FILE_EXPLORER_NV_DATA.OptionalData,
                  prompt   = STRING_TOKEN(STR_OPTIONAL_DATA),
                  help     = STRING_TOKEN(STR_NULL_STRING),
-                 minsize  = 6,
-                 maxsize  = 75,
+                 minsize  = 0,
+                 maxsize  = 120,
        endstring; 
        
        checkbox varid    = FILE_EXPLORER_NV_DATA.ForceReconnect,

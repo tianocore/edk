@@ -88,8 +88,8 @@ Arguments:
 // TODO: function comment should end with '--*/'
 // TODO: function comment is missing 'Returns:'
 {
-  UINT16  *AllignedBuffer;
-  UINT32  *Buffer32;
+  UINT16  *AlignedBuffer;
+  UINT16  *WorkingBuffer;
   UINTN   Size;
 
   //
@@ -102,29 +102,29 @@ Arguments:
 
   gBS->AllocatePool (
         EfiBootServicesData,
-        Size + 32,
-        (VOID **) &AllignedBuffer
+        Size + 1,
+        (VOID**)&WorkingBuffer
         );
 
-  Buffer32 = (UINT32 *) (((UINTN) AllignedBuffer + 0x1F) & (~0x1F));
+  AlignedBuffer = (UINT16 *) ((UINTN)(((UINTN) WorkingBuffer + 0x1) & (~0x1)));
 
   //
   // Perform UINT16 data read from FIFO
   //
   PciIo->Io.Read (
               PciIo,
-              EfiPciIoWidthFifoUint32,
+              EfiPciIoWidthFifoUint16,
               EFI_PCI_IO_PASS_THROUGH_BAR,
               (UINT64) Port,
-              (Count + 1) >> 1,
-              (UINT16 *) Buffer32
+              Count,
+              (UINT16*)AlignedBuffer
               );
 
   //
   // Copy data to user buffer
   //
-  EfiCopyMem (Buffer, (UINT16 *) Buffer32, Size);
-  gBS->FreePool (AllignedBuffer);
+  EfiCopyMem (Buffer, (UINT16*)AlignedBuffer, Size);
+  gBS->FreePool (WorkingBuffer);
 }
 
 VOID
@@ -227,8 +227,8 @@ Arguments:
 // TODO: function comment should end with '--*/'
 // TODO: function comment is missing 'Returns:'
 {
-  UINT16  *AllignedBuffer;
-  UINT32  *Buffer32;
+  UINT16  *AlignedBuffer;
+  UINT32  *WorkingBuffer;
   UINTN   Size;
 
   //
@@ -241,30 +241,30 @@ Arguments:
 
   gBS->AllocatePool (
         EfiBootServicesData,
-        Size + 32,
-        (VOID **) &AllignedBuffer
+        Size + 1,
+        (VOID **) &WorkingBuffer
         );
 
-  Buffer32 = (UINT32 *) (((UINTN) AllignedBuffer + 0x1F) & (~0x1F));
+  AlignedBuffer = (UINT16 *) ((UINTN)(((UINTN) WorkingBuffer + 0x1) & (~0x1)));
 
   //
   // Copy data from user buffer to working buffer
   //
-  EfiCopyMem ((UINT16 *) Buffer32, Buffer, Size);
+  EfiCopyMem ((UINT16 *) AlignedBuffer, Buffer, Size);
 
   //
   // perform UINT16 data write to the FIFO
   //
   PciIo->Io.Write (
               PciIo,
-              EfiPciIoWidthFifoUint32,
+              EfiPciIoWidthFifoUint16,
               EFI_PCI_IO_PASS_THROUGH_BAR,
               (UINT64) Port,
-              (Count + 1) >> 1,
-              (UINT16 *) Buffer32
+              Count,
+              (UINT16 *) AlignedBuffer
               );
 
-  gBS->FreePool (AllignedBuffer);
+  gBS->FreePool (WorkingBuffer);
 }
 
 BOOLEAN

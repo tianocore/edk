@@ -2573,16 +2573,23 @@ Returns:
 
   do {
     TransferFinished = CheckTDsResults (
-                        PtrTD,
-                        RequiredLen,
-                        TransferResult,
-                        &ErrTDPos,
-                        ActualLen
-                        );
+                         PtrTD,
+                         RequiredLen,
+                         TransferResult,
+                         &ErrTDPos,
+                         ActualLen
+                         );
 
     if (TransferFinished) {
       break;
     }
+       
+    //
+    // TD is inactive, which means the control transfer is end.
+    //
+    if ((*TransferResult & EFI_USB_ERR_NOTEXECUTE) != EFI_USB_ERR_NOTEXECUTE) {
+      break;
+    } 
 
     gBS->Stall (50);
 
@@ -2642,13 +2649,21 @@ Returns:
   do {
 
     TransferFinished = CheckTDsResults (
-                        PtrTD,
-                        RequiredLen,
-                        TransferResult,
-                        &ErrTDPos,
-                        ActualLen
-                        );
+                         PtrTD,
+                         RequiredLen,
+                         TransferResult,
+                         &ErrTDPos,
+                         ActualLen
+                         );
+                        
     if (TransferFinished) {
+      break;
+    }
+       
+    //
+    // TD is inactive, which means bulk or interrupt transfer's end.
+    //    
+    if ((*TransferResult & EFI_USB_ERR_NOTEXECUTE) != EFI_USB_ERR_NOTEXECUTE) {
       break;
     }
 

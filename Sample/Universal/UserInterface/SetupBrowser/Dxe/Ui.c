@@ -1436,6 +1436,8 @@ Arguments:
   PageData         - A pointer to the EFI_IFR_DATA_ARRAY.
            
 Returns:
+  Return the pointer of the menu which selected, 
+  otherwise return NULL.
 
 --*/
 {
@@ -1857,7 +1859,7 @@ Returns:
           gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
           if (OptionString != NULL) {
             //
-            // If leading spaces on OptionString - increment the column number and remove the spaces
+            // If leading spaces on OptionString - remove the spaces
             //
             for (Index = 0; OptionString[Index] == L' '; Index++)
               ;
@@ -2123,7 +2125,7 @@ Returns:
           //
           if (FrontPageTimeOutValue == 0) {
             FrontPageTimeOutValue = 0xFFFF;
-            Status                = gBS->CheckEvent (gST->ConIn->WaitForKey);
+            Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
             if (EFI_ERROR (Status)) {
               Status = EFI_TIMEOUT;
             }
@@ -2181,7 +2183,13 @@ Returns:
         Key.UnicodeChar = CHAR_CARRIAGE_RETURN;
       } else {
         Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-        ASSERT (!EFI_ERROR (Status));
+        //
+        // if we encounter error, continue to read another key in.
+        //
+        if (EFI_ERROR (Status)) {
+          ControlFlag = CfReadKey;
+          continue;
+        }
       }
 
       switch (Key.UnicodeChar) {

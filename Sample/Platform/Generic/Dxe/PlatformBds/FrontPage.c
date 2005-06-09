@@ -746,6 +746,23 @@ PlatformBdsEnterFrontPage (
   IN UINT16                       TimeoutDefault,
   IN BOOLEAN                      ConnectAllHappened
   )
+/*++
+
+Routine Description:
+  This function is the main entry of the platform setup entry.
+  The function will present the main menu of the system setup, 
+  this is the platform reference part and can be customize.
+  
+Arguments:
+  TimeoutDefault     - The fault time out value before the system
+                       continue to boot.
+  ConnectAllHappened - The indicater to check if the connect all have
+                       already happended.
+  
+Returns:
+  None
+
+--*/
 {
   EFI_STATUS                    Status;
   EFI_HII_UPDATE_DATA           *UpdateData;
@@ -854,7 +871,9 @@ PlatformBdsEnterFrontPage (
       //
       // Display the Device Manager
       //
-      CallDeviceManager ();
+      do {
+        CallDeviceManager();
+      } while (gCallbackKey == 4);
       break;
 
     case 0x0005:

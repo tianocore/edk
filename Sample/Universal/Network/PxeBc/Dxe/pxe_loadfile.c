@@ -19,6 +19,14 @@ Abstract:
 
 #include "bc.h"
 
+#define DO_MENU     (EFI_SUCCESS)
+#define NO_MENU     (DO_MENU + 1)
+#define LOCAL_BOOT  (EFI_ABORTED)
+#define AUTO_SELECT (NO_MENU)
+
+#define NUMBER_ROWS   25  // we set to mode 0
+#define MAX_MENULIST  23
+
 #define Ctl(x)  (0x1F & (x))
 
 typedef union {
@@ -29,7 +37,7 @@ typedef union {
   UINT8                     *BytePtr;
 } UNION_PTR;
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 STATIC
 EFI_PXE_BASE_CODE_CALLBACK_STATUS
 bc_callback (
@@ -40,27 +48,33 @@ bc_callback (
   IN EFI_PXE_BASE_CODE_PACKET             * PacketPtr OPTIONAL
   )
 /*++
-Routine description:
+
+Routine Description:
+
   PxeBc callback routine for status updates and aborts.
 
-Parameters:
-  This := Pointer to PxeBcCallback interface
-  Function := PxeBc function ID#
-  Received := receive/transmit flag
-  PacketLength := length of received packet (0 == idle callback)
-  PacketPtr := pointer to received packet (NULL == idle callback)
+Arguments:
+
+  This - Pointer to PxeBcCallback interface
+  Function - PxeBc function ID#
+  Received - Receive/transmit flag
+  PacketLength - Length of received packet (0 == idle callback)
+  PacketPtr - Pointer to received packet (NULL == idle callback)
 
 Returns:
-  EFI_PXE_BASE_CODE_CALLBACK_STATUS_CONTINUE := 
-  EFI_PXE_BASE_CODE_CALLBACK_STATUS_ABORT := 
+
+  EFI_PXE_BASE_CODE_CALLBACK_STATUS_CONTINUE - 
+  EFI_PXE_BASE_CODE_CALLBACK_STATUS_ABORT -
+  
 --*/
 {
-  STATIC UINTN  Propeller = 0;
+  STATIC UINTN  Propeller;
 
   EFI_INPUT_KEY Key;
   UINTN         Row;
   UINTN         Col;
 
+  Propeller = 0;
   //
   // Resolve Warning 4 unreferenced parameter problem
   //
@@ -139,21 +153,25 @@ STATIC EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL  _bc_callback = {
   &bc_callback
 };
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 VOID
 PrintIpv4 (
   UINT8 *Ptr
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Display an IPv4 address in dot notation.
 
-Parameters:
-  Ptr := Pointer to IPv4 address.
+Arguments:
+
+  Ptr - Pointer to IPv4 address.
 
 Returns:
-  n/a
+
+  None
+  
 --*/
 {
   if (Ptr != NULL) {
@@ -161,21 +179,25 @@ Returns:
   }
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 VOID
 ShowMyInfo (
   IN PXE_BASECODE_DEVICE *Private
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Display client and server IP information.
 
-Parameters:
-  Private := Pointer to PxeBc interface
+Arguments:
+
+  Private - Pointer to PxeBc interface
 
 Returns:
+
   None
+  
 --*/
 {
   EFI_PXE_BASE_CODE_MODE  *PxeBcMode;
@@ -233,12 +255,6 @@ Returns:
   Aprint ("\n");
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#define DO_MENU     (EFI_SUCCESS)
-#define NO_MENU     (DO_MENU + 1)
-#define LOCAL_BOOT  (EFI_ABORTED)
-#define AUTO_SELECT (NO_MENU)
-
 STATIC
 EFI_STATUS
 DoPrompt (
@@ -246,18 +262,23 @@ DoPrompt (
   PXE_OP_BOOT_PROMPT  *BootPromptPtr
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Display prompt and wait for input.
 
-Parameters:
-  Private := Pointer to PxeBc interface
-  BootPromptPtr := Pointer to PXE boot prompt option
+Arguments:
+
+  Private - Pointer to PxeBc interface
+  BootPromptPtr - Pointer to PXE boot prompt option
 
 Returns:
-  AUTO_SELECT := 
-  DO_MENU := 
-  NO_MENU := 
-  LOCAL_BOOT := 
+
+  AUTO_SELECT - 
+  DO_MENU -
+  NO_MENU - 
+  LOCAL_BOOT - 
+  
 --*/
 {
   EFI_STATUS  Status;
@@ -383,7 +404,8 @@ Returns:
                                 NULL, /* hdr size */
                                 NULL, /* hdr ptr */
                                 &BufferSize,
-                                Buffer);
+                                Buffer
+                                );
 
       continue;
     }
@@ -430,20 +452,25 @@ Returns:
   return Status;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 VOID
 PrintMenuItem (
   PXE_BOOT_MENU_ENTRY *MenuItemPtr
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Display one menu item.
 
-Parameters:
-  MenuItemPtr := Pointer to PXE menu item option.
+Arguments:
+
+  MenuItemPtr - Pointer to PXE menu item option.
 
 Returns:
+
+  None
+
 --*/
 {
   UINT8 Length;
@@ -457,10 +484,6 @@ Returns:
   MenuItemPtr->Data[Length] = SaveChar;
 }
 
-#define NUMBER_ROWS   25  // we set to mode 0
-#define MAX_MENULIST  23
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 EFI_STATUS
 DoMenu (
@@ -468,16 +491,21 @@ DoMenu (
   DHCP_RECEIVE_BUFFER *RxBufferPtr
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Display and process menu.
 
-Parameters:
-  Private := Pointer to PxeBc interface
-  RxBufferPtr := Pointer to receive buffer
+Arguments:
+
+  Private - Pointer to PxeBc interface
+  RxBufferPtr - Pointer to receive buffer
 
 Returns:
-  NO_MENU := 
-  LOCAL_BOOT := 
+
+  NO_MENU - 
+  LOCAL_BOOT - 
+  
 --*/
 {
   PXE_OP_DISCOVERY_CONTROL  *DiscoveryControlPtr;
@@ -593,8 +621,7 @@ Returns:
       //
       gST->ConOut->SetAttribute (
                     gST->ConOut,
-                    EFI_TEXT_ATTR (EFI_BLACK,
-        EFI_LIGHTGRAY)
+                    EFI_TEXT_ATTR (EFI_BLACK, EFI_LIGHTGRAY)
                     );
       gST->ConOut->SetCursorPosition (gST->ConOut, 0, TopRow + Selected);
 
@@ -603,8 +630,7 @@ Returns:
       PrintMenuItem (MenuItemPtrs[Selected]);
       gST->ConOut->SetAttribute (
                     gST->ConOut,
-                    EFI_TEXT_ATTR (EFI_LIGHTGRAY,
-        EFI_BLACK)
+                    EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK)
                     );
       gST->ConOut->SetCursorPosition (gST->ConOut, 0, TopRow + NumMenuItems);
 
@@ -756,20 +782,25 @@ Returns:
   return EFI_SUCCESS;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 UINT16
 GetValue (
   DHCPV4_OP_STRUCT *OpPtr
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Get value 8- or 16-bit value from DHCP option.
 
-Parameters:
-  OpPtr := Pointer to DHCP option
+Arguments:
+
+  OpPtr - Pointer to DHCP option
 
 Returns:
+
+  Value from DHCP option
+  
 --*/
 {
   if (OpPtr->Header.Length == 1) {
@@ -779,7 +810,6 @@ Returns:
   }
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 UINT8 *
 _PxeBcFindOpt (
@@ -788,15 +818,21 @@ _PxeBcFindOpt (
   UINT8 OpCode
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Locate opcode in buffer.
 
-Parameters:
-  BufferPtr := Pointer to buffer
-  BufferLen := Length of buffer
-  OpCode := option number
+Arguments:
+
+  BufferPtr - Pointer to buffer
+  BufferLen - Length of buffer
+  OpCode - Option number
 
 Returns:
+
+  Pointer to opcode, may be NULL
+  
 --*/
 {
   if (BufferPtr == NULL) {
@@ -829,21 +865,26 @@ Returns:
   return NULL;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 UINT8 *
 PxeBcFindDhcpOpt (
   EFI_PXE_BASE_CODE_PACKET  *PacketPtr,
   UINT8                     OpCode
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Find option in packet
 
-Parameters:
-  PacketPtr := Pointer to packet
-  OpCode := option number
+Arguments:
+
+  PacketPtr - Pointer to packet
+  OpCode - option number
 
 Returns:
+
+  Pointer to option in packet
+  
 --*/
 {
   UINTN PacketLen;
@@ -925,7 +966,6 @@ Returns:
   return NULL;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 EFI_STATUS
 DownloadFile (
@@ -934,15 +974,23 @@ DownloadFile (
   IN VOID                 *Buffer
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Download file into buffer
 
-Parameters:
-  Private := Pointer to PxeBc interface
-  BufferSize := pointer to size of download buffer
-  Buffer := Pointer to buffer
+Arguments:
+
+  Private - Pointer to PxeBc interface
+  BufferSize - pointer to size of download buffer
+  Buffer - Pointer to buffer
 
 Returns:
+
+  EFI_BUFFER_TOO_SMALL -
+  EFI_NOT_FOUND -
+  EFI_PROTOCOL_ERROR -
+
 --*/
 {
   EFI_PXE_BASE_CODE_MTFTP_INFO  MtftpInfo;
@@ -1165,7 +1213,6 @@ Returns:
   return Status;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 STATIC
 EFI_STATUS
 LoadfileStart (
@@ -1174,16 +1221,23 @@ LoadfileStart (
   IN VOID                 *Buffer
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Start PXE DHCP.  Get DHCP and proxyDHCP information.
   Display remote boot menu and prompt.  Select item from menu.
 
-Parameters:
-  Private := Pointer to PxeBc interface
-  BufferSize := Pointer to download buffer size
-  Buffer := Pointer to download buffer
+Arguments:
+
+  Private - Pointer to PxeBc interface
+  BufferSize - Pointer to download buffer size
+  Buffer - Pointer to download buffer
 
 Returns:
+
+  EFI_SUCCESS - 
+  EFI_NOT_READY - 
+  
 --*/
 {
   EFI_PXE_BASE_CODE_MODE      *PxeBcMode;
@@ -1290,17 +1344,6 @@ Returns:
   return Status;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-/* LoadFile()
- *  LoadFile protocol for PXE BaseCode.
- *
- * returns:
- *  EFI_INVALID_PARAMETER
- *  EFI_UNSUPPORTED
- *  EFI_BUFFER_TOO_SMALL
- *  Status is also returned from LoadfileStart() and DownloadFile().
- */
 EFI_STATUS
 LoadFile (
   IN EFI_LOAD_FILE_PROTOCOL           *This,
@@ -1310,17 +1353,26 @@ LoadFile (
   IN OUT VOID                         *Buffer
   )
 /*++
-Routine description:
+
+Routine Description:
+
   Loadfile interface for PxeBc interface
 
-Parameters:
-  This :=  Pointer to Loadfile interface
-  FilePath := Not used and not checked
-  BootPolicy := Must be TRUE
-  BufferSize := Pointer to buffer size 
-  Buffer := Pointer to download buffer or NULL
+Arguments:
+
+  This -  Pointer to Loadfile interface
+  FilePath - Not used and not checked
+  BootPolicy - Must be TRUE
+  BufferSize - Pointer to buffer size 
+  Buffer - Pointer to download buffer or NULL
 
 Returns:
+
+  EFI_INVALID_PARAMETER -
+  EFI_UNSUPPORTED -
+  EFI_SUCCESS -
+  EFI_BUFFER_TOO_SMALL -
+
 --*/
 {
   LOADFILE_DEVICE *LoadfilePtr;
@@ -1330,6 +1382,7 @@ Returns:
   BOOLEAN         RemoveCallback;
   BOOLEAN         NewMakeCallback;
   EFI_STATUS      Status;
+  EFI_STATUS      TempStatus;
   //
   //
   //
@@ -1486,7 +1539,7 @@ Returns:
   //
   if (RemoveCallback) {
     NewMakeCallback = FALSE;
-    Status = LoadfilePtr->Private->EfiBc.SetParameters (
+    TempStatus = LoadfilePtr->Private->EfiBc.SetParameters (
                                           &LoadfilePtr->Private->EfiBc,
                                           NULL,
                                           NULL,
@@ -1495,7 +1548,7 @@ Returns:
                                           &NewMakeCallback
                                           );
 
-    if (Status == EFI_SUCCESS) {
+    if (TempStatus == EFI_SUCCESS) {
       gBS->UninstallProtocolInterface (
             LoadfilePtr->Private->Handle,
             &gEfiPxeBaseCodeCallbackProtocolGuid,
@@ -1636,5 +1689,3 @@ Returns:
 
   return Status;
 }
-
-/* EOF - pxe_loadfile.c */

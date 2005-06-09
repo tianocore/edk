@@ -242,11 +242,11 @@ Routine Description
   for future use.
 
 Arguments:
-  CallbackData      -   BMM context data
+  CallbackData           -   BMM context data
 
 Returns:
-  EFI_SUCCESS
-  Others
+  EFI_SUCCESS            -   Success find the file system
+  EFI_OUT_OF_RESOURCES   -   Can not create menu entry
 
 --*/
 {
@@ -316,99 +316,55 @@ Returns:
       }
 
       FileContext = (BM_FILE_CONTEXT *) MenuEntry->VariableContext;
-      if (RemovableMedia) {
-        FileContext->Handle   = SimpleFsHandle[Index];
-        FileContext->FHandle  = EfiLibOpenRoot (FileContext->Handle);
-        if (!FileContext->FHandle) {
-          BOpt_DestroyMenuEntry (MenuEntry);
-          continue;
-        }
+            
+      FileContext->Handle     = SimpleFsHandle[Index];
+      MenuEntry->OptionNumber = Index;
+      FileContext->FHandle    = EfiLibOpenRoot (FileContext->Handle);
+      if (!FileContext->FHandle) {
+        BOpt_DestroyMenuEntry (MenuEntry);
+        continue;
+      }
 
-        FileContext->IsRemovableMedia = TRUE;
-        FileContext->IsLoadFile       = FALSE;
-        MenuEntry->HelpString         = NULL;
+      MenuEntry->HelpString = DevicePathToStr (EfiDevicePathFromHandle (FileContext->Handle));
+      FileContext->Info = EfiLibFileSystemVolumeLabelInfo (FileContext->FHandle);
+      FileContext->FileName = EfiStrDuplicate (L"\\");
+      FileContext->DevicePath = EfiFileDevicePath (
+                                  FileContext->Handle,
+                                  FileContext->FileName
+                                  );
+      FileContext->IsDir            = TRUE;
+      FileContext->IsRoot           = TRUE;
+      FileContext->IsRemovableMedia = FALSE;
+      FileContext->IsLoadFile       = FALSE;
 
-        TempStr = DevicePathToStr (EfiDevicePathFromHandle (FileContext->Handle));
-        MenuEntry->DisplayString = (UINT16 *) EfiAllocateZeroPool (MAX_CHAR);
-        ASSERT (MenuEntry->DisplayString != NULL);
-        MenuEntry->DisplayStringToken = GetStringTokenFromDepository (
-                                          CallbackData,
-                                          FileOptionStrDepository
-                                          );
-        SPrint (
-          MenuEntry->DisplayString,
-          MAX_CHAR,
-          L"Removable Media [%s]",
-          TempStr
-          );
-        SafeFreePool (TempStr);
-        TempStr                 = NULL;
-        MenuEntry->OptionNumber = OptionNumber;
-        OptionNumber++;
-        InsertTailList (&FsOptionMenu.Head, &MenuEntry->Link);
-
-        FileContext->IsDir    = FALSE;
-        FileContext->IsRoot   = TRUE;
-
-        FileContext->FileName = EfiStrDuplicate (L"\\");
-        FileContext->Info = EfiLibFileSystemVolumeLabelInfo (FileContext->FHandle);
-
-        FileContext->DevicePath = EfiDevicePathFromHandle (FileContext->Handle);
-
+      //
+      // Get current file system's Volume Label
+      //
+      if (FileContext->Info == NULL) {
+        VolumeLabel = L"NO FILE SYSTEM INFO";
       } else {
-        //
-        // If it is not removable media type, use file system navigation
-        // method to explore it
-        //
-        FileContext->Handle     = SimpleFsHandle[Index];
-        MenuEntry->OptionNumber = Index;
-        FileContext->FHandle    = EfiLibOpenRoot (FileContext->Handle);
-        if (!FileContext->FHandle) {
-          BOpt_DestroyMenuEntry (MenuEntry);
-          continue;
-        }
-
-        MenuEntry->HelpString = DevicePathToStr (EfiDevicePathFromHandle (FileContext->Handle));
-        FileContext->Info = EfiLibFileSystemVolumeLabelInfo (FileContext->FHandle);
-        FileContext->FileName = EfiStrDuplicate (L"\\");
-        FileContext->DevicePath = EfiFileDevicePath (
-                                    FileContext->Handle,
-                                    FileContext->FileName
-                                    );
-        FileContext->IsDir            = TRUE;
-        FileContext->IsRoot           = TRUE;
-        FileContext->IsRemovableMedia = FALSE;
-        FileContext->IsLoadFile       = FALSE;
-
-        //
-        // Get current file system's Volume Label
-        //
-        if (FileContext->Info == NULL) {
-          VolumeLabel = L"NO FILE SYSTEM INFO";
+        if (FileContext->Info->VolumeLabel == NULL) {
+          VolumeLabel = L"NULL VOLUME LABEL";
         } else {
-          if (FileContext->Info->VolumeLabel == NULL) {
-            VolumeLabel = L"NULL VOLUME LABEL";
-          } else {
-            VolumeLabel = FileContext->Info->VolumeLabel;
-            if (*VolumeLabel == 0x0000) {
-              VolumeLabel = L"NO VOLUME LABEL";
-            }
+          VolumeLabel = FileContext->Info->VolumeLabel;
+          if (*VolumeLabel == 0x0000) {
+            VolumeLabel = L"NO VOLUME LABEL";
           }
         }
-
-        TempStr                   = MenuEntry->HelpString;
-        MenuEntry->DisplayString  = EfiAllocateZeroPool (MAX_CHAR);
-        ASSERT (MenuEntry->DisplayString != NULL);
-        SPrint (
-          MenuEntry->DisplayString,
-          MAX_CHAR,
-          L"%s, [%s]",
-          VolumeLabel,
-          TempStr
-          );
-        OptionNumber++;
-        InsertTailList (&FsOptionMenu.Head, &MenuEntry->Link);
       }
+
+      TempStr                   = MenuEntry->HelpString;
+      MenuEntry->DisplayString  = EfiAllocateZeroPool (MAX_CHAR);
+      ASSERT (MenuEntry->DisplayString != NULL);
+      SPrint (
+        MenuEntry->DisplayString,
+        MAX_CHAR,
+        L"%s, [%s]",
+        VolumeLabel,
+        TempStr
+        );
+      OptionNumber++;
+      InsertTailList (&FsOptionMenu.Head, &MenuEntry->Link);      
     }
   }
 

@@ -337,12 +337,6 @@ formset
             flags = INTERACTIVE | NV_ACCESS,
             key = FORM_DRV_ADD_FILE_ID;
 
-       goto FORM_DRV_ADD_HANDLE_ID,
-            prompt = STRING_TOKEN(STR_FORM_DRV_ADD_HANDLE_TITLE),
-            help = STRING_TOKEN(STR_FORM_DRV_ADD_HANDLE_TITLE),
-            flags = INTERACTIVE | NV_ACCESS,
-            key = FORM_DRV_ADD_HANDLE_ID;
-            
   endform;
 
   form formid = FORM_DRV_DEL_ID,
