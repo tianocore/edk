@@ -52,7 +52,7 @@ typedef struct {
   UINT8   QuestionAboutTreeHugging;
   UINT8   ChooseToActivateNuclearWeaponry;
   UINT8   SuppressGrayOutSomething;
-  UINT8   OrderedList[4];
+  UINT8   OrderedList[8];
   UINT8   BootOrder[8];
   UINT8   BootOrderLarge;
   UINT8   DynamicCheck;

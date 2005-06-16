@@ -229,6 +229,7 @@ TerminalDriverBindingStart (
   EFI_SERIAL_IO_PROTOCOL              *SerialIo;
   EFI_DEVICE_PATH_PROTOCOL            *ParentDevicePath;
   VENDOR_DEVICE_PATH                  *Node;
+  VENDOR_DEVICE_PATH                  *DefaultNode;
   EFI_SERIAL_IO_MODE                  *Mode;
   UINTN                               SerialInTimeOut;
   TERMINAL_DEV                        *TerminalDevice;
@@ -239,6 +240,7 @@ TerminalDriverBindingStart (
   EFI_DEVICE_PATH_PROTOCOL            *DevicePath;
 
   TerminalDevice = NULL;
+  DefaultNode    = NULL;
   //
   // Get the Device Path Protocol to build the device path of the child device
   //
@@ -325,13 +327,6 @@ TerminalDriverBindingStart (
     }
   }
   //
-  // If RemainingDevicePath is NULL, then there is no enough information
-  // to create a child device, so return
-  //
-  if (RemainingDevicePath == NULL) {
-    return EFI_SUCCESS;
-  }
-  //
   // Make sure a child handle does not already exist.  This driver can only
   // produce one child per serial port.
   //
@@ -354,6 +349,19 @@ TerminalDriverBindingStart (
       return Status;
     }
   }
+  //
+  // If RemainingDevicePath is NULL, then create default device path node
+  //
+  if (RemainingDevicePath == NULL) {
+    DefaultNode = EfiLibAllocatePool (sizeof (VENDOR_DEVICE_PATH));
+    if (DefaultNode == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Error;
+    }
+    
+    EfiCopyMem (&DefaultNode->Guid, &gEfiPcAnsiGuid, sizeof (EFI_GUID));
+    RemainingDevicePath = (EFI_DEVICE_PATH_PROTOCOL*) DefaultNode;
+  }  
   //
   // Use the RemainingDevicePath to determine the terminal type
   //
@@ -626,6 +634,10 @@ TerminalDriverBindingStart (
     goto Error;
   }
 
+  if (DefaultNode != NULL) {
+    gBS->FreePool (DefaultNode);
+  }
+  
   return EFI_SUCCESS;
 
 ReportError:
@@ -670,6 +682,10 @@ Error:
     }
   }
 
+  if (DefaultNode != NULL) {
+    gBS->FreePool (DefaultNode);
+  }
+  
   This->Stop (This, Controller, 0, NULL);
 
   return Status;

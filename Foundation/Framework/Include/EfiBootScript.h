@@ -22,8 +22,6 @@ Abstract:
 #ifndef _EFI_SCRIPT_H_
 #define _EFI_SCRIPT_H_
 
-#define EFI_BOOT_SCRIPT_SAVE_PROTOCOL_REVISION  0x00000001
-
 #define EFI_ACPI_S3_RESUME_SCRIPT_TABLE         0x00
 
 //
