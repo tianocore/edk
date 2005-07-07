@@ -210,7 +210,7 @@ typedef struct {
   EFI_HII_PACK_HEADER Header;
   RELOFST             LanguageNameString;
   RELOFST             PrintableLanguageName;
-  RELOFST             NumStringPointers;
+  UINT32              NumStringPointers;
   UINT32              Attributes;
 } EFI_HII_STRING_PACK_HEADER;
 

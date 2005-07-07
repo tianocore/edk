@@ -799,7 +799,6 @@ Returns:
   EFI_HII_STRING_PACK       *StringPack;
   RELOFST                   *StringPointer;
   EFI_STATUS                Status;
-  EFI_STRING                OriginalStringBuffer;
   UINTN                     DataSize;
   CHAR8                     Lang[3];
   CHAR16                    Language[3];
@@ -899,24 +898,36 @@ LangNotFound:
   // If Token is 0, extract entire string package
   //
   if (Token == 0) {
-    OriginalStringBuffer = StringBuffer;
-    EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
     //
-    // If trying to get the entire string package and have insufficient space.  Return error
+    // Compute the entire string pack length, including all languages' and the terminating pack's.
+    //
+    Length = 0;
+    while (0 != StringPack->Header.Length) {
+      Length += StringPack->Header.Length;
+      StringPack = (VOID*)(((UINT8*)StringPack) + StringPack->Header.Length);
+    }
+    //
+    // Back to the start of package.
+    //
+    StringPack = (VOID*)(((UINT8*)StringPack) - Length); 
+    //
+    // Terminating zero sub-pack.
+    //
+    Length += sizeof (EFI_HII_STRING_PACK); 
+
+    //
+    // If trying to get the entire string package and have insufficient space.  Return error.
     //
     if (Length > *BufferLength) {
-      EfiCopyMem (BufferLength, &Length, sizeof (UINT16));
-      return EFI_INVALID_PARAMETER;
+      *BufferLength = (UINT16)Length;
+      return EFI_BUFFER_TOO_SMALL;
     }
+    //
+    // Copy the Pack to the caller's buffer.
+    //
+    *BufferLength = (UINT16)Length;
+    EfiCopyMem (StringBuffer, StringPack, Length);
 
-    for (; Length != 0;) {
-      EfiCopyMem (StringBuffer, StringPack, Length);
-      StringBuffer  = (CHAR16 *) ((CHAR8 *) (StringBuffer) + Length);
-      StringPack    = (EFI_HII_STRING_PACK *) ((CHAR8 *) (StringPack) + Length);
-      EfiCopyMem (&Length, &StringPack->Header.Length, sizeof (UINT32));
-    }
-
-    StringBuffer = OriginalStringBuffer;
     return EFI_SUCCESS;
   }
   //

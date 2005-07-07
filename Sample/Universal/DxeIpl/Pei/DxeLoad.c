@@ -307,6 +307,7 @@ Returns:
   EFI_PHYSICAL_ADDRESS                      BaseOfStack;
   EFI_PHYSICAL_ADDRESS                      BspStore;
   EFI_GUID                                  DxeCoreFileName;
+  EFI_GUID                                  FirmwareFileName;
   VOID                                      *Pe32Data;
   VOID                                      *Interface;
   EFI_PHYSICAL_ADDRESS                      DxeCoreAddress;
@@ -521,6 +522,23 @@ Returns:
     // Now should have a HOB with the DXE core w/ the old HOB destroyed
     //
   }
+  
+  //
+  // Find the EFI_FV_FILETYPE_RAW type compressed Firmware Volume file in FTW spare block
+  // The file found will be processed by PeiProcessFile: It will first be decompressed to
+  // a normal FV, then a corresponding FV type hob will be built which is provided for DXE
+  // core to find and dispatch drivers in this FV. Because PeiProcessFile typically checks
+  // for EFI_FV_FILETYPE_DXE_CORE type file, in this condition we need not check returned 
+  // status
+  //
+  Status = PeiFindFile (
+            PeiServices,
+            EFI_FV_FILETYPE_RAW,
+            EFI_SECTION_PE32,
+            &FirmwareFileName,
+            &Pe32Data
+            );
+                             
   //
   // Find the DXE Core in a Firmware Volume
   //
@@ -643,7 +661,6 @@ Returns:
   VOID                        *SectionData;
   EFI_STATUS                  Status;
   BOOLEAN                     Found;
-  UINTN                       Index;
   EFI_PEI_HOB_POINTERS        Hob;
 
   Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
@@ -651,8 +668,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
-  Index         = 0;
 
   Found         = FALSE;
 
@@ -663,10 +678,9 @@ Returns:
   SectionData   = NULL;
 
   //
-  // Foreach Firmware Volume, look for a file of Type
-  // DXE Core and break out when one is found
+  // Foreach Firmware Volume, look for a specified type
+  // of file and break out when one is found
   //
-  Index   = 0;
   Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
   if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
     return EFI_NOT_FOUND;
@@ -678,7 +692,7 @@ Returns:
 
     Status = (*PeiServices)->FfsFindNextFile (
                               PeiServices,
-                              EFI_FV_FILETYPE_DXE_CORE,
+                              Type,
                               FwVolHeader,
                               &FfsFileHeader
                               );
