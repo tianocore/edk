@@ -21,7 +21,6 @@ Abstract:
 --*/
 
 #include "BdsLib.h"
-#include "BBSsupport.h"
 
 BOOLEAN mEnumBootDevice = FALSE;
 
@@ -136,7 +135,7 @@ Returns:
   //
   Status = gBS->LocateProtocol (&gEfiAcpiS3SaveGuid, NULL, &AcpiS3Save);
   if (!EFI_ERROR (Status)) {
-    AcpiS3Save->S3Save (AcpiS3Save);
+    AcpiS3Save->S3Save (AcpiS3Save, NULL);
   }
   //
   // If it's Device Path that starts with a hard drive path,

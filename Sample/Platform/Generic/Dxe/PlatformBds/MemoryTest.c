@@ -23,6 +23,7 @@ Abstract:
 #include "bdslib.h"
 #include "BdsPlatform.h"
 #include "EfiPrintLib.h"
+#include "String.h"
 
 #include EFI_GUID_DEFINITION (BootState)
 

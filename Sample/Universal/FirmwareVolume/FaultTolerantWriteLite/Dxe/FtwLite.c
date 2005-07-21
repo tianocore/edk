@@ -663,7 +663,8 @@ InitializeFtwLite (
   //
   // Initialize other parameters, and set WorkSpace as FTW_ERASED_BYTE.
   //
-  FtwLiteDevice->FtwWorkSpace = (UINT8 *) (FtwLiteDevice + 1);
+  FtwLiteDevice->FtwWorkSpace     = (UINT8 *) (FtwLiteDevice + 1);
+  FtwLiteDevice->FtwWorkSpaceSize = FTW_WORK_SPACE_SIZE;
   EfiSetMem (
     FtwLiteDevice->FtwWorkSpace,
     FtwLiteDevice->FtwWorkSpaceSize,

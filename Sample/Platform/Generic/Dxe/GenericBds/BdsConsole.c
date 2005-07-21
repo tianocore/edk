@@ -21,7 +21,6 @@ Abstract:
 
 #include "BdsLib.h"
 #include "EfiPrintLib.h"
-#include "BdsPlatform.h"
 
 EFI_STATUS
 BdsLibUpdateConsoleVariable (

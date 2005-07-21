@@ -57,6 +57,14 @@ Abstract:
 #define PXE_BASECODE_DEVICE_SIGNATURE 'pxed'
 
 //
+// Determine the classes of IPv4 address
+//
+#define  IS_CLASSA_IPADDR(x)  ((((EFI_IP_ADDRESS*)x)->v4.Addr[0] & 0x80) == 0x00) 
+#define  IS_CLASSB_IPADDR(x)  ((((EFI_IP_ADDRESS*)x)->v4.Addr[0] & 0xc0) == 0x80) 
+#define  IS_CLASSC_IPADDR(x)  ((((EFI_IP_ADDRESS*)x)->v4.Addr[0] & 0xe0) == 0xc0) 
+#define  IS_INADDR_UNICAST(x) ((IS_CLASSA_IPADDR(x) || IS_CLASSB_IPADDR(x) || IS_CLASSC_IPADDR(x)) && (((EFI_IP_ADDRESS*)x)->Addr[0] != 0) )
+
+//
 // Definitions for internet group management protocol version 2 message
 // structure
 // Per RFC 2236, November 1997

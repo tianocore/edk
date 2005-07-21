@@ -77,7 +77,9 @@ Returns:
       BufferPtr == NULL ||
       DestIpPtr == NULL ||
       DestPortPtr == NULL ||
+      (HeaderSizePtr != NULL && *HeaderSizePtr == 0) ||
       (HeaderSize != 0 && HeaderPtr == NULL) ||
+      (GatewayIpPtr != NULL && !IS_INADDR_UNICAST(GatewayIpPtr)) ||
       (OpFlags &~(EFI_PXE_BASE_CODE_UDP_OPFLAGS_MAY_FRAGMENT | EFI_PXE_BASE_CODE_UDP_OPFLAGS_ANY_SRC_PORT))
       ) {
     DEBUG (

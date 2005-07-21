@@ -46,11 +46,21 @@ typedef
 EFI_STATUS
 EFI_BOOTSERVICE
 (EFIAPI *EFI_ACPI_S3_SAVE) (
-  IN EFI_ACPI_S3_SAVE_PROTOCOL   * This
+  IN EFI_ACPI_S3_SAVE_PROTOCOL      * This,
+  IN VOID                           * LegacyMemoryAddress 
   );
 
+typedef 
+EFI_STATUS 
+EFI_BOOTSERVICE 
+(EFIAPI *EFI_ACPI_GET_LEGACY_MEMORY_SIZE) (
+  IN  EFI_ACPI_S3_SAVE_PROTOCOL     * This,
+  OUT UINTN                         * Size
+);
+
 typedef struct _EFI_ACPI_S3_SAVE_PROTOCOL {
-  EFI_ACPI_S3_SAVE  S3Save;
+  EFI_ACPI_GET_LEGACY_MEMORY_SIZE   GetLegacyMemorySize;
+  EFI_ACPI_S3_SAVE                  S3Save;
 } EFI_ACPI_S3_SAVE_PROTOCOL;
 
 extern EFI_GUID gEfiAcpiS3SaveGuid;

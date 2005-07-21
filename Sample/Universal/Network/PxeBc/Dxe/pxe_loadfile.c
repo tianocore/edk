@@ -289,8 +289,6 @@ Returns:
   UINT8       SaveChar;
   UINT8       SecsLeft;
 
-  Status = AUTO_SELECT;
-
   //
   // if auto select, just get right to it
   //
@@ -375,6 +373,11 @@ Returns:
 
   gST->ConOut->SetCursorPosition (gST->ConOut, SecColumn, SecRow);
   Aprint ("(%d) ", SecsLeft);
+  
+  //
+  // set the default action to be AUTO_SELECT
+  //
+  Status = AUTO_SELECT;
 
   while (EFI_ERROR (gBS->CheckEvent (TimeoutEvent))) {
     EFI_INPUT_KEY Key;

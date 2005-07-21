@@ -29,6 +29,7 @@ Revision History
 #include "BdsLib.h"
 #include "BdsPlatform.h"
 #include "IfrLibrary.h"
+#include "String.h"
 
 #include EFI_PROTOCOL_DEFINITION (FormBrowser)
 #include EFI_PROTOCOL_DEFINITION (FormCallback)

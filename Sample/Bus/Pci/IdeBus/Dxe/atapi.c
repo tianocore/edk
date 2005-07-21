@@ -392,7 +392,7 @@ ATAPIIdentify (
   //
   // original sense data numbers
   //
-  IdeDev->SenseDataNumber = 6;
+  IdeDev->SenseDataNumber = 20;
 
   IdeDev->SenseData = EfiLibAllocatePool (IdeDev->SenseDataNumber * sizeof (REQUEST_SENSE_DATA));
   if (IdeDev->SenseData == NULL) {
@@ -814,7 +814,11 @@ PioReadWriteData (
   if (ByteCount == 0) {
     return EFI_SUCCESS;
   }
-
+  //
+  // for performance, we assert the ByteCount is an even number
+  // which is actually a resonable assumption  
+  ASSERT((ByteCount%2) == 0);
+  
   PtrBuffer         = Buffer;
   RequiredWordCount = ByteCount / 2;
   //
@@ -981,9 +985,6 @@ AtapiRequestSense (
   UINT16                *Ptr;
   BOOLEAN               FetchSenseData;
   ATAPI_PACKET_COMMAND  Packet;
-  UINT8                 AllocateTimes;
-  UINT8                 AllocateUnit;
-  UINTN                 AllocateSize;
 
   *SenseCounts = 0;
 
@@ -999,8 +1000,6 @@ AtapiRequestSense (
   // initialize pointer
   //
   Ptr = (UINT16 *) IdeDev->SenseData;
-  AllocateTimes = 0;
-  AllocateUnit  = IdeDev->SenseDataNumber;
   //
   //  request sense data from device continuously until no sense data
   //  exists in the device.
@@ -1038,58 +1037,10 @@ AtapiRequestSense (
     // supposed to be large enough for any ATAPI device.
     //
     if ((Sense->sense_key != SK_NO_SENSE) && ((*SenseCounts) < 20)) {
-
       //
       // Ptr is word-based pointer
       //
       Ptr += sizeof (REQUEST_SENSE_DATA) / 2;
-
-      //
-      // Sense Data Buffer is not big enough to contain all the sense data,
-      // so enlarge the sense data buffer in the unit of original size of
-      // Sense Data Buffer.
-      //
-      if (*SenseCounts == IdeDev->SenseDataNumber) {
-
-        AllocateTimes++;
-        AllocateSize  = sizeof (REQUEST_SENSE_DATA) * AllocateUnit * (AllocateTimes + 1);
-
-        Ptr           = EfiLibAllocatePool (AllocateSize);
-        if (Ptr == NULL) {
-          //
-          // if no enough space, just return success.
-          //
-          return EFI_SUCCESS;
-        }
-        //
-        // copy the original sense data into the new space
-        //
-        EfiCopyMem (
-          Ptr,
-          IdeDev->SenseData,
-          sizeof (REQUEST_SENSE_DATA) * (IdeDev->SenseDataNumber)
-          );
-
-        //
-        // free the old Sense Data Buffer
-        //
-        gBS->FreePool (IdeDev->SenseData);
-
-        //
-        // Pointing to the new Sense Data Buffer
-        //
-        IdeDev->SenseData = (REQUEST_SENSE_DATA *) Ptr;
-
-        //
-        // Ptr pointing to the next available space for new Sense Data
-        //
-        Ptr += (*SenseCounts) * sizeof (REQUEST_SENSE_DATA) / 2;
-
-        //
-        // Update the Sense Data Buffer Size in IDE_BLK_IO_DEV
-        //
-        IdeDev->SenseDataNumber = (UINT8) (AllocateSize / sizeof (REQUEST_SENSE_DATA));
-      }
 
     } else {
       //

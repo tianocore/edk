@@ -27,7 +27,6 @@ Abstract:
 #include "EfiPrintLib.h"
 #include "BmMachine.h"
 #include "EfiHobLib.h"
-#include "String.h"
 
 #include EFI_PROTOCOL_DEFINITION (SerialIo)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
@@ -336,5 +335,37 @@ ShadowAllOptionRom();
 #else
 #define EFI64_SHADOW_ALL_LEGACY_ROM()
 #endif
+
+//
+// BBS support macros and functions
+//
+#ifdef EFI32
+#define REFRESH_LEGACY_BOOT_OPTIONS \
+        BdsDeleteAllInvalidLegacyBootOptions ();\
+        BdsAddNonExistingLegacyBootOptions (); \
+        BdsUpdateLegacyDevOrder ()
+#else
+#define REFRESH_LEGACY_BOOT_OPTIONS
+#endif
+
+EFI_STATUS
+BdsDeleteAllInvalidLegacyBootOptions (
+  VOID
+  );
+
+EFI_STATUS
+BdsAddNonExistingLegacyBootOptions (
+  VOID
+  );
+
+EFI_STATUS
+BdsUpdateLegacyDevOrder (
+  VOID
+  );
+
+EFI_STATUS
+BdsRefreshBbsTableForBoot (
+  IN BDS_COMMON_OPTION        *Entry
+  );
 
 #endif // _BDS_LIB_H_

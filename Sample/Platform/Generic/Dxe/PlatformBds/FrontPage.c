@@ -25,6 +25,7 @@ Revision History
 #include "BdsLib.h"
 #include "BdsPlatform.h"
 #include "FrontPage.h"
+#include "String.h"
 
 EFI_GUID                    mProcessorSubClass  = EFI_PROCESSOR_SUBCLASS_GUID;
 EFI_GUID                    mMemorySubClass     = EFI_MEMORY_SUBCLASS_GUID;

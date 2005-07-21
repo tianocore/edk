@@ -205,7 +205,7 @@ ATAIdentify (
       //
       // Calculate device capacity
       //
-      Capacity = (AtaIdentifyPointer->AtaData.user_addressable_sectors_hi << 16) |
+      Capacity = ((UINT32)AtaIdentifyPointer->AtaData.user_addressable_sectors_hi << 16) |
                   AtaIdentifyPointer->AtaData.user_addressable_sectors_lo ;
       IdeDev->BlkIo.Media->LastBlock = Capacity - 1;
 
@@ -703,9 +703,16 @@ AtaPioDataOut (
       return EFI_DEVICE_ERROR;
     }
 
+   //
+   // Check the remaining byte count is less than 512 bytes
+   //
+   if ((WordCount + Increment) > ByteCount / 2) {
+      Increment = ByteCount / 2 - WordCount;
+    }
     //
     // perform a series of write without check DRQ ready
     //
+    
     IDEWritePortWMultiple (
       IdeDev->PciIo,
       IdeDev->IoPort->Data,
@@ -922,7 +929,7 @@ AtaReadSectors (
     //
     // in ATA-3 spec, LBA is in 28 bit width
     //
-    Lba0  = (UINT8) (Lba32 & 0xff);
+    Lba0  = (UINT8) Lba32;
     Lba1  = (UINT8) (Lba32 >> 8);
     Lba2  = (UINT8) (Lba32 >> 16);
     //
@@ -971,7 +978,7 @@ AtaReadSectors (
     }
 
     Lba32 += SectorCount;
-    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + ByteCount);
     BlocksRemaining -= SectorCount;
   }
 
@@ -1052,7 +1059,7 @@ AtaWriteSectors (
 
   while (BlocksRemaining > 0) {
 
-    Lba0  = (UINT8) (Lba32 & 0xff);
+    Lba0  = (UINT8) Lba32;
     Lba1  = (UINT8) (Lba32 >> 8);
     Lba2  = (UINT8) (Lba32 >> 16);
     Lba3  = (UINT8) ((Lba32 >> 24) & 0x0f);
@@ -1092,7 +1099,7 @@ AtaWriteSectors (
     }
 
     Lba32 += SectorCount;
-    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + ByteCount);
     BlocksRemaining -= SectorCount;
   }
 
@@ -1154,14 +1161,9 @@ AtaSoftReset (
   gBS->Stall (10);
 
   //
-  // Enable interrupt to support UDMA
+  // Enable interrupt to support UDMA, and clear SRST bit
   //
   DeviceControl = 0;
-  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
-  //
-  // Clear SRST bit  0xfb:1111,1011
-  //
-  DeviceControl &= 0xfb;
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   //
@@ -1564,7 +1566,7 @@ AtaReadSectorsExt (
     }
 
     Lba64 += SectorCount;
-    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + ByteCount);
     BlocksRemaining -= SectorCount;
   }
 
@@ -1670,7 +1672,7 @@ AtaWriteSectorsExt (
     }
 
     Lba64 += SectorCount;
-    Buffer = ((UINT8 *) Buffer + SectorCount * (IdeDev->BlkIo.Media->BlockSize));
+    Buffer = ((UINT8 *) Buffer + ByteCount);
     BlocksRemaining -= SectorCount;
   }
 

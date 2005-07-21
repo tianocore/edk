@@ -1346,6 +1346,10 @@ Foundation\Library\Dxe\Print\PrintLib.inf
 Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
 Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 
+#
+# BDS libraries
+#
+Sample\Platform\Generic\Dxe\GenericBds\GenericBds.inf
 
 #
 #Print/Graphics Library consume SetupBrowser Print Protocol

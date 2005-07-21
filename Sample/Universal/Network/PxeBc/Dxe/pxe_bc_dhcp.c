@@ -2091,9 +2091,9 @@ DoDhcpDora (
       //
       else if (!(RxBuf[Index].OpAdds.Status & (DISCOVER_TYPE | WfM11a_TYPE | PXE_TYPE))) {
         //
-        // it is - just check ARP
+        // it is a normal DHCP offer (without any PXE options), just finish the D.O.R.A by sending DHCP request.
         //
-        if (!RxBuf[Index].OpAdds.PktOptAdds[OP_DHCP_BOOTFILE_IX - 1] || !TryFinishDORA (Private, Index)) {
+        if (!TryFinishDORA (Private, Index)) {
           continue;
         }
       } else if (TryFinishDORA (Private, Index)) {

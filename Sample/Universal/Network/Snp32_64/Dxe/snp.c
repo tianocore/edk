@@ -1157,12 +1157,21 @@ Error_DeleteSNP:
                 snp
                 );
 NiiError:
-  gBS->CloseProtocol (
-        Controller,
-        &gEfiNetworkInterfaceIdentifierProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        );
+  if (!UndiNew) {
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiNetworkInterfaceIdentifierProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
+  } else {
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiNetworkInterfaceIdentifierProtocolGuid_31,
+          This->DriverBindingHandle,
+          Controller
+          );
+  }
 
   gBS->CloseProtocol (
         Controller,
@@ -1223,20 +1232,22 @@ Returns:
     return Status;
   }
 
-  Status = gBS->CloseProtocol (
-                  Controller,
-                  &gEfiNetworkInterfaceIdentifierProtocolGuid_31,
-                  This->DriverBindingHandle,
-                  Controller
-                  );
-
-  Status = gBS->CloseProtocol (
-                  Controller,
-                  &gEfiNetworkInterfaceIdentifierProtocolGuid,
-                  This->DriverBindingHandle,
-                  Controller
-                  );
-
+  if (!Snp->IsOldUndi) {
+    Status = gBS->CloseProtocol (
+                    Controller,
+                    &gEfiNetworkInterfaceIdentifierProtocolGuid_31,
+                    This->DriverBindingHandle,
+                    Controller
+                    );
+  } else {
+    Status = gBS->CloseProtocol (
+                    Controller,
+                    &gEfiNetworkInterfaceIdentifierProtocolGuid,
+                    This->DriverBindingHandle,
+                    Controller
+                    );
+  }
+  
   Status = gBS->CloseProtocol (
                   Controller,
                   &gEfiDevicePathProtocolGuid,
