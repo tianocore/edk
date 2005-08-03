@@ -1196,12 +1196,8 @@ Returns:
     //
     // Check input parameters
     //
-    if (NumOfLba == 0) {
+    if ((NumOfLba == 0) || ((StartingLba + NumOfLba) > NumOfBlocks)) {
       VA_END (args);
-      return EFI_INVALID_PARAMETER;
-    }
-
-    if ((StartingLba + NumOfLba) > NumOfBlocks) {
       return EFI_INVALID_PARAMETER;
     }
   } while (1);

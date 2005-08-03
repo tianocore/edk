@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -107,7 +107,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 PeiInstallPpi (
-  IN EFI_PEI_SERVICES    **PeiServices,
+  IN EFI_PEI_SERVICES        **PeiServices,
   IN EFI_PEI_PPI_DESCRIPTOR  *PpiList
   )
 /*++
@@ -156,7 +156,6 @@ Returns:
     // is reached if the Install reaches the NotifyList
     //
     if (Index == PrivateData->PpiData.NotifyListEnd + 1) {
-      ASSERT_PEI_ERROR (PeiServices, EFI_OUT_OF_RESOURCES);
       return  EFI_OUT_OF_RESOURCES;
     }
     //
@@ -167,7 +166,6 @@ Returns:
     if ((PpiList->Flags & EFI_PEI_PPI_DESCRIPTOR_PPI) == 0) {
       PrivateData->PpiData.PpiListEnd = LastCallbackInstall;
       PEI_DEBUG((PeiServices, EFI_D_INFO, "ERROR -> InstallPpi: %g %x\n", PpiList->Guid, PpiList->Ppi));
-      ASSERT_PEI_ERROR (PeiServices, EFI_INVALID_PARAMETER);
       return  EFI_INVALID_PARAMETER;
     } 
 
@@ -206,7 +204,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 PeiReInstallPpi (
-  IN EFI_PEI_SERVICES    **PeiServices,
+  IN EFI_PEI_SERVICES        **PeiServices,
   IN EFI_PEI_PPI_DESCRIPTOR  *OldPpi,
   IN EFI_PEI_PPI_DESCRIPTOR  *NewPpi
   )
@@ -240,7 +238,6 @@ Returns:
   }
 
   if ((NewPpi->Flags & EFI_PEI_PPI_DESCRIPTOR_PPI) == 0) {
-    ASSERT_PEI_ERROR (PeiServices, EFI_INVALID_PARAMETER);
     return  EFI_INVALID_PARAMETER;
   }
 
@@ -360,7 +357,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 PeiNotifyPpi (
-  IN EFI_PEI_SERVICES       **PeiServices,
+  IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyList
   )
 /*++
@@ -376,17 +373,17 @@ Arguments:
 
 Returns:
 
-  Status - EFI_SUCCESS          if successful
-           EFI_OUT_OF_RESOURCES if no space in the database
+  Status - EFI_SUCCESS           if successful
+           EFI_OUT_OF_RESOURCES  if no space in the database
            EFI_INVALID_PARAMETER if not a good decriptor
 
 --*/
 {
-  PEI_CORE_INSTANCE               *PrivateData;
+  PEI_CORE_INSTANCE                *PrivateData;
   INTN                             Index;
   INTN                             NotifyIndex;
   INTN                             LastCallbackNotify;
-  EFI_PEI_NOTIFY_DESCRIPTOR       *NotifyPtr;
+  EFI_PEI_NOTIFY_DESCRIPTOR        *NotifyPtr;
   UINTN                            NotifyDispatchCount;
 
 
@@ -413,7 +410,6 @@ Returns:
     // is reached if the Install reaches the PpiList
     //
     if (Index == PrivateData->PpiData.PpiListEnd - 1) {
-      ASSERT_PEI_ERROR (PeiServices, EFI_OUT_OF_RESOURCES);
       return  EFI_OUT_OF_RESOURCES;
     }
     
@@ -423,7 +419,6 @@ Returns:
     if ((NotifyList->Flags & EFI_PEI_PPI_DESCRIPTOR_NOTIFY_TYPES) == 0) {
         PrivateData->PpiData.NotifyListEnd = LastCallbackNotify;
         PEI_DEBUG((PeiServices, EFI_D_INFO, "ERROR -> InstallNotify: %g %x\n", NotifyList->Guid, NotifyList->Notify));
-        ASSERT_PEI_ERROR (PeiServices, EFI_INVALID_PARAMETER);
       return  EFI_INVALID_PARAMETER;
     }
      

@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -42,7 +42,7 @@ GetTimerValue (
 
 
 VOID
-PeiPerfMeasure(
+PeiPerfMeasure (
   EFI_PEI_SERVICES              **PeiServices,
   IN UINT16                     *Token,
   IN EFI_FFS_FILE_HEADER        *FileHeader,
@@ -77,7 +77,7 @@ Returns:
   PEI_PERFORMANCE_MEASURE_LOG_ENTRY  *Log;
   EFI_PEI_PPI_DESCRIPTOR             *PerfHobDescriptor;
   UINT64                             TimeCount;
-  UINTN                              Index;
+  INTN                               Index;
   UINTN                              Index2;
   EFI_GUID                           *Guid;
   EFI_GUID                           *CheckGuid;
@@ -109,9 +109,10 @@ Returns:
                PeiServices,
                &gEfiPeiPerformanceHobGuid,
                (sizeof(EFI_HOB_GUID_DATA_PERFORMANCE_LOG) +
-               ((MAX_PEI_PERF_LOG_ENTRIES-1) * 
-               sizeof(PEI_PERFORMANCE_MEASURE_LOG_ENTRY)) +
-               sizeof(EFI_PEI_PPI_DESCRIPTOR)),
+                 ((MAX_PEI_PERF_LOG_ENTRIES-1) * 
+                 sizeof(PEI_PERFORMANCE_MEASURE_LOG_ENTRY)) +
+                 sizeof(EFI_PEI_PPI_DESCRIPTOR)
+               ),
                &Hob
                );
     ASSERT_PEI_ERROR(PeiServices, Status);
@@ -120,8 +121,10 @@ Returns:
     PerfHobData->NumberOfEntries = 0;
 
     PerfHobDescriptor = (EFI_PEI_PPI_DESCRIPTOR *)((UINT8 *)(PerfHobData+1) +
-                                               (sizeof(PEI_PERFORMANCE_MEASURE_LOG_ENTRY) *
-                                                 (MAX_PEI_PERF_LOG_ENTRIES-1)));
+                                                     (sizeof(PEI_PERFORMANCE_MEASURE_LOG_ENTRY) *
+                                                       (MAX_PEI_PERF_LOG_ENTRIES-1)
+                                                     )
+                                                  );
     PerfHobDescriptor->Flags = (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
     PerfHobDescriptor->Guid = &gEfiPeiPerformanceHobGuid;
     PerfHobDescriptor->Ppi = NULL;
@@ -133,9 +136,12 @@ Returns:
   }
 
   PerfHobData = (EFI_HOB_GUID_DATA_PERFORMANCE_LOG *)(((UINT8 *)(PerfHobDescriptor)) -
-                                               ((sizeof(PEI_PERFORMANCE_MEASURE_LOG_ENTRY) *
-                                                 (MAX_PEI_PERF_LOG_ENTRIES-1)) +
-                                                sizeof(EFI_HOB_GUID_DATA_PERFORMANCE_LOG)));
+                                                        ((sizeof(PEI_PERFORMANCE_MEASURE_LOG_ENTRY) *
+                                                           (MAX_PEI_PERF_LOG_ENTRIES-1)
+                                                         )
+                                                         + sizeof(EFI_HOB_GUID_DATA_PERFORMANCE_LOG)
+                                                      )
+                                                     );
 
   if (PerfHobData->NumberOfEntries >= MAX_PEI_PERF_LOG_ENTRIES) {
     return;

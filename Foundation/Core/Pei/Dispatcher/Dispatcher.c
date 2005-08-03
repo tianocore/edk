@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -154,14 +154,13 @@ Returns:
               // The PEIM has its dependencies satisfied, and its entry point
               // has been found, so invoke it. 
               //
-              PEI_DEBUG_CODE (
-                PEI_PERF_START (
-                  &PrivateData->PS,
-                  L"PEIM",
-                  (EFI_FFS_FILE_HEADER *)(DispatchData->CurrentPeimAddress),
-                  0
-                  );
-              )
+              PEI_PERF_START (
+                &PrivateData->PS,
+                L"PEIM",
+                (EFI_FFS_FILE_HEADER *)(DispatchData->CurrentPeimAddress),
+                0
+                );
+
 
               ExtendedData.Handle = (EFI_HANDLE)DispatchData->CurrentPeimAddress;
                                                         
@@ -350,26 +349,26 @@ Returns:
 
   PEI_DEBUG_CODE (
 
-      DebugFoundPeimPoint = 0;
-      //
-      // Get bitmap of Peims that were not dispatched,
-      // 
+    DebugFoundPeimPoint = 0;
+    //
+    // Get bitmap of Peims that were not dispatched,
+    // 
 
-      DebugNotDispatchedBitmap = ((DispatchData->DispatchedPeimBitMap) ^ ((1 << DispatchData->CurrentPeim)-1));
-      //
-      // Scan bitmap of Peims not installed and print GUIDS
-      //
-      while (DebugNotDispatchedBitmap != 0) {
-        if ((DebugNotDispatchedBitmap & 1) != 0) {
-          PEI_DEBUG (
-            (&PrivateData->PS, EFI_D_INFO, 
-             "WARNING -> InstallPpi: Not Installed: %g\n", 
-             &DebugFoundPeimList[DebugFoundPeimPoint])
-            );
-        }
-        DebugFoundPeimPoint++;
-        DebugNotDispatchedBitmap >>= 1;
+    DebugNotDispatchedBitmap = ((DispatchData->DispatchedPeimBitMap) ^ ((1 << DispatchData->CurrentPeim)-1));
+    //
+    // Scan bitmap of Peims not installed and print GUIDS
+    //
+    while (DebugNotDispatchedBitmap != 0) {
+      if ((DebugNotDispatchedBitmap & 1) != 0) {
+        PEI_DEBUG (
+          (&PrivateData->PS, EFI_D_INFO, 
+           "WARNING -> InstallPpi: Not Installed: %g\n", 
+           &DebugFoundPeimList[DebugFoundPeimPoint])
+          );
       }
+      DebugFoundPeimPoint++;
+      DebugNotDispatchedBitmap >>= 1;
+    }
 
   )
 

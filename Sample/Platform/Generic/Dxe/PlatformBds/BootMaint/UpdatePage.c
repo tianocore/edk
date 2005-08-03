@@ -24,6 +24,10 @@ Revision History
 #include "bootmaint.h"
 #include "BdsPlatform.h"
 
+EFI_GUID gTerminalDriverGuid = {
+  0x10634d8e, 0x1c05, 0x46cb, 0xbb, 0xc, 0x5a, 0xfd, 0xc8, 0x29, 0xa8, 0xc8
+};
+
 VOID
 RefreshUpdateData (
   IN BOOLEAN                      FormSetUpdate,
@@ -207,25 +211,30 @@ UpdateConCOMPage (
   BM_MENU_ENTRY *NewMenuEntry;
   UINT16        Index;
   UINT8         *Location;
+  EFI_STATUS    Status;
+  VOID        	*Interface;
 
   Location                      = (UINT8 *) &UpdateData->Data;
   CallbackData->BmmAskSaveOrNot = FALSE;
 
   UpdatePageStart (CallbackData, &Location);
 
-  for (Index = 0; Index < TerminalMenu.MenuNumber; Index++) {
-    NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Index);
-
-    CreateGotoOpCode (
-      FORM_CON_COM_SETUP_ID,
-      NewMenuEntry->DisplayStringToken,
-      STRING_TOKEN (STR_NULL_STRING),
-      EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
-      (UINT16) (TERMINAL_OPTION_OFFSET + Index),
-      Location
-      );
-    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
-    UpdateData->DataCount++;
+  Status = EfiLibLocateProtocol (&gTerminalDriverGuid, &Interface);
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < TerminalMenu.MenuNumber; Index++) {
+      NewMenuEntry = BOpt_GetMenuEntry (&TerminalMenu, Index);
+ 
+      CreateGotoOpCode (
+        FORM_CON_COM_SETUP_ID,
+        NewMenuEntry->DisplayStringToken,
+        STRING_TOKEN (STR_NULL_STRING),
+        EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
+        (UINT16) (TERMINAL_OPTION_OFFSET + Index),
+        Location
+        );
+      Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
+      UpdateData->DataCount++;
+    }
   }
 
   UpdatePageEnd (CallbackData, Location);
@@ -428,6 +437,8 @@ UpdateConsolePage (
   UINT16              Index2;
   UINT8               *Location;
   UINT8               CheckFlags;
+  EFI_STATUS          Status;
+  VOID        	      *Interface;
 
   Location                      = (UINT8 *) &UpdateData->Data;
   CallbackData->BmmAskSaveOrNot = TRUE;
@@ -458,33 +469,36 @@ UpdateConsolePage (
     UpdateData->DataCount++;
   }
 
-  for (Index2 = 0; Index2 < TerminalMenu.MenuNumber; Index2++) {
-    CheckFlags          = EFI_IFR_FLAG_INTERACTIVE;
-    NewMenuEntry        = BOpt_GetMenuEntry (&TerminalMenu, Index2);
-    NewTerminalContext  = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
+  Status = EfiLibLocateProtocol (&gTerminalDriverGuid, &Interface);
+  if (!EFI_ERROR (Status)) {
+    for (Index2 = 0; Index2 < TerminalMenu.MenuNumber; Index2++) {
+      CheckFlags          = EFI_IFR_FLAG_INTERACTIVE;
+      NewMenuEntry        = BOpt_GetMenuEntry (&TerminalMenu, Index2);
+      NewTerminalContext  = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
 
-    if ((NewTerminalContext->IsConIn && (UpdatePageId == FORM_CON_IN_ID)) ||
-        (NewTerminalContext->IsConOut && (UpdatePageId == FORM_CON_OUT_ID)) ||
-        (NewTerminalContext->IsStdErr && (UpdatePageId == FORM_CON_ERR_ID))
-        ) {
-      CheckFlags |= EFI_IFR_FLAG_DEFAULT;
-      CallbackData->BmmFakeNvData->ConsoleCheck[Index] = TRUE;
-    } else {
-      CallbackData->BmmFakeNvData->ConsoleCheck[Index] = FALSE;
+      if ((NewTerminalContext->IsConIn && (UpdatePageId == FORM_CON_IN_ID)) ||
+          (NewTerminalContext->IsConOut && (UpdatePageId == FORM_CON_OUT_ID)) ||
+          (NewTerminalContext->IsStdErr && (UpdatePageId == FORM_CON_ERR_ID))
+          ) {
+        CheckFlags |= EFI_IFR_FLAG_DEFAULT;
+        CallbackData->BmmFakeNvData->ConsoleCheck[Index] = TRUE;
+      } else {
+        CallbackData->BmmFakeNvData->ConsoleCheck[Index] = FALSE;
+      }
+
+      CreateCheckBoxOpCode (
+        (UINT16) (CON_DEVICE_QUESTION_ID + Index),
+        (UINT8) 1,
+        NewMenuEntry->DisplayStringToken,
+        NewMenuEntry->HelpStringToken,
+        CheckFlags,
+        (UINT16) (CONSOLE_OPTION_OFFSET + Index),
+        Location
+        );
+      Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
+      UpdateData->DataCount++;
+      Index++;
     }
-
-    CreateCheckBoxOpCode (
-      (UINT16) (CON_DEVICE_QUESTION_ID + Index),
-      (UINT8) 1,
-      NewMenuEntry->DisplayStringToken,
-      NewMenuEntry->HelpStringToken,
-      CheckFlags,
-      (UINT16) (CONSOLE_OPTION_OFFSET + Index),
-      Location
-      );
-    Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
-    UpdateData->DataCount++;
-    Index++;
   }
 
   UpdatePageEnd (CallbackData, Location);

@@ -3114,10 +3114,6 @@ UHCISyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (TransferResult == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
   ClearStatusReg (HcDev->PciIo, StatusReg);
 
   //
@@ -3140,13 +3136,13 @@ UHCISyncInterruptTransfer (
   // BusMasterWrite means cpu read
   //
   Status = HcDev->PciIo->Map (
-                          HcDev->PciIo,
-                          EfiPciIoOperationBusMasterWrite,
-                          PtrDataSource,
-                          &DataLen,
-                          &TempPtr,
-                          &Mapping
-                          );
+                           HcDev->PciIo,
+                           EfiPciIoOperationBusMasterWrite,
+                           PtrDataSource,
+                           &DataLen,
+                           &TempPtr,
+                           &Mapping
+                           );
   if (EFI_ERROR (Status)) {
     UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
     return Status;
@@ -3165,16 +3161,16 @@ UHCISyncInterruptTransfer (
     }
 
     Status = GenDataTD (
-              HcDev,
-              DeviceAddress,
-              EndPointAddress,
-              Ptr,
-              PktSize,
-              PktID,
-              *DataToggle,
-              IsSlowDevice,
-              &PtrTD
-              );
+               HcDev,
+               DeviceAddress,
+               EndPointAddress,
+               Ptr,
+               PktSize,
+               PktID,
+               *DataToggle,
+               IsSlowDevice,
+               &PtrTD
+               );
     if (EFI_ERROR (Status)) {
       UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
       HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
@@ -3255,14 +3251,14 @@ UHCISyncInterruptTransfer (
   // of the last successful TD
   //
   Status = ExecBulkorSyncInterruptTransfer (
-            HcDev,
-            PtrFirstTD,
-            LoadFrameListIndex,
-            DataLength,
-            DataToggle,
-            TimeOut,
-            TransferResult
-            );
+             HcDev,
+             PtrFirstTD,
+             LoadFrameListIndex,
+             DataLength,
+             DataToggle,
+             TimeOut,
+             TransferResult
+             );
   //
   // Delete Sync Interrupt transfer QH-TD structure
   // and maintain the pointers in the Frame List

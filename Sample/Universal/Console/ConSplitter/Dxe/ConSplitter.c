@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -2903,6 +2903,15 @@ ConSplitterTextOutQueryMode (
 
   Private = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
 
+  //
+  // Check whether param ModeNumber is valid.
+  // ModeNumber should be within range 0 ~ MaxMode - 1.
+  //
+  if ( (ModeNumber < 0)                         ||
+       (ModeNumber > (UINTN)(((UINT32)-1)>>1)) ) {
+    return EFI_UNSUPPORTED;
+  }
+  
   if ((INT32) ModeNumber >= This->Mode->MaxMode) {
     return EFI_UNSUPPORTED;
   }
@@ -2948,6 +2957,15 @@ ConSplitterTextOutSetMode (
   EFI_STATUS                      ReturnStatus;
 
   Private = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+
+  //
+  // Check whether param ModeNumber is valid.
+  // ModeNumber should be within range 0 ~ MaxMode - 1.
+  //
+  if ( (ModeNumber < 0)                         ||
+       (ModeNumber > (UINTN)(((UINT32)-1)>>1)) ) {
+    return EFI_UNSUPPORTED;
+  }
 
   if ((INT32) ModeNumber >= This->Mode->MaxMode) {
     return EFI_UNSUPPORTED;
@@ -3025,6 +3043,13 @@ ConSplitterTextOutSetAttribute (
   EFI_STATUS                      ReturnStatus;
 
   Private = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+
+  //
+  // Check whether param Attribute is valid.
+  //
+  if ( (Attribute > (UINTN)(((UINT32)-1)>>1)) ) {
+    return EFI_UNSUPPORTED;
+  }  
 
   //
   // return the worst status met
