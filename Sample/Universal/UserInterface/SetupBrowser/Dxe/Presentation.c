@@ -767,12 +767,14 @@ Returns:
       PrintAt (StartColumnOfHelp, BottomRowOfHelp, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
       PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
     } else {
-      PrintStringAt (
-        (LocalScreen.RightColumn - GetStringWidth (gEnterCommitString) / 2) / 2,
-        BottomRowOfHelp,
-        gEnterCommitString
-        );
-      PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
+      if (Selection->ThisTag->Operand != EFI_IFR_REF_OP) {
+        PrintStringAt (
+          (LocalScreen.RightColumn - GetStringWidth (gEnterCommitString) / 2) / 2,
+          BottomRowOfHelp,
+          gEnterCommitString
+          );
+        PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
+      }
     }
     break;
   }

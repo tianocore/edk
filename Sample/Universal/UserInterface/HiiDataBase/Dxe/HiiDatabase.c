@@ -24,6 +24,7 @@ Abstract:
 EFI_DRIVER_ENTRY_POINT (InitializeHiiDatabase)
 
 EFI_STATUS
+EFIAPI
 InitializeHiiDatabase (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -140,9 +141,10 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiFindHandles (
-  IN     EFI_HII_PROTOCOL         *This,
-  IN OUT UINT16                   *HandleBufferLength,
+  IN     EFI_HII_PROTOCOL *This,
+  IN OUT UINT16           *HandleBufferLength,
   OUT    EFI_HII_HANDLE   Handle[1]
   )
 /*++
@@ -212,6 +214,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiGetPrimaryLanguages (
   IN  EFI_HII_PROTOCOL      *This,
   IN  EFI_HII_HANDLE        Handle,
@@ -308,6 +311,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiGetSecondaryLanguages (
   IN  EFI_HII_PROTOCOL      *This,
   IN  EFI_HII_HANDLE        Handle,

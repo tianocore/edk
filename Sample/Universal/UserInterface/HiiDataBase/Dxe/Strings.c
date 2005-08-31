@@ -38,6 +38,7 @@ AsciiToUnicode (
 }
 
 EFI_STATUS
+EFIAPI
 HiiTestString (
   IN     EFI_HII_PROTOCOL   *This,
   IN     CHAR16             *StringToTest,
@@ -644,6 +645,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiNewString (
   IN     EFI_HII_PROTOCOL       *This,
   IN     CHAR16                 *Language,
@@ -719,6 +721,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiResetStrings (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle
@@ -770,6 +773,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiGetString (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,
@@ -1020,6 +1024,7 @@ LangNotFound:
 }
 
 EFI_STATUS
+EFIAPI
 HiiGetLine (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,

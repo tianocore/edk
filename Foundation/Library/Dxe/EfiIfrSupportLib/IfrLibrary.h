@@ -1004,4 +1004,207 @@ Returns:
   
 --*/
 ;
+
+VOID
+EfiLibHiiVariablePackGetMap (
+  IN    EFI_HII_VARIABLE_PACK        *Pack,  
+  OUT   CHAR16                       **Name,  OPTIONAL
+  OUT   EFI_GUID                     **Guid,  OPTIONAL
+  OUT   UINT16                       *Id,     OPTIONAL
+  OUT   VOID                         **Var,   OPTIONAL
+  OUT   UINTN                        *Size    OPTIONAL
+  ) 
+/*++
+
+Routine Description:
+
+  Extracts a variable form a Pack.
+
+Arguments:
+
+  Pack - List of variables
+  Name - Name of the variable/map
+  Guid - GUID of the variable/map
+  Var  - Pointer to the variable/map
+  Size - Size of the variable/map in bytes
+
+Returns: 
+
+  VOID.
+
+--*/
+;
+
+UINTN
+EfiLibHiiVariablePackListGetMapCnt (
+  IN    EFI_HII_VARIABLE_PACK_LIST   *List
+  )
+/*++
+
+Routine Description:
+
+  Finds a count of the variables/maps in the List.
+
+Arguments:
+
+  List - List of variables
+
+Returns: 
+
+  Number of Map in the variable pack list.
+
+--*/
+;
+
+typedef VOID (EFI_LIB_HII_VARIABLE_PACK_LIST_CALLBACK) (
+  IN CHAR16                      *Name,
+  IN EFI_GUID                    *Guid,
+  IN UINT16                      Id,
+  IN VOID                        *Var,
+  IN UINTN                       Size
+  )  
+/*++
+
+Routine Description:
+
+  type definition for the callback to be 
+  used with EfiLibHiiVariablePackListForEachVar().
+
+Arguments:
+
+  Id   - Variable/Map ID
+  Name - Name of the variable/map
+  Guid - GUID of the variable/map
+  Var  - Pointer to the variable/map
+  Size - Size of the variable/map in bytes
+
+Returns: 
+
+  VOID
+
+--*/
+;
+
+VOID
+EfiLibHiiVariablePackListForEachVar (
+  IN    EFI_HII_VARIABLE_PACK_LIST               *List,
+  IN    EFI_LIB_HII_VARIABLE_PACK_LIST_CALLBACK  *Callback
+  )
+/*++
+
+Routine Description:
+
+  Will iterate all variable/maps as appearing 
+  in List and for each, it will call the Callback.
+
+Arguments:
+
+  List     - List of variables
+  Callback - Routine to be called for each iterated variable.
+
+Returns: 
+
+  VOID
+
+--*/
+;
+
+EFI_STATUS
+EfiLibHiiVariablePackListGetMapByIdx (
+  IN    UINTN                         Idx,  
+  IN    EFI_HII_VARIABLE_PACK_LIST    *List,  
+  OUT   CHAR16                        **Name,  OPTIONAL
+  OUT   EFI_GUID                      **Guid,  OPTIONAL
+  OUT   UINT16                        *Id,    OPTIONAL
+  OUT   VOID                          **Var,
+  OUT   UINTN                         *Size
+  ) 
+/*++
+
+Routine Description:
+
+  Finds a variable form List given 
+  the order number as appears in the List.
+
+Arguments:
+
+  Idx  - The index of the variable/map to retrieve
+  List - List of variables
+  Name - Name of the variable/map
+  Guid - GUID of the variable/map
+  Var  - Pointer to the variable/map
+  Size - Size of the variable/map in bytes
+
+Returns:
+
+  EFI_SUCCESS   - Variable is found, OUT parameters are valid
+  EFI_NOT_FOUND - Variable is not found, OUT parameters are not valid
+
+--*/
+;
+
+EFI_STATUS
+EfiLibHiiVariablePackListGetMapById (
+  IN    UINT16                        Id,  
+  IN    EFI_HII_VARIABLE_PACK_LIST    *List,
+  OUT   CHAR16                        **Name,  OPTIONAL
+  OUT   EFI_GUID                      **Guid,  OPTIONAL
+  OUT   VOID                          **Var,
+  OUT   UINTN                         *Size
+  ) 
+/*++
+
+Routine Description:
+
+  Finds a variable form List given the 
+  order number as appears in the List.
+
+Arguments:
+
+  Id   - The ID of the variable/map to retrieve
+  List - List of variables
+  Name - Name of the variable/map
+  Guid - GUID of the variable/map
+  Var  - Pointer to the variable/map
+  Size - Size of the variable/map in bytes
+
+Returns:
+
+  EFI_SUCCESS   - Variable is found, OUT parameters are valid
+  EFI_NOT_FOUND - Variable is not found, OUT parameters are not valid
+
+--*/
+;
+
+EFI_STATUS
+EfiLibHiiVariablePackListGetMap (
+  IN    EFI_HII_VARIABLE_PACK_LIST   *List,
+  IN    CHAR16                       *Name,
+  IN    EFI_GUID                     *Guid,
+  OUT   UINT16                       *Id,
+  OUT   VOID                         **Var, 
+  OUT   UINTN                        *Size
+  ) 
+/*++
+
+Routine Description:
+
+  Finds a variable form EFI_HII_VARIABLE_PACK_LIST given name and GUID.
+
+Arguments:
+
+  List - List of variables
+  Name - Name of the variable/map to be found
+  Guid - GUID of the variable/map to be found
+  Var  - Pointer to the variable/map found
+  Size - Size of the variable/map in bytes found
+
+Returns:
+
+  EFI_SUCCESS   - variable is found, OUT parameters are valid
+  EFI_NOT_FOUND - variable is not found, OUT parameters are not valid
+
+--*/
+;
+
 #endif

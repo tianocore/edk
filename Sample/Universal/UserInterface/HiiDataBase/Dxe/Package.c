@@ -210,6 +210,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiNewPack (
   IN  EFI_HII_PROTOCOL    *This,
   IN  EFI_HII_PACKAGES    *Packages,
@@ -599,6 +600,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiRemovePack (
   IN EFI_HII_PROTOCOL    *This,
   IN EFI_HII_HANDLE      Handle

@@ -1717,6 +1717,10 @@ InitializeBinaryStructures (
   EFI_FORM_CALLBACK_PROTOCOL  *FormCallback;
   EFI_VARIABLE_DEFINITION     *VariableDefinition;
   EFI_VARIABLE_DEFINITION     *OverrideDefinition;
+  VOID                        *NvMap;
+  UINTN                       NvMapSize;
+  EFI_HII_VARIABLE_PACK_LIST  *NvMapListHead;
+  EFI_HII_VARIABLE_PACK_LIST  *NvMapListNode;
 
   //
   // Initialize some variables to avoid warnings
@@ -1727,6 +1731,8 @@ InitializeBinaryStructures (
   gBinaryDataHead   = NULL;
   Status            = EFI_SUCCESS;
   FormCallback      = NULL;
+  NvMap             = NULL;
+  NvMapSize         = 0;
 
   if (NumberOfIfrImages > 1) {
     NvMapOverride = NULL;
@@ -1941,32 +1947,50 @@ InitializeBinaryStructures (
           }
           //
           // if the variable was not found, we will retrieve default values
-          // BUGBUG - need to add multi-variable default support
           //
           if (Status == EFI_NOT_FOUND) {
-            if (!EfiCompareMem (VariableDefinition->VariableName, L"Setup", 10)) {
-              Status = Hii->GetDefaultImage (
-                              Hii,
-                              Handle[HandleIndex],
-                              0,
-                              (UINT16 *) &VariableDefinition->VariableSize,
-                              VariableDefinition->NvRamMap
-                              );
-              if (Status == EFI_BUFFER_TOO_SMALL) {
+        
+            if (0 == EfiCompareMem (VariableDefinition->VariableName, L"Setup", 10)) {
+
+              NvMapListHead = NULL;
+              
+              Status = Hii->GetDefaultImage (Hii, Handle[HandleIndex], EFI_IFR_FLAG_DEFAULT, &NvMapListHead);
+
+              if (!EFI_ERROR (Status)) {
+                ASSERT_EFI_ERROR (NULL != NvMapListHead);
+                
+                NvMapListNode = NvMapListHead;
+                
+                while (NULL != NvMapListNode) {
+                  if (VariableDefinition->VariableId == NvMapListNode->VariablePack->VariableId) {
+                    NvMap     = (VOID *) ((CHAR8 *) NvMapListNode->VariablePack + sizeof (EFI_HII_VARIABLE_PACK) + NvMapListNode->VariablePack->VariableNameLength);
+                    NvMapSize = NvMapListNode->VariablePack->Header.Length  - sizeof (EFI_HII_VARIABLE_PACK) - NvMapListNode->VariablePack->VariableNameLength;
+                    break;
+                    }
+                  NvMapListNode = NvMapListNode->NextVariablePack;
+                }
+                
+                //
+                // Free the buffer that was allocated.
+                //
+                gBS->FreePool (VariableDefinition->NvRamMap);
+                gBS->FreePool (VariableDefinition->FakeNvRamMap);
+                
+                //
+                // Allocate, copy the NvRamMap.
+                //
+                VariableDefinition->VariableFakeSize = (UINT16) (VariableDefinition->VariableFakeSize - VariableDefinition->VariableSize);
+                VariableDefinition->VariableSize = (UINT16) NvMapSize;
+                VariableDefinition->VariableFakeSize = (UINT16) (VariableDefinition->VariableFakeSize + VariableDefinition->VariableSize);
+                
                 VariableDefinition->NvRamMap = EfiLibAllocateZeroPool (VariableDefinition->VariableSize);
-                ASSERT (VariableDefinition->NvRamMap != NULL);
-                SizeOfNvStore = VariableDefinition->VariableSize;
+                VariableDefinition->FakeNvRamMap = EfiLibAllocateZeroPool (NvMapSize + VariableDefinition->VariableFakeSize);
+
+                EfiCopyMem (VariableDefinition->NvRamMap, NvMap, NvMapSize);
+                gBS->FreePool (NvMapListHead);
               }
 
-              Hii->GetDefaultImage (
-                    Hii,
-                    Handle[HandleIndex],
-                    0,
-                    (UINT16 *) &VariableDefinition->VariableSize,
-                    VariableDefinition->NvRamMap
-                    );
             }
-
             Status = EFI_SUCCESS;
           }
         }

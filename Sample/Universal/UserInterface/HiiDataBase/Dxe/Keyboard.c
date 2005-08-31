@@ -22,6 +22,7 @@ Abstract:
 #include "HiiDatabase.h"
 
 EFI_STATUS
+EFIAPI
 HiiGetKeyboardLayout (
   IN     EFI_HII_PROTOCOL   *This,
   OUT    UINT16             *DescriptorCount,

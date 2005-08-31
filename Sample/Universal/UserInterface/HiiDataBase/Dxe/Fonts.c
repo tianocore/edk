@@ -67,6 +67,7 @@ UINT8 mUnknownGlyph[38] = {
 };
 
 EFI_STATUS
+EFIAPI
 HiiGetGlyph (
   IN     EFI_HII_PROTOCOL   *This,
   IN     CHAR16             *Source,
@@ -229,6 +230,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 HiiGlyphToBlt (
   IN     EFI_HII_PROTOCOL   *This,
   IN     UINT8              *GlyphBuffer,

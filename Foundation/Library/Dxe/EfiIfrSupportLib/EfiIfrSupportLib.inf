@@ -28,6 +28,7 @@ COMPONENT_TYPE      = LIBRARY
   IfrOnTheFly.c
   IfrOpCodeCreation.c
   IfrLibrary.h
+  IfrVariable.c
 
 [includes.common]
   $(EDK_SOURCE)\Foundation\Efi

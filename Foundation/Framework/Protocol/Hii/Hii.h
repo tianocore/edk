@@ -416,6 +416,11 @@ typedef struct {
   //
 } EFI_HII_PACKAGES;
 
+typedef struct _EFI_HII_VARIABLE_PACK_LIST {
+  struct _EFI_HII_VARIABLE_PACK_LIST   *NextVariablePack;
+  EFI_HII_VARIABLE_PACK                *VariablePack;
+} EFI_HII_VARIABLE_PACK_LIST;
+
 #pragma pack()
 
 typedef
@@ -555,11 +560,10 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_DEFAULT_IMAGE) (
-  IN     EFI_HII_PROTOCOL  * This,
-  IN     EFI_HII_HANDLE    Handle,
-  IN     UINTN             DefaultMask,
-  IN OUT UINT16            *BufferLength,
-  OUT    UINT8             *Buffer
+  IN     EFI_HII_PROTOCOL           *This,
+  IN     EFI_HII_HANDLE             Handle,
+  IN     UINTN                      DefaultMask,
+  OUT    EFI_HII_VARIABLE_PACK_LIST **VariablePackList
   );
 
 typedef

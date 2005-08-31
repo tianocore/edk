@@ -25,6 +25,7 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
+#include "EfiUiLib.h"
 #include EFI_GUID_DEFINITION (GlobalVariable)
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
@@ -104,28 +105,6 @@ GetPackSize (
 ;
 
 EFI_STATUS
-InitializeHiiDatabase (
-  IN EFI_HANDLE             ImageHandle,
-  IN EFI_SYSTEM_TABLE       *SystemTable
-  )
-;
-
-EFI_STATUS
-HiiNewPack (
-  IN  EFI_HII_PROTOCOL      *This,
-  IN  EFI_HII_PACKAGES      *PackageList,
-  OUT EFI_HII_HANDLE        *Handle
-  )
-;
-
-EFI_STATUS
-HiiRemovePack (
-  IN EFI_HII_PROTOCOL    *This,
-  IN EFI_HII_HANDLE      Handle
-  )
-;
-
-EFI_STATUS
 ValidatePack (
   IN   EFI_HII_PROTOCOL          *This,
   IN   EFI_HII_PACKAGE_INSTANCE  *PackageInstance,
@@ -134,152 +113,6 @@ ValidatePack (
   )
 ;
 
-EFI_STATUS
-HiiFindHandles (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN OUT UINT16              *HandleBufferLength,
-  OUT    EFI_HII_HANDLE      *Handle
-  )
-;
-
-EFI_STATUS
-HiiExportDatabase (
-  IN     EFI_HII_PROTOCOL *This,
-  IN     EFI_HII_HANDLE   Handle,
-  IN OUT UINTN            *BufferSize,
-  OUT    VOID             *Buffer
-  )
-;
-
-EFI_STATUS
-HiiGetGlyph (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     CHAR16              *Source,
-  IN OUT UINT16              *Index,
-  OUT    UINT8               **GlyphBuffer,
-  OUT    UINT16              *BitWidth,
-  IN OUT UINT32              *InternalStatus
-  )
-;
-
-EFI_STATUS
-HiiGlyphToBlt (
-  IN     EFI_HII_PROTOCOL   *This,
-  IN     UINT8              *GlyphBuffer,
-  IN     EFI_UGA_PIXEL      Foreground,
-  IN     EFI_UGA_PIXEL      Background,
-  IN     UINTN              Count,
-  IN     UINTN              Width,
-  IN     UINTN              Height,
-  IN OUT EFI_UGA_PIXEL      *BltBuffer
-  )
-;
-
-EFI_STATUS
-HiiNewString (
-  IN     EFI_HII_PROTOCOL        *This,
-  IN     CHAR16                  *Language,
-  IN     EFI_HII_HANDLE          Handle,
-  IN OUT STRING_REF              *Reference,
-  IN     CHAR16                  *NewString
-  )
-;
-
-EFI_STATUS
-HiiGetString (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     EFI_HII_HANDLE      Handle,
-  IN     STRING_REF          Token,
-  IN     BOOLEAN             Raw,
-  IN     CHAR16              *LanguageString,
-  IN OUT UINT16              *BufferLength,
-  OUT    EFI_STRING          StringBuffer
-  )
-;
-
-EFI_STATUS
-HiiResetStrings (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     EFI_HII_HANDLE      Handle
-  )
-;
-
-EFI_STATUS
-HiiTestString (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     CHAR16              *StringToTest,
-  IN OUT UINT32              *FirstMissing,
-  OUT    UINT32              *GlyphBufferSize
-  )
-;
-
-EFI_STATUS
-HiiGetPrimaryLanguages (
-  IN  EFI_HII_PROTOCOL      *This,
-  IN  EFI_HII_HANDLE        Handle,
-  OUT EFI_STRING            *LanguageString
-  )
-;
-
-EFI_STATUS
-HiiGetSecondaryLanguages (
-  IN  EFI_HII_PROTOCOL      *This,
-  IN  EFI_HII_HANDLE        Handle,
-  IN  CHAR16                *PrimaryLanguage,
-  OUT EFI_STRING            *LanguageString
-  )
-;
-
-EFI_STATUS
-HiiGetLine (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     EFI_HII_HANDLE      Handle,
-  IN     STRING_REF          Token,
-  IN OUT UINT16              *Index,
-  IN     UINT16              LineWidth,
-  IN     CHAR16              *LanguageString,
-  IN OUT UINT16              *BufferLength,
-  OUT    EFI_STRING          StringBuffer
-  )
-;
-
-EFI_STATUS
-HiiGetForms (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     EFI_HII_HANDLE      Handle,
-  IN     EFI_FORM_ID         FormId,
-  IN OUT UINT16              *BufferLength,
-  OUT    UINT8               *Buffer
-  )
-;
-
-EFI_STATUS
-HiiGetDefaultImage (
-  IN     EFI_HII_PROTOCOL    *This,
-  IN     EFI_HII_HANDLE      Handle,
-  IN     UINTN               DefaultMask,
-  IN OUT UINT16              *BufferLength,
-  OUT    UINT8               *Buffer
-  )
-;
-
-EFI_STATUS
-HiiUpdateForm (
-  IN EFI_HII_PROTOCOL       *This,
-  IN EFI_HII_HANDLE         Handle,
-  IN EFI_FORM_LABEL         Label,
-  IN BOOLEAN                AddData,
-  IN EFI_HII_UPDATE_DATA    *Data
-  )
-;
-
-EFI_STATUS
-HiiGetKeyboardLayout (
-  IN     EFI_HII_PROTOCOL    *This,
-  OUT    UINT16              *DescriptorCount,
-  OUT    EFI_KEY_DESCRIPTOR  *Descriptor
-  )
-;
 
 EFI_STATUS
 CompareLanguage (
@@ -293,6 +126,195 @@ StrnCpy (
   IN CHAR16   *Dest,
   IN CHAR16   *Src,
   IN UINTN    Length
+  )
+;
+
+//
+// Public Interface Prototypes
+//
+EFI_STATUS
+EFIAPI
+InitializeHiiDatabase (
+  IN EFI_HANDLE             ImageHandle,
+  IN EFI_SYSTEM_TABLE       *SystemTable
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiNewPack (
+  IN  EFI_HII_PROTOCOL      *This,
+  IN  EFI_HII_PACKAGES      *PackageList,
+  OUT EFI_HII_HANDLE        *Handle
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiRemovePack (
+  IN EFI_HII_PROTOCOL    *This,
+  IN EFI_HII_HANDLE      Handle
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiFindHandles (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN OUT UINT16              *HandleBufferLength,
+  OUT    EFI_HII_HANDLE      *Handle
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiExportDatabase (
+  IN     EFI_HII_PROTOCOL *This,
+  IN     EFI_HII_HANDLE   Handle,
+  IN OUT UINTN            *BufferSize,
+  OUT    VOID             *Buffer
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetGlyph (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN     CHAR16              *Source,
+  IN OUT UINT16              *Index,
+  OUT    UINT8               **GlyphBuffer,
+  OUT    UINT16              *BitWidth,
+  IN OUT UINT32              *InternalStatus
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGlyphToBlt (
+  IN     EFI_HII_PROTOCOL   *This,
+  IN     UINT8              *GlyphBuffer,
+  IN     EFI_UGA_PIXEL      Foreground,
+  IN     EFI_UGA_PIXEL      Background,
+  IN     UINTN              Count,
+  IN     UINTN              Width,
+  IN     UINTN              Height,
+  IN OUT EFI_UGA_PIXEL      *BltBuffer
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiNewString (
+  IN     EFI_HII_PROTOCOL        *This,
+  IN     CHAR16                  *Language,
+  IN     EFI_HII_HANDLE          Handle,
+  IN OUT STRING_REF              *Reference,
+  IN     CHAR16                  *NewString
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetString (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN     EFI_HII_HANDLE      Handle,
+  IN     STRING_REF          Token,
+  IN     BOOLEAN             Raw,
+  IN     CHAR16              *LanguageString,
+  IN OUT UINT16              *BufferLength,
+  OUT    EFI_STRING          StringBuffer
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiResetStrings (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN     EFI_HII_HANDLE      Handle
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiTestString (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN     CHAR16              *StringToTest,
+  IN OUT UINT32              *FirstMissing,
+  OUT    UINT32              *GlyphBufferSize
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetPrimaryLanguages (
+  IN  EFI_HII_PROTOCOL      *This,
+  IN  EFI_HII_HANDLE        Handle,
+  OUT EFI_STRING            *LanguageString
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetSecondaryLanguages (
+  IN  EFI_HII_PROTOCOL      *This,
+  IN  EFI_HII_HANDLE        Handle,
+  IN  CHAR16                *PrimaryLanguage,
+  OUT EFI_STRING            *LanguageString
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetLine (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN     EFI_HII_HANDLE      Handle,
+  IN     STRING_REF          Token,
+  IN OUT UINT16              *Index,
+  IN     UINT16              LineWidth,
+  IN     CHAR16              *LanguageString,
+  IN OUT UINT16              *BufferLength,
+  OUT    EFI_STRING          StringBuffer
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetForms (
+  IN     EFI_HII_PROTOCOL    *This,
+  IN     EFI_HII_HANDLE      Handle,
+  IN     EFI_FORM_ID         FormId,
+  IN OUT UINT16              *BufferLength,
+  OUT    UINT8               *Buffer
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetDefaultImage (
+  IN     EFI_HII_PROTOCOL           *This,
+  IN     EFI_HII_HANDLE             Handle,
+  IN     UINTN                      DefaultMask,
+  OUT    EFI_HII_VARIABLE_PACK_LIST **VariablePackList
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiUpdateForm (
+  IN EFI_HII_PROTOCOL       *This,
+  IN EFI_HII_HANDLE         Handle,
+  IN EFI_FORM_LABEL         Label,
+  IN BOOLEAN                AddData,
+  IN EFI_HII_UPDATE_DATA    *Data
+  )
+;
+
+EFI_STATUS
+EFIAPI
+HiiGetKeyboardLayout (
+  IN     EFI_HII_PROTOCOL    *This,
+  OUT    UINT16              *DescriptorCount,
+  OUT    EFI_KEY_DESCRIPTOR  *Descriptor
   )
 ;
 

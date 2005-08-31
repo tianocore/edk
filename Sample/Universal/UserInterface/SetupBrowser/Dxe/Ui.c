@@ -1487,6 +1487,10 @@ Returns:
   UI_SCREEN_OPERATION         ScreenOperation;
   EFI_VARIABLE_DEFINITION     *VariableDefinition;
   EFI_FORM_CALLBACK_PROTOCOL  *FormCallback;
+  EFI_HII_VARIABLE_PACK_LIST  *NvMapListHead;
+  EFI_HII_VARIABLE_PACK_LIST  *NvMapListNode;
+  VOID                        *NvMap;
+  UINTN                       NvMapSize;
 
   EfiCopyMem (&LocalScreen, &gScreenDimensions, sizeof (SCREEN_DESCRIPTOR));
 
@@ -1509,6 +1513,8 @@ Returns:
   PreviousMenuOption  = NULL;
   SavedMenuOption     = NULL;
   IfrBinary           = NULL;
+  NvMap               = NULL;
+  NvMapSize           = 0;
 
   EfiZeroMem (&Key, sizeof (EFI_INPUT_KEY));
 
@@ -2990,13 +2996,45 @@ Returns:
 
     case CfUiDefault:
       ControlFlag = CfCheckSelection;
-      Hii->GetDefaultImage (
-            Hii,
-            MenuOption->Handle,
-            EFI_IFR_FLAG_DEFAULT,
-            (UINT16 *) &FileFormTags->VariableDefinitions->VariableSize,
-            FileFormTags->VariableDefinitions->NvRamMap
-            );
+
+      NvMapListHead = NULL;
+
+      Status = Hii->GetDefaultImage (Hii, MenuOption->Handle, EFI_IFR_FLAG_DEFAULT, &NvMapListHead);
+
+      if (!EFI_ERROR (Status)) {
+        ASSERT_EFI_ERROR (NULL != NvMapListHead);
+        
+        NvMapListNode = NvMapListHead;
+        
+        while (NULL != NvMapListNode) {
+          if (FileFormTags->VariableDefinitions->VariableId == NvMapListNode->VariablePack->VariableId) {
+            NvMap     = (VOID *) ((CHAR8 *) NvMapListNode->VariablePack + sizeof (EFI_HII_VARIABLE_PACK) + NvMapListNode->VariablePack->VariableNameLength);
+            NvMapSize = NvMapListNode->VariablePack->Header.Length  - sizeof (EFI_HII_VARIABLE_PACK) - NvMapListNode->VariablePack->VariableNameLength;
+            break;
+            }
+          NvMapListNode = NvMapListNode->NextVariablePack;
+        }
+        
+        //
+        // Free the buffer that was allocated.
+        //
+        gBS->FreePool (FileFormTags->VariableDefinitions->NvRamMap);
+        gBS->FreePool (FileFormTags->VariableDefinitions->FakeNvRamMap);
+        
+        //
+        // Allocate, copy the NvRamMap.
+        //
+        FileFormTags->VariableDefinitions->VariableFakeSize = (UINT16) (FileFormTags->VariableDefinitions->VariableFakeSize - FileFormTags->VariableDefinitions->VariableSize);
+        FileFormTags->VariableDefinitions->VariableSize = (UINT16) NvMapSize;
+        FileFormTags->VariableDefinitions->VariableFakeSize = (UINT16) (FileFormTags->VariableDefinitions->VariableFakeSize + FileFormTags->VariableDefinitions->VariableSize);
+        
+        FileFormTags->VariableDefinitions->NvRamMap = EfiLibAllocateZeroPool (FileFormTags->VariableDefinitions->VariableSize);
+        FileFormTags->VariableDefinitions->FakeNvRamMap = EfiLibAllocateZeroPool (NvMapSize + FileFormTags->VariableDefinitions->VariableFakeSize);
+
+        EfiCopyMem (FileFormTags->VariableDefinitions->NvRamMap, NvMap, NvMapSize);
+        gBS->FreePool (NvMapListHead);
+      }
+
       UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, TRUE);
       Repaint = TRUE;
       //
