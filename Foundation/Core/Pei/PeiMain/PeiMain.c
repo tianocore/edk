@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -57,7 +57,7 @@ static EFI_PEI_SERVICES  mPS = {
   {
     PEI_SERVICES_SIGNATURE,
     PEI_SERVICES_REVISION,
-    sizeof (EFI_TABLE_HEADER),
+    sizeof (EFI_PEI_SERVICES),
     0,
     0
   },

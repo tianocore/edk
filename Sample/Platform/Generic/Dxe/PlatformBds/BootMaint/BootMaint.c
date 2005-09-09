@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -470,6 +470,24 @@ ApplyChangeHandler (
   IN  BMM_FAKE_NV_DATA                *CurrentFakeNVMap,
   IN  FORM_ID                         FormId
   )
+/*++
+
+Routine Description:
+
+  Function handling request to apply changes for BMM pages.
+
+Arguments:
+
+  Private          - Pointer to callback data buffer.
+  CurrentFakeNVMap - Pointer to buffer holding data of various values used by BMM
+  FormId           - ID of the form which has sent the request to apply change.
+
+Returns:
+
+  EFI_SUCCESS      - Change successfully applied.
+  Other            - Error occurs while trying to apply changes.
+
+--*/
 {
   BM_CONSOLE_CONTEXT  *NewConsoleContext;
   BM_TERMINAL_CONTEXT *NewTerminalContext;
@@ -536,7 +554,7 @@ ApplyChangeHandler (
     Status = Var_UpdateBootNext (Private);
     break;
 
-  case FORM_CON_COM_SETUP_ID:
+  case FORM_CON_COM_ID:
     NewMenuEntry                      = BOpt_GetMenuEntry (&TerminalMenu, Private->CurrentTerminal);
 
     NewTerminalContext                = (BM_TERMINAL_CONTEXT *) NewMenuEntry->VariableContext;
@@ -611,12 +629,12 @@ ApplyChangeHandler (
 
   case FORM_DRV_ADD_HANDLE_DESC_ID:
     Status = Var_UpdateDriverOption (
-              Private,
-              Private->BmmHiiHandle,
-              CurrentFakeNVMap->DriverAddHandleDesc,
-              CurrentFakeNVMap->DriverAddHandleOptionalData,
-              CurrentFakeNVMap->DriverAddForceReconnect
-              );
+               Private,
+               Private->BmmHiiHandle,
+               CurrentFakeNVMap->DriverAddHandleDesc,
+               CurrentFakeNVMap->DriverAddHandleOptionalData,
+               CurrentFakeNVMap->DriverAddForceReconnect
+               );
     if (EFI_ERROR (Status)) {
       goto Error;
     }

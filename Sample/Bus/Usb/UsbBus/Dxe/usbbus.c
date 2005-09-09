@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -315,20 +315,24 @@ UsbBusControllerDriverStart (
 /*++
 
   Routine Description:
+
     Starting the Usb Bus Driver
 
   Arguments:
+
     This                - Protocol instance pointer.
     Controller          - Handle of device to test
     RemainingDevicePath - Not used
 
   Returns:
+
     EFI_SUCCESS         - This driver supports this device.
     EFI_UNSUPPORTED     - This driver does not support this device.
     EFI_DEVICE_ERROR    - This driver cannot be started due to device
                           Error
     EFI_OUT_OF_RESOURCES- Can't allocate memory resources
-    EFI_ALREADY_STARTED - Thios driver has been started
+    EFI_ALREADY_STARTED - This driver has been started
+
 --*/
 {
   EFI_STATUS                Status;
@@ -392,22 +396,22 @@ UsbBusControllerDriverStart (
       );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->FreePool (UsbBusDev);
     return EFI_UNSUPPORTED;
   }
 
   if (OpenStatus == EFI_ALREADY_STARTED) {
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->FreePool (UsbBusDev);
     return EFI_ALREADY_STARTED;
   }
@@ -428,17 +432,17 @@ UsbBusControllerDriverStart (
   if (EFI_ERROR (Status)) {
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiUsbHcProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->FreePool (UsbBusDev);
     return Status;
   }
@@ -449,22 +453,22 @@ UsbBusControllerDriverStart (
   RootHub = EfiLibAllocateZeroPool (sizeof (USB_IO_DEVICE));
   if (RootHub == NULL) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiUsbHcProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->FreePool (UsbBusDev);
     return EFI_OUT_OF_RESOURCES;
   }
@@ -480,22 +484,22 @@ UsbBusControllerDriverStart (
   RootHubController = CreateUsbIoControllerDevice ();
   if (RootHubController == NULL) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiUsbHcProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->FreePool (UsbBusDev);
     gBS->FreePool (RootHub);
     return EFI_OUT_OF_RESOURCES;
@@ -564,24 +568,24 @@ UsbBusControllerDriverStart (
                   );
   if (EFI_ERROR (Status)) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiUsbHcProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     gBS->FreePool (RootHubController);
     gBS->FreePool (RootHub);
@@ -589,6 +593,13 @@ UsbBusControllerDriverStart (
     return EFI_UNSUPPORTED;
   }
 
+  //
+  // Before depending on the timer to check root ports periodically,
+  // here we should check them immediately for the first time, or
+  // there will be an interval between bus start and devices start.
+  //
+  gBS->SignalEvent (RootHubController->HubNotify);
+  
   Status = gBS->SetTimer (
                   RootHubController->HubNotify,
                   TimerPeriodic,
@@ -596,24 +607,24 @@ UsbBusControllerDriverStart (
                   );
   if (EFI_ERROR (Status)) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiUsbHcProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     gBS->CloseEvent (RootHubController->HubNotify);
     gBS->FreePool (RootHubController);
