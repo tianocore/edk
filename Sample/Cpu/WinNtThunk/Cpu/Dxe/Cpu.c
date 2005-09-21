@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -310,10 +310,10 @@ STATIC
 EFI_STATUS
 EFIAPI
 WinNtGetTimerValue (
-  IN EFI_CPU_ARCH_PROTOCOL  *This,
-  IN UINT32                 TimerIndex,
+  IN  EFI_CPU_ARCH_PROTOCOL *This,
+  IN  UINT32                TimerIndex,
   OUT UINT64                *TimerValue,
-  OUT UINT64                *TimerPeriod
+  OUT UINT64                *TimerPeriod OPTIONAL
   )
 /*++
 
@@ -324,37 +324,26 @@ Routine Description:
 
 Arguments:
 
-  Pointer to CPU Architectural Protocol interface
-  Index of given CPU timer
-  Output of the timer
-  Output of the timer period
+  This        - Pointer to CPU Architectural Protocol interface
+  TimerIndex  - Index of given CPU timer
+  TimerValue  - Output of the timer
+  TimerPeriod - Output of the timer period
 
 Returns:
 
-  Status
-    EFI_UNSUPPORTED - not yet implemented
+  EFI_UNSUPPORTED       - not yet implemented
+  EFI_INVALID_PARAMETER - TimeValue is NULL
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    TimerIndex - add argument and description to function comment
-// TODO:    TimerValue - add argument and description to function comment
-// TODO:    TimerPeriod - add argument and description to function comment
-// TODO:    EFI_INVALID_PARAMETER - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
-  CPU_ARCH_PROTOCOL_PRIVATE *Private;
-
-  if (TimerValue == NULL || TimerPeriod == NULL) {
+  if (TimerValue == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-
-  Private     = CPU_ARCH_PROTOCOL_PRIVATE_DATA_FROM_THIS (This);
-  *TimerValue = 0xFFFFFFFFFFFF;
-  if (TimerPeriod != NULL) {
-    *TimerPeriod = 333333333;
-  }
-
-  return EFI_SUCCESS;
+  
+  //
+  // No timer supported
+  //
+  return EFI_UNSUPPORTED;
 }
 
 STATIC

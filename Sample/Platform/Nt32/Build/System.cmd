@@ -1,7 +1,7 @@
 @echo off
 REM #/*++
 REM #  
-rem #  Copyright 2004, Intel Corporation                                                         
+rem #  Copyright (c) 2004, Intel Corporation                                                         
 rem #  All rights reserved. This program and the accompanying materials                          
 rem #  are licensed and made available under the terms and conditions of the BSD License         
 rem #  which accompanies this distribution.  The full text of the license may be found at        
