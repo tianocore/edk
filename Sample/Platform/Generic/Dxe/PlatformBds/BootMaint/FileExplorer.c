@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -16,8 +16,6 @@ Module Name:
 AgBStract:
 
   File explorer related functions.
-
-Revision History
 
 --*/
 
@@ -67,7 +65,7 @@ Returns:
                       UpdateData
                       );
 
-  RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) CallbackData->FeCallbackHandle, FALSE, 0, 0);
+  RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) (UINTN) CallbackData->FeCallbackHandle, FALSE, 0, 0);
 
   Location = (UINT8 *) &UpdateData->Data;
 
@@ -227,7 +225,7 @@ Returns:
         //
         // Create Subtitle op-code for the display string of the option.
         //
-        RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) CallbackData->FeCallbackHandle, FALSE, 0, 1);
+        RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) (UINTN) CallbackData->FeCallbackHandle, FALSE, 0, 1);
 
         CreateSubTitleOpCode (
           NewMenuEntry->DisplayStringToken,
@@ -281,7 +279,7 @@ Returns:
 
   Status                          = EFI_SUCCESS;
   Private                         = FE_CALLBACK_DATA_FROM_THIS (This);
-  UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) Private->FeCallbackHandle;
+  UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) (UINTN) Private->FeCallbackHandle;
   NvRamMap                        = (FILE_EXPLORER_NV_DATA *) Data->NvRamMap;
 
   if (KEY_VALUE_SAVE_AND_EXIT == KeyValue) {

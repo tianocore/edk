@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,3 +29,7 @@ EFI_GUID_STRING(&gEfiAcpiTableGuid, "ACPI Table", "ACPI 1.0 Table GUID in EFI Sy
 EFI_GUID  gEfiAcpi20TableGuid = EFI_ACPI_20_TABLE_GUID;
 
 EFI_GUID_STRING(&gEfiAcpi20TableGuid, "ACPI 2.0 Table", "ACPI 2.0 Table GUID in EFI System Table");
+
+EFI_GUID  gEfiAcpi30TableGuid = EFI_ACPI_30_TABLE_GUID;
+
+EFI_GUID_STRING(&gEfiAcpi30TableGuid, "ACPI 3.0 Table", "ACPI 3.0 Table GUID in EFI System Table");

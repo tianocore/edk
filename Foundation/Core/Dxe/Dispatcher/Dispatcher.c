@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -41,8 +41,6 @@ Abstract:
 
   Depex - Dependency Expresion.
   SOR   - Schedule On Request - Don't schedule if this bit is set.
-
-Revision History
 
 --*/
 
@@ -889,7 +887,7 @@ Returns:
     // Produce a FVB protocol for the file
     //
     Status = ProduceFVBProtocolOnBuffer (
-              (EFI_PHYSICAL_ADDRESS)Buffer,
+              (EFI_PHYSICAL_ADDRESS) (UINTN) Buffer,
               (UINT64)BufferSize,
               FvHandle,
               NULL

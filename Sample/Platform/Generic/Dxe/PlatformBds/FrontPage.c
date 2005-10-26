@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,8 +17,6 @@ Abstract:
 
   FrontPage routines to handle the callbacks and browser calls
   
-Revision History
-
 --*/
 
 #include "Bds.h"
@@ -322,7 +320,7 @@ ReInitStrings:
   //
   // Register CallbackHandle data for FormSet
   //
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) FrontPageCallbackHandle;
+  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) (UINTN) FrontPageCallbackHandle;
   UpdateData->FormUpdate  = FALSE;
   UpdateData->FormTitle   = 0;
   UpdateData->DataCount   = 1;

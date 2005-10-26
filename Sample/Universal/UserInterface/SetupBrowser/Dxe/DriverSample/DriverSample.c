@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,8 +15,6 @@ Abstract:
 
   This is an example of how a driver might export data to the HII protocol to be 
   later utilized by the Setup Protocol
-
-Revision History:
 
 --*/
 
@@ -251,7 +249,7 @@ Returns:
     Location                        = (UINT8 *) &UpdateData->Data;
 
     UpdateData->FormSetUpdate       = TRUE;
-    UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) Private->CallbackHandle;
+    UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) (UINTN) Private->CallbackHandle;
     UpdateData->FormUpdate          = FALSE;
     UpdateData->FormTitle           = 0;
     UpdateData->DataCount           = 2;
@@ -601,7 +599,7 @@ DriverSampleInit (
   //
   // Register CallbackHandle data for FormSet
   //
-  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) CallbackInfo->CallbackHandle;
+  UpdateData->FormCallbackHandle = (EFI_PHYSICAL_ADDRESS) (UINTN) CallbackInfo->CallbackHandle;
   UpdateData->FormUpdate  = FALSE;
   UpdateData->FormTitle   = 0;
   UpdateData->DataCount   = 1;

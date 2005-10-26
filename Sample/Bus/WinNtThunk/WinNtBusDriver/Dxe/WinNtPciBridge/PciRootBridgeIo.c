@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1376,7 +1376,7 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((EFI_PHYSICAL_ADDRESS) (*HostAddress) > 0xffffffff) {
+  if ((EFI_PHYSICAL_ADDRESS) (UINTN) (*HostAddress) > 0xffffffff) {
     return EFI_UNSUPPORTED;
   }
   
@@ -1390,7 +1390,7 @@ Returns:
   //
   // Limit allocations to memory below 4GB
   //
-  PhysicalAddress = (EFI_PHYSICAL_ADDRESS) (0xffffffff);
+  PhysicalAddress = (EFI_PHYSICAL_ADDRESS) (UINTN) (0xffffffff);
 
   Status          = gBS->AllocatePages (AllocateMaxAddress, MemoryType, Pages, &PhysicalAddress);
   if (EFI_ERROR (Status)) {

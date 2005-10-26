@@ -13,11 +13,9 @@ Module Name:
 
   BootMaint.c
     
-AgBStract:
+Abstract:
 
   Boot Maintainence Main File
-
-Revision History
 
 --*/
 
@@ -153,7 +151,7 @@ Returns:
   DisMap                          = NULL;
 
   Private                         = BMM_CALLBACK_DATA_FROM_THIS (This);
-  UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) Private->BmmCallbackHandle;
+  UpdateData->FormCallbackHandle  = (EFI_PHYSICAL_ADDRESS) (UINTN) Private->BmmCallbackHandle;
   CurrentFakeNVMap                = (BMM_FAKE_NV_DATA *) Data->NvRamMap;
   Private->BmmFakeNvData          = CurrentFakeNVMap;
   Location                        = (UINT8 *) &UpdateData->Data;
@@ -869,7 +867,7 @@ Returns:
   //
   // Initialize UpdateData structure
   //
-  RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) BmmCallbackInfo->BmmCallbackHandle, FALSE, 0, 0);
+  RefreshUpdateData (TRUE, (EFI_PHYSICAL_ADDRESS) (UINTN) BmmCallbackInfo->BmmCallbackHandle, FALSE, 0, 0);
 
   Location = (UINT8 *) &UpdateData->Data;
 

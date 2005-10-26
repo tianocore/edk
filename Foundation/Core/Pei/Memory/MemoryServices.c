@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -16,9 +16,6 @@ Module Name:
 Abstract:
 
   EFI PEI Core memory services
-
-
-Revision History
 
 --*/
 
@@ -82,7 +79,7 @@ Returns:
     
     PeiCoreBuildHobHandoffInfoTable (
       BOOT_WITH_FULL_CONFIGURATION,
-      (EFI_PHYSICAL_ADDRESS)(UINTN)PrivateData->BottomOfCarHeap,
+      (EFI_PHYSICAL_ADDRESS) (UINTN) PrivateData->BottomOfCarHeap,
       (UINTN) SizeOfCarHeap
       );
     //
@@ -156,7 +153,7 @@ Returns:
 
   PrivateData->HobList.Raw = (VOID *)((UINTN)(MemoryBegin + PrivateData->StackSize));
   NewHandOffHob = PrivateData->HobList.HandoffInformationTable;
-  PhysicalAddressOfOldHob = (EFI_PHYSICAL_ADDRESS)(UINTN)OldHandOffHob;
+  PhysicalAddressOfOldHob = (EFI_PHYSICAL_ADDRESS) (UINTN) OldHandOffHob;
 
   EfiFreeMemorySize = OldHandOffHob->EfiFreeMemoryBottom - PhysicalAddressOfOldHob;
   
