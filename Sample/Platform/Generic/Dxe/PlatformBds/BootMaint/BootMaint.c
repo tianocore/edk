@@ -99,6 +99,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DriverCallback (
   IN EFI_FORM_CALLBACK_PROTOCOL       *This,
   IN UINT16                           KeyValue,

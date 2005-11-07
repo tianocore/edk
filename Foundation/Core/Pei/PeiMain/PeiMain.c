@@ -88,6 +88,7 @@ static EFI_PEI_SERVICES  mPS = {
 };
 
 EFI_STATUS
+EFIAPI
 PeiCore (
   IN EFI_PEI_STARTUP_DESCRIPTOR  *PeiStartupDescriptor,
   IN PEI_CORE_INSTANCE           *OldCoreData

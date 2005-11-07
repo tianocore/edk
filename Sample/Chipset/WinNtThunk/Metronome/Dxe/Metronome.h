@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -19,7 +19,9 @@ Abstract:
 
 --*/
 
-// TODO: add protective #ifndef
+#ifndef _NT_THUNK_METRONOME_H_
+#define _NT_THUNK_METRONOME_H_
+
 #include "Efi2WinNT.h"
 #include "EfiWinNtLib.h"
 #include "EfiDriverLib.h"
@@ -32,13 +34,14 @@ Abstract:
 //
 // Period of on tick in 100 nanosecond units
 //
-#define TICK_PERIOD 10000
+#define TICK_PERIOD 2000
 
 //
 // Function Prototypes
 //
 
 EFI_STATUS
+EFIAPI
 WinNtMetronomeDriverInitialize (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
@@ -84,3 +87,5 @@ Returns:
 
 --*/
 ;
+
+#endif

@@ -1430,6 +1430,8 @@ Returns:
   UINT64      BarValue64;
   UINT32      OriginalValue;
   UINT32      Mask;
+  UINT32      Data;
+  UINT8       Index;
   EFI_STATUS  Status;
 
   OriginalValue = 0;
@@ -1548,6 +1550,16 @@ Returns:
       if (EFI_ERROR (Status)) {
         return Offset + 4;
       }
+
+      //
+      // Fix the length to support some spefic 64 bit BAR
+      //
+      Data  = Value;
+      Index = 0;
+      for (Data = Value; Data != 0; Data >>= 1) {
+      	Index ++;
+      }
+      Value |= ((UINT32)(-1) << Index); 
 
       //
       // Calculate the size of 64bit bar
@@ -2165,3 +2177,85 @@ Returns:
 
   return FALSE;
 }
+
+EFI_STATUS
+ResetAllPpbBusReg (
+  IN PCI_IO_DEVICE                      *Bridge,
+  IN UINT8                              StartBusNumber
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  Bridge          - TODO: add argument description
+  StartBusNumber  - TODO: add argument description
+
+Returns:
+
+  EFI_SUCCESS - TODO: Add description for return value
+
+--*/
+{
+  EFI_STATUS                      Status;
+  PCI_TYPE00                      Pci;
+  UINT8                           Device;
+  UINT32                          Register;  
+  UINT8                           Func;
+  UINT64                          Address;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
+
+  PciRootBridgeIo = Bridge->PciRootBridgeIo;
+
+  for (Device = 0; Device <= PCI_MAX_DEVICE; Device++) {
+    for (Func = 0; Func <= PCI_MAX_FUNC; Func++) {
+
+      //
+      // Check to see whether a pci device is present
+      //
+      Status = PciDevicePresent (
+                PciRootBridgeIo,
+                &Pci,
+                StartBusNumber,
+                Device,
+                Func
+                );
+
+      if (!EFI_ERROR (Status) && (IS_PCI_BRIDGE (&Pci))) {
+        Register  = 0;
+        Address   = EFI_PCI_ADDRESS (StartBusNumber, Device, Func, 0x18);
+        Status   = PciRootBridgeIo->Pci.Read (
+                                        PciRootBridgeIo,
+                                        EfiPciWidthUint32, 
+                                        Address,
+                                        1,
+                                        &Register
+                                        );
+        //
+        // Reset register 18h, 19h, 1Ah on PCI Bridge
+        //
+        Register &= 0xFF000000;
+        Status = PciRootBridgeIo->Pci.Write (
+                                        PciRootBridgeIo,
+                                        EfiPciWidthUint32, 
+                                        Address,
+                                        1,
+                                        &Register
+                                        );
+      }
+
+      if (Func == 0 && !IS_PCI_MULTI_FUNC (&Pci)) {
+        //
+        // Skip sub functions, this is not a multi function device
+        //
+        Func = PCI_MAX_FUNC;
+      }
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+

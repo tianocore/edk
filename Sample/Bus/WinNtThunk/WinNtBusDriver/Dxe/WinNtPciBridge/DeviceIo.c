@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -42,6 +42,7 @@ static EFI_DEV_IO_DEFAULT_DEVICE_PATH mEndDevicePath = {
 //
 
 EFI_STATUS
+EFIAPI
 DeviceIoMemRead (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -51,6 +52,7 @@ DeviceIoMemRead (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoMemWrite (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -60,6 +62,7 @@ DeviceIoMemWrite (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoIoRead (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -69,6 +72,7 @@ DeviceIoIoRead (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoIoWrite (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -78,6 +82,7 @@ DeviceIoIoWrite (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoPciRead (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -87,6 +92,7 @@ DeviceIoPciRead (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoPciWrite (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -96,6 +102,7 @@ DeviceIoPciWrite (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoPciDevicePath (
   IN EFI_DEVICE_IO_PROTOCOL        *This,
   IN UINT64                        Address,
@@ -103,6 +110,7 @@ DeviceIoPciDevicePath (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoMap (
   IN EFI_DEVICE_IO_PROTOCOL   *This,
   IN EFI_IO_OPERATION_TYPE    Operation,
@@ -113,12 +121,14 @@ DeviceIoMap (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoUnmap (
   IN EFI_DEVICE_IO_PROTOCOL   *This,
   IN VOID                     *Mapping
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoAllocateBuffer (
   IN EFI_DEVICE_IO_PROTOCOL    *This,
   IN EFI_ALLOCATE_TYPE         Type,
@@ -128,11 +138,13 @@ DeviceIoAllocateBuffer (
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoFlush (
   IN EFI_DEVICE_IO_PROTOCOL  *This
   );
 
 EFI_STATUS
+EFIAPI
 DeviceIoFreeBuffer (
   IN EFI_DEVICE_IO_PROTOCOL   *This,
   IN UINTN                    Pages,
@@ -140,7 +152,6 @@ DeviceIoFreeBuffer (
   );
 
 EFI_STATUS
-EFIAPI
 DeviceIoConstructor (
   VOID
   )
@@ -304,6 +315,7 @@ DeviceIoMemRead (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoMemWrite (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -359,6 +371,7 @@ DeviceIoMemWrite (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoIoRead (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -403,6 +416,7 @@ DeviceIoIoRead (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoIoWrite (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -447,6 +461,7 @@ DeviceIoIoWrite (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoPciRead (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -491,6 +506,7 @@ DeviceIoPciRead (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoPciWrite (
   IN EFI_DEVICE_IO_PROTOCOL *This,
   IN EFI_IO_WIDTH           Width,
@@ -637,6 +653,7 @@ AppendPciDevicePath (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoPciDevicePath (
   IN EFI_DEVICE_IO_PROTOCOL        *This,
   IN UINT64                        Address,
@@ -697,6 +714,7 @@ DeviceIoPciDevicePath (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoMap (
   IN EFI_DEVICE_IO_PROTOCOL   *This,
   IN EFI_IO_OPERATION_TYPE    Operation,
@@ -749,6 +767,7 @@ DeviceIoMap (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoUnmap (
   IN EFI_DEVICE_IO_PROTOCOL   *This,
   IN VOID                     *Mapping
@@ -779,6 +798,7 @@ DeviceIoUnmap (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoAllocateBuffer (
   IN EFI_DEVICE_IO_PROTOCOL    *This,
   IN EFI_ALLOCATE_TYPE         Type,
@@ -840,6 +860,7 @@ DeviceIoAllocateBuffer (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoFlush (
   IN EFI_DEVICE_IO_PROTOCOL  *This
   )
@@ -865,6 +886,7 @@ DeviceIoFlush (
 }
 
 EFI_STATUS
+EFIAPI
 DeviceIoFreeBuffer (
   IN EFI_DEVICE_IO_PROTOCOL   *This,
   IN UINTN                    Pages,

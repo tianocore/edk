@@ -49,6 +49,7 @@ InitializeCpu (
   );
 
 VOID
+EFIAPI
 WinNtIoProtocolNotifyFunction (
   IN EFI_EVENT                Event,
   IN VOID                     *Context
@@ -541,6 +542,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 WinNtIoProtocolNotifyFunction (
   IN EFI_EVENT                Event,
   IN VOID                     *Context

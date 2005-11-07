@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -56,6 +56,7 @@ extern CHAR8  mOtherChars[];
 // Prototypes
 //
 INTN
+EFIAPI
 EngStriColl (
   IN EFI_UNICODE_COLLATION_PROTOCOL           *This,
   IN CHAR16                                   *s1,
@@ -64,6 +65,7 @@ EngStriColl (
 ;
 
 BOOLEAN
+EFIAPI
 EngMetaiMatch (
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN CHAR16                                  *String,
@@ -72,6 +74,7 @@ EngMetaiMatch (
 ;
 
 VOID
+EFIAPI
 EngStrLwr (
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN OUT CHAR16                              *Str
@@ -79,6 +82,7 @@ EngStrLwr (
 ;
 
 VOID
+EFIAPI
 EngStrUpr (
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN OUT CHAR16                              *Str
@@ -86,6 +90,7 @@ EngStrUpr (
 ;
 
 VOID
+EFIAPI
 EngFatToStr (
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN UINTN                                   FatSize,
@@ -95,6 +100,7 @@ EngFatToStr (
 ;
 
 BOOLEAN
+EFIAPI
 EngStrToFat (
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
   IN CHAR16                                  *String,
@@ -117,6 +123,7 @@ EFI_UNICODE_COLLATION_PROTOCOL  UnicodeEng = {
 };
 
 EFI_STATUS
+EFIAPI
 InitializeUnicodeCollationEng (
   IN EFI_HANDLE       ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable

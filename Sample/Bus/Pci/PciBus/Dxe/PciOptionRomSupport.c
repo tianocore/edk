@@ -332,26 +332,26 @@ Returns:
                 );
 
     //
-    // Setting the memory space bit in the function's command register
-    //
-    PciEnableCommandRegister (PciDevice, EFI_PCI_COMMAND_MEMORY_SPACE);
-
-    //
     // Programe all upstream bridge
     //
-    ProgrameUpstreamBridgeForRom (PciDevice, RomBar, TRUE);
+    ProgrameUpstreamBridgeForRom(PciDevice, RomBar, TRUE);
+
+    //
+    // Setting the memory space bit in the function's command register
+    //
+    PciEnableCommandRegister(PciDevice, EFI_PCI_COMMAND_MEMORY_SPACE);
 
   } else {
     
     //
-    // Destroy the programmed bar in all the upstream bridge.
-    //
-    ProgrameUpstreamBridgeForRom (PciDevice, RomBar, FALSE);
-
-    //
     // disable command register decode to memory
     //
-    PciDisableCommandRegister (PciDevice, EFI_PCI_COMMAND_MEMORY_SPACE);
+    PciDisableCommandRegister(PciDevice, EFI_PCI_COMMAND_MEMORY_SPACE);
+
+    //
+    // Destroy the programmed bar in all the upstream bridge.
+    //
+    ProgrameUpstreamBridgeForRom(PciDevice, RomBar, FALSE);
 
     //
     // disable rom decode
@@ -446,7 +446,7 @@ Returns:
         ImageSize               = (UINT32) (EfiRomHeader->InitializationSize * 512);
 
         ImageBuffer             = (VOID *) (RomBarOffset + ImageOffset);
-        ImageLength             = ImageSize - ImageOffset;
+        ImageLength             = ImageSize - (UINT32)ImageOffset;
         DecompressedImageBuffer = NULL;
 
         //

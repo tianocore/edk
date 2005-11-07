@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -21,6 +21,7 @@ Abstract:
 //
 //
 EFI_STATUS
+EFIAPI
 PxeBcDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -28,6 +29,7 @@ PxeBcDriverSupported (
   );
 
 EFI_STATUS
+EFIAPI
 PxeBcDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -35,6 +37,7 @@ PxeBcDriverStart (
   );
 
 EFI_STATUS
+EFIAPI
 PxeBcDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -1270,6 +1273,7 @@ Returns:
 static VOID *BCNotifyReg;
 
 EFI_STATUS
+EFIAPI
 BcStart (
   IN EFI_PXE_BASE_CODE_PROTOCOL *This,
   IN BOOLEAN                    UseIPv6
@@ -1601,6 +1605,7 @@ BcStart (
 }
 
 EFI_STATUS
+EFIAPI
 BcStop (
   IN EFI_PXE_BASE_CODE_PROTOCOL *This
   )
@@ -1895,6 +1900,7 @@ IpFilter (
 }
 
 EFI_STATUS
+EFIAPI
 BcIpFilter (
   IN EFI_PXE_BASE_CODE_PROTOCOL  *This,
   IN EFI_PXE_BASE_CODE_IP_FILTER *Filter
@@ -1958,6 +1964,7 @@ BcIpFilter (
 }
 
 EFI_STATUS
+EFIAPI
 BcSetParameters (
   EFI_PXE_BASE_CODE_PROTOCOL  *This,
   BOOLEAN                     *AutoArpPtr,
@@ -2068,6 +2075,7 @@ BcSetParameters (
 //  BC Set Station IP Routine
 //
 EFI_STATUS
+EFIAPI
 BcSetStationIP (
   IN EFI_PXE_BASE_CODE_PROTOCOL *This,
   IN EFI_IP_ADDRESS             *StationIpPtr,
@@ -2146,6 +2154,7 @@ EFI_DRIVER_BINDING_PROTOCOL gPxeBcDriverBinding = {
 };
 
 EFI_STATUS
+EFIAPI
 PxeBcDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -2208,6 +2217,7 @@ PxeBcDriverSupported (
 }
 
 EFI_STATUS
+EFIAPI
 PxeBcDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -2435,6 +2445,7 @@ PxeBcError: ;
 }
 
 EFI_STATUS
+EFIAPI
 PxeBcDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -2512,6 +2523,7 @@ PxeBcDriverStop (
 EFI_DRIVER_ENTRY_POINT (InitializeBCDriver)
 
 EFI_STATUS
+EFIAPI
 InitializeBCDriver (
   IN EFI_HANDLE       ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable

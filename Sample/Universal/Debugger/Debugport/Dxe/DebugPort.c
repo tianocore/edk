@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -38,6 +38,7 @@ GetDebugPortVariable (
 
 STATIC
 EFI_STATUS
+EFIAPI
 ImageUnloadHandler (
   EFI_HANDLE ImageHandle
   );
@@ -55,6 +56,7 @@ static UINT32     mHidStdPcComPort;
 EFI_DRIVER_ENTRY_POINT (InitializeDebugPortDriver)
 
 EFI_STATUS
+EFIAPI
 InitializeDebugPortDriver (
   IN EFI_HANDLE             ImageHandle,
   IN EFI_SYSTEM_TABLE       *SystemTable
@@ -160,6 +162,7 @@ Returns:
 // DebugPort driver binding member functions...
 //
 EFI_STATUS
+EFIAPI
 DebugPortSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     ControllerHandle,
@@ -271,6 +274,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DebugPortStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     ControllerHandle,
@@ -440,6 +444,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DebugPortStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     ControllerHandle,
@@ -532,6 +537,7 @@ Returns:
 // Debugport protocol member functions
 //
 EFI_STATUS
+EFIAPI
 DebugPortReset (
   IN EFI_DEBUGPORT_PROTOCOL   *This
   )
@@ -568,6 +574,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DebugPortRead (
   IN EFI_DEBUGPORT_PROTOCOL   *This,
   IN UINT32                   Timeout,
@@ -626,6 +633,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DebugPortWrite (
   IN EFI_DEBUGPORT_PROTOCOL   *This,
   IN UINT32                   Timeout,
@@ -684,6 +692,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DebugPortPoll (
   IN EFI_DEBUGPORT_PROTOCOL   *This
   )
@@ -813,6 +822,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 ImageUnloadHandler (
   EFI_HANDLE ImageHandle
   )

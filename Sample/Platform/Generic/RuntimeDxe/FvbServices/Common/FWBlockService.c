@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -70,6 +70,7 @@ EFI_DRIVER_ENTRY_POINT (FvbInitialize)
 
 EFI_RUNTIMESERVICE
 VOID
+EFIAPI
 FvbVirtualddressChangeEvent (
   IN EFI_EVENT        Event,
   IN VOID             *Context
@@ -1040,6 +1041,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FvbProtocolGetBlockSize (
   IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL           *This,
   IN  EFI_LBA                                     Lba,
@@ -1331,6 +1333,7 @@ Returns:
 // FVB Extension Protocols
 //
 EFI_STATUS
+EFIAPI
 FvbExtendProtocolEraseCustomBlockRange (
   IN EFI_FVB_EXTENSION_PROTOCOL           *This,
   IN EFI_LBA                              StartLba,
@@ -1579,6 +1582,7 @@ GetFvbHeader (
 }
 
 EFI_STATUS
+EFIAPI
 FvbInitialize (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable

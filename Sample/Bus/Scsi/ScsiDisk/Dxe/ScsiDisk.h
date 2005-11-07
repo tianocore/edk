@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -80,6 +80,7 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gScsiDiskComponentName;
 #define ACTION_RETRY_COMMAND_LATER  0x02
 
 EFI_STATUS
+EFIAPI
 ScsiDiskReset (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  BOOLEAN                 ExtendedVerification
@@ -103,6 +104,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 ScsiDiskReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
@@ -132,6 +134,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 ScsiDiskWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
@@ -161,6 +164,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 ScsiDiskFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
   )

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,6 +22,7 @@ Revision History
 #include "AtapiPassThru.h"
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -29,6 +30,7 @@ AtapiScsiPassThruDriverBindingSupported (
   );
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -36,6 +38,7 @@ AtapiScsiPassThruDriverBindingStart (
   );
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
   IN  EFI_HANDLE                      Controller,
@@ -107,6 +110,7 @@ EFI_DRIVER_BINDING_PROTOCOL gAtapiScsiPassThruDriverBinding = {
 EFI_DRIVER_ENTRY_POINT (AtapiScsiPassThruDriverEntryPoint)
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -137,6 +141,7 @@ AtapiScsiPassThruDriverEntryPoint (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -215,6 +220,7 @@ AtapiScsiPassThruDriverBindingSupported (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -291,6 +297,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
   IN  EFI_HANDLE                      Controller,
@@ -454,6 +461,7 @@ RegisterAtapiScsiPassThru (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruFunction (
   IN EFI_SCSI_PASS_THRU_PROTOCOL                        *This,
   IN UINT32                                             Target,
@@ -541,6 +549,7 @@ AtapiScsiPassThruFunction (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruGetNextDevice (
   IN  EFI_SCSI_PASS_THRU_PROTOCOL    *This,
   IN OUT UINT32                      *Target,
@@ -616,6 +625,7 @@ AtapiScsiPassThruGetNextDevice (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruBuildDevicePath (
   IN     EFI_SCSI_PASS_THRU_PROTOCOL    *This,
   IN     UINT32                         Target,
@@ -694,6 +704,7 @@ AtapiScsiPassThruBuildDevicePath (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruGetTargetLun (
   IN  EFI_SCSI_PASS_THRU_PROTOCOL    *This,
   IN  EFI_DEVICE_PATH_PROTOCOL       *DevicePath,
@@ -757,6 +768,7 @@ AtapiScsiPassThruGetTargetLun (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruResetChannel (
   IN  EFI_SCSI_PASS_THRU_PROTOCOL   *This
   )
@@ -835,6 +847,7 @@ AtapiScsiPassThruResetChannel (
 }
 
 EFI_STATUS
+EFIAPI
 AtapiScsiPassThruResetTarget (
   IN EFI_SCSI_PASS_THRU_PROTOCOL    *This,
   IN UINT32                         Target,

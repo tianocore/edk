@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,7 @@ Abstract:
 #include EFI_PPI_DEFINITION (Security)
 
 EFI_STATUS
+EFIAPI
 SecurityPpiNotifyCallback (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,
@@ -65,6 +66,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SecurityPpiNotifyCallback (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,

@@ -817,85 +817,6 @@ Returns:
 }
 
 EFI_STATUS
-ResetAllPpbBusReg (
-  IN PCI_IO_DEVICE                      *Bridge,
-  IN UINT8                              StartBusNumber
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Bridge          - TODO: add argument description
-  StartBusNumber  - TODO: add argument description
-
-Returns:
-
-  EFI_SUCCESS - TODO: Add description for return value
-
---*/
-{
-  EFI_STATUS                      Status;
-  PCI_TYPE00                      Pci;
-  UINT8                           Device;
-  UINT16                          Register;
-  UINT8                           Func;
-  UINT64                          Address;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
-
-  PciRootBridgeIo = Bridge->PciRootBridgeIo;
-
-  for (Device = 0; Device <= PCI_MAX_DEVICE; Device++) {
-    for (Func = 0; Func <= PCI_MAX_FUNC; Func++) {
-
-      //
-      // Check to see whether a pci device is present
-      //
-      Status = PciDevicePresent (
-                PciRootBridgeIo,
-                &Pci,
-                StartBusNumber,
-                Device,
-                Func
-                );
-
-      if (!EFI_ERROR (Status) && (IS_PCI_BRIDGE (&Pci))) {
-        Register  = 0;
-        Address   = EFI_PCI_ADDRESS (StartBusNumber, Device, Func, 0x18);
-        Status = PciRootBridgeIo->Pci.Write (
-                                        PciRootBridgeIo,
-                                        EfiPciWidthUint16,
-                                        Address,
-                                        1,
-                                        &Register
-                                        );
-
-        Address = EFI_PCI_ADDRESS (StartBusNumber, Device, Func, 0x1A);
-        Status = PciRootBridgeIo->Pci.Write (
-                                        PciRootBridgeIo,
-                                        EfiPciWidthUint8,
-                                        Address,
-                                        1,
-                                        &Register
-                                        );
-      }
-
-      if (Func == 0 && !IS_PCI_MULTI_FUNC (&Pci)) {
-        //
-        // Skip sub functions, this is not a multi function device
-        //
-        Func = PCI_MAX_FUNC;
-      }
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS
 PciScanBus (
   IN PCI_IO_DEVICE                      *Bridge,
   IN UINT8                              StartBusNumber,
@@ -991,6 +912,21 @@ Returns:
 
       PciAddress = EFI_PCI_ADDRESS (StartBusNumber, Device, Func, 0);
 
+      if (!IS_PCI_BRIDGE (&Pci)) {
+        //
+        // PCI bridges will be called later
+        // Here just need for PCI device or PCI to cardbus controller
+        // EfiPciBeforeChildBusEnumeration for PCI Device Node
+        //
+        PreprocessController (
+            PciDevice,
+            PciDevice->BusNumber,
+            PciDevice->DeviceNumber,
+            PciDevice->FunctionNumber,
+            EfiPciBeforeChildBusEnumeration
+            );
+      }
+      
       //
       // For Pci Hotplug controller devcie only
       //
@@ -1013,6 +949,14 @@ Returns:
                                         Event,
                                         &State
                                         );
+                                        
+            PreprocessController (
+              PciDevice,
+              PciDevice->BusNumber,
+              PciDevice->DeviceNumber,
+              PciDevice->FunctionNumber,
+              EfiPciBeforeChildBusEnumeration
+            );                                        
             continue;
           }
         }
@@ -1095,6 +1039,9 @@ Returns:
                                           &Register
                                           );
 
+          //
+          // Nofify EfiPciBeforeChildBusEnumeration for PCI Brige
+          //
           PreprocessController (
             PciDevice,
             PciDevice->BusNumber,
@@ -1355,6 +1302,12 @@ Returns:
     //
   }
 
+  //                                                            
+  // Notify the bus allocation phase is finished for the first time
+  //                                                            
+  NotifyPhase (PciResAlloc, EfiPciHostBridgeEndBusAllocation);
+    
+                  
   if (gPciHotPlugInit != NULL) {
     //
     // Wait for all HPC initialized
@@ -1365,6 +1318,11 @@ Returns:
       return Status;
     }
 
+    //
+    // Notify the bus allocation phase is about to start for the 2nd time
+    //
+    NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
+  
     RootBridgeHandle = NULL;
     while (PciResAlloc->GetNextRootBridge (PciResAlloc, &RootBridgeHandle) == EFI_SUCCESS) {
 
@@ -1392,12 +1350,12 @@ Returns:
         return Status;
       }
     }
+      
+    //
+    // Notify the bus allocation phase is to end
+    //
+    NotifyPhase (PciResAlloc, EfiPciHostBridgeEndBusAllocation);
   }
-    
-  //
-  // Notify the bus allocation phase is to end
-  //
-  NotifyPhase (PciResAlloc, EfiPciHostBridgeEndBusAllocation);
 
   //
   // Notify the resource allocation phase is to start

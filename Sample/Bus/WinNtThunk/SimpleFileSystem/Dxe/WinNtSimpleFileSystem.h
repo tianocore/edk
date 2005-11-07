@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -99,6 +99,7 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gWinNtSimpleFileSystemComponentName;
 // Driver Binding protocol member functions
 //
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemDriverBindingSupported (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   ControllerHandle,
@@ -136,6 +137,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemDriverBindingStart (
   IN  EFI_DRIVER_BINDING_PROTOCOL   *This,
   IN  EFI_HANDLE                    ControllerHandle,
@@ -167,6 +169,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   ControllerHandle,
@@ -202,6 +205,7 @@ Returns:
 // Simple File System protocol member functions
 //
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemOpenVolume (
   IN  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *This,
   OUT EFI_FILE                        **Root
@@ -240,6 +244,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemOpen (
   IN  EFI_FILE  *This,
   OUT EFI_FILE  **NewHandle,
@@ -291,6 +296,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemClose (
   IN EFI_FILE  *This
   )
@@ -312,6 +318,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemDelete (
   IN EFI_FILE  *This
   )
@@ -335,6 +342,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemRead (
   IN     EFI_FILE  *This,
   IN OUT UINTN     *BufferSize,
@@ -371,6 +379,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemWrite (
   IN     EFI_FILE  *This,
   IN OUT UINTN     *BufferSize,
@@ -413,6 +422,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemSetPosition (
   IN EFI_FILE  *This,
   IN UINT64    Position
@@ -439,6 +449,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemGetPosition (
   IN  EFI_FILE  *This,
   OUT UINT64    *Position
@@ -465,6 +476,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemGetInfo (
   IN     EFI_FILE  *This,
   IN     EFI_GUID  *InformationType,
@@ -507,6 +519,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemSetInfo (
   IN EFI_FILE  *This,
   IN EFI_GUID  *InformationType,
@@ -553,6 +566,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtSimpleFileSystemFlush (
   IN EFI_FILE  *This
   )

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,7 @@ Revision History
 #include "ScsiLib.h"
 
 EFI_STATUS
+EFIAPI
 SCSIBusDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -30,6 +31,7 @@ SCSIBusDriverBindingSupported (
   );
 
 EFI_STATUS
+EFIAPI
 SCSIBusDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -37,6 +39,7 @@ SCSIBusDriverBindingStart (
   );
 
 EFI_STATUS
+EFIAPI
 SCSIBusDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
   IN  EFI_HANDLE                      Controller,
@@ -56,6 +59,7 @@ EFI_DRIVER_BINDING_PROTOCOL gSCSIBusDriverBinding = {
 EFI_DRIVER_ENTRY_POINT (ScsiBusControllerDriverEntryPoint)
 
 EFI_STATUS
+EFIAPI
 ScsiBusControllerDriverEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -90,6 +94,7 @@ ScsiBusControllerDriverEntryPoint (
 }
 
 EFI_STATUS
+EFIAPI
 SCSIBusDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -143,6 +148,7 @@ SCSIBusDriverBindingSupported (
 }
 
 EFI_STATUS
+EFIAPI
 SCSIBusDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -253,6 +259,7 @@ SCSIBusDriverBindingStart (
 }
 
 EFI_STATUS
+EFIAPI
 SCSIBusDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
   IN  EFI_HANDLE                      Controller,
@@ -362,6 +369,7 @@ SCSIBusDriverBindingStop (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiGetDeviceType (
   IN  EFI_SCSI_IO_PROTOCOL     *This,
   OUT UINT8                    *DeviceType
@@ -393,6 +401,7 @@ ScsiGetDeviceType (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiGetDeviceLocation (
   IN  EFI_SCSI_IO_PROTOCOL    *This,
   OUT UINT32                  *Target,
@@ -429,6 +438,7 @@ ScsiGetDeviceLocation (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiResetBus (
   IN  EFI_SCSI_IO_PROTOCOL     *This
   )
@@ -458,6 +468,7 @@ ScsiResetBus (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiResetDevice (
   IN  EFI_SCSI_IO_PROTOCOL     *This
   )
@@ -492,6 +503,7 @@ ScsiResetDevice (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiExecuteSCSICommand (
   IN  EFI_SCSI_IO_PROTOCOL                         *This,
   IN OUT  EFI_SCSI_IO_SCSI_REQUEST_PACKET          *Packet,

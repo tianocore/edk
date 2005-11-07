@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -219,6 +219,7 @@ Returns:
 
 
 EFI_STATUS
+EFIAPI
 StartGauge (
   IN EFI_PERFORMANCE_PROTOCOL         *This,
   IN EFI_HANDLE                       Handle,
@@ -284,6 +285,7 @@ Returns:
 
 
 EFI_STATUS
+EFIAPI
 EndGauge (
   IN EFI_PERFORMANCE_PROTOCOL         *This,
   IN EFI_HANDLE                       Handle,
@@ -344,6 +346,7 @@ Returns:
 
 
 EFI_GAUGE_DATA *
+EFIAPI
 GetGauge (
   IN EFI_PERFORMANCE_PROTOCOL         *This,
   IN EFI_HANDLE                       Handle,

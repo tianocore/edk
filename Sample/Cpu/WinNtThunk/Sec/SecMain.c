@@ -775,6 +775,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SecWinNtPeiLoadFile (
   IN  VOID                    *Pe32Data,
   IN  EFI_PHYSICAL_ADDRESS    *ImageAddress,

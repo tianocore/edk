@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -44,6 +44,7 @@ InstallConfigTable (
   );
 
 EFI_STATUS
+EFIAPI
 InitializeUNDIDriver (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -56,12 +57,14 @@ UNDI_notify_virtual (
   );
 
 VOID
+EFIAPI
 UndiNotifyExitBs (
   EFI_EVENT Event,
   VOID      *Context
   );
 
 EFI_STATUS
+EFIAPI
 UndiDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -69,6 +72,7 @@ UndiDriverSupported (
   );
 
 EFI_STATUS
+EFIAPI
 UndiDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -76,6 +80,7 @@ UndiDriverStart (
   );
 
 EFI_STATUS
+EFIAPI
 UndiDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -93,6 +98,7 @@ AppendMac2DevPath (
 // end function prototypes
 //
 VOID
+EFIAPI
 UndiNotifyVirtual (
   EFI_EVENT Event,
   VOID      *Context
@@ -153,6 +159,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 UndiNotifyExitBs (
   EFI_EVENT Event,
   VOID      *Context
@@ -192,6 +199,7 @@ static EFI_DRIVER_BINDING_PROTOCOL  mUndiDriverBinding = {
 EFI_DRIVER_ENTRY_POINT (InitializeUNDIDriver)
 
 EFI_STATUS
+EFIAPI
 InitializeUNDIDriver (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -246,6 +254,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 UndiDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -360,6 +369,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 UndiDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -656,6 +666,7 @@ UndiError:
 }
 
 EFI_STATUS
+EFIAPI
 UndiDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,

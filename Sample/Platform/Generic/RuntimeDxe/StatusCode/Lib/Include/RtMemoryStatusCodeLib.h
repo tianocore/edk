@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,9 +30,7 @@ Abstract:
 //
 // Initialization function
 //
-EFI_BOOTSERVICE
 VOID
-EFIAPI
 RtMemoryInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -42,9 +40,7 @@ RtMemoryInitializeStatusCode (
 //
 // Status code reporting function
 //
-EFI_RUNTIMESERVICE
 EFI_STATUS
-EFIAPI
 RtMemoryReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
@@ -57,11 +53,19 @@ RtMemoryReportStatusCode (
 //
 // Playback all prior status codes to a listener
 //
-EFI_RUNTIMESERVICE
+typedef
+EFI_STATUS
+(*PLATFORM_REPORT_STATUS_CODE) (
+  IN EFI_STATUS_CODE_TYPE     Type,
+  IN EFI_STATUS_CODE_VALUE    Value,
+  IN UINT32                   Instance,
+  IN EFI_GUID                 * CallerId OPTIONAL,
+  IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
+  );
+
 VOID
-EFIAPI
 PlaybackStatusCodes (
-  IN EFI_REPORT_STATUS_CODE   ReportStatusCode
+  IN PLATFORM_REPORT_STATUS_CODE  ReportStatusCode
   )
 ;
 

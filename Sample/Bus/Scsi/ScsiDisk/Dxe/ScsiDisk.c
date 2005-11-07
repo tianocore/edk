@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -20,6 +20,7 @@ Abstract:
 #include "scsidisk.h"
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -27,6 +28,7 @@ ScsiDiskDriverBindingSupported (
   );
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -34,6 +36,7 @@ ScsiDiskDriverBindingStart (
   );
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
   IN  EFI_HANDLE                      Controller,
@@ -53,6 +56,7 @@ EFI_DRIVER_BINDING_PROTOCOL gScsiDiskDriverBinding = {
 EFI_DRIVER_ENTRY_POINT (ScsiDiskDriverEntryPoint)
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -87,6 +91,7 @@ ScsiDiskDriverEntryPoint (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -140,6 +145,7 @@ ScsiDiskDriverBindingSupported (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -297,6 +303,7 @@ ScsiDiskDriverBindingStart (
 }
 
 EFI_STATUS
+EFIAPI
 ScsiDiskDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
   IN  EFI_HANDLE                      Controller,
@@ -363,6 +370,7 @@ ScsiDiskDriverBindingStop (
 //
 
 EFI_STATUS
+EFIAPI
 ScsiDiskReset (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  BOOLEAN                 ExtendedVerification
@@ -401,6 +409,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 ScsiDiskReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
@@ -512,6 +521,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 ScsiDiskWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This,
   IN  UINT32                  MediaId,
@@ -622,6 +632,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 ScsiDiskFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
   )

@@ -251,6 +251,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FileExplorerCallback (
   IN EFI_FORM_CALLBACK_PROTOCOL       *This,
   IN UINT16                           KeyValue,

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,6 +32,7 @@ Revision History
   }
 
 EFI_STATUS
+EFIAPI
 PeimInitializeWinNtStuff (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
@@ -42,6 +43,7 @@ EFI_GUID  mEfiPeiWinNtThunkProtocolGuid = EFI_PEI_WIN_NT_THUNK_PROTOCOL_GUID;
 EFI_PEIM_ENTRY_POINT (PeimInitializeWinNtStuff)
 
 EFI_STATUS
+EFIAPI
 PeimInitializeWinNtStuff (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices

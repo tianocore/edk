@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -76,6 +76,7 @@ Returns:
 //  HostBridge Resource Allocation interface
 //
 EFI_STATUS
+EFIAPI
 NotifyPhase (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE    Phase
@@ -99,6 +100,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 GetNextRootBridge (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN OUT EFI_HANDLE                                   *RootBridgeHandle
@@ -122,6 +124,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 GetAttributes (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
@@ -147,6 +150,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 StartBusEnumeration (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
@@ -172,6 +176,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SetBusNumbers (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
@@ -197,6 +202,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SubmitResources (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
@@ -222,6 +228,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 GetProposedResources (
   IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
   IN EFI_HANDLE                                       RootBridgeHandle,
@@ -247,6 +254,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 PreprocessController (
   IN  EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL  *This,
   IN  EFI_HANDLE                                        RootBridgeHandle,

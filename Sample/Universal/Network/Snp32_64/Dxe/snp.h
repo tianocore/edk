@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -266,6 +266,7 @@ snp_undi32_callback_sync (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_start (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this
   )
@@ -273,6 +274,7 @@ snp_undi32_start (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_stop (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this
   )
@@ -280,6 +282,7 @@ snp_undi32_stop (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_initialize (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
   IN UINTN                       extra_rx_buffer_size OPTIONAL,
@@ -289,6 +292,7 @@ snp_undi32_initialize (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_reset (
   IN EFI_SIMPLE_NETWORK_PROTOCOL  *this,
   IN BOOLEAN                      ExtendedVerification
@@ -297,6 +301,7 @@ snp_undi32_reset (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_shutdown (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this
   )
@@ -304,6 +309,7 @@ snp_undi32_shutdown (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_receive_filters (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
   IN UINT32                      enable,
@@ -316,6 +322,7 @@ snp_undi32_receive_filters (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_station_address (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
   IN BOOLEAN                     reset,
@@ -325,6 +332,7 @@ snp_undi32_station_address (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_statistics (
   IN EFI_SIMPLE_NETWORK_PROTOCOL  * this,
   IN BOOLEAN                      reset,
@@ -335,6 +343,7 @@ snp_undi32_statistics (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_mcast_ip_to_mac (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
   IN BOOLEAN                     IPv6,
@@ -345,6 +354,7 @@ snp_undi32_mcast_ip_to_mac (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_nvdata (
   IN EFI_SIMPLE_NETWORK_PROTOCOL *this,
   IN BOOLEAN                     read_write,
@@ -356,6 +366,7 @@ snp_undi32_nvdata (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_get_status (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
   OUT UINT32                     *interrupt_status OPTIONAL,
@@ -365,6 +376,7 @@ snp_undi32_get_status (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_transmit (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
   IN UINTN                       header_size,
@@ -378,6 +390,7 @@ snp_undi32_transmit (
 
 extern
 EFI_STATUS
+EFIAPI
 snp_undi32_receive (
   IN EFI_SIMPLE_NETWORK_PROTOCOL * this,
   OUT UINTN                      *header_size OPTIONAL,

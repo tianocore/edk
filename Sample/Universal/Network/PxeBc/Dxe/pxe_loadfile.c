@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -40,6 +40,7 @@ typedef union {
 
 STATIC
 EFI_PXE_BASE_CODE_CALLBACK_STATUS
+EFIAPI
 bc_callback (
   IN EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL  * This,
   IN EFI_PXE_BASE_CODE_FUNCTION           Function,
@@ -1348,6 +1349,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 LoadFile (
   IN EFI_LOAD_FILE_PROTOCOL           *This,
   IN EFI_DEVICE_PATH_PROTOCOL         *FilePath,

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -182,6 +182,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 plUnloadDebugSupportDriver (
   IN EFI_HANDLE                       ImageHandle
   )
@@ -206,6 +207,7 @@ Returns:
 // DebugSupport protocol member functions
 //
 EFI_STATUS
+EFIAPI
 GetMaximumProcessorIndex (
   IN EFI_DEBUG_SUPPORT_PROTOCOL       *This,
   OUT UINTN                           *MaxProcessorIndex
@@ -229,6 +231,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 RegisterPeriodicCallback (
   IN EFI_DEBUG_SUPPORT_PROTOCOL       *This,
   IN UINTN                            ProcessorIndex,
@@ -254,6 +257,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 RegisterExceptionCallback (
   IN EFI_DEBUG_SUPPORT_PROTOCOL       *This,
   IN UINTN                            ProcessorIndex,
@@ -281,6 +285,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 InvalidateInstructionCache (
   IN EFI_DEBUG_SUPPORT_PROTOCOL       *This,
   IN UINTN                            ProcessorIndex,

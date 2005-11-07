@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -59,15 +59,12 @@ Routine Description:
 Arguments:
 
   This       - The EFI_METRONOME_ARCH_PROTOCOL instance.
-
   TickNumber - Number of ticks to wait.
 
 Returns: 
 
   EFI_SUCCESS - The wait for the number of ticks specified by TickNumber 
                 succeeded.
-
-  EFI_TIMEOUT - A timeout occurred waiting for the specified number of ticks.
 
 --*/
 {
@@ -77,7 +74,7 @@ Returns:
   // Calculate the time to sleep.  Win API smallest unit to sleep is 1 millisec
   // Tick Period is in 100ns units, divide by 10000 to convert to ms
   //
-  SleepTime = DivU64x32 (MultU64x32 ((UINT64) TickNumber, TICK_PERIOD), 10000, NULL);
+  SleepTime = DivU64x32 ((MultU64x32 ((UINT64) TickNumber, TICK_PERIOD) + 9999), 10000, NULL);
   gWinNt->Sleep ((UINT32) SleepTime);
 
   return EFI_SUCCESS;
@@ -86,6 +83,7 @@ Returns:
 EFI_DRIVER_ENTRY_POINT (WinNtMetronomeDriverInitialize)
 
 EFI_STATUS
+EFIAPI
 WinNtMetronomeDriverInitialize (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable

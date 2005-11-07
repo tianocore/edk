@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,6 +25,7 @@ Revision History:
 // Function Prototypes
 //
 EFI_STATUS
+EFIAPI
 TerminalDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -32,6 +33,7 @@ TerminalDriverBindingSupported (
   );
 
 EFI_STATUS
+EFIAPI
 TerminalDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -39,6 +41,7 @@ TerminalDriverBindingStart (
   );
 
 EFI_STATUS
+EFIAPI
 TerminalDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -68,6 +71,7 @@ EFI_GUID gTerminalDriverGuid = {
 EFI_DRIVER_ENTRY_POINT (InitializeTerminal)
 
 EFI_STATUS
+EFIAPI
 InitializeTerminal (
   IN  EFI_HANDLE         ImageHandle,
   IN  EFI_SYSTEM_TABLE   *SystemTable
@@ -105,6 +109,7 @@ InitializeTerminal (
 }
 
 EFI_STATUS
+EFIAPI
 TerminalDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -202,6 +207,7 @@ TerminalDriverBindingSupported (
 }
 
 EFI_STATUS
+EFIAPI
 TerminalDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -692,6 +698,7 @@ Error:
 }
 
 EFI_STATUS
+EFIAPI
 TerminalDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL   *This,
   IN  EFI_HANDLE                    Controller,

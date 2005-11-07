@@ -35,6 +35,7 @@ extern UINT8                      BdsStrings[];
 extern BOOLEAN                    gConnectAllHappened;
 
 EFI_STATUS
+EFIAPI
 BootManagerCallbackRoutine (
   IN EFI_FORM_CALLBACK_PROTOCOL       *This,
   IN UINT16                           KeyValue,

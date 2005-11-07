@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -74,6 +74,7 @@ extern EFI_DRIVER_BINDING_PROTOCOL  gScsiBusDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL  gScsiBusComponentName;
 
 EFI_STATUS
+EFIAPI
 ScsiGetDeviceType (
   IN  EFI_SCSI_IO_PROTOCOL     *This,
   OUT UINT8                    *DeviceType
@@ -97,6 +98,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 ScsiResetBus (
   IN  EFI_SCSI_IO_PROTOCOL     *This
   )
@@ -118,6 +120,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 ScsiResetDevice (
   IN  EFI_SCSI_IO_PROTOCOL     *This
   )
@@ -139,6 +142,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 ScsiExecuteSCSICommand (
   IN  EFI_SCSI_IO_PROTOCOL                 *This,
   IN OUT  EFI_SCSI_IO_SCSI_REQUEST_PACKET  *CommandPacket,

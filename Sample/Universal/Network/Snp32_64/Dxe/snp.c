@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -40,12 +40,14 @@ pxe_get_stn_addr (
   );
 
 EFI_STATUS
+EFIAPI
 InitializeSnpNiiDriver (
   IN EFI_HANDLE       image_handle,
   IN EFI_SYSTEM_TABLE *system_table
   );
 
 EFI_STATUS
+EFIAPI
 SimpleNetworkDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -53,6 +55,7 @@ SimpleNetworkDriverSupported (
   );
 
 EFI_STATUS
+EFIAPI
 SimpleNetworkDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -60,6 +63,7 @@ SimpleNetworkDriverStart (
   );
 
 EFI_STATUS
+EFIAPI
 SimpleNetworkDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -351,6 +355,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SimpleNetworkDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -526,6 +531,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SimpleNetworkDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -1184,6 +1190,7 @@ NiiError:
 }
 
 EFI_STATUS
+EFIAPI
 SimpleNetworkDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -1308,6 +1315,7 @@ Returns:
 EFI_DRIVER_ENTRY_POINT (InitializeSnpNiiDriver)
 
 EFI_STATUS
+EFIAPI
 InitializeSnpNiiDriver (
   IN EFI_HANDLE       ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable

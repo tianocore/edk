@@ -134,6 +134,7 @@ UsbDeviceConfiguration (
 //
 STATIC
 VOID
+EFIAPI
 UsbEnumeration (
   IN EFI_EVENT     Event,
   IN VOID          *Context
@@ -1259,6 +1260,7 @@ UsbDeviceDeConfiguration (
 //
 STATIC
 EFI_STATUS
+EFIAPI
 OnHubInterruptComplete (
   IN  VOID          *Data,
   IN  UINTN         DataLength,
@@ -1375,6 +1377,7 @@ OnHubInterruptComplete (
 //
 STATIC
 VOID
+EFIAPI
 UsbEnumeration (
   IN EFI_EVENT     Event,
   IN VOID          *Context

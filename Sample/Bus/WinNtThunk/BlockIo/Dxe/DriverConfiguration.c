@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,7 @@ Abstract:
 // EFI Driver Configuration Functions
 //
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverConfigurationSetOptions (
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
   IN  EFI_HANDLE                                             ControllerHandle,
@@ -32,6 +33,7 @@ WinNtBlockIoDriverConfigurationSetOptions (
   );
 
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverConfigurationOptionsValid (
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
   IN  EFI_HANDLE                                      ControllerHandle,
@@ -39,6 +41,7 @@ WinNtBlockIoDriverConfigurationOptionsValid (
   );
 
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverConfigurationForceDefaults (
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
   IN  EFI_HANDLE                                             ControllerHandle,
@@ -58,6 +61,7 @@ EFI_DRIVER_CONFIGURATION_PROTOCOL gWinNtBlockIoDriverConfiguration = {
 };
 
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverConfigurationSetOptions (
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
   IN  EFI_HANDLE                                             ControllerHandle,
@@ -173,6 +177,7 @@ WinNtBlockIoDriverConfigurationSetOptions (
 }
 
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverConfigurationOptionsValid (
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
   IN  EFI_HANDLE                                      ControllerHandle,
@@ -256,6 +261,7 @@ WinNtBlockIoDriverConfigurationOptionsValid (
 }
 
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverConfigurationForceDefaults (
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
   IN  EFI_HANDLE                                             ControllerHandle,

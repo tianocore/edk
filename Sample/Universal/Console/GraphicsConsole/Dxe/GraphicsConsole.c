@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,6 +34,7 @@ Remaining Tasks
 // Function Prototypes
 //
 EFI_STATUS
+EFIAPI
 GraphicsConsoleControllerDriverSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -41,6 +42,7 @@ GraphicsConsoleControllerDriverSupported (
   );
 
 EFI_STATUS
+EFIAPI
 GraphicsConsoleControllerDriverStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -48,6 +50,7 @@ GraphicsConsoleControllerDriverStart (
   );
 
 EFI_STATUS
+EFIAPI
 GraphicsConsoleControllerDriverStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,

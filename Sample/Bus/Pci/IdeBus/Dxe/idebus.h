@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -111,6 +111,7 @@ extern EFI_DRIVER_BINDING_PROTOCOL  gIDEBusDriverBinding;
 // Driver model protocol interface
 //
 EFI_STATUS
+EFIAPI
 IDEBusControllerDriverEntryPoint (
   IN EFI_HANDLE                   ImageHandle,
   IN EFI_SYSTEM_TABLE             *SystemTable
@@ -134,6 +135,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEBusDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -159,6 +161,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEBusDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -184,6 +187,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEBusDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL *This,
   IN  EFI_HANDLE                  Controller,
@@ -214,6 +218,7 @@ Returns:
 // Block I/O Protocol Interface
 //
 EFI_STATUS
+EFIAPI
 IDEBlkIoReset (
   IN  EFI_BLOCK_IO_PROTOCOL       *This,
   IN  BOOLEAN                     ExtendedVerification
@@ -237,6 +242,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEBlkIoReadBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL       *This,
   IN  UINT32                      MediaId,
@@ -266,6 +272,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEBlkIoWriteBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL       *This,
   IN  UINT32                      MediaId,
@@ -295,6 +302,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEBlkIoFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL       *This
   )
@@ -339,6 +347,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEDiskInfoInquiry (
   IN EFI_DISK_INFO_PROTOCOL       *This,
   IN OUT VOID                     *InquiryData,
@@ -364,6 +373,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEDiskInfoIdentify (
   IN EFI_DISK_INFO_PROTOCOL       *This,
   IN OUT VOID                     *IdentifyData,
@@ -389,6 +399,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEDiskInfoSenseData (
   IN EFI_DISK_INFO_PROTOCOL       *This,
   IN OUT VOID                     *SenseData,
@@ -416,6 +427,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 IDEDiskInfoWhichIde (
   IN EFI_DISK_INFO_PROTOCOL       *This,
   OUT UINT32                      *IdeChannel,

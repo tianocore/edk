@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,7 @@ Abstract:
 // EFI Driver Diagnostics Functions
 //
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverDiagnosticsRunDiagnostics (
   IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
   IN  EFI_HANDLE                                    ControllerHandle,
@@ -43,6 +44,7 @@ EFI_DRIVER_DIAGNOSTICS_PROTOCOL gWinNtBlockIoDriverDiagnostics = {
 };
 
 EFI_STATUS
+EFIAPI
 WinNtBlockIoDriverDiagnosticsRunDiagnostics (
   IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
   IN  EFI_HANDLE                                    ControllerHandle,

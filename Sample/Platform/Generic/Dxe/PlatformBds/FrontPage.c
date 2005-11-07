@@ -41,6 +41,7 @@ extern EFI_HII_HANDLE       gFrontPageHandle;
 extern EFI_GUID             gBdsStringPackGuid;
 
 EFI_STATUS
+EFIAPI
 FrontPageCallbackRoutine (
   IN EFI_FORM_CALLBACK_PROTOCOL       *This,
   IN UINT16                           KeyValue,

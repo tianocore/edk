@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -54,6 +54,7 @@ typedef struct _EBC_IMAGE_LIST {
 // Function prototypes
 //
 EFI_STATUS
+EFIAPI
 InitializeEbcDriver (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -75,6 +76,7 @@ ExecuteEbcImageEntryPoint (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcUnloadImage (
   IN EFI_EBC_PROTOCOL     *This,
   IN EFI_HANDLE           ImageHandle
@@ -82,6 +84,7 @@ EbcUnloadImage (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcCreateThunk (
   IN EFI_EBC_PROTOCOL     *This,
   IN EFI_HANDLE           ImageHandle,
@@ -91,6 +94,7 @@ EbcCreateThunk (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcGetVersion (
   IN EFI_EBC_PROTOCOL     *This,
   IN OUT UINT64           *Version
@@ -120,6 +124,7 @@ EbcInterpret (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcRegisterICacheFlush (
   IN EFI_EBC_PROTOCOL               *This,
   IN EBC_ICACHE_FLUSH               Flush
@@ -127,6 +132,7 @@ EbcRegisterICacheFlush (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugGetMaximumProcessorIndex (
   IN EFI_DEBUG_SUPPORT_PROTOCOL     *This,
   OUT UINTN                         *MaxProcessorIndex
@@ -134,6 +140,7 @@ EbcDebugGetMaximumProcessorIndex (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugRegisterPeriodicCallback (
   IN EFI_DEBUG_SUPPORT_PROTOCOL     *This,
   IN UINTN                          ProcessorIndex,
@@ -142,6 +149,7 @@ EbcDebugRegisterPeriodicCallback (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugRegisterExceptionCallback (
   IN EFI_DEBUG_SUPPORT_PROTOCOL     *This,
   IN UINTN                          ProcessorIndex,
@@ -151,6 +159,7 @@ EbcDebugRegisterExceptionCallback (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugInvalidateInstructionCache (
   IN EFI_DEBUG_SUPPORT_PROTOCOL     *This,
   IN UINTN                          ProcessorIndex,
@@ -181,6 +190,7 @@ static EFI_GUID               mEfiEbcVmTestProtocolGuid = EFI_EBC_VM_TEST_PROTOC
 EFI_DRIVER_ENTRY_POINT (InitializeEbcDriver)
 
 EFI_STATUS
+EFIAPI
 InitializeEbcDriver (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -331,6 +341,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcCreateThunk (
   IN EFI_EBC_PROTOCOL   *This,
   IN EFI_HANDLE         ImageHandle,
@@ -374,6 +385,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugGetMaximumProcessorIndex (
   IN EFI_DEBUG_SUPPORT_PROTOCOL          *This,
   OUT UINTN                              *MaxProcessorIndex
@@ -402,6 +414,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugRegisterPeriodicCallback (
   IN EFI_DEBUG_SUPPORT_PROTOCOL  *This,
   IN UINTN                       ProcessorIndex,
@@ -432,6 +445,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugRegisterExceptionCallback (
   IN EFI_DEBUG_SUPPORT_PROTOCOL  *This,
   IN UINTN                       ProcessorIndex,
@@ -463,6 +477,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcDebugInvalidateInstructionCache (
   IN EFI_DEBUG_SUPPORT_PROTOCOL          *This,
   IN UINTN                               ProcessorIndex,
@@ -699,6 +714,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcUnloadImage (
   IN EFI_EBC_PROTOCOL   *This,
   IN EFI_HANDLE         ImageHandle
@@ -865,6 +881,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcRegisterICacheFlush (
   IN EFI_EBC_PROTOCOL   *This,
   IN EBC_ICACHE_FLUSH   Flush
@@ -876,6 +893,7 @@ EbcRegisterICacheFlush (
 
 STATIC
 EFI_STATUS
+EFIAPI
 EbcGetVersion (
   IN EFI_EBC_PROTOCOL   *This,
   IN OUT UINT64         *Version

@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -205,6 +205,7 @@ Returns:
 // Driver Binding Protocol function prototypes
 //
 EFI_STATUS
+EFIAPI
 WinNtBusDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Handle,
@@ -230,6 +231,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtBusDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     ParentHandle,
@@ -255,6 +257,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 WinNtBusDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,

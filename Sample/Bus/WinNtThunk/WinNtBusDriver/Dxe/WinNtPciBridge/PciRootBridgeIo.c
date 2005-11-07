@@ -42,6 +42,7 @@ RESOURCE_CONFIGURATION  mConfiguration = {
 //
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPollMem (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -53,6 +54,7 @@ RootBridgeIoPollMem (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPollIo (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -64,6 +66,7 @@ RootBridgeIoPollIo (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoMemRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -73,6 +76,7 @@ RootBridgeIoMemRead (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoMemWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -82,6 +86,7 @@ RootBridgeIoMemWrite (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoIoRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -91,6 +96,7 @@ RootBridgeIoIoRead (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoIoWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -100,6 +106,7 @@ RootBridgeIoIoWrite (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoCopyMem (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL          *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH    Width,
@@ -109,6 +116,7 @@ RootBridgeIoCopyMem (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPciRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -118,6 +126,7 @@ RootBridgeIoPciRead (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPciWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -127,6 +136,7 @@ RootBridgeIoPciWrite (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoMap (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL            *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  Operation,
@@ -137,12 +147,14 @@ RootBridgeIoMap (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoUnmap (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  VOID                             *Mapping
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoAllocateBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  EFI_ALLOCATE_TYPE                Type,
@@ -153,6 +165,7 @@ RootBridgeIoAllocateBuffer (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoFreeBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  UINTN                            Pages,
@@ -160,11 +173,13 @@ RootBridgeIoFreeBuffer (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoFlush (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoGetAttributes (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT UINT64                           *Supported,
@@ -172,6 +187,7 @@ RootBridgeIoGetAttributes (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
@@ -180,6 +196,7 @@ RootBridgeIoSetAttributes (
   );
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoConfiguration (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT    VOID                             **Resources
@@ -333,6 +350,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPollMem (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -429,6 +447,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPollIo (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -526,6 +545,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoMemRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -621,6 +641,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoMemWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -716,6 +737,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoIoRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -838,6 +860,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoIoWrite (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL         *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH   Width,
@@ -959,6 +982,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoCopyMem (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL          *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH    Width,
@@ -1050,6 +1074,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPciRead (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -1090,6 +1115,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoPciWrite (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -1129,6 +1155,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoMap (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL            *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  Operation,
@@ -1269,6 +1296,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoUnmap (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN VOID                             *Mapping
@@ -1326,6 +1354,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoAllocateBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  EFI_ALLOCATE_TYPE                Type,
@@ -1403,6 +1432,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoFreeBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  UINTN                            Pages,
@@ -1430,6 +1460,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoFlush (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL           *This
   )
@@ -1452,6 +1483,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoGetAttributes (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT UINT64                           *Supported,
@@ -1495,6 +1527,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
@@ -1568,6 +1601,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 RootBridgeIoConfiguration (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT    VOID                             **Resources

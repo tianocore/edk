@@ -714,4 +714,27 @@ Returns:
 --*/
 ;
 
+EFI_STATUS
+ResetAllPpbBusReg (
+  IN PCI_IO_DEVICE                      *Bridge,
+  IN UINT8                              StartBusNumber
+  )
+/*++
+
+Routine Description:
+
+  Reset bus register
+
+Arguments:
+
+  Bridge          - a pointer to the PCI_IO_DEVICE
+  StartBusNumber  - the number of bus
+
+Returns:
+
+  None
+
+--*/
+;
+
 #endif

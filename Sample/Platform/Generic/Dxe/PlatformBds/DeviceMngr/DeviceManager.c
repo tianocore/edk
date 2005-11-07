@@ -39,6 +39,7 @@ STRING_REF                        gStringTokenTable[] = {
 };
 
 EFI_STATUS
+EFIAPI
 DeviceManagerCallbackRoutine (
   IN EFI_FORM_CALLBACK_PROTOCOL       *This,
   IN UINT16                           KeyValue,

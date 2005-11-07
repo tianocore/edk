@@ -30,6 +30,7 @@ Abstract:
 EFI_DRIVER_ENTRY_POINT (DriverSampleInit)
 
 EFI_STATUS
+EFIAPI
 DriverCallback (
   IN EFI_FORM_CALLBACK_PROTOCOL       *This,
   IN UINT16                           KeyValue,
@@ -443,6 +444,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DriverSampleInit (
   IN EFI_HANDLE                   ImageHandle,
   IN EFI_SYSTEM_TABLE             *SystemTable

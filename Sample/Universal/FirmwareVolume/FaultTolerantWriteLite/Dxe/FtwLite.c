@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -47,6 +47,7 @@ Notes:
 // Fault Tolerant Write Protocol API
 //
 EFI_STATUS
+EFIAPI
 FtwLiteWrite (
   IN EFI_FTW_LITE_PROTOCOL                 *This,
   IN EFI_HANDLE                            FvbHandle,
@@ -605,6 +606,7 @@ Returns:
 EFI_DRIVER_ENTRY_POINT (InitializeFtwLite)
 
 EFI_STATUS
+EFIAPI
 InitializeFtwLite (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable

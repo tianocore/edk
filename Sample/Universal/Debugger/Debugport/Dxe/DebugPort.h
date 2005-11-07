@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -105,6 +105,7 @@ DebugPortEntryPoint (
 ;
 
 EFI_STATUS
+EFIAPI
 DebugPortSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -113,6 +114,7 @@ DebugPortSupported (
 ;
 
 EFI_STATUS
+EFIAPI
 DebugPortStart (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,
@@ -121,6 +123,7 @@ DebugPortStart (
 ;
 
 EFI_STATUS
+EFIAPI
 DebugPortStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN  EFI_HANDLE                     Controller,
@@ -156,12 +159,14 @@ DebugPortComponentNameGetControllerName (
 // DebugPort member functions
 //
 EFI_STATUS
+EFIAPI
 DebugPortReset (
   IN EFI_DEBUGPORT_PROTOCOL         *This
   )
 ;
 
 EFI_STATUS
+EFIAPI
 DebugPortRead (
   IN EFI_DEBUGPORT_PROTOCOL         *This,
   IN UINT32                         Timeout,
@@ -171,6 +176,7 @@ DebugPortRead (
 ;
 
 EFI_STATUS
+EFIAPI
 DebugPortWrite (
   IN EFI_DEBUGPORT_PROTOCOL         *This,
   IN UINT32                         Timeout,
@@ -180,6 +186,7 @@ DebugPortWrite (
 ;
 
 EFI_STATUS
+EFIAPI
 DebugPortPoll (
   IN EFI_DEBUGPORT_PROTOCOL         *This
   )

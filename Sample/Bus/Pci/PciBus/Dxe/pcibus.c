@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,6 +28,7 @@ Revision History
 //
 
 EFI_STATUS
+EFIAPI
 PciBusEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -87,6 +88,7 @@ EFI_PCI_PLATFORM_PROTOCOL                     *gPciPlatformProtocol;
 // PCI Bus Driver Support Functions
 //
 EFI_STATUS
+EFIAPI
 PciBusEntryPoint (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -138,6 +140,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 PciBusDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL    *This,
   IN EFI_HANDLE                     Controller,

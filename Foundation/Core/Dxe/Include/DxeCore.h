@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -2286,7 +2286,9 @@ Returns:
 --*/
 ;
 
+EFI_DXESERVICE
 EFI_STATUS
+EFIAPI
 CoreDispatcher (
   VOID
   )
@@ -2316,8 +2318,9 @@ Returns:
 
 --*/
 ;
-
+EFI_DXESERVICE
 EFI_STATUS
+EFIAPI
 CoreSchedule (
   IN  EFI_HANDLE  FirmwareVolumeHandle,
   IN  EFI_GUID    *DriverName
@@ -2345,7 +2348,9 @@ Returns:
 --*/
 ;
 
+EFI_DXESERVICE
 EFI_STATUS
+EFIAPI
 CoreTrust (
   IN  EFI_HANDLE  FirmwareVolumeHandle,
   IN  EFI_GUID    *DriverName
