@@ -1343,13 +1343,27 @@ InitializeTagStructures (
     case EFI_IFR_AND_OP:
     case EFI_IFR_OR_OP:
     case EFI_IFR_NOT_OP:
+    case EFI_IFR_GT_OP:
+    case EFI_IFR_GE_OP:
+    case EFI_IFR_TRUE_OP:
+    case EFI_IFR_FALSE_OP:
       InconsistentTags->Operand = ((EFI_IFR_NOT *) &RawFormSet[Index])->Header.OpCode;
 
       //
       // Since this op-code doesn't use the next field(s), initialize them with something invalid.
       // Unfortunately 0 is a valid offset value for a QuestionId
       //
-      InconsistentTags->QuestionId1         = INVALID_OFFSET_VALUE;
+      
+      //
+      // Reserve INVALID_OFFSET_VALUE - 1 for TRUE or FALSE because they are inconsistency tags also, but
+      // have no coresponding id. The examination of id is needed by evaluating boolean expression.
+      //
+      if (RawFormSet[Index] == EFI_IFR_TRUE_OP ||
+          RawFormSet[Index] == EFI_IFR_FALSE_OP) {
+        InconsistentTags->QuestionId1         = INVALID_OFFSET_VALUE - 1;
+      } else {
+        InconsistentTags->QuestionId1         = INVALID_OFFSET_VALUE;
+      }
       InconsistentTags->QuestionId2         = INVALID_OFFSET_VALUE;
       InconsistentTags->ConsistencyId       = gConsistencyId;
       FormTags->Tags[CurrTag].ConsistencyId = gConsistencyId;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1050,7 +1050,8 @@ GetSelectionInputPopUp (
   // Get the number of one of options present and its size
   //
   for (Index = MenuOption->TagIndex; MenuOption->Tags[Index].Operand != EFI_IFR_END_ONE_OF_OP; Index++) {
-    if (MenuOption->Tags[Index].Operand == EFI_IFR_ONE_OF_OPTION_OP) {
+    if (MenuOption->Tags[Index].Operand == EFI_IFR_ONE_OF_OPTION_OP &&
+        !MenuOption->Tags[Index].Suppress) {
       if (!FirstOptionFoundFlag) {
         FirstOption           = Index;
         FirstOptionFoundFlag  = TRUE;
@@ -1064,7 +1065,7 @@ GetSelectionInputPopUp (
       //
       if (Initialized) {
         for (ValueBackup = (UINT8) MenuOption->TagIndex;
-             MenuOption->Tags[ValueBackup].Operand != EFI_IFR_END_ONE_OF_OP;
+             MenuOption->Tags[ValueBackup].Operand != EFI_IFR_END_OP;
              ValueBackup++
             ) {
           if (MenuOption->Tags[ValueBackup].Value == ((UINT8 *) ValueArrayBackup)[Index - MenuOption->TagIndex - 1]) {
@@ -1227,7 +1228,19 @@ GetSelectionInputPopUp (
         //
         // Code to display the text should go here. Follwed by the [*]
         //
-        if (MenuOption->Tags[ValueBackup].Value == TempValue) {
+        if (MenuOption->Tags[ValueBackup].Suppress == TRUE) {
+          //
+          // Don't show the one, so decrease the Index2 for balance
+          //
+          Index2--;
+        } else if (MenuOption->Tags[ValueBackup].GrayOut == TRUE) {
+          //
+          // Gray Out the one
+          //
+          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | POPUP_BACKGROUND);
+          PrintStringAt (Start + 2, Index2, StringPtr);
+          gST->ConOut->SetAttribute (gST->ConOut, POPUP_TEXT | POPUP_BACKGROUND);
+        } else if (MenuOption->Tags[ValueBackup].Value == TempValue) {
           //
           // Highlight the selected one
           //
@@ -1453,8 +1466,32 @@ TheKey:
             } else {
               if (Key.ScanCode == SCAN_UP) {
                 TempIndex = Index - 1;
+                
+                //
+                // Keep going until meets meaningful tag.
+                //
+                while ((MenuOption->Tags[TempIndex].Operand != EFI_IFR_ONE_OF_OPTION_OP  &&
+                         MenuOption->Tags[TempIndex].Operand != EFI_IFR_ONE_OF_OP        &&
+                         MenuOption->Tags[TempIndex].Operand != EFI_IFR_END_ONE_OF_OP)
+                       ||
+                       (MenuOption->Tags[TempIndex].Operand == EFI_IFR_ONE_OF_OPTION_OP  &&
+                         (MenuOption->Tags[TempIndex].Suppress || MenuOption->Tags[TempIndex].GrayOut))) {
+                  TempIndex--;
+                }
               } else {
                 TempIndex = Index + 1;
+
+                //
+                // Keep going until meets meaningful tag.
+                //
+                while ((MenuOption->Tags[TempIndex].Operand != EFI_IFR_ONE_OF_OPTION_OP  &&
+                         MenuOption->Tags[TempIndex].Operand != EFI_IFR_ONE_OF_OP        &&
+                         MenuOption->Tags[TempIndex].Operand != EFI_IFR_END_ONE_OF_OP)
+                       ||
+                       (MenuOption->Tags[TempIndex].Operand == EFI_IFR_ONE_OF_OPTION_OP  &&
+                         (MenuOption->Tags[TempIndex].Suppress || MenuOption->Tags[TempIndex].GrayOut))) {
+                  TempIndex++;
+                }
               }
               //
               // The option value is the same as what is stored in NV store.  This is where we take action

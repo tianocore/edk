@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -98,18 +98,30 @@ Returns:
 
 VOID
 ExtractVariableData (
-  IN     EFI_HII_DATA_TABLE   *DataTable,
+  IN OUT EFI_HII_DATA_TABLE   *DataTable,
   IN     UINT8                *IfrData,
   IN OUT UINT8                **ExportBufferPtr
   )
 /*++
 
 Routine Description:
+
+  This function extract the EFI_HII_VARIABLE_PACK portion from the 
+  each of the EFI_HII_PACKAGE_INSTANCE in HII handle database.
   
 Arguments:
 
+  DataTable       ¨C On input, this parameter point to the EFI_HII_DATA_TABLE structure
+                    of the final data buffer for the EFI_HII_EXPORT interface. This function
+                    update the NumberOfVariableData attribute.
+  IfrData         - It points to a staring address of a EFI_HII_IFR_PACK structure.
+  ExportBufferPtr ¨C On input, it points the starting address of the data buffer to 
+                    host the variable pack. On output, it is the starting address
+                    of data buffer for the next extraction operation.
 Returns: 
 
+  VOID
+  
 --*/
 {
   EFI_HII_VARIABLE_PACK       *VariableContents;
@@ -156,7 +168,7 @@ Returns:
         );
       if (CallbackHandle != 0) {
         Status = gBS->HandleProtocol (
-                        &CallbackHandle,
+                        (EFI_HANDLE) (UINTN) CallbackHandle,
                         &gEfiFormCallbackProtocolGuid,
                         &FormCallback
                         );
@@ -188,20 +200,20 @@ Returns:
 
       if ((FormCallback != NULL) && (FormCallback->NvRead != NULL)) {
         Status = FormCallback->NvRead (
-                                FormCallback,
-                                L"Setup",
-                                &VariableContents->VariableGuid,
-                                NULL,
-                                (UINTN *) &TempValue,
-                                (VOID *) ExportBuffer
-                                );
+                                 FormCallback,
+                                 L"Setup",
+                                 &VariableContents->VariableGuid,
+                                 NULL,
+                                 &TempValue,
+                                 ExportBuffer
+                                 );
       } else {
         Status = gRT->GetVariable (
                         L"Setup",
                         &VariableContents->VariableGuid,
                         NULL,
-                        (UINTN *) &TempValue,
-                        (VOID *) ExportBuffer
+                        &TempValue,
+                        ExportBuffer
                         );
       }
 
@@ -254,20 +266,20 @@ Returns:
 
       if ((FormCallback != NULL) && (FormCallback->NvRead != NULL)) {
         Status = FormCallback->NvRead (
-                                FormCallback,
-                                String,
-                                &VariableContents->VariableGuid,
-                                NULL,
-                                (UINTN *) &TempValue,
-                                (VOID *) ExportBuffer
-                                );
+                                 FormCallback,
+                                 String,
+                                 &VariableContents->VariableGuid,
+                                 NULL,
+                                 &TempValue,
+                                 ExportBuffer
+                                 );
       } else {
         Status = gRT->GetVariable (
                         String,
                         &VariableContents->VariableGuid,
                         NULL,
-                        (UINTN *) &TempValue,
-                        (VOID *) ExportBuffer
+                        &TempValue,
+                        ExportBuffer
                         );
       }
 
@@ -879,7 +891,7 @@ HiiGetDefaultImagePopulateMap (
                     &Guid,
                     NULL,
                     &Size,
-                    (VOID *) Map
+                    Map
                     );
   } else {
     Status = gRT->GetVariable (
@@ -887,7 +899,7 @@ HiiGetDefaultImagePopulateMap (
                     &Guid,
                     NULL,
                     &Size,
-                    (VOID *) Map
+                    Map
                     );
   }
   if (!EFI_ERROR (Status)) {

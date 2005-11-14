@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1583,7 +1583,7 @@ IfrToFormTag (
   case EFI_IFR_EQ_ID_ID_OP:
     EfiCopyMem (&TargetTag->Id, &((EFI_IFR_EQ_ID_ID *) FormData)->QuestionId1, sizeof (UINT16));
     EfiCopyMem (&TargetTag->Id2, &((EFI_IFR_EQ_ID_ID *) FormData)->QuestionId2, sizeof (UINT16));
-    TargetTag->StorageWidth   = ((EFI_IFR_EQ_ID_VAL *) FormData)->Width;
+    TargetTag->StorageWidth   = ((EFI_IFR_EQ_ID_ID *) FormData)->Width;
     TargetTag->VariableNumber = CurrentVariable;
     TargetTag->VariableNumber = CurrentVariable2;
     break;
@@ -1591,7 +1591,7 @@ IfrToFormTag (
   case EFI_IFR_EQ_ID_LIST_OP:
     EfiCopyMem (&TargetTag->Id, &((EFI_IFR_EQ_ID_LIST *) FormData)->QuestionId, sizeof (UINT16));
     EfiCopyMem (&TargetTag->Id2, &((EFI_IFR_EQ_ID_LIST *) FormData)->ListLength, sizeof (UINT16));
-    TargetTag->StorageWidth = ((EFI_IFR_EQ_ID_VAL *) FormData)->Width;
+    TargetTag->StorageWidth = ((EFI_IFR_EQ_ID_LIST *) FormData)->Width;
 
     TargetTag->IntList      = EfiLibAllocateZeroPool (TargetTag->Id2 * sizeof (UINT16));
     ASSERT (TargetTag->IntList);

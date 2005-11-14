@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,6 +61,10 @@ Returns:
 
   EfiDebugAssertWorker (FileName, LineNumber, Description, sizeof (Buffer), Buffer);
 
+  //
+  // We choose NOT to use PEI_REPORT_STATUS_CODE here, because when debug is enable,
+  // we want get enough information if assert.
+  //
   (**PeiServices).PeiReportStatusCode (
                     PeiServices,
                     (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED),
@@ -110,6 +114,10 @@ Returns:
   VA_START (Marker, Format);
   EfiDebugVPrintWorker (ErrorLevel, Format, Marker, sizeof (Buffer), Buffer);
 
+  //
+  // We choose NOT to use PEI_REPORT_STATUS_CODE here, because when debug is enable,
+  // we want get enough information if assert.
+  //
   (**PeiServices).PeiReportStatusCode (
                     PeiServices,
                     EFI_DEBUG_CODE,

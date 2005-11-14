@@ -63,7 +63,6 @@ Returns:
 {
   EFI_STATUS                        Status;
   PEI_CORE_TEMP_POINTERS            TempPtr;
-  EFI_DEVICE_HANDLE_EXTENDED_DATA   ExtendedData;
   UINTN                             PrivateDataInMem;
   BOOLEAN                           NextFvFound;
   EFI_FIRMWARE_VOLUME_HEADER        *NextFvAddress;
@@ -80,15 +79,19 @@ Returns:
 
   )
 
-  ExtendedData.DataHeader.HeaderSize = (UINT16)sizeof (EFI_STATUS_CODE_DATA);
-  ExtendedData.DataHeader.Size = (UINT16)(sizeof (EFI_DEVICE_HANDLE_EXTENDED_DATA) - ExtendedData.DataHeader.HeaderSize);
-
-  PeiCoreCopyMem (
-    &ExtendedData.DataHeader.Type, 
-    &gEfiStatusCodeSpecificDataGuid, 
-    sizeof (EFI_GUID)
-    ); 
+  PEI_REPORT_STATUS_CODE_CODE (
+    
+    EFI_DEVICE_HANDLE_EXTENDED_DATA   ExtendedData;
+    
+    ExtendedData.DataHeader.HeaderSize = (UINT16)sizeof (EFI_STATUS_CODE_DATA);
+    ExtendedData.DataHeader.Size = (UINT16)(sizeof (EFI_DEVICE_HANDLE_EXTENDED_DATA) - ExtendedData.DataHeader.HeaderSize);
   
+    PeiCoreCopyMem (
+      &ExtendedData.DataHeader.Type, 
+      &gEfiStatusCodeSpecificDataGuid, 
+      sizeof (EFI_GUID)
+      ); 
+  )
   //
   // save the Current FV Address so that we will not process it again if FindFv returns it later
   //
@@ -161,17 +164,24 @@ Returns:
                 0
                 );
 
-
-              ExtendedData.Handle = (EFI_HANDLE)DispatchData->CurrentPeimAddress;
+              PEI_REPORT_STATUS_CODE_CODE (
+               
+                ExtendedData.Handle = (EFI_HANDLE)DispatchData->CurrentPeimAddress;
+              
+              )                
                                                         
-              PeiReportStatusCode (
-                &(PrivateData->PS),
-                EFI_PROGRESS_CODE,
-                EFI_SOFTWARE_PEI_CORE | EFI_SW_PC_INIT_BEGIN,
-                0,
-                NULL,
-                (EFI_STATUS_CODE_DATA *)(&ExtendedData)
-                ); 
+              PEI_REPORT_STATUS_CODE_CODE (
+                
+                PeiReportStatusCode (
+                  &(PrivateData->PS),
+                  EFI_PROGRESS_CODE,
+                  EFI_SOFTWARE_PEI_CORE | EFI_SW_PC_INIT_BEGIN,
+                  0,
+                  NULL,
+                  (EFI_STATUS_CODE_DATA *)(&ExtendedData)
+                  ); 
+
+              )
 
               //
               // Is this a authentic image
@@ -188,15 +198,19 @@ Returns:
                                     &PrivateData->PS
                                     );
               }
-              PeiReportStatusCode (
-                &(PrivateData->PS),
-                EFI_PROGRESS_CODE,
-                EFI_SOFTWARE_PEI_CORE | EFI_SW_PC_INIT_END,
-                0,
-                NULL,
-                (EFI_STATUS_CODE_DATA *)(&ExtendedData)
-                );
 
+              PEI_REPORT_STATUS_CODE_CODE (
+                
+                PeiReportStatusCode (
+                  &(PrivateData->PS),
+                  EFI_PROGRESS_CODE,
+                  EFI_SOFTWARE_PEI_CORE | EFI_SW_PC_INIT_END,
+                  0,
+                  NULL,
+                  (EFI_STATUS_CODE_DATA *)(&ExtendedData)
+                  );
+
+              )
               PEI_PERF_END (&PrivateData->PS, L"PEIM", (EFI_FFS_FILE_HEADER *)(DispatchData->CurrentPeimAddress), 0);
 
               //

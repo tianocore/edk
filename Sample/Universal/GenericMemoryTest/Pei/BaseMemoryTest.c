@@ -37,6 +37,21 @@ PeiBaseMemoryTestInit (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices
   )
+/*++
+Description:
+
+  Entry point function of BaseMemoryTestInit Peim.
+
+Arguments:
+
+  PeiServices           - General purpose services available to every PEIM.
+  FfsHeader             - Ffs header pointer
+
+Returns:
+
+  Status                - Result of InstallPpi
+
+--*/  
 {
   EFI_STATUS  Status;
 
@@ -55,20 +70,40 @@ BaseMemoryTest (
   IN  PEI_MEMORY_TEST_OP                 Operation,
   OUT EFI_PHYSICAL_ADDRESS               *ErrorAddress
   )
+/*++
+Description:
+
+  Test base memory.
+
+Arguments:
+
+  PeiServices   - General purpose services available to every PEIM.
+  This          - Pei memory test PPI pointer.
+  BeginAddress  - Beginning of the memory address to be checked.
+  MemoryLength  - Bytes of memory range to be checked.
+  Operation     - Type of memory check operation to be performed.
+  ErrorAddress  - Return the address of the error memory address.
+  ErrorAddress  - Address which has error when checked.
+
+Returns:
+
+  Status        - Result of InstallPpi
+
+--*/    
 {
   UINT32                TestPattern;
   UINT32                TestMask;
   EFI_PHYSICAL_ADDRESS  TempAddress;
   UINT32                SpanSize;
 
-  (*PeiServices)->PeiReportStatusCode (
-                    PeiServices,
-                    EFI_PROGRESS_CODE,
-                    EFI_COMPUTING_UNIT_MEMORY + EFI_CU_MEMORY_PC_TEST,
-                    0,
-                    NULL,
-                    NULL
-                    );
+  PEI_REPORT_STATUS_CODE (
+    PeiServices,
+    EFI_PROGRESS_CODE,
+    EFI_COMPUTING_UNIT_MEMORY + EFI_CU_MEMORY_PC_TEST,
+    0,
+    NULL,
+    NULL
+    );
 
   TestPattern = TEST_PATTERN;
   TestMask    = 0;
@@ -108,14 +143,15 @@ BaseMemoryTest (
   while (TempAddress < BeginAddress + MemoryLength) {
     if ((*(UINT32 *) (UINTN) TempAddress) != TestPattern) {
       *ErrorAddress = TempAddress;
-      (*PeiServices)->PeiReportStatusCode (
-                        PeiServices,
-                        EFI_ERROR_CODE + EFI_ERROR_UNRECOVERED,
-                        EFI_COMPUTING_UNIT_MEMORY + EFI_CU_MEMORY_EC_UNCORRECTABLE,
-                        0,
-                        NULL,
-                        NULL
-                        );
+      PEI_REPORT_STATUS_CODE (
+        PeiServices,
+        EFI_ERROR_CODE + EFI_ERROR_UNRECOVERED,
+        EFI_COMPUTING_UNIT_MEMORY + EFI_CU_MEMORY_EC_UNCORRECTABLE,
+        0,
+        NULL,
+        NULL
+        );
+
       return EFI_DEVICE_ERROR;
     }
 

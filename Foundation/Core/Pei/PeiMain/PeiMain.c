@@ -242,7 +242,7 @@ Returns:
     //
     // Report Status Code EFI_SW_PC_INIT
     //
-    PeiReportStatusCode (
+    PEI_REPORT_STATUS_CODE (
       &(PrivateData.PS),
       EFI_PROGRESS_CODE,
       EFI_SOFTWARE_PEI_CORE | EFI_SW_PC_INIT,

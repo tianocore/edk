@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -812,6 +812,12 @@ Returns:
 #token VarStore("varstore")                     "varstore"
 #token Name("name")                             "name"
 #token Oem("oem")                               "oem"
+#token True("TRUE")                             "TRUE"
+#token False("FALSE")                           "FALSE"
+#token GreaterThan(">")                         ">"
+#token GreaterEqual(">=")                       ">="
+#token LessThan("<")                          "<"
+#token LessEqual("<=")                        "<="
 
 //
 // Define the class and subclass tokens
@@ -1113,22 +1119,40 @@ vfrStatementInconsistentIf :
   EOP:EndIf ";"                         << WriteOpByte (EOP->getLine(), EFI_IFR_END_IF_OP); >>
   ;
 
+//*****************************************************************************
+// 
+// PARSE:
+//   TRUE AND (ideqval SomeStruct.SomeMember >= 0x10 OR 
+//               ideqid SomeStruct.SomeMember < SomeStruct.SomeOtherMember) AND
+//            (ideqlist SomeStruct.SomeOtherMember == 0x10, 0x20, 0x30 OR
+//               vareqval var(VAR_EQ_TEST_NAME) == 0x1)
 //
-// NOTE: I'm not sure why I am required to use the syntatic predicate to
-// fix the "alternate exit path" warning upon { AND OR }. Thinking something
-// else is going on here, but needed to fix the build warning, and the result
-// works.
+// For supporting complex express, divide the vfrBooleanExpression to two parts
+// so that pred-LL(k) parser can parse incrementally.
 //
 vfrBooleanExpression :
-  { OPID:NOT                              << WriteOpByte (OPID->getLine(), EFI_IFR_NOT_OP); >> }
-  (ideqval | ideqid | ideqvallist | vareqval )
-  ( 
-    ( AOPID:AND                           << WriteOpByte (AOPID->getLine(), EFI_IFR_AND_OP); >>
-      vfrBooleanExpression
-    )?
-    | OOPID:OR                            << WriteOpByte (OOPID->getLine(), EFI_IFR_OR_OP); >>
-      vfrBooleanExpression
-  )*
+  leftPartVfrBooleanExp { rightPartVfrBooleanExp }
+  ;
+  
+leftPartVfrBooleanExp :
+  OpenParen vfrBooleanExpression CloseParen                                                        |
+  (ideqval | ideqid | ideqvallist | vareqval | truefalse)                                          |
+  NOPID:NOT leftPartVfrBooleanExp           << WriteOpByte (NOPID->getLine(), EFI_IFR_NOT_OP); >>
+  ;
+
+rightPartVfrBooleanExp :
+  AOPID:AND vfrBooleanExpression            << WriteOpByte (AOPID->getLine(), EFI_IFR_AND_OP); >>  |
+  OOPID:OR vfrBooleanExpression             << WriteOpByte (OOPID->getLine(), EFI_IFR_OR_OP); >>
+  ;
+
+//*****************************************************************************
+//
+// PARSE:
+//   TRUE
+//
+truefalse :
+  TOPID:True                                << WriteOpByte (TOPID->getLine(), EFI_IFR_TRUE_OP); >> |
+  FOPID:False                               << WriteOpByte (FOPID->getLine(), EFI_IFR_FALSE_OP); >>
   ;
 
 //*****************************************************************************
@@ -1174,17 +1198,15 @@ vareqval :
   OPID:VarEqVal                           << WriteOpByte (OPID->getLine(), EFI_IFR_EQ_VAR_VAL_OP); >>
   Var OpenParen 
   VAR:Number                              << WriteWord (GetNumber (VAR->getText(), VAR->getLine(), 2)); >>
-  CloseParen "=="
-  VAL:Number                              << WriteWord (GetNumber (VAL->getText(), VAL->getLine(), 2)); >>
+  CloseParen
+  compareNumber
   ;
 
 ideqval : 
   OPID:IdEqVal                            << WriteOpByte (OPID->getLine(), EFI_IFR_EQ_ID_VAL_OP); >>
   vfrStructFieldName[0]
-  "==" 
-  VAL:Number                              << WriteWord (GetNumber (VAL->getText(), VAL->getLine(), 2)); >>
+  compareNumber
   ;
-
 
 //*****************************************************************************
 //
@@ -1197,10 +1219,76 @@ ideqval :
 ideqid : 
   OPID:IdEqId                             << WriteOpByte (OPID->getLine(), EFI_IFR_EQ_ID_ID_OP);  >>
   vfrStructFieldName[0]
+  compareVfrStructFieldNameNL0
+  ;
+
+//*****************************************************************************
+//
+// compareNumber is the combination of compare operation and Number
+//
+compareNumber :
+  (
+  "=="
+  VAL1:Number                             << WriteWord (GetNumber (VAL1->getText(), VAL1->getLine(), 2)); >>
+  ) |
+  (
+  GTOPID:GreaterThan
+  VAL2:Number                             << WriteWord (GetNumber (VAL2->getText(), VAL2->getLine(), 2));
+                                             WriteOpByte (GTOPID->getLine(), EFI_IFR_GT_OP); >>
+  ) |
+  (
+  GEOPID:GreaterEqual
+  VAL3:Number                             << WriteWord (GetNumber (VAL3->getText(), VAL3->getLine(), 2));
+                                             WriteOpByte (GEOPID->getLine(), EFI_IFR_GE_OP); >>
+  ) |
+  (
+  LTOPID:LessThan
+  VAL4:Number                             << WriteWord (GetNumber (VAL4->getText(), VAL4->getLine(), 2));
+                                             WriteOpByte (LTOPID->getLine(), EFI_IFR_GE_OP);
+                                             WriteOpByte (LTOPID->getLine(), EFI_IFR_NOT_OP); >>
+  ) |
+  (
+  LEOPID:LessEqual
+  VAL5:Number                             << WriteWord (GetNumber (VAL5->getText(), VAL5->getLine(), 2));
+                                             WriteOpByte (LEOPID->getLine(), EFI_IFR_GT_OP);
+                                             WriteOpByte (LEOPID->getLine(), EFI_IFR_NOT_OP); >>
+  )
+  ;
+
+//*****************************************************************************
+//
+// compareVfrStructFieldNameNL0 is the combination of compare operation and  vfrStructFieldNameNL[0]
+//
+compareVfrStructFieldNameNL0 :
+  (
   "=="                                    << mIdEqIdStmt = 1; >>
   vfrStructFieldNameNL[0]                 << mIdEqIdStmt = 0; >>
+  ) |
+  (
+  GTOPID:GreaterThan                      << mIdEqIdStmt = 1; >>
+  vfrStructFieldNameNL[0]                 << mIdEqIdStmt = 0;
+                                             WriteOpByte (GTOPID->getLine(), EFI_IFR_GT_OP); >>
+  ) |
+  (
+  GEOPID:GreaterEqual                     << mIdEqIdStmt = 1; >>
+  vfrStructFieldNameNL[0]                 << mIdEqIdStmt = 0;
+                                             WriteOpByte (GEOPID->getLine(), EFI_IFR_GE_OP); >>
+  ) |
+  (
+  LTOPID:LessThan                       << mIdEqIdStmt = 1; >>
+  vfrStructFieldNameNL[0]                 << mIdEqIdStmt = 0;
+                                             WriteOpByte (LTOPID->getLine(), EFI_IFR_GE_OP);
+                                             WriteOpByte (LTOPID->getLine(), EFI_IFR_NOT_OP); >>
+  ) |
+  (
+  LEOPID:LessEqual                      << mIdEqIdStmt = 1; >>
+  vfrStructFieldNameNL[0]                 << mIdEqIdStmt = 0;
+                                             WriteOpByte (LEOPID->getLine(), EFI_IFR_GT_OP);
+                                             WriteOpByte (LEOPID->getLine(), EFI_IFR_NOT_OP); >>
+  )
   ;
   
+
 ideqvallist : 
   OPID:IdEqValList                        << WriteOpByte (OPID->getLine(), EFI_IFR_EQ_ID_LIST_OP); >>
   vfrStructFieldName[0] 
@@ -1662,13 +1750,17 @@ vfrStatementBanner :
 //          value       = 0, 
 //          flags       = DEFAULT | INTERACTIVE;
 //
+// supressif/grayoutif are supported inside oneof stmt.
+// We do not restrict the number of oneOfOptionText to >=2, but >=1.
+// The situation that all oneOfOptionText are suppressed is also possiable.
+//
 vfrStatementOneOf :
   << ResetFlags (); >>
   IDOO:OneOf                              << WriteOpByte (IDOO->getLine(), EFI_IFR_ONE_OF_OP); >>
   VarId   "=" vfrStructFieldName[2] ","       
   Prompt  "=" getStringId  ","           // writes string identifier
   Help    "=" getStringId  ","           // writes string identifier
-  oneOfOptionText ( oneOfOptionText )+
+  ( oneOfOptionText )+                   // there must be at least 1 option to be choosed, not 2.
   IDEOO:EndOneOf   ";"                    << TestOneOfFlags (IDEOO->getLine()); WriteOpByte (IDEOO->getLine(), EFI_IFR_END_ONE_OF_OP); >>
   ;
 
@@ -1823,10 +1915,45 @@ vfrStructFieldNameNL[int FieldWidth] :
 //*****************************************************************************
 //
 // PARSE:
+//   suppressif TRUE OR FALSE;
+//   grayoutif FALSE OR TRUE;
+//     option text = STRING_TOKEN(STRING_ID), value = 0 flags = 99;
+//     option text = STRING_TOKEN(STRING_ID2), value = 1 flags = 98;
+//   endif;
 //
-//   option text = STRING_TOKEN(STRING_ID), value = 0 flags = 99;
-//
-oneOfOptionText : 
+oneOfOptionText :
+  suppressIfOptionText    |
+  grayOutIfOptionText     |
+  commonOptionText
+  ;
+
+suppressIfOptionText : 
+  << ResetFlags (); >>
+  OPID:SuppressIf                     << WriteOpByte (OPID->getLine(), EFI_IFR_SUPPRESS_IF_OP); SetIfStart (OPID->getLine()); >>
+  { 
+    FF:Flags  "=" flagsField ( "\|" flagsField )* ","
+  }
+  << WriteFlags (); >> //  write the flags field 
+  vfrBooleanExpression
+  ";"
+  { suppressIfGrayOutIf } ( commonOptionText )+
+  ENDOP:EndIf ";"                     << WriteOpByte (ENDOP->getLine(), EFI_IFR_END_IF_OP); SetIfStart (0); >>
+  ;
+
+grayOutIfOptionText :
+  << ResetFlags (); >>
+  OPID:GrayOutIf                      << WriteOpByte (OPID->getLine(), EFI_IFR_GRAYOUT_IF_OP); SetIfStart (OPID->getLine()); >>
+  { 
+    FF:Flags  "=" flagsField ( "\|" flagsField )* "," 
+  }
+  << WriteFlags (); >> //  write the flags field
+  vfrBooleanExpression
+  ";"
+  { grayoutIfSuppressIf } ( commonOptionText )+ 
+  ENDOP:EndIf ";"                     << WriteOpByte (ENDOP->getLine(), EFI_IFR_END_IF_OP); SetIfStart (0); >>
+  ;
+
+commonOptionText : 
   << UINT32 KeyValue = 0; >>
   IDO:Option                      << WriteOpByte (IDO->getLine(), EFI_IFR_ONE_OF_OPTION_OP); >>
   Text      "=" getStringId ","   // writes string identifier
@@ -1889,6 +2016,7 @@ private:
   UINT32              mIfStart;
   UINT32              mOptionCount;  // how many "option" fields in a given statement
   UINT32              mLastVarIdSize;
+  UINT8               mOutput;
 public:        
 
 VOID 

@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -487,8 +487,10 @@ DisplayForm (
         // through the AND/OR/NOT data to come up with some meaningful ID data.
         //
         for (;
-             FormTags.Tags[Index].Operand == EFI_IFR_AND_OP ||
-             FormTags.Tags[Index].Operand == EFI_IFR_OR_OP ||
+             FormTags.Tags[Index].Operand == EFI_IFR_AND_OP   ||
+             FormTags.Tags[Index].Operand == EFI_IFR_OR_OP    ||
+             FormTags.Tags[Index].Operand == EFI_IFR_GT_OP    ||
+             FormTags.Tags[Index].Operand == EFI_IFR_GE_OP    ||
              FormTags.Tags[Index].Operand == EFI_IFR_NOT_OP;
            Index++
             )
@@ -528,6 +530,10 @@ DisplayForm (
              FormTags.Tags[Index].Operand == EFI_IFR_NOT_OP ||
              FormTags.Tags[Index].Operand == EFI_IFR_AND_OP ||
              FormTags.Tags[Index].Operand == EFI_IFR_OR_OP ||
+             FormTags.Tags[Index].Operand == EFI_IFR_TRUE_OP ||
+             FormTags.Tags[Index].Operand == EFI_IFR_FALSE_OP ||
+             FormTags.Tags[Index].Operand == EFI_IFR_GT_OP    ||
+             FormTags.Tags[Index].Operand == EFI_IFR_GE_OP    ||
              FormTags.Tags[Index].Operand == EFI_IFR_LABEL_OP;
            Index++
             )
@@ -550,12 +556,20 @@ GetOut:
       } else {
         FormTags.Tags[Index].GrayOut = FALSE;
       }
+      if (Suppress && FormTags.Tags[Index].Operand == EFI_IFR_ONE_OF_OPTION_OP) {
+        //
+        // Only need .Suppress field when the tag is a one_of_option. For other cases, omit them directly.
+        //
+        FormTags.Tags[Index].Suppress = TRUE;
+      } else {
+        FormTags.Tags[Index].Suppress = FALSE;
+      }
 
       if ((
             FormTags.Tags[Index].NumberOfLines > 0 ||
-          FormTags.Tags[Index].Operand == EFI_IFR_DATE_OP ||
-          FormTags.Tags[Index].Operand == EFI_IFR_TIME_OP
-        ) &&
+            FormTags.Tags[Index].Operand == EFI_IFR_DATE_OP ||
+            FormTags.Tags[Index].Operand == EFI_IFR_TIME_OP
+          ) &&
           !Suppress
           ) {
 
@@ -1044,6 +1058,10 @@ UpdateNewTagData (
     case EFI_IFR_AND_OP:
     case EFI_IFR_OR_OP:
     case EFI_IFR_NOT_OP:
+    case EFI_IFR_TRUE_OP:
+    case EFI_IFR_FALSE_OP:
+    case EFI_IFR_GT_OP:
+    case EFI_IFR_GE_OP:
       FormTags->Tags[CurrTag].ConsistencyId = ConsistencyId;
       break;
 
@@ -1281,6 +1299,10 @@ ExtractDynamicFormHandle (
     case EFI_IFR_AND_OP:
     case EFI_IFR_OR_OP:
     case EFI_IFR_NOT_OP:
+    case EFI_IFR_TRUE_OP:
+    case EFI_IFR_FALSE_OP:
+    case EFI_IFR_GT_OP:
+    case EFI_IFR_GE_OP:
     case EFI_IFR_EQ_ID_LIST_OP:
       //
       // If we encountered a ConsistencyId value, on this page they will be incremental

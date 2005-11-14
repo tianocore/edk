@@ -87,7 +87,7 @@ REM # Map a: as a 1.44MB Floppy and a 128 MB USB Disk
 REM #  drive letters may be different on your machine
 REM #
 echo on
-set EFI_WIN_NT_PHYSICAL_DISKS=a:RW;2880;512!E:RW;204440;2048
+set EFI_WIN_NT_PHYSICAL_DISKS=a:RW;2880;512!e:RW;262144;512
 @echo off
 
 REM #

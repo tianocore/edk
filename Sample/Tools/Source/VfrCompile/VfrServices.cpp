@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -87,6 +87,10 @@ static const IFR_OPCODE_SIZES mOpcodeSizes[] = {
   { "EFI_IFR_VARSTORE_OP",                -sizeof (EFI_IFR_VARSTORE) },
   { "EFI_IFR_VARSTORE_SELECT_OP",         sizeof (EFI_IFR_VARSTORE_SELECT) },
   { "EFI_IFR_VARSTORE_SELECT_PAIR_OP",    sizeof (EFI_IFR_VARSTORE_SELECT_PAIR) },
+  { "EFI_IFR_TRUE",                       sizeof (EFI_IFR_TRUE)},
+  { "EFI_IFR_FALSE",                      sizeof (EFI_IFR_FALSE)},
+  { "EFI_IFR_GT",                         sizeof (EFI_IFR_GT)},
+  { "EFI_IFR_GE",                         sizeof (EFI_IFR_GE)},
   { "EFI_IFR_OEM_DEFINED_OP",             -2 },
 };
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -73,7 +73,11 @@ typedef CHAR16  *EFI_STRING;
 #define EFI_IFR_VARSTORE_OP             0x24
 #define EFI_IFR_VARSTORE_SELECT_OP      0x25
 #define EFI_IFR_VARSTORE_SELECT_PAIR_OP 0x26
-#define EFI_IFR_OEM_DEFINED_OP          0x27
+#define EFI_IFR_TRUE_OP                 0x27
+#define EFI_IFR_FALSE_OP                0x28
+#define EFI_IFR_GT_OP                   0x29
+#define EFI_IFR_GE_OP                   0x2A
+#define EFI_IFR_OEM_DEFINED_OP          0x2B
 #define EFI_IFR_LAST_OPCODE             EFI_IFR_OEM_DEFINED_OP
 #define EFI_IFR_OEM_OP                  0xFE
 #define EFI_IFR_NV_ACCESS_COMMAND       0xFF
@@ -381,6 +385,22 @@ typedef struct {
   UINT16            VarId;          // variable store ID, as referenced elsewhere in the form
   UINT16            SecondaryVarId; // variable store ID, as referenced elsewhere in the form
 } EFI_IFR_VARSTORE_SELECT_PAIR;
+
+typedef struct {
+  EFI_IFR_OP_HEADER Header;
+} EFI_IFR_TRUE;
+
+typedef struct {
+  EFI_IFR_OP_HEADER Header;
+} EFI_IFR_FALSE;
+
+typedef struct {
+  EFI_IFR_OP_HEADER Header;
+} EFI_IFR_GT;
+
+typedef struct {
+  EFI_IFR_OP_HEADER Header;
+} EFI_IFR_GE;
 
 //
 // Save defaults and restore defaults have same structure

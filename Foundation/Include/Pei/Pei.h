@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -45,4 +45,14 @@ Abstract:
 // #define ASSERT(a)
 // #define DEBUG (a)
 //
+
+#ifdef EFI_PEI_REPORT_STATUS_CODE_ON
+#define PEI_REPORT_STATUS_CODE_CODE(Code) Code
+#define PEI_REPORT_STATUS_CODE(PeiServices, CodeType, Value, Instance, CallerId, Data) \
+          (*PeiServices)->PeiReportStatusCode (PeiServices, CodeType, Value, Instance, CallerId, Data)
+#else
+#define PEI_REPORT_STATUS_CODE_CODE(Code)
+#define PEI_REPORT_STATUS_CODE(PeiServices, CodeType, Value, Instance, CallerId, Data)
+#endif
+
 #endif

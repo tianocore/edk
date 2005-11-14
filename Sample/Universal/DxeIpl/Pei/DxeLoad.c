@@ -596,14 +596,14 @@ Returns:
   //
   // Report Status Code EFI_SW_PEI_PC_HANDOFF_TO_NEXT
   //
-  (**PeiServices).PeiReportStatusCode (
-                    PeiServices,
-                    EFI_PROGRESS_CODE,
-                    EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_CORE_PC_HANDOFF_TO_NEXT,
-                    0,
-                    NULL,
-                    NULL
-                    );
+  PEI_REPORT_STATUS_CODE (
+    PeiServices,
+    EFI_PROGRESS_CODE,
+    EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_CORE_PC_HANDOFF_TO_NEXT,
+    0,
+    NULL,
+    NULL
+    );
 
   PEI_DEBUG ((PeiServices, EFI_D_INFO, "DXE Core Entry\n"));
   SwitchStacks (
