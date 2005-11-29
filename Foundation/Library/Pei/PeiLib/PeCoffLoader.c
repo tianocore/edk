@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -336,18 +336,16 @@ Routine Description:
 
 Arguments:
 
-  This          - Calling context
-
-  ImageContext  - The context of the image being loaded
+  This         - Calling context
+  ImageContext - The context of the image being loaded
 
 Returns:
 
-  EFI_SUCCESS if the information on the PE/COFF image was collected.
-  EFI_UNSUPPORTED of the PE/COFF image is not supported.
-  Otherwise, the error status from reading the PE/COFF image using the 
-    ImageContext->ImageRead() function
-
-  EFI_INVALID_PARAMETER   - ImageContext is NULL.
+  EFI_SUCCESS           - The information on the PE/COFF image was collected.
+  EFI_INVALID_PARAMETER - ImageContext is NULL.
+  EFI_UNSUPPORTED       - The PE/COFF image is not supported.
+  Otherwise             - The error status from reading the PE/COFF image using the
+                          ImageContext->ImageRead() function
 
 --*/
 {
@@ -453,11 +451,11 @@ Returns:
         //
         Size = sizeof (EFI_IMAGE_SECTION_HEADER);
         Status = ImageContext->ImageRead (
-                                ImageContext->Handle,
-                                SectionHeaderOffset,
-                                &Size,
-                                &SectionHeader
-                                );
+                                 ImageContext->Handle,
+                                 SectionHeaderOffset,
+                                 &Size,
+                                 &SectionHeader
+                                 );
         if (EFI_ERROR (Status)) {
           ImageContext->ImageError = EFI_IMAGE_ERROR_IMAGE_READ;
           return Status;
@@ -480,11 +478,11 @@ Returns:
           //
           Size = sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY);
           Status = ImageContext->ImageRead (
-                                  ImageContext->Handle,
-                                  DebugDirectoryEntryFileOffset,
-                                  &Size,
-                                  &DebugEntry
-                                  );
+                                   ImageContext->Handle,
+                                   DebugDirectoryEntryFileOffset,
+                                   &Size,
+                                   &DebugEntry
+                                   );
           if (EFI_ERROR (Status)) {
             ImageContext->ImageError = EFI_IMAGE_ERROR_IMAGE_READ;
             return Status;
@@ -502,12 +500,7 @@ Returns:
       }
     }
   } else {
-    //
-    // Because Te image only extracts base relocations and debug directory entries from
-    // Pe image and in Te image header there is not a field to describe the imagesize,
-    // we use the largest VirtualAddress plus Size in each directory entry to describe the imagesize
-    //
-    ImageContext->ImageSize         = (UINT64) (TeHdr.DataDirectory[0].VirtualAddress + TeHdr.DataDirectory[0].Size);
+    ImageContext->ImageSize         = 0;
     ImageContext->SectionAlignment  = 4096;
     ImageContext->SizeOfHeaders     = sizeof (EFI_TE_IMAGE_HEADER) + (UINTN) TeHdr.BaseOfCode - (UINTN) TeHdr.StrippedSize;
 
@@ -517,17 +510,17 @@ Returns:
 
     DebugDirectoryEntryFileOffset   = 0;
 
-    for (Index = 0; Index < TeHdr.NumberOfSections; Index++) {
+    for (Index = 0; Index < TeHdr.NumberOfSections;) {
       //
       // Read section header from file
       //
       Size = sizeof (EFI_IMAGE_SECTION_HEADER);
       Status = ImageContext->ImageRead (
-                              ImageContext->Handle,
-                              SectionHeaderOffset,
-                              &Size,
-                              &SectionHeader
-                              );
+                               ImageContext->Handle,
+                               SectionHeaderOffset,
+                               &Size,
+                               &SectionHeader
+                               );
       if (EFI_ERROR (Status)) {
         ImageContext->ImageError = EFI_IMAGE_ERROR_IMAGE_READ;
         return Status;
@@ -540,7 +533,31 @@ Returns:
           SectionHeader.PointerToRawData +
           sizeof (EFI_TE_IMAGE_HEADER) -
           TeHdr.StrippedSize;
-        break;
+
+        //
+        // File offset of the debug directory was found, if this is not the last
+        // section, then skip to the last section for calculating the image size.
+        //
+        if (Index < (UINTN) TeHdr.NumberOfSections - 1) {
+          SectionHeaderOffset += (TeHdr.NumberOfSections - 1 - Index) * sizeof (EFI_IMAGE_SECTION_HEADER);
+          Index = TeHdr.NumberOfSections - 1;
+          continue;
+        }
+      }
+
+      //
+      // In Te image header there is not a field to describe the ImageSize.
+      // Actually, the ImageSize equals the RVA plus the VirtualSize of 
+      // the last section mapped into memory (Must be rounded up to 
+      // a mulitple of Section Alignment). Per the PE/COFF specification, the
+      // section headers in the Section Table must appear in order of the RVA
+      // values for the corresponding sections. So the ImageSize can be determined
+      // by the RVA and the VirtualSize of the last section header in the
+      // Section Table.
+      //
+      if ((++Index) == (UINTN) TeHdr.NumberOfSections) {
+        ImageContext->ImageSize = (SectionHeader.VirtualAddress + SectionHeader.Misc.VirtualSize +
+                                   ImageContext->SectionAlignment - 1) & ~(ImageContext->SectionAlignment - 1);
       }
 
       SectionHeaderOffset += sizeof (EFI_IMAGE_SECTION_HEADER);
@@ -553,11 +570,11 @@ Returns:
         //
         Size = sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY);
         Status = ImageContext->ImageRead (
-                                ImageContext->Handle,
-                                DebugDirectoryEntryFileOffset,
-                                &Size,
-                                &DebugEntry
-                                );
+                                 ImageContext->Handle,
+                                 DebugDirectoryEntryFileOffset,
+                                 &Size,
+                                 &DebugEntry
+                                 );
         if (EFI_ERROR (Status)) {
           ImageContext->ImageError = EFI_IMAGE_ERROR_IMAGE_READ;
           return Status;
