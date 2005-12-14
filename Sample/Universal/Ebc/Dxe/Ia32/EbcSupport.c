@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -41,17 +41,127 @@ Abstract:
 #define VM_STACK_SIZE   (1024 * 4)
 #define EBC_THUNK_SIZE  32
 
+VOID
+EbcLLCALLEX (
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        FuncAddr,
+  IN UINTN        NewStackPointer,
+  IN VOID         *FramePtr,
+  IN UINT8        Size
+  )
+/*++
+
+Routine Description:
+
+  This function is called to execute an EBC CALLEX instruction. 
+  The function check the callee's content to see whether it is common native
+  code or a thunk to another piece of EBC code.
+  If the callee is common native code, use EbcLLCAllEXASM to manipulate,
+  otherwise, set the VM->IP to target EBC code directly to avoid another VM
+  be startup which cost time and stack space.
+  
+Arguments:
+
+  VmPtr             - Pointer to a VM context.
+  FuncAddr          - Callee's address
+  NewStackPointer   - New stack pointer after the call
+  FramePtr          - New frame pointer after the call
+  Size              - The size of call instruction
+
+Returns:
+
+  None.
+  
+--*/
+{
+  UINTN    IsThunk;
+  UINTN    TargetEbcAddr;
+
+  IsThunk       = 1;
+  TargetEbcAddr = 0;
+
+  //
+  // Processor specific code to check whether the callee is a thunk to EBC.
+  //
+  if (*((UINT8 *)FuncAddr) != 0xB8) {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 1) != 0xBC)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 2) != 0x2E)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 3) != 0x11)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 4) != 0xCA)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 5) != 0xB8)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 10) != 0xB9)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 15) != 0xFF)  {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT8 *)FuncAddr + 16) != 0xE1)  {
+    IsThunk = 0;
+    goto Action;
+  }
+
+  TargetEbcAddr = ((UINTN)(*((UINT8 *)FuncAddr + 9)) << 24) + ((UINTN)(*((UINT8 *)FuncAddr + 8)) << 16) +
+                    ((UINTN)(*((UINT8 *)FuncAddr + 7)) << 8) + ((UINTN)(*((UINT8 *)FuncAddr + 6)));
+
+Action:
+  if (IsThunk == 1){
+    //
+    // The callee is a thunk to EBC, adjust the stack pointer down 16 bytes and
+    // put our return address and frame pointer on the VM stack.
+    // Then set the VM's IP to new EBC code.
+    //
+    VmPtr->R[0] -= 8;
+    VmWriteMemN (VmPtr, (UINTN) VmPtr->R[0], (UINTN) FramePtr);
+    VmPtr->FramePtr = (VOID *) (UINTN) VmPtr->R[0];
+    VmPtr->R[0] -= 8;
+    VmWriteMem64 (VmPtr, (UINTN) VmPtr->R[0], (UINT64) (VmPtr->Ip + Size));
+
+    VmPtr->Ip = (VMIP) (UINTN) TargetEbcAddr;
+  } else {
+    //
+    // The callee is not a thunk to EBC, call native code.
+    //
+    EbcLLCALLEXNative (FuncAddr, NewStackPointer, FramePtr);
+    
+    //
+    // Get return value and advance the IP.
+    //
+    VmPtr->R[7] = EbcLLGetReturnValue ();
+    VmPtr->Ip += Size;
+  }
+}
+
 STATIC
 UINT64
 EbcInterpret (
-  UINTN      Arg1,
-  UINTN      Arg2,
-  UINTN      Arg3,
-  UINTN      Arg4,
-  UINTN      Arg5,
-  UINTN      Arg6,
-  UINTN      Arg7,
-  UINTN      Arg8
+  IN OUT UINTN      Arg1,
+  IN OUT UINTN      Arg2,
+  IN OUT UINTN      Arg3,
+  IN OUT UINTN      Arg4,
+  IN OUT UINTN      Arg5,
+  IN OUT UINTN      Arg6,
+  IN OUT UINTN      Arg7,
+  IN OUT UINTN      Arg8
   )
 /*++
 
@@ -301,6 +411,21 @@ Returns:
   // Give them the address of our buffer we're going to fix up
   //
   *Thunk = (VOID *) Ptr;
+
+  //
+  // Add a magic code here to help the VM recognize the thunk..
+  // mov eax, 0xca112ebc  => B8 BC 2E 11 CA
+  //
+  *Ptr = 0xB8;
+  Ptr++;
+  Size--;
+  Addr = (UINT32) 0xCA112EBC;
+  for (I = 0; I < sizeof (Addr); I++) {
+    *Ptr = (UINT8) (UINTN) Addr;
+    Addr >>= 8;
+    Ptr++;
+    Size--;
+  }
 
   //
   // Add code bytes to load up a processor register with the EBC entry point.

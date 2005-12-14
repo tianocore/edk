@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -435,6 +435,66 @@ Returns:
   Ptr += sizeof (UINT64) * 2;
 
   //
+  // *************************** MAGIC BUNDLE ********************************
+  //
+  // Write magic code bundle for: movl r8 = 0xca112ebcca112ebc to help the VM
+  // to recognize it is a thunk.
+  //
+  Addr = (UINT64) 0xCA112EBCCA112EBC;
+
+  //
+  // Now generate the code bytes. First is nop.m 0x0
+  //
+  Code[0] = OPCODE_NOP;
+
+  //
+  // Next is simply Addr[62:22] (41 bits) of the address
+  //
+  Code[1] = RightShiftU64 (Addr, 22) & 0x1ffffffffff;
+
+  //
+  // Extract bits from the address for insertion into the instruction
+  // i = Addr[63:63]
+  //
+  I = RightShiftU64 (Addr, 63) & 0x01;
+  //
+  // ic = Addr[21:21]
+  //
+  Ic = RightShiftU64 (Addr, 21) & 0x01;
+  //
+  // imm5c = Addr[20:16] for 5 bits
+  //
+  Imm5c = RightShiftU64 (Addr, 16) & 0x1F;
+  //
+  // imm9d = Addr[15:7] for 9 bits
+  //
+  Imm9d = RightShiftU64 (Addr, 7) & 0x1FF;
+  //
+  // imm7b = Addr[6:0] for 7 bits
+  //
+  Imm7b = Addr & 0x7F;
+
+  //
+  // The EBC entry point will be put into r8, so r8 can be used here
+  // temporary. R8 is general register and is auto-serialized.
+  //
+  RegNum = 8;
+
+  //
+  // Next is jumbled data, including opcode and rest of address
+  //
+  Code[2] = LeftShiftU64 (Imm7b, 13)
+          | LeftShiftU64 (0x00, 20)   // vc
+          | LeftShiftU64 (Ic, 21)
+          | LeftShiftU64 (Imm5c, 22)
+          | LeftShiftU64 (Imm9d, 27)
+          | LeftShiftU64 (I, 36)
+          | LeftShiftU64 ((UINT64)MOVL_OPCODE, 37)
+          | LeftShiftU64 ((RegNum & 0x7F), 6);
+
+  WriteBundle ((VOID *) Ptr, 0x05, Code[0], Code[1], Code[2]);
+
+  //
   // *************************** FIRST BUNDLE ********************************
   //
   // Write code bundle for: movl r8 = EBC_ENTRY_POINT so we pass
@@ -444,6 +504,7 @@ Returns:
   // that contained, among other things, the EBC image's entry point. But
   // for now pass it directly.
   //
+  Ptr += 16;
   Addr = (UINT64) EbcEntryPoint;
 
   //
@@ -700,6 +761,115 @@ Returns:
 
 VOID
 EbcLLCALLEX (
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        FuncAddr,
+  IN UINTN        NewStackPointer,
+  IN VOID         *FramePtr,
+  IN UINT8        Size
+  )
+/*++
+
+Routine Description:
+
+  This function is called to execute an EBC CALLEX instruction. 
+  The function check the callee's content to see whether it is common native
+  code or a thunk to another piece of EBC code.
+  If the callee is common native code, use EbcLLCAllEXASM to manipulate,
+  otherwise, set the VM->IP to target EBC code directly to avoid another VM
+  be startup which cost time and stack space.
+  
+Arguments:
+
+  VmPtr             - Pointer to a VM context.
+  FuncAddr          - Callee's address
+  NewStackPointer   - New stack pointer after the call
+  FramePtr          - New frame pointer after the call
+  Size              - The size of call instruction
+
+Returns:
+
+  None.
+  
+--*/
+{
+  UINTN    IsThunk;
+  UINTN    TargetEbcAddr;
+  UINTN    CodeOne18;
+  UINTN    CodeOne23;
+  UINTN    CodeTwoI;
+  UINTN    CodeTwoIc;
+  UINTN    CodeTwo7b;
+  UINTN    CodeTwo5c;
+  UINTN    CodeTwo9d;
+  UINTN    CalleeAddr;
+
+  IsThunk       = 1;
+  TargetEbcAddr = 0;
+
+  //
+  // FuncAddr points to the descriptor of the target instructions.
+  //
+  CalleeAddr = *((UINT64 *)FuncAddr);
+
+  //
+  // Processor specific code to check whether the callee is a thunk to EBC.
+  //
+  if (*((UINT64 *)CalleeAddr) != 0xBCCA000100000005) {
+    IsThunk = 0;
+    goto Action;
+  }
+  if (*((UINT64 *)CalleeAddr + 1) != 0x697623C1004A112E)  {
+    IsThunk = 0;
+    goto Action;
+  }
+
+  CodeOne18 = RightShiftU64 (*((UINT64 *)CalleeAddr + 2), 46) & 0x3FFFF;
+  CodeOne23 = (*((UINT64 *)CalleeAddr + 3)) & 0x7FFFFF;
+  CodeTwoI  = RightShiftU64 (*((UINT64 *)CalleeAddr + 3), 59) & 0x1;
+  CodeTwoIc = RightShiftU64 (*((UINT64 *)CalleeAddr + 3), 44) & 0x1;
+  CodeTwo7b = RightShiftU64 (*((UINT64 *)CalleeAddr + 3), 36) & 0x7F;
+  CodeTwo5c = RightShiftU64 (*((UINT64 *)CalleeAddr + 3), 45) & 0x1F;
+  CodeTwo9d = RightShiftU64 (*((UINT64 *)CalleeAddr + 3), 50) & 0x1FF;
+
+  TargetEbcAddr = CodeTwo7b
+                  | LeftShiftU64 (CodeTwo9d, 7)
+                  | LeftShiftU64 (CodeTwo5c, 16)
+                  | LeftShiftU64 (CodeTwoIc, 21)
+                  | LeftShiftU64 (CodeOne18, 22)
+                  | LeftShiftU64 (CodeOne23, 40)
+                  | LeftShiftU64 (CodeTwoI, 63)
+                  ;
+
+Action:
+  if (IsThunk == 1){
+    //
+    // The callee is a thunk to EBC, adjust the stack pointer down 16 bytes and
+    // put our return address and frame pointer on the VM stack.
+    // Then set the VM's IP to new EBC code.
+    //
+    VmPtr->R[0] -= 8;
+    VmWriteMemN (VmPtr, (UINTN) VmPtr->R[0], (UINTN) FramePtr);
+    VmPtr->FramePtr = (VOID *) (UINTN) VmPtr->R[0];
+    VmPtr->R[0] -= 8;
+    VmWriteMem64 (VmPtr, (UINTN) VmPtr->R[0], (UINT64) (VmPtr->Ip + Size));
+
+    VmPtr->Ip = (VMIP) (UINTN) TargetEbcAddr;
+  } else {
+    //
+    // The callee is not a thunk to EBC, call native code.
+    //
+    EbcLLCALLEXNative (FuncAddr, NewStackPointer, FramePtr);
+
+    //
+    // Get return value and advance the IP.
+    //
+    VmPtr->R[7] = EbcLLGetReturnValue ();
+    VmPtr->Ip += Size;
+  }
+}
+
+VOID
+EbcLLCALLEXNative (
   IN UINTN    CallAddr,
   IN UINTN    EbcSp,
   IN VOID     *FramePtr
@@ -708,7 +878,7 @@ EbcLLCALLEX (
 
 Routine Description:
   Implements the EBC CALLEX instruction to call an external function, which
-  may be native or EBC code.
+  seems to be native code.
 
   We'll copy the entire EBC stack frame down below itself in memory and use
   that copy for passing parameters. 

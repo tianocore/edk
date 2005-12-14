@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -140,7 +140,6 @@ VmWriteMem32 (
   IN UINT32     Data
   );
 
-STATIC
 EFI_STATUS
 VmWriteMemN (
   IN VM_CONTEXT *VmPtr,
@@ -148,7 +147,6 @@ VmWriteMemN (
   IN UINTN      Data
   );
 
-STATIC
 EFI_STATUS
 VmWriteMem64 (
   IN VM_CONTEXT *VmPtr,
@@ -2357,9 +2355,7 @@ Returns:
       //
       // Call external function, get the return value, and advance the IP
       //
-      EbcLLCALLEX ((UINTN) Immed64, (UINTN) VmPtr->R[0], FramePtr);
-      VmPtr->R[7] = EbcLLGetReturnValue ();
-      VmPtr->Ip += Size;
+      EbcLLCALLEX (VmPtr, (UINTN) Immed64, (UINTN) VmPtr->R[0], FramePtr, Size);
     }
   } else {
     //
@@ -2396,19 +2392,14 @@ Returns:
       // Native call. Relative or absolute?
       //
       if (Operands & OPERAND_M_RELATIVE_ADDR) {
-        EbcLLCALLEX ((UINTN) (Immed64 + VmPtr->Ip + Size), (UINTN) VmPtr->R[0], FramePtr);
+        EbcLLCALLEX (VmPtr, (UINTN) (Immed64 + VmPtr->Ip + Size), (UINTN) VmPtr->R[0], FramePtr, Size);
       } else {
         if (VmPtr->StopFlags & STOPFLAG_BREAK_ON_CALLEX) {
           EFI_BREAKPOINT ();
         }
 
-        EbcLLCALLEX ((UINTN) Immed64, (UINTN) VmPtr->R[0], FramePtr);
+        EbcLLCALLEX (VmPtr, (UINTN) Immed64, (UINTN) VmPtr->R[0], FramePtr, Size);
       }
-      //
-      // Get return value and advance the IP.
-      //
-      VmPtr->R[7] = EbcLLGetReturnValue ();
-      VmPtr->Ip += Size;
     }
   }
 
@@ -4130,7 +4121,6 @@ VmWriteMem32 (
   return EFI_SUCCESS;
 }
 
-STATIC
 EFI_STATUS
 VmWriteMem64 (
   IN VM_CONTEXT   *VmPtr,
@@ -4172,7 +4162,6 @@ VmWriteMem64 (
   return EFI_SUCCESS;
 }
 
-STATIC
 EFI_STATUS
 VmWriteMemN (
   IN VM_CONTEXT   *VmPtr,

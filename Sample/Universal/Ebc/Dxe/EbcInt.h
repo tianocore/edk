@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -126,10 +126,20 @@ EbcLLGetStackPointer (
 ;
 
 VOID
+EbcLLCALLEXNative (
+  IN UINTN        CallAddr,
+  IN UINTN        EbcSp,
+  IN VOID         *FramePtr
+  )
+;
+
+VOID
 EbcLLCALLEX (
-  IN UINTN    CallAddr,
-  IN UINTN    EbcSp,
-  IN VOID     *FramePtr
+  IN VM_CONTEXT   *VmPtr,
+  IN UINTN        CallAddr,
+  IN UINTN        EbcSp,
+  IN VOID         *FramePtr,
+  IN UINT8        Size
   )
 ;
 

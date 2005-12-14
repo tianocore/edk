@@ -2,7 +2,7 @@
   title   VM ASSEMBLY LANGUAGE ROUTINES
 ;****************************************************************************
 ;*                                                                         
-;*  Copyright (c) 2004, Intel Corporation                                                         
+;*  Copyright (c) 2004 - 2005, Intel Corporation                                                         
 ;*  All rights reserved. This program and the accompanying materials                          
 ;*  are licensed and made available under the terms and conditions of the BSD License         
 ;*  which accompanies this distribution.  The full text of the license may be found at        
@@ -47,9 +47,10 @@
 ;---------------------------------------------------------------------------
 
 ;****************************************************************************
-; EbcLLCALLEX
+; EbcLLCALLEXNative
 ;
-; This function is called to execute an EBC CALLEX instruction. 
+; This function is called to execute an EBC CALLEX instruction
+; to native code. 
 ; This instruction requires that we thunk out to external native
 ; code. For IA32, we simply switch stacks and jump to the 
 ; specified function. On return, we restore the stack pointer
@@ -57,8 +58,8 @@
 ;
 ; Destroys no working registers.
 ;****************************************************************************
-; VOID EbcLLCALLEX(UINTN FuncAddr, UINTN NewStackPointer, VOID *FramePtr)
-_EbcLLCALLEX        PROC    NEAR    PUBLIC
+; VOID EbcLLCALLEXNative(UINTN FuncAddr, UINTN NewStackPointer, VOID *FramePtr)
+_EbcLLCALLEXNative        PROC    NEAR    PUBLIC
       push   ebp
       mov    ebp, esp              ; standard function prolog
       
@@ -82,7 +83,7 @@ _EbcLLCALLEX        PROC    NEAR    PUBLIC
       mov      esp, ebp
       pop      ebp
       ret
-_EbcLLCALLEX    ENDP
+_EbcLLCALLEXNative    ENDP
 
 
 ; UINTN EbcLLGetEbcEntryPoint(VOID);
