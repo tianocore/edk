@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -45,8 +45,9 @@ Abstract:
 //
 // PE32+ Machine type for EFI images
 //
-#define EFI_IMAGE_MACHINE_IA32  0x014c
-#define EFI_IMAGE_MACHINE_IA64  0x0200
+#define EFI_IMAGE_MACHINE_IA32      0x014c
+#define EFI_IMAGE_MACHINE_IA64      0x0200
+#define EFI_IMAGE_MACHINE_X64       0x8664
 //
 // #define EFI_IMAGE_MACHINE_FCODE     0xfc0d
 //

@@ -2,7 +2,7 @@ TITLE   CpuIA32.asm: Assembly code for the IA-32 resources
 
 ;*****************************************************************************
 ;*
-;*   Copyright (c) 2004, Intel Corporation                                                         
+;*   Copyright (c) 2004 - 2005, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -173,5 +173,26 @@ EfiGetEflags PROC    PUBLIC
     ret
 EfiGetEflags  ENDP
 
+;------------------------------------------------------------------------------
+; VOID
+; EfiDisableInterrupts (
+;   VOID
+;   );
+;------------------------------------------------------------------------------
+EfiDisableInterrupts PROC    PUBLIC
+    cli
+    ret
+EfiDisableInterrupts  ENDP
+
+;------------------------------------------------------------------------------
+; VOID
+; EfiEnableInterrupts (
+;   VOID
+;   );
+;------------------------------------------------------------------------------
+EfiEnableInterrupts PROC    PUBLIC
+    sti
+    ret
+EfiEnableInterrupts  ENDP
 
 END

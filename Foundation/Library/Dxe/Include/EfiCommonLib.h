@@ -744,9 +744,9 @@ Returns:
 --*/
 ;
 
-UINT32
+UINT64
 GetPowerOfTwo (
-  IN  UINT32  Input
+  IN  UINT64  Input
   )
 /*++
 

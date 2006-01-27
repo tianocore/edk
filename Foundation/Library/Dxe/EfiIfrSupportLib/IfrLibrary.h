@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -14,9 +14,7 @@ Module Name:
   IfrLibrary.h
 
 Abstract:
-
-
-Revision History
+  The file contain all library function for Ifr Operations.
 
 --*/
 
@@ -1203,6 +1201,97 @@ Returns:
 
   EFI_SUCCESS   - variable is found, OUT parameters are valid
   EFI_NOT_FOUND - variable is not found, OUT parameters are not valid
+
+--*/
+;
+
+EFI_STATUS
+EfiLibHiiVariableRetrieveFromNv (
+  IN  CHAR16                     *Name,
+  IN  EFI_GUID                   *Guid,
+  IN  UINTN                       Size,
+  OUT VOID                      **Var
+  )
+/*++
+
+Routine Description:
+  Finds out if a variable of specific Name/Guid/Size exists in NV. 
+  If it does, it will retrieve it into the Var. 
+
+Arguments:
+  Name, Guid, Size - Parameters of the variable to retrieve. Must match exactly.
+  Var              - Variable will be retrieved into buffer pointed by this pointer.
+                     If pointing to NULL, the buffer will be allocated. Caller is responsible for releasing the buffer.
+Returns:
+  EFI_SUCCESS    - The variable of exact Name/Guid/Size parameters was retrieved and written to Var.
+  EFI_NOT_FOUND  - The variable of this Name/Guid was not found in the NV.
+  EFI_LOAD_ERROR - The variable in the NV was of different size, or NV API returned error.
+
+--*/
+;
+
+////
+//// Variable override support.
+////
+
+EFI_STATUS
+EfiLibHiiVariableOverrideIfSuffix (
+  IN  CHAR16                 *Suffix,
+  IN  CHAR16                 *Name,
+  IN  EFI_GUID               *Guid,
+  IN  UINTN                   Size,
+  OUT VOID                   *Var
+  )  
+/*++
+
+Routine Description:
+  Overrrides the variable with NV data if found.
+  But it only does it if the Name ends with specified Suffix.
+  For example, if Suffix="MyOverride" and the Name="XyzSetupMyOverride",
+  the Suffix matches the end of Name, so the variable will be loaded from NV
+  provided the variable exists and the GUID and Size matches.
+
+Arguments:
+  Suffix           - Suffix the Name should end with.
+  Name, Guid, Size - Parameters of the variable to retrieve. Must match exactly.
+  Var              - Variable will be retrieved into this buffer.
+                     Caller is responsible for providing storage of exactly Size size in bytes.
+Returns:
+  EFI_SUCCESS           - The variable was overriden with NV variable of same Name/Guid/Size.
+  EFI_INVALID_PARAMETER - The name of the variable does not end with <Suffix>.
+  EFI_NOT_FOUND         - The variable of this Name/Guid was not found in the NV.
+  EFI_LOAD_ERROR        - The variable in the NV was of different size, or NV API returned error.
+
+--*/
+;
+
+EFI_STATUS
+EfiLibHiiVariableOverrideBySuffix (
+  IN  CHAR16                 *Suffix,
+  IN  CHAR16                 *Name,
+  IN  EFI_GUID               *Guid,
+  IN  UINTN                   Size,
+  OUT VOID                   *Var
+  ) 
+/*++
+
+Routine Description:
+  Overrrides the variable with NV data if found.
+  But it only does it if the NV contains the same variable with Name is appended with Suffix.  
+  For example, if Suffix="MyOverride" and the Name="XyzSetup",
+  the Suffix will be appended to the end of Name, and the variable with Name="XyzSetupMyOverride"
+  will be loaded from NV provided the variable exists and the GUID and Size matches.
+
+Arguments:
+  Suffix           - Suffix the variable will be appended with.
+  Name, Guid, Size - Parameters of the variable to retrieve. Must match exactly.
+  Var              - Variable will be retrieved into this buffer.
+                     Caller is responsible for providing storage of exactly Size size in bytes.
+
+Returns:
+  EFI_SUCCESS    - The variable was overriden with NV variable of same Name/Guid/Size.
+  EFI_NOT_FOUND  - The variable of this Name/Guid was not found in the NV.
+  EFI_LOAD_ERROR - The variable in the NV was of different size, or NV API returned error.
 
 --*/
 ;

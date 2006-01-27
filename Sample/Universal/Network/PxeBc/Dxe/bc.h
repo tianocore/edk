@@ -219,7 +219,6 @@ PxebcBisDetect (
 //
 // Global Variables
 //
-extern EFI_DRIVER_BINDING_PROTOCOL  gPxeBcDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL  gPxeBcComponentName;
 
 //
@@ -233,6 +232,18 @@ InitializeBCDriver (
   IN EFI_HANDLE                       ImageHandle,
   IN EFI_SYSTEM_TABLE                 *SystemTable
   )
+/*++
+
+  Routine Description:
+    Initialize the base code drivers and install the driver binding
+
+  Arguments:
+    Standard EFI Image Entry
+
+  Returns:
+    EFI_SUCCESS         - This driver was successfully bound
+
+--*/  
 ;
 
 EFI_STATUS
@@ -430,6 +441,15 @@ PxeBcLibGetSmbiosSystemGuidAndSerialNumber (
   OUT CHAR8       **SystemSerialNumber
   )
 ;
+
+#ifdef EFI_SIZE_REDUCTION_APPLIED
+  #define COMPONENT_NAME_CODE(code)
+  #define COMPONENT_NAME            NULL
+#else
+  #define COMPONENT_NAME_CODE(code) code
+  #define COMPONENT_NAME            &gPxeBcComponentName
+#endif  
+
 
 //
 // Define SMBIOS tables.

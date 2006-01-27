@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -16,8 +16,6 @@ Module Name:
 AgBStract:
 
   Boot Maintainence Helper functions
-
-Revision History
 
 --*/
 
@@ -478,17 +476,21 @@ Routine Description:
 Arguments:
   
   ProducerGuid - The Guid to search the HII database for
-  Token - The token value of the string to extract
-  String - The string that is extracted
+  Token        - The token value of the string to extract
+  String       - The string that is extracted
   
 Returns:
+
+  EFI_SUCCESS           -  Buffer filled with the requested forms. BufferLength
+                           was updated.
+  EFI_BUFFER_TOO_SMALL  - The buffer provided was not large enough to allow the form to be stored.
 
 --*/
 {
   EFI_STATUS        Status;
   UINT16            HandleBufferLength;
   EFI_HII_HANDLE    *HiiHandleBuffer;
-  UINT16            StringBufferLength;
+  UINTN             StringBufferLength;
   UINTN             NumberOfHiiHandles;
   UINTN             Index;
   UINT16            Length;

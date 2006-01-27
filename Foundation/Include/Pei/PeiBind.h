@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,13 @@ Abstract:
 
 #ifdef EFI_DEBUG
 
+#ifdef EFIX64
+
+#define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                
+#define EFI_PEIM_ENTRY_POINT(InitFunction)
+
+#else
+
 #define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
           UINTN                                               \
           __stdcall                                           \
@@ -36,19 +43,19 @@ Abstract:
               return 1;                                       \
           }                                                   \
                                                               \
-          EFI_STATUS                                                 \
+          EFI_STATUS                                          \
           __declspec( dllexport  )                            \
           __cdecl                                             \
           InitializeDriver (                                  \
-            IN EFI_PEI_STARTUP_DESCRIPTOR *PeiStartup             \
+            IN EFI_PEI_STARTUP_DESCRIPTOR *PeiStartup         \
               )                                               \
           {                                                   \
-              return InitFunction(PeiStartup);  \
+              return InitFunction(PeiStartup);                \
           }
 
 
 
-#define EFI_PEIM_ENTRY_POINT(InitFunction)                \
+#define EFI_PEIM_ENTRY_POINT(InitFunction)                    \
           UINTN                                               \
           __stdcall                                           \
           _DllMainCRTStartup (                                \
@@ -60,7 +67,7 @@ Abstract:
               return 1;                                       \
           }                                                   \
                                                               \
-          EFI_STATUS                                                 \
+          EFI_STATUS                                          \
           __declspec( dllexport  )                            \
           __cdecl                                             \
           InitializeDriver (                                  \
@@ -68,8 +75,10 @@ Abstract:
               IN EFI_PEI_SERVICES          **PeiServices      \
               )                                               \
           {                                                   \
-              return InitFunction(FfsHeader, PeiServices);               \
+              return InitFunction(FfsHeader, PeiServices);    \
           }
+
+#endif
 
 #else
 
@@ -79,7 +88,7 @@ Abstract:
           __declspec( dllexport  )                            \
           __cdecl                                             \
           InitializeDriver (                                  \
-            IN EFI_PEI_STARTUP_DESCRIPTOR *PeiStartup             \
+            IN EFI_PEI_STARTUP_DESCRIPTOR *PeiStartup         \
               )                                               \
           {                                                   \
               return InitFunction(PeiStartup);                \
@@ -102,6 +111,5 @@ Abstract:
 #define EFI_PEIM_ENTRY_POINT(InitFunction)
 
 #endif
-
 #endif
 #endif

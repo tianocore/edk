@@ -62,15 +62,16 @@ Returns:
 
 VOID
 ConvertPpiPointers (
-  IN EFI_PEI_SERVICES                     **PeiServices,
-  IN EFI_HOB_HANDOFF_INFO_TABLE    *OldHandOffHob,
-  IN EFI_HOB_HANDOFF_INFO_TABLE    *NewHandOffHob
+  IN EFI_PEI_SERVICES            **PeiServices,
+  IN EFI_HOB_HANDOFF_INFO_TABLE  *OldHandOffHob,
+  IN EFI_HOB_HANDOFF_INFO_TABLE  *NewHandOffHob
   )
 /*++
 
 Routine Description:
 
-  Migrate the Hob list from the CAR stack to PEI installed memory.
+  Convert PPI pointers after the Hob list was migrated from the CAR stack
+  to PEI installed memory.
 
 Arguments:
 
@@ -79,28 +80,63 @@ Arguments:
   NewHandOffHob - The new handoff HOB list.
 
 Returns:
-            
+
+  None.
+    
 --*/
 {
-  PEI_CORE_INSTANCE                    *PrivateData;
-  UINT8                                Index;
+  PEI_CORE_INSTANCE     *PrivateData;
+  UINT8                 Index;
+  PEI_PPI_LIST_POINTERS *PpiPointer;
+  UINTN                 Fixup;
 
   PrivateData = PEI_CORE_INSTANCE_FROM_PS_THIS(PeiServices);
 
+  Fixup = (UINTN)NewHandOffHob - (UINTN)OldHandOffHob;
+  
   for (Index = 0; Index < MAX_PPI_DESCRIPTORS; Index++) {
-    if (((UINTN)PrivateData->PpiData.PpiListPtrs[Index].Raw < (UINTN)OldHandOffHob->EfiFreeMemoryBottom) && 
-        ((UINTN)PrivateData->PpiData.PpiListPtrs[Index].Raw >= (UINTN)OldHandOffHob)) {
-      //
-      // Convert the pointers from the old HOB heap to the relocated HOB heap).
-      //
-      PrivateData->PpiData.PpiListPtrs[Index].Raw =
-             (VOID *) ((UINTN)PrivateData->PpiData.PpiListPtrs[Index].Raw -
-                       ((UINTN)OldHandOffHob - 
-                        (UINTN)NewHandOffHob));
+    if (Index < PrivateData->PpiData.PpiListEnd ||
+        Index > PrivateData->PpiData.NotifyListEnd) {
+      PpiPointer = &PrivateData->PpiData.PpiListPtrs[Index];
+      
+      if (((UINTN)PpiPointer->Raw < (UINTN)OldHandOffHob->EfiFreeMemoryBottom) && 
+          ((UINTN)PpiPointer->Raw >= (UINTN)OldHandOffHob)) {
+        //
+        // Convert the pointer to the PEIM descriptor from the old HOB heap
+        // to the relocated HOB heap.
+        //
+        PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw + Fixup);
+
+        //
+        // Only when the PEIM descriptor is in the old HOB should it be necessary
+        // to try to convert the pointers in the PEIM descriptor
+        //
+        
+        if (((UINTN)PpiPointer->Ppi->Guid < (UINTN)OldHandOffHob->EfiFreeMemoryBottom) && 
+            ((UINTN)PpiPointer->Ppi->Guid >= (UINTN)OldHandOffHob)) {
+          //
+          // Convert the pointer to the GUID in the PPI or NOTIFY descriptor
+          // from the old HOB heap to the relocated HOB heap.
+          //
+          PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid + Fixup);
+        }
+
+        //
+        // Assume that no code is located in the temporary memory, so the pointer to
+        // the notification function in the NOTIFY descriptor needs not be converted.
+        //
+        if (Index < PrivateData->PpiData.PpiListEnd &&
+            (UINTN)PpiPointer->Ppi->Ppi < (UINTN)OldHandOffHob->EfiFreeMemoryBottom &&
+            (UINTN)PpiPointer->Ppi->Ppi >= (UINTN)OldHandOffHob) {
+            //
+            // Convert the pointer to the PPI interface structure in the PPI descriptor
+            // from the old HOB heap to the relocated HOB heap.
+            //
+            PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi+ Fixup);   
+        }
+      }
     }
   }
-  
-  return;
 }
 
 

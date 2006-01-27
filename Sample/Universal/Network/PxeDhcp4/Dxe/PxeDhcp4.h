@@ -323,8 +323,36 @@ tx_rx_udp (
 //
 // Global variable definitions.
 //
-extern EFI_DRIVER_BINDING_PROTOCOL  gPxeDhcp4DriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL  gPxeDhcp4ComponentName;
+
+EFI_STATUS
+EFIAPI
+PxeDhcp4DriverEntryPoint (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+/*++
+
+Routine Description:
+  Register Driver Binding protocol for this driver.
+  
+Arguments:
+  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+
+Returns: 
+  EFI_SUCCESS - Driver loaded.
+  other       - Driver not loaded.
+
+--*/
+;
+
+#ifdef EFI_SIZE_REDUCTION_APPLIED
+  #define COMPONENT_NAME_CODE(code)
+  #define COMPONENT_NAME            NULL
+#else
+  #define COMPONENT_NAME_CODE(code) code
+  #define COMPONENT_NAME            &gPxeDhcp4ComponentName
+#endif  
 
 #endif /* _PXEDHCP4_H */
 

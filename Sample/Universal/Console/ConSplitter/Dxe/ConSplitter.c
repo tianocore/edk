@@ -919,8 +919,24 @@ Returns:
   //
   Status = ConSplitterTextOutAddDevice (&mConOut, TextOut, UgaDraw);
   ConSplitterTextOutSetAttribute (&mConOut.TextOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
+  
+  //
+  // Match the UGA mode data of ConOut with the current mode
+  //
+  if (UgaDraw) {
+    UgaDraw->GetMode (
+               UgaDraw,
+               &mConOut.UgaHorizontalResolution,
+               &mConOut.UgaVerticalResolution,
+               &mConOut.UgaColorDepth,
+               &mConOut.UgaRefreshRate
+               );
+  }
+
   return Status;
+
 }
+  
 
 STATIC
 EFI_STATUS

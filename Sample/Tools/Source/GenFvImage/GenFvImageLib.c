@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -2525,7 +2525,9 @@ Returns:
   //
   // Verify machine type is supported
   //
-  if (*MachineType != EFI_IMAGE_MACHINE_IA32 && *MachineType != EFI_IMAGE_MACHINE_IA64) {
+  if (*MachineType != EFI_IMAGE_MACHINE_IA32 && 
+      *MachineType != EFI_IMAGE_MACHINE_IA64 &&
+      *MachineType != EFI_IMAGE_MACHINE_X64) {
     printf ("ERROR: Unrecognized machine type in the PE32 file.\n");
     return EFI_UNSUPPORTED;
   }

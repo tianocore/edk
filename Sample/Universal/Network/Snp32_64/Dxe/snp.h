@@ -1,4 +1,5 @@
 /*++
+
 Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
@@ -14,7 +15,7 @@ Module name:
 Abstract:
 
 Revision history:
-    2000-Feb-03 M(f)J   Genesis.
+
 --*/
 #ifndef _SNP_H
 #define _SNP_H
@@ -136,7 +137,6 @@ SNP_DRIVER;
 // Global Variables
 //
 extern EFI_COMPONENT_NAME_PROTOCOL  gSimpleNetworkComponentName;
-extern EFI_DRIVER_BINDING_PROTOCOL  gSimpleNetworkDriverBinding;
 
 //
 //  Virtual to physical mapping for all UNDI 3.0s.
@@ -412,6 +412,39 @@ VOID
 (*ptr) (
   VOID
   );
+
+EFI_STATUS
+EFIAPI
+InitializeSnpNiiDriver (
+  IN EFI_HANDLE       ImageHandle,
+  IN EFI_SYSTEM_TABLE *SystemTable
+  )
+/*++
+
+Routine Description:
+  Install all the driver protocol
+
+Arguments:
+  ImageHandle   - Driver image handle
+  SystemTable   - System services table
+
+Returns:
+
+  EFI_SUCEESS   - Initialization routine has found UNDI hardware, loaded it's ROM, and installed
+                  a notify event for the Network Indentifier Interface Protocol successfully.
+
+  Other         - Return value from HandleProtocol for DeviceIoProtocol or LoadedImageProtocol
+
+--*/
+;
+
+#ifdef EFI_SIZE_REDUCTION_APPLIED
+  #define COMPONENT_NAME_CODE(code)
+  #define COMPONENT_NAME            NULL
+#else
+  #define COMPONENT_NAME_CODE(code) code
+  #define COMPONENT_NAME            &gSimpleNetworkComponentName
+#endif  
 
 #define SNP_MEM_PAGES(x)  (((x) - 1) / 4096 + 1)
 

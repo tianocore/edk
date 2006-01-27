@@ -348,7 +348,7 @@ Sample\Universal\Network\Snp32_64\Dxe\SNP.inf
 #
 # Fat File System driver. Default is binary only 
 #
-Other\Maintained\Universal\Disk\FileSystem\Fat\Dxe\Fat.inf
+Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
 
 
 #

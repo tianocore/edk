@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -42,11 +42,11 @@ Abstract:
 #define NARROW_GLYPH_ARRAY_SIZE           19
 #define WIDE_GLYPH_ARRAY_SIZE             38
 
-#define SETUP_MAP_NAME                    L"Setup"
-#define SETUP_USER_DATA_NAME              L"SetupUserData"
-#define SETUP_DEFAULT_OVERRIDE_NAME       L"SetupDefaultOverride"
-#define SETUP_MANUFACTURING_OVERRIDE_NAME L"SetupManufacturingOverride"
-
+#define SETUP_MAP_NAME                              L"Setup"
+#define HII_VARIABLE_SUFFIX_USER_DATA               L"UserSavedData"
+#define HII_VARIABLE_SUFFIX_DEFAULT_OVERRIDE        L"DefaultOverride"
+#define HII_VARIABLE_SUFFIX_MANUFACTURING_OVERRIDE  L"ManufacturingOverride"
+ 
 typedef struct _EFI_HII_HANDLE_DATABASE {
   VOID                            *Buffer;        // Actual buffer pointer
   EFI_HII_HANDLE                  Handle;         // Monotonically increasing value to signify the value returned to caller
@@ -221,7 +221,7 @@ HiiGetString (
   IN     STRING_REF          Token,
   IN     BOOLEAN             Raw,
   IN     CHAR16              *LanguageString,
-  IN OUT UINT16              *BufferLength,
+  IN OUT UINTN               *BufferLength,
   OUT    EFI_STRING          StringBuffer
   )
 ;
@@ -283,7 +283,7 @@ HiiGetForms (
   IN     EFI_HII_PROTOCOL    *This,
   IN     EFI_HII_HANDLE      Handle,
   IN     EFI_FORM_ID         FormId,
-  IN OUT UINT16              *BufferLength,
+  IN OUT UINTN               *BufferLength,
   OUT    UINT8               *Buffer
   )
 ;

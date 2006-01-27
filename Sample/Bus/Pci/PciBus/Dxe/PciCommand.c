@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -114,37 +114,40 @@ Returns:
 
 EFI_STATUS
 LocateCapabilityRegBlock (
-  IN PCI_IO_DEVICE  *PciIoDevice,
-  IN UINT8          CapId,
-  OUT UINT8         *Offset,
-  OUT UINT8         *NextRegBlock
+  IN     PCI_IO_DEVICE *PciIoDevice,
+  IN     UINT8         CapId,
+  IN OUT UINT8         *Offset,
+     OUT UINT8         *NextRegBlock OPTIONAL
   )
 /*++
 
 Routine Description:
-  Locate cap reg.
+
+  Locate Capability register.
 
 Arguments:
+
   PciIoDevice         - A pointer to the PCI_IO_DEVICE.
-  CapId               - The cap ID.
-  Offset              - A pointer to the offset.
-  NextRegBlock        - A pointer to the next block.
+  CapId               - The capability ID.
+  Offset              - A pointer to the offset. 
+                        As input: the default offset; 
+                        As output: the offset of the found block.
+  NextRegBlock        - An optional pointer to return the value of next block.
 
 Returns:
   
-  None
+  EFI_UNSUPPORTED     - The Pci Io device is not supported.
+  EFI_NOT_FOUND       - The Pci Io device cannot be found.
+  EFI_SUCCESS         - The Pci Io device is successfully located.
 
 --*/
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
   UINT8   CapabilityPtr;
   UINT16  CapabilityEntry;
   UINT8   CapabilityID;
 
   //
-  // To check the cpability of this device supports
+  // To check the capability of this device supports
   //
   if (!PciCapabilitySupport (PciIoDevice)) {
     return EFI_UNSUPPORTED;
@@ -158,21 +161,21 @@ Returns:
     if (IS_CARDBUS_BRIDGE (&PciIoDevice->Pci)) {
 
       PciIoDevice->PciIo.Pci.Read (
-                              &PciIoDevice->PciIo,
-                              EfiPciIoWidthUint8,
-                              EFI_PCI_CARDBUS_BRIDGE_CAPABILITY_PTR,
-                              1,
-                              &CapabilityPtr
-                              );
+                               &PciIoDevice->PciIo,
+                               EfiPciIoWidthUint8,
+                               EFI_PCI_CARDBUS_BRIDGE_CAPABILITY_PTR,
+                               1,
+                               &CapabilityPtr
+                               );
     } else {
 
       PciIoDevice->PciIo.Pci.Read (
-                              &PciIoDevice->PciIo,
-                              EfiPciIoWidthUint8,
-                              EFI_PCI_CAPABILITY_PTR,
-                              1,
-                              &CapabilityPtr
-                              );
+                               &PciIoDevice->PciIo,
+                               EfiPciIoWidthUint8,
+                               EFI_PCI_CAPABILITY_PTR,
+                               1,
+                               &CapabilityPtr
+                               );
     }
   }
 
@@ -182,12 +185,12 @@ Returns:
     //
     CapabilityPtr &= 0xFC;
     PciIoDevice->PciIo.Pci.Read (
-                            &PciIoDevice->PciIo,
-                            EfiPciIoWidthUint16,
-                            CapabilityPtr,
-                            1,
-                            &CapabilityEntry
-                            );
+                             &PciIoDevice->PciIo,
+                             EfiPciIoWidthUint16,
+                             CapabilityPtr,
+                             1,
+                             &CapabilityEntry
+                             );
 
     CapabilityID = (UINT8) CapabilityEntry;
 

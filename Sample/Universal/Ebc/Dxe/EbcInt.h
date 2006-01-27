@@ -1,4 +1,4 @@
-/*++ 
+/*++
 
 Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          

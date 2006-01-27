@@ -42,6 +42,14 @@ COMPONENT_TYPE    = LIBRARY
   ia32\ProcessorAsms.Asm
   ia32\efijump.h
 
+[sources.x64]
+  x64\PeCoffLoaderEx.c
+  x64\PeCoffLoaderEx.h
+  x64\PerformancePrimitives.c
+  x64\Processor.c
+  x64\ProcessorAsms.Asm
+  x64\efijump.h
+
 [sources.ipf]
 #  ipf\Math.c
   ipf\PeCoffLoaderEx.c
@@ -60,6 +68,9 @@ COMPONENT_TYPE    = LIBRARY
   EfiCommonLib
 
 [libraries.ia32]
+  CpuIA32Lib
+
+[libraries.x64]
   CpuIA32Lib
 
 [includes.common]

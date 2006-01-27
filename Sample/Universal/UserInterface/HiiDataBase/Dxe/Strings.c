@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -780,22 +780,37 @@ HiiGetString (
   IN     STRING_REF         Token,
   IN     BOOLEAN            Raw,
   IN     CHAR16             *LanguageString,
-  IN OUT UINT16             *BufferLength,
+  IN OUT UINTN              *BufferLength,
   OUT    EFI_STRING         StringBuffer
   )
 /*++
 
 Routine Description:
   
-    This function extracts a string from a package already registered with the EFI HII database.
+  This function extracts a string from a package already registered with the EFI HII database.
 
 Arguments:
+  This            - A pointer to the EFI_HII_PROTOCOL instance.
+  Handle          - The HII handle on which the string resides.
+  Token           - The string token assigned to the string.
+  Raw             - If TRUE, the string is returned unedited in the internal storage format described
+                    above. If false, the string returned is edited by replacing <cr> with <space> 
+                    and by removing special characters such as the <wide> prefix.
+  LanguageString  - Pointer to a NULL-terminated string containing a single ISO 639-2 language
+                    identifier, indicating the language to print. If the LanguageString is empty (starts
+                    with a NULL), the default system language will be used to determine the language.
+  BufferLength    - Length of the StringBuffer. If the status reports that the buffer width is too
+                    small, this parameter is filled with the length of the buffer needed.
+  StringBuffer    - The buffer designed to receive the characters in the string. Type EFI_STRING is
+                    defined in String.
 
 Returns: 
-
+  EFI_INVALID_PARAMETER - If input parameter is invalid.
+  EFI_BUFFER_TOO_SMALL  - If the *BufferLength is too small.
+  EFI_SUCCESS           - Operation is successful.
+  
 --*/
 {
-  INTN                      Count;
   EFI_HII_PACKAGE_INSTANCE  *PackageInstance;
   EFI_HII_PACKAGE_INSTANCE  *StringPackageInstance;
   EFI_HII_DATA              *HiiData;
@@ -807,9 +822,9 @@ Returns:
   CHAR8                     Lang[3];
   CHAR16                    Language[3];
   UINT32                    Length;
-  INTN                      Index;
+  UINTN                     Count;
   RELOFST                   Offset;
-  UINT16                    *Local;
+  CHAR16                    *Local;
   UINT16                    Zero;
   UINT16                    Narrow;
   UINT16                    Wide;
@@ -922,14 +937,14 @@ LangNotFound:
     //
     // If trying to get the entire string package and have insufficient space.  Return error.
     //
-    if (Length > *BufferLength) {
-      *BufferLength = (UINT16)Length;
+    if (Length > *BufferLength || StringBuffer == NULL) {
+      *BufferLength = Length;
       return EFI_BUFFER_TOO_SMALL;
     }
     //
     // Copy the Pack to the caller's buffer.
     //
-    *BufferLength = (UINT16)Length;
+    *BufferLength = Length;
     EfiCopyMem (StringBuffer, StringPack, Length);
 
     return EFI_SUCCESS;
@@ -978,42 +993,37 @@ LangNotFound:
       ;
     Count++;
 
-    Count = Count * sizeof (CHAR16);;
+    Count *= sizeof (CHAR16);;
 
-    if (*BufferLength >= Count) {
+    if (*BufferLength >= Count && StringBuffer != NULL) {
       //
       // Copy the string to the user's buffer
       //
       if (Raw) {
-        EfiCopyMem (StringBuffer, (VOID *) ((CHAR8 *) (StringPack) + Offset), Count);
+        EfiCopyMem (StringBuffer, Local, Count);
       } else {
-        Index = 0;
-        Count = -1;
-        do {
-          Count++;
-          for (; 
-               EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Narrow, 2) &&
-               EfiCompareMem((CHAR16 *)((CHAR8 *)(StringPack) + Offset + Count * 2), &Wide, 2) &&
-               EfiCompareMem ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset + Count * 2), &NoBreak, 2) &&
-               EfiCompareMem ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset + Count * 2), &Zero, 2);
-               Index++, Count++
-              ) {
-            EfiCopyMem (&StringBuffer[Index], (VOID *) ((CHAR8 *) (StringPack) + Offset + Count * 2), 2);
-          }
-        } while (EfiCompareMem ((CHAR16 *) ((CHAR8 *) (StringPack) + Offset + Count * 2), &Zero, 2));
-
-        EfiCopyMem (&StringBuffer[Index], (VOID *) ((CHAR8 *) (StringPack) + Offset + Count * 2), 2);
-
-        for (Count = 0; StringBuffer[Count] != 0; Count++)
-          ;
+        for (Count = 0; EfiCompareMem (Local, &Zero, 2); Local++) {
+          //
+          // Skip "Narraw, Wide, NoBreak"
+          //
+          if (EfiCompareMem (Local, &Narrow,  2) &&
+              EfiCompareMem (Local, &Wide,    2) && 
+              EfiCompareMem (Local, &NoBreak, 2)) {          
+            EfiCopyMem (&StringBuffer[Count++], Local, 2);          
+          }        
+        } 
+        //
+        // Add "NULL" at the end.
+        //
+        EfiCopyMem (&StringBuffer[Count], &Zero, 2);
         Count++;
-        Count = Count * 2;
+        Count *= sizeof (CHAR16);
       }
 
-      *BufferLength = (UINT16) Count;
+      *BufferLength = Count;
       return EFI_SUCCESS;
     } else {
-      *BufferLength = (UINT16) Count;
+      *BufferLength = Count;
       return EFI_BUFFER_TOO_SMALL;
     }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -95,6 +95,30 @@ Arguments:
 Returns: 
 
   EFI_STATUS always returns EFI_SUCCESS
+
+--*/
+;
+
+EFI_STATUS
+EfiShutdownRuntimeDriverLib (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  This routine will free some resources which have been allocated in
+  EfiInitializeRuntimeDriverLib(). If a runtime driver exits with an error, 
+  it must call this routine to free the allocated resource before the exiting.
+
+Arguments:
+
+  None
+
+Returns: 
+
+  EFI_SUCCESS     - Shotdown the Runtime Driver Lib successfully
+  EFI_UNSUPPORTED - Runtime Driver lib was not initialized at all
 
 --*/
 ;

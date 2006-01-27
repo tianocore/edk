@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -277,28 +277,28 @@ EFI_STATUS
 RegisterPciDevice (
   IN  EFI_HANDLE                     Controller,
   IN  PCI_IO_DEVICE                  *PciIoDevice,
-  OUT EFI_HANDLE                     *Handle
+  OUT EFI_HANDLE                     *Handle OPTIONAL
   )
 /*++
 
 Routine Description:
 
-  This function is used to register the PCI device to the EFI,
-  create a handle for this PCI device,then attach apporpriate protocols
-  onto the handle.
+  This function registers the PCI IO device. It creates a handle for this PCI IO device 
+  (if the handle does not exist), attaches appropriate protocols onto the handle, does
+  necessary initialization, and sets up parent/child relationship with its bus controller.
 
 Arguments:
 
-  Controller    - An efi handle.
-  PciIoDevice   - A pointer to the PCI_IO_DEVICE.
-  Handle        - A pointer to a efi handle.
+  Controller    - An EFI handle for the PCI bus controller.
+  PciIoDevice   - A PCI_IO_DEVICE pointer to the PCI IO device to be registered.
+  Handle        - A pointer to hold the EFI handle for the PCI IO device.
 
 Returns:
 
-  None
+  EFI_SUCCESS   - The PCI device is successfully registered.
+  Others        - An error occurred when registering the PCI device.
 
 --*/
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS          Status;
   VOID                *PlatformOpRomBuffer;
@@ -324,12 +324,13 @@ Returns:
   //
   // Detect if PCI Express Device
   //
+  PciExpressCapRegOffset = 0;
   Status = LocateCapabilityRegBlock (
-            PciIoDevice,
-            EFI_PCI_CAPABILITY_ID_PCIEXP,
-            &PciExpressCapRegOffset,
-            NULL
-            );
+             PciIoDevice,
+             EFI_PCI_CAPABILITY_ID_PCIEXP,
+             &PciExpressCapRegOffset,
+             NULL
+             );
   if (!EFI_ERROR (Status)) {
     PciIoDevice->IsPciExp = TRUE;
   }
@@ -346,11 +347,11 @@ Returns:
     PciIoDevice->AllOpRomProcessed = TRUE;
 
     Status = gPciPlatformProtocol->GetPciRom (
-                                    gPciPlatformProtocol,
-                                    PciIoDevice->Handle,
-                                    &PlatformOpRomBuffer,
-                                    &PlatformOpRomSize
-                                    );
+                                     gPciPlatformProtocol,
+                                     PciIoDevice->Handle,
+                                     &PlatformOpRomBuffer,
+                                     &PlatformOpRomSize
+                                     );
 
     if (!EFI_ERROR (Status)) {
 
@@ -380,13 +381,13 @@ Returns:
                     );
     if (EFI_ERROR (Status)) {
       gBS->UninstallMultipleProtocolInterfaces (
-            &PciIoDevice->Handle,
-            &gEfiDevicePathProtocolGuid,
-            PciIoDevice->DevicePath,
-            &gEfiPciIoProtocolGuid,
-            &PciIoDevice->PciIo,
-            NULL
-            );
+             &PciIoDevice->Handle,
+             &gEfiDevicePathProtocolGuid,
+             PciIoDevice->DevicePath,
+             &gEfiPciIoProtocolGuid,
+             &PciIoDevice->PciIo,
+             NULL
+             );
 
       return Status;
     }

@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2005, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -98,7 +98,7 @@ DEPEX_TYPE = EFI_SECTION_DXE_DEPEX
 # the source filename comes from the sources section of the component INF file.
 #
 [=============================================================================]
-[Compile.Ia32.asm]
+[Compile.Ia32.asm,Compile.x64.asm]
 
 $(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).asm
   $(ASM) $(ASM_FLAGS) $**
@@ -113,7 +113,7 @@ $(DEST_DIR)\$(FILE).obj : $(DEST_DIR)\$(FILE).pro
  $(ASM) $(ASM_FLAGS) $(DEST_DIR)\$(FILE).pro
 
 [=============================================================================]
-[Compile.Ia32.c,Compile.Ipf.c]
+[Compile.Ia32.c,Compile.Ipf.c,Compile.x64.c]
 
 #
 # If it already exists, then include the dependency list file for this 
@@ -196,7 +196,7 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).c $(INF_FILENAME) $(DEP_FILE)
 # Commands for compiling a ".apr" Apriori source file.
 #
 [=============================================================================]
-[Compile.Ia32.Apr,Compile.Ipf.Apr,Compile.Ebc.Apr]
+[Compile.Ia32.Apr,Compile.Ipf.Apr,Compile.Ebc.Apr,Compile.x64.Apr]
 
 #
 # Create the raw binary file. If you get an error on the build saying it doesn't
@@ -210,7 +210,7 @@ $(DEST_DIR)\$(BASE_NAME).sec : $(DEST_DIR)\$(BASE_NAME).bin
   $(GENSECTION) -I $(DEST_DIR)\$(BASE_NAME).bin -O $(DEST_DIR)\$(BASE_NAME).sec -S EFI_SECTION_RAW
 
 [=============================================================================]
-[Build.Ia32.Apriori,Build.Ipf.Apriori,Build.Ebc.Apriori]
+[Build.Ia32.Apriori,Build.Ipf.Apriori,Build.Ebc.Apriori,Build.x64.Apriori]
 
 all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).FFS
 
@@ -221,7 +221,7 @@ $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).FFS : $(DEST_DIR)\$(BASE_NAME).sec
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
 [=============================================================================]
-[Build.Ia32.Makefile,Build.Ipf.Makefile,Build.Ebc.Makefile]
+[Build.Ia32.Makefile,Build.Ipf.Makefile,Build.Ebc.Makefile,Build.x64.Makefile]
 
 #
 # Copy the makefile directly from the source directory, then make it
@@ -256,7 +256,7 @@ all : $(DEST_DIR)\makefile.new call_makefile
 # To build these components, simply call the makefile from the source 
 # directory.
 #
-[Build.Ia32.Custom_Makefile,Build.Ipf.Custom_Makefile,Build.Ebc.Custom_Makefile]
+[Build.Ia32.Custom_Makefile,Build.Ipf.Custom_Makefile,Build.Ebc.Custom_Makefile,Build.x64.Custom_Makefile]
 
 #
 # Just call the makefile from the source directory, passing in some
@@ -281,7 +281,7 @@ all :
 # These commands are used to build libraries
 #
 [=============================================================================]
-[Build.Ia32.LIBRARY,Build.Ipf.LIBRARY]
+[Build.Ia32.LIBRARY,Build.Ipf.LIBRARY,Build.x64.LIBRARY]
 #
 # LIB all the object files into to our target lib file. Put
 # a dependency on the component's INF file in case it changes.
@@ -326,7 +326,7 @@ $(DEST_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec
 # differ.  The entire section gets dumped to the output makefile.
 #
 [=============================================================================]
-[Build.Ia32.BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|PE32_PEIM|PEI_CORE|PIC_PEIM|RELOCATABLE_PEIM|DXE_CORE|APPLICATION|COMBINED_PEIM_DRIVER, Build.Ipf.BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|PEI_CORE|PE32_PEIM|PIC_PEIM|DXE_CORE|APPLICATION|COMBINED_PEIM_DRIVER]
+[Build.Ia32.BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|PE32_PEIM|PEI_CORE|PIC_PEIM|RELOCATABLE_PEIM|DXE_CORE|APPLICATION|COMBINED_PEIM_DRIVER, Build.Ipf.BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|PEI_CORE|PE32_PEIM|PIC_PEIM|DXE_CORE|APPLICATION|COMBINED_PEIM_DRIVER, Build.x64.BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|PE32_PEIM|PEI_CORE|PIC_PEIM|RELOCATABLE_PEIM|DXE_CORE|APPLICATION|COMBINED_PEIM_DRIVER]
 
 !IF "$(LOCALIZE)" == "YES"
 
@@ -585,7 +585,7 @@ BIN_TARGETS = $(BIN_TARGETS) $(DEST_DIR)\$(BASE_NAME)IfrBin.sec
 all: $(LOCALIZE_TARGETS) $(BIN_TARGETS) $(TARGET_FFS_FILE)
 
 [=============================================================================]
-[Build.Ia32.TE_PEIM,Build.Ipf.TE_PEIM]
+[Build.Ia32.TE_PEIM,Build.Ipf.TE_PEIM,Build.x64.TE_PEIM]
 #
 # Define the library file we'll build if we have any objects defined.
 #
@@ -876,7 +876,7 @@ all: $(LOCALIZE_TARGETS) $(TARGET_FFS_FILE)
 # This section, as it now exists, only supports boot service drivers.
 #
 [=============================================================================]
-[Build.Ia32.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.Ebc.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI]
+[Build.Ia32.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.Ipf.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.Ebc.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.x64.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI]
 #
 # Defines for standard intermediate files and build targets. For the source
 # .efi file, take the one in the source directory if it exists. If there's not
@@ -977,7 +977,7 @@ all: $(TARGET_FFS_FILE)
 # shell library below via shell\lib\shelllib.inf.
 #
 [=============================================================================]
-[Build.Ia32.SHELLAPP,Build.Ipf.SHELLAPP]
+[Build.Ia32.SHELLAPP,Build.Ipf.SHELLAPP,Build.x64.SHELLAPP]
 
 TARGET_DLL = $(BIN_DIR)\$(BASE_NAME).dll
 TARGET_EFI = $(BIN_DIR)\$(BASE_NAME).efi
@@ -1003,7 +1003,7 @@ $(TARGET_EFI) : $(TARGET_DLL)
 all: $(TARGET_EFI)
 
 [=============================================================================]
-[Compile.Ia32.Bin,Build.Ipf.Bin]
+[Compile.Ia32.Bin,Compile.x64.Bin,Build.Ipf.Bin]
 #
 # We simply copy the 16 bit binary file from the source directory to the destination directory
 #
@@ -1011,7 +1011,7 @@ $(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_DIR)\$(BASE_NAME).bin
   copy $** $@
 
 [=============================================================================]
-[Compile.Ia32.Bmp,Build.Ipf.Bmp]
+[Compile.Ia32.Bmp,Compile.x64.Bmp,Build.Ipf.Bmp]
 #
 # We simply copy the BMP file from the source directory to the destination directory and change the extension to bin.
 # This is so that we can build BINARY types the same way, with the same default package, etc.
@@ -1020,7 +1020,7 @@ $(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_DIR)\$(BASE_NAME).bmp
   copy $** $@
 
 [=============================================================================]
-[Build.Ia32.BINARY,Build.Ipf.BINARY]
+[Build.Ia32.BINARY,Build.Ipf.BINARY,Build.x64.BINARY]
 #
 #
 # Use GenFfsFile to convert it to an FFS file
@@ -1037,7 +1037,7 @@ all: $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME)$(FFS_EXT)
 # Emit an error message if the file's base name is the same as the
 # component base name. This causes build issues.
 #
-[Compile.Ia32.Uni,Compile.Ipf.Uni,Compile.Ebc.Uni]
+[Compile.Ia32.Uni,Compile.Ipf.Uni,Compile.Ebc.Uni,Compile.x64.Uni]
 
 !IF "$(FILE)" == "$(BASE_NAME)"
 !ERROR Component Unicode string file name cannot be the same as the component BASE_NAME.
@@ -1051,7 +1051,7 @@ STRGATHER_FLAGS = $(STRGATHER_FLAGS) -db $(DEST_DIR)\$(FILE).sdb
 LOCALIZE        = YES
 
 [=============================================================================]
-[Compile.Ia32.Vfr,Compile.Ipf.Vfr,Compile.Ebc.Vfr]
+[Compile.Ia32.Vfr,Compile.Ipf.Vfr,Compile.Ebc.Vfr,Compile.x64.Vfr]
 
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
@@ -1073,7 +1073,7 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).vfr $(INC_DEPS) $(DEST_DIR)\$(BA
 # Commands for building IFR as uncompressed binary into the FFS file. To 
 # use it, set COMPILE_SELECT=.vfr=Ifr_Bin for the component in the DSC file.
 #
-[Compile.Ia32.Ifr_Bin,Compile.Ipf.Ifr_Bin;Compile.Ebc.Ifr_Bin]
+[Compile.Ia32.Ifr_Bin,Compile.Ipf.Ifr_Bin;Compile.Ebc.Ifr_Bin,Compile.x64.Ifr_Bin]
 
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
@@ -1097,7 +1097,7 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).vfr $(INC_DEPS) $(DEST_DIR)\$(BA
 HII_IFR_PACK_FILES = $(HII_IFR_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
 [=============================================================================]
-[Compile.Ia32.Fv,Compile.Ipf.Fv]
+[Compile.Ia32.Fv,Compile.Ipf.Fv,Compile.x64.Fv]
 #
 # Run GenSection on the firmware volume image.
 #

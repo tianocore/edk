@@ -20,6 +20,7 @@ Abstract:
 --*/
 
 #include "HiiDatabase.h"
+#include "IfrLibrary.h"
 
 CHAR16*
 Ascii2Unicode (
@@ -53,6 +54,38 @@ Ascii2Unicode (
   }
 }
 
+CHAR8*
+Unicode2Ascii (
+  OUT CHAR8          *AsciiStr,
+  IN  CHAR16         *UnicodeStr
+  )
+/*++
+  
+  Routine Description:
+
+    This function converts Unicode string to ASCII string.
+  
+  Arguments:
+
+    AsciieStr      - NULL terminated ASCII output string.
+    UnicodeStr     - NULL terminated Unicode input string.
+ 
+  Returns: 
+
+    Start of the ASCII ouput string.
+    
+--*/
+
+{
+  CHAR8      *Str = AsciiStr;  
+  while (TRUE) {
+    *(AsciiStr++) = (CHAR8) *UnicodeStr;
+    if (*(UnicodeStr++) == '\0') {
+      return Str;
+    }
+  }
+}
+
 VOID
 ExtractDevicePathData (
   IN     EFI_HII_DATA_TABLE   *DataTable,
@@ -77,7 +110,7 @@ Returns:
   // BUGBUG - don't have devicepath data yet, setting dummy value
   //
   DataTable++;
-  ExportBuffer  = (VOID *) DataTable;
+  ExportBuffer  = (UINT8 *) DataTable;
   ((EFI_HII_DEVICE_PATH_PACK *) ExportBuffer)->Header.Type = EFI_HII_DEVICE_PATH;
   ((EFI_HII_DEVICE_PATH_PACK *) ExportBuffer)->Header.Length = (UINT32) (sizeof (EFI_HII_DEVICE_PATH_PACK) + sizeof (EFI_DEVICE_PATH_PROTOCOL));
 
@@ -181,7 +214,7 @@ Returns:
       TempValue = 0;
       EfiCopyMem (&VariableContents->VariableId, &TempValue, sizeof (UINT16));
       EfiCopyMem (&VariableContents->VariableGuid, &((EFI_IFR_FORM_SET *) &IfrData[Index])->Guid, sizeof (EFI_GUID));
-      TempValue = sizeof (L"Setup");
+      TempValue = sizeof (SETUP_MAP_NAME);
       EfiCopyMem (&VariableContents->VariableNameLength, &TempValue, sizeof (UINT32));
 
       //
@@ -193,15 +226,15 @@ Returns:
       EfiCopyMem (&VariableContents->Header.Length, &TempValue2, sizeof (UINT32));
 
       ExportBuffer = ExportBuffer + sizeof (EFI_HII_VARIABLE_PACK);
-      EfiCopyMem (ExportBuffer, L"Setup", sizeof (L"Setup"));
-      ExportBuffer = ExportBuffer + sizeof (L"Setup");
+      EfiCopyMem (ExportBuffer, SETUP_MAP_NAME, sizeof (SETUP_MAP_NAME));
+      ExportBuffer = ExportBuffer + sizeof (SETUP_MAP_NAME);
 
       EfiCopyMem (&TempValue, &((EFI_IFR_FORM_SET *) &IfrData[Index])->NvDataSize, sizeof (UINT16));
 
       if ((FormCallback != NULL) && (FormCallback->NvRead != NULL)) {
         Status = FormCallback->NvRead (
                                  FormCallback,
-                                 L"Setup",
+                                 SETUP_MAP_NAME,
                                  &VariableContents->VariableGuid,
                                  NULL,
                                  &TempValue,
@@ -209,7 +242,7 @@ Returns:
                                  );
       } else {
         Status = gRT->GetVariable (
-                        L"Setup",
+                        SETUP_MAP_NAME,
                         &VariableContents->VariableGuid,
                         NULL,
                         &TempValue,
@@ -404,7 +437,7 @@ Returns:
       switch (RawData[Index]) {
       case EFI_IFR_FORM_SET_OP:
         EfiCopyMem (&VariableSize, &((EFI_IFR_FORM_SET *) &RawData[Index])->NvDataSize, sizeof (UINT16));
-        SizeNeeded    = SizeNeeded + VariableSize + sizeof (L"Setup") + sizeof (EFI_HII_VARIABLE_PACK);
+        SizeNeeded    = SizeNeeded + VariableSize + sizeof (SETUP_MAP_NAME) + sizeof (EFI_HII_VARIABLE_PACK);
         VariableExist = TRUE;
         break;
 
@@ -652,7 +685,7 @@ HiiGetForms (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,
   IN     EFI_FORM_ID        FormId,
-  IN OUT UINT16             *BufferLength,
+  IN OUT UINTN              *BufferLength,
   OUT    UINT8              *Buffer
   )
 /*++
@@ -663,8 +696,31 @@ Routine Description:
   previously been registered with the EFI HII database.
 
 Arguments:
+  This         - A pointer to the EFI_HII_PROTOCOL instance.
+  
+  Handle       - Handle on which the form resides. Type EFI_HII_HANDLE is defined in 
+                 EFI_HII_PROTOCOL.NewPack() in the Packages section.
+            
+  FormId       - The ID of the form to return. If the ID is zero, the entire form package is returned.
+                 Type EFI_FORM_ID is defined in "Related Definitions" below.
+            
+  BufferLength - On input, the length of the Buffer. On output, the length of the returned buffer, if
+                 the length was sufficient and, if it was not, the length that is required to fit the
+                 requested form(s).
+                  
+  Buffer       - The buffer designed to receive the form(s).
 
 Returns: 
+
+  EFI_SUCCESS           -  Buffer filled with the requested forms. BufferLength
+                           was updated.
+                           
+  EFI_INVALID_PARAMETER -  The handle is unknown.
+  
+  EFI_NOT_FOUND         -  A form on the requested handle cannot be found with the
+                           requested FormId.
+                           
+  EFI_BUFFER_TOO_SMALL  - The buffer provided was not large enough to allow the form to be stored.
 
 --*/
 {
@@ -722,8 +778,8 @@ Returns:
     //
     // Return an error if buffer is too small
     //
-    if (PackageInstance->IfrSize > *BufferLength) {
-      *BufferLength = (UINT16) PackageInstance->IfrSize;
+    if (PackageInstance->IfrSize > *BufferLength || Buffer == NULL) {
+      *BufferLength = PackageInstance->IfrSize;
       return EFI_BUFFER_TOO_SMALL;
     }
 
@@ -745,7 +801,7 @@ Returns:
         // If we found a Form Op-code and it is of the correct Id, copy it and return
         //
         if (Form->FormId == FormId) {
-          if (Location->Length > *BufferLength) {
+          if (Location->Length > *BufferLength || Buffer == NULL) {
             *BufferLength = Location->Length;
             return EFI_BUFFER_TOO_SMALL;
           } else {
@@ -781,8 +837,7 @@ STATIC
 UINT8*
 HiiGetDefaultImageInitPack (
   IN OUT EFI_HII_VARIABLE_PACK_LIST  *VariablePackItem,
-  IN     EFI_IFR_VARSTORE            *VarStore,
-  IN     UINT8                       *VarName            OPTIONAL
+  IN     EFI_IFR_VARSTORE            *VarStore
   )
 /*++
     
@@ -795,7 +850,6 @@ HiiGetDefaultImageInitPack (
 
     VariablePackItem     - Variable Package List.
     VarStore             - IFR variable storage.
-    VarName              - Variable name used to retrive the VariablePackItem.
    
   Returns: 
 
@@ -803,41 +857,40 @@ HiiGetDefaultImageInitPack (
       
 --*/
 {
-  CHAR16   *Name16;
-  CHAR8    *Map;
+  CHAR16                *Name16;
+  CHAR8                 *Name8;
+  CHAR8                 *Map;
+  EFI_HII_VARIABLE_PACK *VariablePack;
 
   //
   // Set pointer the pack right after the node
   //
-  VariablePackItem->VariablePack = (VOID *) (VariablePackItem + 1);
+  VariablePackItem->VariablePack = (EFI_HII_VARIABLE_PACK *) (VariablePackItem + 1);
+  VariablePack                   = VariablePackItem->VariablePack;
 
   //
-  // Copy the var name from VariablePackItem. Needs ASCII->Unicode conversion.
-  // If the name is not provided, extract it from the VarStore
+  // Copy the var name to VariablePackItem from VarStore
+  // Needs ASCII->Unicode conversion.
   //
-  if (NULL == VarName) {
-    ASSERT (VarStore->Header.Length > sizeof (*VarStore));
-    VarName  = (VOID *) (VarStore + 1);
-  } else {
-    ASSERT (VarStore->Header.Length == sizeof (*VarStore));
-  }
-
-  Name16 = (VOID *) (VariablePackItem->VariablePack + 1);
-  Ascii2Unicode (Name16, VarName);
+  ASSERT (VarStore->Header.Length > sizeof (*VarStore));
+  Name8  = (CHAR8 *) (VarStore + 1);
+  Name16 = (CHAR16 *) (VariablePack + 1);
+  Ascii2Unicode (Name16, Name8);
 
   //
   // Compute the other fields of the VariablePackItem
   //
-  VariablePackItem->VariablePack->VariableId         = VarStore->VarId;
-  EfiCopyMem (&VariablePackItem->VariablePack->VariableGuid, &VarStore->Guid, sizeof (EFI_GUID));
-  VariablePackItem->VariablePack->VariableNameLength = (UINT32)((EfiStrLen (Name16) + 1) * 2);
-  VariablePackItem->VariablePack->Header.Length      = sizeof (*VariablePackItem->VariablePack) 
-                                                         + VariablePackItem->VariablePack->VariableNameLength
-                                                         + VarStore->Size;
+  VariablePack->VariableId         = VarStore->VarId;
+  EfiCopyMem (&VariablePack->VariableGuid, &VarStore->Guid, sizeof (EFI_GUID));
+  VariablePack->VariableNameLength = (UINT32) ((EfiStrLen (Name16) + 1) * 2);
+  VariablePack->Header.Length      = sizeof (*VariablePack) 
+                                              + VariablePack->VariableNameLength
+                                              + VarStore->Size;
   //
   // Return the pointer to the Map space.
   //
-  Map = (UINT8 *) Name16 + VariablePackItem->VariablePack->VariableNameLength;
+  Map = (UINT8 *) Name16 + VariablePack->VariableNameLength;
+  
   return Map;
 }
 
@@ -872,145 +925,220 @@ HiiGetDefaultImagePopulateMap (
   EFI_IFR_OP_HEADER              *IfrItem;
   UINT16                         VarId;
   EFI_IFR_VARSTORE_SELECT        *VarSelect;
-  EFI_IFR_VARSTORE_SELECT_PAIR   *VarSelectPair;
   EFI_IFR_ONE_OF_OPTION          *OneOfOpt;
   EFI_IFR_CHECK_BOX              *CheckBox;
   EFI_IFR_NUMERIC                *Numeric;
   UINTN                          Size;
+  UINTN                          SizeTmp;
   EFI_IFR_NV_DATA                *IfrNvData;
   EFI_GUID                       Guid;
+  CHAR16                         *Name16;
+  CHAR8                          *Name8;  
+  EFI_HANDLE                      CallbackHandle;
+  EFI_FORM_CALLBACK_PROTOCOL     *FormCallbackProt;
+
+  //
+  // Get the Map's Name/Guid/Szie from the Varstore.
+  // VARSTORE contains the Name in ASCII format (@#$^&!), must convert it to Unicode.
+  //
+  ASSERT (VarStore->Header.Length >= sizeof (*VarStore));
+  Name8  = (CHAR8 *) (VarStore + 1);
+  Name16 = EfiLibAllocateZeroPool ((VarStore->Header.Length - sizeof (*VarStore)) * sizeof (CHAR16));
+  Ascii2Unicode (Name16, Name8);
+  EfiCopyMem (&Guid, &VarStore->Guid, sizeof(EFI_GUID));
+  Size =  VarStore->Size;
 
   //
   // First, check if the map exists in the NV. If so, get it from NV and exit.
   //
-  Size = VarStore->Size;
-  EfiCopyMem (&Guid, &VarStore->Guid, sizeof (EFI_GUID));
   if (DefaultMask == EFI_IFR_FLAG_MANUFACTURING) {
-    Status = gRT->GetVariable (
-                    SETUP_MANUFACTURING_OVERRIDE_NAME,
-                    &Guid,
-                    NULL,
-                    &Size,
-                    Map
-                    );
+    //
+    // Check if Manufaturing Defaults exist in the NV.
+    //
+    Status = EfiLibHiiVariableOverrideBySuffix (
+                  HII_VARIABLE_SUFFIX_MANUFACTURING_OVERRIDE,
+                  Name16,
+                  &Guid,
+                  Size,
+                  Map
+                  );
   } else {
-    Status = gRT->GetVariable (
-                    SETUP_DEFAULT_OVERRIDE_NAME,
-                    &Guid,
-                    NULL,
-                    &Size,
-                    Map
-                    );
+    //
+    // All other cases default to Defaults. Check if Defaults exist in the NV.
+    //
+    Status = EfiLibHiiVariableOverrideBySuffix (
+                  HII_VARIABLE_SUFFIX_DEFAULT_OVERRIDE,
+                  Name16,
+                  &Guid,
+                  Size,
+                  Map
+                  );
   }
   if (!EFI_ERROR (Status)) {
+    //
+    // Either Defaults/Manufacturing variable exists and appears to be valid. 
+    // The map is read, exit w/ success now.
+    //
+    gBS->FreePool (Name16);
     return;
   }
 
+  //
+  // First, prime the map with what already is in the NV.
+  // This is needed to cover a situation where the IFR does not contain all the 
+  // defaults; either deliberately not having appropriate IFR, or in case of IFR_STRING, there is no default.
+  // Ignore status. Either it gets read or not. 
+  //  
+  FormCallbackProt = NULL;
+  EfiCopyMem (&CallbackHandle, &((EFI_IFR_FORM_SET*) FormSet)->CallbackHandle, sizeof (CallbackHandle));
+  if (CallbackHandle != NULL) {
+    Status = gBS->HandleProtocol (
+                    CallbackHandle,
+                    &gEfiFormCallbackProtocolGuid,
+                    &FormCallbackProt
+                    );
+  }
+  if ((NULL != FormCallbackProt) && (NULL != FormCallbackProt->NvRead)) {
+    //
+    // Attempt to read using NvRead() callback. Probe first for existence and correct variable size.
+    //
+    SizeTmp = 0;
+    Status = FormCallbackProt->NvRead (
+                    FormCallbackProt,
+                    Name16,
+                    &Guid,
+                    0,
+                    &SizeTmp,
+                    NULL
+                    );
+    if ((EFI_BUFFER_TOO_SMALL == Status) && (SizeTmp == Size)) {
+      Status = FormCallbackProt->NvRead (
+                      FormCallbackProt,
+                      Name16,
+                      &Guid,
+                      0,
+                      &SizeTmp,
+                      Map
+                      );
+      ASSERT_EFI_ERROR (Status);
+      ASSERT (SizeTmp == Size);
+    }
+  } else {
+    //
+    // No callback available for this formset, read straight from NV. Deliberately ignore the Status. 
+    // The buffer will only be written if variable exists nd has correct size.
+    //
+    Status = EfiLibHiiVariableRetrieveFromNv (
+                    Name16,
+                    &Guid,
+                    Size,
+                    &Map
+                    );
+  }
 
-  VarId = 0;
-  IfrItem = FormSet;
-  while (EFI_IFR_END_FORM_SET_OP != IfrItem->OpCode) {
- 
+  //
+  // Iterate all IFR statements and for applicable, retrieve the default into the Map.
+  //
+  for (IfrItem = FormSet, VarId = 0; 
+       IfrItem->OpCode != EFI_IFR_END_FORM_SET_OP; 
+       IfrItem = (EFI_IFR_OP_HEADER *) ((UINT8*) IfrItem + IfrItem->Length)
+      ) {
+
     //
-    // Observe VarStore select.
+    // Observe VarStore switch.
     //
+    if (EFI_IFR_VARSTORE_SELECT_OP == IfrItem->OpCode) {
+      VarSelect = (EFI_IFR_VARSTORE_SELECT *) IfrItem;
+      VarId = VarSelect->VarId;
+      continue;
+    }
+
+    //
+    // Skip opcodes that reference other VarStore than that specific to current map.
+    // 
+    if (VarId != VarStore->VarId) {
+      continue;
+    }
+    
+    //
+    // Extract the default value from this opcode if applicable, and apply it to the map.
+    //
+    IfrNvData = (EFI_IFR_NV_DATA *) IfrItem;
     switch (IfrItem->OpCode) {
 
-      case EFI_IFR_VARSTORE_SELECT_OP:
-        VarSelect = (VOID *) IfrItem;
-        VarId = VarSelect->VarId;
-        goto LabelContinue;
-      case EFI_IFR_VARSTORE_SELECT_PAIR_OP:
-        VarSelectPair = (VOID *) IfrItem;
-        VarId = VarSelectPair->VarId;
-        goto LabelContinue;
-    }
+      case EFI_IFR_ONE_OF_OP:
+        ASSERT (IfrNvData->QuestionId + IfrNvData->StorageWidth <= VarStore->Size);
+        //
+        // Get to the first EFI_IFR_ONE_OF_OPTION_OP
+        //
+        IfrItem = (EFI_IFR_OP_HEADER *) ((UINT8*) IfrItem + IfrItem->Length); 
+        ASSERT (EFI_IFR_ONE_OF_OPTION_OP == IfrItem->OpCode);
 
+        OneOfOpt = (EFI_IFR_ONE_OF_OPTION *)IfrItem;
+        //
+        // In the worst case, the first will be the default.
+        //
+        EfiCopyMem (Map + IfrNvData->QuestionId, &OneOfOpt->Value, IfrNvData->StorageWidth);
 
-    //
-    // For opcodes that reference the same VarStore than current, extreact the default value to the map.
-    // 
-    if (VarId == VarStore->VarId) {
+        while (EFI_IFR_ONE_OF_OPTION_OP == IfrItem->OpCode) {
 
-      IfrNvData = (VOID *) IfrItem;
-
-      switch (IfrItem->OpCode) {
-
-        case EFI_IFR_ONE_OF_OP:
-          ASSERT (IfrNvData->QuestionId + IfrNvData->StorageWidth <= VarStore->Size);
-          //
-          // Get to the first EFI_IFR_ONE_OF_OPTION_OP
-          //
-          IfrItem = (VOID *) ((UINT8 *) IfrItem + IfrItem->Length); 
-          ASSERT (EFI_IFR_ONE_OF_OPTION_OP == IfrItem->OpCode);
-
-          OneOfOpt = (VOID *) IfrItem;
-          //
-          // In the worst case, the first will be the default.
-          //
-          EfiCopyMem (Map + IfrNvData->QuestionId, &OneOfOpt->Value, IfrNvData->StorageWidth);
-
-          while (EFI_IFR_ONE_OF_OPTION_OP == IfrItem->OpCode) {
-
-            OneOfOpt = (VOID *) IfrItem;
-            if (DefaultMask == EFI_IFR_FLAG_MANUFACTURING) {
-              if (0 != (OneOfOpt->Flags & EFI_IFR_FLAG_MANUFACTURING)) {
-                //
-                // In the worst case, the first will be the default.
-                //
-                EfiCopyMem (Map + IfrNvData->QuestionId, &OneOfOpt->Value, IfrNvData->StorageWidth);
-                break;
-              }
-            } else {
-              if (OneOfOpt->Flags & EFI_IFR_FLAG_DEFAULT) {
-                //
-                // In the worst case, the first will be the default.
-                //
-                EfiCopyMem (Map + IfrNvData->QuestionId, &OneOfOpt->Value, IfrNvData->StorageWidth);
-                break;
-              }
-            }
-
-            IfrItem = (VOID *) ((UINT8 *) IfrItem + IfrItem->Length);
-          }
-          continue;
-          break;
-
-        case EFI_IFR_CHECKBOX_OP:
-          ASSERT (IfrNvData->QuestionId + IfrNvData->StorageWidth <= VarStore->Size);
-          CheckBox = (VOID *) IfrItem;        
+          OneOfOpt = (EFI_IFR_ONE_OF_OPTION *)IfrItem;
           if (DefaultMask == EFI_IFR_FLAG_MANUFACTURING) {
-            if (0 != (CheckBox->Flags & EFI_IFR_FLAG_MANUFACTURING)) {
-              *(UINT8 *) (Map + IfrNvData->QuestionId) = TRUE;
+            if (0 != (OneOfOpt->Flags & EFI_IFR_FLAG_MANUFACTURING)) {
+              //
+              // In the worst case, the first will be the default.
+              //
+              EfiCopyMem (Map + IfrNvData->QuestionId, &OneOfOpt->Value, IfrNvData->StorageWidth);
+              break;
             }
           } else {
-            if (CheckBox->Flags & EFI_IFR_FLAG_DEFAULT) {
-              *(UINT8 *) (Map + IfrNvData->QuestionId) = TRUE;
+            if (OneOfOpt->Flags & EFI_IFR_FLAG_DEFAULT) {
+              //
+              // In the worst case, the first will be the default.
+              //
+              EfiCopyMem (Map + IfrNvData->QuestionId, &OneOfOpt->Value, IfrNvData->StorageWidth);
+              break;
             }
           }
-          break;
 
-        case EFI_IFR_NUMERIC_OP:
-          ASSERT (IfrNvData->QuestionId + IfrNvData->StorageWidth <= VarStore->Size);
-          Numeric = (VOID *) IfrItem;
-          EfiCopyMem (Map + IfrNvData->QuestionId, &Numeric->Default, IfrNvData->StorageWidth);
-          break;
+          IfrItem = (EFI_IFR_OP_HEADER *)((UINT8*)IfrItem + IfrItem->Length);
+        }
+        continue;
+        break;
 
-        case EFI_IFR_ORDERED_LIST_OP:
-        case EFI_IFR_PASSWORD_OP:
-        case EFI_IFR_STRING_OP:
-          //
-          // No support for default falue for these opcodes.
-          //
-          ;
-      }
+      case EFI_IFR_CHECKBOX_OP:
+        ASSERT (IfrNvData->QuestionId + IfrNvData->StorageWidth <= VarStore->Size);
+        CheckBox = (EFI_IFR_CHECK_BOX *)IfrItem;        
+        if (DefaultMask == EFI_IFR_FLAG_MANUFACTURING) {
+          if (0 != (CheckBox->Flags & EFI_IFR_FLAG_MANUFACTURING)) {
+            *(UINT8*) (Map + IfrNvData->QuestionId) = TRUE;
+          }
+        } else {
+          if (CheckBox->Flags & EFI_IFR_FLAG_DEFAULT) {
+            *(UINT8*) (Map + IfrNvData->QuestionId) = TRUE;
+          }
+        }
+        break;
+
+      case EFI_IFR_NUMERIC_OP:
+        ASSERT (IfrNvData->QuestionId + IfrNvData->StorageWidth <= VarStore->Size);
+        Numeric = (EFI_IFR_NUMERIC *) IfrItem;
+        EfiCopyMem (Map + IfrNvData->QuestionId, &Numeric->Default, IfrNvData->StorageWidth);
+        break;
+
+      case EFI_IFR_ORDERED_LIST_OP:
+      case EFI_IFR_PASSWORD_OP:
+      case EFI_IFR_STRING_OP:
+        //
+        // No support for default value for these opcodes.
+        //
+        break;
     }
-
-LabelContinue:
-    IfrItem = (VOID *) ((UINT8 *) IfrItem + IfrItem->Length);
   }
-}
+       
+  gBS->FreePool (Name16);
 
+}
 
 EFI_STATUS
 EFIAPI
@@ -1028,8 +1156,8 @@ HiiGetDefaultImage (
   that represents the default storage image
       
   Arguments:
-    This             - NULL terminated Unicode output string.
-    Handle           - NULL terminated ASCII input string.
+    This             - A pointer to the EFI_HII_PROTOCOL instance.
+    Handle           - The HII handle from which will have default data retrieved.
     UINTN            - Mask used to retrieve the default image.
     VariablePackList - Callee allocated, tightly-packed, link list data 
                          structure that contain all default varaible packs
@@ -1047,7 +1175,8 @@ HiiGetDefaultImage (
   EFI_IFR_OP_HEADER              *FormSet;
   EFI_IFR_OP_HEADER              *IfrItem;
   EFI_IFR_VARSTORE               *VarStore;
-  EFI_IFR_VARSTORE               VarStoreDefault;
+  EFI_IFR_VARSTORE               *VarStoreDefault;
+  UINTN                          SetupMapNameSize;
   UINTN                          SizeOfMaps;
   EFI_HII_VARIABLE_PACK_LIST     *PackList;
   EFI_HII_VARIABLE_PACK_LIST     *PackListNext;  
@@ -1069,7 +1198,7 @@ HiiGetDefaultImage (
   if ((PackageInstance == NULL) || (PackageInstance->IfrSize < 0)) {
     return EFI_INVALID_PARAMETER;
   }
-  FormSet = (VOID *) ((UINT8 *) &PackageInstance->IfrData + sizeof (EFI_HII_IFR_PACK));
+  FormSet = (EFI_IFR_OP_HEADER *) ((UINT8 *) &PackageInstance->IfrData + sizeof (EFI_HII_IFR_PACK));
 
   //
   // Get the sizes of all the VARSTOREs in this VFR.
@@ -1080,7 +1209,7 @@ HiiGetDefaultImage (
   while (EFI_IFR_END_FORM_SET_OP != IfrItem->OpCode) {
 
     if (EFI_IFR_VARSTORE_OP == IfrItem->OpCode) {
-      VarStore = (VOID *) IfrItem;
+      VarStore = (EFI_IFR_VARSTORE *) IfrItem;
       //
       // Size of the map
       //
@@ -1099,25 +1228,29 @@ HiiGetDefaultImage (
       SizeOfMaps += sizeof (EFI_HII_VARIABLE_PACK_LIST); 
     }
 
-    IfrItem = (VOID *) ((UINT8 *) IfrItem + IfrItem->Length);
+    IfrItem = (EFI_IFR_OP_HEADER *) ((UINT8 *) IfrItem + IfrItem->Length);
   }
 
   //
   // If the FormSet OpCode has a non-zero NvDataSize. There is a default 
   // NvMap with ID=0, GUID that of the formset itself and "Setup" as name.
   //
-  EfiZeroMem (&VarStoreDefault, sizeof (VarStoreDefault));
+  SetupMapNameSize = EfiStrLen (SETUP_MAP_NAME) + 1;
+  VarStoreDefault  = EfiLibAllocateZeroPool (sizeof (*VarStoreDefault) + SetupMapNameSize);
 
   if (0 != ((EFI_IFR_FORM_SET*)FormSet)->NvDataSize) {
-    VarStoreDefault.Size = ((EFI_IFR_FORM_SET*) FormSet)->NvDataSize;
-    VarStoreDefault.Header.OpCode = EFI_IFR_VARSTORE_OP;
-    VarStoreDefault.Header.Length = sizeof (VarStoreDefault);
-    EfiCopyMem (&VarStoreDefault.Guid, &((EFI_IFR_FORM_SET*) FormSet)->Guid, sizeof (EFI_GUID));
-    VarStoreDefault.VarId = 0;
+
+    VarStoreDefault->Header.OpCode = EFI_IFR_VARSTORE_OP;
+    VarStoreDefault->Header.Length = (UINT8) (sizeof (*VarStoreDefault) + SetupMapNameSize);
+    Unicode2Ascii ((UINT8*) (VarStoreDefault + 1), SETUP_MAP_NAME);
+    EfiCopyMem (&VarStoreDefault->Guid, &((EFI_IFR_FORM_SET*) FormSet)->Guid, sizeof (EFI_GUID));
+    VarStoreDefault->VarId = 0;
+    VarStoreDefault->Size = ((EFI_IFR_FORM_SET*) FormSet)->NvDataSize;
+
     //
     // Size of the map
     //
-    SizeOfMaps += VarStoreDefault.Size; 
+    SizeOfMaps += VarStoreDefault->Size; 
     //
     // add the size of the string
     //
@@ -1151,13 +1284,13 @@ HiiGetDefaultImage (
   //
   // Handle the default map first, if any.
   //
-  if (0 != VarStoreDefault.Size) {
+  if (0 != VarStoreDefault->Size) {
 
-    Map = HiiGetDefaultImageInitPack (PackListNext, &VarStoreDefault, "Setup");
+    Map = HiiGetDefaultImageInitPack (PackListNext, VarStoreDefault);
 
-    HiiGetDefaultImagePopulateMap (Map, FormSet, &VarStoreDefault, DefaultMask);
+    HiiGetDefaultImagePopulateMap (Map, FormSet, VarStoreDefault, DefaultMask);
 
-    PackListNext->NextVariablePack = (VOID *) ((UINT8 *) PackListNext->VariablePack + PackListNext->VariablePack->Header.Length);
+    PackListNext->NextVariablePack = (EFI_HII_VARIABLE_PACK_LIST *) ((UINT8 *) PackListNext->VariablePack + PackListNext->VariablePack->Header.Length);
     PackListLast = PackListNext;
     PackListNext = PackListNext->NextVariablePack;
   }
@@ -1171,20 +1304,21 @@ HiiGetDefaultImage (
 
     if (EFI_IFR_VARSTORE_OP == IfrItem->OpCode) {
 
-      Map = HiiGetDefaultImageInitPack (PackListNext, (VOID *) IfrItem, NULL);
+      Map = HiiGetDefaultImageInitPack (PackListNext, (EFI_IFR_VARSTORE *) IfrItem);
 
-      HiiGetDefaultImagePopulateMap (Map, FormSet, (VOID *) IfrItem, DefaultMask);
+      HiiGetDefaultImagePopulateMap (Map, FormSet, (EFI_IFR_VARSTORE *) IfrItem, DefaultMask);
 
-      PackListNext->NextVariablePack = (VOID *) ((UINT8 *) PackListNext->VariablePack + PackListNext->VariablePack->Header.Length);
+      PackListNext->NextVariablePack = (EFI_HII_VARIABLE_PACK_LIST *) ((UINT8 *) PackListNext->VariablePack + PackListNext->VariablePack->Header.Length);
       PackListLast = PackListNext;
       PackListNext = PackListNext->NextVariablePack;
     }
 
-    IfrItem = (VOID *) ((UINT8 *) IfrItem + IfrItem->Length);
+    IfrItem = (EFI_IFR_OP_HEADER *) ((UINT8 *) IfrItem + IfrItem->Length);
   }
 
   PackListLast->NextVariablePack = NULL;
   *VariablePackList = PackList;
+  
   return EFI_SUCCESS;
 }
 

@@ -199,13 +199,14 @@ InitializeFrontPage (
 /*++
 
 Routine Description:
-  
   Initialize HII information for the FrontPage
 
 Arguments:
   None
             
 Returns:
+  EFI_SUCCESS       - The operation is successful.
+  EFI_DEVICE_ERROR  - If the dynamic opcode creation failed.
 
 --*/
 {
@@ -353,7 +354,7 @@ ReInitStrings:
       mLastSelection = (UINT16) OptionCount;
     }
 
-    Status = Hii->GetString (Hii, gStringPackHandle, 1, TRUE, Lang, (UINT16 *) &BufferSize, StringBuffer);
+    Status = Hii->GetString (Hii, gStringPackHandle, 1, TRUE, Lang, &BufferSize, StringBuffer);
     Hii->NewString (Hii, NULL, gStringPackHandle, &Token, StringBuffer);
     EfiCopyMem (&OptionList[OptionCount].StringToken, &Token, sizeof (UINT16));
     EfiCopyMem (&OptionList[OptionCount].Value, &OptionCount, sizeof (UINT16));
@@ -472,12 +473,14 @@ Arguments:
   
 Returns:
 
+  EFI_SUCCESS - The function returns EFI_SUCCESS always.
+
 --*/
 {
   EFI_STATUS      Status;
   UINT16          HandleBufferLength;
   EFI_HII_HANDLE  *HiiHandleBuffer;
-  UINT16          StringBufferLength;
+  UINTN           StringBufferLength;
   UINTN           NumberOfHiiHandles;
   UINTN           Index;
   UINT16          Length;

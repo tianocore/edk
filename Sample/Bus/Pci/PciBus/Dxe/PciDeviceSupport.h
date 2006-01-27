@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -156,23 +156,26 @@ EFI_STATUS
 RegisterPciDevice (
   IN  EFI_HANDLE                     Controller,
   IN  PCI_IO_DEVICE                  *PciIoDevice,
-  OUT EFI_HANDLE                     *Handle
+  OUT EFI_HANDLE                     *Handle OPTIONAL
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  This function registers the PCI IO device. It creates a handle for this PCI IO device 
+  (if the handle does not exist), attaches appropriate protocols onto the handle, does
+  necessary initialization, and sets up parent/child relationship with its bus controller.
 
 Arguments:
 
-  Controller  - TODO: add argument description
-  PciIoDevice - TODO: add argument description
-  Handle      - TODO: add argument description
+  Controller    - An EFI handle for the PCI bus controller.
+  PciIoDevice   - A PCI_IO_DEVICE pointer to the PCI IO device to be registered.
+  Handle        - A pointer to hold the EFI handle for the PCI IO device.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS   - The PCI device is successfully registered.
+  Others        - An error occurred when registering the PCI device.
 
 --*/
 ;

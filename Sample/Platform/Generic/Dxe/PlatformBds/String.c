@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -16,8 +16,6 @@ Module Name:
 Abstract:
 
   String support
-
-Revision History
 
 --*/
 
@@ -80,12 +78,14 @@ Arguments:
   Id       - String ID.
            
 Returns:
-  String from ID.
+
+  CHAR16 * - String from ID.
+  NULL     - If error occurs.
 
 --*/
 {
   CHAR16      *String;
-  UINT16      StringLength;
+  UINTN       StringLength;
   EFI_STATUS  Status;
 
   //

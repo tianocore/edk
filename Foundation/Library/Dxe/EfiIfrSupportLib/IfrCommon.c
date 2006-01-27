@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -14,8 +14,6 @@ Module Name:
 Abstract:
 
   Common Library Routines to assist in IFR creation on-the-fly
-
-Revision History:
 
 --*/
 
@@ -517,7 +515,7 @@ Returns:
   //
   // Get all the forms associated with this HiiHandle
   //
-  Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &DataLength, RawData);
+  Status = Hii->GetForms (Hii, HiiHandle, 0, &DataLength, RawData);
 
   if (EFI_ERROR (Status)) {
     gBS->FreePool (RawData);
@@ -533,7 +531,7 @@ Returns:
     //
     // Get all the forms associated with this HiiHandle
     //
-    Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &DataLength, RawData);
+    Status = Hii->GetForms (Hii, HiiHandle, 0, &DataLength, RawData);
   }
 
   OldData = RawData;
@@ -809,7 +807,7 @@ Returns:
   //
   // Get all the forms associated with this HiiHandle
   //
-  Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &RawDataLength, RawData);
+  Status = Hii->GetForms (Hii, HiiHandle, 0, &RawDataLength, RawData);
 
   if (EFI_ERROR (Status)) {
     gBS->FreePool (RawData);
@@ -825,7 +823,7 @@ Returns:
     //
     // Get all the forms associated with this HiiHandle
     //
-    Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &RawDataLength, RawData);
+    Status = Hii->GetForms (Hii, HiiHandle, 0, &RawDataLength, RawData);
   }
 
   OldData = RawData;

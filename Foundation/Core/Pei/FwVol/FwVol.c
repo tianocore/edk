@@ -410,7 +410,7 @@ PeiFvFindNextVolume (
 
 Routine Description:
 
-  Return the BFV location
+  Return the Firmware Volume instance requested
 
   BugBug -- Move this to the location of this code to where the
   other FV and FFS support code lives.
@@ -448,7 +448,10 @@ Returns:
   }
 
   if (Instance == 0) {
-    *FwVolHeader = PrivateData->DispatchData.CurrentFvAddress;
+    //
+    // If instance is 0, the first firmware volume must be BFV.
+    //
+    *FwVolHeader = PrivateData->DispatchData.BootFvAddress;
 
 
     return Status;

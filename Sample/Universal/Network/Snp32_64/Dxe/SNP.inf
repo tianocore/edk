@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2005, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -25,6 +25,7 @@ FILE_GUID            = A2f436EA-A127-4EF8-957C-8048606FF670
 COMPONENT_TYPE       = BS_DRIVER
 
 [sources.common]
+        SNPEntry.c      
         callback.c
         get_status.c
         initialize.c

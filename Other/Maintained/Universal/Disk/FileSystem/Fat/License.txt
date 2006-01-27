@@ -35,3 +35,4 @@ derivative works thereof being used for and designed only to read
 and/or write to a file system that is directly managed by an
 Extensible Firmware Interface (EFI) implementation or by an emulator
 of an EFI implementation.
+

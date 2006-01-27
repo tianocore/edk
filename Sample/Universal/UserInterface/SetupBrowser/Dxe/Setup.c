@@ -9,13 +9,13 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
 Module Name:
-        Setup.c
+
+  Setup.c
 
 Abstract:
 
   Entry and initialization module for the browser
 
-Revision History:
 --*/
 
 #include "Setup.h"
@@ -1585,9 +1585,25 @@ GetToken (
   IN  STRING_REF                              Token,
   IN  EFI_HII_HANDLE                          HiiHandle
   )
+/*++
+
+Routine Description:
+  
+  Get the string based on the TokenID and HII Handle.
+
+Arguments:
+
+  Token       - The Token ID.
+  HiiHandle   - Handle of Ifr to be fetched.
+           
+Returns:
+
+  The output string.
+
+--*/
 {
   CHAR16      *Buffer;
-  UINT16      BufferLength;
+  UINTN       BufferLength;
   EFI_STATUS  Status;
 
   //
@@ -2031,17 +2047,19 @@ GetIfrBinaryData (
 /*++
 
 Routine Description:
+
   Fetch the Ifr binary data.
 
 Arguments:
+
   Hii         - Point to HII protocol.
   HiiHandle   - Handle of Ifr to be fetched.
   Packet      - Pointer to IFR packet.
   BinaryData  - Buffer to copy the string into
            
 Returns:
-  Returns the number of CHAR16 characters that were copied into the OutputString buffer.
 
+  Returns the number of CHAR16 characters that were copied into the OutputString buffer.
 
 --*/
 {
@@ -2072,7 +2090,7 @@ Returns:
   ASSERT (Buffer);
 
   if (Packet == NULL) {
-    Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &BufferSize, Buffer);
+    Status = Hii->GetForms (Hii, HiiHandle, 0, &BufferSize, Buffer);
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
 
@@ -2084,7 +2102,7 @@ Returns:
       Buffer = EfiLibAllocatePool (BufferSize);
       ASSERT (Buffer);
 
-      Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &BufferSize, Buffer);
+      Status = Hii->GetForms (Hii, HiiHandle, 0, &BufferSize, Buffer);
     }
   } else {
     //

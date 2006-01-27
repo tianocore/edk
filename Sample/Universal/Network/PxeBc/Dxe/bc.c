@@ -1,4 +1,5 @@
 /*++
+
 Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
@@ -9,7 +10,8 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
 Module Name:
-        bc.c
+  
+  bc.c
 
 Abstract:
 
@@ -2144,7 +2146,7 @@ BcSetStationIP (
   return EFI_SUCCESS;
 }
 
-EFI_DRIVER_BINDING_PROTOCOL gPxeBcDriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL mPxeBcDriverBinding = {
   PxeBcDriverSupported,
   PxeBcDriverStart,
   PxeBcDriverStop,
@@ -2520,8 +2522,6 @@ PxeBcDriverStop (
   return Status;
 }
 
-EFI_DRIVER_ENTRY_POINT (InitializeBCDriver)
-
 EFI_STATUS
 EFIAPI
 InitializeBCDriver (
@@ -2549,9 +2549,9 @@ InitializeBCDriver (
   Status = EfiLibInstallAllDriverProtocols (
             ImageHandle,
             SystemTable,
-            &gPxeBcDriverBinding,
-            ImageHandle,
-            &gPxeBcComponentName,
+            &mPxeBcDriverBinding,
+            NULL,
+            COMPONENT_NAME,
             NULL,
             NULL
             );

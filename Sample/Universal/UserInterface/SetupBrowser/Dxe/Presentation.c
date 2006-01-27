@@ -9,13 +9,11 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
 Module Name:
-        Presentation.c
+  Presentation.c
 
 Abstract:
 
   Some presentation routines.
-
-Revision History:
 
 --*/
 
@@ -1101,6 +1099,28 @@ ExtractDynamicFormHandle (
   OUT UINT16                      *TitleToken,
   OUT EFI_FORM_TAGS               *FormTags
   )
+/*++
+
+Routine Description:
+
+  The function does the most of the works when the EFI_TAG that
+  user selects on is EFI_IFR_FLAG_INTERACTIVE or EFI_IFR_PASSWORD_OP:
+  invoke CallBack, update the new form data.
+  
+Arguments:
+  
+  Selection         - The current selection of the form.
+  CallbackData      - The pointer to host the data passed back by the callback function.
+  FileFormTagsHead  - Prompt string token of the one-of box
+  IdValue           - The current page number.
+  FormHandle        - Output the  the handle of the form.
+  TitleToken        - Output the  TitleToken of the new page.
+  FormTags          - Output the  FormFags of the new page.
+  
+Returns: 
+  VOID
+  
+--*/
 {
   UINTN                       Index;
   UINTN                       BackupIndex;
@@ -1108,7 +1128,7 @@ ExtractDynamicFormHandle (
   EFI_FORM_TAGS               *LocalTags;
   EFI_FORM_CALLBACK_PROTOCOL  *FormCallback;
   EFI_STATUS                  Status;
-  UINT16                      Length;
+  UINTN                       Length;
   UINT8                       *Buffer;
   EFI_PHYSICAL_ADDRESS        CallbackHandle;
   EFI_GUID                    TagGuid;

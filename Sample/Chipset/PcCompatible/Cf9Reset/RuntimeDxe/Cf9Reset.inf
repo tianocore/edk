@@ -1,0 +1,80 @@
+#/*++
+# 
+# Copyright (c) 2005, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#  Module Name:
+#
+#  Abstract:
+#
+#--*/
+
+[defines]
+BASE_NAME            = Cf9Reset
+FILE_GUID            = 6F0198AA-1F1D-426D-AE3E-39AB633FCC28
+
+[defines.ia32,defines.x64]
+COMPONENT_TYPE       = RT_DRIVER
+
+
+[defines.ipf]
+COMPONENT_TYPE       = SAL_RT_DRIVER
+
+[sources.common]
+  Cf9Reset.c
+  Cf9Reset.h
+
+[sources.ipf]
+  Ipf\IpfCf9Reset.c
+
+[sources.ia32]
+  Ia32\Ia32Cf9Reset.c
+
+[sources.x64]
+  x64\x64Cf9Reset.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Core\Dxe\Include
+  $(EDK_SOURCE)\Sample\Platform\Generic\Pei\Capsule
+  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
+
+[libraries.common]
+  EdkGuidLib
+  EdkProtocolLib
+  ArchProtocolLib
+  EfiRuntimeLib
+
+[libraries.ia32]
+  CpuIA32Lib
+
+[libraries.x64]
+  CpuIA32Lib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=InitializeCf9Reset
+
+[nmake.ia32]
+  DPX_SOURCE=Ia32Cf9Reset.dxs
+
+[nmake.x64]
+  DPX_SOURCE=x64Cf9Reset.dxs
+
+[nmake.ipf]
+  DPX_SOURCE=IpfCf9Reset.dxs
+

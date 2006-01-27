@@ -179,7 +179,7 @@ Sample\Universal\Network\PxeBc\Dxe\Bc.inf
 #
 # Fat File System driver. 
 #
-Other\Maintained\Universal\Disk\FileSystem\Fat\Dxe\Fat.inf
+Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
 
 
 #

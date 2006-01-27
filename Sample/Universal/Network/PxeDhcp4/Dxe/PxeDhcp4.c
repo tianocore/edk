@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,7 +61,7 @@ PxeDhcp4DriverBindingStop (
 //
 // PXE DHCP Protocol Interface
 //
-EFI_DRIVER_BINDING_PROTOCOL gPxeDhcp4DriverBinding = {
+EFI_DRIVER_BINDING_PROTOCOL mPxeDhcp4DriverBinding = {
   PxeDhcp4DriverBindingSupported,
   PxeDhcp4DriverBindingStart,
   PxeDhcp4DriverBindingStop,
@@ -73,11 +73,7 @@ EFI_DRIVER_BINDING_PROTOCOL gPxeDhcp4DriverBinding = {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 //
-//
-//
-EFI_DRIVER_ENTRY_POINT (PxeDhcp4DriverEntryPoint)
-//
-//
+// PxeDhcp4 Driver Entry point funtion
 //
 EFI_STATUS
 EFIAPI
@@ -102,9 +98,9 @@ Returns:
   return EfiLibInstallAllDriverProtocols (
           ImageHandle,
           SystemTable,
-          &gPxeDhcp4DriverBinding,
-          ImageHandle,
-          &gPxeDhcp4ComponentName,
+          &mPxeDhcp4DriverBinding,
+          NULL,
+          COMPONENT_NAME,
           NULL,
           NULL
           );

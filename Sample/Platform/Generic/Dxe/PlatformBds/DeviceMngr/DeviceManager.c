@@ -177,7 +177,9 @@ Arguments:
   None
   
 Returns:
-
+  EFI_SUCCESS            - Operation is successful.
+  EFI_INVALID_PARAMETER  - If the inputs to SendForm function is not valid.
+  
 --*/
 {
   EFI_STATUS          Status;
@@ -187,7 +189,7 @@ Returns:
   UINT8               *Buffer;
   EFI_IFR_FORM_SET    *FormSetData;
   CHAR16              *String;
-  UINT16              StringLength;
+  UINTN               StringLength;
   EFI_HII_UPDATE_DATA *UpdateData;
   STRING_REF          Token;
   STRING_REF          TokenHelp;
@@ -274,7 +276,7 @@ Returns:
     // Am not initializing Buffer since the first thing checked is the size
     // this way I can get the real buffersize in the smallest code size
     //
-    Status = Hii->GetForms (Hii, Index, 0, (UINT16 *) &BufferSize, Buffer);
+    Status = Hii->GetForms (Hii, Index, 0, &BufferSize, Buffer);
 
     if (Status != EFI_NOT_FOUND) {
       //
@@ -287,7 +289,7 @@ Returns:
       // Am not initializing Buffer since the first thing checked is the size
       // this way I can get the real buffersize in the smallest code size
       //
-      Status = Hii->GetForms (Hii, Index, 0, (UINT16 *) &BufferSize, Buffer);
+      Status = Hii->GetForms (Hii, Index, 0, &BufferSize, Buffer);
 
       //
       // Skip EFI_HII_PACK_HEADER, advance to EFI_IFR_FORM_SET data.

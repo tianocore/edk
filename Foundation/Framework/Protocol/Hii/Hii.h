@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -434,22 +434,22 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_REMOVE_PACK) (
-  IN EFI_HII_PROTOCOL    * This,
+  IN EFI_HII_PROTOCOL    *This,
   IN EFI_HII_HANDLE      Handle
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_FIND_HANDLES) (
-  IN     EFI_HII_PROTOCOL * This,
+  IN     EFI_HII_PROTOCOL *This,
   IN OUT UINT16           *HandleBufferLength,
-  OUT    EFI_HII_HANDLE   * Handle
+  OUT    EFI_HII_HANDLE   *Handle
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_EXPORT) (
-  IN     EFI_HII_PROTOCOL * This,
+  IN     EFI_HII_PROTOCOL *This,
   IN     EFI_HII_HANDLE   Handle,
   IN OUT UINTN            *BufferSize,
   OUT    VOID             *Buffer
@@ -458,14 +458,14 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_RESET_STRINGS) (
-  IN     EFI_HII_PROTOCOL   * This,
+  IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_TEST_STRING) (
-  IN     EFI_HII_PROTOCOL  * This,
+  IN     EFI_HII_PROTOCOL  *This,
   IN     CHAR16            *StringToTest,
   IN OUT UINT32            *FirstMissing,
   OUT    UINT32            *GlyphBufferSize
@@ -474,7 +474,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_GLYPH) (
-  IN     EFI_HII_PROTOCOL  * This,
+  IN     EFI_HII_PROTOCOL  *This,
   IN     CHAR16            *Source,
   IN OUT UINT16            *Index,
   OUT    UINT8             **GlyphBuffer,
@@ -485,59 +485,59 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GLYPH_TO_BLT) (
-  IN     EFI_HII_PROTOCOL   * This,
+  IN     EFI_HII_PROTOCOL   *This,
   IN     UINT8              *GlyphBuffer,
   IN     EFI_UGA_PIXEL      Foreground,
   IN     EFI_UGA_PIXEL      Background,
   IN     UINTN              Count,
   IN     UINTN              Width,
   IN     UINTN              Height,
-  IN OUT EFI_UGA_PIXEL      * BltBuffer
+  IN OUT EFI_UGA_PIXEL      *BltBuffer
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_NEW_STRING) (
-  IN     EFI_HII_PROTOCOL      * This,
+  IN     EFI_HII_PROTOCOL      *This,
   IN     CHAR16                *Language,
   IN     EFI_HII_HANDLE        Handle,
-  IN OUT STRING_REF            * Reference,
+  IN OUT STRING_REF            *Reference,
   IN     CHAR16                *NewString
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_PRI_LANGUAGES) (
-  IN  EFI_HII_PROTOCOL    * This,
+  IN  EFI_HII_PROTOCOL    *This,
   IN  EFI_HII_HANDLE      Handle,
-  OUT EFI_STRING          * LanguageString
+  OUT EFI_STRING          *LanguageString
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_SEC_LANGUAGES) (
-  IN  EFI_HII_PROTOCOL    * This,
+  IN  EFI_HII_PROTOCOL    *This,
   IN  EFI_HII_HANDLE      Handle,
   IN  CHAR16              *PrimaryLanguage,
-  OUT EFI_STRING          * LanguageString
+  OUT EFI_STRING          *LanguageString
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_STRING) (
-  IN     EFI_HII_PROTOCOL  * This,
+  IN     EFI_HII_PROTOCOL  *This,
   IN     EFI_HII_HANDLE    Handle,
   IN     STRING_REF        Token,
   IN     BOOLEAN           Raw,
   IN     CHAR16            *LanguageString,
-  IN OUT UINT16            *BufferLength,
+  IN OUT UINTN             *BufferLength,
   OUT    EFI_STRING        StringBuffer
   );
 
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_LINE) (
-  IN     EFI_HII_PROTOCOL  * This,
+  IN     EFI_HII_PROTOCOL  *This,
   IN     EFI_HII_HANDLE    Handle,
   IN     STRING_REF        Token,
   IN OUT UINT16            *Index,
@@ -550,10 +550,10 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GET_FORMS) (
-  IN     EFI_HII_PROTOCOL  * This,
+  IN     EFI_HII_PROTOCOL  *This,
   IN     EFI_HII_HANDLE    Handle,
   IN     EFI_FORM_ID       FormId,
-  IN OUT UINT16            *BufferLength,
+  IN OUT UINTN             *BufferLength,
   OUT    UINT8             *Buffer
   );
 
@@ -569,11 +569,11 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_UPDATE_FORM) (
-  IN EFI_HII_PROTOCOL     * This,
+  IN EFI_HII_PROTOCOL     *This,
   IN EFI_HII_HANDLE       Handle,
   IN EFI_FORM_LABEL       Label,
   IN BOOLEAN              AddData,
-  IN EFI_HII_UPDATE_DATA  * Data
+  IN EFI_HII_UPDATE_DATA  *Data
   );
 
 typedef

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -153,6 +153,7 @@ Returns:
 --*/
 {
   UINT8             *Image;
+  UINT8             *ImageHeader;
   BMP_IMAGE_HEADER  *BmpHeader;
   BMP_COLOR_MAP     *BmpColorMap;
   EFI_UGA_PIXEL     *BltBuffer;
@@ -182,6 +183,7 @@ Returns:
   // Calculate graphics image data address in the image
   //
   Image         = ((UINT8 *) BmpImage) + BmpHeader->ImageOffset;
+  ImageHeader   = Image;
 
   BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_UGA_PIXEL);
   if (*UgaBlt == NULL) {
@@ -208,6 +210,22 @@ Returns:
     Blt = &BltBuffer[(BmpHeader->PixelHeight - Height - 1) * BmpHeader->PixelWidth];
     for (Width = 0; Width < BmpHeader->PixelWidth; Width++, Image++, Blt++) {
       switch (BmpHeader->BitPerPixel) {
+      case 1:
+        //
+        // Convert 1bit BMP to 24-bit color
+        //
+        for (Index = 0; Index < 8 && Width < BmpHeader->PixelWidth; Index++) {
+          Blt->Red    = BmpColorMap[((*Image) >> (7 - Index)) & 0x1].Red;
+          Blt->Green  = BmpColorMap[((*Image) >> (7 - Index)) & 0x1].Green;
+          Blt->Blue   = BmpColorMap[((*Image) >> (7 - Index)) & 0x1].Blue;
+          Blt++;
+          Width++;
+        }
+
+        Blt --;
+        Width --;
+        break;
+
       case 4:
         //
         // Convert BMP Palette to 24-bit color
@@ -248,7 +266,7 @@ Returns:
 
     }
 
-    ImageIndex = (UINTN) (Image - BmpHeader->ImageOffset);
+    ImageIndex = (UINTN) (Image - ImageHeader);
     if ((ImageIndex % 4) != 0) {
       //
       // Bmp Image starts each row on a 32-bit boundary!
@@ -346,9 +364,12 @@ Returns:
   UINTN                         Height;
   UINTN                         Width;
 
+  //
+  // We might use console control protocol to shift the mode or not.
+  //
   Status = gBS->LocateProtocol (&gEfiConsoleControlProtocolGuid, NULL, &ConsoleControl);
-  if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+  if (!EFI_ERROR (Status)) {
+    ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenGraphics);
   }
 
   Status = gBS->HandleProtocol (gST->ConsoleOutHandle, &gEfiUgaDrawProtocolGuid, &UgaDraw);
@@ -358,8 +379,6 @@ Returns:
 
   Badging = NULL;
   Status  = gBS->LocateProtocol (&gEfiOEMBadgingProtocolGuid, NULL, &Badging);
-
-  ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenGraphics);
 
   Status = UgaDraw->GetMode (UgaDraw, &SizeOfX, &SizeOfY, &ColorDepth, &RefreshRate);
   if (EFI_ERROR (Status)) {

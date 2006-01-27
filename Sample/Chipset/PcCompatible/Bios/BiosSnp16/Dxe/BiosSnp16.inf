@@ -1,0 +1,52 @@
+#/*++
+# 
+# Copyright (c) 2005, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#  Module Name:
+#
+#  Abstract:
+#
+#--*/
+
+[defines]
+BASE_NAME            = BiosSnp16
+FILE_GUID            = D0CAA91E-2DE4-4b0d-B3DC-09C67E854E34
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  BiosSnp16.h
+  BiosSnp16.c
+  Misc.c
+  Pxe.h
+  PxeUndi.c
+  ComponentName.c
+
+[libraries.common]
+  EdkFrameworkProtocolLib
+  EfiProtocolLib
+  EfiDriverLib
+  PcCompatabileProtocolLib
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EFI_SOURCE)
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Sample\Chipset\PcCompatible
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=BiosSnp16DriverEntryPoint

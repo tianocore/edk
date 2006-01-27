@@ -1312,8 +1312,6 @@ Returns:
   return Status;
 }
 
-EFI_DRIVER_ENTRY_POINT (InitializeSnpNiiDriver)
-
 EFI_STATUS
 EFIAPI
 InitializeSnpNiiDriver (
@@ -1341,8 +1339,8 @@ Returns:
           ImageHandle,
           SystemTable,
           &mSimpleNetworkDriverBinding,
-          ImageHandle,
-          &gSimpleNetworkComponentName,
+          NULL,
+          COMPONENT_NAME,
           NULL,
           NULL
           );
