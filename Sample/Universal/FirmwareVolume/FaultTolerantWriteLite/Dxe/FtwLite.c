@@ -424,6 +424,7 @@ Returns:
 {
   EFI_STATUS          Status;
   EFI_FTW_LITE_RECORD *Record;
+  EFI_LBA             WorkSpaceLbaOffset;
   UINTN               Offset;
 
   //
@@ -442,10 +443,11 @@ Returns:
     // If target block is working block, Attention:
     // it's required to set SPARE_COMPLETED to spare block.
     //
+    WorkSpaceLbaOffset = FtwLiteDevice->FtwWorkSpaceLba - FtwLiteDevice->FtwWorkBlockLba;
     Offset = (UINT8 *) Record - FtwLiteDevice->FtwWorkSpace;
     Status = FtwUpdateFvState (
               FtwLiteDevice->FtwBackupFvb,
-              FtwLiteDevice->FtwSpareLba,
+                         FtwLiteDevice->FtwSpareLba + WorkSpaceLbaOffset,
               FtwLiteDevice->FtwWorkSpaceBase + Offset,
               SPARE_COMPLETED
               );
@@ -642,6 +644,7 @@ InitializeFtwLite (
   EFI_FLASH_MAP_ENTRY_DATA            *FlashMapEntry;
   EFI_FV_BLOCK_MAP_ENTRY              *FvbMapEntry;
   UINT32                              LbaIndex;
+  EFI_LBA                                   WorkSpaceLbaOffset;
 
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
@@ -850,9 +853,10 @@ InitializeFtwLite (
     // Read from spare block
     //
     Length = FtwLiteDevice->FtwWorkSpaceSize;
+    WorkSpaceLbaOffset = FtwLiteDevice->FtwWorkSpaceLba - FtwLiteDevice->FtwWorkBlockLba;
     Status = FtwLiteDevice->FtwBackupFvb->Read (
                                             FtwLiteDevice->FtwBackupFvb,
-                                            FtwLiteDevice->FtwSpareLba,
+                           FtwLiteDevice->FtwSpareLba + WorkSpaceLbaOffset,
                                             FtwLiteDevice->FtwWorkSpaceBase,
                                             &Length,
                                             FtwLiteDevice->FtwWorkSpace

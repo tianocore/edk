@@ -368,7 +368,7 @@ Returns:
   //
   if (Attribute & EFI_LOAD_PE_IMAGE_ATTRIBUTE_RUNTIME_REGISTRATION) {
     if (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER) {
-      Image->ImageContext.FixupData = CoreAllocateRuntimePool (Image->ImageContext.FixupDataSize);
+      Image->ImageContext.FixupData = CoreAllocateRuntimePool ((UINTN)(Image->ImageContext.FixupDataSize));
       if (Image->ImageContext.FixupData == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
         goto Done;
@@ -893,7 +893,7 @@ Returns:
 --*/
 {
   return CoreLoadImageCommon (
-           TRUE,
+           FALSE,
            ParentImageHandle,
            FilePath,
            SourceBuffer,
@@ -958,6 +958,15 @@ Returns:
   //
   PERF_START (ImageHandle, START_IMAGE_TOK, NULL, 0);
 
+  if (sizeof (UINTN) == 4 && Image->Machine == EFI_IMAGE_MACHINE_X64) {
+    return EFI_UNSUPPORTED;
+  } else if (sizeof (UINTN) == 8 && Image->Machine == EFI_IMAGE_MACHINE_IA32) {
+    return EFI_UNSUPPORTED;
+  } else {
+    //
+    // For orther possible cases
+    //
+  }
 
   //
   // Push the current start image context, and

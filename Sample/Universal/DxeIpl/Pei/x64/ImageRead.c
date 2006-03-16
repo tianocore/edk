@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2004, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,10 +17,9 @@ Abstract:
 
 --*/
 
-#include "Tiano.h"
-#include "EfiCommon.h"
+#include "TianoCommon.h"
 #include "EfiCommonLib.h"
-#include "PeiCore.h"
+#include "Pei.h"
 #include "PeiLib.h"
 #include EFI_GUID_DEFINITION (PeiPeCoffLoader)
 
@@ -53,16 +52,17 @@ Returns:
 
 --*/
 {
-  CHAR8   *Destination8;
-  CHAR8   *Source8;
-  UINTN   Length;
+  CHAR8 *Destination8;
+  CHAR8 *Source8;
+  UINTN Length;
 
-  Destination8 = Buffer;
-  Source8 = (CHAR8 *)((UINTN)FileHandle + FileOffset);
-  Length = *ReadSize;
+  Destination8  = Buffer;
+  Source8       = (CHAR8 *) ((UINTN) FileHandle + FileOffset);
+  Length        = *ReadSize;
   while (Length--) {
     *(Destination8++) = *(Source8++);
   }
+
   return EFI_SUCCESS;
 }
 
@@ -89,19 +89,24 @@ Returns:
 
 --*/
 {
-  EFI_STATUS             Status;
-  EFI_PHYSICAL_ADDRESS   MemoryBuffer;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  MemoryBuffer;
 
   Status = (*PeiServices)->AllocatePages (
-                                PeiServices,
-                                EfiBootServicesData,  
-                                0x400 / EFI_PAGE_SIZE + 1,
-                                &MemoryBuffer);
+                            PeiServices,
+                            EfiBootServicesData,
+                            0x400 / EFI_PAGE_SIZE + 1,
+                            &MemoryBuffer
+                            );
   ASSERT_PEI_ERROR (PeiServices, Status);
 
-  (*PeiServices)->CopyMem((VOID *)(UINTN)MemoryBuffer, (VOID *)(UINTN)PeiImageRead, 0x400);
+  (*PeiServices)->CopyMem (
+                    (VOID *) (UINTN) MemoryBuffer,
+                    (VOID *) (UINTN) PeiImageRead,
+                    0x400
+                    );
 
-  ImageContext->ImageRead = (EFI_PEI_PE_COFF_LOADER_READ_FILE)(UINTN)MemoryBuffer;
+  ImageContext->ImageRead = (EFI_PEI_PE_COFF_LOADER_READ_FILE) (UINTN) MemoryBuffer;
 
   return Status;
 }

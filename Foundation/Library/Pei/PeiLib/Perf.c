@@ -77,7 +77,7 @@ Returns:
   PEI_PERFORMANCE_MEASURE_LOG_ENTRY  *Log;
   EFI_PEI_PPI_DESCRIPTOR             *PerfHobDescriptor;
   UINT64                             TimeCount;
-  INTN                               Index;
+  UINTN                              Index;
   UINTN                              Index2;
   EFI_GUID                           *Guid;
   EFI_GUID                           *CheckGuid;

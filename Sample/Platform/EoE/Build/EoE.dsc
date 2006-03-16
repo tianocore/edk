@@ -190,7 +190,7 @@ Foundation\Core\Pei\PeiMain.inf
 # PEIM
 #
 Sample\Universal\GenericMemoryTest\Pei\BaseMemoryTest.inf
-Sample\Universal\DxeIpl\Pei\DxeIpl.inf
+#Sample\Universal\DxeIpl\Pei\DxeIpl.inf
 
 Sample\Platform\EoE\PpisNeededByDxeCore\PpisNeededByDxeCore.inf
 
@@ -292,7 +292,7 @@ Other\Maintained\Application\Shell\bin\Shell.inf
 DEFINE TOOLCHAIN=TOOLCHAIN_IA32
 DEFINE PROCESSOR=IA32
 
-Sample\Platform\EoE\Go64\Go64.inf
-Sample\Platform\EoE\PeiCommand\PeiCommand.inf
+Sample\Platform\EoE\Go64\Go64.inf                  FV=NULL
+Sample\Platform\EoE\PeiCommand\PeiCommand.inf      FV=NULL
 
 [=============================================================================]

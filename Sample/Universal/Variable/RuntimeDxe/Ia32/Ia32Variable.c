@@ -114,8 +114,8 @@ Returns:
           );
 }
 
+EFI_RUNTIMESERVICE
 VOID
-EFIAPI
 VariableClassAddressChangeEvent (
   IN EFI_EVENT        Event,
   IN VOID             *Context
@@ -144,7 +144,6 @@ Returns:
 EFI_DRIVER_ENTRY_POINT (VariableServiceInitialize)
 
 EFI_STATUS
-EFIAPI
 VariableServiceInitialize (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable

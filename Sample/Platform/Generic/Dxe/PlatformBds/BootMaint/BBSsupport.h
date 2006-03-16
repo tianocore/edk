@@ -30,14 +30,6 @@ Revision History
 #include "bdslib.h"
 #include "bootmaint.h"
 
-#ifdef EFI32
-#define REFRESH_LEGACY_BOOT_OPTIONS \
-        BdsDeleteAllInvalidLegacyBootOptions ();\
-        BdsAddNonExistingLegacyBootOptions (); \
-        BdsUpdateLegacyDevOrder ()
-#else
-#define REFRESH_LEGACY_BOOT_OPTIONS
-#endif
 
 VOID
 BdsBuildLegacyDevNameString (

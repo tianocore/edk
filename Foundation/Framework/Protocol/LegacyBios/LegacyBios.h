@@ -50,8 +50,8 @@ EFI_FORWARD_DECLARATION (EFI_LEGACY_BIOS_PROTOCOL);
 //
 // Convert from 32-bit address (_Adr) to Segment:Offset 16-bit form
 //
-#define EFI_SEGMENT(_Adr)     (UINT16) ((UINT16) (((UINT32) (_Adr)) >> 4) & 0xf000)
-#define EFI_OFFSET(_Adr)      (UINT16) (((UINT16) ((UINT32) _Adr)) & 0xffff)
+#define EFI_SEGMENT(_Adr)     (UINT16) ((UINT16) (((UINTN) (_Adr)) >> 4) & 0xf000)
+#define EFI_OFFSET(_Adr)      (UINT16) (((UINT16) ((UINTN) (_Adr))) & 0xffff)
 #define BYTE_GRANULARITY      0x01
 #define WORD_GRANULARITY      0x02
 #define DWORD_GRANULARITY     0x04

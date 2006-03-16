@@ -115,6 +115,8 @@ EfiWriteMsr  ENDP
 ;------------------------------------------------------------------------------
 EfiReadTsc PROC    PUBLIC
     rdtsc
+    shl     rax, 32
+    shrd    rax, rdx, 32
     ret
 EfiReadTsc  ENDP
 
@@ -143,7 +145,7 @@ EfiEnableCache PROC    PUBLIC
     mov   rax, cr0
     and   rax, 09fffffffh         
     mov   cr0, rax
-    pop   rax
+    ret
 EfiEnableCache ENDP
 
 ;------------------------------------------------------------------------------
@@ -153,7 +155,7 @@ EfiEnableCache ENDP
 ;   );
 ;------------------------------------------------------------------------------
 EfiGetEflags PROC    PUBLIC
-    pushf
+    pushfq
     pop   rax
     ret
 EfiGetEflags  ENDP

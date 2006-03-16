@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,7 +32,9 @@ Abstract:
   
 --*/  
 
-#include "Go64.h"
+#include "Pei.h"
+//#include "Go64.h"
+#include "DxeIpl.h"
 #include "CpuIA32.h"
 #include "VirtualMemory.h"
 
@@ -173,7 +175,7 @@ UINTN mPowerOf2[] = {
 
 EFI_STATUS
 EfiGetMtrrs (
-  VOID
+  IN EFI_PEI_SERVICES          **PeiServices
   )
 /*++
 
@@ -190,8 +192,9 @@ Returns:
 
 --*/
 {
-  x64_MTRR_VARIABLE_RANGE   *VariableRange;
-  x64_MTRR_FIXED_RANGE      *FixedRange;
+  EFI_STATUS                Status;
+  x64_MTRR_VARIABLE_RANGE *VariableRange;
+  x64_MTRR_FIXED_RANGE    *FixedRange;
   UINT32                    Index;
 
  
@@ -201,6 +204,7 @@ Returns:
   // Retrieve the default type for memory regions not described by MTRRs
   //
   FixedRange->DefaultType.Uint64 = EfiReadMsr (EFI_CACHE_IA32_MTRR_DEF_TYPE);
+  PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Default %X\n", FixedRange->DefaultType.Uint64));
 
   //
   // Make sure the CPU supports fixed MTRRs
@@ -211,29 +215,54 @@ Returns:
   //
   FixedRange->DefaultType.Bits.FE = 0;
 
+  PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Capabilities %X\n", FixedRange->Capabilities.Uint64));
+  PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fix %01d FE %01d\n", FixedRange->Capabilities.Bits.FIX, FixedRange->DefaultType.Bits.FE));
   if ((FixedRange->Capabilities.Bits.FIX == 1) && (FixedRange->DefaultType.Bits.FE == 1)) {
     //
     // Retrieve the 11 fixed MTRRs
     //
     FixedRange->Fixed[ 0].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX64K_00000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 0 %X\n", FixedRange->Fixed[0].Uint64));
     FixedRange->Fixed[ 1].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX16K_80000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 1 %X\n", FixedRange->Fixed[1].Uint64));
     FixedRange->Fixed[ 2].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX16K_A0000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 2 %X\n", FixedRange->Fixed[2].Uint64));
     FixedRange->Fixed[ 3].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_C0000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 3 %X\n", FixedRange->Fixed[3].Uint64));
     FixedRange->Fixed[ 4].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_C8000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 4 %X\n", FixedRange->Fixed[4].Uint64));
     FixedRange->Fixed[ 5].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_D0000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 5 %X\n", FixedRange->Fixed[5].Uint64));
     FixedRange->Fixed[ 6].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_D8000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 6 %X\n", FixedRange->Fixed[6].Uint64));
     FixedRange->Fixed[ 7].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_E0000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 7 %X\n", FixedRange->Fixed[7].Uint64));
     FixedRange->Fixed[ 8].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_E8000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 8 %X\n", FixedRange->Fixed[8].Uint64));
     FixedRange->Fixed[ 9].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_F0000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 9 %X\n", FixedRange->Fixed[9].Uint64));
     FixedRange->Fixed[10].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_F8000);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 10 %X\n", FixedRange->Fixed[10].Uint64));
   }
 
   //
   // Allocate Buffer for all the Variable MTRRs
   //
-  mMTRRVariableRange = AllocateTempPages (EFI_SIZE_TO_PAGES (sizeof (x64_MTRR_VARIABLE_RANGE) * FixedRange->Capabilities.Bits.VCNT));
-  if (mMTRRVariableRange == NULL) {
-    return EFI_OUT_OF_RESOURCES;
+  /*Status = gBS->AllocatePool (
+                  EfiBootServicesData, 
+                  sizeof (x64_MTRR_VARIABLE_RANGE) * FixedRange->Capabilities.Bits.VCNT,
+                  (VOID **)&mMTRRVariableRange
+                  );
+  */                  
+
+  Status = (*PeiServices)->AllocatePool(
+                             PeiServices,
+                             sizeof (x64_MTRR_VARIABLE_RANGE) * FixedRange->Capabilities.Bits.VCNT,
+                             (VOID **)&mMTRRVariableRange
+                             );
+  
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
 
   VariableRange = mMTRRVariableRange;
@@ -244,6 +273,8 @@ Returns:
   for (Index = 0; Index < FixedRange->Capabilities.Bits.VCNT; Index++) {
     VariableRange[Index].PhysBase.Uint64 = EfiReadMsr (EFI_CACHE_VARIABLE_MTRR_BASE + (Index*2) + 0);
     VariableRange[Index].PhysMask.Uint64 = EfiReadMsr (EFI_CACHE_VARIABLE_MTRR_BASE + (Index*2) + 1);
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Variable[%d] base %X - ", Index, VariableRange[Index].PhysBase.Uint64));
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "mask %X\n", VariableRange[Index].PhysMask.Uint64));
   }
 
   return EFI_SUCCESS;
@@ -366,6 +397,7 @@ Returns:
 
 BOOLEAN
 CanNotUse2MBPage (
+  IN EFI_PEI_SERVICES            **PeiServices,
   IN  EFI_PHYSICAL_ADDRESS  BaseAddress
   )
 /*++
@@ -390,7 +422,7 @@ Returns:
   //
   // Address needs to be 2MB aligned
   //
-  ASSERT ((BaseAddress & 0x1fffff) == 0);
+  ASSERT_PEI_ERROR (PeiServices, (BaseAddress & 0x1fffff) == 0);
 
   PreviousMemoryType = -1;
   for (Index = 0; Index < 512; Index++, BaseAddress += 0x1000) {
@@ -413,7 +445,8 @@ Returns:
 
 VOID
 Convert2MBPageTo4KPages (  
-  IN  X64_PAGE_TABLE_ENTRY_2M   *PageDirectoryEntry2MB, 
+  IN EFI_PEI_SERVICES      **PeiServices,
+  IN  x64_PAGE_TABLE_ENTRY_2M   *PageDirectoryEntry2MB, 
   IN  EFI_PHYSICAL_ADDRESS        PageAddress
   )
 /*++
@@ -432,21 +465,20 @@ Returns:
 --*/
 {
   EFI_PHYSICAL_ADDRESS                          Address;
-  x64_MTRR_MEMORY_TYPE                        MtrrMemoryType;
-  X64_PAGE_DIRECTORY_ENTRY_4K                 *PageDirectoryEntry4k;
-  X64_PAGE_TABLE_ENTRY_4K                     *PageTableEntry;
+  x64_PAGE_DIRECTORY_ENTRY_4K                   *PageDirectoryEntry4k;
+  x64_PAGE_TABLE_ENTRY_4K                       *PageTableEntry;
   UINTN                                         Index1;
 
   //
   // Allocate the page table entry for the 4K pages
   //
-  PageTableEntry = (X64_PAGE_TABLE_ENTRY_4K *)(UINTN)AllocateZeroedHobPages (1);
-  ASSERT (PageTableEntry != NULL);
+  PageTableEntry = (x64_PAGE_TABLE_ENTRY_4K *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+  ASSERT_PEI_ERROR (PeiServices, PageTableEntry != NULL);
 
   //
   // Convert PageDirectoryEntry2MB into a 4K Page Directory
   //
-  PageDirectoryEntry4k = (X64_PAGE_DIRECTORY_ENTRY_4K *)PageDirectoryEntry2MB;
+  PageDirectoryEntry4k = (x64_PAGE_DIRECTORY_ENTRY_4K *)PageDirectoryEntry2MB;
   PageDirectoryEntry2MB->Uint64 = (UINT64)PageTableEntry;
   PageDirectoryEntry2MB->Bits.ReadWrite = 1;
   PageDirectoryEntry2MB->Bits.Present = 1;
@@ -458,37 +490,14 @@ Returns:
     PageTableEntry->Uint64 = (UINT64)Address;
     PageTableEntry->Bits.ReadWrite = 1;
     PageTableEntry->Bits.Present = 1;
-
-    //
-    // Retrieve the MTRR memory type for the 4KB region starting at PageAddress
-    //
-    MtrrMemoryType = EfiGetMTRRMemoryType (Address);
-
-    switch (MtrrMemoryType) {
-    case WriteCombining:
-      PageTableEntry->Bits.CacheDisabled = 1;
-      PageTableEntry->Bits.WriteThrough  = 1;
-      break;
-    case WriteThrough:
-      PageTableEntry->Bits.WriteThrough = 1;
-      break;
-    case WriteProtected:
-      PageTableEntry->Bits.ReadWrite = 0;
-      break;
-    case WriteBack:
-      break;
-    case Uncached:
-    default:
-      PageTableEntry->Bits.CacheDisabled = 1;
-      break;
-    }
   }
 }
 
 
 EFI_PHYSICAL_ADDRESS
 CreateIdentityMappingPageTables (
-  IN UINT32 NumberOfProcessorPhysicalAddressBits
+  IN EFI_PEI_SERVICES      **PeiServices,
+  IN UINT32                NumberOfProcessorPhysicalAddressBits
   )
 /*++
 
@@ -517,10 +526,10 @@ Returns:
   UINTN                                         MaxBitsSupported;
   UINTN                                         Index1;
   UINTN                                         Index2;
-  X64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageMapLevel4Entry;
-  X64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageMap;
-  X64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageDirectoryPointerEntry;
-  X64_PAGE_TABLE_ENTRY_2M                       *PageDirectoryEntry2MB;
+  x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageMapLevel4Entry;
+  x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageMap;
+  x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageDirectoryPointerEntry;
+  x64_PAGE_TABLE_ENTRY_2M                       *PageDirectoryEntry2MB;
 
 
   //
@@ -540,8 +549,8 @@ Returns:
   //
   // By architecture only one PageMapLevel4 exists - so lets allocate storgage for it.
   // 
-  PageMap = PageMapLevel4Entry = (X64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K *)(UINTN)AllocateZeroedHobPages (1);
-  ASSERT (PageMap != NULL);
+  PageMap = PageMapLevel4Entry = (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+  ASSERT_PEI_ERROR (PeiServices, PageMap != NULL);
   PageAddress = 0;
 
   //
@@ -560,13 +569,13 @@ Returns:
     // Each PML4 entry points to a page of Page Directory Pointer entires.
     //  So lets allocate space for them and fill them in in the Index1 loop.
     //  
-    PageDirectoryPointerEntry = (X64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K *)(UINTN)AllocateZeroedHobPages (1);
-    ASSERT (PageDirectoryPointerEntry != NULL);
+    PageDirectoryPointerEntry = (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+    ASSERT_PEI_ERROR (PeiServices, PageDirectoryPointerEntry != NULL);
 
     //
     // Make a PML4 Entry
     //
-    PageMapLevel4Entry->Uint64 = (UINT64)(UINT32)PageDirectoryPointerEntry;
+    PageMapLevel4Entry->Uint64 = (UINT64)(UINTN)PageDirectoryPointerEntry;
     PageMapLevel4Entry->Bits.ReadWrite = 1;
     PageMapLevel4Entry->Bits.Present = 1;
 
@@ -575,13 +584,13 @@ Returns:
       // Each Directory Pointer entries points to a page of Page Directory entires.
       //  So lets allocate space for them and fill them in in the Index2 loop.
       //       
-      PageDirectoryEntry2MB = (X64_PAGE_TABLE_ENTRY_2M *)(UINTN)AllocateZeroedHobPages (1);
-      ASSERT (PageDirectoryEntry2MB != NULL);
+      PageDirectoryEntry2MB = (x64_PAGE_TABLE_ENTRY_2M *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+      ASSERT_PEI_ERROR (PeiServices, PageDirectoryEntry2MB != NULL);
 
       //
       // Fill in a Page Directory Pointer Entries
       //
-      PageDirectoryPointerEntry->Uint64 = (UINT64)(UINT32)PageDirectoryEntry2MB;
+      PageDirectoryPointerEntry->Uint64 = (UINT64)(UINTN)PageDirectoryEntry2MB;
       PageDirectoryPointerEntry->Bits.ReadWrite = 1;
       PageDirectoryPointerEntry->Bits.Present = 1;
 
@@ -593,6 +602,14 @@ Returns:
         PageDirectoryEntry2MB->Bits.ReadWrite = 1;
         PageDirectoryEntry2MB->Bits.Present = 1;
         PageDirectoryEntry2MB->Bits.MustBe1 = 1;
+
+        if (CanNotUse2MBPage (PeiServices, PageAddress)) {
+          //
+          // Check to see if all 2MB has the same mapping. If not convert
+          //  to 4K pages by adding the 4th level of page table entries
+          //
+          Convert2MBPageTo4KPages (PeiServices, PageDirectoryEntry2MB, PageAddress);
+        }
       }
     }
   }
@@ -602,9 +619,14 @@ Returns:
   //  for now we just copy the first entry.
   //
   for (; Index < 512; Index++, PageMapLevel4Entry++) {
-    EfiCommonLibCopyMem (PageMapLevel4Entry, PageMap, sizeof (X64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K));
+  //    EfiCopyMem (PageMapLevel4Entry, PageMap, sizeof (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K));
+    (*PeiServices)->CopyMem (
+                  PageMapLevel4Entry,
+                  PageMap,
+                  sizeof (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K)
+                  );
   }
 
-  return (EFI_PHYSICAL_ADDRESS)(UINT32)PageMap;
+  return (EFI_PHYSICAL_ADDRESS)PageMap;
 }
 

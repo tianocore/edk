@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,8 +17,8 @@ Abstract:
 
 --*/
 
-#ifndef _PEI_DXEIPL_H_
-#define _PEI_DXEIPL_H_
+#ifndef _PEI_DXELOAD_FUNC_H_
+#define _PEI_DXELOAD_FUNC_H_
 
 #include "PeiHob.h"
 #include "PeiLib.h"
@@ -52,94 +52,8 @@ Abstract:
 #include "ImageRead.h"
 #include "peihoblib.h"
 
-#define PEI_DXEIPL_STACK_SIZE 0x10000
-//
-// Define EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE to pass the PeiService table to
-// EFI_PEI_FV_FILE_LOADER_PPI
-
-typedef struct _EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE {
-  EFI_PEI_SERVICES                  **PeiServices;
-  EFI_PEI_FV_FILE_LOADER_PPI        LoadFilePpi;
-} EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE;
 
 
-EFI_STATUS
-InstallEfiDecompress (
-  EFI_DECOMPRESS_PROTOCOL  **This
-  )
-;
-
-EFI_STATUS
-InstallTianoDecompress (
-  EFI_TIANO_DECOMPRESS_PROTOCOL  **This
-  )
-;
-
-EFI_STATUS
-InstallCustomizedDecompress (
-  EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL  **This
-  )
-;
-
-VOID
-SwitchStacks (
-  VOID  *EntryPoint,
-  UINTN Parameter,
-  VOID  *NewStack,
-  VOID  *NewBsp
-  )
-;
-
-
-EFI_STATUS
-PeiFindFile (
-  IN  EFI_PEI_SERVICES       **PeiServices,
-  IN  UINT8                  Type,
-  IN  UINT16                 SectionType,
-  OUT EFI_GUID               *FileName,
-  OUT VOID                   **Pe32Data
-  )
-;
-
-EFI_STATUS
-PeiLoadFile (
-  IN  EFI_PEI_SERVICES                          **PeiServices,
-  IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
-  IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
-  IN  VOID                                      *Pe32Data,
-  OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
-  OUT UINT64                                    *ImageSize,
-  OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
-  )
-;
-
-EFI_STATUS
-PeCoffLoaderGetImageInfo (
-  IN     EFI_PEI_PE_COFF_LOADER_PROTOCOL       *This,
-  IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  )
-;
-
-EFI_STATUS
-PeCoffLoaderRelocateImage (
-  IN     EFI_PEI_PE_COFF_LOADER_PROTOCOL       *This,
-  IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  )
-;
-
-EFI_STATUS
-PeCoffLoaderLoadImage (
-  IN     EFI_PEI_PE_COFF_LOADER_PROTOCOL       *This,
-  IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
-  )
-;
-
-EFI_STATUS
-CreateArchSpecificHobs (
-  IN  EFI_PEI_SERVICES          **PeiServices,
-  OUT EFI_PHYSICAL_ADDRESS      *BspStore
-  )
-;
 EFI_STATUS
 PeiLoadx64File (
   IN  EFI_PEI_SERVICES                          **PeiServices,
@@ -178,4 +92,5 @@ ActivateLongMode (
 
 VOID
 LoadGo64Gdt();
+
 #endif

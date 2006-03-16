@@ -339,7 +339,8 @@ ShadowAllOptionRom();
 //
 // BBS support macros and functions
 //
-#ifdef EFI32
+
+#if defined(EFI32) || defined(EFIX64)
 #define REFRESH_LEGACY_BOOT_OPTIONS \
         BdsDeleteAllInvalidLegacyBootOptions ();\
         BdsAddNonExistingLegacyBootOptions (); \

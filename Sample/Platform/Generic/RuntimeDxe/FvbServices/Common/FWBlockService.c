@@ -519,7 +519,7 @@ Returns:
   // Clear status register
   //
   HubCommand = FWH_CLEAR_STATUS_COMMAND;
-  FvbMemWrite8 ((UINT64) ((UINTN) Dest), HubCommand);
+  FvbMemWrite8 ((UINT64) ((UINTN) WriteAddress), HubCommand);
 
   //
   // Issue read array command to return the FWH state machine to the
@@ -1620,12 +1620,14 @@ Returns:
   EFI_PHYSICAL_ADDRESS                BaseAddress;
   BOOLEAN                             WriteBack;
   UINTN                               NumOfBlocks;
+  UINTN                               HeaderLength;
 
   INITIALIZE_SCRIPT (ImageHandle, SystemTable);
 
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, FvbVirtualddressChangeEvent);
 
   Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
+  HeaderLength = 0;
 
   //
   // No FV HOBs found
@@ -1802,13 +1804,18 @@ Returns:
                   FwVolHeader->FvBlockMap->BlockLength
                   );
 
+        HeaderLength = (UINTN) FwVolHeader->HeaderLength;
+
         Status = FlashFdWrite (
                   (UINTN) FwhInstance->FvWriteBase[0],
                   (UINTN) BaseAddress,
-                  (UINTN *) &FwVolHeader->HeaderLength,
+                  (UINTN *) &HeaderLength,
                   (UINT8 *) FwVolHeader,
                   FwVolHeader->FvBlockMap->BlockLength
                   );
+
+        FwVolHeader->HeaderLength = (UINT16) HeaderLength;
+
         DEBUG ((EFI_D_ERROR, "Fvb: FV header invalid, write back - %r\n", Status));
       }
     }

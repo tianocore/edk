@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004, Intel Corporation                                                         
+Copyright (c) 2004, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,77 +23,39 @@ Abstract:
 
 --*/
 
-#include "Tiano.h"
-#include "EfiRuntimeLib.h"
+#ifndef _CPU_IO_H
+#define _CPU_IO_H
 
-#include EFI_PROTOCOL_DEFINITION (CpuIO)
-
-
-//
-// Volitile
-//
 typedef union {
-  UINT8 VOLATILE  *buf;
-  UINT8 VOLATILE  *ui8;
-  UINT16 VOLATILE *ui16;
-  UINT32 VOLATILE *ui32;
-  UINT64 VOLATILE *ui64;
-  UINTN VOLATILE  ui;
+  UINT8  VOLATILE  *buf;
+  UINT8  VOLATILE  *ui8;
+  UINT16 VOLATILE  *ui16;
+  UINT32 VOLATILE  *ui32;
+  UINT64 VOLATILE  *ui64;
+  UINTN  VOLATILE  ui;
 } PTR;
 
 EFI_STATUS
 EFIAPI
 CpuIoInitialize (
-  IN EFI_HANDLE                            ImageHandle,
-  IN EFI_SYSTEM_TABLE                      *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  CpuIo driver entry point.
 
 Arguments:
 
-  ImageHandle - TODO: add argument description
-  SystemTable - TODO: add argument description
+  ImageHandle - The firmware allocated handle for the EFI image.
+  SystemTable - A pointer to the EFI System Table.
 
 Returns:
 
-  TODO: add return values
-
---*/
-;
-
-STATIC
-EFI_STATUS
-EFIAPI
-CpuIoMemRW (
-  IN EFI_CPU_IO_PROTOCOL_WIDTH     Width,
-  IN UINTN                         Count,
-  IN BOOLEAN                       InStrideFlag,
-  IN PTR                           In,
-  IN BOOLEAN                       OutStrideFlag,
-  OUT PTR                          Out
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  Width         - TODO: add argument description
-  Count         - TODO: add argument description
-  InStrideFlag  - TODO: add argument description
-  In            - TODO: add argument description
-  OutStrideFlag - TODO: add argument description
-  Out           - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
+  EFI_SUCCESS          - The driver was initialized.
+  EFI_OUT_OF_RESOURCES - The request could not be completed due to a lack of resources.
 
 --*/
 ;
@@ -101,29 +63,34 @@ Returns:
 EFI_STATUS
 EFIAPI
 CpuMemoryServiceRead (
-  IN  EFI_CPU_IO_PROTOCOL               *This,
-  IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
-  IN  UINT64                            Address,
-  IN  UINTN                             Count,
-  IN  OUT VOID                          *Buffer
+  IN  EFI_CPU_IO_PROTOCOL        *This,
+  IN  EFI_CPU_IO_PROTOCOL_WIDTH  Width,
+  IN  UINT64                     Address,
+  IN  UINTN                      Count,
+  OUT VOID                       *Buffer
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Perform the memory mapped I/O read service
 
 Arguments:
 
-  This    - TODO: add argument description
-  Width   - TODO: add argument description
-  Address - TODO: add argument description
-  Count   - TODO: add argument description
-  Buffer  - TODO: add argument description
+  This    - Pointer to an instance of the CPU I/O Protocol
+  Width   - Width of the memory mapped I/O operation
+  Address - Base address of the memory mapped I/O operation
+  Count   - Count of the number of accesses to perform
+  Buffer  - Pointer to the destination buffer to store the results
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The data was read.
+  EFI_INVALID_PARAMETER - Width is invalid.
+  EFI_INVALID_PARAMETER - Buffer is NULL.
+  EFI_UNSUPPORTED       - The Buffer is not aligned for the given Width.
+  EFI_UNSUPPORTED       - The address range specified by Address, Width,
+                          and Count is not valid.
 
 --*/
 ;
@@ -131,29 +98,34 @@ Returns:
 EFI_STATUS
 EFIAPI
 CpuMemoryServiceWrite (
-  IN EFI_CPU_IO_PROTOCOL                *This,
-  IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
-  IN  UINT64                            Address,
-  IN  UINTN                             Count,
-  IN  OUT VOID                          *Buffer
+  IN EFI_CPU_IO_PROTOCOL        *This,
+  IN EFI_CPU_IO_PROTOCOL_WIDTH  Width,
+  IN UINT64                     Address,
+  IN UINTN                      Count,
+  IN VOID                       *Buffer
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Perform the memory mapped I/O write service
 
 Arguments:
 
-  This    - TODO: add argument description
-  Width   - TODO: add argument description
-  Address - TODO: add argument description
-  Count   - TODO: add argument description
-  Buffer  - TODO: add argument description
+  This    - Pointer to an instance of the CPU I/O Protocol
+  Width   - Width of the memory mapped I/O operation
+  Address - Base address of the memory mapped I/O operation
+  Count   - Count of the number of accesses to perform
+  Buffer  - Pointer to the source buffer from which to write data
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The data was written.
+  EFI_INVALID_PARAMETER - Width is invalid.
+  EFI_INVALID_PARAMETER - Buffer is NULL.
+  EFI_UNSUPPORTED       - The Buffer is not aligned for the given Width.
+  EFI_UNSUPPORTED       - The address range specified by Address, Width,
+                          and Count is not valid.
 
 --*/
 ;
@@ -161,29 +133,34 @@ Returns:
 EFI_STATUS
 EFIAPI
 CpuIoServiceRead (
-  IN EFI_CPU_IO_PROTOCOL                *This,
-  IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
-  IN  UINT64                            UserAddress,
-  IN  UINTN                             Count,
-  IN  OUT VOID                          *UserBuffer
+  IN  EFI_CPU_IO_PROTOCOL        *This,
+  IN  EFI_CPU_IO_PROTOCOL_WIDTH  Width,
+  IN  UINT64                     UserAddress,
+  IN  UINTN                      Count,
+  OUT VOID                       *UserBuffer
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Perform the port I/O read service
 
 Arguments:
 
-  This        - TODO: add argument description
-  Width       - TODO: add argument description
-  UserAddress - TODO: add argument description
-  Count       - TODO: add argument description
-  UserBuffer  - TODO: add argument description
+  This    - Pointer to an instance of the CPU I/O Protocol
+  Width   - Width of the port I/O operation
+  Address - Base address of the port I/O operation
+  Count   - Count of the number of accesses to perform
+  Buffer  - Pointer to the destination buffer to store the results
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The data was read.
+  EFI_INVALID_PARAMETER - Width is invalid.
+  EFI_INVALID_PARAMETER - Buffer is NULL.
+  EFI_UNSUPPORTED       - The Buffer is not aligned for the given Width.
+  EFI_UNSUPPORTED       - The address range specified by Address, Width,
+                          and Count is not valid.
 
 --*/
 ;
@@ -191,158 +168,69 @@ Returns:
 EFI_STATUS
 EFIAPI
 CpuIoServiceWrite (
-  IN EFI_CPU_IO_PROTOCOL                *This,
-  IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
-  IN  UINT64                            UserAddress,
-  IN  UINTN                             Count,
-  IN  OUT VOID                          *UserBuffer
+  IN EFI_CPU_IO_PROTOCOL        *This,
+  IN EFI_CPU_IO_PROTOCOL_WIDTH  Width,
+  IN UINT64                     UserAddress,
+  IN UINTN                      Count,
+  IN VOID                       *UserBuffer
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Perform the port I/O write service
 
 Arguments:
 
-  This        - TODO: add argument description
-  Width       - TODO: add argument description
-  UserAddress - TODO: add argument description
-  Count       - TODO: add argument description
-  UserBuffer  - TODO: add argument description
+  This    - Pointer to an instance of the CPU I/O Protocol
+  Width   - Width of the port I/O operation
+  Address - Base address of the port I/O operation
+  Count   - Count of the number of accesses to perform
+  Buffer  - Pointer to the source buffer from which to write data
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The data was written.
+  EFI_INVALID_PARAMETER - Width is invalid.
+  EFI_INVALID_PARAMETER - Buffer is NULL.
+  EFI_UNSUPPORTED       - The Buffer is not aligned for the given Width.
+  EFI_UNSUPPORTED       - The address range specified by Address, Width,
+                          and Count is not valid.
 
 --*/
 ;
 
 EFI_STATUS
-CpuIoCheckAddressRange (
-  IN  EFI_CPU_IO_PROTOCOL_WIDTH         Width,
-  IN  UINT64                            Address,
-  IN  UINTN                             Count,
-  IN  VOID                              *Buffer,
-  IN  UINT64                            Limit
+CpuIoCheckParameter (
+  IN EFI_CPU_IO_PROTOCOL_WIDTH  Width,
+  IN UINT64                     Address,
+  IN UINTN                      Count,
+  IN VOID                       *Buffer,
+  IN UINT64                     Limit
   )
 /*++
 
 Routine Description:
 
-  TODO: Add function description
+  Check the validation of parameters for CPU I/O interface functions.
 
 Arguments:
 
-  Width   - TODO: add argument description
-  Address - TODO: add argument description
-  Count   - TODO: add argument description
-  Buffer  - TODO: add argument description
-  Limit   - TODO: add argument description
+  Width   - Width of the Memory Access
+  Address - Address of the Memory access
+  Count   - Count of the number of accesses to perform
+  Buffer  - Pointer to the buffer to read from memory
+  Buffer  - Memory buffer for the I/O operation
+  Limit   - Maximum address supported
 
 Returns:
 
-  TODO: add return values
+  EFI_INVALID_PARAMETER - Buffer is NULL
+  EFI_UNSUPPORTED       - The address range specified by Width, Address and Count is invalid
+  EFI_UNSUPPORTED       - The memory buffer is not aligned
+  EFI_SUCCESS           - Parameters are OK
 
 --*/
 ;
 
-
-UINT8
-EFIAPI
-CpuIoRead8 (
-  IN  UINT16  Port
-  )
-/*++                                                                                                                               
-Routine Description:                                                
-  Cpu I/O read port
-Arguments:                
-   Port: - Port number to read                                                          
-Returns:                                                            
-   Return read 8 bit value                                                
---*/
-;
-
-
-UINT16
-EFIAPI
-CpuIoRead16 (
-  IN  UINT16  Port
-  )
-/*++                                                                                                                               
-Routine Description:                                                
-  Cpu I/O read port
-Arguments:                
-   Port: - Port number to read                                                          
-Returns:                                                            
-   Return read 16 bit value                                                
---*/
-;
-
-
-UINT32
-EFIAPI
-CpuIoRead32 (
-  IN  UINT16  Port
-  )
-/*++                                                                                                                               
-Routine Description:                                                
-  Cpu I/O read port
-Arguments:                
-   Port: - Port number to read                                                          
-Returns:                                                            
-   Return read 32 bit value                                                
---*/
-;
-
-
-VOID
-EFIAPI
-CpuIoWrite8 (
-  IN  UINT16  Port,
-  IN  UINT32  Data
-  )
-/*++                                                                                                                               
-Routine Description:                                                
-  Cpu I/O write 8 bit data to port
-Arguments:                
-   Port: - Port number to read  
-   Data: - Data to write to the Port                                                        
-Returns:                                                            
-   None                                                
---*/
-;
-
-VOID
-EFIAPI
-CpuIoWrite16 (
-  IN  UINT16  Port,
-  IN  UINT32  Data
-  )
-/*++                                                                                                                               
-Routine Description:                                                
-  Cpu I/O write 16 bit data to port
-Arguments:                
-   Port: - Port number to read  
-   Data: - Data to write to the Port                                                        
-Returns:                                                            
-   None                                                
---*/
-;
-
-VOID
-EFIAPI
-CpuIoWrite32 (
-  IN  UINT16  Port,
-  IN  UINT32  Data
-  )
-/*++                                                                                                                               
-Routine Description:                                                
-  Cpu I/O write 32 bit data to port
-Arguments:                
-   Port: - Port number to read  
-   Data: - Data to write to the Port                                                        
-Returns:                                                            
-   None                                                
---*/
-;
+#endif

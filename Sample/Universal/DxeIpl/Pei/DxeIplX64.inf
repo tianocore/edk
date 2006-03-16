@@ -1,6 +1,6 @@
 #/*++
-# 
-# Copyright (c) 2004, Intel Corporation                                                         
+#
+# Copyright 2004, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -8,48 +8,64 @@
 #                                                                                           
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
-#
+# 
 #  Module Name:
 #
-#    CpuIo.inf
+#    DxeIpl.inf
 #
 #  Abstract:
 #
-#    Component description file for CpuIo module
+#    Component description file for DxeIpl module
 #
 #--*/
 
 [defines]
-BASE_NAME            = CpuIo
-FILE_GUID            = BAE7599F-3C6B-43b7-BDF0-9CE07AA91AA6
-COMPONENT_TYPE       = RT_DRIVER
+BASE_NAME            = DxeIpl
+FILE_GUID            = 86D70125-BAA3-4296-A62F-602BEBBB9081
+
+COMPONENT_TYPE       = PE32_PEIM
 
 [sources.common]
-  CpuIo.c
+  DxeLoadX64.c
+  
 
 [sources.ia32]
-  ia32\CpuIoAccess.asm
-
-[sources.x64]
-  x64\CpuIoAccess.asm
+  x64\ImageRead.c
+  x64\LongMode.asm
+  x64\DxeLoadFunc.c
+  x64\VirtualMemory.c
 
 [includes.common]
-  $(EDK_SOURCE)\Foundation\Efi
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Sample\Platform\Nt32
   .
   $(EDK_SOURCE)\Foundation\Include
   $(EDK_SOURCE)\Foundation\Efi\Include
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
-  $(EFI_SOURCE)
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Core\Pei\Include
+  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
 
 [libraries.common]
-  EdkProtocolLib
-  EfiRuntimeLib
+  EdkPpiLib
+  EdkFrameworkPpiLib
+  PeiLib
+  PeiHobLib
+  HobLib
+  CustomizedDecompress
+
+[libraries.x64]
+  CpuIa32Lib
+[libraries.ia32.nt32]
+  EdkNt32PpiLib
 
 [nmake.common]
-  IMAGE_ENTRY_POINT=CpuIoInitialize
-  DPX_SOURCE=Ia32CpuIo.dxs
+  C_STD_INCLUDE=
+  IMAGE_ENTRY_POINT=PeimInitializeDxeIpl
+  DPX_SOURCE=DxeIpl.dxs

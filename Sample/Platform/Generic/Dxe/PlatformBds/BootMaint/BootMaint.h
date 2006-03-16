@@ -436,7 +436,7 @@ typedef struct {
 
 typedef struct {
   UINT16  DescriptionData[75];
-  UINT16                    OptionalData[127];
+  UINT16  OptionalData[127];
   UINT8   Active;
   UINT8   ForceReconnect;
 } FILE_EXPLORER_NV_DATA;

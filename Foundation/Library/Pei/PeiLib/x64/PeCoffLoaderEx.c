@@ -22,7 +22,7 @@ Revision History
 
 --*/
 
-#include "EfiCommon.h"
+#include "TianoCommon.h"
 #include "EfiImage.h"
 
 EFI_STATUS

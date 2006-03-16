@@ -30,14 +30,12 @@ COMPONENT_TYPE       = PE32_PEIM
 
 [sources.ia32]
   ia32\ImageRead.c
-  ia32\Ia32DxeLoad.c
-[sources.x64]
-  x64\ImageRead.c
-  x64\x64DxeLoad.c
+  ia32\DxeLoadFunc.c
+  
 
 [sources.ipf]
   ipf\ImageRead.c
-  ipf\IpfDxeLoad.c
+  ipf\DxeLoadFunc.c
 
 [includes.common]
   $(EDK_SOURCE)\Foundation

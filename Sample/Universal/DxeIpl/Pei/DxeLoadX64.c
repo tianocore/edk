@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,8 @@ Abstract:
 #include "Pei.h"
 #include "DxeIpl.h"
 #include "EfiHobLib.h"
+
+#pragma warning( disable : 4305 )
 
 EFI_PEI_SERVICES                  **gPeiServices;
 
@@ -56,6 +58,22 @@ EFI_GUID                          mPeiEfiPeiPeCoffLoaderGuid = EFI_PEI_PE_COFF_L
 // Interface and GUID for the setjump()/longjump() APIs shared between PEI and DXE
 //
 EFI_GUID                          mPeiEfiPeiTransferControlGuid = EFI_PEI_TRANSFER_CONTROL_GUID;
+
+//
+// GUID for EM64T
+//
+#define EFI_PPI_NEEDED_BY_DXE \
+  { \
+    0x4d37da42, 0x3a0c, 0x4eda, 0xb9, 0xeb, 0xbc, 0x0e, 0x1d, 0xb4, 0x71, 0x3b \
+  }
+EFI_GUID mPpiNeededByDxeGuid = EFI_PPI_NEEDED_BY_DXE;
+
+#define EFI_BREAK \
+  { \
+    0x5B60CCFD, 0x1011, 0x4BCF, 0xb7, 0xd1, 0xbb, 0x99, 0xca, 0x96, 0xa6, 0x03 \
+  }
+EFI_GUID mBreakGuid = EFI_BREAK;
+
 
 //
 // GUID for the Firmware Volume type that PEI supports
@@ -98,6 +116,21 @@ PeiProcessFile (
   IN  EFI_FFS_FILE_HEADER    *FfsFileHeader,
   OUT VOID                   **Pe32Data
   );
+
+VOID
+EfiCommonLibZeroMem (
+  IN VOID   *Buffer,
+  IN UINTN  Size
+  );
+
+EFI_STATUS
+PeiFindFfs (
+  IN  EFI_PEI_SERVICES       **PeiServices,
+  IN  UINT16                 SectionType,
+  OUT EFI_GUID               *FileName,
+  OUT VOID                   **Pe32Data
+  );
+
 
 //
 // Module Globals used in the DXE to PEI handoff
@@ -195,7 +228,7 @@ Returns:
   EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader;
   EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache;
   EFI_BOOT_MODE                             BootMode;
- 
+  
   Status = (*PeiServices)->GetBootMode (PeiServices, &BootMode);
   ASSERT_PEI_ERROR (PeiServices, Status);
 
@@ -285,269 +318,123 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                                Status;
-  EFI_PHYSICAL_ADDRESS                      TopOfStack;
-  EFI_PHYSICAL_ADDRESS                      BaseOfStack;
-  EFI_PHYSICAL_ADDRESS                      BspStore;
-  EFI_GUID                                  DxeCoreFileName;
-  EFI_GUID                                  FirmwareFileName;
-  VOID                                      *Pe32Data;
-  VOID                                      *Interface;
-  EFI_PHYSICAL_ADDRESS                      DxeCoreAddress;
-  UINT64                                    DxeCoreSize;
-  EFI_PHYSICAL_ADDRESS                      DxeCoreEntryPoint;
-  EFI_DECOMPRESS_PROTOCOL                   *PeiEfiDecompress;
-  EFI_TIANO_DECOMPRESS_PROTOCOL             *PeiEfiTianoDecompress;
-  EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL        *PeiEfiCustomizedDecompress;
-  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache;
-  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader;
-  EFI_PEI_TRANSFER_CONTROL_PROTOCOL         *PeiEfiPeiTransferControl;
-  EFI_BOOT_MODE                             BootMode;
-  PEI_RECOVERY_MODULE_INTERFACE             *PeiRecovery;
-  PEI_S3_RESUME_PPI                         *S3Resume;
-
-  PEI_PERF_START (PeiServices, L"DxeIpl", NULL, 0);
-
+  EFI_STATUS                                                Status;
+  EFI_PHYSICAL_ADDRESS                                      TopOfStack;
+  EFI_PHYSICAL_ADDRESS                                      BaseOfStack;
+  EFI_PHYSICAL_ADDRESS                                      BspStore;
+  EFI_GUID                                                  DxeCoreFileName;
+  VOID                                                      *DxeCorePe32Data;
+  EFI_PHYSICAL_ADDRESS                                      DxeCoreAddress;
+  UINT64                                                    DxeCoreSize;
+  EFI_PHYSICAL_ADDRESS                                      DxeCoreEntryPoint;
+  VOID                                                      *PpisNeededByDxePe32Data;
+  EFI_PHYSICAL_ADDRESS                                      PpisNeededByDxeAddress;
+  UINT64                                                    PpisNeededByDxeSize;
+  EFI_PHYSICAL_ADDRESS                                      PpisNeededByDxeEntryPoint;
+  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL                  *PeiEfiPeiFlushInstructionCache;
+  EFI_PEI_PE_COFF_LOADER_PROTOCOL                           *PeiEfiPeiPeCoffLoader;
+  EFI_BOOT_MODE                                             BootMode;
+  PEI_RECOVERY_MODULE_INTERFACE                             *PeiRecovery;
+  PEI_S3_RESUME_PPI                                         *S3Resume;
+  EFI_PHYSICAL_ADDRESS                                      PageTables;
+  
   TopOfStack  = 0;
   BaseOfStack = 0;
   BspStore    = 0;
+  Status      = EFI_SUCCESS;
 
   //
   // if in S3 Resume, restore configure
   //
   Status = (*PeiServices)->GetBootMode (PeiServices, &BootMode);
-
   if (!EFI_ERROR (Status) && (BootMode == BOOT_ON_S3_RESUME)) {
     Status = (*PeiServices)->LocatePpi (
-                              PeiServices,
-                              &gPeiS3ResumePpiGuid,
-                              0,
-                              NULL,
-                              &S3Resume
-                              );
-
+                               PeiServices,
+                               &gPeiS3ResumePpiGuid,
+                               0,
+                               NULL,
+                               &S3Resume
+                               );
     ASSERT_PEI_ERROR (PeiServices, Status);
 
     Status = S3Resume->S3RestoreConfig (PeiServices);
-
     ASSERT_PEI_ERROR (PeiServices, Status);
   }
-
-  Status = EFI_SUCCESS;
-
-  //
-  // Get the EFI decompress functions for possible usage
-  //
-  Status = InstallEfiDecompress (&PeiEfiDecompress);
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Get the Tiano decompress functions for possible usage
-  //
-  Status = InstallTianoDecompress (&PeiEfiTianoDecompress);
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Get the user Customized decompress functions for possible usage
-  //
-  Status = InstallCustomizedDecompress (&PeiEfiCustomizedDecompress);
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Install the PEI Protocols that are shared between PEI and DXE
   //
   PeiEfiPeiPeCoffLoader = NULL;
   Status                = InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
-
   ASSERT_PEI_ERROR (PeiServices, Status);
 
-  Status = InstallEfiPeiTransferControl (&PeiEfiPeiTransferControl);
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  Status = InstallEfiPeiPeCoffLoader (PeiServices, &PeiEfiPeiPeCoffLoader, NULL);
-
+  Status = InstallEfiPeiPeCoffLoader64 (PeiServices, &PeiEfiPeiPeCoffLoader, NULL);
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Allocate 128KB for the Stack
   //
   Status = (*PeiServices)->AllocatePages (
-                            PeiServices,
-                            EfiBootServicesData,
-                            EFI_SIZE_TO_PAGES (EFI_STACK_SIZE),
-                            &BaseOfStack
-                            );
-
+                             PeiServices,
+                             EfiBootServicesData,
+                             EFI_SIZE_TO_PAGES (EFI_STACK_SIZE),
+                             &BaseOfStack
+                             );
   ASSERT_PEI_ERROR (PeiServices, Status);
+
   //
-  // Compute the top of the stack we were allocated. Pre-allocate a UINTN
-  // for safety.
+  // Compute the top of the stack we were allocated. Pre-allocate a 32 bytes
+  // for safety (PpisNeededByDxe and DxeCore).
   //
-  TopOfStack = BaseOfStack + EFI_SIZE_TO_PAGES (EFI_STACK_SIZE) * EFI_PAGE_SIZE - sizeof (UINTN);
+  TopOfStack = BaseOfStack + EFI_SIZE_TO_PAGES (EFI_STACK_SIZE) * EFI_PAGE_SIZE - 32;
+
   //
   // Add architecture-specifc HOBs (including the BspStore HOB)
   //
   Status = CreateArchSpecificHobs (
-            PeiServices,
-            &BspStore
-            );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Add HOB for the EFI Decompress Protocol
-  //
-  Interface = (VOID *) PeiEfiDecompress;
-
-  Status = PeiBuildHobGuidData (
-            PeiServices,
-            &mPeiEfiDecompressProtocolGuid,
-            &Interface,
-            sizeof (VOID *)
-            );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Add HOB for the Tiano Decompress Protocol
-  //
-  Interface = (VOID *) PeiEfiTianoDecompress;
-
-  Status = PeiBuildHobGuidData (
-            PeiServices,
-            &mPeiEfiTianoDecompressProtocolGuid,
-            &Interface,
-            sizeof (VOID *)
-            );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Add HOB for the user customized Decompress Protocol
-  //
-  Interface = (VOID *) PeiEfiCustomizedDecompress;
-
-  Status = PeiBuildHobGuidData (
-            PeiServices,
-            &mPeiEfiCustomizedDecompressProtocolGuid,
-            &Interface,
-            sizeof (VOID *)
-            );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Add HOB for the Flush Instruction Cache Protocol
-  //
-  Interface = (VOID *) PeiEfiPeiFlushInstructionCache;
-
-  Status = PeiBuildHobGuidData (
-            PeiServices,
-            &mPeiEfiPeiFlushInstructionCacheGuid,
-            &Interface,
-            sizeof (VOID *)
-            );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Add HOB for the PE/COFF Loader Protocol
-  //
-  Interface = (VOID *) PeiEfiPeiPeCoffLoader;
-
-  Status = PeiBuildHobGuidData (
-            PeiServices,
-            &mPeiEfiPeiPeCoffLoaderGuid,
-            &Interface,
-            sizeof (VOID *)
-            );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
-  // Add HOB for the Transfer Control Protocol
-  //
-  Interface = (VOID *) PeiEfiPeiTransferControl;
-
-  Status = PeiBuildHobGuidData (
-            PeiServices,
-            &mPeiEfiPeiTransferControlGuid,
-            &Interface,
-            sizeof (VOID *)
-            );
-
+             PeiServices,
+             &BspStore
+             );
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // See if we are in crisis recovery
   //
   Status = (*PeiServices)->GetBootMode (PeiServices, &BootMode);
-
   if (!EFI_ERROR (Status) && (BootMode == BOOT_IN_RECOVERY_MODE)) {
-
     Status = (*PeiServices)->LocatePpi (
-                              PeiServices,
-                              &gPeiRecoveryModulePpiGuid,
-                              0,
-                              NULL,
-                              &PeiRecovery
-                              );
-
+                               PeiServices,
+                               &gPeiRecoveryModulePpiGuid,
+                               0,
+                               NULL,
+                               &PeiRecovery
+                               );
     ASSERT_PEI_ERROR (PeiServices, Status);
     Status = PeiRecovery->LoadRecoveryCapsule (PeiServices, PeiRecovery);
     ASSERT_PEI_ERROR (PeiServices, Status);
-
-    //
-    // Now should have a HOB with the DXE core w/ the old HOB destroyed
-    //
   }
-  
-  //
-  // Find the EFI_FV_FILETYPE_RAW type compressed Firmware Volume file in FTW spare block
-  // The file found will be processed by PeiProcessFile: It will first be decompressed to
-  // a normal FV, then a corresponding FV type hob will be built which is provided for DXE
-  // core to find and dispatch drivers in this FV. Because PeiProcessFile typically checks
-  // for EFI_FV_FILETYPE_DXE_CORE type file, in this condition we need not check returned 
-  // status
-  //
-  Status = PeiFindFile (
-            PeiServices,
-            EFI_FV_FILETYPE_RAW,
-            EFI_SECTION_PE32,
-            &FirmwareFileName,
-            &Pe32Data
-            );
-                             
+
   //
   // Find the DXE Core in a Firmware Volume
   //
   Status = PeiFindFile (
-            PeiServices,
-            EFI_FV_FILETYPE_DXE_CORE,
-            EFI_SECTION_PE32,
-            &DxeCoreFileName,
-            &Pe32Data
-            );
-
+             PeiServices,
+             EFI_FV_FILETYPE_DXE_CORE,
+             EFI_SECTION_PE32,
+             &DxeCoreFileName,
+             &DxeCorePe32Data
+             );
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
-  // Load the DXE Core from a Firmware Volume
+  // Find the PpisNeededByDxe in a Firmware Volume
   //
-  Status = PeiLoadFile (
-            PeiServices,
-            PeiEfiPeiPeCoffLoader,
-            PeiEfiPeiFlushInstructionCache,
-            Pe32Data,
-            &DxeCoreAddress,
-            &DxeCoreSize,
-            &DxeCoreEntryPoint
-            );
-
+  Status = PeiFindFfs (
+             PeiServices,
+             EFI_SECTION_PE32,
+             &mPpiNeededByDxeGuid,
+             &PpisNeededByDxePe32Data
+             );
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
@@ -557,40 +444,83 @@ Returns:
   PEI_PERF_END (PeiServices, L"DxeIpl", NULL, 0);
 
   Status = (*PeiServices)->InstallPpi (PeiServices, &mPpiSignal);
+  ASSERT_PEI_ERROR (PeiServices, Status);
 
+  //
+  // Load the GDT of Go64. Since the GDT of 32-bit Tiano locates in the BS_DATA \
+  // memory, it may be corrupted when copying FV to high-end memory 
+  LoadGo64Gdt();
+
+  //
+  // Limit to 36 bits of addressing for debug. Should get it from CPU
+  //
+  PageTables = CreateIdentityMappingPageTables (PeiServices, 36);
+
+  //
+  // Load the PpiNeededByDxe from a Firmware Volume
+  //
+  Status = PeiLoadx64File (
+             PeiServices,
+             PeiEfiPeiPeCoffLoader,
+             PeiEfiPeiFlushInstructionCache,
+             PpisNeededByDxePe32Data,
+             EfiBootServicesData,
+             &PpisNeededByDxeAddress,
+             &PpisNeededByDxeSize,
+             &PpisNeededByDxeEntryPoint
+             );
+  ASSERT_PEI_ERROR (PeiServices, Status);
+
+
+  //
+  // Load the DXE Core from a Firmware Volume
+  //
+  Status = PeiLoadx64File (
+             PeiServices,
+             PeiEfiPeiPeCoffLoader,
+             PeiEfiPeiFlushInstructionCache,
+             DxeCorePe32Data,
+             EfiBootServicesData,
+             &DxeCoreAddress,
+             &DxeCoreSize,
+             &DxeCoreEntryPoint
+             );
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Add HOB for the DXE Core
   //
   Status = PeiBuildHobModule (
-            PeiServices,
-            &DxeCoreFileName,
-            DxeCoreAddress,
-            DxeCoreSize,
-            DxeCoreEntryPoint
-            );
-
+             PeiServices,
+             &DxeCoreFileName,
+             DxeCoreAddress,
+             DxeCoreSize,
+             DxeCoreEntryPoint
+             );
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Report Status Code EFI_SW_PEI_PC_HANDOFF_TO_NEXT
   //
-  PEI_REPORT_STATUS_CODE (
-    PeiServices,
-    EFI_PROGRESS_CODE,
-    EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_CORE_PC_HANDOFF_TO_NEXT,
-    0,
-    NULL,
-    NULL
-    );
+  (**PeiServices).PeiReportStatusCode (
+                    PeiServices,
+                    EFI_PROGRESS_CODE,
+                    EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_CORE_PC_HANDOFF_TO_NEXT,
+                    0,
+                    NULL,
+                    NULL
+                    );
 
-  PEI_DEBUG ((PeiServices, EFI_D_INFO, "DXE Core Entry\n"));
-  SwitchStacks (
-    (VOID *) (UINTN) DxeCoreEntryPoint,
-    (UINTN) (HobList.Raw),
-    (VOID *) (UINTN) TopOfStack,
-    (VOID *) (UINTN) BspStore
+  //
+  // Go to Long Mode. Interrupts will not get turned on until the CPU AP is loaded.
+  // Call x64 drivers passing in single argument, a pointer to the HOBs.
+  //
+  ActivateLongMode (
+    PageTables, 
+    (EFI_PHYSICAL_ADDRESS)(UINTN)(HobList.Raw), 
+    TopOfStack,
+    PpisNeededByDxeEntryPoint,
+    DxeCoreEntryPoint
     );
 
   //
@@ -639,6 +569,7 @@ Returns:
   VOID                        *SectionData;
   EFI_STATUS                  Status;
   BOOLEAN                     Found;
+  UINTN                       Index;
   EFI_PEI_HOB_POINTERS        Hob;
 
   Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
@@ -647,30 +578,28 @@ Returns:
     return Status;
   }
 
+  Index         = 0;
   Found         = FALSE;
-
   Status        = EFI_SUCCESS;
-
   FwVolHeader   = NULL;
   FfsFileHeader = NULL;
   SectionData   = NULL;
 
   //
-  // Foreach Firmware Volume, look for a specified type
-  // of file and break out when one is found
+  // Foreach Firmware Volume, look for a file of Type
+  // DXE Core and break out when one is found
   //
+  Index   = 0;
   Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
   if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
     return EFI_NOT_FOUND;
   }
 
   while (!END_OF_HOB_LIST (Hob)) {
-
     FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) (Hob.FirmwareVolume->BaseAddress);
-
     Status = (*PeiServices)->FfsFindNextFile (
                               PeiServices,
-                              Type,
+                              EFI_FV_FILETYPE_DXE_CORE,
                               FwVolHeader,
                               &FfsFileHeader
                               );
@@ -684,13 +613,13 @@ Returns:
 
       continue;
     } else {
-
+      PEI_DEBUG ((PeiServices, EFI_D_INFO, "Guid first data is %g\n", &(FfsFileHeader->Name)));
+      
       (*PeiServices)->CopyMem (
                         FileName,
                         &FfsFileHeader->Name,
                         sizeof (EFI_GUID)
                         );
-
       Status = PeiProcessFile (
                 PeiServices,
                 SectionType,
@@ -705,11 +634,12 @@ Returns:
 }
 
 EFI_STATUS
-PeiLoadFile (
+PeiLoadx64File (
   IN  EFI_PEI_SERVICES                          **PeiServices,
   IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
   IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
-  IN  VOID                                      *Pe32Data,
+  IN  VOID                                      *PeiImage,
+  IN  EFI_MEMORY_TYPE                           MemoryType,
   OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
   OUT UINT64                                    *ImageSize,
   OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
@@ -722,19 +652,19 @@ Routine Description:
 
 Arguments:
 
-  PeiService         - General purpose services available to every PEIM.
-  PeiEfiPeiPeCoffLoader - Pointer to a PE COFF loader protocol
+  PeiService                      - General purpose services available to every PEIM.
+  PeiEfiPeiPeCoffLoader           - Pointer to a PE COFF loader protocol
   PeiEfiPeiFlushInstructionCache  - Pointer to a flush-instruction-cache protocol so
                                     we can flush the cache after loading
-  Pe32Data         - The base address of the PE/COFF file that is to be loaded and relocated
-  ImageAddress     - The base address of the relocated PE/COFF image
-  ImageSize        - The size of the relocated PE/COFF image
-  EntryPoint       - The entry point of the relocated PE/COFF image
+  PeiImage                        - The base address of the PE/COFF file that is to be loaded and relocated
+  ImageAddress                    - The base address of the relocated PE/COFF image
+  ImageSize                       - The size of the relocated PE/COFF image
+  EntryPoint                      - The entry point of the relocated PE/COFF image
 
 Returns:
 
-  EFI_SUCCESS   - The file was loaded and relocated
-  EFI_OUT_OF_RESOURCES - There was not enough memory to load and relocate the PE/COFF file
+  EFI_SUCCESS                     - The file was loaded and relocated
+  EFI_OUT_OF_RESOURCES            - There was not enough memory to load and relocate the PE/COFF file
 
 --*/
 {
@@ -747,35 +677,39 @@ Returns:
                     sizeof (ImageContext),
                     0
                     );
-  ImageContext.Handle = Pe32Data;
+  ImageContext.Handle = PeiImage;
   Status              = GetImageReadFunction (PeiServices, &ImageContext);
 
   ASSERT_PEI_ERROR (PeiServices, Status);
-
+  
   Status = PeiEfiPeiPeCoffLoader->GetImageInfo (PeiEfiPeiPeCoffLoader, &ImageContext);
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
   //
   // Allocate Memory for the image
   //
   Status = (*PeiServices)->AllocatePages (
-                            PeiServices,
-                            EfiBootServicesData,
-                            EFI_SIZE_TO_PAGES ((UINT32) ImageContext.ImageSize),
-                            &MemoryBuffer
-                            );
+                             PeiServices,
+                             MemoryType,
+                             EFI_SIZE_TO_PAGES ((UINT32) ImageContext.ImageSize),
+                             &MemoryBuffer
+                             );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   ImageContext.ImageAddress = MemoryBuffer;
+
   //
   // Load the image to our new buffer
   //
+
   Status = PeiEfiPeiPeCoffLoader->LoadImage (PeiEfiPeiPeCoffLoader, &ImageContext);
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  
   //
   // Relocate the image in our new buffer
   //
@@ -783,15 +717,15 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
   //
   // Flush the instruction cache so the image data is written before we execute it
   //
   Status = PeiEfiPeiFlushInstructionCache->Flush (
-                                            PeiEfiPeiFlushInstructionCache,
-                                            ImageContext.ImageAddress,
-                                            ImageContext.ImageSize
-                                            );
-
+                                             PeiEfiPeiFlushInstructionCache,
+                                             ImageContext.ImageAddress,
+                                             ImageContext.ImageSize
+                                             );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -819,16 +753,16 @@ Routine Description:
 
 Arguments:
 
-  PeiService        - General purpose services available to every PEIM.
-  DxeIpl            - Pointer to the FFS file header of the DXE IPL driver
-  PeiEfiPeiPeCoffLoader - Pointer to a PE COFF loader protocol
+  PeiService                      - General purpose services available to every PEIM.
+  DxeIpl                          - Pointer to the FFS file header of the DXE IPL driver
+  PeiEfiPeiPeCoffLoader           - Pointer to a PE COFF loader protocol
   PeiEfiPeiFlushInstructionCache  - Pointer to a flush-instruction-cache protocol so
                                     we can flush the cache after shadowing the image
 
 Returns:
 
-  EFI_SUCCESS   - DXE IPL was successfully shadowed to a different memory location.
-  EFI_ ERROR    - The shadow was unsuccessful.
+  EFI_SUCCESS                     - DXE IPL was successfully shadowed to a different memory location.
+  EFI_ ERROR                      - The shadow was unsuccessful.
   
 --*/
 {
@@ -851,16 +785,17 @@ Returns:
   //
   // Relocate DxeIpl into memory by using loadfile service
   //
-  Status = PeiLoadFile (
-            PeiServices,
-            PeiEfiPeiPeCoffLoader,
-            PeiEfiPeiFlushInstructionCache,
-            (VOID *) (Section + 1),
-            &DxeIplAddress,
-            &DxeIplSize,
-            &DxeIplEntryPoint
-            );
-
+  Status = PeiLoadx64File (
+             PeiServices,
+             PeiEfiPeiPeCoffLoader,
+             PeiEfiPeiFlushInstructionCache,
+             (VOID *) (Section + 1),
+             EfiBootServicesData,
+             &DxeIplAddress,
+             &DxeIplSize,
+             &DxeIplEntryPoint
+             );
+ 
   if (Status == EFI_SUCCESS) {
     //
     // Install PeiInMemory to indicate the Dxeipl is shadowed
@@ -914,7 +849,7 @@ Returns:
   EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache;
   EFI_STATUS                                Status;
   VOID                                      *Pe32Data;
-
+  
   Pe32Data = NULL;
   InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
   InstallEfiPeiPeCoffLoader (gPeiServices, &PeiEfiPeiPeCoffLoader, NULL);
@@ -935,11 +870,12 @@ Returns:
   //
   // Load the PE image from the FFS file
   //
-  Status = PeiLoadFile (
+  Status = PeiLoadx64File (
             gPeiServices,
             PeiEfiPeiPeCoffLoader,
             PeiEfiPeiFlushInstructionCache,
             Pe32Data,
+            EfiBootServicesData,
             ImageAddress,
             ImageSize,
             EntryPoint
@@ -1310,4 +1246,282 @@ Returns:
   *Pe32Data = SectionData;
 
   return EFI_SUCCESS;
+}
+
+EFI_PHYSICAL_ADDRESS
+AllocateZeroedHobPages (
+  IN  EFI_PEI_SERVICES       **PeiServices,
+  IN  UINTN   NumberOfPages
+  )
+/*++
+
+Routine Description:
+
+  Allocate pages from HOBs. Pages are EFI pages and 4K on all architectures in all modes.
+
+Arguments:
+
+  NumberOfPages - Number of EFI pages to allocate from the simulated PEI memory map
+
+Returns:
+
+  Base address of the pages or zero if error.
+
+--*/
+{
+ EFI_PHYSICAL_ADDRESS    Page;
+ EFI_STATUS          Status;
+#if 0
+  
+  UINTN                   NumberOfBytes;
+  UINT64                  AlignmentOffset;
+  EFI_PEI_HOB_POINTERS        Hob;
+  
+
+  //
+  // EFI pages are 4K by convention. EFI pages are independent of processor page size
+  //
+  NumberOfBytes = 0x1000 * NumberOfPages;
+
+  //
+  // Allocate the EFI pages out of Hob Free Memory Heap.
+  // Heap grows down from top of Free Memory. HOB grows up.
+  //
+  //  Page = gHob->Phit.EfiFreeMemoryTop - NumberOfBytes + 1;
+  Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
+  Page = Hob.HandoffInformationTable->EfiFreeMemoryTop -  NumberOfBytes + 1;
+
+  //
+  // Make sure page is 4K aligned.
+  //
+  AlignmentOffset = Page & EFI_PAGE_MASK;
+  NumberOfBytes += (UINTN)AlignmentOffset;
+  Page -= AlignmentOffset;
+
+  if (Page < Hob.HandoffInformationTable->EfiFreeMemoryBottom) {
+    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "Pages Requested %d\n", NumberOfPages));
+    ASSERT_PEI_ERROR (PeiServices, FALSE);
+    return 0;
+  }
+
+  EfiCommonLibZeroMem ((VOID *)(UINTN)Page, NumberOfBytes);
+
+  Hob.HandoffInformationTable->EfiFreeMemoryTop -= NumberOfBytes;
+
+  Status = PeiBuildHobMemoryAllocation (
+             PeiServices,
+             Page,  // now the bottom of our allocation
+             NumberOfBytes,
+             NULL,
+             4
+             );
+#endif
+    
+  //
+  // Allocate 128KB for the Stack
+  //
+  Status = (*PeiServices)->AllocatePages (
+                             PeiServices,
+                             EfiBootServicesData,
+                             NumberOfPages,
+                             &Page
+                             );
+  return Page;
+}
+
+
+EFI_PHYSICAL_ADDRESS
+Loadx64PeImage (
+  IN  EFI_PEI_SERVICES                          **PeiServices,
+  IN  VOID  *PeImage,
+  IN  UINTN PeImageSize
+  )
+/*++
+
+Routine Description:
+
+  32-bit code that loads an x64 PE32 image.
+
+Arguments:
+
+  PeImage     - Pointer to x64 PE32 image
+  PeImageSize - Size of PeImage
+
+Returns:
+
+  Address of the loaded x64 PE32 image
+
+--*/
+{
+  EFI_STATUS                                Status;
+  EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT      ImageContext;
+
+  //
+  // Initialize ImageContext for PeImage
+  //
+  (*PeiServices)->SetMem (
+                    &ImageContext,
+                    sizeof (ImageContext),
+                    0
+                    );
+  ImageContext.Handle = PeImage;
+  Status              = GetImageReadFunction (PeiServices, &ImageContext);
+  ASSERT_PEI_ERROR (PeiServices, Status);
+
+
+  //
+  // Get the size of the Image into the ImageContext
+  //
+  PeCoffLoaderGetImageInfo (NULL, &ImageContext);
+  
+  //
+  // Allocate Memory for the image from our made up HOBs
+  //
+  ImageContext.ImageAddress = AllocateZeroedHobPages (PeiServices, EFI_SIZE_TO_PAGES ( (UINT32)ImageContext.ImageSize));
+  if (ImageContext.ImageAddress == 0) {
+    return 0;
+  }
+
+  Status = PeCoffLoaderLoadImage (NULL, &ImageContext);
+  if (EFI_ERROR (Status)) {
+    return 0;
+  }
+
+  Status = PeCoffLoaderRelocateImage (NULL, &ImageContext);
+  if (EFI_ERROR (Status)) {
+    return 0;
+  }
+
+  //
+  // BugBug: We would flush the Instruction Cache here to follow architecture.
+  // x64 parts do not require one so I left it out.
+  //
+
+  return ImageContext.EntryPoint;
+}
+
+VOID
+EfiCommonLibZeroMem (
+  IN VOID   *Buffer,
+  IN UINTN  Size
+  )
+/*++
+
+Routine Description:
+
+  Set Buffer to 0 for Size bytes. Bugbug, should be replaced by Pei Lib function
+
+Arguments:
+
+  Buffer  - Memory to set.
+
+  Size    - Number of bytes to set
+
+Returns:
+
+  None
+
+--*/
+{
+  INT8  *Ptr;
+
+  Ptr = Buffer;
+  while (Size--) {
+    *(Ptr++) = 0;
+  }
+}
+
+EFI_STATUS
+PeiFindFfs (
+  IN  EFI_PEI_SERVICES      **PeiServices,
+  IN  UINT16                SectionType,
+  IN  EFI_GUID              *FileName,
+  OUT VOID                  **Pe32Data
+  )
+/*++
+
+Routine Description:
+
+  Finds a PE/COFF of a specific Type and SectionType in the Firmware Volumes
+  described in the HOB list. Able to search in a compression set in a FFS file.
+  But only one level of compression is supported, that is, not able to search
+  in a compression set that is within another compression set.
+
+Arguments:
+
+  PeiServices    - General purpose services available to every PEIM.
+  Type           - The Type of file to retrieve
+  SectionType    - The type of section to retrieve from a file
+  FileName       - The name of the file to be  in the Firmware Volume
+  Pe32Data       - Pointer to the beginning of the PE/COFF file found in the Firmware Volume
+
+Returns:
+
+  EFI_SUCCESS   - The file was found, and the name is returned in FileName, and a pointer to
+                  the PE/COFF image is returned in Pe32Data
+  EFI_NOT_FOUND - The file was not found in the Firmware Volumes present in the HOB List
+
+--*/
+{
+  EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
+  EFI_FFS_FILE_HEADER         *FfsFileHeader;
+  VOID                        *SectionData;
+  EFI_STATUS                  Status;
+  BOOLEAN                     Found;
+  UINTN                       Index;
+  EFI_PEI_HOB_POINTERS        Hob;
+  
+  Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Index         = 0;
+  Found         = FALSE;
+  Status        = EFI_SUCCESS;
+  FwVolHeader   = NULL;
+  FfsFileHeader = NULL;
+  SectionData   = NULL;
+
+  //
+  // Foreach Firmware Volume, look for a file of Type
+  // DXE Core and break out when one is found
+  //
+  Index   = 0;
+  Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
+  if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
+    return EFI_NOT_FOUND;
+  }
+
+  while (!END_OF_HOB_LIST (Hob)) {
+    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) (Hob.FirmwareVolume->BaseAddress);
+    Status = (*PeiServices)->FfsFindNextFile (
+                               PeiServices,
+                               EFI_FV_FILETYPE_ALL,
+                               FwVolHeader,
+                               &FfsFileHeader
+                               );
+    if (EFI_ERROR (Status)) {
+      Hob.Raw = GET_NEXT_HOB (Hob);
+      Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
+      if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
+        break;
+      } else {
+        FfsFileHeader = NULL;
+      }
+      continue;
+    } else {        		
+      if (CompareGuid(&(FfsFileHeader->Name), FileName)){
+        Status = PeiProcessFile (
+                   PeiServices,
+                   SectionType,
+                   FfsFileHeader,
+                   Pe32Data
+                   );
+        return Status;
+      }
+    }
+  }  
+
+  return EFI_NOT_FOUND;
 }

@@ -30,6 +30,7 @@ PXE_SW_UNDI             *pxe;     // 3.0 entry point
 PXE_SW_UNDI             *pxe_31;  // 3.1 entry
 UNDI32_DEV              *UNDI32DeviceList[MAX_NIC_INTERFACES];
 
+NII_TABLE               *UnidiDataPointer=NULL;    
 //
 // external Global Variables
 //
@@ -407,6 +408,7 @@ Returns:
   UINT16                    NewCommand;
   UINT8                     *TmpPxePointer;
   EFI_PCI_IO_PROTOCOL       *PciIoFncs;
+  UINTN                     Len;   
 
   Status = gBS->OpenProtocol (
                   Controller,
@@ -619,6 +621,23 @@ Returns:
   }
 
   //
+  // if the table exists, free it and alloc again, or alloc it directly 
+  //
+  if (UnidiDataPointer != NULL) {
+  	Status = gBS->FreePool(UnidiDataPointer);
+  }
+  if (EFI_ERROR (Status)) {
+    goto UndiErrorDeleteDevicePath;
+  }
+
+  Len = (pxe_31->IFcnt * sizeof (NII_ENTRY)) + sizeof (UnidiDataPointer);
+  Status = gBS->AllocatePool (EfiRuntimeServicesData, Len, (VOID **) &UnidiDataPointer);
+
+  if (EFI_ERROR (Status)) {
+    goto UndiErrorAllocDataPointer;
+  }
+  
+  //
   // Open For Child Device
   //
   Status = gBS->OpenProtocol (
@@ -631,6 +650,17 @@ Returns:
                   );
 
   return EFI_SUCCESS;
+UndiErrorAllocDataPointer:
+  gBS->UninstallMultipleProtocolInterfaces (
+                  &UNDI32Device->DeviceHandle,
+                  &gEfiNetworkInterfaceIdentifierProtocolGuid_31,
+                  &UNDI32Device->NIIProtocol_31,
+                  &gEfiNetworkInterfaceIdentifierProtocolGuid,
+                  &UNDI32Device->NIIProtocol,
+                  &gEfiDevicePathProtocolGuid,
+                  UNDI32Device->Undi32DevPath,
+                  NULL
+                  );
 
 UndiErrorDeleteDevicePath:
   UNDI32DeviceList[UNDI32Device->NIIProtocol.IfNum] = NULL;
@@ -1081,7 +1111,6 @@ Returns:
   EFI_STATUS              Status;
   EFI_CONFIGURATION_TABLE *CfgPtr;
   NII_TABLE               *TmpData;
-  UINTN                   Len;
   UINT16                  Index;
   NII_TABLE               *UndiData;
 
@@ -1089,17 +1118,12 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  Len = (pxe_31->IFcnt * sizeof (NII_ENTRY)) + sizeof (UndiData);
-
-  //
-  // there is no table registered yet!
-  //
-  Status = gBS->AllocatePool (EfiRuntimeServicesData, Len, (VOID **) &UndiData);
-
-  if (EFI_ERROR (Status)) {
-    return Status;
+  if(UnidiDataPointer == NULL) { 
+  	return EFI_SUCCESS;
   }
-
+  
+  UndiData = (NII_TABLE *)UnidiDataPointer;  
+  
   UndiData->NumEntries  = pxe_31->IFcnt;
   UndiData->NextLink    = NULL;
 

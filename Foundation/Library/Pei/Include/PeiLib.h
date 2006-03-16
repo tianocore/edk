@@ -28,6 +28,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (Decompress)
 #include EFI_PROTOCOL_DEFINITION (TianoDecompress)
 #include EFI_GUID_DEFINITION (PeiPeCoffLoader)
+#include EFI_PPI_DEFINITION (FindFv)
 
 VOID
 PeiCopyMem (
@@ -156,6 +157,15 @@ Returns:
 
 --*/
 ;
+
+EFI_STATUS
+InstallEfiPeiPeCoffLoader64 (
+  IN EFI_PEI_SERVICES                          **PeiServices,
+  IN OUT  EFI_PEI_PE_COFF_LOADER_PROTOCOL      **This,
+  IN EFI_PEI_PPI_DESCRIPTOR                    *ThisPpi
+  );
+
+
 
 EFI_STATUS
 InstallEfiDecompress (
@@ -791,6 +801,38 @@ Arguments:
 Returns:
 
   None
+
+--*/
+;
+
+EFI_STATUS
+FindFv (
+  IN     EFI_FIND_FV_PPI             *This,
+  IN     EFI_PEI_SERVICES            **PeiServices,
+  IN OUT UINT8                       *FvNumber,
+  IN OUT EFI_FIRMWARE_VOLUME_HEADER  **FVAddress
+  )
+/*++
+
+Routine Description:
+
+  Search Fv in Hob.
+
+Arguments:
+  
+  This        - Interface pointer that implement the Find Fv PPI
+  
+  PeiServices - Pointer to the PEI Service Table
+  
+  FvNumber    - The index of the fireware volume to locate
+  
+  FVAddress   - The address of the volume to discover
+
+Returns:
+
+  EFI_SUCCESS           - An addtional fv found
+  EFI_OUT_OF_RESOURCES  - There are no fireware volume for given fvnumber
+  EFI_INVALID_PARAMETER - *FvAddress is NULL
 
 --*/
 ;

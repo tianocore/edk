@@ -503,9 +503,9 @@ Returns:
           // load image and start image
           //
           Status = gBS->LoadImage (
-                          TRUE,
+                          FALSE,
                           gPciBusDriverBinding.DriverBindingHandle,
-                          NULL,
+                          PciDevice->Handle,
                           ImageBuffer,
                           ImageLength,
                           &ImageHandle

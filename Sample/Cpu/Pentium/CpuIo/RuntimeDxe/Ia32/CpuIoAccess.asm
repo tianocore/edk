@@ -1,7 +1,7 @@
   title   CpuIoAccess.asm
 ;------------------------------------------------------------------------------
 ;*
-;*   Copyright 2005, Intel Corporation                                                         
+;*   Copyright (c) 2005, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -40,9 +40,11 @@ UINTN    TYPEDEF    UINT32
 ;    IN  UINT16  Port
 ;    )
 ;------------------------------------------------------------------------------
-CpuIoRead8 PROC  PUBLIC Port:UINT16
+CpuIoRead8 PROC    PUBLIC Port:UINT16
+    push   edx
     mov    dx,  Port
     in     al,  dx
+    pop    edx
     ret
 CpuIoRead8  ENDP
 
@@ -52,9 +54,11 @@ CpuIoRead8  ENDP
 ;    IN  UINT16  Port
 ;    )
 ;------------------------------------------------------------------------------
-CpuIoRead16 PROC C  PUBLIC Port:UINT16
+CpuIoRead16 PROC    PUBLIC Port:UINT16
+    push   edx
     mov    dx,  Port
     in     ax,  dx
+    pop    edx
     ret
 CpuIoRead16  ENDP
 
@@ -65,8 +69,10 @@ CpuIoRead16  ENDP
 ;    )
 ;------------------------------------------------------------------------------
 CpuIoRead32 PROC    PUBLIC Port:UINT16
+    push  edx
     mov   dx,  Port
     in    eax, dx
+    pop   edx
     ret
 CpuIoRead32  ENDP
 
@@ -80,9 +86,11 @@ CpuIoRead32  ENDP
 ;    )
 ;------------------------------------------------------------------------------
 CpuIoWrite8 PROC    PUBLIC Port:UINT16, Data:UINT32
+    pushad
     mov    eax, Data
     mov    dx,  Port
     out    dx,  al
+    popad
     ret
 CpuIoWrite8  ENDP
 
@@ -95,9 +103,11 @@ CpuIoWrite8  ENDP
 ;    )
 ;------------------------------------------------------------------------------
 CpuIoWrite16 PROC    PUBLIC Port:UINT16, Data:UINT32
+    pushad
     mov    eax, Data
     mov    dx,  Port
     out    dx,  ax
+    popad
     ret
 CpuIoWrite16  ENDP
 
@@ -110,9 +120,11 @@ CpuIoWrite16  ENDP
 ;    )
 ;------------------------------------------------------------------------------
 CpuIoWrite32 PROC    PUBLIC Port:UINT16, Data:UINT32
+    pushad
     mov    eax, Data
     mov    dx,  Port
     out    dx,  eax
+    popad
     ret
 CpuIoWrite32  ENDP
 

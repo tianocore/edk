@@ -630,8 +630,8 @@ Returns:
     // NextVariable->NameSize should not include pad size so that variable
     // service can get actual size in GetVariable
     //
-    NextVariable->NameSize  = VarNameSize;
-    NextVariable->DataSize  = DataSize;
+    NextVariable->NameSize  = (UINT32)VarNameSize;
+    NextVariable->DataSize  = (UINT32)DataSize;
 
     EfiCopyMem (&NextVariable->VendorGuid, VendorGuid, sizeof (EFI_GUID));
     EfiCopyMem (

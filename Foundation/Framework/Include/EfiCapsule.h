@@ -27,10 +27,10 @@ Abstract:
 // a capsule update.
 //
 typedef struct {
-  UINTN   Length;     // length of the data block
-  VOID    *Data;      // physical address of the data block
-  UINT32  Signature;  // CBDS
-  UINT32  CheckSum;   // to sum this structure to 0
+  UINT64                Length;     // length of the data block
+  EFI_PHYSICAL_ADDRESS  Data;       // physical address of the data block
+  UINT32                Signature;  // CBDS
+  UINT32                CheckSum;   // to sum this structure to 0
 } EFI_CAPSULE_BLOCK_DESCRIPTOR;
 
 #define CAPSULE_BLOCK_DESCRIPTOR_SIGNATURE  EFI_SIGNATURE_32 ('C', 'B', 'D', 'S')

@@ -283,6 +283,26 @@ Returns:
 ;
 
 EFI_STATUS
+FwVolBlockDriverInit (
+  IN EFI_HANDLE               ImageHandle,
+  IN EFI_SYSTEM_TABLE         *SystemTable
+  )
+/*++
+
+Routine Description:
+    This routine is the driver initialization entry point.  It initializes the
+    libraries, consumes FV hobs and NT_NON_MM_FV environment variable and
+    produces instances of FW_VOL_BLOCK_PROTOCOL as appropriate.
+Arguments:
+    ImageHandle   - The image handle.
+    SystemTable   - The system table.
+Returns:
+    Status code
+
+--*/
+;
+
+EFI_STATUS
 ProduceFVBProtocolOnBuffer (
   IN EFI_PHYSICAL_ADDRESS   BaseAddress,
   IN UINT64                 Length,

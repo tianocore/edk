@@ -2,7 +2,7 @@
 
 ;------------------------------------------------------------------------------
 ;
-; Copyright (c) 2004, Intel Corporation                                                         
+; Copyright (c) 2005 Intel Corporation                                                         
 ; All rights reserved. This program and the accompanying materials                          
 ; are licensed and made available under the terms and conditions of the BSD License         
 ; which accompanies this distribution.  The full text of the license may be found at        
@@ -27,13 +27,10 @@
   .MODEL SMALL
   .CODE
   
-GetPowerOfTwo PROTO C  Input: DWORD
-
-GetPowerOfTwo PROC C   Input: DWORD
-
+_GetPowerOfTwo  PROC
 ;------------------------------------------------------------------------------
 ; UINT32
-; GetPowerOfTwo (
+; _GetPowerOfTwo (
 ;   IN UINT32   Input
 ;   )
 ;
@@ -51,15 +48,20 @@ GetPowerOfTwo PROC C   Input: DWORD
 ;   the largest integer that is both  a power of 
 ;   two and less than Input
 ;------------------------------------------------------------------------------
-  push   edx
-  xor    eax, eax
-
-  bsr    edx, Input
-  bts    eax, edx
-  pop    edx
-  ret
-  
-GetPowerOfTwo ENDP
-
+    xor     eax, eax
+    mov     edx, eax
+    mov     ecx, [esp + 8]
+    jecxz   @F
+    bsr     ecx, ecx
+    bts     edx, ecx
+    jmp     @Exit
+@@:
+    mov     ecx, [esp + 4]
+    jecxz   @Exit
+    bsr     ecx, ecx
+    bts     eax, ecx
+@Exit:
+    ret
+_GetPowerOfTwo  ENDP
 
 END

@@ -20,7 +20,7 @@ Abstract:
 
 --*/
 
-#include "EfiCommon.h"
+#include "TianoCommon.h"
 #include "CpuIA32.h"
 
 EFI_STATUS

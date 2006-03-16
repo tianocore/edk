@@ -53,15 +53,6 @@ Abstract:
 #include "peihoblib.h"
 
 #define PEI_DXEIPL_STACK_SIZE 0x10000
-//
-// Define EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE to pass the PeiService table to
-// EFI_PEI_FV_FILE_LOADER_PPI
-
-typedef struct _EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE {
-  EFI_PEI_SERVICES                  **PeiServices;
-  EFI_PEI_FV_FILE_LOADER_PPI        LoadFilePpi;
-} EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE;
-
 
 EFI_STATUS
 InstallEfiDecompress (
@@ -140,20 +131,6 @@ CreateArchSpecificHobs (
   OUT EFI_PHYSICAL_ADDRESS      *BspStore
   )
 ;
-EFI_STATUS
-PeiLoadx64File (
-  IN  EFI_PEI_SERVICES                          **PeiServices,
-  IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
-  IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
-  IN  VOID                                      *Pe32Data,
-  IN  EFI_MEMORY_TYPE                           MemoryType,
-  OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
-  OUT UINT64                                    *ImageSize,
-  OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
-  )
-;
-
-
 EFI_PHYSICAL_ADDRESS
 CreateIdentityMappingPageTables (
   IN EFI_PEI_SERVICES      **PeiServices,

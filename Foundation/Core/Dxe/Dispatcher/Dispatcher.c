@@ -477,7 +477,7 @@ Returns:
       //
       if (DriverEntry->ImageHandle == NULL) {
         Status = CoreLoadImage (
-                        TRUE, 
+                        FALSE,
                         gDxeCoreImageHandle, 
                         DriverEntry->FvFileDevicePath,
                         NULL, 

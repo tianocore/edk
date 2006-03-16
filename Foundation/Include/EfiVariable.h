@@ -68,8 +68,8 @@ typedef struct {
   UINT8     State;
   UINT8     Reserved;
   UINT32    Attributes;
-  UINTN     NameSize;
-  UINTN     DataSize;
+  UINT32    NameSize;
+  UINT32    DataSize;
   EFI_GUID  VendorGuid;
 } VARIABLE_HEADER;
 

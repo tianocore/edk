@@ -66,7 +66,7 @@ EFI_STATUS
 ImageRead (
   IN     VOID    *FileHandle,
   IN     UINTN   FileOffset,
-  IN OUT UINTN   *ReadSize,
+  IN OUT UINT64   *ReadSize,
   OUT    VOID    *Buffer
   )
 /*++
@@ -87,10 +87,10 @@ Returns:
 {
   CHAR8   *Destination8;
   CHAR8   *Source8;
-  UINTN   Length;
+  UINT64   Length;
 
   Destination8 = Buffer;
-  Source8 = (CHAR8 *)((UINTN)FileHandle + FileOffset);
+  Source8 = (CHAR8 *)((UINTN)FileHandle + (UINTN)FileOffset);
   Length = *ReadSize;
   while (Length--) {
     *(Destination8++) = *(Source8++);
@@ -118,7 +118,7 @@ Returns:
 
 --*/
 {
-  EfiZeroMem (ImageContext, sizeof (ImageContext));
+  EfiCommonLibZeroMem (ImageContext, sizeof (ImageContext));
   ImageContext->Handle    = PeImage;
   ImageContext->ImageRead = ImageRead;
   return EFI_SUCCESS;
@@ -150,7 +150,7 @@ Returns:
 {
   EFI_STATUS            Status;
   EFI_IMAGE_DOS_HEADER  DosHdr;
-  UINTN                 Size;
+  UINT64                 Size;
   
   //
   // Read the DOS image headers
@@ -289,7 +289,7 @@ Returns:
   EFI_STATUS                      Status;
   EFI_IMAGE_NT_HEADERS64          PeHdr;
   EFI_IMAGE_DATA_DIRECTORY        *DebugDirectoryEntry;
-  UINTN                           Size;
+  UINT64                           Size;
   UINTN                           Index;
   UINTN                           DebugDirectoryEntryRva;
   UINTN                           DebugDirectoryEntryFileOffset;
@@ -707,7 +707,7 @@ Returns:
   CHAR8                                 *MaxEnd;
   EFI_IMAGE_DATA_DIRECTORY              *DirectoryEntry;
   EFI_IMAGE_DEBUG_DIRECTORY_ENTRY       *DebugEntry;
-  UINTN                                 Size;
+  UINT64                                 Size;
   UINT32                                TempDebugEntryRva;
 
   //
@@ -848,7 +848,7 @@ Returns:
     //
 
     if (Size < Section->Misc.VirtualSize) {
-      EfiZeroMem (Base + Size, Section->Misc.VirtualSize - Size);
+      EfiCommonLibZeroMem (Base + (UINTN)Size, Section->Misc.VirtualSize - (UINTN)Size);
     }
 
     //

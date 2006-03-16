@@ -32,6 +32,7 @@ COMPONENT_TYPE    = LIBRARY
   perf.c
   print\print.c
   print\print.h
+  FindFv.c
 
 [sources.ia32]
 #  ia32\Math.c
@@ -72,8 +73,8 @@ COMPONENT_TYPE    = LIBRARY
 
 [libraries.x64]
   CpuIA32Lib
-
 [includes.common]
+  $(EFI_SOURCE)\Framework
   $(EDK_SOURCE)\Sample\Platform\Nt32
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework

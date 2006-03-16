@@ -930,8 +930,8 @@ Returns:
     // NextVariable->DataSize should not include pad size so that variable
     // service can get actual size in GetVariable
     //
-    NextVariable->NameSize  = VarNameSize;
-    NextVariable->DataSize  = DataSize;
+    NextVariable->NameSize  = (UINT32)VarNameSize;
+    NextVariable->DataSize  = (UINT32)DataSize;
 
     //
     // The actual size of the variable that stores in storage should
@@ -1307,6 +1307,23 @@ Returns:
     }
 
     mVariableModuleGlobal->NonVolatileLastVariableOffset = (UINTN) NextVariable - (UINTN) CurrPtr;
+
+    //
+    // Check if the free area is blow a threshold
+    //
+    if ((((VARIABLE_STORE_HEADER *)((UINTN) CurrPtr))->Size - mVariableModuleGlobal->NonVolatileLastVariableOffset) < VARIABLE_RECLAIM_THRESHOLD) {
+      Status = Reclaim (
+                mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
+                &mVariableModuleGlobal->NonVolatileLastVariableOffset,
+                FALSE
+                );
+    }
+
+    if (EFI_ERROR (Status)) {
+      gBS->FreePool (mVariableModuleGlobal);
+      gBS->FreePool (VolatileVariableStore);
+      return Status;
+    }
 
     //
     // Check if the free area is really free.

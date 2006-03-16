@@ -84,10 +84,12 @@ typedef struct {
 #define EFI_CACHE_VARIABLE_MTRR_BASE          0x200
 #define EFI_CACHE_VARIABLE_MTRR_END           0x20F
 #define EFI_CACHE_IA32_MTRR_DEF_TYPE          0x2FF
-#define EFI_CACHE_VALID_ADDRESS               0xFFFFFF000
 #define EFI_CACHE_MTRR_VALID                  0x800
 #define EFI_CACHE_FIXED_MTRR_VALID            0x400
+#define EFI_CACHE_VALID_ADDRESS               0xFFFFFF000
 #define EFI_MSR_VALID_MASK                    0xFFFFFFFFF
+#define EFI_CACHE_VALID_EXTENDED_ADDRESS      0xFFFFFFFFFF000
+#define EFI_MSR_VALID_EXTENDED_MASK           0xFFFFFFFFFFFFF
 
 #define EFI_IA32_MTRR_FIX64K_00000            0x250
 #define EFI_IA32_MTRR_FIX16K_80000            0x258

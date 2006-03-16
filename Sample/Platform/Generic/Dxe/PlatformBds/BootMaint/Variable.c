@@ -694,7 +694,7 @@ Var_UpdateBootOption (
 
   OptionalDataExist = FALSE;
 
-  Index             = BOpt_GetBootOptionNumber ();
+  Index = BOpt_GetBootOptionNumber () ;
   SPrint (BootString, sizeof (BootString), L"Boot%04x", Index);
 
   if (NvRamMap->DescriptionData[0] == 0x0000) {

@@ -30,7 +30,7 @@ COMPONENT_TYPE       = BS_DRIVER
   FtwMisc.c
   FtwWorkSpace.c
 
-[sources.ia32]
+[sources.ia32, sources.x64]
   ia32\Ia32FtwMisc.c
 
 [sources.ipf]

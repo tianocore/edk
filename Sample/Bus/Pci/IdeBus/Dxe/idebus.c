@@ -643,6 +643,28 @@ IDEBusDriverBindingStart (
       IdeBlkIoDevicePtr = IdeBlkIoDevice[IdeChannel][IdeDevice];
 
       //
+      // Set best supported PIO mode on this IDE device
+      //
+      if (SupportedModes->PioMode.Mode <= ATA_PIO_MODE_2) {
+        TransferMode.ModeCategory = ATA_MODE_CATEGORY_DEFAULT_PIO;
+      } else {
+        TransferMode.ModeCategory = ATA_MODE_CATEGORY_FLOW_PIO;
+      }
+
+      TransferMode.ModeNumber = (UINT8) (SupportedModes->PioMode.Mode);
+
+      if (SupportedModes->ExtModeCount == 0){
+        Status                  = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
+
+        if (EFI_ERROR (Status)) {
+          IdeBusDriverPrivateData->DeviceFound[IdeChannel * 2 + IdeDevice] = FALSE;
+          ReleaseIdeResources (IdeBlkIoDevicePtr);
+          IdeBlkIoDevicePtr = NULL;
+          continue;
+        }
+      }
+
+      //
       // Set supported DMA mode on this IDE device. Note that UDMA & MDMA cann't
       // be set together. Only one DMA mode can be set to a device. If setting
       // DMA mode operation fails, we can continue moving on because we only use
@@ -676,25 +698,6 @@ IDEBusDriverBindingStart (
         }
 
         EnableInterrupt (IdeBlkIoDevicePtr);
-      }
-
-      //
-      // Set best supported PIO mode on this IDE device
-      //
-      if (SupportedModes->PioMode.Mode <= ATA_PIO_MODE_2) {
-        TransferMode.ModeCategory = ATA_MODE_CATEGORY_DEFAULT_PIO;
-      } else {
-        TransferMode.ModeCategory = ATA_MODE_CATEGORY_FLOW_PIO;
-      }
-
-      TransferMode.ModeNumber = (UINT8) (SupportedModes->PioMode.Mode);
-      Status                  = SetDeviceTransferMode (IdeBlkIoDevicePtr, &TransferMode);
-
-      if (EFI_ERROR (Status)) {
-        IdeBusDriverPrivateData->DeviceFound[IdeChannel * 2 + IdeDevice] = FALSE;
-        ReleaseIdeResources (IdeBlkIoDevicePtr);
-        IdeBlkIoDevicePtr = NULL;
-        continue;
       }
 
       //
