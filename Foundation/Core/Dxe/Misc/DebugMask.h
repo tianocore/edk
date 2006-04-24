@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -52,6 +52,34 @@ InstallDebugMaskProtocol (
 Routine Description:
 
   Install debug mask protocol on an image handle.
+
+Arguments:
+
+  ImageHandle     - Image handle which debug mask protocol will install on
+
+Returns:
+
+  EFI_INVALID_PARAMETER   - Invalid image handle
+  
+  EFI_OUT_OF_RESOURCES    - No enough buffer could be allocated
+  
+  EFI_SUCCESS             - Debug mask protocol successfully installed
+
+--*/
+;
+  
+//
+// Internal DebugMask Procotol Install/Uninstall Function
+//
+EFI_STATUS
+InstallCoreDebugMaskProtocol (
+  IN EFI_HANDLE      ImageHandle
+  )
+/*++
+
+Routine Description:
+
+  Install debug mask protocol on Dxe Core.
 
 Arguments:
 

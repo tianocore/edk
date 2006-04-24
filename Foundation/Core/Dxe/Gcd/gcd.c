@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -14,6 +14,7 @@ Module Name:
     gcd.c
 
 Abstract:
+
     The file contains the GCD related services in the EFI Boot Services Table.
     The GCD services are used to manage the memory and I/O regions that 
     are accessible to the CPU that is executing the DXE core.
@@ -971,29 +972,19 @@ Routine Description:
 Arguments:
 
   Operation         - The type of operation (memory or IO)
-  
   GcdAllocateType   - The type of allocate operation
-  
   GcdMemoryType     - The desired memory type
-  
   GcdIoType         - The desired IO type
-  
   Alignment         - Align with 2^Alignment
-  
   Length            - Length to allocate
-  
   BaseAddress       - Base address to allocate
-  
   ImageHandle       - The image handle consume the allocated space.
-  
   DeviceHandle      - The device handle consume the allocated space.
 
 Returns:
 
   EFI_INVALID_PARAMETER       - Invalid parameter.
-  
   EFI_NOT_FOUND               - No descriptor for the desired space exists.
-  
   EFI_SUCCESS                 - Space successfully allocated.
 
 --*/
@@ -1037,11 +1028,11 @@ Returns:
   }
 
   Map = NULL;
-  if (Operation & GCD_MEMORY_SPACE_OPERATION) {
+  if ((Operation & GCD_MEMORY_SPACE_OPERATION) != 0) {
     CoreAcquireGcdMemoryLock ();
     Map = &mGcdMemorySpaceMap;
   }
-  if (Operation & GCD_IO_SPACE_OPERATION) {
+  if ((Operation & GCD_IO_SPACE_OPERATION) != 0) {
     CoreAcquireGcdIoLock ();
     Map = &mGcdIoSpaceMap;
   }
@@ -1093,8 +1084,8 @@ Returns:
     // Compute the maximum address to use in the search algorithm
     //
     if (GcdAllocateType == EfiGcdAllocateMaxAddressSearchBottomUp ||
-        GcdAllocateType == EfiGcdAllocateMaxAddressSearchTopDown     ) {
-      MaxAddress = *BaseAddress - 1;
+        GcdAllocateType == EfiGcdAllocateMaxAddressSearchTopDown) {
+      MaxAddress = *BaseAddress;
     } else {
       MaxAddress = Entry->EndAddress;
     }
@@ -1103,7 +1094,7 @@ Returns:
     // Verify that the list of descriptors are unallocated memory matching GcdMemoryType.
     //
     if (GcdAllocateType == EfiGcdAllocateMaxAddressSearchTopDown ||
-        GcdAllocateType == EfiGcdAllocateAnySearchTopDown           ) {
+        GcdAllocateType == EfiGcdAllocateAnySearchTopDown) {
       Link = Map->BackLink;
     } else {
       Link = Map->ForwardLink;
@@ -1112,7 +1103,7 @@ Returns:
       Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
 
       if (GcdAllocateType == EfiGcdAllocateMaxAddressSearchTopDown ||
-          GcdAllocateType == EfiGcdAllocateAnySearchTopDown           ) {
+          GcdAllocateType == EfiGcdAllocateAnySearchTopDown) {
         Link = Link->BackLink;
       } else {
         Link = Link->ForwardLink;
@@ -1124,8 +1115,8 @@ Returns:
       }
 
       if (GcdAllocateType == EfiGcdAllocateMaxAddressSearchTopDown ||
-          GcdAllocateType == EfiGcdAllocateAnySearchTopDown           ) {
-        if ((Entry->BaseAddress + Length) > MaxAddress) {
+          GcdAllocateType == EfiGcdAllocateAnySearchTopDown) {
+        if (Entry->BaseAddress > MaxAddress) {
           continue;
         }
         if (Length > (Entry->EndAddress + 1)) {
@@ -1208,10 +1199,10 @@ Returns:
   Status = CoreCleanupGcdMapEntry (TopEntry, BottomEntry, StartLink, EndLink, Map);
 
 Done:
-  if (Operation & GCD_MEMORY_SPACE_OPERATION) {
+  if ((Operation & GCD_MEMORY_SPACE_OPERATION) != 0) {
     CoreReleaseGcdMemoryLock ();
   }
-  if (Operation & GCD_IO_SPACE_OPERATION) {
+  if ((Operation & GCD_IO_SPACE_OPERATION) != 0) {
     CoreReleaseGcdIoLock ();
   }
 

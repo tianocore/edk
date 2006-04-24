@@ -712,7 +712,6 @@ AtaPioDataOut (
     //
     // perform a series of write without check DRQ ready
     //
-    
     IDEWritePortWMultiple (
       IdeDev->PciIo,
       IdeDev->IoPort->Data,
@@ -1158,6 +1157,9 @@ AtaSoftReset (
 
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
+  //
+  // SRST should assert for at least 5 us
+  //
   gBS->Stall (10);
 
   //
@@ -1166,6 +1168,10 @@ AtaSoftReset (
   DeviceControl = 0;
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
+  //
+  // Wait for at least 2 ms to check BSY status
+  //
+  gBS->Stall(10000);
   //
   // slave device needs at most 31s to clear BSY
   //
@@ -2529,6 +2535,7 @@ AtaUdmaReadExt (
   UINT8       *PrdBuffer;
   UINTN       RemainBlockNum;
   UINT8       DeviceControl;
+  UINT32      Count;
 
   //
   // Channel and device differential. Select device.
@@ -2720,7 +2727,11 @@ AtaUdmaReadExt (
 
     //
     // Check the INTERRUPT and ERROR bit of BMIS
+    // Max transfer number of sectors for one command is 65536(32Mbyte),
+    // it will cost 1 second to transfer these data in UDMA mode 2(33.3MBps).
+    // So set the variable Count to 2000, for about 2 second timeout time.
     //
+    Count = 2000;
     while (TRUE) {
 
       IdeDev->PciIo->Io.Read (
@@ -2731,8 +2742,30 @@ AtaUdmaReadExt (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
-        if (RegisterValue & BMIS_ERROR) {
+      if ((RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) || (Count == 0)) {
+        if ((RegisterValue & BMIS_ERROR) || (Count == 0)) {
+          //
+          // Clear START bit of BMIC register before return EFI_DEVICE_ERROR
+          //
+          IdeDev->PciIo->Io.Read (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
+
+          RegisterValue &= ~((UINT8)BMIC_START);
+
+          IdeDev->PciIo->Io.Write (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
@@ -2740,12 +2773,16 @@ AtaUdmaReadExt (
       }
 
       gBS->Stall (1000);
+      Count --;
     }
 
     gBS->FreePool (PrdAddr);
-
     //
-    // Set START bit of BMIC register
+    // Read Status Register of IDE device to clear interrupt
+    //
+    RegisterValue = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+    //
+    // Clear START bit of BMIC register
     //
     IdeDev->PciIo->Io.Read (
                         IdeDev->PciIo,
@@ -2774,6 +2811,13 @@ AtaUdmaReadExt (
     DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
+
+  //
+  // Disable interrupt of Select device
+  //
+  IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl);
+  DeviceControl |= IEN_L;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   return EFI_SUCCESS;
 }
@@ -2844,6 +2888,7 @@ AtaUdmaRead (
   UINT8       *PrdBuffer;
   UINTN       RemainBlockNum;
   UINT8       DeviceControl;
+  UINT32      Count;
 
   //
   // Channel and device differential
@@ -3034,7 +3079,11 @@ AtaUdmaRead (
 
     //
     // Check the INTERRUPT and ERROR bit of BMIS
+    // Max transfer number of sectors for one command is 65536(32Mbyte),
+    // it will cost 1 second to transfer these data in UDMA mode 2(33.3MBps).
+    // So set the variable Count to 2000, for about 2 second timeout time.
     //
+    Count = 2000;
     while (TRUE) {
 
       IdeDev->PciIo->Io.Read (
@@ -3045,8 +3094,30 @@ AtaUdmaRead (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
-        if (RegisterValue & BMIS_ERROR) {
+      if ((RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) || (Count == 0)) {
+        if ((RegisterValue & BMIS_ERROR) || (Count == 0)) {
+          //
+          // Clear START bit of BMIC register before return EFI_DEVICE_ERROR
+          //
+          IdeDev->PciIo->Io.Read (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
+
+          RegisterValue &= ~((UINT8)BMIC_START);
+
+          IdeDev->PciIo->Io.Write (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
@@ -3054,12 +3125,16 @@ AtaUdmaRead (
       }
 
       gBS->Stall (1000);
+      Count --;
     }
 
     gBS->FreePool (PrdAddr);
-
     //
-    // Set START bit of BMIC register
+    // Read Status Register of IDE device to clear interrupt
+    //
+    RegisterValue = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+    //
+    // Clear START bit of BMIC register
     //
     IdeDev->PciIo->Io.Read (
                         IdeDev->PciIo,
@@ -3088,6 +3163,13 @@ AtaUdmaRead (
     DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
+
+  //
+  // Disable interrupt of Select device
+  //
+  IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl);
+  DeviceControl |= IEN_L;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   return EFI_SUCCESS;
 }
@@ -3157,6 +3239,7 @@ AtaUdmaWriteExt (
   UINT8       *PrdBuffer;
   UINTN       RemainBlockNum;
   UINT8       DeviceControl;
+  UINT32      Count;
 
   //
   // Channel and device differential
@@ -3349,7 +3432,11 @@ AtaUdmaWriteExt (
 
     //
     // Check the INTERRUPT and ERROR bit of BMIS
+    // Max transfer number of sectors for one command is 65536(32Mbyte),
+    // it will cost 1 second to transfer these data in UDMA mode 2(33.3MBps).
+    // So set the variable Count to 2000, for about 2 second timeout time.
     //
+    Count = 2000;
     while (TRUE) {
 
       IdeDev->PciIo->Io.Read (
@@ -3360,8 +3447,30 @@ AtaUdmaWriteExt (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
-        if (RegisterValue & BMIS_ERROR) {
+      if ((RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) || (Count == 0)) {
+        if ((RegisterValue & BMIS_ERROR) || (Count == 0)) {
+          //
+          // Clear START bit of BMIC register before return EFI_DEVICE_ERROR
+          //
+          IdeDev->PciIo->Io.Read (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
+
+          RegisterValue &= ~((UINT8)BMIC_START);
+
+          IdeDev->PciIo->Io.Write (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
@@ -3369,12 +3478,16 @@ AtaUdmaWriteExt (
       }
 
       gBS->Stall (1000);
+      Count --;
     }
 
     gBS->FreePool (PrdAddr);
-
     //
-    // Set START bit of BMIC register
+    // Read Status Register of IDE device to clear interrupt
+    //
+    RegisterValue = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+    //
+    // Clear START bit of BMIC register
     //
     IdeDev->PciIo->Io.Read (
                         IdeDev->PciIo,
@@ -3399,6 +3512,13 @@ AtaUdmaWriteExt (
     DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
+
+  //
+  // Disable interrupt of Select device
+  //
+  IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl);
+  DeviceControl |= IEN_L;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   return EFI_SUCCESS;
 }
@@ -3468,6 +3588,7 @@ AtaUdmaWrite (
   UINT8       *PrdBuffer;
   UINTN       RemainBlockNum;
   UINT8       DeviceControl;
+  UINT32      Count;
 
   //
   // Channel and device differential
@@ -3661,7 +3782,11 @@ AtaUdmaWrite (
 
     //
     // Check the INTERRUPT and ERROR bit of BMIS
+    // Max transfer number of sectors for one command is 65536(32Mbyte),
+    // it will cost 1 second to transfer these data in UDMA mode 2(33.3MBps).
+    // So set the variable Count to 2000, for about 2 second timeout time.
     //
+    Count = 2000;
     while (TRUE) {
 
       IdeDev->PciIo->Io.Read (
@@ -3672,8 +3797,30 @@ AtaUdmaWrite (
                           1,
                           &RegisterValue
                           );
-      if (RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) {
-        if (RegisterValue & BMIS_ERROR) {
+      if ((RegisterValue & (BMIS_INTERRUPT | BMIS_ERROR)) || (Count == 0)) {
+        if ((RegisterValue & BMIS_ERROR) || (Count == 0)) {
+          //
+          // Clear START bit of BMIC register before return EFI_DEVICE_ERROR
+          //
+          IdeDev->PciIo->Io.Read (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
+
+          RegisterValue &= ~((UINT8)BMIC_START);
+
+          IdeDev->PciIo->Io.Write (
+                              IdeDev->PciIo,
+                              EfiPciIoWidthUint8,
+                              EFI_PCI_IO_PASS_THROUGH_BAR,
+                              IoPortForBmic,
+                              1,
+                              &RegisterValue
+                              );
           gBS->FreePool (PrdAddr);
           return EFI_DEVICE_ERROR;
         }
@@ -3681,12 +3828,17 @@ AtaUdmaWrite (
       }
 
       gBS->Stall (1000);
+      Count --;
     }
 
     gBS->FreePool (PrdAddr);
 
     //
-    // Set START bit of BMIC register
+    // Read Status Register of IDE device to clear interrupt
+    //
+    RegisterValue = IDEReadPortB(IdeDev->PciIo,IdeDev->IoPort->Reg.Status);
+    //
+    // Clear START bit of BMIC register
     //
     IdeDev->PciIo->Io.Read (
                         IdeDev->PciIo,
@@ -3711,6 +3863,13 @@ AtaUdmaWrite (
     DataBuffer = (UINT8 *) DataBuffer + NumberOfBlocks * IdeDev->BlkIo.Media->BlockSize;
     StartLba += NumberOfBlocks;
   }
+
+  //
+  // Disable interrupt of Select device
+  //
+  IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl);
+  DeviceControl |= IEN_L;
+  IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Alt.DeviceControl, DeviceControl);
 
   return EFI_SUCCESS;
 }

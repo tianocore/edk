@@ -1420,8 +1420,9 @@ Returns:
   Ptr           = (UINT16 *) FwVolHeader;
   Checksum      = 0;
   while (HeaderLength > 0) {
-    Checksum = *Ptr++;
+    Checksum = Checksum + (*Ptr);
     HeaderLength--;
+    Ptr++;
   }
 
   if (Checksum != 0) {
@@ -1515,7 +1516,6 @@ Returns:
 
 Done:
   //
-  // Bug Fix #4071:
   //   Issue command FWH_READ_ARRAY_COMMAND (0xff) at the end of this service to
   //   guarantee that the FWH is back in read mode again
   //

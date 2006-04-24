@@ -137,7 +137,8 @@ typedef enum _EFI_MEMORY_ARRAY_TYPE {
   EfiMemoryTypeSdram                          = 0x0F,
   EfiMemoryTypeSgram                          = 0x10,
   EfiMemoryTypeRdram                          = 0x11,
-  EfiMemoryTypeDdr                            = 0x12
+  EfiMemoryTypeDdr                            = 0x12,
+  EfiMemoryTypeDdr2                           = 0x13
 } EFI_MEMORY_ARRAY_TYPE;
 
 typedef struct {
@@ -178,7 +179,7 @@ typedef struct {
   EFI_INTER_LINK_DATA         MemorySubArrayLink;
   UINT16                      MemoryTotalWidth;
   UINT16                      MemoryDataWidth;
-  UINTN                       MemoryDeviceSize;
+  UINT64                      MemoryDeviceSize;
   EFI_MEMORY_FORM_FACTOR      MemoryFormFactor;
   UINT8                       MemoryDeviceSet;
   EFI_MEMORY_ARRAY_TYPE       MemoryType;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -236,36 +236,33 @@ Routine Description:
 Arguments:
 
   HobStart        - Start pointer of the hob list
-  
   BaseAddress     - Start address of memory allocated for DXE core
-  
   Length          - Length of memory allocated for DXE core
-  
   EntryPoint      - DXE core file name
+  FileName        - File Name
 
 Returns:
 
-  EFI_NOT_FOUND   - DxeCoreHob not found
-  
+  EFI_NOT_FOUND   - DxeCoreHob not found  
   EFI_SUCCESS     - DxeCoreHob found and information got
-  
-  FileName        - FileName
 
 --*/
 {
   EFI_PEI_HOB_POINTERS  DxeCoreHob;
-
+  
+  
   DxeCoreHob.Raw  = HobStart;
   DxeCoreHob.Raw  = GetHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, DxeCoreHob.Raw);
-  while(!END_OF_HOB_LIST(DxeCoreHob) && 
-        !EfiCompareGuid (&DxeCoreHob.MemoryAllocationModule->MemoryAllocationHeader.Name, &gEfiHobMemeryAllocModuleGuid)) {
+  while (DxeCoreHob.Header->HobType == EFI_HOB_TYPE_MEMORY_ALLOCATION && 
+         !EfiCompareGuid (&DxeCoreHob.MemoryAllocationModule->MemoryAllocationHeader.Name, 
+                          &gEfiHobMemeryAllocModuleGuid)) {
 
     DxeCoreHob.Raw  = GET_NEXT_HOB (DxeCoreHob);
     DxeCoreHob.Raw  = GetHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, DxeCoreHob.Raw);
 
   }
 
-  if (END_OF_HOB_LIST (DxeCoreHob)) {
+  if (DxeCoreHob.Header->HobType != EFI_HOB_TYPE_MEMORY_ALLOCATION) {
     return EFI_NOT_FOUND;
   }
 

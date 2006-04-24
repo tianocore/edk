@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-Revision History
+  Provide support functions for variable services.
 
 --*/
 
@@ -95,7 +95,6 @@ Returns:
 }
 
 EFI_STATUS
-EFIAPI
 UpdateVariableStore (
   IN  VARIABLE_GLOBAL         *Global,
   IN  BOOLEAN                 Volatile,
@@ -114,19 +113,20 @@ Routine Description:
 
 Arguments:
 
-  Global            Pointer to VARAIBLE_GLOBAL structure
-  Volatile          If the Variable is Volatile or Non-Volatile
-  SetByIndex        TRUE: Target pointer is given as index
-                    FALSE: Target pointer is absolute
-  Instance          Instance of FV Block services
-  DataPtrIndex      Pointer to the Data from the end of VARIABLE_STORE_HEADER
-                    structure
-  DataSize          Size of data to be written.
-  Buffer            Pointer to the buffer from which data is written
+  Global            - Pointer to VARAIBLE_GLOBAL structure
+  Volatile          - If the Variable is Volatile or Non-Volatile
+  SetByIndex        - TRUE: Target pointer is given as index
+                      FALSE: Target pointer is absolute
+  Instance          - Instance of FV Block services
+  DataPtrIndex      - Pointer to the Data from the end of VARIABLE_STORE_HEADER
+                      structure
+  DataSize          - Size of data to be written.
+  Buffer            - Pointer to the buffer from which data is written
 
 Returns:
 
-  EFI STATUS
+  EFI_INVALID_PARAMETER   - Parameters not valid
+  EFI_SUCCESS             - Variable store successfully updated
 
 --*/
 {
@@ -177,14 +177,14 @@ Returns:
     if ((DataPtr + DataSize) >= ((UINTN) ((UINT8 *) VolatileBase + VolatileBase->Size))) {
       return EFI_INVALID_PARAMETER;
     }
-  }
-  //
-  // If Volatile Variable just do a simple mem copy.
-  //
-  if (Volatile) {
+    
+    //
+    // If Volatile Variable just do a simple mem copy.
+    //    
     EfiCopyMem ((UINT8 *) ((UINTN) DataPtr), Buffer, DataSize);
     return EFI_SUCCESS;
   }
+  
   //
   // If we are here we are dealing with Non-Volatile Variables
   //
@@ -207,24 +207,23 @@ Returns:
       if ((CurrWritePtr >= LinearOffset) && (CurrWritePtr < LinearOffset + PtrBlockMapEntry->BlockLength)) {
         if ((CurrWritePtr + CurrWriteSize) <= (LinearOffset + PtrBlockMapEntry->BlockLength)) {
           Status = EfiFvbWriteBlock (
-                    Instance,
-                    LbaNumber,
-                    (UINTN) (CurrWritePtr - LinearOffset),
-                    &CurrWriteSize,
-                    CurrBuffer
-                    );
-          if (EFI_ERROR (Status)) {
-            return Status;
-          }
+                     Instance,
+                     LbaNumber,
+                     (UINTN) (CurrWritePtr - LinearOffset),
+                     &CurrWriteSize,
+                     CurrBuffer
+                     );
+          
+          return Status;
         } else {
           Size = (UINT32) (LinearOffset + PtrBlockMapEntry->BlockLength - CurrWritePtr);
           Status = EfiFvbWriteBlock (
-                    Instance,
-                    LbaNumber,
-                    (UINTN) (CurrWritePtr - LinearOffset),
-                    &Size,
-                    CurrBuffer
-                    );
+                     Instance,
+                     LbaNumber,
+                     (UINTN) (CurrWritePtr - LinearOffset),
+                     &Size,
+                     CurrBuffer
+                     );
           if (EFI_ERROR (Status)) {
             return Status;
           }

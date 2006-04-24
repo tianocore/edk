@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -415,7 +415,7 @@ Returns:
   while ((Index--) && NotDone) {
 
     if (strncmp (Ptrx, DEPENDENCY_START, strlen (DEPENDENCY_START)) == 0) {
-      Ptrx += sizeof (DEPENDENCY_START);
+      Ptrx += strlen (DEPENDENCY_START);
       NotDone = FALSE;
       //
       // BUGBUG -- should Index be decremented by sizeof(DEPENDENCY_START)?
@@ -507,7 +507,7 @@ Returns:
         //
         fputc (EFI_DEP_SOR, OutFile);
         OutFileSize++;
-        Ptrx += sizeof (OPERATOR_SOR);
+        Ptrx += strlen (OPERATOR_SOR);
         SOR_Flag = TRUE;
 
       }
@@ -541,7 +541,7 @@ Returns:
       } else {
         fputc (EFI_DEP_BEFORE, OutFile);
         OutFileSize++;
-        Ptrx += sizeof (OPERATOR_BEFORE);
+        Ptrx += strlen (OPERATOR_BEFORE);
         Before_Flag = TRUE;
       }
     } else if (strncmp (Ptrx, OPERATOR_AFTER, strlen (OPERATOR_AFTER)) == 0) {
@@ -574,7 +574,7 @@ Returns:
       } else {
         fputc (EFI_DEP_AFTER, OutFile);
         OutFileSize++;
-        Ptrx += sizeof (OPERATOR_AFTER);
+        Ptrx += strlen (OPERATOR_AFTER);
         Dep_Flag    = TRUE;
         After_Flag  = TRUE;
       }
@@ -591,7 +591,7 @@ Returns:
       }
 
       PushOpCode ((VOID **) &StackPtr, EFI_DEP_AND);
-      Ptrx += sizeof (OPERATOR_AND);
+      Ptrx += strlen (OPERATOR_AND);
       Dep_Flag = TRUE;
 
     } else if (strncmp (Ptrx, OPERATOR_OR, strlen (OPERATOR_OR)) == 0) {
@@ -607,7 +607,7 @@ Returns:
       }
 
       PushOpCode ((VOID **) &StackPtr, EFI_DEP_OR);
-      Ptrx += sizeof (OPERATOR_OR);
+      Ptrx += strlen (OPERATOR_OR);
       Dep_Flag = TRUE;
 
     } else if (strncmp (Ptrx, OPERATOR_NOT, strlen (OPERATOR_NOT)) == 0) {
@@ -623,7 +623,7 @@ Returns:
       }
 
       PushOpCode ((VOID **) &StackPtr, EFI_DEP_NOT);
-      Ptrx += sizeof (OPERATOR_NOT);
+      Ptrx += strlen (OPERATOR_NOT);
       Dep_Flag = TRUE;
 
     } else if (*Ptrx == '\t') {

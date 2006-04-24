@@ -21,9 +21,17 @@ Abstract:
 #include "Tiano.h"
 #include "DxeCore.h"
 #include "DebugMask.h"
+#include EFI_GUID_DEFINITION (GlobalVariable)
 
-extern UINTN                     gErrorLevel;
+extern UINTN                     mErrorLevel;
+static VOID                      *mVariableReadyNotify;
 
+VOID
+UpdateDebugMask (
+  EFI_EVENT Event,
+  VOID      *Context
+  );
+  
 EFI_STATUS
 EFIAPI
 GetDebugMask (
@@ -97,6 +105,32 @@ Returns:
   return EFI_SUCCESS;
 }  
 
+EFI_STATUS
+EFIAPI
+SetCoreDebugMask (
+  IN  EFI_DEBUG_MASK_PROTOCOL     *This,             // Calling context
+  IN  UINTN                       NewDebugMask       // New Debug Mask value to set
+  )
+/*++
+
+Routine Description:
+  DebugMask protocol member function.
+  Updates the current debug mask for core.
+  
+Arguments:
+
+  This          - Calling context
+  NewDebugMask  - New Debug Mask value to set
+
+Returns:
+  EFI_SUCCESS - Debug mask is updated with the new value successfully
+  EFI_UNSUPPORTED - The handle on which this protocol is installed is not an image handle.
+
+--*/
+{
+  mErrorLevel = NewDebugMask;
+  return SetDebugMask(This, NewDebugMask);
+}  
 
 EFI_STATUS
 InstallDebugMaskProtocol(
@@ -153,7 +187,7 @@ Returns:
   // Fill in private data structure
   //
   DebugMaskPrivate->Signature  =  DEBUGMASK_PRIVATE_DATA_SIGNATURE;
-  DebugMaskPrivate->ImageDebugMask  =  gErrorLevel;
+  DebugMaskPrivate->ImageDebugMask  =  mErrorLevel;
   DebugMaskPrivate->DebugMaskInterface.Revision  =  EFI_DEBUG_MASK_REVISION;
   DebugMaskPrivate->DebugMaskInterface.GetDebugMask  =  GetDebugMask;
   DebugMaskPrivate->DebugMaskInterface.SetDebugMask  =  SetDebugMask;
@@ -228,4 +262,136 @@ Returns:
   //
   Status = CoreFreePool(DebugMaskPrivate);
   return Status;
+}
+
+EFI_STATUS
+InstallCoreDebugMaskProtocol(
+  IN EFI_HANDLE ImageHandle
+  )
+/*++
+
+Routine Description:
+
+  Install debug mask protocol on core.
+
+Arguments:
+
+  ImageHandle     - Core handle
+
+Returns:
+
+  EFI_INVALID_PARAMETER   - Invalid image handle
+  
+  EFI_OUT_OF_RESOURCES    - No enough buffer could be allocated
+  
+  EFI_SUCCESS             - Debug mask protocol successfully installed
+
+--*/
+{
+  EFI_DEBUG_MASK_PROTOCOL    *DebugMaskInterface;
+  EFI_STATUS                 Status;
+  EFI_EVENT                  Event;
+
+  if (ImageHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = InstallDebugMaskProtocol(ImageHandle);
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
+
+  //
+  // Check Image Handle
+  //
+  CoreHandleProtocol (
+    ImageHandle, 
+    &gEfiDebugMaskProtocolGuid, 
+    (VOID*)&DebugMaskInterface
+    );
+  DebugMaskInterface->SetDebugMask = SetCoreDebugMask;
+
+  Status = CoreCreateEvent (
+             EFI_EVENT_NOTIFY_SIGNAL,
+             EFI_TPL_CALLBACK,
+             UpdateDebugMask,
+             mVariableReadyNotify,
+             &Event
+             );
+
+  if (!EFI_ERROR (Status)) {
+    Status = CoreRegisterProtocolNotify (
+               &gEfiVariableArchProtocolGuid,
+               Event,
+               &mVariableReadyNotify
+               );
+  }
+                  
+  return Status;
+}
+
+VOID
+UpdateDebugMask (
+  EFI_EVENT Event,
+  VOID      *Context
+  )
+/*++
+
+Routine Description:
+
+  Event callback function to update the debug mask when the variable service is ready.
+
+Arguments:
+
+  Event   - The Event
+  Context - The event's context
+
+Returns:
+
+  None
+
+--*/
+{
+  UINTN                   NoHandles;
+  EFI_STATUS              Status;
+  UINTN                   DebugMask;
+  UINTN                   Index;
+  UINTN                   DataSize;
+  EFI_HANDLE              *Buffer;
+  EFI_DEBUG_MASK_PROTOCOL *DebugMaskProtocol;
+
+  DataSize = sizeof(UINTN);
+  Status = gRT->GetVariable(
+                  L"EFIDebug",
+                  &gEfiGlobalVariableGuid,
+                  NULL,
+                  &DataSize,
+                  &DebugMask
+                  );
+  if (EFI_ERROR(Status)) {
+    return;
+  }
+ 
+  Status = CoreLocateHandleBuffer (
+             AllHandles,
+             &gEfiDebugMaskProtocolGuid,
+             NULL,
+             &NoHandles,
+             &Buffer
+             );
+  if (EFI_ERROR(Status)) {
+    return;
+  }
+  for (Index = 0; Index < NoHandles; Index ++) {
+    Status = CoreHandleProtocol (
+               Buffer[Index],
+               &gEfiDebugMaskProtocolGuid,
+               &DebugMaskProtocol
+               );
+    if (EFI_ERROR(Status)) {
+      continue;
+    }
+    DebugMaskProtocol->SetDebugMask(DebugMaskProtocol, DebugMask);
+  }
+  CoreFreePool(Buffer);
 }

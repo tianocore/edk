@@ -823,7 +823,7 @@ UpdateStatusBar (
           gScreenDimensions.BottomRow - 1,
           NvUpdateMessage
           );
-        gResetRequired    = (BOOLEAN) (gResetRequired | (Flags & RESET_REQUIRED));
+        gResetRequired    = (BOOLEAN) (gResetRequired | ((Flags & EFI_IFR_FLAG_RESET_REQUIRED) == EFI_IFR_FLAG_RESET_REQUIRED));
 
         gNvUpdateRequired = TRUE;
       } else {

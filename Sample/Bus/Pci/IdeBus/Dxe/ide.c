@@ -663,6 +663,35 @@ DiscoverIdeDevice (
 }
 
 EFI_STATUS
+DetectIDEControllerInitial ()
+/*++
+  
+  Name: DetectIDEController
+
+
+  Purpose: 
+      This function is called before DetectIDEController(). It is used to 
+      initialize the global variable MasterDeviceExist and SlaveDeviceExist.
+
+
+  Parameters:
+
+
+  Returns:
+      TRUE
+            Ready to call DetectIDEController().
+
+
+  Notes:
+--*/
+{
+  MasterDeviceExist = FALSE;
+  SlaveDeviceExist  = FALSE;
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
 DetectIDEController (
   IN  IDE_BLK_IO_DEV  *IdeDev
   )

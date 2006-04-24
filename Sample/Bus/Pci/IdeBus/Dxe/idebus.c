@@ -474,6 +474,12 @@ IDEBusDriverBindingStart (
               EfiIdeBusBeforeDevicePresenceDetection,
               IdeChannel
               );
+
+    //
+    // Prepare to detect IDE device of this channel
+    //
+    DetectIDEControllerInitial ();
+
     //
     // -- 1st inner loop --- Master/Slave ------------  Step14
     //

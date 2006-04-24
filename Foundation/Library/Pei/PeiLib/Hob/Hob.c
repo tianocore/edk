@@ -1,7 +1,6 @@
-
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,7 +60,7 @@ Returns:
 
   Status = (*PeiServices)->CreateHob (
                              PeiServices,
-                             EFI_HOB_TYPE_GUID_EXTENSION,
+                             EFI_HOB_TYPE_MEMORY_ALLOCATION,
                              sizeof (EFI_HOB_MEMORY_ALLOCATION_MODULE),
                              &Hob
                              );
@@ -138,10 +137,10 @@ Returns:
 
 EFI_STATUS
 PeiBuildHobGuid (
-  IN EFI_PEI_SERVICES            **PeiServices,
-  IN EFI_GUID                    *Guid,
-  IN UINTN                       DataLength,
-  IN OUT VOID                    **Hob
+  IN  EFI_PEI_SERVICES  **PeiServices,
+  IN  EFI_GUID          *Guid,
+  IN  UINTN             DataLength,
+  OUT VOID              **Hob
   )
 /*++
 
@@ -152,17 +151,14 @@ Routine Description:
 Arguments:
 
   PeiServices - The PEI core services table.
-
   Guid        - The GUID of the custome HOB type
-
   DataLength  - The size of the data payload for the GUIDed HOB
-
-  Hob         - Pointer to the Hob
+  Hob         - Pointer to pointer to the created Hob
 
 Returns:
 
-  EFI_SUCCESS   - Hob is successfully built.
-  Others        - Errors occur while creating new Hob
+  EFI_SUCCESS - Hob is successfully built.
+  Others      - Errors occur while creating new Hob
 
 --*/
 {

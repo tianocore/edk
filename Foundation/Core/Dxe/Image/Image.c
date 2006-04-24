@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -162,7 +162,7 @@ Returns:
   //
   DEBUG_CODE (
     if (!EFI_ERROR (Status)) {
-      Status = InstallDebugMaskProtocol(Image->Handle); 
+      Status = InstallCoreDebugMaskProtocol(Image->Handle); 
       ASSERT_EFI_ERROR (Status);
     } 
   )
@@ -607,7 +607,8 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL   *HandleFilePath;
   UINTN                      FilePathSize;
 
-
+  SecurityStatus = EFI_SUCCESS;
+  
   ASSERT (gEfiCurrentTpl < EFI_TPL_NOTIFY);
   ParentImage = NULL;
 
@@ -773,7 +774,9 @@ Done:
       CoreUnloadAndCloseImage (Image, (BOOLEAN)(DstBuffer == 0));
       *ImageHandle = NULL;
     }
-  }
+  } else if (EFI_ERROR (SecurityStatus)) {
+    Status = SecurityStatus;
+  }  
 
   return Status;
 }
