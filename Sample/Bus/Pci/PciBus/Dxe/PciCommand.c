@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -145,6 +145,7 @@ Returns:
   UINT8   CapabilityPtr;
   UINT16  CapabilityEntry;
   UINT8   CapabilityID;
+  UINT32  Temp;
 
   //
   // To check the capability of this device supports
@@ -171,11 +172,17 @@ Returns:
 
       PciIoDevice->PciIo.Pci.Read (
                                &PciIoDevice->PciIo,
-                               EfiPciIoWidthUint8,
+                               EfiPciIoWidthUint32,
                                EFI_PCI_CAPABILITY_PTR,
                                1,
-                               &CapabilityPtr
+                               &Temp
                                );
+      //
+      // Do not get byte read directly, because some PCI card will return 0xFF
+      // when perform PCI-Express byte read, while return correct 0x00 
+      // when perform PCI-Express dword read, or PCI dword read.
+      //
+      CapabilityPtr = (UINT8)Temp;
     }
   }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,9 +25,7 @@ Abstract:
 #include "bdslib.h"
 #include EFI_PROTOCOL_DEFINITION (WinntIo)
 #include EFI_PROTOCOL_DEFINITION (WinntThunk)
-
 EFI_GUID  UnknownDeviceGuid           = UNKNOWN_DEVICE_GUID;
-
 EFI_GUID  mEfiWinNtThunkProtocolGuid  = EFI_WIN_NT_THUNK_PROTOCOL_GUID;
 EFI_GUID  mEfiWinNtUgaGuid            = EFI_WIN_NT_UGA_GUID;
 EFI_GUID  mEfiWinNtSerialPortGuid     = EFI_WIN_NT_SERIAL_PORT_GUID;
@@ -840,9 +838,11 @@ DEVICE_PATH_STRING_TABLE  DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_PROTOCOL_DP,
   DevPathMediaProtocol,
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   DevPathFvFilePath,
+#endif
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   DevPathBssBss,

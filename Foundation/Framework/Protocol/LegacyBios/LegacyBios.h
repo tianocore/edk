@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,6 +61,24 @@ EFI_FORWARD_DECLARATION (EFI_LEGACY_BIOS_PROTOCOL);
 #define CARRY_FLAG            0x01
 
 typedef struct {
+  UINT32 CF:1;
+  UINT32 Reserved1:1;
+  UINT32 PF:1;
+  UINT32 Reserved2:1;
+  UINT32 AF:1;
+  UINT32 Reserved3:1;
+  UINT32 ZF:1;
+  UINT32 SF:1;
+  UINT32 TF:1;
+  UINT32 IF:1;
+  UINT32 DF:1;
+  UINT32 OF:1;
+  UINT32 IOPL:2;
+  UINT32 NT:1;
+  UINT32 Reserved4:17;
+} EFI_EFLAGS_REG;
+
+typedef struct {
   UINT16  CF : 1;
   UINT16  Reserved1 : 1;
   UINT16  PF : 1;
@@ -79,35 +97,62 @@ typedef struct {
 } EFI_FLAGS_REG;
 
 typedef struct {
+  UINT32         EAX;
+  UINT32         EBX;
+  UINT32         ECX;
+  UINT32         EDX;
+  UINT32         ESI;
+  UINT32         EDI;
+  EFI_EFLAGS_REG EFlags;
+  UINT16         ES;
+  UINT16         CS;
+  UINT16         SS;
+  UINT16         DS;
+  UINT32         EBP;
+} EFI_DWORD_REGS;
+
+typedef struct {
   UINT16        AX;
+  UINT16        ReservedAX;
   UINT16        BX;
+  UINT16        ReservedBX;
   UINT16        CX;
+  UINT16        ReservedCX;
   UINT16        DX;
+  UINT16        ReservedDX;
   UINT16        SI;
+  UINT16        ReservedSI;
   UINT16        DI;
+  UINT16        ReservedDI;
   EFI_FLAGS_REG Flags;
+  UINT16        ReservedFlags;
   UINT16        ES;
   UINT16        CS;
   UINT16        SS;
   UINT16        DS;
-
   UINT16        BP;
+  UINT16        ReservedBP;
 } EFI_WORD_REGS;
 
 typedef struct {
-  UINT8 AL;
-  UINT8 AH;
-  UINT8 BL;
-  UINT8 BH;
-  UINT8 CL;
-  UINT8 CH;
-  UINT8 DL;
-  UINT8 DH;
+  UINT8   AL;
+  UINT8   AH;
+  UINT16  ReservedAX;
+  UINT8   BL;
+  UINT8   BH;
+  UINT16  ReservedBX;
+  UINT8   CL;
+  UINT8   CH;
+  UINT16  ReservedCX;
+  UINT8   DL;
+  UINT8   DH;
+  UINT16  ReservedDX;
 } EFI_BYTE_REGS;
 
 typedef union {
-  EFI_WORD_REGS X;
-  EFI_BYTE_REGS H;
+  EFI_DWORD_REGS E;
+  EFI_WORD_REGS  X;
+  EFI_BYTE_REGS  H;
 } EFI_IA32_REGISTER_SET;
 
 #pragma pack(1)

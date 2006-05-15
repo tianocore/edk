@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -92,6 +92,7 @@ Returns:
   EFI_FV_FILE_ATTRIBUTES            Attrib;
   EFI_FILE_INFO                     *FileInfo;
   UINTN                             FileInfoSize;
+  EFI_GUID                          *NameGuid;
 
   *AuthenticationStatus = 0;
   EfiCommonLibZeroMem (ImageFileHandle, sizeof (IMAGE_FILE_HANDLE));
@@ -133,8 +134,8 @@ Returns:
     //
     // For FwVol File system there is only a single file name that is a GUID.
     //
-    if (DevicePathType (&FwVolFilePathNode->Header) == MEDIA_DEVICE_PATH ||
-        DevicePathSubType (&FwVolFilePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
+    NameGuid = CoreGetNameGuidFromFwVolDevicePathNode (FwVolFilePathNode);
+	if (NameGuid != NULL) {
 
       SectionType = EFI_SECTION_PE32;
       Pe32Buffer  = NULL;

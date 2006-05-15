@@ -66,7 +66,7 @@ Returns:
   //
   snp->cdb.DBsize = (UINT16) (((UINT16) (sizeof (PXE_DB_GET_STATUS)) - (UINT16) (sizeof db->TxBuffer)) + (UINT16) (sizeof db->TxBuffer[0]));
 
-  snp->cdb.DBaddr     = (UINT64) db;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -78,7 +78,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.get_status()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     DEBUG (
@@ -123,7 +123,7 @@ Returns:
         (snp->cdb.StatFlags & PXE_STATFLAGS_GET_STATUS_TXBUF_QUEUE_EMPTY)
       ) ? 0 : (VOID *) (UINTN) db->TxBuffer[0];
 
-    if (snp->IsOldUndi && ((UINT64) (*TransmitBufferListPtr) >= FOUR_GIGABYTES)) {
+    if (snp->IsOldUndi && ((UINT64)(UINTN) (*TransmitBufferListPtr) >= FOUR_GIGABYTES)) {
       del_v2p ((VOID *) (UINTN) (db->TxBuffer[0]));
     }
   }

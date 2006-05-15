@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -21,6 +21,58 @@ Abstract:
 #include "EfiDriverLib.h"
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
+#include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+STATIC EFI_STATUS_CODE_PROTOCOL  *gStatusCode = NULL;
+#endif
+
+EFI_STATUS
+EfiLibReportStatusCode (
+  IN EFI_STATUS_CODE_TYPE     Type,
+  IN EFI_STATUS_CODE_VALUE    Value,
+  IN UINT32                   Instance,
+  IN EFI_GUID                 *CallerId OPTIONAL,
+  IN EFI_STATUS_CODE_DATA     *Data     OPTIONAL  
+  )
+/*++
+
+Routine Description:
+
+  Report device path through status code.
+
+Arguments:
+
+  Type        - Code type
+  Value       - Code value
+  Instance    - Instance number
+  CallerId    - Caller name
+  DevicePath  - Device path that to be reported
+
+Returns:
+
+  Status code.
+
+  EFI_OUT_OF_RESOURCES - No enough buffer could be allocated
+
+--*/
+{
+  EFI_STATUS  Status;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000) 
+  if (gStatusCode == NULL) {
+    Status = gBS->LocateProtocol (&gEfiStatusCodeRuntimeProtocolGuid, NULL, (VOID **)&gStatusCode);
+    if (EFI_ERROR (Status) || gStatusCode == NULL) {
+      return EFI_UNSUPPORTED;
+    }
+  }
+  Status = gStatusCode->ReportStatusCode (Type, Value, Instance, CallerId, Data);
+  return Status;
+#else
+  Status = gRT->ReportStatusCode (Type, Value, Instance, CallerId, Data);
+  return Status;
+#endif
+}
 
 EFI_STATUS
 ReportStatusCodeWithDevicePath (
@@ -68,7 +120,7 @@ Returns:
   ExtendedDevicePath = EfiConstructStatusCodeData (Size, &gEfiStatusCodeSpecificDataGuid, ExtendedData);
   EfiCopyMem (ExtendedDevicePath, DevicePath, DevicePathSize);
 
-  Status = gRT->ReportStatusCode (Type, Value, Instance, CallerId, (EFI_STATUS_CODE_DATA *) ExtendedData);
+  Status = EfiLibReportStatusCode (Type, Value, Instance, CallerId, (EFI_STATUS_CODE_DATA *) ExtendedData);
 
   gBS->FreePool (ExtendedData);
   return Status;

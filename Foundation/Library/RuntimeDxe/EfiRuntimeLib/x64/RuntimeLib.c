@@ -24,6 +24,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
+#include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
 //
 // Driver Lib Module Globals
@@ -40,6 +41,10 @@ static BOOLEAN              mEfiGoneVirtual         = FALSE;
 EFI_CPU_IO_PROTOCOL         *gCpuIo;
 BOOLEAN                     mEfiAtRuntime = FALSE;
 FVB_ENTRY                   *mFvbEntry;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+static EFI_STATUS_CODE_PROTOCOL  *gStatusCode = NULL;
+#endif
 
 EFI_STATUS
 EfiConvertPointer (
@@ -208,6 +213,12 @@ Returns:
   // Update global for Runtime Services Table and IO
   //
   EfiConvertInternalPointer ((VOID **) &gCpuIo);
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  if (gStatusCode != NULL) {
+    EfiConvertInternalPointer ((VOID **) &gStatusCode->ReportStatusCode);
+    EfiConvertInternalPointer ((VOID **) &gStatusCode);
+  }
+#endif
   EfiConvertInternalPointer ((VOID **) &mRT);
 
   //
@@ -260,6 +271,13 @@ Returns:
     gBS     = SystemTable->BootServices;
     Status  = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **) &gDS);
     ASSERT_EFI_ERROR (Status);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    Status = gBS->LocateProtocol (&gEfiStatusCodeRuntimeProtocolGuid, NULL, (VOID **)&gStatusCode);
+    if (EFI_ERROR (Status)) {
+      gStatusCode = NULL;
+    }
+#endif
 
     Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
 
@@ -723,13 +741,18 @@ Returns:
 
 --*/
 {
-  return mRT->ReportStatusCode (
-                CodeType,
-                Value,
-                Instance,
-                CallerId,
-                Data
-                );
+  EFI_STATUS     Status;
+  
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  if (gStatusCode == NULL) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Status = gStatusCode->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
+#else
+  Status = mRT->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
+#endif
+  return Status;
 }
 //
 // Cache Flush Routine.

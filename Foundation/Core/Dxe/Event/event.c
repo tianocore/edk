@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -52,13 +52,14 @@ UINT32 mEventTable[] = {
   //
   EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
   //
-  // 0x00000203       ReadyToBootEvent.
-  //
-  EFI_EVENT_SIGNAL_READY_TO_BOOT,
-  //
   // 0x60000202       SetVirtualAddressMapEvent.
   //
   EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+  //
+  // 0x00000203       ReadyToBootEvent.
+  //
+  EFI_EVENT_SIGNAL_READY_TO_BOOT,
   //
   // 0x00000204       LegacyBootEvent.
   //
@@ -76,6 +77,7 @@ UINT32 mEventTable[] = {
   // It can be signaled with SignalEvent() and checked with CheckEvent() 
   // or WaitForEvent().
   //
+#endif
   0x00000000,
   //
   // 0x80000100       Timer event with a notification function that can be 
@@ -155,12 +157,8 @@ Returns:
 {
   UINTN        Index;
 
-  for (Index=0; Index <= EFI_TPL_HIGH_LEVEL; Index++) {
+  for (Index=0; Index <= EFI_TPL_HIGH_LEVEL; Index ++) {
     InitializeListHead (&gEventQueue[Index]);
-  }
-
-  for (Index=0; Index < EFI_EVENT_EFI_SIGNAL_MAX; Index++) {
-    InitializeListHead (&gEventSignalQueue[Index]);
   }
 
   CoreInitializeTimer ();
@@ -324,7 +322,7 @@ Returns:
 
 VOID
 CoreNotifySignalList (
-  IN UINTN                SignalType
+  IN EFI_GUID     *EventGroup
   )
 /*++
 
@@ -346,19 +344,41 @@ Returns:
   EFI_LIST_ENTRY          *Head;
   IEVENT                  *Event;
 
-  SignalType = (SignalType & EFI_EVENT_EFI_SIGNAL_MASK) - 1;
-  ASSERT (SignalType < EFI_EVENT_EFI_SIGNAL_MAX);
-
   CoreAcquireEventLock ();
 
-  Head = &gEventSignalQueue[SignalType];
+  Head = &gEventSignalQueue;
   for (Link = Head->ForwardLink; Link != Head; Link = Link->ForwardLink) {
     Event = CR (Link, IEVENT, SignalLink, EVENT_SIGNATURE);
-    CoreNotifyEvent (Event);
+    if ((Event->ExFlag) && EfiCompareGuid (&Event->EventGroup, EventGroup)) {
+      CoreNotifyEvent (Event);
+    }
   }
 
   CoreReleaseEventLock ();
 }
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+
+static
+VOID
+EFIAPI
+EventNofitySignalAllNullEvent (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+  //
+  // This null event is a size efficent way to enusre that 
+  // EFI_EVENT_NOTIFY_SIGNAL_ALL is error checked correctly.
+  // EFI_EVENT_NOTIFY_SIGNAL_ALL is now mapped into 
+  // CreateEventEx() and this function is used to make the
+  // old error checking in CreateEvent() for Tiano extensions
+  // function.
+  //
+  return;
+}
+
+#endif
 
 
 EFI_BOOTSERVICE
@@ -393,6 +413,76 @@ Returns:
   EFI_OUT_OF_RESOURCES  - The event could not be allocated
 
 --*/
+{ 
+  EFI_GUID            *GuidPtr;
+  EFI_EVENT_NOTIFY    Function;
+  
+  GuidPtr = NULL;
+  Function = NotifyFunction;
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+  //
+  // Clear EFI_EVENT_NOFITY_SIGNAL_ALL (Tiano extension) as all events in the 
+  // EventGroup now have this property. So we need to filter it out.
+  //
+  if (Type & EFI_EVENT_NOTIFY_SIGNAL_ALL) {
+    Type &= ~EFI_EVENT_NOTIFY_SIGNAL_ALL;
+    Function = EventNofitySignalAllNullEvent;
+  }
+
+  //
+  // Map the Tiano extensions Events to CreateEventEx form
+  //
+  if (Type == EFI_EVENT_SIGNAL_READY_TO_BOOT) {
+    GuidPtr = &gEfiEventReadyToBootGuid;
+  } else if (Type == EFI_EVENT_SIGNAL_LEGACY_BOOT) {
+    GuidPtr = &gEfiEventLegacyBootGuid;
+  }
+#endif
+
+  //
+  // Convert EFI 1.10 Events to thier UEFI 2.0 CreateEventEx mapping
+  // 
+  if (Type == EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES) {
+    GuidPtr = &gEfiEventExitBootServicesGuid;
+  } else if (Type == EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) {
+    GuidPtr = &gEfiEventVirtualAddressChangeGuid;
+  }
+  
+  return CoreCreateEventEx (Type, NotifyTpl, Function, NotifyContext, GuidPtr, Event);
+}
+
+EFI_BOOTSERVICE
+EFI_STATUS
+EFIAPI
+CoreCreateEventEx (
+  IN UINT32                   Type,
+  IN EFI_TPL                  NotifyTpl,
+  IN EFI_EVENT_NOTIFY         NotifyFunction,
+  IN VOID                     *NotifyContext,
+  IN CONST EFI_GUID           *EventGroup,    OPTIONAL
+  OUT EFI_EVENT               *Event
+  )
+/*++
+
+Routine Description:
+  Creates a general-purpose event structure
+
+Arguments:
+  Type                - The type of event to create and its mode and attributes
+  NotifyTpl           - The task priority level of event notifications
+  NotifyFunction      - Pointer to the events notification function
+  NotifyContext       - Pointer to the notification functions context; corresponds to
+                        parameter "Context" in the notification function
+  EventGrout          - GUID for EventGroup if NULL act the same as gBS->CreateEvent().
+  Event               - Pointer to the newly created event if the call succeeds; undefined otherwise
+
+Returns:
+  EFI_SUCCESS           - The event structure was created
+  EFI_INVALID_PARAMETER - One of the parameters has an invalid value
+  EFI_OUT_OF_RESOURCES  - The event could not be allocated
+
+--*/
 {
   EFI_STATUS      Status;
   IEVENT          *IEvent;
@@ -420,9 +510,7 @@ Returns:
   //
   // If it's a notify type of event, check its parameters
   //
-  if ((Type & (EFI_EVENT_NOTIFY_WAIT | EFI_EVENT_NOTIFY_SIGNAL)) && 
-      (!(Type & EFI_EVENT_NOTIFY_SIGNAL_ALL))) {
-
+  if ((Type & (EFI_EVENT_NOTIFY_WAIT | EFI_EVENT_NOTIFY_SIGNAL))) {
     //
     // Check for an invalid NotifyFunction or NotifyTpl
     //
@@ -460,8 +548,11 @@ Returns:
   
   IEvent->NotifyTpl      = NotifyTpl;
   IEvent->NotifyFunction = NotifyFunction;
-  IEvent->NotifyContext  = NotifyContext;
-
+  IEvent->NotifyContext  = (VOID *)NotifyContext;
+  if (EventGroup != NULL) {
+    EfiCommonLibCopyMem (&IEvent->EventGroup, (VOID*)EventGroup, sizeof (EFI_GUID));
+    IEvent->ExFlag = TRUE;
+  }
 
   *Event = IEvent;
 
@@ -473,21 +564,14 @@ Returns:
   }
 
   CoreAcquireEventLock ();
-  //
-  // Is there an efi signal type?
-  //
-  Type = Type & EFI_EVENT_EFI_SIGNAL_MASK;
-  if (Type) {
-      
+  
+  if ((Type & EFI_EVENT_NOTIFY_SIGNAL) != 0x00000000) {
     //
-    // Put the event on the efi signal queue based on it's type
+    // The Event's NotifyFunction must be queued whenever the event is signaled
     //
-    Type = Type - 1;
-    ASSERT (Type < EFI_EVENT_EFI_SIGNAL_MAX);
-
-    InsertHeadList (&gEventSignalQueue[Type], &IEvent->SignalLink);
+    InsertHeadList (&gEventSignalQueue, &IEvent->SignalLink);
   }
-
+  
   CoreReleaseEventLock ();
   
   //
@@ -495,7 +579,6 @@ Returns:
   //
   return EFI_SUCCESS;
 }
-
 
 EFI_BOOTSERVICE
 EFI_STATUS
@@ -539,23 +622,22 @@ Returns:
   // If the event is not already signalled, do so
   //
 
-  if (!Event->SignalCount) {
-    Event->SignalCount = Event->SignalCount + 1;
+  if (Event->SignalCount == 0x00000000) {
+    Event->SignalCount ++;
 
     //
     // If signalling type is a notify function, queue it
     //
     if (Event->Type & EFI_EVENT_NOTIFY_SIGNAL) {
-      if (Event->Type & EFI_EVENT_NOTIFY_SIGNAL_ALL) {
+      if (Event->ExFlag) {
         //
-        // EFI_EVENT_NOTIFY_SIGNAL_ALL is an external way to construct an
-        // event that signals all events of a given type. This feature is
-        // added to support EFI_EVENT_SIGNAL_READY_TO_BOOT and EFI_EVENT_SIGNAL_LEGACY_BOOT.
+        // The CreateEventEx() style requires all members of the Event Group 
+        //  to be signaled. 
         //
         CoreReleaseEventLock ();
-        CoreNotifySignalList (Event->Type & ~EFI_EVENT_NOTIFY_SIGNAL_ALL);
+        CoreNotifySignalList (&Event->EventGroup);
         CoreAcquireEventLock ();
-      } else {
+       } else {
         CoreNotifyEvent (Event);
       }
     }

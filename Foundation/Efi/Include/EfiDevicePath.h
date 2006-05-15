@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -172,20 +172,35 @@ typedef struct {
 
 #define MSG_USB_DP                0x05
 typedef struct {
-    EFI_DEVICE_PATH_PROTOCOL      Header;
-    UINT8                          ParentPortNumber;
-    UINT8                          InterfaceNumber;
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT8                           ParentPortNumber;
+  UINT8                           InterfaceNumber;
 } USB_DEVICE_PATH;
 
 #define MSG_USB_CLASS_DP          0x0f
 typedef struct {
-    EFI_DEVICE_PATH_PROTOCOL      Header;
-    UINT16                        VendorId;
-    UINT16                        ProductId;
-    UINT8                         DeviceClass;
-    UINT8                         DeviceSubClass;
-    UINT8                         DeviceProtocol;
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT16                          VendorId;
+  UINT16                          ProductId;
+  UINT8                           DeviceClass;
+  UINT8                           DeviceSubClass;
+  UINT8                           DeviceProtocol;
 } USB_CLASS_DEVICE_PATH;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT16                          InterfaceNumber;
+  UINT16                          VendorId;
+  UINT16                          ProductId;
+  UINT8                           SerialNumber[1];
+} USB_WWID_DEVICE_PATH;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT8                           Lun;
+} DEVICE_LOGICAL_UNIT;
+#endif
 
 #define MSG_I2O_DP                0x06
 typedef struct {
@@ -264,7 +279,33 @@ typedef struct {
     
 #define DEVICE_PATH_MESSAGING_VT_UTF8 \
     { 0xad15a0d6, 0x8bec, 0x4acf, 0xa0, 0x73, 0xd0, 0x1d, 0xe7, 0x7e, 0x2d, 0x88 }   
-    
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  EFI_GUID                        VendorGuid;
+  UINT32                          FlowContolMap;
+} UART_FLOW_CONTOL_MESSAGING_DEVICE_PATH;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  EFI_GUID                        VendorGuid;
+  UINT32                          Reserved;
+  UINT64                          SasAddress;
+  UINT64                          Lun;
+  UINT16                          Info;
+  UINT16                          TargetPort;  
+}SAS_DEVICE_PATH;
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT16                          Protocol;
+  UINT16                          Option;
+  UINT16                          Reserved;
+  UINT16                          TargetGroup;
+  UINT64                          Lun;
+  UINT8                           TargetName[1];
+}ISCSI_DEVICE_PATH;
+#endif    
 //
 // Media Device Path
 //
@@ -340,10 +381,6 @@ typedef struct {
 #define BBS_TYPE_DEV              0x80
 #define BBS_TYPE_UNKNOWN          0xFF
 
-
-#ifdef TIANO_EXTENSION_FLAG
-
-
 #define UNKNOWN_DEVICE_GUID \
   { 0xcf31fac5, 0xc24e, 0x11d2,  0x85, 0xf3, 0x0, 0xa0, 0xc9, 0x3e, 0xc9, 0x3b  }
 
@@ -351,8 +388,6 @@ typedef struct {
   VENDOR_DEVICE_PATH              DevicePath;
   UINT8                           LegacyDriveLetter;
 } UNKNOWN_DEVICE_VENDOR_DEVICE_PATH;
-
-#endif
 
 
 //
@@ -366,9 +401,7 @@ typedef union {
   MEMMAP_DEVICE_PATH                   MemMap;
   VENDOR_DEVICE_PATH                   Vendor;
   
-  #ifdef TIANO_EXTENSION_FLAG
   UNKNOWN_DEVICE_VENDOR_DEVICE_PATH    UnknownVendor;   
-  #endif
   
   CONTROLLER_DEVICE_PATH               Controller;
   ACPI_HID_DEVICE_PATH                 Acpi;
@@ -380,13 +413,20 @@ typedef union {
   F1394_DEVICE_PATH                    F1394;
   USB_DEVICE_PATH                      Usb;
   USB_CLASS_DEVICE_PATH                UsbClass;
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  USB_WWID_DEVICE_PATH                 UsbWwid;
+  #endif
   I2O_DEVICE_PATH                      I2O;
   MAC_ADDR_DEVICE_PATH                 MacAddr;
   IPv4_DEVICE_PATH                     Ipv4;
   IPv6_DEVICE_PATH                     Ipv6;
   INFINIBAND_DEVICE_PATH               InfiniBand;
   UART_DEVICE_PATH                     Uart;
-
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  UART_FLOW_CONTOL_MESSAGING_DEVICE_PATH UartFlowContol;
+  SAS_DEVICE_PATH                      Sas;
+  ISCSI_DEVICE_PATH                    Iscsi;
+  #endif
   HARDDRIVE_DEVICE_PATH                HardDrive;
   CDROM_DEVICE_PATH                    CD;
 
@@ -405,9 +445,7 @@ typedef union {
   MEMMAP_DEVICE_PATH                   *MemMap;
   VENDOR_DEVICE_PATH                   *Vendor;
   
-  #ifdef TIANO_EXTENSION_FLAG
   UNKNOWN_DEVICE_VENDOR_DEVICE_PATH    *UnknownVendor;   
-  #endif
   
   CONTROLLER_DEVICE_PATH               *Controller;
   ACPI_HID_DEVICE_PATH                 *Acpi;

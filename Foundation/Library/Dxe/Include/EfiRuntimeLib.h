@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,6 +27,8 @@ Abstract:
 
 #include "LinkedList.h"
 #include EFI_GUID_DEFINITION (DxeServices)
+#include EFI_GUID_DEFINITION (EventGroup)
+#include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 #include EFI_PROTOCOL_DEFINITION (FvbExtension)
@@ -1491,6 +1493,36 @@ Arguments:
 Returns:
 
   Status code
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+RtEfiCreateEventReadyToBoot (
+  IN EFI_TPL                      NotifyTpl,
+  IN EFI_EVENT_NOTIFY             NotifyFunction,
+  IN VOID                         *NotifyContext,
+  OUT EFI_EVENT                   *ReadyToBootEvent
+  )
+/*++
+
+Routine Description:
+  Create a Read to Boot Event.  
+  
+  Tiano extended the CreateEvent Type enum to add a ready to boot event type. 
+  This was bad as Tiano did not own the enum. In UEFI 2.0 CreateEventEx was
+  added and now it's possible to not voilate the UEFI specification and use 
+  the ready to boot event class defined in UEFI 2.0. This library supports
+  the R8.5/EFI 1.10 form and R8.6/UEFI 2.0 form and allows common code to 
+  work both ways.
+
+Arguments:
+  @param LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+
+Return:
+  EFI_SUCCESS   - Event was created.
+  Other         - Event was not created.
 
 --*/
 ;

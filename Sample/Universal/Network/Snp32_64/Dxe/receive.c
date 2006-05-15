@@ -88,11 +88,11 @@ Returns:
   // it is giving the address to the device and unmaps it before using the cpu
   // address!
   //
-  if (snp->IsOldUndi && ((UINT64) BufferPtr >= FOUR_GIGABYTES)) {
-    cpb->BufferAddr = (UINT64) snp->receive_buf;
+  if (snp->IsOldUndi && ((UINT64)(UINTN) BufferPtr >= FOUR_GIGABYTES)) {
+    cpb->BufferAddr = (UINT64)(UINTN) snp->receive_buf;
     cpb->BufferLen  = (UINT32) (snp->init_info.MediaHeaderLen + snp->init_info.FrameDataLen);
   } else {
-    cpb->BufferAddr = (UINT64) BufferPtr;
+    cpb->BufferAddr = (UINT64)(UINTN) BufferPtr;
     cpb->BufferLen  = (UINT32) *BuffSizePtr;
   }
 
@@ -102,10 +102,10 @@ Returns:
   snp->cdb.OpFlags    = PXE_OPFLAGS_NOT_USED;
 
   snp->cdb.CPBsize    = sizeof (PXE_CPB_RECEIVE);
-  snp->cdb.CPBaddr    = (UINT64) cpb;
+  snp->cdb.CPBaddr    = (UINT64)(UINTN) cpb;
 
   snp->cdb.DBsize     = sizeof (PXE_DB_RECEIVE);
-  snp->cdb.DBaddr     = (UINT64) db;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -117,7 +117,7 @@ Returns:
   //
   DEBUG ((EFI_D_INFO, "\nsnp->undi.receive ()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   switch (snp->cdb.StatCode) {
   case PXE_STATCODE_SUCCESS:
@@ -162,7 +162,7 @@ Returns:
     *ProtocolPtr = (UINT16) PXE_SWAP_UINT16 (db->Protocol); /*  we need to do the byte swapping */
   }
 
-  if (snp->IsOldUndi && ((UINT64) BufferPtr >= FOUR_GIGABYTES)) {
+  if (snp->IsOldUndi && ((UINT64)(UINTN) BufferPtr >= FOUR_GIGABYTES)) {
     EfiCopyMem (BufferPtr, snp->receive_buf, snp->init_info.MediaHeaderLen + snp->init_info.FrameDataLen);
   }
 

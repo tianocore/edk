@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,8 @@ Abstract:
 #define _TIANO_SPEC_DEVICE_PATH_H
 
 #pragma pack(1)
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
 //
 // EFI Specification extension on Media Device Path
 //
@@ -32,6 +34,29 @@ typedef struct {
   EFI_GUID                  NameGuid;
 } MEDIA_FW_VOL_FILEPATH_DEVICE_PATH;
 
-#pragma pack()
+#else
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  EFI_GUID                  PiwgSpecificDevicePath;
+  UINT32                    Type;
+} PIWG_DEVICE_PATH;
 
+#define PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE         0x01
+typedef struct {
+  PIWG_DEVICE_PATH      Piwg;
+  EFI_GUID              NameGuid;
+} MEDIA_FW_VOL_FILEPATH_DEVICE_PATH;
+
+//
+// Place holder for a future extension
+//
+#define PIWG_MEDIAFW_VOL_DEVICE_PATH_TYPE                   0x02
+typedef struct {
+  PIWG_DEVICE_PATH      Piwg;
+  EFI_GUID              VolumeGuid;
+} MEDIA_FW_VOL_DEVICE_PATH;
+
+#endif
+
+#pragma pack()
 #endif

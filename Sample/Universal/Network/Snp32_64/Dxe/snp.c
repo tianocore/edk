@@ -845,7 +845,7 @@ Arguments:
   snp->cdb.CPBaddr    = PXE_DBADDR_NOT_USED;
 
   snp->cdb.DBsize     = sizeof snp->init_info;
-  snp->cdb.DBaddr     = (UINT64) &snp->init_info;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) &snp->init_info;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -855,7 +855,7 @@ Arguments:
 
   DEBUG ((EFI_D_NET, "\nsnp->undi.get_init_info()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   //
   // Save the INIT Stat Code...
@@ -875,7 +875,7 @@ Arguments:
   snp->cdb.CPBaddr    = PXE_DBADDR_NOT_USED;
 
   snp->cdb.DBsize     = sizeof ConfigInfo;
-  snp->cdb.DBaddr     = (UINT64) &ConfigInfo;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) &ConfigInfo;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -885,7 +885,7 @@ Arguments:
 
   DEBUG ((EFI_D_NET, "\nsnp->undi.get_config_info()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != PXE_STATCODE_SUCCESS) {
     DEBUG ((EFI_D_NET, "\nsnp->undi.config_info()  %xh:%xh\n", snp->cdb.StatFlags, snp->cdb.StatCode));

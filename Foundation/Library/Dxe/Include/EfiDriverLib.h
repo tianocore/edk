@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,6 +27,9 @@ Abstract:
 #include "EfiPerf.h"
 #include "LinkedList.h"
 #include EFI_GUID_DEFINITION (DxeServices)
+#include EFI_GUID_DEFINITION (EventGroup)
+#include EFI_GUID_DEFINITION (EventLegacyBios)
+#include EFI_GUID_DEFINITION (FrameworkDevicePath)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
@@ -933,6 +936,37 @@ Returns:
 ;
 
 EFI_STATUS
+EfiLibReportStatusCode (
+  IN EFI_STATUS_CODE_TYPE     Type,
+  IN EFI_STATUS_CODE_VALUE    Value,
+  IN UINT32                   Instance,
+  IN EFI_GUID                 *CallerId OPTIONAL,
+  IN EFI_STATUS_CODE_DATA     *Data     OPTIONAL  
+  )
+/*++
+
+Routine Description:
+
+  Report status code.
+
+Arguments:
+
+  Type        - Code type
+  Value       - Code value
+  Instance    - Instance number
+  CallerId    - Caller name
+  DevicePath  - Device path that to be reported
+
+Returns:
+
+  Status code.
+
+  EFI_OUT_OF_RESOURCES - No enough buffer could be allocated
+
+--*/
+;
+
+EFI_STATUS
 ReportStatusCodeWithDevicePath (
   IN EFI_STATUS_CODE_TYPE     Type,
   IN EFI_STATUS_CODE_VALUE    Value,
@@ -959,6 +993,117 @@ Returns:
   Status code.
 
   EFI_OUT_OF_RESOURCES - No enough buffer could be allocated
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+EfiCreateEventLegacyBoot (
+  IN EFI_TPL                      NotifyTpl,
+  IN EFI_EVENT_NOTIFY             NotifyFunction,
+  IN VOID                         *NotifyContext,
+  OUT EFI_EVENT                   *LegacyBootEvent
+  )
+/*++
+
+Routine Description:
+  Create a Legacy Boot Event.  
+  Tiano extended the CreateEvent Type enum to add a legacy boot event type. 
+  This was bad as Tiano did not own the enum. In UEFI 2.0 CreateEventEx was
+  added and now it's possible to not voilate the UEFI specification by 
+  declaring a GUID for the legacy boot event class. This library supports
+  the R8.5/EFI 1.10 form and R8.6/UEFI 2.0 form and allows common code to 
+  work both ways.
+
+Arguments:
+  LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+
+Returns:
+  EFI_SUCCESS   Event was created.
+  Other         Event was not created.
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+EfiCreateEventReadyToBoot (
+  IN EFI_TPL                      NotifyTpl,
+  IN EFI_EVENT_NOTIFY             NotifyFunction,
+  IN VOID                         *NotifyContext,
+  OUT EFI_EVENT                   *ReadyToBootEvent
+  )
+/*++
+
+Routine Description:
+  Create a Read to Boot Event.  
+  
+  Tiano extended the CreateEvent Type enum to add a ready to boot event type. 
+  This was bad as Tiano did not own the enum. In UEFI 2.0 CreateEventEx was
+  added and now it's possible to not voilate the UEFI specification and use 
+  the ready to boot event class defined in UEFI 2.0. This library supports
+  the R8.5/EFI 1.10 form and R8.6/UEFI 2.0 form and allows common code to 
+  work both ways.
+
+Arguments:
+  @param LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+
+Return:
+  EFI_SUCCESS   - Event was created.
+  Other         - Event was not created.
+
+--*/
+;
+
+VOID
+EFIAPI
+EfiInitializeFwVolDevicepathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH     *FvDevicePathNode,
+  IN EFI_GUID                               *NameGuid
+  )
+/*++
+Routine Description:
+  Initialize a Firmware Volume (FV) Media Device Path node.
+  
+  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
+  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
+  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
+  device path is defined for PIWG extensions of device path. If the code 
+  is compiled to conform with the UEFI 2.0 specification use the new device path
+  else use the old form for backwards compatability.
+
+Arguments:
+  FvDevicePathNode   - Pointer to a FV device path node to initialize
+  NameGuid           - FV file name to use in FvDevicePathNode
+
+--*/
+;
+
+EFI_GUID *
+EFIAPI
+EfiGetNameGuidFromFwVolDevicePathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
+  )
+/*++
+Routine Description:
+  Check to see if the Firmware Volume (FV) Media Device Path is valid.
+  
+  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
+  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
+  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
+  device path is defined for PIWG extensions of device path. If the code 
+  is compiled to conform with the UEFI 2.0 specification use the new device path
+  else use the old form for backwards compatability. The return value to this
+  function points to a location in FvDevicePathNode and it does not allocate
+  new memory for the GUID pointer that is returned.
+
+Arguments:
+  FvDevicePathNode   - Pointer to FV device path to check
+
+Return:
+  NULL    - FvDevicePathNode is not valid.
+  Other   - FvDevicePathNode is valid and pointer to NameGuid was returned.
 
 --*/
 ;

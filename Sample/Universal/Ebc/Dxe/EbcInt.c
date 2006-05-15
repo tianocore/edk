@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -620,7 +620,7 @@ Returns:
   // If we determined that we should report the condition, then do so now.
   //
   if (Report) {
-    gRT->ReportStatusCode (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED, StatusCodeValue, 0, &gEfiEbcProtocolGuid, NULL);
+    EfiLibReportStatusCode (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED, StatusCodeValue, 0, &gEfiEbcProtocolGuid, NULL);
   }
 
   switch (ExceptionType) {

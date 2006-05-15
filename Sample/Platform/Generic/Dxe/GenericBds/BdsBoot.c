@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -158,13 +158,13 @@ Returns:
   //
   // Signal the EFI_EVENT_SIGNAL_READY_TO_BOOT event
   //
-  Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_READY_TO_BOOT | EFI_EVENT_NOTIFY_SIGNAL_ALL,
-                  EFI_TPL_CALLBACK,
-                  NULL,
-                  NULL,
-                  &ReadyToBootEvent
-                  );
+  Status = EfiCreateEventReadyToBoot (
+             EFI_TPL_CALLBACK,
+             NULL,
+             NULL,
+             &ReadyToBootEvent
+             );
+  
   if (!EFI_ERROR (Status)) {
     gBS->SignalEvent (ReadyToBootEvent);
     gBS->CloseEvent (ReadyToBootEvent);
@@ -740,10 +740,11 @@ Returns:
   //
   // Build the shell device path
   //
-  ShellNode.Header.Type     = MEDIA_DEVICE_PATH;
-  ShellNode.Header.SubType  = MEDIA_FV_FILEPATH_DP;
-  SetDevicePathNodeLength (&ShellNode.Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
-  EfiCopyMem (&ShellNode.NameGuid, &gEfiShellFileGuid, sizeof (EFI_GUID));
+  EfiInitializeFwVolDevicepathNode (&ShellNode, &gEfiShellFileGuid);
+  //ShellNode.Header.Type     = MEDIA_DEVICE_PATH;
+  //ShellNode.Header.SubType  = MEDIA_FV_FILEPATH_DP;
+  //SetDevicePathNodeLength (&ShellNode.Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
+  //EfiCopyMem (&ShellNode.NameGuid, &gEfiShellFileGuid, sizeof (EFI_GUID));
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *) &ShellNode);
 
   //

@@ -1,0 +1,65 @@
+#/*++
+#
+# Copyright (c)  1999 - 2006 Intel Corporation. All rights reserved
+# This software and associated documentation (if any) is furnished
+# under a license and may only be used or copied in accordance
+# with the terms of the license. Except as permitted by such
+# license, no part of this software or documentation may be
+# reproduced, stored in a retrieval system, or transmitted in any
+# form or by any means without the express written consent of
+# Intel Corporation.
+
+#
+#  Module Name:
+#
+#    Capsule.inf
+#
+#  Abstract:
+#
+#    Component description file for CapsuleRuntime module
+#--*/
+
+
+[defines]
+BASE_NAME            = CapsuleRuntime
+FILE_GUID            = 9EA5DF0F-A35C-48C1-BAC9-F63452B47C3E
+
+[defines.ia32, defines.x64]
+COMPONENT_TYPE       = RT_DRIVER
+
+[defines.ipf]
+COMPONENT_TYPE       = SAL_RT_DRIVER
+
+[sources.common]
+  CapsuleService.c
+  CapsuleService.h
+  Capsule.c
+  
+
+[includes.common]
+  $(EDK_SOURCE)\Sample\Platform\Generic\Pei\Capsule
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EFI_SOURCE)
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[libraries.common]
+  EdkProtocolLib
+  EfiRuntimeLib
+  ArchProtocolLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=CapsuleServiceInitialize
+
+[nmake.ia32,nmake.x64,nmake.ipf]
+  DPX_SOURCE=Capsule.dxs
+
+
+

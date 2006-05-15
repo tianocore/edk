@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,6 @@ Abstract:
 #include "Tiano.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
-EFI_GUID  gEfiStatusCodeArchProtocolGuid = EFI_STATUS_CODE_ARCH_PROTOCOL_GUID;
+EFI_GUID  gEfiStatusCodeRuntimeProtocolGuid = EFI_STATUS_CODE_RUNTIME_PROTOCOL_GUID;
 
-EFI_GUID_STRING(&gEfiStatusCodeArchProtocolGuid, "Status Code", "Status Code Arch Protocol");
+EFI_GUID_STRING(&gEfiStatusCodeRuntimeProtocolGuid, "Status Code", "Status Code Arch Protocol");

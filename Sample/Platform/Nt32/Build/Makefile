@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -85,7 +85,7 @@ tempstamp_file:
 # Make all the EFI build tools by calling the makefile
 #
 build_tools :
-  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR)
+  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) EFI_SPECIFICATION_VERSION=$(EFI_SPECIFICATION_VERSION) TIANO_RELEASE_VERSION=$(TIANO_RELEASE_VERSION)
 
 #
 # Build our executable file by linking the PEI object files
@@ -114,6 +114,8 @@ makefiles :
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
         -d SHELL_INF=$(SHELL_INF)           \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
+    -d CAPSULE_INF=$(CAPSULE_INF)           \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     $(PROJECT_NAME).dsc
     
@@ -133,6 +135,8 @@ fast_makefiles :
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -d SHELL_INF=$(SHELL_INF)               \
     -d SKIP_FV_NULL=1                       \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
+    -d CAPSULE_INF=$(CAPSULE_INF)           \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     $(PROJECT_NAME).dsc
 
@@ -148,6 +152,8 @@ xref :
     -d PROJECT_NAME=$(PROJECT_NAME) \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT) \
     -d SHELL_INF=$(SHELL_INF)               \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
+    -d CAPSULE_INF=$(CAPSULE_INF)           \
     -xref FV\Guid.xref \
     $(PROJECT_NAME).dsc
 

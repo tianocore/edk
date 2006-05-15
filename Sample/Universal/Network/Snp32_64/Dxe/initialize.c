@@ -75,7 +75,7 @@ Returns:
     snp->tx_rx_buffer = addr;
   }
 
-  cpb->MemoryAddr   = (UINT64) snp->tx_rx_buffer;
+  cpb->MemoryAddr   = (UINT64)(UINTN) snp->tx_rx_buffer;
 
   cpb->MemoryLength = snp->tx_rx_bufsize;
 
@@ -98,8 +98,8 @@ Returns:
   snp->cdb.CPBsize    = sizeof (PXE_CPB_INITIALIZE);
   snp->cdb.DBsize     = sizeof (PXE_DB_INITIALIZE);
 
-  snp->cdb.CPBaddr    = (UINT64) snp->cpb;
-  snp->cdb.DBaddr     = (UINT64) snp->db;
+  snp->cdb.CPBaddr    = (UINT64)(UINTN) snp->cpb;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) snp->db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -108,7 +108,7 @@ Returns:
 
   DEBUG ((EFI_D_NET, "\nsnp->undi.initialize()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode == PXE_STATCODE_SUCCESS) {
     snp->mode.State = EfiSimpleNetworkInitialized;

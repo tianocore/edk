@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -470,4 +470,62 @@ Returns:
 --*/
 ;
 
+VOID
+EFIAPI
+CoreInitializeFwVolDevicepathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH     *FvDevicePathNode,
+  IN EFI_GUID                               *NameGuid
+  )
+/*++
+
+Routine Description:
+
+  Initialize a Firmware Volume (FV) Media Device Path node.
+  
+  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
+  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
+  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
+  device path is defined for PIWG extensions of device path. If the code 
+  is compiled to conform with the UEFI 2.0 specification use the new device path
+  else use the old form for backwards compatability.
+
+Arguments:
+
+  FvDevicePathNode   - Pointer to a FV device path node to initialize
+  NameGuid           - FV file name to use in FvDevicePathNode
+
+--*/
+;
+
+EFI_GUID *
+EFIAPI
+CoreGetNameGuidFromFwVolDevicePathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
+  )
+/*++
+
+Routine Description:
+
+  Check to see if the Firmware Volume (FV) Media Device Path is valid.
+  
+  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
+  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
+  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
+  device path is defined for PIWG extensions of device path. If the code 
+  is compiled to conform with the UEFI 2.0 specification use the new device path
+  else use the old form for backwards compatability. The return value to this
+  function points to a location in FvDevicePathNode and it does not allocate
+  new memory for the GUID pointer that is returned.
+
+Arguments:
+
+  FvDevicePathNode   Pointer to FV device path to check
+
+Returns:
+
+  NULL    - FvDevicePathNode is not valid.
+  Other   - FvDevicePathNode is valid and pointer to NameGuid was returned.
+
+--*/
+;
 #endif

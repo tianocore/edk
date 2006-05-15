@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -118,7 +118,14 @@ EFI_RUNTIME_ARCH_PROTOCOL         *gRuntime       = NULL;
 EFI_GUID                           *gDxeCoreFileName;
 EFI_LOADED_IMAGE_PROTOCOL          *gDxeCoreLoadedImage;
 
+//
+// BugBug: I'n not runtime, but is the PPI?
+//
+EFI_STATUS_CODE_PROTOCOL     gStatusCodeInstance = {
+  NULL
+};
 
+EFI_STATUS_CODE_PROTOCOL     *gStatusCode    = &gStatusCodeInstance;
 
 //
 // DXE Core Module Variables
@@ -175,6 +182,13 @@ EFI_BOOT_SERVICES mBootServices = {
   (EFI_CALCULATE_CRC32)                         CoreEfiNotAvailableYetArg3,               // CalculateCrc32
   (EFI_COPY_MEM)                                EfiCommonLibCopyMem,                      // CopyMem
   (EFI_SET_MEM)                                 EfiCommonLibSetMem                        // SetMem
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  ,
+  //
+  // UEFI 2.0 Extension to the table
+  //
+  (EFI_CREATE_EVENT_EX)                         CoreCreateEventEx
+#endif
 };
 
 EFI_DXE_SERVICES mDxeServices = {
@@ -234,18 +248,24 @@ EFI_RUNTIME_SERVICES mEfiRuntimeServicesTableTemplate = {
     0,                                                                    // CRC32
     0                                                                     // Reserved
   },
-  (EFI_GET_TIME)                 CoreEfiNotAvailableYetArg2,                  // GetTime
-  (EFI_SET_TIME)                 CoreEfiNotAvailableYetArg1,                  // SetTime
-  (EFI_GET_WAKEUP_TIME)          CoreEfiNotAvailableYetArg3,                  // GetWakeupTime
-  (EFI_SET_WAKEUP_TIME)          CoreEfiNotAvailableYetArg2,                  // SetWakeupTime
-  (EFI_SET_VIRTUAL_ADDRESS_MAP)  CoreEfiNotAvailableYetArg4,                  // SetVirtualAddressMap
-  (EFI_CONVERT_POINTER)          CoreEfiNotAvailableYetArg2,                  // ConvertPointer
-  (EFI_GET_VARIABLE)             CoreEfiNotAvailableYetArg5,                  // GetVariable
-  (EFI_GET_NEXT_VARIABLE_NAME)   CoreEfiNotAvailableYetArg3,                  // GetNextVariableName
-  (EFI_SET_VARIABLE)             CoreEfiNotAvailableYetArg5,                  // SetVariable
-  (EFI_GET_NEXT_HIGH_MONO_COUNT) CoreEfiNotAvailableYetArg1,                  // GetNextHighMonotonicCount
-  (EFI_RESET_SYSTEM)             CoreEfiNotAvailableYetArg4,                  // ResetSystem
-  (EFI_REPORT_STATUS_CODE)       CoreEfiNotAvailableYetArg5                   // ReportStatusCode
+  (EFI_GET_TIME)                   CoreEfiNotAvailableYetArg2,                  // GetTime
+  (EFI_SET_TIME)                   CoreEfiNotAvailableYetArg1,                  // SetTime
+  (EFI_GET_WAKEUP_TIME)            CoreEfiNotAvailableYetArg3,                  // GetWakeupTime
+  (EFI_SET_WAKEUP_TIME)            CoreEfiNotAvailableYetArg2,                  // SetWakeupTime
+  (EFI_SET_VIRTUAL_ADDRESS_MAP)    CoreEfiNotAvailableYetArg4,                  // SetVirtualAddressMap
+  (EFI_CONVERT_POINTER)            CoreEfiNotAvailableYetArg2,                  // ConvertPointer
+  (EFI_GET_VARIABLE)               CoreEfiNotAvailableYetArg5,                  // GetVariable
+  (EFI_GET_NEXT_VARIABLE_NAME)     CoreEfiNotAvailableYetArg3,                  // GetNextVariableName
+  (EFI_SET_VARIABLE)               CoreEfiNotAvailableYetArg5,                  // SetVariable
+  (EFI_GET_NEXT_HIGH_MONO_COUNT)   CoreEfiNotAvailableYetArg1,                  // GetNextHighMonotonicCount
+  (EFI_RESET_SYSTEM)               CoreEfiNotAvailableYetArg4,                  // ResetSystem
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  (EFI_UPDATE_CAPSULE)             CoreEfiNotAvailableYetArg3,                  // UpdateCapsule
+  (EFI_QUERY_CAPSULE_CAPABILITIES) CoreEfiNotAvailableYetArg4,                  // QueryCapsuleCapabilities  
+  (EFI_QUERY_VARIABLE_INFO)        CoreEfiNotAvailableYetArg4                   // QueryVariableInfo
+#elif (TIANO_RELEASE_VERSION != 0)
+  (EFI_REPORT_STATUS_CODE)         CoreEfiNotAvailableYetArg5                   // ReportStatusCode
+#endif
 };
 
 //
@@ -356,18 +376,15 @@ Returns:
   //
   // Initialize the ReportStatusCode with PEI version, if availible
   //
-  CoreGetPeiProtocol (&gEfiStatusCodeArchProtocolGuid, (VOID **)&gRT->ReportStatusCode);
+  CoreGetPeiProtocol (&gEfiStatusCodeRuntimeProtocolGuid, (VOID **)&gStatusCode->ReportStatusCode);
+#if ((TIANO_RELEASE_VERSION != 0) && (EFI_SPECIFICATION_VERSION < 0x00020000))
+  gRT->ReportStatusCode = gStatusCode->ReportStatusCode;
+#endif
 
   //
   // Report Status Code here for DXE_ENTRY_POINT once it is available
   //
-  gRT->ReportStatusCode (
-        EFI_PROGRESS_CODE,
-        (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_ENTRY_POINT),
-        0,
-        &gEfiCallerIdGuid,
-        NULL
-        );
+  CoreReportProgressCode ((EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_ENTRY_POINT));
 
   //
   // Create the aligned system table pointer structure that is used by external
@@ -518,13 +535,8 @@ Returns:
   //
   // Report Status code before transfer control to BDS
   //
-  gRT->ReportStatusCode (
-        EFI_PROGRESS_CODE,
-        (EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_HANDOFF_TO_NEXT),
-        0,
-        &gEfiCallerIdGuid,
-        NULL
-        );
+  CoreReportProgressCode ((EFI_SOFTWARE_DXE_CORE | EFI_SW_DXE_CORE_PC_HANDOFF_TO_NEXT));
+
   //
   // Display any drivers that were not dispatched because dependency expression
   // evaluated to false if this is a debug build
@@ -874,7 +886,7 @@ Returns:
   //
   // Notify other drivers that we are exiting boot services.
   //
-  CoreNotifySignalList (EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES);
+  CoreNotifySignalList (&gEfiEventExitBootServicesGuid);
 
   //
   // Disable Timer
@@ -901,13 +913,7 @@ Returns:
   //
   // We are using gEfiDxeServicesTableGuid as the caller ID for Dxe Core
   //
-  gRT->ReportStatusCode (
-        EFI_PROGRESS_CODE,
-        (EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_BS_PC_EXIT_BOOT_SERVICES),
-        0,
-        &gEfiDxeServicesTableGuid,
-        NULL
-        );
+  CoreReportProgressCode ((EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_BS_PC_EXIT_BOOT_SERVICES));
 
   //
   // Clear the non-runtime values of the EFI System Table

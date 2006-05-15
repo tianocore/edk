@@ -62,7 +62,7 @@ Returns:
   ((SNP_DRIVER *) SnpPtr)->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
   ((SNP_DRIVER *) SnpPtr)->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
   ((SNP_DRIVER *) SnpPtr)->cdb.DBsize     = sizeof (UINT32) * 2;
-  ((SNP_DRIVER *) SnpPtr)->cdb.DBaddr     = (UINT64) (((SNP_DRIVER *) SnpPtr)->db);
+  ((SNP_DRIVER *) SnpPtr)->cdb.DBaddr     = (UINT64)(UINTN) (((SNP_DRIVER *) SnpPtr)->db);
   ((SNP_DRIVER *) SnpPtr)->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   ((SNP_DRIVER *) SnpPtr)->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
   ((SNP_DRIVER *) SnpPtr)->cdb.IFnum      = ((SNP_DRIVER *) SnpPtr)->if_num;
@@ -76,7 +76,7 @@ Returns:
   //
   // Issue UNDI command and check result.
   //
-  (*((SNP_DRIVER *) SnpPtr)->issue_undi32_command) ((UINT64) &((SNP_DRIVER *) SnpPtr)->cdb);
+  (*((SNP_DRIVER *) SnpPtr)->issue_undi32_command) ((UINT64)(UINTN) &((SNP_DRIVER *) SnpPtr)->cdb);
 
   if (((SNP_DRIVER *) SnpPtr)->cdb.StatCode != EFI_SUCCESS) {
     return ;

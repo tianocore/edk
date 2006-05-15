@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -60,6 +60,31 @@ typedef struct {
   UINT32    OffsetToApplicableDevices;
 } EFI_CAPSULE_HEADER;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+#define CAPSULE_FLAGS_PERSIST_ACROSS_RESET    0x00010000
+#define CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE   0x00020000 
+typedef struct {
+  UINT64                   Length;                    
+  union { 
+    EFI_PHYSICAL_ADDRESS   DataBlock;                 
+    EFI_PHYSICAL_ADDRESS   ContinuationPionter;       
+  } Union;
+} UEFI_CAPSULE_BLOCK_DESCRIPTOR;
+
+typedef struct {
+  EFI_GUID  CapsuleGuid;
+  UINT32    HeaderSize;
+  UINT32    Flags;
+  UINT32    CapsuleImageSize;
+} UEFI_CAPSULE_HEADER;
+
+typedef struct {
+  UINT32   CapsuleArrayNumber;
+  VOID*    CapsulePtr[1];
+} EFI_CAPSULE_TABLE;
+
+#endif
 //
 // Bits in the flags field of the capsule header
 //

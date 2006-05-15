@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,6 +30,12 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+#include "EfiCapsule.h"
+#else
+#include "EfiStatusCode.h"
+#endif
 
 //
 // Declare forward referenced data structures
@@ -161,6 +167,18 @@ EFI_STATUS
   IN EFI_EVENT_NOTIFY             NotifyFunction,
   IN VOID                         *NotifyContext,
   OUT EFI_EVENT                   * Event
+  );
+
+typedef
+EFI_BOOTSERVICE
+EFI_STATUS
+(EFIAPI *EFI_CREATE_EVENT_EX) (
+  IN UINT32                 Type,
+  IN EFI_TPL                NotifyTpl      OPTIONAL,
+  IN EFI_EVENT_NOTIFY       NotifyFunction OPTIONAL,
+  IN CONST VOID             *NotifyContext OPTIONAL,
+  IN CONST EFI_GUID         *EventGroup    OPTIONAL,
+  OUT EFI_EVENT             *Event
   );
 
 typedef enum {
@@ -394,7 +412,7 @@ typedef enum {
   EfiResetWarm,
   EfiResetShutdown,
 
-#ifdef TIANO_EXTENSION_FLAG
+#if ((TIANO_RELEASE_VERSION != 0) && (EFI_SPECIFICATION_VERSION < 0x00020000))
   EfiResetUpdate
 #endif
 
@@ -836,7 +854,7 @@ EFI_STATUS
 //  Type          A GUID defining the type of the data
 //
 //
-#ifdef TIANO_EXTENSION_FLAG
+#if ((TIANO_RELEASE_VERSION != 0) && (EFI_SPECIFICATION_VERSION < 0x00020000))
 
 typedef
 EFI_RUNTIMESERVICE
@@ -850,11 +868,46 @@ EFI_STATUS
   );
 
 #endif
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+typedef
+EFI_RUNTIMESERVICE
+EFI_STATUS
+(EFIAPI *EFI_UPDATE_CAPSULE) (
+  IN UEFI_CAPSULE_HEADER    **CapsuleHeaderArray,
+  IN UINTN                  CapsuleCount,
+  IN EFI_PHYSICAL_ADDRESS   ScatterGatherList OPTIONAL
+ );
+
+
+typedef
+EFI_RUNTIMESERVICE
+EFI_STATUS
+(EFIAPI *EFI_QUERY_CAPSULE_CAPABILITIES) (
+  IN  UEFI_CAPSULE_HEADER  **CapsuleHeaderArray,
+  IN  UINTN                CapsuleCount,
+  OUT UINT64               *MaxiumCapsuleSize,
+  OUT EFI_RESET_TYPE       *ResetType
+);
+
+typedef
+EFI_RUNTIMESERVICE
+EFI_STATUS
+(EFIAPI *EFI_QUERY_VARIABLE_INFO) (
+  IN UINT32           Attributes,
+  OUT UINT64          *MaximumVariableStorageSize,
+  OUT UINT64          *RemainingVariableStorageSize,
+  OUT UINT64          *MaximumVariableSize
+  );
+
+#endif
+
 //
 // EFI Runtime Services Table
 //
 #define EFI_RUNTIME_SERVICES_SIGNATURE  0x56524553544e5552
-#define EFI_RUNTIME_SERVICES_REVISION   ((EFI_SPECIFICATION_MAJOR_REVISION << 16) | (EFI_SPECIFICATION_MINOR_REVISION))
+#define EFI_RUNTIME_SERVICES_REVISION   EFI_SPECIFICATION_VERSION
 
 typedef struct {
   EFI_TABLE_HEADER              Hdr;
@@ -886,13 +939,20 @@ typedef struct {
   EFI_GET_NEXT_HIGH_MONO_COUNT  GetNextHighMonotonicCount;
   EFI_RESET_SYSTEM              ResetSystem;
 
-#ifdef TIANO_EXTENSION_FLAG
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   //
-  // ////////////////////////////////////////////////////
-  // Extended EFI Services
-    //////////////////////////////////////////////////////
+  // New Boot Service added by UEFI 2.0
   //
-  EFI_REPORT_STATUS_CODE  ReportStatusCode;
+  EFI_UPDATE_CAPSULE             UpdateCapsule;
+  EFI_QUERY_CAPSULE_CAPABILITIES QueryCapsuleCapabilities;
+  EFI_QUERY_VARIABLE_INFO        QueryVariableInfo;
+#elif (TIANO_RELEASE_VERSION != 0)
+  //
+  // Tiano extension to EFI 1.10 runtime table
+  // It was moved to a protocol to not conflict with UEFI 2.0
+  // If Tiano is disabled, this item is not enabled for EFI1.10
+  //
+  EFI_REPORT_STATUS_CODE        ReportStatusCode;
 #endif
 
 } EFI_RUNTIME_SERVICES;
@@ -901,7 +961,7 @@ typedef struct {
 // EFI Boot Services Table
 //
 #define EFI_BOOT_SERVICES_SIGNATURE 0x56524553544f4f42
-#define EFI_BOOT_SERVICES_REVISION  ((EFI_SPECIFICATION_MAJOR_REVISION << 16) | (EFI_SPECIFICATION_MINOR_REVISION))
+#define EFI_BOOT_SERVICES_REVISION  EFI_SPECIFICATION_VERSION
 
 typedef struct {
   EFI_TABLE_HEADER                            Hdr;
@@ -997,6 +1057,12 @@ typedef struct {
   //
   EFI_COPY_MEM                                CopyMem;
   EFI_SET_MEM                                 SetMem;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  //
+  // UEFI 2.0 Extension to the table
+  //
+  EFI_CREATE_EVENT_EX                         CreateEventEx;
+#endif
 
 } EFI_BOOT_SERVICES;
 
@@ -1012,7 +1078,7 @@ typedef struct {
 // EFI System Table
 //
 #define EFI_SYSTEM_TABLE_SIGNATURE      0x5453595320494249
-#define EFI_SYSTEM_TABLE_REVISION       ((EFI_SPECIFICATION_MAJOR_REVISION << 16) | (EFI_SPECIFICATION_MINOR_REVISION))
+#define EFI_SYSTEM_TABLE_REVISION       EFI_SPECIFICATION_VERSION
 #define EFI_1_02_SYSTEM_TABLE_REVISION  ((1 << 16) | 02)
 #define EFI_1_10_SYSTEM_TABLE_REVISION  ((1 << 16) | 10)
 

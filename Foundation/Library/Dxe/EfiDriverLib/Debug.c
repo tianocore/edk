@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -66,13 +66,13 @@ Returns:
 
   EfiDebugAssertWorker (FileName, LineNumber, Description, sizeof (Buffer), Buffer);
 
-  gRT->ReportStatusCode (
-        (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED),
-        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_ILLEGAL_SOFTWARE_STATE),
-        0,
-        &gEfiCallerIdGuid,
-        (EFI_STATUS_CODE_DATA *) Buffer
-        );
+  EfiLibReportStatusCode (
+    (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED),
+    (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_ILLEGAL_SOFTWARE_STATE),
+    0,
+    &gEfiCallerIdGuid,
+    (EFI_STATUS_CODE_DATA *) Buffer
+    );
 
   //
   // Put break point in module that contained the error.
@@ -127,14 +127,13 @@ Returns:
   EfiDebugVPrintWorker (ErrorLevel, Format, Marker, sizeof (Buffer), Buffer);
 
   ASSERT (NULL != gRT);
-  ASSERT (NULL != gRT->ReportStatusCode);
-  gRT->ReportStatusCode (
-        EFI_DEBUG_CODE,
-        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_DC_UNSPECIFIED),
-        0,
-        &gEfiCallerIdGuid,
-        (EFI_STATUS_CODE_DATA *) Buffer
-        );
+  EfiLibReportStatusCode (
+    EFI_DEBUG_CODE,
+    (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_DC_UNSPECIFIED),
+    0,
+    &gEfiCallerIdGuid,
+    (EFI_STATUS_CODE_DATA *) Buffer
+    );
 
   return ;
 }

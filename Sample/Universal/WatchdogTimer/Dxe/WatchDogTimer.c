@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -87,13 +87,13 @@ WatchdogTimerDriverExpires (
   //
   // Report error code before exiting
   //
-  gRT->ReportStatusCode (
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_CU_HP_EC_TIMER_EXPIRED),
-        0,
-        &gEfiCallerIdGuid,
-        NULL
-        );
+  EfiLibReportStatusCode (
+    EFI_ERROR_CODE | EFI_ERROR_MINOR,
+    (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_CU_HP_EC_TIMER_EXPIRED),
+    0,
+    &gEfiCallerIdGuid,
+    NULL
+    );
 
   //
   // If a notification function has been registered, then call it
@@ -279,13 +279,13 @@ Returns:
   //
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 
-  gRT->ReportStatusCode (
-        EFI_PROGRESS_CODE,
-        (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_BEGIN),
-        0,
-        &gEfiCallerIdGuid,
-        NULL
-        );
+  EfiLibReportStatusCode (
+    EFI_PROGRESS_CODE,
+    (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_BEGIN),
+    0,
+    &gEfiCallerIdGuid,
+    NULL
+    );
   //
   // Make sure the Watchdog Timer Architectural Protocol is not already installed in the system
   //
@@ -314,13 +314,13 @@ Returns:
                   );
   ASSERT_EFI_ERROR (Status);
 
-  gRT->ReportStatusCode (
-        EFI_PROGRESS_CODE,
-        (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_END),
-        0,
-        &gEfiCallerIdGuid,
-        NULL
-        );
+  EfiLibReportStatusCode (
+    EFI_PROGRESS_CODE,
+    (EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_SW_PC_INIT_END),
+    0,
+    &gEfiCallerIdGuid,
+    NULL
+    );
 
   return Status;
 }

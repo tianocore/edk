@@ -370,6 +370,9 @@ Returns:
 #define SCRIPT_MEM_WRITE(TableName, Width, Address, Count, Buffer) \
           BootScriptSaveMemWrite(TableName, Width, Address, Count, Buffer)
 
+#define SCRIPT_MEM_WRITE_THIS(TableName, Width, Address, Count) \
+          BootScriptSaveMemWrite(TableName, Width, Address, Count, (VOID*)(UINTN)Address)
+
 #define SCRIPT_MEM_READ_WRITE(TableName, Width, Address, Data, DataMask) \
           BootScriptSaveMemReadWrite(TableName, Width, Address, Data, DataMask)
 
@@ -396,6 +399,8 @@ Returns:
 #define SCRIPT_IO_READ_WRITE(TableName, Width, Address, Data, DataMask) 
           
 #define SCRIPT_MEM_WRITE(TableName, Width, Address, Count, Buffer) 
+
+#define SCRIPT_MEM_WRITE_THIS(TableName, Width, Address, Count)
 
 #define SCRIPT_MEM_READ_WRITE(TableName, Width, Address, Data, DataMask) 
 

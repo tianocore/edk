@@ -51,7 +51,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.stop()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != PXE_STATCODE_SUCCESS) {
     DEBUG (

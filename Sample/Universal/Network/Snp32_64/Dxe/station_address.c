@@ -46,7 +46,7 @@ Returns:
   snp->cdb.CPBsize    = PXE_CPBSIZE_NOT_USED;
 
   snp->cdb.DBsize     = sizeof (PXE_DB_STATION_ADDRESS);
-  snp->cdb.DBaddr     = (UINT64) db;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -58,7 +58,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.station_addr()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != PXE_STATCODE_SUCCESS) {
     DEBUG (
@@ -134,11 +134,11 @@ Returns:
     EfiCopyMem (&cpb->StationAddr, NewMacAddr, snp->mode.HwAddressSize);
 
     snp->cdb.CPBsize  = sizeof (PXE_CPB_STATION_ADDRESS);
-    snp->cdb.CPBaddr  = (UINT64) cpb;
+    snp->cdb.CPBaddr  = (UINT64)(UINTN) cpb;
   }
 
   snp->cdb.DBsize     = sizeof (PXE_DB_STATION_ADDRESS);
-  snp->cdb.DBaddr     = (UINT64) db;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -150,7 +150,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.station_addr()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != PXE_STATCODE_SUCCESS) {
     DEBUG (

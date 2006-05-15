@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -90,6 +90,19 @@ Returns:
                         );
     return ReturnVal;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  case EsalQueryVariableInfo:
+    ReturnVal.Status = QueryVariableInfo (
+                        (UINT32) Arg2,
+                        (UINT64 *) Arg3,
+                        (UINT64 *) Arg4,
+                        (UINT64 *) Arg5,
+                        &Global->VariableBase[VirtualMode],
+                        Global->FvbInstance
+                        );
+    return ReturnVal;
+#endif
+
   default:
     ReturnVal.Status = EFI_SAL_INVALID_ARGUMENT;
     return ReturnVal;
@@ -161,6 +174,10 @@ Returns:
     EsalGetNextVariableName,
     EsalVariableCommonEntry,
     EsalSetVariable,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    EsalVariableCommonEntry,
+    EsalQueryVariableInfo,
+#endif
     NULL
     );
 

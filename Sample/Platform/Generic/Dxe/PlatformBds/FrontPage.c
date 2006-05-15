@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -421,13 +421,13 @@ Returns:
   //
   // Begin waiting for USER INPUT
   //
-  gRT->ReportStatusCode (
-        EFI_PROGRESS_CODE,
-        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_INPUT_WAIT),
-        0,
-        &gEfiBdsArchProtocolGuid,
-        NULL
-        );
+  EfiLibReportStatusCode (
+    EFI_PROGRESS_CODE,
+    (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_INPUT_WAIT),
+    0,
+    &gEfiBdsArchProtocolGuid,
+    NULL
+    );
 
   //
   // Drop the TPL level from EFI_TPL_DRIVER to EFI_TPL_APPLICATION
@@ -832,13 +832,13 @@ Returns:
     // 5 = boot maintainenance manager
     //
     if ((gCallbackKey > 0x0001) && (gCallbackKey <= 0x0005)) {
-      gRT->ReportStatusCode (
-            EFI_PROGRESS_CODE,
-            (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_USER_SETUP),
-            0,
-            &gEfiBdsArchProtocolGuid,
-            NULL
-            );
+      EfiLibReportStatusCode (
+        EFI_PROGRESS_CODE,
+        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_PC_USER_SETUP),
+        0,
+        &gEfiBdsArchProtocolGuid,
+        NULL
+        );
     }
     //
     // Based on the key that was set, we can determine what to do

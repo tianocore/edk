@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -140,5 +140,19 @@ SetVariable (
   IN UINT32                  Instance
   )
 ;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_STATUS
+EFIAPI
+QueryVariableInfo (
+  IN  UINT32                 Attributes,
+  OUT UINT64                 *MaximumVariableStorageSize,
+  OUT UINT64                 *RemainingVariableStorageSize,
+  OUT UINT64                 *MaximumVariableSize,
+  IN  VARIABLE_GLOBAL        *Global,
+  IN  UINT32                 Instance
+  )
+;
+#endif
 
 #endif

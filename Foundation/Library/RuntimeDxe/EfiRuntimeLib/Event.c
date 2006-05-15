@@ -1,13 +1,13 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2004 - 2006, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
@@ -48,9 +48,9 @@ Arguments:
 
   Registration    - Registration key returned from RegisterProtocolNotify().
 
-Returns: 
+Returns:
 
-  The EFI_EVENT that has been registered to be signaled when a ProtocolGuid 
+  The EFI_EVENT that has been registered to be signaled when a ProtocolGuid
   is added to the system.
 
 --*/
@@ -97,7 +97,7 @@ EfiLibGetSystemConfigurationTable (
 /*++
 
 Routine Description:
-  
+
   Return the EFI 1.0 System Tabl entry with TableGuid
 
 Arguments:
@@ -105,7 +105,7 @@ Arguments:
   TableGuid - Name of entry to return in the system table
   Table     - Pointer in EFI system table associated with TableGuid
 
-Returns: 
+Returns:
 
   EFI_SUCCESS - Table returned;
   EFI_NOT_FOUND - TableGuid not in EFI system table
@@ -141,7 +141,7 @@ Arguments:
 
   ListHead         - Head of linked list to convert
 
-Returns: 
+Returns:
 
   EFI_SUCCESS
 
@@ -170,4 +170,106 @@ Returns:
     Link = NextLink;
   } while (Link != ListHead);
   return EFI_SUCCESS;
+}
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+STATIC
+VOID
+EFIAPI
+EventNofitySignalAllNullEvent (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+  //
+  // This null event is a size efficent way to enusre that 
+  // EFI_EVENT_NOTIFY_SIGNAL_ALL is error checked correctly.
+  // EFI_EVENT_NOTIFY_SIGNAL_ALL is now mapped into 
+  // CreateEventEx() and this function is used to make the
+  // old error checking in CreateEvent() for Tiano extensions
+  // function.
+  //
+  return;
+}
+
+#endif
+
+/*++
+
+Routine Description:
+  Create a Read to Boot Event.
+
+  Tiano extended the CreateEvent Type enum to add a ready to boot event type.
+  This was bad as Tiano did not own the enum. In UEFI 2.0 CreateEventEx was
+  added and now it's possible to not voilate the UEFI specification and use
+  the ready to boot event class defined in UEFI 2.0. This library supports
+  the R8.5/EFI 1.10 form and R8.6/UEFI 2.0 form and allows common code to
+  work both ways.
+
+Arguments:
+  @param LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+
+Return:
+  EFI_SUCCESS   - Event was created.
+  Other         - Event was not created.
+
+--*/
+EFI_STATUS
+EFIAPI
+RtEfiCreateEventReadyToBoot (
+  IN EFI_TPL                      NotifyTpl,
+  IN EFI_EVENT_NOTIFY             NotifyFunction,
+  IN VOID                         *NotifyContext,
+  OUT EFI_EVENT                   *ReadyToBootEvent
+  )
+{
+  EFI_STATUS        Status;
+  UINT32            EventType;
+  EFI_EVENT_NOTIFY  WorkerNotifyFunction;
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+
+  if (NotifyFunction == NULL) {
+    EventType = EFI_EVENT_SIGNAL_READY_TO_BOOT | EFI_EVENT_NOTIFY_SIGNAL_ALL;
+  } else {
+    EventType = EFI_EVENT_SIGNAL_READY_TO_BOOT;
+  }
+  WorkerNotifyFunction = NotifyFunction;
+
+  //
+  // prior to UEFI 2.0 use Tiano extension to EFI
+  //
+  Status = gBS->CreateEvent (
+                  EventType,
+                  NotifyTpl,
+                  WorkerNotifyFunction,
+                  NotifyContext,
+                  ReadyToBootEvent
+                  );
+#else
+
+  EventType = EFI_EVENT_NOTIFY_SIGNAL;
+  if (NotifyFunction == NULL) {
+    //
+    // CreatEventEx will check NotifyFunction is NULL or not
+    //
+    WorkerNotifyFunction = EventNofitySignalAllNullEvent;
+  } else {
+    WorkerNotifyFunction = NotifyFunction;
+  }
+
+  //
+  // For UEFI 2.0 and the future use an Event Group
+  //
+  Status = gBS->CreateEventEx (
+                  EventType,
+                  NotifyTpl,
+                  WorkerNotifyFunction,
+                  NotifyContext,
+                  &gEfiEventReadyToBootGuid,
+                  ReadyToBootEvent
+                  );
+#endif
+  return Status;
 }

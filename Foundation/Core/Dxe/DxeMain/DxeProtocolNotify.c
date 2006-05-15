@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -44,9 +44,12 @@ ARCHITECTURAL_PROTOCOL_ENTRY  mArchProtocols[] = {
   { &gEfiRuntimeArchProtocolGuid,          &gRuntime,       NULL, NULL, FALSE},
   { &gEfiVariableArchProtocolGuid,         NULL,            NULL, NULL, FALSE},
   { &gEfiVariableWriteArchProtocolGuid,    NULL,            NULL, NULL, FALSE},
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  { &gEfiCapsuleArchProtocolGuid,          NULL,            NULL, NULL, FALSE},
+  #endif
   { &gEfiMonotonicCounterArchProtocolGuid, NULL,            NULL, NULL, FALSE},
   { &gEfiResetArchProtocolGuid,            NULL,            NULL, NULL, FALSE},
-  { &gEfiStatusCodeArchProtocolGuid,       NULL,            NULL, NULL, FALSE},
+  { &gEfiStatusCodeRuntimeProtocolGuid,    NULL,            NULL, NULL, FALSE},
   { &gEfiRealTimeClockArchProtocolGuid,    NULL,            NULL, NULL, FALSE},
   NULL
 };
@@ -146,6 +149,13 @@ Returns:
       //
       CoreUpdateDebugTableCrc32 ();
     }
+
+    if (EfiCompareGuid (Entry->ProtocolGuid, &gEfiStatusCodeRuntimeProtocolGuid)) {
+      //
+      // Update StatusCode instance used by DXE core
+      //
+      gStatusCode = (EFI_STATUS_CODE_PROTOCOL *) Protocol;
+    }
   }
 
   //
@@ -227,9 +237,12 @@ GUID_TO_STRING_PROTOCOL_ENTRY MissingProtocols[] = {
   { &gEfiRuntimeArchProtocolGuid,          L"Runtime"            },
   { &gEfiVariableArchProtocolGuid,         L"Variable"           },
   { &gEfiVariableWriteArchProtocolGuid,    L"Variable Write"     },
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  { &gEfiCapsuleArchProtocolGuid,          L"Capsule"            },
+  #endif
   { &gEfiMonotonicCounterArchProtocolGuid, L"Monotonic Counter"  },
   { &gEfiResetArchProtocolGuid,            L"Reset"              },
-  { &gEfiStatusCodeArchProtocolGuid,       L"Status Code"        },
+  { &gEfiStatusCodeRuntimeProtocolGuid,    L"Status Code"        },
   { &gEfiRealTimeClockArchProtocolGuid,    L"Real Time Clock"    }
 };
 #endif

@@ -88,20 +88,20 @@ Returns:
   cpb->FragCnt              = 2;
   cpb->reserved             = 0;
 
-  cpb->FragDesc[0].FragAddr = (UINT64) MacHeaderPtr;
+  cpb->FragDesc[0].FragAddr = (UINT64)(UINTN) MacHeaderPtr;
   cpb->FragDesc[0].FragLen  = (UINT32) MacHeaderSize;
-  cpb->FragDesc[1].FragAddr = (UINT64) BufferPtr;
+  cpb->FragDesc[1].FragAddr = (UINT64)(UINTN) BufferPtr;
   cpb->FragDesc[1].FragLen  = (UINT32) BufferLength;
 
   cpb->FragDesc[0].reserved = cpb->FragDesc[1].reserved = 0;
 
   if (snp->IsOldUndi) {
-    if ((UINT64) MacHeaderPtr >= FOUR_GIGABYTES) {
-      cpb->FragDesc[0].FragAddr = (UINT64) snp->fill_hdr_buf;
+    if ((UINT64)(UINTN) MacHeaderPtr >= FOUR_GIGABYTES) {
+      cpb->FragDesc[0].FragAddr = (UINT64)(UINTN) snp->fill_hdr_buf;
       cpb->FragDesc[0].FragLen  = (UINT32) snp->init_info.MediaHeaderLen;
     }
 
-    if ((UINT64) (BufferPtr) >= FOUR_GIGABYTES) {
+    if ((UINT64)(UINTN) (BufferPtr) >= FOUR_GIGABYTES) {
       //
       // Let the device just read this buffer
       //
@@ -129,7 +129,7 @@ Returns:
   snp->cdb.DBaddr     = PXE_DBADDR_NOT_USED;
 
   snp->cdb.CPBsize    = sizeof (PXE_CPB_FILL_HEADER_FRAGMENTED);
-  snp->cdb.CPBaddr    = (UINT64) cpb;
+  snp->cdb.CPBaddr    = (UINT64)(UINTN) cpb;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -141,17 +141,17 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.fill_header()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->IsOldUndi) {
 
-    if ((UINT64) (BufferPtr) >= FOUR_GIGABYTES) {
+    if ((UINT64)(UINTN) (BufferPtr) >= FOUR_GIGABYTES) {
       del_v2p (BufferPtr);
     }
     //
     // if we used the global buffer for header, copy the contents
     //
-    if ((UINT64) MacHeaderPtr >= FOUR_GIGABYTES) {
+    if ((UINT64)(UINTN) MacHeaderPtr >= FOUR_GIGABYTES) {
       EfiCopyMem (
         MacHeaderPtr,
         snp->fill_hdr_buf,
@@ -213,10 +213,10 @@ Returns:
   struct s_v2p      *v2p;
 
   cpb             = snp->cpb;
-  cpb->FrameAddr  = (UINT64) BufferPtr;
+  cpb->FrameAddr  = (UINT64)(UINTN) BufferPtr;
   cpb->DataLen    = (UINT32) BufferLength;
 
-  if (snp->IsOldUndi && ((UINT64) BufferPtr >= FOUR_GIGABYTES)) {
+  if (snp->IsOldUndi && ((UINT64)(UINTN) BufferPtr >= FOUR_GIGABYTES)) {
     //
     // we need to create a mapping now and give it to the undi when it calls
     // the Virt2Phys on this address.
@@ -241,7 +241,7 @@ Returns:
   snp->cdb.OpFlags    = PXE_OPFLAGS_TRANSMIT_WHOLE;
 
   snp->cdb.CPBsize    = sizeof (PXE_CPB_TRANSMIT);
-  snp->cdb.CPBaddr    = (UINT64) cpb;
+  snp->cdb.CPBaddr    = (UINT64)(UINTN) cpb;
 
   snp->cdb.OpCode     = PXE_OPCODE_TRANSMIT;
   snp->cdb.DBsize     = PXE_DBSIZE_NOT_USED;
@@ -261,7 +261,7 @@ Returns:
   DEBUG ((EFI_D_NET, "\nsnp->cdb.DBaddr  == %X", snp->cdb.DBaddr));
   DEBUG ((EFI_D_NET, "\ncpb->FrameAddr   == %X\n", cpb->FrameAddr));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   DEBUG ((EFI_D_NET, "\nexit snp->undi.transmit()  "));
   DEBUG ((EFI_D_NET, "\nsnp->cdb.StatCode == %r", snp->cdb.StatCode));

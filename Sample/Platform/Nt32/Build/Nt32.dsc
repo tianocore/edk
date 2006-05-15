@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2006, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -282,6 +282,7 @@ Sample\Universal\FirmwareVolume\FaultTolerantWriteLite\Dxe\FtwLite.inf
 Sample\Universal\Variable\RuntimeDxe\Variable.inf
 Sample\Platform\Nt32\Dxe\PlatformBds\PlatformBds.inf
 Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
+$(CAPSULE_INF)
 
 #
 # Drivers necessary to use the debugger

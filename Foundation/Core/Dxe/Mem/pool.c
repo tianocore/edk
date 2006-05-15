@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,8 +61,6 @@ typedef struct {
 #define LIST_TO_SIZE(a)   ((a+1) << POOL_SHIFT)
 
 #define MAX_POOL_LIST       SIZE_TO_LIST(DEFAULT_PAGE_ALLOCATION)
-
-#define MAX_POOL_SIZE      0xffffff00
 
 //
 // Globals
@@ -222,13 +220,6 @@ Returns:
   
   *Buffer = NULL;
   
-  //
-  // If size is too large, fail it
-  // Base on the EFI spec, return status of EFI_OUT_OF_RESOURCES
-  //
-  if (Size > MAX_POOL_SIZE) {
-    return EFI_OUT_OF_RESOURCES;
-  }
 
   //
   // Acquire the memory lock and make the allocation

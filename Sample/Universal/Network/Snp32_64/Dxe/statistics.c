@@ -105,14 +105,14 @@ Returns:
   } else {
     snp->cdb.OpFlags                = PXE_OPFLAGS_STATISTICS_READ;
     snp->cdb.DBsize                 = sizeof (PXE_DB_STATISTICS);
-    snp->cdb.DBaddr                 = (UINT64) (db = snp->db);
+    snp->cdb.DBaddr                 = (UINT64)(UINTN) (db = snp->db);
   }
   //
   // Issue UNDI command and check result.
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.statistics()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   switch (snp->cdb.StatCode) {
   case PXE_STATCODE_SUCCESS:

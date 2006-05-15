@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,6 +30,9 @@ Revision History
 #include EFI_GUID_DEFINITION (DxeServices)
 #include EFI_GUID_DEFINITION (MemoryTypeInformation)
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
+#include EFI_GUID_DEFINITION (EventGroup)
+#include EFI_GUID_DEFINITION (EventLegacyBios)
+#include EFI_GUID_DEFINITION (FrameworkDevicePath)
 #include EFI_ARCH_PROTOCOL_DEFINITION (Cpu)
 #include EFI_ARCH_PROTOCOL_DEFINITION (Metronome)
 #include EFI_ARCH_PROTOCOL_DEFINITION (MonotonicCounter)
@@ -39,6 +42,7 @@ Revision History
 #include EFI_ARCH_PROTOCOL_DEFINITION (RealTimeClock)
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variable)
 #include EFI_ARCH_PROTOCOL_DEFINITION (VariableWrite)
+#include EFI_ARCH_PROTOCOL_DEFINITION (Capsule)
 #include EFI_ARCH_PROTOCOL_DEFINITION (WatchdogTimer)
 #include EFI_ARCH_PROTOCOL_DEFINITION (Runtime)
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
@@ -147,6 +151,7 @@ extern EFI_METRONOME_ARCH_PROTOCOL              *gMetronome;
 extern EFI_TIMER_ARCH_PROTOCOL                  *gTimer;
 extern EFI_SECURITY_ARCH_PROTOCOL               *gSecurity;
 extern EFI_BDS_ARCH_PROTOCOL                    *gBds;
+extern EFI_STATUS_CODE_PROTOCOL                 *gStatusCode;
 
 extern EFI_TPL                                  gEfiCurrentTpl;
 
@@ -611,7 +616,7 @@ Returns:
 
 VOID
 CoreNotifySignalList (
-  IN UINTN        SignalType
+  IN EFI_GUID     *EventGroup
   )
 /*++
 
@@ -1771,6 +1776,39 @@ Arguments:
 
 Returns:
 
+  EFI_SUCCESS           - The event structure was created
+  EFI_INVALID_PARAMETER - One of the parameters has an invalid value
+  EFI_OUT_OF_RESOURCES  - The event could not be allocated
+
+--*/
+;
+
+EFI_BOOTSERVICE
+EFI_STATUS
+EFIAPI
+CoreCreateEventEx (
+  IN UINT32                   Type,
+  IN EFI_TPL                  NotifyTpl,
+  IN EFI_EVENT_NOTIFY         NotifyFunction,
+  IN VOID                     *NotifyContext,
+  IN CONST EFI_GUID           *EventGroup,    OPTIONAL
+  OUT EFI_EVENT               *Event
+  )
+/*++
+
+Routine Description:
+  Creates a general-purpose event structure
+
+Arguments:
+  Type                - The type of event to create and its mode and attributes
+  NotifyTpl           - The task priority level of event notifications
+  NotifyFunction      - Pointer to the events notification function
+  NotifyContext       - Pointer to the notification functions context; corresponds to
+                        parameter "Context" in the notification function
+  EventGrout          - GUID for EventGroup if NULL act the same as gBS->CreateEvent().
+  Event               - Pointer to the newly created event if the call succeeds; undefined otherwise
+
+Returns:
   EFI_SUCCESS           - The event structure was created
   EFI_INVALID_PARAMETER - One of the parameters has an invalid value
   EFI_OUT_OF_RESOURCES  - The event could not be allocated

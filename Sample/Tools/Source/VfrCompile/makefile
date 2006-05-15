@@ -1,6 +1,6 @@
 #/*++
 #  
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -35,7 +35,7 @@ TOOLCHAIN = TOOLCHAIN_MSVC
 
 BASE_NAME         = VfrCompile
 ANTLR_H           = $(PCCTS_DIR)\h
-C_FLAGS_PCCTS     = -I. -I$(ANTLR_H) /Zi /WX /Od 
+C_FLAGS_PCCTS     = -I. -I$(ANTLR_H) /Zi /WX /Od $(VERSION_FLAGS)
 C_FLAGS_PCCTS     = $(C_FLAGS_PCCTS)  
 
 LINK_FLAGS_PCCTS  =

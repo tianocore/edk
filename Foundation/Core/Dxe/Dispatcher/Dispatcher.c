@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -98,30 +98,7 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL            End;
 } FV_FILEPATH_DEVICE_PATH;
 
-FV_FILEPATH_DEVICE_PATH mFvDevicePathTemplate = {
-  {
-    {
-      MEDIA_DEVICE_PATH,
-      MEDIA_FV_FILEPATH_DP,
-      (UINT8)(sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH)),
-      (UINT8)(sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH) >> 8),
-    },
-    {
-      //
-      // Guid left out on purpose
-      //
-      0
-    }
-  },
-  {
-    END_DEVICE_PATH_TYPE,
-    END_ENTIRE_DEVICE_PATH_SUBTYPE,
-    END_DEVICE_PATH_LENGTH,
-    0
-  }
-};
-
-
+FV_FILEPATH_DEVICE_PATH mFvDevicePath;
 //
 // Function Prototypes
 //
@@ -756,11 +733,13 @@ Returns:
     //
     // Build a device path to the file in the FV to pass into gBS->LoadImage
     //
-    EfiCommonLibCopyMem (&mFvDevicePathTemplate.File.NameGuid, DriverName, sizeof (EFI_GUID));
-
+    CoreInitializeFwVolDevicepathNode (&mFvDevicePath.File, DriverName);
+    mFvDevicePath.End.Type = EFI_END_ENTIRE_DEVICE_PATH;
+    mFvDevicePath.End.SubType = END_ENTIRE_DEVICE_PATH_SUBTYPE;
+    SetDevicePathNodeLength (&mFvDevicePath.End, sizeof (EFI_DEVICE_PATH_PROTOCOL));
     FileNameDevicePath = CoreAppendDevicePath (
                             FvDevicePath, 
-                            (EFI_DEVICE_PATH_PROTOCOL *)&mFvDevicePathTemplate
+                            (EFI_DEVICE_PATH_PROTOCOL *)&mFvDevicePath
                             );
   }
 
@@ -1066,14 +1045,13 @@ Returns:
             //
             if (gDxeCoreLoadedImage->FilePath == NULL) {
               if (EfiCompareGuid (&NameGuid, gDxeCoreFileName)) {
-                EfiCommonLibCopyMem (
-                  &mFvDevicePathTemplate.File.NameGuid,
-                  &NameGuid, 
-                  sizeof (EFI_GUID)
-                  );
+			  	CoreInitializeFwVolDevicepathNode (&mFvDevicePath.File, &NameGuid);
+                mFvDevicePath.End.Type = EFI_END_ENTIRE_DEVICE_PATH;
+                mFvDevicePath.End.SubType = END_ENTIRE_DEVICE_PATH_SUBTYPE;
+                SetDevicePathNodeLength (&mFvDevicePath.End, sizeof (EFI_DEVICE_PATH_PROTOCOL));
 
                 gDxeCoreLoadedImage->FilePath = CoreDuplicateDevicePath (
-                                                  (EFI_DEVICE_PATH_PROTOCOL *)&mFvDevicePathTemplate
+                                                  (EFI_DEVICE_PATH_PROTOCOL *)&mFvDevicePath
                                                   );
                 gDxeCoreLoadedImage->DeviceHandle = FvHandle;
               }

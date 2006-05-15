@@ -74,7 +74,7 @@ Returns:
 
   if (MCastAddressCount != 0) {
     snp->cdb.CPBsize  = (UINT16) (MCastAddressCount * sizeof (EFI_MAC_ADDRESS));
-    snp->cdb.CPBaddr  = (UINT64) snp->cpb;
+    snp->cdb.CPBaddr  = (UINT64)(UINTN) snp->cpb;
     EfiCopyMem (snp->cpb, MCastAddressList, snp->cdb.CPBsize);
   }
   //
@@ -82,7 +82,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     //
@@ -171,7 +171,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     //
@@ -212,9 +212,9 @@ Returns:
   snp->cdb.DBsize   = (UINT16) (snp->mode.MaxMCastFilterCount * sizeof (EFI_MAC_ADDRESS));
   snp->cdb.CPBaddr  = PXE_CPBADDR_NOT_USED;
   if (snp->cdb.DBsize == 0) {
-    snp->cdb.DBaddr = (UINT64) NULL;
+    snp->cdb.DBaddr = (UINT64)(UINTN) NULL;
   } else {
-    snp->cdb.DBaddr = (UINT64) snp->db;
+    snp->cdb.DBaddr = (UINT64)(UINTN) snp->db;
     EfiZeroMem (snp->db, snp->cdb.DBsize);
   }
 
@@ -225,7 +225,7 @@ Returns:
 
   DEBUG ((EFI_D_NET, "\nsnp->undi.receive_filters()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   if (snp->cdb.StatCode != EFI_SUCCESS) {
     //

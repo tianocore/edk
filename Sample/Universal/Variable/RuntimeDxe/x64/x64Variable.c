@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -114,6 +114,36 @@ Returns:
           );
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_STATUS
+EFIAPI
+X64QueryVariableInfo (
+  IN  UINT32                 Attributes,
+  OUT UINT64                 *MaximumVariableStorageSize,
+  OUT UINT64                 *RemainingVariableStorageSize,
+  OUT UINT64                 *MaximumVariableSize
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+Returns:
+
+--*/
+{
+  return QueryVariableInfo (
+          Attributes,
+          MaximumVariableStorageSize,
+          RemainingVariableStorageSize,
+          MaximumVariableSize,
+          &mVariableModuleGlobal->VariableBase[Physical],
+          mVariableModuleGlobal->FvbInstance
+          );
+}
+#endif
+
 EFI_RUNTIMESERVICE
 VOID
 VariableClassAddressChangeEvent (
@@ -167,6 +197,10 @@ Returns:
   SystemTable->RuntimeServices->GetVariable         = X64GetVariable;
   SystemTable->RuntimeServices->GetNextVariableName = X64GetNextVariableName;
   SystemTable->RuntimeServices->SetVariable         = X64SetVariable;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  SystemTable->RuntimeServices->QueryVariableInfo   = X64QueryVariableInfo;
+#endif
 
   //
   // Now install the Variable Runtime Architectural Protocol on a new handle

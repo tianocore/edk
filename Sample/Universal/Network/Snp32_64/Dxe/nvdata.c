@@ -52,7 +52,7 @@ Returns:
   snp->cdb.CPBaddr    = PXE_CPBADDR_NOT_USED;
 
   snp->cdb.DBsize     = sizeof (PXE_DB_NVDATA);
-  snp->cdb.DBaddr     = (UINT64) db;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -64,7 +64,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.nvdata ()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   switch (snp->cdb.StatCode) {
   case PXE_STATCODE_SUCCESS:

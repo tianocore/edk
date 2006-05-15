@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -26,6 +26,9 @@ Abstract:
 //
 EFI_HANDLE  gStatusCodeHandle = NULL;
 
+const EFI_STATUS_CODE_PROTOCOL gStatusCodeInstance = {
+  StatusCodeReportStatusCode
+};
 //
 // Define the driver entry point
 //
@@ -63,12 +66,17 @@ Returns:
   //
   // Update runtime service table.
   //
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+  //
+  // Update runtime service table.
+  //
   SystemTable->RuntimeServices->ReportStatusCode = StatusCodeReportStatusCode;
+#endif
 
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &gStatusCodeHandle,
-                  &gEfiStatusCodeArchProtocolGuid,
-                  NULL,
+                  &gEfiStatusCodeRuntimeProtocolGuid,
+                  &gStatusCodeInstance,
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);

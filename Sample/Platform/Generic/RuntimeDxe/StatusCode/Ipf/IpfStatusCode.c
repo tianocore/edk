@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,6 +25,9 @@ Abstract:
 // Define the driver entry point
 //
 EFI_DRIVER_ENTRY_POINT (InstallStatusCode)
+
+EFI_HANDLE               gStatusCodeHandle = NULL;
+EFI_STATUS_CODE_PROTOCOL gStatusCodeInstance;  
 
 SAL_RETURN_REGS
 ReportStatusCodeEsalServicesClassCommonEntry (
@@ -111,15 +114,12 @@ Returns:
 
 --*/
 {
+  EFI_STATUS               Status;
+
   //
   // Initialize RT status code
   //
   InitializeStatusCode (ImageHandle, SystemTable);
-
-  //
-  // Update runtime service table.
-  //
-  SystemTable->RuntimeServices->ReportStatusCode = StatusCodeReportStatusCode;
 
   //
   // Initialize ESAL capabilities
@@ -131,6 +131,22 @@ Returns:
     StatusCode,
     NULL
     );
+
+  //
+  // Update runtime service table.
+  //
+  gStatusCodeInstance.ReportStatusCode = EfiReportStatusCode;
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+  SystemTable->RuntimeServices->ReportStatusCode = gStatusCodeInstance.ReportStatusCode;
+#endif
+ 
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &gStatusCodeHandle,
+                  &gEfiStatusCodeRuntimeProtocolGuid,
+                  &gStatusCodeInstance,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }

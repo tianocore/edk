@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -93,6 +93,9 @@ EFI_LOADED_IMAGE_PROTOCOL     *mMyLoadedImage;
 EFI_SYSTEM_TABLE              *mMyST;
 EFI_RUNTIME_SERVICES          *mMyRT;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+STATIC EFI_GUID mEfiCapsuleHeaderGuid = EFI_CAPSULE_GUID;
+#endif
 //
 // Worker Functions
 //
@@ -415,7 +418,7 @@ RuntimeDriverSetVirtualAddressMap (
   // check whether in Runtime or not (this is judged by looking at
   // mEfiAtRuntime global So this ReportStatusCode will work
   //
-  mMyRT->ReportStatusCode (
+  EfiReportStatusCode (
           EFI_PROGRESS_CODE,
           (EFI_SOFTWARE_EFI_BOOT_SERVICE | EFI_SW_RS_PC_SET_VIRTUAL_ADDRESS_MAP),
           0,
@@ -464,11 +467,18 @@ RuntimeDriverSetVirtualAddressMap (
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetWakeupTime);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->SetWakeupTime);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->ResetSystem);
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->ReportStatusCode);
+#endif
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetNextHighMonotonicCount);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetVariable);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->SetVariable);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetNextVariableName);
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->QueryVariableInfo);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->UpdateCapsule);
+  RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->QueryCapsuleCapabilities);
+#endif
   RuntimeDriverCalculateEfiHdrCrc (&mMyRT->Hdr);
 
   //
@@ -491,6 +501,11 @@ RuntimeDriverSetVirtualAddressMap (
 
       RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index].VendorTable));
     }
+    #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    if (EfiCompareGuid (&mEfiCapsuleHeaderGuid, &(mMyST->ConfigurationTable[Index].VendorGuid))) {
+      RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index].VendorTable));
+    }
+    #endif 
   }
   //
   // Convert the runtime fields of the EFI System Table and recompute the CRC-32

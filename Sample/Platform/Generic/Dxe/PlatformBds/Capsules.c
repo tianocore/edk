@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,6 +32,10 @@ Abstract:
 
 #include EFI_GUID_DEFINITION (FlashMapHob)
 #include EFI_GUID_DEFINITION (Hob)
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+STATIC EFI_GUID mEfiCapsuleHeaderGuid = EFI_CAPSULE_GUID;
+#endif
 
 STATIC
 EFI_STATUS
@@ -166,6 +170,12 @@ Note:
   EFI_STATUS                  HobStatus;
   EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
   EFI_HANDLE                  FvProtocolHandle;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  EFI_CAPSULE_HEADER          *CapsuleHeader;
+  UINT32                      Size; 
+  UINT32                      CapsuleNumber;
+  EFI_CAPSULE_TABLE           *CapsuleTable; 
+#endif
 
   //
   // We don't do anything else if the boot mode is not flash-update
@@ -203,6 +213,33 @@ Note:
     // Now walk the capsule and call the core to process each
     // firmware volume in it.
     //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    CapsuleHeader = (EFI_CAPSULE_HEADER*)(UINTN)BaseAddress;
+    //
+    //Check the capsule flags,if contains CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE, install 
+    //capsuleTable to configure table with EFI_CAPSULE_GUID
+    //
+    if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
+      //
+      //Now just support one full-functional capsule 
+      //
+      CapsuleNumber = 1;
+      Size = sizeof(EFI_CAPSULE_TABLE) + (CapsuleNumber -1)* sizeof(VOID*);  
+      Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleTable);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+      CapsuleTable->CapsulePtr[0] = (VOID*)((UEFI_CAPSULE_HEADER*)(UINTN)BaseAddress);
+      Status = gBS->InstallConfigurationTable (&mEfiCapsuleHeaderGuid, (VOID*)CapsuleTable);
+      ASSERT_EFI_ERROR (Status);
+    }
+    //
+    //Skip the capsule header, move to the Firware Volume
+    //
+    BaseAddress += CapsuleHeader->OffsetToCapsuleBody;
+    Length -= CapsuleHeader->OffsetToCapsuleBody;
+
+#endif    
     while (Length != 0) {
       //
       // Point to the next firmware volume header, and then

@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2005, Intel Corporation                                                         
+# Copyright (c) 2004 - 2006, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -520,7 +520,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -701,7 +701,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -847,7 +847,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -946,7 +946,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL

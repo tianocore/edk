@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1304,9 +1304,12 @@ AtaBlkIoReadBlocks (
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
     // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 read block mechanism
+    // Notice DMA operation can only handle 32bit address
     //
-    Status = AtaUdmaReadExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    if (EFI_ERROR (Status)) {
+    if ((UINTN)Buffer + BufferSize<=0xFFFFFFFF) {
+      Status = AtaUdmaReadExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    }
+    if (EFI_ERROR (Status) || ((UINTN)Buffer + BufferSize>0xFFFFFFFF)) {
       Status = AtaReadSectorsExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   } else {
@@ -1314,11 +1317,11 @@ AtaBlkIoReadBlocks (
     // For ATA-3 compatible device, use ATA-3 read block mechanism
     // Notice DMA operation can only handle 32bit address
     //
-    if ((UINTN) Buffer <= 0xFFFFFFFF) {
+    if ((UINTN) Buffer + BufferSize <= 0xFFFFFFFF) {
       Status = AtaUdmaRead (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
 
-    if (EFI_ERROR (Status) || ((UINTN) Buffer > 0xFFFFFFFF)) {
+    if (EFI_ERROR (Status) || ((UINTN) Buffer + BufferSize > 0xFFFFFFFF)) {
       Status = AtaReadSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   }
@@ -1451,17 +1454,23 @@ AtaBlkIoWriteBlocks (
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
     // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 write block mechanism
+    // Notice DMA operation can only handle 32bit address
     //
-    Status = AtaUdmaWriteExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    if (EFI_ERROR (Status)) {
+    if ((UINTN)Buffer + BufferSize<=0xFFFFFFFF) {
+        Status = AtaUdmaWriteExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    }
+    if (EFI_ERROR (Status) || ((UINTN)Buffer + BufferSize>0xFFFFFFFF)) {
       Status = AtaWriteSectorsExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   } else {
     //
     // For ATA-3 compatible device, use ATA-3 write block mechanism
+    // Notice DMA operation can only handle 32bit address
     //
-    Status = AtaUdmaWrite (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    if (EFI_ERROR (Status) || ((UINTN) Buffer > 0xFFFFFFFF)) {
+    if ((UINTN)Buffer + BufferSize<=0xFFFFFFFF) {
+      Status = AtaUdmaWrite (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    }
+    if (EFI_ERROR (Status) || ((UINTN) Buffer + BufferSize> 0xFFFFFFFF)) {
       Status = AtaWriteSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   }
@@ -2129,7 +2138,7 @@ AtaSMARTSupport (
     //
     // Report nonsupport status code
     //
-    gRT->ReportStatusCode (
+    EfiLibReportStatusCode (
           EFI_ERROR_CODE | EFI_ERROR_MINOR,
           (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_NOTSUPPORTED),
           0,
@@ -2140,7 +2149,7 @@ AtaSMARTSupport (
     //
     // Enable this feature
     //
-    gRT->ReportStatusCode (
+    EfiLibReportStatusCode (
           EFI_PROGRESS_CODE,
           (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_ENABLE),
           0,
@@ -2205,7 +2214,7 @@ AtaSMARTSupport (
         //
         // The threshold exceeded condition is not detected by the device
         //
-        gRT->ReportStatusCode (
+        EfiLibReportStatusCode (
               EFI_PROGRESS_CODE,
               (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_UNDERTHRESHOLD),
               0,
@@ -2217,7 +2226,7 @@ AtaSMARTSupport (
         //
         // The threshold exceeded condition is  detected by the device
         //
-        gRT->ReportStatusCode (
+        EfiLibReportStatusCode (
               EFI_PROGRESS_CODE,
               (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_OVERTHRESHOLD),
               0,
@@ -2230,7 +2239,7 @@ AtaSMARTSupport (
       //
       // Report disabled status code
       //
-      gRT->ReportStatusCode (
+      EfiLibReportStatusCode (
             EFI_ERROR_CODE | EFI_ERROR_MINOR,
             (EFI_IO_BUS_ATA_ATAPI | EFI_IOB_ATA_BUS_SMART_DISABLED),
             0,

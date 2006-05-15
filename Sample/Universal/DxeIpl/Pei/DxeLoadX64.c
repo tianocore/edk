@@ -337,7 +337,9 @@ Returns:
   PEI_RECOVERY_MODULE_INTERFACE                             *PeiRecovery;
   PEI_S3_RESUME_PPI                                         *S3Resume;
   EFI_PHYSICAL_ADDRESS                                      PageTables;
-  
+
+  PEI_PERF_START (PeiServices, L"DxeIpl", NULL, 0);
+
   TopOfStack  = 0;
   BaseOfStack = 0;
   BspStore    = 0;

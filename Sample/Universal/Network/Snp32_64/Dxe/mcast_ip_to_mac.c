@@ -51,8 +51,8 @@ Returns:
   snp->cdb.CPBsize    = sizeof (PXE_CPB_MCAST_IP_TO_MAC);
   snp->cdb.DBsize     = sizeof (PXE_DB_MCAST_IP_TO_MAC);
 
-  snp->cdb.CPBaddr    = (UINT64) cpb;
-  snp->cdb.DBaddr     = (UINT64) db;
+  snp->cdb.CPBaddr    = (UINT64)(UINTN) cpb;
+  snp->cdb.DBaddr     = (UINT64)(UINTN) db;
 
   snp->cdb.StatCode   = PXE_STATCODE_INITIALIZE;
   snp->cdb.StatFlags  = PXE_STATFLAGS_INITIALIZE;
@@ -66,7 +66,7 @@ Returns:
   //
   DEBUG ((EFI_D_NET, "\nsnp->undi.mcast_ip_to_mac()  "));
 
-  (*snp->issue_undi32_command) ((UINT64) &snp->cdb);
+  (*snp->issue_undi32_command) ((UINT64)(UINTN) &snp->cdb);
 
   switch (snp->cdb.StatCode) {
   case PXE_STATCODE_SUCCESS:

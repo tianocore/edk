@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,15 +27,74 @@ Abstract:
 
 --*/
 
-#ifndef _ARCH_PROTOCOL_STATUS_CODE_H__
-#define _ARCH_PROTOCOL_STATUS_CODE_H__
+#ifndef __STATUS_CODE_RUNTIME_PROTOCOL_H__
+#define __STATUS_CODE_RUNTIME_PROTOCOL_H__
+
+#define EFI_STATUS_CODE_RUNTIME_PROTOCOL_GUID  \
+  { 0xd2b2b828, 0x826, 0x48a7, 0xb3, 0xdf, 0x98, 0x3c, 0x0, 0x60, 0x24, 0xf0}
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+typedef
+EFI_STATUS 
+(EFIAPI *EFI_REPORT_STATUS_CODE) (
+  IN EFI_STATUS_CODE_TYPE     Type,
+  IN EFI_STATUS_CODE_VALUE    Value,
+  IN UINT32                   Instance,
+  IN EFI_GUID                 *CallerId  OPTIONAL,
+  IN EFI_STATUS_CODE_DATA     *Data      OPTIONAL
+  )
+/*++
+Routine Description: 
+
+  Provides an interface that a software module can call to report a status code.
+
+Arguments:
+
+  Type     - Indicates the type of status code being reported.
+  
+  Value    - Describes the current status of a hardware or software entity.
+             This included information about the class and subclass that is 
+             used to classify the entity as well as an operation.
+  
+  Instance - The enumeration of a hardware or software entity within 
+             the system. Valid instance numbers start with 1.
+  
+  CallerId - This optional parameter may be used to identify the caller.
+             This parameter allows the status code driver to apply different 
+             rules to different callers.
+  
+  Data     - This optional parameter may be used to pass additional data.
+
+Returns: 
+  
+  EFI_SUCCESS      - The function completed successfully
+  
+  EFI_DEVICE_ERROR - The function should not be completed due to a device error.
+
+--*/
+;
+#endif
 
 //
-// Global ID for the Status Code Architectural Protocol
+// Interface stucture for the STATUS CODE Architectural Protocol
 //
-#define EFI_STATUS_CODE_ARCH_PROTOCOL_GUID \
-  { 0xd98e3ea3, 0x6f39, 0x4be4, 0x82, 0xce, 0x5a, 0x89, 0xc, 0xcb, 0x2c, 0x95 }
+typedef struct _EFI_STATUS_CODE_PROTOCOL {
+  EFI_REPORT_STATUS_CODE         ReportStatusCode;
+} EFI_STATUS_CODE_PROTOCOL;
 
-extern EFI_GUID gEfiStatusCodeArchProtocolGuid;
+/*++
+//  Protocol Description:
+//
+//    Provides the service required to report a status code to the platform firmware.
+//    This protocol must be produced by a runtime DXE driver and may be consumed 
+//    only by the DXE Foundation.
+//
+//  Parameter:
+//
+//    ReportStatusCode - Emit a status code.
+--*/
+
+
+extern EFI_GUID gEfiStatusCodeRuntimeProtocolGuid;
 
 #endif
