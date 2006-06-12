@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2006, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -56,6 +56,12 @@ C_STD_INCLUDE=
   DeviceIo\DeviceIo.c
   DevicePath\DevicePath.h
   DevicePath\DevicePath.c
+  DevicePathFromText\DevicePathFromText.h
+  DevicePathFromText\DevicePathFromText.c
+  DevicePathToText\DevicePathToText.h
+  DevicePathToText\DevicePathToText.c
+  DevicePathUtilities\DevicePathUtilities.h
+  DevicePathUtilities\DevicePathUtilities.c
   DiskIo\DiskIo.h
   DiskIo\DiskIo.c
   DriverBinding\DriverBinding.h
@@ -66,6 +72,12 @@ C_STD_INCLUDE=
   DriverDiagnostics\DriverDiagnostics.c
   Ebc\Ebc.h
   Ebc\Ebc.c
+  EdidActive\EdidActive.h
+  EdidActive\EdidActive.c
+  EdidDiscovered\EdidDiscovered.h
+  EdidDiscovered\EdidDiscovered.c
+  EdidOverride\EdidOverride.h
+  EdidOverride\EdidOverride.c
   EfiNetworkInterfaceIdentifier\EfiNetworkInterfaceIdentifier.h
   EfiNetworkInterfaceIdentifier\EfiNetworkInterfaceIdentifier.c
   FileInfo\FileInfo.h
@@ -74,6 +86,8 @@ C_STD_INCLUDE=
   FileSystemInfo\FileSystemInfo.c
   FileSystemVolumeLabelInfo\FileSystemVolumeLabelInfo.h
   FileSystemVolumeLabelInfo\FileSystemVolumeLabelInfo.c
+  GraphicsOutput\GraphicsOutput.h
+  GraphicsOutput\GraphicsOutput.c
   LoadedImage\LoadedImage.h
   LoadedImage\LoadedImage.c
   LoadFile\LoadFile.h
@@ -112,3 +126,13 @@ C_STD_INCLUDE=
   UsbHostController\UsbHostController.c
   UsbIo\UsbIo.h
   UsbIo\UsbIo.c
+  Hash\Hash.h
+  Hash\Hash.c
+  ScsiPassThru\ScsiPassThru.h
+  ScsiPassThru\ScsiPassThru.c
+  ScsiIo\ScsiIo.h
+  ScsiIo\ScsiIo.c
+  TapeIo\TapeIo.h
+  TapeIo\TapeIo.c
+  IScsiInitiatorName\IScsiInitiatorName.h
+  IScsiInitiatorName\IScsiInitiatorName.c

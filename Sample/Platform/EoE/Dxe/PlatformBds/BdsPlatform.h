@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -118,12 +118,12 @@ BdsMemoryTest (
 
 EFI_STATUS
 PlatformBdsShowProgress (
-  EFI_UGA_PIXEL TitleForeground,
-  EFI_UGA_PIXEL TitleBackground,
-  CHAR16        *Title,
-  EFI_UGA_PIXEL ProgressColor,
-  UINTN         Progress,
-  UINTN         PreviousValue
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL TitleForeground,
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL TitleBackground,
+  CHAR16                        *Title,
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL ProgressColor,
+  UINTN                         Progress,
+  UINTN                         PreviousValue
   )
 ;
 

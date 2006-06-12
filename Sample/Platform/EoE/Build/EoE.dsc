@@ -40,9 +40,7 @@
 # the output makefiles for each component.
 #
 [Defines]
-PROCESSOR                 = $(PROCESSOR)
 PLATFORM                  = $(PROJECT_NAME)
-SHELL_INF                 = $(SHELL_INF)
 
 [=============================================================================]
 #
@@ -115,7 +113,6 @@ EFI_ALIGNMENT_64K       = TRUE
 [=============================================================================]
 [Libraries.Platform]
 
-DEFINE TOOLCHAIN=TOOLCHAIN_IA32
 DEFINE PROCESSOR=IA32
 
 Foundation\Guid\EdkGuidLib.inf
@@ -142,9 +139,6 @@ Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
 Foundation\Library\Dxe\PrintLite\PrintLib.inf
 Foundation\Library\Dxe\GraphicsLite\Graphics.inf
 
-
-
-DEFINE TOOLCHAIN=TOOLCHAIN_X64
 DEFINE PROCESSOR=X64
 
 Foundation\Library\Dxe\Hob\HobLib.inf
@@ -165,8 +159,6 @@ Sample\Chipset\PcCompatible\Protocol\PcCompatibleProtocolLib.inf
 [=============================================================================]
 [Components]
 
-DEFINE TOOLCHAIN=TOOLCHAIN_X64
-DEFINE PROCESSOR=X64
 #
 # The default package
 #
@@ -176,6 +168,8 @@ DEFINE PACKAGE=Default
 # Select the default FV's
 #
 DEFINE FV=X64
+
+DEFINE PROCESSOR=X64
 
 #
 # SEC Core
@@ -287,9 +281,8 @@ Sample\Chipset\PcCompatible\Bios\BiosVideo\Dxe\BiosVideo.inf
 
 Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
 
-Other\Maintained\Application\Shell\bin\Shell.inf
+Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\Shell.inf
 
-DEFINE TOOLCHAIN=TOOLCHAIN_IA32
 DEFINE PROCESSOR=IA32
 
 Sample\Platform\EoE\Go64\Go64.inf                  FV=NULL

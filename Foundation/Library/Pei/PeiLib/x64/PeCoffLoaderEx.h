@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-    IA-32 Specific relocation fixups
+    x64 Specific relocation fixups
 
 Revision History
 
@@ -29,8 +29,7 @@ Revision History
 // Returns 0 if the machine is not supported, Not 0 otherwise.
 //
 #define EFI_IMAGE_MACHINE_TYPE_SUPPORTED(Machine) \
-  ((Machine) == EFI_IMAGE_MACHINE_IA32 || \
-   (Machine) == EFI_IMAGE_MACHINE_EBC || \
+  ((Machine) == EFI_IMAGE_MACHINE_EBC || \
    (Machine) == EFI_IMAGE_MACHINE_X64)
 
 EFI_STATUS
@@ -44,7 +43,7 @@ PeCoffLoaderRelocateImageEx (
 
 Routine Description:
 
-  Performs an IA-32 specific relocation fixup
+  Performs an x64 specific relocation fixup
 
 Arguments:
 
@@ -58,7 +57,8 @@ Arguments:
 
 Returns:
 
-  EFI_UNSUPPORTED   - Unsupported now
+  EFI_SUCCESS - relocate fix successfully
+  EFI_UNSUPPORTED - relocate unsupported
 
 --*/
 ;

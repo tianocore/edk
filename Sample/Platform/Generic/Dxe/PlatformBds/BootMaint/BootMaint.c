@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1240,6 +1240,7 @@ Returns:
   UINTN                     Index;
   BM_MENU_ENTRY             *NewMenuEntry;
   BM_FILE_CONTEXT           *NewFileContext;
+  BOOLEAN	                  BootMaintMenuResetRequired;
 
   Location        = NULL;
   Index           = 0;
@@ -1256,7 +1257,8 @@ Returns:
 
   while (1) {
     UpdatePageId (CallbackData, FORM_MAIN_ID);
-
+    
+    BootMaintMenuResetRequired = FALSE;
     Status = FormConfig->SendForm (
                           FormConfig,
                           TRUE,
@@ -1266,8 +1268,12 @@ Returns:
                           NULL,
                           (UINT8 *) CallbackData->BmmFakeNvData,
                           NULL,
-                          NULL
+                          &BootMaintMenuResetRequired
                           );
+
+    if (BootMaintMenuResetRequired) {
+      EnableResetRequired ();
+    }
 
     ReclaimStringDepository ();
 
@@ -1276,7 +1282,8 @@ Returns:
     //
     if (INACTIVE_STATE != CallbackData->FeCurrentState) {
       UpdateFileExplorer (CallbackData, 0);
-
+      
+      BootMaintMenuResetRequired = FALSE;
       Status = FormConfig->SendForm (
                             FormConfig,
                             TRUE,
@@ -1286,8 +1293,12 @@ Returns:
                             NULL,
                             NULL,
                             NULL,
-                            NULL
+                            &BootMaintMenuResetRequired
                             );
+
+      if (BootMaintMenuResetRequired) {
+        EnableResetRequired ();
+      }
 
       CallbackData->FeCurrentState    = INACTIVE_STATE;
       CallbackData->FeDisplayContext  = UNKNOWN_CONTEXT;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -239,6 +239,7 @@ IDEBusDriverBindingStart (
   UINTN                             DataSize;
   UINT32                            Attributes;
   IDE_BUS_DRIVER_PRIVATE_DATA       *IdeBusDriverPrivateData;
+  EFI_EVENT                         Event;
 
   //
   // Local variables declaration for IdeControllerInit support
@@ -773,6 +774,18 @@ IDEBusDriverBindingStart (
         &gIDEBusDriverGuid,
         IdeBlkIoDevicePtr->DevicePath
         );
+
+      //
+      // Create event to clear pending IDE interrupt
+      //
+      Status = gBS->CreateEvent (
+                      EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                      EFI_TPL_NOTIFY,
+                      ClearInterrupt,
+                      IdeBlkIoDevicePtr,
+                      &Event
+                      );
+
       //
       // end of 2nd inner loop ----
       //

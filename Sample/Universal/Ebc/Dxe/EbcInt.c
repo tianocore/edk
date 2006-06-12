@@ -183,8 +183,9 @@ static EBC_ICACHE_FLUSH       mEbcICacheFlush;
 //
 // These get set via calls by the debug agent
 //
-static EFI_PERIODIC_CALLBACK  mDebugPeriodicCallback    = NULL;
-static EFI_EXCEPTION_CALLBACK mDebugExceptionCallback   = NULL;
+#define EFI_EBC_EXCEPTION_NUMBER 11
+static EFI_PERIODIC_CALLBACK  mDebugPeriodicCallback                            = NULL;
+static EFI_EXCEPTION_CALLBACK mDebugExceptionCallback[EFI_EBC_EXCEPTION_NUMBER] = {NULL};
 static EFI_GUID               mEfiEbcVmTestProtocolGuid = EFI_EBC_VM_TEST_PROTOCOL_GUID;
 
 EFI_DRIVER_ENTRY_POINT (InitializeEbcDriver)
@@ -439,6 +440,12 @@ Returns:
 
 --*/
 {
+  if ((mDebugPeriodicCallback == NULL) && (PeriodicCallback == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if ((mDebugPeriodicCallback != NULL) && (PeriodicCallback != NULL)) {
+    return EFI_ALREADY_STARTED;
+  }
   mDebugPeriodicCallback = PeriodicCallback;
   return EFI_SUCCESS;
 }
@@ -471,7 +478,16 @@ Returns:
 
 --*/
 {
-  mDebugExceptionCallback = ExceptionCallback;
+  if ((ExceptionType < 0) || (ExceptionType >= EFI_EBC_EXCEPTION_NUMBER)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if ((mDebugExceptionCallback[ExceptionType] == NULL) && (ExceptionCallback == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if ((mDebugExceptionCallback[ExceptionType] != NULL) && (ExceptionCallback != NULL)) {
+    return EFI_ALREADY_STARTED;
+  }
+  mDebugExceptionCallback[ExceptionType] = ExceptionCallback;
   return EFI_SUCCESS;
 }
 
@@ -553,13 +569,15 @@ Returns:
   EbcContext.R7                   = VmPtr->R[7];
   EbcContext.Ip                   = (UINT64) VmPtr->Ip;
   EbcContext.Flags                = VmPtr->Flags;
+  EbcContext.ControlFlags         = 0;
   SystemContext.SystemContextEbc  = &EbcContext;
   //
   // If someone's registered for exception callbacks, then call them.
   // Otherwise report the status code via the status code API
   //
-  if (mDebugExceptionCallback != NULL) {
-    mDebugExceptionCallback (ExceptionType, SystemContext);
+  if ((ExceptionType >= 0) && (ExceptionType < EFI_EBC_EXCEPTION_NUMBER) &&
+      (mDebugExceptionCallback[ExceptionType] != NULL)) {
+    mDebugExceptionCallback[ExceptionType] (ExceptionType, SystemContext);
   }
   //
   // Determine if we should report the exception. We report all of them by default,
@@ -570,50 +588,50 @@ Returns:
   Report = TRUE;
   switch (ExceptionType) {
   case EXCEPT_EBC_UNDEFINED:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_UNDEFINED;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_UNDEFINED;
     break;
 
   case EXCEPT_EBC_DIVIDE_ERROR:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_DIVIDE_ERROR;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_DIVIDE_ERROR;
     break;
 
   case EXCEPT_EBC_DEBUG:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_DEBUG;
-    Report          = (BOOLEAN) ((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_DEBUG;
+    Report          = (BOOLEAN) ((mDebugExceptionCallback[ExceptionType] == NULL) ? TRUE : FALSE);
     break;
 
   case EXCEPT_EBC_BREAKPOINT:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_BREAKPOINT;
-    Report          = (BOOLEAN) ((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_BREAKPOINT;
+    Report          = (BOOLEAN) ((mDebugExceptionCallback[ExceptionType] == NULL) ? TRUE : FALSE);
     break;
 
   case EXCEPT_EBC_INVALID_OPCODE:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_INVALID_OPCODE;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_INVALID_OPCODE;
     break;
 
   case EXCEPT_EBC_STACK_FAULT:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_STACK_FAULT;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_STACK_FAULT;
     break;
 
   case EXCEPT_EBC_ALIGNMENT_CHECK:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_ALIGNMENT_CHECK;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_ALIGNMENT_CHECK;
     break;
 
   case EXCEPT_EBC_INSTRUCTION_ENCODING:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_INSTRUCTION_ENCODING;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_INSTRUCTION_ENCODING;
     break;
 
   case EXCEPT_EBC_BAD_BREAK:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_BAD_BREAK;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_BAD_BREAK;
     break;
 
   case EXCEPT_EBC_STEP:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_EBC_STEP;
-    Report          = (BOOLEAN) ((mDebugExceptionCallback == NULL) ? TRUE : FALSE);
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_EBC_STEP;
+    Report          = (BOOLEAN) ((mDebugExceptionCallback[ExceptionType] == NULL) ? TRUE : FALSE);
     break;
 
   default:
-    StatusCodeValue = EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_EC_NON_SPECIFIC;
+    StatusCodeValue = EFI_SOFTWARE_EBC_EXCEPTION | EFI_SW_EC_NON_SPECIFIC;
     break;
   }
   //

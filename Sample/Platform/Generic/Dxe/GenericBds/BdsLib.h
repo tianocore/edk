@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -38,7 +38,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (LoadFile)
 #include EFI_PROTOCOL_DEFINITION (PlatformDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ConsoleControl)
-#include EFI_PROTOCOL_DEFINITION (UgaDraw)
+#include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (Hii)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 
@@ -369,4 +369,42 @@ BdsRefreshBbsTableForBoot (
   IN BDS_COMMON_OPTION        *Entry
   );
 
+//
+//The interface functions relate with Setup Browser Reset Reminder feature
+//
+VOID
+EnableResetReminderFeature (
+  VOID
+  );
+
+VOID
+DisableResetReminderFeature (
+  VOID
+  );
+
+VOID
+EnableResetRequired (
+  VOID
+  );
+
+VOID
+DisableResetRequired (
+  VOID
+  );
+
+BOOLEAN
+IsResetReminderFeatureEnable (
+  VOID
+  );
+
+BOOLEAN
+IsResetRequired (
+  VOID
+  );
+
+VOID
+SetupResetReminder (
+  VOID
+  );
+  
 #endif // _BDS_LIB_H_

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,6 +29,7 @@ Revision History
 #include "ComponentName.h"
 
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
 #include EFI_PROTOCOL_DEFINITION (Hii)
@@ -63,19 +64,21 @@ typedef struct {
   UINTN   Rows;
   INTN    DeltaX;
   INTN    DeltaY;
-  UINT32  UgaWidth;
-  UINT32  UgaHeight;
+  UINT32  GopWidth;
+  UINT32  GopHeight;
+  UINT32  GopModeNumber;
 } GRAPHICS_CONSOLE_MODE_DATA;
 
 #define GRAPHICS_MAX_MODE 3
 
 typedef struct {
   UINTN                         Signature;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
   EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  SimpleTextOutput;
   EFI_SIMPLE_TEXT_OUTPUT_MODE   SimpleTextOutputMode;
   GRAPHICS_CONSOLE_MODE_DATA    ModeData[GRAPHICS_MAX_MODE];
-  EFI_UGA_PIXEL                 *LineBuffer;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL *LineBuffer;
   EFI_HII_HANDLE                HiiHandle;
 } GRAPHICS_CONSOLE_DEV;
 

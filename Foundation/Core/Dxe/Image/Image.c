@@ -961,16 +961,6 @@ Returns:
   //
   PERF_START (ImageHandle, START_IMAGE_TOK, NULL, 0);
 
-  if (sizeof (UINTN) == 4 && Image->Machine == EFI_IMAGE_MACHINE_X64) {
-    return EFI_UNSUPPORTED;
-  } else if (sizeof (UINTN) == 8 && Image->Machine == EFI_IMAGE_MACHINE_IA32) {
-    return EFI_UNSUPPORTED;
-  } else {
-    //
-    // For orther possible cases
-    //
-  }
-
   //
   // Push the current start image context, and
   // link the current image to the head.   This is the

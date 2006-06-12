@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -97,7 +97,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gConSplitterStdErrComponentName = {
   "eng"
 };
 
-static EFI_UNICODE_STRING_TABLE mConSplitterDriverNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE mConSplitterDriverNameTable[] = {
   {
     "eng",
     L"Console Splitter Driver"
@@ -108,7 +108,7 @@ static EFI_UNICODE_STRING_TABLE mConSplitterDriverNameTable[] = {
   }
 };
 
-static EFI_UNICODE_STRING_TABLE mConSplitterConInControllerNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE mConSplitterConInControllerNameTable[] = {
   {
     "eng",
     L"Primary Console Input Device"
@@ -119,7 +119,7 @@ static EFI_UNICODE_STRING_TABLE mConSplitterConInControllerNameTable[] = {
   }
 };
 
-static EFI_UNICODE_STRING_TABLE mConSplitterSimplePointerControllerNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE mConSplitterSimplePointerControllerNameTable[] = {
   {
     "eng",
     L"Primary Simple Pointer Device"
@@ -130,7 +130,7 @@ static EFI_UNICODE_STRING_TABLE mConSplitterSimplePointerControllerNameTable[] =
   }
 };
 
-static EFI_UNICODE_STRING_TABLE mConSplitterConOutControllerNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE mConSplitterConOutControllerNameTable[] = {
   {
     "eng",
     L"Primary Console Output Device"
@@ -141,7 +141,7 @@ static EFI_UNICODE_STRING_TABLE mConSplitterConOutControllerNameTable[] = {
   }
 };
 
-static EFI_UNICODE_STRING_TABLE mConSplitterStdErrControllerNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE mConSplitterStdErrControllerNameTable[] = {
   {
     "eng",
     L"Primary Standard Error Device"

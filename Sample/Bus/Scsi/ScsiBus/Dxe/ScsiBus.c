@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -404,7 +404,7 @@ EFI_STATUS
 EFIAPI
 ScsiGetDeviceLocation (
   IN  EFI_SCSI_IO_PROTOCOL    *This,
-  OUT UINT32                  *Target,
+  IN OUT UINT8                **Target,
   OUT UINT64                  *Lun
   )
 /*++
@@ -413,7 +413,7 @@ ScsiGetDeviceLocation (
     
   Arguments:
     This                  - Protocol instance pointer.
-    Target                - A pointer to the Target ID of a SCSI device 
+    Target                - A pointer to the Target Array which represents ID of a SCSI device 
                             on the SCSI channel. 
     Lun                   - A pointer to the LUN of the SCSI device on 
                             the SCSI channel.
@@ -425,14 +425,18 @@ ScsiGetDeviceLocation (
 {
   SCSI_IO_DEV *ScsiIoDevice;
 
-  if (Target == NULL || Lun == NULL) {
+  if (Target == NULL || Lun == NULL || *Target == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  ScsiIoDevice  = SCSI_IO_DEV_FROM_THIS (This);
+  ScsiIoDevice = SCSI_IO_DEV_FROM_THIS (This);
 
-  *Target       = ScsiIoDevice->Pun;
-  *Lun          = ScsiIoDevice->Lun;
+  (*Target)[0] = (UINT8) (ScsiIoDevice->Pun & 0xff);
+  (*Target)[1] = (UINT8) ((ScsiIoDevice->Pun >> 8) & 0xff);
+  (*Target)[2] = (UINT8) ((ScsiIoDevice->Pun >> 16) & 0xff);
+  (*Target)[3] = (UINT8) ((ScsiIoDevice->Pun >> 24) & 0xff);
+
+  *Lun         = ScsiIoDevice->Lun;
 
   return EFI_SUCCESS;
 }

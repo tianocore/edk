@@ -40,7 +40,6 @@
 # the output makefiles for each component.
 #
 [Defines]
-PROCESSOR=$(PROCESSOR)
 PLATFORM=$(PROJECT_NAME)
 
 
@@ -152,7 +151,7 @@ Sample\Universal\Variable\RuntimeDxe\Variable.inf
 Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf                       
 Sample\Universal\Runtime\Dxe\Runtime.inf
 Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
-Other\Maintained\Application\Shell\Bin\Shell.inf
+Other\Maintained\Application\$(UEFI_PREFIX)Shell\Bin\Shell.inf
 Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
 Sample\Platform\Generic\Logo\Logo.inf                                           PACKAGE=Logo
 Sample\Bus\Pci\IdeBus\Dxe\IdeBus.inf

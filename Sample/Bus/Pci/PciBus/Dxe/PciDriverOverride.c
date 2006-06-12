@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -143,6 +143,7 @@ Returns:
   EFI_IMAGE_NT_HEADERS          *PeHdr;
   EFI_LOADED_IMAGE_PROTOCOL     *LoadedImage;
   PCI_DRIVER_OVERRIDE_LIST      *Node;
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   EFI_DRIVER_OS_HANDOFF_HEADER  *DriverOsHandoffHeader;
   EFI_DRIVER_OS_HANDOFF_HEADER  *NewDriverOsHandoffHeader;
   EFI_DRIVER_OS_HANDOFF         *DriverOsHandoff;
@@ -151,6 +152,7 @@ Returns:
   UINTN                         NumberOfEntries;
   UINTN                         Size;
   UINTN                         Index;
+#endif
 
   Status = gBS->HandleProtocol (DriverImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **) &LoadedImage);
   if (EFI_ERROR (Status)) {
@@ -180,6 +182,7 @@ Returns:
     return EFI_SUCCESS;
   }
 
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   DriverOsHandoffHeader = NULL;
   Status                = EfiLibGetSystemConfigurationTable (&gEfiUgaIoProtocolGuid, (VOID **) &DriverOsHandoffHeader);
   if (!EFI_ERROR (Status) && DriverOsHandoffHeader != NULL) {
@@ -285,6 +288,7 @@ Returns:
   if (DriverOsHandoffHeader != NULL) {
     gBS->FreePool (DriverOsHandoffHeader);
   }
+#endif
 
   return EFI_SUCCESS;
 }

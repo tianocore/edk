@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -18,6 +18,7 @@ Abstract:
 --*/
 
 #include "bc.h"
+#include "PxeArch.h"
 
 STATIC EFI_PXE_BASE_CODE_UDP_PORT DhcpServerPort        = DHCP_SERVER_PORT;
 STATIC EFI_PXE_BASE_CODE_UDP_PORT DHCPClientPort        = DHCP_CLIENT_PORT;
@@ -41,13 +42,6 @@ typedef union {
   DHCPV4_OP_MESSAGE_TYPE    *MessageType;
   UINT8                     *BytePtr;
 } UNION_PTR;
-
-//
-// 1 for Itanium-based, 0 for IA32
-//
-#define IA64SZ    ((sizeof (UINTN) / sizeof (UINT32)) - 1)
-
-#define SYS_ARCH  (SYS_ARCH_EFI32 - (SYS_ARCH_EFI32 - IA64) * IA64SZ)
 
 #pragma pack(1)
 //

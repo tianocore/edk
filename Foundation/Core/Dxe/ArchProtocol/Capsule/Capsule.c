@@ -11,13 +11,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  Variable.c
+  Capsule.c
 
 Abstract:
 
-  Variable Architectural Protocol as defined in Tiano
-
-  This code is used to produce the EFI 1.0 runtime variable services
+  Capsule Architectural Protocol is used to produce the UEFI 2.0 capsule runtime services
 
 --*/
 

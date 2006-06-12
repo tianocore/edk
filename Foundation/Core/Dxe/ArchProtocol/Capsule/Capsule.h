@@ -15,15 +15,7 @@ Module Name:
 
 Abstract:
 
-  Capsule Architectural Protocol is new defined in UEFI2.0
-
-  This code is used to produce the EFI 1.0 runtime variable services
-
-  The GetVariable (), GetNextVariableName (), and SetVariable () EFI 1.0 
-  services are added to the EFI system table and the 
-  EFI_VARIABLE_ARCH_PROTOCOL_GUID protocol is registered with a NULL pointer.
-
-  No CRC of the EFI system table is required, as it is done in the DXE core.
+  Capsule Architectural Protocol is newly added to produce UEFI2.0 capsule runtime services.
 
 --*/
 

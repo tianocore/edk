@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -99,6 +99,16 @@ extern EFI_GUID gEfiWinNtSerialPortGuid;
   }
 
 extern EFI_GUID gEfiWinNtUgaGuid;
+
+//
+// EFI_WIN_NT_GOP
+//
+#define EFI_WIN_NT_GOP_GUID \
+  { \
+    0x4e11e955, 0xccca, 0x11d4, 0xbd, 0xd, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 \
+  }
+
+extern EFI_GUID gEfiWinNtGopGuid;
 
 //
 // EFI_WIN_NT_CONSOLE

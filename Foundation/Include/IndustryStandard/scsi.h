@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -283,5 +283,10 @@ typedef struct {
 // Additional Sense Code Qualifier
 //
 #define EFI_SCSI_ASCQ_IN_PROGRESS (0x01)
+
+//
+// Max bytes needed to represent ID of a SCSI device
+//
+#define EFI_SCSI_TARGET_MAX_BYTES (0x10)
 
 #endif

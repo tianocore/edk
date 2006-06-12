@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -67,6 +67,46 @@ NT_PLATFORM_UGA_DEVICE_PATH gUgaDevicePath1 = {
   },
   gEndEntire
 };
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+NT_PLATFORM_GOP_DEVICE_PATH gGopDevicePath0 = {
+  {
+    HARDWARE_DEVICE_PATH,
+    HW_VENDOR_DP,
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
+    EFI_WIN_NT_THUNK_PROTOCOL_GUID
+  },
+  {
+    HARDWARE_DEVICE_PATH,
+    HW_VENDOR_DP,
+    (UINT8) (sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)),
+    (UINT8) ((sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
+    EFI_WIN_NT_GOP_GUID,
+    0
+  },
+  gEndEntire
+};
+
+NT_PLATFORM_GOP_DEVICE_PATH gGopDevicePath1 = {
+  {
+    HARDWARE_DEVICE_PATH,
+    HW_VENDOR_DP,
+    (UINT8) (sizeof (VENDOR_DEVICE_PATH)),
+    (UINT8) ((sizeof (VENDOR_DEVICE_PATH)) >> 8),
+    EFI_WIN_NT_THUNK_PROTOCOL_GUID
+  },
+  {
+    HARDWARE_DEVICE_PATH,
+    HW_VENDOR_DP,
+    (UINT8) (sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)),
+    (UINT8) ((sizeof (WIN_NT_VENDOR_DEVICE_PATH_NODE)) >> 8),
+    EFI_WIN_NT_GOP_GUID,
+    1
+  },
+  gEndEntire
+};
+#endif
 
 //
 // Platform specific serial device path
@@ -164,6 +204,16 @@ BDS_CONSOLE_CONNECT_ENTRY   gPlatformConsole[] = {
     (EFI_DEVICE_PATH_PROTOCOL *) &gUgaDevicePath1,
     (CONSOLE_OUT | CONSOLE_IN)
   },
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  {
+    (EFI_DEVICE_PATH_PROTOCOL *) &gGopDevicePath0,
+    (CONSOLE_OUT | CONSOLE_IN)
+  },
+  {
+    (EFI_DEVICE_PATH_PROTOCOL *) &gGopDevicePath1,
+    (CONSOLE_OUT | CONSOLE_IN)
+  },
+#endif
   {
     NULL,
     0

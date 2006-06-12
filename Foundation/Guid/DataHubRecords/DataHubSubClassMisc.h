@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -92,7 +92,8 @@ typedef struct {
   UINT32  SmartBatteryIsSupported           :1;
   UINT32  BiosBootSpecIsSupported           :1;
   UINT32  FunctionKeyNetworkBootIsSupported :1;
-  UINT32  Reserved                          :22;
+  UINT32  TargetContentDistributionEnabled  :1; 
+  UINT32  Reserved                          :21;
 } EFI_MISC_BIOS_CHARACTERISTICS;
 
 typedef struct {
@@ -109,6 +110,10 @@ typedef struct {
   EFI_EXP_BASE2_DATA              BiosPhysicalDeviceSize;
   EFI_MISC_BIOS_CHARACTERISTICS   BiosCharacteristics1;
   EFI_MISC_BIOS_CHARACTERISTICS_EXTENSION  BiosCharacteristics2;
+  UINT8                           BiosMajorRelease;
+  UINT8                           BiosMinorRelease;
+  UINT8                           BiosEmbeddedFirmwareMajorRelease;
+  UINT8                           BiosEmbeddedFirmwareMinorRelease;
 } EFI_MISC_BIOS_VENDOR;       
 
 //
@@ -137,7 +142,9 @@ typedef struct {
   STRING_REF                      SystemSerialNumber;
   EFI_GUID                        SystemUuid;
   EFI_MISC_SYSTEM_WAKEUP_TYPE     SystemWakeupType;
-} EFI_MISC_SYSTEM_MANUFACTURER;       
+  STRING_REF                      SystemSKUNumber;
+  STRING_REF                      SystemFamily;
+} EFI_MISC_SYSTEM_MANUFACTURER;        
 
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -404,6 +411,7 @@ typedef enum {
   EfiSlotTypePC98E = 0xA2,
   EfiSlotTypePC98LocalBus = 0xA3,
   EfiSlotTypePC98Card = 0xA4,
+  EfiSlotTypePciExpress = 0xA5,
 } EFI_MISC_SLOT_TYPE;
 
 typedef enum {  
@@ -414,6 +422,13 @@ typedef enum {
   EfiSlotDataBusWidth32Bit = 5,
   EfiSlotDataBusWidth64Bit = 6,
   EfiSlotDataBusWidth128Bit = 7,
+  EfiSlotDataBusWidth1xOrx1 = 8,
+  EfiSlotDataBusWidth2xOrx2 = 9,
+  EfiSlotDataBusWidth4xOrx4 = 0xA,
+  EfiSlotDataBusWidth8xOrx8 = 0xB,
+  EfiSlotDataBusWidth12xOrx12 = 0xC,
+  EfiSlotDataBusWidth16xOrx16 = 0xD,
+  EfiSlotDataBusWidth32xOrx32 = 0xE,
 } EFI_MISC_SLOT_DATA_BUS_WIDTH;
 
 typedef enum {  
@@ -536,6 +551,38 @@ typedef struct {
   UINT16                              LanguageId;
   STRING_REF                          SystemLanguageString;
 } EFI_MISC_SYSTEM_LANGUAGE_STRING;      
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+//  Misc. System Event Log  - SMBIOS Type 15
+//
+#define EFI_MISC_SYSTEM_EVENT_LOG_RECORD_NUMBER 0x0000000D
+typedef struct {
+  //SMBIOS_STRUCTURE_HDR  Header;
+  UINT16                LogAreaLength;
+  UINT16                LogHeaderStartOffset;
+  UINT16                LogDataStartOffset;
+  UINT8                 AccessMethod;
+  UINT8                 LogStatus;
+  UINT32                LogChangeToken;
+  UINT32                AccessMethodAddress;
+  UINT8                 LogHeaderFormat;
+  UINT8                 NumberOfSupportedLogType;
+  UINT8                 LengthOfLogDescriptor;
+} EFI_MISC_SYSTEM_EVENT_LOG;
+
+//
+// Access Method.
+//  0x00~0x04:  as following definition
+//  0x05~0x7f:  Available for future assignment.
+//  0x80~0xff:  BIOS Vendor/OEM-specific.
+// 
+#define ACCESS_INDEXIO_1INDEX8BIT_DATA8BIT    0x00
+#define ACCESS_INDEXIO_2INDEX8BIT_DATA8BIT    0X01
+#define ACCESS_INDEXIO_1INDEX16BIT_DATA8BIT   0X02
+#define ACCESS_MEMORY_MAPPED                  0x03
+#define ACCESS_GPNV                           0x04
 
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -736,7 +783,9 @@ typedef struct {
 //
 //////////////////////////////////////////////////////////////////////////////
 //
-// OEM Data Record - SMBIOS Type 0x80-0xFF
+// Generic Data Record - All SMBIOS Type
+// Put smbios raw data into one datahub record directly. Smbios driver would
+// copy smbios raw data into smbios table but not take any translation.
 //
 typedef struct {
   UINT8       Type;
@@ -768,7 +817,8 @@ typedef union {
   EFI_MISC_OEM_STRING                           MiscOemString;
   EFI_MISC_SYSTEM_OPTION_STRING                 MiscOptionString;
   EFI_MISC_NUMBER_OF_INSTALLABLE_LANGUAGES      NumberOfInstallableLanguages;
-  EFI_MISC_SYSTEM_LANGUAGE_STRING               MiscSystemLanguageString;  
+  EFI_MISC_SYSTEM_LANGUAGE_STRING               MiscSystemLanguageString;
+  EFI_MISC_SYSTEM_EVENT_LOG                     MiscSystemEventLog;
   EFI_MISC_ONBOARD_DEVICE_TYPE_DATA             MiscOnboardDeviceTypeData;
   EFI_MISC_RESET_CAPABILITIES_DATA              MiscResetCapablilitiesData;
   EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA      MiscHardwareSecuritySettingsData;  

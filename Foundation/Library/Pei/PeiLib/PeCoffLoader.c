@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -33,12 +33,7 @@ Revision History
 #endif
 
 #define IMAGE_64_MACHINE_TYPE_SUPPORTED(Machine) \
-  ((Machine) == EFI_IMAGE_MACHINE_IA32 || \
-   (Machine) == EFI_IMAGE_MACHINE_X64 || \
-   (Machine) == EFI_IMAGE_MACHINE_EBC)
-
-#define IMAGE_MACHINE_TYPE_SUPPORTED(Machine) \
-  ((Machine) == EFI_IMAGE_MACHINE_IA32 || \
+  ((Machine) == EFI_IMAGE_MACHINE_X64 || \
    (Machine) == EFI_IMAGE_MACHINE_EBC)
 
 STATIC
@@ -993,7 +988,7 @@ Returns:
   // If there's no relocations, then make sure it's not a runtime driver,
   // and that it's being loaded at the linked address.
   //
-  if (CheckContext.RelocationsStripped == TRUE) {
+  if (CheckContext.RelocationsStripped) {
     //
     // If the image does not contain relocations and it is a runtime driver
     // then return an error.
@@ -1052,7 +1047,7 @@ Returns:
                             ImageContext->Handle,
                             0,
                             &ImageContext->SizeOfHeaders,
-                            (void *) (UINTN) ImageContext->ImageAddress
+                            (VOID *) (UINTN) ImageContext->ImageAddress
                             );
 
     TeHdr             = (EFI_TE_IMAGE_HEADER *) (UINTN) (ImageContext->ImageAddress);
@@ -1452,7 +1447,7 @@ Returns:
 
 
 
-static
+STATIC
 EFI_STATUS
 PeCoffLoader64GetPeHeader (
   IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext,
@@ -1511,14 +1506,14 @@ Returns:
                            PeHdr
                            );
   if (EFI_ERROR (Status)) {
-      ImageContext->ImageError = EFI_IMAGE_ERROR_IMAGE_READ;
-      return Status;
+    ImageContext->ImageError = EFI_IMAGE_ERROR_IMAGE_READ;
+    return Status;
   }
 
   return EFI_SUCCESS;
 }
 
-static
+STATIC
 EFI_STATUS
 PeCoffLoader64CheckImageType (
   IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT      *ImageContext,
@@ -1762,7 +1757,7 @@ Returns:
   return EFI_SUCCESS;
 }
 
-static
+STATIC
 VOID *
 PeCoffLoader64ImageAddress (
   IN OUT EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT      *ImageContext,
@@ -2071,7 +2066,7 @@ Returns:
   // If there's no relocations, then make sure it's not a runtime driver,
   // and that it's being loaded at the linked address.
   //
-  if (CheckContext.RelocationsStripped == TRUE) {
+  if (CheckContext.RelocationsStripped) {
     //
     // If the image does not contain relocations and it is a runtime driver 
     // then return an error.

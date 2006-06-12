@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -43,6 +43,18 @@ typedef struct {
   UINT32  TotalSize;
   UINT8   Reserved[12];
 } EFI_CPU_MICROCODE_HEADER;
+
+typedef struct {
+  UINT32  ExtendedSignatureCount;
+  UINT32  ExtendedTableChecksum;  
+  UINT8   Reserved[12];
+} EFI_CPU_MICROCODE_EXTENDED_TABLE_HEADER;
+
+typedef struct {
+  UINT32  ProcessorSignature;
+  UINT32  ProcessorFlag;
+  UINT32  ProcessorChecksum;
+} EFI_CPU_MICROCODE_EXTENDED_TABLE;
 
 typedef struct {
   UINT32  Stepping : 4;
@@ -107,6 +119,9 @@ typedef struct {
 #define EFI_IA32_MCG_CTL                      0x17B
 #define EFI_IA32_MC0_CTL                      0x400
 #define EFI_IA32_MC0_STATUS                   0x401
+
+#define EFI_IA32_PERF_STATUS                  0x198
+#define EFI_IA32_PERF_CTL                     0x199
 
 #define EFI_CACHE_UNCACHEABLE                 0
 #define EFI_CACHE_WRITECOMBINING              1

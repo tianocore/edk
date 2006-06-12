@@ -32,6 +32,17 @@ EFI_SOURCE = $(EDK_SOURCE)
 !MESSAGE EDK_TOOLS_PATH environmental variable not set, default setting used
 !ENDIF
 
+#
+# Set the processor type
+#
+PROCESSOR = IPF
+
+#
+# Define a toolchain so we can pick up the basic defines from
+# the EFI tool setup file.
+#
+TOOLCHAIN = TOOLCHAIN_$(PROCESSOR)
+
 !INCLUDE PlatformTools.env
 
 #
@@ -83,7 +94,8 @@ makefiles : $(PROCESSOR)\Blank.pad
     -d EDK_SOURCE=$(EDK_SOURCE)                \
     -d PROCESSOR=$(PROCESSOR)                  \
     -d PROJECT_NAME=$(PROJECT_NAME)            \
-    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt  \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)              \
+    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt    \
     $(PROJECT_NAME).dsc
 
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -66,7 +66,6 @@ Returns:
   UINTN                         Index;
   UINT32                        AuthenticationStatus;
 
-
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
                   &gEfiFirmwareVolumeProtocolGuid,
@@ -112,11 +111,11 @@ Returns:
 
 
 EFI_STATUS
-ConvertBmpToUgaBlt (
+ConvertBmpToGopBlt (
   IN  VOID      *BmpImage,
   IN  UINTN     BmpImageSize,
-  IN OUT VOID   **UgaBlt,
-  IN OUT UINTN  *UgaBltSize,
+  IN OUT VOID   **GopBlt,
+  IN OUT UINTN  *GopBltSize,
   OUT UINTN     *PixelHeight,
   OUT UINTN     *PixelWidth
   )
@@ -124,8 +123,8 @@ ConvertBmpToUgaBlt (
 
 Routine Description:
 
-  Convert a *.BMP graphics image to a UGA blt buffer. If a NULL UgaBlt buffer
-  is passed in a UgaBlt buffer will be allocated by this routine. If a UgaBlt
+  Convert a *.BMP graphics image to a GOP/UGA blt buffer. If a NULL Blt buffer
+  is passed in a GopBlt buffer will be allocated by this routine. If a GopBlt
   buffer is passed in it will be used if it is big enough.
 
 Arguments:
@@ -134,36 +133,36 @@ Arguments:
 
   BmpImageSize  - Number of bytes in BmpImage
 
-  UgaBlt        - Buffer containing UGA version of BmpImage.
+  GopBlt        - Buffer containing GOP version of BmpImage.
 
-  UgaBltSize    - Size of UgaBlt in bytes.
+  GopBltSize    - Size of GopBlt in bytes.
 
-  PixelHeight   - Height of UgaBlt/BmpImage in pixels
+  PixelHeight   - Height of GopBlt/BmpImage in pixels
 
-  PixelWidth    - Width of UgaBlt/BmpImage in pixels
+  PixelWidth    - Width of GopBlt/BmpImage in pixels
 
 
 Returns: 
 
-  EFI_SUCCESS           - UgaBlt and UgaBltSize are returned. 
+  EFI_SUCCESS           - GopBlt and GopBltSize are returned. 
   EFI_UNSUPPORTED       - BmpImage is not a valid *.BMP image
-  EFI_BUFFER_TOO_SMALL  - The passed in UgaBlt buffer is not big enough.
-                          UgaBltSize will contain the required size.
+  EFI_BUFFER_TOO_SMALL  - The passed in GopBlt buffer is not big enough.
+                          GopBltSize will contain the required size.
   EFI_OUT_OF_RESOURCES  - No enough buffer to allocate
 
 --*/
 {
-  UINT8             *Image;
-  UINT8             *ImageHeader;
-  BMP_IMAGE_HEADER  *BmpHeader;
-  BMP_COLOR_MAP     *BmpColorMap;
-  EFI_UGA_PIXEL     *BltBuffer;
-  EFI_UGA_PIXEL     *Blt;
-  UINTN             BltBufferSize;
-  UINTN             Index;
-  UINTN             Height;
-  UINTN             Width;
-  UINTN             ImageIndex;
+  UINT8                         *Image;
+  UINT8                         *ImageHeader;
+  BMP_IMAGE_HEADER              *BmpHeader;
+  BMP_COLOR_MAP                 *BmpColorMap;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL *BltBuffer;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Blt;
+  UINTN                         BltBufferSize;
+  UINTN                         Index;
+  UINTN                         Height;
+  UINTN                         Width;
+  UINTN                         ImageIndex;
 
   BmpHeader = (BMP_IMAGE_HEADER *) BmpImage;
   if (BmpHeader->CharB != 'B' || BmpHeader->CharM != 'M') {
@@ -186,16 +185,16 @@ Returns:
   Image         = ((UINT8 *) BmpImage) + BmpHeader->ImageOffset;
   ImageHeader   = Image;
 
-  BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_UGA_PIXEL);
-  if (*UgaBlt == NULL) {
-    *UgaBltSize = BltBufferSize;
-    *UgaBlt     = EfiLibAllocatePool (*UgaBltSize);
-    if (*UgaBlt == NULL) {
+  BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
+  if (*GopBlt == NULL) {
+    *GopBltSize = BltBufferSize;
+    *GopBlt     = EfiLibAllocatePool (*GopBltSize);
+    if (*GopBlt == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
   } else {
-    if (*UgaBltSize < BltBufferSize) {
-      *UgaBltSize = BltBufferSize;
+    if (*GopBltSize < BltBufferSize) {
+      *GopBltSize = BltBufferSize;
       return EFI_BUFFER_TOO_SMALL;
     }
   }
@@ -206,7 +205,7 @@ Returns:
   //
   // Convert image from BMP to Blt buffer format
   //
-  BltBuffer = *UgaBlt;
+  BltBuffer = *GopBlt;
   for (Height = 0; Height < BmpHeader->PixelHeight; Height++) {
     Blt = &BltBuffer[(BmpHeader->PixelHeight - Height - 1) * BmpHeader->PixelWidth];
     for (Width = 0; Width < BmpHeader->PixelWidth; Width++, Image++, Blt++) {
@@ -325,8 +324,8 @@ EnableQuietBoot (
 
 Routine Description:
 
-  Use Console Control to turn off UGA based Simple Text Out consoles from going
-  to the UGA device. Put up LogoFile on every UGA device that is a console
+  Use Console Control to turn off GOP/UGA based Simple Text Out consoles from going
+  to the GOP/UGA device. Put up LogoFile on every GOP/UGA device that is a console
 
 Arguments:
 
@@ -343,20 +342,14 @@ Returns:
 {
   EFI_STATUS                    Status;
   EFI_CONSOLE_CONTROL_PROTOCOL  *ConsoleControl;
-  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
   EFI_OEM_BADGING_PROTOCOL      *Badging;
   UINT32                        SizeOfX;
   UINT32                        SizeOfY;
-  UINT32                        ColorDepth;
-  UINT32                        RefreshRate;
   INTN                          DestX;
   INTN                          DestY;
-
   UINT8                         *ImageData;
   UINTN                         ImageSize;
-  EFI_UGA_PIXEL                 *UgaBlt;
-  UINTN                         UgaBltSize;
-
+  UINTN                         BltSize;
   UINT32                        Instance;
   EFI_BADGING_FORMAT            Format;
   EFI_BADGING_DISPLAY_ATTRIBUTE Attribute;
@@ -364,15 +357,31 @@ Returns:
   UINTN                         CoordinateY;
   UINTN                         Height;
   UINTN                         Width;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Blt;
+  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
+  UINT32                        ColorDepth;
+  UINT32                        RefreshRate;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
 
   Status = gBS->LocateProtocol (&gEfiConsoleControlProtocolGuid, NULL, &ConsoleControl);
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->HandleProtocol (gST->ConsoleOutHandle, &gEfiUgaDrawProtocolGuid, &UgaDraw);
+  UgaDraw = NULL;
+  //
+  // Try to open GOP first
+  //
+  Status = gBS->HandleProtocol (gST->ConsoleOutHandle, &gEfiGraphicsOutputProtocolGuid, &GraphicsOutput);
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    GraphicsOutput = NULL;
+    //
+    // Open GOP failed, try to open UGA
+    //
+    Status = gBS->HandleProtocol (gST->ConsoleOutHandle, &gEfiUgaDrawProtocolGuid, &UgaDraw);
+    if (EFI_ERROR (Status)) {
+      return EFI_UNSUPPORTED;
+    }
   }
 
   Badging = NULL;
@@ -380,9 +389,14 @@ Returns:
 
   ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenGraphics);
 
-  Status = UgaDraw->GetMode (UgaDraw, &SizeOfX, &SizeOfY, &ColorDepth, &RefreshRate);
-  if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+  if (GraphicsOutput != NULL) {
+    SizeOfX = GraphicsOutput->Mode->Info->HorizontalResolution;
+    SizeOfY = GraphicsOutput->Mode->Info->VerticalResolution;
+  } else {
+    Status = UgaDraw->GetMode (UgaDraw, &SizeOfX, &SizeOfY, &ColorDepth, &RefreshRate);
+    if (EFI_ERROR (Status)) {
+      return EFI_UNSUPPORTED;
+    }
   }
 
   Instance = 0;
@@ -423,12 +437,12 @@ Returns:
       Attribute   = EfiBadgingDisplayAttributeCenter;
     }
 
-    UgaBlt = NULL;
-    Status = ConvertBmpToUgaBlt (
+    Blt = NULL;
+    Status = ConvertBmpToGopBlt (
               ImageData,
               ImageSize,
-              &UgaBlt,
-              &UgaBltSize,
+              &Blt,
+              &BltSize,
               &Height,
               &Width
               );
@@ -490,22 +504,37 @@ Returns:
     }
 
     if ((DestX >= 0) && (DestY >= 0)) {
-      Status = UgaDraw->Blt (
-                          UgaDraw,
-                          UgaBlt,
-                          EfiUgaBltBufferToVideo,
-                          0,
-                          0,
-                          (UINTN) DestX,
-                          (UINTN) DestY,
-                          Width,
-                          Height,
-                          Width * sizeof (EFI_UGA_PIXEL)
-                          );
+      if (GraphicsOutput != NULL) {
+        Status = GraphicsOutput->Blt (
+                            GraphicsOutput,
+                            Blt,
+                            EfiBltBufferToVideo,
+                            0,
+                            0,
+                            (UINTN) DestX,
+                            (UINTN) DestY,
+                            Width,
+                            Height,
+                            Width * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
+                            );
+      } else {
+        Status = UgaDraw->Blt (
+                            UgaDraw,
+                            (EFI_UGA_PIXEL *) Blt,
+                            EfiUgaBltBufferToVideo,
+                            0,
+                            0,
+                            (UINTN) DestX,
+                            (UINTN) DestY,
+                            Width,
+                            Height,
+                            Width * sizeof (EFI_UGA_PIXEL)
+                            );
+      }
     }
 
     gBS->FreePool (ImageData);
-    gBS->FreePool (UgaBlt);
+    gBS->FreePool (Blt);
 
     if (Badging == NULL) {
       break;
@@ -524,8 +553,8 @@ DisableQuietBoot (
 
 Routine Description:
 
-  Use Console Control to turn on UGA based Simple Text Out consoles. The UGA 
-  Simple Text Out screens will now be synced up with all non UGA output devices
+  Use Console Control to turn on GOP/UGA based Simple Text Out consoles. The GOP/UGA 
+  Simple Text Out screens will now be synced up with all non GOP/UGA output devices
 
 Arguments:
 
@@ -533,7 +562,7 @@ Arguments:
 
 Returns: 
 
-  EFI_SUCCESS           - UGA devices are back in text mode and synced up.
+  EFI_SUCCESS           - GOP/UGA devices are back in text mode and synced up.
   EFI_UNSUPPORTED       - Logo not found
 
 --*/

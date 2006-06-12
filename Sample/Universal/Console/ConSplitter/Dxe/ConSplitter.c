@@ -1,6 +1,6 @@
-/*++ 
+/*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,23 +15,23 @@ Module Name:
 
 Abstract:
 
-  Console Splitter Driver. Any Handle that attatched 
+  Console Splitter Driver. Any Handle that attatched
   EFI_CONSOLE_IDENTIFIER_PROTOCOL can be bound by this driver.
-  
-  So far it works like any other driver by opening a SimpleTextIn and/or 
-  SimpleTextOut protocol with EFI_OPEN_PROTOCOL_BY_DRIVER attributes. The big 
+
+  So far it works like any other driver by opening a SimpleTextIn and/or
+  SimpleTextOut protocol with EFI_OPEN_PROTOCOL_BY_DRIVER attributes. The big
   difference is this driver does not layer a protocol on the passed in
-  handle, or construct a child handle like a standard device or bus driver. 
-  This driver produces three virtual handles as children, one for console input 
+  handle, or construct a child handle like a standard device or bus driver.
+  This driver produces three virtual handles as children, one for console input
   splitter, one for console output splitter and one for error output splitter.
-  EFI_CONSOLE_SPLIT_PROTOCOL will be attatched onto each virtual handle to 
+  EFI_CONSOLE_SPLIT_PROTOCOL will be attatched onto each virtual handle to
   identify the splitter type.
-  
+
   Each virtual handle, that supports both the EFI_CONSOLE_SPLIT_PROTOCOL
-  and Console I/O protocol, will be produced in the driver entry point. 
+  and Console I/O protocol, will be produced in the driver entry point.
   The virtual handle are added on driver entry and never removed.
   Such design ensures sytem function well during none console device situation.
-  
+
 --*/
 
 #include "ConSplitter.h"
@@ -39,7 +39,7 @@ Abstract:
 //
 // Global Variables
 //
-static TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
+STATIC TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
   TEXT_IN_SPLITTER_PRIVATE_DATA_SIGNATURE,
   (EFI_HANDLE) NULL,
   {
@@ -88,7 +88,7 @@ static TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
   FALSE
 };
 
-static TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
+STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
   TEXT_OUT_SPLITTER_PRIVATE_DATA_SIGNATURE,
   (EFI_HANDLE) NULL,
   {
@@ -111,6 +111,7 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
     0,
     FALSE,
   },
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   {
     ConSpliterUgaDrawGetMode,
     ConSpliterUgaDrawSetMode,
@@ -121,7 +122,18 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
   0,
   0,
   (EFI_UGA_PIXEL *) NULL,
-
+#else
+  {
+    ConSpliterGraphicsOutputQueryMode,
+    ConSpliterGraphicsOutputSetMode,
+    ConSpliterGraphicsOutputBlt,
+    NULL
+  },
+  (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) NULL,
+  (TEXT_OUT_GOP_MODE *) NULL,
+  0,
+  TRUE,
+#endif
   {
     ConSpliterConsoleControlGetMode,
     ConSpliterConsoleControlSetMode,
@@ -129,7 +141,7 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
   },
 
   0,
-  (TEXT_OUT_AND_UGA_DATA *) NULL,
+  (TEXT_OUT_AND_GOP_DATA *) NULL,
   0,
   (TEXT_OUT_SPLITTER_QUERY_DATA *) NULL,
   0,
@@ -142,7 +154,7 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
   (INT32 *) NULL
 };
 
-static TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
+STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
   TEXT_OUT_SPLITTER_PRIVATE_DATA_SIGNATURE,
   (EFI_HANDLE) NULL,
   {
@@ -165,6 +177,7 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
     0,
     FALSE,
   },
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   {
     ConSpliterUgaDrawGetMode,
     ConSpliterUgaDrawSetMode,
@@ -175,7 +188,18 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
   0,
   0,
   (EFI_UGA_PIXEL *) NULL,
-
+#else
+  {
+    ConSpliterGraphicsOutputQueryMode,
+    ConSpliterGraphicsOutputSetMode,
+    ConSpliterGraphicsOutputBlt,
+    NULL
+  },
+  (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) NULL,
+  (TEXT_OUT_GOP_MODE *) NULL,
+  0,
+  TRUE,
+#endif
   {
     ConSpliterConsoleControlGetMode,
     ConSpliterConsoleControlSetMode,
@@ -183,7 +207,7 @@ static TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
   },
 
   0,
-  (TEXT_OUT_AND_UGA_DATA *) NULL,
+  (TEXT_OUT_AND_GOP_DATA *) NULL,
   0,
   (TEXT_OUT_SPLITTER_QUERY_DATA *) NULL,
   0,
@@ -244,12 +268,13 @@ ConSplitterDriverEntry (
 
 Routine Description:
   Intialize a virtual console device to act as an agrigator of physical console
-  devices. 
+  devices.
 
 Arguments:
   ImageHandle - (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
   SystemTable - (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
-Returns: 
+
+Returns:
   EFI_SUCCESS
 
 --*/
@@ -358,6 +383,10 @@ Returns:
   //
   Status = ConSplitterTextOutConstructor (&mConOut);
   if (!EFI_ERROR (Status)) {
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+    //
+    // In EFI mode, UGA Draw protocol is installed
+    //
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &mConOut.VirtualHandle,
                     &gEfiSimpleTextOutProtocolGuid,
@@ -370,6 +399,24 @@ Returns:
                     NULL,
                     NULL
                     );
+#else
+    //
+    // In UEFI mode, Graphics Output Protocol is installed on virtual handle.
+    //
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &mConOut.VirtualHandle,
+                    &gEfiSimpleTextOutProtocolGuid,
+                    &mConOut.TextOut,
+                    &gEfiGraphicsOutputProtocolGuid,
+                    &mConOut.GraphicsOutput,
+                    &gEfiConsoleControlProtocolGuid,
+                    &mConOut.ConsoleControl,
+                    &gEfiPrimaryConsoleOutDeviceGuid,
+                    NULL,
+                    NULL
+                    );
+#endif
+
     if (!EFI_ERROR (Status)) {
       //
       // Update the EFI System Table with new virtual console
@@ -407,7 +454,7 @@ Arguments:
 
   ConInPrivate    - A pointer to the TEXT_IN_SPLITTER_PRIVATE_DATA structure.
 
-Returns: 
+Returns:
   EFI_OUT_OF_RESOURCES - Out of resources.
 
 --*/
@@ -482,7 +529,7 @@ ConSplitterTextOutConstructor (
   ConOutPrivate->TextOut.Mode = &ConOutPrivate->TextOutMode;
 
   Status = ConSplitterGrowBuffer (
-            sizeof (TEXT_OUT_AND_UGA_DATA),
+            sizeof (TEXT_OUT_AND_GOP_DATA),
             &ConOutPrivate->TextOutListCount,
             (VOID **) &ConOutPrivate->TextOutList
             );
@@ -505,10 +552,22 @@ ConSplitterTextOutConstructor (
   ConOutPrivate->TextOutQueryData[0].Rows     = 25;
   DevNullTextOutSetMode (ConOutPrivate, 0);
 
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   //
   // Setup the DevNullUgaDraw to 800 x 600 x 32 bits per pixel
   //
   ConSpliterUgaDrawSetMode (&ConOutPrivate->UgaDraw, 800, 600, 32, 60);
+#else
+  //
+  // Setup resource for mode information in Graphics Output Protocol interface
+  //
+  if ((ConOutPrivate->GraphicsOutput.Mode = EfiLibAllocateZeroPool (sizeof (EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE))) == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  if ((ConOutPrivate->GraphicsOutput.Mode->Info = EfiLibAllocateZeroPool (sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION))) == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+#endif
 
   return Status;
 }
@@ -718,7 +777,7 @@ ConSplitterStart (
 /*++
 
 Routine Description:
-  Start ConSplitter on ControllerHandle, and create the virtual 
+  Start ConSplitter on ControllerHandle, and create the virtual
   agrogated console device on first call Start for a SimpleTextIn handle.
 
 Arguments:
@@ -780,7 +839,7 @@ ConSplitterConInDriverBindingStart (
 /*++
 
 Routine Description:
-  Start ConSplitter on ControllerHandle, and create the virtual 
+  Start ConSplitter on ControllerHandle, and create the virtual
   agrogated console device on first call Start for a SimpleTextIn handle.
 
 Arguments:
@@ -828,7 +887,7 @@ ConSplitterSimplePointerDriverBindingStart (
 /*++
 
 Routine Description:
-  Start ConSplitter on ControllerHandle, and create the virtual 
+  Start ConSplitter on ControllerHandle, and create the virtual
   agrogated console device on first call Start for a SimpleTextIn handle.
 
 Arguments:
@@ -871,7 +930,7 @@ ConSplitterConOutDriverBindingStart (
 /*++
 
 Routine Description:
-  Start ConSplitter on ControllerHandle, and create the virtual 
+  Start ConSplitter on ControllerHandle, and create the virtual
   agrogated console device on first call Start for a SimpleTextIn handle.
 
 Arguments:
@@ -886,6 +945,7 @@ Returns:
 {
   EFI_STATUS                    Status;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
   EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
 
   Status = ConSplitterStart (
@@ -898,6 +958,20 @@ Returns:
             );
   if (EFI_ERROR (Status)) {
     return Status;
+  }
+  //
+  // Try to Open Graphics Output protocol
+  //
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiGraphicsOutputProtocolGuid,
+                  &GraphicsOutput,
+                  This->DriverBindingHandle,
+                  mConOut.VirtualHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    GraphicsOutput = NULL;
   }
   //
   // Open UGA_DRAW protocol
@@ -917,13 +991,14 @@ Returns:
   // If both ConOut and StdErr incorporate the same Text Out device,
   // their MaxMode and QueryData should be the intersection of both.
   //
-  Status = ConSplitterTextOutAddDevice (&mConOut, TextOut, UgaDraw);
+  Status = ConSplitterTextOutAddDevice (&mConOut, TextOut, GraphicsOutput, UgaDraw);
   ConSplitterTextOutSetAttribute (&mConOut.TextOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
-  
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   //
   // Match the UGA mode data of ConOut with the current mode
   //
-  if (UgaDraw) {
+  if (UgaDraw != NULL) {
     UgaDraw->GetMode (
                UgaDraw,
                &mConOut.UgaHorizontalResolution,
@@ -932,11 +1007,10 @@ Returns:
                &mConOut.UgaRefreshRate
                );
   }
+#endif
 
   return Status;
-
 }
-  
 
 STATIC
 EFI_STATUS
@@ -949,7 +1023,7 @@ ConSplitterStdErrDriverBindingStart (
 /*++
 
 Routine Description:
-  Start ConSplitter on ControllerHandle, and create the virtual 
+  Start ConSplitter on ControllerHandle, and create the virtual
   agrogated console device on first call Start for a SimpleTextIn handle.
 
 Arguments:
@@ -980,7 +1054,7 @@ Returns:
   // If both ConOut and StdErr incorporate the same Text Out device,
   // their MaxMode and QueryData should be the intersection of both.
   //
-  Status = ConSplitterTextOutAddDevice (&mStdErr, TextOut, NULL);
+  Status = ConSplitterTextOutAddDevice (&mStdErr, TextOut, NULL, NULL);
   ConSplitterTextOutSetAttribute (&mStdErr.TextOut, EFI_TEXT_ATTR (EFI_MAGENTA, EFI_BLACK));
   if (EFI_ERROR (Status)) {
     return Status;
@@ -1175,7 +1249,6 @@ Returns:
 {
   EFI_STATUS                    Status;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
-  EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
 
   if (NumberOfChildren == 0) {
     return EFI_SUCCESS;
@@ -1192,17 +1265,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  //
-  // Remove any UGA devices
-  //
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiUgaDrawProtocolGuid,
-                  &UgaDraw,
-                  This->DriverBindingHandle,
-                  mConOut.VirtualHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
 
   //
   // Delete this console output device's data structures.
@@ -1777,14 +1839,15 @@ Arguments:
 
 Returns:
 
-  None
+  EFI_SUCCESS
+  EFI_OUT_OF_RESOURCES
 
 --*/
 {
   UINTN                         ConOutNumOfConsoles;
   UINTN                         StdErrNumOfConsoles;
-  TEXT_OUT_AND_UGA_DATA         *ConOutTextOutList;
-  TEXT_OUT_AND_UGA_DATA         *StdErrTextOutList;
+  TEXT_OUT_AND_GOP_DATA         *ConOutTextOutList;
+  TEXT_OUT_AND_GOP_DATA         *StdErrTextOutList;
   UINTN                         Indexi;
   UINTN                         Indexj;
   UINTN                         Rows;
@@ -1925,10 +1988,205 @@ Returns:
   return EFI_SUCCESS;
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_STATUS
+ConSplitterAddGraphicsOutputMode (
+  IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private,
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL    *GraphicsOutput,
+  IN  EFI_UGA_DRAW_PROTOCOL           *UgaDraw
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+Returns:
+
+  None
+
+--*/
+{
+  EFI_STATUS                           Status;
+  UINTN                                Index;
+  TEXT_OUT_GOP_MODE                    *Mode;
+  UINTN                                SizeOfInfo;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE    *CurrentGraphicsOutputMode;
+  TEXT_OUT_GOP_MODE                    *ModeBuffer;
+  TEXT_OUT_GOP_MODE                    *MatchedMode;
+  UINTN                                NumberIndex;
+  BOOLEAN                              Match;
+
+  if ((GraphicsOutput == NULL) && (UgaDraw == NULL)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  CurrentGraphicsOutputMode = Private->GraphicsOutput.Mode;
+
+  if (GraphicsOutput != NULL) {
+    if (Private->CurrentNumberOfGraphicsOutput == 0) {
+        //
+        // This is the first Graphics Output device added
+        //
+        CurrentGraphicsOutputMode->MaxMode = GraphicsOutput->Mode->MaxMode;
+        CurrentGraphicsOutputMode->Mode = GraphicsOutput->Mode->Mode;
+        EfiCopyMem (CurrentGraphicsOutputMode->Info, GraphicsOutput->Mode->Info, GraphicsOutput->Mode->SizeOfInfo);
+        CurrentGraphicsOutputMode->SizeOfInfo = GraphicsOutput->Mode->SizeOfInfo;
+        CurrentGraphicsOutputMode->FrameBufferBase = GraphicsOutput->Mode->FrameBufferBase;
+        CurrentGraphicsOutputMode->FrameBufferSize = GraphicsOutput->Mode->FrameBufferSize;
+
+        //
+        // Allocate resource for the private mode buffer
+        //
+        ModeBuffer = EfiLibAllocatePool (sizeof (TEXT_OUT_GOP_MODE) * GraphicsOutput->Mode->MaxMode);
+        if (ModeBuffer == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+        Private->GraphicsOutputModeBuffer = ModeBuffer;
+
+        //
+        // Store all supported display modes to the private mode buffer
+        //
+        Mode = ModeBuffer;
+        for (Index = 0; Index < GraphicsOutput->Mode->MaxMode; Index++) {
+          Status = GraphicsOutput->QueryMode (GraphicsOutput, (UINT32) Index, &SizeOfInfo, &Info);
+          if (EFI_ERROR (Status)) {
+            return Status;
+          }
+          Mode->HorizontalResolution = Info->HorizontalResolution;
+          Mode->VerticalResolution = Info->VerticalResolution;
+          Mode++;
+          gBS->FreePool (Info);
+        }
+    } else {
+      //
+      // Check intersection of display mode
+      //
+      ModeBuffer = EfiLibAllocatePool (sizeof (TEXT_OUT_GOP_MODE) * CurrentGraphicsOutputMode->MaxMode);
+      if (ModeBuffer == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      MatchedMode = ModeBuffer;
+      Mode = &Private->GraphicsOutputModeBuffer[0];
+      for (Index = 0; Index < CurrentGraphicsOutputMode->MaxMode; Index++) {
+        Match = FALSE;
+
+        for (NumberIndex = 0; NumberIndex < GraphicsOutput->Mode->MaxMode; NumberIndex++) {
+          Status = GraphicsOutput->QueryMode (GraphicsOutput, (UINT32) NumberIndex, &SizeOfInfo, &Info);
+          if (EFI_ERROR (Status)) {
+            return Status;
+          }
+          if ((Info->HorizontalResolution == Mode->HorizontalResolution) &&
+              (Info->VerticalResolution == Mode->VerticalResolution)){
+            Match = TRUE;
+            gBS->FreePool (Info);
+            break;
+          }
+          gBS->FreePool (Info);
+        }
+
+        if (Match) {
+          EfiCopyMem (MatchedMode, Mode, sizeof (TEXT_OUT_GOP_MODE));
+          MatchedMode++;
+        }
+
+        Mode++;
+      }
+
+      //
+      // Drop the old mode buffer, assign it to a new one
+      //
+      gBS->FreePool (Private->GraphicsOutputModeBuffer);
+      Private->GraphicsOutputModeBuffer = ModeBuffer;
+
+      //
+      // Physical frame buffer is no longer available when there are more than one physical GOP devices
+      //
+      CurrentGraphicsOutputMode->MaxMode = (UINT32) (((UINTN) MatchedMode - (UINTN) ModeBuffer) / sizeof (TEXT_OUT_GOP_MODE));
+      CurrentGraphicsOutputMode->Info->PixelFormat = PixelBltOnly;
+      EfiZeroMem (&CurrentGraphicsOutputMode->Info->PixelInformation, sizeof (EFI_PIXEL_BITMASK));
+      CurrentGraphicsOutputMode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
+      CurrentGraphicsOutputMode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS) NULL;
+      CurrentGraphicsOutputMode->FrameBufferSize = 0;
+    }
+
+    //
+    // Select a prefered Display mode 800x600
+    //
+    for (Index = 0; Index < CurrentGraphicsOutputMode->MaxMode; Index++) {
+      Mode = &Private->GraphicsOutputModeBuffer[Index];
+      if ((Mode->HorizontalResolution == 800) && (Mode->VerticalResolution == 600)) {
+        break;
+      }
+    }
+    //
+    // Prefered mode is not found, set to mode 0
+    //
+    if (Index >= CurrentGraphicsOutputMode->MaxMode) {
+      Index = 0;
+    }
+
+    //
+    // Current mode number may need update now, so set it to an invalide mode number
+    //
+    CurrentGraphicsOutputMode->Mode = 0xffff;
+  } else {
+    //
+    // For UGA device, it's inconvenient to retrieve all the supported display modes.
+    // To simplify the implementation, only add one resolution(800x600, 32bit color depth) as defined in UEFI spec
+    //
+    CurrentGraphicsOutputMode->MaxMode = 1;
+    CurrentGraphicsOutputMode->Info->Version = 0;
+    CurrentGraphicsOutputMode->Info->HorizontalResolution = 800;
+    CurrentGraphicsOutputMode->Info->VerticalResolution = 600;
+    CurrentGraphicsOutputMode->Info->PixelFormat = PixelBltOnly;
+    CurrentGraphicsOutputMode->Info->PixelsPerScanLine = 800;
+    CurrentGraphicsOutputMode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
+    CurrentGraphicsOutputMode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS) NULL;
+    CurrentGraphicsOutputMode->FrameBufferSize = 0;
+
+    //
+    // Update the private mode buffer
+    //
+    if (Private->GraphicsOutputModeBuffer == NULL) {
+      ModeBuffer = EfiLibAllocatePool (sizeof (TEXT_OUT_GOP_MODE));
+      if (ModeBuffer == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+      Private->GraphicsOutputModeBuffer = ModeBuffer;
+    } else {
+      ModeBuffer = &Private->GraphicsOutputModeBuffer[0];
+    }
+    ModeBuffer->HorizontalResolution = 800;
+    ModeBuffer->VerticalResolution   = 600;
+
+    //
+    // Current mode is unknow now, set it to an invalid mode number 0xffff
+    //
+    CurrentGraphicsOutputMode->Mode = 0xffff;
+    Index = 0;
+  }
+
+  //
+  // Force GraphicsOutput mode to be set,
+  // regardless whether the console is in EfiConsoleControlScreenGraphics or EfiConsoleControlScreenText mode
+  //
+  Private->HardwareNeedsStarting = TRUE;
+  Status = Private->GraphicsOutput.SetMode (&Private->GraphicsOutput, (UINT32) Index);
+
+  Private->CurrentNumberOfGraphicsOutput++;
+
+  return Status;
+}
+#endif
+
 EFI_STATUS
 ConSplitterTextOutAddDevice (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private,
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *TextOut,
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL    *GraphicsOutput,
   IN  EFI_UGA_DRAW_PROTOCOL           *UgaDraw
   )
 /*++
@@ -1947,7 +2205,7 @@ Returns:
   UINTN                 CurrentNumOfConsoles;
   INT32                 CurrentMode;
   INT32                 MaxMode;
-  TEXT_OUT_AND_UGA_DATA *TextAndUga;
+  TEXT_OUT_AND_GOP_DATA *TextAndGop;
 
   Status                = EFI_SUCCESS;
   CurrentNumOfConsoles  = Private->CurrentNumberOfConsoles;
@@ -1957,7 +2215,7 @@ Returns:
   //
   while (CurrentNumOfConsoles >= Private->TextOutListCount) {
     Status = ConSplitterGrowBuffer (
-              sizeof (TEXT_OUT_AND_UGA_DATA),
+              sizeof (TEXT_OUT_AND_GOP_DATA),
               &Private->TextOutListCount,
               (VOID **) &Private->TextOutList
               );
@@ -1973,20 +2231,22 @@ Returns:
     }
   }
 
-  TextAndUga          = &Private->TextOutList[CurrentNumOfConsoles];
+  TextAndGop          = &Private->TextOutList[CurrentNumOfConsoles];
 
-  TextAndUga->TextOut = TextOut;
-  TextAndUga->UgaDraw = UgaDraw;
-  if (UgaDraw == NULL) {
+  TextAndGop->TextOut = TextOut;
+  TextAndGop->GraphicsOutput = GraphicsOutput;
+  TextAndGop->UgaDraw = UgaDraw;
+
+  if ((GraphicsOutput == NULL) && (UgaDraw == NULL)) {
     //
-    // If No UGA device then use the ConOut device
+    // If No GOP/UGA device then use the ConOut device
     //
-    TextAndUga->TextOutEnabled = TRUE;
+    TextAndGop->TextOutEnabled = TRUE;
   } else {
     //
-    // If UGA device use ConOut device only used if UGA screen is in Text mode
+    // If GOP/UGA device use ConOut device only used if screen is in Text mode
     //
-    TextAndUga->TextOutEnabled = (BOOLEAN) (Private->UgaMode == EfiConsoleControlScreenText);
+    TextAndGop->TextOutEnabled = (BOOLEAN) (Private->ConsoleOutputMode == EfiConsoleControlScreenText);
   }
 
   if (CurrentNumOfConsoles == 0) {
@@ -2011,17 +2271,26 @@ Returns:
   MaxMode     = Private->TextOutMode.MaxMode;
   ASSERT (MaxMode >= 1);
 
-  if (Private->UgaMode == EfiConsoleControlScreenGraphics && UgaDraw != NULL) {
-    //
-    // We just added a new UGA device in graphics mode
-    //
-    DevNullUgaSync (Private, UgaDraw);
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  if ((GraphicsOutput != NULL) || (UgaDraw != NULL)) {
+    ConSplitterAddGraphicsOutputMode (Private, GraphicsOutput, UgaDraw);
+  }
+#endif
 
-  } else if ((CurrentMode >= 0) && (UgaDraw != NULL) && (CurrentMode < Private->TextOutMode.MaxMode)) {
+  if (Private->ConsoleOutputMode == EfiConsoleControlScreenGraphics && GraphicsOutput != NULL) {
+    //
+    // We just added a new GOP or UGA device in graphics mode
+    //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    DevNullGopSync (Private, GraphicsOutput, UgaDraw);
+#else
+    DevNullUgaSync (Private, UgaDraw);
+#endif
+  } else if ((CurrentMode >= 0) && ((GraphicsOutput != NULL) || (UgaDraw != NULL)) && (CurrentMode < Private->TextOutMode.MaxMode)) {
     //
     // The new console supports the same mode of the current console so sync up
     //
-    DevNullSyncUgaStdOut (Private);
+    DevNullSyncGopStdOut (Private);
   } else {
     //
     // If ConOut, then set the mode to Mode #0 which us 80 x 25
@@ -2051,7 +2320,7 @@ Returns:
 {
   INT32                 Index;
   UINTN                 CurrentNumOfConsoles;
-  TEXT_OUT_AND_UGA_DATA *TextOutList;
+  TEXT_OUT_AND_GOP_DATA *TextOutList;
   EFI_STATUS            Status;
 
   //
@@ -2063,7 +2332,7 @@ Returns:
   TextOutList           = Private->TextOutList;
   while (Index >= 0) {
     if (TextOutList->TextOut == TextOut) {
-      EfiCopyMem (TextOutList, TextOutList + 1, sizeof (TEXT_OUT_AND_UGA_DATA) * Index);
+      EfiCopyMem (TextOutList, TextOutList + 1, sizeof (TEXT_OUT_AND_GOP_DATA) * Index);
       CurrentNumOfConsoles--;
       break;
     }
@@ -2146,7 +2415,7 @@ ConSplitterTextInReset (
 
   Returns:
     EFI_SUCCESS           - The device was reset.
-    EFI_DEVICE_ERROR      - The device is not functioning properly and could 
+    EFI_DEVICE_ERROR      - The device is not functioning properly and could
                             not be reset.
 
 --*/
@@ -2185,7 +2454,7 @@ ConSplitterTextInPrivateReadKeyStroke (
 /*++
 
   Routine Description:
-    Reads the next keystroke from the input device. The WaitForKey Event can 
+    Reads the next keystroke from the input device. The WaitForKey Event can
     be used to test for existance of a keystroke via WaitForEvent () call.
 
   Arguments:
@@ -2195,7 +2464,7 @@ ConSplitterTextInPrivateReadKeyStroke (
   Returns:
     EFI_SUCCESS       - The keystroke information was returned.
     EFI_NOT_READY     - There was no keystroke data availiable.
-    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to 
+    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to
                         hardware errors.
 
 --*/
@@ -2257,14 +2526,14 @@ ConSpliterConsoleControlLockStdInEvent (
 /*++
 
 Routine Description:
-  This timer event will fire when StdIn is locked. It will check the key 
+  This timer event will fire when StdIn is locked. It will check the key
   sequence on StdIn to see if it matches the password. Any error in the
   password will cause the check to reset. As long a mConIn.PasswordEnabled is
   TRUE the StdIn splitter will not report any input.
 
 Arguments:
   (Standard EFI_EVENT_NOTIFY)
-  
+
 Returns:
   None
 
@@ -2341,7 +2610,7 @@ ConSpliterConsoleControlLockStdIn (
 /*++
 
 Routine Description:
-  If Password is NULL unlock the password state variable and set the event 
+  If Password is NULL unlock the password state variable and set the event
   timer. If the Password is too big return an error. If the Password is valid
   Copy the Password and enable state variable and then arm the periodic timer
 
@@ -2384,7 +2653,7 @@ ConSplitterTextInReadKeyStroke (
 /*++
 
   Routine Description:
-    Reads the next keystroke from the input device. The WaitForKey Event can 
+    Reads the next keystroke from the input device. The WaitForKey Event can
     be used to test for existance of a keystroke via WaitForEvent () call.
     If the ConIn is password locked make it look like no keystroke is availible
 
@@ -2395,7 +2664,7 @@ ConSplitterTextInReadKeyStroke (
   Returns:
     EFI_SUCCESS       - The keystroke information was returned.
     EFI_NOT_READY     - There was no keystroke data availiable.
-    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to 
+    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to
                         hardware errors.
 
 --*/
@@ -2427,7 +2696,7 @@ Routine Description:
   This event agregates all the events of the ConIn devices in the spliter.
   If the ConIn is password locked then return.
   If any events of physical ConIn devices are signaled, signal the ConIn
-  spliter event. This will cause the calling code to call 
+  spliter event. This will cause the calling code to call
   ConSplitterTextInReadKeyStroke ().
 
 Arguments:
@@ -2487,7 +2756,7 @@ ConSplitterSimplePointerReset (
 
   Returns:
     EFI_SUCCESS           - The device was reset.
-    EFI_DEVICE_ERROR      - The device is not functioning properly and could 
+    EFI_DEVICE_ERROR      - The device is not functioning properly and could
                             not be reset.
 
 --*/
@@ -2529,17 +2798,17 @@ ConSplitterSimplePointerPrivateGetState (
 /*++
 
   Routine Description:
-    Reads the next keystroke from the input device. The WaitForKey Event can 
+    Reads the next keystroke from the input device. The WaitForKey Event can
     be used to test for existance of a keystroke via WaitForEvent () call.
 
   Arguments:
     This   - Protocol instance pointer.
-    State  - 
+    State  -
 
   Returns:
     EFI_SUCCESS       - The keystroke information was returned.
     EFI_NOT_READY     - There was no keystroke data availiable.
-    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to 
+    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to
                         hardware errors.
 
 --*/
@@ -2608,18 +2877,18 @@ ConSplitterSimplePointerGetState (
 /*++
 
   Routine Description:
-    Reads the next keystroke from the input device. The WaitForKey Event can 
+    Reads the next keystroke from the input device. The WaitForKey Event can
     be used to test for existance of a keystroke via WaitForEvent () call.
     If the ConIn is password locked make it look like no keystroke is availible
 
   Arguments:
     This   - Protocol instance pointer.
-    State  - 
+    State  -
 
   Returns:
     EFI_SUCCESS       - The keystroke information was returned.
     EFI_NOT_READY     - There was no keystroke data availiable.
-    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to 
+    EFI_DEVICE_ERROR  - The keydtroke information was not returned due to
                         hardware errors.
 
 --*/
@@ -2651,7 +2920,7 @@ Routine Description:
   This event agregates all the events of the ConIn devices in the spliter.
   If the ConIn is password locked then return.
   If any events of physical ConIn devices are signaled, signal the ConIn
-  spliter event. This will cause the calling code to call 
+  spliter event. This will cause the calling code to call
   ConSplitterTextInReadKeyStroke ().
 
 Arguments:
@@ -2707,7 +2976,7 @@ ConSplitterTextOutReset (
 
   Arguments:
     This                 - Protocol instance pointer.
-    ExtendedVerification - Driver may perform more exhaustive verfication 
+    ExtendedVerification - Driver may perform more exhaustive verfication
                            operation of the device during reset.
 
   Returns:
@@ -2765,17 +3034,17 @@ ConSplitterTextOutOutputString (
   Arguments:
     This    - Protocol instance pointer.
     String  - The NULL-terminated Unicode string to be displayed on the output
-              device(s). All output devices must also support the Unicode 
+              device(s). All output devices must also support the Unicode
               drawing defined in this file.
 
   Returns:
     EFI_SUCCESS       - The string was output to the device.
     EFI_DEVICE_ERROR  - The device reported an error while attempting to output
                          the text.
-    EFI_UNSUPPORTED        - The output device's mode is not currently in a 
+    EFI_UNSUPPORTED        - The output device's mode is not currently in a
                               defined text mode.
-    EFI_WARN_UNKNOWN_GLYPH - This warning code indicates that some of the 
-                              characters in the Unicode string could not be 
+    EFI_WARN_UNKNOWN_GLYPH - This warning code indicates that some of the
+                              characters in the Unicode string could not be
                               rendered and were skipped.
 
 --*/
@@ -2842,7 +3111,7 @@ ConSplitterTextOutTestString (
 /*++
 
   Routine Description:
-    Verifies that all characters in a Unicode string can be output to the 
+    Verifies that all characters in a Unicode string can be output to the
     target device.
 
   Arguments:
@@ -2852,8 +3121,8 @@ ConSplitterTextOutTestString (
 
   Returns:
     EFI_SUCCESS     - The device(s) are capable of rendering the output string.
-    EFI_UNSUPPORTED - Some of the characters in the Unicode string cannot be 
-                       rendered by one or more of the output devices mapped 
+    EFI_UNSUPPORTED - Some of the characters in the Unicode string cannot be
+                       rendered by one or more of the output devices mapped
                        by the EFI handle.
 
 --*/
@@ -2909,7 +3178,7 @@ ConSplitterTextOutQueryMode (
 
   Returns:
     EFI_SUCCESS      - The requested mode information was returned.
-    EFI_DEVICE_ERROR - The device had an error and could not 
+    EFI_DEVICE_ERROR - The device had an error and could not
                        complete the request.
     EFI_UNSUPPORTED - The mode number was not valid.
 
@@ -2927,7 +3196,7 @@ ConSplitterTextOutQueryMode (
        (ModeNumber > (UINTN)(((UINT32)-1)>>1)) ) {
     return EFI_UNSUPPORTED;
   }
-  
+
   if ((INT32) ModeNumber >= This->Mode->MaxMode) {
     return EFI_UNSUPPORTED;
   }
@@ -2960,7 +3229,7 @@ ConSplitterTextOutSetMode (
 
   Returns:
     EFI_SUCCESS      - The requested text mode was set.
-    EFI_DEVICE_ERROR - The device had an error and 
+    EFI_DEVICE_ERROR - The device had an error and
                        could not complete the request.
     EFI_UNSUPPORTED - The mode number was not valid.
 
@@ -3004,10 +3273,10 @@ ConSplitterTextOutSetMode (
                                                       TextOutModeMap[Index]
                                                       );
       //
-      // If this console device is based on a UGA device, then sync up the bitmap from
-      // the UGA splitter and reclear the text portion of the display in the new mode.
+      // If this console device is based on a GOP or UGA device, then sync up the bitmap from
+      // the GOP/UGA splitter and reclear the text portion of the display in the new mode.
       //
-      if (Private->TextOutList[Index].UgaDraw != NULL) {
+      if ((Private->TextOutList[Index].GraphicsOutput != NULL) || (Private->TextOutList[Index].UgaDraw != NULL)) {
         Private->TextOutList[Index].TextOut->ClearScreen (Private->TextOutList[Index].TextOut);
       }
 
@@ -3047,7 +3316,7 @@ ConSplitterTextOutSetAttribute (
 
   Returns:
     EFI_SUCCESS      - The attribute was set.
-    EFI_DEVICE_ERROR - The device had an error and 
+    EFI_DEVICE_ERROR - The device had an error and
                        could not complete the request.
     EFI_UNSUPPORTED - The attribute requested is not defined.
 
@@ -3065,7 +3334,7 @@ ConSplitterTextOutSetAttribute (
   //
   if ( (Attribute > (UINTN)(((UINT32)-1)>>1)) ) {
     return EFI_UNSUPPORTED;
-  }  
+  }
 
   //
   // return the worst status met
@@ -3096,7 +3365,7 @@ ConSplitterTextOutClearScreen (
 /*++
 
   Routine Description:
-    Clears the output device(s) display to the currently selected background 
+    Clears the output device(s) display to the currently selected background
     color.
 
   Arguments:
@@ -3104,7 +3373,7 @@ ConSplitterTextOutClearScreen (
 
   Returns:
     EFI_SUCCESS      - The operation completed successfully.
-    EFI_DEVICE_ERROR - The device had an error and 
+    EFI_DEVICE_ERROR - The device had an error and
                        could not complete the request.
     EFI_UNSUPPORTED - The output device is not in a valid text mode.
 
@@ -3158,9 +3427,9 @@ ConSplitterTextOutSetCursorPosition (
 
   Returns:
     EFI_SUCCESS      - The operation completed successfully.
-    EFI_DEVICE_ERROR - The device had an error and 
+    EFI_DEVICE_ERROR - The device had an error and
                        could not complete the request.
-    EFI_UNSUPPORTED - The output device is not in a valid text mode, or the 
+    EFI_UNSUPPORTED - The output device is not in a valid text mode, or the
                        cursor position is invalid for the current mode.
 
 --*/
@@ -3220,7 +3489,7 @@ ConSplitterTextOutEnableCursor (
 
   Returns:
     EFI_SUCCESS      - The operation completed successfully.
-    EFI_DEVICE_ERROR - The device had an error and could not complete the 
+    EFI_DEVICE_ERROR - The device had an error and could not complete the
                         request, or the device does not support changing
                         the cursor mode.
     EFI_UNSUPPORTED - The output device is not in a valid text mode.

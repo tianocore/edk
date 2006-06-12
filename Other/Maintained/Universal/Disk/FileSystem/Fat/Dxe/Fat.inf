@@ -1,22 +1,18 @@
 #/*++
 #
-# Copyright 2005, Intel Corporation                                                         
-# All rights reserved. This program and the accompanying materials                          
-# are licensed and made available under the terms and conditions of the BSD License         
-# which accompanies this distribution.  The full text of the license may be found at        
-# http://opensource.org/licenses/bsd-license.php                                            
-#                                                                                           
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
-# 
+#  Copyright (c)  2004 - 2005, Intel Corporation
+#  All rights reserved. This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the Software 
+#  License Agreement which accompanies this distribution.
+#  
+#
 #  Module Name:
 #
 #    Fat.inf
 #
 #  Abstract:
 #
-#    Make a FFS section for an FV that contains the FAT driver.
-#    *.FFS files are compressed FFS sections. 
+#    Component description file for Fat module.
 #
 #--*/
 
@@ -24,8 +20,44 @@
 BASE_NAME            = Fat
 FILE_GUID            = 5058F21C-BC34-11d4-BD18-0080C73C8881
 COMPONENT_TYPE       = BS_DRIVER
-BUILD_TYPE           = MAKEFILE
 
 [sources.common]
+  Data.c
+  Delete.c
+  Dirent.c
+  Dirsup.c
+  Fat.c
+  Flush.c
+  Fname.c
+  Fspace.c
+  Info.c
+  Init.c
+  Misc.c
+  Open.c
+  Openvol.c
+  Rw.c
+  Cache.c
+  Hash.c
+  Fat.h
+  FatFs.h
+  ComponentName.c
+
+[libraries.common]
+  EfiGuidLib
+  EfiProtocolLib
+  EfiDriverLib
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
 
 [nmake.common]
+  IMAGE_ENTRY_POINT=FatEntryPoint

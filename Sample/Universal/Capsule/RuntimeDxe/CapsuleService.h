@@ -44,5 +44,19 @@ QueryCapsuleCapabilities(
   OUT EFI_RESET_TYPE       *ResetType
   );
 
+BOOLEAN
+EFIAPI
+SupportUpdateCapsuleRest (
+  VOID
+  );
+
+VOID
+EFIAPI
+SupportCapsuleSize (
+  IN OUT UINT32 *MaxSizePopulate,
+  IN OUT UINT32 *MaxSizeNonPopulate
+  );
+
+
 #endif
 

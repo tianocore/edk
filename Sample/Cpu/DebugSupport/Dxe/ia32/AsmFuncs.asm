@@ -1,6 +1,6 @@
 ;******************************************************************************
 ;*
-;* Copyright (c) 2004, Intel Corporation                                                         
+;* Copyright (c) 2004 - 2006, Intel Corporation                                                         
 ;* All rights reserved. This program and the accompanying materials                          
 ;* are licensed and made available under the terms and conditions of the BSD License         
 ;* which accompanies this distribution.  The full text of the license may be found at        
@@ -79,16 +79,16 @@ OrigVector      dd      66666666h ; ?
 ;;
 ;; For reference, the context structure looks like this:
 ;;      struct {
-;;        UINT32        ExceptionData;
-;;        FX_SAVE_STATE FxSaveState;    // 512 bytes, must be 16 byte aligned
-;;        UINT32        Dr0, Dr1, Dr2, Dr3, Dr6, Dr7;
-;;        UINT32        Cr0, Cr1, Cr2, Cr3, Cr4;
-;;        UINT32        Ldtr, Tr;
-;;        UINT64        Gdtr, Idtr;
-;;        UINT32        EFlags;
-;;        UINT32        Eip;
-;;        UINT32        SegGs, SegFs, SegEs, SegDs, SegCs, SegSs;
-;;        UINT32        Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
+;;        UINT32             ExceptionData;
+;;        FX_SAVE_STATE_IA32 FxSaveState;    // 512 bytes, must be 16 byte aligned
+;;        UINT32             Dr0, Dr1, Dr2, Dr3, Dr6, Dr7;
+;;        UINT32             Cr0, Cr1, Cr2, Cr3, Cr4;
+;;        UINT32             EFlags;
+;;        UINT32             Ldtr, Tr;
+;;        UINT32             Gdtr[2], Idtr[2];
+;;        UINT32             Eip;
+;;        UINT32             Gs, Fs, Es, Ds, Cs, Ss;
+;;        UINT32             Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
 ;;      } SYSTEM_CONTEXT_IA32;  // 32 bit system context record
 
 
@@ -106,6 +106,19 @@ DebugStackBegin db      "<<<< DbgStkBegin"      ;; initial debug ESP == DebugSta
 .CODE
 
 externdef InterruptDistrubutionHub:near
+
+;------------------------------------------------------------------------------
+;  VOID
+;  EfiWbinvd (
+;    VOID
+;    )
+;
+; Abstract: Writeback and invalidate cache
+;
+EfiWbinvd PROC    PUBLIC
+    wbinvd
+    ret
+EfiWbinvd ENDP
 
 ;------------------------------------------------------------------------------
 ; BOOLEAN
@@ -207,11 +220,11 @@ Vect2Desc       ENDP
 ;               copied and fixed up once for each IDT entry that is hooked.
 ;
 InterruptEntryStub::
-                mov     AppEsp, esp             ; save stack top
+                mov     AppEsp, esp                  ; save stack top
                 mov     esp, offset DebugStackBegin  ; switch to debugger stack
-                push    0                       ; push vector number - will be modified before installed
-                db      0e9h                    ; jump rel32
-                dd      0                       ; fixed up to relative address of CommonIdtEntry
+                push    0                            ; push vector number - will be modified before installed
+                db      0e9h                         ; jump rel32
+                dd      0                            ; fixed up to relative address of CommonIdtEntry
 InterruptEntryStubEnd:
 
 
@@ -250,16 +263,16 @@ CommonIdtEntry::
 ;;
 ;; typedef
 ;; struct {
-;;   UINT32        ExceptionData;
-;;   FX_SAVE_STATE FxSaveState;
-;;   UINT32        Dr0, Dr1, Dr2, Dr3, Dr6, Dr7;
-;;   UINT32        Cr0, Cr2, Cr3, Cr4;
-;;   UINT32        Ldtr, Tr;
-;;   UINT64        Gdtr, Idtr;
-;;   UINT32        EFlags;
-;;   UINT32        Eip;
-;;   UINT32        SegGs, SegFs, SegEs, SegDs, SegCs, SegSs;
-;;   UINT32        Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
+;;   UINT32             ExceptionData;
+;;   FX_SAVE_STATE_IA32 FxSaveState;
+;;   UINT32             Dr0, Dr1, Dr2, Dr3, Dr6, Dr7;
+;;   UINT32             Cr0, Cr2, Cr3, Cr4;
+;;   UINT32             EFlags;
+;;   UINT32             Ldtr, Tr;
+;;   UINT32             Gdtr[2], Idtr[2];
+;;   UINT32             Eip;
+;;   UINT32             Gs, Fs, Es, Ds, Cs, Ss;
+;;   UINT32             Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
 ;; } SYSTEM_CONTEXT_IA32;  // 32 bit system context record
 
 ;; UINT32  Edi, Esi, Ebp, Esp, Ebx, Edx, Ecx, Eax;
@@ -339,7 +352,7 @@ CommonIdtEntry::
                 mov     eax, AppEsp
                 push    dword ptr [eax]
 
-;; UINT64  Gdtr, Idtr;
+;; UINT32  Gdtr[2], Idtr[2];
                 push    0
                 push    0
                 sidt    fword ptr [esp]
@@ -455,15 +468,15 @@ CommonIdtEntry::
                 mov     eax, AppEsp
                 pop     dword ptr [eax + 8]
 
-;; UINT16  Ldtr, Tr;
-;; UINT64  Gdtr, Idtr;
+;; UINT32  Ldtr, Tr;
+;; UINT32  Gdtr[2], Idtr[2];
 ;; Best not let anyone mess with these particular registers...
                 add     esp, 24
 
 ;; UINT32  Eip;
                 pop     dword ptr [eax]
 
-;; UINT32  SegGs, SegFs, SegEs, SegDs, SegCs, SegSs;
+;; UINT32  Gs, Fs, Es, Ds, Cs, Ss;
 ;; NOTE - modified segment registers could hang the debugger...  We
 ;;        could attempt to insulate ourselves against this possibility,
 ;;        but that poses risks as well.
@@ -477,7 +490,7 @@ CommonIdtEntry::
                 pop     ss
 
 ;; The next stuff to restore is the general purpose registers that were pushed
-;; using the pushad instruction.
+;; using the "pushad" instruction.
 ;;
 ;; The value of ESP as stored in the context record is the application ESP
 ;; including the 3 entries on the application stack caused by the exception
@@ -504,7 +517,7 @@ CommonIdtEntry::
                 mov     AppEsp, eax
 NoAppStackMove:
                 mov     eax, DebugEsp    ; restore the DebugEsp on the debug stack
-                                         ; so our popad will not cause a stack switch
+                                         ; so our "popad" will not cause a stack switch
                 mov     [esp + 12], eax
 
                 cmp     ExceptionNumber, 068h

@@ -32,6 +32,17 @@ EFI_SOURCE = $(EDK_SOURCE)
 !MESSAGE EDK_TOOLS_PATH environmental variable not set, default setting used
 !ENDIF
 
+#
+# Set the processor type
+#
+PROCESSOR = IA32
+
+#
+# Define a toolchain so we can pick up the basic defines from
+# the EFI tool setup file.
+#
+TOOLCHAIN = TOOLCHAIN_$(PROCESSOR)
+
 !INCLUDE PlatformTools.env
 
 #
@@ -85,7 +96,7 @@ tempstamp_file:
 # Make all the EFI build tools by calling the makefile
 #
 build_tools :
-  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) EFI_SPECIFICATION_VERSION=$(EFI_SPECIFICATION_VERSION) TIANO_RELEASE_VERSION=$(TIANO_RELEASE_VERSION)
+  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) 
 
 #
 # Build our executable file by linking the PEI object files
@@ -113,9 +124,10 @@ makefiles :
     -d PROCESSOR=$(PROCESSOR)               \
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
-        -d SHELL_INF=$(SHELL_INF)           \
+    -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
+    -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     $(PROJECT_NAME).dsc
     
@@ -137,6 +149,7 @@ fast_makefiles :
     -d SKIP_FV_NULL=1                       \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
+    -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     $(PROJECT_NAME).dsc
 
@@ -154,6 +167,7 @@ xref :
     -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
+    -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -xref FV\Guid.xref \
     $(PROJECT_NAME).dsc
 
@@ -206,7 +220,14 @@ components :
 #
 # Make a pseudo-target to simplify running of the NT emulation. 
 #
+!IF "$(EFI_WIN_NT_FILE_SYSTEM)" == ""
+EFI_WIN_NT_FILE_SYSTEM = $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\ia32\Apps
+!ELSE
+EFI_WIN_NT_FILE_SYSTEM = $(EFI_WIN_NT_FILE_SYSTEM)!$(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\ia32\Apps
+!ENDIF
+
 run :
+  set EFI_WIN_NT_FILE_SYSTEM=$(EFI_WIN_NT_FILE_SYSTEM)
   cd $(PROCESSOR)
   secmain.exe
   cd ..

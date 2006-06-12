@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,11 +27,13 @@ typedef unsigned int UINT32;
 
 #include "EfiUtilityMsgs.h"
 
-#define MAX_LINE_LEN  512
+#define MAX_LINE_LEN  1024
 
-#ifndef MAX_PATH
-#define MAX_PATH  512
+#ifdef MAX_PATH
+#undef MAX_PATH
+#define MAX_PATH  1024
 #endif
+
 //
 // Defines for how to expand symbols
 //

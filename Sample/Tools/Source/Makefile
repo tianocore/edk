@@ -24,12 +24,12 @@
 !ERROR EDK_SOURCE environmental variable not set
 !ENDIF
 
-!INCLUDE PlatformTools.env
-
 #
 # Define our toolchain before we include the master settings file
 #
 TOOLCHAIN = TOOLCHAIN_MSVC
+
+!INCLUDE PlatformTools.env
 
 #
 # Define all the makefiles we want to call
@@ -62,7 +62,7 @@ MAKEFILES = $(EDK_TOOLS_SOURCE)\Common\Makefile             \
 all : $(MAKEFILES)
   -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
   !$(MAKE) -f $? TOOLCHAIN=$(TOOLCHAIN) all
-  if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
+  -if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
   
 #
 # Call all the tools makefiles with a clean target.

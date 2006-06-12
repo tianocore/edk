@@ -118,7 +118,34 @@ typedef struct {
   UINT32                          HID;
   UINT32                          UID;
   UINT32                          CID;
+  //
+  // Optional variable length _HIDSTR
+  // Optional variable length _UIDSTR
+  //
 } ACPI_EXTENDED_HID_DEVICE_PATH;
+
+#define ACPI_ADR_DP               0x03
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT32                          ADR;
+} ACPI_ADR_DEVICE_PATH;
+
+#define ACPI_ADR_DISPLAY_TYPE_OTHER             0
+#define ACPI_ADR_DISPLAY_TYPE_VGA               1
+#define ACPI_ADR_DISPLAY_TYPE_TV                2
+#define ACPI_ADR_DISPLAY_TYPE_EXTERNAL_DIGITAL  3
+#define ACPI_ADR_DISPLAY_TYPE_INTERNAL_DIGITAL  4
+
+#define ACPI_DISPLAY_ADR(_DeviceIdScheme, _HeadId, _NonVgaOutput, _BiosCanDetect, _VendorInfo, _Type, _Port, _Index) \
+          ((UINT32) ( (((_DeviceIdScheme) & 0x1) << 31) |  \
+                      (((_HeadId)         & 0x7) << 18) |  \
+                      (((_NonVgaOutput)   & 0x1) << 17) |  \
+                      (((_BiosCanDetect)  & 0x1) << 16) |  \
+                      (((_VendorInfo)     & 0xf) << 12) |  \
+                      (((_Type)           & 0xf) << 8)  |  \
+                      (((_Port)           & 0xf) << 4)  |  \
+                       ((_Index)          & 0xf) ))
 
 // 
 //  EISA ID Macro
@@ -138,7 +165,7 @@ typedef struct {
 //
 // Messaging Device Paths
 //
-#define MESSAGING_DEVICE_PATH     0x03 
+#define MESSAGING_DEVICE_PATH     0x03
 
 #define MSG_ATAPI_DP              0x01
 typedef struct {
@@ -152,7 +179,7 @@ typedef struct {
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
   UINT16                          Pun;
-  UINT16                          Lun; 
+  UINT16                          Lun;
 } SCSI_DEVICE_PATH;
 
 #define MSG_FIBRECHANNEL_DP       0x03
@@ -188,18 +215,22 @@ typedef struct {
 } USB_CLASS_DEVICE_PATH;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+#define MSG_USB_WWID_DP           0x10
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
   UINT16                          InterfaceNumber;
   UINT16                          VendorId;
   UINT16                          ProductId;
-  UINT8                           SerialNumber[1];
+  //
+  // CHAR16                     SerialNumber[];
+  //
 } USB_WWID_DEVICE_PATH;
 
+#define MSG_DEVICE_LOGICAL_UNIT_DP  0x11
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
   UINT8                           Lun;
-} DEVICE_LOGICAL_UNIT;
+} DEVICE_LOGICAL_UNIT_DEVICE_PATH;
 #endif
 
 #define MSG_I2O_DP                0x06
@@ -264,7 +295,7 @@ typedef struct {
 } UART_DEVICE_PATH;
 
 //
-// Use VENDOR_DEVICE_PATH struct 
+// Use VENDOR_DEVICE_PATH struct
 //
 #define MSG_VENDOR_DP             0x0a
 
@@ -276,36 +307,56 @@ typedef struct {
 
 #define DEVICE_PATH_MESSAGING_VT_100_PLUS \
     { 0x7baec70b, 0x57e0, 0x4c76, 0x8e, 0x87, 0x2f, 0x9e, 0x28, 0x08, 0x83, 0x43  }
-    
+
 #define DEVICE_PATH_MESSAGING_VT_UTF8 \
-    { 0xad15a0d6, 0x8bec, 0x4acf, 0xa0, 0x73, 0xd0, 0x1d, 0xe7, 0x7e, 0x2d, 0x88 }   
+    { 0xad15a0d6, 0x8bec, 0x4acf, 0xa0, 0x73, 0xd0, 0x1d, 0xe7, 0x7e, 0x2d, 0x88 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL        Header;
-  EFI_GUID                        VendorGuid;
-  UINT32                          FlowContolMap;
-} UART_FLOW_CONTOL_MESSAGING_DEVICE_PATH;
+
+#define DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL \
+    { 0x37499a9d, 0x542f, 0x4c89, 0xa0, 0x26, 0x35, 0xda, 0x14, 0x20, 0x94, 0xe4 }
+
+#define DEVICE_PATH_MESSAGING_SAS \
+    { 0xb4dd87d4, 0x8b00, 0xd911, 0xaf, 0xdc, 0x00, 0x10, 0x83, 0xff, 0xca, 0x4d }
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
-  EFI_GUID                        VendorGuid;
+  EFI_GUID                        Guid;
+  UINT32                          FlowControlMap;
+} UART_FLOW_CONTROL_DEVICE_PATH;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  EFI_GUID                        Guid;
   UINT32                          Reserved;
   UINT64                          SasAddress;
   UINT64                          Lun;
-  UINT16                          Info;
-  UINT16                          TargetPort;  
-}SAS_DEVICE_PATH;
+  UINT16                          DeviceTopology;
+  UINT16                          RelativeTargetPort;
+} SAS_DEVICE_PATH;
+
+#define MSG_ISCSI_DP              0x13
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
-  UINT16                          Protocol;
-  UINT16                          Option;
+  UINT16                          NetworkProtocol;
+  UINT16                          LoginOption;
   UINT16                          Reserved;
-  UINT16                          TargetGroup;
+  UINT16                          TargetPortalGroupTag;
   UINT64                          Lun;
-  UINT8                           TargetName[1];
-}ISCSI_DEVICE_PATH;
-#endif    
+  // CHAR8                        iSCSI Target Name
+} ISCSI_DEVICE_PATH;
+
+#define ISCSI_LOGIN_OPTION_NO_HEADER_DIGEST             0x0000
+#define ISCSI_LOGIN_OPTION_HEADER_DIGEST_USING_CRC32C   0x0002
+#define ISCSI_LOGIN_OPTION_NO_DATA_DIGEST               0x0000
+#define ISCSI_LOGIN_OPTION_DATA_DIGEST_USING_CRC32C     0x0008
+#define ISCSI_LOGIN_OPTION_AUTHMETHOD_CHAP              0x0000
+#define ISCSI_LOGIN_OPTION_AUTHMETHOD_NON               0x1000
+#define ISCSI_LOGIN_OPTION_CHAP_BI                      0x0000
+#define ISCSI_LOGIN_OPTION_CHAP_UNI                     0x2000
+
+#endif
+
 //
 // Media Device Path
 //
@@ -370,7 +421,7 @@ typedef struct {
 } BBS_BBS_DEVICE_PATH;
 
 //
-// DeviceType definitions - from BBS specification 
+// DeviceType definitions - from BBS specification
 //
 #define BBS_TYPE_FLOPPY           0x01
 #define BBS_TYPE_HARDDRIVE        0x02
@@ -378,7 +429,7 @@ typedef struct {
 #define BBS_TYPE_PCMCIA           0x04
 #define BBS_TYPE_USB              0x05
 #define BBS_TYPE_EMBEDDED_NETWORK 0x06
-#define BBS_TYPE_DEV              0x80
+#define BBS_TYPE_BEV              0x80
 #define BBS_TYPE_UNKNOWN          0xFF
 
 #define UNKNOWN_DEVICE_GUID \
@@ -400,9 +451,9 @@ typedef union {
   PCCARD_DEVICE_PATH                   PcCard;
   MEMMAP_DEVICE_PATH                   MemMap;
   VENDOR_DEVICE_PATH                   Vendor;
-  
-  UNKNOWN_DEVICE_VENDOR_DEVICE_PATH    UnknownVendor;   
-  
+
+  UNKNOWN_DEVICE_VENDOR_DEVICE_PATH    UnknownVendor;
+
   CONTROLLER_DEVICE_PATH               Controller;
   ACPI_HID_DEVICE_PATH                 Acpi;
 
@@ -423,7 +474,7 @@ typedef union {
   INFINIBAND_DEVICE_PATH               InfiniBand;
   UART_DEVICE_PATH                     Uart;
   #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  UART_FLOW_CONTOL_MESSAGING_DEVICE_PATH UartFlowContol;
+  UART_FLOW_CONTROL_DEVICE_PATH        UartFlowControl;
   SAS_DEVICE_PATH                      Sas;
   ISCSI_DEVICE_PATH                    Iscsi;
   #endif
@@ -444,9 +495,9 @@ typedef union {
   PCCARD_DEVICE_PATH                   *PcCard;
   MEMMAP_DEVICE_PATH                   *MemMap;
   VENDOR_DEVICE_PATH                   *Vendor;
-  
-  UNKNOWN_DEVICE_VENDOR_DEVICE_PATH    *UnknownVendor;   
-  
+
+  UNKNOWN_DEVICE_VENDOR_DEVICE_PATH    *UnknownVendor;
+
   CONTROLLER_DEVICE_PATH               *Controller;
   ACPI_HID_DEVICE_PATH                 *Acpi;
   ACPI_EXTENDED_HID_DEVICE_PATH        *ExtendedAcpi;
@@ -474,10 +525,6 @@ typedef union {
   BBS_BBS_DEVICE_PATH                  *Bbs;
   UINT8                                *Raw;
 } EFI_DEV_PATH_PTR;
-
-
-
-
 
 #pragma pack()
 

@@ -27,11 +27,20 @@
 EFI_SOURCE = $(EDK_SOURCE)
 
 #
+# Set the processor type
+#
+PROCESSOR = IA32
+
+#
+# Define a toolchain so we can pick up the basic defines from
+# the EFI tool setup file.
+#
+TOOLCHAIN = TOOLCHAIN_$(PROCESSOR)
+
+#
 # Include the platform-specific settings file
 #
 !INCLUDE PlatformTools.env
-
-PROCESSOR=X64
 
 #
 # Default target to create the makefiles and then build the drivers
@@ -42,7 +51,9 @@ all : build_tools makefiles builds fds
 # Make all the build tools by calling the makefile
 #
 build_tools :
-  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) TOOLCHAIN=TOOLCHAIN_MSVC EDK_SOURCE=$(EDK_SOURCE)
+  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) EDK_SOURCE=$(EDK_SOURCE)
+
+PROCESSOR=X64
 
 #
 # Run ProcessDsc on our main description files to generate the
@@ -57,6 +68,7 @@ makefiles :
     -d PROCESSOR=$(PROCESSOR)               \
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d PROJECT_FAMILY=$(PROJECT_FAMILY)     \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     $(PROJECT_NAME).dsc

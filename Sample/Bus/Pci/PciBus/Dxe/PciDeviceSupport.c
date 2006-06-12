@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1149,7 +1149,10 @@ Returns:
     Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
     if (IS_PCI_VGA(&Temp->Pci) && 
-        (Temp->Attributes & (EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_IO))) {
+        (Temp->Attributes &
+         (EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY |
+          EFI_PCI_IO_ATTRIBUTE_VGA_IO     |
+          EFI_PCI_IO_ATTRIBUTE_VGA_IO_16))) {
       return Temp;
     }
 

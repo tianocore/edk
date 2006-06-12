@@ -172,9 +172,23 @@ Note:
   EFI_HANDLE                  FvProtocolHandle;
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   EFI_CAPSULE_HEADER          *CapsuleHeader;
+  EFI_PHYSICAL_ADDRESS        BodyBaseAddress;
   UINT32                      Size; 
-  UINT32                      CapsuleNumber;
+  UINT8                       CapsuleNumber;
+  UINT8                       CapsuleTotalNumber;
   EFI_CAPSULE_TABLE           *CapsuleTable; 
+  VOID                        *AddDataPtr;
+  UINT32                      *DataPtr;
+  UINT32                      *BeginPtr;
+  UINT32                      Index;
+  UINT32                      PopulateIndex;
+
+  PopulateIndex = 0;
+  CapsuleNumber = 0;
+  CapsuleTotalNumber = 0;
+  AddDataPtr   =  NULL;
+  DataPtr      =  NULL;
+  BeginPtr     =  NULL;
 #endif
 
   //
@@ -214,32 +228,92 @@ Note:
     // firmware volume in it.
     //
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-    CapsuleHeader = (EFI_CAPSULE_HEADER*)(UINTN)BaseAddress;
+    AddDataPtr = (VOID *)((UINTN)BaseAddress + (UINTN)Length);
+    AddDataPtr = (UINT8 *) (((UINTN) AddDataPtr + sizeof(UINT32) - 1) &~ (UINTN) (sizeof (UINT32) - 1));
+    DataPtr = (UINT32*)AddDataPtr;
+    CapsuleTotalNumber = (UINT8)*DataPtr++;
+    BeginPtr = DataPtr;
+
     //
     //Check the capsule flags,if contains CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE, install 
     //capsuleTable to configure table with EFI_CAPSULE_GUID
     //
-    if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
-      //
-      //Now just support one full-functional capsule 
-      //
-      CapsuleNumber = 1;
-      Size = sizeof(EFI_CAPSULE_TABLE) + (CapsuleNumber -1)* sizeof(VOID*);  
-      Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleTable);
-      if (EFI_ERROR (Status)) {
-        return Status;
+    DataPtr = BeginPtr;
+    for (Index = 0; Index < CapsuleTotalNumber; Index++) {
+      CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
+      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
+         CapsuleNumber ++;
       }
-      CapsuleTable->CapsulePtr[0] = (VOID*)((UEFI_CAPSULE_HEADER*)(UINTN)BaseAddress);
-      Status = gBS->InstallConfigurationTable (&mEfiCapsuleHeaderGuid, (VOID*)CapsuleTable);
-      ASSERT_EFI_ERROR (Status);
     }
-    //
-    //Skip the capsule header, move to the Firware Volume
-    //
-    BaseAddress += CapsuleHeader->OffsetToCapsuleBody;
-    Length -= CapsuleHeader->OffsetToCapsuleBody;
 
-#endif    
+    Size = sizeof(EFI_CAPSULE_TABLE) + (CapsuleNumber -1)* sizeof(VOID*);  
+    Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleTable);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    DataPtr = BeginPtr;
+    for (Index = 0; Index < CapsuleTotalNumber; Index++) {
+      CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
+      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
+        CapsuleTable->CapsulePtr[PopulateIndex++] = (VOID*)CapsuleHeader;
+      }
+    }
+    CapsuleTable->CapsuleArrayNumber =  PopulateIndex;
+    Status = gBS->InstallConfigurationTable (&mEfiCapsuleHeaderGuid, (VOID*)CapsuleTable);
+    ASSERT_EFI_ERROR (Status);
+
+    DataPtr = BeginPtr;
+    for (Index = 0; Index < CapsuleTotalNumber; Index++) {
+      CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress + (UINT32)(UINTN)*DataPtr++);
+      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) == 0) {
+        //
+        //Skip the capsule header, move to the Firware Volume
+        //
+        BodyBaseAddress = (EFI_PHYSICAL_ADDRESS)CapsuleHeader + CapsuleHeader->OffsetToCapsuleBody;
+        Length = CapsuleHeader->CapsuleImageSize - CapsuleHeader->OffsetToCapsuleBody;
+
+        while (Length != 0) {
+          //
+          // Point to the next firmware volume header, and then
+          // call the DXE service to process it.
+          //
+          FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BodyBaseAddress;
+          if (FwVolHeader->FvLength > Length) {
+            //
+            // Notes: need to stuff this status somewhere so that the
+            // error can be detected at OS runtime
+            //
+            Status = EFI_VOLUME_CORRUPTED;
+            break;
+          }
+  
+          Status = gDS->ProcessFirmwareVolume (
+                        (VOID *) (UINTN) BodyBaseAddress,
+                        (UINTN) FwVolHeader->FvLength,
+                        &FvProtocolHandle
+                        );
+          if (EFI_ERROR (Status)) {
+            break;
+          }
+          //
+          // Call the dispatcher to dispatch any drivers from the produced firmware volume
+          //
+          gDS->Dispatch ();
+          //
+          // On to the next FV in the capsule
+          //
+          Length -= FwVolHeader->FvLength;
+          BodyBaseAddress = (EFI_PHYSICAL_ADDRESS) ((UINTN) BodyBaseAddress + FwVolHeader->FvLength);
+          //
+          // Notes: when capsule spec is finalized, if the requirement is made to
+          // have each FV in a capsule aligned, then we will need to align the
+          // BaseAddress and Length here.
+          //
+        }
+      }   
+    } 
+#else
     while (Length != 0) {
       //
       // Point to the next firmware volume header, and then
@@ -278,8 +352,8 @@ Note:
       // BaseAddress and Length here.
       //
     }
+#endif
   }
-
   BdsLockNonUpdatableFlash ();
 
   return Status;

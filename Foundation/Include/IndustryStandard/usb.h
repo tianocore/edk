@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -263,6 +263,8 @@ typedef struct {
 #define USB_PORT_STAT_RESET         0x0010
 #define USB_PORT_STAT_POWER         0x0100
 #define USB_PORT_STAT_LOW_SPEED     0x0200
+#define USB_PORT_STAT_HIGH_SPEED    0x0400
+#define USB_PORT_STAT_OWNER         0x0800
 
 #define USB_PORT_STAT_C_CONNECTION  0x0001
 #define USB_PORT_STAT_C_ENABLE      0x0002
@@ -278,6 +280,7 @@ typedef enum {
   EfiUsbPortSuspend           = 2,
   EfiUsbPortReset             = 4,
   EfiUsbPortPower             = 8,
+  EfiUsbPortOwner             = 13,
   EfiUsbPortConnectChange     = 16,
   EfiUsbPortEnableChange      = 17,
   EfiUsbPortSuspendChange     = 18,

@@ -1,7 +1,7 @@
 @echo off
 REM #/*++
 REM #  
-rem #  Copyright (c) 2004, Intel Corporation                                                         
+rem #  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 rem #  All rights reserved. This program and the accompanying materials                          
 rem #  are licensed and made available under the terms and conditions of the BSD License         
 rem #  which accompanies this distribution.  The full text of the license may be found at        
@@ -28,6 +28,7 @@ REM # A ! can be used to seperate multiple instances in a variable. Each
 REM # instance represents a seperate hardware device. 
 REM #
 REM # EFI_WIN_NT_SERIAL_PORT    - maps physical serial ports
+REM # EFI_WIN_NT_GOP            - Builds GraphicsOutput Window
 REM # EFI_WIN_NT_UGA            - Builds UGA Window
 REM # EFI_WIN_NT_FILE_SYSTEM    - map a local directory to a file system
 REM # EFI_FIRMWARE_VOLUMES      - File name of FDs, ! supported
@@ -110,6 +111,7 @@ REM #  UGA consoles.
 REM #
 REM # set EFI_WIN_NT_CONSOLE="Bus Driver Console Window"
 echo on
+set EFI_WIN_NT_GOP="Graphics Output Window 1!Graphics Output Window 2"
 set EFI_WIN_NT_UGA="UGA Window 1!UGA Window 2"
 @echo off
 
@@ -123,7 +125,7 @@ REM #
 REM # These directories will show up as file systems with no Block IO
 REM #
 echo on
-set EFI_WIN_NT_FILE_SYSTEM=.!%EDK_SOURCE%\Other\Maintained\Application\Shell\bin\ia32\Apps
+set EFI_WIN_NT_FILE_SYSTEM=.
 @echo off
 
 REM #

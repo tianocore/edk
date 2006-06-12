@@ -84,7 +84,9 @@ EFI_RUNTIME_ARCH_PROTOCOL     mRuntime = {
 EFI_LIST_ENTRY                mRelocationList             = INITIALIZE_LIST_HEAD_VARIABLE(mRelocationList);
 EFI_LIST_ENTRY                mEventList                  = INITIALIZE_LIST_HEAD_VARIABLE(mEventList);
 BOOLEAN                       mEfiVirtualMode             = FALSE;
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
 EFI_GUID                      mLocalEfiUgaIoProtocolGuid  = EFI_UGA_IO_PROTOCOL_GUID;
+#endif
 EFI_MEMORY_DESCRIPTOR         *mVirtualMap                = NULL;
 UINTN                         mVirtualMapDescriptorSize;
 UINTN                         mVirtualMapMaxIndex;
@@ -358,8 +360,14 @@ RuntimeDriverSetVirtualAddressMap (
   EFI_LIST_ENTRY                *Link;
   UINTN                         Index;
   UINTN                         Index1;
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   EFI_DRIVER_OS_HANDOFF_HEADER  *DriverOsHandoffHeader;
   EFI_DRIVER_OS_HANDOFF         *DriverOsHandoff;
+#endif
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  EFI_CAPSULE_TABLE             *CapsuleTable; 
+#endif
 
   //
   // Can only switch to virtual addresses once the memory map is locked down,
@@ -485,6 +493,7 @@ RuntimeDriverSetVirtualAddressMap (
   // Convert the UGA OS Handoff Table if it is present in the Configuration Table
   //
   for (Index = 0; Index < mMyST->NumberOfTableEntries; Index++) {
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
     if (EfiCompareGuid (&mLocalEfiUgaIoProtocolGuid, &(mMyST->ConfigurationTable[Index].VendorGuid))) {
       DriverOsHandoffHeader = mMyST->ConfigurationTable[Index].VendorTable;
       for (Index1 = 0; Index1 < DriverOsHandoffHeader->NumberOfEntries; Index1++) {
@@ -501,11 +510,17 @@ RuntimeDriverSetVirtualAddressMap (
 
       RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index].VendorTable));
     }
-    #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+#endif
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
     if (EfiCompareGuid (&mEfiCapsuleHeaderGuid, &(mMyST->ConfigurationTable[Index].VendorGuid))) {
+      CapsuleTable = mMyST->ConfigurationTable[Index].VendorTable;
+      for (Index1 = 0; Index1 < CapsuleTable->CapsuleArrayNumber; Index1++) {
+        RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &CapsuleTable->CapsulePtr[Index1]);
+      }     
       RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index].VendorTable));
     }
-    #endif 
+#endif
   }
   //
   // Convert the runtime fields of the EFI System Table and recompute the CRC-32

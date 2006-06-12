@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -198,7 +198,8 @@ Returns:
   UINTN               VideoOptionSize;
   EFI_HII_HANDLE      *HiiHandles;
   UINT16              HandleBufferLength;
-
+  BOOLEAN	            BootDeviceMngrMenuResetRequired;
+  
   IfrOptionList       = NULL;
   VideoOption         = NULL;
   HandleBufferLength  = 0;
@@ -439,7 +440,8 @@ Returns:
   // Drop the TPL level from EFI_TPL_DRIVER to EFI_TPL_APPLICATION
   //
   gBS->RestoreTPL (EFI_TPL_APPLICATION);
-
+  
+  BootDeviceMngrMenuResetRequired = FALSE;
   Status = gBrowser->SendForm (
                       gBrowser,
                       TRUE,                             // Use the database
@@ -449,8 +451,12 @@ Returns:
                       FPCallbackInfo.CallbackHandle,
                       (UINT8 *) &FPCallbackInfo.Data,
                       NULL,
-                      NULL
+                      &BootDeviceMngrMenuResetRequired
                       );
+
+  if (BootDeviceMngrMenuResetRequired) {
+    EnableResetRequired ();
+  }
 
   Hii->ResetStrings (Hii, FPCallbackInfo.DevMgrHiiHandle);
 
@@ -459,6 +465,7 @@ Returns:
   // a target to display
   //
   if (gCallbackKey != 0 && gCallbackKey < 0x2000) {
+    BootDeviceMngrMenuResetRequired = FALSE;
     Status = gBrowser->SendForm (
                         gBrowser,
                         TRUE,                             // Use the database
@@ -468,9 +475,12 @@ Returns:
                         NULL,                             // This is the handle that the interface to the callback was installed on
                         NULL,
                         NULL,
-                        NULL
+                        &BootDeviceMngrMenuResetRequired
                         );
 
+    if (BootDeviceMngrMenuResetRequired) {
+      EnableResetRequired ();
+    }
     //
     // Force return to Device Manager
     //

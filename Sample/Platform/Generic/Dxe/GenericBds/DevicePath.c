@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,7 +27,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (WinntThunk)
 EFI_GUID  UnknownDeviceGuid           = UNKNOWN_DEVICE_GUID;
 EFI_GUID  mEfiWinNtThunkProtocolGuid  = EFI_WIN_NT_THUNK_PROTOCOL_GUID;
-EFI_GUID  mEfiWinNtUgaGuid            = EFI_WIN_NT_UGA_GUID;
+EFI_GUID  mEfiWinNtGopGuid            = EFI_WIN_NT_GOP_GUID;
 EFI_GUID  mEfiWinNtSerialPortGuid     = EFI_WIN_NT_SERIAL_PORT_GUID;
 EFI_GUID  mEfiMsgPcAnsiGuid           = DEVICE_PATH_MESSAGING_PC_ANSI;
 EFI_GUID  mEfiMsgVt100Guid            = DEVICE_PATH_MESSAGING_VT_100;
@@ -311,8 +311,8 @@ Returns:
     if (EfiCompareGuid (&Vendor->Guid, &mEfiWinNtThunkProtocolGuid)) {
       CatPrint (Str, L"%s", L"WinNtBus");
       return ;
-    } else if (EfiCompareGuid (&Vendor->Guid, &mEfiWinNtUgaGuid)) {
-      CatPrint (Str, L"%s", L"UGA");
+    } else if (EfiCompareGuid (&Vendor->Guid, &mEfiWinNtGopGuid)) {
+      CatPrint (Str, L"%s", L"GOP");
       return ;
     } else if (EfiCompareGuid (&Vendor->Guid, &mEfiWinNtSerialPortGuid)) {
       CatPrint (Str, L"%s", L"Serial");

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,6 +22,7 @@ Abstract:
 #ifndef _EFI_PRINT_LIB_H_
 #define _EFI_PRINT_LIB_H_
 
+#include EFI_PROTOCOL_DEFINITION(GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION(UgaDraw)
 #include EFI_PROTOCOL_DEFINITION(Print)
 
@@ -106,8 +107,8 @@ UINTN
 PrintXY (
   IN UINTN                            X,
   IN UINTN                            Y,
-  IN EFI_UGA_PIXEL                    *Foreground, OPTIONAL
-  IN EFI_UGA_PIXEL                    *Background, OPTIONAL
+  IN EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *Foreground, OPTIONAL
+  IN EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *Background, OPTIONAL
   IN CHAR16                           *Fmt,
   ...
   )

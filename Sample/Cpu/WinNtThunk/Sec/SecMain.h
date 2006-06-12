@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -63,6 +63,13 @@ typedef struct {
   EFI_PHYSICAL_ADDRESS  Memory;
   UINT64                Size;
 } NT_SYSTEM_MEMORY;
+
+#define MAX_PDB_NAME_TO_MOD_HANDLE_ARRAY_SIZE 0x100
+
+typedef struct {
+  CHAR8   *PdbPointer;
+  VOID    *ModHandle;
+} PDB_NAME_TO_MOD_HANDLE;
 
 EFI_STATUS
 EFIAPI
@@ -469,18 +476,22 @@ SecWinNtPeCoffLoaderLoadAsDll (
 /*++
 
 Routine Description:
-
-  TODO: Add function description
+  Loads the .DLL file is present when a PE/COFF file is loaded.  This provides source level
+  debugging for drivers that have cooresponding .DLL files on the local system.
 
 Arguments:
-
-  PdbFileName     - TODO: add argument description
-  ImageEntryPoint - TODO: add argument description
-  ModHandle       - TODO: add argument description
+  PdbFileName     - The name of the .PDB file.  This was found from the PE/COFF
+                    file's debug directory entry.
+  ImageEntryPoint - A pointer to the DLL entry point of the .DLL file was loaded.
+  ModHandle       - A pointer to the DLL Module of the .DLL file was loaded.
 
 Returns:
-
-  TODO: add return values
+  EFI_SUCCESS         - The .DLL file was loaded, and the DLL entry point is returned in
+                        ImageEntryPoint
+  EFI_NOT_FOUND       - The .DLL file could not be found
+  EFI_UNSUPPORTED     - The .DLL file was loaded, but the entry point to the .DLL file
+                        could not determined.
+  EFI_ALREADY_STARTED - The .DLL file was already loaded
 
 --*/
 ;
@@ -488,21 +499,18 @@ Returns:
 EFI_STATUS
 EFIAPI
 SecWinNtPeCoffLoaderFreeLibrary (
-  OUT VOID    *ModHandle
+  IN VOID     *ModHandle
   )
 /*++
 
 Routine Description:
-
-  TODO: Add function description
+  Free resources allocated by SecWinNtPeCoffLoaderLoadAsDll
 
 Arguments:
-
-  ModHandle - TODO: add argument description
+  MohHandle   - Handle of the resources to free to undo the work.
 
 Returns:
-
-  TODO: add return values
+  EFI_SUCCESS - This resource is freed successfully.
 
 --*/
 ;
@@ -668,6 +676,69 @@ Arguments:
 Returns:
 
   TODO: add return values
+
+--*/
+;
+
+EFI_STATUS
+AddModHandle (
+  IN  CHAR8         *PdbPointer,
+  IN  VOID          *ModHandle
+  )
+/*++
+
+Routine Description:
+  Store the ModHandle in an array indexed by the Pdb File name.
+  The ModHandle is needed to unload the image. 
+
+Arguments:
+  PdbPointer - Input data returned from PE Laoder Library. Used to find the 
+               .PDB file name of the PE Image.
+  ModHandle  - Returned from LoadLibraryEx() and stored for call to 
+                 FreeLibrary().
+
+Returns:
+  EFI_SUCCESS - ModHandle was stored. 
+
+--*/
+;
+
+VOID *
+RemoveModeHandle (
+  IN  CHAR8         *ModHandle
+  )
+/*++
+
+Routine Description:
+  Return the ModHandle and delete the entry in the array.
+
+Arguments:
+  ModHandle  - Returned from LoadLibraryEx() and stored for call to 
+                 FreeLibrary().
+
+Returns:
+  ModHandle - ModHandle assoicated with Image ModHandle is returned
+  NULL      - No ModHandle associated with Image ModHandle
+
+--*/
+;
+
+VOID *
+GetModHandle (
+  IN  CHAR8         *PdbPointer
+  )
+/*++
+
+Routine Description:
+  Search the ModHandle in an array indexed by the PDB File name.
+
+Arguments:
+  PdbPointer - Input data returned from PE Laoder Library. Used to find the 
+               .PDB file name of the PE Image.
+
+Returns:
+  ModHandle - ModHandle assoicated with Image PdbPointer is returned
+  NULL      - No ModHandle associated with Image PdbPointer
 
 --*/
 ;

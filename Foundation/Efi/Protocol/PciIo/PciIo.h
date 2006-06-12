@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -59,7 +59,7 @@ typedef enum {
 #define EFI_PCI_IO_PASS_THROUGH_BAR               0xff    // Special BAR that passes a memory or I/O cycle through unchanged
 #define EFI_PCI_IO_ATTRIBUTE_MASK                 0x077f  // All the following I/O and Memory cycles
 #define EFI_PCI_IO_ATTRIBUTE_ISA_MOTHERBOARD_IO   0x0001  // I/O cycles 0x0000-0x00FF (10 bit decode)
-#define EFI_PCI_IO_ATTRIBUTE_ISA_IO               0x0002  // I/O cycles 0x0000-0x0FFF or greater (16 bit decode)
+#define EFI_PCI_IO_ATTRIBUTE_ISA_IO               0x0002  // I/O cycles 0x0000-0x03FF (10 bit decode)
 #define EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO       0x0004  // I/O cycles 0x3C6, 0x3C8, 0x3C9 (10 bit decode)
 #define EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY           0x0008  // MEM cycles 0xA0000-0xBFFFF (24 bit decode)
 #define EFI_PCI_IO_ATTRIBUTE_VGA_IO               0x0010  // I/O cycles 0x3B0-0x3BB and 0x3C0-0x3DF (10 bit decode)
@@ -74,6 +74,13 @@ typedef enum {
 #define EFI_PCI_IO_ATTRIBUTE_EMBEDDED_DEVICE      0x2000  // Clear for an add-in PCI Device
 #define EFI_PCI_IO_ATTRIBUTE_EMBEDDED_ROM         0x4000  // Clear for a physical PCI Option ROM accessed through ROM BAR
 #define EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE   0x8000  // Clear for PCI controllers that can not genrate a DAC
+//
+// The following definition is added in EFI1.1 spec update and UEFI2.0 spec.
+//
+#define EFI_PCI_IO_ATTRIBUTE_ISA_IO_16            0x10000 // I/O cycles 0x0100-0x03FF (16 bit decode)
+#define EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16    0x20000 // I/O cycles 0x3C6, 0x3C8, 0x3C9 (16 bit decode)
+#define EFI_PCI_IO_ATTRIBUTE_VGA_IO_16            0x40000 // I/O cycles 0x3B0-0x3BB and 0x3C0-0x3DF (16 bit decode)
+
 #define EFI_PCI_DEVICE_ENABLE                     (EFI_PCI_IO_ATTRIBUTE_IO | EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_BUS_MASTER)
 #define EFI_VGA_DEVICE_ENABLE                     (EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_IO)
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,6 +34,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (ConsoleControl)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
+#include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
 #include EFI_GUID_DEFINITION (ConsoleInDevice)
 #include EFI_GUID_DEFINITION (ConsoleOutDevice)
@@ -95,33 +96,48 @@ typedef struct {
 #define TEXT_OUT_SPLITTER_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32 ('T', 'o', 'S', 'L')
 
 typedef struct {
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
   EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
   BOOLEAN                       TextOutEnabled;
-} TEXT_OUT_AND_UGA_DATA;
+} TEXT_OUT_AND_GOP_DATA;
+
+typedef struct {
+  UINT32                     HorizontalResolution;
+  UINT32                     VerticalResolution;
+} TEXT_OUT_GOP_MODE;
 
 typedef struct {
   UINT64                          Signature;
   EFI_HANDLE                      VirtualHandle;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL    TextOut;
   EFI_SIMPLE_TEXT_OUTPUT_MODE     TextOutMode;
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   EFI_UGA_DRAW_PROTOCOL           UgaDraw;
   UINT32                          UgaHorizontalResolution;
   UINT32                          UgaVerticalResolution;
   UINT32                          UgaColorDepth;
   UINT32                          UgaRefreshRate;
   EFI_UGA_PIXEL                   *UgaBlt;
+#else
+  EFI_GRAPHICS_OUTPUT_PROTOCOL    GraphicsOutput;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL   *GraphicsOutputBlt;
+  TEXT_OUT_GOP_MODE               *GraphicsOutputModeBuffer;
+  UINTN                           CurrentNumberOfGraphicsOutput;
+  BOOLEAN                         HardwareNeedsStarting;
+#endif
 
   EFI_CONSOLE_CONTROL_PROTOCOL    ConsoleControl;
 
   UINTN                           CurrentNumberOfConsoles;
-  TEXT_OUT_AND_UGA_DATA           *TextOutList;
+  TEXT_OUT_AND_GOP_DATA           *TextOutList;
   UINTN                           TextOutListCount;
   TEXT_OUT_SPLITTER_QUERY_DATA    *TextOutQueryData;
   UINTN                           TextOutQueryDataCount;
   INT32                           *TextOutModeMap;
 
-  EFI_CONSOLE_CONTROL_SCREEN_MODE UgaMode;
+  EFI_CONSOLE_CONTROL_SCREEN_MODE ConsoleOutputMode;
 
   UINTN                           DevNullColumns;
   UINTN                           DevNullRows;
@@ -134,6 +150,13 @@ typedef struct {
   CR (a, \
       TEXT_OUT_SPLITTER_PRIVATE_DATA, \
       TextOut, \
+      TEXT_OUT_SPLITTER_PRIVATE_DATA_SIGNATURE \
+      )
+
+#define GRAPHICS_OUTPUT_SPLITTER_PRIVATE_DATA_FROM_THIS(a) \
+  CR (a, \
+      TEXT_OUT_SPLITTER_PRIVATE_DATA, \
+      GraphicsOutput, \
       TEXT_OUT_SPLITTER_PRIVATE_DATA_SIGNATURE \
       )
 
@@ -303,6 +326,7 @@ EFI_STATUS
 ConSplitterTextOutAddDevice (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private,
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL    *TextOut,
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL    *GraphicsOutput,
   IN  EFI_UGA_DRAW_PROTOCOL           *UgaDraw
   )
 ;
@@ -467,7 +491,7 @@ EFIAPI
 ConSpliterConsoleControlGetMode (
   IN  EFI_CONSOLE_CONTROL_PROTOCOL    *This,
   OUT EFI_CONSOLE_CONTROL_SCREEN_MODE *Mode,
-  OUT BOOLEAN                         *UgaExists,
+  OUT BOOLEAN                         *GopExists,
   OUT BOOLEAN                         *StdInLocked
   )
 ;
@@ -480,6 +504,49 @@ ConSpliterConsoleControlSetMode (
   )
 ;
 
+EFI_STATUS
+EFIAPI
+ConSpliterGraphicsOutputQueryMode (
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL		    *This,
+  IN  UINT32		                        ModeNumber,
+  OUT UINTN		                           *SizeOfInfo,
+  OUT EFI_GRAPHICS_OUTPUT_MODE_INFORMATION	**Info
+  )
+;
+
+EFI_STATUS
+EFIAPI
+ConSpliterGraphicsOutputSetMode (
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL * This,
+  IN  UINT32                       ModeNumber
+  )
+;
+
+EFI_STATUS
+EFIAPI
+ConSpliterGraphicsOutputBlt (
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL                  *This,
+  IN  EFI_GRAPHICS_OUTPUT_BLT_PIXEL                 *BltBuffer, OPTIONAL
+  IN  EFI_GRAPHICS_OUTPUT_BLT_OPERATION             BltOperation,
+  IN  UINTN                                         SourceX,
+  IN  UINTN                                         SourceY,
+  IN  UINTN                                         DestinationX,
+  IN  UINTN                                         DestinationY,
+  IN  UINTN                                         Width,
+  IN  UINTN                                         Height,
+  IN  UINTN                                         Delta         OPTIONAL
+  )
+;
+
+EFI_STATUS
+DevNullGopSync (
+  IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private,
+  IN  EFI_GRAPHICS_OUTPUT_PROTOCOL    *GraphicsOutput,
+  IN  EFI_UGA_DRAW_PROTOCOL           *UgaDraw
+  )
+;
+
+#if (EFI_SPECIFICATION < 0x00020000)
 EFI_STATUS
 EFIAPI
 ConSpliterUgaDrawGetMode (
@@ -524,6 +591,7 @@ DevNullUgaSync (
   IN  EFI_UGA_DRAW_PROTOCOL           *UgaDraw
   )
 ;
+#endif
 
 EFI_STATUS
 DevNullTextOutOutputString (
@@ -561,7 +629,7 @@ DevNullTextOutEnableCursor (
 ;
 
 EFI_STATUS
-DevNullSyncUgaStdOut (
+DevNullSyncGopStdOut (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private
   )
 ;

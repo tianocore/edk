@@ -1,5 +1,6 @@
 /*++
-Copyright (c) 2004, Intel Corporation                                                         
+
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -9,18 +10,20 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
 Module name:
+
     EfiPxe.h
 
 32/64-bit PXE specification:
+
     alpha-4, 99-Dec-17
 
 Abstract:
+
     This header file contains all of the PXE type definitions,
     structure prototypes, global variables and constants that
     are needed for porting PXE to EFI.
 --*/
 
-// TODO: fix comment to add: Module Name: EfiPxe.h
 #ifndef _EFIPXE_H
 #define _EFIPXE_H
 

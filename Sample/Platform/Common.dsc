@@ -187,9 +187,9 @@ EBC_C_FLAGS = $(EBC_C_FLAGS) /D $(IMAGE_ENTRY_POINT)=EfiMain
 # This is how to compile the source .c file
 # Use -P to get preprocessor output file (.i)
 #
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).c $(INF_FILENAME) $(DEP_FILE)
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(DEP_FILE)
   $(EBC_CC) $(EBC_C_FLAGS) -X $(INC) -Fa$(DEST_DIR)\$(FILE).cod \
-    $(SOURCE_DIR)\$(FILE).c -Fo$(DEST_DIR)\$(FILE).obj
+    $(SOURCE_FILE_NAME) -Fo$(DEST_DIR)\$(FILE).obj
 
 [=============================================================================]
 #
@@ -1063,9 +1063,9 @@ HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 $(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
   @echo.
   
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).vfr $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
-    -l $(VFR_FLAGS) $(SOURCE_DIR)\$(FILE).vfr
+    -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(FILE).c
 
 [=============================================================================]
@@ -1085,9 +1085,9 @@ HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 $(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
   @echo.
   
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).vfr $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
-    -l $(VFR_FLAGS) $(SOURCE_DIR)\$(FILE).vfr
+    -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(FILE).c
 
 #

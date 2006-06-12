@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -47,8 +47,8 @@ Abstract:
 #define FWH_WRITE_SETUP_COMMAND         0x40
 #define FWH_OPEN_FEATURE_SPACE_COMMAND  0x91
 #define FWH_READ_LOCK                   (1 << 2)
-#define FWH_WRITE_LOCK                  (1 << 1)
-#define FWH_LOCK_DOWN                   1
+#define FWH_LOCK_DOWN                   (1 << 1)
+#define FWH_WRITE_LOCK                  1
 #define FWH_WRITE_STATE_STATUS          (1 << 7)
 #define FWH_ERASE_STATUS                (1 << 5)
 #define FWH_PROGRAM_STATUS              (1 << 4)

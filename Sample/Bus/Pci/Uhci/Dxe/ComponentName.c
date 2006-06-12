@@ -180,10 +180,10 @@ UhciComponentNameGetControllerName (
   UhciDev = USB_HC_DEV_FROM_THIS (UsbHc);
 
   return EfiLibLookupUnicodeString (
-          Language,
-          gUhciComponentName.SupportedLanguages,
-          UhciDev->ControllerNameTable,
-          ControllerName
-          );
+           Language,
+           gUhciComponentName.SupportedLanguages,
+           UhciDev->ControllerNameTable,
+           ControllerName
+           );
 
 }

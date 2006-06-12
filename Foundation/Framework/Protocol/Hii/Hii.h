@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -26,6 +26,7 @@ Abstract:
 
 #include "EfiInternalFormRepresentation.h"
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
+#include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 
 #define EFI_HII_PROTOCOL_GUID \
   { \
@@ -485,14 +486,14 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_HII_GLYPH_TO_BLT) (
-  IN     EFI_HII_PROTOCOL   *This,
-  IN     UINT8              *GlyphBuffer,
-  IN     EFI_UGA_PIXEL      Foreground,
-  IN     EFI_UGA_PIXEL      Background,
-  IN     UINTN              Count,
-  IN     UINTN              Width,
-  IN     UINTN              Height,
-  IN OUT EFI_UGA_PIXEL      *BltBuffer
+  IN     EFI_HII_PROTOCOL               *This,
+  IN     UINT8                          *GlyphBuffer,
+  IN     EFI_GRAPHICS_OUTPUT_BLT_PIXEL  Foreground,
+  IN     EFI_GRAPHICS_OUTPUT_BLT_PIXEL  Background,
+  IN     UINTN                          Count,
+  IN     UINTN                          Width,
+  IN     UINTN                          Height,
+  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *BltBuffer
   );
 
 typedef

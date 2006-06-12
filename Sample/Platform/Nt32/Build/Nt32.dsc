@@ -40,9 +40,7 @@
 # the output makefiles for each component.
 #
 [Defines]
-PROCESSOR                 = $(PROCESSOR)
 PLATFORM                  = $(PROJECT_NAME)
-SHELL_INF                 = $(SHELL_INF)
 FV_RECOVERY_BASE_ADDRESS  = 0xFFD80000
 NV_STORAGE_BASE_ADDRESS   = 0xFFFC0000
 #LANGUAGE                  = eng,fra,chn 
@@ -303,6 +301,7 @@ Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
 Sample\Universal\Console\Terminal\Dxe\Terminal.inf
 Sample\Universal\DataHub\DataHub\Dxe\DataHub.inf
 Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
+#Sample\Universal\DevicePath\Dxe\DevicePath.inf
 Sample\Universal\Disk\DiskIo\Dxe\DiskIo.inf
 Sample\Universal\Ebc\Dxe\Ebc.inf
 Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf
@@ -312,7 +311,7 @@ Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Bus\Pci\PciBus\Dxe\PciBus.inf
 Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.Inf                   
 Sample\Universal\UserInterface\SetupBrowser\Dxe\DriverSample\DriverSample.Inf
-Other\Maintained\Application\Shell\Bin\Shell.inf
+Other\Maintained\Application\$(UEFI_PREFIX)Shell\Bin\Shell.inf
 Sample\Universal\Disk\UnicodeCollation\English\Dxe\English.inf
 Sample\Bus\WinNtThunk\BlockIo\Dxe\WinNtBlockIo.inf
 Sample\Bus\WinNtThunk\Console\Dxe\WinNtConsole.inf
@@ -320,10 +319,15 @@ Sample\Bus\WinNtThunk\SerialIo\Dxe\WinNtSerialIo.inf
 Sample\Bus\WinNtThunk\SimpleFileSystem\Dxe\WinNtSimpleFileSystem.inf
 Sample\Bus\WinNtThunk\WinNtBusDriver\Dxe\WinNtBusDriver.inf
 Sample\Bus\WinNtThunk\WinNtThunk\Dxe\WinNtThunk.inf
-Sample\Bus\WinNtThunk\Uga\Dxe\WinNtUga.inf
+
+#
+# In EFI mode,  GRAPHICS_INF = Sample\Bus\WinNtThunk\Uga\Dxe\WinNtUga.inf
+# In UEFI mode, GRAPHICS_INF = Sample\Bus\WinNtThunk\Gop\Dxe\WinNtGop.inf
+$(GRAPHICS_INF)
+
 Sample\Platform\Nt32\Dxe\Nt32Platform\MiscSubclass\MiscSubclassDriver.inf
 Sample\Bus\Pci\AtapiPassThru\Dxe\AtapiPassThru.inf                            
-Sample\Bus\Pci\CirrusLogic\Dxe\CirrusLogic5430.inf                        
+Sample\Bus\Pci\CirrusLogic\Dxe\$(UEFI_PREFIX)CirrusLogic5430.inf              
 Sample\Bus\Pci\IdeBus\Dxe\idebus.inf                                          
 Sample\Bus\Pci\Uhci\Dxe\Uhci.inf                                              
 Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                                       

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -490,7 +490,12 @@ Returns:
     // from memory.
     //
 #ifdef EFI_NT_EMULATOR
-    mRunningFromMemory = TRUE;
+    //
+    // For NT32, we should also relocate image here, because if the DLL
+    // is already load, we will NOT load it twice. This feature is added to
+    // prevent loading driver twice in DXE phase cause system crash.
+    //
+    * (BOOLEAN *) ((UINTN) &mRunningFromMemory + (UINTN) EntryPoint - (UINTN) InstallMonoStatusCode) = TRUE;
 #else
     * (BOOLEAN *) ((UINTN) &mRunningFromMemory + (UINTN) EntryPoint - (UINTN) InstallMonoStatusCode) = TRUE;
 #endif

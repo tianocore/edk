@@ -68,20 +68,20 @@ Returns:
 
 --*/
 {
-  CHAR16        *LanguageString;
-  UINTN         Count;
-  CHAR16        UnicodeLang[3];
-  CHAR8         Lang[3];
-  EFI_STATUS    Status;
-  UINTN         Index;
-  CHAR16        *TmpStr;
-  EFI_UGA_PIXEL Foreground;
-  EFI_UGA_PIXEL Background;
-  EFI_UGA_PIXEL Color;
+  CHAR16                        *LanguageString;
+  UINTN                         Count;
+  CHAR16                        UnicodeLang[3];
+  CHAR8                         Lang[3];
+  EFI_STATUS                    Status;
+  UINTN                         Index;
+  CHAR16                        *TmpStr;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL Foreground;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL Background;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL Color;
 
-  EfiSetMem (&Foreground, sizeof (EFI_UGA_PIXEL), 0xff);
-  EfiSetMem (&Background, sizeof (EFI_UGA_PIXEL), 0x0);
-  EfiSetMem (&Color, sizeof (EFI_UGA_PIXEL), 0xff);
+  EfiSetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
+  EfiSetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
+  EfiSetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
 
   Count = 0;
 
@@ -417,7 +417,8 @@ Returns:
 {
   EFI_STATUS  Status;
   UINT8       FakeNvRamMap[1];
-
+  BOOLEAN     FrontPageMenuResetRequired;
+  
   //
   // Begin waiting for USER INPUT
   //
@@ -435,6 +436,7 @@ Returns:
   gBS->RestoreTPL (EFI_TPL_APPLICATION);
 
   FakeNvRamMap[0] = (UINT8) mLastSelection;
+  FrontPageMenuResetRequired = FALSE;
   Status = gBrowser->SendForm (
                       gBrowser,
                       TRUE,                     // Use the database
@@ -444,8 +446,14 @@ Returns:
                       FrontPageCallbackHandle,  // This is the handle that the interface to the callback was installed on
                       FakeNvRamMap,
                       NULL,
-                      NULL
+                      &FrontPageMenuResetRequired
                       );
+  //
+  // Check whether user change any option setting which needs a reset to be effective
+  //                      
+  if (FrontPageMenuResetRequired) {
+    EnableResetRequired ();
+  }
 
   Hii->ResetStrings (Hii, gFrontPageHandle);
 
@@ -888,7 +896,12 @@ Returns:
     }
 
   } while ((Status == EFI_SUCCESS) && (gCallbackKey != 1));
-
+  
+  //
+  //Will leave browser, check any reset required change is applied? if yes, reset system
+  //
+  SetupResetReminder ();
+  
   //
   // Automatically load current entry
   // Note: The following lines of code only execute when Auto boot

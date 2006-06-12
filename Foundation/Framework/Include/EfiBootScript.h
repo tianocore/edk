@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,6 +22,8 @@ Abstract:
 #ifndef _EFI_SCRIPT_H_
 #define _EFI_SCRIPT_H_
 
+#include "EfiSmbus.h"
+
 #define EFI_ACPI_S3_RESUME_SCRIPT_TABLE         0x00
 
 //
@@ -42,6 +44,8 @@ typedef const UINT16  EFI_BOOT_SCRIPT_OPCODE;
 #define EFI_BOOT_SCRIPT_TABLE_OPCODE                  0xAA
 #define EFI_BOOT_SCRIPT_TERMINATE_OPCODE              0xFF
 
+#pragma pack(1)
+
 //
 // EFI Boot Script Width
 //
@@ -61,31 +65,6 @@ typedef enum {
   EfiBootScriptWidthMaximum
 } EFI_BOOT_SCRIPT_WIDTH;
 
-//
-// EFI Smbus Device Address, Smbus Device Command, Smbus Operation
-//
-typedef struct {
-  UINTN SmbusDeviceAddress : 7;
-} EFI_SMBUS_DEVICE_ADDRESS;
-
-typedef UINTN EFI_SMBUS_DEVICE_COMMAND;
-
-typedef enum _EFI_SMBUS_OPERATION
-{
-  EfiSmbusQuickRead,
-  EfiSmbusQuickWrite,
-  EfiSmbusReceiveByte,
-  EfiSmbusSendByte,
-  EfiSmbusReadByte,
-  EfiSmbusWriteByte,
-  EfiSmbusReadWord,
-  EfiSmbusWriteWord,
-  EfiSmbusReadBlock,
-  EfiSmbusWriteBlock,
-  EfiSmbusProcessCall,
-  EfiSmbusBWBRProcessCall
-} EFI_SMBUS_OPERATION;
-
 typedef struct {
   UINT16  OpCode;
   UINT8   Length;
@@ -102,68 +81,68 @@ typedef struct {
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
+  UINT32                Width;
 } EFI_BOOT_SCRIPT_COMMON_HEADER;
 
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
-  UINTN                 Count;
+  UINT32                Width;
+  UINT32                Count;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_IO_WRITE;
 
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
+  UINT32                Width;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_IO_READ_WRITE;
 
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
-  UINTN                 Count;
+  UINT32                Width;
+  UINT32                Count;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_MEM_WRITE;
 
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
+  UINT32                Width;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_MEM_READ_WRITE;
 
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
-  UINTN                 Count;
+  UINT32                Width;
+  UINT32                Count;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_PCI_CONFIG_WRITE;
 
 typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
-  EFI_BOOT_SCRIPT_WIDTH Width;
+  UINT32                Width;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_PCI_CONFIG_READ_WRITE;
 
 typedef struct {
   UINT16                    OpCode;
   UINT8                     Length;
-  EFI_SMBUS_DEVICE_ADDRESS  SlaveAddress;
-  EFI_SMBUS_DEVICE_COMMAND  Command;
-  EFI_SMBUS_OPERATION       Operation;
+  UINT64                    SlaveAddress;
+  UINT64                    Command;
+  UINT32                    Operation;
   BOOLEAN                   PecCheck;
-  UINTN                     DataSize;
+  UINT32                    DataSize;
 } EFI_BOOT_SCRIPT_SMBUS_EXECUTE;
 
 typedef struct {
   UINT16  OpCode;
   UINT8   Length;
-  UINTN   Duration;
+  UINT64  Duration;
 } EFI_BOOT_SCRIPT_STALL;
 
 typedef struct {
@@ -193,5 +172,7 @@ typedef union {
   EFI_BOOT_SCRIPT_COMMON_HEADER         *CommonHeader;
   UINT8                                 *Raw;
 } BOOT_SCRIPT_POINTERS;
+
+#pragma pack()
 
 #endif

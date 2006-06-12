@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1514,11 +1514,25 @@ Returns:
   BridgeControl = 0;
 
   //
+  // Check VGA and VGA16, they can not be set at the same time
+  //
+  if (((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO)         &&
+       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO_16))         ||
+      ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO)         &&
+       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16)) ||
+      ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO) &&
+       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO_16))         ||
+      ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO) &&
+       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16)) ) {
+    return EFI_UNSUPPORTED;
+  }
+
+  //
   // For PPB & P2C, set relevant attribute bits
   //
   if (IS_PCI_BRIDGE (&PciIoDevice->Pci) || IS_CARDBUS_BRIDGE (&PciIoDevice->Pci)) {
 
-    if (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO) {
+    if (Attributes & (EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16)) {
       BridgeControl |= EFI_PCI_BRIDGE_CONTROL_VGA;
     }
 
@@ -1526,18 +1540,23 @@ Returns:
       BridgeControl |= EFI_PCI_BRIDGE_CONTROL_ISA;
     }
 
-    if (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO) {
+    if (Attributes & (EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO | EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16)) {
       Command |= EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO;
+    }
+
+    if (Attributes & (EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16 | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16)) {
+      BridgeControl |= EFI_PCI_BRIDGE_CONTROL_VGA_16;
     }
 
   } else {
     //
     // Do with the attributes on VGA
+    // Only for VGA's legacy resource, we just can enable once.
     //
-    if ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO) || 
-        (IS_PCI_VGA(&PciIoDevice->Pci) && 
-         ((Attributes & EFI_PCI_IO_ATTRIBUTE_IO) || 
-          (Attributes & EFI_PCI_IO_ATTRIBUTE_MEMORY)))) {
+    if (Attributes &
+        (EFI_PCI_IO_ATTRIBUTE_VGA_IO    |
+         EFI_PCI_IO_ATTRIBUTE_VGA_IO_16 |
+         EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY)) {
       //
       // Check if a VGA has been enabled before enabling a new one
       //
@@ -1558,7 +1577,7 @@ Returns:
     //
     // Do with the attributes on GFX
     //
-    if (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO) {
+    if (Attributes & (EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO | EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16)) {
 
       if (Operation == EfiPciIoAttributeOperationEnable) {
         //

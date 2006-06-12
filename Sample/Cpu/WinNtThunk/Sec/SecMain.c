@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                        
+Copyright (c) 2004 - 2006, Intel Corporation                                                        
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -111,6 +111,9 @@ NT_FD_INFO                                *gFdInfo;
 //
 UINTN                                     gSystemMemoryCount = 0;
 NT_SYSTEM_MEMORY                          *gSystemMemory;
+
+UINTN                    mPdbNameModHandleArraySize = 0;
+PDB_NAME_TO_MOD_HANDLE   *mPdbNameModHandleArray = NULL;
 
 INTN
 EFIAPI
@@ -524,15 +527,17 @@ Arguments:
   PdbFileName     - The name of the .PDB file.  This was found from the PE/COFF
                     file's debug directory entry.
   ImageEntryPoint - A pointer to the DLL entry point of the .DLL file was loaded.
+  ModHandle       - A pointer to the DLL Module of the .DLL file was loaded.
 
 Returns:
-  EFI_SUCCESS     - The .DLL file was loaded, and the DLL entry point is returned in ImageEntryPoint
-  EFI_NOT_FOUND   - The .DLL file could not be found
-  EFI_UNSUPPORTED - The .DLL file was loaded, but the entry point to the .DLL file could not
-                    determined.
+  EFI_SUCCESS         - The .DLL file was loaded, and the DLL entry point is returned in
+                        ImageEntryPoint
+  EFI_NOT_FOUND       - The .DLL file could not be found
+  EFI_UNSUPPORTED     - The .DLL file was loaded, but the entry point to the .DLL file
+                        could not determined.
+  EFI_ALREADY_STARTED - The .DLL file was already loaded
 
 --*/
-// TODO:    ModHandle - add argument and description to function comment
 {
   CHAR16  *DllFileName;
   HMODULE Library;
@@ -540,6 +545,16 @@ Returns:
 
   *ImageEntryPoint  = NULL;
   *ModHandle        = NULL;
+
+  //
+  // Check whether the ModHandle is already registered. If it does, that means
+  // the DLL file is already loaded. To load it second times will cause the 
+  // first time load information crash.
+  //
+  Library = GetModHandle (PdbFileName);
+  if (Library != NULL) {
+     return EFI_ALREADY_STARTED;
+  }
 
   //
   // Convert filename from ASCII to Unicode
@@ -582,6 +597,11 @@ Returns:
 
   *ModHandle = Library;
 
+  //
+  // Register this module handle, this is used to check second times load.
+  //
+  AddModHandle (PdbFileName, Library);
+
   free (DllFileName);
   return EFI_SUCCESS;
 }
@@ -589,7 +609,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 SecWinNtPeCoffLoaderFreeLibrary (
-  OUT VOID    *ModHandle
+  IN VOID     *ModHandle
   )
 /*++
 
@@ -597,15 +617,17 @@ Routine Description:
   Free resources allocated by SecWinNtPeCoffLoaderLoadAsDll
 
 Arguments:
-  MohHandle  - Handle of the resources to free to undo the work.
+  MohHandle   - Handle of the resources to free to undo the work.
 
 Returns:
-  EFI_SUCCESS - 
+  EFI_SUCCESS - This resource is freed successfully.
 
 --*/
-// TODO:    ModHandle - add argument and description to function comment
 {
-  FreeLibrary (ModHandle);
+  if (ModHandle != NULL) {
+    RemoveModeHandle (ModHandle);
+    FreeLibrary (ModHandle);
+  }
   return EFI_SUCCESS;
 }
 
@@ -924,6 +946,151 @@ Returns:
   }
 
   return EFI_SUCCESS;
+}
+
+EFI_STATUS
+AddModHandle (
+  IN  CHAR8         *PdbPointer,
+  IN  VOID          *ModHandle
+  )
+/*++
+
+Routine Description:
+  Store the ModHandle in an array indexed by the Pdb File name.
+  The ModHandle is needed to unload the image. 
+
+Arguments:
+  PdbPointer - Input data returned from PE Laoder Library. Used to find the 
+               .PDB file name of the PE Image.
+  ModHandle  - Returned from LoadLibraryEx() and stored for call to 
+                 FreeLibrary().
+
+Returns:
+  EFI_SUCCESS - ModHandle was stored. 
+
+--*/
+{
+  UINTN                   Index;
+  PDB_NAME_TO_MOD_HANDLE  *Array;
+  UINTN                   PreviousSize;
+
+
+  Array = mPdbNameModHandleArray;
+  for (Index = 0; Index < mPdbNameModHandleArraySize; Index++, Array++) {
+    if (Array->PdbPointer == NULL) {
+      //
+      // Make a copy of the stirng and store the ModHandle
+      //
+      Array->PdbPointer = malloc (strlen (PdbPointer) + 1);
+      if (Array->PdbPointer == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      strcpy (Array->PdbPointer, PdbPointer);
+      Array->ModHandle = ModHandle;
+      return EFI_SUCCESS;
+    }
+  }
+  
+  //
+  // No free space in mPdbNameModHandleArray so grow it by 
+  // MAX_PDB_NAME_TO_MOD_HANDLE_ARRAY_SIZE entires. realloc will
+  // copy the old values to the new locaiton. But it does
+  // not zero the new memory area.
+  //
+  PreviousSize = mPdbNameModHandleArraySize * sizeof (PDB_NAME_TO_MOD_HANDLE);
+  mPdbNameModHandleArraySize += MAX_PDB_NAME_TO_MOD_HANDLE_ARRAY_SIZE;
+
+  mPdbNameModHandleArray = realloc (mPdbNameModHandleArray, mPdbNameModHandleArraySize * sizeof (PDB_NAME_TO_MOD_HANDLE));
+  if (mPdbNameModHandleArray == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  
+  memset (mPdbNameModHandleArray + PreviousSize, 0, MAX_PDB_NAME_TO_MOD_HANDLE_ARRAY_SIZE * sizeof (PDB_NAME_TO_MOD_HANDLE));
+ 
+  return AddModHandle (PdbPointer, ModHandle);
+}
+
+VOID *
+RemoveModeHandle (
+  IN  VOID          *ModHandle
+  )
+/*++
+
+Routine Description:
+  Return the ModHandle and delete the entry in the array.
+
+Arguments:
+  ModHandle  - Returned from LoadLibraryEx() and stored for call to 
+                 FreeLibrary().
+
+Returns:
+  ModHandle - ModHandle assoicated with Image ModHandle is returned
+  NULL      - No ModHandle associated with Image ModHandle
+
+--*/
+{
+  UINTN                   Index;
+  PDB_NAME_TO_MOD_HANDLE  *Array;
+
+  Array = mPdbNameModHandleArray;
+  for (Index = 0; Index < mPdbNameModHandleArraySize; Index++, Array++) {
+    if (Array->ModHandle != ModHandle) {
+      //
+      // If you find a match return it and delete the entry
+      //
+      free (Array->PdbPointer);
+      Array->PdbPointer = NULL;
+      return Array->ModHandle;
+    }
+  }
+
+  return NULL;
+}
+
+VOID *
+GetModHandle (
+  IN  CHAR8         *PdbPointer
+  )
+/*++
+
+Routine Description:
+  Search the ModHandle in an array indexed by the PDB File name.
+
+Arguments:
+  PdbPointer - Input data returned from PE Laoder Library. Used to find the 
+               .PDB file name of the PE Image.
+
+Returns:
+  ModHandle - ModHandle assoicated with Image PdbPointer is returned
+  NULL      - No ModHandle associated with Image PdbPointer
+
+--*/
+{
+  UINTN                   Index;
+  PDB_NAME_TO_MOD_HANDLE  *Array;
+
+  if (PdbPointer == NULL) {
+    //
+    // If no PDB pointer there is no ModHandle so return NULL
+    //
+    return NULL;
+  }
+
+  Array = mPdbNameModHandleArray;
+  for (Index = 0; Index < mPdbNameModHandleArraySize; Index++, Array++) {
+    if ((Array->PdbPointer != NULL) && (strcmp(Array->PdbPointer, PdbPointer) == 0)) {
+      //
+      // If you find a match return it
+      //
+      return Array->ModHandle;
+    }
+  }
+  
+  //
+  // The module handle related to the PDB pointer is not found.
+  //
+  return NULL;
 }
 
 CHAR16 *

@@ -2,7 +2,7 @@ TITLE   Cpu.asm: Assembly code for the x64 resources
 
 ;------------------------------------------------------------------------------
 ;*
-;*   Copyright (c) 2005, Intel Corporation                                                         
+;*   Copyright (c) 2005 - 2006, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -127,10 +127,16 @@ EfiReadTsc  ENDP
 ;   );
 ;------------------------------------------------------------------------------
 EfiDisableCache PROC    PUBLIC
+; added a check to see if cache is already disabled. If it is, then skip.
+    mov   rax, cr0
+    and   rax, 060000000h     
+    cmp   rax, 0
+    jne   @f
     wbinvd
     mov   rax, cr0
     or    rax, 060000000h     
     mov   cr0, rax
+@@:
     ret
 EfiDisableCache ENDP
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,7 +61,7 @@ CommonIdtEntry (
 
 Routine Description:
 
-  TODO: Add function description
+  Generic IDT entry
 
 Arguments:
 
@@ -69,7 +69,28 @@ Arguments:
 
 Returns:
 
-  TODO: add return values
+  None
+
+--*/
+;
+
+VOID
+EfiWbinvd (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Writeback and invalidate cache
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
 
 --*/
 ;
@@ -82,7 +103,7 @@ FxStorSupport (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether FXSTOR is supported
 
 Arguments:
 
@@ -90,7 +111,8 @@ Arguments:
 
 Returns:
 
-  TODO: add return values
+  TRUE  - supported
+  FALSE - not supported
 
 --*/
 ;
@@ -103,7 +125,7 @@ GetIdtr (
 
 Routine Description:
 
-  TODO: Add function description
+  Return the physical address of IDTR
 
 Arguments:
 
@@ -111,7 +133,7 @@ Arguments:
 
 Returns:
 
-  TODO: add return values
+  The physical address of IDTR
 
 --*/
 ;
@@ -125,16 +147,16 @@ Vect2Desc (
 
 Routine Description:
 
-  TODO: Add function description
+  Encodes an IDT descriptor with the given physical address
 
 Arguments:
 
-  DestDesc  - TODO: add argument description
-  )         - TODO: add argument description
+  DestDesc  - The IDT descriptor address
+  Vector    - The interrupt vector entry
 
 Returns:
 
-  TODO: add return values
+  None
 
 --*/
 ;
@@ -147,15 +169,16 @@ WriteInterruptFlag (
 
 Routine Description:
 
-  TODO: Add function description
+  Programs interrupt flag to the requested state and returns previous
+  state.
 
 Arguments:
 
-  NewState  - TODO: add argument description
+  NewState  - New interrupt status
 
 Returns:
 
-  TODO: add return values
+  Old interrupt status
 
 --*/
 ;
@@ -167,16 +190,18 @@ plInitializeDebugSupportDriver (
 /*++
 
 Routine Description:
+  Initializes driver's handler registration database.
 
-  TODO: Add function description
+  This code executes in boot services context.
 
 Arguments:
-
   None
 
 Returns:
-
-  TODO: add return values
+  EFI_SUCCESS
+  EFI_UNSUPPORTED - if IA32 processor does not support FXSTOR/FXRSTOR instructions,
+                    the context save will fail, so these processor's are not supported.
+  EFI_OUT_OF_RESOURCES - not resource to finish initialization
 
 --*/
 ;
@@ -189,16 +214,18 @@ plUnloadDebugSupportDriver (
 /*++
 
 Routine Description:
+  This is the callback that is written to the LoadedImage protocol instance
+  on the image handle. It uninstalls all registered handlers and frees all entry
+  stub memory.
 
-  TODO: Add function description
+  This code executes in boot services context.
 
 Arguments:
-
-  ImageHandle - TODO: add argument description
+  ImageHandle - The image handle of the unload handler
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS - always return success
 
 --*/
 ;
@@ -214,18 +241,14 @@ GetMaximumProcessorIndex (
   )
 /*++
 
-Routine Description:
-
-  TODO: Add function description
+Routine Description: This is a DebugSupport protocol member function.
 
 Arguments:
-
-  This              - TODO: add argument description
-  MaxProcessorIndex - TODO: add argument description
+  This              - The DebugSupport instance
+  MaxProcessorIndex - The maximuim supported processor index
 
 Returns:
-
-  TODO: add return values
+  Always returns EFI_SUCCESS with *MaxProcessorIndex set to 0
 
 --*/
 ;
@@ -239,19 +262,21 @@ RegisterPeriodicCallback (
   )
 /*++
 
-Routine Description:
-
-  TODO: Add function description
+Routine Description: This is a DebugSupport protocol member function.
 
 Arguments:
-
-  This              - TODO: add argument description
-  ProcessorIndex    - TODO: add argument description
-  PeriodicCallback  - TODO: add argument description
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  PeriodicCallback - Callback function
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS
+  EFI_INVALID_PARAMETER - requested uninstalling a handler from a vector that has
+                          no handler registered for it
+  EFI_ALREADY_STARTED   - requested install to a vector that already has a handler registered.
+
+  Other possible return values are passed through from UnHookEntry and HookEntry.
 
 --*/
 ;
@@ -267,19 +292,24 @@ RegisterExceptionCallback (
 /*++
 
 Routine Description:
+  This is a DebugSupport protocol member function.
 
-  TODO: Add function description
+  This code executes in boot services context.
 
 Arguments:
-
-  This            - TODO: add argument description
-  ProcessorIndex  - TODO: add argument description
-  NewCallback     - TODO: add argument description
-  ExceptionType   - TODO: add argument description
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  NewCallback      - Callback function
+  ExceptionType    - Which exception to hook
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS
+  EFI_INVALID_PARAMETER - requested uninstalling a handler from a vector that has
+                          no handler registered for it
+  EFI_ALREADY_STARTED   - requested install to a vector that already has a handler registered.
+
+  Other possible return values are passed through from UnHookEntry and HookEntry.
 
 --*/
 ;
@@ -295,19 +325,18 @@ InvalidateInstructionCache (
 /*++
 
 Routine Description:
-
-  TODO: Add function description
+  This is a DebugSupport protocol member function.
+  Calls assembly routine to flush cache.
 
 Arguments:
-
-  This            - TODO: add argument description
-  ProcessorIndex  - TODO: add argument description
-  Start           - TODO: add argument description
-  Length          - TODO: add argument description
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  Start            - Physical base of the memory range to be invalidated
+  Length           - mininum number of bytes in instruction cache to invalidate
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS - always return success
 
 --*/
 ;

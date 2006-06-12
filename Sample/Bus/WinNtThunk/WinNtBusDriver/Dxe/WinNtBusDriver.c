@@ -1,6 +1,6 @@
 /*+++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,6 +27,7 @@ EFI_WIN_NT_VIRTUAL_DISKS  - maps to a device emulated by a file
 EFI_WIN_NT_FILE_SYSTEM    - mouts a directory as a file system
 EFI_WIN_NT_CONSOLE        - make a logical comand line window (only one!)
 EFI_WIN_NT_UGA            - Builds UGA Windows of Width and Height
+EFI_WIN_NT_GOP            - Builds GOP Windows of Width and Height
 EFI_WIN_NT_SERIAL_PORT    - maps physical serial ports
 
  <F>ixed       - Fixed disk like a hard drive.
@@ -82,6 +83,12 @@ EFI_WIN_NT_SERIAL_PORT    - maps physical serial ports
    Declaring a two UGA windows with resolutions of 800x600 and 1024x768 would look like:
    Example : EFI_WIN_NT_UGA=800 600!1024 768
 
+ EFI_WIN_NT_GOP = 
+   <width> <height>[!...]
+
+   Declaring a two GOP windows with resolutions of 800x600 and 1024x768 would look like:
+   Example : EFI_WIN_NT_GOP=800 600!1024 768
+
  EFI_WIN_NT_SERIAL_PORT = 
    <port name>[!...]
 
@@ -126,6 +133,9 @@ EFI_DRIVER_BINDING_PROTOCOL           gWinNtBusDriverBinding = {
 static NT_ENVIRONMENT_VARIABLE_ENTRY  mEnvironment[] = {
   L"EFI_WIN_NT_CONSOLE",          &gEfiWinNtConsoleGuid,
   L"EFI_WIN_NT_UGA",              &gEfiWinNtUgaGuid,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  L"EFI_WIN_NT_GOP",              &gEfiWinNtGopGuid,
+#endif
   L"EFI_WIN_NT_SERIAL_PORT",      &gEfiWinNtSerialPortGuid,
   L"EFI_WIN_NT_FILE_SYSTEM",      &gEfiWinNtFileSystemGuid,
   L"EFI_WIN_NT_VIRTUAL_DISKS",    &gEfiWinNtVirtualDisksGuid,
@@ -475,9 +485,10 @@ Returns:
     }
 
     if (Result == 0) {
-      if (EfiCompareGuid (mEnvironment[Index].DevicePathGuid, &gEfiWinNtUgaGuid) && NoWinNtConsole) {
+      if ((EfiCompareGuid (mEnvironment[Index].DevicePathGuid, &gEfiWinNtUgaGuid) && NoWinNtConsole) ||
+          (EfiCompareGuid (mEnvironment[Index].DevicePathGuid, &gEfiWinNtGopGuid) && NoWinNtConsole)) {
         //
-        // If there is no UGA force a default 800 x 600 console
+        // If there is no GOP or UGA force a default 800 x 600 console
         //
         StartString = L"800 600";
       } else {

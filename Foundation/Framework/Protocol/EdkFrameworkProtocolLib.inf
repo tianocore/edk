@@ -41,6 +41,8 @@ C_STD_INCLUDE=
 [sources.common]
   AcpiS3Save\AcpiS3Save.h
   AcpiS3Save\AcpiS3Save.c
+  BootScriptSave\BootScriptSave.h
+  BootScriptSave\BootScriptSave.c
   DataHub\DataHub.h
   DataHub\DataHub.c
   FirmwareVolume\FirmwareVolume.h

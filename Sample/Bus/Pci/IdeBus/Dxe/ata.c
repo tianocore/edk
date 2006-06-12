@@ -1304,24 +1304,17 @@ AtaBlkIoReadBlocks (
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
     // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 read block mechanism
-    // Notice DMA operation can only handle 32bit address
     //
-    if ((UINTN)Buffer + BufferSize<=0xFFFFFFFF) {
-      Status = AtaUdmaReadExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    }
-    if (EFI_ERROR (Status) || ((UINTN)Buffer + BufferSize>0xFFFFFFFF)) {
+    Status = AtaUdmaReadExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    if (EFI_ERROR (Status)) {
       Status = AtaReadSectorsExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   } else {
     //
     // For ATA-3 compatible device, use ATA-3 read block mechanism
-    // Notice DMA operation can only handle 32bit address
     //
-    if ((UINTN) Buffer + BufferSize <= 0xFFFFFFFF) {
-      Status = AtaUdmaRead (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    }
-
-    if (EFI_ERROR (Status) || ((UINTN) Buffer + BufferSize > 0xFFFFFFFF)) {
+    Status = AtaUdmaRead (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    if (EFI_ERROR (Status)) {
       Status = AtaReadSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   }
@@ -1454,23 +1447,17 @@ AtaBlkIoWriteBlocks (
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
     // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 write block mechanism
-    // Notice DMA operation can only handle 32bit address
     //
-    if ((UINTN)Buffer + BufferSize<=0xFFFFFFFF) {
-        Status = AtaUdmaWriteExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    }
-    if (EFI_ERROR (Status) || ((UINTN)Buffer + BufferSize>0xFFFFFFFF)) {
+    Status = AtaUdmaWriteExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    if (EFI_ERROR (Status)) {
       Status = AtaWriteSectorsExt (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   } else {
     //
     // For ATA-3 compatible device, use ATA-3 write block mechanism
-    // Notice DMA operation can only handle 32bit address
     //
-    if ((UINTN)Buffer + BufferSize<=0xFFFFFFFF) {
-      Status = AtaUdmaWrite (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
-    }
-    if (EFI_ERROR (Status) || ((UINTN) Buffer + BufferSize> 0xFFFFFFFF)) {
+    Status = AtaUdmaWrite (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
+    if (EFI_ERROR (Status)) {
       Status = AtaWriteSectors (IdeBlkIoDevice, Buffer, LBA, NumberOfBlocks);
     }
   }
@@ -2529,22 +2516,26 @@ AtaUdmaReadExt (
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD *PrdAddr;
-  IDE_DMA_PRD *UsedPrdAddr;
-  IDE_DMA_PRD *TempPrdAddr;
-  UINT8       RegisterValue;
-  UINT8       Device;
-  UINT64      IoPortForBmic;
-  UINT64      IoPortForBmis;
-  UINT64      IoPortForBmid;
-  EFI_STATUS  Status;
-  UINTN       PrdTableNum;
-  UINTN       ByteCount;
-  UINTN       ByteAvailable;
-  UINT8       *PrdBuffer;
-  UINTN       RemainBlockNum;
-  UINT8       DeviceControl;
-  UINT32      Count;
+  IDE_DMA_PRD                *PrdAddr;
+  IDE_DMA_PRD                *UsedPrdAddr;
+  IDE_DMA_PRD                *TempPrdAddr;
+  UINT8                      RegisterValue;
+  UINT8                      Device;
+  UINT64                     IoPortForBmic;
+  UINT64                     IoPortForBmis;
+  UINT64                     IoPortForBmid;
+  EFI_STATUS                 Status;
+  UINTN                      PrdTableNum;
+  UINTN                      ByteCount;
+  UINTN                      ByteAvailable;
+  UINT8                      *PrdBuffer;
+  UINTN                      RemainBlockNum;
+  UINT8                      DeviceControl;
+  UINT32                     Count;
+  UINTN                      PageCount;
+  VOID                       *Map;
+  EFI_PHYSICAL_ADDRESS       MemPage;
+  EFI_PHYSICAL_ADDRESS       DeviceAddress;
 
   //
   // Channel and device differential. Select device.
@@ -2598,7 +2589,20 @@ AtaUdmaReadExt (
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
+    MemPage = 0xFFFFFFFF;
+    PageCount = EFI_SIZE_TO_PAGES (2 * PrdTableNum * sizeof (IDE_DMA_PRD));
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
+                    PageCount,
+                    &MemPage
+                    );
+    if (EFI_ERROR (Status)) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+    EfiZeroMem ((VOID *) ((UINTN) MemPage), EFI_PAGES_TO_SIZE (PageCount));
+   
+    PrdAddr = (IDE_DMA_PRD *) ((UINTN) MemPage);
 
     //
     // To make sure PRD is allocated in one 64K page
@@ -2616,7 +2620,19 @@ AtaUdmaReadExt (
     //
     // Build the PRD table
     //
-    PrdBuffer   = DataBuffer;
+    Status = IdeDev->PciIo->Map (
+                       IdeDev->PciIo,
+                       EfiPciIoOperationBusMasterWrite,
+                       DataBuffer,
+                       &ByteCount, 
+                       &DeviceAddress,
+                       &Map
+                       );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePages (MemPage, PageCount);
+      return EFI_OUT_OF_RESOURCES;
+    }
+    PrdBuffer   = (VOID *) ((UINTN) DeviceAddress);
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
@@ -2699,15 +2715,16 @@ AtaUdmaReadExt (
     // Issue READ DMA EXT command
     //
     Status = AtaCommandIssueExt (
-              IdeDev,
-              READ_DMA_EXT_CMD,
-              Device,
-              0,
-              (UINT16) NumberOfBlocks,
-              StartLba
-              );
+               IdeDev,
+               READ_DMA_EXT_CMD,
+               Device,
+               0,
+               (UINT16) NumberOfBlocks,
+               StartLba
+               );
     if (EFI_ERROR (Status)) {
-      gBS->FreePool (PrdAddr);
+      gBS->FreePages (MemPage, PageCount);
+      IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
       return EFI_DEVICE_ERROR;
     }
 
@@ -2775,7 +2792,8 @@ AtaUdmaReadExt (
                               1,
                               &RegisterValue
                               );
-          gBS->FreePool (PrdAddr);
+          gBS->FreePages (MemPage, PageCount);
+          IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
           return EFI_DEVICE_ERROR;
         }
         break;
@@ -2785,7 +2803,8 @@ AtaUdmaReadExt (
       Count --;
     }
 
-    gBS->FreePool (PrdAddr);
+    gBS->FreePages (MemPage, PageCount);
+    IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
     //
     // Read Status Register of IDE device to clear interrupt
     //
@@ -2882,22 +2901,26 @@ AtaUdmaRead (
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD *PrdAddr;
-  IDE_DMA_PRD *UsedPrdAddr;
-  IDE_DMA_PRD *TempPrdAddr;
-  UINT8       RegisterValue;
-  UINT8       Device;
-  UINT64      IoPortForBmic;
-  UINT64      IoPortForBmis;
-  UINT64      IoPortForBmid;
-  EFI_STATUS  Status;
-  UINTN       PrdTableNum;
-  UINTN       ByteCount;
-  UINTN       ByteAvailable;
-  UINT8       *PrdBuffer;
-  UINTN       RemainBlockNum;
-  UINT8       DeviceControl;
-  UINT32      Count;
+  IDE_DMA_PRD                *PrdAddr;
+  IDE_DMA_PRD                *UsedPrdAddr;
+  IDE_DMA_PRD                *TempPrdAddr;
+  UINT8                      RegisterValue;
+  UINT8                      Device;
+  UINT64                     IoPortForBmic;
+  UINT64                     IoPortForBmis;
+  UINT64                     IoPortForBmid;
+  EFI_STATUS                 Status;
+  UINTN                      PrdTableNum;
+  UINTN                      ByteCount;
+  UINTN                      ByteAvailable;
+  UINT8                      *PrdBuffer;
+  UINTN                      RemainBlockNum;
+  UINT8                      DeviceControl;
+  UINT32                     Count;
+  UINTN                      PageCount;
+  VOID                       *Map;
+  EFI_PHYSICAL_ADDRESS       MemPage;
+  EFI_PHYSICAL_ADDRESS       DeviceAddress;
 
   //
   // Channel and device differential
@@ -2951,7 +2974,20 @@ AtaUdmaRead (
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
+    MemPage = 0xFFFFFFFF;
+    PageCount = EFI_SIZE_TO_PAGES (2 * PrdTableNum * sizeof (IDE_DMA_PRD));
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
+                    PageCount,
+                    &MemPage
+                    );
+    if (EFI_ERROR (Status)) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+    EfiZeroMem ((VOID *) ((UINTN) MemPage), EFI_PAGES_TO_SIZE (PageCount));   
+    
+    PrdAddr = (IDE_DMA_PRD *) ((UINTN) MemPage);
     //
     // To make sure PRD is allocated in one 64K page
     //
@@ -2968,7 +3004,19 @@ AtaUdmaRead (
     //
     // Build the PRD table
     //
-    PrdBuffer   = DataBuffer;
+    Status = IdeDev->PciIo->Map (
+                       IdeDev->PciIo, 
+                       EfiPciIoOperationBusMasterWrite, 
+                       DataBuffer, 
+                       &ByteCount, 
+                       &DeviceAddress,
+                       &Map
+                       );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePages (MemPage, PageCount);
+      return EFI_OUT_OF_RESOURCES;
+    }    
+    PrdBuffer   = (UINT8 *) ((UINTN) DeviceAddress);
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
@@ -3051,15 +3099,16 @@ AtaUdmaRead (
     // Issue READ DMA command
     //
     Status = AtaCommandIssue (
-              IdeDev,
-              READ_DMA_CMD,
-              Device,
-              0,
-              (UINT16) NumberOfBlocks,
-              StartLba
-              );
+               IdeDev,
+               READ_DMA_CMD,
+               Device,
+               0,
+               (UINT16) NumberOfBlocks,
+               StartLba
+               );
     if (EFI_ERROR (Status)) {
-      gBS->FreePool (PrdAddr);
+      gBS->FreePages (MemPage, PageCount);
+      IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
       return EFI_DEVICE_ERROR;
     }
 
@@ -3127,7 +3176,8 @@ AtaUdmaRead (
                               1,
                               &RegisterValue
                               );
-          gBS->FreePool (PrdAddr);
+          gBS->FreePages (MemPage, PageCount);
+          IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
           return EFI_DEVICE_ERROR;
         }
         break;
@@ -3137,7 +3187,8 @@ AtaUdmaRead (
       Count --;
     }
 
-    gBS->FreePool (PrdAddr);
+    gBS->FreePages (MemPage, PageCount);
+    IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
     //
     // Read Status Register of IDE device to clear interrupt
     //
@@ -3233,22 +3284,26 @@ AtaUdmaWriteExt (
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD *PrdAddr;
-  IDE_DMA_PRD *UsedPrdAddr;
-  IDE_DMA_PRD *TempPrdAddr;
-  UINT8       RegisterValue;
-  UINT8       Device;
-  UINT64      IoPortForBmic;
-  UINT64      IoPortForBmis;
-  UINT64      IoPortForBmid;
-  EFI_STATUS  Status;
-  UINTN       PrdTableNum;
-  UINTN       ByteCount;
-  UINTN       ByteAvailable;
-  UINT8       *PrdBuffer;
-  UINTN       RemainBlockNum;
-  UINT8       DeviceControl;
-  UINT32      Count;
+  IDE_DMA_PRD                *PrdAddr;
+  IDE_DMA_PRD                *UsedPrdAddr;
+  IDE_DMA_PRD                *TempPrdAddr;
+  UINT8                      RegisterValue;
+  UINT8                      Device;
+  UINT64                     IoPortForBmic;
+  UINT64                     IoPortForBmis;
+  UINT64                     IoPortForBmid;
+  EFI_STATUS                 Status;
+  UINTN                      PrdTableNum;
+  UINTN                      ByteCount;
+  UINTN                      ByteAvailable;
+  UINT8                      *PrdBuffer;
+  UINTN                      RemainBlockNum;
+  UINT8                      DeviceControl;
+  UINT32                     Count;
+  UINTN                      PageCount;
+  VOID                       *Map;
+  EFI_PHYSICAL_ADDRESS       MemPage;
+  EFI_PHYSICAL_ADDRESS       DeviceAddress;
 
   //
   // Channel and device differential
@@ -3302,7 +3357,20 @@ AtaUdmaWriteExt (
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
+    MemPage = 0xFFFFFFFF;
+    PageCount = EFI_SIZE_TO_PAGES (2 * PrdTableNum * sizeof (IDE_DMA_PRD));
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
+                    PageCount,
+                    &MemPage
+                    );
+    if (EFI_ERROR (Status)) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+    EfiZeroMem ((VOID *) ((UINTN) MemPage), EFI_PAGES_TO_SIZE (PageCount));
+    
+    PrdAddr = (IDE_DMA_PRD *) ((UINTN) MemPage);
     //
     // To make sure PRD is allocated in one 64K page
     //
@@ -3319,7 +3387,19 @@ AtaUdmaWriteExt (
     //
     // Build the PRD table
     //
-    PrdBuffer   = DataBuffer;
+    Status = IdeDev->PciIo->Map (
+                       IdeDev->PciIo,
+                       EfiPciIoOperationBusMasterRead,
+                       DataBuffer,
+                       &ByteCount, 
+                       &DeviceAddress,
+                       &Map
+                       );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePages (MemPage, PageCount);
+      return EFI_OUT_OF_RESOURCES;
+    }    
+    PrdBuffer   = (INT8 *) ((UINTN) DeviceAddress);
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
@@ -3404,15 +3484,16 @@ AtaUdmaWriteExt (
     // Issue WRITE DMA EXT command
     //
     Status = AtaCommandIssueExt (
-              IdeDev,
-              WRITE_DMA_EXT_CMD,
-              Device,
-              0,
-              (UINT16) NumberOfBlocks,
-              StartLba
-              );
+               IdeDev,
+               WRITE_DMA_EXT_CMD,
+               Device,
+               0,
+               (UINT16) NumberOfBlocks,
+               StartLba
+               );
     if (EFI_ERROR (Status)) {
-      gBS->FreePool (PrdAddr);
+      gBS->FreePages (MemPage, PageCount);
+      IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
       return EFI_DEVICE_ERROR;
     }
 
@@ -3480,7 +3561,8 @@ AtaUdmaWriteExt (
                               1,
                               &RegisterValue
                               );
-          gBS->FreePool (PrdAddr);
+          gBS->FreePages (MemPage, PageCount);
+          IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
           return EFI_DEVICE_ERROR;
         }
         break;
@@ -3490,7 +3572,8 @@ AtaUdmaWriteExt (
       Count --;
     }
 
-    gBS->FreePool (PrdAddr);
+    gBS->FreePages (MemPage, PageCount);
+    IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
     //
     // Read Status Register of IDE device to clear interrupt
     //
@@ -3582,22 +3665,26 @@ AtaUdmaWrite (
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 {
-  IDE_DMA_PRD *PrdAddr;
-  IDE_DMA_PRD *UsedPrdAddr;
-  IDE_DMA_PRD *TempPrdAddr;
-  UINT8       RegisterValue;
-  UINT8       Device;
-  UINT64      IoPortForBmic;
-  UINT64      IoPortForBmis;
-  UINT64      IoPortForBmid;
-  EFI_STATUS  Status;
-  UINTN       PrdTableNum;
-  UINTN       ByteCount;
-  UINTN       ByteAvailable;
-  UINT8       *PrdBuffer;
-  UINTN       RemainBlockNum;
-  UINT8       DeviceControl;
-  UINT32      Count;
+  IDE_DMA_PRD                *PrdAddr;
+  IDE_DMA_PRD                *UsedPrdAddr;
+  IDE_DMA_PRD                *TempPrdAddr;
+  UINT8                      RegisterValue;
+  UINT8                      Device;
+  UINT64                     IoPortForBmic;
+  UINT64                     IoPortForBmis;
+  UINT64                     IoPortForBmid;
+  EFI_STATUS                 Status;
+  UINTN                      PrdTableNum;
+  UINTN                      ByteCount;
+  UINTN                      ByteAvailable;
+  UINT8                      *PrdBuffer;
+  UINTN                      RemainBlockNum;
+  UINT8                      DeviceControl;
+  UINT32                     Count;
+  UINTN                      PageCount;
+  VOID                       *Map;
+  EFI_PHYSICAL_ADDRESS       MemPage;
+  EFI_PHYSICAL_ADDRESS       DeviceAddress;
 
   //
   // Channel and device differential
@@ -3651,7 +3738,20 @@ AtaUdmaWrite (
     //
     // Build PRD table
     //
-    PrdAddr = (IDE_DMA_PRD *) EfiLibAllocateZeroPool ((2 * PrdTableNum * sizeof (IDE_DMA_PRD)));
+    MemPage = 0xFFFFFFFF;
+    PageCount = EFI_SIZE_TO_PAGES (2 * PrdTableNum * sizeof (IDE_DMA_PRD));
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiBootServicesData,
+                    PageCount,
+                    &MemPage
+                    );
+    if (EFI_ERROR (Status)) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+    EfiZeroMem ((VOID *) ((UINTN) MemPage), EFI_PAGES_TO_SIZE (PageCount));
+    
+    PrdAddr = (IDE_DMA_PRD *) ((UINTN) MemPage);
 
     //
     // To make sure PRD is allocated in one 64K page
@@ -3669,7 +3769,19 @@ AtaUdmaWrite (
     //
     // Build the PRD table
     //
-    PrdBuffer   = DataBuffer;
+    Status = IdeDev->PciIo->Map (
+                       IdeDev->PciIo,
+                       EfiPciIoOperationBusMasterRead,
+                       DataBuffer,
+                       &ByteCount, 
+                       &DeviceAddress,
+                       &Map
+                       );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePages (MemPage, PageCount);      
+      return EFI_OUT_OF_RESOURCES;
+    }    
+    PrdBuffer   = (UINT8 *) ((UINTN) DeviceAddress);
     TempPrdAddr = UsedPrdAddr;
     while (TRUE) {
 
@@ -3754,15 +3866,16 @@ AtaUdmaWrite (
     // Issue WRITE DMA command
     //
     Status = AtaCommandIssue (
-              IdeDev,
-              WRITE_DMA_CMD,
-              Device,
-              0,
-              (UINT16) NumberOfBlocks,
-              StartLba
-              );
+               IdeDev,
+               WRITE_DMA_CMD,
+               Device,
+               0,
+               (UINT16) NumberOfBlocks,
+               StartLba
+               );
     if (EFI_ERROR (Status)) {
-      gBS->FreePool (PrdAddr);
+      gBS->FreePages (MemPage, PageCount);
+      IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
       return EFI_DEVICE_ERROR;
     }
 
@@ -3830,7 +3943,8 @@ AtaUdmaWrite (
                               1,
                               &RegisterValue
                               );
-          gBS->FreePool (PrdAddr);
+          gBS->FreePages (MemPage, PageCount);
+          IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
           return EFI_DEVICE_ERROR;
         }
         break;
@@ -3840,7 +3954,8 @@ AtaUdmaWrite (
       Count --;
     }
 
-    gBS->FreePool (PrdAddr);
+    gBS->FreePages (MemPage, PageCount);
+    IdeDev->PciIo->Unmap (IdeDev->PciIo, Map);
 
     //
     // Read Status Register of IDE device to clear interrupt

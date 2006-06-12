@@ -67,6 +67,8 @@ C_STD_INCLUDE=
     SecPlatformInformation\SecPlatformInformation.c
     SectionExtraction\SectionExtraction.h
     SectionExtraction\SectionExtraction.c
+    Stall\Stall.h
+    Stall\Stall.c
     StatusCode\StatusCode.h
     StatusCode\StatusCode.c
     Variable\Variable.h

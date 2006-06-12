@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -100,7 +100,7 @@ Atoi (
   CHAR_W  *String
   );
 
-static EFI_UGA_PIXEL  mEfiColors[16] = {
+static EFI_GRAPHICS_OUTPUT_BLT_PIXEL  mEfiColors[16] = {
   0x00, 0x00, 0x00, 0x00,
   0x98, 0x00, 0x00, 0x00,
   0x00, 0x98, 0x00, 0x00,
@@ -122,12 +122,13 @@ static EFI_UGA_PIXEL  mEfiColors[16] = {
 
 UINTN
 _IPrint (
+  IN EFI_GRAPHICS_OUTPUT_PROTOCOL     *GraphicsOutput,
   IN EFI_UGA_DRAW_PROTOCOL            *UgaDraw,
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *Sto,
   IN UINTN                            X,
   IN UINTN                            Y,
-  IN EFI_UGA_PIXEL                    *Foreground,
-  IN EFI_UGA_PIXEL                    *Background,
+  IN EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *Foreground,
+  IN EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *Background,
   IN CHAR16                           *fmt,
   IN VA_LIST                          args
   )
@@ -138,6 +139,8 @@ Routine Description:
   Display string worker for: Print, PrintAt, IPrint, IPrintAt
 
 Arguments:
+
+  GraphicsOutput  - Graphics output protocol interface
 
   UgaDraw         - UGA draw protocol interface
   
@@ -162,20 +165,20 @@ Returns:
 
 --*/
 {
-  VOID              *Buffer;
-  EFI_STATUS        Status;
-  UINT16            GlyphWidth;
-  UINT32            GlyphStatus;
-  UINT16            StringIndex;
-  UINTN             Index;
-  CHAR16            *UnicodeWeight;
-  EFI_NARROW_GLYPH  *Glyph;
-  EFI_HII_PROTOCOL  *Hii;
-  EFI_UGA_PIXEL     *LineBuffer;
-  UINT32            HorizontalResolution;
-  UINT32            VerticalResolution;
-  UINT32            ColorDepth;
-  UINT32            RefreshRate;
+  VOID                           *Buffer;
+  EFI_STATUS                     Status;
+  UINT16                         GlyphWidth;
+  UINT32                         GlyphStatus;
+  UINT16                         StringIndex;
+  UINTN                          Index;
+  CHAR16                         *UnicodeWeight;
+  EFI_NARROW_GLYPH               *Glyph;
+  EFI_HII_PROTOCOL               *Hii;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *LineBuffer;
+  UINT32                         HorizontalResolution;
+  UINT32                         VerticalResolution;
+  UINT32                         ColorDepth;
+  UINT32                         RefreshRate;
 
   GlyphStatus = 0;
 
@@ -187,9 +190,13 @@ Returns:
     return EFI_OUT_OF_RESOURCES;
   }
 
-  UgaDraw->GetMode (UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
-
-  LineBuffer = EfiLibAllocatePool (sizeof (EFI_UGA_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
+  if (GraphicsOutput != NULL) {
+    HorizontalResolution = GraphicsOutput->Mode->Info->HorizontalResolution;
+    VerticalResolution = GraphicsOutput->Mode->Info->VerticalResolution;
+  } else {
+    UgaDraw->GetMode (UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
+  }
+  LineBuffer = EfiLibAllocatePool (sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
   if (LineBuffer == NULL) {
     gBS->FreePool (Buffer);
     return EFI_OUT_OF_RESOURCES;
@@ -247,18 +254,33 @@ Returns:
   //
   // Blt a character to the screen
   //
-  Status = UgaDraw->Blt (
-                      UgaDraw,
-                      LineBuffer,
-                      EfiUgaBltBufferToVideo,
-                      0,
-                      0,
-                      X,
-                      Y,
-                      GLYPH_WIDTH * EfiStrLen (Buffer),
-                      GLYPH_HEIGHT,
-                      GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_UGA_PIXEL)
-                      );
+  if (GraphicsOutput != NULL) {
+    Status = GraphicsOutput->Blt (
+                        GraphicsOutput,
+                        LineBuffer,
+                        EfiBltBufferToVideo,
+                        0,
+                        0,
+                        X,
+                        Y,
+                        GLYPH_WIDTH * EfiStrLen (Buffer),
+                        GLYPH_HEIGHT,
+                        GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
+                        );
+  } else {
+    Status = UgaDraw->Blt (
+                        UgaDraw,
+                        (EFI_UGA_PIXEL *) LineBuffer,
+                        EfiUgaBltBufferToVideo,
+                        0,
+                        0,
+                        X,
+                        Y,
+                        GLYPH_WIDTH * EfiStrLen (Buffer),
+                        GLYPH_HEIGHT,
+                        GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_UGA_PIXEL)
+                        );
+  }
 
 Error:
   gBS->FreePool (LineBuffer);
@@ -271,8 +293,8 @@ UINTN
 PrintXY (
   IN UINTN                            X,
   IN UINTN                            Y,
-  IN EFI_UGA_PIXEL                    *ForeGround, OPTIONAL
-  IN EFI_UGA_PIXEL                    *BackGround, OPTIONAL
+  IN EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *ForeGround, OPTIONAL
+  IN EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *BackGround, OPTIONAL
   IN CHAR_W                           *Fmt,
   ...
   )
@@ -303,6 +325,7 @@ Returns:
 --*/
 {
   EFI_HANDLE                    Handle;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
   EFI_UGA_DRAW_PROTOCOL         *UgaDraw;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *Sto;
   EFI_STATUS                    Status;
@@ -314,12 +337,23 @@ Returns:
 
   Status = gBS->HandleProtocol (
                   Handle,
-                  &gEfiUgaDrawProtocolGuid,
-                  &UgaDraw
+                  &gEfiGraphicsOutputProtocolGuid,
+                  &GraphicsOutput
                   );
 
+  UgaDraw = NULL;
   if (EFI_ERROR (Status)) {
-    return Status;
+    GraphicsOutput = NULL;
+
+    Status = gBS->HandleProtocol (
+                    Handle,
+                    &gEfiUgaDrawProtocolGuid,
+                    &UgaDraw
+                    );
+
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
   }
 
   Status = gBS->HandleProtocol (
@@ -332,7 +366,7 @@ Returns:
     return Status;
   }
 
-  return _IPrint (UgaDraw, Sto, X, Y, ForeGround, BackGround, Fmt, Args);
+  return _IPrint (GraphicsOutput, UgaDraw, Sto, X, Y, ForeGround, BackGround, Fmt, Args);
 }
 
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -35,10 +35,10 @@ IsPortConnect (
     Tell if there is a device connected to that port according to
     the Port Status.
 
-  Parameters:
+  Arguments:
     PortStatus  -   The status value of that port.
 
-  Return Value:
+  Returns:
     TRUE
     FALSE
 
@@ -280,7 +280,6 @@ IsPortResetChange (
   }
 }
 
-
 BOOLEAN
 IsPortSuspendChange (
   IN UINT16  PortChangeStatus
@@ -309,8 +308,7 @@ IsPortSuspendChange (
   }
 }
 
-
-INTERFACE_DESC_LIST_ENTRY* 
+INTERFACE_DESC_LIST_ENTRY *
 FindInterfaceListEntry (
   IN EFI_USB_IO_PROTOCOL    *This
   )
@@ -356,7 +354,7 @@ FindInterfaceListEntry (
   return NULL;
 }
 
-ENDPOINT_DESC_LIST_ENTRY* 
+ENDPOINT_DESC_LIST_ENTRY *
 FindEndPointListEntry (
   IN EFI_USB_IO_PROTOCOL    *This,
   IN UINT8                  EndPointAddress
@@ -367,8 +365,8 @@ FindEndPointListEntry (
     Find EndPoint ListEntry.
 
   Arguments:
-    This         -  EFI_USB_IO_PROTOCOL   
-    EndpointAddr -  Endpoint address.
+    This            -  EFI_USB_IO_PROTOCOL   
+    EndPointAddress -  Endpoint address.
  
   Returns:
     ENDPOINT_DESC_LIST_ENTRY pointer
@@ -471,7 +469,7 @@ VOID
 GetDeviceEndPointMaxPacketLength (
   IN  EFI_USB_IO_PROTOCOL    *UsbIo,
   IN  UINT8                  EndpointAddr,
-  OUT UINT8                  *MaxPacketLength
+  OUT UINTN                  *MaxPacketLength
   )
 /*++
 
@@ -498,11 +496,10 @@ GetDeviceEndPointMaxPacketLength (
     return ;
   }
 
-  *MaxPacketLength = (UINT8) (EndpointListEntry->EndpointDescriptor.MaxPacketSize);
+  *MaxPacketLength = (UINTN) (EndpointListEntry->EndpointDescriptor.MaxPacketSize);
 
   return ;
 }
-
 
 EFI_STATUS
 UsbSetDeviceAddress (
@@ -542,7 +539,7 @@ Returns:
   DevReq.RequestType  = USB_DEV_SET_ADDRESS_REQ_TYPE;
   DevReq.Request      = USB_DEV_SET_ADDRESS;
   DevReq.Value        = AddressValue;
- 
+
   return UsbIo->UsbControlTransfer (
                   UsbIo,
                   &DevReq,

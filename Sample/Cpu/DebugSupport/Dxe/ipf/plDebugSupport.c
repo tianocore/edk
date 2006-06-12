@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -148,14 +148,13 @@ Routine Description:
   used by the driver.  Must be public because it's referenced from DebugSuport.c
 
 Arguments:
-  IN EFI_HANDLE       ImageHandle
+  ImageHandle - Image handle
 
 Returns:
 
   EFI_STATUS - anything other than EFI_SUCCESS indicates the callback was not registered.
 
 --*/
-// TODO:    ImageHandle - add argument and description to function comment
 {
   EFI_EXCEPTION_TYPE  ExceptionType;
 
@@ -178,16 +177,14 @@ Routine Description:
   exception dispatcher.  Must be public because it's referenced from AsmFuncs.s.
 
 Arguments:
-  IN EFI_EXCEPTION_TYPE ExceptionType,
-  IN EFI_SYSTEM_CONTEXT Context
+  ExceptionType - Exception Type
+  Context       - System Context
 
 Returns:
 
   Nothing
   
 --*/
-// TODO:    ExceptionType - add argument and description to function comment
-// TODO:    Context - add argument and description to function comment
 {
   static BOOLEAN  InHandler = FALSE;
 
@@ -233,16 +230,14 @@ Routine Description:
   Given an integer number, return the physical address of the entry point in the IFT
   
 Arguments:
-  UINTN   HandlerIndex, 
-  VOID    ** EntryPoint
+  HandlerIndex - Index of the Handler 
+  EntryPoint   - IFT Entrypoint
 
 Returns:
 
   Nothing
   
 --*/
-// TODO:    HandlerIndex - add argument and description to function comment
-// TODO:    EntryPoint - add argument and description to function comment
 {
   UINT8 *TempPtr;
 
@@ -279,20 +274,17 @@ Routine Description:
   This is the worker function that installs and removes all handlers
   
 Arguments:
-  IN  EFI_EXCEPTION_TYPE           ExceptionType,
-  IN  BUNDLE                       NewBundles[NUM_BUNDLES_IN_STUB],
-  IN  VOID                         (*NewCallback) ()
+  ExceptionType  - Exception Type
+  NewBundles     - New Boundles
+  NewCallback    - New Callback
 
 Returns:
 
   EFI_STATUS - any return other than EFI_SUCCESS indicates the request was not
   satisfied.
+  EFI_ALEADY_STARTED - Ivt already hooked.
   
 --*/
-// TODO:    ExceptionType - add argument and description to function comment
-// TODO:    ] - add argument and description to function comment
-// TODO:    ) - add argument and description to function comment
-// TODO:    EFI_ALREADY_STARTED - add return value to function comment
 {
   BUNDLE  *B0Ptr;
   UINT64  InterruptFlags;
@@ -366,18 +358,15 @@ Routine Description:
   to store the ExceptionType and then call the common handler.
   
 Arguments:
-  IN  EFI_EXCEPTION_TYPE  ExceptionType,
-  IN  BUNDLE              NewBundles[4],
-  IN  VOID                (*NewCallback) ()
+  ExceptionType  - Exception Type
+  NewBundles     - New Boundles
+  NewCallback    - New Callback
 
 Returns:
 
   Nothing
     
 --*/
-// TODO:    ExceptionType - add argument and description to function comment
-// TODO:    ] - add argument and description to function comment
-// TODO:    ) - add argument and description to function comment
 {
   BUNDLE  *FixupBundle;
   BUNDLE  *B0Ptr;
@@ -421,14 +410,15 @@ Routine Description:
   Restores original IVT contents when unregistering a callback function
   
 Arguments:
-  IN  EFI_EXCEPTION_TYPE  ExceptionType,
+  ExceptionType  - Exception Type
+  NewBundles     - New Boundles
+  NewCallback    - New Callback
 
 Returns:
 
   Nothing
     
 --*/
-// TODO:    ExceptionType - add argument and description to function comment
 {
   BUNDLE  *B0Ptr;
 
@@ -459,14 +449,13 @@ Routine Description:
   Records new callback in IvtEntryTable.
   
 Arguments:
-  IN  VOID  (*NewCallback) ()
+  NewCallback    - New Callback
 
 Returns:
 
   Nothing
     
 --*/
-// TODO:    ) - add argument and description to function comment
 {
   VOID  *Start;
 
@@ -521,12 +510,13 @@ Routine Description: This is a DebugSupport protocol member function.  Hard
   coded to support only 1 processor for now.
 
 Arguments:
+  This              - The DebugSupport instance
+  MaxProcessorIndex - The maximuim supported processor index
 
-Returns: Always returns EFI_SUCCESS with *MaxProcessorIndex set to 0
+Returns:
+  Always returns EFI_SUCCESS with *MaxProcessorIndex set to 0
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    MaxProcessorIndex - add argument and description to function comment
 {
   *MaxProcessorIndex = 0;
   return (EFI_SUCCESS);
@@ -545,18 +535,15 @@ Routine Description:
   DebugSupport protocol member function
 
 Arguments:
-  IN EFI_DEBUG_SUPPORT_PROTOCOL   *This,
-  IN UINTN                        ProcessorIndex,
-  IN EFI_PERIODIC_CALLBACK        NewPeriodicCallback
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  PeriodicCallback - Callback function
 
 Returns:
 
   EFI_STATUS - anything other than EFI_SUCCESS indicates the callback was not registered.
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ProcessorIndex - add argument and description to function comment
-// TODO:    NewPeriodicCallback - add argument and description to function comment
 {
   return ManageIvtEntryTable (EXCEPT_IPF_EXTERNAL_INTERRUPT, NULL, NewPeriodicCallback);
 }
@@ -575,19 +562,16 @@ Routine Description:
   DebugSupport protocol member function
 
 Arguments:
-  IN EFI_DEBUG_SUPPORT_PROTOCOL   *This,
-  IN EFI_EXCEPTION_CALLBACK       NewCallback,
-  IN EFI_EXCEPTION_TYPE           ExceptionType
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  NewCallback      - Callback function
+  ExceptionType    - Which exception to hook
 
 Returns:
 
   EFI_STATUS - anything other than EFI_SUCCESS indicates the callback was not registered.
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ProcessorIndex - add argument and description to function comment
-// TODO:    NewCallback - add argument and description to function comment
-// TODO:    ExceptionType - add argument and description to function comment
 {
   return ManageIvtEntryTable (
           ExceptionType,
@@ -610,15 +594,15 @@ Routine Description:
   DebugSupport protocol member function.  Calls assembly routine to flush cache.
 
 Arguments:
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  Start            - Physical base of the memory range to be invalidated
+  Length           - mininum number of bytes in instruction cache to invalidate
 
 Returns:
   EFI_SUCCESS
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ProcessorIndex - add argument and description to function comment
-// TODO:    Start - add argument and description to function comment
-// TODO:    Length - add argument and description to function comment
 {
   InstructionCacheFlush (Start, Length);
   return (EFI_SUCCESS);

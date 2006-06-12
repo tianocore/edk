@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -88,44 +88,175 @@ typedef struct {
   UINT8   St0Mm5[10], Reserved8[6];
   UINT8   St0Mm6[10], Reserved9[6];
   UINT8   St0Mm7[10], Reserved10[6];
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  UINT8   Xmm1[16];
+  UINT8   Xmm2[16];
+  UINT8   Xmm3[16];
+  UINT8   Xmm4[16];
+  UINT8   Xmm5[16];
+  UINT8   Xmm6[16];
+  UINT8   Xmm7[16];
+  UINT8   Reserved11[14 * 16];
+} EFI_FX_SAVE_STATE_IA32;
+#else
   UINT8   Reserved11[22 * 16];
 } EFI_FX_SAVE_STATE;
+#endif
 
 typedef struct {
-  UINT32            ExceptionData;
-  EFI_FX_SAVE_STATE FxSaveState;
-  UINT32            Dr0;
-  UINT32            Dr1;
-  UINT32            Dr2;
-  UINT32            Dr3;
-  UINT32            Dr6;
-  UINT32            Dr7;
-  UINT32            Cr0;
-  UINT32            Cr1;  /* Reserved */
-  UINT32            Cr2;
-  UINT32            Cr3;
-  UINT32            Cr4;
-  UINT32            Eflags;
-  UINT32            Ldtr;
-  UINT32            Tr;
-  UINT32            Gdtr[2];
-  UINT32            Idtr[2];
-  UINT32            Eip;
-  UINT32            Gs;
-  UINT32            Fs;
-  UINT32            Es;
-  UINT32            Ds;
-  UINT32            Cs;
-  UINT32            Ss;
-  UINT32            Edi;
-  UINT32            Esi;
-  UINT32            Ebp;
-  UINT32            Esp;
-  UINT32            Ebx;
-  UINT32            Edx;
-  UINT32            Ecx;
-  UINT32            Eax;
+  UINT32                 ExceptionData;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  EFI_FX_SAVE_STATE_IA32 FxSaveState;
+#else
+  EFI_FX_SAVE_STATE      FxSaveState;
+#endif
+  UINT32                 Dr0;
+  UINT32                 Dr1;
+  UINT32                 Dr2;
+  UINT32                 Dr3;
+  UINT32                 Dr6;
+  UINT32                 Dr7;
+  UINT32                 Cr0;
+  UINT32                 Cr1;  /* Reserved */
+  UINT32                 Cr2;
+  UINT32                 Cr3;
+  UINT32                 Cr4;
+  UINT32                 Eflags;
+  UINT32                 Ldtr;
+  UINT32                 Tr;
+  UINT32                 Gdtr[2];
+  UINT32                 Idtr[2];
+  UINT32                 Eip;
+  UINT32                 Gs;
+  UINT32                 Fs;
+  UINT32                 Es;
+  UINT32                 Ds;
+  UINT32                 Cs;
+  UINT32                 Ss;
+  UINT32                 Edi;
+  UINT32                 Esi;
+  UINT32                 Ebp;
+  UINT32                 Esp;
+  UINT32                 Ebx;
+  UINT32                 Edx;
+  UINT32                 Ecx;
+  UINT32                 Eax;
 } EFI_SYSTEM_CONTEXT_IA32;
+
+//
+//  X64 processor exception types
+//
+#define EXCEPT_X64_DIVIDE_ERROR    0
+#define EXCEPT_X64_DEBUG           1
+#define EXCEPT_X64_NMI             2
+#define EXCEPT_X64_BREAKPOINT      3
+#define EXCEPT_X64_OVERFLOW        4
+#define EXCEPT_X64_BOUND           5
+#define EXCEPT_X64_INVALID_OPCODE  6
+#define EXCEPT_X64_DOUBLE_FAULT    8
+#define EXCEPT_X64_INVALID_TSS     10
+#define EXCEPT_X64_SEG_NOT_PRESENT 11
+#define EXCEPT_X64_STACK_FAULT     12
+#define EXCEPT_X64_GP_FAULT        13
+#define EXCEPT_X64_PAGE_FAULT      14
+#define EXCEPT_X64_FP_ERROR        16
+#define EXCEPT_X64_ALIGNMENT_CHECK 17
+#define EXCEPT_X64_MACHINE_CHECK   18
+#define EXCEPT_X64_SIMD            19
+
+//
+//  X64 processor context definition
+//
+// FXSAVE_STATE
+// FP / MMX / XMM registers (see fxrstor instruction definition)
+//
+typedef struct {
+  UINT16  Fcw;
+  UINT16  Fsw;
+  UINT16  Ftw;
+  UINT16  Opcode;
+  UINT64  Eip;
+  UINT64  DataOffset;
+  UINT8   Reserved1[8];
+  UINT8   St0Mm0[10], Reserved2[6];
+  UINT8   St0Mm1[10], Reserved3[6];
+  UINT8   St0Mm2[10], Reserved4[6];
+  UINT8   St0Mm3[10], Reserved5[6];
+  UINT8   St0Mm4[10], Reserved6[6];
+  UINT8   St0Mm5[10], Reserved7[6];
+  UINT8   St0Mm6[10], Reserved8[6];
+  UINT8   St0Mm7[10], Reserved9[6];
+  UINT8   Xmm0[16];
+  UINT8   Xmm1[16];
+  UINT8   Xmm2[16];
+  UINT8   Xmm3[16];
+  UINT8   Xmm4[16];
+  UINT8   Xmm5[16];
+  UINT8   Xmm6[16];
+  UINT8   Xmm7[16];
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  //
+  // NOTE: UEFI 2.0 spec definition as follows. It should be updated 
+  // after spec update.
+  //
+  UINT8   Reserved11[14 * 16];
+#else
+  UINT8   Xmm8[16];
+  UINT8   Xmm9[16];
+  UINT8   Xmm10[16];
+  UINT8   Xmm11[16];
+  UINT8   Xmm12[16];
+  UINT8   Xmm13[16];
+  UINT8   Xmm14[16];
+  UINT8   Xmm15[16];
+  UINT8   Reserved10[6 * 16];
+#endif
+} EFI_FX_SAVE_STATE_X64;
+
+typedef struct {
+  UINT64                ExceptionData;
+  EFI_FX_SAVE_STATE_X64 FxSaveState;
+  UINT64                Dr0;
+  UINT64                Dr1;
+  UINT64                Dr2;
+  UINT64                Dr3;
+  UINT64                Dr6;
+  UINT64                Dr7;
+  UINT64                Cr0;
+  UINT64                Cr1;  /* Reserved */
+  UINT64                Cr2;
+  UINT64                Cr3;
+  UINT64                Cr4;
+  UINT64                Cr8;
+  UINT64                Rflags;
+  UINT64                Ldtr;
+  UINT64                Tr;
+  UINT64                Gdtr[2];
+  UINT64                Idtr[2];
+  UINT64                Rip;
+  UINT64                Gs;
+  UINT64                Fs;
+  UINT64                Es;
+  UINT64                Ds;
+  UINT64                Cs;
+  UINT64                Ss;
+  UINT64                Rdi;
+  UINT64                Rsi;
+  UINT64                Rbp;
+  UINT64                Rsp;
+  UINT64                Rbx;
+  UINT64                Rdx;
+  UINT64                Rcx;
+  UINT64                Rax;
+  UINT64                R8;
+  UINT64                R9;
+  UINT64                R10;
+  UINT64                R11;
+  UINT64                R12;
+  UINT64                R13;
+  UINT64                R14;
+  UINT64                R15;
+} EFI_SYSTEM_CONTEXT_X64;
 
 //
 //  IPF processor exception types
@@ -370,6 +501,7 @@ typedef struct {
 typedef union {
   EFI_SYSTEM_CONTEXT_EBC  *SystemContextEbc;
   EFI_SYSTEM_CONTEXT_IA32 *SystemContextIa32;
+  EFI_SYSTEM_CONTEXT_X64  *SystemContextX64;
   EFI_SYSTEM_CONTEXT_IPF  *SystemContextIpf;
 } EFI_SYSTEM_CONTEXT;
 
@@ -394,6 +526,7 @@ VOID
 //
 typedef enum {
   IsaIa32 = EFI_IMAGE_MACHINE_IA32,
+  IsaX64  = EFI_IMAGE_MACHINE_X64,
   IsaIpf  = EFI_IMAGE_MACHINE_IA64,
   IsaEbc  = EFI_IMAGE_MACHINE_EBC
 } EFI_INSTRUCTION_SET_ARCHITECTURE;

@@ -2,7 +2,7 @@ TITLE   CpuIA32.asm: Assembly code for the IA-32 resources
 
 ;*****************************************************************************
 ;*
-;*   Copyright (c) 2004 - 2005, Intel Corporation                                                         
+;*   Copyright (c) 2004 - 2006, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -136,11 +136,18 @@ EfiReadTsc  ENDP
 ;   );
 ;------------------------------------------------------------------------------
 EfiDisableCache PROC    PUBLIC
+; added a check to see if cache is already disabled. If it is, then skip.
     push  eax
+    mov   eax, cr0
+    bswap eax
+    and   al, 60h
+    cmp   al, 60h
+    je    @f
     wbinvd
     mov   eax, cr0
     or    eax, 060000000h     
     mov   cr0, eax
+@@:
     pop   eax
     ret
 EfiDisableCache ENDP

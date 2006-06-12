@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                          
+Copyright (c) 2004 - 2006, Intel Corporation                                                          
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -38,6 +38,26 @@ AsciiToUnicodeSize (
   IN UINTN              Size,
   OUT UINT16            *u
   )
+/*++
+
+  Routine Description:
+
+    Translate the first n characters of an Ascii string to
+    Unicode characters. The count n is indicated by parameter
+    Size. If Size is greater than the length of string, then
+    the entire string is translated.
+
+  Arguments:
+
+    a         - Pointer to input Ascii string.
+    Size      - The number of characters to translate.
+    u         - Pointer to output Unicode string buffer.
+
+  Returns:
+
+    None
+
+--*/
 {
   UINTN i;
 
@@ -45,12 +65,12 @@ AsciiToUnicodeSize (
   while (a[i] != 0) {
     u[i] = (CHAR16) a[i];
     if (i == Size) {
-      u[i] = 0;
       break;
     }
 
     i++;
   }
+  u[i] = 0;
 }
 
 VOID
@@ -158,6 +178,32 @@ BdsCreateLegacyBootOption (
   IN OUT UINT16                       **BootOrderList,
   IN OUT UINTN                        *BootOrderListSize
   )
+/*++
+
+  Routine Description:
+
+    Create a legacy boot option for the specified entry of
+    BBS table, save it as variable, and append it to the boot
+    order list.
+
+  Arguments:
+
+    CurrentBbsEntry        - Pointer to current BBS table.
+    CurrentBbsDevPath      - Pointer to the Device Path Protocol instance of BBS
+    Index                  - Index of the specified entry in BBS table.
+    BootOrderList          - On input, the original boot order list.
+                             On output, the new boot order list attached with the
+                             created node.
+    BootOrderListSize      - On input, the original size of boot order list.
+                           - On output, the size of new boot order list.
+
+  Returns:
+
+    EFI_SUCCESS            - Boot Option successfully created.
+    EFI_OUT_OF_RESOURCES   - Fail to allocate necessary memory.
+    Other                  - Error occurs while setting variable.
+
+--*/
 {
   EFI_STATUS  Status;
   UINT16      CurrentBootOptionNo;
@@ -269,6 +315,8 @@ BdsCreateLegacyBootOption (
     EfiCopyMem (NewBootOrderList, *BootOrderList, *BootOrderListSize);
   }
 
+  SafeFreePool (*BootOrderList);
+
   BootOrderLastIndex                    = (UINTN) (*BootOrderListSize / sizeof (UINT16));
   NewBootOrderList[BootOrderLastIndex]  = CurrentBootOptionNo;
   *BootOrderListSize += sizeof (UINT16);
@@ -354,6 +402,25 @@ EFI_STATUS
 BdsDeleteAllInvalidLegacyBootOptions (
   VOID
   )
+/*++
+
+  Routine Description:
+
+    Delete all the invalid legacy boot options.
+
+  Arguments:
+
+    None.
+
+  Returns:
+
+    EFI_SUCCESS            - All invalide legacy boot options are deleted.
+    EFI_OUT_OF_RESOURCES   - Fail to allocate necessary memory.
+    EFI_NOT_FOUND          - Fail to retrive variable of boot order.
+    Other                  - Error occurs while setting variable or locating
+                             protocol.
+
+--*/
 {
   UINT16                    *BootOrder;
   UINT8                     *BootOptionVar;
@@ -369,6 +436,8 @@ BdsDeleteAllInvalidLegacyBootOptions (
   EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
   UINTN                     Index;
   UINT16                    BootOption[10];
+  UINT16                    BootDesc[100];
+  BOOLEAN                   DescStringMatch;
 
   Status        = EFI_SUCCESS;
   BootOrder     = NULL;
@@ -419,11 +488,28 @@ BdsDeleteAllInvalidLegacyBootOptions (
       Index++;
       continue;
     }
+ 
+    //
+    // Check if BBS Description String is changed
+    //
+    DescStringMatch = FALSE;
+    
+    BdsBuildLegacyDevNameString (
+      &LocalBbsTable[BbsIndex], 
+      BbsIndex, 
+      sizeof(BootDesc), 
+      BootDesc
+      );
+    
+    if (EfiStrCmp (BootDesc, (UINT16*)(BootOptionVar + sizeof (UINT32) + sizeof (UINT16))) == 0) {
+      DescStringMatch = TRUE;
+    }
 
     if (!((LocalBbsTable[BbsIndex].BootPriority == BBS_IGNORE_ENTRY) ||
-        (LocalBbsTable[BbsIndex].BootPriority == BBS_DO_NOT_BOOT_FROM) ||
-         (LocalBbsTable[BbsIndex].BootPriority == BBS_LOWEST_PRIORITY)) &&
-         LocalBbsTable[BbsIndex].DeviceType == BbsEntry->DeviceType) {
+          (LocalBbsTable[BbsIndex].BootPriority == BBS_DO_NOT_BOOT_FROM) ||
+          (LocalBbsTable[BbsIndex].BootPriority == BBS_LOWEST_PRIORITY)) &&
+        (LocalBbsTable[BbsIndex].DeviceType == BbsEntry->DeviceType) &&
+        DescStringMatch) {
       Index++;
       continue;
     }

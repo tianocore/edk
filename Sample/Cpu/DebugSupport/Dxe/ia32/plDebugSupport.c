@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -132,7 +132,6 @@ Returns:
   Other possibilities are passed through by CreateEntryStub
 
 --*/
-// TODO:    ) - add argument and description to function comment
 {
   BOOLEAN     OldIntFlagState;
   EFI_STATUS  Status;
@@ -214,7 +213,6 @@ Returns:
   Other possible return values are passed through from UnHookEntry and HookEntry.
 
 --*/
-// TODO:    ) - add argument and description to function comment
 {
   EFI_STATUS  Status;
 
@@ -261,12 +259,13 @@ GetMaximumProcessorIndex (
 Routine Description: This is a DebugSupport protocol member function.
 
 Arguments:
+  This              - The DebugSupport instance
+  MaxProcessorIndex - The maximuim supported processor index
 
-Returns: Always returns EFI_SUCCESS with *MaxProcessorIndex set to 0
+Returns:
+  Always returns EFI_SUCCESS with *MaxProcessorIndex set to 0
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    MaxProcessorIndex - add argument and description to function comment
 {
   *MaxProcessorIndex = 0;
   return (EFI_SUCCESS);
@@ -284,13 +283,20 @@ RegisterPeriodicCallback (
 Routine Description: This is a DebugSupport protocol member function.
 
 Arguments:
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  PeriodicCallback - Callback function
 
 Returns:
 
+  EFI_SUCCESS
+  EFI_INVALID_PARAMETER - requested uninstalling a handler from a vector that has
+                          no handler registered for it
+  EFI_ALREADY_STARTED   - requested install to a vector that already has a handler registered.
+
+  Other possible return values are passed through from UnHookEntry and HookEntry.
+
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ProcessorIndex - add argument and description to function comment
-// TODO:    PeriodicCallback - add argument and description to function comment
 {
   return ManageIdtEntryTable (PeriodicCallback, SYSTEM_TIMER_VECTOR);
 }
@@ -311,16 +317,21 @@ Routine Description:
   This code executes in boot services context.
 
 Arguments:
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  NewCallback      - Callback function
+  ExceptionType    - Which exception to hook
 
 Returns:
 
-  None
+  EFI_SUCCESS
+  EFI_INVALID_PARAMETER - requested uninstalling a handler from a vector that has
+                          no handler registered for it
+  EFI_ALREADY_STARTED   - requested install to a vector that already has a handler registered.
+
+  Other possible return values are passed through from UnHookEntry and HookEntry.
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ProcessorIndex - add argument and description to function comment
-// TODO:    NewCallback - add argument and description to function comment
-// TODO:    ExceptionType - add argument and description to function comment
 {
   return ManageIdtEntryTable (NewCallback, ExceptionType);
 }
@@ -337,21 +348,21 @@ InvalidateInstructionCache (
 
 Routine Description:
   This is a DebugSupport protocol member function.
-  For IA32, this is a no-op since the instruction and data caches are coherent.
+  Calls assembly routine to flush cache.
 
 Arguments:
+  This             - The DebugSupport instance
+  ProcessorIndex   - Which processor the callback applies to.
+  Start            - Physical base of the memory range to be invalidated
+  Length           - mininum number of bytes in instruction cache to invalidate
 
 Returns:
 
-  None
+  EFI_SUCCESS - always return success
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    ProcessorIndex - add argument and description to function comment
-// TODO:    Start - add argument and description to function comment
-// TODO:    Length - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
+  EfiWbinvd ();
   return EFI_SUCCESS;
 }
 
@@ -373,9 +384,9 @@ Returns:
   EFI_SUCCESS
   EFI_UNSUPPORTED - if IA32 processor does not support FXSTOR/FXRSTOR instructions,
                     the context save will fail, so these processor's are not supported.
+  EFI_OUT_OF_RESOURCES - not resource to finish initialization
 
 --*/
-// TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
 {
   if (!FxStorSupport ()) {
     return EFI_UNSUPPORTED;
@@ -408,10 +419,9 @@ Arguments:
 
 Returns:
 
-  None
+  EFI_SUCCESS - always return success
 
 --*/
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_EXCEPTION_TYPE  ExceptionType;
 
@@ -435,14 +445,14 @@ Routine Description: Common piece of code that invokes the registered handlers.
   This code executes in exception context so no efi calls are allowed.
 
 Arguments:
+  ExceptionType - exception type
+  ContextRecord - system context
 
 Returns:
 
   None
 
 --*/
-// TODO:    ExceptionType - add argument and description to function comment
-// TODO:    ContextRecord - add argument and description to function comment
 {
   if (IdtEntryTable[ExceptionType].RegisteredCallback != NULL) {
     if (ExceptionType != SYSTEM_TIMER_VECTOR) {

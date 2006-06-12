@@ -194,7 +194,7 @@ Returns:
   BuildProtocolHob (&gEfiTianoDecompressProtocolGuid, TianoDecompress);
 
   InstallSerialStatusCode (&ReportStatusCode);
-  BuildProtocolHob (&gEfiStatusCodeArchProtocolGuid, (VOID *)(UINTN)ReportStatusCode);
+  BuildProtocolHob (&gEfiStatusCodeRuntimeProtocolGuid, (VOID *)(UINTN)ReportStatusCode);
 
   return EFI_SUCCESS;
 }

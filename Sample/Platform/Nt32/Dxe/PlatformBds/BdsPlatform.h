@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -66,6 +66,12 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        End;
 } NT_PLATFORM_UGA_DEVICE_PATH;
 
+typedef struct {
+  VENDOR_DEVICE_PATH              NtBus;
+  WIN_NT_VENDOR_DEVICE_PATH_NODE  NtGopDevice;
+  EFI_DEVICE_PATH_PROTOCOL        End;
+} NT_PLATFORM_GOP_DEVICE_PATH;
+
 //
 // Platform BDS Functions
 //
@@ -97,12 +103,12 @@ BdsMemoryTest (
 
 EFI_STATUS
 PlatformBdsShowProgress (
-  EFI_UGA_PIXEL TitleForeground,
-  EFI_UGA_PIXEL TitleBackground,
-  CHAR16        *Title,
-  EFI_UGA_PIXEL ProgressColor,
-  UINTN         Progress,
-  UINTN         PreviousValue
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL TitleForeground,
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL TitleBackground,
+  CHAR16                        *Title,
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL ProgressColor,
+  UINTN                         Progress,
+  UINTN                         PreviousValue
   )
 ;
 

@@ -1,0 +1,30 @@
+#/*++
+#
+# Copyright (c) 2004, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    Shell.inf
+#
+#  Abstract:
+#
+#    Component description file for EFI Shell module.
+#
+#--*/
+
+[defines]
+BASE_NAME            = Shell
+FILE_GUID            = c57ad6b7-0515-40a8-9d21-551652854e37
+COMPONENT_TYPE       = APPLICATION
+BUILD_TYPE           = APPLICATION_EFI
+
+[sources.common]
+
+[nmake.common]

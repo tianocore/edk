@@ -23,7 +23,6 @@ Abstract:
 #include "CapsuleService.h"
 #include EFI_GUID_DEFINITION(Capsule)
 
-#define SUPPORT_MAX_SIZE               (10*1024*1024)
 STATIC EFI_GUID mEfiCapsuleHeaderGuid = EFI_CAPSULE_GUID;
 
 
@@ -57,11 +56,9 @@ Returns:
   
 --*/
 {
-  UINTN                     DataSize;
   UINTN                     CapsuleSize;
   UINTN                     ArrayNumber;
-  VOID                      *AllocatedBuffer;
-  UINT8                     *BufferPtr;
+  VOID                      *BufferPtr;
   EFI_STATUS                Status;
   EFI_HANDLE                FvHandle;
   UEFI_CAPSULE_HEADER       *CapsuleHeader;
@@ -70,25 +67,35 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  DataSize        = 0;
   BufferPtr       = NULL;
-  AllocatedBuffer = NULL;
   CapsuleHeader   = NULL;
 
   //
-  //now just support EFI_CAPSULE_GUID
+  //Compare GUIDs with EFI_CAPSULE_GUID, if capsule header contains CAPSULE_FLAGS_PERSIST_ACROSS_RESET
+  //and CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flags,whatever the GUID is ,the service supports.
   //
   for (ArrayNumber = 0; ArrayNumber < CapsuleCount; ArrayNumber++) {
     CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
     if (!EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mEfiCapsuleHeaderGuid)) {
-      return EFI_INVALID_PARAMETER;
+      if (!((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) && (CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE))) {
+        return EFI_UNSUPPORTED;
+      }  
     }   
-    DataSize += CapsuleHeader->CapsuleImageSize - CapsuleHeader->HeaderSize;
   }
 
+  //
+  //Assume that capsules have the same flags on reseting or not. 
+  //
   CapsuleHeader = CapsuleHeaderArray[0];
 
   if ((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) {
+    //
+    //Check if the platform supports update capsule across a system reset
+    //
+    if (!SupportUpdateCapsuleRest()) {
+      return EFI_UNSUPPORTED;
+    }
+    
     if (ScatterGatherList == 0) {
       return EFI_INVALID_PARAMETER;
     } else {
@@ -107,45 +114,39 @@ Returns:
   }
   
   //
-  //the rest occurs in the condition of non-reset mode
+  //The rest occurs in the condition of non-reset mode
   //
   if (EfiAtRuntime ()) { 
     return EFI_INVALID_PARAMETER;
   }
 
   //
-  //in the boottime,concatenate split capsules into a signle big capsule
+  //Here should be in the boottime
   //
-  Status = gBS->AllocatePool (EfiBootServicesData, DataSize, &AllocatedBuffer);
-
-  if (Status != EFI_SUCCESS) {
-    goto Done;
-  }
-  
-  BufferPtr = AllocatedBuffer;
-
   for (ArrayNumber = 0; ArrayNumber < CapsuleCount ; ArrayNumber++) {
     CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
     CapsuleSize = CapsuleHeader->CapsuleImageSize - CapsuleHeader->HeaderSize;
+    Status = gBS->AllocatePool (EfiBootServicesData, CapsuleSize, &BufferPtr);
+    if (Status != EFI_SUCCESS) {
+      goto Done;
+    }
     gBS->CopyMem (BufferPtr, (UINT8*)CapsuleHeader+ CapsuleHeader->HeaderSize, CapsuleSize);
-    BufferPtr += CapsuleSize;
+
+    //
+    //Call DXE service ProcessFirmwareVolume to process immediatelly 
+    //
+    Status = gDS->ProcessFirmwareVolume (BufferPtr, CapsuleSize, &FvHandle);
+    if (Status != EFI_SUCCESS) {
+      return EFI_DEVICE_ERROR;
+    }
+    gDS->Dispatch ();
+    gBS->FreePool (BufferPtr);
   }
-
-  //
-  //call DXE service ProcessFirmwareVolume to process FV
-  //
-  Status = gDS->ProcessFirmwareVolume (AllocatedBuffer, DataSize, &FvHandle);
-  if (Status != EFI_SUCCESS) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  gDS->Dispatch ();
-
   return EFI_SUCCESS;
 
 Done:
-  if (AllocatedBuffer != NULL) {
-    gBS->FreePool (AllocatedBuffer);
+  if (BufferPtr != NULL) {
+    gBS->FreePool (BufferPtr);
   }     
   return EFI_DEVICE_ERROR;
 }
@@ -185,6 +186,9 @@ Returns:
 {
   UINTN                     ArrayNumber;
   UEFI_CAPSULE_HEADER       *CapsuleHeader;
+  UINT32                    MaxSizePopulate;
+  UINT32                    MaxSizeNonPopulate;
+
 
   if (CapsuleCount < 1) {
     return EFI_INVALID_PARAMETER;
@@ -195,26 +199,38 @@ Returns:
   }  
 
   CapsuleHeader = NULL;
-
+  
   //
-  //now just support EFI_CAPSULE_GUID
+  //Compare GUIDs with EFI_CAPSULE_GUID, if capsule header contains CAPSULE_FLAGS_PERSIST_ACROSS_RESET
+  //and CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flags,whatever the GUID is ,the service supports.
   //
   for (ArrayNumber = 0; ArrayNumber < CapsuleCount; ArrayNumber++) {
     CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
     if (!EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mEfiCapsuleHeaderGuid)) {
-      return EFI_UNSUPPORTED;
-    }   
+      if (!((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) && (CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE))) {
+        return EFI_UNSUPPORTED;
+      }
+    }  
   }
 
-  *MaxiumCapsuleSize = SUPPORT_MAX_SIZE;
-
+  SupportCapsuleSize(&MaxSizePopulate,&MaxSizeNonPopulate);
+  //
+  //Assume that capsules have the same flags on reseting or not. 
+  //
   CapsuleHeader = CapsuleHeaderArray[0];  
   if ((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) {
+    //
+    //Check if the platform supports update capsule across a system reset
+    //
+    if (!SupportUpdateCapsuleRest()) {
+      return EFI_UNSUPPORTED;
+    }
     *ResetType = EfiResetWarm;
+    *MaxiumCapsuleSize = MaxSizePopulate;    
   } else {
     *ResetType = EfiResetCold;
+    *MaxiumCapsuleSize = MaxSizeNonPopulate;
   }  
   return EFI_SUCCESS;
 } 
-
 
