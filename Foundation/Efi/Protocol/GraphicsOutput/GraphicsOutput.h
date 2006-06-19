@@ -24,6 +24,8 @@ Abstract:
 #ifndef __GRAPHICS_OUTPUT_H__
 #define __GRAPHICS_OUTPUT_H__
 
+#include EFI_PROTOCOL_DEFINITION (UgaDraw)
+
 #define EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID \
   { \
     0x9042a9de, 0x23dc, 0x4a38, 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a \
@@ -106,12 +108,7 @@ EFI_STATUS
 --*/
 ;
 
-typedef struct {
-  UINT8 Blue;
-  UINT8 Green;
-  UINT8 Red;
-  UINT8 Reserved;
-} EFI_GRAPHICS_OUTPUT_BLT_PIXEL;
+typedef EFI_UGA_PIXEL EFI_GRAPHICS_OUTPUT_BLT_PIXEL;
 
 typedef union {
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL Pixel;
