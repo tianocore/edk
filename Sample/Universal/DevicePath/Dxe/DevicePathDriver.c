@@ -90,8 +90,8 @@ DevicePathDriverEntryPoint (
   mPrivateData.DevicePathToText.ConvertDeviceNodeToText = ConvertDeviceNodeToText;
   mPrivateData.DevicePathToText.ConvertDevicePathToText = ConvertDevicePathToText;
 
-  mPrivateData.DevicePathFromText.ConvertDeviceNodeFromText = ConvertTextToDeviceNode;
-  mPrivateData.DevicePathFromText.ConvertDevicePathFromText = ConvertTextToDevicePath;
+  mPrivateData.DevicePathFromText.ConvertTextToDeviceNode = ConvertTextToDeviceNode;
+  mPrivateData.DevicePathFromText.ConvertTextToDevicePath = ConvertTextToDevicePath;
 
   mPrivateData.Handle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (

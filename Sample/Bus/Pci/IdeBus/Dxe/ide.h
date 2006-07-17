@@ -277,24 +277,23 @@ Returns:
 ;
 
 EFI_STATUS
-DetectIDEControllerInitial ()
+InitializeIDEChannelData (
+  VOID
+  )
 /*++
   
-  Name: DetectIDEController
+  Name: InitializeIDEChannelData
 
 
   Purpose: 
-      This function is called before DetectIDEController(). It is used to 
-      initialize the global variable MasterDeviceExist and SlaveDeviceExist.
-
+      This function initializes all state data related to the detection of one
+      channel.
 
   Parameters:
 
 
   Returns:
-      TRUE
-            Ready to call DetectIDEController().
-
+      EFI_SUCCESS
 
   Notes:
 --*/

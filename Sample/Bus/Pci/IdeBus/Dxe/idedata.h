@@ -214,9 +214,9 @@ typedef struct {
 //
 
 //
-// 1 second
+// 5 second
 //
-#define ATATIMEOUT  1000  
+#define ATATIMEOUT  5000  
 
 //
 // ATAPITIMEOUT is used for waiting operation

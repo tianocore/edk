@@ -163,6 +163,7 @@ Returns:
   UINTN                         Height;
   UINTN                         Width;
   UINTN                         ImageIndex;
+  BOOLEAN                       IsAllocated;
 
   BmpHeader = (BMP_IMAGE_HEADER *) BmpImage;
   if (BmpHeader->CharB != 'B' || BmpHeader->CharM != 'M') {
@@ -186,9 +187,11 @@ Returns:
   ImageHeader   = Image;
 
   BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
+  IsAllocated   = FALSE;
   if (*GopBlt == NULL) {
     *GopBltSize = BltBufferSize;
     *GopBlt     = EfiLibAllocatePool (*GopBltSize);
+    IsAllocated = TRUE;
     if (*GopBlt == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
@@ -260,6 +263,10 @@ Returns:
         break;
 
       default:
+        if (IsAllocated) {
+          gBS->FreePool (*GopBlt);
+          *GopBlt = NULL;
+        }
         return EFI_UNSUPPORTED;
         break;
       };
@@ -448,7 +455,11 @@ Returns:
               );
     if (EFI_ERROR (Status)) {
       gBS->FreePool (ImageData);
-      continue;
+      if (Badging == NULL) {
+        return Status;
+      } else {
+        continue;
+      }
     }
 
     switch (Attribute) {

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -43,6 +43,103 @@ VOID              *mFvbExtRegistration;
 static EFI_EVENT  mEfiFvbVirtualNotifyEvent;
 BOOLEAN           gEfiFvbInitialized = FALSE;
 
+BOOLEAN
+IsMemoryRuntime (
+  IN VOID   *Address
+  )
+/*++
+
+Routine Description:
+  Check whether an address is runtime memory or not.
+
+Arguments:
+
+  Address - The Address being checked.
+  
+Returns: 
+  TRUE    - The address is runtime memory.
+  FALSE   - The address is not runtime memory.
+
+--*/
+{
+  EFI_STATUS                           Status;
+  UINT8                                TmpMemoryMap[1];
+  UINTN                                MapKey;
+  UINTN                                DescriptorSize;
+  UINT32                               DescriptorVersion;
+  UINTN                                MemoryMapSize;
+  EFI_MEMORY_DESCRIPTOR                *MemoryMap;
+  EFI_MEMORY_DESCRIPTOR                *MemoryMapPtr;
+  BOOLEAN                              IsRuntime;
+  UINTN                                Index;
+
+  IsRuntime = FALSE;
+
+  //
+  // Get System MemoryMapSize
+  //
+  MemoryMapSize = 1;
+  Status = gBS->GetMemoryMap (
+                  &MemoryMapSize,
+                  (EFI_MEMORY_DESCRIPTOR *)TmpMemoryMap,
+                  &MapKey,
+                  &DescriptorSize,
+                  &DescriptorVersion
+                  );
+  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
+  //
+  // Enlarge space here, because we will allocate pool now.
+  //
+  MemoryMapSize += EFI_PAGE_SIZE;
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  MemoryMapSize,
+                  (VOID**)&MemoryMap
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Get System MemoryMap
+  //
+  Status = gBS->GetMemoryMap (
+                  &MemoryMapSize,
+                  MemoryMap,
+                  &MapKey,
+                  &DescriptorSize,
+                  &DescriptorVersion
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  MemoryMapPtr = MemoryMap;
+  //
+  // Search the request Address
+  //
+  for (Index = 0; Index < (MemoryMapSize / DescriptorSize); Index++) {
+    if (((EFI_PHYSICAL_ADDRESS)(UINTN)Address >= MemoryMap->PhysicalStart) &&
+        ((EFI_PHYSICAL_ADDRESS)(UINTN)Address < MemoryMap->PhysicalStart
+                                              + LShiftU64 (MemoryMap->NumberOfPages, EFI_PAGE_SHIFT))) {
+      //
+      // Found it
+      //
+      if (MemoryMap->Attribute & EFI_MEMORY_RUNTIME) {
+        IsRuntime = TRUE;
+      }
+      break;
+    }
+    //
+    // Get next item
+    //
+    MemoryMap = (EFI_MEMORY_DESCRIPTOR *)((UINTN)MemoryMap + DescriptorSize);
+  }
+
+  //
+  // Done
+  //
+  gBS->FreePool (MemoryMapPtr);
+
+  return IsRuntime;
+}
+
 VOID
 EFIAPI
 FvbNotificationFunction (
@@ -66,11 +163,13 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINTN       BufferSize;
-  EFI_HANDLE  Handle;
-  UINTN       Index;
-  UINTN       UpdateIndex;
+  EFI_STATUS                         Status;
+  UINTN                              BufferSize;
+  EFI_HANDLE                         Handle;
+  UINTN                              Index;
+  UINTN                              UpdateIndex;
+  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL *Fvb;
+  EFI_FVB_EXTENSION_PROTOCOL         *FvbExtension;
 
   while (TRUE) {
     BufferSize = sizeof (Handle);
@@ -103,8 +202,7 @@ Returns:
       //
       // Use the next free slot for a new entry
       //
-      UpdateIndex                   = mFvbCount++;;
-      mFvbEntry[UpdateIndex].Handle = Handle;
+      UpdateIndex                   = mFvbCount;
     }
     //
     // The array does not have enough entries
@@ -112,14 +210,22 @@ Returns:
     ASSERT (UpdateIndex < MAX_FVB_COUNT);
 
     //
-    //  Get the interface pointer and if it's ours, skip it
+    //  Get the interface pointer and if it's ours, skip it.
+    //  We check Runtime here, because it has no reason to register
+    //  a boot time FVB protocol.
     //
-    Status = gBS->HandleProtocol (Handle, &gEfiFirmwareVolumeBlockProtocolGuid, &mFvbEntry[UpdateIndex].Fvb);
+    Status = gBS->HandleProtocol (Handle, &gEfiFirmwareVolumeBlockProtocolGuid, &Fvb);
     ASSERT_EFI_ERROR (Status);
-
-    Status = gBS->HandleProtocol (Handle, &gEfiFvbExtensionProtocolGuid, &mFvbEntry[UpdateIndex].FvbExtension);
-    if (Status != EFI_SUCCESS) {
+    if (IsMemoryRuntime (Fvb)) {
+      mFvbCount++;
+      mFvbEntry[UpdateIndex].Handle       = Handle;
+      mFvbEntry[UpdateIndex].Fvb          = Fvb;
       mFvbEntry[UpdateIndex].FvbExtension = NULL;
+
+      Status = gBS->HandleProtocol (Handle, &gEfiFvbExtensionProtocolGuid, &FvbExtension);
+      if ((Status == EFI_SUCCESS) && IsMemoryRuntime (FvbExtension)) {
+        mFvbEntry[UpdateIndex].FvbExtension = FvbExtension;
+      }
     }
   }
 }

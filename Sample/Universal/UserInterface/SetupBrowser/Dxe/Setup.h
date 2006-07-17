@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -46,10 +46,10 @@ extern UINT8  SetupBrowserStrings[];
 //
 // Screen definitions
 //
-#define BANNER_HEIGHT                 4
+#define BANNER_HEIGHT                 6
 #define BANNER_COLUMNS                3
 
-#define FRONT_PAGE_HEADER_HEIGHT      4
+#define FRONT_PAGE_HEADER_HEIGHT      6
 #define NONE_FRONT_PAGE_HEADER_HEIGHT 3
 #define LEFT_SKIPPED_COLUMNS          4
 #define FOOTER_HEIGHT                 4

@@ -160,6 +160,15 @@ UsbUnsetTransactionTranslator (
   USB_IO_DEVICE *Device
   );
 
+STATIC
+EFI_STATUS
+IdentifyDeviceSpeed (
+  USB_BUS_CONTROLLER_DEVICE *UsbBusDev,
+  USB_IO_DEVICE             *NewDevice,
+  UINT8                     Index
+  );
+
+STATIC
 EFI_STATUS
 ReleasePortToCHC (
   USB_BUS_CONTROLLER_DEVICE *UsbBusDev,
@@ -177,12 +186,6 @@ EFI_STATUS
 ResetHubPort (
   IN USB_IO_CONTROLLER_DEVICE    *UsbIoController,
   IN UINT8                       PortIndex
-  );
-
-EFI_STATUS
-ClearRootPortConnectionChangeStatus (
-  IN UINT8                   PortNum,
-  IN EFI_USB_HC_PROTOCOL     *UsbHCInterface
   );
 
 STATIC
@@ -322,8 +325,8 @@ UsbBusControllerDriverSupported (
 
   Arguments:
     This                - Protocol instance pointer.
-    Controller         - Handle of device to test
-    RemainingDevicePath - Not used
+    Controller          - Handle of device to test
+    RemainingDevicePath - Device Path Protocol instance pointer
 
   Returns:
     EFI_SUCCESS         - This driver supports this device.
@@ -331,36 +334,101 @@ UsbBusControllerDriverSupported (
 
 --*/
 {
-  EFI_STATUS  OpenStatus;
+  EFI_STATUS                 Status;
+  EFI_DEVICE_PATH_PROTOCOL   *ParentDevicePath;
+  EFI_USB2_HC_PROTOCOL       *Usb2Hc;
+  EFI_USB_HC_PROTOCOL        *UsbHc;
+  EFI_DEV_PATH_PTR           Node;
 
+  //
+  // Check Device Path
+  //
+  if (RemainingDevicePath != NULL) {
+    Node.DevPath = RemainingDevicePath;
+    if (Node.DevPath->Type != HARDWARE_DEVICE_PATH ||
+        Node.DevPath->SubType != MSG_USB_DP        ||
+        DevicePathNodeLength(Node.DevPath) != sizeof(USB_DEVICE_PATH)) {
+      return EFI_UNSUPPORTED;
+    }
+  }
+  
+  //
+  // Open the IO Abstraction(s) needed to perform the supported test
+  //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &ParentDevicePath,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (Status == EFI_ALREADY_STARTED) {
+    return EFI_SUCCESS;
+  }
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  gBS->CloseProtocol (
+         Controller,
+         &gEfiDevicePathProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
+  
   //
   // Check whether USB Host Controller Protocol is already
   // installed on this handle. If it is installed, we can start
   // USB Bus Driver now.
   //
-  OpenStatus = gBS->OpenProtocol (
-                      Controller,
-                      &gEfiUsb2HcProtocolGuid,
-                      NULL,
-                      This->DriverBindingHandle,
-                      Controller,
-                      EFI_OPEN_PROTOCOL_TEST_PROTOCOL
-                      );
-  if (EFI_ERROR (OpenStatus) && (OpenStatus != EFI_ALREADY_STARTED)) {
-    OpenStatus = gBS->OpenProtocol (
-                        Controller,
-                        &gEfiUsbHcProtocolGuid,
-                        NULL,
-                        This->DriverBindingHandle,
-                        Controller,
-                        EFI_OPEN_PROTOCOL_TEST_PROTOCOL
-                        );
-    if (EFI_ERROR (OpenStatus) && (OpenStatus != EFI_ALREADY_STARTED)) {
-      OpenStatus = EFI_UNSUPPORTED;
-    }
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiUsb2HcProtocolGuid,
+                  (VOID **)&Usb2Hc,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (Status == EFI_ALREADY_STARTED) {
+    return EFI_SUCCESS;
   }
+  
+  if (EFI_ERROR (Status)) {
+    Status = gBS->OpenProtocol (
+                    Controller,
+                    &gEfiUsbHcProtocolGuid,
+                    (VOID **)&UsbHc,
+                    This->DriverBindingHandle,
+                    Controller,
+                    EFI_OPEN_PROTOCOL_BY_DRIVER
+                    );
+    if (Status == EFI_ALREADY_STARTED) {
+      return EFI_SUCCESS;
+    }
 
-  return OpenStatus;
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    gBS->CloseProtocol (
+      Controller,
+      &gEfiUsbHcProtocolGuid,
+      This->DriverBindingHandle,
+      Controller
+      );
+    return EFI_SUCCESS;
+  }
+  
+  gBS->CloseProtocol (
+    Controller,
+    &gEfiUsb2HcProtocolGuid,
+    This->DriverBindingHandle,
+    Controller
+    );
+
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -385,11 +453,8 @@ UsbBusControllerDriverStart (
   Returns:
 
     EFI_SUCCESS         - This driver supports this device.
-    EFI_UNSUPPORTED     - This driver does not support this device.
-    EFI_DEVICE_ERROR    - This driver cannot be started due to device
-                          Error
+    EFI_DEVICE_ERROR    - This driver cannot be started due to device Error
     EFI_OUT_OF_RESOURCES- Can't allocate memory resources
-    EFI_ALREADY_STARTED - This driver has been started
 
 --*/
 {
@@ -428,7 +493,7 @@ UsbBusControllerDriverStart (
 
   if (EFI_ERROR (OpenStatus)) {
     gBS->FreePool (UsbBusDev);
-    return EFI_UNSUPPORTED;
+    return OpenStatus;
   }
   //
   // Locate the Host Controller Interface
@@ -441,7 +506,7 @@ UsbBusControllerDriverStart (
                       Controller,
                       EFI_OPEN_PROTOCOL_BY_DRIVER
                       );
-  if (EFI_ERROR (OpenStatus) && (OpenStatus != EFI_ALREADY_STARTED)) {
+  if (EFI_ERROR (OpenStatus)) {
 
     UsbBusDev->Hc2ProtocolSupported = FALSE;
     OpenStatus = gBS->OpenProtocol (
@@ -452,7 +517,7 @@ UsbBusControllerDriverStart (
                         Controller,
                         EFI_OPEN_PROTOCOL_BY_DRIVER
                         );
-    if (EFI_ERROR (OpenStatus) && (OpenStatus != EFI_ALREADY_STARTED)) {
+    if (EFI_ERROR (OpenStatus)) {
       //
       // Report Status Code here since we will reset the host controller
       //
@@ -465,31 +530,21 @@ UsbBusControllerDriverStart (
         );
 
       gBS->CloseProtocol (
-            Controller,
-            &gEfiDevicePathProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiDevicePathProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
       gBS->FreePool (UsbBusDev);
-      return EFI_UNSUPPORTED;
+      return OpenStatus;
     }
 
-    DEBUG ((gUSBDebugLevel, "Open UsbHcProtocol.\n"));
+    DEBUG ((gUSBDebugLevel, "UsbHcProtocol Opened.\n"));
   } else {
-    DEBUG ((gUSBDebugLevel, "Open Usb2HcProtocol.\n"));
+    DEBUG ((gUSBDebugLevel, "Usb2HcProtocol Opened.\n"));
     UsbBusDev->Hc2ProtocolSupported = TRUE;
   }
 
-  if (OpenStatus == EFI_ALREADY_STARTED) {
-    gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
-    gBS->FreePool (UsbBusDev);
-    return EFI_ALREADY_STARTED;
-  }
   //
   // Attach EFI_USB_BUS_PROTOCOL to controller handle,
   // for locate UsbBusDev later
@@ -504,30 +559,31 @@ UsbBusControllerDriverStart (
   if (EFI_ERROR (Status)) {
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     if (UsbBusDev->Hc2ProtocolSupported) {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsb2HcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsb2HcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     } else {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsbHcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     }
 
     gBS->FreePool (UsbBusDev);
     return Status;
   }
+  
   //
   // Add root hub to the tree
   //
@@ -535,30 +591,30 @@ UsbBusControllerDriverStart (
   RootHub = EfiLibAllocateZeroPool (sizeof (USB_IO_DEVICE));
   if (RootHub == NULL) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     if (UsbBusDev->Hc2ProtocolSupported) {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsb2HcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsb2HcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     } else {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsbHcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     }
 
     gBS->FreePool (UsbBusDev);
@@ -576,30 +632,30 @@ UsbBusControllerDriverStart (
   RootHubController = CreateUsbIoControllerDevice ();
   if (RootHubController == NULL) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     if (UsbBusDev->Hc2ProtocolSupported) {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsb2HcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsb2HcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     } else {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsbHcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     }
 
     gBS->FreePool (UsbBusDev);
@@ -674,38 +730,38 @@ UsbBusControllerDriverStart (
                   );
   if (EFI_ERROR (Status)) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     if (UsbBusDev->Hc2ProtocolSupported) {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsb2HcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsb2HcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     } else {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsbHcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     }
 
     gBS->FreePool (RootHubController);
     gBS->FreePool (RootHub);
     gBS->FreePool (UsbBusDev);
-    return EFI_UNSUPPORTED;
+    return EFI_OUT_OF_RESOURCES;
   }
   //
   // Before depending on the timer to check root ports periodically,
@@ -721,43 +777,44 @@ UsbBusControllerDriverStart (
                   );
   if (EFI_ERROR (Status)) {
     gBS->UninstallProtocolInterface (
-          Controller,
-          &mUsbBusProtocolGuid,
-          &UsbBusDev->BusIdentify
-          );
+           Controller,
+           &mUsbBusProtocolGuid,
+           &UsbBusDev->BusIdentify
+           );
 
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     if (UsbBusDev->Hc2ProtocolSupported) {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsb2HcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsb2HcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     } else {
       gBS->CloseProtocol (
-            Controller,
-            &gEfiUsbHcProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiUsbHcProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
     }
 
     gBS->CloseEvent (RootHubController->HubNotify);
     gBS->FreePool (RootHubController);
     gBS->FreePool (RootHub);
     gBS->FreePool (UsbBusDev);
-    return EFI_UNSUPPORTED;
+    return EFI_DEVICE_ERROR;
   }
 
   return EFI_SUCCESS;
 }
+
 //
 // Stop the bus controller
 //
@@ -863,8 +920,6 @@ UsbBusControllerDriverStop (
   //
   // Stop USB Host Controller
   //
-  // UsbHCInterface = UsbBusController->UsbHCInterface;
-  //
   // Report Status Code here since we will reset the host controller
   //
   ReportUsbStatusCode (
@@ -873,12 +928,6 @@ UsbBusControllerDriverStop (
     EFI_IO_BUS_USB | EFI_IOB_PC_RESET
     );
 
-  /*
-  UsbHCInterface->SetState (
-                    UsbHCInterface,
-                    EfiUsbHcStateHalt
-                    );
-  */
   UsbVirtualHcSetState (
     UsbBusController,
     EfiUsbHcStateHalt
@@ -1012,6 +1061,8 @@ UsbDeviceConfiguration (
   //
   UsbIo = &FirstController->UsbIo;
 
+  ParentPortReset (FirstController, FALSE, 0);
+
   //
   // First retrieve the 1st 8 bytes of
   // in order to get the MaxPacketSize for Endpoint 0
@@ -1019,8 +1070,6 @@ UsbDeviceConfiguration (
   for (Index = 0; Index < 3; Index++) {
 
     UsbIoDevice->DeviceDescriptor.MaxPacketSize0 = 8;
-
-    ParentPortReset (FirstController, FALSE, Index);
 
     gBS->Stall (100 * 1000);
 
@@ -1081,6 +1130,11 @@ UsbDeviceConfiguration (
   }
 
   UsbIoDevice->DeviceAddress = DevAddress;
+
+  //
+  // SetAddress Complete Time by Spec, Max 50ms
+  //
+  gBS->Stall (10 * 1000);
 
   //
   // Get the whole device descriptor
@@ -1595,7 +1649,7 @@ RootHubEnumeration (
       //
       // There is something connected to this port
       //
-      DEBUG ((gUSBDebugLevel, "Something attached from Root Hub in 0x%x\n", Index));
+      DEBUG ((gUSBDebugLevel, "Something connected to Root Hub at Port0x%x\n", Index));
 
       ReportUsbStatusCode (
         UsbBusDev,
@@ -1627,108 +1681,16 @@ RootHubEnumeration (
       //
       // Process of identify device speed
       //
-      
-      if (UsbBusDev->Hc2ProtocolSupported) {
-
-        UsbVirtualHcGetRootHubPortStatus (
-          UsbBusDev,
-          Index,
-          (EFI_USB_PORT_STATUS *) &HubPortStatus
-          );
-        //
-        // Check device device
-        //
-        if (HubPortStatus.PortStatus & USB_PORT_STAT_LOW_SPEED) {
-          if (!(HubPortStatus.PortStatus & USB_PORT_STAT_OWNER)) {
-            //
-            // EHC Port Owner
-            //
-            DEBUG ((gUSBDebugLevel, "Low Speed Device Attached to RootHub\n"));
-            Status = ReleasePortToCHC (UsbBusDev, Index);
-            if (EFI_ERROR (Status)) {
-              DEBUG ((gUSBErrorLevel, "Fail to Release Port To CHC in Root Hub 0x%x\n", Index));
-            } else {
-              DEBUG ((gUSBDebugLevel, "Success to Release Port To CHC in Root Hub 0x%x\n", Index));
-            }
-
-            continue;
-          } else {
-            //
-            // CHC Port Owner
-            //
-            DEBUG ((gUSBDebugLevel, "Low Speed Device Attached to CHC\n"));
-            NewDevice->DeviceSpeed = EFI_USB_SPEED_LOW;
-          }
-        } else if (!(HubPortStatus.PortStatus & USB_PORT_STAT_OWNER)) {
-          //
-          // EHC Port Owner
-          //
-          // Reset the port.
-          //
-          Status = ResetRootPort (
-                    UsbBusDev,
-                    Index,
-                    0
-                    );
-          if (EFI_ERROR (Status)) {
-            DEBUG ((gUSBErrorLevel, "EHCI ResetRootPort Fail\n"));
-            ReportUsbStatusCode (
-              UsbBusDev,
-              EFI_ERROR_CODE | EFI_ERROR_MINOR,
-              EFI_IO_BUS_USB | EFI_IOB_EC_CONTROLLER_ERROR
-              );
-            return ;
-          }
-
-          UsbVirtualHcGetRootHubPortStatus (
-            UsbBusDev,
-            Index,
-            (EFI_USB_PORT_STATUS *) &HubPortStatus
-            );
-
-          if (HubPortStatus.PortStatus & USB_PORT_STAT_ENABLE) {
-            //
-            // High Speed in EHC or Full Speed in CHC
-            //
-            DEBUG ((gUSBDebugLevel, "High Speed Device Attached to RootHub\n"));
-            NewDevice->DeviceSpeed = EFI_USB_SPEED_HIGH;
-          } else {
-            //
-            // Full Speed in EHC
-            //
-            DEBUG ((gUSBDebugLevel, "Full Speed Device Attached to RootHub\n"));
-            NewDevice->DeviceSpeed  = EFI_USB_SPEED_FULL;
-            Status                  = ReleasePortToCHC (UsbBusDev, Index);
-            if (EFI_ERROR (Status)) {
-              DEBUG ((gUSBErrorLevel, "Fail to Release Port To CHC in Root Hub 0x%x\n", Index));
-            } else {
-              DEBUG ((gUSBDebugLevel, "Success to Release Port To CHC in Root Hub 0x%x\n", Index));
-            }
-
-            continue;
-          }
-        } else {
-          //
-          // CHC Port Owner
-          //
-          DEBUG ((gUSBDebugLevel, "Full Speed Device Attached to CHC\n"));
-          NewDevice->DeviceSpeed = EFI_USB_SPEED_FULL;
-        }
-      } else {
-
-        UsbVirtualHcGetRootHubPortStatus (
-          UsbBusDev,
-          Index,
-          (EFI_USB_PORT_STATUS *) &HubPortStatus
-          );
-        if ((HubPortStatus.PortStatus & USB_PORT_STAT_LOW_SPEED) != 0) {
-          DEBUG ((gUSBDebugLevel, "Low Speed Device Attached to RootHub, Efi1.1\n"));
-          NewDevice->DeviceSpeed = EFI_USB_SPEED_LOW;
-        } else {
-          DEBUG ((gUSBDebugLevel, "Full Speed Device Attached to RootHub, Efi1.1\n"));
-          NewDevice->DeviceSpeed = EFI_USB_SPEED_FULL;
-        }
+      Status = IdentifyDeviceSpeed (
+                 UsbBusDev, 
+                 NewDevice, 
+                 Index
+                 );
+      if (EFI_ERROR (Status)) {
+        gBS->FreePool (NewDevice);
+        continue;
       }
+
       //
       // Configure that device
       //
@@ -1814,7 +1776,7 @@ RootHubEnumeration (
       //
       // Something disconnected from USB root hub
       //
-      DEBUG ((gUSBDebugLevel, "Something disconnected from Root Hub\n"));
+      DEBUG ((gUSBDebugLevel, "Something disconnected from Root Hub at Port0x%x\n", Index));
 
       OldUsbIoDevice = HubController->Children[Index];
 
@@ -2201,37 +2163,6 @@ HubEnumeration (
   return ;
 }
 
-//
-// Clear port connection change status over a given root hub port
-//
-EFI_STATUS
-ClearRootPortConnectionChangeStatus (
-  UINT8                   PortNum,
-  EFI_USB_HC_PROTOCOL     *UsbHCInterface
-  )
-/*++
-
-  Routine Description:
-    Clear port connection change status over a given root hub port
-
-  Arguments:
-    PortNum         -   The given port.
-    UsbHCInterface  -   The EFI_USB_HC_PROTOCOL instance.
-
-  Returns:
-     EFI_SUCCESS
-
---*/
-{
-  EFI_STATUS  Status;
-  Status = UsbHCInterface->ClearRootHubPortFeature (
-                            UsbHCInterface,
-                            PortNum,
-                            EfiUsbPortConnectChange
-                            );
-  return Status;
-}
-
 STATIC
 USB_IO_CONTROLLER_DEVICE *
 CreateUsbIoControllerDevice (
@@ -2528,8 +2459,6 @@ ResetRootPort (
     &PortStatus
     );
   if (PortStatus.PortStatus & USB_PORT_STAT_OWNER) {
-
-    DEBUG ((gUSBDebugLevel, "CHC ResetRootPort\n"));
     //
     // Set port enable
     //
@@ -2547,7 +2476,6 @@ ResetRootPort (
               PortNum,
               EfiUsbPortEnableChange
               );
-
   }
 
   gBS->Stall ((1 + RetryTimes) * 50 * 1000);
@@ -2827,6 +2755,77 @@ UsbUnsetTransactionTranslator (
   return EFI_SUCCESS;
 }
 
+STATIC
+EFI_STATUS
+IdentifyDeviceSpeed (
+  USB_BUS_CONTROLLER_DEVICE *UsbBusDev,
+  USB_IO_DEVICE             *NewDevice,
+  UINT8                     Index
+  )
+/*++
+  
+  Routine Description:
+  
+    Identify speed of USB device
+  
+  Arguments:
+    
+    UsbBusDev  - UsbBus controller structure of the device
+    NewDevice  - Devcie controller structure
+    Index      - Number of the port
+    
+  Returns:
+  
+    EFI_SUCCESS        Success
+    EFI_NOT_FOUND      Device release to CHC or can't be found
+    
+--*/
+{
+  EFI_STATUS             Status;
+  EFI_USB_PORT_STATUS    HubPortStatus;
+
+  UsbVirtualHcGetRootHubPortStatus (
+    UsbBusDev,
+    Index,
+    (EFI_USB_PORT_STATUS *) &HubPortStatus
+    );
+  
+  //
+  // Check device device
+  //
+  if (!(HubPortStatus.PortStatus & USB_PORT_STAT_OWNER)) {
+    //
+    // EHC Port Owner
+    //
+    if (HubPortStatus.PortStatus & USB_PORT_STAT_HIGH_SPEED) {
+      DEBUG ((gUSBDebugLevel, "High Speed Device attached to EHC\n"));
+      NewDevice->DeviceSpeed = EFI_USB_SPEED_HIGH; 
+    } else {
+      Status = ReleasePortToCHC (UsbBusDev, Index);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((gUSBErrorLevel, "Fail to release port to CHC\n"));
+      } else {
+        DEBUG ((gUSBDebugLevel, "Success to release port to CHC\n"));
+      }
+      return EFI_DEVICE_ERROR;
+    }
+  } else {
+    //
+    // CHC Port Owner
+    //
+    if (HubPortStatus.PortStatus & USB_PORT_STAT_LOW_SPEED) {
+      DEBUG ((gUSBDebugLevel, "Low Speed Device attached to CHC\n"));
+      NewDevice->DeviceSpeed = EFI_USB_SPEED_LOW; 
+    } else {
+      DEBUG ((gUSBDebugLevel, "FULL Speed Device attached to CHC\n"));
+      NewDevice->DeviceSpeed = EFI_USB_SPEED_FULL; 
+    }
+  }
+  
+  return EFI_SUCCESS;
+}
+
+STATIC
 EFI_STATUS
 ReleasePortToCHC (
   USB_BUS_CONTROLLER_DEVICE *UsbBusDev,

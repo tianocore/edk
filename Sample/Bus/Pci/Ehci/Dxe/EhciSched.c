@@ -463,6 +463,8 @@ Returns:
   //
   // Hardware field
   //
+  // Control Transfer use DataToggleControl
+  //
   (*QhPtrPtr)->Qh.DataToggleControl   = TRUE;
   (*QhPtrPtr)->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&((*QhPtrPtr)->Qh)) >> 5);
   (*QhPtrPtr)->Qh.SelectType          = QH_SELECT_TYPE;
@@ -485,6 +487,7 @@ CreateBulkQh (
   IN  UINT8                               DeviceAddr,
   IN  UINT8                               EndPointAddr,
   IN  UINT8                               DeviceSpeed,
+  IN  UINT8                               DataToggle,
   IN  UINTN                               MaxPacketLen,
   IN  EFI_USB2_HC_TRANSACTION_TRANSLATOR  *Translator,
   OUT EHCI_QH_ENTITY                      **QhPtrPtr
@@ -540,11 +543,14 @@ Returns:
   //
   // Hardware fields
   //
-  (*QhPtrPtr)->Qh.DataToggleControl   = TRUE;
+  // BulkTransfer don't use DataToggleControl
+  //
+  (*QhPtrPtr)->Qh.DataToggleControl   = FALSE;  
   (*QhPtrPtr)->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&((*QhPtrPtr)->Qh)) >> 5);
   (*QhPtrPtr)->Qh.SelectType          = QH_SELECT_TYPE;
   (*QhPtrPtr)->Qh.QhTerminate         = FALSE;
   (*QhPtrPtr)->Qh.NakCountReload      = NAK_COUNT_RELOAD;
+  (*QhPtrPtr)->Qh.DataToggle          = DataToggle;
   if (NULL != Translator) {
     (*QhPtrPtr)->Qh.PortNum = Translator->TranslatorPortNumber;
     (*QhPtrPtr)->Qh.HubAddr = Translator->TranslatorHubAddress;
@@ -561,6 +567,7 @@ CreateInterruptQh (
   IN  UINT8                               DeviceAddr,
   IN  UINT8                               EndPointAddr,
   IN  UINT8                               DeviceSpeed,
+  IN  UINT8                               DataToggle,
   IN  UINTN                               MaxPacketLen,
   IN  UINTN                               Interval,
   IN  EFI_USB2_HC_TRANSACTION_TRANSLATOR  *Translator,
@@ -621,12 +628,15 @@ Returns:
   //
   // Hardware fields
   //
-  (*QhPtrPtr)->Qh.DataToggleControl     = TRUE;
+  // InterruptTranfer don't use DataToggleControl
+  //
+  (*QhPtrPtr)->Qh.DataToggleControl     = FALSE;
   (*QhPtrPtr)->Qh.QhHorizontalPointer   = 0;
   (*QhPtrPtr)->Qh.QhTerminate           = TRUE;
   (*QhPtrPtr)->Qh.NakCountReload        = 0;
   (*QhPtrPtr)->Qh.InerruptScheduleMask  = MICRO_FRAME_0_CHANNEL;
   (*QhPtrPtr)->Qh.SplitComletionMask    = (MICRO_FRAME_2_CHANNEL | MICRO_FRAME_3_CHANNEL | MICRO_FRAME_4_CHANNEL);
+  (*QhPtrPtr)->Qh.DataToggle            = DataToggle;
   if (NULL != Translator) {
     (*QhPtrPtr)->Qh.PortNum = Translator->TranslatorPortNumber;
     (*QhPtrPtr)->Qh.HubAddr = Translator->TranslatorHubAddress;
@@ -1016,22 +1026,15 @@ Returns:
     } else {
       LinkQtdToQtd (PreQtdPtr, QtdPtr);
     }
-	
+
     //
     // Reverse Data Toggle or not determined by parity of transactions of one qtd
     //
-    if (Translator != NULL) {
-      Xnum = GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE_WITH_TT);
-      if (Xnum % 2 != 0) {
-        DataToggle ^= 1;
-      }
-    } else {
-      Xnum = GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE);
-      if (Xnum % 2 != 0) {
-        DataToggle ^= 1;
-      }
+    Xnum = Translator ? GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE_WITH_TT) : GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE);
+    if (Xnum % 2 != 0) {
+      DataToggle ^= 1;
     }
-	
+    
     PreQtdPtr = QtdPtr;
     DataCursor += SizePerQtd;
     DataCount -= SizePerQtd;
@@ -1086,7 +1089,6 @@ CreateBulkOrInterruptQtds (
   IN  UINT8                               PktId,
   IN  UINT8                               *DataCursor,
   IN  UINTN                               DataLen,
-  IN  OUT UINT8                           *DataToggle,
   IN  EFI_USB2_HC_TRANSACTION_TRANSLATOR  *Translator,
   OUT EHCI_QTD_ENTITY                     **QtdsHead
   )
@@ -1121,7 +1123,6 @@ Returns:
   UINTN           DataCount;
   UINTN           CapacityOfQtd;
   UINTN           SizePerQtd;
-  UINTN           Xnum;
 
   Status        = EFI_SUCCESS;
   QtdPtr        = NULL;
@@ -1144,7 +1145,7 @@ Returns:
               DataCursor,
               SizePerQtd,
               PktId,
-              *DataToggle,
+              0,
               &QtdPtr
               );
     if (EFI_ERROR (Status)) {
@@ -1160,21 +1161,6 @@ Returns:
       FirstQtdPtr = QtdPtr;
     } else {
       LinkQtdToQtd (PreQtdPtr, QtdPtr);
-    }
-	
-    //
-    // Reverse Data Toggle or not determined by parity of transactions of one qtd
-    //
-    if (Translator != NULL) {
-      Xnum = GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE_WITH_TT);
-      if (Xnum % 2 != 0) {
-        (*DataToggle) ^= 1;
-      }
-    } else {
-      Xnum = GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE);
-      if (Xnum % 2 != 0) {
-        (*DataToggle) ^= 1;
-      }
     }
 
     PreQtdPtr = QtdPtr;
@@ -1923,7 +1909,7 @@ Returns:
   FrameEntryPtr = (FRAME_LIST_ENTRY *) HcDev->PeriodicFrameListBuffer;
 
   if (QhPtr->TransferType == ASYNC_INTERRUPT_TRANSFER) {
-  	
+  
     //
     // AsyncInterruptTransfer Qh
     //
@@ -1940,8 +1926,8 @@ Returns:
           FrameEntryPtr->LinkPointer    = 0;
           FrameEntryPtr->SelectType     = 0;
           FrameEntryPtr->LinkTerminate  = TRUE;
-          FrameEntryPtr += Interval;
-          FrameIndex += Interval;
+          FrameEntryPtr                += Interval;
+          FrameIndex                   += Interval;
         }
       } else {
         while (FrameIndex < HcDev->PeriodicFrameListLength) {
@@ -2592,9 +2578,9 @@ Returns:
     goto exit;
   }
 
+  *DataToggle = (UINT8) MatchPtr->QhPtr->Qh.DataToggle;
   UnlinkQhFromPeriodicList (HcDev, MatchPtr->QhPtr, MatchPtr->QhPtr->Interval);
   UnlinkFromAsyncReqeust (HcDev, MatchPtr);
-  *DataToggle = (UINT8) MatchPtr->DataToggle;
 
   if (NULL == HcDev->AsyncRequestList) {
 
@@ -2705,7 +2691,6 @@ Returns:
   QhPtr->Qh.AltNextQtdPointer   = 0;
   QhPtr->Qh.NakCount            = 0;
   QhPtr->Qh.AltNextQtdTerminate = 0;
-  QhPtr->Qh.DataToggle          = 0;
   QhPtr->Qh.TotalBytes          = 0;
   QhPtr->Qh.InterruptOnComplete = 0;
   QhPtr->Qh.CurrentPage         = 0;
@@ -2753,37 +2738,30 @@ Returns:
 --*/
 {
   EHCI_QTD_ENTITY *QtdPtr;
-  UINT8           DataToggle;
-  UINT32          QtdIndex;
 
   QtdPtr      = NULL;
-  DataToggle  = 0;
 
   if (EFI_USB_NOERROR == TransferResult) {
-  	
+  
     //
     // Update Qh for next trigger
     //
-    
-    QtdPtr = AsyncRequestPtr->QhPtr->FirstQtdPtr;
-    if (AsyncRequestPtr->DataToggle != QtdPtr->Qtd.DataToggle) {
-      //
-      // DataToggle need to be reverse
-      //
-      while (NULL != QtdPtr) {
-        DataToggle ^= 1;
-        QtdPtr->Qtd.DataToggle  = DataToggle;
-        QtdPtr                  = QtdPtr->Next;
-      }
-    }
 
     QtdPtr = AsyncRequestPtr->QhPtr->FirstQtdPtr;
+
     //
     // Update fields in Qh
+    //
+
+    //
+    // Get DataToggle from Overlay in Qh
+    //
+    // ZeroOut Overlay in Qh except DataToggle, HostController will update this field
     //
     ZeroOutQhOverlay (AsyncRequestPtr->QhPtr);
     AsyncRequestPtr->QhPtr->Qh.NextQtdPointer   = (UINT32) (GET_0B_TO_31B (&(QtdPtr->Qtd)) >> 5);
     AsyncRequestPtr->QhPtr->Qh.NextQtdTerminate = FALSE;
+
     //
     // Update fields in Qtd
     //
@@ -2797,30 +2775,6 @@ Returns:
       QtdPtr->TotalBytes        = QtdPtr->StaticTotalBytes;
       QtdPtr                    = QtdPtr->Next;
     }
-  } else if (TransferResult & EFI_USB_ERR_NAK || TransferResult & EFI_USB_ERR_NOTEXECUTE) {
-  
-    //
-    // No End, No Update
-    //
-    
-  } else {
-  
-    //
-    // Error Handle
-    //
-    
-    QtdPtr = AsyncRequestPtr->QhPtr->FirstQtdPtr;
-    //
-    // Get the datatoggle of the last succeed qtd
-    //
-    if (0 != ErrQtdPos) {
-      for (QtdIndex = 0; QtdIndex < ErrQtdPos; QtdIndex++) {
-        QtdPtr = QtdPtr->Next;
-      }
-      AsyncRequestPtr->DataToggle = (UINT8) QtdPtr->Qtd.DataToggle;
-    } else {
-      AsyncRequestPtr->DataToggle = (UINT8) QtdPtr->Qtd.DataToggle ^ 1;
-    }
   }
 
   return ;
@@ -2831,7 +2785,6 @@ CheckQtdsTransferResult (
   IN  BOOLEAN            IsControl,
   IN  EHCI_QH_ENTITY     *QhPtr,
   OUT UINT32             *Result,
-  OUT UINT8              *DataToggle,
   OUT UINTN              *ErrQtdPos,
   OUT UINTN              *ActualLen
   )
@@ -2912,8 +2865,7 @@ Returns:
       //
       break;
     }
-	
-	(*DataToggle) = (UINT8) QtdHwPtr->DataToggle;
+
     (*ErrQtdPos)++;
     QtdHwPtr = GetQtdNextPointer (QtdHwPtr);
     QtdPtr = (EHCI_QTD_ENTITY *) GET_QTD_ENTITY_ADDR (QtdHwPtr);
@@ -2977,7 +2929,6 @@ Returns:
                  IsControl,
                  QhPtr,
                  TransferResult,
-                 DataToggle,
                  &ErrQtdPos,
                  ActualLen
                  );
@@ -3003,6 +2954,11 @@ Returns:
     }
   }
 
+  //
+  // Special for Bulk and Interrupt Transfer
+  //
+  *DataToggle = (UINT8) QhPtr->Qh.DataToggle;
+  
   return Status;
 }
 
@@ -3031,7 +2987,6 @@ Returns:
   USB2_HC_DEV         *HcDev;
   EHCI_ASYNC_REQUEST  *AsyncRequestPtr;
   EHCI_QTD_HW         *QtdHwPtr;
-  UINT8               DataToggle;
   UINTN               ErrQtdPos;
   UINTN               ActualLen;
   UINT32              TransferResult;
@@ -3052,13 +3007,12 @@ Returns:
     ActualLen       = 0;
 
     CheckQtdsTransferResult (
-	  FALSE, 
-	  AsyncRequestPtr->QhPtr, 
-	  &TransferResult, 
-	  &DataToggle,
-	  &ErrQtdPos, 
-	  &ActualLen
-	  );
+      FALSE, 
+      AsyncRequestPtr->QhPtr, 
+      &TransferResult, 
+      &ErrQtdPos, 
+      &ActualLen
+      );
 
     if ((TransferResult & EFI_USB_ERR_NAK) || (TransferResult & EFI_USB_ERR_NOTEXECUTE)) {
       AsyncRequestPtr = AsyncRequestPtr->Next;
@@ -3080,8 +3034,6 @@ Returns:
       ReceiveBuffer,
       ActualLen
       );
-
-    AsyncRequestPtr->DataToggle = DataToggle;
 
     UpdateAsyncRequestTransfer (AsyncRequestPtr, TransferResult, ErrQtdPos);
 

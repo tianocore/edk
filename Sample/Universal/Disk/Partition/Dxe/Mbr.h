@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -33,7 +33,8 @@ Revision History
 #define EXTENDED_WINDOWS_PARTITION  0x0F
 #define MAX_MBR_PARTITIONS          4
 
-#define EFI_PARTITION               0xef
+#define PMBR_GPT_PARTITION          0xEE
+#define EFI_PARTITION               0xEF
 #define MBR_SIZE                    512
 
 //

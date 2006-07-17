@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -111,10 +111,10 @@ DxeLoadCore (
 
 EFI_STATUS
 PeiProcessFile (
-  IN  EFI_PEI_SERVICES       **PeiServices,
-  IN  UINT16                 SectionType,
-  IN  EFI_FFS_FILE_HEADER    *FfsFileHeader,
-  OUT VOID                   **Pe32Data
+  IN     EFI_PEI_SERVICES       **PeiServices,
+  IN     UINT16                 SectionType,
+  IN OUT EFI_FFS_FILE_HEADER    **FfsFileHeaderPoint,
+  OUT    VOID                   **Pe32Data
   );
 
 VOID
@@ -617,17 +617,21 @@ Returns:
     } else {
       PEI_DEBUG ((PeiServices, EFI_D_INFO, "Guid first data is %g\n", &(FfsFileHeader->Name)));
       
+      Status = PeiProcessFile (
+                PeiServices,
+                SectionType,
+                &FfsFileHeader,
+                Pe32Data
+                );
+
+      //
+      // Copy the File GUID from the FFS file that Pe32Data is found
+      //
       (*PeiServices)->CopyMem (
                         FileName,
                         &FfsFileHeader->Name,
                         sizeof (EFI_GUID)
                         );
-      Status = PeiProcessFile (
-                PeiServices,
-                SectionType,
-                FfsFileHeader,
-                Pe32Data
-                );
       return Status;
     }
   }
@@ -862,7 +866,7 @@ Returns:
   Status = PeiProcessFile (
             gPeiServices,
             EFI_SECTION_PE32,
-            FfsHeader,
+            &FfsHeader,
             &Pe32Data
             );
 
@@ -888,10 +892,10 @@ Returns:
 
 EFI_STATUS
 PeiProcessFile (
-  IN  EFI_PEI_SERVICES       **PeiServices,
-  IN  UINT16                 SectionType,
-  IN  EFI_FFS_FILE_HEADER    *FfsFileHeader,
-  OUT VOID                   **Pe32Data
+  IN     EFI_PEI_SERVICES       **PeiServices,
+  IN     UINT16                 SectionType,
+  IN OUT EFI_FFS_FILE_HEADER    **FfsFileHeaderPoint,
+  OUT    VOID                   **Pe32Data
   )
 /*++
 
@@ -901,13 +905,13 @@ Arguments:
 
   PeiServices        - General purpose services available to every PEIM.
 
-  SectionType       - The type of section in the FFS file to process.
+  SectionType        - The type of section in the FFS file to process.
 
-  FfsFileHeader     - Pointer to the FFS file to process, looking for the
-                      specified SectionType
+  FfsFileHeaderPoint - Pointer to pointer to the FFS file to process, looking for the
+                       specified SectionType and return pointer to FFS file that PE32 image is found
 
-  Pe32Data          - returned pointer to the start of the PE32 image found
-                      in the FFS file.
+  Pe32Data           - returned pointer to the start of the PE32 image found
+                       in the FFS file.
 
 Returns:
 
@@ -942,6 +946,9 @@ Returns:
   EFI_GUID                        TempGuid;
   EFI_FIRMWARE_VOLUME_HEADER      *FvHeader;
   EFI_COMPRESSION_SECTION         *CompressionSection;
+  EFI_FFS_FILE_HEADER             *FfsFileHeader;
+  
+  FfsFileHeader = *FfsFileHeaderPoint;
 
   Status = (*PeiServices)->FfsFindSectionData (
                             PeiServices,
@@ -1189,7 +1196,12 @@ Returns:
               return EFI_NOT_FOUND;
             }
 
-            return PeiProcessFile (PeiServices, SectionType, FfsFileHeader, Pe32Data);
+            //
+            // Write the pointer to the FFS file processed to FfsFileHeaderPoint.
+            //            
+            *FfsFileHeaderPoint = FfsFileHeader;
+
+            return PeiProcessFile (PeiServices, SectionType, FfsFileHeaderPoint, Pe32Data);
           }
         }
         //
@@ -1517,7 +1529,7 @@ Returns:
         Status = PeiProcessFile (
                    PeiServices,
                    SectionType,
-                   FfsFileHeader,
+                   &FfsFileHeader,
                    Pe32Data
                    );
         return Status;

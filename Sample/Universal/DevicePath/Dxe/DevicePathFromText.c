@@ -21,12 +21,6 @@ Abstract:
 
 #include "DevicePathDriver.h"
 
-void  *
-DupMemFromConst (
-  IN CONST VOID     *Src,
-  IN UINTN          len
-  );
-
 CHAR16 *
 StrDuplicate (
   IN CONST CHAR16  *Src

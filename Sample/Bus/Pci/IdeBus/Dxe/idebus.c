@@ -479,7 +479,7 @@ IDEBusDriverBindingStart (
     //
     // Prepare to detect IDE device of this channel
     //
-    DetectIDEControllerInitial ();
+    InitializeIDEChannelData ();
 
     //
     // -- 1st inner loop --- Master/Slave ------------  Step14

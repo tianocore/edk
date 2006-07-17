@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c)  2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,6 +17,9 @@ Abstract:
 
   This implements a status code listener that logs status codes into the data
   hub.  This is only active during non-runtime DXE.
+  The status codes are recorded in a extensiable buffer, and a event is signalled 
+  to log them to the data hub. The recorder is the producer of the status code in
+  buffer and the event notify function the consummer.
 
 --*/
 
@@ -26,21 +29,24 @@ Abstract:
 // Globals only work at BootService Time. NOT at Runtime!
 //
 static EFI_DATA_HUB_PROTOCOL  *mDataHub;
-static EFI_LIST_ENTRY         mRecordBuffer;
+static EFI_LIST_ENTRY         *mRecordHead;
+static EFI_LIST_ENTRY         *mRecordTail;
 static INTN                   mRecordNum;
 static EFI_EVENT              mLogDataHubEvent;
 static EFI_LOCK               mStatusCodeReportLock = EFI_INITIALIZE_LOCK_VARIABLE(EFI_TPL_HIGH_LEVEL);
 static BOOLEAN                mEventHandlerActive   = FALSE;
 
+
 STATUS_CODE_RECORD_LIST *
-GetRecordBuffer (
+AllocateRecordBuffer (
   VOID
   )
 /*++
 
 Routine Description:
 
-  Returned buffer of length BYTES_PER_RECORD
+  Allocate a new record list node and initialize it.
+  Inserting the node into the list isn't the task of this function.
 
 Arguments:
 
@@ -48,21 +54,23 @@ Arguments:
 
 Returns:
 
-  Entry in mRecordBuffer or NULL if non available
+  A pointer to the new allocated node or NULL if non available
 
 --*/
 {
-  STATUS_CODE_RECORD_LIST *Buffer;
+  STATUS_CODE_RECORD_LIST *DataBuffer;
 
-  gBS->AllocatePool (EfiBootServicesData, sizeof (STATUS_CODE_RECORD_LIST), &Buffer);
-  if (Buffer == NULL) {
+  DataBuffer = NULL;
+
+  gBS->AllocatePool (EfiBootServicesData, sizeof (STATUS_CODE_RECORD_LIST), &DataBuffer);
+  if (DataBuffer == NULL) {
     return NULL;
   }
 
-  EfiCommonLibZeroMem (Buffer, sizeof (STATUS_CODE_RECORD_LIST));
-  Buffer->Signature = BS_DATA_HUB_STATUS_CODE_SIGNATURE;
+  EfiCommonLibZeroMem (DataBuffer, sizeof (STATUS_CODE_RECORD_LIST));
+  DataBuffer->Signature = BS_DATA_HUB_STATUS_CODE_SIGNATURE;
 
-  return Buffer;
+  return DataBuffer;
 }
 
 DATA_HUB_STATUS_CODE_DATA_RECORD *
@@ -73,7 +81,9 @@ AquireEmptyRecordBuffer (
 
 Routine Description:
 
-  Allocate a mRecordBuffer entry in the form of a pointer.
+  Acquire an empty record buffer from the record list if there's free node,
+  or allocate one new node and insert it to the list if the list is full and
+  the function isn't run in EFI_TPL_HIGH_LEVEL.
 
 Arguments:
 
@@ -81,24 +91,64 @@ Arguments:
 
 Returns:
 
-  Pointer to new buffer. NULL if none exist.
+  Pointer to new record buffer. NULL if none available.
 
 --*/
 {
+  EFI_TPL                 OldTpl;
   STATUS_CODE_RECORD_LIST *DataBuffer;
 
-  if (mRecordNum < MAX_RECORD_NUM) {
-    DataBuffer = GetRecordBuffer ();
-    if (DataBuffer != NULL) {
-      EfiAcquireLock (&mStatusCodeReportLock);
-      InsertTailList (&mRecordBuffer, &DataBuffer->Link);
-      mRecordNum++;
-      EfiReleaseLock (&mStatusCodeReportLock);
-      return (DATA_HUB_STATUS_CODE_DATA_RECORD *) DataBuffer->RecordBuffer;
+  DataBuffer = NULL;
+
+  //
+  // This function must be reentrant because an event with higher priority may interrupt it
+  // and also report status code.
+  //
+  EfiAcquireLock (&mStatusCodeReportLock);
+  if (mRecordTail != mRecordHead->ForwardLink) {
+    if (mRecordNum != 0) {
+      mRecordHead = mRecordHead->ForwardLink;
     }
+    DataBuffer = CR (mRecordHead, STATUS_CODE_RECORD_LIST, Link, BS_DATA_HUB_STATUS_CODE_SIGNATURE);
+    mRecordNum++;
+    EfiReleaseLock (&mStatusCodeReportLock);
+
+    //
+    // Initalize the record buffer is the responsibility of the producer,
+    // because the consummer is in a lock so must keep it short.
+    //
+    EfiCommonLibZeroMem (&DataBuffer->RecordBuffer[0], BYTES_PER_BUFFER);
+  } else if (mRecordNum < MAX_RECORD_NUM) {
+    //
+    // The condition of "mRecordNum < MAX_RECORD_NUM" is not promised,
+    // because mRecodeNum may be increased out of this lock.
+    //
+    EfiReleaseLock (&mStatusCodeReportLock);
+
+    //
+    // Can't allocate additional buffer in EFI_TPL_HIGH_LEVEL.
+    // Reporting too many status code in EFI_TPL_HIGH_LEVEL may cause status code lost.
+    //
+    OldTpl = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
+    if (OldTpl == EFI_TPL_HIGH_LEVEL) {
+      return NULL;
+    }
+    gBS->RestoreTPL (OldTpl);
+    DataBuffer = AllocateRecordBuffer ();
+    if (DataBuffer == NULL) {
+      return NULL;
+    }
+    EfiAcquireLock (&mStatusCodeReportLock);
+    InsertHeadList (mRecordHead, &DataBuffer->Link);
+    mRecordHead = mRecordHead->ForwardLink;
+    mRecordNum++;
+    EfiReleaseLock (&mStatusCodeReportLock);
+  } else {
+    EfiReleaseLock (&mStatusCodeReportLock);
+    return NULL;
   }
 
-  return NULL;
+  return (DATA_HUB_STATUS_CODE_DATA_RECORD *) DataBuffer->RecordBuffer;
 }
 
 EFI_STATUS
@@ -109,11 +159,11 @@ ReleaseRecordBuffer (
 
 Routine Description:
 
-  Release a mRecordBuffer entry allocated by AquireEmptyRecordBuffer ().
+  Release a buffer in the list, remove some nodes to keep the list inital length.
 
 Arguments:
 
-  RecordBuffer          - Data to free
+  RecordBuffer          - Buffer to release
 
 Returns:
 
@@ -123,19 +173,31 @@ Returns:
 --*/
 {
   ASSERT (RecordBuffer != NULL);
+
+  //
+  // The consummer needn't to be reentrient and the producer won't do any meaningful thing
+  // when consummer is logging records.
+  //
   if (mRecordNum <= 0) {
     return EFI_UNSUPPORTED;
+  } else if (mRecordNum > INITIAL_RECORD_NUM) {
+    mRecordTail = mRecordTail->ForwardLink;
+    RemoveEntryList (&RecordBuffer->Link);
+    mRecordNum--;
+    gBS->FreePool (RecordBuffer);
+  } else {
+    if (mRecordNum != 1) {
+      mRecordTail = mRecordTail->ForwardLink;
+    }
+    mRecordNum--;
   }
 
-  EfiAcquireLock (&mStatusCodeReportLock);
-  RemoveEntryList (&RecordBuffer->Link);
-  mRecordNum--;
-  EfiReleaseLock (&mStatusCodeReportLock);
-  gBS->FreePool (RecordBuffer);
   return EFI_SUCCESS;
 }
 
+EFI_BOOTSERVICE
 EFI_STATUS
+EFIAPI
 BsDataHubReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
@@ -166,6 +228,8 @@ Returns:
   CHAR8                             *Format;
   UINTN                             Index;
   CHAR16                            FormatBuffer[BYTES_PER_RECORD];
+
+  DataHub = NULL;
 
   if (EfiAtRuntime ()) {
     //
@@ -251,7 +315,7 @@ Returns:
   return EFI_SUCCESS;
 }
 
-VOID
+void
 EFIAPI
 LogDataHubEventHandler (
   IN  EFI_EVENT     Event,
@@ -286,12 +350,14 @@ Returns:
   // Set our global flag so we don't recurse if we get an error here.
   //
   mEventHandlerActive = TRUE;
-
+  
   //
   // Log DataRecord in Data Hub.
   // If there are multiple DataRecords, Log all of them.
   //
-  for (Link = mRecordBuffer.ForwardLink; Link != &mRecordBuffer;) {
+  Link = mRecordTail;
+
+  while (mRecordNum != 0) {
     BufferEntry = CR (Link, STATUS_CODE_RECORD_LIST, Link, BS_DATA_HUB_STATUS_CODE_SIGNATURE);
     DataRecord  = (DATA_HUB_STATUS_CODE_DATA_RECORD *) (BufferEntry->RecordBuffer);
     Link        = Link->ForwardLink;
@@ -347,6 +413,7 @@ Returns:
   return ;
 }
 
+EFI_BOOTSERVICE
 EFI_STATUS
 BsDataHubInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
@@ -369,7 +436,11 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
+  EFI_STATUS              Status;
+  STATUS_CODE_RECORD_LIST *DataBuffer;
+  UINTN                   Index1;
+
+  DataBuffer = NULL;
 
   Status = gBS->LocateProtocol (&gEfiDataHubProtocolGuid, NULL, &mDataHub);
   //
@@ -378,10 +449,25 @@ Returns:
   ASSERT_EFI_ERROR (Status);
 
   //
-  // Initialize FIFO
+  // Initialize a record list with length not greater than INITIAL_RECORD_NUM.
+  // If no buffer can be allocated, return EFI_OUT_OF_RESOURCES.
   //
-  InitializeListHead (&mRecordBuffer);
-  mRecordNum = 0;
+  DataBuffer = AllocateRecordBuffer ();
+  if (DataBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  mRecordHead = &DataBuffer->Link;
+  mRecordTail = mRecordHead;
+  InitializeListHead (mRecordHead);
+  
+  for (Index1 = 1; Index1 < INITIAL_RECORD_NUM; Index1++) {
+    DataBuffer = AllocateRecordBuffer ();
+    if (DataBuffer == NULL) {
+      break;
+    }
+    InsertHeadList (mRecordHead, &DataBuffer->Link);
+  }
+
 
   //
   // Create a Notify Event to log data in Data Hub

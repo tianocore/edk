@@ -1040,7 +1040,7 @@ AtapiRequestSense (
       //
       // Ptr is word-based pointer
       //
-      Ptr += sizeof (REQUEST_SENSE_DATA) / 2;
+      Ptr += (sizeof (REQUEST_SENSE_DATA) + 1) >> 1;
 
     } else {
       //

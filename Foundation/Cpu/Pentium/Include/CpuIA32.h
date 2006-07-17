@@ -57,11 +57,14 @@ typedef struct {
 } EFI_CPU_MICROCODE_EXTENDED_TABLE;
 
 typedef struct {
-  UINT32  Stepping : 4;
-  UINT32  Model : 4;
-  UINT32  Family : 4;
-  UINT32  Type : 2;
-  UINT32  Reserved : 18;
+  UINT32  Stepping       : 4;
+  UINT32  Model          : 4;
+  UINT32  Family         : 4;
+  UINT32  Type           : 2;
+  UINT32  Reserved1      : 2;
+  UINT32  ExtendedModel  : 4;
+  UINT32  ExtendedFamily : 8;
+  UINT32  Reserved2      : 4;
 } EFI_CPU_VERSION;
 
 #define EFI_CPUID_SIGNATURE                   0x0

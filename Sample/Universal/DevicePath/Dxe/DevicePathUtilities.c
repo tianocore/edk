@@ -28,52 +28,6 @@ EFI_GUID                  gEfiDevicePathUtilitiesProtocolGuid = EFI_DEVICE_PATH_
 
 UINTN
 GetDevicePathSize (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath
-  );
-
-EFI_DEVICE_PATH_PROTOCOL  *
-DuplicateDevicePath (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath
-  );
-
-EFI_DEVICE_PATH_PROTOCOL  *
-AppendDevicePath (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *Src1,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *Src2
-  );
-
-EFI_DEVICE_PATH_PROTOCOL  *
-AppendDeviceNode (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DeviceNode
-  );
-
-EFI_DEVICE_PATH_PROTOCOL  *
-AppendDevicePathInstance (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePathInstance
-  );
-
-EFI_DEVICE_PATH_PROTOCOL  *
-GetNextDevicePathInstance (
-  IN OUT EFI_DEVICE_PATH_PROTOCOL   **DevicePathInstance,
-  OUT UINTN                         *DevicePathInstanceSize
-  );
-
-BOOLEAN
-IsDevicePathMultiInstance (
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath
-  );
-
-EFI_DEVICE_PATH_PROTOCOL  *
-CreateDeviceNode (
-  IN UINT8                          NodeType,
-  IN UINT8                          NodeSubType,
-  IN UINT16                         NodeLength
-  );
-
-UINTN
-GetDevicePathSize (
   IN CONST EFI_DEVICE_PATH_PROTOCOL  *DevicePath
   )
 /*++

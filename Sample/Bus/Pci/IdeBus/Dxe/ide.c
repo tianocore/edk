@@ -21,8 +21,12 @@ Revision History
 
 #include "idebus.h"
 
-BOOLEAN SlaveDeviceExist  = FALSE;
-BOOLEAN MasterDeviceExist = FALSE;
+BOOLEAN ChannelDeviceDetected = FALSE;
+BOOLEAN SlaveDeviceExist      = FALSE;
+UINT8   SlaveDeviceType       = INVALID_DEVICE_TYPE;
+BOOLEAN MasterDeviceExist     = FALSE;
+UINT8   MasterDeviceType      = INVALID_DEVICE_TYPE;
+
 
 UINT8
 IDEReadPortB (
@@ -519,63 +523,6 @@ Arguments:
   return EFI_SUCCESS;
 }
 
-EFI_STATUS
-CheckPowerMode (
-  IDE_BLK_IO_DEV    *IdeDev
-  )
-/*++
- Routine Description:
- 
-  Read SATA registers to detect SATA disks
-
- Arguments:
-
-  IdeDev - The BLK_IO private data which specifies the IDE device
-  
-++*/
-// TODO: function comment should end with '--*/'
-// TODO: function comment is missing 'Returns:'
-// TODO:    EFI_NOT_FOUND - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
-{
-  UINT8       ErrorRegister;
-  EFI_STATUS  Status;
-
-  IDEWritePortB (
-    IdeDev->PciIo,
-    IdeDev->IoPort->Head,
-    (UINT8) ((IdeDev->Device << 4) | 0xe0)
-    );
-
-  //
-  // Wait 31 seconds for BSY clear. BSY should be in clear state if there exists
-  // a device (initial state). Normally, BSY is also in clear state if there is
-  // no device
-  //
-  Status = WaitForBSYClear (IdeDev, 31000);
-  if (EFI_ERROR (Status)) {
-    return EFI_NOT_FOUND;
-  }
-
-  //
-  // select device, read error register
-  //
-  IDEWritePortB (
-    IdeDev->PciIo,
-    IdeDev->IoPort->Head,
-    (UINT8) ((IdeDev->Device << 4) | 0xe0)
-    );
-  Status        = DRDYReady (IdeDev, 200);
-
-  ErrorRegister = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
-  if ((ErrorRegister == 0x01) || (ErrorRegister == 0x81)) {
-    return EFI_SUCCESS;
-  } else {
-    return EFI_NOT_FOUND;
-  }
-}
-
 //
 // DiscoverIdeDevice
 //
@@ -600,44 +547,67 @@ DiscoverIdeDevice (
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS  Status;
-  BOOLEAN     SataFlag;
-
-  SataFlag = FALSE;
-  //
-  // This extra detection is for SATA disks
-  //
-  Status = CheckPowerMode (IdeDev);
-  if (Status == EFI_SUCCESS) {
-    SataFlag = TRUE;
-  }
-    
+  
   //
   // If a channel has not been checked, check it now. Then set it to "checked" state
   // After this step, all devices in this channel have been checked.
   //
-  Status = DetectIDEController (IdeDev);
-
-  if ((EFI_ERROR (Status)) && !SataFlag) {
-    return EFI_NOT_FOUND;
-  }
-  
-  //
-  // Device exists. test if it is an ATA device
-  //
-  Status = ATAIdentify (IdeDev);
-  if (EFI_ERROR (Status)) {
-    //
-    // if not ATA device, test if it is an ATAPI device
-    //
-    Status = ATAPIIdentify (IdeDev);
+  if (ChannelDeviceDetected == FALSE) {
+    Status = DetectIDEController (IdeDev);
     if (EFI_ERROR (Status)) {
-      //
-      // if not ATAPI device either, return error.
-      //
       return EFI_NOT_FOUND;
     }
   }
 
+  Status = EFI_NOT_FOUND;
+
+  //
+  // Device exists. test if it is an ATA device.
+  // Prefer the result from DetectIDEController,
+  // if failed, try another device type to handle
+  // devices that not follow the spec.
+  //
+  if ((IdeDev->Device == IdeMaster) && (MasterDeviceExist)) {
+    if (MasterDeviceType == ATA_DEVICE_TYPE) {
+      Status = ATAIdentify (IdeDev);
+      if (EFI_ERROR (Status)) {
+        Status = ATAPIIdentify (IdeDev);
+        if (!EFI_ERROR (Status)) {
+          MasterDeviceType = ATAPI_DEVICE_TYPE;
+        }
+      }
+    } else {
+      Status = ATAPIIdentify (IdeDev);
+      if (EFI_ERROR (Status)) {
+        Status = ATAIdentify (IdeDev);
+        if (!EFI_ERROR (Status)) {
+          MasterDeviceType = ATA_DEVICE_TYPE;
+        }
+      }
+    }
+  }
+  if ((IdeDev->Device == IdeSlave) && (SlaveDeviceExist)) {
+    if (SlaveDeviceType == ATA_DEVICE_TYPE) {
+      Status = ATAIdentify (IdeDev);
+      if (EFI_ERROR (Status)) {
+        Status = ATAPIIdentify (IdeDev);
+        if (!EFI_ERROR (Status)) {
+          SlaveDeviceType = ATAPI_DEVICE_TYPE;
+        }
+      }
+    } else {
+      Status = ATAPIIdentify (IdeDev);
+      if (EFI_ERROR (Status)) {
+        Status = ATAIdentify (IdeDev);
+        if (!EFI_ERROR (Status)) {
+          SlaveDeviceType = ATA_DEVICE_TYPE;
+        }
+      }
+    }
+  }
+  if (EFI_ERROR (Status)) {
+    return EFI_NOT_FOUND;
+  }
   //
   // Init Block I/O interface
   //
@@ -663,31 +633,32 @@ DiscoverIdeDevice (
 }
 
 EFI_STATUS
-DetectIDEControllerInitial ()
+InitializeIDEChannelData (
+  VOID
+  )
 /*++
   
-  Name: DetectIDEController
+  Name: InitializeIDEChannelData
 
 
   Purpose: 
-      This function is called before DetectIDEController(). It is used to 
-      initialize the global variable MasterDeviceExist and SlaveDeviceExist.
-
+      This function initializes all state data related to the detection of one
+      channel.
 
   Parameters:
 
 
   Returns:
-      TRUE
-            Ready to call DetectIDEController().
-
+      EFI_SUCCESS
 
   Notes:
 --*/
 {
+  ChannelDeviceDetected = FALSE;
   MasterDeviceExist = FALSE;
+  MasterDeviceType  = 0xff;
   SlaveDeviceExist  = FALSE;
-
+  SlaveDeviceType   = 0xff;
   return EFI_SUCCESS;
 }
 
@@ -734,63 +705,12 @@ DetectIDEController (
 
   Notes:
 --*/
-// TODO: function comment is missing 'Routine Description:'
-// TODO: function comment is missing 'Arguments:'
-// TODO:    IdeDev - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
   EFI_STATUS  Status;
-  UINT8       ErrorReg;
-  UINT8       StatusReg;
-  UINT8       InitStatusReg;
-  EFI_STATUS  DeviceStatus;
-
-  //
-  // Slave device has been detected with master device.
-  //
-  if ((IdeDev->Device) == 1) {
-    if (SlaveDeviceExist) {
-      //
-      // If master not exists but slave exists, slave have to wait a while
-      //
-      if (!MasterDeviceExist) {
-        //
-        // if single slave can't be detected, add delay 4s here.
-        //
-        gBS->Stall (4000000);
-      }
-
-      return EFI_SUCCESS;
-    } else {
-      return EFI_NOT_FOUND;
-    }
-  }
-      
-  //
-  // Select slave device
-  //
-  IDEWritePortB (
-    IdeDev->PciIo,
-    IdeDev->IoPort->Head,
-    (UINT8) ((1 << 4) | 0xe0)
-    );
-  gBS->Stall (100);
-
-  //
-  // Save the init slave status register
-  //
-  InitStatusReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
-
-  //
-  // Select master back
-  //
-  IDEWritePortB (
-    IdeDev->PciIo,
-    IdeDev->IoPort->Head,
-    (UINT8) ((0 << 4) | 0xe0)
-    );
-  gBS->Stall (100);
+  UINT8       SectorCountReg;
+  UINT8       LBALowReg;
+  UINT8       LBAMidReg;
+  UINT8       LBAHighReg;
   //
   // Send ATA Device Execut Diagnostic command.
   // This command should work no matter DRDY is ready or not
@@ -798,81 +718,95 @@ DetectIDEController (
   IDEWritePortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Command, 0x90);
 
   Status    = WaitForBSYClear (IdeDev, 3500);
-
-  ErrorReg  = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
-
-  //
-  // Master Error register is 0x01. D0 passed, D1 passed or not present.
-  // Master Error register is 0x81. D0 passed, D1 failed. Return.
-  // Master Error register is other value. D0 failed, D1 passed or not present..
-  //
-  if (ErrorReg == 0x01) {
-    MasterDeviceExist = TRUE;
-    DeviceStatus      = EFI_SUCCESS;
-  } else if (ErrorReg == 0x81) {
-
-    MasterDeviceExist = TRUE;
-    DeviceStatus      = EFI_SUCCESS;
-    SlaveDeviceExist  = FALSE;
-
-    return DeviceStatus;
-  } else {
-    MasterDeviceExist = FALSE;
-    DeviceStatus      = EFI_NOT_FOUND;
+  if (EFI_ERROR (Status)) {
+    DEBUG((EFI_D_ERROR, "New detecting method: Send Execute Diagnostic Command: WaitForBSYClear: Status: %d\n", Status));
+    return Status;
   }
-    
   //
-  // Master Error register is not 0x81, Go on check Slave
+  // Read device signature
   //
+  //
+  // Select Master
+  //
+  IDEWritePortB (
+    IdeDev->PciIo,
+    IdeDev->IoPort->Head,
+    (UINT8) ((0 << 4) | 0xe0)
+    );
+  gBS->Stall (100);
+  SectorCountReg = IDEReadPortB (
+                     IdeDev->PciIo,
+                     IdeDev->IoPort->SectorCount
+                     );
+  LBALowReg      = IDEReadPortB (
+                     IdeDev->PciIo,
+                     IdeDev->IoPort->SectorNumber
+                     );
+  LBAMidReg      = IDEReadPortB (
+                     IdeDev->PciIo,
+                     IdeDev->IoPort->CylinderLsb
+                     );
+  LBAHighReg     = IDEReadPortB (
+                     IdeDev->PciIo,
+                     IdeDev->IoPort->CylinderMsb
+                     );
+  if ((SectorCountReg == 0x1) &&
+      (LBALowReg      == 0x1) &&
+      (LBAMidReg      == 0x0) &&
+      (LBAHighReg     == 0x0)) {
+    MasterDeviceExist = TRUE;
+    MasterDeviceType  = ATA_DEVICE_TYPE;
+  } else {
+    if ((LBAMidReg      == 0x14) &&
+        (LBAHighReg     == 0xeb)) {
+      MasterDeviceExist = TRUE;
+      MasterDeviceType  = ATAPI_DEVICE_TYPE;
+    }
+  }
 
   //
-  // select slave
+  // Select Slave
   //
   IDEWritePortB (
     IdeDev->PciIo,
     IdeDev->IoPort->Head,
     (UINT8) ((1 << 4) | 0xe0)
     );
-
-  gBS->Stall (300);
-  ErrorReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg1.Error);
-
-  //
-  // Slave Error register is not 0x01, D1 failed. Return.
-  //
-  if (ErrorReg != 0x01) {
-    SlaveDeviceExist = FALSE;
-    return DeviceStatus;
-  }
-
-  StatusReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
-
-  //
-  // Most ATAPI devices don't set DRDY bit, so test with a slow but accurate
-  //   "ATAPI TEST UNIT READY" command
-  //
-  if (((StatusReg & DRDY) == 0) && ((InitStatusReg & DRDY) == 0)) {
-    Status = AtapiTestUnitReady (IdeDev);
-
-    //
-    // Still fail, Slave doesn't exist.
-    //
-    if (EFI_ERROR (Status)) {
-      SlaveDeviceExist = FALSE;
-      return DeviceStatus;
+  gBS->Stall (100);
+  SectorCountReg = IDEReadPortB (
+                     IdeDev->PciIo,
+                     IdeDev->IoPort->SectorCount
+                     );
+  LBALowReg  = IDEReadPortB (
+                 IdeDev->PciIo,
+                 IdeDev->IoPort->SectorNumber
+                 );
+  LBAMidReg  = IDEReadPortB (
+                 IdeDev->PciIo,
+                 IdeDev->IoPort->CylinderLsb
+                 );
+  LBAHighReg = IDEReadPortB (
+                 IdeDev->PciIo,
+                 IdeDev->IoPort->CylinderMsb
+                 );
+  if ((SectorCountReg == 0x1) &&
+      (LBALowReg      == 0x1) &&
+      (LBAMidReg      == 0x0) &&
+      (LBAHighReg     == 0x0)) {
+    SlaveDeviceExist = TRUE;
+    SlaveDeviceType  = ATA_DEVICE_TYPE;
+  } else {
+    if ((LBAMidReg     == 0x14) &&
+        (LBAHighReg    == 0xeb)) {
+      SlaveDeviceExist = TRUE;
+      SlaveDeviceType  = ATAPI_DEVICE_TYPE;
     }
   }
-
   //
-  // Error reg is 0x01 and DRDY is ready,
-  //  or ATAPI test unit ready success,
-  //  or  init Slave status DRDY is ready
-  // Slave exists.
+  // Indicate this channel has been detected
   //
-  SlaveDeviceExist = TRUE;
-
-  return DeviceStatus;
-
+  ChannelDeviceDetected = TRUE;
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS

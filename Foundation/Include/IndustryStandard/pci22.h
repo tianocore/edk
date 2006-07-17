@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -334,7 +334,8 @@ typedef struct {
 typedef struct {
   UINT16  Signature;    // 0xaa55
   UINT8   Size512;
-  UINT8   Reserved[15];
+  UINT8   InitEntryPoint[3];
+  UINT8   Reserved[0x12];
   UINT16  PcirOffset;
 } EFI_LEGACY_EXPANSION_ROM_HEADER;
 

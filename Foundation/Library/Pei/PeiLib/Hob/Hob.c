@@ -72,6 +72,11 @@ Returns:
   Hob->MemoryAllocationHeader.MemoryBaseAddress = MemoryAllocationModule;
   Hob->MemoryAllocationHeader.MemoryLength = ModuleLength;
   Hob->MemoryAllocationHeader.MemoryType = EfiBootServicesCode;
+  (*PeiServices)->SetMem (
+                    Hob->MemoryAllocationHeader.Reserved, 
+                    sizeof (Hob->MemoryAllocationHeader.Reserved),
+                    0
+                    );
 
   Hob->ModuleName = *ModuleName;
   Hob->EntryPoint = EntryPoint;
@@ -323,7 +328,12 @@ Returns:
 
   Hob->SizeOfMemorySpace = SizeOfMemorySpace;
   Hob->SizeOfIoSpace     = SizeOfIoSpace;
-
+  (*PeiServices)->SetMem (
+                    Hob->Reserved, 
+                    sizeof (Hob->Reserved), 
+                    0
+                    );
+  
   return EFI_SUCCESS;
 }
 
@@ -373,6 +383,11 @@ Returns:
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;
   Hob->AllocDescriptor.MemoryLength = Length;
   Hob->AllocDescriptor.MemoryType = EfiConventionalMemory;
+  (*PeiServices)->SetMem (
+                    Hob->AllocDescriptor.Reserved, 
+                    sizeof (Hob->AllocDescriptor.Reserved), 
+                    0
+                    );
 
   return EFI_SUCCESS;
 }
@@ -426,6 +441,11 @@ Returns:
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;
   Hob->AllocDescriptor.MemoryLength = Length;
   Hob->AllocDescriptor.MemoryType = MemoryType;
+  (*PeiServices)->SetMem (
+                    Hob->AllocDescriptor.Reserved, 
+                    sizeof (Hob->AllocDescriptor.Reserved), 
+                    0
+                    );
 
   return EFI_SUCCESS;
 }
@@ -486,6 +506,11 @@ Returns:
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;
   Hob->AllocDescriptor.MemoryLength = Length;
   Hob->AllocDescriptor.MemoryType = MemoryType;
+  (*PeiServices)->SetMem (
+                    Hob->AllocDescriptor.Reserved, 
+                    sizeof (Hob->AllocDescriptor.Reserved), 
+                    0
+                    );
 
   return EFI_SUCCESS;
 }

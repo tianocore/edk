@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,7 +22,7 @@ Abstract:
         code that is not run on an EFI system. The legacy code reads the 
         first sector of the active partition into memory and 
 
-  BPB - Boot(?) Parameter Block is in the first sector of a FAT file system. 
+  BPB - Bios Parameter Block is in the first sector of a FAT file system. 
         The BPB contains information about the FAT file system. The BPB is 
         always on the first sector of a media. The first sector also contains
         the legacy boot strap code.
@@ -209,7 +209,7 @@ Returns:
         continue;
       }
 
-      if (Mbr->Partition[Index].OSIndicator == 0xEE) {
+      if (Mbr->Partition[Index].OSIndicator == PMBR_GPT_PARTITION) {
         //
         // This is the guard MBR for the GPT. If you ever see a GPT disk with zero partitions you can get here.
         //  We can not produce an MBR BlockIo for this device as the MBR spans the GPT headers. So formating 
@@ -265,6 +265,12 @@ Returns:
         break;
       }
 
+      if ((Mbr->Partition[0].OSIndicator == EXTENDED_DOS_PARTITION) ||
+          (Mbr->Partition[0].OSIndicator == EXTENDED_WINDOWS_PARTITION)) {
+        ExtMbrStartingLba = UNPACK_UINT32 (Mbr->Partition[0].StartingLBA);
+        continue;
+      }
+
       HdDev.PartitionNumber = PartitionNumber ++;
       HdDev.PartitionStart  = UNPACK_UINT32 (Mbr->Partition[0].StartingLBA) + ExtMbrStartingLba + ParentHdDev.PartitionStart;
       HdDev.PartitionSize   = UNPACK_UINT32 (Mbr->Partition[0].SizeInLBA);
@@ -294,9 +300,8 @@ Returns:
         Found = TRUE;
       }
 
-      if (Mbr->Partition[1].OSIndicator != EXTENDED_DOS_PARTITION &&
-          Mbr->Partition[1].OSIndicator != EXTENDED_WINDOWS_PARTITION
-          ) {
+      if ((Mbr->Partition[1].OSIndicator != EXTENDED_DOS_PARTITION) &&
+          (Mbr->Partition[1].OSIndicator != EXTENDED_WINDOWS_PARTITION)) {
         break;
       }
 

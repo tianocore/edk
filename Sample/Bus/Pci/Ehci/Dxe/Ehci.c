@@ -230,6 +230,7 @@ EFI_DRIVER_BINDING_PROTOCOL gEhciDriverBinding = {
 };
 
 UINT32                      mUsbCapabilityLen;
+UINT32                      mDeviceSpeed[16];
 
 EFI_DRIVER_ENTRY_POINT (EhciDriverEntryPoint)
 
@@ -257,10 +258,6 @@ Returns:
     
 --*/
 {
-
-
-
-
   return EfiLibInstallAllDriverProtocols (
           ImageHandle,
           SystemTable,
@@ -881,7 +878,7 @@ EhciReset (
   switch (Attributes) {
 
   case EFI_USB_HC_RESET_GLOBAL:
-  	
+    
     //
     // Same behavior as Host Controller Reset
     //
@@ -909,7 +906,7 @@ EhciReset (
       Status = EFI_DEVICE_ERROR;
       goto exit;
     }
-	
+
     //
     // only asynchronous interrupt transfers are always alive on the bus, need to cleanup
     //
@@ -919,7 +916,7 @@ EhciReset (
       Status = EFI_DEVICE_ERROR;
       goto exit;
     }
-	
+
     //
     // Set appropriate 4G Segment Selector
     //
@@ -928,7 +925,7 @@ EhciReset (
       Status = EFI_DEVICE_ERROR;
       goto exit;
     }
-	
+
     //
     // Init Perodic List Base Addr and Frame List
     //
@@ -945,7 +942,7 @@ EhciReset (
       FrameEntryPtr->LinkTerminate = TRUE;
       FrameEntryPtr++;
     }
-	
+
     //
     // Start the Host Controller
     //
@@ -956,7 +953,7 @@ EhciReset (
         goto exit;
       }
     }
-	
+
     //
     // Set all ports routing to EHC
     //
@@ -971,7 +968,7 @@ EhciReset (
   	
     Status = EFI_UNSUPPORTED;
     break;
-	
+
   case EFI_USB_HC_RESET_HOST_WITH_DEBUG:
   	
     Status = EFI_UNSUPPORTED;
@@ -1233,11 +1230,11 @@ EhciGetRootHubPortStatus (
   }
 
   EhciGetCapability (
-  	This, 
-  	&MaxSpeed, 
-  	&TotalPortNumber, 
-  	&Is64BitCapable
-  	);
+    This, 
+    &MaxSpeed, 
+    &TotalPortNumber, 
+    &Is64BitCapable
+    );
   
   if (PortNumber >= TotalPortNumber) {
     Status = EFI_INVALID_PARAMETER;
@@ -1310,10 +1307,21 @@ EhciGetRootHubPortStatus (
     PortStatus->PortStatus |= USB_PORT_STAT_OWNER;
   }
   //
-  // Low Speed Device Attached
+  // Identify device speed
   //
   if (PORTSC_LS_KSTATE & PortStatusControlReg) {
+    //
+    // Low Speed Device Attached
+    //
     PortStatus->PortStatus |= USB_PORT_STAT_LOW_SPEED;
+  } else {
+    //
+    // Not Low Speed Device Attached
+    //
+    if ((PORTSC_CCS & PortStatusControlReg) && (PORTSC_CSC & PortStatusControlReg)) {
+      mDeviceSpeed[PortNumber] = IsHighSpeedDevice (This, PortNumber) ? USB_PORT_STAT_HIGH_SPEED : 0;
+    }
+    PortStatus->PortStatus |= mDeviceSpeed[PortNumber];
   }
   //
   // Fill Port Status Change bits
@@ -1383,11 +1391,11 @@ EhciSetRootHubPortFeature (
   UINT8       Is64BitCapable;
 
   EhciGetCapability (
-  	This, 
-  	&MaxSpeed, 
-  	&TotalPortNumber, 
-  	&Is64BitCapable
-  	);
+    This, 
+    &MaxSpeed, 
+    &TotalPortNumber, 
+    &Is64BitCapable
+    );
 
   if (PortNumber >= TotalPortNumber) {
     Status = EFI_INVALID_PARAMETER;
@@ -1410,7 +1418,7 @@ EhciSetRootHubPortFeature (
   switch (PortFeature) {
 
   case EfiUsbPortEnable:
-  	
+  
     //
     // Sofeware can't set this bit, Port can only be enable by the Host Controller
     // as a part of the reset and enable
@@ -1420,13 +1428,13 @@ EhciSetRootHubPortFeature (
     break;
 
   case EfiUsbPortSuspend:
-  	
+  
     PortStatusControlReg &= 0xffffffd5;
     PortStatusControlReg |= PORTSC_SUSP;
     break;
 
   case EfiUsbPortReset:
-  	
+  
     //
     // Make sure Host Controller not halt before reset it
     //
@@ -1452,14 +1460,14 @@ EhciSetRootHubPortFeature (
     break;
 
   case EfiUsbPortPower:
-  	
-  	//
-  	// No support, no operation
-  	//
+    
+    //
+    // No support, no operation
+    //
     goto exit;
 
   case EfiUsbPortOwner:
-  	
+  
     PortStatusControlReg &= 0xffffffd5;
     PortStatusControlReg |= PORTSC_PO;
     break;
@@ -1525,11 +1533,11 @@ EhciClearRootHubPortFeature (
   UINT8       Is64BitCapable;
 
   EhciGetCapability (
-  	This, 
-  	&MaxSpeed, 
-  	&TotalPortNumber, 
-  	&Is64BitCapable
-  	);
+    This, 
+    &MaxSpeed, 
+    &TotalPortNumber, 
+    &Is64BitCapable
+    );
 
   if (PortNumber >= TotalPortNumber) {
     Status = EFI_INVALID_PARAMETER;
@@ -1552,7 +1560,7 @@ EhciClearRootHubPortFeature (
   switch (PortFeature) {
 
   case EfiUsbPortEnable:
-  	
+  
     //
     // Clear PORT_ENABLE feature means disable port.
     //
@@ -1561,7 +1569,7 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortSuspend:
-  	
+  
     //
     // A write of zero to this bit is ignored by the host controller.
     // The host controller will unconditionally set this bit to a zero when:
@@ -1573,7 +1581,7 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortReset:
-  	
+  
     //
     // Clear PORT_RESET means clear the reset signal.
     //
@@ -1582,14 +1590,14 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortPower:
-  	
+  
     //
     // No support, no operation
     //
     goto exit;
 
   case EfiUsbPortOwner:
-  	
+  
     //
     // Clear port owner means this port owned by EHC
     //
@@ -1598,7 +1606,7 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortConnectChange:
-  	
+  
     //
     // Clear connect status change
     //
@@ -1607,7 +1615,7 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortEnableChange:
-  	
+  
     //
     // Clear enable status change
     //
@@ -1616,14 +1624,14 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortSuspendChange:
-  	
+  
     //
     // No related bit, no operation
     //
     goto exit;
 
   case EfiUsbPortOverCurrentChange:
-  	
+  
     //
     // Clear PortOverCurrent change
     //
@@ -1632,7 +1640,7 @@ EhciClearRootHubPortFeature (
     break;
 
   case EfiUsbPortResetChange:
-  	
+  
     //
     // No related bit, no operation
     //
@@ -2093,6 +2101,7 @@ EhciBulkTransfer (
              DeviceAddress,
              EndPointAddress,
              DeviceSpeed,
+             *DataToggle,
              MaximumPacketLength,
              Translator,
              &QhPtr
@@ -2111,7 +2120,6 @@ EhciBulkTransfer (
              PktId,
              DataCursor,
              *DataLength,
-             DataToggle,
              Translator,
              &BulkQtdsPtr
              );
@@ -2372,6 +2380,7 @@ EhciAsyncInterruptTransfer (
              DeviceAddress,
              EndPointAddress,
              DeviceSpeed,
+             *DataToggle,
              MaximumPacketLength,
              PollingInterval,
              Translator,
@@ -2390,7 +2399,6 @@ EhciAsyncInterruptTransfer (
              PktId,
              DataCursor,
              MappedLength,
-             DataToggle,
              Translator,
              &InterruptQtdsPtr
              );
@@ -2411,7 +2419,6 @@ EhciAsyncInterruptTransfer (
   AsyncRequestPtr->CallBackFunc = CallBackFunction;
   AsyncRequestPtr->TransferType = ASYNC_INTERRUPT_TRANSFER;
   AsyncRequestPtr->QhPtr        = QhPtr;
-  AsyncRequestPtr->DataToggle   = *DataToggle;
   AsyncRequestPtr->Prev         = NULL;
   AsyncRequestPtr->Next         = NULL;
 
@@ -2602,15 +2609,9 @@ EhciSyncInterruptTransfer (
     goto exit;
   }
 
-  if (EFI_USB_SPEED_FULL == DeviceSpeed) {
-    if (8 != MaximumPacketLength &&
-		16 != MaximumPacketLength && 
-		32 != MaximumPacketLength && 
-		64 != MaximumPacketLength
-		) {
-      Status = EFI_INVALID_PARAMETER;
-      goto exit;
-    }
+  if (EFI_USB_SPEED_FULL == DeviceSpeed && MaximumPacketLength > 64) {
+    Status = EFI_INVALID_PARAMETER;
+    goto exit;
   }
 
   if (EFI_USB_SPEED_HIGH == DeviceSpeed && MaximumPacketLength > 3072) {
@@ -2658,6 +2659,7 @@ EhciSyncInterruptTransfer (
              DeviceAddress,
              EndPointAddress,
              DeviceSpeed,
+             *DataToggle,
              MaximumPacketLength,
              0,
              Translator,
@@ -2676,7 +2678,6 @@ EhciSyncInterruptTransfer (
              PktId,
              DataCursor,
              *DataLength,
-             DataToggle,
              Translator,
              &InterruptQtdsPtr
              );

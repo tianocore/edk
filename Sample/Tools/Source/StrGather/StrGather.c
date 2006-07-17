@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -33,10 +33,10 @@ Abstract:
 
 typedef UINT16  WCHAR;
 
-#define MAX_PATH                    255
+#define MAX_PATH                    1024
 #define MAX_NEST_DEPTH              20  // just in case we get in an endless loop.
 #define MAX_STRING_IDENTIFIER_NAME  100 // number of wchars
-#define MAX_LINE_LEN                200
+#define MAX_LINE_LEN                400
 #define STRING_TOKEN                "STRING_TOKEN"
 #define DEFAULT_BASE_NAME           "BaseName"
 //
@@ -95,6 +95,7 @@ static struct {
   BOOLEAN                     VerboseScan;
   BOOLEAN                     UnquotedStrings;                  // -uqs option
   INT8                        OutputDatabaseFileName[MAX_PATH];
+  INT8                        OutputDependencyFileName[MAX_PATH];
   INT8                        StringHFileName[MAX_PATH];
   INT8                        StringCFileName[MAX_PATH];        // output .C filename
   INT8                        DumpUFileName[MAX_PATH];          // output unicode dump file name
@@ -284,6 +285,18 @@ StringDBCreateHiiExportPack (
   INT8                *OutputFileName
   );
 
+static
+void
+EmptyDependency (
+    void
+  );
+  
+static
+void
+AddDependency (
+  INT8          *FileName
+  );
+  
 int
 main (
   int   Argc,
@@ -355,6 +368,7 @@ Returns:
     // Parsing a unicode strings file
     //
     mGlobals.SourceFiles.ControlCharacter = DEFAULT_CONTROL_CHARACTER;
+    EmptyDependency ();
     Status = ProcessIncludeFile (&mGlobals.SourceFiles, NULL);
     if (Status != STATUS_SUCCESS) {
       goto Finish;
@@ -490,6 +504,7 @@ Returns:
   //
   // Process the file found
   //
+  AddDependency (FoundFileName);
   ProcessFile (SourceFile);
 Finish:
   //
@@ -1756,6 +1771,18 @@ ProcessArgs (
       strcpy (mGlobals.StringHFileName, Argv[1]);
       Argc--;
       Argv++;
+    } else if (stricmp (Argv[0], "-dep") == 0) {
+      //
+      // -dep to specify output dependency file name
+      //
+      if ((Argc <= 1) || (Argv[1][0] == '-')) {
+        Error (PROGRAM_NAME, 0, 0, Argv[0], "missing output dependency filename");
+        return STATUS_ERROR;
+      }
+
+      strcpy (mGlobals.OutputDependencyFileName, Argv[1]);
+      Argc--;
+      Argv++;
     } else if (stricmp (Argv[0], "-skipext") == 0) {
       //
       // -skipext to skip scanning of files with certain filename extensions
@@ -2456,6 +2483,50 @@ SkipTo (
 
 static
 void
+EmptyDependency (
+    void
+  )
+{
+  FILE          *Fptr;
+  
+  if (mGlobals.OutputDependencyFileName[0] == 0) {
+    return;
+  }
+
+  if ((Fptr = fopen (mGlobals.OutputDependencyFileName, "w")) == NULL) {
+    Error (NULL, 0, 0, mGlobals.OutputDependencyFileName, "failed to empty output dependency file");
+    return;
+  }
+  
+  fclose (Fptr);
+  return;  
+}
+
+static
+void
+AddDependency (
+  INT8          *FileName
+  )
+{
+  FILE          *Fptr;
+  
+  if (mGlobals.OutputDependencyFileName[0] == 0) {
+    return;
+  }
+
+  if ((Fptr = fopen (mGlobals.OutputDependencyFileName, "a")) == NULL) {
+    Error (NULL, 0, 0, mGlobals.OutputDependencyFileName, "failed to open output dependency file");
+    return;
+  }
+  
+  fprintf (Fptr, "%s : %s\n", mGlobals.DatabaseFileName->Str, FileName);
+  
+  fclose (Fptr);
+  return;
+}
+  
+static
+void
 Usage (
   VOID
   )
@@ -2493,6 +2564,7 @@ Returns:
     "      -od FileName     to specify an output database file name",
     "    Parse options include:",
     "      -i IncludePath   add IncludePath to list of search paths",
+    "      -dep FileName    to specify an output dependency file name",
     "      -newdb           to not read in existing database file",
     "      -uqs             to indicate that unquoted strings are used",
     "      FileNames        name of one or more unicode files to parse",

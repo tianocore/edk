@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -11,11 +11,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-    fwimage.c
+  fwimage.c
 
 Abstract:
 
-    Converts a pe32+ image to an FW image type
+  Converts a pe32/pe32+ image to an FW image type
 
 --*/
 
@@ -30,6 +30,11 @@ Abstract:
 #include "EfiUtilityMsgs.c"
 
 #define UTILITY_NAME  "FwImage"
+
+typedef union {
+  IMAGE_NT_HEADERS32 PeHeader32;
+  IMAGE_NT_HEADERS64 PeHeader64;
+} PE_HEADER;
 
 VOID
 Usage (
@@ -94,6 +99,7 @@ Arguments:
   argv - Array of pointers to command line parameter strings.
 
 Returns:
+
   STATUS_SUCCESS - Utility exits successfully.
   STATUS_ERROR   - Some error occurred during execution.
 
@@ -108,7 +114,7 @@ Returns:
   FILE              *fpIn;
   FILE              *fpOut;
   IMAGE_DOS_HEADER  DosHdr;
-  IMAGE_NT_HEADERS  PeHdr;
+  PE_HEADER         PeHdr;
   time_t            TimeStamp;
   struct tm         TimeStruct;
   IMAGE_DOS_HEADER  BackupDosHdr;
@@ -239,7 +245,7 @@ Returns:
 
   fseek (fpIn, DosHdr.e_lfanew, SEEK_SET);
   fread (&PeHdr, sizeof (PeHdr), 1, fpIn);
-  if (PeHdr.Signature != IMAGE_NT_SIGNATURE) {
+  if (PeHdr.PeHeader32.Signature != IMAGE_NT_SIGNATURE) {
     Error (NULL, 0, 0, argv[2], "PE header signature not found in source image");
     fclose (fpIn);
     return STATUS_ERROR;
@@ -293,18 +299,63 @@ Returns:
   for (Index = sizeof (DosHdr); Index < (ULONG) DosHdr.e_lfanew; Index++) {
     fwrite (&DosHdr.e_cp, 1, 1, fpOut);
   }
+  
   //
-  // Path the PE header
+  // Modify some fields in the PE header
   //
-  PeHdr.OptionalHeader.Subsystem = (USHORT) Type;
+
+  //
+  // TimeDateStamp's offset is fixed for PE32/32+
+  //
   if (TimeStampPresent) {
-    PeHdr.FileHeader.TimeDateStamp = (UINT32) TimeStamp;
+    PeHdr.PeHeader32.FileHeader.TimeDateStamp = (UINT32) TimeStamp;
   }
 
-  PeHdr.OptionalHeader.SizeOfStackReserve = 0;
-  PeHdr.OptionalHeader.SizeOfStackCommit  = 0;
-  PeHdr.OptionalHeader.SizeOfHeapReserve  = 0;
-  PeHdr.OptionalHeader.SizeOfHeapCommit   = 0;
+  //
+  // PE32/32+ has different optional header layout
+  // Determine format is PE32 or PE32+ before modification
+  //
+  if (PeHdr.PeHeader32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    //
+    // PE32 image
+    //
+
+    //
+    // Set appropriate subsystem
+    //
+    PeHdr.PeHeader32.OptionalHeader.Subsystem = (USHORT) Type;
+
+    //
+    // Clear useless fields
+    //
+    PeHdr.PeHeader32.OptionalHeader.SizeOfStackReserve = 0;
+    PeHdr.PeHeader32.OptionalHeader.SizeOfStackCommit  = 0;
+    PeHdr.PeHeader32.OptionalHeader.SizeOfHeapReserve  = 0;
+    PeHdr.PeHeader32.OptionalHeader.SizeOfHeapCommit   = 0;
+  } else if (PeHdr.PeHeader32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+    //
+    // PE32+ image
+    //
+
+    //
+    // Set appropriate subsystem
+    //
+    PeHdr.PeHeader64.OptionalHeader.Subsystem = (USHORT) Type;
+
+    //
+    // Clear useless fields
+    //
+    PeHdr.PeHeader64.OptionalHeader.SizeOfStackReserve = 0;
+    PeHdr.PeHeader64.OptionalHeader.SizeOfStackCommit  = 0;
+    PeHdr.PeHeader64.OptionalHeader.SizeOfHeapReserve  = 0;
+    PeHdr.PeHeader64.OptionalHeader.SizeOfHeapCommit   = 0;
+  } else {
+    Error (NULL, 0, 0, argv[2], "Unsupported PE image");
+    fclose (fpIn);
+    fclose (fpOut);
+    return STATUS_ERROR;
+  }
+  
   fseek (fpOut, DosHdr.e_lfanew, SEEK_SET);
   fwrite (&PeHdr, sizeof (PeHdr), 1, fpOut);
 

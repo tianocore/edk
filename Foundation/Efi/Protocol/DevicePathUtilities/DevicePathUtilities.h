@@ -183,7 +183,7 @@ BOOLEAN
 
 typedef
 EFI_DEVICE_PATH_PROTOCOL*
-(EFIAPI *EFI_DEVICE_PATH_UTILS_CREATE_NODE) (
+(EFIAPI *EFI_DEVICE_PATH_CREATE_NODE) (
   IN UINT8                          NodeType,
   IN UINT8                          NodeSubType,
   IN UINT16                         NodeLength
@@ -217,7 +217,7 @@ typedef struct {
   EFI_DEVICE_PATH_UTILS_APPEND_INSTANCE      AppendDevicePathInstance;
   EFI_DEVICE_PATH_UTILS_GET_NEXT_INSTANCE    GetNextDevicePathInstance;
   EFI_DEVICE_PATH_UTILS_IS_MULTI_INSTANCE    IsDevicePathMultiInstance;
-  EFI_DEVICE_PATH_UTILS_CREATE_NODE          CreateDeviceNode;
+  EFI_DEVICE_PATH_CREATE_NODE                CreateDeviceNode;
 } EFI_DEVICE_PATH_UTILITIES_PROTOCOL;
 
 extern EFI_GUID gEfiDevicePathUtilitiesProtocolGuid;

@@ -917,6 +917,42 @@ Returns:
 }
 
 BOOLEAN
+IsEhcPortEnabled (
+  IN  USB2_HC_DEV     *HcDev,
+  IN  UINT8           PortNum
+  )
+/*++
+
+Routine Description:
+
+  Whether port is enabled
+  
+Arguments:
+
+  HcDev - USB2_HC_DEV 
+  
+Returns:
+
+  TRUE   Enabled
+  FALSE  Disabled
+  
+--*/
+{
+  UINT32  PortStatusControlAddr;
+  UINT32  PortStatusControlReg;
+
+  PortStatusControlAddr = (UINT32) (PORTSC + (4 * PortNum));
+
+  ReadEhcOperationalReg (
+    HcDev,
+    PortStatusControlAddr,
+    &PortStatusControlReg
+    );
+
+  return ((PortStatusControlReg & PORTSC_PED) ? TRUE : FALSE);
+}
+
+BOOLEAN
 IsEhcReseted (
   IN  USB2_HC_DEV     *HcDev
   )
@@ -1040,6 +1076,91 @@ Returns:
   }
 
   return Value;
+}
+
+BOOLEAN
+IsHighSpeedDevice (
+  IN EFI_USB2_HC_PROTOCOL *This,
+  IN UINT8                PortNum 
+  )
+/*++
+
+Routine Description:
+
+  Whether high speed device attached
+  
+Arguments:
+
+  HcDev - USB2_HC_DEV 
+  
+Returns:
+
+  TRUE   High speed
+  FALSE  Full speed
+  
+--*/
+{
+  USB2_HC_DEV          *HcDev;
+  UINT32               PortStatusControlAddr;
+  UINT32               PortStatusControlReg;
+  
+  HcDev = USB2_HC_DEV_FROM_THIS (This);
+  PortStatusControlAddr = (UINT32) (PORTSC + (4 * PortNum));
+
+  //
+  // Set port reset bit
+  //
+  ReadEhcOperationalReg (
+    HcDev,
+    PortStatusControlAddr,
+    &PortStatusControlReg
+    );
+  //
+  // Make sure Host Controller not halt before reset it
+  //
+  if (IsEhcHalted (HcDev)) {
+    StartScheduleExecution (HcDev);
+    WaitForEhcNotHalt (HcDev, EHCI_GENERIC_TIMEOUT);
+  }
+  PortStatusControlReg &= 0xffffffd5;
+  PortStatusControlReg |= PORTSC_PR;
+  //
+  // Set one to PortReset bit must also set zero to PortEnable bit
+  //
+  PortStatusControlReg &= ~PORTSC_PED;
+  WriteEhcOperationalReg (
+    HcDev,
+    PortStatusControlAddr,
+    PortStatusControlReg
+    );
+
+  //
+  // Set Port reset recovery time
+  //
+  gBS->Stall (EHCI_SET_PORT_RESET_RECOVERY_TIME);
+
+  //
+  // Clear port reset bit
+  //
+  ReadEhcOperationalReg (
+    HcDev,
+    PortStatusControlAddr,
+    &PortStatusControlReg
+    );
+  PortStatusControlReg &= 0xffffffd5;
+  PortStatusControlReg &= ~PORTSC_PR;
+  WriteEhcOperationalReg (
+    HcDev,
+    PortStatusControlAddr,
+    PortStatusControlReg
+    );
+
+  //
+  // Clear port reset recovery time
+  //
+  gBS->Stall (EHCI_CLEAR_PORT_RESET_RECOVERY_TIME);
+
+  return (IsEhcPortEnabled (HcDev, PortNum) ? TRUE : FALSE);
 }
 
 EFI_STATUS

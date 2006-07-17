@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -70,7 +70,9 @@ static EFI_FLASH_AREA_DATA    mFlashAreaData[] = {
     EFI_VARIABLE_STORE_OFFSET,
     EFI_VARIABLE_STORE_LENGTH,
     EFI_FLASH_AREA_SUBFV | EFI_FLASH_AREA_MEMMAPPED_FV,
-    EFI_FLASH_AREA_EFI_VARIABLES
+    EFI_FLASH_AREA_EFI_VARIABLES,
+    0, 0, 0,
+    { 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
   },
   //
   // FTW spare (backup) block
@@ -79,7 +81,9 @@ static EFI_FLASH_AREA_DATA    mFlashAreaData[] = {
     EFI_WINNT_FTW_SPARE_BLOCK_OFFSET,
     EFI_WINNT_FTW_SPARE_BLOCK_LENGTH,
     EFI_FLASH_AREA_SUBFV | EFI_FLASH_AREA_MEMMAPPED_FV,
-    EFI_FLASH_AREA_FTW_BACKUP
+    EFI_FLASH_AREA_FTW_BACKUP,
+    0, 0, 0,
+    { 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
   },
   //
   // FTW private working (state) area
@@ -88,7 +92,9 @@ static EFI_FLASH_AREA_DATA    mFlashAreaData[] = {
     EFI_FTW_WORKING_OFFSET,
     EFI_FTW_WORKING_LENGTH,
     EFI_FLASH_AREA_SUBFV | EFI_FLASH_AREA_MEMMAPPED_FV,
-    EFI_FLASH_AREA_FTW_STATE
+    EFI_FLASH_AREA_FTW_STATE,
+    0, 0, 0,
+    { 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
   },
   //
   // Recovery FV
@@ -97,7 +103,9 @@ static EFI_FLASH_AREA_DATA    mFlashAreaData[] = {
     EFI_WINNT_FIRMWARE_OFFSET,
     EFI_WINNT_FIRMWARE_LENGTH,
     EFI_FLASH_AREA_FV | EFI_FLASH_AREA_MEMMAPPED_FV,
-    EFI_FLASH_AREA_RECOVERY_BIOS
+    EFI_FLASH_AREA_RECOVERY_BIOS,
+    0, 0, 0,
+    { 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
   },
   //
   // System Non-Volatile Storage FV
@@ -106,7 +114,9 @@ static EFI_FLASH_AREA_DATA    mFlashAreaData[] = {
     EFI_WINNT_RUNTIME_UPDATABLE_OFFSET,
     EFI_WINNT_RUNTIME_UPDATABLE_LENGTH + EFI_WINNT_FTW_SPARE_BLOCK_LENGTH,
     EFI_FLASH_AREA_FV | EFI_FLASH_AREA_MEMMAPPED_FV,
-    EFI_FLASH_AREA_GUID_DEFINED
+    EFI_FLASH_AREA_GUID_DEFINED,
+    0, 0, 0,
+    EFI_SYSTEM_NV_DATA_HOB_GUID
   },
 };
 
@@ -211,7 +221,7 @@ Returns:
     case EFI_FLASH_AREA_GUID_DEFINED:
       (*PeiServices)->CopyMem (
                         &FlashHobData.AreaTypeGuid,
-                        &gEfiSystemNvDataHobGuid,
+                        &mFlashAreaData[Index].AreaTypeGuid,
                         sizeof (EFI_GUID)
                         );
       (*PeiServices)->CopyMem (
@@ -277,7 +287,7 @@ GetAreaInfo (
       if (AreaType == FlashMapEntry->AreaType) {
         if (AreaType == EFI_FLASH_AREA_GUID_DEFINED) {
           if (!CompareGuid (AreaTypeGuid, &FlashMapEntry->AreaTypeGuid)) {
-            continue;
+            goto NextHob;
           }
         }
 
@@ -286,7 +296,7 @@ GetAreaInfo (
         return EFI_SUCCESS;
       }
     }
-
+  NextHob:
     Hob.Raw = GET_NEXT_HOB (Hob);
   }
 

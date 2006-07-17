@@ -59,10 +59,12 @@ extern UINTN  gEHCErrorLevel;
 #define SITD_SELECT_TYPE                  0x02
 #define FSTN_SELECT_TYPE                  0x03
 
-#define EHCI_GENERIC_TIMEOUT              50 * STALL_1_MILLI_SECOND
-#define EHCI_GENERIC_RECOVERY_TIME        10 * STALL_1_MACRO_SECOND
-#define EHCI_SYNC_REQUEST_POLLING_TIME    10 * STALL_1_MACRO_SECOND
-#define EHCI_ASYNC_REQUEST_POLLING_TIME   50 * STALL_1_MILLI_SECOND
+#define EHCI_SET_PORT_RESET_RECOVERY_TIME     50 * STALL_1_MILLI_SECOND
+#define EHCI_CLEAR_PORT_RESET_RECOVERY_TIME   STALL_1_MILLI_SECOND
+#define EHCI_GENERIC_TIMEOUT                  50 * STALL_1_MILLI_SECOND
+#define EHCI_GENERIC_RECOVERY_TIME            50 * STALL_1_MACRO_SECOND
+#define EHCI_SYNC_REQUEST_POLLING_TIME        50 * STALL_1_MACRO_SECOND
+#define EHCI_ASYNC_REQUEST_POLLING_TIME       50 * STALL_1_MILLI_SECOND
 
 #define USB_BAR_INDEX                     0 /* how many bytes away from USB_BASE to 0x10 */
 
@@ -381,7 +383,6 @@ EFI_FORWARD_DECLARATION (EHCI_ASYNC_REQUEST);
 
 typedef struct _EHCI_ASYNC_REQUEST {
   UINT8                           TransferType;
-  UINT8                           DataToggle;
   EFI_ASYNC_USB_TRANSFER_CALLBACK CallBackFunc;
   VOID                            *Context;
   EHCI_ASYNC_REQUEST              *Prev;
@@ -858,6 +859,29 @@ Returns:
 ;
 
 BOOLEAN
+IsEhcPortEnabled (
+  IN  USB2_HC_DEV     *HcDev,
+  IN  UINT8           PortNum
+  )
+/*++
+
+Routine Description:
+
+  Whether port is enabled
+  
+Arguments:
+
+  HcDev - USB2_HC_DEV 
+  
+Returns:
+
+  TRUE   Enabled
+  FALSE  Disabled
+  
+--*/
+;
+
+BOOLEAN
 IsEhcReseted (
   IN  USB2_HC_DEV     *HcDev
   )
@@ -920,6 +944,29 @@ Returns:
   TRUE   System error
   FALSE  No system error
     
+--*/
+;
+
+BOOLEAN
+IsHighSpeedDevice (
+  IN EFI_USB2_HC_PROTOCOL *This,
+  IN UINT8                PortNum 
+  )
+/*++
+
+Routine Description:
+
+  Whether high speed device attached
+  
+Arguments:
+
+  HcDev - USB2_HC_DEV 
+  
+Returns:
+
+  TRUE   High speed
+  FALSE  Full speed
+  
 --*/
 ;
 
@@ -1592,6 +1639,7 @@ CreateBulkQh (
   IN  UINT8                               DeviceAddr,
   IN  UINT8                               EndPointAddr,
   IN  UINT8                               DeviceSpeed,
+  IN  UINT8                               DataToggle,
   IN  UINTN                               MaxPacketLen,
   IN  EFI_USB2_HC_TRANSACTION_TRANSLATOR  *Translator,
   OUT EHCI_QH_ENTITY                      **QhPtrPtr
@@ -1626,6 +1674,7 @@ CreateInterruptQh (
   IN  UINT8                              DeviceAddr,
   IN  UINT8                              EndPointAddr,
   IN  UINT8                              DeviceSpeed,
+  IN  UINT8                              DataToggle,
   IN  UINTN                              MaxPacketLen,
   IN  UINTN                              Interval,
   IN  EFI_USB2_HC_TRANSACTION_TRANSLATOR *Translator,
@@ -1862,7 +1911,6 @@ CreateBulkOrInterruptQtds (
   IN  UINT8                                PktId,
   IN  UINT8                                *DataCursor,
   IN  UINTN                                DataLen,
-  IN  OUT UINT8                            *DataToggle,
   IN  EFI_USB2_HC_TRANSACTION_TRANSLATOR   *Translator,
   OUT EHCI_QTD_ENTITY                      **QtdsHead
   )
@@ -2604,7 +2652,6 @@ CheckQtdsTransferResult (
   IN BOOLEAN             IsControl,
   IN  EHCI_QH_ENTITY     *QhPtr,
   OUT UINT32             *Result,
-  OUT UINT8              *DataToggle,
   OUT UINTN              *ErrQtdPos,
   OUT UINTN              *ActualLen
   )

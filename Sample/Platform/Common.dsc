@@ -1043,8 +1043,23 @@ all: $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME)$(FFS_EXT)
 !ERROR Component Unicode string file name cannot be the same as the component BASE_NAME.
 !ENDIF
 
+!IF ("$(NO_MAKEDEPS)" == "")
+
+DEP_FILE = $(DEST_DIR)\$(FILE)Uni.dep
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+$(DEST_DIR)\$(FILE).sdb : $(SOURCE_FILE_NAME)
+  $(STRGATHER) -parse -newdb -db $(DEST_DIR)\$(FILE).sdb -dep $(DEP_FILE) $(INC) $(SOURCE_FILE_NAME)
+
+!ELSE
+
 $(DEST_DIR)\$(FILE).sdb : $(SOURCE_FILE_NAME)
   $(STRGATHER) -parse -newdb -db $(DEST_DIR)\$(FILE).sdb $(INC) $(SOURCE_FILE_NAME)
+
+!ENDIF
 
 SDB_FILES       = $(SDB_FILES) $(DEST_DIR)\$(FILE).sdb
 STRGATHER_FLAGS = $(STRGATHER_FLAGS) -db $(DEST_DIR)\$(FILE).sdb

@@ -51,6 +51,10 @@ Revision History
 #define MAX_IDE_CHANNELS  2
 #define MAX_IDE_DRIVES    2
 
+#define INVALID_DEVICE_TYPE 0xff
+#define ATA_DEVICE_TYPE     0x00
+#define ATAPI_DEVICE_TYPE   0x01
+
 typedef struct {
   BOOLEAN HaveScannedDevice[MAX_IDE_DEVICE];
   BOOLEAN DeviceFound[MAX_IDE_DEVICE];
