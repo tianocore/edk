@@ -246,14 +246,12 @@ UsbControlTransfer (
 --*/
 {
   USB_IO_CONTROLLER_DEVICE  *UsbIoController;
-  //
-  // EFI_USB_HC_PROTOCOL       *UsbHCInterface;
-  //
   EFI_STATUS                RetStatus;
   USB_IO_DEVICE             *UsbIoDev;
   UINT8                     MaxPacketLength;
   UINT32                    TransferResult;
   BOOLEAN                   Disconnected;
+  
   //
   // Parameters Checking
   //
@@ -266,9 +264,6 @@ UsbControlTransfer (
   //
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
   UsbIoDev        = UsbIoController->UsbDevice;
-  //
-  // UsbHCInterface  = UsbIoDevice->BusController->UsbHCInterface;
-  //
   MaxPacketLength = UsbIoDev->DeviceDescriptor.MaxPacketSize0;
 
  
@@ -364,9 +359,6 @@ UsbBulkTransfer (
   UINT8                     DataToggle;
   UINT8                     OldToggle;
   EFI_STATUS                RetStatus;
-  //
-  // EFI_USB_HC_PROTOCOL         *UsbHCInterface;
-  //
   USB_IO_CONTROLLER_DEVICE  *UsbIoController;
   ENDPOINT_DESC_LIST_ENTRY  *EndPointListEntry;
   UINT8                     DataBuffersNumber;
@@ -375,8 +367,7 @@ UsbBulkTransfer (
   DataBuffersNumber = 1;
   UsbIoController   = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
   UsbIoDev          = UsbIoController->UsbDevice;
-  //
-  // UsbHCInterface  = UsbIoDev->BusController->UsbHCInterface;
+
   //
   // Parameters Checking
   //

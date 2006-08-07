@@ -31,7 +31,7 @@ BdsLibDoLegacyBoot (
 /*++
 
 Routine Description:
- 
+
   Boot the legacy system with the boot option
 
 Arguments:
@@ -42,7 +42,7 @@ Returns:
 
   EFI_UNSUPPORTED  - There is no legacybios protocol, do not support
                      legacy boot.
-                         
+
   EFI_STATUS       - Return the status of LegacyBios->LegacyBoot ().
 
 --*/
@@ -87,15 +87,15 @@ BdsLibBootViaBootOption (
 
 Routine Description:
 
-  Process the boot option follow the EFI 1.1 specification and 
+  Process the boot option follow the EFI 1.1 specification and
   special treat the legacy boot option with BBS_DEVICE_PATH.
 
 Arguments:
 
   Option       - The boot option need to be processed
-  
-  DevicePath   - The device path which describe where to load 
-                 the boot image or the legcy BBS device path 
+
+  DevicePath   - The device path which describe where to load
+                 the boot image or the legcy BBS device path
                  to boot the legacy OS
 
   ExitDataSize - Returned directly from gBS->StartImage ()
@@ -119,6 +119,8 @@ Returns:
   EFI_LOADED_IMAGE_PROTOCOL *ImageInfo;
   EFI_EVENT                 ReadyToBootEvent;
   EFI_ACPI_S3_SAVE_PROTOCOL *AcpiS3Save;
+  EFI_BLOCK_IO_PROTOCOL     *BlkIo;
+  VOID                      *Buffer;
 
   *ExitDataSize = 0;
   *ExitData     = NULL;
@@ -164,7 +166,7 @@ Returns:
              NULL,
              &ReadyToBootEvent
              );
-  
+
   if (!EFI_ERROR (Status)) {
     gBS->SignalEvent (ReadyToBootEvent);
     gBS->CloseEvent (ReadyToBootEvent);
@@ -223,6 +225,32 @@ Returns:
     if (!EFI_ERROR (Status) && IsDevicePathEnd (TempDevicePath)) {
       FilePath = EfiFileDevicePath (Handle, DEFAULT_REMOVABLE_FILE_NAME);
       if (FilePath) {
+        //
+        // Issue a dummy read to the device to check for media change.
+        // When the removable media is changed, any Block IO read/write will
+        // cause the BlockIo protocol be reinstalled and EFI_MEDIA_CHANGED is
+        // returned. After the Block IO protocol is reinstalled, subsequent
+        // Block IO read/write will success.
+        //
+        Status = gBS->HandleProtocol (
+                        Handle,
+                        &gEfiBlockIoProtocolGuid,
+                        (VOID **) &BlkIo
+                        );
+        if (!EFI_ERROR (Status)) {
+          Buffer = EfiLibAllocatePool (BlkIo->Media->BlockSize);
+          if (Buffer != NULL) {
+            BlkIo->ReadBlocks (
+                     BlkIo,
+                     BlkIo->Media->MediaId,
+                     0,
+                     BlkIo->Media->BlockSize,
+                     Buffer
+                     );
+            gBS->FreePool (Buffer);
+          }
+        }
+
         Status = gBS->LoadImage (
                         TRUE,
                         mBdsImageHandle,
@@ -308,8 +336,8 @@ BdsBootByDiskSignatureAndPartition (
 Routine Description:
 
   Check to see if a hard ware device path was passed in. If it was then search
-  all the block IO devices for the passed in hard drive device path. 
-  
+  all the block IO devices for the passed in hard drive device path.
+
 Arguments:
 
   Option - The current processing boot option.
@@ -331,7 +359,7 @@ Returns:
 
   EFI_SUCCESS   - Status from gBS->StartImage (),
                   or BootByDiskSignatureAndPartition ()
-                  
+
   EFI_NOT_FOUND - If the Device Path is not found in the system
 
 --*/
@@ -390,7 +418,7 @@ Returns:
     // find HardDriver device path node
     //
     while (!IsDevicePathEnd (DevicePath)) {
-      if ((DevicePathType (DevicePath) == MEDIA_DEVICE_PATH) && 
+      if ((DevicePathType (DevicePath) == MEDIA_DEVICE_PATH) &&
           (DevicePathSubType (DevicePath) == MEDIA_HARDDRIVE_DP)
           ) {
         BlockIoHdDevicePath = DevicePath;
@@ -449,6 +477,290 @@ Returns:
 }
 
 EFI_STATUS
+BdsLibDeleteOptionFromHandle (
+  IN  EFI_HANDLE                 Handle
+  )
+/*++
+
+Routine Description:
+
+  Delete the boot option associated with the handle passed in
+
+Arguments:
+
+  Handle - The handle which present the device path to create boot option
+
+Returns:
+
+  EFI_SUCCESS           - Delete the boot option success
+
+  EFI_NOT_FOUND         - If the Device Path is not found in the system
+
+  EFI_OUT_OF_RESOURCES  - Lack of memory resource
+
+  Other                 - Error return value from SetVariable()
+
+--*/
+{
+  UINT16                    *BootOrder;
+  UINT8                     *BootOptionVar;
+  UINTN                     BootOrderSize;
+  UINTN                     BootOptionSize;
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  UINT16                    BootOption[BOOT_OPTION_MAX_CHAR];
+  UINTN                     DevicePathSize;
+  UINTN                     OptionDevicePathSize;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *OptionDevicePath;
+  UINT8                     *TempPtr;
+  CHAR16                    *Description;
+
+  Status        = EFI_SUCCESS;
+  BootOrder     = NULL;
+  BootOrderSize = 0;
+
+  BootOrder = BdsLibGetVariableAndSize (
+                L"BootOrder",
+                &gEfiGlobalVariableGuid,
+                &BootOrderSize
+                );
+  if (NULL == BootOrder) {
+    return EFI_NOT_FOUND;
+  }
+
+  DevicePath = EfiDevicePathFromHandle (Handle);
+  if (DevicePath == NULL) {
+    return EFI_NOT_FOUND;
+  }
+  DevicePathSize = EfiDevicePathSize (DevicePath);
+
+  Index = 0;
+  while (Index < BootOrderSize / sizeof (UINT16)) {
+    SPrint (BootOption, sizeof (BootOption), L"Boot%04x", BootOrder[Index]);
+    BootOptionVar = BdsLibGetVariableAndSize (
+                      BootOption,
+                      &gEfiGlobalVariableGuid,
+                      &BootOptionSize
+                      );
+    if (NULL == BootOptionVar) {
+      gBS->FreePool (BootOrder);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    TempPtr = BootOptionVar;
+    TempPtr += sizeof (UINT32) + sizeof (UINT16);
+    Description = (CHAR16 *) TempPtr;
+    TempPtr += EfiStrSize ((CHAR16 *) TempPtr);
+    OptionDevicePath = (EFI_DEVICE_PATH_PROTOCOL *) TempPtr;
+    OptionDevicePathSize = EfiDevicePathSize (OptionDevicePath);
+
+    //
+    // Check whether the device path match
+    //
+    if ((OptionDevicePathSize == DevicePathSize) &&
+        (EfiCompareMem (DevicePath, OptionDevicePath, DevicePathSize) == 0)) {
+      BdsDeleteBootOption (BootOrder[Index], BootOrder, &BootOrderSize);
+      gBS->FreePool (BootOptionVar);
+      break;
+    }
+
+    gBS->FreePool (BootOptionVar);
+    Index++;
+  }
+
+  Status = gRT->SetVariable (
+                  L"BootOrder",
+                  &gEfiGlobalVariableGuid,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  BootOrderSize,
+                  BootOrder
+                  );
+
+  gBS->FreePool (BootOrder);
+
+  return Status;
+}
+
+EFI_STATUS
+BdsDeleteAllInvalidEfiBootOption (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Delete all invalid EFI boot options. The probable invalid boot option could
+  be Removable media or Network boot device.
+
+Arguments:
+
+  VOID
+
+Returns:
+
+  EFI_SUCCESS           - Delete all invalid boot option success
+
+  EFI_NOT_FOUND         - Variable "BootOrder" is not found
+
+  EFI_OUT_OF_RESOURCES  - Lack of memory resource
+
+  Other                 - Error return value from SetVariable()
+
+--*/
+{
+  UINT16                    *BootOrder;
+  UINT8                     *BootOptionVar;
+  UINTN                     BootOrderSize;
+  UINTN                     BootOptionSize;
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  UINTN                     Index2;
+  UINT16                    BootOption[BOOT_OPTION_MAX_CHAR];
+  UINTN                     OptionDevicePathSize;
+  EFI_DEVICE_PATH_PROTOCOL  *TempDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *LastDeviceNode;
+  EFI_DEVICE_PATH_PROTOCOL  *OptionDevicePath;
+  UINT8                     *TempPtr;
+  CHAR16                    *Description;
+  EFI_HANDLE                Handle;
+  BOOLEAN                   NeedDelete;
+
+  Status        = EFI_SUCCESS;
+  BootOrder     = NULL;
+  BootOrderSize = 0;
+
+  BootOrder = BdsLibGetVariableAndSize (
+                L"BootOrder",
+                &gEfiGlobalVariableGuid,
+                &BootOrderSize
+                );
+  if (NULL == BootOrder) {
+    return EFI_NOT_FOUND;
+  }
+
+  Index = 0;
+  while (Index < BootOrderSize / sizeof (UINT16)) {
+    SPrint (BootOption, sizeof (BootOption), L"Boot%04x", BootOrder[Index]);
+    BootOptionVar = BdsLibGetVariableAndSize (
+                      BootOption,
+                      &gEfiGlobalVariableGuid,
+                      &BootOptionSize
+                      );
+    if (NULL == BootOptionVar) {
+      gBS->FreePool (BootOrder);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    TempPtr = BootOptionVar;
+    TempPtr += sizeof (UINT32) + sizeof (UINT16);
+    Description = (CHAR16 *) TempPtr;
+    TempPtr += EfiStrSize ((CHAR16 *) TempPtr);
+    OptionDevicePath = (EFI_DEVICE_PATH_PROTOCOL *) TempPtr;
+    OptionDevicePathSize = EfiDevicePathSize (OptionDevicePath);
+
+    //
+    // Skip legacy boot option (BBS boot device)
+    //
+    if ((DevicePathType (OptionDevicePath) == BBS_DEVICE_PATH) &&
+        (DevicePathSubType (OptionDevicePath) == BBS_BBS_DP)) {
+      gBS->FreePool (BootOptionVar);
+      Index++;
+      continue;
+    }
+
+    TempDevicePath = OptionDevicePath;
+    LastDeviceNode = OptionDevicePath;
+    while (!EfiIsDevicePathEnd (TempDevicePath)) {
+      LastDeviceNode = TempDevicePath;
+      TempDevicePath = EfiNextDevicePathNode (TempDevicePath);
+    }
+    //
+    // Skip the boot option that point to a file, since the device path in 
+    // removable media boot option doesn't contains a file name.
+    //
+    if (((DevicePathType (LastDeviceNode) == MEDIA_DEVICE_PATH) &&
+         (DevicePathSubType (LastDeviceNode) == MEDIA_FILEPATH_DP)) ||
+        //
+        // Skip boot option for internal Shell, it's always valid
+        //
+        (EfiGetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) LastDeviceNode) != NULL)) {
+      gBS->FreePool (BootOptionVar);
+      Index++;
+      continue;
+    }
+
+    NeedDelete = TRUE;
+    //
+    // Check if it's a valid boot option for removable media
+    //
+    TempDevicePath = OptionDevicePath;
+    Status = gBS->LocateDevicePath (
+                    &gEfiSimpleFileSystemProtocolGuid,
+                    &TempDevicePath,
+                    &Handle
+                    );
+    if (!EFI_ERROR (Status)) {
+      NeedDelete = FALSE;
+    }
+    //
+    // Check if it's a valid boot option for network boot device
+    //
+    TempDevicePath = OptionDevicePath;
+    Status = gBS->LocateDevicePath (
+                    &gEfiLoadFileProtocolGuid,
+                    &TempDevicePath,
+                    &Handle
+                    );
+    if (!EFI_ERROR (Status)) {
+      NeedDelete = FALSE;
+    }
+
+    if (NeedDelete) {
+      //
+      // Delete this invalid boot option "Boot####"
+      //
+      Status = gRT->SetVariable (
+                      BootOption,
+                      &gEfiGlobalVariableGuid,
+                      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                      0,
+                      NULL
+                      );
+      //
+      // Mark this boot option in boot order as deleted
+      //
+      BootOrder[Index] = 0xffff;
+    }
+
+    gBS->FreePool (BootOptionVar);
+    Index++;
+  }
+
+  //
+  // Adjust boot order array
+  //
+  Index2 = 0;
+  for (Index = 0; Index < BootOrderSize / sizeof (UINT16); Index++) {
+    if (BootOrder[Index] != 0xffff) {
+      BootOrder[Index2] = BootOrder[Index];
+      Index2 ++;
+    }
+  }
+  Status = gRT->SetVariable (
+                  L"BootOrder",
+                  &gEfiGlobalVariableGuid,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  Index2 * sizeof (UINT16),
+                  BootOrder
+                  );
+
+  gBS->FreePool (BootOrder);
+
+  return Status;
+}
+
+EFI_STATUS
 BdsLibEnumerateAllBootOption (
   IN OUT EFI_LIST_ENTRY      *BdsBootOptionList
   )
@@ -475,11 +787,8 @@ Returns:
   UINT16                        BootOptionNumber;
   UINTN                         NumberFileSystemHandles;
   EFI_HANDLE                    *FileSystemHandles;
-  UINTN                         NumberBlkIoHandles;
-  EFI_HANDLE                    *BlkIoHandles;
   EFI_BLOCK_IO_PROTOCOL         *BlkIo;
   UINTN                         Index;
-  EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   UINTN                         NumberLoadFileHandles;
   EFI_HANDLE                    *LoadFileHandles;
   VOID                          *ProtocolInstance;
@@ -490,6 +799,10 @@ Returns:
   UINTN                         Size;
   EFI_FV_FILE_ATTRIBUTES        Attributes;
   UINT32                        AuthenticationStatus;
+  EFI_DEVICE_PATH_PROTOCOL      *FilePath;
+  EFI_HANDLE                    ImageHandle;
+  EFI_LOADED_IMAGE_PROTOCOL     *ImageInfo;
+  BOOLEAN                       NeedDelete;
 
   BootOptionNumber = 0;
 
@@ -509,49 +822,11 @@ Returns:
   REFRESH_LEGACY_BOOT_OPTIONS;
 
   //
-  // Check all the block IO to create boot option
+  // Delete invalid boot option
   //
-  gBS->LocateHandleBuffer (
-        ByProtocol,
-        &gEfiBlockIoProtocolGuid,
-        NULL,
-        &NumberBlkIoHandles,
-        &BlkIoHandles
-        );
-  for (Index = 0; Index < NumberBlkIoHandles; Index++) {
-    Status = gBS->HandleProtocol (
-                    BlkIoHandles[Index],
-                    &gEfiBlockIoProtocolGuid,
-                    (VOID **) &BlkIo
-                    );
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-
-    if (!BlkIo->Media->RemovableMedia) {
-      //
-      // Skip fixed Media device on first loop interration
-      //
-      continue;
-    }
-
-    DevicePath = EfiDevicePathFromHandle (BlkIoHandles[Index]);
-    if ((DevicePathType (DevicePath) == MEDIA_DEVICE_PATH) && 
-        (DevicePathSubType (DevicePath) == MEDIA_HARDDRIVE_DP)
-        ) {
-      //
-      // Build the boot option
-      //
-      BdsLibBuildOptionFromHandle (BlkIoHandles[Index], BdsBootOptionList);
-      BootOptionNumber++;
-    }
-  }
-
-  if (NumberBlkIoHandles) {
-    gBS->FreePool (BlkIoHandles);
-  }
+  BdsDeleteAllInvalidEfiBootOption ();
   //
-  // Parse Fixed Disk Devices.
+  // Parse removable media
   //
   gBS->LocateHandleBuffer (
         ByProtocol,
@@ -567,7 +842,7 @@ Returns:
                     (VOID **) &BlkIo
                     );
     if (!EFI_ERROR (Status)) {
-      if (BlkIo->Media->RemovableMedia) {
+      if (!BlkIo->Media->RemovableMedia) {
         //
         // If the file system handle supports a BlkIo protocol,
         // skip the removable media devices
@@ -576,14 +851,38 @@ Returns:
       }
     }
 
-    DevicePath = EfiDevicePathFromHandle (FileSystemHandles[Index]);
-    if ((DevicePathType (DevicePath) == MEDIA_DEVICE_PATH) && 
-        (DevicePathSubType (DevicePath) == MEDIA_HARDDRIVE_DP)
-        ) {
+    //
+    // Do the removable Media thing. \EFI\BOOT\boot{machinename}.EFI
+    //  machinename is ia32, ia64, x64, ...
+    //
+    FilePath = EfiFileDevicePath (FileSystemHandles[Index], DEFAULT_REMOVABLE_FILE_NAME);
+    NeedDelete = TRUE;
+    Status = gBS->LoadImage (
+                    TRUE,
+                    mBdsImageHandle,
+                    FilePath,
+                    NULL,
+                    0,
+                    &ImageHandle
+                    );
+    if (!EFI_ERROR(Status)) {
       //
-      // If the FileSystem protocol does not contain a BlkIo protocol,
-      // then build it
+      // Verify the image is a EFI application (and not a driver)
       //
+      Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **) &ImageInfo);
+      ASSERT (!EFI_ERROR(Status));
+
+      if (ImageInfo->ImageCodeType == EfiLoaderCode) {
+        NeedDelete = FALSE;
+      }
+    }
+
+    if (NeedDelete) {
+      //
+      // No such file or the file is not a EFI application, delete this boot option
+      //
+      BdsLibDeleteOptionFromHandle (FileSystemHandles[Index]);
+    } else {
       BdsLibBuildOptionFromHandle (FileSystemHandles[Index], BdsBootOptionList);
       BootOptionNumber++;
     }
@@ -679,13 +978,13 @@ BdsLibBuildOptionFromHandle (
 /*++
 
 Routine Description:
-  
+
   Build the boot option with the handle parsed in
-  
+
 Arguments:
 
   Handle - The handle which present the device path to create boot option
-  
+
   BdsBootOptionList - The header of the link list which indexed all current
                       boot options
 
@@ -715,14 +1014,14 @@ BdsLibBuildOptionFromShell (
 /*++
 
 Routine Description:
-  
+
   Build the on flash shell boot option with the handle parsed in
-  
+
 Arguments:
 
   Handle - The handle which present the device path to create on flash shell
            boot option
-  
+
   BdsBootOptionList - The header of the link list which indexed all current
                       boot options
 
@@ -741,10 +1040,12 @@ Returns:
   // Build the shell device path
   //
   EfiInitializeFwVolDevicepathNode (&ShellNode, &gEfiShellFileGuid);
+  //
   //ShellNode.Header.Type     = MEDIA_DEVICE_PATH;
   //ShellNode.Header.SubType  = MEDIA_FV_FILEPATH_DP;
   //SetDevicePathNodeLength (&ShellNode.Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
   //EfiCopyMem (&ShellNode.NameGuid, &gEfiShellFileGuid, sizeof (EFI_GUID));
+  //
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *) &ShellNode);
 
   //
@@ -761,13 +1062,13 @@ BdsLibBootNext (
 /*++
 
 Routine Description:
-  
+
   Boot from the EFI1.1 spec defined "BootNext" variable
-  
+
 Arguments:
 
   None
-  
+
 Returns:
 
   None

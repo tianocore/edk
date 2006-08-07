@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,16 +15,15 @@ Module Name:
 
 Abstract:
 
-  BugBug: I need to be ported for a given platform
-
 --*/
 
 #include "Tiano.h"
 #include "EfiRuntimeLib.h"
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 
-#define PCI_CONFIG_INDEX_PORT 0xcf8
-#define PCI_CONFIG_DATA_PORT  0xcfc
+#define PCI_CONFIG_INDEX_PORT    0xcf8
+#define PCI_CONFIG_DATA_PORT     0xcfc
+#define REFRESH_CYCLE_TOGGLE_BIT 0x10
 
 UINT32
 GetPciAddress (
@@ -364,11 +363,11 @@ Returns:
 
   if (EfiAtRuntime ()) {
     //
-    // The time-source is 15 us granular, so calibrate the timing loop
+    // The time-source is 30 us granular, so calibrate the timing loop
     // based on this baseline
-    // Error is possible 15us.
+    // Error is possible 30us.
     //
-    CycleIterations = (Microseconds / 15) + 1;
+    CycleIterations = (Microseconds - 1) / 30 + 1;
 
     //
     // Use the DMA Refresh timer in port 0x61.  Cheap but effective.
@@ -378,12 +377,13 @@ Returns:
     //
     //   _____________/----------\__________/--------
     //
-    //                |<--15us-->|
+    //                |<--30us-->|
     //
     // --------------------------------------------------> Time (us)
     //
     while (CycleIterations--) {
       EfiIoRead (EfiCpuIoWidthUint8, 0x61, 1, &Data);
+      Data &= REFRESH_CYCLE_TOGGLE_BIT;
       InitialState = Data;
 
       //
@@ -391,6 +391,7 @@ Returns:
       //
       while (InitialState == Data) {
         EfiIoRead (EfiCpuIoWidthUint8, 0x61, 1, &Data);
+        Data &= REFRESH_CYCLE_TOGGLE_BIT;
       }
 
       InitialState = Data;
@@ -399,6 +400,7 @@ Returns:
       //
       while (InitialState == Data) {
         EfiIoRead (EfiCpuIoWidthUint8, 0x61, 1, &Data);
+        Data &= REFRESH_CYCLE_TOGGLE_BIT;
       }
     }
   } else {

@@ -679,7 +679,6 @@ Returns:
   //
   // Allocate 128KB for the Stack
   //
-  TopOfStack  = (VOID *) (UINTN) (TopOfMemory - 0x10);
   TopOfStack  = (VOID *) (UINTN) (TopOfMemory - sizeof (EFI_PEI_STARTUP_DESCRIPTOR));
   TopOfMemory = TopOfMemory - EFI_STACK_SIZE;
 

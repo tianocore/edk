@@ -201,5 +201,31 @@ EfiEnableInterrupts PROC    PUBLIC
     sti
     ret
 EfiEnableInterrupts  ENDP
+;------------------------------------------------------------------------------
+;  VOID
+;  EfiCpuidExt (
+;    IN   UINT32              RegisterInEax,
+;    IN   UINT32              CacheLevel,
+;    OUT  EFI_CPUID_REGISTER  *Regs              
+;    )
+;------------------------------------------------------------------------------
+EfiCpuidExt PROC    PUBLIC \
+  RegisterInEax:UINT32,    \
+  CacheLevel:UINT32,       \
+  Regs:PTR EFI_CPUID_REGISTER
+     pushad
+     
+     mov    eax, RegisterInEax
+     mov    ecx, CacheLevel
+     cpuid
+     mov    edi, DWORD PTR Regs 
+     ASSUME edi: PTR EFI_CPUID_REGISTER
+     mov    DWORD PTR [edi].RegEax, eax   ; Reg->RegEax
+     mov    DWORD PTR [edi].RegEbx, ebx   ; Reg->RegEbx
+     mov    DWORD PTR [edi].RegEcx, ecx   ; Reg->RegEcx
+     mov    DWORD PTR [edi].RegEdx, edx   ; Reg->RegEdx
 
+     popad
+     ret
+EfiCpuidExt  ENDP
 END

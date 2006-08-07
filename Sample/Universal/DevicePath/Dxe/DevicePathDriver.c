@@ -28,27 +28,6 @@ EFI_GUID mEfiDevicePathMessagingUartFlowControlGuid = DEVICE_PATH_MESSAGING_UART
 
 EFI_GUID mEfiDevicePathMessagingSASGuid = DEVICE_PATH_MESSAGING_SAS;
 
-STATIC EFI_DEVICE_PATH_UTILITIES_PROTOCOL mDevicePathUtilitiesProtocol = {
-  GetDevicePathSize,
-  DuplicateDevicePath,
-  AppendDevicePath,
-  AppendDeviceNode,
-  AppendDevicePathInstance,
-  GetNextDevicePathInstance,
-  IsDevicePathMultiInstance,
-  CreateDeviceNode
-};
-
-STATIC EFI_DEVICE_PATH_TO_TEXT_PROTOCOL   mDevicePathToTextProtocol = {
-  ConvertDeviceNodeToText,
-  ConvertDevicePathToText
-};
-
-STATIC EFI_DEVICE_PATH_FROM_TEXT_PROTOCOL mDevicePathFromTextProtocol = {
-  ConvertTextToDeviceNode,
-  ConvertTextToDevicePath
-};
-
 EFI_DRIVER_ENTRY_POINT (DevicePathDriverEntryPoint)
 
 EFI_STATUS

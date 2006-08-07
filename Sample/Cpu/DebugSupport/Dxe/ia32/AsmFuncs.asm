@@ -202,7 +202,8 @@ Vect2Desc       PROC    C PUBLIC DestPtr:DWORD, Vector:DWORD
                 mov     eax, Vector
                 mov     ecx, DestPtr
                 mov     word ptr [ecx], ax                  ; write bits 15..0 of offset
-                mov     word ptr [ecx+2], 20h               ; SYS_CODE_SEL from GDT
+                mov     dx, cs
+                mov     word ptr [ecx+2], dx                ; SYS_CODE_SEL from GDT
                 mov     word ptr [ecx+4], 0e00h OR 8000h    ; type = 386 interrupt gate, present
                 shr     eax, 16
                 mov     word ptr [ecx+6], ax                ; write bits 31..16 of offset
@@ -409,7 +410,7 @@ CommonIdtEntry::
                 mov     eax, dr0
                 push    eax
 
-;; FX_SAVE_STATE FxSaveState;
+;; FX_SAVE_STATE_IA32 FxSaveState;
                 sub     esp, 512
                 mov     edi, esp
                 ; IMPORTANT!! The debug stack has been carefully constructed to
@@ -434,7 +435,7 @@ CommonIdtEntry::
 ;; UINT32  ExceptionData;
                 add     esp, 4
 
-;; FX_SAVE_STATE FxSaveState;
+;; FX_SAVE_STATE_IA32 FxSaveState;
                 mov     esi, esp
                 FXRSTOR_ESI
                 add     esp, 512

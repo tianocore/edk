@@ -194,6 +194,28 @@ Arguments:
 Returns:                                                            
    None                                                
 --*/
+
+VOID
+IA32API
+EfiCpuidExt (
+  IN  UINT32                 RegisterInEax,
+  IN  UINT32                 CacheLevel,
+  OUT EFI_CPUID_REGISTER     *Regs
+  )
+/*++                                                                                                                          
+Routine Description:                                                
+  When RegisterInEax != 4, the functionality is the same as EfiCpuid.
+  When RegisterInEax == 4, the function return the deterministic cache
+  parameters by excuting the CPUID instruction
+Arguments:                
+   RegisterInEax: - The input value to put into register EAX
+   CacheLevel:      - The deterministic cache level
+   Regs:          - The Output value                      
+Returns:                                                            
+   None                                                
+--*/
+;
+
 UINT64
 IA32API
 EfiReadMsr (

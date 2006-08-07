@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -235,6 +235,14 @@ Returns:
     RomImageSize  = RomImageSize + RomPcir->ImageLength * 512;
     RomBarOffset  = RomBarOffset + RomPcir->ImageLength * 512;
   } while (((Indicator & 0x80) == 0x00) && ((RomBarOffset - RomBar) < RomSize));
+
+  //
+  // Some Legacy Cards do not report the correct ImageLength so used the maximum
+  // of the legacy length and the PCIR Image Length
+  //
+  if (RomPcir->CodeType == PCI_CODE_TYPE_PCAT_IMAGE) {
+    RomImageSize = EFI_MAX(RomImageSize, (((EFI_LEGACY_EXPANSION_ROM_HEADER *)RomHeader)->Size512 * 512));
+  }
 
   if (RomImageSize > 0) {
     retStatus = EFI_SUCCESS;

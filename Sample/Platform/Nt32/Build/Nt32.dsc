@@ -204,6 +204,7 @@ Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubS
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtPlatformStatusCode\$(PROJECT_NAME)\RtPlatformStatusCode.inf
 
+Sample\Universal\Network\Library\NetLib.inf
 
 [=============================================================================]
 #
@@ -341,9 +342,20 @@ Sample\Bus\Usb\UsbKb\Dxe\UsbKb.inf
 Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf                          
 Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf                                      
 Sample\Universal\Network\PxeBc\Dxe\BC.inf                                     
-Sample\Universal\Network\PxeDhcp4\Dxe\Dhcp4.inf                               
+Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf                               
 Sample\Universal\Network\Snp32_64\Dxe\SNP.inf                                 
 
+#
+# UEFI network drivers.
+#
+Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
+Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
+Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
+Sample\Universal\Network\Ip4Config\Dxe\Ip4Config.inf                   FV=NULL
+Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
+Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
+Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
+Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
 
 #
 # The following components are commented out for a variety of reasons.

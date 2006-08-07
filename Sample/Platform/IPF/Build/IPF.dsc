@@ -171,7 +171,7 @@ Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf
 # The following components are used for network boot
 #
 Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                       
-Sample\Universal\Network\PxeDhcp4\Dxe\Dhcp4.inf               
+Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 Sample\Universal\Network\Snp32_64\Dxe\Snp.inf                 
 Sample\Universal\Network\PxeBc\Dxe\Bc.inf                      
 

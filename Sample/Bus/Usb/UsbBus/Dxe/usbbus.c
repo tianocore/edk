@@ -345,8 +345,8 @@ UsbBusControllerDriverSupported (
   //
   if (RemainingDevicePath != NULL) {
     Node.DevPath = RemainingDevicePath;
-    if (Node.DevPath->Type != HARDWARE_DEVICE_PATH ||
-        Node.DevPath->SubType != MSG_USB_DP        ||
+    if (Node.DevPath->Type != MESSAGING_DEVICE_PATH ||
+        Node.DevPath->SubType != MSG_USB_DP         ||
         DevicePathNodeLength(Node.DevPath) != sizeof(USB_DEVICE_PATH)) {
       return EFI_UNSUPPORTED;
     }
@@ -2378,17 +2378,18 @@ UsbPortReset (
 --*/
 {
   USB_IO_CONTROLLER_DEVICE  *UsbIoController;
-  EFI_STATUS                Status;
 
   UsbIoController = USB_IO_CONTROLLER_DEVICE_FROM_USB_IO_THIS (This);
 
+  if (IsHub (UsbIoController)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
   //
   // Since at this time, this device has already been configured,
   // it needs to be re-configured.
   //
-  Status = ParentPortReset (UsbIoController, TRUE, 0);
-
-  return Status;
+  return ParentPortReset (UsbIoController, TRUE, 0);
 }
 
 EFI_STATUS

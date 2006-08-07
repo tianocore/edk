@@ -74,6 +74,8 @@ C_STD_INCLUDE=
   IsaIo\IsaIo.c
   LoadPe32Image\LoadPe32Image.h
   LoadPe32Image\LoadPe32Image.c
+  NicIp4Config\NicIp4Config.h
+  NicIp4Config\NicIp4Config.c
   PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.h
   PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.c
   PciHotPlugInit\PciHotPlugInit.h

@@ -38,6 +38,8 @@ COMPONENT_TYPE=   LIBRARY
 C_STD_INCLUDE=
 
 [sources.common]
+  Arp\Arp.h
+  Arp\Arp.c
   Bis\Bis.h
   Bis\Bis.c
   BlockIo\BlockIo.h
@@ -62,6 +64,8 @@ C_STD_INCLUDE=
   DevicePathToText\DevicePathToText.c
   DevicePathUtilities\DevicePathUtilities.h
   DevicePathUtilities\DevicePathUtilities.c
+  Dhcp4\Dhcp4.h
+  Dhcp4\Dhcp4.c
   DiskIo\DiskIo.h
   DiskIo\DiskIo.c
   DriverBinding\DriverBinding.h
@@ -88,10 +92,18 @@ C_STD_INCLUDE=
   FileSystemVolumeLabelInfo\FileSystemVolumeLabelInfo.c
   GraphicsOutput\GraphicsOutput.h
   GraphicsOutput\GraphicsOutput.c
+  Ip4\Ip4.h
+  Ip4\Ip4.c
+  Ip4Config\Ip4Config.h
+  Ip4Config\Ip4Config.c
   LoadedImage\LoadedImage.h
   LoadedImage\LoadedImage.c
   LoadFile\LoadFile.h
   LoadFile\LoadFile.c
+  ManagedNetwork\ManagedNetwork.h
+  ManagedNetwork\ManagedNetwork.c
+  Mtftp4\Mtftp4.h
+  Mtftp4\Mtftp4.c
   PciIo\PciIo.h
   PciIo\PciIo.c
   PciRootBridgeIo\PciRootBridgeIo.h
@@ -116,6 +128,8 @@ C_STD_INCLUDE=
   SimpleTextIn\SimpleTextIn.c
   SimpleTextOut\SimpleTextOut.h
   SimpleTextOut\SimpleTextOut.c
+  Udp4\Udp4.h
+  Udp4\Udp4.c
   UgaDraw\UgaDraw.h
   UgaDraw\UgaDraw.c
   UgaIo\UgaIo.h
@@ -128,11 +142,14 @@ C_STD_INCLUDE=
   UsbIo\UsbIo.c
   Hash\Hash.h
   Hash\Hash.c
+  ServiceBinding\ServiceBinding.h
   ScsiPassThru\ScsiPassThru.h
   ScsiPassThru\ScsiPassThru.c
   ScsiIo\ScsiIo.h
   ScsiIo\ScsiIo.c
   TapeIo\TapeIo.h
   TapeIo\TapeIo.c
+  Tcp4\Tcp4.h
+  Tcp4\Tcp4.c
   IScsiInitiatorName\IScsiInitiatorName.h
   IScsiInitiatorName\IScsiInitiatorName.c

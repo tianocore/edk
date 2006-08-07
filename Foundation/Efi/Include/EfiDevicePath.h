@@ -311,19 +311,19 @@ typedef struct {
 #define DEVICE_PATH_MESSAGING_VT_UTF8 \
     { 0xad15a0d6, 0x8bec, 0x4acf, 0xa0, 0x73, 0xd0, 0x1d, 0xe7, 0x7e, 0x2d, 0x88 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-
 #define DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL \
     { 0x37499a9d, 0x542f, 0x4c89, 0xa0, 0x26, 0x35, 0xda, 0x14, 0x20, 0x94, 0xe4 }
-
-#define DEVICE_PATH_MESSAGING_SAS \
-    { 0xb4dd87d4, 0x8b00, 0xd911, 0xaf, 0xdc, 0x00, 0x10, 0x83, 0xff, 0xca, 0x4d }
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
   EFI_GUID                        Guid;
   UINT32                          FlowControlMap;
 } UART_FLOW_CONTROL_DEVICE_PATH;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+#define DEVICE_PATH_MESSAGING_SAS \
+    { 0xb4dd87d4, 0x8b00, 0xd911, 0xaf, 0xdc, 0x00, 0x10, 0x83, 0xff, 0xca, 0x4d }
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
@@ -473,8 +473,8 @@ typedef union {
   IPv6_DEVICE_PATH                     Ipv6;
   INFINIBAND_DEVICE_PATH               InfiniBand;
   UART_DEVICE_PATH                     Uart;
-  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   UART_FLOW_CONTROL_DEVICE_PATH        UartFlowControl;
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   SAS_DEVICE_PATH                      Sas;
   ISCSI_DEVICE_PATH                    Iscsi;
   #endif

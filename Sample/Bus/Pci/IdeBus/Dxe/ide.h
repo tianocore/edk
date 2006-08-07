@@ -936,7 +936,8 @@ Returns:
 
 EFI_STATUS
 AtapiTestUnitReady (
-  IN  IDE_BLK_IO_DEV  *IdeDev
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  OUT UINTN           *SenseCount
   )
 /*++
 
@@ -980,7 +981,8 @@ Returns:
 
 EFI_STATUS
 AtapiReadCapacity (
-  IN  IDE_BLK_IO_DEV  *IdeDev
+  IN  IDE_BLK_IO_DEV  *IdeDev,
+  OUT UINTN           *SenseCount
   )
 /*++
 
@@ -1155,121 +1157,18 @@ Returns:
 --*/
 ;
 
-BOOLEAN
-IsNoMedia (
-  IN  REQUEST_SENSE_DATA    *SenseData,
-  IN  UINTN                 SenseCounts
+EFI_STATUS
+ParseSenseData (
+  IN IDE_BLK_IO_DEV     *IdeDev,
+  IN UINTN              SenseCount,
+  OUT SENSE_RESULT      *Result
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 ;
 
-BOOLEAN
-IsMediaError (
-  IN  REQUEST_SENSE_DATA    *SenseData,
-  IN  UINTN                 SenseCounts
+EFI_STATUS
+AtapiReadPendingData (
+  IN IDE_BLK_IO_DEV     *IdeDev
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-BOOLEAN
-IsMediaChange (
-  IN  REQUEST_SENSE_DATA    *SenseData,
-  IN  UINTN                 SenseCounts
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-BOOLEAN
-IsDriveReady (
-  IN  REQUEST_SENSE_DATA    *SenseData,
-  IN  UINTN                 SenseCounts,
-  OUT BOOLEAN               *NeedRetry
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-  NeedRetry   - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-BOOLEAN
-HaveSenseKey (
-  IN  REQUEST_SENSE_DATA    *SenseData,
-  IN  UINTN                 SenseCounts
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  SenseData   - TODO: add argument description
-  SenseCounts - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 ;
 
 EFI_STATUS

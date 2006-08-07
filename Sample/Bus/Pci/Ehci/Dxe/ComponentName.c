@@ -153,9 +153,9 @@ EhciComponentNameGetControllerName (
 
 --*/
 {
-  EFI_STATUS          Status;
+  EFI_STATUS           Status;
   USB2_HC_DEV          *EhciDev;
-  EFI_USB_HC_PROTOCOL *UsbHc;
+  EFI_USB2_HC_PROTOCOL *Usb2Hc;
 
   //
   // This is a device driver, so ChildHandle must be NULL.
@@ -168,8 +168,8 @@ EhciComponentNameGetControllerName (
   //
   Status = gBS->OpenProtocol (
                   ControllerHandle,
-                  &gEfiUsbHcProtocolGuid,
-                  (VOID **) &UsbHc,
+                  &gEfiUsb2HcProtocolGuid,
+                  (VOID **) &Usb2Hc,
                   gEhciDriverBinding.DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -179,7 +179,7 @@ EhciComponentNameGetControllerName (
     return Status;
   }
 
-  EhciDev = USB2_HC_DEV_FROM_THIS (UsbHc);
+  EhciDev = USB2_HC_DEV_FROM_THIS (Usb2Hc);
 
   return EfiLibLookupUnicodeString (
           Language,

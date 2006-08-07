@@ -371,17 +371,13 @@ Returns:
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
 
-  if (Width < 0 || Width >= EfiPciIoWidthMaximum) {
+  if (Width < 0 || Width > EfiPciIoWidthUint64) {
     return EFI_INVALID_PARAMETER;
   }
 
   Status = PciIoVerifyBarAccess (PciIoDevice, BarIndex, PciBarTypeIo, Width, 1, &Offset);
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
-  }
-
-  if (Width > EfiPciIoWidthUint64) {
-    return EFI_INVALID_PARAMETER;
   }
 
   Status = PciIoDevice->PciRootBridgeIo->PollIo (

@@ -302,7 +302,7 @@ TrimHexStr (
     Str += 1;
   }
   //
-  // skip preceeding white space
+  // skip preceeding character 'x'
   //
   if (*Str && (*Str == 'x' || *Str == 'X')) {
     Str += 1;
@@ -365,6 +365,7 @@ Returns:
 {
   UINTN  Length;
 
+  *Data = 0;
   Length = sizeof (UINT64);
   HexStringToBuf ((UINT8 *) Data, &Length, TrimHexStr (Str), NULL);
 }

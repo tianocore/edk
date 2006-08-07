@@ -99,6 +99,11 @@ extern EFI_HANDLE mBdsImageHandle;
 #define ALIGN_SIZE(a)       ((a % MIN_ALIGNMENT_SIZE) ? MIN_ALIGNMENT_SIZE - (a % MIN_ALIGNMENT_SIZE) : 0)
 
 //
+// Define maximum characters for boot option variable "BootXXXX"
+//
+#define BOOT_OPTION_MAX_CHAR 10
+
+//
 // This data structure is the part of BDS_CONNECT_ENTRY that we can hard code.
 //
 #define BDS_LOAD_OPTION_SIGNATURE EFI_SIGNATURE_32 ('B', 'd', 'C', 'O')
@@ -367,6 +372,13 @@ BdsUpdateLegacyDevOrder (
 EFI_STATUS
 BdsRefreshBbsTableForBoot (
   IN BDS_COMMON_OPTION        *Entry
+  );
+
+EFI_STATUS
+BdsDeleteBootOption (
+  IN UINTN                       OptionNumber,
+  IN OUT UINT16                  *BootOrder,
+  IN OUT UINTN                   *BootOrderSize
   );
 
 //

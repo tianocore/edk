@@ -263,52 +263,52 @@ Returns:
 
   mRuntimeLibInitialized  = TRUE;
 
-  mRT                     = SystemTable->RuntimeServices;
+  gST = SystemTable;
+  ASSERT (gST != NULL);
 
-  if ((SystemTable != NULL) && (SystemTable->BootServices != NULL)) {
+  gBS = SystemTable->BootServices;
+  ASSERT (gBS != NULL);
+  mRT = SystemTable->RuntimeServices;
+  ASSERT (mRT != NULL);
 
-    gST     = SystemTable;
-    gBS     = SystemTable->BootServices;
-    Status  = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **) &gDS);
-    ASSERT_EFI_ERROR (Status);
+  Status  = EfiLibGetSystemConfigurationTable (&gEfiDxeServicesTableGuid, (VOID **) &gDS);
+  ASSERT_EFI_ERROR (Status);
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-    Status = gBS->LocateProtocol (&gEfiStatusCodeRuntimeProtocolGuid, NULL, (VOID **)&gStatusCode);
-    if (EFI_ERROR (Status)) {
-      gStatusCode = NULL;
-    }
+  Status = gBS->LocateProtocol (&gEfiStatusCodeRuntimeProtocolGuid, NULL, (VOID **)&gStatusCode);
+  if (EFI_ERROR (Status)) {
+    gStatusCode = NULL;
+  }
 #endif
 
-    Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
-
-    if (EFI_ERROR (Status)) {
-      gCpuIo = NULL;
-    }
-    //
-    // Register our ExitBootServices () notify function
-    //
-    Status = gBS->CreateEvent (
-                    EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
-                    EFI_TPL_NOTIFY,
-                    RuntimeDriverExitBootServices,
-                    NULL,
-                    &mRuntimeNotifyEvent
-                    );
-    ASSERT_EFI_ERROR (Status);
-
-    //
-    // Register SetVirtualAddressMap () notify function
-    //
-    Status = gBS->CreateEvent (
-                    EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
-                    EFI_TPL_NOTIFY,
-                    EfiRuntimeLibVirtualNotifyEvent,
-                    (VOID *) (UINTN) GoVirtualChildEvent,
-                    &mEfiVirtualNotifyEvent
-                    );
-    ASSERT_EFI_ERROR (Status);
-
+  Status = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
+  if (EFI_ERROR (Status)) {
+    gCpuIo = NULL;
   }
+
+  //
+  // Register our ExitBootServices () notify function
+  //
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                  EFI_TPL_NOTIFY,
+                  RuntimeDriverExitBootServices,
+                  NULL,
+                  &mRuntimeNotifyEvent
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register SetVirtualAddressMap () notify function
+  //
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
+                  EFI_TPL_NOTIFY,
+                  EfiRuntimeLibVirtualNotifyEvent,
+                  (VOID *) (UINTN) GoVirtualChildEvent,
+                  &mEfiVirtualNotifyEvent
+                  );
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }
@@ -395,18 +395,17 @@ Returns:
 
   mRuntimeLibInitialized  = TRUE;
 
-  mRT                     = SystemTable->RuntimeServices;
+  gST = SystemTable;
+  ASSERT (gST != NULL);
 
-  if ((SystemTable != NULL) && (SystemTable->BootServices != NULL)) {
+  gBS = SystemTable->BootServices;
+  ASSERT (gBS != NULL);
+  mRT = SystemTable->RuntimeServices;
+  ASSERT (mRT != NULL);
 
-    gST     = SystemTable;
-    gBS     = SystemTable->BootServices;
-
-    Status  = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
-
-    if (EFI_ERROR (Status)) {
-      gCpuIo = NULL;
-    }
+  Status  = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
+  if (EFI_ERROR (Status)) {
+    gCpuIo = NULL;
   }
 
   return EFI_SUCCESS;

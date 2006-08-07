@@ -1,44 +1,48 @@
 #/*++
 #
-# Copyright (c) 2004 - 2005, Intel Corporation                                                         
+# Copyright (c) 2006, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
 # http://opensource.org/licenses/bsd-license.php                                            
-#                                                                                           
+#                                                                                          
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED. 
 # 
 #  Module Name:
-#
-#    Dhcp4.inf
+#    
+#    Mtftp4.inf
 #
 #  Abstract:
 #
-#    Component description file for PxeDhcp4 module
+#    Component description file for Mtftp4 module.
 #
 #--*/
 
 [defines]
-BASE_NAME            = Dhcp4
-FILE_GUID            = a46c3330-be36-4977-9d24-a7cf92eef0fe
+BASE_NAME            = Mtftp4
+FILE_GUID            = DC3641B8-2FA8-4ed3-BC1F-F9962A03454B
 COMPONENT_TYPE       = BS_DRIVER
 
 [sources.common]
-  PxeDhcp4Entry.c
   ComponentName.c
-  PxeDhcp4.c
-  PxeDhcp4.h
-  PxeDhcp4InitSelect.c
-  PxeDhcp4Release.c
-  PxeDhcp4RenewRebind.c
-  PxeDhcp4Run.c
-  PxeDhcp4Setup.c
-  support.c
+  Mtftp4Driver.c
+  Mtftp4Driver.h
+  Mtftp4Impl.c
+  Mtftp4Impl.h
+  Mtftp4Option.c
+  Mtftp4Option.h
+  Mtftp4Rrq.c
+  Mtftp4Support.c
+  Mtftp4Support.h
+  Mtftp4Wrq.c
+  ..\..\Library\Udp4Io.c
+  ..\..\Library\Udp4Io.h
 
 [includes.common]
-  $(EDK_SOURCE)\Foundation
+  ..\..\Library
   $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
   .
   $(EDK_SOURCE)\Foundation\Core\Dxe
@@ -48,13 +52,13 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Library\Dxe\EfiDriverLib
-
+  $(EDK_SOURCE)\Sample\Include
+  $(EDK_SOURCE)\Sample\Universal\Network\Dhcp4\Dxe
+  
 [libraries.common]
-  EdkProtocolLib
-  EfiProtocolLib
   EfiDriverLib
-#  PrintLib
-
+  EfiProtocolLib
+  NetLib
+  
 [nmake.common]
-  IMAGE_ENTRY_POINT=PxeDhcp4DriverEntryPoint
-
+  IMAGE_ENTRY_POINT=Mtftp4DriverEntryPoint

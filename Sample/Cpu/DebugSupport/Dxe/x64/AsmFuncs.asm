@@ -206,7 +206,8 @@ Vect2Desc       PROC    PUBLIC
 
                 mov     rax, rdx
                 mov     word ptr [rcx], ax                  ; write bits 15..0 of offset
-                mov     word ptr [rcx+2], 38h               ; SYS_CODE_SEL from GDT
+                mov     dx, cs
+                mov     word ptr [rcx+2], dx                ; SYS_CODE_SEL from GDT
                 mov     word ptr [rcx+4], 0e00h OR 8000h    ; type = 386 interrupt gate, present
                 shr     rax, 16
                 mov     word ptr [rcx+6], ax                ; write bits 31..16 of offset
@@ -248,7 +249,7 @@ CommonIdtEntry::
 ;;
 ;;              ...
 ;;              (last application stack entry)
-;;              (8 bytes, do not care it)
+;;              [16 bytes alignment, do not care it]
 ;;              SS from interrupted task
 ;;              RSP from interrupted task
 ;;              rflags from interrupted task
@@ -462,13 +463,15 @@ ExtraPushDone:
 ; pass in the vector number
                 mov     rdx, rsp
                 mov     rcx, ExceptionNumber
+                sub     rsp, 40
                 call    InterruptDistrubutionHub
+                add     rsp, 40
 
 ; restore context...
 ;; UINT64  ExceptionData;
                 add     rsp, 8
 
-;; FX_SAVE_STATE FxSaveState;
+;; FX_SAVE_STATE_X64 FxSaveState;
                 mov     rsi, rsp
                 FXRSTOR_RSI
                 add     rsp, 512
@@ -519,9 +522,9 @@ ExtraPushDone:
 ;;
 
                 pop     rax
-                mov     gs, rax
+                ; mov     gs, rax
                 pop     rax
-                mov     fs, rax
+                ; mov     fs, rax
                 pop     rax
                 mov     es, rax
                 pop     rax

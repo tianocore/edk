@@ -1338,7 +1338,7 @@ DRDYReady (
       }
     }
 
-    gBS->Stall (15);
+    gBS->Stall (30);
 
     Delay--;
   } while (Delay);
@@ -1689,8 +1689,14 @@ Returns:
 
   //
   // Wait for command completion
+  // For ATA_SMART_CMD, we may need more timeout to let device
+  // adjust internal states.
   //
-  Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
+  if (AtaCommand == ATA_SMART_CMD) {
+    Status = WaitForBSYClear (IdeDev, ATASMARTTIMEOUT);
+  } else {
+    Status = WaitForBSYClear (IdeDev, ATATIMEOUT);
+  }
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }

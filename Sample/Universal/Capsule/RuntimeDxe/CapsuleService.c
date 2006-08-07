@@ -63,7 +63,7 @@ Returns:
   EFI_HANDLE                FvHandle;
   UEFI_CAPSULE_HEADER       *CapsuleHeader;
 
-  if (CapsuleCount < 1) {
+  if ((CapsuleCount < 1) || (CapsuleCount > MAX_SUPPORT_CAPSULE_NUM)){
     return EFI_INVALID_PARAMETER;
   }
 
@@ -76,8 +76,11 @@ Returns:
   //
   for (ArrayNumber = 0; ArrayNumber < CapsuleCount; ArrayNumber++) {
     CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
+    if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) && !(CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET)) {
+      return EFI_INVALID_PARAMETER;      
+    }
     if (!EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mEfiCapsuleHeaderGuid)) {
-      if (!((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) && (CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE))) {
+      if (!(CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE)) {
         return EFI_UNSUPPORTED;
       }  
     }   
@@ -121,7 +124,7 @@ Returns:
   }
 
   //
-  //Here should be in the boottime
+  //Here should be in the boot-time
   //
   for (ArrayNumber = 0; ArrayNumber < CapsuleCount ; ArrayNumber++) {
     CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
@@ -137,6 +140,7 @@ Returns:
     //
     Status = gDS->ProcessFirmwareVolume (BufferPtr, CapsuleSize, &FvHandle);
     if (Status != EFI_SUCCESS) {
+      gBS->FreePool (BufferPtr);
       return EFI_DEVICE_ERROR;
     }
     gDS->Dispatch ();
@@ -190,7 +194,7 @@ Returns:
   UINT32                    MaxSizeNonPopulate;
 
 
-  if (CapsuleCount < 1) {
+  if ((CapsuleCount < 1) || (CapsuleCount > MAX_SUPPORT_CAPSULE_NUM)){
     return EFI_INVALID_PARAMETER;
   }
 
@@ -206,8 +210,11 @@ Returns:
   //
   for (ArrayNumber = 0; ArrayNumber < CapsuleCount; ArrayNumber++) {
     CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
+    if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) && !(CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET)) {
+      return EFI_INVALID_PARAMETER;      
+    }
     if (!EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mEfiCapsuleHeaderGuid)) {
-      if (!((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) && (CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE))) {
+      if (!(CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE)) {
         return EFI_UNSUPPORTED;
       }
     }  

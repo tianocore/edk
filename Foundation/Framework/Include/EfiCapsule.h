@@ -62,13 +62,14 @@ typedef struct {
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 
+#define MAX_SUPPORT_CAPSULE_NUM               50
 #define CAPSULE_FLAGS_PERSIST_ACROSS_RESET    0x00010000
 #define CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE   0x00020000 
 typedef struct {
   UINT64                   Length;                    
   union { 
     EFI_PHYSICAL_ADDRESS   DataBlock;                 
-    EFI_PHYSICAL_ADDRESS   ContinuationPionter;       
+    EFI_PHYSICAL_ADDRESS   ContinuationPointer;  
   } Union;
 } UEFI_CAPSULE_BLOCK_DESCRIPTOR;
 

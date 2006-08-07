@@ -80,15 +80,16 @@ typedef struct {
   UINT32  DataOffset;
   UINT16  Ds;
   UINT8   Reserved2[10];
-  UINT8   St0Mm0[10], Reserved3[6];
-  UINT8   St0Mm1[10], Reserved4[6];
-  UINT8   St0Mm2[10], Reserved5[6];
-  UINT8   St0Mm3[10], Reserved6[6];
-  UINT8   St0Mm4[10], Reserved7[6];
-  UINT8   St0Mm5[10], Reserved8[6];
-  UINT8   St0Mm6[10], Reserved9[6];
-  UINT8   St0Mm7[10], Reserved10[6];
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  UINT8   St0Mm0[10], Reserved3[6];
+  UINT8   St1Mm1[10], Reserved4[6];
+  UINT8   St2Mm2[10], Reserved5[6];
+  UINT8   St3Mm3[10], Reserved6[6];
+  UINT8   St4Mm4[10], Reserved7[6];
+  UINT8   St5Mm5[10], Reserved8[6];
+  UINT8   St6Mm6[10], Reserved9[6];
+  UINT8   St7Mm7[10], Reserved10[6];
+  UINT8   Xmm0[16];
   UINT8   Xmm1[16];
   UINT8   Xmm2[16];
   UINT8   Xmm3[16];
@@ -99,6 +100,14 @@ typedef struct {
   UINT8   Reserved11[14 * 16];
 } EFI_FX_SAVE_STATE_IA32;
 #else
+  UINT8   St0Mm0[10], Reserved3[6];
+  UINT8   St0Mm1[10], Reserved4[6];
+  UINT8   St0Mm2[10], Reserved5[6];
+  UINT8   St0Mm3[10], Reserved6[6];
+  UINT8   St0Mm4[10], Reserved7[6];
+  UINT8   St0Mm5[10], Reserved8[6];
+  UINT8   St0Mm6[10], Reserved9[6];
+  UINT8   St0Mm7[10], Reserved10[6];
   UINT8   Reserved11[22 * 16];
 } EFI_FX_SAVE_STATE;
 #endif
@@ -175,17 +184,17 @@ typedef struct {
   UINT16  Fsw;
   UINT16  Ftw;
   UINT16  Opcode;
-  UINT64  Eip;
+  UINT64  Rip;
   UINT64  DataOffset;
   UINT8   Reserved1[8];
   UINT8   St0Mm0[10], Reserved2[6];
-  UINT8   St0Mm1[10], Reserved3[6];
-  UINT8   St0Mm2[10], Reserved4[6];
-  UINT8   St0Mm3[10], Reserved5[6];
-  UINT8   St0Mm4[10], Reserved6[6];
-  UINT8   St0Mm5[10], Reserved7[6];
-  UINT8   St0Mm6[10], Reserved8[6];
-  UINT8   St0Mm7[10], Reserved9[6];
+  UINT8   St1Mm1[10], Reserved3[6];
+  UINT8   St2Mm2[10], Reserved4[6];
+  UINT8   St3Mm3[10], Reserved5[6];
+  UINT8   St4Mm4[10], Reserved6[6];
+  UINT8   St5Mm5[10], Reserved7[6];
+  UINT8   St6Mm6[10], Reserved8[6];
+  UINT8   St7Mm7[10], Reserved9[6];
   UINT8   Xmm0[16];
   UINT8   Xmm1[16];
   UINT8   Xmm2[16];

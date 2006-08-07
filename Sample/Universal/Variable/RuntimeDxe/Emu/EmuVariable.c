@@ -719,6 +719,11 @@ Returns:
     //   Make sure RT Attribute is set if we are in Runtime phase.
     //
     return EFI_INVALID_PARAMETER;
+  } else if (EfiAtRuntime () && Attributes && !(Attributes & EFI_VARIABLE_NON_VOLATILE)) {
+    //
+    // Cannot Query volatile variable in Runtime
+    //
+    return EFI_INVALID_PARAMETER;
   }
 
   if((Attributes & EFI_VARIABLE_NON_VOLATILE) == 0) {

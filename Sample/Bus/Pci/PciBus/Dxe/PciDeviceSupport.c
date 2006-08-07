@@ -305,6 +305,7 @@ Returns:
   UINTN               PlatformOpRomSize;
   UINT8               PciExpressCapRegOffset;
   EFI_PCI_IO_PROTOCOL *PciIo;
+  UINT8               Data8;
 
   //
   // Install the pciio protocol, device path protocol
@@ -339,7 +340,24 @@ Returns:
   // Force Interrupt line to zero for cards that come up randomly
   //
   PciIo = &(PciIoDevice->PciIo);
-  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, 0x3C, 1, &gAllZero);
+  
+  //
+  // Read the class code register to see if it is a bridge
+  //
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0x0B, 1, &Data8); 
+  if (Data8 == PCI_CLASS_BRIDGE) {
+    //
+    // Force Interrupt line to 0xff for bridges
+    //
+    Data8 = 0xFF;
+  } else {
+    //
+    // Force Interrupt line to zero for cards that come up randomly
+    //
+    Data8 = 0x00;
+  }
+  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, 0x3C, 1, &Data8);
+
   //
   // Process Platform OpRom
   //

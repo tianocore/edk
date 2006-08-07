@@ -315,7 +315,7 @@ Returns:
   return EFI_SUCCESS;
 }
 
-void
+VOID
 EFIAPI
 LogDataHubEventHandler (
   IN  EFI_EVENT     Event,

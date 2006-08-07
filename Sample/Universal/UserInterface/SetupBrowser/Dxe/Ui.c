@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1239,6 +1239,15 @@ Returns:
   // Ensure we have got a valid buffer
   //
   if (*OutputString != NULL) {
+  
+    //
+    //NARROW_CHAR can not be printed in screen, so if a line only contain  the two CHARs: 'NARROW_CHAR + CHAR_CARRIAGE_RETURN' , it is a empty line  in Screen.
+    //To avoid displaying this  empty line in screen,  just skip  the two CHARs here.
+    //
+   if ((InputString[*Index] == NARROW_CHAR) && (InputString[*Index + 1] == CHAR_CARRIAGE_RETURN)) {
+     *Index = *Index + 2;
+   } 
+
     //
     // Fast-forward the string and see if there is a carriage-return in the string
     //
