@@ -864,6 +864,7 @@ Returns:
                   &mVariableModuleGlobal
                   );
   if (EFI_ERROR (Status)) {
+    EfiShutdownRuntimeDriverLib ();
     return Status;
   }
   //
@@ -875,6 +876,8 @@ Returns:
             );
 
   if (EFI_ERROR (Status)) {
+    gBS->FreePool (mVariableModuleGlobal);
+    EfiShutdownRuntimeDriverLib ();
     return Status;
   }
   //
@@ -884,6 +887,11 @@ Returns:
             &mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
             &mVariableModuleGlobal->NonVolatileLastVariableOffset
             );
+  if (EFI_ERROR (Status)) {
+    gBS->FreePool ((VOID*) (UINTN) (mVariableModuleGlobal->VariableBase[Physical].VolatileVariableBase));
+    gBS->FreePool (mVariableModuleGlobal);
+    EfiShutdownRuntimeDriverLib ();
+  }
 
   return Status;
 }

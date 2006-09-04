@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1533,7 +1533,7 @@ Returns:
   //
   Ptr = strrchr (SymFileName, '.');
   if (Ptr != NULL) {
-    strlwr (Ptr);
+    _strlwr (Ptr);
   }
   //
   // Check if it is PEI file
@@ -1770,7 +1770,7 @@ Returns:
   //
   // Get the file size
   //
-  FileSize = _filelength (fileno (NewFile));
+  FileSize = _filelength (_fileno (NewFile));
 
   //
   // Read the file into a buffer
@@ -2067,13 +2067,13 @@ Returns:
   TotalSize = 0;
 
   for (Index = 0; FvInfo->FvComponents[Index].Size != 0; Index++) {
-    if (stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_VARIABLE_STRING) == 0) {
+    if (_stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_VARIABLE_STRING) == 0) {
       AddVariableBlock (FvImage, FvInfo->FvComponents[Index].Size, FvInfo);
-    } else if (stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_EVENT_LOG_STRING) == 0) {
+    } else if (_stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_EVENT_LOG_STRING) == 0) {
       AddEventLogBlock (FvImage, FvInfo->FvComponents[Index].Size, FvInfo);
-    } else if (stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_WORKING_STRING) == 0) {
+    } else if (_stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_WORKING_STRING) == 0) {
       AddFTWWorkingBlock (FvImage, FvInfo->FvComponents[Index].Size, FvInfo);
-    } else if (stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_SPARE_STRING) == 0) {
+    } else if (_stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_SPARE_STRING) == 0) {
       AddFTWSpareBlock (FvImage, FvInfo->FvComponents[Index].Size, FvInfo);
     } else {
       printf ("Error. Unknown Non-FFS block %s \n", FvInfo->FvComponents[Index].ComponentName);

@@ -49,6 +49,7 @@ EFI_REPORT_STATUS_CODE  mPeiReportStatusCode;
 // Function implementations
 //
 EFI_STATUS
+EFIAPI
 RtPlatformReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
@@ -94,6 +95,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 RtPlatformInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable

@@ -1527,7 +1527,7 @@ ProcessArgs (
     //
     // -parse option
     //
-    if (stricmp (Argv[0], "-parse") == 0) {
+    if (_stricmp (Argv[0], "-parse") == 0) {
       if (mGlobals.Mode != MODE_UNKNOWN) {
         Error (NULL, 0, 0, "only one of -parse/-scan/-dump allowed", NULL);
         return STATUS_ERROR;
@@ -1537,7 +1537,7 @@ ProcessArgs (
       //
       // -scan option
       //
-    } else if (stricmp (Argv[0], "-scan") == 0) {
+    } else if (_stricmp (Argv[0], "-scan") == 0) {
       if (mGlobals.Mode != MODE_UNKNOWN) {
         Error (NULL, 0, 0, "only one of -parse/-scan/-dump allowed", NULL);
         return STATUS_ERROR;
@@ -1547,24 +1547,24 @@ ProcessArgs (
       //
       // -vscan verbose scanning option
       //
-    } else if (stricmp (Argv[0], "-vscan") == 0) {
+    } else if (_stricmp (Argv[0], "-vscan") == 0) {
       mGlobals.VerboseScan = TRUE;
       //
       // -dump option
       //
-    } else if (stricmp (Argv[0], "-dump") == 0) {
+    } else if (_stricmp (Argv[0], "-dump") == 0) {
       if (mGlobals.Mode != MODE_UNKNOWN) {
         Error (NULL, 0, 0, "only one of -parse/-scan/-dump allowed", NULL);
         return STATUS_ERROR;
       }
 
       mGlobals.Mode = MODE_DUMP;
-    } else if (stricmp (Argv[0], "-uqs") == 0) {
+    } else if (_stricmp (Argv[0], "-uqs") == 0) {
       mGlobals.UnquotedStrings = TRUE;
       //
       // -i path    add include search path when parsing
       //
-    } else if (stricmp (Argv[0], "-i") == 0) {
+    } else if (_stricmp (Argv[0], "-i") == 0) {
       //
       // check for one more arg
       //
@@ -1607,7 +1607,7 @@ ProcessArgs (
       mGlobals.LastIncludePath = NewList;
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-if") == 0) {
+    } else if (_stricmp (Argv[0], "-if") == 0) {
       //
       // Indirection file -- check for one more arg
       //
@@ -1647,7 +1647,7 @@ ProcessArgs (
       mGlobals.LastIndirectionFileName = NewList;
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-db") == 0) {
+    } else if (_stricmp (Argv[0], "-db") == 0) {
       //
       // -db option to specify a database file.
       // Check for one more arg (the database file name)
@@ -1684,7 +1684,7 @@ ProcessArgs (
       mGlobals.LastDatabaseFileName = NewList;
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-ou") == 0) {
+    } else if (_stricmp (Argv[0], "-ou") == 0) {
       //
       // -ou option to specify an output unicode file to
       // which we can dump our database.
@@ -1703,7 +1703,7 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-hpk") == 0) {
+    } else if (_stricmp (Argv[0], "-hpk") == 0) {
       //
       // -hpk option to create an HII export pack of the input database file
       //
@@ -1721,20 +1721,20 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if ((stricmp (Argv[0], "-?") == 0) || (stricmp (Argv[0], "-h") == 0)) {
+    } else if ((_stricmp (Argv[0], "-?") == 0) || (_stricmp (Argv[0], "-h") == 0)) {
       Usage ();
       return STATUS_ERROR;
-    } else if (stricmp (Argv[0], "-v") == 0) {
+    } else if (_stricmp (Argv[0], "-v") == 0) {
       mGlobals.Verbose = 1;
-    } else if (stricmp (Argv[0], "-vdbw") == 0) {
+    } else if (_stricmp (Argv[0], "-vdbw") == 0) {
       mGlobals.VerboseDatabaseWrite = 1;
-    } else if (stricmp (Argv[0], "-vdbr") == 0) {
+    } else if (_stricmp (Argv[0], "-vdbr") == 0) {
       mGlobals.VerboseDatabaseRead = 1;
-    } else if (stricmp (Argv[0], "-newdb") == 0) {
+    } else if (_stricmp (Argv[0], "-newdb") == 0) {
       mGlobals.NewDatabase = 1;
-    } else if (stricmp (Argv[0], "-ignorenotfound") == 0) {
+    } else if (_stricmp (Argv[0], "-ignorenotfound") == 0) {
       mGlobals.IgnoreNotFound = 1;
-    } else if (stricmp (Argv[0], "-oc") == 0) {
+    } else if (_stricmp (Argv[0], "-oc") == 0) {
       //
       // check for one more arg
       //
@@ -1746,7 +1746,7 @@ ProcessArgs (
       strcpy (mGlobals.StringCFileName, Argv[1]);
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-bn") == 0) {
+    } else if (_stricmp (Argv[0], "-bn") == 0) {
       //
       // check for one more arg
       //
@@ -1759,7 +1759,7 @@ ProcessArgs (
       strcpy (mGlobals.BaseName, Argv[1]);
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-oh") == 0) {
+    } else if (_stricmp (Argv[0], "-oh") == 0) {
       //
       // -oh to specify output .h defines file name
       //
@@ -1771,7 +1771,7 @@ ProcessArgs (
       strcpy (mGlobals.StringHFileName, Argv[1]);
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-dep") == 0) {
+    } else if (_stricmp (Argv[0], "-dep") == 0) {
       //
       // -dep to specify output dependency file name
       //
@@ -1783,7 +1783,7 @@ ProcessArgs (
       strcpy (mGlobals.OutputDependencyFileName, Argv[1]);
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-skipext") == 0) {
+    } else if (_stricmp (Argv[0], "-skipext") == 0) {
       //
       // -skipext to skip scanning of files with certain filename extensions
       //
@@ -1828,7 +1828,7 @@ ProcessArgs (
       mGlobals.LastSkipExt = NewList;
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-lang") == 0) {
+    } else if (_stricmp (Argv[0], "-lang") == 0) {
       //
       // "-lang eng" or "-lang spa+cat" to only output certain languages
       //
@@ -1844,7 +1844,7 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-od") == 0) {
+    } else if (_stricmp (Argv[0], "-od") == 0) {
       //
       // Output database file name -- check for another arg
       //
@@ -1994,7 +1994,11 @@ AddCommandLineLanguage (
     // long. If we find a comma, then we're done with this group, so
     // break out.
     //
+#ifdef USE_VC8
+    swprintf (WNewList->Str, (strlen (Language) + 1) * sizeof (WCHAR), L"%S", Language);
+#else
     swprintf (WNewList->Str, L"%S", Language);
+#endif
     From = To = WNewList->Str;
     while (*From) {
       if (*From == L',') {
@@ -2135,8 +2139,13 @@ ParseIndirectionFiles (
                 goto Done;
               }
 
+#ifdef USE_VC8
+              swprintf (NewList->Str1, (strlen (StringName) + 1) * sizeof (WCHAR), L"%S", StringName);
+              swprintf (NewList->Str2, (strlen (ScopeName) + 1) * sizeof (WCHAR), L"%S", ScopeName);
+#else
               swprintf (NewList->Str1, L"%S", StringName);
               swprintf (NewList->Str2, L"%S", ScopeName);
+#endif
               if (mGlobals.IndirectionList == NULL) {
                 mGlobals.IndirectionList = NewList;
               } else {

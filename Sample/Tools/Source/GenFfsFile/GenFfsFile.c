@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -581,14 +581,14 @@ Returns:
   //
   // Get the compress type
   //
-  if (strcmpi (Type, "Dummy") == 0) {
+  if (_strcmpi (Type, "Dummy") == 0) {
     //
     // Added "Dummy" to keep backward compatibility.
     //
     CompressionType   = EFI_STANDARD_COMPRESSION;
     CompressFunction  = (COMPRESS_FUNCTION) Compress;
 
-  } else if (strcmpi (Type, "LZH") == 0) {
+  } else if (_strcmpi (Type, "LZH") == 0) {
     //
     // EFI stardard compression (LZH)
     //
@@ -924,27 +924,27 @@ GetToolArguments (
 
     if (Buffer[0] == ')') {
       break;
-    } else if (strcmpi (Buffer, "ARGS") == 0) {
+    } else if (_strcmpi (Buffer, "ARGS") == 0) {
 
       ArgumentsFlag   = TRUE;
       AttributesFlag  = FALSE;
       continue;
 
-    } else if (strcmpi (Buffer, "INPUT") == 0) {
+    } else if (_strcmpi (Buffer, "INPUT") == 0) {
 
       InputFlag       = TRUE;
       ArgumentsFlag   = FALSE;
       AttributesFlag  = FALSE;
       continue;
 
-    } else if (strcmpi (Buffer, "OUTPUT") == 0) {
+    } else if (_strcmpi (Buffer, "OUTPUT") == 0) {
 
       OutputFlag      = TRUE;
       ArgumentsFlag   = FALSE;
       AttributesFlag  = FALSE;
       continue;
 
-    } else if (strcmpi (Buffer, "GUID") == 0) {
+    } else if (_strcmpi (Buffer, "GUID") == 0) {
 
       GuidFlag        = TRUE;
       ArgumentsFlag   = FALSE;
@@ -954,7 +954,7 @@ GetToolArguments (
       //
       continue;
 
-    } else if (strcmpi (Buffer, "ATTRIBUTES") == 0) {
+    } else if (_strcmpi (Buffer, "ATTRIBUTES") == 0) {
 
       AttributesFlag  = TRUE;
       ArgumentsFlag   = FALSE;
@@ -963,7 +963,7 @@ GetToolArguments (
       //
       continue;
 
-    } else if (strcmpi (Buffer, "") == 0) {
+    } else if (_strcmpi (Buffer, "") == 0) {
       continue;
     }
     //
@@ -1083,9 +1083,9 @@ GetToolArguments (
   // ReplaceVariableInBuffer (ToolArgumentsArray,&i,"OUTPUT",&TargetFileName,1);
   //
   for (z = 0; z < NumberOfAttributes; z++) {
-    if (strcmpi (AttributesArray[z], "PROCESSING_REQUIRED") == 0) {
+    if (_strcmpi (AttributesArray[z], "PROCESSING_REQUIRED") == 0) {
       *GuidedSectionAttributes |= EFI_GUIDED_SECTION_PROCESSING_REQUIRED;
-    } else if (strcmpi (AttributesArray[z], "AUTH_STATUS_VALID") == 0) {
+    } else if (_strcmpi (AttributesArray[z], "AUTH_STATUS_VALID") == 0) {
       *GuidedSectionAttributes |= EFI_GUIDED_SECTION_AUTH_STATUS_VALID;
     }
   }
@@ -1188,7 +1188,7 @@ Returns:
       goto Done;
     }
 
-    if (strcmpi (Buffer, "Compress") == 0) {
+    if (_strcmpi (Buffer, "Compress") == 0) {
       //
       // Handle compress
       //
@@ -1253,7 +1253,7 @@ Returns:
 
       Size += ReturnValue;
 
-    } else if (strcmpi (Buffer, "Tool") == 0) {
+    } else if (_strcmpi (Buffer, "Tool") == 0) {
 
       ZeroMem (ToolName, _MAX_PATH);
       ZeroMem (ToolArgumentsArray, sizeof (CHAR8 *) * MAX_ARRAY_SIZE);
@@ -1268,7 +1268,7 @@ Returns:
         }
       }
 
-      if (strcmpi (Buffer, "(") == 0) {
+      if (_strcmpi (Buffer, "(") == 0) {
         if (GetNextLine (Buffer, Package, &LineNumber) != -1) {
           CheckSlash (Buffer, Package, &LineNumber);
         }
@@ -1479,43 +1479,43 @@ Returns:
 
 --*/
 {
-  if (strcmpi (String, "EFI_FV_FILETYPE_RAW") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_RAW") == 0) {
     return EFI_FV_FILETYPE_RAW;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_FREEFORM") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_FREEFORM") == 0) {
     return EFI_FV_FILETYPE_FREEFORM;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_SECURITY_CORE") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_SECURITY_CORE") == 0) {
     return EFI_FV_FILETYPE_SECURITY_CORE;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_PEI_CORE") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_PEI_CORE") == 0) {
     return EFI_FV_FILETYPE_PEI_CORE;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_DXE_CORE") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_DXE_CORE") == 0) {
     return EFI_FV_FILETYPE_DXE_CORE;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_PEIM") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_PEIM") == 0) {
     return EFI_FV_FILETYPE_PEIM;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_DRIVER") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_DRIVER") == 0) {
     return EFI_FV_FILETYPE_DRIVER;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER") == 0) {
     return EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_APPLICATION") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_APPLICATION") == 0) {
     return EFI_FV_FILETYPE_APPLICATION;
   }
 
-  if (strcmpi (String, "EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE") == 0) {
+  if (_strcmpi (String, "EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE") == 0) {
     return EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE;
   }
 
@@ -1948,7 +1948,7 @@ Returns:
     // Parse override package file
     //
     fscanf (OverridePackage, "%s", &InputString);
-    if (strcmpi (InputString, "PACKAGE.INF") != 0) {
+    if (_strcmpi (InputString, "PACKAGE.INF") != 0) {
       Error (mGlobals.OverridePackagePath, 1, 0, "invalid package file", "expected 'PACKAGE.INF'");
       goto Done;
     }
@@ -1965,7 +1965,7 @@ Returns:
       if (GetNextLine (InputString, OverridePackage, &LineNumber) != -1) {
         if (InputString[0] != '[') {
 here:
-          if (strcmpi (InputString, "BASE_NAME") == 0) {
+          if (_strcmpi (InputString, "BASE_NAME") == 0) {
             //
             // found BASE_NAME, next is = and string.
             //
@@ -1982,13 +1982,13 @@ here:
               BreakString (InputString, InputString, 1);
               strcpy (BaseName, InputString);
             }
-          } else if (strcmpi (InputString, "IMAGE_SCRIPT") == 0) {
+          } else if (_strcmpi (InputString, "IMAGE_SCRIPT") == 0) {
             //
             // found IMAGE_SCRIPT, come back later to process it
             //
             ImageScriptInOveride = TRUE;
             fscanf (OverridePackage, "%s", &InputString);
-          } else if (strcmpi (InputString, "FFS_FILEGUID") == 0) {
+          } else if (_strcmpi (InputString, "FFS_FILEGUID") == 0) {
             //
             // found FILEGUID, next is = and string.
             //
@@ -2013,7 +2013,7 @@ here:
                 goto Done;
               }
             }
-          } else if (strcmpi (InputString, "FFS_FILETYPE") == 0) {
+          } else if (_strcmpi (InputString, "FFS_FILETYPE") == 0) {
             //
             // found FILETYPE, next is = and string.
             //
@@ -2031,7 +2031,7 @@ here:
               strcpy (FileType, InputString);
             }
 
-          } else if (strcmpi (InputString, "FFS_ATTRIB_RECOVERY") == 0) {
+          } else if (_strcmpi (InputString, "FFS_ATTRIB_RECOVERY") == 0) {
             //
             // found FFS_ATTRIB_RECOVERY, next is = and string.
             //
@@ -2043,16 +2043,16 @@ here:
               //
               fscanf (OverridePackage, "%s", &InputString);
               CheckSlash (InputString, OverridePackage, &LineNumber);
-              if (strcmpi (InputString, "TRUE") == 0) {
+              if (_strcmpi (InputString, "TRUE") == 0) {
                 FfsAttrib |= FFS_ATTRIB_RECOVERY;
               }
             } else {
               BreakString (InputString, InputString, 1);
-              if (strcmpi (InputString, "TRUE") == 0) {
+              if (_strcmpi (InputString, "TRUE") == 0) {
                 FfsAttrib |= FFS_ATTRIB_RECOVERY;
               }
             }
-          } else if (strcmpi (InputString, "FFS_ATTRIB_CHECKSUM") == 0) {
+          } else if (_strcmpi (InputString, "FFS_ATTRIB_CHECKSUM") == 0) {
             //
             // found FFS_ATTRIB_CHECKSUM, next is = and string.
             //
@@ -2064,16 +2064,16 @@ here:
               //
               fscanf (OverridePackage, "%s", &InputString);
               CheckSlash (InputString, OverridePackage, &LineNumber);
-              if (strcmpi (InputString, "TRUE") == 0) {
+              if (_strcmpi (InputString, "TRUE") == 0) {
                 FfsAttrib |= FFS_ATTRIB_CHECKSUM;
               }
             } else {
               BreakString (InputString, InputString, 1);
-              if (strcmpi (InputString, "TRUE") == 0) {
+              if (_strcmpi (InputString, "TRUE") == 0) {
                 FfsAttrib |= FFS_ATTRIB_CHECKSUM;
               }
             }
-          } else if (strcmpi (InputString, "FFS_ALIGNMENT") == 0) {
+          } else if (_strcmpi (InputString, "FFS_ALIGNMENT") == 0) {
             //
             // found FFS_ALIGNMENT, next is = and string.
             //
@@ -2130,7 +2130,7 @@ here:
     rewind (OverridePackage);
     LineNumber = 0;
     FindSectionInPackage (mGlobals.BuildDirectory, OverridePackage, &LineNumber);
-    while (strcmpi (InputString, "IMAGE_SCRIPT") != 0) {
+    while (_strcmpi (InputString, "IMAGE_SCRIPT") != 0) {
       GetNextLine (InputString, OverridePackage, &LineNumber);
       CheckSlash (InputString, OverridePackage, &LineNumber);
       if (strchr (InputString, '=') != NULL) {
@@ -2269,7 +2269,7 @@ here:
 
     LineNumber = 1;
     FindSectionInPackage (".", PrimaryPackage, &LineNumber);
-    while (strcmpi (InputString, "IMAGE_SCRIPT") != 0) {
+    while (_strcmpi (InputString, "IMAGE_SCRIPT") != 0) {
       GetNextLine (InputString, PrimaryPackage, &LineNumber);
       CheckSlash (InputString, PrimaryPackage, &LineNumber);
       if (strchr (InputString, '=') != NULL) {
@@ -2541,7 +2541,7 @@ Returns:
   Argc--;
   Argv++;
   while (Argc > 0) {
-    if (strcmpi (Argv[0], "-b") == 0) {
+    if (_strcmpi (Argv[0], "-b") == 0) {
       //
       // OPTION: -b BuildDirectory
       // Make sure there is another argument, then save it to our globals.
@@ -2559,7 +2559,7 @@ Returns:
       strcpy (mGlobals.BuildDirectory, Argv[1]);
       Argc--;
       Argv++;
-    } else if (strcmpi (Argv[0], "-p1") == 0) {
+    } else if (_strcmpi (Argv[0], "-p1") == 0) {
       //
       // OPTION: -p1 PrimaryPackageFile
       // Make sure there is another argument, then save it to our globals.
@@ -2577,7 +2577,7 @@ Returns:
       strcpy (mGlobals.PrimaryPackagePath, Argv[1]);
       Argc--;
       Argv++;
-    } else if (strcmpi (Argv[0], "-p2") == 0) {
+    } else if (_strcmpi (Argv[0], "-p2") == 0) {
       //
       // OPTION: -p2 OverridePackageFile
       // Make sure there is another argument, then save it to our globals.
@@ -2595,18 +2595,18 @@ Returns:
       strcpy (mGlobals.OverridePackagePath, Argv[1]);
       Argc--;
       Argv++;
-    } else if (strcmpi (Argv[0], "-v") == 0) {
+    } else if (_strcmpi (Argv[0], "-v") == 0) {
       //
       // OPTION: -v       verbose
       //
       mGlobals.Verbose = TRUE;
-    } else if (strcmpi (Argv[0], "-h") == 0) {
+    } else if (_strcmpi (Argv[0], "-h") == 0) {
       //
       // OPTION: -h      help
       //
       PrintUsage ();
       return STATUS_ERROR;
-    } else if (strcmpi (Argv[0], "-?") == 0) {
+    } else if (_strcmpi (Argv[0], "-?") == 0) {
       //
       // OPTION:  -?      help
       //

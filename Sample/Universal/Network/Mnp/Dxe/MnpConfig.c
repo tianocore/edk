@@ -1158,12 +1158,8 @@ Returns:
   //
   // Initialize the enable filter and disable filter.
   //
-  EnableFilterBits = 0;
-  DisableFilterBits = EFI_SIMPLE_NETWORK_RECEIVE_UNICAST |
-    EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST |
-    EFI_SIMPLE_NETWORK_RECEIVE_BROADCAST |
-    EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS |
-    EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST;
+  EnableFilterBits  = 0;
+  DisableFilterBits = Snp->Mode->ReceiveFilterMask;
 
   if (MnpServiceData->UnicastCount != 0) {
     //
@@ -1227,7 +1223,17 @@ Returns:
       // The maximum multicast is reached, set the filter to be promiscuous
       // multicast.
       //
-      EnableFilterBits |= EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST;
+
+      if (Snp->Mode->ReceiveFilterMask & EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST) {
+        EnableFilterBits |= EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST;
+      } else {
+        //
+        // Either MULTICAST or PROMISCUOUS_MULTICAST is not supported by Snp,
+        // set the NIC to be promiscuous although this will tremendously degrade
+        // the performance.
+        //
+        EnableFilterBits |= EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS;
+      }
     }
   }
 

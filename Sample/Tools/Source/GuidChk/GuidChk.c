@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -647,7 +647,7 @@ ProcessDirectory (
   NoSubdirs = FALSE;
   if (DirectoryName != NULL) {
     for (SLPtr = gOptions.ExcludeSubDirs; SLPtr != NULL; SLPtr = SLPtr->Next) {
-      if (stricmp (SLPtr->Str, DirectoryName) == 0) {
+      if (_stricmp (SLPtr->Str, DirectoryName) == 0) {
         //
         // printf ("not processing subdirectories of %s\n", DirectoryName);
         //
@@ -829,7 +829,7 @@ GetFileExtension (
   for (Extension = FileName + strlen (FileName) - 1; Extension >= FileName; Extension--) {
     if (*Extension == '.') {
       for (Index = 0; FileTypeTable[Index].Extension != NULL; Index++) {
-        if (stricmp (FileTypeTable[Index].Extension, Extension) == 0) {
+        if (_stricmp (FileTypeTable[Index].Extension, Extension) == 0) {
           return FileTypeTable[Index].ExtensionCode;
         }
       }
@@ -946,7 +946,7 @@ ProcessIA32FileGuids (
       CSave     = *CSavePtr;
       *CSavePtr = 0;
       while (*Cptr) {
-        if (strnicmp (Cptr, "guid", 4) == 0) {
+        if (_strnicmp (Cptr, "guid", 4) == 0) {
           break;
         }
 
@@ -970,7 +970,7 @@ ProcessIA32FileGuids (
           //
           // now look for "equ"
           //
-          if (strnicmp (Cptr, "equ", 3) == 0) {
+          if (_strnicmp (Cptr, "equ", 3) == 0) {
             Cptr += 3;
             Cptr += SkipWhiteSpace (Cptr);
             //

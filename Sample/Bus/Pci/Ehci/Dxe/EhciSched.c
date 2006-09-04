@@ -2112,6 +2112,12 @@ Returns:
   ASSERT (QtdHwPtr);
 
   //
+  // Allow buffer address range across 4G.
+  // But EFI_USB_MAX_BULK_BUFFER_NUM = 1, so don't allow
+  // seperate buffer array.
+  //
+
+  //
   // Set BufferPointer0, ExtBufferPointer0 and Offset
   //
   QtdHwPtr->BufferPointer0    = (UINT32) (GET_0B_TO_31B (DataPtr) >> 12);
@@ -2127,7 +2133,7 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer1    = QtdHwPtr->BufferPointer0 + 1;
-  QtdHwPtr->ExtBufferPointer1 = QtdHwPtr->ExtBufferPointer0;
+  QtdHwPtr->ExtBufferPointer1 = (QtdHwPtr->BufferPointer1 == 0) ? (QtdHwPtr->ExtBufferPointer0 + 1) : QtdHwPtr->ExtBufferPointer0;
 
   //
   // Set BufferPointer2 and ExtBufferPointer2
@@ -2138,7 +2144,7 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer2    = QtdHwPtr->BufferPointer1 + 1;
-  QtdHwPtr->ExtBufferPointer2 = QtdHwPtr->ExtBufferPointer0;
+  QtdHwPtr->ExtBufferPointer2 = (QtdHwPtr->BufferPointer2 == 0) ? (QtdHwPtr->ExtBufferPointer1 + 1) : QtdHwPtr->ExtBufferPointer1;
 
   //
   // Set BufferPointer3 and ExtBufferPointer3
@@ -2149,7 +2155,7 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer3    = QtdHwPtr->BufferPointer2 + 1;
-  QtdHwPtr->ExtBufferPointer3 = QtdHwPtr->ExtBufferPointer0;
+  QtdHwPtr->ExtBufferPointer3 = (QtdHwPtr->BufferPointer2 == 0) ? (QtdHwPtr->ExtBufferPointer2 + 1) : QtdHwPtr->ExtBufferPointer2;
 
   //
   // Set BufferPointer4 and ExtBufferPointer4
@@ -2160,7 +2166,7 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer4    = QtdHwPtr->BufferPointer3 + 1;
-  QtdHwPtr->ExtBufferPointer4 = QtdHwPtr->ExtBufferPointer0;
+  QtdHwPtr->ExtBufferPointer4 = (QtdHwPtr->BufferPointer3 == 0) ? (QtdHwPtr->ExtBufferPointer3 + 1) : QtdHwPtr->ExtBufferPointer3;
 
 exit:
   return ;
@@ -2867,8 +2873,8 @@ Returns:
     }
 
     (*ErrQtdPos)++;
-    QtdHwPtr = GetQtdNextPointer (QtdHwPtr);
-    QtdPtr = (EHCI_QTD_ENTITY *) GET_QTD_ENTITY_ADDR (QtdHwPtr);
+    QtdPtr   = QtdPtr->Next;
+    QtdHwPtr = &(QtdPtr->Qtd);
 
   }
 

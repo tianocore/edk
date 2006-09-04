@@ -22,10 +22,12 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include EFI_PROTOCOL_DEFINITION (Performance)
+#include EFI_PROTOCOL_DEFINITION (LoadedImage)
 #include EFI_GUID_DEFINITION (Hob)
 #include EFI_GUID_DEFINITION (PeiPerformanceHob)
 #include "linkedlist.h"
 #include "EfiHobLib.h"
+#include "EfiImage.h"
 
 EFI_STATUS
 GetTimerValue (
@@ -74,6 +76,180 @@ typedef struct {
 
 EFI_LIST_ENTRY  mPerfDataHead = INITIALIZE_LIST_HEAD_VARIABLE(mPerfDataHead);
 
+STATIC
+VOID
+GetShortPdbFileName (
+  CHAR8  *PdbFileName,
+  CHAR8  *GaugeString
+  )
+/*++
+
+Routine Description:
+  
+Arguments:
+
+Returns:
+
+--*/
+{
+  UINTN Index;
+  UINTN Index1;
+  UINTN StartIndex;
+  UINTN EndIndex;
+
+  if (PdbFileName == NULL) {
+    EfiAsciiStrCpy (GaugeString, " ");
+  } else {
+    StartIndex = 0;
+    for (EndIndex = 0; PdbFileName[EndIndex] != 0; EndIndex++)
+      ;
+
+    for (Index = 0; PdbFileName[Index] != 0; Index++) {
+      if (PdbFileName[Index] == '\\') {
+        StartIndex = Index + 1;
+      }
+
+      if (PdbFileName[Index] == '.') {
+        EndIndex = Index;
+      }
+    }
+
+    Index1 = 0;
+    for (Index = StartIndex; Index < EndIndex; Index++) {
+      GaugeString[Index1] = PdbFileName[Index];
+      Index1++;
+      if (Index1 == EFI_PERF_PDBFILENAME_LENGTH - 1) {
+        break;
+      }
+    }
+
+    GaugeString[Index1] = 0;
+  }
+
+  return ;
+}
+
+STATIC
+CHAR8 *
+GetPdbPath (
+  VOID *ImageBase
+  )
+/*++
+
+Routine Description:
+
+  Located PDB path name in PE image
+
+Arguments:
+
+  ImageBase - base of PE to search
+
+Returns:
+
+  Pointer into image at offset of PDB file name if PDB file name is found,
+  Otherwise a pointer to an empty string.
+
+--*/
+{
+  CHAR8                           *PdbPath;
+  UINT32                          DirCount;
+  EFI_IMAGE_DOS_HEADER            *DosHdr;
+  EFI_IMAGE_NT_HEADERS            *NtHdr;
+  EFI_IMAGE_OPTIONAL_HEADER       *OptionalHdr;
+  EFI_IMAGE_DATA_DIRECTORY        *DirectoryEntry;
+  EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *DebugEntry;
+  VOID                            *CodeViewEntryPointer;
+
+  CodeViewEntryPointer  = NULL;
+  PdbPath               = NULL;
+  DosHdr                = ImageBase;
+
+  if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
+    NtHdr           = (EFI_IMAGE_NT_HEADERS *) ((UINT8 *) DosHdr + DosHdr->e_lfanew);
+    OptionalHdr     = (VOID *) &NtHdr->OptionalHeader;
+    DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    if (DirectoryEntry->VirtualAddress != 0) {
+      for (DirCount = 0;
+           (DirCount < DirectoryEntry->Size / sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) && CodeViewEntryPointer == NULL;
+           DirCount++
+          ) {
+        DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *) (DirectoryEntry->VirtualAddress + (UINTN) ImageBase + DirCount * sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY));
+        if (DebugEntry->Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
+          CodeViewEntryPointer = (VOID *) ((UINTN) DebugEntry->RVA + (UINTN) ImageBase);
+          switch (*(UINT32 *) CodeViewEntryPointer) {
+          case CODEVIEW_SIGNATURE_NB10:
+            PdbPath = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_NB10_ENTRY);
+            break;
+
+          case CODEVIEW_SIGNATURE_RSDS:
+            PdbPath = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_RSDS_ENTRY);
+            break;
+
+          default:
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return PdbPath;
+}
+
+STATIC
+VOID
+GetNameFromHandle (
+  IN  EFI_HANDLE     Handle,
+  OUT CHAR8          *GaugeString
+  )
+{
+  EFI_STATUS                  Status;
+  EFI_LOADED_IMAGE_PROTOCOL   *Image;
+  CHAR8                       *PdbFileName;
+  EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
+
+  EfiAsciiStrCpy (GaugeString, " ");
+
+  //
+  // Get handle name from image protocol
+  //
+  Status = gBS->HandleProtocol (
+                  Handle,
+                  &gEfiLoadedImageProtocolGuid,
+                  &Image
+                  );
+
+  if (EFI_ERROR (Status)) {
+    Status = gBS->OpenProtocol (
+                    Handle,
+                    &gEfiDriverBindingProtocolGuid,
+                    (VOID **) &DriverBinding,
+                    NULL,
+                    NULL,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
+    if (EFI_ERROR (Status)) {
+      return ;
+    }
+    //
+    // Get handle name from image protocol
+    //
+    Status = gBS->HandleProtocol (
+                    DriverBinding->ImageHandle,
+                    &gEfiLoadedImageProtocolGuid,
+                    &Image
+                    );
+  }
+
+  PdbFileName = GetPdbPath (Image->ImageBase);
+
+  if (PdbFileName != NULL) {
+    GetShortPdbFileName (PdbFileName, GaugeString);
+  }
+
+  return ;
+}
+
 EFI_PERF_DATA_LIST *
 CreateDataNode (
   IN EFI_HANDLE       Handle,
@@ -116,6 +292,10 @@ Returns:
 
     if (Host != NULL) {
       EfiStrCpy ((Node->GaugeData).Host, Host);
+    }
+
+    if (Handle != NULL) {
+      GetNameFromHandle (Handle, Node->GaugeData.PdbFileName);
     }
   }
 

@@ -22,14 +22,10 @@ Abstract:
 #include "Image.h"
 #include "EfiHobLib.h"
 #include "EfiPerf.h"
+
 //
 // Module Globals
 //
-
-//
-// LIST of runtime images that need to be relocated.
-//
-EFI_LIST_ENTRY    mRuntimeImageList = INITIALIZE_LIST_HEAD_VARIABLE (mRuntimeImageList);
 
 LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage = NULL;
 
@@ -49,7 +45,7 @@ LOADED_IMAGE_PRIVATE_DATA mCorePrivateImage  = {
   NULL,                                           // Image handle
   EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER,    // Image type
   TRUE,                                           // If entrypoint has been called
-  NULL, // EntryPoint
+  NULL,                                           // EntryPoint
   {
     EFI_LOADED_IMAGE_INFORMATION_REVISION,        // Revision
     NULL,                                         // Parent handle
@@ -67,19 +63,17 @@ LOADED_IMAGE_PRIVATE_DATA mCorePrivateImage  = {
     EfiBootServicesCode,                          // ImageCodeType
     EfiBootServicesData                           // ImageDataType
   },
-  (EFI_PHYSICAL_ADDRESS)0,    // ImageBasePage
-  0,                          // NumberOfPages
-  NULL,                       // FixupData  
-  0,                          // Tpl
-  EFI_SUCCESS,                // Status
-  0,                          // ExitDataSize
-  NULL,                       // ExitData
-  NULL,                       // JumpContext
-  0,                          // Machine
-  NULL,                       // Ebc 
-  FALSE,                      // RuntimeFixupValid
-  NULL,                       // RuntimeFixup
-  { NULL, NULL },             // Link  
+  (EFI_PHYSICAL_ADDRESS)0,                        // ImageBasePage
+  0,                                              // NumberOfPages
+  NULL,                                           // FixupData  
+  0,                                              // Tpl
+  EFI_SUCCESS,                                    // Status
+  0,                                              // ExitDataSize
+  NULL,                                           // ExitData
+  NULL,                                           // JumpContext
+  0,                                              // Machine
+  NULL,                                           // Ebc 
+  NULL,                                           // RuntimeData
 };
 
 
@@ -187,51 +181,6 @@ Returns:
 }
 
 
-EFI_STATUS
-CoreShutdownImageServices (
-  VOID
-  )
-/*++
-
-Routine Description:
-
-  Transfer control of runtime images to runtime service
-
-Arguments:
-
-  None
-
-Returns:
-
-  EFI_SUCCESS       - Function successfully returned
-
---*/
-{
-  EFI_LIST_ENTRY              *Link;
-  LOADED_IMAGE_PRIVATE_DATA   *Image;
-
-  //
-  // The Runtime AP is required for the core to function!
-  //
-  ASSERT (gRuntime != NULL);
-
-  for (Link = mRuntimeImageList.ForwardLink; Link != &mRuntimeImageList; Link = Link->ForwardLink) {
-    Image = CR (Link, LOADED_IMAGE_PRIVATE_DATA, Link, LOADED_IMAGE_PRIVATE_DATA_SIGNATURE);
-    if (Image->RuntimeFixupValid) {
-      gRuntime->RegisterImage (
-                  gRuntime, 
-                  (UINT64)(UINTN)(Image->Info.ImageBase), 
-                  (EFI_SIZE_TO_PAGES ((UINTN)Image->Info.ImageSize)), 
-                  Image->RuntimeFixup
-                  );
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-
-
 STATIC
 EFI_STATUS
 CoreLoadPeImage (
@@ -239,70 +188,82 @@ CoreLoadPeImage (
   IN LOADED_IMAGE_PRIVATE_DATA   *Image,                
   IN EFI_PHYSICAL_ADDRESS        DstBuffer    OPTIONAL,
   OUT EFI_PHYSICAL_ADDRESS       *EntryPoint  OPTIONAL,
-  IN  UINT32                     Attribute
+  IN  UINT32                     Attribute,
+  IN  BOOLEAN                    CrossLoad
   )
 /*++
 
 Routine Description:
 
-  Loads, relocates, and invokes a PE/COFF image
+  Loads, relocates, and invokes a PE/COFF image.
 
 Arguments:
 
-  Pe32Handle       - The handle of PE32 image
-  Image            - PE image to be loaded
-  DstBuffer        - The buffer to store the image
-  EntryPoint       - A pointer to the entry point
-  Attribute        - The bit mask of attributes to set for the load PE image
+  Pe32Handle       - The handle of PE32 image.
+  Image            - PE image to be loaded.
+  DstBuffer        - The buffer to store the image.
+  EntryPoint       - A pointer to the entry point.
+  Attribute        - The bit mask of attributes to set for the load PE image.
+  CrossLoad        - Whether expect to support cross architecture loading.
 
 Returns:
 
-  EFI_SUCCESS          - The file was loaded, relocated, and invoked
-
-  EFI_OUT_OF_RESOURCES - There was not enough memory to load and relocate the PE/COFF file
-
-  EFI_INVALID_PARAMETER - Invalid parameter
-  
-  EFI_BUFFER_TOO_SMALL  - Buffer for image is too small
+  EFI_SUCCESS             - The file was loaded, relocated, and invoked.
+  EFI_OUT_OF_RESOURCES    - There was not enough memory to load and relocate the PE/COFF file.
+  EFI_INVALID_PARAMETER   - Invalid parameter.
+  EFI_BUFFER_TOO_SMALL    - Buffer for image is too small.
 
 --*/
 {
-  EFI_STATUS                            Status;
-  UINTN                                 Size;
-  DEBUG_CODE (
+  EFI_STATUS      Status;
+  BOOLEAN         DstBufAlocated;
+  UINTN           Size;
   
-    UINTN Index;
-    UINTN StartIndex;
-    CHAR8 EfiFileName[256];
-    
+  DEBUG_CODE (
+    UINTN   Index;
+    UINTN   StartIndex;
+    CHAR8   EfiFileName[256];
   )
  
-  EfiCommonLibZeroMem (&Image->ImageContext, sizeof (Image->ImageContext));
+  EfiCommonLibZeroMem (&(Image->ImageContext), sizeof (Image->ImageContext));
 
   Image->ImageContext.Handle    = Pe32Handle;
-  Image->ImageContext.ImageRead = (EFI_PEI_PE_COFF_LOADER_READ_FILE)CoreReadImageFile;
+  Image->ImageContext.ImageRead = (EFI_PEI_PE_COFF_LOADER_READ_FILE) CoreReadImageFile;
 
   //
-  // Get information about the image being loaded
+  // Get information about the image being loaded.
   //
-  Status = gEfiPeiPeCoffLoader->GetImageInfo (gEfiPeiPeCoffLoader, &Image->ImageContext);
+  Status = gEfiPeiPeCoffLoader->GetImageInfo (gEfiPeiPeCoffLoader, &(Image->ImageContext));
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
   //
-  // Allocate memory of the correct memory type aligned on the required image boundry
+  // Check the processor architecture of the image
   //
-  
+  if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->ImageContext.Machine)) {
+    if (CrossLoad) {
+      if (!EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED (Image->ImageContext.Machine)) {
+        return EFI_UNSUPPORTED;
+      }
+    } else {
+      return EFI_UNSUPPORTED;
+    }
+  }
+
+  //
+  // Allocate memory of the correct memory type aligned on the required image boundary.
+  //
+  DstBufAlocated = FALSE;
   if (DstBuffer == 0) {
     //
-    // Allocate Destination Buffer as caller did not pass it in
+    // Allocate Destination Buffer as caller did not pass it in.
     //
 
     if (Image->ImageContext.SectionAlignment > EFI_PAGE_SIZE) {
-      Size = (UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment;
+      Size = (UINTN) Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment;
     } else {
-      Size = (UINTN)Image->ImageContext.ImageSize;
+      Size = (UINTN) Image->ImageContext.ImageSize;
     }
 
     Image->NumberOfPages = EFI_SIZE_TO_PAGES (Size);
@@ -315,17 +276,15 @@ Returns:
                (Image->ImageContext.RelocationsStripped) ? AllocateAddress : AllocateAnyPages,
                Image->ImageContext.ImageCodeMemoryType,
                Image->NumberOfPages,
-               &Image->ImageContext.ImageAddress
+               &(Image->ImageContext.ImageAddress)
                );
     if (EFI_ERROR (Status)) {
       return Status;
     }
-
-    Image->ImageBasePage = Image->ImageContext.ImageAddress;
-
+    DstBufAlocated = TRUE;
   } else {
     //
-    // Caller provided the destination buffer
+    // Caller provided the destination buffer.
     //
     
     if (Image->ImageContext.RelocationsStripped && (Image->ImageContext.ImageAddress != DstBuffer)) {
@@ -336,59 +295,53 @@ Returns:
       //
       return EFI_INVALID_PARAMETER;
     }
-
-    if (Image->NumberOfPages != 0 &&
-        Image->NumberOfPages < 
-        (EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment))) {
-      Image->NumberOfPages = EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment); 
+    
+    Size = EFI_SIZE_TO_PAGES ((UINTN) Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment);
+    
+    if ((Image->NumberOfPages != 0) && (Image->NumberOfPages < Size)) {
+      Image->NumberOfPages = Size;
       return EFI_BUFFER_TOO_SMALL;
     }
 
-    Image->NumberOfPages = EFI_SIZE_TO_PAGES ((UINTN)Image->ImageContext.ImageSize + Image->ImageContext.SectionAlignment); 
+    Image->NumberOfPages = Size;
     Image->ImageContext.ImageAddress = DstBuffer;
-    Image->ImageBasePage = Image->ImageContext.ImageAddress;
   }
-
+  
+  Image->ImageBasePage = Image->ImageContext.ImageAddress;
   Image->ImageContext.ImageAddress = 
-      (Image->ImageContext.ImageAddress + Image->ImageContext.SectionAlignment - 1) & 
-      ~((UINTN)Image->ImageContext.SectionAlignment - 1);
+                        (Image->ImageContext.ImageAddress + Image->ImageContext.SectionAlignment - 1) & 
+                        ~((UINTN) Image->ImageContext.SectionAlignment - 1);
 
   //
   // Load the image from the file into the allocated memory
   //
-  Status = gEfiPeiPeCoffLoader->LoadImage (gEfiPeiPeCoffLoader, &Image->ImageContext);
+  Status = gEfiPeiPeCoffLoader->LoadImage (gEfiPeiPeCoffLoader, &(Image->ImageContext));
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Done;
   }
-
+    
   //
   // If this is a Runtime Driver, then allocate memory for the FixupData that 
   // is used to relocate the image when SetVirtualAddressMap() is called. The 
   // relocation is done by the Runtime AP.
   //
   if (Attribute & EFI_LOAD_PE_IMAGE_ATTRIBUTE_RUNTIME_REGISTRATION) {
-    if (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER) {
+    if (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER &&
+        EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->ImageContext.Machine)) {
       Image->ImageContext.FixupData = CoreAllocateRuntimePool ((UINTN)(Image->ImageContext.FixupDataSize));
       if (Image->ImageContext.FixupData == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
         goto Done;
       }
-
-      //
-      // Make a list off all the RT images so we can let the RT AP know about them
-      //
-      Image->RuntimeFixupValid = TRUE;
-      Image->RuntimeFixup = Image->ImageContext.FixupData;
-      InsertTailList (&mRuntimeImageList, &Image->Link);
     }
   }
 
   //
   // Relocate the image in memory
   //
-  Status = gEfiPeiPeCoffLoader->RelocateImage (gEfiPeiPeCoffLoader, &Image->ImageContext);
+  Status = gEfiPeiPeCoffLoader->RelocateImage (gEfiPeiPeCoffLoader, &(Image->ImageContext));
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Done;
   }
 
   //
@@ -396,28 +349,28 @@ Returns:
   //
   Status = CoreFlushICache (Image->ImageContext.ImageAddress, Image->ImageContext.ImageSize);
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Done;
   }
-
-  //
-  // Copy the machine type from the context to the image private data. This
-  // is needed during image unload to know if we should call an EBC protocol
-  // to unload the image.
-  //
-  Image->Machine = Image->ImageContext.Machine;
 
   //
   // Get the image entry point. If it's an EBC image, then call into the 
   // interpreter to create a thunk for the entry point and use the returned
   // value for the entry point. 
   //
-  Image->EntryPoint   = (EFI_IMAGE_ENTRY_POINT)(UINTN)Image->ImageContext.EntryPoint;
+  Image->EntryPoint   = (EFI_IMAGE_ENTRY_POINT) (UINTN) Image->ImageContext.EntryPoint;
+  
+  //
+  // Copy the machine type from the context to the image private data. This
+  // is needed during image unload to know if we should call an EBC protocol
+  // to unload the image.
+  //
+  Image->Machine = Image->ImageContext.Machine;
   if (Image->ImageContext.Machine == EFI_IMAGE_MACHINE_EBC) {
     //
     // Locate the EBC interpreter protocol
     //
     Status = CoreLocateProtocol (&gEfiEbcProtocolGuid, NULL, &Image->Ebc);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       goto Done;
     }
    
@@ -426,7 +379,7 @@ Returns:
     // thunks can be flushed.
     //
     Status = Image->Ebc->RegisterICacheFlush (Image->Ebc, CoreFlushICache);
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       goto Done;
     }
     
@@ -440,7 +393,7 @@ Returns:
                            (VOID *)(UINTN)Image->ImageContext.EntryPoint, 
                            (VOID **)&Image->EntryPoint
                            );
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       goto Done;
     }
   }
@@ -449,11 +402,28 @@ Returns:
   // Fill in the image information for the Loaded Image Protocol
   //
   Image->Type               = Image->ImageContext.ImageType;
-  Image->Info.ImageBase     = (VOID *)(UINTN)Image->ImageContext.ImageAddress;
+  Image->Info.ImageBase     = (VOID *) (UINTN) Image->ImageContext.ImageAddress;
   Image->Info.ImageSize     = Image->ImageContext.ImageSize;
   Image->Info.ImageCodeType = Image->ImageContext.ImageCodeMemoryType;
   Image->Info.ImageDataType = Image->ImageContext.ImageDataMemoryType;
-
+  
+  if (Attribute & EFI_LOAD_PE_IMAGE_ATTRIBUTE_RUNTIME_REGISTRATION) {
+    if (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER) {
+      //
+      // Make a list off all the RT images so we can let the RT AP know about them.
+      //
+      Image->RuntimeData = CoreAllocateRuntimePool (sizeof(EFI_RUNTIME_IMAGE_ENTRY));
+      if (Image->RuntimeData == NULL) {
+        goto Done;
+      }
+      Image->RuntimeData->ImageBase      = Image->Info.ImageBase;
+      Image->RuntimeData->ImageSize      = (UINT64) (Image->Info.ImageSize);
+      Image->RuntimeData->RelocationData = Image->ImageContext.FixupData;
+      Image->RuntimeData->Handle         = Image->Handle;
+      InsertTailList (&gRuntime->ImageHead, &Image->RuntimeData->Link);
+    }
+  }
+  
   //
   // Fill in the entry point of the image if it is available
   //
@@ -467,7 +437,12 @@ Returns:
 
   DEBUG_CODE (
   {
-    DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Loading driver at 0x%08x EntryPoint=0x%08x ", (UINTN)Image->ImageContext.ImageAddress, (UINTN)Image->ImageContext.EntryPoint));
+    DEBUG ((
+      EFI_D_INFO | EFI_D_LOAD, 
+      "Loading driver at 0x%08x EntryPoint=0x%08x ", 
+      (UINTN) Image->ImageContext.ImageAddress, 
+      (UINTN) Image->ImageContext.EntryPoint
+      ));
     if (Image->ImageContext.PdbPointer != NULL) {
       StartIndex = 0;
       for (Index = 0; Image->ImageContext.PdbPointer[Index] != 0; Index++) {
@@ -491,7 +466,7 @@ Returns:
           break;
         }
       }
-      DEBUG ((EFI_D_INFO | EFI_D_LOAD, "%a", EfiFileName)); // &Image->ImageContext.PdbPointer[StartIndex]));
+      DEBUG ((EFI_D_INFO | EFI_D_LOAD, "%a", EfiFileName));
     }
     DEBUG ((EFI_D_INFO | EFI_D_LOAD, "\n"));
   }
@@ -500,10 +475,19 @@ Returns:
   return EFI_SUCCESS;
 
 Done:
+
   //
-  // Free memory
+  // Free memory.
   //
-  CoreFreePages (Image->ImageContext.ImageAddress, Image->NumberOfPages);
+  
+  if (DstBufAlocated) {
+    CoreFreePages (Image->ImageContext.ImageAddress, Image->NumberOfPages);
+  }
+  
+  if (Image->ImageContext.FixupData != NULL) {
+    CoreFreePool (Image->ImageContext.FixupData);
+  }
+
   return Status;
 }
 
@@ -559,7 +543,8 @@ CoreLoadImageCommon (
   IN OUT UINTN                         *NumberOfPages      OPTIONAL,
   OUT EFI_HANDLE                       *ImageHandle,
   OUT EFI_PHYSICAL_ADDRESS             *EntryPoint         OPTIONAL,
-  IN  UINT32                           Attribute
+  IN  UINT32                           Attribute,
+  IN  BOOLEAN                          CrossLoad
   )
 /*++
 
@@ -584,6 +569,7 @@ Arguments:
                         is successfully loaded.
   EntryPoint          - A pointer to the entry point
   Attribute           - The bit mask of attributes to set for the load PE image
+  CrossLoad           - Whether expect to support cross architecture loading
 
 Returns:
 
@@ -721,7 +707,7 @@ Returns:
   //
   // Load the image.  If EntryPoint is Null, it will not be set.
   //
-  Status = CoreLoadPeImage (&FHand, Image, DstBuffer, EntryPoint, Attribute);
+  Status = CoreLoadPeImage (&FHand, Image, DstBuffer, EntryPoint, Attribute, CrossLoad);
   if (EFI_ERROR (Status)) {
     if ((Status == EFI_BUFFER_TOO_SMALL) || (Status == EFI_OUT_OF_RESOURCES)) {
       if (NumberOfPages != NULL) {
@@ -835,7 +821,8 @@ Returns:
              NULL,
              ImageHandle,
              NULL,
-             EFI_LOAD_PE_IMAGE_ATTRIBUTE_RUNTIME_REGISTRATION | EFI_LOAD_PE_IMAGE_ATTRIBUTE_DEBUG_IMAGE_INFO_TABLE_REGISTRATION
+             EFI_LOAD_PE_IMAGE_ATTRIBUTE_RUNTIME_REGISTRATION | EFI_LOAD_PE_IMAGE_ATTRIBUTE_DEBUG_IMAGE_INFO_TABLE_REGISTRATION,
+             FALSE
              );
 
   if (!EFI_ERROR (Status)) {
@@ -905,7 +892,8 @@ Returns:
            NumberOfPages,
            ImageHandle,
            EntryPoint,
-           Attribute
+           Attribute,
+           TRUE
            );
 }
 
@@ -955,7 +943,14 @@ Returns:
   if (Image == NULL_HANDLE  ||  Image->Started) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
+  //
+  // Cannot start image of an unsupported processor architecture
+  //
+  if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->ImageContext.Machine)) {
+    return EFI_UNSUPPORTED;
+  }
+    
   //
   // Don't profile Objects or invalid start requests
   //
@@ -1199,13 +1194,16 @@ Returns:
 
   }
 
-  if (Image->RuntimeFixupValid) {
-    //
-    // Remove the Image from the Runtime Image list as we are about to Free it!
-    //
-    RemoveEntryList (&Image->Link);
+  if (Image->RuntimeData != NULL) {
+    if (Image->RuntimeData->Link.ForwardLink != NULL) {
+      //
+      // Remove the Image from the Runtime Image list as we are about to Free it!
+      //
+      RemoveEntryList (&Image->RuntimeData->Link);
+    }
+    CoreFreePool (Image->RuntimeData);
   }
-
+  
   //
   // Free the Image from memory
   //

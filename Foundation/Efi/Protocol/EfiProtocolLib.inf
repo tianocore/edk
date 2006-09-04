@@ -143,8 +143,8 @@ C_STD_INCLUDE=
   Hash\Hash.h
   Hash\Hash.c
   ServiceBinding\ServiceBinding.h
-  ScsiPassThru\ScsiPassThru.h
-  ScsiPassThru\ScsiPassThru.c
+  ScsiPassThruExt\ScsiPassThruExt.h
+  ScsiPassThruExt\ScsiPassThruExt.c
   ScsiIo\ScsiIo.h
   ScsiIo\ScsiIo.c
   TapeIo\TapeIo.h

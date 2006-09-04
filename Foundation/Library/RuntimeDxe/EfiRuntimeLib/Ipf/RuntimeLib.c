@@ -736,6 +736,58 @@ Returns:
                 );
   return (EFI_STATUS) ReturnReg.Status;
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+EFI_STATUS
+EfiQueryVariableInfo (
+  IN UINT32           Attributes,
+  OUT UINT64          *MaximumVariableStorageSize,
+  OUT UINT64          *RemainingVariableStorageSize,
+  OUT UINT64          *MaximumVariableSize
+  )
+/*++
+
+Routine Description:
+
+  This code returns information about the EFI variables.
+
+Arguments:
+
+  Attributes                      Attributes bitmask to specify the type of variables 
+                                  on which to return information.
+  MaximumVariableStorageSize      Pointer to the maximum size of the storage space available
+                                  for the EFI variables associated with the attributes specified.
+  RemainingVariableStorageSize    Pointer to the remaining size of the storage space available 
+                                  for the EFI variables associated with the attributes specified.
+  MaximumVariableSize             Pointer to the maximum size of the individual EFI variables
+                                  associated with the attributes specified.
+
+Returns:
+
+  Status code
+
+--*/
+{
+  SAL_RETURN_REGS ReturnReg;
+  EFI_GUID Guid = EFI_EXTENDED_SAL_VARIABLE_SERVICES_PROTOCOL_GUID;
+
+  ReturnReg = EfiCallEsalService (
+                &Guid,
+                EsalQueryVariableInfo,
+                (UINT64) Attributes,
+                (UINT64) MaximumVariableStorageSize,
+                (UINT64) RemainingVariableStorageSize,
+                (UINT64) MaximumVariableSize,
+                0, 
+                0,
+                0
+                );
+  return (EFI_STATUS) ReturnReg.Status;
+}
+
+#endif
+
 //
 //  Sal RTC Driver Class.
 //

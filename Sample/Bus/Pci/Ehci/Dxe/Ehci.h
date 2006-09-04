@@ -208,10 +208,10 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gEhciComponentName;
 #define OUTPUT_PACKET_ID        0xE1
 #define ERROR_PACKET_ID         0x55
 
-#define bit(a)                1 << (a)
+#define bit(a)                (1 << (a))
 
 #define GET_0B_TO_31B(Addr)   (((UINTN) Addr) & (0xffffffff))
-#define GET_32B_TO_63B(Addr)  ((((UINTN) Addr) >> 32) & (0xffffffff))
+#define GET_32B_TO_63B(Addr)  ((UINTN)RShiftU64((UINTN) Addr, 32) & (0xffffffff))
 
 
 //

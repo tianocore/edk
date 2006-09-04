@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,8 +15,7 @@ Module Name:
 
 Abstract:
 
-    Stub to resolve the IPF hook that handles IPF specific relocation types
-
+  Stub that handles IA32 specific relocation types
 
 Revision History
 
@@ -35,7 +34,7 @@ PeHotRelocateImageEx (
 
 Routine Description:
 
-  Performs an Itanium-based platform specific relocation fixup
+  Performs IA32 specific relocation fixup
 
 Arguments:
 
@@ -54,5 +53,4 @@ Returns:
 --*/
 {
   return EFI_SUCCESS;
-
 }

@@ -32,11 +32,10 @@ Abstract:
 #include EFI_GUID_DEFINITION (Acpi)
 #include EFI_GUID_DEFINITION (GlobalVariable)
 
-#define EFI_PERF_TOKEN_LENGTH       28
 #define EFI_PERF_PEI_ENTRY_MAX_NUM  50
 
 typedef struct {
-  CHAR8   Token[EFI_PERF_TOKEN_LENGTH];
+  CHAR8   Token[EFI_PERF_PDBFILENAME_LENGTH];
   UINT32  Duration;
 } EFI_PERF_DATA;
 

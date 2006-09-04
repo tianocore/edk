@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -964,7 +964,7 @@ Returns:
   // defines  x=abc y=yyy. Be nice and accept "define" and "defines" in a
   // case-insensitive manner. If it's defines, then make the symbols global.
   //
-  if ((stricmp (ArgLine, "define") == 0) || (stricmp (ArgLine, "defines") == 0)) {
+  if ((_stricmp (ArgLine, "define") == 0) || (_stricmp (ArgLine, "defines") == 0)) {
     SymType     = SYM_OVERWRITE | SYM_GLOBAL;
     DefineLine  = 1;
   } else {
@@ -2310,7 +2310,7 @@ BuiltFileExtension (
   // its built file extension.
   //
   for (i = 0; mFileTypes[i].Extension != NULL; i++) {
-    if (stricmp (Cptr, mFileTypes[i].Extension) == 0) {
+    if (_stricmp (Cptr, mFileTypes[i].Extension) == 0) {
       return mFileTypes[i].BuiltExtension;
     }
   }
@@ -2933,7 +2933,7 @@ WriteCompileCommands (
             CPtr++;
           }
 
-          if (strnicmp (CPtr, File->Extension, strlen (File->Extension)) == 0) {
+          if (_strnicmp (CPtr, File->Extension, strlen (File->Extension)) == 0) {
             //
             // Found a file name extension match -- extract the name from the variable, for
             // example "MyCCompiler"
@@ -3102,7 +3102,7 @@ MakeFilePath (
   //
   Cptr = GetSymbolValue (BUILD_DIR);
   if (Cptr != NULL) {
-    if (strnicmp (Cptr, FileName, strlen (Cptr)) == 0) {
+    if (_strnicmp (Cptr, FileName, strlen (Cptr)) == 0) {
       //
       // BUILD_DIR path. See if it exists
       //
@@ -3199,11 +3199,11 @@ ExpandMacros (
         //
         *Cptr = 0;
         strcpy (ToPtr, SaveStart);
-        if ((stricmp (SOURCE_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_SOURCEDIR)) {
+        if ((_stricmp (SOURCE_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_SOURCEDIR)) {
           //
           // excluded this expansion
           //
-        } else if ((stricmp (DEST_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_DESTDIR)) {
+        } else if ((_stricmp (DEST_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_DESTDIR)) {
           //
           // excluded this expansion
           //
@@ -3302,11 +3302,11 @@ ExpandMacrosRecursive (
         //
         *Cptr = 0;
         strcpy (ToPtr, SaveStart);
-        if ((stricmp (SOURCE_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_SOURCEDIR)) {
+        if ((_stricmp (SOURCE_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_SOURCEDIR)) {
           //
           // excluded this expansion
           //
-        } else if ((stricmp (DEST_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_DESTDIR)) {
+        } else if ((_stricmp (DEST_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_DESTDIR)) {
           //
           // excluded this expansion
           //
@@ -3400,7 +3400,7 @@ Returns:
   //
   Symbol = gGlobals.Symbol;
   while (Symbol) {
-    if ((stricmp (SymbolName, Symbol->Name) == 0) && (Symbol->Type & SYM_FILE)) {
+    if ((_stricmp (SymbolName, Symbol->Name) == 0) && (Symbol->Type & SYM_FILE)) {
       return Symbol->Value;
     }
 
@@ -3411,7 +3411,7 @@ Returns:
   //
   Symbol = gGlobals.Symbol;
   while (Symbol) {
-    if ((stricmp (SymbolName, Symbol->Name) == 0) && (Symbol->Type & SYM_LOCAL)) {
+    if ((_stricmp (SymbolName, Symbol->Name) == 0) && (Symbol->Type & SYM_LOCAL)) {
       return Symbol->Value;
     }
 
@@ -3422,7 +3422,7 @@ Returns:
   //
   Symbol = gGlobals.Symbol;
   while (Symbol) {
-    if ((stricmp (SymbolName, Symbol->Name) == 0) && (Symbol->Type & SYM_GLOBAL)) {
+    if ((_stricmp (SymbolName, Symbol->Name) == 0) && (Symbol->Type & SYM_GLOBAL)) {
       return Symbol->Value;
     }
 
@@ -3431,7 +3431,7 @@ Returns:
   //
   // For backwards-compatibility, if it's "GUID", return FILE_GUID value
   //
-  if (stricmp (SymbolName, GUID) == 0) {
+  if (_stricmp (SymbolName, GUID) == 0) {
     return GetSymbolValue (FILE_GUID);
   }
 
@@ -3707,7 +3707,7 @@ AddSymbol (
     //
     // Check for symbol name match
     //
-    if (stricmp (Name, Symbol->Name) == 0) {
+    if (_stricmp (Name, Symbol->Name) == 0) {
       //
       // See if this symbol is of the same type (global or local) as what
       // they're requesting
@@ -3728,7 +3728,7 @@ AddSymbol (
           //
           // If value == "NULL", then make it a 0-length string
           //
-          if (stricmp (Symbol->Value, "NULL") == 0) {
+          if (_stricmp (Symbol->Value, "NULL") == 0) {
             Symbol->Value[0] = 0;
           }
 
@@ -3784,7 +3784,7 @@ AddSymbol (
   //
   // If value == "NULL", then make it a 0-length string
   //
-  if (stricmp (NewSymbol->Value, "NULL") == 0) {
+  if (_stricmp (NewSymbol->Value, "NULL") == 0) {
     NewSymbol->Value[0] = 0;
   }
   //
@@ -3812,7 +3812,7 @@ RemoveSymbol (
   PrevSymbol  = NULL;
   Symbol      = gGlobals.Symbol;
   while (Symbol) {
-    if ((stricmp (Name, Symbol->Name) == 0) && (Symbol->Type & SymbolType)) {
+    if ((_stricmp (Name, Symbol->Name) == 0) && (Symbol->Type & SymbolType)) {
       if (Symbol->Value) {
         free (Symbol->Value);
       }
@@ -4147,7 +4147,7 @@ GetSourceFileType (
 
     for (i = 0; mFileTypes[i].Extension != NULL; i++) {
       len = strlen (mFileTypes[i].Extension);
-      if (strnicmp (mFileTypes[i].Extension, Cptr, len) == 0) {
+      if (_strnicmp (mFileTypes[i].Extension, Cptr, len) == 0) {
         if ((*(Cptr + len) == 0) || isspace (*(Cptr + len))) {
           return mFileTypes[i].FileType;
         }
@@ -4188,7 +4188,7 @@ IsIncludeFile (
     //
     for (i = 0; mFileTypes[i].Extension != NULL; i++) {
       len = strlen (mFileTypes[i].Extension);
-      if (strnicmp (mFileTypes[i].Extension, Cptr, len) == 0) {
+      if (_strnicmp (mFileTypes[i].Extension, Cptr, len) == 0) {
         //
         // Make sure that's all there is to the filename extension.
         //
@@ -4265,12 +4265,12 @@ GetEfiSource (
   strcpy (Line, Cwd);
   Cwd = Line + strlen (Line) - 1;
   while (Cwd >= Line) {
-    if (strnicmp (Cwd, PLATFORM_STR, strlen (PLATFORM_STR)) == 0) {
+    if (_strnicmp (Cwd, PLATFORM_STR, strlen (PLATFORM_STR)) == 0) {
       *Cwd = 0;
       //
       // Emit a messsage if it's not the same as the environmental setting.
       //
-      if ((EnvValue != NULL) && stricmp (EnvValue, Line)) {
+      if ((EnvValue != NULL) && _stricmp (EnvValue, Line)) {
         fprintf (stdout, "***************************************************************\n");
         fprintf (stdout, "* WARNING: ENVIRONMENTAL VARIABLE EFI_SOURCE DIFFERS FROM CWD *\n");
         fprintf (stdout, "***************************************************************\n");

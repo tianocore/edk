@@ -308,6 +308,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 MemoryReportStatusCode (
   IN EFI_PEI_SERVICES         **PeiServices,
   IN EFI_STATUS_CODE_TYPE     CodeType,

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -46,7 +46,7 @@ EFI_STATUS
 (EFIAPI *EFI_PEI_PE_COFF_LOADER_READ_FILE) (
   IN     VOID   *FileHandle,
   IN     UINTN  FileOffset,
-  IN OUT UINT64 *ReadSize,
+  IN OUT UINTN  *ReadSize,
   OUT    VOID   *Buffer
   );
 
@@ -63,11 +63,11 @@ typedef struct {
   UINT32                            DebugDirectoryEntryRva;
   VOID                              *CodeView;
   CHAR8                             *PdbPointer;
-  UINT64                            SizeOfHeaders;
+  UINTN                             SizeOfHeaders;
   UINT32                            ImageCodeMemoryType;
   UINT32                            ImageDataMemoryType;
   UINT32                            ImageError;
-  UINT64                            FixupDataSize;
+  UINTN                             FixupDataSize;
   UINT16                            Machine;
   UINT16                            ImageType;
   BOOLEAN                           RelocationsStripped;

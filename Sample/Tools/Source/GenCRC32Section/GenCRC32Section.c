@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -240,7 +240,7 @@ main (
   ZeroMem (FileBuffer, BufferSize);
 
   for (Index = 0; Index < argc; Index++) {
-    if (strcmpi (argv[Index], "-i") == 0) {
+    if (_strcmpi (argv[Index], "-i") == 0) {
       ReturnValue = ReadFilesContentsIntoBuffer (
                       argv,
                       (Index + 1),
@@ -257,7 +257,7 @@ main (
       Index += ReturnValue;
     }
 
-    if (strcmpi (argv[Index], "-o") == 0) {
+    if (_strcmpi (argv[Index], "-o") == 0) {
       OutputFileName = argv[Index + 1];
     }
   }

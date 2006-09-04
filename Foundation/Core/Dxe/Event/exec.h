@@ -33,31 +33,31 @@ Abstract:
 
 #define EVENT_SIGNATURE         EFI_SIGNATURE_32('e','v','n','t')
 typedef struct {
-  UINTN                   Signature;
-  UINT32                  Type;
-  UINT32                  SignalCount;
+  UINTN                     Signature;
+  UINT32                    Type;
+  UINT32                    SignalCount;
 
   //
   // Entry if the event is registered to be signalled
   //
 
-  EFI_LIST_ENTRY          SignalLink;
+  EFI_LIST_ENTRY            SignalLink;
 
   //
   // Notification information for this event
   //
 
-  EFI_TPL                 NotifyTpl;
-  EFI_EVENT_NOTIFY        NotifyFunction;
-  VOID                    *NotifyContext;
-  EFI_GUID                EventGroup;
-  EFI_LIST_ENTRY          NotifyLink; 
-  BOOLEAN                 ExFlag;
+  EFI_TPL                   NotifyTpl;
+  EFI_EVENT_NOTIFY          NotifyFunction;
+  VOID                      *NotifyContext;
+  EFI_GUID                  EventGroup;
+  EFI_LIST_ENTRY            NotifyLink; 
+  BOOLEAN                   ExFlag;
   
   //
   // A list of all runtime events
   //
-  EFI_LIST_ENTRY          RuntimeLink;
+  EFI_RUNTIME_EVENT_ENTRY   RuntimeData;
 
   //
   // Information by event type
@@ -68,9 +68,9 @@ typedef struct {
     // For timer events
     //
     struct {
-      EFI_LIST_ENTRY  Link;
-      UINT64          TriggerTime;
-      UINT64          Period;
+      EFI_LIST_ENTRY        Link;
+      UINT64                TriggerTime;
+      UINT64                Period;
     } Timer;
   } u;
 
@@ -205,6 +205,5 @@ extern UINTN          gEventPending;
 extern EFI_LIST_ENTRY gEventQueue[];
 extern EFI_LIST_ENTRY gEventSignalQueue;
 extern UINT8          gHSB[];
-extern EFI_LIST_ENTRY mRuntimeEventList;
 
 #endif

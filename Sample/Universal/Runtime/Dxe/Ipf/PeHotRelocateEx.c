@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -58,15 +58,6 @@ Returns:
   UINT64  FixupVal;
 
   switch ((*Reloc) >> 12) {
-  case EFI_IMAGE_REL_BASED_DIR64:
-    F64         = (UINT64 *) Fixup;
-    *FixupData  = ALIGN_POINTER (*FixupData, sizeof (UINT64));
-    if (*(UINT64 *) (*FixupData) == *F64) {
-      *F64 = *F64 + (UINT64) Adjust;
-    }
-
-    *FixupData = *FixupData + sizeof (UINT64);
-    break;
 
   case EFI_IMAGE_REL_BASED_IA64_IMM64:
     F64         = (UINT64 *) Fixup;

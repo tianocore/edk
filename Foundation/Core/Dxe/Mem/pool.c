@@ -369,7 +369,7 @@ Done:
     DEBUG (
       (EFI_D_POOL,
       "AllcocatePoolI: Type %x, Addr %x (len %x) %,d\n",
-       PoolType, 
+       (UINTN)PoolType, 
        Buffer, 
        Size - POOL_OVERHEAD, 
       Pool->Used)
@@ -500,7 +500,7 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
   Pool->Used -= Size;
-  DEBUG ((EFI_D_POOL, "FreePool: %x (len %x) %,d\n", Head->Data, Head->Size - POOL_OVERHEAD, Pool->Used));
+  DEBUG ((EFI_D_POOL, "FreePool: %x (len %x) %,d\n", Head->Data, (UINTN)Head->Size - POOL_OVERHEAD, Pool->Used));
 
   //
   // Determine the pool list 

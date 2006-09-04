@@ -313,3 +313,22 @@ Returns:
           0
           ).Status;
 }
+EFI_STATUS
+EfiFvbShutdown (
+  VOID
+  )
+/*++
+
+Routine Description:
+  Release resources allocated in EfiFvbInitialize.
+
+Arguments:
+  None 
+
+Returns: 
+  EFI_SUCCESS
+
+--*/
+{
+  return EFI_SUCCESS;
+}

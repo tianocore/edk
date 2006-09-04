@@ -43,14 +43,18 @@ EFI_FORWARD_DECLARATION (EFI_PERFORMANCE_PROTOCOL);
 #define SHELL_PHASE 1
 #define PEI_PHASE 2
 
+#define EFI_PERF_TOKEN_LENGTH        32
+#define EFI_PERF_HOST_LENGTH         32
+#define EFI_PERF_PDBFILENAME_LENGTH  28
 
 typedef struct {
   EFI_HANDLE        Handle; 
-  UINT16            Token[32];
-  UINT16            Host[32];
+  UINT16            Token[EFI_PERF_TOKEN_LENGTH];
+  UINT16            Host[EFI_PERF_HOST_LENGTH];
   UINT64            StartTick;
   UINT64            EndTick;
   EFI_GUID          GuidName;
+  UINT8             PdbFileName[EFI_PERF_PDBFILENAME_LENGTH];
   UINT8             Phase;
 } EFI_GAUGE_DATA ;
 

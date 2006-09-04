@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,6 +30,7 @@ PEI_STATUS_CODE_MEMORY_PPI  mStatusCodeMemoryPpi = { 0, 0, 0, 0 };
 // Function implementations
 //
 EFI_STATUS
+EFIAPI
 RtMemoryReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
@@ -90,6 +91,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 RtMemoryInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -147,6 +149,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 PlaybackStatusCodes (
   IN EFI_REPORT_STATUS_CODE   ReportStatusCode
   )

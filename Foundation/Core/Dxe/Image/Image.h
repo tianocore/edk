@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -14,8 +14,8 @@ Module Name:
   Image.h
 
 Abstract:
-
-Revision History
+  
+  EFI image loader
 
 --*/
 
@@ -25,69 +25,64 @@ Revision History
 
 
 #include "Tiano.h"
+#include "LinkedList.h"
+#include "DxeCore.h"
+
 #include EFI_PROTOCOL_PRODUCER (LoadedImage)
 #include EFI_PROTOCOL_PRODUCER (LoadPe32Image)
+
 #include EFI_PROTOCOL_CONSUMER (Ebc)
 #include EFI_PROTOCOL_CONSUMER (SimpleFileSystem)
 #include EFI_PROTOCOL_CONSUMER (FileInfo)
 #include EFI_PROTOCOL_CONSUMER (LoadFile)
 #include EFI_PROTOCOL_CONSUMER (FirmwareVolume)
 
-#include "LinkedList.h"
-#include "DxeCore.h"
-
 #define LOADED_IMAGE_PRIVATE_DATA_SIGNATURE   EFI_SIGNATURE_32('l','d','r','i')
 
 typedef struct {
-    UINTN                       Signature;
-    EFI_HANDLE                  Handle;         // Image handle
-    UINTN                       Type;           // Image type
+  UINTN                       Signature;                // Data Signature
+  EFI_HANDLE                  Handle;                   // Image handle
+  UINTN                       Type;                     // Image type
+                                                        
+  BOOLEAN                     Started;                  // If entrypoint has been called
+                                                        
+  EFI_IMAGE_ENTRY_POINT       EntryPoint;               // The image's entry point
+  EFI_LOADED_IMAGE_PROTOCOL   Info;                     // loaded image protocol
+                                                        
+  EFI_PHYSICAL_ADDRESS        ImageBasePage;            // Location in memory
+  UINTN                       NumberOfPages;            // Number of pages 
+                                                        
+  CHAR8                       *FixupData;               // Original fixup data
+                                                        
+  EFI_TPL                     Tpl;                      // Tpl of started image
+  EFI_STATUS                  Status;                   // Status returned by started image
+                                                        
+  UINTN                       ExitDataSize;             // Size of ExitData from started image
+  VOID                        *ExitData;                // Pointer to exit data from started image
+  VOID                        *JumpContext;             // Pointer to buffer for context save/retore
+  UINT16                      Machine;                  // Machine type from PE image
+                                                        
+  EFI_EBC_PROTOCOL            *Ebc;                     // EBC Protocol pointer
+                                                        
+  EFI_RUNTIME_IMAGE_ENTRY     *RuntimeData;             // Runtime image list
 
-    BOOLEAN                     Started;        // If entrypoint has been called
-
-    EFI_IMAGE_ENTRY_POINT       EntryPoint;     // The image's entry point
-    EFI_LOADED_IMAGE_PROTOCOL   Info;           // loaded image protocol
-
-    EFI_PHYSICAL_ADDRESS        ImageBasePage;  // Location in memory
-    UINTN                       NumberOfPages;  // Number of pages 
-
-    CHAR8                       *FixupData;     // Original fixup data
-
-    EFI_TPL                     Tpl;            // Tpl of started image
-    EFI_STATUS                  Status;         // Status returned by started image
-
-    UINTN                       ExitDataSize;   // Size of ExitData from started image
-    VOID                        *ExitData;      // Pointer to exit data from started image
-    VOID                        *JumpContext;   // Pointer to buffer for context save/retore
-    UINT16                      Machine;        // Machine type from PE image
-
-    EFI_EBC_PROTOCOL            *Ebc;           // EBC Protocol pointer
-
-    BOOLEAN                     RuntimeFixupValid; // True if RT image needs fixup
-    VOID                        *RuntimeFixup;     // Copy of fixup data;
-    EFI_LIST_ENTRY              Link;              // List of RT LOADED_IMAGE_PRIVATE_DATA
-
-    EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  ImageContext;     // PeCoffLoader ImageContext
-
+  EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  ImageContext;   // PeCoffLoader ImageContext
 } LOADED_IMAGE_PRIVATE_DATA;
 
 #define LOADED_IMAGE_PRIVATE_DATA_FROM_THIS(a) \
-          CR(a, LOADED_IMAGE_PRIVATE_DATA, Info, LOADED_IMAGE_PRIVATE_DATA_SIGNATURE)
-
+  CR(a, LOADED_IMAGE_PRIVATE_DATA, Info, LOADED_IMAGE_PRIVATE_DATA_SIGNATURE)
 
 
 #define LOAD_PE32_IMAGE_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32('l','p','e','i') 
 
 typedef struct {
     UINTN                       Signature;
-    EFI_HANDLE                  Handle;         // Image handle
+    EFI_HANDLE                  Handle; 
     EFI_PE32_IMAGE_PROTOCOL     Pe32Image;
 } LOAD_PE32_IMAGE_PRIVATE_DATA;
 
 #define LOAD_PE32_IMAGE_PRIVATE_DATA_FROM_THIS(a) \
           CR(a, LOAD_PE32_IMAGE_PRIVATE_DATA, Pe32Image, LOAD_PE32_IMAGE_PRIVATE_DATA_SIGNATURE)
-
-
 
 //
 // Private Data Types
@@ -238,7 +233,8 @@ CoreLoadPeImage (
   IN  LOADED_IMAGE_PRIVATE_DATA  *Image,
   IN  EFI_PHYSICAL_ADDRESS       DstBuffer   OPTIONAL,
   OUT EFI_PHYSICAL_ADDRESS       *EntryPoint  OPTIONAL,
-  IN  UINT32                     Attribute
+  IN  UINT32                     Attribute,
+  IN  BOOLEAN                    CrossLoad
   )
 /*++
 
@@ -253,6 +249,7 @@ Arguments:
   DstBuffer        - The buffer to store the image
   EntryPoint       - A pointer to the entry point
   Attribute        - The bit mask of attributes to set for the load PE image
+  CrossLoad        - Whether expect to support cross architecture loading
 
 Returns:
 

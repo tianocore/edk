@@ -16,9 +16,6 @@ Module Name:
 Abstract:
     Support for PCI 2.2 standard.
 
-
-
-
 Revision History
 
 --*/
@@ -177,6 +174,65 @@ typedef struct {
 #define PCI_CLASS_BRIDGE_RACEWAY      0x08
 #define PCI_CLASS_BRIDGE_ISA_PDECODE  0x80
 #define PCI_CLASS_ISA_POSITIVE_DECODE 0x80  // obsolete
+
+#define PCI_CLASS_SCC                 0x07  // Simple communications controllers 
+#define PCI_SUBCLASS_SERIAL           0x00
+#define PCI_IF_GENERIC_XT             0x00
+#define PCI_IF_16450                  0x01
+#define PCI_IF_16550                  0x02
+#define PCI_IF_16650                  0x03
+#define PCI_IF_16750                  0x04
+#define PCI_IF_16850                  0x05
+#define PCI_IF_16950                  0x06
+#define PCI_SUBCLASS_PARALLEL         0x01
+#define PCI_IF_PARALLEL_PORT          0x00
+#define PCI_IF_BI_DIR_PARALLEL_PORT   0x01
+#define PCI_IF_ECP_PARALLEL_PORT      0x02
+#define PCI_IF_1284_CONTROLLER        0x03
+#define PCI_IF_1284_DEVICE            0xFE
+#define PCI_SUBCLASS_MULTIPORT_SERIAL 0x02
+#define PCI_SUBCLASS_MODEM            0x03
+#define PCI_IF_GENERIC_MODEM          0x00
+#define PCI_IF_16450_MODEM            0x01
+#define PCI_IF_16550_MODEM            0x02
+#define PCI_IF_16650_MODEM            0x03
+#define PCI_IF_16750_MODEM            0x04
+#define PCI_SUBCLASS_OTHER            0x80
+
+#define PCI_CLASS_SYSTEM_PERIPHERAL   0x08
+#define PCI_SUBCLASS_PIC              0x00
+#define PCI_IF_8259_PIC               0x00
+#define PCI_IF_ISA_PIC                0x01
+#define PCI_IF_EISA_PIC               0x02
+#define PCI_IF_APIC_CONTROLLER        0x10 // I/O APIC interrupt controller , 32 bye none-prefectable memory.  
+#define PCI_IF_APIC_CONTROLLER2       0x20 
+#define PCI_SUBCLASS_TIMER            0x02
+#define PCI_IF_8254_TIMER             0x00
+#define PCI_IF_ISA_TIMER              0x01
+#define PCI_EISA_TIMER                0x02
+#define PCI_SUBCLASS_RTC              0x03
+#define PCI_IF_GENERIC_RTC            0x00
+#define PCI_IF_ISA_RTC                0x00
+#define PCI_SUBCLASS_PNP_CONTROLLER   0x04 // HotPlug Controller
+
+#define PCI_CLASS_INPUT_DEVICE        0x09
+#define PCI_SUBCLASS_KEYBOARD         0x00
+#define PCI_SUBCLASS_PEN              0x01
+#define PCI_SUBCLASS_MOUSE_CONTROLLER 0x02
+#define PCI_SUBCLASS_SCAN_CONTROLLER  0x03
+#define PCI_SUBCLASS_GAMEPORT         0x04
+
+#define PCI_CLASS_DOCKING_STATION     0x0A
+
+#define PCI_CLASS_PROCESSOR           0x0B
+#define PCI_SUBCLASS_PROC_386         0x00
+#define PCI_SUBCLASS_PROC_486         0x01
+#define PCI_SUBCLASS_PROC_PENTIUM     0x02
+#define PCI_SUBCLASS_PROC_ALPHA       0x10
+#define PCI_SUBCLASS_PROC_POWERPC     0x20
+#define PCI_SUBCLASS_PROC_MIPS        0x30
+#define PCI_SUBCLASS_PROC_CO_PORC     0x40 // Co-Processor
+
 #define PCI_CLASS_SERIAL              0x0C
 #define PCI_CLASS_SERIAL_FIREWIRE     0x00
 #define PCI_CLASS_SERIAL_ACCESS_BUS   0x01
@@ -184,6 +240,25 @@ typedef struct {
 #define PCI_CLASS_SERIAL_USB          0x03
 #define PCI_CLASS_SERIAL_FIBRECHANNEL 0x04
 #define PCI_CLASS_SERIAL_SMB          0x05
+
+#define PCI_CLASS_WIRELESS            0x0D
+#define PCI_SUBCLASS_IRDA             0x00
+#define PCI_SUBCLASS_IR               0x01
+#define PCI_SUBCLASS_RF               0x02
+
+#define PCI_CLASS_INTELLIGENT_IO      0x0E
+
+#define PCI_CLASS_SATELLITE           0x0F
+#define PCI_SUBCLASS_TV               0x01
+#define PCI_SUBCLASS_AUDIO            0x02
+#define PCI_SUBCLASS_VOICE            0x03
+#define PCI_SUBCLASS_DATA             0x04
+
+#define PCI_SECURITY_CONTROLLER       0x10 // Encryption and decryption controller
+#define PCI_SUBCLASS_NET_COMPUT       0x00
+#define PCI_SUBCLASS_ENTERTAINMENT    0x10 
+
+#define PCI_CLASS_DPIO                0x11
 
 #define IS_CLASS1(_p, c)              ((_p)->Hdr.ClassCode[2] == (c))
 #define IS_CLASS2(_p, c, s)           (IS_CLASS1 (_p, c) && ((_p)->Hdr.ClassCode[1] == (s)))
@@ -217,12 +292,8 @@ typedef struct {
 #define PCI_DEVICE_ROMBAR             0x30
 #define PCI_BRIDGE_ROMBAR             0x38
 
-#define PCI_MAX_BAR                   6
-#define PCI_MAX_CONFIG_OFFSET         0x100
-//
-// bugbug: this is supported in PCI spec v2.3
-//
-#define PCI_EXP_MAX_CONFIG_OFFSET                   0x1000
+#define PCI_MAX_BAR                   0x0006
+#define PCI_MAX_CONFIG_OFFSET         0x0100
 
 #define PCI_VENDOR_ID_OFFSET                        0x00
 #define PCI_DEVICE_ID_OFFSET                        0x02
@@ -234,6 +305,18 @@ typedef struct {
 #define PCI_LATENCY_TIMER_OFFSET                    0x0D
 #define PCI_HEADER_TYPE_OFFSET                      0x0E
 #define PCI_BIST_OFFSET                             0x0F
+#define PCI_BASE_ADDRESSREG_OFFSET                  0x10
+#define PCI_CARDBUS_CIS_OFFSET                      0x28
+#define PCI_SVID_OFFSET                             0x2C // SubSystem Vendor id
+#define PCI_SUBSYSTEM_VENDOR_ID_OFFSET              0x2C
+#define PCI_SID_OFFSET                              0x2E // SubSystem ID
+#define PCI_SUBSYSTEM_ID_OFFSET                     0x2E
+#define PCI_EXPANSION_ROM_BASE                      0x30
+#define PCI_CAPBILITY_POINTER_OFFSET                0x34
+#define PCI_INT_LINE_OFFSET                         0x3C // Interrupt Line Register
+#define PCI_INT_PIN_OFFSET                          0x3D // Interrupt Pin Register
+#define PCI_MAXGNT_OFFSET                           0x3E // Max Grant Register
+#define PCI_MAXLAT_OFFSET                           0x3F // Max Latency Register
 
 #define PCI_BRIDGE_CONTROL_REGISTER_OFFSET          0x3E
 #define PCI_BRIDGE_STATUS_REGISTER_OFFSET           0x1E
@@ -241,14 +324,6 @@ typedef struct {
 #define PCI_BRIDGE_PRIMARY_BUS_REGISTER_OFFSET      0x18
 #define PCI_BRIDGE_SECONDARY_BUS_REGISTER_OFFSET    0x19
 #define PCI_BRIDGE_SUBORDINATE_BUS_REGISTER_OFFSET  0x1a
-
-typedef struct {
-  UINT8 Register;
-  UINT8 Function;
-  UINT8 Device;
-  UINT8 Bus;
-  UINT8 Reserved[4];
-} DEFIO_PCI_ADDR;
 
 typedef struct {
   UINT32  Reg : 8;
@@ -261,9 +336,7 @@ typedef struct {
 
 #pragma pack()
 
-#define EFI_ROOT_BRIDGE_LIST                            'eprb'
 #define PCI_EXPANSION_ROM_HEADER_SIGNATURE              0xaa55
-#define EFI_PCI_EXPANSION_ROM_HEADER_EFISIGNATURE       0x0EF1
 #define PCI_DATA_STRUCTURE_SIGNATURE                    EFI_SIGNATURE_32 ('P', 'C', 'I', 'R')
 #define PCI_CODE_TYPE_PCAT_IMAGE                        0x00
 #define PCI_CODE_TYPE_EFI_IMAGE                         0x03
@@ -321,30 +394,11 @@ typedef struct {
 
 typedef struct {
   UINT16  Signature;    // 0xaa55
-  UINT16  InitializationSize;
-  UINT32  EfiSignature; // 0x0EF1
-  UINT16  EfiSubsystem;
-  UINT16  EfiMachineType;
-  UINT16  CompressionType;
-  UINT8   Reserved[8];
-  UINT16  EfiImageHeaderOffset;
-  UINT16  PcirOffset;
-} EFI_PCI_EXPANSION_ROM_HEADER;
-
-typedef struct {
-  UINT16  Signature;    // 0xaa55
   UINT8   Size512;
   UINT8   InitEntryPoint[3];
   UINT8   Reserved[0x12];
   UINT16  PcirOffset;
 } EFI_LEGACY_EXPANSION_ROM_HEADER;
-
-typedef union {
-  UINT8                           *Raw;
-  PCI_EXPANSION_ROM_HEADER        *Generic;
-  EFI_PCI_EXPANSION_ROM_HEADER    *Efi;
-  EFI_LEGACY_EXPANSION_ROM_HEADER *PcAt;
-} EFI_PCI_ROM_HEADER;
 
 typedef struct {
   UINT32  Signature;    // "PCIR"
@@ -371,10 +425,6 @@ typedef struct {
 #define EFI_PCI_CAPABILITY_ID_MSI     0x05
 #define EFI_PCI_CAPABILITY_ID_HOTPLUG 0x06
 #define EFI_PCI_CAPABILITY_ID_PCIX    0x07
-//
-// bugbug: this ID is defined in PCI spec v2.3
-//
-#define EFI_PCI_CAPABILITY_ID_PCIEXP  0x10
 
 typedef struct {
   UINT8 CapabilityID;
@@ -484,5 +534,13 @@ typedef struct {
 #define PCI_BAR_ALL         0xFF
 
 #pragma pack(pop)
+
+//
+// NOTE: The following header files are included here for
+// compatibility consideration.
+//
+#include "pci23.h"
+#include "pci30.h"
+#include "EfiPci.h"
 
 #endif

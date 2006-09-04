@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -641,5 +641,21 @@ typedef struct {
 //
 #define EFI_TE_IMAGE_DIRECTORY_ENTRY_BASERELOC  0
 #define EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG      1
+
+//
+// Union of PE32, PE32+, and TE headers
+//
+typedef union {
+  EFI_IMAGE_NT_HEADERS32   Pe32;
+  EFI_IMAGE_NT_HEADERS64   Pe32Plus;
+  EFI_TE_IMAGE_HEADER      Te;
+} EFI_IMAGE_OPTIONAL_HEADER_UNION;
+
+typedef union {
+  EFI_IMAGE_NT_HEADERS32            *Pe32;
+  EFI_IMAGE_NT_HEADERS64            *Pe32Plus;
+  EFI_TE_IMAGE_HEADER               *Te;
+  EFI_IMAGE_OPTIONAL_HEADER_UNION   *Union;
+} EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION;
 
 #endif

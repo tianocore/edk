@@ -194,29 +194,29 @@ Returns:
     p += 1;
   }
 
-  if (stricmp (p, "app") == 0 || stricmp (p, "APPLICATION") == 0) {
+  if (_stricmp (p, "app") == 0 || _stricmp (p, "APPLICATION") == 0) {
     Type  = EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION;
     Ext   = ".efi";
 
-  } else if (stricmp (p, "bsdrv") == 0 || stricmp (p, "BS_DRIVER") == 0) {
+  } else if (_stricmp (p, "bsdrv") == 0 || _stricmp (p, "BS_DRIVER") == 0) {
     Type  = EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER;
     Ext   = ".efi";
 
-  } else if (stricmp (p, "rtdrv") == 0 || stricmp (p, "RT_DRIVER") == 0) {
+  } else if (_stricmp (p, "rtdrv") == 0 || _stricmp (p, "RT_DRIVER") == 0) {
     Type  = EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER;
     Ext   = ".efi";
 
-  } else if (stricmp (p, "rtdrv") == 0 || stricmp (p, "SAL_RT_DRIVER") == 0) {
+  } else if (_stricmp (p, "rtdrv") == 0 || _stricmp (p, "SAL_RT_DRIVER") == 0) {
     Type  = EFI_IMAGE_SUBSYSTEM_SAL_RUNTIME_DRIVER;
     Ext   = ".efi";
-  } else if (stricmp (p, "SECURITY_CORE") == 0) {
+  } else if (_stricmp (p, "SECURITY_CORE") == 0) {
     Type  = EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER;
     Ext   = ".sec";
-  } else if (stricmp (p, "peim") == 0 ||
-           stricmp (p, "PEI_CORE") == 0 ||
-           stricmp (p, "PE32_PEIM") == 0 ||
-           stricmp (p, "RELOCATABLE_PEIM") == 0 ||
-           stricmp (p, "combined_peim_driver") == 0
+  } else if (_stricmp (p, "peim") == 0 ||
+           _stricmp (p, "PEI_CORE") == 0 ||
+           _stricmp (p, "PE32_PEIM") == 0 ||
+           _stricmp (p, "RELOCATABLE_PEIM") == 0 ||
+           _stricmp (p, "combined_peim_driver") == 0
           ) {
     Type  = EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER;
     Ext   = ".pei";

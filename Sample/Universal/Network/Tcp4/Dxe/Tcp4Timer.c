@@ -156,7 +156,7 @@ Returns:
 
 --*/
 {
-  int FlightSize;
+  UINT32  FlightSize;
 
   TCP4_DEBUG_WARN (("TcpRexmitTimeout: transmission "
     "timeout for TCB %x\n", Tcb));
@@ -167,7 +167,7 @@ Returns:
   // yet ACKed.
   //
   FlightSize        = TCP_SUB_SEQ (Tcb->SndNxt, Tcb->SndUna);
-  Tcb->Ssthresh     = NET_MAX (2 * Tcb->SndMss, FlightSize / 2);
+  Tcb->Ssthresh     = NET_MAX ((UINT32) (2 * Tcb->SndMss), FlightSize / 2);
 
   Tcb->CWnd         = Tcb->SndMss;
   Tcb->LossRecover  = Tcb->SndNxt;

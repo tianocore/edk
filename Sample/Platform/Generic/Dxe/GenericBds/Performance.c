@@ -1,13 +1,13 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2004 - 2006, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
@@ -43,180 +43,6 @@ ConvertChar16ToChar8 (
   *Dest = 0;
 }
 
-STATIC
-VOID
-GetShortPdbFileName (
-  CHAR8  *PdbFileName,
-  CHAR8  *GaugeString
-  )
-/*++
-
-Routine Description:
-  
-Arguments:
-
-Returns:
-
---*/
-{
-  UINTN Index;
-  UINTN Index1;
-  UINTN StartIndex;
-  UINTN EndIndex;
-
-  if (PdbFileName == NULL) {
-    EfiAsciiStrCpy (GaugeString, " ");
-  } else {
-    StartIndex = 0;
-    for (EndIndex = 0; PdbFileName[EndIndex] != 0; EndIndex++)
-      ;
-
-    for (Index = 0; PdbFileName[Index] != 0; Index++) {
-      if (PdbFileName[Index] == '\\') {
-        StartIndex = Index + 1;
-      }
-
-      if (PdbFileName[Index] == '.') {
-        EndIndex = Index;
-      }
-    }
-
-    Index1 = 0;
-    for (Index = StartIndex; Index < EndIndex; Index++) {
-      GaugeString[Index1] = PdbFileName[Index];
-      Index1++;
-      if (Index1 == EFI_PERF_TOKEN_LENGTH - 1) {
-        break;
-      }
-    }
-
-    GaugeString[Index1] = 0;
-  }
-
-  return ;
-}
-
-STATIC
-CHAR8 *
-GetPdbPath (
-  VOID *ImageBase
-  )
-/*++
-
-Routine Description:
-
-  Located PDB path name in PE image
-
-Arguments:
-
-  ImageBase - base of PE to search
-
-Returns:
-
-  Pointer into image at offset of PDB file name if PDB file name is found,
-  Otherwise a pointer to an empty string.
-
---*/
-{
-  CHAR8                           *PdbPath;
-  UINT32                          DirCount;
-  EFI_IMAGE_DOS_HEADER            *DosHdr;
-  EFI_IMAGE_NT_HEADERS            *NtHdr;
-  EFI_IMAGE_OPTIONAL_HEADER       *OptionalHdr;
-  EFI_IMAGE_DATA_DIRECTORY        *DirectoryEntry;
-  EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *DebugEntry;
-  VOID                            *CodeViewEntryPointer;
-
-  CodeViewEntryPointer  = NULL;
-  PdbPath               = NULL;
-  DosHdr                = ImageBase;
-
-  if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
-    NtHdr           = (EFI_IMAGE_NT_HEADERS *) ((UINT8 *) DosHdr + DosHdr->e_lfanew);
-    OptionalHdr     = (VOID *) &NtHdr->OptionalHeader;
-    DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
-    if (DirectoryEntry->VirtualAddress != 0) {
-      for (DirCount = 0;
-           (DirCount < DirectoryEntry->Size / sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) && CodeViewEntryPointer == NULL;
-           DirCount++
-          ) {
-        DebugEntry = (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *) (DirectoryEntry->VirtualAddress + (UINTN) ImageBase + DirCount * sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY));
-        if (DebugEntry->Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
-          CodeViewEntryPointer = (VOID *) ((UINTN) DebugEntry->RVA + (UINTN) ImageBase);
-          switch (*(UINT32 *) CodeViewEntryPointer) {
-          case CODEVIEW_SIGNATURE_NB10:
-            PdbPath = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_NB10_ENTRY);
-            break;
-
-          case CODEVIEW_SIGNATURE_RSDS:
-            PdbPath = (CHAR8 *) CodeViewEntryPointer + sizeof (EFI_IMAGE_DEBUG_CODEVIEW_RSDS_ENTRY);
-            break;
-
-          default:
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  return PdbPath;
-}
-
-STATIC
-VOID
-GetNameFromHandle (
-  IN  EFI_HANDLE     Handle,
-  OUT CHAR8          *GaugeString
-  )
-{
-  EFI_STATUS                  Status;
-  EFI_LOADED_IMAGE_PROTOCOL   *Image;
-  CHAR8                       *PdbFileName;
-  EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
-
-  EfiAsciiStrCpy (GaugeString, " ");
-
-  //
-  // Get handle name from image protocol
-  //
-  Status = gBS->HandleProtocol (
-                  Handle,
-                  &gEfiLoadedImageProtocolGuid,
-                  &Image
-                  );
-
-  if (EFI_ERROR (Status)) {
-    Status = gBS->OpenProtocol (
-                    Handle,
-                    &gEfiDriverBindingProtocolGuid,
-                    (VOID **) &DriverBinding,
-                    NULL,
-                    NULL,
-                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                    );
-    if (EFI_ERROR (Status)) {
-      return ;
-    }
-    //
-    // Get handle name from image protocol
-    //
-    Status = gBS->HandleProtocol (
-                    DriverBinding->ImageHandle,
-                    &gEfiLoadedImageProtocolGuid,
-                    &Image
-                    );
-  }
-
-  PdbFileName = GetPdbPath (Image->ImageBase);
-
-  if (PdbFileName != NULL) {
-    GetShortPdbFileName (PdbFileName, GaugeString);
-  }
-
-  return ;
-}
-
 VOID
 WriteBootToOsPerformanceData (
   VOID
@@ -224,13 +50,13 @@ WriteBootToOsPerformanceData (
 /*++
 
 Routine Description:
-  
+
   Allocates a block of memory and writes performance data of booting to OS into it.
 
 Arguments:
-  
+
   None
-  
+
 Returns:
 
   None
@@ -248,8 +74,8 @@ Returns:
   EFI_GAUGE_DATA            *DumpData;
   EFI_HANDLE                *Handles;
   UINTN                     NoHandles;
-  CHAR8                     GaugeString[EFI_PERF_TOKEN_LENGTH];
   UINT8                     *Ptr;
+  UINT8                     *PdbFileName;
   UINT32                    mIndex;
   UINT64                    Ticker;
   UINT64                    Freq;
@@ -265,9 +91,10 @@ Returns:
   //
   // Allocate a block of memory that contain performance data to OS
   //
+  mAcpiLowMemoryBase = 0xFFFFFFFF;
   Status = gBS->AllocatePages (
-                  AllocateAnyPages,
-                  EfiACPIReclaimMemory,
+                  AllocateMaxAddress,
+                  EfiACPIMemoryNVS,
                   4,
                   &mAcpiLowMemoryBase
                   );
@@ -275,7 +102,7 @@ Returns:
     return ;
   }
 
-  mAcpiLowMemoryLength  = 0x1000;
+  mAcpiLowMemoryLength  = EFI_PAGES_TO_SIZE(4);
 
   Ptr                   = (UINT8 *) ((UINT32) mAcpiLowMemoryBase + sizeof (EFI_PERF_HEADER));
   LimitCount            = (mAcpiLowMemoryLength - sizeof (EFI_PERF_HEADER)) / sizeof (EFI_PERF_DATA);
@@ -289,7 +116,7 @@ Returns:
                   &DrvPerf
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 1);
+    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
   //
@@ -306,7 +133,7 @@ Returns:
                   &Cpu
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 1);
+    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
   //
@@ -314,7 +141,7 @@ Returns:
   //
   Status = Cpu->GetTimerValue (Cpu, 0, &(CurrentTicker), &TimerPeriod);
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 1);
+    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
 
@@ -339,7 +166,7 @@ Returns:
                   &Handles
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 1);
+    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
   //
@@ -348,7 +175,7 @@ Returns:
   for (mIndex = 0; mIndex < NoHandles; mIndex++) {
 
     Ticker = 0;
-
+    PdbFileName = NULL;
     DumpData = DrvPerf->GetGauge (
                           DrvPerf,    // Context
                           NULL,       // Handle
@@ -357,8 +184,11 @@ Returns:
                           NULL        // PrecGauge
                           );
     while (DumpData) {
-      if ((DumpData->Handle == Handles[mIndex]) && (DumpData->StartTick < DumpData->EndTick)) {
-        Ticker += (DumpData->EndTick - DumpData->StartTick);
+      if (DumpData->Handle == Handles[mIndex]) {
+      	PdbFileName = &(DumpData->PdbFileName[0]);
+      	if (DumpData->StartTick < DumpData->EndTick) {
+      	  Ticker += (DumpData->EndTick - DumpData->StartTick);
+      	}
       }
 
       DumpData = DrvPerf->GetGauge (
@@ -379,9 +209,9 @@ Returns:
     if (Duration > 0) {
       EfiZeroMem (&mPerfData, sizeof (EFI_PERF_DATA));
 
-      GetNameFromHandle (Handles[mIndex], GaugeString);
-
-      EfiAsciiStrCpy (mPerfData.Token, GaugeString);
+      if (PdbFileName != NULL) {
+        EfiAsciiStrCpy (mPerfData.Token, PdbFileName);
+      }
       mPerfData.Duration = Duration;
 
       EfiCopyMem (Ptr, &mPerfData, sizeof (EFI_PERF_DATA));

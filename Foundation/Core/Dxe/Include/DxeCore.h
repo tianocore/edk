@@ -160,6 +160,8 @@ extern EFI_LOADED_IMAGE_PROTOCOL                *gDxeCoreLoadedImage;
 
 extern EFI_MEMORY_TYPE_INFORMATION              gMemoryTypeInformation[EfiMaxMemoryType + 1];
 
+extern EFI_RUNTIME_ARCH_PROTOCOL                gRuntimeTemplate;
+
 //
 // Service Initialization Functions
 //
@@ -345,27 +347,6 @@ Returns:
 ;
 
 EFI_STATUS
-CoreShutdownEventServices (
-  VOID
-  )
-/*++
-
-Routine Description:
-
-  Register all runtime events to make sure they are still available after ExitBootService.
-
-Arguments:
-
-  None
-    
-Returns:
-
-  EFI_SUCCESS - Always return success
-
---*/
-;
-
-EFI_STATUS
 CoreInitializeImageServices (
   IN  VOID *HobStart
   )
@@ -383,27 +364,6 @@ Arguments:
 Returns:
 
   Status code.
-
---*/
-;
-
-EFI_STATUS
-CoreShutdownImageServices (
-  VOID
-  )
-/*++
-
-Routine Description:
-
-  Transfer control of runtime images to runtime service
-
-Arguments:
-
-  None
-
-Returns:
-
-  EFI_SUCCESS       - Function successfully returned
 
 --*/
 ;

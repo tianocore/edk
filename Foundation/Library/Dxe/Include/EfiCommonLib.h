@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -912,6 +912,69 @@ Returns:
 --*/
 ;
 
+
+UINTN
+EfiAsciiStrSize (
+  IN CHAR8   *String
+  )
+/*++
+
+Routine Description:
+  Return the number bytes in the Ascii String. This is not the same as
+  the length of the string in characters. The string size includes the NULL
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of bytes in String
+
+--*/
+;
+
+
+INTN
+EfiAsciiStrCmp (
+  IN CHAR8   *String,
+  IN CHAR8   *String2
+  )
+/*++
+
+Routine Description:
+  Compare the Ascii string pointed by String to the string pointed by String2. 
+
+Arguments:
+  String - String to process
+
+  String2 - The other string to process
+
+Returns:
+  Return a positive integer if String is lexicall greater than String2; Zero if 
+  the two strings are identical; and a negative interger if String is lexically 
+  less than String2.
+--*/
+;
+
+VOID
+EfiAsciiStrCat (
+  IN CHAR8   *Destination,
+  IN CHAR8   *Source
+  )
+/*++
+
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Destination - String to added to the end of.
+  Source      - String to concatinate.
+
+Returns:
+  NONE
+
+--*/
+;
+
 //
 // Print primitives
 //
@@ -1109,5 +1172,45 @@ Returns:
 
 --*/
 ;
+CHAR16*
+EfiStrStr (
+  IN  CHAR16  *String,
+  IN  CHAR16  *StrCharSet
+  )
+/*++
 
+Routine Description:
+  
+  Find a substring.
+  
+Arguments: 
+  
+  String      - Null-terminated string to search.
+  StrCharSet  - Null-terminated string to search for.
+  
+Returns:
+  The address of the first occurrence of the matching substring if successful, or NULL otherwise.
+--*/
+;
+
+CHAR8*
+EfiAsciiStrStr (
+  IN  CHAR8  *String,
+  IN  CHAR8  *StrCharSet
+  )
+/*++
+
+Routine Description:
+  
+  Find a Ascii substring.
+  
+Arguments: 
+  
+  String      - Null-terminated Ascii string to search.
+  StrCharSet  - Null-terminated Ascii string to search for.
+  
+Returns:
+  The address of the first occurrence of the matching Ascii substring if successful, or NULL otherwise.
+--*/
+;
 #endif

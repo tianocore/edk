@@ -11,14 +11,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-    event.c
+  event.c
 
 Abstract:
 
-    EFI Event support
+  EFI Event support.
  
 --*/
-
 
 #include "exec.h"
 #include "..\hand\hand.h"
@@ -163,50 +162,6 @@ Returns:
 
   CoreInitializeTimer ();
   
-  return EFI_SUCCESS;
-}
-
-
-EFI_STATUS
-CoreShutdownEventServices (
-  VOID
-  )
-/*++
-
-Routine Description:
-
-  Register all runtime events to make sure they are still available after ExitBootService.
-
-Arguments:
-
-  None
-    
-Returns:
-
-  EFI_SUCCESS - Always return success.
-
---*/
-{
-  EFI_LIST_ENTRY    *Link;
-  IEVENT            *Event;
-
-  //
-  // The Runtime AP is required for the core to function!
-  //
-  ASSERT (gRuntime != NULL);
-
-  for (Link = mRuntimeEventList.ForwardLink; Link != &mRuntimeEventList; Link = Link->ForwardLink) {
-    Event = CR (Link, IEVENT, RuntimeLink, EVENT_SIGNATURE);
-    gRuntime->RegisterEvent (
-                gRuntime, 
-                Event->Type, 
-                Event->NotifyTpl, 
-                Event->NotifyFunction, 
-                Event->NotifyContext, 
-                (VOID **)Event
-                );
-  }
-
   return EFI_SUCCESS;
 }
 
@@ -498,10 +453,10 @@ Returns:
   //
   Status = EFI_INVALID_PARAMETER;
   for (Index = 0; Index < (sizeof (mEventTable) / sizeof (UINT32)); Index++) {
-     if (Type == mEventTable[Index]) {
-       Status = EFI_SUCCESS;
-       break;
-     }
+    if (Type == mEventTable[Index]) {
+      Status = EFI_SUCCESS;
+      break;
+    }
   }
   if(EFI_ERROR (Status)) {
     return EFI_INVALID_PARAMETER;
@@ -543,9 +498,8 @@ Returns:
 
   EfiCommonLibSetMem (IEvent, sizeof (IEVENT), 0);
 
-  IEvent->Signature = EVENT_SIGNATURE;
-  IEvent->Type = Type;
-  
+  IEvent->Signature      = EVENT_SIGNATURE;
+  IEvent->Type           = Type;
   IEvent->NotifyTpl      = NotifyTpl;
   IEvent->NotifyFunction = NotifyFunction;
   IEvent->NotifyContext  = (VOID *)NotifyContext;
@@ -560,7 +514,12 @@ Returns:
     //
     // Keep a list of all RT events so we can tell the RT AP.
     //
-    InsertTailList (&mRuntimeEventList, &IEvent->RuntimeLink);
+    IEvent->RuntimeData.Type           = Type;
+    IEvent->RuntimeData.NotifyTpl      = NotifyTpl;
+    IEvent->RuntimeData.NotifyFunction = NotifyFunction;
+    IEvent->RuntimeData.NotifyContext  = NotifyContext;
+    IEvent->RuntimeData.Event          = (EFI_EVENT *) IEvent;
+    InsertTailList (&gRuntime->EventHead, &IEvent->RuntimeData.Link);
   }
 
   CoreAcquireEventLock ();
@@ -835,11 +794,11 @@ Returns:
   //
   // If the event is queued somewhere, remove it
   //
-
-  if (Event->RuntimeLink.ForwardLink != NULL) {
-    RemoveEntryList (&Event->RuntimeLink);
+  
+  if (Event->RuntimeData.Link.ForwardLink != NULL) {
+    RemoveEntryList (&Event->RuntimeData.Link);
   }
-
+  
   if (Event->NotifyLink.ForwardLink != NULL) {
     RemoveEntryList (&Event->NotifyLink);
   }
@@ -851,7 +810,8 @@ Returns:
   CoreReleaseEventLock ();
 
   //
-  // If the event is registered on a protocol notify, then remove it from the protocol database
+  // If the event is registered on a protocol notify, 
+  // then remove it from the protocol database
   //
   CoreUnregisterProtocolNotify (Event);
 

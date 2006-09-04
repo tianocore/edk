@@ -15,27 +15,28 @@ Module Name:
 
 Abstract:
 
-
+  Relocate runtime images.
+  
 --*/
 
 #include "Runtime.h"
 
-STATIC
+extern VOID                          *mMyImageBase;
+
 VOID *
 RuntimePeImageAddress (
-  IN   RUNTIME_IMAGE_RELOCATION_DATA  *Image,
+  IN   EFI_RUNTIME_IMAGE_ENTRY        *Image,
   IN   UINTN                          Address
   )
 /*++
 
 Routine Description:
 
-  Converts an image address to the loaded address
+  Converts an image address to the loaded address.
 
 Arguments:
 
   Image         - The relocation data of the image being loaded
-
   Address       - The address to be converted to the loaded address
 
 Returns:
@@ -44,7 +45,7 @@ Returns:
 
 --*/
 {
-  if (Address >= (Image->ImageSize) << EFI_PAGE_SHIFT) {
+  if (Address >= (UINTN) (EFI_SIZE_TO_PAGES ((UINTN)Image->ImageSize) << EFI_PAGE_SHIFT)) {
     return NULL;
   }
 
@@ -53,28 +54,52 @@ Returns:
 
 VOID
 RelocatePeImageForRuntime (
-  RUNTIME_IMAGE_RELOCATION_DATA *Image
+  IN EFI_RUNTIME_IMAGE_ENTRY     *Image
   )
-{
-  CHAR8                     *OldBase;
-  CHAR8                     *NewBase;
-  EFI_IMAGE_DOS_HEADER      *DosHdr;
-  EFI_IMAGE_NT_HEADERS      *PeHdr;
-  UINT32                    NumberOfRvaAndSizes;
-  EFI_IMAGE_DATA_DIRECTORY  *DataDirectory;
-  EFI_IMAGE_DATA_DIRECTORY  *RelocDir;
-  EFI_IMAGE_BASE_RELOCATION *RelocBase;
-  EFI_IMAGE_BASE_RELOCATION *RelocBaseEnd;
-  UINT16                    *Reloc;
-  UINT16                    *RelocEnd;
-  CHAR8                     *Fixup;
-  CHAR8                     *FixupBase;
-  UINT16                    *F16;
-  UINT32                    *F32;
-  CHAR8                     *FixupData;
-  UINTN                     Adjust;
-  EFI_STATUS                Status;
+/*++
 
+Routine Description:
+
+  Relocate runtime images.
+
+Arguments:
+
+  Image   - Points to the relocation data of the image.
+
+Returns:
+
+  None.
+
+--*/  
+{
+  EFI_STATUS                            Status;
+  CHAR8                                 *OldBase;
+  CHAR8                                 *NewBase;
+  EFI_IMAGE_DOS_HEADER                  *DosHdr;
+  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
+  UINT32                                NumberOfRvaAndSizes;
+  EFI_IMAGE_DATA_DIRECTORY              *DataDirectory;
+  EFI_IMAGE_DATA_DIRECTORY              *RelocDir;
+  EFI_IMAGE_BASE_RELOCATION             *RelocBase;
+  EFI_IMAGE_BASE_RELOCATION             *RelocBaseEnd;
+  UINT16                                *Reloc;
+  UINT16                                *RelocEnd;
+  CHAR8                                 *Fixup;
+  CHAR8                                 *FixupBase;
+  UINT16                                *F16;
+  UINT32                                *F32;
+  UINT64                                *F64;
+  CHAR8                                 *FixupData;
+  UINTN                                 Adjust;
+
+  
+  if (mMyImageBase == (VOID *) (UINTN) Image->ImageBase) {
+    //
+    // We don't want to relocate our selves, as we only run in physical mode.
+    //
+    return;
+  }
+  
   OldBase = (CHAR8 *) ((UINTN) Image->ImageBase);
   NewBase = (CHAR8 *) ((UINTN) Image->ImageBase);
 
@@ -84,35 +109,47 @@ RelocatePeImageForRuntime (
   Adjust = (UINTN) NewBase - (UINTN) OldBase;
 
   //
-  // Find the image's relocate dir info
+  // Find the image's relocate dir info.
   //
   DosHdr = (EFI_IMAGE_DOS_HEADER *) OldBase;
   if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
     //
-    // Valid DOS header so get address of PE header
+    // Valid DOS header so get address of PE header.
     //
-    PeHdr = (EFI_IMAGE_NT_HEADERS *) (((CHAR8 *) DosHdr) + DosHdr->e_lfanew);
+    Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *) (((CHAR8 *) DosHdr) + DosHdr->e_lfanew);
   } else {
     //
     // No Dos header so assume image starts with PE header.
     //
-    PeHdr = (EFI_IMAGE_NT_HEADERS *) OldBase;
+    Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *) OldBase;
   }
 
-  if (PeHdr->Signature != EFI_IMAGE_NT_SIGNATURE) {
+  if (Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
     //
-    // Not a valid PE image so Exit
+    // Not a valid PE image so Exit.
     //
-    return ;
+    return;
   }
+  
   //
-  // Get some data from the PE type dependent data
+  // Get some data from the PE type dependent data.
   //
-  NumberOfRvaAndSizes = PeHdr->OptionalHeader.NumberOfRvaAndSizes;
-  DataDirectory       = &PeHdr->OptionalHeader.DataDirectory[0];
+  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    //     
+    // Use PE32 offset
+    //
+    NumberOfRvaAndSizes = Hdr.Pe32->OptionalHeader.NumberOfRvaAndSizes;
+    DataDirectory = (EFI_IMAGE_DATA_DIRECTORY *)&(Hdr.Pe32->OptionalHeader.DataDirectory[0]);
+  } else {
+    //     
+    // Use PE32+ offset
+    //
+    NumberOfRvaAndSizes = Hdr.Pe32Plus->OptionalHeader.NumberOfRvaAndSizes;
+    DataDirectory = (EFI_IMAGE_DATA_DIRECTORY *)&(Hdr.Pe32Plus->OptionalHeader.DataDirectory[0]);
+  }    
 
   //
-  // Find the relocation block
+  // Find the relocation block.
   //
   // Per the PE/COFF spec, you can't assume that a given data directory
   // is present in the image. You have to check the NumberOfRvaAndSizes in
@@ -124,10 +161,10 @@ RelocatePeImageForRuntime (
     RelocBaseEnd  = RuntimePeImageAddress (Image, RelocDir->VirtualAddress + RelocDir->Size);
   } else {
     //
-    // Cannot find relocations, cannot continue
+    // Cannot find relocations, cannot continue.
     //
     ASSERT (FALSE);
-    return ;
+    return;
   }
 
   ASSERT (RelocBase != NULL && RelocBaseEnd != NULL);
@@ -147,7 +184,7 @@ RelocatePeImageForRuntime (
     FixupBase = (UINT8 *) ((UINTN) Image->ImageBase) + RelocBase->VirtualAddress;
 
     //
-    // Run this relocation record
+    // Run this relocation record.
     //
     while (Reloc < RelocEnd) {
 
@@ -160,7 +197,7 @@ RelocatePeImageForRuntime (
       case EFI_IMAGE_REL_BASED_HIGH:
         F16 = (UINT16 *) Fixup;
         if (*(UINT16 *) FixupData == *F16) {
-          *F16 = (UINT16) ((*F16 << 16) + ((UINT16) Adjust & 0xffff));
+          *F16  = (UINT16) (*F16 + (UINT16)(((UINT32)Adjust) >> 16));
         }
 
         FixupData = FixupData + sizeof (UINT16);
@@ -185,29 +222,46 @@ RelocatePeImageForRuntime (
         FixupData = FixupData + sizeof (UINT32);
         break;
 
+      case EFI_IMAGE_REL_BASED_DIR64:
+        //
+        // For X64 and IPF.
+        //
+        F64       = (UINT64 *)Fixup;
+        FixupData = ALIGN_POINTER (FixupData, sizeof (UINT64));
+        if (*(UINT64 *) FixupData == *F64) {
+          *F64 = *F64 + (UINT64)Adjust;
+        }
+        
+        FixupData = FixupData + sizeof (UINT64);
+        break;
+
       case EFI_IMAGE_REL_BASED_HIGHADJ:
         //
-        // Not implemented, but not used in EFI 1.0
+        // Not implemented, but not used in EFI 1.0.
         //
         ASSERT (FALSE);
         break;
 
       default:
+        //
+        // Only Itanium requires ConvertPeImage_Ex
+        //
         Status = PeHotRelocateImageEx (Reloc, Fixup, &FixupData, Adjust);
         if (EFI_ERROR (Status)) {
           return ;
         }
       }
       //
-      // Next relocation record
+      // Next relocation record.
       //
       Reloc += 1;
     }
+    
     //
-    // next reloc block
+    // next reloc block.
     //
     RelocBase = (EFI_IMAGE_BASE_RELOCATION *) RelocEnd;
   }
 
-  EfiCpuFlushCache (Image->ImageBase, (UINT64) Image->ImageSize);
+  EfiCpuFlushCache ((EFI_PHYSICAL_ADDRESS) Image->ImageBase, (UINT64) Image->ImageSize);
 }

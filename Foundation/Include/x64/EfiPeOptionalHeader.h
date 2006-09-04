@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,11 @@ Abstract:
 
 #ifndef _EFI_PE_OPTIONAL_HEADER_H_
 #define _EFI_PE_OPTIONAL_HEADER_H_
+
+#define EFI_IMAGE_MACHINE_TYPE_SUPPORTED(Machine) \
+  (((Machine) == EFI_IMAGE_MACHINE_X64) || ((Machine) == EFI_IMAGE_MACHINE_EBC))
+
+#define EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED(Machine) ((Machine) == EFI_IMAGE_MACHINE_IA32) 
 
 //
 // Assume we can use IPF values

@@ -110,7 +110,6 @@ EFI_METRONOME_ARCH_PROTOCOL       *gMetronome     = NULL;
 EFI_TIMER_ARCH_PROTOCOL           *gTimer         = NULL;
 EFI_BDS_ARCH_PROTOCOL             *gBds           = NULL;
 EFI_WATCHDOG_TIMER_ARCH_PROTOCOL  *gWatchdogTimer = NULL;
-EFI_RUNTIME_ARCH_PROTOCOL         *gRuntime       = NULL;
 
 //
 // DXE Core Global used to update core loaded image protocol handle
@@ -267,6 +266,26 @@ EFI_RUNTIME_SERVICES mEfiRuntimeServicesTableTemplate = {
   (EFI_REPORT_STATUS_CODE)         CoreEfiNotAvailableYetArg5                   // ReportStatusCode
 #endif
 };
+
+EFI_RUNTIME_ARCH_PROTOCOL gRuntimeTemplate = {
+  INITIALIZE_LIST_HEAD_VARIABLE (gRuntimeTemplate.ImageHead),
+  INITIALIZE_LIST_HEAD_VARIABLE (gRuntimeTemplate.EventHead),
+
+  //
+  // Make sure Size != sizeof (EFI_MEMORY_DESCRIPTOR). This will
+  // prevent people from having pointer math bugs in their code.
+  // now you have to use *DescriptorSize to make things work.
+  //
+  sizeof (EFI_MEMORY_DESCRIPTOR) + sizeof (UINT64) - (sizeof (EFI_MEMORY_DESCRIPTOR) % sizeof (UINT64)),  
+  EFI_MEMORY_DESCRIPTOR_VERSION, 
+  0,
+  NULL,
+  NULL,
+  FALSE,
+  FALSE
+};
+
+EFI_RUNTIME_ARCH_PROTOCOL *gRuntime = &gRuntimeTemplate;
 
 //
 // DXE Core Global Variables for the EFI System Table, Boot Services Table, 
@@ -858,17 +877,16 @@ CoreExitBootServices (
 
 Routine Description:
 
-  EFI 1.0 API to terminate Boot Services
+  Terminates all boot services.
 
 Arguments:
 
-  ImageHandle  - Handle that represents the identity of the calling image
-
-  MapKey -Key to the latest memory map.
+  ImageHandle   - Handle that identifies the exiting image.
+  MapKey        - Key to the latest memory map.
 
 Returns:
 
-  EFI_SUCCESS - Boot Services terminated
+  EFI_SUCCESS           - Boot services have been terminated.
   EFI_INVALID_PARAMETER - MapKey is incorrect.
 
 --*/
@@ -899,16 +917,6 @@ Returns:
   gCpu->DisableInterrupt (gCpu);
 
   //
-  // Register Runtime events with the Runtime Architectural Protocol
-  //
-  CoreShutdownEventServices ();
-
-  //
-  // Register Runtime images with the Runtime Architectural Protocol
-  //
-  CoreShutdownImageServices ();
-
-  //
   // Report that ExitBootServices() has been called
   //
   // We are using gEfiDxeServicesTableGuid as the caller ID for Dxe Core
@@ -936,6 +944,11 @@ Returns:
   //
   EfiCommonLibSetMem (gBS, sizeof (EFI_BOOT_SERVICES), 0);
   gBS = NULL;
-
+  
+  //
+  // Update the AtRuntime field in Runtiem AP.
+  //
+  gRuntime->AtRuntime = TRUE;
+  
   return Status;
 }

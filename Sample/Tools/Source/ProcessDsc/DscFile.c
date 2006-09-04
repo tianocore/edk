@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -405,7 +405,7 @@ DSCParseInclude (
   while (CurrSect != NULL) {
     TempSect = CurrSect->Next;
     while (TempSect != NULL) {
-      if (isalpha (CurrSect->Name[0]) && (stricmp (CurrSect->Name, TempSect->Name) == 0)) {
+      if (isalpha (CurrSect->Name[0]) && (_stricmp (CurrSect->Name, TempSect->Name) == 0)) {
         Error (
           TempSect->FirstLine->FileName,
           TempSect->FirstLine->LineNum,
@@ -485,7 +485,7 @@ DSCFileFindSection (
   //
   Sect = DSC->Sections;
   while (Sect != NULL) {
-    if (stricmp (Name, Sect->Name) == 0) {
+    if (_stricmp (Name, Sect->Name) == 0) {
       //
       // Position within file
       //

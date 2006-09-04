@@ -33,9 +33,11 @@ SubmitTestUnitReadyCommand (
 /*++
 
 Routine Description:
+
   Function tests the ready status of SCSI unit.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -45,23 +47,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                             but the entire DataBuffer could not be transferred.
+                             The actual number of bytes transferred is returned
+                             in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                             there are too many SCSI Command Packets already 
+                             queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                             the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                             is not supported by the SCSI initiator(i.e., SCSI 
+                             Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                             Request Packet to execute.
 
 --*/
 {
@@ -72,13 +73,16 @@ Returns:
   EFI_STATUS                      Status;
   UINT8                           Cdb[6];
 
+
   EfiZeroMem (&CommandPacket, sizeof (EFI_SCSI_IO_SCSI_REQUEST_PACKET));
   EfiZeroMem (Cdb, 6);
 
   CommandPacket.Timeout         = Timeout;
   CommandPacket.InDataBuffer    = NULL;
-  CommandPacket.SenseData       = SenseData;
   CommandPacket.InTransferLength= 0;
+  CommandPacket.OutDataBuffer    = NULL;
+  CommandPacket.OutTransferLength= 0;
+  CommandPacket.SenseData       = SenseData;
   CommandPacket.Cdb             = Cdb;
   //
   // Fill Cdb for Test Unit Ready Command
@@ -115,9 +119,11 @@ SubmitInquiryCommand (
 /*++
 
 Routine Description:
+
   Function to submit SCSI inquiry command.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -130,23 +136,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 {
@@ -211,9 +216,11 @@ SubmitModeSense10Command (
 /*++
 
 Routine Description:
+
   Function to submit SCSI mode sense 10 command.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -228,23 +235,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 {
@@ -301,9 +307,11 @@ SubmitRequestSenseCommand (
 /*++
 
 Routine Description:
+
   Function to submit SCSI request sense command.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -313,23 +321,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 {
@@ -386,9 +393,11 @@ SubmitReadCapacityCommand (
 /*++
 
 Routine Description:
+
   Function to submit read capacity command.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -401,23 +410,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 {
@@ -483,9 +491,11 @@ SubmitRead10Command (
 /*++
 
 Routine Description:
+
   Function to submit read 10 command.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -499,23 +509,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 {
@@ -545,9 +554,9 @@ Returns:
   Cdb[2]                        = (UINT8) (StartLba >> 24);
   Cdb[3]                        = (UINT8) (StartLba >> 16);
   Cdb[4]                        = (UINT8) (StartLba >> 8);
-  Cdb[5]                        = (UINT8) StartLba;
+  Cdb[5]                        = (UINT8) (StartLba & 0xff);
   Cdb[7]                        = (UINT8) (SectorSize >> 8);
-  Cdb[8]                        = (UINT8) SectorSize;
+  Cdb[8]                        = (UINT8) (SectorSize & 0xff);
 
   CommandPacket.CdbLength       = 10;
   CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
@@ -579,9 +588,11 @@ SubmitWrite10Command (
 /*++
 
 Routine Description:
+
   Function to submit SCSI write 10 command.
 
 Arguments:
+
   ScsiIo               - A pointer to SCSI IO protocol.
   Timeout              - The length of timeout period.
   SenseData            - A pointer to output sense data.
@@ -595,23 +606,22 @@ Arguments:
 
 Returns:
 
-  Returns:
-    EFI_SUCCESS            - The status of the unit is tested successfully.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
-                            but the entire DataBuffer could not be transferred.
-                            The actual number of bytes transferred is returned
-                            in TransferLength.
-    EFI_NOT_READY          - The SCSI Request Packet could not be sent because 
-                            there are too many SCSI Command Packets already 
-                            queued.
-    EFI_DEVICE_ERROR      - A device error occurred while attempting to send 
-                            the SCSI Request Packet.
-    EFI_INVALID_PARAMETER  - The contents of CommandPacket are invalid.  
-    EFI_UNSUPPORTED        - The command described by the SCSI Request Packet
-                            is not supported by the SCSI initiator(i.e., SCSI 
-                            Host Controller).
-    EFI_TIMEOUT            - A timeout occurred while waiting for the SCSI 
-                            Request Packet to execute.
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 {
@@ -626,9 +636,9 @@ Returns:
   EfiZeroMem (Cdb, 10);
 
   CommandPacket.Timeout         = Timeout;
-  CommandPacket.InDataBuffer    = DataBuffer;
+  CommandPacket.OutDataBuffer    = DataBuffer;
   CommandPacket.SenseData       = SenseData;
-  CommandPacket.InTransferLength= *DataLength;
+  CommandPacket.OutTransferLength= *DataLength;
   CommandPacket.Cdb             = Cdb;
   //
   // Fill Cdb for Write (10) Command

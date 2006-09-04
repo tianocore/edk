@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -667,7 +667,7 @@ Returns:
   //
   Index = 1;
   while (Index < argc) {
-    if (strcmpi (argv[Index], "-i") == 0) {
+    if (_strcmpi (argv[Index], "-i") == 0) {
       //
       // Input File found
       //
@@ -709,37 +709,37 @@ Returns:
 
     }
 
-    if (strcmpi (argv[Index], "-o") == 0) {
+    if (_strcmpi (argv[Index], "-o") == 0) {
       //
       // Output file found
       //
       Index++;
       OutputFileName = argv[Index];
-    } else if (strcmpi (argv[Index], "-s") == 0) {
+    } else if (_strcmpi (argv[Index], "-s") == 0) {
       //
       // Section Type found
       //
       Index++;
       ParamSectionType = argv[Index];
-    } else if (strcmpi (argv[Index], "-t") == 0) {
+    } else if (_strcmpi (argv[Index], "-t") == 0) {
       //
       // Compression or Authentication type
       //
       Index++;
       ParamSectionSubType = argv[Index];
-    } else if (strcmpi (argv[Index], "-l") == 0) {
+    } else if (_strcmpi (argv[Index], "-l") == 0) {
       //
       // Length
       //
       Index++;
       ParamLength = argv[Index];
-    } else if (strcmpi (argv[Index], "-v") == 0) {
+    } else if (_strcmpi (argv[Index], "-v") == 0) {
       //
       // VersionNumber
       //
       Index++;
       ParamVersion = argv[Index];
-    } else if (strcmpi (argv[Index], "-a") == 0) {
+    } else if (_strcmpi (argv[Index], "-a") == 0) {
       //
       // Aux string
       //
@@ -750,13 +750,13 @@ Returns:
       // this will need to be taken into account
       //
       strncpy (AuxString, argv[Index], 499);
-    } else if (strcmpi (argv[Index], "-d") == 0) {
+    } else if (_strcmpi (argv[Index], "-d") == 0) {
       //
       // Digital signature for EFI_TEST_AUTHENTICAION (must be 0 or 1)
       //
       Index++;
       ParamDigitalSignature = argv[Index];
-    } else if (strcmpi (argv[Index], "-?") == 0) {
+    } else if (_strcmpi (argv[Index], "-?") == 0) {
       PrintUsageMessage ();
       return STATUS_ERROR;
     } else {
@@ -771,37 +771,37 @@ Returns:
   // bogus.  Next verify the command line parameters are complete and make
   // sense...
   //
-  if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_COMPRESSION]) == 0) {
+  if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_COMPRESSION]) == 0) {
     SectionType     = EFI_SECTION_COMPRESSION;
     SubTypeRequired = TRUE;
-    if (stricmp (ParamSectionSubType, CompressionTypeName[EFI_NOT_COMPRESSED]) == 0) {
+    if (_stricmp (ParamSectionSubType, CompressionTypeName[EFI_NOT_COMPRESSED]) == 0) {
       SectionSubType = EFI_NOT_COMPRESSED;
-    } else if (stricmp (ParamSectionSubType, CompressionTypeName[EFI_STANDARD_COMPRESSION]) == 0) {
+    } else if (_stricmp (ParamSectionSubType, CompressionTypeName[EFI_STANDARD_COMPRESSION]) == 0) {
       SectionSubType = EFI_STANDARD_COMPRESSION;
     } else {
       Error (NULL, 0, 0, ParamSectionSubType, "unknown compression type");
       PrintUsageMessage ();
       return GetUtilityStatus ();
     }
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_GUID_DEFINED]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_GUID_DEFINED]) == 0) {
     SectionType     = EFI_SECTION_GUID_DEFINED;
     SubTypeRequired = TRUE;
-    if (stricmp (ParamSectionSubType, GUIDedSectionTypeName[EFI_SECTION_CRC32_GUID_DEFINED]) == 0) {
+    if (_stricmp (ParamSectionSubType, GUIDedSectionTypeName[EFI_SECTION_CRC32_GUID_DEFINED]) == 0) {
       SectionSubType = EFI_SECTION_CRC32_GUID_DEFINED;
     } else {
       Error (NULL, 0, 0, ParamSectionSubType, "unknown GUID defined section type", ParamSectionSubType);
       PrintUsageMessage ();
       return GetUtilityStatus ();
     }
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_PE32]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_PE32]) == 0) {
     SectionType = EFI_SECTION_PE32;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_PIC]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_PIC]) == 0) {
     SectionType = EFI_SECTION_PIC;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_TE]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_TE]) == 0) {
     SectionType = EFI_SECTION_TE;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_DXE_DEPEX]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_DXE_DEPEX]) == 0) {
     SectionType = EFI_SECTION_DXE_DEPEX;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_VERSION]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_VERSION]) == 0) {
     SectionType       = EFI_SECTION_VERSION;
     InputFileRequired = FALSE;
     Index             = sscanf (ParamVersion, "%d", &VersionNumber);
@@ -814,7 +814,7 @@ Returns:
     if (strcmp (AuxString, PARAMETER_NOT_SPECIFIED) == 0) {
       AuxString[0] = 0;
     }
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_USER_INTERFACE]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_USER_INTERFACE]) == 0) {
     SectionType       = EFI_SECTION_USER_INTERFACE;
     InputFileRequired = FALSE;
     if (strcmp (AuxString, PARAMETER_NOT_SPECIFIED) == 0) {
@@ -822,15 +822,15 @@ Returns:
       PrintUsageMessage ();
       return GetUtilityStatus ();
     }
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_COMPATIBILITY16]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_COMPATIBILITY16]) == 0) {
     SectionType = EFI_SECTION_COMPATIBILITY16;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_FIRMWARE_VOLUME_IMAGE]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_FIRMWARE_VOLUME_IMAGE]) == 0) {
     SectionType = EFI_SECTION_FIRMWARE_VOLUME_IMAGE;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_FREEFORM_SUBTYPE_GUID]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_FREEFORM_SUBTYPE_GUID]) == 0) {
     SectionType = EFI_SECTION_FREEFORM_SUBTYPE_GUID;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_RAW]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_RAW]) == 0) {
     SectionType = EFI_SECTION_RAW;
-  } else if (stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_PEI_DEPEX]) == 0) {
+  } else if (_stricmp (ParamSectionType, SectionTypeName[EFI_SECTION_PEI_DEPEX]) == 0) {
     SectionType = EFI_SECTION_PEI_DEPEX;
   } else {
     Error (NULL, 0, 0, ParamSectionType, "unknown section type");

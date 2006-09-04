@@ -666,17 +666,17 @@ Returns:
           Buffer,
           BufferSize,
           L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-          Guid->Data1,
-          Guid->Data2,
-          Guid->Data3,
-          Guid->Data4[0],
-          Guid->Data4[1],
-          Guid->Data4[2],
-          Guid->Data4[3],
-          Guid->Data4[4],
-          Guid->Data4[5],
-          Guid->Data4[6],
-          Guid->Data4[7]
+          (UINTN)Guid->Data1,
+          (UINTN)Guid->Data2,
+          (UINTN)Guid->Data3,
+          (UINTN)Guid->Data4[0],
+          (UINTN)Guid->Data4[1],
+          (UINTN)Guid->Data4[2],
+          (UINTN)Guid->Data4[3],
+          (UINTN)Guid->Data4[4],
+          (UINTN)Guid->Data4[5],
+          (UINTN)Guid->Data4[6],
+          (UINTN)Guid->Data4[7]
           );
 
   //

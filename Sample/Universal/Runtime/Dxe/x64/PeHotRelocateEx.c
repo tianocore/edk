@@ -43,28 +43,10 @@ Arguments:
 
 Returns:
 
-  EFI_SUCCESS     - The relocation item fixed up
-  EFI_UNSUPPORTED - The relocation item is of unsupported relocation type
+  EFI_SUCCESS
   
 --*/
 {
-  UINT64      *F64;
-
-  switch ((*Reloc) >> 12) {
-    case EFI_IMAGE_REL_BASED_DIR64:
-      F64 = (UINT64 *) Fixup;
-      *FixupData = ALIGN_POINTER(*FixupData, sizeof(UINT64));
-      if (*(UINT64 *)(*FixupData) == *F64) {
-        *F64  = *F64 + (UINT64) Adjust;
-      }
-
-      *FixupData = *FixupData + sizeof(UINT64);
-      break;
-
-    default:
-      return EFI_UNSUPPORTED;
-  }
-
   return EFI_SUCCESS;
 }
 

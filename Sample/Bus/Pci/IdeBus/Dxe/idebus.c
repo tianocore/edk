@@ -1127,7 +1127,8 @@ Returns:
   //
   // for ATA device, using ATA reset method
   //
-  if (IdeBlkIoDevice->Type == IdeHardDisk) {
+  if (IdeBlkIoDevice->Type == IdeHardDisk ||
+      IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     return AtaSoftReset (IdeBlkIoDevice);
   }
 

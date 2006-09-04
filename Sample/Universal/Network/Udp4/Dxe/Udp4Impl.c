@@ -1860,6 +1860,13 @@ Returns:
 {
   EFI_UDP4_COMPLETION_TOKEN  *Token;
 
+  if (NetMapIsEmpty (&Instance->RxTokens)) {
+    //
+    // There are no receive tokens to deliver the ICMP error.
+    //
+    return;
+  }
+
   if (EFI_ERROR (Instance->IcmpError)) {
     //
     // Try to get a RxToken from the RxTokens map.

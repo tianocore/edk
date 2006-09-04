@@ -370,7 +370,7 @@ Returns:
   Status                = InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
   ASSERT_PEI_ERROR (PeiServices, Status);
 
-  Status = InstallEfiPeiPeCoffLoader64 (PeiServices, &PeiEfiPeiPeCoffLoader, NULL);
+  Status = InstallEfiPeiPeCoffLoader (PeiServices, &PeiEfiPeiPeCoffLoader, NULL);
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
@@ -440,15 +440,6 @@ Returns:
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
-  // Transfer control to the DXE Core
-  // The handoff state is simply a pointer to the HOB list
-  //
-  PEI_PERF_END (PeiServices, L"DxeIpl", NULL, 0);
-
-  Status = (*PeiServices)->InstallPpi (PeiServices, &mPpiSignal);
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  //
   // Load the GDT of Go64. Since the GDT of 32-bit Tiano locates in the BS_DATA \
   // memory, it may be corrupted when copying FV to high-end memory 
   LoadGo64Gdt();
@@ -487,6 +478,17 @@ Returns:
              &DxeCoreSize,
              &DxeCoreEntryPoint
              );
+
+  ASSERT_PEI_ERROR (PeiServices, Status);
+
+  //
+  // Transfer control to the DXE Core
+  // The handoff state is simply a pointer to the HOB list
+  //
+  PEI_PERF_END (PeiServices, L"DxeIpl", NULL, 0);
+
+  Status = (*PeiServices)->InstallPpi (PeiServices, &mPpiSignal);
+
   ASSERT_PEI_ERROR (PeiServices, Status);
 
   //

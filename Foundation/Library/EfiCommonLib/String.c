@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -103,8 +103,7 @@ EfiStrCmp (
 /*++
 
 Routine Description:
-  Return the number bytes in the Unicode String. This is not the same as
-  the length of the string in characters. The string size includes the NULL
+  Compare the Unicode string pointed by String to the string pointed by String2.
 
 Arguments:
   String - String to process
@@ -112,7 +111,9 @@ Arguments:
   String2 - The other string to process
 
 Returns:
-  Number of bytes in String
+  Return a positive integer if String is lexicall greater than String2; Zero if 
+  the two strings are identical; and a negative interger if String is lexically 
+  less than String2.
 
 --*/
 {
@@ -166,7 +167,7 @@ Arguments:
   String - String to process
 
 Returns:
-  Number of Unicode characters in String
+  Number of Ascii characters in String
 
 --*/
 {
@@ -202,6 +203,86 @@ Returns:
   *Destination = 0;
   return Destination + 1;
 }
+
+UINTN
+EfiAsciiStrSize (
+  IN CHAR8   *String
+  )
+/*++
+
+Routine Description:
+  Return the number bytes in the Ascii String. This is not the same as
+  the length of the string in characters. The string size includes the NULL
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of bytes in String
+
+--*/
+{
+  return (EfiAsciiStrLen (String) + 1);
+}
+
+
+INTN
+EfiAsciiStrCmp (
+  IN CHAR8   *String,
+  IN CHAR8   *String2
+  )
+/*++
+
+Routine Description:
+  Compare the Ascii string pointed by String to the string pointed by String2. 
+
+Arguments:
+  String - String to process
+
+  String2 - The other string to process
+
+Returns:
+  Return a positive integer if String is lexicall greater than String2; Zero if 
+  the two strings are identical; and a negative interger if String is lexically 
+  less than String2.
+--*/
+{
+  while (*String) {
+    if (*String != *String2) {
+      break;
+    }
+
+    String += 1;
+    String2 += 1;
+  }
+
+  return *String - *String2;
+}
+
+
+VOID
+EfiAsciiStrCat (
+  IN CHAR8   *Destination,
+  IN CHAR8   *Source
+  )
+/*++
+
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Destination - String to added to the end of.
+  Source      - String to concatinate.
+
+Returns:
+  NONE
+
+--*/
+{   
+  EfiAsciiStrCpy (Destination + EfiAsciiStrLen (Destination), Source);
+}
+
+
 
 BOOLEAN
 IsHexDigit (
@@ -469,3 +550,80 @@ Returns:
     *(p1 + 1) = 0;
   }
 }
+CHAR16*
+ EfiStrStr (
+   IN  CHAR16  *String,
+   IN  CHAR16  *StrCharSet
+   )
+ /*++
+ 
+ Routine Description:
+   
+   Find a substring.
+   
+ Arguments: 
+   
+   String      - Null-terminated string to search.
+   StrCharSet  - Null-terminated string to search for.
+   
+ Returns:
+   The address of the first occurrence of the matching substring if successful, or NULL otherwise.
+ --*/
+ {
+   CHAR16 *Src;
+   CHAR16 *Sub;
+   
+   Src = String;
+   Sub = StrCharSet;
+   
+   while ((*String != L'\0') && (*StrCharSet != L'\0')) {
+     if (*String++ != *StrCharSet++) {
+       String = ++Src;
+       StrCharSet = Sub;
+     }
+   }
+   if (*StrCharSet == L'\0') {
+     return Src;
+   } else {
+     return NULL;
+   }
+ }
+ 
+ CHAR8*
+ EfiAsciiStrStr (
+   IN  CHAR8  *String,
+   IN  CHAR8  *StrCharSet
+   )
+ /*++
+ 
+ Routine Description:
+   
+   Find a Ascii substring.
+   
+ Arguments: 
+   
+   String      - Null-terminated Ascii string to search.
+   StrCharSet  - Null-terminated Ascii string to search for.
+   
+ Returns:
+   The address of the first occurrence of the matching Ascii substring if successful, or NULL otherwise.
+ --*/
+ {
+   CHAR8 *Src;
+   CHAR8 *Sub;
+   
+   Src = String;
+   Sub = StrCharSet;
+   
+   while ((*String != '\0') && (*StrCharSet != '\0')) {
+     if (*String++ != *StrCharSet++) {
+       String = ++Src;
+       StrCharSet = Sub;
+     }
+   }
+   if (*StrCharSet == '\0') {
+     return Src;
+   } else {
+     return NULL;
+   }
+ }

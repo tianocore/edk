@@ -38,11 +38,12 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 #include EFI_PROTOCOL_DEFINITION (ScsiPassThru)
+#include EFI_PROTOCOL_DEFINITION (ScsiIo)
 
 //
 // bit definition
 //
-#define bit(a)        1 << (a)
+#define bit(a)        (1 << (a))
 
 #define MAX_TARGET_ID 4
 //
@@ -75,34 +76,27 @@ typedef struct {
   UINT16                          CylinderMsb;
   UINT16                          Head;
   IDE_CMD_OR_STATUS               Reg;
-
   IDE_AltStatus_OR_DeviceControl  Alt;
   UINT16                          DriveAddress;
-
   UINT16                          MasterSlave;
 } IDE_BASE_REGISTERS;
 
 #define ATAPI_SCSI_PASS_THRU_DEV_SIGNATURE  EFI_SIGNATURE_32 ('a', 's', 'p', 't')
 
 typedef struct {
-  UINTN                       Signature;
-
-  EFI_HANDLE                  Handle;
-  EFI_SCSI_PASS_THRU_PROTOCOL ScsiPassThru;
-  EFI_SCSI_PASS_THRU_MODE     ScsiPassThruMode;
-  EFI_PCI_IO_PROTOCOL         *PciIo;
-
+  UINTN                            Signature;
+  EFI_HANDLE                       Handle;
+  EFI_SCSI_PASS_THRU_PROTOCOL      ScsiPassThru;
+  EFI_SCSI_PASS_THRU_MODE          ScsiPassThruMode;
+  EFI_PCI_IO_PROTOCOL              *PciIo;
   //
   // Local Data goes here
   //
-  IDE_BASE_REGISTERS          *IoPort;
-
-  CHAR16                      ControllerName[100];
-  CHAR16                      ChannelName[100];
-
-  UINT32                      LatestTargetId;
-  UINT64                      LatestLun;
-
+  IDE_BASE_REGISTERS               *IoPort;
+  CHAR16                           ControllerName[100];
+  CHAR16                           ChannelName[100];
+  UINT32                           LatestTargetId;
+  UINT64                           LatestLun;
 } ATAPI_SCSI_PASS_THRU_DEV;
 
 #define ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS(a) \
@@ -266,16 +260,17 @@ AtapiScsiPassThruDriverEntryPoint (
 
 Routine Description:
 
-  TODO: Add function description
+  Entry point for EFI drivers.
 
 Arguments:
 
-  ImageHandle - TODO: add argument description
-  SystemTable - TODO: add argument description
+  ImageHandle - EFI_HANDLE
+  SystemTable - EFI_SYSTEM_TABLE
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS
+  Others 
 
 --*/
 ;
@@ -289,18 +284,15 @@ RegisterAtapiScsiPassThru (
 /*++
 
 Routine Description:
-
-  TODO: Add function description
-
+  Attaches SCSI Pass Thru Protocol for specified IDE channel.
+    
 Arguments:
-
-  This        - TODO: add argument description
-  Controller  - TODO: add argument description
-  PciIo       - TODO: add argument description
-
+  This              - Protocol instance pointer.
+  Controller        - Parent device handle to the IDE channel.    
+  PciIo             - PCI I/O protocol attached on the "Controller".                        
+  
 Returns:
-
-  TODO: add return values
+  Always return EFI_SUCCESS unless installing SCSI Pass Thru Protocol failed.
 
 --*/
 ;
@@ -318,19 +310,29 @@ AtapiScsiPassThruFunction (
 
 Routine Description:
 
-  TODO: Add function description
+  Implements EFI_SCSI_PASS_THRU_PROTOCOL.PassThru() function.
 
 Arguments:
 
-  This    - TODO: add argument description
-  Target  - TODO: add argument description
-  Lun     - TODO: add argument description
-  Packet  - TODO: add argument description
-  Event   - TODO: add argument description
+  This:     The EFI_SCSI_PASS_THRU_PROTOCOL instance.
+  Target:   The Target ID of the ATAPI device to send the SCSI 
+            Request Packet. To ATAPI devices attached on an IDE
+            Channel, Target ID 0 indicates Master device;Target
+            ID 1 indicates Slave device.
+  Lun:      The LUN of the ATAPI device to send the SCSI Request
+            Packet. To the ATAPI device, Lun is always 0.
+  Packet:   The SCSI Request Packet to send to the ATAPI device 
+            specified by Target and Lun.
+  Event:    If non-blocking I/O is not supported then Event is ignored, 
+            and blocking I/O is performed.
+            If Event is NULL, then blocking I/O is performed.
+            If Event is not NULL and non blocking I/O is supported, 
+            then non-blocking I/O is performed, and Event will be signaled 
+            when the SCSI Request Packet completes.      
 
-Returns:
+Returns:  
 
-  TODO: add return values
+   EFI_STATUS
 
 --*/
 ;
@@ -346,17 +348,29 @@ AtapiScsiPassThruGetNextDevice (
 
 Routine Description:
 
-  TODO: Add function description
+  Used to retrieve the list of legal Target IDs for SCSI devices 
+  on a SCSI channel.
 
 Arguments:
 
-  This    - TODO: add argument description
-  Target  - TODO: add argument description
-  Lun     - TODO: add argument description
-
+  This                  - Protocol instance pointer.
+  Target                - On input, a pointer to the Target ID of a SCSI 
+                          device present on the SCSI channel.  On output, 
+                          a pointer to the Target ID of the next SCSI device
+                          present on a SCSI channel.  An input value of 
+                          0xFFFFFFFF retrieves the Target ID of the first 
+                          SCSI device present on a SCSI channel.
+  Lun                   - On input, a pointer to the LUN of a SCSI device
+                          present on the SCSI channel. On output, a pointer
+                          to the LUN of the next SCSI device present on 
+                          a SCSI channel.
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The Target ID and Lun of the next SCSI device 
+                          on the SCSI channel was returned in Target and Lun.
+  EFI_NOT_FOUND         - There are no more SCSI devices on this SCSI channel.
+  EFI_INVALID_PARAMETER - Target is not 0xFFFFFFFF,and Target and Lun were not
+                           returned on a previous call to GetNextDevice().
 
 --*/
 ;
@@ -373,18 +387,32 @@ AtapiScsiPassThruBuildDevicePath (
 
 Routine Description:
 
-  TODO: Add function description
+  Used to allocate and build a device path node for a SCSI device 
+  on a SCSI channel. Would not build device path for a SCSI Host Controller.
 
 Arguments:
 
-  This        - TODO: add argument description
-  Target      - TODO: add argument description
-  Lun         - TODO: add argument description
-  DevicePath  - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
+  This                  - Protocol instance pointer.
+  Target                - The Target ID of the SCSI device for which
+                          a device path node is to be allocated and built.
+  Lun                   - The LUN of the SCSI device for which a device 
+                          path node is to be allocated and built.
+  DevicePath            - A pointer to a single device path node that 
+                          describes the SCSI device specified by 
+                          Target and Lun. This function is responsible 
+                          for allocating the buffer DevicePath with the boot
+                          service AllocatePool().  It is the caller's 
+                          responsibility to free DevicePath when the caller
+                          is finished with DevicePath.    
+  Returns:
+  EFI_SUCCESS           - The device path node that describes the SCSI device
+                          specified by Target and Lun was allocated and 
+                          returned in DevicePath.
+  EFI_NOT_FOUND         - The SCSI devices specified by Target and Lun does
+                          not exist on the SCSI channel.
+  EFI_INVALID_PARAMETER - DevicePath is NULL.
+  EFI_OUT_OF_RESOURCES  - There are not enough resources to allocate 
+                          DevicePath.
 
 --*/
 ;
@@ -401,18 +429,27 @@ AtapiScsiPassThruGetTargetLun (
 
 Routine Description:
 
-  TODO: Add function description
+  Used to translate a device path node to a Target ID and LUN.
 
 Arguments:
 
-  This        - TODO: add argument description
-  DevicePath  - TODO: add argument description
-  Target      - TODO: add argument description
-  Lun         - TODO: add argument description
-
+  This                  - Protocol instance pointer.
+  DevicePath            - A pointer to the device path node that 
+                          describes a SCSI device on the SCSI channel.
+  Target                - A pointer to the Target ID of a SCSI device 
+                          on the SCSI channel. 
+  Lun                   - A pointer to the LUN of a SCSI device on 
+                          the SCSI channel.    
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - DevicePath was successfully translated to a 
+                          Target ID and LUN, and they were returned 
+                          in Target and Lun.
+  EFI_INVALID_PARAMETER - DevicePath/Target/Lun is NULL.
+  EFI_UNSUPPORTED       - This driver does not support the device path 
+                          node type in DevicePath.
+  EFI_NOT_FOUND         - A valid translation from DevicePath to a 
+                          Target ID and LUN does not exist.
 
 --*/
 ;
@@ -426,15 +463,22 @@ AtapiScsiPassThruResetChannel (
 
 Routine Description:
 
-  TODO: Add function description
+  Resets a SCSI channel.This operation resets all the 
+  SCSI devices connected to the SCSI channel.
 
 Arguments:
 
-  This  - TODO: add argument description
+  This                  - Protocol instance pointer.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The SCSI channel was reset.
+  EFI_UNSUPPORTED       - The SCSI channel does not support 
+                          a channel reset operation.
+  EFI_DEVICE_ERROR      - A device error occurred while 
+                          attempting to reset the SCSI channel.
+  EFI_TIMEOUT           - A timeout occurred while attempting 
+                          to reset the SCSI channel.
 
 --*/
 ;
@@ -450,17 +494,26 @@ AtapiScsiPassThruResetTarget (
 
 Routine Description:
 
-  TODO: Add function description
+  Resets a SCSI device that is connected to a SCSI channel.
 
 Arguments:
 
-  This    - TODO: add argument description
-  Target  - TODO: add argument description
-  Lun     - TODO: add argument description
-
+  This                  - Protocol instance pointer.
+  Target                - The Target ID of the SCSI device to reset. 
+  Lun                   - The LUN of the SCSI device to reset.
+    
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS           - The SCSI device specified by Target and 
+                          Lun was reset.
+  EFI_UNSUPPORTED       - The SCSI channel does not support a target
+                          reset operation.
+  EFI_INVALID_PARAMETER - Target or Lun are invalid.
+  EFI_DEVICE_ERROR      - A device error occurred while attempting 
+                          to reset the SCSI device specified by Target 
+                          and Lun.
+  EFI_TIMEOUT           - A timeout occurred while attempting to reset 
+                          the SCSI device specified by Target and Lun.
 
 --*/
 ;
@@ -473,15 +526,16 @@ CheckSCSIRequestPacket (
 
 Routine Description:
 
-  TODO: Add function description
+  Checks the parameters in the SCSI Request Packet to make sure
+  they are valid for a SCSI Pass Thru request.
 
 Arguments:
 
-  Packet  - TODO: add argument description
+  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   
 
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -496,17 +550,19 @@ SubmitBlockingIoCommand (
 
 Routine Description:
 
-  TODO: Add function description
-
+  Performs blocking I/O request.
+    
 Arguments:
 
-  AtapiScsiPrivate  - TODO: add argument description
-  Target            - TODO: add argument description
-  Packet            - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
+  AtapiScsiPrivate:   Private data structure for the specified channel.
+  Target:             The Target ID of the ATAPI device to send the SCSI 
+                      Request Packet. To ATAPI devices attached on an IDE
+                      Channel, Target ID 0 indicates Master device;Target
+                      ID 1 indicates Slave device.
+  Packet:             The SCSI Request Packet to send to the ATAPI device 
+                      specified by Target.
+  
+  Returns:            EFI_STATUS  
 
 --*/
 ;
@@ -519,15 +575,17 @@ IsCommandValid (
 
 Routine Description:
 
-  TODO: Add function description
+  Checks the requested SCSI command: 
+  Is it supported by this driver?
+  Is the Data transfer direction reasonable?
 
 Arguments:
 
-  Packet  - TODO: add argument description
+  Packet         -  The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET   
 
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -544,19 +602,19 @@ RequestSenseCommand (
 
 Routine Description:
 
-  TODO: Add function description
+  Sumbit request sense command
 
 Arguments:
 
-  AtapiScsiPrivate  - TODO: add argument description
-  Target            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
+  AtapiScsiPrivate  - The pionter of ATAPI_SCSI_PASS_THRU_DEV
+  Target            - The target ID
+  Timeout           - The time to complete the command
+  SenseData         - The buffer to fill in sense data
+  SenseDataLength   - The length of buffer
 
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -575,21 +633,34 @@ AtapiPacketCommand (
 
 Routine Description:
 
-  TODO: Add function description
-
+  Submits ATAPI command packet to the specified ATAPI device.
+    
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  Target                - TODO: add argument description
-  PacketCommand         - TODO: add argument description
-  Buffer                - TODO: add argument description
-  ByteCount             - TODO: add argument description
-  Direction             - TODO: add argument description
-  TimeOutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate:   Private data structure for the specified channel.
+  Target:             The Target ID of the ATAPI device to send the SCSI 
+                      Request Packet. To ATAPI devices attached on an IDE
+                      Channel, Target ID 0 indicates Master device;Target
+                      ID 1 indicates Slave device.
+  PacketCommand:      Points to the ATAPI command packet.
+  Buffer:             Points to the transferred data.
+  ByteCount:          When input,indicates the buffer size; when output,
+                      indicates the actually transferred data size.
+  Direction:          Indicates the data transfer direction. 
+  TimeoutInMicroSeconds:
+                      The timeout, in micro second units, to use for the 
+                      execution of this ATAPI command.
+                      A TimeoutInMicroSeconds value of 0 means that 
+                      this function will wait indefinitely for the ATAPI 
+                      command to execute.
+                      If TimeoutInMicroSeconds is greater than zero, then 
+                      this function will return EFI_TIMEOUT if the time 
+                      required to execute the ATAPI command is greater 
+                      than TimeoutInMicroSeconds.
+  
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -604,16 +675,16 @@ ReadPortB (
 
 Routine Description:
 
-  TODO: Add function description
+  Read one byte from a specified I/O port.
 
 Arguments:
 
-  PciIo - TODO: add argument description
-  Port  - TODO: add argument description
-
+  PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
+  Port       - IO port
+  
 Returns:
 
-  TODO: add return values
+  A byte read out
 
 --*/
 ;
@@ -628,16 +699,16 @@ ReadPortW (
 
 Routine Description:
 
-  TODO: Add function description
+  Read one word from a specified I/O port.
 
 Arguments:
 
-  PciIo - TODO: add argument description
-  Port  - TODO: add argument description
+  PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
+  Port       - IO port
+  
+Returns:     
 
-Returns:
-
-  TODO: add return values
+  A word read out
 
 --*/
 ;
@@ -653,18 +724,18 @@ WritePortB (
 
 Routine Description:
 
-  TODO: Add function description
+  Write one byte to a specified I/O port.
 
 Arguments:
 
-  PciIo - TODO: add argument description
-  Port  - TODO: add argument description
-  Data  - TODO: add argument description
-
+  PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
+  Port       - IO port
+  Data       - The data to write
+  
 Returns:
-
-  TODO: add return values
-
+ 
+  NONE
+ 
 --*/
 ;
 
@@ -679,18 +750,18 @@ WritePortW (
 
 Routine Description:
 
-  TODO: Add function description
+  Write one word to a specified I/O port.
 
 Arguments:
 
-  PciIo - TODO: add argument description
-  Port  - TODO: add argument description
-  Data  - TODO: add argument description
-
+  PciIo      - The pointer of EFI_PCI_IO_PROTOCOL
+  Port       - IO port
+  Data       - The data to write
+  
 Returns:
 
-  TODO: add return values
-
+  NONE
+  
 --*/
 ;
 
@@ -703,16 +774,19 @@ StatusDRQClear (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether DRQ is clear in the Status Register. (BSY must also be cleared)
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeOutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -726,16 +800,19 @@ AltStatusDRQClear (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether DRQ is clear in the Alternate Status Register. 
+  (BSY must also be cleared).If TimeoutInMicroSeconds is zero, this routine should 
+  wait infinitely for DRQ clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeOutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -749,16 +826,19 @@ StatusDRQReady (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether DRQ is ready in the Status Register. (BSY must also be cleared)
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeOutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -772,16 +852,20 @@ AltStatusDRQReady (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether DRQ is ready in the Alternate Status Register. 
+  (BSY must also be cleared)
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  DRQ ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeOutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -795,16 +879,19 @@ StatusWaitForBSYClear (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether BSY is clear in the Status Register.
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeoutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -818,16 +905,19 @@ AltStatusWaitForBSYClear (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether BSY is clear in the Alternate Status Register.
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  BSY clear. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeoutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -841,16 +931,20 @@ StatusDRDYReady (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether DRDY is ready in the Status Register. 
+  (BSY must also be cleared)
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeoutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -864,16 +958,20 @@ AltStatusDRDYReady (
 
 Routine Description:
 
-  TODO: Add function description
+  Check whether DRDY is ready in the Alternate Status Register. 
+  (BSY must also be cleared)
+  If TimeoutInMicroSeconds is zero, this routine should wait infinitely for
+  DRDY ready. Otherwise, it will return EFI_TIMEOUT when specified time is 
+  elapsed.
 
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  TimeoutInMicroSeconds - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  TimeoutInMicroSeconds       - The time to wait for
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -890,19 +988,29 @@ AtapiPassThruPioReadWriteData (
 
 Routine Description:
 
-  TODO: Add function description
-
+  Performs data transfer between ATAPI device and host after the
+  ATAPI command packet is sent.
+    
 Arguments:
 
-  AtapiScsiPrivate      - TODO: add argument description
-  Buffer                - TODO: add argument description
-  ByteCount             - TODO: add argument description
-  Direction             - TODO: add argument description
-  TimeOutInMicroSeconds - TODO: add argument description
+  AtapiScsiPrivate:   Private data structure for the specified channel.    
+  Buffer:             Points to the transferred data.
+  ByteCount:          When input,indicates the buffer size; when output,
+                      indicates the actually transferred data size.
+  Direction:          Indicates the data transfer direction. 
+  TimeoutInMicroSeconds:
+                      The timeout, in micro second units, to use for the 
+                      execution of this ATAPI command.
+                      A TimeoutInMicroSeconds value of 0 means that 
+                      this function will wait indefinitely for the ATAPI 
+                      command to execute.
+                      If TimeoutInMicroSeconds is greater than zero, then 
+                      this function will return EFI_TIMEOUT if the time 
+                      required to execute the ATAPI command is greater 
+                      than TimeoutInMicroSeconds.
+ Returns:
 
-Returns:
-
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
@@ -915,16 +1023,42 @@ AtapiPassThruCheckErrorStatus (
 
 Routine Description:
 
-  TODO: Add function description
-
+  Check Error Register for Error Information. 
+  
 Arguments:
 
-  AtapiScsiPrivate  - TODO: add argument description
-
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+   
 Returns:
 
-  TODO: add return values
+  EFI_STATUS
 
 --*/
 ;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+STATIC
+EFI_STATUS
+PacketSwitch (
+  IN      EFI_SCSI_IO_SCSI_REQUEST_PACKET         *Packet,
+  IN OUT  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET  *CommandPacket
+  )
+/*++
+
+Routine Description:
+
+  Transfer EFI_SCSI_IO_SCSI_REQUEST_PACKET packet to 
+  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET packet
+  
+Arguments:
+
+  Packet            - The pointer of EFI_SCSI_IO_SCSI_REQUEST_PACKET
+  CommandPacket     - The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET
+   
+Returns:
+
+  NONE
+
+--*/
+;
+#endif
 #endif

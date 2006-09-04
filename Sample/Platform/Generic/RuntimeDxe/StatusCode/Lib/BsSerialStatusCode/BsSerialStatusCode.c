@@ -2029,6 +2029,7 @@ STATUS_CODE_LOOKUP_TABLE  mOperationToken[] = {
 #ifdef EFI_DEBUG
 
 EFI_STATUS
+EFIAPI
 MatchString (
   IN  STATUS_CODE_LOOKUP_TABLE  *Table,
   IN  UINT32                    Value,
@@ -2044,6 +2045,7 @@ MatchString (
 #ifdef EFI_DEBUG
 
 EFI_STATUS
+EFIAPI
 MatchString (
   IN  STATUS_CODE_LOOKUP_TABLE  *Table,
   IN  UINT32                    Value,
@@ -2219,6 +2221,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 BsSerialReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,

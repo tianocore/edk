@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -268,15 +268,14 @@ Routine Description:
   Install Real Time Clock Protocol 
 
 Arguments:
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  ImageHandle - Image Handle
+  SystemTable - Pointer to system table
 
 Returns:
 
   EFI_SUCEESS - Real Time Clock Services are installed into the Runtime Services Table
 
 --*/
-// TODO:    ImageHandle - add argument and description to function comment
-// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_STATUS  Status;
   EFI_HANDLE  Handle;
@@ -297,6 +296,9 @@ Returns:
                   NULL,
                   NULL
                   );
+  if (EFI_ERROR (Status)) {
+    EfiShutdownRuntimeDriverLib ();
+  }
   return Status;
 }
 

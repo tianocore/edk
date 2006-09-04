@@ -69,7 +69,7 @@ PLATFORM=$(PROJECT_NAME)
 [Libraries.Platform]
 Foundation\Library\pei\PeiLib\PeiLib.inf
 Foundation\Library\Dxe\Hob\HobLib.inf
-
+Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsSerialStatusCode\BsSerialStatusCode.inf
@@ -166,6 +166,15 @@ Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf
 Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf             
 Sample\Bus\Pci\Uhci\Dxe\Uhci.inf
 Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf
+
+#
+# SCSI modules
+#
+Sample\Bus\Pci\AtapiExtPassThru\Dxe\AtapiExtPassThru.inf
+Sample\Bus\Pci\AtapiPassThru\Dxe\AtapiPassThru.inf
+Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
+Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf
+
 
 #
 # The following components are used for network boot

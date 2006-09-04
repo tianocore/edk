@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -729,7 +729,7 @@ Returns:
         PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
       }
     } else {
-      PrintStringAt (StartColumnOfHelp, BottomRowOfHelp, gEnterCommitString);
+      PrintStringAt (SecCol, BottomRowOfHelp, gEnterCommitString);
 
       //
       // If it is a selected numeric with manual input, display different message
@@ -737,7 +737,7 @@ Returns:
       if ((Selection->ThisTag->Operand == EFI_IFR_NUMERIC_OP) && (Selection->ThisTag->Step == 0)) {
         PrintStringAt (SecCol, TopRowOfHelp, gNumericInput);
       } else if (Selection->ThisTag->Operand != EFI_IFR_ORDERED_LIST_OP) {
-        PrintAt (SecCol, BottomRowOfHelp, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
+        PrintAt (StartColumnOfHelp, BottomRowOfHelp, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
       }
 
       if (Selection->ThisTag->Operand == EFI_IFR_ORDERED_LIST_OP) {

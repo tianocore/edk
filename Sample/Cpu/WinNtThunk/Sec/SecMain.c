@@ -299,7 +299,11 @@ Returns:
     // Save the size of the memory and make a Unicode filename SystemMemory00, ...
     //
     gSystemMemory[Index].Size = atoi (MemorySizeStr) * 0x100000;
+#ifdef USE_VC8
+    _snwprintf_s (gSystemMemory[Index].FileName, NT_SYSTEM_MEMORY_FILENAME_SIZE, NT_SYSTEM_MEMORY_FILENAME_SIZE, L"SystemMemory%02d", Index);
+#else
     _snwprintf (gSystemMemory[Index].FileName, NT_SYSTEM_MEMORY_FILENAME_SIZE, L"SystemMemory%02d", Index);
+#endif
 
     //
     // Find the next region

@@ -708,6 +708,41 @@ Returns:
 --*/
 ;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+EFI_STATUS
+EfiQueryVariableInfo (
+  IN UINT32           Attributes,
+  OUT UINT64          *MaximumVariableStorageSize,
+  OUT UINT64          *RemainingVariableStorageSize,
+  OUT UINT64          *MaximumVariableSize
+  )
+/*++
+
+Routine Description:
+
+  This code returns information about the EFI variables.
+
+Arguments:
+
+  Attributes                      Attributes bitmask to specify the type of variables 
+                                  on which to return information.
+  MaximumVariableStorageSize      Pointer to the maximum size of the storage space available
+                                  for the EFI variables associated with the attributes specified.
+  RemainingVariableStorageSize    Pointer to the remaining size of the storage space available 
+                                  for the EFI variables associated with the attributes specified.
+  MaximumVariableSize             Pointer to the maximum size of the individual EFI variables
+                                  associated with the attributes specified.
+
+Returns:
+
+  Status code
+
+--*/
+;
+#endif
+
+
 EFI_STATUS
 EfiReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
@@ -1271,6 +1306,24 @@ Returns:
 ;
 
 EFI_STATUS
+EfiFvbShutdown (
+  VOID
+  )
+/*++
+
+Routine Description:
+  Release resources allocated in EfiFvbInitialize.
+
+Arguments:
+  None 
+
+Returns: 
+  EFI_SUCCESS
+
+--*/
+;
+
+EFI_STATUS
 EfiFvbReadBlock (
   IN UINTN                                        Instance,
   IN EFI_LBA                                      Lba,
@@ -1499,6 +1552,35 @@ Returns:
 
 EFI_STATUS
 EFIAPI
+RtEfiCreateEventLegacyBoot (
+  IN EFI_TPL                      NotifyTpl,
+  IN EFI_EVENT_NOTIFY             NotifyFunction,
+  IN VOID                         *NotifyContext,
+  OUT EFI_EVENT                   *LegacyBootEvent
+  )
+/*++
+
+Routine Description:
+  Create a Legacy Boot Event.  
+  Tiano extended the CreateEvent Type enum to add a legacy boot event type. 
+  This was bad as Tiano did not own the enum. In UEFI 2.0 CreateEventEx was
+  added and now it's possible to not voilate the UEFI specification by 
+  declaring a GUID for the legacy boot event class. This library supports
+  the R8.5/EFI 1.10 form and R8.6/UEFI 2.0 form and allows common code to 
+  work both ways.
+
+Arguments:
+  LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+
+Returns:
+  EFI_SUCCESS   Event was created.
+  Other         Event was not created.
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
 RtEfiCreateEventReadyToBoot (
   IN EFI_TPL                      NotifyTpl,
   IN EFI_EVENT_NOTIFY             NotifyFunction,
@@ -1518,7 +1600,7 @@ Routine Description:
   work both ways.
 
 Arguments:
-  @param LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+  ReadyToBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
 
 Return:
   EFI_SUCCESS   - Event was created.

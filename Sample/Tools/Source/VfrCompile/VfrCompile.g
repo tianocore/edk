@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -321,19 +321,19 @@ Returns:
     //
     // -? or -h help option -- return an error for printing usage
     //
-    if ((stricmp (Argv[0], "-?") == 0) || (stricmp (Argv[0], "-h") == 0)) {
+    if ((_stricmp (Argv[0], "-?") == 0) || (_stricmp (Argv[0], "-h") == 0)) {
       return STATUS_ERROR;
       break;
     //
     // -l to create a listing output file
     //
-    } else if (stricmp (Argv[0], "-l") == 0) {
+    } else if (_stricmp (Argv[0], "-l") == 0) {
       gOptions.CreateListFile = 1;
     //
     // -I include_path option for finding include files. We'll pass this
     // to the preprocessor. Turn them all into a single include string.
     //
-    } else if (stricmp (Argv[0], "-i") == 0) {
+    } else if (_stricmp (Argv[0], "-i") == 0) {
       if ((Argc < 2) || (Argv[1][0] == '-')) {
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing path argument");
         return STATUS_ERROR;
@@ -361,7 +361,7 @@ Returns:
     //
     // -od OutputDirectory to define a common directory for output files
     //
-    } else if (stricmp (Argv[0], "-od") == 0) {
+    } else if (_stricmp (Argv[0], "-od") == 0) {
       if ((Argc < 2) || (Argv[1][0] == '-')) {
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing output directory name");
         return STATUS_ERROR;
@@ -369,15 +369,15 @@ Returns:
       Argc--;
       Argv++;
       strcpy (gOptions.OutputDirectory, Argv[0]);
-    } else if (stricmp (Argv[0], "-ibin") == 0) {
+    } else if (_stricmp (Argv[0], "-ibin") == 0) {
       gOptions.CreateIfrBinFile = 1;
-    } else if (stricmp (Argv[0], "-nostrings") == 0) {
+    } else if (_stricmp (Argv[0], "-nostrings") == 0) {
       // deprecated option
     //
     // -ppflag C-preprocessor-flag option for passing options to the C preprocessor.
     // Turn them all into a single string.
     //
-    } else if (stricmp (Argv[0], "-ppflag") == 0) {
+    } else if (_stricmp (Argv[0], "-ppflag") == 0) {
       if (Argc < 2) {
         Error (PROGRAM_NAME, 0, 0, Argv[0], "missing C-preprocessor argument");
         return STATUS_ERROR;

@@ -55,20 +55,35 @@ SubmitTestUnitReadyCommand (
 
 Routine Description:
 
-  TODO: Add function description
+  Function tests the ready status of SCSI unit.
 
 Arguments:
 
-  ScsiIo            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
-  HostAdapterStatus - TODO: add argument description
-  TargetStatus      - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                             but the entire DataBuffer could not be transferred.
+                             The actual number of bytes transferred is returned
+                             in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                             there are too many SCSI Command Packets already 
+                             queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                             the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                             is not supported by the SCSI initiator(i.e., SCSI 
+                             Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                             Request Packet to execute.
 
 --*/
 ;
@@ -89,23 +104,38 @@ SubmitInquiryCommand (
 
 Routine Description:
 
-  TODO: Add function description
+  Function to submit SCSI inquiry command.
 
 Arguments:
 
-  ScsiIo                  - TODO: add argument description
-  Timeout                 - TODO: add argument description
-  SenseData               - TODO: add argument description
-  SenseDataLength         - TODO: add argument description
-  HostAdapterStatus       - TODO: add argument description
-  TargetStatus            - TODO: add argument description
-  InquiryDataBuffer       - TODO: add argument description
-  InquiryDataLength       - TODO: add argument description
-  EnableVitalProductData  - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
+  InquiryDataBuffer    - A pointer to inquiry data buffer.
+  InquiryDataLength    - The length of inquiry data buffer.
+  EnableVitalProductData - Boolean to enable Vital Product Data.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 ;
@@ -128,25 +158,40 @@ SubmitModeSense10Command (
 
 Routine Description:
 
-  TODO: Add function description
+  Function to submit SCSI mode sense 10 command.
 
 Arguments:
 
-  ScsiIo            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
-  HostAdapterStatus - TODO: add argument description
-  TargetStatus      - TODO: add argument description
-  DataBuffer        - TODO: add argument description
-  DataLength        - TODO: add argument description
-  DBDField          - TODO: add argument description
-  PageControl       - TODO: add argument description
-  PageCode          - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
+  DataBuffer           - A pointer to input data buffer.
+  DataLength           - The length of input data buffer.
+  DBDField             - The DBD Field (Optional).
+  PageControl          - Page Control.
+  PageCode             - Page code.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 ;
@@ -164,20 +209,35 @@ SubmitRequestSenseCommand (
 
 Routine Description:
 
-  TODO: Add function description
+  Function to submit SCSI request sense command.
 
 Arguments:
 
-  ScsiIo            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
-  HostAdapterStatus - TODO: add argument description
-  TargetStatus      - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 ;
@@ -201,23 +261,38 @@ SubmitReadCapacityCommand (
 
 Routine Description:
 
-  TODO: Add function description
+  Function to submit read capacity command.
 
 Arguments:
 
-  ScsiIo            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
-  HostAdapterStatus - TODO: add argument description
-  TargetStatus      - TODO: add argument description
-  DataBuffer        - TODO: add argument description
-  DataLength        - TODO: add argument description
-  PMI               - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
+  DataBuffer           - A pointer to a data buffer.
+  DataLength           - The length of data buffer.
+  PMI                  - Partial medium indicator.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 ;
@@ -239,24 +314,40 @@ SubmitRead10Command (
 
 Routine Description:
 
-  TODO: Add function description
+  Function to submit read 10 command.
 
 Arguments:
 
-  ScsiIo            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
-  HostAdapterStatus - TODO: add argument description
-  TargetStatus      - TODO: add argument description
-  DataBuffer        - TODO: add argument description
-  DataLength        - TODO: add argument description
-  StartLba          - TODO: add argument description
-  SectorSize        - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
+  DataBuffer           - A pointer to a data buffer.
+  DataLength           - The length of data buffer.
+  StartLba             - The start address of LBA.
+  SectorSize           - The sector size.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
+
 
 --*/
 ;
@@ -278,24 +369,39 @@ SubmitWrite10Command (
 
 Routine Description:
 
-  TODO: Add function description
+  Function to submit SCSI write 10 command.
 
 Arguments:
 
-  ScsiIo            - TODO: add argument description
-  Timeout           - TODO: add argument description
-  SenseData         - TODO: add argument description
-  SenseDataLength   - TODO: add argument description
-  HostAdapterStatus - TODO: add argument description
-  TargetStatus      - TODO: add argument description
-  DataBuffer        - TODO: add argument description
-  DataLength        - TODO: add argument description
-  StartLba          - TODO: add argument description
-  SectorSize        - TODO: add argument description
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
+  DataBuffer           - A pointer to a data buffer.
+  DataLength           - The length of data buffer.
+  StartLba             - The start address of LBA.
+  SectorSize           - The sector size.
 
 Returns:
 
-  TODO: add return values
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
 
 --*/
 ;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -244,7 +244,7 @@ GetBaseAddress (
   //
   CSave = *Cptr;
   *Cptr = 0;
-  if (stricmp (Name, EFI_BASE_ADDRESS) != 0) {
+  if (_stricmp (Name, EFI_BASE_ADDRESS) != 0) {
     return STATUS_ERROR;
   }
 
@@ -339,7 +339,7 @@ Returns:
     // component type.
     //
     for (i = 0; mCompTypeExtension[i].ComponentType != NULL; i++) {
-      if (stricmp (ComponentType, mCompTypeExtension[i].ComponentType) == 0) {
+      if (_stricmp (ComponentType, mCompTypeExtension[i].ComponentType) == 0) {
         FFSExt = mCompTypeExtension[i].Extension;
         break;
       }
@@ -390,8 +390,8 @@ Returns:
   //
   Ptr = mFileList;
   while (Ptr != NULL) {
-    if ((Ptr->BaseName != NULL) && (BaseName != NULL) && (stricmp (BaseName, Ptr->BaseName) == 0)) {
-      if ((Ptr->Processor != NULL) && (Processor != NULL) && (stricmp (Processor, Ptr->Processor) == 0)) {
+    if ((Ptr->BaseName != NULL) && (BaseName != NULL) && (_stricmp (BaseName, Ptr->BaseName) == 0)) {
+      if ((Ptr->Processor != NULL) && (Processor != NULL) && (_stricmp (Processor, Ptr->Processor) == 0)) {
         Error (NULL, 0, 0, BaseName, "duplicate base name specified");
         return STATUS_ERROR;
       }
@@ -659,7 +659,7 @@ Returns:
         // an fv output file of this name.
         //
         for (FVPtr = FVList; FVPtr != NULL; FVPtr = FVPtr->Next) {
-          if (stricmp (FVPtr->FVFileName, StartCptr) == 0) {
+          if (_stricmp (FVPtr->FVFileName, StartCptr) == 0) {
             break;
           }
         }
@@ -1225,7 +1225,7 @@ Returns:
     // an fv output file of this name.
     //
     for (FVPtr = mNonFfsFVList; FVPtr != NULL; FVPtr = FVPtr->Next) {
-      if (stricmp (FVPtr->FVFileName, StartCptr) == 0) {
+      if (_stricmp (FVPtr->FVFileName, StartCptr) == 0) {
         break;
       }
     }
@@ -1385,7 +1385,7 @@ AddFirmwareVolumes (
       // already added it.
       //
       for (FvPtr = mFVList; FvPtr != NULL; FvPtr = FvPtr->Next) {
-        if (stricmp (FvPtr->FVFileName, StartPtr) == 0) {
+        if (_stricmp (FvPtr->FVFileName, StartPtr) == 0) {
           break;
         }
       }
@@ -1447,7 +1447,7 @@ OrderInFvList (
     //
     // If it matches for the length of FvName...
     //
-    if (strnicmp (FvList, FvName, strlen (FvName)) == 0) {
+    if (_strnicmp (FvList, FvName, strlen (FvName)) == 0) {
       //
       // Then see if the match string in FvList is terminated at the
       // same length.

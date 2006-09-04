@@ -23,5 +23,5 @@ Revision History
 #include "EfiSpec.h"
 #include EFI_PROTOCOL_DEFINITION (IScsiInitiatorName)
 
-EFI_GUID gEfiTapeIoProtocolGuid = EFI_ISCSI_INITIATOR_NAME_PROTOCOL_GUID;
-EFI_GUID_STRING(&gEfiTapeIoProtocolGuid, "ISCSI Initiator Name Protocol", "UEFI 2.0 ISCSI Initiator Name Protocol protocol");
+EFI_GUID gEfiIScsiInitiatorNameProtocolGuid = EFI_ISCSI_INITIATOR_NAME_PROTOCOL_GUID;
+EFI_GUID_STRING(&gEfiIScsiInitiatorNameProtocolGuid, "ISCSI Initiator Name Protocol", "UEFI 2.0 ISCSI Initiator Name Protocol");

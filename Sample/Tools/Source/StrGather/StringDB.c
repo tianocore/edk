@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1685,7 +1685,11 @@ StringDBSetStringReferenced (
   //
   Status  = STATUS_SUCCESS;
   WName   = (WCHAR *) malloc ((strlen (StringIdentifierName) + 1) * sizeof (WCHAR));
+#ifdef USE_VC8
+  swprintf (WName, (strlen (StringIdentifierName) + 1) * sizeof (WCHAR), L"%S", StringIdentifierName);
+#else
   swprintf (WName, L"%S", StringIdentifierName);
+#endif
   Id = StringDBFindStringIdentifierByName (WName);
   if (Id != NULL) {
     Id->Flags |= STRING_FLAGS_REFERENCED;
@@ -1765,7 +1769,11 @@ StringDBDumpDatabase (
   // The default control character is '/'. Make it '#' by writing
   // "/=#" to the output file.
   //
+#ifdef USE_VC8
+  swprintf (Line, wcslen(Line) * sizeof (WCHAR), L"/=#");
+#else
   swprintf (Line, L"/=#");
+#endif
   fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
   fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
   fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
@@ -1778,6 +1786,16 @@ StringDBDumpDatabase (
     // Write the "#define " string
     //
     if (StringIdentifier->Flags & STRING_FLAGS_REFERENCED) {
+#ifdef USE_VC8
+      swprintf (
+        Line,
+        wcslen(Line) * sizeof (WCHAR),
+        L"%s %-60.60s 0x%04X",
+        DEFINE_STR,
+        StringIdentifier->StringName,
+        StringIdentifier->Index
+        );
+#else
       swprintf (
         Line,
         L"%s %-60.60s 0x%04X",
@@ -1785,7 +1803,18 @@ StringDBDumpDatabase (
         StringIdentifier->StringName,
         StringIdentifier->Index
         );
+#endif
     } else {
+#ifdef USE_VC8
+      swprintf (
+        Line,
+        wcslen(Line) * sizeof (WCHAR), 
+        L"%s %-60.60s 0x%04X  // NOT REFERENCED",
+        DEFINE_STR,
+        StringIdentifier->StringName,
+        StringIdentifier->Index
+        );
+#else
       swprintf (
         Line,
         L"%s %-60.60s 0x%04X  // NOT REFERENCED",
@@ -1793,6 +1822,7 @@ StringDBDumpDatabase (
         StringIdentifier->StringName,
         StringIdentifier->Index
         );
+#endif
     }
 
     fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
@@ -1807,7 +1837,11 @@ StringDBDumpDatabase (
   Scope = NULL;
   for (Lang = mDBData.LanguageList; Lang != NULL; Lang = Lang->Next) {
     fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
+#ifdef USE_VC8
+    swprintf (Line, wcslen(Line) * sizeof (WCHAR), L"#langdef %s \"%s\"", Lang->LanguageName, Lang->PrintableLanguageName);
+#else
     swprintf (Line, L"#langdef %s \"%s\"", Lang->LanguageName, Lang->PrintableLanguageName);
+#endif
     fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
     fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
     fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
@@ -1819,28 +1853,50 @@ StringDBDumpDatabase (
       //
       // Print the internal flags for debug
       //
+#ifdef USE_VC8
+      swprintf (Line, wcslen(Line) * sizeof (WCHAR), L"// flags=0x%02X", (UINT32) StrList->Flags);
+#else
       swprintf (Line, L"// flags=0x%02X", (UINT32) StrList->Flags);
+#endif
       fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
       fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
       //
       // Print the scope if changed
       //
       if ((Scope == NULL) || (wcscmp (Scope, StrList->Scope) != 0)) {
+#ifdef USE_VC8
+        swprintf (Line, wcslen(Line) * sizeof (WCHAR), L"#scope %s", StrList->Scope);
+#else
         swprintf (Line, L"#scope %s", StrList->Scope);
+#endif
         fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
         fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
         Scope = StrList->Scope;
       }
 
+#ifdef USE_VC8
+      swprintf (
+        Line,
+        wcslen(Line) * sizeof (WCHAR), 
+        L"#string %-50.50s #language %s \"",
+        StrList->StringName,
+        Lang->LanguageName
+        );
+#else
       swprintf (
         Line,
         L"#string %-50.50s #language %s \"",
         StrList->StringName,
         Lang->LanguageName
         );
+#endif
       fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
       fwrite (StrList->Str, StrList->Size - sizeof (WCHAR), 1, OutFptr);
+#ifdef USE_VC8
+      swprintf (Line, wcslen(Line) * sizeof (WCHAR), L"\"");
+#else
       swprintf (Line, L"\"");
+#endif
       fwrite (Line, wcslen (Line) * sizeof (WCHAR), 1, OutFptr);
       fwrite (&CrLf, sizeof (CrLf), 1, OutFptr);
     }

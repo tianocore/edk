@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -184,7 +184,7 @@ FileSearchMeetsCriteria (
     //
     StrList = FSData->ExcludeDirs;
     while (StrList != NULL) {
-      if (stricmp (FSData->FindData.cFileName, StrList->Str) == 0) {
+      if (_stricmp (FSData->FindData.cFileName, StrList->Str) == 0) {
         Status = FALSE;
         break;
       }
@@ -209,7 +209,7 @@ FileSearchMeetsCriteria (
     Status  = TRUE;
     StrList = FSData->ExcludeFiles;
     while (StrList != NULL) {
-      if (stricmp (FSData->FindData.cFileName, StrList->Str) == 0) {
+      if (_stricmp (FSData->FindData.cFileName, StrList->Str) == 0) {
         Status = FALSE;
         break;
       }
@@ -225,7 +225,7 @@ FileSearchMeetsCriteria (
       StrList     = FSData->ExcludeExtensions;
       while (StrList != NULL) {
         ExtLen = strlen (StrList->Str);
-        if (stricmp (
+        if (_stricmp (
               FSData->FindData.cFileName + FileNameLen - ExtLen,
               StrList->Str
               ) == 0) {

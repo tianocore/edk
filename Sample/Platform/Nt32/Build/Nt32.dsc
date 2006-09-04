@@ -203,8 +203,10 @@ Foundation\Library\Dxe\Hob\HobLib.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtPlatformStatusCode\$(PROJECT_NAME)\RtPlatformStatusCode.inf
-
+Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
+
+Foundation\Library\CompilerStub\CompilerStubLib.inf
 
 [=============================================================================]
 #
@@ -327,13 +329,14 @@ Sample\Bus\WinNtThunk\WinNtThunk\Dxe\WinNtThunk.inf
 $(GRAPHICS_INF)
 
 Sample\Platform\Nt32\Dxe\Nt32Platform\MiscSubclass\MiscSubclassDriver.inf
-Sample\Bus\Pci\AtapiPassThru\Dxe\AtapiPassThru.inf                            
 Sample\Bus\Pci\CirrusLogic\Dxe\$(UEFI_PREFIX)CirrusLogic5430.inf              
 Sample\Bus\Pci\IdeBus\Dxe\idebus.inf                                          
 Sample\Bus\Pci\Uhci\Dxe\Uhci.inf                                              
 Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                                       
-Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf                                       
-Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf                                     
+Sample\Bus\Pci\AtapiExtPassThru\Dxe\AtapiExtPassThru.inf
+Sample\Bus\Pci\AtapiPassThru\Dxe\AtapiPassThru.inf
+Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
+Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf
 Sample\Bus\Usb\UsbBot\Dxe\UsbBot.inf                                          
 Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf                                          
 Sample\Bus\Usb\UsbCbi\Dxe\Cbi0\UsbCbi0.inf                                    
@@ -341,13 +344,14 @@ Sample\Bus\Usb\UsbCbi\Dxe\Cbi1\UsbCbi1.inf
 Sample\Bus\Usb\UsbKb\Dxe\UsbKb.inf                                            
 Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf                          
 Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf                                      
-Sample\Universal\Network\PxeBc\Dxe\BC.inf                                     
-Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf                               
-Sample\Universal\Network\Snp32_64\Dxe\SNP.inf                                 
+#Sample\Universal\Network\PxeBc\Dxe\BC.inf                                     
+#Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf                               
+#Sample\Universal\Network\Snp32_64\Dxe\SNP.inf                                 
 
 #
 # UEFI network drivers.
 #
+Sample\Universal\Network\SnpNt32\Dxe\SnpNt32.inf                       FV=NULL
 Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
 Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
 Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL

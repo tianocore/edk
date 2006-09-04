@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -384,7 +384,7 @@ Returns:
   //
   if (mGlobals.NoDupes) {
     for (ListPtr = ProcessedFiles->Next; ListPtr != NULL; ListPtr = ListPtr->Next) {
-      if (stricmp (FileName, ListPtr->Str) == 0) {
+      if (_stricmp (FileName, ListPtr->Str) == 0) {
         break;
       }
     }
@@ -688,7 +688,7 @@ ReplaceSymbols (
     //
     Sym = mGlobals.SymbolTable;
     while (Sym != NULL) {
-      if (strnicmp (From, Sym->Value, strlen (Sym->Value)) == 0) {
+      if (_strnicmp (From, Sym->Value, strlen (Sym->Value)) == 0) {
         //
         // Replace the string, then advance the pointers past the
         // replaced strings
@@ -840,7 +840,7 @@ ProcessArgs (
     //
     // -i path    add include search path
     //
-    if (stricmp (Argv[0], "-i") == 0) {
+    if (_stricmp (Argv[0], "-i") == 0) {
       //
       // check for one more arg
       //
@@ -889,7 +889,7 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-f") == 0) {
+    } else if (_stricmp (Argv[0], "-f") == 0) {
       //
       // Check for one more arg
       //
@@ -974,7 +974,7 @@ ProcessArgs (
       LastIncludePath = NewList;
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-s") == 0) {
+    } else if (_stricmp (Argv[0], "-s") == 0) {
       //
       // -s subdir    add subdirectory subdir to list of subdirecties to scan.
       // Check for one more arg first.
@@ -1013,7 +1013,7 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-sub") == 0) {
+    } else if (_stricmp (Argv[0], "-sub") == 0) {
       //
       // -sub symname symvalue  to do string substitution in the output
       //
@@ -1061,13 +1061,13 @@ ProcessArgs (
       //
       Argc -= 2;
       Argv += 2;
-    } else if (stricmp (Argv[0], "-nosystem") == 0) {
+    } else if (_stricmp (Argv[0], "-nosystem") == 0) {
       mGlobals.NoSystem = TRUE;
-    } else if (stricmp (Argv[0], "-nodupes") == 0) {
+    } else if (_stricmp (Argv[0], "-nodupes") == 0) {
       mGlobals.NoDupes = TRUE;
-    } else if (stricmp (Argv[0], "-nodups") == 0) {
+    } else if (_stricmp (Argv[0], "-nodups") == 0) {
       mGlobals.NoDupes = TRUE;
-    } else if (stricmp (Argv[0], "-target") == 0) {
+    } else if (_stricmp (Argv[0], "-target") == 0) {
       //
       // -target TargetFileName  - Target object file (only one allowed right
       // now) is TargetFileName rather than SourceFile.obj
@@ -1082,7 +1082,7 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-usesumdeps") == 0) {
+    } else if (_stricmp (Argv[0], "-usesumdeps") == 0) {
       //
       // -usesumdeps Path - if we find an included file xxx.h, and file
       // Path/xxx.dep exists, list Path/xxx.dep as a dependency rather than
@@ -1110,7 +1110,7 @@ ProcessArgs (
       Argc--;
       Argv++;
 
-    } else if (stricmp (Argv[0], "-o") == 0) {
+    } else if (_stricmp (Argv[0], "-o") == 0) {
       //
       // -o OutputFileName    - specify an output filename for dependency list
       // check for one more arg
@@ -1133,15 +1133,15 @@ ProcessArgs (
 
       Argc--;
       Argv++;
-    } else if (stricmp (Argv[0], "-v") == 0) {
+    } else if (_stricmp (Argv[0], "-v") == 0) {
       mGlobals.Verbose = TRUE;
-    } else if (stricmp (Argv[0], "-neverfail") == 0) {
+    } else if (_stricmp (Argv[0], "-neverfail") == 0) {
       mGlobals.NeverFail = TRUE;
-    } else if (stricmp (Argv[0], "-q") == 0) {
+    } else if (_stricmp (Argv[0], "-q") == 0) {
       mGlobals.QuietMode = TRUE;
-    } else if (stricmp (Argv[0], "-ignorenotfound") == 0) {
+    } else if (_stricmp (Argv[0], "-ignorenotfound") == 0) {
       mGlobals.IgnoreNotFound = TRUE;
-    } else if ((stricmp (Argv[0], "-h") == 0) || (strcmp (Argv[0], "-?") == 0)) {
+    } else if ((_stricmp (Argv[0], "-h") == 0) || (strcmp (Argv[0], "-?") == 0)) {
       Usage ();
       return STATUS_ERROR;
     } else {

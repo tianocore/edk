@@ -440,7 +440,7 @@ Returns:
     return Status;
   }
 
-  if (OptionCount == 0) {
+  if (*OptionCount == 0) {
     return EFI_NOT_FOUND;
   }
 

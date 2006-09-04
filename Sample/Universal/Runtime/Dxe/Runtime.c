@@ -54,16 +54,22 @@ Revision History:
 #include "Runtime.h"
 
 //
-// This is a only short term solution.
-// There is a change coming to the Runtime AP that
-// will make it so the Runtime driver will not have to allocate any buffers. 
+// Global Variables
 //
-#define MAX_RUNTIME_IMAGE_NUM (64)
-#define MAX_RUNTIME_EVENT_NUM (64)
-RUNTIME_IMAGE_RELOCATION_DATA mRuntimeImageBuffer[MAX_RUNTIME_IMAGE_NUM];
-RUNTIME_NOTIFY_EVENT_DATA     mRuntimeEventBuffer[MAX_RUNTIME_EVENT_NUM];
-UINTN                         mRuntimeImageNumber;
-UINTN                         mRuntimeEventNumber;
+
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+EFI_GUID                      mLocalEfiUgaIoProtocolGuid  = EFI_UGA_IO_PROTOCOL_GUID;
+#endif
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_GUID                      mEfiCapsuleHeaderGuid       = EFI_CAPSULE_GUID;
+#endif
+EFI_MEMORY_DESCRIPTOR         *mVirtualMap                = NULL;
+UINTN                         mVirtualMapDescriptorSize;
+UINTN                         mVirtualMapMaxIndex;
+
+VOID                          *mMyImageBase;
+EFI_SYSTEM_TABLE              *mMyST;
+EFI_RUNTIME_SERVICES          *mMyRT;
 
 //
 // The handle onto which the Runtime Architectural Protocol instance is installed
@@ -74,30 +80,23 @@ EFI_HANDLE                    mRuntimeHandle = NULL;
 // The Runtime Architectural Protocol instance produced by this driver
 //
 EFI_RUNTIME_ARCH_PROTOCOL     mRuntime = {
-  RuntimeDriverRegisterImage,
-  RuntimeDriverRegisterEvent
+  INITIALIZE_LIST_HEAD_VARIABLE (mRuntime.ImageHead),
+  INITIALIZE_LIST_HEAD_VARIABLE (mRuntime.EventHead),
+
+  //
+  // Make sure Size != sizeof (EFI_MEMORY_DESCRIPTOR). This will
+  // prevent people from having pointer math bugs in their code.
+  // now you have to use *DescriptorSize to make things work.
+  //
+  sizeof (EFI_MEMORY_DESCRIPTOR) + sizeof (UINT64) - (sizeof (EFI_MEMORY_DESCRIPTOR) % sizeof (UINT64)),  
+  EFI_MEMORY_DESCRIPTOR_VERSION, 
+  0,
+  NULL,
+  NULL,
+  FALSE,
+  FALSE
 };
 
-//
-// Global Variables
-//
-EFI_LIST_ENTRY                mRelocationList             = INITIALIZE_LIST_HEAD_VARIABLE(mRelocationList);
-EFI_LIST_ENTRY                mEventList                  = INITIALIZE_LIST_HEAD_VARIABLE(mEventList);
-BOOLEAN                       mEfiVirtualMode             = FALSE;
-#if (EFI_SPECIFICATION_VERSION < 0x00020000)
-EFI_GUID                      mLocalEfiUgaIoProtocolGuid  = EFI_UGA_IO_PROTOCOL_GUID;
-#endif
-EFI_MEMORY_DESCRIPTOR         *mVirtualMap                = NULL;
-UINTN                         mVirtualMapDescriptorSize;
-UINTN                         mVirtualMapMaxIndex;
-
-EFI_LOADED_IMAGE_PROTOCOL     *mMyLoadedImage;
-EFI_SYSTEM_TABLE              *mMyST;
-EFI_RUNTIME_SERVICES          *mMyRT;
-
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-STATIC EFI_GUID mEfiCapsuleHeaderGuid = EFI_CAPSULE_GUID;
-#endif
 //
 // Worker Functions
 //
@@ -111,15 +110,15 @@ Routine Description:
 
   Calcualte the 32-bit CRC in a EFI table using the Runtime Drivers
   internal function.  The EFI Boot Services Table can not be used because
-  the EFI Boot Services Table was destroyed at ExitBootServices()
+  the EFI Boot Services Table was destroyed at ExitBootServices().
 
 Arguments:
 
-  Hdr  - Pointer to an EFI standard header
+  Hdr  - Pointer to an EFI standard header.
 
 Returns:
 
-  None
+  None.
 
 --*/
 {
@@ -134,134 +133,30 @@ Returns:
 
 EFI_STATUS
 EFIAPI
-RuntimeDriverRegisterImage (
-  IN  EFI_RUNTIME_ARCH_PROTOCOL  *This,
-  IN  EFI_PHYSICAL_ADDRESS       ImageBase,
-  IN  UINTN                      ImageSize,
-  IN  VOID                       *RelocationData
-  )
-/*++
-
-Routine Description:
-
-  When a SetVirtualAddressMap() is performed all the runtime images loaded by 
-  DXE must be fixed up with the new virtual address map. To facilitate this the 
-  Runtime Architectural Protocol needs to be informed of every runtime driver 
-  that is registered.  All the runtime images loaded by DXE should be registered 
-  with this service by the DXE Core when ExitBootServices() is called.  The 
-  images that are registered with this service must have successfully been 
-  loaded into memory with the Boot Service LoadImage().  As a result, no 
-  parameter checking needs to be performed.
-
-Arguments:
-
-  This           - The EFI_RUNTIME_ARCH_PROTOCOL instance. 
-
-  ImageBase      - Start of image that has been loaded in memory. It is either 
-                   a pointer to the DOS or PE header of the image.
-
-  ImageSize      - Size of the image in bytes.
-
-  RelocationData - Information about the fixups that were performed on ImageBase 
-                   when it was loaded into memory. This information is needed 
-                   when the virtual mode fix-ups are reapplied so that data that 
-                   has been programmatically updated will not be fixed up. If 
-                   code updates a global variable the code is responsible for 
-                   fixing up the variable for virtual mode.
-
-Returns: 
-
-  EFI_SUCCESS          - The ImageBase has been registered.
-
---*/
-{
-  RUNTIME_IMAGE_RELOCATION_DATA *RuntimeImage;
-
-  if (mMyLoadedImage->ImageBase == (VOID *) (UINTN) ImageBase) {
-    //
-    // We don't want to relocate our selves, as we only run in physical mode.
-    //
-    return EFI_SUCCESS;
-  }
-
-  RuntimeImage = &mRuntimeImageBuffer[mRuntimeImageNumber];
-  mRuntimeImageNumber++;
-  ASSERT (mRuntimeImageNumber < MAX_RUNTIME_IMAGE_NUM);
-
-  RuntimeImage->Valid           = TRUE;
-  RuntimeImage->ImageBase       = ImageBase;
-  RuntimeImage->ImageSize       = ImageSize;
-  RuntimeImage->RelocationData  = RelocationData;
-
-  InsertTailList (&mRelocationList, &RuntimeImage->Link);
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS
-EFIAPI
-RuntimeDriverRegisterEvent (
-  IN EFI_RUNTIME_ARCH_PROTOCOL  *This,
-  IN UINT32                     Type,
-  IN EFI_TPL                    NotifyTpl,
-  IN EFI_EVENT_NOTIFY           NotifyFunction,
-  IN VOID                       *NotifyContext,
-  IN EFI_EVENT                  Event
-  )
-/*++
-
-Routine Description:
-
-  This function is used to support the required runtime events. Currently only 
-  runtime events of type EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE needs to be 
-  registered with this service.  All the runtime events that exist in the DXE 
-  Core should be registered with this service when ExitBootServices() is called.  
-  All the events that are registered with this service must have been created 
-  with the Boot Service CreateEvent().  As a result, no parameter checking needs 
-  to be performed.
-
-Arguments:
-
-  This           - The EFI_RUNTIME_ARCH_PROTOCOL instance. 
-
-  Type           - The same as Type passed into CreateEvent().
-
-  NotifyTpl      - The same as NotifyTpl passed into CreateEvent().
-
-  NotifyFunction - The same as NotifyFunction passed into CreateEvent().
-
-  NotifyContext  - The same as NotifyContext passed into CreateEvent().
-
-  Event          - The EFI_EVENT returned by CreateEvent().  Event must be in 
-                   runtime memory.
-
-Returns: 
-
-  EFI_SUCCESS          - The Event has been registered.
-
---*/
-{
-  RUNTIME_NOTIFY_EVENT_DATA *RuntimeEvent;
-
-  RuntimeEvent = &mRuntimeEventBuffer[mRuntimeEventNumber];
-  mRuntimeEventNumber++;
-  ASSERT (mRuntimeEventNumber < MAX_RUNTIME_EVENT_NUM);
-
-  RuntimeEvent->Type            = Type;
-  RuntimeEvent->NotifyTpl       = NotifyTpl;
-  RuntimeEvent->NotifyFunction  = NotifyFunction;
-  RuntimeEvent->NotifyContext   = NotifyContext;
-  RuntimeEvent->Event           = Event;
-
-  InsertTailList (&mEventList, &RuntimeEvent->Link);
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS
-EFIAPI
 RuntimeDriverConvertPointer (
-  IN     UINTN  DebugDisposition,
-  IN OUT VOID   **ConvertAddress
+  IN     UINTN    DebugDisposition,
+  IN OUT VOID     **ConvertAddress
   )
+/*++
+
+Routine Description:
+
+  Determines the new virtual address that is to be used on subsequent memory accesses.
+
+Arguments:
+  
+  DebugDisposition    - Supplies type information for the pointer being converted.
+  ConvertAddress      - A pointer to a pointer that is to be fixed to be the value needed
+                        for the new virtual address mappings being applied.
+
+Returns:
+
+  EFI_SUCCESS             - The pointer pointed to by Address was modified.
+  EFI_NOT_FOUND           - The pointer pointed to by Address was not found to be part
+                            of the current memory map. This is normally fatal.
+  EFI_INVALID_PARAMETER   - One of the parameters has an invalid value.
+
+--*/
 {
   UINTN                 Address;
   VOID                  *PlabelConvertAddress;
@@ -300,7 +195,7 @@ RuntimeDriverConvertPointer (
     //  platforms. If you get this ASSERT remove the UINTN and do a 64-bit
     //  multiply.
     //
-    ASSERT ((VirtEntry->NumberOfPages < 0xffffffff) || (sizeof (UINTN) > 4));
+    ASSERT (((UINTN) VirtEntry->NumberOfPages < 0xffffffff) || (sizeof (UINTN) > 4));
 
     if ((VirtEntry->Attribute & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) {
       if (Address >= VirtEntry->PhysicalStart) {
@@ -342,6 +237,26 @@ EFI_STATUS
 RuntimeDriverConvertInternalPointer (
   IN OUT VOID   **ConvertAddress
   )
+/*++
+
+Routine Description:
+
+  Determines the new virtual address that is to be used on subsequent memory accesses 
+  for internal pointers.
+
+Arguments:
+  
+  ConvertAddress  - A pointer to a pointer that is to be fixed to be the value needed
+                    for the new virtual address mappings being applied.
+
+Returns:
+
+  EFI_SUCCESS             - The pointer pointed to by Address was modified.
+  EFI_NOT_FOUND           - The pointer pointed to by Address was not found to be part
+                            of the current memory map. This is normally fatal.
+  EFI_INVALID_PARAMETER   - One of the parameters has an invalid value.
+
+--*/
 {
   return RuntimeDriverConvertPointer (EFI_INTERNAL_FUNCTION, ConvertAddress);
 }
@@ -354,9 +269,35 @@ RuntimeDriverSetVirtualAddressMap (
   IN UINT32                 DescriptorVersion,
   IN EFI_MEMORY_DESCRIPTOR  *VirtualMap
   )
+/*++
+
+Routine Description:
+
+  Changes the runtime addressing mode of EFI firmware from physical to virtual.
+
+Arguments:
+  
+  MemoryMapSize     - The size in bytes of VirtualMap.
+  DescriptorSize    - The size in bytes of an entry in the VirtualMap.
+  DescriptorVersion - The version of the structure entries in VirtualMap.
+  VirtualMap        - An array of memory descriptors which contain new virtual
+                      address mapping information for all runtime ranges.
+
+Returns:
+
+  EFI_SUCCESS           - The virtual address map has been applied.
+  EFI_UNSUPPORTED       - EFI firmware is not at runtime, or the EFI firmware is already in
+                          virtual address mapped mode.
+  EFI_INVALID_PARAMETER - DescriptorSize or DescriptorVersion is invalid.
+  EFI_NO_MAPPING        - A virtual address was not supplied for a range in the memory
+                          map that requires a mapping.
+  EFI_NOT_FOUND         - A virtual address was supplied for an address that is not found
+                          in the memory map.
+
+--*/  
 {
-  RUNTIME_NOTIFY_EVENT_DATA     *RuntimeEvent;
-  RUNTIME_IMAGE_RELOCATION_DATA *RuntimeImage;
+  EFI_RUNTIME_EVENT_ENTRY       *RuntimeEvent;
+  EFI_RUNTIME_IMAGE_ENTRY       *RuntimeImage;
   EFI_LIST_ENTRY                *Link;
   UINTN                         Index;
   UINTN                         Index1;
@@ -373,58 +314,31 @@ RuntimeDriverSetVirtualAddressMap (
   // Can only switch to virtual addresses once the memory map is locked down,
   // and can only set it once
   //
-  if (!EfiAtRuntime () || mEfiVirtualMode) {
+  if (!mRuntime.AtRuntime || mRuntime.VirtualMode) {
     return EFI_UNSUPPORTED;
   }
+
   //
   // Only understand the original descriptor format
   //
   if (DescriptorVersion != EFI_MEMORY_DESCRIPTOR_VERSION || DescriptorSize < sizeof (EFI_MEMORY_DESCRIPTOR)) {
     return EFI_INVALID_PARAMETER;
   }
-  //
-  // BugBug: Add code here to verify the memory map. We should
-  //  cache a copy of the system memory map in the EFI System Table
-  //  as a GUID pointer pair.
-  //
-  //
-  // Make sure all virtual translations are satisfied
-  //
-  mVirtualMapMaxIndex = MemoryMapSize / DescriptorSize;
 
-  //
-  // BugBug :The following code does not work hence commented out.
-  // Need to be replaced by something that works.
-  //
-  //  VirtEntry = VirtualMap;
-  //  for (Index = 0; Index < mVirtualMapMaxIndex; Index++) {
-  //    if (((VirtEntry->Attribute & EFI_MEMORY_RUNTIME) == EFI_MEMORY_RUNTIME) &&
-  //        (VirtEntry->VirtualStart != 0) ) {
-  //        return EFI_NO_MAPPING;
-  //    }
-  //    VirtEntry = NextMemoryDescriptor(VirtEntry, DescriptorSize);
-  //  }
-  //
-  // We are now committed to go to virtual mode, so lets get to it!
-  //
-  mEfiVirtualMode = TRUE;
+  mRuntime.VirtualMode = TRUE;
 
   //
   // ConvertPointer() needs this mVirtualMap to do the conversion. So set up
   // globals we need to parse the virtual address map.
   //
   mVirtualMapDescriptorSize = DescriptorSize;
+  mVirtualMapMaxIndex       = MemoryMapSize / DescriptorSize;
   mVirtualMap               = VirtualMap;
 
   //
-  // Signal all the EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE events.
-  // The core call RuntimeDriverRegisterEvent() for
-  // every runtime event and we stored them in the mEventList
-  //
-  //
   // Currently the bug in StatusCode/RuntimeLib has been fixed, it will
   // check whether in Runtime or not (this is judged by looking at
-  // mEfiAtRuntime global So this ReportStatusCode will work
+  // mEfiAtRuntime global), So this ReportStatusCode will work
   //
   EfiReportStatusCode (
           EFI_PROGRESS_CODE,
@@ -435,19 +349,11 @@ RuntimeDriverSetVirtualAddressMap (
           );
 
   //
-  // BugBug - Commented out for now because the status code driver is not
-  // ready for runtime yet. The Status Code driver calls data hub with does
-  // a bunch of Boot Service things (locks, AllocatePool) and hangs somewhere
-  // on the way.
+  // Signal all the EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE events.
+  // All runtime events are stored in a list in Runtime AP.
   //
-  //  gRT->ReportStatusCode (
-  //        EfiProgressCode,  EfiMaxErrorSeverity,
-  //        0x03, 0x01, 12, // ReadyToBoot Progress code
-  //        0x00, 30, L"ConvertPointer"
-  //        );
-  //
-  for (Link = mEventList.ForwardLink; Link != &mEventList; Link = Link->ForwardLink) {
-    RuntimeEvent = _CR (Link, RUNTIME_NOTIFY_EVENT_DATA, Link);
+  for (Link = mRuntime.EventHead.ForwardLink; Link != &mRuntime.EventHead; Link = Link->ForwardLink) {
+    RuntimeEvent = _CR (Link, EFI_RUNTIME_EVENT_ENTRY, Link);
     if ((RuntimeEvent->Type & EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) == EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) {
       RuntimeEvent->NotifyFunction (
                       RuntimeEvent->Event,
@@ -455,20 +361,18 @@ RuntimeDriverSetVirtualAddressMap (
                       );
     }
   }
+  
   //
-  // Relocate runtime images. Runtime images loaded before the runtime AP was
-  // started will not be relocated, since they would not have gotten registered.
-  // This includes the code in this file.
+  // Relocate runtime images. All runtime images are stored in a list in Runtime AP.
   //
-  for (Link = mRelocationList.ForwardLink; Link != &mRelocationList; Link = Link->ForwardLink) {
-    RuntimeImage = _CR (Link, RUNTIME_IMAGE_RELOCATION_DATA, Link);
-    if (RuntimeImage->Valid) {
-      RelocatePeImageForRuntime (RuntimeImage);
-    }
+  for (Link = mRuntime.ImageHead.ForwardLink; Link != &mRuntime.ImageHead; Link = Link->ForwardLink) {
+    RuntimeImage = _CR (Link, EFI_RUNTIME_IMAGE_ENTRY, Link);
+    RelocatePeImageForRuntime (RuntimeImage);
   }
+  
   //
   // Convert all the Runtime Services except ConvertPointer() and SetVirtualAddressMap()
-  // and recompute the CRC-32
+  // and recompute the CRC-32.
   //
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->GetTime);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyRT->SetTime);
@@ -490,7 +394,7 @@ RuntimeDriverSetVirtualAddressMap (
   RuntimeDriverCalculateEfiHdrCrc (&mMyRT->Hdr);
 
   //
-  // Convert the UGA OS Handoff Table if it is present in the Configuration Table
+  // Convert the UGA OS Handoff Table if it is present in the Configuration Table.
   //
   for (Index = 0; Index < mMyST->NumberOfTableEntries; Index++) {
 #if (EFI_SPECIFICATION_VERSION < 0x00020000)
@@ -522,8 +426,9 @@ RuntimeDriverSetVirtualAddressMap (
     }
 #endif
   }
+  
   //
-  // Convert the runtime fields of the EFI System Table and recompute the CRC-32
+  // Convert the runtime fields of the EFI System Table and recompute the CRC-32.
   //
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyST->FirmwareVendor);
   RuntimeDriverConvertInternalPointer ((VOID **) &mMyST->ConfigurationTable);
@@ -534,8 +439,9 @@ RuntimeDriverSetVirtualAddressMap (
   // At this point, mMyRT and mMyST are physical pointers, but the contents of these tables
   // have been converted to runtime.
   //
+  
   //
-  // mVirtualMap is only valid during SetVirtualAddressMap() call
+  // mVirtualMap is only valid during SetVirtualAddressMap() call.
   //
   mVirtualMap = NULL;
 
@@ -547,37 +453,38 @@ EFI_DRIVER_ENTRY_POINT (RuntimeDriverInitialize)
 EFI_STATUS
 EFIAPI
 RuntimeDriverInitialize (
-  IN EFI_HANDLE                            ImageHandle,
-  IN EFI_SYSTEM_TABLE                      *SystemTable
+  IN EFI_HANDLE             ImageHandle,
+  IN EFI_SYSTEM_TABLE       *SystemTable
   )
 /*++
 
 Routine Description:
-  Install Runtime AP. This code includes the EfiDriverLib, but it functions at
-  RT in physical mode. The only Lib services are gBS, gRT, and the DEBUG and
-  ASSERT macros (they do gRT->ReportStatusCode).
+
+  Install Runtime AP. This code includes the EfiRuntimeLib, but it only 
+  functions at RT in physical mode. 
 
 Arguments:
-  (Standard EFI Image entry - EFI_IMAGE_ENTRY_POINT)
+  
+  ImageHandle   - Image handle of this driver.
+  SystemTable   - Pointer to the EFI System Table.
 
 Returns:
 
-  EFI_SUCEESS - Runtime Driver Architectural Protocol Installed
-
-  Other       - Return value from gBS->InstallMultipleProtocolInterfaces
+  EFI_SUCEESS - Runtime Driver Architectural Protocol installed.
 
 --*/
 {
-  EFI_STATUS  Status;
+  EFI_STATUS                Status;
+  EFI_LOADED_IMAGE_PROTOCOL *MyLoadedImage;
 
   //
-  // Initialize EFI Runtime Driver
+  // Initialize EFI Runtime Driver.
   //
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, NULL);
 
   //
   // Save the EFI System Table and EFI Runtime Services Table into module globals
-  // for use after ExitBootServices()
+  // for use after ExitBootServices().
   //
   mMyST = SystemTable;
   mMyRT = SystemTable->RuntimeServices;
@@ -589,9 +496,10 @@ Returns:
   Status = gBS->HandleProtocol (
                   ImageHandle,
                   &gEfiLoadedImageProtocolGuid,
-                  &mMyLoadedImage
+                  &MyLoadedImage
                   );
   ASSERT_EFI_ERROR (Status);
+  mMyImageBase = MyLoadedImage->ImageBase;
 
   //
   // Initialize the table used to compute 32-bit CRCs
@@ -604,7 +512,7 @@ Returns:
   gBS->CalculateCrc32         = RuntimeDriverCalculateCrc32;
   mMyRT->SetVirtualAddressMap = RuntimeDriverSetVirtualAddressMap;
   mMyRT->ConvertPointer       = RuntimeDriverConvertPointer;
-
+  
   //
   // Install the Runtime Architectural Protocol onto a new handle
   //
@@ -615,9 +523,6 @@ Returns:
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
-
-  mRuntimeImageNumber = 0;
-  mRuntimeEventNumber = 0;
-
-  return Status;
+  
+  return EFI_SUCCESS;
 }

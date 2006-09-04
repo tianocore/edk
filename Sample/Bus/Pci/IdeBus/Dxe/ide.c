@@ -765,6 +765,13 @@ DetectIDEController (
   }
 
   //
+  // For some Hard Drive, it takes some time to get
+  // the right signature when operating in slave mode.
+  // We stall 10ms to work around this.
+  //
+  gBS->Stall (10000);
+
+  //
   // Select Slave
   //
   IDEWritePortB (

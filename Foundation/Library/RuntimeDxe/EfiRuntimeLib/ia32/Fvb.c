@@ -42,6 +42,7 @@ VOID              *mFvbRegistration;
 VOID              *mFvbExtRegistration;
 static EFI_EVENT  mEfiFvbVirtualNotifyEvent;
 BOOLEAN           gEfiFvbInitialized = FALSE;
+EFI_EVENT         mFvbEvent;
 
 BOOLEAN
 IsMemoryRuntime (
@@ -243,7 +244,8 @@ Arguments:
   None 
 
 Returns: 
-  EFI_SUCCESS
+  EFI_SUCCESS - Fvb is successfully initialized
+  others                - Fail to initialize
 
 --*/
 {
@@ -262,7 +264,7 @@ Returns:
 
   EfiZeroMem (mFvbEntry, sizeof (FVB_ENTRY) * MAX_FVB_COUNT);
 
-  RtEfiLibCreateProtocolNotifyEvent (
+  mFvbEvent = RtEfiLibCreateProtocolNotifyEvent (
     &gEfiFirmwareVolumeBlockProtocolGuid,
     EFI_TPL_CALLBACK,
     FvbNotificationFunction,
@@ -286,6 +288,30 @@ Returns:
 
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+EfiFvbShutdown (
+  VOID
+  )
+/*++
+
+Routine Description:
+  Release resources allocated in EfiFvbInitialize.
+
+Arguments:
+  None 
+
+Returns: 
+  EFI_SUCCESS
+
+--*/
+{
+  gBS->FreePool ((VOID *) mFvbEntry);
+  gBS->CloseEvent (mFvbEvent);
+  gEfiFvbInitialized = FALSE;
+  return EFI_SUCCESS;
+}
+
 //
 // The following functions wrap Fvb protocol in the Runtime Lib functions.
 // The Instance translates into Fvb instance. The Fvb order defined by HOBs and

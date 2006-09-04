@@ -655,6 +655,45 @@ Returns:
   return mRT->SetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
 }
 
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+EFI_STATUS
+EfiQueryVariableInfo (
+  IN UINT32           Attributes,
+  OUT UINT64          *MaximumVariableStorageSize,
+  OUT UINT64          *RemainingVariableStorageSize,
+  OUT UINT64          *MaximumVariableSize
+  )
+
+/*++
+
+Routine Description:
+
+  This code returns information about the EFI variables.
+
+Arguments:
+
+  Attributes                      Attributes bitmask to specify the type of variables 
+                                  on which to return information.
+  MaximumVariableStorageSize      Pointer to the maximum size of the storage space available
+                                  for the EFI variables associated with the attributes specified.
+  RemainingVariableStorageSize    Pointer to the remaining size of the storage space available 
+                                  for the EFI variables associated with the attributes specified.
+  MaximumVariableSize             Pointer to the maximum size of the individual EFI variables
+                                  associated with the attributes specified.
+
+Returns:
+
+  Status code
+
+--*/
+{
+  return mRT->QueryVariableInfo (Attributes, MaximumVariableStorageSize, RemainingVariableStorageSize, MaximumVariableSize);
+}
+
+#endif
+
 EFI_STATUS
 EfiGetNextHighMonotonicCount (
   OUT UINT32                      *HighCount

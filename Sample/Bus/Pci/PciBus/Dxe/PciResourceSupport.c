@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -241,11 +241,24 @@ Returns:
   EFI_LIST_ENTRY    *CurrentLink;
   PCI_RESOURCE_NODE *Node;
   UINT64            offset;
+  BOOLEAN           IsaEnable;
+  BOOLEAN           VGAEnable;
 
   //
   // Always assume there is ISA device and VGA device on the platform
   // will be customized later
   //
+  IsaEnable = FALSE;
+  VGAEnable = FALSE;
+
+#ifdef EFI_PCI_ISA_ENABLE
+  IsaEnable = TRUE;
+#endif
+
+#ifdef EFI_PCI_VGA_ENABLE
+  VGAEnable = TRUE;
+#endif
+
   Aperture = 0;
 
   if (!Bridge) {
@@ -277,6 +290,34 @@ Returns:
     // If both of them are enabled, then the IO resource would
     // become too limited to meet the requirement of most of devices.
     //
+
+    if (IsaEnable || VGAEnable) {
+      if (!IS_PCI_BRIDGE (&(Node->PciDev->Pci)) && !IS_CARDBUS_BRIDGE (&(Node->PciDev->Pci))) {
+        //
+        // Check if there is need to support ISA/VGA decoding
+        // If so, we need to avoid isa/vga aliasing range
+        //
+        if (IsaEnable) {
+          SkipIsaAliasAperture (
+            &Aperture,
+            Node->Length               
+            );
+          offset = Aperture & (Node->Alignment);
+          if (offset) {
+            Aperture = Aperture + (Node->Alignment + 1) - offset;
+          }
+        } else if (VGAEnable) {
+          SkipVGAAperture (
+            &Aperture,
+            Node->Length
+            );
+          offset = Aperture & (Node->Alignment);
+          if (offset) {
+            Aperture = Aperture + (Node->Alignment + 1) - offset;
+          }
+        }
+      }
+    }
 
     Node->Offset = Aperture;
 

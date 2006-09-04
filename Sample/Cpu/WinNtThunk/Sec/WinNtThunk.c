@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -45,6 +45,28 @@ Abstract:
 //  to tell if all the elements have been initailized properly.
 //
 #pragma warning(disable : 4232)
+
+#ifdef USE_VC8
+#define SWPRINTF_MAX_COUNT 65536
+static 
+int
+VC8WrapForswprintf (
+  wchar_t * _String,
+  const wchar_t * _Format,
+  ...
+  )
+{
+    va_list _Arglist;
+    int _Ret;
+    size_t _Count = SWPRINTF_MAX_COUNT;
+
+    _crt_va_start(_Arglist, _Format);
+    _Ret = swprintf(_String, _Count, _Format, _Arglist);
+    _crt_va_end(_Arglist);
+
+    return _Ret;
+}
+#endif
 
 EFI_WIN_NT_THUNK_PROTOCOL mWinNtThunkTable = {
   EFI_WIN_NT_THUNK_PROTOCOL_SIGNATURE,
@@ -137,7 +159,11 @@ EFI_WIN_NT_THUNK_PROTOCOL mWinNtThunkTable = {
   PurgeComm,
   SetCommTimeouts,
   ExitProcess,
+#ifdef USE_VC8
+  VC8WrapForswprintf,
+#else
   swprintf,
+#endif
   GetDesktopWindow,
   GetForegroundWindow,
   CreateWindowEx,

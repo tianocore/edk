@@ -213,8 +213,7 @@ Returns:
                      &CurrWriteSize,
                      CurrBuffer
                      );
-          
-          return Status;
+            return Status;
         } else {
           Size = (UINT32) (LinearOffset + PtrBlockMapEntry->BlockLength - CurrWritePtr);
           Status = EfiFvbWriteBlock (
@@ -372,7 +371,8 @@ EFIAPI
 Reclaim (
   IN  EFI_PHYSICAL_ADDRESS  VariableBase,
   OUT UINTN                 *LastVariableOffset,
-  IN  BOOLEAN               IsVolatile
+  IN  BOOLEAN               IsVolatile,
+  IN  VARIABLE_HEADER       *CurrentVariable OPTIONAL
   )
 /*++
 
@@ -386,6 +386,8 @@ Arguments:
   LastVariableOffset          Offset of last variable
   IsVolatile                  The variable store is volatile or not,
                               if it is non-volatile, need FTW
+  CurrentVairable             If it is not NULL, it means not to process
+                              current variable for Reclaim.
 
 Returns:
 
@@ -413,7 +415,9 @@ Returns:
 
   while (IsValidVariableHeader (Variable)) {
     NextVariable = GetNextVariablePtr (Variable);
-    if (Variable->State == VAR_ADDED) {
+    if ((Variable->State == VAR_ADDED) ||
+        ((Variable != CurrentVariable) &&
+         (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
       VariableSize = (UINTN) NextVariable - (UINTN) Variable;
       ValidBufferSize += VariableSize;
     }
@@ -447,9 +451,15 @@ Returns:
 
   while (IsValidVariableHeader (Variable)) {
     NextVariable = GetNextVariablePtr (Variable);
-    if (Variable->State == VAR_ADDED) {
+    if ((Variable->State == VAR_ADDED) ||
+        ((Variable != CurrentVariable) &&
+         (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
       VariableSize = (UINTN) NextVariable - (UINTN) Variable;
       EfiCopyMem (CurrPtr, (UINT8 *) Variable, VariableSize);
+      //
+      // Mark all variable as VAR_ADDED
+      //
+      ((VARIABLE_HEADER *)CurrPtr)->State = VAR_ADDED;
       CurrPtr += VariableSize;
     }
 
@@ -519,6 +529,11 @@ Returns:
   VARIABLE_HEADER       *Variable[2];
   VARIABLE_STORE_HEADER *VariableStoreHeader[2];
   UINTN                 Index;
+  VARIABLE_HEADER       *TempVariable;
+  UINTN                 TempIndex;
+
+  TempVariable = NULL;
+  TempIndex    = (UINTN)-1;
 
   //
   // 0: Non-Volatile, 1: Volatile
@@ -560,6 +575,23 @@ Returns:
             }
           }
         }
+      } else if (Variable[Index]->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)) {
+        //
+        // VAR_IN_DELETED_TRANSITION should also be checked.
+        //
+        if (!(EfiAtRuntime () && !(Variable[Index]->Attributes & EFI_VARIABLE_RUNTIME_ACCESS))) {
+          if (VariableName[0] == 0) {
+            TempVariable = Variable[Index];
+            TempIndex    = Index;
+          } else {
+            if (EfiCompareGuid (VendorGuid, &Variable[Index]->VendorGuid)) {
+              if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), ArrayLength (VariableName))) {
+                TempVariable = Variable[Index];
+                TempIndex    = Index;
+              }
+            }
+          }
+        }
       }
 
       Variable[Index] = GetNextVariablePtr (Variable[Index]);
@@ -571,6 +603,17 @@ Returns:
   //
   // for (...)
   //
+  
+  //
+  // if VAR_IN_DELETED_TRANSITION found, and VAR_ADDED not found,
+  // we return it.
+  //
+  if (TempVariable != NULL) {
+    PtrTrack->CurrPtr   = TempVariable;
+    PtrTrack->Volatile  = (BOOLEAN) TempIndex;
+    return EFI_SUCCESS;
+  }
+  
   PtrTrack->CurrPtr = NULL;
   return EFI_NOT_FOUND;
 }
@@ -718,7 +761,9 @@ Returns:
     //
     // Variable is found
     //
-    if (IsValidVariableHeader (Variable.CurrPtr) && Variable.CurrPtr->State == VAR_ADDED) {
+    if (IsValidVariableHeader (Variable.CurrPtr) && 
+        ((Variable.CurrPtr->State == VAR_ADDED) ||
+         (Variable.CurrPtr->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
       if (!(EfiAtRuntime () && !(Variable.CurrPtr->Attributes & EFI_VARIABLE_RUNTIME_ACCESS))) {
         VarNameSize = Variable.CurrPtr->NameSize;
         if (VarNameSize <= *VariableNameSize) {
@@ -874,7 +919,8 @@ Returns:
           !EfiCompareMem (Data, GetVariableDataPtr (Variable.CurrPtr), DataSize)
             ) {
         return EFI_SUCCESS;
-      } else if (Variable.CurrPtr->State == VAR_ADDED) {
+      } else if ((Variable.CurrPtr->State == VAR_ADDED) ||
+                 (Variable.CurrPtr->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION))) {
         //
         // Mark the old variable as in delete transition
         //
@@ -948,7 +994,7 @@ Returns:
         //
         // Perform garbage collection & reclaim operation
         //
-        Status = Reclaim (Global->NonVolatileVariableBase, NonVolatileOffset, FALSE);
+        Status = Reclaim (Global->NonVolatileVariableBase, NonVolatileOffset, FALSE, Variable.CurrPtr);
         if (EFI_ERROR (Status)) {
           return Status;
         }
@@ -1032,7 +1078,7 @@ Returns:
         //
         // Perform garbage collection & reclaim operation
         //
-        Status = Reclaim (Global->VolatileVariableBase, VolatileOffset, TRUE);
+        Status = Reclaim (Global->VolatileVariableBase, VolatileOffset, TRUE, Variable.CurrPtr);
         if (EFI_ERROR (Status)) {
           return Status;
         }
@@ -1210,7 +1256,8 @@ Returns:
       // Only care about Variables with State VAR_ADDED,because 
       // the space not marked as VAR_ADDED is reclaimable now.
       //
-      if (Variable->State == VAR_ADDED) {
+      if ((Variable->State == VAR_ADDED) ||
+          (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION))) {
         *RemainingVariableStorageSize -= VariableSize;
       }
     }
@@ -1283,7 +1330,7 @@ Returns:
                   );
 
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Shutdown;
   }
   //
   // Allocate memory for volatile variable store
@@ -1295,8 +1342,7 @@ Returns:
                   );
 
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (mVariableModuleGlobal);
-    return Status;
+    goto Shutdown_Free_mVariableModuleGlobal;
   }
 
   EfiSetMem (VolatileVariableStore, VARIABLE_STORE_SIZE + SCRATCH_SIZE, 0xff);
@@ -1317,14 +1363,15 @@ Returns:
   //
   // Get non volatile varaible store
   //
-  EfiFvbInitialize ();
+  Status = EfiFvbInitialize ();
+  if (EFI_ERROR (Status)) {
+    goto Shutdown_Free_VolatileVariableStore;
+  }
 
   Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
 
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (mVariableModuleGlobal);
-    gBS->FreePool (VolatileVariableStore);
-    return Status;
+    goto Shutdown_Fvb;
   }
 
   FlashMapEntryData = NULL;
@@ -1346,9 +1393,8 @@ Returns:
   }
 
   if (EFI_ERROR (Status) || FlashMapEntryData == NULL) {
-    gBS->FreePool (mVariableModuleGlobal);
-    gBS->FreePool (VolatileVariableStore);
-    return EFI_NOT_FOUND;
+    Status = EFI_NOT_FOUND;
+    goto Shutdown_Fvb;
   }
 
   FlashMapEntryData = (EFI_FLASH_MAP_ENTRY_DATA *) Buffer;
@@ -1357,9 +1403,8 @@ Returns:
   // Currently only one non-volatile variable store is supported
   //
   if (FlashMapEntryData->NumEntries != 1) {
-    gBS->FreePool (mVariableModuleGlobal);
-    gBS->FreePool (VolatileVariableStore);
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
+    goto Shutdown_Fvb;
   }
 
   VariableStoreEntry = FlashMapEntryData->Entries[0];
@@ -1373,9 +1418,8 @@ Returns:
 
   Status      = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (mVariableModuleGlobal);
-    gBS->FreePool (VolatileVariableStore);
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
+    goto Shutdown_Fvb;
   }
 
   Status = gDS->SetMemorySpaceAttributes (
@@ -1384,9 +1428,8 @@ Returns:
                   GcdDescriptor.Attributes | EFI_MEMORY_RUNTIME
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (mVariableModuleGlobal);
-    gBS->FreePool (VolatileVariableStore);
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
+    goto Shutdown_Fvb;
   }
   //
   // Get address of non volatile variable store base
@@ -1425,7 +1468,7 @@ Returns:
                 );
 
       if (EFI_ERROR (Status)) {
-        return Status;
+        goto Shutdown_Fvb;
       }
     }
 
@@ -1449,7 +1492,8 @@ Returns:
       Status = Reclaim (
                 mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
                 &mVariableModuleGlobal->NonVolatileLastVariableOffset,
-                FALSE
+                FALSE,
+                NULL
                 );
     }
 
@@ -1471,7 +1515,8 @@ Returns:
         Status = Reclaim (
                   mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
                   &mVariableModuleGlobal->NonVolatileLastVariableOffset,
-                  FALSE
+                  FALSE,
+                  NULL
                   );
         break;
       }
@@ -1479,9 +1524,18 @@ Returns:
   }
 
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (mVariableModuleGlobal);
-    gBS->FreePool (VolatileVariableStore);
+    goto Shutdown_Fvb;
   }
+  return Status;
+Shutdown_Fvb:
+  EfiFvbShutdown ();
 
+Shutdown_Free_VolatileVariableStore:
+    gBS->FreePool (VolatileVariableStore);
+Shutdown_Free_mVariableModuleGlobal:
+  gBS->FreePool (mVariableModuleGlobal);
+
+Shutdown:
+  EfiShutdownRuntimeDriverLib ();
   return Status;
 }
