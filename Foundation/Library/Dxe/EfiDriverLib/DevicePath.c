@@ -490,7 +490,16 @@ Returns:
   return (EFI_DEVICE_PATH_PROTOCOL *) Ptr;
 }
 
+VOID
+EFIAPI
+EfiInitializeFwVolDevicepathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH     *FvDevicePathNode,
+  IN EFI_GUID                               *NameGuid
+  )
 /*++
+
+Routine Description:
+
   Initialize a Firmware Volume (FV) Media Device Path node.
   
   Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
@@ -500,16 +509,16 @@ Returns:
   is compiled to conform with the UEFI 2.0 specification use the new device path
   else use the old form for backwards compatability.
 
+Arguments:
+
   FvDevicePathNode  - Pointer to a FV device path node to initialize
   NameGuid          - FV file name to use in FvDevicePathNode
 
+Returns:
+
+  None
+
 --*/
-VOID
-EFIAPI
-EfiInitializeFwVolDevicepathNode (
-  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH     *FvDevicePathNode,
-  IN EFI_GUID                               *NameGuid
-  )
 {
 #if (EFI_SPECIFICATION_VERSION < 0x00020000) 
   //
@@ -541,7 +550,15 @@ EfiInitializeFwVolDevicepathNode (
   EfiCopyMem (&FvDevicePathNode->NameGuid, NameGuid, sizeof(EFI_GUID));
 }
 
+EFI_GUID *
+EFIAPI
+EfiGetNameGuidFromFwVolDevicePathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
+  )
 /*++
+
+Routine Description:
+
   Check to see if the Firmware Volume (FV) Media Device Path is valid.
   
   Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
@@ -553,26 +570,23 @@ EfiInitializeFwVolDevicepathNode (
   function points to a location in FvDevicePathNode and it does not allocate
   new memory for the GUID pointer that is returned.
 
-  @param FvDevicePathNode   Pointer to FV device path to check
+Arguments:
 
-  @retval NULL    FvDevicePathNode is not valid.
-  @retval Other   FvDevicePathNode is valid and pointer to NameGuid was returned.
+  FvDevicePathNode  - Pointer to FV device path to check
+
+Returns:
+
+  NULL              - FvDevicePathNode is not valid.
+  Other             - FvDevicePathNode is valid and pointer to NameGuid was returned.
 
 --*/
-EFI_GUID *
-EFIAPI
-EfiGetNameGuidFromFwVolDevicePathNode (
-  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
-  )
 {
 #if (EFI_SPECIFICATION_VERSION < 0x00020000) 
-  BOOLEAN       Found;
   //
   // Use old Device Path that conflicts with UEFI
   //
-  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH ||
+  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
-    Found = TRUE;
     return &FvDevicePathNode->NameGuid;
   }
 
@@ -580,8 +594,8 @@ EfiGetNameGuidFromFwVolDevicePathNode (
   //
   // Use the new Device path that does not conflict with the UEFI
   //
-  if (FvDevicePathNode->Piwg.Header.Type == MEDIA_DEVICE_PATH ||
-      FvDevicePathNode->Piwg.Header.SubType == MEDIA_VENDOR_DP) {
+  if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
+      DevicePathSubType (&FvDevicePathNode->Piwg.Header) == MEDIA_VENDOR_DP) {
     if (EfiCompareGuid (&gEfiFrameworkDevicePathGuid, &FvDevicePathNode->Piwg.PiwgSpecificDevicePath)) {
       if (FvDevicePathNode->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
         return &FvDevicePathNode->NameGuid;

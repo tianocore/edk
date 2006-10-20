@@ -41,6 +41,7 @@ COMPONENT_TYPE      = LIBRARY
 
 [libraries.common]
   EdkGuidLib
+  EdkFrameworkGuidLib
 
 [nmake.common]
   C_STD_INCLUDE=

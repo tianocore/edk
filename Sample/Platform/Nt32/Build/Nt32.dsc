@@ -208,6 +208,11 @@ Sample\Universal\Network\Library\NetLib.inf
 
 Foundation\Library\CompilerStub\CompilerStubLib.inf
 
+#
+# EdkII Glue Library
+#
+#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLibAll.dsc"
+
 [=============================================================================]
 #
 # These are the components that will be built by the master makefile

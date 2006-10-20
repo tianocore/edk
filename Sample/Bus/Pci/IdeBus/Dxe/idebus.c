@@ -239,7 +239,6 @@ IDEBusDriverBindingStart (
   UINTN                             DataSize;
   UINT32                            Attributes;
   IDE_BUS_DRIVER_PRIVATE_DATA       *IdeBusDriverPrivateData;
-  EFI_EVENT                         Event;
 
   //
   // Local variables declaration for IdeControllerInit support
@@ -783,7 +782,7 @@ IDEBusDriverBindingStart (
                       EFI_TPL_NOTIFY,
                       ClearInterrupt,
                       IdeBlkIoDevicePtr,
-                      &Event
+                      &IdeBlkIoDevicePtr->ExitBootServiceEvent
                       );
 
       //

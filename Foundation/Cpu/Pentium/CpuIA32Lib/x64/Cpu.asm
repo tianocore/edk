@@ -60,8 +60,8 @@ EfiInvd ENDP
 ;------------------------------------------------------------------------------
 ;  VOID
 ;  EfiCpuid (
-;    IN   UINT32              RegisterInEax,  // rcx   
-;    OUT  EFI_CPUID_REGISTER  *Reg            // rdx  
+;    IN   UINT32              RegisterInEax,          // rcx   
+;    OUT  EFI_CPUID_REGISTER  *Reg           OPTIONAL // rdx  
 ;    )
 ;------------------------------------------------------------------------------
 EfiCpuid PROC NEAR  PUBLIC
@@ -70,11 +70,14 @@ EfiCpuid PROC NEAR  PUBLIC
     mov   r8,   rdx         ; r8 = *Reg
     mov   rax,  rcx         ; RegisterInEax
     cpuid
+    cmp   r8,   0
+    je    _Exit
     mov   [r8 +  0], eax    ; Reg->RegEax
     mov   [r8 +  4], ebx    ; Reg->RegEbx
     mov   [r8 +  8], ecx    ; Reg->RegEcx
     mov   [r8 + 12], edx    ; Reg->RegEdx
     
+_Exit:
     pop   rbx
     ret
 EfiCpuid  ENDP

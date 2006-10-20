@@ -24,7 +24,6 @@ Abstract:
 #include "EfiFirmwareFileSystem.h"
 #include "EfiFirmwareVolumeHeader.h"
 #include "ParseInf.h"
-#include "EfiCompress.h"
 #include "crc32.h"
 #include "EfiUtilityMsgs.h"
 #include "GenCRC32Section.h"

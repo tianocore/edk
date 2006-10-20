@@ -1,0 +1,110 @@
+// *++
+//
+// Copyright (c) 2006, Intel Corporation                                                         
+// All rights reserved. This program and the accompanying materials                          
+// are licensed and made available under the terms and conditions of the BSD License         
+// which accompanies this distribution.  The full text of the license may be found at        
+// http://opensource.org/licenses/bsd-license.php                                            
+//                                                                                           
+// THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+// WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+// 
+// Module Name:
+//
+//   Vfr.vfr 
+// 
+// Abstract:
+// 
+//   Set Options formset
+// 
+// 
+// --*/
+
+
+#include "SetOptionsStrDefs.h" 
+ 
+#define FORMSET_GUID \
+  { \
+    0x22afbab1, 0x23b, 0x452d, 0x80, 0xcf, 0x63, 0x75, 0xe0, 0x33, 0x91, 0x2e \
+  }
+  
+#define EFI_DISK_DEVICE_CLASS              0x01
+
+formset 
+  guid     = FORMSET_GUID,
+  title    = STRING_TOKEN(STR_TITLE),  
+  help     = STRING_TOKEN(STR_TITLE_HELP), 
+  class    = EFI_DISK_DEVICE_CLASS,      
+  subclass = 0xff,
+  
+ 
+  form formid = 0x1234,            
+       title = STRING_TOKEN(STR_TITLE);  
+  	text 
+      help   = STRING_TOKEN(STR_FIRST_REFRESH_HELP),  
+      text   = STRING_TOKEN(STR_FIRST_REFRESH),
+	    text   = STRING_TOKEN(STR_NULL_STRING),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+      
+    label 0x1234;
+      
+  endform;
+  
+  //
+  // This dummy form is used to include the needed string
+  //
+  form formid = 1,
+       title  = STRING_TOKEN(STR_GOTO_HELP_DRIVER);  
+
+    text 
+      help   = STRING_TOKEN(STR_GOTO_HELP_DEVICE),  
+      text   = STRING_TOKEN(STR_GOTO_HELP_CHILD_DEVICE),
+	    text   = STRING_TOKEN(STR_GOTO_HELP_CHILD_DEVICE),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+      
+    text 
+      help   = STRING_TOKEN(STR_REFRESH),  
+      text   = STRING_TOKEN(STR_REFRESH_HELP),
+	    text   = STRING_TOKEN(STR_DRIVER_DEFAULT_NAME),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+
+    text 
+      help   = STRING_TOKEN(STR_DRIVER_CONTROLLER_DEFAULT_NAME),  
+      text   = STRING_TOKEN(STR_DRIVER_CHILD_CONTROLLER_DEFAULT_NAME),
+	    text   = STRING_TOKEN(STR_ACTION_REQUIRED_ACTION_NOW),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+      
+    text 
+      help   = STRING_TOKEN(STR_ACTION_REQUIRED_CONTINUE),  
+      text   = STRING_TOKEN(STR_ACTION_REQUIRED_NONE),
+	    text   = STRING_TOKEN(STR_ACTION_REQUIRED_STOP_CONTROLLER),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+      
+    text 
+      help   = STRING_TOKEN(STR_ACTION_REQUIRED_RESTART_CONTROLLER),  
+      text   = STRING_TOKEN(STR_ACTION_REQUIRED_RESTART_PLATFORM),
+	    text   = STRING_TOKEN(STR_ACTION_REQUIRED_STOP_SELECT_ERROR),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+      
+    text 
+      help   = STRING_TOKEN(STR_ACTION_REQUIRED_DISCON_CONTRO_ERROR),  
+      text   = STRING_TOKEN(STR_ACTION_REQUIRED_START_SELECT_ERROR),
+	    text   = STRING_TOKEN(STR_ACTION_REQUIRED_DISCON_CHILCON_ERROR),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+      
+    text 
+      help   = STRING_TOKEN(STR_ACTION_REQUIRED_CONNECT_CONTRO_ERROR),  
+      text   = STRING_TOKEN(STR_NULL_STRING),
+	    text   = STRING_TOKEN(STR_NULL_STRING),
+      flags  = INTERACTIVE,
+      key    = 0x1234;
+  endform;
+
+endformset;

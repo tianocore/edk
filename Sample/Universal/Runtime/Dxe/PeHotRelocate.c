@@ -91,7 +91,7 @@ Returns:
   UINT64                                *F64;
   CHAR8                                 *FixupData;
   UINTN                                 Adjust;
-
+  UINT16                                Magic;
   
   if (mMyImageBase == (VOID *) (UINTN) Image->ImageBase) {
     //
@@ -134,7 +134,21 @@ Returns:
   //
   // Get some data from the PE type dependent data.
   //
-  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+  // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+  //       It is for backward-compatibility consideration, because
+  //       some system will generate PE32+ image with PE32 Magic.
+  //
+  if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+    Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+  } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+    Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+  } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+    Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+  } else {
+    Magic = Hdr.Pe32->OptionalHeader.Magic;
+  }
+  
+  if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     //     
     // Use PE32 offset
     //

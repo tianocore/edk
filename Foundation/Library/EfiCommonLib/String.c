@@ -48,6 +48,36 @@ Returns:
   *Destination = 0;
 }
 
+VOID
+EfiStrnCpy (
+  OUT CHAR16  *Dst,
+  IN  CHAR16  *Src,
+  IN  UINTN   Length
+  )
+/*++
+
+Routine Description:
+  Copy a string from source to destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+{
+  UINTN Index;
+
+  Index = 0;
+  while (Index < Length) {
+    Dst[Index] = Src[Index];
+    Index++;
+  }
+  Dst[Index] = 0;
+}
+
 UINTN
 EfiStrLen (
   IN CHAR16   *String
@@ -152,6 +182,28 @@ Returns:
   EfiStrCpy (Destination + EfiStrLen (Destination), Source);
 }
 
+VOID
+EfiStrnCat (
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src,
+  IN UINTN    Length
+  )
+/*++
+
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+{
+  EfiStrnCpy (Dest + EfiStrLen (Dest), Src, Length);
+}
 
 UINTN
 EfiAsciiStrLen (
@@ -202,6 +254,36 @@ Returns:
   }
   *Destination = 0;
   return Destination + 1;
+}
+
+VOID
+EfiAsciiStrnCpy (
+  OUT CHAR8    *Dst,
+  IN  CHAR8    *Src,
+  IN  UINTN    Length
+  )
+/*++
+
+Routine Description:
+  Copy the Ascii string from source to destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+{
+  UINTN Index;
+
+  Index = 0;
+  while (Index < Length) {
+    Dst[Index] = Src[Index];
+    Index++;
+  }
+  Dst[Index] = 0;
 }
 
 UINTN
@@ -282,7 +364,28 @@ Returns:
   EfiAsciiStrCpy (Destination + EfiAsciiStrLen (Destination), Source);
 }
 
+VOID
+EfiAsciiStrnCat (
+  IN CHAR8   *Destination,
+  IN CHAR8   *Source,
+  IN UINTN   Length
+  )
+/*++
 
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Destination - String to added to the end of.
+  Source      - String to concatinate.
+
+Returns:
+  NONE
+
+--*/
+{
+  EfiAsciiStrnCpy (Destination + EfiAsciiStrLen (Destination), Source, Length);
+}
 
 BOOLEAN
 IsHexDigit (
@@ -627,3 +730,4 @@ CHAR16*
      return NULL;
    }
  }
+ 

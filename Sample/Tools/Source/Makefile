@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -47,7 +47,6 @@ MAKEFILES = $(EDK_TOOLS_SOURCE)\Common\Makefile             \
             $(EDK_TOOLS_SOURCE)\GuidChk\makefile            \
             $(EDK_TOOLS_SOURCE)\MakeDeps\makefile           \
             $(EDK_TOOLS_SOURCE)\SetStamp\makefile           \
-            $(EDK_TOOLS_SOURCE)\VcCheck\makefile            \
             $(EDK_TOOLS_SOURCE)\VfrCompile\makefile         \
             $(EDK_TOOLS_SOURCE)\StrGather\makefile          
 
@@ -62,7 +61,6 @@ MAKEFILES = $(EDK_TOOLS_SOURCE)\Common\Makefile             \
 all : $(MAKEFILES)
   -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
   !$(MAKE) -f $? TOOLCHAIN=$(TOOLCHAIN) all
-  -if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
   
 #
 # Call all the tools makefiles with a clean target.

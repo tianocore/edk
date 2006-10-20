@@ -59,7 +59,7 @@ VERSION_STRING       = "Test version string -- PciBus v1"
 [libraries.common]
   EdkGuidLib
   EdkFrameworkGuidLib
-  EdkProtocolLib
+  EdkFrameworkProtocolLib
   EfiProtocolLib
   EfiDriverLib
 

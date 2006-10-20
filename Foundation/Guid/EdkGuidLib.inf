@@ -38,8 +38,6 @@ COMPONENT_TYPE=   LIBRARY
 [nmake.common]
 C_STD_INCLUDE=
 [sources.common]
-  AcpiTableStorage\AcpiTableStorage.h
-  AcpiTableStorage\AcpiTableStorage.c
   AlternateFvBlock\AlternateFvBlock.h
   AlternateFvBlock\AlternateFvBlock.c
   Bmp\Bmp.h
@@ -54,8 +52,6 @@ C_STD_INCLUDE=
   ConsoleInDevice\ConsoleInDevice.c
   ConsoleOutDevice\ConsoleOutDevice.h
   ConsoleOutDevice\ConsoleOutDevice.c
-  DataHubRecords\DataHubRecords.h
-  DataHubRecords\DataHubRecords.c
   EfiShell\EfiShell.h
   EfiShell\EfiShell.c
   FlashMapHob\FlashMapHob.h
@@ -64,8 +60,6 @@ C_STD_INCLUDE=
   HotPlugDevice\HotPlugDevice.c
   IoBaseHob\IoBaseHob.h
   IoBaseHob\IoBaseHob.c
-  MemoryAllocationHob\MemoryAllocationHob.c
-  MemoryAllocationHob\MemoryAllocationHob.h
   MemoryTypeInformation\MemoryTypeInformation.h
   MemoryTypeInformation\MemoryTypeInformation.c
   PciHotPlugDevice\PciHotPlugDevice.h
@@ -94,7 +88,5 @@ C_STD_INCLUDE=
   StatusCodeCallerId\StatusCodeCallerId.c
   SystemNvDataGuid\SystemNvDataGuid.h
   SystemNvDataGuid\SystemNvDataGuid.c
-  EventGroup\EventGroup.h
-  EventGroup\EventGroup.c
   EventLegacyBios\EventLegacyBios.h
   EventLegacyBios\EventLegacyBios.c

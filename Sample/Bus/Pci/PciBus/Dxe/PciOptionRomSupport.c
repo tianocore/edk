@@ -152,6 +152,7 @@ Returns:
   UINT64                    RomSize;
   UINT64                    RomImageSize;
   UINT8                     *RomInMemory;
+  UINT8                     CodeType;
 
   RomSize       = PciDevice->RomSize;
 
@@ -159,6 +160,7 @@ Returns:
   RomImageSize  = 0;
   RomInMemory   = NULL;
   Temp          = 0;
+  CodeType      = 0xFF;
 
   //
   // Get the RomBarIndex
@@ -231,6 +233,9 @@ Returns:
                                       sizeof (PCI_DATA_STRUCTURE),
                                       (UINT8 *) RomPcir
                                       );
+    if (RomPcir->CodeType == PCI_CODE_TYPE_PCAT_IMAGE) {
+      CodeType = PCI_CODE_TYPE_PCAT_IMAGE;
+    }
     Indicator     = RomPcir->Indicator;
     RomImageSize  = RomImageSize + RomPcir->ImageLength * 512;
     RomBarOffset  = RomBarOffset + RomPcir->ImageLength * 512;
@@ -240,7 +245,7 @@ Returns:
   // Some Legacy Cards do not report the correct ImageLength so used the maximum
   // of the legacy length and the PCIR Image Length
   //
-  if (RomPcir->CodeType == PCI_CODE_TYPE_PCAT_IMAGE) {
+  if (CodeType == PCI_CODE_TYPE_PCAT_IMAGE) {
     RomImageSize = EFI_MAX(RomImageSize, (((EFI_LEGACY_EXPANSION_ROM_HEADER *)RomHeader)->Size512 * 512));
   }
 

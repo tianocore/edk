@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1220,6 +1220,7 @@ GetSelectionInputPopUp (
         //
         if (EfiStrLen (StringPtr) > (PopUpWidth - 1)) {
           TempStringPtr = EfiLibAllocateZeroPool (sizeof (CHAR16) * (PopUpWidth - 1));
+          ASSERT ( TempStringPtr != NULL );
           EfiCopyMem (TempStringPtr, StringPtr, (sizeof (CHAR16) * (PopUpWidth - 5)));
           gBS->FreePool (StringPtr);
           StringPtr = TempStringPtr;

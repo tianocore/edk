@@ -31,7 +31,7 @@ COMPONENT_TYPE       = BS_DRIVER
   GuidedSection.h
 
 [libraries.common]
-  EdkProtocolLib
+  EdkFrameworkProtocolLib
   EfiDriverLib
 
 [includes.common]

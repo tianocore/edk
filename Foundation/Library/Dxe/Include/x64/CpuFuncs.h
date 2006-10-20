@@ -32,7 +32,10 @@ Abstract:
 
 //
 // CPUID version information masks
+// Note: leaving masks here is for the compatibility
+//       use EfiCpuVersion (...) instead
 //
+
 #define EFI_CPUID_FAMILY                      0x0F00
 #define EFI_CPUID_MODEL                       0x00F0
 #define EFI_CPUID_STEPPING                    0x000F
@@ -91,6 +94,13 @@ Abstract:
 #define EFI_CACHE_WRITETHROUGH                4
 #define EFI_CACHE_WRITEPROTECTED              5
 #define EFI_CACHE_WRITEBACK                   6
+
+//
+// Combine f(FamilyId), m(Model), s(SteppingId) to a single 32 bit number
+//
+#define EfiMakeCpuVersion(f, m, s)         \
+  (((UINT32) (f) << 16) | ((UINT32) (m) << 8) | ((UINT32) (s)))
+
 
 typedef struct {
   UINT32  HeaderVersion;
@@ -185,6 +195,27 @@ Returns:
                                    
    None                          
                          
+--*/
+;
+
+VOID
+EfiCpuVersion (
+  IN   UINT16  *FamilyId,    OPTIONAL
+  IN   UINT8   *Model,       OPTIONAL
+  IN   UINT8   *SteppingId,  OPTIONAL
+  IN   UINT8   *Processor    OPTIONAL
+  )
+/*++
+
+Routine Description:
+  Extract CPU detail version infomation
+
+Arguments:
+  FamilyId   - FamilyId, including ExtendedFamilyId
+  Model      - Model, including ExtendedModel
+  SteppingId - SteppingId
+  Processor  - Processor
+
 --*/
 ;
 

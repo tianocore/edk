@@ -41,8 +41,12 @@ C_STD_INCLUDE=
 [sources.common]
   AcpiS3Save\AcpiS3Save.h
   AcpiS3Save\AcpiS3Save.c
+  AcpiSupport\AcpiSupport.h
+  AcpiSupport\AcpiSupport.c
   BootScriptSave\BootScriptSave.h
   BootScriptSave\BootScriptSave.c
+  CpuIo\CpuIo.h
+  CpuIo\CpuIo.c
   DataHub\DataHub.h
   DataHub\DataHub.c
   FirmwareVolume\FirmwareVolume.h
@@ -55,7 +59,57 @@ C_STD_INCLUDE=
   FormCallback\FormCallback.c
   Hii\Hii.h
   Hii\Hii.c
+  IdeControllerInit\IdeControllerInit.h
+  IdeControllerInit\IdeControllerInit.c
+  IncompatiblePciDeviceSupport\IncompatiblePciDeviceSupport.h
+  IncompatiblePciDeviceSupport\IncompatiblePciDeviceSupport.c
+  Legacy8259\Legacy8259.h
+  Legacy8259\Legacy8259.c
   LegacyBios\LegacyBios.h
   LegacyBios\LegacyBios.c
+  LegacyBiosPlatform\LegacyBiosPlatform.h
+  LegacyBiosPlatform\LegacyBiosPlatform.c
+  LegacyInterrupt\LegacyInterrupt.h
+  LegacyInterrupt\LegacyInterrupt.c
+  LegacyRegion\LegacyRegion.h
+  LegacyRegion\LegacyRegion.c
+  PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.h
+  PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.c
+  PciHotPlugInit\PciHotPlugInit.h
+  PciHotPlugInit\PciHotPlugInit.c
+  PciPlatform\PciPlatform.h
+  PciPlatform\PciPlatform.c
   SectionExtraction\SectionExtraction.h
   SectionExtraction\SectionExtraction.c
+  SecurityPolicy\SecurityPolicy.h
+  SecurityPolicy\SecurityPolicy.c
+  Smbus\Smbus.h
+  Smbus\Smbus.c
+
+[sources.ia32,sources.x64]
+  SmmAccess\SmmAccess.h
+  SmmAccess\SmmAccess.c
+  SmmBase\SmmBase.h
+  SmmBase\SmmBase.c
+  SmmControl\SmmControl.h
+  SmmControl\SmmControl.c
+  SmmCpuState\SmmCpuState.h
+  SmmCpuState\SmmCpuState.c
+  SmmGpiDispatch\SmmGpiDispatch.h
+  SmmGpiDispatch\SmmGpiDispatch.c
+  SmmIchnDispatch\SmmIchnDispatch.h
+  SmmIchnDispatch\SmmIchnDispatch.c
+  SmmPeriodicTimerDispatch\SmmPeriodicTimerDispatch.h
+  SmmPeriodicTimerDispatch\SmmPeriodicTimerDispatch.c
+  SmmPowerButtonDispatch\SmmPowerButtonDispatch.h
+  SmmPowerButtonDispatch\SmmPowerButtonDispatch.c
+  SmmStandbyButtonDispatch\SmmStandbyButtonDispatch.h
+  SmmStandbyButtonDispatch\SmmStandbyButtonDispatch.c
+  SmmStatusCode\SmmStatusCode.h
+  SmmStatusCode\SmmStatusCode.c
+  SmmSwDispatch\SmmSwDispatch.h
+  SmmSwDispatch\SmmSwDispatch.c
+  SmmSxDispatch\SmmSxDispatch.h
+  SmmSxDispatch\SmmSxDispatch.c
+  SmmUsbDispatch\SmmUsbDispatch.h
+  SmmUsbDispatch\SmmUsbDispatch.c  

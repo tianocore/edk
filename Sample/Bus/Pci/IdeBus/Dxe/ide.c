@@ -711,6 +711,34 @@ DetectIDEController (
   UINT8       LBALowReg;
   UINT8       LBAMidReg;
   UINT8       LBAHighReg;
+  UINT8       InitStatusReg;
+  UINT8       StatusReg;
+
+  //
+  // Select slave device
+  //
+  IDEWritePortB (
+    IdeDev->PciIo,
+    IdeDev->IoPort->Head,
+    (UINT8) ((1 << 4) | 0xe0)
+    );
+  gBS->Stall (100);
+
+  //
+  // Save the init slave status register
+  //
+  InitStatusReg = IDEReadPortB (IdeDev->PciIo, IdeDev->IoPort->Reg.Status);
+
+  //
+  // Select Master back
+  //
+  IDEWritePortB (
+    IdeDev->PciIo,
+    IdeDev->IoPort->Head,
+    (UINT8) ((0 << 4) | 0xe0)
+    );
+  gBS->Stall (100);
+
   //
   // Send ATA Device Execut Diagnostic command.
   // This command should work no matter DRDY is ready or not
@@ -766,10 +794,12 @@ DetectIDEController (
 
   //
   // For some Hard Drive, it takes some time to get
-  // the right signature when operating in slave mode.
-  // We stall 10ms to work around this.
+  // the right signature when operating in single slave mode.
+  // We stall 20ms to work around this.
   //
-  gBS->Stall (10000);
+  if (!MasterDeviceExist) {
+    gBS->Stall (20000);
+  }
 
   //
   // Select Slave
@@ -796,6 +826,10 @@ DetectIDEController (
                  IdeDev->PciIo,
                  IdeDev->IoPort->CylinderMsb
                  );
+  StatusReg  = IDEReadPortB (
+                 IdeDev->PciIo,
+                 IdeDev->IoPort->Reg.Status
+                 );
   if ((SectorCountReg == 0x1) &&
       (LBALowReg      == 0x1) &&
       (LBAMidReg      == 0x0) &&
@@ -809,6 +843,22 @@ DetectIDEController (
       SlaveDeviceType  = ATAPI_DEVICE_TYPE;
     }
   }
+
+  //
+  // When single master is plugged, slave device
+  // will be wrongly detected. Here's the workaround
+  // for ATA devices by detecting DRY bit in status
+  // register.
+  // NOTE: This workaround doesn't apply to ATAPI.
+  //
+  if (MasterDeviceExist && SlaveDeviceExist &&
+      (StatusReg & DRDY) == 0               &&
+      (InitStatusReg & DRDY) == 0           &&
+      MasterDeviceType == SlaveDeviceType   &&
+      SlaveDeviceType != ATAPI_DEVICE_TYPE) {
+    SlaveDeviceExist = FALSE;
+  }
+
   //
   // Indicate this channel has been detected
   //
@@ -1560,6 +1610,11 @@ Returns:
 
   if (IdeBlkIoDevice->DevicePath != NULL) {
     gBS->FreePool (IdeBlkIoDevice->DevicePath);
+  }
+  
+  if (IdeBlkIoDevice->ExitBootServiceEvent != NULL) {
+    gBS->CloseEvent (IdeBlkIoDevice->ExitBootServiceEvent);
+    IdeBlkIoDevice->ExitBootServiceEvent = NULL;
   }
 
   gBS->FreePool (IdeBlkIoDevice);

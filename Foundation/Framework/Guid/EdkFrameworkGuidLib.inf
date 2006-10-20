@@ -40,14 +40,22 @@ COMPONENT_TYPE=   LIBRARY
 [nmake.common]
 C_STD_INCLUDE=
 [sources.common]
+  AcpiTableStorage\AcpiTableStorage.h
+  AcpiTableStorage\AcpiTableStorage.c
   Apriori\Apriori.h
   Apriori\Apriori.c
+  DataHubRecords\DataHubRecords.h
+  DataHubRecords\DataHubRecords.c  
   DxeServices\DxeServices.h
   DxeServices\DxeServices.c
   FirmwareFileSystem\FirmwareFileSystem.h
   FirmwareFileSystem\FirmwareFileSystem.c
   Hob\Hob.h
   Hob\Hob.c
+  MemoryAllocationHob\MemoryAllocationHob.c
+  MemoryAllocationHob\MemoryAllocationHob.h
+  SmramMemoryReserve\SmramMemoryReserve.h
+  SmramMemoryReserve\SmramMemoryReserve.c
   StatusCodeDataTypeId\StatusCodeDataTypeId.h
   StatusCodeDataTypeId\StatusCodeDataTypeId.c
   FrameworkDevicePath\FrameworkDevicePath.h

@@ -26,10 +26,13 @@ Abstract:
 #include "EfiCommonLib.h"
 
 #include "LinkedList.h"
+#include "GetImage.h"
+
 #include EFI_GUID_DEFINITION (DxeServices)
 #include EFI_GUID_DEFINITION (EventGroup)
 #include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 #include EFI_PROTOCOL_DEFINITION (FvbExtension)
 #include "ProcDep.h"
@@ -121,30 +124,6 @@ Returns:
 
   EFI_SUCCESS     - Shotdown the Runtime Driver Lib successfully
   EFI_UNSUPPORTED - Runtime Driver lib was not initialized at all
-
---*/
-;
-
-EFI_STATUS
-EfiInitializeSmmDriverLib (
-  IN EFI_HANDLE           ImageHandle,
-  IN EFI_SYSTEM_TABLE     *SystemTable
-  )
-/*++
-
-Routine Description:
-
-  Intialize Smm Driver Lib if it has not yet been initialized. 
-
-Arguments:
-
-  ImageHandle     - The firmware allocated handle for the EFI image.
-  
-  SystemTable     - A pointer to the EFI System Table.
-
-Returns: 
-
-  EFI_STATUS always returns EFI_SUCCESS
 
 --*/
 ;

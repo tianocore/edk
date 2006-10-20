@@ -40,7 +40,6 @@ COMPONENT_TYPE       = LIBRARY
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
 
 [libraries.common]
-  EdkFrameworkGuidLib
   HobLib
   RtMemoryStatusCodeLib
   BsDataHubStatusCodeLib

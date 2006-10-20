@@ -1585,7 +1585,7 @@ AtapiReadSectors (
   //
   // limit the data bytes that can be transferred by one Read(10) Command
   //
-  MaxBlock        = (UINT16) (65536 / BlockSize);
+  MaxBlock        = 65535;
 
   BlocksRemaining = NumberOfBlocks;
 

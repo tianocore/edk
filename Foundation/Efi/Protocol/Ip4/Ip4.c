@@ -26,19 +26,12 @@ Abstract:
 EFI_GUID gEfiIp4ServiceBindingProtocolGuid 
            = EFI_IP4_SERVICE_BINDING_PROTOCOL_GUID;
 
-EFI_GUID gEfiIp4RegistryDataGuid  = EFI_IP4_REGISTRY_DATA_GUID;
-EFI_GUID gEfiIp4ProtocolGuid      = EFI_IP4_PROTOCOL_GUID;
+EFI_GUID gEfiIp4ProtocolGuid = EFI_IP4_PROTOCOL_GUID;
 
 EFI_GUID_STRING (
   &gEfiIp4ServiceBindingProtocolGuid, 
   "IP4 Service Binding Protocol", 
   "IP4 Service Binding Protocol"
-  );
-
-EFI_GUID_STRING (
-  &gEfiIp4RegistryDataGuid,           
-  "IP4 Registry Data Format",     
-  "IP4 Registry Data Format"
   );
 
 EFI_GUID_STRING (

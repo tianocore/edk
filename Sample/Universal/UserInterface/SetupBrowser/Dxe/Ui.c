@@ -3038,8 +3038,10 @@ Returns:
         FileFormTags->VariableDefinitions->VariableFakeSize = (UINT16) (FileFormTags->VariableDefinitions->VariableFakeSize + FileFormTags->VariableDefinitions->VariableSize);
         
         FileFormTags->VariableDefinitions->NvRamMap = EfiLibAllocateZeroPool (FileFormTags->VariableDefinitions->VariableSize);
+        ASSERT ( FileFormTags->VariableDefinitions->NvRamMap != NULL );
         FileFormTags->VariableDefinitions->FakeNvRamMap = EfiLibAllocateZeroPool (NvMapSize + FileFormTags->VariableDefinitions->VariableFakeSize);
-
+        ASSERT ( FileFormTags->VariableDefinitions->FakeNvRamMap != NULL );
+        
         EfiCopyMem (FileFormTags->VariableDefinitions->NvRamMap, NvMap, NvMapSize);
         gBS->FreePool (NvMapListHead);
       }

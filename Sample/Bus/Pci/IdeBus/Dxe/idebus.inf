@@ -35,7 +35,7 @@ COMPONENT_TYPE       = BS_DRIVER
     ComponentName.c
 
 [libraries.common]
-  EdkProtocolLib
+  EdkFrameworkProtocolLib
   EfiProtocolLib
   EfiDriverLib
   EdkGuidLib

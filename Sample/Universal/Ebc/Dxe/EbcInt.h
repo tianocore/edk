@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -50,6 +50,8 @@ typedef struct {
   VOID              *EntryPoint;            // entry point of EBC image
   UINTN             ImageBase;
 } VM_CONTEXT;
+
+extern VM_CONTEXT                    *mVmPtr;
 
 //
 // Bits of exception flags field of VM context
@@ -102,7 +104,8 @@ EbcDebugSignalException (
 // Define a constant of how often to call the debugger periodic callback
 // function.
 //
-#define EBC_VM_PERIODIC_CALLBACK_RATE 1000
+#define EFI_TIMER_UNIT_1MS            (1000 * 10)
+#define EBC_VM_PERIODIC_CALLBACK_RATE (1000 * EFI_TIMER_UNIT_1MS)
 
 EFI_STATUS
 EbcDebugSignalPeriodic (

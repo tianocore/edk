@@ -58,18 +58,19 @@ COMPONENT_TYPE       = LIBRARY
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
   $(EDK_SOURCE)\Sample\Platform\Generic\Pei\Capsule
   $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\GenericBds
 
+[includes.ia32]
+  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
+
+[includes.x64]
+  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
+
+[includes.ipf]
+  $(EDK_SOURCE)\Foundation\Cpu\Itanium\Include
   
 [libraries.common]
-  EfiGuidLib
-  EdkProtocolLib
-  EfiProtocolLib
   EfiDriverLib
-
-[libraries.ia32]  
-  CpuIA32Lib
-    
+   
 [nmake.common]

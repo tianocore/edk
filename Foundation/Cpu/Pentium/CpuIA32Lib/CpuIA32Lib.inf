@@ -24,6 +24,7 @@ BASE_NAME       = CpuIA32Lib
 COMPONENT_TYPE  = LIBRARY
 
 [sources.common]
+  EfiCpuVersion.c
 
 [sources.ia32]
   Ia32\CpuIA32.asm
@@ -32,8 +33,11 @@ COMPONENT_TYPE  = LIBRARY
   x64\Cpu.asm
 [includes.common]
   $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
   .
   $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
+  $(EDK_SOURCE)\Foundation\Include
 
 [nmake.common]
   C_STD_INCLUDE=

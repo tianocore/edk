@@ -1,6 +1,6 @@
 #/*++
 #   
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -42,7 +42,8 @@ TARGET_SOURCE_DIR = $(COMMON_SOURCE)
 
 OBJECTS = "$(EDK_TOOLS_OUTPUT)\ParseInf.obj"      \
           "$(EDK_TOOLS_OUTPUT)\EfiCompress.obj"   \
-          "$(EDK_TOOLS_OUTPUT)\EfiDecompress.obj"   \
+          "$(EDK_TOOLS_OUTPUT)\TianoCompress.obj"   \
+          "$(EDK_TOOLS_OUTPUT)\Decompress.obj"   \
           "$(EDK_TOOLS_OUTPUT)\crc32.obj"   \
           "$(EDK_TOOLS_OUTPUT)\CommonLib.obj"     \
           "$(EDK_TOOLS_OUTPUT)\PeCoffLoader.obj"  \
@@ -68,11 +69,14 @@ all: $(TARGET_LIB)
 "$(EDK_TOOLS_OUTPUT)\MyAlloc.obj": "$(TARGET_SOURCE_DIR)\MyAlloc.c" "$(TARGET_SOURCE_DIR)\MyAlloc.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
   $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\MyAlloc.c" /Fo"$(EDK_TOOLS_OUTPUT)\MyAlloc.obj"
 
-"$(EDK_TOOLS_OUTPUT)\EfiCompress.obj": "$(TARGET_SOURCE_DIR)\EfiCompress.c" "$(TARGET_SOURCE_DIR)\EfiCompress.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
+"$(EDK_TOOLS_OUTPUT)\EfiCompress.obj": "$(TARGET_SOURCE_DIR)\EfiCompress.c" "$(TARGET_SOURCE_DIR)\Compress.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
   $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\EfiCompress.c" /Fo"$(EDK_TOOLS_OUTPUT)\EfiCompress.obj"
 
-"$(EDK_TOOLS_OUTPUT)\EfiDecompress.obj": "$(TARGET_SOURCE_DIR)\EfiDecompress.c" "$(TARGET_SOURCE_DIR)\EfiDecompress.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
-  $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\EfiDecompress.c" /Fo"$(EDK_TOOLS_OUTPUT)\EfiDecompress.obj"
+"$(EDK_TOOLS_OUTPUT)\TianoCompress.obj": "$(TARGET_SOURCE_DIR)\TianoCompress.c" "$(TARGET_SOURCE_DIR)\Compress.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
+  $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\TianoCompress.c" /Fo"$(EDK_TOOLS_OUTPUT)\TianoCompress.obj"
+
+"$(EDK_TOOLS_OUTPUT)\Decompress.obj": "$(TARGET_SOURCE_DIR)\Decompress.c" "$(TARGET_SOURCE_DIR)\Decompress.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
+  $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\Decompress.c" /Fo"$(EDK_TOOLS_OUTPUT)\Decompress.obj"
 
 "$(EDK_TOOLS_OUTPUT)\crc32.obj": "$(TARGET_SOURCE_DIR)\crc32.c" "$(TARGET_SOURCE_DIR)\crc32.h" $(EDK_SOURCE)\Foundation\Include\TianoCommon.h
   $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\crc32.c" /Fo"$(EDK_TOOLS_OUTPUT)\crc32.obj"
@@ -109,13 +113,14 @@ all: $(TARGET_LIB)
 #
 
 $(TARGET_LIB): $(OBJECTS)
-  $(LIB) $(LIB_FLAGS) $(OBJECTS) /OUT:$(TARGET_LIB)
+  $(LIB_EXE) $(LIB_FLAGS) $(OBJECTS) /OUT:$(TARGET_LIB)
 
 clean:
   @if exist $(EDK_TOOLS_OUTPUT)\ParseInf.* del /q $(EDK_TOOLS_OUTPUT)\ParseInf.* > NUL
   @if exist $(EDK_TOOLS_OUTPUT)\ParsePeim.* del /q $(EDK_TOOLS_OUTPUT)\ParsePeim.* > NUL
   @if exist $(EDK_TOOLS_OUTPUT)\EfiCompress.* del /q $(EDK_TOOLS_OUTPUT)\EfiCompress.* > NUL
-  @if exist $(EDK_TOOLS_OUTPUT)\EfiDecompress.* del /q $(EDK_TOOLS_OUTPUT)\EfiDecompress.* > NUL
+  @if exist $(EDK_TOOLS_OUTPUT)\TianoCompress.* del /q $(EDK_TOOLS_OUTPUT)\TianoCompress.* > NUL
+  @if exist $(EDK_TOOLS_OUTPUT)\Decompress.* del /q $(EDK_TOOLS_OUTPUT)\Decompress.* > NUL
   @if exist $(EDK_TOOLS_OUTPUT)\crc32.* del /q $(EDK_TOOLS_OUTPUT)\crc32.* > NUL
   @if exist $(EDK_TOOLS_OUTPUT)\CommonLib.* del /q $(EDK_TOOLS_OUTPUT)\CommonLib.* > NUL
   @if exist $(EDK_TOOLS_OUTPUT)\PeCoffLoader.* del /q $(EDK_TOOLS_OUTPUT)\PeCoffLoader.* > NUL

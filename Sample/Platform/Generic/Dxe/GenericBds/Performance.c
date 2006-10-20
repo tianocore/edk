@@ -94,7 +94,7 @@ Returns:
   mAcpiLowMemoryBase = 0xFFFFFFFF;
   Status = gBS->AllocatePages (
                   AllocateMaxAddress,
-                  EfiACPIMemoryNVS,
+                  EfiReservedMemoryType,
                   4,
                   &mAcpiLowMemoryBase
                   );

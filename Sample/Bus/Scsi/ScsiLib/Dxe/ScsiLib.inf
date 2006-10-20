@@ -29,7 +29,6 @@ COMPONENT_TYPE       = LIBRARY
     ScsiLib.c
 
 [libraries.common]
-  EfiProtocolLib
   EfiDriverLib
 
 [includes.common]

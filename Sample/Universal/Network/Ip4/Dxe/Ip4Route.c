@@ -619,6 +619,7 @@ Returns:
   NET_LIST_ENTRY            *Entry;
   NET_LIST_ENTRY            *Next;
   IP4_ROUTE_CACHE_ENTRY     *RtCacheEntry;
+  IP4_ROUTE_CACHE_ENTRY     *Cache;
   IP4_ROUTE_ENTRY           *RtEntry;
   IP4_ADDR                  NextHop;
   UINT32                    Count;
@@ -657,18 +658,20 @@ Returns:
   } else {
     NextHop = RtEntry->NextHop;
   }
-  
+
+  Ip4FreeRouteEntry (RtEntry);
+
   //
   // Create a route cache entry, and tag it as spawned from this route entry
   //
   RtCacheEntry = Ip4CreateRouteCacheEntry (Dest, Src, NextHop, (UINTN) RtEntry);
 
   if (RtCacheEntry == NULL) {
-    Ip4FreeRouteEntry (RtEntry);
     return NULL;
   }
 
   NetListInsertHead (Head, &RtCacheEntry->Link);
+  NET_GET_REF (RtCacheEntry);
 
   //
   // Each bucket of route cache can contain at most 64 entries.
@@ -681,13 +684,12 @@ Returns:
       continue;
     }
 
-    RtCacheEntry = NET_LIST_USER_STRUCT (Entry, IP4_ROUTE_CACHE_ENTRY, Link);
+    Cache = NET_LIST_USER_STRUCT (Entry, IP4_ROUTE_CACHE_ENTRY, Link);
 
     NetListRemoveEntry (Entry);
-    Ip4FreeRouteCacheEntry (RtCacheEntry);
+    Ip4FreeRouteCacheEntry (Cache);
   }
 
-  NET_GET_REF (RtCacheEntry);
   return RtCacheEntry;
 }
 

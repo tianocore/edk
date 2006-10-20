@@ -216,7 +216,7 @@ GetNameFromHandle (
   Status = gBS->HandleProtocol (
                   Handle,
                   &gEfiLoadedImageProtocolGuid,
-                  &Image
+                  (VOID**)&Image
                   );
 
   if (EFI_ERROR (Status)) {
@@ -237,7 +237,7 @@ GetNameFromHandle (
     Status = gBS->HandleProtocol (
                     DriverBinding->ImageHandle,
                     &gEfiLoadedImageProtocolGuid,
-                    &Image
+                    (VOID**)&Image
                     );
   }
 

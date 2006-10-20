@@ -111,6 +111,13 @@ CommonEbcExceptionHandler (
   IN EFI_SYSTEM_CONTEXT   SystemContext
   );
 
+VOID
+EFIAPI
+EbcPeriodicNotifyFunction (
+  IN EFI_EVENT     Event,
+  IN VOID          *Context
+  );
+
 EFI_STATUS
 EbcDebugPeriodic (
   IN VM_CONTEXT *VmPtr
@@ -204,6 +211,12 @@ static EFI_PERIODIC_CALLBACK  mDebugPeriodicCallback                            
 static EFI_EXCEPTION_CALLBACK mDebugExceptionCallback[EFI_EBC_EXCEPTION_NUMBER] = {NULL};
 static EFI_GUID               mEfiEbcVmTestProtocolGuid = EFI_EBC_VM_TEST_PROTOCOL_GUID;
 
+//
+// Event for Periodic callback
+//
+static EFI_EVENT              mEbcPeriodicEvent;
+VM_CONTEXT                    *mVmPtr = NULL;
+
 EFI_DRIVER_ENTRY_POINT (InitializeEbcDriver)
 
 EFI_STATUS
@@ -237,6 +250,10 @@ Returns:
   UINTN                       NumHandles;
   UINTN                       Index;
   BOOLEAN                     Installed;
+  
+  EbcProtocol      = NULL;
+  EbcDebugProtocol = NULL;
+  
   //
   // Initialize the library
   //
@@ -322,7 +339,7 @@ Returns:
                   (VOID **) &EbcDebugProtocol
                   );
   if (Status != EFI_SUCCESS) {
-    return EFI_OUT_OF_RESOURCES;
+    goto ErrorExit;
   }
 
   EbcDebugProtocol->Isa                         = IsaEbc;
@@ -345,13 +362,14 @@ Returns:
   //
   if (EFI_ERROR (Status)) {
     gBS->FreePool (EbcDebugProtocol);
-  } else {
-    //
-    // Install EbcDebugSupport Protocol Successfully
-    // Now we need to initialize the Ebc default Callback
-    //
-    Status = InitializeEbcCallback (EbcDebugProtocol);
+    goto ErrorExit;
   }
+  
+  //
+  // Install EbcDebugSupport Protocol Successfully
+  // Now we need to initialize the Ebc default Callback
+  //
+  Status = InitializeEbcCallback (EbcDebugProtocol);
   
   //
   // Produce a VM test interface protocol. Not required for execution.
@@ -359,7 +377,44 @@ Returns:
   DEBUG_CODE (
     InitEbcVmTestProtocol (&ImageHandle);
   )
+  
+  return EFI_SUCCESS;
 
+ErrorExit:
+  HandleBuffer  = NULL;
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiEbcProtocolGuid,
+                  NULL,
+                  &NumHandles,
+                  &HandleBuffer
+                  );
+  if (Status == EFI_SUCCESS) {
+    //
+    // Loop through the handles
+    //
+    for (Index = 0; Index < NumHandles; Index++) {
+      Status = gBS->HandleProtocol (
+                      HandleBuffer[Index],
+                      &gEfiEbcProtocolGuid,
+                      (VOID **) &OldEbcProtocol
+                      );
+      if (Status == EFI_SUCCESS) {
+        gBS->UninstallProtocolInterface (
+               HandleBuffer[Index],
+               &gEfiEbcProtocolGuid,
+               OldEbcProtocol
+               );
+      }
+    }
+  }
+
+  if (HandleBuffer != NULL) {
+    gBS->FreePool (HandleBuffer);
+    HandleBuffer = NULL;
+  }
+
+  gBS->FreePool (EbcProtocol);
   return Status;
 }
 
@@ -646,6 +701,7 @@ Returns:
 --*/
 {
   INTN       Index;
+  EFI_STATUS Status;
 
   //
   // For ExceptionCallback
@@ -662,6 +718,25 @@ Returns:
   //
   // For PeriodicCallback
   //
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_NOTIFY,
+                  EbcPeriodicNotifyFunction,
+                  &mVmPtr,
+                  &mEbcPeriodicEvent
+                  );
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
+
+  Status = gBS->SetTimer (
+                  mEbcPeriodicEvent,
+                  TimerPeriodic,
+                  EBC_VM_PERIODIC_CALLBACK_RATE
+                  );
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
 
   return EFI_SUCCESS;
 }
@@ -758,6 +833,41 @@ Returns:
   // We deadloop here to make it easy to debug this issue.
   //
   EFI_DEADLOOP ();
+
+  return ;
+}
+
+VOID
+EFIAPI
+EbcPeriodicNotifyFunction (
+  IN EFI_EVENT     Event,
+  IN VOID          *Context
+  )
+/*++
+
+Routine Description:
+
+  The periodic callback function for EBC VM interpreter, which is used
+  to support the EFI debug support protocol.
+  
+Arguments:
+
+  Event   - The Periodic Callback Event.
+  Context - It should be the address of VM_CONTEXT pointer.
+
+Returns:
+
+  None.
+  
+--*/
+{
+  VM_CONTEXT *VmPtr;
+
+  VmPtr = *(VM_CONTEXT **)Context;
+
+  if (VmPtr != NULL) {
+    EbcDebugPeriodic (VmPtr);
+  }
 
   return ;
 }

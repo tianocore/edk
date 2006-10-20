@@ -790,6 +790,27 @@ Returns:
 --*/
 ;
 
+VOID
+EfiStrnCpy (
+  OUT CHAR16    *Dst,
+  IN  CHAR16    *Src,
+  IN  UINTN     Length
+  )
+/*++
+
+Routine Description:
+  Copy a string from source to destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+;
+
 UINTN
 EfiStrLen (
   IN CHAR16   *String
@@ -873,6 +894,27 @@ Returns:
 --*/
 ;
 
+VOID
+EfiStrnCat (
+  IN CHAR16   *Dest,
+  IN CHAR16   *Src,
+  IN UINTN    Length
+  )
+/*++
+
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+;
+
 UINTN
 EfiAsciiStrLen (
   IN CHAR8   *String
@@ -912,6 +954,26 @@ Returns:
 --*/
 ;
 
+VOID
+EfiAsciiStrnCpy (
+  OUT CHAR8     *Dst,
+  IN  CHAR8     *Src,
+  IN  UINTN     Length
+  )
+/*++
+
+Routine Description:
+  Copy the Ascii string from source to destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+;
 
 UINTN
 EfiAsciiStrSize (
@@ -959,6 +1021,27 @@ VOID
 EfiAsciiStrCat (
   IN CHAR8   *Destination,
   IN CHAR8   *Source
+  )
+/*++
+
+Routine Description:
+  Concatinate Source on the end of Destination
+
+Arguments:
+  Destination - String to added to the end of.
+  Source      - String to concatinate.
+
+Returns:
+  NONE
+
+--*/
+;
+
+VOID
+EfiAsciiStrnCat (
+  IN CHAR8   *Destination,
+  IN CHAR8   *Source,
+  IN UINTN   Length
   )
 /*++
 

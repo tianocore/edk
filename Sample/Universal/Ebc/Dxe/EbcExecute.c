@@ -686,6 +686,8 @@ Returns:
   //
   // end DEBUG_CODE
   //
+
+  mVmPtr          = VmPtr;
   Status          = EFI_SUCCESS;
   StackCorrupted  = 0;
 
@@ -779,6 +781,8 @@ Returns:
   }
 
 Done:
+  mVmPtr          = NULL;
+
   return Status;
 }
 

@@ -39,6 +39,7 @@ COMPONENT_TYPE  = LIBRARY
   EfiLibAllocate.c
   Perf.c
   ReportStatusCode.c
+  GetImage.c
 
   ..\hob\hob.c
 
@@ -69,6 +70,8 @@ COMPONENT_TYPE  = LIBRARY
 [libraries.common]
   EdkGuidLib
   EdkProtocolLib
+  EdkFrameworkProtocolLib
+  EfiGuidLib
   EfiProtocolLib
   ArchProtocolLib
   EfiCommonLib
@@ -78,6 +81,9 @@ COMPONENT_TYPE  = LIBRARY
 
 [libraries.x64]
   CpuIA32Lib
+
+[libraries.ipf]
+  CpuIA64Lib
 
 [nmake.common]
   C_STD_INCLUDE=

@@ -41,7 +41,9 @@ Usage (
   VOID
   )
 {
-  printf ("Usage: " UTILITY_NAME "  {-t time-date} [APPLICATION|BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|COMBINED_PEIM_DRIVER|SECURITY_CORE|PEI_CORE|PE32_PEIM|RELOCATABLE_PEIM] peimage [outimage]");
+  printf ("Usage: " UTILITY_NAME "  {-t time-date} {-e} [APPLICATION|BS_DRIVER|RT_DRIVER|SAL_RT_DRIVER|COMBINED_PEIM_DRIVER|SECURITY_CORE|PEI_CORE|PE32_PEIM|RELOCATABLE_PEIM] peimage [outimage]\n");
+  printf ("  -t: Add Time Stamp for output image\n");
+  printf ("  -e: Not clear ExceptionTable for output image\n");
 }
 
 static
@@ -82,6 +84,91 @@ FCopyFile (
   return STATUS_SUCCESS;
 }
 
+VOID
+ZeroExceptionTable (
+  IN FILE              *fpIn,
+  IN FILE              *fpOut,
+  IN IMAGE_DOS_HEADER  *DosHdr,
+  IN PE_HEADER         *PeHdr
+  )
+{
+  UINT32 PdataSize;
+  UINT32 PdataOffset;
+  UINT32 SectionOffset;
+  UINT16 SectionNumber;
+  UINT32 SectionNameSize;
+  EFI_IMAGE_SECTION_HEADER Section;
+
+  PdataSize   = 0;
+  PdataOffset = 0;
+  SectionOffset = 0;
+
+  //
+  // Search .pdata section
+  //
+  if (PeHdr->PeHeader32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if ((PeHdr->PeHeader32.OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_EXCEPTION) &&
+        (PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress != 0) &&
+        (PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size != 0)) {
+
+      PdataOffset = PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
+      PdataSize = PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
+
+      PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress = 0;
+      PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size = 0;
+
+      SectionOffset = sizeof(PeHdr->PeHeader32);
+    }
+  } else {
+    if ((PeHdr->PeHeader64.OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_EXCEPTION) &&
+        (PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress != 0) &&
+        (PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size != 0)) {
+
+      PdataOffset = PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
+      PdataSize = PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
+
+      PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress = 0;
+      PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size = 0;
+
+      SectionOffset = sizeof(PeHdr->PeHeader64);
+    }
+  }
+
+  //
+  // RVA == File offset
+  //
+  if ((PdataSize != 0) && (PdataOffset != 0)) {
+    fseek (fpOut, PdataOffset, SEEK_SET);
+
+    while (PdataSize > 0) {
+      fputc (0, fpOut);
+      PdataSize--;
+    }
+
+    //
+    // Zero .pdata Section Header Name
+    //
+    SectionNumber = PeHdr->PeHeader32.FileHeader.NumberOfSections;
+    SectionNameSize = sizeof(Section.Name);
+    while (SectionNumber > 0) {
+      fseek (fpIn, DosHdr->e_lfanew + SectionOffset, SEEK_SET);
+      fread (&Section, sizeof (Section), 1, fpIn);
+      if (strcmp (Section.Name, ".pdata") == 0) {
+        fseek (fpOut, DosHdr->e_lfanew + SectionOffset, SEEK_SET);
+        while (SectionNameSize > 0) {
+          fputc (0, fpOut);
+          SectionNameSize--;
+        }
+        break;
+      }
+      SectionNumber--;
+      SectionOffset += sizeof(Section);
+    }
+  }
+  
+  return ;
+}
+
 int
 main (
   int  argc,
@@ -120,6 +207,7 @@ Returns:
   IMAGE_DOS_HEADER  BackupDosHdr;
   ULONG             Index;
   BOOLEAN           TimeStampPresent;
+  BOOLEAN           NeedClearExceptionTable;
 
   SetUtilityName (UTILITY_NAME);
   //
@@ -130,6 +218,7 @@ Returns:
   Ext               = 0;
   TimeStamp         = 0;
   TimeStampPresent  = FALSE;
+  NeedClearExceptionTable = TRUE;
 
   //
   // Look for -t time-date option first. If the time is "0", then
@@ -175,6 +264,19 @@ Returns:
     argc -= 2;
     argv += 2;
   }
+
+  //
+  // Look for -e option.
+  //
+  if ((argc > 1) && !strcmp (argv[1], "-e")) {
+    NeedClearExceptionTable = FALSE;
+    //
+    // Skip over the args
+    //
+    argc -= 1;
+    argv += 1;
+  }
+
   //
   // Check for enough args
   //
@@ -356,8 +458,19 @@ Returns:
     return STATUS_ERROR;
   }
   
+  //
+  // Zero PDATA section for smaller binary size after compression
+  //
+  if (NeedClearExceptionTable) {
+    ZeroExceptionTable (fpIn, fpOut, &DosHdr, &PeHdr);
+  }
+
   fseek (fpOut, DosHdr.e_lfanew, SEEK_SET);
-  fwrite (&PeHdr, sizeof (PeHdr), 1, fpOut);
+  if (PeHdr.PeHeader32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    fwrite (&PeHdr, sizeof (PeHdr.PeHeader32), 1, fpOut);
+  } else {
+    fwrite (&PeHdr, sizeof (PeHdr.PeHeader64), 1, fpOut);
+  }
 
   //
   // Done

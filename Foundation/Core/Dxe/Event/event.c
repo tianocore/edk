@@ -317,7 +317,7 @@ Returns:
 static
 VOID
 EFIAPI
-EventNofitySignalAllNullEvent (
+EventNotifySignalAllNullEvent (
   IN EFI_EVENT                Event,
   IN VOID                     *Context
   )
@@ -382,7 +382,7 @@ Returns:
   //
   if (Type & EFI_EVENT_NOTIFY_SIGNAL_ALL) {
     Type &= ~EFI_EVENT_NOTIFY_SIGNAL_ALL;
-    Function = EventNofitySignalAllNullEvent;
+    Function = EventNotifySignalAllNullEvent;
   }
 
   //

@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -41,14 +41,14 @@ PROCESSOR = IPF
 # Define a toolchain so we can pick up the basic defines from
 # the EFI tool setup file.
 #
-TOOLCHAIN = TOOLCHAIN_$(PROCESSOR)
+TOOLCHAIN = TOOLCHAIN_MSVC
 
 !INCLUDE PlatformTools.env
 
 #
 # Target to build customer config
 #
-all : tempstamp_file build_tools oem_tool_path vc_check makefiles builds
+all : tempstamp_file build_tools makefiles builds
 
 #
 # Create a file to store the date and time, and used by SetStamp.exe
@@ -64,20 +64,14 @@ tempstamp_file:
 # Make all the EFI build tools by calling the makefile
 #
 build_tools :
+  -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
+  -if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
+!IF "$(EDK_TOOLS_VERSION)" == "$(EDK_TOOLS_BIN_VERSION)"
+  copy $(EDK_TOOLS_BIN)\Tools\*.* $(EDK_TOOLS_OUTPUT)
+!ELSE
   $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR)
-
-#
-# Set path for oem signing tools that would be dispatched by GenFfsFile utility
-#
-oem_tool_path: 
-  set OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)
-
-#
-# Check VC version. VC compiler (VC6.0 SP4, SP5) will lost some codes
-# in /O1 option. 
-#
-vc_check:
-  $(EDK_TOOLS_OUTPUT)\VcCheck.exe
+!ENDIF
+  $(GUIDCHK) -b $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt
 
 #
 # Run the utility that processes our description files and generates the
@@ -86,14 +80,12 @@ vc_check:
 # basename-to-fileguid that can be used by VolInfo
 #
 makefiles : $(PROCESSOR)\Blank.pad
-#
-# Create the complete customer DSC file from the common and platform parts.
-#
   $(PROCESSDSC)                                \
     -d EFI_SOURCE=$(EFI_SOURCE)                \
     -d EDK_SOURCE=$(EDK_SOURCE)                \
     -d PROCESSOR=$(PROCESSOR)                  \
     -d PROJECT_NAME=$(PROJECT_NAME)            \
+    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)         \
     -d UEFI_PREFIX=$(UEFI_PREFIX)              \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt    \
     $(PROJECT_NAME).dsc

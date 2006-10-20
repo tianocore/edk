@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -94,12 +94,14 @@ Returns:
     // Need some memory for OptionList. Allow for up to 8 options.
     //
     OptionList = EfiLibAllocateZeroPool (sizeof (IFR_OPTION) * 8);
-
+    ASSERT ( OptionList != NULL );
+    
     //
     // Allocate space for creation of Buffer
     //
     UpdateData = EfiLibAllocateZeroPool (0x1000);
-
+    ASSERT ( UpdateData != NULL );
+    
     //
     // Remove all the op-codes starting with Label 0x2222 to next Label (second label is for convenience
     // so we don't have to keep track of how many op-codes we added or subtracted.  The rules for removal
@@ -170,11 +172,13 @@ Returns:
     // Need some memory for OptionList. Allow for up to 8 options.
     //
     OptionList = EfiLibAllocateZeroPool (sizeof (IFR_OPTION) * 8);
-
+    ASSERT ( OptionList != NULL );
+    
     //
     // Allocate space for creation of Buffer
     //
     UpdateData = EfiLibAllocateZeroPool (0x1000);
+    ASSERT ( OptionList != NULL );
 
     //
     // Remove all the op-codes starting with Label 0x2222 to next Label (second label is for convenience
@@ -238,13 +242,14 @@ Returns:
     //
     // Allocate space for creation of Buffer
     //
-    QuestionId = (UINT16) ((UINTN) (&NVStruc.DynamicCheck));
+    QuestionId = (UINT16) ((UINTN) (&NVStruc.DynamicCheck) - (UINTN) (&NVStruc));
     Status = gBS->AllocatePool (
                     EfiBootServicesData,
                     0x1000,
                     &UpdateData
                     );
-
+    ASSERT_EFI_ERROR (Status);
+    
     EfiZeroMem (UpdateData, 0x1000);
 
     Location                        = (UINT8 *) &UpdateData->Data;
@@ -297,6 +302,7 @@ Returns:
                     0x1000,
                     &UpdateData
                     );
+    ASSERT_EFI_ERROR (Status);
 
     EfiZeroMem (UpdateData, 0x1000);
 
@@ -366,7 +372,9 @@ Returns:
                     sizeof (EFI_HII_CALLBACK_PACKET) + sizeof (SAMPLE_STRING) + 2,
                     Packet
                     );
+    ASSERT_EFI_ERROR (Status);
 
+                    
     EfiZeroMem (*Packet, sizeof (EFI_HII_CALLBACK_PACKET) + sizeof (SAMPLE_STRING) + 2);
 
     //
@@ -384,6 +392,7 @@ Returns:
                     sizeof (EFI_HII_CALLBACK_PACKET) + 2,
                     Packet
                     );
+    ASSERT_EFI_ERROR (Status);
 
     EfiZeroMem (*Packet, sizeof (EFI_HII_CALLBACK_PACKET) + 2);
 
@@ -591,6 +600,7 @@ DriverSampleInit (
                   0x1000,
                   &UpdateData
                   );
+  ASSERT_EFI_ERROR (Status);
 
   EfiZeroMem (UpdateData, 0x1000);
 

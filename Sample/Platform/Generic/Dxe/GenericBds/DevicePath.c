@@ -255,7 +255,7 @@ DevPathMemMap (
   MemMap = DevPath;
   CatPrint (
     Str,
-    L"MemMap(%d:%.lx-%.lx)",
+    L"MemMap(%d:%lx-%lx)",
     MemMap->MemoryType,
     MemMap->StartingAddress,
     MemMap->EndingAddress
@@ -433,7 +433,7 @@ DevPathUsb (
   USB_DEVICE_PATH *Usb;
 
   Usb = DevPath;
-  CatPrint (Str, L"Usb(%x, %x)", Usb->ParentPortNumber, Usb->InterfaceNumber);
+  CatPrint (Str, L"Usb(%x,%x)", Usb->ParentPortNumber, Usb->InterfaceNumber);
 }
 
 VOID
@@ -447,7 +447,7 @@ DevPathUsbClass (
   UsbClass = DevPath;
   CatPrint (
     Str,
-    L"Usb Class(%x, %x, %x, %x, %x)",
+    L"Usb Class(%x,%x,%x,%x,%x)",
     UsbClass->VendorId,
     UsbClass->ProductId,
     UsbClass->DeviceClass,
@@ -579,15 +579,15 @@ DevPathUart (
   }
 
   if (Uart->BaudRate == 0) {
-    CatPrint (Str, L"Uart(DEFAULT %c", Parity);
+    CatPrint (Str, L"Uart(DEFAULT,%c,", Parity);
   } else {
-    CatPrint (Str, L"Uart(%d %c", Uart->BaudRate, Parity);
+    CatPrint (Str, L"Uart(%d,%c,", Uart->BaudRate, Parity);
   }
 
   if (Uart->DataBits == 0) {
-    CatPrint (Str, L"D");
+    CatPrint (Str, L"D,");
   } else {
-    CatPrint (Str, L"%d", Uart->DataBits);
+    CatPrint (Str, L"%d,", Uart->DataBits);
   }
 
   switch (Uart->StopBits) {

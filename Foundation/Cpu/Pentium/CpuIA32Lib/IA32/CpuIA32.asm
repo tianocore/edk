@@ -67,7 +67,7 @@ EfiInvd ENDP
 ;  VOID
 ;  EfiCpuid (
 ;    IN   UINT32              RegisterInEax,    
-;    OUT  EFI_CPUID_REGISTER  *Reg              
+;    OUT  EFI_CPUID_REGISTER  *Reg           OPTIONAL 
 ;    )
 ;------------------------------------------------------------------------------
 EfiCpuid PROC    PUBLIC RegisterInEax:UINT32, Reg:PTR EFI_CPUID_REGISTER
@@ -75,13 +75,16 @@ EfiCpuid PROC    PUBLIC RegisterInEax:UINT32, Reg:PTR EFI_CPUID_REGISTER
      
      mov    eax, RegisterInEax
      cpuid
+     cmp    Reg, 0
+     je     _Exit
      mov    edi, DWORD PTR Reg 
-     ASSUME  edi: PTR EFI_CPUID_REGISTER
+     ASSUME edi: PTR EFI_CPUID_REGISTER
      mov    DWORD PTR [edi].RegEax, eax   ; Reg->RegEax
      mov    DWORD PTR [edi].RegEbx, ebx   ; Reg->RegEbx
      mov    DWORD PTR [edi].RegEcx, ecx   ; Reg->RegEcx
      mov    DWORD PTR [edi].RegEdx, edx   ; Reg->RegEdx
 
+_Exit:
      popad
      ret
 EfiCpuid  ENDP

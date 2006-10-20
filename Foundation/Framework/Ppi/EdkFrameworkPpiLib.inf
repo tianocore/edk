@@ -39,12 +39,18 @@ COMPONENT_TYPE=   LIBRARY
 C_STD_INCLUDE=
 
 [sources.common]
+    BlockIo\BlockIo.h
+    BlockIo\BlockIo.c
     BootInRecoveryMode\BootInRecoveryMode.h
     BootInRecoveryMode\BootInRecoveryMode.c
     BootMode\BootMode.h
     BootMode\BootMode.c
+    BootScriptExecuter\BootScriptExecuter.h
+    BootScriptExecuter\BootScriptExecuter.c    
     CpuIo\CpuIo.h
     CpuIo\CpuIo.c
+    DeviceRecoveryModule\DeviceRecoveryModule.h
+    DeviceRecoveryModule\DeviceRecoveryModule.c    
     DxeIpl\DxeIpl.h
     DxeIpl\DxeIpl.c
     EndOfPeiSignal\EndOfPeiSignal.h
@@ -67,6 +73,10 @@ C_STD_INCLUDE=
     SecPlatformInformation\SecPlatformInformation.c
     SectionExtraction\SectionExtraction.h
     SectionExtraction\SectionExtraction.c
+    Security\Security.h
+    Security\Security.c
+    Smbus\Smbus.h
+    Smbus\Smbus.c
     Stall\Stall.h
     Stall\Stall.c
     StatusCode\StatusCode.h

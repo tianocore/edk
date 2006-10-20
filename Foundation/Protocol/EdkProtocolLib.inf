@@ -42,8 +42,6 @@ C_STD_INCLUDE=
 [sources.common]
   ConsoleControl\ConsoleControl.h
   ConsoleControl\ConsoleControl.c
-  CpuIo\CpuIo.h
-  CpuIo\CpuIo.c
   CustomizedDecompress\CustomizedDecompress.c
   CustomizedDecompress\CustomizedDecompress.h
   DebugAssert\DebugAssert.h
@@ -64,10 +62,6 @@ C_STD_INCLUDE=
   GenericMemoryTest\GenericMemoryTest.c
   GuidedSectionExtraction\GuidedSectionExtraction.h
   GuidedSectionExtraction\GuidedSectionExtraction.c
-  IdeControllerInit\IdeControllerInit.h
-  IdeControllerInit\IdeControllerInit.c
-  IncompatiblePciDeviceSupport\IncompatiblePciDeviceSupport.h
-  IncompatiblePciDeviceSupport\IncompatiblePciDeviceSupport.c
   IsaAcpi\IsaAcpi.h
   IsaAcpi\IsaAcpi.c
   IsaIo\IsaIo.h
@@ -76,14 +70,8 @@ C_STD_INCLUDE=
   LoadPe32Image\LoadPe32Image.c
   NicIp4Config\NicIp4Config.h
   NicIp4Config\NicIp4Config.c
-  PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.h
-  PciHostBridgeResourceAllocation\PciHostBridgeResourceAllocation.c
-  PciHotPlugInit\PciHotPlugInit.h
-  PciHotPlugInit\PciHotPlugInit.c
   PciHotPlugRequest\PciHotPlugRequest.h
   PciHotPlugRequest\PciHotPlugRequest.c
-  PciPlatform\PciPlatform.h
-  PciPlatform\PciPlatform.c
   Performance\Performance.h
   Performance\Performance.c
   PlatformMemTest\PlatformMemTest.h
@@ -94,8 +82,6 @@ C_STD_INCLUDE=
   PxeDhcp4\PxeDhcp4.c
   PxeDhcp4Callback\PxeDhcp4Callback.h
   PxeDhcp4Callback\PxeDhcp4Callback.c
-  SecurityPolicy\SecurityPolicy.h
-  SecurityPolicy\SecurityPolicy.c
   Tcp\Tcp.h
   Tcp\Tcp.c
   TianoDecompress\TianoDecompress.h
@@ -108,6 +94,8 @@ C_STD_INCLUDE=
   VariableStore\VariableStore.c
   VirtualMemoryAccess\VirtualMemoryAccess.h
   VirtualMemoryAccess\VirtualMemoryAccess.c
+  TcgService\TcgService.h
+  TcgService\TcgService.c
 
 [sources.ipf]
   ExtendedSalBootService\ExtendedSalBootService.c

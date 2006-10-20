@@ -97,8 +97,7 @@ EfiLibNamedEventListen (
   IN EFI_GUID             * Name,
   IN EFI_TPL              NotifyTpl,
   IN EFI_EVENT_NOTIFY     NotifyFunction,
-  IN VOID                 *NotifyContext,
-  OUT VOID                *Registration OPTIONAL
+  IN VOID                 *NotifyContext
   )
 /*++
 
@@ -115,8 +114,6 @@ Arguments:
   NotifyTpl       - Maximum TPL to singnal the NotifyFunction.
   NotifyFunction  - The listener routine.
   NotifyContext   - Context passed into the listener routine.
-  Registration    - Registration key returned from RegisterProtocolNotify().
-                    It could be NULL.
 
 Returns:
   EFI_SUCCESS if successful.
@@ -138,25 +135,11 @@ Returns:
                   &Event
                   );
   ASSERT_EFI_ERROR (Status);
-
-  //
-  // The Registration is not optional to RegisterProtocolNotify().
-  // To make it optional to EfiLibNamedEventListen(), may need to substitute with a local.
-  //
-  if (Registration != NULL) {
-    RegistrationLocal = Registration;
-  } else {
-    RegistrationLocal = &RegistrationLocal;
-  }
-
-  //
-  // Register for an installation of protocol interface
-  //
-
+  
   Status = gBS->RegisterProtocolNotify (
                   Name,
                   Event,
-                  RegistrationLocal
+                  &RegistrationLocal
                   );
   ASSERT_EFI_ERROR (Status);
 
@@ -212,7 +195,7 @@ Returns:
 static
 VOID
 EFIAPI
-EventNofitySignalAllNullEvent (
+EventNotifySignalAllNullEvent (
   IN EFI_EVENT                Event,
   IN VOID                     *Context
   )
@@ -288,7 +271,7 @@ Returns:
     //
     // CreatEventEx will check NotifyFunction is NULL or not
     //
-    WorkerNotifyFunction = EventNofitySignalAllNullEvent;
+    WorkerNotifyFunction = EventNotifySignalAllNullEvent;
   } else {
     WorkerNotifyFunction = NotifyFunction;
   }
@@ -367,7 +350,7 @@ Return:
     //
     // CreatEventEx will check NotifyFunction is NULL or not
     //
-    WorkerNotifyFunction = EventNofitySignalAllNullEvent;
+    WorkerNotifyFunction = EventNotifySignalAllNullEvent;
   } else {
     WorkerNotifyFunction = NotifyFunction;
   }

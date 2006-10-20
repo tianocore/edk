@@ -172,6 +172,7 @@ Returns:
   EFI_STATUS            Status;
   EFI_IMAGE_DOS_HEADER  DosHdr;
   UINTN                 Size;
+  UINT16                Magic;
 
   //
   // Read the DOS image header to check for it's existance
@@ -230,7 +231,22 @@ Returns:
     ImageContext->IsTeImage         = FALSE;
     ImageContext->Machine           = Hdr.Pe32->FileHeader.Machine;
     
-    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    //
+    // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+    //       It is for backward-compatibility consideration, because
+    //       some system will generate PE32+ image with PE32 Magic.
+    //
+    if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else {
+      Magic = Hdr.Pe32->OptionalHeader.Magic;
+    }
+
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //
@@ -239,7 +255,7 @@ Returns:
       ImageContext->SectionAlignment  = Hdr.Pe32->OptionalHeader.SectionAlignment;
       ImageContext->SizeOfHeaders     = Hdr.Pe32->OptionalHeader.SizeOfHeaders;
 
-    } else if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+    } else if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
       //
       // Use PE32+ offset
       //
@@ -358,6 +374,7 @@ Returns:
   EFI_IMAGE_SECTION_HEADER              SectionHeader;
   EFI_IMAGE_DEBUG_DIRECTORY_ENTRY       DebugEntry;
   UINT32                                NumberOfRvaAndSizes;
+  UINT16                                Magic;
 
   if (NULL == ImageContext) {
     return EFI_INVALID_PARAMETER;
@@ -382,11 +399,29 @@ Returns:
     return Status;
   }
 
+  Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+
   //
   // Retrieve the base address of the image
   //
   if (!(ImageContext->IsTeImage)) {
-    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+  	
+    //
+    // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+    //       It is for backward-compatibility consideration, because
+    //       some system will generate PE32+ image with PE32 Magic.
+    //
+    if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else {
+      Magic = Hdr.Pe32->OptionalHeader.Magic;
+    }
+
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //
@@ -431,7 +466,7 @@ Returns:
   }
 
   if (!(ImageContext->IsTeImage)) {
-    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //     
       // Use PE32 offset
       //
@@ -672,6 +707,7 @@ Returns:
   CHAR8                                 *FixupData;
   EFI_PHYSICAL_ADDRESS                  BaseAddress;
   UINT32                                NumberOfRvaAndSizes;
+  UINT16                                Magic;
 #ifdef EFI_NT_EMULATOR
   VOID                                  *DllEntryPoint;
   VOID                                  *ModHandle;
@@ -707,7 +743,23 @@ Returns:
 
   if (!(ImageContext->IsTeImage)) {
     Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)((UINTN)ImageContext->ImageAddress + ImageContext->PeCoffHeaderOffset);
-    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    
+    //
+    // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+    //       It is for backward-compatibility consideration, because
+    //       some system will generate PE32+ image with PE32 Magic.
+    //
+    if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else {
+      Magic = Hdr.Pe32->OptionalHeader.Magic;
+    }
+
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //
@@ -940,6 +992,7 @@ Returns:
   UINTN                                 Size;
   UINT32                                TempDebugEntryRva;
   UINT32                                NumberOfRvaAndSizes;
+  UINT16                                Magic;
 
   if (NULL == ImageContext) {
     return EFI_INVALID_PARAMETER;
@@ -1126,14 +1179,32 @@ Returns:
     Section += 1;
   }
 
+  Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+
   //
   // Get image's entry point
   //
   if (!(ImageContext->IsTeImage)) {
+
+    //
+    // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+    //       It is for backward-compatibility consideration, because
+    //       some system will generate PE32+ image with PE32 Magic.
+    //
+    if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else if (Hdr.Pe32->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else {
+      Magic = Hdr.Pe32->OptionalHeader.Magic;
+    }
+
     //
     // Sizes of AddressOfEntryPoint are different so we need to do this safely
     //
-    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //      
@@ -1167,7 +1238,7 @@ Returns:
   // the optional header to verify a desired directory entry is there.
   //
   if (!(ImageContext->IsTeImage)) {
-    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //

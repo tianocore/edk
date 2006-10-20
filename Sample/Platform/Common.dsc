@@ -100,14 +100,14 @@ DEPEX_TYPE = EFI_SECTION_DXE_DEPEX
 [=============================================================================]
 [Compile.Ia32.asm,Compile.x64.asm]
 
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_DIR)\$(FILE).asm
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME)
   $(ASM) $(ASM_FLAGS) $**
 
 [=============================================================================]
 [Compile.Ipf.s]
 
-$(DEST_DIR)\$(FILE).pro : $(SOURCE_DIR)\$(FILE).s $(INF_FILENAME)
- $(CC) $(C_FLAGS_PRO) $(SOURCE_DIR)\$(FILE).s > $@
+$(DEST_DIR)\$(FILE).pro : $(SOURCE_FILE_NAME) $(INF_FILENAME)
+ $(CC) $(C_FLAGS_PRO) $(SOURCE_FILE_NAME) > $@
 
 $(DEST_DIR)\$(FILE).obj : $(DEST_DIR)\$(FILE).pro
  $(ASM) $(ASM_FLAGS) $(DEST_DIR)\$(FILE).pro
@@ -240,7 +240,6 @@ call_makefile :
           BUILD_DIR=$(BUILD_DIR)            \
           FILE_GUID=$(FILE_GUID)            \
           DEST_DIR=$(DEST_DIR)              \
-          FILE_GUID=$(FILE_GUID)            \
           PROCESSOR=$(PROCESSOR)            \
           TOOLCHAIN=TOOLCHAIN_$(PROCESSOR)  \
           BASE_NAME=$(BASE_NAME)            \
@@ -308,15 +307,15 @@ all : $(LIB_DIR)\$(BASE_NAME).lib
 # GenFfsFile with the appropriate package file. SOURCE_FV must be defined
 # in the component INF file Defines section.
 #
-[Build.Ia32.FvImageFile]
+[Build.Ia32.FvImageFile,Build.x64.FvImageFile]
 
-all : $(DEST_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi
+all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi
 
 #
 # Run GenFfsFile on the package file and FV file to create the firmware 
 # volume FFS file
 #
-$(DEST_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
 [=============================================================================]
@@ -345,9 +344,17 @@ $(DEST_DIR)\$(BASE_NAME).sdb : $(SDB_FILES) $(SOURCE_FILES)
   $(STRGATHER) -scan -vdbr $(STRGATHER_FLAGS) -od $(DEST_DIR)\$(BASE_NAME).sdb \
     -skipext .uni -skipext .h $(SOURCE_FILES)
 
-$(DEST_DIR)\$(BASE_NAME)Strings.c $(DEST_DIR)\$(BASE_NAME)StrDefs.h $(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
+$(DEST_DIR)\$(BASE_NAME)Strings.c : $(DEST_DIR)\$(BASE_NAME).sdb
   $(STRGATHER) -dump $(LANGUAGE_FLAGS) -bn $(BASE_NAME)Strings -db $(DEST_DIR)\$(BASE_NAME).sdb \
-    -oc $(DEST_DIR)\$(BASE_NAME)Strings.c -hpk $(DEST_DIR)\$(BASE_NAME)Strings.hpk -oh $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+    -oc $(DEST_DIR)\$(BASE_NAME)Strings.c
+
+$(DEST_DIR)\$(BASE_NAME)StrDefs.h : $(DEST_DIR)\$(BASE_NAME).sdb
+  $(STRGATHER) -dump $(LANGUAGE_FLAGS) -bn $(BASE_NAME)Strings -db $(DEST_DIR)\$(BASE_NAME).sdb \
+    -oh $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+
+$(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
+  $(STRGATHER) -dump $(LANGUAGE_FLAGS) -bn $(BASE_NAME)Strings -db $(DEST_DIR)\$(BASE_NAME).sdb \
+    -hpk $(DEST_DIR)\$(BASE_NAME)Strings.hpk
 
 OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 
@@ -747,9 +754,17 @@ $(DEST_DIR)\$(BASE_NAME).sdb : $(SDB_FILES) $(SOURCE_FILES)
   $(STRGATHER) -scan -vdbr $(STRGATHER_FLAGS) -od $(DEST_DIR)\$(BASE_NAME).sdb \
     -skipext .uni -skipext .h $(SOURCE_FILES)
 
-$(DEST_DIR)\$(BASE_NAME)Strings.c $(DEST_DIR)\$(BASE_NAME)StrDefs.h $(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
+$(DEST_DIR)\$(BASE_NAME)Strings.c : $(DEST_DIR)\$(BASE_NAME).sdb
   $(STRGATHER) -dump $(LANGUAGE_FLAGS) -bn $(BASE_NAME)Strings -db $(DEST_DIR)\$(BASE_NAME).sdb \
-    -oc $(DEST_DIR)\$(BASE_NAME)Strings.c -hpk $(DEST_DIR)\$(BASE_NAME)Strings.hpk -oh $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+    -oc $(DEST_DIR)\$(BASE_NAME)Strings.c
+
+$(DEST_DIR)\$(BASE_NAME)StrDefs.h : $(DEST_DIR)\$(BASE_NAME).sdb
+  $(STRGATHER) -dump $(LANGUAGE_FLAGS) -bn $(BASE_NAME)Strings -db $(DEST_DIR)\$(BASE_NAME).sdb \
+    -oh $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+
+$(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
+  $(STRGATHER) -dump $(LANGUAGE_FLAGS) -bn $(BASE_NAME)Strings -db $(DEST_DIR)\$(BASE_NAME).sdb \
+    -hpk $(DEST_DIR)\$(BASE_NAME)Strings.hpk
 
 OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 
@@ -890,7 +905,6 @@ TARGET_EFI        = $(SOURCE_DIR)\$(PROCESSOR)\$(BASE_NAME).efi
 !ERROR Pre-existing $(BASE_NAME).efi file not found in $(SOURCE_DIR) nor $(SOURCE_DIR)\$(PROCESSOR)
 !ENDIF
 
-TARGET_FFS_FILE   = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).dxe
 TARGET_DPX        = $(DEST_DIR)\$(BASE_NAME).dpx
 TARGET_UI         = $(DEST_DIR)\$(BASE_NAME).ui
 TARGET_VER        = $(DEST_DIR)\$(BASE_NAME).ver
@@ -898,6 +912,15 @@ TARGET_MAP        = $(DEST_DIR)\$(BASE_NAME).map
 TARGET_PDB        = $(EFI_SYMBOL_PATH)\$(BASE_NAME).pdb
 TARGET_PE32       = $(DEST_DIR)\$(BASE_NAME).pe32
 TARGET_DLL        = $(BIN_DIR)\$(BASE_NAME).dll
+
+#
+# If building an application, then the target is a .app, not .dxe
+#
+!IF "$(COMPONENT_TYPE)" == "APPLICATION"
+TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).app
+!ELSE
+TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).dxe
+!ENDIF
 
 #
 # Take the .efi file and make a .pe32 file
@@ -1003,7 +1026,7 @@ $(TARGET_EFI) : $(TARGET_DLL)
 all: $(TARGET_EFI)
 
 [=============================================================================]
-[Compile.Ia32.Bin,Compile.x64.Bin,Build.Ipf.Bin]
+[Compile.Ia32.Bin,Compile.x64.Bin,Compile.Ipf.Bin]
 #
 # We simply copy the 16 bit binary file from the source directory to the destination directory
 #
@@ -1011,7 +1034,7 @@ $(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_DIR)\$(BASE_NAME).bin
   copy $** $@
 
 [=============================================================================]
-[Compile.Ia32.Bmp,Compile.x64.Bmp,Build.Ipf.Bmp]
+[Compile.Ia32.Bmp,Compile.x64.Bmp,Compile.Ipf.Bmp]
 #
 # We simply copy the BMP file from the source directory to the destination directory and change the extension to bin.
 # This is so that we can build BINARY types the same way, with the same default package, etc.
@@ -1025,11 +1048,11 @@ $(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_DIR)\$(BASE_NAME).bmp
 #
 # Use GenFfsFile to convert it to an FFS file
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME)$(FFS_EXT) : $(DEST_DIR)\$(BASE_NAME).bin
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs : $(DEST_DIR)\$(BASE_NAME).bin
   $(GENSECTION) -I $(DEST_DIR)\$(BASE_NAME).bin -O $(DEST_DIR)\$(BASE_NAME).sec -S EFI_SECTION_RAW
   $(GENFFSFILE) -B $(BIN_DIR) -P1 $(DEST_DIR)\$(BASE_NAME).pkg -V
 
-all: $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME)$(FFS_EXT)
+all: $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs
 
 [=============================================================================]
 # 
@@ -1335,6 +1358,7 @@ Foundation\Framework\Guid\EdkFrameworkGuidLib.inf
 Foundation\Efi\Guid\EfiGuidLib.inf
 Foundation\Library\EfiCommonLib\EfiCommonLib.inf
 Foundation\Cpu\Pentium\CpuIA32Lib\CpuIA32Lib.inf
+Foundation\Cpu\Itanium\CpuIA64Lib\CpuIA64Lib.inf
 
 #
 # PEI libraries
@@ -1375,9 +1399,15 @@ Foundation\Library\Dxe\GraphicsLite\Graphics.inf
 #
 # EBC libraries required by drivers
 #
-#
-# EBC libraries required by applications
-#
+#Foundation\Guid\EdkGuidLib.inf                            PROCESSOR=EBC
+#Foundation\Framework\Guid\EdkFrameworkGuidLib.inf         PROCESSOR=EBC
+#Foundation\Efi\Guid\EfiGuidLib.inf                        PROCESSOR=EBC
+#Foundation\Library\EfiCommonLib\EfiCommonLib.inf          PROCESSOR=EBC
+#Foundation\Protocol\EdkProtocolLib.inf                    PROCESSOR=EBC
+#Foundation\Framework\Protocol\EdkFrameworkProtocolLib.inf PROCESSOR=EBC
+#Foundation\Efi\Protocol\EfiProtocolLib.inf                PROCESSOR=EBC
+#Foundation\Core\Dxe\ArchProtocol\ArchProtocolLib.inf      PROCESSOR=EBC
+#Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf      PROCESSOR=EBC
 
 [=============================================================================]
 [=============================================================================]

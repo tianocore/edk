@@ -26,10 +26,14 @@ Abstract:
 #include "EfiCommonLib.h"
 #include "EfiPerf.h"
 #include "LinkedList.h"
+#include "GetImage.h"
+#include "EfiImageFormat.h"
+
 #include EFI_GUID_DEFINITION (DxeServices)
 #include EFI_GUID_DEFINITION (EventGroup)
 #include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_GUID_DEFINITION (FrameworkDevicePath)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
@@ -759,8 +763,7 @@ EfiLibNamedEventListen (
   IN EFI_GUID             * Name,
   IN EFI_TPL              NotifyTpl,
   IN EFI_EVENT_NOTIFY     NotifyFunction,
-  IN VOID                 *NotifyContext,
-  OUT VOID                *Registration OPTIONAL
+  IN VOID                 *NotifyContext
   )
 /*++
 
@@ -777,8 +780,6 @@ Arguments:
   NotifyTpl       - Maximum TPL to singnal the NotifyFunction.
   NotifyFunction  - The listener routine.
   NotifyContext   - Context passed into the listener routine.
-  Registration    - Registration key returned from RegisterProtocolNotify().
-                    It could be NULL.
 
 Returns:
   EFI_SUCCESS if successful.

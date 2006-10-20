@@ -50,8 +50,6 @@ Returns:
 {
   UINT32  Data;
 
-  Data  = 0;
-
   Data  = (((UINT32) Segment) << 24);
   Data |= (((UINT32) Bus) << 16);
   Data |= (((UINT32) DevFunc) << 8);

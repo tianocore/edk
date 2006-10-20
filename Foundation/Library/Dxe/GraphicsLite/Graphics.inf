@@ -45,7 +45,6 @@ COMPONENT_TYPE      = LIBRARY
   $(EDK_SOURCE)\Foundation\Core\Dxe
 
 [libraries.common]
-  EdkFrameworkProtocolLib
   EfiDriverLib
 
 [nmake.common]

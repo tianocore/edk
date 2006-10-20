@@ -362,55 +362,6 @@ Returns:
   return EFI_SUCCESS;
 }
 
-EFI_STATUS
-EfiInitializeSmmDriverLib (
-  IN EFI_HANDLE           ImageHandle,
-  IN EFI_SYSTEM_TABLE     *SystemTable
-  )
-/*++
-
-Routine Description:
-
-  Intialize runtime Driver Lib if it has not yet been initialized. 
-
-Arguments:
-
-  ImageHandle     - The firmware allocated handle for the EFI image.
-  
-  SystemTable     - A pointer to the EFI System Table.
-
-  GoVirtualChildEvent - Caller can register a virtual notification event.
-
-Returns: 
-
-  EFI_STATUS always returns EFI_SUCCESS except EFI_ALREADY_STARTED if already started.
-
---*/
-{
-  EFI_STATUS  Status;
-
-  if (mRuntimeLibInitialized) {
-    return EFI_ALREADY_STARTED;
-  }
-
-  mRuntimeLibInitialized  = TRUE;
-
-  gST = SystemTable;
-  ASSERT (gST != NULL);
-
-  gBS = SystemTable->BootServices;
-  ASSERT (gBS != NULL);
-  mRT = SystemTable->RuntimeServices;
-  ASSERT (mRT != NULL);
-
-  Status  = gBS->LocateProtocol (&gEfiCpuIoProtocolGuid, NULL, &gCpuIo);
-  if (EFI_ERROR (Status)) {
-    gCpuIo = NULL;
-  }
-
-  return EFI_SUCCESS;
-}
-
 BOOLEAN
 EfiAtRuntime (
   VOID

@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2006, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -44,10 +44,14 @@ C_STD_INCLUDE=
   Acpi\Acpi.c
   DebugImageInfoTable\DebugImageInfoTable.h
   DebugImageInfoTable\DebugImageInfoTable.c
+  EventGroup\EventGroup.h
+  EventGroup\EventGroup.c
   GlobalVariable\GlobalVariable.h
   GlobalVariable\GlobalVariable.c
   Gpt\Gpt.h
   Gpt\Gpt.c
+  Mps\Mps.h
+  Mps\Mps.c
   PcAnsi\PcAnsi.h
   PcAnsi\PcAnsi.c
   SmBios\SmBios.h

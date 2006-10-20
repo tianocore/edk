@@ -58,7 +58,7 @@ VERSION_STRING       = "Test version string -- LightPciBus v1"
 [libraries.common]
   EdkGuidLib
   EdkFrameworkGuidLib
-  EdkProtocolLib
+  EdkFrameworkProtocolLib
   EfiProtocolLib
   EfiDriverLib
 

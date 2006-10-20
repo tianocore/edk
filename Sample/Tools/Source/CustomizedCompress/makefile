@@ -60,7 +60,7 @@ all: $(TARGET_LIB)
 #
 
 $(TARGET_LIB): $(OBJECTS)
-  $(LIB) $(LIB_FLAGS) $(OBJECTS) /OUT:$(TARGET_LIB)
+  $(LIB_EXE) $(LIB_FLAGS) $(OBJECTS) /OUT:$(TARGET_LIB)
 
 clean:
   @if exist $(EDK_TOOLS_OUTPUT)\CustomizedCompress.* del /q $(EDK_TOOLS_OUTPUT)\CustomizedCompress.* > NUL

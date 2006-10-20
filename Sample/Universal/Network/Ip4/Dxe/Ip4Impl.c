@@ -737,6 +737,10 @@ Returns:
     IpInstance->GroupCount  = 0;
   }
 
+  NetMapClean (&IpInstance->TxTokens);
+
+  NetMapClean (&IpInstance->RxTokens);
+
   return EFI_SUCCESS;
 }
 

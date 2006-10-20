@@ -28,6 +28,7 @@ COMPONENT_TYPE  = LIBRARY
   Event.c
   Io.c
   LibGlobals.c
+  GetImage.c
 
 [sources.ia32]
   Ia32\RuntimeLib.c
@@ -65,6 +66,8 @@ COMPONENT_TYPE  = LIBRARY
   EdkGuidLib
   EdkProtocolLib
   EdkFrameworkProtocolLib
+  EfiGuidLib
+  EfiProtocolLib
   ArchProtocolLib
   EfiCommonLib
 

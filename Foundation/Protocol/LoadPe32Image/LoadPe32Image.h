@@ -15,13 +15,7 @@ Module Name:
 
 Abstract:
 
-  Load File protocol as defined in the EFI 1.0 specification.
-
-  Load file protocol exists to supports the addition of new boot devices, 
-  and to support booting from devices that do not map well to file system. 
-  Network boot is done via a LoadFile protocol.
-
-  EFI 1.0 can boot from any device that produces a LoadFile protocol.
+    Load PE32 Image Protocol
 
 --*/
 

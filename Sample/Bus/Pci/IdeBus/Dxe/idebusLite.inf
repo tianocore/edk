@@ -34,7 +34,7 @@ COMPONENT_TYPE       = BS_DRIVER
     atapi.c
 
 [libraries.common]
-  EdkProtocolLib
+  EdkFrameworkProtocolLib
   EfiProtocolLib
   EfiDriverLib
   EdkGuidLib

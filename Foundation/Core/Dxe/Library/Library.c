@@ -698,13 +698,11 @@ CoreGetNameGuidFromFwVolDevicePathNode (
   )
 {
 #if (EFI_SPECIFICATION_VERSION < 0x00020000) 
-  BOOLEAN      Found;
   //
   // Use old Device Path that conflicts with UEFI
   //
-  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH ||
+  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
-    Found = TRUE;
     return &FvDevicePathNode->NameGuid;
   }
 
@@ -712,8 +710,8 @@ CoreGetNameGuidFromFwVolDevicePathNode (
   //
   // Use the new Device path that does not conflict with the UEFI
   //
-  if (FvDevicePathNode->Piwg.Header.Type == MEDIA_DEVICE_PATH ||
-      FvDevicePathNode->Piwg.Header.SubType == MEDIA_VENDOR_DP) {
+  if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
+      DevicePathSubType (&FvDevicePathNode->Piwg.Header) == MEDIA_VENDOR_DP) {
     if (EfiCompareGuid (&gEfiFrameworkDevicePathGuid, &FvDevicePathNode->Piwg.PiwgSpecificDevicePath)) {
       if (FvDevicePathNode->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
         return &FvDevicePathNode->NameGuid;

@@ -25,7 +25,7 @@ Abstract:
 #include "EfiFirmwareVolumeHeader.h"
 #include "EfiImageFormat.h"
 #include "ParseInf.h"
-#include "EfiCompress.h"
+#include "Compress.h"
 #include "EfiCustomizedCompress.h"
 #include "crc32.h"
 #include "GenFfsFile.h"
@@ -586,14 +586,14 @@ Returns:
     // Added "Dummy" to keep backward compatibility.
     //
     CompressionType   = EFI_STANDARD_COMPRESSION;
-    CompressFunction  = (COMPRESS_FUNCTION) Compress;
+    CompressFunction  = (COMPRESS_FUNCTION) TianoCompress;
 
   } else if (_strcmpi (Type, "LZH") == 0) {
     //
     // EFI stardard compression (LZH)
     //
     CompressionType   = EFI_STANDARD_COMPRESSION;
-    CompressFunction  = (COMPRESS_FUNCTION) Compress;
+    CompressFunction  = (COMPRESS_FUNCTION) TianoCompress;
 
   } else {
     //
@@ -2126,7 +2126,7 @@ here:
 
   FileSize = 0;
   if (ImageScriptInOveride) {
-#ifdef OVERRIDE_SUPORTED
+#ifdef OVERRIDE_SUPPORTED
     rewind (OverridePackage);
     LineNumber = 0;
     FindSectionInPackage (mGlobals.BuildDirectory, OverridePackage, &LineNumber);

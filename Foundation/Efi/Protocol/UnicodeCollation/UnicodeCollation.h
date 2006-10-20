@@ -32,7 +32,8 @@ EFI_FORWARD_DECLARATION (EFI_UNICODE_COLLATION_PROTOCOL);
 //
 // Protocol data structures and defines
 //
-#define EFI_UNICODE_BYTE_ORDER_MARK (CHAR16) (0xfeff)
+#define EFI_UNICODE_BYTE_ORDER_MARK          ((CHAR16)(0xfeff))
+#define EFI_UNICODE_BYTE_ORDER_MARK_REVERSE  ((CHAR16)(0xfffe))
 
 //
 // Protocol member functions

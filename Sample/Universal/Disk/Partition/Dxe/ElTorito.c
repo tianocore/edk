@@ -202,8 +202,6 @@ Returns:
 
       case ELTORITO_NO_EMULATION:
         SubBlockSize = Media->BlockSize;
-        VolSpaceSize = (VolSpaceSize > Media->LastBlock) ? 
-          (UINT32)(Media->LastBlock - Catalog->Boot.Lba) : (UINT32)(VolSpaceSize - Catalog->Boot.Lba);
         break;
 
       case ELTORITO_HARD_DISK:
@@ -245,7 +243,11 @@ Returns:
       BootEntry++;
       CdDev.PartitionStart = Catalog->Boot.Lba;
       if (SectorCount < 2) {
-        CdDev.PartitionSize = VolSpaceSize;
+        //
+        //When the SectorCount < 2, set the Partition as the whole CD.
+        //
+        CdDev.PartitionSize = (VolSpaceSize > Media->LastBlock + 1) ? 
+          (UINT32)(Media->LastBlock - Catalog->Boot.Lba + 1) : (UINT32)(VolSpaceSize - Catalog->Boot.Lba);
       } else {
         CdDev.PartitionSize = DivU64x32 (
                                 MultU64x32 (SectorCount,

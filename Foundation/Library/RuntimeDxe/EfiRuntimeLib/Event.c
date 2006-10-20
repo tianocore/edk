@@ -177,7 +177,7 @@ Returns:
 STATIC
 VOID
 EFIAPI
-EventNofitySignalAllNullEvent (
+EventNotifySignalAllNullEvent (
   IN EFI_EVENT                Event,
   IN VOID                     *Context
   )
@@ -253,7 +253,7 @@ Returns:
     //
     // CreatEventEx will check NotifyFunction is NULL or not
     //
-    WorkerNotifyFunction = EventNofitySignalAllNullEvent;
+    WorkerNotifyFunction = EventNotifySignalAllNullEvent;
   } else {
     WorkerNotifyFunction = NotifyFunction;
   }
@@ -332,7 +332,7 @@ Return:
     //
     // CreatEventEx will check NotifyFunction is NULL or not
     //
-    WorkerNotifyFunction = EventNofitySignalAllNullEvent;
+    WorkerNotifyFunction = EventNotifySignalAllNullEvent;
   } else {
     WorkerNotifyFunction = NotifyFunction;
   }

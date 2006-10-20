@@ -26,6 +26,10 @@
 
 EFI_SOURCE = $(EDK_SOURCE)
 
+!IFNDEF EDK_TOOLS_PATH
+!MESSAGE EDK_TOOLS_PATH environmental variable not set, default setting used
+!ENDIF
+
 #
 # Set the processor type
 #
@@ -35,7 +39,7 @@ PROCESSOR = IA32
 # Define a toolchain so we can pick up the basic defines from
 # the EFI tool setup file.
 #
-TOOLCHAIN = TOOLCHAIN_$(PROCESSOR)
+TOOLCHAIN = TOOLCHAIN_MSVC
 
 #
 # Include the platform-specific settings file
@@ -51,7 +55,14 @@ all : build_tools makefiles builds
 # Make all the build tools by calling the makefile
 #
 build_tools :
-  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) EDK_SOURCE=$(EDK_SOURCE)
+  -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
+  -if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
+!IF "$(EDK_TOOLS_VERSION)" == "$(EDK_TOOLS_BIN_VERSION)"
+  copy $(EDK_TOOLS_BIN)\Tools\*.* $(EDK_TOOLS_OUTPUT)
+!ELSE
+  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR)
+!ENDIF
+  $(GUIDCHK) -b $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt
 
 PROCESSOR=X64
 
@@ -69,8 +80,8 @@ makefiles :
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d PROJECT_FAMILY=$(PROJECT_FAMILY)     \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
-    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
+    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     $(PROJECT_NAME).dsc
 
 #

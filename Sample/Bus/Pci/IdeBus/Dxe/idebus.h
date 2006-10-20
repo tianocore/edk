@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,9 +17,8 @@ Abstract:
     Header file for IDE Bus Driver.
 
 Revision History
-++*/
+--*/
 
-// TODO: fix comment to end with --*/
 #ifndef _IDE_BUS_H
 #define _IDE_BUS_H
 
@@ -93,6 +92,11 @@ typedef struct {
   REQUEST_SENSE_DATA          *SenseData;
   UINT8                       SenseDataNumber;
   UINT8                       *Cache;
+
+  //
+  // ExitBootService Event, it is used to clear pending IDE interrupt
+  //
+  EFI_EVENT                   ExitBootServiceEvent;
 
   EFI_UNICODE_STRING_TABLE    *ControllerNameTable;
 } IDE_BLK_IO_DEV;

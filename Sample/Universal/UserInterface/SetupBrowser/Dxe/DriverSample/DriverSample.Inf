@@ -56,3 +56,4 @@ COMPONENT_TYPE       = BS_DRIVER
 
 [nmake.common]
   IMAGE_ENTRY_POINT=DriverSampleInit
+  DPX_SOURCE=DriverSample.dxs

@@ -67,7 +67,6 @@ COMPONENT_TYPE  = LIBRARY
 #
   PeiLib                                      
   PeiHobLib
-  EdkGuidLib
   EdkFrameworkPpiLib
   EdkNt32PpiLib
 

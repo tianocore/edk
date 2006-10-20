@@ -182,7 +182,7 @@ Returns:
       //
       // Verify file is in this FV.
       //
-      if ((UINTN) CurrentFile >= (UINTN) mFvHeader + mFvLength - sizeof (EFI_FFS_FILE_HEADER)) {
+      if ((UINTN) CurrentFile + GetLength (CurrentFile->Size) > (UINTN) mFvHeader + mFvLength) {
         *NextFile = NULL;
         return EFI_SUCCESS;
       }
@@ -195,8 +195,8 @@ Returns:
   // Verify current file is in range
   //
   if (((UINTN) CurrentFile < (UINTN) mFvHeader + mFvHeader->HeaderLength) ||
-      ((UINTN) CurrentFile >= (UINTN) mFvHeader + mFvLength - mFvHeader->HeaderLength)
-      ) {
+      ((UINTN) CurrentFile + GetLength (CurrentFile->Size) > (UINTN) mFvHeader + mFvLength)
+     ) {
     return EFI_INVALID_PARAMETER;
   }
   //
@@ -207,7 +207,9 @@ Returns:
   //
   // Verify file is in this FV.
   //
-  if ((UINTN) *NextFile >= (UINTN) mFvHeader + mFvLength - sizeof (EFI_FFS_FILE_HEADER)) {
+  if (((UINTN) *NextFile + sizeof (EFI_FFS_FILE_HEADER) >= (UINTN) mFvHeader + mFvLength) ||
+      ((UINTN) *NextFile + GetLength ((*NextFile)->Size) > (UINTN) mFvHeader + mFvLength)
+     ) {
     *NextFile = NULL;
     return EFI_SUCCESS;
   }

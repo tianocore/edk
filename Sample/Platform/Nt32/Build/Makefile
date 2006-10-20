@@ -41,7 +41,7 @@ PROCESSOR = IA32
 # Define a toolchain so we can pick up the basic defines from
 # the EFI tool setup file.
 #
-TOOLCHAIN = TOOLCHAIN_$(PROCESSOR)
+TOOLCHAIN = TOOLCHAIN_MSVC
 
 !INCLUDE PlatformTools.env
 
@@ -96,14 +96,21 @@ tempstamp_file:
 # Make all the EFI build tools by calling the makefile
 #
 build_tools :
-  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) 
+  -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
+  -if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
+!IF "$(EDK_TOOLS_VERSION)" == "$(EDK_TOOLS_BIN_VERSION)"
+  copy $(EDK_TOOLS_BIN)\Tools\*.* $(EDK_TOOLS_OUTPUT)
+!ELSE
+  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR)
+!ENDIF
+  $(GUIDCHK) -b $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt  
 
 #
 # Build our executable file by linking the PEI object files
 #
 $(PROCESSOR)\SecMain.exe: $(SEC_OBJECTS)
   $(LINK)                         \
-    $(MSVS_LINK_LIBPATHS)        \
+    $(MSVS_LINK_LIBPATHS)         \
     $(LINK_FLAGS_EXE)             \
     $(NT_LIBS)                    \
     $(SEC_OBJECTS)                \
@@ -146,11 +153,11 @@ fast_makefiles :
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -d SHELL_INF=$(SHELL_INF)               \
-    -d SKIP_FV_NULL=1                       \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
     -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
+    -d SKIP_FV_NULL=1                       \
     $(PROJECT_NAME).dsc
 
 #
@@ -159,16 +166,17 @@ fast_makefiles :
 xref : 
   -@if not exist fv mkdir FV
   $(PROCESSDSC) \
-    -d EDK_SOURCE=$(EDK_SOURCE) \
+    -d EDK_SOURCE=$(EDK_SOURCE)             \
     -d EFI_SOURCE=$(EFI_SOURCE)             \
-    -d PROCESSOR=$(PROCESSOR) \
-    -d PROJECT_NAME=$(PROJECT_NAME) \
-    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT) \
+    -d PROCESSOR=$(PROCESSOR)               \
+    -d PROJECT_NAME=$(PROJECT_NAME)         \
+    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
     -d GRAPHICS_INF=$(GRAPHICS_INF)         \
-    -xref FV\Guid.xref \
+    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
+    -xref FV\Guid.xref                      \
     $(PROJECT_NAME).dsc
 
 #
@@ -178,7 +186,7 @@ xref :
 protocols.xref : 
   -@if not exist fv mkdir FV
   cd $(EDK_SOURCE)
-  $(GUIDCHK) -g -d build -e inf -x > $(BUILD_DIR)\Fv\protocols.xref
+  $(GUIDCHK) -g -u $(BUILD_TARGET_DIRECTORY) -e inf -x > $(BUILD_DIR)\Fv\protocols.xref
   cd $(BUILD_DIR)
 
 #
