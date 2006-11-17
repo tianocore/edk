@@ -1162,7 +1162,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     Tool (
       $(OEMTOOLPATH)\GenCRC32Section
       ARGS= -i $(DEST_DIR)\$(BASE_NAME).pe32
@@ -1212,7 +1212,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     Tool ( $(OEMTOOLPATH)\GenCRC32Section
       ARGS = -i $(BIN_DIR)\$(BASE_NAME).sec
              -o $(BIN_DIR)\$(BASE_NAME).crc32
@@ -1246,7 +1246,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     Tool ( $(OEMTOOLPATH)\GenCRC32Section
       ARGS = -i $(BIN_DIR)\$(BASE_NAME).sec
              -o $(BIN_DIR)\$(BASE_NAME).crc32
@@ -1266,7 +1266,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     Tool ( $(OEMTOOLPATH)\GenCRC32Section
       ARGS = -i $(DEST_DIR)\$(BASE_NAME).sec
              -o $(DEST_DIR)\$(BASE_NAME).crc32
@@ -1324,7 +1324,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     Tool (
       $(OEMTOOLPATH)\GenCRC32Section
       ARGS= -i $(DEST_DIR)\$(BASE_NAME).dpx
@@ -1344,70 +1344,9 @@ IMAGE_SCRIPT =
 [=============================================================================]
 [Libraries]
 DEFINE PLATFORM=$(PLATFORM)
+DEFINE EDK_PREFIX=
 
-#
-# SEC libraries
-#
-# None required
-
-#
-# Libraries common to PEI and DXE
-#
-Foundation\Guid\EdkGuidLib.inf
-Foundation\Framework\Guid\EdkFrameworkGuidLib.inf
-Foundation\Efi\Guid\EfiGuidLib.inf
-Foundation\Library\EfiCommonLib\EfiCommonLib.inf
-Foundation\Cpu\Pentium\CpuIA32Lib\CpuIA32Lib.inf
-Foundation\Cpu\Itanium\CpuIA64Lib\CpuIA64Lib.inf
-
-#
-# PEI libraries
-#
-Foundation\Ppi\EdkPpiLib.inf
-Foundation\Framework\Ppi\EdkFrameworkPpiLib.inf
-Foundation\Library\Pei\PeiLib\PeiLib.inf
-Foundation\Library\Pei\Hob\PeiHobLib.inf
-
-#
-# DXE libraries
-#
-
-Foundation\Protocol\EdkProtocolLib.inf
-Foundation\Framework\Protocol\EdkFrameworkProtocolLib.inf
-Foundation\Efi\Protocol\EfiProtocolLib.inf
-Foundation\Core\Dxe\ArchProtocol\ArchProtocolLib.inf
-Foundation\Library\CustomizedDecompress\CustomizedDecompress.inf
-Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf
-Foundation\Library\RuntimeDxe\EfiRuntimeLib\EfiRuntimeLib.inf
-Foundation\Library\Dxe\Graphics\Graphics.inf
-Foundation\Library\Dxe\EfiIfrSupportLib\EfiIfrSupportLib.inf
-Foundation\Library\Dxe\Print\PrintLib.inf
-Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
-Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
-
-#
-# BDS libraries
-#
-Sample\Platform\Generic\Dxe\GenericBds\GenericBds.inf
-
-#
-#Print/Graphics Library consume SetupBrowser Print Protocol
-#
-Foundation\Library\Dxe\PrintLite\PrintLib.inf
-Foundation\Library\Dxe\GraphicsLite\Graphics.inf
-
-#
-# EBC libraries required by drivers
-#
-#Foundation\Guid\EdkGuidLib.inf                            PROCESSOR=EBC
-#Foundation\Framework\Guid\EdkFrameworkGuidLib.inf         PROCESSOR=EBC
-#Foundation\Efi\Guid\EfiGuidLib.inf                        PROCESSOR=EBC
-#Foundation\Library\EfiCommonLib\EfiCommonLib.inf          PROCESSOR=EBC
-#Foundation\Protocol\EdkProtocolLib.inf                    PROCESSOR=EBC
-#Foundation\Framework\Protocol\EdkFrameworkProtocolLib.inf PROCESSOR=EBC
-#Foundation\Efi\Protocol\EfiProtocolLib.inf                PROCESSOR=EBC
-#Foundation\Core\Dxe\ArchProtocol\ArchProtocolLib.inf      PROCESSOR=EBC
-#Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf      PROCESSOR=EBC
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
 [=============================================================================]
 [=============================================================================]

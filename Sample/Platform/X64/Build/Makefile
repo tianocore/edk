@@ -24,8 +24,6 @@
 !ERROR EDK_SOURCE environmental variable not set 
 !ENDIF
 
-EFI_SOURCE = $(EDK_SOURCE)
-
 !IFNDEF EDK_TOOLS_PATH
 !MESSAGE EDK_TOOLS_PATH environmental variable not set, default setting used
 !ENDIF
@@ -74,12 +72,13 @@ PROCESSOR=X64
 #
 makefiles : 
   $(PROCESSDSC)                             \
+    -d EFI_SOURCE=$(EDK_SOURCE)             \
     -d EDK_SOURCE=$(EDK_SOURCE)             \
-    -d EFI_SOURCE=$(EFI_SOURCE)             \
     -d PROCESSOR=$(PROCESSOR)               \
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d PROJECT_FAMILY=$(PROJECT_FAMILY)     \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
+    -d COMPRESS_METHOD=$(COMPRESS_METHOD)   \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     $(PROJECT_NAME).dsc
@@ -97,7 +96,7 @@ builds :
 # components.
 #
 libraries :
-  $(MAKE) -f makefile.out libraries components 
+  $(MAKE) -f makefile.out libraries 
 
 components :
   $(MAKE) -f makefile.out components 

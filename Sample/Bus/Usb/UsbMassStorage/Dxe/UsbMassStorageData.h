@@ -30,7 +30,7 @@ Revision History
 //
 // timeout unit is in millisecond.
 //
-#define USBFLPTIMEOUT         2000
+#define USBFLPTIMEOUT         1000
 #define STALL_1_MILLI_SECOND  1000
 
 //

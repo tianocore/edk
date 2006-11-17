@@ -312,3 +312,161 @@ Returns:
 
   return Head;
 }
+
+EFI_STATUS
+Ip4SetVariableData (
+  IN IP4_SERVICE  *IpSb
+  )
+/*++
+
+Routine Description:
+
+  Set the Ip4 variable data.
+
+Arguments:
+
+  IpSb - Ip4 service binding instance
+
+Returns:
+
+  EFI_OUT_OF_RESOURCES - There are not enough resources to set the variable.
+  other                - Set variable failed.
+
+--*/
+{
+  UINT32                 NumConfiguredInstance;
+  NET_LIST_ENTRY         *Entry;
+  UINTN                  VariableDataSize;
+  EFI_IP4_VARIABLE_DATA  *Ip4VariableData;
+  EFI_IP4_ADDRESS_PAIR   *Ip4AddressPair;
+  IP4_PROTOCOL           *IpInstance;
+  CHAR16                 *NewMacString;
+  EFI_STATUS             Status;
+
+  NumConfiguredInstance = 0;
+
+  //
+  // Go through the children list to count the configured children.
+  //
+  NET_LIST_FOR_EACH (Entry, &IpSb->Children) {
+    IpInstance = NET_LIST_USER_STRUCT_S (Entry, IP4_PROTOCOL, Link, IP4_PROTOCOL_SIGNATURE);
+
+    if (IpInstance->State == IP4_STATE_CONFIGED) {
+      NumConfiguredInstance++;
+    }
+  }
+
+  //
+  // Calculate the size of the Ip4VariableData. As there may be no IP child,
+  // we should add extra buffer for the address paris only if the number of configured
+  // children is more than 1.
+  //
+  VariableDataSize = sizeof (EFI_IP4_VARIABLE_DATA);
+
+  if (NumConfiguredInstance > 1) {
+    VariableDataSize += sizeof (EFI_IP4_ADDRESS_PAIR) * (NumConfiguredInstance - 1);
+  }
+  
+  Ip4VariableData = NetAllocatePool (VariableDataSize);
+  if (Ip4VariableData == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Ip4VariableData->DriverHandle = IpSb->Image;
+  Ip4VariableData->AddressCount = NumConfiguredInstance;
+
+  Ip4AddressPair = &Ip4VariableData->AddressPairs[0];
+
+  //
+  // Go through the children list to fill the configured children's address pairs.
+  //
+  NET_LIST_FOR_EACH (Entry, &IpSb->Children) {
+    IpInstance = NET_LIST_USER_STRUCT_S (Entry, IP4_PROTOCOL, Link, IP4_PROTOCOL_SIGNATURE);
+
+    if (IpInstance->State == IP4_STATE_CONFIGED) {
+      Ip4AddressPair->InstanceHandle       = IpInstance->Handle;
+      EFI_IP4 (Ip4AddressPair->Ip4Address) = NTOHL (IpInstance->Interface->Ip);
+      EFI_IP4 (Ip4AddressPair->SubnetMask) = NTOHL (IpInstance->Interface->SubnetMask);
+
+      Ip4AddressPair++;
+    }
+  }
+
+  //
+  // Get the mac string.
+  //
+  Status = NetLibGetMacString (IpSb->Controller, IpSb->Image, &NewMacString);
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+  if (IpSb->MacString != NULL) {
+    //
+    // The variable is set already, we're going to update it.
+    //
+    if (EfiStrCmp (IpSb->MacString, NewMacString) != 0) {
+      //
+      // The mac address is changed, delete the previous variable first.
+      //
+      gRT->SetVariable (
+             IpSb->MacString,
+             &gEfiIp4ServiceBindingProtocolGuid,
+             EFI_VARIABLE_BOOTSERVICE_ACCESS,
+             0,
+             NULL
+             );
+    }
+
+    NetFreePool (IpSb->MacString);
+  }
+
+  IpSb->MacString = NewMacString;
+
+  Status = gRT->SetVariable (
+                  IpSb->MacString,
+                  &gEfiIp4ServiceBindingProtocolGuid,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                  VariableDataSize,
+                  (VOID *) Ip4VariableData
+                  );
+
+ON_ERROR:
+
+  NetFreePool (Ip4VariableData);
+
+  return Status;
+}
+
+VOID
+Ip4ClearVariableData (
+  IN IP4_SERVICE  *IpSb
+  )
+/*++
+
+Routine Description:
+
+  Clear the variable and free the resource.
+
+Arguments:
+
+  IpSb    - Ip4 service binding instance
+
+Returns:
+
+  None.
+
+--*/
+{
+  ASSERT (IpSb->MacString != NULL);
+
+  gRT->SetVariable (
+         IpSb->MacString,
+         &gEfiIp4ServiceBindingProtocolGuid,
+         EFI_VARIABLE_BOOTSERVICE_ACCESS,
+         0,
+         NULL
+         );
+
+  NetFreePool (IpSb->MacString);
+  IpSb->MacString = NULL;
+}

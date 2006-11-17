@@ -102,7 +102,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 IMAGE_SCRIPT =
 { 
   $(BASE_NAME).dpx 
-  Compress (dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     $(BASE_NAME).pe32
     $(BASE_NAME).ui 
     $(BASE_NAME).ver
@@ -176,7 +176,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     $(BASE_NAME).pe32
     $(BASE_NAME).ui
     $(BASE_NAME).ver
@@ -195,7 +195,7 @@ FFS_ATTRIB_CHECKSUM         = TRUE
 
 IMAGE_SCRIPT =
 {
-  Compress (Dummy) {
+  Compress ($(COMPRESS_METHOD)) {
     Tool ( 
       $(OEMTOOLPATH)\GenCRC32Section
       ARGS= -i $(DEST_DIR)\$(BASE_NAME).dpx

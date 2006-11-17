@@ -180,6 +180,12 @@ typedef struct _IP4_SERVICE {
   EFI_IP4_CONFIG_PROTOCOL         *Ip4Config;
   EFI_EVENT                       DoneEvent;
   EFI_EVENT                       ReconfigEvent;
+
+  //
+  // The string representation of the current mac address of the
+  // NIC this IP4_SERVICE works on.
+  //
+  CHAR16                          *MacString;
 } IP4_SERVICE;
 
 #define IP4_INSTANCE_FROM_PROTOCOL(Ip4) \

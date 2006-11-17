@@ -267,8 +267,9 @@ Returns:
 
 EFI_STATUS
 MnpInitializeServiceData (
-  IN MNP_SERVICE_DATA             *MnpServiceData,
-  IN EFI_SIMPLE_NETWORK_PROTOCOL  *Snp
+  IN MNP_SERVICE_DATA  *MnpServiceData,
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_HANDLE        ControllerHandle
   )
 /*++
 
@@ -288,15 +289,33 @@ Returns:
 
 --*/
 {
-  EFI_STATUS              Status;
-  EFI_SIMPLE_NETWORK_MODE *SnpMode;
+  EFI_STATUS                   Status;
+  EFI_SIMPLE_NETWORK_PROTOCOL  *Snp;
+  EFI_SIMPLE_NETWORK_MODE      *SnpMode;
 
   MnpServiceData->Signature = MNP_SERVICE_DATA_SIGNATURE;
+
+  MnpServiceData->ControllerHandle = ControllerHandle;
 
   //
   // Copy the ServiceBinding structure.
   //
   MnpServiceData->ServiceBinding = mMnpServiceBindingProtocol;
+
+  //
+  // Open the Simple Network protocol.
+  //
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiSimpleNetworkProtocolGuid,
+                  (VOID **) &Snp,
+                  ImageHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
 
   //
   // Get MTU from Snp.

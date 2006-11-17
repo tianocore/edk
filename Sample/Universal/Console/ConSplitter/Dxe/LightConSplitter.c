@@ -505,6 +505,32 @@ ConSplitterTextOutConstructor (
   if ((ConOutPrivate->GraphicsOutput.Mode->Info = EfiLibAllocateZeroPool (sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION))) == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
+  //
+  // Setup the DevNullGraphicsOutput to 800 x 600 x 32 bits per pixel
+  //
+  if ((ConOutPrivate->GraphicsOutputModeBuffer = EfiLibAllocateZeroPool (sizeof (TEXT_OUT_GOP_MODE))) == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  ConOutPrivate->GraphicsOutputModeBuffer[0].HorizontalResolution = 800;
+  ConOutPrivate->GraphicsOutputModeBuffer[0].VerticalResolution = 600;
+
+  //
+  // Initialize the following items, theset items remain unchanged in GraphicsOutput->SetMode()
+  //  GraphicsOutputMode->Info->Version, GraphicsOutputMode->Info->PixelFormat
+  //  GraphicsOutputMode->SizeOfInfo, GraphicsOutputMode->FrameBufferBase, GraphicsOutputMode->FrameBufferSize
+  //
+  ConOutPrivate->GraphicsOutput.Mode->Info->Version = 0;
+  ConOutPrivate->GraphicsOutput.Mode->Info->PixelFormat = PixelBltOnly;
+  ConOutPrivate->GraphicsOutput.Mode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
+  ConOutPrivate->GraphicsOutput.Mode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS) NULL;
+  ConOutPrivate->GraphicsOutput.Mode->FrameBufferSize = 0;
+
+  ConOutPrivate->GraphicsOutput.Mode->MaxMode = 1;
+  //
+  // Initial current mode to unknow state, and then set to mode 0
+  //
+  ConOutPrivate->GraphicsOutput.Mode->Mode = 0xffff;
+  ConOutPrivate->GraphicsOutput.SetMode (&ConOutPrivate->GraphicsOutput, 0);  
 #endif
 
   return Status;
@@ -1784,6 +1810,7 @@ Returns:
         if (ModeBuffer == NULL) {
           return EFI_OUT_OF_RESOURCES;
         }
+        gBS->FreePool (Private->GraphicsOutputModeBuffer);
         Private->GraphicsOutputModeBuffer = ModeBuffer;
 
         //
@@ -1891,15 +1918,7 @@ Returns:
     //
     // Update the private mode buffer
     //
-    if (Private->GraphicsOutputModeBuffer == NULL) {
-      ModeBuffer = EfiLibAllocatePool (sizeof (TEXT_OUT_GOP_MODE));
-      if (ModeBuffer == NULL) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-      Private->GraphicsOutputModeBuffer = ModeBuffer;
-    } else {
-      ModeBuffer = &Private->GraphicsOutputModeBuffer[0];
-    }
+    ModeBuffer = &Private->GraphicsOutputModeBuffer[0];
     ModeBuffer->HorizontalResolution = 800;
     ModeBuffer->VerticalResolution   = 600;
 

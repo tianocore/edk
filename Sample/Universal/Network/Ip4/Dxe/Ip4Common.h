@@ -137,4 +137,14 @@ Ip4NtohHead (
   IN IP4_HEAD               *Head
   );
 
+EFI_STATUS
+Ip4SetVariableData (
+  IN IP4_SERVICE            *IpSb
+  );
+
+VOID
+Ip4ClearVariableData (
+  IN IP4_SERVICE            *IpSb
+  );
+
 #endif

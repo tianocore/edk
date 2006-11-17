@@ -101,10 +101,10 @@ typedef struct _MNP_RXDATA_WRAP {
 
 EFI_STATUS
 MnpInitializeServiceData (
-  IN MNP_SERVICE_DATA             *MnpServiceData,
-  IN EFI_SIMPLE_NETWORK_PROTOCOL  *Snp
+  IN MNP_SERVICE_DATA  *MnpServiceData,
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_HANDLE        ControllerHandle
   );
-
 
 VOID
 MnpFlushServiceData (

@@ -52,7 +52,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gUdp4ComponentName = {
 static EFI_UNICODE_STRING_TABLE mUdpDriverNameTable[] = {
   {
     "eng",
-    L"UDP   Network Service Driver"
+    L"UDP Network Service Driver"
   },
   {
     NULL,

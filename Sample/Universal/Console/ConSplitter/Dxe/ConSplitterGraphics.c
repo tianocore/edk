@@ -337,10 +337,18 @@ Routine Description:
   }
 
   This->Mode->Mode = ModeNumber;
-  This->Mode->Info->HorizontalResolution = Mode->HorizontalResolution;
-  This->Mode->Info->VerticalResolution = Mode->VerticalResolution;
-  This->Mode->Info->PixelsPerScanLine = Mode->HorizontalResolution;
-  This->Mode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
+
+  Info = This->Mode->Info;
+  Info->HorizontalResolution = Mode->HorizontalResolution;
+  Info->VerticalResolution   = Mode->VerticalResolution;
+  Info->PixelsPerScanLine    = Mode->HorizontalResolution;
+
+  //
+  // Information is not enough here, so the following items remain unchanged:
+  //  GraphicsOutputMode->Info->Version, GraphicsOutputMode->Info->PixelFormat
+  //  GraphicsOutputMode->SizeOfInfo, GraphicsOutputMode->FrameBufferBase, GraphicsOutputMode->FrameBufferSize
+  // These items will be initialized/updated when a new GOP device is added into ConsoleSplitter.
+  //
 
   Private->HardwareNeedsStarting = FALSE;
 

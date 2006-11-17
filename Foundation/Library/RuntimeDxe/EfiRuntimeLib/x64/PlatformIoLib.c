@@ -371,13 +371,13 @@ Returns:
 
     //
     // Use the DMA Refresh timer in port 0x61.  Cheap but effective.
-    // The only issue is that the granularity is 15us, and we want to
+    // The only issue is that the granularity is 30us, and we want to
     // guarantee "at least" one full transition to avoid races.
     //
     //
     //   _____________/----------\__________/--------
     //
-    //                |<--30us-->|
+    //                |<--15us-->|<--15us-->|
     //
     // --------------------------------------------------> Time (us)
     //

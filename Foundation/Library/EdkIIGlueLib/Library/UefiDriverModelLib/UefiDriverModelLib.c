@@ -38,16 +38,8 @@ UefiDriverModelLibConstructor (
   )
 {
   EFI_STATUS                   Status;
-  UINTN                        Index;
   EFI_HANDLE                   DriverBindingHandle;
   EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding;
-
-  //
-  // If no Driver Binding Protocols are advertised by the driver then simply return
-  //
-  if (_gDriverModelProtocolListEntries == 0) {
-    return EFI_SUCCESS;
-  }
 
   //
   // Install the first Driver Bindng Protocol onto ImageHandle
@@ -56,8 +48,9 @@ UefiDriverModelLibConstructor (
 
   //
   // See if onle one Driver Binding Protocol is advertised by the driver
+  // EdkIIGlueLib: _gDriverModelProtocolListEntries is always 1
   //
-  if (_gDriverModelProtocolListEntries == 1) {
+
     //
     // The Driver Binding Protocol must never be NULL
     //
@@ -154,82 +147,7 @@ UefiDriverModelLibConstructor (
     DriverBinding->ImageHandle         = ImageHandle;
     DriverBinding->DriverBindingHandle = DriverBindingHandle;
 
-  } else {
-    for (Index = 0; Index < _gDriverModelProtocolListEntries; Index++) {
-      //
-      // The Driver Binding Protocol must never be NULL
-      //
-      ASSERT(_gDriverModelProtocolList[Index].DriverBinding != NULL);
-
-      //
-      // Install the Driver Binding Protocol and ASSERT() if the installation fails
-      //
-      Status = gBS->InstallProtocolInterface (
-                      &DriverBindingHandle,
-                      &gEfiDriverBindingProtocolGuid,
-                      EFI_NATIVE_INTERFACE,
-                      (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[Index].DriverBinding
-                      );
-      ASSERT_EFI_ERROR (Status);
-
-      //
-      // Update the ImageHandle and DriverBindingHandle fields of the Driver Binding Protocol
-      //
-      DriverBinding = (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[Index].DriverBinding;
-      DriverBinding->ImageHandle         = ImageHandle;
-      DriverBinding->DriverBindingHandle = DriverBindingHandle;
-
-      //
-      // If Component Name Protocol is specified then install it and ASSERT() if the installation fails
-      //
-      if ((_gDriverModelProtocolBitmask & UEFI_DRIVER_MODEL_LIBRARY_COMPONENT_NAME_PROTOCOL_ENABLED) != 0) {
-        if (_gDriverModelProtocolList[Index].ComponentName != NULL) {
-          Status = gBS->InstallProtocolInterface (
-                          &DriverBindingHandle,
-                          &gEfiComponentNameProtocolGuid,
-                          EFI_NATIVE_INTERFACE,
-                          (EFI_COMPONENT_NAME_PROTOCOL *)_gDriverModelProtocolList[Index].ComponentName
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
-
-      //
-      // If Driver Configuration Protocol is specified then install it and ASSERT() if the installation fails
-      //
-      if ((_gDriverModelProtocolBitmask & UEFI_DRIVER_MODEL_LIBRARY_DRIVER_CONFIGURATION_PROTOCOL_ENABLED) != 0) {
-        if (_gDriverModelProtocolList[Index].DriverConfiguration != NULL) {
-          Status = gBS->InstallProtocolInterface (
-                          &DriverBindingHandle,
-                          &gEfiDriverConfigurationProtocolGuid,
-                          EFI_NATIVE_INTERFACE,
-                          (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[Index].DriverConfiguration
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
-
-      //
-      // If Driver Diagnostics Protocol is specified then install it and ASSERT() if the installation fails
-      //
-      if ((_gDriverModelProtocolBitmask & UEFI_DRIVER_MODEL_LIBRARY_DRIVER_DIAGNOSTICS_PROTOCOL_ENABLED) != 0) {
-        if (_gDriverModelProtocolList[Index].DriverDiagnostics != NULL) {
-          Status = gBS->InstallProtocolInterface (
-                          &DriverBindingHandle,
-                          &gEfiDriverDiagnosticsProtocolGuid,
-                          EFI_NATIVE_INTERFACE,
-                          (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[Index].DriverDiagnostics
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
-
-      //
-      // Install subsequent Driver Bindng Protocols onto new handles
-      //
-      DriverBindingHandle = NULL;
-    }
-  }
+  
   return EFI_SUCCESS;
 }
 
@@ -249,20 +167,13 @@ UefiDriverModelLibDestructor (
   )
 {
   EFI_STATUS  Status;
-  UINTN       Index;
   EFI_HANDLE  DriverBindingHandle;
 
   //
-  // If no Driver Binding Protocols are advertised by the driver then simply return
-  //
-  if (_gDriverModelProtocolListEntries == 0) {
-    return EFI_SUCCESS;
-  }
-
-  //
   // See if onle one Driver Binding Protocol is advertised by the driver
+  // EdkIIGlueLib: _gDriverModelProtocolListEntries is always 1
   //
-  if (_gDriverModelProtocolListEntries == 1) {
+
     //
     // The Driver Binding Protocol must never be NULL
     //
@@ -356,70 +267,6 @@ UefiDriverModelLibDestructor (
     // ASSERT if the call to UninstallMultipleProtocolInterfaces() failed
     //
     ASSERT_EFI_ERROR (Status);
-  } else {
-    for (Index = 0; Index < _gDriverModelProtocolListEntries; Index++) {
-      //
-      // The Driver Binding Protocol must never be NULL
-      //
-      ASSERT(_gDriverModelProtocolList[Index].DriverBinding != NULL);
-
-      //
-      // Retrieve the DriverBindingHandle from the Driver Binding Protocol
-      //
-      DriverBindingHandle = _gDriverModelProtocolList[0].DriverBinding->DriverBindingHandle;
-
-      //
-      // Uninstall the Driver Binding Protocol and ASSERT() if the installation fails
-      //
-      Status = gBS->UninstallProtocolInterface (
-                      DriverBindingHandle,
-                      &gEfiDriverBindingProtocolGuid,
-                      (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[Index].DriverBinding
-                      );
-      ASSERT_EFI_ERROR (Status);
-
-      //
-      // If Component Name Protocol is specified then uninstall it and ASSERT() if the uninstallation fails
-      //
-      if ((_gDriverModelProtocolBitmask & UEFI_DRIVER_MODEL_LIBRARY_COMPONENT_NAME_PROTOCOL_ENABLED) != 0) {
-        if (_gDriverModelProtocolList[Index].ComponentName != NULL) {
-          Status = gBS->UninstallProtocolInterface (
-                          DriverBindingHandle,
-                          &gEfiComponentNameProtocolGuid,
-                          (EFI_COMPONENT_NAME_PROTOCOL *)_gDriverModelProtocolList[Index].ComponentName
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
-
-      //
-      // If Driver Configuration Protocol is specified then uninstall it and ASSERT() if the uninstallation fails
-      //
-      if ((_gDriverModelProtocolBitmask & UEFI_DRIVER_MODEL_LIBRARY_DRIVER_CONFIGURATION_PROTOCOL_ENABLED) != 0) {
-        if (_gDriverModelProtocolList[Index].DriverConfiguration != NULL) {
-          Status = gBS->UninstallProtocolInterface (
-                          DriverBindingHandle,
-                          &gEfiDriverConfigurationProtocolGuid,
-                          (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[Index].DriverConfiguration
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
-
-      //
-      // If Driver Diagnostics Protocol is specified then uninstall it and ASSERT() if the uninstallation fails
-      //
-      if ((_gDriverModelProtocolBitmask & UEFI_DRIVER_MODEL_LIBRARY_DRIVER_DIAGNOSTICS_PROTOCOL_ENABLED) != 0) {
-        if (_gDriverModelProtocolList[Index].DriverDiagnostics != NULL) {
-          Status = gBS->UninstallProtocolInterface (
-                          DriverBindingHandle,
-                          &gEfiDriverDiagnosticsProtocolGuid,
-                          (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[Index].DriverDiagnostics
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
-    }
-  }
+  
   return EFI_SUCCESS;
 }

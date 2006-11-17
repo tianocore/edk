@@ -341,10 +341,6 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
   BOOLEAN                       NeedClose;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  ACPI_ADR_DEVICE_PATH          AcpiAdrDeviceNode;
-  EFI_DEVICE_PATH_PROTOCOL      *AcpiAdrDevicePath;
-#endif
 
   NeedClose = TRUE;
 
@@ -416,27 +412,7 @@ Returns:
               DevicePath,
               CHECK
               );
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-    //
-    // In case an UGA device is pluged into UEFI system, the DevicePath which has UgaDraw Protocol
-    // installed on it doesn't contain ACPI_ADR device node. So append an ACPI_ADR device node here,
-    // and let it to have another chance to be checked.
-    //
-    if (EFI_ERROR (Status)) {
-      EfiZeroMem (&AcpiAdrDeviceNode, sizeof (ACPI_ADR_DEVICE_PATH));
-      AcpiAdrDeviceNode.Header.Type = ACPI_DEVICE_PATH;
-      AcpiAdrDeviceNode.Header.SubType = ACPI_ADR_DP;
-      AcpiAdrDeviceNode.ADR = ACPI_DISPLAY_ADR (1, 0, 0, 1, 0, ACPI_ADR_DISPLAY_TYPE_VGA, 0, 0);
-      SetDevicePathNodeLength (&AcpiAdrDeviceNode.Header, sizeof (ACPI_ADR_DEVICE_PATH));
 
-      AcpiAdrDevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&AcpiAdrDeviceNode);
-      Status = ConPlatformUpdateDeviceVariable (
-                VarConsoleOut,
-                AcpiAdrDevicePath,
-                CHECK
-                );
-    }
-#endif
     if (!EFI_ERROR (Status)) {
       NeedClose = FALSE;
       Status = gBS->InstallMultipleProtocolInterfaces (

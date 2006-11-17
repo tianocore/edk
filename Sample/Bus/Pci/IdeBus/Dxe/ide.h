@@ -1515,6 +1515,15 @@ Returns:
 ;
 
 EFI_STATUS
+DoAtaUdma (
+  IN  IDE_BLK_IO_DEV      *IdeDev,
+  IN  VOID                *DataBuffer,
+  IN  EFI_LBA             StartLba,
+  IN  UINTN               NumberOfBlocks,
+  IN  ATA_UDMA_OPERATION  UdmaOp
+  );
+
+EFI_STATUS
 AtaCommandIssueExt (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  UINT8           AtaCommand,
@@ -1726,7 +1735,7 @@ Returns:
 --*/
 ;
 
-EFI_STATUS
+VOID
 ClearInterrupt (
   IN EFI_EVENT  Event,
   IN VOID       *Context
@@ -1744,7 +1753,6 @@ Arguments:
 
 Returns:
 
-  EFI_SUCCESS - Interrupt cleared
 
 --*/
 ;

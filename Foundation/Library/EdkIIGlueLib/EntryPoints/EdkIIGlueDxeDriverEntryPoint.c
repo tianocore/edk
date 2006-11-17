@@ -23,20 +23,13 @@ Abstract:
 #include "EdkIIGlueDxe.h"
 #include "Common/EdkIIGlueDependencies.h"
 
+
 //
 // Driver Model related definitions.
 // LIMITATION: only support one instance of Driver Model protocols per driver.
 // In case where multiple Driver Model protocols need to be installed in a single driver,
 // manually edit this file and compile/link the modified file with the driver.
 //
-
-//
-// _gDriverModelProtocolBitmask is not reachable in UefiDriverModel Lib since 
-// only one instance of Driver Model Protocols is supported
-// (refer to UefiDriverModel Lib code)
-//
-GLOBAL_REMOVE_IF_UNREFERENCED const UINT8  _gDriverModelProtocolBitmask = 0;
-GLOBAL_REMOVE_IF_UNREFERENCED const UINTN  _gDriverModelProtocolListEntries = 1;
 
 #ifdef __EDKII_GLUE_DRIVER_BINDING_PROTOCOL_INSTANCE__
 extern EFI_DRIVER_BINDING_PROTOCOL __EDKII_GLUE_DRIVER_BINDING_PROTOCOL_INSTANCE__;
@@ -86,18 +79,12 @@ GLOBAL_REMOVE_IF_UNREFERENCED const EFI_DRIVER_MODEL_PROTOCOL_LIST  _gDriverMode
 // NOTE: Limitation:
 // Only one handler for SetVirtualAddressMap Event and ExitBootServices Event each
 //
-
-GLOBAL_REMOVE_IF_UNREFERENCED  const UINTN _gDriverSetVirtualAddressMapEventCount = 1;
-
 GLOBAL_REMOVE_IF_UNREFERENCED const EFI_EVENT_NOTIFY _gDriverSetVirtualAddressMapEvent[] = {
 #ifdef __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__
   __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__,
 #endif
   NULL
 };
-
-
-GLOBAL_REMOVE_IF_UNREFERENCED  const UINTN _gDriverExitBootServicesEventCount = 1;
 
 GLOBAL_REMOVE_IF_UNREFERENCED const EFI_EVENT_NOTIFY _gDriverExitBootServicesEvent[] = {
 #ifdef __EDKII_GLUE_EXTI_BOOT_SERVICES_EVENT__HANDLER__
@@ -106,34 +93,6 @@ GLOBAL_REMOVE_IF_UNREFERENCED const EFI_EVENT_NOTIFY _gDriverExitBootServicesEve
   NULL
 };
 
-
-//
-// Module Entry Point
-//
-
-#ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
-EFI_STATUS
-EFIAPI
-__EDKII_GLUE_MODULE_ENTRY_POINT__ (
-  EFI_HANDLE        ImageHandle,
-  EFI_SYSTEM_TABLE  *SystemTable
-  );
-#endif
-
-
-EFI_STATUS
-EFIAPI
-ProcessModuleEntryPointList (
-  EFI_HANDLE        ImageHandle,
-  EFI_SYSTEM_TABLE  *SystemTable
-  )
-{
-#ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
-  return (__EDKII_GLUE_MODULE_ENTRY_POINT__ (ImageHandle, SystemTable));
-#else
-  return EFI_SUCCESS;
-#endif
-}
 
 //
 // Module Unload Handler
@@ -232,6 +191,7 @@ ProcessLibraryConstructorList (
   Status = SmbusLibConstructor (ImageHandle, SystemTable);
   ASSERT_EFI_ERROR (Status);
 #endif
+
 }
 
 //
@@ -307,6 +267,18 @@ _DriverUnloadHandler (
 
 EFI_DRIVER_ENTRY_POINT (_ModuleEntryPoint);
 
+//
+// Module Entry Point
+//
+#ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
+EFI_STATUS
+EFIAPI
+__EDKII_GLUE_MODULE_ENTRY_POINT__ (
+  EFI_HANDLE        ImageHandle,
+  EFI_SYSTEM_TABLE  *SystemTable
+  );
+#endif
+
 /**
   Enrty point to DXE Driver.
 
@@ -356,7 +328,11 @@ _ModuleEntryPoint (
   //
   // Call the driver entry point
   //
-  Status = ProcessModuleEntryPointList (ImageHandle, SystemTable);
+  #ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
+  Status = (__EDKII_GLUE_MODULE_ENTRY_POINT__ (ImageHandle, SystemTable));
+  #else
+  Status = EFI_SUCCESS;
+  #endif
 
   //
   // If all of the drivers returned errors, then invoke all of the library destructors
@@ -425,7 +401,9 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID gEfiHashServiceBindingProtocolGuid       
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID gEfiIScsiInitiatorNameProtocolGuid               = { 0xa6a72875, 0x2962, 0x4c18, { 0x9f, 0x46, 0x8d, 0xa6, 0x44, 0xcc, 0xfe, 0x00 } };
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID gEfiExtScsiPassThruProtocolGuid                  = { 0x1d3de7f0, 0x0807, 0x424f, { 0xaa, 0x69, 0x11, 0xa5, 0x4e, 0x19, 0xa4, 0x6f } };
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID gEfiTapeIoProtocolGuid                           = { 0x1e93e633, 0xd65a, 0x459e, { 0xab, 0x84, 0x93, 0xd9, 0xec, 0x26, 0x6d, 0x18 } };
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID gEfiUsb2HcProtocolGuid                           = { 0x3e745226, 0x9818, 0x45b6, { 0xa2, 0xac, 0xd7, 0xcd, 0x0e, 0x8b, 0xa2, 0xbc } };
+#endif
 
 //
 // PPI GUID globals

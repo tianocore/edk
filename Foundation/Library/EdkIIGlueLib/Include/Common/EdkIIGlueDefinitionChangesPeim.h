@@ -77,6 +77,7 @@ typedef EFI_MISC_SMBIOS_STRUCT_ENCAPSULATION         EFI_MISC_SMBIOS_STRUCT_ENCA
 #define gEfiPeiDeviceRecoveryModulePpiGuid            gPeiDeviceRecoveryModulePpiGuid
 #define gEfiPeiStallPpiGuid                           gPeiStallPpiGuid                 
 #define gEfiPeiPciCfgPpiInServiceTableGuid            gPeiPciCfgPpiInServiceTableGuid
+#define gEfiPeiAtaControllerPpiGuid                   gPeiAtaControllerPpiGuid
 #define EFI_PEI_CPU_IO_PPI_INSTALLED_GUID             PEI_CPU_IO_PPI_GUID
 #define EFI_PEI_RESET_PPI_GUID                        PEI_RESET_PPI_GUID           
 #define EFI_PEI_PCI_CFG_PPI_INSTALLED_GUID            PEI_PCI_CFG_PPI_GUID

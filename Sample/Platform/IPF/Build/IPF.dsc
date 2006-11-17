@@ -67,14 +67,12 @@ PLATFORM=$(PROJECT_NAME)
 #
 [=============================================================================]
 [Libraries.Platform]
-Foundation\Library\pei\PeiLib\PeiLib.inf
-Foundation\Library\Dxe\Hob\HobLib.inf
-Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsSerialStatusCode\BsSerialStatusCode.inf
 
-
+Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
+Sample\Universal\Network\Library\NetLib.inf
 
 [=============================================================================]
 #
@@ -151,7 +149,6 @@ Sample\Universal\Variable\RuntimeDxe\Variable.inf
 Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf                       
 Sample\Universal\Runtime\Dxe\Runtime.inf
 Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
-Other\Maintained\Application\$(UEFI_PREFIX)Shell\Bin\Shell.inf
 Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
 Sample\Platform\Generic\Logo\Logo.inf                                           PACKAGE=Logo
 Sample\Bus\Pci\IdeBus\Dxe\IdeBus.inf
@@ -185,10 +182,22 @@ Sample\Universal\Network\Snp32_64\Dxe\Snp.inf
 Sample\Universal\Network\PxeBc\Dxe\Bc.inf                      
 
 #
-# Fat File System driver. 
+# UEFI network drivers.
+#
+Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
+Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
+Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
+Sample\Universal\Network\Ip4Config\Dxe\Ip4Config.inf                   FV=NULL
+Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
+Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
+Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
+Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
+
+#
+# Binaries
 #
 Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
-
+Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\Shell.inf
 
 #
 # NvStorage FV primarily contains private data of FTW and runtime updatable

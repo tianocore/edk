@@ -54,6 +54,7 @@ MemoryDiscoveredPpiNotifyCallback (
 //
 // Module globals
 //
+EFI_GUID  mFvBlockGuid = EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID;
 static PEI_FLASH_MAP_PPI      mFlashMapPpi = { GetAreaInfo };
 
 static EFI_PEI_PPI_DESCRIPTOR mPpiListFlashMap = {
@@ -213,7 +214,7 @@ Returns:
                         );
       (*PeiServices)->CopyMem (
                         &FlashHobData.SubAreaData.FileSystem,
-                        &gEfiFirmwareVolumeBlockProtocolGuid,
+                        &mFvBlockGuid,
                         sizeof (EFI_GUID)
                         );
       break;
@@ -226,7 +227,7 @@ Returns:
                         );
       (*PeiServices)->CopyMem (
                         &FlashHobData.SubAreaData.FileSystem,
-                        &gEfiFirmwareVolumeBlockProtocolGuid,
+                        &mFvBlockGuid,
                         sizeof (EFI_GUID)
                         );
       break;

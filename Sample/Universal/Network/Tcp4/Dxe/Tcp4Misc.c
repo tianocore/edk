@@ -358,7 +358,7 @@ Returns:
     if (TCP_PEER_EQUAL (&Remote, &Tcb->RemoteEnd) &&
         TCP_PEER_EQUAL (&Local, &Tcb->LocalEnd)) {
 
-       NetListRemoveEntry (&Tcb->List);
+      NetListRemoveEntry (&Tcb->List);
       NetListInsertHead (&mTcpRunQue, &Tcb->List);
 
       return Tcb;
@@ -396,9 +396,10 @@ Returns:
 
 --*/
 {
-  NET_LIST_ENTRY  *Entry;
-  NET_LIST_ENTRY  *Head;
-  TCP_CB          *Node;
+  NET_LIST_ENTRY   *Entry;
+  NET_LIST_ENTRY   *Head;
+  TCP_CB           *Node;
+  TCP4_PROTO_DATA  *TcpProto;
 
   ASSERT (
     Tcb &&
@@ -434,6 +435,10 @@ Returns:
   }
 
   NetListInsertHead (Head, &Tcb->List);
+
+  TcpProto = (TCP4_PROTO_DATA *) Tcb->Sk->ProtoReserved;
+  TcpSetVariableData (TcpProto->TcpService);
+
   return 0;
 }
 
@@ -984,3 +989,217 @@ Returns:
 
   TcpSetState (Tcb, TCP_CLOSED);
 }
+
+EFI_STATUS
+TcpSetVariableData (
+  IN TCP4_SERVICE_DATA  *Tcp4Service
+  )
+/*++
+
+Routine Description:
+
+  Set the Tdp4 variable data.
+
+Arguments:
+
+  Tcp4Service - Tcp4 service data.
+
+Returns:
+
+  EFI_OUT_OF_RESOURCES - There are not enough resources to set the variable.
+  other                - Set variable failed.
+
+--*/
+{
+  UINT32                  NumConfiguredInstance;
+  NET_LIST_ENTRY          *Entry;
+  TCP_CB                  *TcpPcb;
+  TCP4_PROTO_DATA         *TcpProto;
+  UINTN                   VariableDataSize;
+  EFI_TCP4_VARIABLE_DATA  *Tcp4VariableData;
+  EFI_TCP4_SERVICE_POINT  *Tcp4ServicePoint;
+  CHAR16                  *NewMacString;
+  EFI_STATUS              Status;
+
+  NumConfiguredInstance = 0;
+
+  //
+  // Go through the running queue to count the instances.
+  //
+  NET_LIST_FOR_EACH (Entry, &mTcpRunQue) {
+    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
+
+    TcpProto = (TCP4_PROTO_DATA *) TcpPcb->Sk->ProtoReserved;
+
+    if (TcpProto->TcpService == Tcp4Service) {
+      //
+      // This tcp instance belongs to the Tcp4Service.
+      //
+      NumConfiguredInstance++;
+    }
+  }
+
+  //
+  // Go through the listening queue to count the instances.
+  //
+  NET_LIST_FOR_EACH (Entry, &mTcpListenQue) {
+    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
+
+    TcpProto = (TCP4_PROTO_DATA *) TcpPcb->Sk->ProtoReserved;
+
+    if (TcpProto->TcpService == Tcp4Service) {
+      //
+      // This tcp instance belongs to the Tcp4Service.
+      //
+      NumConfiguredInstance++;
+    }
+  }
+
+  //
+  // Calculate the size of the Tcp4VariableData. As there may be no Tcp4 child,
+  // we should add extra buffer for the service points only if the number of configured
+  // children is more than 1.
+  //
+  VariableDataSize = sizeof (EFI_TCP4_VARIABLE_DATA);
+
+  if (NumConfiguredInstance > 1) {
+    VariableDataSize += sizeof (EFI_TCP4_SERVICE_POINT) * (NumConfiguredInstance - 1);
+  }
+  
+  Tcp4VariableData = NetAllocatePool (VariableDataSize);
+  if (Tcp4VariableData == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Tcp4VariableData->DriverHandle = Tcp4Service->DriverBindingHandle;
+  Tcp4VariableData->ServiceCount = NumConfiguredInstance;
+
+  Tcp4ServicePoint = &Tcp4VariableData->Services[0];
+
+  //
+  // Go through the running queue to fill the service points.
+  //
+  NET_LIST_FOR_EACH (Entry, &mTcpRunQue) {
+    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
+
+    TcpProto = (TCP4_PROTO_DATA *) TcpPcb->Sk->ProtoReserved;
+
+    if (TcpProto->TcpService == Tcp4Service) {
+      //
+      // This tcp instance belongs to the Tcp4Service.
+      //
+      Tcp4ServicePoint->InstanceHandle          = TcpPcb->Sk->SockHandle;
+      EFI_IP4 (Tcp4ServicePoint->LocalAddress)  = TcpPcb->LocalEnd.Ip;
+      Tcp4ServicePoint->LocalPort               = NTOHS (TcpPcb->LocalEnd.Port);
+      EFI_IP4 (Tcp4ServicePoint->RemoteAddress) = TcpPcb->RemoteEnd.Ip;
+      Tcp4ServicePoint->RemotePort              = NTOHS (TcpPcb->RemoteEnd.Port);
+
+      Tcp4ServicePoint++;
+    }
+  }
+
+  //
+  // Go through the listening queue to fill the service points.
+  //
+  NET_LIST_FOR_EACH (Entry, &mTcpListenQue) {
+    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
+
+    TcpProto = (TCP4_PROTO_DATA *) TcpPcb->Sk->ProtoReserved;
+
+    if (TcpProto->TcpService == Tcp4Service) {
+      //
+      // This tcp instance belongs to the Tcp4Service.
+      //
+      Tcp4ServicePoint->InstanceHandle          = TcpPcb->Sk->SockHandle;
+      EFI_IP4 (Tcp4ServicePoint->LocalAddress)  = TcpPcb->LocalEnd.Ip;
+      Tcp4ServicePoint->LocalPort               = NTOHS (TcpPcb->LocalEnd.Port);
+      EFI_IP4 (Tcp4ServicePoint->RemoteAddress) = TcpPcb->RemoteEnd.Ip;
+      Tcp4ServicePoint->RemotePort              = NTOHS (TcpPcb->RemoteEnd.Port);
+
+      Tcp4ServicePoint++;
+    }
+  }
+
+  //
+  // Get the mac string.
+  //
+  Status = NetLibGetMacString (
+             Tcp4Service->ControllerHandle,
+             Tcp4Service->DriverBindingHandle,
+             &NewMacString
+             );
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+  if (Tcp4Service->MacString != NULL) {
+    //
+    // The variable is set already, we're going to update it.
+    //
+    if (EfiStrCmp (Tcp4Service->MacString, NewMacString) != 0) {
+      //
+      // The mac address is changed, delete the previous variable first.
+      //
+      gRT->SetVariable (
+             Tcp4Service->MacString,
+             &gEfiTcp4ServiceBindingProtocolGuid,
+             EFI_VARIABLE_BOOTSERVICE_ACCESS,
+             0,
+             NULL
+             );
+    }
+
+    NetFreePool (Tcp4Service->MacString);
+  }
+
+  Tcp4Service->MacString = NewMacString;
+
+  Status = gRT->SetVariable (
+                  Tcp4Service->MacString,
+                  &gEfiTcp4ServiceBindingProtocolGuid,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                  VariableDataSize,
+                  (VOID *) Tcp4VariableData
+                  );
+
+ON_ERROR:
+
+  NetFreePool (Tcp4VariableData);
+
+  return Status;
+}
+
+VOID
+TcpClearVariableData (
+  IN TCP4_SERVICE_DATA  *Tcp4Service
+  )
+/*++
+
+Routine Description:
+
+  Clear the variable and free the resource.
+
+Arguments:
+
+  Tcp4Service - Tcp4 service data.
+
+Returns:
+
+  None.
+
+--*/
+{
+  ASSERT (Tcp4Service->MacString != NULL);
+
+  gRT->SetVariable (
+         Tcp4Service->MacString,
+         &gEfiTcp4ServiceBindingProtocolGuid,
+         EFI_VARIABLE_BOOTSERVICE_ACCESS,
+         0,
+         NULL
+         );
+
+  NetFreePool (Tcp4Service->MacString);
+  Tcp4Service->MacString = NULL;
+}
+

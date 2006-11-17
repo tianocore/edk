@@ -42,8 +42,6 @@ COMPONENT_TYPE  = LIBRARY
   .
   ..\..\Include
   ..\..\include\Library
-  $(EDK_SOURCE)\..
-  $(EDK_SOURCE)\..\Framework
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Framework

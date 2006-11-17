@@ -1,0 +1,55 @@
+#/*++
+#
+# Copyright (c) 2006, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#  Module Name:
+#
+#    Ps2Mouse.inf
+#
+#  Abstract:
+#
+#    Component description file for Ps2Mouse module
+#
+#--*/
+
+[defines]
+BASE_NAME            = Ps2Mouse
+FILE_GUID            = 202A2B0E-9A31-4812-B291-8747DF152439
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  Ps2Mouse.c
+  Ps2MouseEntry.c
+  Ps2Mouse.h
+  CommPs2.c
+  CommPs2.h
+  ComponentName.c
+
+[libraries.common]
+  EdkGuidLib
+  EdkProtocolLib
+  EfiProtocolLib
+  EfiDriverLib
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=PS2MouseDriverEntryPoint
+

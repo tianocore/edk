@@ -32,13 +32,6 @@ Abstract:
 
 extern EFI_GUID gEfiTcp4ServiceBindingProtocolGuid;
 
-typedef struct {
-  EFI_IPv4_ADDRESS  LocalAddress;
-  UINT16            LocalPort;
-  EFI_IPv4_ADDRESS  RemoteAddress;
-  UINT16            RemotePort;
-} EFI_TCP4_SERVICE_POINT;
-
 #define EFI_TCP4_PROTOCOL_GUID \
   { \
     0x65530BC7, 0xA359, 0x410f, 0xB0, 0x10, 0x5A, 0xAD, 0xC7, 0xEC, 0x2B, 0x62 \
@@ -47,6 +40,20 @@ typedef struct {
 extern EFI_GUID gEfiTcp4ProtocolGuid;
 
 EFI_FORWARD_DECLARATION (EFI_TCP4_PROTOCOL);
+
+typedef struct {
+  EFI_HANDLE        InstanceHandle;
+  EFI_IPv4_ADDRESS  LocalAddress;
+  UINT16            LocalPort;
+  EFI_IPv4_ADDRESS  RemoteAddress;
+  UINT16            RemotePort;
+} EFI_TCP4_SERVICE_POINT;
+
+typedef struct {
+  EFI_HANDLE              DriverHandle;
+  UINT32                  ServiceCount;
+  EFI_TCP4_SERVICE_POINT  Services[1];
+} EFI_TCP4_VARIABLE_DATA;
 
 typedef struct {
   BOOLEAN           UseDefaultAddress;

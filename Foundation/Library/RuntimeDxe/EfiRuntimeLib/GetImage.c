@@ -67,7 +67,7 @@ GetImage (
     Status = gBS->HandleProtocol (
                     HandleBuffer[Index],
                     &gEfiFirmwareVolumeProtocolGuid,
-                    &Fv
+                    (VOID**)&Fv
                     );
 
     if (EFI_ERROR (Status)) {

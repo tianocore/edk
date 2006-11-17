@@ -22,6 +22,7 @@ Abstract:
 
 typedef struct _TCP_CB  TCP_CB;
 
+#include "Tcp4Driver.h"
 #include "Socket.h"
 #include "NetBuffer.h"
 #include "Tcp4Option.h"

@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -33,465 +33,9 @@ Abstract:
 --*/  
 
 #include "Pei.h"
-//#include "Go64.h"
 #include "DxeIpl.h"
 #include "CpuIA32.h"
 #include "VirtualMemory.h"
-
-
-#pragma pack(1)
-
-//
-// MTRR Definitions
-//
-typedef enum {
-  Uncached       = 0,
-  WriteCombining = 1,
-  WriteThrough   = 4,
-  WriteProtected = 5,
-  WriteBack      = 6
-} x64_MTRR_MEMORY_TYPE;
-
-typedef union {
-  struct {
-    UINT32  VCNT:8;         // The number of Variable Range MTRRs
-    UINT32  FIX:1;          // 1=Fixed Range MTRRs supported.  0=Fixed Range MTRRs not supported
-    UINT32  Reserved_0;     // Reserved
-    UINT32  WC:1;           // Write combining memory type supported
-    UINT32  Reserved_1:21;  // Reserved
-    UINT32  Reserved_2:32;  // Reserved
-  } Bits;
-  UINT64  Uint64;
-} x64_MTRRCAP_MSR;
-
-typedef union {
-  struct {
-    UINT32  Type:8;         // Default Memory Type
-    UINT32  Reserved_0:2;   // Reserved
-    UINT32  FE:1;           // 1=Fixed Range MTRRs enabled.  0=Fixed Range MTRRs disabled
-    UINT32  E:1;            // 1=MTRRs enabled, 0=MTRRs disabled
-    UINT32  Reserved_1:20;  // Reserved
-    UINT32  Reserved_2:32;  // Reserved
-  } Bits;
-  UINT64  Uint64;
-} x64_MTRR_DEF_TYPE_MSR;
-
-typedef union {
-  UINT8   Type[8];          // The 8 Memory Type values in the 64-bit MTRR
-  UINT64  Uint64;           // The full 64-bit MSR
-} x64_MTRR_FIXED_RANGE_MSR;
-
-typedef struct {
-  x64_MTRRCAP_MSR           Capabilities;   // MTRR Capabilities MSR value
-  x64_MTRR_DEF_TYPE_MSR     DefaultType;    // Default Memory Type MSR Value
-  x64_MTRR_FIXED_RANGE_MSR  Fixed[11];      // The 11 Fixed MTRR MSR Values
-} x64_MTRR_FIXED_RANGE;
-
-
-typedef union {
-  struct {
-    UINT64  Type:8;         // Memory Type
-    UINT64  Reserved0:4;    // Reserved
-    UINT64  PhysBase:40;    // The physical base address(bits 35..12) of the MTRR
-    UINT64  Reserved1:12 ;  // Reserved
-  } Bits;
-  UINT64  Uint64;
-} x64_MTRR_PHYSBASE_MSR;
-
-typedef union {
-  struct {
-    UINT64  Reserved0:11;  // Reserved
-    UINT64  Valid:1;        // 1=MTRR is valid, 0=MTRR is not valid
-    UINT64  PhysMask:40;    // The physical address mask (bits 35..12) of the MTRR
-    UINT64  Reserved1:12;  // Reserved
-  } Bits;
-  UINT64  Uint64;
-} x64_MTRR_PHYSMASK_MSR;
-
-typedef struct {
-  x64_MTRR_PHYSBASE_MSR  PhysBase;  // Variable MTRR Physical Base MSR
-  x64_MTRR_PHYSMASK_MSR  PhysMask;  // Variable MTRR Physical Mask MSR
-} x64_MTRR_VARIABLE_RANGE;
-
-#pragma pack ()
-
-x64_MTRR_VARIABLE_RANGE     *mMTRRVariableRange;
-x64_MTRR_FIXED_RANGE        mMTRRFixedRange;
-
-
-//
-// Physial memory limit values for each of the 11 fixed MTRRs
-//
-UINTN mFixedRangeLimit[] = {
-  0x7FFFF,  // Fixed MTRR  #0 describes 0x00000..0x7FFFF
-  0x9FFFF,  // Fixed MTRR  #1 describes 0x80000..0x9FFFF
-  0xBFFFF,  // Fixed MTRR  #2 describes 0xA0000..0xBFFFF
-  0xC7FFF,  // Fixed MTRR  #3 describes 0xC0000..0xC7FFF
-  0xCFFFF,  // Fixed MTRR  #4 describes 0xC8000..0xCFFFF
-  0xD7FFF,  // Fixed MTRR  #5 describes 0xD0000..0xD7FFF
-  0xDFFFF,  // Fixed MTRR  #6 describes 0xD8000..0xDFFFF
-  0xE7FFF,  // Fixed MTRR  #7 describes 0xE0000..0xE7FFF
-  0xEFFFF,  // Fixed MTRR  #8 describes 0xE8000..0xEFFFF
-  0xF7FFF,  // Fixed MTRR  #9 describes 0xF0000..0xF7FFF
-  0xFFFFF   // Fixed MTRR #10 describes 0xF8000..0xFFFFF
-};
-
-//
-// The size, in bits, of each of the 11 fixed MTRR.
-//
-UINTN mFixedRangeShift[] = {
-  16,   // Fixed MTRR  #0 describes 8, 64 KB ranges
-  14,   // Fixed MTRR  #1 describes 8, 16 KB ranges
-  14,   // Fixed MTRR  #2 describes 8, 16 KB ranges
-  12,   // Fixed MTRR  #3 describes 8, 4 KB ranges
-  12,   // Fixed MTRR  #4 describes 8, 4 KB ranges
-  12,   // Fixed MTRR  #5 describes 8, 4 KB ranges
-  12,   // Fixed MTRR  #6 describes 8, 4 KB ranges
-  12,   // Fixed MTRR  #7 describes 8, 4 KB ranges
-  12,   // Fixed MTRR  #8 describes 8, 4 KB ranges
-  12,   // Fixed MTRR  #9 describes 8, 4 KB ranges
-  12    // Fixed MTRR #10 describes 8, 4 KB ranges
-};
-
-
-UINTN mPowerOf2[] = {
-  1,
-  2,
-  4,
-  8,
-  16,
-  32,
-  64,
-  128,
-  256,
-  512
-};
-
-
-
-
-
-
-
-EFI_STATUS
-EfiGetMtrrs (
-  IN EFI_PEI_SERVICES          **PeiServices
-  )
-/*++
-
-Routine Description:
-  Retrieves the Variable and Fixed MTRRs from the CPU.
-
-Arguments:
-  None
-
-Returns:
-  EFI_OUT_OF_RESOURCES - There are not enough resources to allocate the buffers
-  EFI_SUCCESS          - The Variables and Fixed MTRRs were retrieves and returned in
-                         mMTRRVariableRangeBuffer and FixedRangeBuffer
-
---*/
-{
-  EFI_STATUS                Status;
-  x64_MTRR_VARIABLE_RANGE *VariableRange;
-  x64_MTRR_FIXED_RANGE    *FixedRange;
-  UINT32                    Index;
-
- 
-  FixedRange = &mMTRRFixedRange;
-
-  //
-  // Retrieve the default type for memory regions not described by MTRRs
-  //
-  FixedRange->DefaultType.Uint64 = EfiReadMsr (EFI_CACHE_IA32_MTRR_DEF_TYPE);
-  PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Default %X\n", FixedRange->DefaultType.Uint64));
-
-  //
-  // Make sure the CPU supports fixed MTRRs
-  //
-  FixedRange->Capabilities.Uint64 = EfiReadMsr (0xFE);
-
-  // BugBug - Disable parsing the fixed entries
-  //
-  FixedRange->DefaultType.Bits.FE = 0;
-
-  PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Capabilities %X\n", FixedRange->Capabilities.Uint64));
-  PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fix %01d FE %01d\n", FixedRange->Capabilities.Bits.FIX, FixedRange->DefaultType.Bits.FE));
-  if ((FixedRange->Capabilities.Bits.FIX == 1) && (FixedRange->DefaultType.Bits.FE == 1)) {
-    //
-    // Retrieve the 11 fixed MTRRs
-    //
-    FixedRange->Fixed[ 0].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX64K_00000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 0 %X\n", FixedRange->Fixed[0].Uint64));
-    FixedRange->Fixed[ 1].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX16K_80000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 1 %X\n", FixedRange->Fixed[1].Uint64));
-    FixedRange->Fixed[ 2].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX16K_A0000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 2 %X\n", FixedRange->Fixed[2].Uint64));
-    FixedRange->Fixed[ 3].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_C0000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 3 %X\n", FixedRange->Fixed[3].Uint64));
-    FixedRange->Fixed[ 4].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_C8000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 4 %X\n", FixedRange->Fixed[4].Uint64));
-    FixedRange->Fixed[ 5].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_D0000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 5 %X\n", FixedRange->Fixed[5].Uint64));
-    FixedRange->Fixed[ 6].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_D8000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 6 %X\n", FixedRange->Fixed[6].Uint64));
-    FixedRange->Fixed[ 7].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_E0000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 7 %X\n", FixedRange->Fixed[7].Uint64));
-    FixedRange->Fixed[ 8].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_E8000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 8 %X\n", FixedRange->Fixed[8].Uint64));
-    FixedRange->Fixed[ 9].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_F0000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 9 %X\n", FixedRange->Fixed[9].Uint64));
-    FixedRange->Fixed[10].Uint64 = EfiReadMsr (EFI_IA32_MTRR_FIX4K_F8000);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Fixed 10 %X\n", FixedRange->Fixed[10].Uint64));
-  }
-
-  //
-  // Allocate Buffer for all the Variable MTRRs
-  //
-  /*Status = gBS->AllocatePool (
-                  EfiBootServicesData, 
-                  sizeof (x64_MTRR_VARIABLE_RANGE) * FixedRange->Capabilities.Bits.VCNT,
-                  (VOID **)&mMTRRVariableRange
-                  );
-  */                  
-
-  Status = (*PeiServices)->AllocatePool(
-                             PeiServices,
-                             sizeof (x64_MTRR_VARIABLE_RANGE) * FixedRange->Capabilities.Bits.VCNT,
-                             (VOID **)&mMTRRVariableRange
-                             );
-  
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  VariableRange = mMTRRVariableRange;
-
-  //
-  // Retrieve the set of Variable MTRRs
-  //
-  for (Index = 0; Index < FixedRange->Capabilities.Bits.VCNT; Index++) {
-    VariableRange[Index].PhysBase.Uint64 = EfiReadMsr (EFI_CACHE_VARIABLE_MTRR_BASE + (Index*2) + 0);
-    VariableRange[Index].PhysMask.Uint64 = EfiReadMsr (EFI_CACHE_VARIABLE_MTRR_BASE + (Index*2) + 1);
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "MTRR Variable[%d] base %X - ", Index, VariableRange[Index].PhysBase.Uint64));
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "mask %X\n", VariableRange[Index].PhysMask.Uint64));
-  }
-
-  return EFI_SUCCESS;
-}
-
-
-x64_MTRR_MEMORY_TYPE
-EfiGetMTRRMemoryType (
-  IN  EFI_PHYSICAL_ADDRESS      Address
-  )
-/*++
-
-Routine Description:
-
-  Retrieves the memory type from the MTRR that describes a physical address.
-
-Arguments:
-
-  VariableRange - Set of Variable MTRRs
-
-  FixedRange    - Set of Fixed MTRRs
-
-  Address       - The physical address for which the MTRR memory type is being retrieved
-
-Returns:
-
-  The MTRR Memory Type for the physical memory specified by Address.
-
---*/
-{
-  UINTN                   Index;
-  UINTN                   TypeIndex;
-  BOOLEAN                 Found;
-  x64_MTRR_MEMORY_TYPE  VariableType;
-  EFI_PHYSICAL_ADDRESS    MaskBase;
-  EFI_PHYSICAL_ADDRESS    PhysMask;
-
-  //
-  // If the MTRRs are disabled, then return the Uncached Memory Type
-  //
-  if (mMTRRFixedRange.DefaultType.Bits.E == 0) {
-    return Uncached;
-  }
-
-  //
-  // If the CPU supports Fixed MTRRs and the Fixed MTRRs are enabled, then 
-  // see if Address falls into one of the Fixed MTRRs
-  //
-  if (mMTRRFixedRange.Capabilities.Bits.FIX && mMTRRFixedRange.DefaultType.Bits.FE) {
-    //
-    // Loop though 11 fixed MTRRs
-    //
-    for (Index = 0; Index < 11; Index++) {
-      //
-      // Check for a matching range
-      //
-      if (Address <= mFixedRangeLimit[Index]) {
-        //
-        // Compute the offset address into the MTRR bu subtrating the base address of the MTRR
-        //
-        if (Index > 0) {
-          Address = Address - (mFixedRangeLimit[Index-1] + 1);
-        }
-        //
-        // Retrieve the index into the MTRR to extract the memory type.  The range is 0..7
-        //
-        TypeIndex = (UINTN)RShiftU64 (Address, mFixedRangeShift[Index]);
-        
-        //
-        // Retrieve and return the memory type for the matching range
-        //
-        return mMTRRFixedRange.Fixed[Index].Type[TypeIndex];
-      }
-    }
-  }
-
-  //
-  // If Address was not found in a Fixed MTRR, then search the Variable MTRRs
-  //
-  for (Index = 0, Found = FALSE, VariableType = WriteBack; Index < mMTRRFixedRange.Capabilities.Bits.VCNT; Index++) {
-    //
-    // BugBug: __aullshr complier error
-    //
-    if ((mMTRRVariableRange[Index].PhysMask.Uint64 & 0x800) == 0x800) {    
-    //if (mMTRRVariableRange[Index].PhysMask.Bits.Valid == 1) {
-      PhysMask = mMTRRVariableRange[Index].PhysMask.Uint64 & ~0xfff;
-      MaskBase = PhysMask & (mMTRRVariableRange[Index].PhysBase.Uint64 & ~0xfff);
-      if (MaskBase == (PhysMask & Address)) {
-        //
-        // Check to see how many matches we find
-        //
-        Found = TRUE;
-        if ((mMTRRVariableRange[Index].PhysBase.Bits.Type == Uncached) || (VariableType == Uncached)) {
-          //
-          // If any matching region uses UC, the memory region is UC
-          //
-          VariableType = Uncached;
-        } else if ((mMTRRVariableRange[Index].PhysBase.Bits.Type == WriteThrough) || (VariableType == WriteThrough)){
-          //
-          // If it's WT and WB then set it to WT. If it's WT and other type it's undefined
-          //
-          VariableType = WriteThrough;
-        } else {
-          VariableType = mMTRRVariableRange[Index].PhysBase.Bits.Type;
-        }
-      }
-    }
-  }
-  
-  if (Found) {
-    return VariableType;
-  }
-
-  //
-  // Address was not found in the Fixed or Variable MTRRs, so return the default memory type
-  //
-  return mMTRRFixedRange.DefaultType.Bits.Type;
-}
-
-
-BOOLEAN
-CanNotUse2MBPage (
-  IN EFI_PEI_SERVICES            **PeiServices,
-  IN  EFI_PHYSICAL_ADDRESS  BaseAddress
-  )
-/*++
-
-Routine Description:
-  Test to see if a 2MB aligned page has all the same attributes. If a 2MB page
-  has more than one attibute type it needs to be split into multiple 4K pages.
-
-Arguments:
-  BaseAddress - 2MB aligned address to check out
-
-Returns:
-  TRUE  - This 2MB address range (BaseAddress) can NOT be mapped by a 2MB page
-  FALSE - This 2MB address range can be mapped by a 2MB page
-
---*/
-{
-  UINTN                   Index;
-  x64_MTRR_MEMORY_TYPE  MemoryType;
-  x64_MTRR_MEMORY_TYPE  PreviousMemoryType;
-  
-  //
-  // Address needs to be 2MB aligned
-  //
-  ASSERT_PEI_ERROR (PeiServices, (BaseAddress & 0x1fffff) == 0);
-
-  PreviousMemoryType = -1;
-  for (Index = 0; Index < 512; Index++, BaseAddress += 0x1000) {
-    MemoryType = EfiGetMTRRMemoryType (BaseAddress);
-    if ((Index != 0) && (MemoryType != PreviousMemoryType)) {
-      return TRUE;
-    }
-
-    PreviousMemoryType = MemoryType;
-  }
-
-  //
-  // All the pages had the same type
-  //
-  return FALSE;
-}
-
-
-
-
-VOID
-Convert2MBPageTo4KPages (  
-  IN EFI_PEI_SERVICES      **PeiServices,
-  IN  x64_PAGE_TABLE_ENTRY_2M   *PageDirectoryEntry2MB, 
-  IN  EFI_PHYSICAL_ADDRESS        PageAddress
-  )
-/*++
-
-Routine Description:
- Convert a single 2MB page entry to 512 4K page entries. The attributes for 
- the 4K pages are read from the MTRR registers.
-
-Arguments:
-  PageDirectoryEntry2MB - Page directory entry for PageAddress
-  PageAddress           - 2MB algined address of region to convert
-
-Returns:
-  None
-
---*/
-{
-  EFI_PHYSICAL_ADDRESS                          Address;
-  x64_PAGE_DIRECTORY_ENTRY_4K                   *PageDirectoryEntry4k;
-  x64_PAGE_TABLE_ENTRY_4K                       *PageTableEntry;
-  UINTN                                         Index1;
-
-  //
-  // Allocate the page table entry for the 4K pages
-  //
-  PageTableEntry = (x64_PAGE_TABLE_ENTRY_4K *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
-  ASSERT_PEI_ERROR (PeiServices, PageTableEntry != NULL);
-
-  //
-  // Convert PageDirectoryEntry2MB into a 4K Page Directory
-  //
-  PageDirectoryEntry4k = (x64_PAGE_DIRECTORY_ENTRY_4K *)PageDirectoryEntry2MB;
-  PageDirectoryEntry2MB->Uint64 = (UINT64)PageTableEntry;
-  PageDirectoryEntry2MB->Bits.ReadWrite = 1;
-  PageDirectoryEntry2MB->Bits.Present = 1;
-  
-  //
-  // Fill in the 4K page entries with the attributes from the MTRRs
-  //
-  for (Index1 = 0, Address = PageAddress; Index1 < 512; Index1++, PageTableEntry++, Address += 0x1000) {
-    PageTableEntry->Uint64 = (UINT64)Address;
-    PageTableEntry->Bits.ReadWrite = 1;
-    PageTableEntry->Bits.Present = 1;
-  }
-}
 
 
 EFI_PHYSICAL_ADDRESS
@@ -504,9 +48,7 @@ CreateIdentityMappingPageTables (
 Routine Description:
 
   Allocates and fills in the Page Directory and Page Table Entries to
-  establish a 1:1 Virtual to Physical mapping for physical memory from
-  0 to 4GB.  Memory above 4GB is not mapped.  The MTRRs are used to 
-  determine the cachability of the physical memory regions
+  establish a 1:1 Virtual to Physical mapping.
 
 Arguments:
 
@@ -522,15 +64,15 @@ Returns:
 --*/
 {  
   EFI_PHYSICAL_ADDRESS                          PageAddress;
-  UINTN                                         Index;
-  UINTN                                         MaxBitsSupported;
-  UINTN                                         Index1;
-  UINTN                                         Index2;
-  x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageMapLevel4Entry;
-  x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageMap;
-  x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K     *PageDirectoryPointerEntry;
-  x64_PAGE_TABLE_ENTRY_2M                       *PageDirectoryEntry2MB;
-
+  UINTN                                         NumberOfPml4EntriesNeeded;
+  UINTN                                         NumberOfPdpEntriesNeeded;
+  UINTN                                         IndexOfPml4Entries;
+  UINTN                                         IndexOfPdpEntries;
+  UINTN                                         IndexOfPageDirectoryEntries;
+  PAGE_MAP_AND_DIRECTORY_POINTER                *PageMapLevel4Entry;
+  PAGE_MAP_AND_DIRECTORY_POINTER                *PageMap;
+  PAGE_MAP_AND_DIRECTORY_POINTER                *PageDirectoryPointerEntry;
+  PAGE_TABLE_ENTRY                              *PageDirectoryEntry;
 
   //
   //  Page Table structure 4 level 4K, 3 level 2MB.
@@ -542,14 +84,13 @@ Returns:
   //                   PageTableEntry            : bits 20 - 12
   //
   // Strategy is to map every thing in the processor address space using 
-  //  2MB pages. If more  granularity is required the 2MB page will get 
-  //  converted to set of 4K pages. 
+  //  2MB pages.
   //
 
   //
   // By architecture only one PageMapLevel4 exists - so lets allocate storgage for it.
   // 
-  PageMap = PageMapLevel4Entry = (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+  PageMap = PageMapLevel4Entry = (PAGE_MAP_AND_DIRECTORY_POINTER *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
   ASSERT_PEI_ERROR (PeiServices, PageMap != NULL);
   PageAddress = 0;
 
@@ -558,18 +99,20 @@ Returns:
   // physical address bits. Less than equal to 38 bits only takes one entry.
   // 512 entries represents 48 address bits. 
   //
-  if (NumberOfProcessorPhysicalAddressBits <= 38) {
-    MaxBitsSupported = 1;
+  if (NumberOfProcessorPhysicalAddressBits <= 39) {
+    NumberOfPml4EntriesNeeded = 1;
+    NumberOfPdpEntriesNeeded  = 1 << (NumberOfProcessorPhysicalAddressBits - 30);
   } else {
-    MaxBitsSupported = mPowerOf2[NumberOfProcessorPhysicalAddressBits - 39];
+    NumberOfPml4EntriesNeeded = 1 << (NumberOfProcessorPhysicalAddressBits - 39);
+    NumberOfPdpEntriesNeeded  = 512;
   }
 
-  for (Index = 0; Index < MaxBitsSupported; Index++, PageMapLevel4Entry++) {
+  for (IndexOfPml4Entries = 0; IndexOfPml4Entries < NumberOfPml4EntriesNeeded; IndexOfPml4Entries++, PageMapLevel4Entry++) {
     //
     // Each PML4 entry points to a page of Page Directory Pointer entires.
-    //  So lets allocate space for them and fill them in in the Index1 loop.
+    //  So lets allocate space for them and fill them in in the IndexOfPdpEntries loop.
     //  
-    PageDirectoryPointerEntry = (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+    PageDirectoryPointerEntry = (PAGE_MAP_AND_DIRECTORY_POINTER *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
     ASSERT_PEI_ERROR (PeiServices, PageDirectoryPointerEntry != NULL);
 
     //
@@ -579,37 +122,29 @@ Returns:
     PageMapLevel4Entry->Bits.ReadWrite = 1;
     PageMapLevel4Entry->Bits.Present = 1;
 
-    for (Index1 = 0; Index1 < 512; Index1++, PageDirectoryPointerEntry++) {
+    for (IndexOfPdpEntries = 0; IndexOfPdpEntries < 512; IndexOfPdpEntries++, PageDirectoryPointerEntry++) {
       //
       // Each Directory Pointer entries points to a page of Page Directory entires.
-      //  So lets allocate space for them and fill them in in the Index2 loop.
+      //  So lets allocate space for them and fill them in in the IndexOfPageDirectoryEntries loop.
       //       
-      PageDirectoryEntry2MB = (x64_PAGE_TABLE_ENTRY_2M *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
-      ASSERT_PEI_ERROR (PeiServices, PageDirectoryEntry2MB != NULL);
+      PageDirectoryEntry = (PAGE_TABLE_ENTRY *)(UINTN)AllocateZeroedHobPages (PeiServices, 1);
+      ASSERT_PEI_ERROR (PeiServices, PageDirectoryEntry != NULL);
 
       //
       // Fill in a Page Directory Pointer Entries
       //
-      PageDirectoryPointerEntry->Uint64 = (UINT64)(UINTN)PageDirectoryEntry2MB;
+      PageDirectoryPointerEntry->Uint64 = (UINT64)(UINTN)PageDirectoryEntry;
       PageDirectoryPointerEntry->Bits.ReadWrite = 1;
       PageDirectoryPointerEntry->Bits.Present = 1;
 
-      for (Index2 = 0; Index2 < 512; Index2++, PageDirectoryEntry2MB++, PageAddress += 0x200000) {
+      for (IndexOfPageDirectoryEntries = 0; IndexOfPageDirectoryEntries < 512; IndexOfPageDirectoryEntries++, PageDirectoryEntry++, PageAddress += 0x200000) {
         //
         // Fill in the Page Directory entries
         //
-        PageDirectoryEntry2MB->Uint64 = (UINT64)PageAddress;
-        PageDirectoryEntry2MB->Bits.ReadWrite = 1;
-        PageDirectoryEntry2MB->Bits.Present = 1;
-        PageDirectoryEntry2MB->Bits.MustBe1 = 1;
-
-        if (CanNotUse2MBPage (PeiServices, PageAddress)) {
-          //
-          // Check to see if all 2MB has the same mapping. If not convert
-          //  to 4K pages by adding the 4th level of page table entries
-          //
-          Convert2MBPageTo4KPages (PeiServices, PageDirectoryEntry2MB, PageAddress);
-        }
+        PageDirectoryEntry->Uint64 = (UINT64)PageAddress;
+        PageDirectoryEntry->Bits.ReadWrite = 1;
+        PageDirectoryEntry->Bits.Present = 1;
+        PageDirectoryEntry->Bits.MustBe1 = 1;
       }
     }
   }
@@ -618,12 +153,11 @@ Returns:
   // For the PML4 entries we are not using fill in a null entry.
   //  for now we just copy the first entry.
   //
-  for (; Index < 512; Index++, PageMapLevel4Entry++) {
-  //    EfiCopyMem (PageMapLevel4Entry, PageMap, sizeof (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K));
+  for (; IndexOfPml4Entries < 512; IndexOfPml4Entries++, PageMapLevel4Entry++) {
     (*PeiServices)->CopyMem (
                   PageMapLevel4Entry,
                   PageMap,
-                  sizeof (x64_PAGE_MAP_AND_DIRECTORY_POINTER_2MB_4K)
+                  sizeof (PAGE_MAP_AND_DIRECTORY_POINTER)
                   );
   }
 

@@ -66,6 +66,8 @@ C_STD_INCLUDE=
   PciHotPlugDevice\PciHotPlugDevice.c
   PciOptionRomTable\PciOptionRomTable.h
   PciOptionRomTable\PciOptionRomTable.c
+  PciExpressBaseAddress\PciExpressBaseAddress.h
+  PciExpressBaseAddress\PciExpressBaseAddress.c
   PeiFlushInstructionCache\PeiFlushInstructionCache.h
   PeiFlushInstructionCache\PeiFlushInstructionCache.c
   PeiPeCoffLoader\PeiPeCoffLoader.h

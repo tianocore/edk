@@ -488,6 +488,30 @@ DevPathToTextExtAcpi (
 }
 
 VOID
+DevPathToTextAdrAcpi (
+  IN OUT POOL_PRINT  *Str,
+  IN VOID            *DevPath,
+  IN BOOLEAN         DisplayOnly,
+  IN BOOLEAN         AllowShortcuts
+  )
+{
+  ACPI_ADR_DEVICE_PATH    *AcpiAdr;
+  UINT16                  Index;
+  UINT16                  Length;
+  UINT16                  AdditionalAdrCount;
+
+  AcpiAdr            = DevPath;
+  Length             = DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) AcpiAdr);
+  AdditionalAdrCount = (Length - 8) / 4;
+
+  CatPrint (Str, L"AcpiAdr(%x", AcpiAdr->ADR);
+  for (Index = 0; Index < AdditionalAdrCount; Index++) {
+    CatPrint (Str, L",%x", *(UINT32 *) ((UINT8 *) AcpiAdr + 8 + Index * 4));
+  }
+  CatPrint (Str, L")");
+}
+
+VOID
 DevPathToTextAtapi (
   IN OUT POOL_PRINT  *Str,
   IN VOID            *DevPath,
@@ -1277,6 +1301,9 @@ DEVICE_PATH_TO_TEXT_TABLE DevPathToTextTable[] = {
   ACPI_DEVICE_PATH,
   ACPI_EXTENDED_DP,
   DevPathToTextExtAcpi,
+  ACPI_DEVICE_PATH,
+  ACPI_ADR_DP,
+  DevPathToTextAdrAcpi,
   MESSAGING_DEVICE_PATH,
   MSG_ATAPI_DP,
   DevPathToTextAtapi,

@@ -25,7 +25,20 @@ Abstract:
 #define EFI_DRIVER_ENTRY_POINT(InitFunction)
 #define EFI_APPLICATION_ENTRY_POINT EFI_DRIVER_ENTRY_POINT
 
+//
+// Disable warning that make it impossible to compile at /W3
+// This only works for Intel EBC Compiler tools
+//
 
+//
+// Disabling argument of type "TYPE **" is incompatible with parameter of type "void **"
+//
+#pragma warning ( disable : 167 )
+
+//
+// Disabling pointless comparison of unsigned integer with zero
+//
+#pragma warning ( disable : 186 )
 
 //
 // Native integer types

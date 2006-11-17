@@ -23,16 +23,6 @@ Abstract:
 #ifndef __EDKII_GLUE_DXE_H__
 #define __EDKII_GLUE_DXE_H__
 
-//
-// Check to make sure EFI_SPECIFICATION_VERSION and TIANO_RELEASE_VERSION are defined.
-//
-#if !defined(EFI_SPECIFICATION_VERSION)
-  #error EFI_SPECIFICATION_VERSION not defined
-#elif !defined(TIANO_RELEASE_VERSION)
-  #error TIANO_RELEASE_VERSION not defined
-#elif (TIANO_RELEASE_VERSION == 0)
-  #error TIANO_RELEASE_VERSION can not be zero
-#endif
 
 //
 // General Type & API definitions
@@ -155,7 +145,6 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (LegacyRegion)
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
 #include EFI_PROTOCOL_DEFINITION (LoadFile)
-#include EFI_PROTOCOL_DEFINITION (MpService)
 #include EFI_PROTOCOL_DEFINITION (PciHostBridgeResourceAllocation)
 #include EFI_PROTOCOL_DEFINITION (PciHotplugInit)
 #include EFI_PROTOCOL_DEFINITION (PciIo)

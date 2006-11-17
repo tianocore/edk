@@ -277,6 +277,8 @@ Returns:
     Udp4FlushRxData (&Instance->RcvdDgramQue);
   }
 
+  Udp4SetVariableData (Instance->Udp4Service);
+
 ON_EXIT:
 
   NET_RESTORE_TPL (OldTpl);

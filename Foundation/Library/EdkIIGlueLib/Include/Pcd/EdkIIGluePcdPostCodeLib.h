@@ -32,10 +32,7 @@ Abstract:
 // PostCode Pcds
 //
 #ifndef __EDKII_GLUE_PCD_PcdPostCodePropertyMask__
-#define __EDKII_GLUE_PCD_PcdPostCodePropertyMask__                                   \
-                         (  POST_CODE_PROPERTY_POST_CODE_ENABLED                  \
-                            | POST_CODE_PROPERTY_POST_CODE_DESCRIPTION_ENABLED    \
-                         )
+#define __EDKII_GLUE_PCD_PcdPostCodePropertyMask__     EDKII_GLUE_PostCodePropertyMask
 #endif
 
 #include "Pcd/EdkIIGluePcd.h"

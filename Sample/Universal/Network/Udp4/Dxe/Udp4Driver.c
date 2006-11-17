@@ -149,6 +149,8 @@ Returns:
     goto CLEAN_SERVICE;
   }
 
+  Udp4SetVariableData (Udp4Service);
+
   return Status;
 
 CLEAN_SERVICE:
@@ -244,6 +246,8 @@ Returns:
     ServiceBinding->DestroyChild (ServiceBinding, Instance->ChildHandle);
   }
 
+  Udp4ClearVariableData (Udp4Service);
+
   Udp4CleanService (Udp4Service);
 
   NetFreePool (Udp4Service);
@@ -284,6 +288,7 @@ Returns:
   UDP4_SERVICE_DATA   *Udp4Service;
   UDP4_INSTANCE_DATA  *Instance;
   EFI_TPL             OldTpl;
+  VOID                *Ip4;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -325,6 +330,21 @@ Returns:
 
   Instance->ChildHandle = *ChildHandle;
 
+  //
+  // Open the default Ip4 protocol in the IP_IO BY_CHILD.
+  //
+  Status = gBS->OpenProtocol (
+                  Udp4Service->IpIo->ChildHandle,
+                  &gEfiIp4ProtocolGuid,
+                  (VOID **) &Ip4,
+                  gUdp4DriverBinding.DriverBindingHandle,
+                  Instance->ChildHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    goto UNINSTALL_PROTOCOL;
+  }
+
   OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   //
@@ -337,11 +357,22 @@ Returns:
 
   return Status;
 
+UNINSTALL_PROTOCOL:
+
+  gBS->UninstallMultipleProtocolInterfaces (
+         Instance->ChildHandle,
+         &gEfiUdp4ProtocolGuid,
+         &Instance->Udp4Proto,
+         NULL
+         );
+
 REMOVE_IPINFO:
 
   IpIoRemoveIp (Udp4Service->IpIo, Instance->IpInfo);
   
 FREE_INSTANCE:
+
+  Udp4CleanInstance (Instance);
 
   NetFreePool (Instance);
 
@@ -416,6 +447,16 @@ Returns:
   Instance->Destroyed = TRUE;
 
   //
+  // Close the Ip4 protocol.
+  //
+  gBS->CloseProtocol (
+         Udp4Service->IpIo->ChildHandle,
+         &gEfiIp4ProtocolGuid,
+         gUdp4DriverBinding.DriverBindingHandle,
+         Instance->ChildHandle
+         );
+
+  //
   // Uninstall the Udp4Protocol previously installed on the ChildHandle.
   //
   Status = gBS->UninstallMultipleProtocolInterfaces (
@@ -448,11 +489,9 @@ Returns:
   Udp4Service->ChildrenNumber--;
 
   //
-  // Clean the NET_MAPs.
+  // Clean the instance.
   //
-  NetMapClean (&Instance->TxTokens);
-  NetMapClean (&Instance->RxTokens);
-  NetMapClean (&Instance->McastIps);
+  Udp4CleanInstance (Instance);
 
   NET_RESTORE_TPL (OldTpl);
 

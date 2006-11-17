@@ -337,25 +337,10 @@ Returns:
   }
   
   //
-  // Force Interrupt line to zero for cards that come up randomly
+  // Force Interrupt line to "Unknown" or "No Connection"
   //
   PciIo = &(PciIoDevice->PciIo);
-  
-  //
-  // Read the class code register to see if it is a bridge
-  //
-  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0x0B, 1, &Data8); 
-  if (Data8 == PCI_CLASS_BRIDGE) {
-    //
-    // Force Interrupt line to 0xff for bridges
-    //
-    Data8 = 0xFF;
-  } else {
-    //
-    // Force Interrupt line to zero for cards that come up randomly
-    //
-    Data8 = 0x00;
-  }
+  Data8 = PCI_INT_LINE_UNKNOWN;
   PciIo->Pci.Write (PciIo, EfiPciIoWidthUint8, 0x3C, 1, &Data8);
 
   //

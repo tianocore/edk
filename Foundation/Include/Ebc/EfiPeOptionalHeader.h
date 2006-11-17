@@ -29,6 +29,8 @@ Abstract:
 // It does not make sense to have a PE loader coded in EBC. You need to 
 // understand the basic 
 //
+#define EFI_IMAGE_MACHINE_TYPE (EFI_IMAGE_MACHINE_EBC)
+
 #define EFI_IMAGE_MACHINE_TYPE_SUPPORTED(Machine) ((Machine) == EFI_IMAGE_MACHINE_EBC)
 
 #define EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED(Machine) (FALSE) 

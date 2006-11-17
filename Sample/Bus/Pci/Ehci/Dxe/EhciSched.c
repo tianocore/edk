@@ -1,20 +1,20 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                     
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2006, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
     EhciSched.c
-    
-Abstract: 
-    
+
+Abstract:
+
 
 Revision History
 --*/
@@ -22,6 +22,155 @@ Revision History
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "Ehci.h"
+
+
+EFI_STATUS
+SetAndWaitDoorBell (
+  IN  USB2_HC_DEV     *HcDev,
+  IN  UINTN           Timeout
+  )
+/*++
+
+Routine Description:
+
+  Set DoorBell and wait it to complete
+
+Arguments:
+
+  HcDev - USB2_HC_DEV
+
+Returns:
+
+  EFI_SUCCESS       Success
+  EFI_DEVICE_ERROR  Fail
+
+--*/
+{
+  EFI_STATUS  Status;
+  UINT32      Data;
+  UINTN       Delay;
+
+  Status = ReadEhcOperationalReg (
+             HcDev,
+             USBCMD,
+             &Data
+             );
+  if (EFI_ERROR (Status)) {
+    Status = EFI_DEVICE_ERROR;
+    goto exit;
+  }
+
+  Data |= USBCMD_IAAD;
+  Status = WriteEhcOperationalReg (
+             HcDev,
+             USBCMD,
+             Data
+             );
+  if (EFI_ERROR (Status)) {
+    Status = EFI_DEVICE_ERROR;
+  }
+
+  //
+  // Timeout is in US unit
+  //
+  Delay = (Timeout / 50) + 1;
+  do {
+    Status = ReadEhcOperationalReg (
+               HcDev,
+               USBSTS,
+               &Data
+               );
+    if (EFI_ERROR (Status)) {
+      Status = EFI_DEVICE_ERROR;
+      goto exit;
+    }
+
+    if ((Data & USBSTS_IAA) == USBSTS_IAA) {
+      break;
+    }
+
+    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
+
+  } while (Delay--);
+
+  Data = Data & 0xFFFFFFC0;
+  Data |= USBSTS_IAA;
+  Status = WriteEhcOperationalReg (
+             HcDev,
+             USBSTS,
+             Data
+             );
+
+exit:
+  return Status;
+}
+
+
+
+
+
+EFI_STATUS
+CreateNULLQH (
+  IN  USB2_HC_DEV     *HcDev
+  )
+/*++
+
+Routine Description:
+
+  Create the NULL QH to make it as the Async QH header
+
+Arguments:
+
+  HcDev   - USB2_HC_DEV
+
+Returns:
+
+  EFI_SUCCESS        Success
+--*/
+{
+  EFI_STATUS            Status;
+  EHCI_QH_ENTITY        *NULLQhPtr;
+  //
+  // Allocate  memory for Qh structure
+  //
+  Status = EhciAllocatePool (
+             HcDev,
+             (UINT8 **) &NULLQhPtr,
+             sizeof (EHCI_QH_ENTITY)
+             );
+  if (EFI_ERROR (Status)) {
+     return Status;
+  }
+
+  NULLQhPtr->Qh.Status = QTD_STATUS_HALTED;
+  NULLQhPtr->Qh.HeadReclamationFlag = 1;
+  NULLQhPtr->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&(NULLQhPtr->Qh) >> 5));
+  NULLQhPtr->Qh.SelectType = QH_SELECT_TYPE;
+  NULLQhPtr->Qh.NextQtdTerminate = 1;
+
+  NULLQhPtr->Next = NULLQhPtr;
+  NULLQhPtr->Prev = NULLQhPtr;
+
+  HcDev->NULLQH = NULLQhPtr;
+
+  return Status;
+}
+
+
+
+VOID
+DestroyNULLQH (
+  IN  USB2_HC_DEV     *HcDev
+  )
+{
+
+  if (HcDev->NULLQH != NULL) {
+    EhciFreePool (HcDev, (UINT8 *)HcDev->NULLQH, sizeof (EHCI_QH_ENTITY));
+    HcDev->NULLQH = NULL;
+  }
+}
+
+
 
 EFI_STATUS
 InitialPeriodicFrameList (
@@ -38,7 +187,7 @@ Arguments:
 
   HcDev   - USB2_HC_DEV
   Length  - Frame List Length
-  
+
 Returns:
 
   EFI_SUCCESS        Success
@@ -54,7 +203,7 @@ Returns:
   UINTN                 BufferSizeInBytes;
   UINTN                 FrameIndex;
   FRAME_LIST_ENTRY      *FrameEntryPtr;
-  
+
   //
   // The Frame List is a common buffer that will be
   // accessed by both the cpu and the usb bus master
@@ -81,7 +230,7 @@ Returns:
                           0
                           );
   if (EFI_ERROR (Status)) {
-    DEBUG ((gEHCErrorLevel, "PciIo->AllocateBuffer Failed\n"));
+    DEBUG ((gEHCErrorLevel, "EHCI: PciIo->AllocateBuffer Failed\n"));
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
@@ -95,26 +244,26 @@ Returns:
                           &Map
                           );
   if (EFI_ERROR (Status) || (BufferSizeInBytes != EFI_PAGE_SIZE)) {
-    DEBUG ((gEHCErrorLevel, "PciIo->MapBuffer Failed\n"));
+    DEBUG ((gEHCErrorLevel, "EHCI: PciIo->MapBuffer Failed\n"));
     Status = EFI_OUT_OF_RESOURCES;
     goto free_buffer;
   }
 
   //
-  // Put high 32bit into CtrlDataStructSeg reg 
+  // Put high 32bit into CtrlDataStructSeg reg
   // when 64bit addressing range capability
   //
   if (HcDev->Is64BitCapable != 0) {
-  	HcDev->High32BitAddr = (UINT32) GET_32B_TO_63B (FrameBuffer);
-	
-  	Status = SetCtrlDataStructSeg (HcDev);
+    HcDev->High32BitAddr = (UINT32) GET_32B_TO_63B (FrameBuffer);
+
+    Status = SetCtrlDataStructSeg (HcDev);
     if (EFI_ERROR (Status)) {
-      DEBUG ((gEHCErrorLevel, "SetCtrlDataStructSeg Failed\n"));
+      DEBUG ((gEHCErrorLevel, "EHCI: SetCtrlDataStructSeg Failed\n"));
       Status = EFI_DEVICE_ERROR;
       goto unmap_buffer;
     }
   }
-  
+
   //
   // Tell the Host Controller where the Frame List lies,
   // by set the Frame List Base Address Register.
@@ -168,7 +317,7 @@ Arguments:
 Returns:
 
   VOID
-  
+
 --*/
 {
   HcDev->PciIo->Unmap (HcDev->PciIo, HcDev->PeriodicFrameListMap);
@@ -191,12 +340,12 @@ Arguments:
 
   HcDev          - USB2_HC_DEV
   NotifyFunction - Timer Notify Function
-  
+
 Returns:
-  
+
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   return gBS->CreateEvent (
@@ -221,12 +370,12 @@ Routine Description:
 Arguments:
 
   HcDev - USB2_HC_DEV
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   return gBS->CloseEvent (HcDev->AsyncRequestEvent);
@@ -245,12 +394,12 @@ Routine Description:
 Arguments:
 
   HcDev - USB2_HC_DEV
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   return gBS->SetTimer (
@@ -273,12 +422,12 @@ Routine Description:
 Arguments:
 
   HcDev - USB2_HC_DEV
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   return gBS->SetTimer (
@@ -305,18 +454,18 @@ Routine Description:
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   DeviceAddr   - Address of Device
   Endpoint     - Endpoint Number
   DeviceSpeed  - Device Speed
   MaxPacketLen - Max Length of one Packet
   QhPtrPtr     - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -339,10 +488,6 @@ Returns:
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
-  //
-  // Init fields in Qh
-  //
-  gBS->SetMem (*QhPtrPtr, sizeof (EHCI_QH_ENTITY), 0);
 
   //
   // Software field
@@ -361,8 +506,8 @@ Returns:
   QhHwPtr->SelectType           = 0;
   QhHwPtr->MaxPacketLen         = (UINT32) MaxPacketLen;
   QhHwPtr->EndpointSpeed        = (DeviceSpeed & 0x3);
-  QhHwPtr->EndpointNum          = (Endpoint & 0x0f);
-  QhHwPtr->DeviceAddr           = (DeviceAddr & 0x7f);
+  QhHwPtr->EndpointNum          = (Endpoint & 0x0F);
+  QhHwPtr->DeviceAddr           = (DeviceAddr & 0x7F);
   QhHwPtr->Multiplier           = HIGH_BANDWIDTH_PIPE_MULTIPLIER;
   QhHwPtr->Rsvd1                = 0;
   QhHwPtr->Rsvd2                = 0;
@@ -384,18 +529,18 @@ DestoryQh (
 
 Routine Description:
 
-  Destory Qh Structure 
-  
+  Destory Qh Structure
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
+  HcDev - USB2_HC_DEV
   QhPtr - A pointer to Qh
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   ASSERT (HcDev);
@@ -422,18 +567,18 @@ Routine Description:
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   DeviceAddr   - Address of Device
   DeviceSpeed  - Device Speed
   MaxPacketLen - Max Length of one Packet
   Translator   - Translator Transaction for SplitX
   QhPtrPtr     - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -469,7 +614,9 @@ Returns:
   (*QhPtrPtr)->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&((*QhPtrPtr)->Qh)) >> 5);
   (*QhPtrPtr)->Qh.SelectType          = QH_SELECT_TYPE;
   (*QhPtrPtr)->Qh.QhTerminate         = FALSE;
-  (*QhPtrPtr)->Qh.ControlEndpointFlag = TRUE;
+  if (EFI_USB_SPEED_HIGH != DeviceSpeed)  {
+    (*QhPtrPtr)->Qh.ControlEndpointFlag = TRUE;
+  }
   (*QhPtrPtr)->Qh.NakCountReload      = NAK_COUNT_RELOAD;
   if (NULL != Translator) {
     (*QhPtrPtr)->Qh.PortNum = Translator->TranslatorPortNumber;
@@ -500,19 +647,19 @@ Routine Description:
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   DeviceAddr   - Address of Device
   EndPointAddr - Address of Endpoint
   DeviceSpeed  - Device Speed
   MaxPacketLen - Max Length of one Packet
   Translator   - Translator Transaction for SplitX
   QhPtrPtr     - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -532,7 +679,7 @@ Returns:
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
-  
+
   //
   // Software fields
   //
@@ -545,7 +692,7 @@ Returns:
   //
   // BulkTransfer don't use DataToggleControl
   //
-  (*QhPtrPtr)->Qh.DataToggleControl   = FALSE;  
+  (*QhPtrPtr)->Qh.DataToggleControl   = FALSE;
   (*QhPtrPtr)->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&((*QhPtrPtr)->Qh)) >> 5);
   (*QhPtrPtr)->Qh.SelectType          = QH_SELECT_TYPE;
   (*QhPtrPtr)->Qh.QhTerminate         = FALSE;
@@ -581,7 +728,7 @@ Routine Description:
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   DeviceAddr   - Address of Device
   EndPointAddr - Address of Endpoint
   DeviceSpeed  - Device Speed
@@ -589,12 +736,12 @@ Arguments:
   Interval     - value of interval
   Translator   - Translator Transaction for SplitX
   QhPtrPtr     - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -614,7 +761,7 @@ Returns:
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
-  
+
   //
   // Software fields
   //
@@ -665,19 +812,19 @@ Routine Description:
 
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   DataPtr     - A pointer to user data buffer to transfer
   DataLen     - Length of user data to transfer
   PktId       - Packet Identification of this Qtd
   Toggle      - Data Toggle of this Qtd
   QtdStatus   - Default value of status of this Qtd
   QtdPtrPtr   - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -698,10 +845,6 @@ Returns:
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
-  //
-  // Init fields in Qtd
-  //
-  gBS->SetMem (*QtdPtrPtr, sizeof (EHCI_QTD_ENTITY), 0);
 
   //
   // Software field
@@ -751,7 +894,7 @@ Returns:
     Status = EFI_INVALID_PARAMETER;
     goto exit;
   }
-  
+
   //
   // Set Data Buffer Pointers
   //
@@ -778,19 +921,19 @@ CreateSetupQtd (
 
 Routine Description:
 
-  Create Qtd Structure for Setup 
+  Create Qtd Structure for Setup
 
 Arguments:
 
-  HcDev      - USB2_HC_DEV 
+  HcDev      - USB2_HC_DEV
   DevReqPtr  - A pointer to Device Request Data
   QtdPtrPtr  - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   return CreateQtd (
@@ -817,22 +960,22 @@ CreateDataQtd (
 
 Routine Description:
 
-  Create Qtd Structure for data 
+  Create Qtd Structure for data
 
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   DataPtr     - A pointer to user data buffer to transfer
   DataLen     - Length of user data to transfer
   PktId       - Packet Identification of this Qtd
   Toggle      - Data Toggle of this Qtd
   QtdPtrPtr   - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   return CreateQtd (
@@ -856,19 +999,19 @@ CreateAltQtd (
 
 Routine Description:
 
-  Create Qtd Structure for Alternative 
+  Create Qtd Structure for Alternative
 
 Arguments:
 
-  HcDev      - USB2_HC_DEV 
+  HcDev      - USB2_HC_DEV
   PktId      - Packet Identification of this Qtd
   QtdPtrPtr  - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   return CreateQtd (
@@ -892,19 +1035,19 @@ CreateStatusQtd (
 
 Routine Description:
 
-  Create Qtd Structure for status 
+  Create Qtd Structure for status
 
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   PktId       - Packet Identification of this Qtd
   QtdPtrPtr   - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   return CreateQtd (
@@ -932,22 +1075,22 @@ CreateControlQtds (
 
 Routine Description:
 
-  Create Qtds list for Control Transfer 
+  Create Qtds list for Control Transfer
 
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   DataPktId       - Packet Identification of Data Qtds
   RequestCursor   - A pointer to request structure buffer to transfer
   DataCursor      - A pointer to user data buffer to transfer
   DataLen         - Length of user data to transfer
   ControlQtdsHead - A pointer of pointer to first Qtd for control tranfer for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS      Status;
@@ -962,15 +1105,14 @@ Returns:
   UINTN           CapacityOfQtd;
   UINTN           SizePerQtd;
   UINTN           DataCount;
-  UINTN           Xnum;
-  
+
   QtdPtr          = NULL;
   PreQtdPtr       = NULL;
   SetupQtdPtr     = NULL;
   FirstDataQtdPtr = NULL;
   LastDataQtdPtr  = NULL;
   StatusQtdPtr    = NULL;
-  CapacityOfQtd = 0;
+  CapacityOfQtd   = 0;
 
   //
   //  Setup Stage of Control Transfer
@@ -984,7 +1126,7 @@ Returns:
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
-  
+
   //
   //  Data Stage of Control Transfer
   //
@@ -1027,14 +1169,8 @@ Returns:
       LinkQtdToQtd (PreQtdPtr, QtdPtr);
     }
 
-    //
-    // Reverse Data Toggle or not determined by parity of transactions of one qtd
-    //
-    Xnum = Translator ? GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE_WITH_TT) : GetNumberOfTransaction (SizePerQtd, EHCI_BLOCK_SIZE);
-    if (Xnum % 2 != 0) {
-      DataToggle ^= 1;
-    }
-    
+    DataToggle ^= 1;
+  
     PreQtdPtr = QtdPtr;
     DataCursor += SizePerQtd;
     DataCount -= SizePerQtd;
@@ -1060,7 +1196,7 @@ Returns:
     Status = EFI_OUT_OF_RESOURCES;
     goto destory_qtds;
   }
-  
+
   //
   // Link setup Qtd -> data Qtds -> status Qtd
   //
@@ -1096,23 +1232,23 @@ CreateBulkOrInterruptQtds (
 
 Routine Description:
 
-  Create Qtds list for Bulk or Interrupt Transfer 
+  Create Qtds list for Bulk or Interrupt Transfer
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   PktId        - Packet Identification of Qtds
   DataCursor   - A pointer to user data buffer to transfer
   DataLen      - Length of user data to transfer
   DataToggle   - Data Toggle to start
   Translator   - Translator Transaction for SplitX
   QtdsHead     - A pointer of pointer to first Qtd for control tranfer for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 {
   EFI_STATUS      Status;
@@ -1167,11 +1303,11 @@ Returns:
     DataCursor += SizePerQtd;
     DataCount -= SizePerQtd;
   }
-  
+
   //
   // Set Alternate Qtd
   //
-  if (INPUT_PACKET_ID == PktId && 1 < GetNumberOfQtd (FirstQtdPtr)) {
+  if (INPUT_PACKET_ID == PktId && 0 < GetNumberOfQtd (FirstQtdPtr)) {
     Status = CreateAltQtd (
               HcDev,
               PktId,
@@ -1207,9 +1343,9 @@ Routine Description:
 
 Arguments:
 
-  HcDev         - USB2_HC_DEV 
-  FirstQtdPtr   - A pointer to first Qtd in the list 
-    
+  HcDev         - USB2_HC_DEV
+  FirstQtdPtr   - A pointer to first Qtd in the list
+
 Returns:
 
   VOID
@@ -1247,11 +1383,11 @@ GetNumberOfQtd (
 Routine Description:
 
   Number of Qtds in the list
-  
+
 Arguments:
 
   FirstQtdPtr - A pointer to first Qtd in the list
-    
+
 Returns:
 
   Number of Qtds in the list
@@ -1263,41 +1399,12 @@ Returns:
   Count   = 0;
   QtdPtr  = FirstQtdPtr;
 
-  ;
-
   while (NULL != QtdPtr) {
     Count++;
     QtdPtr = QtdPtr->Next;
   }
 
   return Count;
-}
-
-UINTN
-GetNumberOfTransaction (
-  IN UINTN    SizeOfData,
-  IN UINTN    SizeOfTransaction
-  )
-/*++
-
-Routine Description:
-
-  Number of Transactions in one Qtd
-  
-Arguments:
-
-  SizeOfData           - Size of one Qtd
-  SizeOfTransaction    - Size of one Transaction
-   
-Returns:
-
-  Number of Transactions in this Qtd
-
---*/
-{
-
-  return ((SizeOfData & (SizeOfTransaction - 1)) ? SizeOfData / SizeOfTransaction + 1 : SizeOfData / SizeOfTransaction);
-
 }
 
 UINTN
@@ -1309,19 +1416,23 @@ GetCapacityOfQtd (
 Routine Description:
 
   Get Size of First Qtd
-  
+
 Arguments:
 
   BufferCursor       - BufferCursor of the Qtd
-   
+
 Returns:
 
   Size of First Qtd
 
 --*/
 {
-
-  return (EHCI_MAX_QTD_CAPACITY - (EHCI_BLOCK_SIZE * GetNumberOfTransaction (EFI_PAGE_MASK & GET_0B_TO_31B (BufferCursor), EHCI_BLOCK_SIZE)));
+ 
+ if (EFI_PAGE_MASK & GET_0B_TO_31B (BufferCursor)) {
+   return EFI_PAGE_SIZE * 4;
+ } else {
+   return EFI_PAGE_SIZE * 5;
+ }
 
 }
 
@@ -1334,15 +1445,15 @@ GetApproxiOfInterval (
 Routine Description:
 
   Get the approximate value in the 2 index sequence
-  
+
 Arguments:
 
   Interval  - the value of interval
-  
+
 Returns:
 
   approximate value of interval in the 2 index sequence
-  
+
 --*/
 {
   UINTN Orignate;
@@ -1372,15 +1483,15 @@ GetQtdAlternateNextPointer (
 Routine Description:
 
   Get Qtd alternate next pointer field
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   A pointer to hardware alternate Qtd
-  
+
 --*/
 {
   EHCI_QTD_HW *Value;
@@ -1403,15 +1514,15 @@ GetQtdNextPointer (
 Routine Description:
 
   Get Qtd next pointer field
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   A pointer to next hardware Qtd structure
-  
+
 --*/
 {
   EHCI_QTD_HW *Value;
@@ -1425,8 +1536,9 @@ Returns:
   return Value;
 }
 
-VOID LinkQtdToQtd (
-  IN EHCI_QTD_ENTITY * PreQtdPtr, 
+VOID 
+LinkQtdToQtd (
+  IN EHCI_QTD_ENTITY * PreQtdPtr,
   IN EHCI_QTD_ENTITY * QtdPtr
   )
 /*++
@@ -1434,12 +1546,12 @@ VOID LinkQtdToQtd (
 Routine Description:
 
   Link Qtds together
-  
+
 Arguments:
 
   PreQtdPtr   - A pointer to pre Qtd
   QtdPtr      - A pointer to next Qtd
-    
+
 Returns:
 
   VOID
@@ -1468,8 +1580,9 @@ Returns:
 }
 
 
-VOID LinkQtdsToAltQtd (
-  IN EHCI_QTD_ENTITY  * FirstQtdPtr, 
+VOID 
+LinkQtdsToAltQtd (
+  IN EHCI_QTD_ENTITY  * FirstQtdPtr,
   IN EHCI_QTD_ENTITY  * AltQtdPtr
   )
 /*++
@@ -1477,12 +1590,12 @@ VOID LinkQtdsToAltQtd (
 Routine Description:
 
   Link AlterQtds together
-  
+
 Arguments:
 
   FirstQtdPtr  - A pointer to first Qtd in the list
   AltQtdPtr    - A pointer to alternative Qtd
-    
+
 Returns:
 
   VOID
@@ -1497,7 +1610,7 @@ Returns:
 
   AltQtdHwPtr = &(AltQtdPtr->Qtd);
   QtdPtr      = FirstQtdPtr;
-  
+
   while (NULL != QtdPtr) {
     //
     // Software link
@@ -1524,12 +1637,12 @@ LinkQtdToQh (
 Routine Description:
 
   Link Qtds list to Qh
-  
+
 Arguments:
 
   QhPtr    - A pointer to Qh
   QtdPtr   - A pointer to first Qtd in the list
-  
+
 Returns:
 
   VOID
@@ -1561,6 +1674,18 @@ Returns:
   QhPtr->Qh.NextQtdPointer    = (UINT32) (GET_0B_TO_31B (QtdHwPtr) >> 5);
   QhPtr->Qh.NextQtdTerminate  = FALSE;
 
+  QhPtr->Qh.AltNextQtdPointer    = 0;
+  QhPtr->Qh.AltNextQtdTerminate  = TRUE;
+
+
+  if ((QtdPtr->Qtd.PidCode == OUTPUT_PACKET_PID_CODE) && 
+      (QhPtr->TransferType == BULK_TRANSFER)) {
+      //
+      //Start PING first
+      //     
+      QhPtr->Qh.Status |= QTD_STATUS_DO_PING;
+    }
+
   return ;
 }
 
@@ -1574,17 +1699,17 @@ LinkQhToAsyncList (
 Routine Description:
 
   Link Qh to Async Schedule List
-  
+
 Arguments:
 
-  HcDev  - USB2_HC_DEV 
+  HcDev  - USB2_HC_DEV
   QhPtr  - A pointer to Qh
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -1592,9 +1717,23 @@ Returns:
   ASSERT (HcDev);
   ASSERT (QhPtr);
 
-  QhPtr->Qh.HeadReclamationFlag = TRUE;
 
-  Status                        = SetAsyncListAddr (HcDev, QhPtr);
+  //
+  // NULL QH created before
+  //
+
+  HcDev->NULLQH->Next = QhPtr;
+  HcDev->NULLQH->Prev = QhPtr;
+
+  QhPtr->Next = HcDev->NULLQH;
+  QhPtr->Prev = HcDev->NULLQH;
+  
+  
+  HcDev->NULLQH->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&(QhPtr->Qh) >> 5));
+  QhPtr->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&(HcDev->NULLQH->Qh) >> 5));
+
+
+  Status = SetAsyncListAddr (HcDev, HcDev->NULLQH);
   if (EFI_ERROR (Status)) {
     Status = EFI_DEVICE_ERROR;
     goto exit;
@@ -1610,7 +1749,7 @@ Returns:
 
     Status = WaitForAsyncScheduleEnable (HcDev, EHCI_GENERIC_TIMEOUT);
     if (EFI_ERROR (Status)) {
-      DEBUG ((gEHCDebugLevel, "WaitForAsyncScheduleEnable TimeOut"));
+      DEBUG ((gEHCDebugLevel, "EHCI: WaitForAsyncScheduleEnable TimeOut"));
       Status = EFI_TIMEOUT;
       goto exit;
     }
@@ -1638,17 +1777,17 @@ UnlinkQhFromAsyncList (
 Routine Description:
 
   Unlink Qh from Async Schedule List
-  
+
 Arguments:
 
-  HcDev  - USB2_HC_DEV 
+  HcDev  - USB2_HC_DEV
   QhPtr  - A pointer to Qh
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -1658,22 +1797,36 @@ Returns:
   ASSERT (HcDev);
   ASSERT (QhPtr);
 
-  if (QhPtr == QhPtr->Next) {
+  
+  HcDev->NULLQH->Next = HcDev->NULLQH;
+  HcDev->NULLQH->Prev = HcDev->NULLQH;
 
-    Status = DisableAsynchronousSchedule (HcDev);
-    if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
-      goto exit;
-    }
 
-    Status = WaitForAsyncScheduleDisable (HcDev, EHCI_GENERIC_TIMEOUT);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((gEHCErrorLevel, "WaitForAsyncScheduleDisable TimeOut\n"));
-      Status = EFI_TIMEOUT;
-      goto exit;
-    }
+  QhPtr->Next = QhPtr;
+  QhPtr->Prev = QhPtr;
+  
+  HcDev->NULLQH->Qh.QhHorizontalPointer = (UINT32) (GET_0B_TO_31B (&(HcDev->NULLQH->Qh) >> 5));
+  
+  
+  SetAndWaitDoorBell (HcDev, 2 * EHCI_GENERIC_TIMEOUT);
 
+  QhPtr->Qh.QhTerminate         = 1;
+  QhPtr->Qh.QhHorizontalPointer = 0;
+
+
+  Status = DisableAsynchronousSchedule (HcDev);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_DEVICE_ERROR;
+    goto exit;
   }
+
+  Status = WaitForAsyncScheduleDisable (HcDev, EHCI_GENERIC_TIMEOUT);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((gEHCErrorLevel, "EHCI: WaitForAsyncScheduleDisable TimeOut\n"));
+    Status = EFI_TIMEOUT;
+    goto exit;
+  }
+
 
 exit:
   return Status;
@@ -1689,16 +1842,16 @@ LinkQhToPeriodicList (
 Routine Description:
 
   Link Qh to Periodic Schedule List
-  
+
 Arguments:
 
-  HcDev  - USB2_HC_DEV 
+  HcDev  - USB2_HC_DEV
   QhPtr  - A pointer to Qh
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   FRAME_LIST_ENTRY  *FrameEntryPtr;
@@ -1717,11 +1870,11 @@ Returns:
   QhPtr->Qh.HeadReclamationFlag = FALSE;
 
   if (QhPtr->TransferType == ASYNC_INTERRUPT_TRANSFER) {
-  	
+
     //
     // AsyncInterruptTransfer Qh
     //
-    
+
     //
     // Link to Frame[0] List
     //
@@ -1836,11 +1989,11 @@ Returns:
       }
     }
   } else {
-  
+
     //
     // SyncInterruptTransfer Qh
     //
-    
+
     if (!FrameEntryPtr->LinkTerminate) {
       //
       // Not Null FrameList
@@ -1884,17 +2037,17 @@ UnlinkQhFromPeriodicList (
 Routine Description:
 
   Unlink Qh from Periodic Schedule List
-  
+
 Arguments:
 
-  HcDev     - USB2_HC_DEV 
+  HcDev     - USB2_HC_DEV
   QhPtr     - A pointer to Qh
   Interval  - Interval of this periodic transfer
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   FRAME_LIST_ENTRY  *FrameEntryPtr;
@@ -1909,11 +2062,11 @@ Returns:
   FrameEntryPtr = (FRAME_LIST_ENTRY *) HcDev->PeriodicFrameListBuffer;
 
   if (QhPtr->TransferType == ASYNC_INTERRUPT_TRANSFER) {
-  
+
     //
     // AsyncInterruptTransfer Qh
     //
-    
+
     if (NULL == QhPtr->Prev) {
       //
       // Qh is the First one on  Frame[0] List
@@ -1939,7 +2092,7 @@ Returns:
         }
       }
     } else {
-    
+
       //
       // Not First one on  Frame[0] List
       //
@@ -2019,16 +2172,16 @@ LinkToAsyncReqeust (
 Routine Description:
 
   Llink AsyncRequest Entry to Async Request List
-  
+
 Arguments:
 
-  HcDev             - USB2_HC_DEV 
+  HcDev             - USB2_HC_DEV
   AsyncRequestPtr   - A pointer to Async Request Entry
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   EHCI_ASYNC_REQUEST  *CurrentPtr;
@@ -2055,16 +2208,16 @@ UnlinkFromAsyncReqeust (
 Routine Description:
 
   Unlink AsyncRequest Entry from Async Request List
-  
+
 Arguments:
 
-  HcDev            - USB2_HC_DEV 
+  HcDev            - USB2_HC_DEV
   AsyncRequestPtr  - A pointer to Async Request Entry
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   if (NULL == AsyncRequestPtr->Prev) {
@@ -2096,33 +2249,32 @@ Routine Description:
 
 Arguments:
 
-  QtdHwPtr  - A pointer to Qtd hardware structure 
+  QtdHwPtr  - A pointer to Qtd hardware structure
   DataPtr   - A pointer to user data buffer
   DataLen   - Length of the user data buffer
-    
+
 Returns:
 
   VOID
 
 --*/
 {
-  UINTN RemainLen;
+  UINTN     RemainLen;
+
+  ASSERT (QtdHwPtr);
+  ASSERT (DataLen <= 5 * EFI_PAGE_SIZE);
 
   RemainLen = DataLen;
-  ASSERT (QtdHwPtr);
-
   //
   // Allow buffer address range across 4G.
   // But EFI_USB_MAX_BULK_BUFFER_NUM = 1, so don't allow
   // seperate buffer array.
   //
-
   //
   // Set BufferPointer0, ExtBufferPointer0 and Offset
   //
-  QtdHwPtr->BufferPointer0    = (UINT32) (GET_0B_TO_31B (DataPtr) >> 12);
+  QtdHwPtr->BufferPointer0    = (UINT32) (GET_0B_TO_31B (DataPtr) >> EFI_PAGE_SHIFT);
   QtdHwPtr->CurrentOffset     = (UINT32) (GET_0B_TO_31B (DataPtr) & EFI_PAGE_MASK);
-  QtdHwPtr->ExtBufferPointer0 = (UINT32) GET_32B_TO_63B (DataPtr);
 
   //
   // Set BufferPointer1 and ExtBufferPointer1
@@ -2133,7 +2285,6 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer1    = QtdHwPtr->BufferPointer0 + 1;
-  QtdHwPtr->ExtBufferPointer1 = (QtdHwPtr->BufferPointer1 == 0) ? (QtdHwPtr->ExtBufferPointer0 + 1) : QtdHwPtr->ExtBufferPointer0;
 
   //
   // Set BufferPointer2 and ExtBufferPointer2
@@ -2144,7 +2295,6 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer2    = QtdHwPtr->BufferPointer1 + 1;
-  QtdHwPtr->ExtBufferPointer2 = (QtdHwPtr->BufferPointer2 == 0) ? (QtdHwPtr->ExtBufferPointer1 + 1) : QtdHwPtr->ExtBufferPointer1;
 
   //
   // Set BufferPointer3 and ExtBufferPointer3
@@ -2155,7 +2305,6 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer3    = QtdHwPtr->BufferPointer2 + 1;
-  QtdHwPtr->ExtBufferPointer3 = (QtdHwPtr->BufferPointer2 == 0) ? (QtdHwPtr->ExtBufferPointer2 + 1) : QtdHwPtr->ExtBufferPointer2;
 
   //
   // Set BufferPointer4 and ExtBufferPointer4
@@ -2166,7 +2315,6 @@ Returns:
   }
 
   QtdHwPtr->BufferPointer4    = QtdHwPtr->BufferPointer3 + 1;
-  QtdHwPtr->ExtBufferPointer4 = (QtdHwPtr->BufferPointer3 == 0) ? (QtdHwPtr->ExtBufferPointer3 + 1) : QtdHwPtr->ExtBufferPointer3;
 
 exit:
   return ;
@@ -2181,16 +2329,16 @@ IsQtdStatusActive (
 Routine Description:
 
   Whether Qtd status is active or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Active
   FALSE   Inactive
-  
+
 --*/
 {
   UINT8   QtdStatus;
@@ -2211,16 +2359,16 @@ IsQtdStatusHalted (
 Routine Description:
 
   Whether Qtd status is halted or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Halted
   FALSE   Not halted
-  
+
 --*/
 {
   UINT8   QtdStatus;
@@ -2241,16 +2389,16 @@ IsQtdStatusBufferError (
 Routine Description:
 
   Whether Qtd status is buffer error or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Buffer error
   FALSE   No buffer error
-  
+
 --*/
 {
   UINT8   QtdStatus;
@@ -2271,16 +2419,16 @@ IsQtdStatusBabbleError (
 Routine Description:
 
   Whether Qtd status is babble error or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Babble error
   FALSE   No babble error
-  
+
 --*/
 {
   UINT8   QtdStatus;
@@ -2301,16 +2449,16 @@ IsQtdStatusTransactionError (
 Routine Description:
 
   Whether Qtd status is transaction error or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Transaction error
   FALSE   No transaction error
-  
+
 --*/
 {
   UINT8   QtdStatus;
@@ -2331,16 +2479,16 @@ IsDataInTransfer (
 Routine Description:
 
   Whether is a DataIn direction transfer
-  
+
 Arguments:
 
-  EndPointAddress - address of the endpoint 
-  
+  EndPointAddress - address of the endpoint
+
 Returns:
 
   TRUE    DataIn
   FALSE   DataOut
-  
+
 --*/
 {
   BOOLEAN Value;
@@ -2369,22 +2517,22 @@ MapDataBuffer (
 Routine Description:
 
   Map address of user data buffer
-  
+
 Arguments:
 
-  HcDev              - USB2_HC_DEV 
+  HcDev              - USB2_HC_DEV
   TransferDirection  - direction of transfer
-  Data               - A pointer to user data buffer 
+  Data               - A pointer to user data buffer
   DataLength         - length of user data
   PktId              - Packte Identificaion
   DataCursor         - mapped address to return
   DataMap            - identificaion of this mapping to return
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-    
+
 --*/
 {
   EFI_STATUS            Status;
@@ -2409,7 +2557,7 @@ Returns:
                             DataMap
                             );
     if (EFI_ERROR (Status)) {
-      DEBUG ((gEHCDebugLevel, "MapDataBuffer Failed\n"));
+      DEBUG ((gEHCDebugLevel, "EHCI: MapDataBuffer Failed\n"));
       Status = EFI_DEVICE_ERROR;
       goto exit;
     }
@@ -2449,7 +2597,7 @@ Returns:
     break;
 
   default:
-  	
+
     Status = EFI_INVALID_PARAMETER;
   }
 
@@ -2469,19 +2617,19 @@ MapRequestBuffer (
 Routine Description:
 
   Map address of request structure buffer
-  
+
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   Request         - A pointer to request structure
   RequestCursor   - Mapped address of request structure to return
   RequestMap      - Identificaion of this mapping to return
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-    
+
 --*/
 {
   EFI_STATUS            Status;
@@ -2520,19 +2668,19 @@ DeleteAsyncRequestTransfer (
 Routine Description:
 
   Delete all asynchronous request transfer
-  
+
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   DeviceAddress   - address of usb device
   EndPointAddress - address of endpoint
   DataToggle      - stored data toggle
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-    
+
 --*/
 {
   EFI_STATUS          Status;
@@ -2579,7 +2727,7 @@ Returns:
 
   Status = WaitForPeriodicScheduleDisable (HcDev, EHCI_GENERIC_TIMEOUT);
   if (EFI_ERROR (Status)) {
-    DEBUG ((gEHCErrorLevel, "WaitForPeriodicScheduleDisable TimeOut\n"));
+    DEBUG ((gEHCErrorLevel, "EHCI: WaitForPeriodicScheduleDisable TimeOut\n"));
     Status = EFI_TIMEOUT;
     goto exit;
   }
@@ -2606,7 +2754,7 @@ Returns:
 
     Status = WaitForPeriodicScheduleEnable (HcDev, EHCI_GENERIC_TIMEOUT);
     if (EFI_ERROR (Status)) {
-      DEBUG ((gEHCErrorLevel, "WaitForPeriodicScheduleEnable TimeOut\n"));
+      DEBUG ((gEHCErrorLevel, "EHCI: WaitForPeriodicScheduleEnable TimeOut\n"));
       Status = EFI_TIMEOUT;
       goto exit;
     }
@@ -2638,15 +2786,15 @@ CleanUpAllAsyncRequestTransfer (
 Routine Description:
 
   Clean up all asynchronous request transfer
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   EHCI_ASYNC_REQUEST  *AsyncRequestPtr;
@@ -2682,15 +2830,15 @@ ZeroOutQhOverlay (
 Routine Description:
 
   Zero out the fields in Qh structure
-  
+
 Arguments:
 
   QhPtr - A pointer to Qh structure
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   QhPtr->Qh.CurrentQtdPointer   = 0;
@@ -2712,11 +2860,6 @@ Returns:
   QhPtr->Qh.FrameTag            = 0;
   QhPtr->Qh.BufferPointer3      = 0;
   QhPtr->Qh.BufferPointer4      = 0;
-  QhPtr->Qh.ExtBufferPointer0   = 0;
-  QhPtr->Qh.ExtBufferPointer1   = 0;
-  QhPtr->Qh.ExtBufferPointer2   = 0;
-  QhPtr->Qh.ExtBufferPointer3   = 0;
-  QhPtr->Qh.ExtBufferPointer4   = 0;
 }
 
 VOID
@@ -2730,17 +2873,17 @@ UpdateAsyncRequestTransfer (
 Routine Description:
 
   Update asynchronous request transfer
-  
+
 Arguments:
 
-  AsyncRequestPtr  - A pointer to async request  
-  TransferResult   - transfer result 
+  AsyncRequestPtr  - A pointer to async request
+  TransferResult   - transfer result
   ErrQtdPos        - postion of error Qtd
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 {
   EHCI_QTD_ENTITY *QtdPtr;
@@ -2748,7 +2891,7 @@ Returns:
   QtdPtr      = NULL;
 
   if (EFI_USB_NOERROR == TransferResult) {
-  
+
     //
     // Update Qh for next trigger
     //
@@ -2812,7 +2955,7 @@ Returns:
 
   TRUE    Qtds finished
   FALSE   Not finish
-  
+
 --*/
 {
   UINTN           ActualLenPerQtd;
@@ -2836,19 +2979,32 @@ Returns:
     }
 
     if (IsQtdStatusHalted (QtdHwPtr)) {
+
+      DEBUG ((gEHCErrorLevel, "EHCI: QTD_STATUS_HALTED 0x%X\n", QtdHwPtr->Status));
       *Result |= EFI_USB_ERR_STALL;
     }
 
     if (IsQtdStatusBufferError (QtdHwPtr)) {
+      DEBUG ((gEHCErrorLevel, "EHCI: QTD_STATUS_BUFFER_ERR 0x%X\n", QtdHwPtr->Status));
       *Result |= EFI_USB_ERR_BUFFER;
     }
 
     if (IsQtdStatusBabbleError (QtdHwPtr)) {
+      DEBUG ((gEHCErrorLevel, "EHCI: StatusBufferError 0x%X\n", QtdHwPtr->Status));
       *Result |= EFI_USB_ERR_BABBLE;
     }
 
     if (IsQtdStatusTransactionError (QtdHwPtr)) {
-      *Result |= EFI_USB_ERR_TIMEOUT;
+
+      //
+      //Exclude Special Case
+      // 
+      if (((QtdHwPtr->Status & QTD_STATUS_HALTED) == QTD_STATUS_HALTED) ||
+          ((QtdHwPtr->Status & QTD_STATUS_ACTIVE) == QTD_STATUS_ACTIVE) ||
+          ((QtdHwPtr->ErrorCount != QTD_ERROR_COUNTER))) {
+        *Result |= EFI_USB_ERR_TIMEOUT;
+        DEBUG ((gEHCErrorLevel, "EHCI: QTD_STATUS_TRANSACTION_ERR: 0x%X\n", QtdHwPtr->Status));
+      }
     }
 
     ActualLenPerQtd     = QtdPtr->TotalBytes - QtdHwPtr->TotalBytes;
@@ -2865,16 +3021,21 @@ Returns:
       break;
     }
 
-    if ((!IsControl) && (QtdPtr->TotalBytes > 0)) {
+    if ((INPUT_PACKET_PID_CODE == QtdHwPtr->PidCode)&& (QtdPtr->TotalBytes > 0)) {
       //
-      // Did something, but isn't full workload
+      // Short Packet: IN, Short
       //
+      DEBUG ((gEHCDebugLevel, "EHCI: Short Packet Status: 0x%x\n", QtdHwPtr->Status));
       break;
     }
 
-    (*ErrQtdPos)++;
-    QtdPtr   = QtdPtr->Next;
-    QtdHwPtr = &(QtdPtr->Qtd);
+    if (QtdPtr->Next != NULL) {
+      (*ErrQtdPos)++;
+      QtdPtr   = QtdPtr->Next;
+      QtdHwPtr = &(QtdPtr->Qtd);
+    } else {
+      QtdHwPtr = NULL;
+    }
 
   }
 
@@ -2902,16 +3063,16 @@ Arguments:
   HcDev            - USB2_HC_DEV
   IsControl        - Is control transfer or not
   QhPtr            - A pointer to Qh
-  ActualLen        - Actual transfered Len 
+  ActualLen        - Actual transfered Len
   DataToggle       - Data Toggle
   TimeOut          - TimeOut threshold
   TransferResult   - Transfer result
-  
+
 Returns:
 
   EFI_SUCCESS      Sucess
   EFI_DEVICE_ERROR Fail
-  
+
 --*/
 {
   EFI_STATUS  Status;
@@ -2927,7 +3088,7 @@ Returns:
   *ActualLen      = 0;
   Finished        = FALSE;
 
-  Delay           = (TimeOut * STALL_1_MILLI_SECOND / 50) + 1;
+  Delay           = (TimeOut * STALL_1_MILLI_SECOND / 50);
 
   do {
     *TransferResult = 0;
@@ -2954,6 +3115,7 @@ Returns:
 
   if (EFI_USB_NOERROR != *TransferResult) {
     if (0 == Delay) {
+      DEBUG((gEHCErrorLevel, "EHCI: QTDS TimeOut\n"));
       Status = EFI_TIMEOUT;
     } else {
       Status = EFI_DEVICE_ERROR;
@@ -2964,7 +3126,7 @@ Returns:
   // Special for Bulk and Interrupt Transfer
   //
   *DataToggle = (UINT8) QhPtr->Qh.DataToggle;
-  
+
   return Status;
 }
 
@@ -2975,18 +3137,18 @@ AsyncRequestMoniter (
   )
 /*++
 Routine Description:
-  
+
   Interrupt transfer periodic check handler
-    
+
 Arguments:
   Event    - Interrupt event
   Context  - Pointer to USB2_HC_DEV
-    
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   EFI_STATUS          Status;
@@ -3013,10 +3175,10 @@ Returns:
     ActualLen       = 0;
 
     CheckQtdsTransferResult (
-      FALSE, 
-      AsyncRequestPtr->QhPtr, 
-      &TransferResult, 
-      &ErrQtdPos, 
+      FALSE,
+      AsyncRequestPtr->QhPtr,
+      &TransferResult,
+      &ErrQtdPos,
       &ActualLen
       );
 
@@ -3034,7 +3196,7 @@ Returns:
     }
 
     QtdHwPtr = &(AsyncRequestPtr->QhPtr->FirstQtdPtr->Qtd);
-    ReceiveBuffer = (UINT8 *) GET_0B_TO_31B ((QtdHwPtr->BufferPointer0 << 12) | AsyncRequestPtr->QhPtr->FirstQtdPtr->StaticCurrentOffset);
+    ReceiveBuffer = (UINT8 *) GET_0B_TO_31B ((QtdHwPtr->BufferPointer0 << EFI_PAGE_SHIFT) | AsyncRequestPtr->QhPtr->FirstQtdPtr->StaticCurrentOffset);
     EfiCopyMem (
       ProcessBuffer,
       ReceiveBuffer,
@@ -3052,7 +3214,7 @@ Returns:
     } else {
 
       //
-      // leave error recovery to its related device driver. A common case of 
+      // leave error recovery to its related device driver. A common case of
       // the error recovery is to re-submit the interrupt transfer.
       // When an interrupt transfer is re-submitted, its position in the linked
       // list is changed. It is inserted to the head of the linked list, while

@@ -19,6 +19,12 @@ Abstract:
 
 #include "bot.h"
 
+
+#ifdef EFI_DEBUG
+UINT32     gBOTDebugLevel  = EFI_D_INFO;
+UINT32     gBOTErrorLevel  = EFI_D_INFO;
+#endif
+
 //
 // Function prototypes
 //
@@ -91,7 +97,7 @@ STATIC
 EFI_STATUS
 BotDataPhase (
   IN     USB_BOT_DEVICE            *UsbBotDev,
-  IN     UINT32                    *DataSize,
+  IN     UINTN                    *DataSize,
   IN OUT VOID                      *DataBuffer,
   IN     EFI_USB_DATA_DIRECTION    Direction,
   IN     UINT16                    Timeout
@@ -100,11 +106,10 @@ BotDataPhase (
 STATIC
 EFI_STATUS
 BotStatusPhase (
-  IN  USB_BOT_DEVICE      *UsbBotDev,
-  OUT UINT8               *TransferStatus,
-  IN  UINT16              Timeout
+  IN  USB_BOT_DEVICE          *UsbBotDev,
+  OUT UINTN                   *DataResidue, 
+  IN  UINT16                  Timeout
   );
-
 //
 // USB Atapi protocol prototype
 //
@@ -232,7 +237,7 @@ BotDriverBindingSupported (
   //
   // Check if it is a BOT type Mass Storage Device
   //
-  if ((InterfaceDescriptor.InterfaceClass    != 0x08) ||
+  if ((InterfaceDescriptor.InterfaceClass    != MASS_STORAGE_CLASS) ||
       (InterfaceDescriptor.InterfaceProtocol != BOT)) {
     Status = EFI_UNSUPPORTED;
     goto Exit;
@@ -552,6 +557,38 @@ BotDriverBindingStop (
   return Status;
 }
 
+
+
+STATIC
+EFI_STATUS
+ClearBulkInPipe (
+  IN  USB_BOT_DEVICE          *UsbBotDev
+  )
+{
+ UINT32   Result;
+ 
+ return UsbClearEndpointHalt (
+          UsbBotDev->UsbIo,
+          UsbBotDev->BulkInEndpointDescriptor->EndpointAddress,
+          &Result
+          );
+}
+
+
+STATIC
+EFI_STATUS
+ClearBulkOutPipe  (
+  IN  USB_BOT_DEVICE          *UsbBotDev
+  )
+{
+ UINT32   Result;
+ return UsbClearEndpointHalt (
+          UsbBotDev->UsbIo,
+          UsbBotDev->BulkOutEndpointDescriptor->EndpointAddress,
+          &Result
+          );
+}
+
 STATIC
 EFI_STATUS
 BotRecoveryReset (
@@ -573,13 +610,8 @@ Returns:
 --*/
 {
   EFI_STATUS              Status;
-  UINT32                  Result;
   EFI_USB_DEVICE_REQUEST  Request;
-  EFI_USB_IO_PROTOCOL     *UsbIo;
-  UINT8                   EndpointAddr;
-
-  UsbIo = UsbBotDev->UsbIo;
-
+  UINT32                  Result;
   BotReportStatusCode (
     UsbBotDev->DevicePath,
     EFI_PROGRESS_CODE,
@@ -587,50 +619,30 @@ Returns:
     );
 
   EfiZeroMem (&Request, sizeof (EFI_USB_DEVICE_REQUEST));
-
   //
   // See BOT specification
   //
   Request.RequestType = 0x21;
   Request.Request     = 0xFF;
 
-  Status = UsbIo->UsbControlTransfer (
-                    UsbIo,
-                    &Request,
-                    EfiUsbNoData,
-                    TIMEOUT_VALUE,
-                    NULL,
-                    0,
-                    &Result
-                    );
+  Status = UsbBotDev->UsbIo->UsbControlTransfer (
+                               UsbBotDev->UsbIo,
+                               &Request,
+                               EfiUsbNoData,
+                               TIMEOUT_VALUE,
+                               NULL,
+                               0,
+                               &Result
+                               );
 
   gBS->Stall (100 * 1000);
 
-  if (!EFI_ERROR (Status)) {
-    //
-    // clear bulk in endpoint stall feature
-    //
-    EndpointAddr = UsbBotDev->BulkInEndpointDescriptor->EndpointAddress;
-
-    Status = UsbClearEndpointHalt (
-               UsbIo,
-               EndpointAddr,
-               &Result
-               );
-
-    //
-    // clear bulk out endpoint stall feature
-    //
-    EndpointAddr = UsbBotDev->BulkOutEndpointDescriptor->EndpointAddress;
-    Status = UsbClearEndpointHalt (
-               UsbIo,
-               EndpointAddr,
-               &Result
-               );
-  }
+  ClearBulkInPipe (UsbBotDev);
+  ClearBulkOutPipe (UsbBotDev);
 
   return Status;
 }
+
 //
 // Bot Protocol Implementation
 //
@@ -687,28 +699,20 @@ BotCommandPhase (
 
   Status = UsbIo->UsbBulkTransfer (
                     UsbIo,
-                    (UsbBotDev->BulkOutEndpointDescriptor)->EndpointAddress,
+                    UsbBotDev->BulkOutEndpointDescriptor->EndpointAddress,
                     &cbw,
                     &DataSize,
                     Timeout,
                     &Result
                     );
-  if (EFI_ERROR (Status)) {
-    //
-    // Command phase fail, we need to recovery reset this device
-    //
-    BotRecoveryReset (UsbBotDev);
-    return EFI_DEVICE_ERROR;
-  }
-
-  return EFI_SUCCESS;
+  return Status;
 }
 
 STATIC
 EFI_STATUS
 BotDataPhase (
   IN      USB_BOT_DEVICE            *UsbBotDev,
-  IN      UINT32                    *DataSize,
+  IN      UINTN                    *DataSize,
   IN  OUT VOID                      *DataBuffer,
   IN      EFI_USB_DATA_DIRECTION    Direction,
   IN      UINT16                    Timeout
@@ -734,125 +738,52 @@ BotDataPhase (
   UINT32              Result;
   EFI_USB_IO_PROTOCOL *UsbIo;
   UINT8               EndpointAddr;
-  UINTN               Remain;
-  UINTN               Increment;
-  UINT32              MaxPacketLen;
   UINT8               *BufferPtr;
-  UINTN               TransferredSize;
-  UINTN               RetryTimes;
-  UINTN               MaxRetry;
-  UINTN               BlockSize;
-  UINTN               PackageNum;
 
   UsbIo           = UsbBotDev->UsbIo;
-  Remain          = *DataSize;
   BufferPtr       = (UINT8 *) DataBuffer;
-  TransferredSize = 0;
-  MaxRetry        = 10;
-  PackageNum      = 128;
 
   //
   // retrieve the the max packet length of the given endpoint
   //
   if (Direction == EfiUsbDataIn) {
-    MaxPacketLen  = (UsbBotDev->BulkInEndpointDescriptor)->MaxPacketSize;
-    EndpointAddr  = (UsbBotDev->BulkInEndpointDescriptor)->EndpointAddress;
+    EndpointAddr  = UsbBotDev->BulkInEndpointDescriptor->EndpointAddress;
   } else {
-    MaxPacketLen  = (UsbBotDev->BulkOutEndpointDescriptor)->MaxPacketSize;
-    EndpointAddr  = (UsbBotDev->BulkOutEndpointDescriptor)->EndpointAddress;
+    EndpointAddr  = UsbBotDev->BulkOutEndpointDescriptor->EndpointAddress;
   }
-
-  RetryTimes  = MaxRetry;
-  BlockSize   = PackageNum * MaxPacketLen;
-  while (Remain > 0) {
-    //
-    // Using 15 packets to aVOID Bitstuff error
-    //
-    if (Remain > PackageNum * MaxPacketLen) {
-      Increment = BlockSize;
-    } else {
-      Increment = Remain;
-    }
-
+   
     Status = UsbIo->UsbBulkTransfer (
                       UsbIo,
                       EndpointAddr,
                       BufferPtr,
-                      &Increment,
-                      Timeout,
+                      DataSize,
+                      (UINT16)(Timeout),
                       &Result
                       );
 
-    TransferredSize += Increment;
-
     if (EFI_ERROR (Status)) {
-      RetryTimes--;
-      if ((RetryTimes == 0) || ((Result & EFI_USB_ERR_TIMEOUT) == 0)) {
-        goto ErrorExit;
+      if ((Result & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
+        if (Direction == EfiUsbDataIn) {
+          DEBUG((gBOTErrorLevel, "BOT: Data IN Stall, ClearBulkInPipe\n"));
+          ClearBulkInPipe (UsbBotDev);
+        } else {
+          DEBUG((gBOTErrorLevel, "BOT: Data OUT Stall, ClearBulkInPipe\n"));
+          ClearBulkOutPipe (UsbBotDev);
+        }
       }
+      BotRecoveryReset (UsbBotDev);
+   }
 
-      TransferredSize -= Increment;
-      continue;
-    } else {
-      //
-      // we try MaxTetry times for every bulk transfer
-      //
-      RetryTimes = MaxRetry;
-    }
-
-    BufferPtr += Increment;
-    Remain -= Increment;
-    if (Increment < BlockSize && TransferredSize <= *DataSize) {
-      //
-      // we get to the end of transter and transter size is
-      // less than requriedsize
-      //
-      break;
-    }
-  }
-
-  *DataSize = (UINT32) TransferredSize;
-
-  return EFI_SUCCESS;
-
-ErrorExit:
-  if (Direction == EfiUsbDataIn) {
-    BotReportStatusCode (
-      UsbBotDev->DevicePath,
-      EFI_ERROR_CODE | EFI_ERROR_MINOR,
-      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_EC_INPUT_ERROR)
-      );
-  } else {
-    BotReportStatusCode (
-      UsbBotDev->DevicePath,
-      EFI_ERROR_CODE | EFI_ERROR_MINOR,
-      (EFI_PERIPHERAL_REMOVABLE_MEDIA | EFI_P_EC_OUTPUT_ERROR)
-      );
-  }
-
-  if ((Result & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
-    //
-    // just endpoint stall happens
-    //
-    UsbClearEndpointHalt (
-      UsbIo,
-      EndpointAddr,
-      &Result
-      );
-  }
-
-  *DataSize = (UINT32) TransferredSize;
 
   return Status;
-
 }
 
 STATIC
 EFI_STATUS
 BotStatusPhase (
-  IN  USB_BOT_DEVICE        *UsbBotDev,
-  OUT UINT8                 *TransferStatus,
-  IN  UINT16                Timeout
+  IN  USB_BOT_DEVICE          *UsbBotDev,
+  OUT UINTN                   *DataResidue, 
+  IN  UINT16                  Timeout
   )
 /*++
 
@@ -861,7 +792,6 @@ BotStatusPhase (
 
   Parameters:
     UsbBotDev       -  USB_BOT_DEVICE pointer
-    TransferStatus  -  TransferStatus
     Timeout         -  Time out value in milliseconds
   Return Value:
     EFI_SUCCESS
@@ -871,47 +801,21 @@ BotStatusPhase (
 {
   CSW                 csw;
   EFI_STATUS          Status;
-  UINT32              Result;
   EFI_USB_IO_PROTOCOL *UsbIo;
   UINT8               EndpointAddr;
   UINTN               DataSize;
+  UINT32              Result;
+  UINT8               Index; 
 
-  UsbIo = UsbBotDev->UsbIo;
+  UsbIo         = UsbBotDev->UsbIo;
+  EndpointAddr  = UsbBotDev->BulkInEndpointDescriptor->EndpointAddress;
 
-  EfiZeroMem (&csw, sizeof (CSW));
-
-  EndpointAddr  = (UsbBotDev->BulkInEndpointDescriptor)->EndpointAddress;
-
-  DataSize      = sizeof (CSW);
-
-  //
-  // Get the status field from bulk transfer
-  //
-  Status = UsbIo->UsbBulkTransfer (
-                    UsbIo,
-                    EndpointAddr,
-                    &csw,
-                    &DataSize,
-                    Timeout,
-                    &Result
-                    );
-  if (EFI_ERROR (Status)) {
-    if ((Result & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
-      //
-      // just endpoint stall happens
-      //
-      UsbClearEndpointHalt (
-        UsbIo,
-        EndpointAddr,
-        &Result
-        );
-    }
-
+  
+  for (Index = 0; Index < 3; Index ++) {
     EfiZeroMem (&csw, sizeof (CSW));
+    DataSize    = sizeof (CSW);
+    Result      = 0;
 
-    EndpointAddr  = (UsbBotDev->BulkInEndpointDescriptor)->EndpointAddress;
-
-    DataSize      = sizeof (CSW);
     Status = UsbIo->UsbBulkTransfer (
                       UsbIo,
                       EndpointAddr,
@@ -922,25 +826,36 @@ BotStatusPhase (
                       );
     if (EFI_ERROR (Status)) {
       if ((Result & EFI_USB_ERR_STALL) == EFI_USB_ERR_STALL) {
-        UsbClearEndpointHalt (
-          UsbIo,
-          EndpointAddr,
-          &Result
-          );
+        DEBUG((gBOTDebugLevel, "BOT: CSW Stall, ClearBulkInPipe\n"));
+        ClearBulkInPipe (UsbBotDev);
+        continue;
+      }
+    }
+
+    if (csw.dCSWSignature == CSWSIG) {
+      if (csw.bCSWStatus == 0 || csw.bCSWStatus  == 0x01) {
+        if (DataResidue != NULL) {
+          *DataResidue = csw.dCSWDataResidue;
+        }
+        if (csw.bCSWStatus  == 0x01) {
+          return EFI_DEVICE_ERROR;
+        }
+        break;
+      } else if (csw.bCSWStatus == 0x02) {
+        DEBUG((gBOTErrorLevel, "BOT: Bot Phase error\n"));
+        BotRecoveryReset (UsbBotDev);
       }
 
-      return Status;
     }
   }
 
-  if (csw.dCSWSignature == CSWSIG) {
-    *TransferStatus = csw.bCSWStatus;
-  } else {
+  if (Index == 3) {
     return EFI_DEVICE_ERROR;
   }
 
   return EFI_SUCCESS;
 }
+
 //
 // Usb Atapi Protocol implementation
 //
@@ -977,79 +892,82 @@ BotAtapiCommand (
 {
   EFI_STATUS      Status;
   EFI_STATUS      BotDataStatus;
-  UINT8           TransferStatus;
   USB_BOT_DEVICE  *UsbBotDev;
-  UINT32          BufferSize;
+  UINTN          BufferSize;
+  UINT8           Index;
+  UINTN           DataResidue;
 
-  BotDataStatus = EFI_SUCCESS;
   //
   // Get the context
   //
-  UsbBotDev = USB_BOT_DEVICE_FROM_THIS (This);
+  UsbBotDev     = USB_BOT_DEVICE_FROM_THIS (This);
+  BotDataStatus = EFI_SUCCESS;
+  BufferSize    = 0;
 
-  //
-  // First send ATAPI command through Bot
-  //
-  Status = BotCommandPhase (
-            UsbBotDev,
-            Command,
-            CommandSize,
-            BufferLength,
-            Direction,
-            TimeOutInMilliSeconds
-            );
+  for (Index = 0; Index < 3; Index ++) {
+    //
+    // First send ATAPI command through Bot
+    //
+    Status = BotCommandPhase (
+              UsbBotDev,
+              Command,
+              CommandSize,
+              BufferLength,
+              Direction,
+              10 * 1000
+              );
 
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-  //
-  // Send/Get Data if there is a Data Stage
-  //
-  switch (Direction) {
+    if (EFI_ERROR (Status)) {
+       DEBUG((gBOTErrorLevel, "BotCommandPhase Fail\n"));
+       return Status;
+    }
+    //
+    // Send/Get Data if there is a Data Stage
+    //
+    switch (Direction) {
 
-  case EfiUsbDataIn:
-  case EfiUsbDataOut:
-    BufferSize = BufferLength;
+    case EfiUsbDataIn:
+    case EfiUsbDataOut:
+      BufferSize = BufferLength;
 
-    BotDataStatus = BotDataPhase (
-                      UsbBotDev,
-                      &BufferSize,
-                      DataBuffer,
-                      Direction,
-                      (UINT16) (TimeOutInMilliSeconds)
-                      );
+      BotDataStatus = BotDataPhase (
+                        UsbBotDev,
+                        &BufferSize,
+                        DataBuffer,
+                        Direction,
+                        (UINT16) (TimeOutInMilliSeconds)
+                        );
 
-    break;
 
-  case EfiUsbNoData:
-    break;
-  }
+      if (EFI_ERROR (BotDataStatus)) {
+        DEBUG((gBOTErrorLevel, "BotDataPhase Fail\n"));
+      }
+      break;
+
+    case EfiUsbNoData:
+      break;
+   }
   
-  //
-  // Status Phase
-  //
-  Status = BotStatusPhase (
-            UsbBotDev,
-            &TransferStatus,
-            TimeOutInMilliSeconds
-            );
-
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  if (TransferStatus == 0x02) {
+    DataResidue = 0;
     //
-    // Phase error
+    // Status Phase
     //
-    BotRecoveryReset (UsbBotDev);
-    return EFI_DEVICE_ERROR;
-  }
+    Status = BotStatusPhase (
+              UsbBotDev,
+              &DataResidue,
+              10 * 1000
+              );
 
-  if (TransferStatus == 0x01) {
-    return EFI_DEVICE_ERROR;
-  }
+    if (EFI_ERROR (Status)) {
+      DEBUG((gBOTErrorLevel, "BotStatusPhase Fail\n"));
+      return Status;
+    }
 
+    if (!EFI_ERROR (BotDataStatus)) {
+      break;
+    }
+
+  }
   return BotDataStatus;
 }
 

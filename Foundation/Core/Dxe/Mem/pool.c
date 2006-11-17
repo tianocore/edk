@@ -61,6 +61,7 @@ typedef struct {
 #define LIST_TO_SIZE(a)   ((a+1) << POOL_SHIFT)
 
 #define MAX_POOL_LIST       SIZE_TO_LIST(DEFAULT_PAGE_ALLOCATION)
+#define MAX_POOL_SIZE       (EFI_MAX_ADDRESS - POOL_OVERHEAD)
 
 //
 // Globals
@@ -219,7 +220,15 @@ Returns:
   }
   
   *Buffer = NULL;
-  
+  //
+  // As we need to reserve memory for other resources, we can't expect to allocate 
+  // all memory( EFI_MAX_ADDRESS - POOL_OVERHEAD + 1) using this function, 
+  // the following check operation is only used to make sure the allocated pool size will 
+  // not rool over from a very large number to a very small number.
+  //
+  if (Size > MAX_POOL_SIZE) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   //
   // Acquire the memory lock and make the allocation

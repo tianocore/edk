@@ -1,20 +1,20 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                     
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2006, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
     EhciMem.c
-    
-Abstract: 
-    
+
+Abstract:
+
 
 Revision History
 --*/
@@ -22,6 +22,7 @@ Revision History
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "Ehci.h"
+
 
 
 EFI_STATUS
@@ -42,13 +43,13 @@ Arguments:
   HcDev                  - USB2_HC_DEV
   MemoryHeader           - MEMORY_MANAGE_HEADER to output
   MemoryBlockSizeInPages - MemoryBlockSizeInPages
-  
+
 Returns:
 
   EFI_SUCCESS           Success
   EFI_OUT_OF_RESOURCES  Fail for no resources
   EFI_UNSUPPORTED       Unsupported currently
-  
+
 --*/
 {
   EFI_STATUS            Status;
@@ -75,7 +76,7 @@ Returns:
   //
   // each bit in Bit Array will manage 32 bytes memory in memory block
   //
-  (*MemoryHeader)->BitArraySizeInBytes = ((*MemoryHeader)->MemoryBlockSizeInBytes / 32) / 8;
+  (*MemoryHeader)->BitArraySizeInBytes = ((*MemoryHeader)->MemoryBlockSizeInBytes / MEM_UNIT_SIZE) / 8;
 
   //
   // Allocate memory for BitArray
@@ -85,7 +86,7 @@ Returns:
     gBS->FreePool (*MemoryHeader);
     return EFI_OUT_OF_RESOURCES;
   }
-  
+
   //
   // Memory Block uses MemoryBlockSizeInPages pages,
   // and it is allocated as common buffer use.
@@ -114,7 +115,7 @@ Returns:
                            &Mapping
                            );
   //
-  // If returned Mapped size is less than the size 
+  // If returned Mapped size is less than the size
   // we request,do not support.
   //
   if (EFI_ERROR (Status) || (MemoryBlockSizeInBytes != EFI_PAGES_TO_SIZE (MemoryBlockSizeInPages))) {
@@ -123,21 +124,21 @@ Returns:
     gBS->FreePool (*MemoryHeader);
     return EFI_UNSUPPORTED;
   }
-  
+
   //
-  // Data structure involved by host controller 
+  // Data structure involved by host controller
   // should be restricted into the same 4G
   //
   if (HcDev->Is64BitCapable != 0) {
-  	if (HcDev->High32BitAddr != GET_32B_TO_63B (MappedAddress)) {
-	  HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
+    if (HcDev->High32BitAddr != GET_32B_TO_63B (MappedAddress)) {
+    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
       HcDev->PciIo->FreeBuffer (HcDev->PciIo, MemoryBlockSizeInPages, CommonBuffer);
       gBS->FreePool ((*MemoryHeader)->BitArrayPtr);
       gBS->FreePool (*MemoryHeader);
       return EFI_UNSUPPORTED;
-	}
   }
-  
+  }
+
   //
   // Set Memory block initial address
   //
@@ -242,16 +243,16 @@ Returns:
   ASSERT (MemoryHeader != NULL);
 
   OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY + 1);
-  
+
   //
   // allocate unit is 32 bytes (align on 32 byte)
   //
-  if (AllocSize & 0x1F) {
-    RealAllocSize = (AllocSize / 32 + 1) * 32;
+  if (AllocSize & (MEM_UNIT_SIZE - 1)) {
+    RealAllocSize = (AllocSize / MEM_UNIT_SIZE + 1) * MEM_UNIT_SIZE;
   } else {
     RealAllocSize = AllocSize;
   }
-  
+
   //
   // There may be linked MemoryHeaders.
   // To allocate a free pool in Memory blocks,
@@ -264,22 +265,26 @@ Returns:
     Status = AllocMemInMemoryBlock (
               TempHeaderPtr,
               Pool,
-              RealAllocSize / 32
+              RealAllocSize / MEM_UNIT_SIZE
               );
     if (!EFI_ERROR (Status)) {
-      EfiZeroMem (*Pool, AllocSize);
-      gBS->RestoreTPL (OldTpl);
-      return EFI_SUCCESS;
+       break;
     }
   }
 
   gBS->RestoreTPL (OldTpl);
-  
+
+  if (!EFI_ERROR (Status)) {
+     EfiZeroMem (*Pool, AllocSize);
+     return EFI_SUCCESS;
+  }
+
+
   //
   // There is no enough memory,
   // Create a new Memory Block
   //
-  
+
   //
   // if pool size is larger than NORMAL_MEMORY_BLOCK_UNIT_IN_PAGES,
   // just allocate a large enough memory block.
@@ -296,7 +301,7 @@ Returns:
   }
 
   OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY + 1);
-  	
+
   //
   // Link the new Memory Block to the Memory Header list
   //
@@ -305,13 +310,15 @@ Returns:
   Status = AllocMemInMemoryBlock (
              NewMemoryHeader,
              Pool,
-             RealAllocSize / 32
+             RealAllocSize / MEM_UNIT_SIZE
              );
+
+  gBS->RestoreTPL (OldTpl);
+
   if (!EFI_ERROR (Status)) {
     EfiZeroMem (*Pool, AllocSize);
   }
 
-  gBS->RestoreTPL (OldTpl);
   return Status;
 }
 
@@ -356,12 +363,12 @@ Returns:
   //
   // allocate unit is 32 byte (align on 32 byte)
   //
-  if (AllocSize & 0x1F) {
-    RealAllocSize = (AllocSize / 32 + 1) * 32;
+  if (AllocSize & (MEM_UNIT_SIZE - 1)) {
+    RealAllocSize = (AllocSize / MEM_UNIT_SIZE + 1) * MEM_UNIT_SIZE;
   } else {
     RealAllocSize = AllocSize;
   }
-  
+
   //
   // scan the memory header linked list for
   // the asigned memory to free.
@@ -375,13 +382,15 @@ Returns:
       // Pool is in the Memory Block area,
       // find the start byte and bit in the bit array
       //
-      StartBytePos  = ((Pool - TempHeaderPtr->MemoryBlockPtr) / 32) / 8;
-      StartBitPos   = (UINT8) (((Pool - TempHeaderPtr->MemoryBlockPtr) / 32) & 0x7);
+      StartBytePos  = ((Pool - TempHeaderPtr->MemoryBlockPtr) / MEM_UNIT_SIZE) / 8;
+      StartBitPos   = (UINT8) (((Pool - TempHeaderPtr->MemoryBlockPtr) / MEM_UNIT_SIZE) & 0x7);
 
       //
       // reset associated bits in bit arry
       //
-      for (Index = StartBytePos, Index2 = StartBitPos, Count = 0; Count < (RealAllocSize / 32); Count++) {
+      for (Index = StartBytePos, Index2 = StartBitPos, Count = 0; Count < (RealAllocSize / MEM_UNIT_SIZE); Count++) {
+        ASSERT ((TempHeaderPtr->BitArrayPtr[Index] & bit (Index2) )== bit (Index2));
+
         TempHeaderPtr->BitArrayPtr[Index] ^= (UINT8) (bit (Index2));
         Index2++;
         if (Index2 == 8) {
@@ -395,7 +404,7 @@ Returns:
       break;
     }
   }
-  
+
   //
   // Release emptied memory blocks (only if the memory block is not
   // the first one in the memory header list
@@ -481,7 +490,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS    Success
-  EFI_NOT_FOUND  Can't find the free memory 
+  EFI_NOT_FOUND  Can't find the free memory
 
 --*/
 {
@@ -501,16 +510,16 @@ Returns:
   Index         = 0;
 
   for (TempBytePos = 0; TempBytePos < MemoryHeader->BitArraySizeInBytes;) {
-  	
+
     //
     // Pop out BitValue from a byte in TempBytePos.
     //
     BitValue = (UINT8) (ByteValue & 0x1);
-	
+
     //
     // right shift the byte
     //
-    ByteValue /= 2;
+    ByteValue = ByteValue >> 1;
 
     if (BitValue == 0) {
       //
@@ -547,7 +556,7 @@ Returns:
         FoundBitPos   = Index;
       }
     }
-	
+
     //
     // step forward a bit
     //
@@ -566,11 +575,11 @@ Returns:
   if (NumberOfZeros < NumberOfMemoryUnit) {
     return EFI_NOT_FOUND;
   }
-  
+
   //
   // Found enough free space.
   //
-  
+
   //
   // The values recorded in (FoundBytePos,FoundBitPos) have two conditions:
   //  1)(FoundBytePos,FoundBitPos) record the position
@@ -583,7 +592,7 @@ Returns:
   if ((MemoryHeader->BitArrayPtr[FoundBytePos] & bit (FoundBitPos)) != 0) {
     FoundBitPos += 1;
   }
-  
+
   //
   // Have the (FoundBytePos,FoundBitPos) make sense.
   //
@@ -591,12 +600,13 @@ Returns:
     FoundBytePos += 1;
     FoundBitPos -= 8;
   }
-  
+
   //
   // Set the memory as allocated
   //
   for (TempBytePos = FoundBytePos, Index = FoundBitPos, Count = 0; Count < NumberOfMemoryUnit; Count++) {
 
+    ASSERT ((MemoryHeader->BitArrayPtr[TempBytePos] & bit (Index) )== 0);
     MemoryHeader->BitArrayPtr[TempBytePos] |= bit (Index);
     Index++;
     if (Index == 8) {
@@ -605,7 +615,7 @@ Returns:
     }
   }
 
-  *Pool = MemoryHeader->MemoryBlockPtr + (FoundBytePos * 8 + FoundBitPos) * 32;
+  *Pool = MemoryHeader->MemoryBlockPtr + (FoundBytePos * 8 + FoundBitPos) * MEM_UNIT_SIZE;
 
   return EFI_SUCCESS;
 }
@@ -627,7 +637,7 @@ Arguments:
 Returns:
 
   TRUE    Empty
-  FALSE   Not Empty 
+  FALSE   Not Empty
 
 --*/
 {
@@ -677,6 +687,7 @@ Returns:
       // Link the before and after
       //
       TempHeaderPtr->Next = NeedFreeMemoryHeader->Next;
+      NeedFreeMemoryHeader->Next = NULL;
       break;
     }
   }
@@ -700,7 +711,7 @@ Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   EFI_STATUS            Status;
@@ -738,7 +749,7 @@ Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 {
   MEMORY_MANAGE_HEADER  *TempHeaderPtr;

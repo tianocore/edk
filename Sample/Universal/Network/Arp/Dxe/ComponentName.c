@@ -50,7 +50,7 @@ EFI_COMPONENT_NAME_PROTOCOL gArpComponentName = {
 };
 
 STATIC EFI_UNICODE_STRING_TABLE mArpDriverNameTable[] = {
-  { "eng", L"ARP   Network Service Driver" },
+  { "eng", L"ARP Network Service Driver" },
   { NULL, NULL }
 };
   

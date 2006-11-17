@@ -217,7 +217,7 @@ typedef struct _SOCK_INIT_DATA {
 
   SOCK_PROTO_HANDLER  ProtoHandler;
 
-  EFI_HANDLE  *DriverBinding; // the pointer to protocol driver binding handle
+  EFI_HANDLE   DriverBinding; // the driver binding handle
 } SOCK_INIT_DATA;
 
 //

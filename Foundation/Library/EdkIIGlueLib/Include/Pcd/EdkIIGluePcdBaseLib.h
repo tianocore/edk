@@ -29,23 +29,23 @@ Abstract:
 //
 
 #ifndef __EDKII_GLUE_PCD_PcdMaximumUnicodeStringLength__
-#define __EDKII_GLUE_PCD_PcdMaximumUnicodeStringLength__ 1000000
+#define __EDKII_GLUE_PCD_PcdMaximumUnicodeStringLength__ EDKII_GLUE_MaximumUnicodeStringLength
 #endif
 
 #ifndef __EDKII_GLUE_PCD_PcdMaximumAsciiStringLength__
-#define __EDKII_GLUE_PCD_PcdMaximumAsciiStringLength__   1000000
+#define __EDKII_GLUE_PCD_PcdMaximumAsciiStringLength__   EDKII_GLUE_MaximumAsciiStringLength
 #endif
 
 //
 // SpinLock Pcds
 //
 #ifndef __EDKII_GLUE_PCD_PcdSpinLockTimeout__
-#define __EDKII_GLUE_PCD_PcdSpinLockTimeout__             10000000
+#define __EDKII_GLUE_PCD_PcdSpinLockTimeout__            EDKII_GLUE_SpinLockTimeout
 #endif
 
 // Linked List
 #ifndef  __EDKII_GLUE_PCD_PcdMaximumLinkedListLength__
-#define  __EDKII_GLUE_PCD_PcdMaximumLinkedListLength__    1000000
+#define  __EDKII_GLUE_PCD_PcdMaximumLinkedListLength__   EDKII_GLUE_MaximumLinkedListLength
 #endif
 
 #include "Pcd/EdkIIGluePcd.h"

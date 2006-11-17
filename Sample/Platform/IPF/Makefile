@@ -26,8 +26,6 @@
 !ERROR EDK_SOURCE environmental variable not set 
 !ENDIF
 
-EFI_SOURCE = $(EDK_SOURCE)
-
 !IFNDEF EDK_TOOLS_PATH
 !MESSAGE EDK_TOOLS_PATH environmental variable not set, default setting used
 !ENDIF

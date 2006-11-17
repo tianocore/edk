@@ -23,22 +23,6 @@ Abstract:
 #include "EdkIIGluePeim.h"
 #include "Common/EdkIIGlueDependencies.h"
 
-EFI_STATUS
-EFIAPI
-__EDKII_GLUE_MODULE_ENTRY_POINT__ (
-  IN EFI_FFS_FILE_HEADER  *FfsHeader,
-  IN EFI_PEI_SERVICES     **PeiServices
-  );
-
-EFI_STATUS
-EFIAPI
-ProcessModuleEntryPointList (
-  IN EFI_FFS_FILE_HEADER  *FfsHeader,
-  IN EFI_PEI_SERVICES     **PeiServices
-  )
-{
-  return __EDKII_GLUE_MODULE_ENTRY_POINT__ (FfsHeader, PeiServices);
-}
 
 #ifdef __EDKII_GLUE_EFI_CALLER_ID_GUID__
   GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID gEfiCallerIdGuid = __EDKII_GLUE_EFI_CALLER_ID_GUID__;
@@ -76,6 +60,13 @@ ProcessLibraryConstructorList (
 
 EFI_PEIM_ENTRY_POINT (_ModuleEntryPoint);
 
+EFI_STATUS
+EFIAPI
+__EDKII_GLUE_MODULE_ENTRY_POINT__ (
+  IN EFI_FFS_FILE_HEADER  *FfsHeader,
+  IN EFI_PEI_SERVICES     **PeiServices
+  );
+
 /**
   Image entry point of Peim.
 
@@ -107,7 +98,7 @@ _ModuleEntryPoint (
   //
   // Call the driver entry point
   //
-  return ProcessModuleEntryPointList (FfsHeader, PeiServices);
+  return __EDKII_GLUE_MODULE_ENTRY_POINT__ (FfsHeader, PeiServices);
 }
 
 

@@ -41,6 +41,7 @@ typedef struct _TCP4_SERVICE_DATA {
   IP_IO                         *IpIo;  // IP Io consumed by TCP4
   EFI_SERVICE_BINDING_PROTOCOL  Tcp4ServiceBinding;
   EFI_HANDLE                    DriverBindingHandle;
+  CHAR16                        *MacString;
 } TCP4_SERVICE_DATA;
 
 //

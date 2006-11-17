@@ -1,20 +1,20 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2006, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
     Ehci.h
-    
-Abstract: 
-    
+
+Abstract:
+
 
 Revision History
 --*/
@@ -50,6 +50,9 @@ extern UINTN  gEHCErrorLevel;
 #define STALL_1_MILLI_SECOND              1000 * STALL_1_MACRO_SECOND
 #define STALL_1_SECOND                    1000 * STALL_1_MILLI_SECOND
 
+#define MEM_UNIT_SIZE                     128
+
+
 #define SETUP_PACKET_PID_CODE             0x02
 #define INPUT_PACKET_PID_CODE             0x01
 #define OUTPUT_PACKET_PID_CODE            0x0
@@ -68,7 +71,7 @@ extern UINTN  gEHCErrorLevel;
 
 #define USB_BAR_INDEX                     0 /* how many bytes away from USB_BASE to 0x10 */
 
-#define NORMAL_MEMORY_BLOCK_UNIT_IN_PAGES 1
+#define NORMAL_MEMORY_BLOCK_UNIT_IN_PAGES 16
 
 #define EHCI_MIN_PACKET_SIZE              8
 #define EHCI_MAX_PACKET_SIZE              1024
@@ -78,7 +81,7 @@ extern UINTN  gEHCErrorLevel;
 #define EHCI_MAX_QTD_CAPACITY             (EFI_PAGE_SIZE * 5)
 
 #define NAK_COUNT_RELOAD                  3
-#define QTD_ERROR_COUNTER                 1
+#define QTD_ERROR_COUNTER                 3
 #define HIGH_BANDWIDTH_PIPE_MULTIPLIER    1
 
 #define QTD_STATUS_ACTIVE                 0x80
@@ -225,6 +228,9 @@ typedef struct {
   UINT8 BaseCode;
 } USB_CLASSC;
 
+//
+//32 Bytes Aligned
+//
 typedef struct {
   UINT32  NextQtdTerminate : 1;
   UINT32  Rsvd1 : 4;
@@ -257,13 +263,12 @@ typedef struct {
   UINT32  Rsvd6 : 12;
   UINT32  BufferPointer4 : 20;
 
-  UINT32  ExtBufferPointer0;
-  UINT32  ExtBufferPointer1;
-  UINT32  ExtBufferPointer2;
-  UINT32  ExtBufferPointer3;
-  UINT32  ExtBufferPointer4;
+  UINT32  PAD[5];
 } EHCI_QTD_HW;
 
+//
+//32 Bytes Aligned
+//
 typedef struct {
   UINT32  QhTerminate : 1;
   UINT32  SelectType : 2;
@@ -322,11 +327,7 @@ typedef struct {
   UINT32  Rsvd6 : 12;
   UINT32  BufferPointer4 : 20;
 
-  UINT32  ExtBufferPointer0;
-  UINT32  ExtBufferPointer1;
-  UINT32  ExtBufferPointer2;
-  UINT32  ExtBufferPointer3;
-  UINT32  ExtBufferPointer4;
+  UINT32  Pad[5];
 } EHCI_QH_HW;
 
 typedef struct {
@@ -341,6 +342,9 @@ typedef struct {
 EFI_FORWARD_DECLARATION (EHCI_QTD_ENTITY);
 EFI_FORWARD_DECLARATION (EHCI_QH_ENTITY);
 
+//
+//Aligan On 32 Bytes
+//
 typedef struct _EHCI_QTD_ENTITY {
   EHCI_QTD_HW     Qtd;
   UINT32          TotalBytes;
@@ -351,7 +355,9 @@ typedef struct _EHCI_QTD_ENTITY {
   EHCI_QTD_ENTITY *AltNext;
   EHCI_QH_ENTITY  *SelfQh;
 } EHCI_QTD_ENTITY;
-
+//
+//Aligan On 32 Bytes
+//
 typedef struct _EHCI_QH_ENTITY {
   EHCI_QH_HW      Qh;
   EHCI_QH_ENTITY  *Next;
@@ -359,7 +365,7 @@ typedef struct _EHCI_QH_ENTITY {
   EHCI_QTD_ENTITY *FirstQtdPtr;
   EHCI_QTD_ENTITY *LastQtdPtr;
   EHCI_QTD_ENTITY *AltQtdPtr;
-  UINTN           Interval;
+  UINTN            Interval;
   UINT8           TransferType;
 } EHCI_QH_ENTITY;
 
@@ -411,8 +417,9 @@ typedef struct _USB2_HC_DEV {
   EFI_EVENT                 AsyncRequestEvent;
   EFI_UNICODE_STRING_TABLE  *ControllerNameTable;
   MEMORY_MANAGE_HEADER      *MemoryHeader;
-  UINT8						Is64BitCapable;
+  UINT8                     Is64BitCapable;
   UINT32                    High32BitAddr;
+  EHCI_QH_ENTITY            *NULLQH;
 } USB2_HC_DEV;
 
 
@@ -441,13 +448,13 @@ Arguments:
   HcDev                  - USB2_HC_DEV
   MemoryHeader           - MEMORY_MANAGE_HEADER to output
   MemoryBlockSizeInPages - MemoryBlockSizeInPages
-  
+
 Returns:
 
   EFI_SUCCESS           Success
   EFI_OUT_OF_RESOURCES  Fail for no resources
   EFI_UNSUPPORTED       Unsupported currently
-  
+
 --*/
 ;
 
@@ -519,7 +526,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS    Success
-  EFI_NOT_FOUND  Can't find the free memory 
+  EFI_NOT_FOUND  Can't find the free memory
 
 --*/
 ;
@@ -541,7 +548,7 @@ Arguments:
 Returns:
 
   TRUE    Empty
-  FALSE   Not Empty 
+  FALSE   Not Empty
 
 --*/
 ;
@@ -609,7 +616,7 @@ Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -635,7 +642,7 @@ Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -678,18 +685,18 @@ ReadEhcCapabiltiyReg (
 Routine Description:
 
   Read  Ehc Capabitlity register
-  
+
 Arguments:
 
-  HcDev             - USB2_HC_DEV 
+  HcDev             - USB2_HC_DEV
   CapabiltiyRegAddr - Ehc Capability register address
   Data              - A pointer to data read from register
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -704,18 +711,18 @@ ReadEhcOperationalReg (
 Routine Description:
 
   Read  Ehc Operation register
-  
+
 Arguments:
 
-  HcDev                - USB2_HC_DEV 
+  HcDev                - USB2_HC_DEV
   OperationalRegAddr   - Ehc Operation register address
   Data                 - A pointer to data read from register
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -730,18 +737,18 @@ WriteEhcOperationalReg (
 Routine Description:
 
   Write  Ehc Operation register
-  
+
 Arguments:
 
-  HcDev                - USB2_HC_DEV 
+  HcDev                - USB2_HC_DEV
   OperationalRegAddr   - Ehc Operation register address
   Data                 - 32bit write to register
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -754,16 +761,16 @@ SetEhcDoorbell (
 Routine Description:
 
   Set Ehc door bell bit
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-     
+
 --*/
 ;
 
@@ -777,18 +784,18 @@ SetFrameListLen (
 Routine Description:
 
   Set the length of Frame List
-  
+
 Arguments:
 
-  HcDev    - USB2_HC_DEV 
+  HcDev    - USB2_HC_DEV
   Length   - the required length of frame list
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_INVALID_PARAMETER  Invalid parameter
   EFI_DEVICE_ERROR       Fail
-  
+
 --*/
 ;
 
@@ -801,16 +808,16 @@ IsFrameListProgrammable (
 Routine Description:
 
   Whether frame list is programmable
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   TRUE   Programmable
   FALSE  Unprogrammable
-  
+
 --*/
 ;
 
@@ -823,16 +830,16 @@ IsPeriodicScheduleEnabled (
 Routine Description:
 
   Whether periodic schedule is enabled
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   TRUE   Enabled
   FALSE  Disabled
-   
+
 --*/
 ;
 
@@ -845,16 +852,16 @@ IsAsyncScheduleEnabled (
 Routine Description:
 
   Whether asynchronous schedule is enabled
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   TRUE   Enabled
   FALSE  Disabled
-    
+
 --*/
 ;
 
@@ -868,16 +875,16 @@ IsEhcPortEnabled (
 Routine Description:
 
   Whether port is enabled
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   TRUE   Enabled
   FALSE  Disabled
-  
+
 --*/
 ;
 
@@ -890,16 +897,16 @@ IsEhcReseted (
 Routine Description:
 
   Whether Ehc is halted
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   TRUE   Reseted
   FALSE  Unreseted
-    
+
 --*/
 ;
 
@@ -912,16 +919,16 @@ IsEhcHalted (
 Routine Description:
 
   Whether Ehc is halted
-  
+
 Arguments:
 
-  HcDev  - USB2_HC_DEV 
-  
+  HcDev  - USB2_HC_DEV
+
 Returns:
 
   TRUE   Halted
   FALSE  Not halted
-    
+
 --*/
 ;
 
@@ -934,39 +941,39 @@ IsEhcSysError (
 Routine Description:
 
   Whether Ehc is system error
-  
+
 Arguments:
 
-  HcDev  - USB2_HC_DEV 
-  
+  HcDev  - USB2_HC_DEV
+
 Returns:
 
   TRUE   System error
   FALSE  No system error
-    
+
 --*/
 ;
 
 BOOLEAN
 IsHighSpeedDevice (
   IN EFI_USB2_HC_PROTOCOL *This,
-  IN UINT8                PortNum 
+  IN UINT8                PortNum
   )
 /*++
 
 Routine Description:
 
   Whether high speed device attached
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   TRUE   High speed
   FALSE  Full speed
-  
+
 --*/
 ;
 
@@ -980,17 +987,17 @@ WaitForEhcReset (
 Routine Description:
 
   wait for Ehc reset or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1004,17 +1011,17 @@ WaitForEhcHalt (
 Routine Description:
 
   wait for Ehc halt or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1028,17 +1035,17 @@ WaitForEhcNotHalt (
 Routine Description:
 
   wait for Ehc not halt or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1055,14 +1062,14 @@ Routine Description:
 
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
 
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1076,17 +1083,17 @@ WaitForAsyncScheduleEnable (
 Routine Description:
 
   Wait for Ehc asynchronous schedule enable or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1100,17 +1107,17 @@ WaitForAsyncScheduleDisable (
 Routine Description:
 
   Wait for Ehc asynchronous schedule disable or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1124,17 +1131,17 @@ WaitForPeriodicScheduleEnable (
 Routine Description:
 
   Wait for Ehc periodic schedule enable or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1148,17 +1155,17 @@ WaitForPeriodicScheduleDisable (
 Routine Description:
 
   Wait for periodic schedule disable or timeout
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   Timeout - timeout threshold
-  
+
 Returns:
 
   EFI_SUCCESS    Success
   EFI_TIMEOUT    Timeout
-  
+
 --*/
 ;
 
@@ -1171,16 +1178,16 @@ GetCapabilityLen (
 Routine Description:
 
   Get the length of capability register
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1194,17 +1201,17 @@ SetFrameListBaseAddr (
 Routine Description:
 
   Set base address of frame list first entry
-  
+
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   FrameBuffer - base address of first entry of frame list
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1218,17 +1225,17 @@ SetAsyncListAddr (
 Routine Description:
 
   Set address of first Async schedule Qh
-  
+
 Arguments:
 
-  HcDev    - USB2_HC_DEV 
+  HcDev    - USB2_HC_DEV
   QhPtr    - A pointer to first Qh in the Async schedule
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1241,17 +1248,17 @@ SetCtrlDataStructSeg (
 Routine Description:
 
   Set address of first Async schedule Qh
-  
+
 Arguments:
 
-  HcDev    - USB2_HC_DEV 
+  HcDev    - USB2_HC_DEV
   QhPtr    - A pointer to first Qh in the Async schedule
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1264,16 +1271,16 @@ SetPortRoutingEhc (
 Routine Description:
 
   Set Ehc port routing bit
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1286,16 +1293,16 @@ EnablePeriodicSchedule (
 Routine Description:
 
   Enable periodic schedule
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1308,16 +1315,16 @@ DisablePeriodicSchedule (
 Routine Description:
 
   Disable periodic schedule
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1330,16 +1337,16 @@ EnableAsynchronousSchedule (
 Routine Description:
 
   Enable asynchrounous schedule
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1352,16 +1359,16 @@ DisableAsynchronousSchedule (
 Routine Description:
 
   Disable asynchrounous schedule
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1374,16 +1381,16 @@ StartScheduleExecution (
 Routine Description:
 
   Start Ehc schedule execution
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1396,16 +1403,16 @@ ResetEhc (
 Routine Description:
 
   Reset Ehc
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1418,16 +1425,16 @@ ClearEhcAllStatus (
 Routine Description:
 
   Clear Ehc all status bits
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -1449,12 +1456,12 @@ Arguments:
 
   HcDev   - USB2_HC_DEV
   Length  - Frame List Length
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -1475,7 +1482,7 @@ Arguments:
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -1494,12 +1501,12 @@ Arguments:
 
   HcDev          - USB2_HC_DEV
   NotifyFunction - Timer Notify Function
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -1516,12 +1523,12 @@ Routine Description:
 Arguments:
 
   HcDev - USB2_HC_DEV
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -1538,12 +1545,12 @@ Routine Description:
 Arguments:
 
   HcDev - USB2_HC_DEV
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -1560,12 +1567,12 @@ Routine Description:
 Arguments:
 
   HcDev - USB2_HC_DEV
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -1586,18 +1593,18 @@ Routine Description:
 
 Arguments:
 
-  HcDev          - USB2_HC_DEV 
+  HcDev          - USB2_HC_DEV
   DeviceAddr     - Address of Device
   Endpoint       - Endpoint Number
   DeviceSpeed    - Device Speed
   MaxPacketLen   - Max Length of one Packet
   QhPtrPtr       - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1618,18 +1625,18 @@ Routine Description:
 
 Arguments:
 
-  HcDev         - USB2_HC_DEV 
+  HcDev         - USB2_HC_DEV
   DeviceAddr    - Address of Device
   DeviceSpeed   - Device Speed
   MaxPacketLen  - Max Length of one Packet
   Translator    - Translator Transaction for SplitX
   QhPtrPtr      - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1652,19 +1659,19 @@ Routine Description:
 
 Arguments:
 
-  HcDev         - USB2_HC_DEV 
+  HcDev         - USB2_HC_DEV
   DeviceAddr    - Address of Device
   EndPointAddr  - Address of Endpoint
   DeviceSpeed   - Device Speed
   MaxPacketLen  - Max Length of one Packet
   Translator    - Translator Transaction for SplitX
   QhPtrPtr      - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1688,7 +1695,7 @@ Routine Description:
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   DeviceAddr   - Address of Device
   EndPointAddr - Address of Endpoint
   DeviceSpeed  - Device Speed
@@ -1696,12 +1703,12 @@ Arguments:
   Interval     - value of interval
   Translator   - Translator Transaction for SplitX
   QhPtrPtr     - A pointer of pointer to Qh for return
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1714,17 +1721,17 @@ DestoryQh (
 
 Routine Description:
 
-  Destory Qh Structure 
-  
+  Destory Qh Structure
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
+  HcDev - USB2_HC_DEV
   QhPtr - A pointer to Qh
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -1746,19 +1753,19 @@ Routine Description:
 
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   DataPtr     - A pointer to user data buffer to transfer
   DataLen     - Length of user data to transfer
   PktId       - Packet Identification of this Qtd
   Toggle      - Data Toggle of this Qtd
   QtdStatus   - Default value of status of this Qtd
   QtdPtrPtr   - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 ;
 
@@ -1772,19 +1779,19 @@ CreateSetupQtd (
 
 Routine Description:
 
-  Create Qtd Structure for Setup 
+  Create Qtd Structure for Setup
 
 Arguments:
 
-  HcDev      - USB2_HC_DEV 
+  HcDev      - USB2_HC_DEV
   DevReqPtr  - A pointer to Device Request Data
   QtdPtrPtr  - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 ;
 
@@ -1801,22 +1808,22 @@ CreateDataQtd (
 
 Routine Description:
 
-  Create Qtd Structure for data 
+  Create Qtd Structure for data
 
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   DataPtr     - A pointer to user data buffer to transfer
   DataLen     - Length of user data to transfer
   PktId       - Packet Identification of this Qtd
   Toggle      - Data Toggle of this Qtd
   QtdPtrPtr   - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 ;
 
@@ -1830,19 +1837,19 @@ CreateStatusQtd (
 
 Routine Description:
 
-  Create Qtd Structure for status 
+  Create Qtd Structure for status
 
 Arguments:
 
-  HcDev       - USB2_HC_DEV 
+  HcDev       - USB2_HC_DEV
   PktId       - Packet Identification of this Qtd
   QtdPtrPtr   - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 ;
 
@@ -1856,19 +1863,19 @@ CreateAltQtd (
 
 Routine Description:
 
-  Create Qtd Structure for Alternative 
+  Create Qtd Structure for Alternative
 
 Arguments:
 
-  HcDev      - USB2_HC_DEV 
+  HcDev      - USB2_HC_DEV
   PktId      - Packet Identification of this Qtd
   QtdPtrPtr  - A pointer of pointer to Qtd for return
-  
+
 Returns:
 
   EFI_SUCCESS            Success
   EFI_OUT_OF_RESOURCES   Cannot allocate resources
-  
+
 --*/
 ;
 
@@ -1886,22 +1893,22 @@ CreateControlQtds (
 
 Routine Description:
 
-  Create Qtds list for Control Transfer 
+  Create Qtds list for Control Transfer
 
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   DataPktId       - Packet Identification of Data Qtds
   RequestCursor   - A pointer to request structure buffer to transfer
   DataCursor      - A pointer to user data buffer to transfer
   DataLen         - Length of user data to transfer
   ControlQtdsHead - A pointer of pointer to first Qtd for control tranfer for return
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1918,23 +1925,23 @@ CreateBulkOrInterruptQtds (
 
 Routine Description:
 
-  Create Qtds list for Bulk or Interrupt Transfer 
+  Create Qtds list for Bulk or Interrupt Transfer
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
+  HcDev        - USB2_HC_DEV
   PktId        - Packet Identification of Qtds
   DataCursor   - A pointer to user data buffer to transfer
   DataLen      - Length of user data to transfer
   DataToggle   - Data Toggle to start
   Translator   - Translator Transaction for SplitX
   QtdsHead     - A pointer of pointer to first Qtd for control tranfer for return
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -1951,9 +1958,9 @@ Routine Description:
 
 Arguments:
 
-  HcDev        - USB2_HC_DEV 
-  FirstQtdPtr  - A pointer to first Qtd in the list 
-    
+  HcDev        - USB2_HC_DEV
+  FirstQtdPtr  - A pointer to first Qtd in the list
+
 Returns:
 
   VOID
@@ -1971,12 +1978,12 @@ LinkQtdToQtd (
 Routine Description:
 
   Link Qtds together
-  
+
 Arguments:
 
   PreQtdPtr  - A pointer to pre Qtd
   QtdPtr     - A pointer to next Qtd
-    
+
 Returns:
 
   VOID
@@ -1994,12 +2001,12 @@ LinkQtdsToAltQtd (
 Routine Description:
 
   Link AlterQtds together
-  
+
 Arguments:
 
   FirstQtdPtr - A pointer to first Qtd in the list
   AltQtdPtr - A pointer to alternative Qtd
-    
+
 Returns:
   VOID
 
@@ -2016,12 +2023,12 @@ LinkQtdToQh (
 Routine Description:
 
   Link Qtds list to Qh
-  
+
 Arguments:
 
   QhPtr   - A pointer to Qh
   QtdPtr  - A pointer to first Qtd in the list
-  
+
 Returns:
 
   VOID
@@ -2039,17 +2046,17 @@ LinkQhToAsyncList (
 Routine Description:
 
   Link Qh to Async Schedule List
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
+  HcDev - USB2_HC_DEV
   QhPtr - A pointer to Qh
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -2063,17 +2070,17 @@ UnlinkQhFromAsyncList (
 Routine Description:
 
   Unlink Qh from Async Schedule List
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   QhPtr   - A pointer to Qh
-  
+
 Returns:
 
   EFI_SUCCESS       Success
   EFI_DEVICE_ERROR  Fail
-  
+
 --*/
 ;
 
@@ -2087,12 +2094,12 @@ LinkQhToPeriodicList (
 Routine Description:
 
   Link Qh to Periodic Schedule List
-  
+
 Arguments:
 
-  HcDev   - USB2_HC_DEV 
+  HcDev   - USB2_HC_DEV
   QhPtr   - A pointer to Qh
-  
+
 Returns:
 
   VOID
@@ -2111,17 +2118,17 @@ UnlinkQhFromPeriodicList (
 Routine Description:
 
   Unlink Qh from Periodic Schedule List
-  
+
 Arguments:
 
-  HcDev     - USB2_HC_DEV 
+  HcDev     - USB2_HC_DEV
   QhPtr     - A pointer to Qh
   Interval  - Interval of this periodic transfer
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -2135,16 +2142,16 @@ LinkToAsyncReqeust (
 Routine Description:
 
   Llink AsyncRequest Entry to Async Request List
-  
+
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   AsyncRequestPtr - A pointer to Async Request Entry
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -2158,16 +2165,16 @@ UnlinkFromAsyncReqeust (
 Routine Description:
 
   Unlink AsyncRequest Entry from Async Request List
-  
+
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   AsyncRequestPtr - A pointer to Async Request Entry
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -2180,11 +2187,11 @@ GetNumberOfQtd (
 Routine Description:
 
   Number of Qtds in the list
-  
+
 Arguments:
 
   FirstQtdPtr - A pointer to first Qtd in the list
-    
+
 Returns:
 
   Number of Qtds in the list
@@ -2192,28 +2199,7 @@ Returns:
 --*/
 ;
 
-UINTN
-GetNumberOfTransaction (
-  IN UINTN    SizeOfData,
-  IN UINTN    SizeOfTransaction
-  )
-/*++
 
-Routine Description:
-
-  Number of Transactions in one Qtd
-  
-Arguments:
-
-  SizeOfData           - Size of one Qtd
-  SizeOfTransaction    - Size of one Transaction
-   
-Returns:
-
-  Number of Transactions in this Qtd
-
---*/
-;
 
 UINTN
 GetCapacityOfQtd (
@@ -2224,11 +2210,11 @@ GetCapacityOfQtd (
 Routine Description:
 
   Get Capacity of Qtd
-  
+
 Arguments:
 
   BufferCursor  - BufferCursor of the Qtd
-   
+
 Returns:
 
   Capacity of Qtd
@@ -2245,15 +2231,15 @@ GetApproxiOfInterval (
 Routine Description:
 
   Get the approximate value in the 2 index sequence
-  
+
 Arguments:
 
   Interval - the value of interval
-  
+
 Returns:
 
   approximate value of interval in the 2 index sequence
-  
+
 --*/
 ;
 
@@ -2266,15 +2252,15 @@ GetQtdNextPointer (
 Routine Description:
 
   Get Qtd next pointer field
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   A pointer to next hardware Qtd structure
-  
+
 --*/
 ;
 
@@ -2287,16 +2273,16 @@ IsQtdStatusActive (
 Routine Description:
 
   Whether Qtd status is active or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Active
   FALSE   Inactive
-  
+
 --*/
 ;
 
@@ -2309,16 +2295,16 @@ IsQtdStatusHalted (
 Routine Description:
 
   Whether Qtd status is halted or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Halted
   FALSE   Not halted
-  
+
 --*/
 ;
 
@@ -2331,16 +2317,16 @@ IsQtdStatusBufferError (
 Routine Description:
 
   Whether Qtd status is buffer error or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Buffer error
   FALSE   No buffer error
-  
+
 --*/
 ;
 
@@ -2353,16 +2339,16 @@ IsQtdStatusBabbleError (
 Routine Description:
 
   Whether Qtd status is babble error or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Babble error
   FALSE   No babble error
-  
+
 --*/
 ;
 
@@ -2375,16 +2361,16 @@ IsQtdStatusTransactionError (
 Routine Description:
 
   Whether Qtd status is transaction error or not
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   TRUE    Transaction error
   FALSE   No transaction error
-  
+
 --*/
 ;
 
@@ -2397,16 +2383,16 @@ IsDataInTransfer (
 Routine Description:
 
   Whether is a DataIn direction transfer
-  
+
 Arguments:
 
-  EndPointAddress - address of the endpoint 
-  
+  EndPointAddress - address of the endpoint
+
 Returns:
 
   TRUE    DataIn
   FALSE   DataOut
-  
+
 --*/
 ;
 
@@ -2425,22 +2411,22 @@ MapDataBuffer (
 Routine Description:
 
   Map address of user data buffer
-  
+
 Arguments:
 
-  HcDev             - USB2_HC_DEV 
+  HcDev             - USB2_HC_DEV
   TransferDirection - direction of transfer
-  Data              - A pointer to user data buffer 
+  Data              - A pointer to user data buffer
   DataLength        - length of user data
   PktId             - Packte Identificaion
   DataCursor        - mapped address to return
   DataMap           - identificaion of this mapping to return
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -2456,19 +2442,19 @@ MapRequestBuffer (
 Routine Description:
 
   Map address of request structure buffer
-  
+
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   Request         - A pointer to request structure
   RequestCursor   - Mapped address of request structure to return
   RequestMap      - Identificaion of this mapping to return
-  
+
 Returns:
 
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-  
+
 --*/
 ;
 
@@ -2486,10 +2472,10 @@ Routine Description:
 
 Arguments:
 
-  QtdHwPtr  - A pointer to Qtd hardware structure 
+  QtdHwPtr  - A pointer to Qtd hardware structure
   DataPtr   - A pointer to user data buffer
   DataLen   - Length of the user data buffer
-    
+
 Returns:
 
   VOID
@@ -2506,15 +2492,15 @@ GetQtdAlternateNextPointer (
 Routine Description:
 
   Get Qtd alternate next pointer field
-  
+
 Arguments:
 
   HwQtdPtr - A pointer to hardware Qtd structure
-  
+
 Returns:
 
   A pointer to hardware alternate Qtd
-  
+
 --*/
 ;
 
@@ -2527,15 +2513,15 @@ ZeroOutQhOverlay (
 Routine Description:
 
   Zero out the fields in Qh structure
-  
+
 Arguments:
 
   QhPtr - A pointer to Qh structure
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -2550,17 +2536,17 @@ UpdateAsyncRequestTransfer (
 Routine Description:
 
   Update asynchronous request transfer
-  
+
 Arguments:
 
-  AsyncRequestPtr  - A pointer to async request  
-  TransferResult   - transfer result 
+  AsyncRequestPtr  - A pointer to async request
+  TransferResult   - transfer result
   ErrQtdPos        - postion of error Qtd
-  
+
 Returns:
 
   VOID
-  
+
 --*/
 ;
 
@@ -2577,14 +2563,14 @@ DeleteAsyncRequestTransfer (
 Routine Description:
 
   Delete all asynchronous request transfer
-  
+
 Arguments:
 
-  HcDev           - USB2_HC_DEV 
+  HcDev           - USB2_HC_DEV
   DeviceAddress   - address of usb device
   EndPointAddress - address of endpoint
   DataToggle      - stored data toggle
-  
+
 Returns:
 
   EFI_SUCCESS        Success
@@ -2602,14 +2588,14 @@ CleanUpAllAsyncRequestTransfer (
 Routine Description:
 
   Clean up all asynchronous request transfer
-  
+
 Arguments:
 
-  HcDev - USB2_HC_DEV 
-  
+  HcDev - USB2_HC_DEV
+
 Returns:
   VOID
-  
+
 --*/
 ;
 
@@ -2634,16 +2620,16 @@ Arguments:
   HcDev            - USB2_HC_DEV
   IsControl        - Is control transfer or not
   QhPtr            - A pointer to Qh
-  ActualLen        - Actual transfered Len 
+  ActualLen        - Actual transfered Len
   DataToggle       - Data Toggle
   TimeOut          - TimeOut threshold
   TransferResult   - Transfer result
-  
+
 Returns:
 
   EFI_SUCCESS        Sucess
   EFI_DEVICE_ERROR   Error
-  
+
 --*/
 ;
 
@@ -2673,7 +2659,7 @@ Returns:
 
   TRUE    Qtds finished
   FALSE   Not finish
-  
+
 --*/
 ;
 
@@ -2685,20 +2671,46 @@ AsyncRequestMoniter (
 /*++
 
 Routine Description:
-  
+
   Interrupt transfer periodic check handler
-    
+
 Arguments:
 
   Event     - Interrupt event
   Context   - Pointer to USB2_HC_DEV
-    
+
 Returns:
-  
+
   EFI_SUCCESS        Success
   EFI_DEVICE_ERROR   Fail
-    
+
 --*/
 ;
+
+
+EFI_STATUS
+CreateNULLQH (
+  IN  USB2_HC_DEV     *HcDev
+  )
+/*++
+
+Routine Description:
+
+  Create the NULL QH to make it as the Async QH header
+
+Arguments:
+
+  HcDev   - USB2_HC_DEV
+
+Returns:
+
+  EFI_SUCCESS        Success
+--*/
+;
+
+VOID
+DestroyNULLQH (
+  IN  USB2_HC_DEV     *HcDev
+  );
 
 #endif

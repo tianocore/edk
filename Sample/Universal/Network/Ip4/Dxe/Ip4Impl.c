@@ -366,6 +366,8 @@ Returns:
 
   IpSb->State = IP4_SERVICE_CONFIGED;
 
+  Ip4SetVariableData (IpSb);
+
 ON_EXIT:
   NetFreePool (Data);
 }
@@ -933,6 +935,11 @@ Returns:
   // whether it is necessary to reconfigure the MNP.
   //
   Ip4ServiceConfigMnp (IpInstance->Service, FALSE);
+
+  //
+  // Update the variable data.
+  //
+  Ip4SetVariableData (IpInstance->Service);
 
 ON_EXIT:
   NET_RESTORE_TPL (OldTpl);

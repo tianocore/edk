@@ -484,6 +484,7 @@ Returns:
   MTFTP4_PROTOCOL           *Instance;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
+  VOID                      *Udp4;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -522,12 +523,32 @@ Returns:
                   );
 
   if (EFI_ERROR (Status)) {
-    UdpIoFreePort (Instance->UnicastPort);
-    NetFreePool (Instance);
-    return Status;
+    goto ON_ERROR;
   }
 
   Instance->Handle  = *ChildHandle;
+
+  //
+  // Open the Udp4 protocol BY_CHILD.
+  //
+  Status = gBS->OpenProtocol (
+                  MtftpSb->ConnectUdp->UdpHandle,
+                  &gEfiUdp4ProtocolGuid,
+                  (VOID **) &Udp4,
+                  gMtftp4DriverBinding.DriverBindingHandle,
+                  Instance->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           Instance->Handle,
+           &gEfiMtftp4ProtocolGuid,
+           &Instance->Mtftp4,
+           NULL
+           );
+
+    goto ON_ERROR;
+  }
 
   //
   // Add it to the parent's child list.
@@ -539,7 +560,14 @@ Returns:
 
   NET_RESTORE_TPL (OldTpl);
 
-  return EFI_SUCCESS;
+ON_ERROR:
+
+  if (EFI_ERROR (Status)) {
+    UdpIoFreePort (Instance->UnicastPort);
+    NetFreePool (Instance);
+  }
+
+  return Status;
 }
 
 EFI_STATUS
@@ -605,6 +633,16 @@ Returns:
   }
 
   Instance->Indestory = TRUE;
+
+  //
+  // Close the Udp4 protocol.
+  //
+  gBS->CloseProtocol (
+         MtftpSb->ConnectUdp->UdpHandle,
+         &gEfiUdp4ProtocolGuid,
+         gMtftp4DriverBinding.DriverBindingHandle,
+         ChildHandle
+         );
 
   //
   // Uninstall the MTFTP4 protocol first to enable a top down destruction.

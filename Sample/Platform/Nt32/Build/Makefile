@@ -26,8 +26,6 @@
 !ERROR EDK_SOURCE environmental variable not set 
 !ENDIF
 
-EFI_SOURCE = $(EDK_SOURCE)
-
 !IFNDEF EDK_TOOLS_PATH
 !MESSAGE EDK_TOOLS_PATH environmental variable not set, default setting used
 !ENDIF
@@ -80,7 +78,7 @@ customer : tempstamp_file build_tools makefiles builds fds $(PROCESSOR)\SecMain.
 #
 # Target to build everything quickly
 #
-fast : build_tools fast_makefiles builds fds 
+fast : build_tools fast_makefiles builds fds $(PROCESSOR)\SecMain.exe
 
 #
 # Create a file to store the date and time, and used by SetStamp.exe
@@ -126,16 +124,18 @@ $(PROCESSOR)\SecMain.exe: $(SEC_OBJECTS)
 #
 makefiles : 
   $(PROCESSDSC)                             \
+    -d EFI_SOURCE=$(EDK_SOURCE)             \
     -d EDK_SOURCE=$(EDK_SOURCE)             \
-    -d EFI_SOURCE=$(EFI_SOURCE)             \
     -d PROCESSOR=$(PROCESSOR)               \
     -d PROJECT_NAME=$(PROJECT_NAME)         \
+    -d COMPRESS_METHOD=$(COMPRESS_METHOD)   \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
     -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
+    -xref FV\Guid.xref                      \
     $(PROJECT_NAME).dsc
     
 #
@@ -147,29 +147,11 @@ makefiles :
 #
 fast_makefiles : 
   $(PROCESSDSC)                             \
+    -d EFI_SOURCE=$(EDK_SOURCE)             \
     -d EDK_SOURCE=$(EDK_SOURCE)             \
-    -d EFI_SOURCE=$(EFI_SOURCE)             \
     -d PROCESSOR=$(PROCESSOR)               \
     -d PROJECT_NAME=$(PROJECT_NAME)         \
-    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
-    -d SHELL_INF=$(SHELL_INF)               \
-    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
-    -d CAPSULE_INF=$(CAPSULE_INF)           \
-    -d GRAPHICS_INF=$(GRAPHICS_INF)         \
-    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
-    -d SKIP_FV_NULL=1                       \
-    $(PROJECT_NAME).dsc
-
-#
-# Create the guid-to-basename cross reference file used by volinfo
-#
-xref : 
-  -@if not exist fv mkdir FV
-  $(PROCESSDSC) \
-    -d EDK_SOURCE=$(EDK_SOURCE)             \
-    -d EFI_SOURCE=$(EFI_SOURCE)             \
-    -d PROCESSOR=$(PROCESSOR)               \
-    -d PROJECT_NAME=$(PROJECT_NAME)         \
+    -d COMPRESS_METHOD=$(COMPRESS_METHOD)   \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
@@ -177,6 +159,7 @@ xref :
     -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     -xref FV\Guid.xref                      \
+    -d SKIP_FV_NULL=1                       \
     $(PROJECT_NAME).dsc
 
 #
@@ -220,10 +203,10 @@ quick : builds fds $(PROCESSOR)\SecMain.exe
 # components.
 #
 libraries :
-  $(MAKE) -f makefile.out libraries components fds $(PROCESSOR)\SecMain.exe
+  $(MAKE) -f makefile.out libraries
 
 components :
-  $(MAKE) -f makefile.out components fds $(PROCESSOR)\SecMain.exe
+  $(MAKE) -f makefile.out components
 
 #
 # Make a pseudo-target to simplify running of the NT emulation. 

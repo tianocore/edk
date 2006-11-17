@@ -79,12 +79,6 @@ typedef SCREEN_DESCRIPTOR                            EFI_SCREEN_DESCRIPTOR;
 typedef EFI_SIMPLE_TEXT_IN_PROTOCOL                  EFI_SIMPLE_TEXT_INPUT_PROTOCOL;
 typedef EFI_SIMPLE_TEXT_OUT_PROTOCOL                 EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL;
 //typedef EFI_TO_LEGACY16_INIT_TABLE                   EFI_TO_COMPATIBILITY16_INIT_TABLE;
-//typedef DISPATCH_OPROM_TABLE                         EFI_DISPATCH_OPROM_TABLE;         
-typedef EFI_MP_HEALTH_FLAGS                          EFI_HEALTH_FLAGS;
-
-typedef struct {
-  EFI_HEALTH_FLAGS HealthFlags;
-} EFI_SEC_PLATFORM_INFORMATION_RECORD;
-
+//typedef DISPATCH_OPROM_TABLE                         EFI_DISPATCH_OPROM_TABLE;
 
 #endif

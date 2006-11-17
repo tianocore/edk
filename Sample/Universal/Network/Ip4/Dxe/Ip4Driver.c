@@ -292,6 +292,9 @@ Returns:
   }
 
   NetListInsertHead (&IpSb->Interfaces, &IpSb->DefaultInterface->Link);
+
+  IpSb->MacString = NULL;
+  
   *Service = IpSb;
   return EFI_SUCCESS;
 
@@ -476,7 +479,9 @@ Ip4DriverBindingStart (
   // Initialize the IP4 ID
   //
   mIp4Id = (UINT16)NET_RANDOM (NetRandomInitSeed ());
-  
+
+  Ip4SetVariableData (IpSb);
+
   return Status;
 
 UNINSTALL_PROTOCOL:
@@ -669,7 +674,12 @@ Ip4DriverBindingStop (
     Status      = EFI_DEVICE_ERROR;
     goto ON_ERROR;
   }
-  
+
+  //
+  // Clear the variable data.
+  //
+  Ip4ClearVariableData (IpSb);
+
   //
   // OK, clean other resources then uninstall the service binding protocol.
   //
@@ -729,6 +739,7 @@ Ip4ServiceBindingCreateChild (
   IP4_PROTOCOL              *IpInstance;
   EFI_TPL                   OldTpl;
   EFI_STATUS                Status;
+  VOID                      *Mnp;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -754,11 +765,32 @@ Ip4ServiceBindingCreateChild (
                   );
 
   if (EFI_ERROR (Status)) {
-    NetFreePool (IpInstance);
-    return Status;
+    goto ON_ERROR;
   }
 
-  IpInstance->Handle  = *ChildHandle;
+  IpInstance->Handle = *ChildHandle;
+
+  //
+  // Open the Managed Network protocol BY_CHILD.
+  //
+  Status = gBS->OpenProtocol (
+                  IpSb->MnpChildHandle,
+                  &gEfiManagedNetworkProtocolGuid,
+                  (VOID **) &Mnp,
+                  gIp4DriverBinding.DriverBindingHandle,
+                  IpInstance->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           ChildHandle,
+           &gEfiIp4ProtocolGuid,
+           &IpInstance->Ip4Proto,
+           NULL
+           );
+
+    goto ON_ERROR;
+  }
 
   //
   // Insert it into the service binding instance.
@@ -769,8 +801,17 @@ Ip4ServiceBindingCreateChild (
   IpSb->NumChildren++;
 
   NET_RESTORE_TPL (OldTpl);
-  
-  return EFI_SUCCESS;
+
+ON_ERROR:
+
+  if (EFI_ERROR (Status)) {
+
+    Ip4CleanProtocol (IpInstance);
+
+    NetFreePool (IpInstance);
+  }
+
+  return Status;
 }
 
 EFI_STATUS
@@ -851,6 +892,16 @@ Ip4ServiceBindingDestroyChild (
   IpInstance->State = IP4_STATE_DESTORY;
 
   //
+  // Close the Managed Network protocol.
+  //
+  gBS->CloseProtocol (
+         IpSb->MnpChildHandle,
+         &gEfiManagedNetworkProtocolGuid,
+         gIp4DriverBinding.DriverBindingHandle,
+         ChildHandle
+         );
+
+  //
   // Uninstall the IP4 protocol first. Many thing happens during
   // this:
   // 1. The consumer of the IP4 protocol will be stopped if it
@@ -875,7 +926,9 @@ Ip4ServiceBindingDestroyChild (
   }
 
   Status = Ip4CleanProtocol (IpInstance);
-  
+
+  Ip4SetVariableData (IpSb);
+
   if (EFI_ERROR (Status)) {
     gBS->InstallMultipleProtocolInterfaces (
            &ChildHandle, 

@@ -49,6 +49,8 @@ Abstract:
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 #include EFI_GUID_DEFINITION (GlobalVariable)
 
+extern EFI_GUID mStatusCodeRuntimeGuid;
+
 //
 // Platform specific function Declarations.  These must be implemented in a
 // subdirectory named PlatformName in a file named PlatformStatusCode.c.

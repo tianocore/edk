@@ -191,22 +191,14 @@ EFI_ALIGNMENT_64K       = TRUE
 Sample\Platform\Nt32\Ppi\EdkNt32PpiLib.inf
 Sample\Platform\Nt32\Protocol\EdkNt32ProtocolLib.inf
 Sample\Cpu\WinNtThunk\Sec\SecMain.inf
-Foundation\Library\Dxe\Hob\HobLib.inf
 Sample\Library\Dxe\WinNt\WinNtLib.inf
 Sample\Platform\Generic\MonoStatusCode\Library\Pei\MemoryStatusCode\MemoryStatusCode.inf
-
-#
-# BugBug - move this out when Lib's get fixed
-#
-Foundation\Library\Dxe\Hob\HobLib.inf
-
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtPlatformStatusCode\$(PROJECT_NAME)\RtPlatformStatusCode.inf
+
 Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
-
-Foundation\Library\CompilerStub\CompilerStubLib.inf
 
 #
 # EdkII Glue Library
@@ -356,7 +348,6 @@ Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf
 #
 # UEFI network drivers.
 #
-Sample\Universal\Network\SnpNt32\Dxe\SnpNt32.inf                       FV=NULL
 Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
 Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
 Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
@@ -365,6 +356,8 @@ Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
 Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
 Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
 Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
+
+Sample\Universal\Network\SnpNt32\Dxe\SnpNt32.inf                       FV=NULL
 
 #
 # The following components are commented out for a variety of reasons.

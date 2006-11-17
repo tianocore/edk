@@ -31,7 +31,6 @@ COMPONENT_TYPE  = LIBRARY
 [sources.ipf,sources.x64]
 
 [includes.common]
-  $(EFI_SOURCE)\Framework
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Efi
@@ -39,16 +38,12 @@ COMPONENT_TYPE  = LIBRARY
   $(EDK_SOURCE)\Foundation\Efi\Include
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
-  $(EFI_SOURCE)
   $(EDK_SOURCE)\Foundation\Library\EdkIIGlueLib\Include
   $(EDK_SOURCE)\Foundation\Core
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
-  $(EFI_SOURCE)\Core\Pei\Include
-  $(EFI_SOURCE)\Ppi\CpuIo
-  $(EFI_SOURCE)\Ppi\PciCfg
 
 [libraries.common]
   EdkIIGlueUefiBootServicesTableLib

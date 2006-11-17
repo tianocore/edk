@@ -265,6 +265,10 @@ Returns:
   }
 
   //
+  // Open the 
+  //
+
+  //
   // copy the protodata into socket
   //
   NetCopyMem (Sock->ProtoReserved, ProtoData, Len);

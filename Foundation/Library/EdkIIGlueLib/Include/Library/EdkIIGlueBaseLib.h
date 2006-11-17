@@ -25,7 +25,7 @@ Abstract:
 
 
 //
-// EfiCommonLib
+// String Functions
 //
 #define StrCpy(_Dest, _Source)                        GlueStrCpy(_Dest, _Source)
 #define StrnCpy(_Dest, _Source, _Length)              GlueStrnCpy(_Dest, _Source, _Length)
@@ -59,7 +59,7 @@ Abstract:
 #define DivU64x32(_Dividend, _Divisor)                GlueDivU64x32(_Dividend, _Divisor)
 
 //
-// others
+// Others
 //
 #define GetInterruptState()											      GlueGetInterruptState()
 

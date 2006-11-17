@@ -748,7 +748,7 @@ InitializeFtwLite (
     FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) BaseAddress);
 
     if ((FtwLiteDevice->WorkSpaceAddress >= BaseAddress) &&
-        (FtwLiteDevice->WorkSpaceAddress <= (BaseAddress + FwVolHeader->FvLength))
+        (FtwLiteDevice->WorkSpaceAddress < (BaseAddress + FwVolHeader->FvLength))
         ) {
       FtwLiteDevice->FtwFvBlock = Fvb;
       //
@@ -783,7 +783,7 @@ InitializeFtwLite (
     }
 
     if ((FtwLiteDevice->SpareAreaAddress >= BaseAddress) &&
-        (FtwLiteDevice->SpareAreaAddress <= (BaseAddress + FwVolHeader->FvLength))
+        (FtwLiteDevice->SpareAreaAddress < (BaseAddress + FwVolHeader->FvLength))
         ) {
       FtwLiteDevice->FtwBackupFvb = Fvb;
       //
@@ -830,13 +830,11 @@ InitializeFtwLite (
     FtwLiteDevice->FtwWorkBlockLba = 0;
   }
 
-  if ((FtwLiteDevice->FtwFvBlock == NULL) ||
-      (FtwLiteDevice->FtwBackupFvb == NULL) ||
-      (FtwLiteDevice->FtwWorkSpaceLba == (EFI_LBA) (-1)) ||
+  if ((FtwLiteDevice->FtwWorkSpaceLba == (EFI_LBA) (-1)) ||
       (FtwLiteDevice->FtwSpareLba == (EFI_LBA) (-1))
       ) {
     DEBUG ((EFI_D_ERROR, "FtwLite: Working or spare FVB not ready\n"));
-    ASSERT_EFI_ERROR (Status);
+    return EFI_ABORTED;
   }
   //
   // Refresh workspace data from working block

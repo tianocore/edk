@@ -195,7 +195,7 @@ Returns:
   //
   gBS->RestoreTPL (EFI_TPL_APPLICATION);
 
-  DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Booting EFI 1.1 way %S\n", Option->Description));
+  DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Booting EFI way %S\n", Option->Description));
 
   Status = gBS->LoadImage (
                   TRUE,

@@ -37,6 +37,14 @@ Abstract:
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
+
+#ifdef EFI_DEBUG
+extern UINT32     gBOTDebugLevel;
+extern UINT32     gBOTErrorLevel;
+#endif
+
+#define MASS_STORAGE_CLASS   0x08
+
 #pragma pack(1)
 //
 // Bulk Only device protocol

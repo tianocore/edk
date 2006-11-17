@@ -28,7 +28,7 @@ Abstract:
 
 #include EFI_PROTOCOL_CONSUMER (LoadedImage)
 #include EFI_PROTOCOL_CONSUMER (ServiceBinding)
-
+#include EFI_PROTOCOL_CONSUMER (SimpleNetwork)
 
 //
 // Wrap functions to ease the impact of EFI library changes.
@@ -268,6 +268,13 @@ NetLibDestroyServiceChild (
   IN  EFI_HANDLE            ImageHandle,
   IN  EFI_GUID              *ServiceBindingGuid,
   IN  EFI_HANDLE            ChildHandle
+  );
+
+EFI_STATUS
+NetLibGetMacString (
+  IN           EFI_HANDLE  SnpHandle,
+  IN           EFI_HANDLE  ImageHandle,
+  IN OUT CONST CHAR16      **MacString
   );
 
 EFI_HANDLE

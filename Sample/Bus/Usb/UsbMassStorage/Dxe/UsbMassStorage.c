@@ -114,6 +114,7 @@ EFI_DRIVER_BINDING_PROTOCOL         gUSBFloppyDriverBinding = {
   NULL
 };
 
+
 EFI_DRIVER_ENTRY_POINT (USBMassStorageDriverBindingEntryPoint)
 
 EFI_STATUS
@@ -279,6 +280,7 @@ USBFloppyDriverBindingStart (
   UsbFloppyDevice->BlkIo.WriteBlocks  = USBFloppyWriteBlocks;
   UsbFloppyDevice->BlkIo.FlushBlocks  = USBFloppyFlushBlocks;
   UsbFloppyDevice->AtapiProtocol      = AtapiProtocol;
+  UsbFloppyDevice->NeedReadCapacity   = TRUE;
 
   //
   // Identify drive type and retrieve media information.
@@ -437,7 +439,7 @@ USBFloppyReset (
   //
   // directly calling EFI_USB_ATAPI_PROTOCOL.Reset() to implement reset.
   //
-  Status = UsbAtapiInterface->UsbAtapiReset (UsbAtapiInterface, TRUE);
+  Status = UsbAtapiInterface->UsbAtapiReset (UsbAtapiInterface, ExtendedVerification);
 
   return Status;
 }
@@ -483,14 +485,9 @@ USBFloppyReadBlocks (
   UINTN               BlockSize;
   UINTN               NumberOfBlocks;
   BOOLEAN             MediaChange;
-  EFI_TPL             OldTpl;
-  UINT32              Retry;
 
-  OldTpl          = gBS->RaiseTPL (EFI_TPL_NOTIFY);
   Status          = EFI_SUCCESS;
   MediaChange     = FALSE;
-  Retry           = 0;
-
   UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS (This);
 
   //
@@ -516,14 +513,12 @@ USBFloppyReadBlocks (
   }
 
   if (MediaChange) {
-    gBS->RestoreTPL (OldTpl);
     gBS->ReinstallProtocolInterface (
           UsbFloppyDevice->Handle,
           &gEfiBlockIoProtocolGuid,
           &UsbFloppyDevice->BlkIo,
           &UsbFloppyDevice->BlkIo
           );
-    gBS->RaiseTPL (EFI_TPL_NOTIFY);
   }
 
   Media           = UsbFloppyDevice->BlkIo.Media;
@@ -560,33 +555,31 @@ USBFloppyReadBlocks (
     goto Done;
   }
 
-  if (!EFI_ERROR (Status)) {
-
-    Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, 1);
-    if (EFI_ERROR (Status)) {
-      This->Reset (This, TRUE);
-      Status = EFI_DEVICE_ERROR;
-      goto Done;
+  while (NumberOfBlocks > 0) {
+   
+    if (NumberOfBlocks > BLOCK_UNIT) {
+      Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, BLOCK_UNIT);
+    } else {
+      Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks);
     }
 
-    LBA += 1;
-    NumberOfBlocks -= 1;
-    Buffer = (UINT8 *) Buffer + This->Media->BlockSize;
-
-    if (NumberOfBlocks == 0) {
-      Status = EFI_SUCCESS;
-      goto Done;
-    }
-
-    Status = USBFloppyRead10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks);
     if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
     }
-  }
 
-Done:
-  gBS->RestoreTPL (OldTpl);
+    if (NumberOfBlocks > BLOCK_UNIT) {
+       NumberOfBlocks -= BLOCK_UNIT;
+       LBA += BLOCK_UNIT;
+       Buffer = (UINT8 *) Buffer + This->Media->BlockSize * BLOCK_UNIT;
+    } else {
+       NumberOfBlocks -= NumberOfBlocks;
+       LBA += NumberOfBlocks;
+       Buffer = (UINT8 *) Buffer + This->Media->BlockSize * NumberOfBlocks;
+    }
+ }
+
+ Done:
   return Status;
 }
 
@@ -634,13 +627,9 @@ USBFloppyWriteBlocks (
   UINTN               BlockSize;
   UINTN               NumberOfBlocks;
   BOOLEAN             MediaChange;
-  EFI_TPL             OldTpl;
-  UINT32              Retry;
 
-  OldTpl          = gBS->RaiseTPL (EFI_TPL_NOTIFY);
   Status          = EFI_SUCCESS;
   MediaChange     = FALSE;
-  Retry           = 0;
 
   UsbFloppyDevice = USB_FLOPPY_DEV_FROM_THIS (This);
 
@@ -667,14 +656,12 @@ USBFloppyWriteBlocks (
   }
 
   if (MediaChange) {
-    gBS->RestoreTPL (OldTpl);
     gBS->ReinstallProtocolInterface (
           UsbFloppyDevice->Handle,
           &gEfiBlockIoProtocolGuid,
           &UsbFloppyDevice->BlkIo,
           &UsbFloppyDevice->BlkIo
           );
-    gBS->RaiseTPL (EFI_TPL_NOTIFY);
   }
 
   Media           = UsbFloppyDevice->BlkIo.Media;
@@ -716,32 +703,32 @@ USBFloppyWriteBlocks (
     goto Done;
   }
 
-  if (!EFI_ERROR (Status)) {
-    Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, 1);
-    if (EFI_ERROR (Status)) {
-      This->Reset (This, TRUE);
-      Status = EFI_DEVICE_ERROR;
-      goto Done;
+  while (NumberOfBlocks > 0) {
+   
+    if (NumberOfBlocks > BLOCK_UNIT) {
+      Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, BLOCK_UNIT);
+    } else {
+      Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks);
     }
 
-    LBA += 1;
-    NumberOfBlocks -= 1;
-    Buffer = (UINT8 *) Buffer + This->Media->BlockSize;
-
-    if (NumberOfBlocks == 0) {
-      Status = EFI_SUCCESS;
-      goto Done;
-    }
-
-    Status = USBFloppyWrite10 (UsbFloppyDevice, Buffer, LBA, NumberOfBlocks);
     if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
     }
-  }
+
+    if (NumberOfBlocks > BLOCK_UNIT) {
+       NumberOfBlocks -= BLOCK_UNIT;
+       LBA += BLOCK_UNIT;
+       Buffer = (UINT8 *) Buffer + This->Media->BlockSize * BLOCK_UNIT;
+    } else {
+       NumberOfBlocks -= NumberOfBlocks;
+       LBA += NumberOfBlocks;
+       Buffer = (UINT8 *) Buffer + This->Media->BlockSize * NumberOfBlocks;
+    }
+ }
 
 Done:
-  gBS->RestoreTPL (OldTpl);
+
   return Status;
 }
 

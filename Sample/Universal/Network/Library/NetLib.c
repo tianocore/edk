@@ -1162,6 +1162,84 @@ Returns:
   return Status;
 }
 
+EFI_STATUS
+NetLibGetMacString (
+  IN           EFI_HANDLE  SnpHandle,
+  IN           EFI_HANDLE  ImageHandle,
+  IN OUT CONST CHAR16      **MacString
+  )
+/*++
+
+Routine Description:
+
+  Convert the mac address of the simple network protocol installed on
+  SnpHandle to a unicode string. Callers are responsible for freeing the
+  string storage.
+
+Arguments:
+
+  SnpHandle    - The handle where the simple network protocol is installed on.
+  ImageHandle  - The image handle used to act as the agent handle to get the simple
+                 network protocol.
+  MacString    - The pointer to store the address of the string representation of 
+                 the mac address.
+
+Returns:
+
+  EFI_OUT_OF_RESOURCES - There are not enough memory resource.
+  other                - Failed to open the simple network protocol.
+
+--*/
+{
+  EFI_STATUS                   Status;
+  EFI_SIMPLE_NETWORK_PROTOCOL  *Snp;
+  EFI_SIMPLE_NETWORK_MODE      *Mode;
+  CHAR16                       *MacAddress;
+  UINTN                        Index;
+
+  *MacString = NULL;
+
+  //
+  // Get the Simple Network protocol from the SnpHandle.
+  //
+  Status = gBS->OpenProtocol (
+                  SnpHandle,
+                  &gEfiSimpleNetworkProtocolGuid,
+                  (VOID **) &Snp,
+                  ImageHandle,
+                  SnpHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Mode = Snp->Mode;
+
+  //
+  // It takes 2 unicode characters to represent a 1 byte binary buffer.
+  // Plus one unicode character for the null-terminator.
+  //
+  MacAddress = NetAllocatePool ((2 * Mode->HwAddressSize + 1) * sizeof (CHAR16));
+  if (MacAddress == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Convert the mac address into a unicode string.
+  //
+  for (Index = 0; Index < Mode->HwAddressSize; Index++) {
+    MacAddress[Index * 2]     = NibbleToHexChar (Mode->CurrentAddress.Addr[Index] >> 4);
+    MacAddress[Index * 2 + 1] = NibbleToHexChar (Mode->CurrentAddress.Addr[Index]);
+  }
+
+  MacAddress[Mode->HwAddressSize * 2] = L'\0';
+
+  *MacString = MacAddress;
+
+  return EFI_SUCCESS;
+}
+
 EFI_HANDLE
 NetLibGetNicHandle (
   IN EFI_HANDLE             Controller,

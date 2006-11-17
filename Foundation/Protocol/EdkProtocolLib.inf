@@ -96,6 +96,10 @@ C_STD_INCLUDE=
   VirtualMemoryAccess\VirtualMemoryAccess.c
   TcgService\TcgService.h
   TcgService\TcgService.c
+  Ps2Policy\Ps2Policy.h
+  Ps2Policy\Ps2Policy.c
+  VgaMiniPort\VgaMiniPort.h
+  VgaMiniPort\VgaMiniPort.c
 
 [sources.ipf]
   ExtendedSalBootService\ExtendedSalBootService.c

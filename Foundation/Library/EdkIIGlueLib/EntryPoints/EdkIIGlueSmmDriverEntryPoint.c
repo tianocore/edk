@@ -23,33 +23,6 @@ Abstract:
 #include "EdkIIGlueDxe.h"
 #include "Common/EdkIIGlueDependencies.h"
 
-//
-// Module Entry Point
-//
-
-#ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
-EFI_STATUS
-EFIAPI
-__EDKII_GLUE_MODULE_ENTRY_POINT__ (
-  EFI_HANDLE        ImageHandle,
-  EFI_SYSTEM_TABLE  *SystemTable
-  );
-#endif
-
-
-EFI_STATUS
-EFIAPI
-ProcessModuleEntryPointList (
-  EFI_HANDLE        ImageHandle,
-  EFI_SYSTEM_TABLE  *SystemTable
-  )
-{
-#ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
-  return (__EDKII_GLUE_MODULE_ENTRY_POINT__ (ImageHandle, SystemTable));
-#else
-  return EFI_SUCCESS;
-#endif
-}
 
 //
 // Module Unload Handler
@@ -294,6 +267,18 @@ _DriverUnloadHandler (
 
 EFI_DRIVER_ENTRY_POINT (_ModuleEntryPoint);
 
+//
+// Module Entry Point
+//
+#ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
+EFI_STATUS
+EFIAPI
+__EDKII_GLUE_MODULE_ENTRY_POINT__ (
+  EFI_HANDLE        ImageHandle,
+  EFI_SYSTEM_TABLE  *SystemTable
+  );
+#endif
+
 /**
   Enrty point to DXE SMM Driver.
 
@@ -396,7 +381,12 @@ _ModuleEntryPoint (
   //
   // Call the list of driver entry points
   //
-  Status = ProcessModuleEntryPointList (ImageHandle, SystemTable);
+  #ifdef __EDKII_GLUE_MODULE_ENTRY_POINT__
+  Status = (__EDKII_GLUE_MODULE_ENTRY_POINT__ (ImageHandle, SystemTable));
+  #else
+  Status = EFI_SUCCESS;
+  #endif
+
   if (EFI_ERROR (Status)) {
     ProcessLibraryDestructorList (ImageHandle, SystemTable);
   }

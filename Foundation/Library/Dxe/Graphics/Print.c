@@ -179,6 +179,8 @@ Returns:
   UINT32                         VerticalResolution;
   UINT32                         ColorDepth;
   UINT32                         RefreshRate;
+  UINTN                          BufferLen;
+  UINTN                          LineBufferLen;
 
   GlyphStatus = 0;
 
@@ -196,18 +198,28 @@ Returns:
   } else {
     UgaDraw->GetMode (UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
   }
-  LineBuffer = EfiLibAllocatePool (sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
+  ASSERT ((HorizontalResolution != 0) && (VerticalResolution !=0));
+  
+  LineBufferLen = sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * HorizontalResolution * GLYPH_HEIGHT;
+  LineBuffer = EfiLibAllocatePool (LineBufferLen);
   if (LineBuffer == NULL) {
     gBS->FreePool (Buffer);
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Status = gBS->LocateProtocol (&gEfiHiiProtocolGuid, NULL, &Hii);
+  Status = gBS->LocateProtocol (&gEfiHiiProtocolGuid, NULL, (VOID**)&Hii);
   if (EFI_ERROR (Status)) {
     goto Error;
   }
 
   VSPrint (Buffer, 0x10000, fmt, args);
+  
+  BufferLen = EfiStrLen (Buffer);
+  
+  if (GLYPH_WIDTH * GLYPH_HEIGHT * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * BufferLen > LineBufferLen) {
+     Status = EFI_INVALID_PARAMETER;
+     goto Error;
+  }
 
   UnicodeWeight = (CHAR16 *) Buffer;
 
@@ -219,7 +231,7 @@ Returns:
     }
   }
 
-  for (Index = 0; Index < EfiStrLen (Buffer); Index++) {
+  for (Index = 0; Index < BufferLen; Index++) {
     StringIndex = (UINT16) Index;
     Status      = Hii->GetGlyph (Hii, UnicodeWeight, &StringIndex, (UINT8 **) &Glyph, &GlyphWidth, &GlyphStatus);
     if (EFI_ERROR (Status)) {
@@ -232,7 +244,7 @@ Returns:
                       (UINT8 *) Glyph,
                       mEfiColors[Sto->Mode->Attribute & 0x0f],
                       mEfiColors[Sto->Mode->Attribute >> 4],
-                      EfiStrLen (Buffer),
+                      BufferLen,
                       GlyphWidth,
                       GLYPH_HEIGHT,
                       &LineBuffer[Index * GLYPH_WIDTH]
@@ -243,7 +255,7 @@ Returns:
                       (UINT8 *) Glyph,
                       *Foreground,
                       *Background,
-                      EfiStrLen (Buffer),
+                      BufferLen,
                       GlyphWidth,
                       GLYPH_HEIGHT,
                       &LineBuffer[Index * GLYPH_WIDTH]
@@ -263,9 +275,9 @@ Returns:
                         0,
                         X,
                         Y,
-                        GLYPH_WIDTH * EfiStrLen (Buffer),
+                        GLYPH_WIDTH * BufferLen,
                         GLYPH_HEIGHT,
-                        GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
+                        GLYPH_WIDTH * BufferLen * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
                         );
   } else {
     Status = UgaDraw->Blt (
@@ -276,9 +288,9 @@ Returns:
                         0,
                         X,
                         Y,
-                        GLYPH_WIDTH * EfiStrLen (Buffer),
+                        GLYPH_WIDTH * BufferLen,
                         GLYPH_HEIGHT,
-                        GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_UGA_PIXEL)
+                        GLYPH_WIDTH * BufferLen * sizeof (EFI_UGA_PIXEL)
                         );
   }
 
@@ -338,7 +350,7 @@ Returns:
   Status = gBS->HandleProtocol (
                   Handle,
                   &gEfiGraphicsOutputProtocolGuid,
-                  &GraphicsOutput
+                  (VOID**)&GraphicsOutput
                   );
 
   UgaDraw = NULL;
@@ -348,7 +360,7 @@ Returns:
     Status = gBS->HandleProtocol (
                     Handle,
                     &gEfiUgaDrawProtocolGuid,
-                    &UgaDraw
+                    (VOID**)&UgaDraw
                     );
 
     if (EFI_ERROR (Status)) {
@@ -359,7 +371,7 @@ Returns:
   Status = gBS->HandleProtocol (
                   Handle,
                   &gEfiSimpleTextOutProtocolGuid,
-                  &Sto
+                  (VOID**)&Sto
                   );
 
   if (EFI_ERROR (Status)) {
@@ -803,42 +815,6 @@ Returns:
   return Size - 1;
 }
 
-struct {
-  EFI_STATUS  Status;
-  CHAR8       *String;
-} StatusString[] = {
-  EFI_SUCCESS, "Success",
-  EFI_LOAD_ERROR, "Load Error",
-  EFI_INVALID_PARAMETER, "Invalid Parameter",
-  EFI_UNSUPPORTED, "Unsupported",
-  EFI_BAD_BUFFER_SIZE, "Bad Buffer Size",
-  EFI_BUFFER_TOO_SMALL, "Buffer Too Small",
-  EFI_NOT_READY, "Not Ready",
-  EFI_DEVICE_ERROR, "Device Error",
-  EFI_WRITE_PROTECTED, "Write Protected",
-  EFI_OUT_OF_RESOURCES, "Out of Resources",
-  EFI_VOLUME_CORRUPTED, "Volume Corrupt",
-  EFI_VOLUME_FULL, "Volume Full",
-  EFI_NO_MEDIA, "No Media",
-  EFI_MEDIA_CHANGED, "Media changed",
-  EFI_NOT_FOUND, "Not Found",
-  EFI_ACCESS_DENIED, "Access Denied",
-  EFI_NO_RESPONSE, "No Response",
-  EFI_NO_MAPPING, "No mapping",
-  EFI_TIMEOUT, "Time out",
-  EFI_NOT_STARTED, "Not started",
-  EFI_ALREADY_STARTED, "Already started",
-  EFI_ABORTED, "Aborted",
-  EFI_ICMP_ERROR, "ICMP Error",
-  EFI_TFTP_ERROR, "TFTP Error",
-  EFI_PROTOCOL_ERROR, "Protocol Error",
-  EFI_WARN_UNKNOWN_GLYPH, "Warning Unknown Glyph",
-  EFI_WARN_DELETE_FAILURE, "Warning Delete Failure",
-  EFI_WARN_WRITE_FAILURE, "Warning Write Failure",
-  EFI_WARN_BUFFER_TOO_SMALL, "Warning Buffer Too Small",
-  EFI_MAX_BIT, NULL
-};
-
 STATIC
 UINTN
 EfiStatusToString (
@@ -869,22 +845,42 @@ Returns:
 {
   UINTN   Size;
   CHAR8   *Desc;
-  UINTN   Index;
-  BOOLEAN Found;
 
-  Index = 0;
-  Desc  = NULL;
-  Found = FALSE;
-  while (!Found) {
-    if (Status == StatusString[Index].Status || 
-        EFI_MAX_BIT == StatusString[Index].Status) {
-      Found = TRUE;
-      Desc  = StatusString[Index].String;
-      break;
-    } else {
-      Index++;
-    }
-  }
+  Desc = NULL;
+  
+  //
+  // Can't use global Status String Array as UINTN is not constant for EBC
+  //
+  if (Status == EFI_SUCCESS) { Desc = "Success"; } else 
+  if (Status == EFI_LOAD_ERROR) { Desc = "Load Error"; } else
+  if (Status == EFI_INVALID_PARAMETER) { Desc = "Invalid Parameter"; } else
+  if (Status == EFI_UNSUPPORTED) { Desc = "Unsupported"; } else
+  if (Status == EFI_BAD_BUFFER_SIZE) { Desc = "Bad Buffer Size"; } else
+  if (Status == EFI_BUFFER_TOO_SMALL) { Desc = "Buffer Too Small"; } else
+  if (Status == EFI_NOT_READY) { Desc = "Not Ready"; } else
+  if (Status == EFI_DEVICE_ERROR) { Desc = "Device Error"; } else
+  if (Status == EFI_WRITE_PROTECTED) { Desc = "Write Protected"; } else
+  if (Status == EFI_OUT_OF_RESOURCES) { Desc = "Out of Resources"; } else
+  if (Status == EFI_VOLUME_CORRUPTED) { Desc = "Volume Corrupt"; } else
+  if (Status == EFI_VOLUME_FULL) { Desc = "Volume Full"; } else
+  if (Status == EFI_NO_MEDIA) { Desc = "No Media"; } else
+  if (Status == EFI_MEDIA_CHANGED) { Desc = "Media changed"; } else
+  if (Status == EFI_NOT_FOUND) { Desc = "Not Found"; } else
+  if (Status == EFI_ACCESS_DENIED) { Desc = "Access Denied"; } else
+  if (Status == EFI_NO_RESPONSE) { Desc = "No Response"; } else
+  if (Status == EFI_NO_MAPPING) { Desc = "No mapping"; } else
+  if (Status == EFI_TIMEOUT) { Desc = "Time out"; } else
+  if (Status == EFI_NOT_STARTED) { Desc = "Not started"; } else
+  if (Status == EFI_ALREADY_STARTED) { Desc = "Already started"; } else
+  if (Status == EFI_ABORTED) { Desc = "Aborted"; } else
+  if (Status == EFI_ICMP_ERROR) { Desc = "ICMP Error"; } else
+  if (Status == EFI_TFTP_ERROR) { Desc = "TFTP Error"; } else
+  if (Status == EFI_PROTOCOL_ERROR) { Desc = "Protocol Error"; } else
+  if (Status == EFI_WARN_UNKNOWN_GLYPH) { Desc = "Warning Unknown Glyph"; } else
+  if (Status == EFI_WARN_DELETE_FAILURE) { Desc = "Warning Delete Failure"; } else
+  if (Status == EFI_WARN_WRITE_FAILURE) { Desc = "Warning Write Failure"; } else
+  if (Status == EFI_WARN_BUFFER_TOO_SMALL) { Desc = "Warning Buffer Too Small"; } 
+
   //
   // If we found a match, copy the message to the user's buffer. Otherwise
   // sprint the hex status code to their buffer.

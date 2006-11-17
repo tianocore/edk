@@ -179,6 +179,8 @@ Returns:
   UINT32                         VerticalResolution;
   UINT32                         ColorDepth;
   UINT32                         RefreshRate;
+  UINTN                          BufferLen;
+  UINTN                          LineBufferLen;
 
   GlyphStatus = 0;
 
@@ -196,7 +198,10 @@ Returns:
   } else {
     UgaDraw->GetMode (UgaDraw, &HorizontalResolution, &VerticalResolution, &ColorDepth, &RefreshRate);
   }
-  LineBuffer = EfiLibAllocatePool (sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * HorizontalResolution * GLYPH_WIDTH * GLYPH_HEIGHT);
+  ASSERT ((HorizontalResolution != 0) && (VerticalResolution !=0));
+  
+  LineBufferLen = sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * HorizontalResolution * GLYPH_HEIGHT;
+  LineBuffer = EfiLibAllocatePool (LineBufferLen);
   if (LineBuffer == NULL) {
     gBS->FreePool (Buffer);
     return EFI_OUT_OF_RESOURCES;
@@ -208,6 +213,13 @@ Returns:
   }
 
   VSPrint (Buffer, 0x10000, fmt, args);
+  
+  BufferLen = EfiStrLen (Buffer);
+
+  if (GLYPH_WIDTH * GLYPH_HEIGHT * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * BufferLen > LineBufferLen) {
+     Status = EFI_INVALID_PARAMETER;
+     goto Error;
+  }
 
   UnicodeWeight = (CHAR16 *) Buffer;
 
@@ -219,7 +231,7 @@ Returns:
     }
   }
 
-  for (Index = 0; Index < EfiStrLen (Buffer); Index++) {
+  for (Index = 0; Index < BufferLen; Index++) {
     StringIndex = (UINT16) Index;
     Status      = Hii->GetGlyph (Hii, UnicodeWeight, &StringIndex, (UINT8 **) &Glyph, &GlyphWidth, &GlyphStatus);
     if (EFI_ERROR (Status)) {
@@ -232,7 +244,7 @@ Returns:
                       (UINT8 *) Glyph,
                       mEfiColors[Sto->Mode->Attribute & 0x0f],
                       mEfiColors[Sto->Mode->Attribute >> 4],
-                      EfiStrLen (Buffer),
+                      BufferLen,
                       GlyphWidth,
                       GLYPH_HEIGHT,
                       &LineBuffer[Index * GLYPH_WIDTH]
@@ -243,7 +255,7 @@ Returns:
                       (UINT8 *) Glyph,
                       *Foreground,
                       *Background,
-                      EfiStrLen (Buffer),
+                      BufferLen,
                       GlyphWidth,
                       GLYPH_HEIGHT,
                       &LineBuffer[Index * GLYPH_WIDTH]
@@ -263,9 +275,9 @@ Returns:
                         0,
                         X,
                         Y,
-                        GLYPH_WIDTH * EfiStrLen (Buffer),
+                        GLYPH_WIDTH * BufferLen,
                         GLYPH_HEIGHT,
-                        GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
+                        GLYPH_WIDTH * BufferLen * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
                         );
   } else {
     Status = UgaDraw->Blt (
@@ -276,9 +288,9 @@ Returns:
                         0,
                         X,
                         Y,
-                        GLYPH_WIDTH * EfiStrLen (Buffer),
+                        GLYPH_WIDTH * BufferLen,
                         GLYPH_HEIGHT,
-                        GLYPH_WIDTH * EfiStrLen (Buffer) * sizeof (EFI_UGA_PIXEL)
+                        GLYPH_WIDTH * BufferLen * sizeof (EFI_UGA_PIXEL)
                         );
   }
 

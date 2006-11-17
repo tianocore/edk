@@ -30,6 +30,7 @@ EFI_PEIM_ENTRY_POINT (InstallMonoStatusCode)
 //
 // Module globals
 //
+EFI_GUID mStatusCodeRuntimeGuid = EFI_STATUS_CODE_RUNTIME_PROTOCOL_GUID;
 PEI_STATUS_CODE_PPI     mStatusCodePpi = { PlatformReportStatusCode };
 
 EFI_PEI_PPI_DESCRIPTOR  mPpiListStatusCode = {
@@ -101,7 +102,7 @@ Returns:
 
   Status = PeiBuildHobGuidData (
             PeiServices,
-            &gEfiStatusCodeRuntimeProtocolGuid,
+            &mStatusCodeRuntimeGuid,
             &Instance,
             sizeof (VOID *)
             );

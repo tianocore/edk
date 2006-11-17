@@ -54,6 +54,8 @@ Revision History
 #define USBFLOPPY2                2 // for those that use ReadCapacity(0x25) command to retrieve media capacity
 #define USBCDROM                  3
 
+#define BLOCK_UNIT                128
+
 #define USB_FLOPPY_DEV_SIGNATURE  EFI_SIGNATURE_32 ('u', 'f', 'l', 'p')
 
 typedef struct {
@@ -67,7 +69,7 @@ typedef struct {
   REQUEST_SENSE_DATA      *SenseData;
   UINT8                   SenseDataNumber;
   UINT8                   DeviceType;
-
+  BOOLEAN                 NeedReadCapacity;
 } USB_FLOPPY_DEV;
 
 #define USB_FLOPPY_DEV_FROM_THIS(a) \

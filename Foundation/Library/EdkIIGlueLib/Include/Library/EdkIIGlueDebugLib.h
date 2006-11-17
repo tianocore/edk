@@ -253,15 +253,39 @@ DebugClearMemoryEnabled (
   @param  Expression  Boolean expression
 
 **/
-#define ASSERT(Expression)        \
-  do {                            \
-    if (DebugAssertEnabled ()) {  \
-      if (!(Expression)) {        \
-        _ASSERT (Expression);     \
-      }                           \
-    }                             \
-  } while (FALSE)
+#ifdef EDKII_GLUE_LIBRARY_IMPLEMENTATION
+  // Glue Library internal
+  
+  #if EDKII_GLUE_LIBRARY_DEBUG_ENABLE
+    #define ASSERT(Expression)        \
+      do {                            \
+        if (DebugAssertEnabled ()) {  \
+          if (!(Expression)) {        \
+            _ASSERT (Expression);     \
+          }                           \
+        }                             \
+      } while (FALSE)
+  #else
+    #define ASSERT(Expression) do{} while(0)
+  #endif    
 
+#else
+  // External usage
+
+  #ifdef EFI_DEBUG
+    #define ASSERT(Expression)        \
+      do {                            \
+        if (DebugAssertEnabled ()) {  \
+          if (!(Expression)) {        \
+            _ASSERT (Expression);     \
+          }                           \
+        }                             \
+      } while (FALSE)
+  #else
+    #define ASSERT(Expression) do{} while(0)
+  #endif
+
+#endif
 
 /**
   
@@ -275,12 +299,35 @@ DebugClearMemoryEnabled (
   
 
 **/
-#define DEBUG(Expression)        \
-  do {                           \
-    if (DebugPrintEnabled ()) {  \
-      _DEBUG (Expression);       \
-    }                            \
-  } while (FALSE)
+#ifdef EDKII_GLUE_LIBRARY_IMPLEMENTATION
+  // Glue Library internal
+  
+  #if EDKII_GLUE_LIBRARY_DEBUG_ENABLE
+    #define DEBUG(Expression)        \
+      do {                           \
+        if (DebugPrintEnabled ()) {  \
+          _DEBUG (Expression);       \
+        }                            \
+      } while (FALSE)
+  #else
+    #define DEBUG(Expression) do{} while(0)
+  #endif    
+
+#else
+  // External usage
+
+  #ifdef EFI_DEBUG
+    #define DEBUG(Expression)        \
+      do {                           \
+        if (DebugPrintEnabled ()) {  \
+          _DEBUG (Expression);       \
+        }                            \
+      } while (FALSE)
+  #else
+    #define DEBUG(Expression) do{} while(0)
+  #endif
+
+#endif
 
 
 /**
@@ -295,15 +342,41 @@ DebugClearMemoryEnabled (
   @param  StatusParameter  EFI_STATUS value to evaluate.
 
 **/
-#define ASSERT_EFI_ERROR(StatusParameter)                                              \
-  do {                                                                                 \
-    if (DebugAssertEnabled ()) {                                                       \
-      if (EFI_ERROR (StatusParameter)) {                                               \
-        DEBUG ((EFI_D_ERROR, "\nASSERT_EFI_ERROR (Status = %r)\n", StatusParameter));  \
-        _ASSERT (!EFI_ERROR (StatusParameter));                                        \
-      }                                                                                \
-    }                                                                                  \
-  } while (FALSE)
+#ifdef EDKII_GLUE_LIBRARY_IMPLEMENTATION
+  // Glue Library internal
+  
+  #if EDKII_GLUE_LIBRARY_DEBUG_ENABLE
+    #define ASSERT_EFI_ERROR(StatusParameter)                                              \
+      do {                                                                                 \
+        if (DebugAssertEnabled ()) {                                                       \
+          if (EFI_ERROR (StatusParameter)) {                                               \
+            DEBUG ((EFI_D_ERROR, "\nASSERT_EFI_ERROR (Status = %r)\n", StatusParameter));  \
+            _ASSERT (!EFI_ERROR (StatusParameter));                                        \
+          }                                                                                \
+        }                                                                                  \
+      } while (FALSE)
+  #else
+    #define ASSERT_EFI_ERROR(Expression) do{} while(0)
+  #endif    
+
+#else
+  // External usage
+
+  #ifdef EFI_DEBUG
+    #define ASSERT_EFI_ERROR(StatusParameter)                                              \
+      do {                                                                                 \
+        if (DebugAssertEnabled ()) {                                                       \
+          if (EFI_ERROR (StatusParameter)) {                                               \
+            DEBUG ((EFI_D_ERROR, "\nASSERT_EFI_ERROR (Status = %r)\n", StatusParameter));  \
+            _ASSERT (!EFI_ERROR (StatusParameter));                                        \
+          }                                                                                \
+        }                                                                                  \
+      } while (FALSE)
+  #else
+    #define ASSERT_EFI_ERROR(Expression) do{} while(0)
+  #endif
+
+#endif
 
 
 /**

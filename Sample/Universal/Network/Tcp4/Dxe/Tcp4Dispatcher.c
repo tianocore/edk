@@ -252,14 +252,18 @@ Returns:
 
 --*/
 {
-  SOCKET  *Sock;
+  SOCKET           *Sock;
+  TCP4_PROTO_DATA  *TcpProto;
 
   IpIoConfigIp (Tcb->IpInfo, NULL);
 
-  Sock = Tcb->Sk;
+  Sock     = Tcb->Sk;
+  TcpProto = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
 
   if (SOCK_IS_CONFIGURED (Sock)) {
     NetListRemoveEntry (&Tcb->List);
+
+    TcpSetVariableData (TcpProto->TcpService);
   }
 
   NetbufFreeList (&Tcb->SndQue);

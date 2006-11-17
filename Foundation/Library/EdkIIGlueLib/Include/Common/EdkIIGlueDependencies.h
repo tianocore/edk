@@ -24,7 +24,6 @@ Abstract:
 #define __EDKII_GLUE_DEPENDENCIES_H__
 
 
-
 //
 // Declarations of dependencies among EdkII Glue Library instances and R8 Libraries
 // Pay attention to the order of following #define structures
@@ -468,31 +467,31 @@ Abstract:
 #endif
 
 #if defined(__EDKII_GLUE_BASE_POST_CODE_LIB_PORT_80__) && defined(__EDKII_GLUE_BASE_POST_CODE_LIB_DEBUG__)
-#error EdkIIGlueBasePostCodeLibPort80 and EdkIIGlueBasePostCodeLibDebug: can only be mutual exclusively used.
+  #error EdkIIGlueBasePostCodeLibPort80 and EdkIIGlueBasePostCodeLibDebug: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_BASE_POST_CODE_LIB_PORT_80__) && defined(__EDKII_GLUE_PEI_DXE_POST_CODE_LIB_REPORT_STATUS_CODE__)
-#error EdkIIGlueBasePostCodeLibPort80 and EdkIIGluePeiDxePostCodeLibReportStatusCode: can only be mutual exclusively used.
+  #error EdkIIGlueBasePostCodeLibPort80 and EdkIIGluePeiDxePostCodeLibReportStatusCode: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_BASE_POST_CODE_LIB_DEBUG__) && defined(__EDKII_GLUE_PEI_DXE_POST_CODE_LIB_REPORT_STATUS_CODE__)
-#error EdkIIGlueBasePostCodeLibDebug and EdkIIGluePeiDxePostCodeLibReportStatusCode: can only be mutual exclusively used.
+  #error EdkIIGlueBasePostCodeLibDebug and EdkIIGluePeiDxePostCodeLibReportStatusCode: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB) && defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__)
-#error EdkIIGluePeiServicesTablePointerLib and EdkIIGluePeiServicesTablePointerLibMm7: can only be mutual exclusively used.
+  #error EdkIIGluePeiServicesTablePointerLib and EdkIIGluePeiServicesTablePointerLibMm7: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_DXE_REPORT_STATUS_CODE_LIB__) && defined(__EDKII_GLUE_PEI_REPORT_STATUS_CODE_LIB__)
-#error EdkIIGlueDxeReportStatusCodeLib and EdkIIGluePeiReportStatusCodeLib: can only be mutual exclusively used.
+  #error EdkIIGlueDxeReportStatusCodeLib and EdkIIGluePeiReportStatusCodeLib: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_DXE_MEMORY_ALLOCATION_LIB__) && defined(__EDKII_GLUE_PEI_MEMORY_ALLOCATION_LIB__)
-#error EdkIIGlueDxeMemoryAllocationLib and EdkIIGluePeiMemoryAllocationLib: can only be mutual exclusively used.
+  #error EdkIIGlueDxeMemoryAllocationLib and EdkIIGluePeiMemoryAllocationLib: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_DXE_SMBUS_LIB__) && defined(__EDKII_GLUE_PEI_SMBUS_LIB__)
-#error EdkGlueDxeSmbusLib and EdkIIGluePeiSmbusLib: can only be mutual exclusively used.
+  #error EdkIIGlueDxeSmbusLib and EdkIIGluePeiSmbusLib: can only be mutual exclusively used.
 #endif
 
 //
@@ -507,6 +506,15 @@ Abstract:
 #ifdef __EDKII_GLUE_BASE_POST_CODE_LIB_DEBUG__
   #if !defined(__EDKII_GLUE_PEI_DXE_DEBUG_LIB_REPORT_STATUS_CODE__) && !defined(__EDKII_GLUE_BASE_DEBUG_LIB_NULL__)
     #error You use EdkIIGlueBasePostCodeLibDebug, so either EdkIIGluePeiDxeDebugLibReportStatusCode or EdkIIGlueBaseDebugLibNull must be supplied
+  #endif
+#endif
+
+//
+//  EdkIIGlueUefiDriverModelLib used, but no Driver Binding Protocol defined
+//
+#ifdef __EDKII_GLUE_UEFI_DRIVER_MODEL_LIB__
+  #ifndef __EDKII_GLUE_DRIVER_BINDING_PROTOCOL_INSTANCE__
+    #error "EdkIIGlueUefiDriverModelLib used, but no Driver Binding Protocol defined. Please define __EDKII_GLUE_DRIVER_BINDING_PROTOCOL_INSTANCE__."
   #endif
 #endif
 

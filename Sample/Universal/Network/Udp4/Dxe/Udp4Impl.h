@@ -63,6 +63,8 @@ typedef struct _UDP4_SERVICE_DATA_ {
   IP_IO                         *IpIo;
 
   EFI_EVENT                     TimeoutEvent;
+
+  CHAR16                        *MacString;
 } UDP4_SERVICE_DATA;
 
 #define UDP4_INSTANCE_DATA_SIGNATURE  EFI_SIGNATURE_32('U', 'd', 'p', 'I')
@@ -190,6 +192,11 @@ Udp4InitInstance (
   IN UDP4_INSTANCE_DATA  *Instance
   );
 
+VOID
+Udp4CleanInstance (
+  IN UDP4_INSTANCE_DATA  *Instance
+  );
+
 EFI_STATUS
 Udp4Bind (
   IN NET_LIST_ENTRY        *InstanceList,   
@@ -264,6 +271,16 @@ Udp4ReportIcmpError (
 VOID
 Udp4NetVectorExtFree (
   VOID  *Context
+  );
+
+EFI_STATUS
+Udp4SetVariableData (
+  IN UDP4_SERVICE_DATA  *Udp4Service
+  );
+
+VOID
+Udp4ClearVariableData (
+  IN UDP4_SERVICE_DATA  *Udp4Service
   );
 
 #endif

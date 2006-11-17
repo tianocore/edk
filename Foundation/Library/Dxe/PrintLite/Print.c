@@ -179,7 +179,7 @@ Returns:
   Status = gBS->LocateProtocol (
                   &gEfiPrintProtocolGuid,
                   NULL,
-                  &PrintProtocol
+                  (VOID*)&PrintProtocol
                   );
   if (EFI_ERROR (Status)) {
     return 0;

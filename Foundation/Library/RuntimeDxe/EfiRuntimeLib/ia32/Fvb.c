@@ -218,7 +218,12 @@ Returns:
     Status = gBS->HandleProtocol (Handle, &gEfiFirmwareVolumeBlockProtocolGuid, &Fvb);
     ASSERT_EFI_ERROR (Status);
     if (IsMemoryRuntime (Fvb)) {
-      mFvbCount++;
+      //
+      // Increase mFvbCount if we need to add a new entry
+      //
+      if (UpdateIndex == mFvbCount) {
+        mFvbCount++;
+      }
       mFvbEntry[UpdateIndex].Handle       = Handle;
       mFvbEntry[UpdateIndex].Fvb          = Fvb;
       mFvbEntry[UpdateIndex].FvbExtension = NULL;

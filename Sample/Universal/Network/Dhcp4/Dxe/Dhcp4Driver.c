@@ -522,6 +522,7 @@ Dhcp4ServiceBindingCreateChild (
   DHCP_PROTOCOL             *Instance;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
+  VOID                      *Udp4;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -552,6 +553,29 @@ Dhcp4ServiceBindingCreateChild (
   }
 
   Instance->Handle  = *ChildHandle;
+
+  //
+  // Open the Udp4 protocol BY_CHILD.
+  //
+  Status = gBS->OpenProtocol (
+                  DhcpSb->UdpIo->UdpHandle,
+                  &gEfiUdp4ProtocolGuid,
+                  (VOID **) &Udp4,
+                  gDhcp4DriverBinding.DriverBindingHandle,
+                  Instance->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           Instance->Handle,
+           &gEfiDhcp4ProtocolGuid,
+           &Instance->Dhcp4Protocol,
+           NULL
+           );
+
+    NetFreePool (Instance);
+    return Status;
+  }
 
   OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
   
@@ -633,6 +657,16 @@ Dhcp4ServiceBindingDestroyChild (
 
   OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
   Instance->InDestory = TRUE;
+
+  //
+  // Close the Udp4 protocol.
+  //
+  gBS->CloseProtocol (
+         DhcpSb->UdpIo->UdpHandle,
+         &gEfiUdp4ProtocolGuid,
+         gDhcp4DriverBinding.DriverBindingHandle,
+         ChildHandle
+         );
 
   //
   // Uninstall the DHCP4 protocol first to enable a top down destruction.

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,7 @@ Abstract:
 // EFI Component Name Functions
 //
 EFI_STATUS
+EFIAPI
 PciBusComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
@@ -31,6 +32,7 @@ PciBusComponentNameGetDriverName (
   );
 
 EFI_STATUS
+EFIAPI
 PciBusComponentNameGetControllerName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  EFI_HANDLE                   ControllerHandle,
@@ -48,12 +50,13 @@ EFI_COMPONENT_NAME_PROTOCOL gPciBusComponentName = {
   "eng"
 };
 
-static EFI_UNICODE_STRING_TABLE mPciBusDriverNameTable[] = {
+STATIC EFI_UNICODE_STRING_TABLE mPciBusDriverNameTable[] = {
   { "eng", L"PCI Bus Driver" },
   { NULL, NULL }
 };
 
 EFI_STATUS
+EFIAPI
 PciBusComponentNameGetDriverName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  CHAR8                        *Language,
@@ -76,7 +79,7 @@ PciBusComponentNameGetDriverName (
                  specified by Language.
 
   Returns:
-    EFI_SUCCES            - The Unicode string for the Driver specified by This
+    EFI_SUCCESS           - The Unicode string for the Driver specified by This
                             and the language specified by Language was returned 
                             in DriverName.
     EFI_INVALID_PARAMETER - Language is NULL.
@@ -95,6 +98,7 @@ PciBusComponentNameGetDriverName (
 }
 
 EFI_STATUS
+EFIAPI
 PciBusComponentNameGetControllerName (
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
   IN  EFI_HANDLE                   ControllerHandle,

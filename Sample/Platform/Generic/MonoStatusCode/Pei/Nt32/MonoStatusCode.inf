@@ -47,7 +47,6 @@ COMPONENT_TYPE       = PE32_PEIM
 
 [libraries.common]
   EdkFrameworkPpiLib
-  ArchProtocolLib
   EfiCommonLib
   PeiLib
   MemoryStatusCodeLib

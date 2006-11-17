@@ -339,4 +339,14 @@ TcpBackoffRto (
   IN TCP_CB *Tcb
   );
 
+EFI_STATUS
+TcpSetVariableData (
+  IN TCP4_SERVICE_DATA  *Tcp4Service
+  );
+
+VOID
+TcpClearVariableData (
+  IN TCP4_SERVICE_DATA  *Tcp4Service
+  );
+
 #endif

@@ -1,0 +1,57 @@
+#/*++
+#
+# Copyright (c) 2006, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#  Module Name:
+#
+#    VgaClass.inf
+#
+#  Abstract:
+#
+#    Component description file for VgaClass module
+#
+#--*/
+
+[defines]
+BASE_NAME            = VgaClass
+FILE_GUID            = BF89F10D-B205-474f-96E3-7A7BB1B4A407
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  VgaClass.c
+  VgaClass.h
+  ComponentName.c
+
+[libraries.common]
+  EdkGuidLib
+  EfiProtocolLib
+  EfiDriverLib
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\FrameWork
+  $(EDK_SOURCE)\Foundation\FrameWork\Include
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  .
+  $(EDK_SOURCE)\Foundation\Include  
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Include\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Sample\Include
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=VgaClassDriverEntryPoint

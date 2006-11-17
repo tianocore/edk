@@ -33,7 +33,7 @@ Abstract:
 // PciExpress Pcds
 //
 #ifndef __EDKII_GLUE_PCD_PcdPciExpressBaseAddress__
-#define __EDKII_GLUE_PCD_PcdPciExpressBaseAddress__            0xE0000000
+#define __EDKII_GLUE_PCD_PcdPciExpressBaseAddress__   EDKII_GLUE_PciExpressBaseAddress
 #endif
 
 #include "Pcd/EdkIIGluePcd.h"

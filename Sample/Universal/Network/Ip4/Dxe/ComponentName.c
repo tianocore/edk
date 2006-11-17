@@ -53,7 +53,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gIp4ComponentName = {
 static EFI_UNICODE_STRING_TABLE mIp4DriverNameTable[] = {
   {
     "eng",
-    L"IP4  Network Service Driver"
+    L"IP4 Network Service Driver"
   },
   {
     NULL,

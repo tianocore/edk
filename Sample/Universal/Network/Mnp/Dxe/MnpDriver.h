@@ -47,6 +47,8 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gMnpComponentName;
 typedef struct _MNP_SERVICE_DATA {
   UINT32                        Signature;
 
+  EFI_HANDLE                    ControllerHandle;
+
   EFI_SERVICE_BINDING_PROTOCOL  ServiceBinding;
   EFI_SIMPLE_NETWORK_PROTOCOL   *Snp;
 

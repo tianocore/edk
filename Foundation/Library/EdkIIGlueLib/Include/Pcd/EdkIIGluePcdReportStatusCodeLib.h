@@ -32,12 +32,7 @@ Abstract:
 // ReportStatusCode Pcds
 //
 #ifndef __EDKII_GLUE_PCD_PcdReportStatusCodePropertyMask__
-#define __EDKII_GLUE_PCD_PcdReportStatusCodePropertyMask__                                           \
-                                            (  REPORT_STATUS_CODE_PROPERTY_PROGRESS_CODE_ENABLED  \
-                                               | REPORT_STATUS_CODE_PROPERTY_ERROR_CODE_ENABLED   \
-                                               | REPORT_STATUS_CODE_PROPERTY_DEBUG_CODE_ENABLED   \
-                                             )
-
+#define __EDKII_GLUE_PCD_PcdReportStatusCodePropertyMask__   EDKII_GLUE_ReportStatusCodePropertyMask
 #endif
 
 #include "Pcd/EdkIIGluePcd.h"

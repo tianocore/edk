@@ -36,7 +36,8 @@ Abstract:
 
 EFI_FORWARD_DECLARATION (EFI_IP4_PROTOCOL);
 
-typedef struct{
+typedef struct {
+  EFI_HANDLE              InstanceHandle;
   EFI_IPv4_ADDRESS        Ip4Address;
   EFI_IPv4_ADDRESS        SubnetMask;
 } EFI_IP4_ADDRESS_PAIR; 

@@ -40,7 +40,6 @@ COMPONENT_TYPE  = LIBRARY
   .
   ..\..\Include
   ..\..\include\Library
-  $(EDK_SOURCE)\..\Library\Include
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation\Efi

@@ -66,40 +66,15 @@ PLATFORM                  = $(PROJECT_NAME)
 
 DEFINE PROCESSOR=IA32
 
-Foundation\Guid\EdkGuidLib.inf
-Foundation\Framework\Guid\EdkFrameworkGuidLib.inf
-Foundation\Efi\Guid\EfiGuidLib.inf
-Foundation\Library\EfiCommonLib\EfiCommonLib.inf
-Foundation\Cpu\Pentium\CpuIA32Lib\CpuIA32Lib.inf
-Foundation\Ppi\EdkPpiLib.inf
-Foundation\Framework\Ppi\EdkFrameworkPpiLib.inf
-Foundation\Library\Pei\PeiLib\PeiLib.inf
-Foundation\Library\Pei\Hob\PeiHobLib.inf
-Foundation\Library\CustomizedDecompress\CustomizedDecompress.inf
-Foundation\Protocol\EdkProtocolLib.inf
-Foundation\Framework\Protocol\EdkFrameworkProtocolLib.inf
-Foundation\Efi\Protocol\EfiProtocolLib.inf
-Foundation\Core\Dxe\ArchProtocol\ArchProtocolLib.inf
-Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf
-Foundation\Library\RuntimeDxe\EfiRuntimeLib\EfiRuntimeLib.inf
-Foundation\Library\Dxe\Graphics\Graphics.inf
-Foundation\Library\Dxe\EfiIfrSupportLib\EfiIfrSupportLib.inf
-Foundation\Library\Dxe\Print\PrintLib.inf
-Foundation\Library\Dxe\PrintLite\PrintLib.inf
-Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
-Foundation\Library\Dxe\PrintLite\PrintLib.inf
-Foundation\Library\Dxe\GraphicsLite\Graphics.inf
-Foundation\Library\Dxe\Hob\HobLib.inf
-Foundation\Library\CompilerStub\CompilerStubLib.inf
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLib32.dsc"
 
 DEFINE PROCESSOR=X64
 
-Foundation\Library\Dxe\Hob\HobLib.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
-Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
+
 Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
-Foundation\Library\CompilerStub\CompilerStubLib.inf
+Sample\Universal\Network\Library\NetLib.inf
 
 [=============================================================================]
 #
@@ -199,6 +174,21 @@ Sample\Universal\Network\PxeBc\Dxe\BC.inf
 Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 Sample\Universal\Network\Snp32_64\Dxe\SNP.inf    
 
+#
+# UEFI network drivers.
+#
+Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
+Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
+Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
+Sample\Universal\Network\Ip4Config\Dxe\Ip4Config.inf                   FV=NULL
+Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
+Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
+Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
+Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
+
+#
+# Binaries
+#
 Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
 Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\Shell.inf
 

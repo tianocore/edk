@@ -52,7 +52,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gTcp4ComponentName = {
 static EFI_UNICODE_STRING_TABLE mTcpDriverNameTable[] = {
   {
     "eng",
-    L"Tcp   Network Service Driver"
+    L"Tcp Network Service Driver"
   },
   {
     NULL,

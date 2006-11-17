@@ -117,47 +117,28 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                  Status;
-  MNP_SERVICE_DATA            *MnpServiceData;
-  EFI_SIMPLE_NETWORK_PROTOCOL *Snp;
-  BOOLEAN                     MnpInitialized;
+  EFI_STATUS        Status;
+  MNP_SERVICE_DATA  *MnpServiceData;
+  BOOLEAN           MnpInitialized;
 
   MnpInitialized  = FALSE;
 
   MnpServiceData  = NetAllocateZeroPool (sizeof (MNP_SERVICE_DATA));
   if (MnpServiceData == NULL) {
-    MNP_DEBUG_ERROR (("MnpDriverBindingStart(): Failed to allocate the ""Mnp Service Data.\n"));
+    MNP_DEBUG_ERROR (("MnpDriverBindingStart(): Failed to allocate the "
+      L"Mnp Service Data.\n"));
 
     return EFI_OUT_OF_RESOURCES;
   }
 
   //
-  // Open the Simple Network Protocol.
-  //
-  Snp = NULL;
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleNetworkProtocolGuid,
-                  (VOID **) &Snp,
-                  This->DriverBindingHandle,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_BY_DRIVER
-                  );
-  if (EFI_ERROR (Status)) {
-    MNP_DEBUG_ERROR (("MnpDriverBindingStart(): Failed to open Simple ""Network Protocol.\n"));
-
-    goto ErrorExit;
-  }
-  //
   // Initialize the Mnp Service Data.
   //
-  Status = MnpInitializeServiceData (MnpServiceData, Snp);
+  Status = MnpInitializeServiceData (MnpServiceData, This->DriverBindingHandle, ControllerHandle);
   if (EFI_ERROR (Status)) {
 
-    MNP_DEBUG_ERROR (
-      ("MnpDriverBindingStart: MnpInitializeServiceData ""failed, %r.\n",
-      Status)
-      );
+    MNP_DEBUG_ERROR (("MnpDriverBindingStart: MnpInitializeServiceData "
+      L"failed, %r.\n",Status));
     goto ErrorExit;
   }
 
@@ -187,14 +168,12 @@ ErrorExit:
     //
     // Close the Simple Network Protocol.
     //
-    if (Snp != NULL) {
-      gBS->CloseProtocol (
-            ControllerHandle,
-            &gEfiSimpleNetworkProtocolGuid,
-            This->DriverBindingHandle,
-            ControllerHandle
-            );
-    }
+    gBS->CloseProtocol (
+          ControllerHandle,
+          &gEfiSimpleNetworkProtocolGuid,
+          This->DriverBindingHandle,
+          ControllerHandle
+          );
 
     NetFreePool (MnpServiceData);
   }
@@ -347,6 +326,7 @@ Returns:
   EFI_STATUS        Status;
   MNP_SERVICE_DATA  *MnpServiceData;
   MNP_INSTANCE_DATA *Instance;
+  VOID              *Snp;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
 
@@ -389,6 +369,18 @@ Returns:
   // Save the instance's childhandle.
   //
   Instance->Handle = *ChildHandle;
+
+  Status = gBS->OpenProtocol (
+                  MnpServiceData->ControllerHandle,
+                  &gEfiSimpleNetworkProtocolGuid,
+                  (VOID **) &Snp,
+                  gMnpDriverBinding.DriverBindingHandle,
+                  Instance->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    goto ErrorExit;
+  }
 
   //
   // Add the child instance into ChildrenList.
@@ -495,6 +487,16 @@ Returns:
   }
 
   Instance->Destroyed = TRUE;
+
+  //
+  // Close the Simple Network protocol.
+  //
+  gBS->CloseProtocol (
+         MnpServiceData->ControllerHandle,
+         &gEfiSimpleNetworkProtocolGuid,
+         gMnpDriverBinding.DriverBindingHandle,
+         ChildHandle
+         );
 
   //
   // Uninstall the ManagedNetwork protocol.

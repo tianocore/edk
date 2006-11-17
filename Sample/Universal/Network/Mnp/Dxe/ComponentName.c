@@ -52,7 +52,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gMnpComponentName = {
 STATIC EFI_UNICODE_STRING_TABLE mMnpDriverNameTable[] = {
   {
     "eng",
-    L"MNP   Network Service Driver"
+    L"MNP Network Service Driver"
   },
   {
     NULL,

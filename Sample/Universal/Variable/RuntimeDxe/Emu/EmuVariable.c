@@ -367,8 +367,12 @@ Returns:
   //
   VarDataSize = Variable.CurrPtr->DataSize;
   if (*DataSize >= VarDataSize) {
+    if (Data == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
     EfiCopyMem (Data, GetVariableDataPtr (Variable.CurrPtr), VarDataSize);
-    if (Attributes) {
+    if (Attributes != NULL) {
       *Attributes = Variable.CurrPtr->Attributes;
     }
 
@@ -413,7 +417,7 @@ Returns:
   UINTN                   VarNameSize;
   EFI_STATUS              Status;
 
-  if (VariableNameSize == NULL || VendorGuid == NULL) {
+  if (VariableNameSize == NULL || VariableName == NULL || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 

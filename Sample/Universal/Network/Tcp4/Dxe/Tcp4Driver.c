@@ -376,6 +376,8 @@ Returns:
   TcpServiceData->Signature           = TCP4_DRIVER_SIGNATURE;
   TcpServiceData->DriverBindingHandle = This->DriverBindingHandle;
 
+  TcpSetVariableData (TcpServiceData);
+
   return EFI_SUCCESS;
 
 ReleaseTimer:
@@ -430,6 +432,8 @@ Returns:
   TCP_CB                              *TcpPcb;
   SOCKET                              *Sock;
   TCP4_PROTO_DATA                     *TcpProto;
+  NET_LIST_ENTRY                      *Entry;
+  NET_LIST_ENTRY                      *NextEntry;
 
   // Find the NicHandle where Tcp4 ServiceBinding Protocol is installed.
   //
@@ -462,8 +466,8 @@ Returns:
   //
   // Kill TCP driver
   //
-  while (!NetListIsEmpty (&mTcpRunQue)) {
-    TcpPcb = NET_LIST_HEAD (&mTcpRunQue, TCP_CB, List);
+  NET_LIST_FOR_EACH_SAFE (Entry, NextEntry, &mTcpRunQue) {
+    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
 
     //
     // Try to destroy this child
@@ -483,8 +487,8 @@ Returns:
     }
   }
 
-  while (!NetListIsEmpty (&mTcpListenQue)) {
-    TcpPcb = NET_LIST_HEAD (&mTcpListenQue, TCP_CB, List);
+  NET_LIST_FOR_EACH_SAFE (Entry, NextEntry, &mTcpListenQue) {
+    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
 
     //
     // Try to destroy this child
@@ -530,6 +534,11 @@ Returns:
   Tcp4DestroyTimer ();
 
   //
+  // Clear the variable.
+  //
+  TcpClearVariableData (TcpServiceData);
+
+  //
   // Release the TCP service data
   //
   NetFreePool (TcpServiceData);
@@ -569,6 +578,8 @@ Returns:
   SOCKET            *Sock;
   TCP4_SERVICE_DATA *TcpServiceData;
   TCP4_PROTO_DATA   TcpProto;
+  EFI_STATUS        Status;
+  VOID              *Ip4;
 
   if (NULL == This || NULL == ChildHandle) {
     return EFI_INVALID_PARAMETER;
@@ -595,7 +606,22 @@ Returns:
 
   *ChildHandle = Sock->SockHandle;
 
-  return EFI_SUCCESS;
+  //
+  // Open the default Ip4 protocol of IP_IO BY_DRIVER.
+  //
+  Status = gBS->OpenProtocol (
+                  TcpServiceData->IpIo->ChildHandle,
+                  &gEfiIp4ProtocolGuid,
+                  (VOID **) &Ip4,
+                  TcpServiceData->DriverBindingHandle,
+                  Sock->SockHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    SockDestroyChild (Sock);
+  }
+
+  return Status;
 }
 
 EFI_STATUS
@@ -624,9 +650,11 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  EFI_TCP4_PROTOCOL *Tcp4;
-  SOCKET            *Sock;
+  EFI_STATUS         Status;
+  EFI_TCP4_PROTOCOL  *Tcp4;
+  SOCKET             *Sock;
+  TCP4_PROTO_DATA    *TcpProtoData;
+  TCP4_SERVICE_DATA  *TcpServiceData;
 
   if (NULL == This || NULL == ChildHandle) {
     return EFI_INVALID_PARAMETER;
@@ -651,7 +679,21 @@ Returns:
   // destroy this sock and related Tcp protocol control
   // block
   //
-  Sock = SOCK_FROM_THIS (Tcp4);
+  Sock           = SOCK_FROM_THIS (Tcp4);
+  TcpProtoData   = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
+  TcpServiceData = TcpProtoData->TcpService;
 
-  return SockDestroyChild (Sock);
+  Status = SockDestroyChild (Sock);
+
+  //
+  // Close the Ip4 protocol.
+  //
+  gBS->CloseProtocol (
+         TcpServiceData->IpIo->ChildHandle,
+         &gEfiIp4ProtocolGuid,
+         TcpServiceData->DriverBindingHandle,
+         ChildHandle
+         );
+
+  return Status;
 }

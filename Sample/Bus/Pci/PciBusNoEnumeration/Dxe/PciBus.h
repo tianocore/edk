@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -10,6 +10,7 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
 Module Name:
+
   PciBus.h
   
 Abstract:
@@ -54,15 +55,14 @@ Revision History
 // Driver Produced Protocol Prototypes
 //
 
+#define VGABASE1  0x3B0
+#define VGALIMIT1 0x3BB
 
-#define VGABASE1               0x3B0
-#define VGALIMIT1              0x3BB
+#define VGABASE2  0x3C0
+#define VGALIMIT2 0x3DF
 
-#define VGABASE2               0x3C0
-#define VGALIMIT2              0x3DF
-
-#define ISABASE                0x100
-#define ISALIMIT               0x3FF
+#define ISABASE   0x100
+#define ISALIMIT  0x3FF
 
 typedef enum {
   PciBarTypeUnknown = 0,
@@ -99,89 +99,90 @@ typedef struct {
 
 
 typedef struct _PCI_IO_DEVICE {
-  UINT32                                      Signature;
-  EFI_HANDLE                                  Handle;
-  EFI_PCI_IO_PROTOCOL                         PciIo;
-  EFI_LIST_ENTRY                              Link;
- 
-  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL   PciDriverOverride;
-  EFI_DEVICE_PATH_PROTOCOL                    *DevicePath;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL             *PciRootBridgeIo;
+  UINT32                                    Signature;
+  EFI_HANDLE                                Handle;
+  EFI_PCI_IO_PROTOCOL                       PciIo;
+  EFI_LIST_ENTRY                            Link;
+
+  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL PciDriverOverride;
+  EFI_DEVICE_PATH_PROTOCOL                  *DevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL           *PciRootBridgeIo;
 
   //
-  // PCI configuration space header type               
+  // PCI configuration space header type
   //
-  PCI_TYPE00                                  Pci;
+  PCI_TYPE00                                Pci;
 
   //
   // Bus number, Device number, Function number
   //
-  UINT8                                       BusNumber;
-  UINT8                                       DeviceNumber;
-  UINT8                                       FunctionNumber;
+  UINT8                                     BusNumber;
+  UINT8                                     DeviceNumber;
+  UINT8                                     FunctionNumber;
 
   //
   // BAR for this PCI Device
   //
-  PCI_BAR                                     PciBar[PCI_MAX_BAR];
+  PCI_BAR                                   PciBar[PCI_MAX_BAR];
 
   //
   // The bridge device this pci device is subject to
   //
-  struct _PCI_IO_DEVICE                       *Parent;
+  struct _PCI_IO_DEVICE                     *Parent;
 
   //
   // A linked list for children Pci Device if it is bridge device
   //
-  EFI_LIST_ENTRY                              ChildList;
-
+  EFI_LIST_ENTRY                            ChildList;
 
   //
   // TURE if the PCI bus driver creates the handle for this PCI device
   //
-  BOOLEAN                                     Registered;
+  BOOLEAN                                   Registered;
 
   //
   // TRUE if the PCI bus driver successfully allocates the resource required by
   // this PCI device
   //
-  BOOLEAN                                     Allocated;
+  BOOLEAN                                   Allocated;
 
   //
   // The attribute this PCI device currently set
   //
-  UINT64                                      Attributes;
-
+  UINT64                                    Attributes;
 
   //
   // The attributes this PCI device actually supports
   //
-  UINT64                                      Supports;
+  UINT64                                    Supports;
 
   //
   // The resource decode the bridge supports
   //
-  UINT32                                      Decodes;
+  UINT32                                    Decodes;
 
   //
   // The OptionRom Size
   //
-  UINT64                                      RomSize;
+  UINT64                                    RomSize;
 
   //
   // TRUE if there is any EFI driver in the OptionRom
   //
-  BOOLEAN                                     BusOverride;
+  BOOLEAN                                   BusOverride;
 
   //
   //  A list tracking reserved resource on a bridge device
   //
-  EFI_LIST_ENTRY                              ReservedResourceList;
-  
+  EFI_LIST_ENTRY                            ReservedResourceList;
+
   //
   // A list tracking image handle of platform specific overriding driver
   //
-  EFI_LIST_ENTRY                              OptionRomDriverList;
+  EFI_LIST_ENTRY                            OptionRomDriverList;
+
+  BOOLEAN                                   IsPciExp;
+
 } PCI_IO_DEVICE;
 
 

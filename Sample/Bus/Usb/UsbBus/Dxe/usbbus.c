@@ -1061,8 +1061,9 @@ UsbDeviceConfiguration (
   //
   UsbIo = &FirstController->UsbIo;
 
-  ParentPortReset (FirstController, FALSE, 0);
-
+  if (UsbIoDevice->DeviceSpeed != EFI_USB_SPEED_HIGH) {
+    ParentPortReset (FirstController, FALSE, 0);
+  }
   //
   // First retrieve the 1st 8 bytes of
   // in order to get the MaxPacketSize for Endpoint 0

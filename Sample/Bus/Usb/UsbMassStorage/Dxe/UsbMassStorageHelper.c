@@ -272,10 +272,10 @@ USBFloppyInquiry (
 
 EFI_STATUS
 USBFloppyRead10 (
-  IN    USB_FLOPPY_DEV    *UsbFloppyDevice,
-  IN    VOID              *Buffer,
-  IN    EFI_LBA           Lba,
-  IN    UINTN             NumberOfBlocks
+  IN  USB_FLOPPY_DEV    *UsbFloppyDevice,
+  IN  VOID              *Buffer,
+  IN  EFI_LBA           Lba,
+  IN  UINTN             NumberOfBlocks
   )
 /*++
 
@@ -310,7 +310,7 @@ USBFloppyRead10 (
   EFI_STATUS              Status;
   UINT16                  TimeOut;
   EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
-  UINTN                   SenseCounts;
+  UINT8                   Index;
 
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
@@ -333,76 +333,50 @@ USBFloppyRead10 (
     } else {
       SectorCount = MaxBlock;
     }
-    //
-    // fill the Packet data structure
-    //
-    Read10Packet->opcode = READ_10;
 
-    //
-    // Lba0 ~ Lba3 specify the start logical block address of the data transfer.
-    // Lba0 is MSB, Lba3 is LSB
-    //
-    Read10Packet->Lba3  = (UINT8) (Lba32 & 0xff);
-    Read10Packet->Lba2  = (UINT8) (Lba32 >> 8);
-    Read10Packet->Lba1  = (UINT8) (Lba32 >> 16);
-    Read10Packet->Lba0  = (UINT8) (Lba32 >> 24);
+    for (Index = 0; Index < 3; Index ++) {
 
-    //
-    // TranLen0 ~ TranLen1 specify the transfer length in block unit.
-    // TranLen0 is MSB, TranLen is LSB
-    //
-    Read10Packet->TranLen1  = (UINT8) (SectorCount & 0xff);
-    Read10Packet->TranLen0  = (UINT8) (SectorCount >> 8);
-
-    ByteCount               = SectorCount * BlockSize;
-
-    TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
-
-    Status = USBFloppyPacketCommand (
-              UsbFloppyDevice,
-              &Packet,
-              sizeof (ATAPI_PACKET_COMMAND),
-              (VOID *) ptrBuffer,
-              ByteCount,
-              EfiUsbDataIn,
-              TimeOut
-              );
-    if (EFI_ERROR (Status)) {
-
-      Status = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
-      if (!EFI_ERROR (Status)) {
-        if (IsLogicalUnitCommunicationOverRun (
-              UsbFloppyDevice->SenseData,
-              SenseCounts
-              )) {
-          Lba32           = (UINT32) Lba;
-          ptrBuffer       = Buffer;
-          BlocksRemaining = (UINT16) NumberOfBlocks;
-          MaxBlock        = (UINT16) (MaxBlock / 4);
-          if (MaxBlock < 1) {
-            MaxBlock = 1;
-          }
-
-          continue;
-        }
-      } else {
-        return EFI_DEVICE_ERROR;
-      }
       //
-      // retry read10 command
+      // fill the Packet data structure
       //
+      Read10Packet->opcode = READ_10;
+      //
+      // Lba0 ~ Lba3 specify the start logical block address of the data transfer.
+      // Lba0 is MSB, Lba3 is LSB
+      //
+      Read10Packet->Lba3  = (UINT8) (Lba32 & 0xff);
+      Read10Packet->Lba2  = (UINT8) (Lba32 >> 8);
+      Read10Packet->Lba1  = (UINT8) (Lba32 >> 16);
+      Read10Packet->Lba0  = (UINT8) (Lba32 >> 24);
+      
+      //
+      // TranLen0 ~ TranLen1 specify the transfer length in block unit.
+      // TranLen0 is MSB, TranLen is LSB
+      //
+      Read10Packet->TranLen1  = (UINT8) (SectorCount & 0xff);
+      Read10Packet->TranLen0  = (UINT8) (SectorCount >> 8);
+      
+      ByteCount               = SectorCount * BlockSize;
+      
+      TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
+
+
       Status = USBFloppyPacketCommand (
-                UsbFloppyDevice,
-                &Packet,
-                sizeof (ATAPI_PACKET_COMMAND),
-                (VOID *) ptrBuffer,
-                ByteCount,
-                EfiUsbDataIn,
-                TimeOut
-                );
-      if (EFI_ERROR (Status)) {
-        return EFI_DEVICE_ERROR;
+                 UsbFloppyDevice,
+                 &Packet,
+                 sizeof (ATAPI_PACKET_COMMAND),
+                 (VOID *) ptrBuffer,
+                 ByteCount,
+                 EfiUsbDataIn,
+                 TimeOut
+                 );
+      if (!EFI_ERROR (Status)) {
+         break;
       }
+    }
+    
+    if (Index == 3) {
+      return EFI_DEVICE_ERROR;
     }
 
     Lba32 += SectorCount;
@@ -737,10 +711,10 @@ UsbFloppyTestUnitReady (
 
 EFI_STATUS
 USBFloppyWrite10 (
-  IN    USB_FLOPPY_DEV    *UsbFloppyDevice,
-  IN    VOID              *Buffer,
-  IN    EFI_LBA           Lba,
-  IN    UINTN             NumberOfBlocks
+  IN  USB_FLOPPY_DEV    *UsbFloppyDevice,
+  IN  VOID              *Buffer,
+  IN  EFI_LBA           Lba,
+  IN  UINTN             NumberOfBlocks
   )
 /*++
 
@@ -775,8 +749,8 @@ USBFloppyWrite10 (
   EFI_STATUS              Status;
   UINT16                  TimeOut;
   EFI_USB_ATAPI_PROTOCOL  *UsbAtapiInterface;
-  UINTN                   SenseCounts;
-
+  UINT8                   Index;
+ 
   UsbAtapiInterface = UsbFloppyDevice->AtapiProtocol;
 
   //
@@ -795,80 +769,54 @@ USBFloppyWrite10 (
   while (BlocksRemaining > 0) {
 
     if (BlocksRemaining <= MaxBlock) {
-
       SectorCount = BlocksRemaining;
     } else {
-
       SectorCount = MaxBlock;
     }
-    //
-    // fill the Packet data structure
-    //
-    Write10Packet->opcode = WRITE_10;
 
-    //
-    // Lba0 ~ Lba3 specify the start logical block address
-    // of the data transfer.
-    // Lba0 is MSB, Lba3 is LSB
-    //
-    Write10Packet->Lba3 = (UINT8) (Lba32 & 0xff);
-    Write10Packet->Lba2 = (UINT8) (Lba32 >> 8);
-    Write10Packet->Lba1 = (UINT8) (Lba32 >> 16);
-    Write10Packet->Lba0 = (UINT8) (Lba32 >> 24);
-
-    //
-    // TranLen0 ~ TranLen1 specify the transfer length in block unit.
-    // TranLen0 is MSB, TranLen is LSB
-    //
-    Write10Packet->TranLen1 = (UINT8) (SectorCount & 0xff);
-    Write10Packet->TranLen0 = (UINT8) (SectorCount >> 8);
-
-    ByteCount               = SectorCount * BlockSize;
-
-    TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
-
-    Status = USBFloppyPacketCommand (
-              UsbFloppyDevice,
-              &Packet,
-              sizeof (ATAPI_PACKET_COMMAND),
-              (VOID *) ptrBuffer,
-              ByteCount,
-              EfiUsbDataOut,
-              TimeOut
-              );
-    if (EFI_ERROR (Status)) {
-      Status = UsbFloppyRequestSense (UsbFloppyDevice, &SenseCounts);
-      if (!EFI_ERROR (Status)) {
-        if (IsLogicalUnitCommunicationOverRun (
-              UsbFloppyDevice->SenseData,
-              SenseCounts
-              )) {
-          Lba32           = (UINT32) Lba;
-          ptrBuffer       = Buffer;
-          BlocksRemaining = (UINT16) NumberOfBlocks;
-          MaxBlock        = (UINT16) (MaxBlock / 4);
-          if (MaxBlock < 1) {
-            MaxBlock = 1;
-          }
-
-          continue;
-        }
-      }
+    for (Index = 0; Index < 3; Index ++) {
       //
-      // retry write10 command
+      // fill the Packet data structure
       //
+      Write10Packet->opcode = WRITE_10;
+      
+      //
+      // Lba0 ~ Lba3 specify the start logical block address
+      // of the data transfer.
+      // Lba0 is MSB, Lba3 is LSB
+      //
+      Write10Packet->Lba3 = (UINT8) (Lba32 & 0xff);
+      Write10Packet->Lba2 = (UINT8) (Lba32 >> 8);
+      Write10Packet->Lba1 = (UINT8) (Lba32 >> 16);
+      Write10Packet->Lba0 = (UINT8) (Lba32 >> 24);
+      
+      //
+      // TranLen0 ~ TranLen1 specify the transfer length in block unit.
+      // TranLen0 is MSB, TranLen is LSB
+      //
+      Write10Packet->TranLen1 = (UINT8) (SectorCount & 0xff);
+      Write10Packet->TranLen0 = (UINT8) (SectorCount >> 8);
+      
+      ByteCount               = SectorCount * BlockSize;
+      
+      TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
+      
       Status = USBFloppyPacketCommand (
-                UsbFloppyDevice,
-                &Packet,
-                sizeof (ATAPI_PACKET_COMMAND),
-                (VOID *) ptrBuffer,
-                ByteCount,
-                EfiUsbDataOut,
-                TimeOut
-                );
-      if (EFI_ERROR (Status)) {
-        return EFI_DEVICE_ERROR;
+                 UsbFloppyDevice,
+                 &Packet,
+                 sizeof (ATAPI_PACKET_COMMAND),
+                 (VOID *) ptrBuffer,
+                 ByteCount,
+                 EfiUsbDataOut,
+                 TimeOut
+                 );
+      if (!EFI_ERROR (Status)) {
+         break;
       }
+    }
+   
+    if (Index == 3) {
+      return EFI_DEVICE_ERROR;
     }
 
     Lba32 += SectorCount;
@@ -914,7 +862,6 @@ UsbFloppyDetectMedia (
   //
   // a flag used to determine whether need to perform Read Capacity command.
   //
-  BOOLEAN             NeedReadCapacity;
 
   REQUEST_SENSE_DATA  *SensePtr;
 
@@ -925,7 +872,6 @@ UsbFloppyDetectMedia (
   FloppyStatus      = EFI_SUCCESS;
   OldMediaInfo      = *UsbFloppyDevice->BlkIo.Media;
   *MediaChange      = FALSE;
-  NeedReadCapacity  = TRUE;
 
   //
   // if there is no media present,or media not changed,
@@ -944,7 +890,7 @@ UsbFloppyDetectMedia (
     //
     if (IsNoMedia (UsbFloppyDevice->SenseData, SenseCounts)) {
 
-      NeedReadCapacity = FALSE;
+      UsbFloppyDevice->NeedReadCapacity = FALSE;
       UsbFloppyDevice->BlkIo.Media->MediaId = 0;
       UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
       UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
@@ -979,7 +925,7 @@ UsbFloppyDetectMedia (
 
   }
 
-  if (NeedReadCapacity) {
+  if (UsbFloppyDevice->NeedReadCapacity) {
     //
     // at most retry 5 times
     //
@@ -1008,6 +954,8 @@ UsbFloppyDetectMedia (
           //
           UsbFloppyDevice->DeviceType = USBFLOPPY2;
           Status                      = EFI_DEVICE_ERROR;
+        } else {
+          UsbFloppyDevice->NeedReadCapacity = FALSE;
         }
         break;
 
@@ -1019,6 +967,8 @@ UsbFloppyDetectMedia (
           // retry the ReadFormatCapacity command
           //
           UsbFloppyDevice->DeviceType = USBFLOPPY;
+        } else {
+          UsbFloppyDevice->NeedReadCapacity = FALSE;
         }
         //
         // force the BlockSize to be 0x200.

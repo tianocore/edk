@@ -39,8 +39,6 @@ COMPONENT_TYPE  = LIBRARY
   .
   ..\..\Include
   ..\..\include\Library
-  $(EDK_SOURCE)\..
-  $(EDK_SOURCE)\..\Framework
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation\Framework\Protocol\Hii

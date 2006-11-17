@@ -31,7 +31,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gGraphicsConsoleComponentName = {
 STATIC EFI_UNICODE_STRING_TABLE mGraphicsConsoleDriverNameTable[] = {
   {
     "eng",
-    L"UGA Console Driver"
+    L"Graphics Console Driver"
   },
   {
     NULL,

@@ -1,0 +1,72 @@
+#/*++
+#
+# Copyright (c) 2006, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#  Module Name:
+#
+#    IsaDriverLib.inf
+#
+#  Abstract:
+#
+#    Component description file.
+#
+#--*/
+
+[defines]
+BASE_NAME=  IsaDriverLib
+COMPONENT_TYPE=   LIBRARY
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Sample\Include
+  $(EDK_SOURCE)\Sample\Bus\Isa\IsaBus\Dxe
+  $(EDK_SOURCE)\Sample\Bus\Isa\IsaFloppy\Dxe
+  $(EDK_SOURCE)\Sample\Bus\Isa\Ps2Mouse\Dxe
+  $(EDK_SOURCE)\Sample\Bus\Isa\Ps2Keyboard\Dxe
+  $(EDK_SOURCE)\Sample\Bus\Isa\IsaSerial\Dxe
+  
+  
+[nmake.common]
+  C_STD_INCLUDE=
+  
+[sources.common]
+  IsaBus\Dxe\IsaBus.h
+  IsaBus\Dxe\IsaBusCombined.c
+  IsaBus\Dxe\LightIsaIo.h
+  IsaBus\Dxe\LightIsaIo.c
+  IsaBus\Dxe\CommonIsaIo.h
+  IsaBus\Dxe\CommonIsaIo.c  
+  IsaBus\Dxe\IsaAcpi.h
+  IsaFloppy\Dxe\IsaFloppy.h
+  IsaFloppy\Dxe\IsaFloppy.c
+  IsaFloppy\Dxe\IsaFloppyBlock.c
+  IsaFloppy\Dxe\IsaFloppyCtrl.c
+  Ps2Mouse\Dxe\Ps2Mouse.c
+  Ps2Mouse\Dxe\Ps2Mouse.h
+  Ps2Mouse\Dxe\CommPs2.c
+  Ps2Mouse\Dxe\CommPs2.h
+  Ps2Keyboard\Dxe\Ps2Keyboard.c
+  Ps2Keyboard\Dxe\Ps2KbdTextIn.c
+  Ps2Keyboard\Dxe\Ps2KbdCtrller.c
+  Ps2Keyboard\Dxe\Ps2Keyboard.h
+  IsaSerial\Dxe\serial.c
+  IsaSerial\Dxe\serial.h
+  
+

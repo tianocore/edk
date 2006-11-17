@@ -29,6 +29,7 @@ COMPONENT_TYPE  = LIBRARY
   Io.c
   LibGlobals.c
   GetImage.c
+  RtDevicePath.c
 
 [sources.ia32]
   Ia32\RuntimeLib.c

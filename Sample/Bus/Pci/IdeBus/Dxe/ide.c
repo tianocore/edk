@@ -1991,7 +1991,7 @@ Returns:
   return EFI_SUCCESS;
 }
 
-EFI_STATUS
+VOID
 ClearInterrupt (
   IN EFI_EVENT  Event,
   IN VOID       *Context
@@ -2009,7 +2009,6 @@ Arguments:
 
 Returns:
 
-  EFI_SUCCESS - Interrupt cleared
 
 --*/
 {
@@ -2028,7 +2027,7 @@ Returns:
   //
   Status = ReassignIdeResources (IdeDev);
   if (EFI_ERROR (Status)) {
-    return Status;
+    return ;
   }
 
   //
@@ -2041,7 +2040,7 @@ Returns:
   //
   AtaSoftReset (IdeDev);
   if (EFI_ERROR (Status)) {
-    return Status;
+    return ;
   }
 
   //
@@ -2053,7 +2052,7 @@ Returns:
     if (IdeSecondary == IdeDev->Channel) {
       IoPortForBmis = IdeDev->IoPort->BusMasterBaseAddr + BMISS_OFFSET;
     } else {
-      return EFI_UNSUPPORTED;
+      return ;
     }
   }
   //
@@ -2093,5 +2092,5 @@ Returns:
     RegisterValue
     );
 
-  return EFI_SUCCESS;
+  return ;
 }

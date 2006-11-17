@@ -533,6 +533,7 @@ Returns:
   EFI_STATUS         Status;
   ARP_SERVICE_DATA   *ArpService;
   ARP_INSTANCE_DATA  *Instance;
+  VOID               *Mnp;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -566,6 +567,9 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
     ARP_DEBUG_ERROR (("ArpSBCreateChild: faild to install ARP protocol, %r.\n", Status));
+
+    NetFreePool (Instance);
+    return Status;
   }
 
   //
@@ -573,13 +577,25 @@ Returns:
   //
   Instance->Handle = *ChildHandle;
 
-  if (EFI_ERROR (NET_TRYLOCK (&ArpService->Lock))) {
-    //
-    // Free the memory allocated for Instance.
-    //
-    NetFreePool (Instance);
+  //
+  // Open the Managed Network protocol BY_CHILD.
+  //
+  Status = gBS->OpenProtocol (
+                  ArpService->MnpChildHandle,
+                  &gEfiManagedNetworkProtocolGuid,
+                  (VOID **) &Mnp,
+                  gArpDriverBinding.DriverBindingHandle,
+                  Instance->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    goto ERROR;
+  }
 
-    return EFI_ACCESS_DENIED;
+  if (EFI_ERROR (NET_TRYLOCK (&ArpService->Lock))) {
+
+    Status = EFI_ACCESS_DENIED;
+    goto ERROR;
   }
 
   //
@@ -589,6 +605,30 @@ Returns:
   ArpService->ChildrenNumber++;
 
   NET_UNLOCK (&ArpService->Lock);
+
+ERROR:
+
+  if (EFI_ERROR (Status)) {
+
+    gBS->CloseProtocol (
+           ArpService->MnpChildHandle,
+           &gEfiManagedNetworkProtocolGuid,
+           gArpDriverBinding.DriverBindingHandle,
+           Instance->Handle
+           );
+
+    gBS->UninstallMultipleProtocolInterfaces (
+           Instance->Handle,
+           &gEfiArpProtocolGuid,
+           &Instance->ArpProto,
+           NULL
+           );
+
+    //
+    // Free the allocated memory.
+    //
+    NetFreePool (Instance);
+  }
 
   return Status;
 }
@@ -658,6 +698,16 @@ Returns:
   // Use the Destroyed as a flag to avoid re-entrance.
   //
   Instance->Destroyed = TRUE;
+
+  //
+  // Close the Managed Network protocol.
+  //
+  gBS->CloseProtocol (
+         ArpService->MnpChildHandle,
+         &gEfiManagedNetworkProtocolGuid,
+         gArpDriverBinding.DriverBindingHandle,
+         ChildHandle
+         );
 
   //
   // Uninstall the ARP protocol.
