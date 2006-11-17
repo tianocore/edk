@@ -19,8 +19,8 @@ Abstract:
 
 --*/
 
-#ifndef _EOL_BDS_PLATFORM_H_
-#define _EOL_BDS_PLATFORM_H_
+#ifndef _UOL_BDS_PLATFORM_H_
+#define _UOL_BDS_PLATFORM_H_
 
 #include "Tiano.h"
 #include "Bds.h"
@@ -232,4 +232,4 @@ PlatformBdsNoConsoleAction (
   )
 ;
 
-#endif // _BDS_PLATFORM_H
+#endif // _UOL_BDS_PLATFORM_H_
