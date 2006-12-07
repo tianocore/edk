@@ -95,7 +95,7 @@ EfiCreateProtocolNotifyEvent(
   IN  EFI_TPL           NotifyTpl,
   IN  EFI_EVENT_NOTIFY  NotifyFunction,
   IN  VOID              *NotifyContext,  OPTIONAL
-  OUT VOID              *Registration
+  OUT VOID              **Registration
   )
 {
   EFI_STATUS  Status;

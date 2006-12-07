@@ -1848,9 +1848,13 @@ Routine Description:
 
 Arguments:
 
+  PciDevice1  -  The pointer to the first PCI_IO_DEVICE.
+  PciDevice2  -  The pointer to the second PCI_IO_DEVICE.
+
 Returns:
 
-  None
+  TRUE   -  The two Pci devices are on the same path.
+  FALSE  -  The two Pci devices are not on the same path.
 
 --*/
 {
@@ -1859,9 +1863,5 @@ Returns:
     return TRUE;
   }
 
-  if (PciDevice1->BusNumber > PciDevice2->BusNumber) {
-    return PciDeviceExisted (PciDevice1->Parent, PciDevice2);
-  }
-
-  return PciDeviceExisted (PciDevice2->Parent, PciDevice1);
+  return (PciDeviceExisted (PciDevice1->Parent, PciDevice2)|| PciDeviceExisted (PciDevice2->Parent, PciDevice1));
 }

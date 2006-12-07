@@ -24,6 +24,10 @@ Abstract:
 
 #include EFI_ARCH_PROTOCOL_DEFINITION (Cpu)
 #include EFI_PROTOCOL_CONSUMER (Legacy8259)
+#include EFI_PROTOCOL_CONSUMER (LegacyBiosThunk)
+
+#define CPU_EXCEPTION_DEBUG_OUTPUT   1
+#define CPU_EXCEPTION_VGA_SWITCH     1
 
 #define INTERRUPT_VECTOR_NUMBER 0x100
 
@@ -105,7 +109,17 @@ InstallInterruptHandler (
   );
 
 VOID
+SystemExceptionHandler (
+  VOID
+  );
+
+VOID
 SystemTimerHandler (
+  VOID
+  );
+
+VOID
+InitDescriptor (
   VOID
   );
 

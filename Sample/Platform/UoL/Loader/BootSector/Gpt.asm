@@ -31,6 +31,24 @@ BLOCK_SHIFT               EQU     9
 
         org 0h
 Start:
+
+; ****************************************************************************
+; Start Print
+; ****************************************************************************
+
+    mov  ax,0b800h
+    mov  es,ax
+    mov  ax, 07c0h
+    mov  ds, ax
+    lea  si, cs:[StartString]
+    mov  cx, 10
+    mov  di, 160
+    rep  movsw 
+
+; ****************************************************************************
+; Print over
+; ****************************************************************************
+
 ; ****************************************************************************
 ; Initialize segment registers and copy code at 0x0000:0x7c00 to 0x0000:0x0600
 ; ****************************************************************************
@@ -176,6 +194,7 @@ ReadBlocks:
         mov   ah, 42h                           ; ah = Function 42
         mov   dl,byte ptr [bp+PhysicalDrive]    ; dl = Drive Number
         int   13h
+        jc    BadGpt
         pop   ds
         popad
         ret
@@ -199,7 +218,21 @@ AddressPacketEnd:
 ; ****************************************************************************
 
 BadGpt:
-  jmp   BadGpt
+    mov  ax,0b800h
+    mov  es,ax
+    mov  ax, 060h
+    mov  ds, ax
+    lea  si, cs:[ErrorString]
+    mov  cx, 10
+    mov  di, 320
+    rep  movsw 
+Halt:
+    jmp   Halt
+
+StartString:
+    db 'G', 0ch, 'P', 0ch, 'T', 0ch, ' ', 0ch, 'S', 0ch, 't', 0ch, 'a', 0ch, 'r', 0ch, 't', 0ch, '!', 0ch
+ErrorString:
+    db 'G', 0ch, 'P', 0ch, 'T', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '!', 0ch
 
 ; ****************************************************************************
 ; PhysicalDrive - Used to indicate which disk to be boot
@@ -219,7 +252,7 @@ GptPartitionIndicator db 0
 ; Unique MBR signature
 ; ****************************************************************************
     org   01B8h
-    db 'UOL '
+    db 'UoL '
 
 ; ****************************************************************************
 ; Unknown
@@ -253,7 +286,7 @@ GptPartitionIndicator db 0
 ; Sector Signature
 ; ****************************************************************************
 
-  org 01feh
+  org 01FEh
 SectorSignature:
   dw        0aa55h      ; Boot Sector Signature
 

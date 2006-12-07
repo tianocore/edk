@@ -23,253 +23,228 @@ Revision History
 #include <stdio.h>
 #include <string.h>
 
-#define REG_INVALID_PARAMETER 2
-#define REG_NOT_EXIST         1
-#define REG_SUCCESS           0
-
-HRESULT QueryReg(char *strName, HKEY *phKey)
-{
-  LRESULT  hr;
-
-  if (phKey == NULL) {
-    return REG_INVALID_PARAMETER;
-  }
-  hr = RegOpenKey(HKEY_LOCAL_MACHINE, strName, phKey);
-  if (hr == ERROR_SUCCESS) {
-    return REG_SUCCESS;
-  } else {
-    return REG_NOT_EXIST;
-  }
-}
-
-HRESULT QueryRegValue(HKEY hKey, char *strName, ULONG dwType, VOID *lpcbData, DWORD cbBin)
-{
-  DWORD  cbData;
-  DWORD  dwTypeLocal;
-
-  dwTypeLocal = dwType;
-  switch (dwType) {
-  case REG_EXPAND_SZ:
-  case REG_SZ:
-  case REG_LINK:
-  case REG_MULTI_SZ:
-  case REG_RESOURCE_LIST:
-    cbData = lstrlen ((char *)(lpcbData));
-    break;
-  case REG_DWORD_BIG_ENDIAN:
-  case REG_DWORD_LITTLE_ENDIAN:
-    cbData = 4;
-    break;
-  case REG_BINARY:
-    cbData = cbBin;
-    break;
-  default:
-    return REG_INVALID_PARAMETER;
-  }
-  if (RegQueryValueEx(hKey, strName, NULL, &dwTypeLocal, (LPBYTE)(lpcbData), &cbData) == ERROR_SUCCESS)
-  {
-    return REG_SUCCESS;
-  } else {
-    return REG_NOT_EXIST;
-  }
-}
-
 #define MAX_DRIVE 26
-DWORD DiskNumber = 0;
-char  DiskName[MAX_DRIVE][MAX_PATH];
+
+INT
+GetDrvNumOffset (
+  IN VOID *BootSector
+  );
 
 typedef enum {
-  DriveTypeUnknown,
-  DriveTypeFloppy,
-  DriveTypeIde,
-  DriveTypeIdeMbr,
-  DriveTypeUsb,
-  DriveTypeUsbMbr,
-  DriveTypeCdrom,
-  DriveTypeMax
-} DRIVE_TYPE;
+  PatchTypeUnknown,
+  PatchTypeFloppy,
+  PatchTypeIde,
+  PatchTypeUsb,
+} PATCH_TYPE;
+
+typedef enum {
+  ErrorSuccess,
+  ErrorFileCreate,
+  ErrorFileReadWrite,
+  ErrorNoMbr,
+  ErrorFatType
+} ERROR_STATUS;
+
+typedef struct _DRIVE_TYPE_DESC {
+  UINT  Type;
+  CHAR  *Description;
+} DRIVE_TYPE_DESC;
+
+#define DRIVE_TYPE_ITEM(x) {x, #x}
+
+DRIVE_TYPE_DESC DriveTypeDesc[] = {
+  DRIVE_TYPE_ITEM (DRIVE_UNKNOWN),
+  DRIVE_TYPE_ITEM (DRIVE_NO_ROOT_DIR),
+  DRIVE_TYPE_ITEM (DRIVE_REMOVABLE),
+  DRIVE_TYPE_ITEM (DRIVE_FIXED),
+  DRIVE_TYPE_ITEM (DRIVE_REMOTE),
+  DRIVE_TYPE_ITEM (DRIVE_CDROM),
+  DRIVE_TYPE_ITEM (DRIVE_RAMDISK),
+  (UINT) -1, NULL
+};
+
+CHAR *ErrorStatusDesc[] = {
+  "Success",
+  "Failed to create files",
+  "Failed to read/write files",
+  "No MBR exists",
+  "Failed to detect Fat type"
+};
+typedef struct _DRIVE_INFO {
+  CHAR              VolumeLetter;
+  DRIVE_TYPE_DESC   *DriveType;
+  UINT              DiskNumber;
+} DRIVE_INFO;
 
 #define BOOT_SECTOR_LBA_OFFSET 0x1FA
 
-void
-InitDrive (
-  void
+#define IsLetter(x) (((x) >= 'a' && (x) <= 'z') || ((x) >= 'A' && (x) <= 'Z'))
+
+BOOL
+GetDriveInfo (
+  CHAR       VolumeLetter,
+  DRIVE_INFO *DriveInfo
   )
 {
-  HKEY  pKey;
-  DWORD Index;
-  char  RegName[MAX_PATH];
+  HANDLE                  VolumeHandle;
+  STORAGE_DEVICE_NUMBER   StorageDeviceNumber;
+  DWORD                   BytesReturned;
+  BOOL                    Success;
+  UINT                    DriveType;
+  UINT                    Index;
 
-  if (QueryReg ("SYSTEM\\CurrentControlSet\\Services\\Disk\\Enum", &pKey) != 0) {
-    printf ("QueryReg error\n");
-    return ;
+  CHAR RootPath[]         = "X:\\";       // "X:\"  -> for GetDriveType
+  CHAR VolumeAccessPath[] = "\\\\.\\X:";  // "\\.\X:"  -> to open the volume
+
+  RootPath[0] = VolumeAccessPath[4] = VolumeLetter;
+  DriveType = GetDriveType(RootPath);
+  if (DriveType != DRIVE_REMOVABLE && DriveType != DRIVE_FIXED) {
+    return FALSE;
   }
 
-  if (QueryRegValue (pKey, "Count", REG_DWORD_LITTLE_ENDIAN, &DiskNumber,sizeof (DWORD)) != 0) {
-    printf ("QueryRegValue error\n");
-    RegCloseKey(pKey);
-    return ;
+  DriveInfo->VolumeLetter = VolumeLetter;
+  VolumeHandle = CreateFile (
+                   VolumeAccessPath,
+                   0,
+                   FILE_SHARE_READ | FILE_SHARE_WRITE,
+                   NULL,
+                   OPEN_EXISTING,
+                   0,
+                   NULL
+                   );
+  if (VolumeHandle == INVALID_HANDLE_VALUE) {
+    fprintf (
+      stderr, 
+      "ERROR: CreateFile failed: Volume = %s, LastError = 0x%x\n", 
+      VolumeAccessPath, 
+      GetLastError ()
+      );
+    return FALSE;
   }
 
-  for (Index = 0; Index < DiskNumber; Index++) {
-    wsprintf (RegName, "%u", Index);
-    memset (DiskName[Index], ' ', MAX_PATH - 1);
-    DiskName[Index][MAX_PATH - 1] = 0;
-    if (QueryRegValue (pKey, RegName, REG_SZ, &DiskName[Index], MAX_PATH) != 0) {
-      printf ("QueryRegValue error index %d\n", Index);
-      continue;
+  //
+  // Get Disk Number. It should fail when operating on floppy. That's ok because:
+  // To direct write to disk:
+  //   for USB and HD: use path = \\.\PHYSICALDRIVEx, where x is Disk Number
+  //   for floppy:     use path = \\.\X:, where X can be A or B
+  // So the Disk Number is only needed when operating on Hard or USB disk.
+  //
+  Success = DeviceIoControl(
+              VolumeHandle, 
+              IOCTL_STORAGE_GET_DEVICE_NUMBER,
+              NULL, 
+              0, 
+              &StorageDeviceNumber, 
+              sizeof(StorageDeviceNumber),
+              &BytesReturned, 
+              NULL
+              );
+  //
+  // DeviceIoControl should fail if Volume is floppy or network drive.
+  //
+  if (!Success) {
+    DriveInfo->DiskNumber = (UINT) -1;
+  } else if (StorageDeviceNumber.DeviceType != FILE_DEVICE_DISK) {
+    //
+    // Only care about the disk.
+    //
+    return FALSE;
+  } else{
+    DriveInfo->DiskNumber = StorageDeviceNumber.DeviceNumber;
+  }
+  CloseHandle(VolumeHandle);
+  
+  DriveInfo->DriveType = NULL;
+  for (Index = 0; DriveTypeDesc[Index].Description != NULL; Index ++) {
+    if (DriveType == DriveTypeDesc[Index].Type) {
+      DriveInfo->DriveType = &DriveTypeDesc[Index];
+      break;
     }
   }
 
-  RegCloseKey(pKey);
+  if (DriveInfo->DriveType == NULL) {
+    //
+    // Should have a type.
+    //
+    fprintf (stderr, "ERROR: fetal error!!!\n");
+    return FALSE;
+  }
+  return TRUE;
 }
 
-void
+VOID
 ListDrive (
-  void
+  VOID
   )
 {
-  DWORD Index;
+  UINT       Index;
+  DRIVE_INFO DriveInfo;
+  
+  UINT Mask =  GetLogicalDrives();
 
-  InitDrive ();
-  printf ("Physical Disk:\n");
-  for (Index = 0; Index < DiskNumber; Index++) {
-    //
-    // Reset Disk Name
-    //
-    printf ("%d - %s\n", Index, DiskName[Index]);
-  }
-}
-
-char
-CheckDevice (
-  DWORD Index,
-  char  *DeviceName
-  )
-{
-  char  DriveName[MAX_PATH];
-
-  memset (DriveName, 0, MAX_PATH);
-  strcpy (DriveName, DiskName[Index]);
-  DriveName[strlen(DeviceName)] = 0;
-  if (strcmp (DriveName, DeviceName) == 0) {
-    return 1;
-  }
-  return 0;
-}
-
-DRIVE_TYPE
-GetDiskType (
-  DWORD Index
-  )
-{
-  if (CheckDevice (Index, "USB") == 1) {
-    return DriveTypeUsb;
-  }
-  if (CheckDevice (Index, "IDE") == 1) {
-    return DriveTypeIde;
-  }
-  return DriveTypeUnknown;
-}
-
-DWORD
-GetFirstUsb (
-  void
-  )
-{
-  DWORD Index;
-
-  InitDrive ();
-  for (Index = 0; Index < DiskNumber; Index++) {
-    if (CheckDevice (Index, "USB") == 1) {
-      printf ("Select: %d - %s\n", Index, DiskName[Index]);
-      return Index;
+  for (Index = 0; Index < MAX_DRIVE; Index++) {
+    if (((Mask >> Index) & 0x1) == 1) {
+      if (GetDriveInfo ('A' + (CHAR) Index, &DriveInfo)) {
+        if (Index < 2) {
+          // Floppy will occupy 'A' and 'B'
+          fprintf (
+            stdout,
+            "%c: - Type: %s\n",
+            DriveInfo.VolumeLetter,
+            DriveInfo.DriveType->Description
+            );
+        }
+        else {
+          fprintf (
+            stdout,
+            "%c: - DiskNum: %d, Type: %s\n", 
+            DriveInfo.VolumeLetter,
+            DriveInfo.DiskNumber, 
+            DriveInfo.DriveType->Description
+            );
+        }
+      }
     }
   }
 
-  return (DWORD)-1;
-}
-
-DWORD
-GetFirstIde (
-  void
-  )
-{
-  DWORD Index;
-
-  InitDrive ();
-  for (Index = 0; Index < DiskNumber; Index++) {
-    if (CheckDevice (Index, "IDE") == 1) {
-      printf ("Select: %d - %s\n", Index, DiskName[Index]);
-      return Index;
-    }
-  }
-
-  return (DWORD)-1;
-}
-
-int WriteToFile (BYTE *BootSector, char *FileName)
-{
-  FILE *FileHandle;
-  int  result;
-
-  FileHandle = fopen (FileName, "wb");
-  if (FileHandle == NULL) {
-    printf ("error open file: %s\n", FileName);
-    return 0;
-  }
-
-  result = fwrite (BootSector, 1, 512, FileHandle);
-  if (result != 512) {
-    printf ("error write file: %s\n", FileName);
-    result = 0;
-  }
-
-  fclose (FileHandle);
-  return result;
-}
-
-int ReadFromFile (BYTE *BootSector, char *FileName)
-{
-  FILE *FileHandle;
-  int  result;
-
-  FileHandle = fopen (FileName, "rb");
-  if (FileHandle == NULL) {
-    printf ("error open file: %s\n", FileName);
-    return 0;
-  }
-
-  result = fread (BootSector, 1, 512, FileHandle);
-  if (result != 512) {
-    printf ("error read file: %s\n", FileName);
-    result = 0;
-  }
-
-  fclose (FileHandle);
-  return result;
 }
 
 DWORD
 GetBootSectorOffset (
-  HANDLE     hFile,
-  char       IsWrite,
-  DRIVE_TYPE DriveType
+  HANDLE     DiskHandle,
+  BOOL       WriteToDisk,
+  PATCH_TYPE PatchType
   )
-{
-  BYTE    DiskPartition[512];
-  DWORD   dwbytes;
-  DWORD   Offset;
-  char    IsMbr;
-  DWORD   Index;
+/*++
+Description:
+  Get the offset of boot sector.
+  For non-MBR disk, offset is just 0
+  for disk with MBR, offset needs to be caculated by parsing MBR
 
-  IsMbr = FALSE;
-  Offset = 0;
-  SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
-  if (ReadFile (hFile, DiskPartition, 512, &dwbytes, NULL)) {
-    if ((DiskPartition[510] == 0x55) && (DiskPartition[511] == 0xAA)) {
+  Additional thing is done here:
+    Manually select first partition as active one if no one is active: needs to patch MBR
+--*/
+{
+  BYTE    DiskPartition[0x200];
+  DWORD   BytesReturn;
+  DWORD   DbrOffset;
+  DWORD   Index;
+  BOOL    HasMbr;
+
+  DbrOffset = 0;
+  HasMbr    = FALSE;
+  
+  //
+  // Check whether having MBR
+  //
+  SetFilePointer(DiskHandle, 0, NULL, FILE_BEGIN);
+  if (ReadFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
+    // Check 55AA
+    if ((DiskPartition[0x1FE] == 0x55) && (DiskPartition[0x1FF] == 0xAA)) {
+      // Check Jmp
       if (((DiskPartition[0] != 0xEB) || (DiskPartition[2] != 0x90)) &&
           (DiskPartition[0] != 0xE9)) {
+        // Check Boot Indicator
         if (((DiskPartition[0x1BE] == 0x0) || (DiskPartition[0x1BE] == 0x80)) &&
             ((DiskPartition[0x1CE] == 0x0) || (DiskPartition[0x1CE] == 0x80)) &&
             ((DiskPartition[0x1DE] == 0x0) || (DiskPartition[0x1DE] == 0x80)) &&
@@ -278,270 +253,332 @@ GetBootSectorOffset (
           // Check Signature, Jmp, and Boot Indicator.
           // if all pass, we assume MBR found.
           //
-          IsMbr = TRUE;
+          HasMbr = TRUE;
         }
       }
     }
   }
 
-  if (IsMbr) {
+  if (HasMbr) {
     //
     // Skip MBR
     //
-    printf ("Skip MBR!\n");
+    fprintf (stdout, "Skip MBR!\n");
     for (Index = 0; Index < 4; Index++) {
       //
       // Found Boot Indicator.
       //
       if (DiskPartition[0x1BE + (Index * 0x10)] == 0x80) {
-        Offset = *(DWORD *)&DiskPartition[0x1BE + (Index * 0x10) + 8];
+        DbrOffset = *(DWORD *)&DiskPartition[0x1BE + (Index * 0x10) + 8];
         break;
       }
     }
     //
-    // If no boot indicator, we select 1st one.
-    // And patch it to MBR.
+    // If no boot indicator, we manually select 1st partition, and patch MBR accordingly.
     //
-    if (Index >= 4) {
-      Offset = *(DWORD *)&DiskPartition[0x1BE + 8];
-      if (IsWrite && (DriveType == DriveTypeUsb)) {
-        SetFilePointer(hFile, 0, NULL, FILE_BEGIN);
+    if (Index == 4) {
+      DbrOffset = *(DWORD *)&DiskPartition[0x1BE + 8];
+      if (WriteToDisk && (PatchType == PatchTypeUsb)) {
+        SetFilePointer(DiskHandle, 0, NULL, FILE_BEGIN);
         DiskPartition[0x1BE] = 0x80;
-        WriteFile (hFile, DiskPartition, 512, &dwbytes, NULL);
+        WriteFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL);
       }
     }
   }
 
-  return Offset;
+  return DbrOffset;
 }
 
-void
+ERROR_STATUS
 ProcessBootSector (
-  char *DiskDriverName,
-  char *FileName,
-  char IsWrite,
-  DRIVE_TYPE DriveType
+  CHAR        *DiskName,
+  CHAR        *FileName,
+  BOOL        WriteToDisk,
+  PATCH_TYPE  PatchType,
+  BOOL        ProcessMbr
   )
 {
-  BYTE    DiskPartition[512];
-  HANDLE  hFile;
-  DWORD   dwbytes;
-  DWORD   Offset;
+  BYTE    DiskPartition[0x200];
+  BYTE    DiskPartitionBackup[0x200];
+  HANDLE  DiskHandle;
+  HANDLE  FileHandle;
+  DWORD   BytesReturn;
+  DWORD   DbrOffset;
+  INT     DrvNumOffset;
 
-  hFile = CreateFile (DiskDriverName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (hFile != INVALID_HANDLE_VALUE) {
-    Offset = 0;
-    if ((DriveType == DriveTypeIde) || (DriveType == DriveTypeUsb)) {
-      //
-      // Skip potential MBR
-      //
-      Offset = GetBootSectorOffset (hFile, IsWrite, DriveType);
-      SetFilePointer(hFile, Offset * 512, NULL, FILE_BEGIN);
+  DiskHandle = CreateFile (
+                 DiskName, 
+                 GENERIC_READ | GENERIC_WRITE, 
+                 FILE_SHARE_READ, 
+                 NULL, 
+                 OPEN_EXISTING, 
+                 FILE_ATTRIBUTE_NORMAL, 
+                 NULL
+                 );
+  if (DiskHandle == INVALID_HANDLE_VALUE) {
+    return ErrorFileCreate;
+  }
+
+  FileHandle = CreateFile (
+                 FileName,
+                 GENERIC_READ | GENERIC_WRITE,
+                 0,
+                 NULL,
+                 OPEN_ALWAYS,
+                 FILE_ATTRIBUTE_NORMAL,
+                 NULL
+                 );
+  if (FileHandle == INVALID_HANDLE_VALUE) {
+    return ErrorFileCreate;
+  }
+
+  DbrOffset = 0;
+  //
+  // Skip potential MBR for Ide & USB disk
+  //
+  if ((PatchType == PatchTypeIde) || (PatchType == PatchTypeUsb)) {
+    DbrOffset = GetBootSectorOffset (DiskHandle, WriteToDisk, PatchType);
+
+    if (!ProcessMbr) {
+      SetFilePointer (DiskHandle, DbrOffset * 0x200, NULL, FILE_BEGIN);
     }
-    if (IsWrite) {
-      if (ReadFromFile (DiskPartition, FileName)) {
-        if (WriteFile (hFile, DiskPartition, 512, &dwbytes, NULL)) {
-          printf ("Write BootSector successfully!\n");
-        }
-      }
-    } else {
-      if (ReadFile (hFile, DiskPartition, 512, &dwbytes, NULL)) {
-        if (DriveType == DriveTypeIde) {
-          //
-          // Patch LBAOffsetForBootSector
-          //
-          *(DWORD *)&DiskPartition [BOOT_SECTOR_LBA_OFFSET] = Offset;
-        }
-        if (WriteToFile (DiskPartition, FileName)) {
-          printf ("Read BootSector successfully!\n");
-        }
-      }
-    } 
-    CloseHandle (hFile);
+    else if(DbrOffset == 0) {
+      //
+      // If user want to process Mbr, but no Mbr exists, simply return FALSE
+      //
+      return ErrorNoMbr;
+    }
+    else {
+      SetFilePointer (DiskHandle, 0, NULL, FILE_BEGIN);
+    }
   }
-}
-
-void
-ProcessDiskBootSector (
-  DWORD Index,
-  char *FileName,
-  char IsWrite
-  )
-{
-  char    DiskDriverName[MAX_PATH];
-  DRIVE_TYPE DriveType;
-
-  InitDrive ();
-
-  if (Index >= DiskNumber) {
-    printf ("This is no STORAGE disk!\n");
-    return ;
-  }
-
-  DriveType = GetDiskType (Index);
-
-  if (IsWrite && (DriveType != DriveTypeUsb)) {
-    printf ("Update STORAGE is not allowed!\n");
-    return ;
-  }
-  
-  wsprintf(DiskDriverName, "\\\\.\\PHYSICALDRIVE%u",Index);
 
   //
-  // Open Physical Disk
+  // [File Pointer is pointed to beginning of Mbr or Dbr]
   //
-  ProcessBootSector (DiskDriverName, FileName, IsWrite, DriveType);
+  if (WriteToDisk) {
+    //
+    // Write
+    //
+    if (!ReadFile (FileHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
+      return ErrorFileReadWrite;
+    }
+    if (ProcessMbr) {
+      //
+      // Use original partition table
+      //
+      if (!ReadFile (DiskHandle, DiskPartitionBackup, 0x200, &BytesReturn, NULL)) {
+        return ErrorFileReadWrite;
+      }
+      memcpy (DiskPartition + 0x1BE, DiskPartitionBackup + 0x1BE, 0x40);
+      SetFilePointer (DiskHandle, 0, NULL, FILE_BEGIN);
+    }
 
-  return ;
-}
+    if (!WriteFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
+      return ErrorFileReadWrite;
+    }
 
-void
-ProcessDiskMbr (
-  DWORD Index,
-  char *FileName,
-  char IsWrite
-  )
-{
-  char    DiskDriverName[MAX_PATH];
-  DRIVE_TYPE DriveType;
-
-  InitDrive ();
-
-  if (Index >= DiskNumber) {
-    printf ("This is no STORAGE disk!\n");
-    return ;
-  }
-
-  DriveType = GetDiskType (Index);
-  if (DriveType == DriveTypeIde) {
-    DriveType = DriveTypeIdeMbr;
-  } else if (DriveType == DriveTypeUsb) {
-    DriveType = DriveTypeUsbMbr;
   } else {
-    printf ("Update MBR is not suported!\n");
-    return ;
+    //
+    // Read
+    //
+    if (!ReadFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
+      return ErrorFileReadWrite;
+    }
+
+    if (PatchType == PatchTypeUsb) {
+      // Manually set BS_DrvNum to 0x80 as window's format.exe has a bug which will clear this field discarding whether USB disk's MBR. 
+      // offset of BS_DrvNum is 0x24 for FAT12/16
+      //                        0x40 for FAT32
+      //
+      DrvNumOffset = GetDrvNumOffset (DiskPartition);
+      if (DrvNumOffset == -1) {
+        return ErrorFatType;
+      }
+      //
+      // Some legacy BIOS require 0x80 discarding MBR.
+      // Question left here: is it needed to check Mbr before set 0x80?
+      //
+      DiskPartition[DrvNumOffset] = ((DbrOffset > 0) ? 0x80 : 0);
   }
 
-  if (IsWrite) {
-    printf ("Update STORAGE is not allowed!\n");
-    return ;
+
+    if (PatchType == PatchTypeIde) {
+      //
+      // Patch LBAOffsetForBootSector
+      //
+      *(DWORD *)&DiskPartition [BOOT_SECTOR_LBA_OFFSET] = DbrOffset;
+    }
+    if (!WriteFile (FileHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
+      return ErrorFileReadWrite;
+    }
   }
-  
-  wsprintf(DiskDriverName, "\\\\.\\PHYSICALDRIVE%u",Index);
-
-  //
-  // Open Physical Disk
-  //
-  ProcessBootSector (DiskDriverName, FileName, IsWrite, DriveType);
-
-  return ;
+  CloseHandle (FileHandle);
+  CloseHandle (DiskHandle);
+  return ErrorSuccess;
 }
 
-void
-ProcessFloppyBootSector (
-  DWORD Index,
-  char *FileName,
-  char IsWrite
-  )
-{
-  char    DiskDriverName[MAX_PATH];
-
-  if (Index != 0) {
-    printf ("This is no Floppy disk!\n");
-    return ;
-  }
-
-  wsprintf(DiskDriverName, "\\\\.\\A:");
-  printf ("Select: %d - %s\n", Index, DiskDriverName);
-
-  //
-  // Open Floppy
-  //
-  ProcessBootSector (DiskDriverName, FileName, IsWrite, DriveTypeFloppy);
-
-  return ;
-}
-
-void
+VOID
 PrintUsage (
-  void
+  CHAR* AppName
   )
 {
-  printf (
-    "Usage:\n"
-    "genbootsector -l\n"
-    "genbootsector [-m] -r/-w <device number>/-u/-f/-h <file name>\n"
-    "  -l: list device\n"
-    "  -r: read file to device boot sector\n"
-    "  -w: write file to device boot sector\n"
-    "  -u: auto select 1st USB drive\n"
-    "  -f: auto select 1st Floppy drive\n"
-    "  -h: auto select 1st IDE drive\n"
-    "  -m: process MBR instead of boot sector\n"
+  fprintf (
+    stdout,
+    "Usage: %s [OPTIONS]...\n"
+    "Copy file content from/to bootsector.\n"
+    "\n"
+    "  -l        list disks\n"
+    "  -if=FILE  specified an input, can be files or disks\n"
+    "  -of=FILE  specified an output, can be files or disks\n"
+    "  -mbr      process MBR also\n"
+    "  -h        print this message\n"
+    "\n"
+    "FILE providing a volume plus a colon (X:), indicates a disk\n"
+    "FILE providing other format, indicates a file\n",
+    AppName
     );
 }
  
-int
+INT
 main (
-  int argc,
-  char *argv[]
+  INT  argc,
+  CHAR *argv[]
   )
 {
-  DWORD Drive;
-  char  IsWrite;
+  CHAR          *AppName;
+  INT           Index;
+  BOOL          ProcessMbr;
+  CHAR          VolumeLetter;
+  CHAR          *FilePath;
+  BOOL          WriteToDisk;
+  DRIVE_INFO    DriveInfo;
+  PATCH_TYPE    PatchType;
+  ERROR_STATUS  Status;
 
-  if (argc < 2 || argc > 5) {
-    PrintUsage ();
-    return -1;
+  CHAR        FloppyPathTemplate[] = "\\\\.\\%c:";
+  CHAR        DiskPathTemplate[]   = "\\\\.\\PHYSICALDRIVE%u";
+  CHAR        DiskPath[MAX_PATH];
+
+  AppName = *argv;
+  argv ++;
+  argc --;
+  
+  ProcessMbr    = FALSE;
+  WriteToDisk   = TRUE;
+  FilePath      = NULL;
+  VolumeLetter  = 0;
+
+  //
+  // Parse command line
+  //
+  for (Index = 0; Index < argc; Index ++) {
+    if (stricmp (argv[Index], "-l") == 0) {
+      ListDrive ();
+      return 0;
+    }
+    else if (stricmp (argv[Index], "-mbr") == 0) {
+      ProcessMbr = TRUE;
+    }
+    else if ((strnicmp (argv[Index], "-if=", 4) == 0) ||
+             (strnicmp (argv[Index], "-of=", 4) == 0)
+             ) {
+      if (argv[Index][6] == '\0' && argv[Index][5] == ':' && IsLetter (argv[Index][4])) {
+        VolumeLetter = argv[Index][4];
+        if (strnicmp (argv[Index], "-if=", 4) == 0) {
+          WriteToDisk = FALSE;
+        }
+      }
+      else {
+        FilePath = &argv[Index][4];
+      }
+    }
+    else {
+      PrintUsage (AppName);
+      return 1;
+    }
   }
 
-  if ((strcmp (argv[1], "-l") == 0) && (argc == 2)) {
-    ListDrive ();
-  } else if (((strcmp (argv[1], "-w") == 0) || (strcmp (argv[1], "-r") == 0)) && (argc == 4)) {
-    if (strcmp (argv[1], "-w") == 0) {
-      IsWrite = 1;
-    } else {
-      IsWrite = 0;
+  //
+  // Check parameter
+  //
+  if (VolumeLetter == 0) {
+    fprintf (stderr, "ERROR: Volume isn't provided!\n");
+    PrintUsage (AppName);
+    return 1;
+  }
+  
+  if (FilePath == NULL) {
+    fprintf (stderr, "ERROR: File isn't pvovided!\n");
+    PrintUsage (AppName);
+    return 1;
+  }
+    
+  PatchType = PatchTypeUnknown;
+
+  if ((VolumeLetter == 'A') || (VolumeLetter == 'a') || 
+      (VolumeLetter == 'B') || (VolumeLetter == 'b') 
+      ) {
+    //
+    // Floppy
+    //
+    sprintf (DiskPath, FloppyPathTemplate, VolumeLetter);
+    PatchType = PatchTypeFloppy;
+  }
+  else {
+    //
+    // Hard/USB disk
+    //
+    if (!GetDriveInfo (VolumeLetter, &DriveInfo)) {
+      fprintf (stderr, "ERROR: GetDriveInfo - 0x%x\n", GetLastError ());
+      return 1;
     }
-    if (strcmp (argv[2], "-u") == 0) {
-      Drive = GetFirstUsb ();
-      ProcessDiskBootSector (Drive, argv[3], IsWrite);
-    } else if (strcmp (argv[2], "-h") == 0) {
-      Drive = GetFirstIde ();
-      ProcessDiskBootSector (Drive, argv[3], IsWrite);
-    } else if (strcmp (argv[2], "-f") == 0) {
-      Drive = 0; // hardcode for a:
-      ProcessFloppyBootSector (Drive, argv[3], IsWrite);
-    } else {
-      Drive = atoi (argv[2]);
-      ProcessDiskBootSector (Drive, argv[3], IsWrite);
+
+    //
+    // Shouldn't patch my own hard disk, but can read it.
+    // very safe then:)
+    //
+    if (DriveInfo.DriveType->Type == DRIVE_FIXED && WriteToDisk) {
+      fprintf (stderr, "ERROR: Write to local harddisk - permission denied!\n");
+      return 1;
     }
-  } else if ((strcmp (argv[1], "-m") == 0) && (argc == 5)) {
-    if ((strcmp (argv[2], "-w") == 0) || (strcmp (argv[2], "-r") == 0)) {
-      if (strcmp (argv[2], "-w") == 0) {
-        IsWrite = 1;
-      } else {
-        IsWrite = 0;
-      }
-      if (strcmp (argv[3], "-h") == 0) {
-        Drive = GetFirstIde ();
-        ProcessDiskMbr (Drive, argv[4], IsWrite);
-      } else if (strcmp (argv[3], "-u") == 0) {
-        Drive = GetFirstUsb ();
-        ProcessDiskMbr (Drive, argv[4], IsWrite);
-      } else {
-        Drive = atoi (argv[3]);
-        ProcessDiskMbr (Drive, argv[4], IsWrite);
-      }
-    } else {
-      PrintUsage ();
-      return -1;
+    
+    sprintf (DiskPath, DiskPathTemplate, DriveInfo.DiskNumber);
+    if (DriveInfo.DriveType->Type == DRIVE_REMOVABLE) {
+      PatchType = PatchTypeUsb;
     }
-  } else {
-    PrintUsage ();
-    return -1;
+    else if (DriveInfo.DriveType->Type == DRIVE_FIXED) {
+      PatchType = PatchTypeIde;
+    }
   }
 
-  return 0;
+  if (PatchType == PatchTypeUnknown) {
+    fprintf (stderr, "ERROR: PatchType unknown!\n");
+    return 1;
+  }
+
+  //
+  // Process DBR (Patch or Read)
+  //
+  Status = ProcessBootSector (DiskPath, FilePath, WriteToDisk, PatchType, ProcessMbr);
+  if (Status == ErrorSuccess) {
+    fprintf (
+      stdout, 
+      "%s %s successfully!\n", 
+      WriteToDisk ? "Write" : "Read", 
+      ProcessMbr ? "MBR" : "DBR"
+      );
+    return 0;
+  }
+  else {
+    fprintf (
+      stderr, 
+      "ERROR: %s %s failed - %s (LastError: 0x%x)!\n", 
+      WriteToDisk ? "Write" : "Read", 
+      ProcessMbr ? "MBR" : "DBR", 
+      ErrorStatusDesc[Status],
+      GetLastError ()
+      );
+    return 1;
+  }
 }
-

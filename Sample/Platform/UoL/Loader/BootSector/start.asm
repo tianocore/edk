@@ -215,18 +215,18 @@ NotCrossing64KBoundry:
         ret
 
 DiskError:
-        mov     bx,000fh
-        mov     al,ah
-        mov     ah,0ah
-        add     al,041h
-        mov     cx,1
-        int     10h
-        xor     ah,ah
-        int     16h
-        int     19h
+        mov  ax,0b800h
+        mov  es,ax
+        mov  ax, 2000h
+        mov  ds, ax
+        lea  si, cs:[ErrorString]
+        mov  cx, 11
+        mov  di, 160
+        rep  movsw 
 Halt:
-        jmp     Halt
-
+        jmp   Halt
+ErrorString:
+        db 'U', 0ch, 'O', 0ch, 'L', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '2', 0ch, '!', 0ch
         org     01feh
         dw      0aa55h
 
@@ -625,8 +625,16 @@ MACHINE_CHECK_SEL   equ $-IDT_BASE
         db 0eh OR 80h   ; (10001110)type = 386 interrupt gate, present
         dw 0            ; offset 31:16
 
-; 86 unspecified descriptors, First 13 of them are reserved, the rest are avail
-        db (86 * 8) dup(0)
+; SIMD floating-point exception (INT 13h)
+SIMD_EXCEPTION_SEL  equ $-IDT_BASE
+        dw 0            ; offset 15:0
+        dw SYS_CODE_SEL ; selector 15:0
+        db 0            ; 0 for interrupt gate
+        db 0eh OR 80h   ; (10001110)type = 386 interrupt gate, present
+        dw 0            ; offset 31:16
+
+; 85 unspecified descriptors, First 12 of them are reserved, the rest are avail
+        db (85 * 8) dup(0)
         
 ; IRQ 0 (System timer) - (INT 68h)
 IRQ0_SEL            equ $-IDT_BASE

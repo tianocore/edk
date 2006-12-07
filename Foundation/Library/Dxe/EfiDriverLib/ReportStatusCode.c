@@ -61,6 +61,9 @@ Returns:
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000) 
   if (gStatusCode == NULL) {
+    if (gBS == NULL) {
+      return EFI_UNSUPPORTED;
+    }
     Status = gBS->LocateProtocol (&gEfiStatusCodeRuntimeProtocolGuid, NULL, (VOID **)&gStatusCode);
     if (EFI_ERROR (Status) || gStatusCode == NULL) {
       return EFI_UNSUPPORTED;
@@ -69,6 +72,9 @@ Returns:
   Status = gStatusCode->ReportStatusCode (Type, Value, Instance, CallerId, Data);
   return Status;
 #else
+  if (gRT == NULL) {
+    return EFI_UNSUPPORTED;
+  }
   Status = gRT->ReportStatusCode (Type, Value, Instance, CallerId, Data);
   return Status;
 #endif

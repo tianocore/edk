@@ -672,7 +672,7 @@ Returns:
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
-    return EFI_SUCCESS;
+    return EFI_UNSUPPORTED;
   }
 
   //

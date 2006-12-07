@@ -27,6 +27,7 @@ Abstract:
 #include "EfiPrintLib.h"
 #include "BmMachine.h"
 #include "EfiHobLib.h"
+#include "EfiImage.h"
 
 #include EFI_PROTOCOL_DEFINITION (SerialIo)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
@@ -34,6 +35,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (AcpiS3Save)
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
 #include EFI_PROTOCOL_DEFINITION (SimpleFileSystem)
+#include EFI_PROTOCOL_DEFINITION (FileInfo)
 #include EFI_PROTOCOL_DEFINITION (SimpleNetwork)
 #include EFI_PROTOCOL_DEFINITION (LoadFile)
 #include EFI_PROTOCOL_DEFINITION (PlatformDriverOverride)
@@ -285,6 +287,12 @@ BdsLibUnpackDevicePath (
   IN EFI_DEVICE_PATH_PROTOCOL  *DevPath
   );
 
+EFI_DEVICE_PATH_PROTOCOL *
+BdsLibDelPartMatchInstance (
+  IN     EFI_DEVICE_PATH_PROTOCOL  *Multi,
+  IN     EFI_DEVICE_PATH_PROTOCOL  *Single
+  );
+
 BOOLEAN
 BdsLibMatchDevicePaths (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Multi,
@@ -417,6 +425,15 @@ IsResetRequired (
 VOID
 SetupResetReminder (
   VOID
+  );
+
+EFI_STATUS
+BdsLibGetImageHeader (
+  IN  EFI_HANDLE                  Device,
+  IN  CHAR16                      *FileName,
+  OUT EFI_IMAGE_DOS_HEADER        *DosHeader,
+  OUT EFI_IMAGE_FILE_HEADER       *ImageHeader,
+  OUT EFI_IMAGE_OPTIONAL_HEADER   *OptionalHeader
   );
   
 #endif // _BDS_LIB_H_

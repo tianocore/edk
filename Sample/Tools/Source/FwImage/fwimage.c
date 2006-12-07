@@ -94,13 +94,17 @@ ZeroExceptionTable (
 {
   UINT32 PdataSize;
   UINT32 PdataOffset;
+  UINT32 PdataRVASize;
+  UINT32 PdataRVA;
   UINT32 SectionOffset;
   UINT16 SectionNumber;
   UINT32 SectionNameSize;
   EFI_IMAGE_SECTION_HEADER Section;
 
-  PdataSize   = 0;
-  PdataOffset = 0;
+  PdataSize     = 0;
+  PdataOffset   = 0;
+  PdataRVASize  = 0;
+  PdataRVA      = 0;
   SectionOffset = 0;
 
   //
@@ -111,8 +115,8 @@ ZeroExceptionTable (
         (PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress != 0) &&
         (PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size != 0)) {
 
-      PdataOffset = PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
-      PdataSize = PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
+      PdataRVA     = PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
+      PdataRVASize = PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
 
       PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress = 0;
       PeHdr->PeHeader32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size = 0;
@@ -124,8 +128,8 @@ ZeroExceptionTable (
         (PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress != 0) &&
         (PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size != 0)) {
 
-      PdataOffset = PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
-      PdataSize = PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
+      PdataRVA     = PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
+      PdataRVASize = PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
 
       PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress = 0;
       PeHdr->PeHeader64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size = 0;
@@ -134,31 +138,35 @@ ZeroExceptionTable (
     }
   }
 
-  //
-  // RVA == File offset
-  //
-  if ((PdataSize != 0) && (PdataOffset != 0)) {
-    fseek (fpOut, PdataOffset, SEEK_SET);
+  if ((PdataRVASize != 0) && (PdataRVA != 0)) {
 
-    while (PdataSize > 0) {
-      fputc (0, fpOut);
-      PdataSize--;
-    }
-
-    //
-    // Zero .pdata Section Header Name
-    //
     SectionNumber = PeHdr->PeHeader32.FileHeader.NumberOfSections;
     SectionNameSize = sizeof(Section.Name);
     while (SectionNumber > 0) {
       fseek (fpIn, DosHdr->e_lfanew + SectionOffset, SEEK_SET);
       fread (&Section, sizeof (Section), 1, fpIn);
       if (strcmp (Section.Name, ".pdata") == 0) {
+        //
+        // Zero .pdata Section Header Name
+        //
         fseek (fpOut, DosHdr->e_lfanew + SectionOffset, SEEK_SET);
         while (SectionNameSize > 0) {
           fputc (0, fpOut);
           SectionNameSize--;
         }
+
+        //
+        // Zero .pdata Secton raw data
+        //
+        PdataOffset = Section.PointerToRawData;
+        PdataSize   = Section.SizeOfRawData;
+        fseek (fpOut, PdataOffset, SEEK_SET);
+
+        while (PdataSize > 0) {
+          fputc (0, fpOut);
+          PdataSize--;
+        }
+
         break;
       }
       SectionNumber--;

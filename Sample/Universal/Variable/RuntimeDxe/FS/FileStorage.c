@@ -27,8 +27,15 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (FileInfo)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 
-CHAR16 mEfivar[] = L"Efivar.bin";
-
+CHAR16 mEfivar[]    = L"Efivar.bin";
+//
+// Variable storage hot plug is supported but there are still some restrictions:
+// After plugging the storage back,
+// 1. Still use memory as NV if newly plugged storage's MediaId is not same as the original one
+// 2. Still use memory as NV if there are some update operation during storage is unplugged.
+//
+UINT32  mMediaId;
+BOOLEAN mContentDiff = FALSE;
 //
 // Prototypes
 //
@@ -68,7 +75,8 @@ OpenStore (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Device,
   IN  CHAR16                    *FilePathName,
   IN  UINT64                    OpenMode,
-  OUT EFI_FILE                  **File
+  OUT EFI_FILE                  **File,
+  OUT UINT32                    *MediaId        OPTIONAL
   );
 
 STATIC
@@ -176,7 +184,7 @@ FileStorageConstructor (
   //
   // Check \efi\boot\ directory
   //
-  Status = OpenStore (VAR_FILE_DEVICEPATH (Dev), L"\\efi\\boot", EFI_FILE_MODE_READ, &File);
+  Status = OpenStore (VAR_FILE_DEVICEPATH (Dev), L"\\efi\\boot", EFI_FILE_MODE_READ, &File, NULL);
   if (EFI_ERROR (Status)) {
     goto ErrHandle;
   }
@@ -185,7 +193,8 @@ FileStorageConstructor (
   //
   // Check \Efivar.bin file
   //
-  Status = OpenStore (VAR_FILE_DEVICEPATH (Dev), mEfivar, EFI_FILE_MODE_READ, &File);
+  Status = OpenStore (VAR_FILE_DEVICEPATH (Dev), mEfivar, EFI_FILE_MODE_READ, &File, &mMediaId);
+
   if (EFI_ERROR (Status)) {
     //
     // Create \Efivar.bin, and init with default value, e.g.: 0xff
@@ -194,7 +203,8 @@ FileStorageConstructor (
                VAR_FILE_DEVICEPATH (Dev), 
                mEfivar, 
                EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 
-               &File
+               &File,
+               NULL
                );
     if (!EFI_ERROR (Status)) {
       Status = VarEraseStore (&Dev->VarStore);
@@ -279,13 +289,15 @@ VarEraseStore(
 
   EfiSetMem (VAR_DATA_PTR (Dev), Dev->Size, VAR_DEFAULT_VALUE);
 
-  if (!EfiAtRuntime ()) {
+  if (!mContentDiff && !EfiAtRuntime ()) {
     //
     // If not in the runtime period, write through to file also
     //
     Status = OpenVarStore (Dev, 0);
 
-    if (!EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
+      mContentDiff = TRUE;
+    } else {
       Status = VAR_FILE_FILEHANDLE (Dev)->Write (VAR_FILE_FILEHANDLE (Dev), &Dev->Size, VAR_DATA_PTR (Dev));
       if (!EFI_ERROR (Status)) {
         VAR_FILE_FILEHANDLE (Dev)->Flush (VAR_FILE_FILEHANDLE (Dev));
@@ -323,11 +335,13 @@ VarWriteStore (
     EfiCopyMem (VAR_DATA_PTR (Dev) + Offset, Buffer, BufferSize);
   }
 
-  if (!EfiAtRuntime ()) {
+  if (!mContentDiff && !EfiAtRuntime ()) {
 
     Status = OpenVarStore (Dev, Offset);
-    
-    if (!EFI_ERROR(Status)) {
+
+    if (EFI_ERROR (Status)) {
+      mContentDiff = TRUE;
+    } else {
       Status = VAR_FILE_FILEHANDLE (Dev)->Write (VAR_FILE_FILEHANDLE (Dev), &BufferSize, Buffer);
       if (!EFI_ERROR (Status)) {
         VAR_FILE_FILEHANDLE (Dev)->Flush (VAR_FILE_FILEHANDLE (Dev));
@@ -364,17 +378,14 @@ OpenStore (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Device,
   IN  CHAR16                    *FilePathName,
   IN  UINT64                    OpenMode,
-  OUT EFI_FILE                  **File
+  OUT EFI_FILE                  **File,
+  OUT UINT32                    *MediaId        OPTIONAL
   )
-/*++
-
-Routine description:
-
---*/
 {
   EFI_HANDLE                        Handle;
   EFI_FILE_HANDLE                   Root;
   EFI_SIMPLE_FILE_SYSTEM_PROTOCOL   *Volume;
+  EFI_BLOCK_IO_PROTOCOL             *BlockIo;
   EFI_STATUS                        Status;
 
   *File = NULL;
@@ -398,6 +409,20 @@ Routine description:
     return Status;
   }
 
+  //
+  // Get Media ID if neccessary
+  //
+  if (MediaId != NULL) {
+    Status = gBS->HandleProtocol (
+                    Handle,
+                    &gEfiBlockIoProtocolGuid,
+                    &BlockIo
+                    );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    *MediaId = BlockIo->Media->MediaId;
+  }
   //
   // Open the root directory of the volume
   //
@@ -437,7 +462,8 @@ OpenVarStore (
   IN UINTN    Offset
   )
 {
-  EFI_STATUS              Status;
+  EFI_STATUS  Status;
+  UINT32      MediaId;      
 
   ASSERT (!EfiAtRuntime ());
   ASSERT (VAR_FILE_DEVICEPATH (Dev) != NULL);
@@ -449,10 +475,14 @@ OpenVarStore (
                VAR_FILE_DEVICEPATH (Dev), 
                mEfivar, 
                EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 
-               &VAR_FILE_FILEHANDLE (Dev)
+               &VAR_FILE_FILEHANDLE (Dev),
+               &MediaId
                );
     if (EFI_ERROR (Status)) {
       return Status;
+    }
+    if (MediaId != mMediaId) {
+      return EFI_MEDIA_CHANGED;
     }
   }
 

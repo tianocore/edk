@@ -707,7 +707,7 @@ EfiLibCreateProtocolNotifyEvent (
   IN EFI_TPL              NotifyTpl,
   IN EFI_EVENT_NOTIFY     NotifyFunction,
   IN VOID                 *NotifyContext,
-  OUT VOID                *Registration
+  OUT VOID                **Registration
   )
 /*++
 
@@ -1108,4 +1108,26 @@ Return:
 
 --*/
 ;
+
+VOID
+EfiLibSafeFreePool (
+  IN  VOID             *Buffer
+  )
+/*++
+
+Routine Description:
+
+  Free pool safely.
+
+Arguments:
+  
+  Buffer          - The allocated pool entry to free
+
+Returns:
+
+  Pointer of the buffer allocated.
+
+--*/
+;
+
 #endif

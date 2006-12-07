@@ -56,6 +56,23 @@ BootSectorEntryPoint:
         ASSUME  ds:@code
         ASSUME  ss:@code
 
+; ****************************************************************************
+; Start Print
+; ****************************************************************************
+
+    mov  ax,0b800h
+    mov  es,ax
+    mov  ax, 07c0h
+    mov  ds, ax
+    lea  si, cs:[StartString]
+    mov  cx, 10
+    mov  di, 160
+    rep  movsw 
+
+; ****************************************************************************
+; Print over
+; ****************************************************************************
+
   mov   ax,cs         ; ax = 0
   mov   ss,ax         ; ss = 0
   add   ax,1000h
@@ -77,38 +94,7 @@ BootSectorEntryPoint:
 
   cmp   word ptr [bp+SectorSignature],0aa55h  ; Verify Boot Sector Signature
   jne   BadBootSector
-  cmp   byte ptr [bp+Ia32Jump],0ebh       ; Verify that first byte is a jump inst
-  jne   BadBootSector
-  cmp   word ptr [bp+SectorSize],00200h     ; Verify Block Size == 0x200
-  jne   BadBootSector
-  cmp   byte ptr [bp+SectorsPerCluster],000h  ; Verify Sectors Per Cluster != 0
-  je    BadBootSector
-  cmp   word ptr [bp+RootEntries],00000h    ; Verify Root Entries != 0
-  je    BadBootSector
 
-  xor   cx,cx
-  lea   si,OemId
-  mov   cl,8
-  call  CheckASCII
-  lea   si,FatLabel
-  mov   cl,11
-  call  CheckASCII
-
-  cmp   word ptr [bp+SystemId],04146h   ; Check for "FA"
-  jne   BadBootSector
-  cmp   word ptr [bp+SystemId+2],03154h   ; Check for "T1"
-  jne   BadBootSector
-  mov   ax,02020h
-  cmp   word ptr [bp+SystemId+5],ax
-  jne   BadBootSector
-  cmp   word ptr [bp+SystemId+6],ax
-  jne   BadBootSector
-  cmp   byte ptr [bp+SystemId+4],'2'
-  je    Fat12Found
-  cmp   byte ptr [bp+SystemId+4],'6'
-  je    Fat16Found
-  jmp   BadBootSector
-Fat16Found:
   mov   cx,word ptr [bp+RootEntries]      ; cx = RootEntries
   shl   cx,FAT_DIRECTORY_ENTRY_SHIFT      ; cx = cx * 32 = cx * sizeof(FAT_DIRECTORY_ENTRY) = Size of Root Directory in bytes
   mov   bx,cx                             ; bx = size of the Root Directory in bytes
@@ -129,13 +115,9 @@ Fat16Found:
   add   ax,bx                             ; ax = NoFats * SectorsPerFat + ReservedSectors + RootDirSectors = FirstClusterLBA
   mov   word ptr [bp],ax                  ; Save FirstClusterLBA for later use
 FindEFILDR:
-  cmp   word ptr [di],04645h              ; Compare to "EF"
+  cmp   dword ptr [di],04c494645h         ; Compare to "EFIL"
   jne   NotMatchingEFILDR
-  cmp   word ptr [di+2],04c49h            ; Compare to "IL"
-  jne   NotMatchingEFILDR
-  cmp   word ptr [di+4],05244h            ; Compare to "DR"
-  jne   NotMatchingEFILDR
-  cmp   word ptr [di+6],03631h            ; Compare to "16"
+  cmp   dword ptr [di+4],036315244h       ; Compare to "DR16"
   jne   NotMatchingEFILDR
   mov   ax,02020h                         ; ax = "  "
   cmp   word ptr [di+8],ax                ; Compare to "  "
@@ -225,6 +207,7 @@ LimitTransfer:
     mov     ah,2                                ; ah = Function 2
     mov     bx,di                               ; es:bx = Buffer address
     int     013h
+    jc      DiskError
     pop     bx
     pop     cx
     movzx   ebx,bx
@@ -240,30 +223,27 @@ LimitTransfer:
     ret
 
 ; ****************************************************************************
-; CheckASCII - Verifies that a buffer contains only ASCII characters
-;
-; CX       = Number of characters to check
-; SS:BP+SI = Buffer to check
-; ****************************************************************************
-
-CheckASCII:
-  cmp   byte ptr [bp+si],07fh
-  jg    BadBootSector
-  cmp   byte ptr [bp+si],020h
-  jl    BadBootSector
-  inc   si
-  loop  CheckASCII
-  ret
-
-; ****************************************************************************
 ; ERROR Condition:
 ; ****************************************************************************
 
 BadBootSector:
-Fat12Found:
 NotFoundEFILDR:
-  int   3
-  jmp   BadBootSector
+DiskError:
+    mov  ax,0b800h
+    mov  es,ax
+    mov  ax, 07c0h
+    mov  ds, ax
+    lea  si, cs:[ErrorString]
+    mov  cx, 10
+    mov  di, 320
+    rep  movsw 
+Halt:
+    jmp   Halt
+
+StartString:
+    db 'U', 0ch, 'o', 0ch, 'L', 0ch, ' ', 0ch, 'S', 0ch, 't', 0ch, 'a', 0ch, 'r', 0ch, 't', 0ch, '!', 0ch
+ErrorString:
+    db 'U', 0ch, 'o', 0ch, 'L', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '!', 0ch
 
 ; ****************************************************************************
 ; LBA Offset for BootSector, need patched by tool for HD boot.

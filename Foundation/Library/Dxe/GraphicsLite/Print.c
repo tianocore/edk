@@ -214,13 +214,6 @@ Returns:
 
   VSPrint (Buffer, 0x10000, fmt, args);
   
-  BufferLen = EfiStrLen (Buffer);
-
-  if (GLYPH_WIDTH * GLYPH_HEIGHT * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * BufferLen > LineBufferLen) {
-     Status = EFI_INVALID_PARAMETER;
-     goto Error;
-  }
-
   UnicodeWeight = (CHAR16 *) Buffer;
 
   for (Index = 0; UnicodeWeight[Index] != 0; Index++) {
@@ -229,6 +222,13 @@ Returns:
         UnicodeWeight[Index] == CHAR_CARRIAGE_RETURN) {
       UnicodeWeight[Index] = 0;
     }
+  }
+
+  BufferLen = EfiStrLen (Buffer);
+
+  if (GLYPH_WIDTH * GLYPH_HEIGHT * sizeof(EFI_GRAPHICS_OUTPUT_BLT_PIXEL) * BufferLen > LineBufferLen) {
+     Status = EFI_INVALID_PARAMETER;
+     goto Error;
   }
 
   for (Index = 0; Index < BufferLen; Index++) {

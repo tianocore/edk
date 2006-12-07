@@ -189,12 +189,18 @@ Returns:
                                        sizeof (VendorId), 
                                        &VendorId
                                        );
-        if (EFI_ERROR (Status) || VendorId == 0xffff) {
+        if ((EFI_ERROR (Status)) || ((VendorId == 0xffff) && (Function == 0))) {
           //
           // If the PCI Configuration Read fails, or a PCI device does not exist, then 
           // skip this entire PCI device
           //
           break;
+        }
+        if (VendorId == 0xffff) {
+          //
+          // If PCI function != 0, VendorId == 0xFFFF, we continue to search PCI function.
+          //
+          continue;
         }
 
         //

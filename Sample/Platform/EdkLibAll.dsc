@@ -59,21 +59,3 @@ $(EDK_PREFIX)Foundation\Library\Dxe\GraphicsLite\Graphics.inf
 #
 $(EDK_PREFIX)Sample\Platform\Generic\Dxe\GenericBds\GenericBds.inf
 $(EDK_PREFIX)Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
-
-#
-# EBC libraries required by drivers
-#
-#$(EDK_PREFIX)Foundation\Guid\EdkGuidLib.inf                                    PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Framework\Guid\EdkFrameworkGuidLib.inf                 PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Efi\Guid\EfiGuidLib.inf                                PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\EfiCommonLib\EfiCommonLib.inf                  PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Protocol\EdkProtocolLib.inf                            PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Framework\Protocol\EdkFrameworkProtocolLib.inf         PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Efi\Protocol\EfiProtocolLib.inf                        PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Core\Dxe\ArchProtocol\ArchProtocolLib.inf              PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf              PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\Dxe\Graphics\Graphics.inf                      PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\Dxe\EfiIfrSupportLib\EfiIfrSupportLib.inf      PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\Dxe\Print\PrintLib.inf                         PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\Dxe\PrintLite\PrintLib.inf                     PROCESSOR=EBC
-#$(EDK_PREFIX)Foundation\Library\Dxe\GraphicsLite\Graphics.inf                  PROCESSOR=EBC

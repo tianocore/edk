@@ -213,18 +213,18 @@ NotCrossing64KBoundry:
         ret
 
 DiskError:
-        mov     bx,000fh
-        mov     al,ah
-        mov     ah,0ah
-        add     al,041h
-        mov     cx,1
-        int     10h
-        xor     ah,ah
-        int     16h
-        int     19h
+        mov  ax,0b800h
+        mov  es,ax
+        mov  ax, 2000h
+        mov  ds, ax
+        lea  si, cs:[ErrorString]
+        mov  cx, 11
+        mov  di, 160
+        rep  movsw 
 Halt:
-        jmp     Halt
-
+        jmp   Halt
+ErrorString:
+        db 'U', 0ch, 'O', 0ch, 'L', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '2', 0ch, '!', 0ch
 Em64String:
         db 'E', 0ch, 'm', 0ch, '6', 0ch, '4', 0ch, 'T', 0ch, ' ', 0ch, 'U', 0ch, 'n', 0ch, 's', 0ch, 'u', 0ch, 'p', 0ch, 'p', 0ch, 'o', 0ch, 'r', 0ch, 't', 0ch, 'e', 0ch, 'd', 0ch, '!', 0ch
 CheckEm64T:
@@ -415,12 +415,12 @@ In32BitProtectedMode:
     ;    10000 ~    12000 - efildr (loaded)
     ;    20000 ~    21000 - start64.com
     ;    21000 ~    22000 - efi64.com
-    ;    22000 ~    80000 - efildr
-    ;    80000 ~    86000 - 4G pagetable (will be reload later)
+    ;    22000 ~    90000 - efildr
+    ;    90000 ~    96000 - 4G pagetable (will be reload later)
     ;
     db  0b8h
-    dd  80000h
-;    mov eax, 80000h
+    dd  90000h
+;    mov eax, 90000h
     mov cr3, eax
 
     ;
@@ -831,8 +831,18 @@ MACHINE_CHECK_SEL   equ $-IDT_BASE
         dd 0            ; offset 63:32
         dd 0            ; 0 for reserved
 
-; 86 unspecified descriptors, First 13 of them are reserved, the rest are avail
-        db (86 * 16) dup(0)
+; SIMD floating-point exception (INT 13h)
+SIMD_EXCEPTION_SEL  equ $-IDT_BASE
+        dw 0            ; offset 15:0
+        dw SYS_CODE64_SEL ; selector 15:0
+        db 0            ; 0 for interrupt gate
+        db 0eh OR 80h   ; (10001110)type = 386 interrupt gate, present
+        dw 0            ; offset 31:16
+        dd 0            ; offset 63:32
+        dd 0            ; 0 for reserved
+
+; 85 unspecified descriptors, First 12 of them are reserved, the rest are avail
+        db (85 * 16) dup(0)
         
 ; IRQ 0 (System timer) - (INT 68h)
 IRQ0_SEL            equ $-IDT_BASE

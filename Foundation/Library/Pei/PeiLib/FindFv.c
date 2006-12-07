@@ -108,7 +108,7 @@ Returns:
 
   EFI_SUCCESS           - An addtional fv found
   EFI_OUT_OF_RESOURCES  - There are no fireware volume for given fvnumber
-  EFI_INVALID_PARAMETER - *FvAddress is NULL
+  EFI_INVALID_PARAMETER - FvAddress is NULL
 
 --*/
 {
@@ -118,7 +118,7 @@ Returns:
   EFI_HOB_FIRMWARE_VOLUME *FvHob;
   UINT8                   FvIndex;
 
-  if (*FvAddress == NULL){
+  if (FvAddress == NULL){
     return EFI_INVALID_PARAMETER;
   }
 

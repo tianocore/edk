@@ -156,7 +156,10 @@ PrepareHobPageTable (
 
   Ia32Create4MPageTables (PageNumberBase);
   Ia32Create4KPageTables (PageNumberBase);
-  EnableNullPointerProtection (PageNumberBase);
+  //
+  // Not enable NULL Pointer Protection if using INTX call
+  //
+//  EnableNullPointerProtection (PageNumberBase);
 
   return PageNumberBase;
 }

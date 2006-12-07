@@ -506,14 +506,14 @@ Returns:
   //
   // Report Status Code EFI_SW_PEI_PC_HANDOFF_TO_NEXT
   //
-  (**PeiServices).PeiReportStatusCode (
-                    PeiServices,
-                    EFI_PROGRESS_CODE,
-                    EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_CORE_PC_HANDOFF_TO_NEXT,
-                    0,
-                    NULL,
-                    NULL
-                    );
+  PEI_REPORT_STATUS_CODE (
+    PeiServices,
+    EFI_PROGRESS_CODE,
+    EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_CORE_PC_HANDOFF_TO_NEXT,
+    0,
+    NULL,
+    NULL
+    );
 
   //
   // Go to Long Mode. Interrupts will not get turned on until the CPU AP is loaded.
@@ -1070,17 +1070,18 @@ Returns:
         DecompressProtocol  = NULL;
 
         switch (CompressionSection->CompressionType) {
+#ifndef EFI_USE_CUSTOM_COMPRESS
         case EFI_STANDARD_COMPRESSION:
           Status = InstallTianoDecompress (&DecompressProtocol);
           break;
-
+#else
         case EFI_CUSTOMIZED_COMPRESSION:
           //
           // Load user customized compression protocol.
           //
           Status = InstallCustomizedDecompress ((EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL **) &DecompressProtocol);
           break;
-
+#endif
         case EFI_NOT_COMPRESSED:
           //
           // Need to support not compressed file

@@ -670,6 +670,69 @@ Returns:
   return Buffer;
 }
 
+EFI_DEVICE_PATH_PROTOCOL *
+BdsLibDelPartMatchInstance (
+  IN     EFI_DEVICE_PATH_PROTOCOL  *Multi,
+  IN     EFI_DEVICE_PATH_PROTOCOL  *Single
+  )
+/*++
+
+Routine Description:
+
+  Delete the instance in Multi which matches partly with Single instance
+
+Arguments:
+
+  Multi        - A pointer to a multi-instance device path data structure.
+
+  Single       - A pointer to a single-instance device path data structure.
+
+Returns:
+
+  This function will remove the device path instances in Multi which partly 
+  match with the Single, and return the result device path. If there is no
+  remaining device path as a result, this function will return NULL.
+
+--*/
+{
+  EFI_DEVICE_PATH_PROTOCOL  *Instance;
+  EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *TempNewDevicePath;
+  UINTN                     InstanceSize;
+  UINTN                     SingleDpSize;  
+  UINTN                     Size; 
+  
+  NewDevicePath     = NULL;
+  TempNewDevicePath = NULL;
+
+  if (Multi == NULL || Single == NULL) {
+    return Multi;
+  }
+  
+  Instance        =  EfiDevicePathInstance (&Multi, &InstanceSize);
+  SingleDpSize    =  EfiDevicePathSize (Single) - END_DEVICE_PATH_LENGTH;
+  InstanceSize    -= END_DEVICE_PATH_LENGTH;
+
+  while (Instance != NULL) {
+
+    Size = (SingleDpSize < InstanceSize) ? SingleDpSize : InstanceSize;    
+        
+    if ((EfiCompareMem (Instance, Single, Size) != 0)) {
+      //
+      // Append the device path instance which does not match with Single
+      //
+      TempNewDevicePath = NewDevicePath;
+      NewDevicePath = EfiAppendDevicePathInstance (NewDevicePath, Instance);
+      EfiLibSafeFreePool(TempNewDevicePath);
+    }
+    EfiLibSafeFreePool(Instance);
+    Instance = EfiDevicePathInstance (&Multi, &InstanceSize);
+    InstanceSize  -= END_DEVICE_PATH_LENGTH;
+  }
+  
+  return NewDevicePath;
+}
+
 BOOLEAN
 BdsLibMatchDevicePaths (
   IN  EFI_DEVICE_PATH_PROTOCOL  *Multi,
@@ -707,7 +770,6 @@ Returns:
 
   DevicePath      = Multi;
   DevicePathInst  = EfiDevicePathInstance (&DevicePath, &Size);
-  Size -= sizeof (EFI_DEVICE_PATH_PROTOCOL);
 
   //
   // Search for the match of 'Single' in 'Multi'
@@ -717,17 +779,13 @@ Returns:
     // If the single device path is found in multiple device paths,
     // return success
     //
-    if (Size == 0) {
-      return FALSE;
-    }
-
     if (EfiCompareMem (Single, DevicePathInst, Size) == 0) {
+      gBS->FreePool (DevicePathInst);
       return TRUE;
     }
 
     gBS->FreePool (DevicePathInst);
     DevicePathInst = EfiDevicePathInstance (&DevicePath, &Size);
-    Size -= sizeof (EFI_DEVICE_PATH_PROTOCOL);
   }
 
   return FALSE;
@@ -998,4 +1056,171 @@ Returns:
       gST->ConOut->ClearScreen (gST->ConOut);
     } 
   } 
-} 
+}
+
+EFI_STATUS
+BdsLibGetImageHeader (
+  IN  EFI_HANDLE                  Device,
+  IN  CHAR16                      *FileName,
+  OUT EFI_IMAGE_DOS_HEADER        *DosHeader,
+  OUT EFI_IMAGE_FILE_HEADER       *ImageHeader,
+  OUT EFI_IMAGE_OPTIONAL_HEADER   *OptionalHeader
+  )
+/*++
+
+Routine Description:
+
+  Get the headers (dos, image, optional header) from an image
+
+Arguments:
+  Device           - SimpleFileSystem device handle
+  FileName         - File name for the image
+  DosHeader        - Pointer to dos header
+  ImageHeader      - Pointer to image header
+  OptionalHeader   - Pointer to optional header
+
+Returns:
+  EFI_SUCCESS           - Successfully get the machine type.
+  EFI_NOT_FOUND         - The file is not found.
+  EFI_LOAD_ERROR        - File is not a valid image file.
+  
+--*/
+{
+  EFI_STATUS                       Status;
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *Volume;
+  EFI_FILE_HANDLE                  Root;
+  EFI_FILE_HANDLE                  ThisFile;
+  UINT32                           Signature;
+  UINTN                            BufferSize;
+  UINT64                           FileSize;
+  EFI_FILE_INFO                    *Info;
+
+  Root     = NULL;
+  ThisFile = NULL;
+  //
+  // Handle the file system interface to the device
+  //
+  Status = gBS->HandleProtocol (
+                  Device,
+                  &gEfiSimpleFileSystemProtocolGuid,
+                  (VOID *) &Volume
+                  );
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  Status = Volume->OpenVolume (
+                     Volume,
+                     &Root
+                     );
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  Status = Root->Open (Root, &ThisFile, FileName, EFI_FILE_MODE_READ, 0);
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  //
+  // Get file size
+  //
+  BufferSize  = SIZE_OF_EFI_FILE_INFO + 200;
+  do {
+    Info   = NULL;
+    Status = gBS->AllocatePool (EfiBootServicesData, BufferSize, &Info);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+    Status = ThisFile->GetInfo (
+                         ThisFile,
+                         &gEfiFileInfoGuid,
+                         &BufferSize,
+                         Info
+                         );
+    if (!EFI_ERROR (Status)) {
+      break;
+    }
+    if (Status != EFI_BUFFER_TOO_SMALL) {
+      goto Done;
+    }
+    gBS->FreePool (Info);
+  } while (TRUE);
+
+  FileSize = Info->FileSize;
+  gBS->FreePool (Info);
+
+  //
+  // Read dos header
+  //
+  BufferSize = sizeof (EFI_IMAGE_DOS_HEADER);
+  Status = ThisFile->Read (ThisFile, &BufferSize, DosHeader);
+  if (EFI_ERROR (Status) ||
+      BufferSize < sizeof (EFI_IMAGE_DOS_HEADER) ||
+      FileSize <= DosHeader->e_lfanew ||
+      DosHeader->e_magic != EFI_IMAGE_DOS_SIGNATURE) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Move to PE signature
+  //
+  Status = ThisFile->SetPosition (ThisFile, DosHeader->e_lfanew);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read and check PE signature
+  //
+  BufferSize = sizeof (Signature);
+  Status = ThisFile->Read (ThisFile, &BufferSize, &Signature);
+  if (EFI_ERROR (Status) ||
+      BufferSize < sizeof (Signature) ||
+      Signature != EFI_IMAGE_NT_SIGNATURE) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read image header
+  //
+  BufferSize = EFI_IMAGE_SIZEOF_FILE_HEADER;
+  Status = ThisFile->Read (ThisFile, &BufferSize, ImageHeader);
+  if (EFI_ERROR (Status) ||
+      BufferSize < EFI_IMAGE_SIZEOF_FILE_HEADER) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read optional header
+  //
+  BufferSize = ImageHeader->SizeOfOptionalHeader;
+  Status = ThisFile->Read (ThisFile, &BufferSize, OptionalHeader);
+  if (EFI_ERROR (Status) ||
+      BufferSize < ImageHeader->SizeOfOptionalHeader) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Check PE32 or PE32+ magic
+  //  
+  if (OptionalHeader->Magic != EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC &&
+      OptionalHeader->Magic != EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+ Done:
+  if (ThisFile != NULL) {
+    ThisFile->Close (ThisFile);
+  }
+  if (Root != NULL) {
+    Root->Close (Root);
+  }
+  return Status;
+}

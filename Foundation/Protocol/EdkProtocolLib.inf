@@ -66,6 +66,8 @@ C_STD_INCLUDE=
   IsaAcpi\IsaAcpi.c
   IsaIo\IsaIo.h
   IsaIo\IsaIo.c
+  LegacyBiosThunk\LegacyBiosThunk.h
+  LegacyBiosThunk\LegacyBiosThunk.c
   LoadPe32Image\LoadPe32Image.h
   LoadPe32Image\LoadPe32Image.c
   NicIp4Config\NicIp4Config.h

@@ -55,6 +55,9 @@ Revision History
 #define EHCI_MEMORY_CAPLENGTH   0x0
 #define EHCI_MEMORY_CONFIGFLAG  0x40
 
+#define EHCI_MEMORY_HCCPARAMS   0x8
+#define EHCI_PCI_USB_EMU        0x4
+
 //
 // USB Base Class Code,Sub-Class Code and Programming Interface.
 //

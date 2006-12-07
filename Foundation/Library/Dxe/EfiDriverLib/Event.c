@@ -28,7 +28,7 @@ EfiLibCreateProtocolNotifyEvent (
   IN EFI_TPL              NotifyTpl,
   IN EFI_EVENT_NOTIFY     NotifyFunction,
   IN VOID                 *NotifyContext,
-  OUT VOID                *Registration
+  OUT VOID                **Registration
   )
 /*++
 

@@ -40,13 +40,13 @@ EnterDxeMain    PROC  C    \
   PageTable:DWORD
   
   mov   eax, PageTable
-  mov   cr3, eax     ; load page table
-  mov   eax, cr4
-  bts   eax, 4       ; enable CR4.PSE
-  mov   cr4, eax
-  mov   eax, cr0
-  bts   eax, 31      ; enable CR0.PG
-  mov   cr0, eax
+;  mov   cr3, eax     ; load page table
+;  mov   eax, cr4
+;  bts   eax, 4       ; enable CR4.PSE
+;  mov   cr4, eax
+;  mov   eax, cr0
+;  bts   eax, 31      ; enable CR0.PG
+;  mov   cr0, eax
   mov   ecx, DxeCoreEntryPoint
   mov   eax, StackTop
   mov   esp, eax

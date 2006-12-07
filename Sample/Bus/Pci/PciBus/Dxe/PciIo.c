@@ -1263,28 +1263,25 @@ Routine Description:
 
 Arguments:
 
+  PciIoDevice  -  pointer to PCI_IO_DEVICE
+  Operation    -  The operation that is to be performed.
+
 Returns:
 
-  None
+  EFI_SUCCESS      -  Operation successful.
+  EFI_UNSUPPORTED  -  Operation not supported.
+
 
 --*/
-// TODO:    PciIoDevice - add argument and description to function comment
-// TODO:    Operation - add argument and description to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   PCI_IO_DEVICE *Temp;
   UINT16        VGACommand;
 
   //
-  // Snoop attribute can be only modified by GFX
+  // Notice: Snoop attribute can be set both to GFX and VGA
+  //         but here we use simplified logic to support 
+  //         operation on GFX only. The reason is that the snoop
+  //         capability is used very rarely nowadays.
   //
   if (!IS_PCI_GFX (&PciIoDevice->Pci)) {
     return EFI_UNSUPPORTED;
@@ -1346,9 +1343,13 @@ Returns:
   // If they are on  the same path but on the different bus
   // The first agent is set to snoop, the second one set to
   // decode
+  // Notice: Here the order of two devices in the PCI device
+  //         tree is judged simply by the BusNumber. Generally
+  //         speaking, this is not correct. But it is okay for
+  //         a specific algorithm such as ours.
   //
             
-  if (Temp->BusNumber > PciIoDevice->BusNumber) {
+  if (Temp->BusNumber < PciIoDevice->BusNumber) {
     //
     // GFX should be set to decode
     //
@@ -1959,22 +1960,20 @@ Routine Description:
 
 Arguments:
 
+  PciDevice1  -  The pointer to the first PCI_IO_DEVICE.
+  PciDevice2  -  The pointer to the second PCI_IO_DEVICE.
+
 Returns:
 
-  None
+  TRUE   -  The two Pci devices are on the same path.
+  FALSE  -  The two Pci devices are not on the same path.
 
 --*/
-// TODO:    PciDevice1 - add argument and description to function comment
-// TODO:    PciDevice2 - add argument and description to function comment
 {
 
   if (PciDevice1->Parent == PciDevice2->Parent) {
     return TRUE;
   }
 
-  if (PciDevice1->BusNumber > PciDevice2->BusNumber) {
-    return PciDeviceExisted (PciDevice1->Parent, PciDevice2);
-  }
-
-  return PciDeviceExisted (PciDevice2->Parent, PciDevice1);
+  return (PciDeviceExisted (PciDevice1->Parent, PciDevice2)|| PciDeviceExisted (PciDevice2->Parent, PciDevice1));
 }

@@ -42,6 +42,7 @@ Revision History:
 #include EFI_GUID_DEFINITION   (Acpi)
 #include EFI_GUID_DEFINITION   (Mps)
 #include EFI_GUID_DEFINITION   (PciExpressBaseAddress)
+#include EFI_GUID_DEFINITION   (AcpiDescription)
 
 #include "EfiLdrHandoff.h"
 
@@ -83,6 +84,11 @@ typedef struct {
 } PCI_EXPRESS_BASE_HOB;
 
 typedef struct {
+  EFI_HOB_GUID_TYPE             Hob;
+  EFI_ACPI_DESCRIPTION          AcpiDescription;
+} ACPI_DESCRIPTION_HOB;
+
+typedef struct {
   EFI_HOB_HANDOFF_INFO_TABLE        Phit;
   EFI_HOB_FIRMWARE_VOLUME           Bfv;
   EFI_HOB_RESOURCE_DESCRIPTOR       BfvResource;
@@ -106,6 +112,7 @@ typedef struct {
   PROTOCOL_HOB                      SerialStatusCode;
   MEMORY_DESC_HOB                   MemoryDescriptor;
   PCI_EXPRESS_BASE_HOB              PciExpress;
+  ACPI_DESCRIPTION_HOB              AcpiInfo;
   EFI_HOB_GENERIC_HEADER            EndOfHobList;
 } HOB_TEMPLATE;
 

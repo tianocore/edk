@@ -27,7 +27,7 @@ COMPONENT_TYPE  = LIBRARY
   EfiCpuVersion.c
 
 [sources.ia32]
-  Ia32\CpuIA32.asm
+  Ia32\CpuIA32.c
 
 [sources.x64]
   x64\Cpu.asm

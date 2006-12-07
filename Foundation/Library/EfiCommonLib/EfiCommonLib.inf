@@ -33,16 +33,16 @@ COMPONENT_TYPE  = LIBRARY
   LinkedList.c
 
 [sources.ia32]
-  Ia32\EfiCopyMem.asm
-  Ia32\EfiSetMem.asm
-  Ia32\EfiZeroMem.asm
-  Ia32\LShiftU64.asm
-  Ia32\RShiftU64.asm
-  Ia32\MultU64x32.asm
-  Ia32\DivU64x32.asm
-  Ia32\Power10U64.asm
-  Ia32\Log2.asm
-  Ia32\GetPowerOfTwo.asm
+  Ia32\EfiCopyMem.c
+  Ia32\EfiSetMem.c
+  Ia32\EfiZeroMem.c
+  Ia32\LShiftU64.c
+  Ia32\RShiftU64.c
+  Ia32\MultU64x32.c
+  Ia32\DivU64x32.c
+  Ia32\Power10U64.c
+  Ia32\Log2.c
+  Ia32\GetPowerOfTwo.c
 
 [sources.ipf]
   EfiCopyMem.c

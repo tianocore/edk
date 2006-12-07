@@ -19,7 +19,8 @@ Abstract:
   
 --*/  
 #include "EfiDepex.h"
+#include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
 
 DEPENDENCY_START
-  TRUE
+  EFI_STATUS_CODE_RUNTIME_PROTOCOL_GUID
 DEPENDENCY_END

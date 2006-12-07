@@ -75,6 +75,23 @@ BootSectorEntryPoint:
         ASSUME  ds:@code
         ASSUME  ss:@code
 
+; ****************************************************************************
+; Start Print
+; ****************************************************************************
+
+    mov  ax,0b800h
+    mov  es,ax
+    mov  ax, 07c0h
+    mov  ds, ax
+    lea  si, cs:[StartString]
+    mov  cx, 10
+    mov  di, 160
+    rep  movsw 
+
+; ****************************************************************************
+; Print over
+; ****************************************************************************
+
   mov   ax,cs         ; ax = 0
   mov   ss,ax         ; ss = 0
   add   ax,1000h
@@ -96,31 +113,6 @@ BootSectorEntryPoint:
 
   cmp   word ptr [bp+SectorSignature],0aa55h  ; Verify Boot Sector Signature
   jne   BadBootSector
-  cmp   byte ptr [bp+Ia32Jump],0ebh       ; Verify that first byte is a jump inst
-  jne   BadBootSector
-  cmp   word ptr [bp+SectorSize],00200h     ; Verify Block Size == 0x200
-  jne   BadBootSector
-  cmp   byte ptr [bp+SectorsPerCluster],000h  ; Verify Sectors Per Cluster != 0
-  je    BadBootSector
-
-
-  cmp   word ptr [bp+FileSystemType],04146h   ; Check for "FA"
-  jne   BadBootSector
-  cmp   byte ptr [bp+FileSystemType+2],'T'
-  jne   BadBootSector
-  mov   ax,02020h
-  cmp   word ptr [bp+FileSystemType+5],ax
-  jne   BadBootSector
-  cmp   word ptr [bp+FileSystemType+6],ax
-  jne   BadBootSector
-  cmp   word ptr [bp+FileSystemType+3],03233h   ; Check for "32"
-  je    Fat32Found
-  cmp   word ptr [bp+FileSystemType+3],03631h   ; Check for "16"
-  je    Fat16Found
-  cmp   word ptr [bp+FileSystemType+3],03231h   ; Check for "12"
-  je    Fat12Found
-  jmp   BadBootSector
-Fat32Found:
   mov   cx,word ptr [bp+RootEntries]      ; cx = RootEntries
   shl   cx,FAT_DIRECTORY_ENTRY_SHIFT      ; cx = cx * 32 = cx * sizeof(FAT_DIRECTORY_ENTRY) = Size of Root Directory in bytes
   mov   bx,cx                             ; bx = size of the Root Directory in bytes
@@ -149,18 +141,14 @@ Fat32Found:
   pop   es
 
 FindEFILDR:
-  cmp   word ptr [di],04645h          ; Compare to "EF"
+  cmp   dword ptr [di],04c494645h         ; Compare to "EFIL"
   jne   NotMatchingEFILDR
-  cmp   word ptr [di+2],04c49h        ; Compare to "IL"
+  cmp   dword ptr [di+4],030325244h       ; Compare to "DR20"
   jne   NotMatchingEFILDR
-  cmp   word ptr [di+4],05244h        ; Compare to "DR"
+  mov   ax,02020h                         ; ax = "  "
+  cmp   word ptr [di+8],ax                ; Compare to "  "
   jne   NotMatchingEFILDR
-  cmp   word ptr [di+6],03032h        ; Compare to "20"
-  jne   NotMatchingEFILDR
-  mov   ax,02020h                     ; ax = "  "
-  cmp   word ptr [di+8],ax            ; Compare to "  "
-  jne   NotMatchingEFILDR
-  cmp   word ptr [di+9],ax            ; Compare to "  "
+  cmp   word ptr [di+9],ax                ; Compare to "  "
   jne   NotMatchingEFILDR
   mov   al, byte ptr [di+11]
   and   al,058h
@@ -245,6 +233,7 @@ LimitTransfer:
     mov     ah,2                                ; ah = Function 2
     mov     bx,di                               ; es:bx = Buffer address
     int     013h
+    jc      DiskError
     pop     bx
     pop     cx
     movzx   ebx,bx
@@ -264,11 +253,23 @@ LimitTransfer:
 ; ****************************************************************************
 
 BadBootSector:
-Fat16Found:
-Fat12Found:
 NotFoundEFILDR:
-  int   3
-  jmp   BadBootSector
+DiskError:
+    mov  ax,0b800h
+    mov  es,ax
+    mov  ax, 07c0h
+    mov  ds, ax
+    lea  si, cs:[ErrorString]
+    mov  cx, 10
+    mov  di, 320
+    rep  movsw 
+Halt:
+    jmp   Halt
+
+StartString:
+    db 'U', 0ch, 'o', 0ch, 'L', 0ch, ' ', 0ch, 'S', 0ch, 't', 0ch, 'a', 0ch, 'r', 0ch, 't', 0ch, '!', 0ch
+ErrorString:
+    db 'U', 0ch, 'o', 0ch, 'L', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '!', 0ch
 
 ; ****************************************************************************
 ; LBA Offset for BootSector, need patched by tool for HD boot.

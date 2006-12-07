@@ -146,13 +146,10 @@ typedef int64_t   intn_t;
 #define EFI_BAD_POINTER_AS_BYTE  0xAF
 
 //
-// Inject a break point in the code to assist debugging for NT Emulation Environment
-// For real hardware, just put in a halt loop. Don't do a while(1) because the
-// compiler will optimize away the rest of the function following, so that you run out in
-// the weeds if you skip over it with a debugger.
+// Inject a break point in the code to assist debugging.
 //
 #define EFI_DEADLOOP()    { volatile int __iii; __iii = 1; while (__iii); }
-#define EFI_BREAKPOINT()  EFI_DEADLOOP()
+#define EFI_BREAKPOINT()  __debugbreak()
 
 //
 // Memory Fence forces serialization, and is needed to support out of order

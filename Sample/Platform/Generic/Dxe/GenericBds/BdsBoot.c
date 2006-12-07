@@ -799,10 +799,10 @@ Returns:
   UINTN                         Size;
   EFI_FV_FILE_ATTRIBUTES        Attributes;
   UINT32                        AuthenticationStatus;
-  EFI_DEVICE_PATH_PROTOCOL      *FilePath;
-  EFI_HANDLE                    ImageHandle;
-  EFI_LOADED_IMAGE_PROTOCOL     *ImageInfo;
   BOOLEAN                       NeedDelete;
+  EFI_IMAGE_DOS_HEADER          DosHeader;
+  EFI_IMAGE_FILE_HEADER         ImageHeader;
+  EFI_IMAGE_OPTIONAL_HEADER     OptionalHeader;
 
   BootOptionNumber = 0;
 
@@ -845,7 +845,7 @@ Returns:
       if (!BlkIo->Media->RemovableMedia) {
         //
         // If the file system handle supports a BlkIo protocol,
-        // skip the removable media devices
+        // skip the non-removable media devices
         //
         continue;
       }
@@ -855,26 +855,18 @@ Returns:
     // Do the removable Media thing. \EFI\BOOT\boot{machinename}.EFI
     //  machinename is ia32, ia64, x64, ...
     //
-    FilePath = EfiFileDevicePath (FileSystemHandles[Index], DEFAULT_REMOVABLE_FILE_NAME);
     NeedDelete = TRUE;
-    Status = gBS->LoadImage (
-                    TRUE,
-                    mBdsImageHandle,
-                    FilePath,
-                    NULL,
-                    0,
-                    &ImageHandle
-                    );
-    if (!EFI_ERROR(Status)) {
-      //
-      // Verify the image is a EFI application (and not a driver)
-      //
-      Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **) &ImageInfo);
-      ASSERT (!EFI_ERROR(Status));
-
-      if (ImageInfo->ImageCodeType == EfiLoaderCode) {
-        NeedDelete = FALSE;
-      }
+    Status     = BdsLibGetImageHeader (
+                   FileSystemHandles[Index],
+                   DEFAULT_REMOVABLE_FILE_NAME,
+                   &DosHeader,
+                   &ImageHeader,
+                   &OptionalHeader
+                   );
+    if (!EFI_ERROR (Status) &&
+        EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
+        OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
+      NeedDelete = FALSE;
     }
 
     if (NeedDelete) {

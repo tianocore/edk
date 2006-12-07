@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -41,6 +41,11 @@ Abstract:
 #pragma warning ( disable : 186 )
 
 //
+// Disabling enumerated type mixed with another type
+//
+#pragma warning ( disable : 188 )
+
+//
 // Native integer types
 //
 typedef char                  int8_t;
@@ -65,6 +70,7 @@ typedef unsigned long         uintn_t;
 // Scalable macro to set the most significant bit in a natural number
 //
 #define EFI_MAX_BIT           ((UINTN)0x01 << ((sizeof (char *) * 8) - 1))
+#define MAX_2_BITS            (EFI_MAX_BIT | (EFI_MAX_BIT >> 1))
 
 //
 // Maximum legal EBC address

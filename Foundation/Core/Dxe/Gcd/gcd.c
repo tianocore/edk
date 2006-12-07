@@ -2080,7 +2080,7 @@ Returns:
   if (!EFI_ERROR (Status) &&
       EfiMemoryTypeInformation != NULL &&
       DataSize > 0 &&
-      DataSize < EfiMaxMemoryType * sizeof (EFI_MEMORY_TYPE_INFORMATION)) {
+      DataSize <= (EfiMaxMemoryType + 1) * sizeof (EFI_MEMORY_TYPE_INFORMATION)) {
     gBS->CopyMem (&gMemoryTypeInformation, EfiMemoryTypeInformation, DataSize);
   }
 

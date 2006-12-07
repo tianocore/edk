@@ -2,7 +2,7 @@
 
 ;------------------------------------------------------------------------------
 ;
-; Copyright (c) 2004 - 2005, Intel Corporation                                                         
+; Copyright (c) 2004 - 2006, Intel Corporation                                                         
 ; All rights reserved. This program and the accompanying materials                          
 ; are licensed and made available under the terms and conditions of the BSD License         
 ; which accompanies this distribution.  The full text of the license may be found at        
@@ -134,8 +134,8 @@ _RightShiftU64_Calc:
   mov    eax, dword ptr Operand[0]
   mov    edx, dword ptr Operand[4]
   
-  shrd   edx, eax, cl
-  shr    eax, cl
+  shrd   eax, edx, cl
+  shr    edx, cl
   cmp    ecx, 32
   jc     short _RightShiftU64_Done
   

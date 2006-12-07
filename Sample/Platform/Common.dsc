@@ -173,23 +173,11 @@ $(DEP_FILE) : $(SOURCE_FILE_NAME)
 !ENDIF
 
 #
-# Redefine the entry point function if an entry point has been defined at all.
-# This is required because all EBC entry point functions must be called
-# EfiMain.
-#
-!IF DEFINED(IMAGE_ENTRY_POINT)
-!IF "$(IMAGE_ENTRY_POINT)" != "EfiMain"
-EBC_C_FLAGS = $(EBC_C_FLAGS) /D $(IMAGE_ENTRY_POINT)=EfiMain
-!ENDIF
-!ENDIF
-
-#
 # This is how to compile the source .c file
 # Use -P to get preprocessor output file (.i)
 #
 $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(DEP_FILE)
-  $(EBC_CC) $(EBC_C_FLAGS) -X $(INC) -Fa$(DEST_DIR)\$(FILE).cod \
-    $(SOURCE_FILE_NAME) -Fo$(DEST_DIR)\$(FILE).obj
+  $(EBC_CC) $(EBC_C_FLAGS) $(SOURCE_FILE_NAME)
 
 [=============================================================================]
 #
@@ -769,7 +757,7 @@ $(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
 OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 
 $(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c
-  $(CC) $(C_FLAGS) $(DEST_DIR)\$(BASE_NAME)Strings.c
+  $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(BASE_NAME)Strings.c
 
 LOCALIZE_TARGETS = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
 
@@ -1089,7 +1077,7 @@ STRGATHER_FLAGS = $(STRGATHER_FLAGS) -db $(DEST_DIR)\$(FILE).sdb
 LOCALIZE        = YES
 
 [=============================================================================]
-[Compile.Ia32.Vfr,Compile.Ipf.Vfr,Compile.Ebc.Vfr,Compile.x64.Vfr]
+[Compile.Ia32.Vfr,Compile.Ipf.Vfr,Compile.x64.Vfr]
 
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
@@ -1107,11 +1095,29 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAM
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(FILE).c
 
 [=============================================================================]
+[Compile.Ebc.Vfr]
+
+HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
+
+#
+# Add a dummy command for building the HII pack file. In reality, it's built 
+# below, but the C_FLAGS macro reference the target as $@, so you can't specify
+# the obj and hpk files as dual targets of the same command.
+#
+$(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
+  @echo.
+  
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+  $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
+    -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
+  $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(FILE).c
+
+[=============================================================================]
 #
 # Commands for building IFR as uncompressed binary into the FFS file. To 
 # use it, set COMPILE_SELECT=.vfr=Ifr_Bin for the component in the DSC file.
 #
-[Compile.Ia32.Ifr_Bin,Compile.Ipf.Ifr_Bin;Compile.Ebc.Ifr_Bin,Compile.x64.Ifr_Bin]
+[Compile.Ia32.Ifr_Bin,Compile.Ipf.Ifr_Bin,Compile.x64.Ifr_Bin]
 
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
@@ -1127,6 +1133,34 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAM
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
     -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(FILE).c
+
+#
+# Add to the variable that contains the list of VFR binary files we're going
+# to merge together at the end of the build. 
+#
+HII_IFR_PACK_FILES = $(HII_IFR_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
+
+[=============================================================================]
+#
+# Commands for building IFR as uncompressed binary into the FFS file. To 
+# use it, set COMPILE_SELECT=.vfr=Ifr_Bin for the component in the DSC file.
+#
+[Compile.Ebc.Ifr_Bin]
+
+HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
+
+#
+# Add a dummy command for building the HII pack file. In reality, it's built 
+# below, but the C_FLAGS macro reference the target as $@, so you can't specify
+# the obj and hpk files as dual targets of the same command.
+#
+$(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
+  @echo.
+  
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+  $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
+    -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
+  $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(FILE).c
 
 #
 # Add to the variable that contains the list of VFR binary files we're going
@@ -1337,16 +1371,6 @@ IMAGE_SCRIPT =
     )
   }
 }
-[=============================================================================]
-#
-# These are the libraries that will be built by the master makefile
-#
-[=============================================================================]
-[Libraries]
-DEFINE PLATFORM=$(PLATFORM)
-DEFINE EDK_PREFIX=
-
-!include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
 [=============================================================================]
 [=============================================================================]

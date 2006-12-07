@@ -342,8 +342,9 @@ typedef UINT16  PXE_OPFLAGS;
 // //////////////////////////////////////
 // UNDI Station Address
 //
-#define PXE_OPFLAGS_STATION_ADDRESS_READ  0x0000
-#define PXE_OPFLAGS_STATION_ADDRESS_RESET 0x0001
+#define PXE_OPFLAGS_STATION_ADDRESS_READ   0x0000
+#define PXE_OPFLAGS_STATION_ADDRESS_WRITE  0x0000
+#define PXE_OPFLAGS_STATION_ADDRESS_RESET  0x0001
 
 //
 // //////////////////////////////////////

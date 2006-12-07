@@ -554,12 +554,12 @@ IDEBusDriverBindingStart (
       //
       // Report Status code: is about to detect IDE drive
       //
-      ReportStatusCodeWithDevicePath (
+      EfiLibReportStatusCode (
         EFI_PROGRESS_CODE,
         (EFI_IO_BUS_ATA_ATAPI | EFI_P_PC_PRESENCE_DETECT),
         0,
         &gIDEBusDriverGuid,
-        IdeBlkIoDevicePtr->DevicePath
+        NULL
         );
 
       //

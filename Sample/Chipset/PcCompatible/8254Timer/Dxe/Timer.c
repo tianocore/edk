@@ -22,12 +22,10 @@ Abstract:
 
 #include "Timer.h"
 
-extern VOID CpuInitSelectors();
-
 //
 // The handle onto which the Timer Architectural Protocol will be installed
 //
-EFI_HANDLE mTimerHandle = NULL;
+EFI_HANDLE                mTimerHandle = NULL;
 
 //
 // The Timer Architectural Protocol that this driver produces
@@ -66,11 +64,6 @@ volatile EFI_TIMER_NOTIFY mTimerNotifyFunction;
 volatile UINT64           mTimerPeriod = 0;
 
 //
-// The time of twice timer interrupt duration
-//
-volatile UINTN            mPreAcpiTick = 0;
-
-//
 // Worker Functions
 //
 VOID
@@ -100,89 +93,6 @@ Returns:
   mCpuIo->Io.Write (mCpuIo, EfiCpuIoWidthFifoUint8, TIMER0_COUNT_PORT, 2, &Count);
 }
 
-UINT32
-GetAcpiTick (
-  VOID
-  )
-/*++
-
-Routine Description:
-
-  Get the current ACPI counter's value
-
-Arguments:
-
-  None
-
-Returns: 
-
-  The value of the counter
-
---*/
-{
-  UINT32  Tick;
-
-  mCpuIo->Io.Read (mCpuIo, EfiCpuIoWidthUint32, ACPI_TIME_COUNTER_ADDRESS, 1, &Tick);
-
-  return Tick;
-
-}
-
-UINT64
-MeasureTimeLost (
-  IN UINT64             TimePeriod
-  )
-/*++
-
-Routine Description:
-
-  Measure the 8254 timer interrupt use the ACPI time counter
-
-Arguments:
-
-  None
-
-Returns: 
-
-  The real system time pass between the sequence 8254 timer interrupt
-
---*/
-// TODO:    TimePeriod - add argument and description to function comment
-{
-  UINT32  CurrentTick;
-  UINT32  EndTick;
-  UINT64  LostTime;
-
-  CurrentTick = GetAcpiTick ();
-  EndTick     = CurrentTick;
-
-  if (CurrentTick < mPreAcpiTick) {
-    EndTick = CurrentTick + 0x1000000;
-  }
-  //
-  // The calculation of the lost system time should be very accurate, we use
-  // the shift calcu to make sure the value's accurate:
-  // the origenal formula is:
-  //                      (EndTick - mPreAcpiTick) * 10,000,000
-  //      LostTime = -----------------------------------------------
-  //                   (3,579,545 Hz / 1,193,182 Hz) * 1,193,182 Hz
-  //
-  // Note: the 3,579,545 Hz is the ACPI timer's clock;
-  //       the 1,193,182 Hz is the 8254 timer's clock;
-  //
-  LostTime = RShiftU64 (
-              MultU64x32 ((UINT64) (EndTick - mPreAcpiTick),
-              46869689) + 0x00FFFFFF,
-              24
-              );
-
-  if (LostTime != 0) {
-    mPreAcpiTick = CurrentTick;
-  }
-
-  return LostTime;
-}
-
 VOID
 TimerInterruptHandler (
   IN EFI_EXCEPTION_TYPE   InterruptType,
@@ -208,20 +118,18 @@ Returns:
 {
   EFI_TPL OriginalTPL;
 
-
   OriginalTPL = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL);
 
   mLegacy8259->EndOfInterrupt (mLegacy8259, Efi8259Irq0);
 
   if (mTimerNotifyFunction) {
     //
-    // If we have the timer interrupt miss, then we use
-    // the platform ACPI time counter to retrieve the time lost
+    // BUGBUG : This does not handle missed timer interrupts
     //
-    mTimerNotifyFunction (MeasureTimeLost (mTimerPeriod));
+    mTimerNotifyFunction (mTimerPeriod);
   }
 
- gBS->RestoreTPL (OriginalTPL);
+  gBS->RestoreTPL (OriginalTPL);
 }
 
 EFI_STATUS
@@ -457,7 +365,6 @@ Returns:
   UINT16      IRQMask;
   EFI_TPL     OriginalTPL;
   
-
   //
   // If the timer interrupt is enabled, then the registered handler will be invoked.
   //
@@ -471,13 +378,14 @@ Returns:
 
     if (mTimerNotifyFunction) {
       //
-      // We use the platform ACPI time counter to determine
-      // the amount of time that has passed
+      // BUGBUG : This does not handle missed timer interrupts
       //
-      mTimerNotifyFunction (MeasureTimeLost (mTimerPeriod));
+      mTimerNotifyFunction (mTimerPeriod);
     }
    
-   gBS->RestoreTPL (OriginalTPL);
+    gBS->RestoreTPL (OriginalTPL);
+  } else {
+    return EFI_UNSUPPORTED;
   }
 
   return EFI_SUCCESS;
@@ -570,11 +478,6 @@ Returns:
   //
   Status = TimerDriverSetTimerPeriod (&mTimer, DEFAULT_TIMER_TICK_DURATION);
   ASSERT_EFI_ERROR (Status);
-
-  //
-  // Begin the ACPI timer counter
-  //
-  mPreAcpiTick = GetAcpiTick ();
 
   //
   // Install the Timer Architectural Protocol onto a new handle

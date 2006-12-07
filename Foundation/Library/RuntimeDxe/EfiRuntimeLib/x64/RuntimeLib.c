@@ -30,8 +30,8 @@ Abstract:
 // Driver Lib Module Globals
 //
 static EFI_RUNTIME_SERVICES *mRT;
-static EFI_EVENT            mRuntimeNotifyEvent;
-static EFI_EVENT            mEfiVirtualNotifyEvent;
+static EFI_EVENT            mRuntimeNotifyEvent     = NULL;
+static EFI_EVENT            mEfiVirtualNotifyEvent  = NULL;
 static BOOLEAN              mRuntimeLibInitialized  = FALSE;
 static BOOLEAN              mEfiGoneVirtual         = FALSE;
 
@@ -350,14 +350,18 @@ Returns:
   //
   // Close our ExitBootServices () notify function
   //
-  Status = gBS->CloseEvent (mRuntimeNotifyEvent);
-  ASSERT_EFI_ERROR (Status);
+  if (mRuntimeNotifyEvent != NULL) {
+    Status = gBS->CloseEvent (mRuntimeNotifyEvent);
+    ASSERT_EFI_ERROR (Status);
+  }
 
   //
   // Close SetVirtualAddressMap () notify function
   //
-  Status = gBS->CloseEvent (mEfiVirtualNotifyEvent);
-  ASSERT_EFI_ERROR (Status);
+  if (mEfiVirtualNotifyEvent != NULL) {
+    Status = gBS->CloseEvent (mEfiVirtualNotifyEvent);
+    ASSERT_EFI_ERROR (Status);
+  }
 
   return EFI_SUCCESS;
 }
@@ -793,6 +797,9 @@ Returns:
 
   Status = gStatusCode->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
 #else
+  if (mRT == NULL) {
+  	return EFI_UNSUPPORTED;
+  }
   Status = mRT->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
 #endif
   return Status;

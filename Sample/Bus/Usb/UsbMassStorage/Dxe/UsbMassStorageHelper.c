@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -945,28 +945,28 @@ UsbFloppyDetectMedia (
         Status = USBFloppyReadCapacity (UsbFloppyDevice);
         break;
 
-      case USBFLOPPY:
+      case USBFLOPPY2:
         UsbMassStorageModeSense (UsbFloppyDevice);
         Status = USBFloppyReadFormatCapacity (UsbFloppyDevice);
         if (EFI_ERROR (Status) || !UsbFloppyDevice->BlkMedia.MediaPresent) {
           //
           // retry the ReadCapacity command
           //
-          UsbFloppyDevice->DeviceType = USBFLOPPY2;
+          UsbFloppyDevice->DeviceType = USBFLOPPY;
           Status                      = EFI_DEVICE_ERROR;
         } else {
           UsbFloppyDevice->NeedReadCapacity = FALSE;
         }
         break;
 
-      case USBFLOPPY2:
+      case USBFLOPPY:
         UsbMassStorageModeSense (UsbFloppyDevice);
         Status = USBFloppyReadCapacity (UsbFloppyDevice);
         if (EFI_ERROR (Status)) {
           //
           // retry the ReadFormatCapacity command
           //
-          UsbFloppyDevice->DeviceType = USBFLOPPY;
+          UsbFloppyDevice->DeviceType = USBFLOPPY2;
         } else {
           UsbFloppyDevice->NeedReadCapacity = FALSE;
         }

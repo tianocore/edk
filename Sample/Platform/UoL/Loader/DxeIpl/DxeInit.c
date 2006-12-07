@@ -67,11 +67,11 @@ Revision History:
 //   EfiXX.COM (Temporary Interrupt Handler)
 // 0x22000
 //   EfiLdr + DxeIpl.Z + DxeMain.Z + BFV.Z
-// 0x80000
-//   Temporary 4G PageTable for X64
 // 0x86000
 //   MemoryFreeUnder1M (For legacy driver DMA)
 //
+// 0x90000
+//   Temporary 4G PageTable for X64 (6 page)
 // 0x9F800
 //   EBDA
 // 0xA0000

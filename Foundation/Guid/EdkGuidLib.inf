@@ -38,6 +38,8 @@ COMPONENT_TYPE=   LIBRARY
 [nmake.common]
 C_STD_INCLUDE=
 [sources.common]
+  AcpiDescription\AcpiDescription.h
+  AcpiDescription\AcpiDescription.c
   AlternateFvBlock\AlternateFvBlock.h
   AlternateFvBlock\AlternateFvBlock.c
   Bmp\Bmp.h

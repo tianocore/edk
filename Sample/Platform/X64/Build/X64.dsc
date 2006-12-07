@@ -58,6 +58,16 @@ PLATFORM                  = $(PROJECT_NAME)
 
 [=============================================================================]
 #
+# These are the libraries that will be built by the master makefile
+#
+[=============================================================================]
+[Libraries]
+DEFINE EDK_PREFIX=
+
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
+
+[=============================================================================]
+#
 # These are platform specific libraries that must be built prior to building
 # certain drivers that depend upon them.
 #

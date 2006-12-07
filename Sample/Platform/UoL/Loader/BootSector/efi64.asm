@@ -64,7 +64,7 @@ Start:
     mov     ebx, eax                    ; use bx to copy 15..0 to descriptors
     shr     eax, 16                     ; use ax to copy 31..16 to descriptors 
                                         ; 63..32 of descriptors is 0
-    mov     ecx, 20                     ; 20 IDT entries to initialize with unique entry points (exceptions)
+    mov     ecx, 78h                    ; 78h IDT entries to initialize with unique entry points (exceptions)
     mov     esi, [offset Idtr + 2]
     mov     edi, [esi]
 
@@ -81,15 +81,15 @@ Start:
     ;; at this point edi contains the offset of the descriptor for INT 20
     ;; and bx contains the low 16 bits of the offset of the default handler
     ;; so initialize all the rest of the descriptors with these two values...
-    mov     ecx, 101                            ; there are 100 descriptors left (INT 20 (14h) - INT 119 (77h)
-@@:                                             ; loop through all IDT entries exception handlers and initialize to default handler
-    mov     word ptr [edi], bx                  ; write bits 15..0 of offset
-    mov     word ptr [edi+2], 38h               ; SYS_CODE64_SEL from GDT
-    mov     word ptr [edi+4], 0e00h OR 8000h    ; type = 386 interrupt gate, present
-    mov     word ptr [edi+6], ax                ; write bits 31..16 of offset
-    mov     dword ptr [edi+8], 0                ; write bits 63..32 of offset
-    add     edi, 16                             ; move up to next descriptor
-    loop    @b                                  ; loop back through again until all descriptors are initialized
+;    mov     ecx, 101                            ; there are 100 descriptors left (INT 20 (14h) - INT 119 (77h)
+;@@:                                             ; loop through all IDT entries exception handlers and initialize to default handler
+;    mov     word ptr [edi], bx                  ; write bits 15..0 of offset
+;    mov     word ptr [edi+2], 38h               ; SYS_CODE64_SEL from GDT
+;    mov     word ptr [edi+4], 0e00h OR 8000h    ; type = 386 interrupt gate, present
+;    mov     word ptr [edi+6], ax                ; write bits 31..16 of offset
+;    mov     dword ptr [edi+8], 0                ; write bits 63..32 of offset
+;    add     edi, 16                             ; move up to next descriptor
+;    loop    @b                                  ; loop back through again until all descriptors are initialized
     
     
 ;;  DUMP    location of IDT and several of the descriptors
@@ -296,10 +296,14 @@ INT19:
     JmpCommonIdtEntry
 
 INTUnknown:
+REPEAT  (78h - 20)
     push    0h      ; push error code place holder on the stack
-    push    0ffh
+;    push    xxh     ; push vector number
+    db      06ah
+    db      ( $ - INTUnknown - 3 ) / 9 + 20 ; vector number
     JmpCommonIdtEntry
-    
+ENDM
+
 commonIdtEntry:
     push    eax
     push    ecx
@@ -380,6 +384,14 @@ PrintExceptionString:
     jmp     PrintTheString
 PrintDefaultString:
     mov     esi, offset IntUnknownString
+    ; patch Int number
+    mov     edx, eax
+    call    A2C
+    mov     [esi + 1], al
+    mov     eax, edx
+    shr     eax, 4
+    call    A2C
+    mov     [esi], al
 PrintTheString:        
     call    PrintString
     mov     esi, offset String2
@@ -450,10 +462,10 @@ PrintTheString:
     mov     eax, [ebp+8*8]
     call    PrintQword
     
-    mov     esi, offset StringRflags  ; rflags
+    mov     esi, offset StringEcode   ; error code
     call    PrintString
     db 48h
-    mov     eax, [ebp+20*8]
+    mov     eax, [ebp+17*8]
     call    PrintQword
     
     mov     edi, 0b8320h
@@ -518,10 +530,10 @@ PrintTheString:
   
     mov     edi, 0b8500h
 
-    mov     esi, offset StringEcode   ; error code
+    mov     esi, offset StringRflags  ; rflags
     call    PrintString
     db 48h
-    mov     eax, [ebp+17*8]
+    mov     eax, [ebp+20*8]
     call    PrintQword
     
     mov     edi, 0b8640h
@@ -704,29 +716,38 @@ ClearScreen:
 
     ret                
         
+A2C:
+    and     al, 0fh
+    add     al, '0'
+    cmp     al, '9'
+    jle     @f
+    add     al, 7
+@@:
+    ret
+        
 String1           db  "*** INT ",0
 
-Int0String        db  "0 Divide by 0 -",0
-Int1String        db  "1 Debug exception -",0
-Int2String        db  "2 NMI -",0
-Int3String        db  "3 Breakpoint -",0
-Int4String        db  "4 Overflow -",0
-Int5String        db  "5 Bound -",0
-Int6String        db  "6 Invalid opcode -",0
-Int7String        db  "7 device not available -",0
-Int8String        db  "8 double fault -",0
-Int9String        db  "9 coprocessor seg overrun (reserved) -",0
-Int10String       db  "10 Invalid TSS -",0
-Int11String       db  "11 Segment not present -",0
-Int12String       db  "12 Stack fault -",0
-Int13String       db  "13 General protection fault -",0
-Int14String       db  "14 Page fault -",0
-Int15String       db  "15 (intel reserved) -",0
-Int16String       db  "16 Floating point error -",0
-Int17String       db  "17 Alignment check -",0
-Int18String       db  "18 Machine check -",0
-Int19String       db  "19 SIMD Floating-Point Exception -",0
-IntUnknownString  db  "?? Unknown interrupt - ",0
+Int0String        db  "00h Divide by 0 -",0
+Int1String        db  "01h Debug exception -",0
+Int2String        db  "02h NMI -",0
+Int3String        db  "03h Breakpoint -",0
+Int4String        db  "04h Overflow -",0
+Int5String        db  "05h Bound -",0
+Int6String        db  "06h Invalid opcode -",0
+Int7String        db  "07h Device not available -",0
+Int8String        db  "08h Double fault -",0
+Int9String        db  "09h Coprocessor seg overrun (reserved) -",0
+Int10String       db  "0Ah Invalid TSS -",0
+Int11String       db  "0Bh Segment not present -",0
+Int12String       db  "0Ch Stack fault -",0
+Int13String       db  "0Dh General protection fault -",0
+Int14String       db  "0Eh Page fault -",0
+Int15String       db  "0Fh (Intel reserved) -",0
+Int16String       db  "10h Floating point error -",0
+Int17String       db  "11h Alignment check -",0
+Int18String       db  "12h Machine check -",0
+Int19String       db  "13h SIMD Floating-Point Exception -",0
+IntUnknownString  db  "??h Unknown interrupt -",0
 
 StringTable       dq  offset Int0String, offset Int1String, offset Int2String, offset Int3String, 
                       offset Int4String, offset Int5String, offset Int6String, offset Int7String,
@@ -734,8 +755,8 @@ StringTable       dq  offset Int0String, offset Int1String, offset Int2String, o
                       offset Int12String, offset Int13String, offset Int14String, offset Int15String,
                       offset Int16String, offset Int17String, offset Int18String, offset Int19String
 
-String2           db  " HALT!! ***  ( ",0
-String3           db  " )",0
+String2           db  " HALT!! *** (",0
+String3           db  ")",0
 StringRax         db  "RAX=",0
 StringRcx         db  " RCX=",0
 StringRdx         db  " RDX=",0
@@ -744,7 +765,7 @@ StringRsp         db  " RSP=",0
 StringRbp         db  " RBP=",0
 StringRsi         db  "RSI=",0
 StringRdi         db  " RDI=",0
-StringRflags      db  " RFLAGS=",0
+StringEcode       db  " ECODE=",0
 StringR8          db  "R8 =",0
 StringR9          db  " R9 =",0
 StringR10         db  " R10=",0
@@ -754,7 +775,7 @@ StringR13         db  " R13=",0
 StringR14         db  "R14=",0
 StringR15         db  " R15=",0
 StringSs          db  " SS =",0
-StringEcode       db  "ECODE=",0
+StringRflags      db  "RFLAGS=",0
 
 Idtr        df  0
             df  0

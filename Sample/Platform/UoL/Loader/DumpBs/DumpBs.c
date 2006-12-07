@@ -472,7 +472,7 @@ ShowBootSectorLbaOffset (
     if (PartitionIndex >= 4) {
       Print (L"dumpbs: ParitionIndex error - %d\n", PartitionIndex);
     } else {
-      LBAOffset = *(UINT64 *)((UINT8 *)Buffer + 
+      LBAOffset = (UINT64)*(UINT32 *)((UINT8 *)Buffer + 
                               MBR_START_OFFSET + 
                               MBR_ENTRY_LEN * PartitionIndex +
                               MBR_STARTINGLBA_OFFSET

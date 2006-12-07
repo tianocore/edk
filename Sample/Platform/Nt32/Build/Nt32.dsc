@@ -180,6 +180,15 @@ EFI_ALIGNMENT_16K       = TRUE
 EFI_ALIGNMENT_32K       = TRUE
 EFI_ALIGNMENT_64K       = TRUE
 
+[=============================================================================]
+#
+# These are the libraries that will be built by the master makefile
+#
+[=============================================================================]
+[Libraries]
+DEFINE EDK_PREFIX=
+
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
 [=============================================================================]
 #
@@ -301,7 +310,7 @@ Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
 Sample\Universal\Console\Terminal\Dxe\Terminal.inf
 Sample\Universal\DataHub\DataHub\Dxe\DataHub.inf
 Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
-#Sample\Universal\DevicePath\Dxe\DevicePath.inf
+$(DEVPATH_INF)
 Sample\Universal\Disk\DiskIo\Dxe\DiskIo.inf
 Sample\Universal\Ebc\Dxe\Ebc.inf
 Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf

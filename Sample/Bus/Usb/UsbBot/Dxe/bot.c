@@ -97,7 +97,7 @@ STATIC
 EFI_STATUS
 BotDataPhase (
   IN     USB_BOT_DEVICE            *UsbBotDev,
-  IN     UINTN                    *DataSize,
+  IN     UINTN                     *DataSize,
   IN OUT VOID                      *DataBuffer,
   IN     EFI_USB_DATA_DIRECTION    Direction,
   IN     UINT16                    Timeout
@@ -107,7 +107,7 @@ STATIC
 EFI_STATUS
 BotStatusPhase (
   IN  USB_BOT_DEVICE          *UsbBotDev,
-  OUT UINTN                   *DataResidue, 
+  OUT UINT32                  *DataResidue, 
   IN  UINT16                  Timeout
   );
 //
@@ -712,7 +712,7 @@ STATIC
 EFI_STATUS
 BotDataPhase (
   IN      USB_BOT_DEVICE            *UsbBotDev,
-  IN      UINTN                    *DataSize,
+  IN      UINTN                     *DataSize,
   IN  OUT VOID                      *DataBuffer,
   IN      EFI_USB_DATA_DIRECTION    Direction,
   IN      UINT16                    Timeout
@@ -771,7 +771,7 @@ BotDataPhase (
           ClearBulkOutPipe (UsbBotDev);
         }
       }
-      BotRecoveryReset (UsbBotDev);
+     // BotRecoveryReset (UsbBotDev);
    }
 
 
@@ -782,7 +782,7 @@ STATIC
 EFI_STATUS
 BotStatusPhase (
   IN  USB_BOT_DEVICE          *UsbBotDev,
-  OUT UINTN                   *DataResidue, 
+  OUT UINT32                  *DataResidue, 
   IN  UINT16                  Timeout
   )
 /*++
@@ -893,9 +893,9 @@ BotAtapiCommand (
   EFI_STATUS      Status;
   EFI_STATUS      BotDataStatus;
   USB_BOT_DEVICE  *UsbBotDev;
-  UINTN          BufferSize;
+  UINTN           BufferSize;
   UINT8           Index;
-  UINTN           DataResidue;
+  UINT32          DataResidue;
 
   //
   // Get the context

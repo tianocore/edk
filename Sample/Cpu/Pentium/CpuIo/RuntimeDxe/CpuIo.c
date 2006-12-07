@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -286,18 +286,18 @@ Returns:
   PTR        Buffer;
   EFI_STATUS Status;
 
-  Address    = (UINTN) UserAddress;
   Buffer.buf = (UINT8 *) UserBuffer;
 
   if (Width >= EfiCpuIoWidthMaximum) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = CpuIoCheckParameter (Width, Address, Count, UserBuffer, IA32_MAX_IO_ADDRESS);
+  Status = CpuIoCheckParameter (Width, UserAddress, Count, UserBuffer, IA32_MAX_IO_ADDRESS);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
+  Address   = (UINTN) UserAddress;
   InStride  = 1 << (Width & 0x03);
   OutStride = InStride;
   if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
@@ -379,18 +379,18 @@ Returns:
   PTR        Buffer;
   EFI_STATUS Status;
 
-  Address    = (UINTN) UserAddress;
   Buffer.buf = (UINT8 *) UserBuffer;
 
   if (Width >= EfiCpuIoWidthMaximum) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = CpuIoCheckParameter (Width, Address, Count, UserBuffer, IA32_MAX_IO_ADDRESS);
+  Status = CpuIoCheckParameter (Width, UserAddress, Count, UserBuffer, IA32_MAX_IO_ADDRESS);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
+  Address   = (UINTN) UserAddress;
   InStride  = 1 << (Width & 0x03);
   OutStride = InStride;
   if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {

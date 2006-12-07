@@ -1,16 +1,16 @@
 ;------------------------------------------------------------------------------
 ;*
-;*   Copyright 2006, Intel Corporation                                                         
-;*   All rights reserved. This program and the accompanying materials                          
-;*   are licensed and made available under the terms and conditions of the BSD License         
-;*   which accompanies this distribution.  The full text of the license may be found at        
-;*   http://opensource.org/licenses/bsd-license.php                                            
-;*                                                                                             
-;*   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-;*   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
-;*   
+;*   Copyright 2006, Intel Corporation
+;*   All rights reserved. This program and the accompanying materials
+;*   are licensed and made available under the terms and conditions of the BSD License
+;*   which accompanies this distribution.  The full text of the license may be found at
+;*   http://opensource.org/licenses/bsd-license.php
+;*
+;*   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+;*   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+;*
 ;*    Mbr.asm
-;*  
+;*
 ;*   Abstract:
 ;*
 ;------------------------------------------------------------------------------
@@ -31,26 +31,44 @@ BLOCK_SHIFT               EQU     9
 
         org 0h
 Start:
+
+; ****************************************************************************
+; Start Print
+; ****************************************************************************
+
+        mov  ax,0b800h
+        mov  es,ax
+        mov  ax, 07c0h
+        mov  ds, ax
+        lea  si, cs:[StartString]
+        mov  cx, 10
+        mov  di, 160
+        rep  movsw
+
+; ****************************************************************************
+; Print over
+; ****************************************************************************
+
 ; ****************************************************************************
 ; Initialize segment registers and copy code at 0x0000:0x7c00 to 0x0000:0x0600
 ; ****************************************************************************
-        xor   ax, ax                    ; AX = 0x0000  
-        mov   bx, 07c00h                ; BX = 0x7C00
-        mov   bp, 0600h                 ; BP = 0x0600
-        mov   si, OFFSET RelocatedStart ; SI = Offset(RelocatedStart)
-        mov   cx, 0200h                 ; CX = 0x0200
-        sub   cx, si                    ; CS = 0x0200 - Offset(RelocatedStart)
-        lea   di, [bp+si]               ; DI = 0x0600 + Offset(RelocatedStart)
-        lea   si, [bx+si]               ; BX = 0x7C00 + Offset(RelocatedStart)
-        mov   ss, ax                    ; SS = 0x0000
-        mov   sp, bx                    ; SP = 0x7C00
-        mov   es,ax                     ; ES = 0x0000
-        mov   ds,ax                     ; DS = 0x0000
-        push  ax                        ; PUSH 0x0000
-        push  di                        ; PUSH 0x0600 + Offset(RelocatedStart)
-        cld                             ; Clear the direction flag
-        rep   movsb                     ; Copy 0x0200 bytes from 0x7C00 to 0x0600
-        retf                            ; JMP 0x0000:0x0600 + Offset(RelocatedStart)
+        xor   ax, ax                              ; AX = 0x0000
+        mov   bx, 07c00h                          ; BX = 0x7C00
+        mov   bp, 0600h                           ; BP = 0x0600
+        mov   si, OFFSET RelocatedStart           ; SI = Offset(RelocatedStart)
+        mov   cx, 0200h                           ; CX = 0x0200
+        sub   cx, si                              ; CS = 0x0200 - Offset(RelocatedStart)
+        lea   di, [bp+si]                         ; DI = 0x0600 + Offset(RelocatedStart)
+        lea   si, [bx+si]                         ; BX = 0x7C00 + Offset(RelocatedStart)
+        mov   ss, ax                              ; SS = 0x0000
+        mov   sp, bx                              ; SP = 0x7C00
+        mov   es,ax                               ; ES = 0x0000
+        mov   ds,ax                               ; DS = 0x0000
+        push  ax                                  ; PUSH 0x0000
+        push  di                                  ; PUSH 0x0600 + Offset(RelocatedStart)
+        cld                                       ; Clear the direction flag
+        rep   movsb                               ; Copy 0x0200 bytes from 0x7C00 to 0x0600
+        retf                                      ; JMP 0x0000:0x0600 + Offset(RelocatedStart)
 
 ; ****************************************************************************
 ; Code relocated to 0x0000:0x0600
@@ -60,36 +78,37 @@ RelocatedStart:
 ; ****************************************************************************
 ; Get Driver Parameters to 0x0000:0x7BFC
 ; ****************************************************************************
-        xor   ax,ax         ; ax = 0
-        mov   ss,ax         ; ss = 0
+
+        xor   ax,ax                               ; AX = 0
+        mov   ss,ax                               ; SS = 0
         add   ax,1000h
         mov   ds,ax
 
-        mov   sp,07c00h     ; sp = 0x7c00
-        mov   bp,sp         ; bp = 0x7c00
+        mov   sp,07c00h                           ; SP = 0x7c00
+        mov   bp,sp                               ; BP = 0x7c00
 
-        mov   ah,8                                ; ah = 8 - Get Drive Parameters Function
-        mov   dl,byte ptr [bp+PhysicalDrive]      ; dl = Drive Number
+        mov   ah,8                                ; AH = 8 - Get Drive Parameters Function
+        mov   dl,byte ptr [bp+PhysicalDrive]      ; DL = Drive Number
         int   13h                                 ; Get Drive Parameters
-        xor   ax,ax                   ; ax = 0
-        mov   al,dh                   ; al = dh
-        inc   al                      ; MaxHead = al + 1
-        push  ax                      ; 0000:7bfe = MaxHead
-        mov   al,cl                   ; al = cl
-        and   al,03fh                 ; MaxSector = al & 0x3f
-        push  ax                      ; 0000:7bfc = MaxSector
+        xor   ax,ax                               ; AX = 0
+        mov   al,dh                               ; AL = DH
+        inc   al                                  ; MaxHead = AL + 1
+        push  ax                                  ; 0000:7bfe = MaxHead
+        mov   al,cl                               ; AL = CL
+        and   al,03fh                             ; MaxSector = AL & 0x3f
+        push  ax                                  ; 0000:7bfc = MaxSector
 
 ; ****************************************************************************
 ; Read Target DBR from hard disk to 0x0000:0x7C00
 ; ****************************************************************************
+
         xor   ax, ax
         mov   al, byte ptr [bp+MbrPartitionIndicator]  ; AX = MbrPartitionIndex
         cmp   al, 0ffh                                 ; 0xFF means do legacy MBR boot
         jnz   EfiDbr
 LegacyMbr:
-        mov   eax, 1                              ; StartingLBA = 1
-        mov   edx, 0                              ; Assume LegacyMBR in LBA 1
-        jmp   StartReadTo7C00
+        mov   eax, 00000600h                      ; Assume LegacyMBR is backuped in Sector 6
+        jmp   StartReadTo7C00                     ; EAX = Header/Sector/Tracker/Zero
 
 EfiDbr:
         cmp   al, 4                               ; MbrPartitionIndex should < 4
@@ -97,72 +116,99 @@ EfiDbr:
         shl   ax, 4                               ; AX  = MBREntrySize * Index
         add   ax, 1beh                            ; AX  = MBREntryOffset
         mov   di, ax                              ; DI  = MBREntryOffset
-        mov   eax, dword ptr es:[di + 8]          ; EAX = StartingLBA (Low)
-        mov   edx, dword ptr es:[di + 0ch]        ; EDX = StartingLBA (High)
+
+        ; Here we don't use the C/H/S information provided by Partition table
+        ;  but calculate C/H/S from LBA ourselves
+        ;       Ci: Cylinder number
+        ;       Hi: Header number
+        ;       Si: Sector number
+        mov   eax, dword ptr es:[bp + di + 8]     ; Start LBA
+        mov   edx, eax
+        shr   edx, 16                             ; DX:AX = Start LBA
+                                                  ;       = Ci * (H * S) + Hi * S + (Si - 1)
+
+        ; Calculate C/H/S according to LBA
+        mov   bp, 7bfah
+        div   word ptr [bp+2]                     ; AX = Hi + H*Ci
+                                                  ; DX = Si - 1
+        inc   dx                                  ; DX = Si
+        push  dx                                  ; 0000:7bfa = Si  <----
+        xor   dx, dx                              ; DX:AX = Hi + H*Ci
+        div   word ptr [bp+4]                     ; AX = Ci         <----
+                                                  ; DX = Hi         <----
 
 StartReadTo7C00:
-        mov   di, 07C00h                          ; Read to 0x0000:0x7C00
-        mov   bx, 1                               ; Read 1 Block
-        call  ReadBlocks
+
+        mov   cl, byte ptr [bp]                   ; Si
+        mov   ch, al                              ; Ci[0-7]
+        or    cl, ah                              ; Ci[8,9]
+        mov   bx, 7c00h                           ; ES:BX = 0000:7C00h
+        mov   ah, 2h                              ; Function 02h
+        mov   al, 1                               ; 1 Sector
+        mov   dh, dl                              ; Hi
+        mov   bp, 0600h
+        mov   dl, byte ptr [bp + PhysicalDrive]   ; Drive number
+        int   13h
+        jc    BadDbr
+
+
 
 ; ****************************************************************************
 ; Transfer control to BootSector - Jump to 0x0000:0x7C00
 ; ****************************************************************************
         xor   ax, ax
-        push  ax                        ; PUSH 0x0000
+        push  ax                                  ; PUSH 0x0000 - Segment
         mov   di, 07c00h
-        push  di                        ; PUSH 0x7C00
-        retf                            ; JMP 0x0000:0x7C00
-
-; ****************************************************************************
-; ReadBlocks - Reads a set of blocks from a block device
-;
-; EDX:EAX = Start LBA
-; BX      = Number of Blocks to Read (must < 127)
-; ES:DI   = Buffer to store sectors read from disk
-; ****************************************************************************
-
-; si = DiskAddressPacket
-
-ReadBlocks:
-        pushad
-        push  ds
-        xor   cx, cx
-        mov   ds, cx
-        mov   bp, 0600h                         ; bp = 0x600
-        lea   si, [bp + OFFSET AddressPacket]   ; DS:SI = Disk Address Packet
-        mov   BYTE PTR ds:[si+2],bl             ;    02 = Number Of Block transfered
-        mov   WORD PTR ds:[si+4],di             ;    04 = Transfer Buffer Offset
-        mov   WORD PTR ds:[si+6],es             ;    06 = Transfer Buffer Segment
-        mov   DWORD PTR ds:[si+8],eax           ;    08 = Starting LBA (Low)
-        mov   DWORD PTR ds:[si+0ch],edx         ;    0C = Starting LBA (High)
-        mov   ah, 42h                           ; ah = Function 42
-        mov   dl,byte ptr [bp+PhysicalDrive]    ; dl = Drive Number
-        int   13h
-        pop   ds
-        popad
-        ret
-
-; ****************************************************************************
-; Address Packet used by ReadBlocks
-; ****************************************************************************
-AddressPacket:
-        db    10h                       ; Size of address packet
-        db    00h                       ; Reserved.  Must be 0
-        db    01h                       ; Read blocks at a time (To be fixed each times)
-        db    00h                       ; Reserved.  Must be 0
-        dw    0000h                     ; Destination Address offset (To be fixed each times)
-        dw    0000h                     ; Destination Address segment (To be fixed each times)
-AddressPacketLba:
-        dd    0h, 0h                    ; Start LBA (To be fixed each times)
-AddressPacketEnd:
+        push  di                                  ; PUSH 0x7C00 - Offset
+        retf                                      ; JMP 0x0000:0x7C00
 
 ; ****************************************************************************
 ; ERROR Condition:
 ; ****************************************************************************
 
 BadDbr:
-  jmp   BadDbr
+    push ax
+    mov  ax, 0b800h
+    mov  es, ax
+    mov  ax, 060h
+    mov  ds, ax
+    lea  si, cs:[ErrorString]
+    mov  di, 320
+    pop  ax
+    call A2C
+    mov  [si+16], ah
+    mov  [si+18], al
+    mov  cx, 10
+    rep  movsw
+Halt:
+    jmp   Halt
+
+StartString:
+    db 'M', 0ch, 'B', 0ch, 'R', 0ch, ' ', 0ch, 'S', 0ch, 't', 0ch, 'a', 0ch, 'r', 0ch, 't', 0ch, '!', 0ch
+ErrorString:
+    db 'M', 0ch, 'B', 0ch, 'R', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, ':', 0ch, '?', 0ch, '?', 0ch
+
+; ****************************************************************************
+; A2C - convert Ascii code stored in AH to character stored in AX
+; ****************************************************************************
+A2C:
+    mov  al, ah
+    shr  ah, 4
+    and  al, 0Fh
+    add  ah, '0'
+    add  al, '0'
+
+    cmp  ah, '9'
+    jle  @f
+    add  ah, 7
+@@:
+
+    cmp al, '9'
+    jle @f
+    add al, 7
+@@:
+    ret
+
 
 ; ****************************************************************************
 ; PhysicalDrive - Used to indicate which disk to be boot
@@ -174,7 +220,7 @@ PhysicalDrive         db  80h
 ; ****************************************************************************
 ; MbrPartitionIndicator - Used to indicate which MBR partition to be boot
 ;                         Can be patched by tool
-;                         OxFF means boot to legacy MBR. (LBA OFFSET 1)
+;                         OxFF means boot to legacy MBR. (LBA OFFSET 6)
 ; ****************************************************************************
     org   01B7h
 MbrPartitionIndicator db 0
@@ -183,7 +229,7 @@ MbrPartitionIndicator db 0
 ; Unique MBR signature
 ; ****************************************************************************
     org   01B8h
-    db 'UOL '
+    db 'UoL '
 
 ; ****************************************************************************
 ; Unknown
@@ -207,9 +253,9 @@ MbrPartitionIndicator db 0
 ; Sector Signature
 ; ****************************************************************************
 
-  org 01feh
+  org 01FEh
 SectorSignature:
   dw        0aa55h      ; Boot Sector Signature
 
-  end 
-  
+  end
+

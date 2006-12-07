@@ -23,7 +23,8 @@ Abstract:
 //
 
 BOOLEAN                              mInterruptState = FALSE;
-UINT32                               mTimerVector = 0;
+extern UINT32                        mExceptionCodeSize;
+UINTN                                mTimerVector = 0;
 volatile EFI_CPU_INTERRUPT_HANDLER   mTimerHandler = NULL;
 EFI_LEGACY_8259_PROTOCOL             *gLegacy8259 = NULL;
 
@@ -230,7 +231,7 @@ Returns:
   if ((InterruptType < 0) || (InterruptType >= INTERRUPT_VECTOR_NUMBER)) {
     return EFI_UNSUPPORTED;
   }
-  if ((UINT32)InterruptType != mTimerVector) {
+  if ((UINTN)(UINT32)InterruptType != mTimerVector) {
     return EFI_UNSUPPORTED;
   }
   if ((mTimerHandler == NULL) && (InterruptHandler == NULL)) {
@@ -317,6 +318,743 @@ Returns:
   return EFI_UNSUPPORTED;
 }
 
+#if CPU_EXCEPTION_DEBUG_OUTPUT
+STATIC
+VOID
+DumpExceptionDataDebugOut (
+  IN EFI_EXCEPTION_TYPE   InterruptType,
+  IN EFI_SYSTEM_CONTEXT   SystemContext
+  )
+{
+  UINT32        ErrorCodeFlag;
+
+  ErrorCodeFlag = 0x00027d00;
+
+#ifdef EFI32
+  DEBUG ((
+    EFI_D_ERROR,
+    "!!!! IA32 Exception Type - %08x !!!!\n",
+    InterruptType
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "EIP - %08x, CS - %08x, EFLAGS - %08x\n",
+    SystemContext.SystemContextIa32->Eip,
+    SystemContext.SystemContextIa32->Cs,
+    SystemContext.SystemContextIa32->Eflags
+    ));
+  if (ErrorCodeFlag & (1 << InterruptType)) {
+    DEBUG ((
+      EFI_D_ERROR,
+      "ExceptionData - %08x\n",
+      SystemContext.SystemContextIa32->ExceptionData
+      ));
+  }
+  DEBUG ((
+    EFI_D_ERROR,
+    "EAX - %08x, ECX - %08x, EDX - %08x, EBX - %08x\n",
+    SystemContext.SystemContextIa32->Eax,
+    SystemContext.SystemContextIa32->Ecx,
+    SystemContext.SystemContextIa32->Edx,
+    SystemContext.SystemContextIa32->Ebx
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "ESP - %08x, EBP - %08x, ESI - %08x, EDI - %08x\n",
+    SystemContext.SystemContextIa32->Esp,
+    SystemContext.SystemContextIa32->Ebp,
+    SystemContext.SystemContextIa32->Esi,
+    SystemContext.SystemContextIa32->Edi
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "DS - %08x, ES - %08x, FS - %08x, GS - %08x, SS - %08x\n",
+    SystemContext.SystemContextIa32->Ds,
+    SystemContext.SystemContextIa32->Es,
+    SystemContext.SystemContextIa32->Fs,
+    SystemContext.SystemContextIa32->Gs,
+    SystemContext.SystemContextIa32->Ss
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "GDTR - %08x %08x, IDTR - %08x %08x\n",
+    SystemContext.SystemContextIa32->Gdtr[0],
+    SystemContext.SystemContextIa32->Gdtr[1],
+    SystemContext.SystemContextIa32->Idtr[0],
+    SystemContext.SystemContextIa32->Idtr[1]
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "LDTR - %08x, TR - %08x\n",
+    SystemContext.SystemContextIa32->Ldtr,
+    SystemContext.SystemContextIa32->Tr
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "CR0 - %08x, CR2 - %08x, CR3 - %08x, CR4 - %08x\n",
+    SystemContext.SystemContextIa32->Cr0,
+    SystemContext.SystemContextIa32->Cr2,
+    SystemContext.SystemContextIa32->Cr3,
+    SystemContext.SystemContextIa32->Cr4
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "DR0 - %08x, DR1 - %08x, DR2 - %08x, DR3 - %08x\n",
+    SystemContext.SystemContextIa32->Dr0,
+    SystemContext.SystemContextIa32->Dr1,
+    SystemContext.SystemContextIa32->Dr2,
+    SystemContext.SystemContextIa32->Dr3
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "DR6 - %08x, DR7 - %08x\n",
+    SystemContext.SystemContextIa32->Dr6,
+    SystemContext.SystemContextIa32->Dr7
+    ));
+#else
+  DEBUG ((
+    EFI_D_ERROR,
+    "!!!! X64 Exception Type - %016lx !!!!\n",
+    (UINT64)InterruptType
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "RIP - %016lx, CS - %016lx, RFLAGS - %016lx\n",
+    SystemContext.SystemContextX64->Rip,
+    SystemContext.SystemContextX64->Cs,
+    SystemContext.SystemContextX64->Rflags
+    ));
+  if (ErrorCodeFlag & (1 << InterruptType)) {
+    DEBUG ((
+      EFI_D_ERROR,
+      "ExceptionData - %016lx\n",
+      SystemContext.SystemContextX64->ExceptionData
+      ));
+  }
+  DEBUG ((
+    EFI_D_ERROR,
+    "RAX - %016lx, RCX - %016lx, RDX - %016lx\n",
+    SystemContext.SystemContextX64->Rax,
+    SystemContext.SystemContextX64->Rcx,
+    SystemContext.SystemContextX64->Rdx
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "RBX - %016lx, RSP - %016lx, RBP - %016lx\n",
+    SystemContext.SystemContextX64->Rbx,
+    SystemContext.SystemContextX64->Rsp,
+    SystemContext.SystemContextX64->Rbp
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "RSI - %016lx, RDI - %016lx\n",
+    SystemContext.SystemContextX64->Rsi,
+    SystemContext.SystemContextX64->Rdi
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "R8 - %016lx, R9 - %016lx, R10 - %016lx\n",
+    SystemContext.SystemContextX64->R8,
+    SystemContext.SystemContextX64->R9,
+    SystemContext.SystemContextX64->R10
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "R11 - %016lx, R12 - %016lx, R13 - %016lx\n",
+    SystemContext.SystemContextX64->R11,
+    SystemContext.SystemContextX64->R12,
+    SystemContext.SystemContextX64->R13
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "R14 - %016lx, R15 - %016lx\n",
+    SystemContext.SystemContextX64->R14,
+    SystemContext.SystemContextX64->R15
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "DS - %016lx, ES - %016lx, FS - %016lx\n",
+    SystemContext.SystemContextX64->Ds,
+    SystemContext.SystemContextX64->Es,
+    SystemContext.SystemContextX64->Fs
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "GS - %016lx, SS - %016lx\n",
+    SystemContext.SystemContextX64->Gs,
+    SystemContext.SystemContextX64->Ss
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "GDTR - %016lx %016lx, LDTR - %016lx\n",
+    SystemContext.SystemContextX64->Gdtr[0],
+    SystemContext.SystemContextX64->Gdtr[1],
+    SystemContext.SystemContextX64->Ldtr
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "IDTR - %016lx %016lx, TR - %016lx\n",
+    SystemContext.SystemContextX64->Idtr[0],
+    SystemContext.SystemContextX64->Idtr[1],
+    SystemContext.SystemContextX64->Tr
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "CR0 - %016lx, CR2 - %016lx, CR3 - %016lx\n",
+    SystemContext.SystemContextX64->Cr0,
+    SystemContext.SystemContextX64->Cr2,
+    SystemContext.SystemContextX64->Cr3
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "CR4 - %016lx, CR8 - %016lx\n",
+    SystemContext.SystemContextX64->Cr4,
+    SystemContext.SystemContextX64->Cr8
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "DR0 - %016lx, DR1 - %016lx, DR2 - %016lx\n",
+    SystemContext.SystemContextX64->Dr0,
+    SystemContext.SystemContextX64->Dr1,
+    SystemContext.SystemContextX64->Dr2
+    ));
+  DEBUG ((
+    EFI_D_ERROR,
+    "DR3 - %016lx, DR6 - %016lx, DR7 - %016lx\n",
+    SystemContext.SystemContextX64->Dr3,
+    SystemContext.SystemContextX64->Dr6,
+    SystemContext.SystemContextX64->Dr7
+    ));
+#endif
+  return ;
+}
+#endif
+
+STATIC
+UINTN
+SPrint (
+  IN OUT    CHAR16  *Buffer,
+  IN CONST  CHAR16  *Format,
+  ...
+  )
+{
+  VA_LIST   Marker;
+  UINTN     Index;
+  UINTN     Flags;
+  UINTN     Width;
+  UINT64    Value;
+
+  VA_START (Marker, Format);
+
+  //
+  // Process the format string. Stop if Buffer is over run.
+  //
+
+  for (Index = 0; *Format != 0; Format++) {
+    if (*Format != L'%') {
+      Buffer[Index++] = *Format;
+    } else {
+      
+      //
+      // Now it's time to parse what follows after %
+      // Support: % [ 0 width ] [ l ] x
+      // width - fill 0, to ensure the width of x will be "width"
+      // l        - UINT64 instead of UINT32
+      //
+      Width = 0;
+      Flags = 0;
+      Format ++;
+
+      if (*Format == L'0') {
+        Flags |= PREFIX_ZERO;
+        do {
+          Width += Width * 10 + (*Format - L'0');
+          Format ++;
+        } while (*Format >= L'1' && *Format <= L'9');
+      }
+
+      if (*Format == L'l') {
+        Flags |= LONG_TYPE;
+        Format ++;
+      }
+
+      
+      switch (*Format) {
+      case 'X':
+        Flags |= PREFIX_ZERO;
+        Width = sizeof (UINT64) * 2;
+        //
+        // break skiped on purpose
+        //
+      case 'x':
+        if ((Flags & LONG_TYPE) == LONG_TYPE) {
+          Value = VA_ARG (Marker, UINT64);
+        } else {
+          Value = VA_ARG (Marker, UINTN);
+        }
+
+        EfiValueToHexStr (Buffer+Index, Value, Flags, Width);
+        
+        for ( ; Buffer[Index] != L'\0'; Index ++) {
+        }
+
+        break;
+
+      default:
+        //
+        // if the type is unknown print it to the screen
+        //
+        Buffer[Index++] = *Format;
+      }
+    } 
+  }
+  Buffer[Index++] = '\0'; 
+   
+  VA_END (Marker);
+  return Index;
+}
+
+STATIC
+VOID
+DumpExceptionDataVgaOut (
+  IN EFI_EXCEPTION_TYPE   InterruptType,
+  IN EFI_SYSTEM_CONTEXT   SystemContext
+  )
+{
+  UINTN         COLUMN_MAX;
+  UINTN         ROW_MAX;
+  UINT32        ErrorCodeFlag;
+  CHAR16        *VideoBufferBase;
+  CHAR16        *VideoBuffer;
+  UINTN         Index;
+
+  COLUMN_MAX      = 80;
+  ROW_MAX         = 25;
+  ErrorCodeFlag   = 0x00027d00;
+  VideoBufferBase = (CHAR16 *) (UINTN) 0xb8000;
+  VideoBuffer     = (CHAR16 *) (UINTN) 0xb8000;
+
+#ifdef EFI32
+  SPrint (
+    VideoBuffer, 
+    L"!!!! IA32 Exception Type - %08x !!!!",
+    InterruptType
+    );
+  VideoBuffer += COLUMN_MAX;
+  SPrint (
+    VideoBuffer, 
+    L"EIP - %08x, CS - %08x, EFLAGS - %08x",
+    SystemContext.SystemContextIa32->Eip,
+    SystemContext.SystemContextIa32->Cs,
+    SystemContext.SystemContextIa32->Eflags
+    );
+  VideoBuffer += COLUMN_MAX;
+  if (ErrorCodeFlag & (1 << InterruptType)) {
+    SPrint (
+      VideoBuffer,
+      L"ExceptionData - %08x",
+      SystemContext.SystemContextIa32->ExceptionData
+    );
+    VideoBuffer += COLUMN_MAX;
+  }
+  SPrint (
+    VideoBuffer,
+    L"EAX - %08x, ECX - %08x, EDX - %08x, EBX - %08x",
+    SystemContext.SystemContextIa32->Eax,
+    SystemContext.SystemContextIa32->Ecx,
+    SystemContext.SystemContextIa32->Edx,
+    SystemContext.SystemContextIa32->Ebx
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"ESP - %08x, EBP - %08x, ESI - %08x, EDI - %08x",
+    SystemContext.SystemContextIa32->Esp,
+    SystemContext.SystemContextIa32->Ebp,
+    SystemContext.SystemContextIa32->Esi,
+    SystemContext.SystemContextIa32->Edi
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"DS - %08x, ES - %08x, FS - %08x, GS - %08x, SS - %08x",
+    SystemContext.SystemContextIa32->Ds,
+    SystemContext.SystemContextIa32->Es,
+    SystemContext.SystemContextIa32->Fs,
+    SystemContext.SystemContextIa32->Gs,
+    SystemContext.SystemContextIa32->Ss
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"GDTR - %08x %08x, IDTR - %08x %08x",
+    SystemContext.SystemContextIa32->Gdtr[0],
+    SystemContext.SystemContextIa32->Gdtr[1],
+    SystemContext.SystemContextIa32->Idtr[0],
+    SystemContext.SystemContextIa32->Idtr[1]
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"LDTR - %08x, TR - %08x",
+    SystemContext.SystemContextIa32->Ldtr,
+    SystemContext.SystemContextIa32->Tr
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"CR0 - %08x, CR2 - %08x, CR3 - %08x, CR4 - %08x",
+    SystemContext.SystemContextIa32->Cr0,
+    SystemContext.SystemContextIa32->Cr2,
+    SystemContext.SystemContextIa32->Cr3,
+    SystemContext.SystemContextIa32->Cr4
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"DR0 - %08x, DR1 - %08x, DR2 - %08x, DR3 - %08x",
+    SystemContext.SystemContextIa32->Dr0,
+    SystemContext.SystemContextIa32->Dr1,
+    SystemContext.SystemContextIa32->Dr2,
+    SystemContext.SystemContextIa32->Dr3
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"DR6 - %08x, DR7 - %08x",
+    SystemContext.SystemContextIa32->Dr6,
+    SystemContext.SystemContextIa32->Dr7
+    );
+  VideoBuffer += COLUMN_MAX;
+#else
+  SPrint (
+    VideoBuffer,
+    L"!!!! X64 Exception Type - %016lx !!!!",
+    (UINT64)InterruptType
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"RIP - %016lx, CS - %016lx, RFLAGS - %016lx",
+    SystemContext.SystemContextX64->Rip,
+    SystemContext.SystemContextX64->Cs,
+    SystemContext.SystemContextX64->Rflags
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  if (ErrorCodeFlag & (1 << InterruptType)) {
+    SPrint (
+      VideoBuffer,
+      L"ExceptionData - %016lx",
+      SystemContext.SystemContextX64->ExceptionData
+      );
+    VideoBuffer += COLUMN_MAX;
+  }
+
+  SPrint (
+    VideoBuffer,
+    L"RAX - %016lx, RCX - %016lx, RDX - %016lx",
+    SystemContext.SystemContextX64->Rax,
+    SystemContext.SystemContextX64->Rcx,
+    SystemContext.SystemContextX64->Rdx
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"RBX - %016lx, RSP - %016lx, RBP - %016lx",
+    SystemContext.SystemContextX64->Rbx,
+    SystemContext.SystemContextX64->Rsp,
+    SystemContext.SystemContextX64->Rbp
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"RSI - %016lx, RDI - %016lx",
+    SystemContext.SystemContextX64->Rsi,
+    SystemContext.SystemContextX64->Rdi
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"R8 - %016lx, R9 - %016lx, R10 - %016lx",
+    SystemContext.SystemContextX64->R8,
+    SystemContext.SystemContextX64->R9,
+    SystemContext.SystemContextX64->R10
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"R11 - %016lx, R12 - %016lx, R13 - %016lx",
+    SystemContext.SystemContextX64->R11,
+    SystemContext.SystemContextX64->R12,
+    SystemContext.SystemContextX64->R13
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"R14 - %016lx, R15 - %016lx",
+    SystemContext.SystemContextX64->R14,
+    SystemContext.SystemContextX64->R15
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"DS - %016lx, ES - %016lx, FS - %016lx",
+    SystemContext.SystemContextX64->Ds,
+    SystemContext.SystemContextX64->Es,
+    SystemContext.SystemContextX64->Fs
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"GS - %016lx, SS - %016lx",
+    SystemContext.SystemContextX64->Gs,
+    SystemContext.SystemContextX64->Ss
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"GDTR - %016lx %016lx, LDTR - %016lx",
+    SystemContext.SystemContextX64->Gdtr[0],
+    SystemContext.SystemContextX64->Gdtr[1],
+    SystemContext.SystemContextX64->Ldtr
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"IDTR - %016lx %016lx, TR - %016lx",
+    SystemContext.SystemContextX64->Idtr[0],
+    SystemContext.SystemContextX64->Idtr[1],
+    SystemContext.SystemContextX64->Tr
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"CR0 - %016lx, CR2 - %016lx, CR3 - %016lx",
+    SystemContext.SystemContextX64->Cr0,
+    SystemContext.SystemContextX64->Cr2,
+    SystemContext.SystemContextX64->Cr3
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"CR4 - %016lx, CR8 - %016lx",
+    SystemContext.SystemContextX64->Cr4,
+    SystemContext.SystemContextX64->Cr8
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"DR0 - %016lx, DR1 - %016lx, DR2 - %016lx",
+    SystemContext.SystemContextX64->Dr0,
+    SystemContext.SystemContextX64->Dr1,
+    SystemContext.SystemContextX64->Dr2
+    );
+  VideoBuffer += COLUMN_MAX;
+
+  SPrint (
+    VideoBuffer,
+    L"DR3 - %016lx, DR6 - %016lx, DR7 - %016lx",
+    SystemContext.SystemContextX64->Dr3,
+    SystemContext.SystemContextX64->Dr6,
+    SystemContext.SystemContextX64->Dr7
+    );
+  VideoBuffer += COLUMN_MAX;
+#endif
+
+  for (Index = 0; Index < COLUMN_MAX * ROW_MAX; Index ++) {
+    if (Index > (UINTN)(VideoBuffer - VideoBufferBase)) {
+      VideoBufferBase[Index] = 0x0c20;
+    } else {
+      VideoBufferBase[Index] |= 0x0c00;
+    }
+  }
+
+  return ;
+}
+
+#if CPU_EXCEPTION_VGA_SWITCH
+STATIC
+UINT16
+SwitchVideoMode (
+  UINT16    NewVideoMode
+  )
+/*++
+Description
+  Switch Video Mode from current mode to new mode, and return the old mode.
+  Use Thuink
+
+Arguments
+  NewVideoMode - new video mode want to set
+
+Return
+  UINT16       - (UINT16) -1 indicates failure
+                 Other value indicates the old mode, which can be used for restore later
+ 
+--*/
+{
+  EFI_STATUS                      Status;
+  EFI_LEGACY_BIOS_THUNK_PROTOCOL  *LegacyBios;
+  EFI_IA32_REGISTER_SET           Regs;
+  UINT16                          OriginalVideoMode = (UINT16) -1;
+  
+  //
+  // See if the Legacy BIOS Protocol is available
+  //
+  Status = gBS->LocateProtocol (&gEfiLegacyBiosThunkProtocolGuid, NULL, (VOID **) &LegacyBios);
+  if (EFI_ERROR (Status)) {
+    return OriginalVideoMode;
+  }
+
+  //
+  // VESA SuperVGA BIOS - GET CURRENT VIDEO MODE
+  // AX = 4F03h
+  // Return:AL = 4Fh if function supported
+  // AH = status 00h successful
+  // BX = video mode (see #0082,#0083)
+  //
+  gBS->SetMem (&Regs, sizeof (Regs), 0);
+  Regs.X.AX = 0x4F03;
+  LegacyBios->Int86 (LegacyBios, 0x10, &Regs);
+  if (Regs.X.AX == 0x004F) {
+    OriginalVideoMode = Regs.X.BX;
+  } else {
+    //
+    // VIDEO - GET CURRENT VIDEO MODE
+    // AH = 0Fh
+    // Return:AH = number of character columns
+    // AL = display mode (see #0009 at AH=00h)
+    // BH = active page (see AH=05h)
+    //
+    gBS->SetMem (&Regs, sizeof (Regs), 0);
+    Regs.H.AH = 0x0F;
+    LegacyBios->Int86 (LegacyBios, 0x10, &Regs);
+    OriginalVideoMode = Regs.H.AL;
+  }
+
+  //
+  // Set new video mode
+  //
+  if (NewVideoMode < 0x100) {
+    //
+    // Set the 80x25 Text VGA Mode: Assume successful always
+    //
+    // VIDEO - SET VIDEO MODE
+    // AH = 00h
+    // AL = desired video mode (see #0009)
+    // Return:AL = video mode flag (Phoenix, AMI BIOS)
+    // 20h mode > 7
+    // 30h modes 0-5 and 7
+    // 3Fh mode 6
+    // AL = CRT controller mode byte (Phoenix 386 BIOS v1.10)
+    //
+    gBS->SetMem (&Regs, sizeof (Regs), 0);
+    Regs.H.AH = 0x00;
+    Regs.H.AL = (UINT8) NewVideoMode;
+    LegacyBios->Int86 (LegacyBios, 0x10, &Regs);
+
+    //
+    // VIDEO - TEXT-MODE CHARGEN - LOAD ROM 8x16 CHARACTER SET (VGA)
+    // AX = 1114h
+    // BL = block to load
+    // Return:Nothing
+    //
+    gBS->SetMem (&Regs, sizeof (Regs), 0);
+    Regs.H.AH = 0x11;
+    Regs.H.AL = 0x14;
+    Regs.H.BL = 0;
+    LegacyBios->Int86 (LegacyBios, 0x10, &Regs);
+  } else {
+    //
+    //    VESA SuperVGA BIOS - SET SuperVGA VIDEO MODE
+    //    AX = 4F02h
+    //    BX = mode (see #0082,#0083)
+    //    bit 15 set means don't clear video memory
+    //    bit 14 set means enable linear framebuffer mode (VBE v2.0+)
+    //    Return:AL = 4Fh if function supported
+    //    AH = status
+    //    00h successful
+    //    01h failed
+    //
+    gBS->SetMem (&Regs, sizeof (Regs), 0);
+    Regs.X.AX = 0x4F02;
+    Regs.X.BX = NewVideoMode;
+    LegacyBios->Int86 (LegacyBios, 0x10, &Regs);
+    if (Regs.X.AX != 0x004F) {
+      DEBUG ((EFI_D_ERROR, "SORRY: Cannot set to video mode: 0x%04X!\n", NewVideoMode));
+      return (UINT16) -1;
+    }
+  }
+
+  return OriginalVideoMode;
+}
+#endif
+
+VOID
+ExceptionHandler (
+  IN EFI_EXCEPTION_TYPE    InterruptType,
+  IN EFI_SYSTEM_CONTEXT    SystemContext
+  )
+{
+#if CPU_EXCEPTION_VGA_SWITCH
+  UINT16                          VideoMode;
+#endif
+
+#if CPU_EXCEPTION_DEBUG_OUTPUT
+  DumpExceptionDataDebugOut (InterruptType, SystemContext);
+#endif
+
+#if CPU_EXCEPTION_VGA_SWITCH
+  //
+  // Switch to text mode for RED-SCREEN output
+  //
+  VideoMode = SwitchVideoMode (0x83);
+  if (VideoMode == (UINT16) -1) {
+    DEBUG ((EFI_D_ERROR, "Video Mode Unknown!\n"));
+  }
+#endif
+
+  DumpExceptionDataVgaOut (InterruptType, SystemContext);
+
+  //
+  // Use this macro to hang so that the compiler does not optimize out
+  // the following RET instructions. This allows us to return if we
+  // have a debugger attached.
+  //
+  EFI_DEADLOOP ();
+
+#if CPU_EXCEPTION_VGA_SWITCH
+  //
+  // Switch back to the old video mode
+  //
+  if (VideoMode != (UINT16)-1) {
+    SwitchVideoMode (VideoMode);
+  }
+#endif
+
+  return ;
+}
+
 VOID
 TimerHandler (
   IN EFI_EXCEPTION_TYPE    InterruptType,
@@ -369,6 +1107,21 @@ Returns:
   //
   Status = gLegacy8259->GetVector (gLegacy8259, Efi8259Irq0, (UINT8 *) &mTimerVector);
   ASSERT_EFI_ERROR (Status);
+
+  //
+  // Reload GDT, IDT
+  //
+  InitDescriptor ();
+
+  //
+  // Install Exception Handler (0x00 ~ 0x1F)
+  //
+  for (InterruptVector = 0; InterruptVector < 0x20; InterruptVector++) {
+    InstallInterruptHandler (
+      InterruptVector,
+      (VOID (*)(VOID))(UINTN)((UINTN)SystemExceptionHandler + mExceptionCodeSize * InterruptVector)
+      );
+  }
 
   //
   // Install Timer Handler

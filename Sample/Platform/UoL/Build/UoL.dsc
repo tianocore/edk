@@ -113,6 +113,16 @@ EFI_ALIGNMENT_64K       = TRUE
 
 [=============================================================================]
 #
+# These are the libraries that will be built by the master makefile
+#
+[=============================================================================]
+[Libraries]
+DEFINE EDK_PREFIX=
+
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
+
+[=============================================================================]
+#
 # These are platform specific libraries that must be built prior to building
 # certain drivers that depend upon them.
 #
@@ -125,6 +135,8 @@ Sample\Platform\UoL\RuntimeDxe\RtPlatformStatusCode\RtPlatformStatusCode.inf
 
 #Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 #Sample\Universal\Network\Library\NetLib.inf
+
+Foundation\Library\Thunk16\Thunk16Lib.inf
 
 #
 # Shell Library
@@ -182,8 +194,9 @@ Sample\Universal\FirmwareVolume\GuidedSectionExtraction\Crc32SectionExtract\Dxe\
 #
 Sample\Universal\WatchdogTimer\Dxe\WatchDogTimer.inf
 Sample\Universal\Runtime\Dxe\Runtime.inf
-Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
+Sample\Universal\MonotonicCounter\RuntimeDxe\FS\MonotonicCounter.inf
 Sample\Universal\Variable\RuntimeDxe\FS\FSVariable.inf
+#Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf
 Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
 Sample\Platform\UoL\Dxe\PlatformBds\PlatformBds.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\StatusCode.inf
@@ -201,8 +214,12 @@ Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.inf
 # DataHub
 #
 Sample\Universal\DataHub\DataHub\Dxe\DataHub.inf
-#Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
 Sample\Platform\UoL\Dxe\DataHubGen\DataHubGen.inf
+
+#
+# DevPath
+#
+$(DEVPATH_INF)
 
 #
 # CPU Support
@@ -214,10 +231,12 @@ Sample\Cpu\Pentium\SimpleCpu\Dxe\Cpu.inf
 # PC AT Compatabilble Drivers
 #
 Sample\Chipset\PcCompatible\8254Timer\Dxe\8254Timer.inf
+Sample\Chipset\AdvancedConfiguration\SmartTimer\Dxe\SmartTimer.inf FV=NULL
 Sample\Chipset\PcCompatible\8259\Dxe\8259.inf
-Sample\Chipset\PcCompatible\Port92Reset\RuntimeDxe\Reset.inf
-Sample\Chipset\PcCompatible\KbcReset\RuntimeDxe\Reset.inf FV=NULL
+Sample\Chipset\PcCompatible\Port92Reset\RuntimeDxe\Reset.inf FV=NULL
+Sample\Chipset\PcCompatible\KbcReset\RuntimeDxe\Reset.inf
 Sample\Chipset\PcCompatible\Metronome\Dxe\Metronome.inf
+Sample\Chipset\AdvancedConfiguration\AcpiMetronome\Dxe\AcpiMetronome.inf FV=NULL
 Sample\Chipset\PcCompatible\RealTimeClock\RuntimeDxe\RealTimeClock.inf
 
 #
@@ -227,8 +246,14 @@ Sample\Chipset\PcCompatible\PciRootBridgeNoEnumeration\Dxe\PciRootBridgeNoEnumer
 Sample\Bus\Pci\PciBusNoEnumeration\Dxe\PciBusNoEnumeration.inf
 
 #
-# Video Support
+# LegacyBiosThunk interface
 #
+Sample\Csm\LegacyBiosThunk\Dxe\LegacyBiosThunk.inf
+
+#
+# Video Support (User can choose either VgaMiniPort or thunk BiosVideo, or his/her native Video driver)
+#
+Sample\Csm\BiosThunk\Video\Dxe\$(UEFI_PREFIX)BiosVideo.inf    FV=NULL
 Sample\Bus\Pci\VgaMiniPort\Dxe\VgaMiniPort.inf
 #Sample\Bus\Pci\CirrusLogic\Dxe\CirrusLogic5430.inf
 
@@ -236,7 +261,7 @@ Sample\Bus\Pci\VgaMiniPort\Dxe\VgaMiniPort.inf
 # Console Support
 #
 Sample\Universal\Console\ConSplitter\Dxe\ConSplitter.inf
-#Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
+Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
 Sample\Universal\Console\VgaClass\Dxe\VgaClass.inf
 Sample\Universal\Console\Terminal\Dxe\Terminal.inf
 
@@ -253,6 +278,7 @@ Sample\Bus\Pci\Uhci\Dxe\Uhci.inf
 Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf
 Sample\Bus\Usb\UsbBot\Dxe\UsbBot.inf
 Sample\Bus\Usb\UsbCbi\Dxe\Cbi0\UsbCbi0.inf
+Sample\Bus\Usb\UsbCbi\Dxe\Cbi1\UsbCbi1.inf
 Sample\Bus\Usb\UsbKb\Dxe\UsbKb.inf
 Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf
 #
@@ -294,6 +320,11 @@ Sample\Universal\Ebc\Dxe\Ebc.inf
 DEFINE FV=EfiExtended
 
 #
+# Dump Debug Info in DataHub to StdErr Console
+#
+Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
+
+#
 # Drivers necessary to use the debugger
 #
 #Sample\Universal\Debugger\Debugport\Dxe\DebugPort.inf
@@ -307,16 +338,15 @@ Sample\Bus\Isa\Ps2Mouse\Dxe\Ps2Mouse.inf
 #
 # USB Support
 #
-Sample\Bus\Usb\UsbCbi\Dxe\Cbi1\UsbCbi1.inf
 Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf
 
 #
 # Network Support
 #                                   
-#Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf
-#Sample\Universal\Network\Snp32_64\Dxe\SNP.inf
-#Sample\Universal\Network\PxeBc\Dxe\BC.inf
-#Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
+Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf
+Sample\Universal\Network\Snp32_64\Dxe\SNP.inf
+Sample\Universal\Network\PxeBc\Dxe\BC.inf
+Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 
 #
 # UEFI Network Support

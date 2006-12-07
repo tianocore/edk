@@ -133,6 +133,7 @@ makefiles :
     -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
+    -d DEVPATH_INF=$(DEVPATH_INF)           \
     -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     -xref FV\Guid.xref                      \
@@ -156,6 +157,7 @@ fast_makefiles :
     -d SHELL_INF=$(SHELL_INF)               \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
     -d CAPSULE_INF=$(CAPSULE_INF)           \
+    -d DEVPATH_INF=$(DEVPATH_INF)           \
     -d GRAPHICS_INF=$(GRAPHICS_INF)         \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
     -xref FV\Guid.xref                      \

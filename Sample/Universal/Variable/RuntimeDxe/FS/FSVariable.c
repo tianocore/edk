@@ -307,16 +307,14 @@ Returns:
   Status = mGlobal->VariableStore[StorageType]->Erase (
                                                   mGlobal->VariableStore[StorageType]
                                                   );
-  if (!EFI_ERROR (Status)) {
-    Status = mGlobal->VariableStore[StorageType]->Write (
+  Status = mGlobal->VariableStore[StorageType]->Write (
                                                     mGlobal->VariableStore[StorageType],
                                                     0,
                                                     ValidBufferSize,
                                                     ValidBuffer
                                                     );
-  }
 
-  ASSERT_EFI_ERROR (Status);
+  // ASSERT_EFI_ERROR (Status);
 
   mGlobal->LastVariableOffset[StorageType] = ValidBufferSize;
   gBS->FreePool (ValidBuffer);
@@ -718,7 +716,11 @@ Returns:
                                                         sizeof (Variable.CurrPtr->State),
                                                         &State
                                                         );
-      return Status;
+      //
+      // NOTE: Write operation at least can write data to memory cache
+      //       Discard file writing failure here.
+      //
+      return EFI_SUCCESS;
     }
 
     return EFI_NOT_FOUND;
@@ -747,9 +749,10 @@ Returns:
                                                           sizeof (Variable.CurrPtr->State),
                                                           &State
                                                           );
-        if (EFI_ERROR (Status)) {
-          return Status;
-        }
+        //
+        // NOTE: Write operation at least can write data to memory cache
+        //       Discard file writing failure here.
+        //
       }
     }
     //
@@ -829,12 +832,10 @@ Returns:
                                                     VarSize,
                                                     NextVariable
                                                     );
-    if (EFI_ERROR (Status)) {
-      //
-      // Error: Cannot add new variable
-      //
-      return Status;
-    }
+    //
+    // NOTE: Write operation at least can write data to memory cache
+    //       Discard file writing failure here.
+    //
     mGlobal->LastVariableOffset[StorageType] += VarSize;
 
     //
@@ -850,14 +851,10 @@ Returns:
                                                       sizeof (Variable.CurrPtr->State),
                                                       &State
                                                       );
-      if (EFI_ERROR (Status)) {
-        //
-        // Error: new variable is added, but old variable cannot be deleted throughly
-        //        if this error happens, the result will be indeterminated.
-        //
-        DEBUG ((EFI_D_ERROR, "FSVariable: old variable cannot be deleted throughtly (fetal error) - %r\n", Status));
-        ASSERT_EFI_ERROR (Status);
-      }
+      //
+      // NOTE: Write operation at least can write data to memory cache
+      //       Discard file writing failure here.
+      //
     }
   }
 
@@ -931,8 +928,7 @@ Returns:
   }
 
   VariableStoreHeader = (VARIABLE_STORE_HEADER *) mGlobal->VariableBase[
-                                ((Attributes & EFI_VARIABLE_NON_VOLATILE) == 0) ?
-                                NonVolatile : Volatile
+                                (Attributes & EFI_VARIABLE_NON_VOLATILE) ? NonVolatile : Volatile
                                 ];
   //
   // Now let's fill *MaximumVariableStorageSize *RemainingVariableStorageSize
@@ -1204,6 +1200,9 @@ OnSimpleFileSystemInstall (
                                 );
     }
     if (EFI_ERROR (Status)) {
+      //
+      // If write is failed, just remain using memory NV
+      //
       VariableStore->Destruct (VariableStore);
       return;
     }

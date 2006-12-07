@@ -63,6 +63,11 @@ EhciRoutingToClassHostController (
   IN  EFI_PCI_IO_PROTOCOL            *PciIo
   );
 
+EFI_STATUS
+TurnOffUSBEmulation (
+  IN  EFI_PCI_IO_PROTOCOL            *PciIo
+  );
+
 //
 // Ehci Driver Global Variables
 //
@@ -247,6 +252,9 @@ EhciRoutingDriverBindingStart (
   Status = EhciRoutingToClassHostController (PciIo);
   ASSERT_EFI_ERROR (Status);
 
+  Status = TurnOffUSBEmulation (PciIo);
+  ASSERT_EFI_ERROR (Status);
+
   return Status;
 }
 
@@ -340,7 +348,7 @@ EhciRoutingToClassHostController (
     return Status;
   }
 
-  DEBUG ((EFI_D_EHCI, "Ehci CapLength=0x%x\n", CapLength));
+  DEBUG ((EFI_D_ERROR, "Ehci CapLength=0x%x\n", CapLength));
 
   //
   // Read CONFIGFLAG;
@@ -365,7 +373,7 @@ EhciRoutingToClassHostController (
     return Status;
   }
 
-  DEBUG ((EFI_D_EHCI, "Ehci CONFIGFLAG=0x%x\n", Data));
+  DEBUG ((EFI_D_ERROR, "Ehci CONFIGFLAG=0x%x\n", (UINTN)Data));
 
   if ((Data & 0x1) != 0) {
     DEBUG ((EFI_D_ERROR, "Ehci CONFIGFLAG has not been cleared.Clear it now\n"));
@@ -396,4 +404,96 @@ EhciRoutingToClassHostController (
 
   return Status;
 
+}
+
+EFI_STATUS
+TurnOffUSBEmulation (
+  IN  EFI_PCI_IO_PROTOCOL    *PciIo
+  )
+/*++
+  
+  Routine Description:
+    Disable USB Emulation
+  
+  Arguments:
+    PciIo  The pointer to the EFI_PCI_IO_PROTOCOL
+  
+  Returns:
+    EFI_STATUS
+--*/
+{
+  UINT32      Data;
+  UINT32      HCCPARAMS;
+  UINT32      EECP;
+  EFI_STATUS  Status;
+
+  //
+  // Enable Pci master, memory space access
+  //
+  Status = PciIo->Attributes (
+                    PciIo,
+                    EfiPciIoAttributeOperationEnable,
+                    EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_BUS_MASTER,
+                    NULL
+                    );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = PciIo->Mem.Read (
+                        PciIo,
+                        EfiPciIoWidthUint32,
+                        0,
+                        EHCI_MEMORY_HCCPARAMS,
+                        1,
+                        &HCCPARAMS
+                        );
+
+  if (EFI_ERROR (Status)) {
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationDisable,
+                      EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_BUS_MASTER,
+                      NULL
+                      );
+    return Status;
+  }
+  EECP = (HCCPARAMS >> 8) & 0xFF;
+
+  DEBUG ((EFI_D_ERROR, "Ehci EECP=0x%x\n", (UINTN)EECP));
+
+  if (EECP < 0x40) {
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationDisable,
+                      EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_BUS_MASTER,
+                      NULL
+                      );
+    return Status;
+  }
+
+  //
+  // Clear USB_EMU;
+  //
+  Data = 0;
+  Status = PciIo->Pci.Write (
+                         PciIo,
+                         EfiPciIoWidthUint32,
+                         EECP + EHCI_PCI_USB_EMU,
+                         1,
+                         &Data
+                         );
+
+  //
+  // Disable the device
+  //
+  Status = PciIo->Attributes (
+                    PciIo,
+                    EfiPciIoAttributeOperationDisable,
+                    EFI_PCI_IO_ATTRIBUTE_MEMORY | EFI_PCI_IO_ATTRIBUTE_BUS_MASTER,
+                    NULL
+                    );
+
+  return Status;
 }

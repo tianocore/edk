@@ -324,6 +324,15 @@ HOB_TEMPLATE  gHobTemplate = {
       0,
     }
   },
+  { // Acpi Description Hob
+    EFI_HOB_TYPE_GUID_EXTENSION,       // Hob type
+    sizeof (ACPI_DESCRIPTION_HOB),     // Hob size
+    0,                                 // reserved
+    EFI_ACPI_DESCRIPTION_GUID,
+    {
+      0,
+    }
+  },
   { // EndOfHobList
     EFI_HOB_TYPE_END_OF_HOB_LIST,      // HobType
     sizeof (EFI_HOB_GENERIC_HEADER),   // HobLength

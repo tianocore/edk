@@ -59,6 +59,15 @@ PLATFORM=$(PROJECT_NAME)
 
 [build.fv.Fv]
 
+[=============================================================================]
+#
+# These are the libraries that will be built by the master makefile
+#
+[=============================================================================]
+[Libraries]
+DEFINE EDK_PREFIX=
+
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
 [=============================================================================]
 #

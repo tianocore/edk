@@ -414,6 +414,7 @@ Returns:
 {
   EFI_STATUS                Status;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *TempDevicePath;
 
   DevicePath = NULL;
   Status = gBS->HandleProtocol (
@@ -424,20 +425,34 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  TempDevicePath = DevicePath;
 
+  //
+  // Register Keyboard
+  //
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gPnpPs2KeyboardDeviceNode);
 
   BdsLibUpdateConsoleVariable (L"ConIn", DevicePath, NULL);
 
-  DevicePath = NULL;
-  Status = gBS->HandleProtocol (
-                  DeviceHandle,
-                  &gEfiDevicePathProtocolGuid,
-                  &DevicePath
-                  );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+  //
+  // Register COM1
+  //
+  DevicePath = TempDevicePath;
+  gPnp16550ComPortDeviceNode.UID = 0;
+
+  DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gPnp16550ComPortDeviceNode);
+  DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gUartDeviceNode);
+  DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gTerminalTypeDeviceNode);
+
+  BdsLibUpdateConsoleVariable (L"ConOut", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (L"ConIn", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (L"ErrOut", DevicePath, NULL);
+
+  //
+  // Register COM2
+  //
+  DevicePath = TempDevicePath;
+  gPnp16550ComPortDeviceNode.UID = 1;
 
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gPnp16550ComPortDeviceNode);
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gUartDeviceNode);
@@ -449,6 +464,93 @@ Returns:
 
   return EFI_SUCCESS;
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_STATUS
+GetGopDevicePath (
+   IN  EFI_DEVICE_PATH_PROTOCOL *PciDevicePath,
+   OUT EFI_DEVICE_PATH_PROTOCOL **GopDevicePath
+   )
+{
+  UINTN                           Index;
+  EFI_STATUS                      Status;
+  EFI_HANDLE                      PciDeviceHandle;
+  EFI_DEVICE_PATH_PROTOCOL        *TempDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL        *TempPciDevicePath;
+  UINTN                           GopHandleCount;
+  EFI_HANDLE                      *GopHandleBuffer;
+
+  if (PciDevicePath == NULL || GopDevicePath == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  // Initialize the GopDevicePath to be PciDevicePath
+  //
+  *GopDevicePath    = PciDevicePath;
+  TempPciDevicePath = PciDevicePath;
+
+  Status = gBS->LocateDevicePath (
+                  &gEfiDevicePathProtocolGuid,
+                  &TempPciDevicePath,
+                  &PciDeviceHandle
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Try to connect this handle, so that GOP dirver could start on this 
+  // device and create child handles with GraphicsOutput Protocol installed
+  // on them, then we get device paths of these child handles and select 
+  // them as possible console device.
+  //
+  gBS->ConnectController (PciDeviceHandle, NULL, NULL, FALSE);
+
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiGraphicsOutputProtocolGuid,
+                  NULL,
+                  &GopHandleCount,
+                  &GopHandleBuffer
+                  );
+  if (!EFI_ERROR (Status)) {
+    //
+    // Add all the child handles as possible Console Device
+    //
+    for (Index = 0; Index < GopHandleCount; Index++) {
+      Status = gBS->HandleProtocol (GopHandleBuffer[Index], &gEfiDevicePathProtocolGuid, &TempDevicePath);
+      if (EFI_ERROR (Status)) {
+        continue;
+      }
+      if (EfiCompareMem (
+            PciDevicePath,
+            TempDevicePath,
+            EfiDevicePathSize (PciDevicePath) - END_DEVICE_PATH_LENGTH
+            ) == 0) {
+        //
+        // In current implementation, we only enable one of the child handles
+        // as console device, i.e. sotre one of the child handle's device
+        // path to variable "ConOut"
+        // In futhure, we could select all child handles to be console device
+        //       
+
+        *GopDevicePath = TempDevicePath;
+
+        //
+        // Delete the PCI device's path that added by GetPlugInPciVgaDevicePath()
+        // Add the integrity GOP device path.
+        //
+        BdsLibUpdateConsoleVariable (L"ConOutDev", NULL, PciDevicePath);
+        BdsLibUpdateConsoleVariable (L"ConOutDev", TempDevicePath, NULL);
+      }
+    }
+    gBS->FreePool (GopHandleBuffer);
+  }
+
+  return EFI_SUCCESS;
+}
+#endif
 
 EFI_STATUS
 PreparePciVgaDevicePath (
@@ -475,11 +577,7 @@ Returns:
   EFI_STATUS                Status;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  UINTN                     Index;
-  UINTN                     GopHandleCount;
-  EFI_HANDLE                *GopHandleBuffer;
   EFI_DEVICE_PATH_PROTOCOL  *GopDevicePath;
-  EFI_DEVICE_PATH_PROTOCOL  *TempDevicePath;
 #endif  
 
   DevicePath = NULL;
@@ -491,62 +589,10 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
+  
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  //
-  // Initial GopDevicePath
-  //
-  GopDevicePath = DevicePath;
-
-  //
-  // Try to connect this handle, so that GOP dirver could start on this 
-  // device and create child handles with GraphicsOutput Protocol installed
-  // on them, then we get device paths of these child handles and select 
-  // them as possible console device.
-  //
-  Status = gBS->ConnectController (DeviceHandle, NULL, NULL, FALSE);
-
-  if (!EFI_ERROR (Status)) {
-    Status = gBS->LocateHandleBuffer (
-                    ByProtocol,
-                    &gEfiGraphicsOutputProtocolGuid,
-                    NULL,
-                    &GopHandleCount,
-                    &GopHandleBuffer
-                    );
-    if (!EFI_ERROR (Status)) {
-      //
-      // Add all the child handles as possible Console Device
-      //
-      for (Index = 0; Index < GopHandleCount; Index++) {
-        Status = gBS->HandleProtocol (GopHandleBuffer[Index], &gEfiDevicePathProtocolGuid, &TempDevicePath);
-        if (EFI_ERROR (Status)) {
-          continue;
-        }
-        if (EfiCompareMem (
-              DevicePath,
-              TempDevicePath,
-              EfiDevicePathSize (DevicePath) - END_DEVICE_PATH_LENGTH
-              ) == 0) {
-          //
-          // In current implementation, we only enable one of the child handles
-          // as console device, i.e. sotre one of the child handle's device
-          // path to variable "ConOut"
-          // In futhure, we could select all child handles to be console device
-          //
-          GopDevicePath = TempDevicePath;
-          
-          BdsLibUpdateConsoleVariable (L"ConOutDev", GopDevicePath, NULL);
-        }
-      }
-      gBS->FreePool (GopHandleBuffer);
-
-      //
-      // Update DevicePath to be correct GOP device path
-      //
-      DevicePath = GopDevicePath;
-    }
-  }
+  GetGopDevicePath (DevicePath, &GopDevicePath);
+  DevicePath = GopDevicePath;
 #endif
 
   BdsLibUpdateConsoleVariable (L"ConOut", DevicePath, NULL);
@@ -666,7 +712,8 @@ Returns:
     //
     // Here we decide whether it is LPC Bridge
     //
-    if (IS_PCI_LPC (&Pci)) {
+    if ((IS_PCI_LPC (&Pci)) ||
+        ((IS_PCI_ISA_PDECODE (&Pci)) && (Pci.Hdr.VendorId == 0x8086) && (Pci.Hdr.DeviceId == 0x7110))) {
       //
       // Add IsaKeyboard to ConIn,
       // add IsaSerial to ConOut, ConIn, ErrOut
