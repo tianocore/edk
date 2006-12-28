@@ -473,19 +473,19 @@ main (
   // Parse command line
   //
   for (Index = 0; Index < argc; Index ++) {
-    if (stricmp (argv[Index], "-l") == 0) {
+    if (_stricmp (argv[Index], "-l") == 0) {
       ListDrive ();
       return 0;
     }
-    else if (stricmp (argv[Index], "-mbr") == 0) {
+    else if (_stricmp (argv[Index], "-mbr") == 0) {
       ProcessMbr = TRUE;
     }
-    else if ((strnicmp (argv[Index], "-if=", 4) == 0) ||
-             (strnicmp (argv[Index], "-of=", 4) == 0)
+    else if ((_strnicmp (argv[Index], "-if=", 4) == 0) ||
+             (_strnicmp (argv[Index], "-of=", 4) == 0)
              ) {
       if (argv[Index][6] == '\0' && argv[Index][5] == ':' && IsLetter (argv[Index][4])) {
         VolumeLetter = argv[Index][4];
-        if (strnicmp (argv[Index], "-if=", 4) == 0) {
+        if (_strnicmp (argv[Index], "-if=", 4) == 0) {
           WriteToDisk = FALSE;
         }
       }

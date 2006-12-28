@@ -165,6 +165,17 @@ UsbBotComponentNameGetControllerName (
   }
   
   //
+  // Make sure this driver is currently managing ControllerHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gUsbBotDriverBinding.DriverBindingHandle,
+             &gEfiUsbIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  //
   // Get the device context
   //
   Status = gBS->OpenProtocol (
@@ -175,7 +186,6 @@ UsbBotComponentNameGetControllerName (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-
   if (EFI_ERROR (Status)) {
     return Status;
   }

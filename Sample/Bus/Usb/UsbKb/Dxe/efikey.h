@@ -85,6 +85,7 @@ typedef struct {
   UINT8                         ShiftOn;
   UINT8                         NumLockOn;
   UINT8                         CapsOn;
+  UINT8                         ScrollOn;
   UINT8                         LastKeyCodeArray[8];
   UINT8                         CurKeyChar;
 
@@ -133,6 +134,7 @@ typedef struct {
 typedef struct {
   UINT8 NumLock : 1;
   UINT8 CapsLock : 1;
-  UINT8 Resrvd : 6;
+  UINT8 ScrollLock : 1;
+  UINT8 Resrvd : 5;
 } LED_MAP;
 #endif

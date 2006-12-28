@@ -273,11 +273,18 @@ Returns:
     // Otherwise load at the address at which it was linked.
     //
     Status = CoreAllocatePages (
-               (Image->ImageContext.RelocationsStripped) ? AllocateAddress : AllocateAnyPages,
+               AllocateAddress,
                Image->ImageContext.ImageCodeMemoryType,
                Image->NumberOfPages,
-               &(Image->ImageContext.ImageAddress)
+               &Image->ImageContext.ImageAddress
                );
+    if (EFI_ERROR (Status) && !Image->ImageContext.RelocationsStripped)
+      Status = CoreAllocatePages (
+                 AllocateAnyPages,
+                 Image->ImageContext.ImageCodeMemoryType,
+                 Image->NumberOfPages,
+                 &Image->ImageContext.ImageAddress
+                 );
     if (EFI_ERROR (Status)) {
       return Status;
     }

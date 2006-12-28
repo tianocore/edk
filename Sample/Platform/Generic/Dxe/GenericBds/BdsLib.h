@@ -436,4 +436,11 @@ BdsLibGetImageHeader (
   OUT EFI_IMAGE_OPTIONAL_HEADER   *OptionalHeader
   );
   
+EFI_STATUS
+BdsLibGetHiiHandles (
+  IN     EFI_HII_PROTOCOL *Hii,
+  IN OUT UINT16           *HandleBufferLength,
+  OUT    EFI_HII_HANDLE   **HiiHandles
+  );
+    
 #endif // _BDS_LIB_H_

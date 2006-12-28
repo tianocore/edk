@@ -162,6 +162,17 @@ WinNtConsoleComponentNameGetControllerName (
   }
 
   //
+  // Make sure this driver is currently managing ControllerHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gWinNtConsoleDriverBinding.DriverBindingHandle,
+             &gEfiWinNtIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
+  //
   // Get out context back
   //
   Status = gBS->OpenProtocol (

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,9 +22,10 @@ Abstract:
 #ifndef _STATUS_CODE_DATA_TYPE_ID_H__
 #define _STATUS_CODE_DATA_TYPE_ID_H__
 
+
 #include "EfiStatusCode.h"
 #include EFI_PROTOCOL_DEFINITION (DebugSupport)
-
+#include EFI_PROTOCOL_DEFINITION (Hii)
 //
 // The size of string
 //
@@ -61,18 +62,33 @@ extern EFI_GUID gEfiStatusCodeDataTypeStringGuid;
 extern EFI_GUID gEfiStatusCodeSpecificDataGuid;
 
 #pragma pack(1)
+
 typedef enum {
   EfiStringAscii,
   EfiStringUnicode,
   EfiStringToken
 } EFI_STRING_TYPE;
 
+//
+// HII string token
+//
 typedef struct {
-  EFI_STRING_TYPE StringType;
-  //
-  // NULL terminated string follows here
-  //
+EFI_HII_HANDLE Handle;
+STRING_REF Token;
+} EFI_STATUS_CODE_STRING_TOKEN;
+
+typedef union {
+CHAR8   *Ascii;
+CHAR16  *Unicode;
+EFI_STATUS_CODE_STRING_TOKEN Hii;
+} EFI_STATUS_CODE_STRING;
+
+typedef struct {
+  EFI_STATUS_CODE_DATA   DataHeader;
+  EFI_STRING_TYPE        StringType;
+  EFI_STATUS_CODE_STRING String;
 } EFI_STATUS_CODE_STRING_DATA;
+
 #pragma pack()
 //
 // Debug Assert Data. This is part of Status Code Specification

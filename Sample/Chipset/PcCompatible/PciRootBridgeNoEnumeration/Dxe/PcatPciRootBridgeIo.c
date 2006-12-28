@@ -844,7 +844,7 @@ PcatRootBridgeIoFreeBuffer (
   if( HostAddress == NULL ){
   	 return EFI_INVALID_PARAMETER;
   } 
-  return gBS->FreePages ((EFI_PHYSICAL_ADDRESS)HostAddress, Pages);
+  return gBS->FreePages ((EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress, Pages);
 }
 
 EFI_STATUS

@@ -195,9 +195,9 @@ ParseCommandLine (
       //
       // 2. Specifying CompressType
       //
-      if (stricmp ((*argv)+2, "EFI") == 0) {
+      if (_stricmp ((*argv)+2, "EFI") == 0) {
         CurrentType = EFI_COMPRESS;
-      } else if (stricmp ((*argv)+2, "Tiano") == 0) {
+      } else if (_stricmp ((*argv)+2, "Tiano") == 0) {
         CurrentType = TIANO_COMPRESS;
       } else {
         fprintf (stdout, "  ERROR: CompressType %s not supported!\n", (*argv)+2);

@@ -124,8 +124,11 @@ Abstract:
 //
 #pragma warning ( disable : 4100 )
 
+//
+// This warning is caused by empty (after preprocessing) souce file.
+//
+#pragma warning ( disable : 4206 )
 
-//#pragma warning ( disable : 4133 )
 
 #endif
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 1999 - 2002, Intel Corporation
+Copyright (c) 1999 - 2006, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -32,19 +32,6 @@ EFI_FORWARD_DECLARATION (EFI_SMM_ACCESS_PROTOCOL);
   { \
     0x3792095a, 0xe309, 0x4c1e, 0xaa, 0x01, 0x85, 0xf5, 0x65, 0x5a, 0x17, 0xf1 \
   }
-
-//
-// SMM Access specification constant and types
-//
-// *******************************************************
-//  EFI_SMRAM_STATE
-// *******************************************************
-//
-#define EFI_SMRAM_OPEN    0x00000001
-#define EFI_SMRAM_CLOSED  0x00000002
-#define EFI_SMRAM_LOCKED  0x00000004
-#define EFI_CACHEABLE     0x00000008
-#define EFI_ALLOCATED     0x00000010
 
 //
 // SMM Access specification Data Structures

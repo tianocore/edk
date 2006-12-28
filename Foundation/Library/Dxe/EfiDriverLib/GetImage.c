@@ -30,15 +30,6 @@ GetImage (
   OUT VOID               **Buffer,
   OUT UINTN              *Size
   )
-/*++
-
-  Routine Description:
-
-  Arguments:
-
-  Returns:
-
---*/
 {
   EFI_STATUS                    Status;
   EFI_HANDLE                    *HandleBuffer;
@@ -90,8 +81,25 @@ GetImage (
                         &AuthenticationStatus
                         );
 
-    if (EFI_ERROR (Status) && (SectionType != EFI_SECTION_RAW)) {
+    if (EFI_ERROR (Status) && (SectionType == EFI_SECTION_TE)) {
+      //
+      // Try reading PE32 section, since the TE section does not exist
+      //
+      *Buffer = NULL;
+      *Size   = 0;
+      Status  = Fv->ReadSection (
+                      Fv,
+                      NameGuid,
+                      EFI_SECTION_PE32,
+                      0,
+                      Buffer,
+                      Size,
+                      &AuthenticationStatus
+                      );
+    }
 
+    if (EFI_ERROR (Status) && 
+        ((SectionType == EFI_SECTION_TE) || (SectionType == EFI_SECTION_PE32))) {
       //
       // Try reading raw file, since the desired section does not exist
       //

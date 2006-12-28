@@ -24,7 +24,7 @@ Revision History
 
 #ifdef EFI_DEBUG
 UINTN                       gEHCDebugLevel  = EFI_D_INFO;
-UINTN                       gEHCErrorLevel  = EFI_D_INFO;
+UINTN                       gEHCErrorLevel  = EFI_D_ERROR;
 #endif
 
 //
@@ -229,9 +229,6 @@ EFI_DRIVER_BINDING_PROTOCOL gEhciDriverBinding = {
   NULL
 };
 
-UINT32                      mUsbCapabilityLen;
-UINT32                      mDeviceSpeed[16];
-
 EFI_DRIVER_ENTRY_POINT (EhciDriverEntryPoint)
 
 EFI_STATUS
@@ -398,7 +395,6 @@ EhciDriverBindingStart (
   UINT8                 MaxSpeed;
   UINT8                 PortNumber;
   UINT8                 Is64BitCapable;
-
   //
   // Open the PciIo Protocol
   //
@@ -414,7 +410,6 @@ EhciDriverBindingStart (
     Status = EFI_OUT_OF_RESOURCES;
     goto exit;
   }
-  
   //
   // Enable the USB Host Controller
   //
@@ -485,6 +480,12 @@ EhciDriverBindingStart (
     goto uninstall_usb2hc_protocol;
   }
 
+  ClearLegacySupport (HcDev);
+  HostReset (HcDev);
+
+  DEBUG_CODE (
+   DumpEHCIPortsStatus (HcDev);
+  )
   //
   // Create and Init Perodic Frame List
   //
@@ -1333,9 +1334,9 @@ EhciGetRootHubPortStatus (
     // Not Low Speed Device Attached
     //
     if ((PORTSC_CCS & PortStatusControlReg) && (PORTSC_CSC & PortStatusControlReg)) {
-      mDeviceSpeed[PortNumber] = IsHighSpeedDevice (This, PortNumber) ? USB_PORT_STAT_HIGH_SPEED : 0;
+      HcDev->DeviceSpeed[PortNumber] = IsHighSpeedDevice (This, PortNumber) ? USB_PORT_STAT_HIGH_SPEED : 0;
     }
-    PortStatus->PortStatus |= mDeviceSpeed[PortNumber];
+    PortStatus->PortStatus |= HcDev->DeviceSpeed[PortNumber];
   }
   //
   // Fill Port Status Change bits

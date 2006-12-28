@@ -167,15 +167,14 @@ IdeControllerGetControllerName (
   EFI_BLOCK_IO_PROTOCOL *BlockIo;
   IDE_BLK_IO_DEV        *IdeBlkIoDevice;
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gIdeControllerDriverGuid,
-                  NULL,
-                  gIdeControllerDriverBinding.DriverBindingHandle,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
-                  );
-
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gIdeControllerDriverBinding.DriverBindingHandle,
+             &gEfiPciIoProtocolGuid
+             );
   if (EFI_ERROR (Status)) {
     return Status;
   }

@@ -429,9 +429,7 @@ GraphicsConsoleControllerDriverStart (
                          );
       if (!EFI_ERROR (Status)) {
         if ((Info->HorizontalResolution == 800) &&
-            (Info->VerticalResolution == 600) &&
-            ((Info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor) ||
-             (Info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor))) {
+            (Info->VerticalResolution == 600)) {
           Status = Private->GraphicsOutput->SetMode (Private->GraphicsOutput, ModeNumber);
           if (!EFI_ERROR (Status)) {
             gBS->FreePool (Info);
@@ -1209,17 +1207,17 @@ GraphicsConsoleConOutSetMode (
   UINT32                               ColorDepth;
   UINT32                               RefreshRate;
 
-  Private   = GRAPHICS_CONSOLE_CON_OUT_DEV_FROM_THIS (This);
-  GraphicsOutput = Private->GraphicsOutput;
-  UgaDraw   = Private->UgaDraw;
-  ModeData  = &(Private->ModeData[ModeNumber]);
-
   //
   // Make sure the requested mode number is supported
   //
   if (ModeNumber >= (UINTN) This->Mode->MaxMode) {
     return EFI_UNSUPPORTED;
   }
+
+  Private   = GRAPHICS_CONSOLE_CON_OUT_DEV_FROM_THIS (This);
+  GraphicsOutput = Private->GraphicsOutput;
+  UgaDraw   = Private->UgaDraw;
+  ModeData  = &(Private->ModeData[ModeNumber]);
 
   if (ModeData->Columns <= 0 && ModeData->Rows <= 0) {
     return EFI_UNSUPPORTED;

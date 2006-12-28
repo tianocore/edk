@@ -161,6 +161,7 @@ typedef struct {
 #define PCI_CLASS_DISPLAY_OTHER       0x80
 #define PCI_CLASS_DISPLAY_GFX         0x80
 #define PCI_CLASS_GFX                 0x80  // obsolete
+
 #define PCI_CLASS_BRIDGE              0x06
 #define PCI_CLASS_BRIDGE_HOST         0x00
 #define PCI_CLASS_BRIDGE_ISA          0x01
@@ -238,6 +239,7 @@ typedef struct {
 #define PCI_CLASS_SERIAL_ACCESS_BUS   0x01
 #define PCI_CLASS_SERIAL_SSA          0x02
 #define PCI_CLASS_SERIAL_USB          0x03
+#define PCI_IF_EHCI                   0x20
 #define PCI_CLASS_SERIAL_FIBRECHANNEL 0x04
 #define PCI_CLASS_SERIAL_SMB          0x05
 
@@ -277,6 +279,7 @@ typedef struct {
 #define IS_PCI_ISA_PDECODE(_p)        IS_CLASS3 (_p, PCI_CLASS_BRIDGE, PCI_CLASS_BRIDGE_ISA_PDECODE, 0)
 #define IS_PCI_P2P(_p)                IS_CLASS3 (_p, PCI_CLASS_BRIDGE, PCI_CLASS_BRIDGE_P2P, 0)
 #define IS_PCI_P2P_SUB(_p)            IS_CLASS3 (_p, PCI_CLASS_BRIDGE, PCI_CLASS_BRIDGE_P2P, 1)
+#define IS_PCI_16550_SERIAL(_p)       IS_CLASS3 (_p, PCI_CLASS_SCC, PCI_SUBCLASS_SERIAL, PCI_IF_16550)
 #define IS_PCI_USB(_p)                IS_CLASS2 (_p, PCI_CLASS_SERIAL, PCI_CLASS_SERIAL_USB)
 
 #define HEADER_TYPE_DEVICE            0x00

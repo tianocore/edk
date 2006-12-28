@@ -455,19 +455,32 @@ Returns:
       // Build ACPI descriptors for the resources on the PCI Root Bridge
       //
       Status = ConstructConfiguration(PrivateData);
+      ASSERT_EFI_ERROR (Status);
 
       //
       // Create the handle for this PCI Root Bridge 
       //
       Status = gBS->InstallMultipleProtocolInterfaces (
                      &PrivateData->Handle,              
-                     &gEfiDevicePathProtocolGuid,      PrivateData->DevicePath,
-                     &gEfiPciRootBridgeIoProtocolGuid, &PrivateData->Io,
+                     &gEfiDevicePathProtocolGuid,
+                     PrivateData->DevicePath,
+                     &gEfiPciRootBridgeIoProtocolGuid,
+                     &PrivateData->Io,
                      NULL
                      );
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
+      ASSERT_EFI_ERROR (Status);
+
+      //
+      // Contruct DeviceIoProtocol
+      //
+      Status = DeviceIoConstructor (
+                 PrivateData->Handle,
+                 &PrivateData->Io,
+                 PrivateData->DevicePath,
+                 (UINT16)PrivateData->PrimaryBus,
+                 (UINT16)PrivateData->SubordinateBus
+                 );
+      ASSERT_EFI_ERROR (Status);
 
       //
       // Scan this PCI Root Bridge for PCI Option ROMs and add them to the PCI Option ROM Table

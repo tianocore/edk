@@ -164,6 +164,17 @@ EhciComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
   //
+  // Make sure this driver is currently managing ControllerHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gEhciDriverBinding.DriverBindingHandle,
+             &gEfiPciIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  //
   // Get the device context
   //
   Status = gBS->OpenProtocol (
@@ -174,7 +185,6 @@ EhciComponentNameGetControllerName (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-
   if (EFI_ERROR (Status)) {
     return Status;
   }

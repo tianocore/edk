@@ -24,12 +24,13 @@
 TOOLCHAIN = TOOLCHAIN_MSVC
 !ENDIF
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
 #
 # Define some macros we use here. Should get rid of them someday and 
 # get rid of the extra level of indirection.
 #
+TARGET_NAME        = Common
 TARGET_SRC_DIR     = $(EDK_TOOLS_SOURCE)\$(TARGET_NAME)
 COMMON_SOURCE      = $(EDK_TOOLS_COMMON)
 
@@ -112,8 +113,23 @@ all: $(TARGET_LIB)
 # Build LIB
 #
 
+#
+# Add Binary Build description for this lib.
+#
+
+!IF (("$(EFI_BINARY_TOOLS)" == "YES") && EXIST($(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).lib))
+$(TARGET_LIB): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).lib
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).lib $(TARGET_LIB) /Y
+  if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb \
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb /Y
+!ELSE
 $(TARGET_LIB): $(OBJECTS)
   $(LIB_EXE) $(LIB_FLAGS) $(OBJECTS) /OUT:$(TARGET_LIB)
+  if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
+  if exist $(TARGET_LIB) copy $(TARGET_LIB) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).lib /Y
+  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb \
+  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb /Y
+!ENDIF
 
 clean:
   @if exist $(EDK_TOOLS_OUTPUT)\ParseInf.* del /q $(EDK_TOOLS_OUTPUT)\ParseInf.* > NUL

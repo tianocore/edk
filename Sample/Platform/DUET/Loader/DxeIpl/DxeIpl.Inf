@@ -1,0 +1,78 @@
+#/*++
+# 
+# Copyright (c) 2006, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#  Module Name:
+#    DxeIpl.inf
+#
+#  Abstract:
+#
+#--*/
+
+[defines]
+BASE_NAME            = DxeIpl
+FILE_GUID            = 0634229B-E4B5-4421-9C7D-2D200B7CF732
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  DxeInit.c
+  LegacyTable.c
+  LegacyTable.h
+  PpisNeededByDxeCore.c
+  PpisNeededByDxeCore.h
+  HobGeneration.c
+  HobGeneration.h
+  SerialStatusCode.c
+  SerialStatusCode.h
+  Debug.c
+  Debug.h
+  
+[sources.x64]
+  X64\CpuIoAccess.asm
+  X64\EnterDxeCore.asm
+  X64\Paging.c
+  X64\VirtualMemory.h
+
+[sources.Ia32]
+  Ia32\CpuIoAccess.asm
+  Ia32\EnterDxeCore.asm
+  Ia32\Paging.c
+  Ia32\VirtualMemory.h
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Include\Pei
+  $(EDK_SOURCE)\Foundation\Library\Pei\Include
+  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
+  ..\EfiLdr
+  $(DEST_DIR)
+  
+[libraries.common]
+  PeiLib
+  EfiCommonLib
+  EfiProtocolLib
+  EdkProtocolLib
+  ArchProtocolLib
+  EdkGuidLib
+  EdkFrameworkGuidLib
+  EfiGuidLib
+
+[nmake.common]
+  C_STD_INCLUDE=
+  IMAGE_ENTRY_POINT=DxeInit

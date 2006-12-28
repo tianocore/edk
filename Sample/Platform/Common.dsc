@@ -260,7 +260,6 @@ all :
           BASE_NAME=$(BASE_NAME)           \
           PLATFORM=$(PLATFORM)             \
           SOURCE_FV=$(SOURCE_FV)           \
-          EFI_FVMAIN_COMPACT=$(EFI_FVMAIN_COMPACT) \
           PACKAGE_FILENAME=$(PACKAGE_FILENAME)
 
 [=============================================================================]
@@ -362,7 +361,6 @@ LOCALIZE_TARGETS = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
 !ENDIF
 
 TARGET_LOCAL_LIB  = $(DEST_DIR)\$(BASE_NAME)Local.lib
-BIN_TARGETS       = $(BIN_TARGETS) $(TARGET_LOCAL_LIB)
 
 #
 # LIB all the object files into our (local) target lib file. Put
@@ -380,7 +378,7 @@ TARGET_DPX      = $(DEST_DIR)\$(BASE_NAME).dpx
 TARGET_UI       = $(DEST_DIR)\$(BASE_NAME).ui
 TARGET_VER      = $(DEST_DIR)\$(BASE_NAME).ver
 TARGET_MAP      = $(DEST_DIR)\$(BASE_NAME).map
-TARGET_PDB      = $(EFI_SYMBOL_PATH)\$(BASE_NAME).pdb
+TARGET_PDB      = $(BIN_DIR)\$(BASE_NAME).pdb
 TARGET_SYM      = $(BIN_DIR)\$(BASE_NAME).sym
 
 #
@@ -586,7 +584,6 @@ all: $(LOCALIZE_TARGETS) $(BIN_TARGETS) $(TARGET_FFS_FILE)
 #
 !IFDEF OBJECTS
 TARGET_LOCAL_LIB  = $(DEST_DIR)\$(BASE_NAME)Local.lib
-BIN_TARGETS       = $(BIN_TARGETS) $(TARGET_LOCAL_LIB)
 #
 # LIB all the object files into our (local) target lib file. Put
 # a dependency on the component's INF file in case it changes.
@@ -607,7 +604,7 @@ TARGET_DPX        = $(DEST_DIR)\$(BASE_NAME).dpx
 TARGET_UI         = $(DEST_DIR)\$(BASE_NAME).ui
 TARGET_VER        = $(DEST_DIR)\$(BASE_NAME).ver
 TARGET_MAP        = $(DEST_DIR)\$(BASE_NAME).map
-TARGET_PDB        = $(EFI_SYMBOL_PATH)\$(BASE_NAME).pdb
+TARGET_PDB        = $(BIN_DIR)\$(BASE_NAME).pdb
 TARGET_SYM        = $(BIN_DIR)\$(BASE_NAME).sym
 TARGET_TE         = $(BIN_DIR)\$(BASE_NAME).te
 TARGET_PE32       = $(DEST_DIR)\$(BASE_NAME).pe32
@@ -782,7 +779,7 @@ TARGET_DPX  = $(DEST_DIR)\$(BASE_NAME).dpx
 TARGET_UI   = $(DEST_DIR)\$(BASE_NAME).ui
 TARGET_VER  = $(DEST_DIR)\$(BASE_NAME).ver
 TARGET_MAP  = $(DEST_DIR)\$(BASE_NAME).map
-TARGET_PDB  = $(EFI_SYMBOL_PATH)\$(BASE_NAME).pdb
+TARGET_PDB  = $(BIN_DIR)\$(BASE_NAME).pdb
 TARGET_PE32 = $(DEST_DIR)\$(BASE_NAME).pe32
 TARGET_DLL  = $(BIN_DIR)\$(BASE_NAME).dll
 
@@ -897,7 +894,7 @@ TARGET_DPX        = $(DEST_DIR)\$(BASE_NAME).dpx
 TARGET_UI         = $(DEST_DIR)\$(BASE_NAME).ui
 TARGET_VER        = $(DEST_DIR)\$(BASE_NAME).ver
 TARGET_MAP        = $(DEST_DIR)\$(BASE_NAME).map
-TARGET_PDB        = $(EFI_SYMBOL_PATH)\$(BASE_NAME).pdb
+TARGET_PDB        = $(BIN_DIR)\$(BASE_NAME).pdb
 TARGET_PE32       = $(DEST_DIR)\$(BASE_NAME).pe32
 TARGET_DLL        = $(BIN_DIR)\$(BASE_NAME).dll
 
@@ -992,7 +989,7 @@ all: $(TARGET_FFS_FILE)
 
 TARGET_DLL = $(BIN_DIR)\$(BASE_NAME).dll
 TARGET_EFI = $(BIN_DIR)\$(BASE_NAME).efi
-TARGET_PDB = $(EFI_SYMBOL_PATH)\$(BASE_NAME).pdb
+TARGET_PDB = $(BIN_DIR)\$(BASE_NAME).pdb
 TARGET_MAP = $(BIN_DIR)\$(BASE_NAME).map
 SUBSYSTEM  = EFI_APPLICATION
 

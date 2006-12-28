@@ -64,11 +64,7 @@ tempstamp_file:
 build_tools :
   -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
   -if exist $(EDK_TOOLS_BIN)\*.* copy $(EDK_TOOLS_BIN)\*.* $(EDK_TOOLS_OUTPUT)
-!IF "$(EDK_TOOLS_VERSION)" == "$(EDK_TOOLS_BIN_VERSION)"
-  copy $(EDK_TOOLS_BIN)\Tools\*.* $(EDK_TOOLS_OUTPUT)
-!ELSE
-  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR)
-!ENDIF
+  $(MAKE) -f $(EDK_TOOLS_SOURCE)\makefile PROCESSOR=$(PROCESSOR) BUILD_DIR=$(BUILD_DIR)
   $(GUIDCHK) -b $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt
 
 #

@@ -64,6 +64,12 @@ PLATFORM                  = $(PROJECT_NAME)
 [Libraries]
 DEFINE EDK_PREFIX=
 
+DEFINE PROCESSOR=IA32
+
+!include "$(EDK_SOURCE)\Sample\Platform\EdkLib32.dsc"
+
+DEFINE PROCESSOR=X64
+
 !include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
 [=============================================================================]
@@ -73,10 +79,6 @@ DEFINE EDK_PREFIX=
 #
 [=============================================================================]
 [Libraries.Platform]
-
-DEFINE PROCESSOR=IA32
-
-!include "$(EDK_SOURCE)\Sample\Platform\EdkLib32.dsc"
 
 DEFINE PROCESSOR=X64
 

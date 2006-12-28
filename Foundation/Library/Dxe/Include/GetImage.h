@@ -36,9 +36,11 @@ Routine Description:
   Enumerate all the FVs, and fill Buffer with the SectionType section content in NameGuid file.
 
   Note:
-  1. when SectionType is EFI_SECTION_PE32, it tries to read NameGuid file 
-      after failure on read required section.
-  2. Callee allocates memory, which caller is responsible to free.
+  1. when SectionType is EFI_SECTION_PE32, it tries to read NameGuid file after failure on 
+      reading EFI_SECTION_PE32 section.
+  2. when SectionType is EFI_SECTION_TE, it tries to get EFI_SECTION_PE32 section after failure on
+      reading EFI_SECTION_TE section. If it's failed again, it tries to read NameGuid file.
+  3. Callee allocates memory, which caller is responsible to free.
 
 Arguments:
 
@@ -50,8 +52,8 @@ Arguments:
 
 Returns:
   EFI_NOT_FOUND       - Required content can not be found.
-  EFI_SUCCESS         - Required content can be found, but whether the Buffer is filled with section content or not
-                          depends on the Buffer and Size.
+  EFI_SUCCESS         - Required content can be found, but whether the Buffer is filled 
+                          with section content or not depends on the Buffer and Size.
 --*/
 ;
 

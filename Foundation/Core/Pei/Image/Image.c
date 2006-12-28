@@ -62,6 +62,7 @@ Returns:
   UINT64                      ImageSize;
   EFI_PHYSICAL_ADDRESS        ImageEntryPoint;
   EFI_TE_IMAGE_HEADER         *TEImageHeader;
+  UINT16                      Machine;
 
   PEI_DEBUG_CODE (ImageAddress  = 0;)
   
@@ -102,6 +103,16 @@ Returns:
         //
         PeHdr = (EFI_IMAGE_NT_HEADERS *) Pe32Data;
       }
+      Machine = PeHdr->FileHeader.Machine;
+    } else {
+      Machine = TEImageHeader->Machine;
+    }
+    //
+    // Check PEIM image machine. A PEIM image for different processor architecture
+    // from the host can't be started.
+    //
+    if (Machine != EFI_IMAGE_MACHINE_TYPE) {
+      return EFI_UNSUPPORTED;
     }
 
 #ifdef EFI_NT_EMULATOR
@@ -166,7 +177,10 @@ Returns:
 
       if (!EFI_ERROR (Status)) {
         *EntryPoint = (VOID *) ((UINTN) ImageEntryPoint);
-        PEI_DEBUG_CODE (
+        if (((EFI_TE_IMAGE_HEADER *) (UINTN) ImageAddress)->Signature == EFI_TE_IMAGE_HEADER_SIGNATURE) {
+          TEImageHeader = (EFI_TE_IMAGE_HEADER *) (UINTN) ImageAddress;
+          Machine = TEImageHeader->Machine;
+        } else {
           if (((EFI_IMAGE_DOS_HEADER *) (UINTN) ImageAddress)->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
             //
             // DOS image header is present, so read the PE header after the DOS image header
@@ -178,7 +192,15 @@ Returns:
             //
             PeHdr = (EFI_IMAGE_NT_HEADERS *) (UINTN) ImageAddress;
           }
-        )
+          Machine = PeHdr->FileHeader.Machine;
+        }
+        //
+        // Check PEIM image machine. A PEIM image for different processor architecture
+        // from the host can't be started.
+        //
+        if (Machine != EFI_IMAGE_MACHINE_TYPE) {
+          return EFI_UNSUPPORTED;
+        }
       }
     }
   }

@@ -117,7 +117,6 @@ extern UINTN  gEHCErrorLevel;
 //
 // Enhanced Host Controller Registers definitions
 //
-extern UINT32                       mUsbCapabilityLen;
 extern EFI_DRIVER_BINDING_PROTOCOL  gEhciDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL  gEhciComponentName;
 
@@ -204,7 +203,7 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gEhciComponentName;
 //
 // USB Base Class Code,Sub-Class Code and Programming Interface
 //
-#define PCI_CLASSC_PI_EHCI      0x20
+#define PCI_CLASSC_PI_EHCI      PCI_IF_EHCI
 
 #define SETUP_PACKET_ID         0x2D
 #define INPUT_PACKET_ID         0x69
@@ -420,6 +419,8 @@ typedef struct _USB2_HC_DEV {
   UINT8                     Is64BitCapable;
   UINT32                    High32BitAddr;
   EHCI_QH_ENTITY            *NULLQH;
+  UINT32                    UsbCapabilityLen;
+  UINT16                    DeviceSpeed[16];
 } USB2_HC_DEV;
 
 
@@ -2712,5 +2713,22 @@ VOID
 DestroyNULLQH (
   IN  USB2_HC_DEV     *HcDev
   );
+
+VOID
+ClearLegacySupport (
+  IN USB2_HC_DEV     *HcDev
+  );
+
+VOID
+HostReset (
+  IN USB2_HC_DEV    *HcDev
+  );
+
+DEBUG_CODE (
+VOID 
+DumpEHCIPortsStatus (
+  IN USB2_HC_DEV    *HcDev
+  );
+)
 
 #endif

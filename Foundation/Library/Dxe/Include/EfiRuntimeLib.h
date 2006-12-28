@@ -1017,6 +1017,42 @@ Returns:
 --*/
 ;
 
+UINT8
+MemRead8 (
+  IN  UINT64    Address
+  )
+/*++
+
+Routine Description:
+  Do a one byte Memory mapped IO read
+
+Arguments:
+  Address - Memory mapped IO address to read
+
+Returns: 
+  Data read
+
+--*/
+;
+
+UINT16
+MemRead16 (
+  IN  UINT64    Address
+  )
+/*++
+
+Routine Description:
+  Do a two byte Memory mapped IO read
+
+Arguments:
+  Address - Memory mapped IO address to read
+
+Returns: 
+  Data read
+
+--*/
+;
+
 UINT32
 MemRead32 (
   IN  UINT64    Address
@@ -1073,6 +1109,46 @@ Arguments:
 
 Returns: 
   Status code
+
+--*/
+;
+
+VOID
+MemWrite8 (
+  IN  UINT64    Address,
+  IN  UINT8     Data
+  )
+/*++
+
+Routine Description:
+  Do a one byte Memory mapped IO write
+
+Arguments:
+  Address - Memory mapped IO address to write
+  Data    - Data to write to Address
+
+Returns: 
+  NONE
+
+--*/
+;
+
+VOID
+MemWrite16 (
+  IN  UINT64    Address,
+  IN  UINT16    Data
+  )
+/*++
+
+Routine Description:
+  Do a two byte Memory mapped IO write
+
+Arguments:
+  Address - Memory mapped IO address to write
+  Data    - Data to write to Address
+
+Returns: 
+  NONE
 
 --*/
 ;

@@ -101,6 +101,7 @@ extern int  errno;
 #define COMPONENT_TYPE                  "component_type"
 #define PLATFORM_STR                    "\\platform\\"          // to determine EFI_SOURCE
 #define MAKEFILE_OUT_NAME               "makefile.out"          // if not specified on command line
+#define MODULE_NAME_FILE                "module.list"           // this file used to record all module names defined in the dsc file.
 //
 // When a symbol is defined as "NULL", it gets saved in the symbol table as a 0-length
 // string. Use this macro to detect if a symbol has been defined this way.
@@ -249,6 +250,11 @@ typedef struct _SYMBOL {
   INT8            *Name;
   INT8            *Value;
 } SYMBOL;
+
+//
+// Define new SYMBOL list to record all module name used in the platform.dsc file.
+//
+SYMBOL *gModuleList = NULL;
 
 //
 // This structure is used to save globals
@@ -568,6 +574,12 @@ BuiltFileExtension (
   INT8      *SourceFileName
   );
 
+static 
+int
+AddModuleName (
+  INT8    *ModuleName
+  );
+
 /*****************************************************************************/
 int
 main (
@@ -598,6 +610,8 @@ Returns:
   INT8      Line[MAX_LINE_LEN];
   INT8      ExpLine[MAX_LINE_LEN];
   INT8      *EMsg;
+  FILE      *FpModule;
+  SYMBOL    *TempSymBol;
 
   SetUtilityName (PROGRAM_NAME);
 
@@ -691,7 +705,6 @@ Returns:
   //
   Sect = DSCFileFindSection (&DSCFile, LIBRARIES_SECTION_NAME);
   if (Sect != NULL) {
-    fprintf (gGlobals.MakefileFptr, "libraries : \n");
     ProcessSectionComponents (&DSCFile, DSC_SECTION_TYPE_LIBRARIES, 0);
   }
 
@@ -767,6 +780,21 @@ ProcessingError:
     fclose (gGlobals.MakefileFptr);
     gGlobals.MakefileFptr = NULL;
   }
+
+  //
+  // Write all module name into MODULE_NAME_FILE file.
+  //
+  if ((FpModule = fopen (MODULE_NAME_FILE, "w")) != NULL) {
+    TempSymBol = gModuleList;
+    while (TempSymBol != NULL) {
+      fprintf (FpModule, " %s \n", TempSymBol->Name);
+      TempSymBol = TempSymBol->Next;
+    }
+    fprintf (FpModule, "\n");
+  }
+  fclose (FpModule);
+  FreeSymbols (gModuleList);
+
   //
   // Clean up
   //
@@ -1245,8 +1273,6 @@ Returns:
   }
   //
   // Write an nmake line to makefile.out
-  // If this is a library, then the caller already created the "libraries :" target,
-  // so print the line.
   //
   if (DscSectionType == DSC_SECTION_TYPE_COMPONENTS) {
     if (GetSymbolValue (FV) != NULL) {
@@ -1263,13 +1289,47 @@ Returns:
       fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
       fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
     }
+    //
+    // Add Module name to the global module list
+    //
+    AddModuleName (GetSymbolValue (BASE_NAME));
+
+    //
+    // Add Single Module target : build and clean in top level makefile
+    //
+    fprintf (gGlobals.MakefileFptr, "%sbuild ::\n", GetSymbolValue (BASE_NAME));
+    fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
+    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
+    fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
+
+    fprintf (gGlobals.MakefileFptr, "%sclean ::\n", GetSymbolValue (BASE_NAME));
+    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s clean\n\n", FileName);
+
   } else {
     //
-    // We just add up the libraries.
+    // Add up the libraries.
     //
+    fprintf (gGlobals.MakefileFptr, "libraries ::\n");
     fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
     fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
     fprintf (gGlobals.MakefileFptr, "  @cd ..\n");
+
+    //
+    // Add libary name to the global module list
+    //
+    AddModuleName (GetSymbolValue (BASE_NAME));
+
+    //
+    // Add Single Library target : build and clean in top level makefile
+    //    
+    fprintf (gGlobals.MakefileFptr, "%sbuild ::\n", GetSymbolValue (BASE_NAME));
+    fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
+    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
+    fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
+
+    fprintf (gGlobals.MakefileFptr, "%sclean ::\n", GetSymbolValue (BASE_NAME));
+    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s clean\n\n", FileName);
+
   }
   //
   // Copy the common makefile section from the description file to
@@ -1904,6 +1964,7 @@ Returns:
   INT8  *CEnd;
   INT8  CSave;
   INT8  *CopySourceSelect;
+
   //
   // We use this a lot here, so get the value only once.
   //
@@ -2147,6 +2208,11 @@ ProcessSourceFilesSection (
             // SOURCE_FILES = $(SOURCE_FILES) c:\Path\ThisFile.c
             //
             fprintf (MakeFptr, "SOURCE_FILES = $(SOURCE_FILES) %s\n", TempFileName);
+          } else if (IsAbsolutePath (FileName)) {
+            //
+            // For Absolute path, don't print $(SOURCE_FILE) directory.
+            //
+            fprintf (MakeFptr, "SOURCE_FILES = $(SOURCE_FILES) %s\n", FileName);
           } else {
             //
             // SOURCE_FILES = $(SOURCE_FILES) $(SOURCE_DIR)\ThisFile.c
@@ -4417,3 +4483,70 @@ Returns:
 
   return 0;
 }
+
+static 
+int
+AddModuleName (
+  INT8    *ModuleName
+  )
+/*++
+
+Routine Description:
+  
+  Add module name in the global module list. 
+  For the same module names, it is only added once.
+
+Arguments:
+
+  ModuleName : point to one module name char string.
+
+Returns:
+
+  0 : Successfully add input name into the global list.
+  other value : allocate memory failed.
+
+--*/
+{
+  SYMBOL *CurrentSymbol;
+  SYMBOL *LastSymbol;
+  
+  //
+  // Get the global module list.
+  //
+  CurrentSymbol = gModuleList;
+  LastSymbol    = gModuleList;
+  
+  //
+  // Search whether this module name has been added into the global list.
+  //
+  while (CurrentSymbol != NULL) {
+    if (_stricmp (CurrentSymbol->Name, ModuleName) == 0) {
+      break;
+    }
+    LastSymbol    = CurrentSymbol;
+    CurrentSymbol = CurrentSymbol->Next;
+  }
+  
+  //
+  // Add new module name in list.
+  //
+  if (CurrentSymbol == NULL) {
+    CurrentSymbol = (SYMBOL *) malloc (sizeof (SYMBOL));
+    if (CurrentSymbol == NULL) {
+      Error (NULL, 0, 0, NULL, "failed to allocate memory");
+      return -1;
+    }
+    memset ((INT8 *) CurrentSymbol, 0, sizeof (SYMBOL));
+    CurrentSymbol->Name   = (INT8 *) malloc (strlen (ModuleName) + 1);
+    strcpy (CurrentSymbol->Name, ModuleName);
+    
+    if (LastSymbol == NULL) {   
+      gModuleList      = CurrentSymbol;
+    } else {
+      LastSymbol->Next = CurrentSymbol;
+    }
+  }
+
+  return 0;
+}
+

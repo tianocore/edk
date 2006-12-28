@@ -73,6 +73,13 @@ PeCoffLoaderUnloadImage (
   IN EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT   *ImageContext
   );
 
+#if defined (EFI_DEBUG_ITP_BREAK) && !defined (_CONSOLE)
+VOID
+AsmEfiSetBreakSupport (
+  IN UINTN  LoadAddr
+  );
+#endif
+
 EFI_PEI_PE_COFF_LOADER_PROTOCOL mPeCoffLoader = {
   PeCoffLoaderGetImageInfo,
   PeCoffLoaderLoadImage,
@@ -1359,6 +1366,10 @@ Returns:
       }
     }
   }
+
+#if defined (EFI_DEBUG_ITP_BREAK) && !defined (_CONSOLE)
+  AsmEfiSetBreakSupport ((UINTN)(ImageContext->ImageAddress));
+#endif
 
   return Status;
 }

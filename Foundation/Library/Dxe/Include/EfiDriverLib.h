@@ -1130,4 +1130,61 @@ Returns:
 --*/
 ;
 
+EFI_STATUS
+EfiLibTestManagedDevice (
+  IN EFI_HANDLE       ControllerHandle,
+  IN EFI_HANDLE       DriverBindingHandle,
+  IN EFI_GUID         *ManagedProtocolGuid
+  )
+/*++
+
+Routine Description:
+
+  Test to see if the controller is managed by a specific driver.
+
+Arguments:
+
+  ControllerHandle          - Handle for controller to test
+
+  DriverBindingHandle       - Driver binding handle for controller
+
+  ManagedProtocolGuid       - The protocol guid the driver opens on controller
+
+Returns: 
+
+  EFI_SUCCESS     - The controller is managed by the driver
+
+  EFI_UNSUPPORTED - The controller is not managed by the driver
+
+--*/
+;
+
+EFI_STATUS
+EfiLibTestChildHandle (
+  IN EFI_HANDLE       ControllerHandle,
+  IN EFI_HANDLE       ChildHandle,
+  IN EFI_GUID         *ConsumedGuid
+  )
+/*++
+
+Routine Description:
+
+  Test to see if the child handle is the child of the controller
+
+Arguments:
+
+  ControllerHandle          - Handle for controller (parent)
+
+  ChildHandle               - Child handle to test
+
+  ConsumsedGuid             - Protocol guid consumed by child from controller
+
+Returns: 
+
+  EFI_SUCCESS     - The child handle is the child of the controller
+
+  EFI_UNSUPPORTED - The child handle is not the child of the controller
+
+--*/
+;
 #endif

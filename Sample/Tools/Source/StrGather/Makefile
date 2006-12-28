@@ -1,6 +1,6 @@
 #/*++
 #  
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -33,7 +33,7 @@
 TOOLCHAIN = TOOLCHAIN_MSVC
 !ENDIF
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
 #
 # Target specific information
@@ -68,10 +68,22 @@ $(EDK_TOOLS_OUTPUT)\StringDB.obj : $(TARGET_SRC_DIR)\StringDB.c $(INC_DEPS)
   $(CC) $(C_FLAGS) $(INC_PATHS) $(TARGET_SRC_DIR)\StringDB.c /Fo$@
 
 #
-# Link the object files together
+# Add Binary Build description for this tools.
 #
+
+!IF (("$(EFI_BINARY_TOOLS)" == "YES") && EXIST($(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe))
+$(TARGET_EXE): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe $(TARGET_EXE) /Y
+  if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb \
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb /Y
+!ELSE
 $(TARGET_EXE) : $(OBJECTS) $(LIBS)
   $(LINK) $(MSVS_LINK_LIBPATHS) $(L_FLAGS) $(LIBS) /out:$(TARGET_EXE) $(OBJECTS)
+  if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
+  if exist $(TARGET_EXE) copy $(TARGET_EXE) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).exe /Y
+  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb \
+  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb /Y
+!ENDIF
 
 clean:
   

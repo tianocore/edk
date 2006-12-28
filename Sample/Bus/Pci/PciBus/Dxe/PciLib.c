@@ -1291,15 +1291,10 @@ Returns:
               RootBridgeDev
               );
 
+    DestroyRootBridge (RootBridgeDev);
     if (EFI_ERROR (Status)) {
       return Status;
     }
-
-    DestroyRootBridge (RootBridgeDev);
-
-    //
-    // Error proccess here
-    //
   }
 
   //                                                            

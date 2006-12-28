@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,6 +30,12 @@ DayValid (
 BOOLEAN
 IsLeapYear (
   IN EFI_TIME   *Time
+  );
+
+BOOLEAN 
+IsWithinOneDay (
+  IN EFI_TIME   *From,
+  IN EFI_TIME   *To
   );
 
 UINT8
@@ -550,10 +556,7 @@ Returns:
     // Just support set alarm time within 24 hours
     //
     PcRtcGetTime (&RtcTime, &Capabilities, Global);
-    if (Time->Year != RtcTime.Year ||
-        Time->Month != RtcTime.Month ||
-        (Time->Day != RtcTime.Day && Time->Day != (RtcTime.Day + 1))
-        ) {
+    if (!IsWithinOneDay (&RtcTime, Time)) {
       return EFI_UNSUPPORTED;
     }
     //
@@ -931,6 +934,57 @@ Returns:
   if (RegisterB.Bits.MIL == 0 && PM) {
     Time->Hour = (UINT8) (Time->Hour | 0x80);
   }
+}
+ 
+BOOLEAN 
+IsWithinOneDay (
+  IN EFI_TIME  *From,
+  IN EFI_TIME  *To
+  )
+/*++
+
+Routine Description:
+
+  Judge whether two days are adjacent.
+
+Arguments:
+
+  From  -   the first day
+  To    -   the second day
+
+Returns:
+
+  TRUE  -   The interval of two days are within one day.
+  FALSE -   The interval of two days exceed ony day or parameter error.
+
+--*/
+{
+  UINT8   DayOfMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  BOOLEAN Adjacent = FALSE;
+
+  if (From->Year == To->Year) {
+    if (From->Month == To->Month) {
+      if ((From->Day + 1) == To->Day) {
+        Adjacent = TRUE;
+      }
+    } else if (((From->Month + 1) == To->Month) && (To->Day == 1)) {
+      if ((From->Month == 2) && IsLeapYear(From)) {
+        if (From->Day == 29) {
+          Adjacent = TRUE;
+        }
+      } else if (From->Day == DayOfMonth[From->Month - 1]) {
+        Adjacent = TRUE;
+      }
+    }
+  } else if (((From->Year + 1) == To->Year) &&
+             (From->Month == 12) &&
+             (From->Day   == 31) &&
+             (To->Month   == 1)  &&
+             (To->Day     == 1)) {
+      Adjacent = TRUE;
+  }
+
+  return Adjacent;
 }
 
 UINT8

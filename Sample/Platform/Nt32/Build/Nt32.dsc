@@ -190,6 +190,11 @@ DEFINE EDK_PREFIX=
 
 !include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
+#
+# EdkII Glue Library
+#
+#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLibAll.dsc"
+
 [=============================================================================]
 #
 # These are platform specific libraries that must be built prior to building
@@ -208,11 +213,6 @@ Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtPlatformStatusCode\$(PROJECT
 
 Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
-
-#
-# EdkII Glue Library
-#
-#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLibAll.dsc"
 
 [=============================================================================]
 #

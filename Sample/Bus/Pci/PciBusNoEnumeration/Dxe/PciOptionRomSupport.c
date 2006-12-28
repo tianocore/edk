@@ -62,7 +62,7 @@ Returns:
   PciRootBridgeIo = PciIoDevice->PciRootBridgeIo;
 
   //
-  // offset is 48 if is not ppb
+  // offset is 0x30 if is not ppb
   //
 
   //
@@ -111,8 +111,11 @@ Returns:
     return Status;
   }
 
-  AllOnes &= 0xFFFFFFFC;
-  if ((AllOnes == 0) || (AllOnes == 0xFFFFFFFC)) {
+  //
+  // Bits [1, 10] are reserved
+  //
+  AllOnes &= 0xFFFFF800;
+  if ((AllOnes == 0) || (AllOnes == 0xFFFFF800)) {
     return EFI_NOT_FOUND;
   }
   
@@ -121,7 +124,6 @@ Returns:
 
   PciIoDevice->RomSize = (UINT64) ((~AllOnes) + 1);
   return EFI_SUCCESS;
-
 }
 
 EFI_STATUS

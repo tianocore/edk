@@ -41,7 +41,7 @@ all : efi
 efi : Pseudotargets
     @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
     @if exist $@\Config.env del /f $@\Config.env
-    @type Config.env                                           >  $@\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $@\Config.env
     @echo UEFI_MODE                      = NO                  >> $@\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
     @cd $@
@@ -54,7 +54,7 @@ efi : Pseudotargets
 uefi : Pseudotargets
     @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
     @if exist $@\Config.env del /f $@\Config.env
-    @type Config.env                                           >  $@\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $@\Config.env
     @echo UEFI_MODE                      = YES                 >> $@\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
     @cd $@

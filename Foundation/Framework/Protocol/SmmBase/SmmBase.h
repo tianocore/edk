@@ -360,8 +360,73 @@ typedef struct _EFI_SMM_OPTIONAL_FP_SAVE_STATE {
   UINT8   St0Mm5[10], Rsvd8[6];
   UINT8   St0Mm6[10], Rsvd9[6];
   UINT8   St0Mm7[10], Rsvd10[6];
-  UINT8   Rsvd11[22 * 6];
+  UINT8   Rsvd11[22 * 16];
 } EFI_SMM_OPTIONAL_FP_SAVE_STATE;
+
+typedef struct _EFI_SMM_OPTIONAL_FP_SAVE_STATE32 {
+  UINT16  Fcw;
+  UINT16  Fsw;
+  UINT16  Ftw;
+  UINT16  Opcode;
+  UINT32  Eip;
+  UINT16  Cs;
+  UINT16  Rsvd1;
+  UINT32  DataOffset;
+  UINT16  Ds;
+  UINT8   Reserved2[10];
+  UINT8   St0Mm0[10], Rsvd3[6];
+  UINT8   St1Mm1[10], Rsvd4[6];
+  UINT8   St2Mm2[10], Rsvd5[6];
+  UINT8   St3Mm3[10], Rsvd6[6];
+  UINT8   St4Mm4[10], Rsvd7[6];
+  UINT8   St5Mm5[10], Rsvd8[6];
+  UINT8   St6Mm6[10], Rsvd9[6];
+  UINT8   St7Mm7[10], Rsvd10[6];
+  UINT8   Xmm0[16];
+  UINT8   Xmm1[16];
+  UINT8   Xmm2[16];
+  UINT8   Xmm3[16];
+  UINT8   Xmm4[16];
+  UINT8   Xmm5[16];
+  UINT8   Xmm6[16];
+  UINT8   Xmm7[16];
+  UINT8   Rsvd11[14 * 16];
+} EFI_SMM_OPTIONAL_FP_SAVE_STATE32;
+
+typedef struct _EFI_SMM_OPTIONAL_FP_SAVE_STATE64 {
+  UINT16  Fcw;
+  UINT16  Fsw;
+  UINT16  Ftw;
+  UINT16  Opcode;
+  UINT64  Rip;
+  UINT64  DataOffset;
+  UINT8   Rsvd1[8];
+  UINT8   St0Mm0[10], Rsvd2[6];
+  UINT8   St1Mm1[10], Rsvd3[6];
+  UINT8   St2Mm2[10], Rsvd4[6];
+  UINT8   St3Mm3[10], Rsvd5[6];
+  UINT8   St4Mm4[10], Rsvd6[6];
+  UINT8   St5Mm5[10], Rsvd7[6];
+  UINT8   St6Mm6[10], Rsvd8[6];
+  UINT8   St7Mm7[10], Rsvd9[6];
+  UINT8   Xmm0[16];
+  UINT8   Xmm1[16];
+  UINT8   Xmm2[16];
+  UINT8   Xmm3[16];
+  UINT8   Xmm4[16];
+  UINT8   Xmm5[16];
+  UINT8   Xmm6[16];
+  UINT8   Xmm7[16];
+  UINT8   Xmm8[16];
+  UINT8   Xmm9[16];
+  UINT8   Xmm10[16];
+  UINT8   Xmm11[16];
+  UINT8   Xmm12[16];
+  UINT8   Xmm13[16];
+  UINT8   Xmm14[16];
+  UINT8   Xmm15[16];
+  UINT8   Rsvd10[6 * 16];
+} EFI_SMM_OPTIONAL_FP_SAVE_STATE64;
 
 struct _EFI_SMM_SYSTEM_TABLE;
 

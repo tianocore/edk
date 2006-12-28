@@ -15,8 +15,7 @@
 #
 #  Abstract:
 #
-#    Make a FFS section for an FV that contains the FAT driver.
-#    *.FFS files are compressed FFS sections. 
+#    Component description file for FAT module
 #
 #--*/
 
@@ -24,7 +23,7 @@
 BASE_NAME            = Fat
 FILE_GUID            = 961578FE-B6B7-44c3-AF35-6BC705CD2B1F
 COMPONENT_TYPE       = BS_DRIVER
-BUILD_TYPE           = MAKEFILE
+BUILD_TYPE           = BS_DRIVER_EFI
 
 [sources.common]
 

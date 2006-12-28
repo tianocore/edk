@@ -761,10 +761,16 @@ USBParseKey (
     //
     // fall through
     //
+    
     case 0x47:
-    //
-    // fall through
-    //
+	  //
+	  // Turn on the ScrollLock light on KB
+	  //
+      UsbKeyboardDevice->ScrollOn ^= 1;
+      SetKeyLED (UsbKeyboardDevice);
+      continue;
+      break;
+
     case 0x48:
     //
     // fall through
@@ -1041,11 +1047,12 @@ SetKeyLED (
   //
   // Set each field in Led map.
   //
-  Led.NumLock   = (UINT8) UsbKeyboardDevice->NumLockOn;
-  Led.CapsLock  = (UINT8) UsbKeyboardDevice->CapsOn;
-  Led.Resrvd    = 0;
+  Led.NumLock    = (UINT8) UsbKeyboardDevice->NumLockOn;
+  Led.CapsLock   = (UINT8) UsbKeyboardDevice->CapsOn;
+  Led.ScrollLock = (UINT8) UsbKeyboardDevice->ScrollOn;
+  Led.Resrvd     = 0;
 
-  ReportId      = 0;
+  ReportId       = 0;
   //
   // call Set Report Request to lighten the LED.
   //

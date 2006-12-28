@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -824,15 +824,16 @@ Arguments:
   
   PeiServices - Pointer to the PEI Service Table
   
-  FvNumber    - The index of the fireware volume to locate
+  FvNumber    - On input,  the number of the fireware volume which supports FFS to locate
+                On output, the next FV number which supports FFS.
   
-  FVAddress   - The address of the volume to discover
+  FVAddress   - The address of the volume which supports FFS to discover
 
 Returns:
 
-  EFI_SUCCESS           - An addtional fv found
-  EFI_OUT_OF_RESOURCES  - There are no fireware volume for given fvnumber
-  EFI_INVALID_PARAMETER - *FvAddress is NULL
+  EFI_SUCCESS           - An addtional FV which supports FFS found
+  EFI_OUT_OF_RESOURCES  - There are no fireware volume which supports FFS for given fvnumber
+  EFI_INVALID_PARAMETER - FvAddress is NULL
 
 --*/
 ;

@@ -27,6 +27,8 @@ Abstract:
 #include "Acpi.h"
 #include "EfiHobLib.h"
 
+#include "DeviceIo.h"
+
 //
 // Driver Consumes GUIDs
 //

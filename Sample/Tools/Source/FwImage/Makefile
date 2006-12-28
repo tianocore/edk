@@ -1,6 +1,6 @@
 #/*++
 #   
-#  Copyright (c) 2004, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -24,7 +24,7 @@
 TOOLCHAIN = TOOLCHAIN_MSVC
 !ENDIF
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
 #
 # Define some macros we use here. Should get rid of them someday and 
@@ -50,7 +50,7 @@ TARGET_EXE = $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).exe
 TARGET_EXE_SOURCE = "$(TARGET_SOURCE_DIR)\FwImage.c"
 TARGET_EXE_INCLUDE = "$(EDK_SOURCE)\Foundation\Include\TianoCommon.h" \
                      "$(EDK_SOURCE)\Foundation\Efi\Include\EfiImage.h"
-
+OBJECTS = $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj
 #
 # Build targets
 #
@@ -64,8 +64,23 @@ all: $(TARGET_EXE)
 $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj: $(TARGET_EXE_SOURCE) $(TARGET_EXE_INCLUDE)
   $(CC) $(C_FLAGS) $(INC) $(TARGET_EXE_SOURCE) /Fo$(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj
 
-$(TARGET_EXE): $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj $(TARGET_EXE_LIBS) $(TARGET_DLL)
-  $(LINK) $(MSVS_LINK_LIBPATHS) $(L_FLAGS) $(LIBS) /out:$(TARGET_EXE) $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj $(TARGET_LIB)  $(TARGET_EXE_LIBS)
+#
+# Add Binary Build description for this tool.
+#
+
+!IF (("$(EFI_BINARY_TOOLS)" == "YES") && EXIST($(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe))
+$(TARGET_EXE): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe $(TARGET_EXE) /Y
+  if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb \
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb /Y
+!ELSE
+$(TARGET_EXE) : $(OBJECTS)
+  $(LINK) $(MSVS_LINK_LIBPATHS) $(L_FLAGS) $(LIBS) /out:$(TARGET_EXE) $(OBJECTS)
+  if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
+  if exist $(TARGET_EXE) copy $(TARGET_EXE) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).exe /Y
+  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb \
+  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb /Y
+!ENDIF
 
 clean:
   @if exist $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).* del $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).* > NUL

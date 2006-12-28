@@ -31,11 +31,11 @@
 TOOLCHAIN = TOOLCHAIN_MSVC
 !ENDIF
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
-BASE_NAME         = VfrCompile
+TARGET_NAME       = VfrCompile
 ANTLR_H           = $(PCCTS_DIR)\h
-C_FLAGS_PCCTS     = -I. -I$(ANTLR_H) /Zi /WX /Od /D _CRT_SECURE_NO_DEPRECATE $(VERSION_FLAGS)
+C_FLAGS_PCCTS     = -I. -I$(ANTLR_H) /Zi /Fd$(EDK_TOOLS_OUTPUT)\$(TARGET_NAME)Obj /WX /Od /D _CRT_SECURE_NO_DEPRECATE $(VERSION_FLAGS)
 C_FLAGS_PCCTS     = $(C_FLAGS_PCCTS)  
 
 LINK_FLAGS_PCCTS  =
@@ -45,8 +45,8 @@ LIBS              = "$(EDK_TOOLS_OUTPUT)\Common.lib"
 # Define the EFI output and source directories.
 #
 ETO               = $(EDK_TOOLS_OUTPUT)
-SRC               = $(EDK_TOOLS_SOURCE)\$(BASE_NAME)
-TARGET_EXE        = $(ETO)\$(BASE_NAME).exe
+SRC               = $(EDK_TOOLS_SOURCE)\$(TARGET_NAME)
+TARGET_EXE        = $(ETO)\$(TARGET_NAME).exe
 
 #
 # Add deeper lookahead with -ck 3
@@ -82,7 +82,7 @@ INC_DEPS = $(INC_DEPS) $(EDK_SOURCE)\Foundation\Framework\Include\EfiInternalFor
 #
 # This is the grammer file for our project
 #
-GRAMMER_FILE  = $(SRC)\$(BASE_NAME).g
+GRAMMER_FILE  = $(SRC)\$(TARGET_NAME).g
 
 #
 # If we utilize a separate token file, define it here.
@@ -90,7 +90,7 @@ GRAMMER_FILE  = $(SRC)\$(BASE_NAME).g
 #TOKEN_FILE    = 
 
     
-OBJECTS =       $(ETO)\$(BASE_NAME).obj \
+OBJECTS =       $(ETO)\$(TARGET_NAME).obj \
                 $(ETO)\$(PARSER_FILE).obj \
                 $(ETO)\AParser.obj \
                 $(ETO)\DLexerBase.obj \
@@ -102,7 +102,7 @@ OBJECTS =       $(ETO)\$(BASE_NAME).obj \
 # Per the Language Translation Using PCCTS and C++ Reference Guide, page 109,
 # these are the outputs of ANTLR and DLG
 #                
-ANTLR_SPAWN =   $(ETO)\$(BASE_NAME).cpp \
+ANTLR_SPAWN =   $(ETO)\$(TARGET_NAME).cpp \
                 $(ETO)\$(PARSER_FILE).cpp \
 	              $(ETO)\$(PARSER_FILE).h \
                 $(ETO)\$(DLG_FILE) \
@@ -124,8 +124,8 @@ all : $(TARGET_EXE)
 $(ANTLR_SPAWN) : $(GRAMMER_FILE) $(INC_DEPS)
 	$(ANTLR) $(ANTLR_FLAGS) -o $(ETO) $(GRAMMER_FILE)
 
-$(ETO)\$(BASE_NAME).obj : $(ETO)\$(BASE_NAME).cpp $(DLG_SPAWN) $(INC_DEPS)
-	$(CC) -c $(C_FLAGS_PCCTS) /Fo$@ $(INC) $(ETO)\$(BASE_NAME).cpp
+$(ETO)\$(TARGET_NAME).obj : $(ETO)\$(TARGET_NAME).cpp $(DLG_SPAWN) $(INC_DEPS)
+	$(CC) -c $(C_FLAGS_PCCTS) /Fo$@ $(INC) $(ETO)\$(TARGET_NAME).cpp
 
 $(ETO)\$(SCAN_FILE).obj : $(ETO)\$(SCAN_FILE).cpp $(DLG_SPAWN) $(INC_DEPS)
 	$(CC) -c $(C_FLAGS_PCCTS) /Fo$@ $(INC) $(ETO)\$(SCAN_FILE).cpp
@@ -148,9 +148,23 @@ $(ETO)\DLexerBase.obj : $(ANTLR_H)/DLexerBase.cpp
 $(ETO)\VfrServices.obj : $(SRC)\VfrServices.cpp $(SRC)\VfrServices.h $(INC_DEPS)
 	$(CC) -c $(C_FLAGS_PCCTS) $(INC) /Fo$@ $(SRC)\VfrServices.cpp
 
-$(ETO)\$(BASE_NAME).exe : $(OBJECTS)
-	$(LINK) $(MSVS_LINK_LIBPATHS) $(LIBS) /DEBUG /OUT:$(ETO)\$(BASE_NAME).exe $(LINK_FLAGS_PCCTS) $(OBJECTS) /PDB:$*.pdb
+#
+# Add Binary Build description for this tools.
+#
 
+!IF (("$(EFI_BINARY_TOOLS)" == "YES") && EXIST($(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe))
+$(TARGET_EXE): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe $(TARGET_EXE) /Y
+  if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb \
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb /Y
+!ELSE
+$(TARGET_EXE) : $(OBJECTS) $(LIBS)
+	$(LINK) $(MSVS_LINK_LIBPATHS) $(LIBS) /DEBUG /OUT:$(TARGET_EXE) $(LINK_FLAGS_PCCTS) $(OBJECTS) /PDB:$*.pdb
+  if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
+  if exist $(TARGET_EXE) copy $(TARGET_EXE) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).exe /Y
+  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb \
+  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb /Y
+!ENDIF
 
 clean:
   

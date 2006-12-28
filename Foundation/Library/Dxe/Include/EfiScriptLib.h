@@ -356,6 +356,88 @@ Returns:
 --*/
 ;
   
+EFI_STATUS
+EFIAPI
+BootScriptSaveInformation (
+  IN  UINT16                                 TableName,
+  IN  UINT32                                 Length, 
+  IN  EFI_PHYSICAL_ADDRESS                   Buffer
+  )
+/*++
+
+Routine Description:
+
+  Save a Information Opcode record in table specified with TableName
+
+Arguments:
+
+  TableName   - Desired boot script table
+  Length         - Length of information in bytes
+  Buffer          - Content of information that will be saved in script table
+
+Returns:
+
+  EFI_NOT_FOUND - BootScriptSave Protocol not exist.
+  
+  EFI_STATUS - BootScriptSave Protocol exist, always returns EFI_SUCCESS
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+BootScriptSaveInformationUnicodeString (
+  IN        UINT16              TableName,
+  IN        CHAR16              *String
+  )
+/*++
+
+Routine Description:
+
+  Save a Information Opcode record in table specified with TableName, the information
+  is a unicode string.
+
+Arguments:
+
+  TableName   - Desired boot script table
+  String          - The string that will be saved in script table
+
+Returns:
+
+  EFI_NOT_FOUND - BootScriptSave Protocol not exist.
+  
+  EFI_STATUS - BootScriptSave Protocol exist, always returns EFI_SUCCESS
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+BootScriptSaveInformationAsciiString (
+  IN        UINT16              TableName,
+  IN        CHAR8               *String
+  )
+/*++
+
+Routine Description:
+
+  Save a Information Opcode record in table specified with TableName, the information
+  is a ascii string.
+
+Arguments:
+
+  TableName   - Desired boot script table
+  String          - The string that will be saved in script table
+
+Returns:
+
+  EFI_NOT_FOUND - BootScriptSave Protocol not exist.
+  
+  EFI_STATUS - BootScriptSave Protocol exist, always returns EFI_SUCCESS
+
+--*/
+;
+  
 #ifdef EFI_S3_RESUME
   
 #define INITIALIZE_SCRIPT(ImageHandle, SystemTable) \
@@ -390,6 +472,16 @@ Returns:
 
 #define SCRIPT_DISPATCH(TableName, EntryPoint) \
           BootScriptSaveDispatch(TableName, EntryPoint)
+
+#define SCRIPT_INOFRMATION(TableName, Length, Buffer) \
+          BootScriptSaveInformation(TableName, Length, Buffer)
+
+#define SCRIPT_INOFRMATION_UNICODE_STRING(TableName, String) \
+          BootScriptSaveInformationUnicodeString(TableName, String)
+
+#define SCRIPT_INOFRMATION_ASCII_STRING(TableName, String) \
+          BootScriptSaveInformationAsciiString(TableName, String)
+          
 #else
 
 #define INITIALIZE_SCRIPT(ImageHandle, SystemTable)          
@@ -413,6 +505,12 @@ Returns:
 #define SCRIPT_STALL(TableName, Duration)           
 
 #define SCRIPT_DISPATCH(TableName, EntryPoint) 
+
+#define SCRIPT_INOFRMATION(TableName, Length, Buffer)
+
+#define SCRIPT_INOFRMATION_UNICODE_STRING(TableName, String)
+
+#define SCRIPT_INOFRMATION_ASCII_STRING(TableName, String)
 
 #endif
 

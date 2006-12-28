@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -497,8 +497,12 @@ Returns:
   EFI_GUID          HiiGuid;
   EFI_HII_PROTOCOL  *Hii;
 
-  HandleBufferLength  = 0x1000;
+  //
+  // Initialize params.
+  //
+  HandleBufferLength  = 0;
   HiiHandleBuffer     = NULL;
+  
   Status = gBS->LocateProtocol (
                   &gEfiHiiProtocolGuid,
                   NULL,
@@ -511,12 +515,9 @@ Returns:
   //
   // Get all the Hii handles
   //
-  HiiHandleBuffer = EfiLibAllocateZeroPool (HandleBufferLength);
-  ASSERT (HiiHandleBuffer != NULL);
-
-  Status = Hii->FindHandles (Hii, &HandleBufferLength, HiiHandleBuffer);
+  Status = BdsLibGetHiiHandles (Hii, &HandleBufferLength, &HiiHandleBuffer);
   ASSERT_EFI_ERROR (Status);
-
+  
   //
   // Get the Hii Handle that matches the StructureNode->ProducerName
   //

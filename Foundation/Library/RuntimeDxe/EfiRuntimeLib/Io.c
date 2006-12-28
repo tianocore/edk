@@ -158,6 +158,52 @@ Returns:
   EfiIoWrite (EfiCpuIoWidthUint32, Address, 1, &Data);
 }
 
+UINT8
+MemRead8 (
+  IN  UINT64    Address
+  )
+/*++
+
+Routine Description:
+  Do a one byte Memory mapped IO read
+
+Arguments:
+  Address - Memory mapped IO address to read
+
+Returns: 
+  Data read
+
+--*/
+{
+  UINT8   Buffer;
+
+  EfiMemRead (EfiCpuIoWidthUint8, Address, 1, &Buffer);
+  return Buffer;
+}
+
+UINT16
+MemRead16 (
+  IN  UINT64    Address
+  )
+/*++
+
+Routine Description:
+  Do a two byte Memory mapped IO read
+
+Arguments:
+  Address - Memory mapped IO address to read
+
+Returns: 
+  Data read
+
+--*/
+{
+  UINT16  Buffer;
+
+  EfiMemRead (EfiCpuIoWidthUint16, Address, 1, &Buffer);
+  return Buffer;
+}
+
 UINT32
 MemRead32 (
   IN  UINT64    Address
@@ -202,6 +248,50 @@ Returns:
 
   EfiMemRead (EfiCpuIoWidthUint64, Address, 1, &Buffer);
   return Buffer;
+}
+
+VOID
+MemWrite8 (
+  IN  UINT64    Address,
+  IN  UINT8     Data
+  )
+/*++
+
+Routine Description:
+  Do a one byte Memory mapped IO write
+
+Arguments:
+  Address - Memory mapped IO address to write
+  Data    - Data to write to Address
+
+Returns: 
+  NONE
+
+--*/
+{
+  EfiMemWrite (EfiCpuIoWidthUint8, Address, 1, &Data);
+}
+
+VOID
+MemWrite16 (
+  IN  UINT64    Address,
+  IN  UINT16    Data
+  )
+/*++
+
+Routine Description:
+  Do a two byte Memory mapped IO write
+
+Arguments:
+  Address - Memory mapped IO address to write
+  Data    - Data to write to Address
+
+Returns: 
+  NONE
+
+--*/
+{
+  EfiMemWrite (EfiCpuIoWidthUint16, Address, 1, &Data);
 }
 
 VOID

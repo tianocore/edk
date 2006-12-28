@@ -33,7 +33,7 @@
 TOOLCHAIN = TOOLCHAIN_MSVC
 !ENDIF
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
 #
 # Define some macros we use here. Should get rid of them someday and 
@@ -75,8 +75,23 @@ $(EDK_TOOLS_OUTPUT)\GetDrvNumOffset.obj: $(TARGET_SOURCE_DIR)\GenBootsector.c $(
 $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj: $(TARGET_EXE_SOURCE) $(TARGET_EXE_INCLUDE)
   $(CC) $(C_FLAGS) $(INC) $(TARGET_EXE_SOURCE) /Fo$(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj
 
+#
+# Add Binary Build description for this tool.
+#
+
+!IF (("$(EFI_BINARY_TOOLS)" == "YES") && EXIST($(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe))
+$(TARGET_EXE): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe $(TARGET_EXE) /Y
+  if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb \
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb /Y
+!ELSE
 $(TARGET_EXE): $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj $(EDK_TOOLS_OUTPUT)\GetDrvNumOffset.obj
-  $(LINK) $(MSVS_LINK_LIBPATHS) $(L_FLAGS) $(LIBS) user32.lib advapi32.lib /out:$(TARGET_EXE) $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj $(EDK_TOOLS_OUTPUT)\GetDrvNumOffset.obj
+  $(LINK) $(MSVS_LINK_LIBPATHS) $(L_FLAGS) user32.lib advapi32.lib /out:$(TARGET_EXE) $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).obj $(EDK_TOOLS_OUTPUT)\GetDrvNumOffset.obj
+  if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
+  if exist $(TARGET_EXE) copy $(TARGET_EXE) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).exe /Y
+  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb \
+  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb /Y
+!ENDIF
 
 clean:
   @if exist $(TIANO_TOOLS_OUTPUT)\GetDrvNumOffset.* del $(TIANO_TOOLS_OUTPUT)\GetDrvNumOffset.* > NUL

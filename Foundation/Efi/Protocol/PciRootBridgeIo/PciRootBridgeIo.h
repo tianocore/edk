@@ -192,8 +192,8 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_CONFIGURATION) (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL           * This,
-  IN  VOID                                     **Resources
+  IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL          * This,
+  OUT VOID                                     **Resources
   );
 
 typedef struct _EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL {

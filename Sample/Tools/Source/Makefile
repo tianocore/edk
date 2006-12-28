@@ -29,7 +29,7 @@
 #
 TOOLCHAIN = TOOLCHAIN_MSVC
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
 #
 # Define all the makefiles we want to call
@@ -66,7 +66,7 @@ MAKEFILES = $(EDK_TOOLS_SOURCE)\Common\Makefile             \
 #
 all : $(MAKEFILES)
   -if not exist $(EDK_TOOLS_OUTPUT) mkdir $(EDK_TOOLS_OUTPUT)
-  !$(MAKE) -f $? TOOLCHAIN=$(TOOLCHAIN) all
+  !$(MAKE) -f $? TOOLCHAIN=$(TOOLCHAIN) BUILD_DIR=$(BUILD_DIR) all
   
 #
 # Call all the tools makefiles with a clean target.

@@ -162,6 +162,17 @@ WinNtGopComponentNameGetControllerName (
   }
 
   //
+  // Make sure this driver is currently managing ControllerHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gWinNtGopDriverBinding.DriverBindingHandle,
+             &gEfiWinNtIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
+  //
   // Get our context back
   //
   Status = gBS->OpenProtocol (

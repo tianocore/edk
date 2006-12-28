@@ -1514,14 +1514,14 @@ BiosVideoCheckForVbe (
       CurrentModeData->Reserved.Position = BiosVideoPrivate->VbeModeInformationBlock->RsvdFieldPosition;
       CurrentModeData->Reserved.Mask = (UINT8) ((1 << BiosVideoPrivate->VbeModeInformationBlock->RsvdMaskSize) - 1);
     }
-    if ((CurrentModeData->Red.Mask == 0xff) && (CurrentModeData->Green.Mask == 0xff) && (CurrentModeData->Blue.Mask == 0xff)) {
-      if ((CurrentModeData->Red.Position == 0) && (CurrentModeData->Green.Position == 8)) {
+    CurrentModeData->PixelFormat = PixelBitMask;
+    if ((BiosVideoPrivate->VbeModeInformationBlock->BitsPerPixel == 32) &&
+        (CurrentModeData->Red.Mask == 0xff) && (CurrentModeData->Green.Mask == 0xff) && (CurrentModeData->Blue.Mask == 0xff)) {
+      if ((CurrentModeData->Red.Position == 0) && (CurrentModeData->Green.Position == 8) && (CurrentModeData->Blue.Position == 16)) {
         CurrentModeData->PixelFormat = PixelRedGreenBlueReserved8BitPerColor;
-      } else if ((CurrentModeData->Blue.Position == 0) && (CurrentModeData->Green.Position == 8)) {
+      } else if ((CurrentModeData->Blue.Position == 0) && (CurrentModeData->Green.Position == 8) && (CurrentModeData->Red.Position == 16)) {
         CurrentModeData->PixelFormat = PixelBlueGreenRedReserved8BitPerColor;
       }
-    } else {
-      CurrentModeData->PixelFormat = PixelBitMask;
     }
     CurrentModeData->PixelBitMask.RedMask = ((UINT32) CurrentModeData->Red.Mask) << CurrentModeData->Red.Position;
     CurrentModeData->PixelBitMask.GreenMask = ((UINT32) CurrentModeData->Green.Mask) << CurrentModeData->Green.Position;

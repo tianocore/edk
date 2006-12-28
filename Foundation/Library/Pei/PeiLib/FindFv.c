@@ -24,6 +24,8 @@ Abstract:
 #include "Pei.h"
 #include "PeiLib.h"
 #include "PeiHobLib.h"
+#include "EfiCommonLib.h"
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 
 static
 VOID *
@@ -92,7 +94,7 @@ FindFv (
 
 Routine Description:
 
-  Search Fv in Hob.
+  Search Fv which supports FFS.
 
 Arguments:
   
@@ -100,14 +102,15 @@ Arguments:
   
   PeiServices - Pointer to the PEI Service Table
   
-  FvNumber    - The index of the fireware volume to locate
+  FvNumber    - On input,  the number of the fireware volume which supports FFS to locate
+                On output, the next FV number which supports FFS.
   
-  FVAddress   - The address of the volume to discover
+  FVAddress   - The address of the volume which supports FFS to discover
 
 Returns:
 
-  EFI_SUCCESS           - An addtional fv found
-  EFI_OUT_OF_RESOURCES  - There are no fireware volume for given fvnumber
+  EFI_SUCCESS           - An addtional FV which supports FFS found
+  EFI_OUT_OF_RESOURCES  - There are no fireware volume which supports FFS for given fvnumber
   EFI_INVALID_PARAMETER - FvAddress is NULL
 
 --*/
@@ -123,6 +126,7 @@ Returns:
   }
 
   Hob.Raw = NULL;
+  FvIndex = 0;
 
   //
   // Get the Hob table pointer
@@ -135,23 +139,41 @@ Returns:
   if (EFI_ERROR (Status)) {
     return EFI_OUT_OF_RESOURCES;
   }
+  
   //
-  // Loop to search the wanted FirmwareVolume Hob
+  // Loop to search the wanted FirmwareVolume which supports FFS
   //
-  for (FvIndex = 0; FvIndex <= *FvNumber; FvIndex++) {
-    Hob.Raw = GetHob (EFI_HOB_TYPE_FV, HobStart.Raw);
+  //
+  while (FvIndex <= *FvNumber) {
+    
+    Hob.Raw = GetHob (EFI_HOB_TYPE_FV, HobStart.Raw); 
+    
+    //
+    //  If the Hob is not EFI_HOB_TYPE_FV, it indicates that
+    //  we have finished all FV volumes search, and there is no
+    //  the FFS FV specified by FvNumber.
+    //
     if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
       *FvNumber = 0;
       return EFI_OUT_OF_RESOURCES;
     }
-
+  
     HobStart.Raw = Hob.Raw + Hob.Header->HobLength;
+    FvHob        = Hob.FirmwareVolume;
+    *FvAddress  = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvHob->BaseAddress);
+    //
+    // Check if the FV supports FFS
+    //
+    if (EfiCompareGuid (&((*FvAddress)->FileSystemGuid), &gEfiFirmwareFileSystemGuid)) {
+      FvIndex++;
+    }
   }
-
-  FvHob       = Hob.FirmwareVolume;
-
-  *FvAddress  = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvHob->BaseAddress);
+  
+  //
+  // Return the next FV number which supports FFS.
+  //
   (*FvNumber)++;
-
+  
   return EFI_SUCCESS;
+
 }

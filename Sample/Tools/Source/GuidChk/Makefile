@@ -33,7 +33,7 @@
 TOOLCHAIN = TOOLCHAIN_MSVC
 !ENDIF
 
-!INCLUDE PlatformTools.env
+!INCLUDE $(BUILD_DIR)\PlatformTools.env
 
 #
 # Target specific information
@@ -74,10 +74,22 @@ $(EDK_TOOLS_OUTPUT)\UtilsMsgs.obj : $(TARGET_SRC_DIR)\UtilsMsgs.c $(INC_DEPS)
   $(CC) $(C_FLAGS) $(INC) $(TARGET_SRC_DIR)\UtilsMsgs.c /Fo$@
 
 #
-# Link the object files together, then run it to generate the GUID-to-name list file
+# Add Binary Build description for this tool.
 #
+
+!IF (("$(EFI_BINARY_TOOLS)" == "YES") && EXIST($(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe))
+$(TARGET_EXE): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).exe $(TARGET_EXE) /Y
+  if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb \
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb /Y
+!ELSE
 $(TARGET_EXE) : $(OBJECTS)
   $(LINK) $(MSVS_LINK_LIBPATHS) $(L_FLAGS) $(LIBS) /out:$(TARGET_EXE) $(OBJECTS)
+  if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
+  if exist $(TARGET_EXE) copy $(TARGET_EXE) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).exe /Y
+  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb \
+  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME).pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).pdb /Y
+!ENDIF
 
 clean:
   @if exist $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).* del $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME).* > NUL

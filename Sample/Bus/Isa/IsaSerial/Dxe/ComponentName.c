@@ -154,6 +154,17 @@ IsaSerialComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
   //
+  // Make sure this driver is currently managing ControllerHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gSerialControllerDriver.DriverBindingHandle,
+             EFI_ISA_IO_PROTOCOL_VERSION
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  //
   // Get the Block I/O Protocol on Controller
   //
   Status = gBS->OpenProtocol (
