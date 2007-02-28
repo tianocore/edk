@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,26 +34,9 @@ Abstract:
 
 #include "Tiano.h"
 #include "efidriverlib.h"
-#include "print.h"
+#include "EfiPrintLib.h"
 #include "efistdarg.h"
 #include EFI_PROTOCOL_DEFINITION (Hii)
-
-STATIC
-CHAR16  *
-GetFlagsAndWidth (
-  IN  CHAR16      *Format,
-  OUT UINTN       *Flags,
-  OUT UINTN       *Width,
-  IN OUT  VA_LIST *Marker
-  );
-
-STATIC
-UINTN
-GuidToString (
-  IN  EFI_GUID  *Guid,
-  IN OUT CHAR16 *Buffer,
-  IN  UINTN     BufferSize
-  );
 
 UINTN
 ValueToString (
@@ -63,16 +46,7 @@ ValueToString (
   );
 
 UINTN
-EFIAPI
-VSPrint (
-  OUT CHAR16              *StartOfBuffer,
-  IN  UINTN               BufferSize,
-  IN  CONST CHAR16        *FormatString,
-  IN  VA_LIST             Marker
-  );
-
-UINTN
-_IPrint (
+PrintInternal (
   IN UINTN                            Column,
   IN UINTN                            Row,
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *Out,
@@ -164,7 +138,7 @@ _IPrint (
 }
 
 UINTN
-Print (
+ConsolePrint (
   IN CHAR16   *fmt,
   ...
   )
@@ -187,7 +161,7 @@ Returns:
   VA_LIST args;
 
   VA_START (args, fmt);
-  return _IPrint ((UINTN) -1, (UINTN) -1, gST->ConOut, fmt, args);
+  return PrintInternal ((UINTN) -1, (UINTN) -1, gST->ConOut, fmt, args);
 }
 
 UINTN
@@ -211,7 +185,7 @@ Returns:
 
 --*/
 {
-  return Print (L"%s", String);
+  return ConsolePrint (L"%s", String);
 }
 
 UINTN
@@ -235,54 +209,9 @@ Returns:
 
 --*/
 {
-  return Print (L"%c", Character);
+  return ConsolePrint (L"%c", Character);
 }
 
-/*
-UINTN
-PrintToken (
-  IN EFI_HII_HANDLE   Handle,
-  IN UINT16           Token,
-  IN CHAR16           *Language,
-  ...
-  )
-{
-  VA_LIST             args;
-  UINTN               NumberOfHiiHandles;
-  EFI_HANDLE          *HandleBuffer;
-  EFI_HII_PROTOCOL    *Hii;
-
-  //
-  // There should only be one HII image
-  //
-  Status = gBS->LocateHandleBuffer (
-                 ByProtocol, 
-                 &gEfiHiiProtocolGuid, 
-                 NULL,
-                 &NumberOfHiiHandles, 
-                 &HandleBuffer
-                 );
-
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  //
-  // Retrieve the Hii protocol interface
-  //
-  Status = gBS->HandleProtocol (
-                 HandleBuffer[0], 
-                 &gEfiHiiProtocolGuid, 
-                 &Hii
-                 );
-
-  Hii->GetString (Hii, Handle, Token, FALSE, Language, 
-
-  VA_START (args, fmt);
-  return _IPrint ((UINTN) -1, (UINTN) -1, gST->ConOut, fmt, args);
-}
-
-*/
 UINTN
 PrintAt (
   IN UINTN     Column,
@@ -312,7 +241,7 @@ Returns:
   VA_LIST args;
 
   VA_START (args, fmt);
-  return _IPrint (Column, Row, gST->ConOut, fmt, args);
+  return PrintInternal (Column, Row, gST->ConOut, fmt, args);
 }
 
 UINTN
@@ -372,320 +301,6 @@ Returns:
 }
 
 UINTN
-SPrint (
-  OUT CHAR16        *Buffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *Format,
-  ...
-  )
-/*++
-
-Routine Description:
-
-  SPrint function to process format and place the results in Buffer.
-
-Arguments:
-
-  Buffer     - Ascii buffer to print the results of the parsing of Format into.
-
-  BufferSize - Maximum number of characters to put into buffer. Zero means no 
-               limit.
-
-  Format - Ascii format string see file header for more details.
-
-  ...    - Vararg list consumed by processing Format.
-
-Returns: 
-
-  Number of characters printed.
-
---*/
-{
-  UINTN   Return;
-  VA_LIST Marker;
-
-  VA_START (Marker, Format);
-  Return = VSPrint (Buffer, BufferSize, Format, Marker);
-  VA_END (Marker);
-
-  return Return;
-}
-
-UINTN
-EFIAPI
-VSPrint (
-  OUT CHAR16        *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  IN  VA_LIST       Marker
-  )
-/*++
-
-Routine Description:
-
-  VSPrint function to process format and place the results in Buffer. Since a 
-  VA_LIST is used this rountine allows the nesting of Vararg routines. Thus 
-  this is the main print working routine
-
-Arguments:
-
-  StartOfBuffer - Unicode buffer to print the results of the parsing of Format into.
-
-  BufferSize    - Maximum number of characters to put into buffer. Zero means 
-                  no limit.
-
-  FormatString  - Unicode format string see file header for more details.
-
-  Marker        - Vararg list consumed by processing Format.
-
-Returns: 
-
-  Number of characters printed.
-
---*/
-{
-  CHAR16    TmpBuffer[40];
-  CHAR16    *Buffer;
-  CHAR16    *UnicodeStr;
-  CHAR16    *Format;
-  UINTN     Index;
-  UINTN     Flags;
-  UINTN     Width;
-  UINT64    Value;
-  EFI_GUID  *TmpGUID;
-
-  //
-  // Process the format string. Stop if Buffer is over run.
-  //
-  Buffer  = StartOfBuffer;
-  Format  = (CHAR16 *) FormatString;
-  for (Index = 0; (*Format != '\0') && (Index < BufferSize - 1); Format++) {
-    if (*Format != '%') {
-      if (*Format == '\n' && Index < BufferSize - 2) {
-        //
-        // If carage return add line feed
-        //
-        Buffer[Index++] = '\r';
-      }
-
-      Buffer[Index++] = *Format;
-      continue;
-    }
-    //
-    // Now it's time to parse what follows after %
-    //
-    Format = GetFlagsAndWidth (Format, &Flags, &Width, &Marker);
-    switch (*Format) {
-    case 'x':
-      if ((Flags & LONG_TYPE) == LONG_TYPE) {
-        Value = VA_ARG (Marker, UINT64);
-      } else {
-        Value = VA_ARG (Marker, UINTN);
-      }
-
-      if (Width > 39) {
-        Width = 39;
-      }
-
-#if 0
-      Index += EfiValueToHexStr (&Buffer[Index], Value, Flags, Width);
-      continue;
-#else
-      EfiValueToHexStr (TmpBuffer, Value, Flags, Width);
-      UnicodeStr = TmpBuffer;
-      break;
-#endif
-
-    case 'd':
-      if ((Flags & LONG_TYPE) == LONG_TYPE) {
-        Value = VA_ARG (Marker, UINT64);
-      } else {
-        Value = (UINTN) VA_ARG (Marker, UINTN);
-      }
-
-#if 0
-      Index += ValueToString (&Buffer[Index], FALSE, Value);
-      continue;
-#else
-      ValueToString (TmpBuffer, FALSE, Value);
-      UnicodeStr = TmpBuffer;
-      break;
-#endif
-
-    case 's':
-    case 'S':
-      UnicodeStr = (CHAR16 *) VA_ARG (Marker, CHAR16 *);
-
-      if (UnicodeStr == NULL) {
-        UnicodeStr = L"<null string>";
-      }
-
-      break;
-
-    case 'c':
-      Buffer[Index++] = (CHAR16) VA_ARG (Marker, UINTN);
-      continue;
-
-    case 'g':
-      TmpGUID = VA_ARG (Marker, EFI_GUID *);
-
-      if (TmpGUID != NULL) {
-        Index += GuidToString (
-                  TmpGUID,
-                  &Buffer[Index],
-                  BufferSize - Index
-                  );
-      }
-
-      continue;
-
-    case '%':
-    //
-    // Fall through...
-    //
-    default:
-      //
-      // if the type is unknown print it to the screen
-      //
-      Buffer[Index++] = *Format;
-      continue;
-    }
-
-    for (; *UnicodeStr != '\0' && Index < BufferSize - 1; UnicodeStr++) {
-      Buffer[Index++] = *UnicodeStr;
-    }
-  }
-
-  Buffer[Index++] = '\0';
-
-  return &Buffer[Index] - StartOfBuffer;
-}
-
-STATIC
-CHAR16 *
-GetFlagsAndWidth (
-  IN  CHAR16      *Format,
-  OUT UINTN       *Flags,
-  OUT UINTN       *Width,
-  IN OUT  VA_LIST *Marker
-  )
-/*++
-
-Routine Description:
-
-  VSPrint worker function that parses flag and width information from the 
-  Format string and returns the next index into the Format string that needs
-  to be parsed. See file headed for details of Flag and Width.
-
-Arguments:
-
-  Format - Current location in the VSPrint format string.
-
-  Flags  - Returns flags
-
-  Width  - Returns width of element
-
-  Marker - Vararg list that may be paritally consumed and returned.
-
-Returns: 
-
-  Pointer indexed into the Format string for all the information parsed
-  by this routine.
-
---*/
-{
-  UINTN   Count;
-  BOOLEAN Done;
-
-  *Flags  = 0;
-  *Width  = 0;
-  for (Done = FALSE; !Done;) {
-    Format++;
-
-    switch (*Format) {
-
-    case '0':
-      *Flags |= PREFIX_ZERO;
-
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      Count = 0;
-      do {
-        Count = (Count * 10) +*Format - '0';
-        Format++;
-      } while ((*Format >= '0') && (*Format <= '9'));
-      Format--;
-      *Width = Count;
-      break;
-
-    default:
-      Done = TRUE;
-    }
-  }
-
-  return Format;
-}
-
-STATIC
-UINTN
-GuidToString (
-  IN  EFI_GUID  *Guid,
-  IN  CHAR16    *Buffer,
-  IN  UINTN     BufferSize
-  )
-/*++
-
-Routine Description:
-
-  VSPrint worker function that prints an EFI_GUID.
-
-Arguments:
-
-  Guid       - Pointer to GUID to print.
-
-  Buffer     - Buffe to print Guid into.
-  
-  BufferSize - Size of Buffer.
-
-Returns: 
-
-  Number of characters printed.  
-
---*/
-{
-  UINTN Size;
-
-  Size = SPrint (
-          Buffer,
-          BufferSize,
-          L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-          (UINTN)Guid->Data1,
-          (UINTN)Guid->Data2,
-          (UINTN)Guid->Data3,
-          (UINTN)Guid->Data4[0],
-          (UINTN)Guid->Data4[1],
-          (UINTN)Guid->Data4[2],
-          (UINTN)Guid->Data4[3],
-          (UINTN)Guid->Data4[4],
-          (UINTN)Guid->Data4[5],
-          (UINTN)Guid->Data4[6],
-          (UINTN)Guid->Data4[7]
-          );
-
-  //
-  // SPrint will null terminate the string. The -1 skips the null
-  //
-  return Size - 1;
-}
-
-UINTN
 ValueToString (
   IN  OUT CHAR16  *Buffer,
   IN  BOOLEAN     Flags,
@@ -715,28 +330,38 @@ Returns:
   CHAR16  *TempStr;
   CHAR16  *BufferPtr;
   UINTN   Count;
+  UINTN   NumberCount;
   UINTN   Remainder;
+  BOOLEAN Negative;
 
-  TempStr   = TempBuffer;
-  BufferPtr = Buffer;
-  Count     = 0;
+  Negative    = FALSE;
+  TempStr     = TempBuffer;
+  BufferPtr   = Buffer;
+  Count       = 0;
+  NumberCount = 0;
 
   if (Value < 0) {
-    *(BufferPtr++)  = '-';
-    Value           = -Value;
-    Count++;
+    Negative = TRUE;
+    Value    = -Value;
   }
 
   do {
     Value         = (INT64) DivU64x32 ((UINT64) Value, 10, &Remainder);
     *(TempStr++)  = (CHAR16) (Remainder + '0');
     Count++;
+    NumberCount++;
     if ((Flags & COMMA_TYPE) == COMMA_TYPE) {
-      if (Count % 3 == 0) {
+      if (NumberCount % 3 == 0 && Value != 0) {
         *(TempStr++) = ',';
+        Count++;
       }
     }
   } while (Value != 0);
+
+  if (Negative) {
+    *(BufferPtr++) = '-';
+    Count++;
+  }
 
   //
   // Reverse temp string into Buffer.

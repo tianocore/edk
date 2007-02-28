@@ -62,7 +62,7 @@ STATIC
 EFI_STATUS
 SubmitBlockingIoCommand (
   ATAPI_EXT_SCSI_PASS_THRU_DEV                  *AtapiScsiPrivate,
-  UINT32                                        Target,
+  UINT8                                         Target,
   EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET    *Packet
   );
 
@@ -70,7 +70,7 @@ STATIC
 EFI_STATUS
 RequestSenseCommand (
   ATAPI_EXT_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
-  UINT32                          Target,
+  UINT8                           Target,
   UINT64                          Timeout,
   VOID                            *SenseData,
   UINT8                           *SenseDataLength
@@ -80,7 +80,7 @@ STATIC
 EFI_STATUS
 AtapiPacketCommand (
   ATAPI_EXT_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
-  UINT32                          Target,
+  UINT8                           Target,
   UINT8                           *PacketCommand,
   VOID                            *Buffer,
   UINT32                          *ByteCount,
@@ -184,14 +184,21 @@ AtapiPassThruCheckErrorStatus (
   ATAPI_EXT_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate
   );
 
+STATIC
+VOID
+InitAtapiIoPortRegisters (
+  IN  ATAPI_EXT_SCSI_PASS_THRU_DEV      *AtapiScsiPrivate,
+  IN  IDE_REGISTERS_BASE_ADDR           *IdeRegsBaseAddr
+  )
+;
 
-//
-// IDE registers' fixed address
-//
-static IDE_BASE_REGISTERS   AtapiIoPortRegisters[2] = {
-        {0x1f0, 0x1f1, 0x1f2, 0x1f3, 0x1f4, 0x1f5, 0x1f6, 0x1f7, 0x3f6, 0x3f7},
-        {0x170, 0x171, 0x172, 0x173, 0x174, 0x175, 0x176, 0x177, 0x376, 0x377},
-};
+STATIC
+EFI_STATUS
+GetIdeRegistersBaseAddr (
+  IN  EFI_PCI_IO_PROTOCOL         *PciIo,
+  OUT IDE_REGISTERS_BASE_ADDR     *IdeRegsBaseAddr
+  )
+;
 
 static SCSI_COMMAND_SET     EndTable = { 0xff, 0xff };
 
@@ -241,7 +248,7 @@ EFI_DRIVER_BINDING_PROTOCOL gAtapiExtScsiPassThruDriverBinding = {
   AtapiExtScsiPassThruDriverBindingSupported,
   AtapiExtScsiPassThruDriverBindingStart,
   AtapiExtScsiPassThruDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -388,7 +395,9 @@ Returns:
 --*/
 {
   EFI_STATUS          Status;
+  EFI_STATUS          DisableStatus;
   EFI_PCI_IO_PROTOCOL *PciIo;
+  UINT64              Supports;
 
   PciIo = NULL;
   Status = gBS->OpenProtocol (
@@ -405,10 +414,22 @@ Returns:
 
   Status = PciIo->Attributes (
                     PciIo,
-                    EfiPciIoAttributeOperationEnable,
-                    EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
-                    NULL
+                    EfiPciIoAttributeOperationSupported,
+                    0,
+                    &Supports
                     );
+  if (!EFI_ERROR (Status)) {
+    Supports &= (EFI_PCI_DEVICE_ENABLE               |
+                 EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO |
+                 EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO);
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      Supports,
+                      NULL
+                      );
+  }
+
   if (EFI_ERROR (Status)) {
     goto Done;
   }
@@ -421,12 +442,23 @@ Returns:
 Done:
   if (EFI_ERROR (Status)) {
     if (PciIo) {
-      PciIo->Attributes (
-               PciIo,
-               EfiPciIoAttributeOperationDisable,
-               EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
-               NULL
-               );
+      DisableStatus = PciIo->Attributes (
+                               PciIo,
+                               EfiPciIoAttributeOperationSupported,
+                               0,
+                               &Supports
+                               );
+      if (!EFI_ERROR (DisableStatus)) {
+        Supports &= (EFI_PCI_DEVICE_ENABLE               |
+                     EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO |
+                     EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO);
+        DisableStatus = PciIo->Attributes (
+                                 PciIo,
+                                 EfiPciIoAttributeOperationDisable,
+                                 Supports,
+                                 NULL
+                                 );
+      }
     }
 
     gBS->CloseProtocol (
@@ -471,6 +503,7 @@ Returns:
   EFI_STATUS                       Status;
   EFI_EXT_SCSI_PASS_THRU_PROTOCOL  *ScsiPassThru;
   ATAPI_EXT_SCSI_PASS_THRU_DEV     *AtapiScsiPrivate;
+  UINT64                           Supports;
 
   Status = gBS->OpenProtocol (
                   Controller,
@@ -497,12 +530,23 @@ Returns:
   //
   // Release Pci Io protocol on the controller handle.
   //
-  AtapiScsiPrivate->PciIo->Attributes (
-                             AtapiScsiPrivate->PciIo,
-                             EfiPciIoAttributeOperationDisable,
-                             EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
-                             NULL
-                             );
+  Status = AtapiScsiPrivate->PciIo->Attributes (
+                                      AtapiScsiPrivate->PciIo,
+                                      EfiPciIoAttributeOperationSupported,
+                                      0,
+                                      &Supports
+                                      );
+  if (!EFI_ERROR (Status)) {
+    Supports &= (EFI_PCI_DEVICE_ENABLE               |
+                 EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO |
+                 EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO);
+    Status = AtapiScsiPrivate->PciIo->Attributes (
+                                        AtapiScsiPrivate->PciIo,
+                                        EfiPciIoAttributeOperationDisable,
+                                        Supports,
+                                        NULL
+                                        );
+  }
 
   gBS->CloseProtocol (
          Controller,
@@ -539,22 +583,39 @@ Returns:
 --*/
 {
   EFI_STATUS                    Status;
-  UINT64                        Attributes;
+  UINT64                        Supports;
   ATAPI_EXT_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
+  IDE_REGISTERS_BASE_ADDR       IdeRegsBaseAddr[ATAPI_MAX_CHANNEL];
+  
 
   AtapiScsiPrivate = EfiLibAllocateZeroPool (sizeof (ATAPI_EXT_SCSI_PASS_THRU_DEV));
   if (AtapiScsiPrivate == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Attributes = EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE;
   EfiCopyMem (AtapiScsiPrivate->ChannelName, AtapiChannelString, sizeof (AtapiChannelString));
   EfiCopyMem (AtapiScsiPrivate->ControllerName, ControllerNameString, sizeof (ControllerNameString));
 
   //
   // Enable channel
   //
-  PciIo->Attributes (PciIo, EfiPciIoAttributeOperationSet, Attributes, NULL);
+  Status = PciIo->Attributes (
+                    PciIo,
+                    EfiPciIoAttributeOperationSupported,
+                    0,
+                    &Supports
+                    );
+  if (!EFI_ERROR (Status)) {
+    Supports &= (EFI_PCI_DEVICE_ENABLE               |
+                 EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO |
+                 EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO);
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      Supports,
+                      NULL
+                      );
+  }
 
   AtapiScsiPrivate->Signature = ATAPI_SCSI_PASS_THRU_DEV_SIGNATURE;
   AtapiScsiPrivate->Handle    = Controller;
@@ -562,8 +623,18 @@ Returns:
   //
   // will reset the IoPort inside each API function.
   //
-  AtapiScsiPrivate->IoPort  = AtapiIoPortRegisters;
+  AtapiScsiPrivate->IoPort  = NULL;
   AtapiScsiPrivate->PciIo   = PciIo;
+
+  //
+  // Obtain IDE IO port registers' base addresses
+  //
+  Status = GetIdeRegistersBaseAddr (PciIo, IdeRegsBaseAddr);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  InitAtapiIoPortRegisters(AtapiScsiPrivate, IdeRegsBaseAddr);
 
   //
   // initialize SCSI Pass Thru Protocol interface
@@ -590,9 +661,9 @@ Returns:
   AtapiScsiPrivate->ScsiPassThruMode.IoAlign = 0;
 
   //
-  // Initialize the LatestTargetId to 0xFFFFFFFF (for the GetNextDevice() call).
+  // Initialize the LatestTargetId to MAX_TARGET_ID.
   //
-  AtapiScsiPrivate->LatestTargetId  = 0xFFFFFFFF;
+  AtapiScsiPrivate->LatestTargetId  = MAX_TARGET_ID;
   AtapiScsiPrivate->LatestLun       = 0;
 
   Status = gBS->InstallProtocolInterface (
@@ -644,16 +715,20 @@ Returns:
 --*/
 {
   EFI_STATUS                          Status;
-  UINT32                              TargetId;
   ATAPI_EXT_SCSI_PASS_THRU_DEV        *AtapiScsiPrivate;
+  UINT8                                TargetId;
   
   AtapiScsiPrivate = ATAPI_EXT_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  TargetId = *(UINT32*)Target;
+
+  //
+  // For ATAPI device, UINT8 is enough to represent the SCSI ID on channel.
+  //
+  TargetId = Target[0];
   
   //
   // Target is not allowed beyond MAX_TARGET_ID
   //
-  if (TargetId > MAX_TARGET_ID) {
+  if ((TargetId > MAX_TARGET_ID) || (Lun != 0)) {
     return EFI_INVALID_PARAMETER;
   }
   
@@ -669,7 +744,7 @@ Returns:
   // If Request Packet targets at the IDE channel itself,
   // do nothing.
   //
-  if (TargetId == This->Mode->AdapterId) {
+  if (TargetId == (UINT8)This->Mode->AdapterId) {
     Packet->InTransferLength = Packet->OutTransferLength = 0;
     return EFI_SUCCESS;
   }
@@ -680,9 +755,11 @@ Returns:
   //  Target Id in [2,3] area, using AtapiIoPortRegisters[1]
   //
   if ((TargetId / 2) == 0) {
-    AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[0];
+    TargetId = TargetId % 2;
+    AtapiScsiPrivate->IoPort = &AtapiScsiPrivate->AtapiIoPortRegisters[0];
   } else {
-    AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[1];
+    TargetId = TargetId % 2;
+    AtapiScsiPrivate->IoPort = &AtapiScsiPrivate->AtapiIoPortRegisters[1];
   }
   
   //
@@ -731,8 +808,10 @@ Returns:
                            returned on a previous call to GetNextDevice().
 --*/
 {
-  UINT32                         TargetId;
-  ATAPI_EXT_SCSI_PASS_THRU_DEV   *AtapiScsiPrivate;  
+  UINT8                          ByteIndex;
+  UINT8                          TargetId;
+  UINT8                          ScsiId[TARGET_MAX_BYTES];
+  ATAPI_EXT_SCSI_PASS_THRU_DEV   *AtapiScsiPrivate; 
 
   //
   // Retrieve Device Private Data Structure.
@@ -742,13 +821,26 @@ Returns:
   //
   // Check whether Target is valid.
   //
-  TargetId = *(UINT32*)(*Target);
-  
   if (*Target == NULL || Lun == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((TargetId != 0xFFFFFFFF) &&
+  EfiSetMem (ScsiId, TARGET_MAX_BYTES,0xFF);
+
+  TargetId = (*Target)[0];
+
+  //
+  // For ATAPI device, we use UINT8 to represent the SCSI ID on channel.
+  //
+  if (EfiCompareMem(*Target, ScsiId, TARGET_MAX_BYTES) != 0) {
+    for (ByteIndex = 1; ByteIndex < TARGET_MAX_BYTES; ByteIndex++) {
+      if ((*Target)[ByteIndex] != 0) {
+        return EFI_INVALID_PARAMETER;
+      }
+    } 
+  }
+  
+  if ((EfiCompareMem(*Target, ScsiId, TARGET_MAX_BYTES) != 0) &&
       ((TargetId != AtapiScsiPrivate->LatestTargetId) ||
       (*Lun != AtapiScsiPrivate->LatestLun))) {
     return EFI_INVALID_PARAMETER;
@@ -758,10 +850,10 @@ Returns:
     return EFI_NOT_FOUND;
   }
 
-  if (TargetId == 0xFFFFFFFF) {
-    *(UINT32*)(*Target) = 0x0;
+  if (EfiCompareMem(*Target, ScsiId, TARGET_MAX_BYTES) == 0) {
+    EfiSetMem (*Target, TARGET_MAX_BYTES,0);
   } else {
-    *(UINT32*)(*Target) = AtapiScsiPrivate->LatestTargetId + 1;
+    (*Target)[0] = AtapiScsiPrivate->LatestTargetId + 1;
   }
 
   *Lun = 0;
@@ -769,7 +861,7 @@ Returns:
   //
   // Update the LatestTargetId.
   //
-  AtapiScsiPrivate->LatestTargetId  = *(UINT32*)(*Target);
+  AtapiScsiPrivate->LatestTargetId  = (*Target)[0];
   AtapiScsiPrivate->LatestLun       = *Lun;
 
   return EFI_SUCCESS;
@@ -817,14 +909,14 @@ Arguments:
 --*/
 {
   EFI_DEV_PATH                   *Node;
-  UINT32                         TargetId;
+  UINT8                          TargetId;
   ATAPI_EXT_SCSI_PASS_THRU_DEV   *AtapiScsiPrivate;
 
   //
   // Retrieve Device Private Data Structure.
   //
   AtapiScsiPrivate = ATAPI_EXT_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  TargetId = *(UINT32*)Target;  
+  TargetId = Target[0];  
 
   //
   // Validate parameters passed in.
@@ -912,12 +1004,14 @@ Returns:
     return EFI_UNSUPPORTED;
   }
 
+  EfiZeroMem (*Target, TARGET_MAX_BYTES);
+
   Node    = (EFI_DEV_PATH *) DevicePath;
 
-  *(UINT32*)(*Target) = Node->Atapi.PrimarySecondary * 2 + Node->Atapi.SlaveMaster;
+  (*Target)[0] = Node->Atapi.PrimarySecondary * 2 + Node->Atapi.SlaveMaster;
   *Lun    = Node->Atapi.Lun;
 
-  if (*(UINT32*)(*Target) > (MAX_TARGET_ID - 1) || *Lun != 0) {
+  if ((*Target)[0] > (MAX_TARGET_ID - 1) || *Lun != 0) {
     return EFI_NOT_FOUND;
   }
 
@@ -954,18 +1048,20 @@ Returns:
   UINT8                         DeviceControlValue;
   UINT8                         Index;
   ATAPI_EXT_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
+  BOOLEAN                        ResetFlag;
 
   AtapiScsiPrivate = ATAPI_EXT_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-
+  ResetFlag = FALSE;
   //
   // Reset both Primary channel and Secondary channel.
   // so, the IoPort pointer must point to the right I/O Register group
+  // And if there is a channel reset successfully, return EFI_SUCCESS.
   //
   for (Index = 0; Index < 2; Index++) {
     //
     // Reset
     //
-    AtapiScsiPrivate->IoPort  = &AtapiIoPortRegisters[Index];
+    AtapiScsiPrivate->IoPort  = &AtapiScsiPrivate->AtapiIoPortRegisters[Index];
 
     DeviceControlValue        = 0;
     //
@@ -998,12 +1094,16 @@ Returns:
     //
     // slave device needs at most 31s to clear BSY
     //
-    if (StatusWaitForBSYClear (AtapiScsiPrivate, 31000) == EFI_TIMEOUT) {
-      return EFI_DEVICE_ERROR;
+    if (StatusWaitForBSYClear (AtapiScsiPrivate, 31000000) != EFI_TIMEOUT) {
+      ResetFlag = TRUE;
     }
   }
 
-  return EFI_SUCCESS;
+  if (ResetFlag) {
+    return EFI_SUCCESS;
+  }
+  
+  return EFI_TIMEOUT;
 }
 
 EFI_STATUS
@@ -1041,13 +1141,13 @@ Returns:
 {
   UINT8                         Command;
   UINT8                         DeviceSelect;
-  UINT32                        TargetId;
+  UINT8                         TargetId;
   ATAPI_EXT_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;
   
   AtapiScsiPrivate = ATAPI_EXT_SCSI_PASS_THRU_DEV_FROM_THIS (This);
-  TargetId = *(UINT32*)Target;
+  TargetId = Target[0];
   
-  if (TargetId > MAX_TARGET_ID) {
+  if ((TargetId > MAX_TARGET_ID) || (Lun != 0)) {
     return EFI_INVALID_PARAMETER;
   }
   //
@@ -1063,9 +1163,9 @@ Returns:
   //  Target Id in [2,3] area, using AtapiIoPortRegisters[1]
   //
   if ((TargetId / 2) == 0) {
-    AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[0];
+    AtapiScsiPrivate->IoPort = &AtapiScsiPrivate->AtapiIoPortRegisters[0];
   } else {
-    AtapiScsiPrivate->IoPort = &AtapiIoPortRegisters[1];
+    AtapiScsiPrivate->IoPort = &AtapiScsiPrivate->AtapiIoPortRegisters[1];
   }
   
   //
@@ -1084,8 +1184,8 @@ Returns:
   // when reset is complete.
   // slave device needs at most 31s to clear BSY
   //
-  if (EFI_ERROR (StatusWaitForBSYClear (AtapiScsiPrivate, 31000))) {
-    return EFI_DEVICE_ERROR;
+  if (EFI_ERROR (StatusWaitForBSYClear (AtapiScsiPrivate, 31000000))) {
+    return EFI_TIMEOUT;
   }
   
   //
@@ -1130,8 +1230,10 @@ Returns:
                           returned on a previous call to GetNextDevice().
 --*/
 {
-  UINT32                        TargetId;
+  UINT8                         TargetId;
+  UINT8                         ScsiId[TARGET_MAX_BYTES];
   ATAPI_EXT_SCSI_PASS_THRU_DEV  *AtapiScsiPrivate;  
+  UINT8                         ByteIndex;
 
   //
   // Retrieve Device Private Data Structure.
@@ -1141,13 +1243,25 @@ Returns:
   //
   // Check whether Target is valid.
   //
-  TargetId = *(UINT32*)(*Target);
-  
   if (*Target == NULL ) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((TargetId != 0xFFFFFFFF) &&(TargetId != AtapiScsiPrivate->LatestTargetId)) {
+  TargetId = (*Target)[0];
+  EfiSetMem (ScsiId, TARGET_MAX_BYTES,0xFF);
+
+  //
+  // For ATAPI device, we use UINT8 to represent the SCSI ID on channel.
+  //
+  if (EfiCompareMem(*Target, ScsiId, TARGET_MAX_BYTES) != 0) {
+    for (ByteIndex = 1; ByteIndex < TARGET_MAX_BYTES; ByteIndex++) {
+      if ((*Target)[ByteIndex] != 0) {
+        return EFI_INVALID_PARAMETER;
+      }
+    } 
+  }
+
+  if ((EfiCompareMem(*Target, ScsiId, TARGET_MAX_BYTES) != 0) &&(TargetId != AtapiScsiPrivate->LatestTargetId)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1155,19 +1269,154 @@ Returns:
     return EFI_NOT_FOUND;
   }
 
-  if (TargetId == 0xFFFFFFFF) {
-    *(UINT32*)(*Target) = 0x0;
+  if ((EfiCompareMem(*Target, ScsiId, TARGET_MAX_BYTES) == 0)) {
+    EfiSetMem (*Target, TARGET_MAX_BYTES,0);
   } else {
-    *(UINT32*)(*Target) = AtapiScsiPrivate->LatestTargetId + 1;
+    (*Target)[0] = AtapiScsiPrivate->LatestTargetId + 1;
   }
 
   //
   // Update the LatestTargetId.
   //
-  AtapiScsiPrivate->LatestTargetId  = *(UINT32*)(*Target);
+  AtapiScsiPrivate->LatestTargetId  = (*Target)[0];
   AtapiScsiPrivate->LatestLun       = 0;
 
   return EFI_SUCCESS;
+}
+
+STATIC
+EFI_STATUS
+GetIdeRegistersBaseAddr (
+  IN  EFI_PCI_IO_PROTOCOL         *PciIo,
+  OUT IDE_REGISTERS_BASE_ADDR     *IdeRegsBaseAddr
+  )
+/*++
+
+Routine Description:
+  Get IDE IO port registers' base addresses by mode. In 'Compatibility' mode,
+  use fixed addresses. In Native-PCI mode, get base addresses from BARs in
+  the PCI IDE controller's Configuration Space.
+
+Arguments:
+  PciIo             - Pointer to the EFI_PCI_IO_PROTOCOL instance
+  IdeRegsBaseAddr   - Pointer to IDE_REGISTERS_BASE_ADDR to 
+                      receive IDE IO port registers' base addresses
+                      
+Returns:
+
+  EFI_STATUS
+    
+--*/
+{
+  EFI_STATUS  Status;
+  PCI_TYPE00  PciData;
+
+  Status = PciIo->Pci.Read (
+                        PciIo,
+                        EfiPciIoWidthUint8,
+                        0,
+                        sizeof (PciData),
+                        &PciData
+                        );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if ((PciData.Hdr.ClassCode[0] & IDE_PRIMARY_OPERATING_MODE) == 0) {
+    IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  = 0x1f0;
+    IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  = 0x3f6;
+  } else {
+    //
+    // The BARs should be of IO type
+    //
+    if ((PciData.Device.Bar[0] & bit0) == 0 || 
+        (PciData.Device.Bar[1] & bit0) == 0) {
+      return EFI_UNSUPPORTED;
+    }
+
+    IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  =
+    (UINT16) (PciData.Device.Bar[0] & 0x0000fff8);
+    IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  =
+    (UINT16) ((PciData.Device.Bar[1] & 0x0000fffc) + 2);
+  }
+
+  if ((PciData.Hdr.ClassCode[0] & IDE_SECONDARY_OPERATING_MODE) == 0) {
+    IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  = 0x170;
+    IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  = 0x376;
+  } else {
+    //
+    // The BARs should be of IO type
+    //
+    if ((PciData.Device.Bar[2] & bit0) == 0 ||
+        (PciData.Device.Bar[3] & bit0) == 0) {
+      return EFI_UNSUPPORTED;
+    }
+
+    IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  =
+    (UINT16) (PciData.Device.Bar[2] & 0x0000fff8);
+    IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  =
+    (UINT16) ((PciData.Device.Bar[3] & 0x0000fffc) + 2);
+  }
+
+  return EFI_SUCCESS;
+}
+
+
+STATIC
+VOID
+InitAtapiIoPortRegisters (
+  IN  ATAPI_EXT_SCSI_PASS_THRU_DEV *AtapiScsiPrivate,
+  IN  IDE_REGISTERS_BASE_ADDR      *IdeRegsBaseAddr
+  )
+/*++
+
+Routine Description:
+
+  Initialize each Channel's Base Address of CommandBlock and ControlBlock.
+
+Arguments:
+    
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  IdeRegsBaseAddr             - The pointer of IDE_REGISTERS_BASE_ADDR
+  
+Returns:
+  
+  None
+
+--*/  
+{
+  
+  UINT8               IdeChannel;
+  UINT16              CommandBlockBaseAddr;
+  UINT16              ControlBlockBaseAddr;
+  IDE_BASE_REGISTERS  *RegisterPointer;
+
+  
+  for (IdeChannel = 0; IdeChannel < ATAPI_MAX_CHANNEL; IdeChannel++) {
+
+    RegisterPointer =  &AtapiScsiPrivate->AtapiIoPortRegisters[IdeChannel];
+
+    //
+    // Initialize IDE IO port addresses, including Command Block registers
+    // and Control Block registers
+    //
+    CommandBlockBaseAddr = IdeRegsBaseAddr[IdeChannel].CommandBlockBaseAddr;
+    ControlBlockBaseAddr = IdeRegsBaseAddr[IdeChannel].ControlBlockBaseAddr;
+  
+    RegisterPointer->Data = CommandBlockBaseAddr;
+    (*(UINT16 *) &RegisterPointer->Reg1) = (UINT16) (CommandBlockBaseAddr + 0x01);
+    RegisterPointer->SectorCount = (UINT16) (CommandBlockBaseAddr + 0x02);
+    RegisterPointer->SectorNumber = (UINT16) (CommandBlockBaseAddr + 0x03);
+    RegisterPointer->CylinderLsb = (UINT16) (CommandBlockBaseAddr + 0x04);
+    RegisterPointer->CylinderMsb = (UINT16) (CommandBlockBaseAddr + 0x05);
+    RegisterPointer->Head = (UINT16) (CommandBlockBaseAddr + 0x06);
+    (*(UINT16 *) &RegisterPointer->Reg) = (UINT16) (CommandBlockBaseAddr + 0x07);
+  
+    (*(UINT16 *) &RegisterPointer->Alt) = ControlBlockBaseAddr;
+    RegisterPointer->DriveAddress = (UINT16) (ControlBlockBaseAddr + 0x01);
+  }
+
 }
 
 STATIC  
@@ -1213,6 +1462,7 @@ Returns:
 
   return EFI_SUCCESS;
 }
+
 
 STATIC  
 BOOLEAN
@@ -1279,7 +1529,7 @@ STATIC
 EFI_STATUS
 SubmitBlockingIoCommand (
   ATAPI_EXT_SCSI_PASS_THRU_DEV                  *AtapiScsiPrivate,
-  UINT32                                        Target,
+  UINT8                                         Target,
   EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET    *Packet
   )
 /*++
@@ -1348,11 +1598,22 @@ Arguments:
     Packet->SenseDataLength = 0;
     return PacketCommandStatus;
   }
+  
+  //
+  // Check if SenseData meets the alignment requirement.
+  //
+  if ((AtapiScsiPrivate->ScsiPassThru.Mode->IoAlign != 0)     \
+    && (AtapiScsiPrivate->ScsiPassThru.Mode->IoAlign != 1)) {
+    if (((UINTN)Packet->SenseData % AtapiScsiPrivate->ScsiPassThru.Mode->IoAlign) != 0) {
+      return EFI_INVALID_PARAMETER;
+    }
+  }
+  
   //
   // Return SenseData if PacketCommandStatus matches
   // the following return codes.
   //
-  if ((PacketCommandStatus == EFI_WARN_BUFFER_TOO_SMALL) ||
+  if ((PacketCommandStatus ==  EFI_BAD_BUFFER_SIZE) ||
       (PacketCommandStatus == EFI_DEVICE_ERROR) ||
       (PacketCommandStatus == EFI_TIMEOUT)) {
 
@@ -1380,7 +1641,7 @@ STATIC
 EFI_STATUS
 RequestSenseCommand (
   ATAPI_EXT_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
-  UINT32                          Target,
+  UINT8                           Target,
   UINT64                          Timeout,
   VOID                            *SenseData,
   UINT8                           *SenseDataLength
@@ -1432,7 +1693,7 @@ STATIC
 EFI_STATUS
 AtapiPacketCommand (
   ATAPI_EXT_SCSI_PASS_THRU_DEV    *AtapiScsiPrivate,
-  UINT32                          Target,
+  UINT8                           Target,
   UINT8                           *PacketCommand,
   VOID                            *Buffer,
   UINT32                          *ByteCount,
@@ -1478,18 +1739,25 @@ Returns:
   EFI_STATUS  Status;
 
   //
-  // Set all the command parameters by fill related registers.
-  // Before write to all the following registers, BSY and DRQ must be 0.
+  // Check if the buffer meets the alignment requirement.
   //
-  Status = StatusDRQClear (AtapiScsiPrivate, TimeoutInMicroSeconds);
-  if (EFI_ERROR (Status)) {
-    if (Status == EFI_ABORTED) {
-      Status = EFI_DEVICE_ERROR;
+  if ((AtapiScsiPrivate->ScsiPassThru.Mode->IoAlign != 0)     \
+    && (AtapiScsiPrivate->ScsiPassThru.Mode->IoAlign != 1)) {
+    if (((UINTN)Buffer % AtapiScsiPrivate->ScsiPassThru.Mode->IoAlign) != 0) {
+      return EFI_INVALID_PARAMETER;
     }
-
-    *ByteCount = 0;
-    return Status;
   }
+
+  //
+  // Set all the command parameters by fill related registers.
+  // Before write to all the following registers, BSY must be 0.
+  //
+  Status = StatusWaitForBSYClear (AtapiScsiPrivate, TimeoutInMicroSeconds);
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+
   //
   // Select device via Device/Head Register.
   // "Target = 0" indicates device 0; "Target = 1" indicates device 1
@@ -1499,6 +1767,20 @@ Returns:
     AtapiScsiPrivate->IoPort->Head,
     (UINT8) ((Target << 4) | DEFAULT_CMD) // DEFAULT_CMD: 0xa0 (1010,0000)
     );
+
+  //
+  // Set all the command parameters by fill related registers.
+  // Before write to all the following registers, BSY DRQ must be 0.
+  //
+   Status =  StatusDRQClear(AtapiScsiPrivate,  TimeoutInMicroSeconds);
+
+  if (EFI_ERROR (Status)) {
+    if (Status == EFI_ABORTED) {
+      Status = EFI_DEVICE_ERROR;
+    }
+    *ByteCount = 0;
+    return Status;
+  }
 
   //
   // No OVL; No DMA (by setting feature register)
@@ -1664,7 +1946,7 @@ Arguments:
       // ActualWordCount > 0
       //
       if (ActualWordCount < RequiredWordCount) {
-        return EFI_WARN_BUFFER_TOO_SMALL;
+        return EFI_BAD_BUFFER_SIZE;
       }
     }
     //
@@ -2600,3 +2882,4 @@ Returns:
   
   return EFI_DEVICE_ERROR;
 }
+

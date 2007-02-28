@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -252,9 +252,9 @@ DSCParseInclude (
 
       *End = 0;
       //
-      // Expand macro names. Use 'ThisSectionName' as scratchpad
+      // Expand symbols. Use 'ThisSectionName' as scratchpad
       //
-      ExpandMacros (Start, ThisSectionName, sizeof (ThisSectionName), 0);
+      ExpandSymbols (Start, ThisSectionName, sizeof (ThisSectionName), EXPANDMODE_NO_UNDEFS);
       Status = DSCParseInclude (DSC, ThisSectionName, NestLevel + 1);
       if (Status != STATUS_SUCCESS) {
         Error (FileName, LineNum, 0, NULL, "failed to parse !include file");

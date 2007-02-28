@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1479,7 +1479,7 @@ Returns:
   //  x16 device in 16-bit mode?
   //
   EfiMemRead (EfiCpuIoWidthUint8, (LbaAddress + 0x20), 0x4, &HubData);
-  if ((!EfiCompareMem (&HubData[0], "R", 2)) && (!EfiCompareMem (&HubData[2], "Q", 2))) {
+  if ((!EfiCompareMem (&HubData[0], "Q", 2)) && (!EfiCompareMem (&HubData[2], "R", 2))) {
     goto Done;
   }
   //
@@ -1506,7 +1506,7 @@ Returns:
   //
   // x32 device in 32-bit mode
   //
-  if ((!EfiCompareMem (&HubData[0], "R", 2)) && (((UINT16) HubData[2]) == 0) && (HubData[4] == 'Q')) {
+  if ((!EfiCompareMem (&HubData[0], "Q", 2)) && (((UINT16) HubData[2]) == 0) && (HubData[4] == 'R')) {
     goto Done;
   }
   //

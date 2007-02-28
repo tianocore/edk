@@ -23,7 +23,7 @@ EFI_DRIVER_BINDING_PROTOCOL gUdp4DriverBinding = {
   Udp4DriverBindingSupported,
   Udp4DriverBindingStart,
   Udp4DriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

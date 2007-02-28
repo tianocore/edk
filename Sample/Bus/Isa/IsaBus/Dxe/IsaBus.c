@@ -37,7 +37,7 @@ EFI_DRIVER_BINDING_PROTOCOL gIsaBusControllerDriver = {
   IsaBusControllerDriverSupported,
   IsaBusControllerDriverStart,
   IsaBusControllerDriverStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

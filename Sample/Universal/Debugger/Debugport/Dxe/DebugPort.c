@@ -228,7 +228,7 @@ Returns:
     Dp2 = Dp1;
 
     Status = gBS->LocateDevicePath (
-                    &gEfiSerialIoProtocolGuid,
+                    &gEfiDebugSerialIoProtocolGuid,
                     &Dp2,
                     &TempHandle
                     );
@@ -253,7 +253,7 @@ Returns:
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,
-                  &gEfiSerialIoProtocolGuid,
+                  &gEfiDebugSerialIoProtocolGuid,
                   &SerialIo,
                   This->DriverBindingHandle,
                   ControllerHandle,
@@ -265,7 +265,7 @@ Returns:
 
   gBS->CloseProtocol (
         ControllerHandle,
-        &gEfiSerialIoProtocolGuid,
+        &gEfiDebugSerialIoProtocolGuid,
         This->DriverBindingHandle,
         ControllerHandle
         );
@@ -303,7 +303,7 @@ Returns:
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,
-                  &gEfiSerialIoProtocolGuid,
+                  &gEfiDebugSerialIoProtocolGuid,
                   &gDebugPortDevice->SerialIoBinding,
                   This->DriverBindingHandle,
                   ControllerHandle,
@@ -345,7 +345,7 @@ Returns:
     if (EFI_ERROR (Status)) {
       gBS->CloseProtocol (
             ControllerHandle,
-            &gEfiSerialIoProtocolGuid,
+            &gEfiDebugSerialIoProtocolGuid,
             This->DriverBindingHandle,
             ControllerHandle
             );
@@ -388,7 +388,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     gBS->CloseProtocol (
           ControllerHandle,
-          &gEfiSerialIoProtocolGuid,
+          &gEfiDebugSerialIoProtocolGuid,
           This->DriverBindingHandle,
           ControllerHandle
           );
@@ -399,7 +399,7 @@ Returns:
   //
   Status = gBS->OpenProtocol (
                   ControllerHandle,
-                  &gEfiSerialIoProtocolGuid,
+                  &gEfiDebugSerialIoProtocolGuid,
                   &gDebugPortDevice->SerialIoBinding,
                   This->DriverBindingHandle,
                   gDebugPortDevice->DebugPortDeviceHandle,
@@ -414,14 +414,14 @@ Returns:
         &gDebugPortDevice->DebugPortInterface,
         0,
         &BufferSize,
-        "DebugPort driver failed to open child controller\n\n"
+        "DebugPort driver failed to open child controller\r\n\n"
         );
     }
     )
 
     gBS->CloseProtocol (
           ControllerHandle,
-          &gEfiSerialIoProtocolGuid,
+          &gEfiDebugSerialIoProtocolGuid,
           This->DriverBindingHandle,
           ControllerHandle
           );
@@ -435,7 +435,7 @@ Returns:
       &gDebugPortDevice->DebugPortInterface,
       0,
       &BufferSize,
-      "Hello World from the DebugPort driver\n\n"
+      "Hello World from the DebugPort driver\r\n\n"
       );
   }
   )
@@ -474,7 +474,7 @@ Returns:
     //
     gBS->CloseProtocol (
           ControllerHandle,
-          &gEfiSerialIoProtocolGuid,
+          &gEfiDebugSerialIoProtocolGuid,
           This->DriverBindingHandle,
           ControllerHandle
           );
@@ -497,7 +497,7 @@ Returns:
     //
     Status = gBS->CloseProtocol (
                     gDebugPortDevice->SerialIoDeviceHandle,
-                    &gEfiSerialIoProtocolGuid,
+                    &gEfiDebugSerialIoProtocolGuid,
                     This->DriverBindingHandle,
                     gDebugPortDevice->DebugPortDeviceHandle
                     );
@@ -520,7 +520,7 @@ Returns:
     if (EFI_ERROR (Status)) {
       gBS->OpenProtocol (
             ControllerHandle,
-            &gEfiSerialIoProtocolGuid,
+            &gEfiDebugSerialIoProtocolGuid,
             &gDebugPortDevice->SerialIoBinding,
             This->DriverBindingHandle,
             gDebugPortDevice->DebugPortDeviceHandle,

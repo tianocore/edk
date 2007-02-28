@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2006, Intel Corporation                                                         
+#  Copyright (c) 2006 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -148,7 +148,11 @@ $(BIN_DIR)\Efildr.obj: $(LDRDEP)
   $(CC) $(C_FLAGS) $(BUILD_DIR)\..\Loader\EfiLdr\Efildr.c
 
 $(BIN_DIR)\Efildr.dll: $(BIN_DIR)\Efildr.obj
-  $(LINK) /nologo /MACHINE:X86 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /INCREMENTAL:NO /MAP /FIXED /BASE:0x00010000 /OPT:REF /ALIGN:32 /MERGE:.data=.text /MERGE:.rdata=.text /DRIVER /ENTRY:EfiLoader $(BIN_DIR)\Efildr.obj $(BIN_DIR)\CompilerStub.lib $(BIN_DIR)\EfiCommonLib.lib $(BIN_DIR)\PeiLib.lib /OUT:$(BIN_DIR)\Efildr.dll
+  $(LINK) /nologo /MACHINE:X86 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /INCREMENTAL:NO \
+          /MAP /FIXED /BASE:0x00010000 /OPT:REF /ALIGN:32 /MERGE:.data=.text \
+          /MERGE:.rdata=.text /DRIVER /ENTRY:EfiLoader $(BIN_DIR)\Efildr.obj \
+          $(BIN_DIR)\CompilerStub.lib $(BIN_DIR)\EfiCommonLib.lib $(BIN_DIR)\PeiLib.lib \
+          /OUT:$(BIN_DIR)\Efildr.dll /IGNORE:4078,4096
 
 $(BIN_DIR)\Efildr.efi: $(BIN_DIR)\Efildr.dll
   $(TOOLBIN_DIR)\FwImage app $(BIN_DIR)\Efildr.dll $(BIN_DIR)\Efildr.efi

@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2006, Intel Corporation                                                         
+Copyright 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -11,11 +11,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-    bootsectimage.c
+  bootsectimage.c
     
 Abstract:
-
-Revision History
+  Patch the BPB information in boot sector image file.
+  Patch the MBR code in MBR image file.
 
 --*/
 
@@ -25,9 +25,23 @@ Revision History
 #include "fat.h"
 #include "mbr.h"
 
-#define BOOT_SECTOR_LBA_OFFSET 0x1FA
+int WriteToFile (
+  void *BootSector, 
+  char *FileName
+  )
+/*++
+Routine Description:
+  Write 512 bytes boot sector to file.
 
-int WriteToFile (void *BootSector, char *FileName)
+Arguments:
+  BootSector - point to a buffer containing 512 bytes boot sector to write
+  FileName   - file to write to
+
+Return:
+  int        - number of bytes wrote,
+                 512 indicates write successful
+                 0 indicates write failure
+--*/
 {
   FILE *FileHandle;
   int  result;
@@ -49,7 +63,23 @@ int WriteToFile (void *BootSector, char *FileName)
   return result;
 }
 
-int ReadFromFile (void *BootSector, char *FileName)
+int ReadFromFile (
+  void *BootSector, 
+  char *FileName
+  )
+/*++
+Routine Description:
+  Read first 512 bytes from file.
+
+Arguments:
+  BootSector - point to a buffer receiving the first 512 bytes data from file
+  FileName   - file to read from
+
+Return:
+  int        - number of bytes read,
+                 512 indicates read successful
+                 0 indicates read failure
+--*/
 {
   FILE *FileHandle;
   int  result;
@@ -74,6 +104,10 @@ char *
 FatTypeToString (
   IN FAT_TYPE        FatType
   )
+/*++
+Routine Description:
+  Convert enum type of FatType to string
+--*/
 {
   switch (FatType) {
   case FatTypeFat12:
@@ -92,6 +126,19 @@ FAT_TYPE
 GetFatType (
   IN FAT_BPB_STRUCT  *FatBpb
   )
+/*++
+Routine Description:
+  Determine the FAT type according to BIOS Paramater Block (BPB) data
+
+Arguments:
+  FatBpb - BIOS Parameter Block (BPB) data, 512 Bytes
+
+Return:
+  FatTypeUnknown - Cannot determine the FAT type
+  FatTypeFat12   - FAT12
+  FatTypeFat16   - FAT16
+  FatTypeFat32   - FAT32
+--*/
 {
   FAT_TYPE FatType;
   UINTN    RootDirSectors;
@@ -361,84 +408,20 @@ GetFatType (
   return FatType;
 }
 
+
 void
-PatchFatBpbInfo (
-  IN FAT_BPB_STRUCT  *DestFatBpb,
-  IN FAT_BPB_STRUCT  *SourceFatBpb,
-  IN FAT_TYPE        OrigFatType,
-  IN FAT_TYPE        FatType
+ParseBootSector (
+  char *FileName
   )
 {
-  FAT_BPB_STRUCT  BackupFatBpb;
-  CHAR8           VolLab[11];
-  CHAR8           FilSysType[8];
-
-  if (FatType <= FatTypeUnknown || FatType >= FatTypeMax) {
-    printf ("ERROR: Unknown Fat Type!\n");
-    return;
-  }
-
-  memcpy (&BackupFatBpb, DestFatBpb, sizeof(BackupFatBpb));
-
-  printf ("Patching %s BPB:\n", FatTypeToString (FatType));
-  if (FatType != FatTypeFat32) {
-    memcpy (
-      &DestFatBpb->Fat12_16.BPB_BytsPerSec,
-      &SourceFatBpb->Fat12_16.BPB_BytsPerSec,
-      ((UINTN)&DestFatBpb->Fat12_16.Reserved - (UINTN)&DestFatBpb->Fat12_16.BPB_BytsPerSec)
-      );
-  } else {
-    memcpy (
-      &DestFatBpb->Fat32.BPB_BytsPerSec,
-      &SourceFatBpb->Fat32.BPB_BytsPerSec,
-      ((UINTN)&DestFatBpb->Fat32.Reserved - (UINTN)&DestFatBpb->Fat32.BPB_BytsPerSec)
-      );
-  }
-
-//  if ((OrigFatType == FatTypeFat12) || (OrigFatType == FatTypeFat16)) {
-//    memcpy (VolLab, BackupFatBpb.Fat12_16.BS_VolLab, sizeof(VolLab));
-//    memcpy (FilSysType, BackupFatBpb.Fat12_16.BS_FilSysType, sizeof(FilSysType));
-//  } else if (OrigFatType == FatTypeFat32) {
-//    memcpy (VolLab, BackupFatBpb.Fat32.BS_VolLab, sizeof(VolLab));
-//    memcpy (FilSysType, BackupFatBpb.Fat32.BS_FilSysType, sizeof(FilSysType));
-//  } else {
-    if (FatType == FatTypeFat32) {
-      memcpy (VolLab, "EFI FAT32  ", sizeof(VolLab));
-      memcpy (FilSysType, FAT32_FILSYSTYPE, sizeof(FilSysType));
-    } else if (FatType == FatTypeFat16) {
-      memcpy (VolLab, "EFI FAT16  ", sizeof(VolLab));
-      memcpy (FilSysType, FAT16_FILSYSTYPE, sizeof(FilSysType));
-    } else {
-      memcpy (VolLab, "EFI FAT12  ", sizeof(VolLab));
-      memcpy (FilSysType, FAT12_FILSYSTYPE, sizeof(FilSysType));
-    }
-//  }
-  if (FatType != FatTypeFat32) {
-    memcpy (DestFatBpb->Fat12_16.BS_VolLab, VolLab, sizeof(VolLab));
-    memcpy (DestFatBpb->Fat12_16.BS_FilSysType, FilSysType, sizeof(FilSysType));
-  } else {
-    memcpy (DestFatBpb->Fat32.BS_VolLab, VolLab, sizeof(VolLab));
-    memcpy (DestFatBpb->Fat32.BS_FilSysType, FilSysType, sizeof(FilSysType));
+  FAT_BPB_STRUCT  FatBpb;
+  FAT_TYPE        FatType;
+  
+  if (ReadFromFile ((void *)&FatBpb, FileName) == 0) {
+    return ;
   }
   
-  DestFatBpb->Fat12_16.Signature = FAT_BS_SIGNATURE;
-
-  //
-  // Patch LBAOffsetForBootSector
-  //
-//  if ((FatType == FatTypeFat16) || (FatType == FatTypeFat32)) {
-//    memcpy ((BYTE *)DestFatBpb + BOOT_SECTOR_LBA_OFFSET, (BYTE *)SourceFatBpb + BOOT_SECTOR_LBA_OFFSET, sizeof(DWORD));
-//  }
-
-  return ;
-}
-
-void
-PrintFatBpbInfo (
-  IN FAT_BPB_STRUCT  *FatBpb,
-  IN FAT_TYPE        FatType
-  )
-{
+  FatType = GetFatType (&FatBpb);
   if (FatType <= FatTypeUnknown || FatType >= FatTypeMax) {
     printf ("ERROR: Unknown Fat Type!\n");
     return;
@@ -449,129 +432,112 @@ PrintFatBpbInfo (
   printf ("  Offset Title                        Data\n");
   printf ("==================================================================\n");
   printf ("  0      JMP instruction              %02x %02x %02x\n",
-                                                 FatBpb->Fat12_16.BS_jmpBoot[0],
-                                                 FatBpb->Fat12_16.BS_jmpBoot[1],
-                                                 FatBpb->Fat12_16.BS_jmpBoot[2]);
+                                                 FatBpb.Fat12_16.BS_jmpBoot[0],
+                                                 FatBpb.Fat12_16.BS_jmpBoot[1],
+                                                 FatBpb.Fat12_16.BS_jmpBoot[2]);
   printf ("  3      OEM                          %c%c%c%c%c%c%c%c\n",
-                                                 FatBpb->Fat12_16.BS_OEMName[0],
-                                                 FatBpb->Fat12_16.BS_OEMName[1],
-                                                 FatBpb->Fat12_16.BS_OEMName[2],
-                                                 FatBpb->Fat12_16.BS_OEMName[3],
-                                                 FatBpb->Fat12_16.BS_OEMName[4],
-                                                 FatBpb->Fat12_16.BS_OEMName[5],
-                                                 FatBpb->Fat12_16.BS_OEMName[6],
-                                                 FatBpb->Fat12_16.BS_OEMName[7]);
+                                                 FatBpb.Fat12_16.BS_OEMName[0],
+                                                 FatBpb.Fat12_16.BS_OEMName[1],
+                                                 FatBpb.Fat12_16.BS_OEMName[2],
+                                                 FatBpb.Fat12_16.BS_OEMName[3],
+                                                 FatBpb.Fat12_16.BS_OEMName[4],
+                                                 FatBpb.Fat12_16.BS_OEMName[5],
+                                                 FatBpb.Fat12_16.BS_OEMName[6],
+                                                 FatBpb.Fat12_16.BS_OEMName[7]);
   printf ("\n");
   printf ("BIOS Parameter Block\n");
-  printf ("  B      Bytes per sector             %04x\n", FatBpb->Fat12_16.BPB_BytsPerSec);
-  printf ("  D      Sectors per cluster          %02x\n", FatBpb->Fat12_16.BPB_SecPerClus);
-  printf ("  E      Reserved sectors             %04x\n", FatBpb->Fat12_16.BPB_RsvdSecCnt);
-  printf ("  10     Number of FATs               %02x\n", FatBpb->Fat12_16.BPB_NumFATs);
-  printf ("  11     Root entries                 %04x\n", FatBpb->Fat12_16.BPB_RootEntCnt);
-  printf ("  13     Sectors (under 32MB)         %04x\n", FatBpb->Fat12_16.BPB_TotSec16);
-  printf ("  15     Media descriptor             %02x\n", FatBpb->Fat12_16.BPB_Media);
-  printf ("  16     Sectors per FAT (small vol.) %04x\n", FatBpb->Fat12_16.BPB_FATSz16);
-  printf ("  18     Sectors per track            %04x\n", FatBpb->Fat12_16.BPB_SecPerTrk);
-  printf ("  1A     Heads                        %04x\n", FatBpb->Fat12_16.BPB_NumHeads);
-  printf ("  1C     Hidden sectors               %08x\n", FatBpb->Fat12_16.BPB_HiddSec);
-  printf ("  20     Sectors (over 32MB)          %08x\n", FatBpb->Fat12_16.BPB_TotSec32);
+  printf ("  B      Bytes per sector             %04x\n", FatBpb.Fat12_16.BPB_BytsPerSec);
+  printf ("  D      Sectors per cluster          %02x\n", FatBpb.Fat12_16.BPB_SecPerClus);
+  printf ("  E      Reserved sectors             %04x\n", FatBpb.Fat12_16.BPB_RsvdSecCnt);
+  printf ("  10     Number of FATs               %02x\n", FatBpb.Fat12_16.BPB_NumFATs);
+  printf ("  11     Root entries                 %04x\n", FatBpb.Fat12_16.BPB_RootEntCnt);
+  printf ("  13     Sectors (under 32MB)         %04x\n", FatBpb.Fat12_16.BPB_TotSec16);
+  printf ("  15     Media descriptor             %02x\n", FatBpb.Fat12_16.BPB_Media);
+  printf ("  16     Sectors per FAT (small vol.) %04x\n", FatBpb.Fat12_16.BPB_FATSz16);
+  printf ("  18     Sectors per track            %04x\n", FatBpb.Fat12_16.BPB_SecPerTrk);
+  printf ("  1A     Heads                        %04x\n", FatBpb.Fat12_16.BPB_NumHeads);
+  printf ("  1C     Hidden sectors               %08x\n", FatBpb.Fat12_16.BPB_HiddSec);
+  printf ("  20     Sectors (over 32MB)          %08x\n", FatBpb.Fat12_16.BPB_TotSec32);
   printf ("\n");
   if (FatType != FatTypeFat32) {
-    printf ("  24     BIOS drive                   %02x\n", FatBpb->Fat12_16.BS_DrvNum);
-    printf ("  25     (Unused)                     %02x\n", FatBpb->Fat12_16.BS_Reserved1);
-    printf ("  26     Ext. boot signature          %02x\n", FatBpb->Fat12_16.BS_BootSig);
-    printf ("  27     Volume serial number         %08x\n", FatBpb->Fat12_16.BS_VolID);
+    printf ("  24     BIOS drive                   %02x\n", FatBpb.Fat12_16.BS_DrvNum);
+    printf ("  25     (Unused)                     %02x\n", FatBpb.Fat12_16.BS_Reserved1);
+    printf ("  26     Ext. boot signature          %02x\n", FatBpb.Fat12_16.BS_BootSig);
+    printf ("  27     Volume serial number         %08x\n", FatBpb.Fat12_16.BS_VolID);
     printf ("  2B     Volume lable                 %c%c%c%c%c%c%c%c%c%c%c\n",
-                                                   FatBpb->Fat12_16.BS_VolLab[0],
-                                                   FatBpb->Fat12_16.BS_VolLab[1],
-                                                   FatBpb->Fat12_16.BS_VolLab[2],
-                                                   FatBpb->Fat12_16.BS_VolLab[3],
-                                                   FatBpb->Fat12_16.BS_VolLab[4],
-                                                   FatBpb->Fat12_16.BS_VolLab[5],
-                                                   FatBpb->Fat12_16.BS_VolLab[6],
-                                                   FatBpb->Fat12_16.BS_VolLab[7],
-                                                   FatBpb->Fat12_16.BS_VolLab[8],
-                                                   FatBpb->Fat12_16.BS_VolLab[9],
-                                                   FatBpb->Fat12_16.BS_VolLab[10]);
+                                                   FatBpb.Fat12_16.BS_VolLab[0],
+                                                   FatBpb.Fat12_16.BS_VolLab[1],
+                                                   FatBpb.Fat12_16.BS_VolLab[2],
+                                                   FatBpb.Fat12_16.BS_VolLab[3],
+                                                   FatBpb.Fat12_16.BS_VolLab[4],
+                                                   FatBpb.Fat12_16.BS_VolLab[5],
+                                                   FatBpb.Fat12_16.BS_VolLab[6],
+                                                   FatBpb.Fat12_16.BS_VolLab[7],
+                                                   FatBpb.Fat12_16.BS_VolLab[8],
+                                                   FatBpb.Fat12_16.BS_VolLab[9],
+                                                   FatBpb.Fat12_16.BS_VolLab[10]);
     printf ("  36     File system                  %c%c%c%c%c%c%c%c\n",
-                                                   FatBpb->Fat12_16.BS_FilSysType[0],
-                                                   FatBpb->Fat12_16.BS_FilSysType[1],
-                                                   FatBpb->Fat12_16.BS_FilSysType[2],
-                                                   FatBpb->Fat12_16.BS_FilSysType[3],
-                                                   FatBpb->Fat12_16.BS_FilSysType[4],
-                                                   FatBpb->Fat12_16.BS_FilSysType[5],
-                                                   FatBpb->Fat12_16.BS_FilSysType[6],
-                                                   FatBpb->Fat12_16.BS_FilSysType[7]);
+                                                   FatBpb.Fat12_16.BS_FilSysType[0],
+                                                   FatBpb.Fat12_16.BS_FilSysType[1],
+                                                   FatBpb.Fat12_16.BS_FilSysType[2],
+                                                   FatBpb.Fat12_16.BS_FilSysType[3],
+                                                   FatBpb.Fat12_16.BS_FilSysType[4],
+                                                   FatBpb.Fat12_16.BS_FilSysType[5],
+                                                   FatBpb.Fat12_16.BS_FilSysType[6],
+                                                   FatBpb.Fat12_16.BS_FilSysType[7]);
     printf ("\n");
   } else {
     printf ("FAT32 Section\n");
-    printf ("  24     Sectors per FAT (large vol.) %08x\n", FatBpb->Fat32.BPB_FATSz32);
-    printf ("  28     Flags                        %04x\n", FatBpb->Fat32.BPB_ExtFlags);
-    printf ("  2A     Version                      %04x\n", FatBpb->Fat32.BPB_FSVer);
-    printf ("  2C     Root dir 1st cluster         %08x\n", FatBpb->Fat32.BPB_RootClus);
-    printf ("  30     FSInfo sector                %04x\n", FatBpb->Fat32.BPB_FSInfo);
-    printf ("  32     Backup boot sector           %04x\n", FatBpb->Fat32.BPB_BkBootSec);
+    printf ("  24     Sectors per FAT (large vol.) %08x\n", FatBpb.Fat32.BPB_FATSz32);
+    printf ("  28     Flags                        %04x\n", FatBpb.Fat32.BPB_ExtFlags);
+    printf ("  2A     Version                      %04x\n", FatBpb.Fat32.BPB_FSVer);
+    printf ("  2C     Root dir 1st cluster         %08x\n", FatBpb.Fat32.BPB_RootClus);
+    printf ("  30     FSInfo sector                %04x\n", FatBpb.Fat32.BPB_FSInfo);
+    printf ("  32     Backup boot sector           %04x\n", FatBpb.Fat32.BPB_BkBootSec);
     printf ("  34     (Reserved)                   %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-                                                   FatBpb->Fat32.BPB_Reserved[0],
-                                                   FatBpb->Fat32.BPB_Reserved[1],
-                                                   FatBpb->Fat32.BPB_Reserved[2],
-                                                   FatBpb->Fat32.BPB_Reserved[3],
-                                                   FatBpb->Fat32.BPB_Reserved[4],
-                                                   FatBpb->Fat32.BPB_Reserved[5],
-                                                   FatBpb->Fat32.BPB_Reserved[6],
-                                                   FatBpb->Fat32.BPB_Reserved[7],
-                                                   FatBpb->Fat32.BPB_Reserved[8],
-                                                   FatBpb->Fat32.BPB_Reserved[9],
-                                                   FatBpb->Fat32.BPB_Reserved[10],
-                                                   FatBpb->Fat32.BPB_Reserved[11]);
+                                                   FatBpb.Fat32.BPB_Reserved[0],
+                                                   FatBpb.Fat32.BPB_Reserved[1],
+                                                   FatBpb.Fat32.BPB_Reserved[2],
+                                                   FatBpb.Fat32.BPB_Reserved[3],
+                                                   FatBpb.Fat32.BPB_Reserved[4],
+                                                   FatBpb.Fat32.BPB_Reserved[5],
+                                                   FatBpb.Fat32.BPB_Reserved[6],
+                                                   FatBpb.Fat32.BPB_Reserved[7],
+                                                   FatBpb.Fat32.BPB_Reserved[8],
+                                                   FatBpb.Fat32.BPB_Reserved[9],
+                                                   FatBpb.Fat32.BPB_Reserved[10],
+                                                   FatBpb.Fat32.BPB_Reserved[11]);
     printf ("\n");
-    printf ("  40     BIOS drive                   %02x\n", FatBpb->Fat32.BS_DrvNum);
-    printf ("  41     (Unused)                     %02x\n", FatBpb->Fat32.BS_Reserved1);
-    printf ("  42     Ext. boot signature          %02x\n", FatBpb->Fat32.BS_BootSig);
-    printf ("  43     Volume serial number         %08x\n", FatBpb->Fat32.BS_VolID);
+    printf ("  40     BIOS drive                   %02x\n", FatBpb.Fat32.BS_DrvNum);
+    printf ("  41     (Unused)                     %02x\n", FatBpb.Fat32.BS_Reserved1);
+    printf ("  42     Ext. boot signature          %02x\n", FatBpb.Fat32.BS_BootSig);
+    printf ("  43     Volume serial number         %08x\n", FatBpb.Fat32.BS_VolID);
     printf ("  47     Volume lable                 %c%c%c%c%c%c%c%c%c%c%c\n",
-                                                   FatBpb->Fat32.BS_VolLab[0],
-                                                   FatBpb->Fat32.BS_VolLab[1],
-                                                   FatBpb->Fat32.BS_VolLab[2],
-                                                   FatBpb->Fat32.BS_VolLab[3],
-                                                   FatBpb->Fat32.BS_VolLab[4],
-                                                   FatBpb->Fat32.BS_VolLab[5],
-                                                   FatBpb->Fat32.BS_VolLab[6],
-                                                   FatBpb->Fat32.BS_VolLab[7],
-                                                   FatBpb->Fat32.BS_VolLab[8],
-                                                   FatBpb->Fat32.BS_VolLab[9],
-                                                   FatBpb->Fat32.BS_VolLab[10]);
+                                                   FatBpb.Fat32.BS_VolLab[0],
+                                                   FatBpb.Fat32.BS_VolLab[1],
+                                                   FatBpb.Fat32.BS_VolLab[2],
+                                                   FatBpb.Fat32.BS_VolLab[3],
+                                                   FatBpb.Fat32.BS_VolLab[4],
+                                                   FatBpb.Fat32.BS_VolLab[5],
+                                                   FatBpb.Fat32.BS_VolLab[6],
+                                                   FatBpb.Fat32.BS_VolLab[7],
+                                                   FatBpb.Fat32.BS_VolLab[8],
+                                                   FatBpb.Fat32.BS_VolLab[9],
+                                                   FatBpb.Fat32.BS_VolLab[10]);
     printf ("  52     File system                  %c%c%c%c%c%c%c%c\n",
-                                                   FatBpb->Fat32.BS_FilSysType[0],
-                                                   FatBpb->Fat32.BS_FilSysType[1],
-                                                   FatBpb->Fat32.BS_FilSysType[2],
-                                                   FatBpb->Fat32.BS_FilSysType[3],
-                                                   FatBpb->Fat32.BS_FilSysType[4],
-                                                   FatBpb->Fat32.BS_FilSysType[5],
-                                                   FatBpb->Fat32.BS_FilSysType[6],
-                                                   FatBpb->Fat32.BS_FilSysType[7]);
+                                                   FatBpb.Fat32.BS_FilSysType[0],
+                                                   FatBpb.Fat32.BS_FilSysType[1],
+                                                   FatBpb.Fat32.BS_FilSysType[2],
+                                                   FatBpb.Fat32.BS_FilSysType[3],
+                                                   FatBpb.Fat32.BS_FilSysType[4],
+                                                   FatBpb.Fat32.BS_FilSysType[5],
+                                                   FatBpb.Fat32.BS_FilSysType[6],
+                                                   FatBpb.Fat32.BS_FilSysType[7]);
     printf ("\n");
   }
-  printf ("  1FE    Signature                    %04x\n", FatBpb->Fat12_16.Signature);
+  printf ("  1FE    Signature                    %04x\n", FatBpb.Fat12_16.Signature);
   printf ("\n");
 
-  return ;
-}
-
-void
-ParseBootSector (
-  char *FileName
-  )
-{
-  FAT_BPB_STRUCT  BootSector;
-  FAT_TYPE        FatType;
-  
-  if (ReadFromFile ((void *)&BootSector, FileName) == 0) {
-    return ;
-  }
-  
-  FatType = GetFatType (&BootSector);
-  PrintFatBpbInfo (&BootSector, FatType);
   
   return ;
 }
@@ -582,22 +548,38 @@ PatchBootSector (
   char *SourceFileName,
   char ForcePatch
   )
+/*++
+Routine Description:
+  Patch destination file according to the information from source file.
+  Only patch BPB data but leave boot code un-touched.
+
+Arguments:
+  DestFileName   - Destination file to patch
+  SourceFileName - Source file where patch from
+--*/
 {
-  FAT_BPB_STRUCT  DestBootSector;
-  FAT_BPB_STRUCT  SourceBootSector;
+  FAT_BPB_STRUCT  DestFatBpb;
+  FAT_BPB_STRUCT  SourceFatBpb;
   FAT_TYPE        DestFatType;
   FAT_TYPE        SourceFatType;
+  FAT_BPB_STRUCT  BackupFatBpb;
+  CHAR8           VolLab[11];
+  CHAR8           FilSysType[8];
   
-  if (ReadFromFile ((void *)&DestBootSector, DestFileName) == 0) {
+  if (ReadFromFile ((void *)&DestFatBpb, DestFileName) == 0) {
     return ;
   }
-  if (ReadFromFile ((void *)&SourceBootSector, SourceFileName) == 0) {
+  if (ReadFromFile ((void *)&SourceFatBpb, SourceFileName) == 0) {
     return ;
   }
   
-  DestFatType = GetFatType (&DestBootSector);
-  SourceFatType = GetFatType (&SourceBootSector);
+  DestFatType = GetFatType (&DestFatBpb);
+  SourceFatType = GetFatType (&SourceFatBpb);
+
   if (DestFatType != SourceFatType) {
+    //
+    // FAT type mismatch
+    //
     if (ForcePatch) {
       printf ("WARNING: FAT type mismatch: Dest - %s, Source - %s\n", FatTypeToString(DestFatType), FatTypeToString(SourceFatType));
     } else {
@@ -605,77 +587,69 @@ PatchBootSector (
       return ;
     }
   }
-  PatchFatBpbInfo (&DestBootSector, &SourceBootSector, DestFatType, SourceFatType);
 
-  if (WriteToFile ((void *)&DestBootSector, DestFileName)) {
-    printf ("BootSector is patched successfully!\n");
+  if (SourceFatType <= FatTypeUnknown || SourceFatType >= FatTypeMax) {
+    printf ("ERROR: Unknown Fat Type!\n");
+    return;
   }
 
-  return ;
-}
+  memcpy (&BackupFatBpb, &DestFatBpb, sizeof(BackupFatBpb));
 
-void
-PrintMbrInfo (
-  IN MASTER_BOOT_RECORD *Mbr
-  )
-{
-  printf ("\nMaster Boot Record:\n");
-  printf ("\n");
-  printf ("  Offset Title                        Value\n");
-  printf ("==================================================================\n");
-  printf ("  0      Master bootstrap loader code (not list)\n");
-  printf ("  1B8    Windows disk signature       %08x\n", Mbr->UniqueMbrSignature);
-  printf ("\n");
-  printf ("Partition Table Entry #1\n");
-  printf ("  1BE    80 = active partition        %02x\n", Mbr->PartitionRecord[0].BootIndicator);
-  printf ("  1BF    Start head                   %02x\n", Mbr->PartitionRecord[0].StartHead);
-  printf ("  1C0    Start sector                 %02x\n", Mbr->PartitionRecord[0].StartSector);
-  printf ("  1C1    Start cylinder               %02x\n", Mbr->PartitionRecord[0].StartTrack);
-  printf ("  1C2    Partition type indicator     %02x\n", Mbr->PartitionRecord[0].OSType);
-  printf ("  1C3    End head                     %02x\n", Mbr->PartitionRecord[0].EndHead);
-  printf ("  1C4    End sector                   %02x\n", Mbr->PartitionRecord[0].EndSector);
-  printf ("  1C5    End cylinder                 %02x\n", Mbr->PartitionRecord[0].EndTrack);
-  printf ("  1C6    Sectors preceding partition  %08x\n", Mbr->PartitionRecord[0].StartingLBA);
-  printf ("  1CA    Sectors in partition         %08x\n", Mbr->PartitionRecord[0].SizeInLBA);
-  printf ("\n");
-  printf ("Partition Table Entry #2\n");
-  printf ("  1CE    80 = active partition        %02x\n", Mbr->PartitionRecord[1].BootIndicator);
-  printf ("  1CF    Start head                   %02x\n", Mbr->PartitionRecord[1].StartHead);
-  printf ("  1D0    Start sector                 %02x\n", Mbr->PartitionRecord[1].StartSector);
-  printf ("  1D1    Start cylinder               %02x\n", Mbr->PartitionRecord[1].StartTrack);
-  printf ("  1D2    Partition type indicator     %02x\n", Mbr->PartitionRecord[1].OSType);
-  printf ("  1D3    End head                     %02x\n", Mbr->PartitionRecord[1].EndHead);
-  printf ("  1D4    End sector                   %02x\n", Mbr->PartitionRecord[1].EndSector);
-  printf ("  1D5    End cylinder                 %02x\n", Mbr->PartitionRecord[1].EndTrack);
-  printf ("  1D6    Sectors preceding partition  %08x\n", Mbr->PartitionRecord[1].StartingLBA);
-  printf ("  1DA    Sectors in partition         %08x\n", Mbr->PartitionRecord[1].SizeInLBA);
-  printf ("\n");
-  printf ("Partition Table Entry #3\n");
-  printf ("  1DE    80 = active partition        %02x\n", Mbr->PartitionRecord[2].BootIndicator);
-  printf ("  1DF    Start head                   %02x\n", Mbr->PartitionRecord[2].StartHead);
-  printf ("  1E0    Start sector                 %02x\n", Mbr->PartitionRecord[2].StartSector);
-  printf ("  1E1    Start cylinder               %02x\n", Mbr->PartitionRecord[2].StartTrack);
-  printf ("  1E2    Partition type indicator     %02x\n", Mbr->PartitionRecord[2].OSType);
-  printf ("  1E3    End head                     %02x\n", Mbr->PartitionRecord[2].EndHead);
-  printf ("  1E4    End sector                   %02x\n", Mbr->PartitionRecord[2].EndSector);
-  printf ("  1E5    End cylinder                 %02x\n", Mbr->PartitionRecord[2].EndTrack);
-  printf ("  1E6    Sectors preceding partition  %08x\n", Mbr->PartitionRecord[2].StartingLBA);
-  printf ("  1EA    Sectors in partition         %08x\n", Mbr->PartitionRecord[2].SizeInLBA);
-  printf ("\n");
-  printf ("Partition Table Entry #4\n");
-  printf ("  1EE    80 = active partition        %02x\n", Mbr->PartitionRecord[3].BootIndicator);
-  printf ("  1EF    Start head                   %02x\n", Mbr->PartitionRecord[3].StartHead);
-  printf ("  1F0    Start sector                 %02x\n", Mbr->PartitionRecord[3].StartSector);
-  printf ("  1F1    Start cylinder               %02x\n", Mbr->PartitionRecord[3].StartTrack);
-  printf ("  1F2    Partition type indicator     %02x\n", Mbr->PartitionRecord[3].OSType);
-  printf ("  1F3    End head                     %02x\n", Mbr->PartitionRecord[3].EndHead);
-  printf ("  1F4    End sector                   %02x\n", Mbr->PartitionRecord[3].EndSector);
-  printf ("  1F5    End cylinder                 %02x\n", Mbr->PartitionRecord[3].EndTrack);
-  printf ("  1F6    Sectors preceding partition  %08x\n", Mbr->PartitionRecord[3].StartingLBA);
-  printf ("  1FA    Sectors in partition         %08x\n", Mbr->PartitionRecord[3].SizeInLBA);
-  printf ("\n");
-  printf ("  1FE    Signature                    %04x\n", Mbr->Signature);
-  printf ("\n");
+  //
+  // Copy BPB/boot data (excluding BS_jmpBoot, BS_OEMName, BootCode and Signature) from SourceFatBpb to DestFatBpb
+  //
+  printf ("Patching %s BPB:\n", FatTypeToString (SourceFatType));
+  if (SourceFatType != FatTypeFat32) {
+    memcpy (
+      &DestFatBpb.Fat12_16.BPB_BytsPerSec,
+      &SourceFatBpb.Fat12_16.BPB_BytsPerSec,
+      ((UINTN)&DestFatBpb.Fat12_16.Reserved - (UINTN)&DestFatBpb.Fat12_16.BPB_BytsPerSec)
+      );
+  } else {
+    memcpy (
+      &DestFatBpb.Fat32.BPB_BytsPerSec,
+      &SourceFatBpb.Fat32.BPB_BytsPerSec,
+      ((UINTN)&DestFatBpb.Fat32.Reserved - (UINTN)&DestFatBpb.Fat32.BPB_BytsPerSec)
+      );
+  }
+
+  //
+  // Set BS_VolLab and BS_FilSysType of DestFatBpb
+  //
+  //        BS_VolLab     BS_FilSysType
+  // FAT12: EFI FAT12     FAT12
+  // FAT16: EFI FAT16     FAT16
+  // FAT32: EFI FAT32     FAT32
+  //
+  if (SourceFatType == FatTypeFat32) {
+    memcpy (VolLab, "EFI FAT32  ", sizeof(VolLab));
+    memcpy (FilSysType, FAT32_FILSYSTYPE, sizeof(FilSysType));
+  } else if (SourceFatType == FatTypeFat16) {
+    memcpy (VolLab, "EFI FAT16  ", sizeof(VolLab));
+    memcpy (FilSysType, FAT16_FILSYSTYPE, sizeof(FilSysType));
+  } else {
+    memcpy (VolLab, "EFI FAT12  ", sizeof(VolLab));
+    memcpy (FilSysType, FAT12_FILSYSTYPE, sizeof(FilSysType));
+  }
+  if (SourceFatType != FatTypeFat32) {
+    memcpy (DestFatBpb.Fat12_16.BS_VolLab, VolLab, sizeof(VolLab));
+    memcpy (DestFatBpb.Fat12_16.BS_FilSysType, FilSysType, sizeof(FilSysType));
+  } else {
+    memcpy (DestFatBpb.Fat32.BS_VolLab, VolLab, sizeof(VolLab));
+    memcpy (DestFatBpb.Fat32.BS_FilSysType, FilSysType, sizeof(FilSysType));
+  }
+  
+  //
+  // Set Signature of DestFatBpb to 55AA
+  //
+  DestFatBpb.Fat12_16.Signature = FAT_BS_SIGNATURE;
+
+  //
+  // Write DestFatBpb
+  //
+  if (WriteToFile ((void *)&DestFatBpb, DestFileName)) {
+    printf ("BootSector is patched successfully!\n");
+  }
 
   return ;
 }
@@ -690,31 +664,64 @@ ParseMbr (
   if (ReadFromFile ((void *)&Mbr, FileName) == 0) {
     return ;
   }
-  
-  PrintMbrInfo (&Mbr);
-  
-  return ;
-}
-
-void
-PatchMbrInfo (
-  IN MASTER_BOOT_RECORD  *DestMbr,
-  IN MASTER_BOOT_RECORD  *SourceMbr
-  )
-{
-  if (SourceMbr->Signature != MBR_SIGNATURE) {
-    printf ("ERROR: Invalid MBR!\n");
-    return;
-  }
-
-  printf ("Patching MBR:\n");
-  memcpy (
-    &DestMbr->PartitionRecord[0],
-    &SourceMbr->PartitionRecord[0],
-    sizeof(DestMbr->PartitionRecord)
-    );
-
-  DestMbr->Signature = MBR_SIGNATURE;
+ 
+  printf ("\nMaster Boot Record:\n");
+  printf ("\n");
+  printf ("  Offset Title                        Value\n");
+  printf ("==================================================================\n");
+  printf ("  0      Master bootstrap loader code (not list)\n");
+  printf ("  1B8    Windows disk signature       %08x\n", Mbr.UniqueMbrSignature);
+  printf ("\n");
+  printf ("Partition Table Entry #1\n");
+  printf ("  1BE    80 = active partition        %02x\n", Mbr.PartitionRecord[0].BootIndicator);
+  printf ("  1BF    Start head                   %02x\n", Mbr.PartitionRecord[0].StartHead);
+  printf ("  1C0    Start sector                 %02x\n", Mbr.PartitionRecord[0].StartSector);
+  printf ("  1C1    Start cylinder               %02x\n", Mbr.PartitionRecord[0].StartTrack);
+  printf ("  1C2    Partition type indicator     %02x\n", Mbr.PartitionRecord[0].OSType);
+  printf ("  1C3    End head                     %02x\n", Mbr.PartitionRecord[0].EndHead);
+  printf ("  1C4    End sector                   %02x\n", Mbr.PartitionRecord[0].EndSector);
+  printf ("  1C5    End cylinder                 %02x\n", Mbr.PartitionRecord[0].EndTrack);
+  printf ("  1C6    Sectors preceding partition  %08x\n", Mbr.PartitionRecord[0].StartingLBA);
+  printf ("  1CA    Sectors in partition         %08x\n", Mbr.PartitionRecord[0].SizeInLBA);
+  printf ("\n");
+  printf ("Partition Table Entry #2\n");
+  printf ("  1CE    80 = active partition        %02x\n", Mbr.PartitionRecord[1].BootIndicator);
+  printf ("  1CF    Start head                   %02x\n", Mbr.PartitionRecord[1].StartHead);
+  printf ("  1D0    Start sector                 %02x\n", Mbr.PartitionRecord[1].StartSector);
+  printf ("  1D1    Start cylinder               %02x\n", Mbr.PartitionRecord[1].StartTrack);
+  printf ("  1D2    Partition type indicator     %02x\n", Mbr.PartitionRecord[1].OSType);
+  printf ("  1D3    End head                     %02x\n", Mbr.PartitionRecord[1].EndHead);
+  printf ("  1D4    End sector                   %02x\n", Mbr.PartitionRecord[1].EndSector);
+  printf ("  1D5    End cylinder                 %02x\n", Mbr.PartitionRecord[1].EndTrack);
+  printf ("  1D6    Sectors preceding partition  %08x\n", Mbr.PartitionRecord[1].StartingLBA);
+  printf ("  1DA    Sectors in partition         %08x\n", Mbr.PartitionRecord[1].SizeInLBA);
+  printf ("\n");
+  printf ("Partition Table Entry #3\n");
+  printf ("  1DE    80 = active partition        %02x\n", Mbr.PartitionRecord[2].BootIndicator);
+  printf ("  1DF    Start head                   %02x\n", Mbr.PartitionRecord[2].StartHead);
+  printf ("  1E0    Start sector                 %02x\n", Mbr.PartitionRecord[2].StartSector);
+  printf ("  1E1    Start cylinder               %02x\n", Mbr.PartitionRecord[2].StartTrack);
+  printf ("  1E2    Partition type indicator     %02x\n", Mbr.PartitionRecord[2].OSType);
+  printf ("  1E3    End head                     %02x\n", Mbr.PartitionRecord[2].EndHead);
+  printf ("  1E4    End sector                   %02x\n", Mbr.PartitionRecord[2].EndSector);
+  printf ("  1E5    End cylinder                 %02x\n", Mbr.PartitionRecord[2].EndTrack);
+  printf ("  1E6    Sectors preceding partition  %08x\n", Mbr.PartitionRecord[2].StartingLBA);
+  printf ("  1EA    Sectors in partition         %08x\n", Mbr.PartitionRecord[2].SizeInLBA);
+  printf ("\n");
+  printf ("Partition Table Entry #4\n");
+  printf ("  1EE    80 = active partition        %02x\n", Mbr.PartitionRecord[3].BootIndicator);
+  printf ("  1EF    Start head                   %02x\n", Mbr.PartitionRecord[3].StartHead);
+  printf ("  1F0    Start sector                 %02x\n", Mbr.PartitionRecord[3].StartSector);
+  printf ("  1F1    Start cylinder               %02x\n", Mbr.PartitionRecord[3].StartTrack);
+  printf ("  1F2    Partition type indicator     %02x\n", Mbr.PartitionRecord[3].OSType);
+  printf ("  1F3    End head                     %02x\n", Mbr.PartitionRecord[3].EndHead);
+  printf ("  1F4    End sector                   %02x\n", Mbr.PartitionRecord[3].EndSector);
+  printf ("  1F5    End cylinder                 %02x\n", Mbr.PartitionRecord[3].EndTrack);
+  printf ("  1F6    Sectors preceding partition  %08x\n", Mbr.PartitionRecord[3].StartingLBA);
+  printf ("  1FA    Sectors in partition         %08x\n", Mbr.PartitionRecord[3].SizeInLBA);
+  printf ("\n");
+  printf ("  1FE    Signature                    %04x\n", Mbr.Signature);
+  printf ("\n");
 
   return ;
 }
@@ -735,7 +742,20 @@ PatchMbr (
     return ;
   }
   
-  PatchMbrInfo (&DestMbr, &SourceMbr);
+  if (SourceMbr.Signature != MBR_SIGNATURE) {
+    printf ("ERROR: Invalid MBR!\n");
+    return;
+  }
+
+  printf ("Patching MBR:\n");
+  memcpy (
+    &DestMbr.PartitionRecord[0],
+    &SourceMbr.PartitionRecord[0],
+    sizeof(DestMbr.PartitionRecord)
+    );
+
+  DestMbr.Signature = MBR_SIGNATURE;
+
 
   if (WriteToFile ((void *)&DestMbr, DestFileName)) {
     printf ("MBR is patched successfully!\n");
@@ -751,10 +771,11 @@ PrintUsage (
 {
   printf (
     "Usage:\n"
-    "bootsectimage [-m] -p <boot sector image>\n"
-    "bootsectimage [-m] -g <source boot sector image> <dest boot sector image> [-f]\n"
-    "  -p: parse <boot sector image>, and print it\n"
-    "  -g: get info from <source boot sector image>, and patch to <dest boot sector image>\n"
+    "bootsectimage [-m] -p BootSectorImage\n"
+    "bootsectimage [-m] -g SourceBootSectorImage DestBootSectorImage [-f]\n"
+    "where\n"
+    "  -p: parse BootSectorImage\n"
+    "  -g: get info from SourceBootSectorImage, and patch to DestBootSectorImage\n"
     "  -f: force patch even FAT type mismatch\n"
     "  -m: process MBR instead of boot sector\n"
     );
@@ -774,6 +795,9 @@ main (
   }
 
   if ((strcmp (argv[1], "-p") == 0) && (argc == 3)) {
+    //
+    // Parse boot sector
+    //
     ParseBootSector (argv[2]);
   } else if ((strcmp (argv[1], "-g") == 0) && ((argc == 4) || (argc == 5))) {
     ForcePatch = 0;
@@ -782,11 +806,23 @@ main (
         ForcePatch = 1;
       }
     }
+    //
+    // Patch boot sector
+    //
     PatchBootSector (argv[3], argv[2], ForcePatch);
   } else if ((strcmp (argv[1], "-m") == 0) && ((argc == 4) || (argc == 5))) {
+    //
+    // Do MBR job
+    //
     if ((strcmp (argv[2], "-p") == 0) && (argc == 4)) {
+      //
+      // Parse MBR
+      //
       ParseMbr (argv[3]);
     } else if ((strcmp (argv[2], "-g") == 0) && (argc == 5)) {
+      //
+      // Patch MBR
+      //
       PatchMbr (argv[4], argv[3]);
     } else {
       PrintUsage ();

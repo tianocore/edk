@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,7 +29,6 @@ Abstract:
 ESAL_VARIABLE_GLOBAL  *mVariableModuleGlobal;
 
 UINT32
-EFIAPI
 ArrayLength (
   IN CHAR16 *String
   )
@@ -65,7 +64,6 @@ Returns:
 }
 
 BOOLEAN
-EFIAPI
 IsValidVariableHeader (
   IN  VARIABLE_HEADER   *Variable
   )
@@ -242,7 +240,6 @@ Returns:
 }
 
 VARIABLE_STORE_STATUS
-EFIAPI
 GetVariableStoreStatus (
   IN VARIABLE_STORE_HEADER *VarStoreHeader
   )
@@ -283,7 +280,6 @@ Returns:
 }
 
 UINT8 *
-EFIAPI
 GetVariableDataPtr (
   IN  VARIABLE_HEADER   *Variable
   )
@@ -310,7 +306,6 @@ Returns:
 }
 
 VARIABLE_HEADER *
-EFIAPI
 GetNextVariablePtr (
   IN  VARIABLE_HEADER   *Variable
   )
@@ -340,7 +335,6 @@ Returns:
 }
 
 VARIABLE_HEADER *
-EFIAPI
 GetEndPointer (
   IN VARIABLE_STORE_HEADER       *VarStoreHeader
   )
@@ -366,8 +360,52 @@ Returns:
   return (VARIABLE_HEADER *) ((UINTN) VarStoreHeader + VarStoreHeader->Size);
 }
 
+BOOLEAN
+ExistNewerVariable (
+  IN  VARIABLE_HEADER         *Variable
+  )
+/*++
+
+Routine Description:
+
+  Check if exist newer variable when doing reclaim
+
+Arguments:
+
+  Variable                    Pointer to start position
+
+Returns:
+
+  TRUE - Exists another variable, which is newer than the current one
+  FALSE  - Doesn't exist another vairable which is newer than the current one
+
+--*/
+{
+  VARIABLE_HEADER       *NextVariable;
+  CHAR16                *VariableName;
+  EFI_GUID              *VendorGuid;
+  
+  VendorGuid   = &Variable->VendorGuid;
+  VariableName = GET_VARIABLE_NAME_PTR(Variable);
+  
+  NextVariable = GetNextVariablePtr (Variable);
+  while (IsValidVariableHeader (NextVariable)) {
+    if ((NextVariable->State == VAR_ADDED) || (NextVariable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION))) {
+      //
+      // If match Guid and Name
+      //
+      if (EfiCompareGuid (VendorGuid, &NextVariable->VendorGuid)) {
+         if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (NextVariable), ArrayLength (VariableName)) == 0) {
+           return TRUE;
+         }
+       }
+    }
+    NextVariable = GetNextVariablePtr (NextVariable);
+  }
+  return FALSE;
+}
+
 EFI_STATUS
-EFIAPI
 Reclaim (
   IN  EFI_PHYSICAL_ADDRESS  VariableBase,
   OUT UINTN                 *LastVariableOffset,
@@ -410,20 +448,11 @@ Returns:
   // Start Pointers for the variable.
   //
   Variable        = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
-
-  ValidBufferSize = sizeof (VARIABLE_STORE_HEADER);
-
-  while (IsValidVariableHeader (Variable)) {
-    NextVariable = GetNextVariablePtr (Variable);
-    if ((Variable->State == VAR_ADDED) ||
-        ((Variable != CurrentVariable) &&
-         (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
-      VariableSize = (UINTN) NextVariable - (UINTN) Variable;
-      ValidBufferSize += VariableSize;
-    }
-
-    Variable = NextVariable;
-  }
+  
+  //
+  // To make the reclaim, here we just allocate a memory that equal to the original memory
+  //
+  ValidBufferSize = sizeof (VARIABLE_STORE_HEADER) + VariableStoreHeader->Size;
 
   Status = gBS->AllocatePool (
                   EfiBootServicesData,
@@ -448,21 +477,37 @@ Returns:
   // Start Pointers for the variable.
   //
   Variable = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
-
+  
+  ValidBufferSize = sizeof (VARIABLE_STORE_HEADER);
   while (IsValidVariableHeader (Variable)) {
     NextVariable = GetNextVariablePtr (Variable);
-    if ((Variable->State == VAR_ADDED) ||
-        ((Variable != CurrentVariable) &&
-         (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
+    //
+    // State VAR_ADDED or VAR_IN_DELETED_TRANSITION are to kept,
+    // The CurrentVariable, is also saved, as SetVariable may fail duo to lack of space
+    //
+    if (Variable->State == VAR_ADDED) {
       VariableSize = (UINTN) NextVariable - (UINTN) Variable;
       EfiCopyMem (CurrPtr, (UINT8 *) Variable, VariableSize);
-      //
-      // Mark all variable as VAR_ADDED
-      //
-      ((VARIABLE_HEADER *)CurrPtr)->State = VAR_ADDED;
+      ValidBufferSize += VariableSize;
       CurrPtr += VariableSize;
+    } else if (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)) {
+      //
+      // As variables that with the same guid and name may exist in NV due to power failure during SetVariable,
+      // we will only save the latest valid one
+      //
+      if (!ExistNewerVariable(Variable)) {
+        VariableSize = (UINTN) NextVariable - (UINTN) Variable;
+        EfiCopyMem (CurrPtr, (UINT8 *) Variable, VariableSize);
+        //
+        // If CurrentVariable == Variable, mark as VAR_IN_DELETED_TRANSITION
+        //
+        if (Variable != CurrentVariable){
+          ((VARIABLE_HEADER *)CurrPtr)->State = VAR_ADDED;
+        }
+        CurrPtr += VariableSize;
+        ValidBufferSize += VariableSize;
+      }
     }
-
     Variable = NextVariable;
   }
 
@@ -498,7 +543,6 @@ Returns:
 }
 
 EFI_STATUS
-EFIAPI
 FindVariable (
   IN  CHAR16                  *VariableName,
   IN  EFI_GUID                *VendorGuid,
@@ -567,7 +611,7 @@ Returns:
             return EFI_SUCCESS;
           } else {
             if (EfiCompareGuid (VendorGuid, &Variable[Index]->VendorGuid)) {
-              if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), ArrayLength (VariableName))) {
+              if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), ArrayLength (VariableName)) == 0) {
                 PtrTrack->CurrPtr   = Variable[Index];
                 PtrTrack->Volatile  = (BOOLEAN) Index;
                 return EFI_SUCCESS;
@@ -585,7 +629,7 @@ Returns:
             TempIndex    = Index;
           } else {
             if (EfiCompareGuid (VendorGuid, &Variable[Index]->VendorGuid)) {
-              if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), ArrayLength (VariableName))) {
+              if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), ArrayLength (VariableName)) == 0) {
                 TempVariable = Variable[Index];
                 TempIndex    = Index;
               }
@@ -619,7 +663,6 @@ Returns:
 }
 
 EFI_STATUS
-EFIAPI
 GetVariable (
   IN      CHAR16            *VariableName,
   IN      EFI_GUID          * VendorGuid,
@@ -690,7 +733,6 @@ Returns:
 }
 
 EFI_STATUS
-EFIAPI
 GetNextVariableName (
   IN OUT  UINTN             *VariableNameSize,
   IN OUT  CHAR16            *VariableName,
@@ -794,7 +836,6 @@ Returns:
 }
 
 EFI_STATUS
-EFIAPI
 SetVariable (
   IN CHAR16                  *VariableName,
   IN EFI_GUID                *VendorGuid,
@@ -857,6 +898,14 @@ Returns:
     return Status;
   }
   //
+  // If EfiAtRuntime and the variable is Volatile and Runtime Access,  
+  // the volatile is ReadOnly, and SetVariable should be aborted and 
+  // return EFI_WRITE_PROTECTED.
+  //
+  if (!EFI_ERROR (Status) && Variable.Volatile && EfiAtRuntime()) {
+    return EFI_WRITE_PROTECTED;
+  }
+  //
   //  The size of the VariableName, including the Unicode Null in bytes plus
   //  the DataSize is limited to maximum size of MAX_VARIABLE_SIZE (1024) bytes.
   //
@@ -887,7 +936,7 @@ Returns:
   // Setting a data variable with no access, or zero DataSize attributes
   // specified causes it to be deleted.
   //
-  else if (DataSize == 0 || Attributes == 0) {
+  else if (DataSize == 0 || (Attributes & (EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS)) == 0) {
     if (!EFI_ERROR (Status)) {
       State = Variable.CurrPtr->State;
       State &= VAR_DELETED;
@@ -916,7 +965,7 @@ Returns:
       // then return to the caller immediately.
       //
       if (Variable.CurrPtr->DataSize == DataSize &&
-          !EfiCompareMem (Data, GetVariableDataPtr (Variable.CurrPtr), DataSize)
+          (EfiCompareMem (Data, GetVariableDataPtr (Variable.CurrPtr), DataSize) == 0)
             ) {
         return EFI_SUCCESS;
       } else if ((Variable.CurrPtr->State == VAR_ADDED) ||
@@ -1139,7 +1188,6 @@ Returns:
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 EFI_STATUS
-EFIAPI
 QueryVariableInfo (
   IN  UINT32                 Attributes,
   OUT UINT64                 *MaximumVariableStorageSize,
@@ -1273,7 +1321,6 @@ Returns:
 #endif
 
 EFI_STATUS
-EFIAPI
 VariableCommonInitialize (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -1466,7 +1513,16 @@ Returns:
                 sizeof (UINT32),
                 (CHAR8 *) &VariableStoreEntry.Length
                 );
-
+      // 
+      // As Variables are stored in NV storage, which are slow devices,such as flash.
+      // Variable operation may skip checking variable program result to improve performance,
+      // We can assume Variable program is OK through some check point.
+      // Variable Store Size Setting should be the first Variable write operation,
+      // We can assume all Read/Write is OK if we can set Variable store size successfully.
+      // If write fail, we will assert here
+      //
+      ASSERT(VariableStoreHeader->Size == VariableStoreEntry.Length);
+      
       if (EFI_ERROR (Status)) {
         goto Shutdown_Fvb;
       }

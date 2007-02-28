@@ -387,12 +387,8 @@ Routine Description:
               |___________|___________________|___________________|
       
                         Table 2. BARs for Register Mapping
-        Note: Refer to Intel ICH4 datasheet, Control Block Offset: 03F4h for 
-              primary, 0374h for secondary. So 2 bytes extra offset should be 
-              added to the base addresses read from BARs.
   
-  For more details, please refer to PCI IDE Controller Specification and Intel 
-  ICH4 Datasheet.
+  For more details, please refer to PCI IDE Controller Specification.
   
 Arguments:
   PciIo             - Pointer to the EFI_PCI_IO_PROTOCOL instance
@@ -437,6 +433,11 @@ Returns:
 
     IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  =
     (UINT16) (PciData.Device.Bar[0] & 0x0000fff8);
+    //
+    // Per PCI IDE Controller Spec, Offset 0x2 corresponds to
+    // Alternative Status / Device Control register. So we add
+    // the offset 0x2 here.
+    //
     IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  =
     (UINT16) ((PciData.Device.Bar[1] & 0x0000fffc) + 2);
     IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     =
@@ -459,6 +460,11 @@ Returns:
 
     IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  =
     (UINT16) (PciData.Device.Bar[2] & 0x0000fff8);
+    //
+    // Per PCI IDE Controller Spec, Offset 0x2 corresponds to
+    // Alternative Status / Device Control register. So we add
+    // the offset 0x2 here.
+    //
     IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  =
     (UINT16) ((PciData.Device.Bar[3] & 0x0000fffc) + 2);
     IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     =

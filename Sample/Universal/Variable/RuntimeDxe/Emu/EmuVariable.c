@@ -539,6 +539,14 @@ Returns:
     return Status;
   }
   //
+  // If EfiAtRuntime and the variable is Volatile and Runtime Access,  
+  // the volatile is ReadOnly, and SetVariable should be aborted and 
+  // return EFI_WRITE_PROTECTED.
+  //
+  if (!EFI_ERROR (Status) && Variable.Volatile && EfiAtRuntime()) {
+    return EFI_WRITE_PROTECTED;
+  }
+  //
   //  The size of the VariableName, including the Unicode Null in bytes plus
   //  the DataSize is limited to maximum size of MAX_VARIABLE_SIZE (1024) bytes.
   //
@@ -568,7 +576,7 @@ Returns:
   // Setting a data variable with no access, or zero DataSize attributes
   // specified causes it to be deleted.
   //
-  else if (DataSize == 0 || Attributes == 0) {
+  else if (DataSize == 0 || (Attributes & (EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS)) == 0) {
     if (!EFI_ERROR (Status)) {
       Variable.CurrPtr->State &= VAR_DELETED;
       return EFI_SUCCESS;

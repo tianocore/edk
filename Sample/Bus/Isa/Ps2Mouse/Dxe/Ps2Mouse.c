@@ -31,7 +31,7 @@ EFI_DRIVER_BINDING_PROTOCOL gPS2MouseDriver = {
   PS2MouseDriverSupported,
   PS2MouseDriverStart,
   PS2MouseDriverStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

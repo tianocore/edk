@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                          
+Copyright (c) 2004 - 2007, Intel Corporation                                                          
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -166,8 +166,17 @@ BdsBuildLegacyDevNameString (
     Fmt   = L"%s";
     Type  = temp;
   }
-
-  SPrint (BootString, BufSize, Fmt, Type);
+  
+  //
+  // BbsTable 16 entries are for onboard IDE.
+  // Set description string for SATA harddisks, Harddisk 0 ~ Harddisk 11
+  //  
+  if (Index >= 5 && Index <= 16 && CurBBSEntry->DeviceType == BBS_HARDDISK) {
+    Fmt = L"%s %d";
+    SPrint (BootString, BufSize, Fmt, Type, Index - 5);
+  } else {
+    SPrint (BootString, BufSize, Fmt, Type);
+  }
 }
 
 EFI_STATUS

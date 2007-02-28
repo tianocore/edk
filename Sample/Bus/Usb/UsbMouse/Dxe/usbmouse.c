@@ -83,7 +83,7 @@ EFI_DRIVER_BINDING_PROTOCOL gUsbMouseDriverBinding = {
   USBMouseDriverBindingSupported,
   USBMouseDriverBindingStart,
   USBMouseDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

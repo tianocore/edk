@@ -1,6 +1,6 @@
 #/*++
 #   
-#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -121,14 +121,14 @@ all: $(TARGET_LIB)
 $(TARGET_LIB): $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).lib
   copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME).lib $(TARGET_LIB) /Y
   if exist $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb \
-  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb /Y
+  copy $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb /Y
 !ELSE
 $(TARGET_LIB): $(OBJECTS)
   $(LIB_EXE) $(LIB_FLAGS) $(OBJECTS) /OUT:$(TARGET_LIB)
   if not exist $(EFI_PLATFORM_BIN)\Tools mkdir $(EFI_PLATFORM_BIN)\Tools
   if exist $(TARGET_LIB) copy $(TARGET_LIB) $(EFI_PLATFORM_BIN)\tools\$(TARGET_NAME).lib /Y
-  if exist $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb \
-  copy $(TIANO_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb /Y
+  if exist $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb \
+  copy $(EDK_TOOLS_OUTPUT)\$(TARGET_NAME)Obj.pdb $(EFI_PLATFORM_BIN)\Tools\$(TARGET_NAME)Obj.pdb /Y
 !ENDIF
 
 clean:

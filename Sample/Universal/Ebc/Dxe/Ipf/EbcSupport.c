@@ -35,6 +35,7 @@ Abstract:
 #define VM_STACK_SIZE   (1024 * 32)
 
 #define EBC_THUNK_SIZE  128
+#define STACK_REMAIN_SIZE (1024 * 4)
 
 //
 // For code execution, thunks must be aligned on 16-byte boundary
@@ -102,6 +103,8 @@ EbcInterpret (
   //
   VM_CONTEXT  VmContext;
   UINTN       Addr;
+  EFI_STATUS  Status;
+  UINTN       StackIndex;
   VA_LIST     List;
   UINT64      Arg2;
   UINT64      Arg3;
@@ -110,7 +113,14 @@ EbcInterpret (
   UINT64      Arg6;
   UINT64      Arg7;
   UINT64      Arg8;
-  UINTN       Arg9Addr;
+  UINT64      Arg9;
+  UINT64      Arg10;
+  UINT64      Arg11;
+  UINT64      Arg12;
+  UINT64      Arg13;
+  UINT64      Arg14;
+  UINT64      Arg15;
+  UINT64      Arg16;
   //
   // Get the EBC entry point from the processor register. Make sure you don't
   // call any functions before this or you could mess up the register the
@@ -128,7 +138,14 @@ EbcInterpret (
   Arg6      = VA_ARG (List, UINT64);
   Arg7      = VA_ARG (List, UINT64);
   Arg8      = VA_ARG (List, UINT64);
-  Arg9Addr  = (UINTN) List;
+  Arg9      = VA_ARG (List, UINT64);
+  Arg10     = VA_ARG (List, UINT64);
+  Arg11     = VA_ARG (List, UINT64);
+  Arg12     = VA_ARG (List, UINT64);
+  Arg13     = VA_ARG (List, UINT64);
+  Arg14     = VA_ARG (List, UINT64);
+  Arg15     = VA_ARG (List, UINT64);
+  Arg16     = VA_ARG (List, UINT64);
   //
   // Now clear out our context
   //
@@ -141,7 +158,6 @@ EbcInterpret (
   // Initialize the stack pointer for the EBC. Get the current system stack
   // pointer and adjust it down by the max needed for the interpreter.
   //
-  Addr = (UINTN) Arg9Addr;
   //
   // NOTE: Eventually we should have the interpreter allocate memory
   //       for stack space which it will use during its execution. This
@@ -163,13 +179,21 @@ EbcInterpret (
   // actually trying to access args9 and greater. Therefore we need to
   // adjust memory accesses in this region to point above the stack gap.
   //
-  VmContext.HighStackBottom = (UINTN) Addr;
   //
   // Now adjust the EBC stack pointer down to leave a gap for interpreter
   // execution. Then stuff a magic value there.
   //
-  VmContext.R[0] = (UINT64) Addr;
-  VmContext.R[0] -= VM_STACK_SIZE;
+  
+  Status = GetEBCStack((EFI_HANDLE)(UINTN)-1, &VmContext.StackPool, &StackIndex);
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
+  VmContext.StackTop = (UINT8*)VmContext.StackPool + (STACK_REMAIN_SIZE);
+  VmContext.R[0] = (UINT64) ((UINT8*)VmContext.StackPool + STACK_POOL_SIZE);
+  VmContext.HighStackBottom = (UINTN) VmContext.R[0];
+  VmContext.R[0] -= sizeof (UINTN);
+
+  
   PushU64 (&VmContext, (UINT64) VM_STACK_KEY_VALUE);
   VmContext.StackMagicPtr = (UINTN *) VmContext.R[0];
   VmContext.LowStackTop   = (UINTN) VmContext.R[0];
@@ -177,6 +201,14 @@ EbcInterpret (
   // Push the EBC arguments on the stack. Does not matter that they may not
   // all be valid.
   //
+  PushU64 (&VmContext, Arg16);
+  PushU64 (&VmContext, Arg15);
+  PushU64 (&VmContext, Arg14);
+  PushU64 (&VmContext, Arg13);
+  PushU64 (&VmContext, Arg12);
+  PushU64 (&VmContext, Arg11);
+  PushU64 (&VmContext, Arg10);
+  PushU64 (&VmContext, Arg9);
   PushU64 (&VmContext, Arg8);
   PushU64 (&VmContext, Arg7);
   PushU64 (&VmContext, Arg6);
@@ -200,6 +232,7 @@ EbcInterpret (
   //
   // Return the value in R[7] unless there was an error
   //
+  ReturnEBCStack(StackIndex);
   return (UINT64) VmContext.R[7];
 }
 
@@ -234,6 +267,8 @@ Returns:
   //
   VM_CONTEXT  VmContext;
   UINTN       Addr;
+  EFI_STATUS  Status;
+  UINTN       StackIndex;
 
   //
   // Get the EBC entry point from the processor register. Make sure you don't
@@ -262,14 +297,21 @@ Returns:
   // Get the stack pointer. This is the bottom of the upper stack.
   //
   Addr                      = EbcLLGetStackPointer ();
-  VmContext.HighStackBottom = (UINTN) Addr;
-  VmContext.R[0]            = (INT64) Addr;
+  
+  Status = GetEBCStack(ImageHandle, &VmContext.StackPool, &StackIndex);
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
+  VmContext.StackTop = (UINT8*)VmContext.StackPool + (STACK_REMAIN_SIZE);
+  VmContext.R[0] = (UINT64) ((UINT8*)VmContext.StackPool + STACK_POOL_SIZE);
+  VmContext.HighStackBottom = (UINTN) VmContext.R[0];
+  VmContext.R[0] -= sizeof (UINTN);
 
+  
   //
   // Allocate stack space for the interpreter. Then put a magic value
   // at the bottom so we can detect stack corruption.
   //
-  VmContext.R[0] -= VM_STACK_SIZE;
   PushU64 (&VmContext, (UINT64) VM_STACK_KEY_VALUE);
   VmContext.StackMagicPtr = (UINTN *) (UINTN) VmContext.R[0];
 
@@ -315,6 +357,7 @@ Returns:
   //
   // Return the value in R[7] unless there was an error
   //
+  ReturnEBCStack(StackIndex);
   return (UINT64) VmContext.R[7];
 }
 
@@ -866,50 +909,4 @@ Action:
     VmPtr->R[7] = EbcLLGetReturnValue ();
     VmPtr->Ip += Size;
   }
-}
-
-VOID
-EbcLLCALLEXNative (
-  IN UINTN    CallAddr,
-  IN UINTN    EbcSp,
-  IN VOID     *FramePtr
-  )
-/*++
-
-Routine Description:
-  Implements the EBC CALLEX instruction to call an external function, which
-  seems to be native code.
-
-  We'll copy the entire EBC stack frame down below itself in memory and use
-  that copy for passing parameters. 
-
-Arguments:
-  CallAddr    - address (function pointer) of function to call
-  EbcSp       - current EBC stack pointer
-  FramePtr    - current EBC frame pointer.
-
-Returns:
-  NA
-
---*/
-{
-  UINTN FrameSize;
-  VOID  *Destination;
-  VOID  *Source;
-  //
-  // The stack for an EBC function looks like this:
-  //     FramePtr  (8)
-  //     RetAddr   (8)
-  //     Locals    (n)
-  //     Stack for passing args (m)
-  //
-  // Pad the frame size with 64 bytes because the low-level code we call
-  // will move the stack pointer up assuming worst-case 8 args in registers.
-  //
-  FrameSize   = (UINTN) FramePtr - (UINTN) EbcSp + 64;
-  Source      = (VOID *) EbcSp;
-  Destination = (VOID *) ((UINT8 *) EbcSp - FrameSize - IPF_STACK_ALIGNMENT);
-  Destination = (VOID *) ((UINTN) ((UINTN) Destination + IPF_STACK_ALIGNMENT - 1) &~((UINTN) IPF_STACK_ALIGNMENT - 1));
-  gBS->CopyMem (Destination, Source, FrameSize);
-  EbcAsmLLCALLEX ((UINTN) CallAddr, (UINTN) Destination);
 }

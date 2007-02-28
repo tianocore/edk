@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -69,7 +69,6 @@ typedef struct {
 //
 static GUID_LIST  mGuidList[] = {
   GUID_XREF(gAprioriGuid, EFI_APRIORI_GUID),
-  GUID_XREF(gEfiAcpiTableStorageGuid, EFI_ACPI_TABLE_STORAGE_GUID),
   GUID_XREF(gEfiDefaultBmpLogoGuid, EFI_DEFAULT_BMP_LOGO_GUID),
   GUID_XREF(gEfiAcpiTableStorageGuid, EFI_ACPI_TABLE_STORAGE_GUID),
   //

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                              
+Copyright (c) 2004 - 2007, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -130,7 +130,8 @@ STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mConOut = {
     NULL
   },
   (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) NULL,
-  (TEXT_OUT_GOP_MODE *) NULL,
+  (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *) NULL,
+  0,
   0,
   TRUE,
 #endif
@@ -196,7 +197,8 @@ STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
     NULL
   },
   (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) NULL,
-  (TEXT_OUT_GOP_MODE *) NULL,
+  (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *) NULL,
+  0,
   0,
   TRUE,
 #endif
@@ -224,7 +226,7 @@ EFI_DRIVER_BINDING_PROTOCOL           gConSplitterConInDriverBinding = {
   ConSplitterConInDriverBindingSupported,
   ConSplitterConInDriverBindingStart,
   ConSplitterConInDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -233,7 +235,7 @@ EFI_DRIVER_BINDING_PROTOCOL           gConSplitterSimplePointerDriverBinding = {
   ConSplitterSimplePointerDriverBindingSupported,
   ConSplitterSimplePointerDriverBindingStart,
   ConSplitterSimplePointerDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -242,7 +244,7 @@ EFI_DRIVER_BINDING_PROTOCOL           gConSplitterConOutDriverBinding = {
   ConSplitterConOutDriverBindingSupported,
   ConSplitterConOutDriverBindingStart,
   ConSplitterConOutDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -251,7 +253,7 @@ EFI_DRIVER_BINDING_PROTOCOL           gConSplitterStdErrDriverBinding = {
   ConSplitterStdErrDriverBindingSupported,
   ConSplitterStdErrDriverBindingStart,
   ConSplitterStdErrDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -522,6 +524,9 @@ ConSplitterTextOutConstructor (
   )
 {
   EFI_STATUS  Status;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *Info;
+#endif
 
   //
   // Initilize console output splitter's private data.
@@ -570,20 +575,22 @@ ConSplitterTextOutConstructor (
   //
   // Setup the DevNullGraphicsOutput to 800 x 600 x 32 bits per pixel
   //
-  if ((ConOutPrivate->GraphicsOutputModeBuffer = EfiLibAllocateZeroPool (sizeof (TEXT_OUT_GOP_MODE))) == NULL) {
+  if ((ConOutPrivate->GraphicsOutputModeBuffer = EfiLibAllocateZeroPool (sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION))) == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  ConOutPrivate->GraphicsOutputModeBuffer[0].HorizontalResolution = 800;
-  ConOutPrivate->GraphicsOutputModeBuffer[0].VerticalResolution = 600;
+  Info = &ConOutPrivate->GraphicsOutputModeBuffer[0];
+  Info->Version = 0;
+  Info->HorizontalResolution = 800;
+  Info->VerticalResolution = 600;
+  Info->PixelFormat = PixelBltOnly;
+  Info->PixelsPerScanLine = 800;
+  EfiCopyMem (ConOutPrivate->GraphicsOutput.Mode->Info, Info, sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION));
+  ConOutPrivate->GraphicsOutput.Mode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
 
   //
   // Initialize the following items, theset items remain unchanged in GraphicsOutput->SetMode()
-  //  GraphicsOutputMode->Info->Version, GraphicsOutputMode->Info->PixelFormat
-  //  GraphicsOutputMode->SizeOfInfo, GraphicsOutputMode->FrameBufferBase, GraphicsOutputMode->FrameBufferSize
+  // GraphicsOutputMode->FrameBufferBase, GraphicsOutputMode->FrameBufferSize
   //
-  ConOutPrivate->GraphicsOutput.Mode->Info->Version = 0;
-  ConOutPrivate->GraphicsOutput.Mode->Info->PixelFormat = PixelBltOnly;
-  ConOutPrivate->GraphicsOutput.Mode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
   ConOutPrivate->GraphicsOutput.Mode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS) NULL;
   ConOutPrivate->GraphicsOutput.Mode->FrameBufferSize = 0;
 
@@ -2035,20 +2042,31 @@ Returns:
 {
   EFI_STATUS                           Status;
   UINTN                                Index;
-  TEXT_OUT_GOP_MODE                    *Mode;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Mode;
   UINTN                                SizeOfInfo;
   EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
   EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE    *CurrentGraphicsOutputMode;
-  TEXT_OUT_GOP_MODE                    *ModeBuffer;
-  TEXT_OUT_GOP_MODE                    *MatchedMode;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *ModeBuffer;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *MatchedMode;
   UINTN                                NumberIndex;
   BOOLEAN                              Match;
+  BOOLEAN                              AlreadyExist;
 
   if ((GraphicsOutput == NULL) && (UgaDraw == NULL)) {
     return EFI_UNSUPPORTED;
   }
 
   CurrentGraphicsOutputMode = Private->GraphicsOutput.Mode;
+
+  Index = 0;
+  if (Private->CurrentNumberOfUgaDraw != 0) {
+    //
+    // If any UGA device has already been added, then there is no need to 
+    // calculate intersection of display mode of different GOP/UGA device,
+    // since only one display mode will be exported (i.e. 800x600)
+    //
+    goto Done;
+  }
 
   if (GraphicsOutput != NULL) {
     if (Private->CurrentNumberOfGraphicsOutput == 0) {
@@ -2065,7 +2083,7 @@ Returns:
         //
         // Allocate resource for the private mode buffer
         //
-        ModeBuffer = EfiLibAllocatePool (sizeof (TEXT_OUT_GOP_MODE) * GraphicsOutput->Mode->MaxMode);
+        ModeBuffer = EfiLibAllocatePool (GraphicsOutput->Mode->SizeOfInfo * GraphicsOutput->Mode->MaxMode);
         if (ModeBuffer == NULL) {
           return EFI_OUT_OF_RESOURCES;
         }
@@ -2081,8 +2099,7 @@ Returns:
           if (EFI_ERROR (Status)) {
             return Status;
           }
-          Mode->HorizontalResolution = Info->HorizontalResolution;
-          Mode->VerticalResolution = Info->VerticalResolution;
+          EfiCopyMem (Mode, Info, SizeOfInfo);
           Mode++;
           gBS->FreePool (Info);
         }
@@ -2090,7 +2107,7 @@ Returns:
       //
       // Check intersection of display mode
       //
-      ModeBuffer = EfiLibAllocatePool (sizeof (TEXT_OUT_GOP_MODE) * CurrentGraphicsOutputMode->MaxMode);
+      ModeBuffer = EfiLibAllocatePool (sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION) * CurrentGraphicsOutputMode->MaxMode);
       if (ModeBuffer == NULL) {
         return EFI_OUT_OF_RESOURCES;
       }
@@ -2106,7 +2123,7 @@ Returns:
             return Status;
           }
           if ((Info->HorizontalResolution == Mode->HorizontalResolution) &&
-              (Info->VerticalResolution == Mode->VerticalResolution)){
+              (Info->VerticalResolution == Mode->VerticalResolution)) {
             Match = TRUE;
             gBS->FreePool (Info);
             break;
@@ -2115,8 +2132,28 @@ Returns:
         }
 
         if (Match) {
-          EfiCopyMem (MatchedMode, Mode, sizeof (TEXT_OUT_GOP_MODE));
-          MatchedMode++;
+          AlreadyExist = FALSE;
+
+          for (Info = ModeBuffer; Info < MatchedMode; Info++) {
+            if ((Info->HorizontalResolution == Mode->HorizontalResolution) &&
+                (Info->VerticalResolution == Mode->VerticalResolution)) {
+              AlreadyExist = TRUE;
+              break;
+            }
+          }
+
+          if (!AlreadyExist) {
+            EfiCopyMem (MatchedMode, Mode, sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION));
+
+            //
+            // Physical frame buffer is no longer available, change PixelFormat to PixelBltOnly
+            //
+            MatchedMode->Version = 0;
+            MatchedMode->PixelFormat = PixelBltOnly;
+            EfiZeroMem (&MatchedMode->PixelInformation, sizeof (EFI_PIXEL_BITMASK));
+
+            MatchedMode++;
+          }
         }
 
         Mode++;
@@ -2131,7 +2168,7 @@ Returns:
       //
       // Physical frame buffer is no longer available when there are more than one physical GOP devices
       //
-      CurrentGraphicsOutputMode->MaxMode = (UINT32) (((UINTN) MatchedMode - (UINTN) ModeBuffer) / sizeof (TEXT_OUT_GOP_MODE));
+      CurrentGraphicsOutputMode->MaxMode = (UINT32) (((UINTN) MatchedMode - (UINTN) ModeBuffer) / sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION));
       CurrentGraphicsOutputMode->Info->PixelFormat = PixelBltOnly;
       EfiZeroMem (&CurrentGraphicsOutputMode->Info->PixelInformation, sizeof (EFI_PIXEL_BITMASK));
       CurrentGraphicsOutputMode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
@@ -2154,22 +2191,20 @@ Returns:
     if (Index >= CurrentGraphicsOutputMode->MaxMode) {
       Index = 0;
     }
-
-    //
-    // Current mode number may need update now, so set it to an invalide mode number
-    //
-    CurrentGraphicsOutputMode->Mode = 0xffff;
-  } else {
+  }
+  
+  if (UgaDraw != NULL) {
     //
     // For UGA device, it's inconvenient to retrieve all the supported display modes.
     // To simplify the implementation, only add one resolution(800x600, 32bit color depth) as defined in UEFI spec
     //
     CurrentGraphicsOutputMode->MaxMode = 1;
-    CurrentGraphicsOutputMode->Info->Version = 0;
-    CurrentGraphicsOutputMode->Info->HorizontalResolution = 800;
-    CurrentGraphicsOutputMode->Info->VerticalResolution = 600;
-    CurrentGraphicsOutputMode->Info->PixelFormat = PixelBltOnly;
-    CurrentGraphicsOutputMode->Info->PixelsPerScanLine = 800;
+    Info = CurrentGraphicsOutputMode->Info;
+    Info->Version = 0;
+    Info->HorizontalResolution = 800;
+    Info->VerticalResolution = 600;
+    Info->PixelFormat = PixelBltOnly;
+    Info->PixelsPerScanLine = 800;
     CurrentGraphicsOutputMode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
     CurrentGraphicsOutputMode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS) NULL;
     CurrentGraphicsOutputMode->FrameBufferSize = 0;
@@ -2177,15 +2212,21 @@ Returns:
     //
     // Update the private mode buffer
     //
-    ModeBuffer = &Private->GraphicsOutputModeBuffer[0];
-    ModeBuffer->HorizontalResolution = 800;
-    ModeBuffer->VerticalResolution   = 600;
+    EfiCopyMem (&Private->GraphicsOutputModeBuffer[0], Info, sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION));
 
     //
-    // Current mode is unknow now, set it to an invalid mode number 0xffff
+    // Only mode 0 is available to be set
     //
-    CurrentGraphicsOutputMode->Mode = 0xffff;
     Index = 0;
+  }
+
+Done:
+
+  if (GraphicsOutput != NULL) {
+    Private->CurrentNumberOfGraphicsOutput++;
+  }
+  if (UgaDraw != NULL) {
+    Private->CurrentNumberOfUgaDraw++;
   }
 
   //
@@ -2193,9 +2234,11 @@ Returns:
   // regardless whether the console is in EfiConsoleControlScreenGraphics or EfiConsoleControlScreenText mode
   //
   Private->HardwareNeedsStarting = TRUE;
+  //
+  // Current mode number may need update now, so set it to an invalide mode number
+  //
+  CurrentGraphicsOutputMode->Mode = 0xffff;
   Status = Private->GraphicsOutput.SetMode (&Private->GraphicsOutput, (UINT32) Index);
-
-  Private->CurrentNumberOfGraphicsOutput++;
 
   return Status;
 }
@@ -2353,6 +2396,14 @@ Returns:
     if (TextOutList->TextOut == TextOut) {
       EfiCopyMem (TextOutList, TextOutList + 1, sizeof (TEXT_OUT_AND_GOP_DATA) * Index);
       CurrentNumOfConsoles--;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+      if (TextOutList->UgaDraw != NULL) {
+        Private->CurrentNumberOfUgaDraw--;
+      }
+      if (TextOutList->GraphicsOutput != NULL) {
+        Private->CurrentNumberOfGraphicsOutput--;
+      }
+#endif
       break;
     }
 

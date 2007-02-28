@@ -406,7 +406,7 @@ InitializeBrowserStrings (
 ;
 
 UINTN
-Print (
+_Print (
   IN CHAR16                         *fmt,
   ...
   )
@@ -491,7 +491,6 @@ GetQuestionHeader (
 ;
 
 UINTN
-EFIAPI
 VSPrint (
   OUT CHAR16        *StartOfBuffer,
   IN  UINTN         BufferSize,

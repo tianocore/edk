@@ -25,7 +25,7 @@ EFI_DRIVER_BINDING_PROTOCOL gIp4DriverBinding = {
   Ip4DriverBindingSupported,
   Ip4DriverBindingStart,
   Ip4DriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

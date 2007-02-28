@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -21,70 +21,7 @@ Abstract:
 
 #include "HiiDatabase.h"
 #include "IfrLibrary.h"
-
-CHAR16*
-Ascii2Unicode (
-  OUT CHAR16         *UnicodeStr,
-  IN  CHAR8          *AsciiStr
-  )
-/*++
-  
-  Routine Description:
-
-    This function converts ASCII string to Unicode string.
-  
-  Arguments:
-
-    UnicodeStr     - NULL terminated Unicode output string.
-    AsciieStr      - NULL terminated ASCII input string.
- 
-  Returns: 
-
-    Start of the Unicode ouput string.
-    
---*/
-
-{
-  CHAR16      *Str = UnicodeStr;  
-  while (TRUE) {
-    *(UnicodeStr++) = (CHAR16) *AsciiStr;
-    if (*(AsciiStr++) == '\0') {
-      return Str;
-    }
-  }
-}
-
-CHAR8*
-Unicode2Ascii (
-  OUT CHAR8          *AsciiStr,
-  IN  CHAR16         *UnicodeStr
-  )
-/*++
-  
-  Routine Description:
-
-    This function converts Unicode string to ASCII string.
-  
-  Arguments:
-
-    AsciieStr      - NULL terminated ASCII output string.
-    UnicodeStr     - NULL terminated Unicode input string.
- 
-  Returns: 
-
-    Start of the ASCII ouput string.
-    
---*/
-
-{
-  CHAR8      *Str = AsciiStr;  
-  while (TRUE) {
-    *(AsciiStr++) = (CHAR8) *UnicodeStr;
-    if (*(UnicodeStr++) == '\0') {
-      return Str;
-    }
-  }
-}
+#include "EfiUiLib.h"
 
 VOID
 ExtractDevicePathData (
@@ -730,6 +667,7 @@ Returns:
   EFI_HII_IFR_PACK          *FormPack;
   EFI_IFR_FORM              *Form;
   EFI_IFR_OP_HEADER         *Location;
+  UINTN                     FormLength;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -740,6 +678,8 @@ Returns:
   HandleDatabase  = HiiData->DatabaseHead;
 
   PackageInstance = NULL;
+
+  FormLength      = 0;
 
   //
   // Check numeric value against the head of the database
@@ -801,19 +741,27 @@ Returns:
         // If we found a Form Op-code and it is of the correct Id, copy it and return
         //
         if (Form->FormId == FormId) {
-          if (Location->Length > *BufferLength || Buffer == NULL) {
-            *BufferLength = Location->Length;
-            return EFI_BUFFER_TOO_SMALL;
-          } else {
-            for (; Location->OpCode != EFI_IFR_END_FORM_OP;) {
-              EfiCopyMem (Buffer, Location, Location->Length);
-              Buffer    = Buffer + Location->Length;
-              Location  = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (Location) + Location->Length);
-            }
-
-            EfiCopyMem (Buffer, Location, Location->Length);
-            return EFI_SUCCESS;
+          //
+          // Calculate the total size of form
+          //
+          for (FormLength = 0; Location->OpCode != EFI_IFR_END_FORM_OP; ) {
+            FormLength += Location->Length;
+            Location    = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (Location) + Location->Length);
           }
+          FormLength += Location->Length;
+          Location    = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (Location) + Location->Length);
+
+          if ((Buffer == NULL) || (FormLength > *BufferLength)) {
+            *BufferLength = FormLength;
+            return EFI_BUFFER_TOO_SMALL;
+          }
+          
+          //
+          // Rewind to start offset of the found Form
+          //
+          Location   = (EFI_IFR_OP_HEADER *) ((CHAR8 *)Location - FormLength);
+          EfiCopyMem (Buffer, Location, FormLength);
+          return EFI_SUCCESS;
         }
 
       default:
@@ -826,7 +774,7 @@ Returns:
     }
   }
 
-  return EFI_SUCCESS;
+  return EFI_NOT_FOUND;
 }
 
 //

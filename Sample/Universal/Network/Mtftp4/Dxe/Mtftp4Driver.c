@@ -23,7 +23,7 @@ EFI_DRIVER_BINDING_PROTOCOL   gMtftp4DriverBinding = {
   Mtftp4DriverBindingSupported,
   Mtftp4DriverBindingStart,
   Mtftp4DriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

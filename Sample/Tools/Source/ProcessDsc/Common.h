@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -54,6 +54,35 @@ typedef unsigned int UINT32;
 #define FV_DIR        "FV_DIR"  // symbol for base dir where FV files are
 #define DSC_FILENAME  "DSC_FILENAME"
 
+//
+// Smart file for better incremental build support.
+// Only re-create .pkg .inf or .apr files when it's content is changed.
+//  
+//
+typedef struct _SMART_FILE {
+  char              *FileName;
+  char              *FileContent;        // Previous file content
+  int               FileLength;            // Previous file string length
+  int               FilePosition;        // The offset from FileContent for next comparison
+  FILE              *FilePtr;            // New file pointer if the file need to be re-created
+} SMART_FILE;
+
+SMART_FILE *
+SmartOpen (
+  char        *FileName
+  );
+
+int
+SmartWrite (
+  SMART_FILE  *SmartFile,
+  char        *String
+  );
+
+void
+SmartClose (
+  SMART_FILE  *SmartFile
+  );
+    
 INT8  *
 GetSymbolValue (
   INT8 *SymbolName
@@ -69,7 +98,7 @@ AddSymbol (
 ;
 
 int
-ExpandMacros (
+ExpandSymbols (
   INT8  *SourceLine,
   INT8  *DestLine,
   int   LineLen,

@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright 2006, Intel Corporation                                                         
+Copyright 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -178,7 +178,7 @@ ParseCommandLine (
   COMPRESS_ACTION_LIST  **Action;
   
   Action           =    ActionListHead;
-  CurrentType      =    TIANO_COMPRESS;     // default compress algorithm is tiano compress
+  CurrentType      =    EFI_COMPRESS;     // default compress algorithm
 
   // Skip Exe Name
   --argc;
@@ -368,17 +368,17 @@ Usage (
   fprintf (
       stdout, 
       "\n"
-      "Usage: %s {-tCompressType} [InFileName] [OutFileName]\n"
-      "       %*c {-tCompressType} [InFileName] [OutFileName] ...\n"
+      "Usage: %s [-tCompressType] InFileName OutFileName\n"
+      "       %*c [[-tCompressType] InFileName OutFileName ...]\n"
       "\n"
       "where:\n"
       "  CompressType - optional compress algorithm (EFI | Tiano), case insensitive.\n"
       "                 If ommitted, compress type specified ahead is used, \n"
-      "                 default is Tiano\n"
-      "                 e.g.: EfiCompress a.in a.out -tEFI b.in b.out \\ \n"
-      "                                     c.in c.out -tTiano d.in d.out\n"
-      "                 a.in and d.in are compressed using tiano compress algorithm\n"
-      "                 b.in and c.in are compressed using efi compress algorithm\n"
+      "                 default is EFI\n"
+      "                 e.g.: EfiCompress a.in a.out -tTiano b.in b.out \\ \n"
+      "                                     c.in c.out -tEFI d.in d.out\n"
+      "                 a.in and d.in are compressed using EFI compress algorithm\n"
+      "                 b.in and c.in are compressed using Tiano compress algorithm\n"
       "  InFileName   - input file path\n"
       "  OutFileName  - output file path\n",
       ExeName, strlen(ExeName), ' '

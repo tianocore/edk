@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2006, Intel Corporation                                                         
+Copyright 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -14,8 +14,10 @@ Module Name:
   genbootsector.c
   
 Abstract:
-
-Revision History
+  Reading/writing MBR/DBR.
+  NOTE:
+    If we write MBR to disk, we just update the MBR code and the partition table wouldn't be over written.
+    If we process DBR, we will patch MBR to set first partition active if no active partition exists.
 
 --*/
 
@@ -23,7 +25,14 @@ Revision History
 #include <stdio.h>
 #include <string.h>
 
-#define MAX_DRIVE 26
+#define MAX_DRIVE                             26
+#define PARTITION_TABLE_OFFSET                0x1BE
+
+#define SIZE_OF_PARTITION_ENTRY               0x10
+
+#define PARTITION_ENTRY_STARTLBA_OFFSET       8
+
+#define PARTITION_ENTRY_NUM                   4
 
 INT
 GetDrvNumOffset (
@@ -45,13 +54,20 @@ typedef enum {
   ErrorFatType
 } ERROR_STATUS;
 
+CHAR *ErrorStatusDesc[] = {
+  "Success",
+  "Failed to create files",
+  "Failed to read/write files",
+  "No MBR exists",
+  "Failed to detect Fat type"
+};
+
 typedef struct _DRIVE_TYPE_DESC {
   UINT  Type;
   CHAR  *Description;
 } DRIVE_TYPE_DESC;
 
 #define DRIVE_TYPE_ITEM(x) {x, #x}
-
 DRIVE_TYPE_DESC DriveTypeDesc[] = {
   DRIVE_TYPE_ITEM (DRIVE_UNKNOWN),
   DRIVE_TYPE_ITEM (DRIVE_NO_ROOT_DIR),
@@ -63,13 +79,6 @@ DRIVE_TYPE_DESC DriveTypeDesc[] = {
   (UINT) -1, NULL
 };
 
-CHAR *ErrorStatusDesc[] = {
-  "Success",
-  "Failed to create files",
-  "Failed to read/write files",
-  "No MBR exists",
-  "Failed to detect Fat type"
-};
 typedef struct _DRIVE_INFO {
   CHAR              VolumeLetter;
   DRIVE_TYPE_DESC   *DriveType;
@@ -85,6 +94,21 @@ GetDriveInfo (
   CHAR       VolumeLetter,
   DRIVE_INFO *DriveInfo
   )
+/*++
+Routine Description:
+  Get drive information including disk number and drive type,
+  where disknumber is useful for reading/writing disk raw data.
+  NOTE: Floppy disk doesn't have disk number but it doesn't matter because
+        we can reading/writing floppy disk without disk number.
+
+Arguments:
+  VolumeLetter : volume letter, e.g.: C for C:, A for A:
+  DriveInfo    : pointer to DRIVE_INFO structure receiving drive information.
+
+Return:
+  TRUE  : successful
+  FALSE : failed
+--*/
 {
   HANDLE                  VolumeHandle;
   STORAGE_DEVICE_NUMBER   StorageDeviceNumber;
@@ -123,11 +147,12 @@ GetDriveInfo (
   }
 
   //
-  // Get Disk Number. It should fail when operating on floppy. That's ok because:
+  // Get Disk Number. It should fail when operating on floppy. That's ok 
+  //  because Disk Number is only needed when operating on Hard or USB disk.
+  //
   // To direct write to disk:
   //   for USB and HD: use path = \\.\PHYSICALDRIVEx, where x is Disk Number
   //   for floppy:     use path = \\.\X:, where X can be A or B
-  // So the Disk Number is only needed when operating on Hard or USB disk.
   //
   Success = DeviceIoControl(
               VolumeHandle, 
@@ -154,6 +179,9 @@ GetDriveInfo (
   }
   CloseHandle(VolumeHandle);
   
+  //
+  // Fill in the type string
+  //
   DriveInfo->DriveType = NULL;
   for (Index = 0; DriveTypeDesc[Index].Description != NULL; Index ++) {
     if (DriveType == DriveTypeDesc[Index].Type) {
@@ -176,6 +204,11 @@ VOID
 ListDrive (
   VOID
   )
+/*++
+Routine Description:
+  List every drive in current system and their information.
+
+--*/
 {
   UINT       Index;
   DRIVE_INFO DriveInfo;
@@ -209,7 +242,7 @@ ListDrive (
 
 }
 
-DWORD
+INT
 GetBootSectorOffset (
   HANDLE     DiskHandle,
   BOOL       WriteToDisk,
@@ -221,8 +254,16 @@ Description:
   For non-MBR disk, offset is just 0
   for disk with MBR, offset needs to be caculated by parsing MBR
 
-  Additional thing is done here:
-    Manually select first partition as active one if no one is active: needs to patch MBR
+  NOTE: if no one is active, we will patch MBR to select first partition as active.
+
+Arguments:
+  DiskHandle  : HANDLE of disk
+  WriteToDisk : TRUE indicates writing
+  PatchType   : PatchTypeFloppy, PatchTypeIde, PatchTypeUsb
+
+Return:
+  -1   : failed
+  o.w. : Offset to boot sector
 --*/
 {
   BYTE    DiskPartition[0x200];
@@ -234,26 +275,28 @@ Description:
   DbrOffset = 0;
   HasMbr    = FALSE;
   
-  //
-  // Check whether having MBR
-  //
   SetFilePointer(DiskHandle, 0, NULL, FILE_BEGIN);
-  if (ReadFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
-    // Check 55AA
-    if ((DiskPartition[0x1FE] == 0x55) && (DiskPartition[0x1FF] == 0xAA)) {
-      // Check Jmp
-      if (((DiskPartition[0] != 0xEB) || (DiskPartition[2] != 0x90)) &&
-          (DiskPartition[0] != 0xE9)) {
-        // Check Boot Indicator
-        if (((DiskPartition[0x1BE] == 0x0) || (DiskPartition[0x1BE] == 0x80)) &&
-            ((DiskPartition[0x1CE] == 0x0) || (DiskPartition[0x1CE] == 0x80)) &&
-            ((DiskPartition[0x1DE] == 0x0) || (DiskPartition[0x1DE] == 0x80)) &&
-            ((DiskPartition[0x1EE] == 0x0) || (DiskPartition[0x1EE] == 0x80))) {
-          //
-          // Check Signature, Jmp, and Boot Indicator.
-          // if all pass, we assume MBR found.
-          //
-          HasMbr = TRUE;
+  if (!ReadFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL)) {
+    return -1;
+  }
+
+  //
+  // Check Signature, Jmp, and Boot Indicator.
+  // if all pass, we assume MBR found.
+  //
+
+  // Check Signature: 55AA
+  if ((DiskPartition[0x1FE] == 0x55) && (DiskPartition[0x1FF] == 0xAA)) {
+    // Check Jmp: (EB ?? 90) or (E9 ?? ??)
+    if (((DiskPartition[0] != 0xEB) || (DiskPartition[2] != 0x90)) &&
+        (DiskPartition[0] != 0xE9)) {
+      // Check Boot Indicator: 0x00 or 0x80
+      // Boot Indicator is the first byte of Partition Entry
+      HasMbr = TRUE;
+      for (Index = 0; Index < PARTITION_ENTRY_NUM; ++Index) {
+        if ((DiskPartition[PARTITION_TABLE_OFFSET + Index * SIZE_OF_PARTITION_ENTRY] & 0x7F) != 0) {
+          HasMbr = FALSE;
+          break;
         }
       }
     }
@@ -264,23 +307,23 @@ Description:
     // Skip MBR
     //
     fprintf (stdout, "Skip MBR!\n");
-    for (Index = 0; Index < 4; Index++) {
+    for (Index = 0; Index < PARTITION_ENTRY_NUM; Index++) {
       //
       // Found Boot Indicator.
       //
-      if (DiskPartition[0x1BE + (Index * 0x10)] == 0x80) {
-        DbrOffset = *(DWORD *)&DiskPartition[0x1BE + (Index * 0x10) + 8];
+      if (DiskPartition[PARTITION_TABLE_OFFSET + (Index * SIZE_OF_PARTITION_ENTRY)] == 0x80) {
+        DbrOffset = *(DWORD *)&DiskPartition[PARTITION_TABLE_OFFSET + (Index * SIZE_OF_PARTITION_ENTRY) + PARTITION_ENTRY_STARTLBA_OFFSET];
         break;
       }
     }
     //
-    // If no boot indicator, we manually select 1st partition, and patch MBR accordingly.
+    // If no boot indicator, we manually select 1st partition, and patch MBR.
     //
-    if (Index == 4) {
-      DbrOffset = *(DWORD *)&DiskPartition[0x1BE + 8];
+    if (Index == PARTITION_ENTRY_NUM) {
+      DbrOffset = *(DWORD *)&DiskPartition[PARTITION_TABLE_OFFSET + PARTITION_ENTRY_STARTLBA_OFFSET];
       if (WriteToDisk && (PatchType == PatchTypeUsb)) {
         SetFilePointer(DiskHandle, 0, NULL, FILE_BEGIN);
-        DiskPartition[0x1BE] = 0x80;
+        DiskPartition[PARTITION_TABLE_OFFSET] = 0x80;
         WriteFile (DiskHandle, DiskPartition, 0x200, &BytesReturn, NULL);
       }
     }
@@ -290,13 +333,31 @@ Description:
 }
 
 ERROR_STATUS
-ProcessBootSector (
+ProcessBsOrMbr (
   CHAR        *DiskName,
   CHAR        *FileName,
   BOOL        WriteToDisk,
   PATCH_TYPE  PatchType,
   BOOL        ProcessMbr
   )
+/*++
+Routine Description:
+  Writing or reading boot sector or MBR according to the argument.
+
+Arguments:
+  DiskName    : Win32 API recognized string name of disk
+  FileName    : file name
+  WriteToDisk : TRUE is to write content of file to disk, otherwise, reading content of disk to file
+  PatchType   : PatchTypeFloppy, PatchTypeIde, PatchTypeUsb
+  ProcessMbr  : TRUE is to process MBR, otherwise, processing boot sector
+
+Return:
+  ErrorSuccess
+  ErrorFileCreate
+  ErrorFileReadWrite
+  ErrorNoMbr
+  ErrorFatType
+--*/
 {
   BYTE    DiskPartition[0x200];
   BYTE    DiskPartitionBackup[0x200];
@@ -337,18 +398,26 @@ ProcessBootSector (
   // Skip potential MBR for Ide & USB disk
   //
   if ((PatchType == PatchTypeIde) || (PatchType == PatchTypeUsb)) {
+    //
+    // Even user just wants to process MBR, we get offset of boot sector here to validate the disk
+    //  if disk have MBR, DbrOffset should be greater than 0
+    //
     DbrOffset = GetBootSectorOffset (DiskHandle, WriteToDisk, PatchType);
 
     if (!ProcessMbr) {
+      //
+      // 1. Process boot sector, set file pointer to the beginning of boot sector
+      //
       SetFilePointer (DiskHandle, DbrOffset * 0x200, NULL, FILE_BEGIN);
-    }
-    else if(DbrOffset == 0) {
+    } else if(DbrOffset == 0) {
       //
       // If user want to process Mbr, but no Mbr exists, simply return FALSE
       //
       return ErrorNoMbr;
-    }
-    else {
+    } else {
+      //
+      // 2. Process MBR, set file pointer to 0
+      //
       SetFilePointer (DiskHandle, 0, NULL, FILE_BEGIN);
     }
   }
@@ -387,7 +456,7 @@ ProcessBootSector (
     }
 
     if (PatchType == PatchTypeUsb) {
-      // Manually set BS_DrvNum to 0x80 as window's format.exe has a bug which will clear this field discarding whether USB disk's MBR. 
+      // Manually set BS_DrvNum to 0x80 as window's format.exe has a bug which will clear this field discarding USB disk's MBR. 
       // offset of BS_DrvNum is 0x24 for FAT12/16
       //                        0x40 for FAT32
       //
@@ -560,7 +629,7 @@ main (
   //
   // Process DBR (Patch or Read)
   //
-  Status = ProcessBootSector (DiskPath, FilePath, WriteToDisk, PatchType, ProcessMbr);
+  Status = ProcessBsOrMbr (DiskPath, FilePath, WriteToDisk, PatchType, ProcessMbr);
   if (Status == ErrorSuccess) {
     fprintf (
       stdout, 
@@ -569,11 +638,11 @@ main (
       ProcessMbr ? "MBR" : "DBR"
       );
     return 0;
-  }
-  else {
+  } else {
     fprintf (
       stderr, 
-      "ERROR: %s %s failed - %s (LastError: 0x%x)!\n", 
+      "%s: %s %s failed - %s (LastError: 0x%x)!\n",
+      (Status == ErrorNoMbr) ? "WARNING" : "ERROR",
       WriteToDisk ? "Write" : "Read", 
       ProcessMbr ? "MBR" : "DBR", 
       ErrorStatusDesc[Status],

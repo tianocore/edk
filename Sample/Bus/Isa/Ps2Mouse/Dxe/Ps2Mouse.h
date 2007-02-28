@@ -28,12 +28,12 @@ Revision History
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "EfiStatusCode.h"
-#include "..\..\IsaIoDefinitions.h"
 
 //
 // Driver consumed protocol prototypes
 //
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (IsaIo)
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
 

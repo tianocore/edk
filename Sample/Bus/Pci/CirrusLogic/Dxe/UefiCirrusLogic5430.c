@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -39,6 +39,25 @@ EFI_DRIVER_BINDING_PROTOCOL gCirrusLogic5430DriverBinding = {
   NULL,
   NULL
 };
+
+ACPI_ADR_DEVICE_PATH            mGopAcpiDevicePath = {
+  {
+    ACPI_DEVICE_PATH,
+    ACPI_ADR_DP,
+    {
+      sizeof(ACPI_ADR_DEVICE_PATH),
+      0
+    }
+  },
+  ACPI_DISPLAY_ADR (1, 0, 0, 1, 0, ACPI_ADR_DISPLAY_TYPE_VGA, 0, 0)
+};
+
+EFI_STATUS
+ControllerChildHandleUninstall (
+  EFI_DRIVER_BINDING_PROTOCOL    *This,
+  EFI_HANDLE                     Controller,
+  EFI_HANDLE                     Handle
+  );
 
 //
 // Cirrus Logic 5430 Driver Entry point
@@ -196,6 +215,20 @@ Returns:
 {
   EFI_STATUS                      Status;
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
+  EFI_PCI_IO_PROTOCOL             *PciIo;
+  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
+
+  //
+  // Prepare parent device path
+  //
+  Status = gBS->HandleProtocol (
+                  Controller,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &ParentDevicePath
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   //
   // Allocate Private context data for GOP inteface.
@@ -211,22 +244,23 @@ Returns:
   // Set up context record
   //
   Private->Signature  = CIRRUS_LOGIC_5430_PRIVATE_DATA_SIGNATURE;
-  Private->Handle     = Controller;
 
   //
   // Open PCI I/O Protocol
   //
   Status = gBS->OpenProtocol (
-                  Private->Handle,
+                  Controller,
                   &gEfiPciIoProtocolGuid,
-                  (VOID **) &Private->PciIo,
+                  (VOID **) &PciIo,
                   This->DriverBindingHandle,
-                  Private->Handle,
+                  Controller,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status)) {
     goto Error;
   }
+
+  Private->PciIo = PciIo;
 
   Status = Private->PciIo->Attributes (
                             Private->PciIo,
@@ -246,15 +280,44 @@ Returns:
     goto Error;
   }
 
+  if (RemainingDevicePath == NULL) {
+    //
+    // If ACPI_ADR is not specified, use default
+    //
+    Private->DevicePath = EfiAppendDevicePathNode (ParentDevicePath, (EFI_DEVICE_PATH_PROTOCOL *) &mGopAcpiDevicePath);
+  } else {
+    Private->DevicePath = EfiAppendDevicePathNode (ParentDevicePath, RemainingDevicePath);
+  }
+
   //
   // Publish the Graphics Output Protocol interface to the world
   //
+  Private->Handle = NULL;
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &Private->Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  Private->DevicePath,
                   &gEfiGraphicsOutputProtocolGuid,
                   &Private->GraphicsOutput,
+                  &gEfiEdidDiscoveredProtocolGuid,
+                  &Private->EdidDiscovered,
+                  &gEfiEdidActiveProtocolGuid,
+                  &Private->EdidActive,
                   NULL
                   );
+  if (!EFI_ERROR(Status)) {
+    //
+    // Open the Parent Handle for the child
+    //
+    Status = gBS->OpenProtocol (
+                    Controller,
+                    &gEfiPciIoProtocolGuid,
+                    (VOID **) &Private->PciIo,
+                    This->DriverBindingHandle,
+                    Private->Handle,
+                    EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                    );
+  }
 
 Error:
   if (EFI_ERROR (Status)) {
@@ -273,10 +336,10 @@ Error:
     // Close the PCI I/O Protocol
     //
     gBS->CloseProtocol (
-          Private->Handle,
+          Controller,
           &gEfiPciIoProtocolGuid,
           This->DriverBindingHandle,
-          Private->Handle
+          Controller
           );
     if (Private) {
       gBS->FreePool (Private);
@@ -311,12 +374,70 @@ Returns:
 // TODO:    ChildHandleBuffer - add argument and description to function comment
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
+  EFI_STATUS  Status;
+  BOOLEAN     AllChildrenStopped;
+  UINTN       Index;
+
+  if (NumberOfChildren == 0) {
+    //
+    // Close PCI I/O protocol on the controller handle
+    //
+    gBS->CloseProtocol (
+          Controller,
+          &gEfiPciIoProtocolGuid,
+          This->DriverBindingHandle,
+          Controller
+          );
+
+    return EFI_SUCCESS;
+  }
+
+  AllChildrenStopped = TRUE;
+  for (Index = 0; Index < NumberOfChildren; Index ++) {
+
+    Status = ControllerChildHandleUninstall (This, Controller, ChildHandleBuffer[Index]);
+    if (EFI_ERROR (Status)) {
+      AllChildrenStopped = FALSE;
+    }
+  }
+
+  if (!AllChildrenStopped) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+ControllerChildHandleUninstall (
+  EFI_DRIVER_BINDING_PROTOCOL    *This,
+  EFI_HANDLE                     Controller,
+  EFI_HANDLE                     Handle
+  )
+/*++
+
+Routine Description:
+
+  Deregister an video child handle and free resources
+
+Arguments:
+
+  This            - Protocol instance pointer.
+  Controller      - Video controller handle
+  Handle          - Video child handle
+
+Returns:
+
+  EFI_STATUS
+
+--*/
+{
   EFI_GRAPHICS_OUTPUT_PROTOCOL    *GraphicsOutput;
   EFI_STATUS                      Status;
   CIRRUS_LOGIC_5430_PRIVATE_DATA  *Private;
 
   Status = gBS->OpenProtocol (
-                  Controller,
+                  Handle,
                   &gEfiGraphicsOutputProtocolGuid,
                   (VOID **) &GraphicsOutput,
                   This->DriverBindingHandle,
@@ -336,12 +457,28 @@ Returns:
   Private = CIRRUS_LOGIC_5430_PRIVATE_DATA_FROM_GRAPHICS_OUTPUT_THIS (GraphicsOutput);
 
   //
+  // Close the PCI I/O Protocol
+  //
+  gBS->CloseProtocol (
+         Controller,
+         &gEfiPciIoProtocolGuid,
+         This->DriverBindingHandle,
+         Handle
+         );
+
+  //
   // Remove the Graphics Output Protocol interface from the system
   //
   Status = gBS->UninstallMultipleProtocolInterfaces (
                   Private->Handle,
+                  &gEfiDevicePathProtocolGuid,
+                  Private->DevicePath,
                   &gEfiGraphicsOutputProtocolGuid,
                   &Private->GraphicsOutput,
+                  &gEfiEdidDiscoveredProtocolGuid,
+                  &Private->EdidDiscovered,
+                  &gEfiEdidActiveProtocolGuid,
+                  &Private->EdidActive,
                   NULL
                   );
   if (EFI_ERROR (Status)) {
@@ -359,16 +496,6 @@ Returns:
                     EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
                     NULL
                     );
-
-  //
-  // Close the PCI I/O Protocol
-  //
-  gBS->CloseProtocol (
-        Controller,
-        &gEfiPciIoProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        );
 
   //
   // Free our instance data

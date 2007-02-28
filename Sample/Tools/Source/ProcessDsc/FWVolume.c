@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -59,8 +59,8 @@ typedef struct _FV_LIST {
   struct _FV_LIST *Next;
   char            FVFileName[MAX_PATH];
   char            BaseAddress[MAX_LINE_LEN];
-  FILE            *FVFilePtr;
-  FILE            *AprioriFilePtr;
+  SMART_FILE      *FVFilePtr;
+  SMART_FILE      *AprioriFilePtr;
   char            *Processor;
   int             ComponentsInstance; // highest [components.n] section with a file for this FV
 } FV_LIST;
@@ -156,7 +156,7 @@ static const COMP_TYPE_EXTENSION  mCompTypeExtension[] = {
     ".fvi"
   },
   {
-    "raw_file",
+    "rawfile",
     ".raw"
   },
   {
@@ -184,6 +184,13 @@ char                              *
 UpperCaseString (
   char *Str
   );
+
+static
+BOOLEAN
+InSameFv (
+  char  *FVs1,
+  char  *FVs2
+);
 
 static
 void
@@ -321,13 +328,6 @@ Returns:
   int       i;
   char      *Sym;
 
-  //
-  // If the file's not destined for an FV then return
-  //
-  if ((FVs == NULL) || (FVs[0] == 0)) {
-    return STATUS_SUCCESS;
-  }
-  //
   // If they provided a filename extension for this type of file, then use it.
   // If they did not provide a filename extension, search our list for a
   // matching component type and use the extension appropriate for this
@@ -379,20 +379,30 @@ Returns:
       sprintf (Str, "%s\\%s\\%s%s", Sym, Processor, Name, FFSExt);
     }
 
-    ExpandMacros (Str, FileName, sizeof (FileName), 0);
+    ExpandSymbols (Str, FileName, sizeof (FileName), EXPANDMODE_NO_UNDEFS);
   } else {
     strcpy (FileName, Name);
   }
   //
   // Traverse the list of files we have so far and make sure we don't have
   // any duplicate basenames. If the base name and processor match, then we'll
-  // have build issues, so don't allow it.
+  // have build issues, so don't allow it. We also don't allow the same file GUID
+  // in the same FV which will cause boot time error if we allow this.
   //
   Ptr = mFileList;
   while (Ptr != NULL) {
     if ((Ptr->BaseName != NULL) && (BaseName != NULL) && (_stricmp (BaseName, Ptr->BaseName) == 0)) {
       if ((Ptr->Processor != NULL) && (Processor != NULL) && (_stricmp (Processor, Ptr->Processor) == 0)) {
         Error (NULL, 0, 0, BaseName, "duplicate base name specified");
+        return STATUS_ERROR;
+      }
+    }
+    
+    if ((Ptr->Guid != NULL) && (Guid != NULL) && (_stricmp (Guid, Ptr->Guid) == 0)) {
+      if ((Ptr->FVs != NULL) && (FVs != NULL) && (InSameFv (FVs, Ptr->FVs))) {
+        Error (NULL, 0, 0, Guid, "duplicate Guid specified in the same FV for %s and %s", 
+               (Ptr->BaseName==NULL)?"Unknown":Ptr->BaseName, 
+               (BaseName==NULL)?"Unknown":BaseName);
         return STATUS_ERROR;
       }
     }
@@ -621,8 +631,7 @@ Returns:
   //
   StartCptr = GetSymbolValue (FV_INF_DIR);
   if (StartCptr == NULL) {
-    strcpy (Str, DEFAULT_FV_INF_DIR);
-    ExpandMacros (Str, FVDir, sizeof (FVDir), 0);
+    ExpandSymbols (DEFAULT_FV_INF_DIR, FVDir, sizeof (FVDir), EXPANDMODE_NO_UNDEFS);
   } else {
     strcpy (FVDir, StartCptr);
   }
@@ -710,7 +719,7 @@ Returns:
           // Create the directory path for our new fv.inf output file.
           //
           MakeFilePath (Str);
-          if ((FVPtr->FVFilePtr = fopen (Str, "w")) == NULL) {
+          if ((FVPtr->FVFilePtr = SmartOpen (Str)) == NULL) {
             Error (NULL, 0, 0, Str, "could not open FV output file");
             return STATUS_ERROR;
           }
@@ -720,15 +729,10 @@ Returns:
           sprintf (Str, "fv.%s.options", StartCptr);
           Section = DSCFileFindSection (DSC, Str);
           if (Section != NULL) {
-            fprintf (FVPtr->FVFilePtr, "[options]\n");
+            SmartWrite (FVPtr->FVFilePtr, "[options]\n");
             while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-              ExpandMacros (
-                Line,
-                ExpandedLine,
-                sizeof (ExpandedLine),
-                EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
-                );
-              fprintf (FVPtr->FVFilePtr, ExpandedLine);
+              ExpandSymbols (Line, ExpandedLine, sizeof (ExpandedLine), 0);
+              SmartWrite (FVPtr->FVFilePtr, ExpandedLine);
               GetBaseAddress (ExpandedLine, FVPtr->BaseAddress);
             }
           } else {
@@ -740,9 +744,10 @@ Returns:
           sprintf (Str, "fv.%s.attributes", StartCptr);
           Section = DSCFileFindSection (DSC, Str);
           if (Section != NULL) {
-            fprintf (FVPtr->FVFilePtr, "[attributes]\n");
+            SmartWrite (FVPtr->FVFilePtr, "[attributes]\n");
             while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-              fprintf (FVPtr->FVFilePtr, Line);
+              ExpandSymbols (Line, ExpandedLine, sizeof (ExpandedLine), 0);
+              SmartWrite (FVPtr->FVFilePtr, ExpandedLine);
             }
           } else {
             Error (NULL, 0, 0, Str, "Could not find FV section in description file");
@@ -750,13 +755,14 @@ Returns:
           //
           // Start the files section
           //
-          fprintf (FVPtr->FVFilePtr, "\n[files]\n");
+          SmartWrite (FVPtr->FVFilePtr, "\n[files]\n");
         }
         //
         // Now write the FV filename to the FV.inf file. Prepend $(PROCESSOR) on
         // it.
         //
-        fprintf (FVPtr->FVFilePtr, "EFI_FILE_NAME = %s\n", FileListPtr->FileName);
+        sprintf (ExpandedLine, "EFI_FILE_NAME = %s\n", FileListPtr->FileName);
+        SmartWrite (FVPtr->FVFilePtr, ExpandedLine);
 
         //
         // Next FV on the FV list
@@ -844,13 +850,14 @@ Returns:
               strcpy (Str, FVDir);
               strcat (Str, FVPtr->FVFileName);
               strcat (Str, ".apr");
-              if ((FVPtr->AprioriFilePtr = fopen (Str, "w")) == NULL) {
+              if ((FVPtr->AprioriFilePtr = SmartOpen (Str)) == NULL) {
                 Error (NULL, 0, 0, Str, "could not open output Apriori file for writing");
                 return STATUS_ERROR;
               }
             }
-
-            fprintf (FVPtr->AprioriFilePtr, "%s\n", FileListPtr->BaseFileName);
+            
+            sprintf (ExpandedLine, "%s\n", FileListPtr->BaseFileName);
+            SmartWrite (FVPtr->AprioriFilePtr, ExpandedLine);
           }
         }
       }
@@ -1000,7 +1007,7 @@ Returns:
         // Now copy the build commands from the section to the makefile
         //
         while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-          ExpandMacros (
+          ExpandSymbols (
             Line,
             ExpandedLine,
             sizeof (ExpandedLine),
@@ -1112,7 +1119,7 @@ Returns:
         // Now copy the build commands from the section to the makefile
         //
         while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-          ExpandMacros (
+          ExpandSymbols (
             Line,
             ExpandedLine,
             sizeof (ExpandedLine),
@@ -1133,11 +1140,11 @@ Returns:
   while (FVList != NULL) {
     FVPtr = FVList->Next;
     if (FVList->FVFilePtr != NULL) {
-      fclose (FVList->FVFilePtr);
+      SmartClose (FVList->FVFilePtr);
     }
 
     if (FVList->AprioriFilePtr != NULL) {
-      fclose (FVList->AprioriFilePtr);
+      SmartClose (FVList->AprioriFilePtr);
     }
 
     free (FVList);
@@ -1198,11 +1205,11 @@ Returns:
   DSCFileSavePosition (DSC);
   StartCptr = GetSymbolValue (FV_INF_DIR);
   if (StartCptr == NULL) {
-    strcpy (Str, DEFAULT_FV_INF_DIR);
-    ExpandMacros (Str, FVDir, sizeof (FVDir), 0);
+    ExpandSymbols (DEFAULT_FV_INF_DIR, FVDir, sizeof (FVDir), EXPANDMODE_NO_UNDEFS);
   } else {
     strcpy (FVDir, StartCptr);
   }
+
   //
   // Make sure the fv directory path ends in /
   //
@@ -1272,7 +1279,7 @@ Returns:
     // Create the directory path for our new fv.inf output file.
     //
     MakeFilePath (Str);
-    if ((FVPtr->FVFilePtr = fopen (Str, "w")) == NULL) {
+    if ((FVPtr->FVFilePtr = SmartOpen (Str)) == NULL) {
       //
       // FatalError ("Could not open FV output file %s", Str);
       //
@@ -1285,15 +1292,10 @@ Returns:
     sprintf (Str, "fv.%s.options", StartCptr);
     Section = DSCFileFindSection (DSC, Str);
     if (Section != NULL) {
-      fprintf (FVPtr->FVFilePtr, "[options]\n");
+      SmartWrite (FVPtr->FVFilePtr, "[options]\n");
       while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-        ExpandMacros (
-          Line,
-          ExpandedLine,
-          sizeof (ExpandedLine),
-          EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
-          );
-        fprintf (FVPtr->FVFilePtr, ExpandedLine);
+        ExpandSymbols (Line, ExpandedLine, sizeof (ExpandedLine), 0);
+        SmartWrite (FVPtr->FVFilePtr, ExpandedLine);
         GetBaseAddress (ExpandedLine, FVPtr->BaseAddress);
       }
     } else {
@@ -1308,9 +1310,10 @@ Returns:
     sprintf (Str, "fv.%s.attributes", StartCptr);
     Section = DSCFileFindSection (DSC, Str);
     if (Section != NULL) {
-      fprintf (FVPtr->FVFilePtr, "[attributes]\n");
+      SmartWrite (FVPtr->FVFilePtr, "[attributes]\n");
       while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-        fprintf (FVPtr->FVFilePtr, Line);
+        ExpandSymbols (Line, ExpandedLine, sizeof (ExpandedLine), 0);
+        SmartWrite (FVPtr->FVFilePtr, ExpandedLine);
       }
     } else {
       Warning (NULL, 0, 0, NULL, "Could not find FV section '%s' in description file", Str);
@@ -1321,15 +1324,10 @@ Returns:
     sprintf (Str, "fv.%s.components", StartCptr);
     Section = DSCFileFindSection (DSC, Str);
     if (Section != NULL) {
-      fprintf (FVPtr->FVFilePtr, "[components]\n");
+      SmartWrite (FVPtr->FVFilePtr, "[components]\n");
       while (DSCFileGetLine (DSC, Line, sizeof (Line)) != NULL) {
-        ExpandMacros (
-          Line,
-          ExpandedLine,
-          sizeof (ExpandedLine),
-          EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
-          );
-        fprintf (FVPtr->FVFilePtr, ExpandedLine);
+        ExpandSymbols (Line, ExpandedLine, sizeof (ExpandedLine), 0);
+        SmartWrite (FVPtr->FVFilePtr, ExpandedLine);
       }
     } else {
       //
@@ -1339,7 +1337,7 @@ Returns:
     //
     // Close the file
     //
-    fclose (FVPtr->FVFilePtr);
+    SmartClose (FVPtr->FVFilePtr);
     //
     // Next FV in FileName
     //
@@ -1490,6 +1488,77 @@ UpperCaseString (
   }
 
   return Str;
+}
+
+static
+BOOLEAN
+InSameFv (
+  char  *FVs1,
+  char  *FVs2
+)
+{
+  char    *StartCptr1;
+  char    *StartCptr2;
+  char    *EndCptr1;
+  char    *EndCptr2;
+  char    CSave1;
+  char    CSave2;
+  
+  //
+  // Process each FV in first FV list
+  //
+  StartCptr1 = FVs1;
+  while (*StartCptr1) {
+    EndCptr1 = StartCptr1;
+    while (*EndCptr1 && (*EndCptr1 != ',')) {
+      EndCptr1++;
+    }
+
+    CSave1     = *EndCptr1;
+    *EndCptr1  = 0;  
+    
+    if (*StartCptr1) {
+      //
+      // Process each FV in second FV list
+      //
+      StartCptr2 = FVs2;
+      while (*StartCptr2) {
+        EndCptr2 = StartCptr2;
+        while (*EndCptr2 && (*EndCptr2 != ',')) {
+          EndCptr2++;
+        }
+    
+        CSave2     = *EndCptr2;
+        *EndCptr2  = 0;  
+        
+        if (_stricmp (StartCptr1, StartCptr2) == 0) {
+          *EndCptr1  = CSave1;
+          *EndCptr2  = CSave2;
+          return TRUE;
+        }
+        
+        //
+        // Next FV on the second FV list
+        //
+        *EndCptr2  = CSave2;
+        StartCptr2 = EndCptr2;
+        if (*StartCptr2) {
+          StartCptr2++;
+        }
+      }    
+    }
+    
+    //
+    // Next FV on the first FV list
+    //
+    *EndCptr1  = CSave1;
+    StartCptr1 = EndCptr1;
+    if (*StartCptr1) {
+      StartCptr1++;
+    }
+  }        
+  
+  return FALSE;
 }
 
 int

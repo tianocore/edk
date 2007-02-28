@@ -75,7 +75,7 @@ EFI_DRIVER_BINDING_PROTOCOL gEhciRoutingDriverBinding = {
   EhciRoutingDriverBindingSupported,
   EhciRoutingDriverBindingStart,
   EhciRoutingDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

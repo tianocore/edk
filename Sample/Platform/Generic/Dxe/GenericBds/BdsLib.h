@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -43,11 +43,13 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (Hii)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (DebugPort)
 
 #include EFI_GUID_DEFINITION (PcAnsi)
 #include EFI_GUID_DEFINITION (Hob)
 #include EFI_GUID_DEFINITION (HotPlugDevice)
 #include EFI_GUID_DEFINITION (GlobalVariable)
+#include EFI_GUID_DEFINITION (GenericVariable)
 #include EFI_GUID_DEFINITION (EfiShell)
 #include EFI_GUID_DEFINITION (ConsoleInDevice)
 #include EFI_GUID_DEFINITION (ConsoleOutDevice)
@@ -324,6 +326,30 @@ typedef struct {
   UINT8 SubType;
   VOID (*Function) (POOL_PRINT *, VOID *);
 } DEVICE_PATH_STRING_TABLE;
+
+extern EFI_GUID mEfiDevicePathMessagingUartFlowControlGuid;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  EFI_GUID                  Guid;
+  UINT8                     VendorDefinedData[1];
+} VENDOR_DEVICE_PATH_WITH_DATA;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+extern EFI_GUID mEfiDevicePathMessagingSASGuid;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  UINT16                    NetworkProtocol;
+  UINT16                    LoginOption;
+  UINT16                    Reserved;
+  UINT16                    TargetPortalGroupTag;
+  UINT64                    Lun;
+  CHAR16                    iSCSITargetName[1];
+} ISCSI_DEVICE_PATH_WITH_NAME;
+
+#endif
 
 //
 // Internal functions

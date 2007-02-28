@@ -858,7 +858,7 @@ UsbFloppyDetectMedia (
   UINTN               RetryTimes;
   UINTN               MaximumRetryTimes;
   BOOLEAN             NeedRetry;
-
+  BOOLEAN             NeedReadCapacity;
   //
   // a flag used to determine whether need to perform Read Capacity command.
   //
@@ -872,7 +872,8 @@ UsbFloppyDetectMedia (
   FloppyStatus      = EFI_SUCCESS;
   OldMediaInfo      = *UsbFloppyDevice->BlkIo.Media;
   *MediaChange      = FALSE;
-
+  NeedReadCapacity  = TRUE;
+  
   //
   // if there is no media present,or media not changed,
   // the request sense command will detect faster than read capacity command.
@@ -890,7 +891,7 @@ UsbFloppyDetectMedia (
     //
     if (IsNoMedia (UsbFloppyDevice->SenseData, SenseCounts)) {
 
-      UsbFloppyDevice->NeedReadCapacity = FALSE;
+      NeedReadCapacity = FALSE;
       UsbFloppyDevice->BlkIo.Media->MediaId = 0;
       UsbFloppyDevice->BlkIo.Media->MediaPresent = FALSE;
       UsbFloppyDevice->BlkIo.Media->LastBlock = 0;
@@ -925,7 +926,7 @@ UsbFloppyDetectMedia (
 
   }
 
-  if (UsbFloppyDevice->NeedReadCapacity) {
+  if (NeedReadCapacity) {
     //
     // at most retry 5 times
     //
@@ -954,8 +955,6 @@ UsbFloppyDetectMedia (
           //
           UsbFloppyDevice->DeviceType = USBFLOPPY;
           Status                      = EFI_DEVICE_ERROR;
-        } else {
-          UsbFloppyDevice->NeedReadCapacity = FALSE;
         }
         break;
 
@@ -967,9 +966,7 @@ UsbFloppyDetectMedia (
           // retry the ReadFormatCapacity command
           //
           UsbFloppyDevice->DeviceType = USBFLOPPY2;
-        } else {
-          UsbFloppyDevice->NeedReadCapacity = FALSE;
-        }
+        } 
         //
         // force the BlockSize to be 0x200.
         //

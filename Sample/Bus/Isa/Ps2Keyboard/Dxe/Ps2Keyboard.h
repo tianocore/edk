@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,13 +28,13 @@ Revision History
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "EfiStatusCode.h"
-#include "..\..\IsaIoDefinitions.h"
 
 //
 // Driver consumed protocol prototypes
 //
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (Ps2Policy)
+#include EFI_PROTOCOL_DEFINITION (IsaIo)
 #include EFI_GUID_DEFINITION (GlobalVariable)
 #include EFI_GUID_DEFINITION (StatusCodeCallerId)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
@@ -134,6 +134,9 @@ Returns:
 #define KEYBOARD_8042_DATA_REGISTER     0x60
 #define KEYBOARD_8042_STATUS_REGISTER   0x64
 #define KEYBOARD_8042_COMMAND_REGISTER  0x64
+
+#define KEYBOARD_KBEN                   0xF4
+#define KEYBOARD_CMDECHO_ACK            0xFA
 
 #define KEYBOARD_TIMEOUT                65536   // 0.07s
 #define KEYBOARD_WAITFORVALUE_TIMEOUT   1000000 // 1s
@@ -361,4 +364,30 @@ Returns:
 
 --*/
 ;
+
+BOOLEAN
+EFIAPI
+CheckKeyboardConnect (
+  IN KEYBOARD_CONSOLE_IN_DEV *ConsoleIn
+  )
+/*++
+
+Routine Description:
+
+  Check whether there is Ps/2 Keyboard device in system by 0xF4 Keyboard Command
+  If Keyboard receives 0xF4, it will respond with 'ACK'. If it doesn't respond, the device
+  should not be in system. 
+
+Arguments:
+
+  BiosKeyboardPrivate - Keyboard Private Data Structure  
+
+Returns:
+
+  TRUE                - Keyboard in System.
+  FALSE               - Keyboard not in System.
+
+--*/
+;
+
 #endif

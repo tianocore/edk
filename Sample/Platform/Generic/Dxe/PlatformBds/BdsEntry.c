@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,7 +27,7 @@ Abstract:
 EFI_BDS_ARCH_PROTOCOL_INSTANCE  gBdsInstanceTemplate = {
   EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE,
   NULL,
-  BdsEntry,
+  {BdsEntry},
   0xFFFF,
   TRUE,
   EXTENSIVE
@@ -221,7 +221,6 @@ Returns:
     // All the driver options should have been processed since
     // now boot will be performed.
     //
-    PERF_END (0, BDS_TOK, NULL, 0);
     Status = BdsLibBootViaBootOption (BootOption, BootOption->DevicePath, &ExitDataSize, &ExitData);
     if (EFI_ERROR (Status)) {
       //
@@ -272,7 +271,7 @@ Returns:
 
 }
 
-EFI_STATUS
+VOID
 EFIAPI
 BdsEntry (
   IN EFI_BDS_ARCH_PROTOCOL  *This
@@ -357,5 +356,5 @@ Returns:
   //
   ASSERT (FALSE);
 
-  return EFI_SUCCESS;
+  return ;
 }

@@ -778,6 +778,10 @@ Returns:
       EbcDebugSignalException (EXCEPT_EBC_STACK_FAULT, EXCEPTION_FLAG_FATAL, VmPtr);
       StackCorrupted = 1;
     }
+    if (!StackCorrupted && ((UINT64)VmPtr->R[0] <= (UINT64) VmPtr->StackTop)) {
+      EbcDebugSignalException (EXCEPT_EBC_STACK_FAULT, EXCEPTION_FLAG_FATAL, VmPtr);
+      StackCorrupted = 1;
+    }
   }
 
 Done:
@@ -1139,10 +1143,6 @@ Returns:
       EXCEPTION_FLAG_NONE,
       VmPtr
       );
-    //
-    // Don't advance the IP
-    //
-    return EFI_UNSUPPORTED;
     break;
 
   //
@@ -4529,19 +4529,8 @@ Returns:
   adjust for the stack gap and return the modified address.
   
 --*/
-{
-  if ((Addr >= VmPtr->LowStackTop) && (Addr < VmPtr->HighStackBottom)) {
-    //
-    // In the stack gap -- now make sure it's not in the VM itself, which
-    // would be the case if it's accessing VM register contents.
-    //
-    if ((Addr < (UINTN) VmPtr) || (Addr > (UINTN) VmPtr + sizeof (VM_CONTEXT))) {
-      VmPtr->LastAddrConverted      = Addr;
-      VmPtr->LastAddrConvertedValue = Addr - VmPtr->LowStackTop + VmPtr->HighStackBottom;
-      return Addr - VmPtr->LowStackTop + VmPtr->HighStackBottom;
-    }
-  }
-
+{ 
+  ASSERT(((Addr < VmPtr->LowStackTop) || (Addr > VmPtr->HighStackBottom)));
   return Addr;
 }
 

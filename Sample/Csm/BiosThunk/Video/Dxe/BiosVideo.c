@@ -30,7 +30,7 @@ EFI_DRIVER_BINDING_PROTOCOL gBiosVideoDriverBinding = {
   BiosVideoDriverBindingSupported,
   BiosVideoDriverBindingStart,
   BiosVideoDriverBindingStop,
-  0x00000024,
+  0x3,
   NULL,
   NULL
 };

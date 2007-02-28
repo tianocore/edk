@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2005, Intel Corporation                                                         
+# Copyright (c) 2004 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -68,6 +68,11 @@ PLATFORM=$(PROJECT_NAME)
 DEFINE EDK_PREFIX=
 
 !include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
+
+#
+# EdkII Glue Library
+#
+#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLibAll.dsc"
 
 [=============================================================================]
 #
@@ -159,7 +164,7 @@ Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf
 Sample\Universal\Runtime\Dxe\Runtime.inf
 Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
 Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
-Sample\Platform\Generic\Logo\Logo.inf                                           PACKAGE=Logo
+Sample\Platform\Generic\Logo\Logo.inf
 Sample\Bus\Pci\IdeBus\Dxe\IdeBus.inf
 #
 # Usb support

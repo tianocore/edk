@@ -93,10 +93,10 @@ Revision History:
 // 0x100000000 - TTT         <- Phit.EfiFreeMemoryTop     |
 //   MemoryDescriptor (For ACPINVS, ACPIReclaim)          |
 // 0x100000000 - UUU                                      |
-//   Permament 4G PageTable for IA32                     4M
+//   Permament 4G PageTable for IA32               4M = CONSUMED_MEMORY
 //   Permament 64G PageTable for X64                      |
 // 0x100000000 - VVV                                      |
-//   Permament Stack (128K)                               |
+//   Permament Stack (0x20 Pages = 128K)                  |
 // 0x100000000 - WWW         <- Memory Top on Decriptor   |
 //   DxeCore                                              |
 // 0x100000000 - XXX                                      |
@@ -150,6 +150,29 @@ Returns:
   VOID                  *MemoryTopOnDescriptor;
   VOID                  *MemoryDescriptor;
 
+/*
+  ClearScreen();
+  PrintString("handoff:\n");
+  PrintString("Handoff.BfvBase = ");   
+  PrintValue64((UINT64)(UINTN)Handoff->BfvBase);
+  PrintString(", ");   
+  PrintString("BfvLength = ");   
+  PrintValue64(Handoff->BfvSize);
+  PrintString("\n");   
+  PrintString("Handoff.DxeIplImageBase = ");   
+  PrintValue64((UINT64)(UINTN)Handoff->DxeIplImageBase);
+  PrintString(", ");   
+  PrintString("DxeIplImageSize = ");   
+  PrintValue64(Handoff->DxeIplImageSize);
+  PrintString("\n");   
+  PrintString("Handoff.DxeCoreImageBase = ");   
+  PrintValue64((UINT64)(UINTN)Handoff->DxeCoreImageBase);
+  PrintString(", ");   
+  PrintString("DxeCoreImageSize = ");   
+  PrintValue64(Handoff->DxeCoreImageSize);
+  PrintString("\n");   
+*/
+
   PrepareHobBfv (Handoff->BfvBase, Handoff->BfvSize);
 
   MemoryTopOnDescriptor = PrepareHobMemory (Handoff->MemDescCount, Handoff->MemDesc);
@@ -163,7 +186,14 @@ Returns:
 
   PrepareHobPhit (Handoff->BfvBase, MemoryDescriptor);
 
-  PrepareHobDxeCore (Handoff->DxeCoreEntryPoint, (EFI_PHYSICAL_ADDRESS)(UINTN)Handoff->DxeCoreImageBase, Handoff->DxeCoreImageSize);
+  //
+  // Register the memory occupied by DxeCore and DxeIpl together as DxeCore
+  //
+  PrepareHobDxeCore (
+    Handoff->DxeCoreEntryPoint,
+    (EFI_PHYSICAL_ADDRESS)(UINTN)Handoff->DxeCoreImageBase,
+    (UINTN)Handoff->DxeIplImageBase + (UINTN)Handoff->DxeIplImageSize - (UINTN)Handoff->DxeCoreImageBase
+    );
 
   PrepareHobLegacyTable (gHob);
   PreparePpisNeededByDxeCore (gHob);

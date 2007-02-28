@@ -49,6 +49,10 @@ text SEGMENT
 ; Destroys no working registers.
 ;****************************************************************************
 ; VOID EbcLLCALLEXNative(UINTN FuncAddr, UINTN NewStackPointer, VOID *FramePtr)
+
+EfiCommonLibCopyMem  PROTO  Destination:PTR DWORD, Source:PTR DWORD, Count:DWORD
+
+
 EbcLLCALLEXNative        PROC    NEAR    PUBLIC
       push   rbp
       push   rbx
@@ -59,7 +63,12 @@ EbcLLCALLEXNative        PROC    NEAR    PUBLIC
       mov    rbx, rcx
 
       ; Set stack pointer to new value
-      mov    rsp, rdx      
+      sub    r8,  rdx
+      sub    rsp, r8
+      mov    rcx, rsp
+      sub    rsp, 20h
+      call   EfiCommonLibCopyMem      
+      add    rsp, 20h
       
       ; Considering the worst case, load 4 potiential arguments
       ; into registers.

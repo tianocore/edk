@@ -1231,6 +1231,7 @@ Returns:
           //
           // Decompress failed
           //
+          PEI_DEBUG ((PeiServices, EFI_D_ERROR, "Decompress - %r\n", Status));
           return EFI_NOT_FOUND;
         }
 

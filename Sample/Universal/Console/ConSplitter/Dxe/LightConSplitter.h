@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -19,8 +19,8 @@ Abstract:
 
 --*/
 
-#ifndef SPLITER_H_
-#define SPLITER_H_
+#ifndef SPLITTER_H_
+#define SPLITTER_H_
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
@@ -103,11 +103,6 @@ typedef struct {
 } TEXT_OUT_AND_GOP_DATA;
 
 typedef struct {
-  UINT32                     HorizontalResolution;
-  UINT32                     VerticalResolution;
-} TEXT_OUT_GOP_MODE;
-
-typedef struct {
   UINT64                          Signature;
   EFI_HANDLE                      VirtualHandle;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL    TextOut;
@@ -123,8 +118,9 @@ typedef struct {
 #else
   EFI_GRAPHICS_OUTPUT_PROTOCOL    GraphicsOutput;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL   *GraphicsOutputBlt;
-  TEXT_OUT_GOP_MODE               *GraphicsOutputModeBuffer;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *GraphicsOutputModeBuffer;
   UINTN                           CurrentNumberOfGraphicsOutput;
+  UINTN                           CurrentNumberOfUgaDraw;
   BOOLEAN                         HardwareNeedsStarting;
 #endif
 

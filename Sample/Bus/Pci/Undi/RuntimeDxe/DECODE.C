@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -10,7 +10,7 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
 Module name:
-    decode.c
+    DECODE.c
 
 Abstract:
 
@@ -18,14 +18,11 @@ Revision history:
 
 --*/
 
-// TODO: fix comment to add: Module Name: DECODE.C
 #include "undi32.h"
 
 #if UNDI_DEBUG
 extern VOID (*break_pt) ();
 #endif
-
-#pragma data_seg("rtdata")
 
 //
 // Global variables defined outside this file
@@ -1661,4 +1658,3 @@ Returns:
   PxePtr->Fudge         = (UINT8) (PxePtr->Fudge - ChkSum ((VOID *) PxePtr, PxePtr->Len));
 }
 
-#pragma data_seg()

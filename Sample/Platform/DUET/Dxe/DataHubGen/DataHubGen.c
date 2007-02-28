@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -465,40 +465,3 @@ GetSmbiosString (
 
   return AString;
 }
-
-//
-// Internal library
-//
-CHAR16 *
-Ascii2Unicode (
-  OUT CHAR16         *UnicodeStr,
-  IN  CHAR8          *AsciiStr
-  )
-/*++
-
-Routine Description:
-  Converts ASCII characters to Unicode.
-
-Arguments:
-  UnicodeStr - the Unicode string to be written to. The buffer must be large enough.
-  AsciiStr   - The ASCII string to be converted.
-
-Returns:
-  The address to the Unicode string - same as UnicodeStr.
-
---*/
-{
-  CHAR16  *Str;
-
-  Str = UnicodeStr;
-
-  while (TRUE) {
-
-    *(UnicodeStr++) = (CHAR16) *AsciiStr;
-
-    if (*(AsciiStr++) == '\0') {
-      return Str;
-    }
-  }
-}
-

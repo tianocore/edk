@@ -21,6 +21,7 @@ Abstract:
 #include "RealTimeClock.h"
 
 static PC_RTC_MODULE_GLOBALS  mModuleGlobal;
+static UINT8   mDayOfMonth[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 BOOLEAN
 DayValid (
@@ -38,6 +39,12 @@ IsWithinOneDay (
   IN EFI_TIME   *To
   );
 
+INTN
+CompareHMS (
+  IN EFI_TIME   *From,
+  IN EFI_TIME   *To
+  );
+    
 UINT8
 RtcRead (
   IN  UINT8 Address
@@ -60,6 +67,43 @@ Returns:
 {
   IoWrite8 (PCAT_RTC_ADDRESS_REGISTER, (UINT8) (Address | (UINT8) (IoRead8 (PCAT_RTC_ADDRESS_REGISTER) & 0x80)));
   return IoRead8 (PCAT_RTC_DATA_REGISTER);
+}
+
+INTN
+CompareHMS (
+  IN EFI_TIME   *From,
+  IN EFI_TIME   *To
+  )
+/*++
+
+Routine Description: 
+
+  Compare the Hour, Minute and Second of the 'From' time and the 'To' time.
+  Only compare H/M/S in EFI_TIME and ignore other fields here. 
+
+Arguments:
+
+  From  -   the first time
+  To    -   the second time 
+
+Returns:
+
+  >0   : The H/M/S of the 'From' time is later than those of 'To' time
+  ==0  : The H/M/S of the 'From' time is same as those of 'To' time
+  <0   : The H/M/S of the 'From' time is earlier than those of 'To' time
+
+--*/
+
+{
+  if ((From->Hour > To->Hour) ||
+     ((From->Hour == To->Hour) && (From->Minute > To->Minute)) ||
+     ((From->Hour == To->Hour) && (From->Minute == To->Minute) && (From->Second > To->Second))) {
+    return 1; 
+  } else if ((From->Hour == To->Hour) && (From->Minute == To->Minute) && (From->Second == To->Second)) {
+    return 0;
+  } else {
+    return -1;
+  }
 }
 
 VOID
@@ -830,10 +874,8 @@ Returns:
 --*/
 {
 
-  INTN  DayOfMonth[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-
   if (Time->Day < 1 ||
-      Time->Day > DayOfMonth[Time->Month - 1] ||
+      Time->Day > mDayOfMonth[Time->Month - 1] ||
       (Time->Month == 2 && (!IsLeapYear (Time) && Time->Day > 28))
       ) {
     return FALSE;
@@ -959,21 +1001,30 @@ Returns:
 
 --*/
 {
-  UINT8   DayOfMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   BOOLEAN Adjacent = FALSE;
 
   if (From->Year == To->Year) {
     if (From->Month == To->Month) {
       if ((From->Day + 1) == To->Day) {
-        Adjacent = TRUE;
-      }
-    } else if (((From->Month + 1) == To->Month) && (To->Day == 1)) {
-      if ((From->Month == 2) && IsLeapYear(From)) {
-        if (From->Day == 29) {
+        if ((CompareHMS(From, To) >= 0)) {
           Adjacent = TRUE;
         }
-      } else if (From->Day == DayOfMonth[From->Month - 1]) {
-        Adjacent = TRUE;
+      } else if (From->Day == To->Day) {
+        if ((CompareHMS(From, To) <= 0)) {
+          Adjacent = TRUE;
+        }
+      }
+    } else if (((From->Month + 1) == To->Month) && (To->Day == 1)) {
+      if ((From->Month == 2) && !IsLeapYear(From)) {
+        if (From->Day == 28) {
+          if ((CompareHMS(From, To) >= 0)) {
+            Adjacent = TRUE;
+          }  
+        }
+      } else if (From->Day == mDayOfMonth[From->Month - 1]) {
+        if ((CompareHMS(From, To) >= 0)) {
+           Adjacent = TRUE;
+        }
       }
     }
   } else if (((From->Year + 1) == To->Year) &&
@@ -981,7 +1032,9 @@ Returns:
              (From->Day   == 31) &&
              (To->Month   == 1)  &&
              (To->Day     == 1)) {
+    if ((CompareHMS(From, To) >= 0)) {
       Adjacent = TRUE;
+    }
   }
 
   return Adjacent;

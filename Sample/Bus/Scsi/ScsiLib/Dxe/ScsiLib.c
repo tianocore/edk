@@ -48,7 +48,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                              but the entire DataBuffer could not be transferred.
                              The actual number of bytes transferred is returned
                              in TransferLength.
@@ -95,7 +95,7 @@ Returns:
   CommandPacket.CdbLength       = (UINT8) 6;
   CommandPacket.SenseDataLength = *SenseDataLength;
 
-  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                        = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
   *TargetStatus                 = CommandPacket.TargetStatus;
@@ -137,7 +137,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                                but the entire DataBuffer could not be transferred.
                                The actual number of bytes transferred is returned
                                in TransferLength.
@@ -189,7 +189,7 @@ Returns:
   CommandPacket.CdbLength     = (UINT8) 6;
   CommandPacket.DataDirection = EFI_SCSI_DATA_IN;
 
-  Status                      = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                      = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus          = CommandPacket.HostAdapterStatus;
   *TargetStatus               = CommandPacket.TargetStatus;
@@ -236,7 +236,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                                but the entire DataBuffer could not be transferred.
                                The actual number of bytes transferred is returned
                                in TransferLength.
@@ -285,7 +285,7 @@ Returns:
   CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
   CommandPacket.SenseDataLength = *SenseDataLength;
 
-  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                        = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
   *TargetStatus                 = CommandPacket.TargetStatus;
@@ -322,7 +322,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                                but the entire DataBuffer could not be transferred.
                                The actual number of bytes transferred is returned
                                in TransferLength.
@@ -369,7 +369,7 @@ Returns:
   CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
   CommandPacket.SenseDataLength = 0;
 
-  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                        = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
   *TargetStatus                 = CommandPacket.TargetStatus;
@@ -411,7 +411,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                                but the entire DataBuffer could not be transferred.
                                The actual number of bytes transferred is returned
                                in TransferLength.
@@ -465,7 +465,7 @@ Returns:
   CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
   CommandPacket.SenseDataLength = *SenseDataLength;
 
-  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                        = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
   *TargetStatus                 = CommandPacket.TargetStatus;
@@ -510,7 +510,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                                but the entire DataBuffer could not be transferred.
                                The actual number of bytes transferred is returned
                                in TransferLength.
@@ -562,7 +562,7 @@ Returns:
   CommandPacket.DataDirection   = EFI_SCSI_DATA_IN;
   CommandPacket.SenseDataLength = *SenseDataLength;
 
-  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                        = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
   *TargetStatus                 = CommandPacket.TargetStatus;
@@ -607,7 +607,7 @@ Arguments:
 Returns:
 
   EFI_SUCCESS                - The status of the unit is tested successfully.
-  EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
                                but the entire DataBuffer could not be transferred.
                                The actual number of bytes transferred is returned
                                in TransferLength.
@@ -659,7 +659,7 @@ Returns:
   CommandPacket.DataDirection   = EFI_SCSI_DATA_OUT;
   CommandPacket.SenseDataLength = *SenseDataLength;
 
-  Status                        = ScsiIo->ExecuteSCSICommand (ScsiIo, &CommandPacket, NULL);
+  Status                        = ScsiIo->ExecuteScsiCommand (ScsiIo, &CommandPacket, NULL);
 
   *HostAdapterStatus            = CommandPacket.HostAdapterStatus;
   *TargetStatus                 = CommandPacket.TargetStatus;

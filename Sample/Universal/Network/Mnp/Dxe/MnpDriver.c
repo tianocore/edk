@@ -25,7 +25,7 @@ EFI_DRIVER_BINDING_PROTOCOL gMnpDriverBinding = {
   MnpDriverBindingSupported,
   MnpDriverBindingStart,
   MnpDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

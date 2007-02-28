@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -56,55 +56,44 @@ Returns:
 {
   EFI_STATUS                  Status;
   EFI_HOB_HANDOFF_INFO_TABLE  *HobList;
+  EFI_HOB_HANDOFF_INFO_TABLE  *HobStart;
   UINTN                       Size;
-  EFI_PHYSICAL_ADDRESS       *Table;
+  EFI_PHYSICAL_ADDRESS        *Table;
+  UINTN                       Index;
+  EFI_GUID                    *TableGuidArray[] = {
+    &gEfiAcpi20TableGuid, &gEfiAcpiTableGuid, &gEfiSmbiosTableGuid, &gEfiMpsTableGuid
+  };
 
   //
   // Get Hob List
   //
-  
   Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, (VOID *) &HobList);
   if (EFI_ERROR (Status)) {
     return;
   }
 
   //
-  // If there is an ACPI table in the HOB add it to the EFI System table
+  // Iteratively add ACPI Table, SMBIOS Table, MPS Table to EFI System Table
   //
-  Status = GetNextGuidHob (&HobList, &gEfiAcpi20TableGuid, &Table, &Size);
-  if (!EFI_ERROR (Status)) {
-    if (*Table != 0) {
-      gBS->InstallConfigurationTable (&gEfiAcpi20TableGuid, (VOID *)(UINTN)*Table);
-    }
-  }
-  Status = GetNextGuidHob (&HobList, &gEfiAcpiTableGuid, &Table, &Size);
-  if (!EFI_ERROR (Status)) {
-    if (*Table != 0) {
-      gBS->InstallConfigurationTable (&gEfiAcpiTableGuid, (VOID *)(UINTN)*Table);
-    }
-  }
-
-  //
-  // If there is a SMBIOS table in the HOB add it to the EFI System table
-  //
-  Status = GetNextGuidHob (&HobList, &gEfiSmbiosTableGuid, &Table, &Size);
-  if (!EFI_ERROR (Status)) {
-    if (*Table != 0) {
-      gBS->InstallConfigurationTable (&gEfiSmbiosTableGuid, (VOID *)(UINTN)*Table);
+  for (Index = 0; Index < sizeof (TableGuidArray) / sizeof (*TableGuidArray); ++Index) {
+    HobStart = HobList;
+    Table = NULL;
+    Status = GetNextGuidHob (&HobStart, TableGuidArray[Index], &Table, &Size);
+    if (!EFI_ERROR (Status)) {
+      if (Table != NULL) {
+        //
+        // Check if Mps Table/Smbios Table/Acpi Table exists in E/F seg,
+        // According to UEFI Spec, we should make sure Smbios table, 
+        // ACPI table and Mps tables kept in memory of specified type
+        //
+        ConvertSystemTable(TableGuidArray[Index], &Table);
+        gBS->InstallConfigurationTable (TableGuidArray[Index], (VOID *)Table);
+      }
     }
   }
 
-  //
-  // If there is a MPS table in the HOB add it to the EFI System table
-  //
-  Status = GetNextGuidHob (&HobList, &gEfiMpsTableGuid, &Table, &Size);
-  if (!EFI_ERROR (Status)) {
-    if (*Table != 0) {
-      gBS->InstallConfigurationTable (&gEfiMpsTableGuid, (VOID *)(UINTN)*Table);
-    }
-  }
+  return ;
 }
-
 
 #define EFI_LDR_MEMORY_DESCRIPTOR_GUID \
   { 0x7701d7e5, 0x7d1d, 0x4432, 0xa4, 0x68, 0x67, 0x3d, 0xab, 0x8a, 0xde, 0x60 }
@@ -120,6 +109,49 @@ typedef struct {
 } MEMORY_DESC_HOB;
 
 #pragma pack()
+
+#if 0
+VOID
+PrintMemoryMap (
+  VOID
+  )
+{
+  EFI_MEMORY_DESCRIPTOR       *MemMap;
+  EFI_MEMORY_DESCRIPTOR       *MemMapPtr;
+  UINTN                       MemMapSize;
+  UINTN                       MapKey, DescriptorSize;
+  UINTN                       Index;
+  UINT32                      DescriptorVersion;
+  UINT64                      Bytes;
+  EFI_STATUS                  Status;
+
+  MemMapSize = 0;
+  MemMap     = NULL;
+  Status = gBS->GetMemoryMap (&MemMapSize, MemMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
+  MemMapSize += EFI_PAGE_SIZE;
+  Status = gBS->AllocatePool (EfiBootServicesData, MemMapSize, &MemMap);
+  ASSERT (Status == EFI_SUCCESS);
+  Status = gBS->GetMemoryMap (&MemMapSize, MemMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  ASSERT (Status == EFI_SUCCESS);
+  MemMapPtr = MemMap;
+
+  ASSERT (DescriptorVersion == EFI_MEMORY_DESCRIPTOR_VERSION);
+
+  for (Index = 0; Index < MemMapSize / DescriptorSize; Index ++) {
+    Bytes = LShiftU64 (MemMap->NumberOfPages, 12);
+    DEBUG ((EFI_D_ERROR, "%lX-%lX  %lX %lX %X\n",
+          MemMap->PhysicalStart, 
+          MemMap->PhysicalStart + Bytes - 1,
+          MemMap->NumberOfPages, 
+          MemMap->Attribute,
+          (UINTN)MemMap->Type));
+    MemMap = (EFI_MEMORY_DESCRIPTOR *)((UINTN)MemMap + DescriptorSize);
+  }
+
+  gBS->FreePool (MemMapPtr);
+}
+#endif
 
 VOID
 UpdateMemoryMap (
@@ -1205,3 +1237,327 @@ Returns:
 {
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+ConvertSystemTable (
+  EFI_GUID        *TableGuid,
+  VOID            **Table
+  )
+/*++
+
+Routine Description:
+  Convert ACPI Table /Smbios Table /MP Table if its location is lower than Address:0x100000
+  Assumption here:
+   As in legacy Bios, ACPI/Smbios/MP table is required to place in E/F Seg, 
+   So here we just check if the range is E/F seg, 
+   and if Not, assume the Memory type is EfiACPIReclaimMemory/EfiACPIMemoryNVS
+
+Arguments:
+  TableGuid - Guid of the table
+  Table     - pointer to the table  
+
+Returns:
+  EFI_SUCEESS - Convert Table successfully
+  Other       - Failed
+
+--*/
+{
+  EFI_STATUS Status;
+
+  if (EfiCompareGuid(TableGuid, &gEfiAcpiTableGuid)){
+    Status = ConvertAcpiTable (sizeof (EFI_ACPI_1_0_ROOT_SYSTEM_DESCRIPTION_POINTER), Table);
+    return Status; 
+  }
+  if (EfiCompareGuid(TableGuid, &gEfiAcpi20TableGuid)) {
+     Status = ConvertAcpiTable (sizeof (EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER), Table);
+     return Status;
+  }
+  if (EfiCompareGuid(TableGuid, &gEfiSmbiosTableGuid)){
+    Status = ConvertSmbiosTable (Table);
+    return Status;
+  }
+  if (EfiCompareGuid(TableGuid, &gEfiMpsTableGuid)){
+    Status = ConvertMpsTable (Table);
+    return Status;
+  }
+  
+  return EFI_UNSUPPORTED;
+}  
+
+UINT8
+GetBufferCheckSum (
+  VOID *      Buffer,
+  UINTN       Length
+  )
+/*++
+
+Routine Description:
+  Caculate buffer checksum (8-bit)
+
+Arguments:
+  Buffer - Pointer to Buffer that to be caculated
+  Length - How many bytes are to be caculated  
+
+Returns:
+  Checksum of the buffer
+
+--*/
+{
+  UINT8   CheckSum;
+  UINT8   *Ptr8;
+  
+  CheckSum = 0;
+  Ptr8 = (UINT8 *) Buffer;
+  
+  while (Length > 0) {
+    CheckSum = (UINT8) (CheckSum + *Ptr8++);
+    Length--;
+  }
+  
+  return ((0xFF - CheckSum) + 1);
+}  
+
+EFI_STATUS
+ConvertAcpiTable (
+  UINTN                       TableLen,
+  VOID                        **Table
+  )
+/*++
+
+Routine Description:
+  Convert RSDP of ACPI Table if its location is lower than Address:0x100000
+  Assumption here:
+   As in legacy Bios, ACPI table is required to place in E/F Seg, 
+   So here we just check if the range is E/F seg, 
+   and if Not, assume the Memory type is EfiACPIReclaimMemory/EfiACPIMemoryNVS
+
+Arguments:
+  TableLen  - Acpi RSDP length
+  Table     - pointer to the table  
+
+Returns:
+  EFI_SUCEESS - Convert Table successfully
+  Other       - Failed
+
+--*/
+{
+  VOID                  *AcpiTableOri;
+  VOID                  *AcpiTableNew;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  BufferPtr;
+
+  
+  AcpiTableOri    =  (VOID *)(UINTN)(*(UINT64*)(*Table));
+  if (((UINTN)AcpiTableOri < 0x100000) && ((UINTN)AcpiTableOri > 0xE0000)) {
+    BufferPtr = EFI_SYSTEM_TABLE_MAX_ADDRESS;
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiACPIMemoryNVS,
+                    EFI_SIZE_TO_PAGES(TableLen),
+                    &BufferPtr
+                    );
+    ASSERT_EFI_ERROR (Status);
+    AcpiTableNew = (VOID *)(UINTN)BufferPtr;
+    EfiCopyMem (AcpiTableNew, AcpiTableOri, TableLen);
+  } else {
+    AcpiTableNew = AcpiTableOri;
+  }
+  //
+  // Change configuration table Pointer
+  //
+  *Table = AcpiTableNew;
+  
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+ConvertSmbiosTable (
+  VOID        **Table
+  )
+/*++
+
+Routine Description:
+
+  Convert Smbios Table if the Location of the SMBios Table is lower than Addres 0x100000
+  Assumption here:
+   As in legacy Bios, Smbios table is required to place in E/F Seg, 
+   So here we just check if the range is F seg, 
+   and if Not, assume the Memory type is EfiACPIMemoryNVS/EfiRuntimeServicesData
+Arguments:
+  Table     - pointer to the table
+
+Returns:
+  EFI_SUCEESS - Convert Table successfully
+  Other       - Failed
+
+--*/
+{
+  SMBIOS_TABLE_STRUCTURE   *SmbiosTableNew;
+  SMBIOS_TABLE_STRUCTURE   *SmbiosTableOri;
+  EFI_STATUS               Status;
+  UINT32                   SmbiosEntryLen;
+  UINT32                   BufferLen;
+  EFI_PHYSICAL_ADDRESS     BufferPtr;
+  
+  SmbiosTableNew  = NULL;
+  SmbiosTableOri  = NULL;
+  
+  //
+  // Get Smibos configuration Table 
+  //
+  SmbiosTableOri =  (SMBIOS_TABLE_STRUCTURE *)(UINTN)(*(UINT64*)(*Table));
+  
+  if ((SmbiosTableOri == NULL) ||
+      ((UINTN)SmbiosTableOri > 0x100000) ||
+      ((UINTN)SmbiosTableOri < 0xF0000)){
+    return EFI_SUCCESS;
+  }
+  //
+  // Relocate the Smibos memory
+  //
+  BufferPtr = EFI_SYSTEM_TABLE_MAX_ADDRESS;
+  if (SmbiosTableOri->SmbiosBcdRevision != 0x21) {
+    SmbiosEntryLen  = SmbiosTableOri->EntryPointLength;
+  } else {
+    //
+    // According to Smbios Spec 2.4, we should set entry point length as 0x1F if version is 2.1
+    //
+    SmbiosEntryLen = 0x1F;
+  }
+  BufferLen = SmbiosEntryLen + SYS_TABLE_PAD(SmbiosEntryLen) + SmbiosTableOri->TableLength;
+  Status = gBS->AllocatePages (
+                  AllocateMaxAddress,
+                  EfiACPIMemoryNVS,
+                  EFI_SIZE_TO_PAGES(BufferLen),
+                  &BufferPtr
+                  );
+  ASSERT_EFI_ERROR (Status);
+  SmbiosTableNew = (SMBIOS_TABLE_STRUCTURE *)(UINTN)BufferPtr;
+  EfiCopyMem (
+    SmbiosTableNew, 
+    SmbiosTableOri,
+    SmbiosEntryLen
+    );
+  // 
+  // Get Smbios Structure table address, and make sure the start address is 32-bit align
+  //
+  BufferPtr += SmbiosEntryLen + SYS_TABLE_PAD(SmbiosEntryLen);
+  EfiCopyMem (
+    (VOID *)(UINTN)BufferPtr, 
+    (VOID *)(UINTN)(SmbiosTableOri->TableAddress),
+    SmbiosTableOri->TableLength
+    );
+  SmbiosTableNew->TableAddress = (UINT32)BufferPtr;
+  SmbiosTableNew->IntermediateChecksum = 0;
+  SmbiosTableNew->IntermediateChecksum = 
+          GetBufferCheckSum ((UINT8*)SmbiosTableNew + 0x10, SmbiosEntryLen -0x10);
+  //
+  // Change the SMBIOS pointer
+  //
+  *Table = SmbiosTableNew;
+  
+  return EFI_SUCCESS;  
+} 
+
+EFI_STATUS
+ConvertMpsTable (
+  VOID          **Table
+  )
+/*++
+
+Routine Description:
+
+  Convert MP Table if the Location of the SMBios Table is lower than Addres 0x100000
+  Assumption here:
+   As in legacy Bios, MP table is required to place in E/F Seg, 
+   So here we just check if the range is E/F seg, 
+   and if Not, assume the Memory type is EfiACPIMemoryNVS/EfiRuntimeServicesData
+Arguments:
+  Table     - pointer to the table
+
+Returns:
+  EFI_SUCEESS - Convert Table successfully
+  Other       - Failed
+
+--*/
+{
+  UINT32                                       Data32;
+  UINT32                                       FPLength;
+  EFI_LEGACY_MP_TABLE_FLOATING_POINTER         *MpsFloatingPointerOri;
+  EFI_LEGACY_MP_TABLE_FLOATING_POINTER         *MpsFloatingPointerNew;
+  EFI_LEGACY_MP_TABLE_HEADER                   *MpsTableOri;
+  EFI_LEGACY_MP_TABLE_HEADER                   *MpsTableNew;
+  VOID                                         *OemTableOri;
+  VOID                                         *OemTableNew;
+  EFI_STATUS                                   Status;
+  EFI_PHYSICAL_ADDRESS                         BufferPtr;
+  
+  //
+  // Get MP configuration Table 
+  //
+  MpsFloatingPointerOri = (EFI_LEGACY_MP_TABLE_FLOATING_POINTER *)(UINTN)(*(UINT64*)(*Table));
+  if (!(((UINTN)MpsFloatingPointerOri <= 0x100000) && 
+        ((UINTN)MpsFloatingPointerOri >= 0xF0000))){
+    return EFI_SUCCESS;
+  }
+  //
+  // Get Floating pointer structure length
+  //
+  FPLength = MpsFloatingPointerOri->Length * 16;
+  Data32   = FPLength + SYS_TABLE_PAD (FPLength);
+  MpsTableOri = (EFI_LEGACY_MP_TABLE_HEADER *)(UINTN)(MpsFloatingPointerOri->PhysicalAddress);
+  if (MpsTableOri != NULL) {
+    Data32 += MpsTableOri->BaseTableLength;
+    Data32 += MpsTableOri->ExtendedTableLength;
+    if (MpsTableOri->OemTablePointer != 0x00) {
+      Data32 += SYS_TABLE_PAD (Data32);
+      Data32 += MpsTableOri->OemTableSize;
+    }
+  } else {
+    return EFI_SUCCESS;
+  }
+  //
+  // Relocate memory
+  //
+  BufferPtr = EFI_SYSTEM_TABLE_MAX_ADDRESS;
+  Status = gBS->AllocatePages (
+                  AllocateMaxAddress,
+                  EfiACPIMemoryNVS,
+                  EFI_SIZE_TO_PAGES(Data32),
+                  &BufferPtr
+                  );
+  ASSERT_EFI_ERROR (Status); 
+  MpsFloatingPointerNew = (EFI_LEGACY_MP_TABLE_FLOATING_POINTER *)(UINTN)BufferPtr;
+  EfiCopyMem (MpsFloatingPointerNew, MpsFloatingPointerOri, FPLength);
+  //
+  // If Mp Table exists
+  //
+  if (MpsTableOri != NULL) {
+    //
+    // Get Mps table length, including Ext table
+    //
+    BufferPtr = BufferPtr + FPLength + SYS_TABLE_PAD (FPLength);
+    MpsTableNew = (EFI_LEGACY_MP_TABLE_HEADER *)(UINTN)BufferPtr;
+    EfiCopyMem (MpsTableNew, MpsTableOri, MpsTableOri->BaseTableLength + MpsTableOri->ExtendedTableLength);
+    
+    if ((MpsTableOri->OemTableSize != 0x0000) && (MpsTableOri->OemTablePointer != 0x0000)){
+        BufferPtr += MpsTableOri->BaseTableLength + MpsTableOri->ExtendedTableLength;
+        BufferPtr += SYS_TABLE_PAD (BufferPtr);
+        OemTableNew = (VOID *)(UINTN)BufferPtr;
+        OemTableOri = (VOID *)(UINTN)MpsTableOri->OemTablePointer;
+        EfiCopyMem (OemTableNew, OemTableOri, MpsTableOri->OemTableSize);
+        MpsTableNew->OemTablePointer = (UINT32)(UINTN)OemTableNew;
+    }
+    MpsTableNew->Checksum = 0;
+    MpsTableNew->Checksum = GetBufferCheckSum (MpsTableNew, MpsTableOri->BaseTableLength);
+    MpsFloatingPointerNew->PhysicalAddress = (UINT32)(UINTN)MpsTableNew;
+    MpsFloatingPointerNew->Checksum = 0;
+    MpsFloatingPointerNew->Checksum = GetBufferCheckSum (MpsFloatingPointerNew, FPLength);
+  }
+  //
+  // Change the pointer
+  //
+  *Table = MpsFloatingPointerNew;
+  
+  return EFI_SUCCESS;  
+} 

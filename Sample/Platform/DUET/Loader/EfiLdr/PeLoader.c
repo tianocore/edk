@@ -480,6 +480,13 @@ PrintHeader ('Q');
     RelocBase = (EFI_IMAGE_BASE_RELOCATION *) RelocEnd;
   }
 
+  //
+  // Add Fixup data to whole Image (assume Fixup data just below the image), so that there is no hole in the descriptor.
+  // Because only NoPages or ImageBasePage will be used in EfiLoader(), we update these 2 fields.
+  //
+  Image->NoPages += NoFixupPages;
+  Image->ImageBasePage -= (NoFixupPages << EFI_PAGE_SHIFT);
+
   return EFI_SUCCESS;
 }
 

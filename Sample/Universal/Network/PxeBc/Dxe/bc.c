@@ -2150,7 +2150,7 @@ EFI_DRIVER_BINDING_PROTOCOL mPxeBcDriverBinding = {
   PxeBcDriverSupported,
   PxeBcDriverStart,
   PxeBcDriverStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

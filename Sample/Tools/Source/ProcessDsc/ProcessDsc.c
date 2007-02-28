@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -101,7 +101,11 @@ extern int  errno;
 #define COMPONENT_TYPE                  "component_type"
 #define PLATFORM_STR                    "\\platform\\"          // to determine EFI_SOURCE
 #define MAKEFILE_OUT_NAME               "makefile.out"          // if not specified on command line
-#define MODULE_NAME_FILE                "module.list"           // this file used to record all module names defined in the dsc file.
+#define MODULE_MAKEFILE_NAME            "module.mak"            // record all module makefile targets
+#define MODULE_NAME_FILE                "module.list"           // record all module names defined in the dsc file
+#define GLOBAL_LINK_LIB_NAME            "CompilerStub"          // Lib added in link option, maybe removed in the future
+#define MODULE_BASE_NAME_WIDTH          25                      // Width for module name output
+
 //
 // When a symbol is defined as "NULL", it gets saved in the symbol table as a 0-length
 // string. Use this macro to detect if a symbol has been defined this way.
@@ -215,17 +219,6 @@ static const FILETYPE mFileTypes[] = {
 };
 
 //
-// BUGBUG -- remove when you merge with ExpandMacros() function.
-//
-int
-ExpandMacrosRecursive (
-  INT8  *SourceLine,
-  INT8  *DestLine,
-  int   LineLen,
-  int   ExpandMode
-  );
-
-//
 // Structure to split up a file into its different parts.
 //
 typedef struct {
@@ -237,7 +230,7 @@ typedef struct {
 } FILE_NAME_PARTS;
 
 //
-// Maximum length for any line in any file after macro expansion
+// Maximum length for any line in any file after symbol expansion
 //
 #define MAX_EXP_LINE_LEN  (MAX_LINE_LEN * 2)
 
@@ -265,7 +258,11 @@ struct {
   INT8    MakefileName[MAX_PATH]; // output makefile name
   INT8    XRefFileName[MAX_PATH];
   INT8    GuidDatabaseFileName[MAX_PATH];
+  INT8    ModuleMakefileName[MAX_PATH];
   FILE    *MakefileFptr;
+  FILE    *ModuleMakefileFptr;
+  SYMBOL  *ModuleList;
+  SYMBOL  *OutdirList;
   UINT32  Verbose;
 } gGlobals;
 
@@ -574,10 +571,18 @@ BuiltFileExtension (
   INT8      *SourceFileName
   );
 
+static
+void
+SmartFree (
+  SMART_FILE  *SmartFile
+  );
+
 static 
 int
 AddModuleName (
-  INT8    *ModuleName
+  SYMBOL  **SymbolList,
+  INT8    *ModuleName,
+  INT8    *InfName
   );
 
 /*****************************************************************************/
@@ -611,7 +616,7 @@ Returns:
   INT8      ExpLine[MAX_LINE_LEN];
   INT8      *EMsg;
   FILE      *FpModule;
-  SYMBOL    *TempSymBol;
+  SYMBOL    *TempSymbol;
 
   SetUtilityName (PROGRAM_NAME);
 
@@ -649,25 +654,45 @@ Returns:
   if (gGlobals.XRefFileName[0]) {
     CFVSetXRefFileName (gGlobals.XRefFileName);
   }
+  
   //
   // Pre-process the DSC file to get section info.
   //
   if (DSCFileSetFile (&DSCFile, gGlobals.DscFilename) != 0) {
     goto ProcessingError;
   }
+
   //
-  // Try to open the final output makefile
+  // Set output makefile name for single module build 
+  //
+  strcpy (gGlobals.ModuleMakefileName, MODULE_MAKEFILE_NAME);
+
+  //
+  // Try to open all final output makefiles
   //
   if ((gGlobals.MakefileFptr = fopen (gGlobals.MakefileName, "w")) == NULL) {
     Error (NULL, 0, 0, gGlobals.MakefileName, "failed to open output makefile for writing");
     goto ProcessingError;
   }
+  if ((gGlobals.ModuleMakefileFptr = fopen (gGlobals.ModuleMakefileName, "w")) == NULL) {
+    Error (NULL, 0, 0, gGlobals.ModuleMakefileName, "failed to open output makefile for writing");
+    goto ProcessingError;
+  }
+    
   //
-  // Write the header out to the makefile
+  // Write the header out to the makefiles
   //
   for (i = 0; MakefileHeader[i] != NULL; i++) {
     fprintf (gGlobals.MakefileFptr, "%s\n", MakefileHeader[i]);
+    fprintf (gGlobals.ModuleMakefileFptr, "%s\n", MakefileHeader[i]);
   }
+
+  //
+  // Init global potint = NULL
+  //
+  gGlobals.ModuleList = NULL;
+  gGlobals.OutdirList = NULL;
+  
   //
   // Now get the EFI_SOURCE directory which we use everywhere.
   //
@@ -683,28 +708,32 @@ Returns:
     goto ProcessingError;
   }
   //
-  // Write out the [makefile.out] section data to the main output makefile.
+  // Write out the [makefile.out] section data to the output makefiles
   //
   Sect = DSCFileFindSection (&DSCFile, MAKEFILE_OUT_SECTION_NAME);
   if (Sect != NULL) {
     while (DSCFileGetLine (&DSCFile, Line, sizeof (Line)) != NULL) {
-      ExpandMacros (
-        Line,
-        ExpLine,
-        sizeof (ExpLine),
-        EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
-        );
+      ExpandSymbols (Line, ExpLine, sizeof (ExpLine), 0);
       //
-      // Write the line to makefile.out
+      // Write the line to the output makefiles
       //
       fprintf (gGlobals.MakefileFptr, ExpLine);
+      fprintf (gGlobals.ModuleMakefileFptr, ExpLine);
     }
   }
+  
+  //
+  // Add a pseudo target for GLOBAL_LINK_LIB_NAME to avoid single module build 
+  // failure when this lib is not used.
+  //
+  fprintf (gGlobals.ModuleMakefileFptr, "%sbuild ::\n\n", GLOBAL_LINK_LIB_NAME);
+
   //
   // Process [libraries] section in the DSC file
   //
   Sect = DSCFileFindSection (&DSCFile, LIBRARIES_SECTION_NAME);
   if (Sect != NULL) {
+    fprintf (gGlobals.MakefileFptr, "libraries : \n");
     ProcessSectionComponents (&DSCFile, DSC_SECTION_TYPE_LIBRARIES, 0);
   }
 
@@ -728,6 +757,7 @@ Returns:
   //
   Sect = DSCFileFindSection (&DSCFile, COMPONENTS_SECTION_NAME);
   if (Sect != NULL) {
+    fprintf (gGlobals.MakefileFptr, "components_0 : \n");
     ProcessSectionComponents (&DSCFile, DSC_SECTION_TYPE_COMPONENTS, 0);
     fprintf (gGlobals.MakefileFptr, "\n");
   }
@@ -746,6 +776,7 @@ Returns:
     sprintf (Line, "%s.%d", COMPONENTS_SECTION_NAME, i);
     Sect = DSCFileFindSection (&DSCFile, Line);
     if (Sect != NULL) {
+      fprintf (gGlobals.MakefileFptr, "components_%d : \n", i);
       ProcessSectionComponents (&DSCFile, DSC_SECTION_TYPE_COMPONENTS, i);
       fprintf (gGlobals.MakefileFptr, "\n");
     } else {
@@ -773,31 +804,38 @@ ProcessingError:
   if (GetUtilityStatus () < STATUS_ERROR) {
     CFVWriteInfFiles (&DSCFile, gGlobals.MakefileFptr);
   }
+
   //
-  // Close the makefile
+  // Write all module name into MODULE_NAME_FILE file.
+  //
+  if ((FpModule = fopen (MODULE_NAME_FILE, "w")) != NULL) {
+    TempSymbol = gGlobals.ModuleList;
+    while (TempSymbol != NULL) {
+      fprintf (FpModule, " %-*s %s \n", MODULE_BASE_NAME_WIDTH, TempSymbol->Name, TempSymbol->Value);
+      TempSymbol = TempSymbol->Next;
+    }
+    fclose (FpModule);
+    FpModule = NULL;
+  }
+
+  //
+  // Close the all the output makefiles
   //
   if (gGlobals.MakefileFptr != NULL) {
     fclose (gGlobals.MakefileFptr);
     gGlobals.MakefileFptr = NULL;
   }
 
-  //
-  // Write all module name into MODULE_NAME_FILE file.
-  //
-  if ((FpModule = fopen (MODULE_NAME_FILE, "w")) != NULL) {
-    TempSymBol = gModuleList;
-    while (TempSymBol != NULL) {
-      fprintf (FpModule, " %s \n", TempSymBol->Name);
-      TempSymBol = TempSymBol->Next;
-    }
-    fprintf (FpModule, "\n");
+  if (gGlobals.ModuleMakefileFptr != NULL) {
+    fclose (gGlobals.ModuleMakefileFptr);
+    gGlobals.ModuleMakefileFptr = NULL;
   }
-  fclose (FpModule);
-  FreeSymbols (gModuleList);
-
+    
   //
   // Clean up
   //
+  FreeSymbols (gGlobals.ModuleList);
+  FreeSymbols (gGlobals.OutdirList);
   FreeSymbols (gGlobals.Symbol);
   gGlobals.Symbol = NULL;
   CFVDestructor ();
@@ -848,9 +886,9 @@ Returns:
   //
   while (DSCFileGetLine (DSCFile, Line, sizeof (Line)) != NULL) {
     //
-    // Expand macros on the line
+    // Expand symbols on the line
     //
-    if (ExpandMacros (Line, Line2, sizeof (Line2), 0)) {
+    if (ExpandSymbols (Line, Line2, sizeof (Line2), 0)) {
       return STATUS_ERROR;
     }
     //
@@ -1088,7 +1126,7 @@ Returns:
   //
   // Expand symbols in the component description filename
   //
-  ExpandMacros (ArgLine, Line, sizeof (Line), 0);
+  ExpandSymbols (ArgLine, Line, sizeof (Line), EXPANDMODE_NO_UNDEFS);
   //
   // Typically the given line is a component description filename. However we
   // also allow a FV filename (fvvariable.ffs COMPONENT_TYPE=FILE). If the
@@ -1101,15 +1139,26 @@ Returns:
                           COMPONENT_TYPE_FILE,
                           strlen (COMPONENT_TYPE_FILE)
                           ) == 0)) {
+    if (IsAbsolutePath (Line)) {
+      strcpy (InLine, Line);
+    } else if (Line[0] == '.') {
+      //
+      // or if the path starts with ".", then it's build-dir relative.
+      // Prepend $(BUILD_DIR) on the file name
+      //
+      sprintf (InLine, "%s\\%s", GetSymbolValue (BUILD_DIR), Line);
+    } else {
+      sprintf (InLine, "%s\\%s", GetSymbolValue (EFI_SOURCE), Line);
+    }
     CFVAddFVFile (
-      Line,
+      InLine,
       Cptr,
       GetSymbolValue (FV),
       Instance,
       NULL,
       NULL,
       GetSymbolValue (APRIORI),
-      GetSymbolValue (BASE_NAME),
+      NULL,
       NULL
       );
     goto ComponentDone;
@@ -1243,7 +1292,7 @@ Returns:
   //
   TempCptr = GetSymbolValue (MAKEFILE_NAME);
   if (TempCptr != NULL) {
-    ExpandMacros (TempCptr, ComponentMakefileName, sizeof (ComponentMakefileName), 0);
+    ExpandSymbols (TempCptr, ComponentMakefileName, sizeof (ComponentMakefileName), EXPANDMODE_NO_UNDEFS);
     TempCptr = ComponentMakefileName;
   } else {
     TempCptr = "makefile";
@@ -1271,66 +1320,18 @@ Returns:
   if (DscSectionType == DSC_SECTION_TYPE_COMPONENTS) {
     CreatePackageFile (DSCFile);
   }
+
+  //
+  // Add Module name to the global module list
+  //
+  AddModuleName (&gGlobals.ModuleList, GetSymbolValue (BASE_NAME), GetSymbolValue (INF_FILENAME));
   //
   // Write an nmake line to makefile.out
   //
-  if (DscSectionType == DSC_SECTION_TYPE_COMPONENTS) {
-    if (GetSymbolValue (FV) != NULL) {
-      fprintf (gGlobals.MakefileFptr, "components_%d ::\n", Instance);
-      fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
-      fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
-      fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
-    } else {
-      //
-      // FV=NULL component
-      //
-      fprintf (gGlobals.MakefileFptr, "fv_null_components ::\n");
-      fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
-      fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
-      fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
-    }
-    //
-    // Add Module name to the global module list
-    //
-    AddModuleName (GetSymbolValue (BASE_NAME));
+  fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
+  fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
+  fprintf (gGlobals.MakefileFptr, "  @cd ..\n");
 
-    //
-    // Add Single Module target : build and clean in top level makefile
-    //
-    fprintf (gGlobals.MakefileFptr, "%sbuild ::\n", GetSymbolValue (BASE_NAME));
-    fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
-    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
-    fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
-
-    fprintf (gGlobals.MakefileFptr, "%sclean ::\n", GetSymbolValue (BASE_NAME));
-    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s clean\n\n", FileName);
-
-  } else {
-    //
-    // Add up the libraries.
-    //
-    fprintf (gGlobals.MakefileFptr, "libraries ::\n");
-    fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
-    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
-    fprintf (gGlobals.MakefileFptr, "  @cd ..\n");
-
-    //
-    // Add libary name to the global module list
-    //
-    AddModuleName (GetSymbolValue (BASE_NAME));
-
-    //
-    // Add Single Library target : build and clean in top level makefile
-    //    
-    fprintf (gGlobals.MakefileFptr, "%sbuild ::\n", GetSymbolValue (BASE_NAME));
-    fprintf (gGlobals.MakefileFptr, "  @cd %s\n", Processor);
-    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s all\n", FileName);
-    fprintf (gGlobals.MakefileFptr, "  @cd ..\n\n");
-
-    fprintf (gGlobals.MakefileFptr, "%sclean ::\n", GetSymbolValue (BASE_NAME));
-    fprintf (gGlobals.MakefileFptr, "  $(MAKE) -f %s clean\n\n", FileName);
-
-  }
   //
   // Copy the common makefile section from the description file to
   // the component's makefile
@@ -1366,12 +1367,32 @@ Returns:
   // Process sources again to create an OBJECTS macro
   //
   ProcessObjects (&ComponentFile, MakeFptr);
+
+  //
+  // Add Single Module target : build and clean in top level makefile
+  //
+  fprintf (gGlobals.ModuleMakefileFptr, "%sbuild ::", GetSymbolValue (BASE_NAME));
+  if (DscSectionType == DSC_SECTION_TYPE_COMPONENTS) {
+    fprintf (gGlobals.ModuleMakefileFptr, " %sbuild", GLOBAL_LINK_LIB_NAME);
+  }
+  
   //
   // Process all the libraries to define "LIBS = x.lib y.lib..."
   // Be generous and append ".lib" if they forgot.
   // Make a macro definition: LIBS = $(LIBS) xlib.lib ylib.lib...
+  // Also add libs dependency for single module build: basenamebuild :: xlibbuild ylibbuild ...
   //
   ProcessLibs (&ComponentFile, MakeFptr);
+
+  fprintf (gGlobals.ModuleMakefileFptr, "\n");
+  
+  fprintf (gGlobals.ModuleMakefileFptr, "  @cd %s\n", Processor);
+  fprintf (gGlobals.ModuleMakefileFptr, "  $(MAKE) -f %s all\n", FileName);
+  fprintf (gGlobals.ModuleMakefileFptr, "  @cd ..\n\n");
+
+  fprintf (gGlobals.ModuleMakefileFptr, "%sclean ::\n", GetSymbolValue (BASE_NAME));
+  fprintf (gGlobals.ModuleMakefileFptr, "  $(MAKE) -f %s clean\n\n", FileName);
+  
   //
   // Emit commands to create the component. These are simply copied from
   // the description file to the component's makefile. First look for
@@ -1451,12 +1472,12 @@ CreatePackageFile (
   DSC_FILE          *DSCFile
   )
 {
-  INT8    *Package;
-  SECTION *TempSect;
-  INT8    Str[MAX_LINE_LEN];
-  INT8    StrExpanded[MAX_LINE_LEN];
-  FILE    *PkgFptr;
-  int     Status;
+  INT8       *Package;
+  SECTION    *TempSect;
+  INT8       Str[MAX_LINE_LEN];
+  INT8       StrExpanded[MAX_LINE_LEN];
+  SMART_FILE *PkgFptr;
+  int        Status;
 
   PkgFptr = NULL;
 
@@ -1492,7 +1513,13 @@ CreatePackageFile (
       GetSymbolValue (SOURCE_DIR),
       GetSymbolValue (BASE_NAME)
       );
-    AddSymbol (PACKAGE_FILENAME, Str, SYM_LOCAL | SYM_FILENAME);
+ 
+    //
+    // Expand symbols in the package filename
+    //
+    ExpandSymbols (Str, StrExpanded, sizeof (StrExpanded), EXPANDMODE_NO_UNDEFS);    
+ 
+    AddSymbol (PACKAGE_FILENAME, StrExpanded, SYM_LOCAL | SYM_FILENAME);
     return STATUS_SUCCESS;
   }
   //
@@ -1514,27 +1541,33 @@ CreatePackageFile (
       GetSymbolValue (DEST_DIR),
       GetSymbolValue (BASE_NAME)
       );
+    
+    //
+    // Expand symbols in the package filename
+    //
+    ExpandSymbols (Str, StrExpanded, sizeof (StrExpanded), EXPANDMODE_NO_UNDEFS);    
+    
     //
     // Try to open the file, then save the file name as the PACKAGE_FILENAME
     // symbol for use elsewhere.
     //
-    if ((PkgFptr = fopen (Str, "w")) == NULL) {
+    if ((PkgFptr = SmartOpen (StrExpanded)) == NULL) {
       Error (NULL, 0, 0, Str, "could not open package file for writing");
       Status = STATUS_ERROR;
       goto Finish;
     }
 
-    AddSymbol (PACKAGE_FILENAME, Str, SYM_LOCAL | SYM_FILENAME);
+    AddSymbol (PACKAGE_FILENAME, StrExpanded, SYM_LOCAL | SYM_FILENAME);
     //
     // Now read lines in from the DSC file and write them back out to the
     // package file (with string substitution).
     //
     while (DSCFileGetLine (DSCFile, Str, sizeof (Str)) != NULL) {
       //
-      // Expand macros, then write the line out to the package file
+      // Expand symbols, then write the line out to the package file
       //
-      ExpandMacrosRecursive (Str, StrExpanded, sizeof (StrExpanded), EXPANDMODE_RECURSIVE);
-      fprintf (PkgFptr, StrExpanded);
+      ExpandSymbols (Str, StrExpanded, sizeof (StrExpanded), EXPANDMODE_RECURSIVE);
+      SmartWrite (PkgFptr, StrExpanded);
     }
   } else {
     Warning (
@@ -1551,7 +1584,7 @@ CreatePackageFile (
   }
 
   if (PkgFptr != NULL) {
-    fclose (PkgFptr);
+    SmartClose (PkgFptr);
   }
 
 Finish:
@@ -1628,12 +1661,14 @@ ProcessINFDefinesSectionSingle (
 {
   INT8    *Cptr;
   INT8    Str[MAX_LINE_LEN];
+  INT8    ExpandedLine[MAX_LINE_LEN];
   SECTION *TempSect;
 
   TempSect = DSCFileFindSection (ComponentFile, SectionName);
   if (TempSect != NULL) {
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
-      Cptr = StripLine (Str);
+      ExpandSymbols (Str, ExpandedLine, sizeof (ExpandedLine), 0);
+      Cptr = StripLine (ExpandedLine);
       //
       // Don't process blank lines.
       //
@@ -1642,7 +1677,7 @@ ProcessINFDefinesSectionSingle (
         // Add without overwriting macros specified on the component line
         // in the description file
         //
-        AddSymbol (Str, NULL, SYM_LOCAL);
+        AddSymbol (Cptr, NULL, SYM_LOCAL);
       }
     }
   } else {
@@ -1690,7 +1725,7 @@ Returns:
   if (TempSect != NULL) {
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
       Cptr = StripLine (Str);
-      ExpandMacros (
+      ExpandSymbols (
         Cptr,
         ExpandedLine,
         sizeof (ExpandedLine),
@@ -1828,6 +1863,7 @@ ProcessIncludesSectionSingle (
   INT8    *Cptr;
   SECTION *TempSect;
   INT8    Str[MAX_LINE_LEN];
+  INT8    ExpandedLine[MAX_LINE_LEN];
   INT8    *Processor;
 
   TempSect = DSCFileFindSection (ComponentFile, SectionName);
@@ -1840,7 +1876,8 @@ ProcessIncludesSectionSingle (
     // Copy lines directly
     //
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
-      Cptr = StripLine (Str);
+      ExpandSymbols (Str, ExpandedLine, sizeof (ExpandedLine), 0);
+      Cptr = StripLine (ExpandedLine);
       //
       // Don't process blank lines
       //
@@ -2114,13 +2151,13 @@ ProcessSourceFilesSection (
       //
       if (*Cptr) {
         //
-        // Expand macros in the filename, then parse the line for symbol
+        // Expand symbols in the filename, then parse the line for symbol
         // definitions. AddFileSymbols() will null-terminate the line
         // after the file name. Save a copy for override purposes, in which
         // case we'll need to know the file name and path (in case it's in
         // a subdirectory).
         //
-        ExpandMacros (Cptr, FileName, sizeof (FileName), 0);
+        ExpandSymbols (Cptr, FileName, sizeof (FileName), 0);
         AddFileSymbols (FileName);
         strcpy (OriginalFileName, FileName);
         //
@@ -2128,8 +2165,12 @@ ProcessSourceFilesSection (
         // the file, relative to the location of the INF file. So prepend
         // $(SOURCE_DIR) to it first.
         //
-        strcpy (TempFileName, "$(SOURCE_DIR)\\");
-        strcat (TempFileName, FileName);
+        if (IsAbsolutePath (FileName)) {
+          strcpy (TempFileName, FileName);
+        } else {
+          strcpy (TempFileName, "$(SOURCE_DIR)\\");
+          strcat (TempFileName, FileName);
+        }
         AddSymbol (SOURCE_FILE_NAME, TempFileName, SYM_FILE | SYM_OVERWRITE);
         //
         // Extract path information from the source file and set internal
@@ -2187,7 +2228,10 @@ ProcessSourceFilesSection (
           }
         }
 
-        for (Cptr = FilePath; *Cptr && (*Cptr != '.'); Cptr++)
+        //
+        // Start at the end and work back
+        //
+        for (Cptr = FilePath + strlen (FilePath) - 1; (Cptr > FilePath) && (*Cptr != '\\') && (*Cptr != '.'); Cptr--)
           ;
         if (*Cptr == '.') {
           *Cptr = 0;
@@ -2227,8 +2271,19 @@ ProcessSourceFilesSection (
           //
           WriteCompileCommands (DSCFile, MakeFptr, FileName, Processor);
           fprintf (MakeFptr, "\n");
-          sprintf (Str, "%s\\%s", GetSymbolValue (DEST_DIR), FileName);
-          MakeFilePath (Str);
+          if (!IsAbsolutePath (FileName)) {
+            sprintf (Str, "%s\\%s", GetSymbolValue (DEST_DIR), FileName);
+            MakeFilePath (Str);
+            //
+            // Get all output directory for build output files.
+            //
+            Cptr = Str + strlen (Str) - 1;
+            for (; (Cptr > Str) && (*Cptr != '\\'); Cptr--);
+            if (*Cptr == '\\') {
+              *Cptr = '\0';
+              AddModuleName (&gGlobals.OutdirList, Str, NULL);
+            }
+          }
         }
         //
         // Remove file-level symbols
@@ -2259,6 +2314,7 @@ ProcessObjects (
   INT8  *CEnd;
   INT8  CSave;
   INT8  *CopySourceSelect;
+  SYMBOL *TempSymbol;
 
   //
   // Write a useful comment to the output makefile so the user knows where
@@ -2345,6 +2401,26 @@ ProcessObjects (
   }
 
   fprintf (MakeFptr, "\n\n");
+
+  //
+  // Create output directory list 
+  // for clean target to delete all build output files.
+  //
+  fprintf (MakeFptr, "DEST_OUTPUT_DIRS = $(%s) ", DEST_DIR);
+
+  TempSymbol = gGlobals.OutdirList;
+  while (TempSymbol != NULL) {
+    fprintf (MakeFptr, "\\\n                   %s   ", TempSymbol->Name);
+    TempSymbol = TempSymbol->Next;
+  }
+  fprintf (MakeFptr, "\n\n");
+  
+  //
+  // clean up for the next module
+  //
+  FreeSymbols (gGlobals.OutdirList);
+  gGlobals.OutdirList = NULL;
+
   return STATUS_SUCCESS;
 }
 
@@ -2406,12 +2482,12 @@ ProcessObjectsSingle (
       //
       if (*Cptr) {
         //
-        // Expand macros then create the output filename. We'll do a lookup
+        // Expand symbols then create the output filename. We'll do a lookup
         // on the source file's extension to determine what the extension of
         // the built version of the file is. For example, .c -> .obj.
         //
         if (!IsIncludeFile (Cptr)) {
-          ExpandMacros (Cptr, FileName, sizeof (FileName), 0);
+          ExpandSymbols (Cptr, FileName, sizeof (FileName), 0);
           Cptr2 = BuiltFileExtension (FileName);
           if (Cptr2 != NULL) {
             SetFileExtension (FileName, Cptr2);
@@ -2487,21 +2563,32 @@ ProcessLibsSingle (
 {
   INT8    *Cptr;
   INT8    Str[MAX_LINE_LEN];
+  INT8    ExpandedLine[MAX_LINE_LEN];
   SECTION *TempSect;
 
   TempSect = DSCFileFindSection (ComponentFile, SectionName);
   if (TempSect != NULL) {
     fprintf (MakeFptr, "LIBS = $(LIBS) ");
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
-      Cptr = StripLine (Str);
+      ExpandSymbols (Str, ExpandedLine, sizeof (ExpandedLine), 0);
+      Cptr = StripLine (ExpandedLine);
       //
       // Don't process blank lines
       //
       if (*Cptr) {
         if (Cptr[strlen (Cptr) - 4] != '.') {
           fprintf (MakeFptr, "    \\\n       $(LIB_DIR)\\%s.lib", Cptr);
+          //
+          // Add lib dependency for single module build
+          //
+          fprintf (gGlobals.ModuleMakefileFptr, " %sbuild", Cptr);
         } else {
           fprintf (MakeFptr, "    \\\n       $(LIB_DIR)\\%s", Cptr);
+          //
+          // Add lib dependency for single module build
+          //
+          Cptr[strlen (Cptr) - 4] = 0;
+          fprintf (gGlobals.ModuleMakefileFptr, " %sbuild", Cptr);
         }
       }
     }
@@ -2586,9 +2673,9 @@ ProcessIncludeFilesSingle (
       //
       if (*Cptr) {
         //
-        // Expand macros in the filename, then get its parts
+        // Expand symbols in the filename, then get its parts
         //
-        ExpandMacros (Cptr, FileName, sizeof (FileName), 0);
+        ExpandSymbols (Cptr, FileName, sizeof (FileName), 0);
         AddFileSymbols (FileName);
         File = GetFileParts (FileName);
         if ((File != NULL) && IsIncludeFile (FileName)) {
@@ -2747,7 +2834,7 @@ WriteCommonMakefile (
   )
 {
   INT8    InLine[MAX_LINE_LEN];
-  INT8    OutLine[MAX_LINE_LEN * 2];
+  INT8    OutLine[MAX_EXP_LINE_LEN];
   SECTION *Sect;
   INT8    *Sym;
   int     i;
@@ -2785,7 +2872,7 @@ WriteCommonMakefile (
   fprintf (MakeFptr, "\n");
   //
   // If there was a [makefile.common] section in the description file,
-  // copy it (after macro expansion) to the output file.
+  // copy it (after symbol expansion) to the output file.
   //
   sprintf (InLine, "%s.%s", MAKEFILE_SECTION_NAME, COMMON_SECTION_NAME);
   Sect = DSCFileFindSection (DSCFile, InLine);
@@ -2796,15 +2883,15 @@ WriteCommonMakefile (
     //
     while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
       //
-      // Replace macros
+      // Replace symbols
       //
-      ExpandMacrosRecursive (InLine, OutLine, sizeof (OutLine), EXPANDMODE_RECURSIVE);
+      ExpandSymbols (InLine, OutLine, sizeof (OutLine), EXPANDMODE_RECURSIVE);
       fprintf (MakeFptr, OutLine);
     }
   }
   //
   // If there was a [makefile.platform] section in the description file,
-  // copy it (after macro expansion) to the output file.
+  // copy it (after symbol expansion) to the output file.
   //
   sprintf (InLine, "%s.%s", MAKEFILE_SECTION_NAME, "Platform");
   Sect = DSCFileFindSection (DSCFile, InLine);
@@ -2814,9 +2901,9 @@ WriteCommonMakefile (
     //
     while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
       //
-      // Replace macros
+      // Replace symbols
       //
-      ExpandMacrosRecursive (InLine, OutLine, sizeof (OutLine), EXPANDMODE_RECURSIVE);
+      ExpandSymbols (InLine, OutLine, sizeof (OutLine), EXPANDMODE_RECURSIVE);
       fprintf (MakeFptr, OutLine);
     }
   }
@@ -2830,7 +2917,7 @@ WriteCommonMakefile (
     // Read lines, expand, then dump out
     //
     while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
-      ExpandMacros (InLine, OutLine, sizeof (OutLine), 0);
+      ExpandSymbols (InLine, OutLine, sizeof (OutLine), 0);
       fprintf (MakeFptr, OutLine);
     }
   }
@@ -2846,7 +2933,7 @@ WriteCommonMakefile (
       // Read lines, expand, then dump out
       //
       while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
-        ExpandMacros (InLine, OutLine, sizeof (OutLine), 0);
+        ExpandSymbols (InLine, OutLine, sizeof (OutLine), 0);
         fprintf (MakeFptr, OutLine);
       }
     }
@@ -2884,7 +2971,8 @@ Returns:
 {
   SECTION *Sect;
   INT8    InLine[MAX_LINE_LEN];
-
+  INT8    OutLine[MAX_EXP_LINE_LEN];
+  
   //
   // Don't mess up the original file pointer, since we're processing it at a higher
   // level.
@@ -2896,10 +2984,13 @@ Returns:
     // Read lines, expand, then dump out
     //
     while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
-      //
-      // ExpandMacros(InLine, OutLine, sizeof(OutLine), 0);
-      //
-      fprintf (MakeFptr, InLine);
+      ExpandSymbols (
+        InLine, 
+        OutLine, 
+        sizeof(OutLine), 
+        EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+        );
+      fprintf (MakeFptr, OutLine);
     }
   } else {
     Warning (
@@ -2935,7 +3026,7 @@ WriteCompileCommands (
   //
   INT8            BuildSectionName[40];
   INT8            InLine[MAX_LINE_LEN];
-  INT8            OutLine[MAX_LINE_LEN * 2];
+  INT8            OutLine[MAX_EXP_LINE_LEN];
   INT8            *SourceCompileType;
   char            *CPtr;
   char            *CPtr2;
@@ -3072,7 +3163,7 @@ WriteCompileCommands (
       // Read lines, expand (except SOURCE_DIR and DEST_DIR), then dump out
       //
       while (DSCFileGetLine (DscFile, InLine, sizeof (InLine)) != NULL) {
-        ExpandMacros (
+        ExpandSymbols (
           InLine,
           OutLine,
           sizeof (OutLine),
@@ -3151,10 +3242,10 @@ MakeFilePath (
   INT8  CopyFileName[MAX_PATH];
 
   //
-  // Expand macros in the filename
+  // Expand symbols in the filename
   //
-  if (ExpandMacros (FileName, CopyFileName, sizeof (CopyFileName), EXPANDMODE_NO_UNDEFS)) {
-    Error (NULL, 0, 0, NULL, "undefined macros in file path: %s", FileName);
+  if (ExpandSymbols (FileName, CopyFileName, sizeof (CopyFileName), EXPANDMODE_NO_UNDEFS)) {
+    Error (NULL, 0, 0, NULL, "undefined symbols in file path: %s", FileName);
     return STATUS_ERROR;
   }
   //
@@ -3228,92 +3319,7 @@ MakeFilePath (
 /*****************************************************************************
 ******************************************************************************/
 int
-ExpandMacros (
-  INT8 *SourceLine,
-  INT8 *DestLine,
-  int  LineLen,
-  int  ExpandMode
-  )
-{
-  INT8  *FromPtr;
-  INT8  *ToPtr;
-  INT8  *SaveStart;
-  INT8  *Cptr;
-  INT8  *value;
-  int   Expanded;
-
-  FromPtr = SourceLine;
-  ToPtr   = DestLine;
-  while (*FromPtr && (LineLen > 0)) {
-    if ((*FromPtr == '$') && (*(FromPtr + 1) == '(')) {
-      //
-      // Save the start in case it's undefined, in which case we copy it as-is.
-      //
-      SaveStart = FromPtr;
-      Expanded  = 0;
-      //
-      // Macro expansion time. Find the end (no spaces allowed)
-      //
-      FromPtr += 2;
-      for (Cptr = FromPtr; *Cptr && (*Cptr != ')'); Cptr++)
-        ;
-      if (*Cptr) {
-        //
-        // Truncate the string at the closing parenthesis for ease-of-use.
-        // Then copy the string directly to the destination line in case we don't find
-        // a definition for it.
-        //
-        *Cptr = 0;
-        strcpy (ToPtr, SaveStart);
-        if ((_stricmp (SOURCE_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_SOURCEDIR)) {
-          //
-          // excluded this expansion
-          //
-        } else if ((_stricmp (DEST_DIR, FromPtr) == 0) && (ExpandMode & EXPANDMODE_NO_DESTDIR)) {
-          //
-          // excluded this expansion
-          //
-        } else if ((value = GetSymbolValue (FromPtr)) != NULL) {
-          strcpy (ToPtr, value);
-          LineLen -= strlen (value);
-          ToPtr += strlen (value);
-          Expanded = 1;
-        } else if (ExpandMode & EXPANDMODE_NO_UNDEFS) {
-          Error (NULL, 0, 0, Cptr, "undefined macro on line: %s", SourceLine);
-          return 1;
-        }
-
-        if (!Expanded) {
-          //
-          // Restore closing parenthesis, and advance to next character
-          //
-          *Cptr   = ')';
-          FromPtr = SaveStart + 1;
-          ToPtr++;
-        } else {
-          FromPtr = Cptr + 1;
-        }
-      } else {
-        ParserError (0, SourceLine, "missing closing parenthesis on macro");
-        return STATUS_WARNING;
-      }
-    } else {
-      *ToPtr = *FromPtr;
-      FromPtr++;
-      ToPtr++;
-      LineLen--;
-    }
-  }
-
-  if (*FromPtr == 0) {
-    *ToPtr = 0;
-  }
-
-  return STATUS_SUCCESS;
-}
-
-int
-ExpandMacrosRecursive (
+ExpandSymbols (
   INT8  *SourceLine,
   INT8  *DestLine,
   int   LineLen,
@@ -3337,13 +3343,14 @@ ExpandMacrosRecursive (
   LocalDestLine = (INT8 *) malloc (LineLen);
   if (LocalDestLine == NULL) {
     Error (__FILE__, __LINE__, 0, "application error", "memory allocation failed");
+    NestDepth = 0;
     return STATUS_ERROR;
   }
 
   FromPtr = SourceLine;
   ToPtr   = LocalDestLine;
   //
-  // Walk the entire line, replacing $(MACRO_NAME).
+  // Walk the entire line, replacing $(SYMBOL_NAME).
   //
   LocalLineLen  = LineLen;
   ExpandedCount = 0;
@@ -3355,7 +3362,7 @@ ExpandMacrosRecursive (
       SaveStart = FromPtr;
       Expanded  = 0;
       //
-      // Macro expansion time. Find the end (no spaces allowed)
+      // Symbol expansion time. Find the end (no spaces allowed)
       //
       FromPtr += 2;
       for (Cptr = FromPtr; *Cptr && (*Cptr != ')'); Cptr++)
@@ -3383,24 +3390,23 @@ ExpandMacrosRecursive (
           Expanded = 1;
           ExpandedCount++;
         } else if (ExpandMode & EXPANDMODE_NO_UNDEFS) {
-          Error (NULL, 0, 0, Cptr, "undefined macro on line: %s", SourceLine);
-          strcpy (ToPtr, FromPtr);
-          Status = STATUS_WARNING;
+          Error (NULL, 0, 0, "undefined symbol", "$(%s)", FromPtr);
+          Status = STATUS_ERROR;
           goto Done;
         }
-
+        
+        //
+        // Restore closing parenthesis, and advance to next character
+        //
+        *Cptr   = ')';
         if (!Expanded) {
-          //
-          // Restore closing parenthesis, and advance to next character
-          //
-          *Cptr   = ')';
           FromPtr = SaveStart + 1;
           ToPtr++;
         } else {
           FromPtr = Cptr + 1;
         }
       } else {
-        Error (NULL, 0, 0, SourceLine, "missing closing parenthesis on macro");
+        Error (NULL, 0, 0, SourceLine, "missing closing parenthesis on symbol");
         strcpy (ToPtr, FromPtr);
         Status = STATUS_WARNING;
         goto Done;
@@ -3421,8 +3427,8 @@ ExpandMacrosRecursive (
   // If we're in recursive mode, and we expanded at least one string successfully,
   // then make a recursive call to try again.
   //
-  if ((ExpandedCount != 0) && (Status == STATUS_SUCCESS) && (ExpandMode & EXPANDMODE_RECURSIVE) && (NestDepth < 10)) {
-    Status = ExpandMacros (LocalDestLine, DestLine, LineLen, ExpandMode);
+  if ((ExpandedCount != 0) && (Status == STATUS_SUCCESS) && (ExpandMode & EXPANDMODE_RECURSIVE) && (NestDepth < 2)) {
+    Status = ExpandSymbols (LocalDestLine, DestLine, LineLen, ExpandMode);
     free (LocalDestLine);
     NestDepth = 0;
     return Status;
@@ -3667,13 +3673,17 @@ AddSymbol (
   int     Len;
   INT8    *Start;
   INT8    *Cptr;
-  INT8    CSave;
-  INT8    *SaveCptr;
+  INT8    CSave1;
+  INT8    *SaveCptr1;
+  INT8    CSave2;
+  INT8    *SaveCptr2;
   INT8    ShortName[MAX_PATH];
 
   Len           = 0;
-  SaveCptr      = NULL;
-  CSave         = 0;
+  SaveCptr1     = NULL;
+  CSave1        = 0;
+  SaveCptr2     = NULL;
+  CSave2        = 0;
 
   ShortName[0]  = 0;
   //
@@ -3716,10 +3726,14 @@ AddSymbol (
     if (!*Value) {
       return -1;
     }
+
     //
     // Now truncate the name
     //
-    *Cptr = 0;
+    CSave1    = *Cptr;
+    SaveCptr1 = Cptr;
+    *Cptr     = 0;    
+
     //
     // Skip over the = and then any spaces
     //
@@ -3742,10 +3756,14 @@ AddSymbol (
     //
     // Null terminate the value string
     //
-    CSave     = *Cptr;
-    SaveCptr  = Cptr;
-    *Cptr     = 0;
-    Len       = (int) (Cptr - Start);
+    if (*Cptr) {
+      Len = (int) (Cptr - Start) + 1;
+      CSave2    = *Cptr;
+      SaveCptr2 = Cptr;
+      *Cptr     = 0;
+    } else {
+      Len = (int) (Cptr - Start);
+    }
   }
 
   //
@@ -3856,8 +3874,11 @@ AddSymbol (
   //
   // Restore the terminator we inserted if they passed in var=value
   //
-  if (SaveCptr != NULL) {
-    *SaveCptr = CSave;
+  if (SaveCptr1 != NULL) {
+    *SaveCptr1 = CSave1;
+  }
+  if (SaveCptr2 != NULL) {
+    *SaveCptr2 = CSave2;
   }
 
   return Len;
@@ -4020,7 +4041,7 @@ Returns:
         return STATUS_ERROR;
 
       //
-      // /d macro=name
+      // /d symbol=name
       //
       case 'd':
       case 'D':
@@ -4031,7 +4052,7 @@ Returns:
         Argv++;
         if (Argc == 0) {
           Argv--;
-          Error (NULL, 0, 0, NULL, "missing macro definition with %c%c", Argv[0][0], Argv[0][1]);
+          Error (NULL, 0, 0, NULL, "missing symbol definition with %c%c", Argv[0][0], Argv[0][1]);
           return STATUS_ERROR;
         } else {
           if (AddSymbol (Argv[0], NULL, SYM_OVERWRITE | SYM_GLOBAL) <= 0) {
@@ -4061,7 +4082,7 @@ Returns:
         break;
 
       //
-      // Print a cross-reference file containing guid/basename/processor/fv
+      // Print a cross-reference file containing guid/basename/processor
       //
       case 'x':
       case 'X':
@@ -4382,9 +4403,10 @@ Usage (
   static const INT8 *Help[] = {
     "Usage:  ProcessDsc {options} [Dsc Filename]",
     "    Options:",
-    "       -d var=value        to define macro 'var' to 'value'",
+    "       -d var=value        to define symbol 'var' to 'value'",
     "       -v                  for verbose mode",
     "       -g filename         to preparse GUID listing file",
+    "       -x filename         to create a cross-reference file",
     NULL
   };
   for (i = 0; Help[i] != NULL; i++) {
@@ -4431,9 +4453,9 @@ ProcessDSCDefinesSection (
   //
   while (DSCFileGetLine (DscFile, Line, sizeof (Line)) != NULL) {
     //
-    // Expand macros on the line
+    // Expand symbols on the line
     //
-    if (ExpandMacros (Line, Line2, sizeof (Line2), 0)) {
+    if (ExpandSymbols (Line, Line2, sizeof (Line2), 0)) {
       return STATUS_ERROR;
     }
     //
@@ -4464,7 +4486,7 @@ Routine Description:
 
 Arguments:
 
-  FileName - the name of the file, with macros expanded.
+  FileName - the name of the file, with symbol expanded.
 
 Returns:
 
@@ -4484,10 +4506,142 @@ Returns:
   return 0;
 }
 
+SMART_FILE *
+SmartOpen (
+  char        *FileName
+  )
+{
+  SMART_FILE     *SmartFile;
+  FILE           *Fptr;
+  int            FileSize;
+  
+  SmartFile = malloc (sizeof (SMART_FILE));
+  if (SmartFile == NULL) { 
+    return NULL;
+  }
+  memset (SmartFile, 0, sizeof (SMART_FILE));
+  
+  SmartFile->FileName = malloc (strlen (FileName) + 1);
+  if (SmartFile->FileName == NULL){
+    SmartFree (SmartFile); 
+    return NULL;
+  }
+  strcpy (SmartFile->FileName, FileName);
+
+  if ((Fptr = fopen (FileName, "r")) != NULL) {
+    fseek (Fptr, 0, SEEK_END);
+    FileSize = ftell (Fptr);
+    fseek (Fptr, 0, SEEK_SET);
+    SmartFile->FileContent = malloc (FileSize + 1);
+    if (SmartFile->FileContent != NULL) {
+      memset (SmartFile->FileContent, 0, FileSize + 1);
+      //
+      // Usually FileLength < FileSize, because in text mode, carriage return¨Clinefeed
+      // combinations are translated into single linefeeds on input
+      //       
+      SmartFile->FileLength = fread (SmartFile->FileContent, sizeof(char), FileSize, Fptr);
+    }
+    fclose (Fptr);
+  }
+  
+  //
+  // No previous output file content, re-create the file
+  //
+  if (SmartFile->FileContent == NULL) {
+    if ((SmartFile->FilePtr = fopen (FileName, "w")) == NULL) {
+      SmartFree (SmartFile);
+      return NULL;
+    }    
+  }
+  
+  return SmartFile;
+}
+
+int
+SmartWrite (
+  SMART_FILE  *SmartFile,
+  char        *String
+  )
+{
+  int  StrLen;
+  
+  if (SmartFile->FilePtr != NULL) {
+    return fprintf (SmartFile->FilePtr, "%s", String);
+  } else {
+    StrLen = strlen (String);
+    if ((StrLen > SmartFile->FileLength - SmartFile->FilePosition) || 
+       (_strnicmp (&SmartFile->FileContent[SmartFile->FilePosition], String, StrLen) != 0)) {
+      //
+      // file changed, need to re-create.
+      //
+      if ((SmartFile->FilePtr = fopen (SmartFile->FileName, "w")) == NULL) {
+        Error (NULL, 0, 0, SmartFile->FileName, "could not open file for writing when SmartWrite");
+        return -1;
+      } else {
+        SmartFile->FileContent[SmartFile->FilePosition] = 0;
+        fprintf (SmartFile->FilePtr, "%s%s", SmartFile->FileContent, String);
+        return StrLen;
+      }      
+    } else {
+      SmartFile->FilePosition += StrLen;
+      return StrLen;
+    }
+  }
+}
+
+void
+SmartClose (
+  SMART_FILE  *SmartFile
+  )
+{
+  if ((SmartFile->FilePtr == NULL) && (SmartFile->FilePosition < SmartFile->FileLength)) {
+    //
+    // The new file is smaller than before, re-create it.
+    //
+    if ((SmartFile->FilePtr = fopen (SmartFile->FileName, "w")) == NULL) {
+      Error (NULL, 0, 0, SmartFile->FileName, "could not open file for writing when SmartClose");
+    } else {
+      SmartFile->FileContent[SmartFile->FilePosition] = 0;
+      fprintf (SmartFile->FilePtr, "%s", SmartFile->FileContent);
+    }
+  }
+  
+  SmartFree(SmartFile);
+}
+  
+static
+void
+SmartFree (
+  SMART_FILE  *SmartFile
+  )
+{
+  if (SmartFile == NULL) {
+    return;
+  }
+  
+  if (SmartFile->FileName != NULL ) {
+    free (SmartFile->FileName);
+  }
+  
+  if (SmartFile->FileContent != NULL ) {
+    free (SmartFile->FileContent);
+  }
+
+  if (SmartFile->FilePtr != NULL ) {
+    fclose (SmartFile->FilePtr);
+  } 
+
+  free (SmartFile);
+  
+  return;
+}
+
 static 
 int
 AddModuleName (
-  INT8    *ModuleName
+  SYMBOL  **SymbolList,
+  INT8    *ModuleName,
+  INT8    *InfName
   )
 /*++
 
@@ -4497,8 +4651,9 @@ Routine Description:
   For the same module names, it is only added once.
 
 Arguments:
-
+  SymbolList : add name into this list
   ModuleName : point to one module name char string.
+  InfName    : point to this module inf file name with path.
 
 Returns:
 
@@ -4513,15 +4668,20 @@ Returns:
   //
   // Get the global module list.
   //
-  CurrentSymbol = gModuleList;
-  LastSymbol    = gModuleList;
+  CurrentSymbol = *SymbolList;
+  LastSymbol    = *SymbolList;
   
   //
   // Search whether this module name has been added into the global list.
   //
   while (CurrentSymbol != NULL) {
     if (_stricmp (CurrentSymbol->Name, ModuleName) == 0) {
-      break;
+      if ((CurrentSymbol->Value == NULL) && (InfName == NULL)) {
+        break;
+      } else if ((CurrentSymbol->Value != NULL) && (InfName != NULL) && \
+        (_stricmp (CurrentSymbol->Value, InfName) == 0)) {
+        break;
+      }
     }
     LastSymbol    = CurrentSymbol;
     CurrentSymbol = CurrentSymbol->Next;
@@ -4537,11 +4697,19 @@ Returns:
       return -1;
     }
     memset ((INT8 *) CurrentSymbol, 0, sizeof (SYMBOL));
-    CurrentSymbol->Name   = (INT8 *) malloc (strlen (ModuleName) + 1);
-    strcpy (CurrentSymbol->Name, ModuleName);
+
+    if (ModuleName != NULL) {
+      CurrentSymbol->Name   = (INT8 *) malloc (strlen (ModuleName) + 1);
+      strcpy (CurrentSymbol->Name, ModuleName);
+    }
+
+    if (InfName != NULL) {
+      CurrentSymbol->Value  = (INT8 *) malloc (strlen (InfName) + 1);
+      strcpy (CurrentSymbol->Value, InfName);
+    }
     
     if (LastSymbol == NULL) {   
-      gModuleList      = CurrentSymbol;
+      *SymbolList      = CurrentSymbol;
     } else {
       LastSymbol->Next = CurrentSymbol;
     }

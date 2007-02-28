@@ -16,6 +16,8 @@ $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BaseMemoryLib\BaseMemoryLib
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BasePrintLib\BasePrintLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BaseDebugLibNull\BaseDebugLibNull.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BaseIoLibIntrinsic\BaseIoLibIntrinsic.inf
+$(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\UefiBootServicesTableLib\UefiBootServicesTableLib.inf
+$(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxeIoLibCpuIo\DxeIoLibCpuIo.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BasePostCodeLibPort80\BasePostCodeLibPort80.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BasePostCodeLibDebug\BasePostCodeLibDebug.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BaseCacheMaintenanceLib\BaseCacheMaintenanceLib.inf
@@ -29,7 +31,6 @@ $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BaseTimerLibLocalApic\BaseT
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\BaseUefiDecompressLib\BaseUefiDecompressLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiDxeDebugLibReportStatusCode\PeiDxeDebugLibReportStatusCode.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiDxePostCodeLibReportStatusCode\PeiDxePostCodeLibReportStatusCode.inf
-$(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\UefiBootServicesTableLib\UefiBootServicesTableLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxeMemoryAllocationLib\DxeMemoryAllocationLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\UefiLib\UefiLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxeHobLib\DxeHobLib.inf
@@ -37,6 +38,7 @@ $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\UefiRuntimeServicesTableLib
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxeReportStatusCodeLib\DxeReportStatusCodeLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\HiiLib\HiiLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiServicesTablePointerLibMm7\PeiServicesTablePointerLibMm7.inf
+$(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiServicesTablePointerLibKr1\PeiServicesTablePointerLibKr1.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiServicesTablePointerLib\PeiServicesTablePointerLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiMemoryAllocationLib\PeiMemoryAllocationLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiServicesLib\PeiServicesLib.inf
@@ -46,6 +48,7 @@ $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiResourcePublicationLib\P
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\UefiDevicePathLib\UefiDevicePathLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\UefiDriverModelLib\UefiDriverModelLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxeServicesTableLib\DxeServicesTableLib.inf
+$(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\EdkDxeSalLib\EdkDxeSalLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\EdkDxeRuntimeDriverLib\EdkDxeRuntimeDriverLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxeSmbusLib\DxeSmbusLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiSmbusLib\PeiSmbusLib.inf

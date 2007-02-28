@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -116,23 +116,24 @@ $(PROCESSOR)\SecMain.exe: $(SEC_OBJECTS)
 # Run ProcessDsc on our main description files to generate the
 # makefiles and package files. Specify -v option for more verbose output.
 # Specify "-xref filename" to generate a cross-reference file of 
-# basename-to-fileguid that can be used by VolInfo
+# basename-to-fileguid that can be used by VolInfo.
 #
 makefiles : 
-  $(PROCESSDSC)                             \
-    -d EFI_SOURCE=$(EDK_SOURCE)             \
-    -d EDK_SOURCE=$(EDK_SOURCE)             \
-    -d PROCESSOR=$(PROCESSOR)               \
-    -d PROJECT_NAME=$(PROJECT_NAME)         \
-    -d COMPRESS_METHOD=$(COMPRESS_METHOD)   \
-    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
-    -d SHELL_INF=$(SHELL_INF)               \
-    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
-    -d CAPSULE_INF=$(CAPSULE_INF)           \
-    -d DEVPATH_INF=$(DEVPATH_INF)           \
-    -d GRAPHICS_INF=$(GRAPHICS_INF)         \
-    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
-    -xref FV\Guid.xref                      \
+  $(PROCESSDSC)                                    \
+    -d EFI_SOURCE=$(EDK_SOURCE)                    \
+    -d EDK_SOURCE=$(EDK_SOURCE)                    \
+    -d PROCESSOR=$(PROCESSOR)                      \
+    -d PROJECT_NAME=$(PROJECT_NAME)                \
+    -d COMPRESS_METHOD=$(COMPRESS_METHOD)          \
+    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)             \
+    -d SHELL_INF=$(SHELL_INF)                      \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)                  \
+    -d CAPSULE_INF=$(CAPSULE_INF)                  \
+    -d ATAPI_PASS_THRU_INF=$(ATAPI_PASS_THRU_INF)  \
+    -d DEVPATH_INF=$(DEVPATH_INF)                  \
+    -d GRAPHICS_INF=$(GRAPHICS_INF)                \
+    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt        \
+    -xref FV\Guid.xref                             \
     $(PROJECT_NAME).dsc
     
 #
@@ -143,21 +144,22 @@ makefiles :
 # Dxe\Drivers\MyDriver\MyDriver.inf  FV=NULL  SKIP_FV_NULL=0
 #
 fast_makefiles : 
-  $(PROCESSDSC)                             \
-    -d EFI_SOURCE=$(EDK_SOURCE)             \
-    -d EDK_SOURCE=$(EDK_SOURCE)             \
-    -d PROCESSOR=$(PROCESSOR)               \
-    -d PROJECT_NAME=$(PROJECT_NAME)         \
-    -d COMPRESS_METHOD=$(COMPRESS_METHOD)   \
-    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
-    -d SHELL_INF=$(SHELL_INF)               \
-    -d UEFI_PREFIX=$(UEFI_PREFIX)           \
-    -d CAPSULE_INF=$(CAPSULE_INF)           \
-    -d DEVPATH_INF=$(DEVPATH_INF)           \
-    -d GRAPHICS_INF=$(GRAPHICS_INF)         \
-    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \
-    -xref FV\Guid.xref                      \
-    -d SKIP_FV_NULL=1                       \
+  $(PROCESSDSC)                                    \
+    -d EFI_SOURCE=$(EDK_SOURCE)                    \
+    -d EDK_SOURCE=$(EDK_SOURCE)                    \
+    -d PROCESSOR=$(PROCESSOR)                      \
+    -d PROJECT_NAME=$(PROJECT_NAME)                \
+    -d COMPRESS_METHOD=$(COMPRESS_METHOD)          \
+    -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)             \
+    -d SHELL_INF=$(SHELL_INF)                      \
+    -d UEFI_PREFIX=$(UEFI_PREFIX)                  \
+    -d CAPSULE_INF=$(CAPSULE_INF)                  \
+    -d ATAPI_PASS_THRU_INF=$(ATAPI_PASS_THRU_INF)  \
+    -d DEVPATH_INF=$(DEVPATH_INF)                  \
+    -d GRAPHICS_INF=$(GRAPHICS_INF)                \
+    -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt        \
+    -xref FV\Guid.xref                             \
+    -d SKIP_FV_NULL=1                              \
     $(PROJECT_NAME).dsc
 
 #
@@ -240,5 +242,36 @@ clean :
   - @if exist fv rd /s /q fv > NUL
   - @if exist Tools rd /s /q Tools > NUL
   - @if exist makefile.out del makefile.out > NUL
+  - @if exist module.* del module.* > NUL
   - @echo All targets cleaned
 
+#
+# Clean up all build directories except for tools.
+#
+cleanbuilds :
+  - @if exist *.bak del *.bak > NUL
+  - @if exist $(PROCESSOR) rd /s /q $(PROCESSOR) > NUL
+  - @if exist ipf rd /s /q ipf > NUL
+  - @if exist ebc rd /s /q ebc > NUL
+  - @if exist fv rd /s /q fv > NUL
+  - @if exist makefile.out del makefile.out > NUL
+  - @if exist module.* del module.* > NUL
+  - @echo All modules cleaned
+
+#
+# Clean up only the tools
+#
+cleantools :
+  - @if exist vc??.* del vc??.* > NUL
+  - @if exist Tools rd /s /q Tools > NUL
+  - @echo All tools cleaned
+
+#
+# Rebuild target, clean and build all
+#
+rebuild : clean all
+
+#
+# cleanall target to clean all build directories.
+#
+cleanall : clean

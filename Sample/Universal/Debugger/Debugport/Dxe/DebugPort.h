@@ -34,7 +34,7 @@ Abstract:
 // consumed protocols
 //
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
-#include EFI_PROTOCOL_DEFINITION (SerialIo)
+#include EFI_PROTOCOL_DEFINITION (DebugSerialIo)
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 
 //

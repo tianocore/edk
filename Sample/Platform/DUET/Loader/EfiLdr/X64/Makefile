@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2006, Intel Corporation                                                         
+#  Copyright (c) 2006 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -29,14 +29,6 @@ TOOLBIN_DIR = $(BUILD_DIR)\Tools
 #
 
 !INCLUDE $(BUILD_DIR)\PlatformTools.env
-
-!IF "$(EFI_ASSEMBLER_NAME)" == ""
-ASM32             = $(MASMPATH)\bin\ml
-ASMLINK32         = $(MASMPATH)\binr\link
-!ELSE
-ASM32             = $(EDK_TOOLS_BIN)\Ia32\$(EFI_ASSEMBLER_NAME)\bin\ml
-ASMLINK32         = $(EDK_TOOLS_BIN)\Ia32\$(EFI_ASSEMBLER_NAME)\binr\link
-!ENDIF
 
 #
 # Include paths
@@ -87,67 +79,67 @@ loader :      \
 # Generate loader object
 #
 $(BIN_DIR)\BootSect.obj: $(BUILD_DIR)\..\Loader\BootSector\BootSect.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\BootSect.obj $(BUILD_DIR)\..\Loader\BootSector\BootSect.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\BootSect.obj $(BUILD_DIR)\..\Loader\BootSector\BootSect.asm 
 
 $(BIN_DIR)\BootSect.com: $(BIN_DIR)\BootSect.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny BootSect.obj,BootSect.com,BootSect.map,,,
+  $(ASMLINK16) /tiny BootSect.obj,BootSect.com,BootSect.map,,,
 
 $(BIN_DIR)\Bs16.obj: $(BUILD_DIR)\..\Loader\BootSector\Bs16.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\Bs16.obj $(BUILD_DIR)\..\Loader\BootSector\Bs16.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Bs16.obj $(BUILD_DIR)\..\Loader\BootSector\Bs16.asm 
 
 $(BIN_DIR)\Bs16.com: $(BIN_DIR)\Bs16.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny Bs16.obj,Bs16.com,Bs16.map,,,
+  $(ASMLINK16) /tiny Bs16.obj,Bs16.com,Bs16.map,,,
 
 $(BIN_DIR)\Bs32.obj: $(BUILD_DIR)\..\Loader\BootSector\Bs32.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\Bs32.obj $(BUILD_DIR)\..\Loader\BootSector\Bs32.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Bs32.obj $(BUILD_DIR)\..\Loader\BootSector\Bs32.asm 
 
 $(BIN_DIR)\Bs32.com: $(BIN_DIR)\Bs32.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny Bs32.obj,Bs32.com,Bs32.map,,,
+  $(ASMLINK16) /tiny Bs32.obj,Bs32.com,Bs32.map,,,
 
 $(BIN_DIR)\Gpt.obj: $(BUILD_DIR)\..\Loader\BootSector\Gpt.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\Gpt.obj $(BUILD_DIR)\..\Loader\BootSector\Gpt.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Gpt.obj $(BUILD_DIR)\..\Loader\BootSector\Gpt.asm 
 
 $(BIN_DIR)\Gpt.com: $(BIN_DIR)\Gpt.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny Gpt.obj,Gpt.com,Gpt.map,,,
+  $(ASMLINK16) /tiny Gpt.obj,Gpt.com,Gpt.map,,,
 
 $(BIN_DIR)\Mbr.obj: $(BUILD_DIR)\..\Loader\BootSector\Mbr.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\Mbr.obj $(BUILD_DIR)\..\Loader\BootSector\Mbr.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Mbr.obj $(BUILD_DIR)\..\Loader\BootSector\Mbr.asm 
 
 $(BIN_DIR)\Mbr.com: $(BIN_DIR)\Mbr.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny Mbr.obj,Mbr.com,Mbr.map,,,
+  $(ASMLINK16) /tiny Mbr.obj,Mbr.com,Mbr.map,,,
 
 $(BIN_DIR)\Start64.obj: $(BUILD_DIR)\..\Loader\BootSector\Start64.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\Start64.obj $(BUILD_DIR)\..\Loader\BootSector\Start64.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Start64.obj $(BUILD_DIR)\..\Loader\BootSector\Start64.asm 
 
 $(BIN_DIR)\Start64.com: $(BIN_DIR)\Start64.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny Start64.obj,Start64.com,Start64.map,,,
+  $(ASMLINK16) /tiny Start64.obj,Start64.com,Start64.map,,,
 
 $(BIN_DIR)\St16_64.obj: $(BUILD_DIR)\..\Loader\BootSector\St16_64.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\St16_64.obj $(BUILD_DIR)\..\Loader\BootSector\St16_64.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\St16_64.obj $(BUILD_DIR)\..\Loader\BootSector\St16_64.asm 
 
 $(BIN_DIR)\St16_64.com: $(BIN_DIR)\St16_64.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny St16_64.obj,St16_64.com,St16_64.map,,,
+  $(ASMLINK16) /tiny St16_64.obj,St16_64.com,St16_64.map,,,
 
 $(BIN_DIR)\St32_64.obj: $(BUILD_DIR)\..\Loader\BootSector\St32_64.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\St32_64.obj $(BUILD_DIR)\..\Loader\BootSector\St32_64.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\St32_64.obj $(BUILD_DIR)\..\Loader\BootSector\St32_64.asm 
 
 $(BIN_DIR)\St32_64.com: $(BIN_DIR)\St32_64.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny St32_64.obj,St32_64.com,St32_64.map,,,
+  $(ASMLINK16) /tiny St32_64.obj,St32_64.com,St32_64.map,,,
 
 $(BIN_DIR)\Efi64.obj: $(BUILD_DIR)\..\Loader\BootSector\Efi64.asm
-  $(ASM32) /c /omf /Fo$(BIN_DIR)\Efi64.obj $(BUILD_DIR)\..\Loader\BootSector\Efi64.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Efi64.obj $(BUILD_DIR)\..\Loader\BootSector\Efi64.asm 
 
 $(BIN_DIR)\Efi64.com: $(BIN_DIR)\Efi64.obj
   cd $(BIN_DIR)
-  $(ASMLINK32) /tiny Efi64.obj,Efi64.com,Efi64.map,,,
+  $(ASMLINK16) /tiny Efi64.obj,Efi64.com,Efi64.map,,,
 
 $(BIN_DIR)\Efi64.com2: $(BIN_DIR)\Efi64.com
   $(TOOLBIN_DIR)\Splitfile $(BIN_DIR)\Efi64.com 135168
@@ -156,7 +148,11 @@ $(BIN_DIR)\Efildr.obj: $(LDRDEP)
   $(CC) $(C_FLAGS) $(BUILD_DIR)\..\Loader\EfiLdr\Efildr.c
 
 $(BIN_DIR)\Efildr.dll: $(BIN_DIR)\Efildr.obj
-  $(LINK) /nologo /MACHINE:AMD64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /INCREMENTAL:NO /MAP /FIXED /BASE:0x00010000 /OPT:REF /ALIGN:32 /MERGE:.data=.text /MERGE:.rdata=.text /DRIVER /ENTRY:EfiLoader $(BIN_DIR)\Efildr.obj $(BIN_DIR)\CompilerStub.lib $(BIN_DIR)\EfiCommonLib.lib $(BIN_DIR)\PeiLib.lib /OUT:$(BIN_DIR)\Efildr.dll
+  $(LINK) /nologo /MACHINE:AMD64 /SUBSYSTEM:CONSOLE /NODEFAULTLIB /INCREMENTAL:NO \
+          /MAP /FIXED /BASE:0x00010000 /OPT:REF /ALIGN:32 /MERGE:.data=.text \
+          /MERGE:.rdata=.text /DRIVER /ENTRY:EfiLoader $(BIN_DIR)\Efildr.obj \
+          $(BIN_DIR)\CompilerStub.lib $(BIN_DIR)\EfiCommonLib.lib $(BIN_DIR)\PeiLib.lib \
+          /OUT:$(BIN_DIR)\Efildr.dll /IGNORE:4078,4096
 
 $(BIN_DIR)\Efildr.efi: $(BIN_DIR)\Efildr.dll
   $(TOOLBIN_DIR)\FwImage app $(BIN_DIR)\Efildr.dll $(BIN_DIR)\Efildr.efi

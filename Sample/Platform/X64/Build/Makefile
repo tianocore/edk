@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2006, Intel Corporation                                                         
+#  Copyright (c) 2006 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -64,7 +64,7 @@ PROCESSOR=X64
 # Run ProcessDsc on our main description files to generate the
 # makefiles and package files. Specify -v option for more verbose output.
 # Specify "-xref filename" to generate a cross-reference file of 
-# basename-to-fileguid that can be used by VolInfo
+# basename-to-fileguid that can be used by VolInfo.
 #
 makefiles : 
   $(PROCESSDSC)                             \
@@ -97,7 +97,6 @@ libraries :
 components :
   $(MAKE) -f makefile.out components 
 
-
 #
 # Create a target to clean up all build directories
 #
@@ -111,5 +110,37 @@ clean :
   - @if exist fv rd /s /q fv > NUL
   - @if exist Tools rd /s /q Tools > NUL
   - @if exist makefile.out del makefile.out > NUL
+  - @if exist module.* del module.* > NUL
   - @echo All targets cleaned
 
+#
+# Clean up all build directories except for tools.
+#
+cleanbuilds :
+  - @if exist *.bak del *.bak > NUL
+  - @if exist ia32 rd /s/q ia32 > NUL
+  - @if exist ipf rd /s /q ipf > NUL
+  - @if exist ebc rd /s /q ebc > NUL
+  - @if exist x64 rd /s /q x64 > NUL
+  - @if exist fv rd /s /q fv > NUL
+  - @if exist makefile.out del makefile.out > NUL
+  - @if exist module.* del module.* > NUL
+  - @echo All modules cleaned
+
+#
+# Clean up only the tools
+#
+cleantools :
+  - @if exist vc??.* del vc??.* > NUL
+  - @if exist Tools rd /s /q Tools > NUL
+  - @echo All tools cleaned
+
+#
+# Rebuild target, clean and build all
+#
+rebuild : clean all
+
+#
+# cleanall target to clean all build directories.
+#
+cleanall : clean

@@ -24,7 +24,7 @@ EFI_DRIVER_BINDING_PROTOCOL gDhcp4DriverBinding = {
   Dhcp4DriverBindingSupported,
   Dhcp4DriverBindingStart,
   Dhcp4DriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

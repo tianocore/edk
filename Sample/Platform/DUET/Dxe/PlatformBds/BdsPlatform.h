@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,6 +27,11 @@ Abstract:
 #include "BdsLib.h"
 #include "GraphicsLib.h"
 #include "Pci22.h"
+#include "smbios.h"
+#include "Acpi1_0.h"
+#include "Acpi2_0.h"
+#include "Acpi3_0.h"
+#include "LegacyBiosMpTable.h"
 
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
 #include EFI_PROTOCOL_DEFINITION (WinNtThunk)
@@ -112,6 +117,8 @@ extern VENDOR_DEVICE_PATH         gTerminalTypeDeviceNode;
 #define PCI_IF_16550           0x02
 #define IS_PCI_16550SERIAL(_p)           IS_CLASS3 (_p, PCI_CLASS_SCC, PCI_SUBCLASS_SERIAL, PCI_IF_16550)
 
+#define EFI_SYSTEM_TABLE_MAX_ADDRESS 0xFFFFFFFF
+#define SYS_TABLE_PAD(ptr) (((~ptr) +1) & 0x07 )
 //
 // Platform Root Bridge
 //
@@ -229,6 +236,32 @@ PlatformBdsConnectConsole (
 EFI_STATUS
 PlatformBdsNoConsoleAction (
   VOID
+  )
+;
+
+EFI_STATUS
+ConvertMpsTable (
+  VOID       **Table
+  )
+;
+  
+EFI_STATUS
+ConvertSmbiosTable (
+  VOID       **Table
+  )
+;
+  
+EFI_STATUS
+ConvertAcpiTable (
+  UINTN      TableLen,
+  VOID       **Table
+  )
+;
+
+EFI_STATUS
+ConvertSystemTable (
+  EFI_GUID   *TableGuid,
+  VOID       **Table
   )
 ;
 

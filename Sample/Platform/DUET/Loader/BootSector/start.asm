@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 ;*
-;*   Copyright 2006, Intel Corporation                                                         
+;*   Copyright 2006 - 2007, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -226,7 +226,7 @@ DiskError:
 Halt:
         jmp   Halt
 ErrorString:
-        db 'U', 0ch, 'O', 0ch, 'L', 0ch, ' ', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '2', 0ch, '!', 0ch
+        db 'B', 0ch, 'o', 0ch, 'o', 0ch, 't', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '2', 0ch, '!', 0ch
         org     01feh
         dw      0aa55h
 

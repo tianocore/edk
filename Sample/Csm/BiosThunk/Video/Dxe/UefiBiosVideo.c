@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,7 +30,7 @@ EFI_DRIVER_BINDING_PROTOCOL gBiosVideoDriverBinding = {
   BiosVideoDriverBindingSupported,
   BiosVideoDriverBindingStart,
   BiosVideoDriverBindingStop,
-  0x00000024,
+  0x3,
   NULL,
   NULL
 };
@@ -975,7 +975,7 @@ CalculateEdidKey (
   //
   // Be sure no conflicts for all standard timing defined by VESA.
   //
-  Key = (EdidTiming->HorizontalResolution * 2) + EdidTiming->VerticalResolution + EdidTiming->RefreshRate;
+  Key = (EdidTiming->HorizontalResolution * 2) + EdidTiming->VerticalResolution;
   return Key;
 }
 
@@ -1432,7 +1432,6 @@ BiosVideoCheckForVbe (
       //
       Timing.HorizontalResolution = BiosVideoPrivate->VbeModeInformationBlock->XResolution;
       Timing.VerticalResolution = BiosVideoPrivate->VbeModeInformationBlock->YResolution;
-      Timing.RefreshRate = 60;
       if (SearchEdidTiming (&ValidEdidTiming, &Timing) == FALSE) {
         continue;
       }
@@ -1534,8 +1533,6 @@ BiosVideoCheckForVbe (
     CurrentModeData->VerticalResolution = BiosVideoPrivate->VbeModeInformationBlock->YResolution;
 
     CurrentModeData->BitsPerPixel  = BiosVideoPrivate->VbeModeInformationBlock->BitsPerPixel;
-
-    CurrentModeData->RefreshRate   = 60;
 
     BiosVideoPrivate->ModeData = ModeBuffer;
   }
@@ -1686,7 +1683,6 @@ BiosVideoCheckForVga (
   ModeBuffer->FrameBufferSize       = 0;
   ModeBuffer->HorizontalResolution  = 640;
   ModeBuffer->VerticalResolution    = 480;
-  ModeBuffer->RefreshRate           = 60;
   ModeBuffer->PixelFormat           = PixelBltOnly;
 
   BiosVideoPrivate->ModeData = ModeBuffer;

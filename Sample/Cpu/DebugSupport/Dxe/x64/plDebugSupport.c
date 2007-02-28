@@ -68,40 +68,32 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
   UINT8       *StubCopy;
 
+  StubCopy = *Stub;
+
   //
-  // First, allocate a new buffer and copy the stub code into it
+  // Fixup the stub code for this vector
   //
-  Status = gBS->AllocatePool (EfiBootServicesData, StubSize, Stub);
-  if (Status == EFI_SUCCESS) {
-    StubCopy = *Stub;
-    gBS->CopyMem (StubCopy, InterruptEntryStub, StubSize);
 
-    //
-    // Next fixup the stub code for this vector
-    //
+  // The stub code looks like this:
+  //
+  //    00000000  6A 00               push    0                       ; push vector number - will be modified before installed
+  //    00000002  E9                  db      0e9h                    ; jump rel32
+  //    00000003  00000000            dd      0                       ; fixed up to relative address of CommonIdtEntry
+  //
 
-    // The stub code looks like this:
-    //
-    //    00000000  6A 00               push    0                       ; push vector number - will be modified before installed
-    //    00000002  E9                  db      0e9h                    ; jump rel32
-    //    00000003  00000000            dd      0                       ; fixed up to relative address of CommonIdtEntry
-    //
+  //
+  // poke in the exception type so the second push pushes the exception type
+  //
+  StubCopy[0x1] = (UINT8) ExceptionType;
 
-    //
-    // poke in the exception type so the second push pushes the exception type
-    //
-    StubCopy[0x1] = (UINT8) ExceptionType;
+  //
+  // fixup the jump target to point to the common entry
+  //
+  *(UINT32 *) &StubCopy[0x3] = (UINT32)((UINTN) CommonIdtEntry - (UINTN) &StubCopy[StubSize]);
 
-    //
-    // fixup the jump target to point to the common entry
-    //
-    *(UINT32 *) &StubCopy[0x3] = (UINT32)((UINTN) CommonIdtEntry - (UINTN) &StubCopy[StubSize]);
-  }
-
-  return Status;
+  return EFI_SUCCESS;
 }
 
 STATIC
@@ -171,15 +163,12 @@ Returns:
 --*/
 {
   BOOLEAN     OldIntFlagState;
-  EFI_STATUS  Status;
 
   OldIntFlagState = WriteInterruptFlag (0);
   WriteIdt (ExceptionType, &(IdtEntryTable[ExceptionType].OrigDesc));
-  Status = gBS->FreePool ((VOID *) (UINTN) IdtEntryTable[ExceptionType].StubEntry);
-  EfiZeroMem (&IdtEntryTable[ExceptionType], sizeof (IDT_ENTRY));
   WriteInterruptFlag (OldIntFlagState);
 
-  return (Status);
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -384,16 +373,38 @@ Returns:
 
 --*/
 {
+  EFI_EXCEPTION_TYPE  ExceptionType;
+  EFI_STATUS          Status;
+
   if (!FxStorSupport ()) {
     return EFI_UNSUPPORTED;
-  } else {
-    IdtEntryTable = EfiLibAllocateZeroPool (sizeof (IDT_ENTRY) * NUM_IDT_ENTRIES);
-    if (IdtEntryTable != NULL) {
-      return EFI_SUCCESS;
-    } else {
-      return EFI_OUT_OF_RESOURCES;
+  }
+
+  IdtEntryTable = EfiLibAllocateZeroPool (sizeof (IDT_ENTRY) * NUM_IDT_ENTRIES);
+  if (IdtEntryTable == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  for (ExceptionType = 0; ExceptionType < NUM_IDT_ENTRIES; ExceptionType++) {
+    Status = gBS->AllocatePool (EfiBootServicesData, StubSize, (VOID **)&IdtEntryTable[ExceptionType].StubEntry);
+    if (EFI_ERROR (Status)) {
+      goto ErrorCleanup;
+    }
+
+    gBS->CopyMem ((VOID *)(UINTN)IdtEntryTable[ExceptionType].StubEntry, InterruptEntryStub, StubSize);
+  }
+  return EFI_SUCCESS;
+
+ErrorCleanup:
+
+  for (ExceptionType = 0; ExceptionType < NUM_IDT_ENTRIES; ExceptionType++) {
+    if (IdtEntryTable[ExceptionType].StubEntry != NULL) {
+      gBS->FreePool ((VOID *)(UINTN)IdtEntryTable[ExceptionType].StubEntry);
     }
   }
+  gBS->FreePool (IdtEntryTable);
+
+  return EFI_OUT_OF_RESOURCES;
 }
 
 EFI_STATUS
@@ -423,6 +434,9 @@ Returns:
 
   for (ExceptionType = 0; ExceptionType < NUM_IDT_ENTRIES; ExceptionType++) {
     ManageIdtEntryTable (NULL, ExceptionType);
+    if (IdtEntryTable[ExceptionType].StubEntry != NULL) {
+      gBS->FreePool ((VOID *)(UINTN)IdtEntryTable[ExceptionType].StubEntry);
+    }
   }
 
   gBS->FreePool (IdtEntryTable);

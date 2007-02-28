@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1311,7 +1311,6 @@ UpdateOptionSkipLines (
   )
 {
   UINTN   Index;
-  UINTN   Loop;
   UINT16  Width;
   UINTN   Row;
   UINTN   OriginalRow;
@@ -1325,19 +1324,6 @@ UpdateOptionSkipLines (
   ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
 
   if (OptionString != NULL) {
-    //
-    // If leading spaces on OptionString - remove the spaces
-    //
-    for (Index = 0; OptionString[Index] == L' '; Index++)
-    ;
-
-    for (Loop = 0; OptionString[Index] != CHAR_NULL; Index++) {
-      OptionString[Loop] = OptionString[Index];
-      Loop++;
-    }
-
-    OptionString[Loop]  = CHAR_NULL;
-
     Width               = (UINT16) gOptionBlockWidth;
 
     OriginalRow         = Row;
@@ -1661,19 +1647,23 @@ Returns:
             ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
 
             if (OptionString != NULL) {
-              //
-              // If leading spaces on OptionString - remove the spaces
-              //
-              for (Index = 0; OptionString[Index] == L' '; Index++) {
-                MenuOption->OptCol++;
-              }
+              if (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
+                  MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP
+                  ) {
+                //
+                // If leading spaces on OptionString - remove the spaces
+                //
+                for (Index = 0; OptionString[Index] == L' '; Index++) {
+                  MenuOption->OptCol++;
+                }
 
-              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-                OptionString[Count] = OptionString[Index];
-                Count++;
-              }
+                for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+                  OptionString[Count] = OptionString[Index];
+                  Count++;
+                }
 
-              OptionString[Count] = CHAR_NULL;
+                OptionString[Count] = CHAR_NULL;
+              }
 
               //
               // If this is a date or time op-code and is used to reflect an RTC, register the op-code
@@ -1873,18 +1863,22 @@ Returns:
           ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
           gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
           if (OptionString != NULL) {
-            //
-            // If leading spaces on OptionString - remove the spaces
-            //
-            for (Index = 0; OptionString[Index] == L' '; Index++)
-              ;
+            if (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
+                MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP
+                ) {
+              //
+              // If leading spaces on OptionString - remove the spaces
+              //
+              for (Index = 0; OptionString[Index] == L' '; Index++)
+                ;
 
-            for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-              OptionString[Count] = OptionString[Index];
-              Count++;
+              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+                OptionString[Count] = OptionString[Index];
+                Count++;
+              }
+
+              OptionString[Count] = CHAR_NULL;
             }
-
-            OptionString[Count] = CHAR_NULL;
 
             Width               = (UINT16) gOptionBlockWidth;
 
@@ -1991,19 +1985,22 @@ Returns:
         if (SubMenu) {
           ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
           if (OptionString != NULL) {
-            //
-            // If leading spaces on OptionString - remove the spaces
-            //
-            for (Index = 0; OptionString[Index] == L' '; Index++)
-              ;
+            if (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
+                MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP
+                ) {
+              //
+              // If leading spaces on OptionString - remove the spaces
+              //
+              for (Index = 0; OptionString[Index] == L' '; Index++)
+                ;
 
-            for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-              OptionString[Count] = OptionString[Index];
-              Count++;
+              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+                OptionString[Count] = OptionString[Index];
+                Count++;
+              }
+
+              OptionString[Count] = CHAR_NULL;
             }
-
-            OptionString[Count] = CHAR_NULL;
-
             Width               = (UINT16) gOptionBlockWidth;
 
             OriginalRow         = MenuOption->Row;
@@ -2094,14 +2091,14 @@ Returns:
           //
           // Pad String with spaces to simulate a clearing of the previous line
           //
-          for (; GetStringWidth (&FormattedString[Index * gHelpBlockWidth]) / 2 < gHelpBlockWidth;) {
-            EfiStrCat (&FormattedString[Index * gHelpBlockWidth], L" ");
+          for (; GetStringWidth (&FormattedString[Index * gHelpBlockWidth * 2]) / 2 < gHelpBlockWidth;) {
+            EfiStrCat (&FormattedString[Index * gHelpBlockWidth * 2], L" ");
           }
 
           PrintStringAt (
             LocalScreen.RightColumn - gHelpBlockWidth,
             Index + TopRow,
-            &FormattedString[Index * gHelpBlockWidth]
+            &FormattedString[Index * gHelpBlockWidth * 2]
             );
         }
       }

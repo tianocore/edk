@@ -119,6 +119,7 @@ static struct {
   BOOLEAN     NeverFail;                // always return success
   BOOLEAN     NoDupes;                  // to not list duplicate dependency files (for timing purposes)
   BOOLEAN     UseSumDeps;               // use summary dependency files if found
+  BOOLEAN     IsAsm;                    // The SourceFiles are assembler files
   INT8        TargetFileName[MAX_PATH]; // target object filename
   INT8        SumDepsPath[MAX_PATH];    // path to summary files
   INT8        *OutFileName;             // -o option
@@ -375,6 +376,7 @@ Returns:
     //
     if ((Fptr = fopen (SumDepsFile, "r")) != NULL) {
       PrintDependency (TargetFileName, SumDepsFile);
+      fclose (Fptr);
       return STATUS_SUCCESS;
     }
   }
@@ -475,20 +477,23 @@ Returns:
       Cptr++;
     }
     //
-    // Check for # character
+    // Check for # character, there is no # for asm
     //
-    if (*Cptr == '#') {
-      Cptr++;
+    if ((*Cptr == '#') || (mGlobals.IsAsm)) {
+      if (*Cptr == '#') {
+        Cptr++;
+      }
+      
       //
-      // Check for "include"
+      // Check for "include", case insensitive for asm
       //
       while (*Cptr && (isspace (*Cptr))) {
         Cptr++;
       }
-
-      if (strncmp (Cptr, "include", 7) == 0) {
+      if (((!mGlobals.IsAsm) && (strncmp (Cptr, "include", 7) == 0)) || 
+          (mGlobals.IsAsm && (_strnicmp (Cptr, "include", 7) == 0))) {
         //
-        // Skip over "include" and move on to filename as "file" or <file>
+        // Skip over "include" and move on to filename as "file" or <file> or file for asm
         //
         Cptr += 7;
         while (*Cptr && (isspace (*Cptr))) {
@@ -499,6 +504,26 @@ Returns:
           EndChar = '>';
         } else if (*Cptr == '"') {
           EndChar = '"';
+        } else if (mGlobals.IsAsm) {
+          //
+          // Handle include file for asm
+          // Set EndChar to null so we fall through on processing below.
+          //
+          EndChar = 0;
+          
+          //
+          // Look for the end of include file name
+          //
+          EndPtr = Cptr;
+          while (*EndPtr && (!isspace (*EndPtr))) {
+            EndPtr++;
+          }
+      
+          //
+          // Null terminate the filename and try to process it.
+          //
+          *EndPtr = 0;
+          Status  = ProcessFile (TargetFileName, Cptr, NestDepth + 1, ProcessedFiles);
         } else {
           //
           // Handle special #include MACRO_NAME(file)
@@ -656,6 +681,10 @@ Returns:
   strcpy (Str, DependentFile);
   ReplaceSymbols (Str, sizeof (Str));
   fprintf (mGlobals.OutFptr, "%s\n", Str);
+  //
+  // Add pseudo target to avoid incremental build failure when the file is deleted
+  //
+  fprintf (mGlobals.OutFptr, "%s : \n", Str);
 }
 
 static
@@ -1141,6 +1170,8 @@ ProcessArgs (
       mGlobals.QuietMode = TRUE;
     } else if (_stricmp (Argv[0], "-ignorenotfound") == 0) {
       mGlobals.IgnoreNotFound = TRUE;
+    } else if (_stricmp (Argv[0], "-asm") == 0) {
+      mGlobals.IsAsm = TRUE;
     } else if ((_stricmp (Argv[0], "-h") == 0) || (strcmp (Argv[0], "-?") == 0)) {
       Usage ();
       return STATUS_ERROR;
@@ -1275,6 +1306,7 @@ Returns:
     //    "      -nodupes         keep track of include files, don't rescan duplicates",
     //
     "      -usesumdeps path use summary dependency files in 'path' directory.",
+    "      -asm             The SourceFile is assembler file",
     "",
     NULL
   };

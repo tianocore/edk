@@ -447,7 +447,11 @@ PrepareHobMemoryDescriptor (
   )
 {
   gHob->MemoryDescriptor.MemDescCount = MemDescCount;
-  gHob->MemoryDescriptor.MemDesc = (EFI_MEMORY_DESCRIPTOR *)((UINTN)MemoryDescriptorTop - MemDescCount * sizeof(EFI_MEMORY_DESCRIPTOR));
+  gHob->MemoryDescriptor.MemDesc      = (EFI_MEMORY_DESCRIPTOR *)((UINTN)MemoryDescriptorTop - MemDescCount * sizeof(EFI_MEMORY_DESCRIPTOR));
+  //
+  // Make MemoryDescriptor.MemDesc page aligned
+  //
+  gHob->MemoryDescriptor.MemDesc      = (EFI_MEMORY_DESCRIPTOR *)((UINTN) gHob->MemoryDescriptor.MemDesc & ~EFI_PAGE_MASK);
 
   EfiCommonLibCopyMem (gHob->MemoryDescriptor.MemDesc, MemDesc, MemDescCount * sizeof(EFI_MEMORY_DESCRIPTOR));
 
@@ -485,7 +489,7 @@ PrepareHobDxeCore (
   UINT64                DxeCoreLength
   )
 {
-  gHob->DxeCore.MemoryAllocationHeader.MemoryBaseAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)DxeCoreEntryPoint;
+  gHob->DxeCore.MemoryAllocationHeader.MemoryBaseAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)DxeCoreImageBase;
   gHob->DxeCore.MemoryAllocationHeader.MemoryLength = DxeCoreLength;
   gHob->DxeCore.EntryPoint = (EFI_PHYSICAL_ADDRESS)(UINTN)DxeCoreEntryPoint;
 }
@@ -513,7 +517,10 @@ CompleteHobGeneration (
   )
 {
   gHob->MemoryAllocation.AllocDescriptor.MemoryBaseAddress  = gHob->Phit.EfiFreeMemoryTop;
-  gHob->MemoryAllocation.AllocDescriptor.MemoryLength       = gHob->Phit.EfiMemoryTop - gHob->Phit.EfiFreeMemoryTop;
+  //
+  // Reserve all the memory under Stack above FreeMemoryTop as allocated
+  //
+  gHob->MemoryAllocation.AllocDescriptor.MemoryLength       = gHob->Stack.AllocDescriptor.MemoryBaseAddress - gHob->Phit.EfiFreeMemoryTop;
 
   //
   // adjust Above1MB ResourceLength

@@ -45,6 +45,7 @@
 ;---------------------------------------------------------------------------
 ;;GenericPostSegment      SEGMENT USE16
 ;---------------------------------------------------------------------------
+EfiCommonLibCopyMem  PROTO  C Destination:PTR DWORD, Source:PTR DWORD, Count:DWORD
 
 ;****************************************************************************
 ; EbcLLCALLEXNative
@@ -61,16 +62,29 @@
 ; VOID EbcLLCALLEXNative(UINTN FuncAddr, UINTN NewStackPointer, VOID *FramePtr)
 _EbcLLCALLEXNative        PROC    NEAR    PUBLIC
       push   ebp
+      push   ebx
       mov    ebp, esp              ; standard function prolog
       
       ; Get function address in a register
       ; mov ecx, FuncAddr => mov ecx, dword ptr [FuncAddr]
-      mov    ecx, dword ptr [esp]+8
-
+      mov    ecx, dword ptr [esp]+10h
+      
       ; Set stack pointer to new value
       ; mov eax, NewStackPointer => mov eax, dword ptr [NewSp]
-      mov    eax, dword ptr [esp] + 0Ch
-      mov    esp, eax      
+      mov    eax, dword ptr [esp] + 18h
+      mov    edx, dword ptr [esp] + 14h
+      sub    eax, edx
+      sub    esp, eax      
+      mov    ebx, esp
+      push   ecx
+      push   eax
+      push   edx
+      push   ebx
+      call   EfiCommonLibCopyMem
+      pop    eax
+      pop    eax
+      pop    eax
+      pop    ecx
 
       ; Now call the external routine
       call  ecx
@@ -81,6 +95,7 @@ _EbcLLCALLEXNative        PROC    NEAR    PUBLIC
 
       ; Standard function epilog
       mov      esp, ebp
+      pop      ebx
       pop      ebp
       ret
 _EbcLLCALLEXNative    ENDP

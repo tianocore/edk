@@ -109,7 +109,7 @@ EFI_DRIVER_BINDING_PROTOCOL         gUSBFloppyDriverBinding = {
   USBFloppyDriverBindingSupported,
   USBFloppyDriverBindingStart,
   USBFloppyDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -280,8 +280,7 @@ USBFloppyDriverBindingStart (
   UsbFloppyDevice->BlkIo.WriteBlocks  = USBFloppyWriteBlocks;
   UsbFloppyDevice->BlkIo.FlushBlocks  = USBFloppyFlushBlocks;
   UsbFloppyDevice->AtapiProtocol      = AtapiProtocol;
-  UsbFloppyDevice->NeedReadCapacity   = TRUE;
-
+  
   //
   // Identify drive type and retrieve media information.
   //
@@ -566,6 +565,7 @@ USBFloppyReadBlocks (
     if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
+	  goto Done;
     }
 
     if (NumberOfBlocks > BLOCK_UNIT) {
@@ -714,6 +714,7 @@ USBFloppyWriteBlocks (
     if (EFI_ERROR (Status)) {
       This->Reset (This, TRUE);
       Status = EFI_DEVICE_ERROR;
+	  goto Done;
     }
 
     if (NumberOfBlocks > BLOCK_UNIT) {

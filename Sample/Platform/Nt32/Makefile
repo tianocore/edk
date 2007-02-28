@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c)  2006, Intel Corporation                                                         
+#  Copyright (c)  2006 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -31,33 +31,43 @@
 !ENDIF
 
 ######################################################################################
-#    Default build target is efi
+#    Default build target
 ######################################################################################
-all : efi
+all : uefi
 
 ######################################################################################
 #    Target efi use default feature flags
 ######################################################################################
-efi : Pseudotargets
-    @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
-    @if exist $@\Config.env del /f $@\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $@\Config.env
-    @echo UEFI_MODE                      = NO                  >> $@\Config.env
-    @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
-    @cd $@
+BUILD_DIR = efi
+
+$(BUILD_DIR)dir : Pseudotargets
+    @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    @copy Build\*.* $(BUILD_DIR)
+    @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $(BUILD_DIR)\Config.env
+    @echo UEFI_MODE                      = NO                  >> $(BUILD_DIR)\Config.env
+    @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
+
+$(BUILD_DIR) : $(BUILD_DIR)dir
+    @cd $(BUILD_DIR)
     @nmake all
     @cd ..
 
 ######################################################################################
 #    Feature flags for target uefi
 ######################################################################################
-uefi : Pseudotargets
-    @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
-    @if exist $@\Config.env del /f $@\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $@\Config.env
-    @echo UEFI_MODE                      = YES                 >> $@\Config.env
-    @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
-    @cd $@
+BUILD_DIR = uefi
+
+$(BUILD_DIR)dir : Pseudotargets
+    @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    @copy Build\*.* $(BUILD_DIR)
+    @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $(BUILD_DIR)\Config.env
+    @echo UEFI_MODE                      = YES                 >> $(BUILD_DIR)\Config.env
+    @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
+
+$(BUILD_DIR) : $(BUILD_DIR)dir
+    @cd $(BUILD_DIR)
     @nmake all
     @cd ..
 
@@ -73,8 +83,22 @@ ueficlean:
     @nmake clean
     @cd ..
 
+eficleanall:
+    @cd efi
+    @nmake cleanall
+    @cd ..
+
+ueficleanall:
+    @cd uefi
+    @nmake cleanall
+    @cd ..
+
 clean:
     - @if exist efi nmake eficlean
-    - @rd /s /q efi > NUL 2>&1
     - @if exist uefi nmake ueficlean
+
+cleanall:
+    - @if exist efi nmake eficleanall
+    - @rd /s /q efi > NUL 2>&1
+    - @if exist uefi nmake ueficleanall
     - @rd /s /q uefi > NUL 2>&1

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -45,19 +45,6 @@ EFI_IP4_CONFIG_DATA  mIpIoDefaultIpConfigData = {
   FALSE,
   0,
   0
-};
-
-ICMP_ERROR_INFO  mIcmpErrMap[] = {
-  { EFI_NETWORK_UNREACHABLE,  FALSE, TRUE  }, // ICMP_ERR_UNREACH_NET
-  { EFI_HOST_UNREACHABLE,     FALSE, TRUE  }, // ICMP_ERR_UNREACH_HOST
-  { EFI_PROTOCOL_UNREACHABLE, TRUE,  TRUE  }, // ICMP_ERR_UNREACH_PROTOCOL
-  { EFI_PORT_UNREACHABLE,     TRUE,  TRUE  }, // ICMP_ERR_UNREACH_PORT
-  { EFI_ICMP_ERROR,           TRUE,  TRUE  }, // ICMP_ERR_MSGSIZE
-  { EFI_ICMP_ERROR,           FALSE, TRUE  }, // ICMP_ERR_UNREACH_SRCFAIL
-  { EFI_HOST_UNREACHABLE,     FALSE, TRUE  }, // ICMP_ERR_TIMXCEED_INTRANS
-  { EFI_HOST_UNREACHABLE,     FALSE, TRUE  }, // ICMP_ERR_TIMEXCEED_REASS
-  { EFI_ICMP_ERROR,           FALSE, FALSE }, // ICMP_ERR_QUENCH
-  { EFI_ICMP_ERROR,           FALSE, TRUE  }  // ICMP_ERR_PARAMPROB
 };
 
 STATIC
@@ -1359,5 +1346,58 @@ Returns:
   // No match.
   //
   return NULL;
+}
+
+EFI_STATUS
+IpIoGetIcmpErrStatus (
+  IN  ICMP_ERROR  IcmpError,
+  OUT BOOLEAN     *IsHard, OPTIONAL
+  OUT BOOLEAN     *Notify OPTIONAL
+  )
+/*++
+
+Routine Description:
+
+  Get the ICMP error map information, the ErrorStatus will be returned.
+  The IsHard and Notify are optional. If they are not NULL, this rouine will
+  fill them.
+  We move IcmpErrMap[] to local variable to enable EBC build.
+
+Arguments:
+
+  IcmpError     - IcmpError Type
+  IsHard        - Whether it is a hard error
+  Notify        - Whether it need to notify SockError
+
+Returns:
+
+  ICMP Error Status
+
+--*/
+{
+  ICMP_ERROR_INFO  IcmpErrMap[] = {
+    { EFI_NETWORK_UNREACHABLE,  FALSE, TRUE  }, // ICMP_ERR_UNREACH_NET
+    { EFI_HOST_UNREACHABLE,     FALSE, TRUE  }, // ICMP_ERR_UNREACH_HOST
+    { EFI_PROTOCOL_UNREACHABLE, TRUE,  TRUE  }, // ICMP_ERR_UNREACH_PROTOCOL
+    { EFI_PORT_UNREACHABLE,     TRUE,  TRUE  }, // ICMP_ERR_UNREACH_PORT
+    { EFI_ICMP_ERROR,           TRUE,  TRUE  }, // ICMP_ERR_MSGSIZE
+    { EFI_ICMP_ERROR,           FALSE, TRUE  }, // ICMP_ERR_UNREACH_SRCFAIL
+    { EFI_HOST_UNREACHABLE,     FALSE, TRUE  }, // ICMP_ERR_TIMXCEED_INTRANS
+    { EFI_HOST_UNREACHABLE,     FALSE, TRUE  }, // ICMP_ERR_TIMEXCEED_REASS
+    { EFI_ICMP_ERROR,           FALSE, FALSE }, // ICMP_ERR_QUENCH
+    { EFI_ICMP_ERROR,           FALSE, TRUE  }  // ICMP_ERR_PARAMPROB
+  };
+
+  ASSERT ((IcmpError >= ICMP_ERR_UNREACH_NET) && (IcmpError <= ICMP_ERR_PARAMPROB));
+
+  if (IsHard != NULL) {
+    *IsHard = IcmpErrMap[IcmpError].IsHard;
+  }
+
+  if (Notify != NULL) {
+    *Notify = IcmpErrMap[IcmpError].Notify;
+  }
+
+  return IcmpErrMap[IcmpError].Error;
 }
 

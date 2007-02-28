@@ -31,7 +31,7 @@ Abstract:
 static EFI_DATA_HUB_PROTOCOL  *mDataHub;
 static EFI_LIST_ENTRY         *mRecordHead;
 static EFI_LIST_ENTRY         *mRecordTail;
-static INTN                   mRecordNum;
+static INTN                   mRecordNum = 0;
 static EFI_EVENT              mLogDataHubEvent;
 static EFI_LOCK               mStatusCodeReportLock = EFI_INITIALIZE_LOCK_VARIABLE(EFI_TPL_HIGH_LEVEL);
 static BOOLEAN                mEventHandlerActive   = FALSE;

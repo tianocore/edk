@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -35,6 +35,8 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
+#include EFI_PROTOCOL_DEFINITION (EdidDiscovered)
+#include EFI_PROTOCOL_DEFINITION (EdidActive)
 
 //
 // Cirrus Logic 5430 PCI Configuration Header values
@@ -50,10 +52,16 @@ Revision History
 #define CIRRUS_LOGIC_5430_GRAPHICS_OUTPUT_MODE_COUNT 3
 
 typedef struct {
-  UINT32  HorizontalResolution;
-  UINT32  VerticalResolution;
-  UINT32  ColorDepth;
-  UINT32  RefreshRate;
+  UINT32                     ModeNumber;
+  UINT32                     HorizontalResolution;
+  UINT32                     VerticalResolution;
+  UINT32                     ColorDepth;
+  UINT32                     RefreshRate;
+  EFI_GRAPHICS_PIXEL_FORMAT  PixelFormat;
+  EFI_PIXEL_BITMASK          PixelInformation;
+  UINT32                     PixelsPerScanLine;
+  EFI_PHYSICAL_ADDRESS       FrameBufferBase;
+  UINTN                      FrameBufferSize;
 } CIRRUS_LOGIC_5430_GRAPHICS_OUTPUT_MODE_DATA;
 
 //
@@ -67,12 +75,17 @@ typedef struct {
   UINT64                                       Signature;
   EFI_HANDLE                                   Handle;
   EFI_PCI_IO_PROTOCOL                          *PciIo;
+  EFI_DEVICE_PATH_PROTOCOL                     *DevicePath;
   EFI_GRAPHICS_OUTPUT_PROTOCOL                 GraphicsOutput;
+  EFI_EDID_DISCOVERED_PROTOCOL                 EdidDiscovered;
+  EFI_EDID_ACTIVE_PROTOCOL                     EdidActive;
 
   //
   // GOP Private Data
   //
   BOOLEAN                                      HardwareNeedsStarting;
+  UINTN                                        CurrentMode;
+  UINTN                                        MaxMode;
   CIRRUS_LOGIC_5430_GRAPHICS_OUTPUT_MODE_DATA  ModeData[CIRRUS_LOGIC_5430_GRAPHICS_OUTPUT_MODE_COUNT];
   UINT8                                        *LineBuffer;
 } CIRRUS_LOGIC_5430_PRIVATE_DATA;
@@ -101,6 +114,19 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gCirrusLogic5430ComponentName;
 #define DAC_PIXEL_MASK_REGISTER 0x3c6
 #define PALETTE_INDEX_REGISTER  0x3c8
 #define PALETTE_DATA_REGISTER   0x3c9
+
+//
+// CirrusLogic5430 Framebuffer
+//
+#define CIRRUS_LOGIC_5430_FRAMEBUFFER_LENGTH       0x00800000
+
+//
+// CirrusLogic5430 PixelBitMask
+//
+#define CIRRUS_LOGIC_5430_RED_MASK        0xe0
+#define CIRRUS_LOGIC_5430_GREEN_MASK      0x1c
+#define CIRRUS_LOGIC_5430_BLUE_MASK       0x03
+#define CIRRUS_LOGIC_5430_RESERVED_MASK   0x00
 
 //
 // GOP Hardware abstraction internal worker functions

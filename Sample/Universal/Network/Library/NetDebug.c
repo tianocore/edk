@@ -399,6 +399,7 @@ Returns:
                     Time.Minute,
                     Time.Second
                     );
+  Len--;
 
   Len += (UINT32) ASPrint (
                     Buf + Len, 
@@ -409,6 +410,7 @@ Returns:
                     Line,
                     File
                     );
+  Len--;
 
   //
   // OK, patch the IP length/checksum and UDP length fields.

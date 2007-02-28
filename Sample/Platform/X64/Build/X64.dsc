@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2006, Intel Corporation                                                         
+# Copyright (c) 2006 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -68,9 +68,13 @@ DEFINE PROCESSOR=IA32
 
 !include "$(EDK_SOURCE)\Sample\Platform\EdkLib32.dsc"
 
+#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLib32.dsc"
+
 DEFINE PROCESSOR=X64
 
 !include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
+
+#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLibAll.dsc"
 
 [=============================================================================]
 #
@@ -157,7 +161,7 @@ Sample\Universal\Disk\UnicodeCollation\English\Dxe\English.inf
 Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
 Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
 Sample\Bus\Pci\IdeBus\Dxe\IdeBus.inf
-Sample\Platform\Generic\Logo\Logo.inf                                 PACKAGE=Logo
+Sample\Platform\Generic\Logo\Logo.inf
 Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf
 Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Bus\Pci\PciBusNoEnumeration\Dxe\PciBusNoEnumeration.inf

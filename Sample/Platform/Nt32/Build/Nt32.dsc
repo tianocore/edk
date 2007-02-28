@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2006, Intel Corporation                                                         
+# Copyright (c) 2004 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -72,7 +72,7 @@ EFI_NV_FTW_SPARE_LENGTH       = 0x10000
 #
 # Commands to build firmware volumes using the FV INF file
 #
-Fv\$(FV_FILENAME).fv : $(DSC_FILENAME) $($(FV_FILENAME)_FILES)
+Fv\$(FV_FILENAME).fv : Fv\$(FV_FILENAME).inf $($(FV_FILENAME)_FILES)
   @cd Fv
   $(GENFVIMAGE) -I $(FV_FILENAME).inf
   @cd ..
@@ -211,7 +211,7 @@ Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubS
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtPlatformStatusCode\$(PROJECT_NAME)\RtPlatformStatusCode.inf
 
-Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
+#Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
 
 [=============================================================================]
@@ -264,7 +264,7 @@ Foundation\Core\Dxe\DxeMain.inf                                                 
 #
 # APRIORI list, this is a list of drivers run without dependencies
 #
-#$(BUILD_DIR)\AprioriList.inf BASE_NAME=AprioriFvMain FV=FvRecovery MAKEFILE_NAME=AprioriFvMain
+#Sample\Universal\FirmwareVolume\Apriori\Dxe\AprioriList.inf FILE_GUID=$(EFI_APRIORI_GUID) FV=FvRecovery
 
 #
 # Guided Section Extraction Protocol used to authenticate images
@@ -315,7 +315,7 @@ Sample\Universal\Disk\DiskIo\Dxe\DiskIo.inf
 Sample\Universal\Ebc\Dxe\Ebc.inf
 Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf
 Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
-Sample\Platform\Generic\Logo\Logo.inf                                 PACKAGE=Logo
+Sample\Platform\Generic\Logo\Logo.inf
 Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Bus\Pci\PciBus\Dxe\PciBus.inf
 Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.Inf                   
@@ -339,10 +339,9 @@ Sample\Bus\Pci\CirrusLogic\Dxe\$(UEFI_PREFIX)CirrusLogic5430.inf
 Sample\Bus\Pci\IdeBus\Dxe\idebus.inf                                          
 Sample\Bus\Pci\Uhci\Dxe\Uhci.inf                                              
 Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                                       
-Sample\Bus\Pci\AtapiExtPassThru\Dxe\AtapiExtPassThru.inf
-Sample\Bus\Pci\AtapiPassThru\Dxe\AtapiPassThru.inf
-Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
-Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf
+#$(ATAPI_PASS_THRU_INF)
+#Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
+#Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf
 Sample\Bus\Usb\UsbBot\Dxe\UsbBot.inf                                          
 Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf                                          
 Sample\Bus\Usb\UsbCbi\Dxe\Cbi0\UsbCbi0.inf                                    

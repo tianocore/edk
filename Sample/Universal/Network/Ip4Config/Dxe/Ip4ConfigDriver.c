@@ -536,7 +536,7 @@ EFI_DRIVER_BINDING_PROTOCOL gIp4ConfigDriverBinding = {
   Ip4ConfigDriverBindingSupported,
   Ip4ConfigDriverBindingStart,
   Ip4ConfigDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

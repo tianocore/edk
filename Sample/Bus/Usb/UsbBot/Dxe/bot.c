@@ -74,7 +74,7 @@ EFI_DRIVER_BINDING_PROTOCOL   gUsbBotDriverBinding = {
   BotDriverBindingSupported,
   BotDriverBindingStart,
   BotDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -690,7 +690,7 @@ BotCommandPhase (
   cbw.dCBWSignature           = CBWSIG;
   cbw.dCBWTag                 = 0x01;
   cbw.dCBWDataTransferLength  = DataTransferLength;
-  cbw.bmCBWFlags              = (UINT8) (Direction << 7);
+  cbw.bmCBWFlags              = ((Direction == EfiUsbDataIn) ? 0x80 : 0);
   cbw.bCBWCBLength            = CommandSize;
 
   EfiCopyMem (cbw.CBWCB, Command, CommandSize);

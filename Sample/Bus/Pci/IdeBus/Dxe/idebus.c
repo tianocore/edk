@@ -40,7 +40,7 @@ EFI_DRIVER_BINDING_PROTOCOL gIDEBusDriverBinding = {
   IDEBusDriverBindingSupported,
   IDEBusDriverBindingStart,
   IDEBusDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -251,6 +251,8 @@ IDEBusDriverBindingStart (
   EFI_IDENTIFY_DATA                 IdentifyData;
   EFI_ATA_COLLECTIVE_MODE           *SupportedModes;
 
+  UINT64                            Supports;
+
   IdeBusDriverPrivateData = NULL;
   SupportedModes          = NULL;
 
@@ -356,10 +358,19 @@ IDEBusDriverBindingStart (
 
   Status = PciIo->Attributes (
                     PciIo,
-                    EfiPciIoAttributeOperationEnable,
-                    EFI_PCI_DEVICE_ENABLE,
-                    NULL
+                    EfiPciIoAttributeOperationSupported,
+                    0,
+                    &Supports
                     );
+  if (!EFI_ERROR (Status)) {
+    Supports &= EFI_PCI_DEVICE_ENABLE;
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      Supports,
+                      NULL
+                      );
+  }
   if (EFI_ERROR (Status)) {
     goto ErrorExit;
   }
@@ -903,6 +914,7 @@ IDEBusDriverBindingStop (
   BOOLEAN                     AllChildrenStopped;
   UINTN                       Index;
   IDE_BUS_DRIVER_PRIVATE_DATA *IdeBusDriverPrivateData;
+  UINT64                      Supports;
 
   IdeBusDriverPrivateData = NULL;
 
@@ -917,12 +929,23 @@ IDEBusDriverBindingStop (
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (!EFI_ERROR (Status)) {
-      PciIo->Attributes (
-              PciIo,
-              EfiPciIoAttributeOperationDisable,
-              EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO | EFI_PCI_DEVICE_ENABLE,
-              NULL
-              );
+      Status = PciIo->Attributes (
+                        PciIo,
+                        EfiPciIoAttributeOperationSupported,
+                        0,
+                        &Supports
+                        );
+      if (!EFI_ERROR (Status)) {
+        Supports &= (EFI_PCI_DEVICE_ENABLE               |
+                     EFI_PCI_IO_ATTRIBUTE_IDE_PRIMARY_IO |
+                     EFI_PCI_IO_ATTRIBUTE_IDE_SECONDARY_IO);
+        Status = PciIo->Attributes (
+                          PciIo,
+                          EfiPciIoAttributeOperationDisable,
+                          Supports,
+                          NULL
+                          );
+      }
     }
 
     gBS->OpenProtocol (

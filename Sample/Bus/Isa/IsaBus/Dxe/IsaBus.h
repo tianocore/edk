@@ -27,7 +27,6 @@ Revision History:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include "..\..\IsaIoDefinitions.h"
 #include "EfiCompNameSupport.h"
 #include "ComponentName.h"
 
@@ -42,6 +41,7 @@ Revision History:
 // Produced Protocols
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
+#include EFI_PROTOCOL_DEFINITION (IsaIo)
 
 //
 // Driver Consumed Protocols and GUIDs

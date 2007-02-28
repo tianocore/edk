@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c)  2006, Intel Corporation                                                         
+#  Copyright (c)  2006 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -31,63 +31,83 @@
 !ENDIF
 
 ######################################################################################
-#    Default build target is efi32
+#    Default build target
 ######################################################################################
-all : efi32
+all : uefi64
 
 ######################################################################################
 #    Feature flags for target efi32
 ######################################################################################
-efi32 : Pseudotargets
-    @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
-    @if exist $@\Config.env del /f $@\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $@\Config.env
-    @echo UEFI_MODE                      = NO                  >> $@\Config.env
-    @echo EFI_BUILD_TARGET_X64           = NO                  >> $@\Config.env
-    @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
-    @cd $@
+BUILD_DIR = efi32
+
+$(BUILD_DIR)dir : Pseudotargets
+    @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    @copy Build\*.* $(BUILD_DIR)
+    @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @echo UEFI_MODE                      = NO                  >> $(BUILD_DIR)\Config.env
+    @echo EFI_BUILD_TARGET_X64           = NO                  >> $(BUILD_DIR)\Config.env
+    @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
+
+$(BUILD_DIR) : $(BUILD_DIR)dir
+    @cd $(BUILD_DIR)
     @nmake all
     @cd ..
 
 ######################################################################################
 #    Feature flags for target efi64
 ######################################################################################
-efi64 : Pseudotargets
-    @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
-    @if exist $@\Config.env del /f $@\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $@\Config.env
-    @echo UEFI_MODE                      = NO                  >> $@\Config.env
-    @echo EFI_BUILD_TARGET_X64           = YES                 >> $@\Config.env
-    @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
-    @cd $@
+BUILD_DIR = efi64
+
+$(BUILD_DIR)dir : Pseudotargets
+    @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    @copy Build\*.* $(BUILD_DIR)
+    @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @echo UEFI_MODE                      = NO                  >> $(BUILD_DIR)\Config.env
+    @echo EFI_BUILD_TARGET_X64           = YES                 >> $(BUILD_DIR)\Config.env
+    @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
+
+$(BUILD_DIR) : $(BUILD_DIR)dir
+    @cd $(BUILD_DIR)
     @nmake all
     @cd ..
 
 ######################################################################################
 #    Feature flags for target uefi32
 ######################################################################################
-uefi32 : Pseudotargets
-    @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
-    @if exist $@\Config.env del /f $@\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $@\Config.env
-    @echo UEFI_MODE                      = YES                 >> $@\Config.env
-    @echo EFI_BUILD_TARGET_X64           = NO                  >> $@\Config.env
-    @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
-    @cd $@
+BUILD_DIR = uefi32
+
+$(BUILD_DIR)dir : Pseudotargets
+    @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    @copy Build\*.* $(BUILD_DIR)
+    @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @echo UEFI_MODE                      = YES                 >> $(BUILD_DIR)\Config.env
+    @echo EFI_BUILD_TARGET_X64           = NO                  >> $(BUILD_DIR)\Config.env
+    @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
+
+$(BUILD_DIR) : $(BUILD_DIR)dir
+    @cd $(BUILD_DIR)
     @nmake all
     @cd ..
 
 ######################################################################################
 #    Feature flags for target uefi64
 ######################################################################################
-uefi64 : Pseudotargets
-    @if not exist $@ ( mkdir $@ & xcopy Build $@ /E ) else ( copy Build\*.* $@ )
-    @if exist $@\Config.env del /f $@\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $@\Config.env
-    @echo UEFI_MODE                      = YES                 >> $@\Config.env
-    @echo EFI_BUILD_TARGET_X64           = YES                 >> $@\Config.env
-    @echo BUILD_TARGET_DIRECTORY         = $@                  >> $@\Config.env
-    @cd $@
+BUILD_DIR = uefi64
+
+$(BUILD_DIR)dir : Pseudotargets
+    @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
+    @copy Build\*.* $(BUILD_DIR)
+    @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @echo UEFI_MODE                      = YES                 >> $(BUILD_DIR)\Config.env
+    @echo EFI_BUILD_TARGET_X64           = YES                 >> $(BUILD_DIR)\Config.env
+    @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
+
+$(BUILD_DIR) : $(BUILD_DIR)dir
+    @cd $(BUILD_DIR)
     @nmake all
     @cd ..
 
@@ -113,12 +133,38 @@ uefi64clean:
     @nmake clean
     @cd ..
 
+efi32cleanall:
+    @cd efi32
+    @nmake cleanall
+    @cd ..
+
+efi64cleanall:
+    @cd efi64
+    @nmake cleanall
+    @cd ..
+
+uefi32cleanall:
+    @cd uefi32
+    @nmake cleanall
+    @cd ..
+
+uefi64cleanall:
+    @cd uefi64
+    @nmake cleanall
+    @cd ..
+
 clean:
     - @if exist efi32 nmake efi32clean
-    - @rd /s /q efi32 > NUL 2>&1
     - @if exist efi64 nmake efi64clean
-    - @rd /s /q efi64 > NUL 2>&1
     - @if exist uefi32 nmake uefi32clean
-    - @rd /s /q uefi32 > NUL 2>&1
     - @if exist uefi64 nmake uefi64clean
+
+cleanall:
+    - @if exist efi32 nmake efi32cleanall
+    - @rd /s /q efi32 > NUL 2>&1
+    - @if exist efi64 nmake efi64cleanall
+    - @rd /s /q efi64 > NUL 2>&1
+    - @if exist uefi32 nmake uefi32cleanall
+    - @rd /s /q uefi32 > NUL 2>&1
+    - @if exist uefi64 nmake uefi64cleanall
     - @rd /s /q uefi64 > NUL 2>&1

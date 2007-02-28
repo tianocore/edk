@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2006, Intel Corporation                                                         
+# Copyright (c) 2006 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -57,7 +57,7 @@ PLATFORM                  = $(PROJECT_NAME)
 #
 # ORIGIN: [Build.Fv.*] section of the platform DSC file
 #
-Fv\$(FV_FILENAME).fv : $(DSC_FILENAME) $($(FV_FILENAME)_FILES) Fv\$(FV_FILENAME).inf
+Fv\$(FV_FILENAME).fv : Fv\$(FV_FILENAME).inf $($(FV_FILENAME)_FILES)
   @cd Fv
   $(GENFVIMAGE) -I $(FV_FILENAME).inf
   @cd ..
@@ -121,6 +121,11 @@ DEFINE EDK_PREFIX=
 
 !include "$(EDK_SOURCE)\Sample\Platform\EdkLibAll.dsc"
 
+#
+# EdkII Glue Library
+#
+#!include "$(EDK_SOURCE)\Sample\Platform\EdkIIGlueLibAll.dsc"
+
 [=============================================================================]
 #
 # These are platform specific libraries that must be built prior to building
@@ -154,7 +159,6 @@ Foundation\Library\Thunk16\Thunk16Lib.inf
 # The default package
 #
 DEFINE PACKAGE=Default
-#DEFINE PACKAGE=DefaultCompact
 
 #
 # Select the default FV's
@@ -207,7 +211,7 @@ $(CAPSULE_INF)
 #
 Sample\Platform\Generic\Dxe\ConPlatform\ConPlatform.inf
 Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
-#Sample\Platform\Generic\Logo\Logo.inf                                 PACKAGE=Logo
+#Sample\Platform\Generic\Logo\Logo.inf
 Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.inf
 
 #
@@ -283,7 +287,8 @@ Sample\Bus\Usb\UsbCbi\Dxe\Cbi1\UsbCbi1.inf
 Sample\Bus\Usb\UsbKb\Dxe\UsbKb.inf
 Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf
 #
-# For EHCI, we route it to classic host controller.
+# For EHCI, we can route it to classic host controller by 
+# using EhciRouting.inf instead of Ehci.inf
 #
 Sample\Bus\Pci\Ehci\Dxe\Ehci.inf
 #Sample\Bus\Pci\EhciRouting\Dxe\EhciRouting.inf
@@ -364,8 +369,7 @@ Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 #
 # SCSI Support
 #
-#Sample\Bus\Pci\AtapiExtPassThru\Dxe\AtapiExtPassThru.inf
-#Sample\Bus\Pci\AtapiPassThru\Dxe\AtapiPassThru.inf
+#$(ATAPI_PASS_THRU_INF)
 #Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
 #Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf
 

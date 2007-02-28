@@ -95,12 +95,13 @@ static struct {
   BOOLEAN                     VerboseScan;
   BOOLEAN                     UnquotedStrings;                  // -uqs option
   INT8                        OutputDatabaseFileName[MAX_PATH];
-  INT8                        OutputDependencyFileName[MAX_PATH];
   INT8                        StringHFileName[MAX_PATH];
   INT8                        StringCFileName[MAX_PATH];        // output .C filename
   INT8                        DumpUFileName[MAX_PATH];          // output unicode dump file name
   INT8                        HiiExportPackFileName[MAX_PATH];  // HII export pack file name
   INT8                        BaseName[MAX_PATH];               // base filename of the strings file
+  INT8                        OutputDependencyFileName[MAX_PATH];
+  FILE                        *OutputDependencyFptr;
   UINT32                      Mode;
 } mGlobals;
 
@@ -285,18 +286,6 @@ StringDBCreateHiiExportPack (
   INT8                *OutputFileName
   );
 
-static
-void
-EmptyDependency (
-    void
-  );
-  
-static
-void
-AddDependency (
-  INT8          *FileName
-  );
-  
 int
 main (
   int   Argc,
@@ -368,8 +357,16 @@ Returns:
     // Parsing a unicode strings file
     //
     mGlobals.SourceFiles.ControlCharacter = DEFAULT_CONTROL_CHARACTER;
-    EmptyDependency ();
+    if (mGlobals.OutputDependencyFileName[0] != 0) {
+      if ((mGlobals.OutputDependencyFptr = fopen (mGlobals.OutputDependencyFileName, "w")) == NULL) {
+        Error (NULL, 0, 0, mGlobals.OutputDependencyFileName, "failed to open output dependency file");
+        goto Finish;
+      }    
+    }
     Status = ProcessIncludeFile (&mGlobals.SourceFiles, NULL);
+    if (mGlobals.OutputDependencyFptr != NULL) {
+      fclose (mGlobals.OutputDependencyFptr);
+    }    
     if (Status != STATUS_SUCCESS) {
       goto Finish;
     }
@@ -501,11 +498,23 @@ Returns:
       return STATUS_ERROR;
     }
   }
+  
+  //
+  // Output the dependency 
+  //
+  if (mGlobals.OutputDependencyFptr != NULL) {
+    fprintf (mGlobals.OutputDependencyFptr, "%s : %s\n", mGlobals.DatabaseFileName->Str, FoundFileName);    
+    //
+    // Add pseudo target to avoid incremental build failure when the file is deleted
+    //
+    fprintf (mGlobals.OutputDependencyFptr, "%s : \n", FoundFileName); 
+  }
+   
   //
   // Process the file found
   //
-  AddDependency (FoundFileName);
   ProcessFile (SourceFile);
+
 Finish:
   //
   // Close open files and return status
@@ -2490,50 +2499,6 @@ SkipTo (
   return FALSE;
 }
 
-static
-void
-EmptyDependency (
-    void
-  )
-{
-  FILE          *Fptr;
-  
-  if (mGlobals.OutputDependencyFileName[0] == 0) {
-    return;
-  }
-
-  if ((Fptr = fopen (mGlobals.OutputDependencyFileName, "w")) == NULL) {
-    Error (NULL, 0, 0, mGlobals.OutputDependencyFileName, "failed to empty output dependency file");
-    return;
-  }
-  
-  fclose (Fptr);
-  return;  
-}
-
-static
-void
-AddDependency (
-  INT8          *FileName
-  )
-{
-  FILE          *Fptr;
-  
-  if (mGlobals.OutputDependencyFileName[0] == 0) {
-    return;
-  }
-
-  if ((Fptr = fopen (mGlobals.OutputDependencyFileName, "a")) == NULL) {
-    Error (NULL, 0, 0, mGlobals.OutputDependencyFileName, "failed to open output dependency file");
-    return;
-  }
-  
-  fprintf (Fptr, "%s : %s\n", mGlobals.DatabaseFileName->Str, FileName);
-  
-  fclose (Fptr);
-  return;
-}
-  
 static
 void
 Usage (

@@ -64,6 +64,34 @@ typedef union {
   UINT16  DeviceControl;  /* when write */
 } IDE_AltStatus_OR_DeviceControl;
 
+
+typedef enum {
+  IdePrimary    = 0,
+  IdeSecondary  = 1,
+  IdeMaxChannel = 2
+} EFI_IDE_CHANNEL;
+
+//
+// bit definition
+//
+#define bit0  (1 << 0)
+#define bit1  (1 << 1)
+#define bit2  (1 << 2)
+#define bit3  (1 << 3)
+
+
+//
+// Bit definitions in Programming Interface byte of the Class Code field
+// in PCI IDE controller's Configuration Space
+//
+#define IDE_PRIMARY_OPERATING_MODE            bit0
+#define IDE_PRIMARY_PROGRAMMABLE_INDICATOR    bit1
+#define IDE_SECONDARY_OPERATING_MODE          bit2
+#define IDE_SECONDARY_PROGRAMMABLE_INDICATOR  bit3
+
+
+#define ATAPI_MAX_CHANNEL 2
+
 //
 // IDE registers set
 //
@@ -78,7 +106,6 @@ typedef struct {
   IDE_CMD_OR_STATUS               Reg;
   IDE_AltStatus_OR_DeviceControl  Alt;
   UINT16                          DriveAddress;
-  UINT16                          MasterSlave;
 } IDE_BASE_REGISTERS;
 
 #define ATAPI_SCSI_PASS_THRU_DEV_SIGNATURE  EFI_SIGNATURE_32 ('a', 's', 'p', 't')
@@ -93,11 +120,20 @@ typedef struct {
   // Local Data goes here
   //
   IDE_BASE_REGISTERS               *IoPort;
+  IDE_BASE_REGISTERS               AtapiIoPortRegisters[2];
   CHAR16                           ControllerName[100];
   CHAR16                           ChannelName[100];
   UINT32                           LatestTargetId;
   UINT64                           LatestLun;
 } ATAPI_SCSI_PASS_THRU_DEV;
+
+//
+// IDE registers' base addresses
+//
+typedef struct {
+  UINT16  CommandBlockBaseAddr;
+  UINT16  ControlBlockBaseAddr;
+} IDE_REGISTERS_BASE_ADDR;
 
 #define ATAPI_SCSI_PASS_THRU_DEV_FROM_THIS(a) \
   CR (a, \
@@ -1035,30 +1071,54 @@ Returns:
 
 --*/
 ;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
 STATIC
 EFI_STATUS
-PacketSwitch (
-  IN      EFI_SCSI_IO_SCSI_REQUEST_PACKET         *Packet,
-  IN OUT  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET  *CommandPacket
+GetIdeRegistersBaseAddr (
+  IN  EFI_PCI_IO_PROTOCOL         *PciIo,
+  OUT IDE_REGISTERS_BASE_ADDR     *IdeRegsBaseAddr
+  )
+/*++
+
+Routine Description:
+  Get IDE IO port registers' base addresses by mode. In 'Compatibility' mode,
+  use fixed addresses. In Native-PCI mode, get base addresses from BARs in
+  the PCI IDE controller's Configuration Space.
+
+Arguments:
+  PciIo             - Pointer to the EFI_PCI_IO_PROTOCOL instance
+  IdeRegsBaseAddr   - Pointer to IDE_REGISTERS_BASE_ADDR to 
+                      receive IDE IO port registers' base addresses
+                      
+Returns:
+
+  EFI_STATUS
+    
+--*/
+;
+
+STATIC
+VOID
+InitAtapiIoPortRegisters (
+  IN  ATAPI_SCSI_PASS_THRU_DEV     *AtapiScsiPrivate,
+  IN  IDE_REGISTERS_BASE_ADDR      *IdeRegsBaseAddr
   )
 /*++
 
 Routine Description:
 
-  Transfer EFI_SCSI_IO_SCSI_REQUEST_PACKET packet to 
-  EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET packet
-  
+  Initialize each Channel's Base Address of CommandBlock and ControlBlock.
+
 Arguments:
-
-  Packet            - The pointer of EFI_SCSI_IO_SCSI_REQUEST_PACKET
-  CommandPacket     - The pointer of EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET
-   
+    
+  AtapiScsiPrivate            - The pointer of ATAPI_SCSI_PASS_THRU_DEV
+  IdeRegsBaseAddr             - The pointer of IDE_REGISTERS_BASE_ADDR
+  
 Returns:
+  
+  None
 
-  NONE
-
---*/
+--*/  
 ;
-#endif
+
 #endif

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -728,8 +728,7 @@ Returns:
   //
   Status = DhcpCallUser (DhcpSb, Dhcp4RcvdOffer, Packet, NULL);
 
-  switch (Status) {
-  case EFI_SUCCESS:
+  if (Status == EFI_SUCCESS) {
     if (DhcpSb->LastOffer != NULL) {
       NetFreePool (DhcpSb->LastOffer);
     }
@@ -737,23 +736,20 @@ Returns:
     DhcpSb->LastOffer = Packet;
 
     return DhcpChooseOffer (DhcpSb);
-    break;
 
-  case EFI_NOT_READY:
+  } else if (Status == EFI_NOT_READY) {
     if (DhcpSb->LastOffer != NULL) {
       NetFreePool (DhcpSb->LastOffer);
     }
 
     DhcpSb->LastOffer = Packet;
-    break;
 
-  case EFI_ABORTED:
+  } else if (Status == EFI_ABORTED) {
     //
     // DhcpInput will end the session upon error return. Remember
     // only to call DhcpEndSession at the top level call.
     //
     goto ON_EXIT;
-    break;
   }
 
   return EFI_SUCCESS;

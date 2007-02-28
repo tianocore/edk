@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -33,7 +33,6 @@ Abstract:
 #define EFI_IP4_HEADER_LEN(HdrPtr) ((HdrPtr)->HeaderLength << 2)
 
 extern EFI_IP4_CONFIG_DATA  mIpIoDefaultIpConfigData;
-extern ICMP_ERROR_INFO      mIcmpErrMap[];
 
 typedef struct _EFI_NET_SESSION_DATA {
   IP4_ADDR        Source;
@@ -195,6 +194,13 @@ IP_IO_IP_INFO *
 IpIoFindSender (
   IN OUT IP_IO     **IpIo,
   IN     IP4_ADDR  Src
+  );
+
+EFI_STATUS
+IpIoGetIcmpErrStatus (
+  IN  ICMP_ERROR  IcmpError,
+  OUT BOOLEAN     *IsHard, OPTIONAL
+  OUT BOOLEAN     *Notify OPTIONAL
   );
 
 #endif

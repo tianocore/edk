@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,7 +30,7 @@ EFI_DRIVER_BINDING_PROTOCOL gWinNtSimpleFileSystemDriverBinding = {
   WinNtSimpleFileSystemDriverBindingSupported,
   WinNtSimpleFileSystemDriverBindingStart,
   WinNtSimpleFileSystemDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -139,11 +139,12 @@ Returns:
     ASSERT (0);
   }
 
-  for (Pointer = Str; *(Pointer + Count); Pointer++) {
+  if (Count != 0) {
+    for (Pointer = Str; *(Pointer + Count); Pointer++) {
+      *Pointer = *(Pointer + Count);
+    }
     *Pointer = *(Pointer + Count);
   }
-
-  *Pointer = *(Pointer + Count);
 }
 
 EFI_STATUS
@@ -659,12 +660,9 @@ Returns:
   CHAR16                            TempChar;
   DWORD                             LastError;
   UINTN                             Count;
-  BOOLEAN                           TrailingDash;
   BOOLEAN                           LoopFinish;
   UINTN                             InfoSize;
   EFI_FILE_INFO                     *Info;
-
-  TrailingDash = FALSE;
 
   //
   // Check for obvious invalid parameters.
@@ -695,12 +693,26 @@ Returns:
   }
 
   //
-  //
+  // Init local variables
   //
   PrivateFile     = WIN_NT_EFI_FILE_PRIVATE_DATA_FROM_THIS (This);
   PrivateRoot     = WIN_NT_SIMPLE_FILE_SYSTEM_PRIVATE_DATA_FROM_THIS (PrivateFile->SimpleFileSystem);
   NewPrivateFile  = NULL;
 
+  //
+  // Allocate buffer for FileName as the passed in FileName may be read only
+  //
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  EfiStrSize (FileName),
+                  &TempFileName
+                  );
+  if (EFI_ERROR (Status)) {
+    return  Status;
+  }
+  EfiStrCpy (TempFileName, FileName);
+  FileName = TempFileName;
+  
   //
   // BUGBUG: assume an open of root
   // if current location, return current data
@@ -716,10 +728,33 @@ OpenRoot:
   }
 
   if (FileName[EfiStrLen (FileName) - 1] == L'\\') {
-    TrailingDash                        = TRUE;
     FileName[EfiStrLen (FileName) - 1]  = 0;
   }
-
+  //
+  // If file name does not equal to "." or "..", 
+  // then we trim the leading/trailing blanks and trailing dots
+  //
+  if (EfiStrCmp (FileName, L".") != 0 && EfiStrCmp (FileName, L"..") != 0) {
+    //
+    // Trim leading blanks
+    //
+    Count = 0;
+    for (TempFileName = FileName;
+      *TempFileName != 0 && *TempFileName == L' ';
+      TempFileName++) {
+      Count++;
+    }
+    CutPrefix (FileName, Count);
+    //
+    // Trim trailing dots and blanks
+    //
+    for (TempFileName = FileName + EfiStrLen (FileName) - 1; 
+      TempFileName >= FileName && (*TempFileName == L' ' || *TempFileName == L'.');
+      TempFileName--) {
+      ;
+    }
+    *(TempFileName + 1) = 0;
+  }
   //
   // Attempt to open the file
   //
@@ -770,13 +805,14 @@ OpenRoot:
     EfiStrCat (NewPrivateFile->FileName, FileName + 1);
   } else {
     EfiStrCpy (NewPrivateFile->FileName, NewPrivateFile->FilePath);
-    EfiStrCat (NewPrivateFile->FileName, L"\\");
-    EfiStrCat (NewPrivateFile->FileName, FileName);
+    if (EfiStrCmp (FileName, L"") != 0) {
+      //
+      // In case the filename becomes empty, especially after trimming dots and blanks
+      //
+      EfiStrCat (NewPrivateFile->FileName, L"\\");
+      EfiStrCat (NewPrivateFile->FileName, FileName);
+    }
   }
-
-  //
-  // Get rid of . and .., except leading . or ..
-  //
 
   //
   // GuardPointer protect simplefilesystem root path not be destroyed
@@ -1066,10 +1102,8 @@ OpenRoot:
   }
 
 Done: ;
-  if (TrailingDash) {
-    FileName[EfiStrLen (FileName) + 1]  = 0;
-    FileName[EfiStrLen (FileName)]      = L'\\';
-  }
+  
+  gBS->FreePool (FileName);
 
   if (EFI_ERROR (Status)) {
     if (NewPrivateFile) {

@@ -1038,7 +1038,7 @@ Returns:
 
   Array = mPdbNameModHandleArray;
   for (Index = 0; Index < mPdbNameModHandleArraySize; Index++, Array++) {
-    if (Array->ModHandle != ModHandle) {
+    if (Array->ModHandle == ModHandle) {
       //
       // If you find a match return it and delete the entry
       //

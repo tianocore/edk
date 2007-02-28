@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2006, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -15,7 +15,10 @@
 #
 #  Abstract:
 #
-#    Component description file for ConSplitter module.
+#    Component description file for ConSplitterLite module.
+#    Provide a lite version of ConSplitter, without mouse & ComponentName support:
+#       i.e.: ConSplitterLite = LightConSplitter - ComponentName
+#    To build this driver, EFI_SIZE_REDUCTION_APPLIED should be defined to "YES" in Config.env
 #
 --*/
 
@@ -27,7 +30,7 @@ COMPONENT_TYPE       = BS_DRIVER
 [sources.common]
   LightConSplitter.c
   LightConSplitter.h
-  LightConSplitterGraphics.c
+  ConSplitterGraphics.c
 
 [libraries.common]
   EdkGuidLib
@@ -51,3 +54,4 @@ COMPONENT_TYPE       = BS_DRIVER
 
 [nmake.common]
   IMAGE_ENTRY_POINT=ConSplitterDriverEntry
+  C_STD_FLAGS = $(C_STD_FLAGS) /D LIGHT_CON_SPLITTER

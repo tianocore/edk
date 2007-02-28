@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -16,7 +16,7 @@ Module Name:
 Abstract:
 
   This file produces the graphics abstration of Graphics Output Protocol. It is called by 
-  CirrusLogic5430.c file which deals with the EFI 1.1 driver model. 
+  UefiCirrusLogic5430.c file which deals with the UEFI 2.0 driver model. 
   This file just does graphics.
 
 --*/
@@ -222,11 +222,12 @@ Routine Description:
 
   *SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
 
-  (*Info)->Version = 0;
+  (*Info)->Version              = 0;
   (*Info)->HorizontalResolution = Private->ModeData[ModeNumber].HorizontalResolution;
   (*Info)->VerticalResolution   = Private->ModeData[ModeNumber].VerticalResolution;
-  (*Info)->PixelFormat = PixelBltOnly;
-  (*Info)->PixelsPerScanLine = (*Info)->HorizontalResolution;
+  (*Info)->PixelFormat          = Private->ModeData[ModeNumber].PixelFormat;
+  (*Info)->PixelInformation     = Private->ModeData[ModeNumber].PixelInformation;
+  (*Info)->PixelsPerScanLine    = Private->ModeData[ModeNumber].PixelsPerScanLine;
 
   return EFI_SUCCESS;
 }
@@ -263,6 +264,10 @@ Routine Description:
     return EFI_UNSUPPORTED;
   }
 
+  if (ModeNumber == This->Mode->Mode) {
+    return EFI_SUCCESS;
+  }
+
   ModeData = &Private->ModeData[ModeNumber];
 
   if (Private->LineBuffer) {
@@ -277,15 +282,19 @@ Routine Description:
 
   InitializeGraphicsMode (Private, &CirrusLogic5430VideoModes[ModeNumber]);
 
-  This->Mode->Mode = ModeNumber;
+  This->Mode->Mode                       = ModeNumber;
+  This->Mode->Info->Version              = 0;
   This->Mode->Info->HorizontalResolution = ModeData->HorizontalResolution;
-  This->Mode->Info->VerticalResolution = ModeData->VerticalResolution;
-  This->Mode->Info->PixelFormat = PixelBltOnly;
-  This->Mode->Info->PixelsPerScanLine =  ModeData->HorizontalResolution;
-  This->Mode->SizeOfInfo = sizeof(EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
+  This->Mode->Info->VerticalResolution   = ModeData->VerticalResolution;
+  This->Mode->Info->PixelFormat          = ModeData->PixelFormat;
+  This->Mode->Info->PixelInformation     = ModeData->PixelInformation;
+  This->Mode->Info->PixelsPerScanLine    = ModeData->PixelsPerScanLine;
+  This->Mode->SizeOfInfo                 = sizeof(EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
 
-  This->Mode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS)(UINTN)NULL;
-  This->Mode->FrameBufferSize = 0;
+  This->Mode->FrameBufferBase = ModeData->FrameBufferBase;
+  This->Mode->FrameBufferSize = ModeData->FrameBufferSize;
+
+  Private->CurrentMode = ModeNumber;
 
   Private->HardwareNeedsStarting  = FALSE;
 
@@ -608,6 +617,15 @@ Returns:
   EFI_STATUS                   Status;
   EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput;
   UINTN                        Index;
+  PCI_TYPE00                   Pci;
+
+  //
+  // Read the PCI Configuration Header from the PCI Device
+  //
+  Status = Private->PciIo->Pci.Read (Private->PciIo, EfiPciIoWidthUint32, 0, sizeof (Pci) / sizeof (UINT32), &Pci);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   //
   // Fill in Private->GraphicsOutput protocol
@@ -617,6 +635,15 @@ Returns:
   GraphicsOutput->QueryMode = CirrusLogic5430GraphicsOutputQueryMode;
   GraphicsOutput->SetMode   = CirrusLogic5430GraphicsOutputSetMode;
   GraphicsOutput->Blt       = CirrusLogic5430GraphicsOutputBlt;
+
+  //
+  // setup EDID information
+  // Leave it empty now.
+  //
+  Private->EdidDiscovered.Edid       = NULL;
+  Private->EdidDiscovered.SizeOfEdid = 0;
+  Private->EdidActive.Edid           = NULL;
+  Private->EdidActive.SizeOfEdid     = 0;
 
   //
   // Initialize the private data
@@ -635,15 +662,26 @@ Returns:
                   (VOID **) &Private->GraphicsOutput.Mode->Info
                   );
   if (EFI_ERROR (Status)) {
+    gBS->FreePool (Private->GraphicsOutput.Mode);
+    Private->GraphicsOutput.Mode = NULL;
     return Status;
   }
+
   Private->GraphicsOutput.Mode->MaxMode = CIRRUS_LOGIC_5430_GRAPHICS_OUTPUT_MODE_COUNT;
   Private->GraphicsOutput.Mode->Mode = GRAPHICS_OUTPUT_INVALIDE_MODE_NUMBER;
   for (Index = 0; Index < Private->GraphicsOutput.Mode->MaxMode; Index++) {
-    Private->ModeData[Index].HorizontalResolution = CirrusLogic5430VideoModes[Index].Width;
-    Private->ModeData[Index].VerticalResolution   = CirrusLogic5430VideoModes[Index].Height;
-    Private->ModeData[Index].ColorDepth           = 32;
-    Private->ModeData[Index].RefreshRate          = CirrusLogic5430VideoModes[Index].RefreshRate;
+    Private->ModeData[Index].HorizontalResolution          = CirrusLogic5430VideoModes[Index].Width;
+    Private->ModeData[Index].VerticalResolution            = CirrusLogic5430VideoModes[Index].Height;
+    Private->ModeData[Index].ColorDepth                    = CirrusLogic5430VideoModes[Index].ColorDepth;
+    Private->ModeData[Index].RefreshRate                   = CirrusLogic5430VideoModes[Index].RefreshRate;
+    Private->ModeData[Index].PixelFormat                   = PixelBitMask;
+    Private->ModeData[Index].PixelInformation.RedMask      = CIRRUS_LOGIC_5430_RED_MASK;
+    Private->ModeData[Index].PixelInformation.GreenMask    = CIRRUS_LOGIC_5430_GREEN_MASK;
+    Private->ModeData[Index].PixelInformation.BlueMask     = CIRRUS_LOGIC_5430_BLUE_MASK;
+    Private->ModeData[Index].PixelInformation.ReservedMask = CIRRUS_LOGIC_5430_RESERVED_MASK;
+    Private->ModeData[Index].PixelsPerScanLine             = Private->ModeData[Index].HorizontalResolution;
+    Private->ModeData[Index].FrameBufferBase               = (EFI_PHYSICAL_ADDRESS) (UINTN) (Pci.Device.Bar[0] & ~0xF);
+    Private->ModeData[Index].FrameBufferSize               = CIRRUS_LOGIC_5430_FRAMEBUFFER_LENGTH;
   }
 
   Private->HardwareNeedsStarting  = TRUE;

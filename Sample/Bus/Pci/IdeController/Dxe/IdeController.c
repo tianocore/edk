@@ -39,7 +39,7 @@ EFI_DRIVER_BINDING_PROTOCOL gIdeControllerDriverBinding = {
   IdeControllerSupported,
   IdeControllerStart,
   IdeControllerStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

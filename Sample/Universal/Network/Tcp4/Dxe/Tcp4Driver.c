@@ -57,7 +57,7 @@ EFI_DRIVER_BINDING_PROTOCOL mTcp4DriverBinding = {
   Tcp4DriverBindingSupported,
   Tcp4DriverBindingStart,
   Tcp4DriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

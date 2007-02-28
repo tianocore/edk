@@ -51,6 +51,21 @@ Revision History
 
 #define SCSI_IO_DEV_SIGNATURE EFI_SIGNATURE_32 ('s', 'c', 'i', 'o')
 
+typedef struct _SCSI_TARGET_ID {
+ union {
+   UINT32  Scsi;
+   UINT8   ExtScsi[4];   
+ } ScsiId;
+  UINT8   ExtScsiId[12];
+}SCSI_TARGET_ID;
+
+
+typedef struct {
+   VOID   *Data1;
+   VOID   *Data2;
+} SCSI_EVENT_DATA;
+
+
 typedef struct {
   UINT32                             Signature;
   EFI_HANDLE                         Handle;
@@ -59,7 +74,7 @@ typedef struct {
   BOOLEAN                            ExtScsiSupport; 
   EFI_SCSI_PASS_THRU_PROTOCOL        *ScsiPassThru;
   EFI_EXT_SCSI_PASS_THRU_PROTOCOL    *ExtScsiPassThru;
-  UINT32                             Pun;
+  SCSI_TARGET_ID                     Pun;
   UINT64                             Lun;
   UINT8                              ScsiDeviceType;
   UINT8                              ScsiVersion;
@@ -216,7 +231,7 @@ Returns:
                           HostAdapterStatus, TargetStatus, 
                           SenseDataLength, and SenseData in that order
                           for additional status information.
-  EFI_WARN_BUFFER_TOO_SMALL - The SCSI Request Packet was executed, 
+  EFI_BAD_BUFFER_SIZE   - The SCSI Request Packet was executed, 
                           but the entire DataBuffer could not be transferred.
                           The actual number of bytes transferred is returned
                           in TransferLength. See HostAdapterStatus, 
@@ -249,7 +264,7 @@ EFI_STATUS
 ScsiScanCreateDevice (
   EFI_DRIVER_BINDING_PROTOCOL   *This,
   EFI_HANDLE                    Controller,
-  UINT32                        Pun,
+  SCSI_TARGET_ID                *TargetId,
   UINT64                        Lun,
   SCSI_BUS_DEVICE              *ScsiBusDev
   )

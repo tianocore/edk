@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                              
+Copyright (c) 2004 - 2007, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -21,8 +21,11 @@ Abstract:
   when a new console is added it is synced up with the current console
 
 --*/
-
-#include "ConSplitter.h"
+#ifdef LIGHT_CON_SPLITTER
+  #include "LightConSplitter.h"
+#else
+  #include "ConSplitter.h"
+#endif
 #include EFI_PROTOCOL_DEFINITION (Hii)
 
 static CHAR16 mCrLfString[3] = { CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, CHAR_NULL };
@@ -186,7 +189,6 @@ ConSpliterGraphicsOutputQueryMode (
 {
   TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private;
   EFI_STATUS                      Status;
-  TEXT_OUT_GOP_MODE               *Mode;
 
   if (This == NULL || Info == NULL || SizeOfInfo == NULL || ModeNumber >= This->Mode->MaxMode) {
     return EFI_INVALID_PARAMETER;
@@ -212,11 +214,7 @@ ConSpliterGraphicsOutputQueryMode (
 
   *SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
 
-  EfiCopyMem (*Info, Private->GraphicsOutput.Mode->Info, *SizeOfInfo);
-  Mode = &Private->GraphicsOutputModeBuffer[ModeNumber];
-  (*Info)->HorizontalResolution = Mode->HorizontalResolution;
-  (*Info)->VerticalResolution = Mode->VerticalResolution;
-  (*Info)->PixelsPerScanLine = Mode->HorizontalResolution;
+  EfiCopyMem (*Info, &Private->GraphicsOutputModeBuffer[ModeNumber], *SizeOfInfo);
 
   return EFI_SUCCESS;
 }
@@ -248,7 +246,7 @@ Routine Description:
   TEXT_OUT_SPLITTER_PRIVATE_DATA         *Private;
   UINTN                                  Index;
   EFI_STATUS                             ReturnStatus;
-  TEXT_OUT_GOP_MODE                      *Mode;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION   *Mode;
   UINTN                                  Size;
   EFI_GRAPHICS_OUTPUT_PROTOCOL           *GraphicsOutput;
   UINTN                                  NumberIndex;
@@ -289,11 +287,6 @@ Routine Description:
     return EFI_OUT_OF_RESOURCES;
   }
 
-  if (!Private->HardwareNeedsStarting) {
-    if (Private->ConsoleOutputMode != EfiConsoleControlScreenGraphics) {
-      return EFI_UNSUPPORTED;
-    }
-  }
   //
   // return the worst status met
   //
@@ -338,10 +331,7 @@ Routine Description:
 
   This->Mode->Mode = ModeNumber;
 
-  Info = This->Mode->Info;
-  Info->HorizontalResolution = Mode->HorizontalResolution;
-  Info->VerticalResolution   = Mode->VerticalResolution;
-  Info->PixelsPerScanLine    = Mode->HorizontalResolution;
+  EfiCopyMem (This->Mode->Info, &Private->GraphicsOutputModeBuffer[ModeNumber], This->Mode->SizeOfInfo);
 
   //
   // Information is not enough here, so the following items remain unchanged:
@@ -370,6 +360,7 @@ DevNullGraphicsOutputBlt (
   )
 {
   UINTN                         SrcY;
+  BOOLEAN                       Forward; 
   UINTN                         Index;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL *BltPtr;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL *ScreenPtr;
@@ -416,7 +407,7 @@ DevNullGraphicsOutputBlt (
     }
   } else {
     //
-    // BltBuffer to Video: Source is BltBuffer, destination is Video
+    // xxxx to Video: Destination is Video
     //
     if (DestinationY + Height > VerticalResolution) {
       return EFI_INVALID_PARAMETER;
@@ -426,9 +417,23 @@ DevNullGraphicsOutputBlt (
       return EFI_INVALID_PARAMETER;
     }
 
-    ScreenPtr = &Private->GraphicsOutputBlt[DestinationY * HorizontalResolution + DestinationX];
-    SrcY      = SourceY;
-    while (Height) {
+    if ((BltOperation == EfiBltVideoToVideo) && (DestinationY > SourceY)) {
+      //
+      // Copy backwards, only care the Video to Video Blt
+      //
+      ScreenPtr = &Private->GraphicsOutputBlt[(DestinationY + Height - 1) * HorizontalResolution + DestinationX];
+      SrcY      = SourceY + Height - 1;
+      Forward   = FALSE;
+    } else {
+      //
+      // Copy forwards, for other cases
+      //
+      ScreenPtr = &Private->GraphicsOutputBlt[DestinationY * HorizontalResolution + DestinationX];
+      SrcY      = SourceY;
+      Forward   = TRUE;
+    }
+
+    while (Height != 0) {
       if (BltOperation == EfiBltVideoFill) {
         for (Index = 0; Index < Width; Index++) {
           ScreenPtr[Index] = *BltBuffer;
@@ -436,15 +441,23 @@ DevNullGraphicsOutputBlt (
       } else {
         if (BltOperation == EfiBltBufferToVideo) {
           BltPtr = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) ((UINT8 *) BltBuffer + SrcY * Delta + SourceX * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-        } else {
+        } else { 
+          //
+          // EfiBltVideoToVideo
+          //
           BltPtr = &Private->GraphicsOutputBlt[SrcY * HorizontalResolution + SourceX];
         }
 
         EfiCopyMem (ScreenPtr, BltPtr, Width * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
       }
 
-      ScreenPtr += HorizontalResolution;
-      SrcY++;
+      if (Forward) {
+        ScreenPtr += HorizontalResolution;
+        SrcY ++;
+      } else {
+        ScreenPtr -= HorizontalResolution;
+        SrcY --;
+      }
       Height--;
     }
   }
@@ -784,6 +797,7 @@ DevNullUgaBlt (
   )
 {
   UINTN         SrcY;
+  BOOLEAN       Forward;
   UINTN         Index;
   EFI_UGA_PIXEL *BltPtr;
   EFI_UGA_PIXEL *ScreenPtr;
@@ -830,7 +844,7 @@ DevNullUgaBlt (
     }
   } else {
     //
-    // BltBuffer to Video: Source is BltBuffer, destination is Video
+    // xxxxxx to Video: Destination is Video
     //
     if (DestinationY + Height > VerticalResolution) {
       return EFI_INVALID_PARAMETER;
@@ -840,9 +854,23 @@ DevNullUgaBlt (
       return EFI_INVALID_PARAMETER;
     }
 
-    ScreenPtr = &Private->UgaBlt[DestinationY * HorizontalResolution + DestinationX];
-    SrcY      = SourceY;
-    while (Height) {
+    if ((BltOperation == EfiUgaVideoToVideo) && (DestinationY > SourceY)) {
+      //
+      // Copy backwards, only care the Video to Video Blt
+      //
+      ScreenPtr = &Private->UgaBlt[(DestinationY + Height - 1) * HorizontalResolution + DestinationX];
+      SrcY      = SourceY + Height - 1;
+      Forward   = FALSE;
+    } else {
+      //
+      // Copy forwards, for other cases
+      //
+      ScreenPtr = &Private->UgaBlt[DestinationY * HorizontalResolution + DestinationX];
+      SrcY      = SourceY;
+      Forward   = TRUE;
+    }
+
+    while (Height != 0) {
       if (BltOperation == EfiUgaVideoFill) {
         for (Index = 0; Index < Width; Index++) {
           ScreenPtr[Index] = *BltBuffer;
@@ -850,15 +878,23 @@ DevNullUgaBlt (
       } else {
         if (BltOperation == EfiUgaBltBufferToVideo) {
           BltPtr = (EFI_UGA_PIXEL *) ((UINT8 *) BltBuffer + SrcY * Delta + SourceX * sizeof (EFI_UGA_PIXEL));
-        } else {
+        } else { 
+          //
+          // EfiUgaVideoToVideo
+          //
           BltPtr = &Private->UgaBlt[SrcY * HorizontalResolution + SourceX];
         }
 
         EfiCopyMem (ScreenPtr, BltPtr, Width * sizeof (EFI_UGA_PIXEL));
       }
 
-      ScreenPtr += HorizontalResolution;
-      SrcY++;
+      if (Forward) {
+        ScreenPtr += HorizontalResolution;
+        SrcY ++;
+      } else {
+        ScreenPtr -= HorizontalResolution;
+        SrcY --;
+      }
       Height--;
     }
   }

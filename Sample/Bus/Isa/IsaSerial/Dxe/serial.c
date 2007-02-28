@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -168,7 +168,7 @@ EFI_DRIVER_BINDING_PROTOCOL gSerialControllerDriver = {
   SerialControllerDriverSupported,
   SerialControllerDriverStart,
   SerialControllerDriverStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -465,23 +465,23 @@ SerialControllerDriverStart (
   //
   // Report status code the serial present
   //
-  Status = ReportStatusCodeWithDevicePath (
-             EFI_PROGRESS_CODE,
-             EFI_P_PC_PRESENCE_DETECT | EFI_PERIPHERAL_SERIAL_PORT,
-             0,
-             &gEfiSerialIoProtocolGuid,
-             ParentDevicePath
-             );
+  ReportStatusCodeWithDevicePath (
+    EFI_PROGRESS_CODE,
+    EFI_P_PC_PRESENCE_DETECT | EFI_PERIPHERAL_SERIAL_PORT,
+    0,
+    &gEfiSerialIoProtocolGuid,
+    ParentDevicePath
+    );
 
   if (!IsaSerialPortPresent (SerialDevice)) {
     Status = EFI_DEVICE_ERROR;
-    Status = ReportStatusCodeWithDevicePath (
-               EFI_ERROR_CODE,
-               EFI_P_EC_NOT_DETECTED | EFI_PERIPHERAL_SERIAL_PORT,
-               0,
-               &gEfiSerialIoProtocolGuid,
-               ParentDevicePath
-               );
+    ReportStatusCodeWithDevicePath (
+      EFI_ERROR_CODE,
+      EFI_P_EC_NOT_DETECTED | EFI_PERIPHERAL_SERIAL_PORT,
+      0,
+      &gEfiSerialIoProtocolGuid,
+      ParentDevicePath
+      );
     goto Error;
   }
 
@@ -557,13 +557,13 @@ SerialControllerDriverStart (
   //
   Status = SerialDevice->SerialIo.Reset (&SerialDevice->SerialIo);
   if (EFI_ERROR (Status)) {
-    Status = ReportStatusCodeWithDevicePath (
-               EFI_ERROR_CODE,
-               EFI_P_EC_CONTROLLER_ERROR | EFI_PERIPHERAL_SERIAL_PORT,
-               0,
-               &gEfiSerialIoProtocolGuid,
-               ParentDevicePath
-               );
+    ReportStatusCodeWithDevicePath (
+      EFI_ERROR_CODE,
+      EFI_P_EC_CONTROLLER_ERROR | EFI_PERIPHERAL_SERIAL_PORT,
+      0,
+      &gEfiSerialIoProtocolGuid,
+      ParentDevicePath
+      );
     goto Error;
   }
   //
@@ -664,13 +664,13 @@ SerialControllerDriverStop (
   //
   // Report the status code disable the serial
   //
-  Status = ReportStatusCodeWithDevicePath (
-             EFI_PROGRESS_CODE,
-             EFI_P_PC_DISABLE | EFI_PERIPHERAL_SERIAL_PORT,
-             0,
-             &gEfiSerialIoProtocolGuid,
-             DevicePath
-             );
+  ReportStatusCodeWithDevicePath (
+    EFI_PROGRESS_CODE,
+    EFI_P_PC_DISABLE | EFI_PERIPHERAL_SERIAL_PORT,
+    0,
+    &gEfiSerialIoProtocolGuid,
+    DevicePath
+    );
 
   //
   // Complete all outstanding transactions to Controller.
@@ -1103,13 +1103,13 @@ IsaSerialReset (
   //
   // Report the status code reset the serial
   //
-  Status = ReportStatusCodeWithDevicePath (
-             EFI_PROGRESS_CODE,
-             EFI_P_PC_RESET | EFI_PERIPHERAL_SERIAL_PORT,
-             0,
-             &gEfiSerialIoProtocolGuid,
-             SerialDevice->DevicePath
-             );
+  ReportStatusCodeWithDevicePath (
+    EFI_PROGRESS_CODE,
+    EFI_P_PC_RESET | EFI_PERIPHERAL_SERIAL_PORT,
+    0,
+    &gEfiSerialIoProtocolGuid,
+    SerialDevice->DevicePath
+    );
 
   Tpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
 
@@ -1840,13 +1840,13 @@ IsaSerialRead (
   if (EFI_ERROR (Status)) {
     *BufferSize = 0;
 
-    Status = ReportStatusCodeWithDevicePath (
-               EFI_ERROR_CODE,
-               EFI_P_EC_INPUT_ERROR | EFI_PERIPHERAL_SERIAL_PORT,
-               0,
-               &gEfiSerialIoProtocolGuid,
-               SerialDevice->DevicePath
-               );
+    ReportStatusCodeWithDevicePath (
+      EFI_ERROR_CODE,
+      EFI_P_EC_INPUT_ERROR | EFI_PERIPHERAL_SERIAL_PORT,
+      0,
+      &gEfiSerialIoProtocolGuid,
+      SerialDevice->DevicePath
+      );
 
     gBS->RestoreTPL (Tpl);
 

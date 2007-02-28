@@ -41,7 +41,7 @@ EFI_DRIVER_BINDING_PROTOCOL gFdcControllerDriver = {
   FdcControllerDriverSupported,
   FdcControllerDriverStart,
   FdcControllerDriverStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

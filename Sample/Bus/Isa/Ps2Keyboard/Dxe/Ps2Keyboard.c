@@ -61,7 +61,7 @@ EFI_DRIVER_BINDING_PROTOCOL gKeyboardControllerDriver = {
   KbdControllerDriverSupported,
   KbdControllerDriverStart,
   KbdControllerDriverStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

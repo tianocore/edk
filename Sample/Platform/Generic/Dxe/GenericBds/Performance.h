@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,7 +30,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
 
 #include EFI_GUID_DEFINITION (Acpi)
-#include EFI_GUID_DEFINITION (GlobalVariable)
+#include EFI_GUID_DEFINITION (GenericVariable)
 
 #define EFI_PERF_PEI_ENTRY_MAX_NUM  50
 

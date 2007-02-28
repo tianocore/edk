@@ -28,7 +28,7 @@ EFI_DRIVER_BINDING_PROTOCOL gVgaClassDriverBinding = {
   VgaClassDriverBindingSupported,
   VgaClassDriverBindingStart,
   VgaClassDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

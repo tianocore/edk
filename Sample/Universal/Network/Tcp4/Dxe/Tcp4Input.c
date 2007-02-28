@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1504,9 +1504,12 @@ Returns:
 
 --*/
 {
-  TCP_HEAD    *Head;
-  TCP_CB      *Tcb;
-  TCP_SEQNO   Seq;
+  TCP_HEAD         *Head;
+  TCP_CB           *Tcb;
+  TCP_SEQNO        Seq;
+  EFI_STATUS       IcmpErrStatus;
+  BOOLEAN          IcmpErrIsHard;
+  BOOLEAN          IcmpErrNotify;
 
   Head = (TCP_HEAD *) NetbufGetByte (Nbuf, 0, NULL);
   Tcb = TcpLocateTcb (
@@ -1530,12 +1533,14 @@ Returns:
     goto CLEAN_EXIT;
   }
 
-  if (mIcmpErrMap[IcmpErr].Notify) {
+  IcmpErrStatus = IpIoGetIcmpErrStatus (IcmpErr, &IcmpErrIsHard, &IcmpErrNotify);
 
-    SOCK_ERROR (Tcb->Sk, mIcmpErrMap[IcmpErr].Error);
+  if (IcmpErrNotify) {
+
+    SOCK_ERROR (Tcb->Sk, IcmpErrStatus);
   }
 
-  if (mIcmpErrMap[IcmpErr].IsHard) {
+  if (IcmpErrIsHard) {
 
     TcpClose (Tcb);
   }

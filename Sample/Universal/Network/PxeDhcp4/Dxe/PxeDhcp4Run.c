@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -19,7 +19,6 @@ Abstract:
 
 #include "PxeDhcp4.h"
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 EFI_STATUS
 EFIAPI
 PxeDhcp4Run (
@@ -125,14 +124,9 @@ PxeDhcp4Run (
     //
     efi_status = PxeDhcp4Init (This, timeout, &offers, &offer_list);
 
-    switch (efi_status) {
-    case EFI_NO_RESPONSE:
-    case EFI_TIMEOUT:
-    case EFI_SUCCESS:
-      break;
-
-    case EFI_ABORTED:
-    default:
+    if ((efi_status != EFI_SUCCESS) &&
+        (efi_status != EFI_TIMEOUT) &&
+        (efi_status != EFI_NO_RESPONSE)) {
       return efi_status;
     }
     //

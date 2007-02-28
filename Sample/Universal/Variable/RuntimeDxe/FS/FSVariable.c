@@ -207,6 +207,51 @@ Returns:
   return (VARIABLE_HEADER *) ((UINTN) VarStoreHeader + VarStoreHeader->Size);
 }
 
+BOOLEAN
+ExistNewerVariable (
+  IN  VARIABLE_HEADER         *Variable
+  )
+/*++
+
+Routine Description:
+
+  Check if exist newer variable when doing reclaim
+
+Arguments:
+
+  Variable                    Pointer to start position
+
+Returns:
+
+  TRUE - Exists another variable, which is newer than the current one
+  FALSE  - Doesn't exist another vairable which is newer than the current one
+
+--*/
+{
+  VARIABLE_HEADER       *NextVariable;
+  CHAR16                *VariableName;
+  EFI_GUID              *VendorGuid;
+  
+  VendorGuid   = &Variable->VendorGuid;
+  VariableName = GET_VARIABLE_NAME_PTR(Variable);
+  
+  NextVariable = GetNextVariablePtr (Variable);
+  while (IsValidVariableHeader (NextVariable)) {
+    if ((NextVariable->State == VAR_ADDED) || (NextVariable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION))) {
+      //
+      // If match Guid and Name
+      //
+      if (EfiCompareGuid (VendorGuid, &NextVariable->VendorGuid)) {
+         if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (NextVariable), EfiStrSize (VariableName)) == 0) {
+           return TRUE;
+         }
+       }
+    }
+    NextVariable = GetNextVariablePtr (NextVariable);
+  }
+  return FALSE;
+}
+
 STATIC
 EFI_STATUS
 Reclaim (
@@ -248,19 +293,11 @@ Returns:
   //
   Variable        = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
 
-  ValidBufferSize = sizeof (VARIABLE_STORE_HEADER);
-
-  while (IsValidVariableHeader (Variable)) {
-    NextVariable = GetNextVariablePtr (Variable);
-    if ((Variable->State == VAR_ADDED) ||
-        ((Variable != CurrentVariable) &&
-         (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
-      VariableSize = (UINTN) NextVariable - (UINTN) Variable;
-      ValidBufferSize += VariableSize;
-    }
-
-    Variable = NextVariable;
-  }
+  
+  //
+  // To make the reclaim, here we just allocate a memory that equal to the original memory
+  //
+  ValidBufferSize = sizeof (VARIABLE_STORE_HEADER) + VariableStoreHeader->Size;
 
   Status = gBS->AllocatePool (
                   EfiBootServicesData,
@@ -284,20 +321,37 @@ Returns:
   //
   Variable = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
 
+  
+  ValidBufferSize = sizeof (VARIABLE_STORE_HEADER);
   while (IsValidVariableHeader (Variable)) {
     NextVariable = GetNextVariablePtr (Variable);
-    if ((Variable->State == VAR_ADDED) ||
-        ((Variable != CurrentVariable) &&
-         (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)))) {
+    //
+    // State VAR_ADDED or VAR_IN_DELETED_TRANSITION are to kept,
+    // The CurrentVariable, is also saved, as SetVariable may fail duo to lack of space
+    //
+    if (Variable->State == VAR_ADDED) {
       VariableSize = (UINTN) NextVariable - (UINTN) Variable;
       EfiCopyMem (CurrPtr, (UINT8 *) Variable, VariableSize);
-      //
-      // Mark all variable as VAR_ADDED
-      //
-      ((VARIABLE_HEADER *)CurrPtr)->State = VAR_ADDED;
+      ValidBufferSize += VariableSize;
       CurrPtr += VariableSize;
+    } else if (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)) {
+      //
+      // As variables that with the same guid and name may exist in NV due to power failure during SetVariable,
+      // we will only save the latest valid one
+      //
+      if (!ExistNewerVariable(Variable)) {
+        VariableSize = (UINTN) NextVariable - (UINTN) Variable;
+        EfiCopyMem (CurrPtr, (UINT8 *) Variable, VariableSize);
+        //
+        // If CurrentVariable == Variable, mark as VAR_IN_DELETED_TRANSITION
+        //
+        if (Variable != CurrentVariable){
+          ((VARIABLE_HEADER *)CurrPtr)->State = VAR_ADDED;
+        }
+        CurrPtr += VariableSize;
+        ValidBufferSize += VariableSize;
+      }
     }
-
     Variable = NextVariable;
   }
 

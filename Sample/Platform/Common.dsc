@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2006, Intel Corporation                                                         
+# Copyright (c) 2004 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -34,7 +34,6 @@
 #
 [=============================================================================]
 [Makefile.out]
-
 #
 # From the [makefile.out] section of the DSC file
 #
@@ -43,14 +42,7 @@ MAKE      = nmake -nologo
 
 !INCLUDE $(BUILD_DIR)\PlatformTools.env
 
-all : libraries fvs fv_null_components
-
-#
-# summary target for components with FV=NULL to handle the case
-# when no components exist with FV=NULL
-#
-fv_null_components ::
-  @echo.
+all : libraries fvs
 
 [=============================================================================]
 #
@@ -69,13 +61,19 @@ VERSION_STRING   = $(VERSION_STRING)
 TOOLCHAIN        = TOOLCHAIN_$(PROCESSOR)
 FILE_GUID        = $(FILE_GUID)
 COMPONENT_TYPE   = $(COMPONENT_TYPE)
-INF_FILENAME     = $(INF_FILENAME)
-PACKAGE_FILENAME = $(PACKAGE_FILENAME)
 FV_DIR           = $(BUILD_DIR)\FV
 PLATFORM         = $(PROJECT_NAME) 
-#INC_DEPS         = $(INC_DEPS) $(BUILD_DIR)\PlatformTools.env
-#INC_DEPS         = $(INC_DEPS) $(EDK_SOURCE)\Sample\CommonTools.env
-#INC_DEPS         = $(INC_DEPS) $(EDK_SOURCE)\Sample\LocalTools.env
+
+#
+# Define the global dependency files
+#
+!IF EXIST ($(DEST_DIR)\$(BASE_NAME)StrDefs.h)
+INC_DEPS         = $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+!ENDIF
+#ENV_DEPS         = $(ENV_DEPS) $(EDK_SOURCE)\Sample\CommonTools.env
+#ENV_DEPS         = $(ENV_DEPS) $(BUILD_DIR)\PlatformTools.env
+#ENV_DEPS         = $(ENV_DEPS) $(BUILD_DIR)\Config.env
+ALL_DEPS         = $(INC_DEPS) $(ENV_DEPS)
 
 !IF "$(LANGUAGE)" != ""
 LANGUAGE_FLAGS    = -lang $(LANGUAGE)
@@ -89,6 +87,10 @@ DEPEX_TYPE = EFI_SECTION_PEI_DEPEX
 DEPEX_TYPE = EFI_SECTION_DXE_DEPEX
 !ENDIF
 
+#
+# Command flags for MAKEDEPS tool
+#
+DEP_FLAGS = -target $** -o $(DEP_FILE) $(INC) -ignorenotfound -q
 
 [=============================================================================]
 #
@@ -97,86 +99,129 @@ DEPEX_TYPE = EFI_SECTION_DXE_DEPEX
 # name is encoded as [Compile.$(PROCESSOR).source_filename_extension], where
 # the source filename comes from the sources section of the component INF file.
 #
+# If the dependency list file already exists, then include it for this 
+# source file. If it doesn't exist, then this is a clean build and the
+# dependency file will get created below and the source file will get 
+# compiled. 
+#
+# Current behavior is that the first clean build will not create dep files. 
+# But the following second build has to create dep files before build source files.
+# CREATEDEPS flag is used to judge whether current build is the second build or not.
+#
+#
 [=============================================================================]
 [Compile.Ia32.asm,Compile.x64.asm]
 
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME)
-  $(ASM) $(ASM_FLAGS) $**
+DEP_FILE    = $(DEST_DIR)\$(FILE)Asm.dep
 
-[=============================================================================]
-[Compile.Ipf.s]
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE)Asm.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
 
-$(DEST_DIR)\$(FILE).pro : $(SOURCE_FILE_NAME) $(INF_FILENAME)
- $(CC) $(C_FLAGS_PRO) $(SOURCE_FILE_NAME) > $@
-
-$(DEST_DIR)\$(FILE).obj : $(DEST_DIR)\$(FILE).pro
- $(ASM) $(ASM_FLAGS) $(DEST_DIR)\$(FILE).pro
-
-[=============================================================================]
-[Compile.Ia32.c,Compile.Ipf.c,Compile.x64.c]
-
-#
-# If it already exists, then include the dependency list file for this 
-# source file. If it doesn't exist, then this is a clean build and the
-# dependency file will get created below and the source file will get 
-# compiled. Don't do any of this if NO_MAKEDEPS is defined.
-#
-!IF ("$(NO_MAKEDEPS)" == "")
-
-!IF EXIST($(DEST_DIR)\$(FILE).dep)
-!INCLUDE $(DEST_DIR)\$(FILE).dep
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
 !ENDIF
 
 #
-# This is how to create the dependency file.
+# Update dep file for next round incremental build
 #
-DEP_FILE = $(DEST_DIR)\$(FILE).dep
-
-$(DEP_FILE) : $(SOURCE_FILE_NAME)
-  $(MAKEDEPS) -ignorenotfound -f $(SOURCE_FILE_NAME) -q -target \
-    $(DEST_DIR)\$(FILE).obj \
-    -o $(DEP_FILE) $(INC)
-
-!ENDIF
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS) -asm
 
 #
 # Compile the file
 #
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEP_FILE)
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
+  $(ASM) $(ASM_FLAGS) $(SOURCE_FILE_NAME)
+
+[=============================================================================]
+[Compile.Ipf.s]
+
+DEP_FILE    = $(DEST_DIR)\$(FILE)S.dep
+
+!IF EXIST($(DEST_DIR)\$(FILE).pro)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE)S.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).pro
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
+
+#
+# Compile the file
+#
+$(DEST_DIR)\$(FILE).pro : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
+  $(CC) $(C_FLAGS_PRO) $(SOURCE_FILE_NAME) > $@
+
+$(DEST_DIR)\$(FILE).obj : $(DEST_DIR)\$(FILE).pro
+  $(ASM) $(ASM_FLAGS) $(DEST_DIR)\$(FILE).pro
+
+[=============================================================================]
+[Compile.Ia32.c,Compile.Ipf.c,Compile.x64.c]
+
+DEP_FILE    = $(DEST_DIR)\$(FILE).dep
+
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE).dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
+
+#
+# Compile the file
+#
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
   $(CC) $(C_FLAGS) $(SOURCE_FILE_NAME)
 
 [=============================================================================]
 [Compile.Ebc.c]
 
-#
-# If it already exists, then include the dependency list file for this 
-# source file. If it doesn't exist, then this is a clean build and the
-# dependency file will get created below and the source file will get 
-# compiled. Don't do any of this if NO_MAKEDEPS is defined.
-#
-!IF ("$(NO_MAKEDEPS)" == "")
+DEP_FILE    = $(DEST_DIR)\$(FILE).dep
 
-!IF EXIST($(DEST_DIR)\$(FILE).dep)
-!INCLUDE $(DEST_DIR)\$(FILE).dep
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE).dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
 !ENDIF
 
 #
-# This is how to create the dependency file.
+# Update dep file for next round incremental build
 #
-DEP_FILE = $(DEST_DIR)\$(FILE).dep
-
-$(DEP_FILE) : $(SOURCE_FILE_NAME)
-  $(MAKEDEPS) -ignorenotfound -f $(SOURCE_FILE_NAME) -q -target \
-    $(DEST_DIR)\$(FILE).obj \
-    -o $(DEP_FILE) $(INC)
-
-!ENDIF
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
 
 #
-# This is how to compile the source .c file
-# Use -P to get preprocessor output file (.i)
+# Compile the file
 #
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(DEP_FILE)
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
   $(EBC_CC) $(EBC_C_FLAGS) $(SOURCE_FILE_NAME)
 
 [=============================================================================]
@@ -185,14 +230,13 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(DEP_FILE)
 #
 [=============================================================================]
 [Compile.Ia32.Apr,Compile.Ipf.Apr,Compile.Ebc.Apr,Compile.x64.Apr]
-
 #
 # Create the raw binary file. If you get an error on the build saying it doesn't
 # know how to create the .apr file, then you're missing (or mispelled) the
 # "APRIORI=" on the component lines in components section in the DSC file.
 #
-$(DEST_DIR)\$(BASE_NAME).bin : $(BUILD_DIR)\$(DSC_FILENAME)
-  $(GENAPRIORI) -v -f $(FILE).apr -o $(DEST_DIR)\$(BASE_NAME).bin -i
+$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_FILE_NAME)
+  $(GENAPRIORI) -v -f $(SOURCE_FILE_NAME) -o $(DEST_DIR)\$(BASE_NAME).bin
 
 $(DEST_DIR)\$(BASE_NAME).sec : $(DEST_DIR)\$(BASE_NAME).bin
   $(GENSECTION) -I $(DEST_DIR)\$(BASE_NAME).bin -O $(DEST_DIR)\$(BASE_NAME).sec -S EFI_SECTION_RAW
@@ -205,8 +249,18 @@ all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).FFS
 #
 # Run GenFfsFile on the package file and .raw file to create the firmware file
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).FFS : $(DEST_DIR)\$(BASE_NAME).sec
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).FFS : $(DEST_DIR)\$(BASE_NAME).sec $(PACKAGE_FILENAME)
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 [Build.Ia32.Makefile,Build.Ipf.Makefile,Build.Ebc.Makefile,Build.x64.Makefile]
@@ -235,6 +289,17 @@ call_makefile :
 
 all : $(DEST_DIR)\makefile.new call_makefile
 
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+  @- $(MAKE) -f $(DEST_DIR)\makefile.new clean > NUL 2>&1
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
+
 [=============================================================================]
 #
 # Instructions for building a component that uses a custom makefile. Encoding 
@@ -243,6 +308,7 @@ all : $(DEST_DIR)\makefile.new call_makefile
 # To build these components, simply call the makefile from the source 
 # directory.
 #
+[=============================================================================]
 [Build.Ia32.Custom_Makefile,Build.Ipf.Custom_Makefile,Build.Ebc.Custom_Makefile,Build.x64.Custom_Makefile]
 
 #
@@ -262,6 +328,17 @@ all :
           SOURCE_FV=$(SOURCE_FV)           \
           PACKAGE_FILENAME=$(PACKAGE_FILENAME)
 
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+  @- $(MAKE) -f $(SOURCE_DIR)\makefile clean > NUL 2>&1
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
+
 [=============================================================================]
 #
 # These commands are used to build libraries
@@ -274,18 +351,53 @@ all :
 #
 LIB_NAME = $(LIB_DIR)\$(BASE_NAME).lib
 
-$(LIB_NAME) : $(OBJECTS) $(LIBS) $(INF_FILENAME)
+$(LIB_NAME) : $(OBJECTS) $(LIBS) $(INF_FILENAME) $(ENV_DEPS)
   $(LIB) $(LIB_FLAGS) $(OBJECTS) $(LIBS) /OUT:$@
 
-all: $(LIB_NAME)
+!IF "$(CREATEDEPS)"=="YES"
+all : $(DEP_TARGETS)
+  $(MAKE) -f $(MAKEFILE_NAME) all
+!ELSE
+all : $(LIB_NAME) $(DEP_TARGETS)
+!ENDIF
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
-[Build.Ebc.Library]
+[Build.Ebc.LIBRARY]
+#
+# LIB all the object files into to our target lib file. Put
+# a dependency on the component's INF file in case it changes.
+#
+LIB_NAME = $(LIB_DIR)\$(BASE_NAME).lib
 
-$(LIB_DIR)\$(BASE_NAME).lib : $(OBJECTS) $(LIBS)
-   $(EBC_LIB) $(EBC_LIB_FLAGS) $(OBJECTS) $(LIBS) /OUT:$(LIB_DIR)\$(BASE_NAME).lib
+$(LIB_NAME) : $(OBJECTS) $(LIBS) $(INF_FILENAME) $(ENV_DEPS)
+   $(EBC_LIB) $(EBC_LIB_FLAGS) $(OBJECTS) $(LIBS) /OUT:$@
 
-all : $(LIB_DIR)\$(BASE_NAME).lib
+!IF "$(CREATEDEPS)"=="YES"
+all : $(DEP_TARGETS)
+  $(MAKE) -f $(MAKEFILE_NAME) all
+!ELSE
+all : $(LIB_NAME) $(DEP_TARGETS)
+!ENDIF
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 #
@@ -294,7 +406,8 @@ all : $(LIB_DIR)\$(BASE_NAME).lib
 # GenFfsFile with the appropriate package file. SOURCE_FV must be defined
 # in the component INF file Defines section.
 #
-[Build.Ia32.FvImageFile,Build.x64.FvImageFile]
+[=============================================================================]
+[Build.Ia32.FvImageFile,Build.x64.FvImageFile,Build.Ipf.FvImageFile]
 
 all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi
 
@@ -302,8 +415,18 @@ all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi
 # Run GenFfsFile on the package file and FV file to create the firmware 
 # volume FFS file
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec $(PACKAGE_FILENAME)
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 #
@@ -345,7 +468,7 @@ $(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
 
 OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 
-$(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c
+$(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c $(INF_FILENAME) $(ALL_DEPS)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(BASE_NAME)Strings.c
 
 LOCALIZE_TARGETS = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
@@ -366,7 +489,7 @@ TARGET_LOCAL_LIB  = $(DEST_DIR)\$(BASE_NAME)Local.lib
 # LIB all the object files into our (local) target lib file. Put
 # a dependency on the component's INF file in case it changes.
 #
-$(TARGET_LOCAL_LIB) : $(OBJECTS)  $(INF_FILENAME)
+$(TARGET_LOCAL_LIB) : $(OBJECTS)  $(INF_FILENAME) $(ENV_DEPS)
   $(LIB) $(LIB_FLAGS) $(OBJECTS) /OUT:$@
 
 #
@@ -416,20 +539,6 @@ TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).dxe
 !ENDIF
 
 #
-# Build a FFS file from the sections and package
-#
-$(TARGET_FFS_FILE) : $(TARGET_PE32) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER) $(TARGET_DXE_DPX)
-#
-# Some of our components require padding to align code
-#
-!IF "$(PROCESSOR)" == "IPF"
-!IF "$(COMPONENT_TYPE)" == "PIC_PEIM" || "$(COMPONENT_TYPE)" == "PE32_PEIM" || "$(COMPONENT_TYPE)" == "RELOCATABLE_PEIM" || "$(COMPONENT_TYPE)" == "PEI_CORE" || "$(COMPONENT_TYPE)" == "COMBINED_PEIM_DRIVER"
-  copy $(BIN_DIR)\Blank.pad $(DEST_DIR)
-!ENDIF
-!ENDIF
-  $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
-
-#
 # Different methods to build section based on if PIC_PEIM
 #
 !IF "$(COMPONENT_TYPE)" == "PIC_PEIM"
@@ -445,13 +554,13 @@ $(TARGET_PE32) : $(TARGET_DLL)
 
 !ELSE
 
-$(TARGET_PE32) : $(TARGET_EFI) $(INF_FILENAME)
+$(TARGET_PE32) : $(TARGET_EFI)
   $(GENSECTION) -I $(TARGET_EFI) -O $(TARGET_PE32) -S EFI_SECTION_PE32
 
 #
-# BUGBUG: This step is obsolete when a linker is released that supports EFI.
+# Run FWImage on the DLL to set it as an EFI image type.
 #
-$(TARGET_EFI) : $(TARGET_DLL)
+$(TARGET_EFI) : $(TARGET_DLL) $(INF_FILENAME)
   $(FWIMAGE) -t 0 $(COMPONENT_TYPE) $(TARGET_DLL) $(TARGET_EFI)
 
 !ENDIF
@@ -459,7 +568,7 @@ $(TARGET_EFI) : $(TARGET_DLL)
 #
 # Link all objects and libs to create the executable
 #
-$(TARGET_DLL) : $(TARGET_LOCAL_LIB) $(LIBS)
+$(TARGET_DLL) : $(TARGET_LOCAL_LIB) $(LIBS) $(INF_FILENAME) $(ENV_DEPS)
   $(LINK) $(LINK_FLAGS_DLL) $(LIBS) /ENTRY:$(IMAGE_ENTRY_POINT) \
      $(TARGET_LOCAL_LIB) /OUT:$(TARGET_DLL) /MAP:$(TARGET_MAP) \
      /PDB:$(TARGET_PDB) 
@@ -490,7 +599,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : $(INF_FILENAME)
+$(TARGET_VER) : 
   echo.>$(TARGET_VER)
   type $(TARGET_VER)>$(TARGET_VER)
 !ENDIF
@@ -513,7 +622,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -522,7 +631,7 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : $(INF_FILENAME)
+$(TARGET_DPX) : 
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
@@ -536,7 +645,7 @@ $(TARGET_DPX) : $(INF_FILENAME)
 !IF "$(DXE_DPX_SOURCE)" != ""
 !IF EXIST ($(SOURCE_DIR)\$(DPX_SOURCE))
 $(TARGET_DXE_DPX) : $(SOURCE_DIR)\$(DXE_DPX_SOURCE) $(INF_FILENAME)
-  $(CC) $(INC) /EP $(SOURCE_DIR)\$(DXE_DPX_SOURCE) > $*.tmp1
+  $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(SOURCE_DIR)\$(DXE_DPX_SOURCE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S EFI_SECTION_DXE_DEPEX
   del $*.tmp1 > NUL
@@ -545,7 +654,7 @@ $(TARGET_DXE_DPX) : $(SOURCE_DIR)\$(DXE_DPX_SOURCE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(SOURCE_DIR)\$(DXE_DPX_SOURCE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DXE_DPX) : $(INF_FILENAME)
+$(TARGET_DXE_DPX) : 
   echo. > $(TARGET_DXE_DPX)
   type $(TARGET_DXE_DPX) > $(TARGET_DXE_DPX)
 !ENDIF
@@ -575,7 +684,36 @@ BIN_TARGETS = $(BIN_TARGETS) $(DEST_DIR)\$(BASE_NAME)IfrBin.sec
 
 !ENDIF
 
-all: $(LOCALIZE_TARGETS) $(BIN_TARGETS) $(TARGET_FFS_FILE)
+#
+# Build a FFS file from the sections and package
+#
+$(TARGET_FFS_FILE) : $(TARGET_PE32) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER) $(TARGET_DXE_DPX) $(PACKAGE_FILENAME)
+#
+# Some of our components require padding to align code
+#
+!IF "$(PROCESSOR)" == "IPF"
+!IF "$(COMPONENT_TYPE)" == "PIC_PEIM" || "$(COMPONENT_TYPE)" == "PE32_PEIM" || "$(COMPONENT_TYPE)" == "RELOCATABLE_PEIM" || "$(COMPONENT_TYPE)" == "SECURITY_CORE" || "$(COMPONENT_TYPE)" == "PEI_CORE" || "$(COMPONENT_TYPE)" == "COMBINED_PEIM_DRIVER"
+  copy $(BIN_DIR)\Blank.pad $(DEST_DIR)
+!ENDIF
+!ENDIF
+  $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
+
+!IF "$(CREATEDEPS)"=="YES"
+all : $(DEP_TARGETS)
+  $(MAKE) -f $(MAKEFILE_NAME) all
+!ELSE
+all : $(LOCALIZE_TARGETS) $(BIN_TARGETS) $(TARGET_FFS_FILE) $(DEP_TARGETS)
+!ENDIF
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 [Build.Ia32.TE_PEIM,Build.Ipf.TE_PEIM,Build.x64.TE_PEIM]
@@ -588,7 +726,7 @@ TARGET_LOCAL_LIB  = $(DEST_DIR)\$(BASE_NAME)Local.lib
 # LIB all the object files into our (local) target lib file. Put
 # a dependency on the component's INF file in case it changes.
 #
-$(TARGET_LOCAL_LIB) : $(OBJECTS)  $(INF_FILENAME)
+$(TARGET_LOCAL_LIB) : $(OBJECTS)  $(INF_FILENAME) $(ENV_DEPS)
   $(LIB) $(LIB_FLAGS) $(OBJECTS) /OUT:$@
 
 !ELSE
@@ -612,22 +750,15 @@ TARGET_TES        = $(DEST_DIR)\$(BASE_NAME).tes
 TARGET_FFS_FILE   = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).pei
 
 #
-# Build an FFS file from the sections and package
-#
-$(TARGET_FFS_FILE) : $(TARGET_TES) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER)
-  $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
-
-#
 # Create our TE section from our TE file
 #
-$(TARGET_TES) : $(TARGET_TE) $(INF_FILENAME)
+$(TARGET_TES) : $(TARGET_TE)
   $(GENSECTION) -I $(TARGET_TE) -O $(TARGET_TES) -S EFI_SECTION_TE
 
 #
 # Run FWImage on the DLL to set it as an EFI image type.
-# BUGBUG: This step is obsolete when a linker is released that supports EFI.
 #
-$(TARGET_EFI) : $(TARGET_DLL)
+$(TARGET_EFI) : $(TARGET_DLL) $(INF_FILENAME)
   $(FWIMAGE) $(COMPONENT_TYPE) $(TARGET_DLL) $(TARGET_EFI)
 
 #
@@ -639,7 +770,7 @@ $(TARGET_TE) : $(TARGET_EFI)
 #
 # Link all objects and libs to create the executable
 #
-$(TARGET_DLL) : $(TARGET_LOCAL_LIB) $(LIBS)
+$(TARGET_DLL) : $(TARGET_LOCAL_LIB) $(LIBS) $(INF_FILENAME) $(ENV_DEPS)
   $(LINK) $(LINK_FLAGS_DLL) $(LIBS) /ENTRY:$(IMAGE_ENTRY_POINT) \
      $(TARGET_LOCAL_LIB) /OUT:$(TARGET_DLL) /MAP:$(TARGET_MAP) \
      /PDB:$(TARGET_PDB)
@@ -670,7 +801,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : $(INF_FILENAME)
+$(TARGET_VER) : 
   echo.>$(TARGET_VER)
   type $(TARGET_VER)>$(TARGET_VER)
 !ENDIF
@@ -693,7 +824,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -702,19 +833,40 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : $(INF_FILENAME)
+$(TARGET_DPX) : 
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
 
-all: $(BIN_TARGETS) $(TARGET_FFS_FILE)
+#
+# Build an FFS file from the sections and package
+#
+$(TARGET_FFS_FILE) : $(TARGET_TES) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER) $(PACKAGE_FILENAME)
+  $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
+
+!IF "$(CREATEDEPS)"=="YES"
+all : $(DEP_TARGETS)
+  $(MAKE) -f $(MAKEFILE_NAME) all
+!ELSE
+all : $(TARGET_FFS_FILE) $(DEP_TARGETS)
+!ENDIF
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 #
 # These are the commands to build EBC EFI targets
 #
 [=============================================================================]
-[Build.Ebc.BS_DRIVER|APPLICATION]
+[Build.Ebc.BS_DRIVER|RT_DRIVER|APPLICATION]
 
 #
 # Add the EBC library to our list of libs
@@ -753,7 +905,7 @@ $(DEST_DIR)\$(BASE_NAME)Strings.hpk : $(DEST_DIR)\$(BASE_NAME).sdb
 
 OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 
-$(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c
+$(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c $(INF_FILENAME) $(ALL_DEPS)
   $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(BASE_NAME)Strings.c
 
 LOCALIZE_TARGETS = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
@@ -786,9 +938,9 @@ TARGET_DLL  = $(BIN_DIR)\$(BASE_NAME).dll
 #
 # First link all the objects and libs together to make a .dll file
 #
-$(TARGET_DLL) : $(OBJECTS) $(LIBS)
+$(TARGET_DLL) : $(OBJECTS) $(LIBS) $(INF_FILENAME) $(ENV_DEPS)
   $(EBC_LINK) $(EBC_LINK_FLAGS) /SUBSYSTEM:$(SUBSYSTEM) /ENTRY:EfiStart \
-    $(OBJECTS) $(LIBS) /OUT:$(TARGET_DLL)
+    $(OBJECTS) $(LIBS) /OUT:$(TARGET_DLL) /MAP:$(TARGET_MAP)
   $(SETSTAMP) $(TARGET_DLL) $(BUILD_DIR)\GenStamp.txt
 !IF "$(EFI_ZERO_DEBUG_DATA)" == "YES"
   $(ZERODEBUGDATA) $(TARGET_DLL)
@@ -797,13 +949,13 @@ $(TARGET_DLL) : $(OBJECTS) $(LIBS)
 #
 # Now take the .dll file and make a .efi file
 #
-$(TARGET_EFI) : $(TARGET_DLL)
+$(TARGET_EFI) : $(TARGET_DLL) $(INF_FILENAME)
   $(FWIMAGE) -t 0 $(COMPONENT_TYPE) $(TARGET_DLL) $(TARGET_EFI)
 
 #
 # Now take the .efi file and make a .pe32 section
 #
-$(TARGET_PE32) : $(TARGET_EFI) $(INF_FILENAME)
+$(TARGET_PE32) : $(TARGET_EFI) 
   $(GENSECTION) -I $(TARGET_EFI) -O $(TARGET_PE32) -S EFI_SECTION_PE32
 
 #
@@ -824,7 +976,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : $(INF_FILENAME)
+$(TARGET_VER) : 
   echo. > $(TARGET_VER)
   type $(TARGET_VER) > $(TARGET_VER)
 !ENDIF
@@ -847,7 +999,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -856,18 +1008,57 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : $(INF_FILENAME)
+$(TARGET_DPX) : 
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
 
 #
+# Describe how to build the HII export file from all the input HII pack files.
+# Use the FFS file GUID for the package GUID in the export file. Only used
+# when multiple VFR share strings.
+#
+$(DEST_DIR)\$(BASE_NAME).hii : $(HII_PACK_FILES)
+  $(HIIPACK) create -g $(FILE_GUID) -p $(HII_PACK_FILES) -o $(DEST_DIR)\$(BASE_NAME).hii
+
+#
+# If the build calls for creating an FFS file with the IFR included as
+# a separate binary (not compiled into the driver), then build the binary
+# section now. Note that the PACKAGE must be set correctly to actually get
+# this IFR section pulled into the FFS file.
+#
+!IF ("$(HII_IFR_PACK_FILES)" != "")
+
+$(DEST_DIR)\$(BASE_NAME)IfrBin.sec : $(HII_IFR_PACK_FILES)
+  $(HIIPACK) create -novarpacks -p $(HII_IFR_PACK_FILES) -o $(DEST_DIR)\$(BASE_NAME)IfrBin.hii
+  $(GENSECTION) -I $(DEST_DIR)\$(BASE_NAME)IfrBin.hii -O $(DEST_DIR)\$(BASE_NAME)IfrBin.sec -S EFI_SECTION_RAW
+
+BIN_TARGETS = $(BIN_TARGETS) $(DEST_DIR)\$(BASE_NAME)IfrBin.sec
+
+!ENDIF
+
+#
 # Build an FFS file from the sections and package
 #
-$(TARGET_FFS_FILE) : $(TARGET_PE32) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER)
+$(TARGET_FFS_FILE) : $(TARGET_PE32) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER) $(PACKAGE_FILENAME)
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
-all: $(LOCALIZE_TARGETS) $(TARGET_FFS_FILE)
+!IF "$(CREATEDEPS)"=="YES"
+all : $(DEP_TARGETS)
+  $(MAKE) -f $(MAKEFILE_NAME) all
+!ELSE
+all : $(LOCALIZE_TARGETS) $(BIN_TARGETS) $(TARGET_FFS_FILE) $(DEP_TARGETS)
+!ENDIF
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 #
@@ -910,7 +1101,7 @@ TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).dxe
 #
 # Take the .efi file and make a .pe32 file
 #
-$(TARGET_PE32) : $(TARGET_EFI) $(INF_FILENAME)
+$(TARGET_PE32) : $(TARGET_EFI) 
   $(GENSECTION) -I $(TARGET_EFI) -O $(TARGET_PE32) -S EFI_SECTION_PE32
 
 #
@@ -931,7 +1122,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : $(INF_FILENAME)
+$(TARGET_VER) : 
   echo. > $(TARGET_VER)
   type $(TARGET_VER) > $(TARGET_VER)
 !ENDIF
@@ -954,7 +1145,7 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
-  $(CC) $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
+  $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
   $(GENSECTION) -I $*.tmp2 -O $@ -S $(DEPEX_TYPE)
   del $*.tmp1 > NUL
@@ -963,7 +1154,7 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : $(INF_FILENAME)
+$(TARGET_DPX) : 
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
@@ -971,103 +1162,96 @@ $(TARGET_DPX) : $(INF_FILENAME)
 #
 # Build a FFS file from the sections and package
 #
-$(TARGET_FFS_FILE) : $(TARGET_PE32) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER)
+$(TARGET_FFS_FILE) : $(TARGET_PE32) $(TARGET_DPX) $(TARGET_UI) $(TARGET_VER) $(PACKAGE_FILENAME)
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
-all: $(TARGET_FFS_FILE)
-
-[=============================================================================]
-#
-# These commands are used to build EFI shell applications. That's all
-# we need to do for these is link the objects and libraries together
-# to create a .EFI file. See the example INF file in the shell\ls
-# directory for a template INF file. You may also need to build the 
-# shell library below via shell\lib\shelllib.inf.
-#
-[=============================================================================]
-[Build.Ia32.SHELLAPP,Build.Ipf.SHELLAPP,Build.x64.SHELLAPP]
-
-TARGET_DLL = $(BIN_DIR)\$(BASE_NAME).dll
-TARGET_EFI = $(BIN_DIR)\$(BASE_NAME).efi
-TARGET_PDB = $(BIN_DIR)\$(BASE_NAME).pdb
-TARGET_MAP = $(BIN_DIR)\$(BASE_NAME).map
-SUBSYSTEM  = EFI_APPLICATION
+all : $(TARGET_FFS_FILE)
 
 #
-# Link all the object files and library files together to create our
-# final target.
+# Remove the generated temp and final files for this modules.
 #
-$(TARGET_DLL) : $(OBJECTS) $(LIBS)
-  $(LINK) $(LINK_FLAGS_DLL) $(OBJECTS) $(LIBS) /ENTRY:$(IMAGE_ENTRY_POINT) \
-     /OUT:$(TARGET_DLL) /MAP:$(TARGET_MAP) /PDB:$(TARGET_PDB) /SUBSYSTEM:EFI_APPLICATION
-
-$(TARGET_EFI) : $(TARGET_DLL)
-  $(FWIMAGE) -t 0 $(COMPONENT_TYPE) $(TARGET_DLL) $(TARGET_EFI)
-  $(SETSTAMP) $(TARGET_EFI) $(BUILD_DIR)\GenStamp.txt
-!IF "$(EFI_ZERO_DEBUG_DATA)" == "YES"
-  $(ZERODEBUGDATA) $(TARGET_DLL)
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
 !ENDIF
-
-all: $(TARGET_EFI)
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
-[Compile.Ia32.Bin,Compile.x64.Bin,Compile.Ipf.Bin]
+[Compile.Ia32.Bin|Bmp,Compile.x64.Bin|Bmp,Compile.Ipf.Bin|Bmp]
 #
-# We simply copy the 16 bit binary file from the source directory to the destination directory
+# We simply copy the binary file from the source directory to the destination directory
 #
-$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_DIR)\$(BASE_NAME).bin
+$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_FILE_NAME)
   copy $** $@
 
 [=============================================================================]
-[Compile.Ia32.Bmp,Compile.x64.Bmp,Compile.Ipf.Bmp]
-#
-# We simply copy the BMP file from the source directory to the destination directory and change the extension to bin.
-# This is so that we can build BINARY types the same way, with the same default package, etc.
-#
-$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_DIR)\$(BASE_NAME).bmp
-  copy $** $@
-
-[=============================================================================]
-[Build.Ia32.BINARY,Build.Ipf.BINARY,Build.x64.BINARY]
-#
+[Build.Ia32.BINARY|Legacy16|Logo,Build.Ipf.BINARY|Legacy16|Logo,Build.x64.BINARY|Legacy16|Logo]
 #
 # Use GenFfsFile to convert it to an FFS file
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs : $(DEST_DIR)\$(BASE_NAME).bin
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs : $(DEST_DIR)\$(BASE_NAME).bin $(PACKAGE_FILENAME)
   $(GENSECTION) -I $(DEST_DIR)\$(BASE_NAME).bin -O $(DEST_DIR)\$(BASE_NAME).sec -S EFI_SECTION_RAW
-  $(GENFFSFILE) -B $(BIN_DIR) -P1 $(DEST_DIR)\$(BASE_NAME).pkg -V
+  $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
-all: $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs
+all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
+
+[=============================================================================]
+[Build.Ia32.RAWFILE|CONFIG,Build.Ipf.RAWFILE|CONFIG,Build.x64.RAWFILE|CONFIG]
+#
+# Use GenFfsFile to convert it to an raw FFS file
+#
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).raw : $(DEST_DIR)\$(BASE_NAME).bin $(PACKAGE_FILENAME)
+  $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
+
+all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).raw
+
+#
+# Remove the generated temp and final files for this modules.
+#
+clean :
+!IF ("$(FILE_GUID)" != "")
+  @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
+!ENDIF
+  @if exist $(BIN_DIR)\$(BASE_NAME).* del $(BIN_DIR)\$(BASE_NAME).*
+  @del /q $(DEST_OUTPUT_DIRS) 
 
 [=============================================================================]
 # 
 # These are commands to compile unicode .uni files.
+#
+[=============================================================================]
+[Compile.Ia32.Uni,Compile.Ipf.Uni,Compile.Ebc.Uni,Compile.x64.Uni]
+#
 # Emit an error message if the file's base name is the same as the
 # component base name. This causes build issues.
 #
-[Compile.Ia32.Uni,Compile.Ipf.Uni,Compile.Ebc.Uni,Compile.x64.Uni]
-
 !IF "$(FILE)" == "$(BASE_NAME)"
 !ERROR Component Unicode string file name cannot be the same as the component BASE_NAME.
 !ENDIF
 
-!IF ("$(NO_MAKEDEPS)" == "")
-
-DEP_FILE = $(DEST_DIR)\$(FILE)Uni.dep
+#
+# Always create dep file for uni file as it can be created at the same time when 
+# strgather is parsing uni file.
+#
+DEP_FILE    = $(DEST_DIR)\$(FILE)Uni.dep
 
 !IF EXIST($(DEP_FILE))
 !INCLUDE $(DEP_FILE)
 !ENDIF
 
-$(DEST_DIR)\$(FILE).sdb : $(SOURCE_FILE_NAME)
+$(DEST_DIR)\$(FILE).sdb : $(SOURCE_FILE_NAME) $(INF_FILENAME)
   $(STRGATHER) -parse -newdb -db $(DEST_DIR)\$(FILE).sdb -dep $(DEP_FILE) $(INC) $(SOURCE_FILE_NAME)
-
-!ELSE
-
-$(DEST_DIR)\$(FILE).sdb : $(SOURCE_FILE_NAME)
-  $(STRGATHER) -parse -newdb -db $(DEST_DIR)\$(FILE).sdb $(INC) $(SOURCE_FILE_NAME)
-
-!ENDIF
 
 SDB_FILES       = $(SDB_FILES) $(DEST_DIR)\$(FILE).sdb
 STRGATHER_FLAGS = $(STRGATHER_FLAGS) -db $(DEST_DIR)\$(FILE).sdb
@@ -1076,6 +1260,25 @@ LOCALIZE        = YES
 [=============================================================================]
 [Compile.Ia32.Vfr,Compile.Ipf.Vfr,Compile.x64.Vfr]
 
+DEP_FILE    = $(DEST_DIR)\$(FILE)Vfr.dep
+
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE)Vfr.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
+
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
 #
@@ -1084,9 +1287,8 @@ HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 # the obj and hpk files as dual targets of the same command.
 #
 $(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
-  @echo.
   
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
     -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(FILE).c
@@ -1094,6 +1296,25 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAM
 [=============================================================================]
 [Compile.Ebc.Vfr]
 
+DEP_FILE    = $(DEST_DIR)\$(FILE)Vfr.dep
+
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE)Vfr.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
+
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
 #
@@ -1102,9 +1323,8 @@ HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 # the obj and hpk files as dual targets of the same command.
 #
 $(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
-  @echo.
   
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
     -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(FILE).c
@@ -1114,7 +1334,27 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAM
 # Commands for building IFR as uncompressed binary into the FFS file. To 
 # use it, set COMPILE_SELECT=.vfr=Ifr_Bin for the component in the DSC file.
 #
+[=============================================================================]
 [Compile.Ia32.Ifr_Bin,Compile.Ipf.Ifr_Bin,Compile.x64.Ifr_Bin]
+
+DEP_FILE    = $(DEST_DIR)\$(FILE)Vfr.dep
+
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE)Vfr.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
 
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
@@ -1124,9 +1364,8 @@ HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 # the obj and hpk files as dual targets of the same command.
 #
 $(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
-  @echo.
   
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
     -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(FILE).c
@@ -1142,7 +1381,27 @@ HII_IFR_PACK_FILES = $(HII_IFR_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 # Commands for building IFR as uncompressed binary into the FFS file. To 
 # use it, set COMPILE_SELECT=.vfr=Ifr_Bin for the component in the DSC file.
 #
+[=============================================================================]
 [Compile.Ebc.Ifr_Bin]
+
+DEP_FILE    = $(DEST_DIR)\$(FILE)Vfr.dep
+
+!IF EXIST($(DEST_DIR)\$(FILE).obj)
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(FILE)Vfr.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(DEST_DIR)\$(FILE).obj
+  $(MAKEDEPS) -f $(SOURCE_FILE_NAME) $(DEP_FLAGS)
 
 HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 
@@ -1152,9 +1411,8 @@ HII_PACK_FILES  = $(HII_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 # the obj and hpk files as dual targets of the same command.
 #
 $(DEST_DIR)\$(FILE).hpk : $(DEST_DIR)\$(FILE).obj
-  @echo.
   
-$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INC_DEPS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+$(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
   $(VFRCOMPILE) $(VFRCOMPILE_FLAGS) $(INC) -ibin -od $(DEST_DIR)\$(SOURCE_RELATIVE_PATH) \
     -l $(VFR_FLAGS) $(SOURCE_FILE_NAME)
   $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(FILE).c
@@ -1170,204 +1428,7 @@ HII_IFR_PACK_FILES = $(HII_IFR_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 #
 # Run GenSection on the firmware volume image.
 #
-$(DEST_DIR)\$(SOURCE_FV)Fv.sec : $(FV_DIR)\$(SOURCE_FV).fv
-  copy $(FV_DIR)\$(SOURCE_FV).fv $(DEST_DIR)\$(SOURCE_FV).fv /y
-  $(GENSECTION) -I $(DEST_DIR)\$(SOURCE_FV).fv -O $(DEST_DIR)\$(SOURCE_FV)Fv.sec -S EFI_SECTION_FIRMWARE_VOLUME_IMAGE
+$(DEST_DIR)\$(SOURCE_FV)Fv.sec : $(SOURCE_FILE_NAME)
+  $(GENSECTION) -I $(SOURCE_FILE_NAME) -O $(DEST_DIR)\$(SOURCE_FV)Fv.sec -S EFI_SECTION_FIRMWARE_VOLUME_IMAGE
 
-[=============================================================================]
-#
-# These are the package descriptions. They are tagged as
-# [Package.$(COMPONENT_TYPE).$(PACKAGE)], where COMPONENT_TYPE is typically
-# defined in the component INF file, and PACKAGE is typically specified
-# in the components section in the main DSC file.
-#
-
-[=============================================================================]
-[Package.APPLICATION.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_APPLICATION
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress ($(COMPRESS_METHOD)) {
-    Tool (
-      $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\$(BASE_NAME).pe32
-               $(DEST_DIR)\$(BASE_NAME).ui
-               $(DEST_DIR)\$(BASE_NAME).ver
-            -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-[Package.FILE.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_FREEFORM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{ 
-  $(BASE_NAME).sec 
-}
-[=============================================================================]
-[Package.Apriori.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_FREEFORM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{ 
-  $(DEST_DIR)\$(BASE_NAME).sec 
-}
-
-[=============================================================================]
-[Package.Logo.Logo,Package.Logo.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_FREEFORM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress ($(COMPRESS_METHOD)) {
-    Tool ( $(OEMTOOLPATH)\GenCRC32Section
-      ARGS = -i $(BIN_DIR)\$(BASE_NAME).sec
-             -o $(BIN_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(BIN_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-[Package.RAWFILE.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_RAW
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  $(DEST_DIR)\$(BASE_NAME).FV
-}
-
-[=============================================================================]
-[Package.Legacy16.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_FREEFORM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress ($(COMPRESS_METHOD)) {
-    Tool ( $(OEMTOOLPATH)\GenCRC32Section
-      ARGS = -i $(BIN_DIR)\$(BASE_NAME).sec
-             -o $(BIN_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(BIN_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-[Package.BINARY.Default]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_FREEFORM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress ($(COMPRESS_METHOD)) {
-    Tool ( $(OEMTOOLPATH)\GenCRC32Section
-      ARGS = -i $(DEST_DIR)\$(BASE_NAME).sec
-             -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
-#
-# Package definition for TE files
-#
-[Package.PE32_PEIM.TE_PEIM]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_PEIM
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{ 
-  $(BASE_NAME).dpx 
-  $(BASE_NAME).tes
-  $(BASE_NAME).ui 
-  $(BASE_NAME).ver 
-}
-
-[=============================================================================]
-[Package.Config.Config]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_RAW
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{ 
-  $(BASE_NAME).ini 
-}
-
-[=============================================================================]
-#
-# Package definition to put the IFR data in a separate section in the
-# FFS file.
-#
-[Package.BS_DRIVER.Ifr_Bin]
-PACKAGE.INF
-\[.]
-BASE_NAME                   = $(BASE_NAME)
-FFS_FILEGUID                = $(FILE_GUID)
-FFS_FILETYPE                = EFI_FV_FILETYPE_DRIVER
-FFS_ATTRIB_CHECKSUM         = TRUE
-
-IMAGE_SCRIPT =
-{
-  Compress ($(COMPRESS_METHOD)) {
-    Tool (
-      $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\$(BASE_NAME).dpx
-               $(DEST_DIR)\$(BASE_NAME).pe32
-               $(DEST_DIR)\$(BASE_NAME).ui
-               $(DEST_DIR)\$(BASE_NAME).ver
-               $(DEST_DIR)\$(BASE_NAME)IfrBin.sec
-            -o $(DEST_DIR)\$(BASE_NAME).crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).crc32
-    )
-  }
-}
-
-[=============================================================================]
 [=============================================================================]

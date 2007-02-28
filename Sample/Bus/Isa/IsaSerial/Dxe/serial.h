@@ -27,7 +27,6 @@ Revision History:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include "..\..\IsaIoDefinitions.h"
 #include "EfiCompNameSupport.h"
 
 //
@@ -35,6 +34,7 @@ Revision History:
 //
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (IsaIo)
 
 //
 // Driver Produced Protocol Prototypes

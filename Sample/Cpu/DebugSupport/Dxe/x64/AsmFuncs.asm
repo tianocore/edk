@@ -156,9 +156,8 @@ GetIdtr         PROC    PUBLIC
                 push    rbp
                 mov     rbp, rsp
 
-                sub     rsp, 8h
-                sidt    QWORD PTR [rbp - 6]
-                mov     rax, QWORD PTR [rbp - 4]
+                sidt    QWORD PTR [rbp - 0ah]
+                mov     rax, QWORD PTR [rbp - 8h]
 
                 mov     rsp, rbp
                 pop     rbp
@@ -181,7 +180,7 @@ WriteInterruptFlag  PROC PUBLIC
                 pop     rax
                 and     rax, 200h
                 shr     rax, 9
-                cmp     rcx, 0
+                cmp     cl, 0
                 jnz     EnableIF
                 cli
                 ret

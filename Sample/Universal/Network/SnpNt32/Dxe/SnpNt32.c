@@ -23,7 +23,7 @@ EFI_DRIVER_BINDING_PROTOCOL gSnpNt32DriverBinding = {
   SnpNt32DriverBindingSupported,
   SnpNt32DriverBindingStart,
   SnpNt32DriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };

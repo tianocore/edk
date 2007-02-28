@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -77,7 +77,7 @@ Returns:
     CallbackInfo->Data.VideoBIOS = (UINT8) (UINTN) DataArray->Data[0].Data;
     gRT->SetVariable (
           L"VBIOS",
-          &gEfiGlobalVariableGuid,
+          &gEfiGenericVariableGuid,
           EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
           sizeof (UINT8),
           &CallbackInfo->Data.VideoBIOS
@@ -400,7 +400,7 @@ Returns:
   //
   VideoOption = BdsLibGetVariableAndSize (
                   L"VBIOS",
-                  &gEfiGlobalVariableGuid,
+                  &gEfiGenericVariableGuid,
                   &VideoOptionSize
                   );
   if (NULL == VideoOption) {

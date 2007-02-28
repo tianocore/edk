@@ -69,7 +69,6 @@ typedef struct {
   REQUEST_SENSE_DATA      *SenseData;
   UINT8                   SenseDataNumber;
   UINT8                   DeviceType;
-  BOOLEAN                 NeedReadCapacity;
 } USB_FLOPPY_DEV;
 
 #define USB_FLOPPY_DEV_FROM_THIS(a) \

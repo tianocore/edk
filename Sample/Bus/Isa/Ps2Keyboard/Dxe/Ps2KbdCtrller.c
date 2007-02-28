@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -582,7 +582,7 @@ Returns:
 {
   UINT8                   Data;
   EFI_TPL                 OldTpl;
-  UINT32                  TimeOut;
+  //UINT32                  TimeOut;
   KEYBOARD_CONSOLE_IN_DEV *ConsoleIn;
 
   ConsoleIn = Context;
@@ -599,11 +599,20 @@ Returns:
     gBS->RestoreTPL (OldTpl);
     return ;
   }
+  
   //
+  // To let KB driver support Hot plug, here should skip the 'resend' command  for the case that 
+  // KB is not connected to system. If KB is not connected to system, driver will find there's  something 
+  // error in the following code and wait for the input buffer empty, this waiting time shoulb be  short enough since
+  // this is a NOTIFY TPL period function, or the system performance will degrade hardly when KB is not connected. 
+  // Just skip the 'resend' process simply.
+  //
+ 
+/*    //
   // If there is something error, issue a 'resend' command to keyboard
   //
   if (KeyReadStatusRegister (Context) & 0xc0) {
-    //
+    //    
     // wait for input buffer empty
     //
     for (TimeOut = 0; TimeOut < KEYBOARD_TIMEOUT; TimeOut += 30) {
@@ -616,8 +625,8 @@ Returns:
     //
     // issue the 'resend' command
     //
-    KeyWriteDataRegister (Context, 0xfe);
-  }
+    KeyWriteDataRegister (Context, 0xfe); 
+  } */
 
   Data = 0;
 
@@ -1159,7 +1168,7 @@ Returns:
   //
   // point to the current position in ScancodeArr
   //
-  UINT32      TimeOut;
+  //UINT32      TimeOut;
 
   Readed          = 0;
   Extended        = FALSE;
@@ -1172,25 +1181,41 @@ Returns:
   // detecting the availability of keys. Timer event has a max frequency of
   // 18Hz which is insufficient
   //
+  
   //
+  // To let KB driver support Hot plug, here should skip the 'resend' command  for the case that 
+  // KB is not connected to system. If KB is not connected to system, driver will find there's  something 
+  // error in the following code and wait for the input buffer empty, this waiting time shoulb be  short enough since
+  // this is a NOTIFY TPL period function, or the system performance will degrade hardly when KB is not connected. 
+  // Just skip the 'resend' process simply.
+  //
+  
+/*   //
   // If there is something error, issue a 'resend' command to keyboard
   //
   if (KeyReadStatusRegister (ConsoleIn) & 0xc0) {
     //
+    // To let KB driver support Hot plug, here should enhance the Timeout for the case that KB is not 
+    // connected to system. If KB is not connected to system, driver  will find there's  something 
+    // error here and wait for the input buffer empty, this waiting time shoulb be  short enough, or the 
+    // system performance will degrade hardly when KB is not connected. We just skip the waiting for empty here
+    //
+    
+    //    
     // wait for input buffer empty
     //
     for (TimeOut = 0; TimeOut < KEYBOARD_TIMEOUT; TimeOut += 30) {
       if (!(KeyReadStatusRegister (ConsoleIn) & 0x02)) {
         break;
       }
-
+      
       gBS->Stall (30);
     }
     //
     // issue the 'resend' command
     //
     KeyWriteDataRegister (ConsoleIn, 0xfe);
-  }
+  } */
 
   if (((KeyReadStatusRegister (ConsoleIn) & 0x21) == 0x1) && (ConsoleIn->ScancodeBufCount < KEYBOARD_BUFFER_MAX_COUNT)) {
 
@@ -1589,8 +1614,33 @@ Returns:
     KeyboardError (ConsoleIn, L"8042 controller data write error!\n\r");
     goto Done;
   }
+  
+  //
+  // Clear Memory Scancode Buffer
+  //
+  ConsoleIn->ScancodeBufStartPos  = 0;
+  ConsoleIn->ScancodeBufEndPos    = KEYBOARD_BUFFER_MAX_COUNT - 1;
+  ConsoleIn->ScancodeBufCount     = 0;
+  ConsoleIn->Ctrled               = FALSE;
+  ConsoleIn->Alted                = FALSE;
 
-  if (ExtendedVerification) {
+  //
+  // Reset the status indicators
+  //
+  ConsoleIn->Ctrl       = FALSE;
+  ConsoleIn->Alt        = FALSE;
+  ConsoleIn->Shift      = FALSE;
+  ConsoleIn->CapsLock   = FALSE;
+  ConsoleIn->NumLock    = FALSE;
+  ConsoleIn->ScrollLock = FALSE;
+
+  //
+  // For reseting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,
+  // and to support KB hot plug, we need to let the InitKB succeed no matter whether there is a KB device connected
+  // to system. So we only do the real reseting for keyboard when user asks and there is a real KB connected t system, 
+  // and normally during booting an OS, it's skipped. 
+  //
+  if (ExtendedVerification && CheckKeyboardConnect (ConsoleIn)) {
     //
     // Additional verifications for keyboard interface
     //
@@ -1664,62 +1714,45 @@ Returns:
       KeyboardError (ConsoleIn, L"Some specific value not aquired from 8042 controller!\n\r");
       goto Done;
     }
-
-  }
-  //
-  // Clear Keyboard Scancode Buffer
-  //
-  Status = KeyboardWrite (ConsoleIn, 0xf4);
-  if (EFI_ERROR (Status)) {
-    KeyboardError (ConsoleIn, L"8042 controller data write error!\n\r");
-    goto Done;
-  }
-
-  Status = KeyboardWaitForValue (ConsoleIn, 0xfa);
-  if (EFI_ERROR (Status)) {
-    KeyboardError (ConsoleIn, L"Some specific value not aquired from 8042 controller!\n\r");
-    goto Done;
-  }
-  //
-  // Clear Memory Scancode Buffer
-  //
-  ConsoleIn->ScancodeBufStartPos  = 0;
-  ConsoleIn->ScancodeBufEndPos    = KEYBOARD_BUFFER_MAX_COUNT - 1;
-  ConsoleIn->ScancodeBufCount     = 0;
-  ConsoleIn->Ctrled               = FALSE;
-  ConsoleIn->Alted                = FALSE;
-
-  //
-  // Reset the status indicators
-  //
-  ConsoleIn->Ctrl       = FALSE;
-  ConsoleIn->Alt        = FALSE;
-  ConsoleIn->Shift      = FALSE;
-  ConsoleIn->CapsLock   = FALSE;
-  ConsoleIn->NumLock    = FALSE;
-  ConsoleIn->ScrollLock = FALSE;
-
-  if (Ps2Policy != NULL) {
-    if ((Ps2Policy->KeyboardLight & EFI_KEYBOARD_CAPSLOCK) == EFI_KEYBOARD_CAPSLOCK) {
-      ConsoleIn->CapsLock = TRUE;
+    
+    //
+    // Enable keyboard to clear Keyboard Scancode Buffer
+    //
+    Status = KeyboardWrite (ConsoleIn, 0xf4);
+    if (EFI_ERROR (Status)) {
+      KeyboardError (ConsoleIn, L"8042 controller data write error!\n\r");
+      goto Done;
     }
 
-    if ((Ps2Policy->KeyboardLight & EFI_KEYBOARD_NUMLOCK) == EFI_KEYBOARD_NUMLOCK) {
-      ConsoleIn->NumLock = TRUE;
-    }
+     Status = KeyboardWaitForValue (ConsoleIn, 0xfa);
+    if (EFI_ERROR (Status)) {
+      KeyboardError (ConsoleIn, L"Some specific value not aquired from 8042 controller!\n\r");
+      goto Done;
+    } 
+    
+    if (Ps2Policy != NULL) {
+      if ((Ps2Policy->KeyboardLight & EFI_KEYBOARD_CAPSLOCK) == EFI_KEYBOARD_CAPSLOCK) {
+        ConsoleIn->CapsLock = TRUE;
+      }
 
-    if ((Ps2Policy->KeyboardLight & EFI_KEYBOARD_SCROLLLOCK) == EFI_KEYBOARD_SCROLLLOCK) {
-      ConsoleIn->ScrollLock = TRUE;
+      if ((Ps2Policy->KeyboardLight & EFI_KEYBOARD_NUMLOCK) == EFI_KEYBOARD_NUMLOCK) {
+        ConsoleIn->NumLock = TRUE;
+      }
+
+      if ((Ps2Policy->KeyboardLight & EFI_KEYBOARD_SCROLLLOCK) == EFI_KEYBOARD_SCROLLLOCK) {
+        ConsoleIn->ScrollLock = TRUE;
+      }
+    }
+    //
+    // Update Keyboard Lights
+    //
+    Status = UpdateStatusLights (ConsoleIn);
+    if (EFI_ERROR (Status)) {
+      KeyboardError (ConsoleIn, L"Update keyboard status lights error!\n\r");
+      goto Done;
     }
   }
-  //
-  // Update Keyboard Lights
-  //
-  Status = UpdateStatusLights (ConsoleIn);
-  if (EFI_ERROR (Status)) {
-    KeyboardError (ConsoleIn, L"Update keyboard status lights error!\n\r");
-    goto Done;
-  }
+  
   //
   // At last, we can now enable the mouse interface if appropriate
   //
@@ -1777,4 +1810,62 @@ Returns:
   }
 
   return Status;
+}
+
+BOOLEAN
+EFIAPI
+CheckKeyboardConnect (
+  IN KEYBOARD_CONSOLE_IN_DEV *ConsoleIn
+  )
+/*++
+
+Routine Description:
+
+  Check whether there is Ps/2 Keyboard device in system by 0xF4 Keyboard Command
+  If Keyboard receives 0xF4, it will respond with 'ACK'. If it doesn't respond, the device
+  should not be in system. 
+
+Arguments:
+
+  BiosKeyboardPrivate - Keyboard Private Data Structure  
+
+Returns:
+
+  TRUE                - Keyboard in System.
+  FALSE               - Keyboard not in System.
+
+--*/
+{
+  EFI_STATUS     Status;
+  UINTN          WaitForValueTimeOutBcakup;
+  
+  Status = EFI_SUCCESS;  
+  //
+  // enable keyboard itself and wait for its ack
+  // If can't receive ack, Keyboard should not be connected.
+  //
+  Status = KeyboardWrite (
+             ConsoleIn,
+             KEYBOARD_KBEN
+             );
+
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+  //
+  // wait for 1s
+  //
+  WaitForValueTimeOutBcakup = mWaitForValueTimeOut;
+  mWaitForValueTimeOut = KEYBOARD_WAITFORVALUE_TIMEOUT;
+  Status = KeyboardWaitForValue (
+             ConsoleIn,
+             KEYBOARD_CMDECHO_ACK
+             );
+  mWaitForValueTimeOut = WaitForValueTimeOutBcakup;
+  
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }  
+
+  return TRUE;
 }

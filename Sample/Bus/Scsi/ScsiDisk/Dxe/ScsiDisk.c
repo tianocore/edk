@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -50,7 +50,7 @@ EFI_DRIVER_BINDING_PROTOCOL gScsiDiskDriverBinding = {
   ScsiDiskDriverBindingSupported,
   ScsiDiskDriverBindingStart,
   ScsiDiskDriverBindingStop,
-  0x10,
+  0xa,
   NULL,
   NULL
 };
@@ -911,57 +911,41 @@ Returns:
             &InquiryDataLength,
             FALSE
             );
-  switch (Status) {
-  //
-  // no need to check HostAdapterStatus and TargetStatus
-  //
-  case EFI_SUCCESS:
-  case EFI_WARN_BUFFER_TOO_SMALL:
-    ParseInquiryData (ScsiDiskDevice);
-    return EFI_SUCCESS;
-
-  case EFI_NOT_READY:
-    *NeedRetry = TRUE;
-    return EFI_DEVICE_ERROR;
-
-  case EFI_INVALID_PARAMETER:
-  case EFI_UNSUPPORTED:
-    *NeedRetry = FALSE;
-    return EFI_DEVICE_ERROR;
-
-  //
-  // go ahead to check HostAdapterStatus and TargetStatus
-  // (EFI_TIMEOUT, EFI_DEVICE_ERROR)
-  //
-  default:
-    break;
-  }
-
-  Status = CheckHostAdapterStatus (HostAdapterStatus);
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_TIMEOUT:
-  case EFI_NOT_READY:
-    *NeedRetry = TRUE;
-    return EFI_DEVICE_ERROR;
-
-  case EFI_DEVICE_ERROR:
     //
-    // reset the scsi channel
+    // no need to check HostAdapterStatus and TargetStatus
     //
+   if ((Status == EFI_SUCCESS) || (Status == EFI_WARN_BUFFER_TOO_SMALL)) {
+     ParseInquiryData (ScsiDiskDevice);
+     return EFI_SUCCESS;
+ 
+   } else if (Status == EFI_NOT_READY) {
+     *NeedRetry = TRUE;
+     return EFI_DEVICE_ERROR;
+ 
+   } else if ((Status == EFI_INVALID_PARAMETER) || (Status == EFI_UNSUPPORTED)) {
+     *NeedRetry = FALSE;
+     return EFI_DEVICE_ERROR;
+   }
+   //
+   // go ahead to check HostAdapterStatus and TargetStatus
+   // (EFI_TIMEOUT, EFI_DEVICE_ERROR)
+   //
+ 
+   Status = CheckHostAdapterStatus (HostAdapterStatus);
+   if ((Status == EFI_TIMEOUT) || (Status == EFI_NOT_READY)) {
+     *NeedRetry = TRUE;
+     return EFI_DEVICE_ERROR;
+   } else if (Status == EFI_DEVICE_ERROR) {
+      //
+      // reset the scsi channel
+      //
     ScsiDiskDevice->ScsiIo->ResetBus (ScsiDiskDevice->ScsiIo);
     *NeedRetry = FALSE;
     return EFI_DEVICE_ERROR;
   }
 
   Status = CheckTargetStatus (TargetStatus);
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_NOT_READY:
+  if (Status == EFI_NOT_READY) {
     //
     // reset the scsi device
     //
@@ -969,7 +953,7 @@ Returns:
     *NeedRetry = TRUE;
     return EFI_DEVICE_ERROR;
 
-  case EFI_DEVICE_ERROR:
+  } else if (Status == EFI_DEVICE_ERROR) {
     *NeedRetry = FALSE;
     return EFI_DEVICE_ERROR;
   }
@@ -1055,37 +1039,27 @@ Returns:
             &HostAdapterStatus,
             &TargetStatus
             );
-  switch (Status) {
   //
   // no need to check HostAdapterStatus and TargetStatus
   //
-  case EFI_NOT_READY:
+  if (Status == EFI_NOT_READY) {
     *NeedRetry = TRUE;
     return EFI_DEVICE_ERROR;
 
-  case EFI_INVALID_PARAMETER:
-  case EFI_UNSUPPORTED:
+  } else if ((Status == EFI_INVALID_PARAMETER) || (Status == EFI_UNSUPPORTED)) {
     *NeedRetry = FALSE;
     return EFI_DEVICE_ERROR;
-
+  }
   //
   // go ahead to check HostAdapterStatus and TargetStatus(in case of EFI_DEVICE_ERROR)
   //
-  default:
-    break;
-  }
 
   Status = CheckHostAdapterStatus (HostAdapterStatus);
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_TIMEOUT:
-  case EFI_NOT_READY:
+  if ((Status == EFI_TIMEOUT) || (Status == EFI_NOT_READY)) {
     *NeedRetry = TRUE;
     return EFI_DEVICE_ERROR;
 
-  case EFI_DEVICE_ERROR:
+  } else if (Status == EFI_DEVICE_ERROR) {
     //
     // reset the scsi channel
     //
@@ -1095,11 +1069,7 @@ Returns:
   }
 
   Status = CheckTargetStatus (TargetStatus);
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_NOT_READY:
+  if (Status == EFI_NOT_READY) {
     //
     // reset the scsi device
     //
@@ -1107,7 +1077,7 @@ Returns:
     *NeedRetry = TRUE;
     return EFI_DEVICE_ERROR;
 
-  case EFI_DEVICE_ERROR:
+  } else if (Status == EFI_DEVICE_ERROR) {
     *NeedRetry = FALSE;
     return EFI_DEVICE_ERROR;
   }
@@ -1275,42 +1245,32 @@ Returns:
                     &DataLength,
                     FALSE
                     );
-  switch (CommandStatus) {
   //
-  // no need to check HostAdapterStatus and TargetStatus
-  //
-  case EFI_SUCCESS:
-    GetMediaInfo (ScsiDiskDevice, &CapacityData);
-    return EFI_SUCCESS;
-
-  case EFI_NOT_READY:
-    *NeedRetry = TRUE;
-    return EFI_DEVICE_ERROR;
-
-  case EFI_INVALID_PARAMETER:
-  case EFI_UNSUPPORTED:
-    *NeedRetry = FALSE;
-    return EFI_DEVICE_ERROR;
-
-  //
-  // go ahead to check HostAdapterStatus and TargetStatus
-  // (EFI_TIMEOUT, EFI_DEVICE_ERROR, EFI_WARN_BUFFER_TOO_SMALL)
-  //
-  default:
-    break;
-  }
-
-  Status = CheckHostAdapterStatus (HostAdapterStatus);
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_TIMEOUT:
-  case EFI_NOT_READY:
-    *NeedRetry = TRUE;
-    return EFI_DEVICE_ERROR;
-
-  case EFI_DEVICE_ERROR:
+    // no need to check HostAdapterStatus and TargetStatus
+    //
+   if (CommandStatus == EFI_SUCCESS) {
+     GetMediaInfo (ScsiDiskDevice, &CapacityData);
+     return EFI_SUCCESS;
+ 
+   } else if (CommandStatus == EFI_NOT_READY) {
+     *NeedRetry = TRUE;
+     return EFI_DEVICE_ERROR;
+ 
+   } else if ((CommandStatus == EFI_INVALID_PARAMETER) || (CommandStatus == EFI_UNSUPPORTED)) {
+     *NeedRetry = FALSE;
+     return EFI_DEVICE_ERROR;
+   }
+   //
+   // go ahead to check HostAdapterStatus and TargetStatus
+   // (EFI_TIMEOUT, EFI_DEVICE_ERROR, EFI_WARN_BUFFER_TOO_SMALL)
+   //
+ 
+   Status = CheckHostAdapterStatus (HostAdapterStatus);
+   if ((Status == EFI_TIMEOUT) || (Status == EFI_NOT_READY)) {
+     *NeedRetry = TRUE;
+     return EFI_DEVICE_ERROR;
+ 
+   } else if (Status == EFI_DEVICE_ERROR) {
     //
     // reset the scsi channel
     //
@@ -1320,11 +1280,7 @@ Returns:
   }
 
   Status = CheckTargetStatus (TargetStatus);
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_NOT_READY:
+  if (Status == EFI_NOT_READY) {
     //
     // reset the scsi device
     //
@@ -1332,7 +1288,7 @@ Returns:
     *NeedRetry = TRUE;
     return EFI_DEVICE_ERROR;
 
-  case EFI_DEVICE_ERROR:
+  } else if (Status == EFI_DEVICE_ERROR) {
     *NeedRetry = FALSE;
     return EFI_DEVICE_ERROR;
   }
@@ -1523,40 +1479,23 @@ Returns:
               &HostAdapterStatus,
               &TargetStatus
               );
-    switch (Status) {
-
-    case EFI_SUCCESS:
-
-    //
-    // fall through
-    //
-    case EFI_WARN_BUFFER_TOO_SMALL:
-      FallStatus = EFI_SUCCESS;
-      break;
-
-    case EFI_TIMEOUT:
-
-    //
-    // fall through
-    //
-    case EFI_NOT_READY:
-      *NeedRetry  = TRUE;
-      FallStatus  = EFI_DEVICE_ERROR;
-      break;
-
-    case EFI_INVALID_PARAMETER:
-    case EFI_UNSUPPORTED:
-      *NeedRetry  = FALSE;
-      FallStatus  = EFI_DEVICE_ERROR;
-      break;
-
-    case EFI_DEVICE_ERROR:
-      if (AskResetIfError) {
-        ScsiDiskDevice->ScsiIo->ResetDevice (ScsiDiskDevice->ScsiIo);
-      }
-
-      FallStatus = EFI_DEVICE_ERROR;
-      break;
+     if ((Status == EFI_SUCCESS) || (Status == EFI_WARN_BUFFER_TOO_SMALL)) {
+        FallStatus = EFI_SUCCESS;
+  
+     } else if ((Status == EFI_TIMEOUT) || (Status == EFI_NOT_READY)) {
+       *NeedRetry  = TRUE;
+       FallStatus  = EFI_DEVICE_ERROR;
+ 
+     } else if ((Status == EFI_INVALID_PARAMETER) || (Status == EFI_UNSUPPORTED)) {
+       *NeedRetry  = FALSE;
+       FallStatus  = EFI_DEVICE_ERROR;
+ 
+     } else if (Status == EFI_DEVICE_ERROR) {
+        if (AskResetIfError) {
+          ScsiDiskDevice->ScsiIo->ResetDevice (ScsiDiskDevice->ScsiIo);
+        }
+  
+        FallStatus = EFI_DEVICE_ERROR;
     }
 
     if (EFI_ERROR (FallStatus)) {
