@@ -27,18 +27,9 @@ Abstract:
 #include "EdkIIGlueBase.h"
 
 //
-// The following 2 arrays are used in calculating the frequency of local APIC
+// The following array is used in calculating the frequency of local APIC
 // timer. Refer to IA-32 developers' manual for more details.
 //
-
-GLOBAL_REMOVE_IF_UNREFERENCED
-CONST UINT32                          mTimerLibLocalApicFrequencies[] = {
-  100000000,
-  133000000,
-  200000000,
-  166000000
-};
-
 GLOBAL_REMOVE_IF_UNREFERENCED
 CONST UINT8                           mTimerLibLocalApicDivisor[] = {
   0x02, 0x04, 0x08, 0x10,
@@ -81,7 +72,7 @@ InternalX86GetTimerFrequency (
   )
 {
   return
-    mTimerLibLocalApicFrequencies[AsmMsrBitFieldRead32 (44, 16, 18)] /
+    PcdGet32(PcdFSBClock) /
     mTimerLibLocalApicDivisor[MmioBitFieldRead32 (ApicBase + 0x3e0, 0, 3)];
 }
 
@@ -218,7 +209,7 @@ GetPerformanceCounter (
   VOID
   )
 {
-  return (UINT32)InternalX86GetTimerTick (InternalX86GetApicBase ());
+  return (UINT64)(UINT32)InternalX86GetTimerTick (InternalX86GetApicBase ());
 }
 
 /**
@@ -247,8 +238,8 @@ GetPerformanceCounter (
 UINT64
 EFIAPI
 GetPerformanceCounterProperties (
-  IN      UINT64                    *StartValue,
-  IN      UINT64                    *EndValue
+  OUT      UINT64                    *StartValue,  OPTIONAL
+  OUT      UINT64                    *EndValue     OPTIONAL
   )
 {
   UINTN                             ApicBase;
@@ -263,5 +254,5 @@ GetPerformanceCounterProperties (
     *EndValue = 0;
   }
 
-  return InternalX86GetTimerFrequency (ApicBase);
+  return (UINT64) InternalX86GetTimerFrequency (ApicBase);;
 }

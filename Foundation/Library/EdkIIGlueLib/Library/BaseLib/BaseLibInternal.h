@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  BaseLibInternals.h
+  BaseLibInternal.h
     
 Abstract: 
 
@@ -20,8 +20,8 @@ Abstract:
 
 --*/
 
-#ifndef __BASE_LIB_INTERNALS_H__
-#define __BASE_LIB_INTERNALS_H__
+#ifndef __BASE_LIB_INTERNAL_H__
+#define __BASE_LIB_INTERNAL_H__
 
 #include "EdkIIGlueBase.h"
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -21,7 +21,7 @@ Abstract:
 #include "Tiano.h"
 #include "DxeCore.h"
 #include "DebugMask.h"
-#include EFI_GUID_DEFINITION (GlobalVariable)
+#include EFI_GUID_DEFINITION (GenericVariable)
 
 extern UINTN                     mErrorLevel;
 static VOID                      *mVariableReadyNotify;
@@ -363,7 +363,7 @@ Returns:
   DataSize = sizeof(UINTN);
   Status = gRT->GetVariable(
                   L"EFIDebug",
-                  &gEfiGlobalVariableGuid,
+                  &gEfiGenericVariableGuid,
                   NULL,
                   &DataSize,
                   &DebugMask

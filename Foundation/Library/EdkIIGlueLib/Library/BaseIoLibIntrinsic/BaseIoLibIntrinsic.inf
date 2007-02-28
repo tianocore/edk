@@ -24,17 +24,23 @@ BASE_NAME       = EdkIIGlueBaseIoLibIntrinsic
 COMPONENT_TYPE  = LIBRARY
 
 [sources.common]
+  
+[sources.ia32]
   IoLib.c
   IoLibMsc.c
   IoHighLevel.c
-  
-[sources.ia32]
 
 [sources.x64]
+  IoLib.c
+  IoLibMsc.c
+  IoHighLevel.c
 
 [sources.ipf]
+  IoLibIpf.c
+  IoHighLevel.c
 
 [sources.ebc]
+# doesn't support EBC
 
 [includes.common]
   .
@@ -62,7 +68,7 @@ COMPONENT_TYPE  = LIBRARY
 
 [nmake.common]
   C_FLAGS = $(C_FLAGS) /D EDKII_GLUE_LIBRARY_IMPLEMENTATION
-  LIB_STD_FLAGS = /NOLOGO /IGNORE:4006
+  LIB_STD_FLAGS = $(LIB_STD_FLAGS) /IGNORE:4006
 
 [nmake.ia32]
   C_FLAGS = $(C_FLAGS) /D MDE_CPU_IA32
@@ -74,4 +80,6 @@ COMPONENT_TYPE  = LIBRARY
   C_FLAGS = $(C_FLAGS) /D MDE_CPU_IPF
 
 [nmake.ebc]
-  C_FLAGS = $(C_FLAGS) /D MDE_CPU_EBC
+  EBC_C_STD_FLAGS = $(EBC_C_STD_FLAGS) /D EDKII_GLUE_LIBRARY_IMPLEMENTATION
+  EBC_LIB_STD_FLAGS = $(EBC_LIB_STD_FLAGS)  /IGNORE:4006
+  EBC_C_STD_FLAGS = $(EBC_C_STD_FLAGS) /D MDE_CPU_EBC

@@ -23,6 +23,10 @@ Abstract:
 #ifndef __EDKII_GLUE_DXE_RUNTIME_DRIVER_LIB_H__
 #define __EDKII_GLUE_DXE_RUNTIME_DRIVER_LIB_H__
 
+#ifdef MDE_CPU_IPF
+#include "EdkIIGlueEdkDxeSalLib.h"
+#endif
+
 #if (EFI_SPECIFICATION_VERSION < 0x00020000)
 
 typedef struct {
@@ -71,7 +75,7 @@ EfiGoneVirtual (
   capabilities of hardware platform.
 
   @param  Time         A pointer to storage to receive a snapshot of the current time.
-  @param  Capabilities An optional pointer to a buffer to receive the real time clock device¡¯s
+  @param  Capabilities An optional pointer to a buffer to receive the real time clock device's
                        capabilities.
  
   @retval  EFI_SUCCESS  Success to execute the function.
@@ -265,7 +269,7 @@ EFI_STATUS
 EFIAPI
 EfiConvertPointer (
   IN UINTN                  DebugDisposition,
-  IN OUT VOID               *Address
+  IN OUT VOID               **Address
   );
 
 
@@ -316,7 +320,6 @@ EfiConvertList (
   IN UINTN                DebugDisposition,
   IN OUT LIST_ENTRY       *ListHead
   );
-
 
 /**
  

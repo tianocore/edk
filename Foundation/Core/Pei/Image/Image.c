@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -57,6 +57,7 @@ Returns:
 #ifdef EFI_NT_EMULATOR
   EFI_PEI_PPI_DESCRIPTOR      *PpiDescriptor;
   NT_PEI_LOAD_FILE_PPI        *PeiNtService;
+  EFI_PHYSICAL_ADDRESS        NtEntryPoint;
 #endif
   EFI_PHYSICAL_ADDRESS        ImageAddress;
   UINT64                      ImageSize;
@@ -131,7 +132,7 @@ Returns:
                             Pe32Data,
                             &ImageAddress,
                             &ImageSize,
-                            (UINT64 *) EntryPoint
+                            &NtEntryPoint
                             );
 
     if (EFI_ERROR (Status)) {
@@ -141,6 +142,8 @@ Returns:
       } else {
         *EntryPoint = (VOID *) ((UINTN) Pe32Data + (UINTN) (PeHdr->OptionalHeader.AddressOfEntryPoint & 0x0ffffffff));
       }
+    } else {
+      *EntryPoint = (VOID *) (UINTN) NtEntryPoint;
     }
 
 #else

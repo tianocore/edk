@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                          
+Copyright (c) 2004 - 2007, Intel Corporation                                                          
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -44,13 +44,13 @@ typedef struct {
 } EFI_SYSTEM_TABLE_POINTER;
 
 typedef struct {
-  UINTN                     ImageInfoType;
+  UINT32                    ImageInfoType;
   EFI_LOADED_IMAGE_PROTOCOL *LoadedImageProtocolInstance;
   EFI_HANDLE                *ImageHandle;
 } EFI_DEBUG_IMAGE_INFO_NORMAL;
 
 typedef union {
-  UINTN                       *ImageInfoType;
+  UINT32                      *ImageInfoType;
   EFI_DEBUG_IMAGE_INFO_NORMAL *NormalImage;
 } EFI_DEBUG_IMAGE_INFO;
 

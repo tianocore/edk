@@ -40,4 +40,8 @@ InternalAssertJumpBuffer (
   )
 {
   ASSERT (JumpBuffer != NULL);
+
+#ifdef MDE_CPU_IPF
+  ASSERT (((UINTN)JumpBuffer & 0xf) == 0);
+#endif
 }

@@ -555,34 +555,24 @@ typedef struct {
 //
 //////////////////////////////////////////////////////////////////////////////
 //
-//  Misc. System Event Log  - SMBIOS Type 15
+//  Misc. Group Associations  - SMBIOS Type 14
 //
-#define EFI_MISC_SYSTEM_EVENT_LOG_RECORD_NUMBER 0x0000000D
-typedef struct {
-  //SMBIOS_STRUCTURE_HDR  Header;
-  UINT16                LogAreaLength;
-  UINT16                LogHeaderStartOffset;
-  UINT16                LogDataStartOffset;
-  UINT8                 AccessMethod;
-  UINT8                 LogStatus;
-  UINT32                LogChangeToken;
-  UINT32                AccessMethodAddress;
-  UINT8                 LogHeaderFormat;
-  UINT8                 NumberOfSupportedLogType;
-  UINT8                 LengthOfLogDescriptor;
-} EFI_MISC_SYSTEM_EVENT_LOG;
+#define EFI_MISC_GROUP_NAME_RECORD_NUMBER 0x0000000D
 
-//
-// Access Method.
-//  0x00~0x04:  as following definition
-//  0x05~0x7f:  Available for future assignment.
-//  0x80~0xff:  BIOS Vendor/OEM-specific.
-// 
-#define ACCESS_INDEXIO_1INDEX8BIT_DATA8BIT    0x00
-#define ACCESS_INDEXIO_2INDEX8BIT_DATA8BIT    0X01
-#define ACCESS_INDEXIO_1INDEX16BIT_DATA8BIT   0X02
-#define ACCESS_MEMORY_MAPPED                  0x03
-#define ACCESS_GPNV                           0x04
+typedef struct {
+  STRING_REF                          GroupName;
+  UINT16                              NumberGroupItems;
+  UINT16                              GroupId;
+} EFI_MISC_GROUP_NAME_DATA;
+
+#define EFI_MISC_GROUP_ITEM_SET_RECORD_NUMBER 0x0000000E
+
+typedef struct {
+  EFI_GUID            SubClass;
+  EFI_INTER_LINK_DATA GroupLink;
+  UINT16              GroupId;
+  UINT16              GroupElementId;
+} EFI_MISC_GROUP_ITEM_SET_DATA;
 
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -627,6 +617,44 @@ typedef struct {
 //
 //////////////////////////////////////////////////////////////////////////////
 //
+//  Misc. Portable Battery - SMBIOS Type 22
+//
+#define EFI_MISC_PORTABLE_BATTERY_RECORD_NUMBER 0x00000010
+
+typedef enum {  
+  EfiPortableBatteryDeviceChemistryOther = 1,
+  EfiPortableBatteryDeviceChemistryUnknown = 2,
+  EfiPortableBatteryDeviceChemistryLeadAcid = 3,
+  EfiPortableBatteryDeviceChemistryNickelCadmium = 4,
+  EfiPortableBatteryDeviceChemistryNickelMetalHydride = 5,
+  EfiPortableBatteryDeviceChemistryLithiumIon = 6,
+  EfiPortableBatteryDeviceChemistryZincAir = 7,
+  EfiPortableBatteryDeviceChemistryLithiumPolymer = 8,
+} EFI_MISC_PORTABLE_BATTERY_DEVICE_CHEMISTRY;
+
+typedef struct {
+  STRING_REF                                  Location;
+  STRING_REF                                  Manufacturer;
+  STRING_REF                                  ManufactureDate;
+  STRING_REF                                  SerialNumber;
+  STRING_REF                                  DeviceName;
+  EFI_MISC_PORTABLE_BATTERY_DEVICE_CHEMISTRY  DeviceChemistry;
+  UINT16                                      DesignCapacity;
+  UINT16                                      DesignVoltage;
+  STRING_REF                                  SBDSVersionNumber;
+  UINT8                                       MaximumError;
+  UINT16                                      SBDSSerialNumber;
+  UINT16                                      SBDSManufactureDate;
+  STRING_REF                                  SBDSDeviceChemistry;
+  UINT8                                       DesignCapacityMultiplier;
+  UINT32                                      OEMSpecific;  
+  UINT8                                       BatteryNumber; // Temporary   
+  BOOLEAN                                     Valid; // Is entry valid - Temporary
+} EFI_MISC_PORTABLE_BATTERY;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
 // Misc. Reset Capabilities - SMBIOS Type 23
 //
 #define EFI_MISC_RESET_CAPABILITIES_RECORD_NUMBER 0x00000011
@@ -648,7 +676,7 @@ typedef struct {
 } EFI_MISC_RESET_CAPABILITIES;
  
 typedef struct {
-    EFI_MISC_RESET_CAPABILITIES     ResetCapabilities;
+    EFI_MISC_RESET_CAPABILITIES   ResetCapabilities;
     UINT16                        ResetCount;
     UINT16                        ResetLimit;
     UINT16                        ResetTimerInterval;
@@ -660,7 +688,7 @@ typedef struct {
 //
 // Misc. Hardware Security - SMBIOS Type 24
 //
-#define EFI_MISC_HARDWARE_SECURITY_RECORD_NUMBER 0x00000012
+#define EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA_RECORD_NUMBER 0x00000012
 
 typedef enum {
   EfiHardwareSecurityStatusDisabled = 0,
@@ -674,13 +702,159 @@ typedef struct {
   EFI_MISC_HARDWARE_SECURITY_STATUS   AdministratorPasswordStatus   :2;  
   EFI_MISC_HARDWARE_SECURITY_STATUS   KeyboardPasswordStatus :2;  
   EFI_MISC_HARDWARE_SECURITY_STATUS   PowerOnPasswordStatus :2;  
-  EFI_MISC_HARDWARE_SECURITY_STATUS    Reserved :24;  
+  EFI_MISC_HARDWARE_SECURITY_STATUS   Reserved :24;  
 } EFI_MISC_HARDWARE_SECURITY_SETTINGS;
 
 typedef struct {
   EFI_MISC_HARDWARE_SECURITY_SETTINGS HardwareSecuritySettings;
 } EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA;       
 
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. System Power Controls - SMBIOS Type 25
+//
+#define EFI_MISC_SCHEDULED_POWER_ON_MONTH_RECORD_NUMBER 0x00000013
+
+typedef struct {
+  UINT8     ScheduledPoweronMonth;
+  UINT8     ScheduledPoweronDayOfMonth;
+  UINT8     ScheduledPoweronHour;
+  UINT8     ScheduledPoweronMinute;
+  UINT8     ScheduledPoweronSecond;
+} EFI_MISC_SCHEDULED_POWER_ON_MONTH;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Voltage Probe - SMBIOS Type 26
+//
+#define EFI_MISC_VOLTAGE_PROBE_DESCRIPTION_RECORD_NUMBER 0x00000014
+
+typedef struct {
+  UINT32    VoltageProbeSite :5;
+  UINT32    VoltageProbeStatus :3;
+  UINT32    Reserved :24;
+} EFI_MISC_VOLTAGE_PROBE_LOCATION;
+
+typedef struct {
+  STRING_REF                        VoltageProbeDescription;
+  EFI_MISC_VOLTAGE_PROBE_LOCATION   VoltageProbeLocation;
+  UINT16                            VoltageProbeMaximumValue;
+  UINT16                            VoltageProbeMinimumValue;
+  UINT16                            VoltageProbeResolution;
+  UINT16                            VoltageProbeTolerance;
+  UINT16                            VoltageProbeAccuracy;
+  UINT16                            VoltageProbeNominalValue;
+  UINT16                            MDLowerNoncriticalThreshold;
+  UINT16                            MDUpperNoncriticalThreshold;
+  UINT16                            MDLowerCriticalThreshold;
+  UINT16                            MDUpperCriticalThreshold;
+  UINT16                            MDLowerNonrecoverableThreshold;
+  UINT16                            MDUpperNonrecoverableThreshold;
+  UINT32                            VoltageProbeOemDefined;
+} EFI_MISC_VOLTAGE_PROBE_DESCRIPTION;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Cooling Device - SMBIOS Type 27
+//
+#define EFI_MISC_COOLING_DEVICE_TEMP_LINK_RECORD_NUMBER 0x00000015
+
+typedef struct {
+  UINT32 CoolingDevice :5;
+  UINT32 CoolingDeviceStatus :3;
+  UINT32 Reserved :24;
+} EFI_MISC_COOLING_DEVICE_TYPE;
+
+typedef struct {
+  EFI_MISC_COOLING_DEVICE_TYPE  CoolingDeviceType;
+  EFI_INTER_LINK_DATA           CoolingDeviceTemperatureLink;
+  UINT8                         CoolingDeviceUnitGroup;
+  UINT16                        CoolingDeviceNominalSpeed;
+  UINT32                        CoolingDeviceOemDefined;
+} EFI_MISC_COOLING_DEVICE_TEMP_LINK;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Temperature Probe - SMBIOS Type 28
+//
+#define EFI_MISC_TEMPERATURE_PROBE_DESCRIPTION_RECORD_NUMBER 0x00000016
+
+typedef struct {
+  UINT32 TemperatureProbeSite :5;
+  UINT32 TemperatureProbeStatus :3;
+  UINT32 Reserved :24;
+} EFI_MISC_TEMPERATURE_PROBE_LOCATION;
+
+typedef struct {
+  STRING_REF                            TemperatureProbeDescription;
+  EFI_MISC_TEMPERATURE_PROBE_LOCATION   TemperatureProbeLocation;
+  UINT16                                TemperatureProbeMaximumValue;
+  UINT16                                TemperatureProbeMinimumValue;
+  UINT16                                TemperatureProbeResolution;
+  UINT16                                TemperatureProbeTolerance;
+  UINT16                                TemperatureProbeAccuracy;
+  UINT16                                TemperatureProbeNominalValue;
+  UINT16                                MDLowerNoncriticalThreshold;
+  UINT16                                MDUpperNoncriticalThreshold;
+  UINT16                                MDLowerCriticalThreshold;
+  UINT16                                MDUpperCriticalThreshold;
+  UINT16                                MDLowerNonrecoverableThreshold;
+  UINT16                                MDUpperNonrecoverableThreshold;
+  UINT32                                TemperatureProbeOemDefined;
+} EFI_MISC_TEMPERATURE_PROBE_DESCRIPTION;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Electrical Current Probe - SMBIOS Type 29
+//
+#define EFI_MISC_ELECTRICAL_CURRENT_PROBE_DESCRIPTION_RECORD_NUMBER 0x00000017
+
+typedef struct {
+  UINT32 ElectricalCurrentProbeSite :5;
+  UINT32 ElectricalCurrentProbeStatus :3;
+  UINT32 Reserved :24;
+} EFI_MISC_ELECTRICAL_CURRENT_PROBE_LOCATION;
+
+typedef struct {
+  STRING_REF                                  ElectricalCurrentProbeDescription;
+  EFI_MISC_ELECTRICAL_CURRENT_PROBE_LOCATION  ElectricalCurrentProbeLocation;
+  UINT16                                      ElectricalCurrentProbeMaximumValue;
+  UINT16                                      ElectricalCurrentProbeMinimumValue;
+  UINT16                                      ElectricalCurrentProbeResolution;
+  UINT16                                      ElectricalCurrentProbeTolerance;
+  UINT16                                      ElectricalCurrentProbeAccuracy;
+  UINT16                                      ElectricalCurrentProbeNominalValue;
+  UINT16                                      MDLowerNoncriticalThreshold;
+  UINT16                                      MDUpperNoncriticalThreshold;
+  UINT16                                      MDLowerCriticalThreshold;
+  UINT16                                      MDUpperCriticalThreshold;
+  UINT16                                      MDLowerNonrecoverableThreshold;
+  UINT16                                      MDUpperNonrecoverableThreshold;
+  UINT32                                      ElectricalCurrentProbeOemDefined;
+} EFI_MISC_ELECTRICAL_CURRENT_PROBE_DESCRIPTION;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Out-of-Band Remote Access - SMBIOS Type 30
+//
+#define EFI_MISC_REMOTE_ACCESS_MANUFACTURER_DESCRIPTION_RECORD_NUMBER 0x00000018
+
+typedef struct {
+  UINT32 InboundConnectionEnabled :1;
+  UINT32 OutboundConnectionEnabled :1;
+  UINT32 Reserved :30;
+} EFI_MISC_REMOTE_ACCESS_CONNECTIONS;
+
+typedef struct {
+  STRING_REF                          RemoteAccessManufacturerNameDescription;
+  EFI_MISC_REMOTE_ACCESS_CONNECTIONS  RemoteAccessConnections;
+} EFI_MISC_REMOTE_ACCESS_MANUFACTURER_DESCRIPTION;
 //
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -718,6 +892,58 @@ typedef struct {
     EFI_MISC_BOOT_INFORMATION_STATUS_TYPE BootInformationStatus;
     UINT8                                 BootInformationData[9];
 } EFI_MISC_BOOT_INFORMATION_STATUS;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Management Device - SMBIOS Type 34
+//
+#define EFI_MISC_MANAGEMENT_DEVICE_DESCRIPTION_RECORD_NUMBER 0x0000001B
+
+typedef enum {
+  EfiManagementDeviceTypeOther     = 1,
+  EfiManagementDeviceTypeUnknown   = 2,
+  EfiManagementDeviceTypeLm75      = 3,
+  EfiManagementDeviceTypeLm78      = 4,
+  EfiManagementDeviceTypeLm79      = 5,
+  EfiManagementDeviceTypeLm80      = 6,
+  EfiManagementDeviceTypeLm81      = 7,
+  EfiManagementDeviceTypeAdm9240   = 8,
+  EfiManagementDeviceTypeDs1780    = 9,
+  EfiManagementDeviceTypeMaxim1617 = 0xA,
+  EfiManagementDeviceTypeGl518Sm   = 0xB,
+  EfiManagementDeviceTypeW83781D   = 0xC,
+  EfiManagementDeviceTypeHt82H791  = 0xD
+} EFI_MISC_MANAGEMENT_DEVICE_TYPE;
+
+typedef enum {
+  EfiManagementDeviceAddressTypeOther   = 1,
+  EfiManagementDeviceAddressTypeUnknown = 2,
+  EfiManagementDeviceAddressTypeIOPort  = 3,
+  EfiManagementDeviceAddressTypeMemory  = 4,
+  EfiManagementDeviceAddressTypeSmbus   = 5
+} EFI_MISC_MANAGEMENT_DEVICE_ADDRESS_TYPE;
+
+typedef struct {
+  STRING_REF                              ManagementDeviceDescription;
+  EFI_MISC_MANAGEMENT_DEVICE_TYPE         ManagementDeviceType;
+  UINTN                                   ManagementDeviceAddress;
+  EFI_MISC_MANAGEMENT_DEVICE_ADDRESS_TYPE ManagementDeviceAddressType;
+} EFI_MISC_MANAGEMENT_DEVICE_DESCRIPTION;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+// Misc. Management Device Component - SMBIOS Type 35
+//
+#define EFI_MISC_MANAGEMENT_DEVICE_COMPONENT_DESCRIPTION_RECORD_NUMBER 0x0000001C
+
+typedef struct {
+  STRING_REF            ManagementDeviceComponentDescription;
+  EFI_INTER_LINK_DATA   ManagementDeviceLink;
+  EFI_INTER_LINK_DATA   ManagementDeviceComponentLink;
+  EFI_INTER_LINK_DATA   ManagementDeviceThresholdLink;
+} EFI_MISC_MANAGEMENT_DEVICE_COMPONENT_DESCRIPTION;
 
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -764,7 +990,7 @@ typedef struct {
 } POWER_SUPPLY_CHARACTERISTICS;
 
 typedef struct {
-  UINT16                          PowerUnitGroup;
+  UINT8                           PowerUnitGroup;
   STRING_REF                      PowerSupplyLocation;
   STRING_REF                      PowerSupplyDeviceName;
   STRING_REF                      PowerSupplyManufacturer;
@@ -778,6 +1004,7 @@ typedef struct {
   EFI_INTER_LINK_DATA             PowerSupplyCoolingDeviceLink;
   EFI_INTER_LINK_DATA             PowerSupplyInputCurrentProbeLink;
 } EFI_MISC_SYSTEM_POWER_SUPPLY;
+
 #define EFI_MISC_SYSTEM_POWER_SUPPLY_RECORD_NUMBER 0x0000001E
 
 //
@@ -803,30 +1030,90 @@ typedef struct {
 //
 //////////////////////////////////////////////////////////////////////////////
 //
+//  Misc. System Event Log  - SMBIOS Type 15
+//
+#define EFI_MISC_SYSTEM_EVENT_LOG_RECORD_NUMBER 0x00000020
+typedef struct {
+  //SMBIOS_STRUCTURE_HDR  Header;
+  UINT16                LogAreaLength;
+  UINT16                LogHeaderStartOffset;
+  UINT16                LogDataStartOffset;
+  UINT8                 AccessMethod;
+  UINT8                 LogStatus;
+  UINT32                LogChangeToken;
+  UINT32                AccessMethodAddress;
+  UINT8                 LogHeaderFormat;
+  UINT8                 NumberOfSupportedLogType;
+  UINT8                 LengthOfLogDescriptor;
+} EFI_MISC_SYSTEM_EVENT_LOG;
+
+//
+// Access Method.
+//  0x00~0x04:  as following definition
+//  0x05~0x7f:  Available for future assignment.
+//  0x80~0xff:  BIOS Vendor/OEM-specific.
+// 
+#define ACCESS_INDEXIO_1INDEX8BIT_DATA8BIT    0x00
+#define ACCESS_INDEXIO_2INDEX8BIT_DATA8BIT    0X01
+#define ACCESS_INDEXIO_1INDEX16BIT_DATA8BIT   0X02
+#define ACCESS_MEMORY_MAPPED                  0x03
+#define ACCESS_GPNV                           0x04
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
+//Management Device Threshold Data Record - SMBIOS Type 36
+//
+#define EFI_MISC_MANAGEMENT_DEVICE_THRESHOLD_RECORD_NUMBER  0x00000021
+
+typedef struct {
+  UINT16                          LowerThresNonCritical;
+  UINT16                          UpperThresNonCritical;
+  UINT16                          LowerThresCritical;
+  UINT16                          UpperThresCritical;
+  UINT16                          LowerThresNonRecover;
+  UINT16                          UpperThresNonRecover;
+} EFI_MISC_MANAGEMENT_DEVICE_THRESHOLD;
+
+//
+//////////////////////////////////////////////////////////////////////////////
+//
 //
 //
 typedef union {
-  EFI_MISC_LAST_PCI_BUS                         LastPciBus;
-  EFI_MISC_BIOS_VENDOR                          MiscBiosVendor;
-  EFI_MISC_SYSTEM_MANUFACTURER                  MiscSystemManufacturer;
-  EFI_MISC_BASE_BOARD_MANUFACTURER              MiscBaseBoardManufacturer;
-  EFI_MISC_CHASSIS_MANUFACTURER                 MiscChassisManufacturer;  
-  EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR   MiscPortInternalConnectorDesignator;
-  EFI_MISC_SYSTEM_SLOT_DESIGNATION              MiscSystemSlotDesignation;
-  EFI_MISC_ONBOARD_DEVICE                       MiscOnboardDevice;
-  EFI_MISC_OEM_STRING                           MiscOemString;
-  EFI_MISC_SYSTEM_OPTION_STRING                 MiscOptionString;
-  EFI_MISC_NUMBER_OF_INSTALLABLE_LANGUAGES      NumberOfInstallableLanguages;
-  EFI_MISC_SYSTEM_LANGUAGE_STRING               MiscSystemLanguageString;
-  EFI_MISC_SYSTEM_EVENT_LOG                     MiscSystemEventLog;
-  EFI_MISC_ONBOARD_DEVICE_TYPE_DATA             MiscOnboardDeviceTypeData;
-  EFI_MISC_RESET_CAPABILITIES_DATA              MiscResetCapablilitiesData;
-  EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA      MiscHardwareSecuritySettingsData;  
-  EFI_MISC_BIS_ENTRY_POINT                      MiscBisEntryPoint;
-  EFI_MISC_BOOT_INFORMATION_STATUS              MiscBootInformationStatus;
-  EFI_MISC_IPMI_INTERFACE_TYPE_DATA             MiscIpmiInterfaceTypeData;
-  EFI_MISC_SYSTEM_POWER_SUPPLY                  MiscPowerSupplyInfo;
-  EFI_MISC_SMBIOS_STRUCT_ENCAPSULATION          MiscSmbiosStructEncapsulation;  
+  EFI_MISC_LAST_PCI_BUS                                 LastPciBus;
+  EFI_MISC_BIOS_VENDOR                                  MiscBiosVendor;
+  EFI_MISC_SYSTEM_MANUFACTURER                          MiscSystemManufacturer;
+  EFI_MISC_BASE_BOARD_MANUFACTURER                      MiscBaseBoardManufacturer;
+  EFI_MISC_CHASSIS_MANUFACTURER                         MiscChassisManufacturer;  
+  EFI_MISC_PORT_INTERNAL_CONNECTOR_DESIGNATOR           MiscPortInternalConnectorDesignator;
+  EFI_MISC_SYSTEM_SLOT_DESIGNATION                      MiscSystemSlotDesignation;
+  EFI_MISC_ONBOARD_DEVICE                               MiscOnboardDevice;
+  EFI_MISC_OEM_STRING                                   MiscOemString;
+  EFI_MISC_SYSTEM_OPTION_STRING                         MiscOptionString;
+  EFI_MISC_NUMBER_OF_INSTALLABLE_LANGUAGES              NumberOfInstallableLanguages;
+  EFI_MISC_SYSTEM_LANGUAGE_STRING                       MiscSystemLanguageString;
+  EFI_MISC_GROUP_NAME_DATA                              MiscGroupNameData;
+  EFI_MISC_GROUP_ITEM_SET_DATA                          MiscGroupItemSetData;
+  EFI_MISC_SYSTEM_EVENT_LOG                             MiscSystemEventLog;
+  EFI_MISC_ONBOARD_DEVICE_TYPE_DATA                     MiscOnboardDeviceTypeData;
+  EFI_MISC_PORTABLE_BATTERY                             MiscPortableBattery;
+  EFI_MISC_RESET_CAPABILITIES_DATA                      MiscResetCapablilitiesData;
+  EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA              MiscHardwareSecuritySettingsData;
+  EFI_MISC_SCHEDULED_POWER_ON_MONTH                     MiscScheduledPowerOnMonth;
+  EFI_MISC_VOLTAGE_PROBE_DESCRIPTION                    MiscVoltageProbeDescription;
+  EFI_MISC_COOLING_DEVICE_TEMP_LINK                     MiscCoolingDeviceTempLink;
+  EFI_MISC_TEMPERATURE_PROBE_DESCRIPTION                MiscTemperatureProbeDescription;
+  EFI_MISC_ELECTRICAL_CURRENT_PROBE_DESCRIPTION         MiscElectricalCurrentProbeDescription;
+  EFI_MISC_REMOTE_ACCESS_MANUFACTURER_DESCRIPTION       MiscRemoteAccessManufacturerDescription;  
+  EFI_MISC_BIS_ENTRY_POINT                              MiscBisEntryPoint;
+  EFI_MISC_BOOT_INFORMATION_STATUS                      MiscBootInformationStatus;
+  EFI_MISC_MANAGEMENT_DEVICE_DESCRIPTION                MiscManagementDeviceDescription;
+  EFI_MISC_MANAGEMENT_DEVICE_COMPONENT_DESCRIPTION      MiscManagementDeviceComponentDescription;
+  EFI_MISC_IPMI_INTERFACE_TYPE_DATA                     MiscIpmiInterfaceTypeData;
+  EFI_MISC_SYSTEM_POWER_SUPPLY                          MiscPowerSupplyInfo;
+  EFI_MISC_SMBIOS_STRUCT_ENCAPSULATION                  MiscSmbiosStructEncapsulation; 
+  EFI_MISC_MANAGEMENT_DEVICE_THRESHOLD                  MiscManagementDeviceThreshold; 
 } EFI_MISC_SUBCLASS_RECORDS;
 
 //

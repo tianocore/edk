@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -69,13 +69,18 @@ Returns:
 --*/
 {
   UINTN Index;
+  UINTN SrcLen;
+
+  SrcLen = EfiStrLen (Src);
 
   Index = 0;
-  while (Index < Length) {
+  while (Index < Length && Index < SrcLen) {
     Dst[Index] = Src[Index];
     Index++;
   }
-  Dst[Index] = 0;
+  for (Index = SrcLen; Index < Length; Index++) {
+    Dst[Index] = 0;
+  }
 }
 
 UINTN
@@ -159,6 +164,45 @@ Returns:
   return *String - *String2;
 }
 
+INTN
+EfiStrnCmp (
+  IN CHAR16   *String,
+  IN CHAR16   *String2,
+  IN UINTN    Length
+  )
+/*++
+
+Routine Description:
+  This function compares the Unicode string String to the Unicode
+  string String2 for len characters.  If the first len characters
+  of String is identical to the first len characters of String2,
+  then 0 is returned.  If substring of String sorts lexicographically
+  after String2, the function returns a number greater than 0. If
+  substring of String sorts lexicographically before String2, the
+  function returns a number less than 0.
+
+Arguments:
+  String  - Compare to String2
+  String2 - Compare to String
+  Length  - Number of Unicode characters to compare
+
+Returns:
+  0     - The substring of String and String2 is identical.
+  > 0   - The substring of String sorts lexicographically after String2
+  < 0   - The substring of String sorts lexicographically before String2
+
+--*/
+{
+  while (*String && Length != 0) {
+    if (*String != *String2) {
+      break;
+    }
+    String  += 1;
+    String2 += 1;
+    Length  -= 1;
+  }
+  return Length > 0 ? *String - *String2 : 0;
+}
 
 VOID
 EfiStrCat (
@@ -277,13 +321,18 @@ Returns:
 --*/
 {
   UINTN Index;
+  UINTN SrcLen;
+
+  SrcLen = EfiAsciiStrLen (Src);
 
   Index = 0;
-  while (Index < Length) {
+  while (Index < Length && Index < SrcLen) {
     Dst[Index] = Src[Index];
     Index++;
   }
-  Dst[Index] = 0;
+  for (Index = SrcLen; Index < Length; Index++) {
+    Dst[Index] = 0;
+  }
 }
 
 UINTN
@@ -654,80 +703,80 @@ Returns:
   }
 }
 CHAR16*
- EfiStrStr (
+EfiStrStr (
    IN  CHAR16  *String,
    IN  CHAR16  *StrCharSet
    )
- /*++
+/*++
  
- Routine Description:
+Routine Description:
    
-   Find a substring.
+  Find a substring.
    
- Arguments: 
+Arguments: 
    
-   String      - Null-terminated string to search.
-   StrCharSet  - Null-terminated string to search for.
+  String      - Null-terminated string to search.
+  StrCharSet  - Null-terminated string to search for.
    
- Returns:
-   The address of the first occurrence of the matching substring if successful, or NULL otherwise.
- --*/
- {
-   CHAR16 *Src;
-   CHAR16 *Sub;
-   
-   Src = String;
-   Sub = StrCharSet;
-   
-   while ((*String != L'\0') && (*StrCharSet != L'\0')) {
-     if (*String++ != *StrCharSet++) {
-       String = ++Src;
-       StrCharSet = Sub;
-     }
-   }
-   if (*StrCharSet == L'\0') {
-     return Src;
-   } else {
-     return NULL;
-   }
- }
+Returns:
+  The address of the first occurrence of the matching substring if successful, or NULL otherwise.
+--*/
+{
+  CHAR16 *Src;
+  CHAR16 *Sub;
+  
+  Src = String;
+  Sub = StrCharSet;
+  
+  while ((*String != L'\0') && (*StrCharSet != L'\0')) {
+    if (*String++ != *StrCharSet++) {
+      String = ++Src;
+      StrCharSet = Sub;
+    }
+  }
+  if (*StrCharSet == L'\0') {
+    return Src;
+  } else {
+    return NULL;
+  }
+}
  
- CHAR8*
- EfiAsciiStrStr (
-   IN  CHAR8  *String,
-   IN  CHAR8  *StrCharSet
-   )
- /*++
- 
- Routine Description:
+CHAR8*
+EfiAsciiStrStr (
+  IN  CHAR8  *String,
+  IN  CHAR8  *StrCharSet
+  )
+/*++
+
+Routine Description:
+  
+  Find a Ascii substring.
+  
+Arguments: 
+  
+  String      - Null-terminated Ascii string to search.
+  StrCharSet  - Null-terminated Ascii string to search for.
+  
+Returns:
+  The address of the first occurrence of the matching Ascii substring if successful, or NULL otherwise.
+--*/
+{
+  CHAR8 *Src;
+  CHAR8 *Sub;
    
-   Find a Ascii substring.
-   
- Arguments: 
-   
-   String      - Null-terminated Ascii string to search.
-   StrCharSet  - Null-terminated Ascii string to search for.
-   
- Returns:
-   The address of the first occurrence of the matching Ascii substring if successful, or NULL otherwise.
- --*/
- {
-   CHAR8 *Src;
-   CHAR8 *Sub;
-   
-   Src = String;
-   Sub = StrCharSet;
-   
-   while ((*String != '\0') && (*StrCharSet != '\0')) {
-     if (*String++ != *StrCharSet++) {
-       String = ++Src;
-       StrCharSet = Sub;
-     }
-   }
-   if (*StrCharSet == '\0') {
-     return Src;
-   } else {
-     return NULL;
-   }
- }
+  Src = String;
+  Sub = StrCharSet;
+  
+  while ((*String != '\0') && (*StrCharSet != '\0')) {
+    if (*String++ != *StrCharSet++) {
+      String = ++Src;
+      StrCharSet = Sub;
+    }
+  }
+  if (*StrCharSet == '\0') {
+    return Src;
+  } else {
+    return NULL;
+  }
+}
  

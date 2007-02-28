@@ -48,8 +48,6 @@ Abstract:
 // InternalFormRepresentation.h:
 // ----------------------------------------------------------------------------------
 
-// TODO: STRING_REF undefined
-
 typedef struct {
   EFI_IFR_OP_HEADER Header;
   UINT16            QuestionId; // The ID designating what the question is about...sucked in from a #define, likely in the form of a variable name
@@ -69,34 +67,11 @@ typedef struct {
   EFI_IFR_OP_HEADER Header;
 } EFI_IFR_END_EXPR;
 
-// TODO: IFR_NV_DATA undefined
-
 // ------------------------
 // define GUID as EFI_GUID
 // ------------------------
 typedef EFI_GUID GUID;
 
-// -------------------------- 
-// Processor Type definitions
-// --------------------------
-#if defined EFI32
-  #ifndef MDE_CPU_IA32
-    #define MDE_CPU_IA32
-  #endif  
-#elif defined EFIX64
-  #ifndef MDE_CPU_X64
-    #define MDE_CPU_X64
-  #endif
-#endif
-
-// ---------------------------------
-// EFI_IMAGE_MACHINE_TYPE_SUPPORTED
-// ---------------------------------
-#ifndef EFI_IMAGE_MACHINE_TYPE_SUPPORTED
-  #define EFI_IMAGE_MACHINE_TYPE_SUPPORTED(Machine) \
-  ((Machine) == 0x014c || \
-   (Machine) == 0x8664)
-#endif
 
 // -------------------
 // EdkII Names - Edk Names

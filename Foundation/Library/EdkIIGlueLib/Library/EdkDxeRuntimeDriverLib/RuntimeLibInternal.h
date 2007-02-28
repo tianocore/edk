@@ -25,11 +25,6 @@ Abstract:
 
 #include "EdkIIGlueDxe.h"
 
-EFI_STATUS
-EfiConvertInternalPointer (
-  IN OUT VOID                  *Address
-  );
-
 extern EFI_RUNTIME_SERVICES   *mRT;
 
 #endif //__RUNTIMELIBINTERNAL_H__

@@ -21,7 +21,6 @@ Abstract:
 --*/
 
 #include "EdkIIGlueDxe.h"
-#include "Pcd\EdkIIGluePcdDebugLib.h"
 
 /**
 
@@ -80,7 +79,7 @@ DebugPrint (
   //
   VA_START (Marker, Format);
   for (Index = 0, ArgumentPointer = (UINT64 *)(DebugInfo + 1); Index < 12; Index++, ArgumentPointer++) {
-    *ArgumentPointer = VA_ARG (Marker, UINT64);
+    WriteUnaligned64(ArgumentPointer, VA_ARG (Marker, UINT64));
   }
   VA_END (Marker);
   AsciiStrCpy ((CHAR8 *)ArgumentPointer, Format);
@@ -182,7 +181,7 @@ DebugAssert (
 
   If Buffer is NULL, then ASSERT().
 
-  If Length is greater than (MAX_ADDRESS ?Buffer + 1), then ASSERT(). 
+  If Length is greater than (MAX_ADDRESS ? Buffer + 1), then ASSERT(). 
 
   @param   Buffer  Pointer to the target buffer to fill with PcdDebugClearMemoryValue.
   @param   Length  Number of bytes in Buffer to fill with zeros PcdDebugClearMemoryValue. 

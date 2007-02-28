@@ -21,7 +21,6 @@ Abstract:
 --*/
 
 #include "EdkIIGlueDxe.h"
-#include "Pcd\EdkIIGluePcdPostCodeLib.h"
 
 /**
   Converts POST code value to status code value.

@@ -61,7 +61,7 @@ Returns:
   UINTN   Count;
   UINTN   Index;
 
-  TempStr = TempBuffer;
+  TempStr   = TempBuffer;
   BufferPtr = Buffer;
 
   //
@@ -75,10 +75,7 @@ Returns:
   }
 
   do {
-    //
-    // If Width == 0, it means no limit.
-    //
-    if ((Width != 0) && (Count >= Width)) {
+    if (Count >= CHARACTER_NUMBER_FOR_VALUE - 1) {
       break;
     }
 
@@ -142,20 +139,20 @@ Returns:
 
 --*/
 {
-  CHAR16  TempBuffer[CHARACTER_NUMBER_FOR_VALUE];
-  CHAR16  *TempStr;
-  CHAR16  *BufferPtr;
-  UINTN   Count;
-  UINTN   ValueCharNum;
-  UINTN   Remainder;
-  CHAR16  Prefix;
-  UINTN   Index;
+  CHAR16    TempBuffer[CHARACTER_NUMBER_FOR_VALUE];
+  CHAR16    *TempStr;
+  CHAR16    *BufferPtr;
+  UINTN     Count;
+  UINTN     ValueCharNum;
+  UINTN     Remainder;
+  CHAR16    Prefix;
+  UINTN     Index;
   BOOLEAN   ValueIsNegative;
 
-  TempStr = TempBuffer;
-  BufferPtr = Buffer;
-  Count = 0;
-  ValueCharNum = 0;
+  TempStr         = TempBuffer;
+  BufferPtr       = Buffer;
+  Count           = 0;
+  ValueCharNum    = 0;
   ValueIsNegative = FALSE;
 
   if (Width > CHARACTER_NUMBER_FOR_VALUE - 1) {
@@ -163,18 +160,12 @@ Returns:
   }
 
   if (Value < 0) {
-    *(TempStr++) = '-';
-    Value = -Value;
-    ValueCharNum++;
-    Count++;
+    Value           = -Value;
     ValueIsNegative = TRUE;
   }
 
   do {
-    //
-    // If Width == 0, it means no limit.
-    //
-    if ((Width != 0) && (Count >= Width)) {
+    if (Count >= CHARACTER_NUMBER_FOR_VALUE - 1) {
       break;
     }
 
@@ -183,16 +174,19 @@ Returns:
     ValueCharNum++;
     Count++;
     if ((Flags & COMMA_TYPE) == COMMA_TYPE) {
-      if (Value != 0) {
-        if ((ValueIsNegative && (ValueCharNum % 3 == 1)) || ((!ValueIsNegative) && (ValueCharNum % 3 == 0))) {
-          *(TempStr++) = ',';
-          Count++;
-        }
+      if (ValueCharNum % 3 == 0 && Value != 0) {
+        *(TempStr++) = ',';
+        Count++;
       }
     }
   } while (Value != 0);
 
- if (Flags & PREFIX_ZERO) {
+  if (ValueIsNegative) {
+    *(TempStr++)    = '-';
+    Count++;
+  }
+
+  if (Flags & PREFIX_ZERO) {
     Prefix = '0';
   } else { 
     Prefix = ' ';
@@ -202,22 +196,16 @@ Returns:
   if (!(Flags & LEFT_JUSTIFY)) {
     for (; Index < Width; Index++) {
       *(TempStr++) = Prefix;
-  }
+    }
   }
 
   //
   // Reverse temp string into Buffer.
   //
-  if (Width == 0) {
-    while (TempStr != TempBuffer) {
-      *(BufferPtr++) = *(--TempStr);
-    }  
-  } else {
-    Index = 0;
-    while ((TempStr != TempBuffer) && (Index++ < Width)) {
-      *(BufferPtr++) = *(--TempStr);
-    }
-  } 
+  while (TempStr != TempBuffer) {
+    *(BufferPtr++) = *(--TempStr);
+  }
+
   *BufferPtr = 0;
   return Index;
 }

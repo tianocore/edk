@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -233,6 +233,14 @@ typedef struct {
 } DEVICE_LOGICAL_UNIT_DEVICE_PATH;
 #endif
 
+#define MSG_SATA_DP               0x12
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT16                          HBAPortNumber;
+  UINT16                          PortMultiplierPortNumber;
+  UINT16                          Lun;
+} SATA_DEVICE_PATH;
+
 #define MSG_I2O_DP                0x06
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL        Header;
@@ -460,6 +468,7 @@ typedef union {
   ATAPI_DEVICE_PATH                    Atapi;
   SCSI_DEVICE_PATH                     Scsi;
   FIBRECHANNEL_DEVICE_PATH             FibreChannel;
+  SATA_DEVICE_PATH                     Sata;
 
   F1394_DEVICE_PATH                    F1394;
   USB_DEVICE_PATH                      Usb;
@@ -505,6 +514,7 @@ typedef union {
   ATAPI_DEVICE_PATH                    *Atapi;
   SCSI_DEVICE_PATH                     *Scsi;
   FIBRECHANNEL_DEVICE_PATH             *FibreChannel;
+  SATA_DEVICE_PATH                     *Sata;
 
   F1394_DEVICE_PATH                    *F1394;
   USB_DEVICE_PATH                      *Usb;

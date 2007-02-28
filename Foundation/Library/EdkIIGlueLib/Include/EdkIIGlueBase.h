@@ -24,6 +24,13 @@ Abstract:
 #define __EDKII_GLUE_BASE_H__
 
 //
+// Using this header means building with EdkIIGlueLib
+//
+#ifndef BUILD_WITH_EDKII_GLUE_LIB
+  #define BUILD_WITH_EDKII_GLUE_LIB
+#endif
+
+//
 // General Type & API definitions
 //
 
@@ -71,5 +78,16 @@ Abstract:
 #include "Library\EdkIIGlueTimerLib.h"
 #include "Library\EdkIIGlueUefiDecompressLib.h"
 #include "Library\EdkIIGlueDebugLib.h"
+
+//
+// Publish MDE Library PCDs
+//
+#include "Pcd\EdkIIGluePcdBaseLib.h"
+#include "Pcd\EdkIIGluePcdDebugLib.h"
+#include "Pcd\EdkIIGluePcdIoLib.h"
+#include "Pcd\EdkIIGluePcdPciExpressLib.h"
+#include "Pcd\EdkIIGluePcdPostCodeLib.h"
+#include "Pcd\EdkIIGluePcdReportStatusCodeLib.h"
+#include "Pcd\EdkIIGluePcdTimerLib.h"
 
 #endif

@@ -57,7 +57,6 @@ Abstract:
 #include "PeiLib.h"
 #include "Print.h"
 
-
 STATIC
 CHAR8 *
 GetFlagsAndWidth (
@@ -183,30 +182,37 @@ Returns:
 
 --*/
 {
-  CHAR8   *Buffer;
-  CHAR8   *AsciiStr;
-  CHAR16  *UnicodeStr;
-  CHAR8   *Format;
-  UINTN   Index;
-  UINTN   Flags;
-  UINTN   Width;
-  UINT64  Value;
+  CHAR8     TempBuffer[CHARACTER_NUMBER_FOR_VALUE];
+  CHAR8     *Buffer;
+  CHAR8     *AsciiStr;
+  CHAR16    *UnicodeStr;
+  CHAR8     *Format;
+  UINTN     Index;
+  UINTN     Flags;
+  UINTN     Width;
+  UINTN     Count;
+  UINTN     BufferLeft;
+  UINT64    Value;
+  EFI_GUID  *TmpGUID;
 
   //
   // Process the format string. Stop if Buffer is over run.
   //
-
-  Buffer = StartOfBuffer;
-  Format = (CHAR8 *)FormatString; 
-  for (Index = 0; (*Format != '\0') && (Index < BufferSize); Format++) {
+  Buffer              = StartOfBuffer;
+  Format              = (CHAR8 *) FormatString;
+  BufferLeft          = BufferSize;
+  for (Index = 0; (*Format != '\0') && (Index < BufferSize - 1); Format++) {
     if (*Format != '%') {
-      if (*Format == '\n') {
+      if ((*Format == '\n') && (Index < BufferSize - 2)) {
         //
         // If carage return add line feed
         //
         Buffer[Index++] = '\r';
+        BufferLeft -= sizeof (CHAR8);
       }
+
       Buffer[Index++] = *Format;
+      BufferLeft -= sizeof (CHAR8);
     } else {
       
       //
@@ -217,80 +223,111 @@ Returns:
       case 'X':
         Flags |= PREFIX_ZERO;
         Width = sizeof (UINT64) * 2;
-        //
-        // break skiped on purpose
-        //
+
+      //
+      // break skiped on purpose
+      //
       case 'x':
         if ((Flags & LONG_TYPE) == LONG_TYPE) {
           Value = VA_ARG (Marker, UINT64);
         } else {
           Value = VA_ARG (Marker, UINTN);
         }
-        Index += ValueTomHexStr (&Buffer[Index], Value, Flags, Width);
+
+        ValueTomHexStr (TempBuffer, Value, Flags, Width);
+        AsciiStr = TempBuffer;
+
+        for (; (*AsciiStr != '\0') && (Index < BufferSize - 1); AsciiStr++) {
+          Buffer[Index++] = *AsciiStr;
+        }
         break;
 
       case 'd':
         if ((Flags & LONG_TYPE) == LONG_TYPE) {
           Value = VA_ARG (Marker, UINT64);
         } else {
-          Value = (UINTN)VA_ARG (Marker, UINTN);
+          Value = (UINTN) VA_ARG (Marker, UINTN);
         }
-        Index += ValueToString (&Buffer[Index], Value, Flags, Width);
+
+        ValueToString (TempBuffer, Value, Flags, Width);
+        AsciiStr = TempBuffer;
+
+        for (; (*AsciiStr != '\0') && (Index < BufferSize - 1); AsciiStr++) {
+          Buffer[Index++] = *AsciiStr;
+        }
         break;
 
       case 's':
       case 'S':
-        UnicodeStr = (CHAR16 *)VA_ARG (Marker, CHAR16 *);
+        UnicodeStr = (CHAR16 *) VA_ARG (Marker, CHAR8 *);
         if (UnicodeStr == NULL) {
           UnicodeStr = L"<null string>";
         }
-        for ( ;*UnicodeStr != '\0'; UnicodeStr++) {
-          Buffer[Index++] = (CHAR8)*UnicodeStr;
+
+        for (Count = 0; (*UnicodeStr != '\0') && (Index < BufferSize - 1); UnicodeStr++, Count++) {
+          Buffer[Index++] = (CHAR8) *UnicodeStr;
         }
+        //
+        // Add padding if needed
+        //
+        for (; (Count < Width) && (Index < BufferSize - 1); Count++) {
+          Buffer[Index++] = ' ';
+        }
+
         break;
 
       case 'a':
-        AsciiStr = (CHAR8 *)VA_ARG (Marker, CHAR8 *);
+        AsciiStr = (CHAR8 *) VA_ARG (Marker, CHAR8 *);
         if (AsciiStr == NULL) {
           AsciiStr = "<null string>";
         }
-        while (*AsciiStr != '\0') {
-          Buffer[Index++] = *AsciiStr++;
+
+        for (Count = 0; (*AsciiStr != '\0') && (Index < BufferSize - 1); AsciiStr++, Count++) {
+          Buffer[Index++] = *AsciiStr;
+        }
+        //
+        // Add padding if needed
+        //
+        for (; (Count < Width) && (Index < BufferSize - 1); Count++) {
+          Buffer[Index++] = ' ';
         }
         break;
 
       case 'c':
-        Buffer[Index++] = (CHAR8)VA_ARG (Marker, UINTN);
+        Buffer[Index++] = (CHAR8) VA_ARG (Marker, UINTN);
         break;
 
       case 'g':
-        Index += GuidToString (
-                  VA_ARG (Marker, EFI_GUID *), 
-                  &Buffer[Index], 
-                  BufferSize
-                  );
+        TmpGUID = VA_ARG (Marker, EFI_GUID *);
+        if (TmpGUID != NULL) {
+          Index += GuidToString (
+                    TmpGUID,
+                    &Buffer[Index],
+                    BufferLeft
+                    );
+        }
         break;
 
       case 't':
         Index += TimeToString (
                   VA_ARG (Marker, EFI_TIME *), 
-                  &Buffer[Index], 
-                  BufferSize
+                  &Buffer[Index],
+                  BufferLeft
                   );
         break;
 
       case 'r':
         Index += EfiStatusToString (
                   VA_ARG (Marker, EFI_STATUS), 
-                  &Buffer[Index], 
-                  BufferSize
+                  &Buffer[Index],
+                  BufferLeft
                   );
         break;
 
       case '%':
         Buffer[Index++] = *Format;
         break;
-    
+
       default:
         //
         // if the type is unknown print it to the screen
@@ -298,10 +335,12 @@ Returns:
         Buffer[Index++] = *Format;
       }
 
-    } 
+      BufferLeft = BufferSize - Index;
+    }
   }
-  Buffer[Index++] = '\0'; 
-  
+
+  Buffer[Index++] = '\0';
+
   return &Buffer[Index] - StartOfBuffer;
 }
 
@@ -421,7 +460,7 @@ Returns:
 
 --*/
 {
-  CHAR8   TempBuffer[30];
+  CHAR8   TempBuffer[CHARACTER_NUMBER_FOR_VALUE];
   CHAR8   *TempStr;
   CHAR8   Prefix;
   CHAR8   *BufferPtr;
@@ -494,32 +533,42 @@ Returns:
 
 --*/
 {
-  CHAR8   TempBuffer[30];
+  CHAR8   TempBuffer[CHARACTER_NUMBER_FOR_VALUE];
   CHAR8   *TempStr;
   CHAR8   *BufferPtr;
   UINTN   Count;
+  UINTN   NumberCount;
   UINTN   Remainder;
+  BOOLEAN Negative;
 
-  TempStr = TempBuffer;
-  BufferPtr = Buffer;
-  Count = 0;
+  Negative    = FALSE;
+  TempStr     = TempBuffer;
+  BufferPtr   = Buffer;
+  Count       = 0;
+  NumberCount = 0;
 
   if (Value < 0) {
-    *(BufferPtr++) = '-';
-    Value = -Value;
-    Count++;
+    Negative = TRUE;
+    Value    = -Value;
   }
 
   do {
     Value = (INT64)DivU64x32 ((UINT64)Value, 10, &Remainder);
     *(TempStr++) = (CHAR8)(Remainder + '0');
     Count++;
+    NumberCount++;
     if ((Flags & COMMA_TYPE) == COMMA_TYPE) {
-      if (Count % 3 == 0) {
+      if (NumberCount % 3 == 0 && Value != 0) {
         *(TempStr++) = ',';
+        Count++;
       }
     }
   } while (Value != 0);
+
+  if (Negative) {
+    *(BufferPtr++) = '-';
+    Count++;
+  }
 
   //
   // Reverse temp string into Buffer.

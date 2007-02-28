@@ -94,7 +94,7 @@ Returns:
   CHAR16  UnicodeFormat[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
 
   MaxIndex = EfiAsciiStrLen ((CHAR8 *) Format);
-  if (MaxIndex > EFI_DRIVER_LIB_MAX_PRINT_BUFFER) {
+  if (MaxIndex >= EFI_DRIVER_LIB_MAX_PRINT_BUFFER) {
     //
     // Format string was too long for use to process.
     //
@@ -169,7 +169,7 @@ Returns:
   CHAR16  UnicodeFormat[EFI_DRIVER_LIB_MAX_PRINT_BUFFER];
 
   MaxIndex = EfiAsciiStrLen ((CHAR8 *) Format);
-  if (MaxIndex > EFI_DRIVER_LIB_MAX_PRINT_BUFFER) {
+  if (MaxIndex >= EFI_DRIVER_LIB_MAX_PRINT_BUFFER) {
     //
     // Format string was too long for use to process.
     //

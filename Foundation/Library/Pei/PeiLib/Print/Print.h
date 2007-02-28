@@ -34,4 +34,5 @@ Abstract:
 //
 #define PEI_LIB_MAX_PRINT_BUFFER  (80 * 4)
 
+#include "EfiCommonLib.h"
 #endif

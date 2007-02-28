@@ -94,12 +94,6 @@ EfiStatusToString (
   IN  UINTN       BufferSize
   );
 
-STATIC
-UINTN
-Atoi (
-  CHAR_W  *String
-  );
-
 static EFI_GRAPHICS_OUTPUT_BLT_PIXEL  mEfiColors[16] = {
   0x00, 0x00, 0x00, 0x00,
   0x98, 0x00, 0x00, 0x00,

@@ -61,45 +61,6 @@ Abstract:
 #include "Print.h"
 #include EFI_PROTOCOL_DEFINITION (Hii)
 
-STATIC
-CHAR_W                *
-GetFlagsAndWidth (
-  IN  CHAR_W      *Format,
-  OUT UINTN       *Flags,
-  OUT UINTN       *Width,
-  IN OUT  VA_LIST *Marker
-  );
-
-STATIC
-UINTN
-GuidToString (
-  IN  EFI_GUID  *Guid,
-  IN OUT CHAR_W *Buffer,
-  IN  UINTN     BufferSize
-  );
-
-STATIC
-UINTN
-TimeToString (
-  IN  EFI_TIME  *Time,
-  IN OUT CHAR_W *Buffer,
-  IN  UINTN     BufferSize
-  );
-
-STATIC
-UINTN
-EfiStatusToString (
-  IN EFI_STATUS   Status,
-  OUT CHAR_W      *Buffer,
-  IN  UINTN       BufferSize
-  );
-
-STATIC
-UINTN
-Atoi (
-  CHAR_W  *String
-  );
-
 static EFI_GRAPHICS_OUTPUT_BLT_PIXEL  mEfiColors[16] = {
   0x00, 0x00, 0x00, 0x00,
   0x98, 0x00, 0x00, 0x00,

@@ -37,7 +37,7 @@ Revision History
 typedef struct {
   UINTN           Signature;
   EFI_LIST_ENTRY  Link;
-  BOOLEAN         FromPool;
+  BOOLEAN         FromPages;
 
   EFI_MEMORY_TYPE Type;
   UINT64          Start;

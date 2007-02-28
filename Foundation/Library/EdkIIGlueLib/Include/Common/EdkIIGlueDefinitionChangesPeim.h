@@ -35,6 +35,9 @@ typedef enum {
   EfiPeiPciCfgWidthMaximum
 } EFI_PEI_PCI_CFG_PPI_WIDTH;
 
+//
+// typedef Edk types - EdkII types
+//
 typedef EFI_MEMORY_ARRAY_START_ADDRESS               EFI_MEMORY_ARRAY_START_ADDRESS_DATA;
 typedef EFI_MEMORY_DEVICE_START_ADDRESS              EFI_MEMORY_DEVICE_START_ADDRESS_DATA;
 typedef EFI_MISC_LAST_PCI_BUS                        EFI_MISC_LAST_PCI_BUS_DATA;

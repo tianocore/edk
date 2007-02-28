@@ -33,6 +33,7 @@ Abstract:
 
 **/
 EFI_PEI_SERVICES **
+EFIAPI
 GetPeiServicesTablePointer (
   VOID
   );

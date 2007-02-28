@@ -272,19 +272,26 @@ Returns:
     // If the image relocations have not been stripped, then load at any address. 
     // Otherwise load at the address at which it was linked.
     //
-    Status = CoreAllocatePages (
-               AllocateAddress,
-               Image->ImageContext.ImageCodeMemoryType,
-               Image->NumberOfPages,
-               &Image->ImageContext.ImageAddress
-               );
-    if (EFI_ERROR (Status) && !Image->ImageContext.RelocationsStripped)
+    // Images with preferred load address < 1MB are believed not processed by
+    // PeiRebase and thus will not be loaded at their preferred addresses.
+    //
+    Status = EFI_OUT_OF_RESOURCES;
+    if (Image->ImageContext.ImageAddress >= 0x100000 || Image->ImageContext.RelocationsStripped) {
+      Status = CoreAllocatePages (
+                 AllocateAddress,
+                 Image->ImageContext.ImageCodeMemoryType,
+                 Image->NumberOfPages,
+                 &Image->ImageContext.ImageAddress
+                 );
+    }
+    if (EFI_ERROR (Status) && !Image->ImageContext.RelocationsStripped) {
       Status = CoreAllocatePages (
                  AllocateAnyPages,
                  Image->ImageContext.ImageCodeMemoryType,
                  Image->NumberOfPages,
                  &Image->ImageContext.ImageAddress
                  );
+    }
     if (EFI_ERROR (Status)) {
       return Status;
     }

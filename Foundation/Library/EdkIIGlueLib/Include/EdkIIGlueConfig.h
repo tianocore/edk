@@ -23,16 +23,18 @@ Abstract:
 #ifndef __EDKII_GLUE_CONFIG_H__
 #define __EDKII_GLUE_CONFIG_H__
 
+#include "EdkIIGlueProcessorBind.h"
 
 //
 //  Glue Library version
 //
 //  0x3000  - the 3rd release
+//  0x5000  - support IPF. Jan, 2007
+//  0x6000  - support EBC. Feb, 2007
 //
-//  Values:
-//    For reference only, don't change the value
+//  For reference only, don't change the value
 //
-#define EDKII_GLUE_LIBRARY_VERSION 0x3000
+#define EDKII_GLUE_LIBRARY_VERSION 0x6000
 
 
 //
@@ -109,6 +111,13 @@ Abstract:
 #define EDKII_GLUE_PciExpressBaseAddress        0xE0000000
 
 //
+//
+// This value is FSB Clock frequency. Its unit is Hz and its 
+// default value is 200000000, that means FSB frequency is 200Mhz.
+//
+#define EDKII_GLUE_FSBClock                  200000000
+
+//
 // post code property mask
 //
 #define EDKII_GLUE_PostCodePropertyMask         (  POST_CODE_PROPERTY_POST_CODE_ENABLED               \
@@ -123,5 +132,13 @@ Abstract:
                                                    | REPORT_STATUS_CODE_PROPERTY_DEBUG_CODE_ENABLED   \
                                                 )
 
+
+//
+// for IPF only
+// The base address of IPF IO Block
+//
+#ifdef MDE_CPU_IPF
+#define EDKII_GLUE_IoBlockBaseAddressForIpf     0x0ffffc000000
+#endif
 
 #endif

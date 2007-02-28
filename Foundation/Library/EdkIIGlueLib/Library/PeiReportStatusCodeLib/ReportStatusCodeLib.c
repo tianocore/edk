@@ -21,7 +21,6 @@ Abstract:
 --*/
 
 #include "EdkIIGluePeim.h"
-#include "Pcd\EdkIIGluePcdReportStatusCodeLib.h"
 
 //
 // Define the maximum extended data size that is supported in the PEI phase

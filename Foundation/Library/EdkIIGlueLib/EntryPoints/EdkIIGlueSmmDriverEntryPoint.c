@@ -70,7 +70,8 @@ ProcessLibraryConstructorList (
     || defined(__EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__)   \
     || defined(__EDKII_GLUE_DXE_SERVICES_TABLE_LIB__)       \
     || defined(__EDKII_GLUE_DXE_SMBUS_LIB__)                \
-    || defined(__EDKII_GLUE_UEFI_RUNTIME_SERVICES_TABLE_LIB__)
+    || defined(__EDKII_GLUE_UEFI_RUNTIME_SERVICES_TABLE_LIB__) \
+    || defined(__EDKII_GLUE_DXE_IO_LIB_CPU_IO__)
   EFI_STATUS  Status;
 #endif
 
@@ -79,6 +80,7 @@ ProcessLibraryConstructorList (
 // NOTE: the constructors must be called according to dependency order
 //
 // UefiBootServicesTableLib     UefiBootServicesTableLibConstructor()
+// DxeIoLibCpuIo                IoLibConstructor 
 //   EdkDxeRuntimeDriverLib       RuntimeDriverLibConstruct()   
 // DxeHobLib                    HobLibConstructor()
 //   UefiDriverModelLib           UefiDriverModelLibConstructor()
@@ -88,6 +90,11 @@ ProcessLibraryConstructorList (
 // check here: check lib usage
 #ifdef __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
   Status = UefiBootServicesTableLibConstructor (ImageHandle, SystemTable);
+  ASSERT_EFI_ERROR (Status);
+#endif
+
+#ifdef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  Status = IoLibConstructor (ImageHandle, SystemTable);
   ASSERT_EFI_ERROR (Status);
 #endif
 

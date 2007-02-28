@@ -21,8 +21,6 @@ Abstract:
 --*/
 
 #include "BaseLibInternal.h"
-#include "Pcd\EdkIIGluePcdBaseLib.h"
-
 
 /**
   Copies one Null-terminated Unicode string to another Null-terminated Unicode

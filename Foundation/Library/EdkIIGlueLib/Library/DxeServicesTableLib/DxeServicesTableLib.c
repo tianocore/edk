@@ -42,6 +42,7 @@ EFI_DXE_SERVICES  *gDS      = NULL;
 
 **/
 EFI_STATUS
+EFIAPI
 DxeServicesTableLibConstructor (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable

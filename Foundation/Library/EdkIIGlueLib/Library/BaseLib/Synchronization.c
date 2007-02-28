@@ -21,7 +21,6 @@ Abstract:
 --*/
 
 #include "BaseLibInternal.h"
-#include "Pcd\EdkIIGluePcdBaseLib.h"
 
 #define SPIN_LOCK_RELEASED          ((SPIN_LOCK)1)
 #define SPIN_LOCK_ACQUIRED          ((SPIN_LOCK)2)
@@ -245,8 +244,13 @@ AcquireSpinLockOrFail (
   IN OUT  SPIN_LOCK                 *SpinLock
   )
 {
+  volatile SPIN_LOCK    LockValue;
+
   ASSERT (SpinLock != NULL);
-  ASSERT (*SpinLock == SPIN_LOCK_ACQUIRED || *SpinLock == SPIN_LOCK_RELEASED);
+
+  LockValue = *SpinLock;
+  ASSERT (LockValue == SPIN_LOCK_ACQUIRED || LockValue == SPIN_LOCK_RELEASED);
+
   return (BOOLEAN)(
            InterlockedCompareExchangePointer (
              (VOID**)SpinLock,
@@ -276,8 +280,13 @@ ReleaseSpinLock (
   IN OUT  SPIN_LOCK                 *SpinLock
   )
 {
+  volatile SPIN_LOCK    LockValue;
+
   ASSERT (SpinLock != NULL);
-  ASSERT (*SpinLock == SPIN_LOCK_ACQUIRED || *SpinLock == SPIN_LOCK_RELEASED);
+
+  LockValue = *SpinLock;
+  ASSERT (LockValue == SPIN_LOCK_ACQUIRED || LockValue == SPIN_LOCK_RELEASED);
+
   *SpinLock = SPIN_LOCK_RELEASED;
   return SpinLock;
 }

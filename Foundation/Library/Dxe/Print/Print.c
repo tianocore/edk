@@ -92,14 +92,6 @@ EfiStatusToString (
   IN  UINTN       BufferSize
   );
 
-STATIC
-UINTN
-Atoi (
-  CHAR_W  *String
-  );
-
-
-
 UINTN
 SPrint (
   OUT CHAR_W        *Buffer,

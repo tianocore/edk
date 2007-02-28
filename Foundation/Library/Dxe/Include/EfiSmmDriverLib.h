@@ -25,6 +25,7 @@ Abstract:
 #include "Tiano.h"
 #include "GetImage.h"
 #include "EfiCommonLib.h"
+#include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_GUID_DEFINITION (EventGroup)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 #include EFI_PROTOCOL_DEFINITION (SmmBase)
@@ -150,6 +151,35 @@ Arguments:
 Returns:
   
   None
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+SmmEfiCreateEventLegacyBoot (
+  IN EFI_TPL                      NotifyTpl,
+  IN EFI_EVENT_NOTIFY             NotifyFunction,
+  IN VOID                         *NotifyContext,
+  OUT EFI_EVENT                   *LegacyBootEvent
+  )
+/*++
+
+Routine Description:
+  Create a Legacy Boot Event.  
+  Tiano extended the CreateEvent Type enum to add a legacy boot event type. 
+  This was bad as Tiano did not own the enum. In UEFI 2.0 CreateEventEx was
+  added and now it's possible to not voilate the UEFI specification by 
+  declaring a GUID for the legacy boot event class. This library supports
+  the R8.5/EFI 1.10 form and R8.6/UEFI 2.0 form and allows common code to 
+  work both ways.
+
+Arguments:
+  LegacyBootEvent  Returns the EFI event returned from gBS->CreateEvent(Ex)
+
+Returns:
+  EFI_SUCCESS   Event was created.
+  Other         Event was not created.
 
 --*/
 ;

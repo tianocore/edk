@@ -23,6 +23,7 @@ Abstract:
 #include "..\RuntimeLibInternal.h"
 
 VOID
+EFIAPI
 EfiResetSystem (
   IN EFI_RESET_TYPE               ResetType,
   IN EFI_STATUS                   ResetStatus,
@@ -57,6 +58,7 @@ Returns:
 // runtime service in the EFI system table.
 //
 EFI_STATUS
+EFIAPI
 EfiGetTime (
   OUT EFI_TIME                    *Time,
   OUT EFI_TIME_CAPABILITIES       *Capabilities
@@ -71,7 +73,7 @@ Routine Description:
 Arguments:
 
   Time          - A pointer to storage to receive a snapshot of the current time.
-  Capabilities  - An optional pointer to a buffer to receive the real time clock device¡¯s
+  Capabilities  - An optional pointer to a buffer to receive the real time clock device's
                   capabilities.
 
 Returns:
@@ -84,6 +86,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiSetTime (
   IN EFI_TIME                   *Time
   )
@@ -107,6 +110,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiGetWakeupTime (
   OUT BOOLEAN                     *Enabled,
   OUT BOOLEAN                     *Pending,
@@ -134,6 +138,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiSetWakeupTime (
   IN BOOLEAN                      Enable,
   IN EFI_TIME                     *Time
@@ -163,6 +168,7 @@ Returns:
 
 
 EFI_STATUS
+EFIAPI
 EfiGetVariable (
   IN CHAR16                       *VariableName,
   IN EFI_GUID                     * VendorGuid,
@@ -179,7 +185,7 @@ Routine Description:
 Arguments:
 
   VariableName  - A Null-terminated Unicode string that is the name of the
-                  vendor¡¯s variable.
+                  vendor's variable.
   VendorGuid    - A unique identifier for the vendor.
   Attributes    - If not NULL, a pointer to the memory location to return the
                   attributes bitmask for the variable.
@@ -197,6 +203,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiGetNextVariableName (
   IN OUT UINTN                    *VariableNameSize,
   IN OUT CHAR16                   *VariableName,
@@ -229,6 +236,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiSetVariable (
   IN CHAR16                       *VariableName,
   IN EFI_GUID                     *VendorGuid,
@@ -245,7 +253,7 @@ Routine Description:
 Arguments:
 
   VariableName  - A Null-terminated Unicode string that is the name of the
-                  vendor¡¯s variable.
+                  vendor's variable.
   VendorGuid    - A unique identifier for the vendor.
   Attributes    - Attributes bitmask to set for the variable.
   DataSize      - The size in bytes of the Data buffer.
@@ -261,6 +269,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiGetNextHighMonotonicCount (
   OUT UINT32                      *HighCount
   )
@@ -268,7 +277,7 @@ EfiGetNextHighMonotonicCount (
 
 Routine Description:
 
-  Returns the next high 32 bits of the platform¡¯s monotonic counter.
+  Returns the next high 32 bits of the platform's monotonic counter.
 
 Arguments:
 
@@ -284,9 +293,10 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 EfiConvertPointer (
   IN UINTN                  DebugDisposition,
-  IN OUT VOID               *Address
+  IN OUT VOID               **Address
   )
 /*++
 
@@ -310,30 +320,7 @@ Returns:
 }
 
 EFI_STATUS
-EfiConvertInternalPointer (
-  IN OUT VOID                  *Address
-  )
-/*++
-
-Routine Description:
-
-  Call EfiConvertPointer() to convert internal pointer.
-
-Arguments:
-
-  Address - A pointer to a pointer that is to be fixed to be the value needed
-            for the new virtual address mappings being applied.
-
-Returns:
-
-  Status code
-
---*/
-{
-  return EfiConvertPointer (0x0, Address);
-}
-
-EFI_STATUS
+EFIAPI
 EfiConvertList (
   IN UINTN                DebugDisposition,
   IN OUT LIST_ENTRY       *ListHead
@@ -422,6 +409,7 @@ EfiSetVirtualAddressMap (
 
 
 EFI_STATUS
+EFIAPI
 EfiUpdateCapsule (
   IN UEFI_CAPSULE_HEADER	**CapsuleHeaderArray,
   IN UINTN				    CapsuleCount,
@@ -440,6 +428,7 @@ EfiUpdateCapsule (
 }
 
 EFI_STATUS
+EFIAPI
 EfiQueryCapsuleCapabilities (
   IN UEFI_CAPSULE_HEADER	**CapsuleHeaderArray,
   IN UINTN				    CapsuleCount,
@@ -461,6 +450,7 @@ EfiQueryCapsuleCapabilities (
 
 
 EFI_STATUS
+EFIAPI
 EfiQueryVariableInfo (
   IN UINT32			  Attributes,
   OUT UINT64			*MaximumVariableStorageSize,

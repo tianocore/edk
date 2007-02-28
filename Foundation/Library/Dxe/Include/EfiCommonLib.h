@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -874,6 +874,36 @@ Returns:
 --*/
 ;
 
+INTN
+EfiStrnCmp (
+  IN CHAR16   *String,
+  IN CHAR16   *String2,
+  IN UINTN    Length
+  )
+/*++
+
+Routine Description:
+  This function compares the Unicode string String to the Unicode
+  string String2 for len characters.  If the first len characters
+  of String is identical to the first len characters of String2,
+  then 0 is returned.  If substring of String sorts lexicographically
+  after String2, the function returns a number greater than 0. If
+  substring of String sorts lexicographically before String2, the
+  function returns a number less than 0.
+
+Arguments:
+  String  - Compare to String2
+  String2 - Compare to String
+  Length  - Number of Unicode characters to compare
+
+Returns:
+  0     - The substring of String and String2 is identical.
+  > 0   - The substring of String sorts lexicographically after String2
+  < 0   - The substring of String sorts lexicographically before String2
+
+--*/
+;
+
 VOID
 EfiStrCat (
   IN CHAR16   *Destination,
@@ -1014,6 +1044,36 @@ Returns:
   Return a positive integer if String is lexicall greater than String2; Zero if 
   the two strings are identical; and a negative interger if String is lexically 
   less than String2.
+--*/
+;
+
+INTN
+EfiAsciiStrnCmp (
+  IN CHAR8    *String,
+  IN CHAR8    *String2,
+  IN UINTN    Length
+  )
+/*++
+
+Routine Description:
+  This function compares the ASCII string String to the ASCII
+  string String2 for len characters.  If the first len characters
+  of String is identical to the first len characters of String2,
+  then 0 is returned.  If substring of String sorts lexicographically
+  after String2, the function returns a number greater than 0. If
+  substring of String sorts lexicographically before String2, the
+  function returns a number less than 0.
+
+Arguments:
+  String  - Compare to String2
+  String2 - Compare to String
+  Length  - Number of ASCII characters to compare
+
+Returns:
+  0     - The substring of String and String2 is identical.
+  > 0   - The substring of String sorts lexicographically after String2
+  < 0   - The substring of String sorts lexicographically before String2
+
 --*/
 ;
 

@@ -48,6 +48,8 @@ C_STD_INCLUDE=
   DebugAssert\DebugAssert.c
   DebugMask\DebugMask.h
   DebugMask\DebugMask.c
+  DebugSerialIo\DebugSerialIo.h
+  DebugSerialIo\DebugSerialIo.c
   DiskInfo\DiskInfo.h
   DiskInfo\DiskInfo.c
   EfiOemBadging\EfiOemBadging.h

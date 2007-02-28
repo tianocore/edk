@@ -34,5 +34,8 @@ Abstract:
   #define GLOBAL_REMOVE_IF_UNREFERENCED
 #endif
 
+#ifndef MDE_CPU_IA32
+  #define MDE_CPU_IA32
+#endif
 
 #endif

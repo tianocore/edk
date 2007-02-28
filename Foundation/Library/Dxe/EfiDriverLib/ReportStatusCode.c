@@ -75,7 +75,15 @@ Returns:
   if (gRT == NULL) {
     return EFI_UNSUPPORTED;
   }
-  Status = gRT->ReportStatusCode (Type, Value, Instance, CallerId, Data);
+  //
+  // Check whether EFI_RUNTIME_SERVICES has Tiano Extension
+  //
+  Status = EFI_UNSUPPORTED;
+  if (gRT->Hdr.Revision     == EFI_SPECIFICATION_VERSION     &&
+      gRT->Hdr.HeaderSize   == sizeof (EFI_RUNTIME_SERVICES) &&
+      gRT->ReportStatusCode != NULL) {
+    Status = gRT->ReportStatusCode (Type, Value, Instance, CallerId, Data);
+  }
   return Status;
 #endif
 }

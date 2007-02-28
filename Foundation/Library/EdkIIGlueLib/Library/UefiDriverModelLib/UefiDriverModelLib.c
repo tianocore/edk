@@ -25,13 +25,14 @@ Abstract:
 /**
   The constructor function installs the standard EFI Driver Model Protocols.
 
-  @param[in] ImageHandle The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle The firmware allocated handle for the EFI image.
   @param[in] SystemTable A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS The constructor always return EFI_SUCCESS.
 
 **/
 EFI_STATUS
+EFIAPI
 UefiDriverModelLibConstructor (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
@@ -58,7 +59,7 @@ UefiDriverModelLibConstructor (
 
     //
     // Check for all 8 possible combinations of the ComponentName, DriverConfiguration, and DriverDiagnostics Protocol
-    // These are all checks against const pointers, so the optimizing compiler will only select one of the 
+    // These are all checks against const pointers, so the optimizing compiler will only select one of the
     // calls to InstallMultipleProtocolInterfaces()
     //
     if (_gDriverModelProtocolList[0].DriverDiagnostics == NULL) {
@@ -161,6 +162,7 @@ UefiDriverModelLibConstructor (
 
 **/
 EFI_STATUS
+EFIAPI
 UefiDriverModelLibDestructor (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
@@ -186,7 +188,7 @@ UefiDriverModelLibDestructor (
 
     //
     // Check for all 8 possible combinations of the ComponentName, DriverConfiguration, and DriverDiagnostics Protocol
-    // These are all checks against const pointers, so the optimizing compiler will only select one of the 
+    // These are all checks against const pointers, so the optimizing compiler will only select one of the
     // calls to InstallMultipleProtocolInterfaces()
     //
     if (_gDriverModelProtocolList[0].DriverDiagnostics == NULL) {

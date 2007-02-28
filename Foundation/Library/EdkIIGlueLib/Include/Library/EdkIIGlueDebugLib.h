@@ -257,6 +257,7 @@ DebugClearMemoryEnabled (
   // Glue Library internal
   
   #if EDKII_GLUE_LIBRARY_DEBUG_ENABLE
+    #ifdef EFI_DEBUG
     #define ASSERT(Expression)        \
       do {                            \
         if (DebugAssertEnabled ()) {  \
@@ -265,6 +266,7 @@ DebugClearMemoryEnabled (
           }                           \
         }                             \
       } while (FALSE)
+    #endif
   #else
     #define ASSERT(Expression) do{} while(0)
   #endif    
@@ -303,12 +305,14 @@ DebugClearMemoryEnabled (
   // Glue Library internal
   
   #if EDKII_GLUE_LIBRARY_DEBUG_ENABLE
+    #ifdef EFI_DEBUG
     #define DEBUG(Expression)        \
       do {                           \
         if (DebugPrintEnabled ()) {  \
           _DEBUG (Expression);       \
         }                            \
       } while (FALSE)
+    #endif
   #else
     #define DEBUG(Expression) do{} while(0)
   #endif    
@@ -346,6 +350,7 @@ DebugClearMemoryEnabled (
   // Glue Library internal
   
   #if EDKII_GLUE_LIBRARY_DEBUG_ENABLE
+    #ifdef EFI_DEBUG
     #define ASSERT_EFI_ERROR(StatusParameter)                                              \
       do {                                                                                 \
         if (DebugAssertEnabled ()) {                                                       \
@@ -355,6 +360,7 @@ DebugClearMemoryEnabled (
           }                                                                                \
         }                                                                                  \
       } while (FALSE)
+    #endif
   #else
     #define ASSERT_EFI_ERROR(Expression) do{} while(0)
   #endif    

@@ -15,7 +15,8 @@ Module Name:
     
 Abstract:
 
-    EFI ISA I/O Protocol
+    EFI_ISA_IO_PROTOCOL or EFI_LIGHT_ISA_IO_PROTOCOL 
+    based on macro SIZE_REDUCTION_ISA_COMBINED.
 
 Revision History
 
@@ -25,6 +26,17 @@ Revision History
 
 #include EFI_PROTOCOL_DEFINITION (IsaIo)
 
+#ifndef SIZE_REDUCTION_ISA_COMBINED
+//
+// EFI_ISA_IO_PROTOCOL
+//
 EFI_GUID  gEfiIsaIoProtocolGuid = EFI_ISA_IO_PROTOCOL_GUID;
-
 EFI_GUID_STRING(&gEfiIsaIoProtocolGuid, "ISA IO Protocol", "ISA IO Protocol");
+
+#else
+//
+// EFI_LIGHT_ISA_IO_PROTOCOL
+//
+EFI_GUID  gEfiLightIsaIoProtocolGuid = EFI_LIGHT_ISA_IO_PROTOCOL_GUID;
+EFI_GUID_STRING(&gEfiLightIsaIoProtocolGuid, "Light ISA IO Protocol", "Light ISA IO Protocol");
+#endif

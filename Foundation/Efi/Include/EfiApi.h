@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -612,7 +612,7 @@ EFI_STATUS
 //                        GET_PROTOCOL
 //                        TEST_PROTOCOL
 //                        BY_CHILD_CONTROLLER
-// * EFI_SUCCESS        if there are any items in the Open List for (Handle, Protocol)
+// * EFI_ACCESS_DENIED  if there are any items in the Open List for (Handle, Protocol)
 //                      that have the one of the following Attributes
 //                        BY_DRIVER
 //                      AND ImageHandle != OpenListItem.IH

@@ -50,37 +50,26 @@ N.B. only works for 31bit divisors!!
 --*/
 {
   __asm {
-  ;
-  ; let edx contain the intermediate result of remainder
-  ;
-  xor    edx, edx
-  mov    ecx, 64
-  
-_DivU64x32_Wend:
-  shl    dword ptr Dividend[0], 1
-  rcl    dword ptr Dividend[4], 1    
-  rcl    edx, 1            
+    xor edx, edx                    ; Clear EDX
 
-  ;
-  ; If intermediate result of remainder is larger than
-  ; or equal to divisor, then set the lowest bit of dividend,
-  ; and subtract divisor from intermediate remainder
-  ;
-  cmp    edx, Divisor                
-  jb     _DivU64x32_Cont
-  bts    dword ptr Dividend[0], 0            
-  sub    edx, Divisor
-                   
-_DivU64x32_Cont:
-  loop   _DivU64x32_Wend
+    mov eax, dword ptr Dividend[4]  ; Put high 32 bits of 64-bit dividend in EAX
+    mov ecx, Divisor                ; Put 32 bits divisor in ECX
+    div ecx                         ; Dividend   Divisor  Quoitent...Remainder
+                                    ;  0:EAX  /  ECX   =  EAX      EDX   
 
-  cmp    Remainder, 0
-  je     _DivU64x32_Done
-  mov    eax, Remainder
-  mov    dword ptr [eax], edx
+    push eax                        ; Push quoitent in stack
 
-_DivU64x32_Done:
-  mov    eax, dword ptr Dividend[0]
-  mov    edx, dword ptr Dividend[4]
+    mov eax, dword ptr Dividend[0]  ; Put low 32 bits of 64-bit dividend in EAX              
+    div ecx                         ; Leave the REMAINDER in EDX as High 32-bit of new dividend
+                                    ; Dividend   Divisor  Quoitent...Remainder              
+                                    ;  EDX:EAX  /  ECX   =  EAX      EDX               
+
+    mov ecx, Remainder              ; Put &REMAINDER to ecx
+
+    jecxz Label1                    ; If ecx == 0, no remainder exist, return with quoitent in EDX directly 
+    mov dword ptr [ecx], edx        ; Put EDX through REMAINDER pointer in ECX 
+
+Label1:
+    pop edx                         ; Pop High 32-bit QUOITENT to EDX
   }
 }

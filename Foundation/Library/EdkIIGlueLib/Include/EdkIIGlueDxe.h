@@ -43,6 +43,13 @@ Abstract:
 #include "EfiStatusCode.h"
 
 //
+// IPF only
+//
+#ifdef MDE_CPU_IPF
+#include "SalApi.h"
+#endif
+
+//
 // GUID definitions
 //
 
@@ -199,6 +206,14 @@ Abstract:
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variable)
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variablewrite)
 #include EFI_ARCH_PROTOCOL_DEFINITION (WatchdogTimer)
+
+//
+// IPF only
+//
+#ifdef MDE_CPU_IPF
+#include EFI_PROTOCOL_DEFINITION (ExtendedSalGuid)
+#include EFI_PROTOCOL_DEFINITION (ExtendedSalBootService)
+#endif
 
 //
 // R8.x Library headers used by EdkII Glue Libraries

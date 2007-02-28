@@ -36,14 +36,6 @@ Abstract:
 
 
 //
-// Unicode String Table
-//
-typedef struct {
-  CHAR8   *Language;
-  CHAR16  *UnicodeString;
-} GLUE_EFI_UNICODE_STRING_TABLE;
-
-//
 // EFI Lock Status
 //
 typedef enum {
@@ -52,14 +44,6 @@ typedef enum {
   EfiLockAcquired      = 2
 } EFI_LOCK_STATE;
 
-//
-// EFI Lock 
-//
-typedef struct {
-  EFI_TPL         Tpl;
-  EFI_TPL         OwnerTpl;
-  EFI_LOCK_STATE  Lock;
-} GLUE_EFI_LOCK;
 
 /**
   This function searches the list of configuration tables stored in the EFI System 
@@ -128,7 +112,7 @@ EfiNamedEventListen (
   IN EFI_TPL           NotifyTpl,
   IN EFI_EVENT_NOTIFY  NotifyFunction,
   IN CONST VOID        *NotifyContext,  OPTIONAL
-  OUT VOID             *Registration    OPTIONAL
+  OUT VOID             *Registration OPTIONAL
   );
 
 /**
@@ -216,7 +200,7 @@ GlueEfiInitializeLock (
 
 
 /**
-  This function raises the system¡¯s current task priority level to the task 
+  This function raises the system's current task priority level to the task 
   priority level of the mutual exclusion lock.  Then, it places the lock in the 
   acquired state.
 
@@ -230,7 +214,7 @@ GlueEfiAcquireLock (
   );
 
 /**
-  This function raises the system¡¯s current task priority level to the task 
+  This function raises the system's current task priority level to the task 
   priority level of the mutual exclusion lock.  Then, it attempts to place the 
   lock in the acquired state.
 
@@ -248,7 +232,7 @@ GlueEfiAcquireLockOrFail (
 
 /**
   This function transitions a mutual exclusion lock from the acquired state to 
-  the released state, and restores the system¡¯s task priority level to its 
+  the released state, and restores the system's task priority level to its 
   previous level.
 
   @param  Lock  A pointer to the lock to release.

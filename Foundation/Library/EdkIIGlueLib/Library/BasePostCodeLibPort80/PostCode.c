@@ -20,7 +20,6 @@ Abstract:
 --*/
 
 #include "EdkIIGlueBase.h"
-#include "Pcd\EdkIIGluePcdPostCodeLib.h"
 
 /**
   Sends an 32-bit value to a POST card.

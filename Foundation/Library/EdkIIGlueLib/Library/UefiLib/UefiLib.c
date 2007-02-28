@@ -157,7 +157,7 @@ EfiNamedEventListen (
   IN EFI_TPL           NotifyTpl,
   IN EFI_EVENT_NOTIFY  NotifyFunction,
   IN CONST VOID        *NotifyContext,  OPTIONAL
-  OUT VOID             *Registration    OPTIONAL
+  OUT VOID             *Registration OPTIONAL
   )
 {
   EFI_STATUS  Status;
@@ -268,7 +268,7 @@ GlueEfiInitializeLock (
 }
 
 /**
-  This function raises the system¡¯s current task priority level to the task 
+  This function raises the system's current task priority level to the task 
   priority level of the mutual exclusion lock.  Then, it places the lock in the 
   acquired state.
 
@@ -289,7 +289,7 @@ GlueEfiAcquireLock (
 }
 
 /**
-  This function raises the system¡¯s current task priority level to the task 
+  This function raises the system's current task priority level to the task 
   priority level of the mutual exclusion lock.  Then, it attempts to place the 
   lock in the acquired state.
 
@@ -325,7 +325,7 @@ GlueEfiAcquireLockOrFail (
 
 /**
   This function transitions a mutual exclusion lock from the acquired state to 
-  the released state, and restores the system¡¯s task priority level to its 
+  the released state, and restores the system's task priority level to its 
   previous level.
 
   @param  Lock  A pointer to the lock to release.

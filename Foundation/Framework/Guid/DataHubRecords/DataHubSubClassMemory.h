@@ -241,6 +241,148 @@ typedef struct {
   UINT8                       MemoryChannelDeviceLoad;
 } EFI_MEMORY_CHANNEL_DEVICE_DATA;
 
+//
+//  Memory. Controller Information - SMBIOS Type 5
+//
+#define EFI_MEMORY_CONTROLLER_INFORMATION_RECORD_NUMBER 0x00000008
+
+typedef enum {  
+  EfiErrorDetectingMethodOther   = 1,
+  EfiErrorDetectingMethodUnknown = 2,
+  EfiErrorDetectingMethodNone    = 3,
+  EfiErrorDetectingMethodParity  = 4,
+  EfiErrorDetectingMethod32Ecc   = 5,
+  EfiErrorDetectingMethod64Ecc   = 6,
+  EfiErrorDetectingMethod128Ecc  = 7,
+  EfiErrorDetectingMethodCrc     = 8
+} EFI_MEMORY_ERROR_DETECT_METHOD_TYPE;
+
+typedef struct {
+  UINT8  Other                 :1;
+  UINT8  Unknown               :1;
+  UINT8  None                  :1;
+  UINT8  SingleBitErrorCorrect :1;
+  UINT8  DoubleBitErrorCorrect :1;
+  UINT8  ErrorScrubbing        :1;
+  UINT8  Reserved              :2;
+} EFI_MEMORY_ERROR_CORRECT_CAPABILITY;
+
+typedef enum {  
+  EfiMemoryInterleaveOther      = 1,
+  EfiMemoryInterleaveUnknown    = 2,
+  EfiMemoryInterleaveOneWay     = 3,
+  EfiMemoryInterleaveTwoWay     = 4,
+  EfiMemoryInterleaveFourWay    = 5,
+  EfiMemoryInterleaveEightWay   = 6,
+  EfiMemoryInterleaveSixteenWay = 7
+} EFI_MEMORY_SUPPORT_INTERLEAVE_TYPE;
+
+typedef struct {
+  UINT16  Other                 :1;
+  UINT16  Unknown               :1;
+  UINT16  SeventyNs             :1;
+  UINT16  SixtyNs               :1;
+  UINT16  FiftyNs               :1;
+  UINT16  Reserved              :11;
+} EFI_MEMORY_SPEED_TYPE;
+
+typedef struct {
+  UINT16  Other                 :1;
+  UINT16  Unknown               :1;
+  UINT16  Standard              :1;
+  UINT16  FastPageMode          :1;
+  UINT16  EDO                   :1;
+  UINT16  Parity                :1;
+  UINT16  ECC                   :1;
+  UINT16  SIMM                  :1;
+  UINT16  DIMM                  :1;
+  UINT16  BurstEdo              :1;
+  UINT16  SDRAM                 :1;
+  UINT16  Reserved              :5;
+} EFI_MEMORY_SUPPORTED_TYPE;
+
+typedef struct {
+  UINT8  Five                  :1;
+  UINT8  There                 :1;
+  UINT8  Two                   :1;
+  UINT8  Reserved              :5;
+} EFI_MEMORY_MODULE_VOLTAGE_TYPE;
+
+typedef struct {
+  EFI_MEMORY_ERROR_DETECT_METHOD_TYPE   ErrorDetectingMethod;
+  EFI_MEMORY_ERROR_CORRECT_CAPABILITY   ErrorCorrectingCapability;
+  EFI_MEMORY_SUPPORT_INTERLEAVE_TYPE    MemorySupportedInterleave;
+  EFI_MEMORY_SUPPORT_INTERLEAVE_TYPE    MemoryCurrentInterleave;
+  UINT8                                 MaxMemoryModuleSize;
+  EFI_MEMORY_SPEED_TYPE                 MemorySpeedType;
+  EFI_MEMORY_SUPPORTED_TYPE             MemorySupportedType;
+  EFI_MEMORY_MODULE_VOLTAGE_TYPE        MemoryModuleVoltage;
+  UINT8                                 NumberofMemorySlot;
+  EFI_MEMORY_ERROR_CORRECT_CAPABILITY   EnabledCorrectingCapability;
+  UINT16                                *MemoryModuleConfigHandles;
+} EFI_MEMORY_CONTROLLER_INFORMATION;
+
+//
+//  Memory. Error Information - SMBIOS Type 18
+//
+#define EFI_MEMORY_32BIT_ERROR_INFORMATION_RECORD_NUMBER 0x00000009
+
+typedef enum {  
+  EfiMemoryErrorOther             = 1,
+  EfiMemoryErrorUnknown           = 2,
+  EfiMemoryErrorOk                = 3,
+  EfiMemoryErrorBadRead           = 4,
+  EfiMemoryErrorParity            = 5,
+  EfiMemoryErrorSigleBit          = 6,
+  EfiMemoryErrorDoubleBit         = 7,
+  EfiMemoryErrorMultiBit          = 8,
+  EfiMemoryErrorNibble            = 9,
+  EfiMemoryErrorChecksum          = 10,
+  EfiMemoryErrorCrc               = 11,
+  EfiMemoryErrorCorrectSingleBit  = 12,
+  EfiMemoryErrorCorrected         = 13,
+  EfiMemoryErrorUnCorrectable     = 14
+} EFI_MEMORY_ERROR_TYPE;
+
+typedef enum {  
+  EfiMemoryGranularityOther               = 1,
+  EfiMemoryGranularityOtherUnknown        = 2,
+  EfiMemoryGranularityDeviceLevel         = 3,
+  EfiMemoryGranularityMemPartitionLevel   = 4
+} EFI_MEMORY_ERROR_GRANULARITY_TYPE;
+
+typedef enum {  
+  EfiMemoryErrorOperationOther            = 1,
+  EfiMemoryErrorOperationUnknown          = 2,
+  EfiMemoryErrorOperationRead             = 3,
+  EfiMemoryErrorOperationWrite            = 4,
+  EfiMemoryErrorOperationPartialWrite     = 5
+} EFI_MEMORY_ERROR_OPERATION_TYPE;
+
+typedef struct {
+  EFI_MEMORY_ERROR_TYPE               MemoryErrorType;
+  EFI_MEMORY_ERROR_GRANULARITY_TYPE   MemoryErrorGranularity;
+  EFI_MEMORY_ERROR_OPERATION_TYPE     MemoryErrorOperation;
+  UINT32                              VendorSyndrome;
+  UINT32                              MemoryArrayErrorAddress;
+  UINT32                              DeviceErrorAddress;
+  UINT32                              DeviceErrorResolution;
+} EFI_MEMORY_32BIT_ERROR_INFORMATION;
+
+//
+//  Memory. Error Information - SMBIOS Type 33
+//
+#define EFI_MEMORY_64BIT_ERROR_INFORMATION_RECORD_NUMBER 0x0000000A
+
+typedef struct {
+  EFI_MEMORY_ERROR_TYPE               MemoryErrorType;
+  EFI_MEMORY_ERROR_GRANULARITY_TYPE   MemoryErrorGranularity;
+  EFI_MEMORY_ERROR_OPERATION_TYPE     MemoryErrorOperation;
+  UINT32                              VendorSyndrome;
+  UINT64                              MemoryArrayErrorAddress;
+  UINT64                              DeviceErrorAddress;
+  UINT32                              DeviceErrorResolution;
+} EFI_MEMORY_64BIT_ERROR_INFORMATION;
 
 
 typedef union _EFI_MEMORY_SUBCLASS_RECORDS {
@@ -251,6 +393,9 @@ typedef union _EFI_MEMORY_SUBCLASS_RECORDS {
   EFI_MEMORY_DEVICE_START_ADDRESS       DeviceStartAddress;
   EFI_MEMORY_CHANNEL_TYPE_DATA          ChannelTypeData;
   EFI_MEMORY_CHANNEL_DEVICE_DATA        ChannelDeviceData;
+  EFI_MEMORY_CONTROLLER_INFORMATION     MemoryControllerInfo;
+  EFI_MEMORY_32BIT_ERROR_INFORMATION    Memory32bitErrorInfo;
+  EFI_MEMORY_64BIT_ERROR_INFORMATION    Memory64bitErrorInfo;
 } EFI_MEMORY_SUBCLASS_RECORDS;
 
 typedef struct {

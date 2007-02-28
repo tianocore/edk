@@ -60,47 +60,6 @@ Abstract:
 #include "EfiPrintLib.h"
 #include "Print.h"
 
-#ifndef EFI_PRINT_LITE
-STATIC
-CHAR_W  *
-GetFlagsAndWidth (
-  IN  CHAR_W      *Format,
-  OUT UINTN       *Flags,
-  OUT UINTN       *Width,
-  IN OUT  VA_LIST *Marker
-  );
-
-STATIC
-UINTN
-GuidToString (
-  IN  EFI_GUID  *Guid,
-  IN OUT CHAR_W *Buffer,
-  IN  UINTN     BufferSize
-  );
-
-STATIC
-UINTN
-TimeToString (
-  IN  EFI_TIME  *Time,
-  IN OUT CHAR_W *Buffer,
-  IN  UINTN     BufferSize
-  );
-
-STATIC
-UINTN
-EfiStatusToString (
-  IN EFI_STATUS   Status,
-  OUT CHAR_W      *Buffer,
-  IN  UINTN       BufferSize
-  );
-
-#endif
-STATIC
-UINTN
-Atoi (
-  CHAR_W  *String
-  );
-
 UINTN
 SPrint (
   OUT CHAR_W        *Buffer,

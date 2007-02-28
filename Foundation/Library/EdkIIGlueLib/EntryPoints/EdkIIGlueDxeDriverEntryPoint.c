@@ -23,6 +23,7 @@ Abstract:
 #include "EdkIIGlueDxe.h"
 #include "Common/EdkIIGlueDependencies.h"
 
+STATIC EFI_EVENT  _mDriverExitBootServicesNotifyEvent;
 
 //
 // Driver Model related definitions.
@@ -79,16 +80,51 @@ GLOBAL_REMOVE_IF_UNREFERENCED const EFI_DRIVER_MODEL_PROTOCOL_LIST  _gDriverMode
 // NOTE: Limitation:
 // Only one handler for SetVirtualAddressMap Event and ExitBootServices Event each
 //
+#ifdef __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT_HANDLER__
+VOID
+__EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT_HANDLER__ (
+  IN EFI_EVENT        Event,
+  IN VOID             *Context
+  );
+#endif
+
 GLOBAL_REMOVE_IF_UNREFERENCED const EFI_EVENT_NOTIFY _gDriverSetVirtualAddressMapEvent[] = {
-#ifdef __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__
-  __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__,
+#ifdef __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT_HANDLER__
+  __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT_HANDLER__,
 #endif
   NULL
 };
 
+#ifdef __EDKII_GLUE_EXIT_BOOT_SERVICES_EVENT_HANDLER__
+VOID
+__EDKII_GLUE_EXIT_BOOT_SERVICES_EVENT_HANDLER__ (
+  IN EFI_EVENT        Event,
+  IN VOID             *Context
+  );
+#endif
+
+/**
+  Set AtRuntime flag as TRUE after ExitBootServices
+  
+  @param[in]  Event   The Event that is being processed
+  @param[in]  Context Event Context
+**/
+VOID
+EFIAPI
+RuntimeDriverExitBootServices (
+  IN EFI_EVENT        Event,
+  IN VOID             *Context
+  );
+
 GLOBAL_REMOVE_IF_UNREFERENCED const EFI_EVENT_NOTIFY _gDriverExitBootServicesEvent[] = {
-#ifdef __EDKII_GLUE_EXTI_BOOT_SERVICES_EVENT__HANDLER__
-  __EDKII_GLUE_EXTI_BOOT_SERVICES_EVENT__HANDLER__,
+#ifdef __EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__  
+  //
+  // only Runtime drivers need to link EdkDxeRuntimeDriverLib
+  //
+  RuntimeDriverExitBootServices,
+#endif
+#ifdef __EDKII_GLUE_EXIT_BOOT_SERVICES_EVENT_HANDLER__
+  __EDKII_GLUE_EXIT_BOOT_SERVICES_EVENT_HANDLER__,
 #endif
   NULL
 };
@@ -141,7 +177,9 @@ ProcessLibraryConstructorList (
     || defined(__EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__)   \
     || defined(__EDKII_GLUE_DXE_SERVICES_TABLE_LIB__)       \
     || defined(__EDKII_GLUE_DXE_SMBUS_LIB__)                \
-    || defined(__EDKII_GLUE_UEFI_RUNTIME_SERVICES_TABLE_LIB__)
+    || defined(__EDKII_GLUE_UEFI_RUNTIME_SERVICES_TABLE_LIB__) \
+    || defined(__EDKII_GLUE_EDK_DXE_SAL_LIB__)              \
+    || defined(__EDKII_GLUE_DXE_IO_LIB_CPU_IO__)
   EFI_STATUS  Status;
 #endif
 
@@ -150,15 +188,28 @@ ProcessLibraryConstructorList (
 // NOTE: the constructors must be called according to dependency order
 //
 // UefiBootServicesTableLib     UefiBootServicesTableLibConstructor()
-// EdkDxeRuntimeDriverLib       RuntimeDriverLibConstruct()   
+// DxeIoLibCpuIo                IoLibConstructor()
+// DxeSalLib                    DxeSalLibConstructor(), IPF only
+// EdkDxeRuntimeDriverLib       RuntimeDriverLibConstruct()
 // DxeHobLib                    HobLibConstructor()
 // UefiDriverModelLib           UefiDriverModelLibConstructor()
 // DxeSmbusLib                  SmbusLibConstructor()    
 // DxeServicesTableLib          DxeServicesTableLibConstructor()
 // UefiRuntimeServicesTableLib  UefiRuntimeServicesTableLibConstructor() 
 // 
+
 #ifdef __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
   Status = UefiBootServicesTableLibConstructor (ImageHandle, SystemTable);
+  ASSERT_EFI_ERROR (Status);
+#endif
+
+#ifdef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  Status = IoLibConstructor (ImageHandle, SystemTable);
+  ASSERT_EFI_ERROR (Status);
+#endif
+
+#ifdef __EDKII_GLUE_EDK_DXE_SAL_LIB__
+  Status = DxeSalLibConstructor(ImageHandle, SystemTable);
   ASSERT_EFI_ERROR (Status);
 #endif
 
@@ -203,17 +254,19 @@ ProcessLibraryDestructorList (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+#if defined (__EDKII_GLUE_UEFI_DRIVER_MODEL_LIB__) || defined (__EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__)
+  EFI_STATUS  Status;    
+#endif
+
 //
 // NOTE: the destructors must be called according to dependency order
 //
 #ifdef __EDKII_GLUE_UEFI_DRIVER_MODEL_LIB__
-  EFI_STATUS  Status;
   Status = UefiDriverModelLibDestructor (ImageHandle, SystemTable);
   ASSERT_EFI_ERROR (Status);
 #endif
 
 #ifdef __EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__
-  EFI_STATUS  Status;
   Status = RuntimeDriverLibDeconstruct ();
   ASSERT_EFI_ERROR (Status);
 #endif
@@ -249,20 +302,59 @@ _DriverUnloadHandler (
   // unloaded, and the library destructors should not be called
   //
   if (!EFI_ERROR (Status)) {
-  //
-  // NOTE: To allow passing in gST here, any library instance having a destructor
-  // must depend on EfiDriverLib
-  //
-#if defined(__EDKII_GLUE_UEFI_DRIVER_MODEL_LIB__) \
-    || defined(__EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__)
+    //
+    // Close our ExitBootServices () notify function
+    //
+    if (_gDriverExitBootServicesEvent[0] != NULL) {
+      ASSERT (gBS != NULL);
+      Status = gBS->CloseEvent (_mDriverExitBootServicesNotifyEvent);
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    //
+    // NOTE: To allow passing in gST here, any library instance having a destructor
+    // must depend on EfiDriverLib
+    //
     ProcessLibraryDestructorList (ImageHandle, gST);
-#endif
   }
 
   //
   // Return the status from the driver specific unload handler
   //
   return Status;
+}
+
+VOID
+EFIAPI
+_DriverExitBootServices (
+  IN EFI_EVENT        Event,
+  IN VOID             *Context
+  )
+/*++
+
+Routine Description:
+
+  Set AtRuntime flag as TRUE after ExitBootServices
+
+Arguments:
+
+  Event   - The Event that is being processed
+  
+  Context - Event Context
+
+Returns: 
+
+  None
+
+--*/
+{
+  EFI_EVENT_NOTIFY  ChildNotifyEventHandler;
+  UINTN             Index;
+
+  for (Index = 0; _gDriverExitBootServicesEvent[Index] != NULL; Index++) {
+    ChildNotifyEventHandler = _gDriverExitBootServicesEvent[Index];
+    ChildNotifyEventHandler (Event, NULL);
+  }
 }
 
 EFI_DRIVER_ENTRY_POINT (_ModuleEntryPoint);
@@ -309,10 +401,26 @@ _ModuleEntryPoint (
 //  }
 
 //  DEBUG ((EFI_D_ERROR, "EdkII Glue Driver Entry - 0\n"));
+
   //
   // Call constructor for all libraries
   //
   ProcessLibraryConstructorList (ImageHandle, SystemTable);
+
+  //
+  // Register our ExitBootServices () notify function
+  //
+  if (_gDriverExitBootServicesEvent[0] != NULL) {
+    Status = SystemTable->BootServices->CreateEvent (
+                    EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                    EFI_TPL_NOTIFY,
+                    _DriverExitBootServices,
+                    NULL,
+                    &_mDriverExitBootServicesNotifyEvent
+                    );
+
+    ASSERT_EFI_ERROR (Status);
+  }
 
   //
   //  Install unload handler...
@@ -338,6 +446,15 @@ _ModuleEntryPoint (
   // If all of the drivers returned errors, then invoke all of the library destructors
   //
   if (EFI_ERROR (Status)) {
+    //
+    // Close our ExitBootServices () notify function
+    //
+    if (_gDriverExitBootServicesEvent[0] != NULL) {
+    	EFI_STATUS CloseEventStatus;
+      CloseEventStatus = SystemTable->BootServices->CloseEvent (_mDriverExitBootServicesNotifyEvent);
+      ASSERT_EFI_ERROR (CloseEventStatus);
+    }
+
     ProcessLibraryDestructorList (ImageHandle, SystemTable);
   }
 
@@ -357,7 +474,12 @@ _ModuleEntryPoint (
   @retval  EFI_SUCCESS One or more of the drivers returned a success code.
   @retval  !EFI_SUCESS The return status from the last driver entry point in the list.
 
+  EBC build envrionment has /D $(IMAGE_ENTRY_POINT)=EfiMain which overrides what GlueLib 
+  defines: /D IMAGE_ENTRY_POINT=_ModuleEntryPoint, so _ModuleEntryPoint will be replaced with
+  EfiMain thus the function below isn't needed in EBC envrionment.
+
 **/
+#ifndef MDE_CPU_EBC
 EFI_STATUS
 EFIAPI
 EfiMain (
@@ -367,6 +489,7 @@ EfiMain (
 {
   return _ModuleEntryPoint (ImageHandle, SystemTable);
 }
+#endif
 
 //
 // Guids not present in R8.6 code base

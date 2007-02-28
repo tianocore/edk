@@ -21,8 +21,6 @@ Abstract:
 --*/
 
 #include "BaseLibInternal.h"
-#include "Pcd\EdkIIGluePcdBaseLib.h"
-
 
 /**
   Worker function that locates the Node in the List

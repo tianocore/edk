@@ -31,13 +31,15 @@ Abstract:
   @param  FixupData   Pointer to a buffer to log the fixups
   @param  Adjust      The offset to adjust the fixup
 
+  @retval RETURN_SUCCESS      Success to perform relocation
+  @retval RETURN_UNSUPPORTED  Unsupported.
 **/
 RETURN_STATUS
 GluePeCoffLoaderRelocateImageEx (
-  IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup, 
-  IN OUT CHAR8   **FixupData,
-  IN UINT64      Adjust
+  IN     UINT16       *Reloc,
+  IN OUT CHAR8        *Fixup, 
+  IN OUT CHAR8        **FixupData,
+  IN     UINT64       Adjust
   )
 {
   return RETURN_UNSUPPORTED;
@@ -73,7 +75,7 @@ PeCoffLoaderImageFormatSupported (
 
 
 /**
-  Performs an Itanium-based specific re-relocation fixup and is a no-op on other
+  Performs an X64 specific re-relocation fixup and is a no-op on other
   instruction sets. This is used to re-relocated the image into the EFI virtual
   space for runtime calls.
 

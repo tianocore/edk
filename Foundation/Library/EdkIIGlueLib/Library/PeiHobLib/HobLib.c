@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -213,7 +213,7 @@ InternalPeiCreateHob (
   @param  ModuleName              The GUID File Name of the module.
   @param  MemoryAllocationModule  The 64 bit physical address of the module.
   @param  ModuleLength            The length of the module in bytes.
-  @param  EntryPoint              The 64 bit physical address of the module’s entry point.
+  @param  EntryPoint              The 64 bit physical address of the module's entry point.
 
 **/
 VOID
@@ -234,6 +234,11 @@ GlueBuildModuleHob (
   Hob->MemoryAllocationHeader.MemoryLength      = ModuleLength;
   Hob->MemoryAllocationHeader.MemoryType        = EfiBootServicesCode;
 
+  //
+  // Zero the reserved space to match HOB spec
+  //
+  ZeroMem (Hob->MemoryAllocationHeader.Reserved, sizeof (Hob->MemoryAllocationHeader.Reserved));
+  
   CopyGuid (&Hob->ModuleName, ModuleName);
   Hob->EntryPoint = EntryPoint;
 }
@@ -366,6 +371,10 @@ BuildFvHob (
 {
   EFI_HOB_FIRMWARE_VOLUME  *Hob;
 
+  //
+  // Check FV Signature
+  //
+  PEI_ASSERT (GetPeiServicesTablePointer(), ((EFI_FIRMWARE_VOLUME_HEADER*)((UINTN)BaseAddress))->Signature == EFI_FVH_SIGNATURE);
   Hob = InternalPeiCreateHob (EFI_HOB_TYPE_FV, sizeof (EFI_HOB_FIRMWARE_VOLUME));
 
   Hob->BaseAddress = BaseAddress;
@@ -424,6 +433,11 @@ BuildCpuHob (
 
   Hob->SizeOfMemorySpace = SizeOfMemorySpace;
   Hob->SizeOfIoSpace     = SizeOfIoSpace;
+
+  //
+  // Zero the reserved space to match HOB spec
+  //
+  ZeroMem (Hob->Reserved, sizeof (Hob->Reserved)); 
 }
 
 /**
@@ -453,6 +467,11 @@ BuildStackHob (
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;
   Hob->AllocDescriptor.MemoryLength      = Length;
   Hob->AllocDescriptor.MemoryType        = EfiConventionalMemory;
+
+  //
+  // Zero the reserved space to match HOB spec
+  //
+  ZeroMem (Hob->AllocDescriptor.Reserved, sizeof (Hob->AllocDescriptor.Reserved));
 }
 
 /**
@@ -484,6 +503,11 @@ BuildBspStoreHob (
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;
   Hob->AllocDescriptor.MemoryLength      = Length;
   Hob->AllocDescriptor.MemoryType        = MemoryType;
+
+  //
+  // Zero the reserved space to match HOB spec
+  //
+  ZeroMem (Hob->AllocDescriptor.Reserved, sizeof (Hob->AllocDescriptor.Reserved));
 }
 
 /**
@@ -515,4 +539,8 @@ GlueBuildMemoryAllocationHob (
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;
   Hob->AllocDescriptor.MemoryLength      = Length;
   Hob->AllocDescriptor.MemoryType        = MemoryType;
+  //
+  // Zero the reserved space to match HOB spec
+  //
+  ZeroMem (Hob->AllocDescriptor.Reserved, sizeof (Hob->AllocDescriptor.Reserved));
 }

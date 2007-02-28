@@ -26,7 +26,6 @@ Abstract:
 --*/
 
 #include "EdkIIGlueBase.h"
-#include "Pcd\EdkIIGluePcdPciExpressLib.h"
 
 /**
   Assert the validity of a PCI address. A valid PCI address should contain 1's

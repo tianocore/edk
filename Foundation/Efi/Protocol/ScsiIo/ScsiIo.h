@@ -214,7 +214,7 @@ EFI_STATUS
                                  HostAdapterStatus, TargetStatus,
                                  SenseDataLength, and SenseData in that order
                                  for additional status information.
-    EFI_WARN_BUFFER_TOO_SMALL  - The SCSI Request Packet was executed,
+    EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed,
                                  but the entire DataBuffer could not be transferred.
                                  The actual number of bytes transferred is returned
                                  in TransferLength. See HostAdapterStatus,
@@ -247,7 +247,7 @@ struct _EFI_SCSI_IO_PROTOCOL {
   EFI_SCSI_IO_PROTOCOL_GET_DEVICE_LOCATION  GetDeviceLocation;
   EFI_SCSI_IO_PROTOCOL_RESET_BUS            ResetBus;
   EFI_SCSI_IO_PROTOCOL_RESET_DEVICE         ResetDevice;
-  EFI_SCSI_IO_PROTOCOL_EXEC_SCSI_COMMAND    ExecuteSCSICommand;    
+  EFI_SCSI_IO_PROTOCOL_EXEC_SCSI_COMMAND    ExecuteScsiCommand;    
   UINT32                                    IoAlign;
 };
 

@@ -21,8 +21,6 @@ Abstract:
 --*/
 
 #include "EdkIIGlueDxe.h"
-#include "Pcd\EdkIIGluePcdReportStatusCodeLib.h"
-
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 //

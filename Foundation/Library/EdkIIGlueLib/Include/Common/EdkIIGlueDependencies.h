@@ -23,6 +23,7 @@ Abstract:
 #ifndef __EDKII_GLUE_DEPENDENCIES_H__
 #define __EDKII_GLUE_DEPENDENCIES_H__
 
+#include "EdkIIGlueProcessorBind.h"
 
 //
 // Declarations of dependencies among EdkII Glue Library instances and R8 Libraries
@@ -73,8 +74,24 @@ Abstract:
   #ifndef __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
   #define __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
   #endif
+#ifdef MDE_CPU_IPF // IPF
+  #ifndef __EDKII_GLUE_EDK_DXE_SAL_LIB__
+  #define __EDKII_GLUE_EDK_DXE_SAL_LIB__
+  #endif
+#endif // IPF
 #endif
 
+//
+//  EdkDxeSalLib
+//
+#ifdef __EDKII_GLUE_EDK_DXE_SAL_LIB__
+  #ifndef __EDKII_GLUE_BASE_LIB__
+  #define __EDKII_GLUE_BASE_LIB__
+  #endif
+  #ifndef __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
+  #define __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
+  #endif
+#endif
 
 //
 // BasePciLibCf8
@@ -98,17 +115,29 @@ Abstract:
 // BasePciCf8Lib
 //
 #ifdef __EDKII_GLUE_BASE_PCI_CF8_LIB__
+#ifndef MDE_CPU_EBC
   #ifndef __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #define __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #endif
+#else
+  #ifndef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #define __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #endif
+#endif  
 #endif
 
 // BasePciExpressLib
 //
 #ifdef __EDKII_GLUE_BASE_PCI_EXPRESS_LIB__
+#ifndef MDE_CPU_EBC
   #ifndef __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #define __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #endif
+#else
+  #ifndef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #define __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #endif
+#endif
 #endif
 
 //
@@ -118,9 +147,15 @@ Abstract:
   #ifndef __EDKII_GLUE_BASE_LIB__
   #define __EDKII_GLUE_BASE_LIB__
   #endif
+#ifndef MDE_CPU_EBC  
   #ifndef __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #define __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #endif
+#else
+  #ifndef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #define __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #endif
+#endif  
 #endif
 
 //
@@ -130,9 +165,15 @@ Abstract:
   #ifndef __EDKII_GLUE_BASE_LIB__
   #define __EDKII_GLUE_BASE_LIB__
   #endif
+#ifndef MDE_CPU_EBC
   #ifndef __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #define __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #endif
+#else
+  #ifndef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #define __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #endif
+#endif  
   #ifndef __EDKII_GLUE_BASE_MEMORY_LIB__
   #define __EDKII_GLUE_BASE_MEMORY_LIB__
   #endif
@@ -154,14 +195,27 @@ Abstract:
   #ifndef __EDKII_GLUE_BASE_MEMORY_LIB__
   #define __EDKII_GLUE_BASE_MEMORY_LIB__
   #endif
+#ifndef MDE_CPU_EBC  
   #ifndef __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #define __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #endif
+#else
+  #ifndef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #define __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #endif
+#endif  
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)  
   #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #endif
+#elif defined(MDE_CPU_IPF)
+  #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #endif
+#endif  
   //
-  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ can be
+  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ or
+  //  __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__ can be
   //  replaced with __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB__
   //
 #endif
@@ -281,11 +335,18 @@ Abstract:
   #ifndef __EDKII_GLUE_BASE_MEMORY_LIB__
   #define __EDKII_GLUE_BASE_MEMORY_LIB__
   #endif
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)  
   #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #endif
+#elif defined(MDE_CPU_IPF)
+  #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #endif
+#endif  
   //
-  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ can be
+  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ or
+  //  __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__ can be
   //  replaced with __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB__
   //
 #endif
@@ -303,11 +364,18 @@ Abstract:
 // PeiServicesLib
 //
 #ifdef  __EDKII_GLUE_PEI_SERVICES_LIB__
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)  
   #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #endif
+#elif defined(MDE_CPU_IPF)
+  #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #endif
+#endif  
   //
-  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ can be
+  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ or
+  //  __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__ can be
   //  replaced with __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB__
   //
 #endif
@@ -319,11 +387,18 @@ Abstract:
   #ifndef __EDKII_GLUE_BASE_MEMORY_LIB__
   #define __EDKII_GLUE_BASE_MEMORY_LIB__
   #endif
+#if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)  
   #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__
   #endif
+#elif defined(MDE_CPU_IPF)
+  #ifndef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #define __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #endif
+#endif  
   //
-  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ can be
+  //  If necessary, __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__ or
+  //  __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__ can be
   //  replaced with __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB__
   //
 #endif
@@ -336,6 +411,16 @@ Abstract:
   #define __EDKII_GLUE_BASE_LIB__
   #endif
 #endif
+
+//
+// PeiServicesTablePointerLibKr1
+//
+#ifdef  __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+  #ifndef __EDKII_GLUE_BASE_LIB__
+  #define __EDKII_GLUE_BASE_LIB__
+  #endif
+#endif
+
 
 //
 // UefiDriverModelLib
@@ -353,11 +438,6 @@ Abstract:
   #ifndef __EDKII_GLUE_UEFI_LIB__
   #define __EDKII_GLUE_UEFI_LIB__
   #endif
-#endif
-
-//
-// UefiBootServicesTableLib
-#ifdef  __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
 #endif
 
 //
@@ -382,9 +462,15 @@ Abstract:
 // BasePostCodeLibPort80
 //
 #ifdef __EDKII_GLUE_BASE_POST_CODE_LIB_PORT_80__
+#ifndef MDE_CPU_EBC
   #ifndef __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #define __EDKII_GLUE_BASE_IO_LIB_INTRINSIC__
   #endif
+#else
+  #ifndef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #define __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #endif
+#endif  
 #endif
 
 //
@@ -394,6 +480,24 @@ Abstract:
   #ifndef __EDKII_GLUE_BASE_LIB__
   #define __EDKII_GLUE_BASE_LIB__
   #endif
+#endif
+
+//
+// DxeIoLibCpuIo
+//
+#ifdef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+  #ifndef __EDKII_GLUE_BASE_LIB__
+  #define __EDKII_GLUE_BASE_LIB__
+  #endif
+  #ifndef __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
+  #define __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
+  #endif
+#endif
+
+//
+// UefiBootServicesTableLib
+//
+#ifdef  __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
 #endif
 
 //
@@ -415,7 +519,6 @@ Abstract:
 // UefiRuntimeServicesTableLib
 //
 #ifdef __EDKII_GLUE_UEFI_RUNTIME_SERVICES_TABLE_LIB__
-
 #endif
 
 //
@@ -478,8 +581,16 @@ Abstract:
   #error EdkIIGlueBasePostCodeLibDebug and EdkIIGluePeiDxePostCodeLibReportStatusCode: can only be mutual exclusively used.
 #endif
 
-#if defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB) && defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__)
+#if defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB__) && defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__)
   #error EdkIIGluePeiServicesTablePointerLib and EdkIIGluePeiServicesTablePointerLibMm7: can only be mutual exclusively used.
+#endif
+
+#if defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB__) && defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__)
+  #error EdkIIGluePeiServicesTablePointerLib and EdkIIGluePeiServicesTablePointerLibKr1: can only be mutual exclusively used.
+#endif
+
+#if defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_MM7__) && defined(__EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__)
+  #error EdkIIGluePeiServicesTablePointerLibMm7 and EdkIIGluePeiServicesTablePointerLibKr1: can only be mutual exclusively used.
 #endif
 
 #if defined(__EDKII_GLUE_DXE_REPORT_STATUS_CODE_LIB__) && defined(__EDKII_GLUE_PEI_REPORT_STATUS_CODE_LIB__)
@@ -492,6 +603,10 @@ Abstract:
 
 #if defined(__EDKII_GLUE_DXE_SMBUS_LIB__) && defined(__EDKII_GLUE_PEI_SMBUS_LIB__)
   #error EdkIIGlueDxeSmbusLib and EdkIIGluePeiSmbusLib: can only be mutual exclusively used.
+#endif
+
+#if defined(__EDKII_GLUE_BASE_IO_LIB_INTRINSIC__) && defined(__EDKII_GLUE_DXE_IO_LIB_CPU_IO__)
+  #error EdkIIGlueBaseIoLibIntrinsic and EdkIIGlueDxeIoLibCpuIo: can only be mutual exclusively used.
 #endif
 
 //
@@ -523,13 +638,17 @@ Abstract:
 // NOTE: the constructors must be called according to dependency order
 //
 // UefiBootServicesTableLib         UefiBootServicesTableLibConstructor()
+// DxeIoLibCpuIo                    IoLibConstructor()
+// UefiRuntimeServicesTableLib      UefiRuntimeServicesTableLibConstructor()
 // EdkDxeRuntimeDriverLib           RuntimeDriverLibConstruct()
 // DxeHobLib                        HobLibConstructor()
 // UefiDriverModelLib               UefiDriverModelLibConstructor()
 // PeiServicesTablePointerLib       PeiServicesTablePointerLibConstructor()
 // PeiServicesTablePointerLibMm7    PeiServicesTablePointerLibConstructor()
+// PeiServicesTablePointerLibKr1    PeiServicesTablePointerLibConstructor()
 // DxeSmbusLib                      SmbusLibConstructor()
 // DxeServicesTableLib              DxeServicesTableLibConstructor()
+// DxeSalLib                        DxeSalLibConstructor()
 //
 
 #ifdef __EDKII_GLUE_UEFI_BOOT_SERVICES_TABLE_LIB__
@@ -537,6 +656,15 @@ EFI_STATUS
 UefiBootServicesTableLibConstructor (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
+  );
+#endif
+
+#ifdef __EDKII_GLUE_DXE_IO_LIB_CPU_IO__
+EFI_STATUS
+EFIAPI
+IoLibConstructor (
+  IN      EFI_HANDLE                ImageHandle,
+  IN      EFI_SYSTEM_TABLE          *SystemTable
   );
 #endif
 
@@ -588,6 +716,14 @@ PeiServicesTablePointerLibConstructor (
   );
 #endif
 
+#ifdef __EDKII_GLUE_PEI_SERVICES_TABLE_POINTER_LIB_KR1__
+EFI_STATUS
+PeiServicesTablePointerLibConstructor (
+  IN EFI_FFS_FILE_HEADER  *FfsHeader,
+  IN EFI_PEI_SERVICES     **PeiServices
+  );
+#endif
+
 #ifdef __EDKII_GLUE_DXE_SMBUS_LIB__
 EFI_STATUS
 EFIAPI
@@ -600,6 +736,15 @@ SmbusLibConstructor (
 #ifdef __EDKII_GLUE_DXE_SERVICES_TABLE_LIB__
 EFI_STATUS
 DxeServicesTableLibConstructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  );
+#endif
+
+#ifdef __EDKII_GLUE_EDK_DXE_SAL_LIB__
+EFI_STATUS
+EFIAPI
+DxeSalLibConstructor (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
   );
