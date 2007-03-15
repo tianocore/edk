@@ -37,7 +37,6 @@ COMPONENT_TYPE=   LIBRARY
   $(EDK_SOURCE)\Foundation\Framework
 
 [nmake.common]
-C_STD_INCLUDE=
 
 [sources.common]
     BaseMemoryTest\BaseMemoryTest.h

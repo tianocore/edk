@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2004 - 2006, Intel Corporation                                                         
+#  Copyright (c) 2004 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -55,10 +55,11 @@ COMPONENT_TYPE  = LIBRARY
   EfiSetMem.c
   EfiZeroMem.c
   Math.c
+  
 [sources.x64]
-  EfiCopyMem.c
-  EfiSetMem.c
-  EfiZeroMem.c
+  x64\EfiCopyMem.asm
+  x64\EfiSetMem.asm
+  x64\EfiZeroMem.asm
   Math.c
 
 [includes.common]
@@ -82,4 +83,3 @@ COMPONENT_TYPE  = LIBRARY
   EdkFrameworkGuidLib
 
 [nmake.common]
-  C_STD_INCLUDE=

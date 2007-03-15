@@ -33,12 +33,8 @@ COMPONENT_TYPE=   LIBRARY
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
 
-
-[includes.Nt32]
-  $(EDK_SOURCE)\Foundation\Include\WinNt
-
 [nmake.common]
-C_STD_INCLUDE=
+
 [sources.common]
   Acpi\Acpi.h
   Acpi\Acpi.c

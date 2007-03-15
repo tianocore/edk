@@ -25,8 +25,7 @@ Abstract:
 //
 // Statements that include other files
 //
-#include "Tiano.h"
-#include "Acpi.h"
+#include "AcpiCommon.h"
 
 //
 // Ensure proper structure formats

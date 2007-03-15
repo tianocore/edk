@@ -86,16 +86,14 @@ SmartClose (
 INT8  *
 GetSymbolValue (
   INT8 *SymbolName
-  )
-;
+  );
 
 int
 AddSymbol (
   INT8  *Name,
   INT8  *Value,
   int   Mode
-  )
-;
+  );
 
 int
 ExpandSymbols (
@@ -103,28 +101,29 @@ ExpandSymbols (
   INT8  *DestLine,
   int   LineLen,
   int   ExpandMode
-  )
-;
+  );
 
 void
 FatalError (
   INT8 *Fmt,
   ...
-  )
-;
+  );
 
 void
 Message (
   UINT32  PrintMask,
   INT8    *Fmt,
   ...
-  )
-;
+  );
 
 int
 MakeFilePath (
   INT8 *FileName
-  )
-;
+  );
+
+int
+IsAbsolutePath (
+  INT8    *FileName
+  );
 
 #endif // ifndef _COMMON_H_

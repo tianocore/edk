@@ -67,12 +67,12 @@ _EbcLLCALLEXNative        PROC    NEAR    PUBLIC
       
       ; Get function address in a register
       ; mov ecx, FuncAddr => mov ecx, dword ptr [FuncAddr]
-      mov    ecx, dword ptr [esp]+10h
+      mov    ecx, dword ptr [esp]+0Ch
       
       ; Set stack pointer to new value
       ; mov eax, NewStackPointer => mov eax, dword ptr [NewSp]
-      mov    eax, dword ptr [esp] + 18h
-      mov    edx, dword ptr [esp] + 14h
+      mov    eax, dword ptr [esp] + 14h
+      mov    edx, dword ptr [esp] + 10h
       sub    eax, edx
       sub    esp, eax      
       mov    ebx, esp

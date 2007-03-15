@@ -1240,8 +1240,8 @@ Returns:
 
 EFI_STATUS
 ConvertSystemTable (
-  EFI_GUID        *TableGuid,
-  VOID            **Table
+  IN     EFI_GUID        *TableGuid,
+  IN OUT VOID            **Table
   )
 /*++
 
@@ -1262,20 +1262,47 @@ Returns:
 
 --*/
 {
-  EFI_STATUS Status;
-
-  if (EfiCompareGuid(TableGuid, &gEfiAcpiTableGuid)){
-    Status = ConvertAcpiTable (sizeof (EFI_ACPI_1_0_ROOT_SYSTEM_DESCRIPTION_POINTER), Table);
+  EFI_STATUS      Status;
+  VOID            *AcpiHeader;
+  UINTN           AcpiTableLen;
+  
+  //
+  // If match acpi guid (1.0, 2.0, or later), Convert ACPI table according to version. 
+  //
+  AcpiHeader = (VOID*)(UINTN)(*(UINT64 *)(*Table));
+  
+  if (EfiCompareGuid(TableGuid, &gEfiAcpiTableGuid) || EfiCompareGuid(TableGuid, &gEfiAcpi20TableGuid)){
+    if (((EFI_ACPI_1_0_ROOT_SYSTEM_DESCRIPTION_POINTER *)AcpiHeader)->Reserved == 0x00){
+      //
+      // If Acpi 1.0 Table, then RSDP structure doesn't contain Length field, use structure size
+      //
+      AcpiTableLen = sizeof (EFI_ACPI_1_0_ROOT_SYSTEM_DESCRIPTION_POINTER);
+    } else if (((EFI_ACPI_1_0_ROOT_SYSTEM_DESCRIPTION_POINTER *)AcpiHeader)->Reserved >= 0x02){
+      //
+      // If Acpi 2.0 or later, use RSDP Length fied.
+      //
+      AcpiTableLen = ((EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER *)AcpiHeader)->Length;
+    } else {
+      //
+      // Invalid Acpi Version, return
+      //
+      return EFI_UNSUPPORTED;
+    }
+    Status = ConvertAcpiTable (AcpiTableLen, Table);
     return Status; 
   }
-  if (EfiCompareGuid(TableGuid, &gEfiAcpi20TableGuid)) {
-     Status = ConvertAcpiTable (sizeof (EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER), Table);
-     return Status;
-  }
+  
+  //
+  // If matches smbios guid, convert Smbios table.
+  //
   if (EfiCompareGuid(TableGuid, &gEfiSmbiosTableGuid)){
     Status = ConvertSmbiosTable (Table);
     return Status;
   }
+  
+  //
+  // If the table is MP table?
+  //
   if (EfiCompareGuid(TableGuid, &gEfiMpsTableGuid)){
     Status = ConvertMpsTable (Table);
     return Status;
@@ -1286,8 +1313,8 @@ Returns:
 
 UINT8
 GetBufferCheckSum (
-  VOID *      Buffer,
-  UINTN       Length
+  IN VOID *      Buffer,
+  IN UINTN       Length
   )
 /*++
 
@@ -1319,8 +1346,8 @@ Returns:
 
 EFI_STATUS
 ConvertAcpiTable (
-  UINTN                       TableLen,
-  VOID                        **Table
+  IN     UINTN                       TableLen,
+  IN OUT VOID                        **Table
   )
 /*++
 
@@ -1372,7 +1399,7 @@ Returns:
 
 EFI_STATUS
 ConvertSmbiosTable (
-  VOID        **Table
+  IN OUT VOID        **Table
   )
 /*++
 
@@ -1461,7 +1488,7 @@ Returns:
 
 EFI_STATUS
 ConvertMpsTable (
-  VOID          **Table
+  IN OUT VOID          **Table
   )
 /*++
 

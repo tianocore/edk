@@ -44,4 +44,3 @@ COMPONENT_TYPE      = LIBRARY
   EdkFrameworkProtocolLib
 
 [nmake.common]
-  C_STD_INCLUDE=

@@ -155,7 +155,9 @@ Returns:
   UINT32                          DirCount;
   EFI_IMAGE_DOS_HEADER            *DosHdr;
   EFI_IMAGE_NT_HEADERS            *NtHdr;
-  EFI_IMAGE_OPTIONAL_HEADER       *OptionalHdr;
+  UINT16                          Magic;
+  EFI_IMAGE_OPTIONAL_HEADER32     *OptionalHdr32;
+  EFI_IMAGE_OPTIONAL_HEADER64     *OptionalHdr64;
   EFI_IMAGE_DATA_DIRECTORY        *DirectoryEntry;
   EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *DebugEntry;
   VOID                            *CodeViewEntryPointer;
@@ -163,11 +165,30 @@ Returns:
   CodeViewEntryPointer  = NULL;
   PdbPath               = NULL;
   DosHdr                = ImageBase;
-
-  if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
+  if (DosHdr && DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
     NtHdr           = (EFI_IMAGE_NT_HEADERS *) ((UINT8 *) DosHdr + DosHdr->e_lfanew);
-    OptionalHdr     = (VOID *) &NtHdr->OptionalHeader;
-    DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    //
+    // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+    //       It is for backward-compatibility consideration, because
+    //       some system will generate PE32+ image with PE32 Magic.
+    //
+    if (NtHdr->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    } else if (NtHdr->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else if (NtHdr->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else {
+      Magic = NtHdr->OptionalHeader.Magic;
+    }
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+      OptionalHdr32 = (VOID *) &NtHdr->OptionalHeader;
+      DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr32->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    } else {
+      OptionalHdr64 = (VOID *) &NtHdr->OptionalHeader;
+      DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    }
+    
     if (DirectoryEntry->VirtualAddress != 0) {
       for (DirCount = 0;
            (DirCount < DirectoryEntry->Size / sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) && CodeViewEntryPointer == NULL;

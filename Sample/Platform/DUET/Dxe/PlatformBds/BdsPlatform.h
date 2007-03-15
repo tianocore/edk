@@ -34,8 +34,6 @@ Abstract:
 #include "LegacyBiosMpTable.h"
 
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
-#include EFI_PROTOCOL_DEFINITION (WinNtThunk)
-#include EFI_PROTOCOL_DEFINITION (WinNtIo)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 
 extern BDS_CONSOLE_CONNECT_ENTRY  gPlatformConsole[];
@@ -241,27 +239,27 @@ PlatformBdsNoConsoleAction (
 
 EFI_STATUS
 ConvertMpsTable (
-  VOID       **Table
+  IN OUT  VOID     **Table
   )
 ;
   
 EFI_STATUS
 ConvertSmbiosTable (
-  VOID       **Table
+  IN OUT VOID       **Table
   )
 ;
   
 EFI_STATUS
 ConvertAcpiTable (
-  UINTN      TableLen,
-  VOID       **Table
+ IN      UINTN      TableLen,
+ IN OUT  VOID       **Table
   )
 ;
 
 EFI_STATUS
 ConvertSystemTable (
-  EFI_GUID   *TableGuid,
-  VOID       **Table
+ IN     EFI_GUID   *TableGuid,
+ IN OUT VOID       **Table
   )
 ;
 

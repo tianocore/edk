@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -19,9 +19,6 @@ Abstract:
 --*/
 
 #include "RealTimeClock.h"
-
-static PC_RTC_MODULE_GLOBALS  mModuleGlobal;
-static UINT8   mDayOfMonth[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 BOOLEAN
 DayValid (
@@ -874,8 +871,10 @@ Returns:
 --*/
 {
 
+  INTN  DayOfMonth[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
   if (Time->Day < 1 ||
-      Time->Day > mDayOfMonth[Time->Month - 1] ||
+      Time->Day > DayOfMonth[Time->Month - 1] ||
       (Time->Month == 2 && (!IsLeapYear (Time) && Time->Day > 28))
       ) {
     return FALSE;
@@ -1001,6 +1000,7 @@ Returns:
 
 --*/
 {
+  UINT8   DayOfMonth[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
   BOOLEAN Adjacent = FALSE;
 
   if (From->Year == To->Year) {
@@ -1021,7 +1021,7 @@ Returns:
             Adjacent = TRUE;
           }  
         }
-      } else if (From->Day == mDayOfMonth[From->Month - 1]) {
+      } else if (From->Day == DayOfMonth[From->Month - 1]) {
         if ((CompareHMS(From, To) >= 0)) {
            Adjacent = TRUE;
         }

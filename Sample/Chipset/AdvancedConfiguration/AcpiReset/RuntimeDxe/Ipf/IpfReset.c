@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,6 +17,11 @@ Abstract:
 --*/
 
 #include "Cf9Reset.h"
+
+//
+// Don't use directly after virtual address have been registered.
+//
+static EFI_ACPI_DESCRIPTION      mAcpiDescription;
 
 SAL_RETURN_REGS
 ResetEsalServicesClassCommonEntry (
@@ -45,24 +50,24 @@ Arguments:
   Arg3          Last EFI_STATUS 
   Arg4          Data Size of UNICODE STRING passed in ARG5
   Arg5          Unicode String which CHAR16*
+  Arg6          not used
+  Arg7          not used
+  Arg8          not used
+  ExtendedSalProc ExtendedSalProc
+  VirtualMode   Current in virtual mode or not
+  Global        Global variable for this module
 
 Returns:
 
   SAL_RETURN_REGS
 
 --*/
-// TODO:    Arg6 - add argument and description to function comment
-// TODO:    Arg7 - add argument and description to function comment
-// TODO:    Arg8 - add argument and description to function comment
-// TODO:    ExtendedSalProc - add argument and description to function comment
-// TODO:    VirtualMode - add argument and description to function comment
-// TODO:    Global - add argument and description to function comment
 {
   SAL_RETURN_REGS ReturnVal;
 
   switch (FunctionId) {
   case ResetSystem:
-    AcpiResetSystem (Arg2, Arg3, (UINTN) Arg4, (VOID *) Arg5);
+    AcpiResetSystem (Arg2, Arg3, (UINTN) Arg4, (VOID *) Arg5, Global);
     ReturnVal.Status = EFI_SUCCESS;
     break;
 
@@ -109,14 +114,14 @@ Returns:
   //
   // Initialize AcpiDescription
   //
-  AcpiDescription = GetAcpiDescription ();
+  AcpiDescription = GetAcpiDescription (&mAcpiDescription);
   if (AcpiDescription == NULL) {
     return EFI_UNSUPPORTED;
   }
 
   RegisterEsalClass (
     &gEfiExtendedSalResetServicesProtocolGuid,
-    NULL,
+    &mAcpiDescription,
     ResetEsalServicesClassCommonEntry,
     ResetSystem,
     NULL

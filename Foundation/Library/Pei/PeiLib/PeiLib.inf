@@ -75,8 +75,8 @@ COMPONENT_TYPE    = LIBRARY
 
 [libraries.x64]
   CpuIA32Lib
+
 [includes.common]
-  $(EDK_SOURCE)\Sample\Platform\Nt32
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation\Efi
@@ -91,6 +91,8 @@ COMPONENT_TYPE    = LIBRARY
   $(EDK_SOURCE)\Foundation\Core\Pei\Include
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
-   
+
+[includes.ia32.Nt32]
+  $(EDK_SOURCE)\Sample\Platform\Nt32
+
 [nmake.common]
-  C_STD_INCLUDE=

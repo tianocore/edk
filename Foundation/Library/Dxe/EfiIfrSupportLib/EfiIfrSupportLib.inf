@@ -49,4 +49,3 @@ COMPONENT_TYPE      = LIBRARY
 
 
 [nmake.common]
-  C_STD_INCLUDE=

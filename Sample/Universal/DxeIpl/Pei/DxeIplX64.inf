@@ -39,7 +39,6 @@ COMPONENT_TYPE       = PE32_PEIM
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation\Efi
-  $(EDK_SOURCE)\Sample\Platform\Nt32
   .
   $(EDK_SOURCE)\Foundation\Include
   $(EDK_SOURCE)\Foundation\Efi\Include
@@ -66,6 +65,5 @@ COMPONENT_TYPE       = PE32_PEIM
   EdkNt32PpiLib
 
 [nmake.common]
-  C_STD_INCLUDE=
   IMAGE_ENTRY_POINT=PeimInitializeDxeIpl
   DPX_SOURCE=DxeIpl.dxs

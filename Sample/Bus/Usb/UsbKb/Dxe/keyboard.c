@@ -94,8 +94,8 @@ UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
     SCAN_F8,        0x00,     0x00,     // 0x41
     SCAN_F9,        0x00,     0x00,     // 0x42
     SCAN_F10,       0x00,     0x00,     // 0x43
-    SCAN_NULL,      0x00,     0x00,     // 0x44   F11
-    SCAN_NULL,      0x00,     0x00,     // 0x45   F12
+    SCAN_F11,       0x00,     0x00,     // 0x44   F11
+    SCAN_F12,       0x00,     0x00,     // 0x45   F12
     SCAN_NULL,      0x00,     0x00,     // 0x46   PrintScreen
     SCAN_NULL,      0x00,     0x00,     // 0x47   Scroll Lock
     SCAN_NULL,      0x00,     0x00,     // 0x48   Pause
@@ -129,7 +129,7 @@ UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
     SCAN_NULL,      '\\',     '|',      // 0x64 Keyboard Non-US \ and |
     SCAN_NULL,      0x00,     0x00,     // 0x65 Keyboard Application
     SCAN_NULL,      0x00,     0x00,     // 0x66 Keyboard Power
-    SCAN_NULL,      '=' ,     '='      // 0x67 Keypad =
+    SCAN_NULL,      '=' ,     '='       // 0x67 Keypad =
 };
 
 STATIC KB_MODIFIER  KB_Mod[8] = {
@@ -293,6 +293,7 @@ InitUSBKeyboard (
   UsbKeyboardDevice->ShiftOn    = 0;
   UsbKeyboardDevice->NumLockOn  = 0;
   UsbKeyboardDevice->CapsOn     = 0;
+  UsbKeyboardDevice->ScrollOn   = 0;
   EfiZeroMem (UsbKeyboardDevice->LastKeyCodeArray, sizeof (UINT8) * 8);
 
   //
@@ -735,48 +736,52 @@ USBParseKey (
 
     case 0x53:
       UsbKeyboardDevice->NumLockOn ^= 1;
+	  //
+	  // Turn on the NumLock light on KB
+	  //
       SetKeyLED (UsbKeyboardDevice);
       continue;
       break;
 
     case 0x39:
       UsbKeyboardDevice->CapsOn ^= 1;
+	  //
+	  // Turn on the CapsLock light on KB
+	  //
+      SetKeyLED (UsbKeyboardDevice);
+      continue;
+      break;
+    
+    case 0x47:
+      UsbKeyboardDevice->ScrollOn ^= 1;
+	  //
+	  // Turn on the ScrollLock light on KB
+	  //
       SetKeyLED (UsbKeyboardDevice);
       continue;
       break;
 
     //
-    // F11,F12,PrintScreen,ScrollLock,Pause,Application,Power
+    // PrintScreen,Pause,Application,Power
     // keys are not valid EFI key
     //
-    case 0x44:
-    //
-    // fall through
-    //
-    case 0x45:
-    //
-    // fall through
-    //
+
     case 0x46:
     //
     // fall through
     //
-    
-    case 0x47:
-	  //
-	  // Turn on the ScrollLock light on KB
-	  //
-      UsbKeyboardDevice->ScrollOn ^= 1;
-      SetKeyLED (UsbKeyboardDevice);
-      continue;
-      break;
-
     case 0x48:
     //
     // fall through
     //
     case 0x65:
+    //
+    // fall through
+    //
     case 0x66:
+    //
+    // fall through
+    //
       continue;
       break;
 

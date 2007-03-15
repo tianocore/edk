@@ -117,7 +117,6 @@ DEFINE FV=NULL
 #
 # Add your drivers and applications
 #
-Sample\Bus\Pci\CirrusLogic\Dxe\$(UEFI_PREFIX)CirrusLogic5430.inf
 Sample\Bus\Pci\VgaMiniPort\Dxe\VgaMiniPort.inf
 Sample\Universal\Console\Consplitter\Dxe\ConSplitter.inf
 Sample\Universal\Console\Graphicsconsole\Dxe\GraphicsConsole.inf

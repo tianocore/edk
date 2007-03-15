@@ -48,4 +48,3 @@ COMPONENT_TYPE      = LIBRARY
   EfiDriverLib
 
 [nmake.common]
-  C_STD_INCLUDE=

@@ -1,6 +1,6 @@
 ;*****************************************************************************
 ;*
-;*   Copyright (c) 2006, Intel Corporation                                                         
+;*   Copyright (c) 2006 - 2007, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -164,9 +164,9 @@ RealMode    PROC
     pushf
 @@:
     push    cs
-    push    @FarCallRet - _Code16Addr
-;    push    @FarCallRet
-;    sub     dword ptr [esp], _Code16Addr
+;    push    @FarCallRet - _Code16Addr
+    DB      68h                         ; push /iw
+    DW      @FarCallRet - _Code16Addr
     jz      @F
     jmp     fword ptr [esp + 6]
 @@:

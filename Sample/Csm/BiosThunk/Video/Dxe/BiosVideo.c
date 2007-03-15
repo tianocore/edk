@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1313,6 +1313,104 @@ Returns:
 
   return EFI_UNSUPPORTED;
 }
+
+VOID
+CopyVideoBuffer (
+  IN  EFI_PCI_IO_PROTOCOL   *PciIo,
+  IN  UINT8                 *VbeBuffer,
+  IN  VOID                  *MemAddress,
+  IN  UINTN                 DestinationX,
+  IN  UINTN                 DestinationY,
+  IN  UINTN                 TotalBytes,
+  IN  UINT32                VbePixelWidth,
+  IN  UINTN                 BytesPerScanLine
+  )
+/*++
+
+Routine Description:
+
+  Update physical frame buffer, copy 4 bytes block, then copy remaining bytes.
+
+Arguments:
+
+  PciIo             - The pointer of EFI_PCI_IO_PROTOCOL
+  VbeBuffer         - The data to transfer to screen
+  MemAddress        - Physical frame buffer base address
+  DestinationX      - The X coordinate of the destination for BltOperation
+  DestinationY      - The Y coordinate of the destination for BltOperation
+  TotalBytes        - The total bytes of copy
+  VbePixelWidth     - Bytes per pixel
+  BytesPerScanLine  - Bytes per scan line
+
+Returns:
+
+  None.
+
+--*/
+{
+  UINTN                 FrameBufferAddr;
+  UINTN                 CopyBlockNum;
+  UINTN                 RemainingBytes;
+  UINTN                 UnalignedBytes;
+  EFI_STATUS            Status;
+
+  //
+  // If VbeBuffer is not 4-byte aligned, start byte copy.
+  //
+
+  UnalignedBytes  = 4 - ((UINTN) VbeBuffer & 0x3);
+  FrameBufferAddr = (UINTN) MemAddress + (DestinationY * BytesPerScanLine) + DestinationX * VbePixelWidth;
+
+  if (UnalignedBytes != 0) {
+    Status = PciIo->Mem.Write (
+                     PciIo,
+                     EfiPciIoWidthUint8,
+                     EFI_PCI_IO_PASS_THROUGH_BAR,
+                     (UINT64) FrameBufferAddr,
+                     UnalignedBytes,
+                     VbeBuffer
+                );
+    ASSERT_EFI_ERROR (Status);
+    FrameBufferAddr += UnalignedBytes;
+    VbeBuffer       += UnalignedBytes;
+  }
+
+  //
+  // Calculate 4-byte block count and remaining bytes.
+  //
+  CopyBlockNum   = (TotalBytes - UnalignedBytes) >> 2;
+  RemainingBytes = (TotalBytes - UnalignedBytes) &  3;
+
+  //
+  // Copy 4-byte block and remaining bytes to physical frame buffer.
+  //
+  if (CopyBlockNum != 0) {
+    Status = PciIo->Mem.Write (
+                    PciIo,
+                    EfiPciIoWidthUint32,
+                    EFI_PCI_IO_PASS_THROUGH_BAR,
+                    (UINT64) FrameBufferAddr,
+                    CopyBlockNum,
+                    VbeBuffer
+                    );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  if (RemainingBytes != 0) {
+    FrameBufferAddr += (CopyBlockNum << 2);
+    VbeBuffer       += (CopyBlockNum << 2);
+    Status = PciIo->Mem.Write (
+                    PciIo,
+                    EfiPciIoWidthUint8,
+                    EFI_PCI_IO_PASS_THROUGH_BAR,
+                    (UINT64) FrameBufferAddr,
+                    RemainingBytes,
+                    VbeBuffer
+                    );
+    ASSERT_EFI_ERROR (Status);
+  }
+}
+
 //
 // BUGBUG : Add Blt for 16 bit color, 15 bit color, and 8 bit color modes
 //
@@ -1376,6 +1474,7 @@ Returns:
   UINT8                 *BltUint8;
   UINT32                VbePixelWidth;
   UINT32                Pixel;
+  UINTN                 TotalBytes;
 
   BiosVideoPrivate  = BIOS_VIDEO_DEV_FROM_UGA_DRAW_THIS (This);
   Mode              = &BiosVideoPrivate->ModeData[BiosVideoPrivate->CurrentMode];
@@ -1386,6 +1485,7 @@ Returns:
   BytesPerScanLine  = Mode->BytesPerScanLine;
   VbePixelWidth     = Mode->BitsPerPixel / 8;
   BltUint8          = (UINT8 *) BltBuffer;
+  TotalBytes        = Width * VbePixelWidth;
 
   if ((BltOperation < EfiUgaVideoFill) || (BltOperation >= EfiUgaBltMax)) {
     return EFI_INVALID_PARAMETER;
@@ -1474,28 +1574,22 @@ Returns:
       gBS->CopyMem (
             VbeBuffer,
             VbeBuffer1,
-            Width * VbePixelWidth
+            TotalBytes
             );
 
-      if (VbePixelWidth == 4) {
-        PciIo->Mem.Write (
-                    PciIo,
-                    EfiPciIoWidthUint32,
-                    EFI_PCI_IO_PASS_THROUGH_BAR,
-                    (UINT64) ((UINTN) MemAddress + (DstY * BytesPerScanLine) + DestinationX * VbePixelWidth),
-                    Width,
-                    VbeBuffer
-                    );
-      } else {
-        PciIo->Mem.Write (
-                    PciIo,
-                    EfiPciIoWidthUint8,
-                    EFI_PCI_IO_PASS_THROUGH_BAR,
-                    (UINT64) ((UINTN) MemAddress + (DstY * BytesPerScanLine) + DestinationX * VbePixelWidth),
-                    Width * VbePixelWidth,
-                    VbeBuffer
-                    );
-      }
+      //
+      // Update physical frame buffer.
+      //
+      CopyVideoBuffer (
+        PciIo,
+        VbeBuffer,
+        MemAddress,
+        DestinationX,
+        DstY,
+        TotalBytes,
+        VbePixelWidth,
+        BytesPerScanLine
+        );
     }
     break;
 
@@ -1526,20 +1620,25 @@ Returns:
       gBS->CopyMem (
             (VOID *) ((UINTN) VbeFrameBuffer + (DstY * BytesPerScanLine) + DestinationX * VbePixelWidth),
             VbeBuffer,
-            Width * VbePixelWidth
+            TotalBytes
             );
     }
-
     for (DstY = DestinationY; DstY < (Height + DestinationY); DstY++) {
-      PciIo->Mem.Write (
-                  PciIo,
-                  EfiPciIoWidthUint8,
-                  EFI_PCI_IO_PASS_THROUGH_BAR,
-                  (UINT64) ((UINTN) MemAddress + (DstY * BytesPerScanLine) + DestinationX * VbePixelWidth),
-                  Width * VbePixelWidth,
-                  VbeBuffer
-                  );
+      //
+      // Update physical frame buffer.
+      //
+      CopyVideoBuffer (
+        PciIo,
+        VbeBuffer,
+        MemAddress,
+        DestinationX,
+        DstY,
+        TotalBytes,
+        VbePixelWidth,
+        BytesPerScanLine
+        );
     }
+
     break;
 
   case EfiUgaBltBufferToVideo:
@@ -1563,14 +1662,20 @@ Returns:
       }
 
       VbeBuffer = ((UINT8 *) VbeFrameBuffer + (DstY * BytesPerScanLine + DestinationX * VbePixelWidth));
-      PciIo->Mem.Write (
-                  PciIo,
-                  EfiPciIoWidthUint8,
-                  EFI_PCI_IO_PASS_THROUGH_BAR,
-                  (UINT64) ((UINTN) MemAddress + (DstY * BytesPerScanLine) + DestinationX * VbePixelWidth),
-                  Width * VbePixelWidth,
-                  VbeBuffer
-                  );
+
+      //
+      // Update physical frame buffer.
+      //
+      CopyVideoBuffer (
+        PciIo,
+        VbeBuffer,
+        MemAddress,
+        DestinationX,
+        DstY,
+        TotalBytes,
+        VbePixelWidth,
+        BytesPerScanLine
+        );
     }
     break;
   }

@@ -76,5 +76,4 @@ COMPONENT_TYPE  = LIBRARY
   EfiCommonLib
 
 [nmake.common]
-  C_STD_INCLUDE=
 

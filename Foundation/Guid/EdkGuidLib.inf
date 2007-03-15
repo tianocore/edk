@@ -36,7 +36,7 @@ COMPONENT_TYPE=   LIBRARY
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
     
 [nmake.common]
-C_STD_INCLUDE=
+
 [sources.common]
   AcpiDescription\AcpiDescription.h
   AcpiDescription\AcpiDescription.c

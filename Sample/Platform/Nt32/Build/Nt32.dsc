@@ -335,7 +335,6 @@ Sample\Bus\WinNtThunk\WinNtThunk\Dxe\WinNtThunk.inf
 $(GRAPHICS_INF)
 
 Sample\Platform\Nt32\Dxe\Nt32Platform\MiscSubclass\MiscSubclassDriver.inf
-Sample\Bus\Pci\CirrusLogic\Dxe\$(UEFI_PREFIX)CirrusLogic5430.inf              
 Sample\Bus\Pci\IdeBus\Dxe\idebus.inf                                          
 Sample\Bus\Pci\Uhci\Dxe\Uhci.inf                                              
 Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                                       

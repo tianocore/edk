@@ -35,4 +35,3 @@ COMPONENT_TYPE  = LIBRARY
   $(EDK_SOURCE)\Foundation\include
 
 [nmake.common]
-  C_STD_INCLUDE=

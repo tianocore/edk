@@ -397,7 +397,9 @@ Returns:
   //
   CoreGetPeiProtocol (&gEfiStatusCodeRuntimeProtocolGuid, (VOID **)&gStatusCode->ReportStatusCode);
 #if ((TIANO_RELEASE_VERSION != 0) && (EFI_SPECIFICATION_VERSION < 0x00020000))
-  gRT->ReportStatusCode = gStatusCode->ReportStatusCode;
+  if (gStatusCode->ReportStatusCode != NULL) {
+    gRT->ReportStatusCode = gStatusCode->ReportStatusCode;
+  }
 #endif
 
   //

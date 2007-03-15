@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -67,7 +67,7 @@ public:
 // #ifdefs can be used in shared .h files.
 //
 #define PREPROCESSOR_COMMAND        "cl.exe "
-#define PREPROCESSOR_OPTIONS        "/nologo /P /TC /DVFRCOMPILE "
+#define PREPROCESSOR_OPTIONS        "/nologo /E /TC /DVFRCOMPILE "
 
 typedef ANTLRCommonToken ANTLRToken;
 
@@ -76,6 +76,7 @@ typedef ANTLRCommonToken ANTLRToken;
 //
 #define VFR_BINARY_FILENAME_EXTENSION       ".c"
 #define VFR_LIST_FILENAME_EXTENSION         ".lst"
+#define VFR_PREPROCESS_FILENAME_EXTENSION   ".i"
 
 static 
 VOID 
@@ -153,7 +154,8 @@ Returns:
   // on it.
   //
   fclose (VfrFptr);
-  Len = strlen (PREPROCESSOR_OPTIONS) + strlen (gOptions.VfrFileName) + 10;
+  Len = strlen (PREPROCESSOR_OPTIONS) + strlen (gOptions.VfrFileName) + 10 +
+        strlen (PREPROCESSOR_COMMAND) + strlen (gOptions.PreprocessorOutputFileName);
   if (gOptions.CPreprocessorOptions != NULL) {
     Len += strlen (gOptions.CPreprocessorOptions) + 1;
   }
@@ -166,7 +168,7 @@ Returns:
     Cleanup();
     return STATUS_ERROR;
   }  
-  strcpy (Cmd, PREPROCESSOR_OPTIONS);
+  strcpy (Cmd, PREPROCESSOR_COMMAND PREPROCESSOR_OPTIONS);
   if (gOptions.IncludePaths != NULL) {
     strcat (Cmd, gOptions.IncludePaths);
     strcat (Cmd, " ");
@@ -176,7 +178,9 @@ Returns:
     strcat (Cmd, " ");
   }
   strcat (Cmd, gOptions.VfrFileName);
-  Status = _spawnlp (_P_WAIT, PREPROCESSOR_COMMAND, Cmd, NULL);
+  strcat (Cmd, " > ");
+  strcat (Cmd, gOptions.PreprocessorOutputFileName);
+  Status = system (Cmd);
   if (Status != 0) {
     Error (PROGRAM_NAME, 0, 0, gOptions.VfrFileName, "failed to spawn C preprocessor on VFR file");
     printf ("Command: '%s %s'\n", PREPROCESSOR_COMMAND, Cmd);
@@ -419,25 +423,15 @@ Returns:
     return STATUS_ERROR;
   }
   strcpy (gOptions.VfrFileName, Argv[0]);
-  //
-  // We run the preprocessor on the VFR file to manage #include statements.
-  // Unfortunately the preprocessor does not allow you to specify the
-  // output name or path of the resultant .i file, so we have to do
-  // some work. Here we'll extract the basename of the VFR file, then
-  // append .i on the end. 
-  //
+  
   strcpy (CopyStr, gOptions.VfrFileName);
   Cptr = CopyStr + strlen (CopyStr) - 1;
   for (;(Cptr > CopyStr) && (*Cptr != '\\') && (*Cptr != ':'); Cptr--);
   if (Cptr == CopyStr) {
-    strcpy (gOptions.PreprocessorOutputFileName, Cptr);
     strcpy (gOptions.VfrBaseFileName, Cptr);
   } else {
-    strcpy (gOptions.PreprocessorOutputFileName, Cptr+1);
     strcpy (gOptions.VfrBaseFileName, Cptr+1);
   }
-  for (Cptr = gOptions.PreprocessorOutputFileName; *Cptr && (*Cptr != '.'); Cptr++);
-  strcpy (Cptr, ".i");
   //
   // Terminate the vfr file basename at the extension
   //
@@ -477,8 +471,11 @@ Returns:
   strcpy (gOptions.VfrListFileName, gOptions.OutputDirectory);
   strcat (gOptions.VfrListFileName, gOptions.VfrBaseFileName);
   strcpy (gOptions.IfrOutputFileName, gOptions.VfrListFileName);
+  strcpy (gOptions.PreprocessorOutputFileName, gOptions.VfrListFileName);
   strcat (gOptions.VfrListFileName, VFR_LIST_FILENAME_EXTENSION);
   strcat (gOptions.IfrOutputFileName, VFR_BINARY_FILENAME_EXTENSION);
+  strcat (gOptions.PreprocessorOutputFileName, VFR_PREPROCESS_FILENAME_EXTENSION);
+  
   //
   // We set a default list file name, so if they do not
   // want a list file, null out the name now.

@@ -453,7 +453,7 @@ Returns:
   {
     DEBUG ((
       EFI_D_INFO | EFI_D_LOAD, 
-      "Loading driver at 0x%08x EntryPoint=0x%08x ", 
+      "Loading driver at 0x%x EntryPoint=0x%x ", 
       (UINTN) Image->ImageContext.ImageAddress, 
       (UINTN) Image->ImageContext.EntryPoint
       ));

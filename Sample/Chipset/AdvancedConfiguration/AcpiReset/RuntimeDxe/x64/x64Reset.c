@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,36 @@ Abstract:
 // The handle onto which the Reset Architectural Protocol is installed
 //
 EFI_HANDLE  mResetHandle = NULL;
+static EFI_ACPI_DESCRIPTION      mAcpiDescription;
 
+VOID
+EFIAPI
+EfiAcpiResetSystem (
+  IN EFI_RESET_TYPE   ResetType,
+  IN EFI_STATUS       ResetStatus,
+  IN UINTN            DataSize,
+  IN CHAR16           *ResetData OPTIONAL
+  )
+/*++
+
+Routine Description:
+
+  Reset the system.
+
+Arguments:
+  
+    ResetType - warm or cold
+    ResetStatus - possible cause of reset
+    DataSize - Size of ResetData in bytes
+    ResetData - Optional Unicode string
+
+Returns:
+  Does not return if the reset takes place.
+
+--*/
+{
+  AcpiResetSystem (ResetType, ResetStatus, DataSize, ResetData, &mAcpiDescription);
+}
 
 EFI_STATUS
 EFIAPI
@@ -63,7 +92,7 @@ Returns:
   //
   // Initialize AcpiDescription
   //
-  AcpiDescription = GetAcpiDescription ();
+  AcpiDescription = GetAcpiDescription (&mAcpiDescription);
   if (AcpiDescription == NULL) {
     return EFI_UNSUPPORTED;
   }
@@ -76,7 +105,7 @@ Returns:
   //
   // Hook the runtime service table
   //
-  SystemTable->RuntimeServices->ResetSystem = AcpiResetSystem;
+  SystemTable->RuntimeServices->ResetSystem = EfiAcpiResetSystem;
 
   //
   // Now install the Reset RT AP on a new handle

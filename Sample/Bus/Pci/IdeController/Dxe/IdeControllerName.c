@@ -187,6 +187,14 @@ IdeControllerGetControllerName (
             ControllerName
             );
   }
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiPciIoProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
   //
   // Get the child context
   //

@@ -1,6 +1,6 @@
 #/*++
 #
-#  Copyright (c) 2006, Intel Corporation                                                         
+#  Copyright (c) 2006 - 2007, Intel Corporation                                                         
 #  All rights reserved. This program and the accompanying materials                          
 #  are licensed and made available under the terms and conditions of the BSD License         
 #  which accompanies this distribution.  The full text of the license may be found at        
@@ -22,11 +22,21 @@
 [defines]
 BASE_NAME       = CompilerStub
 COMPONENT_TYPE  = LIBRARY
+  
+[sources.common] 
 
-[sources.common]
+[sources.ia32]
+  Ia32\memcpy.asm
+  Ia32\memset.asm
+  
+[sources.x64]  
+  x64\memcpy.asm
+  x64\memset.asm
+  
+[sources.Ipf]  
   memcpy.c
   memset.c
-
+  
 [includes.common]
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Framework
@@ -47,7 +57,6 @@ COMPONENT_TYPE  = LIBRARY
 [libraries.common]
 
 [nmake.common]
-  C_STD_INCLUDE=
 
 [nmake.ia32,nmake.x64]
-  C_STD_INCLUDE= $(C_STD_INCLUDE) /GL-
+  C_FLAGS= $(C_FLAGS) /GL-

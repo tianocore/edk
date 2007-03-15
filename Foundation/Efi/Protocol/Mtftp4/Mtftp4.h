@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,7 +28,7 @@ Abstract:
     { 0x2FE800BE, 0x8F01, 0x4aa6, 0x94, 0x6B, 0xD7, 0x13, 0x88, 0xE1, 0x83, 0x3F }
 
 #define EFI_MTFTP4_PROTOCOL_GUID \
-    { 0x3ad9df29, 0x4501, 0x478d, 0xb1, 0xf8, 0x7f, 0x7f, 0xe7, 0x0e, 0x50, 0xf3 }
+    { 0x78247c57, 0x63db, 0x4708, 0x99, 0xc2, 0xa8, 0xb4, 0xa9, 0xa6, 0x1f, 0x6b }
 
 EFI_FORWARD_DECLARATION (EFI_MTFTP4_PROTOCOL);
 EFI_FORWARD_DECLARATION (EFI_MTFTP4_TOKEN);

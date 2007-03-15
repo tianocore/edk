@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -952,7 +952,7 @@ Returns:
       //
 
       if ((ConfigData->SwAddressType == IPv4_ETHER_PROTO_TYPE) &&
-        (!Ip4IsUnicast (EFI_IP4 (*((EFI_IPv4_ADDRESS *)ConfigData->StationAddress)), 0))) {
+        (!Ip4IsUnicast (EFI_NTOHL (*((EFI_IPv4_ADDRESS *)ConfigData->StationAddress)), 0))) {
         //
         // The station address is not a valid IPv4 unicast address.
         //

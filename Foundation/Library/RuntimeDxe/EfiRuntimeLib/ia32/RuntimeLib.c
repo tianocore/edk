@@ -788,19 +788,26 @@ Returns:
 
 --*/
 {
-  EFI_STATUS     Status;
-  
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  EFI_STATUS  Status;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000) 
   if (gStatusCode == NULL) {
     return EFI_UNSUPPORTED;
   }
-
   Status = gStatusCode->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
 #else
   if (mRT == NULL) {
-  	return EFI_UNSUPPORTED;
+    return EFI_UNSUPPORTED;
   }
-  Status = mRT->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
+  //
+  // Check whether EFI_RUNTIME_SERVICES has Tiano Extension
+  //
+  Status = EFI_UNSUPPORTED;
+  if (mRT->Hdr.Revision     == EFI_SPECIFICATION_VERSION     &&
+      mRT->Hdr.HeaderSize   == sizeof (EFI_RUNTIME_SERVICES) &&
+      mRT->ReportStatusCode != NULL) {
+    Status = mRT->ReportStatusCode (CodeType, Value, Instance, CallerId, Data);
+  }
 #endif
   return Status;
 }

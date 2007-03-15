@@ -86,4 +86,3 @@ COMPONENT_TYPE  = LIBRARY
   CpuIA64Lib
 
 [nmake.common]
-  C_STD_INCLUDE=

@@ -71,6 +71,9 @@ Routine Description:
   Worker function for DEBUG(). If Error Logging hub is loaded log ASSERT
   information. If Error Logging hub is not loaded do nothing.
 
+  The Format string might be truncated to fit into the status code struture
+  which has the max size of EFI_STATUS_CODE_DATA_MAX_SIZE.
+
   We use UINT64 buffers due to IPF alignment concerns.
 
 Arguments:
@@ -89,14 +92,13 @@ Returns:
   
   Status code
   
-  EFI_BUFFER_TOO_SMALL    - Format too big to fit in buffer
-  
   EFI_SUCCESS             - Successfully printed
 
 --*/
 {
   UINTN                   Index;
   UINTN                   FormatStrLen;
+  UINTN                   RemainingStrLen;
   UINT64                  *Ptr;
   EFI_DEBUG_INFO          *EfiDebug;
 
@@ -120,24 +122,27 @@ Returns:
   EfiDebug->ErrorLevel = (UINT32)ErrorLevel;
 
   //
-  // 256 byte mini Var Arg stack. That is followed by the format string.
+  // 12 * sizeof (UINT64) byte mini Var Arg stack.
+  // That is followed by the format string.
   //
   for (Index = 0, Ptr = (UINT64 *)(EfiDebug + 1); Index < 12; Index++, Ptr++) {
     *Ptr = VA_ARG (Marker, UINT64);
   }
 
   //
-  // Place Ascii Format string at the end 
+  // Place Ascii Format string at the end
+  // Truncate it to fit into the status code structure
   //
-  FormatStrLen = EfiAsciiStrLen (Format) + 1;
-  if (FormatStrLen > EFI_STATUS_CODE_DATA_MAX_SIZE) {
-    //
-    // Format too big to fit in our buffer, so do nothing.
-    //
-    return EFI_BUFFER_TOO_SMALL;
-  } else {
-    EfiCommonLibCopyMem (Ptr, Format, FormatStrLen);
+  FormatStrLen    = EfiAsciiStrLen (Format);
+  RemainingStrLen = EFI_STATUS_CODE_DATA_MAX_SIZE
+    - sizeof (EFI_STATUS_CODE_DATA)
+    - sizeof (EFI_DEBUG_INFO)
+    - 12 * sizeof (UINT64) - 1;
+  if (FormatStrLen > RemainingStrLen) {
+    FormatStrLen = RemainingStrLen;
   }
+  EfiCommonLibCopyMem (Ptr, Format, FormatStrLen);
+  *((CHAR8 *) Ptr + FormatStrLen) = '\0';
 
   return EFI_SUCCESS;
 }

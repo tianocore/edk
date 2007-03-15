@@ -105,7 +105,6 @@ COMPONENT_TYPE       = BS_DRIVER
   EfiDriverLib
   
 [nmake.common]
-  C_STD_INCLUDE=
   IMAGE_ENTRY_POINT=DxeMain
   C_PROJ_FLAGS = $(C_PROJ_FLAGS) /Ob0
 

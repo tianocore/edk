@@ -74,5 +74,4 @@ COMPONENT_TYPE       = BS_DRIVER
   EfiGuidLib
 
 [nmake.common]
-  C_STD_INCLUDE=
   IMAGE_ENTRY_POINT=DxeInit

@@ -358,8 +358,7 @@ USBFloppyRead10 (
       
       ByteCount               = SectorCount * BlockSize;
       
-      TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
-
+      TimeOut                 = (UINT16) (SectorCount * USBDATATIMEOUT);
 
       Status = USBFloppyPacketCommand (
                  UsbFloppyDevice,
@@ -799,7 +798,7 @@ USBFloppyWrite10 (
       
       ByteCount               = SectorCount * BlockSize;
       
-      TimeOut                 = (UINT16) (SectorCount * USBFLPTIMEOUT);
+      TimeOut                 = (UINT16) (SectorCount * USBDATATIMEOUT);
       
       Status = USBFloppyPacketCommand (
                  UsbFloppyDevice,

@@ -2662,7 +2662,7 @@ Returns:
         TmpType = NTOHS (((PXE_OP_BOOT_ITEM *) RxBufPtr->OpAdds.PxeOptAdds[VEND_PXE_BOOT_ITEM_IX - 1])->Type);
 
         if (RxBufPtr->OpAdds.Status & USE_THREE_BYTE) {
-          TmpLayer = (UINT16) (((PXE_OP_BOOT_ITEM *) RxBufPtr->OpAdds.PxeOptAdds[VEND_PXE_BOOT_ITEM_IX])->Layer >> 8);
+          TmpLayer = (UINT16) (((PXE_OP_BOOT_ITEM *) RxBufPtr->OpAdds.PxeOptAdds[VEND_PXE_BOOT_ITEM_IX - 1])->Layer >> 8);
         } else {
           TmpLayer = NTOHS (((PXE_OP_BOOT_ITEM *) RxBufPtr->OpAdds.PxeOptAdds[VEND_PXE_BOOT_ITEM_IX - 1])->Layer);
         }

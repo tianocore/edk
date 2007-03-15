@@ -126,7 +126,6 @@ Returns:
 
   EfiDebugVPrintWorker (ErrorLevel, Format, Marker, sizeof (Buffer), Buffer);
 
-  ASSERT (NULL != gRT);
   EfiLibReportStatusCode (
     EFI_DEBUG_CODE,
     (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_DC_UNSPECIFIED),

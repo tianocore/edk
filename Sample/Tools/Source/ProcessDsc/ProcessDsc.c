@@ -283,7 +283,7 @@ static const INT8 *MakefileHeader[] = {
   "#",
   "#    Auto-generated makefile for building of EFI components/libraries",
   "#",
-  "#--*/ ",
+  "#--*/",
   "",
   NULL
 };
@@ -557,12 +557,6 @@ static
 int
 CreatePackageFile (
   DSC_FILE          *DSCFile
-  );
-
-static
-int
-IsAbsolutePath (
-  INT8    *FileName
   );
 
 static
@@ -997,33 +991,7 @@ Returns:
   // Exception-handle processing of this component description file
   //
   TryException ();
-  //
-  // Save the path from the component name for later. It may be relative or
-  // absolute.
-  //
-  strcpy (ComponentFilePath, ArgLine);
-  Cptr = ComponentFilePath + strlen (ComponentFilePath) - 1;
-  while ((*Cptr != '\\') && (*Cptr != '/') && (Cptr != ComponentFilePath)) {
-    Cptr--;
-  }
-  //
-  // Terminate the path.
-  //
-  *Cptr = 0;
-  //
-  // If we have "c:\path\filename"
-  //
-  if (isalpha (ComponentFilePath[0]) && (ComponentFilePath[1] == ':')) {
-    ComponentFilePathAbsolute = 1;
-  } else if (ComponentFilePath[0] == '.') {
-    //
-    // or if the path starts with ".", then it's build-dir relative.
-    // Prepend $(BUILD_DIR) on the file name
-    //
-    sprintf (Line, "%s\\%s", GetSymbolValue (BUILD_DIR), ComponentFilePath);
-    strcpy (ComponentFilePath, Line);
-    ComponentFilePathAbsolute = 1;
-  }
+
   //
   // We also allow a component line format for defines of global symbols
   // instead of a component filename. In this case, the line looks like:
@@ -1056,6 +1024,14 @@ Returns:
       }
     }
   }
+
+  //
+  // If DEBUG_BREAK or EFI_BREAKPOINT is defined, then do a debug breakpoint.
+  //
+  if ((GetSymbolValue ("DEBUG_BREAK") != NULL) || (GetSymbolValue ("EFI_BREAKPOINT") != NULL)) {
+    EFI_BREAKPOINT ();
+  }
+  
   //
   // If it's a define line, then we're done
   //
@@ -1073,60 +1049,42 @@ Returns:
 
     goto ComponentDone;
   }
-  //
-  // If DEBUG_BREAK or EFI_BREAKPOINT is defined, then do a debug breakpoint.
-  //
-  if ((GetSymbolValue ("DEBUG_BREAK") != NULL) || (GetSymbolValue ("EFI_BREAKPOINT") != NULL)) {
-    EFI_BREAKPOINT ();
-  }
-  //
-  // Create the destination path. Save it as the destination directory,
-  // assuming that it is located near its source files.
-  // The destination path is $(BUILD_DIR)\$(PROCESSOR)\component_path
-  //
-  if (ComponentFilePathAbsolute == 0) {
-    sprintf (
-      FileName,
-      "%s\\%s\\%s",
-      GetSymbolValue (BUILD_DIR),
-      GetSymbolValue (PROCESSOR),
-      ComponentFilePath
-      );
-  } else {
-    sprintf (
-      FileName,
-      "%s\\%s",
-      ComponentFilePath,
-      GetSymbolValue (PROCESSOR)
-      );
-  }
-  //
-  // They may have defined DEST_DIR on the component INF line, so it's already
-  // been defined, If that's the case, then don't set it to the path of this file.
-  //
-  if (GetSymbolValue (DEST_DIR) == NULL) {
-    AddSymbol (DEST_DIR, FileName, SYM_OVERWRITE | SYM_LOCAL | SYM_FILEPATH);
-  }
-  //
-  // Create the source directory path from the component file's path. If the component
-  // file's path is absolute, we may have problems here. Try to account for it though.
-  //
-  if (ComponentFilePathAbsolute == 0) {
-    sprintf (
-      FileName,
-      "%s\\%s",
-      GetSymbolValue (EFI_SOURCE),
-      ComponentFilePath
-      );
-  } else {
-    strcpy (FileName, ComponentFilePath);
-  }
 
-  AddSymbol (SOURCE_DIR, FileName, SYM_OVERWRITE | SYM_LOCAL | SYM_FILEPATH);
   //
-  // Expand symbols in the component description filename
+  // Expand symbols in the component description filename to expand the newly 
+  // added local symbols
   //
   ExpandSymbols (ArgLine, Line, sizeof (Line), EXPANDMODE_NO_UNDEFS);
+
+  //
+  // If we have "c:\path\filename"
+  //
+  if (IsAbsolutePath (Line)) {
+    ComponentFilePathAbsolute = 1;
+  } else if (Line[0] == '.') {
+    //
+    // or if the path starts with ".", then it's build-dir relative.
+    // Prepend $(BUILD_DIR) on the file name
+    //
+    sprintf (InLine, "%s\\%s", GetSymbolValue (BUILD_DIR), Line);
+    strcpy (Line, InLine);
+    ComponentFilePathAbsolute = 1;
+  }
+  
+  //
+  // Save the path from the component name for later. It may be relative or
+  // absolute.
+  //
+  strcpy (ComponentFilePath, Line);
+  Cptr = ComponentFilePath + strlen (ComponentFilePath) - 1;
+  while ((*Cptr != '\\') && (*Cptr != '/') && (Cptr != ComponentFilePath)) {
+    Cptr--;
+  }
+  //
+  // Terminate the path.
+  //
+  *Cptr = 0;
+  
   //
   // Typically the given line is a component description filename. However we
   // also allow a FV filename (fvvariable.ffs COMPONENT_TYPE=FILE). If the
@@ -1139,14 +1097,8 @@ Returns:
                           COMPONENT_TYPE_FILE,
                           strlen (COMPONENT_TYPE_FILE)
                           ) == 0)) {
-    if (IsAbsolutePath (Line)) {
+    if (ComponentFilePathAbsolute) {
       strcpy (InLine, Line);
-    } else if (Line[0] == '.') {
-      //
-      // or if the path starts with ".", then it's build-dir relative.
-      // Prepend $(BUILD_DIR) on the file name
-      //
-      sprintf (InLine, "%s\\%s", GetSymbolValue (BUILD_DIR), Line);
     } else {
       sprintf (InLine, "%s\\%s", GetSymbolValue (EFI_SOURCE), Line);
     }
@@ -1163,6 +1115,7 @@ Returns:
       );
     goto ComponentDone;
   }
+
   //
   // Better have defined processor by this point.
   //
@@ -1171,6 +1124,7 @@ Returns:
     Error (NULL, 0, 0, NULL, "PROCESSOR not defined for component %s", Line);
     return STATUS_ERROR;
   }
+
   //
   // The bin, out, and lib dirs are now = $(BUILD_DIR)/$(PROCESSOR). Set them.
   // Don't flag them as file paths (required for short 8.3 filenames) since
@@ -1286,6 +1240,55 @@ Returns:
     DSCFileDestroy (&ComponentFile);
     return STATUS_ERROR;
   }
+
+  //
+  // Create the source directory path from the component file's path. If the component
+  // file's path is absolute, we may have problems here. Try to account for it though.
+  //
+  if (ComponentFilePathAbsolute == 0) {
+    sprintf (
+      FileName,
+      "%s\\%s",
+      GetSymbolValue (EFI_SOURCE),
+      ComponentFilePath
+      );
+  } else {
+    strcpy (FileName, ComponentFilePath);
+  }
+  AddSymbol (SOURCE_DIR, FileName, SYM_OVERWRITE | SYM_LOCAL | SYM_FILEPATH);
+
+  //
+  // Create the destination path. 
+  // They may have defined DEST_DIR on the component INF line, so it's already
+  // been defined, If that's the case, then don't set it to the path of this file.
+  //
+  if (GetSymbolValue (DEST_DIR) == NULL) {
+    if (ComponentFilePathAbsolute == 0) {
+      //
+      // The destination path is $(BUILD_DIR)\$(PROCESSOR)\component_path
+      //
+      sprintf (
+        FileName,
+        "%s\\%s\\%s",
+        GetSymbolValue (BUILD_DIR),
+        Processor,
+        ComponentFilePath
+        );
+    } else {
+      //
+      // The destination path is $(BUILD_DIR)\$(PROCESSOR)\$(BASE_NAME)
+      //
+      sprintf (
+        FileName,
+        "%s\\%s\\%s",
+        GetSymbolValue (BUILD_DIR),
+        Processor,
+        GetSymbolValue (BASE_NAME)
+        );
+    }
+    AddSymbol (DEST_DIR, FileName, SYM_OVERWRITE | SYM_LOCAL | SYM_FILEPATH);
+  }
+  
   //
   // Create the output directory, then open the output component's makefile
   // we're going to create. Allow them to override the makefile name.
@@ -1717,21 +1720,24 @@ Returns:
   SECTION *TempSect;
 
   //
-  // Copy the [nmake.common] and [nmake.processor] sections from the
+  // Copy the [nmake.common] and [nmake.$(PROCESSOR)] sections from the
   // component file directly to the output file.
+  // The line will be stripped and don't print blank lines
   //
   sprintf (Str, "%s.%s", NMAKE_SECTION_NAME, COMMON_SECTION_NAME);
   TempSect = DSCFileFindSection (ComponentFile, Str);
   if (TempSect != NULL) {
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
-      Cptr = StripLine (Str);
       ExpandSymbols (
-        Cptr,
+        Str,
         ExpandedLine,
         sizeof (ExpandedLine),
         EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
         );
-      fprintf (MakeFptr, "%s\n", ExpandedLine);
+      Cptr = StripLine (ExpandedLine);
+      if (*Cptr) {
+        fprintf (MakeFptr, "%s\n", Cptr);
+      }
     }
 
     fprintf (MakeFptr, "\n");
@@ -1743,10 +1749,13 @@ Returns:
   TempSect = DSCFileFindSection (ComponentFile, Str);
   if (TempSect != NULL) {
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
-      Cptr = StripLine (Str);
-      //
-      // Don't print blank lines?
-      //
+      ExpandSymbols (
+        Str,
+        ExpandedLine,
+        sizeof (ExpandedLine),
+        EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+        );
+      Cptr = StripLine (ExpandedLine);
       if (*Cptr) {
         fprintf (MakeFptr, "%s\n", Cptr);
       }
@@ -1755,7 +1764,7 @@ Returns:
     fprintf (MakeFptr, "\n");
   }
   //
-  // Do the same for [nmake.processor.platform]
+  // Do the same for [nmake.$(PROCESSOR).$(PLATFORM)]
   //
   Cptr = GetSymbolValue (PLATFORM);
   if (Cptr != NULL) {
@@ -1763,10 +1772,13 @@ Returns:
     TempSect = DSCFileFindSection (ComponentFile, Str);
     if (TempSect != NULL) {
       while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
-        Cptr = StripLine (Str);
-        //
-        // Don't print blank lines?
-        //
+        ExpandSymbols (
+          Str,
+          ExpandedLine,
+          sizeof (ExpandedLine),
+          EXPANDMODE_NO_DESTDIR | EXPANDMODE_NO_SOURCEDIR
+          );
+        Cptr = StripLine (ExpandedLine);
         if (*Cptr) {
           fprintf (MakeFptr, "%s\n", Cptr);
         }
@@ -1810,6 +1822,15 @@ Returns:
   INT8  Str[MAX_LINE_LEN];
   INT8  *Processor;
   INT8  *OverridePath;
+
+  //
+  // Write a useful comment to the output makefile so the user knows where
+  // the data came from.
+  //
+  fprintf (MakeFptr, "#\n# Tool-generated list of include paths that are created\n");
+  fprintf (MakeFptr, "# from the list of include paths in the [includes.*] sections\n");
+  fprintf (MakeFptr, "# of the component INF file.\n#\n");
+
   //
   // We use this a lot here, so get the value only once.
   //
@@ -1824,7 +1845,7 @@ Returns:
     fprintf (MakeFptr, "INC = $(INC) -I %s\\%s \n", OverridePath, Processor);
   }
   //
-  // Try for an [includes.processor.platform]
+  // Try for an [includes.$(PROCESSOR).$(PLATFORM)]
   //
   Cptr = GetSymbolValue (PLATFORM);
   if (Cptr != NULL) {
@@ -1832,7 +1853,7 @@ Returns:
     ProcessIncludesSectionSingle (ComponentFile, MakeFptr, Str);
   }
   //
-  // Now the [includes.processor] section
+  // Now the [includes.$(PROCESSOR)] section
   //
   sprintf (Str, "%s.%s", INCLUDE_SECTION_NAME, Processor);
   ProcessIncludesSectionSingle (ComponentFile, MakeFptr, Str);
@@ -1846,6 +1867,7 @@ Returns:
   //
   // Done
   //
+  fprintf (MakeFptr, "\n");
   return STATUS_SUCCESS;
 }
 //
@@ -1903,9 +1925,9 @@ ProcessIncludesSectionSingle (
               "INC = $(INC) -I $(SOURCE_DIR)\\%s \n",
               Processor
               );
-          } else if (Cptr[1] == '.') {
+          } else {
             //
-            // Handle case of "..\path\path\path"
+            // Handle case of ".\path\path\path" or "..\path\path\path"
             //
             fprintf (
               MakeFptr,
@@ -1916,22 +1938,6 @@ ProcessIncludesSectionSingle (
               MakeFptr,
               "INC = $(INC) -I $(SOURCE_DIR)\\%s\\%s \n",
               Cptr,
-              Processor
-              );
-
-          } else {
-            //
-            // Handle case of ".\path\path\path"
-            //
-            fprintf (
-              MakeFptr,
-              "INC = $(INC) -I $(SOURCE_DIR)\\%s \n",
-              Cptr + 1
-              );
-            fprintf (
-              MakeFptr,
-              "INC = $(INC) -I $(SOURCE_DIR)\\%s\\%s \n",
-              Cptr + 1,
               Processor
               );
           }
@@ -1954,8 +1960,6 @@ ProcessIncludesSectionSingle (
         }
       }
     }
-
-    fprintf (MakeFptr, "\n");
   }
 
   return STATUS_SUCCESS;
@@ -2002,6 +2006,16 @@ Returns:
   INT8  CSave;
   INT8  *CopySourceSelect;
 
+  if (Mode & SOURCE_MODE_SOURCE_FILES) {
+    //
+    // Write a useful comment to the output makefile so the user knows where
+    // the data came from.
+    //
+    fprintf (MakeFptr, "#\n# Tool-generated list of source files that are created\n");
+    fprintf (MakeFptr, "# from the list of source files in the [sources.*] sections\n");
+    fprintf (MakeFptr, "# of the component INF file.\n#\n");
+  }
+  
   //
   // We use this a lot here, so get the value only once.
   //
@@ -2070,6 +2084,7 @@ Returns:
     }
   }
 
+  fprintf (MakeFptr, "\n");
   return STATUS_SUCCESS;
 }
 
@@ -2134,7 +2149,6 @@ ProcessSourceFilesSection (
   INT8    FileName[MAX_EXP_LINE_LEN];
   INT8    FilePath[MAX_PATH];
   INT8    TempFileName[MAX_PATH];
-  INT8    OriginalFileName[MAX_PATH];
   SECTION *TempSect;
   INT8    Str[MAX_LINE_LEN];
   INT8    *Processor;
@@ -2159,7 +2173,6 @@ ProcessSourceFilesSection (
         //
         ExpandSymbols (Cptr, FileName, sizeof (FileName), 0);
         AddFileSymbols (FileName);
-        strcpy (OriginalFileName, FileName);
         //
         // Set the SOURCE_FILE_NAME symbol. What we have now is the name of
         // the file, relative to the location of the INF file. So prepend
@@ -2201,14 +2214,18 @@ ProcessSourceFilesSection (
         // exists. If it does, then recursive call this function to use the override file
         // instead of the one from the INF file.
         //
-        OverridePath = GetSymbolValue (SOURCE_OVERRIDE_PATH);
+        if (IsAbsolutePath (FileName)) {
+          OverridePath = NULL;
+        } else {
+          OverridePath = GetSymbolValue (SOURCE_OVERRIDE_PATH);
+        }
         if (OverridePath != NULL) {
           //
           // See if the file exists. If it does, reset the SOURCE_FILE_NAME symbol.
           //
           strcpy (TempFileName, OverridePath);
           strcat (TempFileName, "\\");
-          strcat (TempFileName, OriginalFileName);
+          strcat (TempFileName, FileName);
           if ((FPtr = fopen (TempFileName, "rb")) != NULL) {
             fclose (FPtr);
             AddSymbol (SOURCE_FILE_NAME, TempFileName, SYM_FILE | SYM_OVERWRITE);
@@ -2270,18 +2287,17 @@ ProcessSourceFilesSection (
           // Also create the directory for it in the build path.
           //
           WriteCompileCommands (DSCFile, MakeFptr, FileName, Processor);
-          fprintf (MakeFptr, "\n");
           if (!IsAbsolutePath (FileName)) {
             sprintf (Str, "%s\\%s", GetSymbolValue (DEST_DIR), FileName);
             MakeFilePath (Str);
             //
             // Get all output directory for build output files.
             //
-            Cptr = Str + strlen (Str) - 1;
-            for (; (Cptr > Str) && (*Cptr != '\\'); Cptr--);
+            Cptr = FileName + strlen (FileName) - 1;
+            for (; (Cptr > FileName) && (*Cptr != '\\'); Cptr--);
             if (*Cptr == '\\') {
               *Cptr = '\0';
-              AddModuleName (&gGlobals.OutdirList, Str, NULL);
+              AddModuleName (&gGlobals.OutdirList, FileName, NULL);
             }
           }
         }
@@ -2320,7 +2336,7 @@ ProcessObjects (
   // Write a useful comment to the output makefile so the user knows where
   // the data came from.
   //
-  fprintf (MakeFptr, "\n# Tool-generated list of object files that are created\n");
+  fprintf (MakeFptr, "#\n# Tool-generated list of object files that are created\n");
   fprintf (MakeFptr, "# from the list of source files in the [sources.*] sections\n");
   fprintf (MakeFptr, "# of the component INF file.\n#\n");
   //
@@ -2376,6 +2392,7 @@ ProcessObjects (
     }
 
     free (CopySourceSelect);
+  
   } else {
     //
     // Now process all the [sources.common] files and emit build commands for them
@@ -2403,6 +2420,13 @@ ProcessObjects (
   fprintf (MakeFptr, "\n\n");
 
   //
+  // Write a useful comment to the output makefile so the user knows where
+  // the data came from.
+  //
+  fprintf (MakeFptr, "#\n# Tool-generated list of dest output dirs that are created\n");
+  fprintf (MakeFptr, "# from the list of source files in the [sources.*] sections\n");
+  fprintf (MakeFptr, "# of the component INF file.\n#\n");
+  //
   // Create output directory list 
   // for clean target to delete all build output files.
   //
@@ -2410,7 +2434,8 @@ ProcessObjects (
 
   TempSymbol = gGlobals.OutdirList;
   while (TempSymbol != NULL) {
-    fprintf (MakeFptr, "\\\n                   %s   ", TempSymbol->Name);
+    fprintf (MakeFptr, "\\\n                   $(%s)\\%s   ", 
+             DEST_DIR, TempSymbol->Name);
     TempSymbol = TempSymbol->Next;
   }
   fprintf (MakeFptr, "\n\n");
@@ -2525,15 +2550,20 @@ ProcessLibs (
   // Print a useful comment to the component's makefile so the user knows
   // where the data came from.
   //
-  fprintf (MakeFptr, "# Tool-generated list of libraries that are generated\n");
+  fprintf (MakeFptr, "#\n# Tool-generated list of libraries that are generated\n");
   fprintf (MakeFptr, "# from the list of libraries listed in the [libraries.*] sections\n");
-  fprintf (MakeFptr, "# of the component INF file.\n\n");
-
+  fprintf (MakeFptr, "# of the component INF file.\n#\n");
+  
+  fprintf (MakeFptr, "LIBS = $(LIBS) ");
+  
   Processor = GetSymbolValue (PROCESSOR);
+  //
+  // Process [libraries.common] files
+  //
   sprintf (Str, "%s.%s", LIBRARIES_SECTION_NAME, COMMON_SECTION_NAME);
   ProcessLibsSingle (ComponentFile, MakeFptr, Str);
   //
-  // Process the [libraries.processor] libraries to define "LIBS = x.lib y.lib..."
+  // Process the [libraries.$(PROCESSOR)] libraries to define "LIBS = x.lib y.lib..."
   //
   sprintf (Str, "%s.%s", LIBRARIES_SECTION_NAME, Processor);
   ProcessLibsSingle (ComponentFile, MakeFptr, Str);
@@ -2550,6 +2580,7 @@ ProcessLibs (
   //
   ProcessLibsSingle (ComponentFile, MakeFptr, LIBRARIES_PLATFORM_SECTION_NAME);
 
+  fprintf (MakeFptr, "\n\n");
   return STATUS_SUCCESS;
 }
 
@@ -2568,7 +2599,6 @@ ProcessLibsSingle (
 
   TempSect = DSCFileFindSection (ComponentFile, SectionName);
   if (TempSect != NULL) {
-    fprintf (MakeFptr, "LIBS = $(LIBS) ");
     while (DSCFileGetLine (ComponentFile, Str, sizeof (Str)) != NULL) {
       ExpandSymbols (Str, ExpandedLine, sizeof (ExpandedLine), 0);
       Cptr = StripLine (ExpandedLine);
@@ -2592,8 +2622,6 @@ ProcessLibsSingle (
         }
       }
     }
-
-    fprintf (MakeFptr, "\n\n");
   }
 
   return STATUS_SUCCESS;
@@ -2607,37 +2635,87 @@ ProcessIncludeFiles (
   )
 {
   INT8  Str[MAX_LINE_LEN];
-  INT8  *Platform;
   INT8  *Processor;
+  INT8  *Platform;
+  INT8  *SourceSelect;
+  INT8  *CStart;
+  INT8  *CEnd;
+  INT8  CSave;
+  INT8  *CopySourceSelect;
 
   //
   // Print a useful comment to the output makefile so the user knows where
   // the info came from
   //
-  fprintf (MakeFptr, "# Tool-generated include dependencies from any include files in the\n");
-  fprintf (MakeFptr, "# [sources.*] sections of the component INF file\n\n");
+  //fprintf (MakeFptr, "#\n# Tool-generated include dependencies from any include files in the\n");
+  //fprintf (MakeFptr, "# [sources.*] sections of the component INF file\n#\n");
 
   Processor = GetSymbolValue (PROCESSOR);
+  
   //
-  // Find all the include files in the [common.sources] and [common.$(PROCESSOR)]
-  // sections.
+  // See if they defined SOURCE_SELECT=xxx,yyy in which case we'll
+  // select each [sources.xxx] and [sources.yyy] files and process
+  // them.
   //
-  sprintf (Str, "%s.%s", SOURCES_SECTION_NAME, COMMON_SECTION_NAME);
-  ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
-  //
-  // Now process the [sources.$(PROCESSOR)] files.
-  //
-  sprintf (Str, "%s.%s", SOURCES_SECTION_NAME, Processor);
-  ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
-  //
-  // Now process the [sources.$(PROCESSOR).$(PLATFORM)] files.
-  //
-  Platform = GetSymbolValue (PLATFORM);
-  if (Platform != NULL) {
-    sprintf (Str, "sources.%s.%s", Processor, Platform);
-    ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
-  }
+  SourceSelect = GetSymbolValue (SOURCE_SELECT);
 
+  if (SourceSelect != NULL) {
+    //
+    // Make a copy of the string and break it up (comma-separated) and
+    // select each [sources.*] file from the INF.
+    //
+    CopySourceSelect = (INT8 *) malloc (strlen (SourceSelect) + 1);
+    if (CopySourceSelect == NULL) {
+      Error (NULL, 0, 0, NULL, "failed to allocate memory");
+      return STATUS_ERROR;
+    }
+
+    strcpy (CopySourceSelect, SourceSelect);
+    CStart  = CopySourceSelect;
+    CEnd    = CStart;
+    while (*CStart) {
+      CEnd = CStart + 1;
+      while (*CEnd && *CEnd != ',') {
+        CEnd++;
+      }
+
+      CSave = *CEnd;
+      *CEnd = 0;
+      sprintf (Str, "%s.%s", SOURCES_SECTION_NAME, CStart);
+      ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
+      //
+      // Restore the terminator and advance
+      //
+      *CEnd   = CSave;
+      CStart  = CEnd;
+      if (*CStart) {
+        CStart++;
+      }
+    }
+
+    free (CopySourceSelect);
+
+  } else {
+    //
+    // Find all the include files in the [sources.common] sections.
+    //
+    sprintf (Str, "%s.%s", SOURCES_SECTION_NAME, COMMON_SECTION_NAME);
+    ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
+    //
+    // Now process the [sources.$(PROCESSOR)] files.
+    //
+    sprintf (Str, "%s.%s", SOURCES_SECTION_NAME, Processor);
+    ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
+    //
+    // Now process the [sources.$(PROCESSOR).$(PLATFORM)] files.
+    //
+    Platform = GetSymbolValue (PLATFORM);
+    if (Platform != NULL) {
+      sprintf (Str, "sources.%s.%s", Processor, Platform);
+      ProcessIncludeFilesSingle (ComponentFile, MakeFptr, Str);
+    }
+  }
+  
   fprintf (MakeFptr, "\n");
   return STATUS_SUCCESS;
 }
@@ -2679,7 +2757,7 @@ ProcessIncludeFilesSingle (
         AddFileSymbols (FileName);
         File = GetFileParts (FileName);
         if ((File != NULL) && IsIncludeFile (FileName)) {
-          if (OverridePath != NULL) {
+          if ((OverridePath != NULL) && (!IsAbsolutePath (FileName))) {
             strcpy (TempFileName, OverridePath);
             strcat (TempFileName, "\\");
             strcat (TempFileName, FileName);
@@ -2704,15 +2782,11 @@ ProcessIncludeFilesSingle (
           //
           // If absolute path already, don't prepend source directory
           //
-          if (FileName[0] && (FileName[1] == ':')) {
-            //
-            // fprintf (MakeFptr, "INC_DEPS = $(INC_DEPS) %s\n", FileName);
-            //
-          } else {
-            //
-            // fprintf (MakeFptr, "INC_DEPS = $(INC_DEPS) $(SOURCE_DIR)\\%s\n", FileName);
-            //
-          }
+          // if (IsAbsolutePath (FileName)) {
+          //   fprintf (MakeFptr, "INC_DEPS = $(INC_DEPS) %s\n", FileName);
+          // } else {
+          //   fprintf (MakeFptr, "INC_DEPS = $(INC_DEPS) $(SOURCE_DIR)\\%s\n", FileName);
+          // }
         }
 
         FreeFileParts (File);
@@ -2850,7 +2924,7 @@ WriteCommonMakefile (
     fprintf (MakeFptr, "%s\n", MakefileHeader[i]);
   }
 
-  fprintf (MakeFptr, "# Hard-coded defines output by the tool\n");
+  fprintf (MakeFptr, "#\n# Hard-coded defines output by the tool\n#\n");
   //
   // First write the basics to the component's makefile. These includes
   // EFI_SOURCE, BIN_DIR, OUT_DIR, LIB_DIR, SOURCE_DIR, DEST_DIR.
@@ -2917,14 +2991,14 @@ WriteCommonMakefile (
     // Read lines, expand, then dump out
     //
     while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
-      ExpandSymbols (InLine, OutLine, sizeof (OutLine), 0);
+      ExpandSymbols (InLine, OutLine, sizeof (OutLine), EXPANDMODE_RECURSIVE);
       fprintf (MakeFptr, OutLine);
     }
   }
   //
   // Same thing for [makefile.$(PROCESSOR).$(PLATFORM)]
   //
-  Sym = GetSymbolValue (PROCESSOR);
+  Sym = GetSymbolValue (PLATFORM);
   if (Sym != NULL) {
     sprintf (InLine, "%s.%s.%s", MAKEFILE_SECTION_NAME, Processor, Sym);
     Sect = DSCFileFindSection (DSCFile, InLine);
@@ -2933,12 +3007,13 @@ WriteCommonMakefile (
       // Read lines, expand, then dump out
       //
       while (DSCFileGetLine (DSCFile, InLine, sizeof (InLine)) != NULL) {
-        ExpandSymbols (InLine, OutLine, sizeof (OutLine), 0);
+        ExpandSymbols (InLine, OutLine, sizeof (OutLine), EXPANDMODE_RECURSIVE);
         fprintf (MakeFptr, OutLine);
       }
     }
   }
-
+  
+  fprintf (MakeFptr, "\n");
   DSCFileRestorePosition (DSCFile);
   return 0;
 }
@@ -3171,6 +3246,7 @@ WriteCompileCommands (
           );
         fprintf (MakeFptr, OutLine);
       }
+      fprintf (MakeFptr, "\n");
     } else {
       //
       // Be nice and ignore include files
@@ -4442,7 +4518,7 @@ ProcessDSCDefinesSection (
   SECTION *Sect;
 
   //
-  // Look for a [defines.common] section and process it
+  // Look for a [defines] section and process it
   //
   Sect = DSCFileFindSection (DscFile, DEFINES_SECTION_NAME);
   if (Sect == NULL) {
@@ -4473,7 +4549,6 @@ ProcessDSCDefinesSection (
   return STATUS_SUCCESS;
 }
 
-static
 int
 IsAbsolutePath (
   char    *FileName

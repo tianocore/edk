@@ -99,6 +99,8 @@ typedef struct {
 
 #define KEYBOARD_CONSOLE_IN_DEV_FROM_THIS(a)  CR (a, KEYBOARD_CONSOLE_IN_DEV, ConIn, KEYBOARD_CONSOLE_IN_DEV_SIGNATURE)
 
+#define TABLE_END 0x0
+
 //
 // Global Variables
 //
@@ -155,7 +157,7 @@ Returns:
 #define SCANCODE_CAPS_LOCK_MAKE         0x3A
 #define SCANCODE_NUM_LOCK_MAKE          0x45
 #define SCANCODE_SCROLL_LOCK_MAKE       0x46
-#define SCANCODE_MAX_MAKE               0x54
+#define SCANCODE_MAX_MAKE               0x59
 
 //
 // Other functions that are used among .c files

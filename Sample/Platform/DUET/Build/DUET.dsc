@@ -260,7 +260,6 @@ Sample\Csm\LegacyBiosThunk\Dxe\LegacyBiosThunk.inf
 #
 Sample\Csm\BiosThunk\Video\Dxe\$(UEFI_PREFIX)BiosVideo.inf    FV=NULL
 Sample\Bus\Pci\VgaMiniPort\Dxe\VgaMiniPort.inf
-#Sample\Bus\Pci\CirrusLogic\Dxe\CirrusLogic5430.inf
 
 #
 # Console Support

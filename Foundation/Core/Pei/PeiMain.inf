@@ -51,7 +51,6 @@ COMPONENT_TYPE       = PEI_CORE
 
 [includes.common]
   $(EDK_SOURCE)\Foundation
-  $(EDK_SOURCE)\Sample\Platform\Nt32
   $(EDK_SOURCE)\Foundation\Framework
   $(EDK_SOURCE)\Foundation\Efi
   .
@@ -65,6 +64,9 @@ COMPONENT_TYPE       = PEI_CORE
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
   $(EDK_SOURCE)\Foundation\Core\Pei\Include
   $(EDK_SOURCE)\Framework
+
+[includes.ia32.Nt32]
+  $(EDK_SOURCE)\Sample\Platform\Nt32
 
 [libraries.common]
   EdkPpiLib

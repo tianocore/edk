@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -31,8 +31,6 @@ Abstract:
 //
 #include EFI_GUID_DEFINITION (Hob)
 #include EFI_GUID_DEFINITION (AcpiDescription)
-
-extern EFI_ACPI_DESCRIPTION      mAcpiDescription;
 
 EFI_STATUS
 EFIAPI
@@ -68,7 +66,8 @@ AcpiResetSystem (
   IN EFI_RESET_TYPE   ResetType,
   IN EFI_STATUS       ResetStatus,
   IN UINTN            DataSize,
-  IN CHAR16           *ResetData OPTIONAL
+  IN CHAR16           *ResetData, OPTIONAL
+  IN EFI_ACPI_DESCRIPTION *AcpiDescription
   )
 /*++
 
@@ -82,18 +81,17 @@ Arguments:
     ResetStatus - possible cause of reset
     DataSize - Size of ResetData in bytes
     ResetData - Optional Unicode string
-    For details, see efiapi.h
+    AcpiDescription - Global variable to record reset info
 
 Returns:
   Does not return if the reset takes place.
-  EFI_INVALID_PARAMETER   If ResetType is invalid.
 
 --*/
 ;
 
 EFI_ACPI_DESCRIPTION *
 GetAcpiDescription (
-  VOID
+  IN EFI_ACPI_DESCRIPTION *AcpiDescription
   );
 
 #endif

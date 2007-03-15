@@ -75,10 +75,6 @@ Returns:
   }
 
   do {
-    if (Count >= CHARACTER_NUMBER_FOR_VALUE - 1) {
-      break;
-    }
-
     Index = ((UINTN)Value & 0xf);
     *(TempStr++) = mHexStr[Index];
     Value = RShiftU64 (Value, 4);
@@ -101,9 +97,14 @@ Returns:
   //
   // Reverse temp string into Buffer.
   //
+  if (Width > 0 && (UINTN) (TempStr - TempBuffer) > Width) {
+    TempStr = TempBuffer + Width;
+  }
+  Index = 0;
   while (TempStr != TempBuffer) {
     *(BufferPtr++) = *(--TempStr);
-  }  
+    Index++;
+  }
     
   *BufferPtr = 0;
   return Index;
@@ -165,10 +166,6 @@ Returns:
   }
 
   do {
-    if (Count >= CHARACTER_NUMBER_FOR_VALUE - 1) {
-      break;
-    }
-
     Value = (INT64)DivU64x32 ((UINT64)Value, 10, &Remainder);
     *(TempStr++) = (CHAR16)(Remainder + '0');
     ValueCharNum++;
@@ -186,7 +183,7 @@ Returns:
     Count++;
   }
 
-  if (Flags & PREFIX_ZERO) {
+  if ((Flags & PREFIX_ZERO) && !ValueIsNegative) {
     Prefix = '0';
   } else { 
     Prefix = ' ';
@@ -202,8 +199,13 @@ Returns:
   //
   // Reverse temp string into Buffer.
   //
+  if (Width > 0 && (UINTN) (TempStr - TempBuffer) > Width) {
+    TempStr = TempBuffer + Width;
+  }
+  Index = 0;
   while (TempStr != TempBuffer) {
     *(BufferPtr++) = *(--TempStr);
+    Index++;
   }
 
   *BufferPtr = 0;

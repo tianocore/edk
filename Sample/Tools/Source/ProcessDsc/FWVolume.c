@@ -30,10 +30,10 @@ Abstract:
 #include "DSCFile.h"
 #include "FWVolume.h"
 
-#define FV_INF_DIR          "FV_INF_DIR"    // where we create the INF file
+#define FV_INF_DIR          "FV_INF_DIR"    // symbol for where we create the FV INF file
 #define FV_FILENAME         "FV_FILENAME"   // symbol for the current FV.INF filename
 #define EFI_BASE_ADDRESS    "EFI_BASE_ADDRESS"
-#define DEFAULT_FV_INF_DIR  "FV"            // where we create the INF file
+#define DEFAULT_FV_INF_DIR  "FV"            // default dir for where we create the FV INF file
 #define DEFAULT_FV_DIR      "$(BUILD_DIR)"  // where the FV file comes from
 #define MALLOC(size)        malloc (size)
 #define FREE(ptr)           free (ptr)
@@ -364,7 +364,7 @@ Returns:
   // it's not a full pathname.
   // See if they overrode the default base directory for the FV files.
   //
-  if (Name[1] != ':') {
+  if (!IsAbsolutePath (Name)) {
     Sym = GetSymbolValue (FV_DIR);
     if (Sym == NULL) {
       Sym = DEFAULT_FV_DIR;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,7 @@ Abstract:
 
 #define EFI_ACPI_DESCRIPTION_GUID \
   { \
-    0x2cb4113c, 0x91bb, 0x49ee, 0x9c, 0x7d, 0x60, 0xc9, 0x21, 0xa2, 0x31, 0x72 \
+    0x3c699197, 0x93c, 0x4c69, 0xb0, 0x6b, 0x12, 0x8a, 0xe3, 0x48, 0x1d, 0xc9 \
   }
 
 typedef struct {
@@ -88,13 +88,37 @@ typedef struct _EFI_ACPI_DESCRIPTION {
   UINT8                                    SLP_TYPa;
   UINT8                                    SLP_TYPb;
 
-/*
+  //
+  // For sleep
+  //
+  UINT8                                    SLP1_TYPa;
+  UINT8                                    SLP1_TYPb;
+  UINT8                                    SLP2_TYPa;
+  UINT8                                    SLP2_TYPb;
+  UINT8                                    SLP3_TYPa;
+  UINT8                                    SLP3_TYPb;
+  UINT8                                    SLP4_TYPa;
+  UINT8                                    SLP4_TYPb;
+
+  //
+  // GPE
+  //
   EFI_ACPI_GENERIC_ADDRESS_STRUCTURE       GPE0_BLK;
   EFI_ACPI_GENERIC_ADDRESS_STRUCTURE       GPE1_BLK;
   UINT8                                    GPE0_BLK_LEN;
   UINT8                                    GPE1_BLK_LEN;
   UINT8                                    GPE1_BASE;
-*/
+
+  //
+  // IAPC Boot Arch
+  //
+  UINT16                                   IAPC_BOOT_ARCH;
+
+  //
+  // Flags
+  //
+  UINT32                                   Flags;
+
 } EFI_ACPI_DESCRIPTION;
 #pragma pack()
 

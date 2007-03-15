@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -290,7 +290,6 @@ Returns:
   EFI_PHYSICAL_ADDRESS                      BaseOfStack;
   EFI_PHYSICAL_ADDRESS                      BspStore;
   EFI_GUID                                  DxeCoreFileName;
-  EFI_GUID                                  FirmwareFileName;
   VOID                                      *Pe32Data;
   VOID                                      *Interface;
   EFI_PHYSICAL_ADDRESS                      DxeCoreAddress;
@@ -506,22 +505,6 @@ Returns:
     //
   }
   
-  //
-  // Find the EFI_FV_FILETYPE_RAW type compressed Firmware Volume file in FTW spare block
-  // The file found will be processed by PeiProcessFile: It will first be decompressed to
-  // a normal FV, then a corresponding FV type hob will be built which is provided for DXE
-  // core to find and dispatch drivers in this FV. Because PeiProcessFile typically checks
-  // for EFI_FV_FILETYPE_DXE_CORE type file, in this condition we need not check returned 
-  // status
-  //
-  Status = PeiFindFile (
-            PeiServices,
-            EFI_FV_FILETYPE_RAW,
-            EFI_SECTION_PE32,
-            &FirmwareFileName,
-            &Pe32Data
-            );
-                             
   //
   // Find the DXE Core in a Firmware Volume
   //

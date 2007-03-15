@@ -79,67 +79,67 @@ loader :      \
 # Generate loader object
 #
 $(BIN_DIR)\BootSect.obj: $(BUILD_DIR)\..\Loader\BootSector\BootSect.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\BootSect.obj $(BUILD_DIR)\..\Loader\BootSector\BootSect.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\BootSect.obj $(BUILD_DIR)\..\Loader\BootSector\BootSect.asm 
 
 $(BIN_DIR)\BootSect.com: $(BIN_DIR)\BootSect.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny BootSect.obj,BootSect.com,BootSect.map,,,
+  $(ASMLINK16) /tiny BootSect.obj,BootSect.com,BootSect.map,,,
 
 $(BIN_DIR)\Bs16.obj: $(BUILD_DIR)\..\Loader\BootSector\Bs16.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Bs16.obj $(BUILD_DIR)\..\Loader\BootSector\Bs16.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Bs16.obj $(BUILD_DIR)\..\Loader\BootSector\Bs16.asm 
 
 $(BIN_DIR)\Bs16.com: $(BIN_DIR)\Bs16.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Bs16.obj,Bs16.com,Bs16.map,,,
+  $(ASMLINK16) /tiny Bs16.obj,Bs16.com,Bs16.map,,,
 
 $(BIN_DIR)\Bs32.obj: $(BUILD_DIR)\..\Loader\BootSector\Bs32.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Bs32.obj $(BUILD_DIR)\..\Loader\BootSector\Bs32.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Bs32.obj $(BUILD_DIR)\..\Loader\BootSector\Bs32.asm 
 
 $(BIN_DIR)\Bs32.com: $(BIN_DIR)\Bs32.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Bs32.obj,Bs32.com,Bs32.map,,,
+  $(ASMLINK16) /tiny Bs32.obj,Bs32.com,Bs32.map,,,
 
 $(BIN_DIR)\Gpt.obj: $(BUILD_DIR)\..\Loader\BootSector\Gpt.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Gpt.obj $(BUILD_DIR)\..\Loader\BootSector\Gpt.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Gpt.obj $(BUILD_DIR)\..\Loader\BootSector\Gpt.asm 
 
 $(BIN_DIR)\Gpt.com: $(BIN_DIR)\Gpt.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Gpt.obj,Gpt.com,Gpt.map,,,
+  $(ASMLINK16) /tiny Gpt.obj,Gpt.com,Gpt.map,,,
 
 $(BIN_DIR)\Mbr.obj: $(BUILD_DIR)\..\Loader\BootSector\Mbr.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Mbr.obj $(BUILD_DIR)\..\Loader\BootSector\Mbr.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Mbr.obj $(BUILD_DIR)\..\Loader\BootSector\Mbr.asm 
 
 $(BIN_DIR)\Mbr.com: $(BIN_DIR)\Mbr.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Mbr.obj,Mbr.com,Mbr.map,,,
+  $(ASMLINK16) /tiny Mbr.obj,Mbr.com,Mbr.map,,,
 
 $(BIN_DIR)\Start.obj: $(BUILD_DIR)\..\Loader\BootSector\Start.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Start.obj $(BUILD_DIR)\..\Loader\BootSector\Start.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Start.obj $(BUILD_DIR)\..\Loader\BootSector\Start.asm 
 
 $(BIN_DIR)\Start.com: $(BIN_DIR)\Start.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Start.obj,Start.com,Start.map,,,
+  $(ASMLINK16) /tiny Start.obj,Start.com,Start.map,,,
 
 $(BIN_DIR)\Start16.obj: $(BUILD_DIR)\..\Loader\BootSector\Start16.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Start16.obj $(BUILD_DIR)\..\Loader\BootSector\Start16.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Start16.obj $(BUILD_DIR)\..\Loader\BootSector\Start16.asm 
 
 $(BIN_DIR)\Start16.com: $(BIN_DIR)\Start16.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Start16.obj,Start16.com,Start16.map,,,
+  $(ASMLINK16) /tiny Start16.obj,Start16.com,Start16.map,,,
 
 $(BIN_DIR)\Start32.obj: $(BUILD_DIR)\..\Loader\BootSector\Start32.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Start32.obj $(BUILD_DIR)\..\Loader\BootSector\Start32.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Start32.obj $(BUILD_DIR)\..\Loader\BootSector\Start32.asm 
 
 $(BIN_DIR)\Start32.com: $(BIN_DIR)\Start32.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Start32.obj,Start32.com,Start32.map,,,
+  $(ASMLINK16) /tiny Start32.obj,Start32.com,Start32.map,,,
 
 $(BIN_DIR)\Efi32.obj: $(BUILD_DIR)\..\Loader\BootSector\Efi32.asm
-  $(ASM) /c /omf /Fo$(BIN_DIR)\Efi32.obj $(BUILD_DIR)\..\Loader\BootSector\Efi32.asm 
+  $(ASM16) /c /omf /Fo$(BIN_DIR)\Efi32.obj $(BUILD_DIR)\..\Loader\BootSector\Efi32.asm 
 
 $(BIN_DIR)\Efi32.com: $(BIN_DIR)\Efi32.obj
   cd $(BIN_DIR)
-  $(ASMLINK) /tiny Efi32.obj,Efi32.com,Efi32.map,,,
+  $(ASMLINK16) /tiny Efi32.obj,Efi32.com,Efi32.map,,,
 
 $(BIN_DIR)\Efi32.com2: $(BIN_DIR)\Efi32.com
   $(TOOLBIN_DIR)\Splitfile $(BIN_DIR)\Efi32.com 135168

@@ -15,7 +15,7 @@ Module Name:
 
 Abstract:
 
-  ACPI 3.0 definitions from the ACPI Specification Revision 3.0 September 2, 2004
+  ACPI 3.0 definitions from the ACPI Specification Revision 3.0
 
 --*/
 
@@ -25,8 +25,7 @@ Abstract:
 //
 // Statements that include other files
 //
-#include "Tiano.h"
-#include "Acpi.h"
+#include "AcpiCommon.h"
 
 //
 // Ensure proper structure formats
@@ -35,11 +34,8 @@ Abstract:
 //
 // ACPI Specification Revision
 //
-#define EFI_ACPI_3_0_REVISION 0x03  // BUGBUG: Not in spec yet.
-//
-// BUGBUG: OEM values need to be moved somewhere else, probably read from data hub
-// and produced by a platform specific driver.
-//
+#define EFI_ACPI_3_0_REVISION 0x03
+
 //
 // ACPI 3.0 Generic Address Space definition
 //
@@ -91,7 +87,7 @@ typedef struct {
 //
 // RSD_PTR Revision (as defined in ACPI 3.0 spec.)
 //
-#define EFI_ACPI_3_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION 0x02  // ACPISpec30 (Revision 3.0 September 2, 2004) says current value is 2
+#define EFI_ACPI_3_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION 0x02  // ACPISpec30 (Revision 3.0) says current value is 2
 //
 // Common table header, this prefaces all ACPI tables, including FACS, but
 // excluding the RSD PTR structure

@@ -495,9 +495,14 @@ Returns:
   //
   // Reverse temp string into Buffer.
   //
+  if (Width > 0 && (UINTN) (TempStr - TempBuffer) > Width) {
+    TempStr = TempBuffer + Width;
+  }
+  Index = 0;
   while (TempStr != TempBuffer) {
     *(BufferPtr++) = *(--TempStr);
-  }  
+    Index++;
+  }
     
   *BufferPtr = 0;
   return Index;
@@ -540,6 +545,7 @@ Returns:
   UINTN   NumberCount;
   UINTN   Remainder;
   BOOLEAN Negative;
+  UINTN   Index;
 
   Negative    = FALSE;
   TempStr     = TempBuffer;
@@ -573,12 +579,16 @@ Returns:
   //
   // Reverse temp string into Buffer.
   //
+  if (Width > 0 && (UINTN) (TempStr - TempBuffer) > Width) {
+    TempStr = TempBuffer + Width;
+  }
+  Index = 0;
   while (TempStr != TempBuffer) {
     *(BufferPtr++) = *(--TempStr);
   }  
 
   *BufferPtr = 0;
-  return Count;
+  return Index;
 }
 
 STATIC

@@ -149,7 +149,6 @@ Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
 #
 # Following are the DXE drivers (alphabetical order)
 #
-Sample\Bus\Pci\CirrusLogic\Dxe\CirrusLogic5430.inf
 Sample\Platform\Generic\Dxe\ConPlatform\ConPlatform.inf
 Sample\Universal\Console\ConSplitter\Dxe\ConSplitter.inf
 Sample\Universal\DataHub\DataHub\Dxe\DataHub.inf

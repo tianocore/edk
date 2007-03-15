@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -305,6 +305,7 @@ typedef struct {
 #define PCI_PRIMARY_STATUS_OFFSET                   0x06
 #define PCI_REVISION_ID_OFFSET                      0x08
 #define PCI_CLASSCODE_OFFSET                        0x09
+#define PCI_SUBCLASSCODE_OFFSET                     0x0A
 #define PCI_CACHELINE_SIZE_OFFSET                   0x0C
 #define PCI_LATENCY_TIMER_OFFSET                    0x0D
 #define PCI_HEADER_TYPE_OFFSET                      0x0E
@@ -549,8 +550,6 @@ typedef struct {
 // NOTE: The following header files are included here for
 // compatibility consideration.
 //
-#include "pci23.h"
-#include "pci30.h"
 #include "EfiPci.h"
 
 #endif

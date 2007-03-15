@@ -36,7 +36,6 @@ COMPONENT_TYPE=   LIBRARY
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
 
 [nmake.common]
-C_STD_INCLUDE=
 
 [sources.common]
   AcpiS3Save\AcpiS3Save.h
