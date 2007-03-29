@@ -20,9 +20,9 @@ Abstract:
 
 --*/
 
-#include "EdkIIGlueBase.h"
+#include "BasePeCoffLibInternals.h"
 
-
+#define EFI_IMAGE_MACHINE_IPF EFI_IMAGE_MACHINE_IA64
 
 #define EXT_IMM64(Value, Address, Size, InstPos, ValPos)  \
     Value |= (((UINT64)((*(Address) >> InstPos) & (((UINT64)1 << Size) - 1))) << ValPos)
@@ -242,7 +242,7 @@ PeCoffLoaderImageFormatSupported (
   IN  UINT16  Machine
   )
 {
-  if ((Machine == EFI_IMAGE_MACHINE_IA64) || (Machine == EFI_IMAGE_MACHINE_IA32) ||
+  if ((Machine == EFI_IMAGE_MACHINE_IPF) || (Machine == EFI_IMAGE_MACHINE_IA32) ||
       (Machine ==  EFI_IMAGE_MACHINE_EBC) || (Machine == EFI_IMAGE_MACHINE_X64)) {
     return TRUE;
   }

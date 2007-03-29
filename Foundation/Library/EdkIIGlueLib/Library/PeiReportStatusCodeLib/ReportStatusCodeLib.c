@@ -50,6 +50,7 @@ Abstract:
   @retval  EFI_UNSUPPORTED       Status Code Protocol is not available.
 
 **/
+STATIC
 EFI_STATUS
 InternalReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     Type,
@@ -112,8 +113,8 @@ GlueCodeTypeToPostCode (
   //
   if (((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_PROGRESS_CODE) ||
       ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_ERROR_CODE)       ) {
-    *PostCode  = (UINT8) (((Value & EFI_STATUS_CODE_CLASS_MASK) >> 24) << 5);
-    *PostCode |= (UINT8) (((Value & EFI_STATUS_CODE_SUBCLASS_MASK) >> 16) & 0x1f);
+    *PostCode  = (UINT8) ((((Value & EFI_STATUS_CODE_CLASS_MASK) >> 24) << 5) |
+                          (((Value & EFI_STATUS_CODE_SUBCLASS_MASK) >> 16) & 0x1f));
     return TRUE;
   }
   return FALSE;
@@ -478,7 +479,7 @@ GlueReportProgressCodeEnabled (
   VOID
   )
 {
-  return ((PcdGet8(PcdReportStatusCodePropertyMask) & REPORT_STATUS_CODE_PROPERTY_PROGRESS_CODE_ENABLED) != 0);
+  return (BOOLEAN) ((PcdGet8(PcdReportStatusCodePropertyMask) & REPORT_STATUS_CODE_PROPERTY_PROGRESS_CODE_ENABLED) != 0);
 }
 
 
@@ -500,7 +501,7 @@ GlueReportErrorCodeEnabled (
   VOID
   )
 {
-  return ((PcdGet8(PcdReportStatusCodePropertyMask) & REPORT_STATUS_CODE_PROPERTY_ERROR_CODE_ENABLED) != 0);
+  return (BOOLEAN) ((PcdGet8(PcdReportStatusCodePropertyMask) & REPORT_STATUS_CODE_PROPERTY_ERROR_CODE_ENABLED) != 0);
 }
 
 
@@ -522,5 +523,5 @@ GlueReportDebugCodeEnabled (
   VOID
   )
 {
-  return ((PcdGet8(PcdReportStatusCodePropertyMask) & REPORT_STATUS_CODE_PROPERTY_DEBUG_CODE_ENABLED) != 0);
+  return (BOOLEAN) ((PcdGet8(PcdReportStatusCodePropertyMask) & REPORT_STATUS_CODE_PROPERTY_DEBUG_CODE_ENABLED) != 0);
 }

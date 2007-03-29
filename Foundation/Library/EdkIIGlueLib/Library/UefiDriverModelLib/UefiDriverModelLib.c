@@ -155,9 +155,9 @@ UefiDriverModelLibConstructor (
 /**
   The destructor function uninstalls the standard EFI Driver Model Protocols.
 
-  @param[in] ImageHandle The firmware allocated handle for the EFI image.  
+  @param[in] ImageHandle The firmware allocated handle for the EFI image.
   @param[in] SystemTable A pointer to the EFI System Table.
-  
+
   @retval EFI_SUCCESS The destructor always return EFI_SUCCESS.
 
 **/

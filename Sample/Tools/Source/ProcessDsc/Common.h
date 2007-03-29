@@ -104,12 +104,6 @@ ExpandSymbols (
   );
 
 void
-FatalError (
-  INT8 *Fmt,
-  ...
-  );
-
-void
 Message (
   UINT32  PrintMask,
   INT8    *Fmt,

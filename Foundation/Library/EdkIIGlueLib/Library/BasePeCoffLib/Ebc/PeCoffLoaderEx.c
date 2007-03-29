@@ -20,7 +20,7 @@ Abstract:
 
 --*/
 
-#include "EdkIIGlueBase.h"
+#include "BasePeCoffLibInternals.h"
 
 /**
   Performs an EBC specific relocation fixup.
@@ -72,6 +72,7 @@ PeCoffLoaderImageFormatSupported (
   return FALSE;
 }
 
+
 /**
   Performs an Itanium-based specific re-relocation fixup and is a no-op on other
   instruction sets. This is used to re-relocated the image into the EFI virtual
@@ -95,4 +96,3 @@ GluePeHotRelocateImageEx (
 {
   return RETURN_UNSUPPORTED;
 }
-

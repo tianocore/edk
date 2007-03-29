@@ -1972,12 +1972,28 @@ Returns:
   UINTN                 UnalignedBytes;
   EFI_STATUS            Status;
 
+  FrameBufferAddr = (UINTN) MemAddress + (DestinationY * BytesPerScanLine) + DestinationX * VbePixelWidth;
+
+  //
+  // If TotalBytes is less than 4 bytes, only start byte copy.
+  //
+  if (TotalBytes < 4) {
+    Status = PciIo->Mem.Write (
+                     PciIo,
+                     EfiPciIoWidthUint8,
+                     EFI_PCI_IO_PASS_THROUGH_BAR,
+                     (UINT64) FrameBufferAddr,
+                     TotalBytes,
+                     VbeBuffer
+                     );
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+
   //
   // If VbeBuffer is not 4-byte aligned, start byte copy.
   //
-
-  UnalignedBytes  = 4 - ((UINTN) VbeBuffer & 0x3);
-  FrameBufferAddr = (UINTN) MemAddress + (DestinationY * BytesPerScanLine) + DestinationX * VbePixelWidth;
+  UnalignedBytes  = (4 - ((UINTN) VbeBuffer & 0x3)) & 0x3;
 
   if (UnalignedBytes != 0) {
     Status = PciIo->Mem.Write (
@@ -1987,7 +2003,7 @@ Returns:
                      (UINT64) FrameBufferAddr,
                      UnalignedBytes,
                      VbeBuffer
-                );
+                     );
     ASSERT_EFI_ERROR (Status);
     FrameBufferAddr += UnalignedBytes;
     VbeBuffer       += UnalignedBytes;

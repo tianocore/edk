@@ -40,5 +40,5 @@ SwapBytes16 (
   IN      UINT16                    Operand
   )
 {
-  return (Operand << 8) | (Operand >> 8);
+  return (UINT16) ((Operand << 8) | (Operand >> 8));
 }

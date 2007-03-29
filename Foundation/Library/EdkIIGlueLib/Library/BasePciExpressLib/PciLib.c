@@ -47,6 +47,7 @@ Abstract:
   @return The base address of PCI Express.
 
 **/
+STATIC
 volatile VOID*
 GetPciExpressBaseAddress (
   VOID

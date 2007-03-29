@@ -25,8 +25,8 @@ Abstract:
 
 /**
   The function returns the pointer to PEI services.
-  
-  The function returns the pointer to PEI services. 
+
+  The function returns the pointer to PEI services.
   It will ASSERT() if the pointer to PEI services is NULL.
 
   @retval  The pointer to PeiServices.

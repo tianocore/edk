@@ -20,68 +20,7 @@ Abstract:
 
 --*/
 
-#include "EdkIIGlueBase.h"
-
-
-/**
-  Performs an Itanium-based specific relocation fixup and is a no-op on other
-  instruction sets.
-
-  @param  Reloc       Pointer to the relocation record.
-  @param  Fixup       Pointer to the address to fix up.
-  @param  FixupData   Pointer to a buffer to log the fixups.
-  @param  Adjust      The offset to adjust the fixup.
-
-  @return Status code.
-
-**/
-RETURN_STATUS
-GluePeCoffLoaderRelocateImageEx (
-  IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup,
-  IN OUT CHAR8   **FixupData,
-  IN UINT64      Adjust
-  );
-
-
-/**
-  Performs an Itanium-based specific re-relocation fixup and is a no-op on other
-  instruction sets. This is used to re-relocated the image into the EFI virtual
-  space for runtime calls.
-
-  @param  Reloc       Pointer to the relocation record.
-  @param  Fixup       Pointer to the address to fix up.
-  @param  FixupData   Pointer to a buffer to log the fixups.
-  @param  Adjust      The offset to adjust the fixup.
-
-  @return Status code.
-
-**/
-RETURN_STATUS
-GluePeHotRelocateImageEx (
-  IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup,
-  IN OUT CHAR8   **FixupData,
-  IN UINT64      Adjust
-  );
-
-
-/**
-  Returns TRUE if the machine type of PE/COFF image is supported. Supported
-  does not mean the image can be executed it means the PE/COFF loader supports
-  loading and relocating of the image type. It's up to the caller to support
-  the entry point.
-
-  @param  Machine   Machine type from the PE Header.
-
-  @return TRUE if this PE/COFF loader can load the image
-
-**/
-BOOLEAN
-PeCoffLoaderImageFormatSupported (
-  IN  UINT16  Machine
-  );
-
+#include "BasePeCoffLibInternals.h"
 
 /**
   Retrieves the magic value from the PE/COFF header.
@@ -304,7 +243,7 @@ GluePeCoffLoaderGetImageInfo (
       ImageContext->ImageAddress = Hdr.Pe32Plus->OptionalHeader.ImageBase;
     }
   } else {
-    ImageContext->ImageAddress = (PHYSICAL_ADDRESS)(Hdr.Te->ImageBase);
+    ImageContext->ImageAddress = (PHYSICAL_ADDRESS)(Hdr.Te->ImageBase + Hdr.Te->StrippedSize - sizeof (EFI_TE_IMAGE_HEADER));
   }
 
   //
@@ -396,7 +335,7 @@ GluePeCoffLoaderGetImageInfo (
       }
 
       if (DebugDirectoryEntryFileOffset != 0) {
-        for (Index = 0; Index < DebugDirectoryEntry->Size; Index++) {
+        for (Index = 0; Index < DebugDirectoryEntry->Size; Index += sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) {
           //
           // Read next debug directory entry
           //
@@ -411,9 +350,8 @@ GluePeCoffLoaderGetImageInfo (
             ImageContext->ImageError = IMAGE_ERROR_IMAGE_READ;
             return Status;
           }
-
           if (DebugEntry.Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
-            ImageContext->DebugDirectoryEntryRva = (UINT32) (DebugDirectoryEntryRva + Index * sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY));
+            ImageContext->DebugDirectoryEntryRva = (UINT32) (DebugDirectoryEntryRva + Index);
             if (DebugEntry.RVA == 0 && DebugEntry.FileOffset != 0) {
               ImageContext->ImageSize += DebugEntry.SizeOfData;
             }
@@ -485,7 +423,7 @@ GluePeCoffLoaderGetImageInfo (
     }
 
     if (DebugDirectoryEntryFileOffset != 0) {
-      for (Index = 0; Index < DebugDirectoryEntry->Size; Index++) {
+      for (Index = 0; Index < DebugDirectoryEntry->Size; Index += sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) {
         //
         // Read next debug directory entry
         //
@@ -502,7 +440,7 @@ GluePeCoffLoaderGetImageInfo (
         }
 
         if (DebugEntry.Type == EFI_IMAGE_DEBUG_TYPE_CODEVIEW) {
-          ImageContext->DebugDirectoryEntryRva = (UINT32) (DebugDirectoryEntryRva + Index * sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY));
+          ImageContext->DebugDirectoryEntryRva = (UINT32) (DebugDirectoryEntryRva + Index);
           return RETURN_SUCCESS;
         }
       }
@@ -604,8 +542,11 @@ GluePeCoffLoaderRelocateImage (
   //
   if (ImageContext->DestinationAddress != 0) {
     BaseAddress = ImageContext->DestinationAddress;
-  } else {
+  } else if (!(ImageContext->IsTeImage)) {
     BaseAddress = ImageContext->ImageAddress;
+  } else {
+    Hdr.Te      = (EFI_TE_IMAGE_HEADER *)(UINTN)(ImageContext->ImageAddress);
+    BaseAddress = ImageContext->ImageAddress + sizeof (EFI_TE_IMAGE_HEADER) - Hdr.Te->StrippedSize; 
   }
 
   if (!(ImageContext->IsTeImage)) {

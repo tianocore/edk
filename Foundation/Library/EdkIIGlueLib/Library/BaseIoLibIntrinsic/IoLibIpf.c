@@ -21,8 +21,7 @@ Abstract:
 
 #include "EdkIIGlueBase.h"
 
-
-#define BIT63                0x8000000000000000ULL
+#define  BIT63    0x8000000000000000UL
 
 #define MAP_PORT_BASE_TO_MEM(_Port) \
     ((((_Port) & 0xfffc) << 10) | ((_Port) & 0x0fff))

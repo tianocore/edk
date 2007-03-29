@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation
+Copyright (c) 2006 - 2007, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -226,6 +226,9 @@ Returns:
   UINT32  EECP;
   UINT32  Value;
   UINT32  TimeOut;
+  BOOLEAN NotOwnedByThisDriver;
+
+  NotOwnedByThisDriver = FALSE;
 
   ReadEhcCapabiltiyReg (
     HcDev,
@@ -266,6 +269,10 @@ Returns:
                      &Value 
                      );
 
+  if ((Value & (0x1 << 24)) == 0) {
+    NotOwnedByThisDriver = TRUE;
+  }
+
   Value = Value | (0x1 << 24);
   DEBUG((gEHCErrorLevel, "Value Written = 0x%x\n", Value));
 
@@ -277,21 +284,21 @@ Returns:
                      &Value 
                      );
 
- TimeOut = 40;
- while (TimeOut --) {
-   gBS->Stall (500);
+  TimeOut = 40;
+  while (TimeOut --) {
+    gBS->Stall (500);
 
-   HcDev->PciIo->Pci.Read (
+    HcDev->PciIo->Pci.Read (
                       HcDev->PciIo,
                       EfiPciIoWidthUint32,
                       EECP,
                       1,
                       &Value 
                       );
-  if ((Value & 0x01010000) == 0x01000000) {
-    break;
+    if ((Value & 0x01010000) == 0x01000000) {
+      break;
+    }
   }
- }
 
   if (TimeOut == 0) {
     DEBUG((gEHCErrorLevel, "Timeout for getting HC OS Owned Semaphore\n" ));
@@ -320,6 +327,14 @@ Returns:
   DEBUG((gEHCDebugLevel, "EECP[4] = 0x%x\n", Value));
 
 
+  //
+  // Reset Host only if EHCI not owned by this driver
+  //
+  if (NotOwnedByThisDriver) {
+    HostReset (HcDev);
+  }
+
+  return ;
 }
 
 EFI_STATUS

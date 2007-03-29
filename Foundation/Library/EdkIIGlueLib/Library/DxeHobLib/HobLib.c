@@ -197,6 +197,30 @@ GlueGetFirstGuidHob (
 }
 
 /**
+  Get the Boot Mode from the HOB list.
+
+  This function returns the system boot mode information from the 
+  PHIT HOB in HOB list.
+
+  @param  VOID
+
+  @return The Boot Mode.
+
+**/
+EFI_BOOT_MODE
+EFIAPI
+GetBootModeHob (
+  VOID
+  )
+{
+  EFI_HOB_HANDOFF_INFO_TABLE    *HandOffHob;
+
+  HandOffHob = (EFI_HOB_HANDOFF_INFO_TABLE *) GetHobList ();
+
+  return  HandOffHob->BootMode;
+}
+
+/**
   Builds a HOB for a loaded PE32 module.
 
   This function builds a HOB for a loaded PE32 module.

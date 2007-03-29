@@ -174,6 +174,32 @@ GlueGetFirstGuidHob (
 }
 
 /**
+  Get the Boot Mode from the HOB list.
+
+  This function returns the system boot mode information from the 
+  PHIT HOB in HOB list.
+
+  @param  VOID
+
+  @return The Boot Mode.
+
+**/
+EFI_BOOT_MODE
+EFIAPI
+GetBootModeHob (
+  VOID
+  )
+{
+  EFI_STATUS             Status;
+  EFI_BOOT_MODE          BootMode;
+
+  Status = PeiServicesGetBootMode (&BootMode);
+  ASSERT_EFI_ERROR (Status);
+
+  return BootMode;
+}
+
+/**
   Adds a new HOB to the HOB List.
 
   This internal function enables PEIMs to create various types of HOBs.
@@ -184,6 +210,7 @@ GlueGetFirstGuidHob (
   @return The address of new HOB.
 
 **/
+STATIC
 VOID *
 InternalPeiCreateHob (
   IN UINT16                      Type,
@@ -374,7 +401,7 @@ BuildFvHob (
   //
   // Check FV Signature
   //
-  PEI_ASSERT (GetPeiServicesTablePointer(), ((EFI_FIRMWARE_VOLUME_HEADER*)((UINTN)BaseAddress))->Signature == EFI_FVH_SIGNATURE);
+  ASSERT (((EFI_FIRMWARE_VOLUME_HEADER*)((UINTN)BaseAddress))->Signature == EFI_FVH_SIGNATURE);
   Hob = InternalPeiCreateHob (EFI_HOB_TYPE_FV, sizeof (EFI_HOB_FIRMWARE_VOLUME));
 
   Hob->BaseAddress = BaseAddress;

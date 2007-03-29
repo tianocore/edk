@@ -262,8 +262,8 @@ GlueDevicePathFromHandle (
 EFI_DEVICE_PATH_PROTOCOL *
 EFIAPI
 GlueFileDevicePath (
-  IN EFI_HANDLE    Device,     OPTIONAL
-  IN CONST CHAR16  *FileName
+  IN EFI_HANDLE                      Device,     OPTIONAL
+  IN CONST CHAR16                    *FileName
   );
 
 #endif

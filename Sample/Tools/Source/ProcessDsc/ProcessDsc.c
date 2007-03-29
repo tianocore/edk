@@ -117,14 +117,13 @@ extern int  errno;
 //
 #define FILETYPE_UNKNOWN  0
 #define FILETYPE_C        1
-#define FILETYPE_ASM      2 // .asm or .s
-#define FILETYPE_DSC      3 // descriptor file
-#define FILETYPE_H        4
-#define FILETYPE_LIB      5
-#define FILETYPE_I        6
-#define FILETYPE_SRC      7
-#define FILETYPE_VFR      8
-#define FILETYPE_UNI      9
+#define FILETYPE_ASM      2
+#define FILETYPE_S        3
+#define FILETYPE_VFR      4
+#define FILETYPE_INC      5
+#define FILETYPE_H        6
+#define FILETYPE_I        7
+
 
 typedef struct {
   INT8  *Extension;         // file extension
@@ -142,9 +141,6 @@ typedef struct {
 //
 // This table describes a from-to list of files. For
 // example, when a ".c" is built, it results in a ".obj" file.
-// For unicode (.uni) files, we specify a NULL built file
-// extension. This keeps it out of the list of objects in
-// the output makefile.
 //
 static const FILETYPE mFileTypes[] = {
   {
@@ -163,37 +159,7 @@ static const FILETYPE mFileTypes[] = {
     ".s",
     ".obj",
     FILE_FLAG_SOURCE,
-    FILETYPE_ASM
-  },
-  {
-    ".dsc",
-    "",
-    FILE_FLAG_SOURCE,
-    FILETYPE_DSC
-  },
-  {
-    ".h",
-    "",
-    FILE_FLAG_INCLUDE,
-    FILETYPE_H
-  },
-  {
-    ".lib",
-    "",
-    FILE_FLAG_SOURCE,
-    FILETYPE_LIB
-  },
-  {
-    ".i",
-    ".obj",
-    FILE_FLAG_INCLUDE,
-    FILETYPE_I
-  },
-  {
-    ".src",
-    ".c",
-    FILE_FLAG_INCLUDE,
-    FILETYPE_SRC
+    FILETYPE_S
   },
   {
     ".vfr",
@@ -202,14 +168,23 @@ static const FILETYPE mFileTypes[] = {
     FILETYPE_VFR
   },  // actually *.vfr -> *.c -> *.obj
   {
-    ".uni",
+    ".h",
     NULL,
-    FILE_FLAG_SOURCE,
-    FILETYPE_UNI
+    FILE_FLAG_INCLUDE,
+    FILETYPE_H
   },
-  //
-  //  { ".uni", ".obj", FILE_FLAG_SOURCE,  FILETYPE_UNI },
-  //
+  {
+    ".inc",
+    NULL,
+    FILE_FLAG_INCLUDE,
+    FILETYPE_INC
+  },
+  {
+    ".i",
+    NULL,
+    FILE_FLAG_INCLUDE,
+    FILETYPE_I
+  },
   {
     NULL,
     NULL,
@@ -2731,7 +2706,6 @@ ProcessIncludeFilesSingle (
   INT8            FileName[MAX_EXP_LINE_LEN];
   INT8            TempFileName[MAX_PATH];
   SECTION         *TempSect;
-  FILE_NAME_PARTS *File;
   INT8            Str[MAX_LINE_LEN];
   INT8            *OverridePath;
   FILE            *FPtr;
@@ -2755,8 +2729,7 @@ ProcessIncludeFilesSingle (
         //
         ExpandSymbols (Cptr, FileName, sizeof (FileName), 0);
         AddFileSymbols (FileName);
-        File = GetFileParts (FileName);
-        if ((File != NULL) && IsIncludeFile (FileName)) {
+        if (IsIncludeFile (FileName)) {
           if ((OverridePath != NULL) && (!IsAbsolutePath (FileName))) {
             strcpy (TempFileName, OverridePath);
             strcat (TempFileName, "\\");
@@ -2789,7 +2762,6 @@ ProcessIncludeFilesSingle (
           // }
         }
 
-        FreeFileParts (File);
         RemoveFileSymbols ();
       }
     }
@@ -2874,7 +2846,7 @@ GetFileParts (
     FP->Extension[0]  = 0;
   }
   //
-  // Now back up and get the base name
+  // Now back up and get the base name (include the preceding '\' or '/')
   //
   for (; (Cptr > FileNamePtr) && (*Cptr != '\\') && (*Cptr != '/'); Cptr--)
     ;
@@ -3096,9 +3068,6 @@ WriteCompileCommands (
 {
   FILE_NAME_PARTS *File;
   SECTION         *Sect;
-  //
-  // format: [build.ia32.c]
-  //
   INT8            BuildSectionName[40];
   INT8            InLine[MAX_LINE_LEN];
   INT8            OutLine[MAX_EXP_LINE_LEN];
@@ -3117,18 +3086,15 @@ WriteCompileCommands (
     DSCFileSavePosition (DscFile);
     //
     // Option 1: SOURCE_COMPILE_TYPE=MyCompileSection
-    //           Find a section of that name from which to get the build/compile
-    //           commands for this source file. Look for both
-    //           [build.$(PROCESSOR).$(SOURCE_COMPILE_TYPE] and
-    //           [compile.$(PROCESSOR).$(SOURCE_COMPILE_TYPE]
+    //           Find a section of that name from which to get the compile
+    //           commands for this source file. 
+    //           Look for [compile.$(PROCESSOR).$(SOURCE_COMPILE_TYPE]
     // Option 2: COMPILE_SELECT=.c=MyCCompile,.asm=MyAsm
     //           Find a [compile.$(PROCESSOR).MyCompile] section from which to
-    //           get the compile commands for this source file. Look for both
-    //           [build.$(PROCESSOR).MyCompile] and
-    //           [compile.$(PROCESSOR).MyCompile]
+    //           get the compile commands for this source file. 
+    //           Look for [compile.$(PROCESSOR).MyCompile]
     // Option 3: Look for standard section types to compile the file by extension.
-    // Look for both [build.$(PROCESSOR).<extension>] and
-    //               [compile.$(PROCESSOR).<extension>]
+    //           Look for [compile.$(PROCESSOR).<extension>]
     //
     Sect = NULL;
     //
@@ -3138,10 +3104,6 @@ WriteCompileCommands (
     if (SourceCompileType != NULL) {
       sprintf (BuildSectionName, "compile.%s.%s", Processor, SourceCompileType);
       Sect = DSCFileFindSection (DscFile, BuildSectionName);
-      if (Sect == NULL) {
-        sprintf (BuildSectionName, "build.%s.%s", Processor, SourceCompileType);
-        Sect = DSCFileFindSection (DscFile, BuildSectionName);
-      }
     }
     //
     // Option 2 - use COMPILE_SELECT variable
@@ -3214,15 +3176,11 @@ WriteCompileCommands (
       }
     }
     //
-    // Option 3 - use "Build|Compile.$(PROCESSOR).<Extension>" section
+    // Option 3 - use "Compile.$(PROCESSOR).<Extension>" section
     //
     if (Sect == NULL) {
       sprintf (BuildSectionName, "compile.%s.%s", Processor, File->Extension);
       Sect = DSCFileFindSection (DscFile, BuildSectionName);
-      if (Sect == NULL) {
-        sprintf (BuildSectionName, "build.%s.%s", Processor, File->Extension);
-        Sect = DSCFileFindSection (DscFile, BuildSectionName);
-      }
     }
     //
     // Should have found something by now unless it's an include (.h) file
@@ -3257,10 +3215,9 @@ WriteCompileCommands (
           0,
           0,
           NULL,
-          "no build commands section [%s] found in DSC file for %s.%s",
+          "no compile commands section [%s] found in DSC file for %s",
           BuildSectionName,
-          File->BaseName,
-          File->Extension
+          FileName
           );
       }
     }

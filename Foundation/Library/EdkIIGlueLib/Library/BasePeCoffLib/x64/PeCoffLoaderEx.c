@@ -20,7 +20,7 @@ Abstract:
 
 --*/
 
-#include "EdkIIGlueBase.h"
+#include "BasePeCoffLibInternals.h"
 
 
 /**

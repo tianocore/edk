@@ -1280,9 +1280,7 @@ Returns:
     //
     MakeFilePath (Str);
     if ((FVPtr->FVFilePtr = SmartOpen (Str)) == NULL) {
-      //
-      // FatalError ("Could not open FV output file %s", Str);
-      //
+      Error (NULL, 0, 0, Str, "could not open FV output file");
       DSCFileRestorePosition (DSC);
       return STATUS_ERROR;
     }
@@ -1299,9 +1297,6 @@ Returns:
         GetBaseAddress (ExpandedLine, FVPtr->BaseAddress);
       }
     } else {
-      //
-      // Warning ("Could not find FV section '%s' in description file", Str);
-      //
       Warning (NULL, 0, 0, NULL, "Could not find FV section '%s' in description file", Str);
     }
     //

@@ -264,7 +264,7 @@ Foundation\Core\Dxe\DxeMain.inf                                                 
 #
 # APRIORI list, this is a list of drivers run without dependencies
 #
-#Sample\Universal\FirmwareVolume\Apriori\Dxe\AprioriList.inf FILE_GUID=$(EFI_APRIORI_GUID) FV=FvRecovery
+#Sample\Universal\FirmwareVolume\Apriori\Dxe\AprioriList.inf FV=FvRecovery
 
 #
 # Guided Section Extraction Protocol used to authenticate images

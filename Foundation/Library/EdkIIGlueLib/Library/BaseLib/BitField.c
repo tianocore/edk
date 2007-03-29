@@ -771,10 +771,16 @@ BitFieldOr64 (
   IN      UINT64                    OrData
   )
 {
+  UINT64  Value1;
+  UINT64  Value2;
+
   ASSERT (EndBit < sizeof (Operand) * 8);
   ASSERT (StartBit <= EndBit);
-  return Operand |
-         (LShiftU64 (OrData, StartBit) & ~LShiftU64 ((UINT64)-2, EndBit));
+
+  Value1 = LShiftU64 (OrData, StartBit);
+  Value2 = LShiftU64 ((UINT64) - 2, EndBit);
+
+  return Operand | (Value1 & ~Value2);
 }
 
 /**
@@ -809,10 +815,16 @@ BitFieldAnd64 (
   IN      UINT64                    AndData
   )
 {
+  UINT64  Value1;
+  UINT64  Value2;
+  
   ASSERT (EndBit < sizeof (Operand) * 8);
   ASSERT (StartBit <= EndBit);
-  return Operand &
-         ~(LShiftU64 (~AndData, StartBit) & ~LShiftU64 ((UINT64)-2, EndBit));
+
+  Value1 = LShiftU64 (~AndData, StartBit);
+  Value2 = LShiftU64 ((UINT64)-2, EndBit);
+
+  return Operand & ~(Value1 & ~Value2);
 }
 
 /**

@@ -26,13 +26,20 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @retval FALSE     Language 1 and language 2 are not the same.
 
 **/
+STATIC
 BOOLEAN
 CompareIso639LanguageCode (
   IN CONST CHAR8  *Language1,
   IN CONST CHAR8  *Language2
   )
 {
-  return (BOOLEAN) (ReadUnaligned24 ((CONST UINT32 *) Language1) == ReadUnaligned24 ((CONST UINT32 *) Language2));
+  UINT32  Name1;
+  UINT32  Name2;
+
+  Name1 = ReadUnaligned24 ((CONST UINT32 *) Language1);
+  Name2 = ReadUnaligned24 ((CONST UINT32 *) Language2);
+
+  return (BOOLEAN) (Name1 == Name2);
 }
 
 /**
@@ -238,6 +245,34 @@ EfiNamedEventSignal (
   return EFI_SUCCESS;
 }
 
+/** 
+  Returns the current TPL.
+
+  This function returns the current TPL.  There is no EFI service to directly 
+  retrieve the current TPL. Instead, the RaiseTPL() function is used to raise 
+  the TPL to TPL_HIGH_LEVEL.  This will return the current TPL.  The TPL level 
+  can then immediately be restored back to the current TPL level with a call 
+  to RestoreTPL().
+
+  @param  VOID
+
+  @retvale EFI_TPL              The current TPL.
+
+**/
+EFI_TPL
+EFIAPI
+EfiGetCurrentTpl (
+  VOID
+  )
+{
+  EFI_TPL Tpl;
+
+  Tpl = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL); 
+  gBS->RestoreTPL (Tpl);
+
+  return Tpl;
+}
+
 
 /**
   This function initializes a basic mutual exclusion lock to the released state 
@@ -347,6 +382,131 @@ GlueEfiReleaseLock (
   Lock->Lock = EfiLockReleased;
 
   gBS->RestoreTPL (Tpl);
+}
+
+/**
+  Tests whether a controller handle is being managed by a specific driver.
+
+  This function tests whether the driver specified by DriverBindingHandle is
+  currently managing the controller specified by ControllerHandle.  This test
+  is performed by evaluating if the the protocol specified by ProtocolGuid is
+  present on ControllerHandle and is was opened by DriverBindingHandle with an
+  attribute of EFI_OPEN_PROTOCOL_BY_DRIVER. 
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a controller to test.
+  @param  DriverBindingHandle  Specifies the driver binding handle for the
+                               driver.
+  @param  ProtocolGuid         Specifies the protocol that the driver specified
+                               by DriverBindingHandle opens in its Start()
+                               function.
+
+  @retval EFI_SUCCESS          ControllerHandle is managed by the driver
+                               specifed by DriverBindingHandle.
+  @retval EFI_UNSUPPORTED      ControllerHandle is not managed by the driver
+                               specifed by DriverBindingHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiTestManagedDevice (
+  IN CONST EFI_HANDLE       ControllerHandle,
+  IN CONST EFI_HANDLE       DriverBindingHandle,
+  IN CONST EFI_GUID         *ProtocolGuid
+  )
+{
+  EFI_STATUS     Status;
+  VOID           *ManagedInterface;
+
+  ASSERT (ProtocolGuid != NULL);
+
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  (EFI_GUID *) ProtocolGuid,
+                  &ManagedInterface,
+                  DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (!EFI_ERROR (Status)) {
+    gBS->CloseProtocol (
+           ControllerHandle,
+           (EFI_GUID *) ProtocolGuid,
+           DriverBindingHandle,
+           ControllerHandle
+           );
+    return EFI_UNSUPPORTED;
+  }
+
+  if (Status != EFI_ALREADY_STARTED) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Tests whether a child handle is a child device of the controller.
+
+  This function tests whether ChildHandle is one of the children of
+  ControllerHandle.  This test is performed by checking to see if the protocol
+  specified by ProtocolGuid is present on ControllerHandle and opened by
+  ChildHandle with an attribute of EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER.
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a (parent) controller to test. 
+  @param  ChildHandle          A child handle to test.
+  @param  ConsumsedGuid        Supplies the protocol that the child controller
+                               opens on its parent controller. 
+
+  @retval EFI_SUCCESS          ChildHandle is a child of the ControllerHandle.
+  @retval EFI_UNSUPPORTED      ChildHandle is not a child of the
+                               ControllerHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiTestChildHandle (
+  IN CONST EFI_HANDLE       ControllerHandle,
+  IN CONST EFI_HANDLE       ChildHandle,
+  IN CONST EFI_GUID         *ProtocolGuid
+  )
+{
+  EFI_STATUS                            Status;
+  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY   *OpenInfoBuffer;
+  UINTN                                 EntryCount;
+  UINTN                                 Index;
+
+  ASSERT (ProtocolGuid != NULL);
+
+  //
+  // Retrieve the list of agents that are consuming the specific protocol
+  // on ControllerHandle.
+  //
+  Status = gBS->OpenProtocolInformation (
+                  ControllerHandle,
+                  (EFI_GUID *) ProtocolGuid,
+                  &OpenInfoBuffer,
+                  &EntryCount
+                  );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  //
+  // Inspect if ChildHandle is one of the agents.
+  //
+  Status = EFI_UNSUPPORTED;
+  for (Index = 0; Index < EntryCount; Index++) {
+    if ((OpenInfoBuffer[Index].ControllerHandle == ChildHandle) &&
+        (OpenInfoBuffer[Index].Attributes & EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) != 0) {
+      Status = EFI_SUCCESS;
+      break;
+    }
+  }
+  
+  FreePool (OpenInfoBuffer);
+  return Status;
 }
 
 /**
@@ -650,3 +810,4 @@ FreeUnicodeStringTable (
 
   return EFI_SUCCESS;
 }
+

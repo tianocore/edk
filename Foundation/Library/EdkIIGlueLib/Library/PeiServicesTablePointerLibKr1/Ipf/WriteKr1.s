@@ -15,6 +15,7 @@
 //
 //   Contains assembly code for write Kr1.
 //
+//--
 
   .file  "WriteKr1.s"
 

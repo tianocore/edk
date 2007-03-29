@@ -91,7 +91,6 @@ typedef struct {
   BOOLEAN                           IsTeImage;
 } PE_COFF_LOADER_IMAGE_CONTEXT;
 
-
 /**
   Retrieves information about a PE/COFF image.
 

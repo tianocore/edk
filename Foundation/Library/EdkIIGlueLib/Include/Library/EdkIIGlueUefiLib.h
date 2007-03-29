@@ -131,6 +131,26 @@ EfiNamedEventSignal (
   IN CONST EFI_GUID  *Name
   );
 
+/** 
+  Returns the current TPL.
+
+  This function returns the current TPL.  There is no EFI service to directly 
+  retrieve the current TPL. Instead, the RaiseTPL() function is used to raise 
+  the TPL to TPL_HIGH_LEVEL.  This will return the current TPL.  The TPL level 
+  can then immediately be restored back to the current TPL level with a call 
+  to RestoreTPL().
+
+  @param  VOID
+
+  @retvale EFI_TPL              The current TPL.
+
+**/
+EFI_TPL
+EFIAPI
+EfiGetCurrentTpl (
+  VOID
+  );
+
 /**
   This function initializes a basic mutual exclusion lock to the released state 
   and returns the lock.  Each lock provides mutual exclusion access at its task 
@@ -242,6 +262,64 @@ VOID
 EFIAPI
 GlueEfiReleaseLock (
   IN EFI_LOCK  *Lock
+  );
+
+/**
+  Tests whether a controller handle is being managed by a specific driver.
+
+  This function tests whether the driver specified by DriverBindingHandle is
+  currently managing the controller specified by ControllerHandle.  This test
+  is performed by evaluating if the the protocol specified by ProtocolGuid is
+  present on ControllerHandle and is was opened by DriverBindingHandle with an
+  attribute of EFI_OPEN_PROTOCOL_BY_DRIVER. 
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a controller to test.
+  @param  DriverBindingHandle  Specifies the driver binding handle for the
+                               driver.
+  @param  ProtocolGuid         Specifies the protocol that the driver specified
+                               by DriverBindingHandle opens in its Start()
+                               function.
+
+  @retval EFI_SUCCESS          ControllerHandle is managed by the driver
+                               specifed by DriverBindingHandle.
+  @retval EFI_UNSUPPORTED      ControllerHandle is not managed by the driver
+                               specifed by DriverBindingHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiTestManagedDevice (
+  IN CONST EFI_HANDLE       ControllerHandle,
+  IN CONST EFI_HANDLE       DriverBindingHandle,
+  IN CONST EFI_GUID         *ProtocolGuid
+  );
+
+/**
+  Tests whether a child handle is a child device of the controller.
+
+  This function tests whether ChildHandle is one of the children of
+  ControllerHandle.  This test is performed by checking to see if the protocol
+  specified by ProtocolGuid is present on ControllerHandle and opened by
+  ChildHandle with an attribute of EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER.
+  If ProtocolGuid is NULL, then ASSERT().
+
+  @param  ControllerHandle     A handle for a (parent) controller to test. 
+  @param  ChildHandle          A child handle to test.
+  @param  ConsumsedGuid        Supplies the protocol that the child controller
+                               opens on its parent controller. 
+
+  @retval EFI_SUCCESS          ChildHandle is a child of the ControllerHandle.
+  @retval EFI_UNSUPPORTED      ChildHandle is not a child of the
+                               ControllerHandle.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiTestChildHandle (
+  IN CONST EFI_HANDLE       ControllerHandle,
+  IN CONST EFI_HANDLE       ChildHandle,
+  IN CONST EFI_GUID         *ProtocolGuid
   );
 
 /**
@@ -549,5 +627,96 @@ GlueEfiGetNameGuidFromFwVolDevicePathNode (
   IN CONST MEDIA_FW_VOL_FILEPATH_DEVICE_PATH  *FvDevicePathNode
   );
 
+/** 
+  Prints a formatted Unicode string to the console output device specified by 
+  ConOut defined in the EFI_SYSTEM_TABLE.
+
+  This function prints a formatted Unicode string to the console output device 
+  specified by ConOut in EFI_SYSTEM_TABLE and returns the number of Unicode 
+  characters that printed to ConOut.  If the length of the formatted Unicode 
+  string is greater than PcdUefiLibMaxPrintBufferSize, then only the first 
+  PcdUefiLibMaxPrintBufferSize characters are sent to ConOut.
+
+  @param Format   Null-terminated Unicode format string.
+  @param ...      VARARG list consumed to process Format.
+  If Format is NULL, then ASSERT().
+  If Format is not aligned on a 16-bit boundary, then ASSERT().
+
+**/
+UINTN
+EFIAPI
+Print (
+  IN CONST CHAR16  *Format,
+  ...
+  );
+
+/** 
+  Prints a formatted Unicode string to the console output device specified by 
+  StdErr defined in the EFI_SYSTEM_TABLE.
+
+  This function prints a formatted Unicode string to the console output device 
+  specified by StdErr in EFI_SYSTEM_TABLE and returns the number of Unicode 
+  characters that printed to StdErr.  If the length of the formatted Unicode 
+  string is greater than PcdUefiLibMaxPrintBufferSize, then only the first 
+  PcdUefiLibMaxPrintBufferSize characters are sent to StdErr.
+
+  @param Format   Null-terminated Unicode format string.
+  @param ...      VARARG list consumed to process Format.
+  If Format is NULL, then ASSERT().
+  If Format is not aligned on a 16-bit boundary, then ASSERT().
+
+**/
+UINTN
+EFIAPI
+ErrorPrint (
+  IN CONST CHAR16  *Format,
+  ...
+  );
+
+/** 
+  Prints a formatted ASCII string to the console output device specified by 
+  ConOut defined in the EFI_SYSTEM_TABLE.
+
+  This function prints a formatted ASCII string to the console output device 
+  specified by ConOut in EFI_SYSTEM_TABLE and returns the number of ASCII 
+  characters that printed to ConOut.  If the length of the formatted ASCII 
+  string is greater than PcdUefiLibMaxPrintBufferSize, then only the first 
+  PcdUefiLibMaxPrintBufferSize characters are sent to ConOut.
+
+  @param Format   Null-terminated ASCII format string.
+  @param ...      VARARG list consumed to process Format.
+  If Format is NULL, then ASSERT().
+  If Format is not aligned on a 16-bit boundary, then ASSERT().
+
+**/
+UINTN
+EFIAPI
+AsciiPrint (
+  IN CONST CHAR8  *Format,
+  ...
+  );
+
+/** 
+  Prints a formatted ASCII string to the console output device specified by 
+  StdErr defined in the EFI_SYSTEM_TABLE.
+
+  This function prints a formatted ASCII string to the console output device 
+  specified by StdErr in EFI_SYSTEM_TABLE and returns the number of ASCII 
+  characters that printed to StdErr.  If the length of the formatted ASCII 
+  string is greater than PcdUefiLibMaxPrintBufferSize, then only the first 
+  PcdUefiLibMaxPrintBufferSize characters are sent to StdErr.
+
+  @param Format   Null-terminated ASCII format string.
+  @param ...      VARARG list consumed to process Format.
+  If Format is NULL, then ASSERT().
+  If Format is not aligned on a 16-bit boundary, then ASSERT().
+
+**/
+UINTN
+EFIAPI
+AsciiErrorPrint (
+  IN CONST CHAR8  *Format,
+  ...
+  );
 
 #endif
