@@ -28,11 +28,23 @@ Abstract:
 
 
 //
-//  Users can use this macro in .dxs file
+//  Explanation:
+//    BUILD_WITH_GLUELIB was used at the very beginning of EdkIIGlueLib development and 
+//    BUILD_WITH_EDKII_GLUE_LIB was introduced later with newer EDK. The old one, BUILD_WITH_GLUELIB, 
+//    is remained here only to keep source level compatibility with modules which already use it.
 //
+//  Both macros are of same effect: to indicate a module it's using EdkIIGlueLib. For newly created 
+//  modules, BUILD_WITH_EDKII_GLUE_LIB is recommended to use.
+//
+//  The macros can be used in .dxs files and source files.
+//
+
 #ifndef BUILD_WITH_EDKII_GLUE_LIB
   #define BUILD_WITH_EDKII_GLUE_LIB
 #endif
 
+#ifndef BUILD_WITH_GLUELIB
+  #define BUILD_WITH_GLUELIB
+#endif
 
 #endif

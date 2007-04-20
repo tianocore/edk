@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -358,11 +358,16 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL          *DevPath;
   EFI_DEVICE_PATH_PROTOCOL          *DevPathNode;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *FvFilePath;
-  EFI_FIRMWARE_VOLUME_PROTOCOL      *FV;
   VOID                              *Buffer;
   UINTN                             BufferSize;
   UINT32                            AuthenticationStatus;
   EFI_GUID                          *NameGuid;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FIRMWARE_VOLUME_PROTOCOL      *FV;
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL     *FV;
+#endif
+
 
   FV          = NULL;
   Buffer      = NULL;
@@ -385,7 +390,11 @@ Returns:
       FvFilePath = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) DevPathNode;
       Status = gBS->HandleProtocol (
                       Image->DeviceHandle,
+                    #if (PI_SPECIFICATION_VERSION < 0x00010000)
                       &gEfiFirmwareVolumeProtocolGuid,
+                    #else
+                      &gEfiFirmwareVolume2ProtocolGuid,
+                    #endif
                       &FV
                       );
       if (!EFI_ERROR (Status)) {

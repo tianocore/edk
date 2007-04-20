@@ -623,7 +623,14 @@ Returns:
   if (gGlobals.XRefFileName[0]) {
     CFVSetXRefFileName (gGlobals.XRefFileName);
   }
-  
+
+  //
+  // Now get the EFI_SOURCE directory which we use everywhere.
+  //
+  if (GetEfiSource ()) {
+    return STATUS_ERROR;
+  }
+    
   //
   // Pre-process the DSC file to get section info.
   //
@@ -663,12 +670,6 @@ Returns:
   gGlobals.OutdirList = NULL;
   
   //
-  // Now get the EFI_SOURCE directory which we use everywhere.
-  //
-  if (GetEfiSource ()) {
-    return STATUS_ERROR;
-  }
-  //
   // Process the [defines] section in the DSC file to get any defines we need
   // elsewhere
   //
@@ -697,12 +698,12 @@ Returns:
   //
   fprintf (gGlobals.ModuleMakefileFptr, "%sbuild ::\n\n", GLOBAL_LINK_LIB_NAME);
 
+  fprintf (gGlobals.MakefileFptr, "libraries : \n");
   //
   // Process [libraries] section in the DSC file
   //
   Sect = DSCFileFindSection (&DSCFile, LIBRARIES_SECTION_NAME);
   if (Sect != NULL) {
-    fprintf (gGlobals.MakefileFptr, "libraries : \n");
     ProcessSectionComponents (&DSCFile, DSC_SECTION_TYPE_LIBRARIES, 0);
   }
 
@@ -721,6 +722,7 @@ Returns:
   if (ExceptionThrown ()) {
     goto ProcessingError;
   }
+  
   //
   // Process [components] section in the DSC file
   //
@@ -4350,60 +4352,32 @@ GetEfiSource (
   VOID
   )
 {
-  INT8  *Cwd;
-  INT8  *EnvValue;
-  INT8  Line[MAX_PATH];
+  INT8  *EfiSource;
 
-  //
-  // Get the environmental variable setting of EFI_SOURCE. Hack off any
-  // trailing slashes though for comparison's sake.
-  //
-  EnvValue = getenv (EFI_SOURCE);
-  if (EnvValue != NULL) {
-    if (EnvValue[strlen (EnvValue) - 1] == '\\') {
-      EnvValue[strlen (EnvValue) - 1] = 0;
-    }
-  }
   //
   // Don't set it if the user specified it on the command line.
   //
-  if (GetSymbolValue (EFI_SOURCE) != NULL) {
+  EfiSource = GetSymbolValue (EFI_SOURCE);
+  if ( EfiSource != NULL) {
+    if (EfiSource[strlen (EfiSource) - 1] == '\\') {
+      EfiSource[strlen (EfiSource) - 1] = 0;
+    }    
     return STATUS_SUCCESS;
   }
-  //
-  // Get the EFI_SOURCE from the build directory if you can.
-  //
-  Cwd = GetSymbolValue (BUILD_DIR);
-  if (Cwd == NULL) {
-    Error (NULL, 0, 0, NULL, "could not get current working directory from build directory");
-    return STATUS_ERROR;
-  }
-  //
-  // look for "platform" in the string. Should be something like:
-  //  c:\project\efi\platform\nt32     for new directory structure
-  //
-  strcpy (Line, Cwd);
-  Cwd = Line + strlen (Line) - 1;
-  while (Cwd >= Line) {
-    if (_strnicmp (Cwd, PLATFORM_STR, strlen (PLATFORM_STR)) == 0) {
-      *Cwd = 0;
-      //
-      // Emit a messsage if it's not the same as the environmental setting.
-      //
-      if ((EnvValue != NULL) && _stricmp (EnvValue, Line)) {
-        fprintf (stdout, "***************************************************************\n");
-        fprintf (stdout, "* WARNING: ENVIRONMENTAL VARIABLE EFI_SOURCE DIFFERS FROM CWD *\n");
-        fprintf (stdout, "***************************************************************\n");
-      }
 
-      AddSymbol (EFI_SOURCE, Line, SYM_GLOBAL | SYM_FILEPATH);
-      return STATUS_SUCCESS;
+  //
+  // Get the environmental variable setting of EFI_SOURCE. 
+  //
+  EfiSource = getenv (EFI_SOURCE);
+  if (EfiSource != NULL) {
+    if (EfiSource[strlen (EfiSource) - 1] == '\\') {
+      EfiSource[strlen (EfiSource) - 1] = 0;
     }
-
-    Cwd--;
+    AddSymbol (EFI_SOURCE, EfiSource, SYM_GLOBAL | SYM_FILEPATH); 
+    return STATUS_SUCCESS;
   }
 
-  Error (NULL, 0, 0, NULL, "could not determine EFI_SOURCE from current working directory");
+  Error (NULL, 0, 0, NULL, "could not determine EFI_SOURCE");
   return STATUS_ERROR;
 }
 

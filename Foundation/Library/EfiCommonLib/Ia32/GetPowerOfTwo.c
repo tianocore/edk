@@ -22,9 +22,9 @@ Abstract:
 
 #include "Tiano.h"
 
-UINT32
+UINT64
 GetPowerOfTwo (
-  IN UINT32   Input
+  IN UINT64   Input
   )
 /*++
 
@@ -47,13 +47,13 @@ Returns:
   __asm {
     xor     eax, eax
     mov     edx, eax
-    mov     ecx, [esp + 8]
+    mov     ecx, dword ptr Input[4]
     jecxz   _F
     bsr     ecx, ecx
     bts     edx, ecx
     jmp     _Exit
 _F:
-    mov     ecx, [esp + 4]
+    mov     ecx, dword ptr Input[0]
     jecxz   _Exit
     bsr     ecx, ecx
     bts     eax, ecx

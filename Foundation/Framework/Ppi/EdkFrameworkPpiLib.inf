@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2004 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -62,6 +62,8 @@ COMPONENT_TYPE=   LIBRARY
     MemoryDiscovered\MemoryDiscovered.c
     PciCfg\PciCfg.h
     PciCfg\PciCfg.c
+    PciCfg2\PciCfg2.h
+    PciCfg2\PciCfg2.c
     RecoveryModule\RecoveryModule.h
     RecoveryModule\RecoveryModule.c
     Reset\Reset.h
@@ -76,9 +78,25 @@ COMPONENT_TYPE=   LIBRARY
     Security\Security.c
     Smbus\Smbus.h
     Smbus\Smbus.c
+    Smbus2\Smbus2.h
+    Smbus2\Smbus2.c
     Stall\Stall.h
     Stall\Stall.c
     StatusCode\StatusCode.h
     StatusCode\StatusCode.c
     Variable\Variable.h
     Variable\Variable.c
+    Variable2\Variable2.h
+    Variable2\Variable2.c
+    Decompress\Decompress.h
+    Decompress\Decompress.c
+    FirmwareVolumeInfo\FirmwareVolumeInfo.h
+    FirmwareVolumeInfo\FirmwareVolumeInfo.c
+    LoadFile2\LoadFile2.h
+    LoadFile2\LoadFile2.c
+    Security2\Security2.h
+    Security2\Security2.c
+    FirmwareVolume\FirmwareVolume.h
+    FirmwareVolume\FirmwareVolume.c
+    GuidedSectionExtraction\GuidedSectionExtraction.h
+    GuidedSectionExtraction\GuidedSectionExtraction.c

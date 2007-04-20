@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -77,7 +77,7 @@ Returns:
   UINTN SourceStride;
 
   Width             = Width & 0x03;
-  Stride            = 1 << Width;
+  Stride            = (UINTN)1 << Width;
   DestinationStride = DestinationStrideFlag ? Stride : 0;
   SourceStride      = SourceStrideFlag ? Stride : 0;
 
@@ -298,7 +298,7 @@ Returns:
   }
 
   Address   = (UINTN) UserAddress;
-  InStride  = 1 << (Width & 0x03);
+  InStride  = (UINTN)1 << (Width & 0x03);
   OutStride = InStride;
   if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
     InStride = 0;
@@ -391,7 +391,7 @@ Returns:
   }
 
   Address   = (UINTN) UserAddress;
-  InStride  = 1 << (Width & 0x03);
+  InStride  = (UINTN)1 << (Width & 0x03);
   OutStride = InStride;
   if (Width >= EfiCpuIoWidthFifoUint8 && Width <= EfiCpuIoWidthFifoUint64) {
     InStride = 0;
@@ -524,11 +524,11 @@ Returns:
   }
 
   Width = Width & 0x03;
-  if (Address - 1 + (1 << Width) * Count > Limit) {
+  if (Address - 1 + ((UINTN)1 << Width) * Count > Limit) {
     return EFI_UNSUPPORTED;
   }
 
-  AlignMask = (1 << Width) - 1;
+  AlignMask = ((UINTN)1 << Width) - 1;
   if ((UINTN) Buffer & AlignMask) {
     return EFI_UNSUPPORTED;
   }

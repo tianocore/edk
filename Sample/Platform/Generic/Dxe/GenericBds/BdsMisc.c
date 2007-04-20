@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -194,6 +194,58 @@ Returns:
 
 }
 
+UINT16
+BdsLibGetFreeOptionNumber (
+  IN  CHAR16    *VariableName
+  )
+/*++
+
+Routine Description:
+  Get the Option Number that does not used 
+  Try to locate the specific option variable one by one untile find a free number
+  
+Arguments:
+  VariableName - Indicate if the boot#### or driver#### option
+  
+Returns:
+  The Minimal Free Option Number
+  
+--*/
+{
+  UINT16        Number;
+  UINTN         Index;
+  CHAR16        StrTemp[10];
+  UINT16        *OptionBuffer;
+  UINTN         OptionSize;
+
+  //
+  // Try to find the minimum free number from 0, 1, 2, 3....
+  //
+  Index = 0;
+  do {
+    if (*VariableName == 'B') {
+      SPrint (StrTemp, sizeof (StrTemp), L"Boot%04x", Index);      
+    } else {
+      SPrint (StrTemp, sizeof (StrTemp), L"Driver%04x", Index);  
+    }
+    //
+    // try if the option number is used
+    //
+    OptionBuffer = BdsLibGetVariableAndSize (
+              StrTemp,
+              &gEfiGlobalVariableGuid,
+              &OptionSize
+              );
+    if (OptionBuffer == NULL) {
+      break;
+    }
+    Index++;
+  } while (1);
+  
+  Number = (UINT16) Index;
+  return Number;
+}
+
 EFI_STATUS
 BdsLibRegisterNewOption (
   IN  EFI_LIST_ENTRY                 *BdsOptionList,
@@ -243,6 +295,9 @@ Returns:
   CHAR16                    *Description;
   CHAR16                    OptionName[10];
   BOOLEAN                   UpdateBootDevicePath;
+  UINT16                    BootOrderEntry; 
+  UINTN                     OrderItemNum;
+  
 
   OptionPtr             = NULL;
   OptionSize            = 0;
@@ -260,16 +315,11 @@ Returns:
                     &gEfiGlobalVariableGuid,
                     &TempOptionSize
                     );
+
   //
   // Compare with current option variable
   //
   for (Index = 0; Index < TempOptionSize / sizeof (UINT16); Index++) {
-    //
-    // Got the max option#### number
-    //
-    if (MaxOptionNumber < TempOptionPtr[Index]) {
-      MaxOptionNumber = TempOptionPtr[Index];
-    }
 
     if (*VariableName == 'B') {
       SPrint (OptionName, sizeof (OptionName), L"Boot%04x", TempOptionPtr[Index]);
@@ -282,6 +332,9 @@ Returns:
                   &gEfiGlobalVariableGuid,
                   &OptionSize
                   );
+    if (OptionPtr == NULL) {
+      continue;
+    }
     TempPtr = OptionPtr;
     TempPtr += sizeof (UINT32) + sizeof (UINT16);
     Description = (CHAR16 *) TempPtr;
@@ -331,9 +384,9 @@ Returns:
     //
     // The new option#### number
     //
-    RegisterOptionNumber = MaxOptionNumber + 1;
+    RegisterOptionNumber = BdsLibGetFreeOptionNumber(VariableName);
   }
-
+  
   if (*VariableName == 'B') {
     SPrint (OptionName, sizeof (OptionName), L"Boot%04x", RegisterOptionNumber);
   } else {
@@ -358,14 +411,46 @@ Returns:
   //
   // Update the option order variable
   //
-  OptionOrderPtr = EfiLibAllocateZeroPool ((Index + 1) * sizeof (UINT16));
-  EfiCopyMem (OptionOrderPtr, TempOptionPtr, Index * sizeof (UINT16));
-  OptionOrderPtr[Index] = RegisterOptionNumber;
+  
+  //
+  // If no BootOrder
+  //
+  if (TempOptionSize == 0) {
+    BootOrderEntry = 0;
+    Status = gRT->SetVariable (
+                    VariableName,
+                    &gEfiGlobalVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    sizeof (UINT16),
+                    &BootOrderEntry
+                    );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePool (TempOptionPtr);
+      return Status;
+    }
+    return EFI_SUCCESS;
+  }  
+
+  if (UpdateBootDevicePath) {
+    //
+    // If just update a old option, the new optionorder size not change
+    //  
+    OrderItemNum = (TempOptionSize / sizeof (UINT16)) ;
+    OptionOrderPtr = EfiLibAllocateZeroPool ( OrderItemNum * sizeof (UINT16));
+    EfiCopyMem (OptionOrderPtr, TempOptionPtr, OrderItemNum * sizeof (UINT16));
+  } else {
+    OrderItemNum = (TempOptionSize / sizeof (UINT16)) + 1 ;
+    OptionOrderPtr = EfiLibAllocateZeroPool ( OrderItemNum * sizeof (UINT16));
+    EfiCopyMem (OptionOrderPtr, TempOptionPtr, (OrderItemNum - 1) * sizeof (UINT16));
+  }
+
+  OptionOrderPtr[Index] = RegisterOptionNumber; 
+   
   Status = gRT->SetVariable (
                   VariableName,
                   &gEfiGlobalVariableGuid,
                   EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-                  (Index + 1) * sizeof (UINT16),
+                  OrderItemNum * sizeof (UINT16),
                   OptionOrderPtr
                   );
   if (EFI_ERROR (Status)) {

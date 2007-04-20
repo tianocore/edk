@@ -50,6 +50,8 @@ COMPONENT_TYPE=   LIBRARY
   DataHub\DataHub.c
   FirmwareVolume\FirmwareVolume.h
   FirmwareVolume\FirmwareVolume.c
+  FirmwareVolume2\FirmwareVolume2.h
+  FirmwareVolume2\FirmwareVolume2.c
   FirmwareVolumeBlock\FirmwareVolumeBlock.h
   FirmwareVolumeBlock\FirmwareVolumeBlock.c
   FormBrowser\FormBrowser.h

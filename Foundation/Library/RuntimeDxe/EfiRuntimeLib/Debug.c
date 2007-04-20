@@ -109,7 +109,7 @@ Returns:
   EfiReportStatusCode (
     EFI_DEBUG_CODE,
     (EFI_SOFTWARE_DXE_RT_DRIVER | EFI_DC_UNSPECIFIED),
-    0,
+    (UINT32) ErrorLevel,
     &gEfiCallerIdGuid,
     (EFI_STATUS_CODE_DATA *) Buffer
     );

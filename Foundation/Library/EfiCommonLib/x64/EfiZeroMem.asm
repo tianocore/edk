@@ -39,10 +39,9 @@ EfiCommonLibZeroMem  PROC    USES    rdi
     jz      @ZeroBytes
     DB      0fh, 0efh, 0c0h             ; pxor mm0, mm0
 @@:
-    DB      0fh, 0e7h, 7                ; movntq [rdi], mm0
+    DB      48h, 0fh, 7eh, 07h          ; movd [rdi], mm0
     add     rdi, 8
     loop    @B
-    DB      0fh, 0aeh, 0f0h             ; mfence
 @ZeroBytes:
     xor     eax, eax
     mov     ecx, edx

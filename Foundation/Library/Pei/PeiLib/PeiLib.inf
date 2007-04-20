@@ -43,6 +43,9 @@ COMPONENT_TYPE    = LIBRARY
   ia32\ProcessorAsms.Asm
   ia32\SupportItpDebug.asm
   ia32\efijump.h
+  ia32\ReadIdt.asm
+  ia32\WriteIdt.asm
+  ia32\PeiServicePointer.c
 
 [sources.x64]
   x64\PeCoffLoaderEx.c
@@ -52,6 +55,7 @@ COMPONENT_TYPE    = LIBRARY
   x64\ProcessorAsms.Asm
   x64\SupportItpDebug.asm
   x64\efijump.h
+  x64\PeiServicePointer.c
 
 [sources.ipf]
 #  ipf\Math.c
@@ -65,7 +69,10 @@ COMPONENT_TYPE    = LIBRARY
   ipf\PioFlush.s
   ipf\SwitchStack.s
   ipf\Ia_64Gen.h
-
+  ipf\HwAccess.s
+  ipf\PeiServicePointer.c
+  
+  
 [libraries.common]
   EdkGuidLib
   EfiCommonLib
@@ -88,7 +95,6 @@ COMPONENT_TYPE    = LIBRARY
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
-  $(EDK_SOURCE)\Foundation\Core\Pei\Include
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
 

@@ -22,15 +22,15 @@ Abstract:
 #include "Tiano.h"
 #include "Pei.h"
 #include "PeiLib.h"
-
 #include "FlashLayout.h"
-
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 #include EFI_PPI_DEFINITION (FlashMap)
 #include EFI_PPI_DEFINITION (NtFwh)
 #include EFI_GUID_DEFINITION (FlashMapHob)
-#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 #include EFI_GUID_DEFINITION (SystemNvDataGuid)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem2)
+
 
 EFI_STATUS
 EFIAPI
@@ -209,7 +209,11 @@ Returns:
     case EFI_FLASH_AREA_MAIN_BIOS:
       (*PeiServices)->CopyMem (
                         &FlashHobData.AreaTypeGuid,
+                     #if (PI_SPECIFICATION_VERSION < 0x00010000)
                         &gEfiFirmwareFileSystemGuid,
+                     #else
+                        &gEfiFirmwareFileSystem2Guid,
+                     #endif
                         sizeof (EFI_GUID)
                         );
       (*PeiServices)->CopyMem (

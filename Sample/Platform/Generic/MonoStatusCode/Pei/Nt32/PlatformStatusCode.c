@@ -144,6 +144,19 @@ Returns:
 
 --*/
 {
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+  EFI_STATUS  Status;
+
+  Status = (**PeiServices).RegisterForShadow((EFI_PEI_FILE_HANDLE)FfsHeader);
+
+  if (Status == EFI_ALREADY_STARTED) {
+    mRunningFromMemory = TRUE;
+  } else if (Status == EFI_NOT_FOUND) {
+    ASSERT_PEI_ERROR (PeiServices, Status);
+  }
+  
+#endif
+
   if (!mRunningFromMemory) {
     //
     // First pass, running from flash, initialize everything

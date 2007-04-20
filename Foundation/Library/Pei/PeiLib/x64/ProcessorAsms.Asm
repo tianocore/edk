@@ -34,7 +34,7 @@ text  SEGMENT
 ; Returns:
 ;   Nothing. Goes to the Entry Point passing in the new parameters
 ;
-SwitchStacks  PROC NEAR PUBLIC
+SwitchStacks  PROC  PUBLIC
 
     ; Adjust stack for
     ;   1) leave 4 registers space
@@ -104,7 +104,7 @@ EFI_JUMP_BUFFER         TYPEDEF         _EFI_JUMP_BUFFER
 ; rdx - JumpBuffer
 ;
 PUBLIC  TransferControlSetJump
-TransferControlSetJump  PROC  NEAR
+TransferControlSetJump  PROC  
   mov   (EFI_JUMP_BUFFER PTR [rdx])._rbx, rbx
   mov   (EFI_JUMP_BUFFER PTR [rdx])._rsp, rsp
   mov   (EFI_JUMP_BUFFER PTR [rdx])._rbp, rbp
@@ -133,7 +133,7 @@ TransferControlSetJump      ENDP
 ;
 ;
 PUBLIC  TransferControlLongJump
-TransferControlLongJump  PROC  NEAR
+TransferControlLongJump  PROC  
   ; set return from SetJump to EFI_WARN_RETURN_FROM_LONG_JUMP
   mov   rax, EFI_WARN_RETURN_FROM_LONG_JUMP          
   mov   rbx, (EFI_JUMP_BUFFER PTR [rdx])._rbx

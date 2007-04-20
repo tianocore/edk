@@ -207,7 +207,7 @@ DevPathToTextPci (
   PCI_DEVICE_PATH *Pci;
 
   Pci = DevPath;
-  CatPrint (Str, L"Pci(%x,%x)", Pci->Function, Pci->Device);
+  CatPrint (Str, L"Pci(0x%x,0x%x)", Pci->Device, Pci->Function);
 }
 
 VOID
@@ -221,7 +221,7 @@ DevPathToTextPccard (
   PCCARD_DEVICE_PATH  *Pccard;
 
   Pccard = DevPath;
-  CatPrint (Str, L"PcCard(%x)", Pccard->FunctionNumber);
+  CatPrint (Str, L"PcCard(0x%x)", Pccard->FunctionNumber);
 }
 
 VOID
@@ -237,7 +237,8 @@ DevPathToTextMemMap (
   MemMap = DevPath;
   CatPrint (
     Str,
-    L"MemoryMapped(%lx,%lx)",
+    L"MemoryMapped(0x%x,0x%lx,0x%lx)",
+    MemMap->MemoryType,
     MemMap->StartingAddress,
     MemMap->EndingAddress
     );
@@ -301,7 +302,7 @@ DevPathToTextVendor (
       } else if (EfiCompareGuid (&Vendor->Guid, &mEfiDevicePathMessagingSASGuid)) {
         CatPrint (
           Str,
-          L"SAS(%lx,%lx,%x,",
+          L"SAS(0x%lx,0x%lx,0x%x,",
           ((SAS_DEVICE_PATH *) Vendor)->SasAddress,
           ((SAS_DEVICE_PATH *) Vendor)->Lun,
           ((SAS_DEVICE_PATH *) Vendor)->RelativeTargetPort
@@ -320,13 +321,13 @@ DevPathToTextVendor (
           if ((Info & 0x0f) == 1) {
             CatPrint (Str, L"0,");
           } else {
-            CatPrint (Str, L"%x,", (Info >> 8) & 0xff);
+            CatPrint (Str, L"0x%x,", (Info >> 8) & 0xff);
           }
         } else {
           CatPrint (Str, L"0,0,0,0,");
         }
 
-        CatPrint (Str, L"%x)", ((SAS_DEVICE_PATH *) Vendor)->Reserved);
+        CatPrint (Str, L"0x%x)", ((SAS_DEVICE_PATH *) Vendor)->Reserved);
         return ;
       } else if (EfiCompareGuid (&Vendor->Guid, &gEfiDebugPortProtocolGuid)) {
         CatPrint (Str, L"DebugPort()");
@@ -365,7 +366,7 @@ DevPathToTextController (
   Controller = DevPath;
   CatPrint (
     Str,
-    L"Ctrl(%x)",
+    L"Ctrl(0x%x)",
     Controller->Controller
     );
 }
@@ -382,108 +383,125 @@ DevPathToTextAcpi (
 
   Acpi = DevPath;
   if ((Acpi->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
-    if (AllowShortcuts) {
-      switch (EISA_ID_TO_NUM (Acpi->HID)) {
-      case 0x0a03:
-        CatPrint (Str, L"PciRoot(%x)", Acpi->UID);
-        break;
+    switch (EISA_ID_TO_NUM (Acpi->HID)) {
+    case 0x0a03:
+      CatPrint (Str, L"PciRoot(0x%x)", Acpi->UID);
+      break;
 
-      case 0x0604:
-        CatPrint (Str, L"Floppy(%x)", Acpi->UID);
-        break;
+    case 0x0604:
+      CatPrint (Str, L"Floppy(0x%x)", Acpi->UID);
+      break;
 
-      case 0x0301:
-        CatPrint (Str, L"Keyboard(%x)", Acpi->UID);
-        break;
+    case 0x0301:
+      CatPrint (Str, L"Keyboard(0x%x)", Acpi->UID);
+      break;
 
-      case 0x0501:
-        CatPrint (Str, L"Serial(%x)", Acpi->UID);
-        break;
+    case 0x0501:
+      CatPrint (Str, L"Serial(0x%x)", Acpi->UID);
+      break;
 
-      case 0x0401:
-        CatPrint (Str, L"ParallelPort(%x)", Acpi->UID);
-        break;
+    case 0x0401:
+      CatPrint (Str, L"ParallelPort(0x%x)", Acpi->UID);
+      break;
 
-      default:
-        break;
-      }
-
-      return ;
+    default:
+      CatPrint (Str, L"Acpi(PNP%04x,0x%x)", EISA_ID_TO_NUM (Acpi->HID), Acpi->UID);
+      break;
     }
-
-    CatPrint (Str, L"Acpi(PNP%04x,%x)", EISA_ID_TO_NUM (Acpi->HID), Acpi->UID);
   } else {
-    CatPrint (Str, L"Acpi(%08x,%x)", Acpi->HID, Acpi->UID);
+    CatPrint (Str, L"Acpi(0x%08x,0x%x)", Acpi->HID, Acpi->UID);
   }
 }
 
-#define NextStrA(a) ((UINT8 *) (((UINT8 *) (a)) + EfiAsciiStrLen (a) + 1))
+STATIC
+VOID
+EisaIdToText (
+  IN UINT32         EisaId,
+  IN OUT CHAR16    *Text
+  )
+{
+  *Text = 0;
+
+  if ((EisaId & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+    SPrint (Text, 0, L"PNP%04x", EISA_ID_TO_NUM (EisaId));
+  } else {
+    SPrint (Text, 0, L"0x%x", EisaId);
+  }
+}
 
 VOID
-DevPathToTextExtAcpi (
+DevPathToTextAcpiEx (
   IN OUT POOL_PRINT  *Str,
   IN VOID            *DevPath,
   IN BOOLEAN         DisplayOnly,
   IN BOOLEAN         AllowShortcuts
   )
 {
-  ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR  *AcpiExt;
+  ACPI_EXTENDED_HID_DEVICE_PATH  *AcpiEx;
+  CHAR8                          *HIDStr;
+  CHAR8                          *UIDStr;
+  CHAR8                          *CIDStr;
+  CHAR16                         HIDText[11];
+  CHAR16                         CIDText[11];
 
-  AcpiExt = DevPath;
+  AcpiEx = DevPath;
+  HIDStr = (CHAR8 *) (((UINT8 *) AcpiEx) + sizeof (ACPI_EXTENDED_HID_DEVICE_PATH));
+  UIDStr = HIDStr + EfiAsciiStrLen (HIDStr) + 1;
+  CIDStr = UIDStr + EfiAsciiStrLen (UIDStr) + 1;
 
-  if (AllowShortcuts) {
-    if ((*(AcpiExt->HidUidCidStr) == '\0') &&
-        (*(NextStrA (NextStrA (AcpiExt->HidUidCidStr))) == '\0') &&
-        (AcpiExt->UID == 0)
-        ) {
-      if ((AcpiExt->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
-        CatPrint (
-          Str,
-          L"AcpiExp(PNP%04x,%x,%a)",
-          EISA_ID_TO_NUM (AcpiExt->HID),
-          AcpiExt->CID,
-          NextStrA (AcpiExt->HidUidCidStr)
-          );
-      } else {
-        CatPrint (
-          Str,
-          L"AcpiExp(%08x,%x,%a)",
-          AcpiExt->HID,
-          AcpiExt->CID,
-          NextStrA (AcpiExt->HidUidCidStr)
-          );
-      }
-    }
-    return ;
-  }
+  EisaIdToText (AcpiEx->HID, HIDText);
+  EisaIdToText (AcpiEx->CID, CIDText);
 
-  if ((AcpiExt->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+  if ((*HIDStr == '\0') && (*CIDStr == '\0') && (AcpiEx->UID == 0)) {
+    //
+    // use AcpiExp()
+    //
     CatPrint (
       Str,
-      L"AcpiEx(PNP%04x,%x,%x,%a,%a,%a)",
-      EISA_ID_TO_NUM (AcpiExt->HID),
-      AcpiExt->CID,
-      AcpiExt->UID,
-      AcpiExt->HidUidCidStr,
-      NextStrA (NextStrA (AcpiExt->HidUidCidStr)),
-      NextStrA (AcpiExt->HidUidCidStr)
+      L"AcpiExp(%s,%s,%a)",
+      HIDText,
+      CIDText,
+      UIDStr
       );
   } else {
-    CatPrint (
-      Str,
-      L"AcpiEx(%08x,%x,%x,%a,%a,%a)",
-      AcpiExt->HID,
-      AcpiExt->CID,
-      AcpiExt->UID,
-      AcpiExt->HidUidCidStr,
-      NextStrA (NextStrA (AcpiExt->HidUidCidStr)),
-      NextStrA (AcpiExt->HidUidCidStr)
-      );
+    if (AllowShortcuts) {
+      //
+      // display only
+      //
+      if (AcpiEx->HID == 0) {
+        CatPrint (Str, L"AcpiEx(%a,", HIDStr);
+      } else {
+        CatPrint (Str, L"AcpiEx(%s,", HIDText);
+      }
+
+      if (AcpiEx->UID == 0) {
+        CatPrint (Str, L"%a,", UIDStr);
+      } else {
+        CatPrint (Str, L"0x%x,", AcpiEx->UID);
+      }
+
+      if (AcpiEx->CID == 0) {
+        CatPrint (Str, L"%a)", CIDStr);
+      } else {
+        CatPrint (Str, L"%s)", CIDText);
+      }
+    } else {
+      CatPrint (
+        Str,
+        L"AcpiEx(%s,%s,0x%x,%a,%a,%a)",
+        HIDText,
+        CIDText,
+        AcpiEx->UID,
+        HIDStr,
+        CIDStr,
+        UIDStr
+        );
+    }
   }
 }
 
 VOID
-DevPathToTextAdrAcpi (
+DevPathToTextAcpiAdr (
   IN OUT POOL_PRINT  *Str,
   IN VOID            *DevPath,
   IN BOOLEAN         DisplayOnly,
@@ -499,9 +517,9 @@ DevPathToTextAdrAcpi (
   Length             = DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) AcpiAdr);
   AdditionalAdrCount = (Length - 8) / 4;
 
-  CatPrint (Str, L"AcpiAdr(%x", AcpiAdr->ADR);
+  CatPrint (Str, L"AcpiAdr(0x%x", AcpiAdr->ADR);
   for (Index = 0; Index < AdditionalAdrCount; Index++) {
-    CatPrint (Str, L",%x", *(UINT32 *) ((UINT8 *) AcpiAdr + 8 + Index * 4));
+    CatPrint (Str, L",0x%x", *(UINT32 *) ((UINT8 *) AcpiAdr + 8 + Index * 4));
   }
   CatPrint (Str, L")");
 }
@@ -519,11 +537,11 @@ DevPathToTextAtapi (
   Atapi = DevPath;
 
   if (DisplayOnly) {
-    CatPrint (Str, L"Ata(%x)", Atapi->Lun);
+    CatPrint (Str, L"Ata(0x%x)", Atapi->Lun);
   } else {
     CatPrint (
       Str,
-      L"Ata(%s,%s,%x)",
+      L"Ata(%s,%s,0x%x)",
       Atapi->PrimarySecondary ? L"Secondary" : L"Primary",
       Atapi->SlaveMaster ? L"Slave" : L"Master",
       Atapi->Lun
@@ -542,7 +560,7 @@ DevPathToTextScsi (
   SCSI_DEVICE_PATH  *Scsi;
 
   Scsi = DevPath;
-  CatPrint (Str, L"Scsi(%x,%x)", Scsi->Pun, Scsi->Lun);
+  CatPrint (Str, L"Scsi(0x%x,0x%x)", Scsi->Pun, Scsi->Lun);
 }
 
 VOID
@@ -556,7 +574,7 @@ DevPathToTextFibre (
   FIBRECHANNEL_DEVICE_PATH  *Fibre;
 
   Fibre = DevPath;
-  CatPrint (Str, L"Fibre(%lx,%lx)", Fibre->WWN, Fibre->Lun);
+  CatPrint (Str, L"Fibre(0x%lx,0x%lx)", Fibre->WWN, Fibre->Lun);
 }
 
 VOID
@@ -570,7 +588,10 @@ DevPathToText1394 (
   F1394_DEVICE_PATH *F1394;
 
   F1394 = DevPath;
-  CatPrint (Str, L"I1394(%lx)", F1394->Guid);
+  //
+  // Guid has format of IEEE-EUI64
+  //
+  CatPrint (Str, L"I1394(%016lx)", F1394->Guid);
 }
 
 VOID
@@ -584,7 +605,7 @@ DevPathToTextUsb (
   USB_DEVICE_PATH *Usb;
 
   Usb = DevPath;
-  CatPrint (Str, L"USB(%x,%x)", Usb->ParentPortNumber, Usb->InterfaceNumber);
+  CatPrint (Str, L"USB(0x%x,0x%x)", Usb->ParentPortNumber, Usb->InterfaceNumber);
 }
 
 VOID
@@ -596,14 +617,30 @@ DevPathToTextUsbWWID (
   )
 {
   USB_WWID_DEVICE_PATH  *UsbWWId;
+  CHAR16                *SerialNumberStr;
+  CHAR16                *NewStr;
+  UINT16                Length;
 
   UsbWWId = DevPath;
+
+  SerialNumberStr = (CHAR16 *) ((UINT8 *) UsbWWId + sizeof (USB_WWID_DEVICE_PATH));
+  Length = (DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) UsbWWId) - sizeof (USB_WWID_DEVICE_PATH)) / sizeof (CHAR16);
+  if (SerialNumberStr [Length - 1] != 0) {
+    //
+    // In case no NULL terminator in SerialNumber, create a new one with NULL terminator
+    //
+    NewStr = EfiLibAllocateCopyPool ((Length + 1) * sizeof (CHAR16), SerialNumberStr);
+    NewStr [Length] = 0;
+    SerialNumberStr = NewStr;
+  }
+
   CatPrint (
     Str,
-    L"UsbWwid(%x,%x,%x,\"WWID\")",
+    L"UsbWwid(0x%x,0x%x,0x%x,\"%s\")",
     UsbWWId->VendorId,
     UsbWWId->ProductId,
-    UsbWWId->InterfaceNumber
+    UsbWWId->InterfaceNumber,
+    SerialNumberStr
     );
 }
 
@@ -618,7 +655,7 @@ DevPathToTextLogicalUnit (
   DEVICE_LOGICAL_UNIT_DEVICE_PATH *LogicalUnit;
 
   LogicalUnit = DevPath;
-  CatPrint (Str, L"Unit(%x)", LogicalUnit->Lun);
+  CatPrint (Str, L"Unit(0x%x)", LogicalUnit->Lun);
 }
 
 VOID
@@ -630,181 +667,112 @@ DevPathToTextUsbClass (
   )
 {
   USB_CLASS_DEVICE_PATH *UsbClass;
+  BOOLEAN               IsKnownSubClass;
+
 
   UsbClass = DevPath;
 
-  if (AllowShortcuts == TRUE) {
-    switch (UsbClass->DeviceClass) {
-    case 1:
+  IsKnownSubClass = TRUE;
+  switch (UsbClass->DeviceClass) {
+  case USB_CLASS_AUDIO:
+    CatPrint (Str, L"UsbAudio");
+    break;
+
+  case USB_CLASS_CDCCONTROL:
+    CatPrint (Str, L"UsbCDCControl");
+    break;
+
+  case USB_CLASS_HID:
+    CatPrint (Str, L"UsbHID");
+    break;
+
+  case USB_CLASS_IMAGE:
+    CatPrint (Str, L"UsbImage");
+    break;
+
+  case USB_CLASS_PRINTER:
+    CatPrint (Str, L"UsbPrinter");
+    break;
+
+  case USB_CLASS_MASS_STORAGE:
+    CatPrint (Str, L"UsbMassStorage");
+    break;
+
+  case USB_CLASS_HUB:
+    CatPrint (Str, L"UsbHub");
+    break;
+
+  case USB_CLASS_CDCDATA:
+    CatPrint (Str, L"UsbCDCData");
+    break;
+
+  case USB_CLASS_SMART_CARD:
+    CatPrint (Str, L"UsbSmartCard");
+    break;
+
+  case USB_CLASS_VIDEO:
+    CatPrint (Str, L"UsbVideo");
+    break;
+
+  case USB_CLASS_DIAGNOSTIC:
+    CatPrint (Str, L"UsbDiagnostic");
+    break;
+
+  case USB_CLASS_WIRELESS:
+    CatPrint (Str, L"UsbWireless");
+    break;
+
+  default:
+    IsKnownSubClass = FALSE;
+    break;
+  }
+
+  if (IsKnownSubClass) {
+    CatPrint (
+      Str,
+      L"(0x%x,0x%x,0x%x,0x%x)",
+      UsbClass->VendorId,
+      UsbClass->ProductId,
+      UsbClass->DeviceSubClass,
+      UsbClass->DeviceProtocol
+      );
+    return;
+  }
+
+  if (UsbClass->DeviceClass == USB_CLASS_RESERVE) {
+    if (UsbClass->DeviceSubClass == USB_SUBCLASS_FW_UPDATE) {
       CatPrint (
         Str,
-        L"UsbAudio(%x,%x,%x,%x)",
+        L"UsbDeviceFirmwareUpdate(0x%x,0x%x,0x%x)",
         UsbClass->VendorId,
         UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
         UsbClass->DeviceProtocol
         );
-      break;
-
-    case 2:
+      return;
+    } else if (UsbClass->DeviceSubClass == USB_SUBCLASS_IRDA_BRIDGE) {
       CatPrint (
         Str,
-        L"UsbCDCControl(%x,%x,%x,%x)",
+        L"UsbIrdaBridge(0x%x,0x%x,0x%x)",
         UsbClass->VendorId,
         UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
         UsbClass->DeviceProtocol
         );
-      break;
-
-    case 3:
+      return;
+    } else if (UsbClass->DeviceSubClass == USB_SUBCLASS_TEST) {
       CatPrint (
         Str,
-        L"UsbHID(%x,%x,%x,%x)",
+        L"UsbTestAndMeasurement(0x%x,0x%x,0x%x)",
         UsbClass->VendorId,
         UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
         UsbClass->DeviceProtocol
         );
-      break;
-
-    case 6:
-      CatPrint (
-        Str,
-        L"UsbImage(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 7:
-      CatPrint (
-        Str,
-        L"UsbPrinter(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 8:
-      CatPrint (
-        Str,
-        L"UsbMassStorage(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 9:
-      CatPrint (
-        Str,
-        L"UsbHub(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 10:
-      CatPrint (
-        Str,
-        L"UsbCDCData(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 11:
-      CatPrint (
-        Str,
-        L"UsbSmartCard(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 14:
-      CatPrint (
-        Str,
-        L"UsbVideo(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 220:
-      CatPrint (
-        Str,
-        L"UsbDiagnostic(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 224:
-      CatPrint (
-        Str,
-        L"UsbWireless(%x,%x,%x,%x)",
-        UsbClass->VendorId,
-        UsbClass->ProductId,
-        UsbClass->DeviceSubClass,
-        UsbClass->DeviceProtocol
-        );
-      break;
-
-    case 254:
-      if (UsbClass->DeviceSubClass == 1) {
-        CatPrint (
-          Str,
-          L"UsbDeviceFirmwareUpdate(%x,%x,%x)",
-          UsbClass->VendorId,
-          UsbClass->ProductId,
-          UsbClass->DeviceProtocol
-          );
-      } else if (UsbClass->DeviceSubClass == 2) {
-        CatPrint (
-          Str,
-          L"UsbIrdaBridge(%x,%x,%x)",
-          UsbClass->VendorId,
-          UsbClass->ProductId,
-          UsbClass->DeviceProtocol
-          );
-      } else if (UsbClass->DeviceSubClass == 3) {
-        CatPrint (
-          Str,
-          L"UsbTestAndMeasurement(%x,%x,%x)",
-          UsbClass->VendorId,
-          UsbClass->ProductId,
-          UsbClass->DeviceProtocol
-          );
-      }
-      break;
-
-    default:
-      break;
+      return;
     }
-
-    return ;
   }
 
   CatPrint (
     Str,
-    L"UsbClass(%x,%x,%x,%x,%x)",
+    L"UsbClass(0x%x,0x%x,0x%x,0x%x,0x%x)",
     UsbClass->VendorId,
     UsbClass->ProductId,
     UsbClass->DeviceClass,
@@ -824,7 +792,7 @@ DevPathToTextI2O (
   I2O_DEVICE_PATH *I2O;
 
   I2O = DevPath;
-  CatPrint (Str, L"I2O(%x)", I2O->Tid);
+  CatPrint (Str, L"I2O(0x%x)", I2O->Tid);
 }
 
 VOID
@@ -852,7 +820,7 @@ DevPathToTextMacAddr (
     CatPrint (Str, L"%02x", MAC->MacAddress.Addr[Index]);
   }
 
-  CatPrint (Str, L",%x)", MAC->IfType);
+  CatPrint (Str, L",0x%x)", MAC->IfType);
 }
 
 VOID
@@ -982,7 +950,7 @@ DevPathToTextInfiniBand (
   InfiniBand = DevPath;
   CatPrint (
     Str,
-    L"Infiniband(%x,%g,%lx,%lx,%lx)",
+    L"Infiniband(0x%x,%g,0x%lx,0x%lx,0x%lx)",
     InfiniBand->ResourceFlags,
     InfiniBand->PortGid,
     InfiniBand->ServiceId,
@@ -1084,7 +1052,7 @@ DevPathToTextiSCSI (
   iSCSI = DevPath;
   CatPrint (
     Str,
-    L"iSCSI(%s,%x,%lx,",
+    L"iSCSI(%s,0x%x,0x%lx,",
     iSCSI->iSCSITargetName,
     iSCSI->TargetPortalGroupTag,
     iSCSI->Lun
@@ -1129,7 +1097,7 @@ DevPathToTextHardDrive (
   case SIGNATURE_TYPE_MBR:
     CatPrint (
       Str,
-      L"HD(%d,%s,%08x,",
+      L"HD(%d,%s,0x%08x,",
       Hd->PartitionNumber,
       L"MBR",
       *((UINT32 *) (&(Hd->Signature[0])))
@@ -1150,7 +1118,7 @@ DevPathToTextHardDrive (
     break;
   }
 
-  CatPrint (Str, L"%lx,%lx)", Hd->PartitionStart, Hd->PartitionSize);
+  CatPrint (Str, L"0x%lx,0x%lx)", Hd->PartitionStart, Hd->PartitionSize);
 }
 
 VOID
@@ -1165,11 +1133,11 @@ DevPathToTextCDROM (
 
   Cd = DevPath;
   if (DisplayOnly == TRUE) {
-    CatPrint (Str, L"CDROM(%x)", Cd->BootEntry);
+    CatPrint (Str, L"CDROM(0x%x)", Cd->BootEntry);
     return ;
   }
 
-  CatPrint (Str, L"CDROM(%x,%lx,%lx)", Cd->BootEntry, Cd->PartitionStart, Cd->PartitionSize);
+  CatPrint (Str, L"CDROM(0x%x,0x%lx,0x%lx)", Cd->BootEntry, Cd->PartitionStart, Cd->PartitionSize);
 }
 
 VOID
@@ -1249,7 +1217,7 @@ DevPathToTextBBS (
     return ;
   }
 
-  CatPrint (Str, L",%x)", Bbs->StatusFlag);
+  CatPrint (Str, L",0x%x)", Bbs->StatusFlag);
 }
 
 VOID
@@ -1295,10 +1263,10 @@ DEVICE_PATH_TO_TEXT_TABLE DevPathToTextTable[] = {
   DevPathToTextAcpi,
   ACPI_DEVICE_PATH,
   ACPI_EXTENDED_DP,
-  DevPathToTextExtAcpi,
+  DevPathToTextAcpiEx,
   ACPI_DEVICE_PATH,
   ACPI_ADR_DP,
-  DevPathToTextAdrAcpi,
+  DevPathToTextAcpiAdr,
   MESSAGING_DEVICE_PATH,
   MSG_ATAPI_DP,
   DevPathToTextAtapi,

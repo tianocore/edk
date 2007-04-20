@@ -50,7 +50,6 @@ COMPONENT_TYPE  = LIBRARY
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
-  $(EDK_SOURCE)\Foundation\Core\Pei\Include
   $(EDK_SOURCE)\Foundation\Framework\Ppi\CpuIo
   $(EDK_SOURCE)\Foundation\Framework
 

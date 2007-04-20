@@ -34,6 +34,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_GUID_DEFINITION (FrameworkDevicePath)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)

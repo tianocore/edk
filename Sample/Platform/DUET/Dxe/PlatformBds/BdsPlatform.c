@@ -464,7 +464,7 @@ Returns:
   //
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gPnpPs2KeyboardDeviceNode);
 
-  BdsLibUpdateConsoleVariable (L"ConIn", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleInp, DevicePath, NULL);
 
   //
   // Register COM1
@@ -476,9 +476,9 @@ Returns:
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gUartDeviceNode);
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gTerminalTypeDeviceNode);
 
-  BdsLibUpdateConsoleVariable (L"ConOut", DevicePath, NULL);
-  BdsLibUpdateConsoleVariable (L"ConIn", DevicePath, NULL);
-  BdsLibUpdateConsoleVariable (L"ErrOut", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleOut, DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleInp, DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarErrorOut, DevicePath, NULL);
 
   //
   // Register COM2
@@ -490,9 +490,9 @@ Returns:
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gUartDeviceNode);
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gTerminalTypeDeviceNode);
 
-  BdsLibUpdateConsoleVariable (L"ConOut", DevicePath, NULL);
-  BdsLibUpdateConsoleVariable (L"ConIn", DevicePath, NULL);
-  BdsLibUpdateConsoleVariable (L"ErrOut", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleOut, DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleInp, DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarErrorOut, DevicePath, NULL);
 
   return EFI_SUCCESS;
 }
@@ -573,8 +573,8 @@ GetGopDevicePath (
         // Delete the PCI device's path that added by GetPlugInPciVgaDevicePath()
         // Add the integrity GOP device path.
         //
-        BdsLibUpdateConsoleVariable (L"ConOutDev", NULL, PciDevicePath);
-        BdsLibUpdateConsoleVariable (L"ConOutDev", TempDevicePath, NULL);
+        BdsLibUpdateConsoleVariable (VarConsoleOutDev, NULL, PciDevicePath);
+        BdsLibUpdateConsoleVariable (VarConsoleOutDev, TempDevicePath, NULL);
       }
     }
     gBS->FreePool (GopHandleBuffer);
@@ -627,7 +627,7 @@ Returns:
   DevicePath = GopDevicePath;
 #endif
 
-  BdsLibUpdateConsoleVariable (L"ConOut", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleOut, DevicePath, NULL);
   
   return EFI_SUCCESS;
 }
@@ -670,16 +670,16 @@ Returns:
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gUartDeviceNode);
   DevicePath = EfiAppendDevicePathNode (DevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&gTerminalTypeDeviceNode);
 
-  BdsLibUpdateConsoleVariable (L"ConOut", DevicePath, NULL);
-  BdsLibUpdateConsoleVariable (L"ConIn", DevicePath, NULL);
-  BdsLibUpdateConsoleVariable (L"ErrOut", DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleOut, DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarConsoleInp, DevicePath, NULL);
+  BdsLibUpdateConsoleVariable (VarErrorOut, DevicePath, NULL);
   
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 DetectAndPreparePlatformPciDevicePath (
-  VOID
+  BOOLEAN DetectVgaOnly
   )
 /*++
 
@@ -689,7 +689,7 @@ Routine Description:
 
 Arguments:
 
-  None.
+  DetectVgaOnly           - Only detect VGA device if it's TRUE.
  
 Returns:
 
@@ -741,17 +741,29 @@ Returns:
       continue;
     }
 
-    //
-    // Here we decide whether it is LPC Bridge
-    //
-    if ((IS_PCI_LPC (&Pci)) ||
-        ((IS_PCI_ISA_PDECODE (&Pci)) && (Pci.Hdr.VendorId == 0x8086) && (Pci.Hdr.DeviceId == 0x7110))) {
+    if (!DetectVgaOnly) {
       //
-      // Add IsaKeyboard to ConIn,
-      // add IsaSerial to ConOut, ConIn, ErrOut
+      // Here we decide whether it is LPC Bridge
       //
-      PrepareLpcBridgeDevicePath (HandleBuffer[Index]);
-      continue;
+      if ((IS_PCI_LPC (&Pci)) ||
+          ((IS_PCI_ISA_PDECODE (&Pci)) && (Pci.Hdr.VendorId == 0x8086) && (Pci.Hdr.DeviceId == 0x7110))) {
+        //
+        // Add IsaKeyboard to ConIn,
+        // add IsaSerial to ConOut, ConIn, ErrOut
+        //
+        PrepareLpcBridgeDevicePath (HandleBuffer[Index]);
+        continue;
+      }
+      //
+      // Here we decide which Serial device to enable in PCI bus 
+      //
+      if (IS_PCI_16550SERIAL (&Pci)) {
+        //
+        // Add them to ConOut, ConIn, ErrOut.
+        //
+        PreparePciSerialDevicePath (HandleBuffer[Index]);
+        continue;
+      }
     }
 
     //
@@ -764,18 +776,6 @@ Returns:
       PreparePciVgaDevicePath (HandleBuffer[Index]);
       continue;
     }
-
-    //
-    // Here we decide which Serial device to enable in PCI bus 
-    //
-    if (IS_PCI_16550SERIAL (&Pci)) {
-      //
-      // Add them to ConOut, ConIn, ErrOut.
-      //
-      PreparePciSerialDevicePath (HandleBuffer[Index]);
-      continue;
-    }
-
   }
   
   gBS->FreePool (HandleBuffer);
@@ -809,44 +809,57 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINTN       Index;
-
-  Index   = 0;
-  Status  = EFI_SUCCESS;
+  EFI_STATUS                         Status;
+  UINTN                              Index;
+  EFI_DEVICE_PATH_PROTOCOL           *VarConout;
+  EFI_DEVICE_PATH_PROTOCOL           *VarConin;
+  UINTN                              DevicePathSize;
 
   //
   // Connect RootBridge
   //
   ConnectRootBridge ();
 
-  //
-  // Do platform specific PCI Device check and add them to ConOut, ConIn, ErrOut
-  //
-  DetectAndPreparePlatformPciDevicePath ();
-
-  //
-  // Have chance to connect the platform default console,
-  // the platform default console is the minimue device group
-  // the platform should support
-  //
-  while (PlatformConsole[Index].DevicePath != NULL) {
+  VarConout = BdsLibGetVariableAndSize (
+                VarConsoleOut,
+                &gEfiGlobalVariableGuid,
+                &DevicePathSize
+                );
+  VarConin = BdsLibGetVariableAndSize (
+               VarConsoleInp,
+               &gEfiGlobalVariableGuid,
+               &DevicePathSize
+               );
+  if (VarConout == NULL || VarConin == NULL) {
     //
-    // Update the console variable with the connect type
+    // Do platform specific PCI Device check and add them to ConOut, ConIn, ErrOut
     //
-    if ((PlatformConsole[Index].ConnectType & CONSOLE_IN) == CONSOLE_IN) {
-      BdsLibUpdateConsoleVariable (L"ConIn", PlatformConsole[Index].DevicePath, NULL);
-    }
+    DetectAndPreparePlatformPciDevicePath (FALSE);
 
-    if ((PlatformConsole[Index].ConnectType & CONSOLE_OUT) == CONSOLE_OUT) {
-      BdsLibUpdateConsoleVariable (L"ConOut", PlatformConsole[Index].DevicePath, NULL);
+    //
+    // Have chance to connect the platform default console,
+    // the platform default console is the minimue device group
+    // the platform should support
+    //
+    for (Index = 0; PlatformConsole[Index].DevicePath != NULL; ++Index) {
+      //
+      // Update the console variable with the connect type
+      //
+      if ((PlatformConsole[Index].ConnectType & CONSOLE_IN) == CONSOLE_IN) {
+        BdsLibUpdateConsoleVariable (VarConsoleInp, PlatformConsole[Index].DevicePath, NULL);
+      }
+      if ((PlatformConsole[Index].ConnectType & CONSOLE_OUT) == CONSOLE_OUT) {
+        BdsLibUpdateConsoleVariable (VarConsoleOut, PlatformConsole[Index].DevicePath, NULL);
+      }
+      if ((PlatformConsole[Index].ConnectType & STD_ERROR) == STD_ERROR) {
+        BdsLibUpdateConsoleVariable (VarErrorOut, PlatformConsole[Index].DevicePath, NULL);
+      }
     }
-
-    if ((PlatformConsole[Index].ConnectType & STD_ERROR) == STD_ERROR) {
-      BdsLibUpdateConsoleVariable (L"ErrOut", PlatformConsole[Index].DevicePath, NULL);
-    }
-
-    Index++;
+  } else {
+    //
+    // Only detect VGA device and add them to ConOut
+    //
+    DetectAndPreparePlatformPciDevicePath (TRUE);
   }
 
   //
@@ -1039,97 +1052,39 @@ Returns:
   // Go the different platform policy with different boot mode
   // Notes: this part code can be change with the table policy
   //
-  switch (PrivateData->BootMode) {
-
-  case BOOT_ASSUMING_NO_CONFIGURATION_CHANGES:
-  case BOOT_WITH_MINIMAL_CONFIGURATION:
+  ASSERT (PrivateData->BootMode == BOOT_WITH_FULL_CONFIGURATION);
+  //
+  // Connect platform console
+  //
+  Status = PlatformBdsConnectConsole (gPlatformConsole);
+  if (EFI_ERROR (Status)) {
     //
-    // In no-configuration boot mode, we can connect the
-    // console directly.
+    // Here OEM/IBV can customize with defined action
     //
-    BdsLibConnectAllDefaultConsoles ();
-    PlatformBdsDiagnostics (IGNORE, TRUE);
-
-    //
-    // Perform some platform specific connect sequence
-    //
-    PlatformBdsConnectSequence ();
-
-    //
-    // Notes: current time out = 0 can not enter the
-    // front page
-    //
-    PlatformBdsEnterFrontPage (Timeout, FALSE);
-
-    //
-    // Check the boot option with the boot option list
-    //
-    BdsLibBuildOptionFromVar (BootOptionList, L"BootOrder");
-    break;
-
-  case BOOT_ON_FLASH_UPDATE:
-    //
-    // Boot with the specific configuration
-    //
-    PlatformBdsConnectConsole (gPlatformConsole);
-    PlatformBdsDiagnostics (EXTENSIVE, FALSE);
-    BdsLibConnectAll ();
-    ProcessCapsules (BOOT_ON_FLASH_UPDATE);
-    break;
-
-  case BOOT_IN_RECOVERY_MODE:
-    //
-    // In recovery mode, just connect platform console
-    // and show up the front page
-    //
-    PlatformBdsConnectConsole (gPlatformConsole);
-    PlatformBdsDiagnostics (EXTENSIVE, FALSE);
-
-    //
-    // In recovery boot mode, we still enter to the
-    // frong page now
-    //
-    PlatformBdsEnterFrontPage (Timeout, FALSE);
-    break;
-
-  case BOOT_WITH_FULL_CONFIGURATION:
-  case BOOT_WITH_FULL_CONFIGURATION_PLUS_DIAGNOSTICS:
-  case BOOT_WITH_DEFAULT_SETTINGS:
-  default:
-    //
-    // Connect platform console
-    //
-    Status = PlatformBdsConnectConsole (gPlatformConsole);
-    if (EFI_ERROR (Status)) {
-      //
-      // Here OEM/IBV can customize with defined action
-      //
-      PlatformBdsNoConsoleAction ();
-    }
-
-    PlatformBdsDiagnostics (IGNORE, TRUE);
-
-    //
-    // Perform some platform specific connect sequence
-    //
-    PlatformBdsConnectSequence ();
-
-    //
-    // Give one chance to enter the setup if we
-    // have the time out
-    //
-    PlatformBdsEnterFrontPage (Timeout, FALSE);
-
-    //
-    // Here we have enough time to do the enumeration of boot device
-    //
-    if (!gConnectAllHappened) {
-      BdsLibConnectAllDriversToAllControllers ();
-      gConnectAllHappened = TRUE;
-    }
-    BdsLibEnumerateAllBootOption (BootOptionList);
-    break;
+    PlatformBdsNoConsoleAction ();
   }
+
+  PlatformBdsDiagnostics (IGNORE, TRUE);
+
+  //
+  // Perform some platform specific connect sequence
+  //
+  PlatformBdsConnectSequence ();
+
+  //
+  // Give one chance to enter the setup if we
+  // have the time out
+  //
+  PlatformBdsEnterFrontPage (Timeout, FALSE);
+
+  //
+  // Here we have enough time to do the enumeration of boot device
+  //
+  if (!gConnectAllHappened) {
+    BdsLibConnectAllDriversToAllControllers ();
+    gConnectAllHappened = TRUE;
+  }
+  BdsLibEnumerateAllBootOption (BootOptionList);
 
   return ;
 

@@ -133,6 +133,7 @@ Returns:
     PrivateData->StatusCodeMemoryPpi.LastEntry = 0;
     PrivateData->StatusCodeMemoryPpi.Address = (EFI_PHYSICAL_ADDRESS) (UINTN) StartPointer;
     PrivateData->StatusCodeMemoryPpi.Length = PEI_STATUS_CODE_HEAP_LENGTH;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     PrivateData->NotifyDescriptor.Flags =
       (
         EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK |
@@ -140,7 +141,7 @@ Returns:
       );
     PrivateData->NotifyDescriptor.Guid    = &gPeiFvFileLoaderPpiGuid;
     PrivateData->NotifyDescriptor.Notify  = LoadImageCallback;
-
+#endif
     //
     // Publish the PPI
     //
@@ -151,10 +152,12 @@ Returns:
     //
     // Post a callback to relocate to memory
     //
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     Status = (**PeiServices).NotifyPpi (PeiServices, &PrivateData->NotifyDescriptor);
     if (EFI_ERROR (Status)) {
       return ;
     }
+#endif
   } else {
     //
     // If we are running from memory, we need to copy from the heap to a RT
@@ -186,9 +189,11 @@ Returns:
     PrivateData->PpiDescriptor.Guid = &gPeiStatusCodeMemoryPpiGuid;
     PrivateData->StatusCodeMemoryPpi.Address = PrivateData->StatusCodeMemoryPpi.Address +
       (UINTN) PrivateData - (UINTN) PrivateData->This;
+    PrivateData->This                     = PrivateData;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     PrivateData->NotifyDescriptor.Guid    = &gPeiFvFileLoaderPpiGuid;
     PrivateData->NotifyDescriptor.Notify  = LoadImageCallback;
-    PrivateData->This                     = PrivateData;
+#endif
 
     //
     // Allocate RT memory.
@@ -314,7 +319,7 @@ MemoryReportStatusCode (
   IN EFI_STATUS_CODE_TYPE     CodeType,
   IN EFI_STATUS_CODE_VALUE    Value,
   IN UINT32                   Instance,
-  IN EFI_GUID                 * CallerId,
+  IN EFI_GUID                 * CallerId ,
   IN EFI_STATUS_CODE_DATA     * Data OPTIONAL
   )
 /*++
@@ -387,10 +392,11 @@ Returns:
     PrivateData->PpiDescriptor.Guid = &gPeiStatusCodeMemoryPpiGuid;
     PrivateData->StatusCodeMemoryPpi.Address = PrivateData->StatusCodeMemoryPpi.Address +
       (UINTN) PrivateData - (UINTN) PrivateData->This;
+    PrivateData->This                     = PrivateData;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     PrivateData->NotifyDescriptor.Guid    = &gPeiFvFileLoaderPpiGuid;
     PrivateData->NotifyDescriptor.Notify  = LoadImageCallback;
-    PrivateData->This                     = PrivateData;
-
+#endif
     StatusCodeMemoryPpi                   = PrivateData->PpiDescriptor.Ppi;
   } else {
     //
@@ -427,6 +433,9 @@ Returns:
 
   return EFI_SUCCESS;
 }
+
+
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 
 EFI_STATUS
 EFIAPI
@@ -508,3 +517,5 @@ Returns:
 
   return EFI_SUCCESS;
 }
+#endif
+

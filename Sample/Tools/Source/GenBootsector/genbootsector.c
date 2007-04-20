@@ -306,7 +306,6 @@ Return:
     //
     // Skip MBR
     //
-    fprintf (stdout, "Skip MBR!\n");
     for (Index = 0; Index < PARTITION_ENTRY_NUM; Index++) {
       //
       // Found Boot Indicator.
@@ -633,7 +632,7 @@ main (
   if (Status == ErrorSuccess) {
     fprintf (
       stdout, 
-      "%s %s successfully!\n", 
+      "%s %s: successfully!\n", 
       WriteToDisk ? "Write" : "Read", 
       ProcessMbr ? "MBR" : "DBR"
       );
@@ -641,7 +640,7 @@ main (
   } else {
     fprintf (
       stderr, 
-      "%s: %s %s failed - %s (LastError: 0x%x)!\n",
+      "%s: %s %s: failed - %s (LastError: 0x%x)!\n",
       (Status == ErrorNoMbr) ? "WARNING" : "ERROR",
       WriteToDisk ? "Write" : "Read", 
       ProcessMbr ? "MBR" : "DBR", 

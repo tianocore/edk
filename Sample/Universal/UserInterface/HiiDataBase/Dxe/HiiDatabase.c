@@ -88,7 +88,7 @@ Returns:
   //
   // Seed the Font Database with a known non-character glyph
   //
-  for (Index = 0; Index <= MAX_GLYPH_COUNT; Index++) {
+  for (Index = 0; Index < MAX_GLYPH_COUNT; Index++) {
     //
     // Seeding the UnicodeWeight with 0 signifies that it is uninitialized
     //

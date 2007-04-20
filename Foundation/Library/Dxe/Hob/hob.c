@@ -322,6 +322,58 @@ Returns:
   return EFI_SUCCESS;
 }
 
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+EFI_STATUS
+GetNextFirmwareVolume2Hob (
+  IN OUT VOID                  **HobStart,
+  OUT    EFI_PHYSICAL_ADDRESS  *BaseAddress,
+  OUT    UINT64                *Length,
+  OUT    EFI_GUID              *FileName
+  )
+/*++
+
+Routine Description:
+
+  Get next firmware volume2 hob from HobStart
+
+Arguments:
+
+  HobStart        - Start pointer of hob list
+  
+  BaseAddress     - Start address of next firmware volume
+  
+  Length          - Length of next firmware volume
+
+Returns:
+
+  EFI_NOT_FOUND   - Next firmware volume not found
+  
+  EFI_SUCCESS     - Next firmware volume found with address information
+
+--*/
+{
+  EFI_PEI_HOB_POINTERS  FirmwareVolumeHob;
+
+  FirmwareVolumeHob.Raw = *HobStart;
+  if (END_OF_HOB_LIST (FirmwareVolumeHob)) {
+    return EFI_NOT_FOUND;
+  }
+
+  FirmwareVolumeHob.Raw = GetHob (EFI_HOB_TYPE_FV2, *HobStart);
+  if (FirmwareVolumeHob.Header->HobType != EFI_HOB_TYPE_FV2) {
+    return EFI_NOT_FOUND;
+  }
+
+  *BaseAddress  = FirmwareVolumeHob.FirmwareVolume2->BaseAddress;
+  *Length       = FirmwareVolumeHob.FirmwareVolume2->Length;
+  EfiCommonLibCopyMem(FileName,&FirmwareVolumeHob.FirmwareVolume2->FileName,sizeof(EFI_GUID));
+
+  *HobStart     = GET_NEXT_HOB (FirmwareVolumeHob);
+
+  return EFI_SUCCESS;
+}
+#endif
+
 EFI_STATUS
 GetNextGuidHob (
   IN OUT VOID      **HobStart,

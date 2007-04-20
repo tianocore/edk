@@ -1,0 +1,43 @@
+#/*++
+#
+# Copyright (c) 2007, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                          
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+#
+#
+#  Module Name:
+#
+#    AprioriList.inf
+#
+#  Abstract:
+#
+#    Component description file for creating an Apriori file.
+#
+#  NOTES:
+# 
+#    You must define one and only one fv name on the component line in the DSC 
+#    file. Typically you'll have something like:
+#
+#    DriverPath\AprioriList.inf FV=FvRecovery
+#
+#--*/
+
+[defines]
+BASE_NAME       = Apriori$(FV)
+FILE_GUID       = $(EFI_PEI_APRIORI_FILE_NAME_GUID)
+COMPONENT_TYPE  = APRIORI
+MAKEFILE_NAME   = Apriori$(FV).mak
+
+[sources.common]
+  $(BUILD_DIR)\Fv\$(FV).apr
+
+[includes.common]
+
+[libraries.common]
+
+[nmake.common]

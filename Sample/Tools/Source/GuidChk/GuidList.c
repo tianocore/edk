@@ -46,6 +46,8 @@ Notes:
 #include EFI_GUID_DEFINITION (AcpiTableStorage)
 #include EFI_GUID_DEFINITION (Bmp)
 #include EFI_GUID_DEFINITION (AcpiTableStorage)
+#include EFI_GUID_DEFINITION (PeiApriori)
+
 
 #define GUID_XREF(varname, guid) { \
     #varname, #guid, guid \
@@ -68,6 +70,7 @@ typedef struct {
 // Use the #defined name from the GUID definition's source .h file.
 //
 static GUID_LIST  mGuidList[] = {
+  GUID_XREF(gEfiPeiAprioriGuid, EFI_PEI_APRIORI_FILE_NAME_GUID),
   GUID_XREF(gAprioriGuid, EFI_APRIORI_GUID),
   GUID_XREF(gEfiDefaultBmpLogoGuid, EFI_DEFAULT_BMP_LOGO_GUID),
   GUID_XREF(gEfiAcpiTableStorageGuid, EFI_ACPI_TABLE_STORAGE_GUID),

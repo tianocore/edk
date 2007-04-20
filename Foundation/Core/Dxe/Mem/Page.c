@@ -1257,8 +1257,8 @@ Returns:
     }
   }
   if (Link == &gMemoryMap) {
-    CoreReleaseMemoryLock ();
-    return EFI_NOT_FOUND;
+    Status = EFI_NOT_FOUND;
+    goto Done;
   }
 
   Alignment = EFI_DEFAULT_PAGE_ALLOCATION_ALIGNMENT;
@@ -1273,8 +1273,8 @@ Returns:
   }
 
   if ((Memory & (Alignment - 1)) != 0) {
-    CoreReleaseMemoryLock ();
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    goto Done;
   }
 
   NumberOfPages += EFI_SIZE_TO_PAGES (Alignment) - 1;
@@ -1282,10 +1282,8 @@ Returns:
 
   Status = CoreConvertPages (Memory, NumberOfPages, EfiConventionalMemory);
 
-  CoreReleaseMemoryLock ();
-
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Done;
   }
 
   //
@@ -1294,6 +1292,9 @@ Returns:
   if (Memory < EFI_MAX_ADDRESS) {
     DEBUG_SET_MEMORY ((VOID *)(UINTN)Memory, NumberOfPages << EFI_PAGE_SHIFT);
   }
+
+ Done:
+  CoreReleaseMemoryLock ();
   
   return Status;
 }

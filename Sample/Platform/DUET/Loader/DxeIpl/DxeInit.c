@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -47,75 +47,82 @@ Revision History:
 #include "PpisNeededByDxeCore.h"
 #include "Debug.h"
 
-//
-// --------------------------------------------------------
-// Memory Map: (XX=32,64)
-// --------------------------------------------------------
-// 0x0
-//   IVT
-// 0x400
-//   BDA
-// 0x500
-//
-// 0x7C00
-//   BootSector
-// 0x10000
-//   EfiLdr (loaded)
-// 0x20000
-//   StartXX.COM (E820 table, Temporary GDT, Temporary IDT)
-// 0x21000
-//   EfiXX.COM (Temporary Interrupt Handler)
-// 0x22000
-//   EfiLdr + DxeIpl.Z + DxeMain.Z + BFV.Z
-// 0x86000
-//   MemoryFreeUnder1M (For legacy driver DMA)
-//
-// 0x90000
-//   Temporary 4G PageTable for X64 (6 page)
-// 0x9F800
-//   EBDA
-// 0xA0000
-//   VGA
-// 0xC0000
-//   OPROM
-// 0xE0000
-//   FIRMEWARE
-// 0x100000 (1M) ------------------------------------------
-//   Temporary Stack (1M)
-// 0x200000
-// 0x100000 + AAA
-//   MemoryFreeAbove1M
-//
-// 0x100000000 - RRR         <- Phit.EfiMemoryBottom -----+
-//   Hob                                                  |
-// 0x100000000 - SSS         <- Phit.EfiFreeMemoryBottom  |
-//                                                        |
-// 0x100000000 - TTT         <- Phit.EfiFreeMemoryTop     |
-//   MemoryDescriptor (For ACPINVS, ACPIReclaim)          |
-// 0x100000000 - UUU                                      |
-//   Permament 4G PageTable for IA32               4M = CONSUMED_MEMORY
-//   Permament 64G PageTable for X64                      |
-// 0x100000000 - VVV                                      |
-//   Permament Stack (0x20 Pages = 128K)                  |
-// 0x100000000 - WWW         <- Memory Top on Decriptor   |
-//   DxeCore                                              |
-// 0x100000000 - XXX                                      |
-//   DxeIpl                                               |
-// 0x100000000 - YYY         <- Phit.EfiMemoryTop --------+
-//   BFV
-// 0x100000000 - ZZZ         <- Memory Top on E820
-//   ACPINVS
-//   ACPIReclaim
-//   Reserved
-// 0x100000000 - ???         <- Memory Top on RealMemory
-// 
-// 0x100000000 (4G)----------------------------------------
-// 0x100000000 + AAA
-//   MemoryFreeAbove4G
-//
-// 0x100000000 + ZZZ
-// --------------------------------------------------------
-//
+/*
+--------------------------------------------------------
+ Memory Map: (XX=32,64)
+--------------------------------------------------------
+0x0
+        IVT
+0x400
+        BDA
+0x500
+
+0x7C00
+        BootSector
+0x10000
+        EfiLdr (relocate by efiXX.COM)
+0x15000
+        Efivar.bin (Load by StartXX.COM)
+0x20000
+        StartXX.COM (E820 table, Temporary GDT, Temporary IDT)
+0x21000
+        EfiXX.COM (Temporary Interrupt Handler)
+0x22000
+        EfiLdr.efi + DxeIpl.Z + DxeMain.Z + BFV.Z
+0x86000
+        MemoryFreeUnder1M (For legacy driver DMA)
+0x90000
+        Temporary 4G PageTable for X64 (6 page)
+0x9F800
+        EBDA
+0xA0000
+        VGA
+0xC0000
+        OPROM
+0xE0000
+        FIRMEWARE
+0x100000 (1M)
+        Temporary Stack (1M)
+0x200000
+
+MemoryAbove1MB.PhysicalStart <-----------------------------------------------------+
+        ...                                                                        |
+        ...                                                                        |
+                        <- Phit.EfiMemoryBottom -------------------+               |
+        HOB                                                        |               |
+                        <- Phit.EfiFreeMemoryBottom                |               |
+                                                                   |     MemoryFreeAbove1MB.ResourceLength
+                        <- Phit.EfiFreeMemoryTop ------+           |               |
+        MemoryDescriptor (For ACPINVS, ACPIReclaim)    |    4M = CONSUMED_MEMORY   |
+                                                       |           |               |
+        Permament 4G PageTable for IA32 or      MemoryAllocation   |               |
+        Permament 64G PageTable for X64                |           |               |
+                        <------------------------------+           |               |
+        Permament Stack (0x20 Pages = 128K)                        |               |
+                        <- Phit.EfiMemoryTop ----------+-----------+---------------+
+        DxeCore                                                                    |
+                                                                                DxeCore
+        DxeIpl                                                                     |
+                        <----------------------------------------------------------+
+        NvFV + FtwFV                                                               |
+                                                                                 MMIO
+        BFV                                                                        |
+                        <- Top of Free Memory reported by E820 --------------------+
+        ACPINVS        or
+        ACPIReclaim    or
+        Reserved
+                        <- Memory Top on RealMemory
+
+0x100000000 (4G)
+
+MemoryFreeAbove4G.Physicalstart <--------------------------------------------------+
+                                                                                   |
+                                                                                   |
+                                                                  MemoryFreeAbove4GB.ResourceLength
+                                                                                   |
+                                                                                   |
+                                <--------------------------------------------------+
+*/
 
 VOID
 EnterDxeMain (
@@ -149,6 +156,7 @@ Returns:
   VOID                  *PageTableBase;
   VOID                  *MemoryTopOnDescriptor;
   VOID                  *MemoryDescriptor;
+  VOID                  *NvStorageBase;
 
 /*
   ClearScreen();
@@ -172,22 +180,40 @@ Returns:
   PrintValue64(Handoff->DxeCoreImageSize);
   PrintString("\n");   
 */
-
+  //
+  // Hob Generation Guild line:
+  //   * Don't report FV as physical memory
+  //   * MemoryAllocation Hob should only cover physical memory
+  //   * Use ResourceDescriptor Hob to report physical memory or Firmware Device and they shouldn't be overlapped
+  
+  //
+  // 1. BFV
+  //
   PrepareHobBfv (Handoff->BfvBase, Handoff->BfvSize);
 
+  //
+  // 2. Updates Memory information, and get the top free address under 4GB
+  //
   MemoryTopOnDescriptor = PrepareHobMemory (Handoff->MemDescCount, Handoff->MemDesc);
-  StackTop = MemoryTopOnDescriptor;
-
-  StackBottom = PrepareHobStack (StackTop);
-
-  PageTableBase = PrepareHobPageTable (StackBottom);
-
-  MemoryDescriptor = PrepareHobMemoryDescriptor (PageTableBase, Handoff->MemDescCount, Handoff->MemDesc);
-
-  PrepareHobPhit (Handoff->BfvBase, MemoryDescriptor);
 
   //
-  // Register the memory occupied by DxeCore and DxeIpl together as DxeCore
+  // 3. Put [NV], [Stack], [PageTable], [MemDesc], [HOB] just below the [top free address under 4GB]
+  //
+  
+  //   3.1 NV data
+  NvStorageBase = PrepareHobNvStorage (MemoryTopOnDescriptor);
+  //   3.2 Stack
+  StackTop = NvStorageBase;
+  StackBottom = PrepareHobStack (StackTop);
+  //   3.3 Page Table
+  PageTableBase = PreparePageTable (StackBottom);
+  //   3.4 MemDesc (will be used in PlatformBds)
+  MemoryDescriptor = PrepareHobMemoryDescriptor (PageTableBase, Handoff->MemDescCount, Handoff->MemDesc);
+  //   3.5 Copy the Hob itself to EfiMemoryBottom, and update the PHIT Hob
+  PrepareHobPhit (StackTop, MemoryDescriptor);
+
+  //
+  // 4. Register the memory occupied by DxeCore and DxeIpl together as DxeCore
   //
   PrepareHobDxeCore (
     Handoff->DxeCoreEntryPoint,
@@ -220,7 +246,17 @@ Returns:
   PrintValue64(gHob->Bfv.BaseAddress);
   PrintString(" BfvLength = ");   
   PrintValue64(gHob->Bfv.Length);
-  PrintString("\n");   
+  PrintString("\n");
+  PrintString("NvStorageFvb = ");
+  PrintValue64(gHob->NvStorageFvb.FvbInfo.Entries[0].Base);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvStorageFvb.FvbInfo.Entries[0].Length);
+  PrintString("\n");
+  PrintString("NvFtwFvb = ");
+  PrintValue64(gHob->NvFtwFvb.FvbInfo.Entries[0].Base);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvFtwFvb.FvbInfo.Entries[0].Length);
+  PrintString("\n");
   PrintString("Stack = ");   
   PrintValue64(gHob->Stack.AllocDescriptor.MemoryBaseAddress);
   PrintString(" StackLength = ");   
@@ -251,6 +287,7 @@ Returns:
   PrintString(" MemoryLength = ");   
   PrintValue64(gHob->MemoryAllocation.AllocDescriptor.MemoryLength);
   PrintString("\n");   
+  EFI_DEADLOOP();
 */
 
   ClearScreen();

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,7 @@ Abstract:
 #include "Pei.h"
 #include "DxeIpl.h"
 #include "EfiHobLib.h"
+#include "DxeLoadFunc.h"
 
 #pragma warning( disable : 4305 )
 
@@ -113,14 +114,22 @@ EFI_STATUS
 PeiProcessFile (
   IN     EFI_PEI_SERVICES       **PeiServices,
   IN     UINT16                 SectionType,
-  IN OUT EFI_FFS_FILE_HEADER    **FfsFileHeaderPoint,
-  OUT    VOID                   **Pe32Data
+  IN     EFI_FFS_FILE_HEADER    *FfsFileHeader,
+  OUT    VOID                   **Pe32Data,
+  IN     EFI_PEI_HOB_POINTERS   *OrigHob
   );
 
 VOID
 EfiCommonLibZeroMem (
   IN VOID   *Buffer,
   IN UINTN  Size
+  );
+
+VOID
+EfiCommonLibCopyMem (
+  IN VOID   *Destination,
+  IN VOID   *Source,
+  IN UINTN  Count
   );
 
 EFI_STATUS
@@ -131,6 +140,33 @@ PeiFindFfs (
   OUT VOID                   **Pe32Data
   );
 
+STATIC
+EFI_STATUS
+GetFvAlignment (
+  IN    EFI_FIRMWARE_VOLUME_HEADER   *FvHeader,
+  OUT   UINT32                      *FvAlignment
+  );
+
+STATIC
+VOID *
+EFIAPI
+AllocateAlignedPages (
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN UINTN                  Pages,
+  IN UINTN                  Alignment
+  );
+
+EFI_STATUS
+PeiLoadx64File (
+  IN  EFI_PEI_SERVICES                          **PeiServices,
+  IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
+  IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
+  IN  VOID                                      *Pe32Data,
+  IN  EFI_MEMORY_TYPE                           MemoryType,
+  OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
+  OUT UINT64                                    *ImageSize,
+  OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
+  );
 
 //
 // Module Globals used in the DXE to PEI handoff
@@ -324,6 +360,8 @@ Returns:
   EFI_PHYSICAL_ADDRESS                                      BspStore;
   EFI_GUID                                                  DxeCoreFileName;
   VOID                                                      *DxeCorePe32Data;
+  EFI_GUID                                                  FirmwareFileName;
+  VOID                                                      *FvImageData;
   EFI_PHYSICAL_ADDRESS                                      DxeCoreAddress;
   UINT64                                                    DxeCoreSize;
   EFI_PHYSICAL_ADDRESS                                      DxeCoreEntryPoint;
@@ -337,6 +375,8 @@ Returns:
   PEI_RECOVERY_MODULE_INTERFACE                             *PeiRecovery;
   PEI_S3_RESUME_PPI                                         *S3Resume;
   EFI_PHYSICAL_ADDRESS                                      PageTables;
+  EFI_PEI_HOB_POINTERS                                      Hob;
+  UINT8                                                     SizeOfMemorySpace;
 
   PEI_PERF_START (PeiServices, L"DxeIpl", NULL, 0);
 
@@ -417,6 +457,19 @@ Returns:
   }
 
   //
+  // Find the EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE type compressed Firmware Volume file
+  // The file found will be processed by PeiProcessFile: It will first be decompressed to
+  // a normal FV, then a corresponding FV type hob will be built. 
+  //
+  Status = PeiFindFile (
+             PeiServices,
+             EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE,
+             EFI_SECTION_FIRMWARE_VOLUME_IMAGE,
+             &FirmwareFileName,
+             &FvImageData
+             );
+
+  //
   // Find the DXE Core in a Firmware Volume
   //
   Status = PeiFindFile (
@@ -445,9 +498,22 @@ Returns:
   LoadGo64Gdt();
 
   //
-  // Limit to 36 bits of addressing for debug. Should get it from CPU
+  // Set default memory space addressing to 36 bits
   //
-  PageTables = CreateIdentityMappingPageTables (PeiServices, 36);
+  SizeOfMemorySpace = 36;
+
+  //
+  //
+  // Get memory space addressing value from CPU Hob
+  Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
+  if (!EFI_ERROR (Status)) {
+    Hob.Raw = GetHob (EFI_HOB_TYPE_CPU, Hob.Raw);
+    if (Hob.Header->HobType == EFI_HOB_TYPE_CPU) {
+      SizeOfMemorySpace = Hob.Cpu->SizeOfMemorySpace;
+    }
+  }
+
+  PageTables = CreateIdentityMappingPageTables (PeiServices, SizeOfMemorySpace);
 
   //
   // Load the PpiNeededByDxe from a Firmware Volume
@@ -573,7 +639,6 @@ Returns:
   VOID                        *SectionData;
   EFI_STATUS                  Status;
   BOOLEAN                     Found;
-  UINTN                       Index;
   EFI_PEI_HOB_POINTERS        Hob;
 
   Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
@@ -582,7 +647,6 @@ Returns:
     return Status;
   }
 
-  Index         = 0;
   Found         = FALSE;
   Status        = EFI_SUCCESS;
   FwVolHeader   = NULL;
@@ -593,7 +657,6 @@ Returns:
   // Foreach Firmware Volume, look for a file of Type
   // DXE Core and break out when one is found
   //
-  Index   = 0;
   Hob.Raw = GetHob (EFI_HOB_TYPE_FV, Hob.Raw);
   if (Hob.Header->HobType != EFI_HOB_TYPE_FV) {
     return EFI_NOT_FOUND;
@@ -603,7 +666,7 @@ Returns:
     FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) (Hob.FirmwareVolume->BaseAddress);
     Status = (*PeiServices)->FfsFindNextFile (
                               PeiServices,
-                              EFI_FV_FILETYPE_DXE_CORE,
+                              Type,
                               FwVolHeader,
                               &FfsFileHeader
                               );
@@ -622,8 +685,9 @@ Returns:
       Status = PeiProcessFile (
                 PeiServices,
                 SectionType,
-                &FfsFileHeader,
-                Pe32Data
+                FfsFileHeader,
+                Pe32Data,
+                &Hob
                 );
 
       //
@@ -634,7 +698,13 @@ Returns:
                         &FfsFileHeader->Name,
                         sizeof (EFI_GUID)
                         );
-      return Status;
+
+      //
+      // Find all Fv type ffs to get all FvImage and add them into FvHob
+      //
+      if (!EFI_ERROR (Status) && (Type != EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE)) {
+        return EFI_SUCCESS;
+      }
     }
   }
 
@@ -868,8 +938,9 @@ Returns:
   Status = PeiProcessFile (
             gPeiServices,
             EFI_SECTION_PE32,
-            &FfsHeader,
-            &Pe32Data
+            FfsHeader,
+            &Pe32Data,
+            NULL
             );
 
   if (EFI_ERROR (Status)) {
@@ -896,8 +967,9 @@ EFI_STATUS
 PeiProcessFile (
   IN     EFI_PEI_SERVICES       **PeiServices,
   IN     UINT16                 SectionType,
-  IN OUT EFI_FFS_FILE_HEADER    **FfsFileHeaderPoint,
-  OUT    VOID                   **Pe32Data
+  IN     EFI_FFS_FILE_HEADER    *FfsFileHeader,
+  OUT    VOID                   **Pe32Data,
+  IN     EFI_PEI_HOB_POINTERS   *OrigHob
   )
 /*++
 
@@ -909,11 +981,12 @@ Arguments:
 
   SectionType        - The type of section in the FFS file to process.
 
-  FfsFileHeaderPoint - Pointer to pointer to the FFS file to process, looking for the
+  FfsFileHeader      - Pointer to the FFS file to process, looking for the
                        specified SectionType and return pointer to FFS file that PE32 image is found
 
   Pe32Data           - returned pointer to the start of the PE32 image found
                        in the FFS file.
+  OrigHob            - Point to the FV Hob that contains the FV type ffs file.                      
 
 Returns:
 
@@ -946,12 +1019,12 @@ Returns:
   PEI_SECURITY_PPI                *Security;
   BOOLEAN                         StartCrisisRecovery;
   EFI_GUID                        TempGuid;
-  EFI_FIRMWARE_VOLUME_HEADER      *FvHeader;
   EFI_COMPRESSION_SECTION         *CompressionSection;
-  EFI_FFS_FILE_HEADER             *FfsFileHeader;
-  
-  FfsFileHeader = *FfsFileHeaderPoint;
+  EFI_FIRMWARE_VOLUME_HEADER      *FvHeader;
+  UINT32                          FvAlignment;
+  VOID                            *SectionInMemory;
 
+  FvAlignment = 0;
   Status = (*PeiServices)->FfsFindSectionData (
                             PeiServices,
                             EFI_SECTION_COMPRESSION,
@@ -1115,9 +1188,26 @@ Returns:
         ScratchBufferSize = 0;
         DstBuffer         = (UINT8 *) (UINTN) (OldTopOfMemory);
         ScratchBuffer     = (UINT8 *) (UINTN) (OldTopOfMemory);
+        //
+        // Copy compressed section to memory before decompess
+        //
+        Status = (*PeiServices)->AllocatePages (
+                                   PeiServices,
+                                   EfiBootServicesData,
+                                   EFI_SIZE_TO_PAGES(SectionLength),
+                                   &OldTopOfMemory);
+        if (EFI_ERROR (Status)) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+        SectionInMemory = (VOID*) (UINTN) OldTopOfMemory;
+        //
+        // If PEI core is shadowed, (*PeiServices)->CopyMem is preferred to save size
+        //
+        EfiCommonLibCopyMem (SectionInMemory, Section, SectionLength);
+
         Status = DecompressProtocol->GetInfo (
                                       DecompressProtocol,
-                                      (UINT8 *) ((EFI_COMPRESSION_SECTION *) Section + 1),
+                                      (UINT8 *) ((EFI_COMPRESSION_SECTION *) SectionInMemory + 1),
                                       (UINT32) SectionLength - sizeof (EFI_COMPRESSION_SECTION),
                                       (UINT32 *) &DstBufferSize,
                                       (UINT32 *) &ScratchBufferSize
@@ -1161,7 +1251,7 @@ Returns:
           //
           Status = DecompressProtocol->Decompress (
                                         DecompressProtocol,
-                                        (CHAR8 *) ((EFI_COMPRESSION_SECTION *) Section + 1),
+                                        (CHAR8 *) ((EFI_COMPRESSION_SECTION *) SectionInMemory + 1),
                                         (UINT32) SectionLength - sizeof (EFI_COMPRESSION_SECTION),
                                         DstBuffer,
                                         (UINT32) DstBufferSize,
@@ -1178,52 +1268,69 @@ Returns:
           return EFI_NOT_FOUND;
         }
 
-        CmpSection = (EFI_COMMON_SECTION_HEADER *) DstBuffer;
-        if (CmpSection->Type == EFI_SECTION_RAW) {
-          //
-          // Skip the section header and
-          // adjust the pointer alignment to 16
-          //
-          FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (DstBuffer + 16);
-
-          if (FvHeader->Signature == EFI_FVH_SIGNATURE) {
-            FfsFileHeader = NULL;
-            Status        = PeiBuildHobFv (PeiServices, (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader, FvHeader->FvLength);
-            Status = (*PeiServices)->FfsFindNextFile (
-                                      PeiServices,
-                                      EFI_FV_FILETYPE_DXE_CORE,
-                                      FvHeader,
-                                      &FfsFileHeader
-                                      );
-
-            if (EFI_ERROR (Status)) {
-              return EFI_NOT_FOUND;
-            }
-
-            //
-            // Write the pointer to the FFS file processed to FfsFileHeaderPoint.
-            //            
-            *FfsFileHeaderPoint = FfsFileHeader;
-
-            return PeiProcessFile (PeiServices, SectionType, FfsFileHeaderPoint, Pe32Data);
-          }
-        }
         //
         // Decompress successfully.
         // Loop the decompressed data searching for expected section.
         //
+        CmpSection = (EFI_COMMON_SECTION_HEADER *) DstBuffer;
         CmpFileData = (VOID *) DstBuffer;
         CmpFileSize = DstBufferSize;
         do {
           CmpSectionLength = *(UINT32 *) (CmpSection->Size) & 0x00ffffff;
-          if (CmpSection->Type == EFI_SECTION_PE32) {
+          if (CmpSection->Type == SectionType) {
             //
             // This is what we want
             //
-            *Pe32Data = (VOID *) (CmpSection + 1);
-            return EFI_SUCCESS;
-          }
+            if (SectionType == EFI_SECTION_PE32) {
+              *Pe32Data = (VOID *) (CmpSection + 1);
+              return EFI_SUCCESS;
+            } else if (SectionType == EFI_SECTION_FIRMWARE_VOLUME_IMAGE) {
+              // 
+              // Firmware Volume Image in this Section
+              // Skip the section header to get FvHeader
+              //
+              FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (CmpSection + 1);
+    
+              if (FvHeader->Signature == EFI_FVH_SIGNATURE) {
+                //
+                // Because FvLength in FvHeader is UINT64 type, 
+                // so FvHeader must meed at least 8 bytes alignment.
+                // If current FvImage base address doesn't meet its alignment,
+                // we need to reload this FvImage to another correct memory address.
+                //
+                Status = GetFvAlignment(FvHeader, &FvAlignment); 
+                if (EFI_ERROR(Status)) {
+                  return Status;
+                }
+                if (((UINTN) FvHeader % FvAlignment) != 0) {
+                  DstBuffer = AllocateAlignedPages (PeiServices, EFI_SIZE_TO_PAGES ((UINTN) CmpSectionLength - sizeof (EFI_COMMON_SECTION_HEADER)), FvAlignment);
+                  if (DstBuffer == NULL) {
+                    return EFI_OUT_OF_RESOURCES;
+                  }
+                  (*PeiServices)->CopyMem (DstBuffer, FvHeader, (UINTN) CmpSectionLength - sizeof (EFI_COMMON_SECTION_HEADER));
+                  FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) DstBuffer;  
+                }
 
+                //
+                // Build new FvHob for new decompressed Fv image.
+                //
+                PeiBuildHobFv (PeiServices, (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader, FvHeader->FvLength);
+                
+                //
+                // Set the original FvHob to unused.
+                //
+                if (OrigHob != NULL) {
+                  OrigHob->Header->HobType = EFI_HOB_TYPE_UNUSED;
+                }
+                
+                //
+                // return found FvImage data.
+                //
+                *Pe32Data = (VOID *) FvHeader;
+                return EFI_SUCCESS;
+              }
+            }
+          }
           OccupiedCmpSectionLength  = GetOccupiedSize (CmpSectionLength, 4);
           CmpSection                = (EFI_COMMON_SECTION_HEADER *) ((UINT8 *) CmpSection + OccupiedCmpSectionLength);
         } while (CmpSection->Type != 0 && (UINTN) ((UINT8 *) CmpSection - (UINT8 *) CmpFileData) < CmpFileSize);
@@ -1533,8 +1640,9 @@ Returns:
         Status = PeiProcessFile (
                    PeiServices,
                    SectionType,
-                   &FfsFileHeader,
-                   Pe32Data
+                   FfsFileHeader,
+                   Pe32Data,
+                   NULL
                    );
         return Status;
       }
@@ -1543,3 +1651,79 @@ Returns:
 
   return EFI_NOT_FOUND;
 }
+
+STATIC
+EFI_STATUS
+GetFvAlignment (
+  IN    EFI_FIRMWARE_VOLUME_HEADER   *FvHeader,
+  OUT   UINT32                      *FvAlignment
+  )
+{
+  UINT8 Index;
+  //
+  // Because FvLength in FvHeader is UINT64 type, 
+  // so FvHeader must meed at least 8 bytes alignment.
+  // we scan the Fv alignment attribute from 8 bytes to 64K.
+  // And get the least alignment.
+  //
+  if (FvHeader->Attributes | EFI_FVB_ALIGNMENT_CAP) {
+    for (Index = 3; Index <= 16; Index ++) {
+      if ((FvHeader->Attributes & ((1 << Index) * EFI_FVB_ALIGNMENT_CAP)) != 0 ) {
+        *FvAlignment = (1 << Index);
+        return EFI_SUCCESS;
+      }
+    }
+  }
+  return EFI_UNSUPPORTED;
+}
+
+
+STATIC
+VOID *
+EFIAPI
+AllocateAlignedPages (
+  IN EFI_PEI_SERVICES       **PeiServices,
+  IN UINTN                  Pages,
+  IN UINTN                  Alignment
+  )
+{
+  VOID                  *Memory;
+  UINTN                 AlignmentMask;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  BufferAddress; 
+
+  //
+  // Alignment must be a power of two or zero.
+  //
+  PEI_ASSERT (PeiServices, (Alignment & (Alignment - 1)) == 0);
+
+  if (Pages == 0) {
+    return NULL;
+  }
+  //
+  // Make sure that Pages plus EFI_SIZE_TO_PAGES (Alignment) does not overflow.
+  //
+  PEI_ASSERT (PeiServices,Pages <= (EFI_MAX_ADDRESS - EFI_SIZE_TO_PAGES (Alignment)));
+  //
+  // We would rather waste some memory to save PEI code size.
+  //
+  if ((Pages + EFI_SIZE_TO_PAGES (Alignment)) == 0) {
+    return NULL;
+  }
+
+  Status = ((*PeiServices)->AllocatePages) (PeiServices, EfiBootServicesData, (Pages + EFI_SIZE_TO_PAGES (Alignment)), &BufferAddress);
+
+  if (EFI_ERROR (Status)) {
+    BufferAddress = 0;
+  }
+  Memory = (VOID *) (UINTN) BufferAddress;
+
+  if (Alignment == 0) {
+    AlignmentMask = Alignment;
+  } else {
+    AlignmentMask = Alignment - 1;  
+  }
+  return (VOID *) (UINTN) (((UINTN) Memory + AlignmentMask) & ~AlignmentMask);
+}
+
+

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,7 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
+#include "EfiPrintLib.h"
 
 //
 // Driver Produced Protocol Prototypes
@@ -54,14 +55,6 @@ typedef struct {
   EFI_DEVICE_PATH_TO_TEXT_PROTOCOL   DevicePathToText;
 
 } DEVICE_PATH_DRIVER_PRIVATE_DATA;
-
-UINTN
-VSPrint (
-  OUT CHAR16        *StartOfBuffer,
-  IN  UINTN         BufferSize,
-  IN  CONST CHAR16  *FormatString,
-  IN  VA_LIST       Marker
-  );
 
 #define MAX_CHAR      480
 
@@ -132,6 +125,8 @@ typedef struct {
 #define USB_SUBCLASS_IRDA_BRIDGE   2
 #define USB_SUBCLASS_TEST          3
 
+#pragma pack(1)
+
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  Guid;
@@ -173,6 +168,8 @@ typedef struct {
   EFI_GUID                  Guid;
   UINT8                     VendorDefinedData[1];
 } VENDOR_DEVICE_PATH_WITH_DATA;
+
+#pragma pack()
 
 CHAR16 *
 ConvertDeviceNodeToText (

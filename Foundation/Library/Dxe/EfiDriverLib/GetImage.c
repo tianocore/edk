@@ -35,14 +35,24 @@ GetImage (
   EFI_HANDLE                    *HandleBuffer;
   UINTN                         HandleCount;
   UINTN                         Index;
-  EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv;
   EFI_FV_FILETYPE               FileType;
   EFI_FV_FILE_ATTRIBUTES        Attributes;
   UINT32                        AuthenticationStatus;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv;
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL *Fv;
+#endif
+
+
 
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
+                #if (PI_SPECIFICATION_VERSION < 0x00010000)
                   &gEfiFirmwareVolumeProtocolGuid,
+                #else
+                  &gEfiFirmwareVolume2ProtocolGuid,
+                #endif
                   NULL,
                   &HandleCount,
                   &HandleBuffer
@@ -57,7 +67,11 @@ GetImage (
   for (Index = 0; Index < HandleCount; ++Index) {
     Status = gBS->HandleProtocol (
                     HandleBuffer[Index],
+                  #if (PI_SPECIFICATION_VERSION < 0x00010000)
                     &gEfiFirmwareVolumeProtocolGuid,
+                  #else
+                    &gEfiFirmwareVolume2ProtocolGuid,
+                  #endif
                     (VOID**)&Fv
                     );
 

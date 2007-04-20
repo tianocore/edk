@@ -82,6 +82,7 @@ makefiles : $(PROCESSOR)\Blank.pad
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)             \
     -d COMPRESS_METHOD=$(COMPRESS_METHOD)          \
     -d UEFI_PREFIX=$(UEFI_PREFIX)                  \
+    -d PI_PREFIX=$(PI_PREFIX)                      \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt        \
     $(PROJECT_NAME).dsc
 

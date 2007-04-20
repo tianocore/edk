@@ -51,6 +51,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (TianoDecompress)
 #include EFI_PROTOCOL_DEFINITION (CustomizedDecompress)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeDispatch)
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
 #include "LinkedList.h"
@@ -93,8 +94,11 @@ typedef struct {
   EFI_HANDLE                      FvHandle;
   EFI_GUID                        FileName;
   EFI_DEVICE_PATH_PROTOCOL        *FvFileDevicePath;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv;
-
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv;
+#endif
   VOID                            *Depex;
   UINTN                           DepexSize;
 

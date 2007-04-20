@@ -28,7 +28,7 @@ Abstract:
 //
 #include "EfiFirmwareVolumeHeader.h"
 #include "EfiFirmwareFileSystem.h"
-
+#include "EfiFirmwareVolume.h"
 //
 // Firmware Volume Protocol GUID definition
 //
@@ -37,14 +37,8 @@ Abstract:
     0x389F751F, 0x1838, 0x4388, 0x83, 0x90, 0xCD, 0x81, 0x54, 0xBD, 0x27, 0xF8 \
   }
 
-#define FV_DEVICE_SIGNATURE EFI_SIGNATURE_32 ('_', 'F', 'V', '_')
 
 EFI_FORWARD_DECLARATION (EFI_FIRMWARE_VOLUME_PROTOCOL);
-
-//
-// EFI_FV_ATTRIBUTES bit definitions
-//
-typedef UINT64  EFI_FV_ATTRIBUTES;
 
 //
 // ************************************************************
@@ -91,7 +85,7 @@ typedef struct _EFI_FIRMWARE_VOLUME_PROTOCOL  EFI_FIRMWARE_VOLUME_PROTOCOL;
 
 typedef
 EFI_STATUS
-(EFIAPI *EFI_FV_GET_ATTRIBUTES) (
+(EFIAPI *FV_GET_ATTRIBUTES) (
   IN  EFI_FIRMWARE_VOLUME_PROTOCOL  * This,
   OUT EFI_FV_ATTRIBUTES             * Attributes
   );
@@ -113,7 +107,7 @@ Returns:
 --*/
 typedef
 EFI_STATUS
-(EFIAPI *EFI_FV_SET_ATTRIBUTES) (
+(EFIAPI *FV_SET_ATTRIBUTES) (
   IN EFI_FIRMWARE_VOLUME_PROTOCOL   * This,
   IN OUT EFI_FV_ATTRIBUTES          * Attributes
   );
@@ -133,13 +127,10 @@ Returns:
   EFI_SUCCESS
 
 --*/
-typedef UINT32  EFI_FV_FILE_ATTRIBUTES;
-
-#define EFI_FV_FILE_ATTRIB_ALIGNMENT  0x0000001F
 
 typedef
 EFI_STATUS
-(EFIAPI *EFI_FV_READ_FILE) (
+(EFIAPI *FV_READ_FILE) (
   IN EFI_FIRMWARE_VOLUME_PROTOCOL   * This,
   IN EFI_GUID                       * NameGuid,
   IN OUT VOID                       **Buffer,
@@ -184,7 +175,7 @@ Returns:
 --*/
 typedef
 EFI_STATUS
-(EFIAPI *EFI_FV_READ_SECTION) (
+(EFIAPI *FV_READ_SECTION) (
   IN EFI_FIRMWARE_VOLUME_PROTOCOL   * This,
   IN EFI_GUID                       * NameGuid,
   IN EFI_SECTION_TYPE               SectionType,
@@ -228,22 +219,10 @@ Returns:
   EFI_ACCESS_DENIED
   
 --*/
-typedef UINT32  EFI_FV_WRITE_POLICY;
-
-#define EFI_FV_UNRELIABLE_WRITE 0x00000000
-#define EFI_FV_RELIABLE_WRITE   0x00000001
-
-typedef struct {
-  EFI_GUID                *NameGuid;
-  EFI_FV_FILETYPE         Type;
-  EFI_FV_FILE_ATTRIBUTES  FileAttributes;
-  VOID                    *Buffer;
-  UINT32                  BufferSize;
-} EFI_FV_WRITE_FILE_DATA;
 
 typedef
 EFI_STATUS
-(EFIAPI *EFI_FV_WRITE_FILE) (
+(EFIAPI *FV_WRITE_FILE) (
   IN EFI_FIRMWARE_VOLUME_PROTOCOL   * This,
   IN UINT32                         NumberOfFiles,
   IN EFI_FV_WRITE_POLICY            WritePolicy,
@@ -275,7 +254,7 @@ Returns:
 --*/
 typedef
 EFI_STATUS
-(EFIAPI *EFI_FV_GET_NEXT_FILE) (
+(EFIAPI *FV_GET_NEXT_FILE) (
   IN EFI_FIRMWARE_VOLUME_PROTOCOL   * This,
   IN OUT VOID                       *Key,
   IN OUT EFI_FV_FILETYPE            * FileType,
@@ -307,14 +286,14 @@ Returns:
 
 --*/
 typedef struct _EFI_FIRMWARE_VOLUME_PROTOCOL {
-  EFI_FV_GET_ATTRIBUTES GetVolumeAttributes;
-  EFI_FV_SET_ATTRIBUTES SetVolumeAttributes;
-  EFI_FV_READ_FILE      ReadFile;
-  EFI_FV_READ_SECTION   ReadSection;
-  EFI_FV_WRITE_FILE     WriteFile;
-  EFI_FV_GET_NEXT_FILE  GetNextFile;
-  UINT32                KeySize;
-  EFI_HANDLE            ParentHandle;
+  FV_GET_ATTRIBUTES GetVolumeAttributes;
+  FV_SET_ATTRIBUTES SetVolumeAttributes;
+  FV_READ_FILE      ReadFile;
+  FV_READ_SECTION   ReadSection;
+  FV_WRITE_FILE     WriteFile;
+  FV_GET_NEXT_FILE  GetNextFile;
+  UINT32            KeySize;
+  EFI_HANDLE        ParentHandle;
 } EFI_FIRMWARE_VOLUME_PROTOCOL;
 
 extern EFI_GUID gEfiFirmwareVolumeProtocolGuid;

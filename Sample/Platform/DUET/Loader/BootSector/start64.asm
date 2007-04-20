@@ -28,49 +28,128 @@ BLOCK_SHIFT                 EQU     9
 
         org 0h
 Ia32Jump:
-        jmp     BootSectorEntryPoint    ; JMP inst      - 3 bytes
-        nop
+  jmp   BootSectorEntryPoint  ; JMP inst    - 3 bytes
+  nop
 
-OemId               db  "INTEL   "      ; OemId                 - 8 bytes
-SectorSize          dw  0200h           ; Sector Size           - 16 bits
-SectorsPerCluster   db  01h             ; Sector Per Cluster    - 8 bits
-ReservedSectors     dw  01h             ; Reserved Sectors      - 16 bits
-NoFats              db  02h             ; Number of FATs        - 8 bits
-RootEntries         dw  00e0h           ; Root Entries          - 16 bits
-Sectors             dw  0b40h           ; Number of Sectors     - 16 bits
-Media               db  0f0h            ; Media                 - 8 bits    - ignored
-SectorsPerFat       dw  0009h           ; Sectors Per FAT       - 16 bits
-SectorsPerTrack     dw  0012h           ; Sectors Per Track     - 16 bits   - ignored
-Heads               dw  0002h           ; Heads                 - 16 bits   - ignored
-HiddenSectors       dd  0000h           ; Hidden Sectors        - 32 bits   - ignored
-LargeSectors        dd  0000h           ; Large Sectors         - 32 bits   
-PhysicalDrive       db  00h             ; PhysicalDriveNumber   - 8 bits    - ignored
-CurrentHead         db  00h             ; Current Head          - 8 bits
-Signature           db  29h             ; Signature             - 8 bits    - ignored
-Id                  db  "    "          ; Id                    - 4 bytes
-FatLabel            db  "EFI FLOPPY "   ; Label                 - 11 bytes
-SystemId            db  "FAT12   "      ; SystemId              - 8 bytes
+OemId             db  "INTEL   "    ; OemId               - 8 bytes
+SectorSize        dw  0             ; Sector Size         - 16 bits
+SectorsPerCluster db  0             ; Sector Per Cluster  - 8 bits
+ReservedSectors   dw  0             ; Reserved Sectors    - 16 bits
+NoFats            db  0             ; Number of FATs      - 8 bits
+RootEntries       dw  0             ; Root Entries        - 16 bits
+Sectors           dw  0             ; Number of Sectors   - 16 bits
+Media             db  0             ; Media               - 8 bits  - ignored
+SectorsPerFat     dw  0             ; Sectors Per FAT     - 16 bits
+SectorsPerTrack   dw  0             ; Sectors Per Track   - 16 bits - ignored
+Heads             dw  0             ; Heads               - 16 bits - ignored
+HiddenSectors     dd  0             ; Hidden Sectors      - 32 bits - ignored
+LargeSectors      dd  0             ; Large Sectors       - 32 bits 
+PhysicalDrive     db  0             ; PhysicalDriveNumber - 8 bits  - ignored
+CurrentHead       db  0             ; Current Head        - 8 bits
+Signature         db  0             ; Signature           - 8 bits  - ignored
+Id                db  "    "        ; Id                  - 4 bytes
+FatLabel          db  "           " ; Label               - 11 bytes
+SystemId          db  "        "    ; SystemId            - 8 bytes
 
 BootSectorEntryPoint:
         ASSUME  ds:@code
         ASSUME  ss:@code
+      ; ds = 1000, es = 2000 + x (size of first cluster >> 4)
+      ; cx = Start Cluster of EfiLdr
+      ; dx = Start Cluster of Efivar.bin
 
+; Re use the BPB data stored in Boot Sector
+        mov     bp,07c00h
+      
+; Read Efildr
+;       cx    = Start Cluster of Efildr -> BS.com has filled already
+;       ES:DI = 2000:0, first cluster will be read again
+        xor     di,di                               ; di = 0
+        mov     ax,02000h
+        mov     es,ax
+        call    ReadFile
+        mov     ax,cs
+        mov     word ptr cs:[JumpSegment],ax
+
+; Read Efivar.bin
+;       dx    = Start Cluster of Efivar.bin -> BS.com has filled already
+        mov     ax,01900h
+        mov     es,ax
+        xor     di,di        
+        push    es
+        mov     cx,dx                               ; Restore Start Cluster of Efivar.bin
+        test    cx,cx
+        jne     LoadVarStoreFv
+; Set the 5th byte start @ 0:19000 to 1 indicating we should init var store header in DxeIpl
+        mov     al,1
+        mov     byte ptr es:[di+4],al
+        jmp     SaveVolumeId
+
+LoadVarStoreFv:
+        mov     al,0
+        mov     byte ptr es:[di+4],al
+;       ES:DI = 1500:0
+        push    es
+        mov     ax,01500h
+        mov     es,ax
+        call    ReadFile
+SaveVolumeId:
+        pop     es
+        mov     ax,word ptr [bp+Id]
+        mov     word ptr es:[di],ax                  ; Save Volume Id to 0:19000. we will find the correct volume according to this VolumeId
+        mov     ax,word ptr [bp+Id+2]
+        mov     word ptr es:[di+2],ax
+CheckEm64T:
+        mov  eax, 080000001h
+;        cpuid
+        dw   0A20Fh
+        bt   edx, 29
+        jc   CheckEm64TPass
+        mov  ax,0b800h
+        mov  es,ax
+        push cs
+        pop  ds
+        lea  si, cs:[Em64String]
+        mov  cx, 18
+        mov  di, 160
+        rep  movsw 
+        jmp  Halt
+CheckEm64TPass:
+JumpFarInstruction:
+        db      0eah
+JumpOffset:
+        dw      0200h
+JumpSegment:
+        dw      2000h
+
+
+
+; ****************************************************************************
+; ReadFile
+;
+; Arguments:
+;   CX    = Start Cluster of File
+;   ES:DI = Buffer to store file content read from disk
+;
+; Return:
+;   (ES << 4 + DI) = end of file content Buffer
+;
+; ****************************************************************************
+ReadFile:
 ; si      = NumberOfClusters
 ; cx      = ClusterNumber
 ; dx      = CachedFatSectorNumber
 ; ds:0000 = CacheFatSectorBuffer
 ; es:di   = Buffer to load file
 ; bx      = NextClusterNumber
-
-
-        mov     si,0                                ; NumberOfClusters = 0 - Special case for first cluster
-        xor     di,di                               ; di = 0
+        pusha
+        mov     si,1                                ; NumberOfClusters = 1
+        push    cx                                  ; Push Start Cluster onto stack
         mov     dx,0fffh                            ; CachedFatSectorNumber = 0xfff
-        push    cx                                  ; Push StartCluster onto stack
 FatChainLoop:
         mov     ax,cx                               ; ax = ClusterNumber    
-        and     ax,0ff0h                            ; ax = ax & 0xff0
-        cmp     ax,0ff0h                            ; See if this is the last cluster
+        and     ax,0ff8h                            ; ax = ax & 0xff8
+        cmp     ax,0ff8h                            ; See if this is the last cluster
         je      FoundLastCluster                    ; Jump if last cluster found
         mov     ax,cx                               ; ax = ClusterNumber
         shl     ax,1                                ; ax = ClusterNumber * 2
@@ -99,16 +178,6 @@ SkipFatRead:
 EvenFatEntry:
         and     bx,0fffh                            ; Strip upper 4 bits of NextClusterNumber
         pop     si                                  ; Restore si
-
-        cmp     si,0
-        jne     NotFirstCluster
-        mov     cx,bx
-        pop     bx
-        push    cx
-        inc     si
-        jmp     FatChainLoop
-NotFirstCluster:
-
         dec     bx                                  ; bx = NextClusterNumber - 1
         cmp     bx,cx                               ; See if (NextClusterNumber-1)==ClusterNumber
         jne     ReadClusters
@@ -135,16 +204,10 @@ ReadClusters:
         mov     si,1                                ; NumberOfClusters = 1
         jmp     FatChainLoop
 FoundLastCluster:
-        jmp     CheckEm64T
-CheckEm64TPass:
-        mov     ax,cs
-        mov     word ptr cs:[JumpSegment],ax
-JumpFarInstruction:
-        db      0eah
-JumpOffset:
-        dw      0200h
-JumpSegment:
-        dw      2000h
+        pop     cx
+        popa
+        ret
+
 
 ; ****************************************************************************
 ; ReadBlocks - Reads a set of blocks from a block device
@@ -160,13 +223,16 @@ JumpSegment:
 
 ReadBlocks:
         pusha
-        mov     si,ax                               ; si = Start LBA
+        add     eax,dword ptr [bp+LBAOffsetForBootSector]    ; Add LBAOffsetForBootSector to Start LBA
+        add     eax,dword ptr [bp+HiddenSectors]    ; Add HiddenSectors to Start LBA
+        mov     esi,eax                             ; esi = Start LBA
         mov     cx,bx                               ; cx = Number of blocks to read
 ReadCylinderLoop:
         mov     bp,07bfch                           ; bp = 0x7bfc
-        mov     ax,si                               ; ax = Start LBA
+        mov     eax,esi                             ; eax = Start LBA
         xor     dx,dx                               ; dx = 0
-        div     word ptr [bp]                       ; ax = StartLBA / MaxSector
+        movzx   ebx,word ptr [bp]                   ; bx = MaxSector
+        div     ebx                                 ; ax = StartLBA / MaxSector
         inc     dx                                  ; dx = (StartLBA % MaxSector) + 1
 
         mov     bx,word ptr [bp]                    ; bx = MaxSector
@@ -196,7 +262,8 @@ NotCrossing64KBoundry:
 
         push    bx                                  ; Save number of blocks to transfer
         mov     dh,dl                               ; dh = Head
-        mov     dl,0                                ; dl = Drive Number
+        mov     bp,07c00h                           ; bp = 0x7c00
+        mov     dl,byte ptr [bp+PhysicalDrive]      ; dl = Drive Number
         mov     ch,al                               ; ch = Cylinder
         mov     al,bl                               ; al = Blocks
         mov     ah,2                                ; ah = Function 2
@@ -205,7 +272,8 @@ NotCrossing64KBoundry:
         jc      DiskError
         pop     bx
         pop     cx
-        add     si,bx                               ; StartLBA = StartLBA + NumberOfBlocks
+        movzx   ebx,bx
+        add     esi,ebx                             ; StartLBA = StartLBA + NumberOfBlocks
         sub     cx,bx                               ; Blocks = Blocks - NumberOfBlocks
         mov     ax,es
         shl     bx,(BLOCK_SHIFT-4)
@@ -231,22 +299,9 @@ ErrorString:
         db 'B', 0ch, 'o', 0ch, 'o', 0ch, 't', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '2', 0ch, '!', 0ch
 Em64String:
         db 'E', 0ch, 'm', 0ch, '6', 0ch, '4', 0ch, 'T', 0ch, ' ', 0ch, 'U', 0ch, 'n', 0ch, 's', 0ch, 'u', 0ch, 'p', 0ch, 'p', 0ch, 'o', 0ch, 'r', 0ch, 't', 0ch, 'e', 0ch, 'd', 0ch, '!', 0ch
-CheckEm64T:
-        mov  eax, 080000001h
-;        cpuid
-        dw   0A20Fh
-        bt   edx, 29
-        jc   CheckEm64TPass
-
-        mov  ax,0b800h
-        mov  es,ax
-        push cs
-        pop  ds
-        lea  si, cs:[Em64String]
-        mov  cx, 18
-        mov  di, 160
-        rep  movsw 
-        jmp  Halt
+        org     01fah
+LBAOffsetForBootSector:
+        dd      0h
 
         org     01feh
         dw      0aa55h

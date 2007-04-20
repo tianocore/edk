@@ -343,9 +343,9 @@ IMAGE_SCRIPT =
   Compress ($(COMPRESS_METHOD)) {
     Tool (
       $(OEMTOOLPATH)\GenCRC32Section
-      ARGS= -i $(DEST_DIR)\$(BASE_NAME)fv.sec
-            -o $(DEST_DIR)\$(BASE_NAME).fv.crc32
-      OUTPUT = $(DEST_DIR)\$(BASE_NAME).fv.crc32
+      ARGS= -i $(DEST_DIR)\$(SOURCE_FV)Fv.sec
+            -o $(DEST_DIR)\$(BASE_NAME)fv.crc32
+      OUTPUT = $(DEST_DIR)\$(BASE_NAME)fv.crc32
     )
   }
 }
@@ -372,4 +372,20 @@ IMAGE_SCRIPT =
     )
 }
 
+[=============================================================================]
+[Package.FvImageFile.FvMainCompact]
+PACKAGE.INF
+\[.]
+BASE_NAME                   = $(BASE_NAME)
+FFS_FILEGUID                = $(FILE_GUID)
+FFS_FILETYPE                = EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE
+FFS_ATTRIB_CHECKSUM         = TRUE
+
+IMAGE_SCRIPT =
+{
+  Compress ($(COMPRESS_METHOD)) {
+    Blank.pad
+    $(SOURCE_FV)Fv.sec
+  }
+}
 [=============================================================================]

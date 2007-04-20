@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -46,5 +46,24 @@ typedef enum _EFI_SMBUS_OPERATION
   EfiSmbusProcessCall,
   EfiSmbusBWBRProcessCall
 } EFI_SMBUS_OPERATION;
+
+typedef struct {
+  UINT32  VendorSpecificId;
+  UINT16  SubsystemDeviceId;
+  UINT16  SubsystemVendorId;
+  UINT16  Interface;
+  UINT16  DeviceId;
+  UINT16  VendorId;
+  UINT8   VendorRevision;
+  UINT8   DeviceCapabilities;
+} EFI_SMBUS_UDID;
+
+
+typedef struct {
+  EFI_SMBUS_DEVICE_ADDRESS  SmbusDeviceAddress;
+  EFI_SMBUS_UDID            SmbusDeviceUdid;
+} EFI_SMBUS_DEVICE_MAP;
+
+
 
 #endif

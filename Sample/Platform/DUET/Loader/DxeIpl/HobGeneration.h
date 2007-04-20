@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,11 +28,13 @@ Revision History:
 #include "EfiCommonLib.h"
 #include "EfiImage.h"
 #include "EfiImageFormat.h"
+#include "EfiFlashMap.h"
+#include "FlashLayout.h"
 
 #include EFI_PROTOCOL_CONSUMER (LoadedImage)
 #include EFI_PROTOCOL_CONSUMER (DevicePath)
 #include EFI_PROTOCOL_CONSUMER (SimpleFileSystem)
-#include EFI_PROTOCOL_CONSUMER (FirmwareVolume)
+#include EFI_PROTOCOL_CONSUMER (FirmwareVolumeBlock)
 #include EFI_PROTOCOL_CONSUMER (FileInfo)
 #include EFI_GUID_DEFINITION   (PeiPeCoffLoader)
 #include EFI_GUID_DEFINITION   (MemoryAllocationHob)
@@ -43,6 +45,8 @@ Revision History:
 #include EFI_GUID_DEFINITION   (Mps)
 #include EFI_GUID_DEFINITION   (PciExpressBaseAddress)
 #include EFI_GUID_DEFINITION   (AcpiDescription)
+#include EFI_GUID_DEFINITION   (FlashMapHob)
+#include EFI_GUID_DEFINITION   (SystemNvDataGuid)
 
 #include "EfiLdrHandoff.h"
 
@@ -50,6 +54,9 @@ Revision History:
 #define EFI_MEMORY_BELOW_1MB_END       0x9F800
 #define EFI_MEMORY_STACK_PAGE_NUM      0x20
 #define CONSUMED_MEMORY                0x400000
+
+#define NV_STORAGE_START               0x15000
+#define NV_STORAGE_STATE               0x19000
 
 #define EFI_LDR_MEMORY_DESCRIPTOR_GUID \
   { 0x7701d7e5, 0x7d1d, 0x4432, 0xa4, 0x68, 0x67, 0x3d, 0xab, 0x8a, 0xde, 0x60 }
@@ -89,6 +96,11 @@ typedef struct {
 } ACPI_DESCRIPTION_HOB;
 
 typedef struct {
+  EFI_HOB_GUID_TYPE             Hob;
+  EFI_FLASH_MAP_FS_ENTRY_DATA   FvbInfo;
+} FVB_HOB;
+
+typedef struct {
   EFI_HOB_HANDOFF_INFO_TABLE        Phit;
   EFI_HOB_FIRMWARE_VOLUME           Bfv;
   EFI_HOB_RESOURCE_DESCRIPTOR       BfvResource;
@@ -113,6 +125,16 @@ typedef struct {
   MEMORY_DESC_HOB                   MemoryDescriptor;
   PCI_EXPRESS_BASE_HOB              PciExpress;
   ACPI_DESCRIPTION_HOB              AcpiInfo;
+  
+  EFI_HOB_RESOURCE_DESCRIPTOR       NvStorageFvResource;
+
+  FVB_HOB                           NvStorageFvb;
+  FVB_HOB                           NvStorage;
+
+  FVB_HOB                           NvFtwFvb;
+  FVB_HOB                           NvFtwWorking;
+  FVB_HOB                           NvFtwSpare;
+  
   EFI_HOB_GENERIC_HEADER            EndOfHobList;
 } HOB_TEMPLATE;
 
@@ -145,7 +167,7 @@ PrepareHobDxeCore (
   );
 
 VOID *
-PrepareHobPageTable (
+PreparePageTable (
   VOID *PageNumberTop
   );
 
@@ -160,6 +182,11 @@ VOID
 PrepareHobPhit (
   VOID *MemoryTop,
   VOID *FreeMemoryTop
+  );
+
+VOID *
+PrepareHobNvStorage (
+  VOID *NvStorageTop
   );
 
 VOID

@@ -56,7 +56,9 @@ MAKEFILES = $(EDK_TOOLS_SOURCE)\Common\Makefile             \
             $(EDK_TOOLS_SOURCE)\EfiCompress\Makefile        \
             $(EDK_TOOLS_SOURCE)\EfildrImage\Makefile        \
             $(EDK_TOOLS_SOURCE)\EfiRom\Makefile             \
-            $(EDK_TOOLS_SOURCE)\GenAprioriFile\Makefile
+            $(EDK_TOOLS_SOURCE)\GenAprioriFile\Makefile     \
+            $(EDK_TOOLS_SOURCE)\ModifyInf\Makefile
+
 
 
 #

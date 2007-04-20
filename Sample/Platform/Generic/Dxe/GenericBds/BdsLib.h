@@ -43,8 +43,8 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (Hii)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (DebugPort)
-
 #include EFI_GUID_DEFINITION (PcAnsi)
 #include EFI_GUID_DEFINITION (Hob)
 #include EFI_GUID_DEFINITION (HotPlugDevice)
@@ -168,7 +168,8 @@ BdsLibEnumerateAllBootOption (
 VOID
 BdsLibBuildOptionFromHandle (
   IN  EFI_HANDLE          Handle,
-  IN  EFI_LIST_ENTRY      *BdsBootOptionList
+  IN  EFI_LIST_ENTRY      *BdsBootOptionList,
+  IN  CHAR16              *String
   );
 
 VOID
@@ -468,5 +469,65 @@ BdsLibGetHiiHandles (
   IN OUT UINT16           *HandleBufferLength,
   OUT    EFI_HII_HANDLE   **HiiHandles
   );
-    
+
+  
+//
+// Define the boot type which to classify the boot option type
+// Different boot option type could have different boot behavior
+// Use their device path node (Type + SubType) as type value
+// The boot type here can be added according to requirement
+//
+//
+// ACPI boot type. For ACPI device, cannot use sub-type to distinguish device, so hardcode their value
+//
+#define  BDS_EFI_ACPI_FLOPPY_BOOT         0x0201
+//
+// Message boot type
+// If a device path of boot option only point to a message node, the boot option is message boot type
+//
+#define  BDS_EFI_MESSAGE_ATAPI_BOOT       0x0301 // Type 03; Sub-Type 01
+#define  BDS_EFI_MESSAGE_SCSI_BOOT        0x0302 // Type 03; Sub-Type 02
+#define  BDS_EFI_MESSAGE_USB_DEVICE_BOOT  0x0305 // Type 03; Sub-Type 05
+#define  BDS_EFI_MESSAGE_MISC_BOOT        0x03FF
+//
+// Media boot type
+// If a device path of boot option contain a media node, the boot option is media boot type
+//
+#define  BDS_EFI_MEDIA_HD_BOOT            0x0401 // Type 04; Sub-Type 01
+#define  BDS_EFI_MEDIA_CDROM_BOOT         0x0402 // Type 04; Sub-Type 02
+//
+// BBS boot type
+// If a device path of boot option contain a BBS node, the boot option is BBS boot type
+//
+#define  BDS_LEGACY_BBS_BOOT              0x0501 //  Type 05; Sub-Type 01
+
+#define  BDS_EFI_UNSUPPORT                0xFFFF
+
+
+BOOLEAN
+MatchPartitionDevicePathNode (
+  IN  EFI_DEVICE_PATH_PROTOCOL   *BlockIoDevicePath,
+  IN  HARDDRIVE_DEVICE_PATH      *HardDriveDevicePath
+  );
+  
+EFI_DEVICE_PATH_PROTOCOL *
+BdsExpandPartitionPartialDevicePathToFull (
+  IN  HARDDRIVE_DEVICE_PATH      *HardDriveDevicePath
+  );
+  
+EFI_HANDLE
+BdsLibGetBootableHandle (
+  IN  EFI_DEVICE_PATH_PROTOCOL      *DevicePath
+  );
+  
+BOOLEAN
+BdsLibIsValidEFIBootOptDevicePath (
+  IN EFI_DEVICE_PATH_PROTOCOL     *DevPath,
+  IN BOOLEAN                      CheckMedia
+  );
+  
+UINT32
+BdsGetBootTypeFromDevicePath (
+  IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  );
 #endif // _BDS_LIB_H_

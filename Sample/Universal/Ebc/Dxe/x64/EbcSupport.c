@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -31,6 +31,7 @@ Abstract:
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
+#include "EbcDebuggerHook.h"
 
 //
 // NOTE: This is the stack size allocated for the interpreter
@@ -221,7 +222,9 @@ Returns:
   // the stack too, so adjust accordingly.
   //  VmContext.HighStackBottom = (UINTN)(Addr + sizeof (VmContext) + sizeof (Addr));
   //
-
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookEbcInterpret (&VmContext);
+  )
   //
   // Begin executing the EBC code
   //
@@ -340,7 +343,9 @@ Returns:
   // Entry function needn't access high stack context, simply
   // put the stack pointer here.
   //
-
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookExecuteEbcImageEntryPoint (&VmContext);
+  )
   //
   // Begin executing the EBC code
   //

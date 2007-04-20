@@ -28,6 +28,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_GUID_DEFINITION (EventGroup)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (SmmBase)
 #include EFI_PROTOCOL_DEFINITION (SmmStatusCode)
 //

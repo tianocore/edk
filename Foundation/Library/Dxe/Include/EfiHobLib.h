@@ -208,6 +208,17 @@ Returns:
 --*/
 ;
 
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+EFI_STATUS
+GetNextFirmwareVolume2Hob (
+  IN OUT VOID                  **HobStart,
+  OUT    EFI_PHYSICAL_ADDRESS  *BaseAddress,
+  OUT    UINT64                *Length,
+  OUT    EFI_GUID              *FileName
+  )
+;
+#endif
+
 EFI_STATUS
 GetNextGuidHob (
   IN OUT VOID      **HobStart,

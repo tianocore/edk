@@ -664,7 +664,11 @@ Returns:
   UINT64                      PeiCoreSize;
   EFI_PHYSICAL_ADDRESS        PeiCoreEntryPoint;
   EFI_PHYSICAL_ADDRESS        PeiImageAddress;
+#if  (PI_SPECIFICATION_VERSION  < 0x00010000)
   EFI_PEI_STARTUP_DESCRIPTOR  PeiStartup;
+#else
+  EFI_SEC_PEI_HAND_OFF   SecCoreData;
+#endif
 
   //
   // Install the PEI Protocols that are shared between PEI and DXE
@@ -683,17 +687,35 @@ Returns:
   //
   // Allocate 128KB for the Stack
   //
+#if  (PI_SPECIFICATION_VERSION  < 0x00010000)
   TopOfStack  = (VOID *) (UINTN) (TopOfMemory - sizeof (EFI_PEI_STARTUP_DESCRIPTOR));
+#else
+  TopOfStack  = (VOID *) (UINTN) (TopOfMemory - sizeof (EFI_SEC_PEI_HAND_OFF));
+#endif
   TopOfMemory = TopOfMemory - EFI_STACK_SIZE;
 
   //
   // Bind this information into the SEC hand-off state
   //
+#if  (PI_SPECIFICATION_VERSION  < 0x00010000)
   PeiStartup.DispatchTable      = (EFI_PEI_PPI_DESCRIPTOR *) &gPrivateDispatchTable;
   PeiStartup.SizeOfCacheAsRam   = EFI_STACK_SIZE;
   PeiStartup.BootFirmwareVolume = BootFirmwareVolumeBase;
-
   CopyMem (TopOfStack, &PeiStartup, sizeof (EFI_PEI_STARTUP_DESCRIPTOR));
+
+#else
+  SecCoreData.DataSize               = sizeof(EFI_SEC_PEI_HAND_OFF);
+  SecCoreData.BootFirmwareVolumeBase = (VOID*)BootFirmwareVolumeBase;
+  SecCoreData.BootFirmwareVolumeSize = EFI_WINNT_FIRMWARE_LENGTH;
+  SecCoreData.TemporaryRamBase       = (VOID*)(UINTN)TopOfMemory; 
+  SecCoreData.TemporaryRamSize       = EFI_STACK_SIZE;
+  SecCoreData.PeiTemporaryRamBase    = SecCoreData.TemporaryRamBase;
+  SecCoreData.PeiTemporaryRamSize    = (UINTN)RShiftU64((UINT64)EFI_STACK_SIZE,1);
+  SecCoreData.StackBase              = (VOID*)((UINTN)SecCoreData.TemporaryRamBase + (UINTN)SecCoreData.TemporaryRamSize);
+  SecCoreData.StackSize              = (UINTN)RShiftU64((UINT64)EFI_STACK_SIZE,1);
+  CopyMem (TopOfStack, &SecCoreData, sizeof(EFI_SEC_PEI_HAND_OFF));
+#endif
+
 
   //
   // Load the PEI Core from a Firmware Volume
@@ -710,13 +732,23 @@ Returns:
   //
   // Transfer control to the PEI Core
   //
+#if  (PI_SPECIFICATION_VERSION  < 0x00010000)
   SecSwitchStacks (
     (VOID *) (UINTN) PeiCoreEntryPoint,
     (VOID *) (UINTN) TopOfStack,
     (VOID *) (UINTN) TopOfStack,
     (VOID *) (UINTN) NULL
     );
+#else
+  SecSwitchStacks (
+    (VOID *) (UINTN) PeiCoreEntryPoint,
+    (VOID *) (UINTN) TopOfStack,
+    (VOID *) (UINTN) ((EFI_PEI_PPI_DESCRIPTOR *) &gPrivateDispatchTable),
+    (VOID *) (UINTN) TopOfStack,
+    (VOID *) (UINTN) NULL
+    );
 
+#endif
   //
   // If we get here, then the PEI Core returned.  This is an error
   //

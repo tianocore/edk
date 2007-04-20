@@ -30,6 +30,506 @@ Abstract:
 #include EFI_GUID_DEFINITION (PeiPeCoffLoader)
 #include EFI_PPI_DEFINITION (FindFv)
 
+
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+
+typedef struct {
+  UINT32   PeiServiceTable;
+} PEI_IDT_TABLE;
+
+
+VOID *
+EFIAPI
+ScanGuid (
+  IN VOID        *Buffer,
+  IN UINTN       Length,
+  IN EFI_GUID    *Guid
+  )
+/*++
+
+Routine Description:
+
+  Scans a target buffer for a GUID, and returns a pointer to the matching GUID
+  in the target buffer.
+
+  This function searches target the buffer specified by Buffer and Length from
+  the lowest address to the highest address at 128-bit increments for the 128-bit
+  GUID value that matches Guid.  If a match is found, then a pointer to the matching
+  GUID in the target buffer is returned.  If no match is found, then NULL is returned.
+  If Length is 0, then NULL is returned.
+  If Length > 0 and Buffer is NULL, then ASSERT().
+  If Buffer is not aligned on a 32-bit boundary, then ASSERT().
+  If Length is not aligned on a 128-bit boundary, then ASSERT().
+  If Length is greater than (EFI_MAX_ADDRESS ?Buffer + 1), then ASSERT(). 
+
+Arguments:
+
+  Buffer - Pointer to the target buffer to scan.
+  Length - Number of bytes in Buffer to scan.
+  Guid   - Value to search for in the target buffer.
+  
+Returns:
+  A pointer to the matching Guid in the target buffer or NULL otherwise.
+
+--*/
+;
+
+VOID *
+EFIAPI
+InvalidateInstructionCacheRange (
+  IN      VOID                      *Address,
+  IN      UINTN                     Length
+  )
+/*++
+
+Routine Description:
+
+  Invalidates a range of instruction cache lines in the cache coherency domain
+  of the calling CPU.
+
+  Invalidates the instruction cache lines specified by Address and Length. If
+  Address is not aligned on a cache line boundary, then entire instruction
+  cache line containing Address is invalidated. If Address + Length is not
+  aligned on a cache line boundary, then the entire instruction cache line
+  containing Address + Length -1 is invalidated. This function may choose to
+  invalidate the entire instruction cache if that is more efficient than
+  invalidating the specified range. If Length is 0, the no instruction cache
+  lines are invalidated. Address is returned.
+
+  If Length is greater than (EFI_MAX_ADDRESS - Address + 1), then ASSERT().
+
+Arguments:
+
+  Address   -     The base address of the instruction cache lines to
+                  invalidate. If the CPU is in a physical addressing mode, then
+                  Address is a physical address. If the CPU is in a virtual
+                  addressing mode, then Address is a virtual address.
+
+  Length    -      The number of bytes to invalidate from the instruction cache.
+
+ Returns:
+  Address
+
+**/
+;
+
+EFI_STATUS
+EFIAPI
+PeiServicesFfsFindNextVolume (
+  IN UINTN                          Instance,
+  IN OUT EFI_PEI_FV_HANDLE          *VolumeHandle
+  )
+/*++
+
+Routine Description:
+
+  The wrapper of Pei Core Service function FfsFindNextVolume.
+
+Arguments:
+
+  Instance     - The Fv Volume Instance.
+  VolumeHandle - Pointer to the current Fv Volume to search.
+
+Returns:
+  EFI_STATUS
+  
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+PeiServicesFfsFindNextFile (
+  IN EFI_FV_FILETYPE            SearchType,
+  IN EFI_PEI_FV_HANDLE          FwVolHeader,
+  IN OUT EFI_PEI_FILE_HANDLE    *FileHeader
+  )
+/*++
+
+Routine Description:
+
+  The wrapper of Pei Core Service function FfsFindNextFile.
+
+Arguments:
+
+  SearchType   - Filter to find only file of this type.
+  FwVolHeader  - Pointer to the current FV to search.
+  FileHandle   - Pointer to the file matching SearchType in FwVolHeader.
+                - NULL if file not found
+
+Returns:
+  EFI_STATUS
+  
+--*/  
+;
+
+EFI_STATUS
+EFIAPI
+PeiServicesFfsFindFileByName (
+  IN  EFI_GUID              *FileName,
+  IN  EFI_PEI_FV_HANDLE     VolumeHandle,
+  OUT EFI_PEI_FILE_HANDLE   *FileHandle
+  )
+/*++
+
+Routine Description:
+
+  The wrapper of Pei Core Service function FfsFindFileByName.
+
+Arguments:
+
+  FileName      - File name to search.
+  VolumeHandle  - The current FV to search.
+  FileHandle    - Pointer to the file matching name in VolumeHandle.
+                - NULL if file not found
+
+Returns:
+   EFI_STATUS
+   
+--*/  
+;
+
+EFI_STATUS
+EFIAPI
+PeiServicesFfsFindSectionData (
+  IN EFI_SECTION_TYPE           SectionType,
+  IN EFI_FFS_FILE_HEADER        *FfsFileHeader,
+  IN OUT VOID                   **SectionData
+  )
+/*++
+
+Routine Description:
+
+  The wrapper of Pei Core Service function FfsFindSectionData.
+
+Arguments:
+
+  SearchType      - Filter to find only sections of this type.
+  FileHandle      - Pointer to the current file to search.
+  SectionData     - Pointer to the Section matching SectionType in FfsFileHeader.
+                  - NULL if section not found
+
+Returns:
+  EFI_STATUS
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+PeiServicesFfsGetVolumeInfo (
+  IN EFI_PEI_FV_HANDLE  *VolumeHandle,
+  OUT EFI_FV_INFO       *VolumeInfo
+  )
+/*++
+
+Routine Description:
+
+  The wrapper of Pei Core Service function FfsGetVolumeInfo.
+
+Arguments:
+
+  VolumeHandle    - The handle to Fv Volume.
+  VolumeInfo      - The pointer to volume information.
+  
+Returns:
+  EFI_STATUS
+--*/  
+;
+
+EFI_STATUS
+EFIAPI
+PeiServicesLocatePpi (
+  IN EFI_GUID                   *Guid,
+  IN UINTN                      Instance,
+  IN OUT EFI_PEI_PPI_DESCRIPTOR **PpiDescriptor,
+  IN OUT VOID                   **Ppi
+  )
+/*++
+
+Routine Description:
+
+  The wrapper of Pei Core Service function LocatePpi.
+
+Arguments:
+
+  Guid          - Pointer to GUID of the PPI.
+  Instance      - Instance Number to discover.
+  PpiDescriptor - Pointer to reference the found descriptor. If not NULL,
+                returns a pointer to the descriptor (includes flags, etc)
+  Ppi           - Pointer to reference the found PPI
+
+Returns:
+
+  Status -  EFI_SUCCESS   if the PPI is in the database           
+            EFI_NOT_FOUND if the PPI is not in the database
+--*/  
+;
+
+VOID
+EFIAPI
+BuildFvHob (
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length
+  )
+/*++
+
+Routine Description:
+
+  Build FvHob.
+
+Arguments:
+
+  BaseAddress    - Fv base address.
+  Length         - Fv Length.
+
+Returns:
+  NONE.
+  
+--*/  
+;
+
+VOID
+EFIAPI
+BuildFvHob2 (
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length,
+  IN EFI_GUID                    *FvNameGuid,
+  IN EFI_GUID                    *FileNameGuid
+  )
+/*++
+
+Routine Description:
+
+  Build FvHob2.
+
+Arguments:
+
+  BaseAddress  - Fv base address.
+  Length       - Fv length.
+  FvNameGuid   - Fv name.
+  FileNameGuid - File name which contians encapsulated Fv.
+
+Returns:
+   NONE.
+--*/  
+;
+
+
+VOID 
+EFIAPI
+BuildGuidDataHob (
+  IN EFI_GUID                   *Guid,
+  IN VOID                       *Data,
+  IN UINTN                      DataLength
+  )
+/*++
+
+Routine Description:
+
+  Build Guid data Hob.
+
+Arguments:
+
+  Guid        - guid to build data hob.
+  Data        - data to build data hob.
+  DataLength  - the length of data.
+
+Returns:
+  NONE
+  
+--*/  
+;
+
+VOID *
+EFIAPI
+AllocatePages (
+  IN UINTN  Pages
+  )
+/*++
+
+Routine Description:
+
+  Allocate Memory.
+
+Arguments:
+
+  Pages - Pages to allocate.
+
+Returns:
+  Address if successful to allocate memory. 
+  NULL    if fail to allocate memory.
+
+--*/  
+;
+
+VOID
+SetPeiServicesTablePointer (
+  IN EFI_PEI_SERVICES  **PeiServices
+  )
+/*++
+
+Routine Description:
+
+  Save PeiService pointer so that it can be retrieved anywhere.
+
+Arguments:
+
+  PeiServices     - The direct pointer to PeiServiceTable.
+  
+Returns:
+  NONE
+  
+--*/      
+;
+
+EFI_PEI_SERVICES **
+GetPeiServicesTablePointer (
+  VOID 
+  )
+/*++
+
+Routine Description:
+
+  Get PeiService pointer.
+
+Arguments:
+
+  NONE.
+  
+Returns:
+  The direct pointer to PeiServiceTable.
+  
+--*/      
+;
+
+VOID
+MigrateIdtTable (
+  IN EFI_PEI_SERVICES  **PeiServices
+  )
+/*++
+
+Routine Description:
+
+  Migrate IDT from CAR to real memory where preceded with 4 bytes for
+  storing PeiService pointer.
+
+Arguments:
+
+  PeiServices   - The direct pointer to PeiServiceTable.
+  
+Returns:
+
+  NONE.
+  
+--*/   
+;
+
+
+UINTN
+ReadIdtBase (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Read IDT Register BaseAddress.
+
+Arguments:
+
+  NONE
+  
+Returns:
+  IDT Register BaseAddress.
+
+--*/  
+;
+
+
+UINT16
+ReadIdtLimit (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Read IDT Register Limit.
+
+Arguments:
+
+  NONE
+  
+Returns:
+  IDT Register Limit.
+
+--*/  
+;
+
+
+VOID
+SetIdtBase (
+  UINT32  IdtBase,
+  UINT16  IdtLimit 
+  )
+/*++
+
+Routine Description:
+
+  Set IDT Register BaseAddress.
+
+Arguments:
+
+  IdtBase   - IDT.BaseAddress
+  IdtLimit  - IDT.Limit
+  
+Returns:
+  NONE
+--*/    
+;
+
+VOID
+AsmWriteKr7 (
+  UINT64 Address
+  )
+/*++
+
+Routine Description:
+
+  Write 64 bit into Kernel Register7 on IPF.
+
+Arguments:
+
+  Address   - Data to write into kr7.
+  
+Returns:
+  NONE
+  
+--*/    
+;
+
+
+UINT64
+AsmReadKr7 (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Read 64 bit from Kernel Register7 on IPF.
+
+Arguments:
+
+  NONE  
+  
+Returns:
+  Data in kr7.
+  
+--*/    
+;
+
+#endif
+
 VOID
 PeiCopyMem (
   IN VOID   *Destination,

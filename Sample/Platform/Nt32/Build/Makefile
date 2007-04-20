@@ -48,7 +48,7 @@ TOOLCHAIN = TOOLCHAIN_MSVC
 #
 SEC_OBJECTS =                                                     \
   $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\SecMain.obj              \
-  $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\Ia32\SecSwitchStacks.obj \
+  $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\Ia32\$(PI_PREFIX)SecSwitchStacks.obj \
   $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\FwVol.obj                \
   $(PROCESSOR)\Sample\Cpu\WinNtThunk\Sec\WinNtThunk.obj           \
   $(PROCESSOR)\PeiHobLib.lib                                      \
@@ -128,6 +128,7 @@ makefiles :
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)             \
     -d SHELL_INF=$(SHELL_INF)                      \
     -d UEFI_PREFIX=$(UEFI_PREFIX)                  \
+    -d PI_PREFIX=$(PI_PREFIX)                      \
     -d CAPSULE_INF=$(CAPSULE_INF)                  \
     -d ATAPI_PASS_THRU_INF=$(ATAPI_PASS_THRU_INF)  \
     -d DEVPATH_INF=$(DEVPATH_INF)                  \
@@ -153,6 +154,7 @@ fast_makefiles :
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)             \
     -d SHELL_INF=$(SHELL_INF)                      \
     -d UEFI_PREFIX=$(UEFI_PREFIX)                  \
+    -d PI_PREFIX=$(PI_PREFIX)                      \
     -d CAPSULE_INF=$(CAPSULE_INF)                  \
     -d ATAPI_PASS_THRU_INF=$(ATAPI_PASS_THRU_INF)  \
     -d DEVPATH_INF=$(DEVPATH_INF)                  \

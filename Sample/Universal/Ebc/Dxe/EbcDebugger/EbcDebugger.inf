@@ -1,0 +1,102 @@
+#/*++
+#
+# Copyright (c)  2007, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    EbcDebugger.inf
+#
+#  Abstract:
+#
+#    Component description file for EBC interpreter.
+#
+--*/
+
+[defines]
+BASE_NAME            = EbcDebugger
+FILE_GUID            = 8296AF37-D183-4416-B3B6-19D2A80AD4A8
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.ia32]
+  ..\Ia32\EbcLowLevel.asm
+  ..\Ia32\Ia32Math.asm
+  ..\Ia32\EbcSupport.c
+
+[sources.ipf]
+  ..\Ipf\EbcLowLevel.s
+  ..\Ipf\IpfMath.c
+  ..\Ipf\IpfMul.s
+  ..\Ipf\EbcSupport.c
+
+[sources.x64]
+  ..\x64\EbcLowLevel.asm
+  ..\x64\x64Math.c
+  ..\x64\EbcSupport.c
+
+[sources.common]
+  ..\EbcInt.c
+  ..\EbcInt.h
+  ..\EbcExecute.c
+  ..\EbcExecute.h
+  Edb.c
+  Edb.h
+  EdbCommon.h
+  EdbCmdBranch.c
+  EdbCmdBreak.c
+  EdbCmdBreakpoint.c
+  EdbCmdGo.c
+  EdbCmdHelp.c
+  EdbCmdMemory.c
+  EdbCmdRegister.c
+  EdbCmdQuit.c
+  EdbCmdScope.c
+  EdbCmdStep.c
+  EdbCmdSymbol.c
+  EdbCmdExtIo.c
+  EdbCmdExtPci.c
+  EdbCommand.c
+  EdbCommand.h
+  EdbDisasm.c
+  EdbDisasm.h
+  EdbDisasmSupport.c
+  EdbDisasmSupport.h
+  EdbSymbol.c
+  EdbSymbol.h
+  EdbHook.c
+  EdbHook.h
+  EdbSupport.h
+  EdbSupportUI.c
+  EdbSupportString.c
+  EdbSupportFile.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Framework
+  .
+  ..
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+
+[libraries.common]
+  EfiProtocolLib
+  EfiDriverLib
+  PrintLib
+  DebuggerConfigurationProtocolLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=InitializeEbcDriver
+  DPX_SOURCE=..\Ebc.dxs
+  C_FLAGS = $(C_FLAGS) /D EFI_EBC_DEBUGGER_ENABLED
+

@@ -23,6 +23,7 @@ Abstract:
 
 #include EFI_PROTOCOL_DEFINITION (ConsoleControl)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
 #include EFI_PROTOCOL_DEFINITION (EfiOEMBadging)

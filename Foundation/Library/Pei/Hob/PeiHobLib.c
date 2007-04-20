@@ -1,7 +1,7 @@
 
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -541,4 +541,63 @@ Returns:
   Hob = BuildHobEndOfHobList(Hob.Raw);
   HandOffHob.HandoffInformationTable->EfiFreeMemoryBottom = (EFI_PHYSICAL_ADDRESS) (UINTN) Hob.Raw;
   return EFI_SUCCESS;
+}
+
+EFI_STATUS
+GetFirstGuidHob (
+  IN     VOID      **HobStart,
+  IN     EFI_GUID  *Guid,
+  OUT    VOID      **Buffer,
+  OUT    UINTN     *BufferSize  OPTIONAL
+  ) 
+/*++
+
+Routine Description:
+
+  This function searches the first instance of a HOB among the whole HOB list. 
+
+Arguments:
+
+  HobStart                  - A pointer to the start pointer of hob list.
+
+  Guid                      - A pointer to the GUID to match with in the HOB list.
+
+  Buffer                    - A pointer to the pointer to the data for the custom HOB type.
+
+  BufferSize                - A Pointer to the size in byte of BufferSize.
+
+Returns:
+  EFI_SUCCESS
+  The first instance of the matched GUID HOB among the whole HOB list
+
+--*/
+{
+  EFI_STATUS        Status;
+  EFI_PEI_HOB_POINTERS  GuidHob;
+  
+  GuidHob.Raw = *HobStart;
+
+  for (Status = EFI_NOT_FOUND; EFI_ERROR (Status); ) {
+    
+    if (END_OF_HOB_LIST (GuidHob)) {
+      return EFI_NOT_FOUND;
+    }
+    
+    if (GuidHob.Header->HobType == EFI_HOB_TYPE_GUID_EXTENSION) {            
+      if ( ((INT32 *)Guid)[0] == ((INT32 *)&GuidHob.Guid->Name)[0] &&
+           ((INT32 *)Guid)[1] == ((INT32 *)&GuidHob.Guid->Name)[1] &&
+           ((INT32 *)Guid)[2] == ((INT32 *)&GuidHob.Guid->Name)[2] &&
+           ((INT32 *)Guid)[3] == ((INT32 *)&GuidHob.Guid->Name)[3] ) {
+        Status  = EFI_SUCCESS;
+        *Buffer = (VOID *)((UINT8 *)(&GuidHob.Guid->Name) + sizeof (EFI_GUID));
+        if (BufferSize) {
+          *BufferSize = GuidHob.Header->HobLength - sizeof (EFI_HOB_GUID_TYPE);
+        }
+      }
+    }
+
+    GuidHob.Raw = GET_NEXT_HOB (GuidHob);
+  }
+
+  return Status;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -41,6 +41,9 @@ typedef const UINT16  EFI_BOOT_SCRIPT_OPCODE;
 #define EFI_BOOT_SCRIPT_STALL_OPCODE                  0x07
 #define EFI_BOOT_SCRIPT_DISPATCH_OPCODE               0x08
 #define EFI_BOOT_SCRIPT_INFORMATION_OPCODE            0x0A
+
+#define EFI_BOOT_SCRIPT_PCI_CONFIG2_WRITE_OPCODE       0x0B
+#define EFI_BOOT_SCRIPT_PCI_CONFIG2_READ_WRITE_OPCODE  0x0C
 
 #define EFI_BOOT_SCRIPT_TABLE_OPCODE                  0xAA
 #define EFI_BOOT_SCRIPT_TERMINATE_OPCODE              0xFF
@@ -127,8 +130,26 @@ typedef struct {
   UINT16                OpCode;
   UINT8                 Length;
   UINT32                Width;
+  UINT32                Count;
+  UINT64                Address;
+  UINT16                Segment;
+} EFI_BOOT_SCRIPT_PCI_CONFIG2_WRITE;
+
+typedef struct {
+  UINT16                OpCode;
+  UINT8                 Length;
+  UINT32                Width;
   UINT64                Address;
 } EFI_BOOT_SCRIPT_PCI_CONFIG_READ_WRITE;
+
+typedef struct {
+  UINT16                OpCode;
+  UINT8                 Length;
+  UINT32                Width;
+  UINT64                Address;
+  UINT16                Segment;
+} EFI_BOOT_SCRIPT_PCI_CONFIG2_READ_WRITE;
+
 
 typedef struct {
   UINT16                    OpCode;
@@ -173,6 +194,8 @@ typedef union {
   EFI_BOOT_SCRIPT_MEM_READ_WRITE        *MemReadWrite;
   EFI_BOOT_SCRIPT_PCI_CONFIG_WRITE      *PciWrite;
   EFI_BOOT_SCRIPT_PCI_CONFIG_READ_WRITE *PciReadWrite;
+  EFI_BOOT_SCRIPT_PCI_CONFIG2_WRITE      *PciWrite2;
+  EFI_BOOT_SCRIPT_PCI_CONFIG2_READ_WRITE *PciReadWrite2;
   EFI_BOOT_SCRIPT_SMBUS_EXECUTE         *SmbusExecute;
   EFI_BOOT_SCRIPT_STALL                 *Stall;
   EFI_BOOT_SCRIPT_DISPATCH              *Dispatch;

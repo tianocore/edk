@@ -26,8 +26,6 @@ Abstract:
 #include "CommonLib.h"
 #include "EfiUtilityMsgs.h"
 
-#include EFI_GUID_DEFINITION (FirmwareFileSystem)
-
 //
 // Module global variables
 //

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,11 +29,9 @@ Abstract:
 #include "VarMachine.h"
 #include EFI_GUID_DEFINITION (GlobalVariable)
 
-#define VAR_V_MASK                  (0)
-#define VAR_NV_MASK                 (1 << 31)
-#define VARIABLE_STORE_SIZE         (64 * 1024)
-#define VARIABLE_SCRATCH_SIZE       (4 * 1024)
-#define VARIABLE_RECLAIM_THRESHOLD  (1024)
+#define VOLATILE_VARIABLE_STORE_SIZE  (64 * 1024)
+#define VARIABLE_SCRATCH_SIZE         (4 * 1024)
+#define VARIABLE_RECLAIM_THRESHOLD    (1024)
 
 //
 // Define GET_PAD_SIZE to optimize compiler
@@ -71,10 +69,10 @@ typedef struct {
 
 
 typedef struct {
-  VARIABLE_STORAGE   *VariableStore[MaxType];
-  VOID               *VariableBase[MaxType];
-  UINTN              LastVariableOffset[MaxType];
-  VOID               *Scratch;
+  VARIABLE_STORAGE   *VariableStore[MaxType];       // Instance of VariableStorage
+  VOID               *VariableBase[MaxType];        // Start address of variable storage
+  UINTN              LastVariableOffset[MaxType];   // The position to write new variable to (index from VariableBase)
+  VOID               *Scratch;                      // Buffer used during reclaim
 } VARIABLE_GLOBAL;
 
 //

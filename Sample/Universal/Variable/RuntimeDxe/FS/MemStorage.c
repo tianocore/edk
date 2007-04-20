@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation
+Copyright (c) 2006 - 2007, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -37,36 +37,22 @@ OnVirtualAddressChange (
 
 STATIC
 EFI_STATUS
-VarEraseStore(
+MemEraseStore(
   IN VARIABLE_STORAGE   *This
   );
 
 STATIC
 EFI_STATUS
-VarWriteStore (
+MemWriteStore (
   IN VARIABLE_STORAGE   *This,
   IN UINTN                Offset,
   IN UINTN                BufferSize,
   IN VOID                 *Buffer
   );
 
-STATIC
-VOID
-MemStorageDestructor (
-  IN VARIABLE_STORAGE     *VarStore
-  )
-{
-  VS_DEV    *Dev;
-  Dev = DEV_FROM_THIS (VarStore);
-
-  gBS->FreePool (VAR_DATA_PTR (Dev));
-  gBS->FreePool (Dev);
-}
-
 EFI_STATUS
 MemStorageConstructor (
-  OUT VARIABLE_STORAGE          **VarStore,  
-  IN  UINT32                    Attributes,
+  OUT VARIABLE_STORAGE          **VarStore,
   IN  UINTN                     Size
   )
 {
@@ -80,20 +66,15 @@ MemStorageConstructor (
   EfiZeroMem (Dev, sizeof(VS_DEV));
 
   Dev->Signature   = VARIABLE_STORE_SIGNATURE;
-  Dev->Attributes  = Attributes;
   Dev->Size        = Size;
 
-  Dev->VarStore.Erase    = VarEraseStore;
-  Dev->VarStore.Write    = VarWriteStore;
-  Dev->VarStore.Destruct = MemStorageDestructor;
+  Dev->VarStore.Erase    = MemEraseStore;
+  Dev->VarStore.Write    = MemWriteStore;
 
   Status = gBS->AllocatePool (EfiRuntimeServicesData, Size, &VAR_DATA_PTR (Dev));
   ASSERT_EFI_ERROR (Status);
 
-  DEBUG ((EFI_D_ERROR, "%s: Size = 0x%x\n", 
-        ((Attributes & VAR_NV_MASK) != 0) ? L"MemStorage Pre allocate for FileStorage" : L"MemStorage",
-        Size)
-      );
+  DEBUG ((EFI_D_ERROR, "VStorage: Size = 0x%x\n", Size));
   
   //
   // This a runtime ram device, we need to update any internal
@@ -128,12 +109,11 @@ OnVirtualAddressChange (
   EfiConvertPointer (EFI_INTERNAL_POINTER, &VAR_DATA_PTR (Dev));
   EfiConvertPointer (EFI_INTERNAL_POINTER, &Dev->VarStore.Erase);
   EfiConvertPointer (EFI_INTERNAL_POINTER, &Dev->VarStore.Write);
-  EfiConvertPointer (EFI_INTERNAL_POINTER, &Dev->VarStore.Destruct);
 }
 
 STATIC
 EFI_STATUS
-VarEraseStore(
+MemEraseStore(
   IN VARIABLE_STORAGE   *This
   )
 {
@@ -147,7 +127,7 @@ VarEraseStore(
 
 STATIC
 EFI_STATUS
-VarWriteStore (
+MemWriteStore (
   IN VARIABLE_STORAGE     *This,
   IN UINTN                Offset,
   IN UINTN                BufferSize,

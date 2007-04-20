@@ -25,7 +25,6 @@ Abstract:
 #include "GenFvImageLib.h"
 #include "GenFvImageLibInternal.h"
 #include <string.h>
-#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 #include EFI_GUID_DEFINITION (PeiPeCoffLoader)
 #include "EfiFirmwareFileSystem.h"
 #include "EfiWorkingBlockHeader.h"
@@ -37,6 +36,8 @@ Abstract:
 #include "EfiImage.h"
 #include "crc32.h"
 #include "EfiUtilityMsgs.h"
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem2)
 
 //
 // Define the PE/COFF loader
@@ -57,7 +58,12 @@ GetPe32Info (
 //
 // Local function implementations.
 //
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 EFI_GUID  FfsGuid = EFI_FIRMWARE_FILE_SYSTEM_GUID;
+#else
+EFI_GUID  FfsGuid = EFI_FIRMWARE_FILE_SYSTEM2_GUID;
+#endif
+
 EFI_GUID  DefaultFvPadFileNameGuid = { 0x78f54d4, 0xcc22, 0x4048, 0x9e, 0x94, 0x87, 0x9c, 0x21, 0x4d, 0x56, 0x2f };
 
 //
@@ -425,6 +431,90 @@ Returns:
     Error (NULL, 0, 0, EFI_FVB_ERASE_POLARITY_STRING, "value not specified");
     return Status;
   }
+
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)        
+  //
+  // Read the read lock capability attribute
+  //
+  Status = FindToken (InfFile, ATTRIBUTES_SECTION_STRING, EFI_FVB_READ_LOCK_CAP_STRING, 0, Value);
+
+  if (Status == EFI_SUCCESS) {
+    //
+    // Update attribute
+    //
+    if (strcmp (Value, TRUE_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_READ_LOCK_CAP;
+    } else if (strcmp (Value, FALSE_STRING) != 0) {
+      Error (NULL, 0, 0, EFI_FVB_READ_LOCK_CAP_STRING, "expected %s | %s", TRUE_STRING, FALSE_STRING);
+      return EFI_ABORTED;
+    }
+  } else {
+    Error (NULL, 0, 0, EFI_FVB_READ_LOCK_CAP_STRING, "value not specified");
+    return Status;
+  }
+
+  //
+  // Read the read lock status attribute
+  //
+  Status = FindToken (InfFile, ATTRIBUTES_SECTION_STRING, EFI_FVB_READ_LOCK_STATUS_STRING, 0, Value);
+
+  if (Status == EFI_SUCCESS) {
+    //
+    // Update attribute
+    //
+    if (strcmp (Value, TRUE_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_READ_LOCK_STATUS;
+    } else if (strcmp (Value, FALSE_STRING) != 0) {
+      Error (NULL, 0, 0, EFI_FVB_READ_LOCK_STATUS_STRING, "expected %s | %s", TRUE_STRING, FALSE_STRING);
+      return EFI_ABORTED;
+    }
+  } else {
+    Error (NULL, 0, 0, EFI_FVB_READ_LOCK_STATUS_STRING, "value not specified");
+    return Status;
+  }
+
+  //
+  // Read the write lock capability attribute
+  //
+  Status = FindToken (InfFile, ATTRIBUTES_SECTION_STRING, EFI_FVB_WRITE_LOCK_CAP_STRING, 0, Value);
+
+  if (Status == EFI_SUCCESS) {
+    //
+    // Update attribute
+    //
+    if (strcmp (Value, TRUE_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_WRITE_LOCK_CAP;
+    } else if (strcmp (Value, FALSE_STRING) != 0) {
+      Error (NULL, 0, 0, EFI_FVB_WRITE_LOCK_CAP_STRING, "expected %s | %s", TRUE_STRING, FALSE_STRING);
+      return EFI_ABORTED;
+    }
+  } else {
+    Error (NULL, 0, 0, EFI_FVB_WRITE_LOCK_CAP_STRING, "value not specified");
+    return Status;
+  }
+
+  //
+  // Read the write lock status attribute
+  //
+  Status = FindToken (InfFile, ATTRIBUTES_SECTION_STRING, EFI_FVB_WRITE_LOCK_STATUS_STRING, 0, Value);
+
+  if (Status == EFI_SUCCESS) {
+    //
+    // Update attribute
+    //
+    if (strcmp (Value, TRUE_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_WRITE_LOCK_STATUS;
+    } else if (strcmp (Value, FALSE_STRING) != 0) {
+      Error (NULL, 0, 0, EFI_FVB_WRITE_LOCK_STATUS_STRING, "expected %s | %s", TRUE_STRING, FALSE_STRING);
+      return EFI_ABORTED;
+    }
+  } else {
+    Error (NULL, 0, 0, EFI_FVB_WRITE_LOCK_STATUS_STRING, "value not specified");
+    return Status;
+  }
+#endif
+
+#if (PI_SPECIFICATION_VERSION < 0x00010000)     
   //
   // Read the alignment capabilities attribute
   //
@@ -444,6 +534,7 @@ Returns:
     Error (NULL, 0, 0, EFI_FVB_ALIGNMENT_CAP_STRING, "value not specified");
     return Status;
   }
+
   //
   // Read the word alignment capability attribute
   //
@@ -463,6 +554,8 @@ Returns:
     Error (NULL, 0, 0, EFI_FVB_ALIGNMENT_2_STRING, "value not specified");
     return Status;
   }
+
+  
   //
   // Read the dword alignment capability attribute
   //
@@ -768,7 +861,7 @@ Returns:
         (FvInfo->FvAttributes & EFI_FVB_ALIGNMENT_32K) ||
         (FvInfo->FvAttributes & EFI_FVB_ALIGNMENT_64K)
       )
-     ) {
+     ){
     Error (
       NULL,
       0,
@@ -781,6 +874,90 @@ Returns:
       );
     return EFI_ABORTED;
   }
+#else
+  //
+  // Read the PI1.0 FVB2 Alignment Capabilities Attribute
+  //
+  Status = FindToken (InfFile, ATTRIBUTES_SECTION_STRING, EFI_FVB2_ALIGNMENT_STRING, 0, Value);
+
+  if (Status == EFI_SUCCESS) {
+    //
+    // Update attribute
+    //
+    if (strcmp (Value, EFI_FVB2_ALIGNMENT_1_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_1;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_2_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_2;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_4_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_4;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_8_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_8;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_16_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_16;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_32_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_32;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_64_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_64;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_128_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_128;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_256_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_256;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_512_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_512;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_1K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_1K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_2K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_2K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_4K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_4K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_8K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_8K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_16K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_16K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_32K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_32K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_64K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_64K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_128K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_128K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_256K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_256K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_512K_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMNET_512K;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_1M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_1M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_2M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_2M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_4M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_4M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_8M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_8M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_16M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_16M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_32M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_32M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_64M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_64M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_128M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_128M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_256M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_256M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_512M_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_512M;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_1G_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_1G;
+    } else if (strcmp (Value, EFI_FVB2_ALIGNMENT_2G_STRING) == 0) {
+      FvInfo->FvAttributes |= EFI_FVB2_ALIGNMENT_2G;
+    } else {
+      Error (NULL, 0, 0, EFI_FVB2_ALIGNMENT_STRING, "value not correct!");
+      return EFI_ABORTED;
+    }
+  } else {
+    Error (NULL, 0, 0, EFI_FVB2_ALIGNMENT_STRING, "value not specified");
+    return Status;
+  }
+
+#endif  
   //
   // Read block maps
   //
@@ -2670,11 +2847,16 @@ Returns:
   FvHeader->FvLength    = *FvImageSize;
   FvHeader->Signature   = EFI_FVH_SIGNATURE;
   FvHeader->Attributes  = FvInfo.FvAttributes;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   FvHeader->Revision    = EFI_FVH_REVISION;
   FvHeader->Reserved[0] = 0;
   FvHeader->Reserved[1] = 0;
   FvHeader->Reserved[2] = 0;
-
+#else
+  FvHeader->Revision    = EFI_FVH_PI_REVISION;
+  FvHeader->ExtHeaderOffset = 0;
+  FvHeader->Reserved[0] = 0;
+#endif
   //
   // Copy firmware block map
   //

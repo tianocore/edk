@@ -31,8 +31,22 @@ EFI_FORWARD_DECLARATION (EFI_SEC_PLATFORM_INFORMATION_PPI);
 
 extern EFI_GUID gEfiSecPlatformInformationPpiGuid;
 
+typedef union {
+  struct {
+  UINT32 Status : 2;
+  UINT32 Tested : 1;
+  UINT32 Reserved1 :13;
+  UINT32 VirtualMemoryUnavailable : 1;
+  UINT32 Ia32ExecutionUnavailable : 1;
+  UINT32 FloatingPointUnavailable : 1;
+  UINT32 MiscFeaturesUnavailable : 1;
+  UINT32 Reserved2 :12;
+  } Bits;
+  UINT32 Uint32;
+} EFI_HEALTH_FLAGS;
+
 typedef struct {
-  UINTN HealthFlags;
+  EFI_HEALTH_FLAGS HealthFlags;
 } SEC_PLATFORM_INFORMATION_RECORD;
 
 typedef struct {
@@ -47,7 +61,7 @@ EFI_STATUS
 (EFIAPI *SEC_PLATFORM_INFORMATION) (
   IN EFI_PEI_SERVICES                    **PeiServices,
   IN OUT UINT64                          *StructureSize,
-  IN OUT SEC_PLATFORM_INFORMATION_RECORD * PlatformInformationRecord
+  IN OUT SEC_PLATFORM_INFORMATION_RECORD *PlatformInformationRecord
   );
 
 typedef struct _EFI_SEC_PLATFORM_INFORMATION_PPI {

@@ -1183,7 +1183,8 @@ Returns:
   // Length of FvBlock cannot be 2**64-1
   // HeaderLength cannot be an odd number
   //
-  if ((FwVolHeader->Revision != EFI_FVH_REVISION) ||
+  if (((FwVolHeader->Revision != EFI_FVH_REVISION) &&
+      (FwVolHeader->Revision != EFI_FVH_PI_REVISION) )||
       (FwVolHeader->Signature != EFI_FVH_SIGNATURE) ||
       (FwVolHeader->FvLength == ((UINTN) -1)) ||
       ((FwVolHeader->HeaderLength & 0x01) != 0)

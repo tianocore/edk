@@ -2,7 +2,7 @@ TITLE   Cpu.asm: Assembly code for the x64 resources
 
 ;------------------------------------------------------------------------------
 ;*
-;*   Copyright (c) 2005 - 2006, Intel Corporation                                                         
+;*   Copyright (c) 2005 - 2007, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -64,7 +64,7 @@ EfiInvd ENDP
 ;    OUT  EFI_CPUID_REGISTER  *Reg           OPTIONAL // rdx  
 ;    )
 ;------------------------------------------------------------------------------
-EfiCpuid PROC NEAR  PUBLIC
+EfiCpuid PROC   PUBLIC
     push  rbx
     
     mov   r8,   rdx         ; r8 = *Reg
@@ -88,7 +88,7 @@ EfiCpuid  ENDP
 ;    IN   UINT32  Index,  // rcx
 ;    )
 ;------------------------------------------------------------------------------
-EfiReadMsr PROC NEAR PUBLIC 
+EfiReadMsr PROC  PUBLIC 
     rdmsr
     sal     rdx, 32   ; edx:eax -> rax
     or      rax, rdx  ; rax = edx:eax
@@ -102,7 +102,7 @@ EfiReadMsr  ENDP
 ;    IN   UINT64  Value   // rdx
 ;    )
 ;------------------------------------------------------------------------------
-EfiWriteMsr PROC  NEAR PUBLIC
+EfiWriteMsr PROC   PUBLIC
     mov     rax,  rdx   ; rdx = Value
     sar     rdx,  32    ; convert rdx to edx upper 32-bits    
     wrmsr               ; wrmsr[ecx] result = edx:eax

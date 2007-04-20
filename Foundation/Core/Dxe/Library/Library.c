@@ -821,7 +821,7 @@ Returns:
     gStatusCode->ReportStatusCode (
       EFI_DEBUG_CODE,
       (EFI_SOFTWARE_DXE_CORE | EFI_DC_UNSPECIFIED),
-      0,
+      (UINT32) ErrorLevel,
       &gEfiDxeServicesTableGuid,
       (EFI_STATUS_CODE_DATA *)Buffer
       );

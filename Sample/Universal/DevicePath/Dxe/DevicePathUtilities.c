@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                     
+Copyright (c) 2006 - 2007, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,6 +25,13 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (DevicePathUtilities)
 
 EFI_GUID                  gEfiDevicePathUtilitiesProtocolGuid = EFI_DEVICE_PATH_UTILITIES_PROTOCOL_GUID;
+
+STATIC EFI_DEVICE_PATH_PROTOCOL  EndDevicePath[] = {
+  END_DEVICE_PATH_TYPE,
+  END_ENTIRE_DEVICE_PATH_SUBTYPE,
+  END_DEVICE_PATH_LENGTH,
+  0
+};
 
 UINTN
 GetDevicePathSize (
@@ -132,6 +139,13 @@ AppendDevicePath (
   EFI_DEVICE_PATH_PROTOCOL  *SecondDevicePath;
 
   //
+  // If Src1 and Src2 are both NULL, then a copy of an end-of-device-path is returned
+  //
+  if ((Src1 == NULL) && (Src2 == NULL)) {
+    return DuplicateDevicePath (EndDevicePath);
+  }
+
+  //
   // If there's only 1 path, just duplicate it
   //
   if (Src1 == NULL) {
@@ -191,8 +205,18 @@ AppendDeviceNode (
   EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
   UINTN                     NodeLength;
 
-  if ((DevicePath == NULL) || (DeviceNode == NULL)) {
-    return NULL;
+  //
+  //  If both DeviceNode and DevicePath are NULL then a copy of an end-of-device-path device node is returned
+  //
+  if ((DevicePath == NULL) && (DeviceNode == NULL)) {
+    return DuplicateDevicePath (EndDevicePath);
+  }
+
+  //
+  // If DeviceNode is NULL then a copy of DevicePath is returned
+  //
+  if (DeviceNode == NULL) {
+    return DuplicateDevicePath (DevicePath);
   }
 
   //

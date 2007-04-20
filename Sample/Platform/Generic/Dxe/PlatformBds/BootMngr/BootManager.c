@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -142,6 +142,10 @@ Returns:
   EFI_LIST_ENTRY      BdsBootOptionList;
   BOOLEAN	            BootMngrMenuResetRequired;
 
+  CHAR16              *HelpString;
+  STRING_REF          HelpToken;
+  UINT16              *TempStr;
+  
   gOption = NULL;
   InitializeListHead (&BdsBootOptionList);
 
@@ -249,8 +253,7 @@ Returns:
     // At this stage we are creating a menu entry, thus the Keys are reproduceable
     //
     mKeyInput++;
-    Token++;
-
+    Token = 0;
     Status = Hii->NewString (Hii, NULL, gBootManagerHandle, &Token, Option->Description);
 
     //
@@ -261,11 +264,19 @@ Returns:
       Token   = 0;
       Status  = Hii->NewString (Hii, NULL, gBootManagerHandle, &Token, Option->Description);
     }
-
+    
+    TempStr = DevicePathToStr (Option->DevicePath);
+    HelpString = EfiLibAllocateZeroPool (EfiStrSize (TempStr) + EfiStrSize (L"Device Path : "));
+    EfiStrCat (HelpString, L"Device Path : ");
+    EfiStrCat (HelpString, TempStr);
+    
+    HelpToken = 0;
+    Status = Hii->NewString (Hii, NULL, gBootManagerHandle, &HelpToken, HelpString);
+    
     Status = CreateGotoOpCode (
               0x1000, // Form ID
               Token,  // Token Value for the string
-              0,      // Help String (none)
+              HelpToken,      // Help String
               EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,  // The Op-Code flags
               mKeyInput,                                          // The Key to get a callback on
               Location  // Buffer containing created op-code

@@ -141,6 +141,14 @@ EFI_ALIGNMENT_8K        = TRUE
 EFI_ALIGNMENT_16K       = TRUE
 EFI_ALIGNMENT_32K       = TRUE
 EFI_ALIGNMENT_64K       = TRUE
+#
+#New Attribute for PI 1.0 spec
+#
+EFI_READ_LOCK_CAP      = TRUE
+EFI_READ_LOCK_STATUS   = TRUE
+EFI_WRITE_LOCK_CAP     = TRUE
+EFI_WRITE_LOCK_STATUS  = TRUE
+EFI_FVB2_ALIGNMENT     = 8
 
 [=============================================================================]
 [Capsule.Capsule_A.Options]
@@ -241,13 +249,18 @@ DEFINE FV=FvRecovery
 #
 # PEI Core
 #
-Foundation\Core\Pei\PeiMain.inf
+Foundation\Core\$(PI_PREFIX)Pei\PeiMain.inf
 
 #
 # PEIM
 #
-Sample\Platform\Generic\MonoStatusCode\Pei\$(PROJECT_NAME)\MonoStatusCode.inf
-Sample\Platform\Nt32\Pei\BootMode\BootMode.inf
+
+#
+# APRIORI list, this is a list of drivers run without dependencies
+#
+Sample\Universal\FirmwareVolume\Apriori\Pei\AprioriList.inf                     FV=FvRecovery
+Sample\Platform\Generic\MonoStatusCode\Pei\$(PROJECT_NAME)\MonoStatusCode.inf   APRIORI=FvRecovery:1
+Sample\Platform\Nt32\Pei\BootMode\BootMode.inf                                  APRIORI=FvRecovery:2
 Sample\Platform\Nt32\Pei\FlashMap\FlashMap.inf
 Sample\Universal\GenericMemoryTest\Pei\BaseMemoryTest.inf
 Sample\Universal\Variable\Pei\Variable.inf
@@ -261,10 +274,6 @@ Sample\Platform\Nt32\Pei\WinNtStuff\WinNtStuff.inf
 #
 Foundation\Core\Dxe\DxeMain.inf                                                  PACKAGE=DxeMain
 
-#
-# APRIORI list, this is a list of drivers run without dependencies
-#
-#Sample\Universal\FirmwareVolume\Apriori\Dxe\AprioriList.inf FV=FvRecovery
 
 #
 # Guided Section Extraction Protocol used to authenticate images

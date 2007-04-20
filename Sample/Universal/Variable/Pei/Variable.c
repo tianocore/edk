@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,12 +22,14 @@ Abstract:
 #include "Tiano.h"
 #include "Pei.h"
 #include "PeiLib.h"
+#include "PeiHobLib.h"
 #include "Variable.h"
 #include "EfiHobLib.h"
 
 //
 // Module globals
 //
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 static PEI_READ_ONLY_VARIABLE_PPI mVariablePpi = {
   PeiGetVariable,
   PeiGetNextVariableName
@@ -38,6 +40,21 @@ static EFI_PEI_PPI_DESCRIPTOR     mPpiListVariable = {
   &gPeiReadOnlyVariablePpiGuid,
   &mVariablePpi
 };
+
+#else
+
+static EFI_PEI_READ_ONLY_VARIABLE2_PPI mVariablePpi = {
+  PeiGetVariable,
+  PeiGetNextVariableName
+};
+
+static EFI_PEI_PPI_DESCRIPTOR     mPpiListVariable = {
+  (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+  &gPeiReadOnlyVariable2PpiGuid,
+  &mVariablePpi
+};
+
+#endif
 
 EFI_GUID                          gEfiVariableIndexTableGuid = EFI_VARIABLE_INDEX_TABLE_GUID;
 
@@ -67,6 +84,11 @@ Returns:
 
 --*/
 {
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+  #ifdef EFI_NT_EMULATOR
+   SetPeiServicesTablePointer(PeiServices);
+  #endif
+#endif
   //
   // Publish the variable capability to other modules
   //
@@ -204,64 +226,6 @@ Returns:
 }
 
 EFI_STATUS
-GetFirstGuidHob (
-  IN     VOID      **HobStart,
-  IN     EFI_GUID  * Guid,
-  OUT    VOID      **Buffer,
-  OUT    UINTN     *BufferSize OPTIONAL
-  )
-/*++
-
-Routine Description:
-
-  This code get the first GUID Hob.
-
-Arguments:
-
-  HobStart    - A pointer to the start of the hobs.
-  Guid        - A pointer to the EFI_GUID structure.
-  Buffer      - A pointer to the buffer.
-  BufferSize  - A pointer to the Buffer's size.
-
-Returns:
-
-  EFI_SUCCESS    - Get it successfully
-  EFI_NOT_FOUND  - Fail to find it
- 
---*/
-{
-  EFI_STATUS            Status;
-  EFI_PEI_HOB_POINTERS  GuidHob;
-
-  GuidHob.Raw = *HobStart;
-
-  for (Status = EFI_NOT_FOUND; EFI_ERROR (Status);) {
-
-    if (END_OF_HOB_LIST (GuidHob)) {
-      return EFI_NOT_FOUND;
-    }
-
-    if (GuidHob.Header->HobType == EFI_HOB_TYPE_GUID_EXTENSION) {
-      if (((INT32 *) Guid)[0] == ((INT32 *) &GuidHob.Guid->Name)[0] &&
-          ((INT32 *) Guid)[1] == ((INT32 *) &GuidHob.Guid->Name)[1] &&
-          ((INT32 *) Guid)[2] == ((INT32 *) &GuidHob.Guid->Name)[2] &&
-          ((INT32 *) Guid)[3] == ((INT32 *) &GuidHob.Guid->Name)[3]
-          ) {
-        Status  = EFI_SUCCESS;
-        *Buffer = (VOID *) ((UINT8 *) (&GuidHob.Guid->Name) + sizeof (EFI_GUID));
-        if (BufferSize != NULL) {
-          *BufferSize = GuidHob.Header->HobLength - sizeof (EFI_HOB_GUID_TYPE);
-        }
-      }
-    }
-
-    GuidHob.Raw = GET_NEXT_HOB (GuidHob);
-  }
-
-  return Status;
-}
-
-EFI_STATUS
 CompareWithValidVariable (
   IN  VARIABLE_HEADER         *Variable,
   IN  CHAR16                  *VariableName,
@@ -384,7 +348,7 @@ Returns:
     for (Count = 0; Count < IndexTable->Length; Count++)
     {
 #if ALIGNMENT <= 1
-      MaxIndex = (VARIABLE_HEADER *) (IndexTable->Index[Count] + ((UINT32) IndexTable->StartPtr & 0xFFFF0000));
+      MaxIndex = (VARIABLE_HEADER *) (UINTN) (IndexTable->Index[Count] + ((UINTN) IndexTable->StartPtr & 0xFFFF0000));
 #else
 #if ALIGNMENT >= 4
           MaxIndex = (VARIABLE_HEADER *) (UINTN) ((((UINT32)IndexTable->Index[Count]) << 2) + ((UINT32)(UINTN)IndexTable->StartPtr & 0xFFFC0000) );       
@@ -478,7 +442,7 @@ Returns:
       if (IndexTable->Length < VARIABLE_INDEX_TABLE_VOLUME)
       {
 #if ALIGNMENT <= 1
-        IndexTable->Index[IndexTable->Length++] = (UINT16) (UINT32) Variable;
+        IndexTable->Index[IndexTable->Length++] = (UINT16) (UINTN) Variable;
 #else
 #if ALIGNMENT >= 4
             IndexTable->Index[IndexTable->Length++] = (UINT16) (((UINT32)(UINTN) Variable) >> 2);
@@ -504,6 +468,9 @@ Returns:
 
   return EFI_NOT_FOUND;
 }
+
+
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 
 EFI_STATUS
 EFIAPI
@@ -549,7 +516,7 @@ Returns:
   UINTN                   VarDataSize;
   EFI_STATUS              Status;
 
-  if (VariableName == NULL || VendorGuid == NULL) {
+  if (VariableName == NULL || VendorGuid == NULL || DataSize == NULL) {
     return EFI_INVALID_PARAMETER;
   }
   //
@@ -565,6 +532,9 @@ Returns:
   //
   VarDataSize = Variable.CurrPtr->DataSize;
   if (*DataSize >= VarDataSize) {
+    if (Data == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
     (*PeiServices)->CopyMem (Data, GET_VARIABLE_DATA_PTR (Variable.CurrPtr), VarDataSize);
 
     if (Attributes != NULL) {
@@ -618,7 +588,7 @@ Returns:
   UINTN                   VarNameSize;
   EFI_STATUS              Status;
 
-  if (VariableName == NULL) {
+  if (VariableNameSize == NULL || VariableName == NULL || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -664,3 +634,174 @@ Returns:
 
   return EFI_NOT_FOUND;
 }
+
+#else
+
+EFI_STATUS
+EFIAPI
+PeiGetVariable (
+  IN CONST EFI_PEI_READ_ONLY_VARIABLE2_PPI    *This,
+  IN CONST CHAR16                             *VariableName,
+  IN CONST EFI_GUID                           *VariableGuid,
+  OUT UINT32                                  *Attributes,
+  IN OUT UINTN                                *DataSize,
+  OUT VOID                                    *Data
+  )
+/*++
+
+Routine Description:
+
+  Provide the read variable functionality of the variable services.
+
+Arguments:
+
+  This             - Pointer to EFI_PEI_READ_ONLY_VARIABLE2_PPI.
+
+  VariableName     - The variable name
+
+  VendorGuid       - The vendor's GUID
+
+  Attributes       - Pointer to the attribute
+
+  DataSize         - Size of data
+
+  Data             - Pointer to data
+
+Returns:
+
+  EFI_SUCCESS           - The interface could be successfully installed
+
+  EFI_NOT_FOUND         - The variable could not be discovered
+
+  EFI_BUFFER_TOO_SMALL  - The caller buffer is not large enough
+
+--*/
+{
+  VARIABLE_POINTER_TRACK  Variable;
+  UINTN                   VarDataSize;
+  EFI_STATUS              Status;
+  EFI_PEI_SERVICES        **PeiServices;
+
+
+  if (VariableName == NULL || VariableGuid == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  // Find existing variable
+  //
+  PeiServices = GetPeiServicesTablePointer();
+  Status = FindVariable (PeiServices, (CHAR16*)VariableName, (EFI_GUID*)VariableGuid, &Variable);
+
+  if (Variable.CurrPtr == NULL || Status != EFI_SUCCESS) {
+    return Status;
+  }
+  //
+  // Get data size
+  //
+  VarDataSize = Variable.CurrPtr->DataSize;
+  if (*DataSize >= VarDataSize) {
+    (*PeiServices)->CopyMem (Data, GET_VARIABLE_DATA_PTR (Variable.CurrPtr), VarDataSize);
+
+    if (Attributes != NULL) {
+      *Attributes = Variable.CurrPtr->Attributes;
+    }
+
+    *DataSize = VarDataSize;
+    return EFI_SUCCESS;
+  } else {
+    *DataSize = VarDataSize;
+    return EFI_BUFFER_TOO_SMALL;
+  }
+}
+
+
+EFI_STATUS
+EFIAPI
+PeiGetNextVariableName (
+  IN CONST EFI_PEI_READ_ONLY_VARIABLE2_PPI    *This,
+  IN OUT UINTN                                *VariableNameSize,
+  IN OUT CHAR16                               *VariableName,
+  IN OUT EFI_GUID                             *VariableGuid
+  )
+/*++
+
+Routine Description:
+
+  Provide the get next variable functionality of the variable services.
+
+Arguments:
+
+  This             - Pointer to EFI_PEI_READ_ONLY_VARIABLE2_PPI.
+  VariabvleNameSize  - The variable name's size.
+  VariableName       - A pointer to the variable's name.
+  VendorGuid         - A pointer to the EFI_GUID structure.
+
+  VariableNameSize - Size of the variable name
+
+  VariableName     - The variable name
+
+  VendorGuid       - The vendor's GUID
+
+Returns:
+
+  EFI_SUCCESS - The interface could be successfully installed
+
+  EFI_NOT_FOUND - The variable could not be discovered
+
+--*/
+{
+  VARIABLE_POINTER_TRACK  Variable;
+  UINTN                   VarNameSize;
+  EFI_STATUS              Status;
+  EFI_PEI_SERVICES        **PeiServices;
+
+  if (VariableName == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  PeiServices = GetPeiServicesTablePointer();
+  Status = FindVariable (PeiServices, (CHAR16*)VariableName, (EFI_GUID*)VariableGuid, &Variable);
+
+  if (Variable.CurrPtr == NULL || Status != EFI_SUCCESS) {
+    return Status;
+  }
+
+  if (VariableName[0] != 0) {
+    //
+    // If variable name is not NULL, get next variable
+    //
+    Variable.CurrPtr = GetNextVariablePtr (Variable.CurrPtr);
+  }
+
+  while (!(Variable.CurrPtr >= Variable.EndPtr || Variable.CurrPtr == NULL)) {
+    if (IsValidVariableHeader (Variable.CurrPtr)) {
+      if (Variable.CurrPtr->State == VAR_ADDED) {
+        VarNameSize = (UINTN) Variable.CurrPtr->NameSize;
+        if (VarNameSize <= *VariableNameSize) {
+          (*PeiServices)->CopyMem ((CHAR16*)VariableName, GET_VARIABLE_NAME_PTR (Variable.CurrPtr), VarNameSize);
+
+          (*PeiServices)->CopyMem ((EFI_GUID*)VariableGuid, &Variable.CurrPtr->VendorGuid, sizeof (EFI_GUID));
+
+          Status = EFI_SUCCESS;
+        } else {
+          Status = EFI_BUFFER_TOO_SMALL;
+        }
+
+        *VariableNameSize = VarNameSize;
+        return Status;
+        //
+        // Variable is found
+        //
+      } else {
+        Variable.CurrPtr = GetNextVariablePtr (Variable.CurrPtr);
+      }
+    } else {
+      break;
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+#endif

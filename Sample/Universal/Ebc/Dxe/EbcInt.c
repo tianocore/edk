@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,6 +32,7 @@ Abstract:
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
+#include "EbcDebuggerHook.h"
 
 //
 // We'll keep track of all thunks we create in a linked list. Each
@@ -387,7 +388,11 @@ Returns:
   DEBUG_CODE (
     InitEbcVmTestProtocol (&ImageHandle);
   )
-  
+
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookInit (ImageHandle, EbcDebugProtocol);
+  )
+
   return EFI_SUCCESS;
 
 ErrorExit:
@@ -1025,6 +1030,11 @@ Returns:
   // Now free up the image list element
   //
   gBS->FreePool (ImageList);
+
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookEbcUnloadImage (ImageHandle);
+  )
+
   return EFI_SUCCESS;
 }
 

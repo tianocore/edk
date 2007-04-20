@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -20,6 +20,8 @@ Revision History:
 
 #include "HobGeneration.h"
 #include "PpisNeededByDxeCore.h"
+#include "FlashLayout.h"
+#include "EfiVariable.h"
 
 #define EFI_DXE_FILE_GUID \
   { 0xb1644c1a, 0xc16a, 0x4c5b, 0x88, 0xde, 0xea, 0xfb, 0xa9, 0x7e, 0x74, 0xd8 }
@@ -333,6 +335,140 @@ HOB_TEMPLATE  gHobTemplate = {
       0,
     }
   },
+  { // NV Storage FV Resource
+    {
+      EFI_HOB_TYPE_RESOURCE_DESCRIPTOR,     // HobType
+      sizeof (EFI_HOB_RESOURCE_DESCRIPTOR), // HobLength
+      0                                     // Reserved
+    },
+    {
+      0                                     // Owner Guid
+    },
+    EFI_RESOURCE_FIRMWARE_DEVICE,           // ResourceType
+    (EFI_RESOURCE_ATTRIBUTE_PRESENT    |
+     EFI_RESOURCE_ATTRIBUTE_INITIALIZED |
+     EFI_RESOURCE_ATTRIBUTE_TESTED |
+     EFI_RESOURCE_ATTRIBUTE_WRITE_BACK_CACHEABLE),  // ResourceAttribute
+    0,                                              // PhysicalStart (Fixed later)
+    NV_STORAGE_FVB_SIZE                             // ResourceLength
+  },
+  { // FVB holding NV Storage
+    EFI_HOB_TYPE_GUID_EXTENSION,       // Hob type
+    sizeof (FVB_HOB),
+    0,
+    EFI_FLASH_MAP_HOB_GUID,
+    {
+      0, 0, 0,                         // Reserved[3]
+      EFI_FLASH_AREA_GUID_DEFINED,     // AreaType
+      EFI_SYSTEM_NV_DATA_HOB_GUID,     // AreaTypeGuid
+      1,
+      {
+        EFI_FLASH_AREA_FV | EFI_FLASH_AREA_MEMMAPPED_FV, // SubAreaData.Attributes
+        0,                             // SubAreaData.Reserved
+        0,                             // SubAreaData.Base (Fixed later)
+        NV_STORAGE_FVB_SIZE,           // SubAreaData.Length
+        EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID // SubAreaData.FileSystem
+      }, 
+      0,                               // VolumeSignature (Fixed later)
+      NV_STORAGE_FILE_PATH,            // Mapped file without padding
+                                       //  TotalFVBSize = FileSize + PaddingSize = multiple of BLOCK_SIZE
+      NV_STORAGE_SIZE + EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH,
+                                       // ActuralSize
+      EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH
+    }
+  },
+  { // NV Storage Hob
+    EFI_HOB_TYPE_GUID_EXTENSION,       // Hob type
+    sizeof (FVB_HOB),                  // Hob size
+    0,                                 // reserved
+    EFI_FLASH_MAP_HOB_GUID,
+    {
+      0, 0, 0,                         // Reserved[3]
+      EFI_FLASH_AREA_EFI_VARIABLES,    // AreaType
+      { 0 },                           // AreaTypeGuid
+      1,
+      {
+        EFI_FLASH_AREA_SUBFV | EFI_FLASH_AREA_MEMMAPPED_FV, // SubAreaData.Attributes
+        0,                             // SubAreaData.Reserved
+        0,                             // SubAreaData.Base (Fixed later)
+        NV_STORAGE_SIZE,               // SubAreaData.Length
+        EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID // SubAreaData.FileSystem
+      }, 
+      0,
+      NV_STORAGE_FILE_PATH,
+      NV_STORAGE_SIZE,
+      0
+    }
+  },
+  { // FVB holding FTW spaces including Working & Spare space
+    EFI_HOB_TYPE_GUID_EXTENSION,       // Hob type
+    sizeof (FVB_HOB),
+    0,
+    EFI_FLASH_MAP_HOB_GUID,
+    {
+      0, 0, 0,                         // Reserved[3]
+      EFI_FLASH_AREA_GUID_DEFINED,     // AreaType
+      EFI_SYSTEM_NV_DATA_HOB_GUID,     // AreaTypeGuid
+      1,
+      {
+        EFI_FLASH_AREA_FV | EFI_FLASH_AREA_MEMMAPPED_FV, // SubAreaData.Attributes
+        0,                             // SubAreaData.Reserved
+        0,                             // SubAreaData.Base (Fixed later)
+        NV_FTW_FVB_SIZE,               // SubAreaData.Length
+        EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID   // SubAreaData.FileSystem
+      }, 
+      0,
+      L"",                             // Empty String indicates using memory
+      0,
+      0
+    }
+  },
+  { // NV Ftw working Hob
+    EFI_HOB_TYPE_GUID_EXTENSION,       // Hob type
+    sizeof (FVB_HOB),                  // Hob size
+    0,                                 // reserved
+    EFI_FLASH_MAP_HOB_GUID,
+    {
+      0, 0, 0,                         // Reserved[3]
+      EFI_FLASH_AREA_FTW_STATE,        // AreaType
+      { 0 },                           // AreaTypeGuid
+      1,
+      {
+        EFI_FLASH_AREA_SUBFV | EFI_FLASH_AREA_MEMMAPPED_FV, // SubAreaData.Attributes
+        0,                             // SubAreaData.Reserved
+        0,                             // SubAreaData.Base (Fixed later)
+        NV_FTW_WORKING_SIZE,           // SubAreaData.Length
+        EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID // SubAreaData.FileSystem
+      }, 
+      0,                               // VolumeSignature
+      L"",
+      0,
+      0
+    }
+  },
+  { // NV Ftw spare Hob
+    EFI_HOB_TYPE_GUID_EXTENSION,       // Hob type
+    sizeof (FVB_HOB),                  // Hob size
+    0,                                 // reserved
+    EFI_FLASH_MAP_HOB_GUID,
+    {
+      0, 0, 0,                         // Reserved[3]
+      EFI_FLASH_AREA_FTW_BACKUP,       // AreaType
+      { 0 },                           // AreaTypeGuid
+      1,
+      {
+        EFI_FLASH_AREA_SUBFV | EFI_FLASH_AREA_MEMMAPPED_FV, // SubAreaData.Attributes
+        0,                             // SubAreaData.Reserved
+        0,                             // SubAreaData.Base (Fixed later)
+        NV_FTW_SPARE_SIZE,             // SubAreaData.Length
+        EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL_GUID // SubAreaData.FileSystem
+      }, 
+      0,
+      L"",
+      0,
+      0
+    }
+  },
   { // EndOfHobList
     EFI_HOB_TYPE_END_OF_HOB_LIST,      // HobType
     sizeof (EFI_HOB_GENERIC_HEADER),   // HobLength
@@ -347,9 +483,19 @@ PrepareHobMemory (
   IN UINTN                    NumberOfMemoryMapEntries,
   IN EFI_MEMORY_DESCRIPTOR    *EfiMemoryDescriptor
   )
+/*++
+Description:
+  Update the Hob filling MemoryFreeUnder1MB, MemoryAbove1MB, MemoryAbove4GB
+
+Arguments:
+  NumberOfMemoryMapEntries - Count of Memory Descriptors
+  EfiMemoryDescriptor      - Point to the buffer containing NumberOfMemoryMapEntries Memory Descriptors
+
+Return:
+  VOID * : The end address of MemoryAbove1MB (or the top free memory under 4GB)
+--*/
 {
   UINTN                Index;
-  EFI_PHYSICAL_ADDRESS PhysicalEnd;
 
   //
   // Prepare Low Memory
@@ -367,7 +513,6 @@ PrepareHobMemory (
   gHob->MemoryAbove4GB.PhysicalStart   = 0;
   gHob->MemoryAbove4GB.ResourceLength  = 0;
 
-  PhysicalEnd = 0;
   for (Index = 0; Index < NumberOfMemoryMapEntries; Index++) {
     //
     // Skip regions below 1MB
@@ -383,11 +528,9 @@ PrepareHobMemory (
         if (gHob->MemoryAbove1MB.PhysicalStart == 0) {
           gHob->MemoryAbove1MB.PhysicalStart = EfiMemoryDescriptor[Index].PhysicalStart;
           gHob->MemoryAbove1MB.ResourceLength = LShiftU64 (EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT);
-        } else if (PhysicalEnd == EfiMemoryDescriptor[Index].PhysicalStart) {
+        } else if (gHob->MemoryAbove1MB.PhysicalStart + gHob->MemoryAbove1MB.ResourceLength == EfiMemoryDescriptor[Index].PhysicalStart) {
           gHob->MemoryAbove1MB.ResourceLength += LShiftU64 (EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT);
         }
-        PhysicalEnd = EfiMemoryDescriptor[Index].PhysicalStart + \
-                      LShiftU64 (EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT);
       }
       if ((EfiMemoryDescriptor[Index].Type == EfiReservedMemoryType) ||
           (EfiMemoryDescriptor[Index].Type >= EfiACPIReclaimMemory) ) {
@@ -494,6 +637,176 @@ PrepareHobDxeCore (
   gHob->DxeCore.EntryPoint = (EFI_PHYSICAL_ADDRESS)(UINTN)DxeCoreEntryPoint;
 }
 
+VOID *
+PrepareHobNvStorage (
+  VOID *NvStorageTop
+  )
+/*
+  Initialize Block-Aligned Firmware Block.
+
+  Variable:
+           +-------------------+
+           |     FV_Header     |
+           +-------------------+
+           |                   |
+           |VAR_STORAGE(0x4000)|
+           |                   |
+           +-------------------+
+  FTW:
+           +-------------------+
+           |     FV_Header     |
+           +-------------------+
+           |                   |
+           |   Working(0x2000) |
+           |                   |
+           +-------------------+
+           |                   |
+           |   Spare(0x10000)  |
+           |                   |
+           +-------------------+
+*/
+{
+  static VARIABLE_STORE_HEADER VarStoreHeader = {
+    VARIABLE_STORE_SIGNATURE,
+    0xffffffff,                 // will be fixed in Variable driver
+    VARIABLE_STORE_FORMATTED,
+    VARIABLE_STORE_HEALTHY,
+    0,
+    0
+  };
+  
+  static EFI_FIRMWARE_VOLUME_HEADER NvStorageFvbHeader = {
+    {
+      0,
+    },  // ZeroVector[16]
+    EFI_SYSTEM_NV_DATA_FV_GUID,
+    NV_STORAGE_FVB_SIZE,
+    EFI_FVH_SIGNATURE,
+    EFI_FVB_READ_ENABLED_CAP |
+      EFI_FVB_READ_STATUS |
+      EFI_FVB_WRITE_ENABLED_CAP |
+      EFI_FVB_WRITE_STATUS |
+      EFI_FVB_ERASE_POLARITY,
+    EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH,
+    0,  // CheckSum
+    {
+      0,
+    },  // Reserved[3]
+    EFI_FVH_REVISION,  // Revision
+    {
+      NV_STORAGE_FVB_BLOCK_NUM,
+      FV_BLOCK_SIZE,
+    }
+  };
+
+  static EFI_FV_BLOCK_MAP_ENTRY BlockMapEntryEnd = {0, 0};
+
+  EFI_PHYSICAL_ADDRESS StorageFvbBase;
+  EFI_PHYSICAL_ADDRESS FtwFvbBase;
+
+  UINT16               *Ptr;
+  UINT16               Checksum;
+
+
+  //
+  // Use first 16-byte Reset Vector of FVB to store extra information
+  //   UINT32 Offset 0 stores the volume signature
+  //   UINT8  Offset 4 : should init the Variable Store Header if non-zero
+  //
+  gHob->NvStorageFvb.FvbInfo.VolumeId   = *(UINT32 *) (UINTN) (NV_STORAGE_STATE);
+
+  
+  if (*(UINT8 *) (UINTN) (NV_STORAGE_STATE + 4) != 0) {
+    //
+    // Efivar.bin doesn't exist
+    //  1. Init variable storage header to valid header
+    //
+    EfiCommonLibCopyMem (
+      (VOID *) (UINTN) NV_STORAGE_START,
+      &VarStoreHeader,
+      sizeof (VARIABLE_STORE_HEADER)
+    );
+    //
+    //  2. set all bits in variable storage body to 1
+    //
+    EfiCommonLibSetMem (
+      (VOID *) (UINTN) (NV_STORAGE_START + sizeof (VARIABLE_STORE_HEADER)),
+      NV_STORAGE_SIZE - sizeof (VARIABLE_STORE_HEADER),
+      0xff
+    );
+  }
+
+  //
+  // Relocate variable storage
+  // 
+  //  1. Init FVB Header to valid header: First 0x48 bytes
+  //     In real platform, these fields are fixed by tools
+  //
+  //
+  Checksum = 0;
+  for (
+    Ptr = (UINT16 *) &NvStorageFvbHeader; 
+    Ptr < (UINT16 *) ((UINTN) (UINT8 *) &NvStorageFvbHeader + sizeof (EFI_FIRMWARE_VOLUME_HEADER));
+    ++Ptr
+    ) {
+    Checksum = (UINT16) (Checksum + (*Ptr));
+  }
+  NvStorageFvbHeader.Checksum = (UINT16) (0x10000 - Checksum);
+  StorageFvbBase = (EFI_PHYSICAL_ADDRESS)(((UINTN)NvStorageTop - NV_STORAGE_FVB_SIZE - NV_FTW_FVB_SIZE) & ~EFI_PAGE_MASK);
+  EfiCommonLibCopyMem ((VOID *) (UINTN) StorageFvbBase, &NvStorageFvbHeader, sizeof (EFI_FIRMWARE_VOLUME_HEADER));
+  EfiCommonLibCopyMem (
+    (VOID *) (UINTN) (StorageFvbBase + sizeof (EFI_FIRMWARE_VOLUME_HEADER)),
+    &BlockMapEntryEnd,
+    sizeof (EFI_FV_BLOCK_MAP_ENTRY)
+  );
+  
+  //
+  //  2. Relocate variable data
+  //
+  EfiCommonLibCopyMem (
+    (VOID *) (UINTN) (StorageFvbBase + EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH),
+    (VOID *) (UINTN) NV_STORAGE_START,
+    NV_STORAGE_SIZE
+  );
+
+  //
+  //  3. Set the remaining memory to 0xff
+  //
+  EfiCommonLibSetMem (
+    (VOID *) (UINTN) (StorageFvbBase + EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH + NV_STORAGE_SIZE),
+    NV_STORAGE_FVB_SIZE - NV_STORAGE_SIZE - EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH,
+    0xff
+  );
+
+  //
+  // Create the FVB holding NV Storage in memory
+  //
+  gHob->NvStorageFvResource.PhysicalStart =
+    gHob->NvStorageFvb.FvbInfo.Entries[0].Base = StorageFvbBase;
+  //
+  // Create the NV Storage Hob
+  //
+  gHob->NvStorage.FvbInfo.Entries[0].Base = StorageFvbBase + EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH;
+
+  //
+  // Create the FVB holding FTW spaces
+  //
+  FtwFvbBase = (EFI_PHYSICAL_ADDRESS)((UINTN) StorageFvbBase + NV_STORAGE_FVB_SIZE);
+  gHob->NvFtwFvb.FvbInfo.Entries[0].Base = FtwFvbBase;
+  //
+  // Put FTW Working in front
+  //
+  gHob->NvFtwWorking.FvbInfo.Entries[0].Base = FtwFvbBase + EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH;
+
+  //
+  // Put FTW Spare area after FTW Working area
+  //
+  gHob->NvFtwSpare.FvbInfo.Entries[0].Base = 
+    (EFI_PHYSICAL_ADDRESS)((UINTN) FtwFvbBase + EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH + NV_FTW_WORKING_SIZE);
+  
+  return (VOID *)(UINTN)StorageFvbBase;
+}
+
 VOID
 PrepareHobPhit (
   VOID *MemoryTop,
@@ -525,7 +838,7 @@ CompleteHobGeneration (
   //
   // adjust Above1MB ResourceLength
   //
-  if (gHob->MemoryAbove1MB.PhysicalStart + gHob->MemoryAbove1MB.ResourceLength < gHob->Phit.EfiMemoryTop) {
+  if (gHob->MemoryAbove1MB.PhysicalStart + gHob->MemoryAbove1MB.ResourceLength > gHob->Phit.EfiMemoryTop) {
     gHob->MemoryAbove1MB.ResourceLength = gHob->Phit.EfiMemoryTop - gHob->MemoryAbove1MB.PhysicalStart;
   }
 }

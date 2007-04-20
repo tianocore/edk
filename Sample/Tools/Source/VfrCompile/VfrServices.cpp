@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -589,7 +589,7 @@ Returns:
   //
   // Check for buffer overflow
   //
-  if (mQueuedByteCount > MAX_QUEUE_COUNT) {
+  if (mQueuedByteCount >= MAX_QUEUE_COUNT) {
     Error (PROGRAM_NAME, 0, 0, NULL, "opcode queue overflow");
   } else {
     mQueuedBytes[mQueuedByteCount]    = ByteVal;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -309,6 +309,36 @@ Returns:
 
   EFI_SUCCESS
   EFI_NOT_AVAILABLE_YET
+
+--*/
+;
+
+EFI_STATUS
+GetFirstGuidHob (
+  IN     VOID      **HobStart,
+  IN     EFI_GUID  *Guid,
+  OUT    VOID      **Buffer,
+  OUT    UINTN     *BufferSize  OPTIONAL
+  ) 
+/*++
+
+Routine Description:
+
+  This function searches the first instance of a HOB among the whole HOB list. 
+
+Arguments:
+
+  HobStart                  - A pointer to the start pointer of hob list.
+
+  Guid                      - A pointer to the GUID to match with in the HOB list.
+
+  Buffer                    - A pointer to the pointer to the data for the custom HOB type.
+
+  BufferSize                - A Pointer to the size in byte of BufferSize.
+
+Returns:
+  EFI_SUCCESS
+  The first instance of the matched GUID HOB among the whole HOB list
 
 --*/
 ;

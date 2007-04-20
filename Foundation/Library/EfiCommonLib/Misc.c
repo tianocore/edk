@@ -21,18 +21,22 @@ Abstract:
 #include "pei.h"
 #include "cpuio.h"
 #include "pcicfg.h"
-
+#include "pcicfg2.h"
 #include EFI_PROTOCOL_CONSUMER (PciRootBridgeIo)
 
 //
 // Modular variable used by common libiary in PEI phase
 //
 EFI_GUID              mPeiCpuIoPpiGuid  = PEI_CPU_IO_PPI_GUID;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 EFI_GUID              mPeiPciCfgPpiGuid = PEI_PCI_CFG_PPI_GUID;
-
+PEI_PCI_CFG_PPI       *PciCfgPpi        = NULL;
+#else
+EFI_GUID              mPeiPciCfgPpiGuid = EFI_PEI_PCI_CFG2_PPI_GUID;
+EFI_PEI_PCI_CFG2_PPI  *PciCfgPpi        = NULL;
+#endif
 EFI_PEI_SERVICES      **mPeiServices    = NULL;
 PEI_CPU_IO_PPI        *CpuIoPpi         = NULL;
-PEI_PCI_CFG_PPI       *PciCfgPpi        = NULL;
 
 //
 // Modular variable used by common libiary in DXE phase

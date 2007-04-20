@@ -45,16 +45,6 @@ EFI_STATUS
   IN OUT  VOID                      *Buffer
   );
 
-typedef struct {
-  UINT32  VendorSpecificId;
-  UINT16  SubsystemDeviceId;
-  UINT16  SubsystemVendorId;
-  UINT16  Interface;
-  UINT16  DeviceId;
-  UINT16  VendorId;
-  UINT8   VendorRevision;
-  UINT8   DeviceCapabilities;
-} EFI_SMBUS_UDID;
 
 typedef
 EFI_STATUS
@@ -79,10 +69,6 @@ EFI_STATUS
   IN OUT  EFI_SMBUS_DEVICE_ADDRESS  * SlaveAddress OPTIONAL
   );
 
-typedef struct {
-  EFI_SMBUS_DEVICE_ADDRESS  SmbusDeviceAddress;
-  EFI_SMBUS_UDID            SmbusDeviceUdid;
-} EFI_SMBUS_DEVICE_MAP;
 
 typedef
 EFI_STATUS

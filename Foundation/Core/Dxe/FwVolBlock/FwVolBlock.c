@@ -528,7 +528,9 @@ Returns:
   EFI_PHYSICAL_ADDRESS          BaseAddress;
   UINT64                        Length;
   EFI_STATUS                    HobStatus;
-
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+  EFI_GUID                      FileName;
+#endif
   //
   // First walk hobs and create appropriate FVs.
   //
@@ -556,6 +558,28 @@ Returns:
                   &Length
                   );
   }
+  
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+
+  HobStatus = GetNextFirmwareVolume2Hob (
+                  &HobList,
+                  &BaseAddress,
+                  &Length,
+                  &FileName
+                  );
+  while (!EFI_ERROR (HobStatus)) {
+    //
+    // Produce an FVB protocol for it
+    //
+    ProduceFVBProtocolOnBuffer (BaseAddress, Length, NULL, NULL);
+    HobStatus = GetNextFirmwareVolume2Hob (
+                  &HobList,
+                  &BaseAddress,
+                  &Length,
+                  &FileName
+                  );
+  }
+#endif
   
   return EFI_SUCCESS;
 }
@@ -609,7 +633,11 @@ Returns:
   //
   if (!EFI_ERROR(Status)) {
     Ptr = NULL;
+  #if (PI_SPECIFICATION_VERSION < 0x00010000)
     Status = CoreHandleProtocol (*FVProtocolHandle, &gEfiFirmwareVolumeProtocolGuid, &Ptr);
+  #else
+    Status = CoreHandleProtocol (*FVProtocolHandle, &gEfiFirmwareVolume2ProtocolGuid, &Ptr);
+  #endif
     if (EFI_ERROR(Status) || (Ptr == NULL)) {
       return EFI_VOLUME_CORRUPTED;
     }

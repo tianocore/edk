@@ -44,6 +44,15 @@ extern ACPI_HID_DEVICE_PATH       gPnpPs2KeyboardDeviceNode;
 extern ACPI_HID_DEVICE_PATH       gPnp16550ComPortDeviceNode;
 extern UART_DEVICE_PATH           gUartDeviceNode;
 extern VENDOR_DEVICE_PATH         gTerminalTypeDeviceNode;
+//
+//
+//
+#define VarConsoleInpDev        L"ConInDev"
+#define VarConsoleInp           L"ConIn"
+#define VarConsoleOutDev        L"ConOutDev"
+#define VarConsoleOut           L"ConOut"
+#define VarErrorOutDev          L"ErrOutDev"
+#define VarErrorOut             L"ErrOut"
 
 #define PCI_DEVICE_PATH_NODE(Func, Dev) \
   { \

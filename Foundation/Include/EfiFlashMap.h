@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -75,6 +75,23 @@ typedef struct {
   UINT32                  NumEntries;
   EFI_FLASH_SUBAREA_ENTRY Entries[1];
 } EFI_FLASH_MAP_ENTRY_DATA;
+
+typedef struct {
+  UINT8                   Reserved[3];
+  EFI_FLASH_AREA_TYPE     AreaType;
+  EFI_GUID                AreaTypeGuid;
+  UINT32                  NumberOfEntries;
+  EFI_FLASH_SUBAREA_ENTRY Entries[1];
+  //
+  // Extended Hob data.
+  //
+  // VolumeId and FilePath indicating a unique file.
+  //
+  UINT32                  VolumeId;
+  CHAR16                  FilePath[256];
+  UINT32                  ActuralSize;
+  UINT32                  Offset;
+} EFI_FLASH_MAP_FS_ENTRY_DATA;
 
 typedef struct {
   EFI_HOB_GENERIC_HEADER  Header;

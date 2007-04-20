@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,7 @@ Abstract:
 #include "FwVolDriver.h"
 #include "DxeCore.h"
 
+
 #define KEYSIZE       sizeof (UINTN)
 
 //
@@ -43,7 +44,13 @@ FV_DEVICE mFvDevice = {
     FvReadFileSection,
     FvWriteFile,
     FvGetNextFile,
-    KEYSIZE
+    KEYSIZE,
+    NULL
+ #if (PI_SPECIFICATION_VERSION >= 0x00010000)
+    ,
+    FvGetVolumeInfo,
+    FvSetVolumeInfo
+ #endif   
   },
   NULL,
   NULL,
@@ -413,9 +420,14 @@ Returns:
   EFI_STATUS                            Status;
   UINTN                                 BufferSize;
   EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *Fvb;
-  EFI_FIRMWARE_VOLUME_PROTOCOL          *Fv;
   FV_DEVICE                             *FvDevice;
   EFI_FIRMWARE_VOLUME_HEADER            *FwVolHeader;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FIRMWARE_VOLUME_PROTOCOL          *Fv;
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL         *Fv;
+#endif
+  
   //
   // Examine all new handles
   //
@@ -468,14 +480,23 @@ Returns:
     // Check to see that the file system is indeed formatted in a way we can
     // understand it...
     //
+#if (PI_SPECIFICATION_VERSION < 0x00010000)    
     if (!EfiCompareGuid (&FwVolHeader->FileSystemGuid, &gEfiFirmwareFileSystemGuid)) {
+#else
+    if (!EfiCompareGuid (&FwVolHeader->FileSystemGuid, &gEfiFirmwareFileSystem2Guid)) {
+#endif
       continue;
     }
 
     //
     // Check if there is an FV protocol already installed in that handle
     //
+ #if (PI_SPECIFICATION_VERSION < 0x00010000)
     Status = CoreHandleProtocol (Handle, &gEfiFirmwareVolumeProtocolGuid, &Fv);
+ #else
+    Status = CoreHandleProtocol (Handle, &gEfiFirmwareVolume2ProtocolGuid, &Fv);
+ #endif
+ 
     if (!EFI_ERROR (Status)) {
       //
       // Update Fv to use a new Fvb
@@ -505,12 +526,22 @@ Returns:
       //
       // Install an New FV protocol on the existing handle
       //
+ #if (PI_SPECIFICATION_VERSION < 0x00010000)
       Status = CoreInstallProtocolInterface (
                   &Handle,
                   &gEfiFirmwareVolumeProtocolGuid,
                   EFI_NATIVE_INTERFACE,
                   &FvDevice->Fv
                   );
+ #else
+      Status = CoreInstallProtocolInterface (
+                  &Handle,
+                  &gEfiFirmwareVolume2ProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &FvDevice->Fv
+                  );
+
+ #endif
       ASSERT_EFI_ERROR (Status);
     }
   }

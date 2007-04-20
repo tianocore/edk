@@ -45,7 +45,7 @@ text    SEGMENT
 ;   None
 ;
 ;----------------------------------------------------
-SwitchCoreStacks PROC NEAR PUBLIC
+SwitchCoreStacks PROC  PUBLIC
     mov   r10, rcx       ; Save EntryPoint
 
     ; Adjust stack for

@@ -2,7 +2,7 @@
   title   VM ASSEMBLY LANGUAGE ROUTINES
 ;****************************************************************************
 ;*                                                                         
-;*  Copyright (c) 2005, Intel Corporation                                                         
+;*  Copyright (c) 2005 - 2007, Intel Corporation                                                         
 ;*  All rights reserved. This program and the accompanying materials                          
 ;*  are licensed and made available under the terms and conditions of the BSD License         
 ;*  which accompanies this distribution.  The full text of the license may be found at        
@@ -53,7 +53,7 @@ text SEGMENT
 EfiCommonLibCopyMem  PROTO  Destination:PTR DWORD, Source:PTR DWORD, Count:DWORD
 
 
-EbcLLCALLEXNative        PROC    NEAR    PUBLIC
+EbcLLCALLEXNative        PROC        PUBLIC
       push   rbp
       push   rbx
       mov    rbp, rsp
@@ -101,7 +101,7 @@ EbcLLCALLEXNative    ENDP
 ; Returns:
 ;     The contents of the register in which the entry point is passed.
 ;
-EbcLLGetEbcEntryPoint        PROC    NEAR    PUBLIC
+EbcLLGetEbcEntryPoint        PROC        PUBLIC
     ret
 EbcLLGetEbcEntryPoint    ENDP
 
@@ -124,7 +124,7 @@ EbcLLGetEbcEntryPoint    ENDP
 ;--*/
 
 ; UINTN EbcLLGetStackPointer()            
-EbcLLGetStackPointer        PROC    NEAR    PUBLIC
+EbcLLGetStackPointer        PROC        PUBLIC
     mov    rax, rsp      ; get current stack pointer
     ; Stack adjusted by this much when we were called,
     ; For this function, it's 4.
@@ -145,7 +145,7 @@ EbcLLGetStackPointer    ENDP
 ; Returns:
 ;     The unmodified value returned by the native code.
 ;
-EbcLLGetReturnValue   PROC    NEAR    PUBLIC
+EbcLLGetReturnValue   PROC        PUBLIC
     ret
 EbcLLGetReturnValue    ENDP
 

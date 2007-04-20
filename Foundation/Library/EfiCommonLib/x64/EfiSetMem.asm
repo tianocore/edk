@@ -46,10 +46,9 @@ EfiCommonLibSetMem   PROC    USES    rdi
     jz      @SetBytes
     DB      0fh, 70h, 0C0h, 00h         ; pshufw mm0, mm0, 0h
 @@:
-    DB      0fh, 0e7h, 07h              ; movntq [rdi], mm0
+    DB      48h, 0fh, 7eh, 07h          ; movd [rdi], mm0
     add     rdi, 8
     loop    @B
-    mfence
 @SetBytes:
     mov     ecx, edx
     rep     stosb

@@ -57,3 +57,7 @@ COMPONENT_TYPE=   LIBRARY
   StatusCodeDataTypeId\StatusCodeDataTypeId.c
   FrameworkDevicePath\FrameworkDevicePath.h
   FrameworkDevicePath\FrameworkDevicePath.c
+  FirmwareFileSystem2\FirmwareFileSystem2.h
+  FirmwareFileSystem2\FirmwareFileSystem2.c
+  PeiApriori\PeiApriori.h
+  PeiApriori\PeiApriori.c

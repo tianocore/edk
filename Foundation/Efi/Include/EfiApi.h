@@ -1081,6 +1081,8 @@ typedef struct {
 #define EFI_SYSTEM_TABLE_REVISION       EFI_SPECIFICATION_VERSION
 #define EFI_1_02_SYSTEM_TABLE_REVISION  ((1 << 16) | 02)
 #define EFI_1_10_SYSTEM_TABLE_REVISION  ((1 << 16) | 10)
+#define EFI_2_00_SYSTEM_TABLE_REVISION  ((2 << 16) | 00)
+#define EFI_2_10_SYSTEM_TABLE_REVISION  ((2 << 16) | 10)
 
 typedef struct _EFI_SYSTEM_TABLE {
   EFI_TABLE_HEADER              Hdr;

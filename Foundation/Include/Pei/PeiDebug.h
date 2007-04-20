@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -39,7 +39,7 @@ Abstract:
 
   VOID
   PeiDebugAssert (
-    IN EFI_PEI_SERVICES   **PeiServices,
+    IN CONST EFI_PEI_SERVICES   **PeiServices,
     IN CHAR8              *FileName,
     IN INTN               LineNumber,
     IN CHAR8              *Description
@@ -47,7 +47,7 @@ Abstract:
 
   VOID
   PeiDebugPrint (
-    IN EFI_PEI_SERVICES   **PeiServices,
+    IN CONST EFI_PEI_SERVICES   **PeiServices,
     IN UINTN              ErrorLevel,
     IN CHAR8              *Format,
     ...

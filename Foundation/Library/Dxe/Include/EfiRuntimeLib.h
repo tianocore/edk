@@ -34,6 +34,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (EventLegacyBios)
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 #include EFI_PROTOCOL_DEFINITION (FvbExtension)
 #include "ProcDep.h"

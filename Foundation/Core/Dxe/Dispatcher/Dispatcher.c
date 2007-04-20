@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -116,7 +116,11 @@ CoreFwVolEventProtocolNotify (
 
 EFI_DEVICE_PATH_PROTOCOL *
 CoreFvToDevicePath (
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   IN  EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv,
+#else
+  IN  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv,
+#endif
   IN  EFI_HANDLE                      FvHandle,
   IN  EFI_GUID                        *DriverName
   );
@@ -124,7 +128,11 @@ CoreFvToDevicePath (
 STATIC 
 EFI_STATUS
 CoreAddToDriverList (
-  IN  EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv,
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  IN  EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv,
+#else
+  IN  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv,
+#endif
   IN  EFI_HANDLE                    FvHandle,
   IN  EFI_GUID                      *DriverName
   );
@@ -132,7 +140,11 @@ CoreAddToDriverList (
 STATIC
 EFI_STATUS 
 CoreProcessFvImageFile (
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   IN  EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv,
+#else
+  IN  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv,
+#endif
   IN  EFI_HANDLE                      FvHandle,
   IN  EFI_GUID                        *DriverName
   );
@@ -215,8 +227,11 @@ Returns:
   EFI_STATUS                    Status;
   EFI_SECTION_TYPE              SectionType;
   UINT32                        AuthenticationStatus;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv;
-
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL *Fv;
+#endif
   
   Fv = DriverEntry->Fv;
 
@@ -621,6 +636,55 @@ Returns:
   }
 }
 
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+EFI_STATUS
+FileHasBeenProcessed (
+  IN  EFI_GUID     *FileNameGuid
+  )
+{
+  EFI_STATUS                    Status;
+  VOID                          *HobList;
+  EFI_PHYSICAL_ADDRESS          BaseAddress;
+  UINT64                        Length;
+  EFI_STATUS                    HobStatus;
+  EFI_GUID                      FileName;
+  //
+  // First walk hobs and create appropriate FVs.
+  //
+  Status = CoreGetConfigTable (&gEfiHobListGuid, &HobList);
+  //
+  // Core Needs Firmware Volumes to function
+  //
+  ASSERT_EFI_ERROR (Status);
+
+  BaseAddress = 0;
+  Length      = 0;
+  HobStatus = GetNextFirmwareVolume2Hob (
+                  &HobList,
+                  &BaseAddress,
+                  &Length,
+                  &FileName
+                  );
+  while (!EFI_ERROR (HobStatus)) {
+    //
+    // Check if the file has been processed.
+    //
+    if (EfiCompareGuid (FileNameGuid, &FileName)) {
+      return EFI_SUCCESS;  
+    }
+    HobStatus = GetNextFirmwareVolume2Hob (
+                  &HobList,
+                  &BaseAddress,
+                  &Length,
+                  &FileName
+                  );
+  }
+
+  return EFI_NOT_FOUND;
+
+}
+
+#endif
 
 BOOLEAN
 FvHasBeenProcessed (
@@ -694,7 +758,11 @@ Returns:
 
 EFI_DEVICE_PATH_PROTOCOL *
 CoreFvToDevicePath (
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   IN  EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv,
+#else
+  IN  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv,
+#endif
   IN  EFI_HANDLE                      FvHandle,
   IN  EFI_GUID                        *DriverName
   )
@@ -750,7 +818,11 @@ Returns:
 
 EFI_STATUS
 CoreAddToDriverList (
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   IN  EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv,
+#else
+  IN  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv,
+#endif
   IN  EFI_HANDLE                      FvHandle,
   IN  EFI_GUID                        *DriverName
   )
@@ -813,7 +885,11 @@ Returns:
 
 EFI_STATUS 
 CoreProcessFvImageFile (
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   IN  EFI_FIRMWARE_VOLUME_PROTOCOL    *Fv,
+#else
+  IN  EFI_FIRMWARE_VOLUME2_PROTOCOL    *Fv,
+#endif
   IN  EFI_HANDLE                      FvHandle,
   IN  EFI_GUID                        *DriverName
   )
@@ -925,7 +1001,6 @@ Returns:
   EFI_STATUS                    Status;
   EFI_STATUS                    GetNextFileStatus;
   EFI_STATUS                    SecurityStatus;
-  EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv;
   EFI_DEVICE_PATH_PROTOCOL      *FvDevicePath;
   EFI_HANDLE                    FvHandle;
   UINTN                         BufferSize;
@@ -941,6 +1016,11 @@ Returns:
   EFI_LIST_ENTRY                *Link;
   UINT32                        AuthenticationStatus;
   UINTN                         SizeOfBuffer;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv;
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL  *Fv;
+#endif
 
 
   while (TRUE) {
@@ -980,8 +1060,11 @@ Returns:
     //
     FvIsBeingProcesssed (FvHandle);
 
-
+  #if (PI_SPECIFICATION_VERSION < 0x00010000)
     Status = CoreHandleProtocol (FvHandle, &gEfiFirmwareVolumeProtocolGuid, &Fv);
+  #else
+    Status = CoreHandleProtocol (FvHandle, &gEfiFirmwareVolume2ProtocolGuid, &Fv);
+  #endif
     if (EFI_ERROR (Status)) {
       //
       // The Handle has a FirmwareVolumeDispatch protocol and should also contiain
@@ -1045,7 +1128,7 @@ Returns:
             //
             if (gDxeCoreLoadedImage->FilePath == NULL) {
               if (EfiCompareGuid (&NameGuid, gDxeCoreFileName)) {
-			  	CoreInitializeFwVolDevicepathNode (&mFvDevicePath.File, &NameGuid);
+                CoreInitializeFwVolDevicepathNode (&mFvDevicePath.File, &NameGuid);
                 mFvDevicePath.End.Type = EFI_END_ENTIRE_DEVICE_PATH;
                 mFvDevicePath.End.SubType = END_ENTIRE_DEVICE_PATH_SUBTYPE;
                 SetDevicePathNodeLength (&mFvDevicePath.End, sizeof (EFI_DEVICE_PATH_PROTOCOL));
@@ -1057,6 +1140,16 @@ Returns:
               }
             }
           } else if (Type == EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE) {
+
+            #if (PI_SPECIFICATION_VERSION >= 0x00010000)
+              if (FileHasBeenProcessed (&NameGuid) == EFI_SUCCESS) {
+                //
+                // Skip over the file which has been processed.
+                //
+                continue;
+              }
+          
+            #endif  
             //
             // Found a firmware volume image. Produce a firmware volume block
             // protocol for it so it gets dispatched from. This is usually a 
@@ -1144,7 +1237,11 @@ Returns:
 --*/
 {
   mFwVolEvent = CoreCreateProtocolNotifyEvent (
+               #if (PI_SPECIFICATION_VERSION < 0x00010000)
                   &gEfiFirmwareVolumeProtocolGuid, 
+               #else
+                  &gEfiFirmwareVolume2ProtocolGuid, 
+               #endif
                   EFI_TPL_CALLBACK,
                   CoreFwVolEventProtocolNotify,
                   NULL,

@@ -17,7 +17,7 @@ Abstract:
 
   Status Code Definitions, according to Intel Platform Innovation Framework 
   for EFI Status Codes Specification
-  Revision 0.60
+  Revision 0.92
 
   The file is divided into sections for ease of use.
 
@@ -111,7 +111,7 @@ typedef struct {
 // Class definitions
 // Values of 4-127 are reserved for future use by this
 // specification.
-// Values in the range 127-255 are reserved for OEM use.
+// Values in the range 128-255 are reserved for OEM use.
 //
 #define EFI_COMPUTING_UNIT  0x00000000
 #define EFI_PERIPHERAL      0x01000000
@@ -133,7 +133,7 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Computing Unit Subclass definitions.
-// Values of 8-127 are reserved for future use by this
+// Values of 7-127 are reserved for future use by this
 // specification.
 // Values of 128-255 are reserved for OEM use.
 //
@@ -267,7 +267,7 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Peripheral Subclass definitions.
-// Values of 12-127 are reserved for future use by this
+// Values of 13-127 are reserved for future use by this
 // specification.
 // Values of 128-255 are reserved for OEM use.
 //
@@ -408,7 +408,7 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // IO Bus Subclass definitions.
-// Values of 14-127 are reserved for future use by this
+// Values of 13-127 are reserved for future use by this
 // specification.
 // Values of 128-255 are reserved for OEM use.
 //
@@ -552,7 +552,7 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Software Subclass definitions.
-// Values of 14-127 are reserved for future use by this
+// Values of 20-127 are reserved for future use by this
 // specification.
 // Values of 128-255 are reserved for OEM use.
 //

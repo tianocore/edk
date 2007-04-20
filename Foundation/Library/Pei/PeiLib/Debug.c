@@ -29,7 +29,7 @@ Abstract:
 
 VOID
 PeiDebugAssert (
-  IN EFI_PEI_SERVICES   **PeiServices,
+  IN CONST EFI_PEI_SERVICES  **PeiServices,
   IN CHAR8              *FileName,
   IN INTN               LineNumber,
   IN CHAR8              *Description
@@ -66,7 +66,7 @@ Returns:
   // we want get enough information if assert.
   //
   (**PeiServices).PeiReportStatusCode (
-                    PeiServices,
+                    (EFI_PEI_SERVICES**)PeiServices,
                     (EFI_ERROR_CODE | EFI_ERROR_UNRECOVERED),
                     (EFI_SOFTWARE_PEI_MODULE | EFI_SW_EC_ILLEGAL_SOFTWARE_STATE),
                     0,
@@ -80,7 +80,7 @@ Returns:
 
 VOID
 PeiDebugPrint (
-  IN EFI_PEI_SERVICES   **PeiServices,
+  IN CONST EFI_PEI_SERVICES   **PeiServices,
   IN  UINTN             ErrorLevel,
   IN  CHAR8             *Format,
   ...
@@ -119,7 +119,7 @@ Returns:
   // we want get enough information if assert.
   //
   (**PeiServices).PeiReportStatusCode (
-                    PeiServices,
+                    (EFI_PEI_SERVICES**)PeiServices,
                     EFI_DEBUG_CODE,
                     (EFI_SOFTWARE_PEI_MODULE | EFI_DC_UNSPECIFIED),
                     0,

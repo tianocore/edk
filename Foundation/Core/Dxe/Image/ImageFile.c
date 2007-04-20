@@ -84,7 +84,6 @@ Returns:
   EFI_FILE_HANDLE                   FileHandle;
   EFI_FILE_HANDLE                   LastHandle;
   EFI_LOAD_FILE_PROTOCOL            *LoadFile;
-  EFI_FIRMWARE_VOLUME_PROTOCOL      *FwVol;
   EFI_SECTION_TYPE                  SectionType;
   UINT8                             *Pe32Buffer;
   UINTN                             Pe32BufferSize;
@@ -93,6 +92,11 @@ Returns:
   EFI_FILE_INFO                     *FileInfo;
   UINTN                             FileInfoSize;
   EFI_GUID                          *NameGuid;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FIRMWARE_VOLUME_PROTOCOL      *FwVol;
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL     *FwVol;
+#endif
 
   *AuthenticationStatus = 0;
   EfiCommonLibZeroMem (ImageFileHandle, sizeof (IMAGE_FILE_HANDLE));
@@ -125,7 +129,11 @@ Returns:
   //
   FwVolFilePathNode = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)FilePath;
   Status = CoreDevicePathToInterface (
+         #if (PI_SPECIFICATION_VERSION < 0x00010000)
             &gEfiFirmwareVolumeProtocolGuid, 
+         #else
+            &gEfiFirmwareVolume2ProtocolGuid, 
+         #endif
             (EFI_DEVICE_PATH_PROTOCOL **)&FwVolFilePathNode, 
             (VOID*)&FwVol, 
             DeviceHandle
@@ -135,7 +143,7 @@ Returns:
     // For FwVol File system there is only a single file name that is a GUID.
     //
     NameGuid = CoreGetNameGuidFromFwVolDevicePathNode (FwVolFilePathNode);
-	if (NameGuid != NULL) {
+    if (NameGuid != NULL) {
 
       SectionType = EFI_SECTION_PE32;
       Pe32Buffer  = NULL;

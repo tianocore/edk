@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -38,6 +38,7 @@ Abstract:
 
 #define PARAMETER_NOT_SPECIFIED "Parameter not specified"
 #define MAXIMUM_INPUT_FILE_NUM  10
+#define MAX_SECTION_SIZE        0x1000000
 
 char      *SectionTypeName[] = {
   NULL,                                 // 0x00 - reserved
@@ -218,8 +219,8 @@ Returns:
   //
   // Size must fit in 3 bytes
   //
-  if (TotalLength >= 0x1000000) {
-    Error (NULL, 0, 0, InputFileName[0], "file size (0x%X) exceeds section size limit", TotalLength);
+  if (TotalLength >= MAX_SECTION_SIZE) {
+    Error (NULL, 0, 0, InputFileName[0], "file size (0x%X) exceeds section size limit(%dM).", TotalLength, MAX_SECTION_SIZE>>20);
     goto Done;
   }
   //
@@ -281,14 +282,15 @@ Arguments:
 
   FileBuffer     - Output buffer to contain data
 
-  BufferLength   - Actual length of the data 
+  BufferLength   - On input, this is size of the FileBuffer. 
+                   On output, this is the actual length of the data.
 
 Returns:
                        
   EFI_SUCCESS on successful return
-  EFI_INVALID_PARAMETER if InputFileNum is less than 1
+  EFI_INVALID_PARAMETER if InputFileNum is less than 1 or BufferLength point is NULL.
   EFI_ABORTED if unable to open input file.
-
+  EFI_BUFFER_TOO_SMALL FileBuffer is not enough to contain all file data.
 --*/
 {
   UINTN   Size;
@@ -298,6 +300,11 @@ Returns:
 
   if (InputFileNum < 1) {
     Error (NULL, 0, 0, "must specify at least one input file", NULL);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (BufferLength == NULL) {
+    Error (NULL, 0, 0, "BufferLength can't be NULL", NULL);
     return EFI_INVALID_PARAMETER;
   }
 
@@ -318,8 +325,9 @@ Returns:
     fseek (InFile, 0, SEEK_SET);
     //
     // Now read the contents of the file into the buffer
+    // Buffer must be enough to contain the file content.
     //
-    if (FileSize > 0) {
+    if (FileSize > 0 && FileBuffer != NULL && (Size + (UINTN) FileSize) <= *BufferLength) {
       if (fread (FileBuffer + Size, (size_t) FileSize, 1, InFile) != 1) {
         Error (NULL, 0, 0, InputFileName[Index], "failed to read contents of input file");
         fclose (InFile);
@@ -333,13 +341,20 @@ Returns:
     // make sure section ends on a DWORD boundary
     //
     while ((Size & 0x03) != 0) {
-      FileBuffer[Size] = 0;
+      if (FileBuffer != NULL && Size < *BufferLength) {
+        FileBuffer[Size] = 0;
+      }
       Size++;
     }
   }
-
-  *BufferLength = Size;
-  return EFI_SUCCESS;
+  
+  if (Size > *BufferLength) {
+    *BufferLength = Size;
+    return EFI_BUFFER_TOO_SMALL;
+  } else {
+    *BufferLength = Size;
+    return EFI_SUCCESS;
+  }
 }
 
 EFI_STATUS
@@ -398,13 +413,9 @@ Returns:
   FileBuffer        = NULL;
   OutputBuffer      = NULL;
   CompressedLength  = 0;
-  FileBuffer        = (UINT8 *) malloc ((1024 * 1024 * 4) * sizeof (UINT8));
-  if (FileBuffer == NULL) {
-    Error (__FILE__, __LINE__, 0, "application error", "failed to allocate memory");
-    return EFI_OUT_OF_RESOURCES;
-  }
   //
   // read all input file contents into a buffer
+  // first get the size of all file contents
   //
   Status = GetSectionContents (
             InputFileName,
@@ -412,8 +423,28 @@ Returns:
             FileBuffer,
             &InputLength
             );
+
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    FileBuffer = (UINT8 *) malloc (InputLength);
+    if (FileBuffer == NULL) {
+      Error (__FILE__, __LINE__, 0, "application error", "failed to allocate memory");
+      return EFI_OUT_OF_RESOURCES;
+    }
+    //
+    // read all input file contents into a buffer
+    //
+    Status = GetSectionContents (
+              InputFileName,
+              InputFileNum,
+              FileBuffer,
+              &InputLength
+              );
+  }
+
   if (EFI_ERROR (Status)) {
-    free (FileBuffer);
+    if (FileBuffer != NULL) {
+      free (FileBuffer);
+    }
     return Status;
   }
 
@@ -467,6 +498,16 @@ Returns:
   }
 
   TotalLength = CompressedLength + sizeof (EFI_COMPRESSION_SECTION);
+  if (TotalLength >= MAX_SECTION_SIZE) {
+    Error (__FILE__, __LINE__, 0, "input error", "The size of all files exceeds section size limit(%dM).", MAX_SECTION_SIZE>>20);
+    if (FileBuffer != NULL) {
+      free (FileBuffer);
+    }
+    if (OutputBuffer != NULL) {
+      free (OutputBuffer);
+    }
+    return STATUS_ERROR;
+  }
   //
   // Add the section header for the compressed data
   //
@@ -536,13 +577,9 @@ Returns:
 
   InputLength = 0;
   FileBuffer  = NULL;
-  FileBuffer  = (UINT8 *) malloc ((1024 * 1024 * 4) * sizeof (UINT8));
-  if (FileBuffer == NULL) {
-    Error (__FILE__, __LINE__, 0, "application error", "failed to allocate memory");
-    return EFI_OUT_OF_RESOURCES;
-  }
   //
   // read all input file contents into a buffer
+  // first get the size of all file contents
   //
   Status = GetSectionContents (
             InputFileName,
@@ -550,12 +587,32 @@ Returns:
             FileBuffer,
             &InputLength
             );
+
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    FileBuffer = (UINT8 *) malloc (InputLength);
+    if (FileBuffer == NULL) {
+      Error (__FILE__, __LINE__, 0, "application error", "failed to allocate memory");
+      return EFI_OUT_OF_RESOURCES;
+    }
+    //
+    // read all input file contents into a buffer
+    //
+    Status = GetSectionContents (
+              InputFileName,
+              InputFileNum,
+              FileBuffer,
+              &InputLength
+              );
+  }
+
   if (EFI_ERROR (Status)) {
-    free (FileBuffer);
+    if (FileBuffer != NULL) {
+      free (FileBuffer);
+    }
     return Status;
   }
   //
-  // Now data is in FileBuffer, compress the data
+  // Now data is in FileBuffer
   //
   switch (SectionSubType) {
   case EFI_SECTION_CRC32_GUID_DEFINED:
@@ -567,6 +624,12 @@ Returns:
     }
 
     TotalLength = InputLength + CRC32_SECTION_HEADER_SIZE;
+    if (TotalLength >= MAX_SECTION_SIZE) {
+      Error (__FILE__, __LINE__, 0, "input error", "The size of all files exceeds section size limit(%dM).", MAX_SECTION_SIZE>>20);
+      free (FileBuffer);
+      return STATUS_ERROR;
+    }
+
     Crc32GuidSect.GuidSectionHeader.CommonHeader.Type     = (EFI_SECTION_TYPE) SectionType;
     Crc32GuidSect.GuidSectionHeader.CommonHeader.Size[0]  = (UINT8) (TotalLength & 0xff);
     Crc32GuidSect.GuidSectionHeader.CommonHeader.Size[1]  = (UINT8) ((TotalLength & 0xff00) >> 8);

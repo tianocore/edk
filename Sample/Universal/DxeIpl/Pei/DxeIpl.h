@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -53,14 +53,6 @@ Abstract:
 #include "peihoblib.h"
 
 #define PEI_DXEIPL_STACK_SIZE 0x10000
-//
-// Define EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE to pass the PeiService table to
-// EFI_PEI_FV_FILE_LOADER_PPI
-
-typedef struct _EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE {
-  EFI_PEI_SERVICES                  **PeiServices;
-  EFI_PEI_FV_FILE_LOADER_PPI        LoadFilePpi;
-} EFI_PEI_FV_FILE_LOADER_PPI_PRIVATE;
 
 
 EFI_STATUS
@@ -140,42 +132,4 @@ CreateArchSpecificHobs (
   OUT EFI_PHYSICAL_ADDRESS      *BspStore
   )
 ;
-EFI_STATUS
-PeiLoadx64File (
-  IN  EFI_PEI_SERVICES                          **PeiServices,
-  IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
-  IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
-  IN  VOID                                      *Pe32Data,
-  IN  EFI_MEMORY_TYPE                           MemoryType,
-  OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
-  OUT UINT64                                    *ImageSize,
-  OUT EFI_PHYSICAL_ADDRESS                      *EntryPoint
-  )
-;
-
-
-EFI_PHYSICAL_ADDRESS
-CreateIdentityMappingPageTables (
-  IN EFI_PEI_SERVICES      **PeiServices,
-  IN UINT32 NumberOfProcessorPhysicalAddressBits
-  )
- ;
-
- EFI_PHYSICAL_ADDRESS
-AllocateZeroedHobPages (
-  IN  EFI_PEI_SERVICES       **PeiServices,
-  IN  UINTN   NumberOfPages
-  );
-
-VOID
-ActivateLongMode (
-  IN  EFI_PHYSICAL_ADDRESS  PageTables,  
-  IN  EFI_PHYSICAL_ADDRESS  HobStart,
-  IN  EFI_PHYSICAL_ADDRESS  Stack,
-  IN  EFI_PHYSICAL_ADDRESS  CodeEntryPoint1,
-  IN  EFI_PHYSICAL_ADDRESS  CodeEntryPoint2
-  );
-
-VOID
-LoadGo64Gdt();
 #endif

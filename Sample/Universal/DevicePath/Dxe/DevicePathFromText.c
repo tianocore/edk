@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -129,7 +129,7 @@ SplitStr (
     Get current sub-string from a string list, before return
     the list header is moved to next sub-string. The sub-string is separated
     by the specified character. For example, the separator is ',', the string
-    list is "2,0,3", it returns "2", the remain list move to "2,3"
+    list is "2,0,3", it returns "2", the remain list move to "0,3"
 
   Arguments:
     List       - A string list separated by the specified separator
@@ -275,20 +275,24 @@ GetNextDeviceNodeStr (
 
 CHAR16 *
 TrimHexStr (
-  IN CHAR16  *Str
+  IN CHAR16   *Str,
+  OUT BOOLEAN *IsHex
   )
 /*++
 
   Routine Description:
-    Skip the leading white space and '0x' or '0X' of a hex string
+    Skip the leading white space and '0x' or '0X' of a integer string
 
   Arguments:
-    Str  -  The hex string
+    Str   -  The integer string
+    IsHex -  1: Hex string,  0: Decimal string
 
   Returns:
 
 --*/
 {
+  *IsHex = FALSE;
+
   //
   // skip preceeding white space
   //
@@ -306,6 +310,7 @@ TrimHexStr (
   //
   if (*Str && (*Str == 'x' || *Str == 'X')) {
     Str += 1;
+    *IsHex = TRUE;
   }
 
   return Str;
@@ -324,7 +329,7 @@ Routine Description:
 Arguments:
 
   Str  -  The string
-  
+
 Returns:
 
 --*/
@@ -339,7 +344,7 @@ Returns:
   //
   u = 0;
   Length = sizeof (UINTN);
-  HexStringToBuf ((UINT8 *) &u, &Length, TrimHexStr (Str), NULL);
+  HexStringToBuf ((UINT8 *) &u, &Length, Str, NULL);
 
   return u;
 }
@@ -358,7 +363,7 @@ Routine Description:
 Arguments:
 
   Str  -  The string
-  
+
 Returns:
 
 --*/
@@ -367,11 +372,11 @@ Returns:
 
   *Data = 0;
   Length = sizeof (UINT64);
-  HexStringToBuf ((UINT8 *) Data, &Length, TrimHexStr (Str), NULL);
+  HexStringToBuf ((UINT8 *) Data, &Length, Str, NULL);
 }
 
 UINTN
-Atoi (
+Dtoi (
   IN CHAR16  *str
   )
 /*++
@@ -383,7 +388,7 @@ Routine Description:
 Arguments:
 
   Str  -  The string
-  
+
 Returns:
 
 --*/
@@ -423,6 +428,118 @@ Returns:
   }
 
   return u;
+}
+
+VOID
+Dtoi64 (
+  IN CHAR16  *str,
+  OUT UINT64 *Data
+  )
+/*++
+
+Routine Description:
+
+  Convert decimal string to uint
+
+Arguments:
+
+  Str  -  The string
+
+Returns:
+
+--*/
+{
+  UINT64   u;
+  CHAR16   c;
+  UINT64   m;
+  UINT64   n;
+
+  ASSERT (str != NULL);
+  ASSERT (Data != NULL);
+
+  //
+  // skip preceeding white space
+  //
+  while (*str && *str == ' ') {
+    str += 1;
+  }
+  //
+  // convert digits
+  //
+  u = 0;
+  c = *(str++);
+  while (c) {
+    if (c >= '0' && c <= '9') {
+      m = LShiftU64 (u, 3);
+      n = LShiftU64 (u, 1);
+      u = m + n + c - '0';
+    } else {
+      break;
+    }
+
+    c = *(str++);
+  }
+
+  *Data = u;
+}
+
+UINTN
+Strtoi (
+  IN CHAR16  *Str
+  )
+/*++
+
+Routine Description:
+
+  Convert integer string to uint.
+
+Arguments:
+
+  Str  -  The integer string. If leading with "0x" or "0X", it's heximal.
+
+Returns:
+
+--*/
+{
+  BOOLEAN IsHex;
+
+  Str = TrimHexStr (Str, &IsHex);
+
+  if (IsHex) {
+    return Xtoi (Str);
+  } else {
+    return Dtoi (Str);
+  }
+}
+
+VOID
+Strtoi64 (
+  IN CHAR16  *Str,
+  IN UINT64  *Data
+  )
+/*++
+
+Routine Description:
+
+  Convert integer string to 64 bit data.
+
+Arguments:
+
+  Str  -  The integer string. If leading with "0x" or "0X", it's heximal.
+
+Returns:
+
+--*/
+{
+  BOOLEAN IsHex;
+
+  Str = TrimHexStr (Str, &IsHex);
+
+  if (IsHex) {
+    Xtoi64 (Str, Data);
+  } else {
+    Dtoi64 (Str, Data);
+  }
 }
 
 EFI_STATUS 
@@ -535,7 +652,7 @@ StrToIPv4Addr (
   UINTN  Index;
 
   for (Index = 0; Index < 4; Index++) {
-    IPv4Addr->Addr[Index] = (UINT8) Atoi (SplitStr (Str, L'.'));
+    IPv4Addr->Addr[Index] = (UINT8) Dtoi (SplitStr (Str, L'.'));
   }
 }
 
@@ -584,16 +701,16 @@ DevPathFromTextPci (
   CHAR16          *DeviceStr;
   PCI_DEVICE_PATH *Pci;
 
-  FunctionStr = GetNextParamStr (&TextDeviceNode);
   DeviceStr   = GetNextParamStr (&TextDeviceNode);
+  FunctionStr = GetNextParamStr (&TextDeviceNode);
   Pci         = (PCI_DEVICE_PATH *) CreateDeviceNode (
                                       HARDWARE_DEVICE_PATH,
                                       HW_PCI_DP,
                                       sizeof (PCI_DEVICE_PATH)
                                       );
 
-  Pci->Function = (UINT8) Xtoi (FunctionStr);
-  Pci->Device   = (UINT8) Xtoi (DeviceStr);
+  Pci->Function = (UINT8) Strtoi (FunctionStr);
+  Pci->Device   = (UINT8) Strtoi (DeviceStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Pci;
 }
@@ -613,7 +730,7 @@ DevPathFromTextPcCard (
                                                sizeof (PCCARD_DEVICE_PATH)
                                                );
 
-  Pccard->FunctionNumber  = (UINT8) Xtoi (FunctionNumberStr);
+  Pccard->FunctionNumber  = (UINT8) Strtoi (FunctionNumberStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Pccard;
 }
@@ -623,10 +740,12 @@ DevPathFromTextMemoryMapped (
   IN CHAR16 *TextDeviceNode
   )
 {
+  CHAR16              *MemoryTypeStr;
   CHAR16              *StartingAddressStr;
   CHAR16              *EndingAddressStr;
   MEMMAP_DEVICE_PATH  *MemMap;
 
+  MemoryTypeStr      = GetNextParamStr (&TextDeviceNode);
   StartingAddressStr = GetNextParamStr (&TextDeviceNode);
   EndingAddressStr   = GetNextParamStr (&TextDeviceNode);
   MemMap             = (MEMMAP_DEVICE_PATH *) CreateDeviceNode (
@@ -635,10 +754,9 @@ DevPathFromTextMemoryMapped (
                                                sizeof (MEMMAP_DEVICE_PATH)
                                                );
 
-  MemMap->MemoryType  = 0;
-
-  Xtoi64 (StartingAddressStr, &MemMap->StartingAddress);
-  Xtoi64 (EndingAddressStr, &MemMap->EndingAddress);
+  MemMap->MemoryType = (UINT32) Strtoi (MemoryTypeStr);
+  Strtoi64 (StartingAddressStr, &MemMap->StartingAddress);
+  Strtoi64 (EndingAddressStr, &MemMap->EndingAddress);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) MemMap;
 }
@@ -702,9 +820,26 @@ DevPathFromTextCtrl (
                                                HW_CONTROLLER_DP,
                                                sizeof (CONTROLLER_DEVICE_PATH)
                                                );
-  Controller->Controller  = (UINT32) Xtoi (ControllerStr);
+  Controller->Controller  = (UINT32) Strtoi (ControllerStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Controller;
+}
+
+STATIC
+VOID
+EisaIdFromText (
+  IN CHAR16 *Text,
+  OUT UINT32 *EisaId
+  )
+{
+  UINTN PnpId;
+
+  if ((Text[0] == L'P') && (Text[1] == L'N') && (Text[2] == L'P')) {
+    PnpId = Xtoi (Text + 3);
+    *EisaId = EISA_PNP_ID (PnpId);
+  } else {
+    *EisaId = (UINT32) Strtoi (Text);
+  }
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -724,12 +859,8 @@ DevPathFromTextAcpi (
                                       sizeof (ACPI_HID_DEVICE_PATH)
                                       );
 
-  if ((HIDStr[0] == L'P') && (HIDStr[1] == L'N') && (HIDStr[2] == L'P')) {
-    HIDStr += 3;
-  }
-
-  Acpi->HID = EISA_PNP_ID (Xtoi (HIDStr));
-  Acpi->UID = (UINT32) Xtoi (UIDStr);
+  EisaIdFromText (HIDStr, &Acpi->HID);
+  Acpi->UID = (UINT32) Strtoi (UIDStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Acpi;
 }
@@ -737,7 +868,7 @@ DevPathFromTextAcpi (
 EFI_DEVICE_PATH_PROTOCOL *
 ConvertFromTextAcpi (
   IN CHAR16 *TextDeviceNode,
-  IN UINT32  Hid
+  IN UINT32  PnPId
   )
 {
   CHAR16                *UIDStr;
@@ -750,8 +881,8 @@ ConvertFromTextAcpi (
                                       sizeof (ACPI_HID_DEVICE_PATH)
                                       );
 
-  Acpi->HID = Hid;
-  Acpi->UID = (UINT32) Xtoi (UIDStr);
+  Acpi->HID = EFI_PNP_ID (PnPId);
+  Acpi->UID = (UINT32) Strtoi (UIDStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Acpi;
 }
@@ -761,7 +892,7 @@ DevPathFromTextPciRoot (
   IN CHAR16 *TextDeviceNode
   )
 {
-  return ConvertFromTextAcpi (TextDeviceNode, 0x0a0341d0);
+  return ConvertFromTextAcpi (TextDeviceNode, 0x0a03);
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -769,7 +900,7 @@ DevPathFromTextFloppy (
   IN CHAR16 *TextDeviceNode
   )
 {
-  return ConvertFromTextAcpi (TextDeviceNode, 0x060441d0);
+  return ConvertFromTextAcpi (TextDeviceNode, 0x0604);
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -777,7 +908,7 @@ DevPathFromTextKeyboard (
   IN CHAR16 *TextDeviceNode
   )
 {
-  return ConvertFromTextAcpi (TextDeviceNode, 0x030141d0);
+  return ConvertFromTextAcpi (TextDeviceNode, 0x0301);
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -785,7 +916,7 @@ DevPathFromTextSerial (
   IN CHAR16 *TextDeviceNode
   )
 {
-  return ConvertFromTextAcpi (TextDeviceNode, 0x050141d0);
+  return ConvertFromTextAcpi (TextDeviceNode, 0x0501);
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -793,7 +924,7 @@ DevPathFromTextParallelPort (
   IN CHAR16 *TextDeviceNode
   )
 {
-  return ConvertFromTextAcpi (TextDeviceNode, 0x040141d0);
+  return ConvertFromTextAcpi (TextDeviceNode, 0x0401);
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -801,15 +932,15 @@ DevPathFromTextAcpiEx (
   IN CHAR16 *TextDeviceNode
   )
 {
-  CHAR16                                  *HIDStr;
-  CHAR16                                  *CIDStr;
-  CHAR16                                  *UIDStr;
-  CHAR16                                  *HIDSTRStr;
-  CHAR16                                  *CIDSTRStr;
-  CHAR16                                  *UIDSTRStr;
-  CHAR8                                   *AsciiStr;
-  UINT16                                  Length;
-  ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR  *AcpiExt;
+  CHAR16                         *HIDStr;
+  CHAR16                         *CIDStr;
+  CHAR16                         *UIDStr;
+  CHAR16                         *HIDSTRStr;
+  CHAR16                         *CIDSTRStr;
+  CHAR16                         *UIDSTRStr;
+  CHAR8                          *AsciiStr;
+  UINT16                         Length;
+  ACPI_EXTENDED_HID_DEVICE_PATH  *AcpiEx;
 
   HIDStr    = GetNextParamStr (&TextDeviceNode);
   CIDStr    = GetNextParamStr (&TextDeviceNode);
@@ -821,28 +952,22 @@ DevPathFromTextAcpiEx (
                   (UINT16) EfiStrLen (HIDSTRStr) + 1 +
                   (UINT16) EfiStrLen (UIDSTRStr) + 1 +
                   (UINT16) EfiStrLen (CIDSTRStr) + 1;
-  AcpiExt = (ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR *) CreateDeviceNode (
-                                                         ACPI_DEVICE_PATH,
-                                                         ACPI_EXTENDED_DP,
-                                                         Length
-                                                         );
+  AcpiEx = (ACPI_EXTENDED_HID_DEVICE_PATH *) CreateDeviceNode (
+                                               ACPI_DEVICE_PATH,
+                                               ACPI_EXTENDED_DP,
+                                               Length
+                                               );
 
-  if ((HIDStr[0] == L'P') && (HIDStr[1] == L'N') && (HIDStr[2] == L'P')) {
-    HIDStr += 3;
-    AcpiExt->HID = EISA_PNP_ID (Xtoi (HIDStr));
-  } else {
-    AcpiExt->HID = (UINT32) Xtoi (HIDStr);
-  }
+  EisaIdFromText (HIDStr, &AcpiEx->HID);
+  EisaIdFromText (CIDStr, &AcpiEx->CID);
+  AcpiEx->UID = (UINT32) Strtoi (UIDStr);
 
-  AcpiExt->UID  = (UINT32) Xtoi (UIDStr);
-  AcpiExt->CID  = (UINT32) Xtoi (CIDStr);
-
-  AsciiStr = AcpiExt->HidUidCidStr;
+  AsciiStr = (CHAR8 *) ((UINT8 *)AcpiEx + sizeof (ACPI_EXTENDED_HID_DEVICE_PATH));
   StrToAscii (HIDSTRStr, &AsciiStr);
   StrToAscii (UIDSTRStr, &AsciiStr);
   StrToAscii (CIDSTRStr, &AsciiStr);
-  
-  return (EFI_DEVICE_PATH_PROTOCOL *) AcpiExt;
+
+  return (EFI_DEVICE_PATH_PROTOCOL *) AcpiEx;
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -850,49 +975,43 @@ DevPathFromTextAcpiExp (
   IN CHAR16 *TextDeviceNode
   )
 {
-  CHAR16                                  *HIDStr;
-  CHAR16                                  *CIDStr;
-  CHAR16                                  *UIDSTRStr;
-  CHAR8                                   *AsciiStr;
-  UINT16                                  Length;
-  ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR  *AcpiExt;
+  CHAR16                         *HIDStr;
+  CHAR16                         *CIDStr;
+  CHAR16                         *UIDSTRStr;
+  CHAR8                          *AsciiStr;
+  UINT16                         Length;
+  ACPI_EXTENDED_HID_DEVICE_PATH  *AcpiEx;
 
   HIDStr    = GetNextParamStr (&TextDeviceNode);
   CIDStr    = GetNextParamStr (&TextDeviceNode);
   UIDSTRStr = GetNextParamStr (&TextDeviceNode);
   Length    = sizeof (ACPI_EXTENDED_HID_DEVICE_PATH) + (UINT16) EfiStrLen (UIDSTRStr) + 3;
-  AcpiExt   = (ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR *) CreateDeviceNode (
-                                                           ACPI_DEVICE_PATH,
-                                                           ACPI_EXTENDED_DP,
-                                                           Length
-                                                           );
+  AcpiEx    = (ACPI_EXTENDED_HID_DEVICE_PATH *) CreateDeviceNode (
+                                                  ACPI_DEVICE_PATH,
+                                                  ACPI_EXTENDED_DP,
+                                                  Length
+                                                  );
 
-  if ((HIDStr[0] == L'P') && (HIDStr[1] == L'N') && (HIDStr[2] == L'P')) {
-    HIDStr += 3;
-    AcpiExt->HID = EISA_PNP_ID (Xtoi (HIDStr));
-  } else {
-    AcpiExt->HID = (UINT32) Xtoi (HIDStr);
-  }
+  EisaIdFromText (HIDStr, &AcpiEx->HID);
+  EisaIdFromText (CIDStr, &AcpiEx->CID);
+  AcpiEx->UID = 0;
 
-  AcpiExt->UID = 0;
-  AcpiExt->CID = (UINT32) Xtoi (CIDStr);
-
-  AsciiStr = AcpiExt->HidUidCidStr;
+  AsciiStr = (CHAR8 *) ((UINT8 *)AcpiEx + sizeof (ACPI_EXTENDED_HID_DEVICE_PATH));
   //
   // HID string is NULL
   //
-  *AsciiStr = 0;
+  *AsciiStr = '\0';
   //
   // Convert UID string
   //
-  AsciiStr++;
+  AsciiStr ++;
   StrToAscii (UIDSTRStr, &AsciiStr);
   //
   // CID string is NULL
   //
-  *AsciiStr = 0;
+  *AsciiStr = '\0';
 
-  return (EFI_DEVICE_PATH_PROTOCOL *) AcpiExt;
+  return (EFI_DEVICE_PATH_PROTOCOL *) AcpiEx;
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -917,7 +1036,7 @@ DevPathFromTextAta (
 
   Atapi->PrimarySecondary = (EfiStrCmp (PrimarySecondaryStr, L"Primary") == 0) ? (UINT8) 0 : (UINT8) 1;
   Atapi->SlaveMaster      = (EfiStrCmp (SlaveMasterStr, L"Master") == 0) ? (UINT8) 0 : (UINT8) 1;
-  Atapi->Lun              = (UINT16) Xtoi (LunStr);
+  Atapi->Lun              = (UINT16) Strtoi (LunStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Atapi;
 }
@@ -939,8 +1058,8 @@ DevPathFromTextScsi (
                                    sizeof (SCSI_DEVICE_PATH)
                                    );
 
-  Scsi->Pun = (UINT16) Xtoi (PunStr);
-  Scsi->Lun = (UINT16) Xtoi (LunStr);
+  Scsi->Pun = (UINT16) Strtoi (PunStr);
+  Scsi->Lun = (UINT16) Strtoi (LunStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Scsi;
 }
@@ -963,8 +1082,8 @@ DevPathFromTextFibre (
                                    );
 
   Fibre->Reserved = 0;
-  Xtoi64 (WWNStr, &Fibre->WWN);
-  Xtoi64 (LunStr, &Fibre->Lun);
+  Strtoi64 (WWNStr, &Fibre->WWN);
+  Strtoi64 (LunStr, &Fibre->Lun);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Fibre;
 }
@@ -1007,8 +1126,8 @@ DevPathFromTextUsb (
                                 sizeof (USB_DEVICE_PATH)
                                 );
 
-  Usb->ParentPortNumber = (UINT8) Xtoi (PortStr);
-  Usb->InterfaceNumber  = (UINT8) Xtoi (InterfaceStr);
+  Usb->ParentPortNumber = (UINT8) Strtoi (PortStr);
+  Usb->InterfaceNumber  = (UINT8) Strtoi (InterfaceStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Usb;
 }
@@ -1028,7 +1147,7 @@ DevPathFromTextI2O (
                                 sizeof (I2O_DEVICE_PATH)
                                 );
 
-  I2O->Tid  = (UINT32) Xtoi (TIDStr);
+  I2O->Tid  = (UINT32) Strtoi (TIDStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) I2O;
 }
@@ -1057,12 +1176,12 @@ DevPathFromTextInfiniband (
                                 sizeof (INFINIBAND_DEVICE_PATH)
                                 );
 
-  InfiniBand->ResourceFlags = (UINT32) Xtoi (FlagsStr);
+  InfiniBand->ResourceFlags = (UINT32) Strtoi (FlagsStr);
   StrToGuid (GuidStr, &PortGid);
   EfiCopyMem (InfiniBand->PortGid, &PortGid, sizeof (EFI_GUID));
-  Xtoi64 (SidStr, &InfiniBand->ServiceId);
-  Xtoi64 (TidStr, &InfiniBand->TargetPortId);
-  Xtoi64 (DidStr, &InfiniBand->DeviceId);
+  Strtoi64 (SidStr, &InfiniBand->ServiceId);
+  Strtoi64 (TidStr, &InfiniBand->TargetPortId);
+  Strtoi64 (DidStr, &InfiniBand->DeviceId);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) InfiniBand;
 }
@@ -1202,18 +1321,16 @@ DevPathFromTextSAS (
                                        sizeof (SAS_DEVICE_PATH)
                                        );
 
-  Sas->Guid         = mEfiDevicePathMessagingSASGuid;
-  Xtoi64 (AddressStr, &Sas->SasAddress);
-  Xtoi64 (LunStr, &Sas->Lun);
-  Sas->RelativeTargetPort = (UINT16) Xtoi (RTPStr);
-  if (EfiStrCmp (SASSATAStr, L"NoTopology") == 0)
-    ;
-  else {
+  Sas->Guid = mEfiDevicePathMessagingSASGuid;
+  Strtoi64 (AddressStr, &Sas->SasAddress);
+  Strtoi64 (LunStr, &Sas->Lun);
+  Sas->RelativeTargetPort = (UINT16) Strtoi (RTPStr);
+  if (EfiStrCmp (SASSATAStr, L"NoTopology") != 0) {
     if (EfiStrCmp (DriveBayStr, L"0") == 0) {
       Info |= 0x0001;
     } else {
       Info |= 0x0002;
-      Info |= (Xtoi (DriveBayStr) << 8);
+      Info |= (Strtoi (DriveBayStr) << 8);
     }
 
     if (EfiStrCmp (SASSATAStr, L"SATA") == 0) {
@@ -1230,7 +1347,7 @@ DevPathFromTextSAS (
   }
 
   Sas->DeviceTopology = Info;
-  Sas->Reserved       = (UINT32) Xtoi (ReservedStr);
+  Sas->Reserved       = (UINT32) Strtoi (ReservedStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Sas;
 }
@@ -1271,7 +1388,7 @@ DevPathFromTextMAC (
                                               sizeof (MAC_ADDR_DEVICE_PATH)
                                               );
 
-  MAC->IfType   = (UINT8) Xtoi (IfTypeStr);
+  MAC->IfType   = (UINT8) Strtoi (IfTypeStr);
 
   Length = sizeof (EFI_MAC_ADDRESS);
   StrToBuf (&MAC->MacAddress.Addr[0], Length, AddressStr);
@@ -1374,8 +1491,8 @@ DevPathFromTextUart (
                                            sizeof (UART_DEVICE_PATH)
                                            );
 
-  Uart->BaudRate  = (EfiStrCmp (BaudStr, L"DEFAULT") == 0) ? 115200 : Atoi (BaudStr);
-  Uart->DataBits  = (EfiStrCmp (DataBitsStr, L"DEFAULT") == 0) ? (UINT8) 8 : (UINT8) Atoi (DataBitsStr);
+  Uart->BaudRate  = (EfiStrCmp (BaudStr, L"DEFAULT") == 0) ? 115200 : Dtoi (BaudStr);
+  Uart->DataBits  = (EfiStrCmp (DataBitsStr, L"DEFAULT") == 0) ? (UINT8) 8 : (UINT8) Dtoi (DataBitsStr);
   switch (*ParityStr) {
   case L'D':
     Uart->Parity = 0;
@@ -1443,22 +1560,22 @@ ConvertFromTextUsbClass (
   PIDStr      = GetNextParamStr (&TextDeviceNode);
   if (UsbClassText->ClassExist) {
     ClassStr = GetNextParamStr (&TextDeviceNode);
-    UsbClass->DeviceClass = (UINT8) Xtoi (ClassStr);
+    UsbClass->DeviceClass = (UINT8) Strtoi (ClassStr);
   } else {
     UsbClass->DeviceClass = UsbClassText->Class;
   }
   if (UsbClassText->SubClassExist) {
     SubClassStr = GetNextParamStr (&TextDeviceNode);
-    UsbClass->DeviceSubClass = (UINT8) Xtoi (SubClassStr);
+    UsbClass->DeviceSubClass = (UINT8) Strtoi (SubClassStr);
   } else {
     UsbClass->DeviceSubClass = UsbClassText->SubClass;
   }  
 
   ProtocolStr = GetNextParamStr (&TextDeviceNode);
 
-  UsbClass->VendorId        = (UINT16) Xtoi (VIDStr);
-  UsbClass->ProductId       = (UINT16) Xtoi (PIDStr);
-  UsbClass->DeviceProtocol  = (UINT8) Xtoi (ProtocolStr);
+  UsbClass->VendorId        = (UINT16) Strtoi (VIDStr);
+  UsbClass->ProductId       = (UINT16) Strtoi (PIDStr);
+  UsbClass->DeviceProtocol  = (UINT8) Strtoi (ProtocolStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) UsbClass;
 }
@@ -1698,20 +1815,23 @@ DevPathFromTextUsbWwid (
   CHAR16                *VIDStr;
   CHAR16                *PIDStr;
   CHAR16                *InterfaceNumStr;
+  CHAR16                *SerialNumberStr;
   USB_WWID_DEVICE_PATH  *UsbWwid;
 
   VIDStr                    = GetNextParamStr (&TextDeviceNode);
   PIDStr                    = GetNextParamStr (&TextDeviceNode);
   InterfaceNumStr           = GetNextParamStr (&TextDeviceNode);
-  UsbWwid                   = (USB_WWID_DEVICE_PATH *) CreateDeviceNode (
-                                                         MESSAGING_DEVICE_PATH,
-                                                         MSG_USB_WWID_DP,
-                                                         sizeof (USB_WWID_DEVICE_PATH)
-                                                         );
+  SerialNumberStr           = GetNextParamStr (&TextDeviceNode);
+  UsbWwid = (USB_WWID_DEVICE_PATH *) CreateDeviceNode (
+                                       MESSAGING_DEVICE_PATH,
+                                       MSG_USB_WWID_DP,
+                                       sizeof (USB_WWID_DEVICE_PATH) + (UINT16) EfiStrSize (SerialNumberStr)
+                                       );
 
-  UsbWwid->VendorId         = (UINT16) Xtoi (VIDStr);
-  UsbWwid->ProductId        = (UINT16) Xtoi (PIDStr);
-  UsbWwid->InterfaceNumber  = (UINT16) Xtoi (InterfaceNumStr);
+  UsbWwid->VendorId         = (UINT16) Strtoi (VIDStr);
+  UsbWwid->ProductId        = (UINT16) Strtoi (PIDStr);
+  UsbWwid->InterfaceNumber  = (UINT16) Strtoi (InterfaceNumStr);
+  EfiStrCpy ((CHAR16 *) ((UINT8 *) UsbWwid + sizeof (USB_WWID_DEVICE_PATH)), SerialNumberStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) UsbWwid;
 }
@@ -1731,7 +1851,7 @@ DevPathFromTextUnit (
                                                       sizeof (DEVICE_LOGICAL_UNIT_DEVICE_PATH)
                                                       );
 
-  LogicalUnit->Lun  = (UINT8) Xtoi (LunStr);
+  LogicalUnit->Lun  = (UINT8) Strtoi (LunStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) LogicalUnit;
 }
@@ -1765,8 +1885,8 @@ DevPathFromTextiSCSI (
                                                         );
 
   EfiStrCpy (iSCSI->iSCSITargetName, NameStr);
-  iSCSI->TargetPortalGroupTag = (UINT16) Xtoi (PortalGroupStr);
-  Xtoi64 (LunStr, &iSCSI->Lun);
+  iSCSI->TargetPortalGroupTag = (UINT16) Strtoi (PortalGroupStr);
+  Strtoi64 (LunStr, &iSCSI->Lun);
 
   Options = 0x0000;
   if (EfiStrCmp (HeaderDigestStr, L"CRC32C") == 0) {
@@ -1818,7 +1938,7 @@ DevPathFromTextHD (
                                                     sizeof (HARDDRIVE_DEVICE_PATH)
                                                     );
 
-  Hd->PartitionNumber = (UINT32) Atoi (PartitionStr);
+  Hd->PartitionNumber = (UINT32) Dtoi (PartitionStr);
 
   EfiZeroMem (Hd->Signature, 16);
   Hd->MBRType = (UINT8) 0;
@@ -1829,7 +1949,7 @@ DevPathFromTextHD (
     Hd->SignatureType = SIGNATURE_TYPE_MBR;
     Hd->MBRType       = 0x01;
 
-    Signature32       = (UINT32) Xtoi (SignatureStr);
+    Signature32       = (UINT32) Strtoi (SignatureStr);
     EfiCopyMem (Hd->Signature, &Signature32, sizeof (UINT32));
   } else if (EfiStrCmp (TypeStr, L"GUID") == 0) {
     Hd->SignatureType = SIGNATURE_TYPE_GUID;
@@ -1842,8 +1962,8 @@ DevPathFromTextHD (
 
   }
 
-  Xtoi64 (StartStr, &Hd->PartitionStart);
-  Xtoi64 (SizeStr, &Hd->PartitionSize);
+  Strtoi64 (StartStr, &Hd->PartitionStart);
+  Strtoi64 (SizeStr, &Hd->PartitionSize);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Hd;
 }
@@ -1867,9 +1987,9 @@ DevPathFromTextCDROM (
                                                   sizeof (CDROM_DEVICE_PATH)
                                                   );
 
-  CDROM->BootEntry      = (UINT32) Xtoi (EntryStr);
-  Xtoi64 (StartStr, &CDROM->PartitionStart);
-  Xtoi64 (SizeStr, &CDROM->PartitionSize);
+  CDROM->BootEntry      = (UINT32) Strtoi (EntryStr);
+  Strtoi64 (StartStr, &CDROM->PartitionStart);
+  Strtoi64 (SizeStr, &CDROM->PartitionSize);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) CDROM;
 }
@@ -1963,7 +2083,7 @@ DevPathFromTextBBS (
   AsciiStr = Bbs->String;
   StrToAscii (IdStr, &AsciiStr);
 
-  Bbs->StatusFlag = (UINT16) Xtoi (FlagsStr);
+  Bbs->StatusFlag = (UINT16) Strtoi (FlagsStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Bbs;
 }

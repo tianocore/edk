@@ -36,6 +36,7 @@ Abstract:
 #include EFI_PROTOCOL_CONSUMER (FileInfo)
 #include EFI_PROTOCOL_CONSUMER (LoadFile)
 #include EFI_PROTOCOL_CONSUMER (FirmwareVolume)
+#include EFI_PROTOCOL_CONSUMER (FirmwareVolume2)
 
 #define LOADED_IMAGE_PRIVATE_DATA_SIGNATURE   EFI_SIGNATURE_32('l','d','r','i')
 

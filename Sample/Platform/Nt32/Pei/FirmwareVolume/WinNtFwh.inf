@@ -42,7 +42,7 @@ COMPONENT_TYPE       = PE32_PEIM
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
   $(EDK_SOURCE)\Sample\Platform\Nt32\Include
-  $(EDK_SOURCE)\Foundation\Core\Pei\Include
+
 
 [libraries.common]
   EdkNt32PpiLib

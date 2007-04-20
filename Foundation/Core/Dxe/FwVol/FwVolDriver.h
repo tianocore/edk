@@ -35,14 +35,12 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (SectionExtraction)
 
 //
-// Consumed GUID
+// Consumed GUID & Produced protocol
 //
 #include EFI_GUID_DEFINITION (FirmwareFileSystem)
-
-//
-// Produced protocol
-//
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem2)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 
 
 //
@@ -59,8 +57,11 @@ typedef struct {
   UINTN                                   Signature;
   EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL      *Fvb;
   EFI_HANDLE                              Handle;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   EFI_FIRMWARE_VOLUME_PROTOCOL            Fv;
-
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL            Fv;
+#endif
   EFI_FIRMWARE_VOLUME_HEADER              *FwVolHeader;
   UINT8                                   *CachedFv;
   UINT8                                   *EndOfCachedFv;
@@ -74,6 +75,8 @@ typedef struct {
 
 #define FV_DEVICE_FROM_THIS(a) CR(a, FV_DEVICE, Fv, FV_DEVICE_SIGNATURE)
 
+
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 
 EFI_STATUS
 EFIAPI
@@ -299,6 +302,288 @@ FvWriteFile (
 --*/
 ;
 
+#else
+
+EFI_STATUS
+EFIAPI
+FvGetVolumeAttributes (
+  IN  CONST EFI_FIRMWARE_VOLUME2_PROTOCOL   *This,
+  OUT   EFI_FV_ATTRIBUTES                  *Attributes
+  )
+/*++
+
+Routine Description:
+    Retrieves attributes, insures positive polarity of attribute bits, returns
+    resulting attributes in output parameter
+
+Arguments:
+    This        - Calling context
+    Attributes  - output buffer which contains attributes
+
+Returns:
+    EFI_SUCCESS         - Successfully got volume attributes
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+FvSetVolumeAttributes (
+  IN CONST    EFI_FIRMWARE_VOLUME2_PROTOCOL   *This,
+  IN OUT EFI_FV_ATTRIBUTES                   *Attributes
+  )
+/*++
+
+Routine Description:
+    Sets current attributes for volume
+
+Arguments:
+    This       - Calling context
+    Attributes - At input, contains attributes to be set.  At output contains
+      new value of FV
+
+Returns:
+    EFI_UNSUPPORTED   - Could not be set.
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+FvGetNextFile (
+  IN CONST  EFI_FIRMWARE_VOLUME2_PROTOCOL   *This,
+  IN OUT VOID                              *Key,
+  IN OUT EFI_FV_FILETYPE                   *FileType,
+  OUT    EFI_GUID                          *NameGuid,
+  OUT    EFI_FV_FILE_ATTRIBUTES            *Attributes,
+  OUT    UINTN                             *Size
+  )
+/*++
+
+Routine Description:
+    Given the input key, search for the next matching file in the volume.
+
+Arguments:
+    This          -   Indicates the calling context.
+    FileType      -   FileType is a pointer to a caller allocated
+                      EFI_FV_FILETYPE. The GetNextFile() API can filter it's
+                      search for files based on the value of *FileType input.
+                      A *FileType input of 0 causes GetNextFile() to search for
+                      files of all types.  If a file is found, the file's type
+                      is returned in *FileType.  *FileType is not modified if
+                      no file is found.
+    Key           -   Key is a pointer to a caller allocated buffer that
+                      contains implementation specific data that is used to
+                      track where to begin the search for the next file.
+                      The size of the buffer must be at least This->KeySize
+                      bytes long. To reinitialize the search and begin from
+                      the beginning of the firmware volume, the entire buffer
+                      must be cleared to zero. Other than clearing the buffer
+                      to initiate a new search, the caller must not modify the
+                      data in the buffer between calls to GetNextFile().
+    NameGuid      -   NameGuid is a pointer to a caller allocated EFI_GUID.
+                      If a file is found, the file's name is returned in
+                      *NameGuid.  *NameGuid is not modified if no file is
+                      found.
+    Attributes    -   Attributes is a pointer to a caller allocated
+                      EFI_FV_FILE_ATTRIBUTES.  If a file is found, the file's
+                      attributes are returned in *Attributes. *Attributes is
+                      not modified if no file is found.
+    Size          -   Size is a pointer to a caller allocated UINTN.
+                      If a file is found, the file's size is returned in *Size.
+                      *Size is not modified if no file is found.
+
+Returns:    
+    EFI_SUCCESS                 - Successfully find the file.
+    EFI_DEVICE_ERROR            - Device error.
+    EFI_ACCESS_DENIED           - Fv could not read.
+    EFI_NOT_FOUND               - No matching file found.
+    EFI_INVALID_PARAMETER       - Invalid parameter
+
+--*/
+;
+
+
+EFI_STATUS
+EFIAPI
+FvReadFile (
+  IN CONST  EFI_FIRMWARE_VOLUME2_PROTOCOL   *This,
+  IN CONST  EFI_GUID                       *NameGuid,
+  IN OUT    VOID                           **Buffer,
+  IN OUT    UINTN                          *BufferSize,
+  OUT       EFI_FV_FILETYPE                *FoundType,
+  OUT       EFI_FV_FILE_ATTRIBUTES         *FileAttributes,
+  OUT       UINT32                         *AuthenticationStatus
+  )
+/*++
+
+Routine Description:
+    Locates a file in the firmware volume and
+    copies it to the supplied buffer.
+
+Arguments:
+    This              -   Indicates the calling context.
+    NameGuid          -   Pointer to an EFI_GUID, which is the filename.
+    Buffer            -   Buffer is a pointer to pointer to a buffer in
+                          which the file or section contents or are returned.
+    BufferSize        -   BufferSize is a pointer to caller allocated
+                          UINTN. On input *BufferSize indicates the size
+                          in bytes of the memory region pointed to by
+                          Buffer. On output, *BufferSize contains the number
+                          of bytes required to read the file.
+    FoundType         -   FoundType is a pointer to a caller allocated
+                          EFI_FV_FILETYPE that on successful return from Read()
+                          contains the type of file read.  This output reflects
+                          the file type irrespective of the value of the
+                          SectionType input.
+    FileAttributes    -   FileAttributes is a pointer to a caller allocated
+                          EFI_FV_FILE_ATTRIBUTES.  On successful return from
+                          Read(), *FileAttributes contains the attributes of
+                          the file read.
+    AuthenticationStatus -  AuthenticationStatus is a pointer to a caller
+                          allocated UINTN in which the authentication status
+                          is returned.
+Returns:
+    EFI_SUCCESS                   - Successfully read to memory buffer.
+    EFI_WARN_BUFFER_TOO_SMALL     - Buffer too small.
+    EFI_NOT_FOUND                 - Not found.
+    EFI_DEVICE_ERROR              - Device error.
+    EFI_ACCESS_DENIED             - Could not read.
+    EFI_INVALID_PARAMETER         - Invalid parameter.
+    EFI_OUT_OF_RESOURCES          - Not enough buffer to be allocated.
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+FvReadFileSection (
+  IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL   *This,
+  IN CONST EFI_GUID                       *NameGuid,
+  IN       EFI_SECTION_TYPE               SectionType,
+  IN       UINTN                          SectionInstance,
+  IN OUT   VOID                           **Buffer,
+  IN OUT   UINTN                          *BufferSize,
+  OUT      UINT32                         *AuthenticationStatus
+  )
+/*++
+
+  Routine Description:
+    Locates a section in a given FFS File and
+    copies it to the supplied buffer (not including section header).
+
+  Arguments:
+    This              -   Indicates the calling context.
+    NameGuid          -   Pointer to an EFI_GUID, which is the filename.
+    SectionType       -   Indicates the section type to return.
+    SectionInstance   -   Indicates which instance of sections with a type of
+                          SectionType to return.
+    Buffer            -   Buffer is a pointer to pointer to a buffer in which
+                          the file or section contents or are returned.
+    BufferSize        -   BufferSize is a pointer to caller allocated UINTN.
+    AuthenticationStatus -AuthenticationStatus is a pointer to a caller
+                          allocated UINT32 in which the authentication status
+                          is returned.
+
+  Returns:
+    EFI_SUCCESS                     - Successfully read the file section into buffer.
+    EFI_WARN_BUFFER_TOO_SMALL       - Buffer too small.
+    EFI_NOT_FOUND                   - Section not found.
+    EFI_DEVICE_ERROR                - Device error.
+    EFI_ACCESS_DENIED               - Could not read.
+    EFI_INVALID_PARAMETER           - Invalid parameter.
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+FvWriteFile (
+  IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL       *This,
+  IN UINT32                                   NumberOfFiles,
+  IN EFI_FV_WRITE_POLICY                      WritePolicy,
+  IN EFI_FV_WRITE_FILE_DATA                   *FileData
+  )
+/*++
+
+    Routine Description:
+      Writes one or more files to the firmware volume.
+
+    Arguments:
+    This        - Indicates the calling context.
+    WritePolicy - WritePolicy indicates the level of reliability for
+                  the write in the event of a power failure or other
+                  system failure during the write operation.
+    FileData    - FileData is an pointer to an array of EFI_FV_WRITE_DATA.
+                  Each element of FileData[] represents a file to be written.
+
+    Returns:
+      EFI_SUCCESS                   - Files successfully written to firmware volume
+      EFI_OUT_OF_RESOURCES          - Not enough buffer to be allocated.
+      EFI_DEVICE_ERROR              - Device error.
+      EFI_WRITE_PROTECTED           - Write protected.
+      EFI_NOT_FOUND                 - Not found.
+      EFI_INVALID_PARAMETER         - Invalid parameter.
+      EFI_UNSUPPORTED               - This function not supported.
+
+--*/
+;
+
+
+EFI_STATUS
+EFIAPI
+FvGetVolumeInfo (
+  IN  CONST EFI_FIRMWARE_VOLUME2_PROTOCOL       *This,
+  IN  CONST EFI_GUID                            *InformationType,
+  IN OUT UINTN                                  *BufferSize,
+  OUT VOID                                      *Buffer
+  )
+/*++
+
+Routine Description:
+  Return information of type InformationType for the requested firmware
+  volume.
+  
+Arguments:
+    This                - Pointer to EFI_FIRMWARE_VOLUME2_PROTOCOL.
+    InformationType     - InformationType for requested.
+    BufferSize          - On input, size of Buffer.On output, the amount of
+                          data returned in Buffer.
+    Buffer              - A poniter to the data buffer to return.
+Returns:
+    EFI_SUCCESS         - Successfully got volume Information.
+
+--*/
+;
+
+
+EFI_STATUS
+EFIAPI
+FvSetVolumeInfo (
+  IN  CONST EFI_FIRMWARE_VOLUME2_PROTOCOL       *This,
+  IN  CONST EFI_GUID                            *InformationType,
+  IN  UINTN                                     BufferSize,
+  IN CONST  VOID                                *Buffer
+  )
+/*++
+
+Routine Description:
+  Set information of type InformationType for the requested firmware
+  volume.
+
+Arguments:
+    This                - Pointer to EFI_FIRMWARE_VOLUME2_PROTOCOL.
+    InformationType     - InformationType for requested.
+    BufferSize          - On input, size of Buffer.On output, the amount of
+                          data returned in Buffer.
+    Buffer              - A poniter to the data buffer to return.
+Returns:
+    EFI_SUCCESS         - Successfully set volume Information.
+
+--*/
+;
+
+
+#endif
 
   
 //

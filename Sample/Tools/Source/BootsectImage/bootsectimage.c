@@ -24,7 +24,10 @@ Abstract:
 #include <stdio.h>
 #include "fat.h"
 #include "mbr.h"
+#include "EfiUtilityMsgs.h"
 
+#define DEBUG_WARN  0x1
+#define DEBUG_ERROR 0x2
 int WriteToFile (
   void *BootSector, 
   char *FileName
@@ -48,14 +51,14 @@ Return:
 
   FileHandle = fopen (FileName, "r+b");
   if (FileHandle == NULL) {
-    printf ("error open file: %s\n", FileName);
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "Open file: %s", FileName);
     return 0;
   }
   fseek (FileHandle, 0, SEEK_SET);
 
   result = fwrite (BootSector, 1, 512, FileHandle);
   if (result != 512) {
-    printf ("error write file: %s\n", FileName);
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "Write file: %s", FileName);
     result = 0;
   }
 
@@ -86,13 +89,13 @@ Return:
 
   FileHandle = fopen (FileName, "rb");
   if (FileHandle == NULL) {
-    printf ("error open file: %s\n", FileName);
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "Open file: %s", FileName);
     return 0;
   }
 
   result = fread (BootSector, 1, 512, FileHandle);
   if (result != 512) {
-    printf ("error read file: %s\n", FileName);
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "Read file: %s", FileName);
     result = 0;
   }
 
@@ -154,7 +157,7 @@ Return:
   // Simple check
   //
   if (FatBpb->Fat12_16.Signature != FAT_BS_SIGNATURE) {
-    printf ("ERROR: FAT: Signature Invalid - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: Signature Invalid - %04x, expected - %04x",
         FatBpb->Fat12_16.Signature, FAT_BS_SIGNATURE);
     return FatTypeUnknown;
   }
@@ -164,7 +167,7 @@ Return:
   //
   if ((FatBpb->Fat12_16.BS_jmpBoot[0] != FAT_BS_JMP1) &&
       (FatBpb->Fat12_16.BS_jmpBoot[0] != FAT_BS_JMP2)) {
-    printf ("ERROR: FAT: BS_jmpBoot - %02x, expected - %02x or %02x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BS_jmpBoot - %02x, expected - %02x or %02x",
         FatBpb->Fat12_16.BS_jmpBoot[0], FAT_BS_JMP1, FAT_BS_JMP2);
     return FatTypeUnknown;
   }
@@ -173,12 +176,12 @@ Return:
       (FatBpb->Fat12_16.BPB_BytsPerSec != 1024) &&
       (FatBpb->Fat12_16.BPB_BytsPerSec != 2048) &&
       (FatBpb->Fat12_16.BPB_BytsPerSec != 4096)) {
-    printf ("ERROR: FAT: BPB_BytsPerSec - %04x, expected - %04x, %04x, %04x, or %04x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_BytsPerSec - %04x, expected - %04x, %04x, %04x, or %04x",
         FatBpb->Fat12_16.BPB_BytsPerSec, 512, 1024, 2048, 4096);
     return FatTypeUnknown;
   }
   if (FatBpb->Fat12_16.BPB_BytsPerSec != 512) {
-    printf ("WARNING: FAT: BPB_BytsPerSec - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT: BPB_BytsPerSec - %04x, expected - %04x",
         FatBpb->Fat12_16.BPB_BytsPerSec, 512);
   }
   if ((FatBpb->Fat12_16.BPB_SecPerClus != 1) &&
@@ -189,22 +192,22 @@ Return:
       (FatBpb->Fat12_16.BPB_SecPerClus != 32) &&
       (FatBpb->Fat12_16.BPB_SecPerClus != 64) &&
       (FatBpb->Fat12_16.BPB_SecPerClus != 128)) {
-    printf ("ERROR: FAT: BPB_SecPerClus - %02x, expected - %02x, %02x, %02x, %02x, %02x, %02x, %02x, or %02x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_SecPerClus - %02x, expected - %02x, %02x, %02x, %02x, %02x, %02x, %02x, or %02x",
         FatBpb->Fat12_16.BPB_BytsPerSec, 1, 2, 4, 8, 16, 32, 64, 128);
     return FatTypeUnknown;
   }
   if (FatBpb->Fat12_16.BPB_BytsPerSec * FatBpb->Fat12_16.BPB_SecPerClus > 32 * 1024) {
-    printf ("ERROR: FAT: BPB_BytsPerSec * BPB_SecPerClus - %08x, expected <= %08x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_BytsPerSec * BPB_SecPerClus - %08x, expected <= %08x",
         FatBpb->Fat12_16.BPB_BytsPerSec * FatBpb->Fat12_16.BPB_SecPerClus, 32 * 1024);
     return FatTypeUnknown;
   }
   if (FatBpb->Fat12_16.BPB_RsvdSecCnt == 0) {
-    printf ("ERROR: FAT: BPB_RsvdSecCnt - %04x, expected - Non-Zero\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_RsvdSecCnt - %04x, expected - Non-Zero",
         FatBpb->Fat12_16.BPB_RsvdSecCnt);
     return FatTypeUnknown;
   }
   if (FatBpb->Fat12_16.BPB_NumFATs != 2) {
-    printf ("WARNING: FAT: BPB_NumFATs - %02x, expected - %02x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT: BPB_NumFATs - %02x, expected - %02x",
         FatBpb->Fat12_16.BPB_NumFATs, 2);
   }
   if ((FatBpb->Fat12_16.BPB_Media != 0xF0) &&
@@ -216,7 +219,7 @@ Return:
       (FatBpb->Fat12_16.BPB_Media != 0xFD) &&
       (FatBpb->Fat12_16.BPB_Media != 0xFE) &&
       (FatBpb->Fat12_16.BPB_Media != 0xFF)) {
-    printf ("ERROR: FAT: BPB_Media - %02x, expected - %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, or %02x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_Media - %02x, expected - %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x, or %02x",
         FatBpb->Fat12_16.BPB_Media, 0xF0, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF);
     return FatTypeUnknown;
   }
@@ -234,7 +237,7 @@ Return:
     FATSz = FatBpb->Fat32.BPB_FATSz32;
   }
   if (FATSz == 0) {
-    printf ("ERROR: FAT: BPB_FATSz16, BPB_FATSz32 - 0, expected - Non-Zero\n");
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_FATSz16, BPB_FATSz32 - 0, expected - Non-Zero");
     return FatTypeUnknown;
   }
 
@@ -244,7 +247,7 @@ Return:
     TotSec = FatBpb->Fat12_16.BPB_TotSec32;
   }
   if (TotSec == 0) {
-    printf ("ERROR: FAT: BPB_TotSec16, BPB_TotSec32 - 0, expected - Non-Zero\n");
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT: BPB_TotSec16, BPB_TotSec32 - 0, expected - Non-Zero");
     return FatTypeUnknown;
   }
 
@@ -263,19 +266,17 @@ Return:
   } else {
     FatType = FatTypeFat32;
   }
-  printf ("Fat Type: %s\n", FatTypeToString (FatType));
-
   //
   // Check according to FAT spec
   //
   if (((FatType == FatTypeFat12) || (FatType == FatTypeFat16)) &&
        (FatBpb->Fat12_16.BPB_RsvdSecCnt != 1)) {
-    printf ("WARNING: FAT12_16: BPB_RsvdSecCnt - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT12_16: BPB_RsvdSecCnt - %04x, expected - %04x",
         FatBpb->Fat12_16.BPB_RsvdSecCnt, 1);
   }
   if ((FatType == FatTypeFat32) &&
        (FatBpb->Fat12_16.BPB_RsvdSecCnt != 32)) {
-    printf ("WARNING: FAT32: BPB_RsvdSecCnt - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT32: BPB_RsvdSecCnt - %04x, expected - %04x",
         FatBpb->Fat12_16.BPB_RsvdSecCnt, 32);
   }
   if ((FatType == FatTypeFat16) &&
@@ -285,59 +286,59 @@ Return:
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat12_16.BPB_RootEntCnt != 0)) {
-    printf ("ERROR: FAT32: BPB_RootEntCnt - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BPB_RootEntCnt - %04x, expected - %04x",
         FatBpb->Fat12_16.BPB_RootEntCnt, 0);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat12_16.BPB_TotSec16 != 0)) {
-    printf ("ERROR: FAT32: BPB_TotSec16 - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BPB_TotSec16 - %04x, expected - %04x",
         FatBpb->Fat12_16.BPB_TotSec16, 0);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat12_16.BPB_FATSz16 != 0)) {
-    printf ("ERROR: FAT32: BPB_FATSz16 - %04x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BPB_FATSz16 - %04x, expected - %04x",
         FatBpb->Fat12_16.BPB_FATSz16, 0);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat12_16.BPB_TotSec32 == 0)) {
-    printf ("ERROR: FAT32: BPB_TotSec32 - %04x, expected - Non-Zero\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BPB_TotSec32 - %04x, expected - Non-Zero",
         FatBpb->Fat12_16.BPB_TotSec32);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BPB_FATSz32 == 0)) {
-    printf ("ERROR: FAT32: BPB_FATSz32 - %08x, expected - Non-Zero\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BPB_FATSz32 - %08x, expected - Non-Zero",
         FatBpb->Fat32.BPB_FATSz32);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BPB_FSVer != 0)) {
-    printf ("WARNING: FAT32: BPB_FSVer - %08x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT32: BPB_FSVer - %08x, expected - %04x",
         FatBpb->Fat32.BPB_FSVer, 0);
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BPB_RootClus != 2)) {
-    printf ("WARNING: FAT32: BPB_RootClus - %08x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT32: BPB_RootClus - %08x, expected - %04x",
         FatBpb->Fat32.BPB_RootClus, 2);
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BPB_FSInfo != 1)) {
-    printf ("WARNING: FAT32: BPB_FSInfo - %08x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT32: BPB_FSInfo - %08x, expected - %04x",
         FatBpb->Fat32.BPB_FSInfo, 1);
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BPB_BkBootSec != 6)) {
-    printf ("WARNING: FAT32: BPB_BkBootSec - %08x, expected - %04x\n",
+    DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT32: BPB_BkBootSec - %08x, expected - %04x",
         FatBpb->Fat32.BPB_BkBootSec, 6);
   }
   if ((FatType == FatTypeFat32) &&
       ((*(UINT32 *)FatBpb->Fat32.BPB_Reserved != 0) ||
        (*((UINT32 *)FatBpb->Fat32.BPB_Reserved + 1) != 0) ||
        (*((UINT32 *)FatBpb->Fat32.BPB_Reserved + 2) != 0))) {
-    printf ("ERROR: FAT32: BPB_Reserved - %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x, expected - 0\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BPB_Reserved - %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x, expected - 0",
         FatBpb->Fat32.BPB_Reserved[0],
         FatBpb->Fat32.BPB_Reserved[1],
         FatBpb->Fat32.BPB_Reserved[2],
@@ -354,25 +355,25 @@ Return:
   }
   if (((FatType == FatTypeFat12) || (FatType == FatTypeFat16)) &&
        (FatBpb->Fat12_16.BS_Reserved1 != 0)) {
-    printf ("ERROR: FAT12_16: BS_Reserved1 - %02x, expected - 0\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT12_16: BS_Reserved1 - %02x, expected - 0\n",
         FatBpb->Fat12_16.BS_Reserved1);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BS_Reserved1 != 0)) {
-    printf ("ERROR: FAT32: BS_Reserved1 - %02x, expected - 0\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BS_Reserved1 - %02x, expected - 0\n",
         FatBpb->Fat32.BS_Reserved1);
     return FatTypeUnknown;
   }
   if (((FatType == FatTypeFat12) || (FatType == FatTypeFat16)) &&
        (FatBpb->Fat12_16.BS_BootSig != FAT_BS_BOOTSIG)) {
-    printf ("ERROR: FAT12_16: BS_BootSig - %02x, expected - %02x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT12_16: BS_BootSig - %02x, expected - %02x\n",
         FatBpb->Fat12_16.BS_BootSig, FAT_BS_BOOTSIG);
     return FatTypeUnknown;
   }
   if ((FatType == FatTypeFat32) &&
       (FatBpb->Fat32.BS_BootSig != FAT_BS_BOOTSIG)) {
-    printf ("ERROR: FAT32: BS_BootSig - %02x, expected - %02x\n",
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT32: BS_BootSig - %02x, expected - %02x\n",
         FatBpb->Fat32.BS_BootSig, FAT_BS_BOOTSIG);
     return FatTypeUnknown;
   }
@@ -383,13 +384,13 @@ Return:
     if ((FatType == FatTypeFat12) && 
         (strcmp (FilSysType, FAT12_FILSYSTYPE) != 0) &&
         (strcmp (FilSysType, FAT_FILSYSTYPE) != 0)) {
-      printf ("WARNING: FAT12: BS_FilSysType - %s, expected - %s, or %s\n",
+      DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT12: BS_FilSysType - %s, expected - %s, or %s\n",
           FilSysType, FAT12_FILSYSTYPE, FAT_FILSYSTYPE);
     }
     if ((FatType == FatTypeFat16) && 
         (strcmp (FilSysType, FAT16_FILSYSTYPE) != 0) &&
         (strcmp (FilSysType, FAT_FILSYSTYPE) != 0)) {
-      printf ("WARNING: FAT16: BS_FilSysType - %s, expected - %s, or %s\n",
+      DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT16: BS_FilSysType - %s, expected - %s, or %s\n",
           FilSysType, FAT16_FILSYSTYPE, FAT_FILSYSTYPE);
     }
   }
@@ -397,7 +398,7 @@ Return:
     memcpy (FilSysType, FatBpb->Fat32.BS_FilSysType, 8);
     FilSysType[8] = 0;
     if (strcmp (FilSysType, FAT32_FILSYSTYPE) != 0) {
-      printf ("WARNING: FAT32: BS_FilSysType - %s, expected - %s\n",
+      DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT32: BS_FilSysType - %s, expected - %s\n",
           FilSysType, FAT32_FILSYSTYPE);
     }
   }
@@ -546,7 +547,7 @@ void
 PatchBootSector (
   char *DestFileName,
   char *SourceFileName,
-  char ForcePatch
+  BOOL ForcePatch
   )
 /*++
 Routine Description:
@@ -562,7 +563,6 @@ Arguments:
   FAT_BPB_STRUCT  SourceFatBpb;
   FAT_TYPE        DestFatType;
   FAT_TYPE        SourceFatType;
-  FAT_BPB_STRUCT  BackupFatBpb;
   CHAR8           VolLab[11];
   CHAR8           FilSysType[8];
   
@@ -581,24 +581,24 @@ Arguments:
     // FAT type mismatch
     //
     if (ForcePatch) {
-      printf ("WARNING: FAT type mismatch: Dest - %s, Source - %s\n", FatTypeToString(DestFatType), FatTypeToString(SourceFatType));
+      DebugMsg (NULL, 0, DEBUG_WARN, NULL, "FAT type mismatch: Dest - %s, Source - %s", 
+          FatTypeToString(DestFatType), FatTypeToString(SourceFatType));
     } else {
-      printf ("ERROR: FAT type mismatch: Dest - %s, Source - %s\n", FatTypeToString(DestFatType), FatTypeToString(SourceFatType));
+      DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "FAT type mismatch: Dest - %s, Source - %s", 
+          FatTypeToString(DestFatType), FatTypeToString(SourceFatType));
       return ;
     }
   }
 
   if (SourceFatType <= FatTypeUnknown || SourceFatType >= FatTypeMax) {
-    printf ("ERROR: Unknown Fat Type!\n");
+    DebugMsg (NULL, 0, DEBUG_ERROR, NULL, "Unknown Fat Type!\n");
     return;
   }
-
-  memcpy (&BackupFatBpb, &DestFatBpb, sizeof(BackupFatBpb));
 
   //
   // Copy BPB/boot data (excluding BS_jmpBoot, BS_OEMName, BootCode and Signature) from SourceFatBpb to DestFatBpb
   //
-  printf ("Patching %s BPB:\n", FatTypeToString (SourceFatType));
+  printf ("Patching %s BPB: ", FatTypeToString (SourceFatType));
   if (SourceFatType != FatTypeFat32) {
     memcpy (
       &DestFatBpb.Fat12_16.BPB_BytsPerSec,
@@ -648,7 +648,9 @@ Arguments:
   // Write DestFatBpb
   //
   if (WriteToFile ((void *)&DestFatBpb, DestFileName)) {
-    printf ("BootSector is patched successfully!\n");
+    printf ("successfully!\n");
+  } else {
+    printf ("failed!\n");
   }
 
   return ;
@@ -758,7 +760,7 @@ PatchMbr (
 
 
   if (WriteToFile ((void *)&DestMbr, DestFileName)) {
-    printf ("MBR is patched successfully!\n");
+    printf ("\tsuccessfully!\n");
   }
 
   return ;
@@ -771,13 +773,14 @@ PrintUsage (
 {
   printf (
     "Usage:\n"
-    "bootsectimage [-m] -p BootSectorImage\n"
-    "bootsectimage [-m] -g SourceBootSectorImage DestBootSectorImage [-f]\n"
+    "bootsectimage [-m] [-v] -p SrcImage\n"
+    "bootsectimage [-m] [-v] [-f] -g SrcImage DstImage\n"
     "where\n"
-    "  -p: parse BootSectorImage\n"
-    "  -g: get info from SourceBootSectorImage, and patch to DestBootSectorImage\n"
-    "  -f: force patch even FAT type mismatch\n"
+    "  -p: parse SrcImage\n"
+    "  -g: get info from SrcImage, and patch to DstImage\n"
+    "  -f: force patch even FAT type of SrcImage and DstImage mismatch\n"
     "  -m: process MBR instead of boot sector\n"
+    "  -v: verbose\n"
     );
 }
 
@@ -787,50 +790,90 @@ main (
   char *argv[]
   )
 {
-  char ForcePatch;
+  char *SrcImage;
+  char *DstImage;
+  BOOL ForcePatch;    // -f
+  BOOL ProcessMbr;    // -m
+  BOOL DoParse;       // -p SrcImage or -g SrcImage DstImage
+  BOOL Verbose;       // -v
   
-  if (argc < 3 || argc > 5) {
+  SrcImage = DstImage = NULL;
+  ForcePatch = FALSE;
+  ProcessMbr = FALSE;
+  DoParse    = TRUE;
+  Verbose    = FALSE;
+
+  SetUtilityName ("bootsectimage");
+
+  argc--; argv++;
+
+  if (argc == 0) {
     PrintUsage ();
     return -1;
   }
 
-  if ((strcmp (argv[1], "-p") == 0) && (argc == 3)) {
-    //
-    // Parse boot sector
-    //
-    ParseBootSector (argv[2]);
-  } else if ((strcmp (argv[1], "-g") == 0) && ((argc == 4) || (argc == 5))) {
-    ForcePatch = 0;
-    if (argc == 5) {
-      if (strcmp (argv[4], "-f") == 0) {
-        ForcePatch = 1;
+  while (argc != 0) {
+    if (strcmp (*argv, "-f") == 0) {
+      ForcePatch = TRUE;
+    } else if (strcmp (*argv, "-p") == 0) {
+      DoParse    = TRUE;
+      argc--; argv++;
+      if (argc < 1) {
+        PrintUsage ();
+        return -1;
       }
-    }
-    //
-    // Patch boot sector
-    //
-    PatchBootSector (argv[3], argv[2], ForcePatch);
-  } else if ((strcmp (argv[1], "-m") == 0) && ((argc == 4) || (argc == 5))) {
-    //
-    // Do MBR job
-    //
-    if ((strcmp (argv[2], "-p") == 0) && (argc == 4)) {
-      //
-      // Parse MBR
-      //
-      ParseMbr (argv[3]);
-    } else if ((strcmp (argv[2], "-g") == 0) && (argc == 5)) {
-      //
-      // Patch MBR
-      //
-      PatchMbr (argv[4], argv[3]);
+      SrcImage   = *argv;
+    } else if (strcmp (*argv, "-g") == 0) {
+      DoParse    = FALSE;
+      argc--; argv++;
+      if (argc < 2) {
+        PrintUsage ();
+        return -1;
+      }
+      SrcImage   = *argv;
+      argc--; argv++;
+      DstImage   = *argv;
+    } else if (strcmp (*argv, "-m") == 0) {
+      ProcessMbr = TRUE;
+    } else if (strcmp (*argv, "-v") == 0) {
+      Verbose    = TRUE;
     } else {
       PrintUsage ();
       return -1;
     }
-  } else {
+
+    argc--; argv++;
+  }
+
+  if (ForcePatch && DoParse) {
+    printf ("Cannot apply force(-f) to parse(-p)!\n");
     PrintUsage ();
     return -1;
+  }
+  if (ForcePatch && !DoParse && ProcessMbr) {
+    printf ("Cannot apply force(-f) to processing MBR (-g -m)!\n");
+    PrintUsage ();
+    return -1;
+  }
+
+  if (Verbose) {
+    SetDebugMsgMask (DEBUG_WARN | DEBUG_ERROR);
+  } else {
+    SetDebugMsgMask (0);
+  }
+
+  if (DoParse) {
+    if (ProcessMbr) {
+      ParseMbr (SrcImage);
+    } else {
+      ParseBootSector (SrcImage);
+    }
+  } else {
+    if (ProcessMbr) {
+      PatchMbr (DstImage, SrcImage);
+    } else {
+      PatchBootSector (DstImage, SrcImage, ForcePatch);
+    }
   }
 
   return 0;

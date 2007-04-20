@@ -40,8 +40,9 @@ Abstract:
 // Ppi Consumed For Notification
 //
 #include EFI_PPI_CONSUMER (MemoryDiscovered)
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 #include EFI_PPI_CONSUMER (LoadFile)
-
+#endif
 //
 // Private data
 //
@@ -69,7 +70,9 @@ typedef struct _MEMORY_STATUS_CODE_INSTANCE {
   EFI_FFS_FILE_HEADER                 *FfsHeader;
   EFI_PEI_PPI_DESCRIPTOR              PpiDescriptor;
   PEI_STATUS_CODE_MEMORY_PPI          StatusCodeMemoryPpi;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   EFI_PEI_NOTIFY_DESCRIPTOR           NotifyDescriptor;
+#endif
 } MEMORY_STATUS_CODE_INSTANCE;
 
 #define MEMORY_STATUS_CODE_FROM_DESCRIPTOR_THIS(a) \

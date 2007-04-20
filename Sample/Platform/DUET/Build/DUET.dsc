@@ -50,10 +50,21 @@ PLATFORM                  = $(PROJECT_NAME)
 !include "$(EDK_SOURCE)\Sample\Platform\Common$(PROCESSOR).dsc"
 
 [=============================================================================]
+[Build.Fv.EfiMain]
+#
+# Main FV containing uncompressed DXE components which will be compressed
+#
+Fv\$(FV_FILENAME).fv : Fv\$(FV_FILENAME).inf $($(FV_FILENAME)_FILES)
+  @cd Fv
+  $(MODIFYINF) $(FV_FILENAME).inf $(FV_FILENAME)EXP.inf [files]EFI_FILE_NAME+=.Org
+  $(GENFVIMAGE) -I $(FV_FILENAME)EXP.inf
+  @cd ..
+
+[=============================================================================]
 #
 # Commands to build a firmware volume
 #
-[Build.Fv.EfiMain,Build.Fv.EfiExtended]
+[Build.Fv.EfiExtended]
 #
 # ORIGIN: [Build.Fv.*] section of the platform DSC file
 #
@@ -70,7 +81,7 @@ Fv\$(FV_FILENAME).fv : Fv\$(FV_FILENAME).inf $($(FV_FILENAME)_FILES)
 [Fv.EfiMain.Options]
 EFI_BASE_ADDRESS        = 0x100000
 EFI_FILE_NAME           = $(FV_FILENAME).fv
-EFI_NUM_BLOCKS          = 0xC
+EFI_NUM_BLOCKS          = 0x20
 EFI_BLOCK_SIZE          = 0x8000
 
 [=============================================================================]
@@ -198,9 +209,20 @@ Sample\Universal\FirmwareVolume\GuidedSectionExtraction\Crc32SectionExtract\Dxe\
 #
 Sample\Universal\WatchdogTimer\Dxe\WatchDogTimer.inf
 Sample\Universal\Runtime\Dxe\Runtime.inf
-Sample\Universal\MonotonicCounter\RuntimeDxe\FS\MonotonicCounter.inf
+Sample\Universal\MonotonicCounter\RuntimeDxe\MonotonicCounter.inf
+
+#
+# User can choose 
+# 1). DUETFwh + FtwLite + Variable   or
+# 2). FSVariable
+# They have the same effect but case 1). demonstrates how to enable FVB driver in DUET
+# using file storage.
+#
+Sample\Platform\DUET\RuntimeDxe\FvbServices\DUETFwh.inf                   FV=NULL
+Sample\Universal\FirmwareVolume\FaultTolerantWriteLite\Dxe\FtwLite.inf    FV=NULL
+Sample\Universal\Variable\RuntimeDxe\Variable.inf                         FV=NULL
 Sample\Universal\Variable\RuntimeDxe\FS\FSVariable.inf
-#Sample\Universal\Variable\RuntimeDxe\Emu\EmuVariable.inf
+
 Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
 Sample\Platform\DUET\Dxe\PlatformBds\PlatformBds.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\StatusCode.inf

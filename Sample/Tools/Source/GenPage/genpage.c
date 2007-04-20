@@ -37,8 +37,14 @@ Abstract:
 void
 memset (void *, char, long);
 
+unsigned int
+xtoi (char  *);
+
 #define EFI_PAGE_BASE_OFFSET_IN_LDR 0x70000
 #define EFI_PAGE_BASE_ADDRESS       (EFI_PAGE_BASE_OFFSET_IN_LDR + 0x20000)
+
+unsigned int gPageTableBaseAddress  = EFI_PAGE_BASE_ADDRESS;
+unsigned int gPageTableOffsetInFile = EFI_PAGE_BASE_OFFSET_IN_LDR;
 
 #define EFI_MAX_ENTRY_NUM     512
 
@@ -55,7 +61,7 @@ memset (void *, char, long);
 #define EFI_SIZE_OF_PAGE      0x1000
 #define EFI_PAGE_SIZE_2M      0x200000
 
-#define CONVERT_BIN_PAGE_ADDRESS(a)  ((UINT8 *) a - PageTable + EFI_PAGE_BASE_ADDRESS)
+#define CONVERT_BIN_PAGE_ADDRESS(a)  ((UINT8 *) a - PageTable + gPageTableBaseAddress)
 
 
 void *
@@ -195,7 +201,7 @@ return:
   fseek (NoPageFile, 0, SEEK_END);
   FileSize = ftell (NoPageFile);
   fseek (NoPageFile, 0, SEEK_SET);
-  if (FileSize > EFI_PAGE_BASE_OFFSET_IN_LDR) {
+  if (FileSize > gPageTableOffsetInFile) {
     fprintf (stderr, "GenBinPage: file size too large - 0x%x\n", FileSize);
     fclose (PageFile);
     fclose (NoPageFile);
@@ -212,7 +218,7 @@ return:
   //
   // Write PageTable
   //
-  fseek (PageFile, EFI_PAGE_BASE_OFFSET_IN_LDR, SEEK_SET);
+  fseek (PageFile, gPageTableOffsetInFile, SEEK_SET);
   fwrite (BaseMemory, (EFI_PAGE_NUMBER * EFI_SIZE_OF_PAGE), 1, PageFile);
 
   //
@@ -233,18 +239,106 @@ main (
   void *BaseMemory;
   int  result;
 
-  if (argc != 3) {
-    printf ("Usage: GenBinPage.exe NoPageFile PageFile\n");
+  //
+  // Check parameter
+  //
+  if ((argc != 3) && (argc != 5)) {
+    printf ("Usage: GenPage.exe NoPageFile PageFile [<PageTableBaseAddrss> <PageTableOffsetInFile>]\n");
     return 1;
   }
 
+  //
+  // Get PageTable parameter, if have
+  //
+  if (argc == 5) {
+    gPageTableBaseAddress  = xtoi (argv[3]);
+    gPageTableOffsetInFile = xtoi (argv[4]);
+  }
+
+  //
+  // Create X64 page table
+  //
   BaseMemory = CreateIdentityMappingPageTables ();
 
+  //
+  // Add page table to binary file
+  //
   result = GenBinPage (BaseMemory, argv[1], argv[2]);
   if (result < 0) {
     return 1;
   }
 
   return 0;
+}
+
+unsigned int
+xtoi (
+  char  *str
+  )
+/*++
+
+Routine Description:
+
+  Convert hex string to uint
+
+Arguments:
+
+  Str  -  The string
+  
+Returns:
+
+--*/
+{
+  unsigned int u;
+  char         c;
+  unsigned int m;
+  
+  if (str == NULL) {
+    return 0;
+  }
+  
+  m = (unsigned int) -1 >> 4;
+  //
+  // skip preceeding white space
+  //
+  while (*str && *str == ' ') {
+    str += 1;
+  }
+  //
+  // skip preceeding zeros
+  //
+  while (*str && *str == '0') {
+    str += 1;
+  }
+  //
+  // skip preceeding white space
+  //
+  if (*str && (*str == 'x' || *str == 'X')) {
+    str += 1;
+  }
+  //
+  // convert hex digits
+  //
+  u = 0;
+  c = *(str++);
+  while (c) {
+    if (c >= 'a' && c <= 'f') {
+      c -= 'a' - 'A';
+    }
+
+    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
+      if (u > m) {
+        return (unsigned int) -1;
+      }
+
+      u = u << 4 | c - (c >= 'A' ? 'A' - 10 : '0');
+    } else {
+      break;
+    }
+
+    c = *(str++);
+  }
+
+  return u;
 }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -31,6 +31,7 @@ Abstract:
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
+#include "EbcDebuggerHook.h"
 
 #define VM_STACK_SIZE   (1024 * 32)
 
@@ -225,6 +226,10 @@ EbcInterpret (
   PushU64 (&VmContext, 0);
   PushU64 (&VmContext, 0xDEADBEEFDEADBEEF);
   VmContext.StackRetAddr = (UINT64) VmContext.R[0];
+
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookEbcInterpret (&VmContext);
+  )
   //
   // Begin executing the EBC code
   //
@@ -349,6 +354,9 @@ Returns:
   PushU64 (&VmContext, (UINT64) 0x1234567887654321);
   VmContext.StackRetAddr = (UINT64) VmContext.R[0];
 
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookExecuteEbcImageEntryPoint (&VmContext);
+  )
   //
   // Begin executing the EBC code
   //

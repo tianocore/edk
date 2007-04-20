@@ -23,10 +23,10 @@ Abstract:
 #include "Tiano.h"
 #include "FlashLayout.h"
 #include "EfiRuntimeLib.h"
-
 #include EFI_GUID_DEFINITION (SystemNvDataGuid)
-#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem2)
 
 #define FIRMWARE_BLOCK_SIZE 0x10000
 
@@ -49,6 +49,7 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
   //
   {
     EFI_WINNT_FIRMWARE_LENGTH,
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     {
       {
         0,
@@ -72,6 +73,30 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
         FVB_MEDIA_BLOCK_SIZE,
       }
     },
+#else
+    {
+      {
+        0,
+      },  // ZeroVector[16]
+      EFI_FIRMWARE_FILE_SYSTEM2_GUID,
+      FVB_MEDIA_BLOCK_SIZE * RECOVERY_BOIS_BLOCK_NUM,
+      EFI_FVH_SIGNATURE,
+      EFI_FVB_READ_ENABLED_CAP |
+        EFI_FVB_READ_STATUS |
+        EFI_FVB_WRITE_ENABLED_CAP |
+        EFI_FVB_WRITE_STATUS |
+        EFI_FVB_ERASE_POLARITY,
+      sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
+      0,    //CheckSum
+      0,    // ExtHeaderOffset
+      {0}, //Reserved[1]
+      2,    //Revision
+      {
+        RECOVERY_BOIS_BLOCK_NUM,
+        FVB_MEDIA_BLOCK_SIZE,
+      }
+    },
+#endif
     {
       0,
       0
@@ -82,6 +107,7 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
   //
   {
     EFI_WINNT_RUNTIME_UPDATABLE_LENGTH + EFI_WINNT_FTW_SPARE_BLOCK_LENGTH,
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     {
       {
         0,
@@ -105,6 +131,30 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
         FVB_MEDIA_BLOCK_SIZE,
       }
     },
+#else
+    {
+      {
+        0,
+      },  // ZeroVector[16]
+      EFI_SYSTEM_NV_DATA_HOB_GUID,
+      FVB_MEDIA_BLOCK_SIZE * SYSTEM_NV_BLOCK_NUM,
+      EFI_FVH_SIGNATURE,
+      EFI_FVB_READ_ENABLED_CAP |
+        EFI_FVB_READ_STATUS |
+        EFI_FVB_WRITE_ENABLED_CAP |
+        EFI_FVB_WRITE_STATUS |
+        EFI_FVB_ERASE_POLARITY,
+      sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
+      0,    //CheckSum
+      0,    // ExtHeaderOffset
+      {0}, //Reserved[1]
+      2,    //Revision
+      {
+        SYSTEM_NV_BLOCK_NUM,
+        FVB_MEDIA_BLOCK_SIZE,
+      }
+    },
+#endif
     {
       0,
       0

@@ -26,28 +26,24 @@ BLOCK_SIZE                  EQU     0200h
 BLOCK_MASK                  EQU     01ffh
 BLOCK_SHIFT                 EQU     9
 
-;******************************************************************************
-; Boot Sector and BPB (BIOS Parameter Block) structure
-;******************************************************************************
-
         org 0h
 Ia32Jump:
   jmp   BootSectorEntryPoint  ; JMP inst    - 3 bytes
   nop
 
 OemId               db  "INTEL   "    ; OemId                           - 8 bytes
-SectorSize          dw  0200h         ; Sector Size                     - 2 bytes
-SectorsPerCluster   db  04h           ; Sector Per Cluster              - 1 byte
-ReservedSectors     dw  0022h         ; Reserved Sectors                - 2 bytes
-NoFats              db  02h           ; Number of FATs                  - 1 byte
-RootEntries         dw  0000h         ; Root Entries                    - 2 bytes
-Sectors             dw  0000h         ; Number of Sectors               - 2 bytes
-Media               db  0f8h          ; Media                           - 1 byte
-SectorsPerFat16     dw  0000h         ; Sectors Per FAT for FAT12/FAT16 - 2 byte
-SectorsPerTrack     dw  003fh         ; Sectors Per Track               - 2 bytes
-Heads               dw  00ffh         ; Heads                           - 2 bytes
-HiddenSectors       dd  00000000h     ; Hidden Sectors                  - 4 bytes
-LargeSectors        dd  0007bc00h     ; Large Sectors                   - 4 bytes
+SectorSize          dw  0             ; Sector Size                     - 2 bytes
+SectorsPerCluster   db  0             ; Sector Per Cluster              - 1 byte
+ReservedSectors     dw  0             ; Reserved Sectors                - 2 bytes
+NoFats              db  0             ; Number of FATs                  - 1 byte
+RootEntries         dw  0             ; Root Entries                    - 2 bytes
+Sectors             dw  0             ; Number of Sectors               - 2 bytes
+Media               db  0             ; Media                           - 1 byte
+SectorsPerFat16     dw  0             ; Sectors Per FAT for FAT12/FAT16 - 2 byte
+SectorsPerTrack     dw  0             ; Sectors Per Track               - 2 bytes
+Heads               dw  0             ; Heads                           - 2 bytes
+HiddenSectors       dd  0             ; Hidden Sectors                  - 4 bytes
+LargeSectors        dd  0             ; Large Sectors                   - 4 bytes
 
 ;******************************************************************************
 ;
@@ -56,35 +52,100 @@ LargeSectors        dd  0007bc00h     ; Large Sectors                   - 4 byte
 ;
 ;******************************************************************************
 
-SectorsPerFat32     dd  000003dbh     ; Sectors Per FAT for FAT32       - 4 bytes
-ExtFlags            dw  0000h         ; Mirror Flag                     - 2 bytes
-FSVersion           dw  0000h         ; File System Version             - 2 bytes
-RootCluster         dd  00000002h     ; 1st Cluster Number of Root Dir  - 4 bytes
-FSInfo              dw  0001h         ; Sector Number of FSINFO         - 2 bytes
-BkBootSector        dw  0006h         ; Sector Number of Bk BootSector  - 2 bytes
+SectorsPerFat32     dd  0             ; Sectors Per FAT for FAT32       - 4 bytes
+ExtFlags            dw  0             ; Mirror Flag                     - 2 bytes
+FSVersion           dw  0             ; File System Version             - 2 bytes
+RootCluster         dd  0             ; 1st Cluster Number of Root Dir  - 4 bytes
+FSInfo              dw  0             ; Sector Number of FSINFO         - 2 bytes
+BkBootSector        dw  0             ; Sector Number of Bk BootSector  - 2 bytes
 Reserved            db  12 dup(0)     ; Reserved Field                  - 12 bytes
-PhysicalDrive       db  00h           ; Physical Drive Number           - 1 byte
-Reserved1           db  00h           ; Reserved Field                  - 1 byte
-Signature           db  29h           ; Extended Boot Signature         - 1 byte
+PhysicalDrive       db  0             ; Physical Drive Number           - 1 byte
+Reserved1           db  0             ; Reserved Field                  - 1 byte
+Signature           db  0             ; Extended Boot Signature         - 1 byte
 VolId               db  "    "        ; Volume Serial Number            - 4 bytes
-FatLabel            db  "EFI FAT32  " ; Volume Label                    - 11 bytes
-FileSystemType      db  "FAT32   "    ; File System Type                - 8 bytes
+FatLabel            db  "           " ; Volume Label                    - 11 bytes
+FileSystemType      db  "        "    ; File System Type                - 8 bytes
 
 BootSectorEntryPoint:
         ASSUME  ds:@code
         ASSUME  ss:@code
+      ; ds = 1000, es = 2000 + x (size of first cluster >> 4)
+      ; cx = Start Cluster of EfiLdr
+      ; dx = Start Cluster of Efivar.bin
 
+; Re use the BPB data stored in Boot Sector
+        mov     bp,07c00h
+
+; Read Efildr
+;       cx    = Start Cluster of Efildr -> BS.com has filled already
+;       ES:DI = 2000:0, first cluster will be read again
+        xor     di,di                               ; di = 0
+        mov     ax,02000h
+        mov     es,ax
+        call    ReadFile
+        mov     ax,cs
+        mov     word ptr cs:[JumpSegment],ax
+
+; Read Efivar.bin
+;       dx    = Start Cluster of Efivar.bin -> BS.com has filled already
+        mov     ax,01900h
+        mov     es,ax
+        xor     di,di        
+        push    es
+        mov     cx,dx                               ; Restore Start Cluster of Efivar.bin
+        test    cx,cx
+        jne     LoadVarStoreFv
+; Set the 5th byte start @ 0:19000 to 1 indicating we should init var store header in DxeIpl
+        mov     al,1
+        mov     byte ptr es:[di+4],al
+        jmp     SaveVolumeId
+
+LoadVarStoreFv:
+        mov     al,0
+        mov     byte ptr es:[di+4],al
+;       ES:DI = 1500:0
+        push    es
+        mov     ax,01500h
+        mov     es,ax
+        call    ReadFile
+SaveVolumeId:
+        pop     es
+        mov     ax,word ptr [bp+VolId]
+        mov     word ptr es:[di],ax                  ; Save Volume Id to 0:19000. we will find the correct volume according to this VolumeId
+        mov     ax,word ptr [bp+VolId+2]
+        mov     word ptr es:[di+2],ax
+
+JumpFarInstruction:
+        db      0eah
+JumpOffset:
+        dw      0200h
+JumpSegment:
+        dw      2000h
+
+
+
+; ****************************************************************************
+; ReadFile
+;
+; Arguments:
+;   CX    = Start Cluster of File
+;   ES:DI = Buffer to store file content read from disk
+;
+; Return:
+;   (ES << 4 + DI) = end of file content Buffer
+;
+; ****************************************************************************
+ReadFile:
 ; si      = NumberOfClusters
 ; cx      = ClusterNumber
 ; dx      = CachedFatSectorNumber
 ; ds:0000 = CacheFatSectorBuffer
 ; es:di   = Buffer to load file
 ; bx      = NextClusterNumber
-
-        mov     si,0                                ; NumberOfClusters = 0 - Special case for first cluster
-        xor     di,di                               ; di = 0
+        pusha
+        mov     si,1                                ; NumberOfClusters = 1
+        push    cx                                  ; Push Start Cluster onto stack
         mov     dx,0fffh                            ; CachedFatSectorNumber = 0xfff
-        push    cx                                  ; Push StartCluster onto stack
 FatChainLoop:
         mov     ax,cx                               ; ax = ClusterNumber    
         and     ax,0fff8h                           ; ax = ax & 0xfff8
@@ -110,16 +171,6 @@ SkipFatRead:
         mov     bx,word ptr [si]                    ; bx = NextClusterNumber
         mov     ax,cx                               ; ax = ClusterNumber
         pop     si                                  ; Restore si
-
-        cmp     si,0
-        jne     NotFirstCluster
-        mov     cx,bx
-        pop     bx
-        push    cx
-        inc     si
-        jmp     FatChainLoop
-NotFirstCluster:
-
         dec     bx                                  ; bx = NextClusterNumber - 1
         cmp     bx,cx                               ; See if (NextClusterNumber-1)==ClusterNumber
         jne     ReadClusters
@@ -146,14 +197,10 @@ ReadClusters:
         mov     si,1                                ; NumberOfClusters = 1
         jmp     FatChainLoop
 FoundLastCluster:
-        mov     ax,cs
-        mov     word ptr cs:[JumpSegment],ax
-JumpFarInstruction:
-        db      0eah
-JumpOffset:
-        dw      0200h
-JumpSegment:
-        dw      2000h
+        pop     cx
+        popa
+        ret
+
 
 ; ****************************************************************************
 ; ReadBlocks - Reads a set of blocks from a block device
@@ -181,6 +228,7 @@ ReadCylinderLoop:
         div     ebx                                 ; ax = StartLBA / MaxSector
         inc     dx                                  ; dx = (StartLBA % MaxSector) + 1
 
+        mov     bx,word ptr [bp]                    ; bx = MaxSector
         sub     bx,dx                               ; bx = MaxSector - Sector
         inc     bx                                  ; bx = MaxSector - Sector + 1
         cmp     cx,bx                               ; Compare (Blocks) to (MaxSector - Sector + 1)

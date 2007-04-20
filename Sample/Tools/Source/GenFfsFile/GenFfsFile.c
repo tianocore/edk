@@ -1751,7 +1751,9 @@ Returns:
         Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected valid FFS_FILETYPE", NULL);
         goto Done;
       }
-    } else if (SFPIsToken ("FFS_ATTRIB_HEADER_EXTENSION")) {
+    }
+#if (PI_SPECIFICATION_VERSION < 0x00010000)    
+    else if (SFPIsToken ("FFS_ATTRIB_HEADER_EXTENSION")) {
       //
       // ***********************************************************************
       //
@@ -1792,7 +1794,38 @@ Returns:
         Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'FALSE'", NULL);
         goto Done;
       }
-    } else if (SFPIsToken ("FFS_ATTRIB_TAIL_PRESENT")) {
+    }
+#else
+    else if (SFPIsToken ("FFS_ATTRIB_FIXED")) {
+      //
+      // ***********************************************************************
+      //
+      // Found: FFS_ATTRIB_FIXED = TRUE | FALSE
+      //
+      if (FfsAttribDefined & FFS_ATTRIB_FIXED) {
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "FFS_ATTRIB_FIXED previously defined", NULL);
+        goto Done;
+      }
+
+      FfsAttribDefined |= FFS_ATTRIB_FIXED;
+      if (!SFPIsToken ("=")) {
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected '='", NULL);
+        goto Done;
+      }
+
+      if (SFPIsToken ("TRUE")) {
+        FfsAttrib |= FFS_ATTRIB_FIXED;
+      } else if (SFPIsToken ("FALSE")) {
+        //
+        // Default is FALSE
+        //
+      } else {
+        Error (mGlobals.PrimaryPackagePath, SFPGetLineNumber (), 0, "expected 'TRUE' or 'FALSE'", NULL);
+        goto Done;
+      }
+    } 
+#endif
+    else if (SFPIsToken ("FFS_ATTRIB_TAIL_PRESENT")) {
       //
       // ***********************************************************************
       //
@@ -2147,7 +2180,8 @@ here:
     //
     FileSize += ProcessScript (FileBuffer, OverridePackage, mGlobals.BuildDirectory, ForceUncompress);
     if (FileSize == -1) {
-      return -1;
+      Error (NULL, 0, 0, "failed to process script", NULL);
+      goto Done;
     }
 
     if (StringToType (FileType) != EFI_FV_FILETYPE_RAW) {
@@ -2290,6 +2324,7 @@ here:
     //
     FileSize += ProcessScript (FileBuffer, PrimaryPackage, mGlobals.BuildDirectory, ForceUncompress);
     if (FileSize == -1) {
+      Error (NULL, 0, 0, "failed to process script", NULL);
       goto Done;
     }
 

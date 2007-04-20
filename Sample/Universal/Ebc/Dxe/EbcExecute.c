@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,7 +27,7 @@ Abstract:
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
-
+#include "EbcDebuggerHook.h"
 
 //
 // Define some useful data size constants to allow switch statements based on
@@ -754,6 +754,10 @@ Returns:
       Status = EFI_UNSUPPORTED;
       goto Done;
     }
+
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookExecuteStart (VmPtr);
+    )
     //
     // The EBC VM is a strongly ordered processor, so perform a fence operation before
     // and after each instruction is executed.
@@ -764,6 +768,9 @@ Returns:
 
     MEMORY_FENCE ();
 
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookExecuteEnd (VmPtr);
+    )
     //
     // If the step flag is set, signal an exception and continue. We don't
     // clear it here. Assuming the debugger is responsible for clearing it.
@@ -1135,6 +1142,7 @@ Returns:
   //
   case 3:
     VmPtr->StopFlags |= STOPFLAG_BREAKPOINT;
+    VmPtr->Ip += 2;
     //
     // See if someone has registered a handler
     //
@@ -1143,6 +1151,7 @@ Returns:
       EXCEPTION_FLAG_NONE,
       VmPtr
       );
+    return EFI_SUCCESS;
     break;
 
   //
@@ -1256,7 +1265,13 @@ Encoding:
   ConditionFlag = (UINT8) VMFLAG_ISSET (VmPtr, VMFLAGS_CC);
   if (Operand & CONDITION_M_CONDITIONAL) {
     if (CompareSet != ConditionFlag) {
+      EFI_EBC_DEBUGGER_CODE (
+        EbcDebuggerHookJMPStart (VmPtr);
+      )
       VmPtr->Ip += Size;
+      EFI_EBC_DEBUGGER_CODE (
+        EbcDebuggerHookJMPEnd (VmPtr);
+      )
       return EFI_SUCCESS;
     }
   }
@@ -1292,6 +1307,9 @@ Encoding:
       return EFI_UNSUPPORTED;
     }
 
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookJMPStart (VmPtr);
+    )
     //
     // Take jump -- relative or absolute
     //
@@ -1300,6 +1318,9 @@ Encoding:
     } else {
       VmPtr->Ip = (VMIP) (UINTN) Data64;
     }
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookJMPEnd (VmPtr);
+    )
 
     return EFI_SUCCESS;
   }
@@ -1345,11 +1366,17 @@ Encoding:
       return EFI_UNSUPPORTED;
     }
 
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookJMPStart (VmPtr);
+    )
     if (Operand & JMP_M_RELATIVE) {
       VmPtr->Ip += (UINTN) Addr + Size;
     } else {
       VmPtr->Ip = (VMIP) Addr;
     }
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookJMPEnd (VmPtr);
+    )
   } else {
     //
     // Form: JMP32 Rx {Immed32}
@@ -1365,11 +1392,17 @@ Encoding:
       return EFI_UNSUPPORTED;
     }
 
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookJMPStart (VmPtr);
+    )
     if (Operand & JMP_M_RELATIVE) {
       VmPtr->Ip += (UINTN) Addr + Size;
     } else {
       VmPtr->Ip = (VMIP) Addr;
     }
+    EFI_EBC_DEBUGGER_CODE (
+      EbcDebuggerHookJMPEnd (VmPtr);
+    )
   }
 
   return EFI_SUCCESS;
@@ -1413,7 +1446,13 @@ Instruction syntax:
   //
   if (Opcode & CONDITION_M_CONDITIONAL) {
     if (CompareSet != ConditionFlag) {
+      EFI_EBC_DEBUGGER_CODE (
+        EbcDebuggerHookJMP8Start (VmPtr);
+      )
       VmPtr->Ip += 2;
+      EFI_EBC_DEBUGGER_CODE (
+        EbcDebuggerHookJMP8End (VmPtr);
+      )
       return EFI_SUCCESS;
     }
   }
@@ -1422,10 +1461,16 @@ Instruction syntax:
   // following instruction, and divided by 2.
   //
   Offset = VmReadImmed8 (VmPtr, 1);
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookJMP8Start (VmPtr);
+  )
   //
   // Want to check for offset == -2 and then raise an exception?
   //
   VmPtr->Ip += (Offset * 2) + 2;
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookJMP8End (VmPtr);
+  )
   return EFI_SUCCESS;
 }
 
@@ -2301,6 +2346,15 @@ Returns:
   //
   Opcode    = GETOPCODE (VmPtr);
   Operands  = GETOPERANDS (VmPtr);
+
+  EFI_EBC_DEBUGGER_CODE (
+    if (Operands & OPERAND_M_NATIVE_CALL) {
+      EbcDebuggerHookCALLEXStart (VmPtr);
+    } else {
+      EbcDebuggerHookCALLStart (VmPtr);
+    }
+  )
+
   //
   // Assign these as well to avoid compiler warnings
   //
@@ -2402,6 +2456,14 @@ Returns:
     }
   }
 
+  EFI_EBC_DEBUGGER_CODE (
+    if (Operands & OPERAND_M_NATIVE_CALL) {
+      EbcDebuggerHookCALLEXEnd (VmPtr);
+    } else {
+      EbcDebuggerHookCALLEnd (VmPtr);
+    }
+  )
+
   return EFI_SUCCESS;
 }
 
@@ -2426,6 +2488,9 @@ Instruction syntax:
 
 --*/
 {
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookRETStart (VmPtr);
+  )
   //
   // If we're at the top of the stack, then simply set the done
   // flag and return
@@ -2453,6 +2518,9 @@ Instruction syntax:
     VmPtr->R[0] += 8;
   }
 
+  EFI_EBC_DEBUGGER_CODE (
+    EbcDebuggerHookRETEnd (VmPtr);
+  )
   return EFI_SUCCESS;
 }
 

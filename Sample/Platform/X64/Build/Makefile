@@ -74,6 +74,7 @@ makefiles :
     -d PROJECT_NAME=$(PROJECT_NAME)         \
     -d PROJECT_FAMILY=$(PROJECT_FAMILY)     \
     -d UEFI_PREFIX=$(UEFI_PREFIX)           \
+    -d PI_PREFIX=$(PI_PREFIX)               \
     -d COMPRESS_METHOD=$(COMPRESS_METHOD)   \
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)      \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt \

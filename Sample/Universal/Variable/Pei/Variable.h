@@ -27,7 +27,7 @@ Abstract:
 
 #include EFI_PPI_DEFINITION (FlashMap)
 #include EFI_PPI_PRODUCER (Variable)
-
+#include EFI_PPI_PRODUCER (Variable2)
 //
 // Define GET_PAD_SIZE to optimize compiler
 //
@@ -92,6 +92,8 @@ Returns:
 --*/
 ;
 
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+
 EFI_STATUS
 EFIAPI
 PeiGetVariable (
@@ -151,5 +153,85 @@ Returns:
 
 --*/
 ;
+#else
 
+EFI_STATUS
+EFIAPI
+PeiGetVariable (
+  IN CONST EFI_PEI_READ_ONLY_VARIABLE2_PPI    *This,
+  IN CONST CHAR16                             *VariableName,
+  IN CONST EFI_GUID                           *VariableGuid,
+  OUT UINT32                                  *Attributes,
+  IN OUT UINTN                                *DataSize,
+  OUT VOID                                    *Data
+  )
+/*++
+
+Routine Description:
+
+  Provide the read variable functionality of the variable services.
+
+Arguments:
+
+  This             - Pointer to EFI_PEI_READ_ONLY_VARIABLE2_PPI.
+
+  VariableName     - The variable name
+
+  VendorGuid       - The vendor's GUID
+
+  Attributes       - Pointer to the attribute
+
+  DataSize         - Size of data
+
+  Data             - Pointer to data
+
+Returns:
+
+  EFI_SUCCESS           - The interface could be successfully installed
+
+  EFI_NOT_FOUND         - The variable could not be discovered
+
+  EFI_BUFFER_TOO_SMALL  - The caller buffer is not large enough
+
+--*/
+;
+
+EFI_STATUS
+EFIAPI
+PeiGetNextVariableName (
+  IN CONST EFI_PEI_READ_ONLY_VARIABLE2_PPI    *This,
+  IN OUT UINTN                                *VariableNameSize,
+  IN OUT CHAR16                               *VariableName,
+  IN OUT EFI_GUID                             *VariableGuid
+  )
+/*++
+
+Routine Description:
+
+  Provide the get next variable functionality of the variable services.
+
+Arguments:
+
+  This             - Pointer to EFI_PEI_READ_ONLY_VARIABLE2_PPI.
+  VariabvleNameSize  - The variable name's size.
+  VariableName       - A pointer to the variable's name.
+  VendorGuid         - A pointer to the EFI_GUID structure.
+
+  VariableNameSize - Size of the variable name
+
+  VariableName     - The variable name
+
+  VendorGuid       - The vendor's GUID
+
+Returns:
+
+  EFI_SUCCESS - The interface could be successfully installed
+
+  EFI_NOT_FOUND - The variable could not be discovered
+
+--*/
+;
+
+
+#endif
 #endif // _PEI_VARIABLE_H

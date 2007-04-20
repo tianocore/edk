@@ -42,7 +42,7 @@ COMPONENT_TYPE  = LIBRARY
   SecMain.h
 
 [sources.ia32]
-  Ia32\SecSwitchStacks.asm
+  Ia32\$(PI_PREFIX)SecSwitchStacks.asm
 
 [includes.common]
   $(EDK_SOURCE)\Foundation\Framework

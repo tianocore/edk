@@ -937,7 +937,7 @@ Returns:
 EFI_STATUS
 AtapiTestUnitReady (
   IN  IDE_BLK_IO_DEV  *IdeDev,
-  OUT UINTN           *SenseCount
+  OUT SENSE_RESULT    *SResult
   )
 /*++
 
@@ -982,7 +982,7 @@ Returns:
 EFI_STATUS
 AtapiReadCapacity (
   IN  IDE_BLK_IO_DEV  *IdeDev,
-  OUT UINTN           *SenseCount
+  OUT SENSE_RESULT    *SResult
   )
 /*++
 

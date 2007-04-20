@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -47,9 +47,17 @@ Abstract:
 //
 #define FFS_ATTRIB_TAIL_PRESENT     0x01
 #define FFS_ATTRIB_RECOVERY         0x02
-#define FFS_ATTRIB_HEADER_EXTENSION 0x04
 #define FFS_ATTRIB_DATA_ALIGNMENT   0x38
 #define FFS_ATTRIB_CHECKSUM         0x40
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+#define FFS_ATTRIB_HEADER_EXTENSION 0x04
+#else
+//
+// PI 1.0 definition.
+// 
+#define FFS_ATTRIB_FIXED           0x04
+#endif
+
 
 //
 // FFS_FIXED_CHECKSUM is the default checksum value used when the
@@ -58,6 +66,7 @@ Abstract:
 // implementation convenience
 //
 #define FFS_FIXED_CHECKSUM  0x5A
+
 
 //
 // File state definitions

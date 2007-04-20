@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation
+Copyright (c) 2006 - 2007, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -21,13 +21,16 @@ Abstract:
 
 #include "FSVariable.h"
 #include "EfiRuntimeLib.h"
+#include "EfiFlashMap.h"
+#include "EfiHobLib.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (Variable)
 #include EFI_ARCH_PROTOCOL_DEFINITION (VariableWrite)
-#include "PatchVariable.h"
+#include EFI_GUID_DEFINITION (Hob)
+#include EFI_GUID_DEFINITION (FlashMapHob)
 
-VARIABLE_STORE_HEADER mValidStoreHeaderTemplate = {
+VARIABLE_STORE_HEADER mStoreHeaderTemplate = {
   VARIABLE_STORE_SIGNATURE,
-  VARIABLE_STORE_SIZE,
+  VOLATILE_VARIABLE_STORE_SIZE,
   VARIABLE_STORE_FORMATTED,
   VARIABLE_STORE_HEALTHY,
   0,
@@ -38,7 +41,6 @@ VARIABLE_STORE_HEADER mValidStoreHeaderTemplate = {
 // Don't use module globals after the SetVirtualAddress map is signaled
 //
 VARIABLE_GLOBAL  *mGlobal;
-VOID             *mSFSRegistration;
 
 STATIC
 VOID
@@ -109,7 +111,10 @@ Returns:
 
 --*/
 {
-  if (EfiCompareMem (VarStoreHeader, &mValidStoreHeaderTemplate, sizeof (*VarStoreHeader)) == 0) {
+  if ((VarStoreHeader->Signature == mStoreHeaderTemplate.Signature) &&
+      (VarStoreHeader->Format == mStoreHeaderTemplate.Format) &&
+      (VarStoreHeader->State == mStoreHeaderTemplate.State)
+     ) {
     return EfiValid;
   } else if (VarStoreHeader->Signature == VAR_DEFAULT_VALUE_32 &&
            VarStoreHeader->Size == VAR_DEFAULT_VALUE_32 &&
@@ -327,7 +332,7 @@ Returns:
     NextVariable = GetNextVariablePtr (Variable);
     //
     // State VAR_ADDED or VAR_IN_DELETED_TRANSITION are to kept,
-    // The CurrentVariable, is also saved, as SetVariable may fail duo to lack of space
+    // The CurrentVariable, is also saved, as SetVariable may fail due to lack of space
     //
     if (Variable->State == VAR_ADDED) {
       VariableSize = (UINTN) NextVariable - (UINTN) Variable;
@@ -1065,10 +1070,17 @@ Returns:
 --*/
 {
   EFI_STATUS                      Status;
-  UINTN                           Index;
-  EFI_EVENT                       Event;
   EFI_HANDLE                      NewHandle;
   VS_DEV                          *Dev;
+  VOID                            *HobList;
+  VARIABLE_HEADER                 *NextVariable;
+  VARIABLE_STORE_HEADER           *VariableStoreHeader;
+  EFI_FLASH_MAP_FS_ENTRY_DATA     *FlashMapEntryData;
+  EFI_FLASH_SUBAREA_ENTRY         VariableStoreEntry;
+  VOID                            *Buffer;
+  UINT64                          BaseAddress;
+  UINT64                          Length;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR GcdDescriptor;
 
   EfiInitializeRuntimeDriverLib (ImageHandle, SystemTable, OnVirtualAddressChange);
   Status = gBS->AllocatePool (
@@ -1080,16 +1092,69 @@ Returns:
     goto Shutdown;
   }
 
+  Status = EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
+
+  if (EFI_ERROR (Status)) {
+    goto Shutdown;
+  }
+
+  
+  for (FlashMapEntryData = NULL; ;) {
+    Status = GetNextGuidHob (&HobList, &gEfiFlashMapHobGuid, &Buffer, NULL);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+    FlashMapEntryData = (EFI_FLASH_MAP_FS_ENTRY_DATA *) Buffer;
+
+    //
+    // Get the variable store area
+    //
+    if (FlashMapEntryData->AreaType == EFI_FLASH_AREA_EFI_VARIABLES) {
+      break;
+    }
+  }
+
+  if (EFI_ERROR (Status) || FlashMapEntryData == NULL) {
+    Status = EFI_NOT_FOUND;
+    goto Shutdown;
+  }
+
+  VariableStoreEntry = FlashMapEntryData->Entries[0];
+
   //
-  // NV Storage
+  // Mark the variable storage region of the FLASH as RUNTIME
   //
-  Status = MemStorageConstructor (&mGlobal->VariableStore[NonVolatile], (UINT32) VAR_NV_MASK, VARIABLE_STORE_SIZE);
+  BaseAddress = VariableStoreEntry.Base & (~EFI_PAGE_MASK);
+  Length      = VariableStoreEntry.Length + (VariableStoreEntry.Base - BaseAddress);
+  Length      = (Length + EFI_PAGE_SIZE - 1) & (~EFI_PAGE_MASK);
+  Status      = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_UNSUPPORTED;
+    goto Shutdown;
+  }
+  Status = gDS->SetMemorySpaceAttributes (
+                  BaseAddress,
+                  Length,
+                  GcdDescriptor.Attributes | EFI_MEMORY_RUNTIME
+                  );
+  if (EFI_ERROR (Status)) {
+    Status = EFI_UNSUPPORTED;
+    goto Shutdown;
+  }
+  
+  Status = FileStorageConstructor (
+             &mGlobal->VariableStore[NonVolatile], 
+             VariableStoreEntry.Base,
+             (UINT32) VariableStoreEntry.Length,
+             FlashMapEntryData->VolumeId,
+             FlashMapEntryData->FilePath
+             );
   ASSERT_EFI_ERROR (Status);
 
   //
   // Volatile Storage
   //
-  Status = MemStorageConstructor (&mGlobal->VariableStore[Volatile], (UINT32) VAR_V_MASK, VARIABLE_STORE_SIZE);
+  Status = MemStorageConstructor (&mGlobal->VariableStore[Volatile], VOLATILE_VARIABLE_STORE_SIZE);
   ASSERT_EFI_ERROR (Status);
 
   //
@@ -1103,42 +1168,58 @@ Returns:
   ASSERT_EFI_ERROR (Status);
 
   //
-  // V & NV both stored in memory, since Simple File System Driver has not been loaded
+  // 1. NV Storage
   //
-  for (Index = 0; Index < MaxType; Index++) {
-
-    Dev = DEV_FROM_THIS (mGlobal->VariableStore[Index]);
-    mGlobal->VariableBase[Index] = VAR_DATA_PTR (Dev);
-
-    // init store_header & body in memory.
-    // for memory storage, no error check is needed
-    mGlobal->VariableStore[Index]->Erase (mGlobal->VariableStore[Index]);
-    mGlobal->VariableStore[Index]->Write (
-                                     mGlobal->VariableStore[Index],
-                                     0,
-                                     sizeof (VARIABLE_STORE_HEADER),
-                                     &mValidStoreHeaderTemplate
-                                     );
-    mGlobal->LastVariableOffset[Index] = sizeof (VARIABLE_STORE_HEADER);
+  Dev = DEV_FROM_THIS (mGlobal->VariableStore[NonVolatile]);
+  VariableStoreHeader = (VARIABLE_STORE_HEADER *) VAR_DATA_PTR (Dev);
+  if (GetVariableStoreStatus (VariableStoreHeader) == EfiValid) {
+    if (~VariableStoreHeader->Size == 0) {
+      VariableStoreHeader->Size = (UINT32) VariableStoreEntry.Length;
+    }
   }
+  //
+  // Calculate LastVariableOffset
+  //
+  NextVariable = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
+  while (IsValidVariableHeader (NextVariable)) {
+    NextVariable = GetNextVariablePtr (NextVariable);
+  }
+  mGlobal->LastVariableOffset[NonVolatile] = (UINTN) NextVariable - (UINTN) VariableStoreHeader;
+  mGlobal->VariableBase[NonVolatile] = VariableStoreHeader;
 
-  // add notify on SFS's installation.
+  //
+  // Reclaim if remaining space is too small
+  //
+  if ((VariableStoreHeader->Size - mGlobal->LastVariableOffset[NonVolatile]) < VARIABLE_RECLAIM_THRESHOLD) {
+    Status = Reclaim (NonVolatile, NULL);
+    if (EFI_ERROR (Status)) {
+      //
+      // Reclaim error
+      // we cannot restore to original state
+      //
+      DEBUG ((EFI_D_ERROR, "FSVariable: Recalim error (fetal error) - %r\n", Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+  
+  //
+  // 2. Volatile Storage
+  //
+  Dev = DEV_FROM_THIS (mGlobal->VariableStore[Volatile]);
+  VariableStoreHeader = (VARIABLE_STORE_HEADER *) VAR_DATA_PTR (Dev);
+  mGlobal->VariableBase[Volatile] = VAR_DATA_PTR (Dev);  
+  mGlobal->LastVariableOffset[Volatile] = sizeof (VARIABLE_STORE_HEADER);
+  //
+  // init store_header & body in memory.
+  //
+  mGlobal->VariableStore[Volatile]->Erase (mGlobal->VariableStore[Volatile]);
+  mGlobal->VariableStore[Volatile]->Write (
+                                   mGlobal->VariableStore[Volatile],
+                                   0,
+                                   sizeof (VARIABLE_STORE_HEADER),
+                                   &mStoreHeaderTemplate
+                                   );
 
-  Status = gBS->CreateEvent (
-                  EFI_EVENT_NOTIFY_SIGNAL,
-                  EFI_TPL_CALLBACK,
-                  OnSimpleFileSystemInstall,
-                  NULL,
-                  &Event
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  Status = gBS->RegisterProtocolNotify (
-                  &gEfiSimpleFileSystemProtocolGuid,
-                  Event,
-                  &mSFSRegistration
-                  );
-  ASSERT_EFI_ERROR (Status);
 
   SystemTable->RuntimeServices->GetVariable         = GetVariable;
   SystemTable->RuntimeServices->GetNextVariableName = GetNextVariableName;
@@ -1170,147 +1251,6 @@ Shutdown:
 }
 
 
-// this routine is still running in BS period, no limitation
-// call FileInitStorage(), which load variable content file to memory
-// read the store_header, init store_header if it has not been inited (read sth. about format/heathy)
-// reclaim space using scratch memory
-
-STATIC
-VOID
-EFIAPI
-OnSimpleFileSystemInstall (
-  IN EFI_EVENT        Event,
-  IN VOID             *Context
-  )
-{
-  STATIC BOOLEAN         SFSLoaded            = FALSE;
-
-  EFI_STATUS             Status;
-  VARIABLE_STORAGE       *VariableStore;
-  VS_DEV                 *Dev;
-  VARIABLE_STORE_STATUS  StoreStatus;
-  VARIABLE_STORE_HEADER  *VariableStoreHeader;
-  VARIABLE_HEADER        *NextVariable;
-  UINTN                  HandleSize;
-  EFI_HANDLE             Handle;
-
-  if (SFSLoaded) {
-    return;
-  }
-  VariableStore = NULL;
-
-  while (TRUE) {
-    HandleSize = sizeof (EFI_HANDLE);
-    Status = gBS->LocateHandle (
-                    ByRegisterNotify,
-                    NULL,
-                    mSFSRegistration,
-                    &HandleSize,
-                    &Handle
-                    );
-    if (Status == EFI_NOT_FOUND) {
-      break;
-    }
-    ASSERT_EFI_ERROR (Status);
-
-    Status = FileStorageConstructor (&VariableStore, (UINT32) VAR_NV_MASK, (UINT32) VARIABLE_STORE_SIZE, Handle);
-    if (!EFI_ERROR (Status)) {
-      break;
-    }
-  }
-  if (VariableStore == NULL) {
-    DEBUG ((EFI_D_ERROR, "FSVariable: Storage doesn't meet requirement!\n"));
-    return;
-  }
-
-
-  Dev = DEV_FROM_THIS (VariableStore);
-  VariableStoreHeader = (VARIABLE_STORE_HEADER *) VAR_DATA_PTR (Dev);
-
-  //
-  // Check variable store header
-  //
-  StoreStatus         = GetVariableStoreStatus (VariableStoreHeader);
-  if (StoreStatus == EfiInvalid) {
-    DEBUG ((EFI_D_ERROR, "FSVariable: storage is broken, re-init it!\n"));
-  }
-  if (StoreStatus != EfiValid) {
-    //
-    // Even store header is raw type, we cannot assume store body is raw type
-    //   Erase ensure store body is raw type, too.
-    //
-    Status = VariableStore->Erase (
-                              VariableStore
-                              );
-    if (!EFI_ERROR (Status)) {
-      //
-      // Init store header
-      //
-      Status = VariableStore->Write (
-                                VariableStore,
-                                0,
-                                sizeof (mValidStoreHeaderTemplate),
-                                &mValidStoreHeaderTemplate
-                                );
-    }
-    if (EFI_ERROR (Status)) {
-      //
-      // If write is failed, just remain using memory NV
-      //
-      VariableStore->Destruct (VariableStore);
-      return;
-    }
-  }
-
-  LoadSyncVariable ();
-  //
-  // Free previous storage
-  //
-  mGlobal->VariableStore[NonVolatile]->Destruct (
-                                         mGlobal->VariableStore[NonVolatile]
-                                         );
-  //
-  // Assign new one
-  //
-  mGlobal->VariableStore[NonVolatile] = VariableStore;
-  mGlobal->VariableBase[NonVolatile]  = VariableStoreHeader;
-
-  //
-  // Calculate LastVariableOffset
-  //
-  NextVariable = (VARIABLE_HEADER *) (VariableStoreHeader + 1);
-  while (IsValidVariableHeader (NextVariable)) {
-    NextVariable = GetNextVariablePtr (NextVariable);
-  }
-  mGlobal->LastVariableOffset[NonVolatile] = (UINTN) NextVariable - (UINTN) VariableStoreHeader;
-
-  //
-  // Reclaim if remaining space is too small
-  //
-  if ((VariableStoreHeader->Size - mGlobal->LastVariableOffset[NonVolatile]) < VARIABLE_RECLAIM_THRESHOLD) {
-    Status = Reclaim (NonVolatile, NULL);
-    if (EFI_ERROR (Status)) {
-      //
-      // Reclaim error
-      // we cannot restore to original state
-      //
-      DEBUG ((EFI_D_ERROR, "FSVariable: Recalim error (fetal error) - %r\n", Status));
-      ASSERT_EFI_ERROR (Status);
-    }
-  }
-
-  //
-  // Update variable in file, e.g.: ConIn, ConOut, ErrOut, Lang
-  //
-  StoreSyncVariable ();
-
-  //
-  // Do specified data patch
-  //
-  PatchVariable ();
-
-  SFSLoaded = TRUE;
-}
 
 STATIC
 VOID
@@ -1322,9 +1262,8 @@ OnVirtualAddressChange (
 {
   UINTN Index;
 
-  for (Index = 0; Index < MaxType; Index ++) {
+  for (Index = 0; Index < MaxType; Index++) {
     EfiConvertPointer (EFI_INTERNAL_POINTER, &mGlobal->VariableStore[Index]);
-    EfiConvertPointer (EFI_INTERNAL_POINTER, &mGlobal->LastVariableOffset[Index]);
     EfiConvertPointer (EFI_INTERNAL_POINTER, &mGlobal->VariableBase[Index]);
   }
   EfiConvertPointer (EFI_INTERNAL_POINTER, &mGlobal->Scratch);

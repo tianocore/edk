@@ -200,6 +200,7 @@ typedef struct {
 #define EFI_ACPI_3_0_8042              (1 << 1)
 #define EFI_ACPI_3_0_VGA_NOT_PRESENT   (1 << 2)
 #define EFI_ACPI_3_0_MSI_NOT_SUPPORTED (1 << 3)
+#define EFI_ACPI_3_0_PCIE_ASPM_CONTROLS (1 << 4)
 //
 // Fixed ACPI Description Table Fixed Feature Flags
 // All other bits are reserved and must be set to 0.

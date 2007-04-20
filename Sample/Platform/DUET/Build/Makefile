@@ -88,6 +88,7 @@ makefiles :
     -d OEMTOOLPATH=$(EDK_TOOLS_OUTPUT)             \
     -d SHELL_INF=$(SHELL_INF)                      \
     -d UEFI_PREFIX=$(UEFI_PREFIX)                  \
+    -d PI_PREFIX=$(PI_PREFIX)                      \
     -d CAPSULE_INF=$(CAPSULE_INF)                  \
     -d ATAPI_PASS_THRU_INF=$(ATAPI_PASS_THRU_INF)  \
     -d DEVPATH_INF=$(DEVPATH_INF)                  \
@@ -259,49 +260,43 @@ hd32:
 DISK_LABEL=DUET
 
 createfloppy:
-  @echo Format floppy ...
+  @echo Format $(EFI_BOOT_DISK) ...
   @echo.> FormatCommandInput.txt
-  @echo.>> FormatCommandInput.txt
   @echo.n>> FormatCommandInput.txt
-  format /v:$(DISK_LABEL) /u /q $(EFI_BOOT_DISK) < FormatCommandInput.txt > NUL
+  @format /v:$(DISK_LABEL) /q $(EFI_BOOT_DISK) < FormatCommandInput.txt > NUL
   @del FormatCommandInput.txt
   @echo Create boot sector ...
   -Tools\Genbootsector -if=$(EFI_BOOT_DISK) -of=$(PROCESSOR)\FDBs.com
-  -Tools\Bootsectimage -g $(PROCESSOR)\FDBs.com $(PROCESSOR)\Bootsect.com
-  -Tools\Bootsectimage -g $(PROCESSOR)\FDBs.com Fv\Efildr
+  -Tools\Bootsectimage -g $(PROCESSOR)\FDBs.com $(PROCESSOR)\Bootsect.com -f
   @del $(PROCESSOR)\FDBs.com
   -Tools\Genbootsector -of=$(EFI_BOOT_DISK) -if=$(PROCESSOR)\Bootsect.com
-  @echo Done
+  @echo Done.
 
 createusb:
-  @echo Format usb ...
+  @echo Format $(EFI_BOOT_DISK) ...
   @echo.> FormatCommandInput.txt
-  @echo.>> FormatCommandInput.txt
-  @echo.n>> FormatCommandInput.txt
-  format /FS:FAT /v:$(DISK_LABEL) /u /q $(EFI_BOOT_DISK) < FormatCommandInput.txt > NUL
+  @format /FS:FAT /v:$(DISK_LABEL) /q $(EFI_BOOT_DISK) < FormatCommandInput.txt > NUL
   @del FormatCommandInput.txt
   @echo Create boot sector ...
   -Tools\Genbootsector -if=$(EFI_BOOT_DISK) -of=$(PROCESSOR)\UsbBs16.com
-  -Tools\Bootsectimage -g $(PROCESSOR)\UsbBs16.com $(PROCESSOR)\Bs16.com
-  -Tools\Bootsectimage -g $(PROCESSOR)\UsbBs16.com Fv\Efildr16
+  -Tools\Bootsectimage -g $(PROCESSOR)\UsbBs16.com $(PROCESSOR)\Bs16.com -f
   @del $(PROCESSOR)\UsbBs16.com
   -Tools\Genbootsector -of=$(EFI_BOOT_DISK) -if=$(PROCESSOR)\Bs16.com
   -Tools\Genbootsector -mbr -of=$(EFI_BOOT_DISK) -if=$(PROCESSOR)\Mbr.com
-  @echo Done. PLEASE UNPLUG USB, THEN PLUG IT AGAIN!
+  @echo Done.
+  @echo PLEASE UNPLUG USB, THEN PLUG IT AGAIN!
 
 createusb32:
-  @echo Format usb ...
+  @echo Format $(EFI_BOOT_DISK) ...
   @echo.> FormatCommandInput.txt
-  @echo.>> FormatCommandInput.txt
-  @echo.n>> FormatCommandInput.txt
-  format /FS:FAT32 /v:$(DISK_LABEL) /u /q $(EFI_BOOT_DISK) < FormatCommandInput.txt > NUL
+  @format /FS:FAT32 /v:$(DISK_LABEL) /q $(EFI_BOOT_DISK) < FormatCommandInput.txt > NUL
   @del FormatCommandInput.txt
   @echo Create boot sector ...
   -Tools\Genbootsector -if=$(EFI_BOOT_DISK) -of=$(PROCESSOR)\UsbBs32.com
-  -Tools\Bootsectimage -g $(PROCESSOR)\UsbBs32.com $(PROCESSOR)\Bs32.com
-  -Tools\Bootsectimage -g $(PROCESSOR)\UsbBs32.com Fv\Efildr20
+  -Tools\Bootsectimage -g $(PROCESSOR)\UsbBs32.com $(PROCESSOR)\Bs32.com -f
   @del $(PROCESSOR)\UsbBs32.com
   -Tools\Genbootsector -of=$(EFI_BOOT_DISK) -if=$(PROCESSOR)\Bs32.com
   -Tools\Genbootsector -mbr -of=$(EFI_BOOT_DISK) -if=$(PROCESSOR)\Mbr.com
-  @echo Done. PLEASE UNPLUG USB, THEN PLUG IT AGAIN!
+  @echo Done.
+  @echo PLEASE UNPLUG USB, THEN PLUG IT AGAIN!
 

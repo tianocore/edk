@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,37 +34,26 @@ Revision History
 
 EFI_FORWARD_DECLARATION (VARIABLE_STORAGE);
 
-typedef struct _VS_FILE_INFO {
-  UINT8                     *FileData;      // local buffer for reading acceleration
-
-  EFI_FILE                  *File;
-  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;    // device having storage file
-} VS_FILE_INFO;
-
-typedef struct _VS_MEM_INFO {
-  UINT8                     *MemData;
-} VS_MEM_INFO;
-
 EFI_STATUS
 FileStorageConstructor (
+  OUT VARIABLE_STORAGE      **VarStore,
+  IN  EFI_PHYSICAL_ADDRESS  NvStorageBase,
+  IN  UINTN                 Size,
+  IN  UINT32                VolumeId,
+  IN  CHAR16                *FilePath
+  );
+
+EFI_STATUS
+MemNvStorageConstructor (
   OUT VARIABLE_STORAGE          **VarStore,
-  IN UINT32                     Attributes,
-  IN UINTN                      Size,
-  IN EFI_HANDLE                 Handle
+  IN  VOID                      *NvStorageBase,
+  IN  UINT32                    Size
   );
 
 EFI_STATUS
 MemStorageConstructor (
-  OUT VARIABLE_STORAGE          **VarStore,  
-  IN  UINT32                    Attributes,
+  OUT VARIABLE_STORAGE          **VarStore,
   IN  UINTN                     Size
-  );
-
-
-typedef
-VOID
-(EFIAPI *DESTRUCT_STORE) (
-  IN VARIABLE_STORAGE   *This
   );
 
 typedef
@@ -89,26 +78,31 @@ typedef struct _VARIABLE_STORAGE {
   //
   ERASE_STORE           Erase;
   WRITE_STORE           Write;
-
-  //
-  // Functions to destroy storage. e.g.: free allocated memory
-  //
-  DESTRUCT_STORE        Destruct;
-
 } VARIABLE_STORAGE;
 
+typedef struct _VS_FILE_INFO {
+  UINT8                     *FileData;      // local buffer for reading acceleration
+
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;    // device having storage file
+  UINT32                    VolumeId;
+  CHAR16                    FilePath[256];
+} VS_FILE_INFO;
+
+typedef struct _VS_MEM_INFO {
+  UINT8                     *MemData;
+} VS_MEM_INFO;
 
 typedef struct _VS_DEV {
   UINT32             Signature;
   VARIABLE_STORAGE   VarStore;
-  //
-  // Attributes and size
-  //
-  UINT32             Attributes;
   UINTN              Size;
   
   union {
+    //
+    // finally visit FileInfo.FileData or MemInfo.MemData
+    //
     UINT8            *Data;
+    
     VS_FILE_INFO     FileInfo;
     VS_MEM_INFO      MemInfo;
   } Info;
@@ -119,7 +113,8 @@ typedef struct _VS_DEV {
 
 #define VAR_DATA_PTR(a)         ((a)->Info.Data)
 #define VAR_FILE_DEVICEPATH(a)  ((a)->Info.FileInfo.DevicePath)
-#define VAR_FILE_FILEHANDLE(a)  ((a)->Info.FileInfo.File)
+#define VAR_FILE_VOLUMEID(a)    ((a)->Info.FileInfo.VolumeId)
+#define VAR_FILE_FILEPATH(a)    ((a)->Info.FileInfo.FilePath)
 
 
 #endif

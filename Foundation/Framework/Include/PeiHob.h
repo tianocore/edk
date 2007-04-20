@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -203,6 +203,22 @@ typedef struct {
   UINT64                  Length;
 } EFI_HOB_CAPSULE_VOLUME;
 
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+
+#define EFI_HOB_TYPE_FV2    0x0009
+
+typedef struct {
+  EFI_HOB_GENERIC_HEADER  Header;
+  EFI_PHYSICAL_ADDRESS    BaseAddress;
+  UINT64                  Length;
+  EFI_GUID                FvName;
+  EFI_GUID                FileName;
+} EFI_HOB_FIRMWARE_VOLUME2;
+
+#define EFI_HOB_TYPE_LOAD_PEIM            0x000A
+
+#endif
+
 #define EFI_HOB_TYPE_UNUSED 0xFFFE
 
 //
@@ -218,6 +234,9 @@ typedef union {
   EFI_HOB_RESOURCE_DESCRIPTOR         *ResourceDescriptor;
   EFI_HOB_GUID_TYPE                   *Guid;
   EFI_HOB_FIRMWARE_VOLUME             *FirmwareVolume;
+#if (PI_SPECIFICATION_VERSION >= 0x00010000)
+  EFI_HOB_FIRMWARE_VOLUME2            *FirmwareVolume2;
+#endif
   EFI_HOB_CPU                         *Cpu;
   EFI_HOB_MEMORY_POOL                 *Pool;
   EFI_HOB_CAPSULE_VOLUME              *CapsuleVolume;

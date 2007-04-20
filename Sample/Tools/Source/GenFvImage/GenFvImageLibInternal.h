@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -91,6 +91,49 @@ Abstract:
 #define EFI_FVB_ALIGNMENT_16K_STRING      "EFI_ALIGNMENT_16K"
 #define EFI_FVB_ALIGNMENT_32K_STRING      "EFI_ALIGNMENT_32K"
 #define EFI_FVB_ALIGNMENT_64K_STRING      "EFI_ALIGNMENT_64K"
+
+//
+// Add these for PI1.0 new Attributes.
+//
+#define EFI_FVB_READ_LOCK_CAP_STRING            "EFI_READ_LOCK_CAP"
+#define EFI_FVB_READ_LOCK_STATUS_STRING         "EFI_READ_LOCK_STATUS"
+#define EFI_FVB_WRITE_LOCK_CAP_STRING           "EFI_WRITE_LOCK_CAP"
+#define EFI_FVB_WRITE_LOCK_STATUS_STRING        "EFI_WRITE_LOCK_STATUS"
+#define EFI_FVB2_ALIGNMENT_STRING               "EFI_FVB2_ALIGNMENT"
+
+#define EFI_FVB2_ALIGNMENT_1_STRING             "1"
+#define EFI_FVB2_ALIGNMENT_2_STRING             "2"
+#define EFI_FVB2_ALIGNMENT_4_STRING             "4"
+#define EFI_FVB2_ALIGNMENT_8_STRING             "8"
+#define EFI_FVB2_ALIGNMENT_16_STRING            "16"
+#define EFI_FVB2_ALIGNMENT_32_STRING            "32"
+#define EFI_FVB2_ALIGNMENT_64_STRING            "64"
+#define EFI_FVB2_ALIGNMENT_128_STRING           "128"
+#define EFI_FVB2_ALIGNMENT_256_STRING           "256"
+#define EFI_FVB2_ALIGNMENT_512_STRING           "512"
+#define EFI_FVB2_ALIGNMENT_1K_STRING            "1K"
+#define EFI_FVB2_ALIGNMENT_2K_STRING            "2K"
+#define EFI_FVB2_ALIGNMENT_4K_STRING            "4K"
+#define EFI_FVB2_ALIGNMENT_8K_STRING            "8K"
+#define EFI_FVB2_ALIGNMENT_16K_STRING           "16K"
+#define EFI_FVB2_ALIGNMENT_32K_STRING           "32K"
+#define EFI_FVB2_ALIGNMENT_64K_STRING           "64K"
+#define EFI_FVB2_ALIGNMENT_128K_STRING          "128K"
+#define EFI_FVB2_ALIGNMENT_256K_STRING          "256K"
+#define EFI_FVB2_ALIGNMENT_512K_STRING          "512K"
+#define EFI_FVB2_ALIGNMENT_1M_STRING            "1M"
+#define EFI_FVB2_ALIGNMENT_2M_STRING            "2M"
+#define EFI_FVB2_ALIGNMENT_4M_STRING            "4M"
+#define EFI_FVB2_ALIGNMENT_8M_STRING            "8M"
+#define EFI_FVB2_ALIGNMENT_16M_STRING           "16M"
+#define EFI_FVB2_ALIGNMENT_32M_STRING           "32M"
+#define EFI_FVB2_ALIGNMENT_64M_STRING           "64M"
+#define EFI_FVB2_ALIGNMENT_128M_STRING          "128M"
+#define EFI_FVB2_ALIGNMENT_256M_STRING          "256M"
+#define EFI_FVB2_ALIGNMENT_512M_STRING          "512M"
+#define EFI_FVB2_ALIGNMENT_1G_STRING            "1G"
+#define EFI_FVB2_ALIGNMENT_2G_STRING            "2G"
+
 
 //
 // Component sections

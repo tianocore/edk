@@ -26,6 +26,8 @@ Abstract:
 
 #ifdef EFI_NT_EMULATOR
 
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+
 #define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
           UINTN                                               \
           __stdcall                                           \
@@ -48,7 +50,31 @@ Abstract:
               return InitFunction(PeiStartup);                \
           }
 
+#else
+#define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
+          UINTN                                               \
+          __stdcall                                           \
+          _DllMainCRTStartup (                                \
+              UINTN    Inst,                                  \
+              UINTN    reason_for_call,                       \
+              VOID    *rserved                                \
+              )                                               \
+          {                                                   \
+              return 1;                                       \
+          }                                                   \
+                                                              \
+          EFI_STATUS                                          \
+          __declspec( dllexport  )                            \
+          __cdecl                                             \
+          InitializeDriver (                                  \
+            IN CONST EFI_SEC_PEI_HAND_OFF   *SecCoreData,    \
+            IN CONST EFI_PEI_PPI_DESCRIPTOR *PpiList         \
+              )                                               \
+          {                                                   \
+              return InitFunction(SecCoreData, PpiList);      \
+          }
 
+#endif
 
 #define EFI_PEIM_ENTRY_POINT(InitFunction)                    \
           UINTN                                               \
@@ -83,6 +109,9 @@ Abstract:
 #else
 
 #ifdef EFI_NT_EMULATOR
+
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+
 #define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
           EFI_STATUS                                          \
           __declspec( dllexport  )                            \
@@ -93,6 +122,22 @@ Abstract:
           {                                                   \
               return InitFunction(PeiStartup);                \
           }
+
+#else
+#define EFI_PEI_CORE_ENTRY_POINT(InitFunction)                \
+          EFI_STATUS                                          \
+          __declspec( dllexport  )                            \
+          __cdecl                                             \
+          InitializeDriver (                                  \
+            IN CONST EFI_SEC_PEI_HAND_OFF   *SecCoreData,    \
+            IN CONST EFI_PEI_PPI_DESCRIPTOR *PpiList         \
+            )                                               \
+          {                                                   \
+              return InitFunction(SecCoreData, PpiList);     \
+          }
+
+#endif
+
           
 #define EFI_PEIM_ENTRY_POINT(InitFunction)                    \
           EFI_STATUS                                          \

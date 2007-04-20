@@ -413,9 +413,9 @@ all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi
 
 #
 # Run GenFfsFile on the package file and FV file to create the firmware 
-# volume FFS file
+# volume FFS file. This FFS file maybe contain one pad section for alignment requirement.
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec $(PACKAGE_FILENAME)
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).Fvi : $(DEST_DIR)\$(SOURCE_FV)Fv.sec $(PACKAGE_FILENAME) $(PAD_SECTION) 
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
 #
@@ -621,6 +621,28 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
+#
+# Add dependency check for dxs file, because dxs file depends on PPI or 
+# PROTOCOL guid defintions.
+#
+DEP_FILE    = $(DEST_DIR)\$(BASE_NAME)dxs.dep
+
+!IF EXIST($(TARGET_DPX))
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(BASE_NAME)dxs.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(TARGET_DPX)
+  $(MAKEDEPS) -f $(DPX_SOURCE_FILE) $(DEP_FLAGS)
+
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
   $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
@@ -643,7 +665,7 @@ $(TARGET_DPX) :
 #
 !IF "$(COMPONENT_TYPE)" == "COMBINED_PEIM_DRIVER"
 !IF "$(DXE_DPX_SOURCE)" != ""
-!IF EXIST ($(SOURCE_DIR)\$(DPX_SOURCE))
+!IF EXIST ($(SOURCE_DIR)\$(DXE_DPX_SOURCE))
 $(TARGET_DXE_DPX) : $(SOURCE_DIR)\$(DXE_DPX_SOURCE) $(INF_FILENAME)
   $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(SOURCE_DIR)\$(DXE_DPX_SOURCE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
@@ -823,6 +845,28 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
+#
+# Add dependency check for dxs file, because dxs file depends on PPI or 
+# PROTOCOL guid defintions.
+#
+DEP_FILE    = $(DEST_DIR)\$(BASE_NAME)dxs.dep
+
+!IF EXIST($(TARGET_DPX))
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(BASE_NAME)dxs.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(TARGET_DPX)
+  $(MAKEDEPS) -f $(DPX_SOURCE_FILE) $(DEP_FLAGS)
+
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
   $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
@@ -998,6 +1042,28 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
+#
+# Add dependency check for dxs file, because dxs file depends on PPI or 
+# PROTOCOL guid defintions.
+#
+DEP_FILE    = $(DEST_DIR)\$(BASE_NAME)dxs.dep
+
+!IF EXIST($(TARGET_DPX))
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(BASE_NAME)dxs.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(TARGET_DPX)
+  $(MAKEDEPS) -f $(DPX_SOURCE_FILE) $(DEP_FLAGS)
+
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
   $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2
@@ -1144,6 +1210,28 @@ DPX_SOURCE_FILE = $(DPX_SOURCE_OVERRIDE)
 
 !IF "$(DPX_SOURCE_FILE)" != ""
 !IF EXIST ($(DPX_SOURCE_FILE))
+#
+# Add dependency check for dxs file, because dxs file depends on PPI or 
+# PROTOCOL guid defintions.
+#
+DEP_FILE    = $(DEST_DIR)\$(BASE_NAME)dxs.dep
+
+!IF EXIST($(TARGET_DPX))
+DEP_TARGETS = $(DEP_TARGETS) $(DEST_DIR)\$(BASE_NAME)dxs.dep
+!IF !EXIST($(DEP_FILE))
+CREATEDEPS = YES
+!ENDIF
+!ENDIF
+
+!IF EXIST($(DEP_FILE))
+!INCLUDE $(DEP_FILE)
+!ENDIF
+#
+# Update dep file for next round incremental build
+#
+$(DEP_FILE) : $(TARGET_DPX)
+  $(MAKEDEPS) -f $(DPX_SOURCE_FILE) $(DEP_FLAGS)
+
 $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
   $(CC) /nologo $(INC) $(VERSION_FLAGS) /EP $(DPX_SOURCE_FILE) > $*.tmp1
   $(GENDEPEX) -I $*.tmp1 -O $*.tmp2

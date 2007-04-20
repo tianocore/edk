@@ -53,11 +53,10 @@ EfiCommonLibCopyMem  PROC    USES    rsi rdi
     DB      49h, 0fh, 7eh, 0c2h         ; movd r10, mm0 (Save mm0 in r10)
 @@:
     DB      0fh, 6fh, 06h               ; movd mm0, [rsi]
-    DB      0fh, 0e7h, 07h              ; movntq [rdi], mm0
+    DB      48h, 0fh, 7eh, 07h          ; movd [rdi], mm0
     add     rsi, 8
     add     rdi, 8
     loop    @B
-    mfence
     DB      49h, 0fh, 6eh, 0c2h         ; movd mm0, r10 (Restore mm0)
     jmp     @CopyBytes
 @CopyBackward:

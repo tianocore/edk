@@ -393,16 +393,23 @@ Returns:
       Status = EFI_OUT_OF_RESOURCES;
     } else {
       //
-      // Log DataRecord in Data Hub
+      // We don't log EFI_D_POOL and EFI_D_PAGE debug info to datahub
+      // to avoid recursive logging due to the memory allocation in datahub
       //
-      Status = mDataHub->LogData (
-                          mDataHub,
-                          &gEfiStatusCodeGuid,
-                          &gEfiStatusCodeRuntimeProtocolGuid,
-                          DataRecordClass,
-                          DataRecord,
-                          (UINT32) Size
-                          );
+      if (DataRecordClass != EFI_DATA_RECORD_CLASS_DEBUG ||
+          ((DataRecord->Instance & EFI_D_POOL) == 0 && (DataRecord->Instance & EFI_D_PAGE) == 0)) {
+        //
+        // Log DataRecord in Data Hub
+        //
+        Status = mDataHub->LogData (
+                             mDataHub,
+                             &gEfiStatusCodeGuid,
+                             &gEfiStatusCodeRuntimeProtocolGuid,
+                             DataRecordClass,
+                             DataRecord,
+                             (UINT32) Size
+                             );
+      }
     }
 
     ReleaseRecordBuffer (BufferEntry);

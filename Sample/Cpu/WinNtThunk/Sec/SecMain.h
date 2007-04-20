@@ -38,14 +38,14 @@ Abstract:
 #include EFI_PPI_DEFINITION (NtFwh)
 #include EFI_PPI_DEFINITION (NtLoadAsDll)
 #include EFI_PPI_DEFINITION (StatusCode)
-
 #include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
-
-#include EFI_GUID_DEFINITION (FirmwareFileSystem)
 #include EFI_GUID_DEFINITION (PeiFlushInstructionCache)
 #include EFI_GUID_DEFINITION (PeiPeCoffLoader)
 #include EFI_GUID_DEFINITION (PeiTransferControl)
 #include EFI_GUID_DEFINITION (StatusCodeDataTypeId)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem)
+#include EFI_GUID_DEFINITION (FirmwareFileSystem2)
+
 
 #define EFI_MEMORY_SIZE_STR       "EFI_MEMORY_SIZE"
 #define EFI_FIRMWARE_VOLUMES_STR  "EFI_FIRMWARE_VOLUMES"
@@ -205,6 +205,8 @@ Returns:
 --*/
 ;
 
+#if  (PI_SPECIFICATION_VERSION  < 0x00010000)
+
 VOID
 SecSwitchStacks (
   IN VOID                       *EntryPoint,
@@ -212,25 +214,20 @@ SecSwitchStacks (
   IN VOID                       *NewStack,
   IN VOID                       *NewBsp
   )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  EntryPoint  - TODO: add argument description
-  PeiStartup  - TODO: add argument description
-  NewStack    - TODO: add argument description
-  NewBsp      - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
 ;
+#else
+
+VOID
+SecSwitchStacks (
+  IN VOID                       *EntryPoint,
+  IN EFI_SEC_PEI_HAND_OFF       *SecCoreData,
+  IN EFI_PEI_PPI_DESCRIPTOR     *PpList,
+  IN VOID                       *NewStack,
+  IN VOID                       *NewBsp
+  )
+;
+
+#endif
 
 VOID
 CopyMem (
