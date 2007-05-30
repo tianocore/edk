@@ -29,20 +29,36 @@ Abstract:
 
 EFI_STATUS
 EFIAPI
-UpdateCapsule(
-  IN UEFI_CAPSULE_HEADER     **CapsuleHeaderArray,
+UpdateCapsule (
+  IN EFI_CAPSULE_HEADER      **CapsuleHeaderArray,
   IN UINTN                   CapsuleCount,
   IN EFI_PHYSICAL_ADDRESS    ScatterGatherList OPTIONAL
   );
 
 EFI_STATUS
 EFIAPI
-QueryCapsuleCapabilities(
-  IN  UEFI_CAPSULE_HEADER  **CapsuleHeaderArray,
+QueryCapsuleCapabilities (
+  IN  EFI_CAPSULE_HEADER   **CapsuleHeaderArray,
   IN  UINTN                CapsuleCount,
   OUT UINT64               *MaxiumCapsuleSize,
   OUT EFI_RESET_TYPE       *ResetType
   );
+
+EFI_STATUS
+EFIAPI
+CheckCapsuleGuid (
+  IN EFI_CAPSULE_HEADER     **CapsuleHeaderArray,
+  IN UINTN                  CapsuleCount
+  );
+
+EFI_STATUS
+EFIAPI    
+LaunchCapsule (
+  IN EFI_CAPSULE_HEADER      **CapsuleHeaderArray,
+  IN UINTN                   CapsuleCount,
+  OUT BOOLEAN                *NeedReset
+  );
+
 
 BOOLEAN
 EFIAPI

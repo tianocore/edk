@@ -578,7 +578,7 @@ EhciDriverBindingStart (
   // Component name protocol
   //
   Status = EfiLibAddUnicodeString (
-             "eng",
+             LANGUAGE_CODE_ENGLISH,
              gEhciComponentName.SupportedLanguages,
              &HcDev->ControllerNameTable,
              L"Usb Enhanced Host Controller"

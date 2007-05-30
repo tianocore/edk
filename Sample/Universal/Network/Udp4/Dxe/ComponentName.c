@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 UdpComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
@@ -33,7 +37,11 @@ UdpComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UdpComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  EFI_HANDLE                   ControllerHandle,
   IN  EFI_HANDLE                   ChildHandle OPTIONAL,
   IN  CHAR8                        *Language,
@@ -43,15 +51,23 @@ UdpComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gUdp4ComponentName = {
+  UdpComponentNameGetDriverName,
+  UdpComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gUdp4ComponentName = {
   UdpComponentNameGetDriverName,
   UdpComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
 static EFI_UNICODE_STRING_TABLE mUdpDriverNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"UDP Network Service Driver"
   },
   {
@@ -63,7 +79,11 @@ static EFI_UNICODE_STRING_TABLE mUdpDriverNameTable[] = {
 EFI_STATUS
 EFIAPI
 UdpComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -108,7 +128,11 @@ Returns:
 EFI_STATUS
 EFIAPI
 UdpComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  EFI_HANDLE                   ControllerHandle,
   IN  EFI_HANDLE                   ChildHandle OPTIONAL,
   IN  CHAR8                        *Language,

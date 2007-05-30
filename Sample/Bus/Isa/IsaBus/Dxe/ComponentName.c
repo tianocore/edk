@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,15 +23,23 @@ Abstract:
 //
 // EFI Component Name Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gIsaBusComponentName = {
+  IsaBusComponentNameGetDriverName,
+  IsaBusComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gIsaBusComponentName = {
   IsaBusComponentNameGetDriverName,
   IsaBusComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
 STATIC EFI_UNICODE_STRING_TABLE mIsaBusDriverNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"ISA Bus Driver"
   },
   {
@@ -43,7 +51,11 @@ STATIC EFI_UNICODE_STRING_TABLE mIsaBusDriverNameTable[] = {
 EFI_STATUS
 EFIAPI
 IsaBusComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -85,7 +97,11 @@ IsaBusComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 IsaBusComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

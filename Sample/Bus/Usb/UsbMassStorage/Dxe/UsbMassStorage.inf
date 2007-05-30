@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004, Intel Corporation                                                         
+# Copyright (c) 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -21,15 +21,19 @@
 
 [defines]
 BASE_NAME            = UsbMassStorage
-FILE_GUID            = A5C6D68B-E78A-4426-9278-A8F0D9EB4D8F
+FILE_GUID            = 9FB4B4A7-42C0-4bcd-8540-9BCC6711F83E
 COMPONENT_TYPE       = BS_DRIVER
 
 [sources.common]
-  UsbMassStorage.h
-  UsbMassStorageData.h
-  UsbMassStorageHelper.h
-  UsbMassStorage.c
-  UsbMassStorageHelper.c
+  UsbMass.h
+  UsbMassBoot.c
+  UsbMassBoot.h
+  UsbMassBot.c
+  UsbMassBot.h
+  UsbMassCbi.c
+  UsbMassCbi.h
+  UsbMassImpl.c
+  UsbMassImpl.h
   ComponentName.c
 
 [includes.common]
@@ -44,14 +48,11 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Sample\Bus\Usb\UsbBus\Dxe
-  $(EDK_SOURCE)\Sample\Bus\Usb\UsbLib\Dxe
   
 [libraries.common]
-  EdkProtocolLib
   EfiProtocolLib
   EfiDriverLib
-  UsbDxeLib
 
 [nmake.common]
-  IMAGE_ENTRY_POINT=USBMassStorageDriverBindingEntryPoint
+  IMAGE_ENTRY_POINT=USBMassStorageEntryPoint
 

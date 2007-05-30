@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -181,7 +181,7 @@ Returns:
   NetListInit (&MtftpSb->Children);
 
   MtftpSb->Timer          = NULL;
-  MtftpSb->TimeToGetMap   = 0;
+  MtftpSb->TimerToGetMap  = NULL;
   MtftpSb->Controller     = Controller;
   MtftpSb->Image          = Image;
   MtftpSb->ConnectUdp     = NULL;
@@ -202,9 +202,27 @@ Returns:
     return Status;
   }
 
+  //
+  // Create the timer used to time out the procedure which is used to
+  // get the default IP address.
+  //
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_TIMER,
+                  EFI_TPL_CALLBACK,
+                  NULL,
+                  NULL,
+                  &MtftpSb->TimerToGetMap
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->CloseEvent (MtftpSb->Timer);
+    NetFreePool (MtftpSb);
+    return Status;
+  }
+
   MtftpSb->ConnectUdp = UdpIoCreatePort (Controller, Image, Mtftp4ConfigNullUdp, NULL);
 
   if (MtftpSb->ConnectUdp == NULL) {
+    gBS->CloseEvent (MtftpSb->TimerToGetMap);
     gBS->CloseEvent (MtftpSb->Timer);
     NetFreePool (MtftpSb);
     return EFI_DEVICE_ERROR;
@@ -235,6 +253,7 @@ Returns:
 --*/
 {
   UdpIoFreePort (MtftpSb->ConnectUdp);
+  gBS->CloseEvent (MtftpSb->TimerToGetMap);
   gBS->CloseEvent (MtftpSb->Timer);
 }
 

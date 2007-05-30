@@ -26,6 +26,13 @@ Abstract:
 
 #define MAX_VARIABLE_SIZE         1024
 
+//
+// Enlarges the hardware error record maximum variable size to 32K bytes
+//
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#define MAX_HARDWARE_ERROR_VARIABLE_SIZE 0x8000
+#endif
+
 #define VARIABLE_DATA             0x55AA
 
 //

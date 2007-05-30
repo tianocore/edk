@@ -44,6 +44,7 @@ Abstract:
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_GUID_DEFINITION (PrimaryConsoleInDevice)
 #include EFI_GUID_DEFINITION (PrimaryConsoleOutDevice)
 #include EFI_GUID_DEFINITION (PrimaryStandardErrorDevice)
@@ -191,10 +192,17 @@ extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterConInDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterSimplePointerDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterConOutDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterStdErrDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterConInComponentName;
+extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterSimplePointerComponentName;
+extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterConOutComponentName;
+extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterStdErrComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterConInComponentName;
 extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterSimplePointerComponentName;
 extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterConOutComponentName;
 extern EFI_COMPONENT_NAME_PROTOCOL  gConSplitterStdErrComponentName;
+#endif
 
 //
 // Function Prototypes

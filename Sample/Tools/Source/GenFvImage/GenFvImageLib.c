@@ -1920,8 +1920,10 @@ Returns:
   UINT8                 VtfHeaderChecksum;
   UINT8                 VtfFileChecksum;
   UINT8                 FileState;
-  EFI_FFS_FILE_TAIL     TailValue;
   UINT32                TailSize;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FFS_FILE_TAIL     TailValue;
+#endif
   //
   // Verify input parameters.
   //
@@ -2036,6 +2038,7 @@ Returns:
       } else {
         (*VtfFileImage)->IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
       }
+    #if (PI_SPECIFICATION_VERSION < 0x00010000)
       //
       // If it has a file tail, update it
       //
@@ -2043,6 +2046,7 @@ Returns:
         TailValue = (EFI_FFS_FILE_TAIL) (~((*VtfFileImage)->IntegrityCheck.TailReference));
         *(EFI_FFS_FILE_TAIL *) (((UINTN) (*VtfFileImage) + GetLength ((*VtfFileImage)->Size) - sizeof (EFI_FFS_FILE_TAIL))) = TailValue;
       }
+    #endif  
       (*VtfFileImage)->State = FileState;
       free (FileBuffer);
       return EFI_SUCCESS;
@@ -2393,11 +2397,12 @@ Returns:
   UINT16                    CheckSum;
   UINTN                     Index;
   EFI_FFS_FILE_STATE        SavedState;
-  EFI_FFS_FILE_TAIL         TailValue;
   UINT32                    TailSize;
   UINT64                    FitAddress;
   FIT_TABLE                 *FitTablePtr;
-
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FFS_FILE_TAIL         TailValue;
+#endif
   //
   // Verify input parameters
   //
@@ -2616,6 +2621,7 @@ Returns:
 
   VtfFile->State = SavedState;
 
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
   //
   // Update tail if present
   //
@@ -2623,7 +2629,7 @@ Returns:
     TailValue = (EFI_FFS_FILE_TAIL) (~(VtfFile->IntegrityCheck.TailReference));
     *(EFI_FFS_FILE_TAIL *) (((UINTN) (VtfFile) + GetLength (VtfFile->Size) - sizeof (EFI_FFS_FILE_TAIL))) = TailValue;
   }
-
+#endif
   return EFI_SUCCESS;
 }
 

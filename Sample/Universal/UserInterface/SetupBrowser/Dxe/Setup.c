@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -125,11 +125,12 @@ DisplayHomePage (
 
 EFI_STATUS
 GetIfrBinaryData (
-  IN EFI_HII_PROTOCOL *Hii,
-  IN EFI_HII_HANDLE   HiiHandle,
-  IN EFI_IFR_PACKET   *Packet,
-  IN EFI_IFR_BINARY   *BinaryData
+  IN      EFI_HII_PROTOCOL                    *Hii,
+  IN OUT  EFI_HII_HANDLE                      *HiiHandle,
+  IN      EFI_IFR_PACKET                      *Packet,    OPTIONAL
+  IN OUT  EFI_IFR_BINARY                      *BinaryData
   );
+
 
 EFI_STATUS
 InstallPrint (
@@ -191,6 +192,7 @@ Returns:
   EFI_STATUS                  Status;
   BOOLEAN                     Callback;
   VOID                        *CallbackData;
+  EFI_HII_HANDLE              NewHandle;
   EFI_HII_HANDLE              BackupHandle;
 
   EfiZeroMem (&gScreenDimensions, sizeof (SCREEN_DESCRIPTOR));
@@ -199,6 +201,10 @@ Returns:
   CallbackData    = EfiLibAllocatePool (0x10000);
   ASSERT (gPreviousValue != NULL);
   ASSERT (CallbackData != NULL);
+
+  if (!UseDatabase) {
+    Handle = &NewHandle;
+  }
 
   do {
     //
@@ -218,6 +224,8 @@ Returns:
       if ((gScreenDimensions.RightColumn < ScreenDimensions->RightColumn) ||
           (gScreenDimensions.BottomRow < ScreenDimensions->BottomRow)
           ) {
+        gBS->FreePool (gPreviousValue);
+        gBS->FreePool (CallbackData);
         return EFI_INVALID_PARAMETER;
       } else {
         //
@@ -237,6 +245,8 @@ Returns:
             ) {
           EfiCopyMem (&gScreenDimensions, ScreenDimensions, sizeof (SCREEN_DESCRIPTOR));
         } else {
+          gBS->FreePool (gPreviousValue);
+          gBS->FreePool (CallbackData);
           return EFI_INVALID_PARAMETER;
         }
       }
@@ -289,6 +299,7 @@ Returns:
 
       if (EFI_ERROR (Status)) {
         gBS->FreePool (CallbackData);
+        gBS->FreePool (gPreviousValue);
         return Status;;
       }
 
@@ -1729,15 +1740,24 @@ DisplayHomePage (
 
 EFI_STATUS
 InitializeBinaryStructures (
-  IN  EFI_HII_HANDLE                        *Handle,
-  IN  BOOLEAN                               UseDatabase,
-  IN  EFI_IFR_PACKET                        *Packet,
-  IN  UINT8                                 *NvMapOverride,
-  IN  UINTN                                 NumberOfIfrImages,
-  OUT EFI_FILE_FORM_TAGS                    **FileFormTagsHead
+  IN OUT EFI_HII_HANDLE                        *Handle,
+  IN     BOOLEAN                               UseDatabase,
+  IN     EFI_IFR_PACKET                        *Packet,
+  IN     UINT8                                 *NvMapOverride,
+  IN     UINTN                                 NumberOfIfrImages,
+  OUT    EFI_FILE_FORM_TAGS                    **FileFormTagsHead
   )
+/*++
+Routine Description:
+  
+Arguments:
+  Handle    - Point to an array of handles if UseDatabase is TRUE
+              Receive the handle if UseDatabase is FALSE
+--*/
 {
   UINTN                       HandleIndex;
+  EFI_HII_HANDLE              NewHandle;
+  EFI_HII_HANDLE              *Handles;
   EFI_STATUS                  Status;
   EFI_IFR_BINARY              *BinaryData;
   EFI_FILE_FORM_TAGS          *FileFormTags;
@@ -1761,12 +1781,33 @@ InitializeBinaryStructures (
   FormCallback      = NULL;
   NvMap             = NULL;
   NvMapSize         = 0;
+  NewHandle         = 0;
+
+  //
+  // If not use HII database but Packet, assume only ONE instance of IfrImage
+  //
+  if (!UseDatabase) {
+    //
+    // No IFR source if Packet is also NULL
+    //
+    if (Packet == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+    Handles           = &NewHandle;
+    NumberOfIfrImages = 1;
+  } else {
+    if (Packet != NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+    Handles           = Handle;
+  }
 
   if (NumberOfIfrImages > 1) {
     NvMapOverride = NULL;
   }
 
-  for (HandleIndex = 0; HandleIndex < NumberOfIfrImages; HandleIndex += 1) {
+
+  for (HandleIndex = 0; HandleIndex < NumberOfIfrImages; HandleIndex++) {
     //
     // If the buffers are uninitialized, allocate them, otherwise work on the ->Next members
     //
@@ -1783,11 +1824,7 @@ InitializeBinaryStructures (
       gBinaryDataHead       = BinaryData;
       gBinaryDataHead->Next = NULL;
 
-      if (UseDatabase) {
-        Status = GetIfrBinaryData (Hii, Handle[HandleIndex], NULL, BinaryData);
-      } else {
-        Status = GetIfrBinaryData (Hii, Handle[HandleIndex], Packet, BinaryData);
-      }
+      Status = GetIfrBinaryData (Hii, &Handles[HandleIndex], Packet, BinaryData);
       //
       // Allocate memory for our File Form Tags
       //
@@ -1811,11 +1848,7 @@ InitializeBinaryStructures (
       BinaryData        = BinaryData->Next;
       BinaryData->Next  = NULL;
 
-      if (UseDatabase) {
-        Status = GetIfrBinaryData (Hii, Handle[HandleIndex], NULL, BinaryData);
-      } else {
-        Status = GetIfrBinaryData (Hii, Handle[HandleIndex], Packet, BinaryData);
-      }
+      Status = GetIfrBinaryData (Hii, &Handles[HandleIndex], Packet, BinaryData);
 
       if (EFI_ERROR (Status)) {
         return EFI_DEVICE_ERROR;
@@ -1982,7 +2015,7 @@ InitializeBinaryStructures (
 
               NvMapListHead = NULL;
               
-              Status = Hii->GetDefaultImage (Hii, Handle[HandleIndex], EFI_IFR_FLAG_DEFAULT, &NvMapListHead);
+              Status = Hii->GetDefaultImage (Hii, Handles[HandleIndex], EFI_IFR_FLAG_DEFAULT, &NvMapListHead);
 
               if (!EFI_ERROR (Status)) {
                 ASSERT_EFI_ERROR (NULL != NvMapListHead);
@@ -2030,14 +2063,17 @@ InitializeBinaryStructures (
   //
   // endfor
   //
+  if (!UseDatabase) {
+    *Handle = NewHandle;
+  }
   return Status;
 }
 
 EFI_STATUS
 GetIfrBinaryData (
   IN      EFI_HII_PROTOCOL *Hii,
-  IN      EFI_HII_HANDLE   HiiHandle,
-  IN      EFI_IFR_PACKET   *Packet,
+  IN OUT  EFI_HII_HANDLE   *HiiHandle,
+  IN      EFI_IFR_PACKET   *Packet,    OPTIONAL
   IN OUT  EFI_IFR_BINARY   *BinaryData
   )
 /*++
@@ -2049,7 +2085,8 @@ Routine Description:
 Arguments:
 
   Hii         - Point to HII protocol.
-  HiiHandle   - Handle of Ifr to be fetched.
+  HiiHandle   - Point to handle of Ifr to be fetched if Packet == NULL;
+                Point to handle of newly created Ifr if Packet != NULL.
   Packet      - Pointer to IFR packet.
   BinaryData  - Buffer to copy the string into
            
@@ -2086,7 +2123,7 @@ Returns:
   ASSERT (Buffer);
 
   if (Packet == NULL) {
-    Status = Hii->GetForms (Hii, HiiHandle, 0, &BufferSize, Buffer);
+    Status = Hii->GetForms (Hii, *HiiHandle, 0, &BufferSize, Buffer);
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
 
@@ -2098,7 +2135,7 @@ Returns:
       Buffer = EfiLibAllocatePool (BufferSize);
       ASSERT (Buffer);
 
-      Status = Hii->GetForms (Hii, HiiHandle, 0, &BufferSize, Buffer);
+      Status = Hii->GetForms (Hii, *HiiHandle, 0, &BufferSize, Buffer);
     }
   } else {
     //
@@ -2111,7 +2148,7 @@ Returns:
     //
     PackageList = PreparePackages (2, NULL, Packet->IfrData, Packet->StringData);
 
-    Status      = Hii->NewPack (Hii, PackageList, &HiiHandle);
+    Status      = Hii->NewPack (Hii, PackageList, HiiHandle);
 
     gBS->FreePool (PackageList);
   }
@@ -2125,7 +2162,7 @@ Returns:
   BinaryData->IfrPackage  = Buffer;
   RawFormBinary           = (UINT8 *) ((CHAR8 *) (Buffer) + sizeof (EFI_HII_PACK_HEADER));
   BinaryData->FormBinary  = (UINT8 *) ((CHAR8 *) (Buffer) + sizeof (EFI_HII_PACK_HEADER));
-  BinaryData->Handle      = HiiHandle;
+  BinaryData->Handle      = *HiiHandle;
 
   //
   // If a packet was passed in, remove the string data when exiting.
@@ -2150,7 +2187,7 @@ Returns:
       //
       switch (FormOp->SubClass) {
       case EFI_FRONT_PAGE_SUBCLASS:
-        FrontPageHandle = HiiHandle;
+        FrontPageHandle = *HiiHandle;
 
       default:
         gClassOfVfr = FormOp->SubClass;

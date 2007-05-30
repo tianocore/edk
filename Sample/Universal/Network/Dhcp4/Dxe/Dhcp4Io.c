@@ -1612,10 +1612,8 @@ Returns:
 {
   DHCP_SERVICE              *DhcpSb;
   EFI_STATUS                Status;
-  EFI_TPL                   OldTpl;
   
   DhcpSb = (DHCP_SERVICE *) Context;
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
   
   //
   // Check the retransmit timer first
@@ -1740,12 +1738,10 @@ Returns:
     }
   }
 
-  NET_RESTORE_TPL (OldTpl);
   return ;
 
 END_SESSION:
   DhcpEndSession (DhcpSb, EFI_TIMEOUT);
-  NET_RESTORE_TPL (OldTpl);
   
   return ;
 }

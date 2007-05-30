@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -434,13 +434,6 @@ Returns:
   NET_LIST_ENTRY            *Next;
   IP4_ARP_QUE               *ArpQue;
   IP4_LINK_TX_TOKEN         *Token;
-  EFI_TPL                   OldTpl;
-
-  //
-  // Raise the TPL to cancel the ARP and MNP asynchronous requests
-  // to prevent the callback of the signal being called to close it.
-  //
-  OldTpl = gBS->RaiseTPL (NET_TPL_LOCK);
 
   //
   // Cancel all the pending frames on ARP requests
@@ -473,8 +466,6 @@ Returns:
       Ip4FreeLinkTxToken (Token);
     }
   }
-
-  gBS->RestoreTPL (OldTpl);
 }
 
 IP4_INTERFACE *
@@ -731,16 +722,15 @@ Returns:
 {
   EFI_TPL                   OldTpl;
   IP4_LINK_RX_TOKEN         *Token;
-
     
   if ((Token = Interface->RecvRequest) != NULL) {
-    OldTpl = gBS->RaiseTPL (NET_TPL_LOCK);
+    OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
     Interface->RecvRequest = NULL;
     Interface->Mnp->Cancel (Interface->Mnp, &Token->MnpToken);
     Ip4FreeFrameRxToken (Token);
 
-    gBS->RestoreTPL (OldTpl);
+    NET_RESTORE_TPL (OldTpl);
   }
 }
 
@@ -851,12 +841,9 @@ Returns:
   IP4_INTERFACE             *Interface;
   IP4_LINK_TX_TOKEN         *Token;
   EFI_STATUS                Status;
-  EFI_TPL                   OldTpl;
 
   ArpQue = (IP4_ARP_QUE *) Context;
   NET_CHECK_SIGNATURE (ArpQue, IP4_FRAME_ARP_SIGNATURE);
-
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
   
   NetListRemoveEntry (&ArpQue->Link);
 
@@ -868,7 +855,6 @@ Returns:
   if (NET_MAC_EQUAL (&ArpQue->Mac, &mZeroMacAddress, ArpQue->Interface->HwaddrLen)) {
     Ip4FreeArpQue (ArpQue, EFI_NO_MAPPING);
 
-    NET_RESTORE_TPL (OldTpl);
     return ;
   }
 
@@ -898,7 +884,6 @@ Returns:
   }
 
   Ip4FreeArpQue (ArpQue, EFI_SUCCESS);
-  NET_RESTORE_TPL (OldTpl);
 }
 
 STATIC
@@ -927,12 +912,9 @@ Returns:
 --*/
 {
   IP4_LINK_TX_TOKEN         *Token;
-  EFI_TPL                   OldTpl;
 
   Token = (IP4_LINK_TX_TOKEN *) Context;
   NET_CHECK_SIGNATURE (Token, IP4_FRAME_TX_SIGNATURE);
-
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
   
   NetListRemoveEntry (&Token->Link);
   
@@ -945,8 +927,6 @@ Returns:
           );
 
   Ip4FreeLinkTxToken (Token);
-
-  NET_RESTORE_TPL (OldTpl);
 }
 
 
@@ -1166,13 +1146,10 @@ Returns:
   IP4_LINK_RX_TOKEN                     *Token;
   NET_FRAGMENT                          Netfrag;
   NET_BUF                               *Packet;
-  EFI_TPL                               OldTpl;
   UINT32                                Flag;
 
   Token = (IP4_LINK_RX_TOKEN *) Context;
   NET_CHECK_SIGNATURE (Token, IP4_FRAME_RX_SIGNATURE);
-
-  OldTpl    = NET_RAISE_TPL (NET_TPL_LOCK);
 
   //
   // First clear the interface's receive request in case the 
@@ -1187,7 +1164,6 @@ Returns:
     Token->CallBack (Token->IpInstance, NULL, MnpToken->Status, 0, Token->Context);
     Ip4FreeFrameRxToken (Token);
 
-    NET_RESTORE_TPL (OldTpl);
     return ;
   }
   
@@ -1206,7 +1182,6 @@ Returns:
     Token->CallBack (Token->IpInstance, NULL, EFI_OUT_OF_RESOURCES, 0, Token->Context);
     Ip4FreeFrameRxToken (Token);
 
-    NET_RESTORE_TPL (OldTpl);
     return ;
   }
 
@@ -1215,7 +1190,6 @@ Returns:
   Flag |= (MnpRxData->PromiscuousFlag ? IP4_LINK_PROMISC : 0);
 
   Token->CallBack (Token->IpInstance, Packet, EFI_SUCCESS, Flag, Token->Context);
-  NET_RESTORE_TPL (OldTpl);
 }
 
 EFI_STATUS

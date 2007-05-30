@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 Intel Corporation. All rights reserved
+Copyright (c) 2006 - 2007 Intel Corporation. All rights reserved
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,13 +30,21 @@ Revision History
 // This portion declares a gloabl variable of EFI_COMPONENT_NAME_PROTOCOL type.
 // It initializes the followings:
 //      .GetDriverName()     to PlatformIdeGetDriverName() and
-//      SupportedLanguages   to "eng" (3 char ISO639-2 language indetifier)
+//      SupportedLanguages   to LANGUAGE_CODE_ENGLISH (3 char ISO639-2 language indetifier)
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL     gIdeControllerName = {
+  IdeControllerGetDriverName,
+  IdeControllerGetControllerName,
+  LANGUAGE_CODE_ENGLISH // Egnlish
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gIdeControllerName = {
   IdeControllerGetDriverName,
   IdeControllerGetControllerName,
-  "eng" // Egnlish
+  LANGUAGE_CODE_ENGLISH // Egnlish
 };
+#endif
 
 //
 //  Define the Driver's unicode name string
@@ -44,7 +52,7 @@ EFI_COMPONENT_NAME_PROTOCOL     gIdeControllerName = {
 //
 static EFI_UNICODE_STRING_TABLE mIdeControllerDriverNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"IDE Controller Init Driver"
   },
   {
@@ -55,7 +63,7 @@ static EFI_UNICODE_STRING_TABLE mIdeControllerDriverNameTable[] = {
 
 static EFI_UNICODE_STRING_TABLE mIdeControllerControllerNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"ICH IDE Controller"
   },
   {
@@ -68,7 +76,11 @@ static EFI_UNICODE_STRING_TABLE mIdeControllerControllerNameTable[] = {
 EFI_STATUS
 EFIAPI
 IdeControllerGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -111,7 +123,11 @@ IdeControllerGetDriverName (
 EFI_STATUS
 EFIAPI
 IdeControllerGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

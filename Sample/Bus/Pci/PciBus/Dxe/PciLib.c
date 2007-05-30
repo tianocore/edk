@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -869,8 +869,6 @@ Returns:
   Attributes      = 0;
   BusRange        = 0;
 
-  ResetAllPpbBusReg (Bridge, StartBusNumber);
-
   for (Device = 0; Device <= PCI_MAX_DEVICE; Device++) {
     for (Func = 0; Func <= PCI_MAX_FUNC; Func++) {
 
@@ -895,6 +893,8 @@ Returns:
 
         continue;
       }
+                  
+      DEBUG((EFI_D_ERROR, "Found DEV(%02d,%02d,%02d)\n", StartBusNumber, Device, Func ));
       
       //
       // Get the PCI device information
@@ -957,7 +957,6 @@ Returns:
               PciDevice->FunctionNumber,
               EfiPciBeforeChildBusEnumeration
             );                                        
-            continue;
           }
         }
       }
@@ -1006,6 +1005,14 @@ Returns:
           }
         }
 
+        //
+        // Add feature to support customized secondary bus number
+        //
+       	if (*SubBusNumber == 0) {        
+          *SubBusNumber   = *PaddedBusRange;
+          *PaddedBusRange = 0;
+        }
+
         (*SubBusNumber)++;
         SecondBus = *SubBusNumber;
 
@@ -1050,6 +1057,7 @@ Returns:
             EfiPciBeforeChildBusEnumeration
             );
 
+          DEBUG((EFI_D_ERROR, "Scan  PPB(%02d,%02d,%02d)\n", PciDevice->BusNumber, PciDevice->DeviceNumber,PciDevice->FunctionNumber ));
           Status = PciScanBus (
                     PciDevice,
                     (UINT8) (SecondBus),
@@ -1269,6 +1277,7 @@ Returns:
   //
   NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
 
+  DEBUG((EFI_D_ERROR, "PCI Bus First Scanning\n"));
   RootBridgeHandle = NULL;
   while (PciResAlloc->GetNextRootBridge (PciResAlloc, &RootBridgeHandle) == EFI_SUCCESS) {
 
@@ -1318,6 +1327,7 @@ Returns:
     //
     NotifyPhase (PciResAlloc, EfiPciHostBridgeBeginBusAllocation);
   
+    DEBUG((EFI_D_ERROR, "PCI Bus Second Scanning\n"));  
     RootBridgeHandle = NULL;
     while (PciResAlloc->GetNextRootBridge (PciResAlloc, &RootBridgeHandle) == EFI_SUCCESS) {
 

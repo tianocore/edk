@@ -215,6 +215,7 @@ PeiServicesCreateHob (
   return (*PeiServices)->CreateHob (PeiServices, Type, Length, Hob);
 }
 
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 /**
   This service enables PEIMs to discover additional firmware volumes.
 
@@ -292,6 +293,8 @@ PeiServicesFfsFindSectionData (
   PeiServices = GetPeiServicesTablePointer ();
   return (*PeiServices)->FfsFindSectionData (PeiServices, SectionType, FfsFileHeader, SectionData);
 }
+
+#endif
 
 /**
   This service enables PEIMs to register the permanent memory configuration

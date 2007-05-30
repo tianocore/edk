@@ -314,7 +314,7 @@ Returns:
 
   ScsiDiskDevice->ControllerNameTable = NULL;
   EfiLibAddUnicodeString (
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     gScsiDiskComponentName.SupportedLanguages,
     &ScsiDiskDevice->ControllerNameTable,
     L"SCSI Disk Device"

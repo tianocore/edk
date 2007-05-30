@@ -46,6 +46,7 @@ Revision History
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 
@@ -199,7 +200,11 @@ typedef struct _PCI_IO_DEVICE {
 // Global Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL gPciBusDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL gPciBusComponentName;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gPciBusComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL  gPciBusComponentName;
+#endif
 extern BOOLEAN                     gFullEnumeration;
 static UINT64                      gAllOne = 0xFFFFFFFFFFFFFFFF;
 static UINT64                      gAllZero   = 0;

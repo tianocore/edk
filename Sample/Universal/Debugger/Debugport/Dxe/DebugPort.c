@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -118,7 +118,7 @@ Returns:
 
   gDebugPortDevice->ComponentNameInterface.GetDriverName = DebugPortComponentNameGetDriverName;
   gDebugPortDevice->ComponentNameInterface.GetControllerName = DebugPortComponentNameGetControllerName;
-  gDebugPortDevice->ComponentNameInterface.SupportedLanguages = "eng";
+  gDebugPortDevice->ComponentNameInterface.SupportedLanguages = LANGUAGE_CODE_ENGLISH;
 
   gDebugPortDevice->DebugPortInterface.Reset = DebugPortReset;
   gDebugPortDevice->DebugPortInterface.Read = DebugPortRead;
@@ -848,6 +848,16 @@ Returns:
     return EFI_ABORTED;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+                  ImageHandle,
+                  &gEfiDriverBindingProtocolGuid,
+                  &gDebugPortDevice->DriverBindingInterface,
+                  &gEfiComponentName2ProtocolGuid,
+                  &gDebugPortDevice->ComponentNameInterface,
+                  NULL
+                  );
+#else
   Status = gBS->UninstallMultipleProtocolInterfaces (
                   ImageHandle,
                   &gEfiDriverBindingProtocolGuid,
@@ -856,7 +866,7 @@ Returns:
                   &gDebugPortDevice->ComponentNameInterface,
                   NULL
                   );
-
+#endif
   if (EFI_ERROR (Status)) {
     return Status;
   }

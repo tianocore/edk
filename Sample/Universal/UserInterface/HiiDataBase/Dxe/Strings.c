@@ -1171,9 +1171,14 @@ Returns:
       //
       // Rewind the string from the maximum size until we see a space the break the line
       //
-      for (Count = LineWidth; Location[Count] != 0x0020; Count--)
+      for (Count = LineWidth; (Location[Count] != 0x0020) && (Count > 0) ; Count--)
         ;
-
+      //
+      // If there is no space in the line, just use LineWidth as string width
+      //
+      if (Count == 0) {
+        Count = LineWidth;
+      }
       //
       // Put the index at the next character
       //

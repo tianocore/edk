@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -15,22 +15,67 @@ Module Name:
 
 Abstract:
 
-  Capsule Platform Service 
+  Capsule Platform Runtime Service 
 
 --*/
 
 #include "Tiano.h"
 
-//
-//Max size capsule services support are platform policy,to populate capsules we just need
-//memory to maintain them across reset,it is not a problem. And to special capsules ,for
-//example,update flash,it is mostly decided by the platform. Here is a sample size for 
-//different type capsules.
-//
 #define MAX_SIZE_POPULATE              (0)
 #define MAX_SIZE_NON_POPULATE          (0)
 
 
+EFI_STATUS
+EFIAPI
+CheckCapsuleGuid (
+  IN EFI_CAPSULE_HEADER     **CapsuleHeaderArray,
+  IN UINTN                  CapsuleCount
+  )
+/*++
+
+Routine Description:
+
+  This routine check the capsule validity. Platform has knowledge 
+  of certain CapsuleGuid.
+
+Arguments:
+
+  CapsuleHeaderArray             A array of pointers to capsule headers passed in
+  CapsuleCount                   The number of capsule
+  
+Returns:
+
+--*/  
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI    
+LaunchCapsule (
+  IN EFI_CAPSULE_HEADER      **CapsuleHeaderArray,
+  IN UINTN                   CapsuleCount,
+  OUT BOOLEAN                *NeedReset
+  )
+/*++
+
+Routine Description:
+
+  This routine check whether a system reset need, and meanwhile launch 
+  capsules who has no reset flag in its header immediately.
+
+Arguments:
+
+  CapsuleHeaderArray             A array of pointers to capsule headers passed in
+  CapsuleCount                   The number of capsule
+  NeedReset                      Indicates whether a system reset needs.
+  
+Returns:
+
+--*/    
+{
+  return EFI_UNSUPPORTED;
+}
 
 
 BOOLEAN
@@ -51,8 +96,8 @@ Returns:
 --*/
 {
   //
-  //If the platform has a way to guarantee the memory integrity across a system reset, return 
-  //TRUE, else FALSE. 
+  // If the platform has a way to guarantee the memory integrity across a system reset,
+  // return TRUE, else FALSE. 
   //
   return FALSE;
 }
@@ -80,12 +125,12 @@ Returns:
 
 {
   //
-  //Here is a sample size, different platforms have different sizes.
+  // Generally, max size varies from different platform. Strictly, certain platform
+  // has different tolerance between capsule persisted across a system and capsule
+  // who needs launching immediately. These two type capsule demands for different
+  // memory size. Here is an example size.
   //
   *MaxSizePopulate    = MAX_SIZE_POPULATE;
   *MaxSizeNonPopulate = MAX_SIZE_NON_POPULATE;
   return; 
 }
-
-
-

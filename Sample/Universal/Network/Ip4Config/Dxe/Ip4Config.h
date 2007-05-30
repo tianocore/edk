@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -107,7 +107,11 @@ typedef struct _IP4_CONFIG_INSTANCE {
   CR (this, IP4_CONFIG_INSTANCE, NicIp4Protocol, IP4_CONFIG_INSTANCE_SIGNATURE)
 
 extern EFI_DRIVER_BINDING_PROTOCOL  gIp4ConfigDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gIp4ConfigComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gIp4ConfigComponentName;
+#endif
 extern IP4_CONFIG_INSTANCE          *mIp4ConfigNicList[MAX_IP4_CONFIG_IN_VARIABLE];
 extern EFI_IP4_CONFIG_PROTOCOL      mIp4ConfigProtocolTemplate;
 extern EFI_NIC_IP4_CONFIG_PROTOCOL  mNicIp4ConfigProtocolTemplate;

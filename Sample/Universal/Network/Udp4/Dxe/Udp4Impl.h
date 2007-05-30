@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,10 +29,14 @@ Abstract:
 
 #include EFI_PROTOCOL_DEFINITION (Udp4)
 
-extern EFI_COMPONENT_NAME_PROTOCOL   gUdp4ComponentName;
-extern EFI_SERVICE_BINDING_PROTOCOL  mUdp4ServiceBinding;
-extern EFI_UDP4_PROTOCOL             mUdp4Protocol;
-extern UINT16                        mUdp4RandomPort;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL   gUdp4ComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL    gUdp4ComponentName;
+#endif
+extern EFI_SERVICE_BINDING_PROTOCOL   mUdp4ServiceBinding;
+extern EFI_UDP4_PROTOCOL              mUdp4Protocol;
+extern UINT16                         mUdp4RandomPort;
 
 #define ICMP_ERROR_PACKET_LENGTH  8
 

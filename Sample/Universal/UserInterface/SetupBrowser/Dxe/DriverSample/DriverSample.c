@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -65,23 +65,14 @@ Returns:
   UINT16                  Value;
   CHAR16                  VariableName[40];
   EFI_GUID                FormSetGuid = FORMSET_GUID;
-  STATIC UINT16           QuestionId = 0;
+  UINT16                  QuestionId;
   IFR_OPTION              *OptionList;
   UINTN                   Index;
   MyIfrNVData             NVStruc;
 
-  Private     = EFI_CALLBACK_INFO_FROM_THIS (This);
+  Private = EFI_CALLBACK_INFO_FROM_THIS (This);
 
-  //
-  // This should tell me the first offset AFTER the end of the compiled NV map
-  // If op-code results are not going to be saved to NV locations ensure the QuestionId
-  // is beyond the end of the NVRAM mapping.
-  //
-  if (QuestionId == 0) {
-    QuestionId = sizeof (MyIfrNVData);
-  }
-
-  EfiZeroMem (VariableName, (sizeof (CHAR16) * 40));
+  EfiZeroMem (VariableName, sizeof (VariableName));
 
   switch (KeyValue) {
   case 0x0001:
@@ -290,7 +281,6 @@ Returns:
                     );
 
     gBS->FreePool (UpdateData);
-    QuestionId++;
     break;
 
   case 0x1235:

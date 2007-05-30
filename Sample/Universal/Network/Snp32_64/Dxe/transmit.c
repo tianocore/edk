@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -327,12 +327,15 @@ Returns:
 {
   SNP_DRIVER  *snp;
   EFI_STATUS  Status;
+  EFI_TPL     OldTpl;
 
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
+
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
 
   if (snp == NULL) {
     return EFI_DEVICE_ERROR;
@@ -343,21 +346,22 @@ Returns:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkStarted:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
   if (BufferPtr == NULL) {
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
 
   if (BufferLength < snp->mode.MediaHeaderSize) {
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto ON_EXIT;
   }
 
   //
@@ -366,7 +370,8 @@ Returns:
   //
   if (MacHeaderSize != 0) {
     if (MacHeaderSize != snp->mode.MediaHeaderSize || DestinationAddrPtr == 0 || ProtocolPtr == 0) {
-      return EFI_INVALID_PARAMETER;
+      Status = EFI_INVALID_PARAMETER;
+      goto ON_EXIT;
     }
 
     Status = pxe_fillheader (
@@ -380,10 +385,15 @@ Returns:
               ProtocolPtr
               );
 
-    if (Status != EFI_SUCCESS) {
-      return Status;
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
     }
   }
 
-  return pxe_transmit (snp, BufferPtr, BufferLength);
+  Status = pxe_transmit (snp, BufferPtr, BufferLength);
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
+
+  return Status;
 }

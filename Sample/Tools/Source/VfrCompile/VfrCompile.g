@@ -943,22 +943,6 @@ dataStructDefinition :
   ";"
   ;
 
-//
-// Parse a C type data structure for defining data that is not stored in NV.
-//  typedef struct _NON_NV_DATA_MAP {
-//     (fields)
-//  } NON_NV_DATA_MAP;
-//
-nonNvDataStructDefinition :
-  { TypeDef } 
-  Struct NonNvDataMap
-  { StringIdentifier }
-  OpenBrace 
-  dataStructFields 
-  CloseBrace NAME:StringIdentifier        << AddStructField (NAME->getText(), NAME->getLine(), 0, 0, 0); >>
-  ";"                                             
-  ;
-
 dataStructFields :
   ( dataStructField64 | dataStructField32 | dataStructField16 | dataStructField8 ) *
   ;
@@ -2732,6 +2716,13 @@ Returns:
     PrintErrorMessage (LineNum2, FieldName, Msg);
     return;
   }
+
+  //
+  // The reference index starts at 1 not 0
+  //
+  if (IsArrayIndex && (ArrayIndex < 1)) {
+    printf ("WARNING: array index shouldn't be less than 1");
+  }
   //
   // Look through our list of known structures for a match
   //
@@ -3468,4 +3459,5 @@ EfiVfrParser::GetNumber (
 >>
 
 } // end grammar class
+
 

@@ -420,13 +420,22 @@ EisaIdToText (
   IN OUT CHAR16    *Text
   )
 {
-  *Text = 0;
+  CHAR16 PnpIdStr[17];
 
-  if ((EisaId & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
-    SPrint (Text, 0, L"PNP%04x", EISA_ID_TO_NUM (EisaId));
-  } else {
-    SPrint (Text, 0, L"0x%x", EisaId);
-  }
+  //
+  //SPrint ("%X", 0x0a03) => "0000000000000A03"
+  //
+  SPrint (PnpIdStr, 17 * 2, L"%X", EisaId >> 16);
+
+  SPrint (
+    Text,
+    0,
+    L"%c%c%c%s",
+    '@' + ((EisaId >> 10) & 0x1f),
+    '@' + ((EisaId >>  5) & 0x1f),
+    '@' + ((EisaId >>  0) & 0x1f),
+    PnpIdStr + (16 - 4)
+    );
 }
 
 VOID
@@ -1085,15 +1094,6 @@ DevPathToTextHardDrive (
 
   Hd = DevPath;
   switch (Hd->SignatureType) {
-  case 0:
-    CatPrint (
-      Str,
-      L"HD(%d,%s,0,",
-      Hd->PartitionNumber,
-      L"None"
-      );
-    break;
-
   case SIGNATURE_TYPE_MBR:
     CatPrint (
       Str,
@@ -1109,12 +1109,18 @@ DevPathToTextHardDrive (
       Str,
       L"HD(%d,%s,%g,",
       Hd->PartitionNumber,
-      L"GUID",
+      L"GPT",
       (EFI_GUID *) &(Hd->Signature[0])
       );
     break;
 
   default:
+    CatPrint (
+      Str,
+      L"HD(%d,%d,0,",
+      Hd->PartitionNumber,
+      Hd->SignatureType
+      );
     break;
   }
 
@@ -1488,9 +1494,9 @@ ConvertDevicePathToText (
     //  Put a path seperator in if needed
     //
     if (Str.Len && DumpNode != DevPathToTextEndInstance) {
-      if (*(Str.Str + Str.Len / sizeof (CHAR16) - 1) != L',') {	
+      if (*(Str.Str + Str.Len / sizeof (CHAR16) - 1) != L',') {
         CatPrint (&Str, L"/");
-      }	  
+      }
     }
     //
     // Print this node of the device path

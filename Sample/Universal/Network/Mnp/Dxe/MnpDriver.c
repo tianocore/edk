@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -229,7 +229,7 @@ Returns:
   if (EFI_ERROR (Status)) {
 
     MNP_DEBUG_ERROR (
-      ("MnpDriverBindingStop: Locate MNP Service Binding ""Protocol failed, %r.\n",
+      ("MnpDriverBindingStop: Locate MNP Service Binding Protocol failed, %r.\n",
       Status)
       );
     goto EXIT;
@@ -262,7 +262,7 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
 
-    MNP_DEBUG_ERROR (("MnpDriverBindingStop: Uninstall MNP Service ""Binding Protocol failed, %r.\n"));
+    MNP_DEBUG_ERROR (("MnpDriverBindingStop: Uninstall MNP Service Binding Protocol failed, %r.\n"));
     goto EXIT;
   }
 
@@ -277,10 +277,7 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
 
-    MNP_DEBUG_ERROR (
-      ("MnpDriverBindingStop: Close SNP Protocol failed "", %r.\n",
-      Status)
-      );
+    MNP_DEBUG_ERROR (("MnpDriverBindingStop: Close SNP Protocol failed, %r.\n", Status));
     goto EXIT;
   }
 
@@ -323,10 +320,11 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  MNP_SERVICE_DATA  *MnpServiceData;
-  MNP_INSTANCE_DATA *Instance;
-  VOID              *Snp;
+  EFI_STATUS         Status;
+  MNP_SERVICE_DATA   *MnpServiceData;
+  MNP_INSTANCE_DATA  *Instance;
+  VOID               *Snp;
+  EFI_TPL            OldTpl;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
 
@@ -341,7 +339,7 @@ Returns:
   Instance = NetAllocateZeroPool (sizeof (MNP_INSTANCE_DATA));
   if (Instance == NULL) {
 
-    MNP_DEBUG_ERROR (("MnpServiceBindingCreateChild: Faild to allocate ""memory for the new instance.\n"));
+    MNP_DEBUG_ERROR (("MnpServiceBindingCreateChild: Faild to allocate memory for the new instance.\n"));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -359,7 +357,7 @@ Returns:
   if (EFI_ERROR (Status)) {
 
     MNP_DEBUG_ERROR (
-      ("MnpServiceBindingCreateChild: Failed to install ""the MNP protocol, %r.\n",
+      ("MnpServiceBindingCreateChild: Failed to install the MNP protocol, %r.\n",
       Status)
       );
     goto ErrorExit;
@@ -385,17 +383,12 @@ Returns:
   //
   // Add the child instance into ChildrenList.
   //
-  if (EFI_ERROR (NET_TRYLOCK (&MnpServiceData->ChildrenListLock))) {
-
-    MNP_DEBUG_ERROR (("MnpServiceBindingCreateChild: Faild to acquire ""the childrenlist lock.\n"));
-    Status = EFI_ACCESS_DENIED;
-    goto ErrorExit;
-  }
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   NetListInsertTail (&MnpServiceData->ChildrenList, &Instance->InstEntry);
   MnpServiceData->ChildrenNumber++;
 
-  NET_UNLOCK (&MnpServiceData->ChildrenListLock);
+  NET_RESTORE_TPL (OldTpl);
 
 ErrorExit:
 
@@ -449,6 +442,7 @@ Returns:
   MNP_SERVICE_DATA              *MnpServiceData;
   EFI_MANAGED_NETWORK_PROTOCOL  *ManagedNetwork;
   MNP_INSTANCE_DATA             *Instance;
+  EFI_TPL                       OldTpl;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
 
@@ -510,13 +504,15 @@ Returns:
   if (EFI_ERROR (Status)) {
 
     MNP_DEBUG_ERROR (
-      ("MnpServiceBindingDestroyChild: Failed to uninstall ""the ManagedNetwork protocol, %r.\n",
+      ("MnpServiceBindingDestroyChild: Failed to uninstall the ManagedNetwork protocol, %r.\n",
       Status)
       );
 
     Instance->Destroyed = FALSE;
     return Status;
   }
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   //
   // Reset the configuration.
@@ -533,18 +529,13 @@ Returns:
   //
   NetMapClean (&Instance->RxTokenMap);
 
-  if (EFI_ERROR (NET_TRYLOCK (&MnpServiceData->ChildrenListLock))) {
-
-    return EFI_ACCESS_DENIED;
-  }
-
   //
   // Remove this instance from the ChildrenList.
   //
   NetListRemoveEntry (&Instance->InstEntry);
   MnpServiceData->ChildrenNumber--;
 
-  NET_UNLOCK (&MnpServiceData->ChildrenListLock);
+  NET_RESTORE_TPL (OldTpl);
 
   NetFreePool (Instance);
 

@@ -105,7 +105,11 @@ typedef struct {
 // Global Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL  gKeyboardControllerDriver;
-extern EFI_COMPONENT_NAME_PROTOCOL  gPs2KeyboardComponentName;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL  gPs2KeyboardComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL   gPs2KeyboardComponentName;
+#endif
 
 //
 // Driver entry point

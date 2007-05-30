@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -115,7 +115,7 @@ Arguments:
 
 EFI_STATUS
 EFIAPI
-PeiServicesFfsFindNextVolume (
+PeiLibFfsFindNextVolume (
   IN UINTN                          Instance,
   IN OUT EFI_PEI_FV_HANDLE          *VolumeHandle
   )
@@ -138,7 +138,7 @@ Returns:
 
 EFI_STATUS
 EFIAPI
-PeiServicesFfsFindNextFile (
+PeiLibFfsFindNextFile (
   IN EFI_FV_FILETYPE            SearchType,
   IN EFI_PEI_FV_HANDLE          FwVolHeader,
   IN OUT EFI_PEI_FILE_HANDLE    *FileHeader
@@ -164,7 +164,7 @@ Returns:
 
 EFI_STATUS
 EFIAPI
-PeiServicesFfsFindFileByName (
+PeiLibFfsFindFileByName (
   IN  EFI_GUID              *FileName,
   IN  EFI_PEI_FV_HANDLE     VolumeHandle,
   OUT EFI_PEI_FILE_HANDLE   *FileHandle
@@ -190,7 +190,7 @@ Returns:
 
 EFI_STATUS
 EFIAPI
-PeiServicesFfsFindSectionData (
+PeiLibFfsFindSectionData (
   IN EFI_SECTION_TYPE           SectionType,
   IN EFI_FFS_FILE_HEADER        *FfsFileHeader,
   IN OUT VOID                   **SectionData
@@ -215,7 +215,7 @@ Returns:
 
 EFI_STATUS
 EFIAPI
-PeiServicesFfsGetVolumeInfo (
+PeiLibFfsGetVolumeInfo (
   IN EFI_PEI_FV_HANDLE  *VolumeHandle,
   OUT EFI_FV_INFO       *VolumeInfo
   )

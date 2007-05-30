@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -21,7 +21,11 @@ Abstract:
 
 
 UINT16                              mTcp4RandomPort;
-extern EFI_COMPONENT_NAME_PROTOCOL  gTcp4ComponentName;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL  gTcp4ComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL   gTcp4ComponentName;
+#endif
 
 TCP4_HEARTBEAT_TIMER  mTcp4Timer = {
   NULL,
@@ -580,13 +584,14 @@ Returns:
   TCP4_PROTO_DATA   TcpProto;
   EFI_STATUS        Status;
   VOID              *Ip4;
+  EFI_TPL           OldTpl;
 
   if (NULL == This || NULL == ChildHandle) {
     return EFI_INVALID_PARAMETER;
   }
 
+  OldTpl              = NET_RAISE_TPL (NET_TPL_LOCK);
   TcpServiceData      = TCP4_FROM_THIS (This);
-
   TcpProto.TcpService = TcpServiceData;
   TcpProto.TcpPcb     = NULL;
 
@@ -598,10 +603,11 @@ Returns:
 
   Sock = SockCreateChild (&mTcp4DefaultSockData, &TcpProto, sizeof (TCP4_PROTO_DATA));
   if (NULL == Sock) {
-
     TCP4_DEBUG_ERROR (("Tcp4DriverBindingCreateChild: "
       "No resource to create a Tcp Child\n"));
-    return EFI_OUT_OF_RESOURCES;
+
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
   }
 
   *ChildHandle = Sock->SockHandle;
@@ -621,6 +627,8 @@ Returns:
     SockDestroyChild (Sock);
   }
 
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
   return Status;
 }
 
@@ -655,10 +663,13 @@ Returns:
   SOCKET             *Sock;
   TCP4_PROTO_DATA    *TcpProtoData;
   TCP4_SERVICE_DATA  *TcpServiceData;
+  EFI_TPL            OldTpl;
 
   if (NULL == This || NULL == ChildHandle) {
     return EFI_INVALID_PARAMETER;
   }
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   //
   // retrieve the Tcp4 protocol from ChildHandle
@@ -672,7 +683,8 @@ Returns:
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
+    goto ON_EXIT;
   }
 
   //
@@ -695,5 +707,7 @@ Returns:
          ChildHandle
          );
 
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
   return Status;
 }

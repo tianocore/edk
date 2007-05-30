@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2006, Intel Corporation
+Copyright 2006 - 2007, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -27,7 +27,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 EhciComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  CHAR8                           *Language,
   OUT CHAR16                          **DriverName
   );
@@ -35,7 +39,11 @@ EhciComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 EhciComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  EFI_HANDLE                      ControllerHandle,
   IN  EFI_HANDLE                      ChildHandle, OPTIONAL
   IN  CHAR8                           *Language,
@@ -45,21 +53,33 @@ EhciComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gEhciComponentName = {
+  EhciComponentNameGetDriverName,
+  EhciComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gEhciComponentName = {
   EhciComponentNameGetDriverName,
   EhciComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
 static EFI_UNICODE_STRING_TABLE mEhciDriverNameTable[] = {
-  { "eng", L"UEFI Usb Ehci Driver" },
+  { LANGUAGE_CODE_ENGLISH, L"Usb Ehci Driver" },
   { NULL , NULL }
 };
 
 EFI_STATUS
 EFIAPI
 EhciComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  CHAR8                           *Language,
   OUT CHAR16                          **DriverName
   )
@@ -101,7 +121,11 @@ EhciComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 EhciComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  EFI_HANDLE                      ControllerHandle,
   IN  EFI_HANDLE                      ChildHandle, OPTIONAL
   IN  CHAR8                           *Language,

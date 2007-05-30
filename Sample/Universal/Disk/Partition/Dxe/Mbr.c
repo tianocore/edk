@@ -109,7 +109,7 @@ Returns:
   return MbrValid;
 }
 
-BOOLEAN
+EFI_STATUS
 PartitionInstallMbrChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
@@ -130,8 +130,9 @@ Arguments:
   DevicePath - Parent Device Path
 
 Returns:
-  EFI_SUCCESS - If a child handle was added
-  other       - A child handle was not added
+  EFI_SUCCESS       - If a child handle was added
+  EFI_MEDIA_CHANGED - Media changed Detected
+  !EFI_SUCCESS      - Not found MBR partition.
 
 --*/
 {
@@ -141,13 +142,13 @@ Returns:
   UINTN                     Index;
   HARDDRIVE_DEVICE_PATH     HdDev;
   HARDDRIVE_DEVICE_PATH     ParentHdDev;
-  BOOLEAN                   Found;
+  EFI_STATUS                Found;
   UINT32                    PartitionNumber;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePathNode;
   EFI_DEVICE_PATH_PROTOCOL  *LastDevicePathNode;
 
   Mbr             = NULL;
-  Found           = FALSE;
+  Found           = EFI_NOT_FOUND;
 
   Mbr             = EfiLibAllocatePool (BlockIo->Media->BlockSize);
   if (Mbr == NULL) {
@@ -161,7 +162,11 @@ Returns:
                       BlockIo->Media->BlockSize,
                       Mbr
                       );
-  if (EFI_ERROR (Status) || !PartitionValidMbr (Mbr, BlockIo->Media->LastBlock)) {
+  if (EFI_ERROR (Status)) {
+    Found = Status;
+    goto Done;
+  }
+  if (!PartitionValidMbr (Mbr, BlockIo->Media->LastBlock)) {
     goto Done;
   }
   //
@@ -238,7 +243,7 @@ Returns:
                 );
 
       if (!EFI_ERROR (Status)) {
-        Found = TRUE;
+        Found = EFI_SUCCESS;
       }
     }
   } else {
@@ -258,6 +263,7 @@ Returns:
                           Mbr
                           );
       if (EFI_ERROR (Status)) {
+        Found = Status;
         goto Done;
       }
 
@@ -297,7 +303,7 @@ Returns:
                 (BOOLEAN) (Mbr->Partition[0].OSIndicator == EFI_PARTITION)
                 );
       if (!EFI_ERROR (Status)) {
-        Found = TRUE;
+        Found = EFI_SUCCESS;
       }
 
       if ((Mbr->Partition[1].OSIndicator != EXTENDED_DOS_PARTITION) &&

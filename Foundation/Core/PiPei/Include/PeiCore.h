@@ -119,7 +119,6 @@ typedef struct{
   PEI_CORE_FV_HANDLE                 Fv[PEI_CORE_MAX_FV_SUPPORTED];
   EFI_PEI_FILE_HANDLE                CurrentFvFileHandles[PEI_CORE_MAX_PEIM_PER_FV];
   UINTN                              AprioriCount;
-  UINTN                              RegisterForShadowCount;
   UINTN                              CurrentPeimFvCount; 
   UINTN                              CurrentPeimCount;
   EFI_PEI_FILE_HANDLE                CurrentFileHandle;

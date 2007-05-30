@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -26,14 +26,7 @@ Abstract:
 #include "EfiInternalFormRepresentation.h"
 
 #include "EdkIIGlueDefinitionChangesBase.h"
-
-typedef enum {
-  EfiPeiPciCfgWidthUint8   = 0,
-  EfiPeiPciCfgWidthUint16  = 1,
-  EfiPeiPciCfgWidthUint32  = 2,
-  EfiPeiPciCfgWidthUint64  = 3,
-  EfiPeiPciCfgWidthMaximum
-} EFI_PEI_PCI_CFG_PPI_WIDTH;
+#include "EfiPciCfg.h"
 
 //
 // typedef Edk types - EdkII types
@@ -130,10 +123,6 @@ typedef PEI_CPU_IO_PPI_MEM_WRITE8                    EFI_PEI_CPU_IO_PPI_MEM_WRIT
 typedef PEI_CPU_IO_PPI_MEM_WRITE16                   EFI_PEI_CPU_IO_PPI_MEM_WRITE16;
 typedef PEI_CPU_IO_PPI_MEM_WRITE32                   EFI_PEI_CPU_IO_PPI_MEM_WRITE32;
 typedef PEI_CPU_IO_PPI_MEM_WRITE64                   EFI_PEI_CPU_IO_PPI_MEM_WRITE64;
-typedef PEI_PCI_CFG_PPI_WIDTH                        EFI_PEI_PCI_CFG_PPI_WIDTH;
-typedef PEI_PCI_CFG_PPI_PCI_ADDRESS                  EFI_PEI_PCI_CFG_PPI_PCI_ADDRESS;
-typedef PEI_PCI_CFG_PPI_IO                           EFI_PEI_PCI_CFG_PPI_IO;
-typedef PEI_PCI_CFG_PPI_RW                           EFI_PEI_PCI_CFG_PPI_RW;
 typedef PEI_GET_VARIABLE                             EFI_PEI_GET_VARIABLE;
 typedef PEI_GET_NEXT_VARIABLE_NAME                   EFI_PEI_GET_NEXT_VARIABLE_NAME;
 typedef PEI_LOAD_RECOVERY_CAPSULE                    EFI_PEI_LOAD_RECOVERY_CAPSULE;

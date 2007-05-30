@@ -22,9 +22,12 @@ Revision History:
 #include "PpisNeededByDxeCore.h"
 #include "FlashLayout.h"
 #include "EfiVariable.h"
+#include "CpuIA32.h"
 
 #define EFI_DXE_FILE_GUID \
   { 0xb1644c1a, 0xc16a, 0x4c5b, 0x88, 0xde, 0xea, 0xfb, 0xa9, 0x7e, 0x74, 0xd8 }
+
+#define CPUID_EXTENDED_ADD_SIZE  0x80000008
 
 HOB_TEMPLATE  gHobTemplate = {
   { // Phit
@@ -822,6 +825,27 @@ PrepareHobPhit (
   gHob = (HOB_TEMPLATE *)(UINTN)gHob->Phit.EfiMemoryBottom;
 
   gHob->Phit.EfiEndOfHobList = (EFI_PHYSICAL_ADDRESS)(UINTN)&gHob->EndOfHobList;
+}
+
+VOID
+PrepareHobCpu (
+  VOID
+  )
+{
+  EFI_CPUID_REGISTER          Reg;
+  UINT8                       CpuMemoryAddrBitNumber;
+
+  //
+  // Create a CPU hand-off information
+  //
+  CpuMemoryAddrBitNumber = 36;
+  EfiCpuid (EFI_CPUID_EXTENDED_FUNCTION, &Reg);
+  if (Reg.RegEax >= CPUID_EXTENDED_ADD_SIZE) {
+    EfiCpuid (CPUID_EXTENDED_ADD_SIZE, &Reg);
+    CpuMemoryAddrBitNumber = (UINT8)(UINTN)(Reg.RegEax & 0xFF);
+  }
+  
+  gHob->Cpu.SizeOfMemorySpace = CpuMemoryAddrBitNumber;
 }
 
 VOID

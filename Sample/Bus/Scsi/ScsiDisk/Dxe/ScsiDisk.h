@@ -40,6 +40,7 @@ Abstract:
 //
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 #define IsDeviceFixed(a)        (a)->FixedDevice ? 1 : 0
 
@@ -71,7 +72,12 @@ typedef struct {
 // Global Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL  gScsiDiskDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL  gScsiDiskComponentName;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL  gScsiDiskComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL   gScsiDiskComponentName;
+#endif
+
 //
 // action code used in detect media process
 //

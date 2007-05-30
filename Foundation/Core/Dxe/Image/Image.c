@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -576,7 +576,8 @@ Arguments:
                         the image to be loaded.
   SourceSize          - The size in bytes of SourceBuffer.
   DstBuffer           - The buffer to store the image
-  NumberOfPages       - If not NULL, a pointer to the image's page number, if this number 
+  NumberOfPages       - If not NULL, on input a pointer to the page number of DstBuffer and on
+                        output a pointer to the page number of the image. If this number of DstBuffer
                         is not enough, return EFI_BUFFER_TOO_SMALL and this parameter contain 
                         the required number.
   ImageHandle         - Pointer to the returned image handle that is created when the image 
@@ -730,6 +731,9 @@ Returns:
     }
     goto Done;
   }
+  if (NumberOfPages != NULL) {
+    *NumberOfPages = Image->NumberOfPages;
+  }  
 
   //
   // Register the image in the Debug Image Info Table if the attribute is set

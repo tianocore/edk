@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -647,7 +647,7 @@ Returns:
   }
 
   if (Protocol != NULL) {
-    *Protocol = *((UINT16 *) (((UINT8 *) Buffer) + 12));
+    *Protocol = NTOHS (*((UINT16 *) (((UINT8 *) Buffer) + 12)));
   }
 
   return EFI_SUCCESS;
@@ -751,7 +751,7 @@ Returns:
   InterfaceCount        = MAX_INTERFACE_INFO_NUMBER;
 
   NetListInit (&This->InstanceList);
-  NET_GLOBAL_LOCK_INIT (&This->Lock);
+  NET_LOCK_INIT (&This->Lock);
 
   //
   //  Get the WinNT thunk

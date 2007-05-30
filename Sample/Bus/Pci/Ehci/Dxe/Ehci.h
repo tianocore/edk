@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation
+Copyright (c) 2006 - 2007, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -40,6 +40,7 @@ Revision History
 //
 #include EFI_PROTOCOL_DEFINITION (UsbHostController)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 #ifdef EFI_DEBUG
 extern UINTN  gEHCDebugLevel;
@@ -118,7 +119,11 @@ extern UINTN  gEHCErrorLevel;
 // Enhanced Host Controller Registers definitions
 //
 extern EFI_DRIVER_BINDING_PROTOCOL  gEhciDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gEhciComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gEhciComponentName;
+#endif
 
 #define USBCMD            0x0     /* Command Register Offset 00-03h */
 #define USBCMD_RS         0x01    /* Run / Stop */

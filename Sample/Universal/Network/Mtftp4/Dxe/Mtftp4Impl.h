@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,7 +61,7 @@ typedef struct _MTFTP4_SERVICE {
   NET_LIST_ENTRY                Children;
 
   EFI_EVENT                     Timer;  // Ticking timer for all the MTFTP clients
-  INTN                          TimeToGetMap;
+  EFI_EVENT                     TimerToGetMap;
 
   EFI_HANDLE                    Controller;
   EFI_HANDLE                    Image;

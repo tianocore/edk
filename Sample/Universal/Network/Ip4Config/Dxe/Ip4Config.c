@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -330,6 +330,7 @@ Returns:
   IP4_CONFIG_DHCP4_OPTION   ParaList;
   EFI_STATUS                Status;
   UINT32                    Source;
+  EFI_TPL                   OldTpl;
   
   if ((This == NULL) || (DoneEvent == NULL) || (ReconfigEvent == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -337,8 +338,12 @@ Returns:
 
   Instance = IP4_CONFIG_INSTANCE_FROM_IP4CONFIG (This);
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (Instance->State != IP4_CONFIG_STATE_IDLE) {
-    return EFI_ALREADY_STARTED;
+    Status = EFI_ALREADY_STARTED;
+
+    goto ON_EXIT;
   }
   
   Instance->DoneEvent     = DoneEvent;
@@ -361,7 +366,8 @@ Returns:
     Instance->Result = EFI_SUCCESS;
     
     gBS->SignalEvent (Instance->DoneEvent);
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
+    goto ON_EXIT;
   }
 
   //
@@ -406,7 +412,8 @@ Returns:
 
   if (Dhcp4Mode.State == Dhcp4Bound) {
     Ip4ConfigOnDhcp4Complete (NULL, Instance);
-    return EFI_SUCCESS;
+
+    goto ON_EXIT;
   }
   
   //
@@ -451,10 +458,15 @@ Returns:
 
   Instance->State  = IP4_CONFIG_STATE_STARTED;
   Instance->Result = EFI_NOT_READY;
-  return EFI_SUCCESS;
 
 ON_ERROR:
-  Ip4ConfigCleanConfig (Instance);
+  if (EFI_ERROR (Status)) {
+    Ip4ConfigCleanConfig (Instance);
+  }
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
+
   return Status;
 }
 
@@ -481,7 +493,9 @@ Returns:
 
 --*/
 {
-  IP4_CONFIG_INSTANCE       *Instance;
+  IP4_CONFIG_INSTANCE  *Instance;
+  EFI_STATUS           Status;
+  EFI_TPL              OldTpl;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -489,8 +503,12 @@ Returns:
 
   Instance = IP4_CONFIG_INSTANCE_FROM_IP4CONFIG (This);
 
+  Status = EFI_SUCCESS;
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (Instance->State == IP4_CONFIG_STATE_IDLE) {
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
 
   //
@@ -499,7 +517,11 @@ Returns:
   // the configuration done or reconfiguration.
   //
   Ip4ConfigCleanConfig (Instance);
-  return EFI_SUCCESS;
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -533,6 +555,7 @@ Returns:
   IP4_CONFIG_INSTANCE       *Instance;
   NIC_IP4_CONFIG_INFO       *NicConfig;
   EFI_STATUS                Status;
+  EFI_TPL                   OldTpl;
   UINTN                     Len;
 
   if ((This == NULL) || (ConfigDataSize == NULL)) {
@@ -541,10 +564,17 @@ Returns:
 
   Instance  = IP4_CONFIG_INSTANCE_FROM_IP4CONFIG (This);
 
+  Status = EFI_SUCCESS;
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (Instance->State == IP4_CONFIG_STATE_IDLE) {
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
   } else if (Instance->State == IP4_CONFIG_STATE_STARTED) {
-    return EFI_NOT_READY;
+    Status = EFI_NOT_READY;
+  }
+
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
   }
 
   //
@@ -566,6 +596,9 @@ Returns:
 
     *ConfigDataSize = Len;
   }
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
 
   return Status;
 }

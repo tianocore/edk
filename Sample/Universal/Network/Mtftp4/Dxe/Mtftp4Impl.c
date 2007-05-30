@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -54,11 +54,14 @@ Returns:
 
 --*/
 {
-  MTFTP4_PROTOCOL           *Instance;
+  MTFTP4_PROTOCOL  *Instance;
+  EFI_TPL          OldTpl;
 
   if ((This == NULL) || (ModeData == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   Instance                         = MTFTP4_PROTOCOL_FROM_THIS (This);
   ModeData->ConfigData             = Instance->Config;
@@ -66,6 +69,9 @@ Returns:
   ModeData->SupportedOptoins       = mMtftp4SupportedOptions;
   ModeData->UnsupportedOptionCount = 0;
   ModeData->UnsupportedOptoins     = NULL;
+
+  NET_RESTORE_TPL (OldTpl);
+
   return EFI_SUCCESS;
 }
 
@@ -527,17 +533,23 @@ Returns:
   MTFTP4_SERVICE            *Service;
   EFI_IP4_MODE_DATA         Ip4Mode;
   EFI_UDP4_PROTOCOL         *Udp;
+  EFI_STATUS                Status;
 
   ASSERT (Instance->Config.UseDefaultSetting);
 
   Service = Instance->Service;
   Udp     = UdpPort->Udp;
 
-  if (Service->TimeToGetMap == 0) {
-    Service->TimeToGetMap = MTFTP4_TIME_TO_GETMAP;
+  Status = gBS->SetTimer (
+                  Service->TimerToGetMap,
+                  TimerRelative,
+                  MTFTP4_TIME_TO_GETMAP * TICKS_PER_SECOND
+                  );
+  if (EFI_ERROR (Status)) {
+    return FALSE;
   }
 
-  while (Service->TimeToGetMap != 0) {
+  while (!EFI_ERROR (gBS->CheckEvent (Service->TimerToGetMap))) {
     Udp->Poll (Udp);
 
     if (!EFI_ERROR (Udp->GetModeData (Udp, NULL, &Ip4Mode, NULL, NULL)) && 
@@ -667,19 +679,25 @@ Returns:
 
   Instance = MTFTP4_PROTOCOL_FROM_THIS (This);
 
+  Status = EFI_SUCCESS;
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (Instance->State != MTFTP4_STATE_CONFIGED) {
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
   }
 
   if (Instance->Operation != 0) {
-    return EFI_ACCESS_DENIED;
+    Status = EFI_ACCESS_DENIED;
   }
-  
+
+  if (EFI_ERROR (Status)) {
+    NET_RESTORE_TPL (OldTpl);
+    return Status;
+  }
+
   //
   // Set the Operation now to prevent the application start other
-  // operations. Don't get the lock or raise TPL here because
-  // Mtftp4GetMapping, which is called by UdpIoCreatePort, must be
-  // run below the NET_TPL_CALLBACK
+  // operations.
   //
   Instance->Operation = Operation;
   Override            = Token->OverrideData;
@@ -748,8 +766,6 @@ Returns:
   //
   // Build and send an initial requests
   //
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
-
   if (Operation == EFI_MTFTP4_OPCODE_WRQ) {
     Status = Mtftp4WrqStart (Instance, Operation);
   } else {
@@ -761,7 +777,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     goto ON_ERROR;
   }
-  
   //
   // Return immediately for asynchronous operation or poll the
   // instance for synchronous operation.
@@ -780,6 +795,8 @@ Returns:
 
 ON_ERROR:
   Mtftp4CleanOperation (Instance, Status);
+  NET_RESTORE_TPL (OldTpl);
+
   return Status;
 }
 

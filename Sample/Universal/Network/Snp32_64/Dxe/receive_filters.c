@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -325,6 +325,7 @@ Returns:
 {
   SNP_DRIVER  *snp;
   EFI_STATUS  Status;
+  EFI_TPL     OldTpl;
 
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -332,57 +333,54 @@ Returns:
 
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
-  if (snp == NULL) {
-    return EFI_DEVICE_ERROR;
-  }
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
 
   switch (snp->mode.State) {
   case EfiSimpleNetworkInitialized:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkStarted:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
   //
   // check if we are asked to enable or disable something that the UNDI
   // does not even support!
   //
-  if ((EnableFlags &~snp->mode.ReceiveFilterMask) != 0) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if ((DisableFlags &~snp->mode.ReceiveFilterMask) != 0) {
-    return EFI_INVALID_PARAMETER;
+  if (((EnableFlags &~snp->mode.ReceiveFilterMask) != 0) ||
+    ((DisableFlags &~snp->mode.ReceiveFilterMask) != 0)) {
+    Status = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
 
   if (ResetMCastList) {
+
     DisableFlags |= EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST & snp->mode.ReceiveFilterMask;
     MCastAddressCount = 0;
     MCastAddressList  = NULL;
   } else {
     if (MCastAddressCount != 0) {
-      if (MCastAddressCount > snp->mode.MaxMCastFilterCount) {
-        return EFI_INVALID_PARAMETER;
-      }
+      if ((MCastAddressCount > snp->mode.MaxMCastFilterCount) ||
+        (MCastAddressList == NULL)) {
 
-      if (MCastAddressList == NULL) {
-        return EFI_INVALID_PARAMETER;
+        Status = EFI_INVALID_PARAMETER;
+        goto ON_EXIT;
       }
     }
   }
 
   if (EnableFlags == 0 && DisableFlags == 0 && !ResetMCastList && MCastAddressCount == 0) {
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
+    goto ON_EXIT;
   }
 
   if ((EnableFlags & EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST) != 0 && MCastAddressCount == 0) {
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
 
   if ((EnableFlags != 0) || (MCastAddressCount != 0)) {
@@ -393,18 +391,23 @@ Returns:
               MCastAddressList
               );
 
-    if (Status != EFI_SUCCESS) {
-      return Status;
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
     }
   }
 
   if ((DisableFlags != 0) || ResetMCastList) {
     Status = pxe_rcvfilter_disable (snp, DisableFlags, ResetMCastList);
 
-    if (Status != EFI_SUCCESS) {
-      return Status;
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
     }
   }
 
-  return pxe_rcvfilter_read (snp);
+  Status = pxe_rcvfilter_read (snp);
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
+
+  return Status;
 }

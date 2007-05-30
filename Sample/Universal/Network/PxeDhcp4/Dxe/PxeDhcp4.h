@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -39,6 +39,7 @@ Abstract:
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (PxeDhcp4)
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -323,7 +324,11 @@ tx_rx_udp (
 //
 // Global variable definitions.
 //
-extern EFI_COMPONENT_NAME_PROTOCOL  gPxeDhcp4ComponentName;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL  gPxeDhcp4ComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL   gPxeDhcp4ComponentName;
+#endif
 
 EFI_STATUS
 EFIAPI

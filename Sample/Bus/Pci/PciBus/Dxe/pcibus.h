@@ -250,7 +250,11 @@ typedef struct _PCI_IO_DEVICE {
 //
 extern EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL *gEfiIncompatiblePciDeviceSupport;
 extern EFI_DRIVER_BINDING_PROTOCOL                  gPciBusDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL                 gPciBusComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL                  gPciBusComponentName;
+#endif
 extern EFI_LIST_ENTRY                               gPciDevicePool;
 extern BOOLEAN                                      gFullEnumeration;
 extern UINTN                                        gPciHostBridgeNumber;

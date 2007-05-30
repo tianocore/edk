@@ -1,6 +1,6 @@
-/*++
+ /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -20,46 +20,68 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 //
 // EFI Component Name Functions
 //
 EFI_STATUS
 EFIAPI
-UsbMassStorageComponentNameGetDriverName (
+UsbMassStorageGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
 
 EFI_STATUS
 EFIAPI
-UsbMassStorageComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
-  IN  EFI_HANDLE                                      ControllerHandle,
-  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
-  IN  CHAR8                                           *Language,
-  OUT CHAR16                                          **ControllerName
+UsbMassStorageGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
+  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
+  IN  EFI_HANDLE                   ControllerHandle,
+  IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
+  IN  CHAR8                        *Language,
+  OUT CHAR16                       **ControllerName
   );
 
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL     gUsbMassStorageComponentName = {
-  UsbMassStorageComponentNameGetDriverName,
-  UsbMassStorageComponentNameGetControllerName,
-  "eng"
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL gUsbMassStorageComponentName = {
+  UsbMassStorageGetDriverName,
+  UsbMassStorageGetControllerName,
+  LANGUAGE_CODE_ENGLISH
 };
+#else
+EFI_COMPONENT_NAME_PROTOCOL gUsbMassStorageComponentName = {
+  UsbMassStorageGetDriverName,
+  UsbMassStorageGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#endif
 
-STATIC EFI_UNICODE_STRING_TABLE mUsbMassStorageDriverNameTable[] = {
-  { "eng", L"Generic USB Mass Storage Driver" },
-  { NULL , NULL }
+STATIC EFI_UNICODE_STRING_TABLE 
+mUsbMassStorageDriverNameTable[] = {
+  {LANGUAGE_CODE_ENGLISH, L"Usb Mass Storage Driver"},
+  {NULL,  NULL}
 };
 
 EFI_STATUS
 EFIAPI
-UsbMassStorageComponentNameGetDriverName (
+UsbMassStorageGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -91,21 +113,25 @@ UsbMassStorageComponentNameGetDriverName (
 --*/
 {
   return EfiLibLookupUnicodeString (
-          Language,
-          gUsbMassStorageComponentName.SupportedLanguages,
-          mUsbMassStorageDriverNameTable,
-          DriverName
-          );
+           Language,
+           gUsbMassStorageComponentName.SupportedLanguages,
+           mUsbMassStorageDriverNameTable,
+           DriverName
+           );
 }
 
 EFI_STATUS
 EFIAPI
-UsbMassStorageComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
-  IN  EFI_HANDLE                                      ControllerHandle,
-  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
-  IN  CHAR8                                           *Language,
-  OUT CHAR16                                          **ControllerName
+UsbMassStorageGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
+  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
+  IN  EFI_HANDLE                  ControllerHandle,
+  IN  EFI_HANDLE                  ChildHandle        OPTIONAL,
+  IN  CHAR8                       *Language,
+  OUT CHAR16                      **ControllerName
   )
 /*++
 
@@ -137,18 +163,8 @@ UsbMassStorageComponentNameGetControllerName (
                        by This. 
 
   Returns:
-    EFI_SUCCESS           - The Unicode string for the user readable name in the 
-                            language specified by Language for the driver 
-                            specified by This was returned in DriverName.
-    EFI_INVALID_PARAMETER - ControllerHandle is not a valid EFI_HANDLE.
-    EFI_INVALID_PARAMETER - ChildHandle is not NULL and it is not a valid EFI_HANDLE.
-    EFI_INVALID_PARAMETER - Language is NULL.
-    EFI_INVALID_PARAMETER - ControllerName is NULL.
-    EFI_UNSUPPORTED       - The driver specified by This is not currently managing 
-                            the controller specified by ControllerHandle and 
-                            ChildHandle.
-    EFI_UNSUPPORTED       - The driver specified by This does not support the 
-                            language specified by Language.
+    EFI_UNSUPPORTED  - The driver specified by This does not support the 
+                       language specified by Language.
 
 --*/
 {

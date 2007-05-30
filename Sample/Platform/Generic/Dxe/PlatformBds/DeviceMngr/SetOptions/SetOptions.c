@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -152,6 +152,7 @@ SetOptionsInit (
   return EFI_SUCCESS;
 }
 
+
 EFI_STATUS
 EFIAPI
 SetOptionsCallback (
@@ -204,7 +205,11 @@ Arguments:
   EFI_DRIVER_CONFIGURATION_PROTOCOL         *DriverConfiguration;
   EFI_DRIVER_BINDING_PROTOCOL               *DriverBinding;
   EFI_LOADED_IMAGE_PROTOCOL                 *LoadedImage;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   EFI_COMPONENT_NAME_PROTOCOL               *ComponentName;
+#else
+  EFI_COMPONENT_NAME2_PROTOCOL              *ComponentName;
+#endif
   EFI_FORM_BROWSER_PROTOCOL                 *FormBrowser;
   
   EFI_DEVICE_PATH_PROTOCOL                  *DevicePath;
@@ -400,18 +405,22 @@ Arguments:
     if (EFI_ERROR (Status)) {
       LoadedImage = NULL;
     }
-    
-    ComponentName = NULL;
+
+    ComponentName  = NULL;
     Status = gBS->OpenProtocol (
-                    DriverImageHandleBuffer[Index],
+                    DriverBinding->ImageHandle,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+                    &gEfiComponentName2ProtocolGuid,
+#else
                     &gEfiComponentNameProtocolGuid,
+#endif
                     (VOID **) &ComponentName,
                     NULL,
                     NULL,
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
-    if (EFI_ERROR (Status)) {
-      ComponentName = NULL;
+    if (EFI_ERROR(Status)) {
+      return EFI_UNSUPPORTED;
     }
 
     //
@@ -508,14 +517,14 @@ Arguments:
       FreeControllerHandleName = FALSE;
       ControllerHandleName = NULL;
       Status = EFI_UNSUPPORTED;
-      if ((ComponentName != NULL) && (ComponentName->GetDriverName != NULL)) {
-          Status = ComponentName->GetControllerName (
-                                    ComponentName,
-                                    ControllerHandleBuffer[ControllerHandleIndex],
-                                    NULL,
-                                    Language,
-                                    &ControllerHandleName
-                                    );        
+      if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
+        Status = ComponentName->GetControllerName (
+                                  ComponentName,
+                                  ControllerHandleBuffer[ControllerHandleIndex],
+                                  NULL,
+                                  Language,
+                                  &ControllerHandleName
+                                  );
       }
       if (EFI_ERROR (Status)) {
         Status = gBS->OpenProtocol (

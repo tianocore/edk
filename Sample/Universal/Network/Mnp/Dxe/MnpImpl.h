@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -68,8 +68,6 @@ typedef struct _MNP_INSTANCE_DATA {
   NET_LIST_ENTRY                  GroupCtrlBlkList;
 
   NET_MAP                         RxTokenMap;
-
-  EFI_LOCK                        RxLock;
 
   NET_LIST_ENTRY                  RxDeliveredPacketQueue;
   NET_LIST_ENTRY                  RcvdPacketQueue;

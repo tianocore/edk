@@ -34,8 +34,10 @@ Abstract:
 #include EFI_GUID_DEFINITION (Hob)
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-STATIC EFI_GUID mEfiCapsuleHeaderGuid = EFI_CAPSULE_GUID;
+STATIC EFI_GUID mUpdateFlashCapsuleGuid = EFI_CAPSULE_GUID;
+STATIC EFI_GUID  mCapsuleInfoGuid  = EFI_CAPSULE_INFO_GUID;
 #endif
+
 
 STATIC
 EFI_STATUS
@@ -182,6 +184,12 @@ Note:
   UINT32                      *BeginPtr;
   UINT32                      Index;
   UINT32                      PopulateIndex;
+  UINT32                      CacheIndex;
+  UINT32                      CacheNumber;
+  BOOLEAN                     CachedFlag;
+  VOID                        *CapsulePtr[MAX_SUPPORT_CAPSULE_NUM];
+  EFI_GUID                    CapsuleGuidCache[MAX_SUPPORT_CAPSULE_NUM];  
+  EFI_CAPSULE_INFO_TABLE      *CapsuleInfoTable; 
 
   PopulateIndex = 0;
   CapsuleNumber = 0;
@@ -189,6 +197,9 @@ Note:
   AddDataPtr   =  NULL;
   DataPtr      =  NULL;
   BeginPtr     =  NULL;
+  CacheIndex   = 0;
+  CacheNumber  = 0;
+  gBS->SetMem(CapsuleGuidCache, sizeof(EFI_GUID)* MAX_SUPPORT_CAPSULE_NUM, 0);
 #endif
 
   //
@@ -235,43 +246,111 @@ Note:
     BeginPtr = DataPtr;
 
     //
-    //Check the capsule flags,if contains CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE, install 
-    //capsuleTable to configure table with EFI_CAPSULE_GUID
+    // Record the memory address where capsules' offset variable reside. 
+    //
+    DataPtr = BeginPtr;
+
+    //
+    // Capsules who have CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE always are used for operating
+    // System to have information persist across a system reset. EFI System Table must 
+    // point to an array of capsules that contains the same CapsuleGuid value. And agents
+    // searching for this type capsule will look in EFI System Table and search for the 
+    // capsule's Guid and associated pointer to retrieve the data. Two steps below describes
+    // how to sorting the capsules by the unique guid and install the array to EFI System Table. 
+    // Firstly, Loop for all coalesced capsules, record unique CapsuleGuids and cache them in an 
+    // array for later sorting capsules by CapsuleGuid.
+    //
+    for (Index = 0; Index < CapsuleTotalNumber; Index++) {
+      CachedFlag = FALSE;
+      CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
+      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
+        //
+        // For each capsule, we compare it with known CapsuleGuid in the CacheArray.
+        // If already has the Guid, skip it. Whereas, record it in the CacheArray as 
+        // an additional one.
+        //
+        CacheIndex= 0;
+        while (CacheIndex < CacheNumber) {
+          if (EfiCompareGuid(&CapsuleGuidCache[CacheIndex],&CapsuleHeader->CapsuleGuid)) {
+            CachedFlag = TRUE;  
+            break;
+          }        
+          CacheIndex++;
+        }
+        if (!CachedFlag) {
+          gBS->CopyMem(&CapsuleGuidCache[CacheNumber++],&CapsuleHeader->CapsuleGuid,sizeof(EFI_GUID));
+        }
+      }
+    }
+
+    //
+    // Secondly, for each unique CapsuleGuid in CacheArray, gather all coalesced capsules
+    // whose guid is the same as it, and malloc memory for an array which preceding
+    // with UINT32. The array fills with entry point of capsules that have the same
+    // CapsuleGuid, and UINT32 represents the size of the array of capsules. Then install
+    // this array into EFI System Table, so that agents searching for this type capsule
+    // will look in EFI System Table and search for the capsule's Guid and associated
+    // pointer to retrieve the data.
+    //
+    DataPtr = BeginPtr;
+    CacheIndex = 0;
+    while (CacheIndex < CacheNumber) {
+      CapsuleNumber = 0;  
+      for (Index = 0; Index < CapsuleTotalNumber; Index++) {
+        CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
+        if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
+          if (EfiCompareGuid(&CapsuleGuidCache[CacheIndex],&CapsuleHeader->CapsuleGuid)) {
+            //
+            // Cache Caspuleheader to the array, this array is uniqued with certain CapsuleGuid.
+            //
+            CapsulePtr[CapsuleNumber++]= (VOID*)CapsuleHeader;
+          }
+        }
+      }
+      if (CapsuleNumber != 0) {
+        Size = sizeof(EFI_CAPSULE_TABLE) + (CapsuleNumber - 1) * sizeof(VOID*);  
+        Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleTable);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+        CapsuleTable->CapsuleArrayNumber =  CapsuleNumber;
+        gBS->CopyMem(&CapsuleTable->CapsulePtr[0],CapsulePtr, CapsuleNumber * sizeof(VOID*));
+        Status = gBS->InstallConfigurationTable (&CapsuleGuidCache[CacheIndex], (VOID*)CapsuleTable);
+        ASSERT_EFI_ERROR (Status);
+      }
+      CacheIndex++;
+    }
+
+    //
+    // Install CapsuleInformationGuid to EFI ConfigTable to carry the information what
+    // CapsuleGuid array has been installed in the ConfigTable. When comes to Runtime,
+    // SetVirtualAddressMap can find out the related CapsuleGuid array and convert the 
+    // related CapsuleTable contents.
+    //
+    if (CacheNumber != 0) {
+      Size = sizeof(EFI_CAPSULE_INFO_TABLE) + (CacheNumber -1) * sizeof(EFI_GUID);
+      Status  = gBS->AllocatePool (EfiBootServicesData, Size, (VOID **) &CapsuleInfoTable);
+      CapsuleInfoTable->CapsuleGuidNumber = CacheNumber;
+      gBS->CopyMem(&CapsuleInfoTable->CapsuleGuidPtr[0], CapsuleGuidCache, CacheNumber * sizeof(EFI_GUID));
+      Status = gBS->InstallConfigurationTable (&mCapsuleInfoGuid, (VOID*)CapsuleInfoTable);
+      ASSERT_EFI_ERROR (Status);
+    }
+    //
+    // Besides ones with CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flag, all capsules left are
+    // recognized by platform with CapsuleGuid. For general platform driver, UpdateFlash 
+    // type is commonly supported, so here only deal with encapsuled FVs capsule. Additional
+    // type capsule transaction could be extended. It depends on platform policy.
     //
     DataPtr = BeginPtr;
     for (Index = 0; Index < CapsuleTotalNumber; Index++) {
-      CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
-      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
-         CapsuleNumber ++;
-      }
-    }
-
-    Size = sizeof(EFI_CAPSULE_TABLE) + (CapsuleNumber -1)* sizeof(VOID*);  
-    Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleTable);
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    DataPtr = BeginPtr;
-    for (Index = 0; Index < CapsuleTotalNumber; Index++) {
-      CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
-      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
-        CapsuleTable->CapsulePtr[PopulateIndex++] = (VOID*)CapsuleHeader;
-      }
-    }
-    CapsuleTable->CapsuleArrayNumber =  PopulateIndex;
-    Status = gBS->InstallConfigurationTable (&mEfiCapsuleHeaderGuid, (VOID*)CapsuleTable);
-    ASSERT_EFI_ERROR (Status);
-
-    DataPtr = BeginPtr;
-    for (Index = 0; Index < CapsuleTotalNumber; Index++) {
       CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress + (UINT32)(UINTN)*DataPtr++);
-      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) == 0) {
+      if (((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) == 0)       \
+          && (EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mUpdateFlashCapsuleGuid))) {
         //
-        //Skip the capsule header, move to the Firware Volume
+        // Skip the capsule header, move to the Firware Volume
         //
-        BodyBaseAddress = (EFI_PHYSICAL_ADDRESS)CapsuleHeader + CapsuleHeader->OffsetToCapsuleBody;
-        Length = CapsuleHeader->CapsuleImageSize - CapsuleHeader->OffsetToCapsuleBody;
+        BodyBaseAddress = (EFI_PHYSICAL_ADDRESS)CapsuleHeader + CapsuleHeader->HeaderSize;
+        Length = CapsuleHeader->CapsuleImageSize - CapsuleHeader->HeaderSize;
 
         while (Length != 0) {
           //

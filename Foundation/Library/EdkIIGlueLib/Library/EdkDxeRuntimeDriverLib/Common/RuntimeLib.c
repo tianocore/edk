@@ -110,18 +110,16 @@ RuntimeDriverLibConstruct (
   //
   // Register SetVirtualAddressMap () notify function
   // 
-  if (_gDriverSetVirtualAddressMapEvent[0] != NULL) {
-    ASSERT (gBS != NULL);
-    Status = gBS->CreateEvent (
-                    EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
-                    EFI_TPL_NOTIFY,
-                    RuntimeLibVirtualNotifyEvent,
-                    NULL,
-                    &mEfiVirtualNotifyEvent
-                    );
+  ASSERT (gBS != NULL);
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
+                  EFI_TPL_NOTIFY,
+                  RuntimeLibVirtualNotifyEvent,
+                  NULL,
+                  &mEfiVirtualNotifyEvent
+                  );
 
-    ASSERT_EFI_ERROR (Status);
-  }
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }
@@ -137,7 +135,8 @@ RuntimeDriverLibConstruct (
 EFI_STATUS
 EFIAPI
 RuntimeDriverLibDeconstruct (
-  VOID
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
   EFI_STATUS  Status;
@@ -145,11 +144,9 @@ RuntimeDriverLibDeconstruct (
   //
   // Close SetVirtualAddressMap () notify function
   //
-  if (_gDriverSetVirtualAddressMapEvent[0] != NULL) {
-    ASSERT (gBS != NULL);
-    Status = gBS->CloseEvent (mEfiVirtualNotifyEvent);
-    ASSERT_EFI_ERROR (Status);
-  }
+  ASSERT (gBS != NULL);
+  Status = gBS->CloseEvent (mEfiVirtualNotifyEvent);
+  ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
 }

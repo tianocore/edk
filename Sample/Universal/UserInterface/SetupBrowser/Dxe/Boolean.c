@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,6 +28,56 @@ Abstract:
 //
 BOOLEAN *mBooleanEvaluationStack    = (BOOLEAN) 0;
 BOOLEAN *mBooleanEvaluationStackEnd = (BOOLEAN) 0;
+
+STATIC
+VOID
+GetNvValue (
+  IN  EFI_FILE_FORM_TAGS      *FileFormTags,
+  IN  EFI_INCONSISTENCY_DATA  *Iterator,
+  IN  UINT16                  Width,
+  OUT UINT16                  *MapValue,
+  OUT UINT16                  *MapValue2
+)
+{
+  UINT16    *MapBuffer;
+  UINT16    *MapBuffer2;
+
+  MapBuffer   = NULL;
+  MapBuffer2  = NULL;
+  *MapValue   = 0;
+  *MapValue2  = 0;
+
+  // 
+  //  Because INVALID_OFFSET_VALUE - 1 is reserved for TRUE or FALSE, omit them.
+  //
+  if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE &&
+      Iterator->QuestionId1 != INVALID_OFFSET_VALUE - 1) {
+    ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
+  }
+  if (Iterator->QuestionId2 != INVALID_OFFSET_VALUE) {
+    ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
+  }
+
+  if (MapBuffer != NULL) {
+    if (Width == 2) {
+      *MapValue = *MapBuffer;
+    } else {
+      *MapValue = (UINT8) *MapBuffer;
+    }
+
+    gBS->FreePool (MapBuffer);
+  }
+
+  if (MapBuffer2 != NULL) {
+    if (Width == 2) {
+      *MapValue2 = *MapBuffer2;
+    } else {
+      *MapValue2 = (UINT8) *MapBuffer2;
+    }
+
+    gBS->FreePool (MapBuffer2);
+  }
+}
 
 STATIC
 VOID
@@ -451,8 +501,6 @@ Returns:
 {
   BOOLEAN                 Operator;
   BOOLEAN                 Operator2;
-  UINT16                  *MapBuffer;
-  UINT16                  *MapBuffer2;
   UINT16                  MapValue;
   UINT16                  MapValue2;
   UINTN                   SizeOfVariable;
@@ -465,10 +513,6 @@ Returns:
 
   Operator        = FALSE;
   Operator2       = FALSE;
-  MapBuffer       = NULL;
-  MapBuffer2      = NULL;
-  MapValue        = 0;
-  MapValue2       = 0;
   VariableData    = NULL;
 
   while (TRUE) {
@@ -476,35 +520,7 @@ Returns:
       return;
     }
 
-    Width = (*PIterator)->Width;
-
-    // 
-    //  Because INVALID_OFFSET_VALUE - 1 is reserved for TRUE or FALSE, omit them.
-    //
-    if ((*PIterator)->QuestionId1 != INVALID_OFFSET_VALUE &&
-        (*PIterator)->QuestionId1 != INVALID_OFFSET_VALUE - 1) {
-      ExtractNvValue (FileFormTags, (*PIterator)->VariableNumber, Width, (*PIterator)->QuestionId1, &MapBuffer);
-      ExtractNvValue (FileFormTags, (*PIterator)->VariableNumber2, Width, (*PIterator)->QuestionId2, &MapBuffer2);
-      if (MapBuffer != NULL) {
-        if (Width == 2) {
-          MapValue = *MapBuffer;
-        } else {
-          MapValue = (UINT8) *MapBuffer;
-        }
-
-        gBS->FreePool (MapBuffer);
-      }
-
-      if (MapBuffer2 != NULL) {
-        if (Width == 2) {
-          MapValue2 = *MapBuffer2;
-        } else {
-          MapValue2 = (UINT8) *MapBuffer2;
-        }
-
-        gBS->FreePool (MapBuffer2);
-      }
-    }
+    GetNvValue (FileFormTags, *PIterator, (*PIterator)->Width, &MapValue, &MapValue2);
 
     switch ((*PIterator)->Operand) {
     case EFI_IFR_EQ_VAR_VAL_OP:
@@ -663,8 +679,6 @@ Returns:
   BOOLEAN                 OrOperator;
   BOOLEAN                 AndOperator;
   BOOLEAN                 ArtificialEnd;
-  UINT16                  *MapBuffer;
-  UINT16                  *MapBuffer2;
   UINT16                  MapValue;
   UINT16                  MapValue2;
   UINTN                   SizeOfVariable;
@@ -703,10 +717,6 @@ Returns:
 
   StackPtr    = mBooleanEvaluationStack;
   Iterator    = BooleanExpression;
-  MapBuffer   = NULL;
-  MapBuffer2  = NULL;
-  MapValue    = 0;
-  MapValue2   = 0;
 
   while (TRUE) {
     NotOperator = FALSE;
@@ -716,34 +726,7 @@ Returns:
     if (Iterator->Operand == 0) {
       return Operator;
     }
-
-    // 
-    //  Because INVALID_OFFSET_VALUE - 1 is reserved for TRUE or FALSE, omit them.
-    //
-    if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE &&
-        Iterator->QuestionId1 != INVALID_OFFSET_VALUE-1) {
-      ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-      ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-      if (MapBuffer != NULL) {
-        if (Width == 2) {
-          MapValue = *MapBuffer;
-        } else {
-          MapValue = (UINT8) *MapBuffer;
-        }
-
-        gBS->FreePool (MapBuffer);
-      }
-
-      if (MapBuffer2 != NULL) {
-        if (Width == 2) {
-          MapValue2 = *MapBuffer2;
-        } else {
-          MapValue2 = (UINT8) *MapBuffer2;
-        }
-
-        gBS->FreePool (MapBuffer2);
-      }
-    }
+    GetNvValue (FileFormTags, Iterator, Width, &MapValue, &MapValue2);
 
     switch (Iterator->Operand) {
     case EFI_IFR_SUPPRESS_IF_OP:
@@ -888,29 +871,7 @@ Returns:
         Iterator++;
       }
 
-      if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-        ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-        ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-        if (MapBuffer != NULL) {
-          if (Width == 2) {
-            MapValue = *MapBuffer;
-          } else {
-            MapValue = (UINT8) *MapBuffer;
-          }
-
-          gBS->FreePool (MapBuffer);
-        }
-
-        if (MapBuffer2 != NULL) {
-          if (Width == 2) {
-            MapValue2 = *MapBuffer2;
-          } else {
-            MapValue2 = (UINT8) *MapBuffer2;
-          }
-
-          gBS->FreePool (MapBuffer2);
-        }
-      }
+      GetNvValue (FileFormTags, Iterator, Width, &MapValue, &MapValue2);
 
       switch (Iterator->Operand) {
       case EFI_IFR_EQ_ID_VAL_OP:
@@ -1019,29 +980,7 @@ Returns:
         Iterator++;
       }
 
-      if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-        ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-        ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-        if (MapBuffer != NULL) {
-          if (Width == 2) {
-            MapValue = *MapBuffer;
-          } else {
-            MapValue = (UINT8) *MapBuffer;
-          }
-
-          gBS->FreePool (MapBuffer);
-        }
-
-        if (MapBuffer2 != NULL) {
-          if (Width == 2) {
-            MapValue2 = *MapBuffer2;
-          } else {
-            MapValue2 = (UINT8) *MapBuffer2;
-          }
-
-          gBS->FreePool (MapBuffer2);
-        }
-      }
+      GetNvValue (FileFormTags, Iterator, Width, &MapValue, &MapValue2);
 
       switch (Iterator->Operand) {
       case EFI_IFR_EQ_ID_VAL_OP:
@@ -1170,29 +1109,7 @@ Returns:
         Iterator++;
       }
 
-      if (Iterator->QuestionId1 != INVALID_OFFSET_VALUE) {
-        ExtractNvValue (FileFormTags, Iterator->VariableNumber, Width, Iterator->QuestionId1, &MapBuffer);
-        ExtractNvValue (FileFormTags, Iterator->VariableNumber2, Width, Iterator->QuestionId2, &MapBuffer2);
-        if (MapBuffer != NULL) {
-          if (Width == 2) {
-            MapValue = *MapBuffer;
-          } else {
-            MapValue = (UINT8) *MapBuffer;
-          }
-
-          gBS->FreePool (MapBuffer);
-        }
-
-        if (MapBuffer2 != NULL) {
-          if (Width == 2) {
-            MapValue2 = *MapBuffer2;
-          } else {
-            MapValue2 = (UINT8) *MapBuffer2;
-          }
-
-          gBS->FreePool (MapBuffer2);
-        }
-      }
+      GetNvValue (FileFormTags, Iterator, Width, &MapValue, &MapValue2);
 
       switch (Iterator->Operand) {
       case EFI_IFR_EQ_ID_VAL_OP:

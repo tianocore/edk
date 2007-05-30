@@ -71,12 +71,21 @@ UefiDriverModelLibConstructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->InstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid, (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid, (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          NULL
+                          );
+#else
           Status = gBS->InstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid, (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
                           &gEfiComponentNameProtocolGuid, (EFI_COMPONENT_NAME_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
                           NULL
                           );
+#endif
         }
       } else {
         if (_gDriverModelProtocolList[0].ComponentName == NULL) {
@@ -87,6 +96,15 @@ UefiDriverModelLibConstructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->InstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid,      (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          &gEfiDriverConfigurationProtocolGuid, (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[0].DriverConfiguration,
+                          NULL
+                          );
+#else
           Status = gBS->InstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
@@ -94,6 +112,7 @@ UefiDriverModelLibConstructor (
                           &gEfiDriverConfigurationProtocolGuid, (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[0].DriverConfiguration,
                           NULL
                           );
+#endif
         }
       }
     } else {
@@ -106,6 +125,15 @@ UefiDriverModelLibConstructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->InstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid,     (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid,    (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          &gEfiDriverDiagnosticsProtocolGuid, (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
+                          NULL
+                          );
+#else
           Status = gBS->InstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid,     (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
@@ -113,6 +141,7 @@ UefiDriverModelLibConstructor (
                           &gEfiDriverDiagnosticsProtocolGuid, (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
                           NULL
                           );
+#endif
         }
       } else {
         if (_gDriverModelProtocolList[0].ComponentName == NULL) {
@@ -124,6 +153,16 @@ UefiDriverModelLibConstructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->InstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid,      (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          &gEfiDriverConfigurationProtocolGuid, (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[0].DriverConfiguration,
+                          &gEfiDriverDiagnosticsProtocolGuid,   (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
+                          NULL
+                          );
+#else
           Status = gBS->InstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
@@ -132,6 +171,7 @@ UefiDriverModelLibConstructor (
                           &gEfiDriverDiagnosticsProtocolGuid,   (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
                           NULL
                           );
+#endif
         }
       }
     }
@@ -200,12 +240,22 @@ UefiDriverModelLibDestructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->UninstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid, (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid, (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          NULL
+                          );
+#else
           Status = gBS->UninstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid, (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
                           &gEfiComponentNameProtocolGuid, (EFI_COMPONENT_NAME_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
                           NULL
                           );
+
+#endif
         }
       } else {
         if (_gDriverModelProtocolList[0].ComponentName == NULL) {
@@ -216,6 +266,15 @@ UefiDriverModelLibDestructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->UninstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid,      (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          &gEfiDriverConfigurationProtocolGuid, (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[0].DriverConfiguration,
+                          NULL
+                          );
+#else
           Status = gBS->UninstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
@@ -223,6 +282,7 @@ UefiDriverModelLibDestructor (
                           &gEfiDriverConfigurationProtocolGuid, (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[0].DriverConfiguration,
                           NULL
                           );
+#endif
         }
       }
     } else {
@@ -235,6 +295,15 @@ UefiDriverModelLibDestructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->UninstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid,     (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid,    (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          &gEfiDriverDiagnosticsProtocolGuid, (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
+                          NULL
+                          );
+#else
           Status = gBS->UninstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid,     (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
@@ -242,6 +311,7 @@ UefiDriverModelLibDestructor (
                           &gEfiDriverDiagnosticsProtocolGuid, (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
                           NULL
                           );
+#endif
         }
       } else {
         if (_gDriverModelProtocolList[0].ComponentName == NULL) {
@@ -253,6 +323,16 @@ UefiDriverModelLibDestructor (
                           NULL
                           );
         } else {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          Status = gBS->UninstallMultipleProtocolInterfaces (
+                          &DriverBindingHandle,
+                          &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
+                          &gEfiComponentName2ProtocolGuid,      (EFI_COMPONENT_NAME2_PROTOCOL *)_gDriverModelProtocolList[0].ComponentName,
+                          &gEfiDriverConfigurationProtocolGuid, (EFI_DRIVER_CONFIGURATION_PROTOCOL *)_gDriverModelProtocolList[0].DriverConfiguration,
+                          &gEfiDriverDiagnosticsProtocolGuid,   (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
+                          NULL
+                          );
+#else
           Status = gBS->UninstallMultipleProtocolInterfaces (
                           &DriverBindingHandle,
                           &gEfiDriverBindingProtocolGuid,       (EFI_DRIVER_BINDING_PROTOCOL *)_gDriverModelProtocolList[0].DriverBinding,
@@ -261,6 +341,7 @@ UefiDriverModelLibDestructor (
                           &gEfiDriverDiagnosticsProtocolGuid,   (EFI_DRIVER_DIAGNOSTICS_PROTOCOL *)_gDriverModelProtocolList[0].DriverDiagnostics,
                           NULL
                           );
+#endif
         }
       }
     }

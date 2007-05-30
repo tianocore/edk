@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -253,23 +253,17 @@ Returns:
       Magic = Hdr.Pe32->OptionalHeader.Magic;
     }
 
-    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC ||
+        Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
       //
-      // Use PE32 offset
+      // PE32 and PE32+ have the same offset for these fields.
+      // We use PE32 for both PE32 and PE32+ headers here.
       //
       ImageContext->ImageType         = Hdr.Pe32->OptionalHeader.Subsystem;
       ImageContext->ImageSize         = (UINT64)Hdr.Pe32->OptionalHeader.SizeOfImage;
       ImageContext->SectionAlignment  = Hdr.Pe32->OptionalHeader.SectionAlignment;
       ImageContext->SizeOfHeaders     = Hdr.Pe32->OptionalHeader.SizeOfHeaders;
 
-    } else if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-      //
-      // Use PE32+ offset
-      //
-      ImageContext->ImageType         = Hdr.Pe32Plus->OptionalHeader.Subsystem;
-      ImageContext->ImageSize         = (UINT64) Hdr.Pe32Plus->OptionalHeader.SizeOfImage;
-      ImageContext->SectionAlignment  = Hdr.Pe32Plus->OptionalHeader.SectionAlignment;
-      ImageContext->SizeOfHeaders     = Hdr.Pe32Plus->OptionalHeader.SizeOfHeaders;
     } else {
       ImageContext->ImageError = EFI_IMAGE_ERROR_INVALID_MACHINE_TYPE;
       return EFI_UNSUPPORTED;    
@@ -473,24 +467,22 @@ Returns:
   }
 
   if (!(ImageContext->IsTeImage)) {
+    //
+    // Use PE32 to access fields that have same offset in PE32 and PE32+
+    //
+    ImageContext->ImageSize         = (UINT64) Hdr.Pe32->OptionalHeader.SizeOfImage;
+    ImageContext->SectionAlignment  = Hdr.Pe32->OptionalHeader.SectionAlignment;
+    ImageContext->SizeOfHeaders     = Hdr.Pe32->OptionalHeader.SizeOfHeaders;
     if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //     
       // Use PE32 offset
       //
-      ImageContext->ImageSize         = (UINT64) Hdr.Pe32->OptionalHeader.SizeOfImage;
-      ImageContext->SectionAlignment  = Hdr.Pe32->OptionalHeader.SectionAlignment;
-      ImageContext->SizeOfHeaders     = Hdr.Pe32->OptionalHeader.SizeOfHeaders;
-
       NumberOfRvaAndSizes = Hdr.Pe32->OptionalHeader.NumberOfRvaAndSizes;
       DebugDirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *)&(Hdr.Pe32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
     } else {
       //     
       // Use PE32+ offset
       //
-      ImageContext->ImageSize        = (UINT64)Hdr.Pe32Plus->OptionalHeader.SizeOfImage;
-      ImageContext->SectionAlignment = Hdr.Pe32Plus->OptionalHeader.SectionAlignment;
-      ImageContext->SizeOfHeaders    = Hdr.Pe32Plus->OptionalHeader.SizeOfHeaders; 
-
       NumberOfRvaAndSizes = Hdr.Pe32Plus->OptionalHeader.NumberOfRvaAndSizes;
       DebugDirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *)&(Hdr.Pe32Plus->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
     }    
@@ -1211,23 +1203,11 @@ Returns:
     //
     // Sizes of AddressOfEntryPoint are different so we need to do this safely
     //
-    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-      //
-      // Use PE32 offset
-      //      
-      ImageContext->EntryPoint = (EFI_PHYSICAL_ADDRESS)(UINTN)PeCoffLoaderImageAddress (
-                                                            ImageContext,
-                                                            (UINTN)Hdr.Pe32->OptionalHeader.AddressOfEntryPoint
-                                                            );
-    } else {
-      //
-      // Use PE32+ offset
-      //
-      ImageContext->EntryPoint = (EFI_PHYSICAL_ADDRESS)(UINTN)PeCoffLoaderImageAddress (
-                                                            ImageContext,
-                                                            (UINTN)Hdr.Pe32Plus->OptionalHeader.AddressOfEntryPoint
-                                                            );
-    }
+    ImageContext->EntryPoint = (EFI_PHYSICAL_ADDRESS)(UINTN)PeCoffLoaderImageAddress (
+                                                              ImageContext,
+                                                              (UINTN)Hdr.Pe32->OptionalHeader.AddressOfEntryPoint
+                                                              );
+
   } else {
     ImageContext->EntryPoint =  (EFI_PHYSICAL_ADDRESS) (
                                 (UINTN)ImageContext->ImageAddress  +

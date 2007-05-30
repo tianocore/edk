@@ -38,6 +38,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
 #include EFI_PROTOCOL_DEFINITION (DriverDiagnostics)
 
@@ -47,6 +48,13 @@ typedef struct {
   CHAR8   *Language;
   CHAR16  *UnicodeString;
 } EFI_UNICODE_STRING_TABLE;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+#define LANGUAGE_RFC_3066
+#define LANGUAGE_CODE_ENGLISH    "en-US"
+#else
+#define LANGUAGE_ISO_639_2
+#define LANGUAGE_CODE_ENGLISH    "eng"
+#endif
 
 //
 // Macros for EFI Driver Library Functions that are really EFI Boot Services
@@ -158,7 +166,11 @@ EfiLibInstallAllDriverProtocols (
   IN EFI_SYSTEM_TABLE                   *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,
+#else
   IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,
+#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration,
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics
   )

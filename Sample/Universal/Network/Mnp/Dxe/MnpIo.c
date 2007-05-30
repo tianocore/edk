@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -101,7 +101,7 @@ Returns:
     // The length calculated from the fragment information doesn't equal to the
     // sum of the DataLength and the HeaderLength.
     //
-    MNP_DEBUG_WARN (("MnpIsValidTxData: Invalid Datalength compared with ""the sum of fragment length.\n"));
+    MNP_DEBUG_WARN (("MnpIsValidTxData: Invalid Datalength compared with the sum of fragment length.\n"));
     return FALSE;
   }
 
@@ -537,7 +537,7 @@ Returns:
   //
   if (Instance->RcvdPacketQueueSize == MNP_MAX_RCVD_PACKET_QUE_SIZE) {
 
-    MNP_DEBUG_WARN (("MnpQueueRcvdPacket: Drop one packet bcz queue ""size limit reached.\n"));
+    MNP_DEBUG_WARN (("MnpQueueRcvdPacket: Drop one packet bcz queue size limit reached.\n"));
 
     //
     // Get the oldest packet.
@@ -806,7 +806,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
-                  NET_TPL_FAST_RECYCLE,
+                  NET_TPL_RECYCLE,
                   MnpRecycleRxData,
                   RxDataWrap,
                   &RxDataWrap->RxData.RecycleEvent
@@ -1081,18 +1081,10 @@ Returns:
   NET_LIST_ENTRY    *NextEntry;
   MNP_INSTANCE_DATA *Instance;
   MNP_RXDATA_WRAP   *RxDataWrap;
+  EFI_TPL           OldTpl;
 
   MnpServiceData = (MNP_SERVICE_DATA *) Context;
   NET_CHECK_SIGNATURE (MnpServiceData, MNP_SERVICE_DATA_SIGNATURE);
-
-  //
-  // Try to acquire the lock.
-  //
-  if (EFI_ERROR (NET_TRYLOCK (&MnpServiceData->ChildrenListLock))) {
-
-    MNP_DEBUG_WARN (("MnpCheckPacketTimeout: Acquire MnpServiceData->""ChildrenListLock failed.\n"));
-    return ;
-  }
 
   NET_LIST_FOR_EACH (Entry, &MnpServiceData->ChildrenList) {
 
@@ -1106,6 +1098,8 @@ Returns:
       //
       continue;
     }
+
+    OldTpl = NET_RAISE_TPL (NET_TPL_RECYCLE);
 
     NET_LIST_FOR_EACH_SAFE (RxEntry, NextEntry, &Instance->RcvdPacketQueue) {
 
@@ -1123,9 +1117,9 @@ Returns:
         Instance->RcvdPacketQueueSize--;
       }
     }
-  }
 
-  NET_UNLOCK (&MnpServiceData->ChildrenListLock);
+    NET_RESTORE_TPL (OldTpl);
+  }
 }
 
 VOID

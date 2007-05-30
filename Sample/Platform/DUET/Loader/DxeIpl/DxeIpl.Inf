@@ -56,6 +56,7 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Include\Pei
   $(EDK_SOURCE)\Foundation\Library\Pei\Include
@@ -73,6 +74,7 @@ COMPONENT_TYPE       = BS_DRIVER
   EdkGuidLib
   EdkFrameworkGuidLib
   EfiGuidLib
+  CpuIA32Lib
 
 [nmake.common]
   IMAGE_ENTRY_POINT=DxeInit

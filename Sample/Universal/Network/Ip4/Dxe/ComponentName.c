@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -26,7 +26,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 Ip4ComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
@@ -34,7 +38,11 @@ Ip4ComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 Ip4ComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -44,15 +52,23 @@ Ip4ComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gIp4ComponentName = {
+  Ip4ComponentNameGetDriverName,
+  Ip4ComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gIp4ComponentName = {
   Ip4ComponentNameGetDriverName,
   Ip4ComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
 static EFI_UNICODE_STRING_TABLE mIp4DriverNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"IP4 Network Service Driver"
   },
   {
@@ -64,7 +80,11 @@ static EFI_UNICODE_STRING_TABLE mIp4DriverNameTable[] = {
 EFI_STATUS
 EFIAPI
 Ip4ComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -109,7 +129,11 @@ Ip4ComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 Ip4ComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

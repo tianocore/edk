@@ -23,14 +23,7 @@ Abstract:
 
 #ifndef _PEI_PCI_CFG2_H_
 #define _PEI_PCI_CFG2_H_
-
-typedef enum {
-  EfiPeiPciCfgWidthUint8   = 0,
-  EfiPeiPciCfgWidthUint16  = 1,
-  EfiPeiPciCfgWidthUint32  = 2,
-  EfiPeiPciCfgWidthUint64  = 3,
-  EfiPeiPciCfgWidthMaximum
-} EFI_PEI_PCI_CFG_PPI_WIDTH;
+#include "EfiPciCfg.h"
 
 #define EFI_PEI_PCI_CFG2_PPI_GUID \
   { \
@@ -39,19 +32,6 @@ typedef enum {
 
 EFI_FORWARD_DECLARATION (EFI_PEI_PCI_CFG2_PPI);
 
-#define EFI_PEI_PCI_CFG_ADDRESS(bus, dev, func, reg)   \
-            (   ((bus) << 24)  | \
-                ((dev) << 16)  | \
-                ((func) << 8)  | \
-                ((reg) < 256 ? (reg): ((UINT64)(reg) << 32))) 
-
-typedef struct {
-  UINT8 Register;
-  UINT8 Function;
-  UINT8 Device;
-  UINT8 Bus;
-  UINT32 ExtendedRegister;
-} EFI_PEI_PCI_CFG_PPI_PCI_ADDRESS;
 
 typedef
 EFI_STATUS

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -78,7 +78,11 @@ EfiLibInstallAllDriverProtocols (
   IN EFI_SYSTEM_TABLE                   * SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL        * DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL       * ComponentName, OPTIONAL
+#else
   IN EFI_COMPONENT_NAME_PROTOCOL        * ComponentName, OPTIONAL
+#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  * DriverConfiguration, OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    * DriverDiagnostics OPTIONAL
   )
@@ -127,7 +131,11 @@ Returns:
   if (ComponentName != NULL) {
     Status = gBS->InstallProtocolInterface (
                     &DriverBinding->DriverBindingHandle,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+                    &gEfiComponentName2ProtocolGuid,
+#else
                     &gEfiComponentNameProtocolGuid,
+#endif
                     EFI_NATIVE_INTERFACE,
                     ComponentName
                     );

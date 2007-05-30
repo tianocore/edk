@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -47,6 +47,7 @@ Revision History
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 //
 // Partition private data
@@ -76,7 +77,11 @@ typedef struct {
 // Global Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL  gPartitionDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gPartitionComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gPartitionComponentName;
+#endif
 
 //
 // Extract INT32 from char array
@@ -109,7 +114,7 @@ PartitionInstallChildHandle (
   )
 ;
 
-BOOLEAN
+EFI_STATUS
 PartitionInstallGptChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
@@ -119,7 +124,7 @@ PartitionInstallGptChildHandles (
   )
 ;
 
-BOOLEAN
+EFI_STATUS
 PartitionInstallElToritoChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
@@ -129,7 +134,7 @@ PartitionInstallElToritoChildHandles (
   )
 ;
 
-BOOLEAN
+EFI_STATUS
 PartitionInstallMbrChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
@@ -138,5 +143,15 @@ PartitionInstallMbrChildHandles (
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
   )
 ;
+
+typedef 
+EFI_STATUS
+(*PARTITION_DETECT_ROUTINE) (
+  IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN  EFI_HANDLE                   Handle,
+  IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
+  IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
+  IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  );
 
 #endif

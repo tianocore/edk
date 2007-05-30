@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -615,9 +615,7 @@ Returns:
   NET_LIST_ENTRY            *Next;
   MTFTP4_PROTOCOL           *Instance;
   EFI_MTFTP4_TOKEN          *Token;
-  EFI_TPL                   OldTpl;
 
-  OldTpl  = NET_RAISE_TPL (NET_TPL_LOCK);
   MtftpSb = (MTFTP4_SERVICE *) Context;
 
   //
@@ -661,6 +659,4 @@ Returns:
       continue;
     }
   }
-
-  NET_RESTORE_TPL (OldTpl);
 }

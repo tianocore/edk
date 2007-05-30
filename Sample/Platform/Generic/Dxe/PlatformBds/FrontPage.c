@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -334,17 +334,6 @@ ReInitStrings:
 
   OptionCount = 0;
 
-  //
-  // Try for a 512 byte Buffer
-  //
-  BufferSize = 0x200;
-
-  //
-  // Allocate memory for our Form binary
-  //
-  StringBuffer = EfiLibAllocateZeroPool (BufferSize);
-  ASSERT (StringBuffer != NULL);
-
   for (Index = 0; LanguageString[Index] != 0; Index += 3) {
     Token = 0;
     EfiCopyMem (Lang, &LanguageString[Index], 6);
@@ -354,8 +343,15 @@ ReInitStrings:
       mLastSelection = (UINT16) OptionCount;
     }
 
+    BufferSize = 0;
+    Status = Hii->GetString (Hii, gStringPackHandle, 1, TRUE, Lang, &BufferSize, NULL);
+    ASSERT (Status == EFI_BUFFER_TOO_SMALL);
+    StringBuffer = EfiLibAllocatePool (BufferSize);
+    ASSERT (StringBuffer != NULL);
     Status = Hii->GetString (Hii, gStringPackHandle, 1, TRUE, Lang, &BufferSize, StringBuffer);
+    ASSERT_EFI_ERROR (Status);
     Hii->NewString (Hii, NULL, gStringPackHandle, &Token, StringBuffer);
+    gBS->FreePool (StringBuffer);
     EfiCopyMem (&OptionList[OptionCount].StringToken, &Token, sizeof (UINT16));
     EfiCopyMem (&OptionList[OptionCount].Value, &OptionCount, sizeof (UINT16));
     Key = 0x1234;
@@ -367,7 +363,6 @@ ReInitStrings:
   gBS->FreePool (LanguageString);
 
   if (ReInitializeStrings) {
-    gBS->FreePool (StringBuffer);
     gBS->FreePool (OptionList);
     return EFI_SUCCESS;
   }
@@ -390,10 +385,7 @@ ReInitStrings:
   Hii->UpdateForm (Hii, gFrontPageHandle, (EFI_FORM_LABEL) 0x0002, TRUE, UpdateData);
 
   gBS->FreePool (UpdateData);
-  //
-  // gBS->FreePool (OptionList);
-  //
-  gBS->FreePool (StringBuffer);
+  gBS->FreePool (OptionList);
   return Status;
 }
 

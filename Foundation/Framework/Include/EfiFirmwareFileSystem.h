@@ -103,7 +103,11 @@ typedef union {
     UINT8 Header;
     UINT8 File;
   } Checksum;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)  
   UINT16  TailReference;
+#else
+  UINT16  Checksum16;
+#endif
 } EFI_FFS_INTEGRITY_CHECK;
 
 //

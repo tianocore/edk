@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 Intel Corporation. All rights reserved
+Copyright (c) 2006 - 2007 Intel Corporation. All rights reserved
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,11 +27,16 @@ Revision History
 
 #include "Tiano.h"
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 //
 // Global Variables definitions
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gIdeControllerName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gIdeControllerName;
+#endif
 
 //
 // Forward reference declaration
@@ -39,7 +44,11 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gIdeControllerName;
 EFI_STATUS
 EFIAPI
 IdeControllerGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -74,7 +83,11 @@ IdeControllerGetDriverName (
 EFI_STATUS
 EFIAPI
 IdeControllerGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

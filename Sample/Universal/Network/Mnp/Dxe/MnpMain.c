@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -52,6 +52,8 @@ Returns:
 {
   MNP_INSTANCE_DATA           *Instance;
   EFI_SIMPLE_NETWORK_PROTOCOL *Snp;
+  EFI_TPL                     OldTpl;
+  EFI_STATUS                  Status;
 
   if (This == NULL) {
 
@@ -59,6 +61,8 @@ Returns:
   }
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   if (MnpConfigData != NULL) {
     //
@@ -76,11 +80,14 @@ Returns:
   }
 
   if (!Instance->Configured) {
-
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+  } else {
+    Status = EFI_SUCCESS;
   }
 
-  return EFI_SUCCESS;
+  NET_RESTORE_TPL (OldTpl);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -116,7 +123,9 @@ Returns:
 
 --*/
 {
-  MNP_INSTANCE_DATA *Instance;
+  MNP_INSTANCE_DATA  *Instance;
+  EFI_TPL            OldTpl;
+  EFI_STATUS         Status;
 
   if ((This == NULL) || 
     ((MnpConfigData != NULL) &&
@@ -128,17 +137,25 @@ Returns:
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if ((MnpConfigData == NULL) && (!Instance->Configured)) {
     //
     // If the instance is not configured and a reset is requested, just return.
     //
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
+    goto ON_EXIT;
   }
 
   //
   // Configure the instance.
   //
-  return MnpConfigureInstance (Instance, MnpConfigData);
+  Status = MnpConfigureInstance (Instance, MnpConfigData);
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -200,9 +217,12 @@ Returns:
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (!Instance->Configured) {
 
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
 
   Snp = Instance->MnpServiceData->Snp;
@@ -220,22 +240,23 @@ Returns:
     MacAddress->Addr[4] = IpAddress->v4.Addr[2];
     MacAddress->Addr[5] = IpAddress->v4.Addr[3];
 
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
   } else {
     //
     // Invoke Snp to translate the multicast IP address.
     //
-    OldTpl = gBS->RaiseTPL (NET_TPL_GLOBAL_LOCK);
     Status = Snp->MCastIpToMac (
                     Snp,
                     Ipv6Flag,
                     IpAddress,
                     MacAddress
                     );
-    gBS->RestoreTPL (OldTpl);
-
-    return Status;
   }
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -277,6 +298,8 @@ Returns:
   MNP_GROUP_ADDRESS       *GroupAddress;
   NET_LIST_ENTRY          *ListEntry;
   BOOLEAN                 AddressExist;
+  EFI_TPL                 OldTpl;
+  EFI_STATUS              Status;
 
   if (This == NULL || (JoinFlag && (MacAddress == NULL))) {
     //
@@ -288,29 +311,27 @@ Returns:
   Instance  = MNP_INSTANCE_DATA_FROM_THIS (This);
   SnpMode   = Instance->MnpServiceData->Snp->Mode;
 
-  if ((MacAddress != NULL) && 
-    !NET_MAC_IS_MULTICAST (MacAddress, &SnpMode->BroadcastAddress, SnpMode->HwAddressSize)) {
-    //
-    // The passed in MacAddress is not a mutlticast mac address.
-    //
-    return EFI_INVALID_PARAMETER;
-  }
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   if (!Instance->Configured) {
 
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
 
-  if (!Instance->ConfigData.EnableMulticastReceive) {
+  if ((!Instance->ConfigData.EnableMulticastReceive) ||
+    ((MacAddress != NULL) && !NET_MAC_IS_MULTICAST (MacAddress, &SnpMode->BroadcastAddress, SnpMode->HwAddressSize))) {
     //
-    // It's invalid to do any group operation when this instance isn't configured
-    // to do multicast receive.
+    // The instance isn't configured to do mulitcast receive. OR
+    // the passed in MacAddress is not a mutlticast mac address.
     //
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
 
-  AddressExist  = FALSE;
-  GroupCtrlBlk  = NULL;
+  Status       = EFI_SUCCESS;
+  AddressExist = FALSE;
+  GroupCtrlBlk = NULL;
 
   if (MacAddress != NULL) {
     //
@@ -341,27 +362,36 @@ Returns:
       //
       // The multicast mac address to join already exists.
       //
-      return EFI_ALREADY_STARTED;
+      Status = EFI_ALREADY_STARTED;
     }
 
     if (!JoinFlag && !AddressExist) {
       //
       // The multicast mac address to leave doesn't exist in this instance.
       //
-      return EFI_NOT_FOUND;
+      Status = EFI_NOT_FOUND;
+    }
+
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
     }
   } else if (NetListIsEmpty (&Instance->GroupCtrlBlkList)) {
     //
     // The MacAddress is NULL and there is no configured multicast mac address,
     // just return.
     //
-    return EFI_SUCCESS;
+    goto ON_EXIT;
   }
 
   //
   // OK, it is time to take action.
   //
-  return MnpGroupOp (Instance, JoinFlag, MacAddress, GroupCtrlBlk);
+  Status = MnpGroupOp (Instance, JoinFlag, MacAddress, GroupCtrlBlk);
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -403,6 +433,7 @@ Returns:
   MNP_SERVICE_DATA  *MnpServiceData;
   UINT8             *PktBuf;
   UINT32            PktLen;
+  EFI_TPL           OldTpl;
 
   if ((This == NULL) || (Token == NULL)) {
 
@@ -411,28 +442,25 @@ Returns:
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (!Instance->Configured) {
 
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
 
   if (!MnpIsValidTxToken (Instance, Token)) {
     //
     // The Token is invalid.
     //
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
 
   MnpServiceData = Instance->MnpServiceData;
   NET_CHECK_SIGNATURE (MnpServiceData, MNP_SERVICE_DATA_SIGNATURE);
 
-  //
-  // Try to acquire the TxLock.
-  //
-  if (EFI_ERROR (NET_TRYLOCK (&MnpServiceData->TxLock))) {
-
-    return EFI_ACCESS_DENIED;
-  }
   //
   // Build the tx packet
   //
@@ -443,7 +471,8 @@ Returns:
   //
   Status = MnpSyncSendPacket (MnpServiceData, PktBuf, PktLen, Token);
 
-  NET_UNLOCK (&MnpServiceData->TxLock);
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
 
   return Status;
 }
@@ -480,8 +509,9 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  MNP_INSTANCE_DATA *Instance;
+  EFI_STATUS         Status;
+  MNP_INSTANCE_DATA  *Instance;
+  EFI_TPL            OldTpl;
 
   if ((This == NULL) || (Token == NULL) || (Token->Event == NULL)) {
 
@@ -490,24 +520,21 @@ Returns:
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (!Instance->Configured) {
 
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
-  //
-  // Try to acquire the lock
-  //
-  if (EFI_ERROR (NET_TRYLOCK (&Instance->RxLock))) {
 
-    return EFI_ACCESS_DENIED;
-  }
   //
   // Check whether this token(event) is already in the rx token queue.
   //
   Status = NetMapIterate (&Instance->RxTokenMap, MnpTokenExist, (VOID *) Token);
   if (EFI_ERROR (Status)) {
 
-    goto UNLOCK_EXIT;
+    goto ON_EXIT;
   }
 
   //
@@ -522,9 +549,8 @@ Returns:
     Status = MnpInstanceDeliverPacket (Instance);
   }
 
-UNLOCK_EXIT:
-
-  NET_UNLOCK (&Instance->RxLock);
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
 
   return Status;
 }
@@ -561,8 +587,9 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  MNP_INSTANCE_DATA *Instance;
+  EFI_STATUS         Status;
+  MNP_INSTANCE_DATA  *Instance;
+  EFI_TPL            OldTpl;
 
   if (This == NULL) {
 
@@ -571,13 +598,12 @@ Returns:
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   if (!Instance->Configured) {
 
-    return EFI_NOT_STARTED;
-  }
-
-  if (EFI_ERROR (NET_TRYLOCK (&Instance->RxLock))) {
-    return EFI_ACCESS_DENIED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
 
   //
@@ -585,12 +611,13 @@ Returns:
   //
   Status = NetMapIterate (&Instance->RxTokenMap, MnpCancelTokens, (VOID *) Token);
 
-  NET_UNLOCK (&Instance->RxLock);
-
   if (Token != NULL) {
 
     Status = (Status == EFI_ABORTED) ? EFI_SUCCESS : EFI_NOT_FOUND;
   }
+
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
 
   return Status;
 }
@@ -621,34 +648,30 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  MNP_INSTANCE_DATA *Instance;
+  EFI_STATUS         Status;
+  MNP_INSTANCE_DATA  *Instance;
+  EFI_TPL            OldTpl;
 
   if (This == NULL) {
-
     return EFI_INVALID_PARAMETER;
   }
 
   Instance = MNP_INSTANCE_DATA_FROM_THIS (This);
-  ASSERT (Instance->Signature == MNP_INSTANCE_DATA_SIGNATURE);
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   if (!Instance->Configured) {
-
-    return EFI_NOT_STARTED;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
   }
-  //
-  // Try to acquire the rx lock.
-  //
-  if (EFI_ERROR (NET_TRYLOCK (&Instance->RxLock))) {
 
-    return EFI_SUCCESS;
-  }
   //
   // Try to receive packets.
   //
   Status = MnpReceivePacket (Instance->MnpServiceData);
 
-  NET_UNLOCK (&Instance->RxLock);
+ON_EXIT:
+  NET_RESTORE_TPL (OldTpl);
 
   return Status;
 }

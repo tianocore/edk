@@ -349,11 +349,8 @@ Sample\Bus\Pci\Uhci\Dxe\Uhci.inf
 Sample\Bus\Pci\Undi\RuntimeDxe\Undi.inf                                       
 #$(ATAPI_PASS_THRU_INF)
 #Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
-#Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf
-Sample\Bus\Usb\UsbBot\Dxe\UsbBot.inf                                          
-Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf                                          
-Sample\Bus\Usb\UsbCbi\Dxe\Cbi0\UsbCbi0.inf                                    
-Sample\Bus\Usb\UsbCbi\Dxe\Cbi1\UsbCbi1.inf                                    
+#Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf                                       
+Sample\Bus\Usb\UsbBus\Dxe\UsbBus.inf                                                                             
 Sample\Bus\Usb\UsbKb\Dxe\UsbKb.inf                                            
 Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf                          
 Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf                                      

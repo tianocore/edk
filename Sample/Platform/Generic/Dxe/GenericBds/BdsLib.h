@@ -54,7 +54,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (ConsoleInDevice)
 #include EFI_GUID_DEFINITION (ConsoleOutDevice)
 #include EFI_GUID_DEFINITION (StandardErrorDevice)
-
+#include EFI_GUID_DEFINITION (MemoryTypeInformation)
 //
 // Include the performance head file and defind macro to add perf data
 //
@@ -530,4 +530,11 @@ UINT32
 BdsGetBootTypeFromDevicePath (
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
   );
+  
+VOID
+EFIAPI
+BdsLibSaveMemoryTypeInformation (
+  VOID 
+  );
+  
 #endif // _BDS_LIB_H_

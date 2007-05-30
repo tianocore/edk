@@ -240,10 +240,10 @@ Returns:
   PeiServices = GetPeiServicesTablePointer(); 
 
   do {
-    VolumeStatus = PeiServicesFfsFindNextVolume (*Instance, VolumeHandle);
+    VolumeStatus = PeiLibFfsFindNextVolume (*Instance, VolumeHandle);
     if (!EFI_ERROR (VolumeStatus)) {
       *FileHandle = NULL;
-      Status = PeiServicesFfsFindNextFile (SeachType, *VolumeHandle, FileHandle);
+      Status = PeiLibFfsFindNextFile (SeachType, *VolumeHandle, FileHandle);
       if (!EFI_ERROR (Status)) {
         return Status;
       }
@@ -298,7 +298,7 @@ Returns:
                     &Index, EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE, &VolumeHandle, &FileHandle
                     );
     if (!EFI_ERROR (VolumeStatus)) {
-      Status =PeiServicesFfsFindSectionData (
+      Status =PeiLibFfsFindSectionData (
                 EFI_SECTION_FIRMWARE_VOLUME_IMAGE, 
                 (EFI_FFS_FILE_HEADER *)FileHandle, 
                 (VOID **)&FvHeader
@@ -331,7 +331,7 @@ Returns:
           // This new Firmware Volume comes from a firmware file within a firmware volume.
           // Record the original Firmware Volume Name.
           //
-          PeiServicesFfsGetVolumeInfo(&VolumeHandle, &VolumeInfo);
+          PeiLibFfsGetVolumeInfo(&VolumeHandle, &VolumeInfo);
 
           //
           // Prepare to install FirmwareVolumeInfo PPI to expose new FV to PeiCore.

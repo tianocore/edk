@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -99,6 +99,13 @@ UpdatePageEnd (
   // Create the "Apply changes" and "Discard changes" tags.
   //
   if (CallbackData->BmmAskSaveOrNot) {
+    CreateSubTitleOpCode (
+      STRING_TOKEN (STR_NULL_STRING),
+      CurrentLocation
+      );
+    UpdateData->DataCount++;
+    CurrentLocation = CurrentLocation + ((EFI_IFR_OP_HEADER *)CurrentLocation)->Length;
+
     CreateGotoOpCode (
       FORM_MAIN_ID,
       STRING_TOKEN (STR_SAVE_AND_EXIT),
@@ -107,37 +114,22 @@ UpdatePageEnd (
       KEY_VALUE_SAVE_AND_EXIT,
       CurrentLocation
       );
-
     UpdateData->DataCount++;
-
     CurrentLocation = CurrentLocation + ((EFI_IFR_OP_HEADER *) CurrentLocation)->Length;
-
-    CreateGotoOpCode (
-      FORM_MAIN_ID,
-      STRING_TOKEN (STR_NO_SAVE_AND_EXIT),
-      STRING_TOKEN (STR_NULL_STRING),
-      EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
-      KEY_VALUE_NO_SAVE_AND_EXIT,
-      CurrentLocation
-      );
-
-    UpdateData->DataCount++;
   }
+
   //
   // Ensure user can return to the main page.
   //
-  if (0 == UpdateData->DataCount) {
-    CreateGotoOpCode (
-      FORM_MAIN_ID,
-      STRING_TOKEN (STR_NO_SAVE_AND_EXIT),
-      STRING_TOKEN (STR_NULL_STRING),
-      EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
-      KEY_VALUE_NO_SAVE_AND_EXIT,
-      CurrentLocation
-      );
-
-    UpdateData->DataCount++;
-  }
+  CreateGotoOpCode (
+    FORM_MAIN_ID,
+    STRING_TOKEN (STR_NO_SAVE_AND_EXIT),
+    STRING_TOKEN (STR_NULL_STRING),
+    EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
+    KEY_VALUE_NO_SAVE_AND_EXIT,
+    CurrentLocation
+    );
+  UpdateData->DataCount++;
 
   CallbackData->Hii->UpdateForm (
                       CallbackData->Hii,

@@ -36,6 +36,10 @@ typedef struct {
   UINT32    CapsuleImageSize;
 } UEFI_CAPSULE_HEADER;
 
+#else
+
+typedef EFI_CAPSULE_HEADER UEFI_CAPSULE_HEADER;
+
 #endif
 
 extern const EFI_EVENT_NOTIFY _gDriverExitBootServicesEvent[];

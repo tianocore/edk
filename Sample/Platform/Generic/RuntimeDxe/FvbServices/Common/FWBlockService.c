@@ -438,7 +438,7 @@ Returns:
     Status    = EFI_BAD_BUFFER_SIZE;
   }
 
-  EfiMemRead (EfiCpuIoWidthUint8, LbaAddress + BlockOffset, (UINTN) *NumBytes, Buffer);
+  EfiCommonLibCopyMem (Buffer, (VOID *) (LbaAddress + BlockOffset), (UINTN) *NumBytes);
 
   return Status;
 }

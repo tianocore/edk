@@ -390,6 +390,26 @@ Returns:
   return *String - *String2;
 }
 
+INTN
+EfiAsciiStrnCmp (
+  IN CHAR8    *String,
+  IN CHAR8    *String2,
+  IN UINTN    Length
+  )
+{
+  if (Length == 0) {
+    return 0;
+  }
+
+  while ((*String != '\0') &&
+         (*String == *String2) &&
+         (Length > 1)) {
+    String++;
+    String2++;
+    Length--;
+  }
+  return *String - *String2;
+}
 
 VOID
 EfiAsciiStrCat (
@@ -779,4 +799,4 @@ Returns:
     return NULL;
   }
 }
- 
+

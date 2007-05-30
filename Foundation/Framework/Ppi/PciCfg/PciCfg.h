@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,14 +23,7 @@ Abstract:
 
 #ifndef _PEI_PCI_CFG_H_
 #define _PEI_PCI_CFG_H_
-
-typedef enum {
-  PeiPciCfgWidthUint8   = 0,
-  PeiPciCfgWidthUint16  = 1,
-  PeiPciCfgWidthUint32  = 2,
-  PeiPciCfgWidthUint64  = 3,
-  PeiPciCfgWidthMaximum
-} PEI_PCI_CFG_PPI_WIDTH;
+#include "EfiPciCfg.h"
 
 #define PEI_PCI_CFG_PPI_GUID \
   { \
@@ -39,17 +32,6 @@ typedef enum {
 
 EFI_FORWARD_DECLARATION (PEI_PCI_CFG_PPI);
 
-#define PEI_PCI_CFG_ADDRESS(bus, dev, func, reg)  ( \
-      (UINT64) ((((UINTN) bus) << 24) + (((UINTN) dev) << 16) + (((UINTN) func) << 8) + ((UINTN) reg)) \
-    ) & 0x00000000ffffffff
-
-typedef struct {
-  UINT8 Register;
-  UINT8 Function;
-  UINT8 Device;
-  UINT8 Bus;
-  UINT8 Reserved[4];
-} PEI_PCI_CFG_PPI_PCI_ADDRESS;
 
 typedef
 EFI_STATUS

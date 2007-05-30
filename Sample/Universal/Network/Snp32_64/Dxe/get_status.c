@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -157,12 +157,20 @@ Returns:
 --*/
 {
   SNP_DRIVER  *snp;
+  EFI_TPL     OldTpl;
+  EFI_STATUS  Status;
 
   if (this == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
+  if (InterruptStatusPtr == NULL && TransmitBufferListPtr == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
+
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
 
   if (snp == NULL) {
     return EFI_DEVICE_ERROR;
@@ -173,18 +181,18 @@ Returns:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkStarted:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
-  if (InterruptStatusPtr == NULL && TransmitBufferListPtr == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
+  Status = pxe_getstatus (snp, InterruptStatusPtr, TransmitBufferListPtr);
 
-  return pxe_getstatus (snp, InterruptStatusPtr, TransmitBufferListPtr);
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
+
+  return Status;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -41,6 +41,7 @@ Abstract:
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (SimpleFileSystem)
 #include EFI_PROTOCOL_DEFINITION (FileInfo)
 #include EFI_PROTOCOL_DEFINITION (FileSystemInfo)
@@ -93,7 +94,11 @@ typedef struct {
 // Global Protocol Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL  gWinNtSimpleFileSystemDriverBinding;
-extern EFI_COMPONENT_NAME_PROTOCOL  gWinNtSimpleFileSystemComponentName;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL  gWinNtSimpleFileSystemComponentName;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL   gWinNtSimpleFileSystemComponentName;
+#endif
 
 //
 // Driver Binding protocol member functions

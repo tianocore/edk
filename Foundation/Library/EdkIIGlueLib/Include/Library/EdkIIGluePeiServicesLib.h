@@ -168,6 +168,7 @@ PeiServicesCreateHob (
   IN OUT VOID                   **Hob
   );
 
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
 /**
   This service enables PEIMs to discover additional firmware volumes.
 
@@ -227,6 +228,7 @@ PeiServicesFfsFindSectionData (
   IN EFI_FFS_FILE_HEADER        *FfsFileHeader,
   IN OUT VOID                   **SectionData
   );
+#endif
 
 /**
   This service enables PEIMs to register the permanent memory configuration

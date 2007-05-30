@@ -46,6 +46,8 @@ COMPONENT_TYPE=   LIBRARY
   GlobalVariable\GlobalVariable.c
   Gpt\Gpt.h
   Gpt\Gpt.c
+  HardwareErrorVariable\HardwareErrorVariable.h
+  HardwareErrorVariable\HardwareErrorVariable.c
   Mps\Mps.h
   Mps\Mps.c
   PcAnsi\PcAnsi.h

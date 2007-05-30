@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -552,11 +552,14 @@ Returns:
   UINT8               Checksum;
   UINT32              FileLength;
   UINT32              OccupiedFileLength;
-  EFI_FFS_FILE_TAIL   *Tail;
   UINT8               SavedChecksum;
   UINT8               SavedState;
   UINT8               FileGuidString[80];
   UINT32              TailSize;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)  
+  EFI_FFS_FILE_TAIL   *Tail;
+#endif
+  
   //
   // Verify library has been initialized.
   //
@@ -638,6 +641,7 @@ Returns:
       return EFI_ABORTED;
     }
   }
+#if (PI_SPECIFICATION_VERSION < 0x00010000)  
   //
   // Check if the tail is present and verify it if it is.
   //
@@ -651,7 +655,7 @@ Returns:
       return EFI_ABORTED;
     }
   }
-
+#endif
   return EFI_SUCCESS;
 }
 

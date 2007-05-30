@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -37,7 +37,11 @@ extern EFI_DRIVER_BINDING_PROTOCOL __EDKII_GLUE_DRIVER_BINDING_PROTOCOL_INSTANCE
 #endif
 
 #ifdef __EDKII_GLUE_COMPONENT_NAME_PROTOCOL_INSTANCE__
-extern EFI_COMPONENT_NAME_PROTOCOL __EDKII_GLUE_COMPONENT_NAME_PROTOCOL_INSTANCE__;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL  __EDKII_GLUE_COMPONENT_NAME_PROTOCOL_INSTANCE__;
+#else
+extern EFI_COMPONENT_NAME_PROTOCOL   __EDKII_GLUE_COMPONENT_NAME_PROTOCOL_INSTANCE__;
+#endif
 #endif
 
 #ifdef __EDKII_GLUE_DRIVER_CONFIGURATION_PROTOCOL_INSTANCE__
@@ -267,7 +271,7 @@ ProcessLibraryDestructorList (
 #endif
 
 #ifdef __EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__
-  Status = RuntimeDriverLibDeconstruct ();
+  Status = RuntimeDriverLibDeconstruct (ImageHandle, SystemTable);
   ASSERT_EFI_ERROR (Status);
 #endif
 }

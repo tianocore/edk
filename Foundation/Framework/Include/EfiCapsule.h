@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,16 +22,6 @@ Abstract:
 #ifndef _EFI_CAPSULE_H_
 #define _EFI_CAPSULE_H_
 
-//
-// An array of these describe the blocks that make up a capsule for
-// a capsule update.
-//
-typedef struct {
-  UINT64                Length;     // length of the data block
-  EFI_PHYSICAL_ADDRESS  Data;       // physical address of the data block
-  UINT32                Signature;  // CBDS
-  UINT32                CheckSum;   // to sum this structure to 0
-} EFI_CAPSULE_BLOCK_DESCRIPTOR;
 
 #define CAPSULE_BLOCK_DESCRIPTOR_SIGNATURE  EFI_SIGNATURE_32 ('C', 'B', 'D', 'S')
 
@@ -42,6 +32,47 @@ typedef struct {
   // UINT8                       OemHdrData[];
   //
 } EFI_CAPSULE_OEM_HEADER;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+#define MAX_SUPPORT_CAPSULE_NUM               50
+#define CAPSULE_FLAGS_PERSIST_ACROSS_RESET    0x00010000
+#define CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE   0x00020000 
+
+typedef struct {
+  UINT64                   Length;                    
+  union { 
+    EFI_PHYSICAL_ADDRESS   DataBlock;                 
+    EFI_PHYSICAL_ADDRESS   ContinuationPointer;  
+  } Union;
+} EFI_CAPSULE_BLOCK_DESCRIPTOR;
+
+typedef struct {
+  EFI_GUID  CapsuleGuid;
+  UINT32    HeaderSize;
+  UINT32    Flags;
+  UINT32    CapsuleImageSize;
+} EFI_CAPSULE_HEADER;
+
+typedef struct {
+  UINT32   CapsuleArrayNumber;
+  VOID*    CapsulePtr[1];
+} EFI_CAPSULE_TABLE;
+
+typedef struct {
+  UINT32      CapsuleGuidNumber;
+  EFI_GUID    CapsuleGuidPtr[1];
+} EFI_CAPSULE_INFO_TABLE;
+
+//
+// This GUID is used for collecting all capsules' Guids who install in ConfigTable.
+//
+#define EFI_CAPSULE_INFO_GUID \
+  { \
+    0x8B34EAC7, 0x2690, 0x460B, 0x8B, 0xA5, 0xD5, 0xCF, 0x32, 0x83, 0x17, 0x35 \
+  }
+
+#else
 
 typedef struct {
   EFI_GUID  CapsuleGuid;
@@ -60,32 +91,19 @@ typedef struct {
   UINT32    OffsetToApplicableDevices;
 } EFI_CAPSULE_HEADER;
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-
-#define MAX_SUPPORT_CAPSULE_NUM               50
-#define CAPSULE_FLAGS_PERSIST_ACROSS_RESET    0x00010000
-#define CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE   0x00020000 
+//
+// An array of these describe the blocks that make up a capsule for
+// a capsule update.
+//
 typedef struct {
-  UINT64                   Length;                    
-  union { 
-    EFI_PHYSICAL_ADDRESS   DataBlock;                 
-    EFI_PHYSICAL_ADDRESS   ContinuationPointer;  
-  } Union;
-} UEFI_CAPSULE_BLOCK_DESCRIPTOR;
-
-typedef struct {
-  EFI_GUID  CapsuleGuid;
-  UINT32    HeaderSize;
-  UINT32    Flags;
-  UINT32    CapsuleImageSize;
-} UEFI_CAPSULE_HEADER;
-
-typedef struct {
-  UINT32   CapsuleArrayNumber;
-  VOID*    CapsulePtr[1];
-} EFI_CAPSULE_TABLE;
+  UINT64                Length;     // length of the data block
+  EFI_PHYSICAL_ADDRESS  Data;       // physical address of the data block
+  UINT32                Signature;  // CBDS
+  UINT32                CheckSum;   // to sum this structure to 0
+} EFI_CAPSULE_BLOCK_DESCRIPTOR;
 
 #endif
+
 //
 // Bits in the flags field of the capsule header
 //

@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -124,6 +124,8 @@ Returns:
 --*/
 {
   SNP_DRIVER  *snp;
+  EFI_TPL     OldTpl;
+  EFI_STATUS  Status;
 
   //
   // Get pointer to SNP driver instance for *this.
@@ -134,9 +136,8 @@ Returns:
 
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
-  if (snp == NULL) {
-    return EFI_DEVICE_ERROR;
-  }
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
+
   //
   // Return error if the SNP is not initialized.
   //
@@ -145,19 +146,19 @@ Returns:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkStarted:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
   //
   // Return error if non-volatile memory variables are not valid.
   //
   if (snp->mode.NvRamSize == 0 || snp->mode.NvRamAccessSize == 0) {
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
+    goto ON_EXIT;
   }
   //
   // Check for invalid parameter combinations.
@@ -169,14 +170,20 @@ Returns:
       (NumBytes % snp->mode.NvRamAccessSize != 0) ||
       (RegOffset % snp->mode.NvRamAccessSize != 0)
       ) {
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
   //
   // check the implementation flags of undi if we can write the nvdata!
   //
   if (!ReadOrWrite) {
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
   } else {
-    return pxe_nvdata_read (snp, RegOffset, NumBytes, BufferPtr);
+    Status = pxe_nvdata_read (snp, RegOffset, NumBytes, BufferPtr);
   }
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
+
+  return Status;
 }

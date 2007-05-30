@@ -168,10 +168,7 @@ Sample\Platform\Generic\Logo\Logo.inf
 Sample\Bus\Pci\IdeBus\Dxe\IdeBus.inf
 #
 # Usb support
-#
-Sample\Bus\Usb\UsbBot\Dxe\UsbBot.inf
-Sample\Bus\Usb\UsbCbi\Dxe\Cbi0\UsbCbi0.inf
-Sample\Bus\Usb\UsbCbi\Dxe\Cbi1\UsbCbi1.inf                                  
+#                                
 Sample\Bus\Usb\UsbKb\Dxe\UsbKb.inf                                     
 Sample\Bus\Usb\UsbMassStorage\Dxe\UsbMassStorage.inf
 Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf             

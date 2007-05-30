@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -149,6 +149,7 @@ Returns:
   SNP_DRIVER  *Snp;
   EFI_STATUS  Status;
   UINTN       Index;
+  EFI_TPL     OldTpl;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -156,9 +157,7 @@ Returns:
 
   Snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (This);
 
-  if (Snp == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
 
   switch (Snp->mode.State) {
   case EfiSimpleNetworkStopped:
@@ -166,15 +165,17 @@ Returns:
 
   case EfiSimpleNetworkStarted:
   case EfiSimpleNetworkInitialized:
-    return EFI_ALREADY_STARTED;
+    Status = EFI_ALREADY_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
   Status = pxe_start (Snp);
-  if (Status != EFI_SUCCESS) {
-    return Status;
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
   }
   //
   // clear the map_list in SNP structure
@@ -185,6 +186,9 @@ Returns:
   }
 
   Snp->mode.MCastFilterCount = 0;
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
 
   return Status;
 }

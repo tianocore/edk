@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 ConSplitterComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
@@ -33,7 +37,11 @@ ConSplitterComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ConSplitterConInComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -43,7 +51,11 @@ ConSplitterConInComponentNameGetControllerName (
 EFI_STATUS
 EFIAPI
 ConSplitterSimplePointerComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -53,7 +65,11 @@ ConSplitterSimplePointerComponentNameGetControllerName (
 EFI_STATUS
 EFIAPI
 ConSplitterConOutComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -63,7 +79,11 @@ ConSplitterConOutComponentNameGetControllerName (
 EFI_STATUS
 EFIAPI
 ConSplitterStdErrComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -73,33 +93,65 @@ ConSplitterStdErrComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gConSplitterConInComponentName = {
+  ConSplitterComponentNameGetDriverName,
+  ConSplitterConInComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gConSplitterConInComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterConInComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gConSplitterSimplePointerComponentName = {
+  ConSplitterComponentNameGetDriverName,
+  ConSplitterSimplePointerComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gConSplitterSimplePointerComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterSimplePointerComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gConSplitterConOutComponentName = {
+  ConSplitterComponentNameGetDriverName,
+  ConSplitterConOutComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gConSplitterConOutComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterConOutComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gConSplitterStdErrComponentName = {
+  ConSplitterComponentNameGetDriverName,
+  ConSplitterStdErrComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gConSplitterStdErrComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterStdErrComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterDriverNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"Console Splitter Driver"
   },
   {
@@ -110,7 +162,7 @@ STATIC EFI_UNICODE_STRING_TABLE mConSplitterDriverNameTable[] = {
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterConInControllerNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"Primary Console Input Device"
   },
   {
@@ -121,7 +173,7 @@ STATIC EFI_UNICODE_STRING_TABLE mConSplitterConInControllerNameTable[] = {
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterSimplePointerControllerNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"Primary Simple Pointer Device"
   },
   {
@@ -132,7 +184,7 @@ STATIC EFI_UNICODE_STRING_TABLE mConSplitterSimplePointerControllerNameTable[] =
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterConOutControllerNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"Primary Console Output Device"
   },
   {
@@ -143,7 +195,7 @@ STATIC EFI_UNICODE_STRING_TABLE mConSplitterConOutControllerNameTable[] = {
 
 STATIC EFI_UNICODE_STRING_TABLE mConSplitterStdErrControllerNameTable[] = {
   {
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     L"Primary Standard Error Device"
   },
   {
@@ -155,7 +207,11 @@ STATIC EFI_UNICODE_STRING_TABLE mConSplitterStdErrControllerNameTable[] = {
 EFI_STATUS
 EFIAPI
 ConSplitterComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -197,7 +253,11 @@ ConSplitterComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ConSplitterConInComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -281,7 +341,11 @@ ConSplitterConInComponentNameGetControllerName (
 EFI_STATUS
 EFIAPI
 ConSplitterSimplePointerComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -365,7 +429,11 @@ ConSplitterSimplePointerComponentNameGetControllerName (
 EFI_STATUS
 EFIAPI
 ConSplitterConOutComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -449,7 +517,11 @@ ConSplitterConOutComponentNameGetControllerName (
 EFI_STATUS
 EFIAPI
 ConSplitterStdErrComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

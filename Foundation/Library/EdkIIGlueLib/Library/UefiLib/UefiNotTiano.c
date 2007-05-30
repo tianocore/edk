@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -297,9 +297,9 @@ GlueEfiGetNameGuidFromFwVolDevicePathNode (
 {
   ASSERT (FvDevicePathNode != NULL);
 
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION != 0x00020000) 
   //
-  // Use old Device Path that conflicts with UEFI
+  // Use old Device Path
   //
   if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
@@ -308,7 +308,7 @@ GlueEfiGetNameGuidFromFwVolDevicePathNode (
 
 #else
   //
-  // Use the new Device path that does not conflict with the UEFI
+  // Use the new Device path that does not conflict with the UEFI 2.0
   //
   // check here : piwg or tiano
   if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
@@ -348,9 +348,9 @@ GlueEfiInitializeFwVolDevicepathNode (
   ASSERT (FvDevicePathNode  != NULL);
   ASSERT (NameGuid          != NULL);
 
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION != 0x00020000) 
   //
-  // Use old Device Path that conflicts with UEFI
+  // Use old Device Path
   //
   FvDevicePathNode->Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Header.SubType  = MEDIA_FV_FILEPATH_DP;
@@ -358,7 +358,7 @@ GlueEfiInitializeFwVolDevicepathNode (
   
 #else
   //
-  // Use the new Device path that does not conflict with the UEFI
+  // Use the new Device path that does not conflict with the UEFI 2.0
   //
   FvDevicePathNode->Piwg.Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Piwg.Header.SubType  = MEDIA_VENDOR_DP;

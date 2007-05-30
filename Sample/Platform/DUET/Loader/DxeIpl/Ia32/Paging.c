@@ -146,7 +146,8 @@ Ia32Create4MPageTables (
 
 VOID *
 PreparePageTable (
-  VOID *PageNumberTop
+  VOID  *PageNumberTop,
+  UINT8 SizeOfMemorySpace 
   )
 /*++
 Description:

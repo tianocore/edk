@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 ArpComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
@@ -33,7 +37,11 @@ ArpComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ArpComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  EFI_HANDLE                   ControllerHandle,
   IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
   IN  CHAR8                        *Language,
@@ -43,21 +51,33 @@ ArpComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL gArpComponentName = {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL gArpComponentName = {
   ArpComponentNameGetDriverName,
   ArpComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#else
+EFI_COMPONENT_NAME_PROTOCOL  gArpComponentName = {
+  ArpComponentNameGetDriverName,
+  ArpComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#endif
 
 STATIC EFI_UNICODE_STRING_TABLE mArpDriverNameTable[] = {
-  { "eng", L"ARP Network Service Driver" },
+  { LANGUAGE_CODE_ENGLISH, L"ARP Network Service Driver" },
   { NULL, NULL }
 };
-  
+
 EFI_STATUS
 EFIAPI
 ArpComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -99,7 +119,11 @@ ArpComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 ArpComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#endif
   IN  EFI_HANDLE                   ControllerHandle,
   IN  EFI_HANDLE                   ChildHandle        OPTIONAL,
   IN  CHAR8                        *Language,

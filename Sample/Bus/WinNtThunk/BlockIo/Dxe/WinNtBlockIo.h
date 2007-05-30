@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -41,6 +41,7 @@ Abstract:
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
 #include EFI_PROTOCOL_DEFINITION (DriverDiagnostics)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
@@ -95,7 +96,11 @@ typedef struct {
 // Block I/O Global Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL        gWinNtBlockIoDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL       gWinNtBlockIoComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL        gWinNtBlockIoComponentName;
+#endif
 extern EFI_DRIVER_CONFIGURATION_PROTOCOL  gWinNtBlockIoDriverConfiguration;
 extern EFI_DRIVER_DIAGNOSTICS_PROTOCOL    gWinNtBlockIoDriverDiagnostics;
 

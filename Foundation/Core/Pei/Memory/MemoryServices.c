@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -157,12 +157,6 @@ Returns:
 
   EfiFreeMemorySize = OldHandOffHob->EfiFreeMemoryBottom - PhysicalAddressOfOldHob;
   
-  PEI_DEBUG_CODE (
-    {
-      PEI_DEBUG ((PeiServices, EFI_D_INFO, "HOBLIST address before memory init = 0x%08x\n", OldHandOffHob));
-      PEI_DEBUG ((PeiServices, EFI_D_INFO, "HOBLIST address after memory init = 0x%08x\n", NewHandOffHob));
-    }
-  )
   PeiCoreCopyMem (
     NewHandOffHob,
     OldHandOffHob,
@@ -182,7 +176,13 @@ Returns:
   ConvertPpiPointers (PeiServices, OldHandOffHob, NewHandOffHob);
 
   PeiBuildHobStack (PeiServices, PrivateData->StackBase, PrivateData->StackSize);
-  
+
+  PEI_DEBUG_CODE (
+    {
+      PEI_DEBUG ((PeiServices, EFI_D_INFO, "HOBLIST address before memory init = 0x%08x\n", OldHandOffHob));
+      PEI_DEBUG ((PeiServices, EFI_D_INFO, "HOBLIST address after memory init = 0x%08x\n", NewHandOffHob));
+    }
+  )  
 
   return EFI_SUCCESS;   
 }

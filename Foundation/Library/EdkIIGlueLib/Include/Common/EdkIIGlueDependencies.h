@@ -769,7 +769,8 @@ UefiDriverModelLibDestructor (
 #ifdef __EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__
 EFI_STATUS
 RuntimeDriverLibDeconstruct (
-  VOID
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   );
 #endif
 

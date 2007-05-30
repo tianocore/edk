@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -45,21 +45,19 @@ Abstract:
 // Lock primitives: the stack implements its lock primitives according
 // to the standard EFI enviornment. It will NOT consider multiprocessor.
 //
-#define NET_TPL_SYSTEM_POLL     EFI_TPL_NOTIFY
-#define NET_TPL_GLOBAL_LOCK     NET_TPL_SYSTEM_POLL
-#define NET_TPL_LOCK            (EFI_TPL_CALLBACK + 1)
+#define NET_TPL_LOCK            EFI_TPL_CALLBACK
+#define NET_TPL_RECYCLE_LOCK    (NET_TPL_LOCK + 1)
 #define NET_TPL_EVENT           EFI_TPL_CALLBACK
 #define NET_TPL_RECYCLE         (NET_TPL_LOCK + 1)
-#define NET_TPL_FAST_RECYCLE    NET_TPL_SYSTEM_POLL
 #define NET_TPL_SLOW_TIMER      (EFI_TPL_CALLBACK - 1)
-#define NET_TPL_FAST_TIMER      (EFI_TPL_CALLBACK + 1)
+#define NET_TPL_FAST_TIMER      NET_TPL_RECYCLE
 #define NET_TPL_TIMER           EFI_TPL_CALLBACK
 
-#define NET_LOCK                EFI_LOCK
-#define NET_LOCK_INIT(x)        EfiInitializeLock (x, NET_TPL_LOCK)
-#define NET_GLOBAL_LOCK_INIT(x) EfiInitializeLock (x, NET_TPL_GLOBAL_LOCK)
-#define NET_TRYLOCK(x)          EfiAcquireLockOrFail (x)
-#define NET_UNLOCK(x)           EfiReleaseLock (x)
+#define NET_LOCK                 EFI_LOCK
+#define NET_LOCK_INIT(x)         EfiInitializeLock (x, NET_TPL_LOCK)
+#define NET_RECYCLE_LOCK_INIT(x) EfiInitializeLock (x, NET_TPL_RECYCLE_LOCK)
+#define NET_TRYLOCK(x)           EfiAcquireLockOrFail (x)
+#define NET_UNLOCK(x)            EfiReleaseLock (x)
 
 #define NET_RAISE_TPL(x)        (gBS->RaiseTPL (x))
 #define NET_RESTORE_TPL(x)      (gBS->RestoreTPL (x))
@@ -301,7 +299,11 @@ NetLibInstallAllDriverProtocolsWithUnload (
   IN EFI_SYSTEM_TABLE                   *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
-  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName, OPTIONAL
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,       OPTIONAL
+#else
+  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
+#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration, OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics, OPTIONAL
   IN NET_LIB_DRIVER_UNLOAD              CustomizedUnload
@@ -313,7 +315,11 @@ NetLibInstallAllDriverProtocols (
   IN EFI_SYSTEM_TABLE                   *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
-  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName, OPTIONAL
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,       OPTIONAL
+#else
+  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
+#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration, OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics OPTIONAL
   );

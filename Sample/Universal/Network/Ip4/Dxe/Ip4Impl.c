@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -512,7 +512,7 @@ Returns:
   NetListInit (&IpInstance->Delivered);
   NetListInit (&IpInstance->AddrLink);
   
-  NET_GLOBAL_LOCK_INIT (&IpInstance->RecycleLock);
+  NET_RECYCLE_LOCK_INIT (&IpInstance->RecycleLock);
 }
 
 EFI_STATUS
@@ -2118,15 +2118,10 @@ Returns:
 --*/
 {
   IP4_SERVICE               *IpSb;
-  EFI_TPL                   OldTpl;
 
   IpSb = (IP4_SERVICE *) Context;
   NET_CHECK_SIGNATURE (IpSb, IP4_SERVICE_SIGNATURE);
 
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
-
   Ip4PacketTimerTicking (IpSb);
   Ip4IgmpTicking (IpSb);
-
-  NET_RESTORE_TPL (OldTpl);
 }

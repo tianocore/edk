@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -766,6 +766,7 @@ Returns:
   case EFI_IFR_REF_OP:
   case EFI_IFR_PASSWORD_OP:
   case EFI_IFR_STRING_OP:
+  case EFI_IFR_TEXT_OP:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
     if (!Selected) {
@@ -777,7 +778,11 @@ Returns:
       }
 
       PrintAt (StartColumnOfHelp, BottomRowOfHelp, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
-      PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
+      if ((Selection->ThisTag->Operand != EFI_IFR_TEXT_OP) || 
+          ((Selection->ThisTag->Flags & EFI_IFR_FLAG_INTERACTIVE) == EFI_IFR_FLAG_INTERACTIVE)
+         ) {
+        PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
+      }
     } else {
       if (Selection->ThisTag->Operand != EFI_IFR_REF_OP) {
         PrintStringAt (

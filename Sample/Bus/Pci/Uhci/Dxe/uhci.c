@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -11,977 +11,22 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-    Uhci.c
+  Uhci.c
     
 Abstract: 
-    
+
+  The UHCI driver model and HC protocol routines.    
 
 Revision History
---*/
-
-#include "uhci.h"
-
-//
-// Prototypes
-// Driver model protocol interface
-//
-
-EFI_STATUS
-EFIAPI
-UHCIDriverEntryPoint (
-  IN EFI_HANDLE           ImageHandle,
-  IN EFI_SYSTEM_TABLE     *SystemTable
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIDriverBindingSupported (
-  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN EFI_HANDLE                      Controller,
-  IN EFI_DEVICE_PATH_PROTOCOL        *RemainingDevicePath
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIDriverBindingStart (
-  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN EFI_HANDLE                      Controller,
-  IN EFI_DEVICE_PATH_PROTOCOL        *RemainingDevicePath
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIDriverBindingStop (
-  IN  EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN  EFI_HANDLE                      Controller,
-  IN  UINTN                           NumberOfChildren,
-  IN  EFI_HANDLE                      *ChildHandleBuffer
-  );
-
-//
-// UHCI interface functions
-//
-
-EFI_STATUS
-EFIAPI
-UHCIReset (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  IN  UINT16                  Attributes
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIGetState (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  OUT EFI_USB_HC_STATE        *State
-  );
-
-EFI_STATUS
-EFIAPI
-UHCISetState (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  IN  EFI_USB_HC_STATE        State
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIControlTransfer (
-  IN       EFI_USB_HC_PROTOCOL        *This,
-  IN       UINT8                      DeviceAddress,
-  IN       BOOLEAN                    IsSlowDevice,
-  IN       UINT8                      MaximumPacketLength,
-  IN       EFI_USB_DEVICE_REQUEST     *Request,
-  IN       EFI_USB_DATA_DIRECTION     TransferDirection,
-  IN OUT   VOID                       *Data,
-  IN OUT   UINTN                      *DataLength,
-  IN       UINTN                      TimeOut,
-  OUT      UINT32                     *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIBulkTransfer (
-  IN       EFI_USB_HC_PROTOCOL     *This,
-  IN       UINT8                   DeviceAddress,
-  IN       UINT8                   EndPointAddress,
-  IN       UINT8                   MaximumPacketLength,
-  IN OUT   VOID                    *Data,
-  IN OUT   UINTN                   *DataLength,
-  IN OUT   UINT8                   *DataToggle,
-  IN       UINTN                   TimeOut,
-  OUT      UINT32                  *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIAsyncInterruptTransfer (
-  IN       EFI_USB_HC_PROTOCOL                * This,
-  IN       UINT8                              DeviceAddress,
-  IN       UINT8                              EndPointAddress,
-  IN       BOOLEAN                            IsSlowDevice,
-  IN       UINT8                              MaximumPacketLength,
-  IN       BOOLEAN                            IsNewTransfer,
-  IN OUT   UINT8                              *DataToggle,
-  IN       UINTN                              PollingInterval,
-  IN       UINTN                              DataLength,
-  IN       EFI_ASYNC_USB_TRANSFER_CALLBACK    CallBackFunction,
-  IN       VOID                               *Context
-  );
-
-EFI_STATUS
-EFIAPI
-UHCISyncInterruptTransfer (
-  IN       EFI_USB_HC_PROTOCOL     *This,
-  IN       UINT8                   DeviceAddress,
-  IN       UINT8                   EndPointAddress,
-  IN       BOOLEAN                 IsSlowDevice,
-  IN       UINT8                   MaximumPacketLength,
-  IN OUT   VOID                    *Data,
-  IN OUT   UINTN                   *DataLength,
-  IN OUT   UINT8                   *DataToggle,
-  IN       UINTN                   TimeOut,
-  OUT      UINT32                  *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIIsochronousTransfer (
-  IN       EFI_USB_HC_PROTOCOL     *This,
-  IN       UINT8                   DeviceAddress,
-  IN       UINT8                   EndPointAddress,
-  IN       UINT8                   MaximumPacketLength,
-  IN OUT   VOID                    *Data,
-  IN       UINTN                   DataLength,
-  OUT      UINT32                  *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIAsyncIsochronousTransfer (
-  IN       EFI_USB_HC_PROTOCOL                 * This,
-  IN       UINT8                               DeviceAddress,
-  IN       UINT8                               EndPointAddress,
-  IN       UINT8                               MaximumPacketLength,
-  IN OUT   VOID                                *Data,
-  IN       UINTN                               DataLength,
-  IN       EFI_ASYNC_USB_TRANSFER_CALLBACK     IsochronousCallBack,
-  IN       VOID                                *Context
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIGetRootHubPortNumber (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  OUT UINT8                   *PortNumber
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIGetRootHubPortStatus (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  IN  UINT8                   PortNumber,
-  OUT EFI_USB_PORT_STATUS     *PortStatus
-  );
-
-EFI_STATUS
-EFIAPI
-UHCISetRootHubPortFeature (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  IN  UINT8                   PortNumber,
-  IN  EFI_USB_PORT_FEATURE    PortFeature
-  );
-
-EFI_STATUS
-EFIAPI
-UHCIClearRootHubPortFeature (
-  IN  EFI_USB_HC_PROTOCOL     *This,
-  IN  UINT8                   PortNumber,
-  IN  EFI_USB_PORT_FEATURE    PortFeature
-  );
-
-//
-// UEFI 2.0 Protocol
-//
-
-EFI_STATUS
-EFIAPI
-UHCI2GetCapability(
-  IN  EFI_USB2_HC_PROTOCOL  * This,
-  OUT UINT8                 *MaxSpeed,
-  OUT UINT8                 *PortNumber,
-  OUT UINT8                 *Is64BitCapable
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2Reset (
-  IN EFI_USB2_HC_PROTOCOL   * This,
-  IN UINT16                 Attributes
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2GetState (
-  IN  EFI_USB2_HC_PROTOCOL   * This,
-  OUT EFI_USB_HC_STATE       * State
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2SetState (
-  IN EFI_USB2_HC_PROTOCOL   * This,
-  IN EFI_USB_HC_STATE       State
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2ControlTransfer (
-  IN     EFI_USB2_HC_PROTOCOL      * This,
-  IN     UINT8                     DeviceAddress,
-  IN     UINT8                     DeviceSpeed,
-  IN     UINTN                     MaximumPacketLength,
-  IN     EFI_USB_DEVICE_REQUEST    * Request,
-  IN     EFI_USB_DATA_DIRECTION    TransferDirection,
-  IN OUT VOID                      *Data OPTIONAL,
-  IN OUT UINTN                     *DataLength OPTIONAL,
-  IN     UINTN                     TimeOut,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR            *Translator,
-  OUT    UINT32                    *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2BulkTransfer (
-  IN     EFI_USB2_HC_PROTOCOL   * This,
-  IN     UINT8                  DeviceAddress,
-  IN     UINT8                  EndPointAddress,
-  IN     UINT8                  DeviceSpeed,
-  IN     UINTN                  MaximumPacketLength,
-  IN     UINT8                  DataBuffersNumber,
-  IN OUT VOID                   *Data[EFI_USB_MAX_BULK_BUFFER_NUM],
-  IN OUT UINTN                  *DataLength,
-  IN OUT UINT8                  *DataToggle,
-  IN     UINTN                  TimeOut,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR            *Translator,
-  OUT    UINT32                 *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2AsyncInterruptTransfer (
-  IN     EFI_USB2_HC_PROTOCOL   * This,
-  IN     UINT8                  DeviceAddress,
-  IN     UINT8                  EndPointAddress,
-  IN     UINT8                  DeviceSpeed,
-  IN     UINTN                  MaximumPacketLength,
-  IN     BOOLEAN                IsNewTransfer,
-  IN OUT UINT8                  *DataToggle,
-  IN     UINTN                  PollingInterval,
-  IN     UINTN                  DataLength,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR            *Translator,
-  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK               CallBackFunction,
-  IN     VOID                   *Context
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2SyncInterruptTransfer (
-  IN     EFI_USB2_HC_PROTOCOL   * This,
-  IN     UINT8                  DeviceAddress,
-  IN     UINT8                  EndPointAddress,
-  IN     UINT8                  DeviceSpeed,
-  IN     UINTN                  MaximumPacketLength,
-  IN OUT VOID                   *Data,
-  IN OUT UINTN                  *DataLength,
-  IN OUT UINT8                  *DataToggle,
-  IN     UINTN                  TimeOut,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR           *Translator,
-  OUT    UINT32                 *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2IsochronousTransfer (
-  IN     EFI_USB2_HC_PROTOCOL   * This,
-  IN     UINT8                  DeviceAddress,
-  IN     UINT8                  EndPointAddress,
-  IN     UINT8                  DeviceSpeed,
-  IN     UINTN                  MaximumPacketLength,
-  IN     UINT8                  DataBuffersNumber,
-  IN OUT VOID                   *Data[EFI_USB_MAX_ISO_BUFFER_NUM],
-  IN     UINTN                  DataLength,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR           *Translator,
-  OUT    UINT32                 *TransferResult
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2AsyncIsochronousTransfer (
-  IN     EFI_USB2_HC_PROTOCOL   * This,
-  IN     UINT8                  DeviceAddress,
-  IN     UINT8                  EndPointAddress,
-  IN     UINT8                  DeviceSpeed,
-  IN     UINTN                  MaximumPacketLength,
-  IN     UINT8                  DataBuffersNumber,
-  IN OUT VOID                   *Data[EFI_USB_MAX_ISO_BUFFER_NUM],
-  IN     UINTN                  DataLength,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR           *Translator,
-  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK              IsochronousCallBack,
-  IN     VOID                   *Context
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2GetRootHubPortStatus (
-  IN  EFI_USB2_HC_PROTOCOL   * This,
-  IN  UINT8                  PortNumber,
-  OUT EFI_USB_PORT_STATUS    * PortStatus
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2SetRootHubPortFeature (
-  IN EFI_USB2_HC_PROTOCOL    * This,
-  IN UINT8                   PortNumber,
-  IN EFI_USB_PORT_FEATURE    PortFeature
-  );
-
-EFI_STATUS
-EFIAPI
-UHCI2ClearRootHubPortFeature (
-  IN EFI_USB2_HC_PROTOCOL    * This,
-  IN UINT8                   PortNumber,
-  IN EFI_USB_PORT_FEATURE    PortFeature
-  );
-
-//
-// Asynchronous interrupt transfer monitor function
-//
-VOID
-EFIAPI
-MonitorInterruptTrans (
-  IN EFI_EVENT     Event,
-  IN VOID          *Context
-  );
-
-//
-// UHCI Driver Global Variables
-//
-EFI_DRIVER_BINDING_PROTOCOL gUhciDriverBinding = {
-  UHCIDriverBindingSupported,
-  UHCIDriverBindingStart,
-  UHCIDriverBindingStop,
-  0xa,
-  NULL,
-  NULL
-};
-
-
-EFI_DRIVER_ENTRY_POINT (UHCIDriverEntryPoint)
-
-EFI_STATUS
-EFIAPI
-UHCIDriverEntryPoint (
-  IN EFI_HANDLE           ImageHandle,
-  IN EFI_SYSTEM_TABLE     *SystemTable
-  )
-/*++
-
-  Routine Description:
-    Entry point for EFI drivers.
-
-  Arguments:
-    ImageHandle - EFI_HANDLE
-    SystemTable - EFI_SYSTEM_TABLE
-  Returns:
-    EFI_SUCCESS
-    others
-
---*/   
-{
-  return EfiLibInstallAllDriverProtocols (
-           ImageHandle,
-           SystemTable,
-           &gUhciDriverBinding,
-           ImageHandle,
-           &gUhciComponentName,
-           NULL,
-           NULL
-           );
-}
-
-EFI_STATUS
-EFIAPI
-UHCIDriverBindingSupported (
-  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN EFI_HANDLE                      Controller,
-  IN EFI_DEVICE_PATH_PROTOCOL        *RemainingDevicePath
-  )
-/*++
-
-  Routine Description:
-    Test to see if this driver supports ControllerHandle. Any ControllerHandle
-    that has UsbHcProtocol installed will be supported.
-
-  Arguments:
-    This                - Protocol instance pointer.
-    Controller          - Handle of device to test
-    RemainingDevicePath - Not used
-
-  Returns:
-    EFI_SUCCESS         - This driver supports this device.
-    EFI_UNSUPPORTED     - This driver does not support this device.
 
 --*/
-{
-  EFI_STATUS          OpenStatus;
-  EFI_STATUS          Status;
-  EFI_PCI_IO_PROTOCOL *PciIo;
-  USB_CLASSC          UsbClassCReg;
-  //
-  // Test whether there is PCI IO Protocol attached on the controller handle.
-  //
-  OpenStatus = gBS->OpenProtocol (
-                      Controller,
-                      &gEfiPciIoProtocolGuid,
-                      &PciIo,
-                      This->DriverBindingHandle,
-                      Controller,
-                      EFI_OPEN_PROTOCOL_BY_DRIVER
-                      );
-  if (EFI_ERROR (OpenStatus)) {
-    return OpenStatus;
-  }
 
-  Status = PciIo->Pci.Read (
-                        PciIo,
-                        EfiPciIoWidthUint8,
-                        CLASSC,
-                        sizeof (USB_CLASSC) / sizeof (UINT8),
-                        &UsbClassCReg
-                        );
-  if (EFI_ERROR (Status)) {
-    gBS->CloseProtocol (
-          Controller,
-          &gEfiPciIoProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
-    return EFI_UNSUPPORTED;
-  }
-  //
-  // Test whether the controller belongs to UHCI type
-  //
-  if ((UsbClassCReg.BaseCode != PCI_CLASS_SERIAL)         ||
-      (UsbClassCReg.SubClassCode != PCI_CLASS_SERIAL_USB) ||
-      (UsbClassCReg.PI != PCI_CLASSC_PI_UHCI)) {
+#include "Uhci.h"
 
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-
-    return EFI_UNSUPPORTED;
-  }
-  gBS->CloseProtocol (
-         Controller,
-         &gEfiPciIoProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
-  return EFI_SUCCESS;
-
-}
-
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIDriverBindingStart (
-  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN EFI_HANDLE                      Controller,
-  IN EFI_DEVICE_PATH_PROTOCOL        *RemainingDevicePath
-  )
-/*++
-
-  Routine Description:
-    Starting the Usb UHCI Driver
-
-  Arguments:
-    This                - Protocol instance pointer.
-    Controller          - Handle of device to test
-    RemainingDevicePath - Not used
-
-  Returns:
-    EFI_SUCCESS         - This driver supports this device.
-    EFI_UNSUPPORTED     - This driver does not support this device.
-    EFI_DEVICE_ERROR    - This driver cannot be started due to device
-                          Error
-    EFI_OUT_OF_RESOURCES
-
---*/
-{ 
-  EFI_STATUS              Status; 
-  UINTN                   FlBaseAddrReg; 
-  EFI_PCI_IO_PROTOCOL     *PciIo; 
-  USB_HC_DEV              *HcDev;
-  UINT64                  Supports;
-  
-  HcDev = NULL;
-
-  Status = gBS->OpenProtocol (
-                  Controller,
-                  &gEfiPciIoProtocolGuid,
-                  &PciIo,
-                  This->DriverBindingHandle,
-                  Controller,
-                  EFI_OPEN_PROTOCOL_BY_DRIVER
-                  );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  //
-  // Turn off USB emulation
-  //
-  TurnOffUSBEmulation (PciIo);
-
-  //
-  // Enable the USB Host Controller
-  //
-  Status = PciIo->Attributes (
-                    PciIo,
-                    EfiPciIoAttributeOperationSupported,
-                    0,
-                    &Supports
-                    );
-  if (!EFI_ERROR (Status)) {
-    Supports &= EFI_PCI_DEVICE_ENABLE;
-    Status = PciIo->Attributes (
-                      PciIo,
-                      EfiPciIoAttributeOperationEnable,
-                      Supports,
-                      NULL
-                      );
-  }
-  if (EFI_ERROR (Status)) {
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-    return EFI_UNSUPPORTED;
-  }
-
-  //
-  // allocate memory for UHC private data structure
-  //
-  HcDev = EfiLibAllocateZeroPool (sizeof (USB_HC_DEV));
-  if (HcDev == NULL) {
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  //
-  // init EFI_USB_HC_PROTOCOL protocol interface and install the protocol
-  //
-  HcDev->UsbHc.Reset                    = UHCIReset;
-  HcDev->UsbHc.GetState                 = UHCIGetState;
-  HcDev->UsbHc.SetState                 = UHCISetState;
-  HcDev->UsbHc.ControlTransfer          = UHCIControlTransfer;
-  HcDev->UsbHc.BulkTransfer             = UHCIBulkTransfer;
-  HcDev->UsbHc.AsyncInterruptTransfer   = UHCIAsyncInterruptTransfer;
-  HcDev->UsbHc.SyncInterruptTransfer    = UHCISyncInterruptTransfer;
-  HcDev->UsbHc.IsochronousTransfer      = UHCIIsochronousTransfer;
-  HcDev->UsbHc.AsyncIsochronousTransfer = UHCIAsyncIsochronousTransfer;
-  HcDev->UsbHc.GetRootHubPortNumber     = UHCIGetRootHubPortNumber;
-  HcDev->UsbHc.GetRootHubPortStatus     = UHCIGetRootHubPortStatus;
-  HcDev->UsbHc.SetRootHubPortFeature    = UHCISetRootHubPortFeature;
-  HcDev->UsbHc.ClearRootHubPortFeature  = UHCIClearRootHubPortFeature;
-
-  HcDev->UsbHc.MajorRevision            = 0x1;
-  HcDev->UsbHc.MinorRevision            = 0x1;
-
-  //
-  //
-  // init EFI_USB2_HC_PROTOCOL protocol interface and install the protocol
-  //
-  HcDev->Usb2Hc.GetCapability            = UHCI2GetCapability;
-  HcDev->Usb2Hc.Reset                    = UHCI2Reset;
-  HcDev->Usb2Hc.GetState                 = UHCI2GetState;
-  HcDev->Usb2Hc.SetState                 = UHCI2SetState;
-  HcDev->Usb2Hc.ControlTransfer          = UHCI2ControlTransfer;
-  HcDev->Usb2Hc.BulkTransfer             = UHCI2BulkTransfer;
-  HcDev->Usb2Hc.AsyncInterruptTransfer   = UHCI2AsyncInterruptTransfer;
-  HcDev->Usb2Hc.SyncInterruptTransfer    = UHCI2SyncInterruptTransfer;
-  HcDev->Usb2Hc.IsochronousTransfer      = UHCI2IsochronousTransfer;
-  HcDev->Usb2Hc.AsyncIsochronousTransfer = UHCI2AsyncIsochronousTransfer;
-  HcDev->Usb2Hc.GetRootHubPortStatus     = UHCI2GetRootHubPortStatus;
-  HcDev->Usb2Hc.SetRootHubPortFeature    = UHCI2SetRootHubPortFeature;
-  HcDev->Usb2Hc.ClearRootHubPortFeature  = UHCI2ClearRootHubPortFeature;
-  
-  HcDev->Usb2Hc.MajorRevision            = 0x1;
-  HcDev->Usb2Hc.MinorRevision            = 0x1;
-  
-  //
-  //  Init UHCI private data structures
-  //
-  HcDev->Signature  = USB_HC_DEV_SIGNATURE;
-  HcDev->PciIo      = PciIo;
-
-  FlBaseAddrReg     = USBFLBASEADD;
-
-  //
-  // Allocate and Init Host Controller's Frame List Entry
-  //
-  Status = CreateFrameList (HcDev, (UINT32) FlBaseAddrReg);
-  if (EFI_ERROR (Status)) {
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  //
-  //  Init interrupt list head in the HcDev structure.
-  //
-  InitializeListHead (&(HcDev->InterruptListHead));
-
-  //
-  //  Create timer for interrupt transfer result polling
-  //
-  Status = gBS->CreateEvent (
-                  EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
-                  EFI_TPL_NOTIFY,
-                  MonitorInterruptTrans,
-                  HcDev,
-                  &HcDev->InterruptTransTimer
-                  );
-  if (EFI_ERROR (Status)) {
-
-    FreeFrameListEntry (HcDev);
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-    return EFI_UNSUPPORTED;
-  }
-
-  //
-  // Here set interrupt transfer polling timer in 50ms unit.
-  //
-  Status = gBS->SetTimer (
-                  HcDev->InterruptTransTimer,
-                  TimerPeriodic,
-                  INTERRUPT_POLLING_TIME
-                  );
-  if (EFI_ERROR (Status)) {
-    gBS->CloseEvent (HcDev->InterruptTransTimer);
-
-    FreeFrameListEntry (HcDev);
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-    return EFI_UNSUPPORTED;
-  }
-  
-  //
-  // QH,TD structures must in common buffer that will be
-  // accessed by both cpu and usb bus master at the same time.
-  // so, there must has memory management for QH,TD structures.
-  //
-  Status = InitializeMemoryManagement (HcDev);
-  if (EFI_ERROR (Status)) {
-  
-    gBS->CloseEvent (HcDev->InterruptTransTimer);
-    
-    FreeFrameListEntry (HcDev);
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-           Controller, 
-           &gEfiPciIoProtocolGuid, 
-           This->DriverBindingHandle,   
-           Controller
-           );
-    return Status;
-  }
-
-  //
-  // Install Host Controller Protocol
-  //
-  Status = gBS->InstallProtocolInterface (
-                  &Controller,
-                  &gEfiUsbHcProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &HcDev->UsbHc
-                  );
-  if (EFI_ERROR (Status)) {
-    gBS->CloseEvent (HcDev->InterruptTransTimer);
-    FreeFrameListEntry (HcDev);
-    DelMemoryManagement (HcDev);
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-    return Status;
-  }
-
-  //
-  // Install USB2.0 Host Controller Protocol
-  //
-  Status = gBS->InstallProtocolInterface (
-                  &Controller,
-                  &gEfiUsb2HcProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &HcDev->Usb2Hc
-                  );
-  if (EFI_ERROR (Status)) {
-    gBS->CloseEvent (HcDev->InterruptTransTimer);
-    FreeFrameListEntry (HcDev);
-    DelMemoryManagement (HcDev);
-
-    if (HcDev != NULL) {
-      gBS->FreePool (HcDev);
-    }
-
-    gBS->CloseProtocol (
-           Controller,
-           &gEfiPciIoProtocolGuid,
-           This->DriverBindingHandle,
-           Controller
-           );
-
-    return Status;
-  }
-  
-  //
-  // component name protocol.
-  //
-
-  HcDev->ControllerNameTable = NULL;
-  EfiLibAddUnicodeString (
-    "eng",
-    gUhciComponentName.SupportedLanguages,
-    &HcDev->ControllerNameTable,
-    L"Usb Universal Host Controller"
-    );
-
-  return EFI_SUCCESS;
-}
-
-
-EFI_STATUS
-UnInstallUHCInterface (
-  IN  EFI_HANDLE              Controller,
-  IN  EFI_USB_HC_PROTOCOL     *This
-  )
-/*++
-  Routine Description:
-    UnInstall UHCInterface
-  Arguments:
-    Controller        - Controller handle
-    This              - Protocol instance pointer.
-  Returns:
-    EFI_SUCCESS
-    others
---*/
-{
-  USB_HC_DEV  *HcDev;
-  EFI_STATUS  Status;
-  UINT64      Supports;
-
-  HcDev = USB_HC_DEV_FROM_THIS (This);
-
-  gBS->UninstallProtocolInterface (
-         Controller,
-         &gEfiUsbHcProtocolGuid,
-         &HcDev->UsbHc
-         );
-         
-  gBS->UninstallProtocolInterface (
-         Controller,
-         &gEfiUsb2HcProtocolGuid,
-         &HcDev->Usb2Hc
-         );
-  //     
-  // first stop USB Host Controller
-  //
-  This->SetState (This, EfiUsbHcStateHalt);
-
-  //
-  // Delete interrupt transfer polling timer
-  //
-  gBS->CloseEvent (HcDev->InterruptTransTimer);
-
-  //
-  // Delete all the asynchronous interrupt transfers in the interrupt list
-  // and free associated memory
-  //
-  ReleaseInterruptList (HcDev, &(HcDev->InterruptListHead));
-
-  //
-  // free Frame List Entry.
-  //
-  FreeFrameListEntry (HcDev);
-
-  //
-  // Free common buffer allocated for QH,TD structures
-  //
-  DelMemoryManagement (HcDev);
-
-  if (HcDev->ControllerNameTable) {
-    EfiLibFreeUnicodeStringTable (HcDev->ControllerNameTable);
-  }
-  //
-  // Disable the USB Host Controller
-  //
-  Status = HcDev->PciIo->Attributes (
-                           HcDev->PciIo,
-                           EfiPciIoAttributeOperationSupported,
-                           0,
-                           &Supports
-                           );
-  if (!EFI_ERROR (Status)) {
-    Supports &= EFI_PCI_DEVICE_ENABLE;
-    Status = HcDev->PciIo->Attributes (
-                             HcDev->PciIo,
-                             EfiPciIoAttributeOperationDisable,
-                             Supports,
-                             NULL
-                             );
-  }
-
-  gBS->FreePool (HcDev);
-
-  return EFI_SUCCESS;
-}
-
-
-EFI_STATUS
-EFIAPI
-UHCIDriverBindingStop (
-  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
-  IN EFI_HANDLE                      Controller,
-  IN UINTN                           NumberOfChildren,
-  IN EFI_HANDLE                      *ChildHandleBuffer
-  )
-/*++
-
-  Routine Description:
-    Stop this driver on ControllerHandle. Support stoping any child handles
-    created by this driver.
-
-  Arguments:
-    This              - Protocol instance pointer.
-    Controller        - Handle of device to stop driver on
-    NumberOfChildren  - Number of Children in the ChildHandleBuffer
-    ChildHandleBuffer - List of handles for the children we need to stop.
-
-  Returns:
-    EFI_SUCCESS
-    others
-
---*/
-{
-  EFI_USB_HC_PROTOCOL *UsbHc;
-  EFI_USB2_HC_PROTOCOL *Usb2Hc;
-  EFI_STATUS          OpenStatus;
-
-  OpenStatus = gBS->OpenProtocol (
-                      Controller,
-                      &gEfiUsbHcProtocolGuid,
-                      &UsbHc,
-                      This->DriverBindingHandle,
-                      Controller,
-                      EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                      );
-
-  //
-  // Test whether the Controller handler passed in is a valid
-  // Usb controller handle that should be supported, if not,
-  // return the error status directly
-  //
-  if (EFI_ERROR (OpenStatus)) {
-    return OpenStatus;
-  }
-
-  OpenStatus = gBS->OpenProtocol (
-                      Controller,
-                      &gEfiUsb2HcProtocolGuid,
-                      &Usb2Hc,
-                      This->DriverBindingHandle,
-                      Controller,
-                      EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                      );
-
-  //
-  // Test whether the Controller handler passed in is a valid
-  // Usb controller handle that should be supported, if not,
-  // return the error status directly
-  //
-  if (EFI_ERROR (OpenStatus)) {
-    return OpenStatus;
-  }
-  //
-  // free all the controller related memory and uninstall UHCI Protocol.
-  //
-  UnInstallUHCInterface (Controller, UsbHc);
-
-  gBS->CloseProtocol (
-         Controller,
-         &gEfiPciIoProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
-
-  return EFI_SUCCESS;
-
-}
-
-
-EFI_STATUS
-EFIAPI
-UHCIReset (
+UhciReset (
   IN EFI_USB_HC_PROTOCOL     *This,
   IN UINT16                  Attributes
   )
@@ -991,69 +36,29 @@ UHCIReset (
     Provides software reset for the USB host controller.
   
   Arguments:
-  
-  This        A pointer to the EFI_USB_HC_PROTOCOL instance.  
-  
-  Attributes  A bit mask of the reset operation to perform. 
-              See below for a list of the supported bit mask values.
-  
-  #define EFI_USB_HC_RESET_GLOBAL           0x0001
-  #define EFI_USB_HC_RESET_HOST_CONTROLLER  0x0002
-
-  EFI_USB_HC_RESET_GLOBAL 
-        If this bit is set, a global reset signal will be sent to the USB bus.
-        This resets all of the USB bus logic, including the USB host 
-        controller hardware and all the devices attached on the USB bus.
-  EFI_USB_HC_RESET_HOST_CONTROLLER  
-        If this bit is set, the USB host controller hardware will be reset. 
-        No reset signal will be sent to the USB bus.
+    This      : A pointer to the EFI_USB_HC_PROTOCOL instance.  
+    Attributes: A bit mask of the reset operation to perform. 
   
   Returns:
-    EFI_SUCCESS 
-        The reset operation succeeded.
-    EFI_INVALID_PARAMETER 
-        Attributes is not valid.
-    EFI_DEVICE_ERROR  
-        An error was encountered while attempting to perform 
-        the reset operation.
+    EFI_SUCCESS           : The reset operation succeeded.
+    EFI_INVALID_PARAMETER : Attributes is not valid.
+    EFI_DEVICE_ERROR      : An error was encountered while attempting 
+                            to perform the reset operation.      
 --*/
 {
-  BOOLEAN     Match;
-  USB_HC_DEV  *HcDev;
-  UINT32      CommandRegAddr;
-  UINT32      FlBaseAddrReg;
-  UINT16      Command;
-  EFI_STATUS  Status;
+  USB_HC_DEV          *Uhc;
+  EFI_TPL             OldTpl;
 
-  Match           = FALSE;
-  HcDev           = USB_HC_DEV_FROM_THIS (This);
+  OldTpl  = gBS->RaiseTPL (UHCI_TPL);
+  Uhc     = UHC_FROM_USB_HC_PROTO (This);
 
-  CommandRegAddr  = (UINT32) (USBCMD);
-  FlBaseAddrReg   = (UINT32) (USBFLBASEADD);
-
-  if ((Attributes & EFI_USB_HC_RESET_GLOBAL) != 0) {
-    Match = TRUE;
+  switch (Attributes) {
+  case EFI_USB_HC_RESET_GLOBAL:
     //
-    // set the Global Reset bit in the command register
+    // Stop schedule and set the Global Reset bit in the command register
     //
-    Status = ReadUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               &Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
-
-    Command |= USBCMD_GRESET;
-    Status = WriteUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
+    UhciStopHc (Uhc, STALL_1_SECOND);
+    UhciSetRegBit (Uhc->PciIo, USBCMD_OFFSET, USBCMD_GRESET);
 
     //
     // Wait 50ms for root port to let reset complete
@@ -1064,81 +69,55 @@ UHCIReset (
     //
     // Clear the Global Reset bit to zero.
     //
-    Command &= ~USBCMD_GRESET;
-    Status = WriteUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
+    UhciClearRegBit (Uhc->PciIo, USBCMD_OFFSET, USBCMD_GRESET);
+
     //
     // UHCI spec page120 reset recovery time
     //
     gBS->Stall (PORT_RESET_RECOVERY_TIME);
-  }
+    break;
 
-  if ((Attributes & EFI_USB_HC_RESET_HOST_CONTROLLER) != 0) {
-    Match = TRUE;
+  case EFI_USB_HC_RESET_HOST_CONTROLLER:
     //
-    // set Host Controller Reset bit to 1
+    // Stop schedule and set Host Controller Reset bit to 1
     //
-    Status = ReadUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               &Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
+    UhciStopHc (Uhc, STALL_1_SECOND);
+    UhciSetRegBit (Uhc->PciIo, USBCMD_OFFSET, USBCMD_HCRESET);
 
-    Command |= USBCMD_HCRESET;
-    Status = WriteUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
     //
     // this bit will be reset by Host Controller when reset is completed.
     // wait 10ms to let reset complete
     //
     gBS->Stall (PORT_RESET_RECOVERY_TIME);
-  }
+    break;
 
-  if (!Match) {
-    return EFI_INVALID_PARAMETER;
+  default:
+    goto ON_INVAILD_PARAMETER;
   }
   
   //
-  // Delete all old transactions on the USB bus
+  // Delete all old transactions on the USB bus, then
+  // reinitialize the frame list
   //
-  CleanUsbTransactions (HcDev);
+  UhciFreeAllAsyncReq (Uhc);
+  UhciDestoryFrameList (Uhc);
+  UhciInitFrameList (Uhc);
 
-  //
-  // Initialize Universal Host Controller's Frame List Data Structure
-  //
-  InitFrameList (HcDev);
-
-  //
-  // Reset may cause Frame List Base Address Register reset to zero,
-  // so set the original value back again.
-  //
-  SetFrameListBaseAddress (
-    HcDev->PciIo,
-    FlBaseAddrReg,
-    (UINT32) ((UINTN) HcDev->FrameListEntry)
-    );
-
+  gBS->RestoreTPL (OldTpl);
+  
   return EFI_SUCCESS;
+
+ON_INVAILD_PARAMETER:
+  
+  gBS->RestoreTPL (OldTpl);
+  
+  return EFI_INVALID_PARAMETER;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIGetState (
+UhciGetState (
   IN  EFI_USB_HC_PROTOCOL     *This,
   OUT EFI_USB_HC_STATE        *State
   )
@@ -1148,83 +127,46 @@ UHCIGetState (
     Retrieves current state of the USB host controller.
   
   Arguments:
-    
-    This      A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    State     A pointer to the EFI_USB_HC_STATE data structure that 
-              indicates current state of the USB host controller.  
-              Type EFI_USB_HC_STATE is defined below.
-              
-    typedef enum {
-      EfiUsbHcStateHalt,
-      EfiUsbHcStateOperational,
-      EfiUsbHcStateSuspend,
-      EfiUsbHcStateMaximum
-    } EFI_USB_HC_STATE;
-  
+    This    :  A pointer to the EFI_USB_HC_PROTOCOL instance.
+    State   :  A pointer to the EFI_USB_HC_STATE data structure that 
+               indicates current state of the USB host controller.            
   Returns:
-    EFI_SUCCESS 
-            The state information of the host controller was returned in State.
-    EFI_INVALID_PARAMETER 
-            State is NULL.
-    EFI_DEVICE_ERROR  
-            An error was encountered while attempting to retrieve the 
-            host controller's current state.  
+    EFI_SUCCESS           : State was returned
+    EFI_INVALID_PARAMETER : State is NULL.
+    EFI_DEVICE_ERROR      : An error was encountered
+            
 --*/
 {
-  USB_HC_DEV  *HcDev;
-  UINT32      CommandRegAddr;
-  UINT32      StatusRegAddr;
-  UINT16      UhcCommand;
-  UINT16      UhcStatus;
-  EFI_STATUS  Status;
+  USB_HC_DEV          *Uhc;
+  UINT16              UsbSts;
+  UINT16              UsbCmd;
 
   if (State == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HcDev           = USB_HC_DEV_FROM_THIS (This);
+  Uhc     = UHC_FROM_USB_HC_PROTO (This);
 
-  CommandRegAddr  = (UINT32) (USBCMD);
-  StatusRegAddr   = (UINT32) (USBSTS);
+  UsbCmd  = UhciReadReg (Uhc->PciIo, USBCMD_OFFSET);
+  UsbSts  = UhciReadReg (Uhc->PciIo, USBSTS_OFFSET);
 
-  Status = ReadUHCCommandReg (
-             HcDev->PciIo,
-             CommandRegAddr,
-             &UhcCommand
-             );
-
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  Status = ReadUHCCommandReg (
-             HcDev->PciIo,
-             StatusRegAddr,
-             &UhcStatus
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  if (UhcCommand & USBCMD_EGSM) {
+  if (UsbCmd & USBCMD_EGSM) {
     *State = EfiUsbHcStateSuspend;
-    return EFI_SUCCESS;
-  }
 
-  if ((UhcStatus & USBSTS_HCH) == 0) {
-    *State = EfiUsbHcStateOperational;
-  } else {
+  } else if ((UsbSts & USBSTS_HCH) != 0) {
     *State = EfiUsbHcStateHalt;
+
+  } else {
+    *State = EfiUsbHcStateOperational;
   }
 
   return EFI_SUCCESS;
 }
 
-
+STATIC
 EFI_STATUS
 EFIAPI
-UHCISetState (
+UhciSetState (
   IN EFI_USB_HC_PROTOCOL     *This,
   IN EFI_USB_HC_STATE        State
   )
@@ -1234,132 +176,64 @@ UHCISetState (
     Sets the USB host controller to a specific state.
   
   Arguments:
-    
-    This      A pointer to the EFI_USB_HC_PROTOCOL instance.
-
-    State     Indicates the state of the host controller that will be set.
+    This     : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    State    : Indicates the state of the host controller that will be set.
   
   Returns:
-    EFI_SUCCESS 
-          The USB host controller was successfully placed in the state 
-          specified by State.
-    EFI_INVALID_PARAMETER 
-          State is invalid.
-    EFI_DEVICE_ERROR  
-          Failed to set the state specified by State due to device error.  
+    EFI_SUCCESS           : The USB host controller was successfully set
+    EFI_INVALID_PARAMETER : State is invalid.
+    EFI_DEVICE_ERROR      : Failed to set the state specified 
+          
 --*/
 {
-  USB_HC_DEV        *HcDev;
-  UINT32            CommandRegAddr;
-  UINT32            StatusRegAddr;
-  UINT16            Command;
-  EFI_USB_HC_STATE  CurrentState;
-  EFI_STATUS        Status;
+  EFI_USB_HC_STATE    CurState;
+  USB_HC_DEV          *Uhc;
+  EFI_TPL             OldTpl;
+  EFI_STATUS          Status;
+  UINT16              UsbCmd;
 
-  HcDev           = USB_HC_DEV_FROM_THIS (This);
+  Uhc     = UHC_FROM_USB_HC_PROTO (This);
+  Status  = UhciGetState (This, &CurState);
 
-  CommandRegAddr  = (UINT32) (USBCMD);
-  StatusRegAddr   = (UINT32) (USBSTS);
-
-  Status          = UHCIGetState (This, &CurrentState);
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
 
+  if (CurState == State) {
+    return EFI_SUCCESS;
+  }
+
+  Status  = EFI_SUCCESS;
+  OldTpl  = gBS->RaiseTPL (UHCI_TPL);
+
   switch (State) {
-
   case EfiUsbHcStateHalt:
-    if (CurrentState == EfiUsbHcStateHalt) {
-      return EFI_SUCCESS;
-    }
-
-    Status = ReadUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               &Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
-
-    Command &= ~USBCMD_RS;
-
-    Status = WriteUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
-
-    StatusRegAddr = (UINT32) (USBSTS);
-    //
-    // ensure the HC is in halt status after send the stop command
-    //
-    if (WaitForUHCHalt (HcDev->PciIo, StatusRegAddr, STALL_1_SECOND) == EFI_TIMEOUT) {
-      return EFI_DEVICE_ERROR;
-    }
+    Status = UhciStopHc (Uhc, STALL_1_SECOND);
     break;
 
   case EfiUsbHcStateOperational:
-    if (IsHostSysOrProcessErr (HcDev->PciIo, StatusRegAddr)) {
-      return EFI_DEVICE_ERROR;
+    if (UhciIsHcError (Uhc->PciIo)) {
+      Status = EFI_DEVICE_ERROR;
+      goto ON_EXIT;
     }
 
-    switch (CurrentState) {
+    UsbCmd = UhciReadReg (Uhc->PciIo, USBCMD_OFFSET);
 
-    case EfiUsbHcStateOperational:
-      return EFI_SUCCESS;
-
-    case EfiUsbHcStateHalt:
+    if (CurState == EfiUsbHcStateHalt) {
       //
-      // Set Run/Stop bit to 1.
+      // Set Run/Stop bit to 1, also set the bandwidht reclamation
+      // point to 64 bytes
       //
-      Status = ReadUHCCommandReg (
-                 HcDev->PciIo,
-                 CommandRegAddr,
-                 &Command
-                 );
-      if (EFI_ERROR (Status)) {
-        return EFI_DEVICE_ERROR;
-      }
+      UsbCmd |= USBCMD_RS | USBCMD_MAXP;
+      UhciWriteReg (Uhc->PciIo, USBCMD_OFFSET, UsbCmd);
 
-      Command |= USBCMD_RS | USBCMD_MAXP;
-      Status = WriteUHCCommandReg (
-                 HcDev->PciIo,
-                 CommandRegAddr,
-                 Command
-                 );
-      if (EFI_ERROR (Status)) {
-        return EFI_DEVICE_ERROR;
-      }
-
-      break;
-
-    case EfiUsbHcStateSuspend:
-      Status = ReadUHCCommandReg (
-                 HcDev->PciIo,
-                 CommandRegAddr,
-                 &Command
-                 );
-      if (EFI_ERROR (Status)) {
-        return EFI_DEVICE_ERROR;
-      }
-      
+    } else if (CurState == EfiUsbHcStateSuspend) {
       //
-      // FGR(Force Global Resume) bit is 0
+      // If FGR(Force Global Resume) bit is 0, set it
       //
-      if ((Command | (~USBCMD_FGR)) != 0xFF) {
-        //
-        // Write FGR bit to 1
-        //
-        Command |= USBCMD_FGR;
-        WriteUHCCommandReg (
-          HcDev->PciIo,
-          CommandRegAddr,
-          Command
-          );
+      if ((UsbCmd & USBCMD_FGR) == 0) {
+        UsbCmd |= USBCMD_FGR;
+        UhciWriteReg (Uhc->PciIo, USBCMD_OFFSET, UsbCmd);
       }
       
       //
@@ -1371,91 +245,72 @@ UHCISetState (
       //
       // Write FGR bit to 0 and EGSM(Enter Global Suspend Mode) bit to 0
       //
-      Command &= ~USBCMD_FGR;
-      Command &= ~USBCMD_EGSM;
-      Command |= USBCMD_RS;
-      WriteUHCCommandReg (
-        HcDev->PciIo,
-        CommandRegAddr,
-        Command
-        );
-      break;
+      UsbCmd &= ~USBCMD_FGR;
+      UsbCmd &= ~USBCMD_EGSM;
+      UsbCmd |= USBCMD_RS;
+      UhciWriteReg (Uhc->PciIo, USBCMD_OFFSET, UsbCmd);
     }
+
     break;
 
   case EfiUsbHcStateSuspend:
-    if (CurrentState == EfiUsbHcStateSuspend) {
-      return EFI_SUCCESS;
-    }
+    Status = UhciSetState (This, EfiUsbHcStateHalt);
 
-    Status = UHCISetState (This, EfiUsbHcStateHalt);
     if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
+      Status = EFI_DEVICE_ERROR;
+      goto ON_EXIT;
     }
+    
     //
     // Set Enter Global Suspend Mode bit to 1.
     //
-    Status = ReadUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               &Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
-
-    Command |= USBCMD_EGSM;
-    Status = WriteUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
+    UsbCmd = UhciReadReg (Uhc->PciIo, USBCMD_OFFSET);
+    UsbCmd |= USBCMD_EGSM;
+    UhciWriteReg (Uhc->PciIo, USBCMD_OFFSET, UsbCmd);
     break;
 
   default:
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_INVALID_PARAMETER;
+    break;
   }
 
-  return EFI_SUCCESS;
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
+  return Status;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIGetRootHubPortNumber (
+UhciGetRootHubPortNumber (
   IN  EFI_USB_HC_PROTOCOL     *This,
   OUT UINT8                   *PortNumber
   )
 /*++
   
   Routine Description:
+  
     Retrieves the number of root hub ports.
     
   Arguments:
   
-    This        A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    PortNumber  A pointer to the number of the root hub ports.
+    This       : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    PortNumber : A pointer to the number of the root hub ports.
   
   Returns:
-    EFI_SUCCESS 
-          The port number was retrieved successfully.
-    EFI_INVALID_PARAMETER 
-          PortNumber is NULL.
-    EFI_DEVICE_ERROR  
-          An error was encountered while attempting to 
-          retrieve the port number.  
+  
+    EFI_SUCCESS           : The port number was retrieved successfully.
+    EFI_INVALID_PARAMETER : PortNumber is NULL.
+    EFI_DEVICE_ERROR      : An error was encountered 
+          
 --*/
 {
-  USB_HC_DEV  *HcDev;
-  UINT32      PSAddr;
-  UINT16      RHPortControl;
-  UINT32      Index;
-  EFI_STATUS  Status;
+  USB_HC_DEV          *Uhc;
+  UINT32              Offset;
+  UINT16              PortSC;
+  UINT32              Index;
 
-  HcDev = USB_HC_DEV_FROM_THIS (This);
+  Uhc = UHC_FROM_USB_HC_PROTO (This);
 
   if (PortNumber == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1463,30 +318,30 @@ UHCIGetRootHubPortNumber (
 
   *PortNumber = 0;
 
-  for (Index = 0; Index < 2; Index++) {
-    PSAddr = (UINT32) (USBPORTSC1 + Index * 2);
-    Status = ReadRootPortReg (
-               HcDev->PciIo,
-               PSAddr,
-               &RHPortControl
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
+  for (Index = 0; Index < USB_MAX_ROOTHUB_PORT; Index++) {
+    Offset  = USBPORTSC_OFFSET + Index * 2;
+    PortSC  = UhciReadReg (Uhc->PciIo, Offset);
+
     //
-    // Port Register content is valid
+    // Port status's bit 7 is reserved and always returns 1 if
+    // the port number is valid. Intel's UHCI (in EHCI controller)
+    // returns 0 in this bit if port number is invalid. Also, if 
+    // PciIo IoRead returns error, 0xFFFF is returned to caller.
     //
-    if (RHPortControl != 0xff) {
+    if (((PortSC & 0x80) != 0) && (PortSC != 0xFFFF)) {
       (*PortNumber)++;
     }
   }
 
+  Uhc->RootPorts = *PortNumber;
+
+  UHCI_DEBUG ((UHCI_DEBUG_PORT_STS, "UHC root port number: %d\n", Uhc->RootPorts));
   return EFI_SUCCESS;
 }
 
 EFI_STATUS
 EFIAPI
-UHCIGetRootHubPortStatus (
+UhciGetRootHubPortStatus (
   IN  EFI_USB_HC_PROTOCOL     *This,
   IN  UINT8                   PortNumber,
   OUT EFI_USB_PORT_STATUS     *PortStatus
@@ -1494,127 +349,83 @@ UHCIGetRootHubPortStatus (
 /*++
   
   Routine Description:
+  
     Retrieves the current status of a USB root hub port.
   
   Arguments:
   
-    This        A pointer to the EFI_USB_HC_PROTOCOL.
-    
-    PortNumber  Specifies the root hub port from which the status 
-                is to be retrieved.  This value is zero-based. For example, 
-                if a root hub has two ports, then the first port is numbered 0,
-                and the second port is numbered 1.
-    
-    PortStatus  A pointer to the current port status bits and 
-                port status change bits.  
+    This        : A pointer to the EFI_USB_HC_PROTOCOL.
+    PortNumber  : Specifies the root hub port. This value is zero-based.
+    PortStatus  : A pointer to the current port status bits and port status change bits.  
   
   Returns:
-    EFI_SUCCESS 
-        The status of the USB root hub port specified by PortNumber 
-        was returned in PortStatus.
-    EFI_INVALID_PARAMETER 
-        PortNumber is invalid. 
-    EFI_DEVICE_ERROR - Can't read register      
+  
+    EFI_SUCCESS           : The port status was returned in PortStatus.
+    EFI_INVALID_PARAMETER : PortNumber is invalid. 
+    EFI_DEVICE_ERROR      : Can't read register      
+    
 --*/
 {
-  USB_HC_DEV  *HcDev;
-  UINT32      PSAddr;
-  UINT16      RHPortStatus;
-  UINT8       TotalPortNumber;
-  EFI_STATUS  Status;
+  USB_HC_DEV          *Uhc;
+  UINT32              Offset;
+  UINT16              PortSC;
+
+  Uhc = UHC_FROM_USB_HC_PROTO (This);
 
   if (PortStatus == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  UHCIGetRootHubPortNumber (This, &TotalPortNumber);
-  if (PortNumber >= TotalPortNumber) {
+  if (PortNumber >= Uhc->RootPorts) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HcDev   = USB_HC_DEV_FROM_THIS (This);
-  PSAddr  = (UINT32) (USBPORTSC1 + PortNumber * 2);
-
-  //
-  // Clear port status
-  //
+  Offset                        = USBPORTSC_OFFSET + PortNumber * 2;
   PortStatus->PortStatus        = 0;
   PortStatus->PortChangeStatus  = 0;
 
-  Status = ReadRootPortReg (
-             HcDev->PciIo,
-             PSAddr,
-             &RHPortStatus
-             );
+  PortSC                        = UhciReadReg (Uhc->PciIo, Offset);
 
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-  //
-  //    Fill Port Status bits
-  //
-  
-  //
-  // Current Connect Status
-  //
-  if (RHPortStatus & USBPORTSC_CCS) {
+  if (PortSC & USBPORTSC_CCS) {
     PortStatus->PortStatus |= USB_PORT_STAT_CONNECTION;
   }
-  //
-  // Port Enabled/Disabled
-  //
-  if (RHPortStatus & USBPORTSC_PED) {
+
+  if (PortSC & USBPORTSC_PED) {
     PortStatus->PortStatus |= USB_PORT_STAT_ENABLE;
   }
-  
-  //
-  // Port Suspend
-  //
-  if (RHPortStatus & USBPORTSC_SUSP) {
+
+  if (PortSC & USBPORTSC_SUSP) {
     PortStatus->PortStatus |= USB_PORT_STAT_SUSPEND;
   }
-  
-  //
-  // Port Reset
-  //
-  if (RHPortStatus & USBPORTSC_PR) {
+
+  if (PortSC & USBPORTSC_PR) {
     PortStatus->PortStatus |= USB_PORT_STAT_RESET;
   }
-  
-  //
-  // Low Speed Device Attached
-  //
-  if (RHPortStatus & USBPORTSC_LSDA) {
+
+  if (PortSC & USBPORTSC_LSDA) {
     PortStatus->PortStatus |= USB_PORT_STAT_LOW_SPEED;
   }
+  
   //
-  // CHC will always return one in this bit
+  // CHC will always return one in port owner bit
   //
   PortStatus->PortStatus |= USB_PORT_STAT_OWNER;
-  //
-  //   Fill Port Status Change bits
-  //
-  
-  //
-  // Connect Status Change
-  //
-  if (RHPortStatus & USBPORTSC_CSC) {
+
+  if (PortSC & USBPORTSC_CSC) {
     PortStatus->PortChangeStatus |= USB_PORT_STAT_C_CONNECTION;
   }
-  
-  //
-  // Port Enabled/Disabled Change
-  //
-  if (RHPortStatus & USBPORTSC_PEDC) {
+
+  if (PortSC & USBPORTSC_PEDC) {
     PortStatus->PortChangeStatus |= USB_PORT_STAT_C_ENABLE;
   }
 
   return EFI_SUCCESS;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCISetRootHubPortFeature (
+UhciSetRootHubPortFeature (
   IN  EFI_USB_HC_PROTOCOL     *This,
   IN  UINT8                   PortNumber,
   IN  EFI_USB_PORT_FEATURE    PortFeature
@@ -1622,111 +433,85 @@ UHCISetRootHubPortFeature (
 /*++
   
   Routine Description:
+  
     Sets a feature for the specified root hub port.
   
   Arguments:
   
-    This        A pointer to the EFI_USB_HC_PROTOCOL.
-    
-    PortNumber  Specifies the root hub port whose feature 
-                is requested to be set.
-    
-    PortFeature Indicates the feature selector associated 
-                with the feature set request. 
+    This        : A pointer to the EFI_USB_HC_PROTOCOL.
+    PortNumber  : Specifies the root hub port whose feature 
+                  is requested to be set.
+    PortFeature : Indicates the feature selector associated 
+                  with the feature set request. 
   
   Returns:
-    EFI_SUCCESS 
-        The feature specified by PortFeature was set for the 
-        USB root hub port specified by PortNumber.
-    EFI_INVALID_PARAMETER 
-        PortNumber is invalid or PortFeature is invalid.
-    EFI_DEVICE_ERROR
-        Can't read register
+  
+    EFI_SUCCESS           : The feature was set for the port.
+    EFI_INVALID_PARAMETER : PortNumber is invalid or PortFeature is invalid.
+    EFI_DEVICE_ERROR      : Can't read register
+        
 --*/
 {
-  USB_HC_DEV  *HcDev;
-  UINT32      PSAddr;
-  UINT32      CommandRegAddr;
-  //
-  // root hub port status
-  //
-  UINT16      RHPortControl;
-  UINT16      Command;
-  UINT8       TotalPortNumber;
-  EFI_STATUS  Status;
+  USB_HC_DEV          *Uhc;
+  EFI_TPL             OldTpl;
+  UINT32              Offset;
+  UINT16              PortSC;
+  UINT16              Command;
 
-  UHCIGetRootHubPortNumber (This, &TotalPortNumber);
-  if (PortNumber >= TotalPortNumber) {
+  Uhc = UHC_FROM_USB_HC_PROTO (This);
+
+  if (PortNumber >= Uhc->RootPorts) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HcDev           = USB_HC_DEV_FROM_THIS (This);
+  Offset  = USBPORTSC_OFFSET + PortNumber * 2;
 
-  PSAddr          = (UINT32) (USBPORTSC1 + PortNumber * 2);
-  CommandRegAddr  = (UINT32) (USBCMD);
-
-  Status = ReadRootPortReg (
-            HcDev->PciIo,
-            PSAddr,
-            &RHPortControl
-            );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
+  OldTpl  = gBS->RaiseTPL (UHCI_TPL);
+  PortSC  = UhciReadReg (Uhc->PciIo, Offset);
 
   switch (PortFeature) {
-
   case EfiUsbPortSuspend:
-    Status = ReadUHCCommandReg (
-               HcDev->PciIo,
-               CommandRegAddr,
-               &Command
-               );
-    if (EFI_ERROR (Status)) {
-      return EFI_DEVICE_ERROR;
-    }
-
+    Command = UhciReadReg (Uhc->PciIo, USBCMD_OFFSET);
     if (!(Command & USBCMD_EGSM)) {
       //
       // if global suspend is not active, can set port suspend
       //
-      RHPortControl &= 0xfff5;
-      RHPortControl |= USBPORTSC_SUSP;
+      PortSC &= 0xfff5;
+      PortSC |= USBPORTSC_SUSP;
     }
     break;
 
   case EfiUsbPortReset:
-    RHPortControl &= 0xfff5;
-    //
-    // Set the reset bit
-    //
-    RHPortControl |= USBPORTSC_PR;
+    PortSC &= 0xfff5;
+    PortSC |= USBPORTSC_PR;
     break;
 
   case EfiUsbPortPower:
+    //
+    // No action
+    //
     break;
 
   case EfiUsbPortEnable:
-    RHPortControl &= 0xfff5;
-    RHPortControl |= USBPORTSC_PED;
+    PortSC &= 0xfff5;
+    PortSC |= USBPORTSC_PED;
     break;
 
   default:
+    gBS->RestoreTPL (OldTpl);
     return EFI_INVALID_PARAMETER;
   }
 
-  WriteRootPortReg (
-    HcDev->PciIo,
-    PSAddr,
-    RHPortControl
-    );
-
+  UhciWriteReg (Uhc->PciIo, Offset, PortSC);
+  gBS->RestoreTPL (OldTpl);
+  
   return EFI_SUCCESS;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIClearRootHubPortFeature (
+UhciClearRootHubPortFeature (
   IN  EFI_USB_HC_PROTOCOL     *This,
   IN  UINT8                   PortNumber,
   IN  EFI_USB_PORT_FEATURE    PortFeature
@@ -1734,240 +519,164 @@ UHCIClearRootHubPortFeature (
 /*++
   
   Routine Description:
+  
     Clears a feature for the specified root hub port.
   
   Arguments:
   
-    This        A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    PortNumber  Specifies the root hub port whose feature 
-                is requested to be cleared.
-    
-    PortFeature Indicates the feature selector associated with the 
-                feature clear request.
+    This        : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    PortNumber  : Specifies the root hub port whose feature 
+                  is requested to be cleared.
+    PortFeature : Indicates the feature selector associated with the 
+                  feature clear request.
                   
   Returns:
-    EFI_SUCCESS 
-        The feature specified by PortFeature was cleared for the 
-        USB root hub port specified by PortNumber.
-    EFI_INVALID_PARAMETER 
-        PortNumber is invalid or PortFeature is invalid.
-    EFI_DEVICE_ERROR
-        Can't read register
+  
+    EFI_SUCCESS           : The feature was cleared for the port.
+    EFI_INVALID_PARAMETER : PortNumber is invalid or PortFeature is invalid.
+    EFI_DEVICE_ERROR      : Can't read register
+        
 --*/
 {
-  USB_HC_DEV  *HcDev;
-  UINT32      PSAddr;
-  UINT16      RHPortControl;
-  UINT8       TotalPortNumber;
-  EFI_STATUS  Status;
+  USB_HC_DEV          *Uhc;
+  EFI_TPL             OldTpl;
+  UINT32              Offset;
+  UINT16              PortSC;
 
-  UHCIGetRootHubPortNumber (This, &TotalPortNumber);
+  Uhc = UHC_FROM_USB_HC_PROTO (This);
 
-  if (PortNumber >= TotalPortNumber) {
+  if (PortNumber >= Uhc->RootPorts) {
     return EFI_INVALID_PARAMETER;
   }
 
-  HcDev   = USB_HC_DEV_FROM_THIS (This);
-  PSAddr  = (UINT32) (USBPORTSC1 + PortNumber * 2);
+  Offset  = USBPORTSC_OFFSET + PortNumber * 2;
 
-  Status = ReadRootPortReg (
-             HcDev->PciIo,
-             PSAddr,
-             &RHPortControl
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
+  OldTpl  = gBS->RaiseTPL (UHCI_TPL);
+  PortSC  = UhciReadReg (Uhc->PciIo, Offset);
 
   switch (PortFeature) {
-  //
-  // clear PORT_ENABLE feature means disable port.
-  //
   case EfiUsbPortEnable:
-    RHPortControl &= 0xfff5;
-    RHPortControl &= ~USBPORTSC_PED;
+    PortSC &= 0xfff5;
+    PortSC &= ~USBPORTSC_PED;
     break;
 
-  //
-  // clear PORT_SUSPEND feature means resume the port.
-  // (cause a resume on the specified port if in suspend mode)
-  //
   case EfiUsbPortSuspend:
-    RHPortControl &= 0xfff5;
-    RHPortControl &= ~USBPORTSC_SUSP;
+    //
+    // Cause a resume on the specified port if in suspend mode.
+    //
+    PortSC &= 0xfff5;
+    PortSC &= ~USBPORTSC_SUSP;
     break;
 
-  //
-  // no operation
-  //
   case EfiUsbPortPower:
+    //
+    // No action
+    //
     break;
 
-  //
-  // clear PORT_RESET means clear the reset signal.
-  //
   case EfiUsbPortReset:
-    RHPortControl &= 0xfff5;
-    RHPortControl &= ~USBPORTSC_PR;
+    PortSC &= 0xfff5;
+    PortSC &= ~USBPORTSC_PR;
     break;
 
-  //
-  // clear connect status change
-  //
   case EfiUsbPortConnectChange:
-    RHPortControl &= 0xfff5;
-    RHPortControl |= USBPORTSC_CSC;
+    PortSC &= 0xfff5;
+    PortSC |= USBPORTSC_CSC;
     break;
 
-  //
-  // clear enable/disable status change
-  //
   case EfiUsbPortEnableChange:
-    RHPortControl &= 0xfff5;
-    RHPortControl |= USBPORTSC_PEDC;
+    PortSC &= 0xfff5;
+    PortSC |= USBPORTSC_PEDC;
     break;
 
-  //
-  // root hub does not support this request
-  //
   case EfiUsbPortSuspendChange:
+    //
+    // Root hub does not support this
+    //
     break;
 
-  //
-  // root hub does not support this request
-  //
   case EfiUsbPortOverCurrentChange:
+    //
+    // Root hub does not support this
+    //
     break;
 
-  //
-  // root hub does not support this request
-  //
   case EfiUsbPortResetChange:
+    //
+    // Root hub does not support this
+    //
     break;
 
   default:
+    gBS->RestoreTPL (OldTpl);
     return EFI_INVALID_PARAMETER;
   }
 
-  WriteRootPortReg (
-    HcDev->PciIo,
-    PSAddr,
-    RHPortControl
-    );
+  UhciWriteReg (Uhc->PciIo, Offset, PortSC);
+  gBS->RestoreTPL (OldTpl);
 
   return EFI_SUCCESS;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIControlTransfer (
+UhciControlTransfer (
   IN       EFI_USB_HC_PROTOCOL        *This,
   IN       UINT8                      DeviceAddress,
   IN       BOOLEAN                    IsSlowDevice,
   IN       UINT8                      MaximumPacketLength,
   IN       EFI_USB_DEVICE_REQUEST     *Request,
   IN       EFI_USB_DATA_DIRECTION     TransferDirection,
-  IN OUT   VOID                       *Data, OPTIONAL
-  IN OUT   UINTN                      *DataLength, OPTIONAL
+  IN OUT   VOID                       *Data,              OPTIONAL
+  IN OUT   UINTN                      *DataLength,        OPTIONAL
   IN       UINTN                      TimeOut,
   OUT      UINT32                     *TransferResult
   )
 /*++
   
   Routine Description:
+  
     Submits control transfer to a target USB device.
   
   Arguments:
     
-    This          A pointer to the EFI_USB_HC_PROTOCOL instance.
-
-    DeviceAddress Represents the address of the target device on the USB,
-                  which is assigned during USB enumeration.
-
-    IsSlowDevice  Indicates whether the target device is slow device 
-                  or full-speed device.
+    This                : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       : Usb device address
+    IsSlowDevice        : Whether the device is of slow speed or full speed
+    MaximumPacketLength : maximum packet size of the default control endpoint
+    Request             : USB device request to send
+    TransferDirection   : Specifies the data direction for the transfer.
+    Data                : Data buffer to transmit from or receive into 
+    DataLength          : Number of bytes of the data
+    TimeOut             : Maximum time, in microseconds
+    TransferResult      : Return result in this
     
-    MaximumPacketLength Indicates the maximum packet size that the 
-                        default control transfer endpoint is capable of 
-                        sending or receiving.
-    
-    Request       A pointer to the USB device request that will be sent 
-                  to the USB device. 
-    
-    TransferDirection Specifies the data direction for the transfer.
-                      There are three values available, DataIn, DataOut 
-                      and NoData.
-    
-    Data          A pointer to the buffer of data that will be transmitted 
-                  to USB device or received from USB device.
-    
-    DataLength    Indicates the size, in bytes, of the data buffer 
-                  specified by Data.
-    
-    TimeOut       Indicates the maximum time, in microseconds, 
-                  which the transfer is allowed to complete.
-    
-    TransferResult  A pointer to the detailed result information generated 
-                    by this control transfer.
-                    
   Returns:
-    EFI_SUCCESS 
-        The control transfer was completed successfully.
-    EFI_OUT_OF_RESOURCES  
-        The control transfer could not be completed due to a lack of resources.
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-    EFI_TIMEOUT 
-        The control transfer failed due to timeout.
-    EFI_DEVICE_ERROR  
-        The control transfer failed due to host controller or device error. 
-        Caller should check TranferResult for detailed error information.
-
+    EFI_SUCCESS           : Transfer was completed successfully.
+    EFI_OUT_OF_RESOURCES  : Failed due to a lack of resources.
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_TIMEOUT           : Failed due to timeout.
+    EFI_DEVICE_ERROR      : Failed due to host controller or device error. 
 --*/
 {
-  USB_HC_DEV            *HcDev;
-  UINT32                StatusReg;
-  UINT32                FrameNumReg;
-  UINT8                 PktID;
-  QH_STRUCT             *PtrQH;
-  TD_STRUCT             *PtrTD;
-  TD_STRUCT             *PtrPreTD;
-  TD_STRUCT             *PtrSetupTD;
-  TD_STRUCT             *PtrStatusTD;
-  EFI_STATUS            Status;
-  UINTN                 Index;
-  UINTN                 DataLen;
-  UINT8                 *PtrDataSource;
-  UINT8                 *Ptr;
-  UINT8                 DataToggle;
-  UINT16                LoadFrameListIndex;
-  UINT8                 PktSize;
+  USB_HC_DEV          *Uhc;
+  UHCI_QH_SW          *QhSw;
+  UHCI_TD_SW          *TDs;
+  EFI_TPL             OldTpl;
+  EFI_STATUS          Status;
+  UINT8               PktId;
+  UINT8               *RequestPhy;
+  VOID                *RequestMap;
+  UINT8               *DataPhy;
+  VOID                *DataMap;
 
-  UINT8                 *RequestMappedAddress;
-  VOID                  *RequestMapping;
-  UINTN                 RequestLen;
-
-  EFI_PHYSICAL_ADDRESS  TempPtr;
-  VOID                  *Mapping;
-
-  TD_STRUCT             *PtrFirstDataTD;
-  TD_STRUCT             *ptrLastDataTD;
-  BOOLEAN               FirstTD;
-
-  FirstTD               = FALSE;
-  RequestMappedAddress  = NULL;
-  RequestMapping        = NULL;
-  Mapping               = NULL;
-  PtrFirstDataTD        = NULL;
-  ptrLastDataTD         = NULL;
-  PktID                 = INPUT_PACKET_ID;
-  Mapping               = NULL;
-  HcDev                 = USB_HC_DEV_FROM_THIS (This);
-  StatusReg             = (UINT32) (USBSTS);
-  FrameNumReg           = (UINT32) (USBFRNUM);
-  PtrPreTD              = NULL;
-  PtrTD                 = NULL;
+  Uhc         = UHC_FROM_USB_HC_PROTO (This);
+  TDs         = NULL;
+  DataPhy     = NULL;
+  DataMap     = NULL;
+  RequestPhy  = NULL;
+  RequestMap  = NULL;
 
   //
   // Parameters Checking
@@ -1975,494 +684,151 @@ UHCIControlTransfer (
   if (Request == NULL || TransferResult == NULL) {
     return EFI_INVALID_PARAMETER;
   }
-  
-  //
-  // if errors exist that cause host controller halt,
-  // then return EFI_DEVICE_ERROR.
-  //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
-    ClearStatusReg (HcDev->PciIo, StatusReg);
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    return EFI_DEVICE_ERROR;
-  }
-  
-  //
-  // low speed usb devices are limited to only an eight-byte
-  // maximum data payload size
-  //
   if (IsSlowDevice && (MaximumPacketLength != 8)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (MaximumPacketLength != 8  && 
-      MaximumPacketLength != 16 &&
-      MaximumPacketLength != 32 &&
-      MaximumPacketLength != 64) {
+  if ((MaximumPacketLength != 8) &&  (MaximumPacketLength != 16) &&
+      (MaximumPacketLength != 32) && (MaximumPacketLength != 64)) {
+      
     return EFI_INVALID_PARAMETER;
   }
 
   if ((TransferDirection != EfiUsbNoData) && (DataLength == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
-
-  switch (TransferDirection) {
-
-  case EfiUsbDataIn:
-    PktID         = INPUT_PACKET_ID;
-    PtrDataSource = Data;
-    DataLen       = *DataLength;
-
-    //
-    // map the source data buffer for bus master access.
-    // BusMasterWrite means cpu read
-    //
-    Status = HcDev->PciIo->Map (
-                             HcDev->PciIo,
-                             EfiPciIoOperationBusMasterWrite,
-                             PtrDataSource,
-                             &DataLen,
-                             &TempPtr,
-                             &Mapping
-                             );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    Ptr = (UINT8 *) ((UINTN) TempPtr);
-    break;
-
-  case EfiUsbDataOut:
-    PktID         = OUTPUT_PACKET_ID;
-    PtrDataSource = Data;
-    DataLen       = *DataLength;
-
-    //
-    // map the source data buffer for bus master access.
-    // BusMasterRead means cpu write
-    //
-    Status = HcDev->PciIo->Map (
-                             HcDev->PciIo,
-                             EfiPciIoOperationBusMasterRead,
-                             PtrDataSource,
-                             &DataLen,
-                             &TempPtr,
-                             &Mapping
-                             );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    Ptr = (UINT8 *) ((UINTN) TempPtr);
-    break;
-
+  
   //
-  // no data stage
+  // If errors exist that cause host controller halt,
+  // clear status then return EFI_DEVICE_ERROR.
   //
-  case EfiUsbNoData:
-    if ((DataLength != NULL) && (*DataLength != 0)) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    PktID         = OUTPUT_PACKET_ID;
-    PtrDataSource = NULL;
-    DataLen       = 0;
-    Ptr           = NULL;
-    break;
-
-  default:
-    return EFI_INVALID_PARAMETER;
-  }
-
-  Status = ClearStatusReg (HcDev->PciIo, StatusReg);
-  if (EFI_ERROR (Status)) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+    *TransferResult = EFI_USB_ERR_SYSTEM;
     return EFI_DEVICE_ERROR;
   }
-  //
-  // create QH structure and init
-  //
-  Status = CreateQH (HcDev, &PtrQH);
-  if (EFI_ERROR (Status)) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-    return Status;
-  }
-  
-  //
-  // map the Request for bus master access.
-  // BusMasterRead means cpu write
-  //
-  RequestLen = sizeof (EFI_USB_DEVICE_REQUEST);
-  Status = HcDev->PciIo->Map (
-                           HcDev->PciIo,
-                           EfiPciIoOperationBusMasterRead,
-                           (UINT8 *) Request,
-                           &RequestLen,
-                           &TempPtr,
-                           &RequestMapping
-                           );
 
-  if (EFI_ERROR (Status)) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-    UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-    return Status;
-  }
-
-  RequestMappedAddress = (UINT8 *) ((UINTN) TempPtr);
+  OldTpl = gBS->RaiseTPL (UHCI_TPL);
 
   //
-  // generate Setup Stage TD
+  // Map the Request and data for bus master access.
   //
-  Status = GenSetupStageTD (
-             HcDev,
-             DeviceAddress,
-             0,
-             IsSlowDevice,
-             (UINT8 *) RequestMappedAddress,
-             sizeof (EFI_USB_DEVICE_REQUEST),
-             &PtrSetupTD
+  Status = UhciMapUserRequest (
+             Uhc,
+             Request,
+             &RequestPhy,
+             &RequestMap
              );
 
   if (EFI_ERROR (Status)) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-    UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-    HcDev->PciIo->Unmap (HcDev->PciIo, RequestMapping);
-    return Status;
-  }
-  
-  //
-  //  Data Stage of Control Transfer
-  //
-  DataToggle  = 1;
-  FirstTD     = TRUE;
-  while (DataLen > 0) {
-    //
-    // create TD structures and link together
-    //
-    
-    //
-    // PktSize is the data load size that each TD carries.
-    //
-    PktSize = (UINT8) DataLen;
-    if (DataLen > MaximumPacketLength) {
-      PktSize = MaximumPacketLength;
-    }
+    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciMapUserRequest failed\n"));
 
-    Status = GenDataTD (
-               HcDev,
-               DeviceAddress,
-               0,
-               Ptr,
-               PktSize,
-               PktID,
-               DataToggle,
-               IsSlowDevice,
-               &PtrTD
-               );
-
-    if (EFI_ERROR (Status)) {
-      //
-      // free all resources occupied
-      //
-      HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-      UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-      HcDev->PciIo->Unmap (HcDev->PciIo, RequestMapping);
-      DeleteQueuedTDs (HcDev, PtrSetupTD);
-      DeleteQueuedTDs (HcDev, PtrFirstDataTD);
-      return Status;
-    }
-    
-    //
-    // Link two TDs in vertical depth
-    //
-    if (FirstTD) {
-      PtrFirstDataTD            = PtrTD;
-      PtrFirstDataTD->ptrNextTD = NULL;
-      FirstTD                   = FALSE;
-    } else {
-      LinkTDToTD (PtrPreTD, PtrTD);
-    }
-
-    PtrPreTD = PtrTD;
-
-    DataToggle ^= 1;
-    Ptr += PktSize;
-    DataLen -= PktSize;
+    *TransferResult = EFI_USB_ERR_SYSTEM;
+    Status          = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
-  ptrLastDataTD = PtrTD;
-
-  //
-  // Status Stage of Control Transfer
-  //
-  if (PktID == OUTPUT_PACKET_ID) {
-    PktID = INPUT_PACKET_ID;
-  } else {
-    PktID = OUTPUT_PACKET_ID;
-  }
-  
-  //
-  // create Status Stage TD structure
-  //
-  Status = CreateStatusTD (
-             HcDev,
-             DeviceAddress,
-             0,
-             PktID,
-             IsSlowDevice,
-             &PtrStatusTD
+  Status = UhciMapUserData (
+             Uhc,
+             TransferDirection,
+             Data,
+             DataLength,
+             &PktId,
+             &DataPhy,
+             &DataMap
              );
 
   if (EFI_ERROR (Status)) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-    UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-    HcDev->PciIo->Unmap (HcDev->PciIo, RequestMapping);
-    DeleteQueuedTDs (HcDev, PtrSetupTD);
-    DeleteQueuedTDs (HcDev, PtrFirstDataTD);
-    return Status;
+    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciMapUserData failed\n"));
+    *TransferResult = EFI_USB_ERR_SYSTEM;
+
+    goto UNMAP_REQUEST;
+  }
+  
+  //
+  // Create Tds list and link it to the frame list according
+  // to its speed
+  //
+  TDs = UhciCreateCtrlTds (
+          Uhc,
+          DeviceAddress,
+          PktId,
+          RequestPhy,
+          DataPhy,
+          *DataLength,
+          MaximumPacketLength,
+          IsSlowDevice
+          );
+
+  if (TDs == NULL) {
+    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciCreateCtrlTds failed\n"));
+    
+    *TransferResult = EFI_USB_ERR_SYSTEM;
+    Status          = EFI_OUT_OF_RESOURCES;
+    goto UNMAP_DATA;
   }
 
   if (IsSlowDevice) {
-    //
-    // link setup TD structures to QH structure
-    //
-    LinkTDToQH (PtrQH, PtrSetupTD);
-
-    LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-
-    //
-    // link QH-TDs to total 100 frame list entry to speed up the execution.
-    //
-    for (Index = 0; Index < 100; Index++) {
-      LinkQHToFrameList (
-        HcDev->FrameListEntry,
-        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-        PtrQH
-        );
-    }
-    //
-    // Poll QH-TDs execution and get result.
-    // detail status is returned
-    //
-    Status = ExecuteControlTransfer (
-               HcDev,
-               PtrSetupTD,
-               LoadFrameListIndex,
-               DataLength,
-               TimeOut,
-               TransferResult
-               );
-    //
-    // Remove Control Transfer QH-TDs structure from the frame list
-    // and update the pointers in the Frame List
-    // and other pointers in other related QH structures.
-    //
-    for (Index = 0; Index < 100; Index++) {
-      DelLinkSingleQH (
-        HcDev,
-        PtrQH,
-        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-        FALSE,
-        FALSE
-        );
-    }
-    //
-    // delete setup stage TD; the QH is reserved for the next stages.
-    //
-    DeleteQueuedTDs (HcDev, PtrSetupTD);
-
-    //
-    // if setup stage error, return error
-    //
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-    //
-    // some control transfers do not have Data Stage
-    //
-    if (PtrFirstDataTD != NULL) {
-
-      LinkTDToQH (PtrQH, PtrFirstDataTD);
-      LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-
-      for (Index = 0; Index < 500; Index++) {
-        LinkQHToFrameList (
-          HcDev->FrameListEntry,
-          (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-          PtrQH
-          );
-      }
-
-      Status = ExecuteControlTransfer (
-                 HcDev,
-                 PtrFirstDataTD,
-                 LoadFrameListIndex,
-                 DataLength,
-                 TimeOut,
-                 TransferResult
-                 );
-
-      for (Index = 0; Index < 500; Index++) {
-        DelLinkSingleQH (
-          HcDev,
-          PtrQH,
-          (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-          FALSE,
-          FALSE
-          );
-      }
-      //
-      // delete data stage TD; the QH is reserved for the next stage.
-      //
-      DeleteQueuedTDs (HcDev, PtrFirstDataTD);
-    }
-    //
-    // if data stage error, goto done and return error
-    //
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-
-    LinkTDToQH (PtrQH, PtrStatusTD);
-    //
-    // get the frame list index that the QH-TDs will be linked to.
-    //
-    LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-
-    for (Index = 0; Index < 100; Index++) {
-      //
-      // put the QH-TDs directly or indirectly into the proper place
-      // in the Frame List
-      //
-      LinkQHToFrameList (
-        HcDev->FrameListEntry,
-        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-        PtrQH
-        );
-    }
-    //
-    // Poll QH-TDs execution and get result.
-    // detail status is returned
-    //
-    Status = ExecuteControlTransfer (
-               HcDev,
-               PtrStatusTD,
-               LoadFrameListIndex,
-               DataLength,
-               TimeOut,
-               TransferResult
-               );
-
-    //
-    // Delete Control Transfer QH-TDs structure
-    // and update the pointers in the Frame List
-    // and other pointers in other related QH structures.
-    //
-    // TRUE means must search other framelistindex
-    //
-    for (Index = 0; Index < 100; Index++) {
-      DelLinkSingleQH (
-        HcDev,
-        PtrQH,
-        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-        FALSE,
-        FALSE
-        );
-    }
-
-    DeleteQueuedTDs (HcDev, PtrStatusTD);
-
+    QhSw = Uhc->LsCtrlQh;
   } else {
-    //
-    // link setup stage TD with data stage TD
-    //
-    PtrPreTD = PtrSetupTD;
-    if (PtrFirstDataTD != NULL) {
-      LinkTDToTD (PtrSetupTD, PtrFirstDataTD);
-      PtrPreTD = ptrLastDataTD;
-    }
-    //
-    // link status TD with previous TD
-    //
-    LinkTDToTD (PtrPreTD, PtrStatusTD);
-
-    //
-    // link QH with TD
-    //
-    LinkTDToQH (PtrQH, PtrSetupTD);
-
-    LoadFrameListIndex = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-    for (Index = 0; Index < 500; Index++) {
-      //
-      // put the QH-TDs directly or indirectly into the proper place
-      // in the Frame List
-      //
-      LinkQHToFrameList (
-        HcDev->FrameListEntry,
-        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-        PtrQH
-        );
-    }
-    //
-    // Poll QH-TDs execution and get result.
-    // detail status is returned
-    //
-    Status = ExecuteControlTransfer (
-               HcDev,
-               PtrSetupTD,
-               LoadFrameListIndex,
-               DataLength,
-               TimeOut,
-               TransferResult
-               );
-    //
-    // Remove Control Transfer QH-TDs structure from the frame list
-    // and update the pointers in the Frame List
-    // and other pointers in other related QH structures.
-    //
-    for (Index = 0; Index < 500; Index++) {
-      DelLinkSingleQH (
-        HcDev,
-        PtrQH,
-        (UINT16) ((LoadFrameListIndex + Index) & 0x3FF),
-        FALSE,
-        FALSE
-        );
-    }
-
-    DeleteQueuedTDs (HcDev, PtrSetupTD);
+    QhSw = Uhc->FsCtrlBulkQh;
   }
 
-Done:
+  UhciLinkTdToQh (QhSw, TDs);
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
 
-  UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-
-  if (Mapping != NULL) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-  }
-
-  if (RequestMapping != NULL) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, RequestMapping);
-  }
   //
-  // if has errors that cause host controller halt,
+  // Poll QH-TDs execution and get result.
+  // detail status is returned
+  //
+  Status = UhciExecuteTransfer (
+             Uhc,
+             TDs,
+             DataLength,
+             0,
+             TimeOut,
+             TransferResult,
+             TRUE,
+             IsSlowDevice
+             );
+
+  if (EFI_ERROR (Status)) {
+    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciExecuteTransfer failed\n"));
+    goto DESTORY_TDS;
+  }
+  
+  //
+  // If has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
-
-    ClearStatusReg (HcDev->PciIo, StatusReg);
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
     *TransferResult |= EFI_USB_ERR_SYSTEM;
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
   }
 
-  ClearStatusReg (HcDev->PciIo, StatusReg);
-  HcDev->PciIo->Flush (HcDev->PciIo);
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+
+DESTORY_TDS:
+  UhciUnlinkTdFromQh (QhSw, TDs);
+  UhciDestoryTds (Uhc, TDs);
+
+UNMAP_DATA:
+  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+
+UNMAP_REQUEST:
+  Uhc->PciIo->Unmap (Uhc->PciIo, RequestMap);
+  Uhc->PciIo->Flush (Uhc->PciIo);
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
   return Status;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIBulkTransfer (
+UhciBulkTransfer (
   IN       EFI_USB_HC_PROTOCOL     *This,
   IN       UINT8                   DeviceAddress,
   IN       UINT8                   EndPointAddress,
@@ -2476,118 +842,45 @@ UHCIBulkTransfer (
 /*++
   
   Routine Description:
+  
     Submits bulk transfer to a bulk endpoint of a USB device.
     
   Arguments:
     
-    This          A pointer to the EFI_USB_HC_PROTOCOL instance.
+    This                :A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       : Usb device address
+    EndPointAddress     : Endpoint number and endpoint direction
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    Data                : Data buffer to transmit from or receive into
+    DataLength          : Length of the data buffer
+    DataToggle          : On input, data toggle to use, on output, the next toggle
+    TimeOut             : Indicates the maximum time
+    TransferResult      : Variable to receive the transfer result
     
-    DeviceAddress Represents the address of the target device on the USB,
-                  which is assigned during USB enumeration.
-    EndPointAddress   The combination of an endpoint number and an 
-                      endpoint direction of the target USB device. 
-                      Each endpoint address supports data transfer in 
-                      one direction except the control endpoint 
-                      (whose default endpoint address is 0). 
-                      It is the caller's responsibility to make sure that 
-                      the EndPointAddress represents a bulk endpoint. 
-                      
-    MaximumPacketLength Indicates the maximum packet size the target endpoint
-                        is capable of sending or receiving.
-                        
-    Data          A pointer to the buffer of data that will be transmitted 
-                  to USB device or received from USB device.
-    DataLength    When input, indicates the size, in bytes, of the data buffer
-                  specified by Data. When output, indicates the actually 
-                  transferred data size.
-                  
-    DataToggle    A pointer to the data toggle value. On input, it indicates 
-                  the initial data toggle value the bulk transfer should adopt;
-                  on output, it is updated to indicate the data toggle value 
-                  of the subsequent bulk transfer. 
-                  
-    TimeOut       Indicates the maximum time, in microseconds, which the 
-                  transfer is allowed to complete.
-                  
-    TransferResult  A pointer to the detailed result information of the 
-                    bulk transfer.
-
   Returns:
-    EFI_SUCCESS 
-        The bulk transfer was completed successfully.
-    EFI_OUT_OF_RESOURCES  
-        The bulk transfer could not be submitted due to lack of resource.
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-    EFI_TIMEOUT 
-        The bulk transfer failed due to timeout.
-    EFI_DEVICE_ERROR  
-        The bulk transfer failed due to host controller or device error.
-        Caller should check TranferResult for detailed error information.
+    EFI_SUCCESS           : The bulk transfer was completed successfully.
+    EFI_OUT_OF_RESOURCES  : Failed due to lack of resource.
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_TIMEOUT           : Failed due to timeout.
+    EFI_DEVICE_ERROR      : Failed due to host controller or device error.
 
 --*/
 {
-  USB_HC_DEV              *HcDev;
-  UINT32                  StatusReg;
-  UINT32                  FrameNumReg;
-  UINTN                   DataLen;
-  QH_STRUCT               *PtrQH;
-  TD_STRUCT               *PtrFirstTD;
-  TD_STRUCT               *PtrTD;
-  TD_STRUCT               *PtrPreTD;
-  UINT16                  LoadFrameListIndex;
-  UINT16                  SavedFrameListIndex;
-  UINT8                   PktID;
-  UINT8                   *PtrDataSource;
-  UINT8                   *Ptr;
-  BOOLEAN                 IsFirstTD;
+  EFI_USB_DATA_DIRECTION  Direction;
+  EFI_TPL                 OldTpl;
+  USB_HC_DEV              *Uhc;
+  UHCI_TD_SW              *TDs;
   EFI_STATUS              Status;
-  UINT32                  Index;
-  UINT8                   PktSize;
+  UINT8                   PktId;
+  UINT8                   *DataPhy;
+  VOID                    *DataMap;
 
-  EFI_USB_DATA_DIRECTION  TransferDirection;
-  //
-  //  Used to calculate how many entries are linked to the
-  //  specified bulk transfer QH-TDs
-  //
-  UINT32                  LinkTimes;
+  Uhc     = UHC_FROM_USB_HC_PROTO (This);
+  DataPhy = NULL;
+  DataMap = NULL;
 
-  BOOLEAN                 ShortPacketEnable;
-  EFI_PHYSICAL_ADDRESS    TempPtr;
-  VOID                    *Mapping;
-  
-  HcDev             = USB_HC_DEV_FROM_THIS (This);
-  StatusReg         = (UINT32) (USBSTS);
-  FrameNumReg       = (UINT32) (USBFRNUM);
-  PktID             = INPUT_PACKET_ID;
-  PtrTD             = NULL;
-  PtrFirstTD        = NULL;
-  PtrPreTD          = NULL;
-  LinkTimes         = 1;
-  DataLen           = 0;
-  Ptr               = NULL;
-  ShortPacketEnable = FALSE;
-  Mapping           = NULL;
-
-  //
-  // Parameters Checking
-  //
-  
-  if ((DataLength == NULL) ||
-      (Data == NULL)       ||
-      (TransferResult == NULL)) {
+  if ((DataLength == NULL) || (Data == NULL) || (TransferResult == NULL)) {
     return EFI_INVALID_PARAMETER;
-  }
-  
-  //
-  // if has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
-
-    ClearStatusReg (HcDev->PciIo, StatusReg);
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    return EFI_DEVICE_ERROR;
   }
 
   if (*DataLength == 0) {
@@ -2598,276 +891,119 @@ UHCIBulkTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (MaximumPacketLength != 8  &&
-      MaximumPacketLength != 16 &&
-      MaximumPacketLength != 32 &&
-      MaximumPacketLength != 64) {
+  if ((MaximumPacketLength != 8) && (MaximumPacketLength != 16) && 
+      (MaximumPacketLength != 32) && (MaximumPacketLength != 64)) {
     return EFI_INVALID_PARAMETER;
   }
   
   //
-  // Enable the maximum packet size (64bytes)
-  // that can be used for full speed bandwidth reclamation
-  // at the end of a frame.
+  // If has errors that cause host controller halt,
+  // then return EFI_DEVICE_ERROR directly.
   //
-  EnableMaxPacketSize (HcDev);
-
-  Status = ClearStatusReg (HcDev->PciIo, StatusReg);
-  if (EFI_ERROR (Status)) {
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+    *TransferResult = EFI_USB_ERR_SYSTEM;
     return EFI_DEVICE_ERROR;
   }
- 
-  //
-  // construct QH and TD data structures,
-  // and link them together
-  //
+
+  OldTpl = gBS->RaiseTPL (UHCI_TPL);
+
   if (EndPointAddress & 0x80) {
-    TransferDirection = EfiUsbDataIn;
+    Direction = EfiUsbDataIn;
   } else {
-    TransferDirection = EfiUsbDataOut;
-  }
-
-  switch (TransferDirection) {
-
-  case EfiUsbDataIn:
-    ShortPacketEnable = TRUE;
-    PktID             = INPUT_PACKET_ID;
-    PtrDataSource     = Data;
-    DataLen           = *DataLength;
-
-    //
-    // BusMasterWrite means cpu read
-    //
-    Status = HcDev->PciIo->Map (
-                             HcDev->PciIo,
-                             EfiPciIoOperationBusMasterWrite,
-                             PtrDataSource,
-                             &DataLen,
-                             &TempPtr,
-                             &Mapping
-                             );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    Ptr = (UINT8 *) ((UINTN) TempPtr);
-    break;
-
-  case EfiUsbDataOut:
-    PktID         = OUTPUT_PACKET_ID;
-    PtrDataSource = Data;
-    DataLen       = *DataLength;
-
-    //
-    // BusMasterRead means cpu write
-    //
-    Status = HcDev->PciIo->Map (
-                             HcDev->PciIo,
-                             EfiPciIoOperationBusMasterRead,
-                             PtrDataSource,
-                             &DataLen,
-                             &TempPtr,
-                             &Mapping
-                             );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    Ptr = (UINT8 *) ((UINTN) TempPtr);
-    break;
-
-  default:
-    return EFI_INVALID_PARAMETER;
+    Direction = EfiUsbDataOut;
   }
   
   //
-  //  create QH structure and init
+  // Map the source data buffer for bus master access.
   //
-  Status = CreateQH (HcDev, &PtrQH);
+  Status = UhciMapUserData (
+             Uhc,
+             Direction,
+             Data,
+             DataLength,
+             &PktId,
+             &DataPhy,
+             &DataMap
+             );
+
   if (EFI_ERROR (Status)) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-    return Status;
+    UHCI_DEBUG ((UHCI_DEBUG_BULK, "UhciMapUserData failed\n"));
+    *TransferResult = EFI_USB_ERR_SYSTEM;
+
+    goto ON_EXIT;
+  }
+
+  TDs = UhciCreateBulkOrIntTds (
+          Uhc,
+          DeviceAddress,
+          EndPointAddress,
+          PktId,
+          DataPhy,
+          *DataLength,
+          DataToggle,
+          MaximumPacketLength,
+          FALSE
+          );
+
+  if (TDs == NULL) {
+    UHCI_DEBUG ((UHCI_DEBUG_BULK, "UhciCreateBulkTds failed\n"));
+    
+    *TransferResult = EFI_USB_ERR_SYSTEM;
+    Status          = EFI_OUT_OF_RESOURCES;
+    goto UNMAP_DATA;
   }
   
   //
-  // i is used to calculate the total number of TDs.
+  // Link TDs to FsCtrlBulkQh, FsCtrlBulkQh is already on
+  // the frame list. FsCtrlBulkQh is setup for bandwidth
+  // reclamation.
   //
-  Index     = 0;
-
-  IsFirstTD = TRUE;
-  while (DataLen > 0) {
-    
-    //
-    // create TD structures and link together
-    //
-    
-    PktSize = (UINT8) DataLen;
-    if (DataLen > MaximumPacketLength) {
-      PktSize = MaximumPacketLength;
-    }
-
-    Status = GenDataTD (
-               HcDev,
-               DeviceAddress,
-               EndPointAddress,
-               Ptr,
-               PktSize,
-               PktID,
-               *DataToggle,
-               FALSE,
-               &PtrTD
-               );
-
-    if (EFI_ERROR (Status)) {
-      HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-      UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-      DeleteQueuedTDs (HcDev, PtrFirstTD);
-      return Status;
-    }
-    
-    //
-    // Enable short packet detection.
-    // (default action is disabling short packet detection)
-    //
-    if (ShortPacketEnable) {
-      EnableorDisableTDShortPacket (PtrTD, TRUE);
-    }
-
-    if (IsFirstTD) {
-      PtrFirstTD            = PtrTD;
-      PtrFirstTD->ptrNextTD = NULL;
-      IsFirstTD             = FALSE;
-    } else {
-      //
-      // Link two TDs in vertical depth
-      //
-      LinkTDToTD (PtrPreTD, PtrTD);
-    }
-
-    Index++;
-
-    PtrPreTD = PtrTD;
-
-    *DataToggle ^= 1;
-    Ptr += PktSize;
-    DataLen -= PktSize;
-  }
-  
-  //
-  // link TD structures to QH structure
-  //
-  LinkTDToQH (PtrQH, PtrFirstTD);
+  UhciLinkTdToQh (Uhc->FsCtrlBulkQh, TDs);
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
 
   //
-  // calculate how many entries are linked to the specified bulk transfer QH-TDs
-  // the below values are referred to the USB spec revision1.1.
+  // Poll QH-TDs execution and get result
   //
-  switch (MaximumPacketLength) {
-  case 8:
-    LinkTimes = Index / 71 + 1;
-    break;
-
-  case 16:
-    LinkTimes = Index / 51 + 1;
-    break;
-
-  case 32:
-    LinkTimes = Index / 33 + 1;
-    break;
-
-  case 64:
-    LinkTimes = Index / 19 + 1;
-    break;
-  }
-
-  LinkTimes += 500;
-
-  //
-  // put QH-TDs into  Frame list
-  //
-  LoadFrameListIndex  = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-  SavedFrameListIndex = LoadFrameListIndex;
-
-  for (Index = 0; Index <= LinkTimes; Index++) {
-    
-    //
-    // put the QH-TD directly or indirectly into the proper place
-    // in the Frame List
-    //
-    LinkQHToFrameList (HcDev->FrameListEntry, LoadFrameListIndex, PtrQH);
-
-    LoadFrameListIndex += 1;
-    LoadFrameListIndex &= 0x3FF;
-  }
-
-  LoadFrameListIndex = SavedFrameListIndex;
-
-  //
-  // Execute QH-TD and get result
-  //
-  //
-  // detail status is put into the Result field in the pIRP
-  // the Data Toggle value is also re-updated to the value
-  // of the last successful TD
-  //
-  Status = ExecBulkorSyncInterruptTransfer (
-             HcDev,
-             PtrFirstTD,
-             LoadFrameListIndex,
+  Status = UhciExecuteTransfer (
+             Uhc,
+             TDs,
              DataLength,
              DataToggle,
              TimeOut,
-             TransferResult
+             TransferResult,
+             FALSE,
+             FALSE
              );
 
-  //
-  // Delete Bulk transfer QH-TD structure
-  // and maitain the pointers in the Frame List
-  // and other pointers in related QH structure
-  //
-  // TRUE means must search other framelistindex
-  //
-  for (Index = 0; Index <= LinkTimes; Index++) {
-    DelLinkSingleQH (
-      HcDev,
-      PtrQH,
-      LoadFrameListIndex,
-      FALSE,
-      FALSE
-      );
-    LoadFrameListIndex += 1;
-    LoadFrameListIndex &= 0x3FF;
+  if (EFI_ERROR (Status)) {
+    UHCI_DEBUG ((UHCI_DEBUG_BULK, "UhciExecuteTransfer failed\n"));
+    goto DESTORY_TDS;
   }
 
-  UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-
-  DeleteQueuedTDs (HcDev, PtrFirstTD);
-
-  if (Mapping != NULL) {
-    HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-  }
-  
-  //
-  // if has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
-
-    ClearStatusReg (HcDev->PciIo, StatusReg);
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
     *TransferResult |= EFI_USB_ERR_SYSTEM;
-    return EFI_DEVICE_ERROR;
   }
 
-  ClearStatusReg (HcDev->PciIo, StatusReg);
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
 
-  HcDev->PciIo->Flush (HcDev->PciIo);
+DESTORY_TDS:
+  UhciUnlinkTdFromQh (Uhc->FsCtrlBulkQh, TDs);
+  UhciDestoryTds (Uhc, TDs);
 
+UNMAP_DATA:
+  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+  Uhc->PciIo->Flush (Uhc->PciIo);
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
   return Status;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIAsyncInterruptTransfer (
+UhciAsyncInterruptTransfer (
   IN     EFI_USB_HC_PROTOCOL                * This,
   IN     UINT8                              DeviceAddress,
   IN     UINT8                              EndPointAddress,
@@ -2875,156 +1011,74 @@ UHCIAsyncInterruptTransfer (
   IN     UINT8                              MaximumPacketLength,
   IN     BOOLEAN                            IsNewTransfer,
   IN OUT UINT8                              *DataToggle,
-  IN     UINTN                              PollingInterval, OPTIONAL
-  IN     UINTN                              DataLength, OPTIONAL
-  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK    CallBackFunction, OPTIONAL
+  IN     UINTN                              PollingInterval,    OPTIONAL
+  IN     UINTN                              DataLength,         OPTIONAL
+  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK    CallBackFunction,   OPTIONAL
   IN     VOID                               *Context OPTIONAL
   )
 /*++
   
   Routine Description:
-    Submits an asynchronous interrupt transfer to an 
-    interrupt endpoint of a USB device.
+  
+    Submits an asynchronous interrupt transfer to an interrupt endpoint of a USB device.
   
   Arguments:
     
-    This            A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    DeviceAddress   Represents the address of the target device on the USB,
-                    which is assigned during USB enumeration.
-                    
-    EndPointAddress The combination of an endpoint number and an endpoint 
-                    direction of the target USB device. Each endpoint address 
-                    supports data transfer in one direction except the 
-                    control endpoint (whose default endpoint address is 0). 
-                    It is the caller's responsibility to make sure that 
-                    the EndPointAddress represents an interrupt endpoint.
-                    
-    IsSlowDevice    Indicates whether the target device is slow device 
-                    or full-speed device.
-                    
-    MaximumPacketLength  Indicates the maximum packet size the target endpoint
-                        is capable of sending or receiving.
-                        
-    IsNewTransfer   If TRUE, an asynchronous interrupt pipe is built between
-                    the host and the target interrupt endpoint. 
-                    If FALSE, the specified asynchronous interrupt pipe 
-                    is canceled.
-                    
-    DataToggle      A pointer to the data toggle value.  On input, it is valid 
-                    when IsNewTransfer is TRUE, and it indicates the initial 
-                    data toggle value the asynchronous interrupt transfer 
-                    should adopt.  
-                    On output, it is valid when IsNewTransfer is FALSE, 
-                    and it is updated to indicate the data toggle value of 
-                    the subsequent asynchronous interrupt transfer.
-                    
-    PollingInterval Indicates the interval, in milliseconds, that the 
-                    asynchronous interrupt transfer is polled.  
-                    This parameter is required when IsNewTransfer is TRUE.
-                    
-    DataLength      Indicates the length of data to be received at the 
-                    rate specified by PollingInterval from the target 
-                    asynchronous interrupt endpoint.  This parameter 
-                    is only required when IsNewTransfer is TRUE.
-                    
-    CallBackFunction  The Callback function.This function is called at the 
-                      rate specified by PollingInterval.This parameter is 
-                      only required when IsNewTransfer is TRUE.
-                      
-    Context         The context that is passed to the CallBackFunction.
-                    This is an optional parameter and may be NULL.
+    This                : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address
+    EndPointAddress     : Endpoint number with direction
+    IsSlowDevice        : Whether the target device is slow device or full-speed device.                
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    IsNewTransfer       : If TRUE, submit a new async interrupt transfer, otherwise
+                          cancel an existed one 
+    DataToggle          : On input, the data toggle to use; On output, next data toggle
+    PollingInterval     : Interrupt poll rate in milliseconds              
+    DataLength          : Length of data to receive
+    CallBackFunction    : Function to call periodically
+    Context             : User context
   
   Returns:
-    EFI_SUCCESS 
-        The asynchronous interrupt transfer request has been successfully 
-        submitted or canceled.
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-    EFI_OUT_OF_RESOURCES  
-        The request could not be completed due to a lack of resources.  
-    EFI_DEVICE_ERROR
-        Can't read register
+  
+    EFI_SUCCESS           : Request is submitted or cancelled
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_OUT_OF_RESOURCES  : Failed due to a lack of resources.  
+    EFI_DEVICE_ERROR      : Failed to due to device error
+        
 --*/
 {
-  USB_HC_DEV            *HcDev;
-  UINT32                StatusReg;
-  UINT32                FrameNumReg;
-  UINTN                 DataLen;
-  QH_STRUCT             *ptrFirstQH;
-  QH_STRUCT             *PtrQH;
-  QH_STRUCT             *ptrPreQH;
-  TD_STRUCT             *PtrFirstTD;
-  TD_STRUCT             *PtrTD;
-  TD_STRUCT             *PtrPreTD;
-  UINT16                LoadFrameListIndex;
-  UINT16                Index;
-  UINT8                 PktID;
-  UINT8                 *Ptr;
-  UINT8                 *MappedPtr;
-  BOOLEAN               IsFirstTD;
-  BOOLEAN               IsFirstQH;
-  EFI_STATUS            Status;
-  BOOLEAN               ShortPacketEnable;
-  UINT8                 CurrentDataToggle;
-  EFI_PHYSICAL_ADDRESS  TempPtr;
-  VOID                  *Mapping;
-  UINT8                 PktSize;
-  QH_STRUCT             *TempQH;
-  EFI_TPL               OldTpl;
-  
-  HcDev             = USB_HC_DEV_FROM_THIS (This);
-  StatusReg         = (UINT32) (USBSTS);
-  FrameNumReg       = (UINT32) (USBFRNUM);
-  Mapping           = NULL;
-  ShortPacketEnable = FALSE;
+  USB_HC_DEV          *Uhc;
+  UHCI_QH_SW          *Qh;
+  UHCI_TD_SW          *IntTds;
+  EFI_TPL             OldTpl;
+  EFI_STATUS          Status;
+  UINT8               *DataPtr;
+  UINT8               *DataPhy;
+  VOID                *DataMap;
+  UINT8               Toggle;
+  UINT8               PktId;
 
-  PktID             = INPUT_PACKET_ID;
-  PtrTD             = NULL;
-  PtrFirstTD        = NULL;
-  PtrPreTD          = NULL;
-  Ptr               = NULL;
-  PtrQH             = NULL;
-  ptrPreQH          = NULL;
-  ptrFirstQH        = NULL;
+  Uhc       = UHC_FROM_USB_HC_PROTO (This);
+  Qh        = NULL;
+  IntTds    = NULL;
+  DataPtr   = NULL;
+  DataPhy   = NULL;
+  DataMap   = NULL;
 
   if ((EndPointAddress & 0x80) == 0) {
     return EFI_INVALID_PARAMETER;
   }
   
   //
-  // delete Async interrupt transfer request
+  // Delete Async interrupt transfer request
   //
   if (!IsNewTransfer) {
-
-    OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
-
-    Status = DeleteAsyncINTQHTDs (
-               HcDev,
-               DeviceAddress,
-               EndPointAddress,
-               DataToggle
-               );
+    OldTpl = gBS->RaiseTPL (UHCI_TPL);
+    Status = UhciRemoveAsyncReq (Uhc, DeviceAddress, EndPointAddress, DataToggle);
 
     gBS->RestoreTPL (OldTpl);
-
     return Status;
   }
-  //
-  // if has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
 
-    ClearStatusReg (HcDev->PciIo, StatusReg);
-    return EFI_DEVICE_ERROR;
-  }
-
-  ClearStatusReg (HcDev->PciIo, StatusReg);
-
-  //
-  // submit Async interrupt transfer request
-  //
   if (PollingInterval < 1 || PollingInterval > 255) {
     return EFI_INVALID_PARAMETER;
   }
@@ -3036,190 +1090,135 @@ UHCIAsyncInterruptTransfer (
   if ((*DataToggle != 1) && (*DataToggle != 0)) {
     return EFI_INVALID_PARAMETER;
   }
+  
+  //
+  // If has errors that cause host controller halt,
+  // then return EFI_DEVICE_ERROR directly.
+  //
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+    return EFI_DEVICE_ERROR;
+  }
 
-  ShortPacketEnable = TRUE;
-  PktID             = INPUT_PACKET_ID;
-  DataLen           = DataLength;
-  Ptr               = EfiLibAllocatePool (DataLen);
-  if (Ptr == NULL) {
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+
+  //
+  // Allocate and map source data buffer for bus master access.
+  //
+  DataPtr = EfiLibAllocatePool (DataLength);
+
+  if (DataPtr == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  //
-  // BusMasterWrite means cpu read
-  //
-  Status = HcDev->PciIo->Map (
-                           HcDev->PciIo,
-                           EfiPciIoOperationBusMasterWrite,
-                           Ptr,
-                           &DataLen,
-                           &TempPtr,
-                           &Mapping
-                           );
+  OldTpl = gBS->RaiseTPL (UHCI_TPL);
+
+  Status = UhciMapUserData (
+             Uhc,
+             EfiUsbDataIn,
+             DataPtr,
+             &DataLength,
+             &PktId,
+             &DataPhy,
+             &DataMap
+             );
+
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (Ptr);
-    return Status;
-  }
-
-  MappedPtr         = (UINT8 *) ((UINTN) TempPtr);
-
-  CurrentDataToggle = *DataToggle;
-
-  IsFirstTD         = TRUE;
-
-  while (DataLen > 0) {
-    //
-    // create TD structures and link together
-    //
-        
-    PktSize = (UINT8) DataLen;
-    if (DataLen > MaximumPacketLength) {
-      PktSize = MaximumPacketLength;
-    }
-
-    Status = GenDataTD (
-               HcDev,
-               DeviceAddress,
-               EndPointAddress,
-               MappedPtr,
-               PktSize,
-               PktID,
-               CurrentDataToggle,
-               IsSlowDevice,
-               &PtrTD
-               );
-    if (EFI_ERROR (Status)) {
-      gBS->FreePool (Ptr);
-      HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-      DeleteQueuedTDs (HcDev, PtrFirstTD);
-      return Status;
-    }
-    //
-    // Enable short packet detection.
-    //
-    if (ShortPacketEnable) {
-      EnableorDisableTDShortPacket (PtrTD, TRUE);
-    }
-
-    if (IsFirstTD) {
-      PtrFirstTD            = PtrTD;
-      PtrFirstTD->ptrNextTD = NULL;
-      IsFirstTD             = FALSE;
-    } else {
-      //
-      // Link two TDs in vertical depth
-      //
-      LinkTDToTD (PtrPreTD, PtrTD);
-    }
-
-    PtrPreTD = PtrTD;
-
-    CurrentDataToggle ^= 1;
-    MappedPtr += PktSize;
-    DataLen -= PktSize;
+    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciMapUserData failed\n"));
+    
+    goto FREE_DATA;
   }
   
   //
-  // roll one value back
+  //  Create and initialize a new QH and TDs
   //
-  CurrentDataToggle ^= 1;
+  Qh = UhciCreateQh (Uhc, PollingInterval);
 
-  //
-  // create a list of QH structures and init,
-  // link TDs to all the QHs, and link all the QHs together using internal
-  // defined pointer of the QH_STRUCT.
-  //
-  IsFirstQH = TRUE;
-  ptrPreQH  = NULL;
-  for (Index = 0; Index < 1024;) {
-
-    Status = CreateQH (HcDev, &PtrQH);
-    if (EFI_ERROR (Status)) {
-      gBS->FreePool (Ptr);
-      HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-      DeleteQueuedTDs (HcDev, PtrFirstTD);
-      PtrQH = ptrFirstQH;
-      while (PtrQH) {
-        TempQH  = PtrQH;
-        PtrQH   = TempQH->ptrNextIntQH;
-        UhciFreePool (HcDev, (UINT8 *) TempQH, sizeof (QH_STRUCT));
-      }
-
-      return Status;
-    }
+  if (Qh == NULL) {
+    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciCreateQh failed\n"));
     
-    //
-    // link TD structures to QH structure
-    //
-    LinkTDToQH (PtrQH, PtrFirstTD);
-
-    if (IsFirstQH) {
-      ptrFirstQH                = PtrQH;
-      ptrFirstQH->ptrNextIntQH  = NULL;
-      IsFirstQH                 = FALSE;
-    } else {
-      //
-      // link neighbor QH structures together
-      //
-      ptrPreQH->ptrNextIntQH = PtrQH;
-    }
-
-    ptrPreQH  = PtrQH;
-
-    Index     = (UINT16) (PollingInterval + Index);
+    Status = EFI_OUT_OF_RESOURCES;
+    goto UNMAP_DATA;
   }
-  //
-  // last QH in QH list should set its next QH pointer to NULL.
-  //
-  PtrQH->ptrNextIntQH = NULL;
+
+  Toggle   = *DataToggle;
+  IntTds   = UhciCreateBulkOrIntTds (
+               Uhc,
+               DeviceAddress,
+               EndPointAddress,
+               PktId,
+               DataPhy,
+               DataLength,
+               &Toggle,
+               MaximumPacketLength,
+               IsSlowDevice
+               );
+
+  if (IntTds == NULL) {
+    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciCreateInterruptTds failed\n"));
+    
+    Status = EFI_OUT_OF_RESOURCES;
+    goto DESTORY_QH;
+  }
+  
+
+  UhciLinkTdToQh (Qh, IntTds);
 
   //
-  // Save QH-TD structures in Interrupt transfer list,
+  // Save QH-TD structures to async Interrupt transfer list,
   // for monitor interrupt transfer execution routine use.
+  //  
+  // UhciCreateBulkOrIntTds returns the next data toggle to use.
+  // But UhciCreateAsyncReq saves the last data toggle in AsyncReq's
+  // DataToggle. So, roll one value back here. (Actually, this first
+  // data toggle value isn't important as it is overwritten later
+  // by the value computed from TD list.)
   //
-  InsertQHTDToINTList (
-    HcDev,
-    ptrFirstQH,
-    PtrFirstTD,
-    DeviceAddress,
-    EndPointAddress,
-    CurrentDataToggle,
-    DataLength,
-    PollingInterval,
-    Mapping,
-    Ptr,
-    CallBackFunction,
-    Context
-    );
+  Toggle ^= 1;
 
-  //
-  // put QHs-TDs into  Frame list
-  //
-  LoadFrameListIndex  = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
+  Status = UhciCreateAsyncReq (
+             Uhc,
+             Qh,
+             IntTds,
+             DeviceAddress,
+             EndPointAddress,
+             Toggle,
+             DataLength,
+             PollingInterval,
+             DataMap,
+             DataPtr,
+             CallBackFunction,
+             Context,
+             IsSlowDevice
+             );
 
-  PtrQH               = ptrFirstQH;
-
-  for (Index = LoadFrameListIndex; Index < (1024 + LoadFrameListIndex);) {
-      
-    //
-    // put the QH-TD directly or indirectly into the proper place
-    // in the Frame List
-    //
-    LinkQHToFrameList (HcDev->FrameListEntry, (UINT16) (Index & 0x3FF), PtrQH);
-
-    Index = (UINT16) (PollingInterval + Index);
-
-    PtrQH = PtrQH->ptrNextIntQH;
+  if (EFI_ERROR (Status)) {
+    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciCreateAsyncReq failed\n"));
+    goto DESTORY_QH;
   }
 
-  HcDev->PciIo->Flush (HcDev->PciIo);
-
+  UhciLinkQhToFrameList (Uhc->FrameBase, Qh);
+  gBS->RestoreTPL (OldTpl);
   return EFI_SUCCESS;
+
+DESTORY_QH:
+  UhciFreePool (Uhc, (UINT8 *) Qh, sizeof (UHCI_QH_SW));
+
+UNMAP_DATA:
+  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+
+FREE_DATA:
+  gBS->FreePool (DataPtr);
+  Uhc->PciIo->Flush (Uhc->PciIo);
+
+  gBS->RestoreTPL (OldTpl);
+  return Status;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCISyncInterruptTransfer (
+UhciSyncInterruptTransfer (
   IN       EFI_USB_HC_PROTOCOL     *This,
   IN       UINT8                   DeviceAddress,
   IN       UINT8                   EndPointAddress,
@@ -3234,126 +1233,50 @@ UHCISyncInterruptTransfer (
 /*++
   
   Routine Description:
-    Submits synchronous interrupt transfer to an interrupt endpoint 
-    of a USB device.
+  
+    Submits synchronous interrupt transfer to an interrupt endpoint of a USB device.
   
   Arguments:
     
-    This            A pointer to the EFI_USB_HC_PROTOCOL instance.
+    This                : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       : Device address of the target USB device
+    EndPointAddress     : Endpoint number and direction        
+    IsSlowDevice        : Whether the target device is of slow speed or full speed
+    MaximumPacketLength : Maximum packet size of target endpoint 
+    Data                : Data to transmit or receive 
+    DataLength          : On input, data length to transmit or buffer size.
+                          On output, the number of bytes transferred.                
+    DataToggle          : On input, data toggle to use; On output, next data toggle
+    TimeOut             : Maximum time, in microseconds, transfer is allowed to complete.               
+    TransferResult      : Variable to receive transfer result
     
-    DeviceAddress   Represents the address of the target device on the USB, 
-                    which is assigned during USB enumeration.
-                    
-    EndPointAddress   The combination of an endpoint number and an endpoint 
-                      direction of the target USB device. Each endpoint 
-                      address supports data transfer in one direction 
-                      except the control endpoint (whose default 
-                      endpoint address is 0). It is the caller's responsibility
-                      to make sure that the EndPointAddress represents 
-                      an interrupt endpoint. 
-                      
-    IsSlowDevice    Indicates whether the target device is slow device 
-                    or full-speed device.
-                    
-    MaximumPacketLength Indicates the maximum packet size the target endpoint 
-                        is capable of sending or receiving.
-                        
-    Data            A pointer to the buffer of data that will be transmitted 
-                    to USB device or received from USB device.
-                    
-    DataLength      On input, the size, in bytes, of the data buffer specified 
-                    by Data. On output, the number of bytes transferred.
-                    
-    DataToggle      A pointer to the data toggle value. On input, it indicates
-                    the initial data toggle value the synchronous interrupt 
-                    transfer should adopt; 
-                    on output, it is updated to indicate the data toggle value 
-                    of the subsequent synchronous interrupt transfer. 
-                    
-    TimeOut         Indicates the maximum time, in microseconds, which the 
-                    transfer is allowed to complete.
-                    
-    TransferResult  A pointer to the detailed result information from 
-                    the synchronous interrupt transfer.  
-
   Returns:
-    EFI_SUCCESS 
-        The synchronous interrupt transfer was completed successfully.
-    EFI_OUT_OF_RESOURCES  
-        The synchronous interrupt transfer could not be submitted due 
-        to lack of resource.
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-    EFI_TIMEOUT 
-        The synchronous interrupt transfer failed due to timeout.
-    EFI_DEVICE_ERROR  
-        The synchronous interrupt transfer failed due to host controller 
-        or device error. Caller should check TranferResult for detailed 
-        error information.  
+    EFI_SUCCESS           : Transfer was completed successfully.
+    EFI_OUT_OF_RESOURCES  : Failed due to lack of resource.
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_TIMEOUT           : Failed due to timeout.
+    EFI_DEVICE_ERROR      : Failed due to host controller or device error
+
 --*/
 {
-  USB_HC_DEV            *HcDev;
-  UINT32                StatusReg;
-  UINT32                FrameNumReg;
-  UINTN                 DataLen;
-  QH_STRUCT             *PtrQH;
-  TD_STRUCT             *PtrFirstTD;
-  TD_STRUCT             *PtrTD;
-  TD_STRUCT             *PtrPreTD;
-  UINT16                LoadFrameListIndex;
-  UINT16                SavedFrameListIndex;
-  UINT32                Index;
-  UINT32                LinkTimes;
-  UINT8                 PktID;
-  UINT8                 *PtrDataSource;
-  UINT8                 *Ptr;
-  BOOLEAN               IsFirstTD;
-  EFI_STATUS            Status;
-  BOOLEAN               ShortPacketEnable;
-  EFI_PHYSICAL_ADDRESS  TempPtr;
-  VOID                  *Mapping;
-  UINT8                 PktSize;
-  
-  HcDev             = USB_HC_DEV_FROM_THIS (This);
-  StatusReg         = (UINT32) (USBSTS);
-  FrameNumReg       = (UINT32) (USBFRNUM);
-  ShortPacketEnable = FALSE;
-  Mapping           = NULL;
-  PktID             = INPUT_PACKET_ID;
-  PtrTD             = NULL;
-  PtrFirstTD        = NULL;
-  PtrPreTD          = NULL;
-  DataLen           = 0;
-  Ptr               = NULL;
-  Index             = 0;
-  LinkTimes         = 0;
+  EFI_STATUS          Status;
+  USB_HC_DEV          *Uhc;
+  UHCI_TD_SW          *TDs;
+  EFI_TPL             OldTpl;
+  UINT8               *DataPhy;
+  VOID                *DataMap;
+  UINT8               PktId;
 
-  //
-  // Parameters Checking
-  //
-  
-  if ((DataLength == NULL) ||
-      (Data == NULL)       ||
-      (TransferResult == NULL)) {
+  Uhc     = UHC_FROM_USB_HC_PROTO (This);
+  DataPhy = NULL;
+  DataMap = NULL;
+  TDs     = NULL;
+
+  if ((DataLength == NULL) || (Data == NULL) || (TransferResult == NULL)) {
     return EFI_INVALID_PARAMETER;
-  }
-  
-  //
-  // if has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
-
-    ClearStatusReg (HcDev->PciIo, StatusReg);
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    return EFI_DEVICE_ERROR;
   }
 
   if ((EndPointAddress & 0x80) == 0) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if (*DataLength == 0) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -3361,7 +1284,7 @@ UHCISyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (MaximumPacketLength > 64) {
+  if ((*DataLength == 0) || (MaximumPacketLength > 64)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -3369,201 +1292,105 @@ UHCISyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (TransferResult == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  ClearStatusReg (HcDev->PciIo, StatusReg);
-
-  //
-  // submit Sync interrupt transfer request
-  //
-  ShortPacketEnable = TRUE;
-  PktID             = INPUT_PACKET_ID;
-  DataLen           = *DataLength;
-  PtrDataSource     = Data;
-
-  //
-  // create QH structure and init
-  //
-  Status = CreateQH (HcDev, &PtrQH);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-  
-  //
-  // BusMasterWrite means cpu read
-  //
-  Status = HcDev->PciIo->Map (
-                           HcDev->PciIo,
-                           EfiPciIoOperationBusMasterWrite,
-                           PtrDataSource,
-                           &DataLen,
-                           &TempPtr,
-                           &Mapping
-                           );
-  if (EFI_ERROR (Status)) {
-    UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-    return Status;
-  }
-
-  Ptr       = (UINT8 *) ((UINTN) TempPtr);
-
-  IsFirstTD = TRUE;
-  while (DataLen > 0) {
-    //
-    // create TD structures and link together
-    //
-    PktSize = (UINT8) DataLen;
-    if (DataLen > MaximumPacketLength) {
-      PktSize = MaximumPacketLength;
-    }
-
-    Status = GenDataTD (
-               HcDev,
-               DeviceAddress,
-               EndPointAddress,
-               Ptr,
-               PktSize,
-               PktID,
-               *DataToggle,
-               IsSlowDevice,
-               &PtrTD
-               );
-    if (EFI_ERROR (Status)) {
-      UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-      HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-      DeleteQueuedTDs (HcDev, PtrFirstTD);
-      return Status;
-    }
-    //
-    // Enable short packet detection.
-    //
-    if (ShortPacketEnable) {
-      EnableorDisableTDShortPacket (PtrTD, TRUE);
-    }
-
-    if (IsFirstTD) {
-      PtrFirstTD            = PtrTD;
-      PtrFirstTD->ptrNextTD = NULL;
-      IsFirstTD             = FALSE;
-    } else {
-      //
-      // Link two TDs in vertical depth
-      //
-      LinkTDToTD (PtrPreTD, PtrTD);
-    }
-
-    Index++;
-
-    PtrPreTD = PtrTD;
-
-    *DataToggle ^= 1;
-    Ptr += PktSize;
-    DataLen -= PktSize;
-  }
-  
-  //
-  // link TD structures to QH structure
-  //
-  LinkTDToQH (PtrQH, PtrFirstTD);
-
-  switch (MaximumPacketLength) {
-  case 8:
-    LinkTimes = Index / 71 + 1;
-    break;
-
-  case 16:
-    LinkTimes = Index / 51 + 1;
-    break;
-
-  case 32:
-    LinkTimes = Index / 33 + 1;
-    break;
-
-  case 64:
-    LinkTimes = Index / 19 + 1;
-    break;
-  }
-
-  LinkTimes += 100;
-
-  LoadFrameListIndex  = (UINT16) ((GetCurrentFrameNumber (HcDev->PciIo, FrameNumReg)) & 0x3FF);
-  SavedFrameListIndex = LoadFrameListIndex;
-
-  for (Index = 0; Index < LinkTimes; Index++) {
-        
-    //
-    // put the QH-TD directly or indirectly into the proper place
-    // in the Frame List
-    //
-    LinkQHToFrameList (HcDev->FrameListEntry, LoadFrameListIndex, PtrQH);
-
-    LoadFrameListIndex += 1;
-    LoadFrameListIndex &= 0x3FF;
-  }
-
-  LoadFrameListIndex = SavedFrameListIndex;
-  //
-  // detail status is put into the Result field in the pIRP
-  // the Data Toggle value is also re-updated to the value
-  // of the last successful TD
-  //
-  Status = ExecBulkorSyncInterruptTransfer (
-             HcDev,
-             PtrFirstTD,
-             LoadFrameListIndex,
-             DataLength,
-             DataToggle,
-             TimeOut,
-             TransferResult
-             );
-  //
-  // Delete Sync Interrupt transfer QH-TD structure
-  // and maintain the pointers in the Frame List
-  // and other pointers in related QH structure
-  //
-  // TRUE means must search other framelistindex
-  //
-  for (Index = 0; Index <= LinkTimes; Index++) {
-    DelLinkSingleQH (
-      HcDev,
-      PtrQH,
-      LoadFrameListIndex,
-      FALSE,
-      FALSE
-      );
-    LoadFrameListIndex += 1;
-    LoadFrameListIndex &= 0x3FF;
-  }
-
-  UhciFreePool (HcDev, (UINT8 *) PtrQH, sizeof (QH_STRUCT));
-
-  DeleteQueuedTDs (HcDev, PtrFirstTD);
-
-  HcDev->PciIo->Unmap (HcDev->PciIo, Mapping);
-
-  //
-  // if has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!IsStatusOK (HcDev->PciIo, StatusReg)) {
-
-    ClearStatusReg (HcDev->PciIo, StatusReg);
-    *TransferResult |= EFI_USB_ERR_SYSTEM;
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+    *TransferResult = EFI_USB_ERR_SYSTEM;
     return EFI_DEVICE_ERROR;
   }
 
-  ClearStatusReg (HcDev->PciIo, StatusReg);
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
 
-  HcDev->PciIo->Flush (HcDev->PciIo);
+  OldTpl = gBS->RaiseTPL (UHCI_TPL);
 
+  //
+  // Map the source data buffer for bus master access.
+  //
+  Status = UhciMapUserData (
+             Uhc,
+             EfiUsbDataIn,
+             Data,
+             DataLength,
+             &PktId,
+             &DataPhy,
+             &DataMap
+             );
+
+  if (EFI_ERROR (Status)) {
+    UHCI_DEBUG ((UHCI_DEBUG_SYC_INT, "UhciMapUserData failed\n"));
+    *TransferResult = EFI_USB_ERR_SYSTEM;
+    goto ON_EXIT;
+  }
+  
+  //
+  // Create Tds list, then link it to the UHC's interrupt list
+  //
+  TDs = UhciCreateBulkOrIntTds (
+          Uhc,
+          DeviceAddress,
+          EndPointAddress,
+          PktId,
+          DataPhy,
+          *DataLength,
+          DataToggle,
+          MaximumPacketLength,
+          IsSlowDevice
+          );
+
+  if (TDs == NULL) {
+    UHCI_DEBUG ((UHCI_DEBUG_SYC_INT, "UhciCreateInterruptTds failed\n"));
+    Status = EFI_OUT_OF_RESOURCES;
+    
+    goto DESTORY_QH;
+  }
+
+  UhciLinkTdToQh (Uhc->SyncIntQh, TDs);
+
+  //
+  // Poll QH-TDs execution and get result
+  //
+  Status = UhciExecuteTransfer (
+             Uhc,
+             TDs,
+             DataLength,
+             DataToggle,
+             TimeOut,
+             TransferResult,
+             FALSE,
+             IsSlowDevice
+             );
+
+  if (EFI_ERROR (Status)) {
+    UHCI_DEBUG ((UHCI_DEBUG_SYC_INT, "UhciExecuteTransfer failed\n"));
+    goto DESTORY_TDS;
+  }
+  
+  //
+  // If has errors that cause host controller halt,
+  // then return EFI_DEVICE_ERROR directly.
+  //
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    *TransferResult |= EFI_USB_ERR_SYSTEM;
+  }
+
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+
+DESTORY_TDS:
+  UhciUnlinkTdFromQh (Uhc->SyncIntQh, TDs);
+  UhciDestoryTds (Uhc, TDs);
+
+DESTORY_QH:
+  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+  Uhc->PciIo->Flush (Uhc->PciIo);
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
   return Status;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIIsochronousTransfer (
+UhciIsochronousTransfer (
   IN       EFI_USB_HC_PROTOCOL     *This,
   IN       UINT8                   DeviceAddress,
   IN       UINT8                   EndPointAddress,
@@ -3575,24 +1402,21 @@ UHCIIsochronousTransfer (
 /*++
   
   Routine Description:
+  
     Submits isochronous transfer to a target USB device.
   
   Arguments:
     
-    This                - A pointer to the EFI_USB_HC_PROTOCOL instance.
-    DeviceAddress       - Represents the address of the target device on the USB,
-                           which is assigned during USB enumeration.
-    EndPointAddress     - End point address
-    MaximumPacketLength - Indicates the maximum packet size that the 
-                           default control transfer endpoint is capable of 
-                           sending or receiving.
-    Data                - A pointer to the buffer of data that will be transmitted 
-                           to USB device or received from USB device.
-    DataLength          - Indicates the size, in bytes, of the data buffer 
-                           specified by Data.
-    TransferResult      - A pointer to the detailed result information generated 
-                           by this control transfer.               
+    This                : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address
+    EndPointAddress     : End point address withdirection
+    MaximumPacketLength : Maximum packet size of the endpoint
+    Data                : Data to transmit or receive
+    DataLength          : Bytes of the data
+    TransferResult      : Variable to receive the result
+    
   Returns:
+  
     EFI_UNSUPPORTED 
 
 --*/
@@ -3600,10 +1424,10 @@ UHCIIsochronousTransfer (
   return EFI_UNSUPPORTED;
 }
 
-
+STATIC
 EFI_STATUS
 EFIAPI
-UHCIAsyncIsochronousTransfer (
+UhciAsyncIsochronousTransfer (
   IN       EFI_USB_HC_PROTOCOL                 * This,
   IN       UINT8                               DeviceAddress,
   IN       UINT8                               EndPointAddress,
@@ -3616,43 +1440,137 @@ UHCIAsyncIsochronousTransfer (
 /*++
   
   Routine Description:
+  
     Submits Async isochronous transfer to a target USB device.
   
   Arguments:
     
-    This                - A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    DeviceAddress       - Represents the address of the target device on the USB,
-                           which is assigned during USB enumeration.
-
-    EndPointAddress     - End point address
-    
-    MaximumPacketLength - Indicates the maximum packet size that the 
-                           default control transfer endpoint is capable of 
-                           sending or receiving.
-       
-    Data                - A pointer to the buffer of data that will be transmitted 
-                           to USB device or received from USB device.
-    
-    IsochronousCallBack - When the transfer complete, the call back function will be called
-    
-    Context             - Pass to the call back function as parameter
+    This                : A pointer to the EFI_USB_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address
+    EndPointAddress     : End point address withdirection
+    MaximumPacketLength : Maximum packet size of the endpoint
+    Data                : Data to transmit or receive
+    IsochronousCallBack : Function to call when the transfer completes
+    Context             : User context
                     
   Returns:
+  
     EFI_UNSUPPORTED 
 
 --*/
+
 {
   return EFI_UNSUPPORTED;
 }
 
-//
-// UEFI 2.0 Protocol
-//
+
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2GetCapability(
-  IN  EFI_USB2_HC_PROTOCOL  * This,
+Uhci2Reset (
+  IN EFI_USB2_HC_PROTOCOL   *This,
+  IN UINT16                 Attributes
+  )
+/*++
+
+  Routine Description:
+  
+    Provides software reset for the USB host controller according to UEFI 2.0 spec.
+
+  Arguments:
+  
+    This           - A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    Attributes     - A bit mask of the reset operation to perform. 
+                       See below for a list of the supported bit mask values.
+  Returns:
+  
+    EFI_SUCCESS           : The reset operation succeeded.
+    EFI_INVALID_PARAMETER : Attributes is not valid.
+    EFI_UNSUPPORTED       : This type of reset is not currently supported
+    EFI_DEVICE_ERROR      : Other errors
+--*/
+{
+  USB_HC_DEV          *UhciDev;
+
+  UhciDev = UHC_FROM_USB2_HC_PROTO (This);
+
+  if ((Attributes == EFI_USB_HC_RESET_GLOBAL_WITH_DEBUG) || 
+      (Attributes == EFI_USB_HC_RESET_HOST_WITH_DEBUG)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return UhciReset (&UhciDev->UsbHc, Attributes);
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+Uhci2GetState (
+  IN  EFI_USB2_HC_PROTOCOL   *This,
+  OUT EFI_USB_HC_STATE       *State
+  )
+/*++
+  
+  Routine Description:
+  
+    Retrieves current state of the USB host controller according to UEFI 2.0 spec.
+  
+  Arguments:
+    
+    This     - A pointer to the EFI_USB_HC_PROTOCOL instance.
+    State    - Variable to receive current device state
+ 
+  Returns:
+  
+    EFI_SUCCESS           : The state is returned
+    EFI_INVALID_PARAMETER : State is not valid.
+    EFI_DEVICE_ERROR      : Other errors
+            
+--*/
+{
+  USB_HC_DEV          *Uhc;
+
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+  return UhciGetState (&Uhc->UsbHc, State);
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+Uhci2SetState (
+  IN EFI_USB2_HC_PROTOCOL    *This,
+  IN EFI_USB_HC_STATE        State
+  )
+/*++
+  
+  Routine Description:
+  
+    Sets the USB host controller to a specific state according to UEFI 2.0 spec.
+  
+  Arguments:
+    
+    This     - A pointer to the EFI_USB_HC_PROTOCOL instance.
+    State    - Indicates the state of the host controller that will be set.
+  
+  Returns:
+  
+    EFI_SUCCESS           : Host controller was successfully placed in the state 
+    EFI_INVALID_PARAMETER : State is invalid.
+    EFI_DEVICE_ERROR      : Failed to set the state
+          
+--*/
+{
+  USB_HC_DEV          *Uhc;
+
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+  return UhciSetState (&Uhc->UsbHc, State);
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+Uhci2GetCapability (
+  IN  EFI_USB2_HC_PROTOCOL  *This,
   OUT UINT8                 *MaxSpeed,
   OUT UINT8                 *PortNumber,
   OUT UINT8                 *Is64BitCapable
@@ -3660,482 +1578,360 @@ UHCI2GetCapability(
 /*++
 
   Routine Description:
+  
     Retrieves capabilities of USB host controller according to UEFI 2.0 spec.
 
   Arguments:
-    This                      - A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    MaxSpeed             - A pointer to the max speed USB host controller supports.
-    
-    PortNumber           - A pointer to the number of root hub ports.
-    
-    Is64BitCapable      - A pointer to an integer to show whether USB host controller
-                                  supports 64-bit memory addressing.
-  Returns:
-    EFI_SUCCESS 
-        The host controller capabilities were retrieved successfully.
-    EFI_INVALID_PARAMETER 
-        MaxSpeed or PortNumber or Is64BitCapable is NULL.
-    EFI_DEVICE_ERROR  
-	An error was encountered while attempting to retrieve the capabilities.
-        
---*/     
-{
-  USB_HC_DEV *HcDev;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
   
-  if ((NULL == MaxSpeed) 
-  	||(NULL == PortNumber)
-  	|| (NULL == Is64BitCapable))
-  {
+    This           - A pointer to the EFI_USB2_HC_PROTOCOL instance 
+    MaxSpeed       - A pointer to the max speed USB host controller supports.
+    PortNumber     - A pointer to the number of root hub ports.
+    Is64BitCapable - A pointer to an integer to show whether USB host controller
+                     supports 64-bit memory addressing.
+  Returns:
+  
+    EFI_SUCCESS           : capabilities were retrieved successfully.
+    EFI_INVALID_PARAMETER : MaxSpeed or PortNumber or Is64BitCapable is NULL.
+    EFI_DEVICE_ERROR      : An error was encountered
+        
+--*/
+{
+  USB_HC_DEV          *Uhc;
+
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+
+  if ((NULL == MaxSpeed) || (NULL == PortNumber) || (NULL == Is64BitCapable)) {
     return EFI_INVALID_PARAMETER;
   }
-  
-  *MaxSpeed = EFI_USB_SPEED_FULL;
-  *Is64BitCapable = (UINT8)FALSE;
-  return  UHCIGetRootHubPortNumber(&HcDev->UsbHc, PortNumber);
+
+  *MaxSpeed       = EFI_USB_SPEED_FULL;
+  *Is64BitCapable = (UINT8) FALSE;
+
+  return UhciGetRootHubPortNumber (&Uhc->UsbHc, PortNumber);
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2Reset (
-  IN EFI_USB2_HC_PROTOCOL   * This,
-  IN UINT16                 Attributes
+Uhci2GetRootHubPortStatus (
+  IN  EFI_USB2_HC_PROTOCOL   *This,
+  IN  UINT8                  PortNumber,
+  OUT EFI_USB_PORT_STATUS    *PortStatus
   )
 /*++
-
-  Routine Description:
-    Provides software reset for the USB host controller according to UEFI 2.0 spec.
-
-  Arguments:
-    This           - A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    Attributes   - A bit mask of the reset operation to perform. 
-                       See below for a list of the supported bit mask values.
   
-  #define EFI_USB_HC_RESET_GLOBAL                      0x0001
-  #define EFI_USB_HC_RESET_HOST_CONTROLLER             0x0002
-  #define EFI_USB_HC_RESET_GLOBAL _WITH_DEBUG          0x0004
-  #define EFI_USB_HC_RESET_HOST_WITH_DEBUG             0x0008
-
-  EFI_USB_HC_RESET_GLOBAL 
-        If this bit is set, a global reset signal will be sent to the USB bus.
-        This resets all of the USB bus logic, including the USB host 
-        controller hardware and all the devices attached on the USB bus.
-  EFI_USB_HC_RESET_HOST_CONTROLLER  
-        If this bit is set, the USB host controller hardware will be reset. 
-        No reset signal will be sent to the USB bus.
+  Routine Description:
+  
+    Retrieves the current status of a USB root hub port according to UEFI 2.0 spec.
+  
+  Arguments:
+  
+    This        - A pointer to the EFI_USB2_HC_PROTOCOL.
+    PortNumber  - The port to get status
+    PortStatus  - A pointer to the current port status bits and 
+                  port status change bits.  
   
   Returns:
-    EFI_SUCCESS 
-        The reset operation succeeded.
-    EFI_INVALID_PARAMETER 
-        Attributes is not valid.
-    EFI_UNSUPPORTED
-    	 The type of reset specified by Attributes is not currently supported by the host controller hardware.
-    EFI_ACCESS_DENIED
-    	 Reset operation is rejected due to the debug port being configured and active.
-    EFI_DEVICE_ERROR  
-        An error was encountered while attempting to perform 
-        the reset operation.
+  
+    EFI_SUCCESS           : status of the USB root hub port was returned in PortStatus.
+    EFI_INVALID_PARAMETER : PortNumber is invalid. 
+    EFI_DEVICE_ERROR      : Can't read register  
+    
 --*/
 {
-  USB_HC_DEV *HcDev;
+  USB_HC_DEV          *Uhc;
 
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  
-  if (Attributes==EFI_USB_HC_RESET_GLOBAL_WITH_DEBUG || Attributes==EFI_USB_HC_RESET_HOST_WITH_DEBUG)
-  	return EFI_UNSUPPORTED;
-  
-  return UHCIReset(
-  	&HcDev->UsbHc, 
-  	Attributes
-  	);
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+
+  return UhciGetRootHubPortStatus (&Uhc->UsbHc, PortNumber, PortStatus);
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2GetState (
-  IN  EFI_USB2_HC_PROTOCOL   * This,
-  OUT EFI_USB_HC_STATE       * State
+Uhci2SetRootHubPortFeature (
+  IN EFI_USB2_HC_PROTOCOL    *This,
+  IN UINT8                   PortNumber,
+  IN EFI_USB_PORT_FEATURE    PortFeature
   )
 /*++
   
   Routine Description:
-    Retrieves current state of the USB host controller according to UEFI 2.0 spec.
+  
+    Sets a feature for the specified root hub port according to UEFI 2.0 spec.
   
   Arguments:
-    
-    This     - A pointer to the EFI_USB_HC_PROTOCOL instance.
-    
-    State    - A pointer to the EFI_USB_HC_STATE data structure that 
-              indicates current state of the USB host controller.  
-              Type EFI_USB_HC_STATE is defined below.
-              
-    typedef enum {
-      EfiUsbHcStateHalt,
-      EfiUsbHcStateOperational,
-      EfiUsbHcStateSuspend,
-      EfiUsbHcStateMaximum
-    } EFI_USB_HC_STATE;
+  
+    This        - A pointer to the EFI_USB2_HC_PROTOCOL.
+    PortNumber  - Specifies the root hub port whose feature 
+                  is requested to be set.
+    PortFeature - Indicates the feature selector associated 
+                  with the feature set request. 
   
   Returns:
-    EFI_SUCCESS 
-            The state information of the host controller was returned in State.
-    EFI_INVALID_PARAMETER 
-            State is NULL.
-    EFI_DEVICE_ERROR  
-            An error was encountered while attempting to retrieve the 
-            host controller's current state.  
---*/  
-{
-  USB_HC_DEV *HcDev;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  return UHCIGetState(
-  	&HcDev->UsbHc, 
-  	State
-  	);
-}
-
-EFI_STATUS
-EFIAPI
-UHCI2SetState (
-  IN EFI_USB2_HC_PROTOCOL    * This,
-  IN EFI_USB_HC_STATE        State
-  )
-/*++
   
-  Routine Description:
-    Sets the USB host controller to a specific state according to UEFI 2.0 spec.
-  
-  Arguments:
-    
-    This     - A pointer to the EFI_USB_HC_PROTOCOL instance.
-
-    State    - Indicates the state of the host controller that will be set.
-  
-  Returns:
-    EFI_SUCCESS 
-          The USB host controller was successfully placed in the state 
-          specified by State.
-    EFI_INVALID_PARAMETER 
-          State is invalid.
-    EFI_DEVICE_ERROR  
-          Failed to set the state specified by State due to device error.  
+    EFI_SUCCESS           : PortFeature was set for the root port
+    EFI_INVALID_PARAMETER : PortNumber is invalid or PortFeature is invalid.
+    EFI_DEVICE_ERROR      : Can't read register
+        
 --*/
 {
-  USB_HC_DEV *HcDev;
+  USB_HC_DEV          *Uhc;
 
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  return UHCISetState(
-  	&HcDev->UsbHc, 
-  	State
-  	);
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+
+  return UhciSetRootHubPortFeature (&Uhc->UsbHc, PortNumber, PortFeature);
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2ControlTransfer (
-  IN     EFI_USB2_HC_PROTOCOL                           * This,
-  IN     UINT8                                          DeviceAddress,
-  IN     UINT8                                          DeviceSpeed,
-  IN     UINTN                                          MaximumPacketLength,
-  IN     EFI_USB_DEVICE_REQUEST                         * Request,
-  IN     EFI_USB_DATA_DIRECTION                         TransferDirection,
-  IN OUT VOID                                           *Data,
-  IN OUT UINTN                                          *DataLength,
-  IN     UINTN                                          TimeOut,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR             *Translator,
-  OUT    UINT32                                         *TransferResult
+Uhci2ClearRootHubPortFeature (
+  IN EFI_USB2_HC_PROTOCOL    *This,
+  IN UINT8                   PortNumber,
+  IN EFI_USB_PORT_FEATURE    PortFeature
   )
 /*++
   
   Routine Description:
+  
+    Clears a feature for the specified root hub port according to Uefi 2.0 spec.
+  
+  Arguments:
+  
+    This        - A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    PortNumber  - Specifies the root hub port whose feature 
+                  is requested to be cleared.
+    PortFeature - Indicates the feature selector associated with the 
+                  feature clear request.
+                  
+  Returns:
+  
+    EFI_SUCCESS           : PortFeature was cleared for the USB root hub port
+    EFI_INVALID_PARAMETER : PortNumber is invalid or PortFeature is invalid.
+    EFI_DEVICE_ERROR      : Can't read register
+        
+--*/
+{
+  USB_HC_DEV          *Uhc;
+
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+
+  return UhciClearRootHubPortFeature (&Uhc->UsbHc, PortNumber, PortFeature);
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+Uhci2ControlTransfer (
+  IN     EFI_USB2_HC_PROTOCOL                 *This,
+  IN     UINT8                                DeviceAddress,
+  IN     UINT8                                DeviceSpeed,
+  IN     UINTN                                MaximumPacketLength,
+  IN     EFI_USB_DEVICE_REQUEST               *Request,
+  IN     EFI_USB_DATA_DIRECTION               TransferDirection,
+  IN OUT VOID                                 *Data,
+  IN OUT UINTN                                *DataLength,
+  IN     UINTN                                TimeOut,
+  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR   *Translator,
+  OUT    UINT32                               *TransferResult
+  )
+/*++
+  
+  Routine Description:
+  
     Submits control transfer to a target USB device accroding to UEFI 2.0 spec..
   
   Arguments:
     
-    This         - A pointer to the EFI_USB_HC_PROTOCOL instance.
-
-    DeviceAddress -Represents the address of the target device on the USB,
-                  which is assigned during USB enumeration.
-
-    DeviceSpeed  - Indicates transfer speed of device.
-    
-    MaximumPacketLength - Indicates the maximum packet size that the 
-                        default control transfer endpoint is capable of 
-                        sending or receiving.
-    
-    Request      - A pointer to the USB device request that will be sent 
-                  to the USB device. 
-    
-    TransferDirection - Specifies the data direction for the transfer.
-                      There are three values available, DataIn, DataOut 
-                      and NoData.
-    
-    Data          -A pointer to the buffer of data that will be transmitted 
-                  to USB device or received from USB device.
-    
-    DataLength    - Indicates the size, in bytes, of the data buffer 
-                  specified by Data.
-    
-    TimeOut       - Indicates the maximum time, in microseconds, 
-                  which the transfer is allowed to complete.
-    
-    TransferResult  - A pointer to the detailed result information generated 
-                    by this control transfer.
+    This                : A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address          
+    DeviceSpeed         : Device speed
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    Request             : USB device request to send 
+    TransferDirection   : Data direction of the Data stage in control transfer
+    Data                : Data to transmit/receive in data stage
+    DataLength          : Length of the data
+    TimeOut             : Maximum time, in microseconds, for transfer to complete.
+    TransferResult      : Variable to receive the transfer result
                     
   Returns:
-    EFI_SUCCESS 
-        The control transfer was completed successfully.
-    EFI_OUT_OF_RESOURCES  
-        The control transfer could not be completed due to a lack of resources.
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-    EFI_TIMEOUT 
-        The control transfer failed due to timeout.
-    EFI_DEVICE_ERROR  
-        The control transfer failed due to host controller or device error. 
-        Caller should check TranferResult for detailed error information.
+  
+    EFI_SUCCESS           : The control transfer was completed successfully.
+    EFI_OUT_OF_RESOURCES  : Failed due to lack of resource. 
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_TIMEOUT           : Failed due to timeout.
+    EFI_DEVICE_ERROR      : Failed due to host controller or device error.
 
 --*/
 {
-  USB_HC_DEV *HcDev;
-  BOOLEAN IsSlowDevice = (EFI_USB_SPEED_LOW == DeviceSpeed) ? TRUE : FALSE;
+  USB_HC_DEV          *Uhc;
+  BOOLEAN             IsSlow;
 
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  
-  return UHCIControlTransfer(
-  	&HcDev->UsbHc, 
-  	DeviceAddress, 
-  	IsSlowDevice, 
-  	(UINT8) MaximumPacketLength, 
-  	Request, 
-  	TransferDirection, 
-  	Data, 
-  	DataLength,
-  	TimeOut,
-  	TransferResult
-  	);  	
+  Uhc     = UHC_FROM_USB2_HC_PROTO (This);
+  IsSlow  = (EFI_USB_SPEED_LOW == DeviceSpeed) ? TRUE : FALSE;
+
+  return UhciControlTransfer (
+           &Uhc->UsbHc,
+           DeviceAddress,
+           IsSlow,
+           (UINT8) MaximumPacketLength,
+           Request,
+           TransferDirection,
+           Data,
+           DataLength,
+           TimeOut,
+           TransferResult
+           );
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2BulkTransfer (
-  IN     EFI_USB2_HC_PROTOCOL                            * This,
-  IN     UINT8                                           DeviceAddress,
-  IN     UINT8                                           EndPointAddress,
-  IN     UINT8                                           DeviceSpeed,
-  IN     UINTN                                           MaximumPacketLength,
-  IN     UINT8                                           DataBuffersNumber,
-  IN OUT VOID                                            *Data[EFI_USB_MAX_BULK_BUFFER_NUM],
-  IN OUT UINTN                                           *DataLength,
-  IN OUT UINT8                                           *DataToggle,
-  IN     UINTN                                           TimeOut,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR              *Translator,
-  OUT    UINT32                                          *TransferResult
-  )                                                  
-/*++
-  
-  Routine Description:
-    Submits bulk transfer to a bulk endpoint of a USB device according to UEFI 2.0 spec.
-    
-  Arguments:
-    
-    This          A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    DeviceAddress Represents the address of the target device on the USB,
-                  which is assigned during USB enumeration.
-                  
-    EndPointAddress   The combination of an endpoint number and an 
-                      endpoint direction of the target USB device. 
-                      Each endpoint address supports data transfer in 
-                      one direction except the control endpoint 
-                      (whose default endpoint address is 0). 
-                      It is the caller's responsibility to make sure that 
-                      the EndPointAddress represents a bulk endpoint. 
-                      
-    DeviceSpeed  Indicates device speed. The supported values are EFI_USB_SPEED_FULL
-                          and EFI_USB_SPEED_HIGH.
-                          
-    MaximumPacketLength Indicates the maximum packet size the target endpoint
-                        is capable of sending or receiving.
-                        
-    DataBuffersNumber  Number of data buffers prepared for the transfer.
-    
-    Data          Array of pointers to the buffers of data that will be transmitted 
-                  to USB device or received from USB device.
-                  
-    DataLength    When input, indicates the size, in bytes, of the data buffer
-                  specified by Data. When output, indicates the actually 
-                  transferred data size.
-                  
-    DataToggle    A pointer to the data toggle value. On input, it indicates 
-                  the initial data toggle value the bulk transfer should adopt;
-                  on output, it is updated to indicate the data toggle value 
-                  of the subsequent bulk transfer. 
-                  
-    Translator  A pointr to the transaction translator data.
-    
-    TimeOut       Indicates the maximum time, in microseconds, which the 
-                  transfer is allowed to complete.
-                  
-    TransferResult  A pointer to the detailed result information of the 
-                    bulk transfer.
-
-  Returns:
-    EFI_SUCCESS 
-        The bulk transfer was completed successfully.
-        
-    EFI_OUT_OF_RESOURCES  
-        The bulk transfer could not be submitted due to lack of resource.
-        
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-        
-    EFI_TIMEOUT 
-        The bulk transfer failed due to timeout.
-        
-    EFI_DEVICE_ERROR  
-        The bulk transfer failed due to host controller or device error.
-        Caller should check TranferResult for detailed error information.
-
---*/  
-{
-  USB_HC_DEV *HcDev;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  
-  if( Data == NULL || DeviceSpeed==EFI_USB_SPEED_LOW)
-  	return EFI_INVALID_PARAMETER;
-  /* For full-speed bulk transfers only the data pointed by Data[0] shall be used */
-
-  return UHCIBulkTransfer (
-  	&HcDev->UsbHc, 
-  	DeviceAddress, 
-  	EndPointAddress, 
-  	(UINT8) MaximumPacketLength, 
-  	*Data, 
-  	DataLength, 
-  	DataToggle, 
-  	TimeOut, 
-  	TransferResult
-  	);
-}
-
-EFI_STATUS
-EFIAPI
-UHCI2AsyncInterruptTransfer (
-  IN     EFI_USB2_HC_PROTOCOL                        * This,
-  IN     UINT8                                       DeviceAddress,
-  IN     UINT8                                       EndPointAddress,
-  IN     UINT8                                       DeviceSpeed,
-  IN     UINTN                                       MaximumPacketLength,
-  IN     BOOLEAN                                     IsNewTransfer,
-  IN OUT UINT8                                       *DataToggle,
-  IN     UINTN                                       PollingInterval,
-  IN     UINTN                                       DataLength,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR          *Translator,
-  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK             CallBackFunction,
-  IN     VOID                                        *Context
+Uhci2BulkTransfer (
+  IN     EFI_USB2_HC_PROTOCOL               *This,
+  IN     UINT8                              DeviceAddress,
+  IN     UINT8                              EndPointAddress,
+  IN     UINT8                              DeviceSpeed,
+  IN     UINTN                              MaximumPacketLength,
+  IN     UINT8                              DataBuffersNumber,
+  IN OUT VOID                               *Data[EFI_USB_MAX_BULK_BUFFER_NUM],
+  IN OUT UINTN                              *DataLength,
+  IN OUT UINT8                              *DataToggle,
+  IN     UINTN                              TimeOut,
+  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR *Translator,
+  OUT    UINT32                             *TransferResult
   )
 /*++
   
   Routine Description:
+  
+    Submits bulk transfer to a bulk endpoint of a USB device
+    
+  Arguments:
+    
+    This                : A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address          
+    EndPointAddress     : Endpoint number and direction             
+    DeviceSpeed         : Device speed
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    DataBuffersNumber   : Number of data buffers prepared for the transfer.
+    Data                : Array of pointers to the buffers of data        
+    DataLength          : On input, size of the data buffer, On output, 
+                          actually transferred data size.             
+    DataToggle          : On input, data toggle to use; On output, next data toggle
+    Translator          : A pointr to the transaction translator data.
+    TimeOut             : Maximum time out, in microseconds       
+    TransferResult      : Variable to receive transfer result
+    
+  Returns:
+    EFI_SUCCESS           : The bulk transfer was completed successfully.
+    EFI_OUT_OF_RESOURCES  : Failed due to lack of resource. 
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_TIMEOUT           : Failed due to timeout.
+    EFI_DEVICE_ERROR      : Failed due to host controller or device error.
+
+--*/
+{
+  USB_HC_DEV          *Uhc;
+
+  Uhc = UHC_FROM_USB2_HC_PROTO (This);
+
+  if (Data == NULL || DeviceSpeed == EFI_USB_SPEED_LOW) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  // For full-speed bulk transfers only the data pointed by Data[0] shall be used
+  //
+  return UhciBulkTransfer (
+           &Uhc->UsbHc,
+           DeviceAddress,
+           EndPointAddress,
+           (UINT8) MaximumPacketLength,
+           *Data,
+           DataLength,
+           DataToggle,
+           TimeOut,
+           TransferResult
+           );
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+Uhci2AsyncInterruptTransfer (
+  IN     EFI_USB2_HC_PROTOCOL               *This,
+  IN     UINT8                              DeviceAddress,
+  IN     UINT8                              EndPointAddress,
+  IN     UINT8                              DeviceSpeed,
+  IN     UINTN                              MaximumPacketLength,
+  IN     BOOLEAN                            IsNewTransfer,
+  IN OUT UINT8                              *DataToggle,
+  IN     UINTN                              PollingInterval,
+  IN     UINTN                              DataLength,
+  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR *Translator,
+  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK    CallBackFunction,
+  IN     VOID                               *Context
+  )
+/*++
+  
+  Routine Description:
+  
     Submits an asynchronous interrupt transfer to an 
     interrupt endpoint of a USB device according to UEFI 2.0 spec.
   
   Arguments:
     
-    This            A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    DeviceAddress   Represents the address of the target device on the USB,
-                    which is assigned during USB enumeration.
-                    
-    EndPointAddress The combination of an endpoint number and an endpoint 
-                    direction of the target USB device. Each endpoint address 
-                    supports data transfer in one direction except the 
-                    control endpoint (whose default endpoint address is 0). 
-                    It is the caller's responsibility to make sure that 
-                    the EndPointAddress represents an interrupt endpoint.
-                    
-    DeviceSpeed     Indicates device speed.
-    
-    MaximumPacketLength  Indicates the maximum packet size the target endpoint
-                        is capable of sending or receiving.
-                        
-    IsNewTransfer   If TRUE, an asynchronous interrupt pipe is built between
-                    the host and the target interrupt endpoint. 
-                    If FALSE, the specified asynchronous interrupt pipe 
-                    is canceled.
-                    
-    DataToggle      A pointer to the data toggle value.  On input, it is valid 
-                    when IsNewTransfer is TRUE, and it indicates the initial 
-                    data toggle value the asynchronous interrupt transfer 
-                    should adopt.  
-                    On output, it is valid when IsNewTransfer is FALSE, 
-                    and it is updated to indicate the data toggle value of 
-                    the subsequent asynchronous interrupt transfer.
-                    
-    PollingInterval Indicates the interval, in milliseconds, that the 
-                    asynchronous interrupt transfer is polled.  
-                    This parameter is required when IsNewTransfer is TRUE.
-                    
-    DataLength      Indicates the length of data to be received at the 
-                    rate specified by PollingInterval from the target 
-                    asynchronous interrupt endpoint.  This parameter 
-                    is only required when IsNewTransfer is TRUE.
-                    
-    Translator  A pointr to the transaction translator data.
-    
-    CallBackFunction  The Callback function.This function is called at the 
-                      rate specified by PollingInterval.This parameter is 
-                      only required when IsNewTransfer is TRUE.
-                      
-    Context         The context that is passed to the CallBackFunction.
-                    This is an optional parameter and may be NULL.
+    This                : A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address          
+    EndPointAddress     : Endpoint number and direction             
+    DeviceSpeed         : Device speed
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    IsNewTransfer       : If TRUE, submit a new transfer, if FALSE cancel old transfer       
+    DataToggle          : On input, data toggle to use; On output, next data toggle
+    PollingInterval     : Interrupt poll rate in milliseconds              
+    DataLength          : On input, size of the data buffer, On output, 
+                          actually transferred data size.             
+    Translator          : A pointr to the transaction translator data.
+    CallBackFunction    : Function to call periodically
+    Context             : User context
   
   Returns:
   
-    EFI_SUCCESS 
-        The asynchronous interrupt transfer request has been successfully 
-        submitted or canceled.
+    EFI_SUCCESS           : Transfer was submitted
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_OUT_OF_RESOURCES  : Failed due to a lack of resources.  
+    EFI_DEVICE_ERROR      : Can't read register
         
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-        
-    EFI_OUT_OF_RESOURCES  
-        The request could not be completed due to a lack of resources.  
-        
-    EFI_DEVICE_ERROR
-        Can't read register
---*/  
+--*/
 {
-  USB_HC_DEV *HcDev;
-  BOOLEAN IsSlowDevice = (EFI_USB_SPEED_LOW == DeviceSpeed) ? TRUE : FALSE;
-   
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  return UHCIAsyncInterruptTransfer(
-  	&HcDev->UsbHc, 
-  	DeviceAddress, 
-  	EndPointAddress, 
-  	IsSlowDevice, 
-  	(UINT8) MaximumPacketLength, 
-  	IsNewTransfer, 
-  	DataToggle, 
-  	PollingInterval,
-  	DataLength, 
-  	CallBackFunction,
-  	Context
-  	);
+  USB_HC_DEV          *Uhc;
+  BOOLEAN             IsSlow;
+
+  Uhc     = UHC_FROM_USB2_HC_PROTO (This);
+  IsSlow  = (EFI_USB_SPEED_LOW == DeviceSpeed) ? TRUE : FALSE;
+
+  return UhciAsyncInterruptTransfer (
+           &Uhc->UsbHc,
+           DeviceAddress,
+           EndPointAddress,
+           IsSlow,
+           (UINT8) MaximumPacketLength,
+           IsNewTransfer,
+           DataToggle,
+           PollingInterval,
+           DataLength,
+           CallBackFunction,
+           Context
+           );
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2SyncInterruptTransfer (
-  IN     EFI_USB2_HC_PROTOCOL                      * This,
+Uhci2SyncInterruptTransfer (
+  IN     EFI_USB2_HC_PROTOCOL                      *This,
   IN     UINT8                                     DeviceAddress,
   IN     UINT8                                     EndPointAddress,
   IN     UINT8                                     DeviceSpeed,
@@ -4150,99 +1946,73 @@ UHCI2SyncInterruptTransfer (
 /*++
   
   Routine Description:
+  
     Submits synchronous interrupt transfer to an interrupt endpoint 
     of a USB device according to UEFI 2.0 spec.
   
   Arguments:
     
-    This            A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    DeviceAddress   Represents the address of the target device on the USB, 
-                    which is assigned during USB enumeration.
-                    
-    EndPointAddress   The combination of an endpoint number and an endpoint 
-                      direction of the target USB device. Each endpoint 
-                      address supports data transfer in one direction 
-                      except the control endpoint (whose default 
-                      endpoint address is 0). It is the caller's responsibility
-                      to make sure that the EndPointAddress represents 
-                      an interrupt endpoint. 
-                      
-    DeviceSpeed  Indicates device speed.
-                    
-    MaximumPacketLength Indicates the maximum packet size the target endpoint 
-                        is capable of sending or receiving.
-                        
-    Data            A pointer to the buffer of data that will be transmitted 
-                    to USB device or received from USB device.
-                    
-    DataLength      On input, the size, in bytes, of the data buffer specified 
-                    by Data. On output, the number of bytes transferred.
-                    
-    DataToggle      A pointer to the data toggle value. On input, it indicates
-                    the initial data toggle value the synchronous interrupt 
-                    transfer should adopt; 
-                    on output, it is updated to indicate the data toggle value 
-                    of the subsequent synchronous interrupt transfer. 
-                    
-    TimeOut         Indicates the maximum time, in microseconds, which the 
-                    transfer is allowed to complete.
-    Translator  A pointr to the transaction translator data.
-    TransferResult  A pointer to the detailed result information from 
-                    the synchronous interrupt transfer.  
+    This                : A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address          
+    EndPointAddress     : Endpoint number and direction             
+    DeviceSpeed         : Device speed
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    DataBuffersNumber   : Number of data buffers prepared for the transfer.
+    Data                : Array of pointers to the buffers of data        
+    DataLength          : On input, size of the data buffer, On output, 
+                          actually transferred data size.             
+    DataToggle          : On input, data toggle to use; On output, next data toggle
+    TimeOut             : Maximum time out, in microseconds       
+    Translator          : A pointr to the transaction translator data.
+    TransferResult      : Variable to receive transfer result
 
   Returns:
-    EFI_SUCCESS 
-        The synchronous interrupt transfer was completed successfully.
-    EFI_OUT_OF_RESOURCES  
-        The synchronous interrupt transfer could not be submitted due 
-        to lack of resource.
-    EFI_INVALID_PARAMETER 
-        Some parameters are invalid.
-    EFI_TIMEOUT 
-        The synchronous interrupt transfer failed due to timeout.
-    EFI_DEVICE_ERROR  
-        The synchronous interrupt transfer failed due to host controller 
-        or device error. Caller should check TranferResult for detailed 
-        error information.  
---*/  
+    EFI_SUCCESS           : The transfer was completed successfully.
+    EFI_OUT_OF_RESOURCES  : Failed due to lack of resource. 
+    EFI_INVALID_PARAMETER : Some parameters are invalid.
+    EFI_TIMEOUT           : Failed due to timeout.
+    EFI_DEVICE_ERROR      : Failed due to host controller or device error.
+        
+--*/
 {
-  USB_HC_DEV *HcDev;
-  BOOLEAN IsSlowDevice;
-  
-  if(DeviceSpeed==EFI_USB_SPEED_HIGH)
-  	return EFI_INVALID_PARAMETER;
-  
-  IsSlowDevice = (EFI_USB_SPEED_LOW == DeviceSpeed) ? TRUE : FALSE;  
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  
-  return UHCISyncInterruptTransfer(
-  	&HcDev->UsbHc, 
-  	DeviceAddress, 
-  	EndPointAddress, 
-  	IsSlowDevice, 
-  	(UINT8) MaximumPacketLength, 
-  	Data, 
-  	DataLength, 
-  	DataToggle,
-  	TimeOut,
-  	TransferResult
-  	);
+  USB_HC_DEV          *Uhc;
+  BOOLEAN             IsSlow;
+
+  if (DeviceSpeed == EFI_USB_SPEED_HIGH) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Uhc     = UHC_FROM_USB2_HC_PROTO (This);
+  IsSlow  = (EFI_USB_SPEED_LOW == DeviceSpeed) ? TRUE : FALSE;
+
+  return UhciSyncInterruptTransfer (
+           &Uhc->UsbHc,
+           DeviceAddress,
+           EndPointAddress,
+           IsSlow,
+           (UINT8) MaximumPacketLength,
+           Data,
+           DataLength,
+           DataToggle,
+           TimeOut,
+           TransferResult
+           );
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2IsochronousTransfer (
-  IN     EFI_USB2_HC_PROTOCOL                       * This,
-  IN     UINT8                                      DeviceAddress,
-  IN     UINT8                                      EndPointAddress,
-  IN     UINT8                                      DeviceSpeed,
-  IN     UINTN                                      MaximumPacketLength,
-  IN     UINT8                                      DataBuffersNumber,
-  IN OUT VOID                                       *Data[EFI_USB_MAX_ISO_BUFFER_NUM],
-  IN     UINTN                                      DataLength,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR         *Translator,
-  OUT    UINT32                                     *TransferResult
+Uhci2IsochronousTransfer (
+  IN     EFI_USB2_HC_PROTOCOL               *This,
+  IN     UINT8                              DeviceAddress,
+  IN     UINT8                              EndPointAddress,
+  IN     UINT8                              DeviceSpeed,
+  IN     UINTN                              MaximumPacketLength,
+  IN     UINT8                              DataBuffersNumber,
+  IN OUT VOID                               *Data[EFI_USB_MAX_ISO_BUFFER_NUM],
+  IN     UINTN                              DataLength,
+  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR *Translator,
+  OUT    UINT32                             *TransferResult
   )
 /*++
   
@@ -4252,54 +2022,42 @@ UHCI2IsochronousTransfer (
   
   Arguments:
     
-    This             A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    DeviceAddress    Represents the address of the target device on the USB,
-                           which is assigned during USB enumeration.
-                           
-    EndPointAddress  End point address
-    
-    DeviceSpeed      Indicates device speed.
-    
-    MaximumPacketLength    Indicates the maximum packet size that the 
-                           default control transfer endpoint is capable of 
-                           sending or receiving.
-                           
-    DataBuffersNumber Number of data buffers prepared for the transfer.
-    
-    Data              Array of pointers to the buffers of data that will be 
-                      transmitted to USB device or received from USB device.
-                  
-    DataLength        Indicates the size, in bytes, of the data buffer 
-                      specified by Data.
-                           
-    Translator        A pointr to the transaction translator data.
-    
-    TransferResult    A pointer to the detailed result information generated 
-                      by this control transfer.               
+    This                : A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address          
+    EndPointAddress     : Endpoint number and direction             
+    DeviceSpeed         : Device speed
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    DataBuffersNumber   : Number of data buffers prepared for the transfer.
+    Data                : Array of pointers to the buffers of data        
+    DataLength          : On input, size of the data buffer, On output, 
+                          actually transferred data size.             
+    Translator          : A pointr to the transaction translator data.
+    TransferResult      : Variable to receive transfer result
+                      
   Returns:
   
     EFI_UNSUPPORTED 
 
---*/  
+--*/
 {
   return EFI_UNSUPPORTED;
 }
 
+STATIC
 EFI_STATUS
 EFIAPI
-UHCI2AsyncIsochronousTransfer (
-  IN     EFI_USB2_HC_PROTOCOL                         * This,
-  IN     UINT8                                        DeviceAddress,
-  IN     UINT8                                        EndPointAddress,
-  IN     UINT8                                        DeviceSpeed,
-  IN     UINTN                                        MaximumPacketLength,
-  IN     UINT8                                        DataBuffersNumber,
-  IN OUT VOID                                         *Data[EFI_USB_MAX_ISO_BUFFER_NUM],
-  IN     UINTN                                        DataLength,
-  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR           *Translator,
-  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK              IsochronousCallBack,
-  IN     VOID                                         *Context
+Uhci2AsyncIsochronousTransfer (
+  IN     EFI_USB2_HC_PROTOCOL                *This,
+  IN     UINT8                               DeviceAddress,
+  IN     UINT8                               EndPointAddress,
+  IN     UINT8                               DeviceSpeed,
+  IN     UINTN                               MaximumPacketLength,
+  IN     UINT8                               DataBuffersNumber,
+  IN OUT VOID                                *Data[EFI_USB_MAX_ISO_BUFFER_NUM],
+  IN     UINTN                               DataLength,
+  IN     EFI_USB2_HC_TRANSACTION_TRANSLATOR  *Translator,
+  IN     EFI_ASYNC_USB_TRANSFER_CALLBACK     IsochronousCallBack,
+  IN     VOID                                *Context
   )
 /*++
   
@@ -4309,303 +2067,572 @@ UHCI2AsyncIsochronousTransfer (
   
   Arguments:
     
-    This                A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    DeviceAddress       Represents the address of the target device on the USB,
-                           which is assigned during USB enumeration.
-
-    EndPointAddress     End point address
-    
-    DeviceSpeed         Indicates device speed.
-    
-    MaximumPacketLength Indicates the maximum packet size that the 
-                        default control transfer endpoint is capable of 
-                        sending or receiving.
-                        
-    DataBuffersNumber   Number of data buffers prepared for the transfer.
-    
-    Data                Array of pointers to the buffers of data that will be transmitted 
-                        to USB device or received from USB device.
-                        
-    Translator          A pointr to the transaction translator data.
-    
-    IsochronousCallBack When the transfer complete, the call back function will be called
-    
-    Context             Pass to the call back function as parameter
+    This                : A pointer to the EFI_USB2_HC_PROTOCOL instance.
+    DeviceAddress       : Target device address          
+    EndPointAddress     : Endpoint number and direction             
+    DeviceSpeed         : Device speed
+    MaximumPacketLength : Maximum packet size of the target endpoint
+    DataBuffersNumber   : Number of data buffers prepared for the transfer.
+    Data                : Array of pointers to the buffers of data        
+    Translator          : A pointr to the transaction translator data.
+    IsochronousCallBack : Function to call when the transfer complete
+    Context             : Pass to the call back function as parameter
                     
   Returns:
   
     EFI_UNSUPPORTED 
 
---*/  
+--*/
 {
   return EFI_UNSUPPORTED;
 }
 
+EFI_DRIVER_ENTRY_POINT (UhciDriverEntryPoint)
+
 EFI_STATUS
 EFIAPI
-UHCI2GetRootHubPortStatus (
-  IN  EFI_USB2_HC_PROTOCOL   * This,
-  IN  UINT8                  PortNumber,
-  OUT EFI_USB_PORT_STATUS    * PortStatus
+UhciDriverEntryPoint (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
   )
 /*++
-  
+
   Routine Description:
-    Retrieves the current status of a USB root hub port according to UEFI 2.0 spec.
   
+    Entry point for EFI drivers.
+
   Arguments:
   
-    This        A pointer to the EFI_USB2_HC_PROTOCOL.
+    ImageHandle - EFI_HANDLE
+    SystemTable - EFI_SYSTEM_TABLE
     
-    PortNumber  Specifies the root hub port from which the status 
-                is to be retrieved.  This value is zero-based. For example, 
-                if a root hub has two ports, then the first port is numbered 0,
-                and the second port is numbered 1.
-    
-    PortStatus  A pointer to the current port status bits and 
-                port status change bits.  
-  
   Returns:
-    EFI_SUCCESS 
-        The status of the USB root hub port specified by PortNumber 
-        was returned in PortStatus.
-    EFI_INVALID_PARAMETER 
-        PortNumber is invalid. 
-    EFI_DEVICE_ERROR - Can't read register      
---*/     
-{
-  USB_HC_DEV *HcDev;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
   
-  return UHCIGetRootHubPortStatus(
-  	&HcDev->UsbHc, 
-  	PortNumber, 
-  	PortStatus
-  	);
+    EFI_SUCCESS : Driver is successfully loaded
+    Others      : Failed
+    
+--*/
+{
+  return EfiLibInstallAllDriverProtocols (
+           ImageHandle,
+           SystemTable,
+           &gUhciDriverBinding,
+           ImageHandle,
+           &gUhciComponentName,
+           NULL,
+           NULL
+           );
 }
 
 EFI_STATUS
 EFIAPI
-UHCI2SetRootHubPortFeature (
-  IN EFI_USB2_HC_PROTOCOL     * This,
-  IN UINT8                   PortNumber,
-  IN EFI_USB_PORT_FEATURE    PortFeature
+UhciDriverBindingSupported (
+  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
+  IN EFI_HANDLE                      Controller,
+  IN EFI_DEVICE_PATH_PROTOCOL        *RemainingDevicePath
   )
 /*++
-  
+
   Routine Description:
-    Sets a feature for the specified root hub port according to UEFI 2.0 spec.
   
+    Test to see if this driver supports ControllerHandle. Any 
+    ControllerHandle that has UsbHcProtocol installed will be supported.
+
   Arguments:
   
-    This        A pointer to the EFI_USB2_HC_PROTOCOL.
-    
-    PortNumber  Specifies the root hub port whose feature 
-                is requested to be set.
-    
-    PortFeature Indicates the feature selector associated 
-                with the feature set request. 
-  
+    This                - Protocol instance pointer.
+    Controller          - Handle of device to test
+    RemainingDevicePath - Not used
+
   Returns:
-    EFI_SUCCESS 
-        The feature specified by PortFeature was set for the 
-        USB root hub port specified by PortNumber.
-    EFI_INVALID_PARAMETER 
-        PortNumber is invalid or PortFeature is invalid.
-    EFI_DEVICE_ERROR
-        Can't read register
---*/  
-{
-  USB_HC_DEV *HcDev;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  return UHCISetRootHubPortFeature(
-  	&HcDev->UsbHc, 
-  	PortNumber, 
-  	PortFeature
-  	);
-}
-
-EFI_STATUS
-EFIAPI
-UHCI2ClearRootHubPortFeature (
-  IN EFI_USB2_HC_PROTOCOL    * This,
-  IN UINT8                   PortNumber,
-  IN EFI_USB_PORT_FEATURE    PortFeature
-  )
-/*++
   
-  Routine Description:
-    Clears a feature for the specified root hub port according to Uefi 2.0 spec.
-  
-  Arguments:
-  
-    This        A pointer to the EFI_USB2_HC_PROTOCOL instance.
-    
-    PortNumber  Specifies the root hub port whose feature 
-                is requested to be cleared.
-    
-    PortFeature Indicates the feature selector associated with the 
-                feature clear request.
-                  
-  Returns:
-    EFI_SUCCESS 
-        The feature specified by PortFeature was cleared for the 
-        USB root hub port specified by PortNumber.
-    EFI_INVALID_PARAMETER 
-        PortNumber is invalid or PortFeature is invalid.
-    EFI_DEVICE_ERROR
-        Can't read register
---*/  
+    EFI_SUCCESS         : This driver supports this device.
+    EFI_UNSUPPORTED     : This driver does not support this device.
+
+--*/
 {
-  USB_HC_DEV *HcDev;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  return UHCIClearRootHubPortFeature(
-  	&HcDev->UsbHc, 
-  	PortNumber, 
-  	PortFeature
-  	);
-}
-
-VOID
-EFIAPI
-MonitorInterruptTrans (
-  IN EFI_EVENT     Event,
-  IN VOID          *Context
-  )
-/*++
-  Routine Description:
-    Interrupt transfer periodic check handler
-  Arguments:
-    Event  - Interrupt event
-    Contex - Pointer to USB_HC_DEV
-  Returns:
-    None
---*/            
-{
-
-  USB_HC_DEV      *HcDev;
-  INTERRUPT_LIST  *PtrList;
-  EFI_LIST_ENTRY  *Link;
-  UINT32          Result;
-  VOID            *DataBuffer;
-  UINTN           DataLen;
-  UINTN           ActualLen;
-  UINTN           ErrTDPos;
-  UINT32          StatusAddr;
-  EFI_LIST_ENTRY  *NextLink;
-
-  HcDev       = (USB_HC_DEV *) Context;
-  StatusAddr  = (UINT32) (USBSTS);
+  EFI_STATUS            OpenStatus;
+  EFI_STATUS            Status;
+  EFI_PCI_IO_PROTOCOL   *PciIo;
+  USB_CLASSC            UsbClassCReg;
 
   //
-  // interrupt transfer list is empty, means that no interrupt transfer
-  // is submitted by far.
+  // Test whether there is PCI IO Protocol attached on the controller handle.
   //
-  if (IsListEmpty (&(HcDev->InterruptListHead))) {
-    return ;
+  OpenStatus = gBS->OpenProtocol (
+                      Controller,
+                      &gEfiPciIoProtocolGuid,
+                      &PciIo,
+                      This->DriverBindingHandle,
+                      Controller,
+                      EFI_OPEN_PROTOCOL_BY_DRIVER
+                      );
+
+  if (EFI_ERROR (OpenStatus)) {
+    return OpenStatus;
   }
 
-  NextLink = HcDev->InterruptListHead.ForwardLink;
-  do {
+  Status = PciIo->Pci.Read (
+                        PciIo,
+                        EfiPciIoWidthUint8,
+                        CLASSC_OFFSET,
+                        sizeof (USB_CLASSC) / sizeof (UINT8),
+                        &UsbClassCReg
+                        );
 
-    Link      = NextLink;
-    NextLink  = Link->ForwardLink;
+  if (EFI_ERROR (Status)) {
+    Status = EFI_UNSUPPORTED;
+    goto ON_EXIT;
+  }
+  
+  //
+  // Test whether the controller belongs to UHCI type
+  //
+  if ((UsbClassCReg.BaseCode != PCI_CLASS_SERIAL) ||
+      (UsbClassCReg.SubClassCode != PCI_CLASS_SERIAL_USB) ||
+      (UsbClassCReg.PI != PCI_CLASSC_PI_UHCI)
+      ) {
 
-    PtrList   = INTERRUPT_LIST_FROM_LINK (Link);
+    Status = EFI_UNSUPPORTED;
+  }
 
-    //
-    // get TD execution results.
-    // ErrTDPos is zero-based value indicating the first error TD's position
-    // in the TDs' list.
-    // This value is only valid when Result not equal NOERROR.
-    //
-    ExecuteAsyncINTTDs (
-      HcDev,
-      PtrList,
-      &Result,
-      &ErrTDPos,
-      &ActualLen
-      );
+ON_EXIT:
+  gBS->CloseProtocol (
+         Controller,
+         &gEfiPciIoProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
 
-    //
-    // interrupt transfer has not been executed yet.
-    //
-    if (((Result & EFI_USB_ERR_NAK) == EFI_USB_ERR_NAK) ||
-        ((Result & EFI_USB_ERR_NOTEXECUTE) == EFI_USB_ERR_NOTEXECUTE)) {
-      continue;
-    }
-    //
-    // get actual data length transferred data and its data length.
-    //
-    DataLen     = ActualLen;
-    DataBuffer  = EfiLibAllocatePool (DataLen);
-    if (DataBuffer == NULL) {
-      return ;
-    }
-
-    EfiCopyMem (
-      DataBuffer,
-      PtrList->PtrFirstTD->pTDBuffer,
-      DataLen
-      );
-
-    //
-    // only if interrupt endpoint responds
-    // and the interrupt transfer stops because of completion
-    // or error, then we will call callback function.
-    //
-    if (Result == EFI_USB_NOERROR) {
-      //
-      // add for real platform debug
-      //
-      if (PtrList->InterruptCallBack != NULL) {
-        (PtrList->InterruptCallBack) (
-                    DataBuffer,
-                    DataLen,
-                    PtrList->InterruptContext,
-                    Result
-                    );
-      }
-
-      if (DataBuffer) {
-        gBS->FreePool (DataBuffer);
-      }
-      
-      //
-      // update should done after data buffer got.
-      //
-      UpdateAsyncINTQHTDs (PtrList, Result, (UINT32) ErrTDPos);
-
-    } else {
-
-      DEBUG ((EFI_D_ERROR, "interrupt transfer error code is %x\n", Result));
-
-      if (DataBuffer) {
-        gBS->FreePool (DataBuffer);
-      }
-      //
-      // leave error recovery to its related device driver.
-      // A common case of the error recovery is to re-submit the interrupt
-      // transfer.
-      // When an interrupt transfer is re-submitted, its position in the linked
-      // list is changed. It is inserted to the head of the linked list, while
-      // this function scans the whole list from head to tail. Thus, the
-      // re-submitted interrupt transfer's callback function will not be called
-      // again in this round.
-      //
-      if (PtrList->InterruptCallBack != NULL) {
-        (PtrList->InterruptCallBack) (
-                    NULL,
-                    0,
-                    PtrList->InterruptContext,
-                    Result
-                    );
-      }
-    }
-  } while (NextLink != &(HcDev->InterruptListHead));
+  return Status;
 
 }
+
+STATIC
+USB_HC_DEV *
+UhciAllocateDev (
+  IN EFI_PCI_IO_PROTOCOL    *PciIo
+  )
+/*++
+
+Routine Description:
+
+  Allocate and initialize the empty UHCI device 
+
+Arguments:
+
+  PciIo - The PCIIO to use
+
+Returns:
+
+  Allocated UHCI device
+
+--*/
+{
+  USB_HC_DEV  *Uhc;
+  EFI_STATUS  Status;
+
+  Uhc = EfiLibAllocateZeroPool (sizeof (USB_HC_DEV));
+
+  if (Uhc == NULL) {
+    return NULL;
+  }
+  
+  //
+  // This driver supports both USB_HC_PROTOCOL and USB2_HC_PROTOCOL.
+  // USB_HC_PROTOCOL is for EFI 1.1 backward compability.
+  //
+  Uhc->Signature                        = USB_HC_DEV_SIGNATURE;
+  Uhc->UsbHc.Reset                      = UhciReset;
+  Uhc->UsbHc.GetState                   = UhciGetState;
+  Uhc->UsbHc.SetState                   = UhciSetState;
+  Uhc->UsbHc.ControlTransfer            = UhciControlTransfer;
+  Uhc->UsbHc.BulkTransfer               = UhciBulkTransfer;
+  Uhc->UsbHc.AsyncInterruptTransfer     = UhciAsyncInterruptTransfer;
+  Uhc->UsbHc.SyncInterruptTransfer      = UhciSyncInterruptTransfer;
+  Uhc->UsbHc.IsochronousTransfer        = UhciIsochronousTransfer;
+  Uhc->UsbHc.AsyncIsochronousTransfer   = UhciAsyncIsochronousTransfer;
+  Uhc->UsbHc.GetRootHubPortNumber       = UhciGetRootHubPortNumber;
+  Uhc->UsbHc.GetRootHubPortStatus       = UhciGetRootHubPortStatus;
+  Uhc->UsbHc.SetRootHubPortFeature      = UhciSetRootHubPortFeature;
+  Uhc->UsbHc.ClearRootHubPortFeature    = UhciClearRootHubPortFeature;
+  Uhc->UsbHc.MajorRevision              = 0x1;
+  Uhc->UsbHc.MinorRevision              = 0x1;
+
+  Uhc->Usb2Hc.GetCapability             = Uhci2GetCapability;
+  Uhc->Usb2Hc.Reset                     = Uhci2Reset;
+  Uhc->Usb2Hc.GetState                  = Uhci2GetState;
+  Uhc->Usb2Hc.SetState                  = Uhci2SetState;
+  Uhc->Usb2Hc.ControlTransfer           = Uhci2ControlTransfer;
+  Uhc->Usb2Hc.BulkTransfer              = Uhci2BulkTransfer;
+  Uhc->Usb2Hc.AsyncInterruptTransfer    = Uhci2AsyncInterruptTransfer;
+  Uhc->Usb2Hc.SyncInterruptTransfer     = Uhci2SyncInterruptTransfer;
+  Uhc->Usb2Hc.IsochronousTransfer       = Uhci2IsochronousTransfer;
+  Uhc->Usb2Hc.AsyncIsochronousTransfer  = Uhci2AsyncIsochronousTransfer;
+  Uhc->Usb2Hc.GetRootHubPortStatus      = Uhci2GetRootHubPortStatus;
+  Uhc->Usb2Hc.SetRootHubPortFeature     = Uhci2SetRootHubPortFeature;
+  Uhc->Usb2Hc.ClearRootHubPortFeature   = Uhci2ClearRootHubPortFeature;
+  Uhc->Usb2Hc.MajorRevision             = 0x2;
+  Uhc->Usb2Hc.MinorRevision             = 0x0;
+  
+  Uhc->PciIo  = PciIo;
+  Status      = InitializeMemoryManagement (Uhc);
+
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+  InitializeListHead (&Uhc->AsyncIntList);
+  
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
+                  UHCI_TPL,
+                  UhciMonitorAsyncReqList,
+                  Uhc,
+                  &Uhc->AsyncIntMonitor
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DelMemoryManagement (Uhc);
+    goto ON_ERROR;
+  }
+
+  return Uhc;
+
+ON_ERROR:
+  gBS->FreePool (Uhc);
+  return NULL;
+}
+
+STATIC
+VOID
+UhciFreeDev (
+  IN USB_HC_DEV           *Uhc
+  )
+/*++
+
+Routine Description:
+
+  Free the UHCI device and release its associated resources
+
+Arguments:
+
+  Uhc - The UHCI device to release
+
+Returns:
+
+  None
+
+--*/
+{
+  if (Uhc->AsyncIntMonitor != NULL) {
+    gBS->CloseEvent (Uhc->AsyncIntMonitor);
+  }
+
+  if (Uhc->MemoryBank != NULL) {
+    DelMemoryManagement (Uhc);
+  }
+
+  if (Uhc->CtrlNameTable) {
+    EfiLibFreeUnicodeStringTable (Uhc->CtrlNameTable);
+  }
+
+  gBS->FreePool (Uhc);
+}
+
+STATIC
+VOID
+UhciCleanDevUp (
+  IN  EFI_HANDLE          Controller,
+  IN  EFI_USB_HC_PROTOCOL *This
+  )
+/*++
+  Routine Description:
+  
+    Uninstall all Uhci Interface
+    
+  Arguments:
+  
+    Controller        - Controller handle
+    This              - Protocol instance pointer.
+    
+  Returns:
+  
+    VOID
+    
+--*/
+{
+  USB_HC_DEV          *Uhc;
+
+  //
+  // Uninstall the USB_HC and USB_HC2 protocol, then disable the controller
+  //
+  Uhc = UHC_FROM_USB_HC_PROTO (This);
+  UhciStopHc (Uhc, STALL_1_SECOND);
+
+  gBS->UninstallProtocolInterface (
+        Controller,
+        &gEfiUsbHcProtocolGuid,
+        &Uhc->UsbHc
+        );
+
+  gBS->UninstallProtocolInterface (
+        Controller,
+        &gEfiUsb2HcProtocolGuid,
+        &Uhc->Usb2Hc
+        );
+  
+  UhciFreeAllAsyncReq (Uhc);
+  UhciDestoryFrameList (Uhc);
+
+  Uhc->PciIo->Attributes (
+                Uhc->PciIo,
+                EfiPciIoAttributeOperationDisable,
+                EFI_PCI_DEVICE_ENABLE,
+                NULL
+                );
+
+  UhciFreeDev (Uhc);
+}
+
+EFI_STATUS
+EFIAPI
+UhciDriverBindingStart (
+  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
+  IN EFI_HANDLE                      Controller,
+  IN EFI_DEVICE_PATH_PROTOCOL        *RemainingDevicePath
+  )
+/*++
+
+  Routine Description:
+  
+    Starting the Usb UHCI Driver
+
+  Arguments:
+  
+    This                - Protocol instance pointer.
+    Controller          - Handle of device to test
+    RemainingDevicePath - Not used
+
+  Returns:
+  
+    EFI_SUCCESS         - This driver supports this device.
+    EFI_UNSUPPORTED     - This driver does not support this device.
+    EFI_DEVICE_ERROR    - This driver cannot be started due to device Error
+    EFI_OUT_OF_RESOURCES- Failed due to resource shortage
+
+--*/
+{
+  EFI_STATUS          Status;
+  EFI_PCI_IO_PROTOCOL *PciIo;
+  USB_HC_DEV          *Uhc;
+
+  //
+  // Open PCIIO, then enable the EHC device and turn off emulation
+  //
+  Uhc = NULL;
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiPciIoProtocolGuid,
+                  &PciIo,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  UhciTurnOffUsbEmulation (PciIo);
+
+  Status = PciIo->Attributes (
+                    PciIo,
+                    EfiPciIoAttributeOperationEnable,
+                    EFI_PCI_DEVICE_ENABLE,
+                    NULL
+                    );
+
+  if (EFI_ERROR (Status)) {
+    goto CLOSE_PCIIO;
+  }
+
+  Uhc = UhciAllocateDev (PciIo);
+
+  if (Uhc == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto CLOSE_PCIIO;
+  }
+  
+  //
+  // Allocate and Init Host Controller's Frame List Entry
+  //
+  Status = UhciInitFrameList (Uhc);
+
+  if (EFI_ERROR (Status)) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto FREE_UHC;
+  }
+
+  Status = gBS->SetTimer (
+                  Uhc->AsyncIntMonitor,
+                  TimerPeriodic,
+                  INTERRUPT_POLLING_TIME
+                  );
+
+  if (EFI_ERROR (Status)) {
+    goto FREE_UHC;
+  }
+  
+  //
+  // Install both USB_HC_PROTOCOL and USB2_HC_PROTOCOL
+  //
+  Status = gBS->InstallProtocolInterface (
+                  &Controller,
+                  &gEfiUsbHcProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &Uhc->UsbHc
+                  );
+
+  if (EFI_ERROR (Status)) {
+    goto FREE_UHC;
+  }
+
+  Status = gBS->InstallProtocolInterface (
+                  &Controller,
+                  &gEfiUsb2HcProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &Uhc->Usb2Hc
+                  );
+
+  if (EFI_ERROR (Status)) {
+    gBS->UninstallProtocolInterface (
+          Controller,
+          &gEfiUsbHcProtocolGuid,
+          &Uhc->UsbHc
+          );
+
+    goto FREE_UHC;
+  }
+  
+  //
+  // Install the component name protocol
+  //
+  Uhc->CtrlNameTable = NULL;
+
+  EfiLibAddUnicodeString (
+    LANGUAGE_CODE_ENGLISH,
+    gUhciComponentName.SupportedLanguages,
+    &Uhc->CtrlNameTable,
+    L"Usb Universal Host Controller"
+    );
+
+  //
+  // Start the UHCI hardware, also set its reclamation point to 64 bytes
+  //
+  UhciWriteReg (Uhc->PciIo, USBCMD_OFFSET, USBCMD_RS | USBCMD_MAXP);
+
+  return EFI_SUCCESS;
+
+FREE_UHC:
+  UhciFreeDev (Uhc);
+
+CLOSE_PCIIO:
+  gBS->CloseProtocol (
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
+  return Status;
+}
+
+EFI_STATUS
+EFIAPI
+UhciDriverBindingStop (
+  IN EFI_DRIVER_BINDING_PROTOCOL     *This,
+  IN EFI_HANDLE                      Controller,
+  IN UINTN                           NumberOfChildren,
+  IN EFI_HANDLE                      *ChildHandleBuffer
+  )
+/*++
+
+  Routine Description:
+  
+    Stop this driver on ControllerHandle. Support stoping any child handles
+    created by this driver.
+
+  Arguments:
+  
+    This              - Protocol instance pointer.
+    Controller        - Handle of device to stop driver on
+    NumberOfChildren  - Number of Children in the ChildHandleBuffer
+    ChildHandleBuffer - List of handles for the children we need to stop.
+
+  Returns:
+  
+    EFI_SUCCESS
+    others
+
+--*/
+{
+  EFI_USB_HC_PROTOCOL   *UsbHc;
+  EFI_USB2_HC_PROTOCOL  *Usb2Hc;
+  EFI_STATUS            Status;
+
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiUsbHcProtocolGuid,
+                  &UsbHc,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  //
+  // Test whether the Controller handler passed in is a valid
+  // Usb controller handle that should be supported, if not,
+  // return the error status directly
+  //
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiUsb2HcProtocolGuid,
+                  &Usb2Hc,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+
+  //
+  // Test whether the Controller handler passed in is a valid
+  // Usb controller handle that should be supported, if not,
+  // return the error status directly
+  //
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  UhciCleanDevUp (Controller, UsbHc);
+
+  gBS->CloseProtocol (
+        Controller,
+        &gEfiPciIoProtocolGuid,
+        This->DriverBindingHandle,
+        Controller
+        );
+
+  return EFI_SUCCESS;
+}
+
+EFI_DRIVER_BINDING_PROTOCOL gUhciDriverBinding = {
+  UhciDriverBindingSupported,
+  UhciDriverBindingStart,
+  UhciDriverBindingStop,
+  0x20,
+  NULL,
+  NULL
+};

@@ -1412,6 +1412,58 @@ SCREEN_OPERATION_T0_CONTROL_FLAG  gScreenOperationToControlFlag[] = {
   CfUiPageDown
 };
 
+STATIC
+INTN
+SkipNoFocusTag (
+  IN     BOOLEAN                   GoUp,
+  IN OUT EFI_LIST_ENTRY            **CurrentPosition
+  )
+{
+  INTN             Distance;
+  EFI_LIST_ENTRY   *Pos;
+  BOOLEAN          NothingLeft;
+  UI_MENU_OPTION   *NextMenuOption;
+
+  Distance    = 0;
+  Pos         = *CurrentPosition;
+  NothingLeft = FALSE;
+  while (TRUE) {
+    NextMenuOption = CR (Pos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+    if (!(NextMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || NextMenuOption->ThisTag->GrayOut)) {
+      break;
+    }
+    if ((GoUp ? Pos->BackLink : Pos->ForwardLink) == &Menu) {
+      NothingLeft = TRUE;
+      break;
+    }
+    Distance      += NextMenuOption->Skip;
+    Pos            = (GoUp ? Pos->BackLink : Pos->ForwardLink);
+  }
+
+  if (NothingLeft) {
+    //
+    // If we hit end there is still no TAG can be focused, 
+    //  we go backwards to find the tag can be focused.
+    //
+    Distance    = 0;
+    Pos         = *CurrentPosition;
+    while (TRUE) {
+      NextMenuOption = CR (Pos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+      if (!(NextMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || NextMenuOption->ThisTag->GrayOut)) {
+        break;
+      }
+      if ((!GoUp ? Pos->BackLink : Pos->ForwardLink) == &Menu) {
+        ASSERT (FALSE);
+        break;
+      }
+      Distance      -= NextMenuOption->Skip;
+      Pos            = (!GoUp ? Pos->BackLink : Pos->ForwardLink);
+    }
+  }
+  *CurrentPosition = &NextMenuOption->Link;
+  return Distance;
+}
+
 UI_MENU_OPTION *
 UiDisplayMenu (
   IN  BOOLEAN                      SubMenu,
@@ -1439,6 +1491,7 @@ Returns:
   INTN                        SkipValue;
   INTN                        Difference;
   INTN                        OldSkipValue;
+  UINTN                       DistanceValue;
   UINTN                       Row;
   UINTN                       Col;
   UINTN                       Temp;
@@ -1447,7 +1500,6 @@ Returns:
   UINTN                       BottomRow;
   UINTN                       OriginalRow;
   UINTN                       Index;
-  UINTN                       DataAndTimeLineNumberPad;
   UINT32                      Count;
   UINT16                      OriginalTimeOut;
   UINT8                       *Location;
@@ -1576,7 +1628,6 @@ Returns:
         //
         // Display menu
         //
-        SavedMenuOption = MenuOption;
         gDownArrow      = FALSE;
         gUpArrow        = FALSE;
         Row             = TopRow;
@@ -1831,13 +1882,16 @@ Returns:
           gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
         }
 
-        if (SavedMenuOption != NULL) {
-          MenuOption = SavedMenuOption;
-        }
+        MenuOption = NULL;
       }
       break;
 
     case CfRefreshHighLight:
+      //
+      // MenuOption: Last menu option that need to remove hilight
+      //             MenuOption is set to NULL in Repaint
+      // NewPos:     Current menu option that need to hilight
+      //
       ControlFlag = CfUpdateHelpString;
       //
       // Repaint flag is normally reset when finish processing CfUpdateHelpString. Temporarily
@@ -1846,80 +1900,87 @@ Returns:
       SavedValue  = Repaint;
       Repaint     = FALSE;
 
-      if (NewPos != NULL) {
-        gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
-        if (SubMenu) {
-          if (gLastOpr && (gEntryNumber != -1)) {
+      if (NewPos != NULL && (MenuOption == NULL || NewPos != &MenuOption->Link)) {
+        if (SubMenu && gLastOpr && (gEntryNumber != -1)) {
+          while (NewPos != &Menu) {
             MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            if (gEntryNumber != MenuOption->EntryNumber) {
-              ScreenOperation = UiDown;
-              ControlFlag     = CfScreenOperation;
+            if (gEntryNumber == MenuOption->EntryNumber) {
               break;
-            } else {
-              gLastOpr = FALSE;
             }
+            NewPos     = NewPos->ForwardLink;
           }
+          
+          if (gEntryNumber == MenuOption->EntryNumber) {
+            //
+            // If NewPos is not in the current page, simply scroll page so that NewPos is in the end of the page
+            //
+            Link = TopOfScreen;
 
-          ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
-          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-          if (OptionString != NULL) {
-            if (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
-                MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP
-                ) {
-              //
-              // If leading spaces on OptionString - remove the spaces
-              //
-              for (Index = 0; OptionString[Index] == L' '; Index++)
-                ;
-
-              for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
-                OptionString[Count] = OptionString[Index];
-                Count++;
-              }
-
-              OptionString[Count] = CHAR_NULL;
+            for (Index = TopRow; Index <= BottomRow && Link != NewPos;) {
+              MenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+              Index     += MenuOption->Skip;
+              Link       = Link->ForwardLink;
             }
-
-            Width               = (UINT16) gOptionBlockWidth;
-
-            OriginalRow         = MenuOption->Row;
-
-            for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
-              if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
-                PrintStringAt (MenuOption->OptCol, MenuOption->Row, OutputString);
-              }
+            if ((Link == NewPos) && (Index <= BottomRow)) {
               //
-              // If there is more string to process print on the next row and increment the Skip value
+              // NewPos is in the current page, needn't scroll page
               //
-              if (EfiStrLen (&OptionString[Index])) {
-                MenuOption->Row++;
+              ControlFlag     = CfRefreshHighLight;
+            } else {
+              Repaint = TRUE;
+              Link    = NewPos;
+              for (Index = TopRow; Index <= BottomRow; ) {
+                Link       = Link->BackLink;
+                MenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+                Index     += MenuOption->Skip;
               }
-
-              gBS->FreePool (OutputString);
+              TopOfScreen     = Link->ForwardLink;
+              ControlFlag     = CfRepaint;
             }
-
-            MenuOption->Row = OriginalRow;
           } else {
-            if (NewLine) {
-              if (MenuOption->ThisTag->GrayOut) {
-                gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | FIELD_BACKGROUND);
-              } else {
-                if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) {
-                  gST->ConOut->SetAttribute (gST->ConOut, SUBTITLE_TEXT | FIELD_BACKGROUND);
+            ControlFlag     = CfInitialization;
+          }
+          ScreenOperation = UiNoOperation;
+          gLastOpr        = FALSE;
+          MenuOption      = NULL;
+          break;
+        }
+
+        if (MenuOption != NULL) {
+          if (SubMenu) {
+            gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
+            ProcessOptions (MenuOption, FALSE, FileFormTagsHead, PageData, &OptionString);
+            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+            if (OptionString != NULL) {
+              if (MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP ||
+                  MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP
+                  ) {
+                //
+                // If leading spaces on OptionString - remove the spaces
+                //
+                for (Index = 0; OptionString[Index] == L' '; Index++)
+                  ;
+
+                for (Count = 0; OptionString[Index] != CHAR_NULL; Index++) {
+                  OptionString[Count] = OptionString[Index];
+                  Count++;
                 }
+
+                OptionString[Count] = CHAR_NULL;
               }
 
-              OriginalRow = MenuOption->Row;
-              Width       = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
+              Width               = (UINT16) gOptionBlockWidth;
 
-              for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
+              OriginalRow         = MenuOption->Row;
+
+              for (Index = 0; GetLineByWidth (OptionString, Width, &Index, &OutputString) != 0x0000;) {
                 if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
-                  PrintStringAt (Col, MenuOption->Row, OutputString);
+                  PrintStringAt (MenuOption->OptCol, MenuOption->Row, OutputString);
                 }
                 //
                 // If there is more string to process print on the next row and increment the Skip value
                 //
-                if (EfiStrLen (&MenuOption->Description[Index])) {
+                if (EfiStrLen (&OptionString[Index])) {
                   MenuOption->Row++;
                 }
 
@@ -1927,40 +1988,96 @@ Returns:
               }
 
               MenuOption->Row = OriginalRow;
-              gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+            } else {
+              if (NewLine) {
+                if (MenuOption->ThisTag->GrayOut) {
+                  gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT_GRAYED | FIELD_BACKGROUND);
+                } else {
+                  if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) {
+                    gST->ConOut->SetAttribute (gST->ConOut, SUBTITLE_TEXT | FIELD_BACKGROUND);
+                  }
+                }
+
+                OriginalRow = MenuOption->Row;
+                Width       = GetWidth (MenuOption->ThisTag, MenuOption->Handle);
+
+                for (Index = 0; GetLineByWidth (MenuOption->Description, Width, &Index, &OutputString) != 0x0000;) {
+                  if (MenuOption->Row >= TopRow && MenuOption->Row <= BottomRow) {
+                    PrintStringAt (Col, MenuOption->Row, OutputString);
+                  }
+                  //
+                  // If there is more string to process print on the next row and increment the Skip value
+                  //
+                  if (EfiStrLen (&MenuOption->Description[Index])) {
+                    MenuOption->Row++;
+                  }
+
+                  gBS->FreePool (OutputString);
+                }
+
+                MenuOption->Row = OriginalRow;
+                gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+              }
             }
+          } else {
+            gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
+            gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
           }
-        } else {
-          gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-          gST->ConOut->OutputString (gST->ConOut, MenuOption->Description);
         }
+
 
         MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
-        if ((gPriorMenuEntry != 0) && (MenuOption->EntryNumber != gPriorMenuEntry) && (NewPos->ForwardLink != &Menu)) {
-          ScreenOperation = UiDown;
-          ControlFlag     = CfScreenOperation;
-          break;
-        } else {
+        if (gPriorMenuEntry != 0) {
+          while (MenuOption->EntryNumber != gPriorMenuEntry && NewPos->ForwardLink != &Menu) {
+            NewPos     = NewPos->ForwardLink;
+            MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+          }
+          if (MenuOption->EntryNumber == gPriorMenuEntry) {
+            //
+            // If NewPos is not in the current page, simply scroll page so that NewPos is in the end of the page
+            //
+            Link = TopOfScreen;
+
+            for (Index = TopRow; Index <= BottomRow && Link != NewPos;) {
+              MenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+              Index     += MenuOption->Skip;
+              Link       = Link->ForwardLink;
+            }
+            if ((Link == NewPos) && (Index <= BottomRow)) {
+              //
+              // NewPos is in the current page, needn't scroll page
+              //
+              ScreenOperation = UiNoOperation;
+              ControlFlag     = CfRefreshHighLight;
+            } else {
+              Repaint = TRUE;
+              Link    = NewPos;
+              for (Index = TopRow; Index <= BottomRow; ) {
+                Link       = Link->BackLink;
+                MenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
+                Index     += MenuOption->Skip;
+              }
+              TopOfScreen     = Link->ForwardLink;
+              ScreenOperation = UiNoOperation;
+              ControlFlag     = CfRepaint;
+            }
+            gPriorMenuEntry = 0;
+            MenuOption      = NULL;
+            break;
+          }
           gPriorMenuEntry = 0;
         }
+
         //
         // This is only possible if we entered this page and the first menu option is
         // a "non-menu" item.  In that case, force it UiDown
         //
         if (MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || MenuOption->ThisTag->GrayOut) {
-          //
-          // If we previously hit an UP command and we are still sitting on a text operation
-          // we must continue going up
-          //
-          if (ScreenOperation == UiUp) {
-            ControlFlag = CfScreenOperation;
-            break;
-          } else {
-            ScreenOperation = UiDown;
-            ControlFlag     = CfScreenOperation;
-            break;
-          }
+          ASSERT (ScreenOperation == UiNoOperation);
+          ScreenOperation = UiDown;
+          ControlFlag     = CfScreenOperation;
+          break;
         }
         //
         // Set reverse attribute
@@ -2213,17 +2330,19 @@ Returns:
 
       //
       // We will push the adjustment of these numeric values directly to the input handler
+      //  NOTE: we won't handle manual input numeric TAG
       //
       case '+':
       case '-':
-        if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
-
+        if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP)
+          || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)
+          || ((MenuOption->ThisTag->Operand == EFI_IFR_NUMERIC_OP) && (MenuOption->ThisTag->Step != 0))
+        ){
           if (Key.UnicodeChar == '+') {
             gDirection = SCAN_RIGHT;
           } else {
             gDirection = SCAN_LEFT;
           }
-
           Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, NULL, &OptionString);
         }
         break;
@@ -2385,8 +2504,8 @@ Returns:
         Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, PageData, &OptionString);
 
         if (EFI_ERROR (Status)) {
-          Selection = NULL;
-          Repaint   = TRUE;
+          Selection  = NULL;
+          Repaint    = TRUE;
           break;
         }
 
@@ -2600,6 +2719,8 @@ Returns:
     case CfUiUp:
       ControlFlag = CfCheckSelection;
 
+      SavedListEntry = TopOfScreen;
+
       if (NewPos->BackLink != &Menu) {
         NewLine = TRUE;
         //
@@ -2615,68 +2736,53 @@ Returns:
         }
 
         PreviousMenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-
+        DistanceValue = PreviousMenuOption->Skip;
         //
         // Since the behavior of hitting the up arrow on a Date/Time op-code is intended
         // to be one that back to the previous set of op-codes, we need to advance to the sencond
         // Date/Time op-code and leave the remaining logic in UiDown intact so the appropriate
         // checking can be done.
         //
-        DataAndTimeLineNumberPad = AdjustDateAndTimePosition (TRUE, &NewPos);
-
-        if (SubMenu) {
-          //
-          // If the previous MenuOption contains a display-only op-code, skip to the next one
-          //
-          if (PreviousMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || PreviousMenuOption->ThisTag->GrayOut) {
-            //
-            // This is ok as long as not at the end of the list
-            //
-            if (NewPos->BackLink == &Menu) {
-              //
-              // If we are at the start of the list, then this list must start with a display only
-              // piece of data, so do not allow the backward motion
-              //
-              ScreenOperation = UiDown;
-
-              if (PreviousMenuOption->Row <= TopRow) {
-                if (TopOfScreen->BackLink != &Menu) {
-                  TopOfScreen = TopOfScreen->BackLink;
-                  Repaint     = TRUE;
-                }
-              }
-
-              UpdateStatusBar (INPUT_ERROR, PreviousMenuOption->ThisTag->Flags, FALSE);
-              break;
-            }
-          }
-        }
+        DistanceValue += AdjustDateAndTimePosition (TRUE, &NewPos);
+        
         //
         // Check the previous menu entry to see if it was a zero-length advance.  If it was,
         // don't worry about a redraw.
         //
-        if ((MenuOption->Row - PreviousMenuOption->Skip - DataAndTimeLineNumberPad < TopRow) ||
-            (PreviousMenuOption->Skip > MenuOption->Row)
-            ) {
-          do {
-            if (TopOfScreen->BackLink == &Menu) {
-              break;
-            }
-
-            Repaint = TRUE;
-
-            //
-            // Is the current top of screen a zero-advance op-code?
-            // If so, keep moving forward till we hit a >0 advance op-code
-            //
-            SavedMenuOption = CR (TopOfScreen->BackLink, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-            TopOfScreen     = TopOfScreen->BackLink;
-          } while (SavedMenuOption->Skip == 0);
-          //
-          // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
-          //
-          AdjustDateAndTimePosition (TRUE, &TopOfScreen);
+        if ((INTN) MenuOption->Row - (INTN) DistanceValue < (INTN) TopRow) {
+          Repaint     = TRUE;
+          TopOfScreen = NewPos;
         }
+
+        if (SubMenu) {
+          Difference   = SkipNoFocusTag (TRUE, &NewPos);
+          if ((INTN) MenuOption->Row - (INTN) DistanceValue < (INTN) TopRow) {
+            if (Difference > 0) {
+              //
+              // Case: The previous focus tag is above the TopOfScreen, so we need to scroll
+              //
+              TopOfScreen = NewPos;
+              Repaint     = TRUE;
+            }
+          } 
+          if (Difference < 0) {
+            //
+            // Case: We want to goto previous tag, but finally we go down.
+            //       it means that we hit the begining tag that can be focused
+            //       so we simply scroll to the top
+            //
+            if (SavedListEntry != Menu.ForwardLink) {
+              TopOfScreen = Menu.ForwardLink;
+              Repaint     = TRUE;
+            }
+          }
+        }
+
+        
+        //
+        // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
+        //
+        AdjustDateAndTimePosition (TRUE, &TopOfScreen);
 
         UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
       } else {
@@ -2700,71 +2806,103 @@ Returns:
     case CfUiPageUp:
       ControlFlag     = CfCheckSelection;
 
-      SavedListEntry  = NewPos;
-      Link            = TopOfScreen;
-      for (Index = BottomRow; Index >= TopRow + 1; Index -= MenuOption->Skip) {
+      if (NewPos->BackLink == &Menu) {
+        NewLine = FALSE;
+        Repaint = FALSE;
+        break;
+      }
+
+      NewLine   = TRUE;
+      Repaint   = TRUE;
+      Link      = TopOfScreen;
+      for (Index = BottomRow; Index >= TopRow + 1; Index -= PreviousMenuOption->Skip) {
         if (Link->BackLink == &Menu) {
-          TopOfScreen = Link;
-          Link        = SavedListEntry;
-          MenuOption  = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
           break;
         }
 
-        NewLine         = TRUE;
-        Repaint         = TRUE;
-        Link            = Link->BackLink;
-        MenuOption      = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-        TopOfScreen     = Link;
-        SavedListEntry  = Link;
+        Link       = Link->BackLink;
+        PreviousMenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
       }
 
-      NewPos = Link;
+      TopOfScreen = Link;
+      Difference = SkipNoFocusTag (TRUE, &Link);
+      if (Difference > 0) {
+        //
+        // The focus TAG is above the TopOfScreen
+        //
+        TopOfScreen = Link;
+      } else if (Difference < 0) {
+        //
+        // This happens when there is no TAG can be focused from Current TAG to the first TAG
+        //
+        TopOfScreen = Menu.ForwardLink;
+      }
+      Index += Difference;
+      if (Index < TopRow + 1) {
+        MenuOption = NULL;
+      }
+
+      if (NewPos == Link) {
+        Repaint = FALSE;
+        NewLine = FALSE;
+      } else {
+        NewPos      = Link;
+      }
 
       //
       // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
       // Don't do this when we are already in the first page.
       //
-      if (Repaint) {
-        AdjustDateAndTimePosition (TRUE, &TopOfScreen);
-        AdjustDateAndTimePosition (TRUE, &NewPos);
-        MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-      }
+      AdjustDateAndTimePosition (TRUE, &TopOfScreen);
+      AdjustDateAndTimePosition (TRUE, &NewPos);
       break;
 
     case CfUiPageDown:
       ControlFlag     = CfCheckSelection;
 
-      SavedListEntry  = NewPos;
-      Link            = TopOfScreen;
-      NewPos          = TopOfScreen;
-      for (Index = TopRow; Index <= BottomRow - 1; Index += MenuOption->Skip) {
-        if (NewPos->ForwardLink == &Menu) {
-          NewPos      = SavedListEntry;
-          MenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-          Link        = TopOfScreen;
-          NewLine     = FALSE;
-          Repaint     = FALSE;
+      if (NewPos->ForwardLink == &Menu) {
+        NewLine = FALSE;
+        Repaint = FALSE;
+        break;
+      }
+
+      NewLine = TRUE;
+      Repaint = TRUE;
+      Link    = TopOfScreen;
+      for (Index = TopRow; Index <= BottomRow - 1; Index += NextMenuOption->Skip) {
+        if (Link->ForwardLink == &Menu) {
           break;
         }
 
-        NewLine     = TRUE;
-        Repaint     = TRUE;
-        MenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-        NewPos      = NewPos->ForwardLink;
-        Link        = NewPos;
+        Link           = Link->ForwardLink;
+        NextMenuOption = CR (Link, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
       }
 
-      TopOfScreen = Link;
+      Index += SkipNoFocusTag (FALSE, &Link);
+      //
+      // If (Index > BottomRow - 1) is TRUE, it means that there are more TAGs needing scrolling
+      //
+      if (Index > BottomRow - 1) {
+        TopOfScreen = Link;
+        MenuOption = NULL;
+      }
+      if (NewPos == Link && Index <= BottomRow - 1) {
+        //
+        // Finally we know that NewPos is the last TAG can be focused.
+        //
+        NewLine = FALSE;
+        Repaint = FALSE;
+      } else {
+        NewPos  = Link;
+      }
+
 
       //
       // If we encounter a Date/Time op-code set, rewind to the first op-code of the set.
       // Don't do this when we are already in the last page.
       //
-      if (Repaint) {
-        AdjustDateAndTimePosition (TRUE, &TopOfScreen);
-        AdjustDateAndTimePosition (TRUE, &NewPos);
-        MenuOption = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
-      }
+      AdjustDateAndTimePosition (TRUE, &TopOfScreen);
+      AdjustDateAndTimePosition (TRUE, &NewPos);
       break;
 
     case CfUiDown:
@@ -2777,46 +2915,27 @@ Returns:
       // op-code is the last entry in the menu, we need to rewind back to the first op-code of
       // the Date/Time op-code.
       //
-      DataAndTimeLineNumberPad = AdjustDateAndTimePosition (FALSE, &NewPos);
+      SavedListEntry = NewPos;
+      DistanceValue  = AdjustDateAndTimePosition (FALSE, &NewPos);
 
       if (NewPos->ForwardLink != &Menu) {
         NewLine         = TRUE;
         NewPos          = NewPos->ForwardLink;
         NextMenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
+        DistanceValue  += NextMenuOption->Skip;
         if (SubMenu) {
-          //
-          // If the next MenuOption contains a display-only op-code, skip to the next one
-          // Also if the next MenuOption is date or time,
-          //
-          if (NextMenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP || NextMenuOption->ThisTag->GrayOut) {
-            //
-            // This is ok as long as not at the end of the list
-            //
-            if (NewPos == &Menu) {
-              //
-              // If we are at the end of the list, then this list must end with a display only
-              // piece of data, so do not allow the forward motion
-              //
-              UpdateStatusBar (INPUT_ERROR, NextMenuOption->ThisTag->Flags, FALSE);
-              NewPos          = NewPos->BackLink;
-              ScreenOperation = UiUp;
-              break;
-            }
-          }
+          DistanceValue  += SkipNoFocusTag (FALSE, &NewPos);
         }
         //
         // An option might be multi-line, so we need to reflect that data in the overall skip value
         //
         UpdateOptionSkipLines (PageData, NextMenuOption, FileFormTagsHead, &OptionString, SkipValue);
 
-        if (NextMenuOption->Skip > 1) {
-          Temp = MenuOption->Row + MenuOption->Skip + NextMenuOption->Skip - 1;
-        } else {
-          Temp = MenuOption->Row + MenuOption->Skip + DataAndTimeLineNumberPad;
-        }
+        Temp = MenuOption->Row + MenuOption->Skip + DistanceValue - 1;
+
         //
-        // If we are going to scroll
+        // If we are going to scroll, update TopOfScreen
         //
         if (Temp > BottomRow) {
           do {
@@ -2829,7 +2948,7 @@ Returns:
             //
             // If bottom op-code is more than one line or top op-code is more than one line
             //
-            if ((NextMenuOption->Skip > 1) || (MenuOption->Skip > 1)) {
+            if ((DistanceValue > 1) || (MenuOption->Skip > 1)) {
               //
               // Is the bottom op-code greater than or equal in size to the top op-code?
               //
@@ -3044,11 +3163,11 @@ Returns:
       }
 
       UpdateStatusBar (NV_UPDATE_REQUIRED, MenuOption->ThisTag->Flags, TRUE);
-      Repaint = TRUE;
+      Repaint    = TRUE;
       //
       // After the repaint operation, we should refresh the highlight.
       //
-      NewLine = TRUE;
+      NewLine    = TRUE;
       break;
 
     case CfUiNoOperation:
@@ -3097,7 +3216,6 @@ Returns:
 {
   EFI_LIST_ENTRY  *Temp;
   UI_MENU_OPTION  *MenuOption;
-  MenuOption  = NULL;
 
   Temp        = Direction ? CurrentPos->BackLink : CurrentPos->ForwardLink;
 
@@ -3117,8 +3235,8 @@ Returns:
 
 UINTN
 AdjustDateAndTimePosition (
-  IN  BOOLEAN                     DirectionUp,
-  IN  EFI_LIST_ENTRY              **CurrentPosition
+  IN     BOOLEAN                     DirectionUp,
+  IN OUT EFI_LIST_ENTRY              **CurrentPosition
   )
 /*++
 Routine Description:
@@ -3127,8 +3245,10 @@ Routine Description:
   Line number :        0  0    1         0  0  1
 
 Arguments:
-  Direction - the up or down direction. False is down. True is up.
-  CurrentPos - Current position.
+  DirectionUp     - the up or down direction. False is down. True is up.
+  CurrentPosition - Current position.
+                    On return: Point to the last TAG (Year or Second) if up;
+                               Point to the first TAG (Month or Hour) if down.
            
 Returns:
   Return line number to pad. It is possible that we stand on a zero-advance 
@@ -3184,3 +3304,4 @@ Returns:
 
   return PadLineNumber;
 }
+

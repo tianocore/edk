@@ -25,7 +25,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 UhciComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  CHAR8                           *Language,
   OUT CHAR16                          **DriverName
   );
@@ -33,7 +37,11 @@ UhciComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UhciComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  EFI_HANDLE                      ControllerHandle,
   IN  EFI_HANDLE                      ChildHandle, OPTIONAL
   IN  CHAR8                           *Language,
@@ -43,21 +51,33 @@ UhciComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_COMPONENT_NAME2_PROTOCOL    gUhciComponentName = {
+  UhciComponentNameGetDriverName,
+  UhciComponentNameGetControllerName,
+  LANGUAGE_CODE_ENGLISH
+};
+#else
 EFI_COMPONENT_NAME_PROTOCOL     gUhciComponentName = {
   UhciComponentNameGetDriverName,
   UhciComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
+#endif
 
 static EFI_UNICODE_STRING_TABLE mUhciDriverNameTable[] = {
-  { "eng", L"Usb Uhci Driver" },
-  { NULL , NULL }
+  { LANGUAGE_CODE_ENGLISH, L"Usb Uhci Driver" },
+  { NULL, NULL }
 };
 
 EFI_STATUS
 EFIAPI
 UhciComponentNameGetDriverName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  CHAR8                           *Language,
   OUT CHAR16                          **DriverName
   )
@@ -99,7 +119,11 @@ UhciComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 UhciComponentNameGetControllerName (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+#else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
+#endif
   IN  EFI_HANDLE                      ControllerHandle,
   IN  EFI_HANDLE                      ChildHandle, OPTIONAL
   IN  CHAR8                           *Language,
@@ -162,17 +186,6 @@ UhciComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
   //
-  // Make sure this driver is currently managing ControllerHandle
-  //
-  Status = EfiLibTestManagedDevice (
-             ControllerHandle,
-             gUhciDriverBinding.DriverBindingHandle,
-             &gEfiPciIoProtocolGuid
-             );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-  //
   // Get the device context
   //
   Status = gBS->OpenProtocol (
@@ -183,17 +196,18 @@ UhciComponentNameGetControllerName (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
+
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  UhciDev = USB_HC_DEV_FROM_THIS (UsbHc);
+  UhciDev = UHC_FROM_USB_HC_PROTO (UsbHc);
 
   return EfiLibLookupUnicodeString (
-           Language,
-           gUhciComponentName.SupportedLanguages,
-           UhciDev->ControllerNameTable,
-           ControllerName
-           );
+          Language,
+          gUhciComponentName.SupportedLanguages,
+          UhciDev->CtrlNameTable,
+          ControllerName
+          );
 
 }

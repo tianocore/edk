@@ -1493,24 +1493,29 @@ Returns:
   if (!EFI_ERROR (Status)) {
     Status = gBS->HandleProtocol (Handle, &gEfiSimpleNetworkProtocolGuid, (VOID **)&Snp);
     if (!EFI_ERROR (Status)) {
-      if (Snp->Mode->MediaPresent) {
-        //
-        // In case some one else is using the SNP check to see if it's connected
-        //
-        MediaPresent = TRUE;
-      } else {
-        //
-        // No one is using SNP so we need to Start and Initialize so 
-        // MediaPresent will be valid.
-        //
-        Status = Snp->Start (Snp);
-        if (!EFI_ERROR (Status)) {
-          Status = Snp->Initialize (Snp, 0, 0);
+      if (Snp->Mode->MediaPresentSupported) {
+        if (Snp->Mode->State == EfiSimpleNetworkInitialized) {
+          //
+          // In case some one else is using the SNP check to see if it's connected
+          //
+          MediaPresent = Snp->Mode->MediaPresent;
+        } else {
+          //
+          // No one is using SNP so we need to Start and Initialize so 
+          // MediaPresent will be valid.
+          //
+          Status = Snp->Start (Snp);
           if (!EFI_ERROR (Status)) {
-            MediaPresent = Snp->Mode->MediaPresent;
+            Status = Snp->Initialize (Snp, 0, 0);
+            if (!EFI_ERROR (Status)) {
+              MediaPresent = Snp->Mode->MediaPresent;
+              Snp->Shutdown (Snp);
+            }
             Snp->Stop (Snp);
           }
         }
+      } else {
+        MediaPresent = TRUE;
       }
     }
   }
@@ -1673,7 +1678,7 @@ Returns:
       //
       // Test if it is ready to boot now
       //
-      if (BdsLibNetworkBootWithMediaPresent(TempDevicePath)) {
+      if (BdsLibNetworkBootWithMediaPresent(DevPath)) {
         return TRUE;
       }
     } else {

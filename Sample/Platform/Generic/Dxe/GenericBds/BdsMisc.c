@@ -30,6 +30,19 @@ static BOOLEAN   mResetRequired = FALSE;
 
 extern UINT16 gPlatformBootTimeOutDefault;
 
+static EFI_MEMORY_TYPE_INFORMATION mDefaultMemoryTypeInfo[] = {
+  { EfiACPIReclaimMemory,   0 },
+  { EfiACPIMemoryNVS,       0 },
+  { EfiReservedMemoryType,  0 },  
+  { EfiRuntimeServicesData, 0 },
+  { EfiRuntimeServicesCode, 0 },
+  { EfiBootServicesCode,    0 },
+  { EfiBootServicesData,    0 },
+  { EfiLoaderCode,          0 },
+  { EfiLoaderData,          0 },
+  { EfiMaxMemoryType,       0 }
+};
+
 UINT16
 BdsLibGetTimeout (
   VOID
@@ -1361,4 +1374,161 @@ Returns:
   
   return Status;
   
+}
+
+VOID
+EFIAPI
+BdsSetMemoryTypeInformationVariable (
+  EFI_EVENT  Event,
+  VOID       *Context
+  )
+/*++
+
+Routine Description:
+
+  This routine is a notification function for legayc boot or exit boot 
+  service event. It will adjust the memory information for different 
+  memory type and save them into the variables for next boot
+
+Arguments:
+
+  Event    - The event that triggered this notification function  
+  Context  - Pointer to the notification functions context
+
+Returns:
+
+  None.
+
+--*/
+{
+  EFI_STATUS                   Status;
+  EFI_MEMORY_TYPE_INFORMATION  *PreviousMemoryTypeInformation;
+  EFI_MEMORY_TYPE_INFORMATION  *CurrentMemoryTypeInformation;
+  UINTN                        VariableSize;
+  BOOLEAN                      UpdateRequired;
+  UINTN                        Index;
+  UINTN                        Index1;
+  UINT32                       Previous;
+  UINT32                       Current;
+  UINT32                       Next;
+  VOID                         *HobList;
+    
+  UpdateRequired = FALSE;    
+  
+  //
+  // Retrieve the current memory usage statistics.  If they are not found, then
+  // no adjustments can be made to the Memory Type Information variable.
+  //
+  Status = EfiLibGetSystemConfigurationTable (
+             &gEfiMemoryTypeInformationGuid,
+             &CurrentMemoryTypeInformation
+             );
+  if (EFI_ERROR (Status)) {
+    return;
+  }
+
+  //
+  // Get the Memory Type Information settings from Hob if they exist, 
+  // PEI is responsible for getting them from variable and build a Hob to save them.
+  // If the previous Memory Type Information is not available, then set defaults
+  //
+  EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
+  Status = GetNextGuidHob (&HobList, &gEfiMemoryTypeInformationGuid, &PreviousMemoryTypeInformation, &VariableSize);
+  if (!EFI_ERROR (Status) && PreviousMemoryTypeInformation != NULL) {
+    ASSERT (VariableSize == sizeof (mDefaultMemoryTypeInfo));
+  } else {
+    PreviousMemoryTypeInformation = mDefaultMemoryTypeInfo;
+    VariableSize = sizeof (mDefaultMemoryTypeInfo);
+    UpdateRequired = TRUE;    
+  }
+
+  //
+  // Use a heuristic to adjust the Memory Type Information for the next boot
+  //
+  for (Index = 0; PreviousMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+
+    Current = 0;
+    for (Index1 = 0; CurrentMemoryTypeInformation[Index1].Type != EfiMaxMemoryType; Index1++) {
+      if (PreviousMemoryTypeInformation[Index].Type == CurrentMemoryTypeInformation[Index1].Type) {
+        Current = CurrentMemoryTypeInformation[Index1].NumberOfPages;
+        break;
+      }
+    }
+
+    if (CurrentMemoryTypeInformation[Index1].Type == EfiMaxMemoryType) {
+      continue;
+    }
+
+    Previous = PreviousMemoryTypeInformation[Index].NumberOfPages;
+
+    //
+    // Write next varible to 125% * current and Inconsistent Memory Reserved across bootings may lead to S4 fail
+    //
+    if (Current > Previous) {
+      Next = Current + (Current >> 2);
+    } else {
+      Next = Previous;
+    }   
+    if (Next > 0 && Next < 4) {
+      Next = 4;
+    }
+
+    if (Next != Previous) {
+      PreviousMemoryTypeInformation[Index].NumberOfPages = Next;
+      UpdateRequired = TRUE;
+    }
+ 
+  }
+
+  //
+  // If any changes were made to the Memory Type Information settings, then set the new variable value
+  //
+  if (UpdateRequired) {
+    Status = gRT->SetVariable (  
+          EFI_MEMORY_TYPE_INFORMATION_VARIABLE_NAME, 
+          &gEfiMemoryTypeInformationGuid,
+          EFI_VARIABLE_NON_VOLATILE  | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+          VariableSize,
+          PreviousMemoryTypeInformation
+          );
+  }
+
+  return;
+}
+
+VOID
+EFIAPI
+BdsLibSaveMemoryTypeInformation (
+  VOID 
+  )
+/*++
+
+Routine Description:
+
+  This routine register a function to adjust the different type memory page number just before booting
+  and save the updated info into the variable for next boot to use
+
+Arguments:
+
+  None
+
+Returns:
+
+  None.
+
+--*/
+{
+  EFI_STATUS                   Status;
+  EFI_EVENT                    ReadyToBootEvent;
+
+  Status = EfiCreateEventReadyToBoot (
+           EFI_TPL_NOTIFY, 
+           BdsSetMemoryTypeInformationVariable, 
+           NULL, 
+           &ReadyToBootEvent
+           );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR,"Bds Set Memory Type Informationa Variable Fails\n"));
+  }
+
 }

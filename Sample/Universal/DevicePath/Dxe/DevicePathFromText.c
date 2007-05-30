@@ -834,12 +834,11 @@ EisaIdFromText (
 {
   UINTN PnpId;
 
-  if ((Text[0] == L'P') && (Text[1] == L'N') && (Text[2] == L'P')) {
-    PnpId = Xtoi (Text + 3);
-    *EisaId = EISA_PNP_ID (PnpId);
-  } else {
-    *EisaId = (UINT32) Strtoi (Text);
-  }
+  PnpId = Xtoi (Text + 3);
+  *EisaId = (((Text[0] - '@') & 0x1f) << 10) + 
+            (((Text[1] - '@') & 0x1f) << 5) + 
+            ((Text[2] - '@') & 0x1f) +
+            (UINT32) (PnpId << 16);
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
@@ -1943,23 +1942,20 @@ DevPathFromTextHD (
   EfiZeroMem (Hd->Signature, 16);
   Hd->MBRType = (UINT8) 0;
 
-  if (EfiStrCmp (TypeStr, L"None") == 0) {
-    Hd->SignatureType = (UINT8) 0;
-  } else if (EfiStrCmp (TypeStr, L"MBR") == 0) {
+  if (EfiStrCmp (TypeStr, L"MBR") == 0) {
     Hd->SignatureType = SIGNATURE_TYPE_MBR;
     Hd->MBRType       = 0x01;
 
     Signature32       = (UINT32) Strtoi (SignatureStr);
     EfiCopyMem (Hd->Signature, &Signature32, sizeof (UINT32));
-  } else if (EfiStrCmp (TypeStr, L"GUID") == 0) {
+  } else if (EfiStrCmp (TypeStr, L"GPT") == 0) {
     Hd->SignatureType = SIGNATURE_TYPE_GUID;
     Hd->MBRType       = 0x02;
 
     StrToGuid (SignatureStr, &SignatureGuid);
     EfiCopyMem (Hd->Signature, &SignatureGuid, sizeof (EFI_GUID));
   } else {
-    Hd->SignatureType = 0xff;
-
+    Hd->SignatureType = (UINT8) Strtoi (TypeStr);
   }
 
   Strtoi64 (StartStr, &Hd->PartitionStart);

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,8 +29,13 @@ Revision History:
 #ifndef EFI_SIZE_REDUCTION_APPLIED
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gIsaBusComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gIsaBusComponentName;
+#endif
 
 //
 // EFI Component Name Functions
@@ -38,7 +43,11 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gIsaBusComponentName;
 EFI_STATUS
 EFIAPI
 IsaBusComponentNameGetDriverName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL  * This,
+#else
+  IN EFI_COMPONENT_NAME_PROTOCOL   * This,
+#endif
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -64,7 +73,11 @@ Returns:
 EFI_STATUS
 EFIAPI
 IsaBusComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL                     * This,
+#else
+  IN EFI_COMPONENT_NAME_PROTOCOL                      * This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

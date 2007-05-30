@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2004, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -11,61 +11,39 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  ComponentName.c
-
+    ComponentName.h
+    
 Abstract:
+
+    EFI Component Name Protocol
+
+Revision History
 
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
-#include "..\cbi.h"
-
-extern EFI_DRIVER_BINDING_PROTOCOL  gCBI1DriverBinding;
+#ifndef _EFI_COMPONENT_NAME2_H_
+#define _EFI_COMPONENT_NAME2_H_
 
 //
-// EFI Component Name Functions
+// Global ID for the Component Name Protocol
 //
+
+#define EFI_COMPONENT_NAME2_PROTOCOL_GUID \
+  { \
+    0x6a7a5cff, 0xe8d9, 0x4f70, 0xba, 0xda, 0x75, 0xab, 0x30, 0x25, 0xce, 0x14 \
+  }
+
+EFI_FORWARD_DECLARATION (EFI_COMPONENT_NAME2_PROTOCOL);
+
+
+typedef
 EFI_STATUS
-EFIAPI
-UsbCbi1ComponentNameGetDriverName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **DriverName
+(EFIAPI *EFI_COMPONENT_NAME2_GET_DRIVER_NAME) (
+  IN EFI_COMPONENT_NAME2_PROTOCOL          * This,
+  IN  CHAR8                                *Language,
+  OUT CHAR16                               **DriverName
   );
 
-EFI_STATUS
-EFIAPI
-UsbCbi1ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
-  IN  EFI_HANDLE                                      ControllerHandle,
-  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
-  IN  CHAR8                                           *Language,
-  OUT CHAR16                                          **ControllerName
-  );
-
-//
-// EFI Component Name Protocol
-//
-EFI_COMPONENT_NAME_PROTOCOL         gUsbCbi1ComponentName = {
-  UsbCbi1ComponentNameGetDriverName,
-  UsbCbi1ComponentNameGetControllerName,
-  "eng"
-};
-
-STATIC EFI_UNICODE_STRING_TABLE     mUsbCbi1DriverNameTable[] = {
-  { "eng", L"Usb Cbi1 Mass Storage Driver" },
-  { NULL , NULL }
-};
-
-
-EFI_STATUS
-EFIAPI
-UsbCbi1ComponentNameGetDriverName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
-  IN  CHAR8                        *Language,
-  OUT CHAR16                       **DriverName
-  )
 /*++
 
   Routine Description:
@@ -86,30 +64,21 @@ UsbCbi1ComponentNameGetDriverName (
     EFI_SUCCESS           - The Unicode string for the Driver specified by This
                             and the language specified by Language was returned 
                             in DriverName.
-    EFI_INVALID_PARAMETER - Language is NULL.
-    EFI_INVALID_PARAMETER - DriverName is NULL.
+    EFI_INVALID_PARAMETER - Language is NULL or DriverName is NULL.
     EFI_UNSUPPORTED       - The driver specified by This does not support the 
                             language specified by Language.
 
 --*/
-{
-  return EfiLibLookupUnicodeString (
-          Language,
-          gUsbCbi1ComponentName.SupportedLanguages,
-          mUsbCbi1DriverNameTable,
-          DriverName
-          );
-}
-
+typedef
 EFI_STATUS
-EFIAPI
-UsbCbi1ComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
-  IN  EFI_HANDLE                                      ControllerHandle,
-  IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
-  IN  CHAR8                                           *Language,
-  OUT CHAR16                                          **ControllerName
-  )
+(EFIAPI *EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME) (
+  IN EFI_COMPONENT_NAME2_PROTOCOL                             * This,
+  IN  EFI_HANDLE                                              ControllerHandle,
+  IN  EFI_HANDLE                                              ChildHandle        OPTIONAL,
+  IN  CHAR8                                                   *Language,
+  OUT CHAR16                                                  **ControllerName
+  );
+
 /*++
 
   Routine Description:
@@ -143,62 +112,25 @@ UsbCbi1ComponentNameGetControllerName (
     EFI_SUCCESS           - The Unicode string for the user readable name in the 
                             language specified by Language for the driver 
                             specified by This was returned in DriverName.
-    EFI_INVALID_PARAMETER - ControllerHandle is not a valid EFI_HANDLE.
-    EFI_INVALID_PARAMETER - ChildHandle is not NULL and it is not a valid EFI_HANDLE.
-    EFI_INVALID_PARAMETER - Language is NULL.
-    EFI_INVALID_PARAMETER - ControllerName is NULL.
+    EFI_INVALID_PARAMETER - ControllerHandle is not a valid EFI_HANDLE; ChildHandle 
+                            is not NULL and it is not a valid EFI_HANDLE;Language 
+                            is NULL;ControllerName is NULL.
     EFI_UNSUPPORTED       - The driver specified by This is not currently managing 
                             the controller specified by ControllerHandle and 
-                            ChildHandle.
-    EFI_UNSUPPORTED       - The driver specified by This does not support the 
+                            ChildHandle;The driver specified by This does not support the 
                             language specified by Language.
 
 --*/
-{
-  EFI_STATUS              Status;
-  USB_CBI_DEVICE          *UsbCbiDev;
-  EFI_USB_ATAPI_PROTOCOL  *UsbAtapi;
 
-  //
-  // This is a device driver, so ChildHandle must be NULL.
-  //
-  if (ChildHandle != NULL) {
-    return EFI_UNSUPPORTED;
-  }
-  
-  //
-  // Make sure this driver is currently managing ControllerHandle
-  //
-  Status = EfiLibTestManagedDevice (
-             ControllerHandle,
-             gCBI1DriverBinding.DriverBindingHandle,
-             &gEfiUsbIoProtocolGuid
-             );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-  //
-  // Get the device context
-  //
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiUsbAtapiProtocolGuid,
-                  (VOID **) &UsbAtapi,
-                  gCBI1DriverBinding.DriverBindingHandle,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+//
+// Interface structure for the Component Name Protocol
+//
+typedef struct _EFI_COMPONENT_NAME2_PROTOCOL {
+  EFI_COMPONENT_NAME2_GET_DRIVER_NAME      GetDriverName;
+  EFI_COMPONENT_NAME2_GET_CONTROLLER_NAME  GetControllerName;
+  CHAR8                                    *SupportedLanguages;
+} EFI_COMPONENT_NAME2_PROTOCOL;
 
-  UsbCbiDev = USB_CBI_DEVICE_FROM_THIS (UsbAtapi);
+extern EFI_GUID gEfiComponentName2ProtocolGuid;
 
-  return EfiLibLookupUnicodeString (
-          Language,
-          gUsbCbi1ComponentName.SupportedLanguages,
-          UsbCbiDev->ControllerNameTable,
-          ControllerName
-          );
-
-}
+#endif

@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -50,6 +50,8 @@ Returns:
   UINT64            mask;
   UINTN             size;
   UINTN             n;
+  EFI_TPL           OldTpl;
+  EFI_STATUS        Status;
 
   //
   // Get pointer to SNP driver instance for *this.
@@ -60,9 +62,8 @@ Returns:
 
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
-  if (snp == NULL) {
-    return EFI_DEVICE_ERROR;
-  }
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
+
   //
   // Return error if the SNP is not initialized.
   //
@@ -71,20 +72,20 @@ Returns:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkStarted:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
   //
   // if we are not resetting the counters, we have to have a valid stat table
   // with >0 size. if no reset, no table and no size, return success.
   //
   if (!ResetFlag && StatTableSizePtr == NULL) {
-    return StatTablePtr ? EFI_INVALID_PARAMETER : EFI_SUCCESS;
+    Status = StatTablePtr ? EFI_INVALID_PARAMETER : EFI_SUCCESS;
+    goto ON_EXIT;
   }
   //
   // Initialize UNDI Statistics CDB
@@ -126,7 +127,8 @@ Returns:
       snp->cdb.StatCode)
       );
 
-    return EFI_UNSUPPORTED;
+    Status = EFI_UNSUPPORTED;
+    goto ON_EXIT;
 
   default:
     DEBUG (
@@ -136,16 +138,19 @@ Returns:
       snp->cdb.StatCode)
       );
 
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
   if (ResetFlag) {
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
+    goto ON_EXIT;
   }
 
   if (StatTablePtr == NULL) {
     *StatTableSizePtr = sizeof (EFI_NETWORK_STATISTICS);
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto ON_EXIT;
   }
   //
   // Convert the UNDI statistics information to SNP statistics
@@ -184,9 +189,14 @@ Returns:
 
   if (*StatTableSizePtr >= size) {
     *StatTableSizePtr = size;
-    return EFI_SUCCESS;
+    Status = EFI_SUCCESS;
   } else {
     *StatTableSizePtr = size;
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
   }
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
+
+  return Status;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -126,6 +126,14 @@ Returns:
       // Modify the table enty and return.
       //
       gST->ConfigurationTable[Index].VendorTable = Table;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      //
+      // Signal Configuration Table change
+      //
+      CoreNotifySignalList (Guid);
+#endif
+
       return EFI_SUCCESS;
     }
 
@@ -210,6 +218,13 @@ Returns:
   // Fix up the CRC-32 in the EFI System Table
   //
   CalculateEfiHdrCrc (&gST->Hdr);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Signal Configuration Table change
+  //
+  CoreNotifySignalList (Guid);
+#endif
 
   return EFI_SUCCESS;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -66,6 +66,8 @@ Returns:
 {
   UDP4_INSTANCE_DATA  *Instance;
   EFI_IP4_PROTOCOL    *Ip;
+  EFI_TPL             OldTpl;
+  EFI_STATUS          Status;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -76,6 +78,8 @@ Returns:
   if (!Instance->Configured && (Udp4ConfigData != NULL)) {
     return EFI_NOT_STARTED;
   }
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   if (Udp4ConfigData != NULL) {
     //
@@ -89,7 +93,11 @@ Returns:
   //
   // Get the underlying Ip4ModeData, MnpConfigData and SnpModeData.
   //
-  return Ip->GetModeData (Ip, Ip4ModeData, MnpConfigData, SnpModeData);
+  Status = Ip->GetModeData (Ip, Ip4ModeData, MnpConfigData, SnpModeData);
+
+  NET_RESTORE_TPL (OldTpl);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -349,16 +357,16 @@ Returns:
 
   Ip = Instance->IpInfo->Ip;
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   //
   // Invoke the Ip instance the Udp4 instance consumes to do the group operation.
   //
   Status = Ip->Groups (Ip, JoinFlag, MulticastAddress);
 
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto ON_EXIT;
   }
-
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   //
   // Keep a local copy of the configured multicast IPs because IpIo receives
@@ -377,6 +385,8 @@ Returns:
 
     NetMapIterate (&Instance->McastIps, Udp4LeaveGroup, MulticastAddress);
   }
+
+ON_EXIT:
 
   NET_RESTORE_TPL (OldTpl);
 
@@ -447,7 +457,7 @@ Returns:
   Ip = Instance->IpInfo->Ip;
 
   //
-  // Invode the Ip instance the Udp4 instance consumes to do the actual operation.
+  // Invoke the Ip instance the Udp4 instance consumes to do the actual operation.
   //
   return Ip->Routes (Ip, DeleteRoute, SubnetAddress, SubnetMask, GatewayAddress);
 }
@@ -532,15 +542,15 @@ Returns:
     return EFI_NOT_STARTED;
   }
 
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
   //
   // Validate the Token, if the token is invalid return the error code.
   //
   Status = Udp4ValidateTxToken (Instance, Token);
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto ON_EXIT;
   }
-
-  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   if (EFI_ERROR (NetMapIterate (&Instance->TxTokens, Udp4TokenExist, Token)) ||
     EFI_ERROR (NetMapIterate (&Instance->RxTokens, Udp4TokenExist, Token))) {

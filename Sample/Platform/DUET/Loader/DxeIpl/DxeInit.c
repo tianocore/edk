@@ -186,6 +186,7 @@ Returns:
   //   * MemoryAllocation Hob should only cover physical memory
   //   * Use ResourceDescriptor Hob to report physical memory or Firmware Device and they shouldn't be overlapped
   
+  PrepareHobCpu ();
   //
   // 1. BFV
   //
@@ -206,7 +207,7 @@ Returns:
   StackTop = NvStorageBase;
   StackBottom = PrepareHobStack (StackTop);
   //   3.3 Page Table
-  PageTableBase = PreparePageTable (StackBottom);
+  PageTableBase = PreparePageTable (StackBottom, gHob->Cpu.SizeOfMemorySpace);
   //   3.4 MemDesc (will be used in PlatformBds)
   MemoryDescriptor = PrepareHobMemoryDescriptor (PageTableBase, Handoff->MemDescCount, Handoff->MemDesc);
   //   3.5 Copy the Hob itself to EfiMemoryBottom, and update the PHIT Hob

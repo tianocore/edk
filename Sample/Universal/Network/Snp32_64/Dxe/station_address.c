@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -200,19 +200,20 @@ Returns:
 {
   SNP_DRIVER  *snp;
   EFI_STATUS  Status;
+  EFI_TPL     OldTpl;
 
   //
-  // Get pointer to SNP driver instance for *this.
+  // Check for invalid parameter combinations.
   //
-  if (this == NULL) {
+  if ((this == NULL) ||
+    (!ResetFlag && (NewMacAddr == NULL))) {
     return EFI_INVALID_PARAMETER;
   }
 
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
-  if (snp == NULL) {
-    return EFI_DEVICE_ERROR;
-  }
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
+
   //
   // Return error if the SNP is not initialized.
   //
@@ -221,27 +222,22 @@ Returns:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkStarted:
-    return EFI_DEVICE_ERROR;
+    Status = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
-  }
-  //
-  // Check for invalid parameter combinations.
-  //
-  if (!ResetFlag && NewMacAddr == NULL) {
-    return EFI_INVALID_PARAMETER;
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
 
   if (ResetFlag) {
     Status = pxe_set_stn_addr (snp, NULL);
   } else {
     Status = pxe_set_stn_addr (snp, NewMacAddr);
-
   }
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
 
   return Status;
 }

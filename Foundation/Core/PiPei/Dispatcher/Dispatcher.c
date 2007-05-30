@@ -187,6 +187,7 @@ Returns:
 --*/
 {
   EFI_STATUS                          Status;
+  UINT32                              Index;
   EFI_PEI_SERVICES                    **PeiServices;
   VOID                                *PrivateInMem;
   EFI_PEI_FV_HANDLE                   VolumeHandle; 
@@ -200,6 +201,8 @@ Returns:
   VOID*                               PeiCoreReentryPoint;
   BOOLEAN                             PeimNeedingDispatch;
   BOOLEAN                             PeimDispatchOnThisPass;
+  UINTN                               SaveCurrentPeimCount;
+  EFI_PEI_FILE_HANDLE                 SaveCurrentFileHandle;
 
   PEI_REPORT_STATUS_CODE_CODE (
     
@@ -216,6 +219,47 @@ Returns:
   )
 
   PeiServices = &Private->PS;
+  PeimEntryPoint = NULL;
+
+  if (Private->PeiMemoryInstalled) {
+    //
+    // Once real memory is available, shadow the RegisterForShadow modules. And meanwhile
+    // update the modules' status from PEIM_STATE_REGISITER_FOR_SHADOW to PEIM_STATE_DONE.
+    //
+    SaveCurrentPeimCount  = Private->CurrentPeimCount;
+    SaveCurrentFileHandle =  Private->CurrentFileHandle;
+    for (Index = 0; (Index < PEI_CORE_MAX_PEIM_PER_FV) && (Private->CurrentFvFileHandles[Index] != NULL); Index++) {
+      if (Private->Fv[Private->CurrentPeimFvCount].PeimState[Index] == PEIM_STATE_REGISITER_FOR_SHADOW) {
+        Status = PeiLoadImage (
+                  &Private->PS, 
+                  Private->CurrentFvFileHandles[Index],  
+                  &EntryPoint, 
+                  &AuthenticationState
+                  );
+        if (Status == EFI_SUCCESS) {
+          //
+          // PEIM_STATE_REGISITER_FOR_SHADOW move to PEIM_STATE_DONE
+          //
+          Private->Fv[Private->CurrentPeimFvCount].PeimState[Index]++;
+          Private->CurrentFileHandle = Private->CurrentFvFileHandles[Index];
+          Private->CurrentPeimCount  = Index;        
+          //
+          // Call the PEIM entry point
+          //
+          PeimEntryPoint = (EFI_PEIM_ENTRY_POINT)(UINTN)EntryPoint;
+          PeimEntryPoint(Private->CurrentFvFileHandles[Index], &Private->PS);
+        } 
+        
+        //
+        // Process the Notify list and dispatch any notifies for
+        // newly installed PPIs.
+        //
+        ProcessNotifyList (&Private->PS);
+      }
+    }
+    Private->CurrentFileHandle = SaveCurrentFileHandle;   
+    Private->CurrentPeimCount  = SaveCurrentPeimCount;    
+  }
 
   //
   // This is the main dispatch loop.  It will search known FVs for PEIMs and
@@ -243,14 +287,12 @@ Returns:
       }
 
       for (PeimCount = Private->CurrentPeimCount; 
-           (PeimCount < PEI_CORE_MAX_PEIM_PER_FV) & (Private->CurrentFvFileHandles[PeimCount] != NULL); 
+           (PeimCount < PEI_CORE_MAX_PEIM_PER_FV) && (Private->CurrentFvFileHandles[PeimCount] != NULL); 
            PeimCount++) {
         Private->CurrentPeimCount  = PeimCount;
         PeimFileHandle = Private->CurrentFileHandle = Private->CurrentFvFileHandles[PeimCount];
 
-        if ((Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_NOT_DISPATCHED) ||
-            (Private->PeiMemoryInstalled && (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_REGISITER_FOR_SHADOW))
-            ) {
+        if (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_NOT_DISPATCHED) {
           if (!DepexSatisfied (Private, PeimFileHandle, PeimCount)) {
             PeimNeedingDispatch = TRUE;
           } else {
@@ -285,8 +327,7 @@ Returns:
               Status = VerifyPeim (Private, VolumeHandle, PeimFileHandle);
               if (Status != EFI_SECURITY_VIOLATION && (AuthenticationState == 0)) {
                 //
-                // If PeimState == PEIM_STATE_NOT_DISPATCHED move to PEIM_STATE_DISPATCHED
-                // If PeimState == PEIM_STATE_REGISITER_FOR_SHADOW move to PEIM_STATE_DONE
+                // PEIM_STATE_NOT_DISPATCHED move to PEIM_STATE_DISPATCHED
                 //
                 Private->Fv[FvCount].PeimState[PeimCount]++;
 
@@ -309,13 +350,6 @@ Returns:
                   );
               )
               PEI_PERF_END (PeiServices, L"PEIM", PeimFileHandle, 0);
-            }
-
-            //
-            // Find out if there is still a PEIM needing to shadow.
-            //
-            if (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_DONE){
-                Private->RegisterForShadowCount--;
             }
 
             //
@@ -394,6 +428,25 @@ Returns:
                 (VOID*)((UINTN)Private->StackBase + (UINTN)Private->StackSize - 0x10)
                 );
             }
+
+            if ((Private->PeiMemoryInstalled) && (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_REGISITER_FOR_SHADOW)) {
+              //
+              // If memory is availble we shadow images by default for performance reasons. 
+              // We call the entry point a 2nd time so the module knows it's shadowed. 
+              //
+              PeimEntryPoint (PeimFileHandle, PeiServices);
+              
+              //
+              // PEIM_STATE_REGISITER_FOR_SHADOW move to PEIM_STATE_DONE
+              //
+              Private->Fv[FvCount].PeimState[PeimCount]++;
+
+              //
+              // Process the Notify list and dispatch any notifies for
+              // newly installed PPIs.
+              //
+              ProcessNotifyList (PeiServices);
+            }
           }
         }
       }
@@ -425,7 +478,7 @@ Returns:
     //  pass. If we did not dispatch a PEIM there is no point in trying again
     //  as it will fail the next time too (nothing has changed).
     //
-  } while ((PeimNeedingDispatch && PeimDispatchOnThisPass) || (Private->RegisterForShadowCount != 0));
+  } while (PeimNeedingDispatch && PeimDispatchOnThisPass);
 }
 
 
@@ -456,7 +509,6 @@ Returns:
 {
   if (OldCoreData == NULL) {
     PeiInitializeFv (PrivateData, SecCoreData);
-    PrivateData->RegisterForShadowCount = 0;
   }
 
   return;
@@ -553,7 +605,6 @@ Returns:
   }
   
   Private->Fv[Private->CurrentPeimFvCount].PeimState[Private->CurrentPeimCount] = PEIM_STATE_REGISITER_FOR_SHADOW;
-  Private->RegisterForShadowCount++;
 
   return EFI_SUCCESS;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -103,6 +103,22 @@ Returns:
 {
   UINTN Index;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  for (Index = 0; (Language1[Index] != 0) && (Language2[Index] != 0); Index++) {
+    if (Language1[Index] != Language2[Index]) {
+      return FALSE;
+    }
+  }
+
+  if (((Language1[Index] == 0) && (Language2[Index] == 0))   || 
+  	  ((Language1[Index] == 0) && (Language2[Index] != ';')) ||
+  	  ((Language1[Index] == ';') && (Language2[Index] != 0)) ||
+  	  ((Language1[Index] == ';') && (Language2[Index] != ';'))) {
+    return TRUE;
+  }
+
+  return FALSE;
+#else
   for (Index = 0; Index < 3; Index++) {
     if (Language1[Index] != Language2[Index]) {
       return FALSE;
@@ -110,6 +126,22 @@ Returns:
   }
 
   return TRUE;
+#endif
+}
+
+STATIC
+CHAR8 *
+NextSupportedLanguage (
+  IN CHAR8                *Languages
+  )
+{
+#ifdef LANGUAGE_RFC_3066   // LANGUAGE_RFC_3066
+  for (; (*Languages != 0) && (*Languages != ';'); Languages++)
+    ;
+  return Languages;
+#else                      // LANGUAGE_ISO_639_2
+  return (Languages + 3);
+#endif
 }
 
 EFI_STATUS
@@ -180,7 +212,7 @@ Returns:
       return EFI_UNSUPPORTED;
     }
 
-    SupportedLanguages += 3;
+    SupportedLanguages = NextSupportedLanguage(SupportedLanguages);
   }
 
   return EFI_UNSUPPORTED;
@@ -289,7 +321,7 @@ Returns:
       //
       // Allocate space for a copy of the Language specifier
       //
-      NewUnicodeStringTable[NumberOfEntries].Language = EfiLibAllocateCopyPool (3, Language);
+      NewUnicodeStringTable[NumberOfEntries].Language = EfiLibAllocateCopyPool (EfiAsciiStrLen(Language) + 1, Language);
       if (NewUnicodeStringTable[NumberOfEntries].Language == NULL) {
         gBS->FreePool (NewUnicodeStringTable);
         return EFI_OUT_OF_RESOURCES;
@@ -335,7 +367,7 @@ Returns:
       return EFI_SUCCESS;
     }
 
-    SupportedLanguages += 3;
+    SupportedLanguages = NextSupportedLanguage(SupportedLanguages);
   }
 
   return EFI_UNSUPPORTED;

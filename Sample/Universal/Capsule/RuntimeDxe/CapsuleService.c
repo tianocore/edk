@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,13 +23,11 @@ Abstract:
 #include "CapsuleService.h"
 #include EFI_GUID_DEFINITION(Capsule)
 
-STATIC EFI_GUID mEfiCapsuleHeaderGuid = EFI_CAPSULE_GUID;
-
 
 EFI_STATUS
 EFIAPI
 UpdateCapsule (
-  IN UEFI_CAPSULE_HEADER     **CapsuleHeaderArray,
+  IN EFI_CAPSULE_HEADER      **CapsuleHeaderArray,
   IN UINTN                   CapsuleCount,
   IN EFI_PHYSICAL_ADDRESS    ScatterGatherList OPTIONAL
   )
@@ -37,7 +35,12 @@ UpdateCapsule (
 
 Routine Description:
 
-  This code finds if the capsule needs reset to update, if no, update immediately.
+  Pass capsules to firmware with both virtual and physical mapping.
+  Depending on the intended consumption,the firmware may process the
+  capsule immediately. If the payload should persist across a system
+  reset, the reset value returned from QueryCapsuleCapabilities() must
+  be passed into ResetSystem() and will cause the capsule to be processed
+  by firmware as part of the reset process.
 
 Arguments:
 
@@ -48,119 +51,76 @@ Arguments:
 Returns:
 
   EFI STATUS
-  EFI_SUCCESS                    Valid capsule was passed.If CAPSULE_FLAG_PERSIT_ACROSS_RESET is
-                                 not set, the capsule has been successfully processed by the firmware.
-                                 If it set, the ScattlerGatherList is successfully to be set.
-  EFI_INVALID_PARAMETER          CapsuleCount is less than 1,CapsuleGuid is not supported.
-  EFI_DEVICE_ERROR               Failed to SetVariable or AllocatePool or ProcessFirmwareVolume. 
+  EFI_SUCCESS                    Valid capsule was passed.
+  EFI_INVALID_PARAMETER          Invalid capsule was passed. 
+  EFI_DEVICE_ERROR               Capsule update was started,but failed due to a device error.
   
 --*/
 {
-  UINTN                     CapsuleSize;
-  UINTN                     ArrayNumber;
-  VOID                      *BufferPtr;
-  EFI_STATUS                Status;
-  EFI_HANDLE                FvHandle;
-  UEFI_CAPSULE_HEADER       *CapsuleHeader;
+  EFI_STATUS   Status;
+  BOOLEAN      NeedResetFlag;
 
-  if ((CapsuleCount < 1) || (CapsuleCount > MAX_SUPPORT_CAPSULE_NUM)){
+  NeedResetFlag   = FALSE;
+
+  //
+  // Any capsule is recognized by CapsuleGuid. It is known to every plaform driver.
+  //
+  Status  = CheckCapsuleGuid (CapsuleHeaderArray, CapsuleCount);
+  if (EFI_ERROR(Status)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  BufferPtr       = NULL;
-  CapsuleHeader   = NULL;
-
   //
-  //Compare GUIDs with EFI_CAPSULE_GUID, if capsule header contains CAPSULE_FLAGS_PERSIST_ACROSS_RESET
-  //and CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flags,whatever the GUID is ,the service supports.
+  // To capsules who has no reset flag, launch them immediately. How to treat a 
+  // particular capsule is driven by the CapsuleGuid, platform has knowledge 
+  // of it.
   //
-  for (ArrayNumber = 0; ArrayNumber < CapsuleCount; ArrayNumber++) {
-    CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
-    if ((CapsuleHeader->Flags & (CAPSULE_FLAGS_PERSIST_ACROSS_RESET | CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE)) == CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) {
-      return EFI_INVALID_PARAMETER;      
-    }
-    if (!EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mEfiCapsuleHeaderGuid)) {
-      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) == 0) {
-        return EFI_UNSUPPORTED;
-      }  
-    }   
-  }
-
-  //
-  //Assume that capsules have the same flags on reseting or not. 
-  //
-  CapsuleHeader = CapsuleHeaderArray[0];
-
-  if ((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) {
-    //
-    //Check if the platform supports update capsule across a system reset
-    //
-    if (!SupportUpdateCapsuleRest()) {
-      return EFI_UNSUPPORTED;
-    }
-    
-    if (ScatterGatherList == 0) {
-      return EFI_INVALID_PARAMETER;
-    } else {
-      Status = EfiSetVariable (
-                 EFI_CAPSULE_VARIABLE_NAME,  
-                 &gEfiCapsuleVendorGuid,     
-                 EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS,  
-                 sizeof (UINTN), 
-                 (VOID *) &ScatterGatherList 
-                 );
-      if (Status != EFI_SUCCESS) { 
-        return EFI_DEVICE_ERROR;
-      }
-    }
-    return EFI_SUCCESS;
+  Status = LaunchCapsule(CapsuleHeaderArray, CapsuleCount, &NeedResetFlag);
+  if (EFI_ERROR(Status)) {
+    return EFI_DEVICE_ERROR;
   }
   
   //
-  //The rest occurs in the condition of non-reset mode
+  // After launching all capsules who has no reset flag, if no more capsules claims
+  // for a system reset just return.
   //
-  if (EfiAtRuntime ()) { 
-    return EFI_INVALID_PARAMETER;
+  if (!NeedResetFlag) {
+    return EFI_SUCCESS;
   }
 
   //
-  //Here should be in the boot-time
+  // To capsule who has reset flag, firmware will process it after system reset. Patform
+  // should guarantee the memory integrity across a reset. It is platform's obligation
+  // to use appropriate approach to do a reset, S3, WarmRest and etc. 
   //
-  for (ArrayNumber = 0; ArrayNumber < CapsuleCount ; ArrayNumber++) {
-    CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
-    CapsuleSize = CapsuleHeader->CapsuleImageSize - CapsuleHeader->HeaderSize;
-    Status = gBS->AllocatePool (EfiBootServicesData, CapsuleSize, &BufferPtr);
-    if (Status != EFI_SUCCESS) {
-      goto Done;
-    }
-    gBS->CopyMem (BufferPtr, (UINT8*)CapsuleHeader+ CapsuleHeader->HeaderSize, CapsuleSize);
+  if (!SupportUpdateCapsuleRest()) {
+    return EFI_DEVICE_ERROR;
+  }
 
-    //
-    //Call DXE service ProcessFirmwareVolume to process immediatelly 
-    //
-    Status = gDS->ProcessFirmwareVolume (BufferPtr, CapsuleSize, &FvHandle);
-    if (Status != EFI_SUCCESS) {
-      gBS->FreePool (BufferPtr);
-      return EFI_DEVICE_ERROR;
-    }
-    gDS->Dispatch ();
-    gBS->FreePool (BufferPtr);
+  //
+  // ScatterGatherList is only referenced if the capsules are defined to persist across
+  // system reset. Set its value into NV storage to let pre-boot driver to pick it up 
+  // after coming through a system reset.
+  //
+  Status = EfiSetVariable (
+             EFI_CAPSULE_VARIABLE_NAME,  
+             &gEfiCapsuleVendorGuid,     
+             EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS,  
+             sizeof (UINTN), 
+             (VOID *) &ScatterGatherList 
+             );
+  if (EFI_ERROR(Status)) { 
+    return Status;
   }
   return EFI_SUCCESS;
-
-Done:
-  if (BufferPtr != NULL) {
-    gBS->FreePool (BufferPtr);
-  }     
-  return EFI_DEVICE_ERROR;
 }
 
 
   
 EFI_STATUS
 EFIAPI
-QueryCapsuleCapabilities(
-  IN  UEFI_CAPSULE_HEADER  **CapsuleHeaderArray,
+QueryCapsuleCapabilities (
+  IN  EFI_CAPSULE_HEADER   **CapsuleHeaderArray,
   IN  UINTN                CapsuleCount,
   OUT UINT64               *MaxiumCapsuleSize,
   OUT EFI_RESET_TYPE       *ResetType
@@ -169,7 +129,9 @@ QueryCapsuleCapabilities(
 
 Routine Description:
 
-  This code is query about capsule capability.
+  The function allows a caller to test to see if a capsule or capsules can be updated
+  via UpdateCapsule().The flags values in the capsule header and size of the entire
+  capsule is checked.
 
 Arguments:
 
@@ -189,12 +151,18 @@ Returns:
 --*/
 {
   UINTN                     ArrayNumber;
-  UEFI_CAPSULE_HEADER       *CapsuleHeader;
+  EFI_CAPSULE_HEADER        *CapsuleHeader;
   UINT32                    MaxSizePopulate;
   UINT32                    MaxSizeNonPopulate;
+  EFI_STATUS                Status;
+  BOOLEAN                   NeedReset;
 
-
-  if ((CapsuleCount < 1) || (CapsuleCount > MAX_SUPPORT_CAPSULE_NUM)){
+  NeedReset = FALSE;
+  //
+  // Any capsule is recognized by CapsuleGuid. It is known to every plaform driver.
+  //
+  Status  = CheckCapsuleGuid (CapsuleHeaderArray, CapsuleCount);
+  if (EFI_ERROR(Status)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -202,36 +170,35 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }  
 
-  CapsuleHeader = NULL;
-  
   //
-  //Compare GUIDs with EFI_CAPSULE_GUID, if capsule header contains CAPSULE_FLAGS_PERSIST_ACROSS_RESET
-  //and CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flags,whatever the GUID is ,the service supports.
+  // Every platform has different capability to support capsules, generally it depends on
+  // platform memory size, and meanwhile it varies to capsule type.
   //
-  for (ArrayNumber = 0; ArrayNumber < CapsuleCount; ArrayNumber++) {
-    CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
-    if ((CapsuleHeader->Flags & (CAPSULE_FLAGS_PERSIST_ACROSS_RESET | CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE)) == CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) {
-      return EFI_INVALID_PARAMETER;      
-    }
-    if (!EfiCompareGuid (&CapsuleHeader->CapsuleGuid, &mEfiCapsuleHeaderGuid)) {
-      if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) == 0) {
-        return EFI_UNSUPPORTED;
-      }
-    }  
-  }
-
   SupportCapsuleSize(&MaxSizePopulate,&MaxSizeNonPopulate);
+
   //
-  //Assume that capsules have the same flags on reseting or not. 
+  // Find out whether there is any capsule defined to persist across system reset. 
   //
-  CapsuleHeader = CapsuleHeaderArray[0];  
-  if ((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) {
+  for (ArrayNumber = 0; ArrayNumber < CapsuleCount ; ArrayNumber++) {
+    CapsuleHeader = CapsuleHeaderArray[ArrayNumber];
+    if ((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) {
+      NeedReset = TRUE;
+    }
+  }
+  
+  if (NeedReset) {
     //
-    //Check if the platform supports update capsule across a system reset
+    // Capsule needs reset, and if platfrom has no capability to guarantee the 
+    // memory integrity across a reset, return unsupported.
     //
     if (!SupportUpdateCapsuleRest()) {
       return EFI_UNSUPPORTED;
     }
+    //
+    // ResetType returns the type of reset required for the capsule update. Since it
+    // is type of EFI_RESET_TYPE, we use EfiResetWarm to indicate reset flag existing
+    // in capsule header. Whereas, EfiResetCold indicates no reset flag in capsule header.
+    //
     *ResetType = EfiResetWarm;
     *MaxiumCapsuleSize = MaxSizePopulate;    
   } else {
@@ -240,4 +207,3 @@ Returns:
   }  
   return EFI_SUCCESS;
 } 
-

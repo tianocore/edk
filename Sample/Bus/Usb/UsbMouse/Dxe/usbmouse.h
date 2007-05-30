@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (SimplePointer)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 #define CLASS_HID               3
 #define SUBCLASS_BOOT           1
@@ -75,7 +76,11 @@ USBMouseRecoveryHandler (
 // Global Variables
 //
 extern EFI_DRIVER_BINDING_PROTOCOL  gUsbMouseDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+extern EFI_COMPONENT_NAME2_PROTOCOL gUsbMouseComponentName;
+#else
 extern EFI_COMPONENT_NAME_PROTOCOL  gUsbMouseComponentName;
+#endif
 extern EFI_GUID                     gEfiUsbMouseDriverGuid;
 
 VOID

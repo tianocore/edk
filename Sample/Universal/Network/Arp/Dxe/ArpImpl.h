@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,6 +28,7 @@ Abstract:
 
 #include EFI_PROTOCOL_PRODUCER (DriverBinding)
 #include EFI_PROTOCOL_PRODUCER (ComponentName)
+#include EFI_PROTOCOL_PRODUCER (ComponentName2)
 #include EFI_PROTOCOL_PRODUCER (Arp)
 
 #define ARP_ETHER_PROTO_TYPE         0x0806

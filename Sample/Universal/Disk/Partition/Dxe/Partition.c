@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -68,6 +68,14 @@ EFI_DRIVER_BINDING_PROTOCOL gPartitionDriverBinding = {
   PartitionDriverBindingStop,
   0xa,
   NULL,
+  NULL
+};
+
+STATIC 
+PARTITION_DETECT_ROUTINE mPartitionDetectRoutineTable[] = {
+  PartitionInstallGptChildHandles,
+  PartitionInstallElToritoChildHandles,
+  PartitionInstallMbrChildHandles,
   NULL
 };
 
@@ -245,6 +253,7 @@ PartitionDriverBindingStart (
   EFI_BLOCK_IO_PROTOCOL     *BlockIo;
   EFI_DISK_IO_PROTOCOL      *DiskIo;
   EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
+  PARTITION_DETECT_ROUTINE  *Routine;
 
   Status = gBS->OpenProtocol (
                   ControllerHandle,
@@ -302,32 +311,19 @@ PartitionDriverBindingStart (
     // media supports a given partition type install child handles to represent
     // the partitions described by the media.
     //
-    if (PartitionInstallGptChildHandles (
-          This,
-          ControllerHandle,
-          DiskIo,
-          BlockIo,
-          ParentDevicePath
-          ) ||
-
-    PartitionInstallElToritoChildHandles (
-          This,
-          ControllerHandle,
-          DiskIo,
-          BlockIo,
-          ParentDevicePath
-          ) ||
-
-    PartitionInstallMbrChildHandles (
-          This,
-          ControllerHandle,
-          DiskIo,
-          BlockIo,
-          ParentDevicePath
-          )) {
-      Status = EFI_SUCCESS;
-    } else {
-      Status = EFI_NOT_FOUND;
+    Routine = &mPartitionDetectRoutineTable[0];
+    while (*Routine != NULL) {
+      Status = (*Routine) (
+                   This,
+                   ControllerHandle,
+                   DiskIo,
+                   BlockIo,
+                   ParentDevicePath
+                   );
+      if (!EFI_ERROR (Status) || Status == EFI_MEDIA_CHANGED) {
+        break;
+      }
+      Routine++;
     }
   }
   //
@@ -336,7 +332,12 @@ PartitionDriverBindingStart (
   // driver. So don't try to close them. Otherwise, we will break the dependency
   // between the controller and the driver set up before.
   //
-  if (EFI_ERROR (Status) && !EFI_ERROR (OpenStatus)) {
+  // In the case that when the media changes on a device it will Reinstall the 
+  // BlockIo interaface. This will cause a call to our Stop(), and a subsequent
+  // reentrant call to our Start() successfully. We should leave the device open
+  // when this happen.
+  //  
+  if (EFI_ERROR (Status) && !EFI_ERROR (OpenStatus) && Status != EFI_MEDIA_CHANGED) {
     gBS->CloseProtocol (
           ControllerHandle,
           &gEfiDiskIoProtocolGuid,

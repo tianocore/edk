@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -298,7 +298,7 @@ Returns:
 
 EFI_STATUS
 CoreInitializeGcdServices (
-  IN VOID                  **HobStart,
+  IN OUT VOID              **HobStart,
   IN EFI_PHYSICAL_ADDRESS  MemoryBaseAddress,
   IN UINT64                MemoryLength
   )
@@ -311,7 +311,8 @@ Routine Description:
   memory map, so memory allocations and resource allocations can be made.  The first
   part of this function can not depend on any memory services until at least one
   memory descriptor is provided to the memory services.  Then the memory services
-  can be used to intialize the GCD map.
+  can be used to intialize the GCD map. The HobStart will be relocated to a pool
+  buffer.
 
 Arguments:
 

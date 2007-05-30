@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -520,17 +520,17 @@ Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION != 0x00020000)
   //
-  // Use old Device Path that conflicts with UEFI
+  // Use old Device Path
   //
   FvDevicePathNode->Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Header.SubType  = MEDIA_FV_FILEPATH_DP;
   SetDevicePathNodeLength (&FvDevicePathNode->Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
-  
+
 #else
   //
-  // Use the new Device path that does not conflict with the UEFI
+  // Use the new Device path that does not conflict with the UEFI 2.0
   //
   FvDevicePathNode->Piwg.Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Piwg.Header.SubType  = MEDIA_VENDOR_DP;
@@ -581,9 +581,9 @@ Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION != 0x00020000)
   //
-  // Use old Device Path that conflicts with UEFI
+  // Use old Device Path
   //
   if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
@@ -592,7 +592,7 @@ Returns:
 
 #else
   //
-  // Use the new Device path that does not conflict with the UEFI
+  // Use the new Device path that does not conflict with the UEFI 2.0
   //
   if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Piwg.Header) == MEDIA_VENDOR_DP) {
@@ -602,6 +602,6 @@ Returns:
       }
     }
   }
-#endif  
+#endif
   return NULL;
 }

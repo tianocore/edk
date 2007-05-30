@@ -1150,6 +1150,9 @@ Returns:
 --*/
 {
   UDP4_RXDATA_WRAP  *Wrap;
+  EFI_TPL           OldTpl;
+
+  OldTpl = NET_RAISE_TPL (NET_TPL_RECYCLE);
 
   while (!NetListIsEmpty (RcvdDgramQue)) {
     //
@@ -1162,6 +1165,8 @@ Returns:
     //
     Udp4RecycleRxDataWrap (NULL, (VOID *) Wrap);
   }
+
+  NET_RESTORE_TPL (OldTpl);
 }
 
 

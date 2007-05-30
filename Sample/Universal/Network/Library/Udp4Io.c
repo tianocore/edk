@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -515,9 +515,6 @@ Returns:
 --*/
 {
   UDP_TX_TOKEN              *Token;
-  EFI_TPL                   OldTpl;
-
-  OldTpl  = NET_RAISE_TPL (NET_TPL_LOCK);
 
   Token   = (UDP_TX_TOKEN *) Context;
   ASSERT (Token->Signature == UDP_IO_TX_SIGNATURE);
@@ -526,8 +523,6 @@ Returns:
   Token->CallBack (Token->Packet, NULL, Token->UdpToken.Status, Token->Context);
 
   UdpIoFreeTxToken (Token);
-
-  NET_RESTORE_TPL (OldTpl);
 }
 
 EFI_STATUS
@@ -701,10 +696,8 @@ Returns:
   EFI_UDP4_SESSION_DATA     *UdpSession;
   UDP_RX_TOKEN              *Token;
   UDP_POINTS                Points;
-  EFI_TPL                   OldTpl;
   NET_BUF                   *Netbuf;
 
-  OldTpl  = NET_RAISE_TPL (NET_TPL_LOCK);
   Token   = (UDP_RX_TOKEN *) Context;
 
   ASSERT ((Token->Signature == UDP_IO_RX_SIGNATURE) && 
@@ -755,7 +748,6 @@ Returns:
   Token->CallBack (Netbuf, &Points, EFI_SUCCESS, Token->Context);
 
 ON_EXIT:
-  NET_RESTORE_TPL (OldTpl);
   return;
 }
 

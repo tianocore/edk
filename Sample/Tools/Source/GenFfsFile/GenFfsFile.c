@@ -1627,8 +1627,9 @@ Returns:
   UINT8                   *FileBuffer;
   EFI_STATUS              Status;
   UINT32                  LineNumber;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)  
   EFI_FFS_FILE_TAIL       TailValue;
-
+#endif
   BaseName[0]       = 0;
   FileType[0]       = 0;
   FfsAttrib         = 0;
@@ -2458,6 +2459,9 @@ here:
     // Set the state now. Spec says the checksum assumes the state is 0
     //
     FileHeader.State = EFI_FILE_HEADER_CONSTRUCTION | EFI_FILE_HEADER_VALID | EFI_FILE_DATA_VALID;
+
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+
     //
     // If there is a tail, then set it
     //
@@ -2470,6 +2474,7 @@ here:
         sizeof (TailValue)
         );
     }
+#endif    
     //
     // Write the FFS file header
     //

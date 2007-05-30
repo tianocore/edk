@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,7 @@ Abstract:
 EFI_STATUS
 EFIAPI
 WinNtGopComponentNameGetDriverName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   );
@@ -33,7 +33,7 @@ WinNtGopComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtGopComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,
@@ -43,21 +43,21 @@ WinNtGopComponentNameGetControllerName (
 //
 // EFI Component Name Protocol
 //
-EFI_COMPONENT_NAME_PROTOCOL     gWinNtGopComponentName = {
+EFI_COMPONENT_NAME2_PROTOCOL    gWinNtGopComponentName = {
   WinNtGopComponentNameGetDriverName,
   WinNtGopComponentNameGetControllerName,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
 
 static EFI_UNICODE_STRING_TABLE mWinNtGopDriverNameTable[] = {
-  { "eng", L"Windows GOP Driver" },
+  { LANGUAGE_CODE_ENGLISH, L"Windows GOP Driver" },
   { NULL , NULL }
 };
 
 EFI_STATUS
 EFIAPI
 WinNtGopComponentNameGetDriverName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL  *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL *This,
   IN  CHAR8                        *Language,
   OUT CHAR16                       **DriverName
   )
@@ -99,7 +99,7 @@ WinNtGopComponentNameGetDriverName (
 EFI_STATUS
 EFIAPI
 WinNtGopComponentNameGetControllerName (
-  IN  EFI_COMPONENT_NAME_PROTOCOL                     *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL                    *This,
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle        OPTIONAL,
   IN  CHAR8                                           *Language,

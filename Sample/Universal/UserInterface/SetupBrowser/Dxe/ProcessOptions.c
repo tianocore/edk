@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -347,31 +347,32 @@ ProcessOptions (
               //
               if (!Tag->Suppress && !Tag->GrayOut) {
                 EfiCopyMem (NvRamMap, &Number, MenuOption->ThisTag->StorageWidth);
+                break;
               }
-              break;
+            } else {
+
+              StringPtr = GetToken (PopUp, MenuOption->Handle);
+
+              CreatePopUp (GetStringWidth (StringPtr) / 2, 3, &NullCharacter, StringPtr, &NullCharacter);
+
+              do {
+                Status = WaitForKeyStroke (&Key);
+
+                switch (Key.UnicodeChar) {
+
+                case CHAR_CARRIAGE_RETURN:
+                  //
+                  // Since the value can be one byte long or two bytes long, do a CopyMem based on StorageWidth
+                  //
+                  EfiCopyMem (NvRamMap, &Number, MenuOption->ThisTag->StorageWidth);
+                  gBS->FreePool (StringPtr);
+                  break;
+
+                default:
+                  break;
+                }
+              } while (Key.UnicodeChar != CHAR_CARRIAGE_RETURN);
             }
-
-            StringPtr = GetToken (PopUp, MenuOption->Handle);
-
-            CreatePopUp (GetStringWidth (StringPtr) / 2, 3, &NullCharacter, StringPtr, &NullCharacter);
-
-            do {
-              Status = WaitForKeyStroke (&Key);
-
-              switch (Key.UnicodeChar) {
-
-              case CHAR_CARRIAGE_RETURN:
-                //
-                // Since the value can be one byte long or two bytes long, do a CopyMem based on StorageWidth
-                //
-                EfiCopyMem (NvRamMap, &Number, MenuOption->ThisTag->StorageWidth);
-                gBS->FreePool (StringPtr);
-                break;
-
-              default:
-                break;
-              }
-            } while (Key.UnicodeChar != CHAR_CARRIAGE_RETURN);
           }
         }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -940,7 +940,11 @@ Returns:
   UINTN                             DeviceHandleCount;
   UINTN                             Index;
   EFI_DRIVER_BINDING_PROTOCOL       *DriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  EFI_COMPONENT_NAME2_PROTOCOL      *ComponentName;
+#else
   EFI_COMPONENT_NAME_PROTOCOL       *ComponentName;
+#endif
   EFI_DRIVER_CONFIGURATION_PROTOCOL *DriverConfiguration;
   EFI_DRIVER_DIAGNOSTICS_PROTOCOL   *DriverDiagnostics;
 
@@ -996,20 +1000,33 @@ Returns:
           &gEfiDriverBindingProtocolGuid,
           DriverBinding
           );
-    
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    Status = gBS->HandleProtocol (
+                    DeviceHandleBuffer[Index],
+                    &gEfiComponentName2ProtocolGuid,
+                    &ComponentName
+                    );
+    if (!EFI_ERROR (Status)) {
+      gBS->UninstallProtocolInterface (
+            ImageHandle,
+            &gEfiComponentName2ProtocolGuid,
+            ComponentName
+            );
+    }
+#else
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
                     &gEfiComponentNameProtocolGuid,
                     &ComponentName
                     );
-    
     if (!EFI_ERROR (Status)) {
       gBS->UninstallProtocolInterface (
-            ImageHandle,
-            &gEfiComponentNameProtocolGuid,
-            ComponentName
-            );
+             ImageHandle,
+             &gEfiComponentNameProtocolGuid,
+             ComponentName
+             );
     }
+#endif
 
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
@@ -1305,7 +1322,11 @@ NetLibInstallAllDriverProtocols (
   IN EFI_SYSTEM_TABLE                   *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,       OPTIONAL
+#else
   IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
+#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration, OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics    OPTIONAL
   )
@@ -1360,7 +1381,11 @@ NetLibInstallAllDriverProtocolsWithUnload (
   IN EFI_SYSTEM_TABLE                   *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
-  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,         OPTIONAL
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,       OPTIONAL
+#else
+  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
+#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration,   OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics,     OPTIONAL
   IN NET_LIB_DRIVER_UNLOAD              Unload

@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -163,6 +163,7 @@ Returns:
 {
   EFI_STATUS  EfiStatus;
   SNP_DRIVER  *snp;
+  EFI_TPL     OldTpl;
 
   //
   //
@@ -173,28 +174,26 @@ Returns:
 
   snp = EFI_SIMPLE_NETWORK_DEV_FROM_THIS (this);
 
+  OldTpl = gBS->RaiseTPL (EFI_TPL_CALLBACK);
+
   if (snp == NULL) {
-    return EFI_INVALID_PARAMETER;
+    EfiStatus = EFI_INVALID_PARAMETER;
+    goto ON_EXIT;
   }
-  //
-  //
-  //
+
   switch (snp->mode.State) {
   case EfiSimpleNetworkStarted:
     break;
 
   case EfiSimpleNetworkStopped:
-    return EFI_NOT_STARTED;
-
-  case EfiSimpleNetworkInitialized:
-    return EFI_DEVICE_ERROR;
+    EfiStatus = EFI_NOT_STARTED;
+    goto ON_EXIT;
 
   default:
-    return EFI_DEVICE_ERROR;
+    EfiStatus = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
-  //
-  //
-  //
+
   EfiStatus = gBS->CreateEvent (
                     EFI_EVENT_NOTIFY_WAIT,
                     EFI_TPL_NOTIFY,
@@ -205,7 +204,8 @@ Returns:
 
   if (EFI_ERROR (EfiStatus)) {
     snp->snp.WaitForPacket = NULL;
-    return EFI_DEVICE_ERROR;
+    EfiStatus = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
   }
   //
   //
@@ -227,7 +227,7 @@ Returns:
   if (snp->mode.MediaPresentSupported) {
     if (pxe_init (snp, PXE_OPFLAGS_INITIALIZE_DETECT_CABLE) == EFI_SUCCESS) {
       snp->mode.MediaPresent = TRUE;
-      return EFI_SUCCESS;
+      goto ON_EXIT;
     }
   }
 
@@ -238,6 +238,9 @@ Returns:
   if (EFI_ERROR (EfiStatus)) {
     gBS->CloseEvent (snp->snp.WaitForPacket);
   }
+
+ON_EXIT:
+  gBS->RestoreTPL (OldTpl);
 
   return EfiStatus;
 }

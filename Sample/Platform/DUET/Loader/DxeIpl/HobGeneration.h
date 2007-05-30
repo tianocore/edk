@@ -168,7 +168,8 @@ PrepareHobDxeCore (
 
 VOID *
 PreparePageTable (
-  VOID *PageNumberTop
+  VOID  *PageNumberTop,
+  UINT8 SizeOfMemorySpace
   );
 
 VOID *
@@ -187,6 +188,11 @@ PrepareHobPhit (
 VOID *
 PrepareHobNvStorage (
   VOID *NvStorageTop
+  );
+
+VOID
+PrepareHobCpu (
+  VOID
   );
 
 VOID
