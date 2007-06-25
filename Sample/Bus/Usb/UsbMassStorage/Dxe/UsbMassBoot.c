@@ -135,7 +135,8 @@ UsbBootRequestSense (
   EFI_STATUS                  Status;
   UINT32                      CmdResult;
 
-  Transport   = UsbMass->Transport;
+  Transport = UsbMass->Transport;
+
   //
   // Request the sense data from the device if command failed
   //
@@ -153,7 +154,7 @@ UsbBootRequestSense (
                         EfiUsbDataIn,
                         &SenseData,
                         sizeof (USB_BOOT_REQUEST_SENSE_DATA),
-                        USB_MASS_STALL_1_MS,
+                        USB_BOOT_GENERAL_CMD_TIMEOUT,
                         &CmdResult
                         );
   if (EFI_ERROR (Status) || CmdResult != USB_MASS_CMD_SUCCESS) {
@@ -241,7 +242,7 @@ UsbBootExecCmd (
   IN EFI_USB_DATA_DIRECTION     DataDir,
   IN VOID                       *Data,
   IN UINT32                     DataLen,
-  IN UINT32                     TimeOut
+  IN UINT32                     Timeout
   )
 /*++
 
@@ -283,7 +284,7 @@ Returns:
                            DataDir,
                            Data,
                            DataLen,
-                           TimeOut,
+                           Timeout,
                            &CmdResult
                            );
   //
@@ -306,7 +307,7 @@ UsbBootExecCmdWithRetry (
   IN EFI_USB_DATA_DIRECTION   DataDir,
   IN VOID                     *Data,
   IN UINT32                   DataLen,
-  IN UINT32                   TimeOut 
+  IN UINT32                   Timeout 
   )
 /*++
 
@@ -355,7 +356,7 @@ Returns:
                DataDir, 
                Data, 
                DataLen, 
-               TimeOut * (Index + 1)
+               Timeout * (Index + 1)
                );
     if (Status == EFI_SUCCESS ||
         Status == EFI_MEDIA_CHANGED) {
@@ -401,7 +402,7 @@ Returns:
 
   TestCmd.OpCode  = USB_BOOT_TEST_UNIT_READY_OPCODE;
   TestCmd.Lun     = USB_BOOT_LUN (UsbMass->Lun);
-
+	
   return UsbBootExecCmdWithRetry (
            UsbMass, 
            &TestCmd, 
@@ -409,7 +410,7 @@ Returns:
            EfiUsbNoData, 
            NULL, 
            0, 
-           USB_BOOT_GENERAL_TIMEOUT
+           USB_BOOT_GENERAL_CMD_TIMEOUT
            );
 }
 
@@ -451,7 +452,7 @@ Returns:
   InquiryCmd.OpCode   = USB_BOOT_INQUIRY_OPCODE;
   InquiryCmd.Lun      = USB_BOOT_LUN (UsbMass->Lun);
   InquiryCmd.AllocLen = sizeof (InquiryData);
-  
+		
   Status = UsbBootExecCmdWithRetry (
              UsbMass,
              &InquiryCmd,
@@ -459,7 +460,7 @@ Returns:
              EfiUsbDataIn,
              &InquiryData,
              sizeof (USB_BOOT_INQUIRY_DATA),
-             USB_BOOT_INQUIRY_TIMEOUT
+             USB_BOOT_INQUIRY_CMD_TIMEOUT
              );
   if (EFI_ERROR (Status)) {
     return Status;
@@ -505,8 +506,8 @@ Returns:
   EFI_BLOCK_IO_MEDIA          *Media;
   EFI_STATUS                  Status;
 
-  Media = &UsbMass->BlockIoMedia;
-    
+  Media   = &UsbMass->BlockIoMedia;
+  
   //
   // Use the READ CAPACITY command to get the block length and last blockno
   //
@@ -515,7 +516,7 @@ Returns:
 
   CapacityCmd.OpCode = USB_BOOT_READ_CAPACITY_OPCODE;
   CapacityCmd.Lun    = USB_BOOT_LUN (UsbMass->Lun);
-
+	
   Status = UsbBootExecCmdWithRetry (
              UsbMass,
              &CapacityCmd,
@@ -523,7 +524,7 @@ Returns:
              EfiUsbDataIn,
              &CapacityData,
              sizeof (USB_BOOT_READ_CAPACITY_DATA),
-             USB_BOOT_GENERAL_TIMEOUT
+             USB_BOOT_GENERAL_CMD_TIMEOUT
              );
   if (EFI_ERROR (Status)) { 
     return Status;
@@ -577,6 +578,7 @@ UsbBootModeSense (
     //
     return EFI_SUCCESS;
   }
+
   ModeSenseCmd.OpCode         = USB_BOOT_MODE_SENSE10_OPCODE;
   ModeSenseCmd.PageCode       = 0x3f;
   ModeSenseCmd.ParaListLenLsb = (UINT8) sizeof (USB_BOOT_MODE_PARA_HEADER);
@@ -588,7 +590,7 @@ UsbBootModeSense (
              EfiUsbDataIn,
              &ModeParaHeader,
              sizeof (USB_BOOT_MODE_PARA_HEADER),
-             USB_BOOT_GENERAL_TIMEOUT
+             USB_BOOT_GENERAL_CMD_TIMEOUT
              );
   //
   // Did nothing with the Header here
@@ -776,7 +778,7 @@ Returns:
   UINT16                    Count;
   UINT32                    BlockSize;
   UINT32                    ByteSize;
-  UINT32                    TimeOut;
+  UINT32                    Timeout;
 
   BlockSize = UsbMass->BlockIoMedia.BlockSize;
   Status    = EFI_SUCCESS;
@@ -787,9 +789,17 @@ Returns:
     // on the device. We must split the total block because the READ10
     // command only has 16 bit transfer length (in the unit of block).
     //
-    Count    = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
-    TimeOut  = (UINT32)Count * USB_BOOT_TRANSFER_TIMEOUT;
-    ByteSize = (UINT32)Count * BlockSize;
+    Count     = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
+    ByteSize  = (UINT32)Count * BlockSize;
+
+    //
+    // Optical device need longer timeout than other device
+    //
+    if (UsbMass->OpticalStorage == TRUE) {
+      Timeout = (UINT32)Count * USB_BOOT_OPTICAL_BLOCK_TIMEOUT;
+    } else {
+      Timeout = (UINT32)Count * USB_BOOT_GENERAL_BLOCK_TIMEOUT;
+    }
 
     //
     // Fill in the command then execute 
@@ -808,7 +818,7 @@ Returns:
                EfiUsbDataIn,
                Buffer,
                ByteSize,
-               TimeOut
+               Timeout
                );
     if (EFI_ERROR (Status)) {   
       return Status;
@@ -855,7 +865,7 @@ Returns:
   UINT16                Count;
   UINT32                BlockSize;
   UINT32                ByteSize;
-  UINT32                TimeOut;
+  UINT32                Timeout;
 
   BlockSize = UsbMass->BlockIoMedia.BlockSize;
   Status    = EFI_SUCCESS;
@@ -866,9 +876,18 @@ Returns:
     // on the device. We must split the total block because the WRITE10
     // command only has 16 bit transfer length (in the unit of block).
     //
-    Count    = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
-    TimeOut  = (UINT32)Count * USB_BOOT_TRANSFER_TIMEOUT;
-    ByteSize = (UINT32)Count * BlockSize;
+    Count     = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
+    ByteSize  = (UINT32)Count * BlockSize;
+
+    //
+    // Optical device need longer timeout than other device
+    //
+    if (UsbMass->OpticalStorage == TRUE) {
+      Timeout = (UINT32)Count * USB_BOOT_OPTICAL_BLOCK_TIMEOUT;
+    } else {
+      Timeout = (UINT32)Count * USB_BOOT_GENERAL_BLOCK_TIMEOUT;
+    }
+
     //
     // Fill in the write10 command block
     //
@@ -886,7 +905,7 @@ Returns:
                EfiUsbDataOut,
                Buffer,
                ByteSize,
-               TimeOut
+               Timeout
                );
     if (EFI_ERROR (Status)) {
       return Status;
@@ -927,18 +946,20 @@ Returns:
   EFI_USB_DEVICE_REQUEST    Request;
   EFI_STATUS                Status;
   UINT32                    CmdResult;
+  UINT32                    Timeout;
 
   Request.RequestType = 0x02;
   Request.Request     = USB_DEV_CLEAR_FEATURE;
   Request.Value       = EfiUsbEndpointHalt;
   Request.Index       = EndpointAddr;
   Request.Length      = 0;
-  
+  Timeout             = USB_BOOT_GENERAL_CMD_TIMEOUT / USB_MASS_STALL_1_MS;
+
   Status = UsbIo->UsbControlTransfer (
                     UsbIo,
                     &Request,
                     EfiUsbNoData,
-                    USB_MASS_STALL_1_MS,
+                    Timeout,
                     NULL,
                     0,
                     &CmdResult

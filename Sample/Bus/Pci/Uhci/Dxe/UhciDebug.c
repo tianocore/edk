@@ -57,6 +57,8 @@ Arguments:
 
 Returns:
 
+  None
+
 --*/
 {
   VA_LIST Marker;
@@ -90,7 +92,10 @@ Arguments:
 
 Returns: 
 
+  None
+  
 --*/
+
 {
   UINT32  Index;
 
@@ -128,7 +133,7 @@ Arguments:
 
 Returns:
 
-  GC_TODO: add return values
+  None
 
 --*/
 {
@@ -161,6 +166,8 @@ Arguments:
 
 Returns:
 
+  None
+
 --*/
 {
   UhciDebug (UHCI_DEBUG_QH, "&QhSw = 0x%x\n", QhSw);
@@ -188,6 +195,8 @@ Arguments:
   IsCur - Whether dump the whole list, or only dump the current TD
 
 Returns:
+
+  None
 
 --*/
 {

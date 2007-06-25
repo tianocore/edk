@@ -221,7 +221,7 @@ Returns:
   PeiServices = &Private->PS;
   PeimEntryPoint = NULL;
 
-  if (Private->PeiMemoryInstalled) {
+  if ((Private->PeiMemoryInstalled) && (Private->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME)) {
     //
     // Once real memory is available, shadow the RegisterForShadow modules. And meanwhile
     // update the modules' status from PEIM_STATE_REGISITER_FOR_SHADOW to PEIM_STATE_DONE.
@@ -429,7 +429,8 @@ Returns:
                 );
             }
 
-            if ((Private->PeiMemoryInstalled) && (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_REGISITER_FOR_SHADOW)) {
+            if ((Private->PeiMemoryInstalled) && (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_REGISITER_FOR_SHADOW) &&   \
+                (Private->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME)) {
               //
               // If memory is availble we shadow images by default for performance reasons. 
               // We call the entry point a 2nd time so the module knows it's shadowed. 

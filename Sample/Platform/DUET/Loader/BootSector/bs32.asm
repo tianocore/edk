@@ -156,7 +156,8 @@ FindVARSTORE:
   jne   FindNext
   cmp   dword ptr [di+7], 04e494220h      ; Compare to " BIN"
   jne   FindNext
-  mov   dx, word ptr [di+26];             ; dx = Start Cluster for Efivar.bin <----------------------------------
+  mov   dx, di                            ; dx = Offset of Start Cluster for Efivar.bin <---------------------
+  add   dx, 26
   test  bx, bx
   je    FindNext                          ; Efildr is not loaded
   jmp   FoundAll

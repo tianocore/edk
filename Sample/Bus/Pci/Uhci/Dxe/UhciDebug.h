@@ -68,17 +68,16 @@ UhciDebug (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  Debug print interface for UHCI
 
 Arguments:
 
-  Mask    - GC_TODO: add argument description
-  Format  - GC_TODO: add argument description
-  ...     - GC_TODO: add argument description
+  Mask    - Level to control debug print
+  Format  - String to use for the print, followed by print arguments
 
 Returns:
 
-  GC_TODO: add return values
+  None
 
 --*/
 ;
@@ -92,17 +91,17 @@ UhciDumpBuffer (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  Dump the content of data buffer
 
 Arguments:
 
-  Buffer  - GC_TODO: add argument description
-  Length  - GC_TODO: add argument description
+  Buffer  - Start pointer of data buffer
+  Length  - Length of data buffer
 
-Returns:
+Returns: 
 
-  GC_TODO: add return values
-
+  None
+  
 --*/
 ;
 
@@ -115,16 +114,16 @@ UhciDumpPortsStatus (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  Dump the content of port status register
 
 Arguments:
 
-  HcDev       - GC_TODO: add argument description
-  PortNumber  - GC_TODO: add argument description
+  HcDev       - Host controller structure
+  PortNumber  - Index of port
 
 Returns:
 
-  GC_TODO: add return values
+  None
 
 --*/
 ;
@@ -137,15 +136,15 @@ UhciDumpQh (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  Dump the content of QH structure
 
 Arguments:
 
-  QhSw  - GC_TODO: add argument description
+  QhSw  - Pointer to software QH structure
 
 Returns:
 
-  GC_TODO: add return values
+  None
 
 --*/
 ;
@@ -159,16 +158,16 @@ UhciDumpTds (
 
 Routine Description:
 
-  GC_TODO: Add function description
+  Dump the content of TD structure.
 
 Arguments:
 
-  TdSw  - GC_TODO: add argument description
-  IsCur - GC_TODO: add argument description
+  TdSw  - Pointer to software TD structure
+  IsCur - Whether dump the whole list, or only dump the current TD
 
 Returns:
 
-  GC_TODO: add return values
+  None
 
 --*/
 ;

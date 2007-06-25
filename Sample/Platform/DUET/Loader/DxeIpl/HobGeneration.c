@@ -23,6 +23,7 @@ Revision History:
 #include "FlashLayout.h"
 #include "EfiVariable.h"
 #include "CpuIA32.h"
+#include "Debug.h"
 
 #define EFI_DXE_FILE_GUID \
   { 0xb1644c1a, 0xc16a, 0x4c5b, 0x88, 0xde, 0xea, 0xfb, 0xa9, 0x7e, 0x74, 0xd8 }
@@ -717,7 +718,19 @@ PrepareHobNvStorage (
   //   UINT8  Offset 4 : should init the Variable Store Header if non-zero
   //
   gHob->NvStorageFvb.FvbInfo.VolumeId   = *(UINT32 *) (UINTN) (NV_STORAGE_STATE);
+  gHob->NvStorage.   FvbInfo.VolumeId   = *(UINT32 *) (UINTN) (NV_STORAGE_STATE);
 
+  //
+  // *(NV_STORAGE_STATE + 4):
+  //   2 - Size error
+  //   1 - File not exist
+  //   0 - File exist with correct size
+  //
+  if (*(UINT8 *) (UINTN) (NV_STORAGE_STATE + 4) == 2) {
+    ClearScreen ();
+    PrintString ("Error: Size of Efivar.bin should be 16k!\n");
+    EFI_DEADLOOP();
+  }
   
   if (*(UINT8 *) (UINTN) (NV_STORAGE_STATE + 4) != 0) {
     //

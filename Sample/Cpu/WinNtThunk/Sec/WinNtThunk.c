@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -61,7 +61,7 @@ VC8WrapForswprintf (
     size_t _Count = SWPRINTF_MAX_COUNT;
 
     _crt_va_start(_Arglist, _Format);
-    _Ret = swprintf(_String, _Count, _Format, _Arglist);
+    _Ret = _vswprintf_c_l(_String, _Count, _Format, NULL, _Arglist);
     _crt_va_end(_Arglist);
 
     return _Ret;

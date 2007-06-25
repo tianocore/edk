@@ -785,7 +785,7 @@ Returns:
       EbcDebugSignalException (EXCEPT_EBC_STACK_FAULT, EXCEPTION_FLAG_FATAL, VmPtr);
       StackCorrupted = 1;
     }
-    if (!StackCorrupted && ((UINT64)VmPtr->R[0] <= (UINT64) VmPtr->StackTop)) {
+    if (!StackCorrupted && ((UINT64)VmPtr->R[0] <= (UINT64)(UINTN) VmPtr->StackTop)) {
       EbcDebugSignalException (EXCEPT_EBC_STACK_FAULT, EXCEPTION_FLAG_FATAL, VmPtr);
       StackCorrupted = 1;
     }

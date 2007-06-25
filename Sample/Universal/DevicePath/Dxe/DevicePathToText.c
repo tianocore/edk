@@ -791,6 +791,26 @@ DevPathToTextUsbClass (
 }
 
 VOID
+DevPathToTextSata (
+  IN OUT POOL_PRINT  *Str,
+  IN VOID            *DevPath,
+  IN BOOLEAN         DisplayOnly,
+  IN BOOLEAN         AllowShortcuts
+  )
+{
+  SATA_DEVICE_PATH *Sata;
+
+  Sata = DevPath;
+  CatPrint (
+    Str,
+    L"Sata(0x%x,0x%x,0x%x)",
+    (UINTN) Sata->HBAPortNumber,
+    (UINTN) Sata->PortMultiplierPortNumber,
+    (UINTN) Sata->Lun
+    );
+}
+
+VOID
 DevPathToTextI2O (
   IN OUT POOL_PRINT  *Str,
   IN VOID            *DevPath,
@@ -1297,6 +1317,9 @@ DEVICE_PATH_TO_TEXT_TABLE DevPathToTextTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_USB_CLASS_DP,
   DevPathToTextUsbClass,
+  MESSAGING_DEVICE_PATH,
+  MSG_SATA_DP,
+  DevPathToTextSata,
   MESSAGING_DEVICE_PATH,
   MSG_I2O_DP,
   DevPathToTextI2O,

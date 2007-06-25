@@ -67,6 +67,7 @@ enum {
   USB_MASS_STORE_BOT      = 0x50, // Bulk-Only Transport
   
   USB_MASS_STALL_1_MS     = 1000,
+  USB_MASS_STALL_1_S      = 1000 * USB_MASS_STALL_1_MS,
   
   USB_MASS_CMD_SUCCESS    = 0,
   USB_MASS_CMD_FAIL,
@@ -90,7 +91,7 @@ EFI_STATUS
   IN  EFI_USB_DATA_DIRECTION  DataDir,
   IN  VOID                    *Data,
   IN  UINT32                  DataLen,
-  IN  UINT32                  TimeOut,
+  IN  UINT32                  Timeout,
   OUT UINT32                  *CmdStatus
   );
 

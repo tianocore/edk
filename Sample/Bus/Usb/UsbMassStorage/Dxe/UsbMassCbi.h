@@ -34,9 +34,9 @@ enum {
   USB_CBI_MAX_RETRY             = 3,
 
   //
-  // Usb CBI stall time
+  // Usb Cbi transfer timeout
   //
-  USB_CBI_RESET_TIMEOUT         = USB_MASS_STALL_1_MS,
+  USB_CBI_RESET_TIMEOUT         = 1 * USB_MASS_STALL_1_S,
 };
 
 //

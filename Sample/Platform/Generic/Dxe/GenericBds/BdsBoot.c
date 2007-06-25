@@ -125,6 +125,7 @@ Returns:
   EFI_EVENT                 ReadyToBootEvent;
   EFI_DEVICE_PATH_PROTOCOL  *WorkingDevicePath;
   EFI_ACPI_S3_SAVE_PROTOCOL *AcpiS3Save;
+  EFI_LIST_ENTRY            TempBootLists;
   //
   // Record the performance data for End of BDS
   //
@@ -194,6 +195,24 @@ Returns:
     //
     return BdsLibDoLegacyBoot (Option);
   }
+  
+  //
+  // If the boot option point to Internal FV shell, make sure it is valid
+  //
+  Status = BdsLibUpdateFvFileDevicePath (&DevicePath, &gEfiShellFileGuid);
+  if (!EFI_ERROR(Status)) {
+    if (Option->DevicePath != NULL) {
+      EfiLibSafeFreePool(Option->DevicePath);
+    }
+    Option->DevicePath  = EfiLibAllocateZeroPool (EfiDevicePathSize (DevicePath));
+    EfiCopyMem (Option->DevicePath, DevicePath, EfiDevicePathSize (DevicePath));
+    //
+    // Update the shell boot option
+    //
+    InitializeListHead (&TempBootLists);
+    BdsLibRegisterNewOption (&TempBootLists, DevicePath, L"EFI Internal Shell", L"BootOrder"); 
+  }
+  
   //
   // Drop the TPL level from EFI_TPL_DRIVER to EFI_TPL_APPLICATION
   //
@@ -1759,4 +1778,226 @@ Returns:
   }
 
   return FALSE;
+}
+
+EFI_STATUS
+EFIAPI
+BdsLibUpdateFvFileDevicePath (
+  IN  OUT EFI_DEVICE_PATH_PROTOCOL      ** DevicePath,
+  IN  EFI_GUID                          *FileGuid
+  )
+/*++
+
+Routine Description:
+   According to a file guild, check a Fv file device path is valid. If it is invalid,
+   try to return the valid device path.
+   FV address maybe changes for memory layout adjust from time to time, use this funciton 
+   could promise the Fv file device path is right.
+
+Arguments:
+  DevicePath - on input, the Fv file device path need to check
+                    on output, the updated valid Fv file device path
+                    
+  FileGuid - the Fv file guild
+  
+Returns:
+  EFI_INVALID_PARAMETER - the input DevicePath or FileGuid is invalid parameter
+  EFI_UNSUPPORTED - the input DevicePath does not contain Fv file guild at all
+  EFI_ALREADY_STARTED - the input DevicePath has pointed to Fv file, it is valid
+  EFI_SUCCESS - has successfully updated the invalid DevicePath, and return the updated
+                          device path in DevicePath
+                
+--*/
+{
+  EFI_DEVICE_PATH_PROTOCOL      *TempDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL      *LastDeviceNode;
+  EFI_STATUS                    Status;
+  EFI_GUID                      *GuidPoint;
+  UINTN                         Index;
+  UINTN                         FvHandleCount;
+  EFI_HANDLE                    *FvHandleBuffer;
+  EFI_FV_FILETYPE               Type;
+  UINTN                         Size;
+  EFI_FV_FILE_ATTRIBUTES        Attributes;
+  UINT32                        AuthenticationStatus;
+  BOOLEAN                       FindFvFile;
+  EFI_LOADED_IMAGE_PROTOCOL     *LoadedImage;
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
+  EFI_FIRMWARE_VOLUME_PROTOCOL  *Fv;
+#else
+  EFI_FIRMWARE_VOLUME2_PROTOCOL *Fv;
+#endif
+  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH FvFileNode;
+  EFI_HANDLE                    FoundFvHandle;
+  EFI_DEVICE_PATH_PROTOCOL      *NewDevicePath;
+  
+  if ((DevicePath == NULL) || (*DevicePath == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if (FileGuid == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  //
+  // Check whether the device path point to the default the input Fv file
+  //
+  TempDevicePath = *DevicePath; 
+  LastDeviceNode = TempDevicePath;
+  while (!EfiIsDevicePathEnd (TempDevicePath)) {
+     LastDeviceNode = TempDevicePath;
+     TempDevicePath = EfiNextDevicePathNode (TempDevicePath);
+  }
+  GuidPoint = EfiGetNameGuidFromFwVolDevicePathNode (
+                (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) LastDeviceNode
+                );
+  if (GuidPoint == NULL) {
+    //
+    // if this option does not points to a Fv file, just return EFI_UNSUPPORTED
+    //
+    return EFI_UNSUPPORTED;
+  }
+  if (!EfiCompareGuid (GuidPoint, FileGuid)) {
+    //
+    // If the Fv file is not the input file guid, just return EFI_UNSUPPORTED
+    //
+    return EFI_UNSUPPORTED;
+  }
+  
+  //
+  // Check whether the input Fv file device path is valid
+  //
+  TempDevicePath = *DevicePath; 
+  FoundFvHandle = NULL;
+  Status = gBS->LocateDevicePath (
+                #if (PI_SPECIFICATION_VERSION < 0x00010000)    
+                  &gEfiFirmwareVolumeProtocolGuid,
+                #else
+                  &gEfiFirmwareVolume2ProtocolGuid,
+                #endif 
+                  &TempDevicePath, 
+                  &FoundFvHandle
+                  );
+  if (!EFI_ERROR (Status)) {
+    Status = gBS->HandleProtocol (
+                    FoundFvHandle,
+                  #if (PI_SPECIFICATION_VERSION < 0x00010000)    
+                    &gEfiFirmwareVolumeProtocolGuid,
+                  #else
+                    &gEfiFirmwareVolume2ProtocolGuid,
+                  #endif
+                    (VOID **) &Fv
+                    );
+    if (!EFI_ERROR (Status)) {
+      //
+      // Set FV ReadFile Buffer as NULL, only need to check whether input Fv file exist there
+      //
+      Status = Fv->ReadFile (
+                    Fv,
+                    FileGuid,
+                    NULL,
+                    &Size,
+                    &Type,
+                    &Attributes,
+                    &AuthenticationStatus
+                    );
+      if (!EFI_ERROR (Status)) {
+        return EFI_ALREADY_STARTED;
+      }
+    }
+  }
+ 
+  //
+  // Look for the input wanted FV file in current FV
+  // First, try to look for in Bds own FV. Bds and input wanted FV file usually are in the same FV
+  //
+  FindFvFile = FALSE;
+  FoundFvHandle = NULL;
+  Status = gBS->HandleProtocol (
+             mBdsImageHandle,
+             &gEfiLoadedImageProtocolGuid,
+             &LoadedImage
+             );
+  if (!EFI_ERROR (Status)) {
+    Status = gBS->HandleProtocol (
+                    LoadedImage->DeviceHandle,
+                  #if (PI_SPECIFICATION_VERSION < 0x00010000)    
+                    &gEfiFirmwareVolumeProtocolGuid,
+                  #else
+                    &gEfiFirmwareVolume2ProtocolGuid,
+                  #endif
+                    (VOID **) &Fv
+                    );
+    if (!EFI_ERROR (Status)) {
+      Status = Fv->ReadFile (
+                    Fv,
+                    FileGuid,
+                    NULL,
+                    &Size,
+                    &Type,
+                    &Attributes,
+                    &AuthenticationStatus
+                    );
+      if (!EFI_ERROR (Status)) {
+        FindFvFile = TRUE;
+        FoundFvHandle = LoadedImage->DeviceHandle;
+      }
+    }
+  }
+  //
+  // Second, if fail to find, try to enumerate all FV
+  //
+  if (!FindFvFile) {
+    gBS->LocateHandleBuffer (
+          ByProtocol,
+       #if (PI_SPECIFICATION_VERSION < 0x00010000)
+          &gEfiFirmwareVolumeProtocolGuid,
+       #else
+          &gEfiFirmwareVolume2ProtocolGuid,
+       #endif   
+          NULL,
+          &FvHandleCount,
+          &FvHandleBuffer
+          );
+    for (Index = 0; Index < FvHandleCount; Index++) {
+      gBS->HandleProtocol (
+            FvHandleBuffer[Index],
+         #if (PI_SPECIFICATION_VERSION < 0x00010000)
+            &gEfiFirmwareVolumeProtocolGuid,
+         #else
+            &gEfiFirmwareVolume2ProtocolGuid,
+         #endif   
+            (VOID **) &Fv
+            );
+
+      Status = Fv->ReadFile (
+                    Fv,
+                    FileGuid,
+                    NULL,
+                    &Size,
+                    &Type,
+                    &Attributes,
+                    &AuthenticationStatus
+                    );
+      if (EFI_ERROR (Status)) {
+        //
+        // Skip if input Fv file not in the FV
+        //
+        continue;
+      }
+      FindFvFile = TRUE;
+      FoundFvHandle = FvHandleBuffer[Index];
+      break;
+    }  
+  }
+
+  if (FindFvFile) {
+    //
+    // Build the shell device path
+    //
+    NewDevicePath = EfiDevicePathFromHandle (FoundFvHandle);
+    EfiInitializeFwVolDevicepathNode (&FvFileNode, FileGuid);
+    NewDevicePath = EfiAppendDevicePathNode (NewDevicePath, (EFI_DEVICE_PATH_PROTOCOL *) &FvFileNode);
+    *DevicePath = NewDevicePath;    
+    return EFI_SUCCESS;
+  }
+  return EFI_NOT_FOUND;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -29,10 +29,15 @@ Abstract:
 #include "FileSearch.h"
 #include "UtilsMsgs.h"
 
-#define MAX_LINE_LEN  180 // we concatenate two lines sometimes
+#define MAX_LINE_LEN  1024 // we concatenate lines sometimes
 // Define a structure that correlates filename extensions to an enumerated
 // type.
 //
+#ifdef MAX_PATH
+#undef MAX_PATH
+#define MAX_PATH  1024
+#endif
+
 typedef struct {
   INT8  *Extension;
   INT8  ExtensionCode;
@@ -77,7 +82,7 @@ typedef struct EFI_GUID {
 } EFI_GUID;
 
 typedef struct {
-  INT8  Data[4];
+  INT8  Data[8];
   INT8  DataLen;
 } EFI_SIGNATURE;
 
@@ -241,7 +246,8 @@ AddGuid64x2 (
   UINT32    DataHH,                             // Upper 32-bits of upper 64 bits of guid
   UINT32    DataHL,                             // Lower 32-bits of upper 64 bits
   UINT32    DataLH,
-  UINT32    DataLL
+  UINT32    DataLL,
+  INT8      *SymName
   );
 
 static
@@ -283,6 +289,14 @@ CheckGuidData (
   UINT32    DataCount
   );
 
+static
+VOID
+ConcatenateLines (
+  FILE        *Fptr, 
+  INT8        *Line,
+  UINT32      Len
+  );
+  
 /**************************** GLOBALS ****************************************/
 static GUID_RECORD      *gGuidList      = NULL;
 static SIGNATURE_RECORD *gSignatureList = NULL;
@@ -517,7 +531,7 @@ ProcessArgs (
       //
       case 'x':
       case 'X':
-        gOptions.GuidXReference = 1;
+        gOptions.GuidXReference = TRUE;
         break;
 
       //
@@ -684,7 +698,11 @@ ProcessDirectory (
   //
   // Start file searching for files and directories
   //
-  FileSearchStart (&FSData, FileMask, FILE_SEARCH_FILE | FILE_SEARCH_DIR);
+  if (FileSearchStart (&FSData, FileMask, FILE_SEARCH_FILE | FILE_SEARCH_DIR) == STATUS_SUCCESS) {
+    Done = FALSE;
+  } else {
+    Done = TRUE;
+  }
 
   //
   // Now hack the "\*.*" off the end of the filemask so we can use it to pass
@@ -695,7 +713,6 @@ ProcessDirectory (
   //
   // Loop until no more files
   //
-  Done = FALSE;
   while (!Done) {
     //
     // printf ("Found %s...", FSData.FileName);
@@ -1086,7 +1103,8 @@ AddGuid64x2 (
   UINT32    DataHH, // Upper 32-bits of upper 64 bits of guid
   UINT32    DataHL, // Lower 32-bits of upper 64 bits
   UINT32    DataLH,
-  UINT32    DataLL
+  UINT32    DataLL,
+  INT8      *SymName
   )
 {
   GUID_RECORD *NewRec;
@@ -1122,6 +1140,17 @@ AddGuid64x2 (
     NewRec->Guid.Data4[Index + 4] = (UINT8) DataLH;
     DataLH >>= 8;
   }
+
+  if (SymName != NULL) {
+    NewRec->SymName = malloc (strlen (SymName) + 1);
+    if (NewRec->SymName == NULL) {
+      free (NewRec);
+      Error (NULL, 0, 0, "memory allocation failure", NULL);
+      return STATUS_ERROR;
+    }
+    strcpy (NewRec->SymName, SymName);
+  }
+    
   //
   // Add it to the list
   //
@@ -1217,10 +1246,13 @@ AddSignature (
   //
   Fail    = FALSE;
   NewRec  = malloc (sizeof (SIGNATURE_RECORD));
+  
   if (NewRec == NULL) {
     Error (NULL, 0, 0, "memory allocation failure", NULL);
     return STATUS_ERROR;
   }
+  memset ((char *) NewRec, 0, sizeof (SIGNATURE_RECORD));
+  
   //
   // Allocate memory to save the file name
   //
@@ -1274,7 +1306,7 @@ AddSignature (
       }
     } else {
       Fail = TRUE;
-      DebugMsg (NULL, 0, 0, StrDef, "failed to parse signature");
+      DebugMsg (NULL, 0, 0, FileName, "failed to parse signature");
       break;
     }
   }
@@ -1306,7 +1338,6 @@ ProcessCFileSigs (
   INT8    Line[MAX_LINE_LEN * 2];
   INT8    *Cptr;
   UINT32  Len;
-  UINT32  LineLen;
 
   if ((Fptr = fopen (FileName, "r")) == NULL) {
     Error (NULL, 0, 0, FileName, "could not open input file for reading");
@@ -1319,7 +1350,7 @@ ProcessCFileSigs (
     Cptr = Line;
     Cptr += SkipWhiteSpace (Line);
     //
-    // look for #define xxxGUIDxxx value
+    // look for #define EFI_SIGNATURE_xx value
     //
     if (*Cptr == '#') {
       Cptr++;
@@ -1341,16 +1372,11 @@ ProcessCFileSigs (
           Len = ValidSymbolName (Cptr);
           if (Len) {
             //
-            // It is a valid symbol name. See if there's a line continuation,
-            // and if so, read one more line.
+            // It is a valid symbol name. See if there's line continuation,
+            // and if so, read more lines.
             // Skip over the symbol name and look for the string "EFI_SIGNATURE_xx"
             //
-            LineLen = strlen (Line);
-            if ((Line[LineLen - 1] == '\n') && (Line[LineLen - 2] == '\\')) {
-              fgets (Line + LineLen - 2, sizeof (Line) - LineLen, Fptr);
-            } else if (Line[LineLen - 1] == '\\') {
-              fgets (Line + LineLen - 1, sizeof (Line) - LineLen, Fptr);
-            }
+            ConcatenateLines (Fptr, Line, sizeof(Line));
 
             Cptr += Len;
             Cptr += SkipWhiteSpace (Cptr);
@@ -1383,7 +1409,6 @@ ProcessCFileGuids (
   FILE    *Fptr;
   INT8    Line[MAX_LINE_LEN * 2];
   INT8    *Cptr;
-  INT8    CSave;
   INT8    *CSavePtr;
   INT8    *TempCptr;
   INT8    *SymName;
@@ -1411,6 +1436,7 @@ ProcessCFileGuids (
       // Look for "define"
       //
       if (!strncmp (Cptr, "define", 6)) {
+DefineLine:
         Cptr += 6;
         //
         // Better be whitespace
@@ -1424,88 +1450,96 @@ ProcessCFileGuids (
           Len = ValidSymbolName (Cptr);
           if (Len) {
             //
-            // It is a valid symbol name. See if there's a line continuation,
-            // and if so, read one more line.
+            // It is a valid symbol name. See if there's line continuation,
+            // and if so, read more lines.
             // Then truncate after the symbol name, look for the string "GUID",
             // and continue.
             //
             SymName = Cptr;
-            LineLen = strlen (Line);
-            if ((Line[LineLen - 1] == '\n') && (Line[LineLen - 2] == '\\')) {
-              fgets (Line + LineLen - 2, sizeof (Line) - LineLen, Fptr);
-            } else if (Line[LineLen - 1] == '\\') {
-              fgets (Line + LineLen - 1, sizeof (Line) - LineLen, Fptr);
-            }
+            ConcatenateLines (Fptr, Line, sizeof(Line));
 
-            CSavePtr  = Cptr + Len;
-            CSave     = *CSavePtr;
-            *CSavePtr = 0;
-            while (*Cptr) {
-              if (strncmp (Cptr, "GUID", 4) == 0) {
-                break;
-              }
-
-              Cptr++;
-            }
             //
-            // If we didn't run out of string, then we found the GUID string.
             // Now look for { 0x....... }
             //
-            if (*Cptr) {
-              Cptr      = CSavePtr;
-              *CSavePtr = CSave;
-              Cptr += SkipWhiteSpace (Cptr);
-              if (*Cptr == '{') {
-                *Cptr = 0;
-                Cptr++;
-                //
-                // 0x665E3FF6, 0x46CC, 0x11d4, 0x9A, 0x38, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0x4D }
-                // If you have one suffixed with "L", then it doesn't work. So hack off 'L' characters
-                // in the string.
-                //
-                for (TempCptr = Cptr; *TempCptr; TempCptr++) {
-                  if (*TempCptr == 'L') {
-                    if (*(TempCptr + 1) == ',') {
-                      *TempCptr       = ',';
-                      *(TempCptr + 1) = ' ';
-                    }
-                  }
+            CSavePtr  = Cptr + Len;
+            Cptr += Len;
+            Cptr += SkipWhiteSpace (Cptr);
+            if (*Cptr == '{') {
+              Cptr++;
+              //
+              // Blank out 'L', 'l', '{', '}', ',' on the line.
+              //
+              for (TempCptr = Cptr; *TempCptr; TempCptr++) {
+                if ((*TempCptr == 'L') || (*TempCptr == 'l') || (*TempCptr == '{') || 
+                    (*TempCptr == '}') || (*TempCptr == ',')) {
+                  *TempCptr       = ' ';
                 }
+              }
 
-                if (sscanf (
-                      Cptr,
-                      "%X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X",
-                      &GuidScan[0],
-                      &GuidScan[1],
-                      &GuidScan[2],
-                      &GuidScan[3],
-                      &GuidScan[4],
-                      &GuidScan[5],
-                      &GuidScan[6],
-                      &GuidScan[7],
-                      &GuidScan[8],
-                      &GuidScan[9],
-                      &GuidScan[10]
-                      ) == 11) {
-                  AddGuid11 (FileName, GuidScan, SymName);
-                }
+              if (sscanf (
+                    Cptr,
+                    "%X %X %X %X %X %X %X %X %X %X %X",
+                    &GuidScan[0],
+                    &GuidScan[1],
+                    &GuidScan[2],
+                    &GuidScan[3],
+                    &GuidScan[4],
+                    &GuidScan[5],
+                    &GuidScan[6],
+                    &GuidScan[7],
+                    &GuidScan[8],
+                    &GuidScan[9],
+                    &GuidScan[10]
+                    ) == 11) {
+                *CSavePtr = '\0';
+                AddGuid11 (FileName, GuidScan, SymName);
               }
             }
           }
         }
       }
-      //
-      // Else look for "static EFI_GUID xxxGUIDxxx = { 0x.... };
-      //
+    //
+    // Else look for "static EFI_GUID xxxGUIDxxx = { 0x.... };
+    //
     } else if ((CSavePtr = strstr (Line, "EFI_GUID")) != NULL) {
       //
-      // Read the next line if line continuation
+      // Read more lines until met ';'
       //
-      LineLen = strlen (Line);
-      if ((Line[LineLen - 1] == '\n') && (Line[LineLen - 2] == '\\')) {
-        fgets (Line + LineLen - 2, sizeof (Line) - LineLen, Fptr);
-      } else if (Line[LineLen - 1] == '\\') {
-        fgets (Line + LineLen - 1, sizeof (Line) - LineLen, Fptr);
+      ConcatenateLines (Fptr, Line, sizeof(Line));
+      while (strstr (Line, ";") == NULL) {
+        LineLen = strlen (Line);
+        Len = sizeof(Line) - LineLen;
+        if (Len <= 1) {
+          break;
+        }
+        if (Line[LineLen - 1] == '\n') {
+          Cptr = Line + LineLen - 1;
+          *Cptr = '\0';
+          if (fgets (Cptr, Len, Fptr) == NULL){
+            break;
+          }
+          ConcatenateLines (Fptr, Line, sizeof(Line));
+        } else {
+          Cptr = Line + LineLen;
+          *Cptr = '\0';
+          if (fgets (Cptr, Len, Fptr) == NULL) {
+            break;
+          }
+          ConcatenateLines (Fptr, Line, sizeof(Line));
+        }
+        
+        //
+        // EFI_GUID may appear in comments wihout end of ';' which may cause
+        // ignoring of new #define, so handle it here.
+        //
+        Cptr += SkipWhiteSpace (Cptr);
+        if (*Cptr == '#') {
+          Cptr++;
+          Cptr += SkipWhiteSpace (Cptr);
+          if (!strncmp (Cptr, "define", 6)) {
+            goto DefineLine;
+          }
+        }
       }
 
       Cptr = CSavePtr + 8;
@@ -1516,8 +1550,10 @@ ProcessCFileGuids (
       Len     = ValidSymbolName (Cptr);
       SymName = Cptr;
       Cptr += Len;
+      CSavePtr = Cptr;
       Cptr += SkipWhiteSpace (Cptr);
       if (*Cptr == '=') {
+        *CSavePtr = '\0';
         Cptr++;
         Cptr += SkipWhiteSpace (Cptr);
         //
@@ -1526,11 +1562,18 @@ ProcessCFileGuids (
         if (*Cptr == '{') {
           Cptr++;
           //
-          // 0x665E3FF6, 0x46CC, 0x11d4, 0x9A, 0x38, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0x4D }
+          // Blank out 'L', 'l', '{', '}', ',' on the line.
           //
+          for (TempCptr = Cptr; *TempCptr; TempCptr++) {
+            if ((*TempCptr == 'L') || (*TempCptr == 'l') || (*TempCptr == '{') || 
+                (*TempCptr == '}') || (*TempCptr == ',')) {
+              *TempCptr       = ' ';
+            }
+          }
+
           if (sscanf (
                 Cptr,
-                "%X, %X, %X, %X, %X, %X, %X, %X, %X, %X, %X",
+                "%X %X %X %X %X %X %X %X %X %X %X",
                 &GuidScan[0],
                 &GuidScan[1],
                 &GuidScan[2],
@@ -1543,11 +1586,8 @@ ProcessCFileGuids (
                 &GuidScan[9],
                 &GuidScan[10]
                 ) == 11) {
-            AddGuid11 (FileName, GuidScan, Cptr);
-            //
-            // printf ("Found guid: %s", Cptr);
-            //
-          }
+            AddGuid11 (FileName, GuidScan, SymName);
+          } 
         }
       }
     }
@@ -1625,9 +1665,9 @@ ProcessIA64FileGuids (
             // Yea, found one. Save it off.
             //
             if (LowFirst) {
-              AddGuid64x2 (FileName, Guid2H, Guid2L, Guid1H, Guid1L);
+              AddGuid64x2 (FileName, Guid2H, Guid2L, Guid1H, Guid1L, SymName1);
             } else {
-              AddGuid64x2 (FileName, Guid1H, Guid1L, Guid2H, Guid2L);
+              AddGuid64x2 (FileName, Guid1H, Guid1L, Guid2H, Guid2L, SymName1);
             }
             //
             // Read the next line for processing
@@ -1870,11 +1910,10 @@ AddPkgGuid (
   NewRec->Guid.Data1    = Data[0];
   NewRec->Guid.Data2    = (UINT16) Data[1];
   NewRec->Guid.Data3    = (UINT16) Data[2];
-  NewRec->Guid.Data4[0] = (UINT8) Data[3];
-  NewRec->Guid.Data4[1] = (UINT8) (Data[3] >> 8);
+  NewRec->Guid.Data4[0] = (UINT8) (Data[3] >> 8);
+  NewRec->Guid.Data4[1] = (UINT8) Data[3];
   for (Index = 2; Index < 8; Index++) {
-    NewRec->Guid.Data4[Index] = (UINT8) *Data64;
-    *Data64 >>= 8;
+    NewRec->Guid.Data4[Index] = ((UINT8*)Data64)[7-Index];
   }
   //
   // Add it to the list
@@ -1933,9 +1972,8 @@ AddGuid11 (
       Error (NULL, 0, 0, "memory allocation failure", NULL);
       return STATUS_ERROR;
     }
+    strcpy (NewRec->SymName, SymName);
   }
-
-  strcpy (NewRec->SymName, SymName);
 
   NewRec->Guid.Data1  = Data[0];
   NewRec->Guid.Data2  = (UINT16) Data[1];
@@ -2067,11 +2105,16 @@ CheckDuplicates (
       CurrentFile = gGuidList;
       while (CurrentFile != NULL) {
         //
-        // If no symbol name, print "unknown"
+        // If no symbol name, print FileName
         //
         SymName = CurrentFile->SymName;
         if (SymName == NULL) {
-          SymName = "unknown";
+          //
+          // Assume file name will not be NULL and strlen > 0
+          //
+          SymName = CurrentFile->FileName + strlen (CurrentFile->FileName) - 1;
+          while ((*SymName != '\\') && (SymName > CurrentFile->FileName)) SymName --;
+          if (*SymName == '\\') SymName ++;
         }
 
         fprintf (
@@ -2345,4 +2388,30 @@ CheckGuidData (
   }
 
   return FALSE;
+}
+
+static
+VOID
+ConcatenateLines (
+  FILE        *Fptr, 
+  INT8        *Line,
+  UINT32      Len
+  )
+{
+  UINT32      LineLen;
+  BOOLEAN     NeedCheck;
+  
+  NeedCheck = TRUE;
+  while (NeedCheck) {
+    LineLen = strlen (Line);
+    if ((Line[LineLen - 1] == '\n') && (Line[LineLen - 2] == '\\')) {
+      Line[LineLen - 2] = '\0';
+      fgets (Line + LineLen - 2, Len - LineLen, Fptr);
+    } else if (Line[LineLen - 1] == '\\') {
+      Line[LineLen - 1] = '\0';
+      fgets (Line + LineLen - 1, Len - LineLen, Fptr);
+    } else {
+      NeedCheck = FALSE;
+    }
+  }
 }

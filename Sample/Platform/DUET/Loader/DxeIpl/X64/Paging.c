@@ -35,14 +35,14 @@ Revision History:
 #define EFI_PAGE_SIZE_2M        (1 << EFI_2M_PAGE_BITS_NUM)
 
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
-#define ENTRY_NUM(x)            (1 << (x))
+#define ENTRY_NUM(x)            ((UINTN)1 << (x))
 
 UINT8 gPML4BitsNum;
 UINT8 gPDPTEBitsNum;
 UINT8 gPDEBitsNum;
 
-UINT8 gPageNum2M;
-UINT8 gPageNum4K;
+UINTN gPageNum2M;
+UINTN gPageNum4K;
 
 VOID
 EnableNullPointerProtection (

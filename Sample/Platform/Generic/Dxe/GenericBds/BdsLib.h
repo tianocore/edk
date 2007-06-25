@@ -344,9 +344,8 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   UINT16                    NetworkProtocol;
   UINT16                    LoginOption;
-  UINT16                    Reserved;
-  UINT16                    TargetPortalGroupTag;
   UINT64                    Lun;
+  UINT16                    TargetPortalGroupTag;
   CHAR16                    iSCSITargetName[1];
 } ISCSI_DEVICE_PATH_WITH_NAME;
 
@@ -537,4 +536,10 @@ BdsLibSaveMemoryTypeInformation (
   VOID 
   );
   
+EFI_STATUS
+EFIAPI
+BdsLibUpdateFvFileDevicePath (
+  IN  OUT EFI_DEVICE_PATH_PROTOCOL      ** DevicePath,
+  IN  EFI_GUID                          *FileGuid
+  );
 #endif // _BDS_LIB_H_

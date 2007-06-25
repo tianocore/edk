@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -188,7 +188,7 @@ Returns:
 
   Width &= 0x03;
 
-  if ((*Offset + Count * (1 << Width)) - 1 >= PciIoDevice->PciBar[BarIndex].Length) {
+  if ((*Offset + Count * ((UINTN)1 << Width)) - 1 >= PciIoDevice->PciBar[BarIndex].Length) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -238,7 +238,7 @@ Returns:
   Width &= 0x03;
 
   if (PciIoDevice->IsPciExp) {
-    if ((*Offset + Count * (1 << Width)) - 1 >= PCI_EXP_MAX_CONFIG_OFFSET) {
+    if ((*Offset + Count * ((UINTN)1 << Width)) - 1 >= PCI_EXP_MAX_CONFIG_OFFSET) {
       return EFI_UNSUPPORTED;
     }
 
@@ -247,7 +247,7 @@ Returns:
     *Offset       = (*Offset) | ExtendOffset;
 
   } else {
-    if ((*Offset + Count * (1 << Width)) - 1 >= PCI_MAX_CONFIG_OFFSET) {
+    if ((*Offset + Count * ((UINTN)1 << Width)) - 1 >= PCI_MAX_CONFIG_OFFSET) {
       return EFI_UNSUPPORTED;
     }
 

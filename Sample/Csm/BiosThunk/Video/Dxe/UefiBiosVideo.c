@@ -1683,6 +1683,7 @@ BiosVideoCheckForVga (
   ModeBuffer->FrameBufferSize       = 0;
   ModeBuffer->HorizontalResolution  = 640;
   ModeBuffer->VerticalResolution    = 480;
+  ModeBuffer->BitsPerPixel          = 8;  
   ModeBuffer->PixelFormat           = PixelBltOnly;
 
   BiosVideoPrivate->ModeData = ModeBuffer;

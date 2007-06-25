@@ -45,6 +45,7 @@ Abstract:
 //
 #define EFI_ACPI_DMA_REMAPPING_STRUCTURE_TYPE_DRHD  0
 #define EFI_ACPI_DMA_REMAPPING_STRUCTURE_TYPE_RMRR  1
+#define EFI_ACPI_DMA_REMAPPING_STRUCTURE_TYPE_ATSR  2
 
 //
 // Definition for DMA Remapping Structure Header
@@ -65,12 +66,15 @@ typedef struct {
 //
 // Definition for DMA-Remapping Device Scope Entry Structure
 //
-#define EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ENDPOINT                 0x01            // Endpoint device
-#define EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_BRIDGE                   0x02            // Bridge Device
+#define EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_ENDPOINT                 0x01
+#define EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_BRIDGE                   0x02
+#define EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_IOAPIC                   0x03
+#define EFI_ACPI_DEVICE_SCOPE_ENTRY_TYPE_MSI_CAPABLE_HPET         0x04
 typedef struct {
   UINT8                   DeviceScopeEntryType;
   UINT8                   Length;
-  UINT8                   SegmentNumber;
+  UINT16                  Reserved_2;
+  UINT8                   EnumerationID;
   UINT8                   StartingBusNumber;
 } EFI_ACPI_DMAR_DEVICE_SCOPE_ENTRY_STRUCTURE;
 
@@ -83,40 +87,55 @@ typedef struct {
   UINT16                                      Type;
   UINT16                                      Length;
   UINT8                                       Flags;
-  UINT8                                       Reserved_5[3];
+  UINT8                                       Reserved_5;
+  UINT16                                      SegmentNumber;
   UINT64                                      RegisterBaseAddress;
 } EFI_ACPI_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE;
 
 //
 // Definition for Reserved Memory Region Reporting (RMRR) Structure
 //
-#define EFI_ACPI_DMAR_RMRR_FLAGS_ALLOW_ALL_SET       0x1
-#define EFI_ACPI_DMAR_DRHD_FLAGS_INCLUDE_ALL_CLEAR   0x0
 typedef struct {
   UINT16                                      Type;
   UINT16                                      Length;
-  UINT8                                       Flags;
-  UINT8                                       Reserved_5[3];
+  UINT8                                       Reserved_4[2];
+  UINT16                                      SegmentNumber;
   UINT64                                      ReservedMemoryRegionBaseAddress;
   UINT64                                      ReservedMemoryRegionLimitAddress;
 } EFI_ACPI_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE;
 
 //
+// Definition for Root Port ATS Capability Reporting (ATSR) Structure
+//
+#define EFI_ACPI_DMAR_ATSR_FLAGS_ALL_PORTS_SET     0x1
+#define EFI_ACPI_DMAR_ATSR_FLAGS_ALL_PORTS_CLEAR   0x0
+typedef struct {
+  UINT16                                      Type;
+  UINT16                                      Length;
+  UINT8                                       Flags;
+  UINT8                                       Reserved_5;
+  UINT16                                      SegmentNumber;
+} EFI_ACPI_DMAR_ROOT_PORT_ATS_CAPABILITY_REPORTING_STRUCTURE;
+
+//
 // Definition for DMA Remapping Structure
 //
 typedef union {
-  EFI_ACPI_DMAR_STRUCTURE_HEADER                            DMARStructureHeader;
-  EFI_ACPI_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE          DMARHardwareUnitDefinition;
-  EFI_ACPI_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE  DMARReservedMemoryRegionReporting;
+  EFI_ACPI_DMAR_STRUCTURE_HEADER                               DMARStructureHeader;
+  EFI_ACPI_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE             DMARHardwareUnitDefinition;
+  EFI_ACPI_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE     DMARReservedMemoryRegionReporting;
+  EFI_ACPI_DMAR_ROOT_PORT_ATS_CAPABILITY_REPORTING_STRUCTURE   DMARRootPortATSCapabilityReporting;
 } EFI_ACPI_DMA_REMAPPING_STRUCTURE;
 
 //
 // Definition for DMA-Remapping Reporting ACPI Table
 //
+#define EFI_ACPI_DMAR_TABLE_FLAGS_INTR_REMAP_SET            0x01
 typedef struct {
   EFI_ACPI_DESCRIPTION_HEADER                               Header;
   UINT8                                                     HostAddressWidth;
-  UINT8                                                     Reserved_37[11];
+  UINT8                                                     Flags;
+  UINT8                                                     Reserved_38[10];
 } EFI_ACPI_DMAR_DESCRIPTION_TABLE;
 
 //
@@ -138,28 +157,39 @@ typedef struct {
 
 #define EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_DHRD_ENTRY    0x01  // user need to update
 typedef struct {
-  EFI_ACPI_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE         Header;
-  EFI_ACPI_3_0_DMAR_DEVICE_SCOPE_ENTRY_STRUCTURE           DeviceScopeEntry[EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_DHRD_ENTRY];
+  EFI_ACPI_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE           Header;
+  EFI_ACPI_3_0_DMAR_DEVICE_SCOPE_ENTRY_STRUCTURE             DeviceScopeEntry[EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_DHRD_ENTRY];
 } EFI_ACPI_3_0_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE;
 
 #define EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_RMRR_ENTRY    0x01  // user need to update
 typedef struct {
-  EFI_ACPI_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE Header;
-  EFI_ACPI_3_0_DMAR_DEVICE_SCOPE_ENTRY_STRUCTURE           DeviceScopeEntry[EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_RMRR_ENTRY];
+  EFI_ACPI_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE   Header;
+  EFI_ACPI_3_0_DMAR_DEVICE_SCOPE_ENTRY_STRUCTURE             DeviceScopeEntry[EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_RMRR_ENTRY];
 } EFI_ACPI_3_0_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE;
+
+#define EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_ATSR_ENTRY    0x01  // user need to update
+typedef struct {
+  EFI_ACPI_DMAR_ROOT_PORT_ATS_CAPABILITY_REPORTING_STRUCTURE   Header;
+  EFI_ACPI_3_0_DMAR_DEVICE_SCOPE_ENTRY_STRUCTURE               DeviceScopeEntry[EFI_ACPI_MAX_NUM_OF_DEVICE_SCOPE_PER_ATSR_ENTRY];
+} EFI_ACPI_3_0_DMAR_ROOT_PORT_ATS_CAPABILITY_REPORTING_STRUCTURE;
 
 #define EFI_ACPI_DMAR_DHRD_ENTRY_COUNT                     0x1   // user need to update
 #define EFI_ACPI_DMAR_RMRR_ENTRY_COUNT                     0x1   // user need to update
+#define EFI_ACPI_DMAR_ATSR_ENTRY_COUNT                     0x1   // user need to update
 
 typedef struct {
-  EFI_ACPI_DMAR_DESCRIPTION_TABLE                              Header;
+  EFI_ACPI_DMAR_DESCRIPTION_TABLE                                  Header;
 
 #if EFI_ACPI_3_0_DMAR_DHRD_ENTRY_COUNT > 0
-  EFI_ACPI_3_0_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE         Dhrd[EFI_ACPI_DMAR_DHRD_ENTRY_COUNT];
+  EFI_ACPI_3_0_DMAR_HARDWARE_UNIT_DEFINITION_STRUCTURE             Dhrd[EFI_ACPI_DMAR_DHRD_ENTRY_COUNT];
 #endif
 
 #if EFI_ACPI_3_0_DMAR_RMRR_ENTRY_COUNT > 0
-  EFI_ACPI_3_0_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE Rmrr[EFI_ACPI_DMAR_RMRR_ENTRY_COUNT];
+  EFI_ACPI_3_0_DMAR_RESERVED_MEMORY_REGION_REPORTING_STRUCTURE     Rmrr[EFI_ACPI_DMAR_RMRR_ENTRY_COUNT];
+#endif
+
+#if EFI_ACPI_3_0_DMAR_ATSR_ENTRY_COUNT > 0
+  EFI_ACPI_3_0_DMAR_ROOT_PORT_ATS_CAPABILITY_REPORTING_STRUCTURE   Atsr[EFI_ACPI_DMAR_ATSR_ENTRY_COUNT];
 #endif
 
 } EFI_ACPI_3_0_DMA_REMAPPING_REPORTING_TABLE;

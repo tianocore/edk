@@ -37,19 +37,19 @@ Routine Description:
   Use PciIo->AllocateBuffer to allocate common buffer for the memory block,
   and use PciIo->Map to map the common buffer for Bus Master Read/Write.
 
-
 Arguments:
 
   HcDev        - USB_HC_DEV
   MemoryHeader - MEMORY_MANAGE_HEADER to output
   MemoryBlockSizeInPages - MemoryBlockSizeInPages
+  
 Returns:
 
-  EFI_SUCCESS -  Success
+  EFI_SUCCESS 
+  EFI_OUT_OF_RESOURCES
+  EFI_UNSUPPORTED
+  
 --*/
-// GC_TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// GC_TODO:    EFI_OUT_OF_RESOURCES - add return value to function comment
-// GC_TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   EFI_STATUS            Status;
   VOID                  *CommonBuffer;

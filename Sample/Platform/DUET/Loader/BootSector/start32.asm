@@ -76,7 +76,47 @@ BootSectorEntryPoint:
 ; Re use the BPB data stored in Boot Sector
         mov     bp,07c00h
 
+
+        push    cx
+; Read Efivar.bin
+;       1000:dx    = DirectoryEntry of Efivar.bin -> BS.com has filled already
+        mov     ax,01900h
+        mov     es,ax
+        test    dx,dx
+        jnz     CheckVarStoreSize
+
+        mov     al,1
+NoVarStore:
+        push    es
+; Set the 5th byte start @ 0:19000 to non-zero indicating we should init var store header in DxeIpl
+        mov     byte ptr es:[4],al
+        jmp     SaveVolumeId
+
+CheckVarStoreSize:
+        mov     di,dx
+        cmp     dword ptr ds:[di+2], 04000h
+        mov     al,2
+        jne     NoVarStore
+
+LoadVarStore:
+        mov     al,0
+        mov     byte ptr es:[4],al
+        mov     cx,word ptr[di]
+;       ES:DI = 1500:0
+        xor     di,di
+        push    es
+        mov     ax,01500h
+        mov     es,ax
+        call    ReadFile
+SaveVolumeId:
+        pop     es
+        mov     ax,word ptr [bp+VolId]
+        mov     word ptr es:[0],ax                  ; Save Volume Id to 0:19000. we will find the correct volume according to this VolumeId
+        mov     ax,word ptr [bp+VolId+2]
+        mov     word ptr es:[2],ax
+
 ; Read Efildr
+        pop     cx
 ;       cx    = Start Cluster of Efildr -> BS.com has filled already
 ;       ES:DI = 2000:0, first cluster will be read again
         xor     di,di                               ; di = 0
@@ -85,42 +125,13 @@ BootSectorEntryPoint:
         call    ReadFile
         mov     ax,cs
         mov     word ptr cs:[JumpSegment],ax
-
-; Read Efivar.bin
-;       dx    = Start Cluster of Efivar.bin -> BS.com has filled already
-        mov     ax,01900h
-        mov     es,ax
-        xor     di,di        
-        push    es
-        mov     cx,dx                               ; Restore Start Cluster of Efivar.bin
-        test    cx,cx
-        jne     LoadVarStoreFv
-; Set the 5th byte start @ 0:19000 to 1 indicating we should init var store header in DxeIpl
-        mov     al,1
-        mov     byte ptr es:[di+4],al
-        jmp     SaveVolumeId
-
-LoadVarStoreFv:
-        mov     al,0
-        mov     byte ptr es:[di+4],al
-;       ES:DI = 1500:0
-        push    es
-        mov     ax,01500h
-        mov     es,ax
-        call    ReadFile
-SaveVolumeId:
-        pop     es
-        mov     ax,word ptr [bp+VolId]
-        mov     word ptr es:[di],ax                  ; Save Volume Id to 0:19000. we will find the correct volume according to this VolumeId
-        mov     ax,word ptr [bp+VolId+2]
-        mov     word ptr es:[di+2],ax
-
 JumpFarInstruction:
         db      0eah
 JumpOffset:
         dw      0200h
 JumpSegment:
         dw      2000h
+
 
 
 
@@ -278,18 +289,23 @@ NotCrossing64KBoundry:
         ret
 
 DiskError:
+        push cs
+        pop  ds
+        lea  si, [ErrorString]
+        mov  cx, 7
+        jmp  PrintStringAndHalt
+
+PrintStringAndHalt:
         mov  ax,0b800h
         mov  es,ax
-        mov  ax, 2000h
-        mov  ds, ax
-        lea  si, cs:[ErrorString]
-        mov  cx, 11
-        mov  di, 160
-        rep  movsw 
+        mov  di,160
+        rep  movsw
 Halt:
         jmp   Halt
+
 ErrorString:
-        db 'B', 0ch, 'o', 0ch, 'o', 0ch, 't', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '2', 0ch, '!', 0ch
+        db 'S', 0ch, 'E', 0ch, 'r', 0ch, 'r', 0ch, 'o', 0ch, 'r', 0ch, '!', 0ch
+
         org     01fah
 LBAOffsetForBootSector:
         dd      0h
@@ -308,6 +324,10 @@ WRITE_DATA_PORT_CMD  equ     0d1h    ; 8042 command to write the data port
 ENABLE_A20_CMD       equ     0dfh    ; 8042 command to enable A20
 
         org     200h
+        jmp start
+Em64String:
+        db 'E', 0ch, 'm', 0ch, '6', 0ch, '4', 0ch, 'T', 0ch, ' ', 0ch, 'U', 0ch, 'n', 0ch, 's', 0ch, 'u', 0ch, 'p', 0ch, 'p', 0ch, 'o', 0ch, 'r', 0ch, 't', 0ch, 'e', 0ch, 'd', 0ch, '!', 0ch
+
 start:  
         mov ax,cs
         mov ds,ax
@@ -315,11 +335,11 @@ start:
         mov ss,ax
         mov sp,MyStack
 
-        mov ax,0b800h
-        mov es,ax
-        mov byte ptr es:[160],'a'
-        mov ax,cs
-        mov es,ax
+;        mov ax,0b800h
+;        mov es,ax
+;        mov byte ptr es:[160],'a'
+;        mov ax,cs
+;        mov es,ax
 
         mov ebx,0
         lea edi,MemoryMap
@@ -352,11 +372,11 @@ MemMapDone:
         add ebx,01000h
         mov esi,ebx                         ; Source of EFILDR32
 
-        mov ax,0b800h
-        mov es,ax
-        mov byte ptr es:[162],'b'
-        mov ax,cs
-        mov es,ax
+;        mov ax,0b800h
+;        mov es,ax
+;        mov byte ptr es:[162],'b'
+;        mov ax,cs
+;        mov es,ax
 
 ;
 ; Enable A20 Gate 
@@ -395,11 +415,11 @@ A20GateEnabled:
 
         cli                             
 
-        mov ax,0b800h
-        mov es,ax
-        mov byte ptr es:[164],'c'
-        mov ax,cs
-        mov es,ax
+;        mov ax,0b800h
+;        mov es,ax
+;        mov byte ptr es:[164],'c'
+;        mov ax,cs
+;        mov es,ax
 
         db      66h     
         lgdt    fword ptr [gdtr]

@@ -1907,7 +1907,6 @@ DevPathFromTextiSCSI (
   iSCSI->LoginOption      = (UINT16) Options;
 
   iSCSI->NetworkProtocol  = (UINT16) EfiStrCmp (ProtocolStr, L"TCP");
-  iSCSI->Reserved         = (UINT16) 0;
 
   return (EFI_DEVICE_PATH_PROTOCOL *) iSCSI;
 }
@@ -2084,6 +2083,43 @@ DevPathFromTextBBS (
   return (EFI_DEVICE_PATH_PROTOCOL *) Bbs;
 }
 
+EFI_DEVICE_PATH_PROTOCOL *
+DevPathFromTextSata (
+  IN CHAR16 *TextDeviceNode
+  )
+{
+  SATA_DEVICE_PATH *Sata;
+  CHAR16           *Param1;
+  CHAR16           *Param2;
+  CHAR16           *Param3;
+
+  //
+  // The PMPN is optional.
+  //
+  Param1 = GetNextParamStr (&TextDeviceNode);
+  Param2 = GetNextParamStr (&TextDeviceNode);
+  Param3 = NULL;
+  if (!IS_NULL (TextDeviceNode)) {
+    Param3 = GetNextParamStr (&TextDeviceNode);
+  }
+
+  Sata = (SATA_DEVICE_PATH *) CreateDeviceNode (
+                                MESSAGING_DEVICE_PATH,
+                                MSG_SATA_DP,
+                                sizeof (SATA_DEVICE_PATH)
+                                );
+  Sata->HBAPortNumber = (UINT16) Xtoi (Param1);
+  if (Param3 != NULL) {
+    Sata->PortMultiplierPortNumber = (UINT16) Xtoi (Param2);
+    Param2                         = Param3;
+  } else {
+    Sata->PortMultiplierPortNumber = 0;
+  }
+  Sata->Lun = (UINT16) Xtoi (Param2);
+
+  return (EFI_DEVICE_PATH_PROTOCOL *) Sata;
+}
+
 DEVICE_PATH_FROM_TEXT_TABLE DevPathFromTextTable[] = {
   L"Pci",
   DevPathFromTextPci,
@@ -2197,6 +2233,8 @@ DEVICE_PATH_FROM_TEXT_TABLE DevPathFromTextTable[] = {
   DevPathFromTextMedia,
   L"BBS",
   DevPathFromTextBBS,
+  L"Sata",
+  DevPathFromTextSata,
   NULL,
   NULL
 };

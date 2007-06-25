@@ -1335,11 +1335,12 @@ Returns:
     }
   }
   //
-  // No handle was found - error condition
+  // No package instance was found, or found package without IFR data - error condition
   //
-  if (PackageInstance == NULL) {
+  if ((PackageInstance == NULL) || (PackageInstance->IfrSize == 0)) {
     return EFI_INVALID_PARAMETER;
   }
+
   //
   // Calculate and allocate space for retrieval of IFR data
   //
@@ -1357,13 +1358,6 @@ Returns:
   ASSERT ( TempBuffer != NULL );
   
   OrigTempBuffer  = TempBuffer;
-
-  //
-  // We update only packages with IFR information in it
-  //
-  if (PackageInstance->IfrSize == 0) {
-    return EFI_INVALID_PARAMETER;
-  }
 
   EfiCopyMem (
     TempBuffer,

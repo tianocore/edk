@@ -30,19 +30,6 @@ static BOOLEAN   mResetRequired = FALSE;
 
 extern UINT16 gPlatformBootTimeOutDefault;
 
-static EFI_MEMORY_TYPE_INFORMATION mDefaultMemoryTypeInfo[] = {
-  { EfiACPIReclaimMemory,   0 },
-  { EfiACPIMemoryNVS,       0 },
-  { EfiReservedMemoryType,  0 },  
-  { EfiRuntimeServicesData, 0 },
-  { EfiRuntimeServicesCode, 0 },
-  { EfiBootServicesCode,    0 },
-  { EfiBootServicesData,    0 },
-  { EfiLoaderCode,          0 },
-  { EfiLoaderData,          0 },
-  { EfiMaxMemoryType,       0 }
-};
-
 UINT16
 BdsLibGetTimeout (
   VOID
@@ -1434,12 +1421,11 @@ Returns:
   //
   EfiLibGetSystemConfigurationTable (&gEfiHobListGuid, &HobList);
   Status = GetNextGuidHob (&HobList, &gEfiMemoryTypeInformationGuid, &PreviousMemoryTypeInformation, &VariableSize);
-  if (!EFI_ERROR (Status) && PreviousMemoryTypeInformation != NULL) {
-    ASSERT (VariableSize == sizeof (mDefaultMemoryTypeInfo));
-  } else {
-    PreviousMemoryTypeInformation = mDefaultMemoryTypeInfo;
-    VariableSize = sizeof (mDefaultMemoryTypeInfo);
-    UpdateRequired = TRUE;    
+  if (EFI_ERROR (Status) || PreviousMemoryTypeInformation == NULL) {
+  	//
+  	// If Platform has not built Memory Type Info into the Hob, just return.
+  	//
+    return;
   }
 
   //

@@ -183,6 +183,7 @@ Returns:
   EFI_STATUS                Status;
   UINT32                    Result;
   UINTN                     DataLen;
+  UINTN                     Timeout;
 
   ASSERT ((CmdLen > 0) && (CmdLen <= USB_BOT_MAX_CMDLEN));
 
@@ -201,6 +202,7 @@ Returns:
 
   Result        = 0;
   DataLen       = sizeof (USB_BOT_CBW);
+  Timeout       = USB_BOT_CBW_TIMEOUT / USB_MASS_STALL_1_MS;
 
   //
   // Use the UsbIo to send the command to the device. The default
@@ -211,7 +213,7 @@ Returns:
                             UsbBot->BulkOutEndpoint->EndpointAddress,
                             &Cbw,
                             &DataLen,
-                            USB_BOT_CBW_TIMEOUT,
+                            Timeout,
                             &Result
                             );
   //
@@ -279,8 +281,10 @@ Returns:
   } else {
     Endpoint = UsbBot->BulkOutEndpoint;
   }
-  Result = 0;
-  
+
+  Result  = 0;
+  Timeout = Timeout / USB_MASS_STALL_1_MS;
+
   Status = UsbBot->UsbIo->UsbBulkTransfer (
                             UsbBot->UsbIo,
                             Endpoint->EndpointAddress,
@@ -341,11 +345,13 @@ Returns:
   UINT32                    Result;
   EFI_USB_IO_PROTOCOL       *UsbIo;
   UINT32                    Index;
+  UINTN                     Timeout;
   
   *CmdStatus = USB_BOT_COMMAND_ERROR;
   Status     = EFI_DEVICE_ERROR;
   Endpoint   = UsbBot->BulkInEndpoint->EndpointAddress;
   UsbIo      = UsbBot->UsbIo;
+  Timeout    = USB_BOT_CSW_TIMEOUT / USB_MASS_STALL_1_MS;
 
   for (Index = 0; Index < USB_BOT_GET_STATUS_RETRY; Index++) {
     //
@@ -359,7 +365,7 @@ Returns:
                       Endpoint,
                       &Csw,
                       &Len,
-                      USB_BOT_CSW_TIMEOUT,
+                      Timeout,
                       &Result
                       );
     if (EFI_ERROR(Status)) {
@@ -405,7 +411,7 @@ UsbBotExecCommand (
   IN  EFI_USB_DATA_DIRECTION  DataDir,
   IN  VOID                    *Data,
   IN  UINT32                  DataLen,
-  IN  UINT32                  TimeOut,
+  IN  UINT32                  Timeout,
   OUT UINT32                  *CmdStatus
   )
 /*++
@@ -423,7 +429,7 @@ Arguments:
   DataDir   - The direction of the data transfer
   Data      - The buffer to hold data
   DataLen   - The length of the data
-  TimeOut   - The time to wait command 
+  Timeout   - The time to wait command 
   CmdStatus - The result of high level command execution
 
 Returns:
@@ -457,7 +463,7 @@ Returns:
   // whether it succeeds or failed.
   //
   TransLen = (UINTN) DataLen;
-  UsbBotDataTransfer (UsbBot, DataDir, Data, &TransLen, TimeOut);
+  UsbBotDataTransfer (UsbBot, DataDir, Data, &TransLen, Timeout);
 
   //
   // Get the status, if that succeeds, interpret the result
@@ -502,6 +508,7 @@ Returns:
   EFI_USB_DEVICE_REQUEST  Request;
   EFI_STATUS              Status;
   UINT32                  Result;
+  UINT32                  Timeout;
 
   UsbBot = (USB_BOT_PROTOCOL *) Context;
 
@@ -524,12 +531,13 @@ Returns:
   Request.Value       = 0;
   Request.Index       = UsbBot->Interface.InterfaceNumber;
   Request.Length      = 0;
+  Timeout             = USB_BOT_RESET_TIMEOUT / USB_MASS_STALL_1_MS;
 
   Status = UsbBot->UsbIo->UsbControlTransfer (
                             UsbBot->UsbIo,
                             &Request,
                             EfiUsbNoData,
-                            USB_BOT_RESET_TIMEOUT,
+                            Timeout,
                             NULL,
                             0,
                             &Result

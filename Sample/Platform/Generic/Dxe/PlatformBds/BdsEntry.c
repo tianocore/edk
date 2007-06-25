@@ -152,6 +152,7 @@ Returns:
     //
     SPrint (Buffer, sizeof (Buffer), L"Boot%04x", *mBootNext);
     BootOption = BdsLibVariableToOption (&BootLists, Buffer);
+    BootOption->BootCurrent = *mBootNext;
   }
   //
   // Parse the boot order to get boot option

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -638,33 +638,9 @@ Returns:
 ;
 
 EFI_STATUS
-CleanupWorkSpace (
-  IN EFI_FTW_LITE_DEVICE  *FtwLiteDevice,
-  IN OUT UINT8            *BlockBuffer,
-  IN UINTN                BufferSize
-  )
-/*++
-
-Routine Description:
-    Reclaim the work space. Get rid of all the completed write records
-    and write records in the Fault Tolerant work space.
-
-Arguments:
-    FtwLiteDevice   - Point to private data of FTW driver
-    FtwSpaceBuffer  - Buffer to contain the reclaimed clean data
-    BufferSize      - Size of the FtwSpaceBuffer
-
-Returns:
-    EFI_SUCCESS           - The function completed successfully
-    EFI_BUFFER_TOO_SMALL  - The FtwSpaceBuffer is too small
-    EFI_ABORTED           - The function could not complete successfully.
-
---*/
-;
-
-EFI_STATUS
 FtwReclaimWorkSpace (
-  IN EFI_FTW_LITE_DEVICE  *FtwLiteDevice
+  IN EFI_FTW_LITE_DEVICE  *FtwLiteDevice,
+  IN BOOLEAN              PreserveRecord
   )
 /*++
 

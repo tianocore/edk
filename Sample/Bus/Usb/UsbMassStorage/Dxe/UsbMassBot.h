@@ -51,11 +51,15 @@ enum {
 
   //
   // Usb Bot stall time
-  //
-  USB_BOT_CBW_TIMEOUT      = USB_MASS_STALL_1_MS,
-  USB_BOT_CSW_TIMEOUT      = USB_MASS_STALL_1_MS,
-  USB_BOT_RESET_TIMEOUT    = 3 * USB_MASS_STALL_1_MS,
+  //  
   USB_BOT_RESET_STALL      = 100 * USB_MASS_STALL_1_MS,
+  
+  //
+  // Usb Bot transfer timeout
+  //
+  USB_BOT_CBW_TIMEOUT      = 1 * USB_MASS_STALL_1_S,
+  USB_BOT_CSW_TIMEOUT      = 1 * USB_MASS_STALL_1_S,
+  USB_BOT_RESET_TIMEOUT    = 3 * USB_MASS_STALL_1_S,
 };
 
 //

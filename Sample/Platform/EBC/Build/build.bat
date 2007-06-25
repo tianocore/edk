@@ -291,9 +291,11 @@ goto end
 :builderror
 if exist error.log type error.log
 echo.
-echo.
-echo Error!!! Build tools may not be ready. Try to build tools first.
-echo.
+if not exist Tools\ProcessDsc.exe (
+  echo.
+  echo Error!!! Build tools may not be ready. Try to build tools first.
+  echo.
+)
 del module.* > NUL 2>&1
 goto end
 

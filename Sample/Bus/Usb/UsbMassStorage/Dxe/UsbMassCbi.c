@@ -205,6 +205,7 @@ Returns:
   Request.Length      = CmdLen;
 
   Status              = EFI_SUCCESS;
+  Timeout             = Timeout / USB_MASS_STALL_1_MS;
 
   for (Retry = 0; Retry < USB_CBI_MAX_RETRY; Retry++) {
     //
@@ -297,6 +298,7 @@ Returns:
   Remain  = *TransLen;
   Retry   = 0;
   Status  = EFI_SUCCESS;
+  Timeout = Timeout / USB_MASS_STALL_1_MS;
 
   //
   // Transfer the data, if the device returns NAK, retry it. 
@@ -396,6 +398,7 @@ Returns:
 
   Endpoint  = UsbCbi->InterruptEndpoint->EndpointAddress;
   Status    = EFI_SUCCESS;
+  Timeout   = Timeout / USB_MASS_STALL_1_MS;
 
   //
   // Attemp to the read the result from interrupt endpoint
@@ -434,7 +437,7 @@ UsbCbiExecCommand (
   IN  EFI_USB_DATA_DIRECTION  DataDir,
   IN  VOID                    *Data,
   IN  UINT32                  DataLen,
-  IN  UINT32                  TimeOut,
+  IN  UINT32                  Timeout,
   OUT UINT32                  *CmdStatus
   )
 /*++
@@ -450,7 +453,7 @@ Arguments:
   DataDir   - The direction of data transfer
   Data      - The buffer to hold the data
   DataLen   - The length of the buffer
-  TimeOut   - The time to wait 
+  Timeout   - The time to wait 
   CmdStatus - The result of the command execution
 
 Returns:
@@ -472,7 +475,7 @@ Returns:
   // Send the command to the device. Return immediately if device
   // rejects the command.
   //
-  Status = UsbCbiSendCommand (UsbCbi, Cmd, CmdLen, TimeOut);
+  Status = UsbCbiSendCommand (UsbCbi, Cmd, CmdLen, Timeout);
   if (EFI_ERROR (Status)) {
     DEBUG ((mUsbCbiError, "UsbCbiExecCommand: UsbCbiSendCommand (%r)\n",Status));
     return Status;
@@ -484,7 +487,7 @@ Returns:
   //
   TransLen = (UINTN) DataLen;
   
-  Status   = UsbCbiDataTransfer (UsbCbi, DataDir, Data, &TransLen, TimeOut);
+  Status   = UsbCbiDataTransfer (UsbCbi, DataDir, Data, &TransLen, Timeout);
   if (UsbCbi->InterruptEndpoint == NULL) {
     DEBUG ((mUsbCbiError, "UsbCbiExecCommand: UsbCbiDataTransfer (%r)\n",Status));
     return Status;
@@ -493,7 +496,7 @@ Returns:
   //
   // Get the status, if that succeeds, interpret the result
   //
-  Status = UsbCbiGetStatus (UsbCbi, TimeOut, &Result);
+  Status = UsbCbiGetStatus (UsbCbi, Timeout, &Result);
   if (EFI_ERROR (Status)) {
     DEBUG ((mUsbCbiError, "UsbCbiExecCommand: UsbCbiGetStatus (%r)\n",Status));
     return EFI_DEVICE_ERROR;
@@ -574,6 +577,7 @@ Returns:
   USB_CBI_PROTOCOL          *UsbCbi;
   USB_CBI_STATUS            Result;
   EFI_STATUS                Status;
+  UINT32                    Timeout;
 
   UsbCbi = (USB_CBI_PROTOCOL *) Context;
 
@@ -581,13 +585,15 @@ Returns:
   // Fill in the reset command.
   //
   EfiSetMem (ResetCmd, USB_CBI_RESET_CMD_LEN, 0xFF);
+
   ResetCmd[0] = 0x1D;
   ResetCmd[1] = 0x04;
+  Timeout     = USB_CBI_RESET_TIMEOUT / USB_MASS_STALL_1_MS;
 
   //
   // Send the command to the device. Don't use UsbCbiExecCommand here.
   //
-  Status = UsbCbiSendCommand (UsbCbi, ResetCmd, USB_CBI_RESET_CMD_LEN, USB_CBI_RESET_TIMEOUT);
+  Status = UsbCbiSendCommand (UsbCbi, ResetCmd, USB_CBI_RESET_CMD_LEN, Timeout);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -596,7 +602,7 @@ Returns:
   // Just retrieve the status and ignore that. Then stall 
   // 50ms to wait it complete
   //
-  UsbCbiGetStatus (UsbCbi, USB_CBI_RESET_TIMEOUT, &Result);
+  UsbCbiGetStatus (UsbCbi, Timeout, &Result);
   gBS->Stall (50 * 1000);
 
   //
