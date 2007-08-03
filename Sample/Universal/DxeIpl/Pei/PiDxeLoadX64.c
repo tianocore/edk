@@ -1013,111 +1013,11 @@ Returns:
                              NumberOfPages,
                              &Page
                              );
+  if (!EFI_ERROR (Status)) {
+    EfiCommonLibZeroMem ((VOID *) Page, EFI_PAGES_TO_SIZE (NumberOfPages));
+  }
   return Page;
 }
-
-
-EFI_PHYSICAL_ADDRESS
-Loadx64PeImage (
-  IN  EFI_PEI_SERVICES                          **PeiServices,
-  IN  VOID  *PeImage,
-  IN  UINTN PeImageSize
-  )
-/*++
-
-Routine Description:
-
-  32-bit code that loads an x64 PE32 image.
-
-Arguments:
-
-  PeImage     - Pointer to x64 PE32 image
-  PeImageSize - Size of PeImage
-
-Returns:
-
-  Address of the loaded x64 PE32 image
-
---*/
-{
-  EFI_STATUS                                Status;
-  EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT      ImageContext;
-
-  //
-  // Initialize ImageContext for PeImage
-  //
-  (*PeiServices)->SetMem (
-                    &ImageContext,
-                    sizeof (ImageContext),
-                    0
-                    );
-  ImageContext.Handle = PeImage;
-  Status              = GetImageReadFunction (PeiServices, &ImageContext);
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-
-  //
-  // Get the size of the Image into the ImageContext
-  //
-  PeCoffLoaderGetImageInfo (NULL, &ImageContext);
-  
-  //
-  // Allocate Memory for the image from our made up HOBs
-  //
-  ImageContext.ImageAddress = AllocateZeroedHobPages (PeiServices, EFI_SIZE_TO_PAGES ( (UINT32)ImageContext.ImageSize));
-  if (ImageContext.ImageAddress == 0) {
-    return 0;
-  }
-
-  Status = PeCoffLoaderLoadImage (NULL, &ImageContext);
-  if (EFI_ERROR (Status)) {
-    return 0;
-  }
-
-  Status = PeCoffLoaderRelocateImage (NULL, &ImageContext);
-  if (EFI_ERROR (Status)) {
-    return 0;
-  }
-
-  //
-  // BugBug: We would flush the Instruction Cache here to follow architecture.
-  // x64 parts do not require one so I left it out.
-  //
-
-  return ImageContext.EntryPoint;
-}
-
-VOID
-EfiCommonLibZeroMem (
-  IN VOID   *Buffer,
-  IN UINTN  Size
-  )
-/*++
-
-Routine Description:
-
-  Set Buffer to 0 for Size bytes. Bugbug, should be replaced by Pei Lib function
-
-Arguments:
-
-  Buffer  - Memory to set.
-
-  Size    - Number of bytes to set
-
-Returns:
-
-  None
-
---*/
-{
-  INT8  *Ptr;
-
-  Ptr = Buffer;
-  while (Size--) {
-    *(Ptr++) = 0;
-  }
-}
-
 
 EFI_STATUS
 EFIAPI

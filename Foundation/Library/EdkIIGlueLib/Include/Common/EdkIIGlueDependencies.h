@@ -554,6 +554,14 @@ Abstract:
   //
 #endif
 
+//
+//  Whether _gDriverExitBootServicesEvent[] contains effective handler
+//
+#if defined(__EDKII_GLUE_EDK_DXE_RUNTIME_DRIVER_LIB__) || defined(__EDKII_GLUE_EXIT_BOOT_SERVICES_EVENT_HANDLER__)
+  #define __EDKII_GLUE_HAVE_DRIVER_EXIT_BOOT_SERVICES_EVENT__ 1
+#else  
+  #define __EDKII_GLUE_HAVE_DRIVER_EXIT_BOOT_SERVICES_EVENT__ 0
+#endif
 
 //
 // Check against multiple instances of same library class being used

@@ -94,7 +94,7 @@ BootSectorEntryPoint:
   mov   bp,sp         ; bp = 0x7c00
 
   mov   ah,8                                ; ah = 8 - Get Drive Parameters Function
-  mov   byte ptr [bp+PhysicalDrive],dl      ; Physical Drive 
+  mov   byte ptr [bp+PhysicalDrive],dl      ; BBS defines that BIOS would pass the booting driver number to the loader through DL
   int   13h                                 ; Get Drive Parameters
   xor   ax,ax                   ; ax = 0
   mov   al,dh                   ; al = dh

@@ -951,7 +951,7 @@ UpdateNewTagData (
     case EFI_IFR_ONE_OF_OPTION_OP:
       IfrToFormTag (FormData[Index], &FormTags->Tags[CurrTag], (VOID *) &FormData[Index], NULL);
       FormTags->Tags[QuestionIndex].Key = ((EFI_IFR_ONE_OF_OPTION *) &FormData[Index])->Key;
-      FormTags->Tags[QuestionIndex].ResetRequired = (BOOLEAN) (FormTags->Tags[QuestionIndex].Flags & EFI_IFR_FLAG_RESET_REQUIRED);
+      FormTags->Tags[QuestionIndex].ResetRequired |= (BOOLEAN) (FormTags->Tags[CurrTag].Flags & EFI_IFR_FLAG_RESET_REQUIRED);
       break;
 
     case EFI_IFR_CHECKBOX_OP:

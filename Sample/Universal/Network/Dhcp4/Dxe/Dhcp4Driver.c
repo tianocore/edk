@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -150,9 +150,9 @@ Returns:
   UdpConfigData.StationPort               = DHCP_CLIENT_PORT;
   UdpConfigData.RemotePort                = DHCP_SERVER_PORT;
 
-  EFI_IP4 (UdpConfigData.StationAddress)  = 0;
-  EFI_IP4 (UdpConfigData.SubnetMask)      = 0;
-  EFI_IP4 (UdpConfigData.RemoteAddress)   = 0;
+  NetZeroMem (&UdpConfigData.StationAddress, sizeof (EFI_IPv4_ADDRESS));
+  NetZeroMem (&UdpConfigData.SubnetMask, sizeof (EFI_IPv4_ADDRESS));
+  NetZeroMem (&UdpConfigData.RemoteAddress, sizeof (EFI_IPv4_ADDRESS));
 
   return UdpIo->Udp->Configure (UdpIo->Udp, &UdpConfigData);;
 }

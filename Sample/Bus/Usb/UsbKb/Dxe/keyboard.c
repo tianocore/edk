@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -130,6 +130,24 @@ UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
     SCAN_NULL,      0x00,     0x00,     // 0x65 Keyboard Application
     SCAN_NULL,      0x00,     0x00,     // 0x66 Keyboard Power
     SCAN_NULL,      '=' ,     '='       // 0x67 Keypad =
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    ,
+    SCAN_F13,         0x00,   0x00,     // 0x68
+    SCAN_F14,         0x00,   0x00,     // 0x69
+    SCAN_F15,         0x00,   0x00,     // 0x6A  
+    SCAN_F16,         0x00,   0x00,     // 0x6B  
+    SCAN_F17,         0x00,   0x00,     // 0x6C
+    SCAN_F18,         0x00,   0x00,     // 0x6D
+    SCAN_F19,         0x00,   0x00,     // 0x6E
+    SCAN_F20,         0x00,   0x00,     // 0x6F
+    SCAN_F21,         0x00,   0x00,     // 0x70
+    SCAN_F22,         0x00,   0x00,     // 0x71
+    SCAN_F23,         0x00,   0x00,     // 0x72
+    SCAN_F24,         0x00,   0x00,     // 0x73
+    SCAN_MUTE,        0x00,   0x00,     // 0x7F
+    SCAN_VOLUME_UP,   0x00,   0x00,     // 0x80
+    SCAN_VOLUME_DOWN, 0x00,   0x00      // 0x81
+#endif
 };
 
 STATIC KB_MODIFIER  KB_Mod[8] = {
@@ -231,7 +249,7 @@ InitUSBKeyboard (
   //
   // Uses default configuration to configure the USB Keyboard device.
   //
-  Status = UsbSetDeviceConfiguration (
+  Status = UsbSetConfiguration (
             UsbKeyboardDevice->UsbIo,
             (UINT16) ConfigValue,
             &TransferResult
@@ -299,7 +317,7 @@ InitUSBKeyboard (
   // Sync the initial state of lights 
   //
   SetKeyLED (UsbKeyboardDevice);
-	
+
   EfiZeroMem (UsbKeyboardDevice->LastKeyCodeArray, sizeof (UINT8) * 8);
 
   //
@@ -690,21 +708,79 @@ USBParseKey (
     if (!UsbKey.Down) {
       switch (UsbKey.KeyCode) {
 
+      //
+      // CTRL release
+      //
       case 0xe0:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        UsbKeyboardDevice->LeftCtrlOn = 0;
+        UsbKeyboardDevice->CtrlOn = 0;
+        break;
+#endif
       case 0xe4:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        UsbKeyboardDevice->RightCtrlOn = 0;
+#endif
         UsbKeyboardDevice->CtrlOn = 0;
         break;
 
+      //
+      // Shift release
+      //
       case 0xe1:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        UsbKeyboardDevice->LeftShiftOn = 0;
+        UsbKeyboardDevice->ShiftOn = 0;
+        break;
+#endif
       case 0xe5:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        UsbKeyboardDevice->RightShiftOn = 0;
+#endif
         UsbKeyboardDevice->ShiftOn = 0;
         break;
 
+      //
+      // Alt release
+      //
       case 0xe2:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        UsbKeyboardDevice->LeftAltOn = 0;
+        UsbKeyboardDevice->AltOn = 0;
+        break;
+#endif
       case 0xe6:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        UsbKeyboardDevice->RightAltOn = 0;
+#endif        
         UsbKeyboardDevice->AltOn = 0;
         break;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      //
+      // Logo release
+      //
+     case 0xe3:
+        UsbKeyboardDevice->LeftLogoOn = 0;
+        break;
+      case 0xe7:
+        UsbKeyboardDevice->RightLogoOn = 0;
+        break;
+
+      //
+      // Menu key (App/Apps) release
+      //
+      case 0x65:
+        UsbKeyboardDevice->MenuKeyOn = 0;
+        break;
+
+      //
+      // SysReq release
+      //
+      case 0x46:
+        UsbKeyboardDevice->SysReqOn = 0;
+        break;
+#endif
       default:
         break;
       }
@@ -717,52 +793,119 @@ USBParseKey (
     //
     switch (UsbKey.KeyCode) {
 
+    //
+    // CTRL press
+    //
     case 0xe0:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      UsbKeyboardDevice->LeftCtrlOn = 1;
+      UsbKeyboardDevice->CtrlOn = 1;
+      continue;      
+      break;
+#endif
     case 0xe4:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      UsbKeyboardDevice->RightCtrlOn = 1;
+#endif
       UsbKeyboardDevice->CtrlOn = 1;
       continue;
       break;
 
+    //
+    // Shift press
+    //
     case 0xe1:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      UsbKeyboardDevice->LeftShiftOn = 1;
+      UsbKeyboardDevice->ShiftOn = 1;
+      continue;
+      break;
+#endif
     case 0xe5:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      UsbKeyboardDevice->RightShiftOn = 1;      
+#endif
       UsbKeyboardDevice->ShiftOn = 1;
       continue;
       break;
 
+    //
+    // Alt press
+    //
     case 0xe2:
-    case 0xe6:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      UsbKeyboardDevice->LeftAltOn = 1;
       UsbKeyboardDevice->AltOn = 1;
       continue;
       break;
 
+#endif      
+    case 0xe6:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      UsbKeyboardDevice->RightAltOn = 1;      
+#endif
+      UsbKeyboardDevice->AltOn = 1;
+      continue;
+      break;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    //
+    // Logo press
+    //
+    case 0xe3:
+      UsbKeyboardDevice->LeftLogoOn = 1;
+      continue;      
+      break;
+    case 0xe7:
+      UsbKeyboardDevice->RightLogoOn = 1;
+      continue;
+      break;
+
+    //
+    // Menu key (App/Apps) press
+    //
+    case 0x65:
+      UsbKeyboardDevice->MenuKeyOn = 1;
+      continue;      
+      break;
+
+    //
+    // SysReq press
+    //
+    case 0x46:
+      UsbKeyboardDevice->SysReqOn = 1;
+      continue;      
+      break;
+
+#else
     case 0xe3:
     case 0xe7:
       continue;
       break;
-
+#endif
     case 0x53:
       UsbKeyboardDevice->NumLockOn ^= 1;
-	  //
-	  // Turn on the NumLock light on KB
-	  //
+      //
+      // Turn on the NumLock light on KB
+      //
       SetKeyLED (UsbKeyboardDevice);
       continue;
       break;
 
     case 0x39:
       UsbKeyboardDevice->CapsOn ^= 1;
-	  //
-	  // Turn on the CapsLock light on KB
-	  //
+      //
+      // Turn on the CapsLock light on KB
+      //
       SetKeyLED (UsbKeyboardDevice);
       continue;
       break;
     
     case 0x47:
-      UsbKeyboardDevice->ScrollOn ^= 1;
-	  //
-	  // Turn on the ScrollLock light on KB
-	  //
+      UsbKeyboardDevice->ScrollOn ^= 1;  
+      //
+      // Turn on the ScrollLock light on KB
+      //
       SetKeyLED (UsbKeyboardDevice);
       continue;
       break;
@@ -772,15 +915,21 @@ USBParseKey (
     // keys are not valid EFI key
     //
 
+    //
+    // PrintScreen/SysRq key and Application key
+    // Should be handled by UEFI2.1 compliant code
+
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
     case 0x46:
     //
     // fall through
     //
-    case 0x48:
+    case 0x65:
     //
     // fall through
     //
-    case 0x65:
+#endif    
+    case 0x48:
     //
     // fall through
     //
@@ -850,11 +999,30 @@ USBKeyCodeToEFIScanCode (
     return EFI_NOT_READY;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Undefined entries from 0x74 to 0x7E
+  //
+  if (KeyChar > USB_KEYCODE_MAX_MAKE) {
+    Index = Index - 11;
+  }
+#endif
+
   Key->ScanCode = KeyConvertionTable[Index][0];
 
   if (UsbKeyboardDevice->ShiftOn) {
 
     Key->UnicodeChar = KeyConvertionTable[Index][2];
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    //
+    // Need not return associated shift state if a class of printable characters that
+    // are normally adjusted by shift modifiers. e.g. Shift Key + 'f' key = 'F'
+    //
+    if (Key->UnicodeChar >= 'A' && Key->UnicodeChar <= 'Z') {
+      UsbKeyboardDevice->LeftShiftOn = 0;
+      UsbKeyboardDevice->RightShiftOn = 0;
+    }
+#endif    
 
   } else {
 
@@ -889,6 +1057,53 @@ USBKeyCodeToEFIScanCode (
   if (Key->UnicodeChar == 0 && Key->ScanCode == SCAN_NULL) {
     return EFI_NOT_READY;
   }
+
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Save Shift/Toggle state
+  //
+  if (UsbKeyboardDevice->LeftCtrlOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_LEFT_CONTROL_PRESSED;
+  }
+  if (UsbKeyboardDevice->RightCtrlOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_RIGHT_CONTROL_PRESSED;
+  }
+  if (UsbKeyboardDevice->LeftAltOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_LEFT_ALT_PRESSED;
+  }
+  if (UsbKeyboardDevice->RightAltOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_RIGHT_ALT_PRESSED;
+  }
+  if (UsbKeyboardDevice->LeftShiftOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_LEFT_SHIFT_PRESSED;
+  }
+  if (UsbKeyboardDevice->RightShiftOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_RIGHT_SHIFT_PRESSED;
+  }
+  if (UsbKeyboardDevice->LeftLogoOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_LEFT_LOGO_PRESSED;
+  }
+  if (UsbKeyboardDevice->RightLogoOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_RIGHT_LOGO_PRESSED;
+  }
+  if (UsbKeyboardDevice->MenuKeyOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_MENU_KEY_PRESSED;
+  }
+  if (UsbKeyboardDevice->SysReqOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyShiftState |= EFI_SYS_REQ_PRESSED;
+  }  
+
+  if (UsbKeyboardDevice->ScrollOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyToggleState |= EFI_SCROLL_LOCK_ACTIVE;
+  }
+  if (UsbKeyboardDevice->NumLockOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyToggleState |= EFI_NUM_LOCK_ACTIVE;
+  }
+  if (UsbKeyboardDevice->CapsOn == 1) {
+    UsbKeyboardDevice->KeyState.KeyToggleState |= EFI_CAPS_LOCK_ACTIVE;
+  }
+#endif
 
   return EFI_SUCCESS;
 

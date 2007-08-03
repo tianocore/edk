@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,9 +23,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "UsbDxeLib.h"
 
-//
-// Get Device Descriptor
-//
+
 EFI_STATUS
 UsbGetDescriptor (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
@@ -65,7 +63,7 @@ Returns:
   EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   DevReq.RequestType  = USB_DEV_GET_DESCRIPTOR_REQ_TYPE;
-  DevReq.Request      = USB_DEV_GET_DESCRIPTOR;
+  DevReq.Request      = USB_REQ_GET_DESCRIPTOR;
   DevReq.Value        = Value;
   DevReq.Index        = Index;
   DevReq.Length       = DescriptorLength;
@@ -80,9 +78,7 @@ Returns:
                   Status
                   );
 }
-//
-// Set Device Descriptor
-//
+
 EFI_STATUS
 UsbSetDescriptor (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
@@ -122,7 +118,7 @@ Returns:
   EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   DevReq.RequestType  = USB_DEV_SET_DESCRIPTOR_REQ_TYPE;
-  DevReq.Request      = USB_DEV_SET_DESCRIPTOR;
+  DevReq.Request      = USB_REQ_SET_DESCRIPTOR;
   DevReq.Value        = Value;
   DevReq.Index        = Index;
   DevReq.Length       = DescriptorLength;
@@ -138,11 +134,8 @@ Returns:
                   );
 }
 
-//
-// Get device Interface
-//
 EFI_STATUS
-UsbGetDeviceInterface (
+UsbGetInterface (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   IN  UINT16                  Index,
   OUT UINT8                   *AltSetting,
@@ -179,7 +172,7 @@ Returns:
   EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   DevReq.RequestType  = USB_DEV_GET_INTERFACE_REQ_TYPE;
-  DevReq.Request      = USB_DEV_GET_INTERFACE;
+  DevReq.Request      = USB_REQ_GET_INTERFACE;
   DevReq.Index        = Index;
   DevReq.Length       = 1;
 
@@ -193,11 +186,9 @@ Returns:
                   Status
                   );
 }
-//
-// Set device interface
-//
+
 EFI_STATUS
-UsbSetDeviceInterface (
+UsbSetInterface (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   IN  UINT16                  InterfaceNo,
   IN  UINT16                  AltSetting,
@@ -233,7 +224,7 @@ Returns:
   EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   DevReq.RequestType  = USB_DEV_SET_INTERFACE_REQ_TYPE;
-  DevReq.Request      = USB_DEV_SET_INTERFACE;
+  DevReq.Request      = USB_REQ_SET_INTERFACE;
   DevReq.Value        = AltSetting;
   DevReq.Index        = InterfaceNo;
  
@@ -248,11 +239,9 @@ Returns:
                   Status
                   );
 }
-//
-// Get device configuration
-//
+
 EFI_STATUS
-UsbGetDeviceConfiguration (
+UsbGetConfiguration (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   OUT UINT8                   *ConfigValue,
   OUT UINT32                  *Status
@@ -286,7 +275,7 @@ Returns:
   EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   DevReq.RequestType  = USB_DEV_GET_CONFIGURATION_REQ_TYPE;
-  DevReq.Request      = USB_DEV_GET_CONFIGURATION;
+  DevReq.Request      = USB_REQ_GET_CONFIG;
   DevReq.Length       = 1;
 
   return UsbIo->UsbControlTransfer (
@@ -299,11 +288,9 @@ Returns:
                   Status
                   );
 }
-//
-// Set device configuration
-//
+
 EFI_STATUS
-UsbSetDeviceConfiguration (
+UsbSetConfiguration (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
   IN  UINT16                  Value,
   OUT UINT32                  *Status
@@ -337,7 +324,7 @@ Returns:
   EfiZeroMem (&DevReq, sizeof (EFI_USB_DEVICE_REQUEST));
 
   DevReq.RequestType  = USB_DEV_SET_CONFIGURATION_REQ_TYPE;
-  DevReq.Request      = USB_DEV_SET_CONFIGURATION;
+  DevReq.Request      = USB_REQ_SET_CONFIG;
   DevReq.Value        = Value;
  
   return UsbIo->UsbControlTransfer (
@@ -350,13 +337,11 @@ Returns:
                   Status
                   );
 }
-//
-//  Set Device Feature
-//
+
 EFI_STATUS
-UsbSetDeviceFeature (
+UsbSetFeature (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
-  IN  EFI_USB_RECIPIENT       Recipient,
+  IN  UINTN       Recipient,
   IN  UINT16                  Value,
   IN  UINT16                  Target,
   OUT UINT32                  *Status
@@ -393,22 +378,22 @@ Returns:
 
   switch (Recipient) {
 
-  case EfiUsbDevice:
-    DevReq.RequestType = 0x00;
+  case USB_TARGET_DEVICE:
+    DevReq.RequestType = USB_DEV_SET_FEATURE_REQ_TYPE_D;
     break;
 
-  case EfiUsbInterface:
-    DevReq.RequestType = 0x01;
+  case USB_TARGET_INTERFACE:
+    DevReq.RequestType = USB_DEV_SET_FEATURE_REQ_TYPE_I;
     break;
 
-  case EfiUsbEndpoint:
-    DevReq.RequestType = 0x02;
+  case USB_TARGET_ENDPOINT:
+    DevReq.RequestType = USB_DEV_SET_FEATURE_REQ_TYPE_E;
     break;
   }
   //
   // Fill device request, see USB1.1 spec
   //
-  DevReq.Request  = USB_DEV_SET_FEATURE;
+  DevReq.Request  = USB_REQ_SET_FEATURE;
   DevReq.Value    = Value;
   DevReq.Index    = Target;
 
@@ -423,13 +408,11 @@ Returns:
                   Status
                   );
 }
-//
-// Clear Device Feature
-//
+
 EFI_STATUS
-UsbClearDeviceFeature (
+UsbClearFeature (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
-  IN  EFI_USB_RECIPIENT       Recipient,
+  IN  UINTN       Recipient,
   IN  UINT16                  Value,
   IN  UINT16                  Target,
   OUT UINT32                  *Status
@@ -466,22 +449,22 @@ Returns:
 
   switch (Recipient) {
 
-  case EfiUsbDevice:
-    DevReq.RequestType = 0x00;
+  case USB_TARGET_DEVICE:
+    DevReq.RequestType = USB_DEV_CLEAR_FEATURE_REQ_TYPE_D;
     break;
 
-  case EfiUsbInterface:
-    DevReq.RequestType = 0x01;
+  case USB_TARGET_INTERFACE:
+    DevReq.RequestType = USB_DEV_CLEAR_FEATURE_REQ_TYPE_I;
     break;
 
-  case EfiUsbEndpoint:
-    DevReq.RequestType = 0x02;
+  case USB_TARGET_ENDPOINT:
+    DevReq.RequestType = USB_DEV_CLEAR_FEATURE_REQ_TYPE_E;
     break;
   }
   //
   // Fill device request, see USB1.1 spec
   //
-  DevReq.Request  = USB_DEV_CLEAR_FEATURE;
+  DevReq.Request  = USB_REQ_CLEAR_FEATURE;
   DevReq.Value    = Value;
   DevReq.Index    = Target;
 
@@ -496,13 +479,11 @@ Returns:
                   Status
                   );
 }
-//
-//  Get Device Status
-//
+
 EFI_STATUS
-UsbGetDeviceStatus (
+UsbGetStatus (
   IN  EFI_USB_IO_PROTOCOL     *UsbIo,
-  IN  EFI_USB_RECIPIENT       Recipient,
+  IN  UINTN       Recipient,
   IN  UINT16                  Target,
   OUT UINT16                  *DevStatus,
   OUT UINT32                  *Status
@@ -539,22 +520,22 @@ Returns:
 
   switch (Recipient) {
 
-  case EfiUsbDevice:
-    DevReq.RequestType = 0x80;
+  case USB_TARGET_DEVICE:
+    DevReq.RequestType = USB_DEV_GET_STATUS_REQ_TYPE_D;
     break;
 
-  case EfiUsbInterface:
-    DevReq.RequestType = 0x81;
+  case USB_TARGET_INTERFACE:
+    DevReq.RequestType = USB_DEV_GET_STATUS_REQ_TYPE_I;
     break;
 
-  case EfiUsbEndpoint:
-    DevReq.RequestType = 0x82;
+  case USB_TARGET_ENDPOINT:
+    DevReq.RequestType = USB_DEV_GET_STATUS_REQ_TYPE_E;
     break;
   }
   //
   // Fill device request, see USB1.1 spec
   //
-  DevReq.Request  = USB_DEV_GET_STATUS;
+  DevReq.Request  = USB_REQ_GET_STATUS;
   DevReq.Value    = 0;
   DevReq.Index    = Target;
   DevReq.Length   = 2;
@@ -569,60 +550,7 @@ Returns:
                   Status
                   );
 }
-//
-// Usb Get String
-//
-EFI_STATUS
-UsbGetString (
-  IN  EFI_USB_IO_PROTOCOL     *UsbIo,
-  IN  UINT16                  LangID,
-  IN  UINT8                   Index,
-  IN  VOID                    *Buf,
-  IN  UINTN                   BufSize,
-  OUT UINT32                  *Status
-  )
-/*++
 
-Routine Description:
-
-  Usb Get String
-
-Arguments:
-
-  UsbIo     - EFI_USB_IO_PROTOCOL
-  LangID    - Language ID
-  Index     - Request index
-  Buf       - Buffer to store string
-  BufSize   - Buffer size
-  Status    - Transfer status
-
-Returns:
-  
-  EFI_INVALID_PARAMETER - Parameter is error
-  EFI_SUCCESS           - Success
-  EFI_TIMEOUT           - Device has no response 
-
---*/
-{
-  UINT16  Value;
-
-  if (UsbIo == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-  //
-  // Fill value, see USB1.1 spec
-  //
-  Value = (UINT16) ((USB_DT_STRING << 8) | Index);
-
-  return UsbGetDescriptor (
-          UsbIo,
-          Value,
-          LangID,
-          (UINT16) BufSize,
-          Buf,
-          Status
-          );
-}
 
 EFI_STATUS
 UsbClearEndpointHalt (
@@ -689,9 +617,9 @@ Returns:
     return EFI_NOT_FOUND;
   }
 
-  Result = UsbClearDeviceFeature (
+  Result = UsbClearFeature (
             UsbIo,
-            EfiUsbEndpoint,
+            USB_TARGET_ENDPOINT,
             EfiUsbEndpointHalt,
             EndpointDescriptor.EndpointAddress,
             Status

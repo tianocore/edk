@@ -475,11 +475,15 @@ Returns:
         //
         // Save the matched patition device path as first instance of 'HDDP' variable
         //        
-        if (!BdsLibMatchDevicePaths (CachedDevicePath, BlockIoDevicePath)) {
+        if (BdsLibMatchDevicePaths (CachedDevicePath, BlockIoDevicePath)) {
           TempNewDevicePath = CachedDevicePath;
           CachedDevicePath = BdsLibDelPartMatchInstance (CachedDevicePath, BlockIoDevicePath);
           EfiLibSafeFreePool(TempNewDevicePath); 
 
+          TempNewDevicePath = CachedDevicePath;
+          CachedDevicePath = EfiAppendDevicePathInstance (BlockIoDevicePath, CachedDevicePath);
+          EfiLibSafeFreePool(TempNewDevicePath);
+        } else {
           TempNewDevicePath = CachedDevicePath;
           CachedDevicePath = EfiAppendDevicePathInstance (BlockIoDevicePath, CachedDevicePath);
           EfiLibSafeFreePool(TempNewDevicePath);

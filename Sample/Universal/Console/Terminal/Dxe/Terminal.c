@@ -49,6 +49,16 @@ TerminalDriverBindingStop (
   IN  EFI_HANDLE                     *ChildHandleBuffer
   );
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC
+EFI_STATUS
+TerminalFreeNotifyList (
+  IN OUT EFI_LIST_ENTRY       *ListHead
+  );  
+
+EFI_GUID gSimpleTextInExNotifyGuid = SIMPLE_TEXTIN_EX_NOTIFY_GUID;
+#endif
+
 //
 // Globals
 //
@@ -415,6 +425,31 @@ TerminalDriverBindingStart (
   TerminalDevice->SimpleInput.Reset         = TerminalConInReset;
   TerminalDevice->SimpleInput.ReadKeyStroke = TerminalConInReadKeyStroke;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Simple Input Ex Protocol
+  //
+  TerminalDevice->SimpleInputEx.Reset               = TerminalConInResetEx;
+  TerminalDevice->SimpleInputEx.ReadKeyStrokeEx     = TerminalConInReadKeyStrokeEx;
+  TerminalDevice->SimpleInputEx.SetState            = TerminalConInSetState;
+  TerminalDevice->SimpleInputEx.RegisterKeyNotify   = TerminalConInRegisterKeyNotify;
+  TerminalDevice->SimpleInputEx.UnregisterKeyNotify = TerminalConInUnregisterKeyNotify;
+
+  InitializeListHead (&TerminalDevice->NotifyList);
+
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_NOTIFY_WAIT,
+                  EFI_TPL_NOTIFY,
+                  TerminalConInWaitForKeyEx,
+                  &TerminalDevice->SimpleInputEx,
+                  &TerminalDevice->SimpleInputEx.WaitForKeyEx
+                  );
+  if (EFI_ERROR (Status)) {
+    goto Error;
+  }
+
+#endif
+
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_WAIT,
                   EFI_TPL_NOTIFY,
@@ -503,7 +538,7 @@ TerminalDriverBindingStart (
   TerminalDevice->SimpleTextOutput.EnableCursor       = TerminalConOutEnableCursor;
   TerminalDevice->SimpleTextOutput.Mode               = &TerminalDevice->SimpleTextOutputMode;
 
-  TerminalDevice->SimpleTextOutputMode.MaxMode        = 1;
+  TerminalDevice->SimpleTextOutputMode.MaxMode        = 2;
   //
   // For terminal devices, cursor is always visible
   //
@@ -597,6 +632,11 @@ TerminalDriverBindingStart (
                   TerminalDevice->DevicePath,
                   &gEfiSimpleTextInProtocolGuid,
                   &TerminalDevice->SimpleInput,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  &TerminalDevice->SimpleInputEx,
+
+#endif                 
                   &gEfiSimpleTextOutProtocolGuid,
                   &TerminalDevice->SimpleTextOutput,
                   NULL
@@ -675,6 +715,14 @@ Error:
       if (TerminalDevice->SimpleInput.WaitForKey != NULL) {
         gBS->CloseEvent (TerminalDevice->SimpleInput.WaitForKey);
       }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+      if (TerminalDevice->SimpleInputEx.WaitForKeyEx != NULL) {
+        gBS->CloseEvent (TerminalDevice->SimpleInputEx.WaitForKeyEx);
+      }
+
+      TerminalFreeNotifyList (&TerminalDevice->NotifyList);
+#endif
 
       if (TerminalDevice->ControllerNameTable != NULL) {
         EfiLibFreeUnicodeStringTable (TerminalDevice->ControllerNameTable);
@@ -840,6 +888,10 @@ TerminalDriverBindingStop (
                       ChildHandleBuffer[Index],
                       &gEfiSimpleTextInProtocolGuid,
                       &TerminalDevice->SimpleInput,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+                      &gEfiSimpleTextInputExProtocolGuid,
+                      &TerminalDevice->SimpleInputEx,
+#endif
                       &gEfiSimpleTextOutProtocolGuid,
                       &TerminalDevice->SimpleTextOutput,
                       &gEfiDevicePathProtocolGuid,
@@ -882,6 +934,10 @@ TerminalDriverBindingStop (
 
         gBS->CloseEvent (TerminalDevice->TwoSecondTimeOut);
         gBS->CloseEvent (TerminalDevice->SimpleInput.WaitForKey);
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        gBS->CloseEvent (TerminalDevice->SimpleInputEx.WaitForKeyEx);
+        TerminalFreeNotifyList (&TerminalDevice->NotifyList);
+#endif
         gBS->FreePool (TerminalDevice->DevicePath);
         gBS->FreePool (TerminalDevice);
       }
@@ -898,6 +954,49 @@ TerminalDriverBindingStop (
 
   return EFI_SUCCESS;
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC
+EFI_STATUS
+TerminalFreeNotifyList (
+  IN OUT EFI_LIST_ENTRY       *ListHead
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  ListHead   - The list head
+
+Returns:
+
+  EFI_SUCCESS           - Free the notify list successfully
+  EFI_INVALID_PARAMETER - ListHead is invalid.
+
+--*/
+{
+  TERMINAL_CONSOLE_IN_EX_NOTIFY *NotifyNode;
+
+  if (ListHead == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  while (!IsListEmpty (ListHead)) {
+    NotifyNode = CR (
+                   ListHead->ForwardLink, 
+                   TERMINAL_CONSOLE_IN_EX_NOTIFY, 
+                   NotifyEntry, 
+                   TERMINAL_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                   );
+    RemoveEntryList (ListHead->ForwardLink);
+    EfiLibSafeFreePool (NotifyNode);
+  }
+  
+  return EFI_SUCCESS;
+}
+#endif
+
+
 
 VOID
 TerminalUpdateConsoleDevVariable (

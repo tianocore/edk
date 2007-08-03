@@ -212,11 +212,6 @@ UhciSetState (
     break;
 
   case EfiUsbHcStateOperational:
-    if (UhciIsHcError (Uhc->PciIo)) {
-      Status = EFI_DEVICE_ERROR;
-      goto ON_EXIT;
-    }
-
     UsbCmd = UhciReadReg (Uhc->PciIo, USBCMD_OFFSET);
 
     if (CurState == EfiUsbHcStateHalt) {
@@ -237,8 +232,7 @@ UhciSetState (
       }
       
       //
-      // wait 20ms to let resume complete
-      // (20ms is specified by UHCI spec)
+      // wait 20ms to let resume complete (20ms is specified by UHCI spec)
       //
       gBS->Stall (FORCE_GLOBAL_RESUME_TIME);
 
@@ -335,7 +329,7 @@ UhciGetRootHubPortNumber (
 
   Uhc->RootPorts = *PortNumber;
 
-  UHCI_DEBUG ((UHCI_DEBUG_PORT_STS, "UHC root port number: %d\n", Uhc->RootPorts));
+  UHCI_DEBUG (("UhciGetRootHubPortNumber: %d ports\n", Uhc->RootPorts));
   return EFI_SUCCESS;
 }
 
@@ -395,6 +389,7 @@ UhciGetRootHubPortStatus (
   }
 
   if (PortSC & USBPORTSC_SUSP) {
+    UHCI_DEBUG (("UhciGetRootHubPortStatus: port %d is suspended\n", PortNumber));
     PortStatus->PortStatus |= USB_PORT_STAT_SUSPEND;
   }
 
@@ -660,16 +655,16 @@ UhciControlTransfer (
     EFI_DEVICE_ERROR      : Failed due to host controller or device error. 
 --*/
 {
-  USB_HC_DEV          *Uhc;
-  UHCI_QH_SW          *QhSw;
-  UHCI_TD_SW          *TDs;
-  EFI_TPL             OldTpl;
-  EFI_STATUS          Status;
-  UINT8               PktId;
-  UINT8               *RequestPhy;
-  VOID                *RequestMap;
-  UINT8               *DataPhy;
-  VOID                *DataMap;
+  USB_HC_DEV              *Uhc;
+  UHCI_TD_SW              *TDs;
+  EFI_TPL                 OldTpl;
+  EFI_STATUS              Status;
+  UHCI_QH_RESULT          QhResult;
+  UINT8                   PktId;
+  UINT8                   *RequestPhy;
+  VOID                    *RequestMap;
+  UINT8                   *DataPhy;
+  VOID                    *DataMap;
 
   Uhc         = UHC_FROM_USB_HC_PROTO (This);
   TDs         = NULL;
@@ -698,58 +693,39 @@ UhciControlTransfer (
   if ((TransferDirection != EfiUsbNoData) && (DataLength == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
+  *TransferResult = EFI_USB_ERR_SYSTEM;
+  Status          = EFI_DEVICE_ERROR;
+
   //
   // If errors exist that cause host controller halt,
   // clear status then return EFI_DEVICE_ERROR.
   //
+  UhciAckAllInterrupt (Uhc);
+
   if (!UhciIsHcWorking (Uhc->PciIo)) {
-    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-    *TransferResult = EFI_USB_ERR_SYSTEM;
     return EFI_DEVICE_ERROR;
   }
 
   OldTpl = gBS->RaiseTPL (UHCI_TPL);
 
   //
-  // Map the Request and data for bus master access.
+  // Map the Request and data for bus master access, 
+  // then create a list of TD for this transfer
   //
-  Status = UhciMapUserRequest (
-             Uhc,
-             Request,
-             &RequestPhy,
-             &RequestMap
-             );
+  Status = UhciMapUserRequest (Uhc, Request, &RequestPhy, &RequestMap);
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciMapUserRequest failed\n"));
-
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    Status          = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
 
-  Status = UhciMapUserData (
-             Uhc,
-             TransferDirection,
-             Data,
-             DataLength,
-             &PktId,
-             &DataPhy,
-             &DataMap
-             );
+  Status = UhciMapUserData (Uhc, TransferDirection, Data, DataLength, &PktId, &DataPhy, &DataMap);
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciMapUserData failed\n"));
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-
-    goto UNMAP_REQUEST;
+    Uhc->PciIo->Unmap (Uhc->PciIo, RequestMap);
+    goto ON_EXIT;
   }
   
-  //
-  // Create Tds list and link it to the frame list according
-  // to its speed
-  //
   TDs = UhciCreateCtrlTds (
           Uhc,
           DeviceAddress,
@@ -762,63 +738,32 @@ UhciControlTransfer (
           );
 
   if (TDs == NULL) {
-    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciCreateCtrlTds failed\n"));
-    
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    Status          = EFI_OUT_OF_RESOURCES;
+    Status = EFI_OUT_OF_RESOURCES;
     goto UNMAP_DATA;
   }
 
-  if (IsSlowDevice) {
-    QhSw = Uhc->LsCtrlQh;
-  } else {
-    QhSw = Uhc->FsCtrlBulkQh;
-  }
-
-  UhciLinkTdToQh (QhSw, TDs);
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-
   //
-  // Poll QH-TDs execution and get result.
-  // detail status is returned
+  // According to the speed of the end point, link 
+  // the TD to corrosponding queue head, then check
+  // the execution result
   //
-  Status = UhciExecuteTransfer (
-             Uhc,
-             TDs,
-             DataLength,
-             0,
-             TimeOut,
-             TransferResult,
-             TRUE,
-             IsSlowDevice
-             );
+  UhciLinkTdToQh (Uhc->CtrlQh, TDs);
+  Status = UhciExecuteTransfer (Uhc, Uhc->CtrlQh, TDs, TimeOut, IsSlowDevice, &QhResult);
+  UhciUnlinkTdFromQh (Uhc->CtrlQh, TDs);
 
-  if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_CTL, "UhciExecuteTransfer failed\n"));
-    goto DESTORY_TDS;
+  Uhc->PciIo->Flush (Uhc->PciIo);
+
+  *TransferResult = QhResult.Result;
+ 
+  if (DataLength != NULL) {
+    *DataLength = QhResult.Complete;
   }
   
-  //
-  // If has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!UhciIsHcWorking (Uhc->PciIo)) {
-    *TransferResult |= EFI_USB_ERR_SYSTEM;
-    Status = EFI_DEVICE_ERROR;
-  }
-
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-
-DESTORY_TDS:
-  UhciUnlinkTdFromQh (QhSw, TDs);
   UhciDestoryTds (Uhc, TDs);
 
 UNMAP_DATA:
   Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
-
-UNMAP_REQUEST:
   Uhc->PciIo->Unmap (Uhc->PciIo, RequestMap);
-  Uhc->PciIo->Flush (Uhc->PciIo);
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
@@ -870,6 +815,8 @@ UhciBulkTransfer (
   EFI_TPL                 OldTpl;
   USB_HC_DEV              *Uhc;
   UHCI_TD_SW              *TDs;
+  UHCI_QH_SW              *BulkQh;
+  UHCI_QH_RESULT          QhResult;
   EFI_STATUS              Status;
   UINT8                   PktId;
   UINT8                   *DataPhy;
@@ -896,104 +843,75 @@ UhciBulkTransfer (
     return EFI_INVALID_PARAMETER;
   }
   
+  *TransferResult = EFI_USB_ERR_SYSTEM;
+  Status          = EFI_OUT_OF_RESOURCES;
+
   //
   // If has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
+  UhciAckAllInterrupt (Uhc);
+
   if (!UhciIsHcWorking (Uhc->PciIo)) {
-    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-    *TransferResult = EFI_USB_ERR_SYSTEM;
     return EFI_DEVICE_ERROR;
   }
 
   OldTpl = gBS->RaiseTPL (UHCI_TPL);
 
+  //
+  // Map the source data buffer for bus master access,
+  // then create a list of TDs
+  //
   if (EndPointAddress & 0x80) {
     Direction = EfiUsbDataIn;
   } else {
     Direction = EfiUsbDataOut;
   }
   
-  //
-  // Map the source data buffer for bus master access.
-  //
-  Status = UhciMapUserData (
-             Uhc,
-             Direction,
-             Data,
-             DataLength,
-             &PktId,
-             &DataPhy,
-             &DataMap
-             );
+  Status = UhciMapUserData (Uhc, Direction, Data, DataLength, &PktId, &DataPhy, &DataMap);
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_BULK, "UhciMapUserData failed\n"));
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-
     goto ON_EXIT;
   }
 
-  TDs = UhciCreateBulkOrIntTds (
-          Uhc,
-          DeviceAddress,
-          EndPointAddress,
-          PktId,
-          DataPhy,
-          *DataLength,
-          DataToggle,
-          MaximumPacketLength,
-          FALSE
-          );
-
-  if (TDs == NULL) {
-    UHCI_DEBUG ((UHCI_DEBUG_BULK, "UhciCreateBulkTds failed\n"));
-    
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    Status          = EFI_OUT_OF_RESOURCES;
-    goto UNMAP_DATA;
-  }
-  
-  //
-  // Link TDs to FsCtrlBulkQh, FsCtrlBulkQh is already on
-  // the frame list. FsCtrlBulkQh is setup for bandwidth
-  // reclamation.
-  //
-  UhciLinkTdToQh (Uhc->FsCtrlBulkQh, TDs);
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-
-  //
-  // Poll QH-TDs execution and get result
-  //
-  Status = UhciExecuteTransfer (
+  Status = EFI_OUT_OF_RESOURCES;
+  TDs    = UhciCreateBulkOrIntTds (
              Uhc,
-             TDs,
-             DataLength,
+             DeviceAddress,
+             EndPointAddress,
+             PktId,
+             DataPhy,
+             *DataLength,
              DataToggle,
-             TimeOut,
-             TransferResult,
-             FALSE,
+             MaximumPacketLength,
              FALSE
              );
 
-  if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_BULK, "UhciExecuteTransfer failed\n"));
-    goto DESTORY_TDS;
+  if (TDs == NULL) { 
+    Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+    goto ON_EXIT;
   }
 
-  if (!UhciIsHcWorking (Uhc->PciIo)) {
-    *TransferResult |= EFI_USB_ERR_SYSTEM;
-  }
+ 
+  //
+  // Link the TDs to bulk queue head. According to the platfore
+  // defintion of UHCI_NO_BW_RECLAMATION, BulkQh is either configured
+  // to do full speed bandwidth reclamation or not.
+  //
+  BulkQh = Uhc->BulkQh;
 
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-
-DESTORY_TDS:
-  UhciUnlinkTdFromQh (Uhc->FsCtrlBulkQh, TDs);
-  UhciDestoryTds (Uhc, TDs);
-
-UNMAP_DATA:
-  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+  UhciLinkTdToQh (BulkQh, TDs);
+  Status = UhciExecuteTransfer (Uhc, BulkQh, TDs, TimeOut, FALSE, &QhResult);
+  UhciUnlinkTdFromQh (BulkQh, TDs);
+ 
   Uhc->PciIo->Flush (Uhc->PciIo);
+
+  *TransferResult = QhResult.Result;
+  *DataToggle     = QhResult.NextToggle;
+  *DataLength     = QhResult.Complete;
+
+  UhciDestoryTds (Uhc, TDs);
+  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
@@ -1054,7 +972,6 @@ UhciAsyncInterruptTransfer (
   UINT8               *DataPtr;
   UINT8               *DataPhy;
   VOID                *DataMap;
-  UINT8               Toggle;
   UINT8               PktId;
 
   Uhc       = UHC_FROM_USB_HC_PROTO (This);
@@ -1090,17 +1007,16 @@ UhciAsyncInterruptTransfer (
   if ((*DataToggle != 1) && (*DataToggle != 0)) {
     return EFI_INVALID_PARAMETER;
   }
-  
+
   //
   // If has errors that cause host controller halt,
   // then return EFI_DEVICE_ERROR directly.
   //
+  UhciAckAllInterrupt (Uhc);
+
   if (!UhciIsHcWorking (Uhc->PciIo)) {
-    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
     return EFI_DEVICE_ERROR;
   }
-
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
 
   //
   // Allocate and map source data buffer for bus master access.
@@ -1110,79 +1026,63 @@ UhciAsyncInterruptTransfer (
   if (DataPtr == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-
+  
   OldTpl = gBS->RaiseTPL (UHCI_TPL);
-
+  
+  //
+  // Map the user data then create a queue head and 
+  // list of TD for it.
+  //
   Status = UhciMapUserData (
-             Uhc,
-             EfiUsbDataIn,
-             DataPtr,
-             &DataLength,
-             &PktId,
-             &DataPhy,
+             Uhc, 
+             EfiUsbDataIn, 
+             DataPtr, 
+             &DataLength, 
+             &PktId, 
+             &DataPhy, 
              &DataMap
              );
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciMapUserData failed\n"));
-    
     goto FREE_DATA;
   }
   
-  //
-  //  Create and initialize a new QH and TDs
-  //
   Qh = UhciCreateQh (Uhc, PollingInterval);
 
   if (Qh == NULL) {
-    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciCreateQh failed\n"));
-    
     Status = EFI_OUT_OF_RESOURCES;
     goto UNMAP_DATA;
   }
 
-  Toggle   = *DataToggle;
-  IntTds   = UhciCreateBulkOrIntTds (
-               Uhc,
-               DeviceAddress,
-               EndPointAddress,
-               PktId,
-               DataPhy,
-               DataLength,
-               &Toggle,
-               MaximumPacketLength,
-               IsSlowDevice
-               );
+  IntTds = UhciCreateBulkOrIntTds (
+             Uhc,
+             DeviceAddress,
+             EndPointAddress,
+             PktId,
+             DataPhy,
+             DataLength,
+             DataToggle,
+             MaximumPacketLength,
+             IsSlowDevice
+             );
 
   if (IntTds == NULL) {
-    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciCreateInterruptTds failed\n"));
-    
     Status = EFI_OUT_OF_RESOURCES;
     goto DESTORY_QH;
   }
   
-
   UhciLinkTdToQh (Qh, IntTds);
 
   //
   // Save QH-TD structures to async Interrupt transfer list,
   // for monitor interrupt transfer execution routine use.
   //  
-  // UhciCreateBulkOrIntTds returns the next data toggle to use.
-  // But UhciCreateAsyncReq saves the last data toggle in AsyncReq's
-  // DataToggle. So, roll one value back here. (Actually, this first
-  // data toggle value isn't important as it is overwritten later
-  // by the value computed from TD list.)
-  //
-  Toggle ^= 1;
-
   Status = UhciCreateAsyncReq (
              Uhc,
              Qh,
              IntTds,
              DeviceAddress,
              EndPointAddress,
-             Toggle,
              DataLength,
              PollingInterval,
              DataMap,
@@ -1193,16 +1093,16 @@ UhciAsyncInterruptTransfer (
              );
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciCreateAsyncReq failed\n"));
     goto DESTORY_QH;
   }
 
   UhciLinkQhToFrameList (Uhc->FrameBase, Qh);
+  
   gBS->RestoreTPL (OldTpl);
   return EFI_SUCCESS;
 
 DESTORY_QH:
-  UhciFreePool (Uhc, (UINT8 *) Qh, sizeof (UHCI_QH_SW));
+  UsbHcFreeMem (Uhc->MemPool, Qh, sizeof (UHCI_QH_SW));
 
 UNMAP_DATA:
   Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
@@ -1262,6 +1162,7 @@ UhciSyncInterruptTransfer (
   EFI_STATUS          Status;
   USB_HC_DEV          *Uhc;
   UHCI_TD_SW          *TDs;
+  UHCI_QH_RESULT      QhResult;
   EFI_TPL             OldTpl;
   UINT8               *DataPhy;
   VOID                *DataMap;
@@ -1292,18 +1193,21 @@ UhciSyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (!UhciIsHcWorking (Uhc->PciIo)) {
-    UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-    *TransferResult = EFI_USB_ERR_SYSTEM;
-    return EFI_DEVICE_ERROR;
-  }
+  *TransferResult = EFI_USB_ERR_SYSTEM;
+  Status          = EFI_DEVICE_ERROR;
+  
 
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+  UhciAckAllInterrupt (Uhc);
+
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    return Status;
+  }
 
   OldTpl = gBS->RaiseTPL (UHCI_TPL);
 
   //
   // Map the source data buffer for bus master access.
+  // Create Tds list, then link it to the UHC's interrupt list
   //
   Status = UhciMapUserData (
              Uhc,
@@ -1316,14 +1220,9 @@ UhciSyncInterruptTransfer (
              );
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_SYC_INT, "UhciMapUserData failed\n"));
-    *TransferResult = EFI_USB_ERR_SYSTEM;
     goto ON_EXIT;
   }
   
-  //
-  // Create Tds list, then link it to the UHC's interrupt list
-  //
   TDs = UhciCreateBulkOrIntTds (
           Uhc,
           DeviceAddress,
@@ -1337,50 +1236,26 @@ UhciSyncInterruptTransfer (
           );
 
   if (TDs == NULL) {
-    UHCI_DEBUG ((UHCI_DEBUG_SYC_INT, "UhciCreateInterruptTds failed\n"));
+    Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
+
     Status = EFI_OUT_OF_RESOURCES;
-    
-    goto DESTORY_QH;
+    goto ON_EXIT;
   }
+
 
   UhciLinkTdToQh (Uhc->SyncIntQh, TDs);
 
-  //
-  // Poll QH-TDs execution and get result
-  //
-  Status = UhciExecuteTransfer (
-             Uhc,
-             TDs,
-             DataLength,
-             DataToggle,
-             TimeOut,
-             TransferResult,
-             FALSE,
-             IsSlowDevice
-             );
-
-  if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((UHCI_DEBUG_SYC_INT, "UhciExecuteTransfer failed\n"));
-    goto DESTORY_TDS;
-  }
+  Status = UhciExecuteTransfer (Uhc, Uhc->SyncIntQh, TDs, TimeOut, IsSlowDevice, &QhResult);
   
-  //
-  // If has errors that cause host controller halt,
-  // then return EFI_DEVICE_ERROR directly.
-  //
-  if (!UhciIsHcWorking (Uhc->PciIo)) {
-    *TransferResult |= EFI_USB_ERR_SYSTEM;
-  }
-
-  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
-
-DESTORY_TDS:
   UhciUnlinkTdFromQh (Uhc->SyncIntQh, TDs);
-  UhciDestoryTds (Uhc, TDs);
-
-DESTORY_QH:
-  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
   Uhc->PciIo->Flush (Uhc->PciIo);
+  
+  *TransferResult = QhResult.Result;
+  *DataToggle     = QhResult.NextToggle;
+  *DataLength     = QhResult.Complete;
+
+  UhciDestoryTds (Uhc, TDs);
+  Uhc->PciIo->Unmap (Uhc->PciIo, DataMap);
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
@@ -2272,13 +2147,14 @@ Returns:
   Uhc->Usb2Hc.GetRootHubPortStatus      = Uhci2GetRootHubPortStatus;
   Uhc->Usb2Hc.SetRootHubPortFeature     = Uhci2SetRootHubPortFeature;
   Uhc->Usb2Hc.ClearRootHubPortFeature   = Uhci2ClearRootHubPortFeature;
-  Uhc->Usb2Hc.MajorRevision             = 0x2;
-  Uhc->Usb2Hc.MinorRevision             = 0x0;
+  Uhc->Usb2Hc.MajorRevision             = 0x1;
+  Uhc->Usb2Hc.MinorRevision             = 0x1;
   
-  Uhc->PciIo  = PciIo;
-  Status      = InitializeMemoryManagement (Uhc);
-
-  if (EFI_ERROR (Status)) {
+  Uhc->PciIo   = PciIo;
+  Uhc->MemPool = UsbHcInitMemPool (PciIo, TRUE, 0);
+  
+  if (Uhc->MemPool == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
     goto ON_ERROR;
   }
 
@@ -2286,14 +2162,14 @@ Returns:
   
   Status = gBS->CreateEvent (
                   EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
-                  UHCI_TPL,
+                  EFI_TPL_CALLBACK,
                   UhciMonitorAsyncReqList,
                   Uhc,
                   &Uhc->AsyncIntMonitor
                   );
 
   if (EFI_ERROR (Status)) {
-    DelMemoryManagement (Uhc);
+    UsbHcFreeMemPool (Uhc->MemPool);
     goto ON_ERROR;
   }
 
@@ -2329,8 +2205,8 @@ Returns:
     gBS->CloseEvent (Uhc->AsyncIntMonitor);
   }
 
-  if (Uhc->MemoryBank != NULL) {
-    DelMemoryManagement (Uhc);
+  if (Uhc->MemPool != NULL) {
+    UsbHcFreeMemPool (Uhc->MemPool);
   }
 
   if (Uhc->CtrlNameTable) {
@@ -2487,34 +2363,19 @@ UhciDriverBindingStart (
   //
   // Install both USB_HC_PROTOCOL and USB2_HC_PROTOCOL
   //
-  Status = gBS->InstallProtocolInterface (
+  Status = gBS->InstallMultipleProtocolInterfaces (
                   &Controller,
                   &gEfiUsbHcProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &Uhc->UsbHc
-                  );
-
-  if (EFI_ERROR (Status)) {
-    goto FREE_UHC;
-  }
-
-  Status = gBS->InstallProtocolInterface (
-                  &Controller,
+                  &Uhc->UsbHc,
                   &gEfiUsb2HcProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &Uhc->Usb2Hc
+                  &Uhc->Usb2Hc,
+                  NULL
                   );
 
   if (EFI_ERROR (Status)) {
-    gBS->UninstallProtocolInterface (
-          Controller,
-          &gEfiUsbHcProtocolGuid,
-          &Uhc->UsbHc
-          );
-
     goto FREE_UHC;
   }
-  
+ 
   //
   // Install the component name protocol
   //

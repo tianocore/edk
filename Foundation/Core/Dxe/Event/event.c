@@ -71,12 +71,12 @@ UINT32 mEventTable[] = {
   // 0x00000604       Signal all LegacyBootEvents.
   //
   EFI_EVENT_NOTIFY_SIGNAL_ALL | EFI_EVENT_SIGNAL_LEGACY_BOOT,
+#endif
   //
   // 0x00000000       Generic event without a notification function. 
   // It can be signaled with SignalEvent() and checked with CheckEvent() 
   // or WaitForEvent().
   //
-#endif
   0x00000000,
   //
   // 0x80000100       Timer event with a notification function that can be 
@@ -399,8 +399,10 @@ Returns:
   // Convert EFI 1.10 Events to thier UEFI 2.0 CreateEventEx mapping
   // 
   if (Type == EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES) {
+    Type = 0;
     GuidPtr = &gEfiEventExitBootServicesGuid;
   } else if (Type == EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) {
+    Type = 0;
     GuidPtr = &gEfiEventVirtualAddressChangeGuid;
   }
   
@@ -429,7 +431,7 @@ Arguments:
   NotifyFunction      - Pointer to the events notification function
   NotifyContext       - Pointer to the notification functions context; corresponds to
                         parameter "Context" in the notification function
-  EventGrout          - GUID for EventGroup if NULL act the same as gBS->CreateEvent().
+  EventGroup          - GUID for EventGroup if NULL act the same as gBS->CreateEvent().
   Event               - Pointer to the newly created event if the call succeeds; undefined otherwise
 
 Returns:
@@ -449,6 +451,16 @@ Returns:
   }
 
   //
+  // For event group, type EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES and EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE
+  // are not valid
+  //
+  if (EventGroup != NULL) {
+    if ((Type == EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES) || (Type == EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE)) {
+      return EFI_INVALID_PARAMETER;
+    }
+  }
+
+  //
   // Check to make sure no reserved flags are set
   //
   Status = EFI_INVALID_PARAMETER;
@@ -460,6 +472,17 @@ Returns:
   }
   if(EFI_ERROR (Status)) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Convert Event type for pre-defined Event groups
+  //
+  if (EventGroup != NULL) {
+    if (EfiCompareGuid ((VOID *) EventGroup, &gEfiEventExitBootServicesGuid)) {
+      Type = EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES;
+    } else if (EfiCompareGuid ((VOID *) EventGroup, &gEfiEventVirtualAddressChangeGuid)) {
+      Type = EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE;
+    }
   }
 
   //

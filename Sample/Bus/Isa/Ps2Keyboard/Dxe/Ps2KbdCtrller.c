@@ -91,12 +91,6 @@ KeyboardWaitForValue (
   IN UINT8                   Value
   );
 
-STATIC
-EFI_STATUS
-UpdateStatusLights (
-  IN KEYBOARD_CONSOLE_IN_DEV *ConsoleIn
-  );
-
 STATIC struct {
   UINT8  ScanCode;
   UINT16  EfiScanCode;
@@ -274,7 +268,7 @@ ConvertKeyboardScanCodeToEfiKey[] = {
     0x0d
   },
   {
-    0x1d, 
+    0x1d, //Left CTRL/Extended Right CTRL
     SCAN_NULL,
     0x00,
     0x00
@@ -615,6 +609,26 @@ ConvertKeyboardScanCodeToEfiKey[] = {
     0x00,
     0x00
   },
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+  {
+    0x5B,  //Left LOGO
+    SCAN_NULL,
+    0x00,
+    0x00
+  },  
+  {
+    0x5C,  //Right LOGO
+    SCAN_NULL,
+    0x00,
+    0x00
+  },  
+  {
+    0x5D,  //Menu key
+    SCAN_NULL,
+    0x00,
+    0x00
+  },    
+#endif  
   {
     TABLE_END,
     TABLE_END,
@@ -1339,7 +1353,6 @@ Returns:
 
 }
 
-STATIC
 EFI_STATUS
 UpdateStatusLights (
   IN KEYBOARD_CONSOLE_IN_DEV *ConsoleIn
@@ -1601,19 +1614,70 @@ Returns:
       break;
 
     case SCANCODE_LEFT_SHIFT_MAKE:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+      if (!Extended) {
+        ConsoleIn->Shift     = TRUE;
+        ConsoleIn->LeftShift = TRUE;
+      }      
+      break;
+#endif            
     case SCANCODE_RIGHT_SHIFT_MAKE:
       if (!Extended) {
         ConsoleIn->Shift = TRUE;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+        ConsoleIn->RightShift = TRUE;
+#endif
       }
       break;
 
     case SCANCODE_LEFT_SHIFT_BREAK:
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+      //
+      // Scancode 0xAA: Left shift break
+      // Scancode 0xE0, 0x B7, 0xE0, 0xAA: SysReq break
+      //
+      if (!Extended) {
+        ConsoleIn->Shift     = FALSE;
+        ConsoleIn->LeftShift = FALSE;
+      } else {
+        ConsoleIn->SysReq    = FALSE;
+      }      
+      break;
+#endif            
+      
     case SCANCODE_RIGHT_SHIFT_BREAK:
       if (!Extended) {
         ConsoleIn->Shift = FALSE;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+        ConsoleIn->RightShift = FALSE;
+#endif
       }
       break;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    case SCANCODE_LEFT_LOGO_MAKE:
+      ConsoleIn->LeftLogo = TRUE;
+      break;    
+    case SCANCODE_LEFT_LOGO_BREAK:
+      ConsoleIn->LeftLogo = FALSE;
+      break;          
+    case SCANCODE_RIGHT_LOGO_MAKE:
+      ConsoleIn->RightLogo = TRUE;
+      break;
+    case SCANCODE_RIGHT_LOGO_BREAK:
+      ConsoleIn->RightLogo = FALSE;
+      break;      
+    case SCANCODE_MENU_MAKE:
+      ConsoleIn->Menu = TRUE;
+      break;
+    case SCANCODE_MENU_BREAK:
+      ConsoleIn->Menu = FALSE;
+      break;      
+    case SCANCODE_SYS_REQ_MAKE:
+      if (Extended) {
+        ConsoleIn->SysReq = TRUE;
+      }
+#endif      
     case SCANCODE_CAPS_LOCK_MAKE:
       ConsoleIn->CapsLock = (BOOLEAN)!ConsoleIn->CapsLock;
       UpdateStatusLights (ConsoleIn);
@@ -1638,12 +1702,15 @@ Returns:
       break;
     }
   }
+
   //
   // If this is the SysRq, ignore it
+  // The shift state is already saved so just return
   //
   if (Extended && ScanCode == 0x37) {
     return EFI_NOT_READY;
   }
+
   //
   // Treat Numeric Key Pad "/" specially
   //
@@ -1658,6 +1725,17 @@ Returns:
       ConsoleIn->Key.ScanCode = ConvertKeyboardScanCodeToEfiKey[Index].EfiScanCode;
       if (ConsoleIn->Shift) {
         ConsoleIn->Key.UnicodeChar = ConvertKeyboardScanCodeToEfiKey[Index].ShiftUnicodeChar;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+        //
+        // Need not return associated shift state if a class of printable characters that
+        // are normally adjusted by shift modifiers. e.g. Shift Key + 'f' key = 'F'
+        //
+        if (ConsoleIn->Key.UnicodeChar >= 'A' && ConsoleIn->Key.UnicodeChar <= 'Z') {
+          ConsoleIn->LeftShift  = FALSE;
+          ConsoleIn->RightShift = FALSE;
+        }
+#endif
+        
       } else {
         ConsoleIn->Key.UnicodeChar = ConvertKeyboardScanCodeToEfiKey[Index].UnicodeChar;
       }
@@ -1693,6 +1771,45 @@ Returns:
     return EFI_NOT_READY;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Save the Shift/Toggle state
+  //
+  if (ConsoleIn->Ctrl) {
+    ConsoleIn->KeyState.KeyShiftState  |= (Extended == TRUE) ? EFI_RIGHT_CONTROL_PRESSED : EFI_LEFT_CONTROL_PRESSED;
+  }                                    
+  if (ConsoleIn->Alt) {                
+    ConsoleIn->KeyState.KeyShiftState  |= (Extended == TRUE) ? EFI_RIGHT_ALT_PRESSED : EFI_LEFT_ALT_PRESSED;
+  }                                    
+  if (ConsoleIn->LeftShift) {          
+    ConsoleIn->KeyState.KeyShiftState  |= EFI_LEFT_SHIFT_PRESSED;
+  }                                    
+  if (ConsoleIn->RightShift) {         
+    ConsoleIn->KeyState.KeyShiftState  |= EFI_RIGHT_SHIFT_PRESSED;
+  }                                    
+  if (ConsoleIn->LeftLogo) {           
+    ConsoleIn->KeyState.KeyShiftState  |= EFI_LEFT_LOGO_PRESSED;
+  }                                    
+  if (ConsoleIn->RightLogo) {          
+    ConsoleIn->KeyState.KeyShiftState  |= EFI_RIGHT_LOGO_PRESSED;
+  }                                    
+  if (ConsoleIn->Menu) {               
+    ConsoleIn->KeyState.KeyShiftState  |= EFI_MENU_KEY_PRESSED;
+  }                                    
+  if (ConsoleIn->SysReq) {             
+    ConsoleIn->KeyState.KeyShiftState  |= EFI_SYS_REQ_PRESSED;
+  }  
+  if (ConsoleIn->CapsLock) {
+    ConsoleIn->KeyState.KeyToggleState |= EFI_CAPS_LOCK_ACTIVE;
+  }
+  if (ConsoleIn->NumLock) {
+    ConsoleIn->KeyState.KeyToggleState |= EFI_NUM_LOCK_ACTIVE;
+  }
+  if (ConsoleIn->ScrollLock) {
+    ConsoleIn->KeyState.KeyToggleState |= EFI_SCROLL_LOCK_ACTIVE;
+  }
+
+#endif  
   return EFI_SUCCESS;
 }
 
@@ -1897,7 +2014,14 @@ Returns:
   ConsoleIn->CapsLock   = FALSE;
   ConsoleIn->NumLock    = FALSE;
   ConsoleIn->ScrollLock = FALSE;
-
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  ConsoleIn->LeftShift  = FALSE;
+  ConsoleIn->RightShift = FALSE;
+  ConsoleIn->LeftLogo   = FALSE;
+  ConsoleIn->RightLogo  = FALSE;
+  ConsoleIn->Menu       = FALSE;
+  ConsoleIn->SysReq     = FALSE;  
+#endif
   //
   // For reseting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,
   // and to support KB hot plug, we need to let the InitKB succeed no matter whether there is a KB device connected

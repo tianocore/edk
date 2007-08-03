@@ -342,4 +342,35 @@ Returns:
 
 --*/
 ;
+
+EFI_STATUS
+GetNextGuidHob (
+  IN OUT VOID      **HobStart,
+  IN     EFI_GUID  * Guid,
+  OUT    VOID      **Buffer,
+  OUT    UINTN     *BufferSize OPTIONAL
+  )
+/*++
+
+Routine Description:
+  Get the next guid hob.
+  
+Arguments:
+  HobStart        A pointer to the start hob.
+  Guid            A pointer to a guid.
+  Buffer          A pointer to the buffer.
+  BufferSize      Buffer size.
+  
+Returns:
+  Status code.
+
+  EFI_NOT_FOUND          - Next Guid hob not found
+  
+  EFI_SUCCESS            - Next Guid hob found and data for this Guid got
+  
+  EFI_INVALID_PARAMETER  - invalid parameter
+
+--*/
+;
+
 #endif

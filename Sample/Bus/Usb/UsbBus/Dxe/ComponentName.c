@@ -20,8 +20,6 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "UsbBus.h"
-#include EFI_PROTOCOL_DEFINITION (ComponentName)
-#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 
 //
 // EFI Component Name Functions
@@ -30,7 +28,7 @@ EFI_STATUS
 EFIAPI
 UsbBusComponentNameGetDriverName (
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL     *This,
 #else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
 #endif
@@ -42,7 +40,7 @@ EFI_STATUS
 EFIAPI
 UsbBusComponentNameGetControllerName (
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL     *This,
 #else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
 #endif
@@ -56,13 +54,13 @@ UsbBusComponentNameGetControllerName (
 // EFI Component Name Protocol
 //
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-EFI_COMPONENT_NAME2_PROTOCOL    gUsbBusComponentName = {
+EFI_COMPONENT_NAME2_PROTOCOL     mUsbBusComponentName = {
   UsbBusComponentNameGetDriverName,
   UsbBusComponentNameGetControllerName,
   LANGUAGE_CODE_ENGLISH
 };
 #else
-EFI_COMPONENT_NAME_PROTOCOL     gUsbBusComponentName = {
+EFI_COMPONENT_NAME_PROTOCOL      mUsbBusComponentName = {
   UsbBusComponentNameGetDriverName,
   UsbBusComponentNameGetControllerName,
   LANGUAGE_CODE_ENGLISH
@@ -78,7 +76,7 @@ EFI_STATUS
 EFIAPI
 UsbBusComponentNameGetDriverName (
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL     *This,
 #else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
 #endif
@@ -91,7 +89,7 @@ UsbBusComponentNameGetDriverName (
     Retrieves a Unicode string that is the user readable name of the EFI Driver.
 
   Arguments:
-    This       - A pointer to the EFI_COMPONENT_NAME_PROTOCOL instance.
+    This       - A pointer to the EFI_COMPONENT_NAME2_PROTOCOL instance.
     Language   - A pointer to a three character ISO 639-2 language identifier.
                  This is the language of the driver name that that the caller 
                  is requesting, and it must match one of the languages specified
@@ -114,7 +112,7 @@ UsbBusComponentNameGetDriverName (
 {
   return EfiLibLookupUnicodeString (
           Language,
-          gUsbBusComponentName.SupportedLanguages,
+          mUsbBusComponentName.SupportedLanguages,
           mUsbBusDriverNameTable,
           DriverName
           );
@@ -124,7 +122,7 @@ EFI_STATUS
 EFIAPI
 UsbBusComponentNameGetControllerName (
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  IN  EFI_COMPONENT_NAME2_PROTOCOL    *This,
+  IN  EFI_COMPONENT_NAME2_PROTOCOL     *This,
 #else
   IN  EFI_COMPONENT_NAME_PROTOCOL     *This,
 #endif
@@ -140,7 +138,7 @@ UsbBusComponentNameGetControllerName (
     that is being managed by an EFI Driver.
 
   Arguments:
-    This             - A pointer to the EFI_COMPONENT_NAME_PROTOCOL instance.
+    This             - A pointer to the EFI_COMPONENT_NAME2_PROTOCOL instance.
     ControllerHandle - The handle of a controller that the driver specified by 
                        This is managing.  This handle specifies the controller 
                        whose name is to be returned.

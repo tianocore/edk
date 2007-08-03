@@ -266,12 +266,14 @@ ProcessOptions (
       //
       if (MenuOption->Tags[Index].Operand == EFI_IFR_ONE_OF_OPTION_OP) {
         //
-        // If one of the options for the one-of has an interactive flag, back-define the oneof to have one too
+        // If one of the options for the one-of has an interactive or reset required flag, back-define the oneof to have one too
         //
         if (MenuOption->Tags[Index].Flags & EFI_IFR_FLAG_INTERACTIVE) {
           MenuOption->Tags[CachedIndex].Flags = (UINT8) (MenuOption->Tags[CachedIndex].Flags | EFI_IFR_FLAG_INTERACTIVE);
         }
-
+        if (MenuOption->Tags[Index].Flags & EFI_IFR_FLAG_RESET_REQUIRED) {
+          MenuOption->Tags[CachedIndex].Flags = (UINT8) (MenuOption->Tags[CachedIndex].Flags | EFI_IFR_FLAG_RESET_REQUIRED);
+        }
         StringCount++;
       }
     }

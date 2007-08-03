@@ -100,6 +100,18 @@ EFI_GUID  gEfiUsbKeyboardDriverGuid = {
   0xa05f5f78, 0xfb3, 0x4d10, 0x90, 0x90, 0xac, 0x4, 0x6e, 0xeb, 0x7c, 0x3c
 };
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC
+EFI_STATUS
+KbdFreeNotifyList (
+  IN OUT EFI_LIST_ENTRY       *ListHead
+  );  
+
+EFI_GUID gSimpleTextInExNotifyGuid = { \
+  0x856f2def, 0x4e93, 0x4d6b, 0x94, 0xce, 0x1c, 0xfe, 0x47, 0x1, 0x3e, 0xa5 \
+};
+#endif
+
 //
 // USB Keyboard Driver Global Variables
 //
@@ -355,6 +367,29 @@ USBKeyboardDriverBindingStart (
   UsbKeyboardDevice->Signature                  = USB_KB_DEV_SIGNATURE;
   UsbKeyboardDevice->SimpleInput.Reset          = USBKeyboardReset;
   UsbKeyboardDevice->SimpleInput.ReadKeyStroke  = USBKeyboardReadKeyStroke;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  UsbKeyboardDevice->SimpleInputEx.Reset               = USBKeyboardResetEx;
+  UsbKeyboardDevice->SimpleInputEx.ReadKeyStrokeEx     = USBKeyboardReadKeyStrokeEx;
+  UsbKeyboardDevice->SimpleInputEx.SetState            = USBKeyboardSetState;
+  UsbKeyboardDevice->SimpleInputEx.RegisterKeyNotify   = USBKeyboardRegisterKeyNotify;
+  UsbKeyboardDevice->SimpleInputEx.UnregisterKeyNotify = USBKeyboardUnregisterKeyNotify; 
+  
+  InitializeListHead (&UsbKeyboardDevice->NotifyList);
+  
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_NOTIFY_WAIT,
+                  EFI_TPL_NOTIFY,
+                  USBKeyboardWaitForKey,
+                  UsbKeyboardDevice,
+                  &(UsbKeyboardDevice->SimpleInputEx.WaitForKeyEx)
+                  );
+
+  if (EFI_ERROR (Status)) {
+    goto ErrorExit;
+  }
+#endif
+
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_WAIT,
                   EFI_TPL_NOTIFY,
@@ -386,6 +421,10 @@ USBKeyboardDriverBindingStart (
                   &Controller,
                   &gEfiSimpleTextInProtocolGuid,
                   &UsbKeyboardDevice->SimpleInput,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  &UsbKeyboardDevice->SimpleInputEx,
+#endif                  
                   &gEfiHotPlugDeviceGuid,
                   NULL,
                   NULL
@@ -401,7 +440,7 @@ USBKeyboardDriverBindingStart (
           );
     return Status;
   }
-    
+
   //
   // Reset USB Keyboard Device
   //
@@ -411,13 +450,17 @@ USBKeyboardDriverBindingStart (
                                             );
   if (EFI_ERROR (Status)) {
     gBS->UninstallMultipleProtocolInterfaces (
-          Controller,
-          &gEfiSimpleTextInProtocolGuid,
-          &UsbKeyboardDevice->SimpleInput,
-          &gEfiHotPlugDeviceGuid,
-          NULL,
-          NULL
-          );
+           Controller,
+           &gEfiSimpleTextInProtocolGuid,
+           &UsbKeyboardDevice->SimpleInput,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+           &gEfiSimpleTextInputExProtocolGuid,
+           &UsbKeyboardDevice->SimpleInputEx,
+#endif                            
+           &gEfiHotPlugDeviceGuid,
+           NULL,
+           NULL
+           );
     gBS->CloseEvent (UsbKeyboardDevice->SimpleInput.WaitForKey);
     gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
@@ -448,13 +491,17 @@ USBKeyboardDriverBindingStart (
   if (EFI_ERROR (Status)) {
 
     gBS->UninstallMultipleProtocolInterfaces (
-          Controller,
-          &gEfiSimpleTextInProtocolGuid,
-          &UsbKeyboardDevice->SimpleInput,
-          &gEfiHotPlugDeviceGuid,
-          NULL,
-          NULL
-          );
+           Controller,
+           &gEfiSimpleTextInProtocolGuid,
+           &UsbKeyboardDevice->SimpleInput,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+           &gEfiSimpleTextInputExProtocolGuid,
+           &UsbKeyboardDevice->SimpleInputEx,
+#endif                                      
+           &gEfiHotPlugDeviceGuid,
+           NULL,
+           NULL
+           );
     gBS->CloseEvent (UsbKeyboardDevice->SimpleInput.WaitForKey);
     gBS->FreePool (UsbKeyboardDevice);
     gBS->CloseProtocol (
@@ -475,6 +522,29 @@ USBKeyboardDriverBindingStart (
     );
 
   return EFI_SUCCESS;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
+ErrorExit:
+  if (UsbKeyboardDevice != NULL) {
+    if (UsbKeyboardDevice->SimpleInput.WaitForKey != NULL) {
+      gBS->CloseEvent (UsbKeyboardDevice->SimpleInput.WaitForKey);
+    }
+    if (UsbKeyboardDevice->SimpleInputEx.WaitForKeyEx != NULL) {
+      gBS->CloseEvent (UsbKeyboardDevice->SimpleInputEx.WaitForKeyEx);
+    }
+    KbdFreeNotifyList (&UsbKeyboardDevice->NotifyList);    
+    EfiLibSafeFreePool (UsbKeyboardDevice);
+    UsbKeyboardDevice = NULL;
+  }
+  gBS->CloseProtocol (
+         Controller,
+         &gEfiUsbIoProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
+  return Status;
+#endif      
+
 }
 
 
@@ -517,7 +587,19 @@ USBKeyboardDriverBindingStop (
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
-  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  NULL,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
+#endif
   //
   // Get USB_KB_DEV instance.
   //
@@ -565,6 +647,10 @@ USBKeyboardDriverBindingStop (
                   Controller,
                   &gEfiSimpleTextInProtocolGuid,
                   &UsbKeyboardDevice->SimpleInput,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  &UsbKeyboardDevice->SimpleInputEx,
+#endif
                   &gEfiHotPlugDeviceGuid,
                   NULL,
                   NULL
@@ -575,7 +661,11 @@ USBKeyboardDriverBindingStop (
   gBS->CloseEvent (UsbKeyboardDevice->RepeatTimer);
   gBS->CloseEvent (UsbKeyboardDevice->DelayedRecoveryEvent);
   gBS->CloseEvent ((UsbKeyboardDevice->SimpleInput).WaitForKey);
-
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
+  gBS->CloseEvent (UsbKeyboardDevice->SimpleInputEx.WaitForKeyEx);  
+  KbdFreeNotifyList (&UsbKeyboardDevice->NotifyList);    
+#endif    
+  
   if (UsbKeyboardDevice->ControllerNameTable != NULL) {
     EfiLibFreeUnicodeStringTable (UsbKeyboardDevice->ControllerNameTable);
   }
@@ -808,3 +898,410 @@ KbdReportStatusCode (
     DevicePath
     );
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC
+EFI_STATUS
+KbdFreeNotifyList (
+  IN OUT EFI_LIST_ENTRY       *ListHead
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  ListHead   - The list head
+
+Returns:
+
+  EFI_SUCCESS           - Free the notify list successfully
+  EFI_INVALID_PARAMETER - ListHead is invalid.
+
+--*/
+{
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY *NotifyNode;
+
+  if (ListHead == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  while (!IsListEmpty (ListHead)) {
+    NotifyNode = CR (
+                   ListHead->ForwardLink, 
+                   KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                   NotifyEntry, 
+                   USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                   );
+    RemoveEntryList (ListHead->ForwardLink);
+    EfiLibSafeFreePool (NotifyNode);
+  }
+  
+  return EFI_SUCCESS;
+}
+
+STATIC
+BOOLEAN
+IsKeyRegistered (
+  IN EFI_KEY_DATA  *RegsiteredData,
+  IN EFI_KEY_DATA  *InputData
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  RegsiteredData    - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was registered.
+  InputData         - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was pressed.
+
+Returns:
+  TRUE              - Key be pressed matches a registered key.
+  FLASE             - Match failed. 
+  
+--*/
+{
+  ASSERT (RegsiteredData != NULL && InputData != NULL);
+  
+  if ((RegsiteredData->Key.ScanCode    != InputData->Key.ScanCode) ||
+      (RegsiteredData->Key.UnicodeChar != InputData->Key.UnicodeChar)) {
+    return FALSE;  
+  }      
+  
+  //
+  // Assume KeyShiftState/KeyToggleState = 0 in Registered key data means these state could be ignored.
+  //
+  if (RegsiteredData->KeyState.KeyShiftState != 0 &&
+      RegsiteredData->KeyState.KeyShiftState != InputData->KeyState.KeyShiftState) {
+    return FALSE;    
+  }   
+  if (RegsiteredData->KeyState.KeyToggleState != 0 &&
+      RegsiteredData->KeyState.KeyToggleState != InputData->KeyState.KeyToggleState) {
+    return FALSE;    
+  }     
+  
+  return TRUE;
+
+}
+
+//
+// Simple Text Input Ex protocol functions 
+//
+
+EFI_STATUS
+EFIAPI
+USBKeyboardResetEx (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN BOOLEAN                            ExtendedVerification
+  )
+/*++
+
+  Routine Description:
+    Reset the input device and optionaly run diagnostics
+
+  Arguments:
+    This                 - Protocol instance pointer.
+    ExtendedVerification - Driver may perform diagnostics on reset.
+
+  Returns:
+    EFI_SUCCESS           - The device was reset.
+    EFI_DEVICE_ERROR      - The device is not functioning properly and could 
+                            not be reset.
+
+--*/
+{
+  EFI_STATUS                Status;
+  USB_KB_DEV                *UsbKeyboardDevice;
+  EFI_TPL                   OldTpl;
+  
+
+  UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
+
+  Status = UsbKeyboardDevice->SimpleInput.Reset (&UsbKeyboardDevice->SimpleInput, ExtendedVerification);
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
+  UsbKeyboardDevice->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
+  UsbKeyboardDevice->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
+  gBS->RestoreTPL (OldTpl);
+
+  return EFI_SUCCESS;
+
+}
+
+EFI_STATUS
+EFIAPI
+USBKeyboardReadKeyStrokeEx (
+  IN  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *This,
+  OUT EFI_KEY_DATA                      *KeyData
+  )
+/*++
+
+  Routine Description:
+    Reads the next keystroke from the input device. The WaitForKey Event can 
+    be used to test for existance of a keystroke via WaitForEvent () call.
+
+  Arguments:
+    This       - Protocol instance pointer.
+    KeyData    - A pointer to a buffer that is filled in with the keystroke 
+                 state data for the key that was pressed.
+
+  Returns:
+    EFI_SUCCESS           - The keystroke information was returned.
+    EFI_NOT_READY         - There was no keystroke data availiable.
+    EFI_DEVICE_ERROR      - The keystroke information was not returned due to 
+                            hardware errors.
+    EFI_INVALID_PARAMETER - KeyData is NULL.                        
+
+--*/
+{
+  USB_KB_DEV                        *UsbKeyboardDevice;
+  EFI_STATUS                        Status;
+  EFI_LIST_ENTRY                    *Link;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;
+
+  if (KeyData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
+
+  Status = UsbKeyboardDevice->SimpleInput.ReadKeyStroke (&UsbKeyboardDevice->SimpleInput, &KeyData->Key);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  EfiCopyMem (&KeyData->KeyState, &UsbKeyboardDevice->KeyState, sizeof (KeyData->KeyState));
+  
+  UsbKeyboardDevice->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
+  UsbKeyboardDevice->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
+
+  //
+  // Invoke notification functions if exist
+  //
+  for (Link = UsbKeyboardDevice->NotifyList.ForwardLink; Link != &UsbKeyboardDevice->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      CurrentNotify->KeyNotificationFn (KeyData);
+    }
+  }
+
+  return EFI_SUCCESS;
+  
+}
+
+EFI_STATUS
+EFIAPI
+USBKeyboardSetState (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN EFI_KEY_TOGGLE_STATE               *KeyToggleState
+  )
+/*++
+
+  Routine Description:
+    Set certain state for the input device.
+
+  Arguments:
+    This                  - Protocol instance pointer.
+    KeyToggleState        - A pointer to the EFI_KEY_TOGGLE_STATE to set the 
+                            state for the input device.
+                          
+  Returns:                
+    EFI_SUCCESS           - The device state was set successfully.
+    EFI_DEVICE_ERROR      - The device is not functioning correctly and could 
+                            not have the setting adjusted.
+    EFI_UNSUPPORTED       - The device does not have the ability to set its state.
+    EFI_INVALID_PARAMETER - KeyToggleState is NULL.                       
+
+--*/   
+{
+  USB_KB_DEV                        *UsbKeyboardDevice;
+
+  if (KeyToggleState == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
+
+  if (((UsbKeyboardDevice->KeyState.KeyToggleState & EFI_TOGGLE_STATE_VALID) != EFI_TOGGLE_STATE_VALID) ||
+      ((*KeyToggleState & EFI_TOGGLE_STATE_VALID) != EFI_TOGGLE_STATE_VALID)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  //
+  // Update the status light
+  //
+
+  UsbKeyboardDevice->ScrollOn   = 0;
+  UsbKeyboardDevice->NumLockOn  = 0;
+  UsbKeyboardDevice->CapsOn     = 0;
+ 
+  if ((*KeyToggleState & EFI_SCROLL_LOCK_ACTIVE) == EFI_SCROLL_LOCK_ACTIVE) {
+    UsbKeyboardDevice->ScrollOn = 1;
+  }
+  if ((*KeyToggleState & EFI_NUM_LOCK_ACTIVE) == EFI_NUM_LOCK_ACTIVE) {
+    UsbKeyboardDevice->NumLockOn = 1;
+  }
+  if ((*KeyToggleState & EFI_CAPS_LOCK_ACTIVE) == EFI_CAPS_LOCK_ACTIVE) {
+    UsbKeyboardDevice->CapsOn = 1;
+  }
+
+  SetKeyLED (UsbKeyboardDevice);
+
+  UsbKeyboardDevice->KeyState.KeyToggleState = *KeyToggleState;
+
+  return EFI_SUCCESS;
+  
+}
+
+EFI_STATUS
+EFIAPI
+USBKeyboardRegisterKeyNotify (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN EFI_KEY_DATA                       *KeyData,
+  IN EFI_KEY_NOTIFY_FUNCTION            KeyNotificationFunction,
+  OUT EFI_HANDLE                        *NotifyHandle
+  )
+/*++
+
+  Routine Description:
+    Register a notification function for a particular keystroke for the input device.
+
+  Arguments:
+    This                    - Protocol instance pointer.
+    KeyData                 - A pointer to a buffer that is filled in with the keystroke 
+                              information data for the key that was pressed.
+    KeyNotificationFunction - Points to the function to be called when the key 
+                              sequence is typed specified by KeyData.                        
+    NotifyHandle            - Points to the unique handle assigned to the registered notification.                          
+
+  Returns:
+    EFI_SUCCESS             - The notification function was registered successfully.
+    EFI_OUT_OF_RESOURCES    - Unable to allocate resources for necesssary data structures.
+    EFI_INVALID_PARAMETER   - KeyData or NotifyHandle is NULL.                       
+                              
+--*/   
+{
+  USB_KB_DEV                        *UsbKeyboardDevice;
+  EFI_STATUS                        Status;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY     *NewNotify;
+
+  if (KeyData == NULL || NotifyHandle == NULL || KeyNotificationFunction == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
+
+  //
+  // Allocate resource to save the notification function
+  //  
+  NewNotify = (KEYBOARD_CONSOLE_IN_EX_NOTIFY *) EfiLibAllocateZeroPool (sizeof (KEYBOARD_CONSOLE_IN_EX_NOTIFY));
+  if (NewNotify == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  NewNotify->Signature         = USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE;     
+  NewNotify->KeyNotificationFn = KeyNotificationFunction;
+  EfiCopyMem (&NewNotify->KeyData, KeyData, sizeof (EFI_KEY_DATA));
+  InsertTailList (&UsbKeyboardDevice->NotifyList, &NewNotify->NotifyEntry);
+
+  //
+  // Use gSimpleTextInExNotifyGuid to get a valid EFI_HANDLE
+  //  
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &NewNotify->NotifyHandle,
+                  &gSimpleTextInExNotifyGuid,
+                  NULL,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+  
+  *NotifyHandle = NewNotify->NotifyHandle;  
+  
+  return EFI_SUCCESS;
+  
+}
+
+EFI_STATUS
+EFIAPI
+USBKeyboardUnregisterKeyNotify (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN EFI_HANDLE                         NotificationHandle
+  )
+/*++
+
+  Routine Description:
+    Remove a registered notification function from a particular keystroke.
+
+  Arguments:
+    This                    - Protocol instance pointer.    
+    NotificationHandle      - The handle of the notification function being unregistered.
+
+  Returns:
+    EFI_SUCCESS             - The notification function was unregistered successfully.
+    EFI_INVALID_PARAMETER   - The NotificationHandle is invalid.
+    EFI_NOT_FOUND           - Can not find the matching entry in database.  
+                              
+--*/   
+{
+  USB_KB_DEV                        *UsbKeyboardDevice;
+  EFI_STATUS                        Status;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;
+  EFI_LIST_ENTRY                    *Link;
+
+  if (NotificationHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }  
+  
+  UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
+  
+  Status = gBS->OpenProtocol (
+                  NotificationHandle,
+                  &gSimpleTextInExNotifyGuid,
+                  NULL,
+                  NULL,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  for (Link = UsbKeyboardDevice->NotifyList.ForwardLink; Link != &UsbKeyboardDevice->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );       
+    if (CurrentNotify->NotifyHandle == NotificationHandle) {
+      //
+      // Remove the notification function from NotifyList and free resources
+      //
+      RemoveEntryList (&CurrentNotify->NotifyEntry);      
+      Status = gBS->UninstallMultipleProtocolInterfaces (
+                      CurrentNotify->NotifyHandle,
+                      gSimpleTextInExNotifyGuid,
+                      NULL,
+                      NULL
+                      );
+      ASSERT_EFI_ERROR (Status);
+      EfiLibSafeFreePool (CurrentNotify);            
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;  
+}
+
+#endif
+
+

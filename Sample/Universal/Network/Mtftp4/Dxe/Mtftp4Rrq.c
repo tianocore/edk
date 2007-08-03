@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -417,6 +417,7 @@ Returns:
   EFI_UDP4_CONFIG_DATA      UdpConfig;
   EFI_IPv4_ADDRESS          Group;
   EFI_STATUS                Status;
+  IP4_ADDR                  Ip;
 
   Instance                     = (MTFTP4_PROTOCOL *) Context;
   Config                       = &Instance->Config;
@@ -435,8 +436,9 @@ Returns:
   UdpConfig.SubnetMask         = Config->SubnetMask;
   UdpConfig.StationPort        = Instance->McastPort;
   UdpConfig.RemotePort         = 0;
-  
-  EFI_IP4 (UdpConfig.RemoteAddress) = HTONL (Instance->ServerIp);
+
+  Ip = HTONL (Instance->ServerIp);
+  NetCopyMem (&UdpConfig.RemoteAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
 
   Status = McastIo->Udp->Configure (McastIo->Udp, &UdpConfig);
 
@@ -447,7 +449,9 @@ Returns:
   //
   // join the multicast group
   //
-  EFI_IP4 (Group) = HTONL (Instance->McastIp);
+  Ip = HTONL (Instance->McastIp);
+  NetCopyMem (&Group, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
   return McastIo->Udp->Groups (McastIo->Udp, TRUE, &Group);
 }
 

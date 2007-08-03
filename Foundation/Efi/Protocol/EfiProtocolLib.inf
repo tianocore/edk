@@ -37,6 +37,8 @@ COMPONENT_TYPE=   LIBRARY
 [nmake.common]
 
 [sources.common]
+  AbsolutePointer\AbsolutePointer.h
+  AbsolutePointer\AbsolutePointer.c
   AcpiTable\AcpiTable.h
   AcpiTable\AcpiTable.c
   Arp\Arp.h
@@ -129,6 +131,8 @@ COMPONENT_TYPE=   LIBRARY
   SimplePointer\SimplePointer.c
   SimpleTextIn\SimpleTextIn.h
   SimpleTextIn\SimpleTextIn.c
+  SimpleTextInputEx\SimpleTextInputEx.h
+  SimpleTextInputEx\SimpleTextInputEx.c  
   SimpleTextOut\SimpleTextOut.h
   SimpleTextOut\SimpleTextOut.c
   Udp4\Udp4.h

@@ -62,6 +62,8 @@ IP4_ADDR  mIp4AllMasks[IP4_MASK_NUM] = {
   0xFFFFFFFF,
 };
 
+EFI_IPv4_ADDRESS  mZeroIp4Addr = {0, 0, 0, 0};
+
 INTN
 NetGetMaskLength (
   IN IP4_ADDR               NetMask

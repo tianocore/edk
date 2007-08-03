@@ -23,6 +23,7 @@ Abstract:
 #include "Tiano.h"
 #include "EfiPrintLib.h"
 #include "bdslib.h"
+#include EFI_PROTOCOL_DEFINITION (DevicePathToText)
 #include EFI_PROTOCOL_DEFINITION (WinntIo)
 #include EFI_PROTOCOL_DEFINITION (WinntThunk)
 EFI_GUID  mEfiWinNtThunkProtocolGuid                 = EFI_WIN_NT_THUNK_PROTOCOL_GUID;
@@ -1046,14 +1047,14 @@ DevPathBssBss (
     Type = L"Net";
     break;
 
+  case BBS_TYPE_BEV:
+    Type = L"BEV";
+    break;
+
   default:
     Type = L"?";
     break;
   }
-  //
-  // Since current Print function hasn't implemented %a (for ansi string)
-  // we will only print Unicode strings.
-  //
   CatPrint (Str, L"Legacy-%s", Type);
 }
 
@@ -1204,6 +1205,25 @@ DevicePathToStr (
 
   UINTN Index;
   UINTN NewSize;
+
+  EFI_STATUS                       Status;
+  CHAR16                           *ToText;
+  EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *DevPathToText;
+  
+  Status = gBS->LocateProtocol (
+                  &gEfiDevicePathToTextProtocolGuid,
+                  NULL,
+                  &DevPathToText
+                  );
+  if (!EFI_ERROR (Status)) {
+    ToText = DevPathToText->ConvertDevicePathToText (
+                              DevPath,
+                              TRUE,
+                              TRUE
+                              );
+    ASSERT (ToText != NULL);
+    return ToText;
+  }
 
   EfiZeroMem (&Str, sizeof (Str));
 

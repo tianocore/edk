@@ -440,12 +440,13 @@ Returns:
   //
   // Set the fields of TxData
   //
-  EFI_IP4 (TxData->DestinationAddress)  = Dest;
-  TxData->OverrideData                  = OverrideData;
-  TxData->OptionsLength                 = 0;
-  TxData->OptionsBuffer                 = NULL;
-  TxData->TotalDataLength               = Pkt->TotalSize;
-  TxData->FragmentCount                 = Pkt->BlockOpNum;
+  NetCopyMem (&TxData->DestinationAddress, &Dest, sizeof (EFI_IPv4_ADDRESS));
+
+  TxData->OverrideData    = OverrideData;
+  TxData->OptionsLength   = 0;
+  TxData->OptionsBuffer   = NULL;
+  TxData->TotalDataLength = Pkt->TotalSize;
+  TxData->FragmentCount   = Pkt->BlockOpNum;
 
   for (Index = 0; Index < Pkt->BlockOpNum; Index++) {
 
@@ -814,7 +815,6 @@ Returns:
 {
   EFI_STATUS        Status;
   EFI_IP4_PROTOCOL  *Ip;
-  EFI_IPv4_ADDRESS  ZeroIp;
 
   if (IpIo->IsConfigured) {
     return EFI_ACCESS_DENIED;
@@ -835,8 +835,7 @@ Returns:
   // (0.0.0.0, 0.0.0.0, 0.0.0.0). Delete this statement if Ip modified
   // its code
   //
-  EFI_IP4 (ZeroIp) = 0;
-  Status = Ip->Routes (Ip, TRUE, &ZeroIp, &ZeroIp, &ZeroIp);
+  Status = Ip->Routes (Ip, TRUE, &mZeroIp4Addr, &mZeroIp4Addr, &mZeroIp4Addr);
 
   if (EFI_ERROR (Status) && (EFI_NOT_FOUND != Status)) {
     return Status;
@@ -1232,8 +1231,8 @@ Returns:
       Ip4ConfigData->SubnetMask     = Ip4ModeData.ConfigData.SubnetMask;
     }
 
-    IpInfo->Addr       = EFI_IP4 (Ip4ConfigData->StationAddress);
-    IpInfo->SubnetMask = EFI_IP4 (Ip4ConfigData->SubnetMask);
+    NetCopyMem (&IpInfo->Addr, &Ip4ConfigData->StationAddress, sizeof (IP4_ADDR));
+    NetCopyMem (&IpInfo->SubnetMask, &Ip4ConfigData->SubnetMask, sizeof (IP4_ADDR));
 
     Status = Ip->Receive (Ip, &IpInfo->DummyRcvToken);
     if (EFI_ERROR (Status)) {

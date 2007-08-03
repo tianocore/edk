@@ -925,6 +925,7 @@ Returns:
 --*/
 {
   EFI_ARP_CONFIG_DATA  *OldConfigData;
+  IP4_ADDR             Ip;
 
   OldConfigData = &Instance->ConfigData;
 
@@ -951,12 +952,15 @@ Returns:
       // The instance is not configured.
       //
 
-      if ((ConfigData->SwAddressType == IPv4_ETHER_PROTO_TYPE) &&
-        (!Ip4IsUnicast (EFI_NTOHL (*((EFI_IPv4_ADDRESS *)ConfigData->StationAddress)), 0))) {
-        //
-        // The station address is not a valid IPv4 unicast address.
-        //
-        return EFI_INVALID_PARAMETER;
+      if (ConfigData->SwAddressType == IPv4_ETHER_PROTO_TYPE) {
+        NetCopyMem (&Ip, ConfigData->StationAddress, sizeof (IP4_ADDR));
+
+        if (!Ip4IsUnicast (NTOHL (Ip), 0)) {
+          //
+          // The station address is not a valid IPv4 unicast address.
+          //
+          return EFI_INVALID_PARAMETER;
+        }
       }
 
       //

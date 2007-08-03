@@ -120,7 +120,9 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (BootScriptSave)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 #include EFI_PROTOCOL_DEFINITION (ComponentName2)
+#endif
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 #include EFI_PROTOCOL_DEFINITION (DebugPort)

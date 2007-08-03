@@ -200,6 +200,27 @@ Returns:
 --*/
 ;
 
+VOID
+UhciAckAllInterrupt (
+  IN  USB_HC_DEV          *Uhc
+  )
+/*++
+
+Routine Description:
+
+  Clear all the interrutp status bits, these bits 
+  are Write-Clean
+
+Arguments:
+
+  Uhc - The UHCI device
+
+Returns:
+
+  None
+  
+--*/
+;
 
 EFI_STATUS
 UhciStopHc (
@@ -244,30 +265,6 @@ Returns:
 
    TRUE  -  Host controller is working
    FALSE -  Host controller is halted or system error
-
---*/
-;
-
-
-BOOLEAN
-UhciIsHcError (
-  IN EFI_PCI_IO_PROTOCOL     *PciIo
-  )
-/*++
-
-Routine Description:
-
-  Check whether host controller is halt because of system error
-
-Arguments:
-
-  PciIo  - The EFI_PCI_IO_PROTOCOL to use
-
-Returns:
-
-   TRUE  -  The host controller is halt because of system error
-   FALSE -  Host controller isn't experiencing a system error, but
-            it may still be halted by software.
 
 --*/
 ;

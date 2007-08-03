@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1545,6 +1545,7 @@ BcStart (
   //
   // Initialize Mode structure
   //
+  EfiZeroMem (Private->EfiBc.Mode, sizeof (EFI_PXE_BASE_CODE_MODE));
   //
   // check for callback protocol and set boolean
   //
@@ -1553,22 +1554,6 @@ BcStart (
   Private->EfiBc.Mode->TTL                  = DEFAULT_TTL;
   Private->EfiBc.Mode->ToS                  = DEFAULT_ToS;
   Private->EfiBc.Mode->UsingIpv6            = UseIPv6;
-  Private->EfiBc.Mode->DhcpDiscoverValid    = FALSE;
-  Private->EfiBc.Mode->DhcpAckReceived      = FALSE;
-  Private->EfiBc.Mode->ProxyOfferReceived   = FALSE;
-  Private->EfiBc.Mode->PxeDiscoverValid     = FALSE;
-  Private->EfiBc.Mode->PxeReplyReceived     = FALSE;
-  Private->EfiBc.Mode->PxeBisReplyReceived  = FALSE;
-  Private->EfiBc.Mode->IcmpErrorReceived    = FALSE;
-  Private->EfiBc.Mode->TftpErrorReceived    = FALSE;
-  EfiZeroMem (&Private->EfiBc.Mode->StationIp, sizeof (EFI_IP_ADDRESS));
-  EfiZeroMem (&Private->EfiBc.Mode->SubnetMask, sizeof (EFI_IP_ADDRESS));
-  Private->EfiBc.Mode->IpFilter.Filters   = 0;
-  Private->EfiBc.Mode->IpFilter.IpCnt     = 0;
-  Private->EfiBc.Mode->ArpCacheEntries    = 0;
-  Private->EfiBc.Mode->RouteTableEntries  = 0;
-  EfiZeroMem (&Private->EfiBc.Mode->IcmpError, sizeof (EFI_PXE_BASE_CODE_ICMP_ERROR));
-  EfiZeroMem (&Private->EfiBc.Mode->TftpError, sizeof (EFI_PXE_BASE_CODE_TFTP_ERROR));
 
   //
   // Set to PXE_TRUE by the BC constructor if this BC implementation
@@ -1698,7 +1683,12 @@ BcStop (
   }
 
   Private->FileSize             = 0;
-  Private->EfiBc.Mode->Started  = FALSE;
+  
+  if (!Private->EfiBc.Mode->Started) {
+    StatCode = EFI_NOT_STARTED;
+  } else {
+    Private->EfiBc.Mode->Started = FALSE;
+  }
 
   //
   // Unlock the instance data
@@ -1924,7 +1914,7 @@ BcIpFilter (
 {
   EFI_STATUS          StatCode;
   PXE_BASECODE_DEVICE *Private;
-
+  UINTN               Index;
   //
   // Lock the instance data and make sure started
   //
@@ -1941,7 +1931,16 @@ BcIpFilter (
     DEBUG ((EFI_D_ERROR, "PXE_BASECODE_DEVICE poiner == NULL"));
     return EFI_INVALID_PARAMETER;
   }
-
+  
+  for (Index = 0; Index < Filter->IpCnt; ++Index) {
+    if ((Filter->IpList[Index].Addr[0]) == BROADCAST_IPv4) {
+      //
+      // The  IP is a broadcast address.
+      //
+      return EFI_INVALID_PARAMETER;
+    }  
+  }
+  
   EfiAcquireLock (&Private->Lock);
 
   if (This->Mode == NULL || !This->Mode->Started) {

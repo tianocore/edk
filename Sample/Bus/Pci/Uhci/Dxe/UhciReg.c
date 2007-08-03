@@ -58,8 +58,7 @@ Returns:
                       );
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((USB_DEBUG_ERROR, "UhciReadReg: PciIo Io.Read error: %r at offset %d\n", 
-                                  Status, Offset));
+    UHCI_ERROR (("UhciReadReg: PciIo Io.Read error: %r at offset %d\n", Status, Offset));
 
     Data = 0xFFFF;
   }
@@ -103,8 +102,7 @@ Returns:
                       );
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((USB_DEBUG_ERROR, "UhciWriteReg: PciIo Io.Write error: %r at offset %d\n",
-                                  Status, Offset));
+    UHCI_ERROR (("UhciWriteReg: PciIo Io.Write error: %r at offset %d\n", Status, Offset));
   }
 }
 
@@ -168,6 +166,40 @@ Returns:
   Data &= ~Bit;
   UhciWriteReg (PciIo, Offset, Data);
 }
+
+VOID
+UhciAckAllInterrupt (
+  IN  USB_HC_DEV          *Uhc
+  )
+/*++
+
+Routine Description:
+
+  Clear all the interrutp status bits, these bits 
+  are Write-Clean
+
+Arguments:
+
+  Uhc - The UHCI device
+
+Returns:
+
+  None
+  
+--*/
+{
+  UhciWriteReg (Uhc->PciIo, USBSTS_OFFSET, 0x3F);
+
+  //
+  // If current HC is halted, re-enable it. Host Controller Process Error
+  // is a temporary error status.
+  //
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    UHCI_ERROR (("UhciAckAllInterrupt: re-enable the UHCI from system error\n"));
+    Uhc->UsbHc.SetState (&Uhc->UsbHc, EfiUsbHcStateOperational);
+  }
+}
+
 
 EFI_STATUS
 UhciStopHc (
@@ -240,43 +272,11 @@ Returns:
   UsbSts = UhciReadReg (PciIo, USBSTS_OFFSET);
   
   if (UsbSts & (USBSTS_HCPE | USBSTS_HSE | USBSTS_HCH)) {
+    UHCI_ERROR (("UhciIsHcWorking: current USB state is %x\n", UsbSts));
     return FALSE;
   }
 
   return TRUE;
-}
-
-BOOLEAN
-UhciIsHcError (
-  IN EFI_PCI_IO_PROTOCOL     *PciIo
-  )
-/*++
-
-Routine Description:
-
-  Check whether host controller is halt because of system error
-
-Arguments:
-
-  PciIo  - The EFI_PCI_IO_PROTOCOL to use
-
-Returns:
-
-   TRUE  -  The host controller is halt because of system error
-   FALSE -  Host controller isn't experiencing a system error, but
-            it may still be halted by software.
-
---*/
-{
-  UINT16                UsbSts;
-
-  UsbSts = UhciReadReg (PciIo, USBSTS_OFFSET);  
-  
-  if (UsbSts & (USBSTS_HSE | USBSTS_HCPE)) {
-    return TRUE;
-  }
-
-  return FALSE;
 }
 
 VOID
@@ -317,8 +317,7 @@ Returns:
                        );
 
   if (EFI_ERROR (Status)) {
-    UHCI_DEBUG ((USB_DEBUG_ERROR, "UhciSetFrameListBaseAddr: PciIo Io.Write error: %r\n",
-                                  Status));
+    UHCI_ERROR (("UhciSetFrameListBaseAddr: PciIo Io.Write error: %r\n", Status));
   }
 }
 

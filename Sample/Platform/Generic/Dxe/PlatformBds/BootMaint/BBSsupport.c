@@ -73,6 +73,41 @@ AsciiToUnicodeSize (
   u[i] = 0;
 }
 
+UINTN
+UnicodeToAscii (
+  IN  CHAR16  *UStr,
+  IN  UINTN   Length,
+  OUT CHAR8   *AStr
+  )
+/*++
+Routine Description:
+
+  change a Unicode string t ASCII string
+  
+Arguments:
+
+  UStr   - Unicode string
+  Lenght - most possible length of AStr
+  AStr   - ASCII string to pass out
+
+Returns:
+
+  Actuall length
+
+--*/
+{
+  UINTN Index;
+
+  //
+  // just buffer copy, not character copy
+  //
+  for (Index = 0; Index < Length; Index++) {
+    *AStr++ = (CHAR8) *UStr++;
+  }
+
+  return Index;
+}
+
 VOID
 BdsBuildLegacyDevNameString (
   IN BBS_TABLE                 *CurBBSEntry,
@@ -214,19 +249,22 @@ BdsCreateLegacyBootOption (
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINT16      CurrentBootOptionNo;
-  UINT16      BootString[10];
-  UINT16      BootDesc[100];
-  UINT16      *NewBootOrderList;
-  UINTN       BufferSize;
-  VOID        *Buffer;
-  UINT8       *Ptr;
-  UINT16      CurrentBbsDevPathSize;
-  UINTN       BootOrderIndex;
-  UINTN       BootOrderLastIndex;
-  UINTN       ArrayIndex;
-  BOOLEAN     IndexNotFound;
+  EFI_STATUS           Status;
+  UINT16               CurrentBootOptionNo;
+  UINT16               BootString[10];
+  UINT16               BootDesc[100];
+  UINT8                HelpString[100];  
+  UINT16               *NewBootOrderList;
+  UINTN                BufferSize;
+  UINTN                StringLen;
+  VOID                 *Buffer;
+  UINT8                *Ptr;
+  UINT16               CurrentBbsDevPathSize;
+  UINTN                BootOrderIndex;
+  UINTN                BootOrderLastIndex;
+  UINTN                ArrayIndex;
+  BOOLEAN              IndexNotFound;
+  BBS_BBS_DEVICE_PATH  *NewBbsDevPathNode;
 
   if (NULL == (*BootOrderList)) {
     CurrentBootOptionNo = 0;
@@ -258,6 +296,31 @@ BdsCreateLegacyBootOption (
     );
 
   BdsBuildLegacyDevNameString (CurrentBbsEntry, Index, sizeof (BootDesc), BootDesc);
+  
+  //
+  // Create new BBS device path node with description string
+  //
+  UnicodeToAscii (BootDesc, EfiStrSize (BootDesc), HelpString);
+  StringLen = EfiAsciiStrLen (HelpString);
+  NewBbsDevPathNode = EfiAllocateZeroPool (sizeof (BBS_BBS_DEVICE_PATH) + StringLen);
+  if (NewBbsDevPathNode == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  EfiCopyMem (NewBbsDevPathNode, CurrentBbsDevPath, sizeof (BBS_BBS_DEVICE_PATH));
+  EfiCopyMem (NewBbsDevPathNode->String, HelpString, StringLen + 1);
+  SetDevicePathNodeLength (&(NewBbsDevPathNode->Header), sizeof (BBS_BBS_DEVICE_PATH) + StringLen);
+  
+  //
+  // Create entire new CurrentBbsDevPath with end node
+  //
+  CurrentBbsDevPath = EfiAppendDevicePathNode (
+                        EndDevicePath,
+                        (EFI_DEVICE_PATH_PROTOCOL *) NewBbsDevPathNode
+                        );
+   if (CurrentBbsDevPath == NULL) {
+    gBS->FreePool (NewBbsDevPathNode);
+    return EFI_OUT_OF_RESOURCES;
+  } 
 
   CurrentBbsDevPathSize = (UINT16) (EfiDevicePathSize (CurrentBbsDevPath));
 
@@ -270,6 +333,8 @@ BdsCreateLegacyBootOption (
 
   Buffer = EfiAllocateZeroPool (BufferSize);
   if (Buffer == NULL) {
+    gBS->FreePool (NewBbsDevPathNode);
+    gBS->FreePool (CurrentBbsDevPath);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -317,6 +382,8 @@ BdsCreateLegacyBootOption (
 
   NewBootOrderList = EfiAllocateZeroPool (*BootOrderListSize + sizeof (UINT16));
   if (NULL == NewBootOrderList) {
+    gBS->FreePool (NewBbsDevPathNode);
+    gBS->FreePool (CurrentBbsDevPath);    
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -331,6 +398,8 @@ BdsCreateLegacyBootOption (
   *BootOrderListSize += sizeof (UINT16);
   *BootOrderList = NewBootOrderList;
 
+  gBS->FreePool (NewBbsDevPathNode);
+  gBS->FreePool (CurrentBbsDevPath);
   return Status;
 }
 

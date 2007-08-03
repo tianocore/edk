@@ -258,7 +258,7 @@ Returns:
   // from the graphic lib
   //
   if (QuietBoot) {
-    EnableQuietBootEx (&gEfiUgaSplashProtocolGuid, mBdsImageHandle);
+    EnableQuietBootEx (&gEfiDefaultBmpLogoGuid, mBdsImageHandle);
     //
     // Perform system diagnostic
     //

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -181,9 +181,9 @@ typedef struct {
 //
 // Convert the EFI_IP4_ADDRESS to plain UINT32 IP4 address.
 //
-#define EFI_IP4(EfiIpAddr)                (*(IP4_ADDR *) ((EfiIpAddr).Addr))
-#define EFI_NTOHL(EfiIp)                  (NTOHL (EFI_IP4 ((EfiIp))))
-#define EFI_IP_EQUAL(Ip1, Ip2)            (EFI_IP4 (Ip1) == EFI_IP4 (Ip2))
+#define EFI_IP4(EfiIpAddr)       (*(IP4_ADDR *) ((EfiIpAddr).Addr))
+#define EFI_NTOHL(EfiIp)         (NTOHL (EFI_IP4 ((EfiIp))))
+#define EFI_IP4_EQUAL(Ip1, Ip2)  (NetCompareMem (&(Ip1), &(Ip2), sizeof (EFI_IPv4_ADDRESS)) == 0)
 
 INTN
 NetGetMaskLength (

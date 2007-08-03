@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -239,7 +239,8 @@ TerminalConOutOutputString (
   //  Terminal driver only support mode 0
   //
   Mode = This->Mode;
-  if (Mode->Mode != 0) {
+  
+  if (Mode->Mode > 1) {
     return EFI_UNSUPPORTED;
   }
 
@@ -475,15 +476,17 @@ TerminalConOutQueryMode (
                 
 --*/
 {
-  if (This->Mode->MaxMode > 1) {
+  if (This->Mode->MaxMode > 2) {
     return EFI_DEVICE_ERROR;
   }
 
   if (ModeNumber == 0) {
-
     *Columns  = MODE0_COLUMN_COUNT;
     *Rows     = MODE0_ROW_COUNT;
-
+    return EFI_SUCCESS;
+  } else if (ModeNumber == 1) {  
+    *Columns  = MODE1_COLUMN_COUNT;
+    *Rows     = MODE1_ROW_COUNT;
     return EFI_SUCCESS;
   }
 
@@ -532,11 +535,14 @@ TerminalConOutSetMode (
   //
   TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
 
-  if (ModeNumber != 0) {
+  if (ModeNumber > 1) {
     return EFI_UNSUPPORTED;
   }
-
-  This->Mode->Mode = 0;
+  
+  //
+  // Set the current mode
+  //
+  This->Mode->Mode = (INT32) ModeNumber;
 
   This->ClearScreen (This);
 
@@ -548,7 +554,7 @@ TerminalConOutSetMode (
     return EFI_DEVICE_ERROR;
   }
 
-  This->Mode->Mode  = 0;
+  This->Mode->Mode  = (INT32) ModeNumber;
 
   Status            = This->ClearScreen (This);
   if (EFI_ERROR (Status)) {

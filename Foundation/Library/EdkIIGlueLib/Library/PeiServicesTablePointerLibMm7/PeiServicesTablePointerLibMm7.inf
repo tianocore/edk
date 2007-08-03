@@ -24,16 +24,15 @@ BASE_NAME       = EdkIIGluePeiServicesTablePointerLibMm7
 COMPONENT_TYPE  = LIBRARY
 
 [sources.common]
-  PeiServicesTablePointer.c
 
 [sources.ia32]
-
+  PeiServicesTablePointer.c
 [sources.x64]
+  PeiServicesTablePointer.c
 
 [sources.ipf]
 
 [sources.ebc]
-  
 
 [includes.common]
   .

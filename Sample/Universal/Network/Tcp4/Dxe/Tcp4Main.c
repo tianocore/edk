@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -155,6 +155,7 @@ Returns:
   EFI_TCP4_OPTION  *Option;
   SOCKET           *Sock;
   EFI_STATUS       Status;
+  IP4_ADDR         Ip;
 
   if (NULL == This) {
     return EFI_INVALID_PARAMETER;
@@ -164,29 +165,28 @@ Returns:
   // Tcp protocol related parameter check will be conducted here
   //
   if (NULL != TcpConfigData) {
-    if ((EFI_IP4 (TcpConfigData->AccessPoint.RemoteAddress) != 0) &&
-      !Ip4IsUnicast (EFI_NTOHL (TcpConfigData->AccessPoint.RemoteAddress), 0)) {
+
+    NetCopyMem (&Ip, &TcpConfigData->AccessPoint.RemoteAddress, sizeof (IP4_ADDR));
+    if ((Ip != 0) && !Ip4IsUnicast (NTOHL (Ip), 0)) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if (TcpConfigData->AccessPoint.ActiveFlag &&
+      (0 == TcpConfigData->AccessPoint.RemotePort || (Ip == 0))) {
       return EFI_INVALID_PARAMETER;
     }
 
     if (!TcpConfigData->AccessPoint.UseDefaultAddress) {
-      if (!Ip4IsUnicast (EFI_NTOHL (TcpConfigData->AccessPoint.StationAddress), 0) ||
-          !IP4_IS_VALID_NETMASK (EFI_NTOHL (TcpConfigData->AccessPoint.SubnetMask))
-            ) {
+
+      NetCopyMem (&Ip, &TcpConfigData->AccessPoint.StationAddress, sizeof (IP4_ADDR));
+      if (!Ip4IsUnicast (NTOHL (Ip), 0) || !IP4_IS_VALID_NETMASK (NTOHL (Ip))) {
         return EFI_INVALID_PARAMETER;
       }
     }
 
-    if (TcpConfigData->AccessPoint.ActiveFlag &&
-        (0 == TcpConfigData->AccessPoint.RemotePort || 
-        (EFI_IP4 (TcpConfigData->AccessPoint.RemoteAddress) == 0))
-        ) {
-      return EFI_INVALID_PARAMETER;
-    }
-
     Option = TcpConfigData->ControlOption;
     if ((NULL != Option) &&
-        (Option->EnableSelectiveAck || Option->EnablePathMtuDiscovery)) {
+      (Option->EnableSelectiveAck || Option->EnablePathMtuDiscovery)) {
       return EFI_UNSUPPORTED;
     }
   }

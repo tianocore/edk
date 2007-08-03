@@ -98,13 +98,11 @@ Returns:
   // can be reclaimed. Notice, LS don't support bulk transfer and
   // also doesn't support BW reclamation.
   //
-  Uhc->SyncIntQh    = UhciCreateQh (Uhc, 1);
-  Uhc->LsCtrlQh     = UhciCreateQh (Uhc, 1);
-  Uhc->FsCtrlBulkQh = UhciCreateQh (Uhc, 1);
+  Uhc->SyncIntQh  = UhciCreateQh (Uhc, 1);
+  Uhc->CtrlQh     = UhciCreateQh (Uhc, 1);
+  Uhc->BulkQh     = UhciCreateQh (Uhc, 1);
 
-  if ((Uhc->SyncIntQh == NULL) || (Uhc->LsCtrlQh == NULL) || 
-      (Uhc->FsCtrlBulkQh == NULL)) {
-
+  if ((Uhc->SyncIntQh == NULL) || (Uhc->CtrlQh == NULL) || (Uhc->BulkQh == NULL)) {
     Uhc->PciIo->Unmap (Uhc->PciIo, Mapping);
     Status = EFI_OUT_OF_RESOURCES;
     goto ON_ERROR;
@@ -113,18 +111,28 @@ Returns:
   //
   //                                                +-------------+
   //                                                |             |
-  // Link the three together: SyncIntQh->LsCtrlQh->FsCtrlBulkQh <-+
+  // Link the three together: SyncIntQh->CtrlQh->BulkQh <---------+
   // Each frame entry is linked to this sequence of QH. These QH
   // will remain on the schedul, never got removed
   //
-  Uhc->SyncIntQh->QhHw.HorizonLink    = QH_HLINK (Uhc->LsCtrlQh, FALSE);
-  Uhc->SyncIntQh->NextQh              = Uhc->LsCtrlQh;
+  Uhc->SyncIntQh->QhHw.HorizonLink  = QH_HLINK (Uhc->CtrlQh, FALSE);
+  Uhc->SyncIntQh->NextQh            = Uhc->CtrlQh;
 
-  Uhc->LsCtrlQh->QhHw.HorizonLink     = QH_HLINK (Uhc->FsCtrlBulkQh, FALSE);
-  Uhc->LsCtrlQh->NextQh               = Uhc->FsCtrlBulkQh;
+  Uhc->CtrlQh->QhHw.HorizonLink     = QH_HLINK (Uhc->BulkQh, FALSE);
+  Uhc->CtrlQh->NextQh               = Uhc->BulkQh;
 
-  Uhc->FsCtrlBulkQh->QhHw.HorizonLink = QH_HLINK (Uhc->FsCtrlBulkQh, FALSE);
-  Uhc->FsCtrlBulkQh->NextQh           = NULL;
+  //
+  // Some old platform such as Intel's Tiger 4 has a difficult time
+  // in supporting the full speed bandwidth reclamation in the previous
+  // mentioned form. Most new platforms don't suffer it.
+  //
+#ifdef UHCI_NO_BW_RECLAMATION
+  Uhc->BulkQh->QhHw.HorizonLink     = QH_HLINK (NULL, TRUE);
+#else
+  Uhc->BulkQh->QhHw.HorizonLink     = QH_HLINK (Uhc->BulkQh, FALSE);
+#endif
+
+  Uhc->BulkQh->NextQh               = NULL;
 
   for (Index = 0; Index < UHCI_FRAME_NUM; Index++) {
     Uhc->FrameBase[Index] = QH_HLINK (Uhc->SyncIntQh, FALSE);
@@ -139,15 +147,15 @@ Returns:
 
 ON_ERROR:
   if (Uhc->SyncIntQh != NULL) {
-    UhciFreePool (Uhc, (UINT8 *) Uhc->SyncIntQh, sizeof (UHCI_QH_SW));
+    UsbHcFreeMem (Uhc->MemPool, Uhc->SyncIntQh, sizeof (UHCI_QH_SW));
   }
 
-  if (Uhc->LsCtrlQh != NULL) {
-    UhciFreePool (Uhc, (UINT8 *) Uhc->LsCtrlQh, sizeof (UHCI_QH_SW));
+  if (Uhc->CtrlQh != NULL) {
+    UsbHcFreeMem (Uhc->MemPool, Uhc->CtrlQh, sizeof (UHCI_QH_SW));
   }
 
-  if (Uhc->FsCtrlBulkQh != NULL) {
-    UhciFreePool (Uhc, (UINT8 *) Uhc->FsCtrlBulkQh, sizeof (UHCI_QH_SW));
+  if (Uhc->BulkQh != NULL) {
+    UsbHcFreeMem (Uhc->MemPool, Uhc->BulkQh, sizeof (UHCI_QH_SW));
   }
 
   Uhc->PciIo->FreeBuffer (Uhc->PciIo, Pages, Buffer);
@@ -188,199 +196,21 @@ Returns:
                 );
 
   if (Uhc->SyncIntQh != NULL) {
-    UhciFreePool (Uhc, (UINT8 *) Uhc->SyncIntQh, sizeof (UHCI_QH_SW));
+    UsbHcFreeMem (Uhc->MemPool, Uhc->SyncIntQh, sizeof (UHCI_QH_SW));
   }
 
-  if (Uhc->LsCtrlQh != NULL) {
-    UhciFreePool (Uhc, (UINT8 *) Uhc->LsCtrlQh, sizeof (UHCI_QH_SW));
+  if (Uhc->CtrlQh != NULL) {
+    UsbHcFreeMem (Uhc->MemPool, Uhc->CtrlQh, sizeof (UHCI_QH_SW));
   }
 
-  if (Uhc->FsCtrlBulkQh != NULL) {
-    UhciFreePool (Uhc, (UINT8 *) Uhc->FsCtrlBulkQh, sizeof (UHCI_QH_SW));
+  if (Uhc->BulkQh != NULL) {
+    UsbHcFreeMem (Uhc->MemPool, Uhc->BulkQh, sizeof (UHCI_QH_SW));
   }
 
   Uhc->FrameBase    = NULL;
   Uhc->SyncIntQh    = NULL;
-  Uhc->LsCtrlQh     = NULL;
-  Uhc->FsCtrlBulkQh = NULL;
-}
-
-EFI_STATUS
-UhciMapUserRequest (
-  IN  USB_HC_DEV          *Uhc,
-  IN  OUT VOID            *Request,
-  OUT UINT8               **MappedAddr,
-  OUT VOID                **Map
-  )
-/*++
-
-Routine Description:
-
-  Map address of request structure buffer
-
-Arguments:
-
-  Uhc        - The UHCI device
-  Request    - The user request buffer
-  MappedAddr - Mapped address of request 
-  Map        - Identificaion of this mapping to return
-
-Returns:
-
-  EFI_SUCCESS      : Success
-  EFI_DEVICE_ERROR : Fail to map the user request
-
---*/
-{
-  EFI_STATUS            Status;
-  UINTN                 Len;
-  EFI_PHYSICAL_ADDRESS  PhyAddr;
-
-  Len    = sizeof (EFI_USB_DEVICE_REQUEST);
-  Status = Uhc->PciIo->Map (
-                         Uhc->PciIo,
-                         EfiPciIoOperationBusMasterRead,
-                         Request,
-                         &Len,
-                         &PhyAddr,
-                         Map
-                         );
-
-  if (!EFI_ERROR (Status)) {
-    *MappedAddr = (UINT8 *) (UINTN) PhyAddr;
-  }
-
-  return Status;
-}
-
-EFI_STATUS
-UhciMapUserData (
-  IN  USB_HC_DEV              *Uhc,
-  IN  EFI_USB_DATA_DIRECTION  Direction,
-  IN  VOID                    *Data,
-  IN  OUT UINTN               *Len,
-  OUT UINT8                   *PktId,
-  OUT UINT8                   **MappedAddr,
-  OUT VOID                    **Map
-  )
-/*++
-
-Routine Description:
-
-  Map address of user data buffer
-
-Arguments:
-
-  Uhc        - The UHCI device
-  Direction  - direction of the data transfer
-  Data       - The user data buffer
-  Len        - Length of the user data
-  PktId      - Packet identificaion
-  MappedAddr - mapped address to return
-  Map        - identificaion of this mapping to return
-
-Returns:
-
-  EFI_SUCCESS      : Success
-  EFI_DEVICE_ERROR : Fail to map the user data
-
---*/
-{
-  EFI_STATUS            Status;
-  EFI_PHYSICAL_ADDRESS  PhyAddr;
-
-  Status = EFI_SUCCESS;
-
-  switch (Direction) {
-  case EfiUsbDataIn:
-    //
-    // BusMasterWrite means cpu read
-    //
-    *PktId = INPUT_PACKET_ID;
-    Status = Uhc->PciIo->Map (
-                           Uhc->PciIo,
-                           EfiPciIoOperationBusMasterWrite,
-                           Data,
-                           Len,
-                           &PhyAddr,
-                           Map
-                           );
-
-    if (EFI_ERROR (Status)) {
-      goto EXIT;
-    }
-
-    *MappedAddr = (UINT8 *) (UINTN) PhyAddr;
-    break;
-
-  case EfiUsbDataOut:
-    *PktId = OUTPUT_PACKET_ID;
-    Status = Uhc->PciIo->Map (
-                           Uhc->PciIo,
-                           EfiPciIoOperationBusMasterRead,
-                           Data,
-                           Len,
-                           &PhyAddr,
-                           Map
-                           );
-
-    if (EFI_ERROR (Status)) {
-      goto EXIT;
-    }
-
-    *MappedAddr = (UINT8 *) (UINTN) PhyAddr;
-    break;
-
-  case EfiUsbNoData:
-    if ((Len != NULL) && (*Len != 0)) {
-      Status    = EFI_INVALID_PARAMETER;
-			goto EXIT;
-    }
-		
-    *PktId      = OUTPUT_PACKET_ID;
-    *Len        = 0;
-    *MappedAddr = NULL;
-    *Map        = NULL;
-    break;
-
-  default:
-    Status      = EFI_INVALID_PARAMETER;
-  }
-
-EXIT:
-  return Status;
-}
-
-STATIC
-UINTN
-UhciGetNumberOfTd (
-  IN UHCI_TD_SW           *First
-  )
-/*++
-
-Routine Description:
-
-  Get number of TDs
-
-Arguments:
-
-  First   - The first TD on the link
-  
-Returns:
-
-  The number of Tds
-
---*/
-{
-  UINTN                   Num;
-
-  Num = 0;
-
-  for (Num = 0; First != NULL; First = First->NextTd) {
-    Num++;
-  }
-
-  return Num;
+  Uhc->CtrlQh       = NULL;
+  Uhc->BulkQh       = NULL;
 }
 
 UINTN
@@ -602,11 +432,10 @@ Returns:
 STATIC
 BOOLEAN
 UhciCheckTdStatus (
+  IN  USB_HC_DEV          *Uhc,
   IN  UHCI_TD_SW          *Td,
-  OUT UINT32              *Result,
-  OUT UINT32              *ErrTdPos,
-  OUT UINTN               *ActualLen,
-  IN  BOOLEAN             IsLow
+  IN  BOOLEAN             IsLow,
+  OUT UHCI_QH_RESULT      *QhResult
   )
 /*++
 
@@ -616,109 +445,148 @@ Routine Description:
 
 Arguments:
 
+  Uhc         - This UHCI device
   Td          - UHCI_TD_SW to check
-  RequiredLen - Required Len
-  Result      - Transfer result
-  ErrTdPos    - Error TD Position
-  ActualLen   - Actual Transfer Size
   IsLow       - Is Low Speed Device
-
+  QhResult    - Return the result of this TD list
+  
 Returns:
 
-  Wheterh all the TD of the transfer has been processed
+  Whether the TD's result is finialized.
   
 --*/
 {
   UINTN                   Len;
+  UINT8                   State;
+  UHCI_TD_HW              *TdHw;
   BOOLEAN                 Finished;
 
-  Finished   = TRUE;
-  *Result    = EFI_USB_NOERROR;
-  *ErrTdPos  = 0;
-  *ActualLen = 0;
+  Finished             = TRUE;
 
+  //
+  // Initialize the data toggle to that of the first
+  // TD. The next toggle to use is either:
+  // 1. first TD's toggle if no TD is executed OK
+  // 2. the next toggle of last executed-OK TD
+  //
+  QhResult->Result     = EFI_USB_NOERROR;
+  QhResult->NextToggle = (UINT8)Td->TdHw.DataToggle;
+  QhResult->Complete   = 0;
+  
   while (Td != NULL) {
-    if (Td->TdHw.Status & USBTD_ACTIVE) {
-      *Result |= EFI_USB_ERR_NOTEXECUTE;
-    }
+    TdHw  = &Td->TdHw;
+    State = (UINT8)TdHw->Status;
 
-    if (Td->TdHw.Status & USBTD_STALLED) {
-      *Result |= EFI_USB_ERR_STALL;
-    }
-
-    if (Td->TdHw.Status & USBTD_BUFFERR) {
-      *Result |= EFI_USB_ERR_BUFFER;
-    }
-
-    if (Td->TdHw.Status & USBTD_BABBLE) {
-      *Result |= EFI_USB_ERR_BABBLE;
-    }
-
-    if (Td->TdHw.Status & USBTD_NAK) {
-      *Result |= EFI_USB_ERR_NAK;
-    }
-
-    if (Td->TdHw.Status & USBTD_CRC) {
-      *Result |= EFI_USB_ERR_TIMEOUT;
-    }
-
-    if (Td->TdHw.Status & USBTD_BITSTUFF) {
-      *Result |= EFI_USB_ERR_BITSTUFF;
-    }
-    
     //
-    // If any error encountered, stop processing the left TDs.
+    // UHCI will set STALLED bit when it abort the execution 
+    // of TD list. There are several reasons: 
+    //   1. BABBLE error happened
+    //   2. Received a STALL response
+    //   3. Error count decreased to zero.
     //
-    if (*Result) {
-      Finished = FALSE;
-      goto EXIT;
-    }
-    
-    //
-    // Retrieve the actual number of bytes that were tansferred.
-    // the value is encoded as n-1. so return ActualLen + 1.
-    //
-    Len = (Td->TdHw.ActualLen + 1) & 0x7FF;
+    // It also set CRC/Timeout/NAK/Buffer Error/BitStuff Error
+    // bits when corresponding conditions happen. But these
+    // conditions are not deadly, that is a TD can successfully
+    // completes even these bits are set. But it is likely that
+    // upper layer won't distinguish these condtions. So, only 
+    // set these bits when TD is actually halted.
+    // 
+    if (State & USBTD_STALLED) {
+      if (State & USBTD_BABBLE) {
+        QhResult->Result |= EFI_USB_ERR_BABBLE;
+        
+      } else if (TdHw->ErrorCount != 0) {
+        QhResult->Result |= EFI_USB_ERR_STALL;
+      }
 
-    if (Td->TdHw.PidCode != SETUP_PACKET_ID) {
-      *ActualLen += Len;
-    }
+      if (State & USBTD_CRC) {
+        QhResult->Result |= EFI_USB_ERR_CRC;
+      }
 
-       
-    //
-    // Short packet condition for full speed input TD, also 
-    // terminate the transfer
-    //
-    if (!IsLow && (Td->TdHw.PidCode == INPUT_PACKET_ID) && 
-       (Len < Td->TdHw.MaxPacketLen)) {
-      UHCI_DEBUG ((UHCI_DEBUG_SCHEDULE, "Short Packet Occured\n"));
+      if (State & USBTD_BUFFERR) {
+        QhResult->Result |= EFI_USB_ERR_BUFFER;
+      }
+      
+      if (Td->TdHw.Status & USBTD_BITSTUFF) {
+        QhResult->Result |= EFI_USB_ERR_BITSTUFF;
+      }
+      
+      if (TdHw->ErrorCount == 0) {
+        QhResult->Result |= EFI_USB_ERR_TIMEOUT;
+      }
+
       Finished = TRUE;
-      goto EXIT;
+      goto ON_EXIT;
+
+    } else if (State & USBTD_ACTIVE) {
+      //
+      // The TD is still active, no need to check further.
+      //
+      QhResult->Result |= EFI_USB_ERR_NOTEXECUTE;
+      
+      Finished = FALSE;
+      goto ON_EXIT;
+      
+    } else {     
+      //
+      // Update the next data toggle, it is always the 
+      // next to the last known-good TD's data toggle if
+      // any TD is executed OK
+      //
+      QhResult->NextToggle = 1 - (UINT8)TdHw->DataToggle;
+      
+      //
+      // This TD is finished OK or met short packet read. Update the
+      // transfer length if it isn't a SETUP.
+      //
+      Len = (TdHw->ActualLen + 1) & 0x7FF;
+  
+      if (TdHw->PidCode != SETUP_PACKET_ID) {
+        QhResult->Complete += Len;
+      }
+      
+      //
+      // Short packet condition for full speed input TD, also 
+      // terminate the transfer
+      //
+      if (!IsLow && (TdHw->ShortPacket == 1) && (Len < Td->DataLen)) {
+        UHCI_DEBUG (("UhciCheckTdStatus: short packet read occured\n"));     
+   
+        Finished = TRUE;
+        goto ON_EXIT;
+      }
     }
-    
-    //
-    // Accumulate actual transferred data length in each TD.
-    // Then record the first Error TD's position in the queue,
-    // this value is zero-based.
-    //
+
     Td = Td->NextTd;
-    (*ErrTdPos)++;
   }
 
-EXIT:
+ON_EXIT:
+  //
+  // Check whether HC is halted. Don't move this up. It must be
+  // called after data toggle is successfully updated.
+  //
+  if (!UhciIsHcWorking (Uhc->PciIo)) {
+    QhResult->Result |= EFI_USB_ERR_SYSTEM;
+    Finished  = TRUE;
+  }
+
+  if (Finished) {
+    Uhc->PciIo->Flush (Uhc->PciIo);
+  }
+  
+  UhciAckAllInterrupt (Uhc);
   return Finished;
 }
+
 
 EFI_STATUS
 UhciExecuteTransfer (
   IN  USB_HC_DEV          *Uhc,
+  IN  UHCI_QH_SW          *Qh,
   IN  UHCI_TD_SW          *Td,
-  OUT UINTN               *ActualLen,
-  OUT UINT8               *DataToggle,
   IN  UINTN               TimeOut,
-  OUT UINT32              *Result,
-  IN  BOOLEAN             IsControl,
-  IN  BOOLEAN             IsLow
+  IN  BOOLEAN             IsLow,
+  OUT UHCI_QH_RESULT      *QhResult
   )
 /*++
 
@@ -730,12 +598,9 @@ Arguments:
 
   Uhc            - The UHCI device
   Td             - The first TDs of the transfer
-  ActualLen      - Actual Transfered Len 
-  DataToggle     - Data Toggle
   TimeOut        - TimeOut value in milliseconds
-  TransferResult - Transfer result
-  IsControl      - Is Control Transfer
   IsLow          - Is Low Speed Device
+  QhResult       - The variable to return result
   
 Returns:
 
@@ -744,52 +609,44 @@ Returns:
 
 --*/
 {
-  UINT32                  ErrTdPos;
   UINTN                   Index;
   UINTN                   Delay;
-  UINTN                   ScrollNum;
+  BOOLEAN                 Finished;
+  EFI_STATUS              Status;
 
-  ErrTdPos    = 0;
-  *Result     = EFI_USB_NOERROR;
-  *ActualLen  = 0;
-  Delay       = (TimeOut * STALL_1_MS / 50) + 1;
+  Finished = FALSE;
+  Status   = EFI_SUCCESS;
+  Delay    = (TimeOut * STALL_1_MS / UHC_SYN_POLL) + 1;
   
   for (Index = 0; Index < Delay; Index++) {
-    UhciCheckTdStatus (Td, Result, &ErrTdPos, ActualLen, IsLow);
+    Finished = UhciCheckTdStatus (Uhc, Td, IsLow, QhResult);
 
     //
     // Transfer is OK or some error occured (TD inactive)
     //
-    if ((*Result == EFI_USB_NOERROR) || ((*Result & EFI_USB_ERR_NOTEXECUTE) == 0)) {
+    if (Finished) {
       break;
     }
 
-    gBS->Stall (50);
+    gBS->Stall (UHC_SYN_POLL);
   }
 
-  if (*Result != EFI_USB_NOERROR) {
-    //
-    // Roll the data toggle back to the last success TD.
-    // No need to roll toggle for control transfer because
-    // it always start a new data toggle sequence for new
-    // transfer
-    //
-    if (!IsControl) {
-      ScrollNum = UhciGetNumberOfTd (Td) - ErrTdPos;
+  if (!Finished) {    
+    UHCI_ERROR (("UhciExecuteTransfer: execution not finished for %dms\n", TimeOut));
+    UHCI_DUMP_QH  ((Qh));
+    UHCI_DUMP_TDS ((Td));
 
-      if ((ScrollNum % 2) != 0) {
-        *DataToggle ^= 1;
-      }
-    }
-
-    UHCI_DEBUG ((UHCI_DEBUG_SCHEDULE, "UhciExecuteTransfer failed:"
-      "Result:0x%x, Error position: %d,  Data transferred: %d\n",
-      *Result, ErrTdPos, *ActualLen));
-
-    return EFI_DEVICE_ERROR;
+    Status = EFI_TIMEOUT;
+    
+  } else if (QhResult->Result != EFI_USB_NOERROR) {
+    UHCI_ERROR (("UhciExecuteTransfer: execution failed with result %x\n", QhResult->Result));
+    UHCI_DUMP_QH  ((Qh));
+    UHCI_DUMP_TDS ((Td));
+    
+    Status = EFI_DEVICE_ERROR;
   }
-
-  return EFI_SUCCESS;
+  
+  return Status;
 }
 
 STATIC
@@ -797,7 +654,7 @@ VOID
 UhciUpdateAsyncReq (
   IN UHCI_ASYNC_REQUEST  *AsyncReq,
   IN UINT32              Result,
-  IN UINT32              ErrTdPos
+  IN UINT32              NextToggle
   )
 /*++
 
@@ -820,12 +677,9 @@ Returns:
   UHCI_QH_SW              *Qh;
   UHCI_TD_SW              *FirstTd;
   UHCI_TD_SW              *Td;
-  UINT8                   DataToggle;
-  UINT32                  Index;
 
   Qh          = AsyncReq->QhSw;
   FirstTd     = AsyncReq->FirstTd;
-  DataToggle  = 0;
 
   if (Result == EFI_USB_NOERROR) { 
     //
@@ -837,48 +691,15 @@ Returns:
     //    execution, queue head's TD pointer is changed by 
     //    hardware.
     //
-
-    //
-    // First find the last data toggle of the last successful
-    // transfer. New round of transfer continues it.
-    //
     for (Td = FirstTd; Td != NULL; Td = Td->NextTd) {
-      DataToggle = (UINT8)Td->TdHw.DataToggle;
-    }
-    
-    AsyncReq->DataToggle = DataToggle;
-
-    //
-    // Setup the TD for next round of transfer: continue the data
-    // toggle sequence of the last round of transfer and set the
-    // TD to active.
-    //
-    for (Td = FirstTd; Td != NULL; Td = Td->NextTd) {
-      DataToggle         ^= 1;
-      Td->TdHw.DataToggle = DataToggle;
+      Td->TdHw.DataToggle = NextToggle;
+      NextToggle         ^= 1;
       Td->TdHw.Status    |= USBTD_ACTIVE;
     }
     
     UhciLinkTdToQh (Qh, FirstTd);
     return ;
-  }
-  
-  //
-  // Update the data toggle if transfer met some error. 
-  // No need to update TD if TD is still active or received 
-  // some NAKs
-  //
-  if ((Result & USB_ERR_FAIL_MASK) != 0) {
-    //
-    // Find the first error TD, then update the asynchronous 
-    // transfer's data toggle. This the next data toggle to use.
-    //
-    for (Td = FirstTd, Index = 0; Index < ErrTdPos; Index++) {
-      Td = Td->NextTd;
-    } 
-    
-    AsyncReq->DataToggle = (UINT8)Td->TdHw.DataToggle;
-  }
+  } 
 }
 
 EFI_STATUS
@@ -888,7 +709,6 @@ UhciCreateAsyncReq (
   IN UHCI_TD_SW                       *FirstTd,
   IN UINT8                            DevAddr,
   IN UINT8                            EndPoint,
-  IN UINT8                            Toggle,
   IN UINTN                            DataLen,
   IN UINTN                            Interval,
   IN VOID                             *Mapping,
@@ -910,7 +730,6 @@ Arguments:
   FirstTd     - First TD of the transfer
   DevAddr     - Device Address
   EndPoint    - EndPoint Address
-  Toggle      - Data Toggle
   DataLen     - Data length 
   Interval    - Polling Interval when inserted to frame list
   Mapping     - Mapping value  
@@ -941,7 +760,6 @@ Returns:
   AsyncReq->Signature   = UHCI_ASYNC_INT_SIGNATURE;
   AsyncReq->DevAddr     = DevAddr;
   AsyncReq->EndPoint    = EndPoint;
-  AsyncReq->DataToggle  = Toggle;
   AsyncReq->DataLen     = DataLen;
   AsyncReq->Interval    = Interval;
   AsyncReq->Mapping     = Mapping;
@@ -990,7 +808,7 @@ Returns:
   ASSERT ((Uhc != NULL) && (AsyncReq != NULL));
   
   UhciDestoryTds (Uhc, AsyncReq->FirstTd);
-  UhciFreePool   (Uhc, (UINT8 *)AsyncReq->QhSw, sizeof (UHCI_QH_SW));
+  UsbHcFreeMem (Uhc->MemPool, AsyncReq->QhSw, sizeof (UHCI_QH_SW));
 
   if (AsyncReq->Mapping != NULL) {
     Uhc->PciIo->Unmap (Uhc->PciIo, AsyncReq->Mapping);
@@ -1073,16 +891,14 @@ Returns:
 
   EFI_SUCCESS            - The request is deleted
   EFI_INVALID_PARAMETER  - Paremeter is error 
-  EFI_NOT_FOUND         - The asynchronous isn't found
+  EFI_NOT_FOUND          - The asynchronous isn't found
 
 --*/
 {
   EFI_STATUS          Status;
-  UINT32              Result;
   UHCI_ASYNC_REQUEST  *AsyncReq;
+  UHCI_QH_RESULT      QhResult;
   EFI_LIST_ENTRY      *Link;
-  UINT32              ErrTdPos;
-  UINTN               ActualLen;
   BOOLEAN             Found;
 
   Status = EFI_SUCCESS;
@@ -1119,16 +935,8 @@ Returns:
   // Check the result of the async transfer then update it
   // to get the next data toggle to use.
   //
-  UhciCheckTdStatus (
-    AsyncReq->FirstTd, 
-    &Result, 
-    &ErrTdPos, 
-    &ActualLen, 
-    AsyncReq->IsLow
-    );
-  
-  UhciUpdateAsyncReq (AsyncReq, Result, ErrTdPos);
-  *Toggle = AsyncReq->DataToggle;
+  UhciCheckTdStatus (Uhc, AsyncReq->FirstTd, AsyncReq->IsLow, &QhResult);
+  *Toggle = QhResult.NextToggle;
 
   //
   // Don't release the request now, keep it to synchronize with hardware.
@@ -1252,10 +1060,9 @@ UhciMonitorAsyncReqList (
   UHCI_ASYNC_REQUEST      *AsyncReq;
   EFI_LIST_ENTRY          *Link;
   USB_HC_DEV              *Uhc;
-  UINT32                  Result;
   VOID                    *Data;
-  UINTN                   ActualLen;
-  UINT32                  ErrTdPos;
+  BOOLEAN                 Finished;
+  UHCI_QH_RESULT          QhResult;
 
   Uhc = (USB_HC_DEV *) Context;
 
@@ -1275,31 +1082,13 @@ UhciMonitorAsyncReqList (
   //
   Link = Uhc->AsyncIntList.ForwardLink;
 
-  do {
-    Result    = 0;
-    ErrTdPos  = 0;
-    ActualLen = 0;
-    
+  do { 
     AsyncReq  = UHCI_ASYNC_INT_FROM_LINK (Link);
     Link      = Link->ForwardLink;
 
-    UhciCheckTdStatus (
-      AsyncReq->FirstTd,
-      &Result,
-      &ErrTdPos,
-      &ActualLen,
-      AsyncReq->IsLow
-      );
+    Finished = UhciCheckTdStatus (Uhc, AsyncReq->FirstTd, AsyncReq->IsLow, &QhResult);
 
-    if (ActualLen != 0) {
-      UHCI_DEBUG ((UHCI_DEBUG_ASYC_INT, "UhciMonitorAsyncReq: actual data "
-                                        "length transferred: %d\n", ActualLen));
-    }
-    
-    //
-    // check the next transfer if current hasn't finished.
-    //
-    if ((Result != EFI_USB_NOERROR) && ((Result & USB_ERR_FAIL_MASK) == 0)) {
+    if (!Finished) {
       continue;
     }
     
@@ -1309,24 +1098,25 @@ UhciMonitorAsyncReqList (
     //
     Data = NULL;
 
-    if (ActualLen != 0) {
-      Data = EfiLibAllocatePool (ActualLen);
+    if (QhResult.Complete != 0) {
+      Data = EfiLibAllocatePool (QhResult.Complete);
 
       if (Data == NULL) {
         return ;
       }
 
-      EfiCopyMem (Data, AsyncReq->FirstTd->Data, ActualLen);
+      EfiCopyMem (Data, AsyncReq->FirstTd->Data, QhResult.Complete);
     }
+    
+    UhciUpdateAsyncReq (AsyncReq, QhResult.Result, QhResult.NextToggle);
     
     //
     // Now, either transfer is SUCCESS or met errors since
     // we have skipped to next transfer earlier if current
     // transfer is still active. 
     //
-    if (Result == EFI_USB_NOERROR) {
-      AsyncReq->Callback (Data, ActualLen, AsyncReq->Context, Result);
-      UhciUpdateAsyncReq (AsyncReq, Result, ErrTdPos);
+    if (QhResult.Result == EFI_USB_NOERROR) {
+      AsyncReq->Callback (Data, QhResult.Complete, AsyncReq->Context, QhResult.Result);
     } else {
       //
       // Leave error recovery to its related device driver.
@@ -1338,7 +1128,7 @@ UhciMonitorAsyncReqList (
       // head to tail. Thus, the re-submitted interrupt transfer's
       // callback function will not be called again in this round.
       //
-      AsyncReq->Callback (NULL, 0, AsyncReq->Context, Result);
+      AsyncReq->Callback (NULL, 0, AsyncReq->Context, QhResult.Result);
     }
     
     if (Data != NULL) {

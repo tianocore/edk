@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                              
+Copyright (c) 2004 - 2007, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -46,6 +46,13 @@ Revision History
 #define GLYPH_WIDTH   8
 #define GLYPH_HEIGHT  19
 
+//
+// User can define valid graphic resolution here
+// e.g. 640x480, 800x600, 1024x768...
+//
+#define CURRENT_HORIZONTAL_RESOLUTION  800
+#define CURRENT_VERTICAL_RESOLUTION    600
+
 typedef union {
   EFI_NARROW_GLYPH  NarrowGlyph;
   EFI_WIDE_GLYPH    WideGlyph;
@@ -69,7 +76,7 @@ typedef struct {
   UINT32  GopModeNumber;
 } GRAPHICS_CONSOLE_MODE_DATA;
 
-#define GRAPHICS_MAX_MODE 3
+#define GRAPHICS_MAX_MODE 4
 
 typedef struct {
   UINTN                         Signature;

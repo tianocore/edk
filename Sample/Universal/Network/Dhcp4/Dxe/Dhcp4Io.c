@@ -377,6 +377,7 @@ Returns:
   EFI_IPv4_ADDRESS          Gateway;
   DHCP_SERVICE              *DhcpSb;
   EFI_STATUS                Status;
+  IP4_ADDR                  Ip;
 
   DhcpSb = (DHCP_SERVICE *) Context;
   
@@ -394,9 +395,13 @@ Returns:
   UdpConfigData.StationPort         = DHCP_CLIENT_PORT;
   UdpConfigData.RemotePort          = DHCP_SERVER_PORT;
 
-  EFI_IP4 (UdpConfigData.StationAddress)= HTONL (DhcpSb->ClientAddr);
-  EFI_IP4 (UdpConfigData.SubnetMask)    = HTONL (DhcpSb->Netmask);
-  EFI_IP4 (UdpConfigData.RemoteAddress) = 0;
+  Ip = HTONL (DhcpSb->ClientAddr);
+  NetCopyMem (&UdpConfigData.StationAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+  Ip = HTONL (DhcpSb->Netmask);
+  NetCopyMem (&UdpConfigData.SubnetMask, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+  NetZeroMem (&UdpConfigData.RemoteAddress, sizeof (EFI_IPv4_ADDRESS));
 
   Status = UdpIo->Udp->Configure (UdpIo->Udp, &UdpConfigData);
   
@@ -408,8 +413,11 @@ Returns:
   // Add a default route if received from the server.
   //
   if ((DhcpSb->Para != NULL) && (DhcpSb->Para->Router != 0)) {
-    EFI_IP4 (Subnet)  = 0;
-    EFI_IP4 (Gateway) = HTONL (DhcpSb->Para->Router);
+    NetZeroMem (&Subnet, sizeof (EFI_IPv4_ADDRESS));
+
+    Ip = HTONL (DhcpSb->Para->Router);
+    NetCopyMem (&Gateway, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
     UdpIo->Udp->Routes (UdpIo->Udp, FALSE, &Subnet, &Subnet, &Gateway);
   }
 
@@ -823,7 +831,7 @@ Returns:
   //
   Message = NULL;
 
-  if (!EFI_IP_EQUAL (Head->YourAddr, Selected->YourAddr)) {
+  if (!EFI_IP4_EQUAL (Head->YourAddr, Selected->YourAddr)) {
     Message = "Lease confirmed isn't the same as that in the offer";
     goto REJECT;
   }
@@ -921,7 +929,7 @@ Returns:
   // The lease is different from the selected. Don't send a DECLINE
   // since it isn't existed in the client's FSM.
   //
-  if (!EFI_IP_EQUAL (Head->YourAddr, Selected->YourAddr)) {
+  if (!EFI_IP4_EQUAL (Head->YourAddr, Selected->YourAddr)) {
     goto ON_EXIT;
   }
 
@@ -1348,7 +1356,7 @@ Returns:
   Head->HwAddrLen    = DhcpSb->HwLen;
   Head->Xid          = HTONL (DhcpSb->Xid); 
   Head->Reserved     = HTONS (0x8000);  //Server, broadcast the message please.
-  
+
   EFI_IP4 (Head->ClientAddr) = HTONL (DhcpSb->ClientAddr);
   NetCopyMem (Head->ClientHwAddr, DhcpSb->Mac.Addr, DhcpSb->HwLen);
 

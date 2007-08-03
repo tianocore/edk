@@ -147,6 +147,68 @@ Returns:
 --*/
 ;
 
+EFI_STATUS
+UhciMapUserRequest (
+  IN  USB_HC_DEV          *Uhc,
+  IN  OUT VOID            *Request,
+  OUT UINT8               **MappedAddr,
+  OUT VOID                **Map
+  )
+/*++
+
+Routine Description:
+
+  Map address of request structure buffer
+
+Arguments:
+
+  Uhc        - The UHCI device
+  Request    - The user request buffer
+  MappedAddr - Mapped address of request 
+  Map        - Identificaion of this mapping to return
+
+Returns:
+
+  EFI_SUCCESS      : Success
+  EFI_DEVICE_ERROR : Fail to map the user request
+
+--*/
+;
+
+EFI_STATUS
+UhciMapUserData (
+  IN  USB_HC_DEV              *Uhc,
+  IN  EFI_USB_DATA_DIRECTION  Direction,
+  IN  VOID                    *Data,
+  IN  OUT UINTN               *Len,
+  OUT UINT8                   *PktId,
+  OUT UINT8                   **MappedAddr,
+  OUT VOID                    **Map
+  )
+/*++
+
+Routine Description:
+
+  Map address of user data buffer
+
+Arguments:
+
+  Uhc        - The UHCI device
+  Direction  - direction of the data transfer
+  Data       - The user data buffer
+  Len        - Length of the user data
+  PktId      - Packet identificaion
+  MappedAddr - mapped address to return
+  Map        - identificaion of this mapping to return
+
+Returns:
+
+  EFI_SUCCESS      : Success
+  EFI_DEVICE_ERROR : Fail to map the user data
+
+--*/
+;
+
 VOID
 UhciDestoryTds (
   IN USB_HC_DEV           *Uhc,

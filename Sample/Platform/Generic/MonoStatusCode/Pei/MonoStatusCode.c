@@ -134,8 +134,9 @@ Returns:
 
 --*/
 {
+#ifndef EFI_NT_EMULATOR
   EFI_STATUS  Status;
-
+#endif
   //
   // Initialize status code listeners.
   //
@@ -144,10 +145,10 @@ Returns:
   //
   // Publish the status code capability to other modules
   //
+#ifndef EFI_NT_EMULATOR  
   Status = (*PeiServices)->InstallPpi (PeiServices, &mPpiListStatusCode);
-
   ASSERT_PEI_ERROR (PeiServices, Status);
-
+#endif
   PEI_DEBUG ((PeiServices, EFI_D_ERROR, "\nMono Status Code PEIM Loaded\n"));
 
   return ;

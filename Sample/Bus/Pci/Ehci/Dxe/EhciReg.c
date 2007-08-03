@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation
+Copyright (c) 2007, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -11,128 +11,64 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-    Ehchlp.c
+    EhciReg.c
 
 Abstract:
+
+    The EHCI register operation routines.
 
 
 Revision History
 --*/
 
-#include "Tiano.h"
-#include "EfiDriverLib.h"
 #include "Ehci.h"
 
-
-VOID
-HostReset (
-  IN USB2_HC_DEV    *HcDev
-  )
-{
-  UINT32  Value;
-  UINT32  TimeOut;
- 
-  ReadEhcOperationalReg (
-    HcDev,
-    USBCMD,
-    &Value
-    );
-
-  Value = Value & (~USBCMD_RS);
-  WriteEhcOperationalReg (
-    HcDev,
-    USBCMD,
-    Value
-    );
-
-  TimeOut = 40;
-  while (TimeOut --) {
-    gBS->Stall (500);
-    ReadEhcOperationalReg (
-      HcDev,
-      USBSTS,
-      &Value
-      );
-    if ((Value & USBSTS_HCH) != 0) {
-      break;
-    }
-  }
-
-  if (TimeOut == 0) {
-    DEBUG((gEHCErrorLevel, "TimeOut for clearing Run/Stop bit\n"));
-  }
-
-  ReadEhcOperationalReg (
-    HcDev,
-    USBCMD,
-    &Value
-    );
-  Value = Value | USBCMD_HCRESET;
-  WriteEhcOperationalReg (
-    HcDev,
-    USBCMD,
-    Value
-    );
-
-  TimeOut = 40;
-  while (TimeOut --) {
-    gBS->Stall (500);
-    ReadEhcOperationalReg (
-      HcDev,
-      USBCMD,
-      &Value
-      );
-    if ((Value & USBCMD_HCRESET) == 0) {
-      break;
-    }
-  }
-
-  if (TimeOut == 0) {
-    DEBUG((gEHCErrorLevel, "TimeOut for Host Reset\n"));
-  }
-
-}
-
-EFI_STATUS
-ReadEhcCapabiltiyReg (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINT32                  CapabiltiyRegAddr,
-  IN OUT UINT32              *Data
+UINT32
+EhcReadCapRegister (
+  IN  USB2_HC_DEV         *Ehc,
+  IN  UINT32              Offset
   )
 /*++
 
 Routine Description:
 
-  Read  Ehc Capabitlity register
+  Read  EHCI capability register
 
 Arguments:
 
-  HcDev              - USB2_HC_DEV
-  CapabiltiyRegAddr  - Ehc Capability register address
-  Data               - A pointer to data read from register
+  Ehc     - The Ehc device 
+  Offset  - Capability register address
 
 Returns:
 
-  EFI_SUCCESS        Success
-  EFI_DEVICE_ERROR   Fail
-
+  The register content read
+  
 --*/
 {
-  return HcDev->PciIo->Mem.Read (
-                             HcDev->PciIo,
+  UINT32                  Data;
+  EFI_STATUS              Status;
+
+  Status = Ehc->PciIo->Mem.Read (
+                             Ehc->PciIo,
                              EfiPciIoWidthUint32,
-                             USB_BAR_INDEX,
-                             (UINT64) CapabiltiyRegAddr,
+                             EHC_BAR_INDEX,
+                             (UINT64) Offset,
                              1,
-                             Data
+                             &Data
                              );
+
+  if (EFI_ERROR (Status)) {
+    EHC_ERROR (("EhcReadCapRegister: Pci Io read error - %r at %d\n", Status, Offset));
+    Data = 0xFFFF;
+  }
+
+  return Data;
 }
 
-EFI_STATUS
-ReadEhcOperationalReg (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINT32                  OperationalRegAddr,
-  IN OUT UINT32              *Data
+UINT32
+EhcReadOpReg (
+  IN  USB2_HC_DEV         *Ehc,
+  IN  UINT32              Offset
   )
 /*++
 
@@ -142,612 +78,342 @@ Routine Description:
 
 Arguments:
 
-  HcDev                - USB2_HC_DEV
-  OperationalRegAddr   - Ehc Operation register address
-  Data                 - A pointer to data read from register
+  Ehc      - The EHCI device
+  Offset   - The operation register offset
 
 Returns:
 
-  EFI_SUCCESS        Success
-  EFI_DEVICE_ERROR   Fail
-
+  The register content read
+  
 --*/
 {
-  ASSERT (HcDev->UsbCapabilityLen);
-  return HcDev->PciIo->Mem.Read (
-                             HcDev->PciIo,
+  UINT32                  Data;
+  EFI_STATUS              Status;
+
+  ASSERT (Ehc->CapLen != 0);
+
+  Status = Ehc->PciIo->Mem.Read (
+                             Ehc->PciIo,
                              EfiPciIoWidthUint32,
-                             USB_BAR_INDEX,
-                             (UINT64) (OperationalRegAddr + HcDev->UsbCapabilityLen),
-                             1,
-                             Data
-                             );
-}
-
-EFI_STATUS
-WriteEhcOperationalReg (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINT32                  OperationalRegAddr,
-  IN UINT32                  Data
-  )
-/*++
-
-Routine Description:
-
-  Write  Ehc Operation register
-
-Arguments:
-
-  HcDev                - USB2_HC_DEV
-  OperationalRegAddr   - Ehc Operation register address
-  Data                 - 32bit write to register
-
-Returns:
-
-  EFI_SUCCESS        Success
-  EFI_DEVICE_ERROR   Fail
-
---*/
-{
-  ASSERT (HcDev->UsbCapabilityLen);
-  return HcDev->PciIo->Mem.Write (
-                             HcDev->PciIo,
-                             EfiPciIoWidthUint32,
-                             USB_BAR_INDEX,
-                             (UINT64) (OperationalRegAddr + HcDev->UsbCapabilityLen),
+                             EHC_BAR_INDEX,
+                             (UINT64) (Ehc->CapLen + Offset),
                              1,
                              &Data
                              );
+
+  if (EFI_ERROR (Status)) {
+    EHC_ERROR (("EhcReadOpReg: Pci Io Read error - %r at %d\n", Status, Offset));
+    Data = 0xFFFF;
+  }
+
+  return Data;
 }
 
-
-
 VOID
-ClearLegacySupport (
-  IN USB2_HC_DEV     *HcDev
+EhcWriteOpReg (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Offset,
+  IN UINT32               Data
   )
 /*++
 
 Routine Description:
 
-  Stop the legacy USB SMI
+  Write  the data to the EHCI operation register
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
+  Ehc      - The EHCI device
+  Offset   - EHCI operation register offset
+  Data     - The data to write
 
 Returns:
 
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
+  None
 
 --*/
 {
-  UINT32  EECP;
-  UINT32  Value;
-  UINT32  TimeOut;
-  BOOLEAN NotOwnedByThisDriver;
+  EFI_STATUS              Status;
 
-  NotOwnedByThisDriver = FALSE;
+  ASSERT (Ehc->CapLen != 0);
 
-  ReadEhcCapabiltiyReg (
-    HcDev,
-    HCCPARAMS,
-    &EECP
-    );
+  Status = Ehc->PciIo->Mem.Write (
+                             Ehc->PciIo,
+                             EfiPciIoWidthUint32,
+                             EHC_BAR_INDEX,
+                             (UINT64) (Ehc->CapLen + Offset),
+                             1,
+                             &Data
+                             );
 
-  EECP = (EECP >> 8) & 0xFF;
+  if (EFI_ERROR (Status)) {
+    EHC_ERROR (("EhcWriteOpReg: Pci Io Write error: %r at %d\n", Status, Offset));
+  }
+}
 
-  DEBUG ((gEHCDebugLevel, "EHCI: EECPBase = 0x%x\n", EECP));
+STATIC
+VOID
+EhcSetOpRegBit (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Offset,
+  IN UINT32               Bit
+  )
+/*++
 
+Routine Description:
+  Set one bit of the operational register while keeping other bits
 
-  HcDev->PciIo->Pci.Read (
-                     HcDev->PciIo,
-                     EfiPciIoWidthUint32,
-                     EECP,
-                     1,
-                     &Value 
-                     );
+Arguments:
+  Ehc     - The EHCI device
+  Offset  - The offset of the operational register
+  Bit     - The bit mask of the register to set
+  
+Returns:
 
-  DEBUG((gEHCDebugLevel, "EECP[0] = 0x%x\n", Value));
+  None
+  
+--*/
+{
+  UINT32                  Data;
 
-  HcDev->PciIo->Pci.Read (
-                     HcDev->PciIo,
-                     EfiPciIoWidthUint32,
-                     EECP + 0x4,
-                     1,
-                     &Value 
-                     );
+  Data  = EhcReadOpReg (Ehc, Offset);
+  Data |= Bit;
+  EhcWriteOpReg (Ehc, Offset, Data);
+}
 
-  DEBUG((gEHCDebugLevel, "EECP[4] = 0x%x\n", Value));
+STATIC
+VOID
+EhcClearOpRegBit (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Offset,
+  IN UINT32               Bit
+  )
+/*++
 
-  HcDev->PciIo->Pci.Read (
-                     HcDev->PciIo,
-                     EfiPciIoWidthUint32,
-                     EECP,
-                     1,
-                     &Value 
-                     );
+Routine Description:
+  Clear one bit of the operational register while keeping other bits
 
-  if ((Value & (0x1 << 24)) == 0) {
-    NotOwnedByThisDriver = TRUE;
+Arguments:
+  Ehc - The EHCI device
+  Offset  - The offset of the operational register
+  Bit     - The bit mask of the register to clear
+
+Returns:
+
+  None
+
+--*/
+{
+  UINT32                  Data;
+
+  Data  = EhcReadOpReg (Ehc, Offset);
+  Data &= ~Bit;
+  EhcWriteOpReg (Ehc, Offset, Data);
+}
+
+STATIC
+EFI_STATUS
+EhcWaitOpRegBit (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Offset,
+  IN UINT32               Bit,
+  IN BOOLEAN              WaitToSet,
+  IN UINT32               Timeout
+  )
+/*++
+
+Routine Description:
+
+  Wait the operation register's bit as specified by Bit 
+  to become set (or clear)
+
+Arguments:
+
+  Ehc         - The EHCI device
+  Offset      - The offset of the operation register 
+  Bit         - The bit of the register to wait for
+  WaitToSet   - Wait the bit to set or clear
+  Timeout     - The time to wait before abort (in millisecond)
+
+Returns:
+
+  EFI_SUCCESS - The bit successfully changed by host controller
+  EFI_TIMEOUT - The time out occurred
+
+--*/
+{
+  UINT32                  Index;
+
+  for (Index = 0; Index < Timeout / EHC_SYNC_POLL_TIME + 1; Index++) {
+    if (EHC_REG_BIT_IS_SET (Ehc, Offset, Bit) == WaitToSet) {
+      return EFI_SUCCESS;
+    }
+
+    gBS->Stall (EHC_SYNC_POLL_TIME);
   }
 
-  Value = Value | (0x1 << 24);
-  DEBUG((gEHCErrorLevel, "Value Written = 0x%x\n", Value));
+  return EFI_TIMEOUT;
+}
 
-  HcDev->PciIo->Pci.Write (
-                     HcDev->PciIo,
-                     EfiPciIoWidthUint32,
-                     EECP,
-                     1,
-                     &Value 
-                     );
+VOID
+EhcClearLegacySupport (
+  IN USB2_HC_DEV          *Ehc
+  )
+/*++
+
+Routine Description:
+
+  Add support for UEFI Over Legacy (UoL) feature, stop 
+  the legacy USB SMI support
+
+Arguments:
+
+  Ehc - The EHCI device.
+
+Returns:
+
+  None
+  
+--*/
+{
+  UINT32                    ExtendCap;
+  EFI_PCI_IO_PROTOCOL       *PciIo;
+  UINT32                    Value;
+  UINT32                    TimeOut;
+
+  EHC_DEBUG (("EhcClearLegacySupport: called to clear legacy support\n"));
+
+  PciIo     = Ehc->PciIo;
+  ExtendCap = (Ehc->HcCapParams >> 8) & 0xFF;
+
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, ExtendCap, 1, &Value);
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, ExtendCap + 0x4, 1, &Value);
+
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, ExtendCap, 1, &Value);
+  Value |= (0x1 << 24);
+  PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, ExtendCap, 1, &Value);
 
   TimeOut = 40;
-  while (TimeOut --) {
+  while (TimeOut--) {
     gBS->Stall (500);
 
-    HcDev->PciIo->Pci.Read (
-                      HcDev->PciIo,
-                      EfiPciIoWidthUint32,
-                      EECP,
-                      1,
-                      &Value 
-                      );
+    PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, ExtendCap, 1, &Value);
+
     if ((Value & 0x01010000) == 0x01000000) {
       break;
     }
   }
 
-  if (TimeOut == 0) {
-    DEBUG((gEHCErrorLevel, "Timeout for getting HC OS Owned Semaphore\n" ));
-  } 
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, ExtendCap, 1, &Value);
+  PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, ExtendCap + 0x4, 1, &Value);
+}
+
+
+EFI_STATUS
+EhcSetAndWaitDoorBell (
+  IN  USB2_HC_DEV         *Ehc,
+  IN  UINT32              Timeout
+  )
+/*++
+
+Routine Description:
+
+  Set door bell and wait it to be ACKed by host controller.
+  This function is used to synchronize with the hardware.
+
+Arguments:
+
+  Ehc     - The EHCI device
+  Timeout - The time to wait before abort (in millisecond, ms)
+Returns:
+
+  EFI_SUCCESS : Synchronized with the hardware
+  EFI_TIMEOUT : Time out happened while waiting door bell to set
+
+--*/
+{
+  EFI_STATUS              Status;
+  UINT32                  Data;
+
+  EhcSetOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_IAAD);
+
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_IAA, TRUE, Timeout);
+
+  //
+  // ACK the IAA bit in USBSTS register. Make sure other
+  // interrupt bits are not ACKed. These bits are WC (Write Clean).
+  //
+  Data  = EhcReadOpReg (Ehc, EHC_USBSTS_OFFSET);
+  Data &= ~USBSTS_INTACK_MASK;
+  Data |= USBSTS_IAA;
+
+  EhcWriteOpReg (Ehc, EHC_USBSTS_OFFSET, Data);
+
+  return Status;
+}
+
+VOID
+EhcAckAllInterrupt (
+  IN  USB2_HC_DEV         *Ehc
+  )
+/*++
+
+Routine Description:
+
+  Clear all the interrutp status bits, these bits 
+  are Write-Clean
+
+Arguments:
+
+  Ehc - The EHCI device
+
+Returns:
+
+  None
   
-  DEBUG((gEHCErrorLevel, "After Release Value\n" ));
-
-  HcDev->PciIo->Pci.Read (
-                     HcDev->PciIo,
-                     EfiPciIoWidthUint32,
-                     EECP,
-                     1,
-                     &Value 
-                     );
-
-  DEBUG((gEHCDebugLevel, "EECP[0] = 0x%x\n", Value));
-
-  HcDev->PciIo->Pci.Read (
-                     HcDev->PciIo,
-                     EfiPciIoWidthUint32,
-                     EECP + 0x4,
-                     1,
-                     &Value 
-                     );
-
-  DEBUG((gEHCDebugLevel, "EECP[4] = 0x%x\n", Value));
-
-
-  //
-  // Reset Host only if EHCI not owned by this driver
-  //
-  if (NotOwnedByThisDriver) {
-    HostReset (HcDev);
-  }
-
-  return ;
+--*/
+{
+  EhcWriteOpReg (Ehc, EHC_USBSTS_OFFSET, USBSTS_INTACK_MASK);
 }
 
+STATIC
 EFI_STATUS
-GetCapabilityLen (
-  IN USB2_HC_DEV     *HcDev
+EhcEnablePeriodSchd (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Timeout
   )
 /*++
 
 Routine Description:
 
-  Get the length of capability register
+  Enable the periodic schedule then wait EHC to 
+  actually enable it.
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
-
+  Ehc     - The EHCI device
+  Timeout - The time to wait before abort (in millisecond, ms)
 Returns:
 
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
+  EFI_SUCCESS : The periodical schedule is enabled
+  EFI_TIMEOUT : Time out happened while enabling periodic schedule
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINT32      CapabilityLenAddr;
+  EFI_STATUS              Status;
 
-  CapabilityLenAddr = CAPLENGTH;
+  EhcSetOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_ENABLE_PERIOD);
 
-  Status = ReadEhcCapabiltiyReg (
-             HcDev,
-             CapabilityLenAddr,
-             &(HcDev->UsbCapabilityLen)
-             );
-  HcDev->UsbCapabilityLen = (UINT8) HcDev->UsbCapabilityLen;
-
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_PERIOD_ENABLED, TRUE, Timeout);
   return Status;
 }
 
+
+STATIC
 EFI_STATUS
-SetFrameListLen (
-  IN USB2_HC_DEV     *HcDev,
-  IN UINTN           Length
-  )
-/*++
-
-Routine Description:
-
-  Set the length of Frame List
-
-Arguments:
-
-  HcDev    - USB2_HC_DEV
-  Length   - the required length of frame list
-
-Returns:
-
-  EFI_SUCCESS            Success
-  EFI_INVALID_PARAMETER  Invalid parameter
-  EFI_DEVICE_ERROR       Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
-
-  UsbCommandAddr = USBCMD;
-
-  if (256 != Length && 512 != Length) {
-    Status = EFI_INVALID_PARAMETER;
-    goto exit;
-  }
-
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  if (256 == Length) {
-    UsbCommandReg |= USBCMD_FLS_256;
-  } else {
-    UsbCommandReg |= USBCMD_FLS_512;
-  }
-
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-SetFrameListBaseAddr (
-  IN USB2_HC_DEV     *HcDev,
-  IN UINT32          FrameBuffer
-  )
-/*++
-
-Routine Description:
-
-  Set base address of frame list first entry
-
-Arguments:
-
-  HcDev        - USB2_HC_DEV
-  FrameBuffer  - base address of first entry of frame list
-
-Returns:
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      PeriodicListBaseAddr;
-  UINT32      PeriodicListBaseReg;
-
-  Status                = EFI_SUCCESS;
-  PeriodicListBaseAddr  = PERIODICLISTBASE;
-  PeriodicListBaseReg   = FrameBuffer & 0xfffff000;
-
-  if (IsEhcHalted (HcDev)) {
-
-    Status = WriteEhcOperationalReg (
-               HcDev,
-               PeriodicListBaseAddr,
-               PeriodicListBaseReg
-               );
-    if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
-      goto exit;
-    }
-
-  }
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-SetAsyncListAddr (
-  IN USB2_HC_DEV        *HcDev,
-  IN EHCI_QH_ENTITY     *QhPtr
-  )
-/*++
-
-Routine Description:
-
-  Set address of first Async schedule Qh
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  QhPtr   - A pointer to first Qh in the Async schedule
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      AsyncListAddr;
-  UINT32      AsyncListReg;
-
-  AsyncListAddr = ASYNCLISTADDR;
-  AsyncListReg  = (UINT32) GET_0B_TO_31B (&(QhPtr->Qh));
-
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             AsyncListAddr,
-             AsyncListReg
-             );
-
-  return Status;
-}
-
-EFI_STATUS
-SetCtrlDataStructSeg (
-  IN USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Set register of control and data structure segment
-
-Arguments:
-
-  HcDev  - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      CtrlDsSegmentAddr;
-  UINT32      CtrlDsSegmentReg;
-
-  CtrlDsSegmentAddr = CTRLDSSGMENT;
-  CtrlDsSegmentReg  = HcDev->High32BitAddr;
-
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             CtrlDsSegmentAddr,
-             CtrlDsSegmentReg
-             );
-
-  return Status;
-}
-
-EFI_STATUS
-SetPortRoutingEhc (
-  IN USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Set Ehc port routing bit
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      ConfigFlagAddr;
-  UINT32      ConfigFlagReg;
-
-  ConfigFlagAddr = CONFIGFLAG;
-
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             ConfigFlagAddr,
-             &ConfigFlagReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  ConfigFlagReg |= CONFIGFLAG_CF;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             ConfigFlagAddr,
-             ConfigFlagReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-SetEhcDoorbell (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Set Ehc door bell bit
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
-
-  UsbCommandAddr = USBCMD;
-
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  UsbCommandReg |= USBCMD_IAAD;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-ClearEhcAllStatus (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Clear Ehc all status bits
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  UINT32  UsbStatusAddr;
-
-  UsbStatusAddr = USBSTS;
-
-  return WriteEhcOperationalReg (
-           HcDev,
-           UsbStatusAddr,
-           0x003F
-           );
-}
-
-EFI_STATUS
-EnablePeriodicSchedule (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Enable periodic schedule
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
-
-  UsbCommandAddr = USBCMD;
-
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  UsbCommandReg |= USBCMD_PSE;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-DisablePeriodicSchedule (
-  IN  USB2_HC_DEV     *HcDev
+EhcDisablePeriodSchd (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Timeout
   )
 /*++
 
@@ -757,46 +423,30 @@ Routine Description:
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
-
+  Ehc     - The EHCI device
+  Timeout - Time to wait before abort (in millisecond, ms)
+  
 Returns:
 
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
+  EFI_SUCCESS      : Periodic schedule is disabled.
+  EFI_DEVICE_ERROR : Fail to disable periodic schedule
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
+  EFI_STATUS              Status;
 
-  UsbCommandAddr = USBCMD;
+  EhcClearOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_ENABLE_PERIOD);
 
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  UsbCommandReg &= ~USBCMD_PSE;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_PERIOD_ENABLED, FALSE, Timeout);
   return Status;
 }
 
+
+STATIC
 EFI_STATUS
-EnableAsynchronousSchedule (
-  IN  USB2_HC_DEV     *HcDev
+EhcEnableAsyncSchd (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Timeout
   )
 /*++
 
@@ -806,48 +456,30 @@ Routine Description:
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
-
+  Ehc     - The EHCI device
+  Timeout - Time to wait before abort
+  
 Returns:
 
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
+  EFI_SUCCESS : The EHCI asynchronous schedule is enabled
+  Others      : Failed to enable the asynchronous scheudle
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
+  EFI_STATUS              Status;
 
-  UsbCommandAddr = USBCMD;
+  EhcSetOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_ENABLE_ASYNC);
 
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  UsbCommandReg |= USBCMD_ASE;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_ASYNC_ENABLED, TRUE, Timeout);
   return Status;
 }
 
+
+STATIC
 EFI_STATUS
-DisableAsynchronousSchedule (
-  IN  USB2_HC_DEV     *HcDev
+EhcDisableAsyncSchd (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Timeout
   )
 /*++
 
@@ -857,352 +489,28 @@ Routine Description:
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
-
+  Ehc     - The EHCI device
+  Timeout - Time to wait before abort (in millisecond, ms)
+  
 Returns:
 
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
+  EFI_SUCCESS : The asynchronous schedule is disabled
+  Others      : Failed to disable the asynchronous schedule
 
 --*/
 {
   EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
 
-  UsbCommandAddr = USBCMD;
+  EhcClearOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_ENABLE_ASYNC);
 
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  UsbCommandReg &= ~USBCMD_ASE;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_ASYNC_ENABLED, FALSE, Timeout);
   return Status;
 }
 
-EFI_STATUS
-ResetEhc (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Reset Ehc
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
-
-  UsbCommandAddr = USBCMD;
-
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  UsbCommandReg |= USBCMD_HCRESET;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-StartScheduleExecution (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Start Ehc schedule execution
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  EFI_SUCCESS       Success
-  EFI_DEVICE_ERROR  Fail
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
-
-  UsbCommandAddr = USBCMD;
-
-  Status = ReadEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             &UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-    goto exit;
-  }
-
-  UsbCommandReg |= USBCMD_RS;
-  Status = WriteEhcOperationalReg (
-             HcDev,
-             UsbCommandAddr,
-             UsbCommandReg
-             );
-  if (EFI_ERROR (Status)) {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-exit:
-  return Status;
-}
 
 BOOLEAN
-IsFrameListProgrammable (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Whether frame list is programmable
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  TRUE   Programmable
-  FALSE  Unprogrammable
-
---*/
-{
-  BOOLEAN Value;
-  UINT32  HcCapParamsAddr;
-  UINT32  HcCapParamsReg;
-
-  HcCapParamsAddr = HCCPARAMS;
-
-  ReadEhcCapabiltiyReg(
-    HcDev,
-    HcCapParamsAddr,
-    &HcCapParamsReg
-    );
-
-  if (HcCapParamsReg & HCCP_PFLF) {
-    Value = TRUE;
-  } else {
-    Value = FALSE;
-  }
-
-  return Value;
-}
-
-BOOLEAN
-IsPeriodicScheduleEnabled (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Whether periodic schedule is enabled
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  TRUE    Enabled
-  FALSE   Disabled
-
---*/
-{
-  BOOLEAN Value;
-  UINT32  UsbStatusAddr;
-  UINT32  UsbStatusReg;
-
-  UsbStatusAddr = USBSTS;
-
-  ReadEhcOperationalReg (
-    HcDev,
-    UsbStatusAddr,
-    &UsbStatusReg
-    );
-
-  if (UsbStatusReg & USBSTS_PSS) {
-    Value = TRUE;
-  } else {
-    Value = FALSE;
-  }
-
-  return Value;
-}
-
-BOOLEAN
-IsAsyncScheduleEnabled (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Whether asynchronous schedule is enabled
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  TRUE   Enabled
-  FALSE  Disabled
-
---*/
-{
-  BOOLEAN Value;
-  UINT32  UsbStatusAddr;
-  UINT32  UsbStatusReg;
-
-  UsbStatusAddr = USBSTS;
-
-  ReadEhcOperationalReg (
-    HcDev,
-    UsbStatusAddr,
-    &UsbStatusReg
-    );
-
-  if (UsbStatusReg & USBSTS_ASS) {
-    Value = TRUE;
-  } else {
-    Value = FALSE;
-  }
-
-  return Value;
-}
-
-BOOLEAN
-IsEhcPortEnabled (
-  IN  USB2_HC_DEV     *HcDev,
-  IN  UINT8           PortNum
-  )
-/*++
-
-Routine Description:
-
-  Whether port is enabled
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  TRUE   Enabled
-  FALSE  Disabled
-
---*/
-{
-  UINT32  PortStatusControlAddr;
-  UINT32  PortStatusControlReg;
-
-  PortStatusControlAddr = (UINT32) (PORTSC + (4 * PortNum));
-
-  ReadEhcOperationalReg (
-    HcDev,
-    PortStatusControlAddr,
-    &PortStatusControlReg
-    );
-
-  return ((PortStatusControlReg & PORTSC_PED) ? TRUE : FALSE);
-}
-
-BOOLEAN
-IsEhcReseted (
-  IN  USB2_HC_DEV     *HcDev
-  )
-/*++
-
-Routine Description:
-
-  Whether Ehc is reseted
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  TRUE   Reseted
-  FALSE  Unreseted
-
---*/
-{
-  BOOLEAN Value;
-  UINT32  UsbCommandAddr;
-  UINT32  UsbCommandReg;
-
-  UsbCommandAddr = USBCMD;
-
-  ReadEhcOperationalReg (
-    HcDev,
-    UsbCommandAddr,
-    &UsbCommandReg
-    );
-
-  if (UsbCommandReg & USBCMD_HCRESET) {
-    Value = FALSE;
-  } else {
-    Value = TRUE;
-  }
-
-  return Value;
-}
-
-BOOLEAN
-IsEhcHalted (
-  IN  USB2_HC_DEV     *HcDev
+EhcIsHalt (
+  IN USB2_HC_DEV          *Ehc
   )
 /*++
 
@@ -1212,536 +520,221 @@ Routine Description:
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
+  Ehc - The EHCI device
 
 Returns:
 
-  TRUE   Halted
-  FALSE  Not halted
+  TRUE  : The controller is halted
+  FALSE : It isn't halted
 
 --*/
 {
-  BOOLEAN Value;
-  UINT32  UsbStatusAddr;
-  UINT32  UsbStatusReg;
-
-  UsbStatusAddr = USBSTS;
-
-  ReadEhcOperationalReg (
-    HcDev,
-    UsbStatusAddr,
-    &UsbStatusReg
-    );
-
-  if (UsbStatusReg & USBSTS_HCH) {
-    Value = TRUE;
-  } else {
-    Value = FALSE;
-  }
-
-  return Value;
+  return EHC_REG_BIT_IS_SET (Ehc, EHC_USBSTS_OFFSET, USBSTS_HALT);
 }
 
 BOOLEAN
-IsEhcSysError (
-  IN  USB2_HC_DEV     *HcDev
+EhcIsSysError (
+  IN USB2_HC_DEV          *Ehc
   )
 /*++
 
 Routine Description:
 
-  Whether Ehc is system error
+  Whether system error occurred
 
 Arguments:
 
-  HcDev - USB2_HC_DEV
+  Ehc - The EHCI device
 
 Returns:
 
-  TRUE   System error
-  FALSE  No system error
+  TRUE  : System error happened 
+  FALSE : No system error
 
 --*/
 {
-  BOOLEAN Value;
-  UINT32  UsbStatusAddr;
-  UINT32  UsbStatusReg;
-
-  UsbStatusAddr = USBSTS;
-
-  ReadEhcOperationalReg (
-    HcDev,
-    UsbStatusAddr,
-    &UsbStatusReg
-    );
-
-  if (UsbStatusReg & USBSTS_HSE) {
-    Value = TRUE;
-  } else {
-    Value = FALSE;
-  }
-
-  return Value;
-}
-
-BOOLEAN
-IsHighSpeedDevice (
-  IN EFI_USB2_HC_PROTOCOL *This,
-  IN UINT8                PortNum
-  )
-/*++
-
-Routine Description:
-
-  Whether high speed device attached
-
-Arguments:
-
-  HcDev - USB2_HC_DEV
-
-Returns:
-
-  TRUE   High speed
-  FALSE  Full speed
-
---*/
-{
-  USB2_HC_DEV          *HcDev;
-  UINT32               PortStatusControlAddr;
-  UINT32               PortStatusControlReg;
-
-  HcDev = USB2_HC_DEV_FROM_THIS (This);
-  PortStatusControlAddr = (UINT32) (PORTSC + (4 * PortNum));
-
-  //
-  // Set port reset bit
-  //
-  ReadEhcOperationalReg (
-    HcDev,
-    PortStatusControlAddr,
-    &PortStatusControlReg
-    );
-  //
-  // Make sure Host Controller not halt before reset it
-  //
-  if (IsEhcHalted (HcDev)) {
-    StartScheduleExecution (HcDev);
-    WaitForEhcNotHalt (HcDev, EHCI_GENERIC_TIMEOUT);
-  }
-  PortStatusControlReg &= 0xffffffd5;
-  PortStatusControlReg |= PORTSC_PR;
-  //
-  // Set one to PortReset bit must also set zero to PortEnable bit
-  //
-  PortStatusControlReg &= ~PORTSC_PED;
-  WriteEhcOperationalReg (
-    HcDev,
-    PortStatusControlAddr,
-    PortStatusControlReg
-    );
-
-  //
-  // Set Port reset recovery time
-  //
-  gBS->Stall (EHCI_SET_PORT_RESET_RECOVERY_TIME);
-
-  //
-  // Clear port reset bit
-  //
-  ReadEhcOperationalReg (
-    HcDev,
-    PortStatusControlAddr,
-    &PortStatusControlReg
-    );
-  PortStatusControlReg &= 0xffffffd5;
-  PortStatusControlReg &= ~PORTSC_PR;
-  WriteEhcOperationalReg (
-    HcDev,
-    PortStatusControlAddr,
-    PortStatusControlReg
-    );
-
-  //
-  // Clear port reset recovery time
-  //
-  gBS->Stall (EHCI_CLEAR_PORT_RESET_RECOVERY_TIME);
-
-  return (IsEhcPortEnabled (HcDev, PortNum) ? TRUE : FALSE);
+  return EHC_REG_BIT_IS_SET (Ehc, EHC_USBSTS_OFFSET, USBSTS_SYS_ERROR);
 }
 
 EFI_STATUS
-WaitForEhcReset (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
+EhcResetHC (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Timeout
   )
 /*++
 
 Routine Description:
 
-  wait for Ehc reset or timeout
+  Reset the host controller
 
 Arguments:
 
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
+  Ehc     - The EHCI device
+  Timeout - Time to wait before abort (in millisecond, ms)
 
 Returns:
 
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
+  EFI_SUCCESS : The host controller is reset
+  Others      : Failed to reset the host
 
 --*/
 {
-  EFI_STATUS  Status;
-  UINTN       Delay;
+  EFI_STATUS              Status;
 
   //
-  // Timeout is in US unit
+  // Host can only be reset when it is halt. If not so, halt it
   //
-  Delay = (Timeout / 50) + 1;
-  do {
+  if (!EHC_REG_BIT_IS_SET (Ehc, EHC_USBSTS_OFFSET, USBSTS_HALT)) {
+    Status = EhcHaltHC (Ehc, Timeout);
 
-    if (IsEhcReseted (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForEhcHalt (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  wait for Ehc halt or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINTN       Delay;
-
-  //
-  // Timeout is in US unit
-  //
-  Delay = (Timeout / 50) + 1;
-  do {
-
-    if (IsEhcHalted (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForEhcNotHalt (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  wait for Ehc not halt or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINTN       Delay;
-
-  //
-  // Timeout is in US unit
-  //
-  Delay = (Timeout / 50) + 1;
-  do {
-
-    if (!IsEhcHalted (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForAsyncScheduleEnable (
-  IN  USB2_HC_DEV            *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  Wait for Ehc asynchronous schedule enable or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINTN       Delay;
-
-  //
-  // Timeout is in US unit
-  //
-  Delay = (Timeout / 50) + 1;
-  do {
-
-    if (IsAsyncScheduleEnabled (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForAsyncScheduleDisable (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  Wait for Ehc asynchronous schedule disable or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINTN       Delay;
-
-  //
-  // Timeout is in US unit
-  //
-  Delay = (Timeout / 50) + 1;
-  do {
-
-    if (!IsAsyncScheduleEnabled (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForPeriodicScheduleEnable (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  Wait for Ehc periodic schedule enable or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINTN       Delay;
-
-  //
-  // Timeout is in US unit
-  //
-  Delay = (Timeout / 50) + 1;
-  do {
-
-    if (IsPeriodicScheduleEnabled (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForPeriodicScheduleDisable (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  Wait for periodic schedule disable or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINTN       Delay;
-
-  //
-  // Timeout is in US unit
-  //
-  Delay = (Timeout / 50) + 1;
-  do {
-
-    if (!IsPeriodicScheduleEnabled (HcDev)) {
-      Status = EFI_SUCCESS;
-      goto exit;
-    }
-    gBS->Stall (EHCI_GENERIC_RECOVERY_TIME);
-
-  } while (Delay--);
-
-  Status = EFI_TIMEOUT;
-
-exit:
-  return Status;
-}
-
-EFI_STATUS
-WaitForEhcDoorbell (
-  IN USB2_HC_DEV             *HcDev,
-  IN UINTN                   Timeout
-  )
-/*++
-
-Routine Description:
-
-  Wait for periodic schedule disable or timeout
-
-Arguments:
-
-  HcDev   - USB2_HC_DEV
-  Timeout - timeout threshold
-
-Returns:
-
-  EFI_SUCCESS    Success
-  EFI_TIMEOUT    Timeout
-
---*/
-{
-  EFI_STATUS  Status;
-  UINT32      UsbCommandAddr;
-  UINT32      UsbCommandReg;
-  UINTN       Delay;
-
-  UsbCommandAddr  = USBCMD;
-  Delay           = (Timeout / 50) + 1;
-
-  do {
-    Status = ReadEhcOperationalReg (
-               HcDev,
-               UsbCommandAddr,
-               &UsbCommandReg
-               );
     if (EFI_ERROR (Status)) {
-      Status = EFI_DEVICE_ERROR;
-      goto exit;
+      return Status;
     }
-    if (!(UsbCommandReg & USBCMD_IAAD)) {
-      break;
-    }
-
-  } while (--Delay);
-
-  if (0 == Delay) {
-    Status = EFI_TIMEOUT;
   }
 
-exit:
+  EhcSetOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_RESET);
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_RESET, FALSE, Timeout);
   return Status;
+}
+
+EFI_STATUS
+EhcHaltHC (
+  IN USB2_HC_DEV         *Ehc,
+  IN UINT32              Timeout
+  )
+/*++
+
+Routine Description:
+
+  Halt the host controller
+
+Arguments:
+
+  Ehc     - The EHCI device
+  Timeout - Time to wait before abort
+
+Returns:
+
+  EFI_SUCCESS : The EHCI is halt
+  EFI_TIMEOUT : Failed to halt the controller before Timeout 
+
+--*/
+{
+  EFI_STATUS              Status;
+
+  EhcClearOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_RUN);
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_HALT, TRUE, Timeout);
+  return Status;
+}
+
+EFI_STATUS
+EhcRunHC (
+  IN USB2_HC_DEV          *Ehc,
+  IN UINT32               Timeout
+  )
+/*++
+
+Routine Description:
+
+  Set the EHCI to run
+
+Arguments:
+
+  Ehc     - The EHCI device
+  Timeout - Time to wait before abort
+
+Returns:
+
+  EFI_SUCCESS : The EHCI is running
+  Others      : Failed to set the EHCI to run
+
+--*/
+{
+  EFI_STATUS              Status;
+
+  EhcSetOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_RUN);
+  Status = EhcWaitOpRegBit (Ehc, EHC_USBSTS_OFFSET, USBSTS_HALT, FALSE, Timeout);
+  return Status;
+}
+
+EFI_STATUS
+EhcInitHC (
+  IN USB2_HC_DEV          *Ehc
+  )
+/*++
+
+Routine Description:
+
+  Initialize the HC hardware. 
+  EHCI spec lists the five things to do to initialize the hardware
+  1. Program CTRLDSSEGMENT
+  2. Set USBINTR to enable interrupts
+  3. Set periodic list base
+  4. Set USBCMD, interrupt threshold, frame list size etc
+  5. Write 1 to CONFIGFLAG to route all ports to EHCI
+
+Arguments:
+
+  Ehc - The EHCI device
+
+Returns:
+
+  EFI_SUCCESS : The EHCI has come out of halt state
+  EFI_TIMEOUT : Time out happened
+
+--*/
+{
+  EFI_STATUS              Status;
+
+  ASSERT (EhcIsHalt (Ehc));
+
+  //
+  // Allocate the periodic frame and associated memeory
+  // management facilities if not already done.
+  //
+  if (Ehc->PeriodFrame != NULL) {
+    EhcFreeSched (Ehc);
+  }
+
+  Status = EhcInitSched (Ehc);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  //
+  // 1. Program the CTRLDSSEGMENT register with the high 32 bit addr
+  //
+  EhcWriteOpReg (Ehc, EHC_CTRLDSSEG_OFFSET, Ehc->High32bitAddr);
+
+  //
+  // 2. Clear USBINTR to disable all the interrupt. UEFI works by polling
+  //
+  EhcWriteOpReg (Ehc, EHC_USBINTR_OFFSET, 0);
+
+  //
+  // 3. Program periodic frame list, already done in EhcInitSched
+  // 4. Start the Host Controller
+  //
+  EhcSetOpRegBit (Ehc, EHC_USBCMD_OFFSET, USBCMD_RUN);
+
+  //
+  // 5. Set all ports routing to EHC
+  //
+  EhcSetOpRegBit (Ehc, EHC_CONFIG_FLAG_OFFSET, CONFIGFLAG_ROUTE_EHC);
+
+  Status = EhcEnablePeriodSchd (Ehc, EHC_GENERIC_TIME);
+
+  if (EFI_ERROR (Status)) {
+    EHC_ERROR (("EhcInitHC: failed to enable period schedule\n"));
+    return Status;
+  }
+
+  Status = EhcEnableAsyncSchd (Ehc, EHC_GENERIC_TIME);
+
+  if (EFI_ERROR (Status)) {
+    EHC_ERROR (("EhcInitHC: failed to enable async schedule\n"));
+    return Status;
+  }
+
+  return EFI_SUCCESS;
 }

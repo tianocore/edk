@@ -74,6 +74,7 @@ Returns:
   EFI_UDP4_TRANSMIT_DATA    *UdpTxData;
   EFI_STATUS                Status;
   UINT32                    Count;
+  IP4_ADDR                  Ip;
 
   Token = NetAllocatePool (sizeof (UDP_TX_TOKEN) + 
                            sizeof (EFI_UDP4_FRAGMENT_DATA) * (Packet->BlockOpNum - 1));
@@ -113,15 +114,21 @@ Returns:
   UdpTxData->GatewayAddress = NULL;
 
   if (EndPoint != NULL) {
-    EFI_IP4 (Token->UdpSession.SourceAddress)      = HTONL (EndPoint->LocalAddr);
-    EFI_IP4 (Token->UdpSession.DestinationAddress) = HTONL (EndPoint->RemoteAddr);
-    Token->UdpSession.SourcePort                   = EndPoint->LocalPort;
-    Token->UdpSession.DestinationPort              = EndPoint->RemotePort;
-    UdpTxData->UdpSessionData                      = &Token->UdpSession;
+    Ip = HTONL (EndPoint->LocalAddr);
+    NetCopyMem (&Token->UdpSession.SourceAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+    Ip = HTONL (EndPoint->RemoteAddr);
+    NetCopyMem (&Token->UdpSession.DestinationAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+    Token->UdpSession.SourcePort      = EndPoint->LocalPort;
+    Token->UdpSession.DestinationPort = EndPoint->RemotePort;
+    UdpTxData->UdpSessionData         = &Token->UdpSession;
   }
 
   if (Gateway != 0) {
-    EFI_IP4 (Token->Gateway)  = HTONL (Gateway);
+    Ip = HTONL (Gateway);
+    NetCopyMem (&Token->Gateway, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
     UdpTxData->GatewayAddress = &Token->Gateway;
   }
 
@@ -740,10 +747,13 @@ Returns:
   }
 
   UdpSession        = &UdpRxData->UdpSession;
-  Points.LocalAddr  = EFI_NTOHL (UdpSession->DestinationAddress);
   Points.LocalPort  = UdpSession->DestinationPort;
-  Points.RemoteAddr = EFI_NTOHL (UdpSession->SourceAddress);
   Points.RemotePort = UdpSession->SourcePort;
+
+  NetCopyMem (&Points.LocalAddr, &UdpSession->DestinationAddress, sizeof (IP4_ADDR));
+  NetCopyMem (&Points.RemoteAddr, &UdpSession->SourceAddress, sizeof (IP4_ADDR));
+  Points.LocalAddr  = NTOHL (Points.LocalAddr);
+  Points.RemoteAddr = NTOHL (Points.RemoteAddr);
 
   Token->CallBack (Netbuf, &Points, EFI_SUCCESS, Token->Context);
 

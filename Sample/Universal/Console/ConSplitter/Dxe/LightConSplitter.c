@@ -50,6 +50,23 @@ STATIC TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
   0,
   (EFI_SIMPLE_TEXT_IN_PROTOCOL **) NULL,
   0,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  {
+    ConSplitterTextInResetEx,
+    ConSplitterTextInReadKeyStrokeEx,
+    (EFI_EVENT) NULL,
+    ConSplitterTextInSetState,
+    ConSplitterTextInRegisterKeyNotify,
+    ConSplitterTextInUnregisterKeyNotify
+  },
+  0,
+  (EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL **) NULL,
+  0,
+  {
+    (struct _EFI_LIST_ENTRY *) NULL,
+    (struct _EFI_LIST_ENTRY *) NULL
+  },
+#endif  
 
   FALSE,
   {
@@ -204,6 +221,11 @@ STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
   (INT32 *) NULL
 };
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_GUID gSimpleTextInExNotifyGuid = { \
+  0x856f2def, 0x4e93, 0x4d6b, 0x94, 0xce, 0x1c, 0xfe, 0x47, 0x1, 0x3e, 0xa5 \
+};
+#endif
 EFI_DRIVER_BINDING_PROTOCOL           gConSplitterConInDriverBinding = {
   ConSplitterConInDriverBindingSupported,
   ConSplitterConInDriverBindingStart,
@@ -326,6 +348,10 @@ Returns:
                     &mConIn.VirtualHandle,
                     &gEfiSimpleTextInProtocolGuid,
                     &mConIn.TextIn,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+                    &gEfiSimpleTextInputExProtocolGuid,
+                    &mConIn.TextInEx,
+#endif
                     &gEfiPrimaryConsoleInDeviceGuid,
                     NULL,
                     NULL
@@ -451,6 +477,31 @@ Returns:
                   ConInPrivate,
                   &ConInPrivate->TextIn.WaitForKey
                   );
+  ASSERT_EFI_ERROR (Status);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+
+  Status = ConSplitterGrowBuffer (
+            sizeof (EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *),
+            &ConInPrivate->TextInExListCount,
+            (VOID **) &ConInPrivate->TextInExList
+            );
+  if (EFI_ERROR (Status)) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_NOTIFY_WAIT,
+                  EFI_TPL_NOTIFY,
+                  ConSplitterTextInWaitForKey,
+                  ConInPrivate,
+                  &ConInPrivate->TextInEx.WaitForKeyEx
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  InitializeListHead (&ConInPrivate->NotifyList); 
+
+#endif
 
   return Status;
 }
@@ -512,6 +563,7 @@ ConSplitterTextOutConstructor (
   }
   //
   // Setup the DevNullGraphicsOutput to 800 x 600 x 32 bits per pixel
+  // DevNull will be updated to user-defined mode after driver has started.
   //
   if ((ConOutPrivate->GraphicsOutputModeBuffer = EfiLibAllocateZeroPool (sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION))) == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -796,6 +848,9 @@ Returns:
 {
   EFI_STATUS                  Status;
   EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *TextInEx;
+#endif
 
   //
   // Start ConSplitter on ControllerHandle, and create the virtual
@@ -813,6 +868,24 @@ Returns:
     return Status;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  (VOID **) &TextInEx,
+                  This->DriverBindingHandle,
+                  mConIn.VirtualHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = ConSplitterTextInExAddDevice (&mConIn, TextInEx);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }  
+#endif
   return ConSplitterTextInAddDevice (&mConIn, TextIn);
 }
 
@@ -1055,10 +1128,32 @@ Returns:
   EFI_STATUS                  Status;
   EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *TextInEx;
+#endif
   if (NumberOfChildren == 0) {
     return EFI_SUCCESS;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = gBS->OpenProtocol (
+                  ControllerHandle,
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  (VOID **) &TextInEx,
+                  This->DriverBindingHandle,
+                  ControllerHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = ConSplitterTextInExDeleteDevice (&mConIn, TextInEx);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
+#endif
   Status = ConSplitterStop (
             This,
             ControllerHandle,
@@ -1329,6 +1424,69 @@ Returns:
   return EFI_NOT_FOUND;
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+
+EFI_STATUS
+ConSplitterTextInExAddDevice (
+  IN  TEXT_IN_SPLITTER_PRIVATE_DATA         *Private,
+  IN  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL     *TextInEx
+  )
+{
+  EFI_STATUS  Status;
+
+  //
+  // If the TextInEx List is full, enlarge it by calling growbuffer().
+  //
+  if (Private->CurrentNumberOfExConsoles >= Private->TextInExListCount) {
+    Status = ConSplitterGrowBuffer (
+              sizeof (EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *),
+              &Private->TextInExListCount,
+              (VOID **) &Private->TextInExList
+              );
+    if (EFI_ERROR (Status)) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+  }
+  //
+  // Add the new text-in device data structure into the Text In List.
+  //
+  Private->TextInExList[Private->CurrentNumberOfExConsoles] = TextInEx;
+  Private->CurrentNumberOfExConsoles++;
+
+  //
+  // Extra CheckEvent added to reduce the double CheckEvent() in UI.c
+  //
+  gBS->CheckEvent (TextInEx->WaitForKeyEx);
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+ConSplitterTextInExDeleteDevice (
+  IN  TEXT_IN_SPLITTER_PRIVATE_DATA         *Private,
+  IN  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL     *TextInEx
+  )
+{
+  UINTN Index;
+  //
+  // Remove the specified text-in device data structure from the Text In List,
+  // and rearrange the remaining data structures in the Text In List.
+  //
+  for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    if (Private->TextInExList[Index] == TextInEx) {
+      for (Index = Index; Index < Private->CurrentNumberOfExConsoles - 1; Index++) {
+        Private->TextInExList[Index] = Private->TextInExList[Index + 1];
+      }
+
+      Private->CurrentNumberOfExConsoles--;
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+#endif
 EFI_STATUS
 ConSplitterGrowMapTable (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private
@@ -1548,6 +1706,7 @@ Returns:
   INT32                         Index;
   INT32                         *TextOutModeMap;
   INT32                         *MapTable;
+  INT32                         QueryMode;
   TEXT_OUT_SPLITTER_QUERY_DATA  *TextOutQueryData;
   UINTN                         Rows;
   UINTN                         Columns;
@@ -1571,11 +1730,12 @@ Returns:
     TextOut->QueryMode (TextOut, Mode, &Columns, &Rows);
 
     //
-    // Search the QueryData database to see if they intersects
+    // Search the intersection map and QueryData database to see if they intersects
     //
     Index = 0;
     while (Index < CurrentMaxMode) {
-      if ((TextOutQueryData[Index].Rows == Rows) && (TextOutQueryData[Index].Columns == Columns)) {
+      QueryMode = *(TextOutModeMap + Index * StepSize);
+      if ((TextOutQueryData[QueryMode].Rows == Rows) && (TextOutQueryData[QueryMode].Columns == Columns)) {
         MapTable[Index * StepSize] = Mode;
         break;
       }
@@ -1624,12 +1784,16 @@ Returns:
   TEXT_OUT_AND_GOP_DATA         *StdErrTextOutList;
   UINTN                         Indexi;
   UINTN                         Indexj;
-  UINTN                         Rows;
-  UINTN                         Columns;
+  UINTN                         ConOutRows;
+  UINTN                         ConOutColumns;
+  UINTN                         StdErrRows;
+  UINTN                         StdErrColumns;  
   INT32                         ConOutCurrentMode;
   INT32                         StdErrCurrentMode;
   INT32                         ConOutMaxMode;
   INT32                         StdErrMaxMode;
+  INT32                         ConOutMode;
+  INT32                         StdErrMode;
   INT32                         Mode;
   INT32                         Index;
   INT32                         *ConOutModeMap;
@@ -1711,13 +1875,17 @@ Returns:
   Mode = 0;
   while (Mode < ConOutMaxMode) {
     //
-    // Search the other's QueryData database to see if they intersect
+    // Search the intersection map and QueryData database to see if they intersect
     //
-    Index   = 0;
-    Rows    = ConOutQueryData[Mode].Rows;
-    Columns = ConOutQueryData[Mode].Columns;
+    Index = 0;
+    ConOutMode    = *(ConOutModeMap + Mode * ConOutStepSize);
+    ConOutRows    = ConOutQueryData[ConOutMode].Rows;
+    ConOutColumns = ConOutQueryData[ConOutMode].Columns;
     while (Index < StdErrMaxMode) {
-      if ((StdErrQueryData[Index].Rows == Rows) && (StdErrQueryData[Index].Columns == Columns)) {
+      StdErrMode    = *(StdErrModeMap + Index * StdErrStepSize);
+      StdErrRows    = StdErrQueryData[StdErrMode].Rows;
+      StdErrColumns = StdErrQueryData[StdErrMode].Columns;
+      if ((StdErrRows == ConOutRows) && (StdErrColumns == ConOutColumns)) {
         ConOutMapTable[Mode]  = 1;
         StdErrMapTable[Index] = 1;
         break;
@@ -1783,6 +1951,7 @@ Returns:
 {
   EFI_STATUS                           Status;
   UINTN                                Index;
+  UINTN                                CurrentIndex;
   EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Mode;
   UINTN                                SizeOfInfo;
   EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
@@ -1792,6 +1961,10 @@ Returns:
   UINTN                                NumberIndex;
   BOOLEAN                              Match;
   BOOLEAN                              AlreadyExist;
+  UINT32                               UgaHorizontalResolution;
+  UINT32                               UgaVerticalResolution;
+  UINT32                               UgaColorDepth;
+  UINT32                               UgaRefreshRate;
 
   if ((GraphicsOutput == NULL) && (UgaDraw == NULL)) {
     return EFI_UNSUPPORTED;
@@ -1799,12 +1972,14 @@ Returns:
 
   CurrentGraphicsOutputMode = Private->GraphicsOutput.Mode;
 
-  Index = 0;
+  Index        = 0;
+  CurrentIndex = 0;
+  
   if (Private->CurrentNumberOfUgaDraw != 0) {
     //
     // If any UGA device has already been added, then there is no need to 
     // calculate intersection of display mode of different GOP/UGA device,
-    // since only one display mode will be exported (i.e. 800x600)
+    // since only one display mode will be exported (i.e. user-defined mode)
     //
     goto Done;
   }
@@ -1918,34 +2093,51 @@ Returns:
     }
 
     //
-    // Select a prefered Display mode 800x600
+    // Graphics console driver can ensure the same mode for all GOP devices
     //
     for (Index = 0; Index < CurrentGraphicsOutputMode->MaxMode; Index++) {
       Mode = &Private->GraphicsOutputModeBuffer[Index];
-      if ((Mode->HorizontalResolution == 800) && (Mode->VerticalResolution == 600)) {
+      if ((Mode->HorizontalResolution == GraphicsOutput->Mode->Info->HorizontalResolution) && 
+         (Mode->VerticalResolution == GraphicsOutput->Mode->Info->VerticalResolution)) {  
+        CurrentIndex = Index;
         break;
       }
     }
-    //
-    // Prefered mode is not found, set to mode 0
-    //
+
     if (Index >= CurrentGraphicsOutputMode->MaxMode) {
-      Index = 0;
+      //
+      // if user defined mode is not found, set to default mode 800x600
+      //
+      for (Index = 0; Index < CurrentGraphicsOutputMode->MaxMode; Index++) {
+        Mode = &Private->GraphicsOutputModeBuffer[Index];
+        if ((Mode->HorizontalResolution == 800) && (Mode->VerticalResolution == 600)) {
+          CurrentIndex = Index;
+          break;
+        }
+      }
     }
   }
   
   if (UgaDraw != NULL) {
     //
-    // For UGA device, it's inconvenient to retrieve all the supported display modes.
-    // To simplify the implementation, only add one resolution(800x600, 32bit color depth) as defined in UEFI spec
+    // Graphics console driver can ensure the same mode for all GOP devices
+    // so we can get the current mode from this video device
     //
+    UgaDraw->GetMode (
+               UgaDraw,
+               &UgaHorizontalResolution,
+               &UgaVerticalResolution,
+               &UgaColorDepth,
+               &UgaRefreshRate
+               );    
+    
     CurrentGraphicsOutputMode->MaxMode = 1;
     Info = CurrentGraphicsOutputMode->Info;
     Info->Version = 0;
-    Info->HorizontalResolution = 800;
-    Info->VerticalResolution = 600;
+    Info->HorizontalResolution = UgaHorizontalResolution;
+    Info->VerticalResolution = UgaVerticalResolution;
     Info->PixelFormat = PixelBltOnly;
-    Info->PixelsPerScanLine = 800;
+    Info->PixelsPerScanLine = UgaHorizontalResolution;
     CurrentGraphicsOutputMode->SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
     CurrentGraphicsOutputMode->FrameBufferBase = (EFI_PHYSICAL_ADDRESS) NULL;
     CurrentGraphicsOutputMode->FrameBufferSize = 0;
@@ -1958,7 +2150,7 @@ Returns:
     //
     // Only mode 0 is available to be set
     //
-    Index = 0;
+    CurrentIndex = 0;
   }
 
 Done:
@@ -1976,10 +2168,22 @@ Done:
   //
   Private->HardwareNeedsStarting = TRUE;
   //
-  // Current mode number may need update now, so set it to an invalide mode number
+  // Current mode number may need update now, so set it to an invalid mode number
   //
   CurrentGraphicsOutputMode->Mode = 0xffff;
-  Status = Private->GraphicsOutput.SetMode (&Private->GraphicsOutput, (UINT32) Index);
+  //
+  // Graphics console can ensure all GOP devices have the same mode which can be taken as current mode.
+  //
+  Status = Private->GraphicsOutput.SetMode (&Private->GraphicsOutput, (UINT32) CurrentIndex);
+  
+  //
+  // If user defined mode is not valid for UGA, set to the default mode 800x600.
+  //  
+  if (EFI_ERROR(Status)) {
+    (Private->GraphicsOutputModeBuffer[0]).HorizontalResolution = 800;
+    (Private->GraphicsOutputModeBuffer[0]).VerticalResolution   = 600;
+    Status = Private->GraphicsOutput.SetMode (&Private->GraphicsOutput, 0);
+  }
 
   return Status;
 }
@@ -2008,6 +2212,12 @@ Returns:
   UINTN                 CurrentNumOfConsoles;
   INT32                 CurrentMode;
   INT32                 MaxMode;
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)  
+  UINT32                UgaHorizontalResolution;
+  UINT32                UgaVerticalResolution; 
+  UINT32                UgaColorDepth;
+  UINT32                UgaRefreshRate;
+#endif  
   TEXT_OUT_AND_GOP_DATA *TextAndGop;
 
   Status                = EFI_SUCCESS;
@@ -2074,9 +2284,43 @@ Returns:
   MaxMode     = Private->TextOutMode.MaxMode;
   ASSERT (MaxMode >= 1);
 
+  //
+  // Update DevNull mode according to current video device
+  //
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   if ((GraphicsOutput != NULL) || (UgaDraw != NULL)) {
     ConSplitterAddGraphicsOutputMode (Private, GraphicsOutput, UgaDraw);
+  }
+#else
+  if (UgaDraw != NULL) {
+    Status = UgaDraw->GetMode (
+                  UgaDraw,
+                  &UgaHorizontalResolution,
+                  &UgaVerticalResolution,
+                  &UgaColorDepth,
+                  &UgaRefreshRate
+                  );
+    if (!EFI_ERROR (Status)) {
+      Status = ConSpliterUgaDrawSetMode (
+                  &Private->UgaDraw, 
+                  UgaHorizontalResolution, 
+                  UgaVerticalResolution, 
+                  UgaColorDepth, 
+                  UgaRefreshRate
+                  );
+    }
+    //
+    // If GetMode/SetMode is failed, set to 800x600 mode
+    //
+    if(EFI_ERROR (Status)) {
+      Status = ConSpliterUgaDrawSetMode (
+                  &Private->UgaDraw, 
+                  800, 
+                  600, 
+                  32, 
+                  60
+                  );
+    }
   }
 #endif
 
@@ -2550,6 +2794,367 @@ Returns:
   }
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+
+//
+// Simple Text Input Ex protocol functions
+//
+
+EFI_STATUS
+EFIAPI
+ConSplitterTextInResetEx (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN BOOLEAN                            ExtendedVerification
+  )
+/*++
+
+  Routine Description:
+    Reset the input device and optionaly run diagnostics
+
+  Arguments:
+    This                 - Protocol instance pointer.
+    ExtendedVerification - Driver may perform diagnostics on reset.
+
+  Returns:
+    EFI_SUCCESS           - The device was reset.
+    EFI_DEVICE_ERROR      - The device is not functioning properly and could 
+                            not be reset.
+
+--*/
+{
+  EFI_STATUS                    Status;
+  EFI_STATUS                    ReturnStatus;
+  TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
+  UINTN                         Index;
+
+  Private                       = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+
+  Private->KeyEventSignalState  = FALSE;
+
+  //
+  // return the worst status met
+  //
+  for (Index = 0, ReturnStatus = EFI_SUCCESS; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    Status = Private->TextInExList[Index]->Reset (
+                                             Private->TextInExList[Index],
+                                             ExtendedVerification
+                                             );
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+    }
+  }
+
+  return ReturnStatus;
+
+}
+
+EFI_STATUS
+EFIAPI
+ConSplitterTextInReadKeyStrokeEx (
+  IN  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *This,
+  OUT EFI_KEY_DATA                      *KeyData
+  )
+/*++
+
+  Routine Description:
+    Reads the next keystroke from the input device. The WaitForKey Event can 
+    be used to test for existance of a keystroke via WaitForEvent () call.
+
+  Arguments:
+    This       - Protocol instance pointer.
+    KeyData    - A pointer to a buffer that is filled in with the keystroke 
+                 state data for the key that was pressed.
+
+  Returns:
+    EFI_SUCCESS           - The keystroke information was returned.
+    EFI_NOT_READY         - There was no keystroke data availiable.
+    EFI_DEVICE_ERROR      - The keystroke information was not returned due to 
+                            hardware errors.
+    EFI_INVALID_PARAMETER - KeyData is NULL.                        
+
+--*/
+{
+  TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
+  EFI_STATUS                    Status;
+  UINTN                         Index;
+  EFI_KEY_DATA                  CurrentKeyData;
+
+  
+  if (KeyData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+  if (Private->PasswordEnabled) {
+    //
+    // If StdIn Locked return not ready
+    //
+    return EFI_NOT_READY;
+  }
+
+  Private->KeyEventSignalState = FALSE;
+
+  KeyData->Key.UnicodeChar  = 0;
+  KeyData->Key.ScanCode     = SCAN_NULL;
+
+  //
+  // if no physical console input device exists, return EFI_NOT_READY;
+  // if any physical console input device has key input,
+  // return the key and EFI_SUCCESS.
+  //
+  for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    Status = Private->TextInExList[Index]->ReadKeyStrokeEx (
+                                          Private->TextInExList[Index],
+                                          &CurrentKeyData
+                                          );
+    if (!EFI_ERROR (Status)) {
+      EfiCopyMem (KeyData, &CurrentKeyData, sizeof (CurrentKeyData));
+      return Status;
+    }
+  }
+
+  return EFI_NOT_READY;  
+}
+
+EFI_STATUS
+EFIAPI
+ConSplitterTextInSetState (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN EFI_KEY_TOGGLE_STATE               *KeyToggleState
+  )
+/*++
+
+  Routine Description:
+    Set certain state for the input device.
+
+  Arguments:
+    This                  - Protocol instance pointer.
+    KeyToggleState        - A pointer to the EFI_KEY_TOGGLE_STATE to set the 
+                            state for the input device.
+                          
+  Returns:                
+    EFI_SUCCESS           - The device state was set successfully.
+    EFI_DEVICE_ERROR      - The device is not functioning correctly and could 
+                            not have the setting adjusted.
+    EFI_UNSUPPORTED       - The device does not have the ability to set its state.
+    EFI_INVALID_PARAMETER - KeyToggleState is NULL.                       
+
+--*/   
+{
+  TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
+  EFI_STATUS                    Status;
+  UINTN                         Index;
+
+  if (KeyToggleState == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+
+  //
+  // if no physical console input device exists, return EFI_SUCCESS;
+  // otherwise return the status of setting state of physical console input device
+  //
+  for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    Status = Private->TextInExList[Index]->SetState (
+                                             Private->TextInExList[Index],
+                                             KeyToggleState
+                                             );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+  }
+
+  return EFI_SUCCESS;  
+
+}
+
+EFI_STATUS
+EFIAPI
+ConSplitterTextInRegisterKeyNotify (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN EFI_KEY_DATA                       *KeyData,
+  IN EFI_KEY_NOTIFY_FUNCTION            KeyNotificationFunction,
+  OUT EFI_HANDLE                        *NotifyHandle
+  )
+/*++
+
+  Routine Description:
+    Register a notification function for a particular keystroke for the input device.
+
+  Arguments:
+    This                    - Protocol instance pointer.
+    KeyData                 - A pointer to a buffer that is filled in with the keystroke 
+                              information data for the key that was pressed.
+    KeyNotificationFunction - Points to the function to be called when the key 
+                              sequence is typed specified by KeyData.                        
+    NotifyHandle            - Points to the unique handle assigned to the registered notification.                          
+
+  Returns:
+    EFI_SUCCESS             - The notification function was registered successfully.
+    EFI_OUT_OF_RESOURCES    - Unable to allocate resources for necesssary data structures.
+    EFI_INVALID_PARAMETER   - KeyData or NotifyHandle is NULL.                       
+                              
+--*/   
+{
+  TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
+  EFI_STATUS                    Status;
+  UINTN                         Index;
+  TEXT_IN_EX_SPLITTER_NOTIFY    *NewNotify;
+  
+
+  if (KeyData == NULL || NotifyHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+
+  //
+  // if no physical console input device exists, 
+  // return EFI_SUCCESS directly.
+  //
+  if (Private->CurrentNumberOfExConsoles <= 0) {
+    return EFI_SUCCESS;
+  }
+  
+  //
+  // Allocate resource to save the notification function
+  //  
+  NewNotify = (TEXT_IN_EX_SPLITTER_NOTIFY *) EfiLibAllocateZeroPool (sizeof (TEXT_IN_EX_SPLITTER_NOTIFY));
+  if (NewNotify == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  NewNotify->NotifyHandleList = (EFI_HANDLE *) EfiLibAllocateZeroPool (sizeof (EFI_HANDLE) * Private->CurrentNumberOfExConsoles);
+  if (NewNotify->NotifyHandleList == NULL) {
+    EfiLibSafeFreePool (NewNotify);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  NewNotify->Signature         = TEXT_IN_EX_SPLITTER_NOTIFY_SIGNATURE;     
+  NewNotify->KeyNotificationFn = KeyNotificationFunction;
+  EfiCopyMem (&NewNotify->KeyData, KeyData, sizeof (KeyData));
+  
+  //
+  // Return the wrong status of registering key notify of 
+  // physical console input device if meet problems
+  //
+  for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    Status = Private->TextInExList[Index]->RegisterKeyNotify (
+                                             Private->TextInExList[Index],
+                                             KeyData,
+                                             KeyNotificationFunction,
+                                             &NewNotify->NotifyHandleList[Index]
+                                             );
+    if (EFI_ERROR (Status)) {
+      EfiLibSafeFreePool (NewNotify->NotifyHandleList);
+      EfiLibSafeFreePool (NewNotify);
+      return Status;
+    }
+  }
+
+  //
+  // Use gSimpleTextInExNotifyGuid to get a valid EFI_HANDLE
+  //  
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &NewNotify->NotifyHandle,
+                  &gSimpleTextInExNotifyGuid,
+                  NULL,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  InsertTailList (&mConIn.NotifyList, &NewNotify->NotifyEntry);
+  
+  *NotifyHandle                = NewNotify->NotifyHandle;  
+  
+  return EFI_SUCCESS;  
+  
+}
+
+EFI_STATUS
+EFIAPI
+ConSplitterTextInUnregisterKeyNotify (
+  IN EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL  *This,
+  IN EFI_HANDLE                         NotificationHandle
+  )
+/*++
+
+  Routine Description:
+    Remove a registered notification function from a particular keystroke.
+
+  Arguments:
+    This                    - Protocol instance pointer.    
+    NotificationHandle      - The handle of the notification function being unregistered.
+
+  Returns:
+    EFI_SUCCESS             - The notification function was unregistered successfully.
+    EFI_INVALID_PARAMETER   - The NotificationHandle is invalid.
+    EFI_NOT_FOUND           - Can not find the matching entry in database.  
+                              
+--*/   
+{
+  TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
+  EFI_STATUS                    Status;
+  UINTN                         Index;
+  TEXT_IN_EX_SPLITTER_NOTIFY    *CurrentNotify;
+  EFI_LIST_ENTRY                *Link;            
+
+  if (NotificationHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->OpenProtocol (
+                  NotificationHandle,
+                  &gSimpleTextInExNotifyGuid,
+                  NULL,
+                  NULL,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+
+  //
+  // if no physical console input device exists, 
+  // return EFI_SUCCESS directly.
+  //
+  if (Private->CurrentNumberOfExConsoles <= 0) {
+    return EFI_SUCCESS;
+  }
+
+  for (Link = Private->NotifyList.ForwardLink; Link != &Private->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (Link, TEXT_IN_EX_SPLITTER_NOTIFY, NotifyEntry, TEXT_IN_EX_SPLITTER_NOTIFY_SIGNATURE);
+    if (CurrentNotify->NotifyHandle == NotificationHandle) {
+      for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+        Status = Private->TextInExList[Index]->UnregisterKeyNotify (
+                                                 Private->TextInExList[Index], 
+                                                 CurrentNotify->NotifyHandleList[Index]
+                                                 );
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }        
+      }
+      RemoveEntryList (&CurrentNotify->NotifyEntry);      
+      Status = gBS->UninstallMultipleProtocolInterfaces (
+                      CurrentNotify->NotifyHandle,
+                      gSimpleTextInExNotifyGuid,
+                      NULL,
+                      NULL
+                      );
+      ASSERT_EFI_ERROR (Status);
+      EfiLibSafeFreePool (CurrentNotify->NotifyHandleList);
+      EfiLibSafeFreePool (CurrentNotify);
+      return EFI_SUCCESS;      
+    }    
+  }
+
+  return EFI_NOT_FOUND;    
+  
+}
+
+#endif
 EFI_STATUS
 EFIAPI
 ConSplitterTextOutReset (
@@ -2772,6 +3377,8 @@ ConSplitterTextOutQueryMode (
 --*/
 {
   TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private;
+  UINTN                           CurrentMode;
+  INT32                           *TextOutModeMap;
 
   Private = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
 
@@ -2788,8 +3395,18 @@ ConSplitterTextOutQueryMode (
     return EFI_UNSUPPORTED;
   }
 
-  *Columns  = Private->TextOutQueryData[ModeNumber].Columns;
-  *Rows     = Private->TextOutQueryData[ModeNumber].Rows;
+  //
+  // We get the available mode from mode intersection map if it's available
+  //
+  if (Private->TextOutModeMap != NULL) {
+    TextOutModeMap = Private->TextOutModeMap + Private->TextOutListCount * ModeNumber;
+    CurrentMode    = (UINTN)(*TextOutModeMap);
+    *Columns       = Private->TextOutQueryData[CurrentMode].Columns;
+    *Rows          = Private->TextOutQueryData[CurrentMode].Rows;
+  } else {
+    *Columns  = Private->TextOutQueryData[ModeNumber].Columns;
+    *Rows     = Private->TextOutQueryData[ModeNumber].Rows;    
+  }
 
   if (*Columns <= 0 && *Rows <= 0) {
     return EFI_UNSUPPORTED;
@@ -3027,11 +3644,26 @@ ConSplitterTextOutSetCursorPosition (
   EFI_STATUS                      ReturnStatus;
   UINTN                           MaxColumn;
   UINTN                           MaxRow;
+  INT32                           *TextOutModeMap;
+  INT32                           ModeNumber;
+  INT32                           CurrentMode;
 
-  Private   = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
-
-  MaxColumn = Private->TextOutQueryData[Private->TextOutMode.Mode].Columns;
-  MaxRow    = Private->TextOutQueryData[Private->TextOutMode.Mode].Rows;
+  Private         = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
+  TextOutModeMap  = NULL;
+  ModeNumber      = Private->TextOutMode.Mode;
+  
+  //
+  // Get current MaxColumn and MaxRow from intersection map
+  //
+  if (Private->TextOutModeMap != NULL) {
+    TextOutModeMap = Private->TextOutModeMap + Private->TextOutListCount * ModeNumber;
+    CurrentMode    = *TextOutModeMap;
+  } else {
+    CurrentMode = ModeNumber;
+  }
+  
+  MaxColumn = Private->TextOutQueryData[CurrentMode].Columns;
+  MaxRow    = Private->TextOutQueryData[CurrentMode].Rows;
 
   if (Column >= MaxColumn || Row >= MaxRow) {
     return EFI_UNSUPPORTED;

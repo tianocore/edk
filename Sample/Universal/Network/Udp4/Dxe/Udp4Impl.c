@@ -455,7 +455,7 @@ Returns:
       continue;
     }
 
-    if (EFI_IP_EQUAL (ConfigData->StationAddress, *Address) &&
+    if (EFI_IP4_EQUAL (ConfigData->StationAddress, *Address) &&
       (ConfigData->StationPort == Port)) {
       //
       // if both the address and the port are the same, return TRUE.
@@ -606,8 +606,8 @@ Returns:
     }
     
     if (!NewConfigData->UseDefaultAddress &&
-      (!EFI_IP_EQUAL (NewConfigData->StationAddress, OldConfigData->StationAddress) ||
-      !EFI_IP_EQUAL (NewConfigData->SubnetMask, OldConfigData->SubnetMask))) {
+      (!EFI_IP4_EQUAL (NewConfigData->StationAddress, OldConfigData->StationAddress) ||
+      !EFI_IP4_EQUAL (NewConfigData->SubnetMask, OldConfigData->SubnetMask))) {
       //
       // If the instance doesn't use the default address, and the new address or
       // new subnet mask is different from the old values.
@@ -616,15 +616,14 @@ Returns:
     }
   }
 
-  if (!EFI_IP_EQUAL (NewConfigData->RemoteAddress, OldConfigData->RemoteAddress)) {
+  if (!EFI_IP4_EQUAL (NewConfigData->RemoteAddress, OldConfigData->RemoteAddress)) {
     //
     // The remoteaddress is not the same.
     //
     return FALSE;
   }
 
-  if ((EFI_IP4 (NewConfigData->RemoteAddress) != 0) &&
-    (NewConfigData->RemotePort != OldConfigData->RemotePort)) {
+  if (!EFI_IP4_EQUAL (NewConfigData->RemoteAddress, mZeroIp4Addr) && (NewConfigData->RemotePort != OldConfigData->RemotePort)) {
     //
     // The RemotePort differs if it's designated in the configdata.
     //
@@ -719,6 +718,7 @@ Returns:
   EFI_UDP4_CONFIG_DATA    *ConfigData;
   EFI_UDP4_SESSION_DATA   *UdpSessionData;
   IP4_ADDR                SourceAddress;
+  IP4_ADDR                GatewayAddress;
 
   if (TxToken->Event == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -752,12 +752,15 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((TxData->GatewayAddress != NULL) &&
-    !Ip4IsUnicast(EFI_NTOHL (*(TxData->GatewayAddress)), 0)) {
-    //
-    // The specified GatewayAddress is not a unicast IPv4 address while it's not 0.
-    //
-    return EFI_INVALID_PARAMETER;
+  if (TxData->GatewayAddress != NULL) {
+    NetCopyMem (&GatewayAddress, TxData->GatewayAddress, sizeof (IP4_ADDR));
+
+    if (!Ip4IsUnicast (NTOHL (GatewayAddress), 0)) {
+      //
+      // The specified GatewayAddress is not a unicast IPv4 address while it's not 0.
+      //
+      return EFI_INVALID_PARAMETER;
+    }
   }
 
   ConfigData     = &Instance->ConfigData;
@@ -765,9 +768,9 @@ Returns:
 
   if (UdpSessionData != NULL) {
 
-    SourceAddress = EFI_NTOHL (UdpSessionData->SourceAddress);
+    NetCopyMem (&SourceAddress, &UdpSessionData->SourceAddress, sizeof (IP4_ADDR));
 
-    if ((SourceAddress != 0) && !Ip4IsUnicast (SourceAddress, 0)) {
+    if ((SourceAddress != 0) && !Ip4IsUnicast (HTONL (SourceAddress), 0)) {
       //
       // Check whether SourceAddress is a valid IPv4 address in case it's not zero.
       // The configured station address is used if SourceAddress is zero.
@@ -782,13 +785,13 @@ Returns:
       return EFI_INVALID_PARAMETER;
     }
 
-    if (EFI_IP4 (UdpSessionData->DestinationAddress) == 0) {
+    if (EFI_IP4_EQUAL (UdpSessionData->DestinationAddress, mZeroIp4Addr)) {
       //
       // The DestinationAddress specified in the UdpSessionData is 0.
       //
       return EFI_INVALID_PARAMETER;
     }
-  } else if (EFI_IP4 (ConfigData->RemoteAddress) == 0) {
+  } else if (EFI_IP4_EQUAL (ConfigData->RemoteAddress, mZeroIp4Addr)) {
     //
     // the configured RemoteAddress is all zero, and the user doens't override the
     // destination address.
@@ -1040,7 +1043,7 @@ Returns:
 
   McastIp = Arg;
 
-  if ((McastIp != NULL) && ((UINTN) EFI_IP4 (*McastIp) != (UINTN) (Item->Key))) {
+  if ((McastIp != NULL) && (!EFI_IP4_EQUAL (*McastIp, (UINTN) Item->Key))) {
     //
     // McastIp is not NULL and the multicast address contained in the Item 
     // is not the same as McastIp.
@@ -1271,16 +1274,16 @@ Returns:
     return FALSE;
   }
 
-  if ((EFI_IP4 (ConfigData->RemoteAddress) != 0) &&
-    !EFI_IP_EQUAL (ConfigData->RemoteAddress, Udp4Session->SourceAddress)) {
+  if (!EFI_IP4_EQUAL (ConfigData->RemoteAddress, mZeroIp4Addr) &&
+    !EFI_IP4_EQUAL (ConfigData->RemoteAddress, Udp4Session->SourceAddress)) {
     //
     // This datagram doesn't come from the instance's specified sender.
     //
     return FALSE;
   }
 
-  if ((EFI_IP4 (ConfigData->StationAddress) == 0) ||
-    EFI_IP_EQUAL (Udp4Session->DestinationAddress, ConfigData->StationAddress)) {
+  if (EFI_IP4_EQUAL (ConfigData->StationAddress, mZeroIp4Addr) ||
+    EFI_IP4_EQUAL (Udp4Session->DestinationAddress, ConfigData->StationAddress)) {
     //
     // The instance is configured to receive datagrams destinated to any station IP or
     // the destination address of this datagram matches the configured station IP.
@@ -1288,7 +1291,7 @@ Returns:
     return TRUE;
   }
 
-  Destination = EFI_IP4 (Udp4Session->DestinationAddress);
+  NetCopyMem (&Destination, &Udp4Session->DestinationAddress, sizeof (IP4_ADDR));
 
   if (IP4_IS_LOCAL_BROADCAST (Destination) && ConfigData->AcceptBroadcast) {
     //
@@ -1645,11 +1648,12 @@ Returns:
 
   gRT->GetTime (&RxData.TimeStamp, NULL);
 
-  Udp4Session                               = &RxData.UdpSession;
-  EFI_IP4 (Udp4Session->SourceAddress)      = NetSession->Source;
-  EFI_IP4 (Udp4Session->DestinationAddress) = NetSession->Dest;
-  Udp4Session->SourcePort                   = NTOHS (Udp4Header->SrcPort);
-  Udp4Session->DestinationPort              = NTOHS (Udp4Header->DstPort);
+  Udp4Session                  = &RxData.UdpSession;
+  Udp4Session->SourcePort      = NTOHS (Udp4Header->SrcPort);
+  Udp4Session->DestinationPort = NTOHS (Udp4Header->DstPort);
+
+  NetCopyMem (&Udp4Session->SourceAddress, &NetSession->Source, sizeof (EFI_IPv4_ADDRESS));
+  NetCopyMem (&Udp4Session->DestinationAddress, &NetSession->Dest, sizeof (EFI_IPv4_ADDRESS));
 
   //
   // Trim the UDP header.
@@ -1774,12 +1778,13 @@ Returns:
   //
   // Fill the override data.
   //
-  Override.DoNotFragment            = FALSE;
-  Override.TypeOfService            = 0;
-  Override.TimeToLive               = 255;
-  Override.Protocol                 = EFI_IP_PROTO_ICMP;
-  EFI_IP4 (Override.SourceAddress)  = NetSession->Dest;
-  EFI_IP4 (Override.GatewayAddress) = 0;
+  Override.DoNotFragment = FALSE;
+  Override.TypeOfService = 0;
+  Override.TimeToLive    = 255;
+  Override.Protocol      = EFI_IP_PROTO_ICMP;
+
+  NetCopyMem (&Override.SourceAddress, &NetSession->Dest, sizeof (EFI_IPv4_ADDRESS));
+  NetZeroMem (&Override.GatewayAddress, sizeof (EFI_IPv4_ADDRESS));
 
   //
   // Send out this icmp packet.
@@ -1825,10 +1830,11 @@ Returns:
 
   Udp4Header = (EFI_UDP4_HEADER *) NetbufGetByte (Packet, 0, NULL);
 
-  EFI_IP4 (Udp4Session.SourceAddress)      = NetSession->Source;
-  EFI_IP4 (Udp4Session.DestinationAddress) = NetSession->Dest;
-  Udp4Session.SourcePort                   = NTOHS (Udp4Header->DstPort);
-  Udp4Session.DestinationPort              = NTOHS (Udp4Header->SrcPort);
+  NetCopyMem (&Udp4Session.SourceAddress, &NetSession->Source, sizeof (EFI_IPv4_ADDRESS));
+  NetCopyMem (&Udp4Session.DestinationAddress, &NetSession->Dest, sizeof (EFI_IPv4_ADDRESS));
+
+  Udp4Session.SourcePort      = NTOHS (Udp4Header->DstPort);
+  Udp4Session.DestinationPort = NTOHS (Udp4Header->SrcPort);
 
   NET_LIST_FOR_EACH (Entry, &Udp4Service->ChildrenList) {
     //
@@ -1839,7 +1845,7 @@ Returns:
     if (!Instance->Configured ||
       Instance->ConfigData.AcceptPromiscuous ||
       Instance->ConfigData.AcceptAnyPort ||
-      (EFI_IP4 (Instance->ConfigData.StationAddress) == 0)) {
+      EFI_IP4_EQUAL (Instance->ConfigData.StationAddress, mZeroIp4Addr)) {
       //
       // Don't try to deliver the ICMP error to this instance if it is not configured,
       // or it's configured to be promiscuous or accept any port or accept all the

@@ -32,8 +32,8 @@ $(EDK_PREFIX)Foundation\Library\Dxe\Hob\HobLib.inf
 #
 $(EDK_PREFIX)Foundation\Framework\Ppi\EdkFrameworkPpiLib.inf
 $(EDK_PREFIX)Foundation\Ppi\EdkPpiLib.inf
-$(EDK_PREFIX)Foundation\Library\Pei\PeiLib\PeiLib.inf
 $(EDK_PREFIX)Foundation\Library\Pei\Hob\PeiHobLib.inf
+$(EDK_PREFIX)Foundation\Library\Pei\PeiLib\PeiLib.inf
 
 #
 # DXE libraries

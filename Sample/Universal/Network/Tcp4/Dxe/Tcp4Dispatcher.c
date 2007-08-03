@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -113,42 +113,44 @@ Returns:
 
   if (Mode->Tcp4ConfigData) {
 
-    ConfigData                      = Mode->Tcp4ConfigData;
-    AccessPoint                     = &(ConfigData->AccessPoint);
-    Option                          = ConfigData->ControlOption;
+    ConfigData                     = Mode->Tcp4ConfigData;
+    AccessPoint                    = &(ConfigData->AccessPoint);
+    Option                         = ConfigData->ControlOption;
 
-    ConfigData->TypeOfService       = Tcb->TOS;
-    ConfigData->TimeToLive          = Tcb->TTL;
+    ConfigData->TypeOfService      = Tcb->TOS;
+    ConfigData->TimeToLive         = Tcb->TTL;
 
-    AccessPoint->UseDefaultAddress  = Tcb->UseDefaultAddr;
+    AccessPoint->UseDefaultAddress = Tcb->UseDefaultAddr;
 
-    EFI_IP4 (AccessPoint->StationAddress) = Tcb->LocalEnd.Ip;
-    AccessPoint->SubnetMask         = Tcb->SubnetMask;
-    AccessPoint->StationPort        = NTOHS (Tcb->LocalEnd.Port);
+    NetCopyMem (&AccessPoint->StationAddress, &Tcb->LocalEnd.Ip, sizeof (EFI_IPv4_ADDRESS));
 
-    EFI_IP4 (AccessPoint->RemoteAddress) = Tcb->RemoteEnd.Ip;
-    AccessPoint->RemotePort         = NTOHS (Tcb->RemoteEnd.Port);
-    AccessPoint->ActiveFlag         = (BOOLEAN) (Tcb->State != TCP_LISTEN);
+    AccessPoint->SubnetMask        = Tcb->SubnetMask;
+    AccessPoint->StationPort       = NTOHS (Tcb->LocalEnd.Port);
+
+    NetCopyMem (&AccessPoint->RemoteAddress, &Tcb->RemoteEnd.Ip, sizeof (EFI_IPv4_ADDRESS));
+
+    AccessPoint->RemotePort        = NTOHS (Tcb->RemoteEnd.Port);
+    AccessPoint->ActiveFlag        = (BOOLEAN) (Tcb->State != TCP_LISTEN);
 
     if (Option != NULL) {
-      Option->ReceiveBufferSize       = GET_RCV_BUFFSIZE (Tcb->Sk);
-      Option->SendBufferSize          = GET_SND_BUFFSIZE (Tcb->Sk);
-      Option->MaxSynBackLog           = GET_BACKLOG (Tcb->Sk);
+      Option->ReceiveBufferSize = GET_RCV_BUFFSIZE (Tcb->Sk);
+      Option->SendBufferSize    = GET_SND_BUFFSIZE (Tcb->Sk);
+      Option->MaxSynBackLog     = GET_BACKLOG (Tcb->Sk);
 
-      Option->ConnectionTimeout       = Tcb->ConnectTimeout / TCP_TICK_HZ;
-      Option->DataRetries             = Tcb->MaxRexmit;
-      Option->FinTimeout              = Tcb->FinWait2Timeout / TCP_TICK_HZ;
-      Option->TimeWaitTimeout         = Tcb->TimeWaitTimeout / TCP_TICK_HZ;
-      Option->KeepAliveProbes         = Tcb->MaxKeepAlive;
-      Option->KeepAliveTime           = Tcb->KeepAliveIdle / TCP_TICK_HZ;
-      Option->KeepAliveInterval       = Tcb->KeepAlivePeriod / TCP_TICK_HZ;
+      Option->ConnectionTimeout = Tcb->ConnectTimeout / TCP_TICK_HZ;
+      Option->DataRetries       = Tcb->MaxRexmit;
+      Option->FinTimeout        = Tcb->FinWait2Timeout / TCP_TICK_HZ;
+      Option->TimeWaitTimeout   = Tcb->TimeWaitTimeout / TCP_TICK_HZ;
+      Option->KeepAliveProbes   = Tcb->MaxKeepAlive;
+      Option->KeepAliveTime     = Tcb->KeepAliveIdle / TCP_TICK_HZ;
+      Option->KeepAliveInterval = Tcb->KeepAlivePeriod / TCP_TICK_HZ;
 
-      Option->EnableNagle      = !TCP_FLG_ON (Tcb->CtrlFlag, TCP_CTRL_NO_NAGLE);
+      Option->EnableNagle         = !TCP_FLG_ON (Tcb->CtrlFlag, TCP_CTRL_NO_NAGLE);
       Option->EnableTimeStamp     = !TCP_FLG_ON (Tcb->CtrlFlag, TCP_CTRL_NO_TS);
       Option->EnableWindowScaling = !TCP_FLG_ON (Tcb->CtrlFlag, TCP_CTRL_NO_WS);
 
-      Option->EnableSelectiveAck      = FALSE;
-      Option->EnablePathMtuDiscovery  = FALSE;
+      Option->EnableSelectiveAck     = FALSE;
+      Option->EnablePathMtuDiscovery = FALSE;
     }
   }
 
@@ -451,11 +453,11 @@ Returns:
   Tcb->TTL            = CfgData->TimeToLive;
   Tcb->TOS            = CfgData->TypeOfService;
 
-  Tcb->LocalEnd.Ip    = EFI_IP4 (CfgData->AccessPoint.StationAddress);
+  NetCopyMem (&Tcb->LocalEnd.Ip, &CfgData->AccessPoint.StationAddress, sizeof (IP4_ADDR));
   Tcb->LocalEnd.Port  = HTONS (CfgData->AccessPoint.StationPort);
   Tcb->SubnetMask     = CfgData->AccessPoint.SubnetMask;
 
-  Tcb->RemoteEnd.Ip   = EFI_IP4 (CfgData->AccessPoint.RemoteAddress);
+  NetCopyMem (&Tcb->RemoteEnd.Ip, &CfgData->AccessPoint.RemoteAddress, sizeof (IP4_ADDR));
   Tcb->RemoteEnd.Port = HTONS (CfgData->AccessPoint.RemotePort);
 
   Option              = CfgData->ControlOption;

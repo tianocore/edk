@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -122,7 +122,7 @@ Returns:
     PageMapLevel4Entry->Bits.ReadWrite = 1;
     PageMapLevel4Entry->Bits.Present = 1;
 
-    for (IndexOfPdpEntries = 0; IndexOfPdpEntries < 512; IndexOfPdpEntries++, PageDirectoryPointerEntry++) {
+    for (IndexOfPdpEntries = 0; IndexOfPdpEntries < NumberOfPdpEntriesNeeded; IndexOfPdpEntries++, PageDirectoryPointerEntry++) {
       //
       // Each Directory Pointer entries points to a page of Page Directory entires.
       //  So lets allocate space for them and fill them in in the IndexOfPageDirectoryEntries loop.
@@ -147,18 +147,6 @@ Returns:
         PageDirectoryEntry->Bits.MustBe1 = 1;
       }
     }
-  }
-
-  //
-  // For the PML4 entries we are not using fill in a null entry.
-  //  for now we just copy the first entry.
-  //
-  for (; IndexOfPml4Entries < 512; IndexOfPml4Entries++, PageMapLevel4Entry++) {
-    (*PeiServices)->CopyMem (
-                  PageMapLevel4Entry,
-                  PageMap,
-                  sizeof (PAGE_MAP_AND_DIRECTORY_POINTER)
-                  );
   }
 
   return (EFI_PHYSICAL_ADDRESS)PageMap;

@@ -2072,7 +2072,7 @@ DevPathFromTextBBS (
   } else if (EfiStrCmp (TypeStr, L"Network") == 0) {
     Bbs->DeviceType = BBS_TYPE_EMBEDDED_NETWORK;
   } else {
-    Bbs->DeviceType = BBS_TYPE_UNKNOWN;
+    Bbs->DeviceType = (UINT16) Strtoi (TypeStr);
   }
 
   AsciiStr = Bbs->String;

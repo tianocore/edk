@@ -30,6 +30,10 @@ Abstract:
 #include EFI_PROTOCOL_CONSUMER (ServiceBinding)
 #include EFI_PROTOCOL_CONSUMER (SimpleNetwork)
 
+extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
+
+#define NET_IS_DIGIT(Ch)  (('0' <= (Ch)) && ((Ch) <= '9'))
+
 //
 // Wrap functions to ease the impact of EFI library changes.
 //

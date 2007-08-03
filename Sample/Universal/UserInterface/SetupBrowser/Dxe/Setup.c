@@ -1032,7 +1032,7 @@ InitializeTagStructures (
         &((EFI_IFR_ONE_OF_OPTION *) &RawFormSet[Index])->Key,
         sizeof (UINT16)
         );
-      FormTags->Tags[QuestionIndex].ResetRequired = (BOOLEAN) (FormTags->Tags[QuestionIndex].Flags & EFI_IFR_FLAG_RESET_REQUIRED);
+      FormTags->Tags[QuestionIndex].ResetRequired |= (BOOLEAN) (FormTags->Tags[QuestionIndex].Flags & EFI_IFR_FLAG_RESET_REQUIRED);
       break;
 
     case EFI_IFR_CHECKBOX_OP:

@@ -26,6 +26,7 @@ Abstract:
 #include "EfiInternalFormRepresentation.h"
 
 #include "EdkIIGlueDefinitionChangesBase.h"
+
 #include "EfiPciCfg.h"
 
 //

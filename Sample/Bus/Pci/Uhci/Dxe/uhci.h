@@ -36,7 +36,7 @@ Revision History
 
 EFI_FORWARD_DECLARATION (USB_HC_DEV);
 
-#include "UhciMem.h"
+#include "UsbHcMem.h"
 #include "UhciQueue.h"
 #include "UhciReg.h"
 #include "UhciSched.h"
@@ -49,10 +49,12 @@ enum {
   STALL_1_MS               = 1000,
   STALL_1_SECOND           = 1000 *STALL_1_MS,
 
+  UHC_SYN_POLL             = 50,
   FORCE_GLOBAL_RESUME_TIME = 20 *STALL_1_MS,
   ROOT_PORT_REST_TIME      = 50 *STALL_1_MS,
   PORT_RESET_RECOVERY_TIME = 10 *STALL_1_MS,
-  INTERRUPT_POLLING_TIME   = 50 *STALL_1_MS,
+  INTERRUPT_POLLING_TIME   = 50 * 10000UL,
+  
   //
   // UHC raises TPL to TPL_NOTIFY to serialize all its operations
   // to protect shared data structures.
@@ -95,8 +97,8 @@ typedef struct _USB_HC_DEV {
   //
   UINT32                    *FrameBase;
   UHCI_QH_SW                *SyncIntQh;
-  UHCI_QH_SW                *LsCtrlQh;
-  UHCI_QH_SW                *FsCtrlBulkQh;
+  UHCI_QH_SW                *CtrlQh;
+  UHCI_QH_SW                *BulkQh;
 
   //
   // Structures to maintain asynchronus interrupt transfers.
@@ -113,7 +115,7 @@ typedef struct _USB_HC_DEV {
   
 
   UINTN                     RootPorts;
-  MEMORY_MANAGE_HEADER      *MemoryBank;
+  USBHC_MEM_POOL            *MemPool;
   EFI_UNICODE_STRING_TABLE  *CtrlNameTable;
   VOID                      *FrameMapping;
 } USB_HC_DEV;

@@ -24,6 +24,7 @@ Revision History
 #ifndef _EFI_UHCI_SCHED_H_
 #define _EFI_UHCI_SCHED_H_
 
+
 enum {
   UHCI_ASYNC_INT_SIGNATURE = EFI_SIGNATURE_32 ('u', 'h', 'c', 'a'),
 
@@ -39,6 +40,18 @@ enum {
                       EFI_USB_ERR_SYSTEM,
 
 };
+
+//
+// Structure to return the result of UHCI QH execution.
+// Result is the final result of the QH's QTD. NextToggle 
+// is the next data toggle to use. Complete is the actual
+// length of data transferred.
+//
+typedef struct {
+  UINT32                  Result;
+  UINT8                   NextToggle;
+  UINTN                   Complete;
+} UHCI_QH_RESULT;
 
 EFI_FORWARD_DECLARATION (UHCI_ASYNC_REQUEST);
 
@@ -57,7 +70,6 @@ typedef struct _UHCI_ASYNC_REQUEST{
   UINT8                           EndPoint;
   BOOLEAN                         IsLow;
   UINTN                           Interval;
-  UINT8                           DataToggle; // The last data toggle of the TD
 
   //
   // Data and UHC structures
@@ -118,68 +130,6 @@ Arguments:
 Returns:
 
   VOID
-
---*/
-;
-
-EFI_STATUS
-UhciMapUserRequest (
-  IN  USB_HC_DEV          *Uhc,
-  IN  OUT VOID            *Request,
-  OUT UINT8               **MappedAddr,
-  OUT VOID                **Map
-  )
-/*++
-
-Routine Description:
-
-  Map address of request structure buffer
-
-Arguments:
-
-  Uhc        - The UHCI device
-  Request    - The user request buffer
-  MappedAddr - Mapped address of request 
-  Map        - Identificaion of this mapping to return
-
-Returns:
-
-  EFI_SUCCESS      : Success
-  EFI_DEVICE_ERROR : Fail to map the user request
-
---*/
-;
-
-EFI_STATUS
-UhciMapUserData (
-  IN  USB_HC_DEV              *Uhc,
-  IN  EFI_USB_DATA_DIRECTION  Direction,
-  IN  VOID                    *Data,
-  IN  OUT UINTN               *Len,
-  OUT UINT8                   *PktId,
-  OUT UINT8                   **MappedAddr,
-  OUT VOID                    **Map
-  )
-/*++
-
-Routine Description:
-
-  Map address of user data buffer
-
-Arguments:
-
-  Uhc        - The UHCI device
-  Direction  - direction of the data transfer
-  Data       - The user data buffer
-  Len        - Length of the user data
-  PktId      - Packet identificaion
-  MappedAddr - mapped address to return
-  Map        - identificaion of this mapping to return
-
-Returns:
-
-  EFI_SUCCESS      : Success
-  EFI_DEVICE_ERROR : Fail to map the user data
 
 --*/
 ;
@@ -258,13 +208,11 @@ Returns:
 EFI_STATUS
 UhciExecuteTransfer (
   IN  USB_HC_DEV          *Uhc,
+  IN  UHCI_QH_SW          *Qh,
   IN  UHCI_TD_SW          *Td,
-  OUT UINTN               *ActualLen,
-  OUT UINT8               *DataToggle,
   IN  UINTN               TimeOut,
-  OUT UINT32              *Result,
-  IN  BOOLEAN             IsControl,
-  IN  BOOLEAN             IsLow
+  IN  BOOLEAN             IsLow,
+  OUT UHCI_QH_RESULT      *QhResult
   )
 /*++
 
@@ -276,12 +224,9 @@ Arguments:
 
   Uhc            - The UHCI device
   Td             - The first TDs of the transfer
-  ActualLen      - Actual Transfered Len 
-  DataToggle     - Data Toggle
   TimeOut        - TimeOut value in milliseconds
-  TransferResult - Transfer result
-  IsControl      - Is Control Transfer
   IsLow          - Is Low Speed Device
+  QhResult       - The variable to return result
   
 Returns:
 
@@ -298,7 +243,6 @@ UhciCreateAsyncReq (
   IN UHCI_TD_SW                       *FirstTd,
   IN UINT8                            DevAddr,
   IN UINT8                            EndPoint,
-  IN UINT8                            Toggle,
   IN UINTN                            DataLen,
   IN UINTN                            Interval,
   IN VOID                             *Mapping,

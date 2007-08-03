@@ -1508,7 +1508,7 @@ Returns:
   EFI_EVENT                    ReadyToBootEvent;
 
   Status = EfiCreateEventReadyToBoot (
-           EFI_TPL_NOTIFY, 
+           EFI_TPL_CALLBACK,
            BdsSetMemoryTypeInformationVariable, 
            NULL, 
            &ReadyToBootEvent

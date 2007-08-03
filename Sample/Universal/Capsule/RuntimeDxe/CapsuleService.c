@@ -67,7 +67,7 @@ Returns:
   //
   Status  = CheckCapsuleGuid (CapsuleHeaderArray, CapsuleCount);
   if (EFI_ERROR(Status)) {
-    return EFI_INVALID_PARAMETER;
+    return Status;
   }
 
   //
@@ -77,7 +77,7 @@ Returns:
   //
   Status = LaunchCapsule(CapsuleHeaderArray, CapsuleCount, &NeedResetFlag);
   if (EFI_ERROR(Status)) {
-    return EFI_DEVICE_ERROR;
+    return Status;
   }
   
   //
@@ -94,7 +94,7 @@ Returns:
   // to use appropriate approach to do a reset, S3, WarmRest and etc. 
   //
   if (!SupportUpdateCapsuleRest()) {
-    return EFI_DEVICE_ERROR;
+    return EFI_UNSUPPORTED;
   }
 
   //
@@ -163,7 +163,7 @@ Returns:
   //
   Status  = CheckCapsuleGuid (CapsuleHeaderArray, CapsuleCount);
   if (EFI_ERROR(Status)) {
-    return EFI_INVALID_PARAMETER;
+    return Status;
   }
 
   if ((MaxiumCapsuleSize == NULL) ||(ResetType == NULL)) {

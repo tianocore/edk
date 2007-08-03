@@ -45,8 +45,6 @@ typedef struct {
   UINT32                    Exist;
 } MTFTP4_OPTION;
 
-#define NET_IS_DIGIT(Ch)  (('0' <= (Ch)) && ((Ch) <= '9'))
-
 EFI_STATUS
 Mtftp4ExtractOptions (
   IN  EFI_MTFTP4_PACKET     *Packet,

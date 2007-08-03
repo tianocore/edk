@@ -104,6 +104,8 @@ typedef struct {
 typedef struct {
   EFI_FIRMWARE_VOLUME_HEADER          *FvHeader;
   UINT8                               PeimState[PEI_CORE_MAX_PEIM_PER_FV];   
+  EFI_PEI_FILE_HANDLE                 FvFileHandles[PEI_CORE_MAX_PEIM_PER_FV];
+  BOOLEAN                             ScanFv;
 } PEI_CORE_FV_HANDLE;
 
 //

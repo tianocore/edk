@@ -27,41 +27,14 @@ Revision History
 //
 // DEBUG support
 //
-//
-// USB generic definition
-//
 #define USB_DEBUG_FORCE_OUTPUT  (UINTN) (1 << 0)
-#define USB_DEBUG_PROMT         (UINTN) (1 << 1)
-
-//
-// Data Structure
-//
-#define UHCI_DEBUG_QH       (UINTN) (1 << 2)
-#define UHCI_DEBUG_TD       (UINTN) (1 << 3)
-#define UHCI_DEBUG_BUFFER   (UINTN) (1 << 4)
-#define UHCI_DEBUG_PORT_STS (UINTN) (1 << 5)
-
-//
-// Function
-//
-#define UHCI_DEBUG_CTL      (UINTN) (1 << 10)
-#define UHCI_DEBUG_BULK     (UINTN) (1 << 11)
-#define UHCI_DEBUG_SYC_INT  (UINTN) (1 << 12)
-#define UHCI_DEBUG_ASYC_INT (UINTN) (1 << 13)
-#define UHCI_DEBUG_SCHEDULE (UINTN) (1 << 14)
-
-//
-// USB generic definition
-//
-#define USB_DEBUG_RESERVED1 (UINTN) (1 << 29)
-#define USB_DEBUG_RESERVED2 (UINTN) (1 << 30)
-#define USB_DEBUG_ERROR     (UINTN) (1 << 31)
-#define USB_DEBUG_ALL       (UINTN) (-1)
+#define UHCI_DEBUG_QH           (UINTN) (1 << 2)
+#define UHCI_DEBUG_TD           (UINTN) (1 << 3)
 
 VOID
-UhciDebug (
-  IN  UINTN         Mask,
-  IN  CHAR8         *Format,
+UhciDebugPrint (
+  IN  UINTN               Level,
+  IN  CHAR8               *Format,
   ...
   )
 /*++
@@ -72,7 +45,7 @@ Routine Description:
 
 Arguments:
 
-  Mask    - Level to control debug print
+  Level   - Level to control debug print
   Format  - String to use for the print, followed by print arguments
 
 Returns:
@@ -83,43 +56,41 @@ Returns:
 ;
 
 VOID
-UhciDumpBuffer (
-  IN UINT8         *Buffer,
-  IN UINT32        Length
+UhciDebug (
+  IN  CHAR8               *Format,
+  ...
   )
 /*++
 
 Routine Description:
 
-  Dump the content of data buffer
+  Debug print interface for UHCI
 
 Arguments:
 
-  Buffer  - Start pointer of data buffer
-  Length  - Length of data buffer
+  Format  - String to use for the print, followed by print arguments
 
-Returns: 
+Returns:
 
   None
-  
+
 --*/
 ;
 
 VOID
-UhciDumpPortsStatus (
-  IN USB_HC_DEV    *HcDev,
-  IN UINT8         PortNumber
+UhciError (
+  IN  CHAR8               *Format,
+  ...
   )
 /*++
 
 Routine Description:
 
-  Dump the content of port status register
+  Debug error print interface for UHCI
 
 Arguments:
 
-  HcDev       - Host controller structure
-  PortNumber  - Index of port
+  Format  - String to use for the print, followed by print arguments
 
 Returns:
 
@@ -130,7 +101,7 @@ Returns:
 
 VOID
 UhciDumpQh (
-  IN UHCI_QH_SW    *QhSw
+  IN UHCI_QH_SW         *QhSw
   )
 /*++
 
@@ -151,8 +122,7 @@ Returns:
 
 VOID
 UhciDumpTds (
-  IN UHCI_TD_SW    *TdSw,
-  IN BOOLEAN       IsCur
+  IN UHCI_TD_SW           *TdSw
   )
 /*++
 
@@ -163,7 +133,6 @@ Routine Description:
 Arguments:
 
   TdSw  - Pointer to software TD structure
-  IsCur - Whether dump the whole list, or only dump the current TD
 
 Returns:
 
@@ -172,18 +141,17 @@ Returns:
 --*/
 ;
 
+
 #ifdef EFI_DEBUG
-  #define UHCI_DEBUG(arg)            UhciDebug arg
-  #define UHCI_DUMP_PORT_STAT(arg)   UhciDumpPortsStatus arg
-  #define UHCI_DUMP_BUFFER(arg)      UhciDumpBuffer arg
-  #define UHCI_DUMP_QH(arg)          UhciDumpQh arg
-  #define UHCI_DUMP_TDS(arg)         UhciDumpTds arg
+  #define UHCI_DEBUG(arg)             UhciDebug arg
+  #define UHCI_ERROR(arg)             UhciError arg
+  #define UHCI_DUMP_TDS(arg)          UhciDumpTds arg
+  #define UHCI_DUMP_QH(arg)           UhciDumpQh arg
 #else
   #define UHCI_DEBUG(arg)
-  #define UHCI_DUMP_PORT_STAT(arg)
-  #define UHCI_DUMP_BUFFER(arg)
-  #define UHCI_DUMP_QH(arg)
+  #define UHCI_ERROR(arg)             
   #define UHCI_DUMP_TDS(arg)
+  #define UHCI_DUMP_QH(arg)
 #endif
 
 #endif

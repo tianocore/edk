@@ -23,6 +23,153 @@ Revision History
 
 #include "Uhci.h"
 
+EFI_STATUS
+UhciMapUserRequest (
+  IN  USB_HC_DEV          *Uhc,
+  IN  OUT VOID            *Request,
+  OUT UINT8               **MappedAddr,
+  OUT VOID                **Map
+  )
+/*++
+
+Routine Description:
+
+  Map address of request structure buffer
+
+Arguments:
+
+  Uhc        - The UHCI device
+  Request    - The user request buffer
+  MappedAddr - Mapped address of request 
+  Map        - Identificaion of this mapping to return
+
+Returns:
+
+  EFI_SUCCESS      : Success
+  EFI_DEVICE_ERROR : Fail to map the user request
+
+--*/
+{
+  EFI_STATUS            Status;
+  UINTN                 Len;
+  EFI_PHYSICAL_ADDRESS  PhyAddr;
+
+  Len    = sizeof (EFI_USB_DEVICE_REQUEST);
+  Status = Uhc->PciIo->Map (
+                         Uhc->PciIo,
+                         EfiPciIoOperationBusMasterRead,
+                         Request,
+                         &Len,
+                         &PhyAddr,
+                         Map
+                         );
+
+  if (!EFI_ERROR (Status)) {
+    *MappedAddr = (UINT8 *) (UINTN) PhyAddr;
+  }
+
+  return Status;
+}
+
+EFI_STATUS
+UhciMapUserData (
+  IN  USB_HC_DEV              *Uhc,
+  IN  EFI_USB_DATA_DIRECTION  Direction,
+  IN  VOID                    *Data,
+  IN  OUT UINTN               *Len,
+  OUT UINT8                   *PktId,
+  OUT UINT8                   **MappedAddr,
+  OUT VOID                    **Map
+  )
+/*++
+
+Routine Description:
+
+  Map address of user data buffer
+
+Arguments:
+
+  Uhc        - The UHCI device
+  Direction  - direction of the data transfer
+  Data       - The user data buffer
+  Len        - Length of the user data
+  PktId      - Packet identificaion
+  MappedAddr - mapped address to return
+  Map        - identificaion of this mapping to return
+
+Returns:
+
+  EFI_SUCCESS      : Success
+  EFI_DEVICE_ERROR : Fail to map the user data
+
+--*/
+{
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  PhyAddr;
+
+  Status = EFI_SUCCESS;
+
+  switch (Direction) {
+  case EfiUsbDataIn:
+    //
+    // BusMasterWrite means cpu read
+    //
+    *PktId = INPUT_PACKET_ID;
+    Status = Uhc->PciIo->Map (
+                           Uhc->PciIo,
+                           EfiPciIoOperationBusMasterWrite,
+                           Data,
+                           Len,
+                           &PhyAddr,
+                           Map
+                           );
+
+    if (EFI_ERROR (Status)) {
+      goto EXIT;
+    }
+
+    *MappedAddr = (UINT8 *) (UINTN) PhyAddr;
+    break;
+
+  case EfiUsbDataOut:
+    *PktId = OUTPUT_PACKET_ID;
+    Status = Uhc->PciIo->Map (
+                           Uhc->PciIo,
+                           EfiPciIoOperationBusMasterRead,
+                           Data,
+                           Len,
+                           &PhyAddr,
+                           Map
+                           );
+
+    if (EFI_ERROR (Status)) {
+      goto EXIT;
+    }
+
+    *MappedAddr = (UINT8 *) (UINTN) PhyAddr;
+    break;
+
+  case EfiUsbNoData:
+    if ((Len != NULL) && (*Len != 0)) {
+      Status    = EFI_INVALID_PARAMETER;
+      goto EXIT;
+    }
+
+    *PktId      = OUTPUT_PACKET_ID;
+    *Len        = 0;
+    *MappedAddr = NULL;
+    *Map        = NULL;
+    break;
+
+  default:
+    Status      = EFI_INVALID_PARAMETER;
+  }
+
+EXIT:
+  return Status;
+}
+
+
 VOID
 UhciLinkTdToQh (
   IN UHCI_QH_SW           *Qh,
@@ -137,7 +284,7 @@ Returns:
   while (NextTd != NULL) {
     ThisTd  = NextTd;
     NextTd  = ThisTd->NextTd;
-    UhciFreePool (Uhc, (UINT8 *) ThisTd, sizeof (UHCI_TD_SW));
+    UsbHcFreeMem (Uhc->MemPool, ThisTd, sizeof (UHCI_TD_SW));
   }
 }
 
@@ -163,12 +310,11 @@ Returns:
   
 --*/
 {
-  EFI_STATUS            Status;
   UHCI_QH_SW            *Qh;
 
-  Status = UhciAllocatePool (Uhc, (UINT8 **) &Qh, sizeof (UHCI_QH_SW));
-
-  if (EFI_ERROR (Status)) {
+  Qh = UsbHcAllocateMem (Uhc->MemPool, sizeof (UHCI_QH_SW));
+  
+  if (Qh == NULL) {
     return NULL;
   }
 
@@ -202,12 +348,10 @@ Returns:
   
 --*/
 {
-  EFI_STATUS              Status;
   UHCI_TD_SW              *Td;
 
-  Status = UhciAllocatePool (Uhc, (UINT8 **) &Td, sizeof (UHCI_TD_SW));
-  
-  if (EFI_ERROR (Status)) {
+  Td     = UsbHcAllocateMem (Uhc->MemPool, sizeof (UHCI_TD_SW));
+  if (Td == NULL) {
     return NULL;
   }
 
@@ -314,7 +458,7 @@ Returns:
   //
   // Code as length - 1, and the max valid length is 0x500
   //
-  Len = (Len > 0x500) ? 0x4FF : (Len - 1);
+  ASSERT (Len <= 0x500);
 
   Td  = UhciCreateTd (Uhc);
   
@@ -332,7 +476,7 @@ Returns:
   Td->TdHw.DataToggle   = Toggle & 0x01;
   Td->TdHw.EndPoint     = Endpoint & 0x0F;
   Td->TdHw.DeviceAddr   = DevAddr & 0x7F;
-  Td->TdHw.MaxPacketLen = (UINT32) (Len & 0x7FF);
+  Td->TdHw.MaxPacketLen = (UINT32) (Len - 1);
   Td->TdHw.PidCode      = (UINT8) PktId;
   Td->TdHw.DataBuffer   = (UINT32) (UINTN) DataPtr;
 
@@ -520,7 +664,6 @@ Returns:
     UhciAppendTd (SetupTd, StatusTd);
   }
 
-  UHCI_DUMP_TDS ((SetupTd, 0));
   return SetupTd;
 
 FREE_TD:
@@ -624,8 +767,6 @@ Returns:
     Data        += ThisTdLen;
     DataLen     -= ThisTdLen;
   }
-
-  UHCI_DUMP_TDS ((FirstDataTd, 0));
 
   return FirstDataTd;
 

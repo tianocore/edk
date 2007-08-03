@@ -29,8 +29,8 @@ COMPONENT_TYPE       = BS_DRIVER
     uhci.h
     UhciReg.c
     UhciReg.h
-    UhciMem.c
-    UhciMem.h
+    UsbHcMem.c
+    UsbHcMem.h
     UhciQueue.c
     UhciQueue.h
     UhciSched.c

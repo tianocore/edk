@@ -21,7 +21,7 @@
 --*/
 
 [defines]
-BASE_NAME            = ConSplitter
+BASE_NAME            = LightConSplitter
 FILE_GUID            = A373D346-1D56-4e33-8BD0-A5B725D088FE
 COMPONENT_TYPE       = BS_DRIVER
 

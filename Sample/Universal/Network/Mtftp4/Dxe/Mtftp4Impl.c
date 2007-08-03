@@ -187,6 +187,7 @@ Returns:
   IP4_ADDR                  Ip;
   IP4_ADDR                  Netmask;
   IP4_ADDR                  Gateway;
+  IP4_ADDR                  ServerIp;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -210,11 +211,17 @@ Returns:
     //
     // Configure the parameters for new operation.
     //
-    Ip      = EFI_NTOHL (ConfigData->StationIp);
-    Netmask = EFI_NTOHL (ConfigData->SubnetMask);
-    Gateway = EFI_NTOHL (ConfigData->GatewayIp);
+    NetCopyMem (&Ip, &ConfigData->StationIp, sizeof (IP4_ADDR));
+    NetCopyMem (&Netmask, &ConfigData->SubnetMask, sizeof (IP4_ADDR));
+    NetCopyMem (&Gateway, &ConfigData->GatewayIp, sizeof (IP4_ADDR));
+    NetCopyMem (&ServerIp, &ConfigData->ServerIp, sizeof (IP4_ADDR));
 
-    if (!Ip4IsUnicast (EFI_NTOHL (ConfigData->ServerIp), 0)) {
+    Ip       = NTOHL (Ip);
+    Netmask  = NTOHL (Netmask);
+    Gateway  = NTOHL (Gateway);
+    ServerIp = NTOHL (ServerIp);
+
+    if (!Ip4IsUnicast (ServerIp, 0)) {
       return EFI_INVALID_PARAMETER;
     }
 
@@ -484,16 +491,22 @@ Returns:
   IP4_ADDR                  Netmask;
   IP4_ADDR                  Gateway;
 
-  if (!Ip4IsUnicast (EFI_NTOHL (Override->ServerIp), 0)) {
+  NetCopyMem (&Ip, &Override->ServerIp, sizeof (IP4_ADDR));
+  if (!Ip4IsUnicast (NTOHL (Ip), 0)) {
     return FALSE;
   }
 
-  Config  = &Instance->Config;
-  Gateway = EFI_NTOHL (Override->GatewayIp);
+  Config = &Instance->Config;
+
+  NetCopyMem (&Gateway, &Override->GatewayIp, sizeof (IP4_ADDR));
+  Gateway = NTOHL (Gateway);
 
   if (!Config->UseDefaultSetting && (Gateway != 0)) {
-    Netmask = EFI_NTOHL (Config->SubnetMask);
-    Ip   = EFI_NTOHL (Config->StationIp);
+    NetCopyMem (&Netmask, &Config->SubnetMask, sizeof (IP4_ADDR));
+    NetCopyMem (&Ip, &Config->StationIp, sizeof (IP4_ADDR));
+
+    Netmask = NTOHL (Netmask);
+    Ip      = NTOHL (Ip);
 
     if (!Ip4IsUnicast (Gateway, Netmask) || !IP4_NET_EQUAL (Gateway, Ip, Netmask)) {
       return FALSE;
@@ -590,24 +603,27 @@ Returns:
   EFI_MTFTP4_CONFIG_DATA    *Config;
   EFI_UDP4_CONFIG_DATA      UdpConfig;
   EFI_STATUS                Status;
+  IP4_ADDR                  Ip;
 
   Config = &Instance->Config;
 
-  UdpConfig.AcceptBroadcast     = FALSE;
-  UdpConfig.AcceptPromiscuous   = FALSE;
-  UdpConfig.AcceptAnyPort       = FALSE;
-  UdpConfig.AllowDuplicatePort  = FALSE;
-  UdpConfig.TypeOfService       = 0;
-  UdpConfig.TimeToLive          = 64;
-  UdpConfig.DoNotFragment       = FALSE;
-  UdpConfig.ReceiveTimeout      = 0;
-  UdpConfig.TransmitTimeout     = 0;
-  UdpConfig.UseDefaultAddress   = Config->UseDefaultSetting;
-  UdpConfig.StationAddress      = Config->StationIp;
-  UdpConfig.SubnetMask          = Config->SubnetMask;
-  UdpConfig.StationPort         = 0;
-  UdpConfig.RemotePort          = 0;
-  EFI_IP4 (UdpConfig.RemoteAddress) = HTONL (Instance->ServerIp);
+  UdpConfig.AcceptBroadcast    = FALSE;
+  UdpConfig.AcceptPromiscuous  = FALSE;
+  UdpConfig.AcceptAnyPort      = FALSE;
+  UdpConfig.AllowDuplicatePort = FALSE;
+  UdpConfig.TypeOfService      = 0;
+  UdpConfig.TimeToLive         = 64;
+  UdpConfig.DoNotFragment      = FALSE;
+  UdpConfig.ReceiveTimeout     = 0;
+  UdpConfig.TransmitTimeout    = 0;
+  UdpConfig.UseDefaultAddress  = Config->UseDefaultSetting;
+  UdpConfig.StationAddress     = Config->StationIp;
+  UdpConfig.SubnetMask         = Config->SubnetMask;
+  UdpConfig.StationPort        = 0;
+  UdpConfig.RemotePort         = 0;
+
+  Ip = HTONL (Instance->ServerIp);
+  NetCopyMem (&UdpConfig.RemoteAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
 
   Status = UdpIo->Udp->Configure (UdpIo->Udp, &UdpConfig);
 
@@ -726,17 +742,27 @@ Returns:
   Config                  = &Instance->Config;
   Instance->Token         = Token;
   Instance->BlkSize       = MTFTP4_DEFAULT_BLKSIZE;
-  Instance->ServerIp      = EFI_NTOHL (Config->ServerIp);
+
+  NetCopyMem (&Instance->ServerIp, &Config->ServerIp, sizeof (IP4_ADDR));
+  Instance->ServerIp      = NTOHL (Instance->ServerIp);
+
   Instance->ListeningPort = Config->InitialServerPort;
   Instance->ConnectedPort = 0;
-  Instance->Gateway       = EFI_NTOHL (Config->GatewayIp);
+
+  NetCopyMem (&Instance->Gateway, &Config->GatewayIp, sizeof (IP4_ADDR));
+  Instance->Gateway       = NTOHL (Instance->Gateway);
+
   Instance->MaxRetry      = Config->TryCount;
   Instance->Timeout       = Config->TimeoutValue;
   Instance->Master        = TRUE;
 
   if (Override != NULL) {
-    Instance->Gateway       = EFI_NTOHL (Override->GatewayIp);
-    Instance->ServerIp      = EFI_NTOHL (Override->ServerIp);
+    NetCopyMem (&Instance->ServerIp, &Override->ServerIp, sizeof (IP4_ADDR));
+    NetCopyMem (&Instance->Gateway, &Override->GatewayIp, sizeof (IP4_ADDR));
+
+    Instance->ServerIp      = NTOHL (Instance->ServerIp);
+    Instance->Gateway       = NTOHL (Instance->Gateway);
+
     Instance->ListeningPort = Override->ServerPort;
     Instance->MaxRetry      = Override->TryCount;
     Instance->Timeout       = Override->TimeoutValue;

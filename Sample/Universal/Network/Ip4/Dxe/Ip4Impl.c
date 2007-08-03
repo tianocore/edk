@@ -56,6 +56,7 @@ Returns:
   EFI_IP4_CONFIG_DATA       *Config;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
+  IP4_ADDR                  Ip;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -91,10 +92,14 @@ Returns:
     //
     if (Ip4ModeData->IsStarted) {
       Config  = &Ip4ModeData->ConfigData;
-      
-      EFI_IP4 (Config->StationAddress) = HTONL (IpInstance->Interface->Ip);
-      EFI_IP4 (Config->SubnetMask)     = HTONL (IpInstance->Interface->SubnetMask);
-      Ip4ModeData->IsConfigured        = IpInstance->Interface->Configured;
+
+      Ip = HTONL (IpInstance->Interface->Ip);
+      NetCopyMem (&Config->StationAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+      Ip = HTONL (IpInstance->Interface->SubnetMask);
+      NetCopyMem (&Config->SubnetMask, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+      Ip4ModeData->IsConfigured = IpInstance->Interface->Configured;
 
       //
       // Build a EFI route table for user from the internal route table.
@@ -587,8 +592,11 @@ Returns:
   //
   // Set up the interface.
   //
-  Ip      = EFI_NTOHL (Config->StationAddress);
-  Netmask = EFI_NTOHL (Config->SubnetMask);
+  NetCopyMem (&Ip, &Config->StationAddress, sizeof (IP4_ADDR));
+  NetCopyMem (&Netmask, &Config->SubnetMask, sizeof (IP4_ADDR));
+
+  Ip      = NTOHL (Ip);
+  Netmask = NTOHL (Netmask);
 
   if (!Config->UseDefaultAddress) {
     //
@@ -847,6 +855,8 @@ Returns:
   EFI_TPL                   OldTpl;
   EFI_STATUS                Status;
   BOOLEAN                   AddrOk;
+  IP4_ADDR                  IpAddress;
+  IP4_ADDR                  SubnetMask;
 
   //
   // First, validate the parameters
@@ -869,15 +879,19 @@ Returns:
       Status = EFI_UNSUPPORTED;
       goto ON_EXIT;
     }
-    
+
+
+    NetCopyMem (&IpAddress, &IpConfigData->StationAddress, sizeof (IP4_ADDR));
+    NetCopyMem (&SubnetMask, &IpConfigData->SubnetMask, sizeof (IP4_ADDR));
+
+    IpAddress  = NTOHL (IpAddress);
+    SubnetMask = NTOHL (SubnetMask);
+
     //
     // Check whether the station address is a valid unicast address
     //
     if (!IpConfigData->UseDefaultAddress) {
-      AddrOk = Ip4StationAddressValid (
-                 EFI_NTOHL (IpConfigData->StationAddress),
-                 EFI_NTOHL (IpConfigData->SubnetMask)
-                 );
+      AddrOk = Ip4StationAddressValid (IpAddress, SubnetMask);
 
       if (!AddrOk) {
         Status = EFI_INVALID_PARAMETER;
@@ -899,8 +913,8 @@ Returns:
       }
 
       if (!Current->UseDefaultAddress &&
-         (!EFI_IP_EQUAL (Current->StationAddress, IpConfigData->StationAddress) || 
-          !EFI_IP_EQUAL (Current->SubnetMask, IpConfigData->SubnetMask))) {
+         (!EFI_IP4_EQUAL (Current->StationAddress, IpConfigData->StationAddress) || 
+          !EFI_IP4_EQUAL (Current->SubnetMask, IpConfigData->SubnetMask))) {
         Status = EFI_ALREADY_STARTED;
         goto ON_EXIT;
       }
@@ -986,7 +1000,7 @@ Returns:
   // host byte order
   //
   if (JoinFlag) {
-    Group = EFI_IP4 (*GroupAddress);
+    NetCopyMem (&Group, GroupAddress, sizeof (IP4_ADDR));
 
     for (Index = 0; Index < IpInstance->GroupCount; Index++) {
       if (IpInstance->Groups[Index] == Group) {
@@ -1023,7 +1037,7 @@ Returns:
   for (Index = IpInstance->GroupCount; Index > 0 ; Index--) {
     Group = IpInstance->Groups[Index - 1];
 
-    if ((GroupAddress == NULL) || (Group == EFI_IP4 (*GroupAddress))) {
+    if ((GroupAddress == NULL) || EFI_IP4_EQUAL (Group, *GroupAddress)) {
       if (EFI_ERROR (Ip4LeaveGroup (IpInstance, NTOHL (Group)))) {
         return EFI_DEVICE_ERROR;
       }
@@ -1081,10 +1095,18 @@ Returns:
   IP4_PROTOCOL              *IpInstance;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
+  IP4_ADDR                  McastIp;
 
-  if ((This == NULL) || (JoinFlag && (GroupAddress == NULL)) ||
-      ((GroupAddress != NULL) && !IP4_IS_MULTICAST (EFI_NTOHL (*GroupAddress)))) {
+  if ((This == NULL) || (JoinFlag && (GroupAddress == NULL))) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  if (GroupAddress != NULL) {
+    NetCopyMem (&McastIp, GroupAddress, sizeof (IP4_ADDR));
+
+    if (!IP4_IS_MULTICAST (NTOHL (McastIp))) {
+      return EFI_INVALID_PARAMETER;
+    }
   }
 
   IpInstance = IP4_INSTANCE_FROM_PROTOCOL (This);
@@ -1169,9 +1191,14 @@ Returns:
     goto ON_EXIT;
   }
 
-  Dest    = EFI_NTOHL (*SubnetAddress);
-  Netmask = EFI_NTOHL (*SubnetMask);
-  Nexthop = EFI_NTOHL (*GatewayAddress);
+  NetCopyMem (&Dest, SubnetAddress, sizeof (IP4_ADDR));
+  NetCopyMem (&Netmask, SubnetMask, sizeof (IP4_ADDR));
+  NetCopyMem (&Nexthop, GatewayAddress, sizeof (IP4_ADDR));
+
+  Dest    = NTOHL (Dest);  
+  Netmask = NTOHL (Netmask);
+  Nexthop = NTOHL (Nexthop);
+
   IpIf    = IpInstance->Interface;
 
   if (!IP4_IS_VALID_NETMASK (Netmask)) {
@@ -1321,9 +1348,13 @@ Returns:
   // Gateway must also be on the connected network.
   //
   if (TxData->OverrideData) {
-    Override  = TxData->OverrideData;
-    Src       = EFI_NTOHL (Override->SourceAddress);
-    Gateway   = EFI_NTOHL (Override->GatewayAddress);
+    Override = TxData->OverrideData;
+
+    NetCopyMem (&Src, &Override->SourceAddress, sizeof (IP4_ADDR));
+    NetCopyMem (&Gateway, &Override->GatewayAddress, sizeof (IP4_ADDR));
+
+    Src     = NTOHL (Src);
+    Gateway = NTOHL (Gateway);
 
     if ((NetGetIpClass (Src) > IP4_ADDR_CLASSC) ||
         (Src == IP4_ALLONE_ADDRESS) || 
@@ -1552,17 +1583,23 @@ Returns:
   // Build the IP header, need to fill in the Tos, TotalLen, Id, 
   // fragment, Ttl, protocol, Src, and Dst.
   //
-  TxData    = Token->Packet.TxData;
-  Head.Dst  = EFI_NTOHL (TxData->DestinationAddress);
+  TxData = Token->Packet.TxData;
+
+  NetCopyMem (&Head.Dst, &TxData->DestinationAddress, sizeof (IP4_ADDR));
+  Head.Dst = NTOHL (Head.Dst);
 
   if (TxData->OverrideData) {
     Override      = TxData->OverrideData;
-    Head.Src      = EFI_NTOHL (Override->SourceAddress);
-    GateWay       = EFI_NTOHL (Override->GatewayAddress);
     Head.Protocol = Override->Protocol;
     Head.Tos      = Override->TypeOfService;
     Head.Ttl      = Override->TimeToLive;
     DontFragment  = Override->DoNotFragment;
+
+    NetCopyMem (&Head.Src, &Override->SourceAddress, sizeof (IP4_ADDR));
+    NetCopyMem (&GateWay, &Override->GatewayAddress, sizeof (IP4_ADDR));
+
+    Head.Src = NTOHL (Head.Src);
+    GateWay  = NTOHL (GateWay);
   } else {
     Head.Src      = IpIf->Ip;
     GateWay       = IP4_ALLZERO_ADDRESS;

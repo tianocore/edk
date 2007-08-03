@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -51,6 +51,7 @@ Returns:
   DHCP_SERVICE              *DhcpSb;
   DHCP_PARAMETER            *Para;
   EFI_TPL                   OldTpl;
+  IP4_ADDR                  Ip;
 
   //
   // First validate the parameters.
@@ -76,17 +77,23 @@ Returns:
   Dhcp4ModeData->ConfigData                = DhcpSb->ActiveConfig;
   Dhcp4ModeData->ClientMacAddress          = DhcpSb->Mac;
 
-  EFI_IP4 (Dhcp4ModeData->ClientAddress)   = HTONL (DhcpSb->ClientAddr);
-  EFI_IP4 (Dhcp4ModeData->SubnetMask)      = HTONL (DhcpSb->Netmask);
-  EFI_IP4 (Dhcp4ModeData->ServerAddress)   = HTONL (DhcpSb->ServerAddr);
+  Ip = HTONL (DhcpSb->ClientAddr);
+  NetCopyMem (&Dhcp4ModeData->ClientAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
 
+  Ip = HTONL (DhcpSb->Netmask);
+  NetCopyMem (&Dhcp4ModeData->SubnetMask, &Ip, sizeof (EFI_IPv4_ADDRESS));
+
+  Ip = HTONL (DhcpSb->ServerAddr);
+  NetCopyMem (&Dhcp4ModeData->ServerAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
+  
   Para = DhcpSb->Para;
 
   if (Para != NULL) {
-    EFI_IP4 (Dhcp4ModeData->RouterAddress) = HTONL (Para->Router);
+    Ip = HTONL (Para->Router);
+    NetCopyMem (&Dhcp4ModeData->RouterAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
     Dhcp4ModeData->LeaseTime               = Para->Lease;
   } else {
-    EFI_IP4 (Dhcp4ModeData->RouterAddress) = 0;
+    NetZeroMem (&Dhcp4ModeData->RouterAddress, sizeof (EFI_IPv4_ADDRESS));
     Dhcp4ModeData->LeaseTime               = 0xffffffff;
   }
 
@@ -327,6 +334,7 @@ Returns:
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
   UINT32                    Index;
+  IP4_ADDR                  Ip;
 
   //
   // First validate the parameters
@@ -348,8 +356,9 @@ Returns:
       return EFI_INVALID_PARAMETER;
     }
 
-    if ((EFI_IP4 (Dhcp4CfgData->ClientAddress) != 0) && 
-        !Ip4IsUnicast (EFI_NTOHL (Dhcp4CfgData->ClientAddress), 0)) {
+    NetCopyMem (&Ip, &Dhcp4CfgData->ClientAddress, sizeof (IP4_ADDR));
+
+    if ((Ip != 0) && !Ip4IsUnicast (NTOHL (Ip), 0)) {
         
       return EFI_INVALID_PARAMETER;
     }

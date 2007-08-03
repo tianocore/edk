@@ -1161,6 +1161,11 @@ Returns:
     //
     if (EfiStrSize (Location) <= LineWidth) {
       if (*BufferLength >= EfiStrSize (Location)) {
+        //
+        // Let Index point to '\0' and BufferLength equal copied string actual size
+        //
+        *BufferLength = (UINT16) EfiStrSize (Location)/sizeof (CHAR16);      
+        *Index += (UINT16) (EfiStrSize (Location) - sizeof (CHAR16))/sizeof (CHAR16);
         EfiStrCpy (StringBuffer, Location);
         return EFI_SUCCESS;
       } else {
@@ -1179,13 +1184,14 @@ Returns:
       if (Count == 0) {
         Count = LineWidth;
       }
-      //
-      // Put the index at the next character
-      //
-      *Index = (UINT16) (Count + 1);
 
       if (*BufferLength >= Count) {
         StrnCpy (StringBuffer, Location, Count);
+        *BufferLength = (UINT16) Count;
+        //
+        // Put the index at the next character
+        //
+        *Index += ((UINT16) Count + 1);
         return EFI_SUCCESS;
       } else {
         *BufferLength = (UINT16) Count;

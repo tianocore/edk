@@ -68,6 +68,18 @@ Returns:
   Private->CurrentFvFileHandles[0] = NULL;
   Guid = NULL;
   FileHandle = NULL;
+
+  //
+  // If the current Fv has been scanned, directly get its cachable record.
+  //
+  if (Private->Fv[Private->CurrentPeimFvCount].ScanFv) {
+    PeiCoreCopyMem (Private->CurrentFvFileHandles, Private->Fv[Private->CurrentPeimFvCount].FvFileHandles, sizeof (Private->CurrentFvFileHandles));      
+    return;
+  }
+
+  //
+  // Go ahead to scan this Fv, and cache FileHandles within it.
+  //
   for (PeimCount = 0; PeimCount < PEI_CORE_MAX_PEIM_PER_FV; PeimCount++) {
     Status = PeiFindFileEx (
                 VolumeHandle, 
@@ -160,6 +172,13 @@ Returns:
       PeiCoreCopyMem (Private->CurrentFvFileHandles, TempFileHandles, sizeof (Private->CurrentFvFileHandles));
     }
   }
+  //
+  // Cache the current Fv File Handle. So that we don't have to scan the Fv again.
+  // Instead, we can retrieve the file handles within this Fv from cachable data.
+  //
+  Private->Fv[Private->CurrentPeimFvCount].ScanFv = TRUE;
+  PeiCoreCopyMem (Private->Fv[Private->CurrentPeimFvCount].FvFileHandles, Private->CurrentFvFileHandles, sizeof (Private->CurrentFvFileHandles));
+  
 }
 
 
@@ -187,7 +206,8 @@ Returns:
 --*/
 {
   EFI_STATUS                          Status;
-  UINT32                              Index;
+  UINT32                              Index1;
+  UINT32                              Index2;
   EFI_PEI_SERVICES                    **PeiServices;
   VOID                                *PrivateInMem;
   EFI_PEI_FV_HANDLE                   VolumeHandle; 
@@ -220,6 +240,7 @@ Returns:
 
   PeiServices = &Private->PS;
   PeimEntryPoint = NULL;
+  PeimFileHandle = NULL;
 
   if ((Private->PeiMemoryInstalled) && (Private->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME)) {
     //
@@ -228,33 +249,40 @@ Returns:
     //
     SaveCurrentPeimCount  = Private->CurrentPeimCount;
     SaveCurrentFileHandle =  Private->CurrentFileHandle;
-    for (Index = 0; (Index < PEI_CORE_MAX_PEIM_PER_FV) && (Private->CurrentFvFileHandles[Index] != NULL); Index++) {
-      if (Private->Fv[Private->CurrentPeimFvCount].PeimState[Index] == PEIM_STATE_REGISITER_FOR_SHADOW) {
-        Status = PeiLoadImage (
-                  &Private->PS, 
-                  Private->CurrentFvFileHandles[Index],  
-                  &EntryPoint, 
-                  &AuthenticationState
-                  );
-        if (Status == EFI_SUCCESS) {
+
+    for (Index1 = 0;Index1 <= Private->CurrentPeimFvCount; Index1++) {
+      for (Index2 = 0; (Index2 < PEI_CORE_MAX_PEIM_PER_FV) && (Private->Fv[Index1].FvFileHandles[Index2] != NULL); Index2++) {
+        if (Private->Fv[Index1].PeimState[Index2] == PEIM_STATE_REGISITER_FOR_SHADOW) {
+          PeimFileHandle = Private->Fv[Index1].FvFileHandles[Index2];  
+          Status = PeiLoadImage (
+                    &Private->PS, 
+                    PeimFileHandle,  
+                    &EntryPoint, 
+                    &AuthenticationState
+                    );
+          if (Status == EFI_SUCCESS) {
+            //
+            // PEIM_STATE_REGISITER_FOR_SHADOW move to PEIM_STATE_DONE
+            //
+            Private->Fv[Index1].PeimState[Index2]++;
+            Private->CurrentFileHandle = PeimFileHandle;
+            Private->CurrentPeimCount  = Index2;        
+            //
+            // Call the PEIM entry point
+            //
+            PeimEntryPoint = (EFI_PEIM_ENTRY_POINT)(UINTN)EntryPoint;
+            
+            PEI_PERF_START (PeiServices, L"PEIM", PeimFileHandle, 0);
+            PeimEntryPoint(PeimFileHandle, &Private->PS);
+            PEI_PERF_END (PeiServices, L"PEIM", PeimFileHandle, 0);
+          } 
+          
           //
-          // PEIM_STATE_REGISITER_FOR_SHADOW move to PEIM_STATE_DONE
+          // Process the Notify list and dispatch any notifies for
+          // newly installed PPIs.
           //
-          Private->Fv[Private->CurrentPeimFvCount].PeimState[Index]++;
-          Private->CurrentFileHandle = Private->CurrentFvFileHandles[Index];
-          Private->CurrentPeimCount  = Index;        
-          //
-          // Call the PEIM entry point
-          //
-          PeimEntryPoint = (EFI_PEIM_ENTRY_POINT)(UINTN)EntryPoint;
-          PeimEntryPoint(Private->CurrentFvFileHandles[Index], &Private->PS);
-        } 
-        
-        //
-        // Process the Notify list and dispatch any notifies for
-        // newly installed PPIs.
-        //
-        ProcessNotifyList (&Private->PS);
+          ProcessNotifyList (&Private->PS);
+        }
       }
     }
     Private->CurrentFileHandle = SaveCurrentFileHandle;   
@@ -286,6 +314,9 @@ Returns:
         DiscoverPeimsAndOrderWithApriori (Private, VolumeHandle);
       }
 
+      //
+      // Start to dispatch all modules within the current Fv.
+      //
       for (PeimCount = Private->CurrentPeimCount; 
            (PeimCount < PEI_CORE_MAX_PEIM_PER_FV) && (Private->CurrentFvFileHandles[PeimCount] != NULL); 
            PeimCount++) {
@@ -435,7 +466,9 @@ Returns:
               // If memory is availble we shadow images by default for performance reasons. 
               // We call the entry point a 2nd time so the module knows it's shadowed. 
               //
+              PEI_PERF_START (PeiServices, L"PEIM", PeimFileHandle, 0);
               PeimEntryPoint (PeimFileHandle, PeiServices);
+              PEI_PERF_END (PeiServices, L"PEIM", PeimFileHandle, 0);
               
               //
               // PEIM_STATE_REGISITER_FOR_SHADOW move to PEIM_STATE_DONE

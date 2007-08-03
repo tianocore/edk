@@ -1,6 +1,6 @@
 ;------------------------------------------------------------------------------
 ;*
-;*   Copyright 2006, Intel Corporation                                                         
+;*   Copyright 2006 - 2007, Intel Corporation                                                         
 ;*   All rights reserved. This program and the accompanying materials                          
 ;*   are licensed and made available under the terms and conditions of the BSD License         
 ;*   which accompanies this distribution.  The full text of the license may be found at        
@@ -87,7 +87,7 @@ RelocatedStart:
         mov   bp,sp         ; bp = 0x7c00
 
         mov   ah,8                                ; ah = 8 - Get Drive Parameters Function
-        mov   dl,byte ptr [bp+PhysicalDrive]      ; dl = Drive Number
+        mov   byte ptr [bp+PhysicalDrive],dl      ; BBS defines that BIOS would pass the booting driver number to the loader through DL
         int   13h                                 ; Get Drive Parameters
         xor   ax,ax                   ; ax = 0
         mov   al,dh                   ; al = dh

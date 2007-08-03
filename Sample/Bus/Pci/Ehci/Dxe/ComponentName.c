@@ -19,7 +19,7 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include "ehci.h"
+#include "Ehci.h"
 
 //
 // EFI Component Name Functions
@@ -213,7 +213,7 @@ EhciComponentNameGetControllerName (
     return Status;
   }
 
-  EhciDev = USB2_HC_DEV_FROM_THIS (Usb2Hc);
+  EhciDev = EHC_FROM_THIS (Usb2Hc);
 
   return EfiLibLookupUnicodeString (
           Language,

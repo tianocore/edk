@@ -1232,11 +1232,15 @@ DevPathToTextBBS (
     break;
 
   default:
-    Type = L"?";
+    Type = NULL;
     break;
   }
 
-  CatPrint (Str, L"BBS(%s,%a", Type, Bbs->String);
+  if (Type != NULL) {
+    CatPrint (Str, L"BBS(%s,%a", Type, Bbs->String);
+  } else {
+    CatPrint (Str, L"BBS(0x%x,%a", Bbs->DeviceType, Bbs->String);
+  }
 
   if (DisplayOnly == TRUE) {
     CatPrint (Str, L")");

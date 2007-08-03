@@ -481,7 +481,7 @@ Returns:
   CHAR8           *Description;
   UINT32          LineNumber;
 
-  if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_DEBUG_CODE) {
+  if ((CodeType & EFI_STATUS_CODE_TYPE_MASK) == EFI_DEBUG_CODE && (Data != NULL)) {
     //
     // This supports DEBUG () marcos
     // Data format

@@ -15,7 +15,10 @@
 #
 #  Abstract:
 #
-#    Component description file for BaseMemoryLib.
+#    Component description file for BaseMemoryLib. This instance is not the 
+#    BaseMemoryLib in EdkII but almost BaseMemoryLibRepStr.
+#    Use REP string instructions for Ia32 and X64 for high performance and small size
+#    Use C implementation for IPF and EBC
 #
 #--*/
 
@@ -24,9 +27,7 @@ BASE_NAME       = EdkIIGlueBaseMemoryLib
 COMPONENT_TYPE  = LIBRARY
 
 [sources.common]
-  CopyMem.c
   MemLibGuid.c
-  MemLibGeneric.c
   CopyMemWrapper.c
   SetMemWrapper.c
   SetMem16Wrapper.c
@@ -38,15 +39,42 @@ COMPONENT_TYPE  = LIBRARY
   ScanMem16Wrapper.c
   ScanMem32Wrapper.c
   ScanMem64Wrapper.c
-  SetMem.c
 
 [sources.ia32]
+  Ia32/CopyMem.asm
+  Ia32/SetMem.asm
+  Ia32/SetMem16.asm
+  Ia32/SetMem32.asm
+  Ia32/SetMem64.asm
+  Ia32/ZeroMem.asm
+  Ia32/CompareMem.asm
+  Ia32/ScanMem8.asm
+  Ia32/ScanMem16.asm
+  Ia32/ScanMem32.asm
+  Ia32/ScanMem64.asm
 
 [sources.x64]
+  X64/CopyMem.asm
+  X64/SetMem.asm
+  X64/SetMem16.asm
+  X64/SetMem32.asm
+  X64/SetMem64.asm
+  X64/ZeroMem.asm
+  X64/CompareMem.asm
+  X64/ScanMem8.asm
+  X64/ScanMem16.asm
+  X64/ScanMem32.asm
+  X64/ScanMem64.asm
 
 [sources.ipf]
+  Ipf/CopyMem.c
+  Ipf/MemLibGeneric.c
+  Ipf/SetMem.c
 
 [sources.ebc]
+  Ebc/CopyMem.c
+  Ebc/MemLibGeneric.c
+  Ebc/SetMem.c
 
 [includes.common]
   .
