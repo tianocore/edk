@@ -505,7 +505,7 @@ Returns:
              Direction,
              Buf,
              &Len,
-             50 * USB_STALL_1_MS,
+             USB_GENERAL_DEVICE_REQUEST_TIMEOUT,
              &UsbDev->Translator,
              &Result
              );
@@ -606,7 +606,7 @@ Returns:
       return EFI_SUCCESS;
     }
 
-    gBS->Stall (100 * USB_STALL_1_MS);
+    gBS->Stall (USB_RETRY_MAX_PACK_SIZE_STALL);
   }
   
   return EFI_DEVICE_ERROR;
@@ -820,7 +820,7 @@ Returns:
   // First get four bytes which contains the total length
   // for this configuration.
   //
-  Status = UsbCtrlGetDesc (UsbDev, USB_DESC_TYPE_CONFIG, Index, 0, &Desc, 8);
+  Status = UsbCtrlGetDesc (UsbDev, USB_DESC_TYPE_CONFIG, Index, 0, &Desc, 4);
 
   if (EFI_ERROR (Status)) {
     USB_ERROR (("UsbGetOneConfig: failed to get descript length(%d) %r\n", 
@@ -1082,7 +1082,7 @@ Returns:
                     UsbIo,
                     &DevReq,
                     EfiUsbNoData,
-                    10 * USB_STALL_1_MS,
+                    USB_CLEAR_FEATURE_REQUEST_TIMEOUT,
                     NULL,
                     0,
                     &UsbResult

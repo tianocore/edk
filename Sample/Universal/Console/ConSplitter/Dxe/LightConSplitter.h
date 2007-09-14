@@ -50,6 +50,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (PrimaryConsoleInDevice)
 #include EFI_GUID_DEFINITION (PrimaryConsoleOutDevice)
 #include EFI_GUID_DEFINITION (PrimaryStandardErrorDevice)
+#include EFI_GUID_DEFINITION (GenericVariable)
 
 //
 // Private Data Structures
@@ -57,6 +58,13 @@ Abstract:
 #define CONSOLE_SPLITTER_CONSOLES_ALLOC_UNIT  32
 #define CONSOLE_SPLITTER_MODES_ALLOC_UNIT     32
 #define MAX_STD_IN_PASSWORD                   80
+
+#define VarConOutMode L"ConOutMode"
+
+typedef struct {
+  UINTN   Column;
+  UINTN   Row;
+} CONSOLE_OUT_MODE;
 
 typedef struct {
   UINTN Columns;
@@ -805,7 +813,7 @@ DevNullTextOutEnableCursor (
 ;
 
 EFI_STATUS
-DevNullSyncGopStdOut (
+DevNullSyncStdOut (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private
   )
 ;

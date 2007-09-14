@@ -66,33 +66,7 @@ enum {
   USB_BOOT_ASC_NOT_READY          = 0x04,
   USB_BOOT_ASC_NO_MEDIA           = 0x3A,
   USB_BOOT_ASC_MEDIA_CHANGE       = 0x28,
-  
-  //
-  // Other parameters
-  //
-  USB_BOOT_IO_BLOCKS              = 64,
 
-  //
-  // Boot Retry times
-  //
-  USB_BOOT_COMMAND_RETRY          = 5,
-  USB_BOOT_WAIT_RETRY             = 5,
-
-  //
-  // Boot Stall time
-  //
-  USB_BOOT_UNIT_READY_STALL       = 50 * USB_MASS_STALL_1_MS,
-
-  //
-  // Boot Transfer timeout
-  //
-  // USB2.0 Spec define the up-limit timeout 5s for all command. USB floppy, 
-  // USB CD-Rom and iPod devices are much slower than USB key when reponse 
-  // most of commands, So we set 5s as timeout here.
-  // 
-  //
-  USB_BOOT_GENERAL_CMD_TIMEOUT    = 5 * USB_MASS_STALL_1_S,
-  
   //
   // Supported PDT codes, or Peripheral Device Type
   //
@@ -100,6 +74,32 @@ enum {
   USB_PDT_CDROM                   = 0x05,       // CDROM
   USB_PDT_OPTICAL                 = 0x07,       // Non-CD optical disks
   USB_PDT_SIMPLE_DIRECT           = 0x0E,       // Simplified direct access device
+  
+  //
+  // Other parameters, Max carried size is 512B * 128 = 64KB
+  //
+  USB_BOOT_IO_BLOCKS              = 128,
+
+  //
+  // Retry mass command times, set by experience
+  //
+  USB_BOOT_COMMAND_RETRY          = 5,
+  USB_BOOT_INIT_MEDIA_RETRY       = 5,
+
+  //
+  // Wait for unit ready command, set by experience
+  //
+  USB_BOOT_RETRY_UNIT_READY_STALL = 500 * USB_MASS_1_MILLISECOND,
+
+  //
+  // Mass command timeout, refers to specification[USB20-9.2.6.1]
+  //
+  // USB2.0 Spec define the up-limit timeout 5s for all command. USB floppy, 
+  // USB CD-Rom and iPod devices are much slower than USB key when reponse 
+  // most of commands, So we set 5s as timeout here.
+  // 
+  //
+  USB_BOOT_GENERAL_CMD_TIMEOUT    = 5 * USB_MASS_1_SECOND,
 };
 
 //

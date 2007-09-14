@@ -41,9 +41,7 @@ Revision History
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextInputEx)
-#endif
 
 #include "usb.h"
 #include "UsbDxeLib.h"

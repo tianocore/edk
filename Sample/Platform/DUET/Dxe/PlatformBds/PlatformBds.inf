@@ -38,6 +38,7 @@ PLATFORM_BDS_FILE_PATH  = ..\..\..\..\Platform\Generic\Dxe\PlatformBds
   $(PLATFORM_BDS_FILE_PATH)\Strings.uni
   $(PLATFORM_BDS_FILE_PATH)\Capsules.c
   $(PLATFORM_BDS_FILE_PATH)\MemoryTest.c
+  $(PLATFORM_BDS_FILE_PATH)\Hotkey.c
 
   $(PLATFORM_BDS_FILE_PATH)\BootMaint\BmString.uni
   $(PLATFORM_BDS_FILE_PATH)\BootMaint\bm.vfr

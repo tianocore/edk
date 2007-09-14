@@ -109,10 +109,10 @@ REM #
 REM # Make Win NT Windows. Only one supported today. Mostly obsolete with
 REM #  UGA consoles.
 REM #
-REM # set EFI_WIN_NT_CONSOLE="Bus Driver Console Window"
+REM # set EFI_WIN_NT_CONSOLE=Bus Driver Console Window
 echo on
-set EFI_WIN_NT_GOP="Graphics Output Window 1!Graphics Output Window 2"
-set EFI_WIN_NT_UGA="UGA Window 1!UGA Window 2"
+set EFI_WIN_NT_GOP=Graphics Output Window 1!Graphics Output Window 2
+set EFI_WIN_NT_UGA=UGA Window 1!UGA Window 2
 @echo off
 
 REM #

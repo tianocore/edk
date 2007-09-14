@@ -40,9 +40,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 #include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextInputEx)
-#endif
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
 #include EFI_GUID_DEFINITION (HotPlugDevice)
 
@@ -168,8 +166,11 @@ typedef union {
 #define MODE0_COLUMN_COUNT        80
 #define MODE0_ROW_COUNT           25
 
-#define MODE1_COLUMN_COUNT        100
-#define MODE1_ROW_COUNT           31
+#define MODE1_COLUMN_COUNT        80
+#define MODE1_ROW_COUNT           50
+
+#define MODE2_COLUMN_COUNT        100
+#define MODE2_ROW_COUNT           31
 
 #define BACKSPACE                 8
 #define ESC                       27
@@ -229,6 +230,30 @@ TerminalConInReadKeyStroke (
 ;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+
+STATIC
+BOOLEAN
+IsKeyRegistered (
+  IN EFI_KEY_DATA  *RegsiteredData,
+  IN EFI_KEY_DATA  *InputData
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  RegsiteredData    - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was registered.
+  InputData         - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was pressed.
+
+Returns:
+  TRUE              - Key be pressed matches a registered key.
+  FLASE             - Match failed. 
+  
+--*/
+;
 
 VOID
 EFIAPI

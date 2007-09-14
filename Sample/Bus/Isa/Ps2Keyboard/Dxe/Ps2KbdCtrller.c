@@ -1703,6 +1703,7 @@ Returns:
     }
   }
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   //
   // If this is the SysRq, ignore it
   // The shift state is already saved so just return
@@ -1710,6 +1711,7 @@ Returns:
   if (Extended && ScanCode == 0x37) {
     return EFI_NOT_READY;
   }
+#endif
 
   //
   // Treat Numeric Key Pad "/" specially

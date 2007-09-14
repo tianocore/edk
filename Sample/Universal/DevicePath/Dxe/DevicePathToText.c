@@ -255,6 +255,7 @@ DevPathToTextVendor (
   VENDOR_DEVICE_PATH  *Vendor;
   CHAR16              *Type;
   UINTN               Index;
+  UINTN               DataLength;
   UINT32              FlowControlMap;
   UINT16              Info;
 
@@ -345,9 +346,13 @@ DevPathToTextVendor (
     break;
   }
 
-  CatPrint (Str, L"Ven%s(%g,", Type, &Vendor->Guid);
-  for (Index = 0; Index < DevicePathNodeLength (&Vendor->Header) - sizeof (VENDOR_DEVICE_PATH); Index++) {
-    CatPrint (Str, L"%02x", ((VENDOR_DEVICE_PATH_WITH_DATA *) Vendor)->VendorDefinedData[Index]);
+  DataLength = DevicePathNodeLength (&Vendor->Header) - sizeof (VENDOR_DEVICE_PATH);
+  CatPrint (Str, L"Ven%s(%g", Type, &Vendor->Guid);
+  if (DataLength != 0) {
+    CatPrint (Str, L",");
+    for (Index = 0; Index < DataLength; Index++) {
+      CatPrint (Str, L"%02x", ((VENDOR_DEVICE_PATH_WITH_DATA *) Vendor)->VendorDefinedData[Index]);
+    }
   }
 
   CatPrint (Str, L")");
@@ -1081,7 +1086,7 @@ DevPathToTextiSCSI (
   iSCSI = DevPath;
   CatPrint (
     Str,
-    L"iSCSI(%s,0x%x,0x%lx,",
+    L"iSCSI(%a,0x%x,0x%lx,",
     iSCSI->iSCSITargetName,
     iSCSI->TargetPortalGroupTag,
     iSCSI->Lun
@@ -1193,6 +1198,36 @@ DevPathToTextMediaProtocol (
   MediaProt = DevPath;
   CatPrint (Str, L"Media(%g)", &MediaProt->Protocol);
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+VOID
+DevPathToTextFv (
+  IN OUT POOL_PRINT  *Str,
+  IN VOID            *DevPath,
+  IN BOOLEAN         DisplayOnly,
+  IN BOOLEAN         AllowShortcuts
+  )
+{
+  MEDIA_FW_VOL_DEVICE_PATH  *Fv;
+
+  Fv = DevPath;
+  CatPrint (Str, L"Fv(%g)", &Fv->NameGuid);
+}
+
+VOID
+DevPathToTextFvFile (
+  IN OUT POOL_PRINT  *Str,
+  IN VOID            *DevPath,
+  IN BOOLEAN         DisplayOnly,
+  IN BOOLEAN         AllowShortcuts
+  )
+{
+  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH  *FvFile;
+
+  FvFile = DevPath;
+  CatPrint (Str, L"FvFile(%g)", &FvFile->NameGuid);
+}
+#endif
 
 VOID
 DevPathToTextBBS (
@@ -1366,6 +1401,14 @@ DEVICE_PATH_TO_TEXT_TABLE DevPathToTextTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_FILEPATH_DP,
   DevPathToTextFilePath,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  MEDIA_DEVICE_PATH,
+  MEDIA_FV_DP,
+  DevPathToTextFv,
+  MEDIA_DEVICE_PATH,
+  MEDIA_FV_FILEPATH_DP,
+  DevPathToTextFvFile,
+#endif
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   DevPathToTextBBS,

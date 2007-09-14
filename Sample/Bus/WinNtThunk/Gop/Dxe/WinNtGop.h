@@ -38,7 +38,24 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
+#include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
+#include EFI_PROTOCOL_DEFINITION (SimpleTextInputEx)
 #include "LinkedList.h"
+
+//
+// WM_SYSKEYDOWN/WM_SYSKEYUP Notification
+// lParam
+// bit 24: Specifies whether the key is an extended key, 
+// such as the right-hand ALT and CTRL keys that appear on 
+// an enhanced 101- or 102-key keyboard. 
+// The value is 1 if it is an extended key; otherwise, it is 0.
+// bit 29:Specifies the context code. 
+// The value is 1 if the ALT key is down while the key is pressed/released; 
+// it is 0 if the WM_SYSKEYDOWN message is posted to the active window 
+// because no window has the keyboard focus.
+#define GOP_EXTENDED_KEY         (0x1 << 24)
+#define GOP_ALT_KEY_PRESSED      (0x1 << 29)
+
 
 #define MAX_Q 256
 
@@ -52,6 +69,24 @@ typedef struct {
 #define WIN_NT_GOP_CLASS_NAME       L"WinNtGopWindow"
 
 #define GOP_PRIVATE_DATA_SIGNATURE  EFI_SIGNATURE_32 ('S', 'g', 'o', 'N')
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#define SIMPLE_TEXTIN_EX_NOTIFY_GUID \
+  { \
+    0x856f2def, 0x4e93, 0x4d6b, 0x94, 0xce, 0x1c, 0xfe, 0x47, 0x1, 0x3e, 0xa5 \
+  }
+
+#define WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY_SIGNATURE EFI_SIGNATURE_32 ('W', 'g', 'S', 'n')
+
+typedef struct _WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY {
+  UINTN                                 Signature;
+  EFI_HANDLE                            NotifyHandle;
+  EFI_KEY_DATA                          KeyData;
+  EFI_KEY_NOTIFY_FUNCTION               KeyNotificationFn;
+  EFI_LIST_ENTRY                        NotifyEntry;
+} WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY;
+
+#endif
 
 #define GRAPHICS_OUTPUT_INVALIDE_MODE_NUMBER 0xffff
 
@@ -109,6 +144,25 @@ typedef struct {
   CRITICAL_SECTION              QCriticalSection;
   GOP_QUEUE_FIXED               Queue;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL SimpleTextInEx;
+  EFI_KEY_STATE                     KeyState;
+  EFI_LIST_ENTRY                    NotifyList;
+  BOOLEAN                           LeftShift;
+  BOOLEAN                           RightShift;  
+  BOOLEAN                           LeftAlt;
+  BOOLEAN                           RightAlt;
+  BOOLEAN                           LeftCtrl;
+  BOOLEAN                           RightCtrl;
+  BOOLEAN                           LeftLogo;
+  BOOLEAN                           RightLogo;
+  BOOLEAN                           Menu;
+  BOOLEAN                           SysReq;  
+  BOOLEAN                           NumLock;
+  BOOLEAN                           ScrollLock;
+  BOOLEAN                           CapsLock;  
+#endif
+
 } GOP_PRIVATE_DATA;
 
 #define GOP_PRIVATE_DATA_FROM_THIS(a)  \
@@ -116,6 +170,14 @@ typedef struct {
 
 #define GOP_PRIVATE_DATA_FROM_TEXT_IN_THIS(a)  \
          CR(a, GOP_PRIVATE_DATA, SimpleTextIn, GOP_PRIVATE_DATA_SIGNATURE)
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#define GOP_PRIVATE_DATA_FROM_TEXT_IN_EX_THIS(a)  \
+         CR(a, GOP_PRIVATE_DATA, SimpleTextInEx, GOP_PRIVATE_DATA_SIGNATURE)
+
+extern EFI_GUID gSimpleTextInExNotifyGuid;
+
+#endif
 
 //
 // Global Protocol Variables

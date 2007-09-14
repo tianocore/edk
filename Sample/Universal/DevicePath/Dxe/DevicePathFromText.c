@@ -1868,6 +1868,7 @@ DevPathFromTextiSCSI (
   CHAR16                      *DataDigestStr;
   CHAR16                      *AuthenticationStr;
   CHAR16                      *ProtocolStr;
+  CHAR8                       *AsciiStr;
   ISCSI_DEVICE_PATH_WITH_NAME *iSCSI;
 
   NameStr           = GetNextParamStr (&TextDeviceNode);
@@ -1880,10 +1881,12 @@ DevPathFromTextiSCSI (
   iSCSI             = (ISCSI_DEVICE_PATH_WITH_NAME *) CreateDeviceNode (
                                                         MESSAGING_DEVICE_PATH,
                                                         MSG_ISCSI_DP,
-                                                        sizeof (ISCSI_DEVICE_PATH_WITH_NAME) + (UINT16) (EfiStrLen (NameStr) * 2)
+                                                        sizeof (ISCSI_DEVICE_PATH_WITH_NAME) + (UINT16) EfiStrLen (NameStr)
                                                         );
 
-  EfiStrCpy (iSCSI->iSCSITargetName, NameStr);
+  AsciiStr = iSCSI->iSCSITargetName;
+  StrToAscii (NameStr, &AsciiStr);
+
   iSCSI->TargetPortalGroupTag = (UINT16) Strtoi (PortalGroupStr);
   Strtoi64 (LunStr, &iSCSI->Lun);
 
@@ -2039,6 +2042,48 @@ DevPathFromTextMedia (
   return (EFI_DEVICE_PATH_PROTOCOL *) Media;
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_DEVICE_PATH_PROTOCOL *
+DevPathFromTextFv (
+  IN CHAR16 *TextDeviceNode
+  )
+{
+  CHAR16                    *GuidStr;
+  MEDIA_FW_VOL_DEVICE_PATH  *Fv;
+
+  GuidStr = GetNextParamStr (&TextDeviceNode);
+  Fv      = (MEDIA_FW_VOL_DEVICE_PATH *) CreateDeviceNode (
+                                           MEDIA_DEVICE_PATH,
+                                           MEDIA_FV_DP,
+                                           sizeof (MEDIA_FW_VOL_DEVICE_PATH)
+                                           );
+
+  StrToGuid (GuidStr, &Fv->NameGuid);
+
+  return (EFI_DEVICE_PATH_PROTOCOL *) Fv;
+}
+
+EFI_DEVICE_PATH_PROTOCOL *
+DevPathFromTextFvFile (
+  IN CHAR16 *TextDeviceNode
+  )
+{
+  CHAR16                             *GuidStr;
+  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH  *FvFile;
+
+  GuidStr = GetNextParamStr (&TextDeviceNode);
+  FvFile  = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) CreateDeviceNode (
+                                                    MEDIA_DEVICE_PATH,
+                                                    MEDIA_FV_FILEPATH_DP,
+                                                    sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH)
+                                                    );
+
+  StrToGuid (GuidStr, &FvFile->NameGuid);
+
+  return (EFI_DEVICE_PATH_PROTOCOL *) FvFile;
+}
+#endif
+
 EFI_DEVICE_PATH_PROTOCOL *
 DevPathFromTextBBS (
   IN CHAR16 *TextDeviceNode
@@ -2047,7 +2092,7 @@ DevPathFromTextBBS (
   CHAR16              *TypeStr;
   CHAR16              *IdStr;
   CHAR16              *FlagsStr;
-  UINT8               *AsciiStr;
+  CHAR8               *AsciiStr;
   BBS_BBS_DEVICE_PATH *Bbs;
 
   TypeStr   = GetNextParamStr (&TextDeviceNode);
@@ -2231,6 +2276,12 @@ DEVICE_PATH_FROM_TEXT_TABLE DevPathFromTextTable[] = {
   DevPathFromTextVenMEDIA,
   L"Media",
   DevPathFromTextMedia,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  L"Fv",
+  DevPathFromTextFv,
+  L"FvFile",
+  DevPathFromTextFvFile,
+#endif
   L"BBS",
   DevPathFromTextBBS,
   L"Sata",

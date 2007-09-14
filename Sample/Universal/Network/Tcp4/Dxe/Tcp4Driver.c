@@ -625,9 +625,32 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
     SockDestroyChild (Sock);
+    goto ON_EXIT;
+  }
+
+  //
+  // Open the device path on the handle where service binding resides on.
+  //
+  Status = gBS->OpenProtocol (
+                  TcpServiceData->ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &Sock->ParentDevicePath,
+                  TcpServiceData->DriverBindingHandle,
+                  Sock->SockHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->CloseProtocol (
+           TcpServiceData->IpIo->ChildHandle,
+           &gEfiIp4ProtocolGuid,
+           TcpServiceData->DriverBindingHandle,
+           Sock->SockHandle
+           );
+    SockDestroyChild (Sock);
   }
 
 ON_EXIT:
+
   NET_RESTORE_TPL (OldTpl);
   return Status;
 }
@@ -696,6 +719,16 @@ Returns:
   TcpServiceData = TcpProtoData->TcpService;
 
   Status = SockDestroyChild (Sock);
+
+  //
+  // Close the device path protocol
+  //
+  gBS->CloseProtocol (
+         TcpServiceData->ControllerHandle,
+         &gEfiDevicePathProtocolGuid,
+         TcpServiceData->DriverBindingHandle,
+         ChildHandle
+         );
 
   //
   // Close the Ip4 protocol.

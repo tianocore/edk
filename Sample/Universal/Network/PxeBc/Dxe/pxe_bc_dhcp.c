@@ -1471,7 +1471,7 @@ Release (
 
   EfiCopyMem (
     &DHCPRELEASEoptions.DhcServerIpPtr,
-    &(DHCPV4_OP_SERVER_IP *) DHCPV4_ACK_BUFFER.OpAdds.PktOptAdds[OP_DHCP_SERVER_IP_IX - 1],
+    (DHCPV4_OP_SERVER_IP *) DHCPV4_ACK_BUFFER.OpAdds.PktOptAdds[OP_DHCP_SERVER_IP_IX - 1],
     sizeof DHCPRELEASEoptions.DhcServerIpPtr
     );
 

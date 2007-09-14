@@ -538,7 +538,7 @@ TerminalDriverBindingStart (
   TerminalDevice->SimpleTextOutput.EnableCursor       = TerminalConOutEnableCursor;
   TerminalDevice->SimpleTextOutput.Mode               = &TerminalDevice->SimpleTextOutputMode;
 
-  TerminalDevice->SimpleTextOutputMode.MaxMode        = 2;
+  TerminalDevice->SimpleTextOutputMode.MaxMode        = 3;
   //
   // For terminal devices, cursor is always visible
   //

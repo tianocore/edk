@@ -357,6 +357,7 @@ Returns:
     }
     ScsiBusDev->Signature        = SCSI_BUS_DEVICE_SIGNATURE;
     ScsiBusDev->ExtScsiSupport   = ExtScsiSupport;
+    ScsiBusDev->DevicePath       = ParentDevicePath;
     if (ScsiBusDev->ExtScsiSupport) {
       ScsiBusDev->ExtScsiInterface = ExtScsiInterface;
     } else {
@@ -452,7 +453,7 @@ Returns:
   
 ErrorExit:
   
-  if (ScsiBusDev == NULL) {
+  if (ScsiBusDev != NULL) {
     gBS->FreePool (ScsiBusDev);
   }
   

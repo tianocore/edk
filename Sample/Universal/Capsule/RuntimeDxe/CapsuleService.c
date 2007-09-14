@@ -89,6 +89,14 @@ Returns:
   }
 
   //
+  // ScatterGatherList is only referenced if the capsules are defined to persist across
+  // system reset. 
+  //
+  if (ScatterGatherList == (EFI_PHYSICAL_ADDRESS)NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
   // To capsule who has reset flag, firmware will process it after system reset. Patform
   // should guarantee the memory integrity across a reset. It is platform's obligation
   // to use appropriate approach to do a reset, S3, WarmRest and etc. 

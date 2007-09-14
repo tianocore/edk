@@ -668,6 +668,158 @@ UpdateTimeOutPage (
 }
 
 VOID
+UpdateConModePage (
+  IN BMM_CALLBACK_DATA                *CallbackData
+  )
+/*++
+
+Routine Description:
+  Refresh the text mode page
+
+Arguments:
+  CallbackData      - BMM_CALLBACK_DATA 
+
+Returns:
+  None.
+  
+--*/
+{
+  UINT8                         *Location;
+  UINTN                         Mode;
+  UINTN                         Index;
+  UINTN                         Col;
+  UINTN                         Row;
+  CHAR16                        Lang[4];
+  CHAR16                        RowString[50];
+  CHAR16                        ModeString[50];
+  UINTN                         MaxMode;
+  UINTN                         ValidMode;
+  STRING_REF                    *ModeToken;
+  IFR_OPTION                    *IfrOptionList;
+  EFI_STATUS                    Status;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ConOut;
+
+  ConOut    = gST->ConOut;
+  Index     = 0;
+  ValidMode = 0;
+  MaxMode   = (UINTN) (ConOut->Mode->MaxMode);
+  //
+  // Get current language to display
+  //
+  GetCurrentLanguage (Lang);
+
+  EfiZeroMem (UpdateData, UPDATE_DATA_SIZE);
+  Location = (UINT8 *) &UpdateData->Data;
+  UpdatePageStart (CallbackData, &Location);
+  
+  //
+  // Check valid mode
+  //
+  for (Mode = 0; Mode < MaxMode; Mode++) {
+    Status = ConOut->QueryMode (ConOut, Mode, &Col, &Row);
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+    ValidMode++;
+  }
+
+  if (ValidMode == 0) {
+    return;
+  }
+
+  IfrOptionList       = EfiAllocateZeroPool (sizeof (IFR_OPTION) * ValidMode);
+  ASSERT(IfrOptionList != NULL);
+
+  ModeToken           = EfiAllocateZeroPool (sizeof (STRING_REF) * ValidMode);
+  ASSERT(ModeToken != NULL);
+  
+  //
+  // Build text mode options
+  //
+  for (Mode = 0; Mode < MaxMode; Mode++) {
+    Status = ConOut->QueryMode (ConOut, Mode, &Col, &Row);
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+    //
+    // Build mode string Column x Row
+    //
+    EfiValueToString (ModeString, Col, 0, 0);
+    EfiStrCat (ModeString, L" x ");
+    EfiValueToString (RowString, Row, 0, 0);
+    EfiStrCat (ModeString, RowString);
+    
+    CallbackData->Hii->NewString (
+                    CallbackData->Hii,
+                    Lang,
+                    CallbackData->BmmHiiHandle,
+                    &ModeToken[Index],
+                    ModeString
+                    );
+    IfrOptionList[Index].StringToken  = ModeToken[Index];
+    IfrOptionList[Index].Value        = (UINT16) Mode;
+    IfrOptionList[Index].Flags        = EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_RESET_REQUIRED;
+    Index++;
+  }
+  
+  //
+  // Determin which mode should be the first entry in menu
+  //
+  GetConsoleOutMode (CallbackData);  
+  
+  CreateOneOfOpCode (
+    (UINT16) CON_MODE_QUESTION_ID,
+    (UINT8) 1,
+    STRING_TOKEN (STR_CON_MODE_SETUP),
+    STRING_TOKEN (STR_CON_MODE_SETUP),
+    IfrOptionList,
+    ValidMode,
+    Location
+    );
+
+  Location              = Location + (ValidMode + 1) * ((EFI_IFR_OP_HEADER *) Location)->Length;
+  Location              = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
+  UpdateData->DataCount = (UINT8) (UpdateData->DataCount + ValidMode);
+  UpdateData->DataCount += 2;
+
+  SafeFreePool (IfrOptionList);
+
+  CreateGotoOpCode (
+    FORM_MAIN_ID,
+    STRING_TOKEN (STR_SAVE_AND_EXIT),
+    STRING_TOKEN (STR_NULL_STRING),
+    EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
+    KEY_VALUE_SAVE_AND_EXIT,
+    Location
+    );
+
+  Location = Location + ((EFI_IFR_OP_HEADER *) Location)->Length;
+  UpdateData->DataCount++;
+
+  CreateGotoOpCode (
+    FORM_MAIN_ID,
+    STRING_TOKEN (STR_NO_SAVE_AND_EXIT),
+    STRING_TOKEN (STR_NULL_STRING),
+    EFI_IFR_FLAG_INTERACTIVE | EFI_IFR_FLAG_NV_ACCESS,
+    KEY_VALUE_NO_SAVE_AND_EXIT,
+    Location
+    );
+
+  UpdateData->DataCount++;
+
+  CallbackData->Hii->UpdateForm (
+                      CallbackData->Hii,
+                      CallbackData->BmmHiiHandle,
+                      (EFI_FORM_LABEL) FORM_CON_MODE_ID,
+                      TRUE,
+                      UpdateData
+                      );
+
+  SafeFreePool (ModeToken);
+
+}  
+
+VOID
 UpdateTerminalPage (
   IN BMM_CALLBACK_DATA                *CallbackData
   )

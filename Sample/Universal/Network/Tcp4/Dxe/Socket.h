@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -315,9 +315,12 @@ typedef struct _SOCKET {
   //
   // socket description information
   //
-  UINT32                Signature;
-  EFI_HANDLE            SockHandle;     // the virtual handle of the socket
-  EFI_HANDLE            DriverBinding;  // socket't driver binding protocol
+  UINT32                    Signature;
+  EFI_HANDLE                SockHandle;     // the virtual handle of the socket
+  EFI_HANDLE                DriverBinding;  // socket't driver binding protocol
+  EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+
   SOCK_CONFIGURE_STATE  ConfigureState;
   SOCK_TYPE             Type;
   SOCK_STATE            State;

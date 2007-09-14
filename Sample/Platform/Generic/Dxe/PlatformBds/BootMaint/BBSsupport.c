@@ -584,8 +584,7 @@ BdsDeleteAllInvalidLegacyBootOptions (
     }
 
     if (!((LocalBbsTable[BbsIndex].BootPriority == BBS_IGNORE_ENTRY) ||
-          (LocalBbsTable[BbsIndex].BootPriority == BBS_DO_NOT_BOOT_FROM) ||
-          (LocalBbsTable[BbsIndex].BootPriority == BBS_LOWEST_PRIORITY)) &&
+          (LocalBbsTable[BbsIndex].BootPriority == BBS_DO_NOT_BOOT_FROM)) &&
         (LocalBbsTable[BbsIndex].DeviceType == BbsEntry->DeviceType) &&
         DescStringMatch) {
       Index++;
@@ -797,21 +796,10 @@ Returns:
             &BbsIndex,
             &OptionNumber
             );
-    if (Ret && (Attribute & LOAD_OPTION_ACTIVE) != 0) {
+    if (Ret) {
       continue;
     }
-
-    if (Ret) {
-      if (Index != BbsIndex) {
-        BdsDeleteBootOption (
-          OptionNumber,
-          BootOrder,
-          &BootOrderSize
-          );
-      } else {
-        continue;
-      }
-    }
+    
     //
     // Not found such type of legacy device in boot options or we found but it's disabled
     // so we have to create one and put it to the tail of boot order list
@@ -1091,8 +1079,7 @@ Index# is a 16 bit integer, the low byte of it stands for the index in BBS table
   //
   for (Index = 0; Index < BbsCount; Index++) {
     if ((LocalBbsTable[Index].BootPriority == BBS_IGNORE_ENTRY) ||
-        (LocalBbsTable[Index].BootPriority == BBS_DO_NOT_BOOT_FROM) ||
-        (LocalBbsTable[Index].BootPriority == BBS_LOWEST_PRIORITY)
+        (LocalBbsTable[Index].BootPriority == BBS_DO_NOT_BOOT_FROM)
         ) {
       continue;
     }
@@ -1155,7 +1142,6 @@ Index# is a 16 bit integer, the low byte of it stands for the index in BBS table
   for (Index = 0; Index < Length / sizeof (UINT16) - 1; Index++) {
     if (LocalBbsTable[*Ptr].BootPriority == BBS_IGNORE_ENTRY ||
         LocalBbsTable[*Ptr].BootPriority == BBS_DO_NOT_BOOT_FROM ||
-        LocalBbsTable[*Ptr].BootPriority == BBS_LOWEST_PRIORITY ||
         LocalBbsTable[*Ptr].DeviceType != BBS_FLOPPY
         ) {
       Ptr += sizeof (UINT16);
@@ -1269,8 +1255,7 @@ Index# is a 16 bit integer, the low byte of it stands for the index in BBS table
 
   for (Index = 0; Index < BbsCount; Index++) {
     if ((LocalBbsTable[Index].BootPriority == BBS_IGNORE_ENTRY) ||
-        (LocalBbsTable[Index].BootPriority == BBS_DO_NOT_BOOT_FROM) ||
-        (LocalBbsTable[Index].BootPriority == BBS_LOWEST_PRIORITY)
+        (LocalBbsTable[Index].BootPriority == BBS_DO_NOT_BOOT_FROM)
         ) {
       continue;
     }

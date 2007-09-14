@@ -106,6 +106,12 @@ EFI_STATUS
 KbdFreeNotifyList (
   IN OUT EFI_LIST_ENTRY       *ListHead
   );  
+STATIC
+BOOLEAN
+IsKeyRegistered (
+  IN EFI_KEY_DATA  *RegsiteredData,
+  IN EFI_KEY_DATA  *InputData
+  );
 
 EFI_GUID gSimpleTextInExNotifyGuid = { \
   0x856f2def, 0x4e93, 0x4d6b, 0x94, 0xce, 0x1c, 0xfe, 0x47, 0x1, 0x3e, 0xa5 \
@@ -676,7 +682,95 @@ USBKeyboardDriverBindingStop (
 
 }
 
+STATIC
+EFI_STATUS
+USBKeyboardReadKeyStrokeWorker (
+  IN  USB_KB_DEV                        *UsbKeyboardDevice,
+  OUT EFI_KEY_DATA                      *KeyData
+  )
+/*++
 
+  Routine Description:
+    Reads the next keystroke from the input device. The WaitForKey Event can 
+    be used to test for existance of a keystroke via WaitForEvent () call.
+
+  Arguments:
+    UsbKeyboardDevice     - Usb keyboard private structure.
+    KeyData               - A pointer to a buffer that is filled in with the keystroke 
+                            state data for the key that was pressed.
+
+  Returns:
+    EFI_SUCCESS           - The keystroke information was returned.
+    EFI_NOT_READY         - There was no keystroke data availiable.
+    EFI_DEVICE_ERROR      - The keystroke information was not returned due to 
+                            hardware errors.
+    EFI_INVALID_PARAMETER - KeyData is NULL.                        
+
+--*/
+{
+
+  EFI_STATUS                        Status;
+  UINT8                             KeyChar;  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+  EFI_LIST_ENTRY                    *Link;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;  
+#endif  
+
+  if (KeyData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // if there is no saved ASCII byte, fetch it
+  // by calling USBKeyboardCheckForKey().
+  //
+  if (UsbKeyboardDevice->CurKeyChar == 0) {
+    Status = USBKeyboardCheckForKey (UsbKeyboardDevice);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+  }
+
+  KeyData->Key.UnicodeChar = 0;
+  KeyData->Key.ScanCode    = SCAN_NULL;
+
+  KeyChar = UsbKeyboardDevice->CurKeyChar;
+
+  UsbKeyboardDevice->CurKeyChar = 0;
+
+  //
+  // Translate saved ASCII byte into EFI_INPUT_KEY
+  //
+  Status = USBKeyCodeToEFIScanCode (UsbKeyboardDevice, KeyChar, &KeyData->Key);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EfiCopyMem (&KeyData->KeyState, &UsbKeyboardDevice->KeyState, sizeof (KeyData->KeyState));
+  
+  UsbKeyboardDevice->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
+  UsbKeyboardDevice->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
+
+  //
+  // Invoke notification functions if exist
+  //
+  for (Link = UsbKeyboardDevice->NotifyList.ForwardLink; Link != &UsbKeyboardDevice->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      CurrentNotify->KeyNotificationFn (KeyData);
+    }
+  }
+#endif
+
+  return EFI_SUCCESS;
+  
+}
 EFI_STATUS
 EFIAPI
 USBKeyboardReset (
@@ -765,36 +859,20 @@ USBKeyboardReadKeyStroke (
     EFI_SUCCESS - Success
 --*/       
 {
-  USB_KB_DEV  *UsbKeyboardDevice;
-  EFI_STATUS  Status;
-  UINT8       KeyChar;
+  USB_KB_DEV   *UsbKeyboardDevice;
+  EFI_STATUS   Status;
+  EFI_KEY_DATA KeyData;
 
   UsbKeyboardDevice = USB_KB_DEV_FROM_THIS (This);
 
-  //
-  // if there is no saved ASCII byte, fetch it
-  // by calling USBKeyboardCheckForKey().
-  //
-  if (UsbKeyboardDevice->CurKeyChar == 0) {
-    Status = USBKeyboardCheckForKey (UsbKeyboardDevice);
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
+  Status = USBKeyboardReadKeyStrokeWorker (UsbKeyboardDevice, &KeyData);
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
 
-  Key->UnicodeChar              = 0;
-  Key->ScanCode                 = SCAN_NULL;
+  EfiCopyMem (Key, &KeyData.Key, sizeof (EFI_INPUT_KEY));
 
-  KeyChar                       = UsbKeyboardDevice->CurKeyChar;
-
-  UsbKeyboardDevice->CurKeyChar = 0;
-
-  //
-  // Translate saved ASCII byte into EFI_INPUT_KEY
-  //
-  Status = USBKeyCodeToEFIScanCode (UsbKeyboardDevice, KeyChar, Key);
-
-  return Status;
+  return EFI_SUCCESS;
 
 }
 
@@ -1059,9 +1137,6 @@ USBKeyboardReadKeyStrokeEx (
 --*/
 {
   USB_KB_DEV                        *UsbKeyboardDevice;
-  EFI_STATUS                        Status;
-  EFI_LIST_ENTRY                    *Link;
-  KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;
 
   if (KeyData == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1069,32 +1144,7 @@ USBKeyboardReadKeyStrokeEx (
 
   UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
 
-  Status = UsbKeyboardDevice->SimpleInput.ReadKeyStroke (&UsbKeyboardDevice->SimpleInput, &KeyData->Key);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  EfiCopyMem (&KeyData->KeyState, &UsbKeyboardDevice->KeyState, sizeof (KeyData->KeyState));
-  
-  UsbKeyboardDevice->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
-  UsbKeyboardDevice->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
-
-  //
-  // Invoke notification functions if exist
-  //
-  for (Link = UsbKeyboardDevice->NotifyList.ForwardLink; Link != &UsbKeyboardDevice->NotifyList; Link = Link->ForwardLink) {
-    CurrentNotify = CR (
-                      Link, 
-                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
-                      NotifyEntry, 
-                      USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
-                      );
-    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
-      CurrentNotify->KeyNotificationFn (KeyData);
-    }
-  }
-
-  return EFI_SUCCESS;
+  return USBKeyboardReadKeyStrokeWorker (UsbKeyboardDevice, KeyData);
   
 }
 
@@ -1193,6 +1243,8 @@ USBKeyboardRegisterKeyNotify (
   USB_KB_DEV                        *UsbKeyboardDevice;
   EFI_STATUS                        Status;
   KEYBOARD_CONSOLE_IN_EX_NOTIFY     *NewNotify;
+  EFI_LIST_ENTRY                    *Link;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;  
 
   if (KeyData == NULL || NotifyHandle == NULL || KeyNotificationFunction == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1200,6 +1252,24 @@ USBKeyboardRegisterKeyNotify (
 
   UsbKeyboardDevice = TEXT_INPUT_EX_USB_KB_DEV_FROM_THIS (This);
 
+  //
+  // Return EFI_SUCCESS if the (KeyData, NotificationFunction) is already registered.
+  //
+  for (Link = UsbKeyboardDevice->NotifyList.ForwardLink; Link != &UsbKeyboardDevice->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
+        *NotifyHandle = CurrentNotify->NotifyHandle;        
+        return EFI_SUCCESS;
+      }
+    }
+  }
+  
   //
   // Allocate resource to save the notification function
   //  
@@ -1289,7 +1359,7 @@ USBKeyboardUnregisterKeyNotify (
       RemoveEntryList (&CurrentNotify->NotifyEntry);      
       Status = gBS->UninstallMultipleProtocolInterfaces (
                       CurrentNotify->NotifyHandle,
-                      gSimpleTextInExNotifyGuid,
+                      &gSimpleTextInExNotifyGuid,
                       NULL,
                       NULL
                       );

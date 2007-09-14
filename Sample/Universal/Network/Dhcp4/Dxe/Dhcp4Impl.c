@@ -889,7 +889,7 @@ Returns:
   Parse = (DHCP_PARSE_CONTEXT *) Context;
   Parse->Index++;
   
-  if (Parse->Index < Parse->OptionCount) {
+  if (Parse->Index <= Parse->OptionCount) {
     //
     // Use _CR to get the memory position of EFI_DHCP4_PACKET_OPTION for
     // the EFI_DHCP4_PACKET_OPTION->Data because DhcpIterateOptions only

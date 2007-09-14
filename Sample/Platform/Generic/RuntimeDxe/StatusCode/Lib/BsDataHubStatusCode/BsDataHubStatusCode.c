@@ -31,6 +31,7 @@ Abstract:
 STATIC EFI_LIST_ENTRY   mRecordsFifo    = INITIALIZE_LIST_HEAD_VARIABLE (mRecordsFifo);
 STATIC EFI_LIST_ENTRY   mRecordsBuffer  = INITIALIZE_LIST_HEAD_VARIABLE (mRecordsBuffer);
 STATIC EFI_EVENT        mLogDataHubEvent;
+STATIC BOOLEAN          mEventHandlerActive = FALSE;
 
 //
 // Cache data hub protocol.
@@ -191,6 +192,13 @@ Returns:
     return EFI_SUCCESS;
   }
 
+  //
+  // Discard new DataHubRecord caused by DataHub->LogData()
+  //
+  if (mEventHandlerActive) {
+    return EFI_SUCCESS;
+  }
+
   Record = AcquireRecordBuffer ();
   if (Record == NULL) {
     //
@@ -280,6 +288,11 @@ Returns:
   UINT64                            DataRecordClass;
 
   //
+  // Set global flag so we don't recurse if DataHub->LogData eventually causes new DataHubRecord
+  //
+  mEventHandlerActive = TRUE;
+  
+  //
   // Log DataRecord in Data Hub.
   // Journal records fifo to find all record entry.
   //
@@ -323,6 +336,9 @@ Returns:
                         );
 
   }
+
+  mEventHandlerActive = FALSE;
+
 }
 
 EFI_BOOTSERVICE

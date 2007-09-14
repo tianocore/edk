@@ -146,7 +146,13 @@ extern EFI_COMPONENT_NAME_PROTOCOL   gWinNtSerialIoComponentName;
 //
 // 115400 baud with rounding errors
 //
-#define SERIAL_PORT_MAX_BAUD_RATE 115400  
+#define SERIAL_PORT_MAX_BAUD_RATE           115400  
+
+#define SERIAL_PORT_MIN_BAUD_RATE           50
+#define SERIAL_PORT_MAX_RECEIVE_FIFO_DEPTH  16
+
+#define SERIAL_PORT_MIN_TIMEOUT             1         // 1 uS
+#define SERIAL_PORT_MAX_TIMEOUT             100000000 // 100 seconds
 
 //
 // Function Prototypes

@@ -312,6 +312,19 @@ InitUSBKeyboard (
   UsbKeyboardDevice->NumLockOn  = 0;
   UsbKeyboardDevice->CapsOn     = 0;
   UsbKeyboardDevice->ScrollOn   = 0;
+  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  UsbKeyboardDevice->LeftCtrlOn   = 0;
+  UsbKeyboardDevice->LeftAltOn    = 0;
+  UsbKeyboardDevice->LeftShiftOn  = 0;  
+  UsbKeyboardDevice->LeftLogoOn   = 0;  
+  UsbKeyboardDevice->RightCtrlOn  = 0;
+  UsbKeyboardDevice->RightAltOn   = 0;
+  UsbKeyboardDevice->RightShiftOn = 0;  
+  UsbKeyboardDevice->RightLogoOn  = 0;  
+  UsbKeyboardDevice->MenuKeyOn    = 0;
+  UsbKeyboardDevice->SysReqOn     = 0;  
+#endif
 
   //
   // Sync the initial state of lights 

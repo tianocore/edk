@@ -473,13 +473,13 @@ Returns:
 #define SCRIPT_DISPATCH(TableName, EntryPoint) \
           BootScriptSaveDispatch(TableName, EntryPoint)
 
-#define SCRIPT_INOFRMATION(TableName, Length, Buffer) \
+#define SCRIPT_INFORMATION(TableName, Length, Buffer) \
           BootScriptSaveInformation(TableName, Length, Buffer)
 
-#define SCRIPT_INOFRMATION_UNICODE_STRING(TableName, String) \
+#define SCRIPT_INFORMATION_UNICODE_STRING(TableName, String) \
           BootScriptSaveInformationUnicodeString(TableName, String)
 
-#define SCRIPT_INOFRMATION_ASCII_STRING(TableName, String) \
+#define SCRIPT_INFORMATION_ASCII_STRING(TableName, String) \
           BootScriptSaveInformationAsciiString(TableName, String)
           
 #else
@@ -506,11 +506,11 @@ Returns:
 
 #define SCRIPT_DISPATCH(TableName, EntryPoint) 
 
-#define SCRIPT_INOFRMATION(TableName, Length, Buffer)
+#define SCRIPT_INFORMATION(TableName, Length, Buffer)
 
-#define SCRIPT_INOFRMATION_UNICODE_STRING(TableName, String)
+#define SCRIPT_INFORMATION_UNICODE_STRING(TableName, String)
 
-#define SCRIPT_INOFRMATION_ASCII_STRING(TableName, String)
+#define SCRIPT_INFORMATION_ASCII_STRING(TableName, String)
 
 #endif
 

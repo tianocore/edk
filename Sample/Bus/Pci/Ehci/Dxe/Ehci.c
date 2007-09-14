@@ -130,7 +130,7 @@ EhcReset (
     // Host Controller must be Halt when Reset it
     //
     if (!EhcIsHalt (Ehc)) {
-      Status = EhcHaltHC (Ehc, EHC_GENERIC_TIME);
+      Status = EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
 
       if (EFI_ERROR (Status)) {
         Status = EFI_DEVICE_ERROR;
@@ -146,7 +146,7 @@ EhcReset (
     EhcAckAllInterrupt (Ehc);
     EhcFreeSched (Ehc);
 
-    Status = EhcResetHC (Ehc, EHC_STALL_1_SECOND);
+    Status = EhcResetHC (Ehc, EHC_RESET_TIMEOUT);
 
     if (EFI_ERROR (Status)) {
       goto ON_EXIT;
@@ -262,7 +262,7 @@ EhcSetState (
 
   switch (State) {
   case EfiUsbHcStateHalt:
-    Status = EhcHaltHC (Ehc, EHC_GENERIC_TIME);
+    Status = EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
     break;
 
   case EfiUsbHcStateOperational:
@@ -271,7 +271,17 @@ EhcSetState (
       break;
     }
 
-    Status = EhcRunHC (Ehc, EHC_GENERIC_TIME);
+    //
+    // Software must not write a one to this field unless the host controller
+    // is in the Halted state. Doing so will yield undefined results. 
+    // refers to Spec[EHCI1.0-2.3.1]
+    // 
+    if (!EHC_REG_BIT_IS_SET (Ehc, EHC_USBSTS_OFFSET, USBSTS_HALT)) {
+      Status = EFI_DEVICE_ERROR;
+      break;
+    }
+
+    Status = EhcRunHC (Ehc, EHC_GENERIC_TIMEOUT);
     break;
 
   case EfiUsbHcStateSuspend:
@@ -456,7 +466,7 @@ EhcSetRootHubPortFeature (
     // Make sure Host Controller not halt before reset it
     //
     if (EhcIsHalt (Ehc)) {
-      Status = EhcRunHC (Ehc, EHC_GENERIC_TIME);
+      Status = EhcRunHC (Ehc, EHC_GENERIC_TIMEOUT);
 
       if (EFI_ERROR (Status)) {
         EHC_DEBUG (("EhcSetRootHubPortFeature :failed to start HC - %r\n", Status));
@@ -1597,7 +1607,7 @@ EhcDriverBindingStart (
   // Robustnesss improvement such as for UoL
   //
   EhcClearLegacySupport (Ehc);
-  EhcResetHC (Ehc, EHC_STALL_1_SECOND);
+  EhcResetHC (Ehc, EHC_RESET_TIMEOUT);
 
   Status = EhcInitHC (Ehc);
 
@@ -1609,12 +1619,12 @@ EhcDriverBindingStart (
   //
   // Start the asynchronous interrupt monitor
   //
-  Status = gBS->SetTimer (Ehc->PollTimer, TimerPeriodic, EHC_ASYNC_POLL_TIME);
+  Status = gBS->SetTimer (Ehc->PollTimer, TimerPeriodic, EHC_ASYNC_POLL_INTERVAL);
 
   if (EFI_ERROR (Status)) {
     EHC_ERROR (("EhcDriverBindingStart: failed to start async interrupt monitor\n"));
     
-    EhcHaltHC (Ehc, EHC_GENERIC_TIME);
+    EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
     goto UNINSTALL_USBHC;
   }
   
@@ -1623,7 +1633,7 @@ EhcDriverBindingStart (
   // because of something for display.
   //
   EfiLibAddUnicodeString (
-    "eng",
+    LANGUAGE_CODE_ENGLISH,
     gEhciComponentName.SupportedLanguages,
     &Ehc->ControllerNameTable,
     L"Enhanced Host Controller (USB 2.0)"
@@ -1713,8 +1723,8 @@ EhcDriverBindingStop (
   // Stop AsyncRequest Polling timer then stop the EHCI driver
   // and uninstall the EHCI protocl.
   //
-  gBS->SetTimer (Ehc->PollTimer, TimerCancel, EHC_ASYNC_POLL_TIME);
-  EhcHaltHC (Ehc, EHC_GENERIC_TIME);
+  gBS->SetTimer (Ehc->PollTimer, TimerCancel, EHC_ASYNC_POLL_INTERVAL);
+  EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
 
   Status = gBS->UninstallProtocolInterface (
                   Controller,

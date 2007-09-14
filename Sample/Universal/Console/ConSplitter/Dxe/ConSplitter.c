@@ -661,6 +661,12 @@ ConSplitterTextOutConstructor (
   //
   ConOutPrivate->TextOut.Mode = &ConOutPrivate->TextOutMode;
 
+  //
+  // When new console device is added, the new mode will be set later,
+  // so put current mode back to init state.
+  //  
+  ConOutPrivate->TextOutMode.Mode = 0xFF;
+
   Status = ConSplitterGrowBuffer (
             sizeof (TEXT_OUT_AND_GOP_DATA),
             &ConOutPrivate->TextOutListCount,
@@ -1250,6 +1256,13 @@ Returns:
   if (EFI_ERROR (Status)) {
     UgaDraw = NULL;
   }
+
+  //
+  // When new console device is added, the new mode will be set later,
+  // so put current mode back to init state.
+  //
+  mConOut.TextOutMode.Mode = 0xFF;
+  
   //
   // If both ConOut and StdErr incorporate the same Text Out device,
   // their MaxMode and QueryData should be the intersection of both.
@@ -1313,6 +1326,13 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  
+  //
+  // When new console device is added, the new mode will be set later,
+  // so put current mode back to init state.
+  //
+  mStdErr.TextOutMode.Mode = 0xFF;
+  
   //
   // If both ConOut and StdErr incorporate the same Text Out device,
   // their MaxMode and QueryData should be the intersection of both.
@@ -2160,12 +2180,20 @@ Returns:
   Mode  = 0;
   Index = 0;
   while (Mode < MaxMode) {
-    TextOut->QueryMode (
-              TextOut,
-              Mode,
-              &Private->TextOutQueryData[Mode].Columns,
-              &Private->TextOutQueryData[Mode].Rows
-              );
+    Status = TextOut->QueryMode (
+                  TextOut,
+                  Mode,
+                  &Private->TextOutQueryData[Mode].Columns,
+                  &Private->TextOutQueryData[Mode].Rows
+                  );
+    //
+    // If mode 1 (80x50) is not supported, make sure mode 1 in TextOutQueryData
+    // is clear to 0x0.
+    //              
+    if ((EFI_ERROR(Status)) && (Mode == 1)) {
+      Private->TextOutQueryData[Mode].Columns = 0;
+      Private->TextOutQueryData[Mode].Rows = 0;
+    }
     Private->TextOutModeMap[Index] = Mode;
     Mode++;
     Index += Private->TextOutListCount;
@@ -2183,16 +2211,45 @@ ConSplitterGetIntersection (
   OUT INT32                           *MaxMode,
   OUT INT32                           *CurrentMode
   )
+/*++
+
+Routine Description:
+  
+  This routine reconstruct TextOutModeMap to get the intersection 
+  of modes for all console out devices. Because EFI/UEFI spec require
+  mode 0 is 80x25, mode 1 is 80x50, this routine will not check the 
+  intersection for mode 0 and mode 1.
+
+Arguments:
+  TextOutModeMap - Current text out mode map, begin with the mode 80x25
+  NewlyAddedMap  - New text out mode map, begin with the mode 80x25
+  MapStepSize    - Mode step size for one console device
+  NewMapStepSize - Mode step size for one console device
+  MaxMode        - Current max text mode
+  CurrentMode    - Current text mode
+  
+Returns:
+
+  None
+
+--*/  
 {
   INT32 Index;
   INT32 *CurrentMapEntry;
   INT32 *NextMapEntry;
   INT32 CurrentMaxMode;
   INT32 Mode;
-
-  Index           = 0;
-  CurrentMapEntry = TextOutModeMap;
-  NextMapEntry    = TextOutModeMap;
+  
+  //
+  // According to EFI/UEFI spec, mode 0 and mode 1 have been reserved
+  // for 80x25 and 80x50 in Simple Text Out protocol, so don't make intersection
+  // for mode 0 and mode 1, mode number starts from 2.
+  //
+  Index           = 2;
+  CurrentMapEntry = &TextOutModeMap[MapStepSize * 2];
+  NextMapEntry    = &TextOutModeMap[MapStepSize * 2];
+  NewlyAddedMap   = &NewlyAddedMap[NewMapStepSize * 2];
+  
   CurrentMaxMode  = *MaxMode;
   Mode            = *CurrentMode;
 
@@ -2255,6 +2312,7 @@ Returns:
   UINTN                         Rows;
   UINTN                         Columns;
   UINTN                         StepSize;
+  EFI_STATUS                    Status;
 
   //
   // Must make sure that current mode won't change even if mode number changes
@@ -2271,8 +2329,16 @@ Returns:
   Mode      = 0;
   MapTable  = TextOutModeMap + Private->CurrentNumberOfConsoles;
   while (Mode < TextOut->Mode->MaxMode) {
-    TextOut->QueryMode (TextOut, Mode, &Columns, &Rows);
-
+    Status = TextOut->QueryMode (TextOut, Mode, &Columns, &Rows);
+    if (EFI_ERROR(Status)) {
+      if (Mode == 1) {
+        MapTable[StepSize] = Mode;
+        TextOutQueryData[Mode].Columns = 0;
+        TextOutQueryData[Mode].Rows = 0;
+      }
+      Mode++;
+      continue;
+    }
     //
     // Search the intersection map and QueryData database to see if they intersects
     //
@@ -2733,6 +2799,111 @@ Done:
 }
 #endif
 
+VOID
+ConsplitterSetConsoleOutMode (
+  IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private
+  )
+/*++
+
+Routine Description:
+
+  This routine will get the current console mode information (column, row)
+  from ConsoleOutMode variable and set it; if the variable does not exist,
+  set to user defined console mode.
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/  
+{
+  UINTN                         Col;
+  UINTN                         Row;
+  UINTN                         Mode;
+  UINTN                         PreferMode;
+  UINTN                         BaseMode;
+  UINTN                         ModeInfoSize;
+  UINTN                         MaxMode;
+  EFI_STATUS                    Status;
+  CONSOLE_OUT_MODE              *ModeInfo;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
+  
+  PreferMode   = 0xFF;
+  BaseMode     = 0xFF;
+  TextOut      = &Private->TextOut;
+  MaxMode      = (UINTN) (TextOut->Mode->MaxMode);
+  ModeInfoSize = sizeof (CONSOLE_OUT_MODE);
+
+  ModeInfo = EfiLibAllocateZeroPool (sizeof(CONSOLE_OUT_MODE));
+  ASSERT(ModeInfo != NULL);
+
+  Status = gRT->GetVariable (
+                   VarConOutMode,
+                   &gEfiGenericVariableGuid,
+                   NULL,
+                   &ModeInfoSize,
+                   ModeInfo
+                   );
+
+  //
+  // Set to the default mode 80 x 25 required by EFI/UEFI spec; 
+  // user can also define other valid default console mode here.
+  //            
+  if (EFI_ERROR(Status)) {
+    ModeInfo->Column = 80;
+    ModeInfo->Row    = 25;
+    Status = gRT->SetVariable (
+                    VarConOutMode,
+                    &gEfiGenericVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    sizeof (CONSOLE_OUT_MODE),
+                    ModeInfo
+                    );    
+  }
+  
+  for (Mode = 0; Mode < MaxMode; Mode++) {
+    Status = TextOut->QueryMode (TextOut, Mode, &Col, &Row);
+    if (!EFI_ERROR(Status)) {
+      if (Col == ModeInfo->Column && Row == ModeInfo->Row) {
+        PreferMode = Mode;
+      }
+      if (Col == 80 && Row == 25) {
+        BaseMode = Mode;
+      }
+    }
+  }
+  
+  Status = TextOut->SetMode (TextOut, PreferMode);
+  
+  //
+  // if current mode setting is failed, default 80x25 mode will be set.
+  //
+  if (EFI_ERROR(Status)) {
+    Status = TextOut->SetMode (TextOut, BaseMode);
+    ASSERT(!EFI_ERROR(Status));
+    
+    ModeInfo->Column = 80;
+    ModeInfo->Row    = 25;
+    
+    //
+    // Update ConOutMode variable
+    //
+    Status = gRT->SetVariable (
+                    VarConOutMode,
+                    &gEfiGenericVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                    sizeof (CONSOLE_OUT_MODE),
+                    ModeInfo
+                    );     
+  }
+
+  EfiLibSafeFreePool (ModeInfo);
+}
+
 EFI_STATUS
 ConSplitterTextOutAddDevice (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private,
@@ -2881,13 +3052,19 @@ Returns:
     //
     // The new console supports the same mode of the current console so sync up
     //
-    DevNullSyncGopStdOut (Private);
+    DevNullSyncStdOut (Private);
   } else {
     //
     // If ConOut, then set the mode to Mode #0 which us 80 x 25
     //
     Private->TextOut.SetMode (&Private->TextOut, 0);
   }
+  
+  //
+  // After adding new console device, all existing console devices should be 
+  // synced to the current shared mode.
+  //
+  ConsplitterSetConsoleOutMode (Private);
 
   return Status;
 }
@@ -3340,6 +3517,52 @@ Returns:
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 
+STATIC
+BOOLEAN
+IsKeyRegistered (
+  IN EFI_KEY_DATA  *RegsiteredData,
+  IN EFI_KEY_DATA  *InputData
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  RegsiteredData    - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was registered.
+  InputData         - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was pressed.
+
+Returns:
+  TRUE              - Key be pressed matches a registered key.
+  FLASE             - Match failed. 
+  
+--*/
+{
+  ASSERT (RegsiteredData != NULL && InputData != NULL);
+  
+  if ((RegsiteredData->Key.ScanCode    != InputData->Key.ScanCode) ||
+      (RegsiteredData->Key.UnicodeChar != InputData->Key.UnicodeChar)) {
+    return FALSE;  
+  }      
+  
+  //
+  // Assume KeyShiftState/KeyToggleState = 0 in Registered key data means these state could be ignored.
+  //
+  if (RegsiteredData->KeyState.KeyShiftState != 0 &&
+      RegsiteredData->KeyState.KeyShiftState != InputData->KeyState.KeyShiftState) {
+    return FALSE;    
+  }   
+  if (RegsiteredData->KeyState.KeyToggleState != 0 &&
+      RegsiteredData->KeyState.KeyToggleState != InputData->KeyState.KeyToggleState) {
+    return FALSE;    
+  }     
+  
+  return TRUE;
+
+}
+
 //
 // Simple Text Input Ex protocol functions
 //
@@ -3545,6 +3768,8 @@ ConSplitterTextInRegisterKeyNotify (
   EFI_STATUS                    Status;
   UINTN                         Index;
   TEXT_IN_EX_SPLITTER_NOTIFY    *NewNotify;
+  EFI_LIST_ENTRY                *Link;
+  TEXT_IN_EX_SPLITTER_NOTIFY    *CurrentNotify;  
   
 
   if (KeyData == NULL || NotifyHandle == NULL || KeyNotificationFunction == NULL) {
@@ -3559,6 +3784,24 @@ ConSplitterTextInRegisterKeyNotify (
   //
   if (Private->CurrentNumberOfExConsoles <= 0) {
     return EFI_SUCCESS;
+  }
+
+  //
+  // Return EFI_SUCCESS if the (KeyData, NotificationFunction) is already registered.
+  //
+  for (Link = Private->NotifyList.ForwardLink; Link != &Private->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      TEXT_IN_EX_SPLITTER_NOTIFY, 
+                      NotifyEntry, 
+                      TEXT_IN_EX_SPLITTER_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
+        *NotifyHandle = CurrentNotify->NotifyHandle;        
+        return EFI_SUCCESS;
+      }
+    }
   }
   
   //
@@ -3683,7 +3926,7 @@ ConSplitterTextInUnregisterKeyNotify (
       RemoveEntryList (&CurrentNotify->NotifyEntry);      
       Status = gBS->UninstallMultipleProtocolInterfaces (
                       CurrentNotify->NotifyHandle,
-                      gSimpleTextInExNotifyGuid,
+                      &gSimpleTextInExNotifyGuid,
                       NULL,
                       NULL
                       );

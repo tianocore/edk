@@ -357,7 +357,7 @@ Returns:
   if (JoinFlag) {
     NetCopyMem (&McastIp, MulticastAddress, sizeof (IP4_ADDR));
 
-    if (IP4_IS_MULTICAST (NTOHL (McastIp))) {
+    if (!IP4_IS_MULTICAST (NTOHL (McastIp))) {
       return EFI_INVALID_PARAMETER;
     }
   }

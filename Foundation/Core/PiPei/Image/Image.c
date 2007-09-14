@@ -225,6 +225,50 @@ Returns:
   return EFI_SUCCESS;
 }
 
+EFI_STATUS
+GetImageReadFunction (
+  IN      EFI_PEI_SERVICES                      **PeiServices,
+  IN      EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
+  )
+/*++
+
+Routine Description:
+
+  Support routine to return the Image Read
+
+Arguments:
+
+  PeiServices   - PEI Services Table
+
+  ImageContext  - The context of the image being loaded
+
+Returns:
+
+  EFI_SUCCESS - If Image function location is found
+
+--*/
+{
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  MemoryBuffer;
+
+  Status = (*PeiServices)->AllocatePages (
+                            PeiServices,
+                            EfiBootServicesData,
+                            0x400 / EFI_PAGE_SIZE + 1,
+                            &MemoryBuffer
+                            );
+  ASSERT_PEI_ERROR (PeiServices, Status);
+
+  (*PeiServices)->CopyMem (
+                    (VOID *) (UINTN) MemoryBuffer,
+                    (VOID *) (UINTN) PeiImageRead,
+                    0x400
+                    );
+
+  ImageContext->ImageRead = (EFI_PEI_PE_COFF_LOADER_READ_FILE) (UINTN) MemoryBuffer;
+
+  return Status;
+}
 
 EFI_STATUS
 PeiLoadImageLoadImage (
@@ -274,7 +318,6 @@ Returns:
 #else
   VOID                        *EntryPointPtr;
 #endif
-
 
   Private = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
 
@@ -334,7 +377,12 @@ Returns:
     //
     ZeroMem (&ImageContext, sizeof (ImageContext));
     ImageContext.Handle = Pe32Data;
-    ImageContext.ImageRead = PeiImageRead;
+    if (Private->ImageReadFile == NULL) {
+      GetImageReadFunction (PeiServices, &ImageContext);
+      Private->ImageReadFile = ImageContext.ImageRead;
+    } else {
+      ImageContext.ImageRead = Private->ImageReadFile;
+    }
     PeCoffLoader = Private->PeCoffLoader;
     Status = PeCoffLoader->GetImageInfo (PeCoffLoader, &ImageContext);
     if (EFI_ERROR (Status)) {

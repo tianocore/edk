@@ -404,7 +404,9 @@ Arguments:
 
 Returns:
 
-  EFI STATUS
+  EFI_INVALID_PARAMETER       - Invalid parameter
+  EFI_SUCCESS                 - Find the specified variable
+  EFI_NOT_FOUND               - Not found
 
 --*/
 {
@@ -413,6 +415,8 @@ Returns:
   UINTN                   Index;
   VARIABLE_HEADER         *InDeleteVariable;
   UINTN                   InDeleteIndex;
+  VARIABLE_HEADER         *InDeleteStartPtr;
+  VARIABLE_HEADER         *InDeleteEndPtr;
 
   if (VariableName[0] != 0 && VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -420,6 +424,8 @@ Returns:
 
   InDeleteVariable = NULL;
   InDeleteIndex    = (UINTN)-1;
+  InDeleteStartPtr = NULL;
+  InDeleteEndPtr   = NULL;
 
   for (Index = 0; Index < MaxType; Index ++) {
     //
@@ -436,8 +442,8 @@ Returns:
     //
     // Find the variable by walk through non-volatile and volatile variable store
     //
-    PtrTrack->StartPtr  = Variable;
-    PtrTrack->EndPtr    = GetEndPointer (VariableStoreHeader);
+    PtrTrack->StartPtr = Variable;
+    PtrTrack->EndPtr   = GetEndPointer (VariableStoreHeader);
 
     while (IsValidVariableHeader (Variable) && (Variable < PtrTrack->EndPtr)) {
       if (Variable->State == VAR_ADDED) {
@@ -464,11 +470,15 @@ Returns:
           if (VariableName[0] == 0) {
             InDeleteVariable = Variable;
             InDeleteIndex    = Index;
+            InDeleteStartPtr = PtrTrack->StartPtr;
+            InDeleteEndPtr   = PtrTrack->EndPtr;
           } else {
             if (EfiCompareGuid (VendorGuid, &Variable->VendorGuid)) {
               if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable), EfiStrSize (VariableName))) {
                 InDeleteVariable = Variable;
                 InDeleteIndex    = Index;
+                InDeleteStartPtr = PtrTrack->StartPtr;
+                InDeleteEndPtr   = PtrTrack->EndPtr;
               }
             }
           }
@@ -490,8 +500,10 @@ Returns:
   // we return it.
   //
   if (InDeleteVariable != NULL) {
-    PtrTrack->CurrPtr = InDeleteVariable;
-    PtrTrack->Type    = (VARIABLE_STORAGE_TYPE) InDeleteIndex;
+    PtrTrack->CurrPtr  = InDeleteVariable;
+    PtrTrack->Type     = (VARIABLE_STORAGE_TYPE) InDeleteIndex;
+    PtrTrack->StartPtr = InDeleteStartPtr;
+    PtrTrack->EndPtr   = InDeleteEndPtr;
     return EFI_SUCCESS;
   }
 
@@ -1048,13 +1060,8 @@ Returns:
     // Make sure RT Attribute is set if we are in Runtime phase.
     //
     return EFI_INVALID_PARAMETER;
-  }  else if (EfiAtRuntime () && Attributes && !(Attributes & EFI_VARIABLE_NON_VOLATILE)) {
-    //
-    // Cannot Query volatile variable in Runtime
-    //
-    return EFI_INVALID_PARAMETER;
-  }
-
+  } 
+  
   VariableStoreHeader = (VARIABLE_STORE_HEADER *) mGlobal->VariableBase[
                                 (Attributes & EFI_VARIABLE_NON_VOLATILE) ? NonVolatile : Volatile
                                 ];

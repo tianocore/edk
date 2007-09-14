@@ -23,6 +23,9 @@ Abstract:
 #include "BdsLib.h"
 #include "BdsPlatform.h"
 #include "FrontPage.h"
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "Hotkey.h"
+#endif
 
 EFI_BDS_ARCH_PROTOCOL_INSTANCE  gBdsInstanceTemplate = {
   EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE,
@@ -310,6 +313,13 @@ Returns:
   //
   InitializeListHead (&DriverOptionList);
   InitializeListHead (&BootOptionList);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Initialize hotkey service
+  //
+  InitializeHotkeyService ();
+#endif
 
   //
   // Get the BDS private data

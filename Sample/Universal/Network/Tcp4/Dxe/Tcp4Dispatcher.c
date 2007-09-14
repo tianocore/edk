@@ -254,8 +254,8 @@ Returns:
 
 --*/
 {
-  SOCKET           *Sock;
-  TCP4_PROTO_DATA  *TcpProto;
+  SOCKET                    *Sock;
+  TCP4_PROTO_DATA           *TcpProto;
 
   IpIoConfigIp (Tcb->IpInfo, NULL);
 
@@ -264,6 +264,16 @@ Returns:
 
   if (SOCK_IS_CONFIGURED (Sock)) {
     NetListRemoveEntry (&Tcb->List);
+
+    //
+    // Uninstall the device path protocl.
+    //
+    gBS->UninstallProtocolInterface (
+           Sock->SockHandle,
+           &gEfiDevicePathProtocolGuid,
+           Sock->DevicePath
+           );
+    NetFreePool (Sock->DevicePath);
 
     TcpSetVariableData (TcpProto->TcpService);
   }
@@ -365,12 +375,12 @@ Returns:
 
 --*/
 {
-  IP_IO               *IpIo;
-  EFI_IP4_CONFIG_DATA IpCfgData;
-  EFI_STATUS          Status;
-  EFI_TCP4_OPTION     *Option;
-  TCP4_PROTO_DATA     *TcpProto;
-  TCP_CB              *Tcb;
+  IP_IO                *IpIo;
+  EFI_IP4_CONFIG_DATA  IpCfgData;
+  EFI_STATUS           Status;
+  EFI_TCP4_OPTION      *Option;
+  TCP4_PROTO_DATA      *TcpProto;
+  TCP_CB               *Tcb;
 
   ASSERT (CfgData && Sk && Sk->SockHandle);
 
@@ -453,12 +463,19 @@ Returns:
   Tcb->TTL            = CfgData->TimeToLive;
   Tcb->TOS            = CfgData->TypeOfService;
 
+  Tcb->UseDefaultAddr = CfgData->AccessPoint.UseDefaultAddress;
+
   NetCopyMem (&Tcb->LocalEnd.Ip, &CfgData->AccessPoint.StationAddress, sizeof (IP4_ADDR));
   Tcb->LocalEnd.Port  = HTONS (CfgData->AccessPoint.StationPort);
   Tcb->SubnetMask     = CfgData->AccessPoint.SubnetMask;
 
-  NetCopyMem (&Tcb->RemoteEnd.Ip, &CfgData->AccessPoint.RemoteAddress, sizeof (IP4_ADDR));
-  Tcb->RemoteEnd.Port = HTONS (CfgData->AccessPoint.RemotePort);
+  if (CfgData->AccessPoint.ActiveFlag) {
+    NetCopyMem (&Tcb->RemoteEnd.Ip, &CfgData->AccessPoint.RemoteAddress, sizeof (IP4_ADDR));
+    Tcb->RemoteEnd.Port = HTONS (CfgData->AccessPoint.RemotePort);
+  } else {
+    Tcb->RemoteEnd.Ip   = 0;
+    Tcb->RemoteEnd.Port = 0;
+  }
 
   Option              = CfgData->ControlOption;
 
@@ -551,6 +568,15 @@ Returns:
     if (Option->EnableWindowScaling == FALSE) {
       TCP_SET_FLG (Tcb->CtrlFlag, TCP_CTRL_NO_WS);
     }
+  }
+
+  //
+  // The socket is bound, the <SrcIp, SrcPort, DstIp, DstPort> is
+  // determined, construct the IP device path and install it.
+  //
+  Status = TcpInstallDevicePath (Sk);
+  if (EFI_ERROR (Status)) {
+    goto OnExit;
   }
 
   //

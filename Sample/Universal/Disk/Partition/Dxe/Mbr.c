@@ -267,7 +267,7 @@ Returns:
         goto Done;
       }
 
-      if (Mbr->Partition[0].OSIndicator == 0) {
+      if (UNPACK_UINT32 (Mbr->Partition[0].SizeInLBA) == 0) {
         break;
       }
 
@@ -291,17 +291,17 @@ Returns:
       *((UINT32 *) &HdDev.Signature[0]) = 0;
 
       Status = PartitionInstallChildHandle (
-                This,
-                Handle,
-                DiskIo,
-                BlockIo,
-                DevicePath,
-                (EFI_DEVICE_PATH_PROTOCOL *) &HdDev,
-                HdDev.PartitionStart - ParentHdDev.PartitionStart,
-                HdDev.PartitionStart - ParentHdDev.PartitionStart + HdDev.PartitionSize - 1,
-                MBR_SIZE,
-                (BOOLEAN) (Mbr->Partition[0].OSIndicator == EFI_PARTITION)
-                );
+                 This,
+                 Handle,
+                 DiskIo,
+                 BlockIo,
+                 DevicePath,
+                 (EFI_DEVICE_PATH_PROTOCOL *) &HdDev,
+                 HdDev.PartitionStart - ParentHdDev.PartitionStart,
+                 HdDev.PartitionStart - ParentHdDev.PartitionStart + HdDev.PartitionSize - 1,
+                 MBR_SIZE,
+                 (BOOLEAN) (Mbr->Partition[0].OSIndicator == EFI_PARTITION)
+                 );
       if (!EFI_ERROR (Status)) {
         Found = EFI_SUCCESS;
       }

@@ -53,8 +53,6 @@ FILE_GUID            = 240612B7-A063-11d4-9A3A-0090273FC14D
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   
-  $(EDK_SOURCE)\Sample\Bus\Usb\UsbLib\Dxe
-
 [nmake.common]
   IMAGE_ENTRY_POINT=UsbBusDriverEntryPoint
 

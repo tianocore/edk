@@ -1507,7 +1507,7 @@ Returns:
 EFI_STATUS
 EfiFvbSetVolumeAttributes (
   IN UINTN                                Instance,
-  IN EFI_FVB_ATTRIBUTES                   Attributes
+  IN EFI_FVB_ATTRIBUTES                   *Attributes
   )
 /*++
 

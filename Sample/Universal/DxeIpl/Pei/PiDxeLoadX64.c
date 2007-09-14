@@ -762,6 +762,10 @@ Returns:
   //
   // Add HOB for the DXE Core
   //
+
+  // Adjust DxeCoreSize to 4K granularity to meet the page size requirements of UEFI
+  DxeCoreSize = (DxeCoreSize + EFI_PAGE_MASK) & ~((UINT64)EFI_PAGE_MASK);
+
   Status = PeiBuildHobModule (
              PeiServices,
              &DxeCoreFileName,
@@ -1055,6 +1059,7 @@ Returns:
   UINTN                           ScratchBufferSize;
   EFI_PHYSICAL_ADDRESS            OldTopOfMemory;
   EFI_TIANO_DECOMPRESS_PROTOCOL   *DecompressProtocol;
+  VOID                            *SectionInMemory;
 
   DstBufferSize     = 0;
   ScratchBufferSize = 0;
@@ -1088,9 +1093,23 @@ Returns:
  
   DstBuffer         = (UINT8 *) (UINTN) (OldTopOfMemory);
   ScratchBuffer     = (UINT8 *) (UINTN) (OldTopOfMemory);
+
+  //
+  // Copy compressed section to memory before decompess
+  //
+  Status = (*PeiServices)->AllocatePages (
+                             PeiServices,
+                             EfiBootServicesData,
+                             EFI_SIZE_TO_PAGES(SECTION_SIZE (InputSection)),
+                             &OldTopOfMemory);
+  if (EFI_ERROR (Status)) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  SectionInMemory = (VOID*) (UINTN) OldTopOfMemory;
+  (*PeiServices)->CopyMem (SectionInMemory, (VOID *) InputSection, SECTION_SIZE (InputSection));
   Status = DecompressProtocol->GetInfo (
                                 DecompressProtocol,
-                                (UINT8 *) ((EFI_COMPRESSION_SECTION *) InputSection + 1),
+                                (UINT8 *) ((EFI_COMPRESSION_SECTION *) SectionInMemory + 1),
                                 (UINT32) CompressedSize,
                                 (UINT32 *) &DstBufferSize,
                                 (UINT32 *) &ScratchBufferSize
@@ -1134,7 +1153,7 @@ Returns:
     //
     Status = DecompressProtocol->Decompress (
                                   DecompressProtocol,
-                                  (CHAR8 *) ((EFI_COMPRESSION_SECTION *) InputSection + 1),
+                                  (CHAR8 *) ((EFI_COMPRESSION_SECTION *) SectionInMemory + 1),
                                   (UINT32) CompressedSize,
                                   DstBuffer,
                                   (UINT32) DstBufferSize,

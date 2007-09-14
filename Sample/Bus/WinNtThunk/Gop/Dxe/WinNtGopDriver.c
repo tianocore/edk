@@ -23,6 +23,49 @@ Abstract:
 
 #include "WinNtGop.h"
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC
+EFI_STATUS
+FreeNotifyList (
+  IN OUT EFI_LIST_ENTRY       *ListHead
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  ListHead   - The list head
+
+Returns:
+
+  EFI_SUCCESS           - Free the notify list successfully
+  EFI_INVALID_PARAMETER - ListHead is invalid.
+
+--*/
+{
+  WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY *NotifyNode;
+
+  if (ListHead == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  while (!IsListEmpty (ListHead)) {
+    NotifyNode = CR (
+                   ListHead->ForwardLink, 
+                   WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY, 
+                   NotifyEntry, 
+                   WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY_SIGNATURE
+                   );
+    RemoveEntryList (ListHead->ForwardLink);
+    EfiLibSafeFreePool (NotifyNode);
+  }
+  
+  return EFI_SUCCESS;
+}
+
+EFI_GUID gSimpleTextInExNotifyGuid = SIMPLE_TEXTIN_EX_NOTIFY_GUID;
+#endif
+
 EFI_DRIVER_BINDING_PROTOCOL gWinNtGopDriverBinding = {
   WinNtGopDriverBindingSupported,
   WinNtGopDriverBindingStart,
@@ -209,6 +252,10 @@ Returns:
                   &Private->GraphicsOutput,
                   &gEfiSimpleTextInProtocolGuid,
                   &Private->SimpleTextIn,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  &Private->SimpleTextInEx,
+#endif                                    
                   NULL
                   );
 
@@ -229,6 +276,16 @@ Done:
       if (Private->ControllerNameTable != NULL) {
         EfiLibFreeUnicodeStringTable (Private->ControllerNameTable);
       }
+
+      if (Private->SimpleTextIn.WaitForKey != NULL) {
+        gBS->CloseEvent (Private->SimpleTextIn.WaitForKey);
+      }
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      if (Private->SimpleTextInEx.WaitForKeyEx != NULL) {
+        gBS->CloseEvent (Private->SimpleTextInEx.WaitForKeyEx);
+      }
+      FreeNotifyList (&Private->NotifyList);
+#endif
 
       gBS->FreePool (Private);
     }
@@ -296,6 +353,10 @@ Returns:
                   &Private->GraphicsOutput,
                   &gEfiSimpleTextInProtocolGuid,
                   &Private->SimpleTextIn,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+                  &gEfiSimpleTextInputExProtocolGuid,
+                  &Private->SimpleTextInEx,
+#endif                                    
                   NULL
                   );
   if (!EFI_ERROR (Status)) {
@@ -318,7 +379,13 @@ Returns:
     // Free our instance data
     //
     EfiLibFreeUnicodeStringTable (Private->ControllerNameTable);
-
+    Status = gBS->CloseEvent (Private->SimpleTextIn.WaitForKey);
+    ASSERT_EFI_ERROR (Status);
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    Status = gBS->CloseEvent (Private->SimpleTextInEx.WaitForKeyEx);
+    ASSERT_EFI_ERROR (Status);
+    FreeNotifyList (&Private->NotifyList);
+#endif    
     gBS->FreePool (Private);
 
   }

@@ -205,7 +205,7 @@ Returns:
   Request.Length      = CmdLen;
 
   Status              = EFI_SUCCESS;
-  Timeout             = Timeout / USB_MASS_STALL_1_MS;
+  Timeout             = Timeout / USB_MASS_1_MILLISECOND;
 
   for (Retry = 0; Retry < USB_CBI_MAX_RETRY; Retry++) {
     //
@@ -298,7 +298,7 @@ Returns:
   Remain  = *TransLen;
   Retry   = 0;
   Status  = EFI_SUCCESS;
-  Timeout = Timeout / USB_MASS_STALL_1_MS;
+  Timeout = Timeout / USB_MASS_1_MILLISECOND;
 
   //
   // Transfer the data, if the device returns NAK, retry it. 
@@ -398,7 +398,7 @@ Returns:
 
   Endpoint  = UsbCbi->InterruptEndpoint->EndpointAddress;
   Status    = EFI_SUCCESS;
-  Timeout   = Timeout / USB_MASS_STALL_1_MS;
+  Timeout   = Timeout / USB_MASS_1_MILLISECOND;
 
   //
   // Attemp to the read the result from interrupt endpoint
@@ -588,7 +588,7 @@ Returns:
 
   ResetCmd[0] = 0x1D;
   ResetCmd[1] = 0x04;
-  Timeout     = USB_CBI_RESET_TIMEOUT / USB_MASS_STALL_1_MS;
+  Timeout     = USB_CBI_RESET_DEVICE_TIMEOUT / USB_MASS_1_MILLISECOND;
 
   //
   // Send the command to the device. Don't use UsbCbiExecCommand here.
@@ -603,7 +603,8 @@ Returns:
   // 50ms to wait it complete
   //
   UsbCbiGetStatus (UsbCbi, Timeout, &Result);
-  gBS->Stall (50 * 1000);
+
+  gBS->Stall (USB_CBI_RESET_DEVICE_STALL);
 
   //
   // Clear the Bulk-In and Bulk-Out stall condition and

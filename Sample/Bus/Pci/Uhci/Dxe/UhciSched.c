@@ -616,7 +616,7 @@ Returns:
 
   Finished = FALSE;
   Status   = EFI_SUCCESS;
-  Delay    = (TimeOut * STALL_1_MS / UHC_SYN_POLL) + 1;
+  Delay    = (TimeOut * UHC_1_MILLISECOND / UHC_SYNC_POLL_INTERVAL) + 1;
   
   for (Index = 0; Index < Delay; Index++) {
     Finished = UhciCheckTdStatus (Uhc, Td, IsLow, QhResult);
@@ -628,7 +628,7 @@ Returns:
       break;
     }
 
-    gBS->Stall (UHC_SYN_POLL);
+    gBS->Stall (UHC_SYNC_POLL_INTERVAL);
   }
 
   if (!Finished) {    

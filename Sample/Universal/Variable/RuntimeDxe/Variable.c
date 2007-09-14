@@ -537,14 +537,22 @@ Returns:
 
 --*/
 {
-  VARIABLE_HEADER       *Variable[2];
+  VARIABLE_HEADER       *Variable;
   VARIABLE_STORE_HEADER *VariableStoreHeader[2];
   UINTN                 Index;
-  VARIABLE_HEADER       *TempVariable;
-  UINTN                 TempIndex;
+  VARIABLE_HEADER       *InDeleteVariable;
+  UINTN                 InDeleteIndex;
+  VARIABLE_HEADER       *InDeleteStartPtr;
+  VARIABLE_HEADER       *InDeleteEndPtr;
 
-  TempVariable = NULL;
-  TempIndex    = (UINTN)-1;
+  if (VariableName[0] != 0 && VendorGuid == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  InDeleteVariable = NULL;
+  InDeleteIndex    = (UINTN)-1;
+  InDeleteStartPtr = NULL;
+  InDeleteEndPtr   = NULL;
 
   //
   // 0: Non-Volatile, 1: Volatile
@@ -552,74 +560,81 @@ Returns:
   VariableStoreHeader[0]  = (VARIABLE_STORE_HEADER *) ((UINTN) Global->NonVolatileVariableBase);
   VariableStoreHeader[1]  = (VARIABLE_STORE_HEADER *) ((UINTN) Global->VolatileVariableBase);
 
-  //
-  // Start Pointers for the variable.
-  // Actual Data Pointer where data can be written.
-  //
-  Variable[0] = (VARIABLE_HEADER *) (VariableStoreHeader[0] + 1);
-  Variable[1] = (VARIABLE_HEADER *) (VariableStoreHeader[1] + 1);
-
-  if (VariableName[0] != 0 && VendorGuid == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
+  for (Index = 0; Index < 2; Index ++) {
+    //
+    // Start Pointers for the variable.
+    // Actual Data Pointer where data can be written.
+    //
+    Variable = (VARIABLE_HEADER *) (VariableStoreHeader[Index] + 1);
   
-  //
-  // Find the variable by walk through non-volatile and volatile variable store
-  //
-  for (Index = 0; Index < 2; Index++) {
-    PtrTrack->StartPtr = (VARIABLE_HEADER *) (VariableStoreHeader[Index] + 1);
+    //
+    // Find the variable by walk through non-volatile and volatile variable store
+    //
+    PtrTrack->StartPtr = Variable;
     PtrTrack->EndPtr   = GetEndPointer (VariableStoreHeader[Index]);
 
-    while (IsValidVariableHeader (Variable[Index]) && (Variable[Index] <= GetEndPointer (VariableStoreHeader[Index]))) {
-      if (Variable[Index]->State == VAR_ADDED) {
-        if (!(EfiAtRuntime () && !(Variable[Index]->Attributes & EFI_VARIABLE_RUNTIME_ACCESS))) {
+    while (IsValidVariableHeader (Variable) && (Variable < PtrTrack->EndPtr)) {
+      if (Variable->State == VAR_ADDED) {
+        if (!EfiAtRuntime () || (Variable->Attributes & EFI_VARIABLE_RUNTIME_ACCESS)) {
           if (VariableName[0] == 0) {
-            PtrTrack->CurrPtr  = Variable[Index];
+            PtrTrack->CurrPtr  = Variable;
             PtrTrack->Volatile = (BOOLEAN) Index;
             return EFI_SUCCESS;
           } else {
-            if (EfiCompareGuid (VendorGuid, &Variable[Index]->VendorGuid)) {
-              if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), EfiStrSize (VariableName)) == 0) {
-                PtrTrack->CurrPtr  = Variable[Index];
+            if (EfiCompareGuid (VendorGuid, &Variable->VendorGuid)) {
+              if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable), EfiStrSize (VariableName)) == 0) {
+                PtrTrack->CurrPtr  = Variable;
                 PtrTrack->Volatile = (BOOLEAN) Index;
                 return EFI_SUCCESS;
               }
             }
           }
         }
-      } else if (Variable[Index]->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)) {
+      } else if (Variable->State == (VAR_ADDED & VAR_IN_DELETED_TRANSITION)) {
         //
         // VAR_IN_DELETED_TRANSITION should also be checked.
         //
-        if (!(EfiAtRuntime () && !(Variable[Index]->Attributes & EFI_VARIABLE_RUNTIME_ACCESS))) {
+        if (!EfiAtRuntime () || (Variable->Attributes & EFI_VARIABLE_RUNTIME_ACCESS)) {
           if (VariableName[0] == 0) {
-            TempVariable = Variable[Index];
-            TempIndex    = Index;
+            InDeleteVariable = Variable;
+            InDeleteIndex    = Index;
+            InDeleteStartPtr = PtrTrack->StartPtr;
+            InDeleteEndPtr   = PtrTrack->EndPtr;
           } else {
-            if (EfiCompareGuid (VendorGuid, &Variable[Index]->VendorGuid)) {
-              if (EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable[Index]), EfiStrSize (VariableName)) == 0) {
-                TempVariable = Variable[Index];
-                TempIndex    = Index;
+            if (EfiCompareGuid (VendorGuid, &Variable->VendorGuid)) {
+              if (!EfiCompareMem (VariableName, GET_VARIABLE_NAME_PTR (Variable), EfiStrSize (VariableName))) {
+                InDeleteVariable = Variable;
+                InDeleteIndex    = Index;
+                InDeleteStartPtr = PtrTrack->StartPtr;
+                InDeleteEndPtr   = PtrTrack->EndPtr;
               }
             }
           }
         }
       }
 
-      Variable[Index] = GetNextVariablePtr (Variable[Index]);
+      Variable = GetNextVariablePtr (Variable);
     }
+    //
+    // While (...)
+    //
   }
+  //
+  // for (...)
+  //
 
   //
   // if VAR_IN_DELETED_TRANSITION found, and VAR_ADDED not found,
   // we return it.
   //
-  if (TempVariable != NULL) {
-    PtrTrack->CurrPtr  = TempVariable;
-    PtrTrack->Volatile = (BOOLEAN) TempIndex;
+  if (InDeleteVariable != NULL) {
+    PtrTrack->CurrPtr  = InDeleteVariable;
+    PtrTrack->Volatile = (BOOLEAN) InDeleteIndex;
+    PtrTrack->StartPtr = InDeleteStartPtr;
+    PtrTrack->EndPtr   = InDeleteEndPtr;
     return EFI_SUCCESS;
   }
-  
+
   PtrTrack->CurrPtr = NULL;
   return EFI_NOT_FOUND;
 }
@@ -1267,11 +1282,6 @@ Returns:
   } else if (EfiAtRuntime () && !(Attributes & EFI_VARIABLE_RUNTIME_ACCESS)) {
     //
     // Make sure RT Attribute is set if we are in Runtime phase.
-    //
-    return EFI_INVALID_PARAMETER;
-  }  else if (EfiAtRuntime () && Attributes && !(Attributes & EFI_VARIABLE_NON_VOLATILE)) {
-    //
-    // Cannot Query volatile variable in Runtime
     //
     return EFI_INVALID_PARAMETER;
   }

@@ -140,6 +140,7 @@ typedef struct{
   VOID                               *MaxTopOfCarHeap;
   EFI_PEI_PPI_DESCRIPTOR             *XipLoadFile;
   EFI_PEI_PE_COFF_LOADER_PROTOCOL    *PeCoffLoader; 
+  EFI_PEI_PE_COFF_LOADER_READ_FILE   ImageReadFile;
 } PEI_CORE_INSTANCE;
 
 

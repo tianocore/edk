@@ -23,6 +23,82 @@ Revision History
 
 extern EFI_GUID gTerminalDriverGuid;
 
+STATIC
+EFI_STATUS
+ReadKeyStrokeWorker (
+  IN  TERMINAL_DEV *TerminalDevice,
+  OUT EFI_KEY_DATA *KeyData
+  )
+/*++
+
+  Routine Description:
+    Reads the next keystroke from the input device. The WaitForKey Event can 
+    be used to test for existance of a keystroke via WaitForEvent () call.
+
+  Arguments:
+    TerminalDevice        - Terminal driver private structure
+    KeyData               - A pointer to a buffer that is filled in with the keystroke 
+                            state data for the key that was pressed.
+
+  Returns:
+    EFI_SUCCESS           - The keystroke information was returned.
+    EFI_NOT_READY         - There was no keystroke data availiable.
+    EFI_DEVICE_ERROR      - The keystroke information was not returned due to 
+                            hardware errors.
+    EFI_INVALID_PARAMETER - KeyData is NULL.                        
+
+--*/
+{
+  EFI_STATUS                      Status;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+  EFI_LIST_ENTRY                  *Link;
+  TERMINAL_CONSOLE_IN_EX_NOTIFY   *CurrentNotify;
+#endif  
+
+  if (KeyData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }  
+
+  //
+  // Initialize *Key to nonsense value.
+  //
+  KeyData->Key.ScanCode    = SCAN_NULL;
+  KeyData->Key.UnicodeChar = 0;
+
+  Status = TerminalConInCheckForKey (&TerminalDevice->SimpleInput);
+  if (EFI_ERROR (Status)) {
+    return EFI_NOT_READY;
+  }
+
+  if (!EfiKeyFiFoRemoveOneKey (TerminalDevice, &KeyData->Key)) {
+    return EFI_NOT_READY;
+  }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  KeyData->KeyState.KeyShiftState  = 0;
+  KeyData->KeyState.KeyToggleState = 0;
+
+  //
+  // Invoke notification functions if exist
+  //
+  for (Link = TerminalDevice->NotifyList.ForwardLink; Link != &TerminalDevice->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      TERMINAL_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      TERMINAL_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      CurrentNotify->KeyNotificationFn (KeyData);
+    }
+  }
+#endif
+
+  return EFI_SUCCESS;
+
+}
+
+
 EFI_STATUS
 EFIAPI
 TerminalConInReset (
@@ -123,23 +199,19 @@ TerminalConInReadKeyStroke (
 {
   TERMINAL_DEV  *TerminalDevice;
   EFI_STATUS    Status;
+  EFI_KEY_DATA  KeyData;
 
-  //
-  // Initialize *Key to nonsense value.
-  //
-  Key->ScanCode     = SCAN_NULL;
-  Key->UnicodeChar  = 0;
   //
   //  get TERMINAL_DEV from "This" parameter.
   //
   TerminalDevice  = TERMINAL_CON_IN_DEV_FROM_THIS (This);
 
-  Status          = TerminalConInCheckForKey (This);
+  Status = ReadKeyStrokeWorker (TerminalDevice, &KeyData);
   if (EFI_ERROR (Status)) {
-    return EFI_NOT_READY;
+    return Status;
   }
 
-  EfiKeyFiFoRemoveOneKey (TerminalDevice, Key);
+  EfiCopyMem (Key, &KeyData.Key, sizeof (EFI_INPUT_KEY));
 
   return EFI_SUCCESS;
 
@@ -279,10 +351,7 @@ TerminalConInReadKeyStrokeEx (
 
 --*/
 {
-  EFI_STATUS                      Status;
   TERMINAL_DEV                    *TerminalDevice;
-  EFI_LIST_ENTRY                  *Link;
-  TERMINAL_CONSOLE_IN_EX_NOTIFY   *CurrentNotify;
 
   if (KeyData == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -290,34 +359,7 @@ TerminalConInReadKeyStrokeEx (
 
   TerminalDevice = TERMINAL_CON_IN_EX_DEV_FROM_THIS (This);
 
-  Status = TerminalConInCheckForKey (&TerminalDevice->SimpleInput);
-  if (EFI_ERROR (Status)) {
-    return EFI_NOT_READY;
-  }
-
-  if (!EfiKeyFiFoRemoveOneKey (TerminalDevice, &KeyData->Key)) {
-    return EFI_NOT_READY;
-  }
-
-  KeyData->KeyState.KeyShiftState  = 0;
-  KeyData->KeyState.KeyToggleState = 0;
-
-  //
-  // Invoke notification functions if exist
-  //
-  for (Link = TerminalDevice->NotifyList.ForwardLink; Link != &TerminalDevice->NotifyList; Link = Link->ForwardLink) {
-    CurrentNotify = CR (
-                      Link, 
-                      TERMINAL_CONSOLE_IN_EX_NOTIFY, 
-                      NotifyEntry, 
-                      TERMINAL_CONSOLE_IN_EX_NOTIFY_SIGNATURE
-                      );
-  if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
-      CurrentNotify->KeyNotificationFn (KeyData);
-    }
-  }
-  
-  return EFI_SUCCESS;
+  return ReadKeyStrokeWorker (TerminalDevice, KeyData);
 
 }
 
@@ -384,12 +426,32 @@ TerminalConInRegisterKeyNotify (
   EFI_STATUS                      Status;
   TERMINAL_DEV                    *TerminalDevice;
   TERMINAL_CONSOLE_IN_EX_NOTIFY   *NewNotify;
+  EFI_LIST_ENTRY                  *Link;
+  TERMINAL_CONSOLE_IN_EX_NOTIFY   *CurrentNotify;  
 
   if (KeyData == NULL || NotifyHandle == NULL || KeyNotificationFunction == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   TerminalDevice = TERMINAL_CON_IN_EX_DEV_FROM_THIS (This);
+
+  //
+  // Return EFI_SUCCESS if the (KeyData, NotificationFunction) is already registered.
+  //
+  for (Link = TerminalDevice->NotifyList.ForwardLink; Link != &TerminalDevice->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      TERMINAL_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      TERMINAL_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
+        *NotifyHandle = CurrentNotify->NotifyHandle;        
+        return EFI_SUCCESS;
+      }
+    }
+  }
 
   //
   // Allocate resource to save the notification function
@@ -477,7 +539,7 @@ TerminalConInUnregisterKeyNotify (
       RemoveEntryList (&CurrentNotify->NotifyEntry);      
       Status = gBS->UninstallMultipleProtocolInterfaces (
                       CurrentNotify->NotifyHandle,
-                      gSimpleTextInExNotifyGuid,
+                      &gSimpleTextInExNotifyGuid,
                       NULL,
                       NULL
                       );

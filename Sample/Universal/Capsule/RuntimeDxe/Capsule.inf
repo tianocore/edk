@@ -23,12 +23,7 @@
 [defines]
 BASE_NAME            = CapsuleRuntime
 FILE_GUID            = 9EA5DF0F-A35C-48C1-BAC9-F63452B47C3E
-
-[defines.ia32, defines.x64]
 COMPONENT_TYPE       = RT_DRIVER
-
-[defines.ipf]
-COMPONENT_TYPE       = SAL_RT_DRIVER
 
 [sources.common]
   CapsuleService.c

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -54,6 +54,8 @@ Revision History
 // Constants which are variable names used to access variables
 //
 #define VarLegacyDevOrder L"LegacyDevOrder"
+
+#define VarConOutMode L"ConOutMode"
 
 //
 // Guid of a NV Variable which store the information about the
@@ -165,6 +167,7 @@ typedef enum {
   FORM_FILE_EXPLORER_ID,                // 0x001E
   FORM_BOOT_ADD_DESCRIPTION_ID,         // 0x001F
   FORM_DRIVER_ADD_FILE_DESCRIPTION_ID,  // 0x0020
+  FORM_CON_MODE_ID                      // 0x0021
 } FORM_ID;
 
 #define MAXIMUM_FORM_ID                 0x007F
@@ -303,6 +306,7 @@ typedef enum {
 #define CON_OUT_COM2_QUESTION_ID        QUESTION_ID (ConsoleOutputCOM2)
 #define CON_ERR_COM1_QUESTION_ID        QUESTION_ID (ConsoleErrorCOM1)
 #define CON_ERR_COM2_QUESTION_ID        QUESTION_ID (ConsoleErrorCOM2)
+#define CON_MODE_QUESTION_ID            QUESTION_ID (ConsoleOutMode)
 #define CON_DEVICE_QUESTION_ID          QUESTION_ID (ConsoleCheck)
 #define OPTION_ORDER_QUESTION_ID        QUESTION_ID (OptionOrder)
 #define DRIVER_OPTION_ORDER_QUESTION_ID QUESTION_ID (DriverOptionToBeDeleted)
@@ -385,6 +389,11 @@ typedef struct {
   UINT8   ConsoleOutputCOM2;
   UINT8   ConsoleErrorCOM1;
   UINT8   ConsoleErrorCOM2;
+  
+  //
+  // Console Output Text Mode
+  //  
+  UINTN  ConsoleOutMode;
 
   //
   // At most 100 input/output/errorout device for console storage
@@ -506,6 +515,11 @@ typedef struct {
 
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
 } BM_CONSOLE_CONTEXT;
+
+typedef struct {
+  UINTN   Column;
+  UINTN   Row;
+} CONSOLE_OUT_MODE;
 
 typedef struct {
   EFI_HANDLE                        Handle;
@@ -763,6 +777,14 @@ EFI_STATUS
 GetAllConsoles();
 
 //
+// Get current mode information
+//
+VOID
+GetConsoleOutMode (
+  IN  BMM_CALLBACK_DATA    *CallbackData
+  );
+
+//
 // Cleaning up console menu
 //
 EFI_STATUS
@@ -837,6 +859,11 @@ Var_UpdateDriverOrder (
 
 EFI_STATUS
 Var_UpdateBBSOption (
+  IN BMM_CALLBACK_DATA            *CallbackData
+  );
+
+EFI_STATUS
+Var_UpdateConMode (
   IN BMM_CALLBACK_DATA            *CallbackData
   );
 
@@ -964,6 +991,11 @@ UpdateTerminalPage (
   );
 
 VOID
+UpdateConModePage (
+  IN BMM_CALLBACK_DATA                *CallbackData
+  );
+
+VOID
 UpdateConCOMPage (
   IN BMM_CALLBACK_DATA                *CallbackData
   );
@@ -998,6 +1030,13 @@ EfiLibFileSystemVolumeLabelInfo (
 EFI_FILE_INFO                     *
 EfiLibFileInfo (
   IN EFI_FILE_HANDLE      FHand
+  );
+
+UINTN
+UnicodeToAscii (
+  IN  CHAR16  *UStr,
+  IN  UINTN   Length,
+  OUT CHAR8   *AStr
   );
 
 CHAR16                            *

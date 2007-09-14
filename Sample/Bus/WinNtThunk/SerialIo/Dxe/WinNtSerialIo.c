@@ -743,6 +743,7 @@ Returns:
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS                    Status;
+  UINTN                         Index;  
   WIN_NT_SERIAL_IO_PRIVATE_DATA *Private;
   COMMTIMEOUTS                  PortTimeOuts;
   DWORD                         ConvertedTime;
@@ -750,8 +751,13 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL      *NewDevicePath;
   EFI_TPL                       Tpl;
 
-  Tpl     = gBS->RaiseTPL (EFI_TPL_NOTIFY);
-
+  //
+  // for BaudRate, currently we support 
+  // 50,75,110,134,150,300,600,1200,1800,2000,2400,3600,4800,7200,9600,19200,38400,57600,115200
+  //
+  
+  UINT64 BaudRateCurrentSupport[] = {50, 75, 110, 134, 150, 300, 600, 1200, 1800, 2000, 2400, 3600, 4800, 7200, 9600, 19200, 38400, 57600, 115200, SERIAL_PORT_MAX_BAUD_RATE+1};
+  
   Private = WIN_NT_SERIAL_IO_PRIVATE_DATA_FROM_THIS (This);
 
   //
@@ -781,6 +787,56 @@ Returns:
   if (StopBits == DefaultStopBits) {
     StopBits = OneStopBit;
   }
+
+  //
+  // Make sure all parameters are valid
+  //
+  if ((BaudRate > SERIAL_PORT_MAX_BAUD_RATE) || (BaudRate < SERIAL_PORT_MIN_BAUD_RATE)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  //The lower baud rate supported by the serial device will be selected without exceeding the unsupported BaudRate parameter
+  // 
+  
+  for (Index = 1; Index < (sizeof (BaudRateCurrentSupport) / sizeof (BaudRateCurrentSupport[0])); Index++) {
+    if (BaudRate < BaudRateCurrentSupport[Index]) {
+      BaudRate = BaudRateCurrentSupport[Index-1];
+      break;
+      }
+  }
+  	
+  if ((ReceiveFifoDepth < 1) || (ReceiveFifoDepth > SERIAL_PORT_MAX_RECEIVE_FIFO_DEPTH)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Timeout < SERIAL_PORT_MIN_TIMEOUT) || (Timeout > SERIAL_PORT_MAX_TIMEOUT)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Parity < NoParity) || (Parity > SpaceParity)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((StopBits < OneStopBit) || (StopBits > TwoStopBits)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Now we only support DataBits=7,8.
+  //
+  if ((DataBits < 7) || (DataBits > 8)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  // Now we only support DataBits=7,8.
+  // for DataBits = 6,7,8, StopBits can not set OneFiveStopBits.
+  //
+  if (StopBits == OneFiveStopBits) {
+    return EFI_INVALID_PARAMETER;
+  }  
+  
   //
   // See if the new attributes already match the current attributes
   //
@@ -790,9 +846,10 @@ Returns:
       Private->UartDevicePath.StopBits       == StopBits         &&
       Private->SerialIoMode.ReceiveFifoDepth == ReceiveFifoDepth &&
       Private->SerialIoMode.Timeout          == Timeout             ) {
-    gBS->RestoreTPL(Tpl);
     return EFI_SUCCESS;
   }
+
+  Tpl     = gBS->RaiseTPL (EFI_TPL_NOTIFY);
 
   //
   //  Get current values from NT
@@ -946,6 +1003,15 @@ Returns:
   BOOL                          Result;
   DCB                           Dcb;
   EFI_TPL                       Tpl;
+
+  //
+  // first determine the parameter is invalid
+  //
+  if (Control & (~(EFI_SERIAL_REQUEST_TO_SEND | EFI_SERIAL_DATA_TERMINAL_READY |
+                   EFI_SERIAL_HARDWARE_LOOPBACK_ENABLE | EFI_SERIAL_SOFTWARE_LOOPBACK_ENABLE | 
+                   EFI_SERIAL_HARDWARE_FLOW_CONTROL_ENABLE))) {
+    return EFI_UNSUPPORTED;
+  }
 
   Tpl     = gBS->RaiseTPL (EFI_TPL_NOTIFY);
 

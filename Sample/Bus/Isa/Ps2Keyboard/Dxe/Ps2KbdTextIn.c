@@ -54,6 +54,122 @@ KeyboardCheckForKey (
   IN  EFI_SIMPLE_TEXT_IN_PROTOCOL *This
   );
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC
+BOOLEAN
+IsKeyRegistered (
+  IN EFI_KEY_DATA  *RegsiteredData,
+  IN EFI_KEY_DATA  *InputData
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  RegsiteredData    - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was registered.
+  InputData         - A pointer to a buffer that is filled in with the keystroke 
+                      state data for the key that was pressed.
+
+Returns:
+  TRUE              - Key be pressed matches a registered key.
+  FLASE             - Match failed. 
+  
+--*/
+;
+#endif
+
+STATIC
+EFI_STATUS
+KeyboardReadKeyStrokeWorker (
+  IN  KEYBOARD_CONSOLE_IN_DEV           *ConsoleInDev,
+  OUT EFI_KEY_DATA                      *KeyData
+  )
+/*++
+
+  Routine Description:
+    Reads the next keystroke from the input device. The WaitForKey Event can 
+    be used to test for existance of a keystroke via WaitForEvent () call.
+
+  Arguments:
+    ConsoleInDev          - Ps2 Keyboard private structure
+    KeyData               - A pointer to a buffer that is filled in with the keystroke 
+                            state data for the key that was pressed.
+
+  Returns:
+    EFI_SUCCESS           - The keystroke information was returned.
+    EFI_NOT_READY         - There was no keystroke data availiable.
+    EFI_DEVICE_ERROR      - The keystroke information was not returned due to 
+                            hardware errors.
+    EFI_INVALID_PARAMETER - KeyData is NULL.                        
+
+--*/
+{
+  EFI_STATUS                            Status;
+  EFI_TPL                               OldTpl;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+  EFI_LIST_ENTRY                        *Link;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY         *CurrentNotify;
+#endif  
+
+  if (KeyData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  // Enter critical section
+  //
+  OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
+
+  if (ConsoleInDev->KeyboardErr) {
+    gBS->RestoreTPL (OldTpl);
+    return EFI_DEVICE_ERROR;
+  }
+  //
+  // If there's no key, just return
+  //
+  Status = KeyboardCheckForKey (&ConsoleInDev->ConIn);
+  if (EFI_ERROR (Status)) {
+    gBS->RestoreTPL (OldTpl);
+    return EFI_NOT_READY;
+  }
+
+  EfiCopyMem (&KeyData->Key, &ConsoleInDev->Key, sizeof (EFI_INPUT_KEY));
+
+  ConsoleInDev->Key.ScanCode    = SCAN_NULL;          
+  ConsoleInDev->Key.UnicodeChar = 0x0000;     
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)    
+  EfiCopyMem (&KeyData->KeyState, &ConsoleInDev->KeyState, sizeof (EFI_KEY_STATE));
+                                          
+  ConsoleInDev->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
+  ConsoleInDev->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
+#endif
+
+  gBS->RestoreTPL (OldTpl);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
+  //
+  // Invoke notification functions if exist
+  //
+  for (Link = ConsoleInDev->NotifyList.ForwardLink; Link != &ConsoleInDev->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      CurrentNotify->KeyNotificationFn (KeyData);
+    }
+  }
+#endif
+
+  return EFI_SUCCESS;
+  
+}
+
 EFI_STATUS
 EFIAPI
 KeyboardEfiReset (
@@ -176,47 +292,17 @@ Returns:
 {
   EFI_STATUS              Status;
   KEYBOARD_CONSOLE_IN_DEV *ConsoleIn;
-  EFI_TPL                 OldTpl;
+  EFI_KEY_DATA            KeyData;
 
   ConsoleIn = KEYBOARD_CONSOLE_IN_DEV_FROM_THIS (This);
-
-  //
-  // Enter critical section
-  //
-  OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
-
-  if (ConsoleIn->KeyboardErr) {
-    //
-    // Leave critical section and return
-    //
-    gBS->RestoreTPL (OldTpl);
-
-    return EFI_DEVICE_ERROR;
-  }
-  //
-  // If there's no key, just return
-  //
-  Status = KeyboardCheckForKey (This);
+  Status = KeyboardReadKeyStrokeWorker (ConsoleIn, &KeyData);
   if (EFI_ERROR (Status)) {
-    //
-    // Leave critical section and return
-    //
-    gBS->RestoreTPL (OldTpl);
-    return EFI_NOT_READY;
+    return Status;
   }
 
-  Key->ScanCode               = ConsoleIn->Key.ScanCode;
-  Key->UnicodeChar            = ConsoleIn->Key.UnicodeChar;
-
-  ConsoleIn->Key.ScanCode     = SCAN_NULL;
-  ConsoleIn->Key.UnicodeChar  = 0x0000;
-
-  //
-  // Leave critical section and return
-  //
-  gBS->RestoreTPL (OldTpl);
-
+  EfiCopyMem (Key, &KeyData.Key, sizeof (EFI_INPUT_KEY));
   return EFI_SUCCESS;
+  
 }
 
 VOID
@@ -455,62 +541,14 @@ KeyboardReadKeyStrokeEx (
 
 --*/
 {
-  EFI_STATUS                            Status;
   KEYBOARD_CONSOLE_IN_DEV               *ConsoleInDev;
-  EFI_TPL                               OldTpl;
-  EFI_LIST_ENTRY                        *Link;
-  KEYBOARD_CONSOLE_IN_EX_NOTIFY         *CurrentNotify;
 
   if (KeyData == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   ConsoleInDev = TEXT_INPUT_EX_KEYBOARD_CONSOLE_IN_DEV_FROM_THIS (This);
-  
-  //
-  // Enter critical section
-  //
-  OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
-
-  if (ConsoleInDev->KeyboardErr) {
-    gBS->RestoreTPL (OldTpl);
-    return EFI_DEVICE_ERROR;
-  }
-  //
-  // If there's no key, just return
-  //
-  Status = KeyboardCheckForKey (&ConsoleInDev->ConIn);
-  if (EFI_ERROR (Status)) {
-    gBS->RestoreTPL (OldTpl);
-    return EFI_NOT_READY;
-  }
-
-  EfiCopyMem (&KeyData->Key, &ConsoleInDev->Key, sizeof (ConsoleInDev->Key));
-  EfiCopyMem (&KeyData->KeyState, &ConsoleInDev->KeyState, sizeof (ConsoleInDev->KeyState));
-                                          
-  ConsoleInDev->Key.ScanCode            = SCAN_NULL;          
-  ConsoleInDev->Key.UnicodeChar         = 0x0000;     
-  ConsoleInDev->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
-  ConsoleInDev->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
-
-  gBS->RestoreTPL (OldTpl);
-  
-  //
-  // Invoke notification functions if exist
-  //
-  for (Link = ConsoleInDev->NotifyList.ForwardLink; Link != &ConsoleInDev->NotifyList; Link = Link->ForwardLink) {
-    CurrentNotify = CR (
-                      Link, 
-                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
-                      NotifyEntry, 
-                      KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
-                      );
-    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
-      CurrentNotify->KeyNotificationFn (KeyData);
-    }
-  }
-
-  return EFI_SUCCESS;
+  return KeyboardReadKeyStrokeWorker (ConsoleInDev, KeyData);
   
 }
 
@@ -630,6 +668,8 @@ KeyboardRegisterKeyNotify (
   EFI_STATUS                            Status;
   KEYBOARD_CONSOLE_IN_DEV               *ConsoleInDev;
   EFI_TPL                               OldTpl;
+  EFI_LIST_ENTRY                        *Link;
+  KEYBOARD_CONSOLE_IN_EX_NOTIFY         *CurrentNotify;  
   KEYBOARD_CONSOLE_IN_EX_NOTIFY         *NewNotify;
 
   if (KeyData == NULL || NotifyHandle == NULL || KeyNotificationFunction == NULL) {
@@ -643,6 +683,25 @@ KeyboardRegisterKeyNotify (
   //
   OldTpl = gBS->RaiseTPL (EFI_TPL_NOTIFY);
 
+  //
+  // Return EFI_SUCCESS if the (KeyData, NotificationFunction) is already registered.
+  //
+  for (Link = ConsoleInDev->NotifyList.ForwardLink; Link != &ConsoleInDev->NotifyList; Link = Link->ForwardLink) {
+    CurrentNotify = CR (
+                      Link, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY, 
+                      NotifyEntry, 
+                      KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
+                      );
+    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
+      if (CurrentNotify->KeyNotificationFn == KeyNotificationFunction) {
+        *NotifyHandle = CurrentNotify->NotifyHandle;        
+        Status = EFI_SUCCESS;
+        goto Exit;
+      }
+    }
+  }    
+  
   //
   // Allocate resource to save the notification function
   //  
@@ -744,7 +803,7 @@ KeyboardUnregisterKeyNotify (
       RemoveEntryList (&CurrentNotify->NotifyEntry);      
       Status = gBS->UninstallMultipleProtocolInterfaces (
                       CurrentNotify->NotifyHandle,
-                      gSimpleTextInExNotifyGuid,
+                      &gSimpleTextInExNotifyGuid,
                       NULL,
                       NULL
                       );

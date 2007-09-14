@@ -729,11 +729,7 @@ Returns:
   Bus     = Parent->Bus;
   HubApi  = HubIf->HubApi;
   
-  
-  //
-  // Wait at least 100 ms for the power on port to stable
-  //
-  gBS->Stall (100 * USB_STALL_1_MS);
+  gBS->Stall (USB_WAIT_PORT_STABLE_STALL);
   
   //
   // Hub resets the device for at least 10 milliseconds.
@@ -847,10 +843,7 @@ Returns:
     goto ON_ERROR;
   }
   
-  //
-  // Wait 20ms for set address to complete
-  //
-  gBS->Stall (20 * USB_STALL_1_MS);
+  gBS->Stall (USB_SET_DEVICE_ADDRESS_STALL);
 
   USB_DEBUG (("UsbEnumerateNewDev: device is now ADDRESSED at %d\n", Address));
 
@@ -964,47 +957,44 @@ Returns:
 
     if (USB_BIT_IS_SET (PortState.PortStatus, USB_PORT_STAT_OVERCURRENT)) {
       //
-      // Both OverCurrent and OverCurrentChange set, means over current occurs, 
-      // which probably is caused by short circuit. It has to wait system hardware
-      // to perform recovery.
+      // Case1:
+      //   Both OverCurrent and OverCurrentChange set, means over current occurs, 
+      //   which probably is caused by short circuit. It has to wait system hardware
+      //   to perform recovery.
       //
       USB_DEBUG (("UsbEnumeratePort: Critical Over Current\n", Port));
       return EFI_DEVICE_ERROR;
       
-    } else {
-      //
-      // Only OverCurrentChange set, means system has been recoveried from 
-      // over current. As a result, all ports are nearly power-off, so
-      // it's necessary to detach and enumerate all ports again. 
-      //
-      USB_DEBUG (("UsbEnumeratePort: 2.0 device Recovery Over Current\n", Port)); 
-      goto ON_ENUMERATE;
-      
-    }
+    } 
+    //
+    // Case2:
+    //   Only OverCurrentChange set, means system has been recoveried from 
+    //   over current. As a result, all ports are nearly power-off, so
+    //   it's necessary to detach and enumerate all ports again. 
+    //
+    USB_DEBUG (("UsbEnumeratePort: 2.0 Device Recovery Over Current\n", Port)); 
   }
 
   if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_ENABLE)) {  
     //
-    // 1.1 roothub port reg doesn't reflect over-current state, while its counterpart
-    // on 2.0 roothub does. When over-current has influence on 1.1 device, the port 
-    // would be disabled, so it's also necessary to detach and enumerate again.
+    // Case3:
+    //   1.1 roothub port reg doesn't reflect over-current state, while its counterpart
+    //   on 2.0 roothub does. When over-current has influence on 1.1 device, the port 
+    //   would be disabled, so it's also necessary to detach and enumerate again.
     //
-    USB_DEBUG (("UsbEnumeratePort: 1.1 device Recovery Over Current\n", Port));
-    goto ON_ENUMERATE;
+    USB_DEBUG (("UsbEnumeratePort: 1.1 Device Recovery Over Current\n", Port));
   }
   
   if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_CONNECTION)) {
     //
-    // Device connected or disconnected normally. 
+    // Case4:
+    //   Device connected or disconnected normally. 
     //
-    goto ON_ENUMERATE;
+    USB_DEBUG (("UsbEnumeratePort: Device Connect/Discount Normally\n", Port));
   }
 
-ON_ENUMERATE:
-
   // 
-  // In case there is already a device on this port logically, it's safety to remove
-  // and enumerate again.
+  // Following as the above cases, it's safety to remove and create again.
   //
   Child = UsbFindChild (HubIf, Port);
   

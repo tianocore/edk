@@ -1225,7 +1225,25 @@ Returns:
     Status = EFI_DEVICE_ERROR;
     goto CLOSE_HC;
   }
-  
+
+  UsbHcReset (UsbBus, EFI_USB_HC_RESET_GLOBAL);
+  UsbHcSetState (UsbBus, EfiUsbHcStateOperational);
+
+  //
+  // Install an EFI_USB_BUS_PROTOCOL to host controler to identify it.
+  //
+  Status = gBS->InstallProtocolInterface (
+                  &Controller,
+                  &mUsbBusProtocolGuid,
+                  EFI_NATIVE_INTERFACE,
+                  &UsbBus->BusId
+                  );
+
+  if (EFI_ERROR (Status)) {
+    USB_ERROR (("UsbBusStart: Failed to install bus protocol %r\n", Status));
+    goto CLOSE_HC;
+  }
+
   //
   // Create a fake usb device for root hub
   //
@@ -1233,7 +1251,7 @@ Returns:
 
   if (RootHub == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    goto CLOSE_HC;
+    goto UNINSTALL_USBBUS;
   }
 
   RootIf = EfiLibAllocateZeroPool (sizeof (USB_INTERFACE));
@@ -1241,7 +1259,7 @@ Returns:
   if (RootIf == NULL) {
     gBS->FreePool (RootHub);
     Status = EFI_OUT_OF_RESOURCES;
-    goto CLOSE_HC;
+    goto FREE_ROOTHUB;
   }
 
   RootHub->Bus            = UsbBus;
@@ -1260,33 +1278,20 @@ Returns:
 
   UsbBus->Devices[0] = RootHub;
 
-  //
-  // Install an EFI_USB_BUS_PROTOCOL to host controler to identify it.
-  //
-  Status = gBS->InstallProtocolInterface (
-                  &Controller,
-                  &mUsbBusProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &UsbBus->BusId
-                  );
-
-  if (EFI_ERROR (Status)) {
-    USB_ERROR (("UsbBusStart: Failed to install bus protocol %r\n", Status));
-
-    mUsbRootHubApi.Release (RootIf);
-    goto FREE_ROOTHUB;
-  }
-
-  UsbHcReset (UsbBus, EFI_USB_HC_RESET_GLOBAL);
-  UsbHcSetState (UsbBus, EfiUsbHcStateOperational);
-
   USB_DEBUG (("UsbBusStart: usb bus started on %x, root hub %x\n", Controller, RootIf));
   return EFI_SUCCESS;
-
+  
 FREE_ROOTHUB:
-  gBS->FreePool (RootIf);
-  gBS->FreePool (RootHub);
-
+  if (RootIf != NULL) {
+    gBS->FreePool (RootIf);
+  }
+  if (RootHub != NULL) {
+    gBS->FreePool (RootHub);
+  }
+  
+UNINSTALL_USBBUS:
+  gBS->UninstallProtocolInterface (Controller, &mUsbBusProtocolGuid, &UsbBus->BusId);
+  
 CLOSE_HC:
   if (UsbBus->Usb2Hc != NULL) {
     gBS->CloseProtocol (
@@ -1296,7 +1301,6 @@ CLOSE_HC:
           Controller
           );
   }
-
   if (UsbBus->UsbHc != NULL) {
     gBS->CloseProtocol (
           Controller,
@@ -1305,14 +1309,12 @@ CLOSE_HC:
           Controller
           );
   }
-
   gBS->CloseProtocol (
          Controller,
          &gEfiDevicePathProtocolGuid,
          This->DriverBindingHandle,
          Controller
          );
-
   gBS->FreePool (UsbBus);
 
   USB_ERROR (("UsbBusStart: Failed to start bus driver %r\n", Status));

@@ -742,8 +742,7 @@ Returns:
 
   for (Index = 0; Index < BbsCount; Index++) {
     if ((BBS_IGNORE_ENTRY == BbsTable[Index].BootPriority) ||
-        (BBS_DO_NOT_BOOT_FROM == BbsTable[Index].BootPriority) ||
-        (BBS_LOWEST_PRIORITY == BbsTable[Index].BootPriority)
+        (BBS_DO_NOT_BOOT_FROM == BbsTable[Index].BootPriority)
         ) {
       continue;
     }

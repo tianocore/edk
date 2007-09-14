@@ -253,6 +253,16 @@ Returns:
     // At this stage we are creating a menu entry, thus the Keys are reproduceable
     //
     mKeyInput++;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    //
+    // Don't display the boot option marked as LOAD_OPTION_HIDDEN
+    //
+    if (Option->Attribute & LOAD_OPTION_HIDDEN) {
+      continue;
+    }
+#endif
+
     Token = 0;
     Status = Hii->NewString (Hii, NULL, gBootManagerHandle, &Token, Option->Description);
 

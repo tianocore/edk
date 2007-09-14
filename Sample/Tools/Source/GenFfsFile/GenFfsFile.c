@@ -82,6 +82,39 @@ PrintUsage (
   void
   );
 
+static
+void
+AddMacro (
+  UINT8   *MacroString
+  );
+
+static
+UINT8 *
+GetMacroValue (
+  UINT8   *MacroName
+  );
+    
+static
+void
+FreeMacros (
+  );
+
+static
+STATUS
+ReplaceMacros (
+  UINT8   *InputFile,
+  UINT8   *OutputFile
+  );
+    
+//
+// Linked list to keep track of all macros
+//
+typedef struct _MACRO {
+  struct _MACRO   *Next;
+  UINT8           *Name;
+  UINT8           *Value;
+} MACRO;
+
 //
 // Keep globals in this structure
 //
@@ -90,6 +123,7 @@ static struct {
   UINT8   PrimaryPackagePath[_MAX_PATH];
   UINT8   OverridePackagePath[_MAX_PATH];
   BOOLEAN Verbose;
+  MACRO   *MacroList;
 } mGlobals;
 
 static EFI_GUID mZeroGuid = { 0 };
@@ -151,8 +185,9 @@ Returns:
 --*/
 {
   printf ("Usage:\n");
-  printf (UTILITY_NAME " -b \"build directory\" -p1 \"package1.inf\" -p2 \"package2.inf\" -v\n");
-  printf ("   -b \"build directory\":\n ");
+  printf (UTILITY_NAME " -b \"build directory\" -p1 \"package1.inf\" -p2 \"package2.inf\"\n");
+  printf ("           -d \"name=value\" -v\n");
+  printf ("   -b \"build directory\":\n");
   printf ("       specifies the full path to the component build directory.\n");
   printf ("   -p1 \"P1_path\":\n");
   printf ("       specifies fully qualified file name to the primary package file.\n");
@@ -161,6 +196,10 @@ Returns:
   printf ("   -p2 \"P2_path\":\n");
   printf ("       specifies fully qualified file name to the override package file.\n");
   printf ("       This file will normally exist in the build tip. Optional.\n");
+  printf ("   -d \"name=value\":\n");
+  printf ("       add a macro definition for package file. Optional.\n");
+  printf ("   -v :\n");
+  printf ("       verbose. Optional.\n");
 }
 
 static
@@ -757,54 +796,6 @@ Returns:
 }
 
 static
-INT32
-ProcessEnvironmentVariable (
-  IN CHAR8  *Buffer,
-  OUT CHAR8 *NewBuffer
-  )
-/*++
-
-Routine Description:
-
-  Converts environment variables to values
-
-Arguments:
-
-  Buffer      - Buffer containing Environment Variable String
-
-  NewBuffer   - Buffer containing value of environment variable
-
-
-Returns:
-
-  Number of characters from Buffer used
-
---*/
-{
-  INT32 Index;
-  INT32 Index2;
-  CHAR8 VariableBuffer[_MAX_PATH];
-
-  Index   = 2;
-  Index2  = 0;
-
-  while (Buffer[Index] != ')') {
-    VariableBuffer[Index - 2] = Buffer[Index++];
-  }
-
-  VariableBuffer[Index - 2] = 0;
-  Index++;
-
-  if (getenv (VariableBuffer) != NULL) {
-    strcpy (NewBuffer, getenv (VariableBuffer));
-  } else {
-    printf ("Environment variable %s not found!\n", VariableBuffer);
-  }
-
-  return Index;
-}
-
-static
 void
 SplitAttributesField (
   IN CHAR8       *Buffer,
@@ -880,7 +871,6 @@ GetToolArguments (
   UINT32      Index2;
   UINT32      z;
   CHAR8       *CharBuffer;
-  INT32       Index;
   INT32       ReturnValue;
   EFI_STATUS  Status;
 
@@ -982,17 +972,7 @@ GetToolArguments (
 
       ToolArgumentsArray[argc] = CharBuffer;
 
-      if (Buffer[0] == '$') {
-        Index = ProcessEnvironmentVariable (&Buffer[0], ToolArgumentsArray[argc]);
-        //
-        // if there is string after the environment variable, cat it.
-        //
-        if ((UINT32) Index < strlen (Buffer)) {
-          strcat (ToolArgumentsArray[argc], &Buffer[Index]);
-        }
-      } else {
-        strcpy (ToolArgumentsArray[argc], Buffer);
-      }
+      strcpy (ToolArgumentsArray[argc], Buffer);
 
       argc += 1;
       ToolArgumentsArray[argc] = NULL;
@@ -1010,17 +990,7 @@ GetToolArguments (
 
       ZeroMem (InputFileName, sizeof (_MAX_PATH));
 
-      if (Buffer[0] == '$') {
-        Index = ProcessEnvironmentVariable (&Buffer[0], InputFileName);
-        //
-        // if there is string after the environment variable, cat it.
-        //
-        if ((UINT32) Index < strlen (Buffer)) {
-          strcat (InputFileName, &Buffer[Index]);
-        }
-      } else {
-        strcpy (InputFileName, Buffer);
-      }
+      strcpy (InputFileName, Buffer);
 
       InputFlag = FALSE;
       continue;
@@ -1037,17 +1007,7 @@ GetToolArguments (
 
       ZeroMem (OutputFileName, sizeof (_MAX_PATH));
 
-      if (Buffer[0] == '$') {
-        Index = ProcessEnvironmentVariable (&Buffer[0], OutputFileName);
-        //
-        // if there is string after the environment variable, cat it.
-        //
-        if ((UINT32) Index < strlen (Buffer)) {
-          strcat (OutputFileName, &Buffer[Index]);
-        }
-      } else {
-        strcpy (OutputFileName, Buffer);
-      }
+      strcpy (OutputFileName, Buffer);
 
       OutputFlag = FALSE;
       continue;
@@ -1142,7 +1102,6 @@ Returns:
   CHAR8       Buffer[_MAX_PATH];
   CHAR8       Type[_MAX_PATH];
   CHAR8       FileName[_MAX_PATH];
-  CHAR8       NewBuffer[_MAX_PATH];
   INT32       Index3;
   INT32       Index2;
   UINT32      ReturnValue;
@@ -1157,7 +1116,6 @@ Returns:
   FILE        *InputFile;
   UINT8       Temp;
   int         returnint;
-  INT32       Index;
   UINT32      LineNumber;
   BOOLEAN     IsError;
   EFI_GUID    SignGuid;
@@ -1200,11 +1158,7 @@ Returns:
       }
 
       StripParens (Buffer);
-      if (Buffer[0] == '$') {
-        ProcessEnvironmentVariable (&Buffer[0], Type);
-      } else {
-        strcpy (Type, Buffer);
-      }
+      strcpy (Type, Buffer);
       //
       // build buffer
       //
@@ -1275,19 +1229,7 @@ Returns:
       }
 
       StripParens (Buffer);
-
-      if (Buffer[0] == '$') {
-        Index = ProcessEnvironmentVariable (&Buffer[0], ToolName);
-        //
-        // if there is string after the environment variable, cat it.
-        //
-        if ((UINT32) Index < strlen (Buffer)) {
-          strcat (ToolName, &Buffer[Index]);
-        }
-      } else {
-        strcpy (ToolName, Buffer);
-      }
-
+      strcpy (ToolName, Buffer);
       ToolArgumentsArray[0] = ToolName;
 
       //
@@ -1397,13 +1339,8 @@ Returns:
       if (!isalpha (Buffer[0]) || (Buffer[1] != ':')) {
         sprintf (FileName, "%s\\", BuildDirectory);
       }
-
+      
       while (Buffer[Index3] != '\n') {
-        if (Buffer[Index3] == '$') {
-          Index3 += ProcessEnvironmentVariable (&Buffer[Index3], NewBuffer);
-          strcat (FileName, NewBuffer);
-        }
-
         if (Buffer[Index3] == 0) {
           break;
         } else {
@@ -2540,6 +2477,7 @@ Returns:
   //
   SetUtilityName (UTILITY_NAME);
   Status = ProcessCommandLineArgs (argc, argv);
+  FreeMacros ();
   if (Status != STATUS_SUCCESS) {
     return Status;
   }
@@ -2577,6 +2515,11 @@ Returns:
 
 --*/
 {
+  STATUS       Status;
+  UINT8        *OriginalPrimaryPackagePath;
+  UINT8        *OriginalOverridePackagePath;
+  UINT8        *PackageName;
+  
   //
   // If no args, then print usage instructions and return an error
   //
@@ -2584,7 +2527,9 @@ Returns:
     PrintUsage ();
     return STATUS_ERROR;
   }
-
+  
+  OriginalPrimaryPackagePath = NULL;
+  OriginalOverridePackagePath = NULL;
   memset (&mGlobals, 0, sizeof (mGlobals));
   Argc--;
   Argv++;
@@ -2617,12 +2562,12 @@ Returns:
         return STATUS_ERROR;
       }
 
-      if (mGlobals.PrimaryPackagePath[0]) {
+      if (OriginalPrimaryPackagePath) {
         Error (NULL, 0, 0, Argv[0], "option can only be specified once");
         return STATUS_ERROR;
       }
-
-      strcpy (mGlobals.PrimaryPackagePath, Argv[1]);
+      
+      OriginalPrimaryPackagePath = Argv[1];
       Argc--;
       Argv++;
     } else if (_strcmpi (Argv[0], "-p2") == 0) {
@@ -2635,12 +2580,12 @@ Returns:
         return STATUS_ERROR;
       }
 
-      if (mGlobals.OverridePackagePath[0]) {
+      if (OriginalOverridePackagePath) {
         Error (NULL, 0, 0, Argv[0], "option can only be specified once");
         return STATUS_ERROR;
       }
-
-      strcpy (mGlobals.OverridePackagePath, Argv[1]);
+      
+      OriginalOverridePackagePath = Argv[1];
       Argc--;
       Argv++;
     } else if (_strcmpi (Argv[0], "-v") == 0) {
@@ -2648,6 +2593,19 @@ Returns:
       // OPTION: -v       verbose
       //
       mGlobals.Verbose = TRUE;
+    } else if (_strcmpi (Argv[0], "-d") == 0) {
+      //
+      // OPTION: -d  name=value
+      // Make sure there is another argument, then add it to our macro list.
+      //
+      if (Argc < 2) {
+        Error (NULL, 0, 0, Argv[0], "option requires the macro definition");
+        return STATUS_ERROR;
+      }
+      
+      AddMacro (Argv[1]);
+      Argc--;
+      Argv++;
     } else if (_strcmpi (Argv[0], "-h") == 0) {
       //
       // OPTION: -h      help
@@ -2669,13 +2627,324 @@ Returns:
     Argv++;
     Argc--;
   }
+
+  //
+  // Must have at least specified the build directory
+  //
+  if (!mGlobals.BuildDirectory[0]) {
+    Error (NULL, 0, 0, "must specify build directory", NULL);
+    return STATUS_ERROR;
+  }
+  
   //
   // Must have at least specified the package file name
   //
-  if (mGlobals.PrimaryPackagePath[0] == 0) {
+  if (OriginalPrimaryPackagePath == NULL) {
     Error (NULL, 0, 0, "must specify primary package file", NULL);
     return STATUS_ERROR;
   }
 
+  PackageName = OriginalPrimaryPackagePath + strlen (OriginalPrimaryPackagePath);
+  while ((*PackageName != '\\') && (*PackageName != '/') && 
+         (PackageName != OriginalPrimaryPackagePath)) {
+    PackageName--;
+  }
+  //
+  // Skip the '\' or '/'
+  //
+  if (PackageName != OriginalPrimaryPackagePath) {
+    PackageName++;
+  }
+  sprintf (mGlobals.PrimaryPackagePath, "%s\\%s.new", mGlobals.BuildDirectory, PackageName);
+  Status = ReplaceMacros (OriginalPrimaryPackagePath, mGlobals.PrimaryPackagePath);
+  if (Status == STATUS_WARNING) {
+    //
+    // No macro replacement, use the previous package file
+    //
+    strcpy (mGlobals.PrimaryPackagePath, OriginalPrimaryPackagePath);
+  } else if (Status != STATUS_SUCCESS) {
+    return Status;
+  }
+  
+  if (OriginalOverridePackagePath != NULL) {
+    PackageName = OriginalOverridePackagePath + strlen (OriginalOverridePackagePath);
+    while ((*PackageName != '\\') && (*PackageName != '/') && 
+           (PackageName != OriginalOverridePackagePath)) {
+      PackageName--;
+    }
+    //
+    // Skip the '\' or '/'
+    //
+    if (PackageName != OriginalOverridePackagePath) {
+      PackageName++;
+    }    
+    sprintf (mGlobals.OverridePackagePath, "%s\\%s.new", mGlobals.BuildDirectory, PackageName);
+    Status = ReplaceMacros (OriginalOverridePackagePath, mGlobals.OverridePackagePath);
+    if (Status == STATUS_WARNING) {
+      //
+      // No macro replacement, use the previous package file
+      //
+      strcpy (mGlobals.OverridePackagePath, OriginalOverridePackagePath);
+    } else if (Status != STATUS_SUCCESS) {
+        return Status;
+    }    
+  }
+
   return STATUS_SUCCESS;
+}
+
+static
+void
+AddMacro (
+  UINT8   *MacroString
+  )
+/*++
+
+Routine Description:
+
+  Add or override a macro definition.
+
+Arguments:
+
+  MacroString  - macro definition string: name=value
+
+Returns:
+
+  None
+
+--*/  
+{
+  MACRO    *Macro;
+  MACRO    *NewMacro;
+  UINT8    *Value;
+  
+  //
+  // Seperate macro name and value by '\0'
+  //
+  for (Value = MacroString; *Value && (*Value != '='); Value++);
+  
+  if (*Value == '=') {
+    *Value = '\0';
+    Value ++;
+  }
+  
+  //
+  // We now have a macro name and value. 
+  // Look for an existing macro and overwrite it.
+  //
+  Macro = mGlobals.MacroList;
+  while (Macro) {
+    if (_strcmpi (MacroString, Macro->Name) == 0) {
+      Macro->Value = Value;
+      return;
+    }
+
+    Macro = Macro->Next;
+  }
+  
+  //
+  // Does not exist, create a new one
+  //
+  NewMacro = (MACRO *) malloc (sizeof (MACRO));
+  memset ((UINT8 *) NewMacro, 0, sizeof (MACRO));
+  NewMacro->Name   = MacroString;
+  NewMacro->Value  = Value;
+
+  //
+  // Add it to the head of the list.
+  //
+  NewMacro->Next = mGlobals.MacroList;
+  mGlobals.MacroList = NewMacro;
+  
+  return;
+}
+
+static
+UINT8 *
+GetMacroValue (
+  UINT8   *MacroName
+  )
+/*++
+
+Routine Description:
+
+  Look up a macro.
+
+Arguments:
+
+  MacroName  - The name of macro
+
+Returns:
+
+  Pointer to the value of the macro if found
+  NULL if the macro is not found
+
+--*/   
+{
+
+  MACRO  *Macro;
+  UINT8  *Value;
+
+  //
+  // Scan for macro
+  //
+  Macro = mGlobals.MacroList;
+  while (Macro) {
+    if (_strcmpi (MacroName, Macro->Name) == 0) {
+      return Macro->Value;
+    }
+    Macro = Macro->Next;
+  }
+  
+  //
+  // Try environment variable
+  //
+  Value = getenv (MacroName);
+  if (Value == NULL) {
+    printf ("Environment variable %s not found!\n", MacroName);
+  }   
+  return Value;
+}
+  
+static
+void
+FreeMacros (
+  )
+/*++
+
+Routine Description:
+
+  Free the macro list.
+
+Arguments:
+
+  None
+
+Returns:
+
+  None
+
+--*/    
+{
+  MACRO    *Macro;
+  MACRO    *NextMacro;
+  
+  Macro = mGlobals.MacroList;
+  while (Macro) {
+    NextMacro = Macro->Next;
+    free (Macro);
+    Macro = NextMacro;
+  }
+  mGlobals.MacroList = NULL;
+  
+  return;
+}
+
+static
+STATUS
+ReplaceMacros (
+  UINT8   *InputFile,
+  UINT8   *OutputFile
+  )
+/*++
+
+Routine Description:
+
+  Replace all the macros in InputFile to create the OutputFile.
+
+Arguments:
+
+  InputFile         - Input package file for macro replacement
+  OutputFile        - Output package file after macro replacement
+
+Returns:
+
+  STATUS_SUCCESS    - Output package file is created successfully after the macro replacement.
+  STATUS_WARNING    - Output package file is not created because of no macro replacement.
+  STATUS_ERROR      - Some error occurred during execution.
+
+--*/    
+{
+  FILE   *Fptr;
+  UINT8  *SaveStart;
+  UINT8  *FromPtr;
+  UINT8  *ToPtr;
+  UINT8  *Value;
+  UINT8  *FileBuffer;
+  UINTN  FileSize;
+  
+  //
+  // Get the file size, and then read the entire thing into memory.
+  // Allocate extra space for a terminator character.
+  //
+  if ((Fptr = fopen (InputFile, "r")) == NULL) {
+    Error (NULL, 0, 0, InputFile, "can't open input file");
+    return STATUS_ERROR;    
+  }
+  fseek (Fptr, 0, SEEK_END);
+  FileSize = ftell (Fptr);
+  fseek (Fptr, 0, SEEK_SET);
+  FileBuffer = malloc (FileSize + 1);
+  if (FileBuffer == NULL) {
+    fclose (Fptr);
+    Error (NULL, 0, 0, InputFile, "file buffer memory allocation failure");
+    return STATUS_ERROR;
+  }
+  fread (FileBuffer, FileSize, 1, Fptr);
+  FileBuffer[FileSize] = '\0';
+  fclose (Fptr);
+    
+  //
+  // Walk the entire file, replacing $(MACRO_NAME).
+  //
+  Fptr = NULL;
+  FromPtr = FileBuffer;
+  SaveStart = FromPtr;
+  while (*FromPtr) {
+    if ((*FromPtr == '$') && (*(FromPtr + 1) == '(')) {
+      FromPtr += 2;
+      for (ToPtr = FromPtr; *ToPtr && (*ToPtr != ')'); ToPtr++);
+      if (*ToPtr) {
+        //
+        // Find an $(MACRO_NAME), replace it
+        //
+        *ToPtr = '\0';
+        Value = GetMacroValue (FromPtr);
+        *(FromPtr-2)= '\0';
+        if (Fptr == NULL) {
+          if ((Fptr = fopen (OutputFile, "w")) == NULL) {
+            free (FileBuffer);
+            Error (NULL, 0, 0, OutputFile, "can't open output file");
+            return STATUS_ERROR;    
+          }
+        }
+        if (Value != NULL) {
+          fprintf (Fptr, "%s%s", SaveStart, Value);
+        } else {
+          fprintf (Fptr, "%s", SaveStart);
+        }
+        //
+        // Continue macro replacement for the remaining string line
+        //
+        FromPtr = ToPtr+1;
+        SaveStart = FromPtr;
+        continue;
+      } else {
+        break;
+      }
+    } else {
+      FromPtr++;
+    }
+  }
+  if (Fptr != NULL) {
+    fprintf (Fptr, "%s", SaveStart);
+  }
+  
+  free (FileBuffer);
+  if (Fptr != NULL) {
+    fclose (Fptr);
+    return STATUS_SUCCESS;
+  } else {
+    return STATUS_WARNING;
+  }
 }

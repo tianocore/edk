@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -210,6 +210,105 @@ ChangeVariableDevicePath (
 }
 
 BOOLEAN
+RetrieveUartUid (
+  IN EFI_HANDLE   Handle,
+  IN OUT UINT32   *AcpiUid
+  )
+/*++
+
+Routine Description:
+  Retrieve ACPI UID of UART from device path
+  
+Arguments:
+  Handles   -   EFI_SERIAL_IO_PROTOCOL handle
+
+Returns:
+  TRUE  - Find valid UID from device path
+  FALSE - Can't find
+  
+--*/    
+{
+  UINT32                    Match;
+  UINT8                     *Ptr;
+  ACPI_HID_DEVICE_PATH      *Acpi;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  
+  gBS->HandleProtocol (
+        Handle,
+        &gEfiDevicePathProtocolGuid,
+        &DevicePath
+        );
+  Ptr = (UINT8 *) DevicePath;
+
+  while (*Ptr != END_DEVICE_PATH_TYPE) {
+    Ptr++;
+  }
+
+  Ptr   = Ptr - sizeof (UART_DEVICE_PATH) - sizeof (ACPI_HID_DEVICE_PATH);
+  Acpi  = (ACPI_HID_DEVICE_PATH *) Ptr;
+  Match = EISA_PNP_ID (0x0501);
+
+  if (EfiCompareMem (&Acpi->HID, &Match, sizeof (UINT32)) == 0) {
+    if (AcpiUid != NULL) {
+      *AcpiUid = Acpi->UID;
+    }
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+VOID
+SortedUartHandle (
+  IN  EFI_HANDLE *Handles,
+  IN  UINTN      NoHandles
+  )
+/*++
+
+Routine Description:
+  Sort Uart handles array with Acpi->UID from low to high
+  
+Arguments:
+  Handles   -   EFI_SERIAL_IO_PROTOCOL handle buffer
+  NoHandles -   EFI_SERIAL_IO_PROTOCOL handle count
+  
+Returns:
+  None
+
+--*/  
+{
+  UINTN       Index1;
+  UINTN       Index2;
+  UINTN       Position;
+  UINT32      AcpiUid1;
+  UINT32      AcpiUid2;
+  UINT32      TempAcpiUid;
+  EFI_HANDLE  TempHandle;
+  
+  for (Index1 = 0; Index1 < NoHandles-1; Index1++) {
+    if (!RetrieveUartUid (Handles[Index1], &AcpiUid1)) {
+      continue;
+    }
+    TempHandle  = Handles[Index1];
+    Position    = Index1;
+    TempAcpiUid = AcpiUid1;
+    
+    for (Index2 = Index1+1; Index2 < NoHandles; Index2++) {
+      if (!RetrieveUartUid (Handles[Index2], &AcpiUid2)) {
+        continue;
+      }
+      if (AcpiUid2 < TempAcpiUid) {
+        TempAcpiUid = AcpiUid2;        
+        TempHandle  = Handles[Index2];
+        Position    = Index2;
+      }     
+    }
+    Handles[Position] = Handles[Index1];
+    Handles[Index1]   = TempHandle;
+  }
+}
+
+BOOLEAN
 IsTerminalDevicePath (
   IN  EFI_DEVICE_PATH_PROTOCOL *DevicePath,
   OUT TYPE_OF_TERMINAL         *Termi,
@@ -266,6 +365,12 @@ Returns:
     //
     return EFI_UNSUPPORTED;
   }
+  
+  //
+  // Sort Uart handles array with Acpi->UID from low to high
+  // then Terminal menu can be built from low Acpi->UID to high Acpi->UID
+  //
+  SortedUartHandle (Handles, NoHandles);
 
   for (Index = 0; Index < NoHandles; Index++) {
     //
@@ -838,4 +943,51 @@ Returns:
   }
 
   return TRUE;
+}
+
+VOID
+GetConsoleOutMode (
+  IN  BMM_CALLBACK_DATA    *CallbackData
+  )
+/*++
+
+Routine Description:
+  Get mode number according to column and row
+
+Arguments:
+  CallbackData  -  BMM_CALLBACK_DATA
+  
+Returns:
+  None.
+  
+--*/  
+{
+  UINTN                         Col;
+  UINTN                         Row;
+  UINTN                         CurrentCol;
+  UINTN                         CurrentRow;
+  UINTN                         Mode;
+  UINTN                         MaxMode;
+  EFI_STATUS                    Status;
+  CONSOLE_OUT_MODE              *ModeInfo;
+  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ConOut;
+  
+  ConOut   = gST->ConOut;
+  MaxMode  = (UINTN) (ConOut->Mode->MaxMode);
+  ModeInfo = EfiLibGetVariable (VarConOutMode, &gEfiGenericVariableGuid);
+  
+  if (ModeInfo != NULL) {
+    CurrentCol = ModeInfo->Column;
+    CurrentRow = ModeInfo->Row;
+    for (Mode = 0; Mode < MaxMode; Mode++) {
+      Status = ConOut->QueryMode (ConOut, Mode, &Col, &Row);
+      if (!EFI_ERROR(Status)) {
+        if (CurrentCol == Col && CurrentRow == Row) {
+          CallbackData->BmmFakeNvData->ConsoleOutMode = Mode;
+          break;
+        }
+      }
+    }
+  }
+  SafeFreePool (ModeInfo);
 }

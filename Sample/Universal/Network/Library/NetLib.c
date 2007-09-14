@@ -209,7 +209,7 @@ Returns:
   UINT32                    Seed;
 
   gRT->GetTime (&Time, NULL);
-  Seed = (~Time.Hour << 24 | Time.Second << 16 | Time.Minute << 8 | Time.Day);
+  Seed = (~Time.Hour << 24 | Time.Day << 16 | Time.Minute << 8 | Time.Second);
   Seed ^= Time.Nanosecond;
   Seed ^= Time.Year << 7;
 
@@ -1257,6 +1257,124 @@ Returns:
   *MacString = MacAddress;
 
   return EFI_SUCCESS;
+}
+
+STATIC
+BOOLEAN
+NetLibDefaultAddressIsStatic (
+  IN EFI_HANDLE  Controller
+  )
+/*++
+
+Routine Description:
+
+  Check the default address used by the IPv4 driver is static or dynamic (acquired
+  from DHCP).
+
+Arguments:
+
+  Controller - The controller handle which has the NIC Ip4 Config Protocol relative
+               with the default address to judge.
+
+Returns:
+
+  TRUE if the default address is static, FALSE if the default address is acquired
+  from DHCP.
+
+--*/
+{
+  EFI_STATUS                   Status;
+  EFI_NIC_IP4_CONFIG_PROTOCOL  *NicIp4;
+  UINTN                        Len;
+  NIC_IP4_CONFIG_INFO          *ConfigInfo;
+  BOOLEAN                      IsStatic;
+
+  Status = gBS->HandleProtocol (
+                  Controller,
+                  &gEfiNicIp4ConfigProtocolGuid,
+                  &NicIp4
+                  );
+  if (EFI_ERROR (Status)) {
+    return TRUE;
+  }
+
+  Len = 0;
+  Status = NicIp4->GetInfo (NicIp4, &Len, NULL);
+  if (Status != EFI_BUFFER_TOO_SMALL) {
+    return TRUE;
+  }
+
+  ConfigInfo = NetAllocatePool (Len);
+  if (ConfigInfo == NULL) {
+    return TRUE;
+  }
+
+  IsStatic = TRUE;
+  Status = NicIp4->GetInfo (NicIp4, &Len, ConfigInfo);
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
+  }
+
+  IsStatic = (BOOLEAN) (ConfigInfo->Source == IP4_CONFIG_SOURCE_STATIC);
+
+ON_EXIT:
+
+  NetFreePool (ConfigInfo);
+
+  return IsStatic;
+}
+
+VOID
+NetLibCreateIPv4DPathNode (
+  IN OUT IPv4_DEVICE_PATH  *Node,
+  IN EFI_HANDLE            Controller,
+  IN IP4_ADDR              LocalIp,
+  IN UINT16                LocalPort,
+  IN IP4_ADDR              RemoteIp,
+  IN UINT16                RemotePort,
+  IN UINT16                Protocol,
+  IN BOOLEAN               UseDefaultAddress
+  )
+/*++
+
+Routine Description:
+
+  Create an IPv4 device path node.
+
+Arguments:
+
+  Node              - Pointer to the IPv4 device path node.
+  Controller        - The handle where the NIC IP4 config protocol resides.
+  LocalIp           - The local IPv4 address.
+  LocalPort         - The local port.
+  RemoteIp          - The remote IPv4 address.
+  RemotePort        - The remote port.
+  Protocol          - The protocol type in the IP header.
+  UseDefaultAddress - Whether this instance is using default address or not.
+
+Returns:
+
+  None.
+
+--*/
+{
+  Node->Header.Type    = MESSAGING_DEVICE_PATH;
+  Node->Header.SubType = MSG_IPv4_DP;
+  SetDevicePathNodeLength (&Node->Header, 19);
+
+  NetCopyMem (&Node->LocalIpAddress, &LocalIp, sizeof (EFI_IPv4_ADDRESS));
+  NetCopyMem (&Node->RemoteIpAddress, &RemoteIp, sizeof (EFI_IPv4_ADDRESS));
+
+  Node->LocalPort  = LocalPort;
+  Node->RemotePort = RemotePort;
+
+  Node->Protocol = Protocol;
+
+  if (!UseDefaultAddress) {
+    Node->StaticIpAddress = TRUE;
+  } else {
+    Node->StaticIpAddress = NetLibDefaultAddressIsStatic (Controller);
+  }
 }
 
 EFI_HANDLE

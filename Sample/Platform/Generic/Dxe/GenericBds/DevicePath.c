@@ -1210,6 +1210,12 @@ DevicePathToStr (
   CHAR16                           *ToText;
   EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *DevPathToText;
   
+  EfiZeroMem (&Str, sizeof (Str));
+
+  if (DevPath == NULL) {
+    goto Done;
+  }
+
   Status = gBS->LocateProtocol (
                   &gEfiDevicePathToTextProtocolGuid,
                   NULL,
@@ -1218,18 +1224,13 @@ DevicePathToStr (
   if (!EFI_ERROR (Status)) {
     ToText = DevPathToText->ConvertDevicePathToText (
                               DevPath,
-                              TRUE,
+                              FALSE,
                               TRUE
                               );
     ASSERT (ToText != NULL);
     return ToText;
   }
 
-  EfiZeroMem (&Str, sizeof (Str));
-
-  if (DevPath == NULL) {
-    goto Done;
-  }
   //
   // Unpacked the device path
   //

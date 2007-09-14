@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1027,6 +1027,7 @@ Var_UpdateBBSOption (
   UINT8                       *Ptr;
   EFI_STATUS                  Status;
   CHAR16                      DescString[100];
+  CHAR8                       DescAsciiString[100];
   UINTN                       NewOptionSize;
   UINT8                       *NewOptionPtr;
   UINT8                       *TempPtr;
@@ -1183,8 +1184,12 @@ Var_UpdateBBSOption (
       LegacyDeviceContext->Description,
       EfiStrSize (LegacyDeviceContext->Description)
       );
-
-    NewOptionSize = sizeof (UINT32) + sizeof (UINT16) + EfiStrSize (DescString) + sizeof (BBS_TABLE) + sizeof (UINT16);
+    
+    UnicodeToAscii (DescString, EfiStrSize (DescString), DescAsciiString);
+    
+    NewOptionSize = sizeof (UINT32) + sizeof (UINT16) + EfiStrSize (DescString) + 
+                    sizeof (BBS_BBS_DEVICE_PATH) + EfiAsciiStrLen (DescAsciiString) +
+                    EFI_END_DEVICE_PATH_LENGTH + sizeof (BBS_TABLE) + sizeof (UINT16);
 
     SPrint (VarName, 100, L"Boot%04x", Index);
 
@@ -1203,8 +1208,7 @@ Var_UpdateBBSOption (
 
     FilePathSize = *(UINT16 *) Ptr;
     Ptr += sizeof (UINT16);
-
-    NewOptionSize += FilePathSize;
+    Ptr += EfiStrSize ((CHAR16 *) Ptr);
 
     NewOptionPtr = EfiAllocateZeroPool (NewOptionSize);
     if (NULL == NewOptionPtr) {
@@ -1214,16 +1218,28 @@ Var_UpdateBBSOption (
     TempPtr = NewOptionPtr;
 
     //
-    // Copy previous option data to new option except the description string
+    // Attribute
     //
     EfiCopyMem (
       TempPtr,
       BootOptionVar,
-      sizeof (UINT32) + sizeof (UINT16)
+      sizeof (UINT32)
       );
+      
+    TempPtr += sizeof (UINT32);
 
-    TempPtr += (sizeof (UINT32) + sizeof (UINT16));
+    //
+    // BBS device path Length
+    //
+    *((UINT16 *) TempPtr) = (UINT16) (sizeof (BBS_BBS_DEVICE_PATH) + 
+                         EfiAsciiStrLen (DescAsciiString) +
+                         EFI_END_DEVICE_PATH_LENGTH);
 
+    TempPtr += sizeof (UINT16);
+    
+    //
+    // Description string
+    //
     EfiCopyMem (
       TempPtr,
       DescString,
@@ -1233,32 +1249,49 @@ Var_UpdateBBSOption (
     TempPtr += EfiStrSize (DescString);
 
     //
-    // Description = (CHAR16 *)Ptr;
+    // BBS device path
     //
-    Ptr += EfiStrSize ((CHAR16 *) Ptr);
-
     EfiCopyMem (
       TempPtr,
       Ptr,
-      FilePathSize
+      sizeof (BBS_BBS_DEVICE_PATH)
       );
+    
+    EfiCopyMem (
+      ((BBS_BBS_DEVICE_PATH*) TempPtr)->String,
+      DescAsciiString,
+      EfiAsciiStrSize (DescAsciiString)
+      );
+      
+    SetDevicePathNodeLength (
+          (EFI_DEVICE_PATH_PROTOCOL *) TempPtr, 
+          sizeof (BBS_BBS_DEVICE_PATH) + EfiAsciiStrLen (DescAsciiString)
+          );
 
-    TempPtr += FilePathSize;
+    TempPtr += sizeof (BBS_BBS_DEVICE_PATH) + EfiAsciiStrLen (DescAsciiString);
+    
+    //
+    // End node
+    //
+    EfiCopyMem (
+      TempPtr,
+      EndDevicePath,
+      EFI_END_DEVICE_PATH_LENGTH
+      );
+    TempPtr += EFI_END_DEVICE_PATH_LENGTH;
 
     //
-    // DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)Ptr;
-    //
-    Ptr += FilePathSize;
-
-    //
-    // Now Ptr point to optional data, i.e. Bbs Table
+    // Now TempPtr point to optional data, i.e. Bbs Table
     //
     EfiCopyMem (
       TempPtr,
       LegacyDeviceContext->BbsTable,
       sizeof (BBS_TABLE)
       );
-
+    
+    //
+    // Now TempPtr point to BBS index
+    //
     TempPtr += sizeof (BBS_TABLE);
     *((UINT16 *) TempPtr) = (UINT16) LegacyDeviceContext->Index;
 
@@ -1275,5 +1308,33 @@ Var_UpdateBBSOption (
   }
 
   BOpt_GetBootOptions (CallbackData);
+  return Status;
+}
+
+EFI_STATUS
+Var_UpdateConMode (
+  IN BMM_CALLBACK_DATA            *CallbackData
+  )
+{
+  EFI_STATUS        Status;
+  UINTN             Mode;
+  CONSOLE_OUT_MODE  ModeInfo;
+
+  Mode = CallbackData->BmmFakeNvData->ConsoleOutMode;
+  
+  Status = gST->ConOut->QueryMode (gST->ConOut, Mode, &(ModeInfo.Column), &(ModeInfo.Row));
+  if (EFI_ERROR(Status)) {
+    ModeInfo.Column = 80;
+    ModeInfo.Row = 25;    
+  }
+  
+  Status = gRT->SetVariable (
+                  VarConOutMode,
+                  &gEfiGenericVariableGuid,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  sizeof (CONSOLE_OUT_MODE),
+                  &ModeInfo
+                  );
+  
   return Status;
 }

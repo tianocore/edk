@@ -830,7 +830,7 @@ Returns:
     UsbHubCtrlSetPortFeature (HubIf->Device, Index, USB_HUB_PORT_POWER);
   }
 
-  gBS->Stall (HubDesc.PwrOn2PwrGood * 2 * USB_STALL_1_MS);
+  gBS->Stall (HubDesc.PwrOn2PwrGood * USB_SET_PORT_POWER_STALL);
   UsbHubAckHubStatus (HubIf->Device);
   
   USB_DEBUG (("UsbHubInit: hub %d initialized\n", HubDev->Address));
@@ -1030,14 +1030,14 @@ Returns:
   // Drive the reset signal for at least 10ms. Check USB 2.0 Spec
   // section 7.1.7.5 for timing requirements.
   //
-  gBS->Stall (20 * USB_STALL_1_MS);
+  gBS->Stall (USB_SET_PORT_RESET_STALL);
 
   //
   // USB hub will clear RESET bit if reset is actually finished.
   //
   EfiZeroMem (&PortState, sizeof (EFI_USB_PORT_STATUS));
 
-  for (Index = 0; Index < 20; Index++) {
+  for (Index = 0; Index < USB_WAIT_PORT_STS_CHANGE_LOOP; Index++) {
     Status = UsbHubGetPortStatus (HubIf, Port, &PortState);
 
     if (!EFI_ERROR (Status) && 
@@ -1046,7 +1046,7 @@ Returns:
       return EFI_SUCCESS;
     }
 
-    gBS->Stall (5 * USB_STALL_1_MS);
+    gBS->Stall (USB_WAIT_PORT_STS_CHANGE_STALL);
   }
 
   return EFI_TIMEOUT;
@@ -1161,6 +1161,13 @@ Returns:
     return Status;
   }
 
+
+  //
+  // It should signal the event immediately here, or device detection
+  // by bus enumeration might be delayed by the timer interval.
+  //
+  gBS->SignalEvent (HubIf->HubNotify);
+
   Status = gBS->SetTimer (
                   HubIf->HubNotify,
                   TimerPeriodic,
@@ -1170,7 +1177,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     gBS->CloseEvent (HubIf->HubNotify);
   }
-
+  
   return Status;
 }
 
@@ -1379,7 +1386,7 @@ Returns:
   // Drive the reset signal for at least 50ms. Check USB 2.0 Spec
   // section 7.1.7.5 for timing requirements.
   //
-  gBS->Stall (50 * USB_STALL_1_MS);
+  gBS->Stall (USB_SET_ROOT_PORT_RESET_STALL);
 
   Status = UsbHcClearRootHubPortFeature (Bus, Port, EfiUsbPortReset);
 
@@ -1388,7 +1395,7 @@ Returns:
     return Status;
   }
 
-  gBS->Stall (USB_STALL_1_MS);
+  gBS->Stall (USB_CLR_ROOT_PORT_RESET_STALL);
 
   //
   // USB host controller won't clear the RESET bit until
@@ -1396,7 +1403,7 @@ Returns:
   //
   EfiZeroMem (&PortState, sizeof (EFI_USB_PORT_STATUS));
   
-  for (Index = 0; Index < USB_HUB_LOOP; Index++) {
+  for (Index = 0; Index < USB_WAIT_PORT_STS_CHANGE_LOOP; Index++) {
     Status = UsbHcGetRootHubPortStatus (Bus, Port, &PortState);
 
     if (EFI_ERROR (Status)) {
@@ -1407,10 +1414,10 @@ Returns:
       break;
     }
 
-    gBS->Stall (10 * USB_STALL_1_MS);
+    gBS->Stall (USB_WAIT_PORT_STS_CHANGE_STALL);
   }
 
-  if (Index == USB_HUB_LOOP) {
+  if (Index == USB_WAIT_PORT_STS_CHANGE_LOOP) {
     USB_ERROR (("UsbRootHubResetPort: reset not finished in time on port %d\n", Port));
     return EFI_TIMEOUT;
   }
@@ -1437,7 +1444,7 @@ Returns:
         return Status;
       }
       
-      gBS->Stall (20 * USB_STALL_1_MS);
+      gBS->Stall (USB_SET_ROOT_PORT_ENABLE_STALL);
     }
   }
 

@@ -146,6 +146,7 @@ typedef struct {
 #define FORM_SET_CD_ORDER_ID                 0x001B
 #define FORM_SET_NET_ORDER_ID                0x001C
 #define FORM_SET_BEV_ORDER_ID                0x001D
+#define FORM_CON_MODE_ID                     0x0021
 									
 #define KEY_VALUE_BOOT_FROM_FILE             0x0092
 
@@ -391,11 +392,23 @@ formset
        flags = INTERACTIVE | NV_ACCESS,
        key = FORM_CON_ERR_ID;
 
+       goto FORM_CON_MODE_ID,
+       prompt = STRING_TOKEN(STR_FORM_MODE_TITLE),
+       help = STRING_TOKEN(STR_FORM_MODE_HELP),
+       flags = INTERACTIVE | NV_ACCESS,
+       key = FORM_CON_MODE_ID; 
+
        goto FORM_CON_COM_ID,
        prompt = STRING_TOKEN(STR_FORM_COM_TITLE),
        help = STRING_TOKEN(STR_FORM_COM_HELP),
        flags = INTERACTIVE | NV_ACCESS,
        key = FORM_CON_COM_ID;
+  endform;
+
+  form formid = FORM_CON_MODE_ID,
+       title = STRING_TOKEN(STR_FORM_MODE_TITLE);
+
+       label FORM_CON_MODE_ID;
   endform;
 
   form formid = FORM_CON_COM_ID,

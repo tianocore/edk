@@ -152,7 +152,7 @@ ConSpliterConsoleControlSetMode (
   }
 
   if (Mode == EfiConsoleControlScreenText) {
-    DevNullSyncGopStdOut (Private);
+    DevNullSyncStdOut (Private);
   }
 
   return EFI_SUCCESS;
@@ -1308,7 +1308,7 @@ DevNullTextOutSetMode (
     return EFI_UNSUPPORTED;
   }
 
-  if (Private->DevNullColumns != Column || Private->DevNullRows != Row) {
+  if (Private->TextOutMode.Mode != (INT32) ModeNumber) {
 
     Private->TextOutMode.Mode = (INT32) ModeNumber;
     Private->DevNullColumns   = Column;
@@ -1456,7 +1456,7 @@ DevNullTextOutEnableCursor (
 }
 
 EFI_STATUS
-DevNullSyncGopStdOut (
+DevNullSyncStdOut (
   IN  TEXT_OUT_SPLITTER_PRIVATE_DATA  *Private
   )
 /*++
