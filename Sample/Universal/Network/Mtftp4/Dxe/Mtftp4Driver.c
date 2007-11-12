@@ -191,7 +191,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL | EFI_EVENT_TIMER,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_TIMER,
                   Mtftp4OnTimerTick,
                   MtftpSb,
                   &MtftpSb->Timer
@@ -208,7 +208,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_TIMER,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_TIMER,
                   NULL,
                   NULL,
                   &MtftpSb->TimerToGetMap

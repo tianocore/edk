@@ -50,7 +50,7 @@ CurrentHead       db  0             ; Current Head        - 8 bits
 Signature         db  0             ; Signature           - 8 bits  - ignored
 VolId             db  "    "        ; Volume Serial Number- 4 bytes
 FatLabel          db  "           " ; Label               - 11 bytes
-SystemId          db  "        "    ; SystemId            - 8 bytes
+SystemId          db  "FAT16   "    ; SystemId            - 8 bytes
 
 BootSectorEntryPoint:
         ASSUME  ds:@code
@@ -219,7 +219,7 @@ ReadBlocks:
 ReadCylinderLoop:
         mov     bp,07bfch                           ; bp = 0x7bfc
         mov     eax,esi                             ; eax = Start LBA
-        xor     dx,dx                               ; dx = 0
+        xor     edx,edx                             ; edx = 0
         movzx   ebx,word ptr [bp]                   ; bx = MaxSector
         div     ebx                                 ; ax = StartLBA / MaxSector
         inc     dx                                  ; dx = (StartLBA % MaxSector) + 1

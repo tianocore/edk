@@ -37,6 +37,7 @@ EFI_FORWARD_DECLARATION (VARIABLE_STORAGE);
 EFI_STATUS
 FileStorageConstructor (
   OUT VARIABLE_STORAGE      **VarStore,
+  OUT EFI_EVENT_NOTIFY      *GoVirtualEvent,
   IN  EFI_PHYSICAL_ADDRESS  NvStorageBase,
   IN  UINTN                 Size,
   IN  UINT32                VolumeId,
@@ -44,15 +45,9 @@ FileStorageConstructor (
   );
 
 EFI_STATUS
-MemNvStorageConstructor (
-  OUT VARIABLE_STORAGE          **VarStore,
-  IN  VOID                      *NvStorageBase,
-  IN  UINT32                    Size
-  );
-
-EFI_STATUS
 MemStorageConstructor (
   OUT VARIABLE_STORAGE          **VarStore,
+  OUT EFI_EVENT_NOTIFY          *GoVirtualEvent,
   IN  UINTN                     Size
   );
 

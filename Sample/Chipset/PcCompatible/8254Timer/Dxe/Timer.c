@@ -94,6 +94,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 TimerInterruptHandler (
   IN EFI_EXCEPTION_TYPE   InterruptType,
   IN EFI_SYSTEM_CONTEXT   SystemContext

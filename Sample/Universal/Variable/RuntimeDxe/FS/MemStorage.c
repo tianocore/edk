@@ -37,12 +37,14 @@ OnVirtualAddressChange (
 
 STATIC
 EFI_STATUS
+EFIAPI
 MemEraseStore(
   IN VARIABLE_STORAGE   *This
   );
 
 STATIC
 EFI_STATUS
+EFIAPI
 MemWriteStore (
   IN VARIABLE_STORAGE   *This,
   IN UINTN                Offset,
@@ -53,11 +55,11 @@ MemWriteStore (
 EFI_STATUS
 MemStorageConstructor (
   OUT VARIABLE_STORAGE          **VarStore,
+  OUT EFI_EVENT_NOTIFY          *GoVirtualEvent,
   IN  UINTN                     Size
   )
 {
   EFI_STATUS                  Status;
-  EFI_EVENT                   Event;
   VS_DEV                      *Dev;
 
   Status = gBS->AllocatePool (EfiRuntimeServicesData, sizeof(VS_DEV), &Dev);
@@ -76,20 +78,8 @@ MemStorageConstructor (
 
   DEBUG ((EFI_D_ERROR, "VStorage: Size = 0x%x\n", Size));
   
-  //
-  // This a runtime ram device, we need to update any internal
-  // pointers for the device if the OS sets the environment into
-  // virtual mode
-  //
-  Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
-                  EFI_TPL_NOTIFY,
-                  OnVirtualAddressChange,
-                  Dev,
-                  &Event
-                  );
-  ASSERT_EFI_ERROR (Status);
-  *VarStore = &Dev->VarStore;
+  *VarStore       = &Dev->VarStore;
+  *GoVirtualEvent = OnVirtualAddressChange;
 
   return EFI_SUCCESS;
 }
@@ -104,7 +94,7 @@ OnVirtualAddressChange (
 {
   VS_DEV                  *Dev;
 
-  Dev = Context;
+  Dev = DEV_FROM_THIS (Context);
 
   EfiConvertPointer (EFI_INTERNAL_POINTER, &VAR_DATA_PTR (Dev));
   EfiConvertPointer (EFI_INTERNAL_POINTER, &Dev->VarStore.Erase);
@@ -113,6 +103,7 @@ OnVirtualAddressChange (
 
 STATIC
 EFI_STATUS
+EFIAPI
 MemEraseStore(
   IN VARIABLE_STORAGE   *This
   )
@@ -127,6 +118,7 @@ MemEraseStore(
 
 STATIC
 EFI_STATUS
+EFIAPI
 MemWriteStore (
   IN VARIABLE_STORAGE     *This,
   IN UINTN                Offset,

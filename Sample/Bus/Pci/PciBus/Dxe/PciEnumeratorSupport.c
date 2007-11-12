@@ -1006,6 +1006,12 @@ Returns:
     }
 
     PciRomGetImageMapping (Temp);
+
+    //
+    // The OpRom has already been processed in the first round
+    //
+    Temp->AllOpRomProcessed = TRUE;
+
     CurrentLink = CurrentLink->ForwardLink;
   }
 
@@ -1847,7 +1853,8 @@ PciEnumeratorLight (
 Routine Description:
 
   This routine is used to enumerate entire pci bus system 
-  in a given platform
+  in a given platform.
+  It is only called on the second start on the same Root Bridge.
 
 Arguments:
 
@@ -1873,9 +1880,9 @@ Returns:
   Descriptors = NULL;
 
   //
-  // If this host bridge has been already enumerated, then return successfully
+  // If this root bridge has been already enumerated, then return successfully
   //
-  if (RootBridgeExisted (Controller)) {
+  if (GetRootBridgeByHandle (Controller) != NULL) {
     return EFI_SUCCESS;
   }
 

@@ -23,7 +23,6 @@ Abstract:
 #include "Tiano.h"
 #include "Pei.h"
 #include "DxeIpl.h"
-#include "EfiHobLib.h"
 
 EFI_PEI_SERVICES                  **gPeiServices;
 

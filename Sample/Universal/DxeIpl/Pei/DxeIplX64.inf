@@ -56,7 +56,6 @@ COMPONENT_TYPE       = PE32_PEIM
   EdkFrameworkPpiLib
   PeiLib
   PeiHobLib
-  HobLib
   CustomizedDecompress
 
 [libraries.ia32.nt32]

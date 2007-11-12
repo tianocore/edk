@@ -1235,6 +1235,7 @@ Returns:
   
   Status = FileStorageConstructor (
              &mGlobal->VariableStore[NonVolatile], 
+             &mGlobal->GoVirtualChildEvent[NonVolatile],
              VariableStoreEntry.Base,
              (UINT32) VariableStoreEntry.Length,
              FlashMapEntryData->VolumeId,
@@ -1245,7 +1246,11 @@ Returns:
   //
   // Volatile Storage
   //
-  Status = MemStorageConstructor (&mGlobal->VariableStore[Volatile], VOLATILE_VARIABLE_STORE_SIZE);
+  Status = MemStorageConstructor (
+             &mGlobal->VariableStore[Volatile],
+             &mGlobal->GoVirtualChildEvent[Volatile],
+             VOLATILE_VARIABLE_STORE_SIZE
+             );
   ASSERT_EFI_ERROR (Status);
 
   //
@@ -1354,6 +1359,7 @@ OnVirtualAddressChange (
   UINTN Index;
 
   for (Index = 0; Index < MaxType; Index++) {
+    mGlobal->GoVirtualChildEvent[Index] (Event, mGlobal->VariableStore[Index]);
     EfiConvertPointer (EFI_INTERNAL_POINTER, &mGlobal->VariableStore[Index]);
     EfiConvertPointer (EFI_INTERNAL_POINTER, &mGlobal->VariableBase[Index]);
   }

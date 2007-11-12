@@ -543,7 +543,13 @@ TerminalDriverBindingStart (
   // For terminal devices, cursor is always visible
   //
   TerminalDevice->SimpleTextOutputMode.CursorVisible  = TRUE;
-  TerminalDevice->SimpleTextOutputMode.Attribute      = EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK);
+  Status = TerminalDevice->SimpleTextOutput.SetAttribute (
+                                                      &TerminalDevice->SimpleTextOutput,
+                                                      EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK)
+                                                      );
+  if (EFI_ERROR (Status)) {
+    goto ReportError;
+  }
 
   Status = TerminalDevice->SimpleTextOutput.Reset (
                                               &TerminalDevice->SimpleTextOutput,

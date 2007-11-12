@@ -100,7 +100,7 @@ all: $(TARGET_LIB)
 "$(EDK_TOOLS_OUTPUT)\PeCoffLoaderEx.obj": "$(EDK_SOURCE)\Foundation\Library\Pei\PeiLib\$(PROCESSOR)\PeCoffLoaderEx.c"
   $(CC) $(C_FLAGS) "$(EDK_SOURCE)\Foundation\Library\Pei\PeiLib\$(PROCESSOR)\PeCoffLoaderEx.c" /Fo"$(EDK_TOOLS_OUTPUT)\PeCoffLoaderEx.obj"
 
-"$(EDK_TOOLS_OUTPUT)\FvLib.obj": "$(TARGET_SOURCE_DIR)\FvLib.c" "$(TARGET_SOURCE_DIR)\FvLib.h" $(EDK_SOURCE)\Sample\Include\Efi2WinNt.h $(EDK_SOURCE)\Foundation\Framework\Include\EfiFirmwareFileSystem.h "$(EDK_SOURCE)\Foundation\Framework\Include\EfiFirmwareVolumeHeader.h"
+"$(EDK_TOOLS_OUTPUT)\FvLib.obj": "$(TARGET_SOURCE_DIR)\FvLib.c" "$(TARGET_SOURCE_DIR)\FvLib.h" $(EDK_SOURCE)\Foundation\Framework\Include\EfiFirmwareFileSystem.h "$(EDK_SOURCE)\Foundation\Framework\Include\EfiFirmwareVolumeHeader.h"
   $(CC) $(C_FLAGS) "$(TARGET_SOURCE_DIR)\FvLib.c" /Fo"$(EDK_TOOLS_OUTPUT)\FvLib.obj"
 
 "$(EDK_TOOLS_OUTPUT)\EfiUtilityMsgs.obj": "$(TARGET_SOURCE_DIR)\EfiUtilityMsgs.c" "$(TARGET_SOURCE_DIR)\EfiUtilityMsgs.h"

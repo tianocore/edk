@@ -184,6 +184,7 @@ Returns:
 STATIC
 EFI_STATUS
 CoreLoadPeImage (
+  IN  BOOLEAN                    BootPolicy,
   IN VOID                        *Pe32Handle,           
   IN LOADED_IMAGE_PRIVATE_DATA   *Image,                
   IN EFI_PHYSICAL_ADDRESS        DstBuffer    OPTIONAL,
@@ -215,9 +216,11 @@ Returns:
 
 --*/
 {
-  EFI_STATUS      Status;
-  BOOLEAN         DstBufAlocated;
-  UINTN           Size;
+  EFI_STATUS                Status;
+  BOOLEAN                   DstBufAlocated;
+  UINTN                     Size;
+  EFI_IMAGE_NT_HEADERS64    *PeHdr;
+  EFI_TCG_PLATFORM_PROTOCOL *TcgPlatformProtocol;
   
   DEBUG_CODE (
     UINTN   Index;
@@ -348,6 +351,33 @@ Returns:
         goto Done;
       }
     }
+  }
+
+  //
+  // Measure the image before applying fixup
+  //
+  Status = CoreLocateProtocol (
+             &gEfiTcgPlatformProtocolGuid,
+             NULL,
+             &TcgPlatformProtocol
+             );
+  if (!EFI_ERROR (Status)) {
+    PeHdr  = (EFI_IMAGE_NT_HEADERS64 *)(UINTN) (
+                Image->ImageContext.ImageAddress +
+                Image->ImageContext.PeCoffHeaderOffset
+                );
+    
+    Status = TcgPlatformProtocol->MeasurePeImage (
+                                    BootPolicy,
+                                    Image->ImageContext.ImageAddress,
+                                    (UINTN) Image->ImageContext.ImageSize,
+                                    (UINTN) PeHdr->OptionalHeader.ImageBase,
+                                    Image->ImageContext.ImageType,
+                                    Image->Info.DeviceHandle,
+                                    Image->Info.FilePath
+                                    );
+    
+    ASSERT_EFI_ERROR (Status);
   }
 
   //
@@ -634,7 +664,7 @@ Returns:
              BootPolicy,
              SourceBuffer,
              SourceSize,
-             FilePath,
+             &FilePath,
              &DeviceHandle,
              &FHand,
              &AuthenticationStatus
@@ -673,7 +703,8 @@ Returns:
 
   // 
   // Pull out just the file portion of the DevicePath for the LoadedImage FilePath
-  //
+  // 
+  FilePath = OriginalFilePath;
   Status = CoreHandleProtocol (DeviceHandle, &gEfiDevicePathProtocolGuid, &HandleFilePath);
   if (!EFI_ERROR (Status)) {
     FilePathSize = CoreDevicePathSize (HandleFilePath) - sizeof(EFI_DEVICE_PATH_PROTOCOL);
@@ -722,7 +753,7 @@ Returns:
   //
   // Load the image.  If EntryPoint is Null, it will not be set.
   //
-  Status = CoreLoadPeImage (&FHand, Image, DstBuffer, EntryPoint, Attribute, CrossLoad);
+  Status = CoreLoadPeImage (BootPolicy, &FHand, Image, DstBuffer, EntryPoint, Attribute, CrossLoad);
   if (EFI_ERROR (Status)) {
     if ((Status == EFI_BUFFER_TOO_SMALL) || (Status == EFI_OUT_OF_RESOURCES)) {
       if (NumberOfPages != NULL) {

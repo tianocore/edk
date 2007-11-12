@@ -998,7 +998,7 @@ ProcessOptions (
       gBS->FreePool (StringPtr);
       return Status;
     } else {
-      for (Index = 0; Index < gOptionBlockWidth; Index++) {
+      for (Index = 0; Index < (gOptionBlockWidth + 1) * gScreenDimensions.BottomRow; Index++) {
         if (VariableDefinition->NvRamMap[Tag->StorageStart + (Index * 2)] != 0x0000) {
           EfiCopyMem (OptionString[0] + Index, &VariableDefinition->NvRamMap[Tag->StorageStart + (Index * 2)], 2);
         } else {

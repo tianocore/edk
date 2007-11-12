@@ -64,7 +64,7 @@ Reserved1           db  0             ; Reserved Field                  - 1 byte
 Signature           db  0             ; Extended Boot Signature         - 1 byte
 VolId               db  "    "        ; Volume Serial Number            - 4 bytes
 FatLabel            db  "           " ; Volume Label                    - 11 bytes
-FileSystemType      db  "        "    ; File System Type                - 8 bytes
+FileSystemType      db  "FAT32   "    ; File System Type                - 8 bytes
 
 BootSectorEntryPoint:
         ASSUME  ds:@code
@@ -247,7 +247,7 @@ ReadBlocks:
 ReadCylinderLoop:
         mov     bp,07bfch                           ; bp = 0x7bfc
         mov     eax,esi                             ; eax = Start LBA
-        xor     dx,dx                               ; dx = 0
+        xor     edx,edx                             ; edx = 0
         movzx   ebx,word ptr [bp]                   ; bx = MaxSector
         div     ebx                                 ; ax = StartLBA / MaxSector
         inc     dx                                  ; dx = (StartLBA % MaxSector) + 1

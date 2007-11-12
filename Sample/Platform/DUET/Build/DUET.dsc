@@ -159,6 +159,11 @@ Foundation\Library\Thunk16\Thunk16Lib.inf
 #
 #Sample\Application\Shell\Library\EfiShellLib.inf
 
+#
+# Platform Driver Override protocol support
+#
+Sample\Platform\Generic\Dxe\PlatDriOverLib\PlatDriOverLib.inf
+
 [=============================================================================]
 #
 # These are the components that will be built by the master makefile
@@ -223,6 +228,7 @@ Sample\Universal\FirmwareVolume\FaultTolerantWriteLite\Dxe\FtwLite.inf    FV=NUL
 Sample\Universal\Variable\RuntimeDxe\Variable.inf                         FV=NULL
 Sample\Universal\Variable\RuntimeDxe\FS\FSVariable.inf
 
+Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf
 Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
 Sample\Platform\DUET\Dxe\PlatformBds\PlatformBds.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\StatusCode.inf
@@ -395,5 +401,11 @@ Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 # Support Application
 #
 #Sample\Platform\DUET\Loader\DumpBs\DumpBs.inf   FV=NULL
+
+#
+# Platform Driver Override protocol support
+#
+Sample\Platform\Generic\Dxe\PlatformDriOverride\PlatformDriOverride.inf
+Sample\Platform\Generic\Dxe\PlatformBds\DeviceMngr\PlatOverMngr\PlatOverMngr.Inf
 
 [=============================================================================]

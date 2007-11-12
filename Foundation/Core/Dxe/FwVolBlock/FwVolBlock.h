@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -279,26 +279,6 @@ Arguments:
 Returns:
   EFI_SUCCESS  -  The firmware volume base address is returned.
   EFI_INVALID_PARAMETER  -  The requested LBA is out of range.
---*/
-;
-
-EFI_STATUS
-FwVolBlockDriverInit (
-  IN EFI_HANDLE               ImageHandle,
-  IN EFI_SYSTEM_TABLE         *SystemTable
-  )
-/*++
-
-Routine Description:
-    This routine is the driver initialization entry point.  It initializes the
-    libraries, consumes FV hobs and NT_NON_MM_FV environment variable and
-    produces instances of FW_VOL_BLOCK_PROTOCOL as appropriate.
-Arguments:
-    ImageHandle   - The image handle.
-    SystemTable   - The system table.
-Returns:
-    Status code
-
 --*/
 ;
 

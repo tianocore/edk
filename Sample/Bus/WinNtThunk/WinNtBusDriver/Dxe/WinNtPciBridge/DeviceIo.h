@@ -49,7 +49,9 @@ typedef struct {
 
 EFI_STATUS
 DeviceIoConstructor (
-  VOID
+  EFI_HANDLE                      RootBridgeHandle,
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo,
+  EFI_DEVICE_PATH_PROTOCOL        *DevicePath
   )
 /*++
 

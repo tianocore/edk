@@ -23,7 +23,6 @@ Abstract:
 #include "Tiano.h"
 #include "Pei.h"
 #include "DxeIpl.h"
-#include "EfiHobLib.h"
 #include "DxeLoadFunc.h"
 
 #pragma warning( disable : 4305 )

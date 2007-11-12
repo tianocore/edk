@@ -423,7 +423,9 @@ Returns:
   EFI_DECOMPRESS_PROTOCOL       *Decompress;
   EFI_PCI_EXPANSION_ROM_HEADER  *EfiRomHeader;
   PCI_DATA_STRUCTURE            *Pcir;
-
+  EFI_DEVICE_PATH_PROTOCOL      *PciOptionRomImageDevicePath;
+  MEMMAP_DEVICE_PATH            PciOptionRomImageNode;
+  
   Indicator = 0;
 
   //
@@ -514,16 +516,32 @@ Returns:
 
         if (!SkipImage) {
           //
+          // Create Pci Option Rom Image device path header
+          //
+          PciOptionRomImageNode.Header.Type     = HARDWARE_DEVICE_PATH;
+          PciOptionRomImageNode.Header.SubType  = HW_MEMMAP_DP;
+          SetDevicePathNodeLength (&PciOptionRomImageNode.Header, sizeof (PciOptionRomImageNode));
+          //
+          // Use Memory Mapped device path node to record the image offset into the PCI Option ROM 
+          //
+          PciOptionRomImageNode.MemoryType = EfiMemoryMappedIO;
+          PciOptionRomImageNode.StartingAddress = (EFI_PHYSICAL_ADDRESS) (RomBarOffset - (UINT8 *) RomBar);
+          PciOptionRomImageNode.EndingAddress   = (EFI_PHYSICAL_ADDRESS) (RomBarOffset + ImageSize - 1 - (UINT8 *) RomBar);
+          PciOptionRomImageDevicePath = EfiAppendDevicePathNode (PciDevice->DevicePath, &PciOptionRomImageNode.Header);
+          ASSERT (PciOptionRomImageDevicePath != NULL);
+
+          //
           // load image and start image
           //
           Status = gBS->LoadImage (
                           FALSE,
                           gPciBusDriverBinding.DriverBindingHandle,
-                          NULL,
+                          PciOptionRomImageDevicePath,
                           ImageBuffer,
                           ImageLength,
                           &ImageHandle
                           );
+          gBS->FreePool (PciOptionRomImageDevicePath);
           if (!EFI_ERROR (Status)) {
             Status = gBS->StartImage (ImageHandle, NULL, NULL);
             if (!EFI_ERROR (Status)) {

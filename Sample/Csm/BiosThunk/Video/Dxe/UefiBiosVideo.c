@@ -1236,6 +1236,8 @@ BiosVideoCheckForVbe (
     return Status;
   }
 
+  EfiZeroMem (&ValidEdidTiming, sizeof (VESA_BIOS_EXTENSIONS_VALID_EDID_TIMING));
+
   //
   // Fill in the Graphics Output Protocol
   //
@@ -1250,7 +1252,7 @@ BiosVideoCheckForVbe (
   BiosVideoPrivate->VbeInformationBlock = (VESA_BIOS_EXTENSIONS_INFORMATION_BLOCK *) (UINTN) (BiosVideoPrivate->PagesBelow1MB);
   BiosVideoPrivate->VbeModeInformationBlock = (VESA_BIOS_EXTENSIONS_MODE_INFORMATION_BLOCK *) (BiosVideoPrivate->VbeInformationBlock + 1);
   BiosVideoPrivate->VbeEdidDataBlock = (VESA_BIOS_EXTENSIONS_EDID_DATA_BLOCK *) (BiosVideoPrivate->VbeModeInformationBlock + 1);
-  BiosVideoPrivate->VbeCrtcInformationBlock = (VESA_BIOS_EXTENSIONS_CRTC_INFORMATION_BLOCK *) (BiosVideoPrivate->VbeModeInformationBlock + 1);
+  BiosVideoPrivate->VbeCrtcInformationBlock = (VESA_BIOS_EXTENSIONS_CRTC_INFORMATION_BLOCK *) (BiosVideoPrivate->VbeEdidDataBlock + 1);
   BiosVideoPrivate->VbeSaveRestorePages   = 0;
   BiosVideoPrivate->VbeSaveRestoreBuffer  = 0;
 
@@ -1426,7 +1428,7 @@ BiosVideoCheckForVbe (
       continue;
     }
 
-    if (EdidFound) {
+    if (EdidFound && (ValidEdidTiming.ValidNumber > 0)) {
       //
       // EDID exist, check whether this mode match with any mode in EDID
       //

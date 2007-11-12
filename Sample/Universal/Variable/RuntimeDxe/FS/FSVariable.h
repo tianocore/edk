@@ -69,6 +69,7 @@ typedef struct {
 
 
 typedef struct {
+  EFI_EVENT_NOTIFY   GoVirtualChildEvent[MaxType];
   VARIABLE_STORAGE   *VariableStore[MaxType];       // Instance of VariableStorage
   VOID               *VariableBase[MaxType];        // Start address of variable storage
   UINTN              LastVariableOffset[MaxType];   // The position to write new variable to (index from VariableBase)

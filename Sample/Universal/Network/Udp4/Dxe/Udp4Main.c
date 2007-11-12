@@ -291,7 +291,9 @@ Returns:
     //
     // Remove the buffered RxData for this instance.
     //
-    Udp4FlushRxData (&Instance->RcvdDgramQue);
+    Udp4FlushRcvdDgram (Instance);
+
+    ASSERT (NetListIsEmpty (&Instance->DeliveredDgramQue));
   }
 
   Udp4SetVariableData (Instance->Udp4Service);

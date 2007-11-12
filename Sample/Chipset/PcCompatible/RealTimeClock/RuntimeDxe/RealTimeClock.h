@@ -208,6 +208,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 PcRtcSetWakeupTime (
   IN BOOLEAN                Enable,
   OUT EFI_TIME              *Time,
@@ -233,6 +234,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 PcRtcGetWakeupTime (
   OUT BOOLEAN               *Enabled,
   OUT BOOLEAN               *Pending,

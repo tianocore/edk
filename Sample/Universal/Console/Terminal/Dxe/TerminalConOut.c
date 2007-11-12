@@ -166,7 +166,7 @@ TerminalConOutReset (
     }
   }
 
-  This->SetAttribute (This, EFI_TEXT_ATTR (This->Mode->Attribute & 0x0F, EFI_BACKGROUND_BLACK));
+  This->SetAttribute (This, EFI_TEXT_ATTR (This->Mode->Attribute & 0x0F, EFI_BLACK));
 
   Status = This->SetMode (This, 0);
 
@@ -622,6 +622,14 @@ TerminalConOutSetAttribute (
   //
   if ((Attribute | 0x7f) != 0x7f) {
     return EFI_UNSUPPORTED;
+  }
+
+  //
+  // Skip outputting the command string for the same attribute
+  //   It improves the terminal performance siginificantly
+  //
+  if (This->Mode->Attribute == (INT32) Attribute) {
+    return EFI_SUCCESS;
   }
   //
   //  convert Attribute value to terminal emulator

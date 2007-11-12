@@ -23,7 +23,6 @@ Abstract:
 #include "Tiano.h"
 #include "Pei.h"
 #include "PiDxeIpl.h"
-#include "EfiHobLib.h"
 #include "PeiLib.h"
 #include EFI_PPI_DEFINITION (RecoveryModule)
 #include EFI_PPI_DEFINITION (S3Resume)

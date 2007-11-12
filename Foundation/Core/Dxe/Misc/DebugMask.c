@@ -27,6 +27,7 @@ extern UINTN                     mErrorLevel;
 static VOID                      *mVariableReadyNotify;
 
 VOID
+EFIAPI
 UpdateDebugMask (
   EFI_EVENT Event,
   VOID      *Context
@@ -331,6 +332,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 UpdateDebugMask (
   EFI_EVENT Event,
   VOID      *Context

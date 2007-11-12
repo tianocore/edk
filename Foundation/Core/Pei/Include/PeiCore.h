@@ -61,7 +61,7 @@ typedef union _PEI_PPI_LIST_POINTERS {
 
 #define PEI_STACK_SIZE 0x20000
 
-#define MAX_PPI_DESCRIPTORS 64
+#define MAX_PPI_DESCRIPTORS 128
 
 typedef struct {
   INTN                    PpiListEnd;

@@ -898,13 +898,37 @@ Returns:
 
 --*/
 {
-  EFI_STATUS    Status;
+  EFI_STATUS                Status, Status2;
+  EFI_TCG_PLATFORM_PROTOCOL *TcgPlatformProtocol;
+
+  //
+  // Measure invocation of ExitBootServices, 
+  // which is defined by TCG_EFI_Platform_1_20_Final Specification
+  //
+  TcgPlatformProtocol = NULL;
+  Status = CoreLocateProtocol (
+             &gEfiTcgPlatformProtocolGuid,
+             NULL,
+             &TcgPlatformProtocol
+             );
+  if (!EFI_ERROR (Status)) {
+    Status = TcgPlatformProtocol->MeasureAction (EFI_EXIT_BOOT_SERVICES_INVOCATION);
+    ASSERT_EFI_ERROR (Status);
+  }  
 
   //
   // Terminate memory services if the MapKey matches
   //
   Status = CoreTerminateMemoryMap (MapKey);
   if (EFI_ERROR (Status)) {
+    //
+    // Measure failure of ExitBootServices
+    //
+    if (TcgPlatformProtocol != NULL) {
+      Status2 = TcgPlatformProtocol->MeasureAction (EFI_EXIT_BOOT_SERVICES_FAILED);
+      ASSERT_EFI_ERROR (Status2);
+    }
+
     return Status;
   }
 
@@ -956,6 +980,14 @@ Returns:
   // Update the AtRuntime field in Runtiem AP.
   //
   gRuntime->AtRuntime = TRUE;
+  
+  //
+  // Measure success of ExitBootServices
+  //
+  if (TcgPlatformProtocol != NULL) {
+    Status2 = TcgPlatformProtocol->MeasureAction (EFI_EXIT_BOOT_SERVICES_SUCCEEDED);
+    ASSERT_EFI_ERROR (Status2);
+  }  
   
   return Status;
 }

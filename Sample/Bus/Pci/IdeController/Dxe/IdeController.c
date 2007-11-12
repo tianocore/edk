@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 Intel Corporation. All rights reserved
+Copyright (c) 2006 - 2007 Intel Corporation. All rights reserved
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -427,6 +427,7 @@ IdeControllerStop (
 // Interface functions of IDE_CONTROLLER_INIT protocol
 //
 EFI_STATUS
+EFIAPI
 IdeInitGetChannelInfo (
   IN   EFI_IDE_CONTROLLER_INIT_PROTOCOL *This,
   IN   UINT8                            Channel,
@@ -468,6 +469,7 @@ Returns:
 
 
 EFI_STATUS
+EFIAPI
 IdeInitNotifyPhase (
   IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL   *This,
   IN  EFI_IDE_CONTROLLER_ENUM_PHASE      Phase,
@@ -494,6 +496,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 IdeInitSubmitData (
   IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL    *This,
   IN  UINT8                               Channel,
@@ -522,6 +525,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 IdeInitDisqualifyMode (
   IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL    *This,
   IN  UINT8                               Channel,
@@ -550,6 +554,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 IdeInitCalculateMode (
   IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL       *This,
   IN  UINT8                                  Channel,
@@ -598,6 +603,7 @@ Returns:
 
 
 EFI_STATUS
+EFIAPI
 IdeInitSetTiming (
   IN  EFI_IDE_CONTROLLER_INIT_PROTOCOL    *This,
   IN  UINT8                               Channel,

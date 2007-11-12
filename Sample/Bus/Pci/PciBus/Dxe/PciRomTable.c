@@ -451,11 +451,19 @@ Returns:
         mRomImageTable[Index].Dev  == PciIoDevice->DeviceNumber      &&
         mRomImageTable[Index].Func == PciIoDevice->FunctionNumber    ) {
 
+      //
+      // There would be more than one entry in mRomImageTable for a specified PCI device
+      //   if its OpROM contains EFI drivers.
+      // One is an entry with ImageHandle = NULL inserted by LoadOpRom,
+      //   the others are entries with ImageHandle != NULL inserted by ProcessOpRom.
+      // Their RomAddress and RomLength are equal.
+      //
       if (mRomImageTable[Index].ImageHandle != NULL) {
         AddDriver (PciIoDevice, mRomImageTable[Index].ImageHandle);
       } else {
         PciIoDevice->PciIo.RomImage = (VOID *) (UINTN) mRomImageTable[Index].RomAddress;
         PciIoDevice->PciIo.RomSize  = (UINTN) mRomImageTable[Index].RomLength;
+        PciIoDevice->RomSize        = (UINTN) mRomImageTable[Index].RomLength;
       }
     }
   }

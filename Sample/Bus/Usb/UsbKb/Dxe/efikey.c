@@ -714,6 +714,7 @@ USBKeyboardReadKeyStrokeWorker (
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
   EFI_LIST_ENTRY                    *Link;
   KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;  
+  EFI_KEY_DATA                      OriginalKeyData;
 #endif  
 
   if (KeyData == NULL) {
@@ -753,6 +754,21 @@ USBKeyboardReadKeyStrokeWorker (
   UsbKeyboardDevice->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
 
   //
+  //Switch the control value to their original characters. In USBKeyCodeToEFIScanCode() the  CTRL-Alpha characters have been switched to 
+  // their corresponding control value (ctrl-a = 0x0001 through ctrl-Z = 0x001A), here switch them back for notification function.
+  //
+  EfiCopyMem (&OriginalKeyData, KeyData, sizeof (EFI_KEY_DATA));
+  if (UsbKeyboardDevice->CtrlOn) {
+    if (OriginalKeyData.Key.UnicodeChar >= 0x01 && OriginalKeyData.Key.UnicodeChar <= 0x1A) {
+      if (UsbKeyboardDevice->CapsOn) {
+        OriginalKeyData.Key.UnicodeChar = OriginalKeyData.Key.UnicodeChar + 'A' - 1;
+      } else {
+        OriginalKeyData.Key.UnicodeChar = OriginalKeyData.Key.UnicodeChar + 'a' - 1;
+      } 
+    }
+  }
+  
+  //
   // Invoke notification functions if exist
   //
   for (Link = UsbKeyboardDevice->NotifyList.ForwardLink; Link != &UsbKeyboardDevice->NotifyList; Link = Link->ForwardLink) {
@@ -762,8 +778,8 @@ USBKeyboardReadKeyStrokeWorker (
                       NotifyEntry, 
                       USB_KB_CONSOLE_IN_EX_NOTIFY_SIGNATURE
                       );
-    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
-      CurrentNotify->KeyNotificationFn (KeyData);
+    if (IsKeyRegistered (&CurrentNotify->KeyData, &OriginalKeyData)) { 
+      CurrentNotify->KeyNotificationFn (&OriginalKeyData);
     }
   }
 #endif

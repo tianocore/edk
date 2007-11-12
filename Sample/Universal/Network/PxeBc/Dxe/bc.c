@@ -2558,6 +2558,50 @@ PxeBcDriverStop (
 
 EFI_STATUS
 EFIAPI
+PxeBcUnload (
+  IN EFI_HANDLE  ImageHandle
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       DeviceHandleCount;
+  EFI_HANDLE  *DeviceHandleBuffer;
+  UINTN       Index;
+
+  Status = gBS->LocateHandleBuffer (
+                  AllHandles,
+                  NULL,
+                  NULL,
+                  &DeviceHandleCount,
+                  &DeviceHandleBuffer
+                  );
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < DeviceHandleCount; Index++) {
+      Status = gBS->DisconnectController (
+                      DeviceHandleBuffer[Index],
+                      mPxeBcDriverBinding.DriverBindingHandle,
+                      NULL
+                      );
+    }
+
+    if (DeviceHandleBuffer != NULL) {
+      gBS->FreePool (DeviceHandleBuffer);
+    }
+  }
+
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+                  mPxeBcDriverBinding.DriverBindingHandle,
+                  &gEfiDriverBindingProtocolGuid,
+                  &mPxeBcDriverBinding,
+                  COMPONENT_NAME_GUID,
+                  COMPONENT_NAME,
+                  NULL
+                  );
+
+  return Status;
+}
+
+EFI_STATUS
+EFIAPI
 InitializeBCDriver (
   IN EFI_HANDLE       ImageHandle,
   IN EFI_SYSTEM_TABLE *SystemTable
@@ -2575,7 +2619,8 @@ InitializeBCDriver (
 
 --*/
 {
-  EFI_STATUS  Status;
+  EFI_STATUS                 Status;
+  EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage;
 
   //
   // Initialize EFI library
@@ -2589,6 +2634,20 @@ InitializeBCDriver (
             NULL,
             NULL
             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->HandleProtocol (
+                  ImageHandle,
+                  &gEfiLoadedImageProtocolGuid,
+                  &LoadedImage
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  } else {
+    LoadedImage->Unload = PxeBcUnload;
+  }
 
   InitArpHeader ();
   OptionsStrucInit ();

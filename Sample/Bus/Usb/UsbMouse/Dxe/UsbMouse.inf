@@ -47,8 +47,8 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Sample\Bus\Usb\UsbBus\Dxe
-  $(EDK_SOURCE)\Sample\Bus\Usb\UsbLib\Dxe
+  ..\..\UsbBus\Dxe
+  ..\..\UsbLib\Dxe
 
 [nmake.common]
   IMAGE_ENTRY_POINT=USBMouseDriverBindingEntryPoint

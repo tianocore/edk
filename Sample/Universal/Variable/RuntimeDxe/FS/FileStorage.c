@@ -42,12 +42,14 @@ OnVirtualAddressChange (
 
 STATIC
 EFI_STATUS
+EFIAPI
 FileEraseStore(
   IN VARIABLE_STORAGE     *This
   );
 
 STATIC
 EFI_STATUS
+EFIAPI
 FileWriteStore (
   IN VARIABLE_STORAGE     *This,
   IN UINTN                Offset,
@@ -238,6 +240,7 @@ OnSimpleFileSystemInstall (
 EFI_STATUS
 FileStorageConstructor (
   OUT VARIABLE_STORAGE      **VarStore,
+  OUT EFI_EVENT_NOTIFY      *GoVirtualEvent,
   IN  EFI_PHYSICAL_ADDRESS  NvStorageBase,
   IN  UINTN                 Size,
   IN  UINT32                VolumeId,
@@ -246,9 +249,7 @@ FileStorageConstructor (
 {
   VS_DEV                    *Dev;
   EFI_STATUS                Status;
-  EFI_EVENT                 ChgVMEvent;
   EFI_EVENT                 Event;
-  *VarStore = NULL;
 
   Status = gBS->AllocatePool (EfiRuntimeServicesData, sizeof(VS_DEV), &Dev);
   ASSERT_EFI_ERROR (Status);
@@ -263,15 +264,6 @@ FileStorageConstructor (
   Dev->VarStore.Write     = FileWriteStore;
 
   DEBUG ((EFI_D_ERROR, "FileStorageConstructor(0x%0x:0x%0x): added!\n", NvStorageBase, Size));
-
-  Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
-                  EFI_TPL_NOTIFY,
-                  OnVirtualAddressChange,
-                  Dev,
-                  &ChgVMEvent
-                  );
-  ASSERT_EFI_ERROR (Status);
 
   // add notify on SFS's installation.
 
@@ -291,12 +283,14 @@ FileStorageConstructor (
                   );
   ASSERT_EFI_ERROR (Status);
 
-  *VarStore = &Dev->VarStore;
+  *VarStore       = &Dev->VarStore;
+  *GoVirtualEvent = OnVirtualAddressChange;
   return EFI_SUCCESS;
 }
 
 STATIC
 EFI_STATUS
+EFIAPI
 FileEraseStore(
   IN VARIABLE_STORAGE   *This
   )
@@ -330,6 +324,7 @@ FileEraseStore(
 
 STATIC
 EFI_STATUS
+EFIAPI
 FileWriteStore (
   IN VARIABLE_STORAGE     *This,
   IN UINTN                Offset,
@@ -375,7 +370,7 @@ OnVirtualAddressChange (
 {
   VS_DEV  *Dev;
 
-  Dev = Context;
+  Dev = DEV_FROM_THIS (Context);
 
   EfiConvertPointer (EFI_INTERNAL_POINTER, &VAR_DATA_PTR (Dev));
   EfiConvertPointer (EFI_INTERNAL_POINTER, &Dev->VarStore.Erase);

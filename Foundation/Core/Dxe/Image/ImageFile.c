@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -40,7 +40,7 @@ CoreOpenImageFile (
   IN BOOLEAN                        BootPolicy,
   IN VOID                           *SourceBuffer   OPTIONAL,
   IN UINTN                          SourceSize,
-  IN OUT EFI_DEVICE_PATH_PROTOCOL   *FilePath,
+  IN OUT EFI_DEVICE_PATH_PROTOCOL   **FilePath,
   OUT EFI_HANDLE                    *DeviceHandle,
   IN IMAGE_FILE_HANDLE              *ImageFileHandle,
   OUT UINT32                        *AuthenticationStatus
@@ -109,6 +109,7 @@ Returns:
     ImageFileHandle->Source     = SourceBuffer;
     ImageFileHandle->SourceSize = SourceSize;
     *DeviceHandle     = NULL;
+    CoreLocateDevicePath (&gEfiDevicePathProtocolGuid, FilePath, DeviceHandle);
     if (SourceSize > 0) {
       Status = EFI_SUCCESS;
     } else {
@@ -120,14 +121,14 @@ Returns:
   //
   // Make sure FilePath is valid
   //
-  if (FilePath == NULL) {
+  if (*FilePath == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   //
   // Check to see if it's in a Firmware Volume
   //
-  FwVolFilePathNode = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)FilePath;
+  FwVolFilePathNode = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) *FilePath;
   Status = CoreDevicePathToInterface (
          #if (PI_SPECIFICATION_VERSION < 0x00010000)
             &gEfiFirmwareVolumeProtocolGuid, 
@@ -191,7 +192,7 @@ Returns:
   //
   // Attempt to access the file via a file system interface
   //
-  FilePathNode = (FILEPATH_DEVICE_PATH *) FilePath;
+  FilePathNode = (FILEPATH_DEVICE_PATH *) *FilePath;
   Status = CoreDevicePathToInterface (
             &gEfiSimpleFileSystemProtocolGuid, 
             (EFI_DEVICE_PATH_PROTOCOL **)&FilePathNode, 
@@ -291,7 +292,7 @@ Returns:
   // Try LoadFile style
   //
 
-  TempFilePath = FilePath;
+  TempFilePath = *FilePath;
   Status = CoreDevicePathToInterface (
               &gEfiLoadFileProtocolGuid,
               &TempFilePath,

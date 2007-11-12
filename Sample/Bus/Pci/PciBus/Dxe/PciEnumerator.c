@@ -62,13 +62,6 @@ Returns:
   }
 
   //
-  // If this host bridge has been already enumerated, then return successfully
-  //
-  if (RootBridgeExisted (Controller)) {
-    return EFI_SUCCESS;
-  }
-
-  //
   // Get the rootbridge Io protocol to find the host bridge handle
   //
   Status = gBS->OpenProtocol (
@@ -254,7 +247,9 @@ Returns:
                           RootBridgeHandle,
                           pConfiguration
                           );
-
+  
+  gBS->FreePool (pConfiguration);
+  
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -310,9 +305,6 @@ Returns:
       // Load and process the option rom
       //
       Status = LoadOpRomImage (Temp, RomBase);
-      if (Status == EFI_SUCCESS) {
-        Status = ProcessOpRomImage (Temp);
-      }
     }
 
     CurrentLink = CurrentLink->ForwardLink;

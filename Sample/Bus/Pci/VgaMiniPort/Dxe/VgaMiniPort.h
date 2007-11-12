@@ -68,6 +68,7 @@ extern EFI_COMPONENT_NAME_PROTOCOL  gPciVgaMiniPortComponentName;
 // Driver Binding Protocol functions
 //
 EFI_STATUS
+EFIAPI
 PciVgaMiniPortDriverBindingSupported (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -75,6 +76,7 @@ PciVgaMiniPortDriverBindingSupported (
   );
 
 EFI_STATUS
+EFIAPI
 PciVgaMiniPortDriverBindingStart (
   IN EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN EFI_HANDLE                   Controller,
@@ -82,6 +84,7 @@ PciVgaMiniPortDriverBindingStart (
   );
 
 EFI_STATUS
+EFIAPI
 PciVgaMiniPortDriverBindingStop (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Controller,

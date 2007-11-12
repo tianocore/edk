@@ -1019,6 +1019,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 UsbHubEnumeration (
   IN EFI_EVENT            Event,
   IN VOID                 *Context
@@ -1075,6 +1076,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 UsbRootHubEnumeration (
   IN EFI_EVENT            Event,
   IN VOID                 *Context

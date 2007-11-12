@@ -313,6 +313,30 @@ Returns:
 --*/
 ;
 
+VOID *
+GetHob (
+  IN UINT16  Type,
+  IN VOID    *HobStart
+  )
+/*++
+
+Routine Description:
+
+  This function returns the first instance of a HOB type in a HOB list.
+  
+Arguments:
+
+  Type          The HOB type to return.
+  HobStart      The first HOB in the HOB list.
+    
+Returns:
+
+  HobStart      There were no HOBs found with the requested type.
+  else          Returns the first HOB with the matching type.
+
+--*/
+;
+
 EFI_STATUS
 GetFirstGuidHob (
   IN     VOID      **HobStart,

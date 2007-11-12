@@ -54,6 +54,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeDispatch)
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
+#include EFI_PROTOCOL_DEFINITION (TcgService)
 #include "LinkedList.h"
 #include "DebugImageInfo.h"
 #include "EfiCommonLib.h"

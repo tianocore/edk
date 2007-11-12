@@ -195,7 +195,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
-                  NET_TPL_FAST_TIMER,
+                  NET_TPL_TIMER,
                   Udp4CheckTimeout,
                   Udp4Service,
                   &Udp4Service->TimeoutEvent
@@ -1133,8 +1133,8 @@ Returns:
 }
 
 VOID
-Udp4FlushRxData (
-  IN NET_LIST_ENTRY  *RcvdDgramQue
+Udp4FlushRcvdDgram (
+  IN UDP4_INSTANCE_DATA  *Instance
   )
 /*++
 
@@ -1153,23 +1153,18 @@ Returns:
 --*/
 {
   UDP4_RXDATA_WRAP  *Wrap;
-  EFI_TPL           OldTpl;
 
-  OldTpl = NET_RAISE_TPL (NET_TPL_RECYCLE);
-
-  while (!NetListIsEmpty (RcvdDgramQue)) {
+  while (!NetListIsEmpty (&Instance->RcvdDgramQue)) {
     //
     // Iterate all the Wraps in the RcvdDgramQue.
     //
-    Wrap = NET_LIST_HEAD (RcvdDgramQue, UDP4_RXDATA_WRAP, Link);
+    Wrap = NET_LIST_HEAD (&Instance->RcvdDgramQue, UDP4_RXDATA_WRAP, Link);
 
     //
     // The Wrap will be removed from the RcvdDgramQue by this function call.
     //
     Udp4RecycleRxDataWrap (NULL, (VOID *) Wrap);
   }
-
-  NET_RESTORE_TPL (OldTpl);
 }
 
 
@@ -1505,6 +1500,7 @@ Returns:
   EFI_UDP4_COMPLETION_TOKEN  *Token;
   NET_BUF                    *Dup;
   EFI_UDP4_RECEIVE_DATA      *RxData;
+  EFI_TPL                    OldTpl;
 
   if (!NetListIsEmpty (&Instance->RcvdDgramQue) &&
     !NetMapIsEmpty (&Instance->RxTokens)) {
@@ -1544,9 +1540,11 @@ Returns:
     Token->Status        = EFI_SUCCESS;
     Token->Packet.RxData = &Wrap->RxData;
 
-    gBS->SignalEvent (Token->Event);
-
+    OldTpl = NET_RAISE_TPL (NET_TPL_RECYCLE);
     NetListInsertTail (&Instance->DeliveredDgramQue, &Wrap->Link);
+    NET_RESTORE_TPL (OldTpl);
+
+    gBS->SignalEvent (Token->Event);
   }
 }
 

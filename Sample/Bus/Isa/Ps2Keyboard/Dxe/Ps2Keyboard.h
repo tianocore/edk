@@ -160,6 +160,7 @@ extern EFI_COMPONENT_NAME_PROTOCOL   gPs2KeyboardComponentName;
 // Driver entry point
 //
 EFI_STATUS
+EFIAPI
 InstallPs2KeyboardDriver (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable

@@ -117,6 +117,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 UsbMassReset (
   IN EFI_BLOCK_IO_PROTOCOL    *This,
   IN BOOLEAN                  ExtendedVerification
@@ -154,6 +155,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 UsbMassReadBlocks (
   IN EFI_BLOCK_IO_PROTOCOL    *This,
   IN UINT32                   MediaId,
@@ -244,6 +246,7 @@ ON_EXIT:
 }
 
 EFI_STATUS
+EFIAPI
 UsbMassWriteBlocks (
   IN EFI_BLOCK_IO_PROTOCOL    *This,
   IN UINT32                   MediaId,
@@ -338,6 +341,7 @@ ON_EXIT:
 }
 
 EFI_STATUS
+EFIAPI
 UsbMassFlushBlocks (
   IN EFI_BLOCK_IO_PROTOCOL  *This
   )

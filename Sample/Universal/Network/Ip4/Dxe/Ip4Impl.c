@@ -424,7 +424,7 @@ Returns:
 
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_EVENT,
                   Ip4AutoConfigCallBack,
                   IpSb,
                   &IpSb->ReconfigEvent

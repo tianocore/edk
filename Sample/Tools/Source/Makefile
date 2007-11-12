@@ -49,17 +49,12 @@ MAKEFILES = $(EDK_TOOLS_SOURCE)\Common\Makefile             \
             $(EDK_TOOLS_SOURCE)\SetStamp\makefile           \
             $(EDK_TOOLS_SOURCE)\VfrCompile\makefile         \
             $(EDK_TOOLS_SOURCE)\StrGather\makefile          \
-            $(EDK_TOOLS_SOURCE)\BootsectImage\Makefile      \
-            $(EDK_TOOLS_SOURCE)\GenBootsector\Makefile      \
-            $(EDK_TOOLS_SOURCE)\GenPage\Makefile            \
             $(EDK_TOOLS_SOURCE)\SplitFile\Makefile          \
+            $(EDK_TOOLS_SOURCE)\Strip\Makefile              \
             $(EDK_TOOLS_SOURCE)\EfiCompress\Makefile        \
-            $(EDK_TOOLS_SOURCE)\EfildrImage\Makefile        \
             $(EDK_TOOLS_SOURCE)\EfiRom\Makefile             \
             $(EDK_TOOLS_SOURCE)\GenAprioriFile\Makefile     \
             $(EDK_TOOLS_SOURCE)\ModifyInf\Makefile
-
-
 
 #
 # Define default all target which calls all our makefiles. The special

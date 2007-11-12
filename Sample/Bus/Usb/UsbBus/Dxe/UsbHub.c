@@ -565,6 +565,7 @@ Returns:
 
 STATIC
 EFI_STATUS
+EFIAPI
 UsbOnHubInterrupt (
   IN  VOID                *Data,
   IN  UINTN               DataLength,
@@ -762,7 +763,7 @@ Returns:
     return Status;
   }
 
-  HubIf->NumOfPort = HubDesc.NumPorts;
+  HubIf->NumOfPort = HubDesc.NbrPorts;
 
   USB_DEBUG (("UsbHubInit: hub %d has %d ports\n", HubDev->Address,HubIf->NumOfPort));
   
@@ -826,7 +827,7 @@ Returns:
   // Feed power to all the hub ports. It should be ok
   // for both gang/individual powered hubs.
   //
-  for (Index = 0; Index < HubDesc.NumPorts; Index++) {
+  for (Index = 0; Index < HubDesc.NbrPorts; Index++) {
     UsbHubCtrlSetPortFeature (HubIf->Device, Index, USB_HUB_PORT_POWER);
   }
 

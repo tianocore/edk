@@ -1306,6 +1306,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 FindFv (
   IN     EFI_FIND_FV_PPI             *This,
   IN     EFI_PEI_SERVICES            **PeiServices,

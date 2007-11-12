@@ -401,7 +401,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL | EFI_EVENT_TIMER,
-                  NET_TPL_LOCK,
+                  NET_TPL_EVENT,
                   MnpSystemPoll,
                   MnpServiceData,
                   &MnpServiceData->PollTimer
@@ -417,7 +417,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL | EFI_EVENT_TIMER,
-                  NET_TPL_EVENT,
+                  NET_TPL_TIMER,
                   MnpCheckPacketTimeout,
                   MnpServiceData,
                   &MnpServiceData->TimeoutCheckTimer
@@ -433,7 +433,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_TIMER,
-                  NET_TPL_SLOW_TIMER,
+                  NET_TPL_TIMER,
                   NULL,
                   NULL,
                   &MnpServiceData->TxTimeoutEvent

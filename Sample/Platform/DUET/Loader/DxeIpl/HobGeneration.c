@@ -166,7 +166,6 @@ HOB_TEMPLATE  gHobTemplate = {
     },
     EFI_RESOURCE_SYSTEM_MEMORY,                     // ResourceType
     (EFI_RESOURCE_ATTRIBUTE_PRESENT                 |
-     EFI_RESOURCE_ATTRIBUTE_TESTED                  |
      EFI_RESOURCE_ATTRIBUTE_INITIALIZED             |
      EFI_RESOURCE_ATTRIBUTE_UNCACHEABLE             | 
      EFI_RESOURCE_ATTRIBUTE_WRITE_COMBINEABLE       | 

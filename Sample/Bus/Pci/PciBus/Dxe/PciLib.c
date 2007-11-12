@@ -1269,8 +1269,14 @@ Returns:
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *PciRootBridgeIo;
   UINT16                            MinBus;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Descriptors;
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *pConfiguration;
+  UINT8                             StartBusNumber;
+  EFI_LIST_ENTRY                    RootBridgeList;
+  EFI_LIST_ENTRY                    *Link;
 
   InitializeHotPlugSupport ();
+  
+  InitializeListHead (&RootBridgeList);
 
   //
   // Notify the bus allocation phase is about to start
@@ -1299,8 +1305,13 @@ Returns:
               PciResAlloc,
               RootBridgeDev
               );
-
-    DestroyRootBridge (RootBridgeDev);
+              
+    if (gPciHotPlugInit != NULL) {
+      InsertTailList (&RootBridgeList, &(RootBridgeDev->Link));
+    } else {
+      DestroyRootBridge (RootBridgeDev);
+    }
+    
     if (EFI_ERROR (Status)) {
       return Status;
     }
@@ -1310,9 +1321,43 @@ Returns:
   // Notify the bus allocation phase is finished for the first time
   //                                                            
   NotifyPhase (PciResAlloc, EfiPciHostBridgeEndBusAllocation);
-    
                   
   if (gPciHotPlugInit != NULL) {
+    //
+    // Reset all assigned PCI bus number in all PPB
+    //
+    RootBridgeHandle = NULL;
+    Link = GetFirstNode (&RootBridgeList);
+    while ((PciResAlloc->GetNextRootBridge (PciResAlloc, &RootBridgeHandle) == EFI_SUCCESS) &&
+      (!IsNull (&RootBridgeList, Link))) {         
+      RootBridgeDev = PCI_IO_DEVICE_FROM_LINK (Link);
+      //
+      // Get the Bus information
+      //
+      Status = PciResAlloc->StartBusEnumeration (
+                              PciResAlloc,
+                              RootBridgeHandle,
+                              (VOID **) &pConfiguration
+                              );
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+      
+      //
+      // Get the bus number to start with
+      //
+      StartBusNumber  = (UINT8) (pConfiguration->AddrRangeMin);
+      
+      ResetAllPpbBusNumber (
+        RootBridgeDev,
+        StartBusNumber
+      );
+      
+      gBS->FreePool (pConfiguration);
+      Link = GetNextNode (&RootBridgeList, Link);   
+      DestroyRootBridge (RootBridgeDev);
+    }
+      
     //
     // Wait for all HPC initialized
     //

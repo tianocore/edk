@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -111,8 +111,6 @@ Returns:
   EFI_DEVICE_ERROR 
 
 --*/
-// TODO:    ImageHandle - add argument and description to function comment
-// TODO:    SystemTable - add argument and description to function comment
 {
   EFI_STATUS  Status;
 
@@ -120,14 +118,14 @@ Returns:
   // Initialize the EFI Driver Library
   //
   Status = INSTALL_ALL_DRIVER_PROTOCOLS (
-            ImageHandle,
-            SystemTable,
-            &gPciBusDriverBinding,
-            ImageHandle,
-            &gPciBusComponentName,
-            NULL,
-            NULL
-            );
+             ImageHandle,
+             SystemTable,
+             &gPciBusDriverBinding,
+             ImageHandle,
+             &gPciBusComponentName,
+             NULL,
+             NULL
+             );
 
   InitializePciDevicePool ();
 
@@ -163,10 +161,6 @@ Returns:
   EFI_SUCCESS
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    Controller - add argument and description to function comment
-// TODO:    RemainingDevicePath - add argument and description to function comment
-// TODO:    EFI_UNSUPPORTED - add return value to function comment
 {
   EFI_STATUS                      Status;
   EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
@@ -224,11 +218,11 @@ Returns:
   }
 
   gBS->CloseProtocol (
-        Controller,
-        &gEfiPciRootBridgeIoProtocolGuid,
-        This->DriverBindingHandle,
-        Controller
-        );
+         Controller,
+         &gEfiPciRootBridgeIoProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
 
   return EFI_SUCCESS;
 }
@@ -256,10 +250,6 @@ Returns:
  
 
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    Controller - add argument and description to function comment
-// TODO:    RemainingDevicePath - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS  Status;
 
@@ -294,11 +284,9 @@ Returns:
   }
   
   //
-  // Enable PCI device specified by remaining device path. BDS or other driver can call the
-  // start more than once.
+  // Start all the devices under the entire host bridge.
   //
-  
-  StartPciDevices (Controller, RemainingDevicePath);
+  StartPciDevices (Controller);
 
   return EFI_SUCCESS;
 }
@@ -329,13 +317,6 @@ Returns:
 
   
 --*/
-// TODO:    This - add argument and description to function comment
-// TODO:    Controller - add argument and description to function comment
-// TODO:    NumberOfChildren - add argument and description to function comment
-// TODO:    ChildHandleBuffer - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS  Status;
   UINTN       Index;
@@ -346,17 +327,17 @@ Returns:
     // Close the bus driver
     //
     gBS->CloseProtocol (
-          Controller,
-          &gEfiDevicePathProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiDevicePathProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
     gBS->CloseProtocol (
-          Controller,
-          &gEfiPciRootBridgeIoProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiPciRootBridgeIoProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
 
     DestroyRootBridgeByHandle (
       Controller

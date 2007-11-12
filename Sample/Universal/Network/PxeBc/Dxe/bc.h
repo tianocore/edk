@@ -27,6 +27,7 @@ Abstract:
 //
 // Driver Consumed Protocol Prototypes
 //
+#include EFI_PROTOCOL_DEFINITION (LoadedImage)
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
 #include EFI_PROTOCOL_DEFINITION (EfiNetworkInterfaceIdentifier)
 #include EFI_PROTOCOL_DEFINITION (SimpleNetwork)
@@ -450,9 +451,18 @@ PxeBcLibGetSmbiosSystemGuidAndSerialNumber (
 #ifdef EFI_SIZE_REDUCTION_APPLIED
   #define COMPONENT_NAME_CODE(code)
   #define COMPONENT_NAME            NULL
+  #define COMPONENT_NAME_GUID       NULL
+
 #else
   #define COMPONENT_NAME_CODE(code) code
   #define COMPONENT_NAME            &gPxeBcComponentName
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  #define COMPONENT_NAME_GUID       &gEfiComponentName2ProtocolGuid
+#else
+  #define COMPONENT_NAME_GUID       &gEfiComponentNameProtocolGuid
+#endif
+
 #endif  
 
 

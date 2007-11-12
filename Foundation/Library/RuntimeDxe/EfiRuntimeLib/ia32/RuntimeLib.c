@@ -838,5 +838,8 @@ Returns:
 
 --*/
 {
+  __asm {
+    wbinvd
+  }
   return EFI_SUCCESS;
 }

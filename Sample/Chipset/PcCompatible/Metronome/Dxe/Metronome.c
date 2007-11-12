@@ -144,6 +144,7 @@ Returns:
 EFI_DRIVER_ENTRY_POINT (InstallMetronome)
 
 EFI_STATUS
+EFIAPI
 InstallMetronome (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable

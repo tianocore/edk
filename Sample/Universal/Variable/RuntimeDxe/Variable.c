@@ -1366,6 +1366,33 @@ Returns:
 }
 #endif
 
+VOID
+EFIAPI
+ReclaimForOS(
+  EFI_EVENT  Event,
+  VOID       *Context
+  )
+{
+  CHAR8                           *CurrPtr;
+  EFI_STATUS                      Status;
+
+  CurrPtr   = (CHAR8 *) ((UINTN) mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase);
+
+  //
+  // Check if the free area is blow a threshold
+  //
+  if ((((VARIABLE_STORE_HEADER *)((UINTN) CurrPtr))->Size - mVariableModuleGlobal->NonVolatileLastVariableOffset) < VARIABLE_RECLAIM_THRESHOLD) {
+    Status = Reclaim (
+              mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
+              &mVariableModuleGlobal->NonVolatileLastVariableOffset,
+              FALSE,
+              NULL
+              );
+    ASSERT(!EFI_ERROR(Status));
+  }
+
+}
+
 EFI_STATUS
 EFIAPI
 VariableCommonInitialize (
@@ -1401,6 +1428,7 @@ Returns:
   VARIABLE_HEADER                 *NextVariable;
   UINT32                          Instance;
   EFI_PHYSICAL_ADDRESS            FvVolHdr;
+  EFI_EVENT                       ReadyToBootEvent;
 
   VOID                            *Buffer;
   EFI_FLASH_MAP_ENTRY_DATA        *FlashMapEntryData;
@@ -1589,24 +1617,6 @@ Returns:
     mVariableModuleGlobal->NonVolatileLastVariableOffset = (UINTN) NextVariable - (UINTN) CurrPtr;
 
     //
-    // Check if the free area is blow a threshold
-    //
-    if ((((VARIABLE_STORE_HEADER *)((UINTN) CurrPtr))->Size - mVariableModuleGlobal->NonVolatileLastVariableOffset) < VARIABLE_RECLAIM_THRESHOLD) {
-      Status = Reclaim (
-                mVariableModuleGlobal->VariableBase[Physical].NonVolatileVariableBase,
-                &mVariableModuleGlobal->NonVolatileLastVariableOffset,
-                FALSE,
-                NULL
-                );
-    }
-
-    if (EFI_ERROR (Status)) {
-      gBS->FreePool (mVariableModuleGlobal);
-      gBS->FreePool (VolatileVariableStore);
-      return Status;
-    }
-
-    //
     // Check if the free area is really free.
     //
     for (Index = mVariableModuleGlobal->NonVolatileLastVariableOffset; Index < VariableStoreHeader->Size; Index++) {
@@ -1624,6 +1634,17 @@ Returns:
         break;
       }
     }
+
+    //
+    // Register the event handling function to reclaim
+    // variable for OS usage.
+    //
+    Status = RtEfiCreateEventReadyToBoot (
+               EFI_TPL_NOTIFY, 
+               ReclaimForOS, 
+               NULL, 
+               &ReadyToBootEvent
+               );
   }
 
   if (EFI_ERROR (Status)) {

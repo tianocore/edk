@@ -182,7 +182,12 @@ PROCEDURE_ENTRY (GetHandOffStatus)
         mov     r8 = ar.k6              // Health Status (Self test params)
         mov     r9 = ar.k4              // LID bits
         mov     r10 = ar.k3;;           // SAL_E entry state
+     #if (PI_SPECIFICATION_VERSION < 0x00010000)
         mov     r11 = ar.k7             // Return address to PAL
+     #else
+        mov     r11 = ar.k1             // Return address to PAL     
+     #endif   
+
         
         NESTED_RETURN
 PROCEDURE_EXIT (GetHandOffStatus)

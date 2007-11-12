@@ -21,18 +21,6 @@ Abstract:
 #include "DeviceIo.h"
 #include "pci22.h"
 
-typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL  DeviceIoRootPath;
-  EFI_DEVICE_PATH_PROTOCOL  EndDevicePath;
-} EFI_DEV_IO_DEFAULT_DEVICE_PATH;
-
-static EFI_DEV_IO_DEFAULT_DEVICE_PATH mEndDevicePath = {
-  END_DEVICE_PATH_TYPE,
-  END_ENTIRE_DEVICE_PATH_SUBTYPE,
-  END_DEVICE_PATH_LENGTH,
-  0
-};
-
 //
 // Prototypes
 //
@@ -153,72 +141,33 @@ DeviceIoFreeBuffer (
 
 EFI_STATUS
 DeviceIoConstructor (
-  VOID
+  EFI_HANDLE                      RootBridgeHandle,
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo,
+  EFI_DEVICE_PATH_PROTOCOL        *DevicePath
   )
 /*++
 
-  Routine Description:
-    Initialize and install a Device IO protocol on a empty device path handle.
+Routine Description:
+  Register Device Io protocol 
+  
+Arguments:  
 
-  Arguments:
-
-  Returns:
-    EFI_SUCCESS         - This driver is added to ControllerHandle.
-    EFI_ALREADY_STARTED - This driver is already running on ControllerHandle.
-    other               - This driver does not support this device.
+Returns: 
+  EFI_SUCCESS - DeviceIo protocol install successfully.
+  other       - Some error happened.
 
 --*/
-// TODO:    EFI_NOT_FOUND - add return value to function comment
 {
   EFI_STATUS                      Status;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
-  EFI_DEVICE_PATH_PROTOCOL        *DevicePath;
   DEVICE_IO_PRIVATE_DATA          *Private;
-  EFI_HANDLE                      Handle;
-  EFI_HANDLE                      *HandleBuffer;
-  UINTN                           HandleCount;
 
-  Handle  = NULL;
-  Private = NULL;
-
-  //
-  // Locate PciRootBridge IO protocol.
-  //
-  Status = gBS->LocateProtocol (&gEfiPciRootBridgeIoProtocolGuid, NULL, &PciRootBridgeIo);
-  ASSERT_EFI_ERROR (Status);
-
-  Status = gBS->LocateHandleBuffer (
-                  ByProtocol,
-                  &gEfiPciRootBridgeIoProtocolGuid,
-                  NULL,
-                  &HandleCount,
-                  &HandleBuffer
-                  );
-  if (EFI_ERROR (Status) || HandleCount == 0) {
-    return EFI_NOT_FOUND;
-  }
-
-  Status = gBS->HandleProtocol (
-                  HandleBuffer[0],
-                  &gEfiDevicePathProtocolGuid,
-                  (VOID *) (&DevicePath)
-                  );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
   //
   // Initialize the Device IO device instance.
   //
-  Status = gBS->AllocatePool (
-                  EfiBootServicesData,
-                  sizeof (DEVICE_IO_PRIVATE_DATA),
-                  (VOID **) &Private
-                  );
-  if (EFI_ERROR (Status)) {
-    return Status;
+  Private = EfiLibAllocateZeroPool (sizeof (DEVICE_IO_PRIVATE_DATA));
+  if (Private == NULL) {
+    return EFI_OUT_OF_RESOURCES;
   }
-
-  EfiZeroMem (Private, sizeof (DEVICE_IO_PRIVATE_DATA));
 
   Private->Signature                = DEVICE_IO_PRIVATE_DATA_SIGNATURE;
   Private->PciRootBridgeIo          = PciRootBridgeIo;
@@ -243,15 +192,13 @@ DeviceIoConstructor (
   // Install protocol interfaces for the Device IO device.
   //
   Status = gBS->InstallMultipleProtocolInterfaces (
-                  &Handle,
+                  &RootBridgeHandle,
                   &gEfiDeviceIoProtocolGuid,
                   &Private->DeviceIo,
-                  &gEfiDevicePathProtocolGuid,
-                  &mEndDevicePath,
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePool (Private);
+    (gBS->FreePool) (Private);
     return Status;
   }
 

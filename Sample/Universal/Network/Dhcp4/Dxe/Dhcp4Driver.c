@@ -248,7 +248,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL | EFI_EVENT_TIMER,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_TIMER,
                   DhcpOnTimerTick,
                   DhcpSb,
                   &DhcpSb->Timer

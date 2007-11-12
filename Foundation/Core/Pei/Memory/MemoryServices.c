@@ -361,7 +361,6 @@ Returns:
 --*/
 {
   EfiCommonLibCopyMem (Destination, Source, Length);
-  return;
 }
 
 VOID
@@ -391,13 +390,6 @@ Returns:
 
 --*/
 {
-  UINT8  *Ptr;
-
-  Ptr = Buffer;
-   while (Size--) {
-    *(Ptr++) = Value;
-  }
-
-  return;
+  EfiCommonLibSetMem (Buffer, Size, Value);
 }
 

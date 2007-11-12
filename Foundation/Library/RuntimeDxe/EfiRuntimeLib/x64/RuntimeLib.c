@@ -811,33 +811,3 @@ Returns:
 #endif
   return Status;
 }
-
-//
-// Cache Flush Routine.
-//
-EFI_STATUS
-EfiCpuFlushCache (
-  IN EFI_PHYSICAL_ADDRESS          Start,
-  IN UINT64                        Length
-  )
-/*++
-
-Routine Description:
-
-  Flush cache with specified range.
-
-Arguments:
-
-  Start   - Start address
-  Length  - Length in bytes
-
-Returns:
-
-  Status code
-  
-  EFI_SUCCESS - success
-
---*/
-{
-  return EFI_SUCCESS;
-}

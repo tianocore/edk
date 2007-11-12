@@ -688,11 +688,10 @@ TheKey2:
 
     case '+':
     case '-':
-      if (Key.UnicodeChar == '+') {
-        Key.ScanCode = SCAN_RIGHT;
-      } else {
-        Key.ScanCode = SCAN_LEFT;
-      }
+      //
+      // Treat '+' / '-' as scan code, internally use
+      //
+      Key.ScanCode    = Key.UnicodeChar;
       Key.UnicodeChar = CHAR_NULL;
       goto TheKey2;
 
@@ -700,24 +699,35 @@ TheKey2:
       switch (Key.ScanCode) {
       case SCAN_LEFT:
       case SCAN_RIGHT:
+        //
+        // For numeric input, treat SCAN_LEFT/RIGHT as '-'/'+'
+        // For date/time input, treat SCAN_LEFT/RIGHT as Save
+        //
+        if ((Tag->Operand == EFI_IFR_DATE_OP) || (Tag->Operand == EFI_IFR_TIME_OP)) {
+          goto EnterCarriageReturn;
+        } else {
+          Key.ScanCode = ((Key.ScanCode == SCAN_LEFT) ? '-' : '+');
+        }
+        
+        
+      case '+':
+      case '-':
         if ((Tag->Operand == EFI_IFR_DATE_OP) || (Tag->Operand == EFI_IFR_TIME_OP)) {
           //
-          // By setting this value, we will return back to the caller.
-          // We need to do this since an auto-refresh will destroy the adjustment
-          // based on what the real-time-clock is showing.  So we always commit
-          // upon changing the value.
+          // By setting the Flags, we can avoid updating this TAG in UpdateDateAndTime()
+          //  during user's modification
           //
-          gDirection = SCAN_DOWN;
+          Tag->Flags |= FLAG_DATE_TIME_BEING_MODIFY;
         }
 
         if (!ManualInput) {
           Tag->Value = *Value;
-          if (Key.ScanCode == SCAN_LEFT) {
+          if (Key.ScanCode == '-') {
             Number = *Value - Tag->Step;
             if (Number < Tag->Minimum) {
               Number = Tag->Minimum;
             }
-          } else if (Key.ScanCode == SCAN_RIGHT) {
+          } else if (Key.ScanCode == '+') {
             Number = *Value + Tag->Step;
             if (Number > Tag->Maximum) {
               Number = Tag->Maximum;
@@ -803,6 +813,9 @@ TheKey2:
         goto EnterCarriageReturn;
 
       case SCAN_ESC:
+        if (Tag->Operand == EFI_IFR_DATE_OP || Tag->Operand == EFI_IFR_TIME_OP) {
+          Tag->Flags &= ~FLAG_DATE_TIME_BEING_MODIFY;
+        }
         return EFI_DEVICE_ERROR;
 
       default:
@@ -836,6 +849,10 @@ EnterCarriageReturn:
       //
       if (Tag->StorageWidth == (UINT16) 0) {
         EfiCopyMem (&VariableDefinition->FakeNvRamMap[Tag->StorageStart], &Tag->Value, 2);
+      }
+
+      if (Tag->Operand == EFI_IFR_DATE_OP || Tag->Operand == EFI_IFR_TIME_OP) {
+        Tag->Flags &= ~FLAG_DATE_TIME_BEING_MODIFY;
       }
       //
       // If a late check is required save off the information.  This is used when consistency checks

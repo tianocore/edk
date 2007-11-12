@@ -27,6 +27,7 @@ Revision History
 // Protocol Member Function Prototypes
 //
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPollMem ( 
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -38,6 +39,7 @@ PcatRootBridgeIoPollMem (
   );
   
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPollIo ( 
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -49,6 +51,7 @@ PcatRootBridgeIoPollIo (
   );
   
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoMemRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -58,6 +61,7 @@ PcatRootBridgeIoMemRead (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoMemWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -67,6 +71,7 @@ PcatRootBridgeIoMemWrite (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoIoRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -76,6 +81,7 @@ PcatRootBridgeIoIoRead (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoIoWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -85,6 +91,7 @@ PcatRootBridgeIoIoWrite (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoCopyMem (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -94,6 +101,7 @@ PcatRootBridgeIoCopyMem (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPciRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -103,6 +111,7 @@ PcatRootBridgeIoPciRead (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPciWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -112,6 +121,7 @@ PcatRootBridgeIoPciWrite (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoMap (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL            *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  Operation,
@@ -122,12 +132,14 @@ PcatRootBridgeIoMap (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoUnmap (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN VOID                             *Mapping
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoAllocateBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  EFI_ALLOCATE_TYPE                Type,
@@ -138,6 +150,7 @@ PcatRootBridgeIoAllocateBuffer (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoFreeBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  UINTN                            Pages,
@@ -145,11 +158,13 @@ PcatRootBridgeIoFreeBuffer (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoFlush (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoGetAttributes (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT UINT64                           *Supported,
@@ -157,6 +172,7 @@ PcatRootBridgeIoGetAttributes (
   );
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
@@ -165,6 +181,7 @@ PcatRootBridgeIoSetAttributes (
   ); 
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoConfiguration (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT VOID                             **Resources
@@ -241,6 +258,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPollMem ( 
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -302,6 +320,7 @@ PcatRootBridgeIoPollMem (
 }
   
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPollIo ( 
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -378,6 +397,7 @@ PcatRootBridgeMemAddressValid (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoMemRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -424,6 +444,7 @@ PcatRootBridgeIoMemRead (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoMemWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -470,6 +491,7 @@ PcatRootBridgeIoMemWrite (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoCopyMem (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -535,6 +557,7 @@ PcatRootBridgeIoCopyMem (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPciRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -551,6 +574,7 @@ PcatRootBridgeIoPciRead (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoPciWrite (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -567,6 +591,7 @@ PcatRootBridgeIoPciWrite (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoMap (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL            *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  Operation,
@@ -716,6 +741,7 @@ PcatRootBridgeIoMap (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoUnmap (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN VOID                             *Mapping
@@ -784,6 +810,7 @@ PcatRootBridgeIoUnmap (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoAllocateBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  EFI_ALLOCATE_TYPE                Type,
@@ -833,6 +860,7 @@ PcatRootBridgeIoAllocateBuffer (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoFreeBuffer (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN  UINTN                            Pages,
@@ -848,6 +876,7 @@ PcatRootBridgeIoFreeBuffer (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoFlush (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This
   )
@@ -862,6 +891,7 @@ PcatRootBridgeIoFlush (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoGetAttributes (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT UINT64                           *Supported,  OPTIONAL
@@ -903,6 +933,7 @@ PcatRootBridgeIoGetAttributes (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoSetAttributes (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   IN     UINT64                           Attributes,
@@ -929,6 +960,7 @@ PcatRootBridgeIoSetAttributes (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoConfiguration (
   IN  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *This,
   OUT VOID                             **Resources

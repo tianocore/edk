@@ -36,6 +36,12 @@ Revision History
 #define TIME_NUMERIC    1
 #define DATE_NUMERIC    2
 
+//
+// Set this flag to date/time TAG 
+//  so that the TAG won't be updated automatically during user's modification
+//
+#define FLAG_DATE_TIME_BEING_MODIFY 0x80
+
 typedef enum {
   UiNoOperation,
   UiDefault,

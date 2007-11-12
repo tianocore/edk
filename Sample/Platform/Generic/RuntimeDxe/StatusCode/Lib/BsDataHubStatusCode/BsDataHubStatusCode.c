@@ -148,7 +148,6 @@ Returns:
   return RecordData;
 }
 
-EFI_BOOTSERVICE
 EFI_STATUS
 EFIAPI
 BsDataHubReportStatusCode (
@@ -341,8 +340,8 @@ Returns:
 
 }
 
-EFI_BOOTSERVICE
 EFI_STATUS
+EFIAPI
 BsDataHubInitializeStatusCode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable

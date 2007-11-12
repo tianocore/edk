@@ -14,7 +14,7 @@ Module Name:
     usb.h
 
 Abstract:
-    Support for USB 1.1 standard.
+    Support for USB standard.
 
 
 
@@ -25,10 +25,6 @@ Revision History
 
 #ifndef _USB_INDUSTRY_H_
 #define _USB_INDUSTRY_H_
-
-//
-// Definitions defined in UEFI spec
-//
 
 //
 // USB Transfer Results
@@ -64,13 +60,22 @@ Revision History
 #define USB_PORT_STAT_C_RESET       0x0010
 
 //
-// USB data transfer direction
+// Usb data transfer direction
 //
 typedef enum {
   EfiUsbDataIn,
   EfiUsbDataOut,
   EfiUsbNoData
 } EFI_USB_DATA_DIRECTION;
+
+//
+// Usb data recipient type
+//
+typedef enum {
+  EfiUsbDevice,
+  EfiUsbInterface,
+  EfiUsbEndpoint
+} EFI_USB_RECIPIENT;
 
 //
 // Usb port features
@@ -88,11 +93,82 @@ typedef enum {
   EfiUsbPortResetChange       = 20
 } EFI_USB_PORT_FEATURE;
 
+//
+// Following are definitions not specified by UEFI spec.
+// Add new definitions below this line
+//
+enum {
+  //
+  // USB request type
+  //
+  USB_REQ_TYPE_STANDARD   = (0x00 << 5),
+  USB_REQ_TYPE_CLASS      = (0x01 << 5),
+  USB_REQ_TYPE_VENDOR     = (0x02 << 5),
+
+  //
+  // Standard control transfer request type, or the value 
+  // to fill in EFI_USB_DEVICE_REQUEST.Request
+  //
+  USB_REQ_GET_STATUS      = 0x00,
+  USB_REQ_CLEAR_FEATURE   = 0x01,
+  USB_REQ_SET_FEATURE     = 0x03,
+  USB_REQ_SET_ADDRESS     = 0x05,
+  USB_REQ_GET_DESCRIPTOR  = 0x06,
+  USB_REQ_SET_DESCRIPTOR  = 0x07,
+  USB_REQ_GET_CONFIG      = 0x08,
+  USB_REQ_SET_CONFIG      = 0x09,
+  USB_REQ_GET_INTERFACE   = 0x0A,
+  USB_REQ_SET_INTERFACE   = 0x0B,
+  USB_REQ_SYNCH_FRAME     = 0x0C,
+
+  //
+  // Usb control transfer target 
+  //
+  USB_TARGET_DEVICE       = 0,
+  USB_TARGET_INTERFACE    = 0x01,
+  USB_TARGET_ENDPOINT     = 0x02,
+  USB_TARGET_OTHER        = 0x03,
+
+  //
+  // USB Descriptor types
+  //
+  USB_DESC_TYPE_DEVICE    = 0x01,
+  USB_DESC_TYPE_CONFIG    = 0x02,
+  USB_DESC_TYPE_STRING    = 0x03,
+  USB_DESC_TYPE_INTERFACE = 0x04,
+  USB_DESC_TYPE_ENDPOINT  = 0x05,
+  USB_DESC_TYPE_HID       = 0x21,
+
+  //
+  // Features to be cleared by CLEAR_FEATURE requests
+  //
+  USB_FEATURE_ENDPOINT_HALT = 0,
+  
+  //
+  // USB endpoint types: 00: control, 01: isochronous, 10: bulk, 11: interrupt
+  // 
+  USB_ENDPOINT_CONTROL    = 0x00,
+  USB_ENDPOINT_ISO        = 0x01,
+  USB_ENDPOINT_BULK       = 0x02,
+  USB_ENDPOINT_INTERRUPT  = 0x03,
+
+  USB_ENDPOINT_TYPE_MASK  = 0x03,
+  USB_ENDPOINT_DIR_IN     = 0x80,
+
+  MAXBYTES                = 8,
+  
+  //
+  //Use 200 ms to increase the error handling response time
+  //
+  EFI_USB_INTERRUPT_DELAY = 2000000,
+};
+
 
 //
 // USB standard descriptors and reqeust 
 //
 #pragma pack(1)
+
 typedef struct {
   UINT8           RequestType;
   UINT8           Request;
@@ -156,79 +232,113 @@ typedef struct {
   CHAR16          String[1];
 } EFI_USB_STRING_DESCRIPTOR;
 
-#pragma pack()
-
 typedef struct {
   UINT16          PortStatus;
   UINT16          PortChangeStatus;
 } EFI_USB_PORT_STATUS;
 
+typedef struct {
+  UINT8           Length;
+  UINT8           DescriptorType;
+  UINT8           NbrPorts;
+  UINT8           HubCharacteristics[2];
+  UINT8           PwrOn2PwrGood;
+  UINT8           HubContrCurrent;
+  UINT8           Filler[MAXBYTES];
+} EFI_USB_HUB_DESCRIPTOR;
+
+#pragma pack()
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////      Backward Compatibility         ///////////////////
+///////////////////////////////////////////////////////////////////////////
 
 //
-// Following are definitions not specified by UEFI spec.
-// Add new definitions below this line
+// USB Descriptor types
 //
-enum {
-  //
-  // USB request type
-  //
-  USB_REQ_TYPE_STANDARD   = (0x00 << 5),
-  USB_REQ_TYPE_CLASS      = (0x01 << 5),
-  USB_REQ_TYPE_VENDOR     = (0x02 << 5),
+#define USB_DT_DEVICE     0x01
+#define USB_DT_CONFIG     0x02
+#define USB_DT_STRING     0x03
+#define USB_DT_INTERFACE  0x04
+#define USB_DT_ENDPOINT   0x05
+#define USB_DT_HUB        0x29
+#define USB_DT_HID        0x21
 
-  //
-  // Standard control transfer request type, or the value 
-  // to fill in EFI_USB_DEVICE_REQUEST.Request
-  //
-  USB_REQ_GET_STATUS      = 0x00,
-  USB_REQ_CLEAR_FEATURE   = 0x01,
-  USB_REQ_SET_FEATURE     = 0x03,
-  USB_REQ_SET_ADDRESS     = 0x05,
-  USB_REQ_GET_DESCRIPTOR  = 0x06,
-  USB_REQ_SET_DESCRIPTOR  = 0x07,
-  USB_REQ_GET_CONFIG      = 0x08,
-  USB_REQ_SET_CONFIG      = 0x09,
-  USB_REQ_GET_INTERFACE   = 0x0A,
-  USB_REQ_SET_INTERFACE   = 0x0B,
-  USB_REQ_SYNCH_FRAME     = 0x0C,
+//
+// USB request type
+//
+#define USB_TYPE_STANDARD (0x00 << 5)
+#define USB_TYPE_CLASS    (0x01 << 5)
+#define USB_TYPE_VENDOR   (0x02 << 5)
+#define USB_TYPE_RESERVED (0x03 << 5)
 
-  //
-  // Usb control transfer target 
-  //
-  USB_TARGET_DEVICE       = 0,
-  USB_TARGET_INTERFACE    = 0x01,
-  USB_TARGET_ENDPOINT     = 0x02,
-  USB_TARGET_OTHER        = 0x03,
+//
+// USB request targer device
+//
+#define USB_RECIP_DEVICE    0x00
+#define USB_RECIP_INTERFACE 0x01
+#define USB_RECIP_ENDPOINT  0x02
+#define USB_RECIP_OTHER     0x03
 
-  //
-  // USB Descriptor types
-  //
-  USB_DESC_TYPE_DEVICE    = 0x01,
-  USB_DESC_TYPE_CONFIG    = 0x02,
-  USB_DESC_TYPE_STRING    = 0x03,
-  USB_DESC_TYPE_INTERFACE = 0x04,
-  USB_DESC_TYPE_ENDPOINT  = 0x05,
-  USB_DESC_TYPE_HID       = 0x21,
+//
+// Request target types.
+//
+#define USB_RT_DEVICE     0x00
+#define USB_RT_INTERFACE  0x01
+#define USB_RT_ENDPOINT   0x02
+#define USB_RT_HUB        (USB_TYPE_CLASS | USB_RECIP_DEVICE)
+#define USB_RT_PORT       (USB_TYPE_CLASS | USB_RECIP_OTHER)
 
-  //
-  // Features to be cleared by CLEAR_FEATURE requests
-  //
-  USB_FEATURE_ENDPOINT_HALT = 0,
-  
-  //
-  // USB endpoint types: 00: control, 01: isochronous, 10: bulk, 11: interrupt
-  // 
-  USB_ENDPOINT_CONTROL    = 0x00,
-  USB_ENDPOINT_ISO        = 0x01,
-  USB_ENDPOINT_BULK       = 0x02,
-  USB_ENDPOINT_INTERRUPT  = 0x03,
+typedef enum {
+  EfiUsbEndpointHalt,
+  EfiUsbDeviceRemoteWakeup
+} EFI_USB_STANDARD_FEATURE_SELECTOR;
 
-  USB_ENDPOINT_TYPE_MASK  = 0x03,
-  USB_ENDPOINT_DIR_IN     = 0x80,
-  
-  //
-  //Use 200 ms to increase the error handling response time
-  //
-  EFI_USB_INTERRUPT_DELAY = 2000000,
-};
+//
+// Standard USB request
+//
+#define USB_DEV_GET_STATUS                  0x00
+#define USB_DEV_CLEAR_FEATURE               0x01
+#define USB_DEV_SET_FEATURE                 0x03
+#define USB_DEV_SET_ADDRESS                 0x05
+#define USB_DEV_SET_ADDRESS_REQ_TYPE        0x00
+#define USB_DEV_GET_DESCRIPTOR              0x06
+#define USB_DEV_GET_DESCRIPTOR_REQ_TYPE     0x80
+#define USB_DEV_SET_DESCRIPTOR              0x07
+#define USB_DEV_SET_DESCRIPTOR_REQ_TYPE     0x00
+#define USB_DEV_GET_CONFIGURATION           0x08
+#define USB_DEV_GET_CONFIGURATION_REQ_TYPE  0x80
+#define USB_DEV_SET_CONFIGURATION           0x09
+#define USB_DEV_SET_CONFIGURATION_REQ_TYPE  0x00
+#define USB_DEV_GET_INTERFACE               0x0A
+#define USB_DEV_GET_INTERFACE_REQ_TYPE      0x81
+#define USB_DEV_SET_INTERFACE               0x0B
+#define USB_DEV_SET_INTERFACE_REQ_TYPE      0x01
+#define USB_DEV_SYNCH_FRAME                 0x0C
+#define USB_DEV_SYNCH_FRAME_REQ_TYPE        0x82
+
+#pragma pack(1)
+//
+// Supported String Languages
+//
+typedef struct {
+  UINT8   Length;
+  UINT8   DescriptorType;
+  UINT16  SupportedLanID[1];
+} EFI_USB_SUPPORTED_LANGUAGES;
+
+//
+// USB alternate setting
+//
+typedef struct {
+  EFI_USB_INTERFACE_DESCRIPTOR  *Interface;
+} USB_ALT_SETTING;
+
+#pragma pack()
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
 #endif

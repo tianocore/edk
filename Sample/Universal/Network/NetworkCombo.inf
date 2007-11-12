@@ -67,9 +67,9 @@ COMPONENT_TYPE       = BS_DRIVER
   PxeDhcp4\Dxe\support.c
 
 [includes.common]
-  $(EDK_SOURCE)\Sample\Universal\Network\PxeBc\Dxe
-  $(EDK_SOURCE)\Sample\Universal\Network\PxeDhcp4\Dxe
-  $(EDK_SOURCE)\Sample\Universal\Network\Snp32_64\Dxe
+  .\PxeBc\Dxe
+  .\PxeDhcp4\Dxe
+  .\Snp32_64\Dxe
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Efi
   $(EDK_SOURCE)\Foundation\Framework

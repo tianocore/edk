@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -99,6 +99,9 @@ Returns:
   EFI_LIST_ENTRY                       *ProtLink;
   OPEN_PROTOCOL_DATA                   *OpenData;
   EFI_DEVICE_PATH_PROTOCOL             *AlignedRemainingDevicePath;
+  EFI_HANDLE                           *ChildHandleBuffer;
+  UINTN                                ChildHandleCount;
+  UINTN                                Index;
   
   //
   // Make sure ControllerHandle is valid
@@ -111,51 +114,115 @@ Returns:
   Handle = ControllerHandle;
 
   //
-  // Connect all drivers to ControllerHandle 
+  // Make a copy of RemainingDevicePath to guanatee it is aligned
   //
   AlignedRemainingDevicePath = NULL;
   if (RemainingDevicePath != NULL) {
     AlignedRemainingDevicePath = CoreDuplicateDevicePath (RemainingDevicePath);
   }
-  ReturnStatus = CoreConnectSingleController (
-                   ControllerHandle,
-                   DriverImageHandle,
-                   AlignedRemainingDevicePath
-                   );
+
+  //
+  // Connect all drivers to ControllerHandle
+  // If CoreConnectSingleController returns EFI_NOT_READY, then the number of
+  // Driver Binding Protocols in the handle database has increased during the call
+  // so the connect operation must be restarted
+  //
+  do {
+    ReturnStatus = CoreConnectSingleController (
+                    ControllerHandle,
+                    DriverImageHandle,
+                    AlignedRemainingDevicePath
+                    );
+  } while (ReturnStatus == EFI_NOT_READY);
+
+  //
+  // Free the aligned copy of RemainingDevicePath
+  //
   if (AlignedRemainingDevicePath != NULL) {
     CoreFreePool (AlignedRemainingDevicePath);
   }
 
   //
-  // If not recursive, then just return after connecting drivers to ControllerHandle
-  //
-  if (!Recursive) {
-    return ReturnStatus;
-  }
-
-  //
   // If recursive, then connect all drivers to all of ControllerHandle's children
   //
-  CoreAcquireProtocolLock ();
-  for (Link = Handle->Protocols.ForwardLink; Link != &Handle->Protocols; Link = Link->ForwardLink) {
-    Prot = CR(Link, PROTOCOL_INTERFACE, Link, PROTOCOL_INTERFACE_SIGNATURE);
-    for (ProtLink = Prot->OpenList.ForwardLink; 
-           ProtLink != &Prot->OpenList; 
-           ProtLink = ProtLink->ForwardLink) {
+  if (Recursive) {
+    //
+    // Acquire the protocol lock on the handle database so the child handles can be collected
+    //
+    CoreAcquireProtocolLock ();
+
+    //
+    // Make sure the DriverBindingHandle is valid
+    //
+    Status = CoreValidateHandle (ControllerHandle);
+    if (EFI_ERROR (Status)) {
+      //
+      // Release the protocol lock on the handle database
+      //
+      CoreReleaseProtocolLock ();
+
+      return ReturnStatus;
+    }
+
+
+    //
+    // Count ControllerHandle's children
+    //
+    for (Link = Handle->Protocols.ForwardLink, ChildHandleCount = 0; Link != &Handle->Protocols; Link = Link->ForwardLink) {
+      Prot = CR(Link, PROTOCOL_INTERFACE, Link, PROTOCOL_INTERFACE_SIGNATURE);
+      for (ProtLink = Prot->OpenList.ForwardLink; 
+          ProtLink != &Prot->OpenList; 
+          ProtLink = ProtLink->ForwardLink) {
         OpenData = CR (ProtLink, OPEN_PROTOCOL_DATA, Link, OPEN_PROTOCOL_DATA_SIGNATURE);
         if ((OpenData->Attributes & EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) != 0) {
-          CoreReleaseProtocolLock ();
-          Status = CoreConnectController (
-                          OpenData->ControllerHandle,
-                          NULL,
-                          NULL,
-                          TRUE
-                          ); 
-          CoreAcquireProtocolLock ();
+          ChildHandleCount++;
         }
+      }
     }
+
+    //
+    // Allocate a handle buffer for ControllerHandle's children
+    //
+    ChildHandleBuffer = CoreAllocateBootServicesPool (ChildHandleCount * sizeof(EFI_HANDLE));
+
+    //
+    // Fill in a handle buffer with ControllerHandle's children
+    //
+    for (Link = Handle->Protocols.ForwardLink, ChildHandleCount = 0; Link != &Handle->Protocols; Link = Link->ForwardLink) {
+      Prot = CR(Link, PROTOCOL_INTERFACE, Link, PROTOCOL_INTERFACE_SIGNATURE);
+      for (ProtLink = Prot->OpenList.ForwardLink; 
+          ProtLink != &Prot->OpenList; 
+          ProtLink = ProtLink->ForwardLink) {
+        OpenData = CR (ProtLink, OPEN_PROTOCOL_DATA, Link, OPEN_PROTOCOL_DATA_SIGNATURE);
+        if ((OpenData->Attributes & EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) != 0) {
+          ChildHandleBuffer[ChildHandleCount] = OpenData->ControllerHandle;
+          ChildHandleCount++;
+        }
+      }
+    }
+
+    //
+    // Release the protocol lock on the handle database
+    //
+    CoreReleaseProtocolLock ();
+
+    //
+    // Recursively connect each child handle
+    //
+    for (Index = 0; Index < ChildHandleCount; Index++) {
+      CoreConnectController (
+        ChildHandleBuffer[Index],
+        NULL,
+        NULL,
+        TRUE
+        ); 
+    }
+
+    //
+    // Free the handle buffer of ControllerHandle's children
+    //
+    CoreFreePool (ChildHandleBuffer);
   }
-  CoreReleaseProtocolLock ();
   
   return ReturnStatus;
 }
@@ -223,7 +290,7 @@ Returns:
   //
   // See if DriverBinding is already in the sorted list
   //
-  for (Index = 0; Index < *NumberOfSortedDriverBindingProtocols; Index++) {
+  for (Index = 0; Index < *NumberOfSortedDriverBindingProtocols && Index < DriverBindingHandleCount; Index++) {
     if (DriverBinding == SortedDriverBindingProtocols[Index]) {
       return;
     }
@@ -232,7 +299,9 @@ Returns:
   //
   // Add DriverBinding to the end of the list
   //
-  SortedDriverBindingProtocols[*NumberOfSortedDriverBindingProtocols] = DriverBinding;
+  if (*NumberOfSortedDriverBindingProtocols < DriverBindingHandleCount) {
+    SortedDriverBindingProtocols[*NumberOfSortedDriverBindingProtocols] = DriverBinding;
+  }
   *NumberOfSortedDriverBindingProtocols = *NumberOfSortedDriverBindingProtocols + 1;
 
   //
@@ -418,13 +487,26 @@ Returns:
   CoreFreePool (DriverBindingHandleBuffer);
 
   //
+  // If the number of Driver Binding Protocols has increased since this function started, then return
+  // EFI_NOT_READY, so it will be restarted
+  //
+  if (NumberOfSortedDriverBindingProtocols > DriverBindingHandleCount) {
+    //
+    // Free any buffers that were allocated with AllocatePool()
+    //
+    CoreFreePool (SortedDriverBindingProtocols);
+
+    return EFI_NOT_READY;
+  }
+
+  //
   // Sort the remaining DriverBinding Protocol based on their Version field from
   // highest to lowest.
   //
-  for ( ; SortIndex < DriverBindingHandleCount; SortIndex++) {
+  for ( ; SortIndex < NumberOfSortedDriverBindingProtocols; SortIndex++) {
     HighestVersion = SortedDriverBindingProtocols[SortIndex]->Version;
     HighestIndex   = SortIndex;
-    for (Index = SortIndex + 1; Index < DriverBindingHandleCount; Index++) {
+    for (Index = SortIndex + 1; Index < NumberOfSortedDriverBindingProtocols; Index++) {
       if (SortedDriverBindingProtocols[Index]->Version > HighestVersion) {
         HighestVersion = SortedDriverBindingProtocols[Index]->Version;
         HighestIndex   = Index;

@@ -94,21 +94,6 @@ enum {
   USB_WAIT_PORT_STS_CHANGE_LOOP   = 100,
 };
 
-#pragma pack(1)
-//
-// Hub descriptor, the last two fields are of variable lenght.
-//
-typedef struct {
-  UINT8           Length;
-  UINT8           DescType;
-  UINT8           NumPorts;
-  UINT16          HubCharacter;
-  UINT8           PwrOn2PwrGood;
-  UINT8           HubContrCurrent;
-  UINT8           Filler[16];
-} EFI_USB_HUB_DESCRIPTOR;
-#pragma pack()
-
 
 typedef struct {
   UINT16                ChangedBit;

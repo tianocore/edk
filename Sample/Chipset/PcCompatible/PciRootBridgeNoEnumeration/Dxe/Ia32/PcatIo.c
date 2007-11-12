@@ -27,6 +27,7 @@ static BOOLEAN                  mPciOptionRomTableInstalled = FALSE;
 static EFI_PCI_OPTION_ROM_TABLE mPciOptionRomTable          = {0, NULL};
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoIoRead (
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,
@@ -45,6 +46,7 @@ PcatRootBridgeIoIoRead (
 }
 
 EFI_STATUS
+EFIAPI
 PcatRootBridgeIoIoWrite (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL        *This,
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH  Width,

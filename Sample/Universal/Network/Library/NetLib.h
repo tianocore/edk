@@ -33,7 +33,8 @@ Abstract:
 
 extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
 
-#define NET_IS_DIGIT(Ch)  (('0' <= (Ch)) && ((Ch) <= '9'))
+#define NET_IS_DIGIT(Ch)        (('0' <= (Ch)) && ((Ch) <= '9'))
+#define NET_ROUNDUP(size, unit) (((size) + (unit) - 1) & (~((unit) - 1)))
 
 //
 // Wrap functions to ease the impact of EFI library changes.
@@ -51,16 +52,13 @@ extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
 // to the standard EFI enviornment. It will NOT consider multiprocessor.
 //
 #define NET_TPL_LOCK            EFI_TPL_CALLBACK
-#define NET_TPL_RECYCLE_LOCK    (NET_TPL_LOCK + 1)
 #define NET_TPL_EVENT           EFI_TPL_CALLBACK
-#define NET_TPL_RECYCLE         (NET_TPL_LOCK + 1)
-#define NET_TPL_SLOW_TIMER      (EFI_TPL_CALLBACK - 1)
-#define NET_TPL_FAST_TIMER      NET_TPL_RECYCLE
-#define NET_TPL_TIMER           EFI_TPL_CALLBACK
+#define NET_TPL_RECYCLE         EFI_TPL_NOTIFY
+#define NET_TPL_TIMER           NET_TPL_LOCK
 
 #define NET_LOCK                 EFI_LOCK
 #define NET_LOCK_INIT(x)         EfiInitializeLock (x, NET_TPL_LOCK)
-#define NET_RECYCLE_LOCK_INIT(x) EfiInitializeLock (x, NET_TPL_RECYCLE_LOCK)
+#define NET_RECYCLE_LOCK_INIT(x) EfiInitializeLock (x, NET_TPL_RECYCLE)
 #define NET_TRYLOCK(x)           EfiAcquireLockOrFail (x)
 #define NET_UNLOCK(x)            EfiReleaseLock (x)
 

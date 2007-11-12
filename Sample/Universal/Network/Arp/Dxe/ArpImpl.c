@@ -1620,6 +1620,7 @@ Returns:
     //
     *EntryLength = sizeof (EFI_ARP_FIND_DATA) + Instance->ConfigData.SwAddressLength +
                    ArpService->SnpMode.HwAddressSize;
+    *EntryLength = NET_ROUNDUP (*EntryLength, 4);
   }
 
   if (EntryCount != NULL) {

@@ -296,6 +296,7 @@ Note:
     CacheIndex = 0;
     while (CacheIndex < CacheNumber) {
       CapsuleNumber = 0;  
+      DataPtr = BeginPtr;
       for (Index = 0; Index < CapsuleTotalNumber; Index++) {
         CapsuleHeader = (EFI_CAPSULE_HEADER*)((UINTN)BaseAddress +  (UINT32)(UINTN)*DataPtr++);
         if ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0) {
@@ -329,7 +330,7 @@ Note:
     //
     if (CacheNumber != 0) {
       Size = sizeof(EFI_CAPSULE_INFO_TABLE) + (CacheNumber -1) * sizeof(EFI_GUID);
-      Status  = gBS->AllocatePool (EfiBootServicesData, Size, (VOID **) &CapsuleInfoTable);
+      Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleInfoTable);
       CapsuleInfoTable->CapsuleGuidNumber = CacheNumber;
       gBS->CopyMem(&CapsuleInfoTable->CapsuleGuidPtr[0], CapsuleGuidCache, CacheNumber * sizeof(EFI_GUID));
       Status = gBS->InstallConfigurationTable (&mCapsuleInfoGuid, (VOID*)CapsuleInfoTable);

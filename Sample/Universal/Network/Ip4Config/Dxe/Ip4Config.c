@@ -665,13 +665,13 @@ Returns:
       NetFreePool (Instance->NicConfig);
     }
 
-    Instance->NicConfig = NetAllocatePool (sizeof (NIC_IP4_CONFIG_INFO) + 
-                                           sizeof (EFI_IP4_ROUTE_TABLE));
-
+    Instance->NicConfig = NetAllocatePool (sizeof (NIC_IP4_CONFIG_INFO) + 2 * sizeof (EFI_IP4_ROUTE_TABLE));
     if (Instance->NicConfig == NULL) {
       Instance->Result = EFI_OUT_OF_RESOURCES;
       goto ON_EXIT;
     }
+
+    Instance->NicConfig->Ip4Info.RouteTable = (EFI_IP4_ROUTE_TABLE *) (Instance->NicConfig + 1);
 
     Instance->NicConfig->NicAddr = Instance->NicAddr;
     Instance->NicConfig->Source  = IP4_CONFIG_SOURCE_DHCP;

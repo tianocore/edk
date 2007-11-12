@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -106,7 +106,7 @@ CoreOpenImageFile (
   IN BOOLEAN                        BootPolicy,
   IN VOID                           *SourceBuffer   OPTIONAL,
   IN UINTN                          SourceSize,
-  IN OUT EFI_DEVICE_PATH_PROTOCOL   *FilePath,
+  IN OUT EFI_DEVICE_PATH_PROTOCOL   **FilePath,
   OUT EFI_HANDLE                    *DeviceHandle,
   IN IMAGE_FILE_HANDLE              *ImageFileHandle,
   OUT UINT32                        *AuthenticationStatus
@@ -230,6 +230,7 @@ Returns:
 STATIC
 EFI_STATUS
 CoreLoadPeImage (
+  IN  BOOLEAN                    BootPolicy,
   IN  VOID                       *Pe32Handle,
   IN  LOADED_IMAGE_PRIVATE_DATA  *Image,
   IN  EFI_PHYSICAL_ADDRESS       DstBuffer   OPTIONAL,

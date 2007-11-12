@@ -111,6 +111,7 @@ KeyboardReadKeyStrokeWorker (
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
   EFI_LIST_ENTRY                        *Link;
   KEYBOARD_CONSOLE_IN_EX_NOTIFY         *CurrentNotify;
+  EFI_KEY_DATA                          OriginalKeyData;
 #endif  
 
   if (KeyData == NULL) {
@@ -151,6 +152,20 @@ KeyboardReadKeyStrokeWorker (
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
   //
+  //Switch the control value to their original characters. In KeyGetchar() the  CTRL-Alpha characters have been switched to 
+  // their corresponding control value (ctrl-a = 0x0001 through ctrl-Z = 0x001A), here switch them back for notification function.
+  //
+  EfiCopyMem (&OriginalKeyData, KeyData, sizeof (EFI_KEY_DATA));
+  if (ConsoleInDev->Ctrled) {
+    if (OriginalKeyData.Key.UnicodeChar >= 0x01 && OriginalKeyData.Key.UnicodeChar <= 0x1A) {
+      if (ConsoleInDev->CapsLock) {
+        OriginalKeyData.Key.UnicodeChar = OriginalKeyData.Key.UnicodeChar + 'A' - 1;
+      } else {
+        OriginalKeyData.Key.UnicodeChar = OriginalKeyData.Key.UnicodeChar + 'a' - 1;
+      } 
+    }
+  }
+  //
   // Invoke notification functions if exist
   //
   for (Link = ConsoleInDev->NotifyList.ForwardLink; Link != &ConsoleInDev->NotifyList; Link = Link->ForwardLink) {
@@ -160,8 +175,8 @@ KeyboardReadKeyStrokeWorker (
                       NotifyEntry, 
                       KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
                       );
-    if (IsKeyRegistered (&CurrentNotify->KeyData, KeyData)) { 
-      CurrentNotify->KeyNotificationFn (KeyData);
+    if (IsKeyRegistered (&CurrentNotify->KeyData, &OriginalKeyData)) { 
+      CurrentNotify->KeyNotificationFn (&OriginalKeyData);
     }
   }
 #endif

@@ -255,24 +255,29 @@ Returns:
     MenuRefreshEntry = gMenuRefreshHead;
 
     do {
-      gST->ConOut->SetAttribute (gST->ConOut, MenuRefreshEntry->CurrentAttribute);
-      ProcessOptions (MenuRefreshEntry->MenuOption, FALSE, MenuRefreshEntry->FileFormTagsHead, NULL, &OptionString);
-
-      if (OptionString != NULL) {
+      if ((MenuRefreshEntry->MenuOption->ThisTag->Flags & FLAG_DATE_TIME_BEING_MODIFY) == 0) {
         //
-        // If leading spaces on OptionString - remove the spaces
+        // We only update those not being modified
         //
-        for (Index = 0; OptionString[Index] == L' '; Index++)
-          ;
+        gST->ConOut->SetAttribute (gST->ConOut, MenuRefreshEntry->CurrentAttribute);
+        ProcessOptions (MenuRefreshEntry->MenuOption, FALSE, MenuRefreshEntry->FileFormTagsHead, NULL, &OptionString);
 
-        for (Loop = 0; OptionString[Index] != CHAR_NULL; Index++) {
-          OptionString[Loop] = OptionString[Index];
-          Loop++;
+        if (OptionString != NULL) {
+          //
+          // If leading spaces on OptionString - remove the spaces
+          //
+          for (Index = 0; OptionString[Index] == L' '; Index++)
+            ;
+
+          for (Loop = 0; OptionString[Index] != CHAR_NULL; Index++) {
+            OptionString[Loop] = OptionString[Index];
+            Loop++;
+          }
+
+          OptionString[Loop] = CHAR_NULL;
+
+          PrintStringAt (MenuRefreshEntry->CurrentColumn, MenuRefreshEntry->CurrentRow, OptionString);
         }
-
-        OptionString[Loop] = CHAR_NULL;
-
-        PrintStringAt (MenuRefreshEntry->CurrentColumn, MenuRefreshEntry->CurrentRow, OptionString);
       }
 
       MenuRefreshEntry = MenuRefreshEntry->Next;
@@ -2338,11 +2343,7 @@ Returns:
           || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)
           || ((MenuOption->ThisTag->Operand == EFI_IFR_NUMERIC_OP) && (MenuOption->ThisTag->Step != 0))
         ){
-          if (Key.UnicodeChar == '+') {
-            gDirection = SCAN_RIGHT;
-          } else {
-            gDirection = SCAN_LEFT;
-          }
+          gDirection = Key.UnicodeChar;
           Status = ProcessOptions (MenuOption, TRUE, FileFormTagsHead, NULL, &OptionString);
         }
         break;
@@ -2919,6 +2920,7 @@ Returns:
       DistanceValue  = AdjustDateAndTimePosition (FALSE, &NewPos);
 
       if (NewPos->ForwardLink != &Menu) {
+        MenuOption      = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);        
         NewLine         = TRUE;
         NewPos          = NewPos->ForwardLink;
         NextMenuOption  = CR (NewPos, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
@@ -2933,6 +2935,12 @@ Returns:
         UpdateOptionSkipLines (PageData, NextMenuOption, FileFormTagsHead, &OptionString, SkipValue);
 
         Temp = MenuOption->Row + MenuOption->Skip + DistanceValue - 1;
+        if ((MenuOption->Row + MenuOption->Skip == BottomRow + 1) &&
+            (NextMenuOption->ThisTag->Operand == EFI_IFR_DATE_OP || 
+             NextMenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)
+            ) {
+          Temp ++;
+        }
 
         //
         // If we are going to scroll, update TopOfScreen
@@ -3027,6 +3035,8 @@ Returns:
           Repaint       = TRUE;
           OldSkipValue  = SkipValue;
         }
+        
+        MenuOption = CR (SavedListEntry, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE);
 
         UpdateStatusBar (INPUT_ERROR, MenuOption->ThisTag->Flags, FALSE);
 

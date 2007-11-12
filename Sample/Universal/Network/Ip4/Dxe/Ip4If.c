@@ -120,7 +120,7 @@ Returns:
 
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_EVENT,
                   Ip4OnFrameSent,
                   Token,
                   &MnpToken->Event
@@ -216,7 +216,7 @@ Returns:
 
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_EVENT,
                   Ip4OnArpResolved,
                   ArpQue,
                   &ArpQue->OnResolved
@@ -314,7 +314,7 @@ Returns:
 
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
-                  EFI_TPL_CALLBACK,
+                  NET_TPL_EVENT,
                   Ip4OnFrameReceived,
                   Token,
                   &MnpToken->Event

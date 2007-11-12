@@ -47,7 +47,7 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Sample\Bus\Scsi\ScsiLib\Dxe\
+  ..\..\ScsiLib\Dxe
 
 [nmake.common]
   IMAGE_ENTRY_POINT=ScsiBusControllerDriverEntryPoint

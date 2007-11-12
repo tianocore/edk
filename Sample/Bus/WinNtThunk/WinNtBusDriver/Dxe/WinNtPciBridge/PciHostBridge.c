@@ -190,6 +190,15 @@ Returns:
         return EFI_DEVICE_ERROR;
       }
 
+      //
+      // Install DeviceIo
+      //
+      Status = DeviceIoConstructor (
+                 PrivateData->Handle,
+                 &PrivateData->Io,
+                 PrivateData->DevicePath
+                 );
+
       InsertTailList (&HostBridge->Head, &PrivateData->Link);
     }
     //
@@ -211,8 +220,6 @@ Returns:
                   RES_MEM_LIMIT - RES_MEM_BASE + 1,
                   0
                   );
-
-  DeviceIoConstructor ();
 
   return EFI_SUCCESS;
 }
