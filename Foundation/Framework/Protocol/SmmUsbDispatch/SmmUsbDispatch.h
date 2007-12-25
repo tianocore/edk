@@ -40,12 +40,7 @@ EFI_FORWARD_DECLARATION (EFI_SMM_USB_DISPATCH_PROTOCOL);
 //
 typedef enum {
   UsbLegacy,
-  UsbWake,
-  Trap60Read,
-  Trap60Write,
-  Trap64Read,
-  Trap64Write,
-  NUM_OF_USB_TYPE
+  UsbWake
 } EFI_USB_SMI_TYPE;
 
 typedef struct {

@@ -216,8 +216,7 @@ Returns:
 
 VOID
 EFIAPI
-Ip4AutoConfigCallBack (
-  IN EFI_EVENT              Event,
+Ip4AutoConfigCallBackDpc (
   IN VOID                   *Context
   )
 /*++
@@ -235,7 +234,6 @@ Routine Description:
 
 Arguments:
 
-  Event   - The event that is signalled.
   Context - The IP4 service binding instance.
 
 Returns:
@@ -254,7 +252,7 @@ Returns:
   UINTN                     Len;
   UINT32                    Index;
 
-  IpSb      = (IP4_SERVICE *) Context;
+  IpSb = (IP4_SERVICE *) Context;
   NET_CHECK_SIGNATURE (IpSb, IP4_SERVICE_SIGNATURE);
   
   Ip4Config = IpSb->Ip4Config;
@@ -269,7 +267,7 @@ Returns:
   // frames on the default address, and when the default interface is 
   // freed, Ip4AcceptFrame won't be informed.
   //
-  if (Event == IpSb->ReconfigEvent) {
+  if (IpSb->ActiveEvent == IpSb->ReconfigEvent) {
     
     if (IpSb->DefaultInterface->Configured) {
       IpIf = Ip4CreateInterface (IpSb->Mnp, IpSb->Controller, IpSb->Image);
@@ -375,6 +373,40 @@ Returns:
 
 ON_EXIT:
   NetFreePool (Data);
+}
+
+VOID
+EFIAPI
+Ip4AutoConfigCallBack (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+/*++
+
+Routine Description:
+
+  Request Ip4AutoConfigCallBackDpc as a DPC at EFI_TPL_CALLBACK
+
+Arguments:
+
+  Event   - The event that is signalled.
+  Context - The IP4 service binding instance.
+
+Returns:
+
+  None
+
+--*/
+{
+  IP4_SERVICE  *IpSb;
+
+  IpSb              = (IP4_SERVICE *) Context;
+  IpSb->ActiveEvent = Event;
+
+  //
+  // Request Ip4AutoConfigCallBackDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, Ip4AutoConfigCallBackDpc, Context);
 }
 
 EFI_STATUS
@@ -1444,6 +1476,11 @@ Returns:
 
   if (Wrap->Sent) {
     gBS->SignalEvent (Wrap->Token->Event);
+
+    //
+    // Dispatch the DPC queued by the NotifyFunction of Token->Event.
+    //
+    NetLibDispatchDpc ();
   }
 
   NetFreePool (Wrap);
@@ -1660,6 +1697,12 @@ Returns:
     goto ON_EXIT;
   }
 
+  //
+  // Mark the packet sent before output it. Mark it not sent again if the 
+  // returned status is not EFI_SUCCESS;
+  //
+  Wrap->Sent = TRUE;
+
   Status = Ip4Output (
              IpSb,
              IpInstance,
@@ -1671,17 +1714,10 @@ Returns:
              Ip4OnPacketSent,
              Wrap
              );
-
   if (EFI_ERROR (Status)) {
+    Wrap->Sent = FALSE;
     NetbufFree (Wrap->Packet);
-    goto ON_EXIT;
   }
-
-  //
-  // Mark the packet sent, so when Ip4FreeTxToken is called, it 
-  // will signal the upper layer.
-  //
-  Wrap->Sent = TRUE;
 
 ON_EXIT:
   NET_RESTORE_TPL (OldTpl);
@@ -1775,8 +1811,15 @@ Returns:
 
   Status = Ip4InstanceDeliverPacket (IpInstance);
 
+  //
+  // Dispatch the DPC queued by the NotifyFunction of this instane's receive
+  // event.
+  //
+  NetLibDispatchDpc ();
+
 ON_EXIT:
   NET_RESTORE_TPL (OldTpl);
+
   return Status;
 }
 
@@ -1927,7 +1970,6 @@ Returns:
   // token != NULL. So, return EFI_SUCCESS for this condition.
   //
   Status = NetMapIterate (&IpInstance->TxTokens, Ip4CancelTxTokens, Token);
-
   if (EFI_ERROR (Status)) {
     if ((Token != NULL) && (Status == EFI_ABORTED)) {
       return EFI_SUCCESS;
@@ -1941,7 +1983,11 @@ Returns:
   // for Token!=NULL and it is cancelled.
   //
   Status = NetMapIterate (&IpInstance->RxTokens, Ip4CancelRxTokens, Token);
-
+  //
+  // Dispatch the DPCs queued by the NotifyFunction of the canceled rx token's
+  // events.
+  //
+  NetLibDispatchDpc ();
   if (EFI_ERROR (Status)) {
     if ((Token != NULL) && (Status == EFI_ABORTED)) {
       return EFI_SUCCESS;
@@ -1959,7 +2005,7 @@ Returns:
   }
   
   //
-  // If Token == NULL, cancel all the tokens. return error if no
+  // If Token == NULL, cancel all the tokens. return error if not
   // all of them are cancelled.
   //
   if (!NetMapIsEmpty (&IpInstance->TxTokens) || 

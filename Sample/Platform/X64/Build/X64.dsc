@@ -89,6 +89,7 @@ DEFINE PROCESSOR=X64
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 
+Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
 Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
 
@@ -118,7 +119,7 @@ DEFINE PROCESSOR=IA32
 #
 # PEI Core
 #
-Foundation\Core\Pei\PeiMain.inf 
+Foundation\Core\$(PI_PREFIX)Pei\PeiMain.inf
 
 #
 # PEIM
@@ -154,11 +155,11 @@ Sample\Universal\Console\ConSplitter\Dxe\ConSplitter.inf
 Sample\Universal\DataHub\DataHub\Dxe\DataHub.inf
 Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
 Sample\Universal\Disk\DiskIo\Dxe\DiskIo.inf
-Sample\Universal\UserInterface\SetupBrowser\Dxe\DriverSample\DriverSample.Inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\DriverSample\DriverSample.Inf
 Sample\Universal\Ebc\Dxe\Ebc.inf
 Sample\Universal\Disk\UnicodeCollation\English\Dxe\English.inf
 Sample\Universal\Console\GraphicsConsole\Dxe\GraphicsConsole.inf
-Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)HiiDataBase\Dxe\HiiDatabase.inf
 Sample\Bus\Pci\IdeBus\Dxe\IdeBus.inf
 Sample\Platform\Generic\Logo\Logo.inf
 Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf
@@ -166,7 +167,7 @@ Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Bus\Pci\PciBusNoEnumeration\Dxe\PciBusNoEnumeration.inf
 Sample\Bus\Scsi\ScsiBus\Dxe\ScsiBus.inf
 Sample\Bus\Scsi\ScsiDisk\Dxe\ScsiDisk.inf   
-Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.Inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\SetupBrowser.inf
 Sample\Universal\Console\Terminal\Dxe\Terminal.inf
 Sample\Bus\Pci\Uhci\Dxe\Uhci.inf   
 
@@ -189,6 +190,7 @@ Sample\Universal\Network\Snp32_64\Dxe\SNP.inf
 #
 # UEFI network drivers.
 #
+Sample\Universal\Network\Dpc\Dxe\Dpc.inf                               FV=NULL
 Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
 Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
 Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
@@ -197,11 +199,13 @@ Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
 Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
 Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
 Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
+Sample\Universal\Network\UefiPxeBc\Dxe\UefiPxeBc.inf                   FV=NULL
+Sample\Universal\Network\IScsi\Dxe\$(UEFI_PREFIX)IScsi.inf             FV=NULL
 
 #
 # Binaries
 #
 Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
-Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\Shell.inf
+Other\Maintained\Application\UefiShell\bin\Shell.inf
 
 [=============================================================================]

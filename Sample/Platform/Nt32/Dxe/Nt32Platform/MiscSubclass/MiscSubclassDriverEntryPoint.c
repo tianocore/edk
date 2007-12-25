@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -161,8 +161,13 @@ Returns:
 {
   EFI_MISC_SUBCLASS_DRIVER_DATA RecordData;
   EFI_DATA_HUB_PROTOCOL         *DataHub;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_HII_DATABASE_PROTOCOL     *HiiDatabase;
+  EFI_HII_PACKAGE_LIST_HEADER   *PackageList;
+#else
   EFI_HII_PROTOCOL              *Hii;
   EFI_HII_PACKAGES              *PackageList;
+#endif
   EFI_HII_HANDLE                HiiHandle;
   EFI_STATUS                    EfiStatus;
   UINTN                         Index;
@@ -198,6 +203,22 @@ Returns:
   //
   // Locate hii protocol.
   //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EfiStatus = gBS->LocateProtocol (&gEfiHiiDatabaseProtocolGuid, NULL, &HiiDatabase);
+
+  if (EFI_ERROR (EfiStatus)) {
+    DEBUG ((EFI_D_ERROR, "Could not locate HiiDatabase protocol.  %r\n", EfiStatus));
+    return EfiStatus;
+  } else if (HiiDatabase == NULL) {
+    DEBUG ((EFI_D_ERROR, "LocateProtocol(HiiDatabase) returned NULL pointer!\n"));
+    return EFI_DEVICE_ERROR;
+  }
+  //
+  // Add our default strings to the HII database. They will be modified later.
+  //
+  PackageList = PreparePackageList (1, &gEfiMiscSubClassGuid, MiscSubclassStrings);
+  EfiStatus = HiiDatabase->NewPackageList (HiiDatabase, PackageList, ImageHandle, &HiiHandle);
+#else
   EfiStatus = gBS->LocateProtocol (&gEfiHiiProtocolGuid, NULL, &Hii);
 
   if (EFI_ERROR (EfiStatus)) {
@@ -212,6 +233,7 @@ Returns:
   //
   PackageList = PreparePackages (1, &gEfiMiscSubClassGuid, MiscSubclassStrings);
   EfiStatus   = Hii->NewPack (Hii, PackageList, &HiiHandle);
+#endif
   gBS->FreePool (PackageList);
 
   if (EFI_ERROR (EfiStatus)) {

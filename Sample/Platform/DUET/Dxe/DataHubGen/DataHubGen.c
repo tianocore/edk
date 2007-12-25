@@ -21,18 +21,24 @@ Abstract:
 #include "PeiHob.h"
 #include "EfiHobLib.h"
 #include "EfiDriverLib.h"
-#include "IfrLibrary.h"
 #include "EfiUiLib.h"
 #include EFI_GUID_DEFINITION     (Hob)
 #include EFI_GUID_DEFINITION     (DataHubRecords)
 #include EFI_GUID_DEFINITION     (SmBios)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "UefiIfrLibrary.h"
+#include EFI_PROTOCOL_DEFINITION (HiiDatabase)
+EFI_HII_DATABASE_PROTOCOL        *gHiiDatabase;
+#else
+#include "IfrLibrary.h"
 #include EFI_PROTOCOL_DEFINITION (Hii)
+EFI_HII_PROTOCOL                 *gHii;
+#endif
 
 extern UINT8                DataHubGenStrings[];
 
 EFI_DATA_HUB_PROTOCOL       *gDataHub;
-EFI_HII_PROTOCOL            *gHii;
 EFI_HII_HANDLE              gStringHandle;
 
 VOID *
@@ -70,6 +76,19 @@ PrepareHiiPackage (
   VOID
   )
 {
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_HANDLE                        DriverHandle;
+  EFI_HII_PACKAGE_LIST_HEADER       *PackageList;
+  EFI_STATUS                        Status;
+
+  CreateHiiDriverHandle (&DriverHandle);
+  PackageList = PreparePackageList (1, &gMiscProducerGuid, DataHubGenStrings);
+
+  Status = gHiiDatabase->NewPackageList (gHiiDatabase, PackageList, DriverHandle, &gStringHandle);
+  gBS->FreePool (PackageList);
+
+  return Status;
+#else
   EFI_HII_PACKAGES                  *PackageList;
   EFI_STATUS                        Status;
 
@@ -77,6 +96,7 @@ PrepareHiiPackage (
   Status        = gHii->NewPack (gHii, PackageList, &gStringHandle);
 
   return Status;
+#endif
 }
 
 EFI_SUBCLASS_TYPE1_HEADER mCpuDataRecordHeader = {
@@ -136,8 +156,12 @@ InstallProcessorDataHub (
   ASSERT (UString != NULL);
   Ascii2Unicode (UString, AString);
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = IfrLibNewString (gStringHandle, &Token, UString);
+#else
   Token  = 0;
   Status = gHii->NewString (gHii, NULL, gStringHandle, &Token, UString);
+#endif
   if (EFI_ERROR (Status)) {
     gBS->FreePool (UString);
     return ;
@@ -265,8 +289,12 @@ InstallMiscDataHub (
   EfiCopyMem (UString, FIRMWARE_BIOS_VERSIONE, sizeof(FIRMWARE_BIOS_VERSIONE));
   Ascii2Unicode (UString + sizeof(FIRMWARE_BIOS_VERSIONE) / sizeof(CHAR16) - 1, AString);
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = IfrLibNewString (gStringHandle, &Token, UString);
+#else
   Token  = 0;
   Status = gHii->NewString (gHii, NULL, gStringHandle, &Token, UString);
+#endif
   if (EFI_ERROR (Status)) {
     gBS->FreePool (UString);
     return ;
@@ -314,8 +342,12 @@ InstallMiscDataHub (
   EfiCopyMem (UString, FIRMWARE_PRODUCT_NAME, sizeof(FIRMWARE_PRODUCT_NAME));
   Ascii2Unicode (UString + sizeof(FIRMWARE_PRODUCT_NAME) / sizeof(CHAR16) - 1, AString);
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = IfrLibNewString (gStringHandle, &Token, UString);
+#else
   Token  = 0;
   Status = gHii->NewString (gHii, NULL, gStringHandle, &Token, UString);
+#endif
   if (EFI_ERROR (Status)) {
     gBS->FreePool (UString);
     return ;
@@ -372,11 +404,19 @@ DataHubGenEntrypoint (
     return Status;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = gBS->LocateProtocol (
+                  &gEfiHiiDatabaseProtocolGuid,
+                  NULL,
+                  &gHiiDatabase
+                  );
+#else
   Status = gBS->LocateProtocol (
                   &gEfiHiiProtocolGuid,
                   NULL,
                   &gHii
                   );
+#endif
   if (EFI_ERROR (Status)) {
     return Status;
   }

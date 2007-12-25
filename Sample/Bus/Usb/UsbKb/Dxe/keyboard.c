@@ -131,6 +131,7 @@ UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
     SCAN_NULL,      0x00,     0x00,     // 0x66 Keyboard Power
     SCAN_NULL,      '=' ,     '='       // 0x67 Keypad =
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
     ,
     SCAN_F13,         0x00,   0x00,     // 0x68
     SCAN_F14,         0x00,   0x00,     // 0x69
@@ -147,6 +148,7 @@ UINT8 KeyConvertionTable[USB_KEYCODE_MAX_MAKE][3] = {
     SCAN_MUTE,        0x00,   0x00,     // 0x7F
     SCAN_VOLUME_UP,   0x00,   0x00,     // 0x80
     SCAN_VOLUME_DOWN, 0x00,   0x00      // 0x81
+#endif  // DISABLE_CONSOLE_EX
 #endif
 };
 
@@ -314,6 +316,7 @@ InitUSBKeyboard (
   UsbKeyboardDevice->ScrollOn   = 0;
   
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   UsbKeyboardDevice->LeftCtrlOn   = 0;
   UsbKeyboardDevice->LeftAltOn    = 0;
   UsbKeyboardDevice->LeftShiftOn  = 0;  
@@ -324,6 +327,7 @@ InitUSBKeyboard (
   UsbKeyboardDevice->RightLogoOn  = 0;  
   UsbKeyboardDevice->MenuKeyOn    = 0;
   UsbKeyboardDevice->SysReqOn     = 0;  
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   //
@@ -726,13 +730,17 @@ USBParseKey (
       //
       case 0xe0:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         UsbKeyboardDevice->LeftCtrlOn = 0;
         UsbKeyboardDevice->CtrlOn = 0;
         break;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       case 0xe4:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         UsbKeyboardDevice->RightCtrlOn = 0;
+#endif  // DISABLE_CONSOLE_EX
 #endif
         UsbKeyboardDevice->CtrlOn = 0;
         break;
@@ -742,13 +750,17 @@ USBParseKey (
       //
       case 0xe1:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         UsbKeyboardDevice->LeftShiftOn = 0;
         UsbKeyboardDevice->ShiftOn = 0;
         break;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       case 0xe5:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         UsbKeyboardDevice->RightShiftOn = 0;
+#endif  // DISABLE_CONSOLE_EX
 #endif
         UsbKeyboardDevice->ShiftOn = 0;
         break;
@@ -758,18 +770,23 @@ USBParseKey (
       //
       case 0xe2:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         UsbKeyboardDevice->LeftAltOn = 0;
         UsbKeyboardDevice->AltOn = 0;
         break;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       case 0xe6:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         UsbKeyboardDevice->RightAltOn = 0;
+#endif  // DISABLE_CONSOLE_EX
 #endif        
         UsbKeyboardDevice->AltOn = 0;
         break;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       //
       // Logo release
       //
@@ -793,6 +810,7 @@ USBParseKey (
       case 0x46:
         UsbKeyboardDevice->SysReqOn = 0;
         break;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       default:
         break;
@@ -811,14 +829,18 @@ USBParseKey (
     //
     case 0xe0:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       UsbKeyboardDevice->LeftCtrlOn = 1;
       UsbKeyboardDevice->CtrlOn = 1;
       continue;      
       break;
+#endif  // DISABLE_CONSOLE_EX
 #endif
     case 0xe4:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       UsbKeyboardDevice->RightCtrlOn = 1;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       UsbKeyboardDevice->CtrlOn = 1;
       continue;
@@ -829,14 +851,18 @@ USBParseKey (
     //
     case 0xe1:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       UsbKeyboardDevice->LeftShiftOn = 1;
       UsbKeyboardDevice->ShiftOn = 1;
       continue;
       break;
+#endif  // DISABLE_CONSOLE_EX
 #endif
     case 0xe5:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       UsbKeyboardDevice->RightShiftOn = 1;      
+#endif  // DISABLE_CONSOLE_EX
 #endif
       UsbKeyboardDevice->ShiftOn = 1;
       continue;
@@ -847,21 +873,26 @@ USBParseKey (
     //
     case 0xe2:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       UsbKeyboardDevice->LeftAltOn = 1;
       UsbKeyboardDevice->AltOn = 1;
       continue;
       break;
 
+#endif  // DISABLE_CONSOLE_EX
 #endif      
     case 0xe6:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
       UsbKeyboardDevice->RightAltOn = 1;      
+#endif  // DISABLE_CONSOLE_EX
 #endif
       UsbKeyboardDevice->AltOn = 1;
       continue;
       break;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
     //
     // Logo press
     //
@@ -889,7 +920,7 @@ USBParseKey (
       UsbKeyboardDevice->SysReqOn = 1;
       continue;      
       break;
-
+#endif  // DISABLE_CONSOLE_EX
 #else
     case 0xe3:
     case 0xe7:
@@ -1013,12 +1044,14 @@ USBKeyCodeToEFIScanCode (
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   //
   // Undefined entries from 0x74 to 0x7E
   //
   if (KeyChar > USB_KEYCODE_MAX_MAKE) {
     Index = Index - 11;
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   Key->ScanCode = KeyConvertionTable[Index][0];
@@ -1027,6 +1060,7 @@ USBKeyCodeToEFIScanCode (
 
     Key->UnicodeChar = KeyConvertionTable[Index][2];
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
     //
     // Need not return associated shift state if a class of printable characters that
     // are normally adjusted by shift modifiers. e.g. Shift Key + 'f' key = 'F'
@@ -1035,6 +1069,7 @@ USBKeyCodeToEFIScanCode (
       UsbKeyboardDevice->LeftShiftOn = 0;
       UsbKeyboardDevice->RightShiftOn = 0;
     }
+#endif  // DISABLE_CONSOLE_EX
 #endif    
 
   } else {
@@ -1084,6 +1119,7 @@ USBKeyCodeToEFIScanCode (
 
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   //
   // Save Shift/Toggle state
   //
@@ -1127,6 +1163,7 @@ USBKeyCodeToEFIScanCode (
   if (UsbKeyboardDevice->CapsOn == 1) {
     UsbKeyboardDevice->KeyState.KeyToggleState |= EFI_CAPS_LOCK_ACTIVE;
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   return EFI_SUCCESS;

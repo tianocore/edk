@@ -1,0 +1,74 @@
+#/*++
+#
+# Copyright (c) 2007, Intel Corporation                                                         
+# All rights reserved. This program and the accompanying materials                          
+# are licensed and made available under the terms and conditions of the BSD License         
+# which accompanies this distribution.  The full text of the license may be found at        
+# http://opensource.org/licenses/bsd-license.php                                            
+#                                                                                           
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+# 
+#  Module Name:
+#
+#    UefiPxeBc.inf
+#
+#  Abstract:
+#
+#    Component description file for UEFI PxeBc module
+#
+#--*/
+
+[defines]
+BASE_NAME            = UefiPxeBc
+FILE_GUID            = 3B1DEAB5-C75D-442e-9238-8E2FFB62B0BB
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  PxeBcDriver.c
+  PxeBcDriver.h
+  PxeBcDhcp.c
+  PxeBcDhcp.h
+  PxeBcMtftp.c
+  PxeBcMtftp.h
+  PxeBcSupport.c
+  PxeBcSupport.h
+  ComponentName.c
+  PxeBcImpl.c
+  PxeBcImpl.h
+
+[sources.ia32]
+  ia32\PxeArch.h
+
+[sources.ipf]
+  ipf\PxeArch.h
+
+[sources.x64]
+  x64\PxeArch.h
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Efi
+  $(EDK_SOURCE)\Foundation\Framework
+  .
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Print
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Library\Dxe\EfiDriverLib
+  $(EDK_SOURCE)\Sample\Include
+  $(EDK_SOURCE)\Sample\Universal\Network\Library
+  
+[libraries.common]
+  EfiGuidLib
+  EdkProtocolLib
+  EfiProtocolLib
+  PrintLib
+  NetLib
+  EfiDriverLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT = PxeBcDriverEntryPoint

@@ -420,7 +420,7 @@ Returns:
   CopyMem(&(Hob.MemoryAllocationStack->AllocDescriptor.Name), &gEfiHobMemeryAllocStackGuid, sizeof(EFI_GUID));
   (Hob.MemoryAllocationStack->AllocDescriptor).MemoryBaseAddress = BaseAddress;
   (Hob.MemoryAllocationStack->AllocDescriptor).MemoryLength      = Length;
-  (Hob.MemoryAllocationStack->AllocDescriptor).MemoryType  = EfiConventionalMemory;
+  (Hob.MemoryAllocationStack->AllocDescriptor).MemoryType  = EfiBootServicesData;
 
   Hob.MemoryAllocationStack++;
   HandOffHob.HandoffInformationTable->EfiEndOfHobList = (EFI_PHYSICAL_ADDRESS) (UINTN) Hob.Raw;

@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2005 - 2006, Intel Corporation                                                         
+# Copyright (c) 2005 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -26,26 +26,26 @@ COMPONENT_TYPE       = BS_DRIVER
 
 [sources.common]
   ComponentName.c
-  IP4Common.c
-  IP4Common.h
+  Ip4Common.c
+  Ip4Common.h
   Ip4Driver.c
   Ip4Driver.h
-  IP4Icmp.c
-  IP4Icmp.h
-  IP4If.c
-  IP4If.h
-  IP4Igmp.c
-  IP4Igmp.h
-  IP4Impl.c
-  IP4Impl.h
-  IP4Input.c
-  IP4Input.h
-  IP4Option.c
-  IP4Option.h
-  IP4Output.c
-  IP4Output.h
-  IP4Route.c
-  IP4Route.h
+  Ip4Icmp.c
+  Ip4Icmp.h
+  Ip4If.c
+  Ip4If.h
+  Ip4Igmp.c
+  Ip4Igmp.h
+  Ip4Impl.c
+  Ip4Impl.h
+  Ip4Input.c
+  Ip4Input.h
+  Ip4Option.c
+  Ip4Option.h
+  Ip4Output.c
+  Ip4Output.h
+  Ip4Route.c
+  Ip4Route.h
 
 [includes.common]
   ..\..\Library
@@ -65,6 +65,7 @@ COMPONENT_TYPE       = BS_DRIVER
 [libraries.common]
   EfiDriverLib
   EfiProtocolLib
+  EdkProtocolLib
   NetLib
   
 [nmake.common]

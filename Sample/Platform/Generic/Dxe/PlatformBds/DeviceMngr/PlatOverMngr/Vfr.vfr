@@ -47,10 +47,10 @@ formset
   form formid = 0x1234,            
        title = STRING_TOKEN(STR_TITLE);  
 
-  	text 
+    text 
       help   = STRING_TOKEN(STR_FIRST_REFRESH_HELP),  
       text   = STRING_TOKEN(STR_FIRST_REFRESH),
-	    text   = STRING_TOKEN(STR_NULL_STRING),
+      text   = STRING_TOKEN(STR_NULL_STRING),
       flags  = INTERACTIVE,
       key    = 0x1234;
       
@@ -62,7 +62,14 @@ formset
     endcheckbox;
       
     label 0x1234;
-      
+    label 0xffff;
+    subtitle text = STRING_TOKEN(STR_NULL_STRING);
+    
+    goto 0x1234,
+      prompt  = STRING_TOKEN(STR_CLEAR_ALL),
+      help    = STRING_TOKEN(STR_CLEAR_ALL_HELP),
+      flags   = INTERACTIVE | RESET_REQUIRED,
+      key     = 0x1236;
   endform;
   
   form formid = 0x1200,            

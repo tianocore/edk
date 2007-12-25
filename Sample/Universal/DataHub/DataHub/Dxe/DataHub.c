@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -142,8 +142,11 @@ Returns:
   EfiCopyMem (&Record->DataRecordGuid, DataRecordGuid, sizeof (EFI_GUID));
   EfiCopyMem (&Record->ProducerName, ProducerName, sizeof (EFI_GUID));
   Record->DataRecordClass   = DataRecordClass;
-
-  Record->LogMonotonicCount = Private->GlobalMonotonicCount++;
+  
+  //
+  // Ensure LogMonotonicCount is not zero
+  //
+  Record->LogMonotonicCount = ++Private->GlobalMonotonicCount;
 
   gRT->GetTime (&Record->LogTime, NULL);
 
@@ -260,8 +263,7 @@ Returns:
       if (FilterMonotonicCount != 0) {
         //
         // The GetNextMonotonicCount field remembers the last value from the previous time.
-        // But we already processed this vaule, so we need to find the next one. So if
-        // It is not the first time get the new record entry.
+        // But we already processed this vaule, so we need to find the next one.
         //
         *Record         = GetNextDataRecord (&Private->DataListHead, ClassFilter, &FilterMonotonicCount);
         *MonotonicCount = FilterMonotonicCount;
@@ -288,12 +290,10 @@ Returns:
     // If MonotonicCount is zero No more reacords left.
     //
     if (*MonotonicCount == 0) {
-      if (FilterMonotonicCount != 0) {
-        //
-        // Return the result of our extra GetNextDataRecord.
-        //
-        FilterDriver->GetNextMonotonicCount = FilterMonotonicCount;
-      }
+      //
+      // Save the current Record MonotonicCount.
+      //
+      FilterDriver->GetNextMonotonicCount = (*Record)->LogMonotonicCount;
     } else {
       //
       // Point to next undread record

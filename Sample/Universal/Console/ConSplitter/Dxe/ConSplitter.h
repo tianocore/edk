@@ -101,6 +101,7 @@ typedef struct {
   UINTN                       TextInListCount;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL TextInEx;
   UINTN                             CurrentNumberOfExConsoles;
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL **TextInExList;
@@ -113,7 +114,8 @@ typedef struct {
   EFI_ABSOLUTE_POINTER_PROTOCOL     **AbsolutePointerList;
   UINTN                             AbsolutePointerListCount;
   BOOLEAN                           AbsoluteInputEventSignalState;  
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
 
   EFI_SIMPLE_POINTER_PROTOCOL SimplePointer;
   EFI_SIMPLE_POINTER_MODE     SimplePointerMode;

@@ -24,6 +24,7 @@ Abstract:
 #include "Pei.h"
 #include "DxeIpl.h"
 #include "DxeLoadFunc.h"
+#include EFI_GUID_DEFINITION(MemoryAllocationHob)
 
 #pragma warning( disable : 4305 )
 
@@ -154,6 +155,15 @@ AllocateAlignedPages (
   IN UINTN                  Pages,
   IN UINTN                  Alignment
   );
+
+STATIC
+VOID
+UpdateStackHob (
+  IN EFI_PEI_SERVICES            **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length
+  );
+
 
 EFI_STATUS
 PeiLoadx64File (
@@ -422,6 +432,12 @@ Returns:
                              &BaseOfStack
                              );
   ASSERT_PEI_ERROR (PeiServices, Status);
+
+
+  //
+  // Update the contents of BSP stack HOB to reflect the real stack info passed to DxeCore.
+  //    
+  UpdateStackHob (PeiServices, BaseOfStack, EFI_STACK_SIZE);
 
   //
   // Compute the top of the stack we were allocated. Pre-allocate a 32 bytes
@@ -1566,7 +1582,7 @@ GetFvAlignment (
   // we scan the Fv alignment attribute from 8 bytes to 64K.
   // And get the least alignment.
   //
-  if (FvHeader->Attributes | EFI_FVB_ALIGNMENT_CAP) {
+  if (FvHeader->Attributes & EFI_FVB_ALIGNMENT_CAP) {
     for (Index = 3; Index <= 16; Index ++) {
       if ((FvHeader->Attributes & ((1 << Index) * EFI_FVB_ALIGNMENT_CAP)) != 0 ) {
         *FvAlignment = (1 << Index);
@@ -1626,4 +1642,41 @@ AllocateAlignedPages (
   return (VOID *) (UINTN) (((UINTN) Memory + AlignmentMask) & ~AlignmentMask);
 }
 
+
+STATIC
+VOID
+UpdateStackHob (
+  IN EFI_PEI_SERVICES            **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length
+  )
+{
+  EFI_STATUS                    Status;
+  EFI_PEI_HOB_POINTERS          Hob;
+  
+  Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
+
+  while ((Hob.Raw = GetHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, Hob.Raw)) != NULL) {
+    if (CompareGuid (&gEfiHobMemeryAllocStackGuid, &(Hob.MemoryAllocationStack->AllocDescriptor.Name))) {
+      //
+      // Build a new memory allocation HOB with old stack info with EfiConventionalMemory type
+      // to be reclaimed by DXE core.
+      //
+      PeiBuildHobMemoryAllocation (
+        PeiServices,
+        Hob.MemoryAllocationStack->AllocDescriptor.MemoryBaseAddress,
+        Hob.MemoryAllocationStack->AllocDescriptor.MemoryLength,
+        NULL,
+        EfiConventionalMemory
+        );
+      //
+      // Update the BSP Stack Hob to reflect the new stack info.
+      //
+      Hob.MemoryAllocationStack->AllocDescriptor.MemoryBaseAddress = BaseAddress;
+      Hob.MemoryAllocationStack->AllocDescriptor.MemoryLength = Length;
+      break;
+    }
+    Hob.Raw = GET_NEXT_HOB (Hob);
+  }
+}
 

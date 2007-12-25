@@ -393,6 +393,7 @@ Returns:
     if (EfiCompareMem (&Acpi->HID, &Match, sizeof (UINT32)) == 0) {
       NewMenuEntry = BOpt_CreateMenuEntry (BM_TERMINAL_CONTEXT_SELECT);
       if (!NewMenuEntry) {
+        SafeFreePool (Handles);
         return EFI_OUT_OF_RESOURCES;
       }
 
@@ -445,6 +446,8 @@ Returns:
       TerminalMenu.MenuNumber++;
     }
   }
+  SafeFreePool (Handles);
+
   //
   // Get L"ConOut", L"ConIn" and L"ErrOut" from the Var
   //
@@ -983,7 +986,7 @@ Returns:
       Status = ConOut->QueryMode (ConOut, Mode, &Col, &Row);
       if (!EFI_ERROR(Status)) {
         if (CurrentCol == Col && CurrentRow == Row) {
-          CallbackData->BmmFakeNvData->ConsoleOutMode = Mode;
+          CallbackData->BmmFakeNvData->ConsoleOutMode = (UINT16) Mode;
           break;
         }
       }

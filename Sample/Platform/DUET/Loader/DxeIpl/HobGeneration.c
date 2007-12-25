@@ -692,10 +692,18 @@ PrepareHobNvStorage (
       EFI_FVB_ERASE_POLARITY,
     EFI_RUNTIME_UPDATABLE_FV_HEADER_LENGTH,
     0,  // CheckSum
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     {
       0,
     },  // Reserved[3]
     EFI_FVH_REVISION,  // Revision
+#else
+    0,  // ExtHeaderOffset
+    {
+      0,
+    },  // Reserved[1]
+    EFI_FVH_PI_REVISION,  // Revision
+#endif
     {
       NV_STORAGE_FVB_BLOCK_NUM,
       FV_BLOCK_SIZE,

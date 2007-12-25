@@ -52,6 +52,7 @@ KbdControllerDriverStop (
   );
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 STATIC
 EFI_STATUS
 KbdFreeNotifyList (
@@ -59,6 +60,7 @@ KbdFreeNotifyList (
   );  
 
 EFI_GUID gSimpleTextInExNotifyGuid = SIMPLE_TEXTIN_EX_NOTIFY_GUID;
+#endif  // DISABLE_CONSOLE_EX
 #endif
 //
 // Global variables
@@ -234,6 +236,7 @@ Returns:
   ConsoleIn->DevicePath             = ParentDevicePath;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   ConsoleIn->ConInEx.Reset               = KeyboardEfiResetEx;
   ConsoleIn->ConInEx.ReadKeyStrokeEx     = KeyboardReadKeyStrokeEx;
   ConsoleIn->ConInEx.SetState            = KeyboardSetState;
@@ -241,7 +244,8 @@ Returns:
   ConsoleIn->ConInEx.UnregisterKeyNotify = KeyboardUnregisterKeyNotify;  
   
   InitializeListHead (&ConsoleIn->NotifyList);
-#endif    
+#endif  // DISABLE_CONSOLE_EX
+#endif
 
   //
   // Setup the WaitForKey event
@@ -258,7 +262,8 @@ Returns:
     StatusCode  = EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR;
     goto ErrorExit;
   }
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX  
   //
   // Setup the WaitForKeyEx event
   //  
@@ -274,7 +279,8 @@ Returns:
     StatusCode  = EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR;
     goto ErrorExit;
   }
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
   //
   // Setup a periodic timer, used for reading keystrokes at a fixed interval
   //
@@ -335,9 +341,11 @@ Returns:
                   &Controller,
                   &gEfiSimpleTextInProtocolGuid,
                   &ConsoleIn->ConIn,
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX  
                   &gEfiSimpleTextInputExProtocolGuid,
                   &ConsoleIn->ConInEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif
                   NULL
                   );
@@ -369,11 +377,13 @@ ErrorExit:
   if ((ConsoleIn != NULL) && (ConsoleIn->TimerEvent != NULL)) {
     gBS->CloseEvent (ConsoleIn->TimerEvent);
   }
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX  
   if ((ConsoleIn != NULL) && (ConsoleIn->ConInEx.WaitForKeyEx != NULL)) {
     gBS->CloseEvent (ConsoleIn->ConInEx.WaitForKeyEx);
   }
   KbdFreeNotifyList (&ConsoleIn->NotifyList);
+#endif  // DISABLE_CONSOLE_EX
 #endif
   if ((ConsoleIn != NULL) && (ConsoleIn->ControllerNameTable != NULL)) {
     EfiLibFreeUnicodeStringTable (ConsoleIn->ControllerNameTable);
@@ -451,6 +461,7 @@ KbdControllerDriverStop (
     return Status;
   }
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiSimpleTextInputExProtocolGuid,
@@ -463,6 +474,7 @@ KbdControllerDriverStop (
     return Status;
   }
   
+#endif  // DISABLE_CONSOLE_EX
 #endif
   ConsoleIn = KEYBOARD_CONSOLE_IN_DEV_FROM_THIS (ConIn);
 
@@ -494,7 +506,7 @@ KbdControllerDriverStop (
   while (!EFI_ERROR (Status)) {
     Status = KeyboardRead (ConsoleIn, &Data);;
   }
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+
   //
   // Uninstall the SimpleTextIn and SimpleTextInEx protocols
   //
@@ -502,26 +514,18 @@ KbdControllerDriverStop (
                   Controller,
                   &gEfiSimpleTextInProtocolGuid,
                   &ConsoleIn->ConIn,
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
                   &gEfiSimpleTextInputExProtocolGuid,
                   &ConsoleIn->ConInEx,
+#endif  // DISABLE_CONSOLE_EX
+#endif
                   NULL
                   );
   if (EFI_ERROR (Status)) {
     return Status;
   }
-#else
-  //
-  // Uninstall the Simple TextIn Protocol
-  //
-  Status = gBS->UninstallProtocolInterface (
-                  Controller,
-                  &gEfiSimpleTextInProtocolGuid,
-                  &ConsoleIn->ConIn
-                  );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-#endif
+
   gBS->CloseProtocol (
          Controller,
          &gEfiDevicePathProtocolGuid,
@@ -544,11 +548,13 @@ KbdControllerDriverStop (
     (ConsoleIn->ConIn).WaitForKey = NULL;
   }
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   if (ConsoleIn->ConInEx.WaitForKeyEx != NULL) {
     gBS->CloseEvent (ConsoleIn->ConInEx.WaitForKeyEx);
     ConsoleIn->ConInEx.WaitForKeyEx = NULL;
   }
   KbdFreeNotifyList (&ConsoleIn->NotifyList);
+#endif  // DISABLE_CONSOLE_EX
 #endif
   EfiLibFreeUnicodeStringTable (ConsoleIn->ControllerNameTable);
   gBS->FreePool (ConsoleIn);
@@ -557,6 +563,7 @@ KbdControllerDriverStop (
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 STATIC
 EFI_STATUS
 KbdFreeNotifyList (
@@ -595,5 +602,6 @@ Returns:
   
   return EFI_SUCCESS;
 }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 

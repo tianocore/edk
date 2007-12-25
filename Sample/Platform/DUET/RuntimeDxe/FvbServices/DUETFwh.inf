@@ -11,11 +11,11 @@
 # 
 #  Module Name:
 #
-#   Nt32Fwh.inf
+#   DUETFwh.inf
 #
 #  Abstract:
 #
-#    Component description file for Nt32 Module
+#    Component description file for DUET Module
 #
 #--*/
 

@@ -375,6 +375,7 @@ USBKeyboardDriverBindingStart (
   UsbKeyboardDevice->SimpleInput.ReadKeyStroke  = USBKeyboardReadKeyStroke;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   UsbKeyboardDevice->SimpleInputEx.Reset               = USBKeyboardResetEx;
   UsbKeyboardDevice->SimpleInputEx.ReadKeyStrokeEx     = USBKeyboardReadKeyStrokeEx;
   UsbKeyboardDevice->SimpleInputEx.SetState            = USBKeyboardSetState;
@@ -394,6 +395,7 @@ USBKeyboardDriverBindingStart (
   if (EFI_ERROR (Status)) {
     goto ErrorExit;
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   Status = gBS->CreateEvent (
@@ -427,9 +429,11 @@ USBKeyboardDriverBindingStart (
                   &Controller,
                   &gEfiSimpleTextInProtocolGuid,
                   &UsbKeyboardDevice->SimpleInput,
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
                   &gEfiSimpleTextInputExProtocolGuid,
                   &UsbKeyboardDevice->SimpleInputEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif                  
                   &gEfiHotPlugDeviceGuid,
                   NULL,
@@ -459,9 +463,11 @@ USBKeyboardDriverBindingStart (
            Controller,
            &gEfiSimpleTextInProtocolGuid,
            &UsbKeyboardDevice->SimpleInput,
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
            &gEfiSimpleTextInputExProtocolGuid,
            &UsbKeyboardDevice->SimpleInputEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif                            
            &gEfiHotPlugDeviceGuid,
            NULL,
@@ -500,9 +506,11 @@ USBKeyboardDriverBindingStart (
            Controller,
            &gEfiSimpleTextInProtocolGuid,
            &UsbKeyboardDevice->SimpleInput,
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
            &gEfiSimpleTextInputExProtocolGuid,
            &UsbKeyboardDevice->SimpleInputEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif                                      
            &gEfiHotPlugDeviceGuid,
            NULL,
@@ -529,7 +537,8 @@ USBKeyboardDriverBindingStart (
 
   return EFI_SUCCESS;
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 ErrorExit:
   if (UsbKeyboardDevice != NULL) {
     if (UsbKeyboardDevice->SimpleInput.WaitForKey != NULL) {
@@ -549,6 +558,7 @@ ErrorExit:
          Controller
          );
   return Status;
+#endif  // DISABLE_CONSOLE_EX
 #endif      
 
 }
@@ -588,12 +598,13 @@ USBKeyboardDriverBindingStop (
                   &SimpleInput,
                   This->DriverBindingHandle,
                   Controller,
-                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiSimpleTextInputExProtocolGuid,
@@ -605,6 +616,7 @@ USBKeyboardDriverBindingStop (
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
   //
   // Get USB_KB_DEV instance.
@@ -654,8 +666,10 @@ USBKeyboardDriverBindingStop (
                   &gEfiSimpleTextInProtocolGuid,
                   &UsbKeyboardDevice->SimpleInput,
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
                   &gEfiSimpleTextInputExProtocolGuid,
                   &UsbKeyboardDevice->SimpleInputEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif
                   &gEfiHotPlugDeviceGuid,
                   NULL,
@@ -667,9 +681,11 @@ USBKeyboardDriverBindingStop (
   gBS->CloseEvent (UsbKeyboardDevice->RepeatTimer);
   gBS->CloseEvent (UsbKeyboardDevice->DelayedRecoveryEvent);
   gBS->CloseEvent ((UsbKeyboardDevice->SimpleInput).WaitForKey);
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   gBS->CloseEvent (UsbKeyboardDevice->SimpleInputEx.WaitForKeyEx);  
   KbdFreeNotifyList (&UsbKeyboardDevice->NotifyList);    
+#endif  // DISABLE_CONSOLE_EX
 #endif    
   
   if (UsbKeyboardDevice->ControllerNameTable != NULL) {
@@ -711,10 +727,12 @@ USBKeyboardReadKeyStrokeWorker (
 
   EFI_STATUS                        Status;
   UINT8                             KeyChar;  
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_LIST_ENTRY                    *Link;
   KEYBOARD_CONSOLE_IN_EX_NOTIFY     *CurrentNotify;  
   EFI_KEY_DATA                      OriginalKeyData;
+#endif  // DISABLE_CONSOLE_EX
 #endif  
 
   if (KeyData == NULL) {
@@ -748,6 +766,7 @@ USBKeyboardReadKeyStrokeWorker (
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EfiCopyMem (&KeyData->KeyState, &UsbKeyboardDevice->KeyState, sizeof (KeyData->KeyState));
   
   UsbKeyboardDevice->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
@@ -782,6 +801,7 @@ USBKeyboardReadKeyStrokeWorker (
       CurrentNotify->KeyNotificationFn (&OriginalKeyData);
     }
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   return EFI_SUCCESS;

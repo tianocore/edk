@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -44,6 +44,30 @@ EFI_DEVICE_PATH_PROTOCOL          *gPlatformRootBridges[] = {
   (EFI_DEVICE_PATH_PROTOCOL *) &gPlatformRootBridge0,
   NULL
 };
+
+USB_CLASS_FORMAT_DEVICE_PATH gUsbClassKeyboardDevicePath = {
+  {
+    {
+      MESSAGING_DEVICE_PATH,
+      MSG_USB_CLASS_DP,
+      (UINT8) (sizeof (USB_CLASS_DEVICE_PATH)),
+      (UINT8) ((sizeof (USB_CLASS_DEVICE_PATH)) >> 8)
+    },
+    0xffff,           // VendorId 
+    0xffff,           // ProductId 
+    CLASS_HID,        // DeviceClass 
+    SUBCLASS_BOOT,    // DeviceSubClass
+    PROTOCOL_KEYBOARD // DeviceProtocol
+  },
+
+  { 
+    END_DEVICE_PATH_TYPE, 
+    END_ENTIRE_DEVICE_PATH_SUBTYPE, 
+    END_DEVICE_PATH_LENGTH, 
+    0
+  }
+};
+
 /*
 //
 // Platform specific Dummy ISA keyboard device path
@@ -111,6 +135,10 @@ BDS_CONSOLE_CONNECT_ENTRY         gPlatformConsole[] = {
 //  	(EFI_DEVICE_PATH_PROTOCOL *) &gDummyPciSerialDevicePath,
 //  	(CONSOLE_OUT | CONSOLE_IN | STD_ERROR)
 //  },
+  {
+    (EFI_DEVICE_PATH_PROTOCOL*) &gUsbClassKeyboardDevicePath, 
+    CONSOLE_IN
+  },
   {
     NULL,
     0

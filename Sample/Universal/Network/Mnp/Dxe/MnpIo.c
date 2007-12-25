@@ -308,6 +308,11 @@ SIGNAL_TOKEN:
   Token->Status = Status;
   gBS->SignalEvent (Token->Event);
 
+  //
+  // Dispatch the DPC queued by the NotifyFunction of Token->Event.
+  //
+  NetLibDispatchDpc ();
+
   return EFI_SUCCESS;
 }
 
@@ -604,17 +609,18 @@ Returns:
 
   ConfigData = &Instance->ConfigData;
 
-  if (ConfigData->EnablePromiscuousReceive) {
-    //
-    // Always match if this instance is configured to be promiscuous.
-    //
-    return TRUE;
-  }
   //
   // Check the protocol type.
   //
   if ((ConfigData->ProtocolTypeFilter != 0) && (ConfigData->ProtocolTypeFilter != RxData->ProtocolType)) {
     return FALSE;
+  }
+
+  if (ConfigData->EnablePromiscuousReceive) {
+    //
+    // Always match if this instance is configured to be promiscuous.
+    //
+    return TRUE;
   }
 
   //
@@ -1048,6 +1054,11 @@ Returns:
   //
   MnpDeliverPacket (MnpServiceData);
 
+  //
+  // Dispatch the DPC queued by the NotifyFunction of rx token's events.
+  //
+  NetLibDispatchDpc ();
+
 EXIT:
 
   ASSERT (Nbuf->TotalSize == MnpServiceData->BufferLength);
@@ -1158,4 +1169,6 @@ Returns:
   // Try to receive packets from Snp.
   //
   MnpReceivePacket (MnpServiceData);
+
+  NetLibDispatchDpc ();
 }

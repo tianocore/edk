@@ -38,7 +38,6 @@ Revision History
 //
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_PROTOCOL_DEFINITION (IsaAcpi)
-#include EFI_PROTOCOL_DEFINITION (LightIsaIo)
 
 //
 // Prototypes for the ISA ACPI protocol interface

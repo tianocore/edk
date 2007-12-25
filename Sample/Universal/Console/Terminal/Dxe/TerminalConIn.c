@@ -50,9 +50,11 @@ ReadKeyStrokeWorker (
 --*/
 {
   EFI_STATUS                      Status;
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_LIST_ENTRY                  *Link;
   TERMINAL_CONSOLE_IN_EX_NOTIFY   *CurrentNotify;
+#endif  // DISABLE_CONSOLE_EX
 #endif  
 
   if (KeyData == NULL) {
@@ -75,6 +77,7 @@ ReadKeyStrokeWorker (
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   KeyData->KeyState.KeyShiftState  = 0;
   KeyData->KeyState.KeyToggleState = 0;
 
@@ -92,6 +95,7 @@ ReadKeyStrokeWorker (
       CurrentNotify->KeyNotificationFn (KeyData);
     }
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   return EFI_SUCCESS;
@@ -1307,12 +1311,14 @@ ESC R ESC r ESC R = Reset System
           Key.ScanCode = SCAN_F10;        
           break;
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         case '!':
           Key.ScanCode = SCAN_F11;
           break;
         case '@':
           Key.ScanCode = SCAN_F12;
           break;          
+#endif  // DISABLE_CONSOLE_EX
 #endif
         case 'h': 
           Key.ScanCode = SCAN_HOME;       

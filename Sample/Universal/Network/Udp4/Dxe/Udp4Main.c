@@ -286,7 +286,7 @@ Returns:
     //
     // Cancel all the user tokens.
     //
-    Udp4InstanceCancelToken (Instance, NULL);
+    Instance->Udp4Proto.Cancel (&Instance->Udp4Proto, NULL);
 
     //
     // Remove the buffered RxData for this instance.
@@ -793,7 +793,8 @@ Returns:
   //
   Status = NetMapInsertTail (&Instance->RxTokens, Token, NULL);
   if (EFI_ERROR (Status)) {
-    return EFI_NOT_READY;
+    Status = EFI_NOT_READY;
+    goto ON_EXIT;
   }
 
   //
@@ -805,6 +806,11 @@ Returns:
   // Try to delivered the received datagrams.
   //
   Udp4InstanceDeliverDgram (Instance);
+
+  //
+  // Dispatch the DPC queued by the NotifyFunction of Token->Event.
+  //
+  NetLibDispatchDpc ();
 
 ON_EXIT:
 
@@ -869,6 +875,11 @@ Returns:
   // Cancle the tokens specified by Token for this instance.
   //
   Status = Udp4InstanceCancelToken (Instance, Token);
+
+  //
+  // Dispatch the DPC queued by the NotifyFunction of the canceled token's events.
+  //
+  NetLibDispatchDpc ();
 
   NET_RESTORE_TPL (OldTpl);
 

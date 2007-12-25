@@ -50,6 +50,13 @@ EFI_IP4_CONFIG_DATA  mIpIoDefaultIpConfigData = {
 STATIC
 VOID
 EFIAPI
+IpIoTransmitHandlerDpc (
+  IN VOID      *Context
+  );
+
+STATIC
+VOID
+EFIAPI
 IpIoTransmitHandler (
   IN EFI_EVENT Event,
   IN VOID      *Context
@@ -533,8 +540,7 @@ Returns:
 STATIC
 VOID
 EFIAPI
-IpIoTransmitHandler (
-  IN EFI_EVENT Event,
+IpIoTransmitHandlerDpc (
   IN VOID      *Context
   )
 /*++
@@ -576,8 +582,37 @@ Returns:
 STATIC
 VOID
 EFIAPI
-IpIoDummyHandler (
+IpIoTransmitHandler (
   IN EFI_EVENT Event,
+  IN VOID      *Context
+  )
+/*++
+
+Routine Description:
+
+  Notify function for IP transmit token.
+
+Arguments:
+
+  Event   - The event signaled.
+  Context - The context passed in by the event notifier.
+
+Returns:
+
+  None.
+
+--*/
+{
+  //
+  // Request IpIoTransmitHandlerDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, IpIoTransmitHandlerDpc, Context);
+}
+
+STATIC
+VOID
+EFIAPI
+IpIoDummyHandlerDpc (
   IN VOID      *Context
   )
 /*++
@@ -600,12 +635,15 @@ Returns:
   IP_IO_IP_INFO             *IpInfo;
   EFI_IP4_COMPLETION_TOKEN  *DummyToken;
 
-  ASSERT (Event && Context);
-
   IpInfo      = (IP_IO_IP_INFO *) Context;
   DummyToken  = &(IpInfo->DummyRcvToken);
 
-  if (EFI_SUCCESS == DummyToken->Status) {
+  if (EFI_ABORTED == DummyToken->Status) {
+    //
+    // The reception is actively aborted by the consumer, directly return.
+    //
+    return;
+  } else if (EFI_SUCCESS == DummyToken->Status) {
     ASSERT (DummyToken->Packet.RxData);
 
     gBS->SignalEvent (DummyToken->Packet.RxData->RecycleSignal);
@@ -617,8 +655,37 @@ Returns:
 STATIC
 VOID
 EFIAPI
-IpIoListenHandler (
+IpIoDummyHandler (
   IN EFI_EVENT Event,
+  IN VOID      *Context
+  )
+/*++
+
+Routine Description:
+
+  Request IpIoDummyHandlerDpc as a DPC at EFI_TPL_CALLBACK.
+
+Arguments:
+
+  Evt     - The event signaled.
+  Context - The context passed in by the event notifier.
+
+Returns:
+
+  None.
+
+--*/
+{
+  //
+  // Request IpIoDummyHandlerDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, IpIoDummyHandlerDpc, Context);
+}
+
+STATIC
+VOID
+EFIAPI
+IpIoListenHandlerDpc (
   IN VOID      *Context
   )
 /*++
@@ -651,6 +718,13 @@ Returns:
   Ip      = IpIo->Ip;
   Status  = IpIo->RcvToken.Status;
   RxData  = IpIo->RcvToken.Packet.RxData;
+
+  if (EFI_ABORTED == Status) {
+    //
+    // The reception is actively aborted by the consumer, directly return.
+    //
+    return;
+  }
 
   if (((EFI_SUCCESS != Status) && (EFI_ICMP_ERROR != Status)) || (NULL == RxData)) {
     //
@@ -715,6 +789,36 @@ CleanUp:
 
 Resume:
   Ip->Receive (Ip, &(IpIo->RcvToken));
+}
+
+STATIC
+VOID
+EFIAPI
+IpIoListenHandler (
+  IN EFI_EVENT Event,
+  IN VOID      *Context
+  )
+/*++
+
+Routine Description:
+
+  Request IpIoListenHandlerDpc as a DPC at EFI_TPL_CALLBACK 
+
+Arguments:
+
+  Event   - The event signaled.
+  Context - The context passed in by the event notifier.
+
+Returns:
+
+  None.
+
+--*/
+{
+  //
+  // Request IpIoListenHandlerDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, IpIoListenHandlerDpc, Context);
 }
 
 IP_IO *
@@ -1071,12 +1175,6 @@ Returns:
       Ip = SndEntry->Ip;
       Ip->Cancel (Ip, SndEntry->SndToken);
 
-      //
-      // Abort the user token.
-      //
-      SndEntry->SndToken->Status = EFI_ABORTED;
-      IpIoTransmitHandler (NULL, SndEntry);
-
       break;
     }
   }
@@ -1196,7 +1294,6 @@ Returns:
 
   EFI_STATUS     - The status returned by IP4->Configure or IP4->Receive.
 
-
 --*/
 {
   EFI_STATUS         Status;
@@ -1215,8 +1312,7 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  Ip = IpInfo->Ip;
-
+  Ip     = IpInfo->Ip;
   Status = Ip->Configure (Ip, Ip4ConfigData);
   if (EFI_ERROR (Status)) {
     goto OnExit;

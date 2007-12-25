@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -178,11 +178,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     goto ERROR_EXIT;
   }
-
-  //
-  // Init the lock.
-  //
-  NET_LOCK_INIT (&ArpService->Lock);
 
   //
   // Init the lists.
@@ -443,7 +438,7 @@ Returns:
   //
   NicHandle = NetLibGetNicHandle (ControllerHandle, &gEfiManagedNetworkProtocolGuid);
   if (NicHandle == NULL) {
-    return EFI_SUCCESS;
+    return EFI_DEVICE_ERROR;
   }
 
   //
@@ -459,48 +454,42 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
     ARP_DEBUG_ERROR (("ArpDriverBindingStop: Open ArpSb failed, %r.\n", Status));
-    return Status;
+    return EFI_DEVICE_ERROR;
   }
 
   ArpService = ARP_SERVICE_DATA_FROM_THIS (ServiceBinding);
 
-  while (!NetListIsEmpty (&ArpService->ChildrenList)) {
+  if (NumberOfChildren == 0) {
     //
-    // Iterate all the instances.
+    // Uninstall the ARP ServiceBinding protocol.
     //
-    Instance = NET_LIST_HEAD (&ArpService->ChildrenList, ARP_INSTANCE_DATA, List);
+    gBS->UninstallMultipleProtocolInterfaces (
+           NicHandle,
+           &gEfiArpServiceBindingProtocolGuid,
+           &ArpService->ServiceBinding,
+           NULL
+           );
 
     //
-    // Destroy this arp child.
+    // Clean the arp servicebinding context data and free the memory allocated.
     //
-    ServiceBinding->DestroyChild (ServiceBinding, Instance->Handle);
+    ArpCleanService (ArpService);
+
+    NetFreePool (ArpService);
+  } else {
+
+    while (!NetListIsEmpty (&ArpService->ChildrenList)) {
+      Instance = NET_LIST_HEAD (&ArpService->ChildrenList, ARP_INSTANCE_DATA, List);
+
+      ServiceBinding->DestroyChild (ServiceBinding, Instance->Handle);
+    }
+
+    ASSERT (NetListIsEmpty (&ArpService->PendingRequestTable));
+    ASSERT (NetListIsEmpty (&ArpService->DeniedCacheTable));
+    ASSERT (NetListIsEmpty (&ArpService->ResolvedCacheTable));
   }
 
-  ASSERT (NetListIsEmpty (&ArpService->PendingRequestTable));
-  ASSERT (NetListIsEmpty (&ArpService->DeniedCacheTable));
-  ASSERT (NetListIsEmpty (&ArpService->ResolvedCacheTable));
-
-  //
-  // Uninstall the ARP ServiceBinding protocol.
-  //
-  Status = gBS->UninstallMultipleProtocolInterfaces (
-                  NicHandle,
-                  &gEfiArpServiceBindingProtocolGuid,
-                  &ArpService->ServiceBinding,
-                  NULL
-                  );
-  if (EFI_ERROR (Status)) {
-    ARP_DEBUG_ERROR (("ArpDriverBindingStop: Failed to uninstall ArpSb, %r.\n", Status));
-    return Status;
-  }
-
-  //
-  // Clean the arp servicebinding context data and free the memory allocated.
-  //
-  ArpCleanService (ArpService);
-  NetFreePool (ArpService);
-
-  return Status;
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -534,6 +523,7 @@ Returns:
   ARP_SERVICE_DATA   *ArpService;
   ARP_INSTANCE_DATA  *Instance;
   VOID               *Mnp;
+  EFI_TPL            OldTpl;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -592,11 +582,7 @@ Returns:
     goto ERROR;
   }
 
-  if (EFI_ERROR (NET_TRYLOCK (&ArpService->Lock))) {
-
-    Status = EFI_ACCESS_DENIED;
-    goto ERROR;
-  }
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   //
   // Insert the instance into children list managed by the arp service context data.
@@ -604,7 +590,7 @@ Returns:
   NetListInsertTail (&ArpService->ChildrenList, &Instance->List);
   ArpService->ChildrenNumber++;
 
-  NET_UNLOCK (&ArpService->Lock);
+  NET_RESTORE_TPL (OldTpl);
 
 ERROR:
 
@@ -666,6 +652,7 @@ Returns:
   ARP_SERVICE_DATA   *ArpService;
   ARP_INSTANCE_DATA  *Instance;
   EFI_ARP_PROTOCOL   *Arp;
+  EFI_TPL            OldTpl;
 
   if ((This == NULL) || (ChildHandle == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -726,10 +713,7 @@ Returns:
     return Status;
   }
 
-  if (EFI_ERROR (NET_TRYLOCK (&ArpService->Lock))) {
-    Instance->Destroyed = FALSE;
-    return EFI_ACCESS_DENIED;
-  }
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
 
   if (Instance->Configured) {
     //
@@ -749,7 +733,7 @@ Returns:
   NetListRemoveEntry (&Instance->List);
   ArpService->ChildrenNumber--;
 
-  NET_UNLOCK (&ArpService->Lock);
+  NET_RESTORE_TPL (OldTpl);
 
   NetFreePool (Instance);
 

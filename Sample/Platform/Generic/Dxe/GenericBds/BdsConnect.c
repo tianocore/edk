@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -356,4 +356,107 @@ Returns:
 
   } while (!EFI_ERROR (Status));
 
+}
+
+EFI_STATUS
+BdsLibConnectUsbDevByShortFormDP(
+  IN CHAR8                      HostControllerPI,
+  IN EFI_DEVICE_PATH_PROTOCOL   *RemainingDevicePath
+  )
+/*++
+
+Routine Description:
+  Connect the specific Usb device which match the short form device path, 
+  and whose bus is determined by Host Controller (Uhci or Ehci)
+
+  
+Arguments:
+  HostControllerPI       - Uhci (0x00) or Ehci (0x20) or Both uhci and ehci (0xFF)
+  RemainingDevicePath - a short-form device path that starts with the first element 
+                                          being a USB WWID or a USB Class device path
+  
+Returns:
+  EFI_INVALID_PARAMETER
+  EFI_SUCCESS
+  EFI_NOT_FOUND
+--*/
+{
+  EFI_STATUS                            Status;
+  EFI_HANDLE                            *HandleArray;
+  UINTN                                 HandleArrayCount;
+  UINTN                                 Index;
+  EFI_PCI_IO_PROTOCOL                   *PciIo;
+  UINT8                                 Class[3];
+  BOOLEAN                               AtLeastOneConnected;
+  
+  //
+  // Check the passed in parameters
+  //
+  if (RemainingDevicePath == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }  
+  
+  if ((DevicePathType (RemainingDevicePath) != MESSAGING_DEVICE_PATH) ||
+      ((DevicePathSubType (RemainingDevicePath) != MSG_USB_CLASS_DP) 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+      && (DevicePathSubType (RemainingDevicePath) != MSG_USB_WWID_DP)
+#endif
+      )) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  if (HostControllerPI != 0xFF && 
+      HostControllerPI != 0x00 && 
+      HostControllerPI != 0x20) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  //
+  // Find the usb host controller firstly, then connect with the remaining device path
+  //   
+  AtLeastOneConnected = FALSE;
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiPciIoProtocolGuid,
+                  NULL,
+                  &HandleArrayCount,
+                  &HandleArray
+                  );
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < HandleArrayCount; Index++) {
+      Status = gBS->HandleProtocol (
+                      HandleArray[Index],
+                      &gEfiPciIoProtocolGuid,
+                      (VOID **)&PciIo
+                      );
+      if (!EFI_ERROR (Status)) {
+        //
+        // Check whether the Pci device is the wanted usb host controller
+        //
+        Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint8, 0x09, 3, &Class);
+        if (!EFI_ERROR (Status)) {
+          if ((PCI_CLASS_SERIAL == Class[2]) &&
+              (PCI_CLASS_SERIAL_USB == Class[1])) {
+            if (HostControllerPI == Class[0] || HostControllerPI == 0xFF) {
+              Status = gBS->ConnectController (
+                              HandleArray[Index],
+                              NULL,
+                              RemainingDevicePath,
+                              FALSE
+                              );
+              if (!EFI_ERROR(Status)) {
+                AtLeastOneConnected = TRUE;
+              }
+            }
+          } 
+        }
+      }
+    }
+    
+    if (AtLeastOneConnected) {
+      return EFI_SUCCESS;
+    }
+  }
+  
+  return EFI_NOT_FOUND;
 }

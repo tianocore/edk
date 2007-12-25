@@ -58,10 +58,18 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
         EFI_FVB_ERASE_POLARITY,
       sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
       0,  // CheckSum
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
       {
         0,
       },  // Reserved[3]
       EFI_FVH_REVISION,  // Revision
+#else
+      0,  // ExtHeaderOffset
+      {
+        0,
+      },  // Reserved[1]
+      EFI_FVH_PI_REVISION,  // Revision
+#endif
       {
         NV_STORAGE_FVB_BLOCK_NUM,
         FV_BLOCK_SIZE,
@@ -91,10 +99,18 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
         EFI_FVB_ERASE_POLARITY,
       sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
       0,  // CheckSum
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
       {
         0,
       },  // Reserved[3]
       EFI_FVH_REVISION,  // Revision
+#else
+      0,  // ExtHeaderOffset
+      {
+        0,
+      },  // Reserved[1]
+      EFI_FVH_PI_REVISION,  // Revision
+#endif
       {
         NV_FTW_FVB_BLOCK_NUM,
         FV_BLOCK_SIZE,

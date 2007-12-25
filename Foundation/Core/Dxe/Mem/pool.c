@@ -377,7 +377,7 @@ Done:
 
     DEBUG (
       (EFI_D_POOL,
-      "AllcocatePoolI: Type %x, Addr %x (len %x) %,d\n",
+      "AllocatePool: Type %x, Addr %x (len %x) %,d\n",
        (UINTN)PoolType, 
        Buffer, 
        Size - POOL_OVERHEAD, 

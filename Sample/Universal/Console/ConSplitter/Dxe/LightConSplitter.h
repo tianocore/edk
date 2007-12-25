@@ -98,12 +98,14 @@ typedef struct {
   UINTN                       TextInListCount;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL TextInEx;
   UINTN                             CurrentNumberOfExConsoles;
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL **TextInExList;
   UINTN                             TextInExListCount;
   EFI_LIST_ENTRY                    NotifyList;    
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
   BOOLEAN                     PasswordEnabled;
   CHAR16                      Password[MAX_STD_IN_PASSWORD];
   UINTN                       PwdIndex;

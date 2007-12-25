@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -237,18 +237,40 @@ Returns:
     }
 
     SetDevicePathEndNode (Next);
+    //
+    // Check USB1.1 console
+    //
+    if ((DevicePathType (Instance) == MESSAGING_DEVICE_PATH) && 
+       ((DevicePathSubType (Instance) == MSG_USB_CLASS_DP) 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+       || (DevicePathSubType (Instance) == MSG_USB_WWID_DP)
+#endif
+       )) {
+      //
+      // Check the Usb console in Usb2.0 bus firstly, then Usb1.1 bus
+      // 
+      Status = BdsLibConnectUsbDevByShortFormDP (PCI_CLASSC_PI_EHCI, Instance);
+      if (!EFI_ERROR (Status)) {
+        DeviceExist = TRUE;      
+      }
 
-    //
-    // Connect the instance device path
-    //
-    Status = BdsLibConnectDevicePath (Instance);
-    if (EFI_ERROR (Status)) {
-      //
-      // Delete the instance from the console varialbe
-      //
-      BdsLibUpdateConsoleVariable (ConVarName, NULL, Instance);
+      Status = BdsLibConnectUsbDevByShortFormDP (PCI_CLASSC_PI_UHCI, Instance);
+      if (!EFI_ERROR (Status)) {
+        DeviceExist = TRUE;      
+      }
     } else {
-      DeviceExist = TRUE;
+      //
+      // Connect the instance device path
+      //
+      Status = BdsLibConnectDevicePath (Instance);
+      if (EFI_ERROR (Status)) {
+        //
+        // Delete the instance from the console varialbe
+        //
+        BdsLibUpdateConsoleVariable (ConVarName, NULL, Instance);
+      } else {
+        DeviceExist = TRUE;
+      }
     }
     EfiLibSafeFreePool(Instance);
   } while (CopyOfDevicePath != NULL);
@@ -370,11 +392,6 @@ Returns:
   //
   // Connect all default console variables
   //
-  // Because possibly the platform is legacy free, in such case,
-  // ConIn devices (Serial Port and PS2 Keyboard ) does not exist, 
-  // so we need not check the status.
-  //
-  BdsLibConnectConsoleVariable (L"ConIn");
   
   // 
   // It seems impossible not to have any ConOut device on platform,
@@ -384,6 +401,19 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  
+  //
+  // Insert the performance probe for Console Out
+  //
+  PERF_START (NULL, L"ConOut", L"BDS", 1);
+  PERF_END (NULL, L"ConOut", L"BDS", 0);
+  
+  //
+  // Because possibly the platform is legacy free, in such case,
+  // ConIn devices (Serial Port and PS2 Keyboard ) does not exist, 
+  // so we need not check the status.
+  //
+  BdsLibConnectConsoleVariable (L"ConIn");
   
   //
   // The null err out var is legal.

@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2006, Intel Corporation                                                         
+# Copyright (c) 2006 - 2007, Intel Corporation                                                  
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -23,7 +23,7 @@
 BASE_NAME               = Bds
 FILE_GUID               = A6F691AC-31C8-4444-854C-E2C1A6950F92
 COMPONENT_TYPE          = BS_DRIVER
-PLATFORM_BDS_FILE_PATH  = ..\..\..\..\Platform\Generic\Dxe\PlatformBds
+PLATFORM_BDS_FILE_PATH  = ..\..\..\..\Platform\Generic\Dxe\$(UEFI_PREFIX)PlatformBds
 
 [sources.common]
   PlatformData.c
@@ -73,14 +73,14 @@ PLATFORM_BDS_FILE_PATH  = ..\..\..\..\Platform\Generic\Dxe\PlatformBds
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Foundation\Library\Dxe\EfiIfrSupportLib
+  $(EDK_SOURCE)\Foundation\Library\Dxe\$(UEFI_PREFIX)EfiIfrSupportLib
   $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
   $(EDK_SOURCE)\Sample\Platform\Generic\Pei\Capsule
   $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\GenericBds
-  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\PlatformBds
-  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\PlatformBds\BootMngr
-  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\PlatformBds\BootMaint
-  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\PlatformBds\DeviceMngr
+  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\$(UEFI_PREFIX)PlatformBds
+  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\$(UEFI_PREFIX)PlatformBds\BootMngr
+  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\$(UEFI_PREFIX)PlatformBds\BootMaint
+  $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\$(UEFI_PREFIX)PlatformBds\DeviceMngr
   $(DEST_DIR)
   
 [libraries.common]
@@ -91,7 +91,7 @@ PLATFORM_BDS_FILE_PATH  = ..\..\..\..\Platform\Generic\Dxe\PlatformBds
   ArchProtocolLib
   GraphicsLite
   HobLib
-  EfiIfrSupportLib
+  $(UEFI_PREFIX)EfiIfrSupportLib
   PrintLibLite
   GenericBdsLib
     

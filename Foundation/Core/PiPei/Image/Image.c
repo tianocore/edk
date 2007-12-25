@@ -399,6 +399,13 @@ Returns:
               );
     ASSERT_PEI_ERROR (PeiServices,Status);
 
+    if (ImageContext.IsTeImage &&
+        TEImageHeader->Machine == EFI_IMAGE_MACHINE_IA64) {
+      ImageContext.ImageAddress = ImageContext.ImageAddress + 
+                                    TEImageHeader->StrippedSize -
+                                    sizeof (EFI_TE_IMAGE_HEADER);
+    }
+
     //
     // Load the image to our new buffer
     //

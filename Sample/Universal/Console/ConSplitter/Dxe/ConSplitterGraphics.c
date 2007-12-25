@@ -26,7 +26,12 @@ Abstract:
 #else
   #include "ConSplitter.h"
 #endif
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "TianoHii.h"
+#else
 #include EFI_PROTOCOL_DEFINITION (Hii)
+#endif
 
 static CHAR16 mCrLfString[3] = { CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, CHAR_NULL };
 

@@ -18,13 +18,6 @@
 #--*/
 
 #
-# Everything depends on EDK_SOURCE. Make sure it's defined
-#
-!IFNDEF EDK_SOURCE
-!ERROR EDK_SOURCE environmental variable not set
-!ENDIF
-
-#
 # Define our toolchain before we include the master settings file
 #
 TOOLCHAIN = TOOLCHAIN_MSVC

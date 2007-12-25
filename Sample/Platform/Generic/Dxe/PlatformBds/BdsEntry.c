@@ -315,10 +315,12 @@ Returns:
   InitializeListHead (&BootOptionList);
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   //
   // Initialize hotkey service
   //
   InitializeHotkeyService ();
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   //

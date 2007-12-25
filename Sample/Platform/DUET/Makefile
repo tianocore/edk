@@ -44,8 +44,9 @@ $(BUILD_DIR)dir : Pseudotargets
     @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     @copy Build\*.* $(BUILD_DIR)
     @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE PI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
     @echo UEFI_MODE                      = NO                  >> $(BUILD_DIR)\Config.env
+    @echo PI_MODE                        = NO                  >> $(BUILD_DIR)\Config.env
     @echo EFI_BUILD_TARGET_X64           = NO                  >> $(BUILD_DIR)\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
 
@@ -63,8 +64,9 @@ $(BUILD_DIR)dir : Pseudotargets
     @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     @copy Build\*.* $(BUILD_DIR)
     @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE PI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
     @echo UEFI_MODE                      = NO                  >> $(BUILD_DIR)\Config.env
+    @echo PI_MODE                        = NO                  >> $(BUILD_DIR)\Config.env
     @echo EFI_BUILD_TARGET_X64           = YES                 >> $(BUILD_DIR)\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
 
@@ -82,8 +84,9 @@ $(BUILD_DIR)dir : Pseudotargets
     @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     @copy Build\*.* $(BUILD_DIR)
     @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE PI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
     @echo UEFI_MODE                      = YES                 >> $(BUILD_DIR)\Config.env
+    @echo PI_MODE                        = YES                  >> $(BUILD_DIR)\Config.env
     @echo EFI_BUILD_TARGET_X64           = NO                  >> $(BUILD_DIR)\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
 
@@ -101,8 +104,9 @@ $(BUILD_DIR)dir : Pseudotargets
     @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     @copy Build\*.* $(BUILD_DIR)
     @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE PI_MODE BUILD_TARGET_DIRECTORY EFI_BUILD_TARGET_X64" Build\Config.env > $(BUILD_DIR)\Config.env
     @echo UEFI_MODE                      = YES                 >> $(BUILD_DIR)\Config.env
+    @echo PI_MODE                        = YES                 >> $(BUILD_DIR)\Config.env
     @echo EFI_BUILD_TARGET_X64           = YES                 >> $(BUILD_DIR)\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
 

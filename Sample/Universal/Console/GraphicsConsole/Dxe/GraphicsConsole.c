@@ -28,7 +28,11 @@ Remaining Tasks
 --*/
 
 #include "GraphicsConsole.h"
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "UefiIfrLibrary.h"
+#else
 #include "IfrLibrary.h"
+#endif
 
 //
 // Function Prototypes
@@ -128,7 +132,16 @@ GRAPHICS_CONSOLE_DEV        mGraphicsConsoleDevTemplate = {
   (EFI_HII_HANDLE) 0
 };
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_HII_DATABASE_PROTOCOL   *mHiiDatabase;
+EFI_HII_FONT_PROTOCOL       *mHiiFont;
+BOOLEAN                     mFirstAccessFlag = TRUE;
+
+STATIC EFI_GUID             mPackageListGuid = {0xf5f219d3, 0x7006, 0x4648, 0xac, 0x8d, 0xd6, 0x1d, 0xfb, 0x7b, 0xc6, 0xad};
+
+#else
 EFI_HII_PROTOCOL            *mHii;
+#endif
 
 static CHAR16               mCrLfString[3] = { CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, CHAR_NULL };
 
@@ -331,8 +344,6 @@ GraphicsConsoleControllerDriverStart (
 {
   EFI_STATUS                           Status;
   GRAPHICS_CONSOLE_DEV                 *Private;
-  EFI_HII_PACKAGES                     *Package;
-  EFI_HII_FONT_PACK                    *FontPack;
   UINTN                                NarrowFontSize;
   UINT32                               HorizontalResolution;
   UINT32                               VerticalResolution;
@@ -343,7 +354,17 @@ GraphicsConsoleControllerDriverStart (
   UINTN                                Rows;
   UINT8                                *Location;
   UINT32                               ModeNumber;
-
+  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_HII_SIMPLE_FONT_PACKAGE_HDR      *SimplifiedFont;
+  UINTN                                PackageLength;
+  EFI_HII_PACKAGE_LIST_HEADER          *PackageList;
+  UINT8                                *Package;
+#else
+  EFI_HII_PACKAGES                     *Package;
+  EFI_HII_FONT_PACK                    *FontPack;
+#endif
+    
   ModeNumber = 0;
 
   //
@@ -384,16 +405,46 @@ GraphicsConsoleControllerDriverStart (
   }
 
   //
-  // Get the HII protocol. If Supported() succeeds, do we really
-  // need to get HII protocol again?
+  // Install the simplified font package to hii database.
   //
-  Status = EfiLocateHiiProtocol ();
-  if (EFI_ERROR (Status)) {
-    goto Error;
-  }
-
+  
   NarrowFontSize  = ReturnNarrowFontSize ();
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  if (mFirstAccessFlag) {
+    //
+    // Make sure we install this package to hii database only once.
+    //
+    mFirstAccessFlag = FALSE;
+    //
+    // Add 4 bytes to the header for entire length for PreparePackageList use only.
+    // Looks ugly. Might be updated when font tool is ready.
+    //
+    PackageLength   = sizeof (EFI_HII_SIMPLE_FONT_PACKAGE_HDR) + NarrowFontSize + 4;
+    Package = EfiLibAllocateZeroPool (PackageLength);
+    if (Package == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+    EfiCopyMem (Package, &PackageLength, 4);
+    SimplifiedFont = (EFI_HII_SIMPLE_FONT_PACKAGE_HDR*) (Package + 4);
+    SimplifiedFont->Header.Length        = (UINT32) (PackageLength - 4);
+    SimplifiedFont->Header.Type          = EFI_HII_PACKAGE_SIMPLE_FONTS;
+    SimplifiedFont->NumberOfNarrowGlyphs = (UINT16) (NarrowFontSize / sizeof (EFI_NARROW_GLYPH));
+
+    Location = (UINT8 *) (&SimplifiedFont->NumberOfWideGlyphs + 1);
+    EfiCopyMem (Location, UsStdNarrowGlyphData, NarrowFontSize);
+
+    //
+    // Add this simplified font package to a package list then install it.
+    //
+    PackageList = PreparePackageList (1, &mPackageListGuid, Package);
+    Status = mHiiDatabase->NewPackageList (mHiiDatabase, PackageList, NULL, &Private->HiiHandle);
+    ASSERT_EFI_ERROR (Status);
+    EfiLibSafeFreePool (PackageList);
+    EfiLibSafeFreePool (Package);    
+  }
+  
+#else
   FontPack        = EfiLibAllocateZeroPool (sizeof (EFI_HII_FONT_PACK) + NarrowFontSize);
   ASSERT (FontPack);
 
@@ -415,6 +466,7 @@ GraphicsConsoleControllerDriverStart (
   // Free the font database
   //
   gBS->FreePool (FontPack);
+#endif
 
   //
   // If the current mode information can not be retrieved, then attemp to set the default mode
@@ -693,7 +745,15 @@ GraphicsConsoleControllerDriverStop (
     //
     // Remove the font pack
     //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    Status = mHiiDatabase->RemovePackageList (mHiiDatabase, Private->HiiHandle);
+    if (!EFI_ERROR (Status)) {
+      mFirstAccessFlag = TRUE;
+    }
+
+#else
     mHii->RemovePack (mHii, Private->HiiHandle);
+#endif
 
     //
     // Free our instance data
@@ -757,7 +817,7 @@ EfiLocateHiiProtocol (
 /*++
 
   Routine Description:
-    Find if the HII protocol is available. If yes, locate the HII protocol
+    Locate HII protocols for future usage.
 
   Arguments:
 
@@ -769,6 +829,41 @@ EfiLocateHiiProtocol (
   UINTN       Size;
   EFI_STATUS  Status;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // There should only be one - so buffer size is this
+  //
+  Size = sizeof (EFI_HANDLE);
+
+  Status = gBS->LocateHandle (
+                  ByProtocol,
+                  &gEfiHiiDatabaseProtocolGuid,
+                  NULL,
+                  &Size,
+                  &Handle
+                  );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->HandleProtocol (
+                  Handle,
+                  &gEfiHiiDatabaseProtocolGuid,
+                  &mHiiDatabase
+                  );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->HandleProtocol (
+                  Handle,
+                  &gEfiHiiFontProtocolGuid,
+                  &mHiiFont
+                  );
+  return Status;
+#else
   //
   // There should only be one - so buffer size is this
   //
@@ -793,7 +888,9 @@ EfiLocateHiiProtocol (
                   );
 
   return Status;
+#endif
 }
+
 //
 // Body of the STO functions
 //
@@ -1163,17 +1260,31 @@ GraphicsConsoleConOutTestString (
 --*/
 {
   EFI_STATUS            Status;
-  UINT16                GlyphWidth;
-  UINT32                GlyphStatus;
   UINT16                Count;
-  GRAPHICS_CONSOLE_DEV  *Private;
-  GLYPH_UNION           *Glyph;
 
-  Private     = GRAPHICS_CONSOLE_CON_OUT_DEV_FROM_THIS (This);
-  GlyphStatus = 0;
-  Count       = 0;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_IMAGE_OUTPUT      *Blt = NULL;
+#else
+  UINT16                GlyphWidth;
+  UINT32                GlyphStatus = 0;
+  GLYPH_UNION           *Glyph;  
+#endif
 
-  while (WString[Count]) {
+  Count = 0;
+
+  while (WString[Count] != 0) {
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    Status = mHiiFont->GetGlyph (
+                         mHiiFont,
+                         WString[Count],
+                         NULL,
+                         &Blt,
+                         NULL
+                         );
+    EfiLibSafeFreePool (Blt);
+    Blt = NULL;
+    Count++;
+#else
     Status = mHii->GetGlyph (
                     mHii,
                     WString,
@@ -1182,7 +1293,7 @@ GraphicsConsoleConOutTestString (
                     &GlyphWidth,
                     &GlyphStatus
                     );
-
+#endif
     if (EFI_ERROR (Status)) {
       return EFI_UNSUPPORTED;
     }
@@ -1681,6 +1792,69 @@ GetTextColors (
   return EFI_SUCCESS;
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_STATUS
+DrawUnicodeWeightAtCursorN (
+  IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
+  IN  CHAR16                        *UnicodeWeight,
+  IN  UINTN                         Count
+  )
+{
+  EFI_STATUS                        Status;
+  GRAPHICS_CONSOLE_DEV              *Private;
+  EFI_IMAGE_OUTPUT                  *Blt;
+  EFI_STRING                        String;
+  EFI_FONT_DISPLAY_INFO             *FontInfo;
+
+  Private = GRAPHICS_CONSOLE_CON_OUT_DEV_FROM_THIS (This);
+  //
+  // GOP protocol is required in UEFI mode.
+  //
+  ASSERT (Private->GraphicsOutput != NULL);
+
+  Blt = (EFI_IMAGE_OUTPUT *) EfiLibAllocateZeroPool (sizeof (EFI_IMAGE_OUTPUT));
+  if (Blt == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Blt->Width        = (UINT16) (Private->ModeData[This->Mode->Mode].GopWidth);
+  Blt->Height       = (UINT16) (Private->ModeData[This->Mode->Mode].GopHeight);
+  Blt->Image.Screen = Private->GraphicsOutput;
+
+  String = EfiLibAllocateCopyPool ((Count + 1) * sizeof (CHAR16), UnicodeWeight);
+  if (String == NULL) {
+    EfiLibSafeFreePool (Blt);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  *(String + Count) = 0;
+
+  FontInfo = (EFI_FONT_DISPLAY_INFO *) EfiLibAllocateZeroPool (sizeof (EFI_FONT_DISPLAY_INFO));
+  if (FontInfo == NULL) {
+    EfiLibSafeFreePool (Blt);
+    EfiLibSafeFreePool (String);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  GetTextColors (This, &FontInfo->ForegroundColor, &FontInfo->BackgroundColor);
+
+  Status = mHiiFont->StringToImage (
+                       mHiiFont,
+                       EFI_HII_IGNORE_IF_NO_GLYPH | EFI_HII_DIRECT_TO_SCREEN,
+                       String,
+                       FontInfo,
+                       &Blt,
+                       This->Mode->CursorColumn * GLYPH_WIDTH + Private->ModeData[This->Mode->Mode].DeltaX,
+                       This->Mode->CursorRow * GLYPH_HEIGHT + Private->ModeData[This->Mode->Mode].DeltaY,
+                       NULL,
+                       NULL,
+                       NULL
+                       );
+
+  EfiLibSafeFreePool (Blt);
+  EfiLibSafeFreePool (String);
+  EfiLibSafeFreePool (FontInfo);
+  return Status;
+}
+#else
 EFI_STATUS
 DrawUnicodeWeightAtCursorN (
   IN  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *This,
@@ -1821,6 +1995,7 @@ DrawUnicodeWeightAtCursorN (
 
   return ReturnStatus;
 }
+#endif
 
 EFI_STATUS
 EraseCursor (

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,10 +25,16 @@ Abstract:
 #include "Efi2WinNT.h"
 #include "EfiWinNtLib.h"
 #include "EfiDriverLib.h"
-#include "IfrLibrary.h"
+
 #include EFI_ARCH_PROTOCOL_DEFINITION (Cpu)
 #include EFI_PROTOCOL_DEFINITION (WinNtIo)
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "UefiIfrLibrary.h"
+#include EFI_PROTOCOL_DEFINITION (HiiDatabase)
+#else
+#include "IfrLibrary.h"
 #include EFI_PROTOCOL_DEFINITION (Hii)
+#endif
 #include EFI_PROTOCOL_CONSUMER (DataHub)
 #include EFI_GUID_DEFINITION (DataHubRecords)
 #include "CpuDriver.h"
@@ -574,10 +580,18 @@ Returns:
   EFI_HANDLE                  *HandleBuffer;
   EFI_WIN_NT_IO_PROTOCOL      *WinNtIo;
   EFI_DATA_HUB_PROTOCOL       *DataHub;
-  EFI_HII_PROTOCOL            *Hii;
   EFI_HII_HANDLE              StringHandle;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_HANDLE                  DriverHandle;
+  EFI_HII_DATABASE_PROTOCOL   *HiiDatabase;
+  EFI_HII_PACKAGE_LIST_HEADER *PackageList;
+  EFI_STRING_ID               Token;
+#else
+  EFI_HII_PROTOCOL            *Hii;
   EFI_HII_PACKAGES            *PackageList;
   STRING_REF                  Token;
+#endif
+
 
   DataHub         = NULL;
   Token           = 0;
@@ -600,7 +614,11 @@ Returns:
   //
   // Locate HII protocol
   //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  Status = gBS->LocateProtocol (&gEfiHiiDatabaseProtocolGuid, NULL, &HiiDatabase);
+#else
   Status = gBS->LocateProtocol (&gEfiHiiProtocolGuid, NULL, &Hii);
+#endif
   if (EFI_ERROR (Status)) {
     return ;
   }
@@ -665,6 +683,21 @@ Returns:
       //
       // Initialize strings to HII database
       //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      CreateHiiDriverHandle (&DriverHandle);
+      PackageList = PreparePackageList (1, &gProcessorProducerGuid, STRING_ARRAY_NAME);
+
+      Status = HiiDatabase->NewPackageList (HiiDatabase, PackageList, DriverHandle, &StringHandle);
+      ASSERT (!EFI_ERROR (Status));
+
+      gBS->FreePool (PackageList);
+
+      //
+      // Store processor version data record to data hub
+      //
+      Status = IfrLibNewString (StringHandle, &Token, WinNtIo->EnvString);
+      ASSERT (!EFI_ERROR (Status));
+#else
       PackageList = PreparePackages (1, &gProcessorProducerGuid, STRING_ARRAY_NAME);
 
       Status      = Hii->NewPack (Hii, PackageList, &StringHandle);
@@ -677,6 +710,7 @@ Returns:
       //
       Status = Hii->NewString (Hii, NULL, StringHandle, &Token, WinNtIo->EnvString);
       ASSERT (!EFI_ERROR (Status));
+#endif
 
       RecordBuffer.DataRecord->DataRecordHeader.RecordType      = ProcessorVersionRecordType;
       RecordBuffer.DataRecord->VariableRecord.ProcessorVersion  = Token;

@@ -56,8 +56,6 @@ Returns:
       DhcpSb->DhcpState = Dhcp4Init;
       return Status;
     }
-
-    DhcpSb->WaitOffer = DHCP_WAIT_OFFER;
   } else {
     DhcpSetState (DhcpSb, Dhcp4Rebooting, FALSE);
     Status = DhcpSendMessage (DhcpSb, NULL, NULL, DHCP_MSG_REQUEST, NULL);
@@ -247,7 +245,7 @@ Returns:
   // This will clear the retry count. This is also why the rule
   // first transit the state, then send packets.
   //
-  if (State == Dhcp4Init) {
+  if (State == Dhcp4Selecting) {
     DhcpSb->MaxRetries = DhcpSb->ActiveConfig.DiscoverTryCount;
   } else {
     DhcpSb->MaxRetries = DhcpSb->ActiveConfig.RequestTryCount;
@@ -290,7 +288,7 @@ Returns:
 
   ASSERT (DhcpSb->MaxRetries > DhcpSb->CurRetry);
 
-  if (DhcpSb->DhcpState == Dhcp4Init) {
+  if (DhcpSb->DhcpState == Dhcp4Selecting) {
     Times = DhcpSb->ActiveConfig.DiscoverTimeout;
   } else {
     Times = DhcpSb->ActiveConfig.RequestTimeout;
@@ -301,6 +299,10 @@ Returns:
   }
 
   DhcpSb->PacketToLive = Times[DhcpSb->CurRetry];
+
+  if (DhcpSb->DhcpState == Dhcp4Selecting) {
+    DhcpSb->WaitOffer = DhcpSb->PacketToLive;
+  }
 }
 
 STATIC
@@ -576,6 +578,7 @@ Returns:
 {
   EFI_DHCP4_PACKET          *Selected;
   EFI_DHCP4_PACKET          *NewPacket;
+  EFI_DHCP4_PACKET          *TempPacket;
   EFI_STATUS                Status;
 
   ASSERT (DhcpSb->LastOffer != NULL);
@@ -599,12 +602,12 @@ Returns:
 
   Selected = DhcpSb->LastOffer;
 
-  if (NewPacket != NULL) {
-    if (EFI_ERROR (DhcpValidateOptions (NewPacket, NULL))) {
-      NetFreePool (NewPacket);
-    } else {
+  if ((NewPacket != NULL) && !EFI_ERROR (DhcpValidateOptions (NewPacket, NULL))) {
+    TempPacket = (EFI_DHCP4_PACKET *) NetAllocatePool (NewPacket->Size);
+    if (TempPacket != NULL) {
+      NetCopyMem (TempPacket, NewPacket, NewPacket->Size);
       NetFreePool (Selected);
-      Selected = NewPacket;
+      Selected = TempPacket;
     }
   }
 
@@ -718,10 +721,6 @@ Returns:
   // Don't return a error for these two case otherwise the session is ended.
   //
   Head = &Packet->Dhcp4.Header;
-  
-  if (!Ip4IsUnicast (EFI_NTOHL (Head->YourAddr), (Para == NULL ? 0 : Para->NetMask))) {
-    goto ON_EXIT;
-  }
 
   if (!DHCP_IS_BOOTP (Para) && 
      ((Para->DhcpType != DHCP_MSG_OFFER) || (Para->ServerId == 0))) {
@@ -1619,12 +1618,32 @@ Returns:
 --*/
 {
   DHCP_SERVICE              *DhcpSb;
+  DHCP_PROTOCOL             *Instance;
   EFI_STATUS                Status;
   
-  DhcpSb = (DHCP_SERVICE *) Context;
+  DhcpSb   = (DHCP_SERVICE *) Context;
+  Instance = DhcpSb->ActiveChild;
+
+  //
+  // Check the time to wait offer
+  //
+  if ((DhcpSb->WaitOffer > 0) && (--DhcpSb->WaitOffer == 0)) {
+    //
+    // OK, offer collection finished, select a offer
+    //
+    ASSERT (DhcpSb->DhcpState == Dhcp4Selecting);
+
+    if (DhcpSb->LastOffer == NULL) {
+      goto END_SESSION;
+    }
+
+    if (EFI_ERROR (DhcpChooseOffer (DhcpSb))) {
+      goto END_SESSION;
+    }
+  }
   
   //
-  // Check the retransmit timer first
+  // Check the retransmit timer
   //
   if ((DhcpSb->PacketToLive > 0) && (--DhcpSb->PacketToLive == 0)) {
 
@@ -1665,21 +1684,6 @@ Returns:
         DhcpSb->IoStatus = EFI_TIMEOUT;
         DhcpNotifyUser (DhcpSb, DHCP_NOTIFY_RENEWREBIND);
       }
-    }
-  }
-
-  if ((DhcpSb->WaitOffer > 0) && (--DhcpSb->WaitOffer == 0)) {
-    //
-    // OK, offer collection finished, select a offer
-    //
-    ASSERT (DhcpSb->DhcpState == Dhcp4Selecting);
-
-    if (DhcpSb->LastOffer == NULL) {
-      goto END_SESSION;
-    }
-
-    if (EFI_ERROR (DhcpChooseOffer (DhcpSb))) {
-      goto END_SESSION;
     }
   }
   
@@ -1743,6 +1747,16 @@ Returns:
       if (EFI_ERROR (Status)) {
         goto END_SESSION;
       }
+    }
+  }
+
+  //
+  //
+  //
+  if ((Instance != NULL) && (Instance->Token != NULL)) {
+    Instance->Timeout--;
+    if (Instance->Timeout == 0) {
+      PxeDhcpDone (Instance);
     }
   }
 

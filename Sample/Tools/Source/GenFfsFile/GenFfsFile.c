@@ -24,6 +24,7 @@ Abstract:
 #include "EfiFirmwareFileSystem.h"
 #include "EfiFirmwareVolumeHeader.h"
 #include "EfiImageFormat.h"
+#include "EfiImage.h"
 #include "ParseInf.h"
 #include "Compress.h"
 #include "EfiCustomizedCompress.h"
@@ -127,6 +128,8 @@ static struct {
 } mGlobals;
 
 static EFI_GUID mZeroGuid = { 0 };
+
+static UINT8  MinFfsDataAlignOverride = 0;
 
 static
 void
@@ -1099,6 +1102,9 @@ Returns:
 {
   EFI_STATUS  Status;
   UINT32      Size;
+  UINT32      OldSize;
+  UINT32      Adjust;
+  UINT16      TeStrippedSize;
   CHAR8       Buffer[_MAX_PATH];
   CHAR8       Type[_MAX_PATH];
   CHAR8       FileName[_MAX_PATH];
@@ -1357,6 +1363,7 @@ Returns:
         goto Done;
       }
 
+      OldSize = Size;
       fread (&ByteBuffer, sizeof (UINT8), 1, InFile);
       while (!feof (InFile)) {
         FileBuffer[Size++] = ByteBuffer;
@@ -1365,6 +1372,29 @@ Returns:
 
       fclose (InFile);
       InFile = NULL;
+
+      //
+      // Adjust the TE Section for IPF so that the function entries are 16-byte aligned.
+      //
+      if (Size - OldSize >= sizeof (EFI_COMMON_SECTION_HEADER) + sizeof (EFI_TE_IMAGE_HEADER) &&
+          ((EFI_COMMON_SECTION_HEADER *) &FileBuffer[OldSize])->Type == EFI_SECTION_TE        &&
+          ((EFI_TE_IMAGE_HEADER *) &FileBuffer[OldSize + 4])->Machine == EFI_IMAGE_MACHINE_IA64) {
+        TeStrippedSize = ((EFI_TE_IMAGE_HEADER *) &FileBuffer[OldSize + 4])->StrippedSize;
+        Adjust = TeStrippedSize - (OldSize + sizeof (EFI_COMMON_SECTION_HEADER) + sizeof (EFI_TE_IMAGE_HEADER));
+        Adjust &= 15;
+        if (Adjust > 0) {
+          memmove (&FileBuffer[OldSize + Adjust], &FileBuffer[OldSize], Size - OldSize);
+          //
+          // Pad with RAW Section type
+          //
+          *(UINT32 *)&FileBuffer[OldSize] = 0x19000000 | Adjust;
+          Size += Adjust;
+          //
+          // Make sure the Data alignment in FFS header is no less than 1 (16-byte aligned)
+          //
+          MinFfsDataAlignOverride = 1;
+        }
+      }
 
       //
       // Make sure section ends on a DWORD boundary
@@ -2189,6 +2219,9 @@ here:
     memset (&FileHeader, 0, sizeof (EFI_FFS_FILE_HEADER));
     memcpy (&FileHeader.Name, &FfsGuid, sizeof (EFI_GUID));
     FileHeader.Type       = StringToType (FileType);
+    if (((FfsAttrib & FFS_ATTRIB_DATA_ALIGNMENT) >> 3) < MinFfsDataAlignOverride) {
+      FfsAttrib = (FfsAttrib & ~FFS_ATTRIB_DATA_ALIGNMENT) | (MinFfsDataAlignOverride << 3);
+    }
     FileHeader.Attributes = FfsAttrib;
     //
     // Now FileSize includes the EFI_FFS_FILE_HEADER
@@ -2333,6 +2366,9 @@ here:
     memset (&FileHeader, 0, sizeof (EFI_FFS_FILE_HEADER));
     memcpy (&FileHeader.Name, &FfsGuid, sizeof (EFI_GUID));
     FileHeader.Type       = StringToType (FileType);
+    if (((FfsAttrib & FFS_ATTRIB_DATA_ALIGNMENT) >> 3) < MinFfsDataAlignOverride) {
+      FfsAttrib = (FfsAttrib & ~FFS_ATTRIB_DATA_ALIGNMENT) | (MinFfsDataAlignOverride << 3);
+    }
     FileHeader.Attributes = FfsAttrib;
     //
     // From this point on FileSize includes the size of the EFI_FFS_FILE_HEADER

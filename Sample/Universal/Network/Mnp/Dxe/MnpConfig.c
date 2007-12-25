@@ -401,7 +401,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL | EFI_EVENT_TIMER,
-                  NET_TPL_EVENT,
+                  NET_TPL_LOCK,
                   MnpSystemPoll,
                   MnpServiceData,
                   &MnpServiceData->PollTimer
@@ -674,18 +674,18 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  TokenToCancel         = (EFI_MANAGED_NETWORK_COMPLETION_TOKEN *) Item->Key;
+  TokenToCancel = (EFI_MANAGED_NETWORK_COMPLETION_TOKEN *) Item->Key;
+
+  //
+  // Remove the item from the map.
+  //
+  NetMapRemoveItem (Map, Item, NULL);
 
   //
   // Cancel this token with status set to EFI_ABORTED.
   //
   TokenToCancel->Status = EFI_ABORTED;
   gBS->SignalEvent (TokenToCancel->Event);
-
-  //
-  // Remove the item from the map.
-  //
-  NetMapRemoveItem (Map, Item, NULL);
 
   if (Arg != NULL) {
     //
@@ -1102,7 +1102,7 @@ Returns:
 
   if (ConfigData == NULL) {
 
-    NetMapIterate (&Instance->RxTokenMap, MnpCancelTokens, NULL);
+    Instance->ManagedNetwork.Cancel (&Instance->ManagedNetwork, NULL);
   }
 
   if (!NewConfigData->EnableMulticastReceive) {

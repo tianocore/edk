@@ -25,6 +25,13 @@ Abstract:
 STATIC
 VOID
 EFIAPI
+UdpIoOnDgramSentDpc (
+  IN VOID                   *Context
+  );
+
+STATIC
+VOID
+EFIAPI
 UdpIoOnDgramSent (
   IN EFI_EVENT              Event,
   IN VOID                   *Context
@@ -388,10 +395,7 @@ Returns:
     Token = NET_LIST_USER_STRUCT (Entry, UDP_TX_TOKEN, Link);
 
     if ((ToCancel == NULL) || (ToCancel (Token, Context))) {
-      NetListRemoveEntry (Entry);
       UdpIo->Udp->Cancel (UdpIo->Udp, &Token->UdpToken);
-      Token->CallBack (Token->Packet, NULL, IoStatus, Token->Context);
-      UdpIoFreeTxToken (Token);
     }
   }
 }
@@ -430,9 +434,7 @@ Returns:
   UdpIoCancelDgrams (UdpIo, EFI_ABORTED, NULL, NULL);
 
   if ((RxToken = UdpIo->RecvRequest) != NULL) {
-    UdpIo->RecvRequest = NULL;
     UdpIo->Udp->Cancel (UdpIo->Udp, &RxToken->UdpToken);
-    UdpIoFreeRxToken (RxToken);
   }
   
   //
@@ -487,9 +489,7 @@ Returns:
   UdpIoCancelDgrams (UdpIo, EFI_ABORTED, NULL, NULL);
 
   if ((RxToken = UdpIo->RecvRequest) != NULL) {
-    UdpIo->RecvRequest = NULL;
     UdpIo->Udp->Cancel (UdpIo->Udp, &RxToken->UdpToken);
-    UdpIoFreeRxToken (RxToken);
   }
 
   UdpIo->Udp->Configure (UdpIo->Udp, NULL);
@@ -498,8 +498,7 @@ Returns:
 STATIC
 VOID
 EFIAPI
-UdpIoOnDgramSent (
-  IN EFI_EVENT              Event,
+UdpIoOnDgramSentDpc (
   IN VOID                   *Context
   )
 /*++
@@ -530,6 +529,36 @@ Returns:
   Token->CallBack (Token->Packet, NULL, Token->UdpToken.Status, Token->Context);
 
   UdpIoFreeTxToken (Token);
+}
+
+STATIC
+VOID
+EFIAPI
+UdpIoOnDgramSent (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+/*++
+
+Routine Description:
+
+  Request UdpIoOnDgramSentDpc as a DPC at EFI_TPL_CALLBACK 
+
+Arguments:
+
+  Event   - The event signalled.
+  Context - The UDP TX Token.
+
+Returns:
+
+  None
+
+--*/
+{
+  //
+  // Request UdpIoOnDgramSentDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, UdpIoOnDgramSentDpc, Context);
 }
 
 EFI_STATUS
@@ -574,14 +603,18 @@ Returns:
     return EFI_OUT_OF_RESOURCES;
   }
 
+  //
+  // Insert the tx token into SendDatagram list before transmitting it. Remove
+  // it from the list if the returned status is not EFI_SUCCESS.
+  //
+  NetListInsertHead (&UdpIo->SentDatagram, &Token->Link);
   Status = UdpIo->Udp->Transmit (UdpIo->Udp, &Token->UdpToken);
-
   if (EFI_ERROR (Status)) {
+    NetListRemoveEntry (&Token->Link);
     UdpIoFreeTxToken (Token);
     return Status;
   }
 
-  NetListInsertHead (&UdpIo->SentDatagram, &Token->Link);
   return EFI_SUCCESS;
 }
 
@@ -675,8 +708,7 @@ Returns:
 STATIC
 VOID
 EFIAPI
-UdpIoOnDgramRcvd (
-  IN EFI_EVENT              Event,
+UdpIoOnDgramRcvdDpc (
   IN VOID                   *Context
   )
 /*++
@@ -689,7 +721,6 @@ Routine Description:
 
 Arguments:
 
-  Event   - The UDP receive request event
   Context - The UDP RX token.
 
 Returns:
@@ -720,10 +751,15 @@ Returns:
   UdpRxData = UdpToken->Packet.RxData;
 
   if (EFI_ERROR (UdpToken->Status) || (UdpRxData == NULL)) {
-    Token->CallBack (NULL, NULL, UdpToken->Status, Token->Context);
-    UdpIoFreeRxToken (Token);
+    if (UdpToken->Status != EFI_ABORTED) {
+      //
+      // Invoke the CallBack only if the reception is not actively aborted.
+      //
+      Token->CallBack (NULL, NULL, UdpToken->Status, Token->Context);
+    }
 
-    goto ON_EXIT;
+    UdpIoFreeRxToken (Token);
+    return;
   }
 
   //
@@ -743,7 +779,7 @@ Returns:
     Token->CallBack (NULL, NULL, EFI_OUT_OF_RESOURCES, Token->Context);
 
     UdpIoFreeRxToken (Token);
-    goto ON_EXIT;
+    return;
   }
 
   UdpSession        = &UdpRxData->UdpSession;
@@ -756,9 +792,36 @@ Returns:
   Points.RemoteAddr = NTOHL (Points.RemoteAddr);
 
   Token->CallBack (Netbuf, &Points, EFI_SUCCESS, Token->Context);
+}
 
-ON_EXIT:
-  return;
+STATIC
+VOID
+EFIAPI
+UdpIoOnDgramRcvd (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+/*++
+
+Routine Description:
+
+  Request UdpIoOnDgramRcvdDpc as a DPC at EFI_TPL_CALLBACK 
+
+Arguments:
+
+  Event   - The UDP receive request event
+  Context - The UDP RX token.
+
+Returns:
+
+  None
+
+--*/
+{
+  //
+  // Request UdpIoOnDgramRcvdDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, UdpIoOnDgramRcvdDpc, Context);
 }
 
 EFI_STATUS
@@ -803,13 +866,13 @@ Returns:
     return EFI_OUT_OF_RESOURCES;
   }
 
+  UdpIo->RecvRequest = Token;
   Status = UdpIo->Udp->Receive (UdpIo->Udp, &Token->UdpToken);
 
   if (EFI_ERROR (Status)) {
+    UdpIo->RecvRequest = NULL;
     UdpIoFreeRxToken (Token);
-    return Status;
   }
 
-  UdpIo->RecvRequest = Token;
-  return EFI_SUCCESS;
+  return Status;
 }

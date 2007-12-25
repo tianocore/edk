@@ -21,7 +21,6 @@ Abstract:
 
 #include "BdsLib.h"
 
-#include EFI_PROTOCOL_DEFINITION (FormBrowser)
 
 #define MAX_STRING_LEN        200
 
@@ -501,7 +500,7 @@ Returns:
   VOID                      *LoadOptions;
   UINT32                    LoadOptionsSize;
   CHAR16                    *Description;
-
+  UINT8                     NumOff;
   //
   // Read the variable. We will never free this data.
   //
@@ -568,6 +567,18 @@ Returns:
   EfiCopyMem (Option->LoadOptions, LoadOptions, LoadOptionsSize);
   Option->LoadOptionsSize = LoadOptionsSize;
 
+  //
+  // Get the value from VariableName Unicode string
+  // since the ISO standard assumes ASCII equivalent abbreviations, we can be safe in converting this 
+  // Unicode stream to ASCII without any loss in meaning.
+  //
+  if (*VariableName == 'B') {
+    NumOff = sizeof (L"Boot")/sizeof(CHAR16) -1 ;
+    Option->BootCurrent =  (VariableName[NumOff]  -'0') * 0x1000;
+    Option->BootCurrent += (VariableName[NumOff+1]-'0') * 0x100;
+    Option->BootCurrent += (VariableName[NumOff+2]-'0') * 0x10;
+    Option->BootCurrent += (VariableName[NumOff+3]-'0');
+  } 
   //
   // Insert active entry to BdsDeviceList
   //
@@ -1098,8 +1109,10 @@ Returns:
 
 --*/
 {
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   EFI_STATUS                    Status;
   EFI_FORM_BROWSER_PROTOCOL     *Browser;
+#endif
   EFI_INPUT_KEY                 Key;  
   CHAR16                        *StringBuffer1;
   CHAR16                        *StringBuffer2;    
@@ -1110,12 +1123,14 @@ Returns:
   //
   if (IsResetReminderFeatureEnable ()) {
     if (IsResetRequired ()) {
-    
+
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)    
       Status = gBS->LocateProtocol (
                       &gEfiFormBrowserProtocolGuid,
                       NULL,
                       &Browser
                       );      
+#endif
                       
       StringBuffer1 = EfiLibAllocateZeroPool (MAX_STRING_LEN * sizeof (CHAR16));
       ASSERT (StringBuffer1 != NULL);
@@ -1127,7 +1142,11 @@ Returns:
       // Popup a menu to notice user
       // 
       do {
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
         Browser->CreatePopUp (2, TRUE, 0, NULL, &Key, StringBuffer1, StringBuffer2);
+#else
+        IfrLibCreatePopUp (2, &Key, StringBuffer1, StringBuffer2);
+#endif
       } while ((Key.ScanCode != SCAN_ESC) && (Key.UnicodeChar != CHAR_CARRIAGE_RETURN)); 
       
       gBS->FreePool (StringBuffer1);      
@@ -1310,6 +1329,7 @@ Returns:
   return Status;
 }
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 EFI_STATUS
 BdsLibGetHiiHandles (
   IN     EFI_HII_PROTOCOL *Hii,
@@ -1362,6 +1382,7 @@ Returns:
   return Status;
   
 }
+#endif
 
 VOID
 EFIAPI
@@ -1517,4 +1538,32 @@ Returns:
     DEBUG ((EFI_D_ERROR,"Bds Set Memory Type Informationa Variable Fails\n"));
   }
 
+}
+
+EFI_TPL
+BdsLibGetCurrentTpl (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  return the current TPL, copied from the EDKII glue lib. 
+
+Arguments:
+
+  VOID
+
+Returns:
+
+  Current TPL
+
+--*/
+{
+  EFI_TPL                 Tpl;
+
+  Tpl = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL); 
+  gBS->RestoreTPL (Tpl);
+
+  return Tpl;
 }

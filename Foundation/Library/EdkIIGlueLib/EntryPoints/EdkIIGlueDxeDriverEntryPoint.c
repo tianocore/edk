@@ -90,6 +90,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED const EFI_DRIVER_MODEL_PROTOCOL_LIST  _gDriverMode
  */
 #ifdef __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__
 VOID
+EFIAPI
 __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__ (
   IN EFI_EVENT        Event,
   IN VOID             *Context
@@ -101,6 +102,7 @@ __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT__HANDLER__ (
  */  
 #ifdef __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT_HANDLER__
 VOID
+EFIAPI
 __EDKII_GLUE_SET_VIRTUAL_ADDRESS_MAP_EVENT_HANDLER__ (
   IN EFI_EVENT        Event,
   IN VOID             *Context
@@ -220,6 +222,7 @@ ProcessModuleUnloadList (
 // Library constructors
 //
 VOID
+EFIAPI
 ProcessLibraryConstructorList (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
@@ -306,6 +309,7 @@ ProcessLibraryConstructorList (
 // Library Destructors
 //
 VOID
+EFIAPI
 ProcessLibraryDestructorList (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable

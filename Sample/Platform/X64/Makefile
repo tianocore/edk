@@ -36,7 +36,7 @@
 all : uefi
 
 ######################################################################################
-#    Target efi use default feature flags
+#    Feature flags for target efi
 ######################################################################################
 BUILD_DIR = efi
 
@@ -44,8 +44,9 @@ $(BUILD_DIR)dir : Pseudotargets
     @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     @copy Build\*.* $(BUILD_DIR)
     @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE PI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $(BUILD_DIR)\Config.env
     @echo UEFI_MODE                      = NO                  >> $(BUILD_DIR)\Config.env
+    @echo PI_MODE                        = NO                  >> $(BUILD_DIR)\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
 
 $(BUILD_DIR) : $(BUILD_DIR)dir
@@ -62,8 +63,9 @@ $(BUILD_DIR)dir : Pseudotargets
     @if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
     @copy Build\*.* $(BUILD_DIR)
     @if exist $(BUILD_DIR)\Config.env del /f $(BUILD_DIR)\Config.env
-    @findstr /V "UEFI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $(BUILD_DIR)\Config.env
+    @findstr /V "UEFI_MODE PI_MODE BUILD_TARGET_DIRECTORY" Build\Config.env > $(BUILD_DIR)\Config.env
     @echo UEFI_MODE                      = YES                 >> $(BUILD_DIR)\Config.env
+    @echo PI_MODE                        = YES                 >> $(BUILD_DIR)\Config.env
     @echo BUILD_TARGET_DIRECTORY         = $(BUILD_DIR)        >> $(BUILD_DIR)\Config.env
 
 $(BUILD_DIR) : $(BUILD_DIR)dir

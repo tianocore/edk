@@ -221,6 +221,7 @@ Returns:
   UINTN                     Size;
   EFI_IMAGE_NT_HEADERS64    *PeHdr;
   EFI_TCG_PLATFORM_PROTOCOL *TcgPlatformProtocol;
+  IMAGE_FILE_HANDLE         *FHandle;
   
   DEBUG_CODE (
     UINTN   Index;
@@ -362,20 +363,21 @@ Returns:
              &TcgPlatformProtocol
              );
   if (!EFI_ERROR (Status)) {
-    PeHdr  = (EFI_IMAGE_NT_HEADERS64 *)(UINTN) (
-                Image->ImageContext.ImageAddress +
-                Image->ImageContext.PeCoffHeaderOffset
-                );
-    
-    Status = TcgPlatformProtocol->MeasurePeImage (
-                                    BootPolicy,
-                                    Image->ImageContext.ImageAddress,
-                                    (UINTN) Image->ImageContext.ImageSize,
-                                    (UINTN) PeHdr->OptionalHeader.ImageBase,
-                                    Image->ImageContext.ImageType,
-                                    Image->Info.DeviceHandle,
-                                    Image->Info.FilePath
-                                    );
+    PeHdr   = (EFI_IMAGE_NT_HEADERS64 *)(UINTN) (
+                 Image->ImageContext.ImageAddress +
+                 Image->ImageContext.PeCoffHeaderOffset
+                 );
+    FHandle = (IMAGE_FILE_HANDLE *)Image->ImageContext.Handle;
+
+    Status  = TcgPlatformProtocol->MeasurePeImage (
+                                     BootPolicy,
+                                     (EFI_PHYSICAL_ADDRESS)FHandle->Source,
+                                     FHandle->SourceSize,
+                                     (UINTN) PeHdr->OptionalHeader.ImageBase,
+                                     Image->ImageContext.ImageType,
+                                     Image->Info.DeviceHandle,
+                                     Image->Info.FilePath
+                                     );
     
     ASSERT_EFI_ERROR (Status);
   }

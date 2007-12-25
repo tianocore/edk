@@ -426,6 +426,7 @@ TerminalDriverBindingStart (
   TerminalDevice->SimpleInput.ReadKeyStroke = TerminalConInReadKeyStroke;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   //
   // Simple Input Ex Protocol
   //
@@ -448,6 +449,7 @@ TerminalDriverBindingStart (
     goto Error;
   }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   Status = gBS->CreateEvent (
@@ -638,10 +640,12 @@ TerminalDriverBindingStart (
                   TerminalDevice->DevicePath,
                   &gEfiSimpleTextInProtocolGuid,
                   &TerminalDevice->SimpleInput,
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX  
                   &gEfiSimpleTextInputExProtocolGuid,
                   &TerminalDevice->SimpleInputEx,
 
+#endif  // DISABLE_CONSOLE_EX
 #endif                 
                   &gEfiSimpleTextOutProtocolGuid,
                   &TerminalDevice->SimpleTextOutput,
@@ -722,12 +726,14 @@ Error:
         gBS->CloseEvent (TerminalDevice->SimpleInput.WaitForKey);
       }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX  
       if (TerminalDevice->SimpleInputEx.WaitForKeyEx != NULL) {
         gBS->CloseEvent (TerminalDevice->SimpleInputEx.WaitForKeyEx);
       }
 
       TerminalFreeNotifyList (&TerminalDevice->NotifyList);
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
       if (TerminalDevice->ControllerNameTable != NULL) {
@@ -895,8 +901,10 @@ TerminalDriverBindingStop (
                       &gEfiSimpleTextInProtocolGuid,
                       &TerminalDevice->SimpleInput,
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
                       &gEfiSimpleTextInputExProtocolGuid,
                       &TerminalDevice->SimpleInputEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif
                       &gEfiSimpleTextOutProtocolGuid,
                       &TerminalDevice->SimpleTextOutput,
@@ -941,8 +949,10 @@ TerminalDriverBindingStop (
         gBS->CloseEvent (TerminalDevice->TwoSecondTimeOut);
         gBS->CloseEvent (TerminalDevice->SimpleInput.WaitForKey);
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         gBS->CloseEvent (TerminalDevice->SimpleInputEx.WaitForKeyEx);
         TerminalFreeNotifyList (&TerminalDevice->NotifyList);
+#endif  // DISABLE_CONSOLE_EX
 #endif
         gBS->FreePool (TerminalDevice->DevicePath);
         gBS->FreePool (TerminalDevice);

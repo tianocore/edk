@@ -86,7 +86,13 @@ Returns:
 --*/
 { 
   EFI_STATUS  Status;
-
+  //
+  // Check that ControllerHandle is a valid handle
+  //
+  if (ControllerHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
   //
   // Read the environment variable(s) that contain the override mappings from Controller Device Path to
   // a set of Driver Device Paths, and  initialize in memory database of the overrides that map Controller
@@ -98,7 +104,6 @@ Returns:
     
     Status = LibInitOverridesMapping (&mMappingDataBase);
     if (Status == EFI_NOT_FOUND) {
-      DEBUG ((EFI_D_ERROR, "Cannot read Platform Driver Override Variable \n"));
       InitializeListHead (&mMappingDataBase);
       return EFI_NOT_FOUND;
     } else if (Status == EFI_VOLUME_CORRUPTED){

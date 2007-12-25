@@ -51,6 +51,7 @@ STATIC TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
   (EFI_SIMPLE_TEXT_IN_PROTOCOL **) NULL,
   0,
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   {
     ConSplitterTextInResetEx,
     ConSplitterTextInReadKeyStrokeEx,
@@ -66,7 +67,8 @@ STATIC TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
     (struct _EFI_LIST_ENTRY *) NULL,
     (struct _EFI_LIST_ENTRY *) NULL
   },
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
 
   FALSE,
   {
@@ -222,9 +224,11 @@ STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
 };
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 EFI_GUID gSimpleTextInExNotifyGuid = { \
   0x856f2def, 0x4e93, 0x4d6b, 0x94, 0xce, 0x1c, 0xfe, 0x47, 0x1, 0x3e, 0xa5 \
 };
+#endif  // DISABLE_CONSOLE_EX
 #endif
 EFI_DRIVER_BINDING_PROTOCOL           gConSplitterConInDriverBinding = {
   ConSplitterConInDriverBindingSupported,
@@ -349,8 +353,10 @@ Returns:
                     &gEfiSimpleTextInProtocolGuid,
                     &mConIn.TextIn,
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
                     &gEfiSimpleTextInputExProtocolGuid,
                     &mConIn.TextInEx,
+#endif  // DISABLE_CONSOLE_EX
 #endif
                     &gEfiPrimaryConsoleInDeviceGuid,
                     NULL,
@@ -480,6 +486,7 @@ Returns:
   ASSERT_EFI_ERROR (Status);
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
   Status = ConSplitterGrowBuffer (
             sizeof (EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *),
@@ -501,6 +508,7 @@ Returns:
 
   InitializeListHead (&ConInPrivate->NotifyList); 
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   return Status;
@@ -855,7 +863,9 @@ Returns:
   EFI_STATUS                  Status;
   EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *TextInEx;
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   //
@@ -875,6 +885,7 @@ Returns:
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiSimpleTextInputExProtocolGuid,
@@ -891,6 +902,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }  
+#endif  // DISABLE_CONSOLE_EX
 #endif
   return ConSplitterTextInAddDevice (&mConIn, TextIn);
 }
@@ -1149,13 +1161,16 @@ Returns:
   EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *TextInEx;
+#endif  // DISABLE_CONSOLE_EX
 #endif
   if (NumberOfChildren == 0) {
     return EFI_SUCCESS;
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiSimpleTextInputExProtocolGuid,
@@ -1173,6 +1188,7 @@ Returns:
     return Status;
   }
   
+#endif  // DISABLE_CONSOLE_EX
 #endif
   Status = ConSplitterStop (
             This,
@@ -1445,6 +1461,7 @@ Returns:
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
 EFI_STATUS
 ConSplitterTextInExAddDevice (
@@ -1506,6 +1523,7 @@ ConSplitterTextInExDeleteDevice (
   return EFI_NOT_FOUND;
 }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 EFI_STATUS
 ConSplitterGrowMapTable (
@@ -2972,6 +2990,7 @@ Returns:
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
 STATIC
 BOOLEAN
@@ -3396,6 +3415,7 @@ ConSplitterTextInUnregisterKeyNotify (
   
 }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 EFI_STATUS
 EFIAPI

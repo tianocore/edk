@@ -32,6 +32,7 @@ Abstract:
 // Library constructors
 //
 VOID
+EFIAPI
 ProcessLibraryConstructorList (
   IN EFI_FFS_FILE_HEADER       *FfsHeader,
   IN EFI_PEI_SERVICES          **PeiServices

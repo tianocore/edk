@@ -250,8 +250,10 @@ Returns:
 
 --*/
 {
+  UINTN                     NoBlkIoHandles;
   UINTN                     NoSimpleFsHandles;
   UINTN                     NoLoadFileHandles;
+  EFI_HANDLE                *BlkIoHandle;
   EFI_HANDLE                *SimpleFsHandle;
   EFI_HANDLE                *LoadFileHandle;
   UINT16                    *VolumeLabel;
@@ -262,6 +264,7 @@ Returns:
   BM_FILE_CONTEXT           *FileContext;
   UINT16                    *TempStr;
   UINTN                     OptionNumber;
+  VOID                      *Buffer;
   EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
   UINT16                    DeviceType;
   BBS_BBS_DEVICE_PATH       BbsDevicePathNode;
@@ -273,6 +276,52 @@ Returns:
   NoLoadFileHandles = 0;
   OptionNumber      = 0;
   InitializeListHead (&FsOptionMenu.Head);
+
+  //
+  // Locate Handles that support BlockIo protocol
+  //
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiBlockIoProtocolGuid,
+                  NULL,
+                  &NoBlkIoHandles,
+                  &BlkIoHandle
+                  );
+  if (!EFI_ERROR (Status)) {
+
+    for (Index = 0; Index < NoBlkIoHandles; Index++) {
+      Status = gBS->HandleProtocol (
+                      BlkIoHandle[Index],
+                      &gEfiBlockIoProtocolGuid,
+                      &BlkIo
+                      );
+
+      if (EFI_ERROR (Status)) {
+        continue;
+      }
+
+      //
+      // Issue a dummy read to trigger reinstall of BlockIo protocol for removable media
+      //
+      if (BlkIo->Media->RemovableMedia) {
+        Buffer = EfiAllocateZeroPool (BlkIo->Media->BlockSize);
+        if (NULL == Buffer) {
+          SafeFreePool (BlkIoHandle);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        BlkIo->ReadBlocks (
+                BlkIo,
+                BlkIo->Media->MediaId,
+                0,
+                BlkIo->Media->BlockSize,
+                Buffer
+                );
+        SafeFreePool (Buffer);
+      }
+    }
+    SafeFreePool (BlkIoHandle);
+  }
 
   //
   // Locate Handles that support Simple File System protocol
@@ -1320,6 +1369,7 @@ Returns:
 
     NewMenuEntry = BOpt_CreateMenuEntry (BM_HANDLE_CONTEXT_SELECT);
     if (NULL == NewMenuEntry) {
+      SafeFreePool (DevicePathHandle);
       return EFI_OUT_OF_RESOURCES;
     }
 
@@ -1333,6 +1383,7 @@ Returns:
     InsertTailList (&DriverMenu.Head, &NewMenuEntry->Link);
 
   }
+  SafeFreePool (DevicePathHandle);
 
   DriverMenu.MenuNumber = OptionNumber;
   return EFI_SUCCESS;

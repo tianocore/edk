@@ -48,7 +48,7 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   ..\..\ScsiLib\Dxe
-  ..\..\\ScsiBus\Dxe
+  ..\..\ScsiBus\Dxe
 
 [nmake.common]
   IMAGE_ENTRY_POINT=ScsiDiskDriverEntryPoint

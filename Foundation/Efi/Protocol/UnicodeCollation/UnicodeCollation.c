@@ -23,5 +23,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (UnicodeCollation)
 
 EFI_GUID  gEfiUnicodeCollationProtocolGuid = EFI_UNICODE_COLLATION_PROTOCOL_GUID;
+EFI_GUID  gEfiUnicodeCollation2ProtocolGuid = EFI_UNICODE_COLLATION2_PROTOCOL_GUID;
 
 EFI_GUID_STRING(&gEfiUnicodeCollationProtocolGuid, "Unicode Collation Protocol", "EFI 1.0 Unicode Collation Protocol");
+EFI_GUID_STRING(&gEfiUnicodeCollation2ProtocolGuid, "Unicode Collation Protocol", "UEFI 2.10 Unicode Collation Protocol");

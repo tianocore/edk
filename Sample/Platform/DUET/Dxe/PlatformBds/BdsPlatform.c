@@ -32,7 +32,7 @@ Abstract:
 
 CHAR16  mFirmwareVendor[] = L"TianoCore.org";
 extern BOOLEAN  gConnectAllHappened;
-
+extern USB_CLASS_FORMAT_DEVICE_PATH gUsbClassKeyboardDevicePath;
 //
 // BDS Platform Functions
 //
@@ -292,6 +292,15 @@ Returns:
   GetSystemTablesFromHob ();
 
   UpdateMemoryMap ();
+  
+  //
+  // Append Usb Keyboard short form DevicePath into "ConInDev" 
+  //
+  BdsLibUpdateConsoleVariable (
+    VarConsoleInpDev,
+    (EFI_DEVICE_PATH_PROTOCOL *) &gUsbClassKeyboardDevicePath,
+    NULL
+    );
 }
 
 UINT64
@@ -1029,8 +1038,14 @@ Returns:
   
 --*/
 {
-  EFI_STATUS  Status;
-  UINT16      Timeout;
+  EFI_STATUS                         Status;
+  UINT16                             Timeout;
+  EFI_EVENT                          UserInputDurationTime;
+  EFI_LIST_ENTRY                     *Link;
+  BDS_COMMON_OPTION                  *BootOption;
+  UINTN                              Index;
+  EFI_INPUT_KEY                      Key;
+  EFI_TPL                            OldTpl;
 
   //
   // Init the time out value
@@ -1063,7 +1078,22 @@ Returns:
     //
     PlatformBdsNoConsoleAction ();
   }
-
+  //
+  // Create a 300ms duration event to ensure user has enough input time to enter Setup
+  //
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_TIMER,
+                  0,
+                  NULL,
+                  NULL,
+                  &UserInputDurationTime
+                  );
+  ASSERT (Status == EFI_SUCCESS);
+  Status = gBS->SetTimer (UserInputDurationTime, TimerRelative, 3000000);
+  ASSERT (Status == EFI_SUCCESS);
+  //
+  // Memory test and Logo show
+  //
   PlatformBdsDiagnostics (IGNORE, TRUE);
 
   //
@@ -1075,17 +1105,75 @@ Returns:
   // Give one chance to enter the setup if we
   // have the time out
   //
-  PlatformBdsEnterFrontPage (Timeout, FALSE);
-
-  //
-  // Here we have enough time to do the enumeration of boot device
-  //
-  if (!gConnectAllHappened) {
-    BdsLibConnectAllDriversToAllControllers ();
-    gConnectAllHappened = TRUE;
+  if (Timeout != 0) {
+    PlatformBdsEnterFrontPage (Timeout, FALSE);
   }
-  BdsLibEnumerateAllBootOption (BootOptionList);
 
+  //
+  //BdsLibConnectAll ();
+  //BdsLibEnumerateAllBootOption (BootOptionList);  
+  
+  //
+  // Please uncomment above ConnectAll and EnumerateAll code and remove following first boot
+  // checking code in real production tip.
+  //          
+  // In BOOT_WITH_FULL_CONFIGURATION boot mode, should always connect every device 
+  // and do enumerate all the default boot options. But in development system board, the boot mode 
+  // cannot be BOOT_ASSUMING_NO_CONFIGURATION_CHANGES because the machine box
+  // is always open. So the following code only do the ConnectAll and EnumerateAll at first boot.
+  //
+  Status = BdsLibBuildOptionFromVar (BootOptionList, L"BootOrder");
+  if (EFI_ERROR(Status)) {
+    //
+    // If cannot find "BootOrder" variable,  it may be first boot. 
+    // Try to connect all devices and enumerate all boot options here.
+    //
+    BdsLibConnectAll ();
+    BdsLibEnumerateAllBootOption (BootOptionList);
+  } 
+
+  //
+  // To give the User a chance to enter Setup here, if user set TimeOut is 0.
+  // BDS should still give user a chance to enter Setup
+  //
+  // Connect first boot option, and then check user input before exit 
+  //
+  for (Link = BootOptionList->ForwardLink; Link != BootOptionList;Link = Link->ForwardLink) {
+    BootOption = CR (Link, BDS_COMMON_OPTION, Link, BDS_LOAD_OPTION_SIGNATURE);
+    if (!IS_LOAD_OPTION_TYPE (BootOption->Attribute, LOAD_OPTION_ACTIVE)) {
+      //
+      // skip the header of the link list, becuase it has no boot option
+      //
+      continue;
+    } else {
+      //
+      // Make sure the boot option device path connected, but ignore the BBS device path
+      //
+      if (DevicePathType (BootOption->DevicePath) != BBS_DEVICE_PATH) {
+        BdsLibConnectDevicePath (BootOption->DevicePath);
+      }     
+      break;           
+    }
+  }       
+
+  //
+  // Check whether the user input after the duration time has expired 
+  //
+  OldTpl = BdsLibGetCurrentTpl();
+  gBS->RestoreTPL (EFI_TPL_APPLICATION); 
+  gBS->WaitForEvent (1, &UserInputDurationTime, &Index);
+  gBS->CloseEvent (UserInputDurationTime);
+  Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+  gBS->RaiseTPL (OldTpl);  
+  
+  if (!EFI_ERROR (Status)) {
+    //
+    // Enter Setup if user input 
+    //
+    Timeout = 0xffff;
+    PlatformBdsEnterFrontPage (Timeout, FALSE);
+  }
+  
   return ;
 
 }

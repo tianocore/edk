@@ -101,7 +101,7 @@ Returns:
 
     Status = gBS->CreateEvent (
                     EFI_EVENT_TIMER | EFI_EVENT_NOTIFY_SIGNAL,
-                    NET_TPL_TIMER,
+                    NET_TPL_EVENT,
                     TcpTicking,
                     NULL,
                     &mTcp4Timer.TimerEvent
@@ -323,7 +323,7 @@ Returns:
       " resource to create an Ip Io!\n"));
 
     Status = EFI_OUT_OF_RESOURCES;
-    goto ReleaseServiceData;
+    goto ON_ERROR;
   }
 
   //
@@ -338,7 +338,7 @@ Returns:
   Status                 = IpIoOpen (TcpServiceData->IpIo, &OpenData);
 
   if (EFI_ERROR (Status)) {
-      goto ReleaseServiceData;
+    goto ON_ERROR;
   }
 
   //
@@ -350,7 +350,7 @@ Returns:
     TCP4_DEBUG_ERROR (("Tcp4DriverBindingStart: Create TcpTimer"
       " Event failed with %r\n", Status));
 
-    goto ReleaseIpIo;
+    goto ON_ERROR;
   }
 
   //
@@ -370,7 +370,8 @@ Returns:
     TCP4_DEBUG_ERROR (("Tcp4DriverBindingStart: Install Tcp4 Service Binding"
       " Protocol failed for %r\n", Status));
 
-    goto ReleaseTimer;
+    Tcp4DestroyTimer ();
+    goto ON_ERROR;
   }
 
   //
@@ -380,19 +381,17 @@ Returns:
   TcpServiceData->Signature           = TCP4_DRIVER_SIGNATURE;
   TcpServiceData->DriverBindingHandle = This->DriverBindingHandle;
 
+  NetListInit (&TcpServiceData->SocketList);
+
   TcpSetVariableData (TcpServiceData);
 
   return EFI_SUCCESS;
 
-ReleaseTimer:
+ON_ERROR:
 
-  Tcp4DestroyTimer ();
-
-ReleaseIpIo:
-
-  IpIoDestroy (TcpServiceData->IpIo);
-
-ReleaseServiceData:
+  if (TcpServiceData->IpIo != NULL) {
+    IpIoDestroy (TcpServiceData->IpIo);
+  }
 
   NetFreePool (TcpServiceData);
 
@@ -431,19 +430,15 @@ Returns:
 {
   EFI_STATUS                          Status;
   EFI_HANDLE                          NicHandle;
-  EFI_SERVICE_BINDING_PROTOCOL        *Tcp4ServiceBinding;
+  EFI_SERVICE_BINDING_PROTOCOL        *ServiceBinding;
   TCP4_SERVICE_DATA                   *TcpServiceData;
-  TCP_CB                              *TcpPcb;
   SOCKET                              *Sock;
-  TCP4_PROTO_DATA                     *TcpProto;
-  NET_LIST_ENTRY                      *Entry;
-  NET_LIST_ENTRY                      *NextEntry;
 
   // Find the NicHandle where Tcp4 ServiceBinding Protocol is installed.
   //
   NicHandle = NetLibGetNicHandle (ControllerHandle, &gEfiIp4ProtocolGuid);
   if (NicHandle == NULL) {
-    return EFI_SUCCESS;
+    return EFI_DEVICE_ERROR;
   }
 
   //
@@ -452,7 +447,7 @@ Returns:
   Status = gBS->OpenProtocol (
                   NicHandle,
                   &gEfiTcp4ServiceBindingProtocolGuid,
-                  (VOID **) &Tcp4ServiceBinding,
+                  (VOID **) &ServiceBinding,
                   This->DriverBindingHandle,
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
@@ -462,90 +457,49 @@ Returns:
     TCP4_DEBUG_ERROR (("Tcp4DriverBindingStop: Locate Tcp4 Service "
       " Binding Protocol failed with %r\n", Status));
 
-    return Status;
+    return EFI_DEVICE_ERROR;
   }
 
-  TcpServiceData = TCP4_FROM_THIS (Tcp4ServiceBinding);
+  TcpServiceData = TCP4_FROM_THIS (ServiceBinding);
 
-  //
-  // Kill TCP driver
-  //
-  NET_LIST_FOR_EACH_SAFE (Entry, NextEntry, &mTcpRunQue) {
-    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
+  if (NumberOfChildren == 0) {
+    //
+    // Uninstall TCP servicebinding protocol
+    //
+    gBS->UninstallMultipleProtocolInterfaces (
+           NicHandle,
+           &gEfiTcp4ServiceBindingProtocolGuid,
+           ServiceBinding,
+           NULL
+           );
 
     //
-    // Try to destroy this child
+    // Destroy the IpIO consumed by TCP driver
     //
-    Sock     = TcpPcb->Sk;
-    TcpProto = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
+    IpIoDestroy (TcpServiceData->IpIo);
 
-    if (TcpProto->TcpService == TcpServiceData) {
-      Status = SockDestroyChild (Sock);
+    //
+    // Destroy the heartbeat timer.
+    //
+    Tcp4DestroyTimer ();
 
-      if (EFI_ERROR (Status)) {
+    //
+    // Clear the variable.
+    //
+    TcpClearVariableData (TcpServiceData);
 
-        TCP4_DEBUG_ERROR (("Tcp4DriverBindingStop: Destroy Tcp "
-          "instance failed with %r\n", Status));
-        return Status;
-      }
+    //
+    // Release the TCP service data
+    //
+    NetFreePool (TcpServiceData);
+  } else {
+
+    while (!NetListIsEmpty (&TcpServiceData->SocketList)) {
+      Sock = NET_LIST_HEAD (&TcpServiceData->SocketList, SOCKET, Link);
+
+      ServiceBinding->DestroyChild (ServiceBinding, Sock->SockHandle);
     }
   }
-
-  NET_LIST_FOR_EACH_SAFE (Entry, NextEntry, &mTcpListenQue) {
-    TcpPcb = NET_LIST_USER_STRUCT (Entry, TCP_CB, List);
-
-    //
-    // Try to destroy this child
-    //
-    Sock     = TcpPcb->Sk;
-    TcpProto = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
-
-    if (TcpProto->TcpService == TcpServiceData) {
-      Status = SockDestroyChild (TcpPcb->Sk);
-      if (EFI_ERROR (Status)) {
-
-        TCP4_DEBUG_ERROR (("Tcp4DriverBindingStop: Destroy Tcp "
-          "instance failed with %r\n", Status));
-        return Status;
-      }
-    }
-  }
-
-  //
-  // Uninstall TCP servicebinding protocol
-  //
-  Status = gBS->UninstallMultipleProtocolInterfaces (
-                  NicHandle,
-                  &gEfiTcp4ServiceBindingProtocolGuid,
-                  Tcp4ServiceBinding,
-                  NULL
-                  );
-  if (EFI_ERROR (Status)) {
-
-    TCP4_DEBUG_ERROR (("Tcp4DriverBindingStop: Uninstall TCP service "
-      "binding protocol failed with %r\n", Status));
-    return Status;
-  }
-
-  //
-  // Destroy the IpIO consumed by TCP driver
-  //
-  Status = IpIoDestroy (TcpServiceData->IpIo);
-
-  //
-  // Destroy the heartbeat timer.
-  //
-  Tcp4DestroyTimer ();
-
-  //
-  // Clear the variable.
-  //
-  TcpClearVariableData (TcpServiceData);
-
-  //
-  // Release the TCP service data
-  //
-  NetFreePool (TcpServiceData);
 
   return Status;
 }
@@ -647,6 +601,8 @@ Returns:
            Sock->SockHandle
            );
     SockDestroyChild (Sock);
+  } else {
+    NetListInsertTail (&TcpServiceData->SocketList, &Sock->Link);
   }
 
 ON_EXIT:
@@ -718,7 +674,9 @@ Returns:
   TcpProtoData   = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
   TcpServiceData = TcpProtoData->TcpService;
 
-  Status = SockDestroyChild (Sock);
+  NetListRemoveEntry (&Sock->Link);
+
+  SockDestroyChild (Sock);
 
   //
   // Close the device path protocol
@@ -741,6 +699,7 @@ Returns:
          );
 
 ON_EXIT:
+
   NET_RESTORE_TPL (OldTpl);
   return Status;
 }

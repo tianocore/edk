@@ -133,7 +133,8 @@ Returns:
 
   Status = Udp4CreateService (Udp4Service, This->DriverBindingHandle, ControllerHandle);
   if (EFI_ERROR (Status)) {
-    goto FREE_SERVICE;
+    NetFreePool (Udp4Service);
+    return Status;
   }
 
   //
@@ -146,20 +147,11 @@ Returns:
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    goto CLEAN_SERVICE;
+    Udp4CleanService (Udp4Service);
+    NetFreePool (Udp4Service);
+  } else {
+    Udp4SetVariableData (Udp4Service);
   }
-
-  Udp4SetVariableData (Udp4Service);
-
-  return Status;
-
-CLEAN_SERVICE:
-
-  Udp4CleanService (Udp4Service);
-
-FREE_SERVICE:
-
-  NetFreePool (Udp4Service);
 
   return Status;
 }
@@ -204,7 +196,7 @@ Returns:
   //
   NicHandle = NetLibGetNicHandle (ControllerHandle, &gEfiIp4ProtocolGuid);
   if (NicHandle == NULL) {
-    return EFI_SUCCESS;
+    return EFI_DEVICE_ERROR;
   }
 
   //
@@ -224,35 +216,30 @@ Returns:
 
   Udp4Service = UDP4_SERVICE_DATA_FROM_THIS (ServiceBinding);
 
-  //
-  // Uninstall the UDP4 ServiceBinding Protocol.
-  //
-  Status = gBS->UninstallMultipleProtocolInterfaces (
-                  NicHandle,
-                  &gEfiUdp4ServiceBindingProtocolGuid,
-                  &Udp4Service->ServiceBinding,
-                  NULL
-                  );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
+  if (NumberOfChildren == 0) {
+
+    gBS->UninstallMultipleProtocolInterfaces (
+           NicHandle,
+           &gEfiUdp4ServiceBindingProtocolGuid,
+           &Udp4Service->ServiceBinding,
+           NULL
+           );
+
+    Udp4ClearVariableData (Udp4Service);
+
+    Udp4CleanService (Udp4Service);
+
+    NetFreePool (Udp4Service);
+  } else {
+
+    while (!NetListIsEmpty (&Udp4Service->ChildrenList)) {
+      Instance = NET_LIST_HEAD (&Udp4Service->ChildrenList, UDP4_INSTANCE_DATA, Link);
+
+      ServiceBinding->DestroyChild (ServiceBinding, Instance->ChildHandle);
+    }
   }
 
-  while (!NetListIsEmpty (&Udp4Service->ChildrenList)) {
-    //
-    // Destroy all instances.
-    //
-    Instance = NET_LIST_HEAD (&Udp4Service->ChildrenList, UDP4_INSTANCE_DATA, Link);
-
-    ServiceBinding->DestroyChild (ServiceBinding, Instance->ChildHandle);
-  }
-
-  Udp4ClearVariableData (Udp4Service);
-
-  Udp4CleanService (Udp4Service);
-
-  NetFreePool (Udp4Service);
-
-  return EFI_SUCCESS;
+  return Status;
 }
 
 EFI_STATUS
@@ -299,7 +286,7 @@ Returns:
   //
   // Allocate the instance private data structure.
   // 
-  Instance = NetAllocatePool (sizeof (UDP4_INSTANCE_DATA));
+  Instance = NetAllocateZeroPool (sizeof (UDP4_INSTANCE_DATA));
   if (Instance == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -312,7 +299,7 @@ Returns:
   Instance->IpInfo = IpIoAddIp (Udp4Service->IpIo);
   if (Instance->IpInfo == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    goto FREE_INSTANCE;
+    goto ON_ERROR;
   }
 
   //
@@ -325,7 +312,7 @@ Returns:
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    goto REMOVE_IPINFO;
+    goto ON_ERROR;
   }
 
   Instance->ChildHandle = *ChildHandle;
@@ -342,7 +329,7 @@ Returns:
                   EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
                   );
   if (EFI_ERROR (Status)) {
-    goto UNINSTALL_PROTOCOL;
+    goto ON_ERROR;
   }
 
   OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
@@ -355,29 +342,29 @@ Returns:
 
   NET_RESTORE_TPL (OldTpl);
 
-  return Status;
+  return EFI_SUCCESS;
 
-UNINSTALL_PROTOCOL:
+ON_ERROR:
 
-  gBS->UninstallMultipleProtocolInterfaces (
-         Instance->ChildHandle,
-         &gEfiUdp4ProtocolGuid,
-         &Instance->Udp4Proto,
-         NULL
-         );
+  if (Instance->ChildHandle != NULL) {
+    gBS->UninstallMultipleProtocolInterfaces (
+           Instance->ChildHandle,
+           &gEfiUdp4ProtocolGuid,
+           &Instance->Udp4Proto,
+           NULL
+           );
+  }
 
-REMOVE_IPINFO:
-
-  IpIoRemoveIp (Udp4Service->IpIo, Instance->IpInfo);
-  
-FREE_INSTANCE:
+  if (Instance->IpInfo != NULL) {
+    IpIoRemoveIp (Udp4Service->IpIo, Instance->IpInfo);
+  }
 
   Udp4CleanInstance (Instance);
 
   NetFreePool (Instance);
 
   return Status;
-}
+ }
 
 EFI_STATUS
 EFIAPI

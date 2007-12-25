@@ -63,6 +63,11 @@ COMPONENT_TYPE       = LIBRARY
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Sample\Platform\Generic\Pei\Capsule
   $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\GenericBds
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+#
+# Only required if EFI_SPECIFICATION_VERSION >= 0x0002000A
+#
+  $(EDK_SOURCE)\Foundation\Library\Dxe\UefiEfiIfrSupportLib
 
 [includes.ia32]
   $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include

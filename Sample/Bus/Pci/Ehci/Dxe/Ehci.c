@@ -1603,10 +1603,13 @@ EhcDriverBindingStart (
     goto FREE_POOL;
   }
   
+#ifdef USB_LEGACY_OFF 
   //
-  // Robustnesss improvement such as for UoL
+  // the USB_LEGACY_OFF can be defined at PlatformTools.env 
   //
   EhcClearLegacySupport (Ehc);
+#endif
+
   EhcResetHC (Ehc, EHC_RESET_TIMEOUT);
 
   Status = EhcInitHC (Ehc);

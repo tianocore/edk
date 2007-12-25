@@ -23,6 +23,34 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "UsbBus.h"
 
+//
+// if RemainingDevicePath== NULL, then all Usb child devices in this bus are wanted.
+// Use a shor form Usb class Device Path, which could match any usb device, in WantedUsbIoDPList to indicate all Usb devices 
+// are wanted Usb devices
+//
+STATIC USB_CLASS_FORMAT_DEVICE_PATH mAllUsbClassDevicePath = {
+  {
+    {
+      MESSAGING_DEVICE_PATH,
+      MSG_USB_CLASS_DP,
+      (UINT8) (sizeof (USB_CLASS_DEVICE_PATH)),
+      (UINT8) ((sizeof (USB_CLASS_DEVICE_PATH)) >> 8)
+    },
+    0xffff, // VendorId 
+    0xffff, // ProductId 
+    0xff,   // DeviceClass 
+    0xff,   // DeviceSubClass
+    0xff    // DeviceProtocol
+  },
+
+  { 
+    END_DEVICE_PATH_TYPE, 
+    END_ENTIRE_DEVICE_PATH_SUBTYPE, 
+    END_DEVICE_PATH_LENGTH, 
+    0
+  }
+};
+
 EFI_STATUS
 UsbHcGetCapability (
   IN  USB_BUS             *UsbBus,
@@ -858,5 +886,655 @@ Returns:
   EfiDebugVPrint (EFI_D_ERROR, Format, Marker);
   VA_END (Marker);
 }
-
 #endif
+
+EFI_DEVICE_PATH_PROTOCOL *
+EFIAPI
+GetUsbDPFromFullDP (
+  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  )
+/*++
+
+Routine Description:
+  Create a new device path which only contain the first Usb part of the DevicePath
+
+Arguments:
+  DevicePath - A full device path which contain the usb nodes
+
+Returns:
+ A new device path which only contain the Usb part of the DevicePath
+    
+--*/
+{ 
+  EFI_DEVICE_PATH_PROTOCOL    *UsbDevicePathPtr;
+  EFI_DEVICE_PATH_PROTOCOL    *UsbDevicePathBeginPtr;
+  EFI_DEVICE_PATH_PROTOCOL    *UsbDevicePathEndPtr;
+  UINTN                       Size;
+  
+  //
+  // Get the Usb part first Begin node in full device path
+  //
+  UsbDevicePathBeginPtr = DevicePath;
+  while ( (!EfiIsDevicePathEnd (UsbDevicePathBeginPtr))&&
+         ((UsbDevicePathBeginPtr->Type != MESSAGING_DEVICE_PATH) || 
+         (UsbDevicePathBeginPtr->SubType != MSG_USB_DP && 
+          UsbDevicePathBeginPtr->SubType != MSG_USB_CLASS_DP 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          && UsbDevicePathBeginPtr->SubType != MSG_USB_WWID_DP
+#endif
+          ))) {
+          
+    UsbDevicePathBeginPtr = NextDevicePathNode(UsbDevicePathBeginPtr);
+  }
+
+  //
+  // Get the Usb part first End node in full device path
+  //
+  UsbDevicePathEndPtr = UsbDevicePathBeginPtr;
+  while ((!EfiIsDevicePathEnd (UsbDevicePathEndPtr))&&
+         (UsbDevicePathEndPtr->Type == MESSAGING_DEVICE_PATH) && 
+         (UsbDevicePathEndPtr->SubType == MSG_USB_DP || 
+          UsbDevicePathEndPtr->SubType == MSG_USB_CLASS_DP 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+          || UsbDevicePathEndPtr->SubType == MSG_USB_WWID_DP
+#endif
+          )) {
+          
+    UsbDevicePathEndPtr = NextDevicePathNode(UsbDevicePathEndPtr);
+  }
+  
+  Size = EfiDevicePathSize(UsbDevicePathBeginPtr) - EfiDevicePathSize (UsbDevicePathEndPtr);
+  if (Size ==0){
+    //
+    // The passed in DevicePath does not contain the usb nodes
+    //
+    return NULL;
+  }
+  
+  //
+  // Create a new device path which only contain the above Usb part
+  //
+  UsbDevicePathPtr = EfiLibAllocateZeroPool (Size + sizeof (EFI_DEVICE_PATH_PROTOCOL));
+  ASSERT (UsbDevicePathPtr != NULL);
+  EfiCopyMem (UsbDevicePathPtr, UsbDevicePathBeginPtr, Size);
+  //
+  // Append end device path node
+  //
+  UsbDevicePathEndPtr = (EFI_DEVICE_PATH_PROTOCOL *) ((UINTN) UsbDevicePathPtr + Size);
+  SetDevicePathEndNode (UsbDevicePathEndPtr);
+  return UsbDevicePathPtr;  
+}
+
+BOOLEAN
+EFIAPI
+SearchUsbDPInList (
+  IN EFI_DEVICE_PATH_PROTOCOL     *UsbDP,
+  IN EFI_LIST_ENTRY               *UsbIoDPList
+  )
+/*++
+
+Routine Description:
+  Check whether a usb device path is in a DEVICE_PATH_LIST_ITEM list.
+
+Arguments:
+  UsbDP            - a usb device path of DEVICE_PATH_LIST_ITEM
+  UsbIoDPList - a DEVICE_PATH_LIST_ITEM list
+
+Returns:
+  TRUE    - there is a DEVICE_PATH_LIST_ITEM in UsbIoDPList which contains the passed in UsbDP
+  FALSE  - there is no DEVICE_PATH_LIST_ITEM in UsbIoDPList which contains the passed in UsbDP
+    
+--*/
+{ 
+  EFI_LIST_ENTRY              *ListIndex;
+  DEVICE_PATH_LIST_ITEM       *ListItem;
+  BOOLEAN                     Found;
+  
+  //
+  // Check that UsbDP and UsbIoDPList are valid
+  //
+  if ((UsbIoDPList == NULL) || (UsbDP == NULL)) {
+    return FALSE;
+  }
+  
+  Found = FALSE;
+  ListIndex = UsbIoDPList->ForwardLink;
+  while (ListIndex != UsbIoDPList){
+    ListItem = CR(ListIndex, DEVICE_PATH_LIST_ITEM, Link, DEVICE_PATH_LIST_ITEM_SIGNATURE);
+    //
+    // Compare DEVICE_PATH_LIST_ITEM.DevicePath[]
+    //
+    ASSERT (ListItem->DevicePath != NULL);
+    if (EfiDevicePathSize (UsbDP) == EfiDevicePathSize (ListItem->DevicePath)) {
+      if (EfiCompareMem (UsbDP, ListItem->DevicePath, EfiDevicePathSize (UsbDP)) == 0) {
+        Found = TRUE;
+        break;
+      }        
+    } 
+    ListIndex =  ListIndex->ForwardLink;
+  }      
+
+  return Found;  
+}
+
+EFI_STATUS
+EFIAPI
+AddUsbDPToList (
+  IN EFI_DEVICE_PATH_PROTOCOL     *UsbDP,
+  IN EFI_LIST_ENTRY               *UsbIoDPList
+  )
+/*++
+
+Routine Description:
+    Add a usb device path into the DEVICE_PATH_LIST_ITEM list.
+
+Arguments:
+  UsbDP            - a usb device path of DEVICE_PATH_LIST_ITEM
+  UsbIoDPList - a DEVICE_PATH_LIST_ITEM list
+
+Returns:
+    EFI_INVALID_PARAMETER
+    EFI_SUCCESS
+    
+--*/
+{ 
+  DEVICE_PATH_LIST_ITEM       *ListItem;
+
+  //
+  // Check that UsbDP and UsbIoDPList are valid
+  //
+  if ((UsbIoDPList == NULL) || (UsbDP == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  if (SearchUsbDPInList (UsbDP, UsbIoDPList)){
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Prepare the usbio device path DEVICE_PATH_LIST_ITEM structure.
+  //
+  ListItem = EfiLibAllocateZeroPool (sizeof (DEVICE_PATH_LIST_ITEM)); 
+  ASSERT (ListItem != NULL);
+  ListItem->Signature = DEVICE_PATH_LIST_ITEM_SIGNATURE;
+  ListItem->DevicePath = EfiDuplicateDevicePath (UsbDP);  
+  
+  InsertTailList (UsbIoDPList, &ListItem->Link);
+
+  return EFI_SUCCESS;  
+}
+
+
+BOOLEAN
+EFIAPI
+MatchUsbClass (
+  IN USB_CLASS_DEVICE_PATH      *UsbClassDevicePathPtr,
+  IN USB_INTERFACE              *UsbIf
+  )
+/*++
+
+Routine Description:
+  Check whether usb device, whose interface is UsbIf, matches the usb class which indicated by 
+  UsbClassDevicePathPtr whose is a short form usb class device path
+
+Arguments:
+  UsbClassDevicePathPtr    - a short form usb class device path 
+  UsbIf                                 - a usb device interface
+
+Returns:
+  TRUE    - the usb device match the usb class
+  FALSE  - the usb device does not match the usb class
+    
+--*/
+{
+  USB_INTERFACE_DESC            *IfDesc;
+  EFI_USB_INTERFACE_DESCRIPTOR  *ActIfDesc;
+  EFI_USB_DEVICE_DESCRIPTOR     *DevDesc;
+
+  
+  if ((UsbClassDevicePathPtr->Header.Type != MESSAGING_DEVICE_PATH) ||
+      (UsbClassDevicePathPtr->Header.SubType != MSG_USB_CLASS_DP)){
+    ASSERT (0);
+    return FALSE;
+  }
+      
+  IfDesc       = UsbIf->IfDesc;
+  ActIfDesc    = &(IfDesc->Settings[IfDesc->ActiveIndex]->Desc);
+  DevDesc      = &(UsbIf->Device->DevDesc->Desc);
+  
+  //
+  // If connect class policy, determine whether to create device handle by the five fields 
+  // in class device path node. 
+  //
+  // In addtion, hub interface is always matched for this policy.
+  // 
+  if ((ActIfDesc->InterfaceClass == USB_HUB_CLASS_CODE) && 
+      (ActIfDesc->InterfaceSubClass == USB_HUB_SUBCLASS_CODE)) {
+    return TRUE;
+  }
+
+  //
+  // If vendor id or product id is 0xffff, they will be ignored. 
+  //
+  if ((UsbClassDevicePathPtr->VendorId == 0xffff || UsbClassDevicePathPtr->VendorId == DevDesc->IdVendor) &&
+      (UsbClassDevicePathPtr->ProductId == 0xffff || UsbClassDevicePathPtr->ProductId == DevDesc->IdProduct)) {
+      
+    //
+    // If class or subclass or protocol is 0, the counterparts in interface should be checked.
+    //
+    if (DevDesc->DeviceClass == 0 && 
+        DevDesc->DeviceSubClass == 0 && 
+        DevDesc->DeviceProtocol == 0) {
+     
+      if ((UsbClassDevicePathPtr->DeviceClass == ActIfDesc->InterfaceClass ||
+                                          UsbClassDevicePathPtr->DeviceClass == 0xff) && 
+          (UsbClassDevicePathPtr->DeviceSubClass == ActIfDesc->InterfaceSubClass ||
+                                       UsbClassDevicePathPtr->DeviceSubClass == 0xff) &&
+          (UsbClassDevicePathPtr->DeviceProtocol == ActIfDesc->InterfaceProtocol) || 
+                                       UsbClassDevicePathPtr->DeviceProtocol == 0xff) {
+        return TRUE;
+      }
+      
+    } else if ((UsbClassDevicePathPtr->DeviceClass != DevDesc->DeviceClass ||
+                                         UsbClassDevicePathPtr->DeviceClass == 0xff) && 
+               (UsbClassDevicePathPtr->DeviceSubClass == DevDesc->DeviceSubClass ||
+                                      UsbClassDevicePathPtr->DeviceSubClass == 0xff) &&
+               (UsbClassDevicePathPtr->DeviceProtocol == DevDesc->DeviceProtocol) ||
+                                      UsbClassDevicePathPtr->DeviceProtocol == 0xff) {
+
+      return TRUE;
+    }
+  }
+  
+  return FALSE;
+}
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+STATIC
+BOOLEAN
+MatchUsbWwid (
+  IN USB_WWID_DEVICE_PATH       *UsbWWIDDevicePathPtr,
+  IN USB_INTERFACE              *UsbIf
+  )
+/*++
+
+Routine Description:
+  Check whether usb device, whose interface is UsbIf, matches the usb WWID requirement which indicated by 
+  UsbWWIDDevicePathPtr whose is a short form usb WWID device path
+
+Arguments:
+  UsbClassDevicePathPtr    - a short form usb WWID device path 
+  UsbIf                                 - a usb device interface
+
+Returns:
+  TRUE    - the usb device match the usb WWID requirement 
+  FALSE  - the usb device does not match the usb WWID requirement
+    
+--*/
+{
+  USB_INTERFACE_DESC            *IfDesc;
+  EFI_USB_INTERFACE_DESCRIPTOR  *ActIfDesc;
+  EFI_USB_DEVICE_DESCRIPTOR     *DevDesc;
+  EFI_USB_STRING_DESCRIPTOR     *StrDesc;
+  UINT16                        *SnString;
+  
+  if ((UsbWWIDDevicePathPtr->Header.Type != MESSAGING_DEVICE_PATH) ||
+     (UsbWWIDDevicePathPtr->Header.SubType != MSG_USB_WWID_DP )){
+    ASSERT (0);
+    return FALSE;
+  }
+  
+  IfDesc       = UsbIf->IfDesc;
+  ActIfDesc    = &(IfDesc->Settings[IfDesc->ActiveIndex]->Desc);
+  DevDesc      = &(UsbIf->Device->DevDesc->Desc);
+  StrDesc      = UsbGetOneString (UsbIf->Device, DevDesc->StrSerialNumber, USB_US_LAND_ID);
+  SnString     = (UINT16 *) ((UINT8 *)UsbWWIDDevicePathPtr + 10);
+  
+  //
+  //In addtion, hub interface is always matched for this policy.
+  //
+  if ((ActIfDesc->InterfaceClass == USB_HUB_CLASS_CODE) && 
+      (ActIfDesc->InterfaceSubClass == USB_HUB_SUBCLASS_CODE)) {
+    return TRUE;
+  }
+  //
+  // If connect wwid policy, determine the objective device by the serial number of 
+  // device descriptor. 
+  // Get serial number index from device descriptor, then get serial number by index
+  // and land id, compare the serial number with wwid device path node at last
+  //
+  // BugBug: only check serial number here, should check Interface Number, Device Vendor Id, Device Product Id  in later version
+  // 
+  if (StrDesc != NULL && !EfiStrnCmp (StrDesc->String, SnString, StrDesc->Length)) { 
+    
+    return TRUE;
+  }
+
+  return FALSE;
+}
+#endif
+
+EFI_STATUS
+EFIAPI
+UsbBusFreeUsbDPList (
+  IN EFI_LIST_ENTRY      *UsbIoDPList
+  )
+/*++
+
+Routine Description:
+   Free a DEVICE_PATH_LIST_ITEM list
+
+Arguments:
+  UsbIoDPList - a DEVICE_PATH_LIST_ITEM list pointer
+
+Returns:
+    EFI_INVALID_PARAMETER
+    EFI_SUCCESS
+    
+--*/
+{ 
+  EFI_LIST_ENTRY              *ListIndex;
+  DEVICE_PATH_LIST_ITEM       *ListItem;
+
+  //
+  // Check that ControllerHandle is a valid handle
+  //
+  if (UsbIoDPList == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ListIndex = UsbIoDPList->ForwardLink;
+  while (ListIndex != UsbIoDPList){
+    ListItem = CR(ListIndex, DEVICE_PATH_LIST_ITEM, Link, DEVICE_PATH_LIST_ITEM_SIGNATURE);
+    //
+    // Free DEVICE_PATH_LIST_ITEM.DevicePath[]
+    //
+    if (ListItem->DevicePath != NULL){
+      EfiLibSafeFreePool(ListItem->DevicePath);     
+    }   
+    //
+    // Free DEVICE_PATH_LIST_ITEM itself
+    //
+    ListIndex =  ListIndex->ForwardLink;
+    RemoveEntryList (&ListItem->Link);
+    EfiLibSafeFreePool (ListItem);  
+  }      
+
+  InitializeListHead (UsbIoDPList);
+  return EFI_SUCCESS;  
+}
+
+EFI_STATUS
+EFIAPI
+UsbBusAddWantedUsbIoDP (
+  IN EFI_USB_BUS_PROTOCOL         *UsbBusId,
+  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
+  )
+/*++
+
+Routine Description:
+  Store a wanted usb child device info (its Usb part of device path) which is indicated by
+  RemainingDevicePath in a Usb bus which  is indicated by UsbBusId
+
+Arguments:
+  UsbBusId - point to EFI_USB_BUS_PROTOCOL interface
+  RemainingDevicePath - The remaining device patch
+  
+Returns:
+  EFI_SUCCESS  
+  EFI_INVALID_PARAMETER
+  EFI_OUT_OF_RESOURCES 
+
+--*/
+{
+  USB_BUS                       *Bus;
+  EFI_STATUS                    Status;
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePathPtr;
+  
+  //
+  // Check whether remaining device path is valid
+  //
+  if (RemainingDevicePath != NULL) {
+    if ((RemainingDevicePath->Type    != MESSAGING_DEVICE_PATH) ||
+        (RemainingDevicePath->SubType != MSG_USB_DP && 
+         RemainingDevicePath->SubType != MSG_USB_CLASS_DP 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+         && RemainingDevicePath->SubType != MSG_USB_WWID_DP
+#endif
+         )) {
+      return EFI_INVALID_PARAMETER;
+    }
+  }
+  
+  if (UsbBusId == NULL){
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  Bus = USB_BUS_FROM_THIS (UsbBusId);  
+  
+  if (RemainingDevicePath == NULL) {
+    //
+    // RemainingDevicePath== NULL means all Usb devices in this bus are wanted.
+    // Here use a Usb class Device Path in WantedUsbIoDPList to indicate all Usb devices 
+    // are wanted Usb devices
+    //
+    Status = UsbBusFreeUsbDPList (&Bus->WantedUsbIoDPList);
+    ASSERT (!EFI_ERROR (Status));
+    DevicePathPtr = EfiDuplicateDevicePath ((EFI_DEVICE_PATH_PROTOCOL *) &mAllUsbClassDevicePath);
+  } else {
+    //
+    // Create new Usb device path according to the usb part in remaining device path
+    //
+    DevicePathPtr = GetUsbDPFromFullDP (RemainingDevicePath);
+  }
+  
+  ASSERT (DevicePathPtr != NULL); 
+  Status = AddUsbDPToList (DevicePathPtr, &Bus->WantedUsbIoDPList);
+  ASSERT (!EFI_ERROR (Status));  
+  gBS->FreePool (DevicePathPtr);
+  return EFI_SUCCESS;
+}
+
+BOOLEAN
+EFIAPI
+UsbBusIsWantedUsbIO (
+  IN USB_BUS                 *Bus,
+  IN USB_INTERFACE           *UsbIf
+  )
+/*++
+
+Routine Description:
+  Check whether a usb child  device is the wanted device in a bus
+
+Arguments:
+  Bus     -   The Usb bus's private data pointer
+  UsbIf -  The usb child  device inferface
+  
+Returns:
+  EFI_SUCCESS   
+  EFI_INVALID_PARAMETER 
+  EFI_OUT_OF_RESOURCES 
+
+--*/
+{
+  EFI_DEVICE_PATH_PROTOCOL      *DevicePathPtr;
+  EFI_LIST_ENTRY                *WantedUsbIoDPListPtr;
+  EFI_LIST_ENTRY                *WantedListIndex;
+  DEVICE_PATH_LIST_ITEM         *WantedListItem;
+  BOOLEAN                       DoConvert;
+  
+  //
+  // Check whether passed in parameters are valid
+  //
+  if ((UsbIf == NULL) || (Bus == NULL)) {
+    return FALSE;
+  }
+  //
+  // Check whether UsbIf is Hub
+  //
+  if (UsbIf->IsHub) {
+    return TRUE;
+  }
+    
+  //
+  // Check whether all Usb devices in this bus are wanted
+  //
+  if (SearchUsbDPInList ((EFI_DEVICE_PATH_PROTOCOL *)&mAllUsbClassDevicePath, &Bus->WantedUsbIoDPList)){
+    return TRUE;
+  }
+  
+  //
+  // Check whether the Usb device match any item in WantedUsbIoDPList
+  //
+  WantedUsbIoDPListPtr = &Bus->WantedUsbIoDPList;
+  //
+  // Create new Usb device path according to the usb part in UsbIo full device path
+  //
+  DevicePathPtr = GetUsbDPFromFullDP (UsbIf->DevicePath);
+  ASSERT (DevicePathPtr != NULL);   
+  
+  DoConvert = FALSE;
+  WantedListIndex = WantedUsbIoDPListPtr->ForwardLink;
+  while (WantedListIndex != WantedUsbIoDPListPtr){
+    WantedListItem = CR(WantedListIndex, DEVICE_PATH_LIST_ITEM, Link, DEVICE_PATH_LIST_ITEM_SIGNATURE);
+    ASSERT (WantedListItem->DevicePath->Type == MESSAGING_DEVICE_PATH);
+    switch (WantedListItem->DevicePath->SubType) {
+    case MSG_USB_DP:
+      if (EfiDevicePathSize (WantedListItem->DevicePath) == EfiDevicePathSize (DevicePathPtr)) {
+        if (EfiCompareMem (
+              WantedListItem->DevicePath,
+              DevicePathPtr,
+              EfiDevicePathSize (DevicePathPtr)) == 0
+            ) {
+          DoConvert = TRUE;
+        }
+      }
+      break;
+    case MSG_USB_CLASS_DP:
+      if (MatchUsbClass((USB_CLASS_DEVICE_PATH *)WantedListItem->DevicePath, UsbIf)) {
+        DoConvert = TRUE;
+      }
+      break;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    case MSG_USB_WWID_DP:
+      if (MatchUsbWwid((USB_WWID_DEVICE_PATH *)WantedListItem->DevicePath, UsbIf)) {
+        DoConvert = TRUE;
+      }
+      break;
+#endif
+    default:
+      ASSERT (0);
+      break;
+    }
+    
+    if (DoConvert) {
+      break;
+    }
+    
+    WantedListIndex =  WantedListIndex->ForwardLink;
+  }
+  gBS->FreePool (DevicePathPtr);  
+  
+  //
+  // Check whether the new Usb device path is wanted
+  //
+  if (DoConvert){
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+EFI_STATUS
+EFIAPI
+UsbBusRecursivelyConnectWantedUsbIo (
+  IN EFI_USB_BUS_PROTOCOL         *UsbBusId
+  )
+/*++
+
+Routine Description:
+  Recursively connnect every wanted usb child device to ensure they all fully connected.
+  Check all the child Usb IO handles in this bus, recursively connecte if it is wanted usb child device
+Arguments:
+
+  UsbBusId - point to EFI_USB_BUS_PROTOCOL interface
+  
+Returns:
+
+  EFI_SUCCESS
+  EFI_INVALID_PARAMETER 
+  EFI_OUT_OF_RESOURCES  
+
+--*/
+{
+  USB_BUS                       *Bus;
+  EFI_STATUS                    Status;
+  UINTN                         Index;
+  EFI_USB_IO_PROTOCOL           *UsbIo;
+  USB_INTERFACE                 *UsbIf;
+  UINTN                         UsbIoHandleCount;
+  EFI_HANDLE                    *UsbIoBuffer;
+  EFI_DEVICE_PATH_PROTOCOL      *UsbIoDevicePath;
+  
+  if (UsbBusId == NULL){
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  Bus = USB_BUS_FROM_THIS (UsbBusId);  
+
+  //
+  // Get all Usb IO handles in system
+  //
+  UsbIoHandleCount = 0;
+  Status = gBS->LocateHandleBuffer (ByProtocol, &gEfiUsbIoProtocolGuid, NULL, &UsbIoHandleCount, &UsbIoBuffer);
+  if (Status == EFI_NOT_FOUND || UsbIoHandleCount == 0) {
+    return EFI_SUCCESS;
+  } 
+  ASSERT (!EFI_ERROR (Status));
+  
+  for (Index = 0; Index < UsbIoHandleCount; Index++) {
+    //
+    // Check whether the USB IO handle is a child of this bus
+    // Note: The usb child handle maybe invalid because of hot plugged out during the loop
+    //
+    UsbIoDevicePath = NULL;
+    Status = gBS->HandleProtocol (UsbIoBuffer[Index], &gEfiDevicePathProtocolGuid, (VOID *) &UsbIoDevicePath);
+    if (EFI_ERROR (Status) || UsbIoDevicePath == NULL) {
+      continue;
+    }
+    if (EfiCompareMem (
+            UsbIoDevicePath,
+            Bus->DevicePath,
+            (EfiDevicePathSize (Bus->DevicePath) - sizeof (EFI_DEVICE_PATH_PROTOCOL))
+            ) != 0) {
+      continue;
+    }
+    
+    //
+    // Get the child Usb IO interface
+    //
+    Status = gBS->HandleProtocol(
+                     UsbIoBuffer[Index],  
+                     &gEfiUsbIoProtocolGuid, 
+                     &UsbIo
+                     );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+    UsbIf   = USB_INTERFACE_FROM_USBIO (UsbIo);
+    
+    if (UsbBusIsWantedUsbIO (Bus, UsbIf)) {
+      if (!UsbIf->IsManaged) {
+        //
+        // Recursively connect the wanted Usb Io handle
+        //
+        USB_DEBUG (("UsbConnectDriver: TPL before connect is %d\n", UsbGetCurrentTpl ()));
+        Status            = gBS->ConnectController (UsbIf->Handle, NULL, NULL, TRUE);
+        UsbIf->IsManaged  = (BOOLEAN)!EFI_ERROR (Status);
+        USB_DEBUG (("UsbConnectDriver: TPL after connect is %d\n", UsbGetCurrentTpl()));      
+      }
+    } 
+  }
+  
+  return EFI_SUCCESS;
+}

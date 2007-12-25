@@ -585,75 +585,6 @@ Returns:
   return Buffer;
 }
 
-EFI_DRIVER_BINDING_PROTOCOL *
-GetBindingProtocolFromImageHandle (
-  IN  EFI_HANDLE   ImageHandle,
-  OUT EFI_HANDLE   *BindingHandle
-  )
-/*++
-
-Routine Description:
-  Get the first Binding protocol which has the specific image handle  
-
-Arguments:
-  Image - Image handle 
-
-Returns:
-  Pointer into the Binding protocol interface.
-  Otherwise a pointer to NULL.
-  
---*/
-{
-  EFI_STATUS                        Status;
-  UINTN                             Index;
-  UINTN                             DriverBindingHandleCount;
-  EFI_HANDLE                        *DriverBindingHandleBuffer;
-  EFI_DRIVER_BINDING_PROTOCOL       *DriverBindingInterface;
-  
-  if (BindingHandle == NULL || ImageHandle == NULL) {
-    return NULL;
-  }
-  //
-  // Get all driver which support binding protocol in second page
-  //
-  DriverBindingHandleCount  = 0;
-  Status = gBS->LocateHandleBuffer (
-                  ByProtocol,
-                  &gEfiDriverBindingProtocolGuid,
-                  NULL,
-                  &DriverBindingHandleCount,
-                  &DriverBindingHandleBuffer
-                  );
-  if (EFI_ERROR (Status) || (DriverBindingHandleCount == 0)) {
-    return NULL;
-  }
-
-  for (Index = 0; Index < DriverBindingHandleCount; Index++) {
-    DriverBindingInterface =NULL;
-    Status = gBS->OpenProtocol (
-                    DriverBindingHandleBuffer[Index],
-                    &gEfiDriverBindingProtocolGuid,
-                    (VOID **) &DriverBindingInterface,
-                    NULL,
-                    NULL,
-                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                    );
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-    
-    if (DriverBindingInterface->ImageHandle == ImageHandle) {
-      *BindingHandle = DriverBindingHandleBuffer[Index];
-      gBS->FreePool (DriverBindingHandleBuffer);
-      return DriverBindingInterface;
-    }
-  }
-  
-  gBS->FreePool (DriverBindingHandleBuffer);
-  *BindingHandle = NULL;
-  return NULL;
-}
-
 EFI_STATUS
 EFIAPI
 UpdateDeviceSelectPage (
@@ -816,7 +747,6 @@ Arguments:
     // Save the device path protocol interface
     //
     mControllerDevicePathProtocol[Index] = ControllerDevicePath;
-    DEBUG ((EFI_D_ERROR, "Index = 0x%x; mControllerDevicePathProtocol[Index] = 0x%x\n",Index, mControllerDevicePathProtocol[Index]));
 
     //
     // Get the driver name
@@ -939,6 +869,7 @@ Arguments:
   // Switch the item callback key value to its NO. in mDevicePathHandleBuffer
   //
   mSelectedCtrIndex = KeyValue - 0x100;    
+  ASSERT (0 <= mSelectedCtrIndex < MAX_CHOICE_NUM);
   mLastSavedDriverImageNum = 0;
   //
   // Clear all the content in dynamic page
@@ -996,7 +927,7 @@ Arguments:
                     EFI_OPEN_PROTOCOL_GET_PROTOCOL
                     );
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "Steven: Cannot get LoadedImage protocol !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"));
+      ((MyIfrNVData *) Data->NvRamMap)->DriSelection[Index] = 0;
       continue;
     }
     mDriverImageProtocol[Index] = LoadedImage;    
@@ -1005,11 +936,12 @@ Arguments:
     //
     DriverBindingInterface = NULL;
     DriverBindingHandle = NULL;
-    DriverBindingInterface = GetBindingProtocolFromImageHandle (
+    DriverBindingInterface = LibGetBindingProtocolFromImageHandle (
                                 mDriverImageHandleBuffer[Index],
                                 &DriverBindingHandle
                                 );
     if (DriverBindingInterface == NULL) {
+      ((MyIfrNVData *) Data->NvRamMap)->DriSelection[Index] = 0;
       continue;
     }
     
@@ -1023,7 +955,7 @@ Arguments:
                         &LoadedImageHandleDevicePath
                         );
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "Steven LoadedImage->DeviceHandle has wrong DevicePathProtocol \n"));
+      ((MyIfrNVData *) Data->NvRamMap)->DriSelection[Index] = 0;
       continue;
     }
     
@@ -1039,26 +971,25 @@ Arguments:
                          &BusSpecificDriverOverride
                          );
         if (EFI_ERROR (Status) || BusSpecificDriverOverride == NULL) {
+          ((MyIfrNVData *) Data->NvRamMap)->DriSelection[Index] = 0;
           continue;
         }  
       } else {
+        ((MyIfrNVData *) Data->NvRamMap)->DriSelection[Index] = 0;
         continue;
       }
     }
     
     TatalFilePath = NULL;
     TatalFilePath = EfiAppendDevicePath (LoadedImageHandleDevicePath, LoadedImage->FilePath);
-    DEBUG ((EFI_D_ERROR, "Steven: TatalFilePath: %s \n", DevicePathToStr (TatalFilePath)));
         
     //
     // For driver name, try to get its component name, if fail, get its image name, 
     // if also fail, give a default name.
     //
-    DEBUG ((EFI_D_ERROR, "Steven: get LoadedImage protocol \n"));
     FreeDriverName = FALSE;
     DriverName = GetComponentName (DriverBindingHandle);
     if (DriverName == NULL) {
-      DEBUG ((EFI_D_ERROR, "Steven:try to get image name \n"));
       //
       // get its image name
       //
@@ -1068,7 +999,6 @@ Arguments:
       //
       // give a default name
       //
-      DEBUG ((EFI_D_ERROR, "Steven:give a default name \n"));
       DriverName = GetString (Private, (STRING_REF) STR_DRIVER_DEFAULT_NAME);
       ASSERT (DriverName != NULL);
       FreeDriverName = TRUE;  // the DriverName string need to free pool
@@ -1111,21 +1041,18 @@ Arguments:
     //
     // Second create the driver image device path as item help string
     //
-    DEBUG ((EFI_D_ERROR, "Steven: TatalFilePath: %s \n", DevicePathToStr (TatalFilePath)));
     if (TatalFilePath == NULL) {
       DriverName = EfiLibAllocateZeroPool (EfiStrSize (L"This driver device path and file path are both NULL! Maybe it is a Option Rom driver. Can not save it!"));   
       EfiStrCat (DriverName, L"This driver device path and file path are both NULL! Maybe it is a Option Rom driver. Can not save it!");
     } else {
       DriverName = DevicePathToStr (TatalFilePath);      
     }
-    DEBUG ((EFI_D_ERROR, "Steven: DriverName: %s \n", DriverName));
     NewString = EfiLibAllocateZeroPool (EfiStrSize (DriverName));
     EfiStrCat (NewString, DriverName);
     NewStringHelpToken = mDriverImageFilePathToken[Index];
     Status = Private->Hii->NewString (Private->Hii, NULL, Private->RegisteredHandle, &NewStringHelpToken, NewString);
     mDriverImageFilePathToken[Index] = NewStringHelpToken;
     ASSERT_EFI_ERROR (Status);
-    DEBUG ((EFI_D_ERROR, "Steven: NewString: %s \n", NewString));
     gBS->FreePool (NewString);
     gBS->FreePool (DriverName);
     
@@ -1153,7 +1080,6 @@ Arguments:
                     UpdateData
                     );
   }
-  DEBUG ((EFI_D_ERROR, "Steven: second page updated done \n"));
   gBS->FreePool (UpdateData);
   return EFI_SUCCESS;
 }
@@ -1470,9 +1396,10 @@ Arguments:
   }
   
   if ((0x100 <= KeyValue) && (KeyValue < 0x500) || (KeyValue == 0x2000)) {
-    if (KeyValue != 0x2000) {
-      UpdateBindingDriverSelectPage (Private, KeyValue, Data);    
+    if (KeyValue == 0x2000) {
+      KeyValue = (UINT16)mSelectedCtrIndex + 0x100;
     }
+    UpdateBindingDriverSelectPage (Private, KeyValue, Data);      
     //
     // Update page title string 
     //
@@ -1500,7 +1427,16 @@ Arguments:
       return EFI_DEVICE_ERROR;
     }
   }
-
+  
+  if (KeyValue == 0x1236) {
+    //
+    // Deletes all environment variable(s) that contain the override mappings info
+    //
+    LibFreeMappingDatabase (&mMappingDataBase);
+    Status = LibSaveOverridesMapping (&mMappingDataBase);    
+    UpdateDeviceSelectPage (Private, KeyValue, Data);
+  }
+  
   return EFI_SUCCESS;
 }
 

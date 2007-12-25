@@ -30,11 +30,14 @@ Abstract:
 #include EFI_PROTOCOL_CONSUMER (ServiceBinding)
 #include EFI_PROTOCOL_CONSUMER (SimpleNetwork)
 #include EFI_PROTOCOL_CONSUMER (NicIp4Config)
+#include EFI_PROTOCOL_CONSUMER (Dpc)
 
 extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
 
-#define NET_IS_DIGIT(Ch)        (('0' <= (Ch)) && ((Ch) <= '9'))
-#define NET_ROUNDUP(size, unit) (((size) + (unit) - 1) & (~((unit) - 1)))
+#define NET_IS_DIGIT(Ch)            (('0' <= (Ch)) && ((Ch) <= '9'))
+#define NET_IS_LOWER_CASE_CHAR(Ch)  (('a' <= (Ch)) && ((Ch) <= 'z'))
+#define NET_IS_UPPER_CASE_CHAR(Ch)  (('A' <= (Ch)) && ((Ch) <= 'Z'))
+#define NET_ROUNDUP(size, unit)     (((size) + (unit) - 1) & (~((unit) - 1)))
 
 //
 // Wrap functions to ease the impact of EFI library changes.
@@ -52,7 +55,7 @@ extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
 // to the standard EFI enviornment. It will NOT consider multiprocessor.
 //
 #define NET_TPL_LOCK            EFI_TPL_CALLBACK
-#define NET_TPL_EVENT           EFI_TPL_CALLBACK
+#define NET_TPL_EVENT           EFI_TPL_NOTIFY
 #define NET_TPL_RECYCLE         EFI_TPL_NOTIFY
 #define NET_TPL_TIMER           NET_TPL_LOCK
 
@@ -72,6 +75,15 @@ extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
 #define NET_MAX(a, b)           ((a) > (b) ? (a) : (b))
 #define NET_RANDOM(Seed)        (((Seed) * 1103515245L + 12345) % 4294967295L)
 
+UINTN
+NetAtoi (
+  IN CHAR8  *Str
+  );
+
+UINTN
+NetXtoi (
+  IN CHAR8  *Str
+  );
 
 UINT32
 NetGetUint32 (
@@ -294,6 +306,18 @@ EFI_HANDLE
 NetLibGetNicHandle (
   IN EFI_HANDLE             Controller,
   IN EFI_GUID               *ProtocolGuid
+  );
+
+EFI_STATUS
+NetLibQueueDpc (
+  IN EFI_TPL            DpcTpl,
+  IN EFI_DPC_PROCEDURE  DpcProcedure,
+  IN VOID               *DpcContext    OPTIONAL
+  );
+
+EFI_STATUS
+NetLibDispatchDpc (
+  VOID
   );
 
 typedef

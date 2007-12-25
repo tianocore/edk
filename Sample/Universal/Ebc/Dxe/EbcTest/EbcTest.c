@@ -88,7 +88,6 @@ InitializeEbcDriver (
   EFI_STATUS  (*FuncPtr) (IN UINTN Arg1, IN UINTN Arg2);
   EFI_EVENT   Event1;
   EFI_EVENT   Event2;
-  UINTN       Index;
 
   EfiInitializeDriverLib (ImageHandle, SystemTable);
 

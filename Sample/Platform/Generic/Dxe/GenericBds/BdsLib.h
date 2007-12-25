@@ -28,6 +28,7 @@ Abstract:
 #include "BmMachine.h"
 #include "EfiHobLib.h"
 #include "EfiImage.h"
+#include "pci22.h"
 
 #include EFI_PROTOCOL_DEFINITION (SerialIo)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
@@ -41,10 +42,17 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (PlatformDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ConsoleControl)
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "UefiIfrLibrary.h"
+#include EFI_PROTOCOL_DEFINITION (HiiDatabase)
+#else
 #include EFI_PROTOCOL_DEFINITION (Hii)
+#include EFI_PROTOCOL_DEFINITION (FormBrowser)
+#endif
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (DebugPort)
+#include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_GUID_DEFINITION (PcAnsi)
 #include EFI_GUID_DEFINITION (Hob)
 #include EFI_GUID_DEFINITION (HotPlugDevice)
@@ -476,11 +484,14 @@ BdsLibGetImageHeader (
   
 EFI_STATUS
 BdsLibGetHiiHandles (
-  IN     EFI_HII_PROTOCOL *Hii,
-  IN OUT UINT16           *HandleBufferLength,
-  OUT    EFI_HII_HANDLE   **HiiHandles
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  IN     EFI_HII_DATABASE_PROTOCOL *HiiDatabase,
+#else
+  IN     EFI_HII_PROTOCOL          *Hii,
+#endif
+  IN OUT UINT16                    *HandleBufferLength,
+  OUT    EFI_HII_HANDLE            **HiiHandleBuffer
   );
-
   
 //
 // Define the boot type which to classify the boot option type
@@ -514,6 +525,11 @@ BdsLibGetHiiHandles (
 
 #define  BDS_EFI_UNSUPPORT                0xFFFF
 
+//
+// USB host controller Programming Interface.
+//
+#define  PCI_CLASSC_PI_UHCI               0x00
+#define  PCI_CLASSC_PI_EHCI               0x20
 
 BOOLEAN
 MatchPartitionDevicePathNode (
@@ -553,5 +569,16 @@ EFIAPI
 BdsLibUpdateFvFileDevicePath (
   IN  OUT EFI_DEVICE_PATH_PROTOCOL      ** DevicePath,
   IN  EFI_GUID                          *FileGuid
+  );
+
+EFI_STATUS
+BdsLibConnectUsbDevByShortFormDP (
+  IN CHAR8                      HostControllerPI,
+  IN EFI_DEVICE_PATH_PROTOCOL   *RemainingDevicePath
+  );
+  
+EFI_TPL
+BdsLibGetCurrentTpl (
+  VOID
   );
 #endif // _BDS_LIB_H_

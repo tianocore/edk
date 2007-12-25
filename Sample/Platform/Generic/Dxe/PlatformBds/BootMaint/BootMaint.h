@@ -389,11 +389,6 @@ typedef struct {
   UINT8   ConsoleOutputCOM2;
   UINT8   ConsoleErrorCOM1;
   UINT8   ConsoleErrorCOM2;
-  
-  //
-  // Console Output Text Mode
-  //  
-  UINTN  ConsoleOutMode;
 
   //
   // At most 100 input/output/errorout device for console storage
@@ -437,7 +432,12 @@ typedef struct {
   // If the bit is 1, it means the boot device has been disabled.
   //
   UINT8   DisableMap[32];
-
+  
+  //
+  // Console Output Text Mode
+  //  
+  UINT16  ConsoleOutMode;
+  
   //
   //  UINT16                    PadArea[10];
   //

@@ -213,14 +213,7 @@ components :
 #
 # Make a pseudo-target to simplify running of the NT emulation. 
 #
-!IF "$(EFI_WIN_NT_FILE_SYSTEM)" == ""
-EFI_WIN_NT_FILE_SYSTEM = $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\ia32\Apps
-!ELSE
-EFI_WIN_NT_FILE_SYSTEM = $(EFI_WIN_NT_FILE_SYSTEM)!$(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\ia32\Apps
-!ENDIF
-
 run :
-  set EFI_WIN_NT_FILE_SYSTEM=$(EFI_WIN_NT_FILE_SYSTEM)
   cd $(PROCESSOR)
   secmain.exe
   cd ..
@@ -274,6 +267,19 @@ cleantools :
 rebuild : clean all
 
 #
-# cleanall target to clean all build directories.
+# cleanall target to clean all build directories
+# and binary files in $(EFI_PLATFORM_BIN).
 #
-cleanall : clean
+cleanall : 
+  - @if exist vc??.* del vc??.* > NUL
+  - @if exist *.bak del *.bak > NUL
+  - @if exist $(PROCESSOR) rd /s /q $(PROCESSOR) > NUL
+  - @if exist ipf rd /s /q ipf > NUL
+  - @if exist ebc rd /s /q ebc > NUL
+  - @if exist fv rd /s /q fv > NUL
+  - @if exist Tools rd /s /q Tools > NUL
+  - @if exist $(EFI_PLATFORM_BIN) rd /s /q $(EFI_PLATFORM_BIN) > NUL
+  - @if exist $(EFI_BINARY) rd $(EFI_BINARY) > NUL 2>&1  
+  - @if exist makefile.out del makefile.out > NUL
+  - @if exist module.* del module.* > NUL
+  - @echo All targets cleaned

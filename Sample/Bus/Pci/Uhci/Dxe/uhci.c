@@ -2330,6 +2330,18 @@ UhciDriverBindingStart (
   }
   
   //
+  // Stop schedule and set the Global Reset bit in the command register
+  //
+  UhciStopHc (Uhc, UHC_GENERIC_TIMEOUT);
+  UhciSetRegBit (Uhc->PciIo, USBCMD_OFFSET, USBCMD_GRESET);
+  gBS->Stall (UHC_ROOT_PORT_RESET_STALL);
+  //
+  // Clear the Global Reset bit to zero.
+  //
+  UhciClearRegBit (Uhc->PciIo, USBCMD_OFFSET, USBCMD_GRESET);
+  gBS->Stall (UHC_ROOT_PORT_RECOVERY_STALL);
+  
+  //
   // Allocate and Init Host Controller's Frame List Entry
   //
   Status = UhciInitFrameList (Uhc);

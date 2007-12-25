@@ -440,7 +440,7 @@ Returns:
   //
   Status = gBS->CreateEvent (
                   EFI_EVENT_NOTIFY_SIGNAL,
-                  NET_TPL_EVENT,
+                  NET_TPL_LOCK,
                   Ip4ConfigOnDhcp4Complete,
                   Instance,
                   &Instance->Dhcp4Event

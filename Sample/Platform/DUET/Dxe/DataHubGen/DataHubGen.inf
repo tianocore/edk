@@ -41,7 +41,7 @@ COMPONENT_TYPE          = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Foundation\Library\Dxe\EfiIfrSupportLib
+  $(EDK_SOURCE)\Foundation\Library\Dxe\$(UEFI_PREFIX)EfiIfrSupportLib
   $(EDK_SOURCE)\Foundation\Cpu\Pentium\Include
   $(DEST_DIR)
   
@@ -52,7 +52,7 @@ COMPONENT_TYPE          = BS_DRIVER
   EfiDriverLib
   GraphicsLite
   HobLib
-  EfiIfrSupportLib
+  $(UEFI_PREFIX)EfiIfrSupportLib
   PrintLibLite
   EfiUiLib
 

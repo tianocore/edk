@@ -32,19 +32,19 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include EFI_PROTOCOL_DEFINITION (HiiDatabase)
+#include EFI_PROTOCOL_DEFINITION (HiiFont)
+#else
 #include EFI_PROTOCOL_DEFINITION (Hii)
+#endif
 
 //
 // Driver Produced Protocol Prototypes
 //
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
-
-//
-// Glyph database
-//
-#define GLYPH_WIDTH   8
-#define GLYPH_HEIGHT  19
 
 //
 // User can define valid graphic resolution here

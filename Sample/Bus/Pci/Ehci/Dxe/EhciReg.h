@@ -201,8 +201,7 @@ EhcClearLegacySupport (
 
 Routine Description:
 
-  Add support for UEFI Over Legacy (UoL) feature, stop 
-  the legacy USB SMI support
+  Stop the legacy USB SMI support
 
 Arguments:
 

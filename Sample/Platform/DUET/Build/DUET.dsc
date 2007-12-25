@@ -121,6 +121,14 @@ EFI_ALIGNMENT_8K        = TRUE
 EFI_ALIGNMENT_16K       = TRUE
 EFI_ALIGNMENT_32K       = TRUE
 EFI_ALIGNMENT_64K       = TRUE
+#
+#New Attribute for PI 1.0 spec
+#
+EFI_READ_LOCK_CAP      = TRUE
+EFI_READ_LOCK_STATUS   = TRUE
+EFI_WRITE_LOCK_CAP     = TRUE
+EFI_WRITE_LOCK_STATUS  = TRUE
+EFI_FVB2_ALIGNMENT     = 8
 
 [=============================================================================]
 #
@@ -149,6 +157,8 @@ Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemorySta
 Sample\Platform\DUET\RuntimeDxe\RtPlatformStatusCode\RtPlatformStatusCode.inf
 #Sample\Platform\DUET\Library\Paging\PagingLib.inf
 
+Sample\Platform\Generic\Dxe\GenericBds\GenericBds.inf
+Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
 #Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 #Sample\Universal\Network\Library\NetLib.inf
 
@@ -238,9 +248,15 @@ $(CAPSULE_INF)
 # BDS/UI Support
 #
 Sample\Platform\Generic\Dxe\ConPlatform\ConPlatform.inf
-Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)HiiDataBase\Dxe\HiiDatabase.inf
 #Sample\Platform\Generic\Logo\Logo.inf
-Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\SetupBrowser.inf
+
+#
+# Platform Driver Override protocol support
+#
+Sample\Platform\Generic\Dxe\PlatformDriOverride\PlatformDriOverride.inf
+Sample\Platform\Generic\Dxe\$(UEFI_PREFIX)PlatformBds\DeviceMngr\PlatOverMngr\PlatOverMngr.Inf
 
 #
 # DataHub
@@ -342,7 +358,7 @@ Sample\Universal\Ebc\Dxe\Ebc.inf
 #
 # Shell
 #
-#Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\Shell.inf  FV=NULL
+#Other\Maintained\Application\UefiShell\bin\Shell.inf  FV=NULL
 
 #
 # Select the extended FV's
@@ -381,6 +397,7 @@ Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 #
 # UEFI Network Support
 #
+#Sample\Universal\Network\Dpc\Dxe\Dpc.inf                         FV=NULL
 #Sample\Universal\Network\Mnp\Dxe\Mnp.inf                         FV=NULL
 #Sample\Universal\Network\Arp\Dxe\Arp.inf                         FV=NULL
 #Sample\Universal\Network\Ip4\Dxe\Ip4.inf                         FV=NULL
@@ -389,6 +406,8 @@ Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 #Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                       FV=NULL
 #Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                     FV=NULL
 #Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                   FV=NULL
+#Sample\Universal\Network\UefiPxeBc\Dxe\UefiPxeBc.inf             FV=NULL
+#Sample\Universal\Network\IScsi\Dxe\$(UEFI_PREFIX)IScsi.inf       FV=NULL
 
 #
 # SCSI Support
@@ -401,11 +420,5 @@ Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 # Support Application
 #
 #Sample\Platform\DUET\Loader\DumpBs\DumpBs.inf   FV=NULL
-
-#
-# Platform Driver Override protocol support
-#
-Sample\Platform\Generic\Dxe\PlatformDriOverride\PlatformDriOverride.inf
-Sample\Platform\Generic\Dxe\PlatformBds\DeviceMngr\PlatOverMngr\PlatOverMngr.Inf
 
 [=============================================================================]

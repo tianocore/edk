@@ -31,6 +31,13 @@ STATIC EFI_MAC_ADDRESS  mZeroMacAddress;
 STATIC
 VOID
 EFIAPI
+Ip4OnFrameSentDpc (
+  IN VOID                   *Context
+  );
+
+STATIC
+VOID
+EFIAPI
 Ip4OnFrameSent (
   IN EFI_EVENT              Event,
   IN VOID                   *Context
@@ -39,8 +46,22 @@ Ip4OnFrameSent (
 STATIC
 VOID
 EFIAPI
+Ip4OnArpResolvedDpc (
+  IN VOID                   *Context
+  );
+
+STATIC
+VOID
+EFIAPI
 Ip4OnArpResolved (
   IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  );
+
+STATIC
+VOID
+EFIAPI
+Ip4OnFrameReceivedDpc (
   IN VOID                   *Context
   );
 
@@ -444,10 +465,7 @@ Returns:
     Ip4CancelFrameArp (ArpQue, IoStatus, FrameToCancel, Context);
 
     if (NetListIsEmpty (&ArpQue->Frames)) {
-      NetListRemoveEntry (Entry);
-
       Interface->Arp->Cancel (Interface->Arp, &ArpQue->Ip, ArpQue->OnResolved);
-      Ip4FreeArpQue (ArpQue, EFI_ABORTED);
     }
   }
   
@@ -459,11 +477,7 @@ Returns:
     Token = NET_LIST_USER_STRUCT (Entry, IP4_LINK_TX_TOKEN, Link);
 
     if ((FrameToCancel == NULL) || FrameToCancel (Token, Context)) {
-      NetListRemoveEntry (Entry);
-
       Interface->Mnp->Cancel (Interface->Mnp, &Token->MnpToken);
-      Token->CallBack (Token->IpInstance, Token->Packet, IoStatus, 0, Token->Context);
-      Ip4FreeLinkTxToken (Token);
     }
   }
 }
@@ -728,7 +742,6 @@ Returns:
 
     Interface->RecvRequest = NULL;
     Interface->Mnp->Cancel (Interface->Mnp, &Token->MnpToken);
-    Ip4FreeFrameRxToken (Token);
 
     NET_RESTORE_TPL (OldTpl);
   }
@@ -812,8 +825,7 @@ Returns:
 STATIC
 VOID
 EFIAPI
-Ip4OnArpResolved (
-  IN EFI_EVENT              Event,
+Ip4OnArpResolvedDpc (
   IN VOID                   *Context
   )
 /*++
@@ -871,16 +883,23 @@ Returns:
     Token         = NET_LIST_USER_STRUCT (Entry, IP4_LINK_TX_TOKEN, Link);
     Token->DstMac = ArpQue->Mac;
 
-    Status = Interface->Mnp->Transmit (Interface->Mnp, &Token->MnpToken);
+    //
+    // Insert the tx token before transmitting it via MNP as the FrameSentDpc
+    // may be called before Mnp->Transmit returns which will remove this tx
+    // token from the SentFrames list. Remove it from the list if the returned
+    // Status of Mnp->Transmit is not EFI_SUCCESS as in this case the 
+    // FrameSentDpc won't be queued.
+    //
+    NetListInsertTail (&Interface->SentFrames, &Token->Link);
 
+    Status = Interface->Mnp->Transmit (Interface->Mnp, &Token->MnpToken);
     if (EFI_ERROR (Status)) {
+      NetListRemoveEntry (Entry);
       Token->CallBack (Token->IpInstance, Token->Packet, Status, 0, Token->Context);
 
       Ip4FreeLinkTxToken (Token);
       continue;
     }
-
-    NetListInsertTail (&Interface->SentFrames, &Token->Link);
   }
 
   Ip4FreeArpQue (ArpQue, EFI_SUCCESS);
@@ -889,8 +908,38 @@ Returns:
 STATIC
 VOID
 EFIAPI
-Ip4OnFrameSent (
-  IN EFI_EVENT               Event,
+Ip4OnArpResolved (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+/*++
+
+Routine Description:
+
+  Request Ip4OnArpResolvedDpc as a DPC at EFI_TPL_CALLBACK
+
+Arguments:
+
+  Event   - The Arp request event
+  Context - The context of the callback, a point to the ARP queue
+
+Returns:
+
+  None
+
+--*/
+{
+  //
+  // Request Ip4OnArpResolvedDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, Ip4OnArpResolvedDpc, Context);
+}
+
+
+STATIC
+VOID
+EFIAPI
+Ip4OnFrameSentDpc (
   IN VOID                    *Context
   )
 /*++
@@ -902,7 +951,6 @@ Routine Description:
 
 Arguments:
 
-  Event   - The transmit token's event
   Context - Context which is point to the token.
 
 Returns:
@@ -927,6 +975,36 @@ Returns:
           );
 
   Ip4FreeLinkTxToken (Token);
+}
+
+STATIC
+VOID
+EFIAPI
+Ip4OnFrameSent (
+  IN EFI_EVENT               Event,
+  IN VOID                    *Context
+  )
+/*++
+
+Routine Description:
+
+  Request Ip4OnFrameSentDpc as a DPC at EFI_TPL_CALLBACK 
+
+Arguments:
+
+  Event   - The transmit token's event
+  Context - Context which is point to the token.
+
+Returns:
+
+  None.
+
+--*/
+{
+  //
+  // Request Ip4OnFrameSentDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, Ip4OnFrameSentDpc, Context);
 }
 
 
@@ -1067,13 +1145,17 @@ Returns:
   return EFI_SUCCESS;
 
 SEND_NOW:
+  //
+  // Insert the tx token into the SentFrames list before calling Mnp->Transmit.
+  // Remove it if the returned status is not EFI_SUCCESS.
+  //
+  NetListInsertTail (&Interface->SentFrames, &Token->Link);
   Status = Interface->Mnp->Transmit (Interface->Mnp, &Token->MnpToken);
-
   if (EFI_ERROR (Status)) {
+    NetListRemoveEntry (&Interface->SentFrames);
     goto ON_ERROR;
   }
 
-  NetListInsertTail (&Interface->SentFrames, &Token->Link);
   return EFI_SUCCESS;
 
 ON_ERROR:
@@ -1115,8 +1197,7 @@ Returns:
 STATIC
 VOID
 EFIAPI
-Ip4OnFrameReceived (
-  IN EFI_EVENT                Event,
+Ip4OnFrameReceivedDpc (
   IN VOID                     *Context
   )
 /*++
@@ -1132,7 +1213,6 @@ Routine Description:
 
 Arguments:
 
-  Event   - The receive event delivered to MNP for receive.
   Context - Context for the callback.
 
 Returns:
@@ -1192,6 +1272,36 @@ Returns:
   Token->CallBack (Token->IpInstance, Packet, EFI_SUCCESS, Flag, Token->Context);
 }
 
+STATIC
+VOID
+EFIAPI
+Ip4OnFrameReceived (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+/*++
+
+Routine Description:
+ 
+  Request Ip4OnFrameReceivedDpc as a DPC at EFI_TPL_CALLBACK
+  
+Arguments:
+
+  Event   - The receive event delivered to MNP for receive.
+  Context - Context for the callback.
+
+Returns:
+
+  None.
+
+--*/
+{
+  //
+  // Request Ip4OnFrameReceivedDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, Ip4OnFrameReceivedDpc, Context);
+}
+
 EFI_STATUS
 Ip4ReceiveFrame (
   IN  IP4_INTERFACE         *Interface,
@@ -1235,13 +1345,12 @@ Returns:
     return EFI_OUT_OF_RESOURCES;
   }
 
+  Interface->RecvRequest = Token;
   Status = Interface->Mnp->Receive (Interface->Mnp, &Token->MnpToken);
-
   if (EFI_ERROR (Status)) {
+    Interface->RecvRequest = NULL;
     Ip4FreeFrameRxToken (Token);
     return Status;
   }
-
-  Interface->RecvRequest = Token;
   return EFI_SUCCESS;
 }

@@ -514,7 +514,7 @@ Returns:
              Instance->UnicastPort,
              Packet,
              &UdpPoint,
-             Instance->Gateway,
+             0,
              Mtftp4OnPacketSent,
              Instance
              );
@@ -575,7 +575,7 @@ Returns:
              Instance->UnicastPort,
              Instance->LastPacket,
              &UdpPoint,
-             Instance->Gateway,
+             0,
              Mtftp4OnPacketSent,
              Instance
              );

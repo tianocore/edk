@@ -51,6 +51,7 @@ STATIC TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
   (EFI_SIMPLE_TEXT_IN_PROTOCOL **) NULL,
   0,
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   {
     ConSplitterTextInResetEx,
     ConSplitterTextInReadKeyStrokeEx,
@@ -87,7 +88,8 @@ STATIC TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
   (EFI_ABSOLUTE_POINTER_PROTOCOL **) NULL,
   0,
   FALSE,
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
   {
     ConSplitterSimplePointerReset,
     ConSplitterSimplePointerGetState,
@@ -260,6 +262,7 @@ STATIC TEXT_OUT_SPLITTER_PRIVATE_DATA mStdErr = {
 };
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 EFI_GUID gSimpleTextInExNotifyGuid = { \
   0x856f2def, 0x4e93, 0x4d6b, 0x94, 0xce, 0x1c, 0xfe, 0x47, 0x1, 0x3e, 0xa5 \
 };
@@ -276,6 +279,7 @@ EFI_DRIVER_BINDING_PROTOCOL           gConSplitterAbsolutePointerDriverBinding =
   NULL
 };
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
 EFI_DRIVER_BINDING_PROTOCOL           gConSplitterConInDriverBinding = {
@@ -370,6 +374,7 @@ Returns:
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = EfiLibInstallAllDriverProtocols (
             ImageHandle,
             SystemTable,
@@ -383,6 +388,7 @@ Returns:
     return Status;
   }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   Status = EfiLibInstallAllDriverProtocols (
@@ -439,10 +445,12 @@ Returns:
                     &gEfiSimpleTextInProtocolGuid,
                     &mConIn.TextIn,
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
                     &gEfiSimpleTextInputExProtocolGuid,
                     &mConIn.TextInEx,
                     &gEfiAbsolutePointerProtocolGuid,
                     &mConIn.AbsolutePointer,                   
+#endif  // DISABLE_CONSOLE_EX
 #endif
                     &gEfiSimplePointerProtocolGuid,
                     &mConIn.SimplePointer,
@@ -574,6 +582,7 @@ Returns:
   ASSERT_EFI_ERROR (Status);
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
   //
   // Buffer for Simple Text Input Ex Protocol
@@ -621,6 +630,7 @@ Returns:
                   );
   ASSERT_EFI_ERROR (Status);
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   ConInPrivate->SimplePointer.Mode = &ConInPrivate->SimplePointerMode;
@@ -1059,7 +1069,9 @@ Returns:
   EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
   
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *TextInEx;
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   //
@@ -1079,6 +1091,7 @@ Returns:
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiSimpleTextInputExProtocolGuid,
@@ -1095,6 +1108,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }  
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   return ConSplitterTextInAddDevice (&mConIn, TextIn);
@@ -1144,6 +1158,7 @@ Returns:
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 STATIC
 EFI_STATUS
 EFIAPI
@@ -1186,6 +1201,7 @@ Returns:
 
   return ConSplitterAbsolutePointerAddDevice (&mConIn, AbsolutePointer);
 }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
 STATIC
@@ -1442,7 +1458,9 @@ Returns:
   EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *TextInEx;
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   if (NumberOfChildren == 0) {
@@ -1450,6 +1468,7 @@ Returns:
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   Status = gBS->OpenProtocol (
                   ControllerHandle,
                   &gEfiSimpleTextInputExProtocolGuid,
@@ -1467,6 +1486,7 @@ Returns:
     return Status;
   }
   
+#endif  // DISABLE_CONSOLE_EX
 #endif
   
   Status = ConSplitterStop (
@@ -1834,6 +1854,7 @@ Returns:
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
 EFI_STATUS
 ConSplitterTextInExAddDevice (
@@ -1972,6 +1993,7 @@ Returns:
   return EFI_NOT_FOUND;
 }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
 EFI_STATUS
@@ -3516,6 +3538,7 @@ Returns:
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
 STATIC
 BOOLEAN
@@ -4133,6 +4156,7 @@ Returns:
   }
 }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
 EFI_STATUS

@@ -117,8 +117,6 @@ typedef struct _ARP_SERVICE_DATA {
 
   EFI_SIMPLE_NETWORK_MODE          SnpMode;
 
-  NET_LOCK                         Lock;
-
   UINTN                            ChildrenNumber;
   NET_LIST_ENTRY                   ChildrenList;
 
@@ -292,8 +290,20 @@ ArpInitInstance (
 
 VOID
 EFIAPI
+ArpOnFrameRcvdDpc (
+  IN VOID       *Context
+  );
+
+VOID
+EFIAPI
 ArpOnFrameRcvd (
   IN EFI_EVENT  Event,
+  IN VOID       *Context
+  );
+
+VOID
+EFIAPI
+ArpOnFrameSentDpc (
   IN VOID       *Context
   );
 

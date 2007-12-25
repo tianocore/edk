@@ -55,6 +55,7 @@ KeyboardCheckForKey (
   );
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 STATIC
 BOOLEAN
 IsKeyRegistered (
@@ -78,6 +79,7 @@ Returns:
   
 --*/
 ;
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
 STATIC
@@ -108,11 +110,13 @@ KeyboardReadKeyStrokeWorker (
 {
   EFI_STATUS                            Status;
   EFI_TPL                               OldTpl;
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX  
   EFI_LIST_ENTRY                        *Link;
   KEYBOARD_CONSOLE_IN_EX_NOTIFY         *CurrentNotify;
   EFI_KEY_DATA                          OriginalKeyData;
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
 
   if (KeyData == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -141,16 +145,19 @@ KeyboardReadKeyStrokeWorker (
   ConsoleInDev->Key.ScanCode    = SCAN_NULL;          
   ConsoleInDev->Key.UnicodeChar = 0x0000;     
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)    
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX    
   EfiCopyMem (&KeyData->KeyState, &ConsoleInDev->KeyState, sizeof (EFI_KEY_STATE));
                                           
   ConsoleInDev->KeyState.KeyShiftState  = EFI_SHIFT_STATE_VALID;
   ConsoleInDev->KeyState.KeyToggleState = EFI_TOGGLE_STATE_VALID;
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   gBS->RestoreTPL (OldTpl);
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)      
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX      
   //
   //Switch the control value to their original characters. In KeyGetchar() the  CTRL-Alpha characters have been switched to 
   // their corresponding control value (ctrl-a = 0x0001 through ctrl-Z = 0x001A), here switch them back for notification function.
@@ -179,6 +186,7 @@ KeyboardReadKeyStrokeWorker (
       CurrentNotify->KeyNotificationFn (&OriginalKeyData);
     }
   }
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
   return EFI_SUCCESS;
@@ -408,6 +416,7 @@ Returns:
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 
 STATIC
 BOOLEAN
@@ -841,6 +850,7 @@ Exit:
   return Status;
 }
 
+#endif  // DISABLE_CONSOLE_EX
 #endif
 
 

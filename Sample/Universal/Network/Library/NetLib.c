@@ -20,6 +20,8 @@ Abstract:
 
 #include "NetLib.h"
 
+EFI_DPC_PROTOCOL *mDpc = NULL;
+
 //
 // All the supported IP4 maskes in host byte order.
 //
@@ -63,6 +65,60 @@ IP4_ADDR  mIp4AllMasks[IP4_MASK_NUM] = {
 };
 
 EFI_IPv4_ADDRESS  mZeroIp4Addr = {0, 0, 0, 0};
+
+UINTN
+NetAtoi (
+  IN CHAR8  *Str
+  )
+{
+  UINTN  Value;
+
+  Value = 0;
+
+  while (*Str) {
+    if (!NET_IS_DIGIT (*Str)) {
+      return (UINTN) -1;
+    }
+
+    Value = Value * 10 + *Str - '0';
+
+    Str++;
+  }
+
+  return Value;
+}
+
+UINTN
+NetXtoi (
+  IN CHAR8  *Str
+  )
+{
+  UINTN  Value;
+  UINTN  Temp;
+  CHAR8  Digit;
+
+  Value = 0;
+
+  while (*Str) {
+    if (!IsHexDigit (&Digit, *Str)) {
+      return (UINTN) -1;
+    }
+
+    if (NET_IS_DIGIT (*Str)) {
+      Temp = *Str - '0';
+    } else if (*Str >= 'a') {
+      Temp = *Str - 'a' + 10;
+    } else {
+      Temp = *Str - 'A' + 10;
+    }
+
+    Value  = (Value << 4) | Temp;
+
+    Str++;
+  }
+
+  return Value;
+}
 
 INTN
 NetGetMaskLength (
@@ -1436,6 +1492,68 @@ Returns:
   return Handle;
 }
 
+
+EFI_STATUS
+NetLibQueueDpc (
+  IN EFI_TPL            DpcTpl,
+  IN EFI_DPC_PROCEDURE  DpcProcedure,
+  IN VOID               *DpcContext    OPTIONAL
+  )
+/*++
+
+Routine Description:
+
+  Add a Deferred Procedure Call to the end of the DPC queue.
+
+Arguments:
+
+  DpcTpl        -  The EFI_TPL that the DPC should be invoked.
+  DpcProcedure  -  Pointer to the DPC's function.
+  DpcContext    -  Pointer to the DPC's context.  Passed to DpcProcedure
+                   when DpcProcedure is invoked.
+
+Returns:
+
+  EFI_SUCCESS            -  The DPC was queued.
+  EFI_INVALID_PARAMETER  -  DpcTpl is not a valid EFI_TPL.
+                            DpcProcedure is NULL.
+  EFI_OUT_OF_RESOURCES   -  There are not enough resources available to
+                            add the DPC to the queue.
+                            
+--*/  
+{
+  return mDpc->QueueDpc (mDpc, DpcTpl, DpcProcedure, DpcContext);
+}
+
+
+EFI_STATUS
+NetLibDispatchDpc (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Dispatch the queue of DPCs.  ALL DPCs that have been queued with a DpcTpl
+  value greater than or equal to the current TPL are invoked in the order that
+  they were queued.  DPCs with higher DpcTpl values are invoked before DPCs with
+  lower DpcTpl values.
+
+Arguments:
+ 
+  NONE
+  
+Returns:
+
+  EFI_SUCCESS   -  One or more DPCs were invoked.
+  EFI_NOT_FOUND -  No DPCs were invoked.
+                            
+--*/  
+{
+  return mDpc->DispatchDpc(mDpc);
+}
+
+
 EFI_STATUS
 NetLibInstallAllDriverProtocols (
   IN EFI_HANDLE                         ImageHandle,
@@ -1483,16 +1601,20 @@ Returns:
 
 --*/
 {
-  return NetLibInstallAllDriverProtocolsWithUnload (
-           ImageHandle,
-           SystemTable,
-           DriverBinding,
-           DriverBindingHandle,
-           ComponentName,
-           DriverConfiguration,
-           DriverDiagnostics,
-           NetLibDefaultUnload
-           );
+  EFI_STATUS    Status;
+
+  Status = NetLibInstallAllDriverProtocolsWithUnload (
+             ImageHandle,
+             SystemTable,
+             DriverBinding,
+             DriverBindingHandle,
+             ComponentName,
+             DriverConfiguration,
+             DriverDiagnostics,
+             NetLibDefaultUnload
+             );
+
+  return Status;  
 }
 
 EFI_STATUS
@@ -1560,7 +1682,10 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
+  Status = gBS->LocateProtocol (&gEfiDpcProtocolGuid, NULL, &mDpc);
+  ASSERT_EFI_ERROR (Status);
+
   //
   // Retrieve the Loaded Image Protocol from Image Handle
   //

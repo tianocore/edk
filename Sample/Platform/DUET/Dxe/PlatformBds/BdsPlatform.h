@@ -165,6 +165,18 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  End;
 } PLATFORM_DUMMY_PCI_SERIAL_DEVICE_PATH;
 
+//
+// the short form device path for Usb keyboard
+//
+#define CLASS_HID           3
+#define SUBCLASS_BOOT       1
+#define PROTOCOL_KEYBOARD   1
+
+typedef struct {
+  USB_CLASS_DEVICE_PATH           UsbClass;
+  EFI_DEVICE_PATH_PROTOCOL        End;
+} USB_CLASS_FORMAT_DEVICE_PATH;  
+
 extern PLATFORM_ROOT_BRIDGE_DEVICE_PATH  gPlatformRootBridge0;
 
 //

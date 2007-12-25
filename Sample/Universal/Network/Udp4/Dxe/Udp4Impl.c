@@ -156,6 +156,8 @@ Returns:
   EFI_STATUS       Status;
   IP_IO_OPEN_DATA  OpenData;
 
+  NetZeroMem (Udp4Service, sizeof (UDP4_SERVICE_DATA));
+
   Udp4Service->Signature        = UDP4_SERVICE_DATA_SIGNATURE;
   Udp4Service->ServiceBinding   = mUdp4ServiceBinding;
   Udp4Service->ImageHandle      = ImageHandle;
@@ -187,7 +189,7 @@ Returns:
   //
   Status = IpIoOpen (Udp4Service->IpIo, &OpenData);
   if (EFI_ERROR (Status)) {
-    goto RELEASE_IPIO;
+    goto ON_ERROR;
   }
 
   //
@@ -201,7 +203,7 @@ Returns:
                   &Udp4Service->TimeoutEvent
                   );
   if (EFI_ERROR (Status)) {
-    goto RELEASE_IPIO;
+    goto ON_ERROR;
   }
 
   //
@@ -213,18 +215,16 @@ Returns:
                   UDP4_TIMEOUT_INTERVAL
                   );
   if (EFI_ERROR (Status)) {
-    goto RELEASE_ALL;
+    goto ON_ERROR;
   }
-
-  Udp4Service->MacString = NULL;
 
   return EFI_SUCCESS;
 
-RELEASE_ALL:
+ON_ERROR:
 
-  gBS->CloseEvent (Udp4Service->TimeoutEvent);
-
-RELEASE_IPIO:
+  if (Udp4Service->TimeoutEvent != NULL) {
+    gBS->CloseEvent (Udp4Service->TimeoutEvent);
+  }
 
   IpIoDestroy (Udp4Service->IpIo);
 
@@ -663,8 +663,8 @@ Returns:
   Ip4ConfigData->AcceptBroadcast   = Udp4ConfigData->AcceptBroadcast;
   Ip4ConfigData->AcceptPromiscuous = Udp4ConfigData->AcceptPromiscuous;
   Ip4ConfigData->UseDefaultAddress = Udp4ConfigData->UseDefaultAddress;
-  Ip4ConfigData->StationAddress    = Udp4ConfigData->StationAddress;
-  Ip4ConfigData->SubnetMask        = Udp4ConfigData->SubnetMask;
+  NetCopyMem (&Ip4ConfigData->StationAddress, &Udp4ConfigData->StationAddress, sizeof (EFI_IPv4_ADDRESS));
+  NetCopyMem (&Ip4ConfigData->SubnetMask, &Udp4ConfigData->SubnetMask, sizeof (EFI_IPv4_ADDRESS));
 
   //
   // use the -1 magic number to disable the receiving process of the ip instance.
@@ -964,6 +964,7 @@ Returns:
     //
     Token->Status = Status;
     gBS->SignalEvent (Token->Event);
+    NetLibDispatchDpc ();
   }
 }
 
@@ -1012,6 +1013,12 @@ Returns:
     //
     Udp4IcmpHandler ((UDP4_SERVICE_DATA *) Context, IcmpError, NetSession, Packet);
   }
+
+  //
+  // Dispatch the DPC queued by the NotifyFunction of the rx token's events
+  // which are signaled with received data.
+  //
+  NetLibDispatchDpc ();
 }
 
 EFI_STATUS
@@ -1118,11 +1125,10 @@ Returns:
     // The token is a receive token. Abort it and remove it from the Map. 
     //
     TokenToCancel = (EFI_UDP4_COMPLETION_TOKEN *) Item->Key;
+    NetMapRemoveItem (Map, Item, NULL);
 
     TokenToCancel->Status = EFI_ABORTED;
     gBS->SignalEvent (TokenToCancel->Event);
-
-    NetMapRemoveItem (Map, Item, NULL);
   }
 
   if (Arg != NULL) {

@@ -85,6 +85,7 @@ Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemorySta
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsSerialStatusCode\BsSerialStatusCode.inf
 
+Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
 Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
 
@@ -109,12 +110,12 @@ DEFINE FV=Fv
 #
 # SEC Core
 #
-# None required
-
+#
 
 #
 # PEI core
 #
+Foundation\Core\$(PI_PREFIX)Pei\PeiMain.inf
 
 #
 # PEIM
@@ -148,10 +149,10 @@ Sample\Universal\Security\SecurityStub\Dxe\SecurityStub.inf
 
 
 Sample\Universal\DataHub\DataHubStdErr\Dxe\DataHubStdErr.inf
-Sample\Universal\UserInterface\SetupBrowser\Dxe\setupbrowser.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\setupbrowser.inf
 Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Universal\Disk\DiskIo\Dxe\DiskIo.inf
-Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)HiiDataBase\Dxe\HiiDatabase.inf
 Sample\Universal\Disk\UnicodeCollation\English\Dxe\English.inf
 Sample\Bus\Pci\PciBus\Dxe\PciBus.inf
 Sample\Universal\Console\Terminal\Dxe\terminal.inf
@@ -195,6 +196,7 @@ Sample\Universal\Network\PxeBc\Dxe\Bc.inf
 #
 # UEFI network drivers.
 #
+Sample\Universal\Network\Dpc\Dxe\Dpc.inf                               FV=NULL
 Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
 Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
 Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
@@ -203,12 +205,14 @@ Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
 Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
 Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
 Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
+Sample\Universal\Network\UefiPxeBc\Dxe\UefiPxeBc.inf                   FV=NULL
+Sample\Universal\Network\IScsi\Dxe\$(UEFI_PREFIX)IScsi.inf             FV=NULL
 
 #
 # Binaries
 #
 Other\Maintained\Universal\Disk\FileSystem\EnhancedFat\Dxe\Fat.inf
-Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\Shell.inf
+Other\Maintained\Application\UefiShell\bin\Shell.inf
 
 #
 # NvStorage FV primarily contains private data of FTW and runtime updatable

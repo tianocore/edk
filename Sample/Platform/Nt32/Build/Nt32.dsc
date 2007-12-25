@@ -219,6 +219,8 @@ Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\BsDataHubStatusCode\BsDataHubS
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtMemoryStatusCode\RtMemoryStatusCode.inf
 Sample\Platform\Generic\RuntimeDxe\StatusCode\Lib\RtPlatformStatusCode\$(PROJECT_NAME)\RtPlatformStatusCode.inf
 
+Sample\Platform\Generic\Dxe\GenericBds\GenericBds.inf
+Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf
 #Sample\Bus\Scsi\ScsiLib\Dxe\ScsiLib.inf
 Sample\Universal\Network\Library\NetLib.inf
 
@@ -323,13 +325,13 @@ $(DEVPATH_INF)
 Sample\Universal\Disk\DiskIo\Dxe\DiskIo.inf
 Sample\Universal\Ebc\Dxe\Ebc.inf
 Sample\Universal\GenericMemoryTest\Dxe\NullMemoryTest.inf
-Sample\Universal\UserInterface\HiiDataBase\Dxe\HiiDatabase.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)HiiDataBase\Dxe\HiiDatabase.inf
 Sample\Platform\Generic\Logo\Logo.inf
 Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Bus\Pci\PciBus\Dxe\PciBus.inf
-Sample\Universal\UserInterface\SetupBrowser\Dxe\SetupBrowser.Inf                   
-Sample\Universal\UserInterface\SetupBrowser\Dxe\DriverSample\DriverSample.Inf
-Other\Maintained\Application\$(UEFI_PREFIX)Shell\Bin\Shell.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\SetupBrowser.inf
+Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\DriverSample\DriverSample.inf
+Other\Maintained\Application\UefiShell\Bin\Shell.inf
 Sample\Universal\Disk\UnicodeCollation\English\Dxe\English.inf
 Sample\Bus\WinNtThunk\BlockIo\Dxe\WinNtBlockIo.inf
 Sample\Bus\WinNtThunk\Console\Dxe\WinNtConsole.inf
@@ -361,6 +363,7 @@ Sample\Bus\Usb\UsbMouse\Dxe\UsbMouse.inf
 #
 # UEFI network drivers.
 #
+Sample\Universal\Network\Dpc\Dxe\Dpc.inf                               FV=NULL
 Sample\Universal\Network\Mnp\Dxe\Mnp.inf                               FV=NULL
 Sample\Universal\Network\Arp\Dxe\Arp.inf                               FV=NULL
 Sample\Universal\Network\Ip4\Dxe\Ip4.inf                               FV=NULL
@@ -369,6 +372,8 @@ Sample\Universal\Network\Udp4\Dxe\Udp4.inf                             FV=NULL
 Sample\Universal\Network\Tcp4\Dxe\Tcp4.inf                             FV=NULL
 Sample\Universal\Network\Dhcp4\Dxe\Dhcp4.inf                           FV=NULL
 Sample\Universal\Network\Mtftp4\Dxe\Mtftp4.inf                         FV=NULL
+Sample\Universal\Network\UefiPxeBc\Dxe\UefiPxeBc.inf                   FV=NULL
+Sample\Universal\Network\IScsi\Dxe\$(UEFI_PREFIX)IScsi.inf             FV=NULL
 
 Sample\Universal\Network\SnpNt32\Dxe\SnpNt32.inf                       FV=NULL
 

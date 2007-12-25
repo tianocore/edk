@@ -29,6 +29,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (Decompress)
 #include EFI_PROTOCOL_DEFINITION (TianoDecompress)
 #include EFI_PROTOCOL_DEFINITION (CustomizedDecompress)
+#include EFI_GUID_DEFINITION(MemoryAllocationHob)
 
 
 UINT32  mScratchSize = 0;
@@ -168,7 +169,13 @@ AllocateAlignedPages (
   IN UINTN                  Alignment
   );
 
-
+STATIC
+VOID
+UpdateStackHob (
+  IN EFI_PEI_SERVICES            **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length
+  );
 
 
 EFI_PEIM_ENTRY_POINT (PeimInitializeDxeIpl)
@@ -513,6 +520,12 @@ Returns:
                             );
 
   ASSERT_PEI_ERROR (PeiServices, Status);
+
+
+  //
+  // Update the contents of BSP stack HOB to reflect the real stack info passed to DxeCore.
+  //    
+  UpdateStackHob (PeiServices, BaseOfStack, EFI_STACK_SIZE);
 
   //
   // Compute the top of the stack we were allocated. Pre-allocate a UINTN
@@ -1064,4 +1077,39 @@ AllocateAlignedPages (
   return (VOID *) (UINTN) (((UINTN) Memory + AlignmentMask) & ~AlignmentMask);
 }
 
+STATIC
+VOID
+UpdateStackHob (
+  IN EFI_PEI_SERVICES            **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length
+  )
+{
+  EFI_STATUS                    Status;
+  EFI_PEI_HOB_POINTERS          Hob;
+  
+  Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
 
+  while ((Hob.Raw = GetHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, Hob.Raw)) != NULL) {
+    if (CompareGuid (&gEfiHobMemeryAllocStackGuid, &(Hob.MemoryAllocationStack->AllocDescriptor.Name))) {
+      //
+      // Build a new memory allocation HOB with old stack info with EfiConventionalMemory type
+      // to be reclaimed by DXE core.
+      //
+      PeiBuildHobMemoryAllocation (
+        PeiServices,
+        Hob.MemoryAllocationStack->AllocDescriptor.MemoryBaseAddress,
+        Hob.MemoryAllocationStack->AllocDescriptor.MemoryLength,
+        NULL,
+        EfiConventionalMemory
+        );
+      //
+      // Update the BSP Stack Hob to reflect the new stack info.
+      //
+      Hob.MemoryAllocationStack->AllocDescriptor.MemoryBaseAddress = BaseAddress;
+      Hob.MemoryAllocationStack->AllocDescriptor.MemoryLength = Length;
+      break;
+    }
+    Hob.Raw = GET_NEXT_HOB (Hob);
+  }
+}

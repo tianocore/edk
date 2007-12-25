@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -71,6 +71,9 @@ typedef struct _DHCP_PROTOCOL {
   EFI_EVENT                         RenewRebindEvent;
 
   EFI_DHCP4_TRANSMIT_RECEIVE_TOKEN  *Token;
+  UDP_IO_PORT                       *UdpIo; // The UDP IO used for TransmitReceive.
+  UINT32                            Timeout;
+  NET_BUF_QUEUE                     ResponseQueue;
 };
 
 //
@@ -148,6 +151,11 @@ extern EFI_DHCP4_PROTOCOL mDhcp4ProtocolTemplate;
 VOID
 DhcpYieldControl (
   IN DHCP_SERVICE         *DhcpSb
+  );
+
+VOID
+PxeDhcpDone (
+  IN DHCP_PROTOCOL  *Instance
   );
 
 #endif

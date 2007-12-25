@@ -64,10 +64,10 @@ Returns:
   NetListInit (&Instance->List);
 }
 
+
 VOID
 EFIAPI
-ArpOnFrameRcvd (
-  IN EFI_EVENT  Event,
+ArpOnFrameRcvdDpc (
   IN VOID       *Context
   )
 /*++
@@ -78,7 +78,6 @@ Routine Description:
 
 Arguments:
 
-  Event   - The Event this notify function registered to.
   Context - Pointer to the context data registerd to the Event.
 
 Returns:
@@ -153,11 +152,6 @@ Returns:
   ArpAddress.TargetHwAddr    = ArpAddress.SenderProtoAddr + Head->ProtoAddrLen;
   ArpAddress.TargetProtoAddr = ArpAddress.TargetHwAddr + Head->HwAddrLen;
 
-  if (EFI_ERROR (NET_TRYLOCK (&ArpService->Lock))) {
-    ARP_DEBUG_ERROR (("ArpOnFrameRcvd: Faild to acquire the CacheTableLock.\n"));
-    goto RECYCLE_RXDATA;
-  }
-
   SenderAddress[Hardware].Type       = Head->HwType;
   SenderAddress[Hardware].Length     = Head->HwAddrLen;
   SenderAddress[Hardware].AddressPtr = ArpAddress.SenderHwAddr;
@@ -179,7 +173,7 @@ Returns:
     // This address (either hardware or protocol address, or both) is configured to
     // be a deny entry, silently skip the normal process.
     //
-    goto UNLOCK_EXIT;
+    goto RECYCLE_RXDATA;
   }
 
   ProtoMatched = FALSE;
@@ -218,7 +212,7 @@ Returns:
     //
     // Protocol type unmatchable, skip.
     //
-    goto UNLOCK_EXIT;
+    goto RECYCLE_RXDATA;
   }
 
   //
@@ -245,7 +239,7 @@ Returns:
     //
     // This arp packet isn't targeted to us, skip now.
     //
-    goto UNLOCK_EXIT;
+    goto RECYCLE_RXDATA;
   }
 
   if (!MergeFlag) {
@@ -266,7 +260,7 @@ Returns:
       //
       CacheEntry = ArpAllocCacheEntry (NULL);
       if (CacheEntry == NULL) {
-        goto UNLOCK_EXIT;
+        goto RECYCLE_RXDATA;
       }
     } 
 
@@ -300,19 +294,13 @@ Returns:
     ArpSendFrame (Instance, CacheEntry, ARP_OPCODE_REPLY);
   }
 
-UNLOCK_EXIT:
-
-  NET_UNLOCK (&ArpService->Lock);
-
 RECYCLE_RXDATA:
-
   //
   // Signal Mnp to recycle the RxData.
   //
   gBS->SignalEvent (RxData->RecycleEvent);
   
 RESTART_RECEIVE:
-
   //
   // Continue to receive packets from Mnp.
   //
@@ -328,8 +316,37 @@ RESTART_RECEIVE:
 
 VOID
 EFIAPI
-ArpOnFrameSent (
+ArpOnFrameRcvd (
   IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+/*++
+
+Routine Description:
+
+  Queue ArpOnFrameRcvdDpc as a DPC at EFI_TPL_CALLBACK.
+
+Arguments:
+
+  Event   - The Event this notify function registered to.
+  Context - Pointer to the context data registerd to the Event.
+
+Returns:
+
+  None.
+
+--*/  
+{
+  //
+  // Request ArpOnFrameRcvdDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, ArpOnFrameRcvdDpc, Context);
+}
+
+
+VOID
+EFIAPI
+ArpOnFrameSentDpc (
   IN VOID       *Context
   )
 /*++
@@ -340,7 +357,6 @@ Routine Description:
 
 Arguments:
 
-  Event   - The Event this notify function registered to.
   Context - Pointer to the context data registerd to the Event.
 
 Returns:
@@ -371,6 +387,37 @@ Returns:
   gBS->CloseEvent (TxToken->Event);
   NetFreePool (TxToken);
 }
+
+
+VOID
+EFIAPI
+ArpOnFrameSent (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+/*++
+
+Routine Description:
+
+  Request ArpOnFrameSentDpc as a DPC at EFI_TPL_CALLBACK 
+
+Arguments:
+
+  Event   - The Event this notify function registered to.
+  Context - Pointer to the context data registerd to the Event.
+
+Returns:
+
+  None.
+
+--*/
+{
+  //
+  // Request ArpOnFrameSentDpc as a DPC at EFI_TPL_CALLBACK 
+  //
+  NetLibQueueDpc (EFI_TPL_CALLBACK, ArpOnFrameSentDpc, Context);
+}
+
 
 VOID
 EFIAPI
@@ -404,10 +451,6 @@ Returns:
 
   ASSERT (Context != NULL);
   ArpService = (ARP_SERVICE_DATA *)Context;
-
-  if (EFI_ERROR (NET_TRYLOCK (&ArpService->Lock))) {
-    return;
-  }
 
   //
   // Iterate all the pending requests to see whether a retry is needed to send out
@@ -507,8 +550,6 @@ Returns:
       CacheEntry->DecayTime -= ARP_PERIODIC_TIMER_INTERVAL;
     }
   }
-
-  NET_UNLOCK (&ArpService->Lock);
 }
 
 STATIC
@@ -833,6 +874,11 @@ Returns:
     }
   }
 
+  //
+  // Dispatch the DPCs queued by the NotifyFunction of the Context->UserRequestEvent.
+  //
+  NetLibDispatchDpc ();
+
   return Count;
 }
 
@@ -1010,7 +1056,7 @@ Returns:
       //
       // Cancel the arp requests issued by this instance.
       //
-      ArpCancelRequest (Instance, NULL, NULL);
+      Instance->ArpProto.Cancel (&Instance->ArpProto, NULL, NULL);
 
       //
       // Free the buffer previously allocated to hold the station address.

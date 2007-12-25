@@ -363,6 +363,20 @@ Returns:
         PciIoDevice->RomSize        = PlatformOpRomSize;
         PciIoDevice->PciIo.RomSize  = PlatformOpRomSize;
         PciIoDevice->PciIo.RomImage = PlatformOpRomBuffer;
+        //
+        // For OpROM read from gPciPlatformProtocol:
+        //   Add the Rom Image to internal database for later PCI light enumeration
+        //
+        PciRomAddImageMapping (
+          NULL,
+          PciIoDevice->PciRootBridgeIo->SegmentNumber,
+          PciIoDevice->BusNumber,
+          PciIoDevice->DeviceNumber,
+          PciIoDevice->FunctionNumber,
+          (UINT64) (UINTN) PciIoDevice->PciIo.RomImage,
+          PciIoDevice->PciIo.RomSize
+          );
+        
       }
     }
 

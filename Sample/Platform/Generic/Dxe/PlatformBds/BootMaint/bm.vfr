@@ -113,6 +113,20 @@ typedef struct {
   UINT8                     LegacyCD[100];
   UINT8                     LegacyNET[100];
   UINT8                     LegacyBEV[100];
+  
+//
+// We use DisableMap array to record the enable/disable state of each boot device
+// It should be taken as a bit array, from left to right there are totally 256 bits
+// the most left one stands for BBS table item 0, and the most right one stands for item 256
+// If the bit is 1, it means the boot device has been disabled.
+//
+  UINT8   DisableMap[32];
+
+//
+// Console Output Text Mode
+//
+  UINT16  ConsoleOutMode;
+  
 } BMM_FAKE_NV_DATA;
 #pragma pack()
 

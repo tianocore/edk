@@ -429,10 +429,9 @@ Returns:
   
   if (MappingDataBase->ForwardLink == MappingDataBase) {
     Status = LibDeleteOverridesVariables ();
-    //ASSERT (!EFI_ERROR(Status));  
     return EFI_SUCCESS;
   }
-  DEBUG ((EFI_D_ERROR, "begin QueryVariableInfo \n"));
+
   //
   // Get the the maximum size of an individual EFI variable in current system
   //
@@ -447,7 +446,6 @@ Returns:
   MaximumVariableSize = 0x300;
 #endif
 
-  DEBUG ((EFI_D_ERROR, "Steven: MaximumVariableSize =  0x%x\n", MaximumVariableSize));
   NumIndex = 0;
   OverrideItemListIndex = MappingDataBase->ForwardLink;
   while (OverrideItemListIndex != MappingDataBase) {
@@ -458,7 +456,7 @@ Returns:
     VariableNeededSize += sizeof (UINT32); //BOOLEAN	NotEnd; 
     ItemIndex = OverrideItemListIndex;
     NotEnd = FALSE;
-    DEBUG ((EFI_D_ERROR, "step1 begin \n"));
+
     while (ItemIndex != MappingDataBase){ 
       if ((VariableNeededSize + 
            GetOneItemNeededSize (ItemIndex) + 
@@ -469,7 +467,7 @@ Returns:
         NotEnd = TRUE;
         break;
       }
-      DEBUG ((EFI_D_ERROR, "step1: a item pass \n"));
+
       VariableNeededSize += GetOneItemNeededSize (ItemIndex);  
       ItemIndex =  ItemIndex->ForwardLink;
     } 
@@ -482,14 +480,14 @@ Returns:
         return EFI_OUT_OF_RESOURCES;
       }
     }
-    DEBUG ((EFI_D_ERROR, "step1 done \n"));
+
     //
     // VariableNeededSize is the most proper variable size, allocate variable buffer
     // ItemIndex now points to the next PLATFORM_OVERRIDE_ITEM which is not covered by VariableNeededSize
     //
     VariableBuffer = EfiLibAllocateZeroPool (VariableNeededSize);
     ASSERT ((UINTN) VariableBuffer % sizeof(UINTN) == 0);
-    DEBUG ((EFI_D_ERROR, "Allocation done \n"));
+
     //
     // Fill the variable buffer according to MappingDataBase
     //
@@ -501,23 +499,20 @@ Returns:
     //
     // ItemIndex points to the next PLATFORM_OVERRIDE_ITEM which is not covered by VariableNeededSize
     //
-    DEBUG ((EFI_D_ERROR, "step2 begin: VariableIndex = 0x%x\n", (UINTN) VariableIndex));
     while (OverrideItemListIndex != ItemIndex){
       *(UINT32 *) VariableIndex = PLATFORM_OVERRIDE_ITEM_SIGNATURE;  
       VariableIndex += sizeof (UINT32); // pass SIGNATURE
       SavedSize += sizeof (UINT32);
-      DEBUG ((EFI_D_ERROR, "step2.1 done: VariableIndex = 0x%x\n", (UINTN) VariableIndex));
       
       OverrideItem = CR(OverrideItemListIndex, PLATFORM_OVERRIDE_ITEM, Link, PLATFORM_OVERRIDE_ITEM_SIGNATURE);
       *(UINT32 *) VariableIndex = OverrideItem->DriverInfoNum;
       VariableIndex += sizeof (UINT32); // pass DriverNum
       SavedSize += sizeof (UINT32);
-      DEBUG ((EFI_D_ERROR, "step2.2 done: VariableIndex = 0x%x\n", (UINTN) VariableIndex));
 
       EfiCopyMem (VariableIndex, OverrideItem->ControllerDevicePath, EfiDevicePathSize (OverrideItem->ControllerDevicePath));
       VariableIndex += EfiDevicePathSize (OverrideItem->ControllerDevicePath); // pass ControllerDevicePath
       SavedSize += EfiDevicePathSize (OverrideItem->ControllerDevicePath);
-      DEBUG ((EFI_D_ERROR, "step2.3 done: VariableIndex = 0x%x\n", (UINTN) VariableIndex));
+
       //
       // Align the VariableIndex since the controller device path may not be aligned
       //
@@ -528,7 +523,6 @@ Returns:
       while (ImageInfoListIndex != &OverrideItem->DriverInfoList){
         DriverImageInfo = CR(ImageInfoListIndex, DRIVER_IMAGE_INFO, Link, DRIVER_IMAGE_INFO_SIGNATURE);
         EfiCopyMem (VariableIndex, DriverImageInfo->DriverImagePath, EfiDevicePathSize (DriverImageInfo->DriverImagePath));
-        DEBUG ((EFI_D_ERROR, "step2: EfiCopyMem pass \n"));
         VariableIndex += EfiDevicePathSize (DriverImageInfo->DriverImagePath); // pass DriverImageDevicePath
         SavedSize += EfiDevicePathSize (DriverImageInfo->DriverImagePath);
         //
@@ -536,15 +530,12 @@ Returns:
         //
         SavedSize += ((sizeof(UINT32) - ((UINTN) (VariableIndex))) & (sizeof(UINT32) - 1));
         VariableIndex += ((sizeof(UINT32) - ((UINTN) (VariableIndex))) & (sizeof(UINT32) - 1));
-        DEBUG ((EFI_D_ERROR, "step2: EfiCopyMem pass: VariableIndex = 0x%x\n", (UINTN) VariableIndex));
         ImageInfoListIndex = ImageInfoListIndex->ForwardLink;
       }
-      DEBUG ((EFI_D_ERROR, "step2: a item pass \n"));
+
       OverrideItemListIndex =  OverrideItemListIndex->ForwardLink;
-      DEBUG ((EFI_D_ERROR, "step2: next item VariableIndex = 0x%x\n", (UINTN) VariableIndex));
     }
     
-    DEBUG ((EFI_D_ERROR, "VariableNeededSize = 0x%x \n", VariableNeededSize));
     ASSERT (SavedSize == VariableNeededSize);
     
     if (NumIndex == 0) {
@@ -553,7 +544,6 @@ Returns:
       SPrint (OverrideVariableName, sizeof (OverrideVariableName), L"PlatDriOver%d", NumIndex ); 
     }
     
-    DEBUG ((EFI_D_ERROR, "begin setvariable \n"));
     Status = gRT->SetVariable (
                     OverrideVariableName,
                     &mOverrideVariableGuid,
@@ -561,7 +551,6 @@ Returns:
                     VariableNeededSize,
                     VariableBuffer
                     );
-    DEBUG ((EFI_D_ERROR, "Status = 0x%x\n", Status));
     ASSERT (!EFI_ERROR(Status));
     
     NumIndex ++;
@@ -569,6 +558,104 @@ Returns:
   }
 
   return EFI_SUCCESS;  
+}
+
+EFI_DRIVER_BINDING_PROTOCOL *
+EFIAPI
+LibGetBindingProtocolFromImageHandle (
+  IN  EFI_HANDLE   ImageHandle,
+  OUT EFI_HANDLE   *BindingHandle
+  )
+/*++
+
+Routine Description:
+  Get the first Binding protocol which has the specific image handle  
+
+Arguments:
+  Image - Image handle 
+
+Returns:
+  Pointer into the Binding protocol interface.
+  Otherwise a pointer to NULL.
+  
+--*/
+{
+  EFI_STATUS                        Status;
+  UINTN                             Index;
+  UINTN                             DriverBindingHandleCount;
+  EFI_HANDLE                        *DriverBindingHandleBuffer;
+  EFI_DRIVER_BINDING_PROTOCOL       *DriverBindingInterface;
+  
+  if (BindingHandle == NULL || ImageHandle == NULL) {
+    return NULL;
+  }
+  //
+  // Get all driver which support binding protocol in second page
+  //
+  DriverBindingHandleCount  = 0;
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiDriverBindingProtocolGuid,
+                  NULL,
+                  &DriverBindingHandleCount,
+                  &DriverBindingHandleBuffer
+                  );
+  if (EFI_ERROR (Status) || (DriverBindingHandleCount == 0)) {
+    return NULL;
+  }
+
+  for (Index = 0; Index < DriverBindingHandleCount; Index++) {
+    DriverBindingInterface =NULL;
+    Status = gBS->OpenProtocol (
+                    DriverBindingHandleBuffer[Index],
+                    &gEfiDriverBindingProtocolGuid,
+                    (VOID **) &DriverBindingInterface,
+                    NULL,
+                    NULL,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+    
+    if (DriverBindingInterface->ImageHandle == ImageHandle) {
+      *BindingHandle = DriverBindingHandleBuffer[Index];
+      gBS->FreePool (DriverBindingHandleBuffer);
+      return DriverBindingInterface;
+    }
+  }
+  
+  gBS->FreePool (DriverBindingHandleBuffer);
+  *BindingHandle = NULL;
+  return NULL;
+}
+
+EFI_TPL
+GetCurrentTpl (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  return the current TPL, copied from the EDKII glue lib. 
+
+Arguments:
+
+  VOID
+
+Returns:
+
+  Current TPL
+
+--*/
+{
+  EFI_TPL                 Tpl;
+
+  Tpl = gBS->RaiseTPL (EFI_TPL_HIGH_LEVEL); 
+  gBS->RestoreTPL (Tpl);
+
+  return Tpl;
 }
 
 EFI_STATUS
@@ -611,7 +698,10 @@ Returns:
   UINTN                       ImageHandleCount;
   UINTN                       Index;
   EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage;
+#ifdef EFI_DEBUG
   EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
+  EFI_HANDLE                  DriverBindingHandle;
+#endif
   BOOLEAN                     FoundLastReturned;
   PLATFORM_OVERRIDE_ITEM      *OverrideItem;
   DRIVER_IMAGE_INFO           *DriverImageInfo;
@@ -623,6 +713,7 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL    *LoadedImageHandleDevicePath;
   EFI_DEVICE_PATH_PROTOCOL    *TatalFilePath;
   EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL  *BusSpecificDriverOverride;
+  
   //
   // Check that ControllerHandle is a valid handle
   //
@@ -666,7 +757,6 @@ Returns:
   if (!ControllerFound) {
     return EFI_NOT_FOUND;
   }
-  DEBUG ((EFI_D_ERROR, "Steven: Controller Found! \n"));
   //
   // Passing in a pointer to NULL, will return the first driver device path for ControllerHandle.
   // Check whether the driverImagePath is not a device path that was returned on a previous call to GetDriverPath().
@@ -697,7 +787,6 @@ Returns:
   while (ImageInfoListIndex != &OverrideItem->DriverInfoList){
     DriverImageInfo = CR(ImageInfoListIndex, DRIVER_IMAGE_INFO, Link, DRIVER_IMAGE_INFO_SIGNATURE);
     if (DriverImageInfo->ImageHandle == NULL) {
-      DEBUG ((EFI_D_ERROR, "Steven: DriverImageInfo->ImageHandle == NULL \n"));
       //
       // Skip if the image is unloadable or unstartable
       //
@@ -748,11 +837,10 @@ Returns:
                               &LoadedImageHandleDevicePath
                               );
           if (EFI_ERROR (Status)) {
-            DEBUG ((EFI_D_ERROR, "Steven:0x%x: LoadedImage->DeviceHandle has wrong DevicePathProtocol \n", Status));
             //
-            // Maybe Not all  LoadedImage->DeviceHandle has valid value.  Not continue here currently.
+            // Maybe Not all  LoadedImage->DeviceHandle has valid value.  Skip the invalid image.
             //
-            //continue;
+            continue;
           }
           
           TatalFilePath = EfiAppendDevicePath (LoadedImageHandleDevicePath, LoadedImage->FilePath);
@@ -772,26 +860,30 @@ Returns:
         }
 
         if (ImageFound) {
-          DEBUG ((EFI_D_ERROR, "Steven: Needed override Image Found! \n"));
-          Status = gBS->HandleProtocol (
-                          ImageHandleBuffer[Index],
-                          &gEfiDriverBindingProtocolGuid,
-                          &DriverBinding
-                          );
-          if (EFI_ERROR (Status)){
-            DEBUG ((EFI_D_ERROR, "Steven: Can not locate the binding protocol!!!!! Status=0x%x\n", Status));
-            ASSERT (!EFI_ERROR (Status));
-          }
+#ifdef EFI_DEBUG
+          //
+          // Find its related driver binding protocol
+          // Driver binding handle may be different with its driver's Image handle,
+          //
+          DriverBindingHandle = NULL;
+          DriverBinding = LibGetBindingProtocolFromImageHandle (
+                                      ImageHandleBuffer[Index],
+                                      &DriverBindingHandle
+                                      );
+          ASSERT (DriverBinding != NULL);
+#endif
           DriverImageInfo->ImageHandle = ImageHandleBuffer[Index];
-        } else {
-          DEBUG ((EFI_D_ERROR, "Steven: Not Found Needed override Image, try to load it! \n"));
+        } else if (GetCurrentTpl() <= EFI_TPL_CALLBACK){
           //
           // The driver image has not been loaded and started, need try to load and start it now
           // Try to connect all device in the driver image path
           //
+          // Note: LoadImage() and  StartImage() should be called under CALLBACK TPL in theory, but 
+          // since many device need to be connected in  CALLBACK level environment( e.g. Usb devices ) 
+          // and the Fat and Patition driver can endure executing in CALLBACK level in fact, so here permit
+          // to use LoadImage() and  StartImage() in CALLBACK TPL.
+          //
           Status = ConnectDevicePath (DriverImageInfo->DriverImagePath);
-          //if (!EFI_ERROR (Status)) {
-          //DEBUG ((EFI_D_ERROR, "Steven: ConnectDevicePath (DriverImageInfo->DriverImagePath) success! \n"));
           //
           // check whether it points to a PCI Option Rom image, and try to use bus override protocol to get its first option rom image driver
           //
@@ -812,16 +904,21 @@ Returns:
                                                   &ImageHandle
                                                   );
             if (!EFI_ERROR (Status)) {
-              Status = gBS->HandleProtocol (
-                              ImageHandle,
-                              &gEfiDriverBindingProtocolGuid,
-                              &DriverBinding
-                              );
-              ASSERT (!EFI_ERROR (Status));
-              DriverImageInfo->ImageHandle = ImageHandle; 
+#ifdef EFI_DEBUG
+              //
+              // Find its related driver binding protocol
+              // Driver binding handle may be different with its driver's Image handle
+              //
+              DriverBindingHandle = NULL;
+              DriverBinding = LibGetBindingProtocolFromImageHandle (
+                                          ImageHandle,
+                                          &DriverBindingHandle
+                                          );
+              ASSERT (DriverBinding != NULL);
+#endif
+              DriverImageInfo->ImageHandle = ImageHandle;
             }
           }
-          //}
           //
           // Skip if any device cannot be connected now, future passes through GetDriver() may be able to load that driver. 
           // Only file path media or FwVol Device Path Node remain if all device is connected
@@ -850,20 +947,24 @@ Returns:
               //
               Status = gBS->StartImage (ImageHandle, NULL, NULL);
               if (EFI_ERROR (Status)){
-                DEBUG ((EFI_D_ERROR, "Steven: UnStartable happen! \n"));
                 DriverImageInfo->UnStartable = TRUE;
                 DriverImageInfo->ImageHandle = NULL;
-              } else {
-                Status = gBS->HandleProtocol (
-                                ImageHandle,
-                                &gEfiDriverBindingProtocolGuid,
-                                &DriverBinding
-                                );
-                ASSERT (!EFI_ERROR (Status));
-                DriverImageInfo->ImageHandle = ImageHandle;              
+              } else {       
+#ifdef EFI_DEBUG
+                //
+                // Find its related driver binding protocol
+                // Driver binding handle may be different with its driver's Image handle
+                //
+                DriverBindingHandle = NULL;
+                DriverBinding = LibGetBindingProtocolFromImageHandle (
+                                            ImageHandle,
+                                            &DriverBindingHandle
+                                            );
+                ASSERT (DriverBinding != NULL);
+#endif
+                DriverImageInfo->ImageHandle = ImageHandle;                
               }
             } else {
-              DEBUG ((EFI_D_ERROR, "Steven: Unloadable happen! \n"));
               DriverImageInfo->UnLoadable = TRUE;
               DriverImageInfo->ImageHandle = NULL;
             }                      
@@ -890,7 +991,6 @@ Returns:
       if ((*DriverImageHandle == NULL) || FoundLastReturned) {
         OverrideItem->LastReturnedImageHandle = DriverImageInfo->ImageHandle;
         *DriverImageHandle = DriverImageInfo->ImageHandle;
-        DEBUG ((EFI_D_ERROR, "Steven: return EFI_SUCCESS! \n"));
         return EFI_SUCCESS;
       } else if (*DriverImageHandle == DriverImageInfo->ImageHandle){
         FoundLastReturned = TRUE;
@@ -898,7 +998,7 @@ Returns:
     }
     ImageInfoListIndex = ImageInfoListIndex->ForwardLink;
   }
-  DEBUG ((EFI_D_ERROR, "Steven: return EFI_NOT_FOUND \n"));
+
   return EFI_NOT_FOUND;
 }
 
@@ -1891,87 +1991,5 @@ Returns:
   //
   // All handle with DevicePath exists in the handle database
   //
-  return Status;
-}
-
-EFI_STATUS
-EFIAPI
-LocateHandleByPciClassType (
-  IN  UINT8       ClassType,
-  IN  UINT8       SubClassCode,
-  IN  UINT8       PI,
-  IN  BOOLEAN     Recursive,
-  OUT EFI_HANDLE  **Buffer
-  ) 
-/*++
-
-Routine Description:
-  
-
-Arguments:
-  ClassType - 
-  Recursive -
-  
-Returns:
-  EFI_SUCCESS       - 
-  others            - An error occurred when 
-
---*/
-{
-  EFI_STATUS                Status;
-  UINTN                     Index;
-  UINTN                     HandleCount;
-  EFI_HANDLE                *HandleBuffer;
-  EFI_PCI_IO_PROTOCOL       *PciIo;
-  PCI_TYPE00                Pci;
-
-  HandleBuffer = NULL;
-  Status = gBS->LocateHandleBuffer (
-                  ByProtocol,
-                  &gEfiPciIoProtocolGuid,
-                  NULL,
-                  &HandleCount,
-                  &HandleBuffer
-                  );
-  for (Index = 0; Index < HandleCount; Index++) {
-    Status = gBS->HandleProtocol (
-                    HandleBuffer[Index],
-                    &gEfiPciIoProtocolGuid,
-                    &PciIo
-                    );
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-
-    Status = PciIo->Pci.Read (PciIo, EfiPciIoWidthUint32, 0, sizeof (Pci) / sizeof (UINT32), &Pci);
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-
-    if (ClassType != 0xFF) {
-      if (Pci.Hdr.ClassCode[2] != ClassType) {
-        continue;
-      }
-    }
-    
-    if (SubClassCode != 0xFF) {
-      if (Pci.Hdr.ClassCode[1] != SubClassCode) {
-        continue;
-      }
-    }
-    
-    if (PI != 0xFF) {
-      if (Pci.Hdr.ClassCode[0] != PI) {
-        continue;
-      }        
-    }
-    
-    gBS->ConnectController (HandleBuffer[Index], NULL, NULL, Recursive);
-  }
-
-  if (HandleBuffer != NULL) {
-    EfiLibSafeFreePool (HandleBuffer);
-  }
-  
   return Status;
 }

@@ -642,6 +642,7 @@ Returns:
     return NULL;
   }
 
+  NetListInit (&Sock->Link);
   NetListInit (&Sock->ConnectionList);
   NetListInit (&Sock->ListenTokenList);
   NetListInit (&Sock->RcvTokenList);

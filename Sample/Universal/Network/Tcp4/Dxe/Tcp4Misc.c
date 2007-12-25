@@ -464,6 +464,7 @@ Returns:
 {
   TCP_CB             *Clone;
   TCP4_SERVICE_DATA  *TcpService;
+  EFI_IP4_PROTOCOL   *Ip4;
 
   Clone = NetAllocatePool (sizeof (TCP_CB));
 
@@ -492,14 +493,29 @@ Returns:
 
   ((TCP4_PROTO_DATA *) (Clone->Sk->ProtoReserved))->TcpPcb = Clone;
 
+  TcpService = ((TCP4_PROTO_DATA *) (Clone->Sk->ProtoReserved))->TcpService;
+
+  NetListInsertTail (&TcpService->SocketList, &Clone->Sk->Link);
+
   //
   // Open the device path on the handle where service binding resides on.
   //
-  TcpService = ((TCP4_PROTO_DATA *) (Clone->Sk->ProtoReserved))->TcpService;
   gBS->OpenProtocol (
          TcpService->ControllerHandle,
          &gEfiDevicePathProtocolGuid,
          (VOID **) &Clone->Sk->ParentDevicePath,
+         TcpService->DriverBindingHandle,
+         Clone->Sk->SockHandle,
+         EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+         );
+
+  //
+  // Open the ip protocol by child controller.
+  //
+  gBS->OpenProtocol (
+         TcpService->IpIo->ChildHandle,
+         &gEfiIp4ProtocolGuid,
+         (VOID **) &Ip4,
          TcpService->DriverBindingHandle,
          Clone->Sk->SockHandle,
          EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER

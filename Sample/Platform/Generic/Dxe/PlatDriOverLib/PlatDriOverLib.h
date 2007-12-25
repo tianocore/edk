@@ -110,6 +110,13 @@ LibSaveOverridesMapping (
   IN  EFI_LIST_ENTRY          *MappingDataBase
   );
   
+EFI_DRIVER_BINDING_PROTOCOL *
+EFIAPI
+LibGetBindingProtocolFromImageHandle (
+  IN  EFI_HANDLE   ImageHandle,
+  OUT EFI_HANDLE   *BindingHandle
+  );
+  
 EFI_STATUS
 EFIAPI
 LibGetDriverFromMapping (

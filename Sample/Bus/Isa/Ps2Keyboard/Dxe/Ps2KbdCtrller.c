@@ -609,7 +609,8 @@ ConvertKeyboardScanCodeToEfiKey[] = {
     0x00,
     0x00
   },
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   {
     0x5B,  //Left LOGO
     SCAN_NULL,
@@ -628,7 +629,8 @@ ConvertKeyboardScanCodeToEfiKey[] = {
     0x00,
     0x00
   },    
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
   {
     TABLE_END,
     TABLE_END,
@@ -1614,24 +1616,29 @@ Returns:
       break;
 
     case SCANCODE_LEFT_SHIFT_MAKE:
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX        
       if (!Extended) {
         ConsoleIn->Shift     = TRUE;
         ConsoleIn->LeftShift = TRUE;
       }      
       break;
-#endif            
+#endif  // DISABLE_CONSOLE_EX
+#endif
     case SCANCODE_RIGHT_SHIFT_MAKE:
       if (!Extended) {
         ConsoleIn->Shift = TRUE;
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX        
         ConsoleIn->RightShift = TRUE;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       }
       break;
 
     case SCANCODE_LEFT_SHIFT_BREAK:
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX        
       //
       // Scancode 0xAA: Left shift break
       // Scancode 0xE0, 0x B7, 0xE0, 0xAA: SysReq break
@@ -1643,18 +1650,22 @@ Returns:
         ConsoleIn->SysReq    = FALSE;
       }      
       break;
-#endif            
+#endif  // DISABLE_CONSOLE_EX
+#endif
       
     case SCANCODE_RIGHT_SHIFT_BREAK:
       if (!Extended) {
         ConsoleIn->Shift = FALSE;
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)          
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX        
         ConsoleIn->RightShift = FALSE;
+#endif  // DISABLE_CONSOLE_EX
 #endif
       }
       break;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
     case SCANCODE_LEFT_LOGO_MAKE:
       ConsoleIn->LeftLogo = TRUE;
       break;    
@@ -1677,7 +1688,8 @@ Returns:
       if (Extended) {
         ConsoleIn->SysReq = TRUE;
       }
-#endif      
+#endif  // DISABLE_CONSOLE_EX
+#endif
     case SCANCODE_CAPS_LOCK_MAKE:
       ConsoleIn->CapsLock = (BOOLEAN)!ConsoleIn->CapsLock;
       UpdateStatusLights (ConsoleIn);
@@ -1728,6 +1740,7 @@ Returns:
       if (ConsoleIn->Shift) {
         ConsoleIn->Key.UnicodeChar = ConvertKeyboardScanCodeToEfiKey[Index].ShiftUnicodeChar;
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
         //
         // Need not return associated shift state if a class of printable characters that
         // are normally adjusted by shift modifiers. e.g. Shift Key + 'f' key = 'F'
@@ -1736,6 +1749,7 @@ Returns:
           ConsoleIn->LeftShift  = FALSE;
           ConsoleIn->RightShift = FALSE;
         }
+#endif  // DISABLE_CONSOLE_EX
 #endif
         
       } else {
@@ -1784,6 +1798,7 @@ Returns:
   }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   //
   // Save the Shift/Toggle state
   //
@@ -1821,7 +1836,8 @@ Returns:
     ConsoleIn->KeyState.KeyToggleState |= EFI_SCROLL_LOCK_ACTIVE;
   }
 
-#endif  
+#endif  // DISABLE_CONSOLE_EX
+#endif
   return EFI_SUCCESS;
 }
 
@@ -2027,12 +2043,14 @@ Returns:
   ConsoleIn->NumLock    = FALSE;
   ConsoleIn->ScrollLock = FALSE;
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
   ConsoleIn->LeftShift  = FALSE;
   ConsoleIn->RightShift = FALSE;
   ConsoleIn->LeftLogo   = FALSE;
   ConsoleIn->RightLogo  = FALSE;
   ConsoleIn->Menu       = FALSE;
   ConsoleIn->SysReq     = FALSE;  
+#endif  // DISABLE_CONSOLE_EX
 #endif
   //
   // For reseting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,

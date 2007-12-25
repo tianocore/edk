@@ -125,7 +125,7 @@ REM #
 REM # These directories will show up as file systems with no Block IO
 REM #
 echo on
-set EFI_WIN_NT_FILE_SYSTEM=.
+set EFI_WIN_NT_FILE_SYSTEM=.!%EDK_SOURCE%\Other\Maintained\Application\UefiShell\bin\ia32\Apps
 @echo off
 
 REM #

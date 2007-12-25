@@ -445,7 +445,19 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
+  if (!Config->UseDefaultSetting && !EFI_IP4_EQUAL (mZeroIp4Addr, Config->GatewayIp)) {
+    //
+    // The station IP address is manually configured and the Gateway IP is not 0.
+    // Add the default route for this UDP instance.
+    //
+    Status = McastIo->Udp->Routes (McastIo->Udp, FALSE, &mZeroIp4Addr, &mZeroIp4Addr, &Config->GatewayIp);
+    if (EFI_ERROR (Status)) {
+      McastIo->Udp->Configure (McastIo->Udp, NULL);
+      return Status;
+    }
+  }
+
   //
   // join the multicast group
   //

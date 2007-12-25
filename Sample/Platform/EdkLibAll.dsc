@@ -46,6 +46,7 @@ $(EDK_PREFIX)Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf
 $(EDK_PREFIX)Foundation\Library\RuntimeDxe\EfiRuntimeLib\EfiRuntimeLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\Graphics\Graphics.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\EfiIfrSupportLib\EfiIfrSupportLib.inf
+$(EDK_PREFIX)Foundation\Library\Dxe\UefiEfiIfrSupportLib\UefiEfiIfrSupportLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\Print\PrintLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\EfiScriptLib\EfiScriptLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\EfiUiLib\EfiUiLib.inf
@@ -55,9 +56,3 @@ $(EDK_PREFIX)Foundation\Library\Dxe\EfiUiLib\EfiUiLib.inf
 #
 $(EDK_PREFIX)Foundation\Library\Dxe\PrintLite\PrintLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\GraphicsLite\Graphics.inf
-
-#
-# Module Libraries
-#
-$(EDK_PREFIX)Sample\Platform\Generic\Dxe\GenericBds\GenericBds.inf
-$(EDK_PREFIX)Sample\Bus\Usb\UsbLib\Dxe\UsbDxeLib.inf

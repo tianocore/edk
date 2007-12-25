@@ -1,0 +1,60 @@
+#/*++
+#
+# Copyright (c) 2007, Intel Corporation
+# All rights reserved. This program and the accompanying materials
+# are licensed and made available under the terms and conditions of the BSD License
+# which accompanies this distribution.  The full text of the license may be found at
+# http://opensource.org/licenses/bsd-license.php
+#
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#  Module Name:
+#
+#    DriverSample.Inf
+#
+#  Abstract:
+#
+#
+#
+#--*/
+
+
+[defines]
+BASE_NAME            = DriverSample
+FILE_GUID            = FE3542FE-C1D3-4EF8-657C-8048606FF671
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  InventoryStrings.uni
+  Inventory.vfr
+  VfrStrings.uni
+  Vfr.vfr
+  DriverSample.c
+  DriverSample.h
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Library\Dxe\EfiDriverLib
+  $(EDK_SOURCE)\Foundation\Library\Dxe\UefiEfiIfrSupportLib
+  $(DEST_DIR)
+
+[libraries.common]
+  EdkFrameworkProtocolLib
+  EfiDriverLib
+  UefiEfiIfrSupportLib
+  PrintLibLite
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=DriverSampleInit
+  DPX_SOURCE=DriverSample.dxs
+  LINK_FLAGS = $(LINK_FLAGS) /EXPORT:InitializeDriver=DriverSampleInit

@@ -68,6 +68,7 @@ $(EDK_PREFIX)Foundation\Core\Dxe\ArchProtocol\ArchProtocolLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\EfiDriverLib\EfiDriverLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\Graphics\Graphics.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\EfiIfrSupportLib\EfiIfrSupportLib.inf
+$(EDK_PREFIX)Foundation\Library\Dxe\UefiEfiIfrSupportLib\UefiEfiIfrSupportLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\Print\PrintLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\PrintLite\PrintLib.inf
 $(EDK_PREFIX)Foundation\Library\Dxe\GraphicsLite\Graphics.inf
@@ -154,6 +155,7 @@ Sample\Universal\Network\Snp32_64\Dxe\SNP.inf
 Sample\Universal\Network\PxeBc\Dxe\BC.inf
 Sample\Universal\Network\PxeDhcp4\Dxe\PxeDhcp4.inf
 
+Sample\Universal\Network\Dpc\Dxe\Dpc.inf
 Sample\Universal\Network\Mnp\Dxe\Mnp.inf
 Sample\Universal\Network\Arp\Dxe\Arp.inf
 Sample\Universal\Network\Ip4\Dxe\Ip4.inf

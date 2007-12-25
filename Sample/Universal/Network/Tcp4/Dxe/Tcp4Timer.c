@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -575,9 +575,8 @@ Returns:
 
 VOID
 EFIAPI
-TcpTicking (
-  IN EFI_EVENT Event,
-  IN VOID      *Context
+TcpTickingDpc (
+  IN VOID       *Context
   )
 /*++
 
@@ -587,8 +586,7 @@ Routine Description:
 
 Arguments:
 
-  Event   - Timer event signaled, ignored.
-  Context - Context of the timer event, ignored.
+  Context - Context of the DPC, ignored.
 
 Returns:
 
@@ -669,3 +667,30 @@ NextConnection:
     ;
   }
 }
+
+VOID
+EFIAPI
+TcpTicking (
+  IN EFI_EVENT Event,
+  IN VOID      *Context
+  )
+/*++
+
+Routine Description:
+
+  Heart beat timer handler, queues the DPC at TPL_CALLBACK.
+
+Arguments:
+
+  Event   - Timer event signaled, ignored.
+  Context - Context of the timer event, ignored.
+
+Returns:
+
+  None.
+
+--*/
+{
+  NetLibQueueDpc (EFI_TPL_CALLBACK, TcpTickingDpc, Context);
+}
+

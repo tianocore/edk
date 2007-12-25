@@ -175,9 +175,23 @@ cleantools :
 rebuild : clean all
 
 #
-# cleanall target to clean all build directories.
+# cleanall target to clean all build directories
+# and binary files in $(EFI_PLATFORM_BIN).
 #
-cleanall : clean
+cleanall : 
+  - @if exist vc??.* del vc??.* > NUL
+  - @if exist *.bak del *.bak > NUL
+  - @if exist ia32 rd /s/q ia32 > NUL
+  - @if exist ipf rd /s /q ipf > NUL
+  - @if exist ebc rd /s /q ebc > NUL
+  - @if exist x64 rd /s /q x64 > NUL
+  - @if exist fv rd /s /q fv > NUL
+  - @if exist Tools rd /s /q Tools > NUL
+  - @if exist $(EFI_PLATFORM_BIN) rd /s /q $(EFI_PLATFORM_BIN) > NUL
+  - @if exist $(EFI_BINARY) rd $(EFI_BINARY) > NUL 2>&1
+  - @if exist makefile.out del makefile.out > NUL
+  - @if exist module.* del module.* > NUL
+  - @echo All targets cleaned
 
 loader:
   $(MAKE) loader \
@@ -200,22 +214,22 @@ floppy:
   -copy Fv\Efildr $(EFI_BOOT_DISK)\Efildr /Y
   -copy Fv\EfiExtended.fv $(EFI_BOOT_DISK)\ /Y
   -@if not exist $(EFI_BOOT_DISK)\efi\boot ( mkdir $(EFI_BOOT_DISK)\efi\boot )
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
 
 usb:
   -copy Fv\Efildr16 $(EFI_BOOT_DISK)\Efildr16 /Y
   -copy Fv\EfiExtended.fv $(EFI_BOOT_DISK)\ /Y
   -@if not exist $(EFI_BOOT_DISK)\efi\boot ( mkdir $(EFI_BOOT_DISK)\efi\boot )
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
 
 usb32:
   -copy Fv\Efildr20 $(EFI_BOOT_DISK)\Efildr20 /Y
   -copy Fv\EfiExtended.fv $(EFI_BOOT_DISK)\ /Y
   -@if not exist $(EFI_BOOT_DISK)\efi\boot ( mkdir $(EFI_BOOT_DISK)\efi\boot )
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
 
 hd:
   -copy Fv\Efildr16 $(EFI_BOOT_DISK)\Efildr16 /Y
@@ -228,8 +242,8 @@ hd:
   -copy Fv\EfiExtended.fv $(EFI_BOOT_DISK)\ /Y
   @echo copy EfiExtended.fv fs0: -q >> $(EFI_BOOT_DISK)\createhd.nsh
   -@if not exist $(EFI_BOOT_DISK)\efi\boot ( mkdir $(EFI_BOOT_DISK)\efi\boot )
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
   @echo copy efi fs0: -r -q         >> $(EFI_BOOT_DISK)\createhd.nsh
   @echo copy LoadFv.efi fs0: -q     >> $(EFI_BOOT_DISK)\createhd.nsh
   @echo fs0:                        >> $(EFI_BOOT_DISK)\createhd.nsh
@@ -247,8 +261,8 @@ hd32:
   -copy Fv\EfiExtended.fv $(EFI_BOOT_DISK)\ /Y
   @echo copy EfiExtended.fv fs0: -q >> $(EFI_BOOT_DISK)\createhd32.nsh
   -@if not exist $(EFI_BOOT_DISK)\efi\boot ( mkdir $(EFI_BOOT_DISK)\efi\boot )
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
-  -copy $(EDK_SOURCE)\Other\Maintained\Application\$(UEFI_PREFIX)Shell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\$(EFI_SHELL_BIN) $(EFI_BOOT_DISK)\efi\boot\boot$(PROCESSOR).efi /Y
+  -copy $(EDK_SOURCE)\Other\Maintained\Application\UefiShell\bin\$(PROCESSOR)\Apps\LoadFv.efi $(EFI_BOOT_DISK)\ /Y
   @echo copy efi fs0: -r -q         >> $(EFI_BOOT_DISK)\createhd32.nsh
   @echo copy LoadFv.efi fs0: -q     >> $(EFI_BOOT_DISK)\createhd32.nsh
   @echo fs0:                        >> $(EFI_BOOT_DISK)\createhd32.nsh
