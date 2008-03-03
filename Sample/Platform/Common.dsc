@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2007, Intel Corporation                                                         
+# Copyright (c) 2004 - 2008, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -1293,7 +1293,7 @@ clean :
 # This section, as it now exists, only supports boot service drivers.
 #
 [=============================================================================]
-[Build.Ia32.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.Ipf.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.Ebc.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.x64.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI]
+[Build.Ia32.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI|PE32_PEIM_EFI,Build.Ipf.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI|PE32_PEIM_EFI,Build.Ebc.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI,Build.x64.BS_DRIVER_EFI|RT_DRIVER_EFI|APPLICATION_EFI|PE32_PEIM_EFI]
 #
 # Defines for standard intermediate files and build targets. For the source
 # .efi file, take the one in the source directory if it exists. If there's not
@@ -1320,6 +1320,8 @@ TARGET_DLL        = $(BIN_DIR)\$(BASE_NAME).dll
 #
 !IF "$(COMPONENT_TYPE)" == "APPLICATION"
 TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).app
+!ELSE IF "$(COMPONENT_TYPE)" == "PE32_PEIM"
+TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).pei
 !ELSE
 TARGET_FFS_FILE = $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).dxe
 !ENDIF

@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2006 - 2007, Intel Corporation                                                         
+Copyright 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -112,6 +112,7 @@ Return:
 {
   HANDLE                  VolumeHandle;
   STORAGE_DEVICE_NUMBER   StorageDeviceNumber;
+  STORAGE_HOTPLUG_INFO    StorageHotplugInfo;
   DWORD                   BytesReturned;
   BOOL                    Success;
   UINT                    DriveType;
@@ -164,19 +165,42 @@ Return:
               &BytesReturned, 
               NULL
               );
-  //
-  // DeviceIoControl should fail if Volume is floppy or network drive.
-  //
+
   if (!Success) {
+    //
+    // DeviceIoControl should fail if Volume is floppy or network drive.
+    //
     DriveInfo->DiskNumber = (UINT) -1;
   } else if (StorageDeviceNumber.DeviceType != FILE_DEVICE_DISK) {
     //
     // Only care about the disk.
     //
+    CloseHandle (VolumeHandle);
     return FALSE;
   } else{
     DriveInfo->DiskNumber = StorageDeviceNumber.DeviceNumber;
   }
+
+  //
+  // Walkround for some strange USB keys who report themself as DRIVE_FIXED.
+  // In such case, we query the hot-plug information additionally.
+  //
+  if (DriveType == DRIVE_FIXED) {
+    Success = DeviceIoControl (
+                VolumeHandle,
+                IOCTL_STORAGE_GET_HOTPLUG_INFO,
+                NULL, 
+                0,
+                &StorageHotplugInfo,
+                sizeof (StorageHotplugInfo),
+                &BytesReturned,
+                NULL
+                );
+    if (Success && StorageHotplugInfo.DeviceHotplug) {
+      DriveType = DRIVE_REMOVABLE;
+    }
+  }
+              
   CloseHandle(VolumeHandle);
   
   //

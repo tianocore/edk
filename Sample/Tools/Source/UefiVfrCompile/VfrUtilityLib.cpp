@@ -1,3 +1,20 @@
+/*++
+Copyright (c) 2004 - 2008, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+
+Module Name:
+  VfrUtilityLib.cpp
+
+Abstract:
+
+--*/
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "VfrUtilityLib.h"
@@ -517,7 +534,7 @@ static struct {
   {"UINT16",        EFI_IFR_TYPE_NUM_SIZE_16, sizeof (UINT16),       sizeof (UINT16)},
   {"UINT8",         EFI_IFR_TYPE_NUM_SIZE_8,  sizeof (UINT8),        sizeof (UINT8)},
   {"BOOLEAN",       EFI_IFR_TYPE_BOOLEAN,     sizeof (BOOLEAN),      sizeof (BOOLEAN)},
-  {"EFI_HII_DATE",  EFI_IFR_TYPE_DATE,        sizeof (EFI_HII_DATE), sizeof (UINT8)},
+  {"EFI_HII_DATE",  EFI_IFR_TYPE_DATE,        sizeof (EFI_HII_DATE), sizeof (UINT16)},
   {"EFI_STRING_ID", EFI_IFR_TYPE_STRING,      sizeof (EFI_STRING_ID),sizeof (EFI_STRING_ID)},
   {"EFI_HII_TIME",  EFI_IFR_TYPE_TIME,        sizeof (EFI_HII_TIME), sizeof (UINT8)},
   {NULL,            EFI_IFR_TYPE_OTHER,       0,                     0}
@@ -834,6 +851,7 @@ CVfrVarDataTypeDB::CVfrVarDataTypeDB (
   mNewDataType   = NULL;
   mCurrDataField = NULL;
   mPackAlign     = DEFAULT_PACK_ALIGN;
+  mPackStack     = NULL;
 
   InternalTypesListInit ();
 }
@@ -842,8 +860,9 @@ CVfrVarDataTypeDB::~CVfrVarDataTypeDB (
   VOID
   )
 {
-  SVfrDataType  *pType;
-  SVfrDataField *pField;
+  SVfrDataType      *pType;
+  SVfrDataField     *pField;
+  SVfrPackStackNode *pPack;
 
   if (mNewDataType != NULL) {
     delete mNewDataType;
@@ -860,30 +879,64 @@ CVfrVarDataTypeDB::~CVfrVarDataTypeDB (
 	delete pType;
   }
 
+  while (mPackStack != NULL) {
+    pPack = mPackStack;
+    mPackStack = mPackStack->mNext;
+    delete pPack;
+  }
 }
 
 EFI_VFR_RETURN_CODE
 CVfrVarDataTypeDB::Pack (
-  IN UINT32        Align
+  IN UINT32         LineNum,
+  IN UINT8          Action, 
+  IN INT8           *Identifier, 
+  IN UINT32         Number
   )
 {
-  if (Align == 0) {
-    return VFR_RETURN_INVALID_PARAMETER;
-  } else if (Align > 1) {
-    mPackAlign = Align + Align % 2;
-  } else {
-    mPackAlign = Align;
+  UINT32            PackAlign;
+  INT8              Msg[64] = {0, };
+
+  if (Action & VFR_PACK_SHOW) {
+    sprintf (Msg, "value of pragma pack(show) == %d", mPackAlign);
+    gCVfrErrorHandle.PrintMsg (LineNum, "", "Warning", Msg);
+  }
+
+  if (Action & VFR_PACK_PUSH) {
+    SVfrPackStackNode *pNew = NULL;
+
+    if ((pNew = new SVfrPackStackNode (Identifier, mPackAlign)) == NULL) {
+      return VFR_RETURN_FATAL_ERROR;
+    }
+    pNew->mNext = mPackStack;
+    mPackStack  = pNew;
+  }
+
+  if (Action & VFR_PACK_POP) {
+    SVfrPackStackNode *pNode = NULL;
+
+    if (mPackStack == NULL) {
+      gCVfrErrorHandle.PrintMsg (LineNum, "", "Warning", "#pragma pack(pop...) : more pops than pushes");
+    }
+
+    for (pNode = mPackStack; pNode != NULL; pNode = pNode->mNext) {
+      if (pNode->Match (Identifier) == TRUE) {
+        mPackAlign = pNode->mNumber;
+        mPackStack = pNode->mNext;
+      }
+    }
+  }
+
+  if (Action & VFR_PACK_ASSIGN) {
+    PackAlign = (Number > 1) ? Number + Number % 2 : Number;
+    if ((PackAlign == 0) || (PackAlign > 16)) {
+      gCVfrErrorHandle.PrintMsg (LineNum, "", "Warning", "expected pragma parameter to be '1', '2', '4', '8', or '16'");
+    } else {
+      mPackAlign = PackAlign;
+    }
   }
 
   return VFR_RETURN_SUCCESS;
-}
-
-VOID
-CVfrVarDataTypeDB::UnPack (
-  VOID
-  )
-{
-  mPackAlign = DEFAULT_PACK_ALIGN;
 }
 
 VOID

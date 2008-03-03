@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -243,6 +243,8 @@ Returns:
   UINT64            offset;
   BOOLEAN           IsaEnable;
   BOOLEAN           VGAEnable;
+  EFI_STATUS        Status;
+  EFI_PCI_PLATFORM_POLICY PciPolicy;
 
   //
   // Always assume there is ISA device and VGA device on the platform
@@ -258,6 +260,24 @@ Returns:
 #ifdef EFI_PCI_VGA_ENABLE
   VGAEnable = TRUE;
 #endif
+
+  //
+  // Check PciPlatform policy
+  //
+  if (gPciPlatformProtocol != NULL) {
+    Status = gPciPlatformProtocol->GetPlatformPolicy (
+                                     gPciPlatformProtocol,
+                                     &PciPolicy
+                                     );
+    if (!EFI_ERROR (Status)) {
+      if (PciPolicy & EFI_RESERVE_ISA_IO_ALIAS) {
+        IsaEnable = TRUE;
+      }
+      if (PciPolicy & EFI_RESERVE_VGA_IO_ALIAS) {
+        VGAEnable = TRUE;
+      }
+    }
+  }
 
   Aperture = 0;
 

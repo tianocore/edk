@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                        
+Copyright (c) 2004 - 2008, Intel Corporation                                                        
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -153,6 +153,7 @@ Returns:
   CHAR8                 *FileNameAscii;
   BOOLEAN               Done;
   VOID                  *PeiCoreFile;
+  UINTN                 *StackPointer;
 
   printf ("\nEDK SEC Main NT Emulation Environment from www.TianoCore.org\n");
 
@@ -211,22 +212,22 @@ Returns:
   printf ("  BootMode 0x%02x\n", BootMode);
 
   //
-  // Open up a 128K file to emulate temp memory for PEI.
-  //  on a real platform this would be SRAM, or using the cache as RAM.
-  //  Set InitialStackMemory to zero so WinNtOpenFile will allocate a new mapping
+  //  Allocate 128K memory space with ReadWrite and Execute attributes allocated by VirtualAlloc() API. 
+  //  to emulate temp memory for PEI. On a real platform this would be SRAM, or using the cache as RAM.
+  //  Set InitialStackMemory to 0x5aa5 as stack default value.
   //
   InitialStackMemory      = 0;
   InitialStackMemorySize  = 0x20000;
-  Status = WinNtOpenFile (
-            L"SecStack",
-            (UINT32) InitialStackMemorySize,
-            OPEN_ALWAYS,
-            &InitialStackMemory,
-            &InitialStackMemorySize
-            );
-  if (EFI_ERROR (Status)) {
-    printf ("ERROR : Can not open SecStack Exiting\n");
+  InitialStackMemory = (EFI_PHYSICAL_ADDRESS) (UINTN) VirtualAlloc (NULL, (SIZE_T) (InitialStackMemorySize), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  if (InitialStackMemory == 0) {
+    printf ("ERROR : Can not allocate enough SecStack space\n");
     exit (1);
+  }
+
+  for (StackPointer = (UINTN*) (UINTN) InitialStackMemory;
+       StackPointer < (UINTN*) ((UINTN)InitialStackMemory + (SIZE_T) InitialStackMemorySize);
+       StackPointer ++) {
+    *StackPointer = 0x5AA55AA5;
   }
 
   printf ("  SEC passing in %d bytes of temp RAM to PEI\n", InitialStackMemorySize);
@@ -296,14 +297,9 @@ Returns:
   //
   for (Index = 0, Done = FALSE; !Done; Index++) {
     //
-    // Save the size of the memory and make a Unicode filename SystemMemory00, ...
+    // Save the size of the memory
     //
     gSystemMemory[Index].Size = atoi (MemorySizeStr) * 0x100000;
-#ifdef USE_VC8
-    _snwprintf_s (gSystemMemory[Index].FileName, NT_SYSTEM_MEMORY_FILENAME_SIZE, NT_SYSTEM_MEMORY_FILENAME_SIZE, L"SystemMemory%02d", Index);
-#else
-    _snwprintf (gSystemMemory[Index].FileName, NT_SYSTEM_MEMORY_FILENAME_SIZE, L"SystemMemory%02d", Index);
-#endif
 
     //
     // Find the next region
@@ -769,8 +765,8 @@ Routine Description:
   It allows discontiguous memory regions to be supported by the emulator.
   It uses gSystemMemory[] and gSystemMemoryCount that were created by
   parsing the Windows environment variable EFI_MEMORY_SIZE.
-  The size comes from the varaible and the address comes from the call to
-  WinNtOpenFile. 
+  The size comes from the varaible and the address comes from the memory space
+  with ReadWrite and Execute attributes allocated by VirtualAlloc() API.
 
 Arguments:
   Index      - Which memory region to use
@@ -783,24 +779,23 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
 
   if (Index >= gSystemMemoryCount) {
     return EFI_UNSUPPORTED;
   }
 
-  *MemoryBase = 0;
-  Status = WinNtOpenFile (
-            gSystemMemory[Index].FileName,
-            (UINT32) gSystemMemory[Index].Size,
-            OPEN_ALWAYS,
-            MemoryBase,
-            MemorySize
-            );
+  //
+  // Allocate enough memory space for emulator 
+  //
+  gSystemMemory[Index].Memory = (EFI_PHYSICAL_ADDRESS) (UINTN) VirtualAlloc (NULL, (SIZE_T) (gSystemMemory[Index].Size), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  if (gSystemMemory[Index].Memory == 0) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  
+  *MemoryBase = gSystemMemory[Index].Memory;
+  *MemorySize = gSystemMemory[Index].Size;
 
-  gSystemMemory[Index].Memory = *MemoryBase;
-
-  return Status;
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -869,9 +864,10 @@ Returns:
     return Status;
   }
   //
-  // Allocate space in NT (not emulator) memory. Extra space is for alignment
+  // Allocate space in NT (not emulator) memory with Execute attribute. 
+  // Extra space is for alignment
   //
-  ImageContext.ImageAddress = (EFI_PHYSICAL_ADDRESS) (UINTN) malloc ((UINTN) (ImageContext.ImageSize + (ImageContext.SectionAlignment * 2)));
+  ImageContext.ImageAddress = (EFI_PHYSICAL_ADDRESS) (UINTN) VirtualAlloc (NULL, (SIZE_T) (ImageContext.ImageSize + (ImageContext.SectionAlignment * 2)), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
   if (ImageContext.ImageAddress == 0) {
     return EFI_OUT_OF_RESOURCES;
   }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1122,8 +1122,8 @@ Returns:
     //
     // If class or subclass or protocol is 0, the counterparts in interface should be checked.
     //
-    if (DevDesc->DeviceClass == 0 && 
-        DevDesc->DeviceSubClass == 0 && 
+    if (DevDesc->DeviceClass == 0 || 
+        DevDesc->DeviceSubClass == 0 || 
         DevDesc->DeviceProtocol == 0) {
      
       if ((UsbClassDevicePathPtr->DeviceClass == ActIfDesc->InterfaceClass ||
@@ -1135,7 +1135,7 @@ Returns:
         return TRUE;
       }
       
-    } else if ((UsbClassDevicePathPtr->DeviceClass != DevDesc->DeviceClass ||
+    } else if ((UsbClassDevicePathPtr->DeviceClass == DevDesc->DeviceClass ||
                                          UsbClassDevicePathPtr->DeviceClass == 0xff) && 
                (UsbClassDevicePathPtr->DeviceSubClass == DevDesc->DeviceSubClass ||
                                       UsbClassDevicePathPtr->DeviceSubClass == 0xff) &&

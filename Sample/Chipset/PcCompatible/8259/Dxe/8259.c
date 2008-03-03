@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -369,6 +369,12 @@ Interrupt8259SetMode (
     mMode = Mode;
 
     //
+    // Set 8259 Vector Base
+    //
+    //
+    Interrupt8259SetVectorBase (This, LEGACY_MODE_BASE_VECTOR_MASTER, LEGACY_MODE_BASE_VECTOR_SLAVE);
+
+    //
     // Enable Interrupts
     //
     Interrupt8259WriteMask (mLegacyModeMask, mLegacyModeEdgeLevel);
@@ -402,6 +408,12 @@ Interrupt8259SetMode (
     }
 
     mMode = Mode;
+
+    //
+    // Set 8259 Vector Base
+    //
+    //
+    Interrupt8259SetVectorBase (This, PROTECTED_MODE_BASE_VECTOR_MASTER, PROTECTED_MODE_BASE_VECTOR_SLAVE);
 
     //
     // Enable Interrupts

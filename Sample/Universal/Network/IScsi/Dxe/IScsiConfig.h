@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -97,7 +97,7 @@ typedef struct _ISCSI_CONFIG_FORM_ENTRY {
 } ISCSI_CONFIG_FORM_ENTRY;
 
 typedef struct _ISCSI_FORM_CALLBACK_INFO {
-  UINTN                            Signature;
+  UINT32                           Signature;
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
   EFI_HANDLE                       DriverHandle;
   EFI_HII_CONFIG_ACCESS_PROTOCOL   ConfigAccess;

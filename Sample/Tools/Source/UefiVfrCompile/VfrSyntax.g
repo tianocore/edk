@@ -1,3 +1,20 @@
+/*++
+Copyright (c) 2004 - 2008, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+
+Module Name:
+  VfrSyntax.g
+
+Abstract:
+
+--*/
+
 #header<<
 
 #include "EfiVfr.h"
@@ -140,6 +157,7 @@ VfrParserStart (
 #token Inventory("inventory")                   "inventory"
 #token NonNvDataMap("_NON_NV_DATA_MAP")         "_NON_NV_DATA_MAP"
 #token Struct("struct")                         "struct"
+#token Boolean("BOOLEAN")                       "BOOLEAN"
 #token Uint64("UINT64")                         "UINT64"
 #token Uint32("UINT32")                         "UINT32"
 #token Uint16("UINT16")                         "UINT16"
@@ -238,24 +256,56 @@ VfrParserStart (
 vfrProgram > [UINT8 Return] :
   << mParserStatus = 0; >>
   (
-    (
-	  "\#pragma" "pack" "\(" A:Number "\)"          << _PCATCH(mCVfrVarDataTypeDB.Pack (_STOU32(A->getText())), A); >>
-      vfrDataStructDefinition
-	  "\#pragma" "pack" "\(" "\)"                   << mCVfrVarDataTypeDB.UnPack (); >>
-    )
-    |
-    (
-      vfrDataStructDefinition
-    )
+      vfrPragmaPackDefinition
+    | vfrDataStructDefinition
   )*
   vfrFromSetDefinition
   << $Return = mParserStatus; >>
   ;
 
-//*****************************************************************************
-//
-// the syntax of data struct definition
-//
+pragmaPackShowDef :
+  L:"show"                                          << mCVfrVarDataTypeDB.Pack (L->getLine(), VFR_PACK_SHOW); >>
+  ;
+
+pragmaPackStackDef :
+  <<
+     UINT32 LineNum;
+     UINT8  PackAction;
+     INT8   *Identifier = NULL;
+     UINT32 PackNumber  = DEFAULT_PACK_ALIGN;
+  >>
+  (
+      L1:"push"                                     << LineNum = L1->getLine(); PackAction = VFR_PACK_PUSH; >>
+    | L2:"pop"                                      << LineNum = L2->getLine(); PackAction = VFR_PACK_POP; >>
+  ) 
+  {
+    "," ID:StringIdentifier                         << Identifier = ID->getText(); >>
+  } 
+  {
+    "," N:Number                                    << PackAction |= VFR_PACK_ASSIGN; PackNumber = _STOU32(N->getText()); >>
+  }
+                                                    << mCVfrVarDataTypeDB.Pack (LineNum, PackAction, Identifier, PackNumber); >>
+  ;
+
+pragmaPackNumber :
+  <<
+     UINT32 LineNum;
+     UINT32 PackNumber = DEFAULT_PACK_ALIGN;
+  >>
+  N:Number                                          << LineNum = N->getLine(); PackNumber = _STOU32(N->getText()); >>
+                                                    << mCVfrVarDataTypeDB.Pack (LineNum, VFR_PACK_ASSIGN, NULL, PackNumber); >>
+  ;
+
+vfrPragmaPackDefinition :
+  "\#pragma" "pack" "\(" 
+  {
+      pragmaPackShowDef
+    | pragmaPackStackDef
+    | pragmaPackNumber
+  }
+  "\)"
+  ;
+
 vfrDataStructDefinition :
   { TypeDef } Struct                                << mCVfrVarDataTypeDB.DeclareDataTypeBegin (); >>
   { NonNVDataMap }
@@ -377,6 +427,39 @@ dataStructFieldUser :
 
 //*****************************************************************************
 //
+// the syntax of GUID definition
+//
+guidSubDefinition [EFI_GUID &Guid] :
+  G4:Number "," G5:Number "," G6:Number "," G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
+                                                    <<
+													   Guid.Data4[0] = _STOU8(G4->getText());
+													   Guid.Data4[1] = _STOU8(G5->getText());
+													   Guid.Data4[2] = _STOU8(G6->getText());
+													   Guid.Data4[3] = _STOU8(G7->getText());
+													   Guid.Data4[4] = _STOU8(G8->getText());
+													   Guid.Data4[5] = _STOU8(G9->getText());
+													   Guid.Data4[6] = _STOU8(G10->getText());
+													   Guid.Data4[7] = _STOU8(G11->getText());
+                                                    >>
+  ;
+
+guidDefinition [EFI_GUID &Guid] :
+  OpenBrace
+    G1:Number "," G2:Number "," G3:Number ","
+                                                    <<
+                                                       Guid.Data1 = _STOU32 (G1->getText());
+                                                       Guid.Data2 = _STOU16 (G2->getText());
+                                                       Guid.Data3 = _STOU16 (G3->getText());
+                                                    >>
+    (
+        OpenBrace guidSubDefinition[Guid] CloseBrace
+      | guidSubDefinition[Guid]
+    ) 
+  CloseBrace
+  ;
+
+//*****************************************************************************
+//
 // the syntax of from set definition
 //
 vfrFromSetDefinition :
@@ -386,19 +469,7 @@ vfrFromSetDefinition :
      UINT16      C, SC;
   >>
   L:FormSet                                         << SET_LINE_INFO (FSObj, L); >>
-  GUID "=" 
-  OpenBrace
-    G1:Number "," G2:Number "," G3:Number "," G4:Number "," G5:Number "," G6:Number "," 
-    G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
-  CloseBrace
-                                                    << 
-                                                       _CRGUID (&Guid, G1->getText (), G2->getText (), G3->getText (), 
-                                                                       G4->getText (), G5->getText (), G6->getText (), 
-                                                                       G7->getText (), G8->getText (), G9->getText (), 
-                                                                       G10->getText (), G11->getText ()); 
-                                                       FSObj.SetGuid (&Guid);
-                                                    >>
-  ","
+  GUID "=" guidDefinition[Guid] ","                 << FSObj.SetGuid (&Guid); >>
   Title "=" "STRING_TOKEN" "\(" S1:Number "\)" ","  << FSObj.SetFormSetTitle (_STOSID(S1->getText())); >>
   Help  "=" "STRING_TOKEN" "\(" S2:Number "\)" ","  << FSObj.SetHelp (_STOSID(S2->getText())); >>
   {
@@ -473,17 +544,7 @@ vfrStatementVarStoreLinear :
     VarId "=" ID:Number ","                         << VarStoreId = _STOU16(ID->getText()); >>
   }
   Name "=" SN:StringIdentifier ","
-  GUID "="
-  OpenBrace
-    G1:Number "," G2:Number "," G3:Number "," G4:Number "," G5:Number "," G6:Number "," 
-    G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
-  CloseBrace
-                                                    << 
-                                                       _CRGUID (&Guid, G1->getText (), G2->getText (), G3->getText (), 
-                                                                       G4->getText (), G5->getText (), G6->getText (), 
-                                                                       G7->getText (), G8->getText (), G9->getText (), 
-                                                                       G10->getText (), G11->getText ()); 
-                                                    >>
+  GUID "=" guidDefinition[Guid]
                                                     <<
                                                        _PCATCH(mCVfrDataStorage.DeclareBufferVarStore (
                                                                                   SN->getText(), 
@@ -517,18 +578,7 @@ vfrStatementVarStoreEfi :
                                                     << VSEObj.SetAttributes (Attr); >>
   Name "=" "STRING_TOKEN" "\(" VN:Number "\)" ","
   VarSize "=" N:Number ","
-  GUID "=" 
-  OpenBrace
-    G1:Number "," G2:Number "," G3:Number "," G4:Number "," G5:Number "," G6:Number "," 
-    G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
-  CloseBrace
-                                                    << 
-                                                       _CRGUID (&Guid, G1->getText (), G2->getText (), G3->getText (), 
-                                                                       G4->getText (), G5->getText (), G6->getText (), 
-                                                                       G7->getText (), G8->getText (), G9->getText (), 
-                                                                       G10->getText (), G11->getText ()); 
-                                                    >>
-                                                    << mCVfrDataStorage.DeclareEfiVarStore (SN->getText(), &Guid, _STOSID(VN->getText()), _STOU32(N->getText())); >>
+  GUID "=" guidDefinition[Guid]                     << mCVfrDataStorage.DeclareEfiVarStore (SN->getText(), &Guid, _STOSID(VN->getText()), _STOU32(N->getText())); >>
                                                     << 
                                                        VSEObj.SetGuid (&Guid);
                                                        _PCATCH(mCVfrDataStorage.GetVarStoreId(SN->getText(), &VarStoreId), SN);
@@ -552,18 +602,7 @@ vfrStatementVarStoreNameValue :
   (
     Name "=" "STRING_TOKEN" "\(" N:Number "\)" ","  << _PCATCH(mCVfrDataStorage.NameTableAddItem (_STOSID(N->getText())), SN); >>
   )+
-  GUID "=" 
-  OpenBrace
-    G1:Number "," G2:Number "," G3:Number "," G4:Number "," G5:Number "," G6:Number "," 
-    G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
-  CloseBrace
-                                                    << 
-                                                       _CRGUID (&Guid, G1->getText (), G2->getText (), G3->getText (), 
-                                                                       G4->getText (), G5->getText (), G6->getText (), 
-                                                                       G7->getText (), G8->getText (), G9->getText (), 
-                                                                       G10->getText (), G11->getText ()); 
-                                                    >>
-                                                    << _PCATCH(mCVfrDataStorage.DeclareNameVarStoreEnd (&Guid), SN); >>
+  GUID "=" guidDefinition[Guid]                     << _PCATCH(mCVfrDataStorage.DeclareNameVarStoreEnd (&Guid), SN); >>
                                                     << 
                                                        VSNVObj.SetGuid (&Guid);
                                                        _PCATCH(mCVfrDataStorage.GetVarStoreId(SN->getText(), &VarStoreId), SN);
@@ -1013,19 +1052,11 @@ vfrStatementGoto :
   (
     (
       DevicePath "=" "STRING_TOKEN" "\(" P:Number "\)" ","
-      FormSetGuid "=" 
-        OpenBrace
-          G11:Number "," G12:Number "," G13:Number "," G14:Number "," G15:Number "," G16:Number "," 
-          G17:Number "," G18:Number "," G19:Number "," G110:Number "," G111:Number
-        CloseBrace ","
+      FormSetGuid "=" guidDefinition[FSId] ","
       FormId "=" F1:Number ","
       Question "=" QN1:Number ","
                                                        << 
                                                           RefType = 4;
-                                                          _CRGUID (&FSId, G11->getText (), G12->getText (), G13->getText (), 
-                                                                          G14->getText (), G15->getText (), G16->getText (), 
-                                                                          G17->getText (), G18->getText (), G19->getText (), 
-                                                                          G110->getText (), G111->getText ()); 
                                                           DevPath = _STOSID(P->getText()); 
                                                           FId = _STOFID(F1->getText());
                                                           QId = _STOQID(QN1->getText());
@@ -1033,19 +1064,11 @@ vfrStatementGoto :
     )
     |
     (
-      FormSetGuid "="
-        OpenBrace
-          G21:Number "," G22:Number "," G23:Number "," G24:Number "," G25:Number "," G26:Number "," 
-          G27:Number "," G28:Number "," G29:Number "," G210:Number "," G211:Number
-        CloseBrace ","
+      FormSetGuid "=" guidDefinition[FSId] ","
       FormId "=" F2:Number ","
       Question "=" QN2:Number ","
                                                        <<
                                                           RefType = 3;
-                                                          _CRGUID (&FSId, G21->getText (), G22->getText (), G23->getText (), 
-                                                                          G24->getText (), G25->getText (), G26->getText (), 
-                                                                          G27->getText (), G28->getText (), G29->getText (), 
-                                                                          G210->getText (), G211->getText ()); 
                                                           FId = _STOFID(F2->getText());
                                                           QId = _STOQID(QN2->getText());
                                                        >>
@@ -1403,7 +1426,7 @@ vfrStatementOneOf :
      CIfrOneOf OObj;
   >>
   L:OneOf                                              << OObj.SetLineNo(L->getLine()); >>
-  vfrQuestionHeader[OObj] ","
+  vfrQuestionHeader[OObj] ","                          << _PCATCH(OObj.SetFlags (OObj.FLAGS(), _GET_CURRQEST_DATATYPE()), L->getLine()); >>
   { F:FLAGS "=" vfrOneofFlagsField[OObj, F->getLine()] "," }
   { 
     vfrSetMinMaxStep[OObj]
@@ -1432,7 +1455,7 @@ vfrStatementString :
      CIfrString SObj;
   >>
   L:String                                             << SObj.SetLineNo(L->getLine()); >>
-  vfrQuestionHeader[SObj] ","                          << _PCATCH(SObj.SetFlags (SObj.FLAGS(), _GET_CURRQEST_DATATYPE()), L->getLine()); >>
+  vfrQuestionHeader[SObj] ","
   { F:FLAGS "=" vfrStringFlagsField[SObj, F->getLine()] "," }
   {
     Key "=" KN:Number ","                              << AssignQuestionKey (SObj, KN); >>
@@ -1768,7 +1791,6 @@ vfrStatementOneOfOption :
 																				        ), L->getLine());
                                                           }
                                                        >>
-  { "," Key "=" Number }                               // no use in UEFI2.1 VFR
   (
     "," vfrImageTag                                    << OOOObj.SetScope (1); CIfrEnd EOOOObj; >>
   )*
@@ -1796,27 +1818,6 @@ oneofoptionFlagsField [UINT8 & HFlags, UINT8 & LFlags] :
   | ManufacturingFlag                                  << $LFlags |= 0x20; >>
   | DefaultFlag                                        << $LFlags |= 0x10; >>
   ;
-
-//vfrStatementGuid :
-//  <<
-//     EFI_GUID Guid; 
-//     CIfrGuid GObj;
-//  >>
-//  GuidAction
-//  GUID "=" 
-//  OpenBrace
-//    G1:Number "," G2:Number "," G3:Number "," G4:Number "," G5:Number "," G6:Number "," 
-//    G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
-//  CloseBrace
-//                                                       << 
-//                                                          _CRGUID (&Guid, G1->getText (), G2->getText (), G3->getText (), 
-//                                                                          G4->getText (), G5->getText (), G6->getText (), 
-//                                                                          G7->getText (), G8->getText (), G9->getText (), 
-//                                                                          G10->getText (), G11->getText ()); 
-//                                                       >>
-//                                                       << GObj.SetGuid (&Guid); >>
-//  ";"
-//  ;
 
 vfrStatementLabel :
   << CIfrLabel LObj; >>
@@ -2013,20 +2014,42 @@ addMinusTerm [UINT32 & RootLevel, UINT32 & ExpOpCount]:
   ;
 
 multdivmodTerm [UINT32 & RootLevel, UINT32 & ExpOpCount]:
-  atomTerm[$RootLevel, $ExpOpCount]
+  castTerm[$RootLevel, $ExpOpCount]
   ( 
     (
-      L1:"\*" atomTerm[$RootLevel, $ExpOpCount]         << $ExpOpCount++; CIfrMultiply MObj(L1->getLine()); >>
+      L1:"\*" castTerm[$RootLevel, $ExpOpCount]         << $ExpOpCount++; CIfrMultiply MObj(L1->getLine()); >>
     )
     |
     (
-      L2:"/" atomTerm[$RootLevel, $ExpOpCount]          << $ExpOpCount++; CIfrDivide DObj(L2->getLine()); >>
+      L2:"/" castTerm[$RootLevel, $ExpOpCount]          << $ExpOpCount++; CIfrDivide DObj(L2->getLine()); >>
     )
     |
     (
-      L3:"%" atomTerm[$RootLevel, $ExpOpCount]          << $ExpOpCount++; CIfrModulo MObj(L3->getLine()); >>
+      L3:"%" castTerm[$RootLevel, $ExpOpCount]          << $ExpOpCount++; CIfrModulo MObj(L3->getLine()); >>
     ) 
   )*
+  ;
+
+castTerm [UINT32 & RootLevel, UINT32 & ExpOpCount]:
+  << UINT8 CastType = 0xFF; >>
+  (
+    L:"\("
+    (
+        Boolean                                         << CastType = 0; >>
+      | Uint64                                          << CastType = 1; >>
+      | Uint32                                          << CastType = 1; >>
+      | Uint16                                          << CastType = 1; >>
+      | Uint8                                           << CastType = 1; >>
+    )
+    "\)"
+  )*
+  atomTerm[$RootLevel, $ExpOpCount]
+                                                        <<
+                                                           switch (CastType) {
+                                                           case 0: { CIfrToBoolean TBObj(L->getLine()); $ExpOpCount++; } break;
+                                                           case 1: { CIfrToUint TUObj(L->getLine()); $ExpOpCount++; } break;
+                                                           }
+														>>
   ;
 
 atomTerm [UINT32 & RootLevel, UINT32 & ExpOpCount]:
@@ -2250,18 +2273,7 @@ questionref13Exp[UINT32 & RootLevel, UINT32 & ExpOpCount] :
         Path "=" "STRING_TOKEN" "\(" S:Number "\)"     << Type = 0x4; DevPath = _STOSID(S->getText()); >>
       }
       {
-        GUID "=" 
-          OpenBrace
-            G1:Number "," G2:Number "," G3:Number "," G4:Number "," G5:Number "," G6:Number "," 
-            G7:Number "," G8:Number "," G9:Number "," G10:Number "," G11:Number
-          CloseBrace
-                                                       <<
-                                                          Type = 0x5;
-                                                          _CRGUID (&Guid, G1->getText (), G2->getText (), G3->getText (), 
-                                                                          G4->getText (), G5->getText (), G6->getText (), 
-                                                                          G7->getText (), G8->getText (), G9->getText (), 
-                                                                          G10->getText (), G11->getText ()); 
-                                                       >>
+        GUID "=" guidDefinition[Guid]                  << Type = 0x5; >>
       }
     )
     |
@@ -2323,6 +2335,7 @@ vfrExpressionUnaryOp[UINT32 & RootLevel, UINT32 & ExpOpCount] :
   | bitwisenotExp[$RootLevel, $ExpOpCount]
   | question2refExp[$RootLevel, $ExpOpCount]
   | stringref2Exp[$RootLevel, $ExpOpCount]
+  | toboolExp[$RootLevel, $ExpOpCount]
   | unintExp[$RootLevel, $ExpOpCount]
   | toupperExp[$RootLevel, $ExpOpCount]
   | tolwerExp[$RootLevel, $ExpOpCount]
@@ -2630,7 +2643,7 @@ EfiVfrParser::_PCATCH (
 {
   if (ReturnCode != ExpectCode) {
     mParserStatus++;
-    gCVfrErrorHandle.PrintError (Tok->getLine(), Tok->getText(), ErrorMsg);
+    gCVfrErrorHandle.PrintMsg (Tok->getLine(), Tok->getText(), "Error", ErrorMsg);
   }
 }
 

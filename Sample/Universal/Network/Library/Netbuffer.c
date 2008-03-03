@@ -716,7 +716,7 @@ Returns:
     CurBlockOp++
     );
 
-  for (Index = First + 1; Index <= Last - 1 ; Index++) {
+  for (Index = First + 1; Index < Last ; Index++) {
     NetbufSetBlockOp (
       Child, 
       BlockOp[Index].Head, 

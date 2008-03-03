@@ -2308,8 +2308,13 @@ UhciDriverBindingStart (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-
+  
+#ifdef USB_LEGACY_OFF 
+  //
+  // the USB_LEGACY_OFF can be defined in FEATURE_FLAGS of PlatformTools.env 
+  //
   UhciTurnOffUsbEmulation (PciIo);
+#endif
 
   Status = PciIo->Attributes (
                     PciIo,

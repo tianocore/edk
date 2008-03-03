@@ -1,3 +1,22 @@
+/*++
+
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  VfrError.cpp
+
+Abstract:
+
+--*/
+
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
@@ -33,6 +52,7 @@ CVfrErrorHandle::CVfrErrorHandle (
   VOID
   )
 {
+  mInputFileName       = NULL;
   mScopeRecordListHead = NULL;
   mScopeRecordListTail = NULL;
   mVfrErrorHandleTable = VFR_ERROR_HANDLE_TABLE;
@@ -44,6 +64,10 @@ CVfrErrorHandle::~CVfrErrorHandle (
 {
   SVfrFileScopeRecord *pNode = NULL;
 
+  if (mInputFileName != NULL) {
+    delete mInputFileName;
+  }
+
   while (mScopeRecordListHead != NULL) {
     pNode = mScopeRecordListHead;
     mScopeRecordListHead = mScopeRecordListHead->mNext;
@@ -53,6 +77,17 @@ CVfrErrorHandle::~CVfrErrorHandle (
   mScopeRecordListHead = NULL;
   mScopeRecordListTail = NULL;
   mVfrErrorHandleTable = NULL;
+}
+
+VOID
+CVfrErrorHandle::SetInputFile (
+  IN INT8     *InputFile
+  )
+{
+  if (InputFile != NULL) {
+    mInputFileName = new INT8[strlen(InputFile) + 1];
+    strcpy (mInputFileName, InputFile);
+  }
 }
 
 SVfrFileScopeRecord::SVfrFileScopeRecord (
@@ -136,6 +171,15 @@ CVfrErrorHandle::GetFileNameLineNum (
   *FileName = NULL;
   *FileLine = 0xFFFFFFFF;
 
+  //
+  // Some errors occur before scope record list been built.
+  //
+  if (mScopeRecordListHead == NULL) {
+    *FileLine = LineNum;
+    *FileName = mInputFileName;
+    return ;
+  }
+
   for (pNode = mScopeRecordListHead; pNode->mNext != NULL; pNode = pNode->mNext) {
     if ((LineNum > pNode->mWholeScopeLine) && (pNode->mNext->mWholeScopeLine > LineNum)) {
       *FileName = pNode->mFileName;
@@ -149,9 +193,10 @@ CVfrErrorHandle::GetFileNameLineNum (
 }
 
 VOID
-CVfrErrorHandle::PrintError (
+CVfrErrorHandle::PrintMsg (
   IN UINT32               LineNum,
   IN INT8                 *TokName,
+  IN INT8                 *MsgType,
   IN INT8                 *ErrorMsg
   )
 {
@@ -159,7 +204,7 @@ CVfrErrorHandle::PrintError (
   UINT32                 FileLine;
 
   GetFileNameLineNum (LineNum, &FileName, &FileLine);
-  printf ("%s line %d: error %s %s\n", FileName, FileLine, TokName, ErrorMsg);
+  printf ("%s line %d: %s %s %s\n", FileName, FileLine, MsgType, TokName, ErrorMsg);
 }
 
 UINT8

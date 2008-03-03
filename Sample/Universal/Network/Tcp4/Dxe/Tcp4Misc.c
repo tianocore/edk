@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -463,14 +463,11 @@ Returns:
 --*/
 {
   TCP_CB             *Clone;
-  TCP4_SERVICE_DATA  *TcpService;
-  EFI_IP4_PROTOCOL   *Ip4;
 
   Clone = NetAllocatePool (sizeof (TCP_CB));
 
   if (Clone == NULL) {
     return NULL;
-
   }
 
   NetCopyMem (Clone, Tcb, sizeof (TCP_CB));
@@ -492,34 +489,6 @@ Returns:
   }
 
   ((TCP4_PROTO_DATA *) (Clone->Sk->ProtoReserved))->TcpPcb = Clone;
-
-  TcpService = ((TCP4_PROTO_DATA *) (Clone->Sk->ProtoReserved))->TcpService;
-
-  NetListInsertTail (&TcpService->SocketList, &Clone->Sk->Link);
-
-  //
-  // Open the device path on the handle where service binding resides on.
-  //
-  gBS->OpenProtocol (
-         TcpService->ControllerHandle,
-         &gEfiDevicePathProtocolGuid,
-         (VOID **) &Clone->Sk->ParentDevicePath,
-         TcpService->DriverBindingHandle,
-         Clone->Sk->SockHandle,
-         EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-         );
-
-  //
-  // Open the ip protocol by child controller.
-  //
-  gBS->OpenProtocol (
-         TcpService->IpIo->ChildHandle,
-         &gEfiIp4ProtocolGuid,
-         (VOID **) &Ip4,
-         TcpService->DriverBindingHandle,
-         Clone->Sk->SockHandle,
-         EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-         );
 
   return Clone;
 }

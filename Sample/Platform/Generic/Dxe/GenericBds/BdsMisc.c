@@ -293,7 +293,7 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL  *OptionDevicePath;
   CHAR16                    *Description;
   CHAR16                    OptionName[10];
-  BOOLEAN                   UpdateBootDevicePath;
+  BOOLEAN                   UpdateDescription;
   UINT16                    BootOrderEntry; 
   UINTN                     OrderItemNum;
   
@@ -305,7 +305,7 @@ Returns:
   Description           = NULL;
   MaxOptionNumber       = 0;
   OptionOrderPtr        = NULL;
-  UpdateBootDevicePath  = FALSE;
+  UpdateDescription     = FALSE;
   EfiZeroMem (OptionName, sizeof (OptionName));
 
   TempOptionSize = 0;
@@ -343,8 +343,8 @@ Returns:
     //
     // Notes: the description may will change base on the GetStringToken
     //
-    if (EfiCompareMem (Description, String, EfiStrSize (Description)) == 0) {
-      if (EfiCompareMem (OptionDevicePath, DevicePath, EfiDevicePathSize (OptionDevicePath)) == 0) {
+    if (EfiCompareMem (OptionDevicePath, DevicePath, EfiDevicePathSize (OptionDevicePath)) == 0) {
+      if (EfiCompareMem (Description, String, EfiStrSize (Description)) == 0) { 
         //
         // Got the option, so just return
         //
@@ -353,12 +353,13 @@ Returns:
         return EFI_SUCCESS;
       } else {
         //
-        // Boot device path changed, need update.
+        // Option description changed, need update.
         //
-        UpdateBootDevicePath = TRUE;
+        UpdateDescription = TRUE;
+        gBS->FreePool (OptionPtr);
         break;
       }
-    }
+    } 
 
     gBS->FreePool (OptionPtr);
   }
@@ -374,7 +375,7 @@ Returns:
   TempPtr += EfiStrSize (String);
   EfiCopyMem (TempPtr, DevicePath, EfiDevicePathSize (DevicePath));
 
-  if (UpdateBootDevicePath) {
+  if (UpdateDescription) {
     //
     // The number in option#### to be updated
     //
@@ -399,7 +400,10 @@ Returns:
                   OptionSize,
                   OptionPtr
                   );
-  if (EFI_ERROR (Status) || UpdateBootDevicePath) {
+  //
+  // Return if only need to update a changed description or fail to set option.
+  //
+  if (EFI_ERROR (Status) || UpdateDescription) {
     gBS->FreePool (OptionPtr);
     gBS->FreePool (TempOptionPtr);
     return Status;
@@ -412,7 +416,7 @@ Returns:
   //
   
   //
-  // If no BootOrder
+  // If no option order
   //
   if (TempOptionSize == 0) {
     BootOrderEntry = 0;
@@ -429,19 +433,12 @@ Returns:
     }
     return EFI_SUCCESS;
   }  
-
-  if (UpdateBootDevicePath) {
-    //
-    // If just update a old option, the new optionorder size not change
-    //  
-    OrderItemNum = (TempOptionSize / sizeof (UINT16)) ;
-    OptionOrderPtr = EfiLibAllocateZeroPool ( OrderItemNum * sizeof (UINT16));
-    EfiCopyMem (OptionOrderPtr, TempOptionPtr, OrderItemNum * sizeof (UINT16));
-  } else {
-    OrderItemNum = (TempOptionSize / sizeof (UINT16)) + 1 ;
-    OptionOrderPtr = EfiLibAllocateZeroPool ( OrderItemNum * sizeof (UINT16));
-    EfiCopyMem (OptionOrderPtr, TempOptionPtr, (OrderItemNum - 1) * sizeof (UINT16));
-  }
+  //
+  // Append the new option number to the original option order
+  //
+  OrderItemNum = (TempOptionSize / sizeof (UINT16)) + 1 ;
+  OptionOrderPtr = EfiLibAllocateZeroPool ( OrderItemNum * sizeof (UINT16));
+  EfiCopyMem (OptionOrderPtr, TempOptionPtr, (OrderItemNum - 1) * sizeof (UINT16));
 
   OptionOrderPtr[Index] = RegisterOptionNumber; 
    

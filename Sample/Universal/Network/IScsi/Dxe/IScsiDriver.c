@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -415,7 +415,20 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
+  EFI_STATUS                         Status;
+  EFI_ISCSI_INITIATOR_NAME_PROTOCOL  *IScsiInitiatorName;
+
+  //
+  // There should be only one EFI_ISCSI_INITIATOR_NAME_PROTOCOL.
+  //
+  Status = SystemTable->BootServices->LocateProtocol (
+                                        &gEfiIScsiInitiatorNameProtocolGuid,
+                                        NULL,
+                                        &IScsiInitiatorName
+                                        );
+  if (!EFI_ERROR (Status)) {
+    return EFI_ACCESS_DENIED;
+  }
 
   //
   // Initialize the EFI Driver Library
@@ -432,6 +445,9 @@ Returns:
             );
 
   if (!EFI_ERROR (Status)) {
+    //
+    // Install the iSCSI Initiator Name Protocol.
+    //
     Status = gBS->InstallProtocolInterface (
                     &ImageHandle,
                     &gEfiIScsiInitiatorNameProtocolGuid,
@@ -440,23 +456,42 @@ Returns:
                     );
     if (EFI_ERROR (Status)) {
       gBS->UninstallMultipleProtocolInterfaces (
-            ImageHandle,
-            &gEfiDriverBindingProtocolGuid,
-            &gIScsiDriverBinding,
+             ImageHandle,
+             &gEfiDriverBindingProtocolGuid,
+             &gIScsiDriverBinding,
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-            & gEfiComponentName2ProtocolGuid,
+             &gEfiComponentName2ProtocolGuid,
 #else
-            &gEfiComponentNameProtocolGuid,
+             &gEfiComponentNameProtocolGuid,
 #endif
-            &gIScsiComponentName,
-            NULL
-            );
+             &gIScsiComponentName,
+             NULL
+             );
+
+      return Status;
+    }
+
+    //
+    // Initialize the configuration form of iSCSI.
+    //
+    Status = IScsiConfigFormInit (gIScsiDriverBinding.DriverBindingHandle);
+    if (EFI_ERROR (Status)) {
+      gBS->UninstallMultipleProtocolInterfaces (
+             ImageHandle,
+             &gEfiDriverBindingProtocolGuid,
+             &gIScsiDriverBinding,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+             &gEfiComponentName2ProtocolGuid,
+#else
+             &gEfiComponentNameProtocolGuid,
+#endif
+             &gIScsiComponentName,
+             &gEfiIScsiInitiatorNameProtocolGuid,
+             &gIScsiInitiatorName,
+             NULL
+             );
     }
   }
-  //
-  // Initialize the configuration form of iSCSI.
-  //
-  IScsiConfigFormInit (gIScsiDriverBinding.DriverBindingHandle);
 
   return Status;
 }

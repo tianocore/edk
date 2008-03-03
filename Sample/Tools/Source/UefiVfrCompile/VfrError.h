@@ -1,3 +1,22 @@
+/*++
+
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  VfrError.h
+
+Abstract:
+
+--*/
+
 #ifndef _VFRERROR_H_
 #define _VFRERROR_H_
 
@@ -46,6 +65,7 @@ struct SVfrFileScopeRecord {
 
 class CVfrErrorHandle {
 private:
+  INT8                *mInputFileName;
   SVFR_ERROR_HANDLE   *mVfrErrorHandleTable;
   SVfrFileScopeRecord *mScopeRecordListHead;
   SVfrFileScopeRecord *mScopeRecordListTail;
@@ -54,10 +74,11 @@ public:
   CVfrErrorHandle (VOID);
   ~CVfrErrorHandle (VOID);
 
+  VOID  SetInputFile (IN INT8 *);
   VOID  ParseFileScopeRecord (IN INT8 *, IN UINT32);
   VOID  GetFileNameLineNum (IN UINT32, OUT INT8 **, OUT UINT32 *);
   UINT8 HandleError (IN EFI_VFR_RETURN_CODE, IN UINT32 LineNum = 0, IN INT8 *TokName = "\0");
-  VOID  PrintError (IN UINT32 LineNum = 0, IN INT8 *TokName = "\0", IN INT8 *ErrorMsg = "\0");
+  VOID  PrintMsg (IN UINT32 LineNum = 0, IN INT8 *TokName = "\0", IN INT8 *MsgType = "Error", IN INT8 *ErrorMsg = "\0");
 };
 
 #define CHECK_ERROR_RETURN(f, v) do { EFI_VFR_RETURN_CODE r; if ((r = (f)) != (v)) { return r; } } while (0)

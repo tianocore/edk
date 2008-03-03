@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -56,10 +56,7 @@ typedef struct {
   UINT64                Size;
 } NT_FD_INFO;
 
-#define NT_SYSTEM_MEMORY_FILENAME_SIZE  40
-
 typedef struct {
-  CHAR16                FileName[NT_SYSTEM_MEMORY_FILENAME_SIZE];
   EFI_PHYSICAL_ADDRESS  Memory;
   UINT64                Size;
 } NT_SYSTEM_MEMORY;

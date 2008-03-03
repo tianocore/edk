@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -121,6 +121,18 @@ Tcp4DriverBindingStop (
   IN  EFI_HANDLE                   ControllerHandle,
   IN  UINTN                        NumberOfChildren,
   IN  EFI_HANDLE                   *ChildHandleBuffer
+  );
+
+EFI_STATUS
+Tcp4CreateSocketCallback (
+  IN SOCKET  *This,
+  IN VOID    *Context
+  );
+
+VOID
+Tcp4DestroySocketCallback (
+  IN SOCKET  *This,
+  IN VOID    *Context
   );
 
 //

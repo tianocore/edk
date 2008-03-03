@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -53,7 +53,7 @@ STATIC EFI_DEVICE_PATH_PROTOCOL     *mControllerDevicePathProtocol[MAX_CHOICE_NU
 STATIC UINTN                        mSelectedDriverImageNum;
 STATIC UINTN                        mLastSavedDriverImageNum;
 STATIC CHAR8                        mLanguage[RFC_3066_ENTRY_SIZE];
-STATIC UINT8                        mCurrentPage;
+STATIC UINT16                       mCurrentPage;
 
 EFI_STATUS
 EFIAPI

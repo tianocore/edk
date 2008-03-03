@@ -158,7 +158,7 @@ RealMode    PROC
     pop     es
     pop     fs
     pop     gs
-    add     sp, 4                       ; skip EFlags
+    popfd
     test    (_STK16 ptr [esp + 8]).ThunkFlags, 1
     jz      @F
     pushf

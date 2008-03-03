@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -415,13 +415,13 @@ typedef struct {
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 
-#define MEDIA_FV_DP  0x06
+#define MEDIA_FV_DP  0x07
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  NameGuid;
 } MEDIA_FW_VOL_DEVICE_PATH;
 
-#define MEDIA_FV_FILEPATH_DP  0x07
+#define MEDIA_FV_FILEPATH_DP  0x06
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  Header;
   EFI_GUID                  NameGuid;

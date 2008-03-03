@@ -426,10 +426,10 @@ PxeBcDriverBindingStop (
           Private->Udp4Child,
           &gEfiUdp4ProtocolGuid,
           This->DriverBindingHandle,
-          ControllerHandle
+          NicHandle
           );
     NetLibDestroyServiceChild (
-      ControllerHandle,
+      NicHandle,
       This->DriverBindingHandle,
       &gEfiUdp4ServiceBindingProtocolGuid,
       Private->Udp4Child
@@ -439,10 +439,10 @@ PxeBcDriverBindingStop (
           Private->Dhcp4Child,
           &gEfiDhcp4ProtocolGuid,
           This->DriverBindingHandle,
-          ControllerHandle
+          NicHandle
           );
     NetLibDestroyServiceChild (
-      ControllerHandle,
+      NicHandle,
       This->DriverBindingHandle,
       &gEfiDhcp4ServiceBindingProtocolGuid,
       Private->Dhcp4Child
@@ -452,10 +452,10 @@ PxeBcDriverBindingStop (
           Private->Mtftp4Child,
           &gEfiMtftp4ProtocolGuid,
           This->DriverBindingHandle,
-          ControllerHandle
+          NicHandle
           );
     NetLibDestroyServiceChild (
-      ControllerHandle,
+      NicHandle,
       This->DriverBindingHandle,
       &gEfiMtftp4ServiceBindingProtocolGuid,
       Private->Mtftp4Child

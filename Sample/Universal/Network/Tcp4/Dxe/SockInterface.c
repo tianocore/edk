@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -223,9 +223,7 @@ Returns:
 
 SOCKET *
 SockCreateChild (
-  IN SOCK_INIT_DATA *SockInitData,
-  IN VOID           *ProtoData,
-  IN UINT32         Len
+  IN SOCK_INIT_DATA *SockInitData
   )
 /*++
 
@@ -238,8 +236,6 @@ Routine Description:
 Arguments:
 
   SockInitData  - Inital data to setting the socket.
-  ProtoData     - Pointer to the protocol specific data.
-  Len           - Length of the protocol specific data.
 
 Returns:
 
@@ -249,8 +245,6 @@ Returns:
 {
   SOCKET      *Sock;
   EFI_STATUS  Status;
-
-  ASSERT (ProtoData && (Len <= PROTO_RESERVED_LEN));
 
   //
   // create a new socket
@@ -263,11 +257,6 @@ Returns:
 
     return NULL;
   }
-
-  //
-  // copy the protodata into socket
-  //
-  NetCopyMem (Sock->ProtoReserved, ProtoData, Len);
 
   Status = NET_TRYLOCK (&(Sock->Lock));
   if (EFI_ERROR (Status)) {

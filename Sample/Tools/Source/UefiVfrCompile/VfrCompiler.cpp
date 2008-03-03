@@ -1,3 +1,22 @@
+/*++
+
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
+All rights reserved. This program and the accompanying materials                          
+are licensed and made available under the terms and conditions of the BSD License         
+which accompanies this distribution.  The full text of the license may be found at        
+http://opensource.org/licenses/bsd-license.php                                            
+                                                                                          
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+
+Module Name:
+
+  VfrCompiler.cpp
+
+Abstract:
+
+--*/
+
 #include "stdio.h"
 #include "string.h"
 #include "process.h"
@@ -38,6 +57,7 @@ CVfrCompiler::OptionInitialization (
   mOptions.PreprocessorOutputFileName[0] = '\0';
   mOptions.VfrBaseFileName[0]            = '\0';
   mOptions.IncludePaths                  = NULL;
+  mOptions.SkipCPreprocessor             = FALSE;
   mOptions.CPreprocessorOptions          = NULL;
 
   for (Index = 1; (Index < Argc) && (Argv[Index][0] == '-'); Index++) {
@@ -63,9 +83,12 @@ CVfrCompiler::OptionInitialization (
         goto Fail;
       }
       strcpy (mOptions.OutputDirectory, Argv[Index]);
+      strcat (mOptions.OutputDirectory, "\\");
     } else if (_stricmp(Argv[Index], "-ibin") == 0) {
       mOptions.CreateIfrPkgFile = TRUE;
     } else if (_stricmp(Argv[Index], "-nostrings") == 0) {
+    } else if (_stricmp(Argv[Index], "-nopp") == 0) {
+      mOptions.SkipCPreprocessor = TRUE;
     } else if (_stricmp(Argv[Index], "-ppflag") == 0) {
       Index++;
       if ((Index >= Argc) || (Argv[Index][0] == '-')) {
@@ -331,7 +354,8 @@ CVfrCompiler::Usage (
     "      -l             create an output IFR listing file",
     "      -i IncPath     add IncPath to the search path for VFR included files",
     "      -od OutputDir  deposit all output files to directory OutputDir (default=cwd)",
-    "      -ibin          create an IFR HII pack file"
+    "      -ibin          create an IFR HII pack file",
+    "      -nopp          do not preprocess",
     "      -ppflag        C-preprocessor argument",
     "    where parameters include:",
     "      VfrFile        name of the input VFR script file",
@@ -354,6 +378,10 @@ CVfrCompiler::PreProcess (
 
   if (!IS_RUN_STATUS(STATUS_INITIALIZED)) {
     goto Fail;
+  }
+
+  if (mOptions.SkipCPreprocessor == TRUE) {
+    goto Out;
   }
 
   if ((pVfrFile = fopen (mOptions.VfrFileName, "r")) == NULL) {
@@ -393,6 +421,8 @@ CVfrCompiler::PreProcess (
   }
 
   delete PreProcessCmd;
+
+Out:
   SET_RUN_STATUS (STATUS_PREPROCESSED);
   return;
 
@@ -410,22 +440,27 @@ CVfrCompiler::Compile (
   VOID
   )
 {
-  FILE *VfrFile = NULL;
+  FILE *pInFile    = NULL;
+  INT8 *InFileName = NULL;
 
   if (!IS_RUN_STATUS(STATUS_PREPROCESSED)) {
     goto Fail;
   }
 
-  if ((VfrFile = fopen (mOptions.PreprocessorOutputFileName, "r")) == NULL) {
-    printf ("%s failed to open input VFR preprocessor output file - %s\n", PROGRAM_NAME, mOptions.PreprocessorOutputFileName);
+  InFileName = (mOptions.SkipCPreprocessor == TRUE) ? mOptions.VfrFileName : mOptions.PreprocessorOutputFileName;
+
+  gCVfrErrorHandle.SetInputFile (InFileName);
+
+  if ((pInFile = fopen (InFileName, "r")) == NULL) {
+    printf ("%s failed to open input file - %s\n", PROGRAM_NAME, InFileName);
     goto Fail;
   }
 
-  if (VfrParserStart (VfrFile) != 0) {
+  if (VfrParserStart (pInFile) != 0) {
     goto Fail;
   }
 
-  fclose (VfrFile);
+  fclose (pInFile);
 
   if (gCFormPkg.HavePendingUnassigned () == TRUE) {
     gCFormPkg.PendingAssignPrintAll ();
@@ -440,8 +475,8 @@ Fail:
     printf ("%s compile error!\n", PROGRAM_NAME);
     SET_RUN_STATUS (STATUS_FAILED);
   }
-  if (VfrFile != NULL) {
-    fclose (VfrFile);
+  if (pInFile != NULL) {
+    fclose (pInFile);
   }
 }
 
@@ -458,7 +493,7 @@ CVfrCompiler::GenBinary (
 
   if (mOptions.CreateIfrPkgFile == TRUE) {
     if ((pFile = fopen (mOptions.PkgOutputFileName, "wb")) == NULL) {
-      printf ("can not open PkgFileName\n", mOptions.PkgOutputFileName);
+      printf ("can not open %s\n", mOptions.PkgOutputFileName);
       goto Fail;
     }
     if (gCFormPkg.BuildPkg (pFile) != VFR_RETURN_SUCCESS) {
@@ -529,18 +564,21 @@ CVfrCompiler::GenRecordListFile (
   VOID
   )
 {
-  FILE   *pInFile  = NULL;
-  FILE   *pOutFile = NULL;
+  INT8   *InFileName = NULL;
+  FILE   *pInFile    = NULL;
+  FILE   *pOutFile   = NULL;
   INT8   LineBuf[MAX_LINE_LEN];
   UINT32 LineNo;
 
+  InFileName = (mOptions.SkipCPreprocessor == TRUE) ? mOptions.VfrFileName : mOptions.PreprocessorOutputFileName;
+
   if (mOptions.CreateRecordListFile == TRUE) {
-    if ((mOptions.PreprocessorOutputFileName[0] == '\0') || (mOptions.RecordListFile[0] == '\0')) {
+    if ((InFileName[0] == '\0') || (mOptions.RecordListFile[0] == '\0')) {
       return;
     }
 
-    if ((pInFile = fopen (mOptions.PreprocessorOutputFileName, "r")) == NULL) {
-      printf ("%s failed to open input VFR preprocessor output file - %s\n", PROGRAM_NAME, mOptions.PreprocessorOutputFileName);
+    if ((pInFile = fopen (InFileName, "r")) == NULL) {
+      printf ("%s failed to open input VFR preprocessor output file - %s\n", PROGRAM_NAME, InFileName);
       return;
     }
 

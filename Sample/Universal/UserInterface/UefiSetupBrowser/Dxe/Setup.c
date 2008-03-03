@@ -1606,7 +1606,7 @@ Returns:
       return Status;
     }
 
-    Link = GetNextNode (&Form->ExpressionListHead, Link);
+    Link = GetNextNode (&Form->StatementListHead, Link);
   }
 
   return EFI_SUCCESS;

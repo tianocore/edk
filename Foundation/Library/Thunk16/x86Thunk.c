@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -55,6 +55,18 @@ AsmFxSave (
   OUT IA32_FX_BUFFER *Buffer
   );
 
+UINTN
+IA32API
+AsmGetEflags (
+  VOID
+  );
+
+VOID
+IA32API
+AsmSetEflags (
+  IN UINTN   Eflags
+  );
+
 //
 // Implementation
 //
@@ -100,6 +112,7 @@ Returns:
 {
   IA32_FX_BUFFER                    *FpSavedState;
   UINT8                             FpBuffer[sizeof (*FpSavedState) + 0x10];
+  UINTN                             Eflags;
 
   FpSavedState = (IA32_FX_BUFFER*)(((UINTN)FpBuffer + 0xf) & ~0xf);
 
@@ -112,6 +125,8 @@ Returns:
     AsmFxSave (FpSavedState);
   }
 
+  Eflags = AsmGetEflags ();
+
   EfiCommonLibCopyMem (
     RegisterSet,
     _Thunk16 (
@@ -121,6 +136,8 @@ Returns:
       ),
     sizeof (*RegisterSet)
     );
+
+   AsmSetEflags (Eflags);
 
   if (ThunkFlags & THUNK_SAVE_FP_STATE) {
     AsmFxRestore (FpSavedState);

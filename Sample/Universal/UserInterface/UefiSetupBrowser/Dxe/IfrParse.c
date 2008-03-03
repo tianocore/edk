@@ -370,14 +370,14 @@ Returns:
     //
     // Old String buffer is not sufficient for RequestElement, allocate a new one
     //
-    StrSize = (Storage->ConfigRequest != NULL) ? EfiStrSize (Storage->ConfigRequest) : 0;
+    StrSize = (Storage->ConfigRequest != NULL) ? EfiStrSize (Storage->ConfigRequest) : sizeof (CHAR16);
     NewStr = EfiLibAllocateZeroPool (StrSize + (CONFIG_REQUEST_STRING_INCREMENTAL * sizeof (CHAR16)));
     if (Storage->ConfigRequest != NULL) {
       EfiCopyMem (NewStr, Storage->ConfigRequest, StrSize);
       gBS->FreePool (Storage->ConfigRequest);
     }
     Storage->ConfigRequest = NewStr;
-    Storage->SpareStrLen += CONFIG_REQUEST_STRING_INCREMENTAL;
+    Storage->SpareStrLen = CONFIG_REQUEST_STRING_INCREMENTAL;
   }
 
   EfiStrCat (Storage->ConfigRequest, RequestElement);

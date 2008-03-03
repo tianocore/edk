@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -53,6 +53,11 @@ SOCK_INIT_DATA mTcp4DefaultSockData = {
   TCP_SND_BUF_SIZE,
   TCP_RCV_BUF_SIZE,
   &mTcp4ProtocolTemplate,
+  Tcp4CreateSocketCallback,
+  Tcp4DestroySocketCallback,
+  NULL,
+  NULL,
+  0,
   Tcp4Dispatcher,
   NULL,
 };
@@ -505,6 +510,130 @@ Returns:
 }
 
 EFI_STATUS
+Tcp4CreateSocketCallback (
+  IN SOCKET  *This,
+  IN VOID    *Context
+  )
+/*++
+
+Routine Description:
+
+  The Callback funtion called after the TCP socket is created.
+
+Arguments:
+
+  This    - The TCP socket created.
+  Context - The context.
+
+Returns:
+
+  EFI_SUCCESS - The callback is succesfully done.
+  Other       - Failed to open some protocol.
+
+--*/
+{
+  EFI_STATUS         Status;
+  TCP4_SERVICE_DATA  *TcpServiceData;
+  EFI_IP4_PROTOCOL   *Ip4;
+
+  TcpServiceData = ((TCP4_PROTO_DATA *) This->ProtoReserved)->TcpService;
+
+  //
+  // Open the default Ip4 protocol of IP_IO BY_DRIVER.
+  //
+  Status = gBS->OpenProtocol (
+                  TcpServiceData->IpIo->ChildHandle,
+                  &gEfiIp4ProtocolGuid,
+                  (VOID **) &Ip4,
+                  TcpServiceData->DriverBindingHandle,
+                  This->SockHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Open the device path on the handle where service binding resides on.
+  //
+  Status = gBS->OpenProtocol (
+                  TcpServiceData->ControllerHandle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &This->ParentDevicePath,
+                  TcpServiceData->DriverBindingHandle,
+                  This->SockHandle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->CloseProtocol (
+           TcpServiceData->IpIo->ChildHandle,
+           &gEfiIp4ProtocolGuid,
+           TcpServiceData->DriverBindingHandle,
+           This->SockHandle
+           );
+  } else {
+    //
+    // Insert this socket into the SocketList.
+    //
+    NetListInsertTail (&TcpServiceData->SocketList, &This->Link);
+  }
+
+  return Status;
+}
+
+VOID
+Tcp4DestroySocketCallback (
+  IN SOCKET  *This,
+  IN VOID    *Context
+  )
+/*++
+
+Routine Description:
+
+  The callback function called before the TCP socket is to be destroyed.
+
+Arguments:
+
+  This    - The TCP socket to be destroyed.
+  Context - The context.
+
+Returns:
+
+  None.
+
+--*/ 
+{
+  TCP4_SERVICE_DATA  *TcpServiceData;
+
+  TcpServiceData = ((TCP4_PROTO_DATA *) This->ProtoReserved)->TcpService;
+
+  //
+  // Remove this node from the list.
+  //
+  NetListRemoveEntry (&This->Link);
+
+  //
+  // Close the device path protocol
+  //
+  gBS->CloseProtocol (
+         TcpServiceData->ControllerHandle,
+         &gEfiDevicePathProtocolGuid,
+         TcpServiceData->DriverBindingHandle,
+         This->SockHandle
+         );
+
+  //
+  // Close the Ip4 protocol.
+  //
+  gBS->CloseProtocol (
+         TcpServiceData->IpIo->ChildHandle,
+         &gEfiIp4ProtocolGuid,
+         TcpServiceData->DriverBindingHandle,
+         This->SockHandle
+         );
+}
+
+EFI_STATUS
 EFIAPI
 Tcp4ServiceBindingCreateChild (
   IN EFI_SERVICE_BINDING_PROTOCOL  *This,
@@ -537,14 +666,15 @@ Returns:
   TCP4_SERVICE_DATA *TcpServiceData;
   TCP4_PROTO_DATA   TcpProto;
   EFI_STATUS        Status;
-  VOID              *Ip4;
   EFI_TPL           OldTpl;
 
   if (NULL == This || NULL == ChildHandle) {
     return EFI_INVALID_PARAMETER;
   }
 
-  OldTpl              = NET_RAISE_TPL (NET_TPL_LOCK);
+  OldTpl = NET_RAISE_TPL (NET_TPL_LOCK);
+
+  Status              = EFI_SUCCESS;
   TcpServiceData      = TCP4_FROM_THIS (This);
   TcpProto.TcpService = TcpServiceData;
   TcpProto.TcpPcb     = NULL;
@@ -553,59 +683,19 @@ Returns:
   // Create a tcp instance with defualt Tcp default
   // sock init data and TcpProto
   //
+  mTcp4DefaultSockData.ProtoData     = &TcpProto;
+  mTcp4DefaultSockData.DataSize      = sizeof (TCP4_PROTO_DATA);
   mTcp4DefaultSockData.DriverBinding = TcpServiceData->DriverBindingHandle;
-
-  Sock = SockCreateChild (&mTcp4DefaultSockData, &TcpProto, sizeof (TCP4_PROTO_DATA));
+  
+  Sock = SockCreateChild (&mTcp4DefaultSockData);
   if (NULL == Sock) {
     TCP4_DEBUG_ERROR (("Tcp4DriverBindingCreateChild: "
       "No resource to create a Tcp Child\n"));
 
     Status = EFI_OUT_OF_RESOURCES;
-    goto ON_EXIT;
-  }
-
-  *ChildHandle = Sock->SockHandle;
-
-  //
-  // Open the default Ip4 protocol of IP_IO BY_DRIVER.
-  //
-  Status = gBS->OpenProtocol (
-                  TcpServiceData->IpIo->ChildHandle,
-                  &gEfiIp4ProtocolGuid,
-                  (VOID **) &Ip4,
-                  TcpServiceData->DriverBindingHandle,
-                  Sock->SockHandle,
-                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-                  );
-  if (EFI_ERROR (Status)) {
-    SockDestroyChild (Sock);
-    goto ON_EXIT;
-  }
-
-  //
-  // Open the device path on the handle where service binding resides on.
-  //
-  Status = gBS->OpenProtocol (
-                  TcpServiceData->ControllerHandle,
-                  &gEfiDevicePathProtocolGuid,
-                  (VOID **) &Sock->ParentDevicePath,
-                  TcpServiceData->DriverBindingHandle,
-                  Sock->SockHandle,
-                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-                  );
-  if (EFI_ERROR (Status)) {
-    gBS->CloseProtocol (
-           TcpServiceData->IpIo->ChildHandle,
-           &gEfiIp4ProtocolGuid,
-           TcpServiceData->DriverBindingHandle,
-           Sock->SockHandle
-           );
-    SockDestroyChild (Sock);
   } else {
-    NetListInsertTail (&TcpServiceData->SocketList, &Sock->Link);
+    *ChildHandle = Sock->SockHandle;
   }
-
-ON_EXIT:
 
   NET_RESTORE_TPL (OldTpl);
   return Status;
@@ -640,8 +730,6 @@ Returns:
   EFI_STATUS         Status;
   EFI_TCP4_PROTOCOL  *Tcp4;
   SOCKET             *Sock;
-  TCP4_PROTO_DATA    *TcpProtoData;
-  TCP4_SERVICE_DATA  *TcpServiceData;
   EFI_TPL            OldTpl;
 
   if (NULL == This || NULL == ChildHandle) {
@@ -663,42 +751,15 @@ Returns:
                   );
   if (EFI_ERROR (Status)) {
     Status = EFI_UNSUPPORTED;
-    goto ON_EXIT;
+  } else {
+    //
+    // destroy this sock and related Tcp protocol control
+    // block
+    //
+    Sock = SOCK_FROM_THIS (Tcp4);
+
+    SockDestroyChild (Sock);
   }
-
-  //
-  // destroy this sock and related Tcp protocol control
-  // block
-  //
-  Sock           = SOCK_FROM_THIS (Tcp4);
-  TcpProtoData   = (TCP4_PROTO_DATA *) Sock->ProtoReserved;
-  TcpServiceData = TcpProtoData->TcpService;
-
-  NetListRemoveEntry (&Sock->Link);
-
-  SockDestroyChild (Sock);
-
-  //
-  // Close the device path protocol
-  //
-  gBS->CloseProtocol (
-         TcpServiceData->ControllerHandle,
-         &gEfiDevicePathProtocolGuid,
-         TcpServiceData->DriverBindingHandle,
-         ChildHandle
-         );
-
-  //
-  // Close the Ip4 protocol.
-  //
-  gBS->CloseProtocol (
-         TcpServiceData->IpIo->ChildHandle,
-         &gEfiIp4ProtocolGuid,
-         TcpServiceData->DriverBindingHandle,
-         ChildHandle
-         );
-
-ON_EXIT:
 
   NET_RESTORE_TPL (OldTpl);
   return Status;
