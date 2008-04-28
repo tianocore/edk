@@ -480,8 +480,8 @@ Returns:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
   //
   //  The size of the VariableName, including the Unicode Null in bytes plus
-  //  the DataSize is limited to maximum size of MAX_HARDWARE_ERROR_VARIABLE_SIZE (32K)
-  //  bytes for HwErrRec, and MAX_VARIABLE_SIZE (1024) bytes for the others.
+  //  the DataSize is limited to maximum size of MAX_HARDWARE_ERROR_VARIABLE_SIZE
+  //  bytes for HwErrRec, and MAX_VARIABLE_SIZE bytes for the others.
   //
   if ((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == EFI_VARIABLE_HARDWARE_ERROR_RECORD) {
     if ((DataSize > MAX_HARDWARE_ERROR_VARIABLE_SIZE) ||                                                       
@@ -497,7 +497,7 @@ Returns:
 #else    
   //
   //  The size of the VariableName, including the Unicode Null in bytes plus
-  //  the DataSize is limited to maximum size of MAX_VARIABLE_SIZE (1024) bytes.
+  //  the DataSize is limited to maximum size of MAX_VARIABLE_SIZE bytes.
   //
   if ((DataSize > MAX_VARIABLE_SIZE) ||
       (sizeof (VARIABLE_HEADER) + EfiStrSize (VariableName) + DataSize > MAX_VARIABLE_SIZE)) {

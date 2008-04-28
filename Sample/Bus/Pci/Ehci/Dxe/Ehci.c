@@ -1491,8 +1491,8 @@ EhcCreateUsb2Hc (
   Ehc->Usb2Hc.GetRootHubPortStatus      = EhcGetRootHubPortStatus;
   Ehc->Usb2Hc.SetRootHubPortFeature     = EhcSetRootHubPortFeature;
   Ehc->Usb2Hc.ClearRootHubPortFeature   = EhcClearRootHubPortFeature;
-  Ehc->Usb2Hc.MajorRevision             = 0x1;
-  Ehc->Usb2Hc.MinorRevision             = 0x1;
+  Ehc->Usb2Hc.MajorRevision             = 0x2;
+  Ehc->Usb2Hc.MinorRevision             = 0x0;
 
   Ehc->PciIo = PciIo;
 

@@ -320,7 +320,7 @@ Returns:
 
   Qh->QhHw.HorizonLink  = QH_HLINK (NULL, TRUE);
   Qh->QhHw.VerticalLink = QH_VLINK (NULL, TRUE);
-  Qh->Interval          = Interval;
+  Qh->Interval          = UhciConvertPollRate(Interval);
   Qh->TDs               = NULL;
   Qh->NextQh            = NULL;
 

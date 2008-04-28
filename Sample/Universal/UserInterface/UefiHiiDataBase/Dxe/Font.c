@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -917,14 +917,13 @@ IsSystemFontInfo (
 /*++
 
   Routine Description:
-    Check whether EFI_FONT_DISPLAY_INFO points to system default font and color.
+    Check whether EFI_FONT_DISPLAY_INFO points to system default font and color or
+    returns the system default according to the optional inputs.
     
   Arguments:          
     Private                - HII database driver private data.
     StringInfo             - Points to the string output information, including the color and font. 
-    SystemInfo             - If not NULL, points to system default font and color
-                             when incoming StringInfo does not match the default. 
-                             Points to NULL if matches.
+    SystemInfo             - If not NULL, points to system default font and color.
                              It's caller's reponsibility to free this buffer.
     SystemInfoLen          - If not NULL, output the length of default system info.
     
@@ -936,7 +935,8 @@ IsSystemFontInfo (
 {
   EFI_STATUS                          Status;
   EFI_FONT_DISPLAY_INFO               *SystemDefault;
-  UINTN                               DefaultLen;  
+  UINTN                               DefaultLen;
+  BOOLEAN                             Flag;
 
   ASSERT (Private != NULL && Private->Signature == HII_DATABASE_PRIVATE_DATA_SIGNATURE);
 
@@ -944,28 +944,68 @@ IsSystemFontInfo (
     return TRUE;
   }
 
-  //
-  // Check whether incoming string font and color matches system default.
-  //    
   Status = GetSystemFont (Private, &SystemDefault, &DefaultLen);
   ASSERT_EFI_ERROR (Status);
 
+  //
+  // Record the system default info.
+  //
   if (SystemInfo != NULL) {
     *SystemInfo = SystemDefault;
-  } else {
-    EfiLibSafeFreePool (SystemDefault);
   }
-
   if (SystemInfoLen != NULL) {
     *SystemInfoLen = DefaultLen;
   }
       
-  if (StringInfo == NULL || 
-      (StringInfo != NULL && EfiCompareMem (SystemDefault, StringInfo, DefaultLen) == 0)) {    
+  if (StringInfo == NULL) {
     return TRUE;
-  } 
+  }
 
-  return FALSE;
+  Flag = FALSE;
+  //
+  // Check the FontInfoMask to see whether it is retrieving system info.
+  //
+  if ((StringInfo->FontInfoMask & (EFI_FONT_INFO_SYS_FONT | EFI_FONT_INFO_ANY_FONT)) == 0) {
+    if (EfiStrCmp (StringInfo->FontInfo.FontName, SystemDefault->FontInfo.FontName) != 0) {
+      goto Exit;
+    }
+  }
+  if ((StringInfo->FontInfoMask & (EFI_FONT_INFO_SYS_SIZE | EFI_FONT_INFO_ANY_SIZE)) == 0) {
+    if (StringInfo->FontInfo.FontSize != SystemDefault->FontInfo.FontSize) {
+      goto Exit;
+    }
+  }
+  if ((StringInfo->FontInfoMask & (EFI_FONT_INFO_SYS_STYLE | EFI_FONT_INFO_ANY_STYLE)) == 0) {
+    if (StringInfo->FontInfo.FontStyle != SystemDefault->FontInfo.FontStyle) {
+      goto Exit;
+    }
+  }
+  if ((StringInfo->FontInfoMask & EFI_FONT_INFO_SYS_FORE_COLOR) == 0) {
+    if (EfiCompareMem (
+          &StringInfo->ForegroundColor, 
+          &SystemDefault->ForegroundColor, 
+          sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
+          ) != 0) {
+      goto Exit;
+    }
+  }
+  if ((StringInfo->FontInfoMask & EFI_FONT_INFO_SYS_BACK_COLOR) == 0) {
+    if (EfiCompareMem (
+          &StringInfo->BackgroundColor, 
+          &SystemDefault->BackgroundColor, 
+          sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
+          ) != 0) {
+      goto Exit;
+    }
+  }
+
+  Flag = TRUE;
+
+Exit:
+  if (SystemInfo == NULL) {
+    EfiLibSafeFreePool (SystemDefault);    
+  }
+  return Flag;
 }
 
 BOOLEAN
@@ -1380,7 +1420,7 @@ HiiStringToImage (
     Flags             - Describes how the string is to be drawn.                 
     String            - Points to the null-terminated string to be displayed.
     StringInfo        - Points to the string output information, including the color and font. 
-                        If NULL, then the string will be output in the default system font and color.                             
+                        If NULL, then the string will be output in the default system font and color.
     Blt               - If this points to a non-NULL on entry, this points to the image, which is Width pixels  
                         wide and Height pixels high. The string will be drawn onto this image and               
                         EFI_HII_OUT_FLAG_CLIP is implied. If this points to a NULL on entry, then a             
@@ -1391,7 +1431,7 @@ HiiStringToImage (
     RowInfoArray      - If this is non-NULL on entry, then on exit, this will point to an allocated buffer   
                         containing row information and RowInfoArraySize will be updated to contain the       
                         number of elements. This array describes the characters which were at least partially
-                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.                            
+                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.
     RowInfoArraySize  - If this is non-NULL on entry, then on exit it contains the number of elements in
                         RowInfoArray.                                                                   
     ColumnInfoArray   - If this is non-NULL, then on return it will be filled with the horizontal offset for each 
@@ -1403,7 +1443,8 @@ HiiStringToImage (
   Returns:
     EFI_SUCCESS           - The string was successfully rendered.                           
     EFI_OUT_OF_RESOURCES  - Unable to allocate an output buffer for RowInfoArray or Blt.
-    EFI_INVALID_PARAMETER - The String or Blt was NULL.    
+    EFI_INVALID_PARAMETER - The String or Blt was NULL.
+    EFI_INVALID_PARAMETER - Flags were invalid combination.
         
 --*/
 {
@@ -1461,16 +1502,16 @@ HiiStringToImage (
   //
   // These two flags require that EFI_HII_OUT_FLAG_CLIP be also set.
   //
-  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLEAN_X)) ==  EFI_HII_OUT_FLAG_CLEAN_X) {
+  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) ==  EFI_HII_OUT_FLAG_CLIP_CLEAN_X) {
     return EFI_INVALID_PARAMETER;
   }
-  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLEAN_Y)) ==  EFI_HII_OUT_FLAG_CLEAN_Y) {
+  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLIP_CLEAN_Y)) ==  EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) {
     return EFI_INVALID_PARAMETER;
   }
   //
   // This flag cannot be used with EFI_HII_OUT_FLAG_CLEAN_X.
   //
-  if ((Flags & (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLEAN_X)) ==  (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLEAN_X)) {
+  if ((Flags & (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) ==  (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1627,7 +1668,7 @@ HiiStringToImage (
     //
     
     Transparent = (Flags & EFI_HII_OUT_FLAG_TRANSPARENT) == EFI_HII_OUT_FLAG_TRANSPARENT ? TRUE : FALSE;
-    if ((Flags & EFI_HII_OUT_FLAG_CLEAN_Y) == EFI_HII_OUT_FLAG_CLEAN_Y) {
+    if ((Flags & EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) == EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) {
       //
       // Don't draw at all if there is only one row and 
       // the row's bottom-most on pixel cannot fit.
@@ -1699,7 +1740,7 @@ HiiStringToImage (
         //
         if (!LineBreak) {
           Flags &= (~ (EFI_HII_OUT_FLAGS) EFI_HII_OUT_FLAG_WRAP);
-          Flags |= EFI_HII_OUT_FLAG_CLEAN_X;
+          Flags |= EFI_HII_OUT_FLAG_CLIP_CLEAN_X;
         }
       }
 
@@ -1707,7 +1748,7 @@ HiiStringToImage (
       // Clip the right-most character if cannot fit when EFI_HII_OUT_FLAG_CLEAN_X is set.
       //
       if (LineWidth + BltX <= Image->Width ||
-          (LineWidth + BltX > Image->Width && (Flags & EFI_HII_OUT_FLAG_CLEAN_X) == 0)) {
+          (LineWidth + BltX > Image->Width && (Flags & EFI_HII_OUT_FLAG_CLIP_CLEAN_X) == 0)) {
         //
         // Record right-most character in RowInfo even if it is partially displayed.
         //
@@ -1743,7 +1784,7 @@ HiiStringToImage (
       //
       if (RowIndex == MaxRowNum - 1 && Image->Height < LineHeight) {
         LineHeight = Image->Height;
-        if ((Flags & EFI_HII_OUT_FLAG_CLEAN_Y) == EFI_HII_OUT_FLAG_CLEAN_Y) {
+        if ((Flags & EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) == EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) {
           //
           // Don't draw at all if the row's bottom-most on pixel cannot fit.
           //
@@ -1938,7 +1979,7 @@ HiiStringIdToImage (
     Language          - Points to the language for the retrieved string. If NULL, then the current system
                         language is used.                                                                
     StringInfo        - Points to the string output information, including the color and font. 
-                        If NULL, then the string will be output in the default system font and color.                             
+                        If NULL, then the string will be output in the default system font and color.
     Blt               - If this points to a non-NULL on entry, this points to the image, which is Width pixels  
                         wide and Height pixels high. The string will be drawn onto this image and               
                         EFI_HII_OUT_FLAG_CLIP is implied. If this points to a NULL on entry, then a             
@@ -1949,7 +1990,7 @@ HiiStringIdToImage (
     RowInfoArray      - If this is non-NULL on entry, then on exit, this will point to an allocated buffer   
                         containing row information and RowInfoArraySize will be updated to contain the       
                         number of elements. This array describes the characters which were at least partially
-                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.                            
+                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.
     RowInfoArraySize  - If this is non-NULL on entry, then on exit it contains the number of elements in
                         RowInfoArray.                                                                   
     ColumnInfoArray   - If this is non-NULL, then on return it will be filled with the horizontal offset for each 
@@ -1961,7 +2002,10 @@ HiiStringIdToImage (
   Returns:
     EFI_SUCCESS           - The string was successfully rendered.
     EFI_OUT_OF_RESOURCES  - Unable to allocate an output buffer for RowInfoArray or Blt.
-    EFI_INVALID_PARAMETER - The PackageList was NULL.    
+    EFI_INVALID_PARAMETER - The Blt or PackageList was NULL.
+    EFI_INVALID_PARAMETER - Flags were invalid combination.
+    EFI_NOT_FOUND         - The specified PackageList is not in the Database or the stringid is not 
+                            in the specified PackageList. 
         
 --*/
 {
@@ -1969,6 +2013,11 @@ HiiStringIdToImage (
   HII_DATABASE_PRIVATE_DATA           *Private;
   EFI_STRING                          String;
   UINTN                               StringSize;
+  UINTN                               FontLen;
+  EFI_FONT_INFO                       *StringFontInfo;
+  EFI_FONT_DISPLAY_INFO               *NewStringInfo;
+  CHAR8                               CurrentLang[RFC_3066_ENTRY_SIZE];
+  
 
   if (This == NULL || PackageList == NULL || Blt == NULL || PackageList == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1978,7 +2027,14 @@ HiiStringIdToImage (
     return EFI_NOT_FOUND;
   }
 
-  Private = HII_FONT_DATABASE_PRIVATE_DATA_FROM_THIS (This);
+  //
+  // When Language points to NULL, current system language is used.
+  //
+  if (Language != NULL) {
+    EfiAsciiStrCpy (CurrentLang, (CHAR8 *) Language);
+  } else {
+    GetCurrentLanguage (CurrentLang);
+  }
   
   //
   // Get the string to be displayed.
@@ -1990,14 +2046,18 @@ HiiStringIdToImage (
     return EFI_OUT_OF_RESOURCES;
   }
 
+  Private        = HII_FONT_DATABASE_PRIVATE_DATA_FROM_THIS (This);
+  StringFontInfo = NULL;
+  NewStringInfo  = NULL;
+  
   Status = Private->HiiString.GetString (
                                 &Private->HiiString,
-                                Language,
+                                CurrentLang,
                                 PackageList,
                                 StringId,
                                 String,
                                 &StringSize,
-                                NULL
+                                &StringFontInfo
                                 );  
   if (Status == EFI_BUFFER_TOO_SMALL) {
     EfiLibSafeFreePool (String);
@@ -2007,34 +2067,69 @@ HiiStringIdToImage (
     }
     Status = Private->HiiString.GetString (
                                   &Private->HiiString,
-                                  Language,
+                                  CurrentLang,
                                   PackageList,
                                   StringId,
                                   String,
                                   &StringSize,
-                                  NULL
-                                  );  
-
+                                  &StringFontInfo
+                                  );
   } 
-
+  
   if (EFI_ERROR (Status)) {
-    EfiLibSafeFreePool (String);
-    return Status;
+    goto Exit;
   }
 
-  return HiiStringToImage (
-           This, 
-           Flags, 
-           String, 
-           StringInfo, 
-           Blt, 
-           BltX, 
-           BltY, 
-           RowInfoArray,
-           RowInfoArraySize,
-           ColumnInfoArray
-           );
+  //
+  // When StringInfo specifies that string will be output in the system default font and color,
+  // use particular stringfontinfo described in string package instead if exists. 
+  // StringFontInfo equals NULL means system default font attaches with the string block.
+  //
+  if (StringFontInfo != NULL && IsSystemFontInfo (Private, (EFI_FONT_DISPLAY_INFO *) StringInfo, NULL, NULL)) {
+    FontLen = sizeof (EFI_FONT_DISPLAY_INFO) - sizeof (CHAR16) + EfiStrSize (StringFontInfo->FontName);
+    NewStringInfo = EfiLibAllocateZeroPool (FontLen);
+    if (NewStringInfo == NULL) {      
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Exit;
+    }
+    NewStringInfo->FontInfoMask       = EFI_FONT_INFO_SYS_FORE_COLOR | EFI_FONT_INFO_SYS_BACK_COLOR;
+    NewStringInfo->FontInfo.FontStyle = StringFontInfo->FontStyle;
+    NewStringInfo->FontInfo.FontSize  = StringFontInfo->FontSize;    
+    EfiStrCpy (NewStringInfo->FontInfo.FontName, StringFontInfo->FontName);
 
+    Status = HiiStringToImage (
+               This, 
+               Flags, 
+               String, 
+               NewStringInfo, 
+               Blt, 
+               BltX, 
+               BltY, 
+               RowInfoArray,
+               RowInfoArraySize,
+               ColumnInfoArray
+               );
+    goto Exit;
+  }
+
+  Status = HiiStringToImage (
+             This, 
+             Flags, 
+             String, 
+             StringInfo, 
+             Blt, 
+             BltX, 
+             BltY, 
+             RowInfoArray,
+             RowInfoArraySize,
+             ColumnInfoArray
+             );
+Exit:
+  EfiLibSafeFreePool (String);
+  EfiLibSafeFreePool (StringFontInfo);
+  EfiLibSafeFreePool (NewStringInfo);
+
+  return Status;
 }
 
 EFI_STATUS
@@ -2200,7 +2295,7 @@ EFIAPI
 HiiGetFontInfo (
   IN  CONST EFI_HII_FONT_PROTOCOL    *This,
   IN  OUT   EFI_FONT_HANDLE          *FontHandle,
-  IN  CONST EFI_FONT_DISPLAY_INFO    *StringInfoIn,
+  IN  CONST EFI_FONT_DISPLAY_INFO    *StringInfoIn, OPTIONAL
   OUT       EFI_FONT_DISPLAY_INFO    **StringInfoOut,
   IN  CONST EFI_STRING               String OPTIONAL
   )
@@ -2213,11 +2308,13 @@ HiiGetFontInfo (
     
   Arguments:          
     This              - A pointer to the EFI_HII_FONT_PROTOCOL instance.
-    FontHandle        - On entry, points to the font handle returned by a 
-                        previous call to GetFontInfo() or NULL to start with the 
+    FontHandle        - On entry, points to the font handle returned by a previous 
+                        call to GetFontInfo() or points to NULL to start with the 
                         first font. On return, points to the returned font handle or
-                        points to NULL if there are no more matching fonts.                                               
-    StringInfoIn      - Upon entry, points to the font to return information about.                        
+                        points to NULL if there are no more matching fonts.
+    StringInfoIn      - Upon entry, points to the font to return information about.
+                        If NULL, then the information about the system default 
+                        font will be returned.
     StringInfoOut     - Upon return, contains the matching font¡¯s information. 
                         If NULL, then no information is returned.
                         It's caller's responsibility to free this buffer.
@@ -2228,7 +2325,7 @@ HiiGetFontInfo (
   Returns:
     EFI_SUCCESS            - Matching font returned successfully.
     EFI_NOT_FOUND          - No matching font was found.
-    EFI_INVALID_PARAMETER  - StringInfoIn is NULL.
+    EFI_INVALID_PARAMETER  - StringInfoIn->FontInfoMask is an invalid combination.
     EFI_OUT_OF_RESOURCES   - There were insufficient resources to complete the request.
             
 --*/    
@@ -2243,8 +2340,54 @@ HiiGetFontInfo (
   EFI_STRING                         StringIn;
   EFI_FONT_HANDLE                    LocalFontHandle;
     
-  if (This == NULL || StringInfoIn == NULL) {
+  if (This == NULL) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  FontInfo        = NULL;
+  SystemDefault   = NULL;
+  LocalFontHandle = NULL;
+  if (FontHandle != NULL) {
+    LocalFontHandle = *FontHandle;
+  }
+  
+  Private = HII_FONT_DATABASE_PRIVATE_DATA_FROM_THIS (This);
+  
+  //
+  // Already searched to the end of the whole list, return directly.
+  //
+  if (LocalFontHandle == &Private->FontInfoList) {
+    LocalFontHandle = NULL;
+    Status = EFI_NOT_FOUND;
+    goto Exit;
+  }
+
+  //
+  // Get default system display info, if StringInfoIn points to 
+  // system display info, return it directly.
+  //
+  if (IsSystemFontInfo (Private, (EFI_FONT_DISPLAY_INFO *) StringInfoIn, &SystemDefault, &StringInfoOutLen)) {
+    //
+    // System font is the first node. When handle is not NULL, system font can not
+    // be found any more.
+    //
+    if (LocalFontHandle == NULL) {
+      if (StringInfoOut != NULL) {
+        *StringInfoOut = EfiLibAllocateCopyPool (StringInfoOutLen, SystemDefault);
+        if (*StringInfoOut == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          LocalFontHandle = NULL;
+          goto Exit;
+        }
+      }      
+      LocalFontHandle = Private->FontInfoList.ForwardLink;
+      Status = EFI_SUCCESS;
+      goto Exit;
+    } else {
+      LocalFontHandle = NULL;
+      Status = EFI_NOT_FOUND;
+      goto Exit;
+    }
   }
   
   //
@@ -2263,37 +2406,11 @@ HiiGetFontInfo (
     return EFI_INVALID_PARAMETER;
   }
 
-  FontInfo        = NULL;
-  LocalFontHandle = NULL;
-  if (FontHandle != NULL) {
-    LocalFontHandle = *FontHandle;
-  }
-  
-  //
-  // Get default system display info, if StringInfoIn points to 
-  // system display info, return it directly.
-  //
-  Private = HII_FONT_DATABASE_PRIVATE_DATA_FROM_THIS (This);
-
-  if (IsSystemFontInfo (Private, (EFI_FONT_DISPLAY_INFO *) StringInfoIn, &SystemDefault, &StringInfoOutLen)) {
-    if (StringInfoOut != NULL) {
-      *StringInfoOut = EfiLibAllocateCopyPool (StringInfoOutLen, (EFI_FONT_DISPLAY_INFO *) StringInfoIn);
-      if (*StringInfoOut == NULL) {
-        Status = EFI_OUT_OF_RESOURCES;
-        LocalFontHandle = NULL;
-        goto Exit;
-      }
-    }
-    
-    LocalFontHandle = Private->FontInfoList.ForwardLink;
-    Status = EFI_SUCCESS;
-    goto Exit;
-  }
   
   //
   // Parse the font information mask to find a matching font.
   //
-  
+
   EfiCopyMem (&InfoOut, (EFI_FONT_DISPLAY_INFO *) StringInfoIn, sizeof (EFI_FONT_DISPLAY_INFO));
   
   if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_FONT) == EFI_FONT_INFO_SYS_FONT) {
@@ -2307,11 +2424,14 @@ HiiGetFontInfo (
 
   if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_SIZE) == EFI_FONT_INFO_SYS_SIZE) {
     InfoOut.FontInfo.FontSize = SystemDefault->FontInfo.FontSize;
-  } else if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_STYLE) == EFI_FONT_INFO_SYS_STYLE) {
+  } 
+  if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_STYLE) == EFI_FONT_INFO_SYS_STYLE) {
     InfoOut.FontInfo.FontStyle = SystemDefault->FontInfo.FontStyle;
-  } else if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_FORE_COLOR) == EFI_FONT_INFO_SYS_FORE_COLOR) {
+  }
+  if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_FORE_COLOR) == EFI_FONT_INFO_SYS_FORE_COLOR) {
     InfoOut.ForegroundColor = SystemDefault->ForegroundColor;
-  } else if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_BACK_COLOR) == EFI_FONT_INFO_SYS_BACK_COLOR) {
+  }
+  if ((StringInfoIn->FontInfoMask & EFI_FONT_INFO_SYS_BACK_COLOR) == EFI_FONT_INFO_SYS_BACK_COLOR) {
     InfoOut.BackgroundColor = SystemDefault->BackgroundColor;
   }
 

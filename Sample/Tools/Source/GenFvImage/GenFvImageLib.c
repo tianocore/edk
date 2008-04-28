@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1040,91 +1040,25 @@ Returns:
 
   if (FindSection (InfFile, COMPONENT_SECTION_STRING)) {
     Index = 0;
-    //
-    // Read component FV_VARIABLE
-    //
-    Status = FindToken (InfFile, COMPONENT_SECTION_STRING, EFI_NV_VARIABLE_STRING, 0, Value);
-
-    if (Status == EFI_SUCCESS) {
-      //
-      // Add the component
-      //
-      strcpy (FvInfo->FvComponents[Index].ComponentName, EFI_NV_VARIABLE_STRING);
+    while (TRUE) {
+      Status = FindTokenInstanceInSection (
+                 InfFile,
+                 COMPONENT_SECTION_STRING,
+                 Index,
+                 FvInfo->FvComponents[Index].ComponentName,
+                 Value
+                 );
+      if (EFI_ERROR (Status)) {
+        break;
+      }
       Status = AsciiStringToUint64 (Value, FALSE, &Value64);
       if (EFI_ERROR (Status)) {
-        printf ("ERROR: %s is not a valid integer.\n", EFI_NV_VARIABLE_STRING);
+        printf ("ERROR: %s is not a valid integer.\n", Value);
         return EFI_ABORTED;
       }
 
       FvInfo->FvComponents[Index].Size = (UINTN) Value64;
-    } else {
-      printf ("WARNING: Could not read %s.\n", EFI_NV_VARIABLE_STRING);
-    }
-
-    Index++;
-    //
-    // Read component FV_EVENT_LOG
-    //
-    Status = FindToken (InfFile, COMPONENT_SECTION_STRING, EFI_NV_EVENT_LOG_STRING, 0, Value);
-
-    if (Status == EFI_SUCCESS) {
-      //
-      // Add the component
-      //
-      strcpy (FvInfo->FvComponents[Index].ComponentName, EFI_NV_EVENT_LOG_STRING);
-      Status = AsciiStringToUint64 (Value, FALSE, &Value64);
-      if (EFI_ERROR (Status)) {
-        printf ("ERROR: %s is not a valid integer.\n", EFI_NV_EVENT_LOG_STRING);
-        return EFI_ABORTED;
-      }
-
-      FvInfo->FvComponents[Index].Size = (UINTN) Value64;
-    } else {
-      printf ("WARNING: Could not read %s.\n", EFI_NV_EVENT_LOG_STRING);
-    }
-
-    Index++;
-    //
-    // Read component FV_FTW_WORKING
-    //
-    Status = FindToken (InfFile, COMPONENT_SECTION_STRING, EFI_NV_FTW_WORKING_STRING, 0, Value);
-
-    if (Status == EFI_SUCCESS) {
-      //
-      // Add the component
-      //
-      strcpy (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_WORKING_STRING);
-      Status = AsciiStringToUint64 (Value, FALSE, &Value64);
-      if (EFI_ERROR (Status)) {
-        printf ("ERROR: %s is not a valid integer.\n", EFI_NV_FTW_WORKING_STRING);
-        return EFI_ABORTED;
-      }
-
-      FvInfo->FvComponents[Index].Size = (UINTN) Value64;
-    } else {
-      printf ("WARNING: Could not read %s.\n", EFI_NV_FTW_WORKING_STRING);
-    }
-
-    Index++;
-    //
-    // Read component FV_FTW_SPARE
-    //
-    Status = FindToken (InfFile, COMPONENT_SECTION_STRING, EFI_NV_FTW_SPARE_STRING, 0, Value);
-
-    if (Status == EFI_SUCCESS) {
-      //
-      // Add the component
-      //
-      strcpy (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_SPARE_STRING);
-      Status = AsciiStringToUint64 (Value, FALSE, &Value64);
-      if (EFI_ERROR (Status)) {
-        printf ("ERROR: %s is not a valid integer.\n", EFI_NV_FTW_SPARE_STRING);
-        return EFI_ABORTED;
-      }
-
-      FvInfo->FvComponents[Index].Size = (UINTN) Value64;
-    } else {
-      printf ("WARNING: Could not read %s.\n", EFI_NV_FTW_SPARE_STRING);
+      Index++;
     }
   }
   //
@@ -2250,8 +2184,7 @@ Returns:
     } else if (_stricmp (FvInfo->FvComponents[Index].ComponentName, EFI_NV_FTW_SPARE_STRING) == 0) {
       AddFTWSpareBlock (FvImage, FvInfo->FvComponents[Index].Size, FvInfo);
     } else {
-      printf ("Error. Unknown Non-FFS block %s \n", FvInfo->FvComponents[Index].ComponentName);
-      return EFI_ABORTED;
+      printf ("Warning: Unknown Non-FFS block %s \n", FvInfo->FvComponents[Index].ComponentName);
     }
 
     FvImage   = FvImage + FvInfo->FvComponents[Index].Size;

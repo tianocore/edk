@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -2849,8 +2849,7 @@ HiiRemovePackageList (
   Returns:
     EFI_SUCCESS            - The data associated with the Handle was removed from 
                              the HII database.
-    EFI_NOT_FOUND          - The specified PackageList could not be found in database.
-    EFI_INVALID_PARAMETER  - The Handle was not valid.
+    EFI_NOT_FOUND          - The specified Handle is not in database.
      
 --*/
 {
@@ -2861,8 +2860,12 @@ HiiRemovePackageList (
   HII_DATABASE_PACKAGE_LIST_INSTANCE  *PackageList;
   HII_HANDLE                          *HiiHandle;
   
-  if (This == NULL || !IsHiiHandleValid (Handle)) {
+  if (This == NULL) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  if (!IsHiiHandleValid (Handle)) {
+    return EFI_NOT_FOUND;
   }
 
   Private = HII_DATABASE_DATABASE_PRIVATE_DATA_FROM_THIS (This);
@@ -2957,9 +2960,9 @@ HiiUpdatePackageList (
   Returns:
     EFI_SUCCESS            - The HII database was successfully updated.
     EFI_OUT_OF_RESOURCES   - Unable to allocate enough memory for the updated database.
-    EFI_INVALID_PARAMETER  - Handle or PackageList was NULL.
-    EFI_NOT_FOUND          - The Handle was not valid or could not be found in database.
-     
+    EFI_INVALID_PARAMETER  - PackageList was NULL.
+    EFI_NOT_FOUND          - The specified Handle is not in database.
+    
 --*/
 {
   EFI_STATUS                          Status;
@@ -2970,7 +2973,7 @@ HiiUpdatePackageList (
   HII_DATABASE_PACKAGE_LIST_INSTANCE  *OldPackageList;
   EFI_HII_PACKAGE_HEADER              PackageHeader;
 
-  if (This == NULL || PackageList == NULL || Handle == NULL) {
+  if (This == NULL || PackageList == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -3073,12 +3076,16 @@ HiiListPackageLists (
         
   Returns:
     EFI_SUCCESS            - The matching handles are outputed successfully.
+                             HandleBufferLength is updated with the actual length.
     EFI_BUFFER_TO_SMALL    - The HandleBufferLength parameter indicates that
                              Handle is too small to support the number of handles.
                              HandleBufferLength is updated with a value that will 
                              enable the data to fit.
     EFI_NOT_FOUND          - No matching handle could not be found in database.
     EFI_INVALID_PARAMETER  - Handle or HandleBufferLength was NULL.
+    EFI_INVALID_PARAMETER  - PackageType is not a EFI_HII_PACKAGE_TYPE_GUID but
+                             PackageGuid is not NULL, PackageType is a EFI_HII_
+                             PACKAGE_TYPE_GUID but PackageGuid is NULL.
      
 --*/
 {
@@ -3407,7 +3414,6 @@ HiiUnregisterPackageNotify (
                          
   Returns:
     EFI_SUCCESS            - Notification is unregistered successfully.    
-    EFI_INVALID_PARAMETER  - The Handle is invalid.
     EFI_NOT_FOUND          - The incoming notification handle does not exist 
                              in current hii database.
      
@@ -3418,8 +3424,12 @@ HiiUnregisterPackageNotify (
   EFI_LIST_ENTRY                      *Link;
   EFI_STATUS                          Status;
 
-  if (This == NULL || NotificationHandle == NULL) {
+  if (This == NULL) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  if (NotificationHandle == NULL) {
+    return EFI_NOT_FOUND;
   }
 
   Status = gBS->OpenProtocol (
@@ -3431,7 +3441,7 @@ HiiUnregisterPackageNotify (
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
-    return EFI_INVALID_PARAMETER;
+    return EFI_NOT_FOUND;
   }
 
   Private = HII_DATABASE_DATABASE_PRIVATE_DATA_FROM_THIS (This);

@@ -1195,11 +1195,38 @@ vfrStatementBooleanType :
 //
 vfrStatementCheckBox :
   <<
-     CIfrCheckBox CBObj;
+     CIfrCheckBox       CBObj;
+     EFI_IFR_TYPE_VALUE Val; 
+     INT8               *VarStoreName = NULL;
   >>
   L:CheckBox                                           << CBObj.SetLineNo(L->getLine()); >>
   vfrQuestionHeader[CBObj] ","
-  { F:FLAGS "=" vfrCheckBoxFlags[CBObj, F->getLine()] "," }
+  {
+    F:FLAGS "=" vfrCheckBoxFlags[CBObj, F->getLine()] ","
+                                                       <<
+                                                          if (CBObj.GetFlags () == 0x01) {
+                                                            _PCATCH(mCVfrDataStorage.GetVarStoreName (_GET_CURRQEST_VARTINFO().mVarStoreId, &VarStoreName), L->getLine());
+                                                            Val.b = TRUE;
+                                                            _PCATCH(mCVfrDefaultStore.BufferVarStoreAltConfigAdd (
+															                            EFI_HII_DEFAULT_CLASS_STANDARD, 
+																			   	        _GET_CURRQEST_VARTINFO(), 
+																				        VarStoreName, 
+																			            _GET_CURRQEST_DATATYPE (), 
+																				        Val
+																				        ), L->getLine());
+                                                          } else if (CBObj.GetFlags () == 0x02) {
+                                                            _PCATCH(mCVfrDataStorage.GetVarStoreName (_GET_CURRQEST_VARTINFO().mVarStoreId, &VarStoreName), L->getLine());
+                                                            Val.b = TRUE;
+                                                            _PCATCH(mCVfrDefaultStore.BufferVarStoreAltConfigAdd (
+															                            EFI_HII_DEFAULT_CLASS_MANUFACTURING, 
+																			   	        _GET_CURRQEST_VARTINFO(), 
+																				        VarStoreName, 
+																			            _GET_CURRQEST_DATATYPE (), 
+																				        Val
+																				        ), L->getLine());
+														  }
+													   >>
+  }
   {
     Key "=" KN:Number  ","                             << AssignQuestionKey (CBObj, KN); >>
   }
@@ -1215,6 +1242,7 @@ vfrCheckBoxFlags [CIfrCheckBox & CBObj, UINT32 LineNum] :
   >>
   checkboxFlagsField[LFlags, HFlags] ( "\|" checkboxFlagsField[LFlags, HFlags] )*
                                                        << _PCATCH(CBObj.SetFlags (HFlags, LFlags), LineNum); >>
+
   ;
 
 checkboxFlagsField[UINT8 & LFlags, UINT8 & HFlags] :

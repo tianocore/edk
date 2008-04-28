@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -64,6 +64,8 @@ Returns:
   ASSERT_EFI_ERROR (Status);
 
   InitializeBiosIntCaller ();
+
+  InitializeInterruptRedirection ();
 
   //
   // Install thunk protocol
@@ -162,6 +164,73 @@ InitializeBiosIntCaller (
     );
 
   return;
+}
+
+
+VOID
+InitializeInterruptRedirection (
+  VOID
+  )
+/*++
+
+  Routine Description:
+    Initialize interrupt redirection code and entries, because
+    IDT Vectors 0x68-0x6f must be redirected to IDT Vectors 0x08-0x0f.
+    Or the interrupt will lost when we do thunk.
+    NOTE: We do not reset 8259 vector base, because it will cause pending
+    interrupt lost.
+
+  Arguments:
+    NONE
+
+  Returns:
+    NONE
+--*/
+{
+  EFI_STATUS            Status;
+  UINTN                 LegacyRegionBase;
+  UINTN                 LegacyRegionLength;
+  UINT32                *IdtArray;
+  UINTN                 Index;
+  UINT8                 ProtectedModeBaseVector;
+  UINT32                InterruptRedirectionCode[] = {
+    0x90CF08CD, // INT8; IRET; NOP
+    0x90CF09CD, // INT9; IRET; NOP
+    0x90CF0ACD, // INTA; IRET; NOP
+    0x90CF0BCD, // INTB; IRET; NOP
+    0x90CF0CCD, // INTC; IRET; NOP
+    0x90CF0DCD, // INTD; IRET; NOP
+    0x90CF0ECD, // INTE; IRET; NOP
+    0x90CF0FCD  // INTF; IRET; NOP
+  };
+
+  //
+  // Get LegacyRegion
+  //
+  LegacyRegionLength = sizeof(InterruptRedirectionCode);
+  Status = GetFreeLegacyRegion (&LegacyRegionBase, &LegacyRegionLength);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Copy code to legacy region
+  //
+  EfiCommonLibCopyMem ((VOID *)LegacyRegionBase, InterruptRedirectionCode, sizeof (InterruptRedirectionCode));
+
+  //
+  // Get VectorBase, it should be 0x68
+  //
+  Status = gLegacy8259->GetVector (gLegacy8259, Efi8259Irq0, &ProtectedModeBaseVector);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Patch IVT 0x68 ~ 0x6f
+  //
+  IdtArray = (UINT32 *) 0;
+  for (Index = 0; Index < 8; Index++) {
+    IdtArray[ProtectedModeBaseVector + Index] = ((EFI_SEGMENT (LegacyRegionBase + Index * 4)) << 16) | (EFI_OFFSET (LegacyRegionBase + Index * 4));
+  }
+
+  return ;
 }
 
 BOOLEAN

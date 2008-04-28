@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -108,6 +108,7 @@ typedef struct _EFI_HII_SIMPLE_FONT_PACKAGE_HDR {
 // Font Package
 //
 
+#define EFI_HII_FONT_STYLE_NORMAL            0x00000000
 #define EFI_HII_FONT_STYLE_BOLD              0x00000001
 #define EFI_HII_FONT_STYLE_ITALIC            0x00000002
 #define EFI_HII_FONT_STYLE_EMBOSS            0x00010000
@@ -704,7 +705,7 @@ typedef struct _EFI_IFR_VARSTORE_EFI {
 
 typedef struct _EFI_IFR_VARSTORE_NAME_VALUE {
   EFI_IFR_OP_HEADER        Header;
-  UINT16                   VarStoreId;
+  EFI_VARSTORE_ID          VarStoreId;
   EFI_GUID                 Guid;
 } EFI_IFR_VARSTORE_NAME_VALUE;
 

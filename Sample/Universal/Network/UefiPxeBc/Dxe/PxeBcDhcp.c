@@ -1744,7 +1744,8 @@ Returns:
   }
 
   if (UseDefaultItem) {
-    *Type = NTOHS (MenuArray[0]->Type);
+    NetCopyMem (Type, &MenuArray[0]->Type, sizeof (UINT16));
+    *Type = NTOHS (*Type);
     return EFI_SUCCESS;
   }
 
@@ -1844,7 +1845,8 @@ Returns:
   //
   // Swap the byte order
   //
-  *Type = NTOHS (MenuArray[Select]->Type);
+  NetCopyMem (Type, &MenuArray[Select]->Type, sizeof (UINT16));
+  *Type = NTOHS (*Type);
 
   return EFI_SUCCESS;
 }

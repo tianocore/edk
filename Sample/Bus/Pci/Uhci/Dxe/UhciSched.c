@@ -761,7 +761,7 @@ Returns:
   AsyncReq->DevAddr     = DevAddr;
   AsyncReq->EndPoint    = EndPoint;
   AsyncReq->DataLen     = DataLen;
-  AsyncReq->Interval    = Interval;
+  AsyncReq->Interval    = UhciConvertPollRate(Interval);
   AsyncReq->Mapping     = Mapping;
   AsyncReq->Data        = Data;
   AsyncReq->Callback    = Callback;

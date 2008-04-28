@@ -369,12 +369,6 @@ Interrupt8259SetMode (
     mMode = Mode;
 
     //
-    // Set 8259 Vector Base
-    //
-    //
-    Interrupt8259SetVectorBase (This, LEGACY_MODE_BASE_VECTOR_MASTER, LEGACY_MODE_BASE_VECTOR_SLAVE);
-
-    //
     // Enable Interrupts
     //
     Interrupt8259WriteMask (mLegacyModeMask, mLegacyModeEdgeLevel);
@@ -408,12 +402,6 @@ Interrupt8259SetMode (
     }
 
     mMode = Mode;
-
-    //
-    // Set 8259 Vector Base
-    //
-    //
-    Interrupt8259SetVectorBase (This, PROTECTED_MODE_BASE_VECTOR_MASTER, PROTECTED_MODE_BASE_VECTOR_SLAVE);
 
     //
     // Enable Interrupts
@@ -648,6 +636,11 @@ Returns:
   for (Irq = Efi8259Irq0; Irq <= Efi8259Irq15; Irq++) {
     Interrupt8259EndOfInterrupt (&m8259, Irq);
   }
+
+  //
+  // Save old legacy mode mask and edge level
+  //
+  Interrupt8259ReadMask (&mLegacyModeMask, &mLegacyModeEdgeLevel);
 
   //
   // Set the 8259 Master base to 0x68 and the 8259 Slave base to 0x70

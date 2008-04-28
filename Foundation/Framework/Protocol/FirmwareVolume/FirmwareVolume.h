@@ -78,10 +78,6 @@ EFI_FORWARD_DECLARATION (EFI_FIRMWARE_VOLUME_PROTOCOL);
 //
 // Protocol API definitions
 //
-//
-// Forward declaration of protocol data structure
-//
-typedef struct _EFI_FIRMWARE_VOLUME_PROTOCOL  EFI_FIRMWARE_VOLUME_PROTOCOL;
 
 typedef
 EFI_STATUS

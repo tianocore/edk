@@ -67,7 +67,12 @@ enum {
   USBPORTSC_PR          = BIT(9),  // Port Reset
   USBPORTSC_SUSP        = BIT(12), // Suspend
 
-  USB_MAX_ROOTHUB_PORT  = 0x0F,    // Max number of root hub port
+  //
+  // UHCI Spec said it must implement 2 ports each host at least,
+  // and if more, check whether the bit7 of PORTSC is always 1.
+  // So here assume the max of port number each host is 16.
+  //
+  USB_MAX_ROOTHUB_PORT  = 0x0F,
   
   //
   // Command register bit definitions

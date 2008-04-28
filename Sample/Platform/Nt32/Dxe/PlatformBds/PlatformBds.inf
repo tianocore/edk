@@ -65,8 +65,6 @@ PLATFORM_BDS_FILE_PATH  = ..\..\..\..\Platform\Generic\Dxe\$(UEFI_PREFIX)Platfor
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Efi
   $(EDK_SOURCE)\Foundation\Framework
-  $(EDK_SOURCE)\Application
-
   .
   $(EDK_SOURCE)\Sample\Platform\Nt32
   $(EDK_SOURCE)\Foundation\Include

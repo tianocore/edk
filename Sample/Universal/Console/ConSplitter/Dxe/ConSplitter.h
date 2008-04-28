@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -249,6 +249,11 @@ extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterConInDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterSimplePointerDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterConOutDriverBinding;
 extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterStdErrDriverBinding;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
+extern EFI_DRIVER_BINDING_PROTOCOL  gConSplitterAbsolutePointerDriverBinding;
+#endif
+#endif
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterConInComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL gConSplitterSimplePointerComponentName;

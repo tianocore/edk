@@ -108,14 +108,18 @@ Abstract:
 //
 // pci express base address
 //
+#ifndef EDKII_GLUE_PciExpressBaseAddress
 #define EDKII_GLUE_PciExpressBaseAddress        0xE0000000
+#endif
 
 //
 //
 // This value is FSB Clock frequency. Its unit is Hz and its 
 // default value is 200000000, that means FSB frequency is 200Mhz.
 //
+#ifndef EDKII_GLUE_FSBClock
 #define EDKII_GLUE_FSBClock                     200000000
+#endif
 
 //
 // post code property mask
@@ -137,7 +141,9 @@ Abstract:
 // The base address of IPF IO Block
 //
 #ifdef MDE_CPU_IPF
+#ifndef EDKII_GLUE_IoBlockBaseAddressForIpf
 #define EDKII_GLUE_IoBlockBaseAddressForIpf     0x0ffffc000000
+#endif
 #endif
 
 #endif

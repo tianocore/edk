@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -238,6 +238,18 @@ Returns:
   // Initialize keyboard controller if necessary
   //
   IsaIo->Io.Read (IsaIo, EfiIsaIoWidthUint8, KBC_CMD_STS_PORT, 1, &Data);
+  //
+  // Fix for random hangs in System waiting for the Key if no KBC is present in BIOS.
+  //
+  if ((Data & (KBC_PARE | KBC_TIM)) == (KBC_PARE | KBC_TIM)) {
+    //
+    // If nobody decodes KBC I/O port, it will read back as 0xFF.
+    // Check the Time-Out and Parity bit to see if it has an active KBC in system
+    //
+    Status     = EFI_DEVICE_ERROR;
+    StatusCode = EFI_PERIPHERAL_MOUSE | EFI_P_EC_NOT_DETECTED;
+    goto ErrorExit;
+  }
   if ((Data & KBC_SYSF) != KBC_SYSF) {
     Status = KbcSelfTest (IsaIo);
     if (EFI_ERROR (Status)) {
@@ -332,7 +344,9 @@ Returns:
 
 ErrorExit:
 
-  KbcDisableAux (IsaIo);
+  if (Status != EFI_DEVICE_ERROR) {
+    KbcDisableAux (IsaIo);
+  }
 
   if (StatusCode != 0) {
     ReportStatusCodeWithDevicePath (
@@ -355,13 +369,16 @@ ErrorExit:
   if ((MouseDev != NULL) && (MouseDev->ControllerNameTable != NULL)) {
     EfiLibFreeUnicodeStringTable (MouseDev->ControllerNameTable);
   }
-  //
-  // Since there will be no timer handler for mouse input any more,
-  // exhaust input data just in case there is still mouse data left
-  //
-  EmptyStatus = EFI_SUCCESS;
-  while (!EFI_ERROR (EmptyStatus)) {
-    EmptyStatus = In8042Data (IsaIo, &Data);
+
+  if (Status != EFI_DEVICE_ERROR) {
+    //
+    // Since there will be no timer handler for mouse input any more,
+    // exhaust input data just in case there is still mouse data left
+    //
+    EmptyStatus = EFI_SUCCESS;
+    while (!EFI_ERROR (EmptyStatus)) {
+      EmptyStatus = In8042Data (IsaIo, &Data);
+    }
   }
 
   if (MouseDev != NULL) {

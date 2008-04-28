@@ -835,7 +835,7 @@ public:
   CIfrCheckBox () : CIfrObj (EFI_IFR_CHECKBOX_OP, (CHAR8 **)&mCheckBox),
                      CIfrOpHeader (EFI_IFR_CHECKBOX_OP, &mCheckBox->Header), 
                      CIfrQuestionHeader (&mCheckBox->Question) {
-    mCheckBox->Flags = EFI_IFR_CHECKBOX_DEFAULT;
+    mCheckBox->Flags = 0;
     gCurrentQuestion = this;
   }
 
@@ -860,6 +860,10 @@ public:
     }
 
     return _FLAGS_ZERO (LFlags) ? VFR_RETURN_SUCCESS : VFR_RETURN_FLAGS_UNSUPPORTED;
+  }
+
+  UINT8 GetFlags (VOID) {
+    return mCheckBox->Flags;
   }
 };
 

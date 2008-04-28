@@ -37,7 +37,6 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Foundation\Library\Dxe\EfiDriverLib
   
 [libraries.common]
   EfiDriverLib

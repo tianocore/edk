@@ -1130,8 +1130,8 @@ Returns:
                                           UsbClassDevicePathPtr->DeviceClass == 0xff) && 
           (UsbClassDevicePathPtr->DeviceSubClass == ActIfDesc->InterfaceSubClass ||
                                        UsbClassDevicePathPtr->DeviceSubClass == 0xff) &&
-          (UsbClassDevicePathPtr->DeviceProtocol == ActIfDesc->InterfaceProtocol) || 
-                                       UsbClassDevicePathPtr->DeviceProtocol == 0xff) {
+          (UsbClassDevicePathPtr->DeviceProtocol == ActIfDesc->InterfaceProtocol || 
+                                       UsbClassDevicePathPtr->DeviceProtocol == 0xff)) {
         return TRUE;
       }
       
@@ -1139,8 +1139,8 @@ Returns:
                                          UsbClassDevicePathPtr->DeviceClass == 0xff) && 
                (UsbClassDevicePathPtr->DeviceSubClass == DevDesc->DeviceSubClass ||
                                       UsbClassDevicePathPtr->DeviceSubClass == 0xff) &&
-               (UsbClassDevicePathPtr->DeviceProtocol == DevDesc->DeviceProtocol) ||
-                                      UsbClassDevicePathPtr->DeviceProtocol == 0xff) {
+               (UsbClassDevicePathPtr->DeviceProtocol == DevDesc->DeviceProtocol ||
+                                      UsbClassDevicePathPtr->DeviceProtocol == 0xff)) {
 
       return TRUE;
     }

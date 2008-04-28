@@ -311,9 +311,10 @@ UhciGetRootHubPortNumber (
     // returns 0 in this bit if port number is invalid. Also, if 
     // PciIo IoRead returns error, 0xFFFF is returned to caller.
     //
-    if (((PortSC & 0x80) != 0) && (PortSC != 0xFFFF)) {
-      (*PortNumber)++;
+    if (((PortSC & 0x80) == 0) || (PortSC == 0xFFFF)) {
+      break;
     }
+    (*PortNumber)++;
   }
 
   Uhc->RootPorts = *PortNumber;

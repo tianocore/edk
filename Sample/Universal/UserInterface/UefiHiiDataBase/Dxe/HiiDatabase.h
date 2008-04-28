@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,7 +27,7 @@ Revision History
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
-#include "EfiUiLib.h"
+#include "UefiIfrLibrary.h"
 
 #include EFI_PROTOCOL_DEFINITION (HiiFont)
 #include EFI_PROTOCOL_DEFINITION (HiiImage)
@@ -468,7 +468,7 @@ HiiStringToImage (
     Flags             - Describes how the string is to be drawn.                 
     String            - Points to the null-terminated string to be displayed.
     StringInfo        - Points to the string output information, including the color and font. 
-                        If NULL, then the string will be output in the default system font and color.                             
+                        If NULL, then the string will be output in the default system font and color.
     Blt               - If this points to a non-NULL on entry, this points to the image, which is Width pixels  
                         wide and Height pixels high. The string will be drawn onto this image and               
                         EFI_HII_OUT_FLAG_CLIP is implied. If this points to a NULL on entry, then a             
@@ -479,7 +479,7 @@ HiiStringToImage (
     RowInfoArray      - If this is non-NULL on entry, then on exit, this will point to an allocated buffer   
                         containing row information and RowInfoArraySize will be updated to contain the       
                         number of elements. This array describes the characters which were at least partially
-                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.                            
+                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.
     RowInfoArraySize  - If this is non-NULL on entry, then on exit it contains the number of elements in
                         RowInfoArray.                                                                   
     ColumnInfoArray   - If this is non-NULL, then on return it will be filled with the horizontal offset for each 
@@ -489,9 +489,10 @@ HiiStringToImage (
                         is possible when character display is normalized that some character cells overlap.           
                      
   Returns:
-    EFI_SUCCESS           - The string was successfully rendered.
+    EFI_SUCCESS           - The string was successfully rendered.                           
     EFI_OUT_OF_RESOURCES  - Unable to allocate an output buffer for RowInfoArray or Blt.
-    EFI_INVALID_PARAMETER - The String was NULL.    
+    EFI_INVALID_PARAMETER - The String or Blt was NULL.
+    EFI_INVALID_PARAMETER - Flags were invalid combination.
         
 --*/
 ;
@@ -525,7 +526,7 @@ HiiStringIdToImage (
     Language          - Points to the language for the retrieved string. If NULL, then the current system
                         language is used.                                                                
     StringInfo        - Points to the string output information, including the color and font. 
-                        If NULL, then the string will be output in the default system font and color.                             
+                        If NULL, then the string will be output in the default system font and color.
     Blt               - If this points to a non-NULL on entry, this points to the image, which is Width pixels  
                         wide and Height pixels high. The string will be drawn onto this image and               
                         EFI_HII_OUT_FLAG_CLIP is implied. If this points to a NULL on entry, then a             
@@ -536,7 +537,7 @@ HiiStringIdToImage (
     RowInfoArray      - If this is non-NULL on entry, then on exit, this will point to an allocated buffer   
                         containing row information and RowInfoArraySize will be updated to contain the       
                         number of elements. This array describes the characters which were at least partially
-                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.                            
+                        drawn and the heights of the rows. It is the caller¡¯s responsibility to free this buffer.
     RowInfoArraySize  - If this is non-NULL on entry, then on exit it contains the number of elements in
                         RowInfoArray.                                                                   
     ColumnInfoArray   - If this is non-NULL, then on return it will be filled with the horizontal offset for each 
@@ -548,7 +549,10 @@ HiiStringIdToImage (
   Returns:
     EFI_SUCCESS           - The string was successfully rendered.
     EFI_OUT_OF_RESOURCES  - Unable to allocate an output buffer for RowInfoArray or Blt.
-    EFI_INVALID_PARAMETER - The String was NULL.    
+    EFI_INVALID_PARAMETER - The Blt or PackageList was NULL.
+    EFI_INVALID_PARAMETER - Flags were invalid combination.
+    EFI_NOT_FOUND         - The specified PackageList is not in the Database or the stringid is not 
+                            in the specified PackageList. 
         
 --*/
 ;
@@ -592,7 +596,7 @@ EFIAPI
 HiiGetFontInfo (
   IN  CONST EFI_HII_FONT_PROTOCOL    *This,
   IN  OUT   EFI_FONT_HANDLE          *FontHandle,
-  IN  CONST EFI_FONT_DISPLAY_INFO    *StringInfoIn,
+  IN  CONST EFI_FONT_DISPLAY_INFO    *StringInfoIn, OPTIONAL
   OUT       EFI_FONT_DISPLAY_INFO    **StringInfoOut,
   IN  CONST EFI_STRING               String OPTIONAL
   )
@@ -605,11 +609,13 @@ HiiGetFontInfo (
     
   Arguments:          
     This              - A pointer to the EFI_HII_FONT_PROTOCOL instance.
-    FontHandle        - On entry, points to the font handle returned by a 
-                        previous call to GetFontInfo() or NULL to start with the 
+    FontHandle        - On entry, points to the font handle returned by a previous 
+                        call to GetFontInfo() or points to NULL to start with the 
                         first font. On return, points to the returned font handle or
-                        points to NULL if there are no more matching fonts.                                               
-    StringInfoIn      - Upon entry, points to the font to return information about.                        
+                        points to NULL if there are no more matching fonts.
+    StringInfoIn      - Upon entry, points to the font to return information about.
+                        If NULL, then the information about the system default 
+                        font will be returned.
     StringInfoOut     - Upon return, contains the matching font¡¯s information. 
                         If NULL, then no information is returned.
                         It's caller's responsibility to free this buffer.
@@ -620,10 +626,10 @@ HiiGetFontInfo (
   Returns:
     EFI_SUCCESS            - Matching font returned successfully.
     EFI_NOT_FOUND          - No matching font was found.
-    EFI_INVALID_PARAMETER  - StringInfoIn is NULL.
+    EFI_INVALID_PARAMETER  - StringInfoIn->FontInfoMask is an invalid combination.
     EFI_OUT_OF_RESOURCES   - There were insufficient resources to complete the request.
             
---*/    
+--*/
 ;
 
 //
@@ -665,8 +671,7 @@ HiiGetImage (
   IN  CONST EFI_HII_IMAGE_PROTOCOL   *This,
   IN  EFI_HII_HANDLE                 PackageList,
   IN  EFI_IMAGE_ID                   ImageId,
-  OUT EFI_IMAGE_INPUT                *Image,
-  OUT UINTN                          *ImageSize
+  OUT EFI_IMAGE_INPUT                *Image
   )
 /*++
 
@@ -679,16 +684,16 @@ HiiGetImage (
     PackageList       - Handle of the package list where this image will be searched.    
     ImageId           - The image¡¯s id,, which is unique within PackageList.
     Image             - Points to the image.
-    ImageSize         - On entry, points to the size of the buffer pointed to by Image, in bytes. On return,
-                        points to the length of the image, in bytes.
                         
   Returns:
     EFI_SUCCESS            - The new image was returned successfully.
     EFI_NOT_FOUND          - The image specified by ImageId is not available.
-    EFI_BUFFER_TOO_SMALL   - The buffer specified by ImageSize is too small to hold the image.                                                      
+                             The specified PackageList is not in the database.    
     EFI_INVALID_PARAMETER  - The Image or ImageSize was NULL.
+    EFI_OUT_OF_RESOURCES   - The bitmap could not be retrieved because there was not
+                             enough memory.
     
---*/  
+--*/
 ;
 
 EFI_STATUS
@@ -714,6 +719,7 @@ HiiSetImage (
   Returns:
     EFI_SUCCESS            - The new image was updated successfully.
     EFI_NOT_FOUND          - The image specified by ImageId is not in the database.
+                             The specified PackageList is not in the database.    
     EFI_INVALID_PARAMETER  - The Image was NULL.
     
 --*/  
@@ -797,9 +803,9 @@ HiiDrawImageId (
   Returns:
     EFI_SUCCESS            - The image was successfully drawn.
     EFI_OUT_OF_RESOURCES   - Unable to allocate an output buffer for Blt.
-    EFI_INVALID_PARAMETER  - The Image was NULL.
-    EFI_NOT_FOUND          - The specified packagelist could not be found in 
-                             current database.
+    EFI_INVALID_PARAMETER  - The Blt was NULL.
+    EFI_NOT_FOUND          - The image specified by ImageId is not in the database. 
+                             The specified PackageList is not in the database.
     
 --*/
 ;
@@ -1056,8 +1062,7 @@ HiiRemovePackageList (
   Returns:
     EFI_SUCCESS            - The data associated with the Handle was removed from 
                              the HII database.
-    EFI_NOT_FOUND          - The specified PackageList could not be found in database.
-    EFI_INVALID_PARAMETER  - The Handle was not valid.
+    EFI_NOT_FOUND          - The specified Handle is not in database.
      
 --*/
 ;
@@ -1084,8 +1089,8 @@ HiiUpdatePackageList (
   Returns:
     EFI_SUCCESS            - The HII database was successfully updated.
     EFI_OUT_OF_RESOURCES   - Unable to allocate enough memory for the updated database.
-    EFI_INVALID_PARAMETER  - Handle or PackageList was NULL.
-    EFI_NOT_FOUND          - The Handle was not valid or could not be found in database.
+    EFI_INVALID_PARAMETER  - PackageList was NULL.
+    EFI_NOT_FOUND          - The specified Handle is not in database.
      
 --*/
 ;
@@ -1121,12 +1126,16 @@ HiiListPackageLists (
         
   Returns:
     EFI_SUCCESS            - The matching handles are outputed successfully.
+                             HandleBufferLength is updated with the actual length.
     EFI_BUFFER_TO_SMALL    - The HandleBufferLength parameter indicates that
                              Handle is too small to support the number of handles.
                              HandleBufferLength is updated with a value that will 
                              enable the data to fit.
     EFI_NOT_FOUND          - No matching handle could not be found in database.
     EFI_INVALID_PARAMETER  - Handle or HandleBufferLength was NULL.
+    EFI_INVALID_PARAMETER  - PackageType is not a EFI_HII_PACKAGE_TYPE_GUID but
+                             PackageGuid is not NULL, PackageType is a EFI_HII_
+                             PACKAGE_TYPE_GUID but PackageGuid is NULL.
      
 --*/
 ;
@@ -1230,7 +1239,8 @@ HiiUnregisterPackageNotify (
                          
   Returns:
     EFI_SUCCESS            - Notification is unregistered successfully.    
-    EFI_INVALID_PARAMETER  - The Handle is invalid.
+    EFI_NOT_FOUND          - The incoming notification handle does not exist 
+                             in current hii database.
      
 --*/  
 ;  

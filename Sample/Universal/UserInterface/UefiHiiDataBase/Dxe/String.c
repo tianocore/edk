@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,7 +34,8 @@ STATIC
 BOOLEAN
 ReferFontInfoLocally (
   IN  HII_DATABASE_PRIVATE_DATA   *Private,
-  IN  HII_STRING_PACKAGE_INSTANCE *StringPackage,  
+  IN  HII_STRING_PACKAGE_INSTANCE *StringPackage,
+  IN  UINT8                       FontId,
   IN  BOOLEAN                     DuplicateEnable,  
   IN  HII_GLOBAL_FONT_INFO        *GlobalFontInfo,
   OUT HII_FONT_INFO               **LocalFontInfo
@@ -49,6 +50,7 @@ ReferFontInfoLocally (
   Arguments:          
     Private         - Hii database private structure.
     StringPackage   - HII string package instance.
+    FontId          - Font identifer, which must be unique within the string package.
     DuplicateEnable - If true, duplicate HII_FONT_INFO which refers to the same
                       EFI_FONT_INFO is permitted. Otherwise it is not allowed.
     GlobalFontInfo  - Input a global font info which specify a EFI_FONT_INFO.
@@ -81,10 +83,6 @@ ReferFontInfoLocally (
     }
   }
   //
-  // Since string package tool set FontId initially to 0 and increases it
-  // progressively by one, StringPackage->FondId always represents an unique
-  // and available FontId.
-  //
   // FontId identifies EFI_FONT_INFO in local string package uniquely.
   // GlobalEntry points to a HII_GLOBAL_FONT_INFO which identifies 
   // EFI_FONT_INFO uniquely in whole hii database.
@@ -93,11 +91,9 @@ ReferFontInfoLocally (
   ASSERT (LocalFont != NULL);
   
   LocalFont->Signature   = HII_FONT_INFO_SIGNATURE;
-  LocalFont->FontId      = StringPackage->FontId;
+  LocalFont->FontId      = FontId;
   LocalFont->GlobalEntry = &GlobalFontInfo->Entry;
   InsertTailList (&StringPackage->FontInfoList, &LocalFont->Entry);
-
-  StringPackage->FontId++;
 
   *LocalFontInfo = LocalFont;
   return FALSE;
@@ -170,8 +166,7 @@ GetUnicodeStringTextOrSize (
     EFI_BUFFER_TOO_SMALL   - Buffer is insufficient to store the found string text.
                              BufferSize is updated to the required buffer size.
                              
---*/    
-  
+--*/  
 {
   UINTN  StringSize;
   CHAR16 Zero;
@@ -300,6 +295,7 @@ FindStringBlock (
   UINT16                               FontSize;
   UINT8                                Length8;
   EFI_HII_SIBT_EXT2_BLOCK              Ext2;
+  UINT8                                FontId;
   UINT32                               Length32;
   UINTN                                StrSize;
   CHAR16                               Zero;
@@ -489,12 +485,14 @@ FindStringBlock (
 
     case EFI_HII_SIBT_EXT2:
       EfiCopyMem (&Ext2, BlockHdr, sizeof (EFI_HII_SIBT_EXT2_BLOCK));
-      if (Ext2.BlockType2 == EFI_HII_SIBT_FONT && StringId == (EFI_STRING_ID) (-1)) {
+      if (Ext2.BlockType2 == EFI_HII_SIBT_FONT && StringId == (EFI_STRING_ID) (-1)) {        
         //
         // Find the relationship between global font info and the font info of 
         // this EFI_HII_SIBT_FONT block then backup its information in local package.
         //
-        BlockHdr += sizeof (EFI_HII_SIBT_EXT2_BLOCK) + sizeof (UINT8);
+        BlockHdr += sizeof (EFI_HII_SIBT_EXT2_BLOCK);
+        EfiCopyMem (&FontId, BlockHdr, sizeof (UINT8));
+        BlockHdr += sizeof (UINT8);
         EfiCopyMem (&FontSize, BlockHdr, sizeof (UINT16));
         BlockHdr += sizeof (UINT16);
         EfiCopyMem (&FontStyle, BlockHdr, sizeof (EFI_HII_FONT_STYLE));
@@ -510,16 +508,21 @@ FindStringBlock (
         FontInfo->FontSize  = FontSize;
         EfiCopyMem (FontInfo->FontName, BlockHdr, StrSize);
 
+        //
+        // If find the corresponding global font info, save the relationship.
+        // Otherwise ignore this EFI_HII_SIBT_FONT block.
+        //
         if (IsFontInfoExisted (Private, FontInfo, NULL, NULL, &GlobalFont)) {
-          //
-          // If find the corresponding global font info, save the relationship.
-          //
-          ReferFontInfoLocally (Private, StringPackage, TRUE, GlobalFont, &LocalFont);
+          ReferFontInfoLocally (Private, StringPackage, FontId, TRUE, GlobalFont, &LocalFont);
         }
-        
+
         //
-        // If can not find, ignore this EFI_HII_SIBT_FONT block.
-        //
+        // Since string package tool set FontId initially to 0 and increases it
+        // progressively by one, StringPackage->FondId always represents an unique
+        // and available FontId.
+        //        
+        StringPackage->FontId++;
+
         EfiLibSafeFreePool (FontInfo);
       }
 
@@ -652,7 +655,8 @@ GetStringWorker (
   }
   
   //
-  // Get the string font.
+  // Get the string font. The FontId 0 is the default font for those string blocks which 
+  // do not specify a font identifier. If default font is not specified, return NULL.
   //
   if (StringFontInfo != NULL) {
     switch (BlockType) {
@@ -661,13 +665,16 @@ GetStringWorker (
     case EFI_HII_SIBT_STRING_UCS2_FONT:
     case EFI_HII_SIBT_STRINGS_UCS2_FONT:
       FontId = *(StringBlockAddr + sizeof (EFI_HII_STRING_BLOCK));
-      return GetStringFontInfo (StringPackage, FontId, StringFontInfo);
       break;
     default:
-      break;
+      FontId = 0;
+    }
+    Status = GetStringFontInfo (StringPackage, FontId, StringFontInfo);
+    if (Status == EFI_NOT_FOUND) {
+      *StringFontInfo = NULL;
     }
   }  
-
+      
   return EFI_SUCCESS;
 }
 
@@ -741,20 +748,26 @@ SetStringWorker (
   Referred   = FALSE;
 
   //
-  // Set the string font according to input font information.
+  // The input StringFontInfo should exist in current database if specified.
   //
   if (StringFontInfo != NULL) {
-    //
-    // The input StringFontInfo should exist in current database
-    //
     if (!IsFontInfoExisted (Private, StringFontInfo, NULL, NULL, &GlobalFont)) {
       return EFI_INVALID_PARAMETER;
     } else {
-      Referred = ReferFontInfoLocally (Private, StringPackage, FALSE, GlobalFont, &LocalFont);      
+      Referred = ReferFontInfoLocally (
+                   Private, 
+                   StringPackage, 
+                   StringPackage->FontId, 
+                   FALSE, 
+                   GlobalFont, 
+                   &LocalFont
+                   );
+      if (!Referred) {
+        StringPackage->FontId++;
+      }
     }
-    
     //
-    // Update the FontId of the specified string block
+    // Update the FontId of the specified string block to input font info.
     //
     switch (BlockType) {
     case EFI_HII_SIBT_STRING_SCSU_FONT:  
@@ -764,22 +777,26 @@ SetStringWorker (
       *(StringBlockAddr + sizeof (EFI_HII_STRING_BLOCK)) = LocalFont->FontId;
       break;
     default:
-      return EFI_NOT_FOUND;
+      //
+      // When modify the font info of these blocks, the block type should be updated
+      // to contain font info thus the whole structure should be revised.
+      // It is recommended to use tool to modify the block type not in the code.
+      //      
+      return EFI_UNSUPPORTED;
     }
-         
   }
 
   OldBlockSize = StringPackage->StringPkgHdr->Header.Length - StringPackage->StringPkgHdr->HdrSize;
 
   //
-  // Set the string text.
+  // Set the string text and font.
   //
   StringTextPtr = StringBlockAddr + StringTextOffset;
   switch (BlockType) {
   case EFI_HII_SIBT_STRING_SCSU:
-  case EFI_HII_SIBT_STRING_SCSU_FONT:  
-  case EFI_HII_SIBT_STRINGS_SCSU:  
-  case EFI_HII_SIBT_STRINGS_SCSU_FONT:  
+  case EFI_HII_SIBT_STRING_SCSU_FONT:
+  case EFI_HII_SIBT_STRINGS_SCSU:
+  case EFI_HII_SIBT_STRINGS_SCSU_FONT:
     BlockSize = OldBlockSize + EfiStrLen (String) - EfiAsciiStrLen (StringTextPtr);
     Block = EfiLibAllocateZeroPool (BlockSize);
     if (Block == NULL) {
@@ -889,7 +906,6 @@ SetStringWorker (
   StringPackage->StringPkgHdr->Header.Length += Ext2.Length;
 
   return EFI_SUCCESS;
-
 }
 
 EFI_STATUS
@@ -1134,7 +1150,7 @@ HiiNewString (
     //
     Ucs2FontBlockSize = (UINT32) (EfiStrSize (String) + sizeof (EFI_HII_SIBT_STRING_UCS2_FONT_BLOCK) - 
                                   sizeof (CHAR16));
-    if (ReferFontInfoLocally (Private, StringPackage, FALSE, GlobalFont, &LocalFont)) {
+    if (ReferFontInfoLocally (Private, StringPackage, StringPackage->FontId, FALSE, GlobalFont, &LocalFont)) {
       //
       // Create a EFI_HII_SIBT_STRING_UCS2_FONT block only.
       //
@@ -1225,6 +1241,12 @@ HiiNewString (
       StringPackage->StringBlock = StringBlock;
       StringPackage->StringPkgHdr->Header.Length += FontBlockSize + Ucs2FontBlockSize;
       PackageListNode->PackageListHdr.PackageLength += FontBlockSize + Ucs2FontBlockSize;
+
+      //
+      // Increase the FontId to make it unique since we already add 
+      // a EFI_HII_SIBT_FONT block to this string package.
+      //
+      StringPackage->FontId++;
     }   
   }
 

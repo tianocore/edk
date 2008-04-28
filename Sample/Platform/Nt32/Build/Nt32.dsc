@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2007, Intel Corporation                                                         
+# Copyright (c) 2004 - 2008, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -91,7 +91,6 @@ EFI_BLOCK_SIZE          = 0x10000
 [Fv.FvFile.Options]
 EFI_BASE_ADDRESS        = 0x00000000
 EFI_FILE_NAME           = $(FV_FILENAME).fv
-EFI_SYM_FILE_NAME       = $(FV_FILENAME).sym
 EFI_NUM_BLOCKS          = 0x2
 EFI_BLOCK_SIZE          = 0x10000
 

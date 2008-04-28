@@ -29,6 +29,8 @@ Abstract:
 #include "EfiImage.h"
 #include "Performance.h"
 
+STATIC EFI_PHYSICAL_ADDRESS mAcpiLowMemoryBase = 0x0FFFFFFFF;
+
 STATIC
 VOID
 ConvertChar16ToChar8 (
@@ -66,7 +68,6 @@ Returns:
   EFI_STATUS                Status;
   EFI_CPU_ARCH_PROTOCOL     *Cpu;
   EFI_PERFORMANCE_PROTOCOL  *DrvPerf;
-  EFI_PHYSICAL_ADDRESS      mAcpiLowMemoryBase;
   UINT32                    mAcpiLowMemoryLength;
   UINT32                    LimitCount;
   EFI_PERF_HEADER           mPerfHeader;
@@ -89,25 +90,6 @@ Returns:
   Ticker = EfiReadTsc ();
 
   //
-  // Allocate a block of memory that contain performance data to OS
-  //
-  mAcpiLowMemoryBase = 0xFFFFFFFF;
-  Status = gBS->AllocatePages (
-                  AllocateMaxAddress,
-                  EfiReservedMemoryType,
-                  4,
-                  &mAcpiLowMemoryBase
-                  );
-  if (EFI_ERROR (Status)) {
-    return ;
-  }
-
-  mAcpiLowMemoryLength  = EFI_PAGES_TO_SIZE(4);
-
-  Ptr                   = (UINT8 *) ((UINT32) mAcpiLowMemoryBase + sizeof (EFI_PERF_HEADER));
-  LimitCount            = (mAcpiLowMemoryLength - sizeof (EFI_PERF_HEADER)) / sizeof (EFI_PERF_DATA);
-
-  //
   // Get performance architecture protocol
   //
   Status = gBS->LocateProtocol (
@@ -116,13 +98,8 @@ Returns:
                   &DrvPerf
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
-  //
-  // Initialize performance data structure
-  //
-  EfiZeroMem (&mPerfHeader, sizeof (EFI_PERF_HEADER));
 
   //
   // Get CPU frequency
@@ -133,26 +110,16 @@ Returns:
                   &Cpu
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
+
   //
   // Get Cpu Frequency
   //
-  Status = Cpu->GetTimerValue (Cpu, 0, &(CurrentTicker), &TimerPeriod);
+  Status = Cpu->GetTimerValue (Cpu, 0, &CurrentTicker, &TimerPeriod);
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
-
-  Freq                = DivU64x32 (1000000000000, (UINTN) TimerPeriod, NULL);
-
-  mPerfHeader.CpuFreq = Freq;
-
-  //
-  // Record BDS raw performance data
-  //
-  mPerfHeader.BDSRaw = Ticker;
 
   //
   // Put Detailed performance data into memory
@@ -166,9 +133,44 @@ Returns:
                   &Handles
                   );
   if (EFI_ERROR (Status)) {
-    gBS->FreePages (mAcpiLowMemoryBase, 4);
     return ;
   }
+
+  //
+  // Allocate a block of memory that contain performance data to OS
+  // if it is not allocated yet.
+  //
+  if (mAcpiLowMemoryBase == 0x0FFFFFFFF) {
+    Status = gBS->AllocatePages (
+                    AllocateMaxAddress,
+                    EfiReservedMemoryType,
+                    4,
+                    &mAcpiLowMemoryBase
+                    );
+    if (EFI_ERROR (Status)) {
+      gBS->FreePool (Handles);
+      return ;
+    }
+  }
+
+  mAcpiLowMemoryLength  = EFI_PAGES_TO_SIZE(4);
+  Ptr                   = (UINT8 *) ((UINT32) mAcpiLowMemoryBase + sizeof (EFI_PERF_HEADER));
+  LimitCount            = (mAcpiLowMemoryLength - sizeof (EFI_PERF_HEADER)) / sizeof (EFI_PERF_DATA);
+
+  //
+  // Initialize performance data structure
+  //
+  EfiZeroMem (&mPerfHeader, sizeof (EFI_PERF_HEADER));
+
+  Freq                = DivU64x32 (1000000000000, (UINTN) TimerPeriod, NULL);
+
+  mPerfHeader.CpuFreq = Freq;
+
+  //
+  // Record BDS raw performance data
+  //
+  mPerfHeader.BDSRaw = Ticker;
+
   //
   // Get DXE drivers performance
   //
@@ -297,4 +299,5 @@ Done:
 
   return ;
 }
+
 #endif

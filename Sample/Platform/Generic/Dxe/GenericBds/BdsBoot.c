@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -70,7 +70,7 @@ Returns:
   BdsRefreshBbsTableForBoot (Option);
 
   //
-  // Write boot to OS performance data to a file
+  // Write boot to OS performance data for Legacy Boot
   //
   WRITE_BOOT_TO_OS_PERFORMANCE_DATA;
 
@@ -162,6 +162,18 @@ Returns:
       DevicePath = WorkingDevicePath;
     }
   }
+  
+  //
+  // Set Boot Current
+  //
+  gRT->SetVariable (
+        L"BootCurrent",
+        &gEfiGlobalVariableGuid,
+        EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+        sizeof (UINT16),
+        &Option->BootCurrent
+        );
+        
   //
   // Signal the EFI_EVENT_SIGNAL_READY_TO_BOOT event
   //
@@ -176,16 +188,7 @@ Returns:
     gBS->SignalEvent (ReadyToBootEvent);
     gBS->CloseEvent (ReadyToBootEvent);
   }
-  //
-  // Set Boot Current
-  //
-  gRT->SetVariable (
-        L"BootCurrent",
-        &gEfiGlobalVariableGuid,
-        EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-        sizeof (UINT16),
-        &Option->BootCurrent
-        );
+
 
   if ((DevicePathType (Option->DevicePath) == BBS_DEVICE_PATH) &&
       (DevicePathSubType (Option->DevicePath) == BBS_BBS_DP)
@@ -211,6 +214,11 @@ Returns:
     //
     InitializeListHead (&TempBootLists);
     BdsLibRegisterNewOption (&TempBootLists, DevicePath, L"EFI Internal Shell", L"BootOrder"); 
+    //
+    // free the temporary device path created by BdsLibUpdateFvFileDevicePath()
+    //
+    gBS->FreePool (DevicePath); 
+    DevicePath = Option->DevicePath;
   }
   
   //
@@ -288,6 +296,11 @@ Returns:
   //
   gBS->SetWatchdogTimer (5 * 60, 0x0000, 0x00, NULL);
 
+  //
+  // Write boot to OS performance data for UEFI boot
+  //
+  WRITE_BOOT_TO_OS_PERFORMANCE_DATA;
+  
   Status = gBS->StartImage (ImageHandle, ExitDataSize, ExitData);
   DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Image Return Status = %r\n", Status));
 
@@ -1117,6 +1130,18 @@ Returns:
         &FvHandleBuffer
         );
   for (Index = 0; Index < FvHandleCount; Index++) {
+    //
+    // Only care the dispatched FV. If no dispatch protocol on the FV, it is not dispatched, then skip it.
+    //
+    Status = gBS->HandleProtocol (
+                    FvHandleBuffer[Index],
+                    &gEfiFirmwareVolumeDispatchProtocolGuid,
+                    &Fv
+                    );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+    
     gBS->HandleProtocol (
           FvHandleBuffer[Index],
        #if (PI_SPECIFICATION_VERSION < 0x00010000)
@@ -1728,11 +1753,22 @@ Returns:
   }  
   
   //
-  // If the boot option point to a internal Shell, it is a valid EFI boot option,
-  // and assume it is ready to boot now
+  // Check if it's a valid boot option for internal Shell
   //
   if (EfiGetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) LastDeviceNode) != NULL) {
-     return TRUE;
+    //
+    // If the boot option point to Internal FV shell, make sure it is valid
+    //
+    TempDevicePath = DevPath; 
+    Status = BdsLibUpdateFvFileDevicePath (&TempDevicePath, &gEfiShellFileGuid);
+    if (Status == EFI_ALREADY_STARTED) {
+      return TRUE;
+    } else {
+      if (Status == EFI_SUCCESS) {
+        gBS->FreePool (TempDevicePath); 
+      }
+      return FALSE;
+    }
   }
   
   //
@@ -1955,6 +1991,7 @@ Returns:
   // Second, if fail to find, try to enumerate all FV
   //
   if (!FindFvFile) {
+    FvHandleBuffer = NULL;
     gBS->LocateHandleBuffer (
           ByProtocol,
        #if (PI_SPECIFICATION_VERSION < 0x00010000)
@@ -1996,6 +2033,10 @@ Returns:
       FoundFvHandle = FvHandleBuffer[Index];
       break;
     }  
+    
+    if (FvHandleBuffer !=NULL ) {
+      gBS->FreePool (FvHandleBuffer);  
+    }
   }
 
   if (FindFvFile) {

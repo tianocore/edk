@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1829,8 +1829,14 @@ Returns:
   OverridePath = GetSymbolValue (SOURCE_OVERRIDE_PATH);
   if (OverridePath != NULL) {
     ReplaceSlash (OverridePath);
+    fprintf (MakeFptr, "!IF EXIST(%s)\n", OverridePath);
     fprintf (MakeFptr, "INC = $(INC) -I %s\n", OverridePath);
-    fprintf (MakeFptr, "INC = $(INC) -I %s\\%s \n", OverridePath, Processor);
+    fprintf (MakeFptr, "!IF EXIST(%s\\%s)\n", OverridePath, Processor);
+    fprintf (MakeFptr, "INC = $(INC) -I %s\\%s\n", OverridePath, Processor);
+    fprintf (MakeFptr, "!ENDIF\n");
+    fprintf (MakeFptr, "!ELSE\n");
+    fprintf (MakeFptr, "!MESSAGE Warning: include dir %s does not exist\n", OverridePath);
+    fprintf (MakeFptr, "!ENDIF\n");
   }
   //
   // Try for an [includes.$(PROCESSOR).$(PLATFORM)]
@@ -1909,43 +1915,45 @@ ProcessIncludesSectionSingle (
           //
           if (Cptr[1] == 0) {
             fprintf (MakeFptr, "INC = $(INC) -I $(SOURCE_DIR)\n");
-            fprintf (
-              MakeFptr,
-              "INC = $(INC) -I $(SOURCE_DIR)\\%s \n",
-              Processor
-              );
+            fprintf (MakeFptr, "!IF EXIST($(SOURCE_DIR)\\%s)\n", Processor);
+            fprintf (MakeFptr, "INC = $(INC) -I $(SOURCE_DIR)\\%s\n", Processor);
+            fprintf (MakeFptr, "!ENDIF\n");
           } else {
             //
             // Handle case of ".\path\path\path" or "..\path\path\path"
             //
-            fprintf (
-              MakeFptr,
-              "INC = $(INC) -I $(SOURCE_DIR)\\%s \n",
-              Cptr
-              );
-            fprintf (
-              MakeFptr,
-              "INC = $(INC) -I $(SOURCE_DIR)\\%s\\%s \n",
-              Cptr,
-              Processor
-              );
+            fprintf (MakeFptr, "!IF EXIST($(SOURCE_DIR)\\%s)\n", Cptr);
+            fprintf (MakeFptr, "INC = $(INC) -I $(SOURCE_DIR)\\%s\n", Cptr);
+            fprintf (MakeFptr, "!IF EXIST($(SOURCE_DIR)\\%s\\%s)\n", Cptr, Processor);
+            fprintf (MakeFptr, "INC = $(INC) -I $(SOURCE_DIR)\\%s\\%s\n", Cptr, Processor);
+            fprintf (MakeFptr, "!ENDIF\n");
+            fprintf (MakeFptr, "!ELSE\n");
+            fprintf (MakeFptr, "!MESSAGE Warning: include dir $(SOURCE_DIR)\\%s does not exist\n", Cptr);
+            fprintf (MakeFptr, "!ENDIF\n");
           }
         } else if ((Cptr[1] != ':') && isalpha (*Cptr)) {
-          fprintf (MakeFptr, "INC = $(INC) -I $(EFI_SOURCE)\\%s \n", Cptr);
-          fprintf (
-            MakeFptr,
-            "INC = $(INC) -I $(EFI_SOURCE)\\%s\\%s \n",
-            Cptr,
-            Processor
-            );
+          fprintf (MakeFptr, "!IF EXIST($(EFI_SOURCE)\\%s)\n", Cptr);
+          fprintf (MakeFptr, "INC = $(INC) -I $(EFI_SOURCE)\\%s\n", Cptr);
+          fprintf (MakeFptr, "!IF EXIST($(EFI_SOURCE)\\%s\\%s)\n", Cptr, Processor);
+          fprintf (MakeFptr, "INC = $(INC) -I $(EFI_SOURCE)\\%s\\%s\n", Cptr, Processor);
+          fprintf (MakeFptr, "!ENDIF\n");
+          fprintf (MakeFptr, "!ELSE\n");
+          fprintf (MakeFptr, "!MESSAGE Warning: include dir $(EFI_SOURCE)\\%s does not exist\n", Cptr);
+          fprintf (MakeFptr, "!ENDIF\n");
         } else {
           //
           // The line is something like: $(EFI_SOURCE)\dxe\include. Add it to
           // the existing $(INC) definition. Add user includes before any
           // other existing paths.
           //
-          fprintf (MakeFptr, "INC = $(INC) -I %s \n", Cptr);
-          fprintf (MakeFptr, "INC = $(INC) -I %s\\%s \n", Cptr, Processor);
+          fprintf (MakeFptr, "!IF EXIST(%s)\n", Cptr);
+          fprintf (MakeFptr, "INC = $(INC) -I %s\n", Cptr);
+          fprintf (MakeFptr, "!IF EXIST(%s\\%s)\n", Cptr, Processor);
+          fprintf (MakeFptr, "INC = $(INC) -I %s\\%s\n", Cptr, Processor);
+          fprintf (MakeFptr, "!ENDIF\n");
+          fprintf (MakeFptr, "!ELSE\n");
+          fprintf (MakeFptr, "!MESSAGE Warning: include dir %s does not exist\n", Cptr);
+          fprintf (MakeFptr, "!ENDIF\n");
         }
       }
     }
@@ -2767,8 +2775,9 @@ ProcessIncludeFilesSingle (
               if (Cptr >= TempFileName) {
                 *Cptr = 0;
               }
-
+              fprintf (MakeFptr, "!IF EXIST(%s)\n", TempFileName);
               fprintf (MakeFptr, "INC = -I %s $(INC)\n", TempFileName);
+              fprintf (MakeFptr, "!ENDIF\n");
             }
           }
           //

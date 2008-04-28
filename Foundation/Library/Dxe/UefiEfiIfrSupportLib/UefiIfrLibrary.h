@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -78,10 +78,13 @@ typedef struct {
 } IFR_OPTION;
 #pragma pack()
 
+#pragma pack(1)
 typedef struct {
   VENDOR_DEVICE_PATH             VendorDevicePath;
-  UINT32                         MonotonicCount;
+  UINT32                         Reserved;
+  UINT64                         UniqueId;
 } HII_VENDOR_DEVICE_PATH_NODE;
+#pragma pack()
 
 typedef struct {
   HII_VENDOR_DEVICE_PATH_NODE    Node;

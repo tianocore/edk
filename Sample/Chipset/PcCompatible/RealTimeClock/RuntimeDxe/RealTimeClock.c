@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -208,11 +208,7 @@ Returns:
 
   ConvertRtcTimeToEfiTime (&Time, RegisterB);
 
-  if (RtcTestCenturyRegister () == EFI_SUCCESS) {
-    Century = BcdToDecimal ((UINT8) (RtcRead (RTC_ADDRESS_CENTURY) & 0x7f));
-  } else {
-    Century = BcdToDecimal (RtcRead (RTC_ADDRESS_CENTURY));
-  }
+  Century = BcdToDecimal (RtcRead (RTC_ADDRESS_CENTURY));
 
   Time.Year = (UINT16) (Century * 100 + Time.Year);
 
@@ -309,11 +305,8 @@ Routine Description:
 
   ConvertRtcTimeToEfiTime (Time, RegisterB);
 
-  if (RtcTestCenturyRegister () == EFI_SUCCESS) {
-    Century = BcdToDecimal ((UINT8) (RtcRead (RTC_ADDRESS_CENTURY) & 0x7f));
-  } else {
-    Century = BcdToDecimal (RtcRead (RTC_ADDRESS_CENTURY));
-  }
+  Century = BcdToDecimal (RtcRead (RTC_ADDRESS_CENTURY));
+
 
   Time->Year = (UINT16) (Century * 100 + Time->Year);
 
@@ -418,10 +411,6 @@ Routine Description:
   RtcWrite (RTC_ADDRESS_DAY_OF_THE_MONTH, RtcTime.Day);
   RtcWrite (RTC_ADDRESS_MONTH, RtcTime.Month);
   RtcWrite (RTC_ADDRESS_YEAR, (UINT8) RtcTime.Year);
-  if (RtcTestCenturyRegister () == EFI_SUCCESS) {
-    Century = (UINT8) ((Century & 0x7f) | (RtcRead (RTC_ADDRESS_CENTURY) & 0x80));
-  }
-
   RtcWrite (RTC_ADDRESS_CENTURY, Century);
 
   //
@@ -523,11 +512,7 @@ Returns:
 
   ConvertRtcTimeToEfiTime (Time, RegisterB);
 
-  if (RtcTestCenturyRegister () == EFI_SUCCESS) {
-    Century = BcdToDecimal ((UINT8) (RtcRead (RTC_ADDRESS_CENTURY) & 0x7f));
-  } else {
-    Century = BcdToDecimal (RtcRead (RTC_ADDRESS_CENTURY));
-  }
+  Century = BcdToDecimal (RtcRead (RTC_ADDRESS_CENTURY));
 
   Time->Year = (UINT16) (Century * 100 + Time->Year);
 
@@ -679,39 +664,6 @@ Returns:
   Low   = BcdValue - (High << 4);
 
   return (UINT8) (Low + (High * 10));
-}
-
-EFI_STATUS
-RtcTestCenturyRegister (
-  VOID
-  )
-/*++
-
-Routine Description:
-
-  Arguments:
-
-  
-
-Returns: 
---*/
-// TODO:    EFI_SUCCESS - add return value to function comment
-// TODO:    EFI_DEVICE_ERROR - add return value to function comment
-{
-  UINT8 Century;
-  UINT8 Temp;
-
-  Century = RtcRead (RTC_ADDRESS_CENTURY);
-  //
-  //  RtcWrite (RTC_ADDRESS_CENTURY, 0x00);
-  //
-  Temp = (UINT8) (RtcRead (RTC_ADDRESS_CENTURY) & 0x7f);
-  RtcWrite (RTC_ADDRESS_CENTURY, Century);
-  if (Temp == 0x19 || Temp == 0x20) {
-    return EFI_SUCCESS;
-  }
-
-  return EFI_DEVICE_ERROR;
 }
 
 VOID

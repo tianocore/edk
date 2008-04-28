@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -63,6 +63,7 @@ ConSplitterSimplePointerComponentNameGetControllerName (
   );
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 EFI_STATUS
 EFIAPI
 ConSplitterAbsolutePointerComponentNameGetControllerName (
@@ -73,6 +74,7 @@ ConSplitterAbsolutePointerComponentNameGetControllerName (
   OUT CHAR16                                          **ControllerName
   )
 ;
+#endif
 #endif
 
 EFI_STATUS
@@ -135,11 +137,13 @@ EFI_COMPONENT_NAME_PROTOCOL     gConSplitterSimplePointerComponentName = {
 #endif
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 EFI_COMPONENT_NAME2_PROTOCOL    gConSplitterAbsolutePointerComponentName = {
   ConSplitterComponentNameGetDriverName,
   ConSplitterAbsolutePointerComponentNameGetControllerName,
   LANGUAGE_CODE_ENGLISH
 };
+#endif
 #endif
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
@@ -344,7 +348,19 @@ ConSplitterConInComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                  Status;
-  EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterConInDriverBinding.DriverBindingHandle,
+             &gEfiConsoleInDeviceGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
@@ -352,16 +368,13 @@ ConSplitterConInComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleTextInProtocolGuid,
-                  (VOID **) &TextIn,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiConsoleInDeviceGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (
@@ -432,7 +445,19 @@ ConSplitterSimplePointerComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                  Status;
-  EFI_SIMPLE_POINTER_PROTOCOL *SimplePointer;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterSimplePointerDriverBinding.DriverBindingHandle,
+             &gEfiSimplePointerProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
@@ -440,16 +465,13 @@ ConSplitterSimplePointerComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimplePointerProtocolGuid,
-                  (VOID **) &SimplePointer,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiSimplePointerProtocolGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (
@@ -461,6 +483,7 @@ ConSplitterSimplePointerComponentNameGetControllerName (
 }
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#ifndef DISABLE_CONSOLE_EX
 EFI_STATUS
 EFIAPI
 ConSplitterAbsolutePointerComponentNameGetControllerName (
@@ -517,7 +540,19 @@ ConSplitterAbsolutePointerComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                    Status;
-  EFI_ABSOLUTE_POINTER_PROTOCOL *AbsolutePointer;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterAbsolutePointerDriverBinding.DriverBindingHandle,
+             &gEfiAbsolutePointerProtocolGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
@@ -525,16 +560,13 @@ ConSplitterAbsolutePointerComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiAbsolutePointerProtocolGuid,
-                  (VOID **) &AbsolutePointer,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiAbsolutePointerProtocolGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (
@@ -544,7 +576,7 @@ ConSplitterAbsolutePointerComponentNameGetControllerName (
           ControllerName
           );
 }
-
+#endif
 #endif
 
 EFI_STATUS
@@ -607,7 +639,19 @@ ConSplitterConOutComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                    Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterConOutDriverBinding.DriverBindingHandle,
+             &gEfiConsoleOutDeviceGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
@@ -615,16 +659,13 @@ ConSplitterConOutComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleTextOutProtocolGuid,
-                  (VOID **) &TextOut,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiConsoleOutDeviceGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (
@@ -695,24 +736,33 @@ ConSplitterStdErrComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                    Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ErrOut;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterStdErrDriverBinding.DriverBindingHandle,
+             &gEfiStandardErrorDeviceGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleTextOutProtocolGuid,
-                  (VOID **) &ErrOut,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiStandardErrorDeviceGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (

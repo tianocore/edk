@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -368,8 +368,7 @@ typedef struct _EFI_FILE {
   EFI_FILE_GET_INFO     GetInfo;
   EFI_FILE_SET_INFO     SetInfo;
   EFI_FILE_FLUSH        Flush;
-}
-EFI_FILE, *EFI_FILE_HANDLE;
+} EFI_FILE, *EFI_FILE_HANDLE, EFI_FILE_PROTOCOL;
 
 extern EFI_GUID gEfiSimpleFileSystemProtocolGuid;
 

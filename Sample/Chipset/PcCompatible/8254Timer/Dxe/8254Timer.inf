@@ -36,7 +36,6 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(EDK_SOURCE)\Foundation\Core\Dxe\Include
-  $(EDK_SOURCE)\Sample\Platform\BootFloppy64
   $(EDK_SOURCE)\Sample\Chipset\PcCompatible
 
 [libraries.common]

@@ -497,8 +497,6 @@ clean :
 !IF "$(LOCALIZE)" == "YES"
 
 !IF "$(EFI_GENERATE_HII_EXPORT)" == "YES"
-STRGATHER_FLAGS   = $(STRGATHER_FLAGS) -hpk $(DEST_DIR)\$(BASE_NAME)Strings.hpk
-
 #
 # There will be one HII pack containing all the strings. Add that file
 # to the list of HII pack files we'll use to create our final HII export file.
@@ -528,7 +526,7 @@ OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 $(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c $(INF_FILENAME) $(ALL_DEPS)
   $(CC) $(C_FLAGS) $(DEST_DIR)\$(BASE_NAME)Strings.c
 
-LOCALIZE_TARGETS = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+LOCALIZE_TARGETS = $(DEST_DIR)\$(BASE_NAME)StrDefs.h $(LOCALIZE_TARGETS)
 
 !ENDIF
 
@@ -1070,8 +1068,6 @@ LIBS = $(LIBS) $(EBC_TOOLS_PATH)\lib\EbcLib.lib
 !IF "$(LOCALIZE)" == "YES"
 
 !IF "$(EFI_GENERATE_HII_EXPORT)" == "YES"
-STRGATHER_FLAGS   = $(STRGATHER_FLAGS) -hpk $(DEST_DIR)\$(BASE_NAME)Strings.hpk
-
 #
 # There will be one HII pack containing all the strings. Add that file
 # to the list of HII pack files we'll use to create our final HII export file.
@@ -1102,7 +1098,7 @@ OBJECTS = $(OBJECTS) $(DEST_DIR)\$(BASE_NAME)Strings.obj
 $(DEST_DIR)\$(BASE_NAME)Strings.obj : $(DEST_DIR)\$(BASE_NAME)Strings.c $(INF_FILENAME) $(ALL_DEPS)
   $(EBC_CC) $(EBC_C_FLAGS) $(DEST_DIR)\$(BASE_NAME)Strings.c
 
-LOCALIZE_TARGETS = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME)StrDefs.h
+LOCALIZE_TARGETS = $(DEST_DIR)\$(BASE_NAME)StrDefs.h $(LOCALIZE_TARGETS)
 
 !ENDIF
 

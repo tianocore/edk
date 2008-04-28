@@ -43,7 +43,6 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(EDK_SOURCE)\Foundation\Library\Dxe\EfiDriverLib
   $(EDK_SOURCE)\Foundation\Library\Dxe\EfiIfrSupportLib
   $(EDK_SOURCE)\Sample\Platform\Generic\Dxe\PlatDriOverLib
   $(DEST_DIR)

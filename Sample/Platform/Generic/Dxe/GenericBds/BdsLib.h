@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -51,6 +51,7 @@ Abstract:
 #endif
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolumeDispatch)
 #include EFI_PROTOCOL_DEFINITION (DebugPort)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_GUID_DEFINITION (PcAnsi)

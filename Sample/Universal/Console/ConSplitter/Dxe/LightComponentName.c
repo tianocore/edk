@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -211,7 +211,19 @@ ConSplitterConInComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                  Status;
-  EFI_SIMPLE_TEXT_IN_PROTOCOL *TextIn;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterConInDriverBinding.DriverBindingHandle,
+             &gEfiConsoleInDeviceGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
@@ -219,16 +231,13 @@ ConSplitterConInComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleTextInProtocolGuid,
-                  (VOID **) &TextIn,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiConsoleInDeviceGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (
@@ -299,24 +308,33 @@ ConSplitterConOutComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                    Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *TextOut;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterConOutDriverBinding.DriverBindingHandle,
+             &gEfiConsoleOutDeviceGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
   if (ChildHandle == NULL) {
     return EFI_UNSUPPORTED;
   }
-
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleTextOutProtocolGuid,
-                  (VOID **) &TextOut,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiConsoleOutDeviceGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (
@@ -387,7 +405,19 @@ ConSplitterStdErrComponentNameGetControllerName (
 --*/
 {
   EFI_STATUS                    Status;
-  EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ErrOut;
+  
+  //
+  // Make sure this driver is currently managing ControllHandle
+  //
+  Status = EfiLibTestManagedDevice (
+             ControllerHandle,
+             gConSplitterStdErrDriverBinding.DriverBindingHandle,
+             &gEfiStandardErrorDeviceGuid
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  
   //
   // here ChildHandle is not an Optional parameter.
   //
@@ -395,16 +425,13 @@ ConSplitterStdErrComponentNameGetControllerName (
     return EFI_UNSUPPORTED;
   }
 
-  Status = gBS->OpenProtocol (
-                  ControllerHandle,
-                  &gEfiSimpleTextOutProtocolGuid,
-                  (VOID **) &ErrOut,
-                  NULL,
-                  ControllerHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+  Status = EfiLibTestChildHandle (
+             ControllerHandle,
+             ChildHandle,
+             &gEfiStandardErrorDeviceGuid
+             );
   if (EFI_ERROR (Status)) {
-    return EFI_UNSUPPORTED;
+    return Status;
   }
 
   return EfiLibLookupUnicodeString (

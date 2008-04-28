@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -35,6 +35,7 @@ HII_VENDOR_DEVICE_PATH  mHiiVendorDevicePathTemplate = {
       },
       EFI_IFR_TIANO_GUID,
     },
+    0,
     0
   },
   {
@@ -178,22 +179,23 @@ Returns:
 {
   EFI_STATUS                   Status;
   HII_VENDOR_DEVICE_PATH_NODE  *VendorDevicePath;
-  UINT64                       MonotonicCount;
 
   VendorDevicePath = EfiLibAllocateCopyPool (sizeof (HII_VENDOR_DEVICE_PATH), &mHiiVendorDevicePathTemplate);
   if (VendorDevicePath == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  gBS->GetNextMonotonicCount (&MonotonicCount);
-  VendorDevicePath->MonotonicCount = (UINT32) MonotonicCount;
+  //
+  // Use memory address as unique ID to distinguish from different device paths
+  //
+  VendorDevicePath->UniqueId = (UINT64) ((UINTN) VendorDevicePath);
 
   *DriverHandle = NULL;
-  Status = gBS->InstallProtocolInterface (
+  Status = gBS->InstallMultipleProtocolInterfaces (
                   DriverHandle,
                   &gEfiDevicePathProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  VendorDevicePath
+                  VendorDevicePath,
+                  NULL
                   );
   if (EFI_ERROR (Status)) {
     return Status;
@@ -237,7 +239,7 @@ Returns:
                   &gEfiDevicePathProtocolGuid,
                   DevicePath
                   );
-
+  gBS->FreePool (DevicePath);
   return Status;
 }
 

@@ -52,8 +52,6 @@ COMPONENT_TYPE       = LIBRARY
   $(EDK_SOURCE)\Foundation
   $(EDK_SOURCE)\Foundation\Efi
   $(EDK_SOURCE)\Foundation\Framework
-  $(EDK_SOURCE)\Application
-
   .
   $(EDK_SOURCE)\Sample\Platform\Nt32
   $(EDK_SOURCE)\Foundation\Include
