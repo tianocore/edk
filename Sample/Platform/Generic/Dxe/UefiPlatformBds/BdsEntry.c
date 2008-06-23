@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation
+Copyright (c) 2004 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -27,12 +27,21 @@ Abstract:
 #include "Hotkey.h"
 #endif
 
+//
+// BDS arch protocol instance initial value.
+//
+// Note: Current BDS not directly get the BootMode, DefaultBoot,
+// TimeoutDefault, MemoryTestLevel value from the BDS arch protocol.
+// Please refer to the library useage of BdsLibGetBootMode, BdsLibGetTimeout 
+// and PlatformBdsDiagnostics in BdsPlatform.c
+//
 EFI_BDS_ARCH_PROTOCOL_INSTANCE  gBdsInstanceTemplate = {
   EFI_BDS_ARCH_PROTOCOL_INSTANCE_SIGNATURE,
   NULL,
   {BdsEntry},
   0xFFFF,
   TRUE,
+  0, 
   EXTENSIVE
 };
 

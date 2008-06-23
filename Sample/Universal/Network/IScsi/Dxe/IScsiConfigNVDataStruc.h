@@ -76,7 +76,6 @@ Abstract:
 #define ISCSI_CHAP_SECRET_MAX_LEN 17
 #define ISCSI_CHAP_NAME_MAX_LEN   126
 
-#pragma pack(1)
 typedef struct _ISCSI_CONFIG_IFR_NVDATA {
   CHAR16  InitiatorName[ISCSI_NAME_IFR_MAX_SIZE];
 
@@ -99,6 +98,5 @@ typedef struct _ISCSI_CONFIG_IFR_NVDATA {
   CHAR16  ReverseCHAPName[ISCSI_CHAP_NAME_MAX_LEN];
   CHAR16  ReverseCHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
 } ISCSI_CONFIG_IFR_NVDATA;
-#pragma pack()
 
 #endif

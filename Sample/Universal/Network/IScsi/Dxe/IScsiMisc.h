@@ -24,6 +24,7 @@ Abstract:
 
 #pragma pack(1)
 typedef struct _ISCSI_SESSION_CONFIG_NVDATA {
+  UINT16            TargetPort;
   BOOLEAN           Enabled;
 
   BOOLEAN           InitiatorInfoFromDhcp;
@@ -34,7 +35,6 @@ typedef struct _ISCSI_SESSION_CONFIG_NVDATA {
   BOOLEAN           TargetInfoFromDhcp;
   CHAR8             TargetName[ISCSI_NAME_MAX_SIZE];
   EFI_IPv4_ADDRESS  TargetIp;
-  UINT16            TargetPort;
   UINT8             BootLun[8];
 } ISCSI_SESSION_CONFIG_NVDATA;
 #pragma pack()

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -63,6 +63,9 @@ LOADED_IMAGE_PRIVATE_DATA mCorePrivateImage  = {
     EfiBootServicesCode,                          // ImageCodeType
     EfiBootServicesData                           // ImageDataType
   },
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  NULL,                                           // Loaded Image Device Path
+#endif
   (EFI_PHYSICAL_ADDRESS)0,                        // ImageBasePage
   0,                                              // NumberOfPages
   NULL,                                           // FixupData  
@@ -788,6 +791,28 @@ Returns:
     goto Done;
   }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // If DevicePath parameter to the LoadImage() is not NULL, then make a copy of DevicePath,
+  // otherwise Loaded Image Device Path Protocol is installed with a NULL interface pointer.
+  //
+  if (OriginalFilePath != NULL) {
+    Image->LoadedImageDevicePath = CoreDuplicateDevicePath (OriginalFilePath);
+  }
+
+  //
+  // Install Loaded Image Device Path Protocol onto the image handle of a PE/COFE image
+  //
+  Status = CoreInstallProtocolInterface (
+            &Image->Handle,
+            &gEfiLoadedImageDevicePathProtocolGuid,
+            EFI_NATIVE_INTERFACE,
+            Image->LoadedImageDevicePath
+            );
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+#endif
 
   //
   // Success.  Return the image handle
@@ -1234,6 +1259,18 @@ Returns:
                &gEfiLoadedImageProtocolGuid,
                &Image->Info
                );
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    Status = CoreUninstallProtocolInterface (
+               Image->Handle,
+               &gEfiLoadedImageDevicePathProtocolGuid,
+               Image->LoadedImageDevicePath
+               );
+
+    if (Image->LoadedImageDevicePath != NULL) {
+      CoreFreePool (Image->LoadedImageDevicePath);
+    }
+#endif
 
     //
     // Uninstall Debug Mask Protocol

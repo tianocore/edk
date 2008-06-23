@@ -117,7 +117,7 @@ Returns:
   //
   // Initialize the EFI Driver Library
   //
-  Status = INSTALL_ALL_DRIVER_PROTOCOLS (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
              ImageHandle,
              SystemTable,
              &gPciBusDriverBinding,

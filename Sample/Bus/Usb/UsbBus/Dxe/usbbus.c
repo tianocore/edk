@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -911,6 +911,7 @@ Returns:
   Address       = Dev->Address;
   Dev->Address  = 0;
   Status        = UsbSetAddress (Dev, Address);
+  Dev->Address  = Address;
   
   if (EFI_ERROR (Status)) {
     USB_ERROR (("UsbIoPortReset: failed to set address for device %d - %r\n",
@@ -919,13 +920,16 @@ Returns:
     goto ON_EXIT;
   }
 
-  Dev->Address  = Address;
+  gBS->Stall (USB_SET_DEVICE_ADDRESS_STALL);
+
+  USB_DEBUG (("UsbIoPortReset: device is now ADDRESSED at %d\n", Address));
   
   //
   // Reset the current active configure, after this device
   // is in CONFIGURED state.
   //
   if (Dev->ActiveConfig != NULL) {
+    
     Status = UsbSetConfig (Dev, Dev->ActiveConfig->Desc.ConfigurationValue);
 
     if (EFI_ERROR (Status)) {
@@ -1174,7 +1178,7 @@ Returns:
 
 --*/
 {
-  return EfiLibInstallAllDriverProtocols (
+  return INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
            ImageHandle,
            SystemTable,
            &mUsbBusDriverBinding,

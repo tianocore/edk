@@ -57,6 +57,8 @@ typedef struct _ISCSI_CHAP_AUTH_CONFIG_NVDATA {
   CHAR8 ReverseCHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
 } ISCSI_CHAP_AUTH_CONFIG_NVDATA;
 
+#pragma pack()
+
 //
 // ISCSI CHAP Authentication Data
 //
@@ -77,8 +79,6 @@ typedef struct _ISCSI_CHAP_AUTH_DATA {
   UINT8                         OutChallenge[ISCSI_CHAP_AUTH_MAX_LEN];
   UINT32                        OutChallengeLength;
 } ISCSI_CHAP_AUTH_DATA;
-
-#pragma pack()
 
 EFI_STATUS
 IScsiCHAPOnRspReceived (

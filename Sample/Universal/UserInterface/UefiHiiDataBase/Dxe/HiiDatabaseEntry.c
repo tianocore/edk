@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -78,7 +78,7 @@ STATIC HII_DATABASE_PRIVATE_DATA mPrivate = {
   {
     HiiConfigRoutingExtractConfig,
     HiiConfigRoutingExportConfig,
-    HiiConfigRoutingRoutConfig, 
+    HiiConfigRoutingRouteConfig, 
     HiiBlockToConfig,
     HiiConfigToBlock,
     HiiGetAltCfg
@@ -101,6 +101,17 @@ STATIC HII_DATABASE_PRIVATE_DATA mPrivate = {
   },
   NULL
 };
+
+STATIC
+VOID
+EFIAPI
+KeyboardLayoutChangeNullEvent (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+  return;
+}
 
 EFI_DRIVER_ENTRY_POINT (InitializeHiiDatabase)
 
@@ -163,9 +174,9 @@ Returns:
   // Create a event with EFI_HII_SET_KEYBOARD_LAYOUT_EVENT_GUID group type.
   // 
   Status = gBS->CreateEventEx (
-                  0,
-                  0,
-                  NULL,
+                  EFI_EVENT_NOTIFY_SIGNAL,
+                  EFI_TPL_NOTIFY,
+                  KeyboardLayoutChangeNullEvent,
                   NULL,
                   &gHiiSetKbdLayoutEventGuid,
                   &gHiiKeyboardLayoutChanged

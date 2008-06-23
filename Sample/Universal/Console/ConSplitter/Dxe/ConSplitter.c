@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                              
+Copyright (c) 2004 - 2008, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -347,7 +347,7 @@ Returns:
   // Initialize the EFI Driver Library and install the
   // EFI Driver Binding Protocols
   //
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterConInDriverBinding,
@@ -360,7 +360,7 @@ Returns:
     return Status;
   }
 
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterSimplePointerDriverBinding,
@@ -375,7 +375,7 @@ Returns:
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 #ifndef DISABLE_CONSOLE_EX
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = EfiLibInstallAllDriverProtocols2 (
             ImageHandle,
             SystemTable,
             &gConSplitterAbsolutePointerDriverBinding,
@@ -391,7 +391,7 @@ Returns:
 #endif  // DISABLE_CONSOLE_EX
 #endif
 
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterConOutDriverBinding,
@@ -404,7 +404,7 @@ Returns:
     return Status;
   }
 
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterStdErrDriverBinding,

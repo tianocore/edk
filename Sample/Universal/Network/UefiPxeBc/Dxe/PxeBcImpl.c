@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -72,7 +72,7 @@ Returns:
   //
   // Configure the udp4 instance to let it receive data
   //
-  Status = Private->Udp4->Configure (Private->Udp4, &Private->Udp4CfgData);
+  Status = Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -128,7 +128,9 @@ Returns:
 
   Mode->Started = FALSE;
 
-  Private->Udp4->Configure (Private->Udp4, NULL);
+  Private->CurrentUdpSrcPort = 0;
+  Private->Udp4Write->Configure (Private->Udp4Write, NULL);
+  Private->Udp4Read->Configure (Private->Udp4Read, NULL);
 
   Private->Dhcp4->Stop (Private->Dhcp4);
   Private->Dhcp4->Configure (Private->Dhcp4, NULL);
@@ -701,7 +703,6 @@ Returns:
   EFI_UDP4_SESSION_DATA     Udp4Session;
   EFI_STATUS                Status;
   BOOLEAN                   IsDone;
-  UINT16                    RandomSrcPort;
 
   IsDone = FALSE;
 
@@ -730,29 +731,35 @@ Returns:
 
   Private = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
   Mode    = Private->PxeBc.Mode;
-  Udp4    = Private->Udp4;
+  Udp4    = Private->Udp4Write;
+
+  if (!Mode->Started) {
+    return EFI_NOT_STARTED;
+  }
 
   if (!Private->AddressIsOk && (SrcIp == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (SrcIp == NULL) {
-    SrcIp = &Private->StationIp;
-
-    if (GatewayIp == NULL) {
-      GatewayIp = &Private->GatewayIp;
+  if ((Private->CurrentUdpSrcPort == 0) ||
+    ((SrcPort != NULL) && (*SrcPort != Private->CurrentUdpSrcPort))) {
+    //
+    // Port is changed, (re)configure the Udp4Write instance
+    //
+    if (SrcPort != NULL) {
+      Private->CurrentUdpSrcPort = *SrcPort;
     }
-  }
 
-  if ((SrcPort == NULL) || (OpFlags & EFI_PXE_BASE_CODE_UDP_OPFLAGS_ANY_SRC_PORT)) {
-    RandomSrcPort = (UINT16) (NET_RANDOM (NetRandomInitSeed ()) % 10000 + 1024);
-
-    if (SrcPort == NULL) {
-
-      SrcPort  = &RandomSrcPort;
-    } else {
-
-      *SrcPort = RandomSrcPort;
+    Status = PxeBcConfigureUdpWriteInstance (
+               Udp4,
+               &Private->StationIp.v4,
+               &Private->SubnetMask.v4,
+               &Private->GatewayIp.v4,
+               &Private->CurrentUdpSrcPort
+               );
+    if (EFI_ERROR (Status)) {
+      Private->CurrentUdpSrcPort = 0;
+      return EFI_INVALID_PARAMETER;
     }
   }
 
@@ -761,11 +768,17 @@ Returns:
 
   NetCopyMem (&Udp4Session.DestinationAddress, DestIp, sizeof (EFI_IPv4_ADDRESS));
   Udp4Session.DestinationPort = *DestPort;
-  NetCopyMem (&Udp4Session.SourceAddress, SrcIp, sizeof (EFI_IPv4_ADDRESS));
-  Udp4Session.SourcePort = *SrcPort;
+
+  if (SrcIp != NULL) {
+    NetCopyMem (&Udp4Session.SourceAddress, SrcIp, sizeof (EFI_IPv4_ADDRESS));
+  }
+
+  if (SrcPort != NULL) {
+    Udp4Session.SourcePort = *SrcPort;
+  }
 
   FragCount = (HeaderSize != NULL) ? 2 : 1;
-  Udp4TxData = (EFI_UDP4_TRANSMIT_DATA *) NetAllocatePool (sizeof (EFI_UDP4_TRANSMIT_DATA) + (FragCount - 1) * sizeof (EFI_UDP4_FRAGMENT_DATA));
+  Udp4TxData = (EFI_UDP4_TRANSMIT_DATA *) NetAllocateZeroPool (sizeof (EFI_UDP4_TRANSMIT_DATA) + (FragCount - 1) * sizeof (EFI_UDP4_FRAGMENT_DATA));
   if (Udp4TxData == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -782,7 +795,10 @@ Returns:
     DataLength += (UINT32) *HeaderSize;
   }
 
-  Udp4TxData->GatewayAddress  = (EFI_IPv4_ADDRESS *) GatewayIp;
+  if (GatewayIp != NULL) {
+    Udp4TxData->GatewayAddress  = (EFI_IPv4_ADDRESS *) GatewayIp;
+  }
+
   Udp4TxData->UdpSessionData  = &Udp4Session;
   Udp4TxData->DataLength      = DataLength;
   Token.Packet.TxData         = Udp4TxData;
@@ -890,7 +906,7 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  if (((HeaderSize != NULL) && (*HeaderSize == 0)) || ((HeaderPtr == NULL) && (*HeaderSize != 0))) {
+  if (((HeaderSize != NULL) && (*HeaderSize == 0)) || ((HeaderSize != NULL) && (HeaderPtr == NULL))) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -900,7 +916,7 @@ Returns:
 
   Private = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
   Mode    = Private->PxeBc.Mode;
-  Udp4    = Private->Udp4;
+  Udp4    = Private->Udp4Read;
 
   if (!Mode->Started) {
     return EFI_NOT_STARTED;
@@ -916,6 +932,8 @@ Returns:
   if (EFI_ERROR (Status)) {
     return EFI_OUT_OF_RESOURCES;
   }
+
+TRY_AGAIN:
 
   IsDone = FALSE;
   Status = Udp4->Receive (Udp4, &Token);
@@ -1040,6 +1058,10 @@ Returns:
     // Recycle the RxData
     //
     gBS->SignalEvent (RxData->RecycleSignal);
+
+    if (!Matched) {
+      goto TRY_AGAIN;
+    }
   }
 
 ON_EXIT:
@@ -1783,6 +1805,7 @@ Returns:
   switch (Status) {
 
   case EFI_SUCCESS:
+    return EFI_SUCCESS;
     break;
 
   case EFI_BUFFER_TOO_SMALL:

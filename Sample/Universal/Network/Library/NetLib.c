@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1000,11 +1000,13 @@ Returns:
   EFI_DRIVER_BINDING_PROTOCOL       *DriverBinding;
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   EFI_COMPONENT_NAME2_PROTOCOL      *ComponentName;
+  EFI_DRIVER_CONFIGURATION2_PROTOCOL *DriverConfiguration;
+  EFI_DRIVER_DIAGNOSTICS2_PROTOCOL   *DriverDiagnostics;
 #else
   EFI_COMPONENT_NAME_PROTOCOL       *ComponentName;
-#endif
   EFI_DRIVER_CONFIGURATION_PROTOCOL *DriverConfiguration;
   EFI_DRIVER_DIAGNOSTICS_PROTOCOL   *DriverDiagnostics;
+#endif
 
   //
   // Get the list of all the handles in the handle database.
@@ -1086,6 +1088,21 @@ Returns:
     }
 #endif
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    Status = gBS->HandleProtocol (
+                    DeviceHandleBuffer[Index],
+                    &gEfiDriverConfiguration2ProtocolGuid,
+                    &DriverConfiguration
+                    );
+    
+    if (!EFI_ERROR (Status)) {
+      gBS->UninstallProtocolInterface (
+            ImageHandle,
+            &gEfiDriverConfiguration2ProtocolGuid,
+            DriverConfiguration
+            );
+    }
+#else
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
                     &gEfiDriverConfigurationProtocolGuid,
@@ -1099,7 +1116,22 @@ Returns:
             DriverConfiguration
             );
     }
+#endif
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    Status = gBS->HandleProtocol (
+                    DeviceHandleBuffer[Index],
+                    &gEfiDriverDiagnostics2ProtocolGuid,
+                    &DriverDiagnostics
+                    );
+    
+    if (!EFI_ERROR (Status)) {
+      gBS->UninstallProtocolInterface (
+            ImageHandle,
+            &gEfiDriverDiagnostics2ProtocolGuid,
+            DriverDiagnostics
+            );
+#else
     Status = gBS->HandleProtocol (
                     DeviceHandleBuffer[Index],
                     &gEfiDriverDiagnosticsProtocolGuid,
@@ -1112,6 +1144,7 @@ Returns:
             &gEfiDriverDiagnosticsProtocolGuid,
             DriverDiagnostics
             );
+#endif
     }
   }
   
@@ -1562,11 +1595,13 @@ NetLibInstallAllDriverProtocols (
   IN EFI_HANDLE                         DriverBindingHandle,
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,       OPTIONAL
+  IN EFI_DRIVER_CONFIGURATION2_PROTOCOL *DriverConfiguration, OPTIONAL
+  IN EFI_DRIVER_DIAGNOSTICS2_PROTOCOL   *DriverDiagnostics    OPTIONAL
 #else
   IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
-#endif
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration, OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics    OPTIONAL
+#endif
   )
 /*++
 
@@ -1624,12 +1659,14 @@ NetLibInstallAllDriverProtocolsWithUnload (
   IN EFI_DRIVER_BINDING_PROTOCOL        *DriverBinding,
   IN EFI_HANDLE                         DriverBindingHandle,
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,       OPTIONAL
+  IN EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName,         OPTIONAL
+  IN EFI_DRIVER_CONFIGURATION2_PROTOCOL *DriverConfiguration,   OPTIONAL
+  IN EFI_DRIVER_DIAGNOSTICS2_PROTOCOL   *DriverDiagnostics,     OPTIONAL
 #else
-  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
-#endif
+  IN EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,         OPTIONAL
   IN EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration,   OPTIONAL
   IN EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics,     OPTIONAL
+#endif
   IN NET_LIB_DRIVER_UNLOAD              Unload
   )
 /*++
@@ -1669,7 +1706,7 @@ Returns:
   EFI_STATUS                Status;
   EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
              ImageHandle,
              SystemTable,
              DriverBinding,

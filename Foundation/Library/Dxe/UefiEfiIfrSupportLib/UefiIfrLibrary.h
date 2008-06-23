@@ -647,6 +647,23 @@ Returns:
 --*/
 ;
 
+VOID
+ToLower (
+  IN OUT CHAR16    *Str
+  )
+/*++
+
+Routine Description:
+  Converts the unicode character from uppercase to lowercase.
+
+Arguments:
+  Str        -  String to be converted
+
+Returns:
+
+--*/
+;
+
 EFI_STATUS
 BufferToHexString (
   IN OUT CHAR16    *Str,
@@ -689,6 +706,64 @@ Arguments:
 
 Returns:
   EFI_SUCCESS    -  The function completed successfully.
+
+--*/
+;
+
+EFI_STATUS
+ConfigStringToUnicode (
+  IN OUT CHAR16                *UnicodeString,
+  IN OUT UINTN                 *StrBufferLen,
+  IN CHAR16                    *ConfigString
+  )
+/*++
+
+Routine Description:
+  Convert binary representation Config string (e.g. "0041004200430044") to the
+  original string (e.g. "ABCD"). Config string appears in <ConfigHdr> (i.e.
+  "&NAME=<string>"), or Name/Value pair in <ConfigBody> (i.e. "label=<string>").
+
+Arguments:
+  UnicodeString - Original Unicode string.
+  StrBufferLen  - On input: Length in bytes of buffer to hold the Unicode string.
+                  Includes tailing '\0' character.
+                  On output:
+                    If return EFI_SUCCESS, containing length of Unicode string buffer.
+                    If return EFI_BUFFER_TOO_SMALL, containg length of string buffer desired.
+  ConfigString  - Binary representation of Unicode String, <string> := (<HexCh>4)+
+
+Returns:
+  EFI_SUCCESS          - Routine success.
+  EFI_BUFFER_TOO_SMALL - The string buffer is too small.
+
+--*/
+;
+
+EFI_STATUS
+UnicodeToConfigString (
+  IN OUT CHAR16                *ConfigString,
+  IN OUT UINTN                 *StrBufferLen,
+  IN CHAR16                    *UnicodeString
+  )
+/*++
+
+Routine Description:
+  Convert Unicode string to binary representation Config string, e.g.
+  "ABCD" => "0041004200430044". Config string appears in <ConfigHdr> (i.e.
+  "&NAME=<string>"), or Name/Value pair in <ConfigBody> (i.e. "label=<string>").
+
+Arguments:
+  ConfigString  - Binary representation of Unicode String, <string> := (<HexCh>4)+
+  StrBufferLen  - On input: Length in bytes of buffer to hold the Unicode string.
+                  Includes tailing '\0' character.
+                  On output:
+                    If return EFI_SUCCESS, containing length of Unicode string buffer.
+                    If return EFI_BUFFER_TOO_SMALL, containg length of string buffer desired.
+  UnicodeString - Original Unicode string.
+
+Returns:
+  EFI_SUCCESS          - Routine success.
+  EFI_BUFFER_TOO_SMALL - The string buffer is too small.
 
 --*/
 ;

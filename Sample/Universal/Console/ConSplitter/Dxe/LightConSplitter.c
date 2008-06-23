@@ -286,7 +286,7 @@ Returns:
   // Initialize the EFI Driver Library and install the
   // EFI Driver Binding Protocols
   //
-  Status = INSTALL_ALL_DRIVER_PROTOCOLS (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterConInDriverBinding,
@@ -299,7 +299,7 @@ Returns:
     return Status;
   }
 
-  Status = INSTALL_ALL_DRIVER_PROTOCOLS (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterConOutDriverBinding,
@@ -312,7 +312,7 @@ Returns:
     return Status;
   }
 
-  Status = INSTALL_ALL_DRIVER_PROTOCOLS (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConSplitterStdErrDriverBinding,

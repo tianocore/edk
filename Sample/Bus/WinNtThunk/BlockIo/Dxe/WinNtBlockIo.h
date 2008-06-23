@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -48,11 +48,6 @@ Abstract:
 
 #define FILENAME_BUFFER_SIZE  80
 
-//
-// Language supported for driverconfiguration protocol
-//
-#define LANGUAGESUPPORTED "eng"
-
 typedef enum {
   EfiWinNtVirtualDisks,
   EfiWinNtPhysicalDisks,
@@ -98,11 +93,13 @@ typedef struct {
 extern EFI_DRIVER_BINDING_PROTOCOL        gWinNtBlockIoDriverBinding;
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 extern EFI_COMPONENT_NAME2_PROTOCOL       gWinNtBlockIoComponentName;
+extern EFI_DRIVER_CONFIGURATION2_PROTOCOL  gWinNtBlockIoDriverConfiguration;
+extern EFI_DRIVER_DIAGNOSTICS2_PROTOCOL    gWinNtBlockIoDriverDiagnostics;
 #else
 extern EFI_COMPONENT_NAME_PROTOCOL        gWinNtBlockIoComponentName;
-#endif
 extern EFI_DRIVER_CONFIGURATION_PROTOCOL  gWinNtBlockIoDriverConfiguration;
 extern EFI_DRIVER_DIAGNOSTICS_PROTOCOL    gWinNtBlockIoDriverDiagnostics;
+#endif
 
 //
 // EFI Driver Binding Functions
@@ -511,4 +508,9 @@ Returns:
 --*/
 ;
 
+CHAR8 *
+GetNextSupportedLanguage (
+  IN CHAR8                *Languages
+  )
+;
 #endif

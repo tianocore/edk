@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -40,7 +40,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
 #include EFI_PROTOCOL_DEFINITION (Print)
-#include EFI_PROTOCOL_DEFINITION (UnicodeCollation)
+#include EFI_PROTOCOL_DEFINITION (UnicodeCollation2)
 
 //
 // This is the generated header file which includes whatever needs to be exported (strings + IFR)

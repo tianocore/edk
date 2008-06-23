@@ -186,6 +186,7 @@ UsbBootRequestSense (
                         EfiUsbDataIn,
                         &SenseData,
                         sizeof (USB_BOOT_REQUEST_SENSE_DATA),
+                        UsbMass->Lun,
                         USB_BOOT_GENERAL_CMD_TIMEOUT,
                         &CmdResult
                         );
@@ -309,6 +310,7 @@ Returns:
                            DataDir,
                            Data,
                            DataLen,
+                           UsbMass->Lun,
                            Timeout,
                            &CmdResult
                            );

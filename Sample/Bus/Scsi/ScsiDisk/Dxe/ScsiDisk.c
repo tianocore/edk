@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -87,7 +87,7 @@ Returns:
   //
   // Initialize the EFI Library
   //
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gScsiDiskDriverBinding,

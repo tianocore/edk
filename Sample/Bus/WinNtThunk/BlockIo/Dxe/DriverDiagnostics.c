@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverDiagnosticsRunDiagnostics (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_DIAGNOSTICS2_PROTOCOL              *This,
+#else
   IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
+#endif
   IN  EFI_HANDLE                                    ControllerHandle,
   IN  EFI_HANDLE                                    ChildHandle  OPTIONAL,
   IN  EFI_DRIVER_DIAGNOSTIC_TYPE                    DiagnosticType,
@@ -38,15 +42,23 @@ WinNtBlockIoDriverDiagnosticsRunDiagnostics (
 //
 // EFI Driver Diagnostics Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_DRIVER_DIAGNOSTICS2_PROTOCOL gWinNtBlockIoDriverDiagnostics = {
+#else
 EFI_DRIVER_DIAGNOSTICS_PROTOCOL gWinNtBlockIoDriverDiagnostics = {
+#endif
   WinNtBlockIoDriverDiagnosticsRunDiagnostics,
-  LANGUAGESUPPORTED
+  LANGUAGE_CODE_ENGLISH
 };
 
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverDiagnosticsRunDiagnostics (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_DIAGNOSTICS2_PROTOCOL              *This,
+#else
   IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
+#endif
   IN  EFI_HANDLE                                    ControllerHandle,
   IN  EFI_HANDLE                                    ChildHandle  OPTIONAL,
   IN  EFI_DRIVER_DIAGNOSTIC_TYPE                    DiagnosticType,
@@ -136,7 +148,7 @@ WinNtBlockIoDriverDiagnosticsRunDiagnostics (
       break;
     }
 
-    SupportedLanguage += 3;
+    SupportedLanguage = GetNextSupportedLanguage (SupportedLanguage);
   }
 
   if (EFI_ERROR (Status)) {

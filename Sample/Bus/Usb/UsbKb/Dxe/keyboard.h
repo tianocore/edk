@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,6 +24,9 @@ Revision History
 
 #include "efikey.h"
 #include "UsbDxeLib.h"
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "EfiHii.h"
+#endif
 
 BOOLEAN
 IsUSBKeyboard (
@@ -34,6 +37,18 @@ EFI_STATUS
 InitUSBKeyboard (
   IN USB_KB_DEV   *UsbKeyboardDevice
   );
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_STATUS
+InitKeyboardLayout (
+  IN USB_KB_DEV   *UsbKeyboardDevice
+  );
+
+VOID
+ReleaseKeyboardLayoutResources (
+  USB_KB_DEV  *UsbKeyboardDevice
+  );
+#endif
 
 EFI_STATUS
 EFIAPI

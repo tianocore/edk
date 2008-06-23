@@ -62,7 +62,7 @@ Returns:
   //
   // Install driver binding protocols and component name protocols
   //
-  Status = INSTALL_ALL_DRIVER_PROTOCOLS (
+  Status = INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
             ImageHandle,
             SystemTable,
             &gConPlatformTextOutDriverBinding,
@@ -75,7 +75,7 @@ Returns:
     return Status;
   }
 
-  return INSTALL_ALL_DRIVER_PROTOCOLS (
+  return INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
           ImageHandle,
           SystemTable,
           &gConPlatformTextInDriverBinding,

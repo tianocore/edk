@@ -173,4 +173,6 @@ Abstract:
 #include "Library\EdkIIGlueUefiLib.h"
 #include "Library\EdkIIGlueUefiRuntimeServicesTableLib.h"
 
+extern UINT8 _gEdkIIGlueDriverModelProtocolSelection;
+
 #endif

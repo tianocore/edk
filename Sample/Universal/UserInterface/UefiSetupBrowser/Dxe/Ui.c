@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation
+Copyright (c) 2004 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -2331,7 +2331,7 @@ Returns:
             Selection->Statement = NULL;
             break;
           }
-          BufferSize = EfiStrLen (StringPtr) / 4;
+          BufferSize = EfiStrLen (StringPtr) / 2;
           DevicePath = EfiLibAllocatePool (BufferSize);
 
           HexStringToBuffer ((UINT8 *) DevicePath, &BufferSize, StringPtr);

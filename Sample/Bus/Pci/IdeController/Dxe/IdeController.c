@@ -138,7 +138,7 @@ InitializeIdeControllerDriver (
 --*/
 {
 
-  return INSTALL_ALL_DRIVER_PROTOCOLS (
+  return INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
           ImageHandle,
           SystemTable,
           &gIdeControllerDriverBinding,

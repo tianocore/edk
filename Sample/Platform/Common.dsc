@@ -268,7 +268,7 @@ $(DEST_DIR)\$(FILE).obj : $(SOURCE_FILE_NAME) $(INF_FILENAME) $(ALL_DEPS)
 # know how to create the .apr file, then you're missing (or mispelled) the
 # "APRIORI=" on the component lines in components section in the DSC file.
 #
-$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_FILE_NAME)
+$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_FILE_NAME) $(INF_FILENAME)
   $(GENAPRIORI) -v -f $(SOURCE_FILE_NAME) -o $(DEST_DIR)\$(BASE_NAME).bin
 
 $(DEST_DIR)\$(BASE_NAME).sec : $(DEST_DIR)\$(BASE_NAME).bin
@@ -299,34 +299,29 @@ clean :
 [Build.Ia32.Makefile,Build.Ipf.Makefile,Build.Ebc.Makefile,Build.x64.Makefile]
 
 #
-# Copy the makefile directly from the source directory, then make it
-# writable so we can copy over it later if we try to.
+# Set some required macros
 #
-$(DEST_DIR)\makefile.new : $(SOURCE_DIR)\makefile.new
-  copy $(SOURCE_DIR)\makefile.new $(DEST_DIR)\makefile.new
-  attrib -r $(DEST_DIR)\makefile.new
+MAKEFILE_MACROS = SOURCE_DIR=$(SOURCE_DIR)                \
+                  BUILD_DIR=$(BUILD_DIR)                  \
+                  FILE_GUID=$(FILE_GUID)                  \
+                  DEST_DIR=$(DEST_DIR)                    \
+                  PROCESSOR=$(PROCESSOR)                  \
+                  TOOLCHAIN=TOOLCHAIN_$(PROCESSOR)        \
+                  BASE_NAME=$(BASE_NAME)                  \
+                  PACKAGE_FILENAME=$(PACKAGE_FILENAME)
 
 #
-# Make the all target, set some required macros.
+# Just call the makefile from the source directory, passing in some
+# useful info.
 #
-call_makefile :
-  $(MAKE) -f $(DEST_DIR)\makefile.new all   \
-          SOURCE_DIR=$(SOURCE_DIR)          \
-          BUILD_DIR=$(BUILD_DIR)            \
-          FILE_GUID=$(FILE_GUID)            \
-          DEST_DIR=$(DEST_DIR)              \
-          PROCESSOR=$(PROCESSOR)            \
-          TOOLCHAIN=TOOLCHAIN_$(PROCESSOR)  \
-          BASE_NAME=$(BASE_NAME)            \
-          PACKAGE_FILENAME=$(PACKAGE_FILENAME)
-
-all : $(DEST_DIR)\makefile.new call_makefile
+all :
+  $(MAKE) -f $(SOURCE_DIR)\makefile.new all $(MAKEFILE_MACROS)
 
 #
 # Remove the generated temp and final files for this modules.
 #
 clean :
-  @- $(MAKE) -f $(DEST_DIR)\makefile.new clean > NUL 2>&1
+  @- $(MAKE) -f $(SOURCE_DIR)\makefile.new clean $(MAKEFILE_MACROS) > NUL 2>&1
 !IF ("$(FILE_GUID)" != "")
   @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
 !ENDIF
@@ -345,27 +340,31 @@ clean :
 [Build.Ia32.Custom_Makefile,Build.Ipf.Custom_Makefile,Build.Ebc.Custom_Makefile,Build.x64.Custom_Makefile]
 
 #
+# Set some required macros
+#
+MAKEFILE_MACROS = SOURCE_DIR=$(SOURCE_DIR)                \
+                  BUILD_DIR=$(BUILD_DIR)                  \
+                  DEST_DIR=$(DEST_DIR)                    \
+                  FILE_GUID=$(FILE_GUID)                  \
+                  PROCESSOR=$(PROCESSOR)                  \
+                  TOOLCHAIN=TOOLCHAIN_$(PROCESSOR)        \
+                  BASE_NAME=$(BASE_NAME)                  \
+                  PLATFORM=$(PLATFORM)                    \
+                  SOURCE_FV=$(SOURCE_FV)                  \
+                  PACKAGE_FILENAME=$(PACKAGE_FILENAME)
+
+#
 # Just call the makefile from the source directory, passing in some
 # useful info.
 #
 all : 
-  $(MAKE) -f $(SOURCE_DIR)\makefile all    \
-          SOURCE_DIR=$(SOURCE_DIR)         \
-          BUILD_DIR=$(BUILD_DIR)           \
-          DEST_DIR=$(DEST_DIR)             \
-          FILE_GUID=$(FILE_GUID)           \
-          PROCESSOR=$(PROCESSOR)           \
-          TOOLCHAIN=TOOLCHAIN_$(PROCESSOR) \
-          BASE_NAME=$(BASE_NAME)           \
-          PLATFORM=$(PLATFORM)             \
-          SOURCE_FV=$(SOURCE_FV)           \
-          PACKAGE_FILENAME=$(PACKAGE_FILENAME)
+  $(MAKE) -f $(SOURCE_DIR)\makefile all $(MAKEFILE_MACROS)
 
 #
 # Remove the generated temp and final files for this modules.
 #
 clean :
-  @- $(MAKE) -f $(SOURCE_DIR)\makefile clean > NUL 2>&1
+  @- $(MAKE) -f $(SOURCE_DIR)\makefile clean $(MAKEFILE_MACROS) > NUL 2>&1
 !IF ("$(FILE_GUID)" != "")
   @if exist $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).* del $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).*
 !ENDIF
@@ -675,7 +674,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : 
+$(TARGET_VER) : $(INF_FILENAME)
   echo.>$(TARGET_VER)
   type $(TARGET_VER)>$(TARGET_VER)
 !ENDIF
@@ -739,7 +738,7 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : 
+$(TARGET_DPX) : $(INF_FILENAME)
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
@@ -794,7 +793,7 @@ $(TARGET_DXE_DPX) : $(SOURCE_DIR)\$(DXE_DPX_SOURCE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(SOURCE_DIR)\$(DXE_DPX_SOURCE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DXE_DPX) : 
+$(TARGET_DXE_DPX) : $(INF_FILENAME)
   echo. > $(TARGET_DXE_DPX)
   type $(TARGET_DXE_DPX) > $(TARGET_DXE_DPX)
 !ENDIF
@@ -961,7 +960,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : 
+$(TARGET_VER) : $(INF_FILENAME)
   echo.>$(TARGET_VER)
   type $(TARGET_VER)>$(TARGET_VER)
 !ENDIF
@@ -1025,7 +1024,7 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : 
+$(TARGET_DPX) : $(INF_FILENAME)
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
@@ -1166,7 +1165,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : 
+$(TARGET_VER) : $(INF_FILENAME)
   echo. > $(TARGET_VER)
   type $(TARGET_VER) > $(TARGET_VER)
 !ENDIF
@@ -1230,7 +1229,7 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : 
+$(TARGET_DPX) : $(INF_FILENAME)
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
@@ -1346,7 +1345,7 @@ $(TARGET_VER) : $(INF_FILENAME)
   $(GENSECTION) -O $(TARGET_VER) -S EFI_SECTION_VERSION -V $(BUILD_NUMBER)
 !ENDIF
 !ELSE
-$(TARGET_VER) : 
+$(TARGET_VER) : $(INF_FILENAME)
   echo. > $(TARGET_VER)
   type $(TARGET_VER) > $(TARGET_VER)
 !ENDIF
@@ -1410,7 +1409,7 @@ $(TARGET_DPX) : $(DPX_SOURCE_FILE) $(INF_FILENAME)
 !ERROR Dependency expression source file "$(DPX_SOURCE_FILE)" does not exist.
 !ENDIF
 !ELSE
-$(TARGET_DPX) : 
+$(TARGET_DPX) : $(INF_FILENAME)
   echo. > $(TARGET_DPX)
   type $(TARGET_DPX) > $(TARGET_DPX)
 !ENDIF
@@ -1436,18 +1435,17 @@ clean :
 [=============================================================================]
 [Compile.Ia32.Bin|Bmp,Compile.x64.Bin|Bmp,Compile.Ipf.Bin|Bmp]
 #
-# We simply copy the binary file from the source directory to the destination directory
+# We simply define the binary source file name
 #
-$(DEST_DIR)\$(BASE_NAME).bin : $(SOURCE_FILE_NAME)
-  copy $** $@
+BINARY_SOURCE_FILE = $(SOURCE_FILE_NAME)
 
 [=============================================================================]
 [Build.Ia32.BINARY|Legacy16|Logo,Build.Ipf.BINARY|Legacy16|Logo,Build.x64.BINARY|Legacy16|Logo]
 #
 # Use GenFfsFile to convert it to an FFS file
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs : $(DEST_DIR)\$(BASE_NAME).bin $(PACKAGE_FILENAME)
-  $(GENSECTION) -I $(DEST_DIR)\$(BASE_NAME).bin -O $(DEST_DIR)\$(BASE_NAME).sec -S EFI_SECTION_RAW
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs : $(BINARY_SOURCE_FILE) $(PACKAGE_FILENAME) $(INF_FILENAME)
+  $(GENSECTION) -I $(BINARY_SOURCE_FILE) -O $(DEST_DIR)\$(BASE_NAME).sec -S EFI_SECTION_RAW
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
 all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).ffs
@@ -1467,7 +1465,8 @@ clean :
 #
 # Use GenFfsFile to convert it to an raw FFS file
 #
-$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).raw : $(DEST_DIR)\$(BASE_NAME).bin $(PACKAGE_FILENAME)
+$(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).raw : $(BINARY_SOURCE_FILE) $(PACKAGE_FILENAME) $(INF_FILENAME)
+  copy $(BINARY_SOURCE_FILE) $(DEST_DIR)\$(BASE_NAME).bin /Y
   $(GENFFSFILE) -B $(DEST_DIR) -P1 $(PACKAGE_FILENAME) -V
 
 all : $(BIN_DIR)\$(FILE_GUID)-$(BASE_NAME).raw
@@ -1693,7 +1692,7 @@ HII_IFR_PACK_FILES = $(HII_IFR_PACK_FILES) $(DEST_DIR)\$(FILE).hpk
 #
 # Run GenSection on the firmware volume image.
 #
-$(DEST_DIR)\$(SOURCE_FV)Fv.sec : $(SOURCE_FILE_NAME)
+$(DEST_DIR)\$(SOURCE_FV)Fv.sec : $(SOURCE_FILE_NAME) $(INF_FILENAME)
   $(GENSECTION) -I $(SOURCE_FILE_NAME) -O $(DEST_DIR)\$(SOURCE_FV)Fv.sec -S EFI_SECTION_FIRMWARE_VOLUME_IMAGE
 
 [=============================================================================]

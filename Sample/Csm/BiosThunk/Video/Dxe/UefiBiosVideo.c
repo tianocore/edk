@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -230,7 +230,7 @@ BiosVideoDriverEntryPoint (
 {
   EFI_STATUS  Status;
 
-  Status = EfiLibInstallAllDriverProtocols (
+  Status = EfiLibInstallAllDriverProtocols2 (
              ImageHandle,
              SystemTable,
              &gBiosVideoDriverBinding,
@@ -826,6 +826,8 @@ Returns:
            );
     return Status;
   }
+
+  gBS->SetMem (&Regs, sizeof (Regs), 0);
 
   //
   // Set the 80x25 Text VGA Mode
@@ -2968,6 +2970,8 @@ Returns:
   // Get the device structure for this device
   //
   BiosVideoPrivate = BIOS_VIDEO_DEV_FROM_VGA_MINI_PORT_THIS (This);
+  
+  gBS->SetMem (&Regs, sizeof (Regs), 0);
 
   switch (ModeNumber) {
   case 0:

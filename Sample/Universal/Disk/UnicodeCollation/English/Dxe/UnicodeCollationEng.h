@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,7 +34,11 @@ Revision History
 //
 // Driver Produced Protocol Prototypes
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+#include EFI_PROTOCOL_DEFINITION (UnicodeCollation2)
+#else
 #include EFI_PROTOCOL_DEFINITION (UnicodeCollation)
+#endif
 
 //
 // Globals
@@ -58,7 +62,11 @@ extern CHAR8  mOtherChars[];
 INTN
 EFIAPI
 EngStriColl (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL          *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL           *This,
+#endif
   IN CHAR16                                   *s1,
   IN CHAR16                                   *s2
   )
@@ -67,7 +75,11 @@ EngStriColl (
 BOOLEAN
 EFIAPI
 EngMetaiMatch (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL         *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
+#endif
   IN CHAR16                                  *String,
   IN CHAR16                                  *Pattern
   )
@@ -76,7 +88,11 @@ EngMetaiMatch (
 VOID
 EFIAPI
 EngStrLwr (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL         *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
+#endif
   IN OUT CHAR16                              *Str
   )
 ;
@@ -84,7 +100,11 @@ EngStrLwr (
 VOID
 EFIAPI
 EngStrUpr (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL         *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
+#endif
   IN OUT CHAR16                              *Str
   )
 ;
@@ -92,7 +112,11 @@ EngStrUpr (
 VOID
 EFIAPI
 EngFatToStr (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL         *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
+#endif
   IN UINTN                                   FatSize,
   IN CHAR8                                   *Fat,
   OUT CHAR16                                 *String
@@ -102,7 +126,11 @@ EngFatToStr (
 BOOLEAN
 EFIAPI
 EngStrToFat (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL         *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL          *This,
+#endif
   IN CHAR16                                  *String,
   IN UINTN                                   FatSize,
   OUT CHAR8                                  *Fat
@@ -112,14 +140,18 @@ EngStrToFat (
 //
 // Globals
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_UNICODE_COLLATION2_PROTOCOL UnicodeEng = {
+#else
 EFI_UNICODE_COLLATION_PROTOCOL  UnicodeEng = {
+#endif
   EngStriColl,
   EngMetaiMatch,
   EngStrLwr,
   EngStrUpr,
   EngFatToStr,
   EngStrToFat,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
 
 EFI_STATUS

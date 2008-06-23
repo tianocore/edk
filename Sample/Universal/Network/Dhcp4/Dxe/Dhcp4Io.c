@@ -300,9 +300,7 @@ Returns:
 
   DhcpSb->PacketToLive = Times[DhcpSb->CurRetry];
 
-  if (DhcpSb->DhcpState == Dhcp4Selecting) {
-    DhcpSb->WaitOffer = DhcpSb->PacketToLive;
-  }
+  return;
 }
 
 STATIC
@@ -549,7 +547,6 @@ Returns:
   DhcpSb->PacketToLive  = 0;
   DhcpSb->CurRetry      = 0;
   DhcpSb->MaxRetries    = 0;
-  DhcpSb->WaitOffer     = 0;
   DhcpSb->LeaseLife     = 0;
 }
 
@@ -582,11 +579,6 @@ Returns:
   EFI_STATUS                Status;
 
   ASSERT (DhcpSb->LastOffer != NULL);
-
-  //
-  // Stop waiting more offers
-  //
-  DhcpSb->WaitOffer = 0;
 
   //
   // User will cache previous offers if he wants to select
@@ -1623,30 +1615,27 @@ Returns:
   
   DhcpSb   = (DHCP_SERVICE *) Context;
   Instance = DhcpSb->ActiveChild;
-
-  //
-  // Check the time to wait offer
-  //
-  if ((DhcpSb->WaitOffer > 0) && (--DhcpSb->WaitOffer == 0)) {
-    //
-    // OK, offer collection finished, select a offer
-    //
-    ASSERT (DhcpSb->DhcpState == Dhcp4Selecting);
-
-    if (DhcpSb->LastOffer == NULL) {
-      goto END_SESSION;
-    }
-
-    if (EFI_ERROR (DhcpChooseOffer (DhcpSb))) {
-      goto END_SESSION;
-    }
-  }
   
   //
   // Check the retransmit timer
   //
   if ((DhcpSb->PacketToLive > 0) && (--DhcpSb->PacketToLive == 0)) {
 
+    //
+    // Select offer at each timeout if any offer received.
+    //
+    if (DhcpSb->DhcpState == Dhcp4Selecting && DhcpSb->LastOffer != NULL) {
+
+      Status = DhcpChooseOffer (DhcpSb);
+
+      if (EFI_ERROR(Status)) {
+        NetFreePool (DhcpSb->LastOffer);
+        DhcpSb->LastOffer = NULL;
+      } else {
+        goto ON_EXIT;
+      }
+    }
+    
     if (++DhcpSb->CurRetry < DhcpSb->MaxRetries) {
       //
       // Still has another try
@@ -1654,10 +1643,7 @@ Returns:
       DhcpRetransmit (DhcpSb);
       DhcpSetTransmitTimer (DhcpSb);
 
-    } else {
-      if (!DHCP_CONNECTED (DhcpSb->DhcpState)) {
-        goto END_SESSION;
-      }
+    } else if (DHCP_CONNECTED (DhcpSb->DhcpState)) {
 
       //
       // Retransmission failed, if the DHCP request is initiated by
@@ -1684,6 +1670,8 @@ Returns:
         DhcpSb->IoStatus = EFI_TIMEOUT;
         DhcpNotifyUser (DhcpSb, DHCP_NOTIFY_RENEWREBIND);
       }
+    } else {
+      goto END_SESSION;
     }
   }
   
@@ -1750,9 +1738,7 @@ Returns:
     }
   }
 
-  //
-  //
-  //
+ON_EXIT:
   if ((Instance != NULL) && (Instance->Token != NULL)) {
     Instance->Timeout--;
     if (Instance->Timeout == 0) {

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -36,7 +36,7 @@ EFI_HII_VALUE *mExpressionEvaluationStackPointer = NULL;
 //
 // Unicode collation protocol interface
 //
-EFI_UNICODE_COLLATION_PROTOCOL *mUnicodeCollation = NULL;
+EFI_UNICODE_COLLATION2_PROTOCOL *mUnicodeCollation = NULL;
 
 STATIC
 EFI_STATUS

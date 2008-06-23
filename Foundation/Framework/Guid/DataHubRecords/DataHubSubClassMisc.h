@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -417,7 +417,7 @@ typedef enum {
   EfiSlotTypeApg2X = 0x10,
   EfiSlotTypeAgp4X = 0x11,
   EfiSlotTypePciX = 0x12,
-  EfiSlotTypeAgp4x = 0x13,
+  EfiSlotTypeAgp8X = 0x13,
   EfiSlotTypePC98C20 = 0xA0,
   EfiSlotTypePC98C24 = 0xA1,
   EfiSlotTypePC98E = 0xA2,

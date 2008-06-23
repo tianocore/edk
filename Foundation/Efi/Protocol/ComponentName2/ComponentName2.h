@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -11,11 +11,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-    ComponentName.h
+    ComponentName2.h
     
 Abstract:
 
-    EFI Component Name Protocol
+    UEFI Component Name2 Protocol
 
 Revision History
 
@@ -51,7 +51,7 @@ EFI_STATUS
 
   Arguments:
     This       - A pointer to the EFI_COMPONENT_NAME_PROTOCOL instance.
-    Language   - A pointer to a three character ISO 639-2 language identifier.
+    Language   - A pointer to a three character RFC 3066 language identifier.
                  This is the language of the driver name that that the caller 
                  is requesting, and it must match one of the languages specified
                  in SupportedLanguages.  The number of languages supported by a 
@@ -96,7 +96,7 @@ EFI_STATUS
                        for a bus drivers that wish to retrieve the name of the 
                        bus controller.  It will not be NULL for a bus driver 
                        that wishes to retrieve the name of a child controller.
-    Language         - A pointer to a three character ISO 639-2 language 
+    Language         - A pointer to a three character RFC 3066 language 
                        identifier.  This is the language of the controller name 
                        that that the caller is requesting, and it must match one
                        of the languages specified in SupportedLanguages.  The 

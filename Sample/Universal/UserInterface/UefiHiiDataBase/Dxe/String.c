@@ -182,13 +182,13 @@ GetUnicodeStringTextOrSize (
     StringPtr += sizeof (CHAR16);
   }
 
+  if (*BufferSize < StringSize) {
+    *BufferSize = StringSize;
+    return EFI_BUFFER_TOO_SMALL;
+  }
+
   if (StringDest != NULL) {
-    if (*BufferSize < StringSize) {
-      *BufferSize = StringSize;
-      return EFI_BUFFER_TOO_SMALL;
-    }
     EfiCopyMem (StringDest, StringSrc, StringSize);
-    return EFI_SUCCESS;    
   }
 
   *BufferSize = StringSize;
@@ -1287,7 +1287,8 @@ HiiGetString (
   Returns:
     EFI_SUCCESS            - The string was returned successfully.
     EFI_NOT_FOUND          - The string specified by StringId is not available.
-    EFI_NOT_FOUND          - The string specified by StringId is available but
+                             The specified PackageList is not in the database.
+    EFI_INVALID_LANGUAGE   - The string specified by StringId is available but
                              not in the specified language.
     EFI_BUFFER_TOO_SMALL   - The buffer specified by StringSize is too small to 
                              hold the string.                                                      
@@ -1327,7 +1328,10 @@ HiiGetString (
     }
   }
 
-  if (PackageListNode != NULL) {    
+  if (PackageListNode != NULL) {
+    //
+    // First search: to match the StringId in the specified language.
+    //
     for (Link =  PackageListNode->StringPkgHdr.ForwardLink; 
          Link != &PackageListNode->StringPkgHdr;
          Link =  Link->ForwardLink
@@ -1340,6 +1344,19 @@ HiiGetString (
         }
       }
     }
+    //
+    // Second search: to match the StringId in other available languages if exist.
+    //
+    for (Link =  PackageListNode->StringPkgHdr.ForwardLink; 
+         Link != &PackageListNode->StringPkgHdr;
+         Link =  Link->ForwardLink
+        ) {
+      StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);      
+      Status = GetStringWorker (Private, StringPackage, StringId, String, StringSize, StringFontInfo);
+      if (!EFI_ERROR (Status)) {
+        return EFI_INVALID_LANGUAGE;
+      }
+    }    
   }
   
   return EFI_NOT_FOUND;
@@ -1557,8 +1574,9 @@ HiiGetSecondaryLanguages (
                              too small to hold the returned information.      
                              SecondLanguageSize is updated to hold the size of
                              the buffer required.                             
-    EFI_NOT_FOUND          - The language specified by FirstLanguage is not
+    EFI_INVALID_LANGUAGE   - The language specified by FirstLanguage is not
                              present in the specified package list.
+    EFI_NOT_FOUND          - The specified PackageList is not in the Database.                         
     
 --*/
 {
@@ -1581,46 +1599,53 @@ HiiGetSecondaryLanguages (
     return EFI_NOT_FOUND;
   }
   
-  Private    = HII_STRING_DATABASE_PRIVATE_DATA_FROM_THIS (This);
-  Languages  = NULL;
-  ResultSize = 0;
-    
+  Private = HII_STRING_DATABASE_PRIVATE_DATA_FROM_THIS (This);
+
+  PackageListNode = NULL;     
   for (Link = Private->DatabaseList.ForwardLink; Link != &Private->DatabaseList; Link = Link->ForwardLink) {
     DatabaseRecord  = CR (Link, HII_DATABASE_RECORD, DatabaseEntry, HII_DATABASE_RECORD_SIGNATURE);
     if (DatabaseRecord->Handle == PackageList) {
       PackageListNode = (HII_DATABASE_PACKAGE_LIST_INSTANCE *) (DatabaseRecord->PackageList);
-      for (Link1 = PackageListNode->StringPkgHdr.ForwardLink; 
-           Link1 != &PackageListNode->StringPkgHdr;
-           Link1 = Link1->ForwardLink
-          ) {
-        StringPackage = CR (Link1, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
-        if (EfiLibCompareLanguage (StringPackage->StringPkgHdr->Language, (CHAR8 *) FirstLanguage)) {
-          Languages = StringPackage->StringPkgHdr->Language;
-          //
-          // Language is a series of ';' terminated strings, first one is primary
-          // language and following with other secondary languages or NULL if no
-          // secondary languages any more.
-          //          
-          Languages = EfiAsciiStrStr (Languages, ";");
-          if (Languages == NULL) {
-            break;
-          }
-          Languages++;
-          
-          ResultSize = EfiAsciiStrSize (Languages);
-          if (ResultSize <= *SecondLanguagesSize) {
-            EfiAsciiStrCpy (SecondLanguages, Languages);
-          } else {
-            *SecondLanguagesSize = ResultSize;
-            return EFI_BUFFER_TOO_SMALL;
-          }
-          
-          return EFI_SUCCESS;
-        }
+      break;
+    }
+  }
+  if (PackageListNode == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  Languages  = NULL;
+  ResultSize = 0;
+      
+  for (Link1 = PackageListNode->StringPkgHdr.ForwardLink; 
+       Link1 != &PackageListNode->StringPkgHdr;
+       Link1 = Link1->ForwardLink
+      ) {
+    StringPackage = CR (Link1, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
+    if (EfiLibCompareLanguage (StringPackage->StringPkgHdr->Language, (CHAR8 *) FirstLanguage)) {
+      Languages = StringPackage->StringPkgHdr->Language;
+      //
+      // Language is a series of ';' terminated strings, first one is primary
+      // language and following with other secondary languages or NULL if no
+      // secondary languages any more.
+      //          
+      Languages = EfiAsciiStrStr (Languages, ";");
+      if (Languages == NULL) {
+        break;
       }
+      Languages++;
+      
+      ResultSize = EfiAsciiStrSize (Languages);
+      if (ResultSize <= *SecondLanguagesSize) {
+        EfiAsciiStrCpy (SecondLanguages, Languages);
+      } else {
+        *SecondLanguagesSize = ResultSize;
+        return EFI_BUFFER_TOO_SMALL;
+      }
+      
+      return EFI_SUCCESS;
     }
   }
 
-  return EFI_NOT_FOUND;
+  return EFI_INVALID_LANGUAGE;
 }
 

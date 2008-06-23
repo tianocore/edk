@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -51,7 +51,7 @@ PS2MouseDriverEntryPoint (
   
 --*/
 {
-  return EfiLibInstallAllDriverProtocols (
+  return INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
            ImageHandle,
            SystemTable,
            &gPS2MouseDriver,

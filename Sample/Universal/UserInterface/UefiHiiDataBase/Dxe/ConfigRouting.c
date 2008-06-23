@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,188 +24,6 @@ Revision History
 #include "HiiDatabase.h"
 
 #ifndef DISABLE_UNUSED_HII_PROTOCOLS
-
-STATIC
-CHAR16
-NibbleToHexCharPrivate (
-  IN UINT8                         Nibble
-  )
-/*++
-
-  Routine Description:
-    Converts the low nibble of a byte to hex unicode character.
-
-  Arguments:
-    Nibble - lower nibble of a byte.
-
-  Returns:
-    Hex unicode character between L'0' to L'f'.
-
---*/
-{
-  Nibble &= 0x0F;
-
-  if (Nibble <= 0x9) {
-    return (CHAR16)(Nibble + L'0');
-  }
-
-  return (CHAR16)(Nibble - 0xA + L'a');
-}
-
-STATIC
-EFI_STATUS
-HexStringToBufPrivate (
-  IN OUT UINT8                     *Buf,   
-  IN OUT UINTN                     *Len,
-  IN     CHAR16                    *Str,
-  OUT    UINTN                     *ConvertedStrLen  OPTIONAL
-  )
-/*++
-
-  Routine Description:
-    Converts Unicode string to binary buffer.
-    The conversion may be partial.
-    The first character in the string that is not hex digit stops the conversion.
-    At a minimum, any blob of data could be represented as a hex string.
-
-  Arguments:
-    Buf             - Pointer to buffer that receives the data.
-    Len             - Length in bytes of the buffer to hold converted data.
-                     If routine return with EFI_SUCCESS, containing length of converted data.
-                      If routine return with EFI_BUFFER_TOO_SMALL, containg length of buffer desired.
-    Str             - String to be converted from.
-    ConvertedStrLen - Length of the Hex String consumed.
-
-  Returns:
-    EFI_SUCCESS          - Routine Success.
-    EFI_BUFFER_TOO_SMALL - The buffer is too small to hold converted data.
-
---*/
-{
-  UINTN       HexCnt;
-  UINTN       Idx;
-  UINTN       BufferLength;
-  UINT8       Digit;
-  UINT8       Byte;
-
-  //
-  // Find out how many hex characters the string has.
-  //
-  for (Idx = 0, HexCnt = 0; IsHexDigit (&Digit, Str[Idx]); Idx++, HexCnt++);
-
-  if (HexCnt == 0) {
-    *Len = 0;
-    return EFI_SUCCESS;
-  }
-  //
-  // Two Unicode characters make up 1 buffer byte. Round up.
-  //
-  BufferLength = (HexCnt + 1) / 2; 
-
-  //
-  // Test if  buffer is passed enough.
-  //
-  if (BufferLength > (*Len)) {
-    *Len = BufferLength;
-    return EFI_BUFFER_TOO_SMALL;
-  }
-
-  *Len = BufferLength;
-
-  for (Idx = 0; Idx < HexCnt; Idx++) {
-
-    IsHexDigit (&Digit, Str[Idx]);
-
-    //
-    // For odd charaters, write the lower nibble for each buffer byte,
-    // and for even characters, the upper nibble.
-    //
-    if ((Idx & 1) == 0) {
-      Byte = Digit << 4;
-    } else {
-      Byte = Buf[Idx / 2];
-      Byte &= 0xF0;
-      Byte |= Digit;
-    }
-
-    Buf[Idx / 2] = Byte;
-  }
-
-  if (ConvertedStrLen != NULL) {
-    *ConvertedStrLen = HexCnt;
-  }
-
-  return EFI_SUCCESS;
-}
-
-STATIC
-EFI_STATUS
-BufToHexStringPrivate (
-  IN OUT CHAR16                    *Str,
-  IN OUT UINTN                     *HexStringBufferLength,
-  IN     UINT8                     *Buf,
-  IN     UINTN                     Len,
-  IN     BOOLEAN                   Flag
-  )
-/*++
-
-  Routine Description:
-    Converts binary buffer to Unicode string.
-    At a minimum, any blob of data could be represented as a hex string.
-
-  Arguments:
-    Str                   - Pointer to the string.
-    HexStringBufferLength - Length in bytes of buffer to hold the hex string. Includes tailing '\0' character.
-                            If routine return with EFI_SUCCESS, containing length of hex string buffer.
-                            If routine return with EFI_BUFFER_TOO_SMALL, containg length of hex string buffer desired.
-    Buf                   - Buffer to be converted from.
-    Len                   - Length in bytes of the buffer to be converted.
-    Flag                  - If TRUE, encode the data in the same order as the it 
-                            resides in the Buf. Else encode it in the reverse direction.
-
-  Returns:
-    EFI_SUCCESS           - Routine  success.
-    EFI_BUFFER_TOO_SMALL  - The hex string buffer is too small.
-
---*/
-{
-  UINTN       Idx;
-  UINT8       Byte;
-  UINTN       StrLen;
-
-  //
-  // Make sure string is either passed or allocate enough.
-  // It takes 2 Unicode characters (4 bytes) to represent 1 byte of the binary buffer.
-  // Plus the Unicode termination character.
-  //
-  StrLen = Len * 2;
-  if ((*HexStringBufferLength) < (StrLen + 1) * sizeof (CHAR16)) {
-    *HexStringBufferLength = (StrLen + 1) * sizeof (CHAR16);
-    return EFI_BUFFER_TOO_SMALL;
-  }
-
-  *HexStringBufferLength = (StrLen + 1) * sizeof (CHAR16);
-  
-  //
-  // Ends the string.
-  //
-  Str[StrLen] = 0;
-
-  for (Idx = 0; Idx < Len; Idx++) {
-
-    Byte = Buf[Idx];
-    if (Flag) {
-      Str[Idx * 2]     = NibbleToHexCharPrivate ((UINT8)(Byte >> 4));
-      Str[Idx * 2 + 1] = NibbleToHexCharPrivate (Byte);
-    } else {
-      Str[StrLen - 1 - Idx * 2] = NibbleToHexCharPrivate (Byte);
-      Str[StrLen - 2 - Idx * 2] = NibbleToHexCharPrivate ((UINT8)(Byte >> 4));
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
 
 STATIC
 UINTN
@@ -308,7 +126,6 @@ GetDevicePath (
   // The data in <PathHdr> is encoded as hex UNICODE %02x bytes in the same order
   // as the device path resides in RAM memory.
   // Translate the data into binary.
-  // Two Unicode characters make up 1 buffer byte.
   //
   Length /= 2;
   *DevicePath = (UINT8 *) EfiLibAllocateZeroPool (Length);
@@ -316,13 +133,11 @@ GetDevicePath (
     EfiLibSafeFreePool (DevicePathString);
     return EFI_OUT_OF_RESOURCES;
   }
-  
-  HexStringToBufPrivate (*DevicePath, &Length, DevicePathString, NULL);
 
+  HexStringToBuffer (*DevicePath, &Length, DevicePathString);
   EfiLibSafeFreePool (DevicePathString);
 
   return EFI_SUCCESS;
-
 }
 
 STATIC
@@ -505,8 +320,8 @@ VOID
 GenerateSubStr (
   IN CONST EFI_STRING              String,
   IN  UINTN                        BufferLen,
-  IN  UINT8                        *Buffer,
-  IN  BOOLEAN                      Flag,
+  IN  VOID                         *Buffer,
+  IN  UINT8                        Flag,
   OUT EFI_STRING                   *SubStr  
   )
 /*++
@@ -517,10 +332,11 @@ GenerateSubStr (
     String                 - A constant string which is the prefix of the to be
                              generated string, e.g. GUID=
     BufferLen              - The length of the Buffer in bytes.
-    Buffer                 - Points to a buffer which will be converted to hex string
-                             and to be the content of the generated string.
-    Flag                   - If TRUE, convert the buffer data in the same order as the it 
-                             resides in the Buffer. Else convert it in the reverse direction.
+    Buffer                 - Points to a buffer which will be converted to
+                             be the content of the generated string.
+    Flag                   - If 1, the buffer contains data for the value of GUID or PATH stored in 
+                             UINT8 *; if 2, the buffer contains unicode string for the value of NAME;
+                             if 3, the buffer contains other data.
     SubStr                 - Points to the output string. It's caller's responsibility
                              to free this buffer.
                              
@@ -532,6 +348,7 @@ GenerateSubStr (
   UINTN       Length;
   EFI_STRING  Str;
   EFI_STATUS  Status;
+  EFI_STRING  StringHeader;
 
   ASSERT (String != NULL && SubStr != NULL);
 
@@ -540,21 +357,34 @@ GenerateSubStr (
     ASSERT (*SubStr != NULL);
     return ;
   }
-  
-  Length = BufferLen * 2 + 1 + EfiStrLen (String) + 1;
+
+  Length = EfiStrLen (String) + BufferLen * 2 + 1 + 1;
   Str = EfiLibAllocateZeroPool (Length * sizeof (CHAR16));
   ASSERT (Str != NULL); 
 
   EfiStrCpy (Str, String);
   Length = (BufferLen * 2 + 1) * sizeof (CHAR16);
 
-  Status = BufToHexStringPrivate (
-             Str + EfiStrLen (String), 
-             &Length, 
-             Buffer, 
-             BufferLen,
-             Flag
-             );
+  Status       = EFI_SUCCESS;
+  StringHeader = Str + EfiStrLen (String);
+
+  switch (Flag) {
+  case 1:
+    Status = BufferToHexString (StringHeader, (UINT8 *) Buffer, BufferLen);
+    break;
+  case 2:
+    Status = UnicodeToConfigString (StringHeader, &Length, (CHAR16 *) Buffer);
+    break;
+  case 3:
+    Status = BufToHexString (StringHeader, &Length, (UINT8 *) Buffer, BufferLen);
+    //
+    // Convert the uppercase to lowercase since <HexAf> is defined in lowercase format.
+    //
+    ToLower (StringHeader);
+    break;
+  default:
+    break;
+  }
 
   ASSERT_EFI_ERROR (Status);
   EfiStrCat (Str, L"&");
@@ -1108,14 +938,14 @@ HiiConfigRoutingExportConfig (
     if (PathHdr == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
-    Status = BufToHexStringPrivate (PathHdr, &PathHdrSize, (UINT8 *) DevicePath, Length, TRUE);
+    Status = BufferToHexString (PathHdr, (UINT8 *) DevicePath, Length);
     ASSERT_EFI_ERROR (Status);
 
     //
     // Generate a <ConfigRequest> with one <ConfigHdr> and zero <RequestElement>.
     // It means extract all possible configurations from this specific driver.
     //
-    RequestSize   = (EfiStrLen (L"GUID=&NAME=&PATH=") + sizeof (EFI_GUID) * 2 +  EfiStrLen (Storage->Name))
+    RequestSize   = (EfiStrLen (L"GUID=&NAME=&PATH=") + 32 +  EfiStrLen (Storage->Name) * 4)
                      * sizeof (CHAR16) + PathHdrSize;
     ConfigRequest = (EFI_STRING) EfiLibAllocateZeroPool (RequestSize);
     if (ConfigRequest == NULL) {
@@ -1126,20 +956,16 @@ HiiConfigRoutingExportConfig (
     //
     // Add <GuidHdr>
     // <GuidHdr> ::= 'GUID='<Guid>
+    // Convert <Guid> in the same order as it resides in RAM memory.
     //
     StringPtr = ConfigRequest;
     EfiStrnCpy (StringPtr, L"GUID=", EfiStrLen (L"GUID="));
     StringPtr += EfiStrLen (L"GUID=");
-    
-    Status = BufToHexStringPrivate (
-               StringPtr, 
-               &RequestSize, 
-               (UINT8 *) (&Storage->Guid), 
-               sizeof (EFI_GUID),
-               FALSE
-               );
+
+    Status = BufferToHexString (StringPtr, (UINT8 *) (&Storage->Guid), sizeof (EFI_GUID));
     ASSERT_EFI_ERROR (Status);
-    StringPtr += RequestSize / 2 - 1;
+    
+    StringPtr += 32;
     ASSERT (*StringPtr == 0);
     *StringPtr = L'&';
     StringPtr++;
@@ -1150,8 +976,12 @@ HiiConfigRoutingExportConfig (
     //
     EfiStrnCpy (StringPtr, L"NAME=", EfiStrLen (L"NAME="));
     StringPtr += EfiStrLen (L"NAME=");
-    EfiStrnCpy (StringPtr, Storage->Name, EfiStrLen (Storage->Name));
-    StringPtr += EfiStrLen (Storage->Name);
+
+    Length = (EfiStrLen (Storage->Name) * 4 + 1) * sizeof (CHAR16);
+    Status = UnicodeToConfigString (StringPtr, &Length, Storage->Name);
+    ASSERT_EFI_ERROR (Status);
+    StringPtr += EfiStrLen (Storage->Name) * 4;
+    
     *StringPtr = L'&';
     StringPtr++;
 
@@ -1235,7 +1065,7 @@ HiiConfigRoutingExportConfig (
 
 EFI_STATUS
 EFIAPI
-HiiConfigRoutingRoutConfig (
+HiiConfigRoutingRouteConfig (
   IN  EFI_HII_CONFIG_ROUTING_PROTOCOL        *This,
   IN  CONST EFI_STRING                       Configuration,
   OUT EFI_STRING                             *Progress
@@ -1618,8 +1448,10 @@ HiiBlockToConfig (
       goto Exit;
     }
       
-    Status = BufToHexString (ValueStr, &Length, Value, Width);
+    Status = BufToHexString (ValueStr, &Length, Value, Width);        
     ASSERT_EFI_ERROR (Status);
+    ToLower (ValueStr);
+    
     EfiLibSafeFreePool (Value);
     Value = NULL;
     
@@ -1965,29 +1797,21 @@ HiiGetAltCfg (
   //
   // Generate the sub string for later matching.
   //
-  GenerateSubStr (L"GUID=", sizeof (EFI_GUID), (UINT8 *) Guid, FALSE, &GuidStr);
+  GenerateSubStr (L"GUID=", sizeof (EFI_GUID), (VOID *) Guid, 1, &GuidStr);
   GenerateSubStr (
     L"PATH=", 
     EfiDevicePathSize ((EFI_DEVICE_PATH_PROTOCOL *) DevicePath), 
-    (UINT8 *) DevicePath,
-    TRUE,
+    (VOID *) DevicePath,
+    1,
     &PathStr
     );   
   if (AltCfgId != NULL) {
-    GenerateSubStr (L"ALTCFG=", sizeof (UINT16), (UINT8 *) AltCfgId, FALSE, &AltIdStr);  
+    GenerateSubStr (L"ALTCFG=", sizeof (UINT16), (VOID *) AltCfgId, 3, &AltIdStr);  
   }  
   if (Name != NULL) {
-    Length  = EfiStrLen (Name) + EfiStrLen (L"NAME=&") + 1;
-    NameStr = EfiLibAllocateZeroPool (Length * sizeof (CHAR16));
-    if (NameStr == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      goto Exit;
-    }
-    EfiStrCpy (NameStr, L"NAME=");
-    EfiStrCat (NameStr, Name);
-    EfiStrCat (NameStr, L"&");
+    GenerateSubStr (L"NAME=", EfiStrLen (Name) * sizeof (CHAR16), (VOID *) Name, 2, &NameStr);    
   } else {
-    GenerateSubStr (L"NAME=", 0, NULL, FALSE, &NameStr);
+    GenerateSubStr (L"NAME=", 0, NULL, 2, &NameStr);
   }
      
   while (*StringPtr != 0) {

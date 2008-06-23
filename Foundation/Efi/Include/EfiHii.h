@@ -698,7 +698,7 @@ typedef struct _EFI_IFR_VARSTORE {
 
 typedef struct _EFI_IFR_VARSTORE_EFI {
   EFI_IFR_OP_HEADER        Header;
-  UINT16                   VarStoreId;
+  EFI_VARSTORE_ID          VarStoreId;
   EFI_GUID                 Guid;
   UINT32                   Attributes;
 } EFI_IFR_VARSTORE_EFI;
@@ -1274,7 +1274,7 @@ typedef enum {
   EfiKeyB8,
   EfiKeyB9,
   EfiKeyB10,
-  EfiKeyRshift,
+  EfiKeyRShift,
   EfiKeyUpArrow,
   EfiKeyOne,
   EfiKeyTwo,
@@ -1372,8 +1372,8 @@ typedef struct {
 #define EFI_AFFECTED_BY_STANDARD_SHIFT       0x0001
 //
 // This key is affected by the caps lock so that if a keyboard driver
-// would need to disambiguate between a key which had a ¡°1¡± defined
-// versus a ¡°a¡± character.  Having this bit turned on would tell
+// would need to disambiguate between a key which had a "1" defined
+// versus a "a" character.  Having this bit turned on would tell
 // the keyboard driver to use the appropriate shifted state or not.
 //
 #define EFI_AFFECTED_BY_CAPS_LOCK            0x0002
@@ -1397,16 +1397,16 @@ typedef struct {
   // EFI_HII_KEYBOARD_LAYOUT Layout[];
 } EFI_HII_KEYBOARD_PACKAGE_HDR;
 
-typedef struct {
-  CHAR16                  Language[3];
-  CHAR16                  Space;
-  CHAR16                  DescriptionString[1];
-} EFI_DESCRIPTION_STRING;
+//typedef struct {
+//  CHAR16                  Language[];           // RFC4646 Language Code
+//  CHAR16                  Space;
+//  CHAR16                  DescriptionString[];
+//} EFI_DESCRIPTION_STRING;
 
-typedef struct {
-  UINT16                  DescriptionCount;
-  EFI_DESCRIPTION_STRING  DescriptionString[1];
-} EFI_DESCRIPTION_STRING_BUNDLE;
+//typedef struct {
+//  UINT16                  DescriptionCount;
+//  EFI_DESCRIPTION_STRING  DescriptionString[];
+//} EFI_DESCRIPTION_STRING_BUNDLE;
 
 //
 // Modifier values
@@ -1426,7 +1426,7 @@ typedef struct {
 #define EFI_LEFT_SHIFT_MODIFIER          0x000C
 #define EFI_RIGHT_SHIFT_MODIFIER         0x000D
 #define EFI_CAPS_LOCK_MODIFIER           0x000E
-#define EFI_NUM_LOCK _MODIFIER           0x000F
+#define EFI_NUM_LOCK_MODIFIER            0x000F
 #define EFI_LEFT_ARROW_MODIFIER          0x0010
 #define EFI_RIGHT_ARROW_MODIFIER         0x0011
 #define EFI_DOWN_ARROW_MODIFIER          0x0012
@@ -1458,6 +1458,10 @@ typedef struct {
 #define EFI_SCROLL_LOCK_MODIFIER         0x0024
 #define EFI_PAUSE_MODIFIER               0x0025
 #define EFI_BREAK_MODIFIER               0x0026
+
+#define EFI_LEFT_LOGO_MODIFIER           0x0027
+#define EFI_RIGHT_LOGO_MODIFIER          0x0028
+#define EFI_MENU_MODIFIER                0x0029
 
 #pragma pack()
 

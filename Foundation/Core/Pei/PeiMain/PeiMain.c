@@ -87,6 +87,12 @@ static EFI_PEI_SERVICES  mPS = {
   PeiCoreResetSystem
 };
 
+VOID
+EFIAPI
+AsmWriteMm7 (
+  IN UINT64   Value
+  );
+
 EFI_STATUS
 EFIAPI
 PeiCore (
@@ -180,6 +186,14 @@ Returns:
 
   PrivateData.Signature = PEI_CORE_HANDLE_SIGNATURE;
   PrivateData.PS = &mPS;
+  
+  //
+  //  Mm7 stored PeiServicesTablePointer in EdkII Glue Library
+  //  Update Mm7 now
+  //
+#if (defined(EFI32)) || (defined(EFIX64))
+  AsmWriteMm7 ((UINT64)(UINTN)(&PrivateData.PS));
+#endif
 
   InitializeMemoryServices (&PrivateData.PS, PeiStartupDescriptor, OldCoreData);
 

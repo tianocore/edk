@@ -1336,6 +1336,16 @@ Returns:
                 //
                 if (OrigHob != NULL) {
                   OrigHob->Header->HobType = EFI_HOB_TYPE_UNUSED;
+                  //
+                  // Reserved Flash MemoryIo resource
+                  //
+                  Status = PeiBuildHobMemoryAllocation (PeiServices,
+                                                        OrigHob->FirmwareVolume->BaseAddress,
+                                                        OrigHob->FirmwareVolume->Length,
+                                                        NULL,
+                                                        EfiMemoryMappedIO
+                                                        );
+                  ASSERT_PEI_ERROR (PeiServices, Status);
                 }
                 
                 //

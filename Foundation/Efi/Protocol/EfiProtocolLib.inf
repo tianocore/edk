@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2007, Intel Corporation                                                         
+# Copyright (c) 2004 - 2008, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -43,6 +43,8 @@ COMPONENT_TYPE=   LIBRARY
   AcpiTable\AcpiTable.c
   Arp\Arp.h
   Arp\Arp.c
+  AuthenticationInfo\AuthenticationInfo.h
+  AuthenticationInfo\AuthenticationInfo.c
   Bis\Bis.h
   Bis\Bis.c
   BlockIo\BlockIo.h
@@ -77,8 +79,14 @@ COMPONENT_TYPE=   LIBRARY
   DriverBinding\DriverBinding.c
   DriverConfiguration\DriverConfiguration.h
   DriverConfiguration\DriverConfiguration.c
+  DriverConfiguration2\DriverConfiguration2.h
+  DriverConfiguration2\DriverConfiguration2.c
   DriverDiagnostics\DriverDiagnostics.h
   DriverDiagnostics\DriverDiagnostics.c
+  DriverDiagnostics2\DriverDiagnostics2.h
+  DriverDiagnostics2\DriverDiagnostics2.c
+  DriverSupportedEfiVersion\DriverSupportedEfiVersion.h
+  DriverSupportedEfiVersion\DriverSupportedEfiVersion.c
   Ebc\Ebc.h
   Ebc\Ebc.c
   EdidActive\EdidActive.h
@@ -117,6 +125,8 @@ COMPONENT_TYPE=   LIBRARY
   Ip4Config\Ip4Config.c
   LoadedImage\LoadedImage.h
   LoadedImage\LoadedImage.c
+  LoadedImageDevicePath\LoadedImageDevicePath.h
+  LoadedImageDevicePath\LoadedImageDevicePath.c
   LoadFile\LoadFile.h
   LoadFile\LoadFile.c
   ManagedNetwork\ManagedNetwork.h
@@ -129,6 +139,8 @@ COMPONENT_TYPE=   LIBRARY
   PciRootBridgeIo\PciRootBridgeIo.c
   PlatformDriverOverride\PlatformDriverOverride.h
   PlatformDriverOverride\PlatformDriverOverride.c
+  PlatformToDriverConfiguration\PlatformToDriverConfiguration.h
+  PlatformToDriverConfiguration\PlatformToDriverConfiguration.c
   PxeBaseCode\PxeBaseCode.h
   PxeBaseCode\PxeBaseCode.c
   PxeBaseCodeCallBack\PxeBaseCodeCallBack.h
@@ -157,6 +169,8 @@ COMPONENT_TYPE=   LIBRARY
   UgaIo\UgaIo.c
   UnicodeCollation\UnicodeCollation.h
   UnicodeCollation\UnicodeCollation.c
+  UnicodeCollation2\UnicodeCollation2.h
+  UnicodeCollation2\UnicodeCollation2.c
   UsbHostController\UsbHostController.h
   UsbHostController\UsbHostController.c
   UsbIo\UsbIo.h

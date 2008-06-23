@@ -248,6 +248,7 @@ Returns:
         );
 
   NetFreePool (DeviceList);
+  NetFreePool (Handles);
 
   return Status;
 }

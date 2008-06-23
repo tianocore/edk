@@ -25,6 +25,20 @@
   .XMM
   .MODEL SMALL
   .CODE
+
+AsmWriteMm7 PROTO C
+
+AsmWriteMm7 PROC C 
+;------------------------------------------------------------------------------
+; VOID
+; EFIAPI
+; AsmWriteMm7 (
+;   IN UINT64   Value
+;   );
+;------------------------------------------------------------------------------
+    movq    mm7, [esp + 4]
+    ret
+AsmWriteMm7 ENDP
   
 SwitchCoreStacks PROTO C  EntryPoint: DWORD, Parameter1: DWORD, Parameter2: DWORD, NewStack: DWORD
 

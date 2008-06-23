@@ -219,7 +219,7 @@ typedef struct {
 
 typedef struct {
   UINT8             ModeDataLen;
- UINT8             MediumType;
+  UINT8             MediumType;
   UINT8             DevicePara;
   UINT8             BlkDesLen;
 } USB_SCSI_MODE_SENSE6_PARA_HEADER;

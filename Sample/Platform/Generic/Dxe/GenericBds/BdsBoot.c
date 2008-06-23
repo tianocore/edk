@@ -126,6 +126,7 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL  *WorkingDevicePath;
   EFI_ACPI_S3_SAVE_PROTOCOL *AcpiS3Save;
   EFI_LIST_ENTRY            TempBootLists;
+  EFI_TCG_PLATFORM_PROTOCOL *TcgPlatformProtocol;
   //
   // Record the performance data for End of BDS
   //
@@ -219,6 +220,17 @@ Returns:
     //
     gBS->FreePool (DevicePath); 
     DevicePath = Option->DevicePath;
+  }
+  //
+  // Measure GPT Table
+  //
+  Status = gBS->LocateProtocol (
+                  &gEfiTcgPlatformProtocolGuid,
+                  NULL,
+                  &TcgPlatformProtocol
+                  );  
+  if (!EFI_ERROR (Status)) {
+    Status = TcgPlatformProtocol->MeasureGptTable (DevicePath);
   }
   
   //
@@ -1648,9 +1660,22 @@ Returns:
         break;
       case MESSAGING_DEVICE_PATH:
         //
-        // if the device path not only point to driver device, it is not a messaging device path.
+        // Get the last device path node
         //
         LastDeviceNode = NextDevicePathNode (TempDevicePath);
+        
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+        if (DevicePathSubType(LastDeviceNode) == MSG_DEVICE_LOGICAL_UNIT_DP) {
+          //
+          // if the next node type is Device Logical Unit, which specify the Logical Unit Number (LUN),
+          // skit it
+          //
+          LastDeviceNode = NextDevicePathNode (LastDeviceNode);
+        }
+#endif
+        //
+        // if the device path not only point to driver device, it is not a messaging device path,
+        //
         if (!IsDevicePathEndType (LastDeviceNode)) {
           break;        
         }

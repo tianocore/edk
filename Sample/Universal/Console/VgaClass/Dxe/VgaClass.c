@@ -279,7 +279,7 @@ VgaClassDriverEntryPoint (
 // GC_TODO:    ImageHandle - add argument and description to function comment
 // GC_TODO:    SystemTable - add argument and description to function comment
 {
-  return INSTALL_ALL_DRIVER_PROTOCOLS (
+  return INSTALL_ALL_DRIVER_PROTOCOLS_OR_PROTOCOLS2 (
           ImageHandle,
           SystemTable,
           &gVgaClassDriverBinding,

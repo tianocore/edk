@@ -160,9 +160,16 @@ EFI_STATUS
   IN      CHAR8                     *ActionString
   );
 
-typedef struct tdEFI_TCG_PLATFORM_PROTOCOL {
+typedef
+EFI_STATUS
+(EFIAPI *EFI_TCG_MEASURE_GPT_TABLE) (
+  IN      EFI_DEVICE_PATH_PROTOCOL  *DevicePath
+  );
+
+typedef struct _EFI_TCG_PLATFORM_PROTOCOL {
   EFI_TCG_MEASURE_PE_IMAGE          MeasurePeImage;
   EFI_TCG_MEASURE_ACTION            MeasureAction;
+  EFI_TCG_MEASURE_GPT_TABLE         MeasureGptTable;
 } EFI_TCG_PLATFORM_PROTOCOL;
 
 extern EFI_GUID                     gEfiTcgPlatformProtocolGuid;

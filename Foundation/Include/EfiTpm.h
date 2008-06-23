@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -67,7 +67,7 @@ typedef UINT32                     TCG_EVENTTYPE;
 //
 // TCG_PCR_EVENT
 //
-typedef struct tdTCG_PCR_EVENT {
+typedef struct _TCG_PCR_EVENT {
   TCG_PCRINDEX                      PCRIndex;  // PCRIndex event extended to
   TCG_EVENTTYPE                     EventType; // TCG EFI event type
   TCG_DIGEST                        Digest;    // Value extended into PCRIndex
@@ -78,7 +78,7 @@ typedef struct tdTCG_PCR_EVENT {
 //
 // TCG_PCR_EVENT_HDR
 //
-typedef struct tdTCG_PCR_EVENT_HDR {
+typedef struct _TCG_PCR_EVENT_HDR {
   TCG_PCRINDEX                      PCRIndex;
   TCG_EVENTTYPE                     EventType;
   TCG_DIGEST                        Digest;
@@ -91,7 +91,7 @@ typedef struct tdTCG_PCR_EVENT_HDR {
 // BlobLength should be of type UINTN but we use UINT64 here
 // because PEI is 32-bit while DXE is 64-bit on x64 platforms
 //
-typedef struct tdEFI_PLATFORM_FIRMWARE_BLOB {
+typedef struct _EFI_PLATFORM_FIRMWARE_BLOB {
   EFI_PHYSICAL_ADDRESS              BlobBase;
   UINT64                            BlobLength;
 } EFI_PLATFORM_FIRMWARE_BLOB;
@@ -102,7 +102,7 @@ typedef struct tdEFI_PLATFORM_FIRMWARE_BLOB {
 // This structure is used in EV_EFI_BOOT_SERVICES_APPLICATION,
 // EV_EFI_BOOT_SERVICES_DRIVER and EV_EFI_RUNTIME_SERVICES_DRIVER
 //
-typedef struct tdEFI_IMAGE_LOAD_EVENT {
+typedef struct _EFI_IMAGE_LOAD_EVENT {
   EFI_PHYSICAL_ADDRESS              ImageLocationInMemory;
   UINTN                             ImageLengthInMemory;
   UINTN                             ImageLinkTimeAddress;
@@ -116,7 +116,7 @@ typedef struct tdEFI_IMAGE_LOAD_EVENT {
 // This structure is used in EV_EFI_HANDOFF_TABLES event to facilitate
 // the measurement of given configuration tables.
 //
-typedef struct tdEFI_HANDOFF_TABLE_POINTERS {
+typedef struct _EFI_HANDOFF_TABLE_POINTERS {
   UINTN 	                          NumberOfTables;
   EFI_CONFIGURATION_TABLE           TableEntry[1];
 } EFI_HANDOFF_TABLE_POINTERS;
@@ -128,7 +128,7 @@ typedef struct tdEFI_HANDOFF_TABLE_POINTERS {
 // variable (in Unicode format) should immediately follow, then the variable
 // data.
 //
-typedef struct tdEFI_VARIABLE_DATA {
+typedef struct _EFI_VARIABLE_DATA {
   EFI_GUID                          VariableName;
   UINTN                             UnicodeNameLength;
   UINTN                             VariableDataLength;

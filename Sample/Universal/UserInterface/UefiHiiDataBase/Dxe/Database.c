@@ -113,7 +113,6 @@ GenerateHiiDatabaseRecord (
   *DatabaseNode = DatabaseRecord;
 
   return EFI_SUCCESS;
-
 }
 
 BOOLEAN
@@ -177,7 +176,6 @@ InvokeRegisteredFunction (
     EFI_INVALID_PARAMETER  - Any input parameter is not valid.
      
 --*/  
-  
 {
   HII_DATABASE_NOTIFY             *Notify;
   EFI_LIST_ENTRY                  *Link;
@@ -386,8 +384,7 @@ InsertGuidPackage (
                              new Guid package.
     EFI_INVALID_PARAMETER  - PackageHdr is NULL or PackageList is NULL.
      
---*/  
-  
+--*/
 {
   HII_GUID_PACKAGE_INSTANCE            *GuidPackage;
   EFI_HII_PACKAGE_HEADER               PackageHeader;
@@ -453,8 +450,7 @@ ExportGuidPackages (
     EFI_SUCCESS            - Guid Packages are exported successfully.
     EFI_INVALID_PARAMETER  - Any input parameter is invalid.
      
---*/  
-  
+--*/ 
 {
   HII_GUID_PACKAGE_INSTANCE            *GuidPackage;
   EFI_LIST_ENTRY                       *Link;
@@ -580,7 +576,6 @@ InsertFormPackage (
     EFI_INVALID_PARAMETER  - PackageHdr is NULL or PackageList is NULL.
      
 --*/  
-  
 {
   HII_IFR_PACKAGE_INSTANCE *FormPackage;
   EFI_HII_PACKAGE_HEADER   PackageHeader;
@@ -662,8 +657,7 @@ ExportFormPackages (
     EFI_SUCCESS            - Form Packages are exported successfully.
     EFI_INVALID_PARAMETER  - Any input parameter is invalid.
      
---*/  
-  
+--*/
 {
   HII_IFR_PACKAGE_INSTANCE *FormPackage;
   UINTN                    PackageLength;
@@ -714,9 +708,7 @@ ExportFormPackages (
   }
 
   *ResultSize += PackageLength;
-
   return EFI_SUCCESS;
-
 }
 
 STATIC
@@ -777,7 +769,6 @@ RemoveFormPackages (
   return EFI_SUCCESS;
 }
 
-
 STATIC
 EFI_STATUS
 InsertStringPackage (
@@ -786,7 +777,6 @@ InsertStringPackage (
   IN     EFI_HII_DATABASE_NOTIFY_TYPE       NotifyType,    
   IN OUT HII_DATABASE_PACKAGE_LIST_INSTANCE *PackageList,
   OUT    HII_STRING_PACKAGE_INSTANCE        **Package
-
   )
 /*++
 
@@ -808,8 +798,7 @@ InsertStringPackage (
     EFI_UNSUPPORTED        - A string package with the same language already exists
                              in current package list.
      
---*/  
-  
+--*/
 {
   HII_STRING_PACKAGE_INSTANCE *StringPackage;
   UINT32                      HeaderSize;
@@ -908,12 +897,11 @@ InsertStringPackage (
   return EFI_SUCCESS;
 
 Error:
-
   EfiLibSafeFreePool (StringPackage->StringBlock);
   EfiLibSafeFreePool (StringPackage->StringPkgHdr);
   EfiLibSafeFreePool (StringPackage);  
-  return Status;
   
+  return Status;  
 }
 
 STATIC
@@ -946,8 +934,7 @@ ExportStringPackages (
     EFI_SUCCESS            - String Packages are exported successfully.
     EFI_INVALID_PARAMETER  - Any input parameter is invalid.
      
---*/  
-  
+--*/
 {
   EFI_LIST_ENTRY              *Link;
   UINTN                       PackageLength;
@@ -1104,8 +1091,7 @@ InsertFontPackage (
     EFI_UNSUPPORTED        - A font package with same EFI_FONT_INFO already exists
                              in current hii database.
      
---*/  
-  
+--*/
 {
   HII_FONT_PACKAGE_INSTANCE *FontPackage;
   EFI_HII_FONT_PACKAGE_HDR  *FontPkgHdr;
@@ -1209,15 +1195,13 @@ InsertFontPackage (
   return EFI_SUCCESS;
 
 Error:
-
   EfiLibSafeFreePool (FontPkgHdr);
   EfiLibSafeFreePool (FontInfo); 
   EfiLibSafeFreePool (FontPackage->GlyphBlock);
   EfiLibSafeFreePool (FontPackage);
   EfiLibSafeFreePool (GlobalFont);   
   
-  return Status;
-  
+  return Status;  
 }
 
 STATIC
@@ -1250,8 +1234,7 @@ ExportFontPackages (
     EFI_SUCCESS            - Font Packages are exported successfully.
     EFI_INVALID_PARAMETER  - Any input parameter is invalid.
      
---*/  
-  
+--*/
 {
   EFI_LIST_ENTRY              *Link;
   UINTN                       PackageLength;
@@ -1420,8 +1403,7 @@ InsertImagePackage (
                              new Image package.
     EFI_INVALID_PARAMETER  - PackageHdr is NULL or PackageList is NULL.
      
---*/  
-  
+--*/
 {
   HII_IMAGE_PACKAGE_INSTANCE        *ImagePackage;
   UINT32                            PaletteSize;
@@ -1552,8 +1534,7 @@ ExportImagePackages (
     EFI_SUCCESS            - Image Packages are exported successfully.
     EFI_INVALID_PARAMETER  - Any input parameter is invalid.
      
---*/  
-  
+--*/
 {
   UINTN                       PackageLength;
   EFI_STATUS                  Status;
@@ -1701,8 +1682,7 @@ InsertSimpleFontPackage (
                              new Simple Font package.
     EFI_INVALID_PARAMETER  - PackageHdr is NULL or PackageList is NULL.
      
---*/  
-  
+--*/
 {
   HII_SIMPLE_FONT_PACKAGE_INSTANCE *SimpleFontPackage;
   EFI_STATUS                       Status;
@@ -1784,8 +1764,7 @@ ExportSimpleFontPackages (
     EFI_SUCCESS            - SimpleFont Packages are exported successfully.
     EFI_INVALID_PARAMETER  - Any input parameter is invalid.
      
---*/  
-  
+--*/
 {
   EFI_LIST_ENTRY                    *Link;
   UINTN                             PackageLength;
@@ -2204,8 +2183,7 @@ InsertKeyboardLayoutPackage (
   
   return EFI_SUCCESS;
 
-Error:
-  
+Error:  
   EfiLibSafeFreePool (KeyboardLayoutPackage->KeyboardPkg);
   EfiLibSafeFreePool (KeyboardLayoutPackage);
   
@@ -3552,7 +3530,7 @@ HiiFindKeyboardLayouts (
       for (Index = 0; Index < LayoutCount; Index++) {
         ResultSize += sizeof (EFI_GUID);
         if (ResultSize <= *KeyGuidBufferLength) {
-          EfiCopyMem (KeyGuidBuffer + Index, Layout + sizeof (UINT16), sizeof (EFI_GUID));
+          EfiCopyMem (KeyGuidBuffer + (ResultSize / sizeof (EFI_GUID) - 1), Layout + sizeof (UINT16), sizeof (EFI_GUID));
           EfiCopyMem (&LayoutLength, Layout, sizeof (UINT16));
           Layout = Layout + LayoutLength;
         }

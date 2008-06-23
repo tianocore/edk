@@ -33,10 +33,11 @@ Abstract:
 //  0x6000  - support EBC. Feb, 2007
 //  0x7000  - size reduction, Jun, 2007
 //  0x7100  - backward compatibility supported, Jun, 2007
+//  0x8000  - Driver model protocols2 supported, May, 2008
 //
 //  For reference only, don't change the value
 //
-#define EDKII_GLUE_LIBRARY_VERSION 0x7100
+#define EDKII_GLUE_LIBRARY_VERSION 0x8000
 
 
 //

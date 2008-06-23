@@ -129,8 +129,6 @@ typedef struct _DHCP_SERVICE {
   UINT32                        PacketToLive; // Retransmission timer for our packets
   INTN                          CurRetry;
   INTN                          MaxRetries;
-
-  UINT32                        WaitOffer;    // Time to collect the offers
   UINT32                        LeaseLife;
 };
 

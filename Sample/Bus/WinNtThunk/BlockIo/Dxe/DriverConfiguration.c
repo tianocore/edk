@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,7 +25,11 @@ Abstract:
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverConfigurationSetOptions (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_CONFIGURATION2_PROTOCOL                     *This,
+#else
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+#endif
   IN  EFI_HANDLE                                             ControllerHandle,
   IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
   IN  CHAR8                                                  *Language,
@@ -35,7 +39,11 @@ WinNtBlockIoDriverConfigurationSetOptions (
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverConfigurationOptionsValid (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_CONFIGURATION2_PROTOCOL              *This,
+#else
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle  OPTIONAL
   );
@@ -43,7 +51,11 @@ WinNtBlockIoDriverConfigurationOptionsValid (
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverConfigurationForceDefaults (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_CONFIGURATION2_PROTOCOL                     *This,
+#else
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+#endif
   IN  EFI_HANDLE                                             ControllerHandle,
   IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
   IN  UINT32                                                 DefaultType,
@@ -53,17 +65,25 @@ WinNtBlockIoDriverConfigurationForceDefaults (
 //
 // EFI Driver Configuration Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_DRIVER_CONFIGURATION2_PROTOCOL gWinNtBlockIoDriverConfiguration = {
+#else
 EFI_DRIVER_CONFIGURATION_PROTOCOL gWinNtBlockIoDriverConfiguration = {
+#endif
   WinNtBlockIoDriverConfigurationSetOptions,
   WinNtBlockIoDriverConfigurationOptionsValid,
   WinNtBlockIoDriverConfigurationForceDefaults,
-  LANGUAGESUPPORTED
+  LANGUAGE_CODE_ENGLISH
 };
 
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverConfigurationSetOptions (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_CONFIGURATION2_PROTOCOL                     *This,
+#else
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+#endif
   IN  EFI_HANDLE                                             ControllerHandle,
   IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
   IN  CHAR8                                                  *Language,
@@ -128,7 +148,7 @@ WinNtBlockIoDriverConfigurationSetOptions (
       Status = EFI_SUCCESS;
     }
 
-    SupportedLanguage += 3;
+    SupportedLanguage = GetNextSupportedLanguage (SupportedLanguage);
   }
 
   if (EFI_ERROR (Status)) {
@@ -179,7 +199,11 @@ WinNtBlockIoDriverConfigurationSetOptions (
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverConfigurationOptionsValid (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_CONFIGURATION2_PROTOCOL              *This,
+#else
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL               *This,
+#endif
   IN  EFI_HANDLE                                      ControllerHandle,
   IN  EFI_HANDLE                                      ChildHandle  OPTIONAL
   )
@@ -263,7 +287,11 @@ WinNtBlockIoDriverConfigurationOptionsValid (
 EFI_STATUS
 EFIAPI
 WinNtBlockIoDriverConfigurationForceDefaults (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_CONFIGURATION2_PROTOCOL                     *This,
+#else
   IN  EFI_DRIVER_CONFIGURATION_PROTOCOL                      *This,
+#endif
   IN  EFI_HANDLE                                             ControllerHandle,
   IN  EFI_HANDLE                                             ChildHandle  OPTIONAL,
   IN  UINT32                                                 DefaultType,

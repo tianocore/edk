@@ -40,7 +40,6 @@ STATIC
 EFI_STATUS
 UsbCbiInit (
   IN  EFI_USB_IO_PROTOCOL   *UsbIo,
-  IN  EFI_HANDLE            Controller,
   OUT VOID                  **Context       OPTIONAL
   )
 /*++
@@ -53,7 +52,6 @@ Routine Description:
 Arguments:
 
   UsbIo       - The USB IO to use
-  Controller  - The device controller
   Context     - The variable to save context in
 
 Returns:
@@ -437,6 +435,7 @@ UsbCbiExecCommand (
   IN  EFI_USB_DATA_DIRECTION  DataDir,
   IN  VOID                    *Data,
   IN  UINT32                  DataLen,
+  IN  UINT8                   Lun,
   IN  UINT32                  Timeout,
   OUT UINT32                  *CmdStatus
   )
@@ -453,6 +452,7 @@ Arguments:
   DataDir   - The direction of data transfer
   Data      - The buffer to hold the data
   DataLen   - The length of the buffer
+  Lun       - Should be 0, this field for bot only
   Timeout   - The time to wait 
   CmdStatus - The result of the command execution
 
@@ -646,6 +646,7 @@ mUsbCbi0Transport = {
   UsbCbiInit,
   UsbCbiExecCommand,
   UsbCbiResetDevice,
+  NULL,
   UsbCbiFini
 };
 
@@ -655,5 +656,6 @@ mUsbCbi1Transport = {
   UsbCbiInit,
   UsbCbiExecCommand,
   UsbCbiResetDevice,
+  NULL,
   UsbCbiFini
 };

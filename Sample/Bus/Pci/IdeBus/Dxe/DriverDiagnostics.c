@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -26,7 +26,11 @@ Abstract:
 //
 EFI_STATUS
 IDEBusDriverDiagnosticsRunDiagnostics (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_DIAGNOSTICS2_PROTOCOL              *This,
+#else
   IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
+#endif
   IN  EFI_HANDLE                                    ControllerHandle,
   IN  EFI_HANDLE                                    ChildHandle  OPTIONAL,
   IN  EFI_DRIVER_DIAGNOSTIC_TYPE                    DiagnosticType,
@@ -39,14 +43,22 @@ IDEBusDriverDiagnosticsRunDiagnostics (
 //
 // EFI Driver Diagnostics Protocol
 //
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_DRIVER_DIAGNOSTICS2_PROTOCOL gIDEBusDriverDiagnostics = {
+#else
 EFI_DRIVER_DIAGNOSTICS_PROTOCOL gIDEBusDriverDiagnostics = {
+#endif
   IDEBusDriverDiagnosticsRunDiagnostics,
-  "eng"
+  LANGUAGE_CODE_ENGLISH
 };
 
 EFI_STATUS
 IDEBusDriverDiagnosticsRunDiagnostics (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN  EFI_DRIVER_DIAGNOSTICS2_PROTOCOL              *This,
+#else
   IN  EFI_DRIVER_DIAGNOSTICS_PROTOCOL               *This,
+#endif
   IN  EFI_HANDLE                                    ControllerHandle,
   IN  EFI_HANDLE                                    ChildHandle  OPTIONAL,
   IN  EFI_DRIVER_DIAGNOSTIC_TYPE                    DiagnosticType,

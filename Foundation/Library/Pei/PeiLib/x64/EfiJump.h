@@ -35,6 +35,8 @@ typedef struct {
   UINT64 R14;
   UINT64 R15;
   UINT64 Rip;
+  UINT32 MxCsr;
+  UINT8  XmmBuffer[160]; // XMM6-XMM15
 } EFI_JUMP_BUFFER;
 
 #endif

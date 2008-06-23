@@ -54,6 +54,7 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeDispatch)
 #include EFI_PROTOCOL_DEFINITION (DebugPort)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
+#include EFI_PROTOCOL_DEFINITION (TcgService)
 #include EFI_GUID_DEFINITION (PcAnsi)
 #include EFI_GUID_DEFINITION (Hob)
 #include EFI_GUID_DEFINITION (HotPlugDevice)

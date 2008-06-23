@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -83,6 +83,26 @@ typedef struct _KEYBOARD_CONSOLE_IN_EX_NOTIFY {
   EFI_LIST_ENTRY                        NotifyEntry;
 } KEYBOARD_CONSOLE_IN_EX_NOTIFY;
 
+#define USB_NS_KEY_SIGNATURE  EFI_SIGNATURE_32 ('u', 'n', 's', 'k')
+
+typedef struct {
+  UINTN                         Signature;
+  EFI_LIST_ENTRY                Link;
+
+  //
+  // The number of EFI_NS_KEY_MODIFIER children definitions
+  //
+  UINTN                         KeyCount;
+
+  //
+  // NsKey[0] : Non-spacing key
+  // NsKey[1] ~ NsKey[KeyCount] : Physical keys
+  //
+  EFI_KEY_DESCRIPTOR            *NsKey;
+} USB_NS_KEY;
+
+#define USB_NS_KEY_FORM_FROM_LINK(a)  CR (a, USB_NS_KEY, Link, USB_NS_KEY_SIGNATURE)
+
 #endif
 typedef struct {
   UINTN                         Signature;
@@ -123,12 +143,21 @@ typedef struct {
   UINT8                         RightLogoOn;  
   UINT8                         MenuKeyOn;
   UINT8                         SysReqOn;
+  UINT8                         AltGrOn;
 
   EFI_KEY_STATE                 KeyState;
   //
   // Notification function list
   //
   EFI_LIST_ENTRY                NotifyList;
+
+  //
+  // Non-spacing key list
+  //
+  EFI_LIST_ENTRY                NsKeyList;
+  USB_NS_KEY                    *CurrentNsKey;
+  EFI_KEY_DESCRIPTOR            *KeyConvertionTable;
+  EFI_EVENT                     KeyboardLayoutEvent;
 #endif
 } USB_KB_DEV;
 
@@ -173,7 +202,7 @@ typedef struct {
 } KB_MODIFIER;
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
-#define USB_KEYCODE_MAX_MAKE      0x7E
+#define USB_KEYCODE_MAX_MAKE      0x62
 #else
 #define USB_KEYCODE_MAX_MAKE      0x64
 #endif

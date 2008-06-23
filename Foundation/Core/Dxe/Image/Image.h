@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,6 +30,9 @@ Abstract:
 
 #include EFI_PROTOCOL_PRODUCER (LoadedImage)
 #include EFI_PROTOCOL_PRODUCER (LoadPe32Image)
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include EFI_PROTOCOL_PRODUCER (LoadedImageDevicePath)
+#endif
 
 #include EFI_PROTOCOL_CONSUMER (Ebc)
 #include EFI_PROTOCOL_CONSUMER (SimpleFileSystem)
@@ -49,6 +52,10 @@ typedef struct {
                                                         
   EFI_IMAGE_ENTRY_POINT       EntryPoint;               // The image's entry point
   EFI_LOADED_IMAGE_PROTOCOL   Info;                     // loaded image protocol
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath;   // Loaded Image Device Path Protocl pointer
+#endif
                                                         
   EFI_PHYSICAL_ADDRESS        ImageBasePage;            // Location in memory
   UINTN                       NumberOfPages;            // Number of pages 

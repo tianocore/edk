@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -195,6 +195,7 @@ Returns:
   } else {
     Status = EFI_SUCCESS;
     NetCopyMem (NicConfig, Config, Len);
+    Ip4ConfigFixRouteTablePointer (&NicConfig->Ip4Info);
   }
 
   *ConfigLen = Len;
@@ -291,6 +292,7 @@ Returns:
   //
   if (Reconfig && (Instance->ReconfigEvent != NULL)) {
     Status = gBS->SignalEvent (Instance->ReconfigEvent);
+    NetLibDispatchDpc ();
   }
 
   return Status;
@@ -467,6 +469,8 @@ ON_ERROR:
 ON_EXIT:
   NET_RESTORE_TPL (OldTpl);
 
+  NetLibDispatchDpc ();
+
   return Status;
 }
 
@@ -592,6 +596,7 @@ Returns:
       Status = EFI_BUFFER_TOO_SMALL;
     } else {
       NetCopyMem (ConfigData, &NicConfig->Ip4Info, Len);
+      Ip4ConfigFixRouteTablePointer (ConfigData);
     }
 
     *ConfigDataSize = Len;
@@ -718,6 +723,9 @@ Returns:
 ON_EXIT:
   gBS->SignalEvent (Instance->DoneEvent);
   Ip4ConfigCleanDhcp4 (Instance);
+
+  NetLibDispatchDpc ();
+
   return ;
 }
 

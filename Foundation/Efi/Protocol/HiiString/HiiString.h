@@ -115,6 +115,8 @@ EFI_STATUS
     EFI_SUCCESS            - The string was returned successfully.
     EFI_NOT_FOUND          - The string specified by StringId is not available.
                              The specified PackageList is not in the database.
+    EFI_INVALID_LANGUAGE   - The string specified by StringId is available but
+                             not in the specified language.                             
     EFI_BUFFER_TOO_SMALL   - The buffer specified by StringSize is too small to 
                              hold the string.
     EFI_INVALID_PARAMETER  - The String or Language or StringSize was NULL.
@@ -226,10 +228,12 @@ EFI_STATUS
     EFI_BUFFER_TOO_SMALL   - The buffer specified by SecondLanguagesSize is   
                              too small to hold the returned information.      
                              SecondLanguageSize is updated to hold the size of
-                             the buffer required.                             
-    EFI_NOT_FOUND          - The specified PackageList is not in the database.    
+                             the buffer required.
+    EFI_INVALID_LANGUAGE   - The language specified by FirstLanguage is not
+                             present in the specified package list.
+    EFI_NOT_FOUND          - The specified PackageList is not in the Database.    
     
---*/                         
+--*/
 ;
 //
 // Interface structure for the EFI_HII_STRING_PROTOCOL

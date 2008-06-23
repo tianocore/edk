@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2005, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -143,7 +143,11 @@ Returns:
   Handle = NULL;
   Status = gBS->InstallProtocolInterface (
                   &Handle,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+                  &gEfiUnicodeCollation2ProtocolGuid,
+#else
                   &gEfiUnicodeCollationProtocolGuid,
+#endif
                   EFI_NATIVE_INTERFACE,
                   &UnicodeEng
                   );
@@ -154,7 +158,11 @@ Returns:
 INTN
 EFIAPI
 EngStriColl (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL  *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
+#endif
   IN CHAR16                           *s1,
   IN CHAR16                           *s2
   )
@@ -189,7 +197,11 @@ Returns:
 VOID
 EFIAPI
 EngStrLwr (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL  *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
+#endif
   IN OUT CHAR16                       *Str
   )
 /*++
@@ -222,7 +234,11 @@ Returns:
 VOID
 EFIAPI
 EngStrUpr (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL  *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
+#endif
   IN OUT CHAR16                       *Str
   )
 /*++
@@ -250,7 +266,11 @@ Returns:
 BOOLEAN
 EFIAPI
 EngMetaiMatch (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL  *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
+#endif
   IN CHAR16                           *String,
   IN CHAR16                           *Pattern
   )
@@ -396,7 +416,11 @@ Returns:
 VOID
 EFIAPI
 EngFatToStr (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL  *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
+#endif
   IN UINTN                            FatSize,
   IN CHAR8                            *Fat,
   OUT CHAR16                          *String
@@ -436,7 +460,11 @@ Returns:
 BOOLEAN
 EFIAPI
 EngStrToFat (
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  IN EFI_UNICODE_COLLATION2_PROTOCOL  *This,
+#else
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
+#endif
   IN CHAR16                           *String,
   IN UINTN                            FatSize,
   OUT CHAR8                           *Fat
