@@ -2014,7 +2014,7 @@ Returns:
   //
   // Add file
   //
-  if ((FvImage->CurrentFilePointer + FileSize) < FvImage->Eof) {
+  if ((FvImage->CurrentFilePointer + FileSize) <= FvImage->Eof) {
     //
     // Copy the file
     //

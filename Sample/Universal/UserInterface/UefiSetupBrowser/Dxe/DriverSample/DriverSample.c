@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2007, Intel Corporation
+Copyright (c) 2004 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -258,6 +258,15 @@ ExtractConfig (
   HiiConfigRouting = PrivateData->HiiConfigRouting;
 
   //
+  // Check routing data in <ConfigHdr>.
+  // Note: if only one Storage is used, then this checking could be skipped.
+  //
+  if (!IsConfigHdrMatch (Request, &mFormSetGuid, VariableName)) {
+    *Progress = Request;
+    return EFI_NOT_FOUND;
+  }
+
+  //
   // Get Buffer Storage data from EFI variable
   //
   BufferSize = sizeof (DRIVER_SAMPLE_CONFIGURATION);
@@ -269,6 +278,30 @@ ExtractConfig (
                   &PrivateData->Configuration
                   );
   if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (Request == NULL) {
+    //
+    // Request is set to NULL, return all configurable elements together with ALTCFG
+    //
+    Status = ConstructConfigAltResp (
+               NULL,
+               NULL,
+               Results,
+               &mFormSetGuid,
+               VariableName,
+               PrivateData->DriverHandle[0],
+               &PrivateData->Configuration,
+               BufferSize,
+               VfrMyIfrNVDataBlockName,
+               2,
+               STRING_TOKEN (STR_STANDARD_DEFAULT_PROMPT),
+               VfrMyIfrNVDataDefault0000,
+               STRING_TOKEN (STR_MANUFACTURE_DEFAULT_PROMPT),
+               VfrMyIfrNVDataDefault0001
+               );
+
     return Status;
   }
 
@@ -320,6 +353,15 @@ RouteConfig (
 
   PrivateData = DRIVER_SAMPLE_PRIVATE_FROM_THIS (This);
   HiiConfigRouting = PrivateData->HiiConfigRouting;
+
+  //
+  // Check routing data in <ConfigHdr>.
+  // Note: if only one Storage is used, then this checking could be skipped.
+  //
+  if (!IsConfigHdrMatch (Configuration, &mFormSetGuid, VariableName)) {
+    *Progress = Configuration;
+    return EFI_NOT_FOUND;
+  }
 
   //
   // Get Buffer Storage data from EFI variable
@@ -414,10 +456,7 @@ DriverCallback (
     //
     // Create dynamic page for this interactive goto
     //
-    UpdateData.BufferSize = 0x1000;
-    UpdateData.Offset = 0;
-    UpdateData.Data = EfiLibAllocatePool (0x1000);
-    ASSERT (UpdateData.Data != NULL);
+    IfrLibInitUpdateData (&UpdateData, 0x1000);
 
     IfrOptionList = EfiLibAllocatePool (2 * sizeof (IFR_OPTION));
     ASSERT (IfrOptionList != NULL);

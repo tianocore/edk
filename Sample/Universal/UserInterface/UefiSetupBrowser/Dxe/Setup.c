@@ -44,7 +44,6 @@ UINTN                 gFunctionKeySetting;
 BOOLEAN               gResetRequired;
 BOOLEAN               gNvUpdateRequired;
 EFI_HII_HANDLE        gHiiHandle;
-BOOLEAN               gFirstIn;
 UINT16                gDirection;
 EFI_SCREEN_DESCRIPTOR gScreenDimensions;
 BOOLEAN               gUpArrow;
@@ -81,6 +80,7 @@ CHAR16            *gMiniString;
 CHAR16            *gPlusString;
 CHAR16            *gMinusString;
 CHAR16            *gAdjustNumber;
+CHAR16            *gSaveChanges;
 
 CHAR16            gPromptBlockWidth;
 CHAR16            gOptionBlockWidth;
@@ -276,11 +276,8 @@ Returns:
   //
   // Ensure we are in Text mode
   //
-  if (gFirstIn) {
-    gFirstIn = FALSE;
-    gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
-    DisableQuietBoot ();
-  }
+  gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
+  DisableQuietBoot ();
 
   for (Index = 0; Index < HandleCount; Index++) {
     Selection = EfiLibAllocateZeroPool (sizeof (UI_MENU_SELECTION));
@@ -300,7 +297,7 @@ Returns:
       // Initialize internal data structures of FormSet
       //
       Status = InitializeFormSet (Selection->Handle, &Selection->FormSetGuid, FormSet);
-      if (EFI_ERROR (Status)) {
+      if (EFI_ERROR (Status) || IsListEmpty (&FormSet->FormListHead)) {
         DestroyFormSet (FormSet);
         break;
       }
@@ -574,7 +571,6 @@ Returns:
   //
   // Initialize Driver private data
   //
-  gFirstIn = TRUE;
   BannerData = EfiLibAllocateZeroPool (sizeof (BANNER_DATA));
   ASSERT (BannerData != NULL);
 

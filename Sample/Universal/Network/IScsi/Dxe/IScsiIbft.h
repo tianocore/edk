@@ -22,6 +22,8 @@ Abstract:
 #ifndef _ISCSI_IBFT_H_
 #define _ISCSI_IBFT_H_
 
+#include EFI_GUID_DEFINITION (Acpi)
+#include "Acpi.h"
 #include "IScsiBootFirmwareTable.h"
 #include EFI_PROTOCOL_CONSUMER (AcpiSupport)
 #include EFI_PROTOCOL_CONSUMER (PciIo)

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -34,10 +34,14 @@ Abstract:
 
 #define ISCSI_NAME_MAX_SIZE 224
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#define ISCSI_NAME_IFR_MAX_SIZE   223
+#else
 //
-// Vfr has a limit on the size, it's 255 bytes.
+// Frameowrk VFR complier has a limit on the size, it's 255 bytes.
 //
 #define ISCSI_NAME_IFR_MAX_SIZE   126
+#endif
 
 #define IP_MIN_SIZE               7
 #define IP_MAX_SIZE               15
@@ -76,6 +80,7 @@ Abstract:
 #define ISCSI_CHAP_SECRET_MAX_LEN 17
 #define ISCSI_CHAP_NAME_MAX_LEN   126
 
+#pragma pack(1)
 typedef struct _ISCSI_CONFIG_IFR_NVDATA {
   CHAR16  InitiatorName[ISCSI_NAME_IFR_MAX_SIZE];
 
@@ -87,16 +92,19 @@ typedef struct _ISCSI_CONFIG_IFR_NVDATA {
   CHAR16  Gateway[IP4_STR_MAX_SIZE];
 
   UINT8   TargetInfoFromDhcp;
+  UINT8   Padding1;
   CHAR16  TargetName[ISCSI_NAME_IFR_MAX_SIZE];
   CHAR16  TargetIp[IP4_STR_MAX_SIZE];
   UINT16  TargetPort;
   CHAR16  BootLun[ISCSI_LUN_STR_MAX_LEN];
 
   UINT8   CHAPType;
+  UINT8   Padding2;
   CHAR16  CHAPName[ISCSI_CHAP_NAME_MAX_LEN];
   CHAR16  CHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
   CHAR16  ReverseCHAPName[ISCSI_CHAP_NAME_MAX_LEN];
   CHAR16  ReverseCHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
 } ISCSI_CONFIG_IFR_NVDATA;
+#pragma pack()
 
 #endif

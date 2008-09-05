@@ -1125,7 +1125,7 @@ GetNextSupportedLanguage (
   IN CHAR8                *Languages
   )
 {
-#ifdef LANGUAGE_RFC_3066   // LANGUAGE_RFC_3066
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)   // LANGUAGE_RFC_3066
   for (; (*Languages != 0) && (*Languages != ';'); Languages++)
     ;
   if (*Languages == ';') {

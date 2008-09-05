@@ -1,13 +1,13 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2004 - 2008, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
@@ -25,9 +25,9 @@ Abstract:
  */
 
 SPendingAssign::SPendingAssign (
-  IN INT8   *Key, 
-  IN VOID   *Addr, 
-  IN UINT32 Len, 
+  IN INT8   *Key,
+  IN VOID   *Addr,
+  IN UINT32 Len,
   IN UINT32 LineNo,
   IN INT8   *Msg
   )
@@ -73,7 +73,7 @@ SPendingAssign::~SPendingAssign (
 
 VOID
 SPendingAssign::SetAddrAndLen (
-  IN VOID   *Addr, 
+  IN VOID   *Addr,
   IN UINT32 LineNo
   )
 {
@@ -83,7 +83,7 @@ SPendingAssign::SetAddrAndLen (
 
 VOID
 SPendingAssign::AssignValue (
-  IN VOID   *Addr, 
+  IN VOID   *Addr,
   IN UINT32 Len
   )
 {
@@ -239,7 +239,7 @@ CFormPkg::Close (
 
 UINT32
 CFormPkg::Read (
-  IN CHAR8     *Buffer, 
+  IN CHAR8     *Buffer,
   IN UINT32    Size
   )
 {
@@ -369,7 +369,7 @@ CFormPkg::_WRITE_PKG_END (
 
 #define BYTES_PRE_LINE 0x10
 
-EFI_VFR_RETURN_CODE 
+EFI_VFR_RETURN_CODE
 CFormPkg::GenCFile (
   IN INT8 *BaseName,
   IN FILE *pFile
@@ -419,8 +419,8 @@ CFormPkg::GenCFile (
 
 EFI_VFR_RETURN_CODE
 CFormPkg::AssignPending (
-  IN INT8   *Key, 
-  IN VOID   *ValAddr, 
+  IN INT8   *Key,
+  IN VOID   *ValAddr,
   IN UINT32 ValLen,
   IN UINT32 LineNo,
   IN INT8   *Msg
@@ -440,8 +440,8 @@ CFormPkg::AssignPending (
 
 VOID
 CFormPkg::DoPendingAssign (
-  IN INT8   *Key, 
-  IN VOID   *ValAddr, 
+  IN INT8   *Key,
+  IN VOID   *ValAddr,
   IN UINT32 ValLen
   )
 {
@@ -550,8 +550,8 @@ CIfrRecordInfoDB::GetRecordInfoFromIdx (
     return NULL;
   }
 
-  for (Idx = (EFI_IFR_RECORDINFO_IDX_START + 1), pNode = mIfrRecordListHead; 
-       (Idx != RecordIdx) && (pNode != NULL); 
+  for (Idx = (EFI_IFR_RECORDINFO_IDX_START + 1), pNode = mIfrRecordListHead;
+       (Idx != RecordIdx) && (pNode != NULL);
        Idx++, pNode = pNode->mNext)
   ;
 
@@ -560,8 +560,8 @@ CIfrRecordInfoDB::GetRecordInfoFromIdx (
 
 UINT32
 CIfrRecordInfoDB::IfrRecordRegister (
-  IN UINT32 LineNo, 
-  IN CHAR8  *IfrBinBuf, 
+  IN UINT32 LineNo,
+  IN CHAR8  *IfrBinBuf,
   IN UINT8  BinBufLen,
   IN UINT32 Offset
   )
@@ -590,7 +590,7 @@ CIfrRecordInfoDB::IfrRecordRegister (
 
 VOID
 CIfrRecordInfoDB::IfrRecordInfoUpdate (
-  IN UINT32 RecordIdx, 
+  IN UINT32 RecordIdx,
   IN UINT32 LineNo,
   IN CHAR8  *BinBuf,
   IN UINT8  BinBufLen,
@@ -639,7 +639,7 @@ CIfrRecordInfoDB::IfrRecordOutput (
       fprintf (File, ">%08X: ", pNode->mOffset);
       if (pNode->mIfrBinBuf != NULL) {
         for (Index = 0; Index < pNode->mBinBufLen; Index++) {
-          fprintf (File, "%02X ", pNode->mIfrBinBuf[Index]);
+          fprintf (File, "%02X ", (UINT8)(pNode->mIfrBinBuf[Index]));
         }
       }
       fprintf (File, "\n");
@@ -829,11 +829,11 @@ CIfrObj::~CIfrObj (
   VOID
   )
 {
+  gCIfrRecordInfoDB.IfrRecordInfoUpdate (mRecordIdx, mLineNo, mObjBinBuf, mObjBinLen, mPkgOffset);
+
   if ((mDelayEmit == TRUE) && ((gCreateOp == TRUE))) {
     _EMIT_PENDING_OBJ ();
   }
-
-  gCIfrRecordInfoDB.IfrRecordInfoUpdate (mRecordIdx, mLineNo, mObjBinBuf, mObjBinLen, mPkgOffset);
 }
 
 /*
@@ -842,10 +842,10 @@ CIfrObj::~CIfrObj (
 UINT8 gScopeCount = 0;
 
 CIfrOpHeader::CIfrOpHeader (
-  IN UINT8 OpCode, 
+  IN UINT8 OpCode,
   IN VOID *StartAddr,
-  IN UINT8 Length 
-  ) : mHeader ((EFI_IFR_OP_HEADER *)StartAddr) 
+  IN UINT8 Length
+  ) : mHeader ((EFI_IFR_OP_HEADER *)StartAddr)
 {
   mHeader->OpCode = OpCode;
   mHeader->Length = (Length == 0) ? gOpcodeSizesScopeTable[OpCode].mSize : Length;

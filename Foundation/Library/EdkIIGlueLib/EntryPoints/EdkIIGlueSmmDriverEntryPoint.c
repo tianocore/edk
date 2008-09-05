@@ -319,6 +319,11 @@ _ModuleEntryPoint (
   mBS = SystemTable->BootServices;
 
   //
+  // Initialize gBS as ASSERT needs it
+  //
+  gBS = mBS;
+
+  //
   // Retrieve the Loaded Image Protocol
   //
   Status = mBS->HandleProtocol (

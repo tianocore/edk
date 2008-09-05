@@ -56,9 +56,9 @@ struct SConfigInfo {
 };
 
 struct SConfigItem {
-  INT8          *mId;
-  INT8          *mInfo;
-  SConfigInfo   *mInfoStrList;
+  INT8          *mName;         // varstore name
+  INT8          *mId;           // varstore ID
+  SConfigInfo   *mInfoStrList;  // list of Offset/Value in the varstore
   SConfigItem   *mNext;
 
 public:

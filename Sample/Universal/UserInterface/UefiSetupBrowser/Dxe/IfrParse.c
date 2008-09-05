@@ -677,6 +677,9 @@ Returns:
 {
   if (((Operand >= EFI_IFR_EQ_ID_VAL_OP) && (Operand <= EFI_IFR_NOT_OP)) ||
       ((Operand >= EFI_IFR_MATCH_OP) && (Operand <= EFI_IFR_SPAN_OP)) ||
+      (Operand == EFI_IFR_TO_LOWER_OP) ||
+      (Operand == EFI_IFR_TO_UPPER_OP) ||
+      (Operand == EFI_IFR_VERSION_OP)  ||
       (Operand == EFI_IFR_CATENATE_OP)
      ) {
     return TRUE;

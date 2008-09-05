@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation
+Copyright (c) 2004 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -938,12 +938,16 @@ Returns:
     Status = ShowProgress (TimeoutDefault);
     gBS->RaiseTPL (EFI_TPL_DRIVER);
 
+    //
+    // Ensure screen is clear when switch Console from Graphics mode to Text mode
+    //
+    gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+    gST->ConOut->ClearScreen (gST->ConOut);
+
     if (EFI_ERROR (Status)) {
       //
       // Timeout or user press enter to continue
       //
-      gST->ConOut->EnableCursor (gST->ConOut, TRUE);
-      gST->ConOut->ClearScreen (gST->ConOut);
       goto Exit;
     }
   }

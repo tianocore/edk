@@ -169,15 +169,14 @@ GetUnicodeStringTextOrSize (
 --*/  
 {
   UINTN  StringSize;
-  CHAR16 Zero;
   UINT8  *StringPtr;
   
   ASSERT (StringSrc != NULL && BufferSize != NULL);
 
-  EfiZeroMem (&Zero, sizeof (CHAR16));
   StringSize = sizeof (CHAR16);
   StringPtr  = StringSrc;
-  while (EfiCompareMem (StringPtr, &Zero, sizeof (CHAR16)) != 0) {
+
+  while ((*StringPtr != 0) || (*(StringPtr + 1) != 0)) {
     StringSize += sizeof (CHAR16);
     StringPtr += sizeof (CHAR16);
   }

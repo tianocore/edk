@@ -42,6 +42,7 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
   $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(EDK_SOURCE)\Foundation\Library\Dxe\UefiEfiIfrSupportLib
   ..\..\UsbBus\Dxe
   ..\..\UsbLib\Dxe
 
@@ -49,6 +50,7 @@ COMPONENT_TYPE       = BS_DRIVER
   EdkGuidLib
   EfiProtocolLib
   EfiDriverLib
+  UefiEfiIfrSupportLib
   UsbDxeLib
 
 [nmake.common]

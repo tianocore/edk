@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                  
+Copyright (c) 2006 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -2042,7 +2042,6 @@ DevPathFromTextMedia (
   return (EFI_DEVICE_PATH_PROTOCOL *) Media;
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 EFI_DEVICE_PATH_PROTOCOL *
 DevPathFromTextFv (
   IN CHAR16 *TextDeviceNode
@@ -2082,7 +2081,6 @@ DevPathFromTextFvFile (
 
   return (EFI_DEVICE_PATH_PROTOCOL *) FvFile;
 }
-#endif
 
 EFI_DEVICE_PATH_PROTOCOL *
 DevPathFromTextBBS (
@@ -2158,7 +2156,7 @@ DevPathFromTextSata (
     Sata->PortMultiplierPortNumber = (UINT16) Xtoi (Param2);
     Param2                         = Param3;
   } else {
-    Sata->PortMultiplierPortNumber = 0;
+    Sata->PortMultiplierPortNumber = SATA_HBA_DIRECT_CONNECT_FLAG;
   }
   Sata->Lun = (UINT16) Xtoi (Param2);
 
@@ -2276,12 +2274,10 @@ DEVICE_PATH_FROM_TEXT_TABLE DevPathFromTextTable[] = {
   DevPathFromTextVenMEDIA,
   L"Media",
   DevPathFromTextMedia,
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
   L"Fv",
   DevPathFromTextFv,
   L"FvFile",
   DevPathFromTextFvFile,
-#endif
   L"BBS",
   DevPathFromTextBBS,
   L"Sata",

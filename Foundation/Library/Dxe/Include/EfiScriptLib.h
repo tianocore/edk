@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -533,18 +533,6 @@ Returns:
 #define SCRIPT_INFORMATION_ASCII_STRING(TableName, String) \
           BootScriptSaveInformationAsciiString(TableName, String)
 
-//
-// For backward compatibility
-//
-#define SCRIPT_INOFRMATION(TableName, Length, Buffer) \
-          BootScriptSaveInformation(TableName, Length, Buffer)
-
-#define SCRIPT_INOFRMATION_UNICODE_STRING(TableName, String) \
-          BootScriptSaveInformationUnicodeString(TableName, String)
-
-#define SCRIPT_INOFRMATION_ASCII_STRING(TableName, String) \
-          BootScriptSaveInformationAsciiString(TableName, String)
-          
 #else
 
 #define INITIALIZE_SCRIPT(ImageHandle, SystemTable)          
@@ -576,15 +564,6 @@ Returns:
 #define SCRIPT_INFORMATION_UNICODE_STRING(TableName, String)
 
 #define SCRIPT_INFORMATION_ASCII_STRING(TableName, String)
-
-//
-// For backward compatibility
-//
-#define SCRIPT_INOFRMATION(TableName, Length, Buffer)
-
-#define SCRIPT_INOFRMATION_UNICODE_STRING(TableName, String)
-
-#define SCRIPT_INOFRMATION_ASCII_STRING(TableName, String)
 
 #endif
 

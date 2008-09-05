@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -20,8 +20,8 @@ Abstract:
 #include "Tiano.h"
 #include "pei.h"
 #include "cpuio.h"
-#include "pcicfg.h"
-#include "pcicfg2.h"
+#include EFI_PPI_CONSUMER (PciCfg)
+#include EFI_PPI_CONSUMER (PciCfg2)
 #include EFI_PROTOCOL_CONSUMER (PciRootBridgeIo)
 
 //
@@ -68,8 +68,6 @@ Returns:
 
 --*/
 {
-  EFI_STATUS  Status;
-
   mPeiServices  = NULL;
   CpuIoPpi      = NULL;
   PciCfgPpi     = NULL;
@@ -79,7 +77,7 @@ Returns:
     // The function is called in PEI phase, use PEI interfaces
     //
     mPeiServices = (EFI_PEI_SERVICES **) SystemTable;
-    ASSERT (mPeiServices == NULL);
+    ASSERT (mPeiServices);
 
     CpuIoPpi  = (**mPeiServices).CpuIo;
     PciCfgPpi = (**mPeiServices).PciCfg;
@@ -136,7 +134,7 @@ Returns:
   EFI_STATUS                      Status;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
-  if (mPeiServices == NULL) {
+  if (mPeiServices != NULL) {
     //
     // The function is called in PEI phase, use PEI interfaces
     //
@@ -197,7 +195,7 @@ Returns:
   EFI_STATUS                      Status;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
-  if (mPeiServices == NULL) {
+  if (mPeiServices != NULL) {
     //
     // The function is called in PEI phase, use PEI interfaces
     //
@@ -260,7 +258,7 @@ Returns:
   UINT8                           *Buffer8;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *RootBridgeIo;
 
-  if (mPeiServices == NULL) {
+  if (mPeiServices != NULL) {
     //
     // The function is called in PEI phase, use PEI interfaces
     //

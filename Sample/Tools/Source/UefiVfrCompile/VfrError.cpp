@@ -1,13 +1,13 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2004 - 2008, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
@@ -25,27 +25,29 @@ Abstract:
 static SVFR_ERROR_HANDLE VFR_ERROR_HANDLE_TABLE [] = {
   { VFR_RETURN_SUCCESS, NULL },
   { VFR_RETURN_ERROR_SKIPED, NULL },
-  { VFR_RETURN_FATAL_ERROR, "fatal error!!" },
+  { VFR_RETURN_FATAL_ERROR, ": fatal error!!" },
 
-  { VFR_RETURN_MISMATCHED, "unexpected token" },
-  { VFR_RETURN_INVALID_PARAMETER, "Invalid parameter" },
-  { VFR_RETURN_OUT_FOR_RESOURCES, "system out of memory" },
-  { VFR_RETURN_UNSUPPORTED, "unsupported" },
-  { VFR_RETURN_REDEFINED, "already defined" },
-  { VFR_RETURN_FORMID_REDEFINED, "form id already defined" },
-  { VFR_RETURN_QUESTIONID_REDEFINED, "question id already defined" },
-  { VFR_RETURN_VARSTOREID_REDEFINED, "varstore id already defined" },
-  { VFR_RETURN_UNDEFINED, "undefined" },
-  { VFR_RETURN_VAR_NOTDEFINED_BY_QUESTION, "some variable has not defined by a question"},
-  { VFR_RETURN_GET_EFIVARSTORE_ERROR, "get efi varstore error"},
-  { VFR_RETURN_EFIVARSTORE_USE_ERROR, "can not use the efi varstore like this" },
-  { VFR_RETURN_EFIVARSTORE_SIZE_ERROR, "unsupport efi varstore size should be <= 8 bytes" },
-  { VFR_RETURN_GET_NVVARSTORE_ERROR, "get name value varstore error" },
-  { VFR_RETURN_QVAR_REUSE, "variable reused by more than one question" }, 
-  { VFR_RETURN_FLAGS_UNSUPPORTED, "flags unsupported" }, 
-  { VFR_RETURN_ERROR_ARRARY_NUM, "array number error" },
-  { VFR_RETURN_DATA_STRING_ERROR, "data field string error or not support"},
-  { VFR_RETURN_CODEUNDEFINED, "Undefined Error Code" }
+  { VFR_RETURN_MISMATCHED, ": unexpected token" },
+  { VFR_RETURN_INVALID_PARAMETER, ": invalid parameter" },
+  { VFR_RETURN_OUT_FOR_RESOURCES, ": system out of memory" },
+  { VFR_RETURN_UNSUPPORTED, ": unsupported" },
+  { VFR_RETURN_REDEFINED, ": already defined" },
+  { VFR_RETURN_FORMID_REDEFINED, ": form id already defined" },
+  { VFR_RETURN_QUESTIONID_REDEFINED, ": question id already defined" },
+  { VFR_RETURN_VARSTOREID_REDEFINED, ": varstore id already defined" },
+  { VFR_RETURN_UNDEFINED, ": undefined" },
+  { VFR_RETURN_VAR_NOTDEFINED_BY_QUESTION, ": some variable has not defined by a question"},
+  { VFR_RETURN_GET_EFIVARSTORE_ERROR, ": get efi varstore error"},
+  { VFR_RETURN_EFIVARSTORE_USE_ERROR, ": can not use the efi varstore like this" },
+  { VFR_RETURN_EFIVARSTORE_SIZE_ERROR, ": unsupport efi varstore size should be <= 8 bytes" },
+  { VFR_RETURN_GET_NVVARSTORE_ERROR, ": get name value varstore error" },
+  { VFR_RETURN_QVAR_REUSE, ": variable reused by more than one question" },
+  { VFR_RETURN_FLAGS_UNSUPPORTED, ": flags unsupported" },
+  { VFR_RETURN_ERROR_ARRARY_NUM, ": array number error" },
+  { VFR_RETURN_DATA_STRING_ERROR, ": data field string error or not support"},
+  { VFR_RETURN_DEFAULT_VALUE_REDEFINED, ": default value re-defined with different value"},
+  { VFR_RETURN_CONSTANT_ONLY, ": only constant is allowed in the expression"},
+  { VFR_RETURN_CODEUNDEFINED, ": undefined Error Code" }
 };
 
 CVfrErrorHandle::CVfrErrorHandle (
@@ -91,7 +93,7 @@ CVfrErrorHandle::SetInputFile (
 }
 
 SVfrFileScopeRecord::SVfrFileScopeRecord (
-  IN INT8     *Record, 
+  IN INT8     *Record,
   IN UINT32   LineNum
   )
 {
@@ -132,7 +134,7 @@ SVfrFileScopeRecord::~SVfrFileScopeRecord (
 
 VOID
 CVfrErrorHandle::ParseFileScopeRecord (
-  IN INT8      *Record, 
+  IN INT8      *Record,
   IN UINT32    WholeScopeLine
   )
 {

@@ -219,8 +219,6 @@ Returns:
   EFI_PHYSICAL_ADDRESS                EntryPoint;
   EFI_PEIM_ENTRY_POINT                PeimEntryPoint;
   VOID*                               PeiCoreReentryPoint;
-  BOOLEAN                             PeimNeedingDispatch;
-  BOOLEAN                             PeimDispatchOnThisPass;
   UINTN                               SaveCurrentPeimCount;
   UINTN                               SaveCurrentFvCount;
   EFI_PEI_FILE_HANDLE                 SaveCurrentFileHandle;
@@ -303,9 +301,15 @@ Returns:
   // satisfied, this dipatcher should run only once.
   //
   do {
-    PeimNeedingDispatch = FALSE;
-    PeimDispatchOnThisPass = FALSE;
-
+    //
+    // In case that reenter PeiCore happens, the last pass record is still available.   
+    //
+    if (!Private->PeimDispatcherReenter) {
+      Private->PeimNeedingDispatch      = FALSE;
+      Private->PeimDispatchOnThisPass   = FALSE;
+    } else {
+      Private->PeimDispatcherReenter    = FALSE;
+    }
     for (FvCount = Private->CurrentPeimFvCount; FvCount < Private->FvCount; FvCount++) {
       Private->CurrentPeimFvCount = FvCount;
       VolumeHandle = Private->Fv[FvCount].FvHeader;
@@ -330,7 +334,7 @@ Returns:
 
         if (Private->Fv[FvCount].PeimState[PeimCount] == PEIM_STATE_NOT_DISPATCHED) {
           if (!DepexSatisfied (Private, PeimFileHandle, PeimCount)) {
-            PeimNeedingDispatch = TRUE;
+            Private->PeimNeedingDispatch  =   TRUE;
           } else {
             Status = PeiLoadImage (
                        PeiServices, 
@@ -372,7 +376,7 @@ Returns:
                 //
                 PeimEntryPoint = (EFI_PEIM_ENTRY_POINT)(UINTN)EntryPoint;
                 PeimEntryPoint (PeimFileHandle, PeiServices);
-                PeimDispatchOnThisPass = TRUE;
+                Private->PeimDispatchOnThisPass = TRUE;
               }
 
               PEI_REPORT_STATUS_CODE_CODE (
@@ -405,6 +409,10 @@ Returns:
               //
               Private->CurrentPeimCount++;
 
+              //
+              // Indicate that PeiCore reenter
+              //
+              Private->PeimDispatcherReenter  = TRUE;
               //
               // Migrate IDT from CAR into real memory, so after stack switches to
               // the new memory, the caller can get memory version PeiServiceTable. 
@@ -517,7 +525,7 @@ Returns:
     //  pass. If we did not dispatch a PEIM there is no point in trying again
     //  as it will fail the next time too (nothing has changed).
     //
-  } while (PeimNeedingDispatch && PeimDispatchOnThisPass);
+  } while (Private->PeimNeedingDispatch && Private->PeimDispatchOnThisPass);
 }
 
 

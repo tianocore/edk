@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,10 +32,6 @@ Abstract:
 #include EFI_PROTOCOL_DEFINITION (CustomizedDecompress)
 #include EFI_GUID_DEFINITION(MemoryAllocationHob)
 
-
-#pragma warning( disable : 4305 )
-
-EFI_PEI_SERVICES                  **gPeiServices;
 
 //
 // Interface and GUID for the Decompression APIs shared between PEI and DXE
@@ -957,7 +953,7 @@ Returns:
 EFI_PHYSICAL_ADDRESS
 AllocateZeroedHobPages (
   IN  EFI_PEI_SERVICES       **PeiServices,
-  IN  UINTN   NumberOfPages
+  IN  UINTN                  NumberOfPages
   )
 /*++
 
@@ -975,57 +971,9 @@ Returns:
 
 --*/
 {
- EFI_PHYSICAL_ADDRESS    Page;
- EFI_STATUS          Status;
-#if 0
-  
-  UINTN                   NumberOfBytes;
-  UINT64                  AlignmentOffset;
-  EFI_PEI_HOB_POINTERS        Hob;
-  
-
-  //
-  // EFI pages are 4K by convention. EFI pages are independent of processor page size
-  //
-  NumberOfBytes = 0x1000 * NumberOfPages;
-
-  //
-  // Allocate the EFI pages out of Hob Free Memory Heap.
-  // Heap grows down from top of Free Memory. HOB grows up.
-  //
-  //  Page = gHob->Phit.EfiFreeMemoryTop - NumberOfBytes + 1;
-  Status = (*PeiServices)->GetHobList (PeiServices, &Hob.Raw);
-  Page = Hob.HandoffInformationTable->EfiFreeMemoryTop -  NumberOfBytes + 1;
-
-  //
-  // Make sure page is 4K aligned.
-  //
-  AlignmentOffset = Page & EFI_PAGE_MASK;
-  NumberOfBytes += (UINTN)AlignmentOffset;
-  Page -= AlignmentOffset;
-
-  if (Page < Hob.HandoffInformationTable->EfiFreeMemoryBottom) {
-    PEI_DEBUG ((PeiServices, EFI_D_ERROR, "Pages Requested %d\n", NumberOfPages));
-    ASSERT_PEI_ERROR (PeiServices, FALSE);
-    return 0;
-  }
-
-  EfiCommonLibZeroMem ((VOID *)(UINTN)Page, NumberOfBytes);
-
-  Hob.HandoffInformationTable->EfiFreeMemoryTop -= NumberOfBytes;
-
-  Status = PeiBuildHobMemoryAllocation (
-             PeiServices,
-             Page,  // now the bottom of our allocation
-             NumberOfBytes,
-             NULL,
-             4
-             );
-#endif
-    
-  //
-  // Allocate 128KB for the Stack
-  //
+  EFI_STATUS              Status;
+  EFI_PHYSICAL_ADDRESS    Page;
+ 
   Status = (*PeiServices)->AllocatePages (
                              PeiServices,
                              EfiBootServicesData,
@@ -1033,7 +981,7 @@ Returns:
                              &Page
                              );
   if (!EFI_ERROR (Status)) {
-    EfiCommonLibZeroMem ((VOID *) Page, EFI_PAGES_TO_SIZE (NumberOfPages));
+    EfiCommonLibZeroMem ((VOID *)(UINTN)Page, EFI_PAGES_TO_SIZE (NumberOfPages));
   }
   return Page;
 }

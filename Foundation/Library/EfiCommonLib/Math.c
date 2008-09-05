@@ -76,6 +76,21 @@ Returns:
 }
 
 UINT64
+Power10U64 (
+  IN UINT64   Operand,
+  IN UINTN    Power
+  )
+{
+  UINT64 Result;
+
+  Result = Operand;
+  while (Power-- > 0) {
+    Result *= 10;
+  }
+  return Result;
+}
+
+UINT64
 RShiftU64 (
   IN UINT64   Operand,
   IN UINTN    Count

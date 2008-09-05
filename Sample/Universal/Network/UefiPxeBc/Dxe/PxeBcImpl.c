@@ -218,8 +218,9 @@ Returns:
     //
     // Zero those arrays to record the varies numbers of DHCP OFFERS.
     //
-    Private->NumOffers   = 0;
-    Private->BootpIndex  = 0;
+    Private->GotProxyOffer = FALSE;
+    Private->NumOffers     = 0;
+    Private->BootpIndex    = 0;
     NetZeroMem (Private->ServerCount, sizeof (Private->ServerCount));
     NetZeroMem (Private->ProxyIndex, sizeof (Private->ProxyIndex));
 

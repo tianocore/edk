@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -28,11 +28,14 @@ Revision History
 
 #include "IfrLibrary.h"
 
+extern EFI_HII_HANDLE    gStringPackHandle;
 //
 // This is the VFR compiler generated header file which defines the
 // string identifiers.
 //
 #include "BdsStrDefs.h"
+
+extern UINT8  BdsStrings[];
 
 //
 // String Definition Guid for BDS Platform
@@ -42,8 +45,8 @@ Revision History
     0x7777E939, 0xD57E, 0x4DCB, 0xA0, 0x8E, 0x64, 0xD7, 0x98, 0x57, 0x1E, 0x0F \
   }
 
-EFI_HII_HANDLE    gStringPackHandle;
-EFI_HII_PROTOCOL  *Hii;
+
+extern EFI_HII_PROTOCOL  *Hii;
 
 CHAR16            *
 GetStringById (

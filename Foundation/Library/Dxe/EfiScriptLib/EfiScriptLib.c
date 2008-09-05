@@ -23,6 +23,56 @@ Abstract:
 
 EFI_BOOT_SCRIPT_SAVE_PROTOCOL *mBootScriptSave;
 
+STATIC
+UINTN
+EfiScriptLibAsciiStrLen (
+  IN CHAR8   *String
+  )
+/*++
+
+Routine Description:
+  Return the number of Ascii characters in String. This is not the same as
+  the length of the string in bytes.
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of Ascii characters in String
+
+--*/
+{
+  UINTN Length;
+  
+  for (Length=0; *String; String++, Length++);
+  return Length;
+}
+
+STATIC
+UINTN
+EfiScriptLibStrLen (
+  IN CHAR16   *String
+  )
+/*++
+
+Routine Description:
+  Return the number of Unicode characters in String. This is not the same as
+  the length of the string in bytes.
+
+Arguments:
+  String - String to process
+
+Returns:
+  Number of Unicode characters in String
+
+--*/
+{
+  UINTN Length;
+  
+  for (Length=0; *String; String++, Length++);
+  return Length;
+}
+
 EFI_STATUS
 EFIAPI
 BootScriptSaveInitialize (
@@ -622,7 +672,7 @@ Returns:
 {
   return BootScriptSaveInformation (      
            TableName,
-           (UINT32) EfiStrLen (String) * 2 + 2, 
+           (UINT32) EfiScriptLibStrLen (String) * 2 + 2, 
            (EFI_PHYSICAL_ADDRESS)String
            );
 }
@@ -655,7 +705,7 @@ Returns:
 {
   return BootScriptSaveInformation (      
            TableName,
-           (UINT32) EfiAsciiStrLen (String) + 1, 
+           (UINT32) EfiScriptLibAsciiStrLen (String) + 1, 
            (EFI_PHYSICAL_ADDRESS)String
            );
 }

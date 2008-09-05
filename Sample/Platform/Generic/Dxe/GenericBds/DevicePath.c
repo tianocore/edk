@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -31,9 +31,7 @@ EFI_GUID  mEfiWinNtGopGuid                           = EFI_WIN_NT_GOP_GUID;
 EFI_GUID  mEfiWinNtSerialPortGuid                    = EFI_WIN_NT_SERIAL_PORT_GUID;
 EFI_GUID  mEfiDevicePathMessagingUartFlowControlGuid = DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL;
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 EFI_GUID mEfiDevicePathMessagingSASGuid = DEVICE_PATH_MESSAGING_SAS;
-#endif
 
 VOID *
 ReallocatePool (
@@ -257,7 +255,7 @@ DevPathMemMap (
   CatPrint (
     Str,
     L"MemMap(%d:%lx-%lx)",
-    MemMap->MemoryType,
+    (UINTN) MemMap->MemoryType,
     MemMap->StartingAddress,
     MemMap->EndingAddress
     );
@@ -302,9 +300,7 @@ Returns:
   UINTN               DataLength;
   UINTN               Index;
   UINT32              FlowControlMap;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   UINT16              Info;
-#endif
 
   Vendor  = DevPath;
 
@@ -360,14 +356,13 @@ Returns:
       }
 
       return ;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
     } else if (EfiCompareGuid (&Vendor->Guid, &mEfiDevicePathMessagingSASGuid)) {
       CatPrint (
         Str,
         L"SAS(%lx,%lx,%x,",
         ((SAS_DEVICE_PATH *) Vendor)->SasAddress,
         ((SAS_DEVICE_PATH *) Vendor)->Lun,
-        ((SAS_DEVICE_PATH *) Vendor)->RelativeTargetPort
+        (UINTN) ((SAS_DEVICE_PATH *) Vendor)->RelativeTargetPort
         );
       Info = (((SAS_DEVICE_PATH *) Vendor)->DeviceTopology);
       if ((Info & 0x0f) == 0) {
@@ -391,7 +386,6 @@ Returns:
 
       CatPrint (Str, L"%x)", (UINTN) ((SAS_DEVICE_PATH *) Vendor)->Reserved);
       return ;
-#endif
     } else if (EfiCompareGuid (&Vendor->Guid, &gEfiDebugPortProtocolGuid)) {
       CatPrint (Str, L"DebugPort()");
       return ;
@@ -452,16 +446,12 @@ DevPathExtendedAcpi (
   UINT16                          Anchor;
   CHAR8                           *AsChar8Array;
 
-  ASSERT (Str != NULL);
-  ASSERT (DevPath != NULL);
-
   HIDSTRIdx    = 0;
   UIDSTRIdx    = 0;
   CIDSTRIdx    = 0;
   ExtendedAcpi = DevPath;
   Length       = DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) ExtendedAcpi);
 
-  ASSERT (Length >= 19);
   AsChar8Array = (CHAR8 *) ExtendedAcpi;
 
   //
@@ -617,7 +607,7 @@ DevPath1394 (
   F1394_DEVICE_PATH *F1394;
 
   F1394 = DevPath;
-  CatPrint (Str, L"1394(%g)", &F1394->Guid);
+  CatPrint (Str, L"1394(%lx)", &F1394->Guid);
 }
 
 VOID
@@ -632,7 +622,6 @@ DevPathUsb (
   CatPrint (Str, L"Usb(%x,%x)", (UINTN) Usb->ParentPortNumber, (UINTN) Usb->InterfaceNumber);
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 VOID
 DevPathUsbWWID (
   IN OUT POOL_PRINT       *Str,
@@ -662,7 +651,6 @@ DevPathLogicalUnit (
   LogicalUnit = DevPath;
   CatPrint (Str, L"Unit(%x)", (UINTN) LogicalUnit->Lun);
 }
-#endif
 
 VOID
 DevPathUsbClass (
@@ -693,13 +681,22 @@ DevPathSata (
   SATA_DEVICE_PATH *Sata;
 
   Sata = DevPath;
-  CatPrint (
-    Str,
-    L"Sata(%x,%x,%x)",
-    (UINTN) Sata->HBAPortNumber,
-    (UINTN) Sata->PortMultiplierPortNumber,
-    (UINTN) Sata->Lun
-    );
+  if (Sata->PortMultiplierPortNumber & SATA_HBA_DIRECT_CONNECT_FLAG) {
+    CatPrint (
+      Str,
+      L"Sata(%x,%x)",
+      (UINTN) Sata->HBAPortNumber,
+      (UINTN) Sata->Lun
+      );
+  } else {
+    CatPrint (
+      Str,
+      L"Sata(%x,%x,%x)",
+      (UINTN) Sata->HBAPortNumber,
+      (UINTN) Sata->PortMultiplierPortNumber,
+      (UINTN) Sata->Lun
+      );
+  }
 }
 
 VOID
@@ -854,7 +851,7 @@ DevPathUart (
   if (Uart->BaudRate == 0) {
     CatPrint (Str, L"Uart(DEFAULT,%c,", Parity);
   } else {
-    CatPrint (Str, L"Uart(%d,%c,", Uart->BaudRate, Parity);
+    CatPrint (Str, L"Uart(%ld,%c,", Uart->BaudRate, Parity);
   }
 
   if (Uart->DataBits == 0) {
@@ -886,7 +883,6 @@ DevPathUart (
   }
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 VOID
 DevPathiSCSI (
   IN OUT POOL_PRINT       *Str,
@@ -896,15 +892,12 @@ DevPathiSCSI (
   ISCSI_DEVICE_PATH_WITH_NAME *iSCSI;
   UINT16                      Options;
 
-  ASSERT (Str != NULL);
-  ASSERT (DevPath != NULL);
-
   iSCSI = DevPath;
   CatPrint (
     Str,
-    L"iSCSI(%s,%x,%lx,",
+    L"iSCSI(%a,%x,%lx,",
     iSCSI->iSCSITargetName,
-    iSCSI->TargetPortalGroupTag,
+    (UINTN) iSCSI->TargetPortalGroupTag,
     iSCSI->Lun
     );
 
@@ -922,7 +915,6 @@ DevPathiSCSI (
 
   CatPrint (Str, L"%s)", (iSCSI->NetworkProtocol == 0) ? L"TCP" : L"reserved");
 }
-#endif
 
 VOID
 DevPathHardDrive (
@@ -1076,6 +1068,18 @@ DevPathNodeUnknown (
   CatPrint (Str, L"?");
 }
 
+VOID
+DevPathFvPath (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  MEDIA_FW_VOL_DEVICE_PATH *FvPath;
+
+  FvPath = DevPath;
+  CatPrint (Str, L"Fv(%g)", &FvPath->NameGuid);
+}
+
 DEVICE_PATH_STRING_TABLE  DevPathTable[] = {
   HARDWARE_DEVICE_PATH,
   HW_PCI_DP,
@@ -1116,14 +1120,12 @@ DEVICE_PATH_STRING_TABLE  DevPathTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_USB_DP,
   DevPathUsb,
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   MESSAGING_DEVICE_PATH,
   MSG_USB_WWID_DP,
   DevPathUsbWWID,
   MESSAGING_DEVICE_PATH,
   MSG_DEVICE_LOGICAL_UNIT_DP,
   DevPathLogicalUnit,
-#endif
   MESSAGING_DEVICE_PATH,
   MSG_USB_CLASS_DP,
   DevPathUsbClass,
@@ -1151,11 +1153,9 @@ DEVICE_PATH_STRING_TABLE  DevPathTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_VENDOR_DP,
   DevPathVendor,
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   MESSAGING_DEVICE_PATH,
   MSG_ISCSI_DP,
   DevPathiSCSI,
-#endif
   MEDIA_DEVICE_PATH,
   MEDIA_HARDDRIVE_DP,
   DevPathHardDrive,
@@ -1171,11 +1171,12 @@ DEVICE_PATH_STRING_TABLE  DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_PROTOCOL_DP,
   DevPathMediaProtocol,
-#if (EFI_SPECIFICATION_VERSION != 0x00020000)
+  MEDIA_DEVICE_PATH,
+  MEDIA_FV_DP,
+  DevPathFvPath,
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   DevPathFvFilePath,
-#endif
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   DevPathBssBss,

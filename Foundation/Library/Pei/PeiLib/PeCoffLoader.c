@@ -797,6 +797,8 @@ Returns:
       //
       RelocBase = RelocBaseEnd = 0;
     }
+
+    ImageContext->EntryPoint = BaseAddress + Hdr.Pe32->OptionalHeader.AddressOfEntryPoint;
   } else {
     Hdr.Te             = (EFI_TE_IMAGE_HEADER *)(UINTN)(ImageContext->ImageAddress);
     Adjust             = (UINT64) (BaseAddress - Hdr.Te->StrippedSize + sizeof (EFI_TE_IMAGE_HEADER) - Hdr.Te->ImageBase);
@@ -813,6 +815,8 @@ Returns:
                                     Hdr.Te->StrippedSize
                                     );
     RelocBaseEnd = (EFI_IMAGE_BASE_RELOCATION *) ((UINTN) RelocBase + (UINTN) RelocDir->Size - 1);
+
+    ImageContext->EntryPoint = Hdr.Te->ImageBase + Hdr.Te->AddressOfEntryPoint;
   }
   
   //

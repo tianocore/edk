@@ -1,13 +1,13 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2004 - 2008, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
@@ -41,7 +41,7 @@ CVfrCompiler::IS_RUN_STATUS (
 
 VOID
 CVfrCompiler::OptionInitialization (
-  IN INT32      Argc, 
+  IN INT32      Argc,
   IN INT8       **Argv
   )
 {
@@ -144,7 +144,7 @@ Fail:
   if (mOptions.IncludePaths != NULL) {
     delete mOptions.IncludePaths;
     mOptions.IncludePaths                = NULL;
-  } 
+  }
   if (mOptions.CPreprocessorOptions != NULL) {
     delete mOptions.CPreprocessorOptions;
     mOptions.CPreprocessorOptions        = NULL;
@@ -221,7 +221,11 @@ CVfrCompiler::SetBaseFileName (
   }
 
   pFileName = mOptions.VfrFileName;
-  while ((pPath = strchr (pFileName, '\\')) != NULL) {
+  while (
+    ((pPath = strchr (pFileName, '\\')) != NULL) ||
+    ((pPath = strchr (pFileName, '/')) != NULL)
+    )
+  {
     pFileName = pPath + 1;
   }
 
@@ -304,7 +308,7 @@ CVfrCompiler::SetRecordListFileName (
 }
 
 CVfrCompiler::CVfrCompiler (
-  IN INT32      Argc, 
+  IN INT32      Argc,
   IN INT8       **Argv
   )
 {
@@ -337,14 +341,14 @@ CVfrCompiler::~CVfrCompiler (
   SET_RUN_STATUS(STATUS_DEAD);
 }
 
-VOID 
+VOID
 CVfrCompiler::Usage (
   VOID
   )
 {
   UINT32 Index;
   CONST  INT8 *Help[] = {
-    " ", 
+    " ",
     "VfrCompile version " VFR_COMPILER_VERSION,
     " ",
     "  Usage: VfrCompile {options} [VfrFile]",
@@ -390,7 +394,7 @@ CVfrCompiler::PreProcess (
   }
   fclose (pVfrFile);
 
-  CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) + 
+  CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) +
   	       strlen (mOptions.VfrFileName) + strlen (mOptions.PreprocessorOutputFileName);
   if (mOptions.CPreprocessorOptions != NULL) {
     CmdLen += strlen (mOptions.CPreprocessorOptions);
@@ -609,7 +613,7 @@ Err1:
 
 INT32
 main (
-  IN INT32             Argc, 
+  IN INT32             Argc,
   IN INT8              **Argv
   )
 {

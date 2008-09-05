@@ -24,7 +24,9 @@ Abstract:
 STATIC
 VOID
 IScsiInitIbfTableHeader (
-  IN EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_HEADER  *Header
+  IN EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_HEADER  *Header,
+  IN UINT8                                      *OemId,
+  IN UINT64                                     *OemTableId
   )
 /*++
 
@@ -49,11 +51,8 @@ Returns:
   Header->Revision  = EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_REVISION;
   Header->Checksum  = 0;
 
-  Header->OemId[0]  = 'I';
-  Header->OemId[1]  = 'N';
-  Header->OemId[2]  = 'T';
-  Header->OemId[3]  = 'E';
-  Header->OemId[4]  = 'L';
+  NetCopyMem (Header->OemId, OemId, sizeof (Header->OemId));
+  Header->OemTableId = *OemTableId;
 }
 
 STATIC
@@ -541,28 +540,54 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                                Status;
-  UINTN                                     TableHandle;
-  EFI_ACPI_SUPPORT_PROTOCOL                 *AcpiSupport;
-  EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_HEADER *Table;
-  UINTN                                     HandleCount;
-  EFI_HANDLE                                *HandleBuffer;
-  UINT8                                     *Heap;
-  INTN                                      Index;
-  EFI_ACPI_TABLE_VERSION                    Version;
-  UINT32                                    Signature;
+  EFI_STATUS                                    Status;
+  UINTN                                         TableHandle;
+  EFI_ACPI_SUPPORT_PROTOCOL                     *AcpiSupport;
+  EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_HEADER     *Table;
+  EFI_ACPI_3_0_ROOT_SYSTEM_DESCRIPTION_POINTER  *Rsdp;
+  EFI_ACPI_DESCRIPTION_HEADER                   *Rsdt;
+  UINTN                                         HandleCount;
+  EFI_HANDLE                                    *HandleBuffer;
+  UINT8                                         *Heap;
+  UINTN                                         Index;
+  INTN                                          TableIndex;
+  EFI_ACPI_TABLE_VERSION                        Version;
+  UINT32                                        Signature;
 
   Status = gBS->LocateProtocol (&gEfiAcpiSupportGuid, NULL, &AcpiSupport);
   if (EFI_ERROR (Status)) {
     return ;
   }
+
+  //
+  // Find ACPI table RSD_PTR from system table
+  //
+  for (Index = 0, Rsdp = NULL; Index < gST->NumberOfTableEntries; Index++) {
+    if (EfiCompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), &gEfiAcpi30TableGuid) ||
+      EfiCompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), &gEfiAcpi20TableGuid) ||
+      EfiCompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), &gEfiAcpiTableGuid)
+      ) {
+      //
+      // A match was found.
+      //
+      Rsdp = (EFI_ACPI_3_0_ROOT_SYSTEM_DESCRIPTION_POINTER *) gST->ConfigurationTable[Index].VendorTable;
+      break;
+    }
+  }
+
+  if (Rsdp == NULL) {
+    return ;
+  } else {
+    Rsdt = (EFI_ACPI_DESCRIPTION_HEADER *) (UINTN) Rsdp->RsdtAddress;
+  }
+
   //
   // Try to remove the old iSCSI Boot Firmware Table.
   //
-  for (Index = 0;; Index++) {
+  for (TableIndex = 0;; TableIndex++) {
     Status = AcpiSupport->GetAcpiTable (
                             AcpiSupport,
-                            Index,
+                            TableIndex,
                             &Table,
                             &Version,
                             &TableHandle
@@ -618,7 +643,7 @@ Returns:
   //
   // Fill in the various section of the iSCSI Boot Firmware Table.
   //
-  IScsiInitIbfTableHeader (Table);
+  IScsiInitIbfTableHeader (Table, Rsdt->OemId, &Rsdt->OemTableId);
   IScsiInitControlSection (Table, HandleCount);
   IScsiFillInitiatorSection (Table, &Heap, HandleBuffer[0]);
   IScsiFillNICAndTargetSections (Table, &Heap, HandleCount, HandleBuffer);

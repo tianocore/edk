@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2007, Intel Corporation
+Copyright (c) 2004 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -439,7 +439,7 @@ DisplayForm (
 
   EfiCopyMem (&LocalScreen, &gScreenDimensions, sizeof (EFI_SCREEN_DESCRIPTOR));
 
-  StringPtr = GetToken (Selection->FormSet->FormSetTitle, Handle);
+  StringPtr = GetToken (Selection->Form->FormTitle, Handle);
 
   if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
     gST->ConOut->SetAttribute (gST->ConOut, TITLE_TEXT | TITLE_BACKGROUND);
@@ -570,6 +570,7 @@ InitializeBrowserStrings (
   gPlusString           = GetToken (STRING_TOKEN (PLUS_STRING), gHiiHandle);
   gMinusString          = GetToken (STRING_TOKEN (MINUS_STRING), gHiiHandle);
   gAdjustNumber         = GetToken (STRING_TOKEN (ADJUST_NUMBER), gHiiHandle);
+  gSaveChanges          = GetToken (STRING_TOKEN (SAVE_CHANGES), gHiiHandle);
   return ;
 }
 
@@ -605,6 +606,7 @@ FreeBrowserStrings (
   EfiLibSafeFreePool (gPlusString);
   EfiLibSafeFreePool (gMinusString);
   EfiLibSafeFreePool (gAdjustNumber);
+  EfiLibSafeFreePool (gSaveChanges);
   return ;
 }
 
@@ -791,6 +793,9 @@ SetupBrowser (
   EFI_HII_VALUE                   *HiiValue;
   FORM_BROWSER_STATEMENT          *Statement;
   EFI_HII_CONFIG_ACCESS_PROTOCOL  *ConfigAccess;
+  EFI_INPUT_KEY                   Key;
+  CHAR16                          YesResponse;
+  CHAR16                          NoResponse;
 
   gMenuRefreshHead = NULL;
   gResetRequired = FALSE;
@@ -924,6 +929,32 @@ SetupBrowser (
         // Force to reparse IFR binary of target Formset
         //
         Selection->Action = UI_ACTION_REFRESH_FORMSET;
+
+        //
+        // Uncommitted data will be lost after IFR binary re-pasing, so confirm on whether to save
+        //
+        if (gNvUpdateRequired) {
+          Status      = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+
+          YesResponse = gYesResponse[0];
+          NoResponse  = gNoResponse[0];
+
+          do {
+            CreateDialog (3, TRUE, 0, NULL, &Key, gEmptyString, gSaveChanges, gEmptyString);
+          } while
+          (
+            (Key.ScanCode != SCAN_ESC) &&
+            ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (NoResponse | UPPER_LOWER_CASE_OFFSET)) &&
+            ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (YesResponse | UPPER_LOWER_CASE_OFFSET))
+          );
+
+          if ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) == (YesResponse | UPPER_LOWER_CASE_OFFSET)) {
+            //
+            // If the user hits the YesResponse key
+            //
+            SubmitForm (Selection->FormSet, Selection->Form);
+          }
+        }
       }
     }
   } while (Selection->Action == UI_ACTION_REFRESH_FORM);

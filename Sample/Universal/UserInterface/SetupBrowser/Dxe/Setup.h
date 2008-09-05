@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -332,69 +332,69 @@ typedef struct {
 //
 // Head of the Binary structures
 //
-EFI_IFR_BINARY    *gBinaryDataHead;
+extern EFI_IFR_BINARY    *gBinaryDataHead;
 
 //
 // The IFR binary that the user chose to run
 //
-UINTN             gActiveIfr;
+extern UINTN             gActiveIfr;
 
-EFI_HII_PROTOCOL  *Hii;
+extern EFI_HII_PROTOCOL  *Hii;
 
-VOID              *CachedNVEntry;
-BANNER_DATA       *BannerData;
-EFI_HII_HANDLE    FrontPageHandle;
-STRING_REF        FrontPageTimeOutTitle;
-UINT16            FrontPageTimeOutValue;
-UINTN             gClassOfVfr;
-UINTN             gFunctionKeySetting;
-BOOLEAN           gResetRequired;
-BOOLEAN           gExitRequired;
-BOOLEAN           gSaveRequired;
-BOOLEAN           gNvUpdateRequired;
-UINT16            gConsistencyId;
-UINTN             gPriorMenuEntry;
-EFI_HII_HANDLE    gHiiHandle;
-BOOLEAN           gFirstIn;
-VOID              *gPreviousValue;
-UINT16            gDirection;
-SCREEN_DESCRIPTOR gScreenDimensions;
-BOOLEAN           gUpArrow;
-BOOLEAN           gDownArrow;
-BOOLEAN           gTimeOnScreen;
-BOOLEAN           gDateOnScreen;
+extern VOID              *CachedNVEntry;
+extern BANNER_DATA       *BannerData;
+extern EFI_HII_HANDLE    FrontPageHandle;
+extern STRING_REF        FrontPageTimeOutTitle;
+extern UINT16            FrontPageTimeOutValue;
+extern UINTN             gClassOfVfr;
+extern UINTN             gFunctionKeySetting;
+extern BOOLEAN           gResetRequired;
+extern BOOLEAN           gExitRequired;
+extern BOOLEAN           gSaveRequired;
+extern BOOLEAN           gNvUpdateRequired;
+extern UINT16            gConsistencyId;
+extern UINTN             gPriorMenuEntry;
+extern EFI_HII_HANDLE    gHiiHandle;
+extern BOOLEAN           gNeedSwitchToTextMode;
+extern VOID              *gPreviousValue;
+extern UINT16            gDirection;
+extern SCREEN_DESCRIPTOR gScreenDimensions;
+extern BOOLEAN           gUpArrow;
+extern BOOLEAN           gDownArrow;
+extern BOOLEAN           gTimeOnScreen;
+extern BOOLEAN           gDateOnScreen;
 
 //
 // Browser Global Strings
 //
-CHAR16            *gFunctionOneString;
-CHAR16            *gFunctionTwoString;
-CHAR16            *gFunctionNineString;
-CHAR16            *gFunctionTenString;
-CHAR16            *gEnterString;
-CHAR16            *gEnterCommitString;
-CHAR16            *gEscapeString;
-CHAR16            *gMoveHighlight;
-CHAR16            *gMakeSelection;
-CHAR16            *gNumericInput;
-CHAR16            *gToggleCheckBox;
-CHAR16            *gPromptForPassword;
-CHAR16            *gPromptForNewPassword;
-CHAR16            *gConfirmPassword;
-CHAR16            *gConfirmError;
-CHAR16            *gPressEnter;
-CHAR16            *gEmptyString;
-CHAR16            *gAreYouSure;
-CHAR16            *gYesResponse;
-CHAR16            *gNoResponse;
-CHAR16            *gMiniString;
-CHAR16            *gPlusString;
-CHAR16            *gMinusString;
-CHAR16            *gAdjustNumber;
+extern CHAR16            *gFunctionOneString;
+extern CHAR16            *gFunctionTwoString;
+extern CHAR16            *gFunctionNineString;
+extern CHAR16            *gFunctionTenString;
+extern CHAR16            *gEnterString;
+extern CHAR16            *gEnterCommitString;
+extern CHAR16            *gEscapeString;
+extern CHAR16            *gMoveHighlight;
+extern CHAR16            *gMakeSelection;
+extern CHAR16            *gNumericInput;
+extern CHAR16            *gToggleCheckBox;
+extern CHAR16            *gPromptForPassword;
+extern CHAR16            *gPromptForNewPassword;
+extern CHAR16            *gConfirmPassword;
+extern CHAR16            *gConfirmError;
+extern CHAR16            *gPressEnter;
+extern CHAR16            *gEmptyString;
+extern CHAR16            *gAreYouSure;
+extern CHAR16            *gYesResponse;
+extern CHAR16            *gNoResponse;
+extern CHAR16            *gMiniString;
+extern CHAR16            *gPlusString;
+extern CHAR16            *gMinusString;
+extern CHAR16            *gAdjustNumber;
 
-CHAR16            gPromptBlockWidth;
-CHAR16            gOptionBlockWidth;
-CHAR16            gHelpBlockWidth;
+extern CHAR16            gPromptBlockWidth;
+extern CHAR16            gOptionBlockWidth;
+extern CHAR16            gHelpBlockWidth;
 
 //
 // Global Procedure Defines

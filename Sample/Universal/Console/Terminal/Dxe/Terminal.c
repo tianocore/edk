@@ -814,7 +814,7 @@ TerminalDriverBindingStart (
   //
   // Only do the reset if the device path is in the Conout variable
   //
-  if (ConInSeleced) {
+  if (ConInSeleced && !SimTxtInInstalled) {
     Status = TerminalDevice->SimpleInput.Reset (
                                           &TerminalDevice->SimpleInput,
                                           FALSE
@@ -831,7 +831,7 @@ TerminalDriverBindingStart (
   // Only output the configure string to remote terminal if the device path
   // is in the Conout variable
   //
-  if (ConOutSeleced) {
+  if (ConOutSeleced && !SimTxtOutInstalled) {
     Status = TerminalDevice->SimpleTextOutput.SetAttribute (
                                                         &TerminalDevice->SimpleTextOutput,
                                                         EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK)

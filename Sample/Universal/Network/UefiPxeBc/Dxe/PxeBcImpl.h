@@ -86,6 +86,7 @@ typedef struct _PXEBC_PRIVATE_DATA {
   EFI_DHCP4_PACKET                          SeedPacket;
 
   BOOLEAN                                   SortOffers;
+  BOOLEAN                                   GotProxyOffer;
   UINT32                                    NumOffers;
   UINT32                                    SelectedOffer;
   UINT32                                    ProxyOfferType;

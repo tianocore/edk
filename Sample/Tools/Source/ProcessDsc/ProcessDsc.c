@@ -823,9 +823,9 @@ ProcessingError:
   }
   
   //
-  // Start multi-thread build if ThreadNumber is specified
+  // Start multi-thread build if ThreadNumber is specified and no error status
   //
-  if (gGlobals.ThreadNumber != 0) {
+  if ((gGlobals.ThreadNumber != 0) && (GetUtilityStatus () < STATUS_ERROR)) {
     BuildDir = GetSymbolValue (BUILD_DIR);
     if (gGlobals.BuildTarget & BUILD_TARGET_LIBRARIES) {
       if (StartMultiThreadBuild (&gGlobals.LibraryList, gGlobals.ThreadNumber, BuildDir) != 0) {

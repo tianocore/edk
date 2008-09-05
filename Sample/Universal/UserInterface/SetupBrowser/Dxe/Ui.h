@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -136,12 +136,12 @@ typedef struct {
   UI_CONTROL_FLAG     ControlFlag;
 } SCREEN_OPERATION_T0_CONTROL_FLAG;
 
-EFI_LIST_ENTRY      Menu;
-EFI_LIST_ENTRY      gMenuList;
-MENU_REFRESH_ENTRY  *gMenuRefreshHead;
+extern EFI_LIST_ENTRY      Menu;
+extern EFI_LIST_ENTRY      gMenuList;
+extern MENU_REFRESH_ENTRY  *gMenuRefreshHead;
 
-INTN                gEntryNumber;
-BOOLEAN             gLastOpr;
+extern INTN                gEntryNumber;
+extern BOOLEAN             gLastOpr;
 //
 // Global Functions
 //

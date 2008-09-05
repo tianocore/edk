@@ -230,6 +230,7 @@ GetGlyphBuffer (
             Cell->Height   = EFI_GLYPH_HEIGHT;
             Cell->OffsetY  = NARROW_BASELINE;
             Cell->AdvanceX = Cell->Width;
+            
             EfiCopyMem (*GlyphBuffer, Narrow.GlyphCol1, Cell->Height);
             if (Attributes != NULL) {
               *Attributes = Narrow.Attributes | NARROW_GLYPH;
@@ -318,7 +319,7 @@ GlyphToBlt (
   IN     UINTN                         ImageWidth,
   IN     UINTN                         ImageHeight,  
   IN     BOOLEAN                       Transparent,
-  IN     EFI_HII_GLYPH_INFO            Cell,  
+  IN     EFI_HII_GLYPH_INFO            *Cell,  
   IN     UINT8                         Attributes, 
   IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL **Origin
   )
@@ -351,7 +352,7 @@ GlyphToBlt (
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BltBuffer;
 
   ASSERT (GlyphBuffer != NULL && Origin != NULL && *Origin != NULL);
-  ASSERT (Cell.Width <= ImageWidth && Cell.Height <= ImageHeight);
+  ASSERT (Cell->Width <= ImageWidth && Cell->Height <= ImageHeight);
 
   BltBuffer = *Origin;
 
@@ -367,13 +368,13 @@ GlyphToBlt (
   // The glyph's upper left hand corner pixel is the most significant bit of the 
   // first bitmap byte.
   //
-  for (Y = 0; Y < Cell.Height; Y++) {
-    OffsetY = BITMAP_LEN_1_BIT (Cell.Width, Y);
+  for (Y = 0; Y < Cell->Height; Y++) {
+    OffsetY = BITMAP_LEN_1_BIT (Cell->Width, Y);
 
     //
     // All bits in these bytes are meaningful.
     //    
-    for (X = 0; X < Cell.Width / 8; X++) {
+    for (X = 0; X < Cell->Width / 8; X++) {
       Data  = *(GlyphBuffer + OffsetY + X);
       for (Index = 0; Index < 8; Index++) {
         if ((Data & (1 << Index)) != 0) {
@@ -386,12 +387,12 @@ GlyphToBlt (
       }
     }
 
-    if (Cell.Width % 8 != 0) {
+    if (Cell->Width % 8 != 0) {
       //
       // There are some padding bits in this byte. Ignore them.
       //
       Data  = *(GlyphBuffer + OffsetY + X);
-      for (Index = 0; Index < Cell.Width % 8; Index++) {
+      for (Index = 0; Index < Cell->Width % 8; Index++) {
         if ((Data & (1 << (8 - Index - 1))) != 0) {
           BltBuffer[Y * ImageWidth + X * 8 + Index] = Foreground;
         } else {
@@ -404,7 +405,7 @@ GlyphToBlt (
      
   } // end of for (Y=0...)
 
-  *Origin = BltBuffer + Cell.Width;
+  *Origin = BltBuffer + Cell->Width;
 }
 
 STATIC
@@ -416,7 +417,7 @@ GlyphToImage (
   IN     UINTN                         ImageWidth,
   IN     UINTN                         ImageHeight,
   IN     BOOLEAN                       Transparent,
-  IN     EFI_HII_GLYPH_INFO            Cell,
+  IN     EFI_HII_GLYPH_INFO            *Cell,
   IN     UINT8                         Attributes,
   IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL **Origin
   )
@@ -448,7 +449,7 @@ GlyphToImage (
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *Buffer;
 
   ASSERT (GlyphBuffer != NULL && Origin != NULL && *Origin != NULL);
-  ASSERT (Cell.Width <= ImageWidth && Cell.Height <= ImageHeight);
+  ASSERT (Cell->Width <= ImageWidth && Cell->Height <= ImageHeight);
 
   Buffer = *Origin;
 
@@ -457,7 +458,7 @@ GlyphToImage (
     // This character is a non-spacing key, print it OR'd with the previous glyph.
     // without advancing cursor.
     //
-    Buffer -= Cell.Width;
+    Buffer -= Cell->Width;
     GlyphToBlt (
       GlyphBuffer, 
       Foreground, 
@@ -1502,16 +1503,19 @@ HiiStringToImage (
   //
   // These two flags require that EFI_HII_OUT_FLAG_CLIP be also set.
   //
-  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) ==  EFI_HII_OUT_FLAG_CLIP_CLEAN_X) {
+  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) ==  
+       EFI_HII_OUT_FLAG_CLIP_CLEAN_X) {
     return EFI_INVALID_PARAMETER;
   }
-  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLIP_CLEAN_Y)) ==  EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) {
+  if ((Flags & (EFI_HII_OUT_FLAG_CLIP | EFI_HII_OUT_FLAG_CLIP_CLEAN_Y)) ==  
+       EFI_HII_OUT_FLAG_CLIP_CLEAN_Y) {
     return EFI_INVALID_PARAMETER;
   }
   //
   // This flag cannot be used with EFI_HII_OUT_FLAG_CLEAN_X.
   //
-  if ((Flags & (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) ==  (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) {
+  if ((Flags & (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) ==  
+      (EFI_HII_OUT_FLAG_WRAP | EFI_HII_OUT_FLAG_CLIP_CLEAN_X)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1695,7 +1699,6 @@ HiiStringToImage (
         if (LineHeight < Cell[Index].Height) {
           LineHeight = (UINTN) Cell[Index].Height;
         }
-        BaseLineOffset += (UINTN) Cell[Index].OffsetY;
 
         if ((Flags & EFI_HII_IGNORE_LINE_BREAK) == 0 &&
             (Flags & EFI_HII_OUT_FLAG_WRAP) == 0 &&  
@@ -1764,7 +1767,7 @@ HiiStringToImage (
         if (Index > 0) {
           RowInfo[RowIndex].EndIndex       = Index - 1;
           RowInfo[RowIndex].LineWidth      = LineWidth - Cell[Index].AdvanceX;
-          RowInfo[RowIndex].BaselineOffset = BaseLineOffset - Cell[Index].OffsetY;
+          RowInfo[RowIndex].BaselineOffset = BaseLineOffset;
           if (LineHeight > Cell[Index - 1].Height) {
             LineHeight = Cell[Index - 1].Height;
           }
@@ -1811,7 +1814,7 @@ HiiStringToImage (
             RowInfo[RowIndex].LineWidth,
             RowInfo[RowIndex].LineHeight,
             Transparent,
-            Cell[Index1], 
+            &Cell[Index1], 
             Attributes[Index1],
             &BufferPtr
             );                  
@@ -1852,7 +1855,7 @@ HiiStringToImage (
             Image->Width,
             Image->Height,
             Transparent,
-            Cell[Index1], 
+            &Cell[Index1], 
             Attributes[Index1],
             &BufferPtr
             );
@@ -2254,7 +2257,7 @@ HiiGetGlyph (
     Image->Width, 
     Image->Height, 
     FALSE, 
-    Cell, 
+    &Cell, 
     Attributes, 
     &BltBuffer
     );  
@@ -2439,10 +2442,10 @@ HiiGetFontInfo (
   FontInfo->FontStyle = InfoOut.FontInfo.FontStyle;
 
   if (IsFontInfoExisted (Private, FontInfo, &InfoOut.FontInfoMask, LocalFontHandle, &GlobalFont)) {
+    //
+    // Test to guarantee all characters are available in the found font.
+    //    
     if (String != NULL) {
-      //
-      // Test to guarantee all characters are available in the found font.
-      //
       StringIn = String;
       while (*StringIn != 0) {
         Status = FindGlyphBlock (GlobalFont->FontPackage, *StringIn, NULL, NULL, NULL);
@@ -2452,28 +2455,27 @@ HiiGetFontInfo (
         }
         StringIn++;
       }
-
-      //
-      // Write to output parameter
-      //
-      if (StringInfoOut != NULL) {
-        StringInfoOutLen = sizeof (EFI_FONT_DISPLAY_INFO) - sizeof (EFI_FONT_INFO) + GlobalFont->FontInfoSize;
-        *StringInfoOut   = (EFI_FONT_DISPLAY_INFO *) EfiLibAllocateZeroPool (StringInfoOutLen);
-        if (*StringInfoOut == NULL) {
-          Status = EFI_OUT_OF_RESOURCES;
-          LocalFontHandle = NULL;
-          goto Exit;
-        }
-        EfiCopyMem (*StringInfoOut, &InfoOut, sizeof (EFI_FONT_DISPLAY_INFO));
-        EfiCopyMem (&(*StringInfoOut)->FontInfo, GlobalFont->FontInfo, GlobalFont->FontInfoSize);
-      }
-      LocalFontHandle = GlobalFont->Entry.ForwardLink;
-      
-      Status = EFI_SUCCESS;
-      goto Exit;
     }
-  } else {
-    LocalFontHandle = NULL;
+
+    //
+    // Write to output parameter
+    //
+    if (StringInfoOut != NULL) {
+      StringInfoOutLen = sizeof (EFI_FONT_DISPLAY_INFO) - sizeof (EFI_FONT_INFO) + GlobalFont->FontInfoSize;
+      *StringInfoOut   = (EFI_FONT_DISPLAY_INFO *) EfiLibAllocateZeroPool (StringInfoOutLen);      
+      if (*StringInfoOut == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        LocalFontHandle = NULL;
+        goto Exit;
+      }
+      
+      EfiCopyMem (*StringInfoOut, &InfoOut, sizeof (EFI_FONT_DISPLAY_INFO));
+      EfiCopyMem (&(*StringInfoOut)->FontInfo, GlobalFont->FontInfo, GlobalFont->FontInfoSize);
+    }
+    
+    LocalFontHandle = GlobalFont->Entry.ForwardLink;    
+    Status = EFI_SUCCESS;
+    goto Exit;
   }  
 
   Status = EFI_NOT_FOUND;

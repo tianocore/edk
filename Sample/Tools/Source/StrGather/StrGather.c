@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -281,11 +281,6 @@ ParseIndirectionFiles (
   TEXT_STRING_LIST    *Files
   );
 
-STATUS
-StringDBCreateHiiExportPack (
-  INT8                *OutputFileName
-  );
-
 int
 main (
   int   Argc,
@@ -405,7 +400,7 @@ Returns:
   // Dump the string data as HII binary string pack if requested
   //
   if ((mGlobals.HiiExportPackFileName[0] != 0) && (GetUtilityStatus () < STATUS_ERROR)) {
-    StringDBCreateHiiExportPack (mGlobals.HiiExportPackFileName);
+    StringDBCreateHiiExportPack (mGlobals.HiiExportPackFileName, mGlobals.Language);
   }
   //
   // Always update the database if no errors and not in dump mode. If they specified -od

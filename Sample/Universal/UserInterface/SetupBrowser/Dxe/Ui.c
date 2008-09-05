@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,6 +23,14 @@ Revision History
 
 #include "Ui.h"
 #include "Setup.h"
+
+EFI_LIST_ENTRY      Menu;
+EFI_LIST_ENTRY      gMenuList;
+MENU_REFRESH_ENTRY  *gMenuRefreshHead;
+
+INTN                gEntryNumber;
+BOOLEAN             gLastOpr;
+BOOLEAN             gNeedSwitchToTextMode;
 
 //
 // Implementation
@@ -2307,8 +2315,8 @@ Returns:
         }
       } while (Status == EFI_TIMEOUT);
 
-      if (gFirstIn) {
-        gFirstIn = FALSE;
+      if (gNeedSwitchToTextMode) {
+        gNeedSwitchToTextMode = FALSE;
         gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
         DisableQuietBoot ();
       }

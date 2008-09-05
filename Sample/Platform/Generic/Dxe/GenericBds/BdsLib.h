@@ -358,8 +358,6 @@ typedef struct {
   UINT8                     VendorDefinedData[1];
 } VENDOR_DEVICE_PATH_WITH_DATA;
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-
 extern EFI_GUID mEfiDevicePathMessagingSASGuid;
 
 typedef struct {
@@ -368,10 +366,8 @@ typedef struct {
   UINT16                    LoginOption;
   UINT64                    Lun;
   UINT16                    TargetPortalGroupTag;
-  CHAR16                    iSCSITargetName[1];
+  CHAR8                     iSCSITargetName[1];
 } ISCSI_DEVICE_PATH_WITH_NAME;
-
-#endif
 
 //
 // Internal functions
@@ -496,6 +492,25 @@ BdsLibGetHiiHandles (
   );
   
 //
+// Define the boot option default description 
+// NOTE: This is not defined in UEFI spec.
+//
+#define DESCRIPTION_FLOPPY        L"EFI Floppy"
+#define DESCRIPTION_FLOPPY_NUM    L"EFI Floppy %d"
+#define DESCRIPTION_DVD           L"EFI DVD/CDROM"
+#define DESCRIPTION_DVD_NUM       L"EFI DVD/CDROM %d"
+#define DESCRIPTION_USB           L"EFI USB Device"
+#define DESCRIPTION_USB_NUM       L"EFI USB Device %d"
+#define DESCRIPTION_SCSI          L"EFI SCSI Device"
+#define DESCRIPTION_SCSI_NUM      L"EFI SCSI Device %d"
+#define DESCRIPTION_MISC          L"EFI Misc Device"
+#define DESCRIPTION_MISC_NUM      L"EFI Misc Device %d"
+#define DESCRIPTION_NETWORK       L"EFI Network"
+#define DESCRIPTION_NETWORK_NUM   L"EFI Network %d"       
+#define DESCRIPTION_NON_BLOCK     L"EFI Non-Block Boot Device"
+#define DESCRIPTION_NON_BLOCK_NUM L"EFI Non-Block Boot Device %d"
+  
+//
 // Define the boot type which to classify the boot option type
 // Different boot option type could have different boot behavior
 // Use their device path node (Type + SubType) as type value
@@ -512,6 +527,7 @@ BdsLibGetHiiHandles (
 #define  BDS_EFI_MESSAGE_ATAPI_BOOT       0x0301 // Type 03; Sub-Type 01
 #define  BDS_EFI_MESSAGE_SCSI_BOOT        0x0302 // Type 03; Sub-Type 02
 #define  BDS_EFI_MESSAGE_USB_DEVICE_BOOT  0x0305 // Type 03; Sub-Type 05
+#define  BDS_EFI_MESSAGE_SATA_BOOT        0x0318 // Type 03; Sub-Type 18
 #define  BDS_EFI_MESSAGE_MISC_BOOT        0x03FF
 //
 // Media boot type
@@ -553,6 +569,13 @@ BOOLEAN
 BdsLibIsValidEFIBootOptDevicePath (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevPath,
   IN BOOLEAN                      CheckMedia
+  );
+  
+BOOLEAN
+BdsLibIsValidEFIBootOptDevicePathExt (
+  IN EFI_DEVICE_PATH_PROTOCOL     *DevPath,
+  IN BOOLEAN                      CheckMedia,
+  IN CHAR16                       *Description
   );
   
 UINT32

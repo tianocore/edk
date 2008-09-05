@@ -448,7 +448,6 @@ extern UINTN                 gFunctionKeySetting;
 extern BOOLEAN               gResetRequired;
 extern BOOLEAN               gNvUpdateRequired;
 extern EFI_HII_HANDLE        gHiiHandle;
-extern BOOLEAN               gFirstIn;
 extern UINT16                gDirection;
 extern EFI_SCREEN_DESCRIPTOR gScreenDimensions;
 extern BOOLEAN               gUpArrow;
@@ -485,6 +484,7 @@ extern CHAR16            *gMiniString;
 extern CHAR16            *gPlusString;
 extern CHAR16            *gMinusString;
 extern CHAR16            *gAdjustNumber;
+extern CHAR16            *gSaveChanges;
 
 extern CHAR16            gPromptBlockWidth;
 extern CHAR16            gOptionBlockWidth;
