@@ -198,6 +198,7 @@ VfrParserStart (
 #token OptionOnlyFlag("OPTIONS_ONLY")           "OPTIONS_ONLY"
 #token Class("class")                           "class"
 #token Subclass("subclass")                     "subclass"
+#token ClassGuid("classguid")                   "classguid"
 #token TypeDef("typedef")                       "typedef"
 #token Restore("restore")                       "restore"
 #token Save("save")                             "save"
@@ -467,13 +468,54 @@ guidDefinition [EFI_GUID &Guid] :
 vfrFormSetDefinition :
   <<
      EFI_GUID    Guid;
-     CIfrFormSet FSObj;
+     EFI_GUID    DefaultClassGuid = EFI_HII_PLATFORM_SETUP_FORMSET_GUID;
+     EFI_GUID    ClassGuid1, ClassGuid2, ClassGuid3, ClassGuid4, ClassGuid5;
+     UINT8       ClassGuidNum = 0;
+     CIfrFormSet *FSObj = NULL;
      UINT16      C, SC;
   >>
-  L:FormSet                                         << SET_LINE_INFO (FSObj, L); >>
-  Uuid "=" guidDefinition[Guid] ","                 << FSObj.SetGuid (&Guid); >>
-  Title "=" "STRING_TOKEN" "\(" S1:Number "\)" ","  << FSObj.SetFormSetTitle (_STOSID(S1->getText())); >>
-  Help  "=" "STRING_TOKEN" "\(" S2:Number "\)" ","  << FSObj.SetHelp (_STOSID(S2->getText())); >>
+  L:FormSet
+  Uuid "=" guidDefinition[Guid] ","
+  Title "=" "STRING_TOKEN" "\(" S1:Number "\)" ","
+  Help  "=" "STRING_TOKEN" "\(" S2:Number "\)" ","
+  {
+    ClassGuid "=" guidDefinition[ClassGuid1]             <<  ++ClassGuidNum; >>
+                  {
+                   "\|" guidDefinition[ClassGuid2]        << ++ClassGuidNum; >>
+                  }
+                  {
+                   "\|" guidDefinition[ClassGuid3]        << ++ClassGuidNum; >>
+                  }
+                  ","
+  }
+                                                    <<
+                                                      switch (ClassGuidNum) {
+                                                      case 0:
+                                                        FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET));
+                                                        FSObj->SetClassGuid(&DefaultClassGuid);
+                                                        break;
+                                                      case 1:
+                                                        FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET));
+                                                        FSObj->SetClassGuid(&ClassGuid1);
+                                                        break;
+                                                      case 2:
+                                                        FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET) + sizeof(EFI_GUID));
+                                                        FSObj->SetClassGuid(&ClassGuid1);
+                                                        FSObj->SetClassGuid(&ClassGuid2);
+                                                        break;
+                                                      default:
+                                                        FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET) + 2 * sizeof(EFI_GUID));
+                                                        FSObj->SetClassGuid(&ClassGuid1);
+                                                        FSObj->SetClassGuid(&ClassGuid2);
+                                                        FSObj->SetClassGuid(&ClassGuid3);
+                                                        break;
+                                                      }
+
+                                                      SET_LINE_INFO (*FSObj, L);
+                                                      FSObj->SetGuid (&Guid);
+                                                      FSObj->SetFormSetTitle (_STOSID(S1->getText()));
+                                                      FSObj->SetHelp (_STOSID(S2->getText()));
+                                                    >>
   {
     Class "=" classDefinition[C] ","                << {CIfrClass CObj; CObj.SetClass(C);} >>
   }
@@ -485,7 +527,7 @@ vfrFormSetDefinition :
                                                        //_DeclareDefaultLinearVarStore (GET_LINENO (L));
                                                     >>
   vfrFormSetList
-  E:EndFormSet                                      << CRT_END_OP (E); >>
+  E:EndFormSet                                      << CRT_END_OP (E); if (FSObj != NULL) {delete FSObj;}>>
   ";"
   ;
 
@@ -652,7 +694,6 @@ subclassDefinition[UINT16 & SubClass] :
 vfrStatementDisableIfFormSet :
   <<
     CIfrDisableIf DIObj;
-    mConstantOnlyInExpression = TRUE;
   >>
   D:DisableIf                                       << DIObj.SetLineNo(D->getLine()); >>
   vfrStatementExpression[0] ";"                     << mConstantOnlyInExpression = FALSE; >>
@@ -924,7 +965,7 @@ vfrStatementRules :
 vfrStatementDefault :
   <<
      BOOLEAN               IsExp         = FALSE;
-     EFI_IFR_TYPE_VALUE    Val;
+     EFI_IFR_TYPE_VALUE    Val = {0};
      CIfrDefault           DObj;
      EFI_DEFAULT_ID        DefaultId     = EFI_HII_DEFAULT_CLASS_STANDARD;
      INT8                  *VarStoreName = NULL;
@@ -1230,7 +1271,7 @@ vfrStatementBooleanType :
 vfrStatementCheckBox :
   <<
      CIfrCheckBox       CBObj;
-     EFI_IFR_TYPE_VALUE Val;
+     EFI_IFR_TYPE_VALUE Val = {0};
      INT8               *VarStoreName = NULL;
   >>
   L:CheckBox                                           << CBObj.SetLineNo(L->getLine()); >>
@@ -1332,7 +1373,7 @@ vfrStatementDate :
      EFI_QUESTION_ID    QId          = EFI_QUESTION_ID_INVALID;
      INT8               *VarIdStr[3] = {NULL, };
      CIfrDate           DObj;
-     EFI_IFR_TYPE_VALUE Val;
+     EFI_IFR_TYPE_VALUE Val = {0};
   >>
   L:Date                                               << DObj.SetLineNo(L->getLine()); >>
   (
@@ -1618,7 +1659,7 @@ vfrStatementTime :
      EFI_QUESTION_ID    QId          = EFI_QUESTION_ID_INVALID;
      INT8               *VarIdStr[3] = {NULL, };
      CIfrTime           TObj;
-     EFI_IFR_TYPE_VALUE Val;
+     EFI_IFR_TYPE_VALUE Val = {0};
   >>
   L:Time                                               << TObj.SetLineNo(L->getLine()); >>
   (
@@ -1731,7 +1772,6 @@ vfrStatementStatList :
 vfrStatementDisableIfStat :
   <<
     CIfrDisableIf DIObj;
-    mConstantOnlyInExpression = TRUE;
   >>
   L:DisableIf                                          << DIObj.SetLineNo(L->getLine()); >>
   vfrStatementExpression[0] ";"                        << mConstantOnlyInExpression = FALSE; >>
@@ -1811,7 +1851,6 @@ vfrStatementNoSubmitIf :
 vfrStatementDisableIfQuest :
   <<
     CIfrDisableIf DIObj;
-    mConstantOnlyInExpression = TRUE;
   >>
   L:DisableIf                                          << DIObj.SetLineNo(L->getLine()); >>
   vfrStatementExpression[0] ";"                        << mConstantOnlyInExpression = FALSE; >>
@@ -1846,7 +1885,7 @@ vfrStatementOptions :
 
 vfrStatementOneOfOption :
   <<
-     EFI_IFR_TYPE_VALUE Val;
+     EFI_IFR_TYPE_VALUE Val = {0};
      CIfrOneOfOption    OOOObj;
      INT8               *VarStoreName = NULL;
 

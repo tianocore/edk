@@ -25,6 +25,12 @@
 
 #define FORMSET_GUID  { 0x9e0c30bc, 0x3f06, 0x4ba6, 0x82, 0x88, 0x9, 0x17, 0x9b, 0x85, 0x5d, 0xbe }
 
+//
+// The ClassGuid of Front Page, keep consistent with Edk\Foundation\Include\TianoHii.h
+//
+#define EFI_HII_FRONT_PAGE_CLASS_GUID \
+  { 0x94d411b7, 0x7669, 0x45c3, 0xba, 0x3b, 0xf3, 0xa5, 0x8a, 0x71, 0x56, 0x81 }
+
 #define FRONT_PAGE_CLASS               0x0000
 #define FRONT_PAGE_SUBCLASS            0x0002
 
@@ -50,6 +56,7 @@ formset
   guid     = FORMSET_GUID,
   title    = STRING_TOKEN(STR_FRONT_PAGE_TITLE),
   help     = STRING_TOKEN(STR_NULL_STRING),
+  classguid = EFI_HII_FRONT_PAGE_CLASS_GUID,
   class    = FRONT_PAGE_CLASS,
   subclass = FRONT_PAGE_SUBCLASS,
 

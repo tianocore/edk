@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -84,6 +84,10 @@ extern EFI_COMPONENT_NAME_PROTOCOL   gScsiDiskComponentName;
 #define ACTION_NO_ACTION            0x00
 #define ACTION_READ_CAPACITY        0x01
 #define ACTION_RETRY_COMMAND_LATER  0x02
+
+#define SCSI_COMMAND_VERSION_1      0x01
+#define SCSI_COMMAND_VERSION_2      0x02
+#define SCSI_COMMAND_VERSION_3      0x03
 
 EFI_STATUS
 EFIAPI
@@ -572,8 +576,9 @@ Returns:
 
 VOID
 GetMediaInfo (
-  SCSI_DISK_DEV                 *ScsiDiskDevice,
-  EFI_SCSI_DISK_CAPACITY_DATA   *Capacity
+  SCSI_DISK_DEV                   *ScsiDiskDevice,
+  EFI_SCSI_DISK_CAPACITY_DATA     *Capacity10,
+  EFI_SCSI_DISK_CAPACITY_DATA16   *Capacity16
   )
 /*++
 
@@ -584,7 +589,8 @@ Routine Description:
 Arguments:
 
   ScsiDiskDevice  - The pointer of SCSI_DISK_DEV
-  Capacity        - The pointer of EFI_SCSI_DISK_CAPACITY_DATA
+  Capacity10      - The pointer of EFI_SCSI_DISK_CAPACITY_DATA
+  Capacity16      - The pointer of EFI_SCSI_DISK_CAPACITY_DATA16
 
 Returns:
 

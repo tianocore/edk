@@ -2083,6 +2083,31 @@ DevPathFromTextFvFile (
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
+DevPathFromTextRelativeOffsetRange (
+  IN CHAR16 *TextDeviceNode
+  )
+{
+  CHAR16              *StartingOffsetStr;
+  CHAR16              *EndingOffsetStr;
+  MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH
+                      *Offset;
+
+  StartingOffsetStr = GetNextParamStr (&TextDeviceNode);
+  EndingOffsetStr   = GetNextParamStr (&TextDeviceNode);
+  Offset            = (MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH *) 
+                        CreateDeviceNode (
+                          MEDIA_DEVICE_PATH,
+                          MEDIA_RELATIVE_OFFSET_RANGE_DP,
+                          sizeof (MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH)
+                          );
+
+  Strtoi64 (StartingOffsetStr, &Offset->StartingOffset);
+  Strtoi64 (EndingOffsetStr, &Offset->EndingOffset);
+
+  return (EFI_DEVICE_PATH_PROTOCOL *) Offset;
+}
+
+EFI_DEVICE_PATH_PROTOCOL *
 DevPathFromTextBBS (
   IN CHAR16 *TextDeviceNode
   )
@@ -2278,6 +2303,8 @@ DEVICE_PATH_FROM_TEXT_TABLE DevPathFromTextTable[] = {
   DevPathFromTextFv,
   L"FvFile",
   DevPathFromTextFvFile,
+  L"Offset",
+  DevPathFromTextRelativeOffsetRange,
   L"BBS",
   DevPathFromTextBBS,
   L"Sata",

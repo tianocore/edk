@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,7 +30,7 @@ Abstract:
 #include EFI_GUID_DEFINITION (Mps)
 #include EFI_GUID_DEFINITION (PciExpressBaseAddress)
 
-CHAR16  mFirmwareVendor[] = L"TianoCore.org";
+CHAR16  mFirmwareVendor[] = EFI_FIRMWARE_VENDOR;
 extern BOOLEAN  gConnectAllHappened;
 extern USB_CLASS_FORMAT_DEVICE_PATH gUsbClassKeyboardDevicePath;
 //

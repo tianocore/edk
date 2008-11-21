@@ -510,6 +510,141 @@ Arguments:
 
 Returns:
   EFI_SUCCESS     - Successfully extract Class for specified Hii handle.
+  EFI_NOT_FOUND   - Class not found.
+
+--*/
+{
+  EFI_STATUS                   Status;
+  UINTN                        BufferSize;
+  EFI_HII_DATABASE_PROTOCOL    *HiiDatabase;
+  EFI_HII_PACKAGE_LIST_HEADER  *HiiPackageList;
+  UINT8                        *Package;
+  UINT8                        *FormSet;
+  UINT8                        *OpCodeData;
+  UINT32                       Offset;
+  UINT32                       Offset2;
+  UINT32                       PackageListLength;
+  EFI_HII_PACKAGE_HEADER       PackageHeader;
+  BOOLEAN                      ClassFound;
+
+  *Class = EFI_NON_DEVICE_CLASS;
+  *FormSetTitle = 0;
+  *FormSetHelp = 0;
+  ClassFound = FALSE;
+
+  //
+  // Locate HII Database protocol
+  //
+  Status = gBS->LocateProtocol (
+                  &gEfiHiiDatabaseProtocolGuid,
+                  NULL,
+                  &HiiDatabase
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Get HII PackageList
+  //
+  BufferSize = 0;
+  HiiPackageList = NULL;
+  Status = HiiDatabase->ExportPackageLists (HiiDatabase, Handle, &BufferSize, HiiPackageList);
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    HiiPackageList = EfiLibAllocatePool (BufferSize);
+    ASSERT (HiiPackageList != NULL);
+
+    Status = HiiDatabase->ExportPackageLists (HiiDatabase, Handle, &BufferSize, HiiPackageList);
+  }
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Get Form package from this HII package List
+  //
+  Offset = sizeof (EFI_HII_PACKAGE_LIST_HEADER);
+  Offset2 = 0;
+  FormSet = NULL;
+  EfiCopyMem (&PackageListLength, &HiiPackageList->PackageLength, sizeof (UINT32));
+
+  while (Offset < PackageListLength) {
+    Package = ((UINT8 *) HiiPackageList) + Offset;
+    EfiCopyMem (&PackageHeader, Package, sizeof (EFI_HII_PACKAGE_HEADER));
+
+    if (PackageHeader.Type == EFI_HII_PACKAGE_FORMS) {
+      //
+      // Search Class Opcode in this Form Package
+      //
+      Offset2 = sizeof (EFI_HII_PACKAGE_HEADER);
+      while (Offset2 < PackageHeader.Length) {
+        OpCodeData = Package + Offset2;
+
+        if (((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode == EFI_IFR_FORM_SET_OP) {
+          //
+          // Find FormSet OpCode
+          //
+          EfiCopyMem (FormSetTitle, &((EFI_IFR_FORM_SET *) OpCodeData)->FormSetTitle, sizeof (EFI_STRING_ID));
+          EfiCopyMem (FormSetHelp, &((EFI_IFR_FORM_SET *) OpCodeData)->Help, sizeof (EFI_STRING_ID));
+        }
+
+        if ((((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode == EFI_IFR_GUID_OP) &&
+            (EfiCompareGuid (&mIfrVendorGuid, &((EFI_IFR_GUID *) OpCodeData)->Guid)) &&
+            (((EFI_IFR_GUID_CLASS *) OpCodeData)->ExtendOpCode == EFI_IFR_EXTEND_OP_CLASS)
+           ) {
+          //
+          // Find GUIDed Class OpCode
+          //
+          EfiCopyMem (Class, &((EFI_IFR_GUID_CLASS *) OpCodeData)->Class, sizeof (UINT16));
+
+          //
+          // Till now, we ought to have found the formset Opcode
+          //
+          ClassFound = TRUE;
+          break;
+        }
+
+        Offset2 += ((EFI_IFR_OP_HEADER *) OpCodeData)->Length;
+      }
+
+      if (Offset2 < PackageHeader.Length) {
+        //
+        // Target formset found
+        //
+        break;
+      }
+    }
+
+    Offset += PackageHeader.Length;
+  }
+
+  gBS->FreePool (HiiPackageList);
+
+  return ClassFound ? EFI_SUCCESS : EFI_NOT_FOUND;
+}
+
+EFI_STATUS
+ExtractClassGuidFromHiiHandle (
+  IN      EFI_HII_HANDLE      Handle,
+  OUT     UINT8               *NumberOfClassGuid,
+  OUT     EFI_GUID            **ClassGuid,
+  OUT     EFI_STRING_ID       *FormSetTitle,
+  OUT     EFI_STRING_ID       *FormSetHelp
+  )
+/*++
+
+Routine Description:
+  Extract formset ClassGuid for given HII handle.
+
+Arguments:
+  HiiHandle         - Hii handle
+  NumberOfClassGuid - Number of ClassGuid
+  ClassGuid         - Pointer to callee allocated buffer, an array of ClassGuid
+  FormSetTitle      - Formset title string
+  FormSetHelp       - Formset help string
+
+Returns:
+  EFI_SUCCESS     - Successfully extract Class for specified Hii handle.
 
 --*/
 {
@@ -525,7 +660,12 @@ Returns:
   UINT32                       PackageListLength;
   EFI_HII_PACKAGE_HEADER       PackageHeader;
 
-  *Class = EFI_NON_DEVICE_CLASS;
+  if (NumberOfClassGuid == NULL || ClassGuid == NULL || FormSetTitle == NULL || FormSetHelp == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *NumberOfClassGuid = 0;
+  *ClassGuid = NULL;
   *FormSetTitle = 0;
   *FormSetHelp = 0;
 
@@ -569,7 +709,7 @@ Returns:
     Package = ((UINT8 *) HiiPackageList) + Offset;
     EfiCopyMem (&PackageHeader, Package, sizeof (EFI_HII_PACKAGE_HEADER));
 
-    if (PackageHeader.Type == EFI_HII_PACKAGE_FORM) {
+    if (PackageHeader.Type == EFI_HII_PACKAGE_FORMS) {
       //
       // Search Class Opcode in this Form Package
       //
@@ -583,20 +723,16 @@ Returns:
           //
           EfiCopyMem (FormSetTitle, &((EFI_IFR_FORM_SET *) OpCodeData)->FormSetTitle, sizeof (EFI_STRING_ID));
           EfiCopyMem (FormSetHelp, &((EFI_IFR_FORM_SET *) OpCodeData)->Help, sizeof (EFI_STRING_ID));
-        }
-
-        if ((((EFI_IFR_OP_HEADER *) OpCodeData)->OpCode == EFI_IFR_GUID_OP) &&
-            (EfiCompareGuid (&mIfrVendorGuid, &((EFI_IFR_GUID *) OpCodeData)->Guid)) &&
-            (((EFI_IFR_GUID_CLASS *) OpCodeData)->ExtendOpCode == EFI_IFR_EXTEND_OP_CLASS)
-           ) {
-          //
-          // Find GUIDed Class OpCode
-          //
-          EfiCopyMem (Class, &((EFI_IFR_GUID_CLASS *) OpCodeData)->Class, sizeof (UINT16));
-
-          //
-          // Till now, we ought to have found the formset Opcode
-          //
+          if (((EFI_IFR_OP_HEADER *) OpCodeData)->Length > ((UINTN) &((EFI_IFR_FORM_SET *) 0)->Flags)) {
+            //
+            // New version of formset OpCode
+            //
+            *NumberOfClassGuid = ((EFI_IFR_FORM_SET *) OpCodeData)->Flags & 0x3;
+            *ClassGuid = EfiLibAllocateCopyPool (
+                           *NumberOfClassGuid * sizeof (EFI_GUID),
+                           ((EFI_IFR_FORM_SET *) OpCodeData)->ClassGuid
+                           );
+          }
           break;
         }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2006 - 2007, Intel Corporation                                                         
+Copyright 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -31,6 +31,8 @@ Revision History
 #include <stdio.h>
 #include "Tiano.h"
 
+#define UTILITY_NAME                   "EfiLdrImage"
+#define UTILITY_VERSION                "v1.0"
 #define MAX_PE_IMAGES                  63
 #define FILE_TYPE_FIXED_LOADER         0
 #define FILE_TYPE_RELOCATABLE_PE_IMAGE 1
@@ -56,8 +58,24 @@ Usage (
   VOID
   )
 {
-  printf ("Usage: EfiLdrImage OutImage LoaderImage PeImage1 PeImage2 ... PeImageN");
-  exit (1);
+  int         Index;
+  const char  *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel Generate EFILDR Image Utility",
+    "  Copyright (C), 2006 - 2008 Intel Corporation",
+    
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" EFILDR IMAGE...",
+    "Description:",
+    "  Generate the EFILDR image from a series of IMAGE(s)",
+    NULL
+  };
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
+  }
 }
 
 ULONG
@@ -127,6 +145,7 @@ Returns:
 
   if (argc < 4) {
     Usage();
+    return 1;
   }
 
   //

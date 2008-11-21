@@ -329,8 +329,7 @@ Returns:
   gMenuRefreshHead = NULL;
 }
 
-
-VOID
+EFI_STATUS
 RefreshForm (
   VOID
   )
@@ -347,19 +346,24 @@ Returns:
 
 --*/
 {
-  CHAR16                  *OptionString;
-  MENU_REFRESH_ENTRY      *MenuRefreshEntry;
-  UINTN                   Index;
-  UINTN                   Loop;
-  EFI_STATUS              Status;
-  UI_MENU_SELECTION       *Selection;
-  FORM_BROWSER_STATEMENT  *Question;
-
-  OptionString = NULL;
+  CHAR16                          *OptionString;
+  MENU_REFRESH_ENTRY              *MenuRefreshEntry;
+  UINTN                           Index;
+  EFI_STATUS                      Status;
+  UI_MENU_SELECTION               *Selection;
+  FORM_BROWSER_STATEMENT          *Question;
+  EFI_HII_CONFIG_ACCESS_PROTOCOL  *ConfigAccess;
+  EFI_HII_VALUE                   *HiiValue;
+  EFI_BROWSER_ACTION_REQUEST      ActionRequest;
 
   if (gMenuRefreshHead != NULL) {
 
     MenuRefreshEntry = gMenuRefreshHead;
+
+    //
+    // Reset FormPackage update flag
+    //
+    mHiiPackageListUpdated = FALSE;
 
     do {
       gST->ConOut->SetAttribute (gST->ConOut, MenuRefreshEntry->CurrentAttribute);
@@ -367,16 +371,9 @@ Returns:
       Selection = MenuRefreshEntry->Selection;
       Question = MenuRefreshEntry->MenuOption->ThisTag;
 
-      //
-      // Don't update Question being edited
-      //
-      if (Question != MenuRefreshEntry->Selection->Statement) {
-
-        Status = GetQuestionValue (Selection->FormSet, Selection->Form, Question, FALSE);
-        if (EFI_ERROR (Status)) {
-          return;
-        }
-
+      Status = GetQuestionValue (Selection->FormSet, Selection->Form, Question, FALSE);
+      if (!EFI_ERROR (Status)) {
+        OptionString = NULL;
         ProcessOptions (Selection, MenuRefreshEntry->MenuOption, FALSE, &OptionString);
 
         if (OptionString != NULL) {
@@ -386,22 +383,78 @@ Returns:
           for (Index = 0; OptionString[Index] == L' '; Index++)
             ;
 
-          for (Loop = 0; OptionString[Index] != CHAR_NULL; Index++) {
-            OptionString[Loop] = OptionString[Index];
-            Loop++;
-          }
-
-          OptionString[Loop] = CHAR_NULL;
-
-          PrintStringAt (MenuRefreshEntry->CurrentColumn, MenuRefreshEntry->CurrentRow, OptionString);
+          PrintStringAt (MenuRefreshEntry->CurrentColumn, MenuRefreshEntry->CurrentRow, &OptionString[Index]);
           gBS->FreePool (OptionString);
+        }
+      }
+
+      //
+      // Question value may be changed, need invoke its Callback()
+      //
+      ConfigAccess = Selection->FormSet->ConfigAccess;
+      if ((Question->QuestionFlags & EFI_IFR_FLAG_CALLBACK) && (ConfigAccess != NULL)) {
+        ActionRequest = EFI_BROWSER_ACTION_REQUEST_NONE;
+
+        HiiValue = &Question->HiiValue;
+        if (HiiValue->Type == EFI_IFR_TYPE_STRING) {
+          //
+          // Create String in HII database for Configuration Driver to retrieve
+          //
+          HiiValue->Value.string = NewString ((CHAR16 *) Question->BufferValue, Selection->FormSet->HiiHandle);
+        }
+
+        Status = ConfigAccess->Callback (
+                                 ConfigAccess,
+                                 EFI_BROWSER_ACTION_CHANGING,
+                                 Question->QuestionId,
+                                 HiiValue->Type,
+                                 &HiiValue->Value,
+                                 &ActionRequest
+                                 );
+
+        if (HiiValue->Type == EFI_IFR_TYPE_STRING) {
+          //
+          // Clean the String in HII Database
+          //
+          DeleteString (HiiValue->Value.string, Selection->FormSet->HiiHandle);
+        }
+
+        if (!EFI_ERROR (Status)) {
+          switch (ActionRequest) {
+          case EFI_BROWSER_ACTION_REQUEST_RESET:
+            gResetRequired = TRUE;
+            break;
+
+          case EFI_BROWSER_ACTION_REQUEST_SUBMIT:
+            SubmitForm (Selection->FormSet, Selection->Form);
+            break;
+
+          case EFI_BROWSER_ACTION_REQUEST_EXIT:
+            Selection->Action = UI_ACTION_EXIT;
+            gNvUpdateRequired = FALSE;
+            break;
+
+          default:
+            break;
+          }
         }
       }
 
       MenuRefreshEntry = MenuRefreshEntry->Next;
 
     } while (MenuRefreshEntry != NULL);
+
+    if (mHiiPackageListUpdated) {
+      //
+      // Package list is updated, force to reparse IFR binary of target Formset
+      //
+      mHiiPackageListUpdated = FALSE;
+      Selection->Action = UI_ACTION_REFRESH_FORMSET;
+      return EFI_SUCCESS;
+    }
   }
+
+  return EFI_TIMEOUT;
 }
 
 EFI_STATUS
@@ -496,7 +549,7 @@ Returns:
       if (!EFI_ERROR (Status) && Index == 1) {
         Status = EFI_TIMEOUT;
         if (RefreshInterval != 0) {
-          RefreshForm ();
+          Status = RefreshForm ();
         }
       }
 
@@ -956,7 +1009,7 @@ Returns:
     break;
 
   case NV_UPDATE_REQUIRED:
-    if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
+    if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
       if (State) {
         gST->ConOut->SetAttribute (gST->ConOut, INFO_TEXT);
         PrintStringAt (
@@ -1524,7 +1577,7 @@ Returns:
 
   EfiZeroMem (&Key, sizeof (EFI_INPUT_KEY));
 
-  if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
+  if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
     TopRow  = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
     Row     = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
   } else {
@@ -1643,7 +1696,16 @@ Returns:
           Row   = OriginalRow;
 
           gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-          ProcessOptions (Selection, MenuOption, FALSE, &OptionString);
+          Status = ProcessOptions (Selection, MenuOption, FALSE, &OptionString);
+          if (EFI_ERROR (Status)) {
+            //
+            // Repaint to clear possible error prompt pop-up
+            //
+            Repaint = TRUE;
+            NewLine = TRUE;
+            ControlFlag = CfRepaint;
+            break;
+          }
 
           if (OptionString != NULL) {
             if (Statement->Operand == EFI_IFR_DATE_OP || Statement->Operand == EFI_IFR_TIME_OP) {
@@ -1660,47 +1722,6 @@ Returns:
               }
 
               OptionString[Count] = CHAR_NULL;
-            }
-
-            //
-            // If Question request refresh, register the op-code
-            //
-            if (Statement->RefreshInterval != 0) {
-              //
-              // Menu will be refreshed at minimal interval of all Questions
-              // which have refresh request
-              //
-              if (MinRefreshInterval == 0 || Statement->RefreshInterval < MinRefreshInterval) {
-                MinRefreshInterval = Statement->RefreshInterval;
-              }
-
-              if (gMenuRefreshHead == NULL) {
-                MenuRefreshEntry = EfiLibAllocateZeroPool (sizeof (MENU_REFRESH_ENTRY));
-                ASSERT (MenuRefreshEntry != NULL);
-                MenuRefreshEntry->MenuOption        = MenuOption;
-                MenuRefreshEntry->Selection         = Selection;
-                MenuRefreshEntry->CurrentColumn     = MenuOption->OptCol;
-                MenuRefreshEntry->CurrentRow        = MenuOption->Row;
-                MenuRefreshEntry->CurrentAttribute  = FIELD_TEXT | FIELD_BACKGROUND;
-                gMenuRefreshHead                    = MenuRefreshEntry;
-              } else {
-                //
-                // Advance to the last entry
-                //
-                for (MenuRefreshEntry = gMenuRefreshHead;
-                     MenuRefreshEntry->Next != NULL;
-                     MenuRefreshEntry = MenuRefreshEntry->Next
-                    )
-                  ;
-                MenuRefreshEntry->Next = EfiLibAllocateZeroPool (sizeof (MENU_REFRESH_ENTRY));
-                ASSERT (MenuRefreshEntry->Next != NULL);
-                MenuRefreshEntry                    = MenuRefreshEntry->Next;
-                MenuRefreshEntry->MenuOption        = MenuOption;
-                MenuRefreshEntry->Selection         = Selection;
-                MenuRefreshEntry->CurrentColumn     = MenuOption->OptCol;
-                MenuRefreshEntry->CurrentRow        = MenuOption->Row;
-                MenuRefreshEntry->CurrentAttribute  = FIELD_TEXT | FIELD_BACKGROUND;
-              }
             }
 
             Width       = (UINT16) gOptionBlockWidth;
@@ -1740,6 +1761,48 @@ Returns:
 
             gBS->FreePool (OptionString);
           }
+
+          //
+          // If Question request refresh, register the op-code
+          //
+          if (Statement->RefreshInterval != 0) {
+            //
+            // Menu will be refreshed at minimal interval of all Questions
+            // which have refresh request
+            //
+            if (MinRefreshInterval == 0 || Statement->RefreshInterval < MinRefreshInterval) {
+              MinRefreshInterval = Statement->RefreshInterval;
+            }
+
+            if (gMenuRefreshHead == NULL) {
+              MenuRefreshEntry = EfiLibAllocateZeroPool (sizeof (MENU_REFRESH_ENTRY));
+              ASSERT (MenuRefreshEntry != NULL);
+              MenuRefreshEntry->MenuOption        = MenuOption;
+              MenuRefreshEntry->Selection         = Selection;
+              MenuRefreshEntry->CurrentColumn     = MenuOption->OptCol;
+              MenuRefreshEntry->CurrentRow        = MenuOption->Row;
+              MenuRefreshEntry->CurrentAttribute  = FIELD_TEXT | FIELD_BACKGROUND;
+              gMenuRefreshHead                    = MenuRefreshEntry;
+            } else {
+              //
+              // Advance to the last entry
+              //
+              for (MenuRefreshEntry = gMenuRefreshHead;
+                   MenuRefreshEntry->Next != NULL;
+                   MenuRefreshEntry = MenuRefreshEntry->Next
+                  )
+                ;
+              MenuRefreshEntry->Next = EfiLibAllocateZeroPool (sizeof (MENU_REFRESH_ENTRY));
+              ASSERT (MenuRefreshEntry->Next != NULL);
+              MenuRefreshEntry                    = MenuRefreshEntry->Next;
+              MenuRefreshEntry->MenuOption        = MenuOption;
+              MenuRefreshEntry->Selection         = Selection;
+              MenuRefreshEntry->CurrentColumn     = MenuOption->OptCol;
+              MenuRefreshEntry->CurrentRow        = MenuOption->Row;
+              MenuRefreshEntry->CurrentAttribute  = FIELD_TEXT | FIELD_BACKGROUND;
+            }
+          }
+
           //
           // If this is a text op with secondary text information
           //
@@ -2071,12 +2134,8 @@ Returns:
           }
         }
 
-        if (((NewPos->ForwardLink != &Menu) && (ScreenOperation == UiDown)) ||
-            ((NewPos->BackLink != &Menu) && (ScreenOperation == UiUp)) ||
-            (ScreenOperation == UiNoOperation)
-            ) {
-          UpdateKeyHelp (MenuOption, FALSE);
-        }
+        UpdateKeyHelp (MenuOption, FALSE);
+
         //
         // Clear reverse attribute
         //
@@ -2092,7 +2151,7 @@ Returns:
     case CfUpdateHelpString:
       ControlFlag = CfPrepareToReadKey;
 
-        if ((Repaint || NewLine) && (gClassOfVfr != EFI_GENERAL_APPLICATION_SUBCLASS)) {
+        if (Repaint || NewLine) {
         //
         // Don't print anything if it is a NULL help token
         //
@@ -2143,17 +2202,22 @@ Returns:
         Status = UiWaitForSingleEvent (gST->ConIn->WaitForKey, 0, MinRefreshInterval);
       } while (Status == EFI_TIMEOUT);
 
-      if (Status == EFI_TIMEOUT) {
-        Key.UnicodeChar = CHAR_CARRIAGE_RETURN;
-      } else {
-        Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+      if (Selection->Action == UI_ACTION_REFRESH_FORMSET) {
         //
-        // if we encounter error, continue to read another key in.
+        // IFR is updated in Callback of refresh opcode, re-parse it
         //
-        if (EFI_ERROR (Status)) {
-          ControlFlag = CfReadKey;
-          continue;
-        }
+        ControlFlag = CfUiReset;
+        Selection->Statement = NULL;
+        break;
+      }
+
+      Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+      //
+      // if we encounter error, continue to read another key in.
+      //
+      if (EFI_ERROR (Status)) {
+        ControlFlag = CfReadKey;
+        break;
       }
 
       if (IsListEmpty (&Menu) && Key.UnicodeChar != CHAR_NULL) {
@@ -2186,6 +2250,13 @@ Returns:
             gDirection = SCAN_LEFT;
           }
           Status = ProcessOptions (Selection, MenuOption, TRUE, &OptionString);
+          if (EFI_ERROR (Status)) {
+            //
+            // Repaint to clear possible error prompt pop-up
+            //
+            Repaint = TRUE;
+            NewLine = TRUE;
+          }
           EfiLibSafeFreePool (OptionString);
         }
         break;
@@ -2200,7 +2271,7 @@ Returns:
         break;
 
       case ' ':
-        if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
+        if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
           if (MenuOption->ThisTag->Operand == EFI_IFR_CHECKBOX_OP && !MenuOption->GrayOut) {
             ScreenOperation = UiSelect;
           }
@@ -2424,15 +2495,12 @@ Returns:
         if (EFI_ERROR (Status)) {
           Repaint = TRUE;
           NewLine = TRUE;
-          break;
+          UpdateKeyHelp (MenuOption, FALSE);
+        } else {
+          Selection->Action = UI_ACTION_REFRESH_FORM;
         }
 
-        if (OptionString != NULL) {
-          PrintStringAt (LocalScreen.LeftColumn + gPromptBlockWidth + 1, MenuOption->Row, OptionString);
-          gBS->FreePool (OptionString);
-        }
-
-        Selection->Action = UI_ACTION_REFRESH_FORM;
+        EfiLibSafeFreePool (OptionString);
         break;
       }
       break;
@@ -2443,7 +2511,7 @@ Returns:
       //
       ControlFlag = CfCheckSelection;
 
-      if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
+      if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
         //
         // There is no parent menu for FrontPage
         //
@@ -2493,24 +2561,24 @@ Returns:
     case CfUiLeft:
       ControlFlag = CfCheckSelection;
       if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
-      	if (MenuOption->Sequence != 0) {
+        if (MenuOption->Sequence != 0) {
           //
           // In the middle or tail of the Date/Time op-code set, go left.
           //
           NewPos = NewPos->BackLink;
-      	}
+        }
       }
       break;
 
     case CfUiRight:
       ControlFlag = CfCheckSelection;
       if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) || (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)) {
-      	if (MenuOption->Sequence != 2) {
+        if (MenuOption->Sequence != 2) {
           //
           // In the middle or tail of the Date/Time op-code set, go left.
           //
           NewPos = NewPos->ForwardLink;
-      	}
+        }
       }
       break;
 

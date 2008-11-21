@@ -421,6 +421,13 @@ typedef struct {
   EFI_GUID                  NameGuid;
 } MEDIA_FW_VOL_FILEPATH_DEVICE_PATH;
 
+#define MEDIA_RELATIVE_OFFSET_RANGE_DP 0x08
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  UINT64                    StartingOffset;
+  UINT64                    EndingOffset;
+} MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH;
+
 //
 // BBS Device Path
 //
@@ -498,6 +505,8 @@ typedef union {
 
   MEDIA_FW_VOL_DEVICE_PATH             PiwgFirmwareVolume;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH    PiwgFirmwareFile;
+  MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH
+                                       Offset;
 
   BBS_BBS_DEVICE_PATH                  Bbs;
 } EFI_DEV_PATH;
@@ -546,6 +555,8 @@ typedef union {
 
   MEDIA_FW_VOL_DEVICE_PATH             *PiwgFirmwareVolume;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH    *PiwgFirmwareFile;
+  MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH
+                                       *Offset;
 
   BBS_BBS_DEVICE_PATH                  *Bbs;
   UINT8                                *Raw;

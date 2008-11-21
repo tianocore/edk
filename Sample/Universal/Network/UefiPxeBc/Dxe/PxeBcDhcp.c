@@ -320,20 +320,26 @@ Returns:
   ASSERT (Private->Dhcp4Offers[Index].OfferType == DHCP4_PACKET_TYPE_BINL);
 
   Offer = &Private->Dhcp4Offers[Index].Packet.Offer;
-  if (Offer->Dhcp4.Header.ServerAddr.Addr[0] == 0) {
-    //
-    // next server ip address is zero, use server id option instead.
-    //
+
+  //
+  // use option 54, if zero, use siaddr in header
+  //
+  NetZeroMem (&ServerIp, sizeof(EFI_IP_ADDRESS));
+  if (Private->Dhcp4Offers[Index].Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID] != NULL) {
     NetCopyMem (
       &ServerIp.Addr[0],
       Private->Dhcp4Offers[Index].Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID]->Data,
       sizeof (EFI_IPv4_ADDRESS)
       );
   } else {
-    //
-    // use next server ip address.
-    //
-    NetCopyMem (&ServerIp.Addr[0], &Offer->Dhcp4.Header.ServerAddr, sizeof (EFI_IPv4_ADDRESS));
+    NetCopyMem (
+      &ServerIp.Addr[0], 
+      &Offer->Dhcp4.Header.ServerAddr, 
+      sizeof (EFI_IPv4_ADDRESS)
+      );
+  }
+  if (ServerIp.Addr[0] == 0) {
+    return FALSE;
   }
 
   CachedPacket = &Private->ProxyOffer;

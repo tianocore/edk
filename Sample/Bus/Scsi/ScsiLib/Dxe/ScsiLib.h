@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -262,6 +262,58 @@ SubmitReadCapacityCommand (
 Routine Description:
 
   Function to submit read capacity command.
+
+Arguments:
+
+  ScsiIo               - A pointer to SCSI IO protocol.
+  Timeout              - The length of timeout period.
+  SenseData            - A pointer to output sense data.
+  SenseDataLength      - The length of output sense data.
+  HostAdapterStatus    - The status of Host Adapter.
+  TargetStatus         - The status of the target.
+  DataBuffer           - A pointer to a data buffer.
+  DataLength           - The length of data buffer.
+  PMI                  - Partial medium indicator.
+
+Returns:
+
+  EFI_SUCCESS                - The status of the unit is tested successfully.
+  EFI_BAD_BUFFER_SIZE        - The SCSI Request Packet was executed, 
+                               but the entire DataBuffer could not be transferred.
+                               The actual number of bytes transferred is returned
+                               in TransferLength.
+  EFI_NOT_READY              - The SCSI Request Packet could not be sent because 
+                               there are too many SCSI Command Packets already 
+                               queued.
+  EFI_DEVICE_ERROR           - A device error occurred while attempting to send 
+                               the SCSI Request Packet.
+  EFI_INVALID_PARAMETER      - The contents of CommandPacket are invalid.  
+  EFI_UNSUPPORTED            - The command described by the SCSI Request Packet
+                               is not supported by the SCSI initiator(i.e., SCSI 
+                               Host Controller).
+  EFI_TIMEOUT                - A timeout occurred while waiting for the SCSI 
+                               Request Packet to execute.
+
+--*/
+;
+
+EFI_STATUS
+SubmitReadCapacity16Command (
+  IN  EFI_SCSI_IO_PROTOCOL  *ScsiIo,
+  IN  UINT64                Timeout,
+  IN  VOID                  *SenseData,
+  IN OUT UINT8              *SenseDataLength,
+  OUT UINT8                 *HostAdapterStatus,
+  OUT UINT8                 *TargetStatus,
+  OUT VOID                  *DataBuffer,
+  IN OUT UINT32             *DataLength,
+  IN  BOOLEAN               PMI
+  )
+/*++
+
+Routine Description:
+
+  Function to submit read capacity16 command.
 
 Arguments:
 

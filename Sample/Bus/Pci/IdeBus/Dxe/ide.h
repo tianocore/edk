@@ -1630,6 +1630,30 @@ Returns:
 ;
 
 EFI_STATUS
+AtaEnableLongPhysicalSector (
+  IN  IDE_BLK_IO_DEV  *IdeDev
+  )
+/*++
+
+Routine Description:
+
+  Enable Long Physical Sector Feature for ATA device.
+
+Arguments:
+
+  IdeDev  - The IDE device data
+
+Returns:
+
+  EFI_SUCCESS     - The ATA device supports Long Physical Sector feature
+                    and corresponding fields in BlockIo structure is updated.
+  EFI_UNSUPPORTED - The device is not ATA device or Long Physical Sector
+                    feature is not supported.
+
+--*/
+;
+
+EFI_STATUS
 AtaPioDataInExt (
   IN  IDE_BLK_IO_DEV  *IdeDev,
   IN  OUT VOID        *Buffer,

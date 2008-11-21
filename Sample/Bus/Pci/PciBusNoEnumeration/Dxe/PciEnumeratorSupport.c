@@ -23,93 +23,6 @@ Revision History
 
 #include "Pcibus.h"
 
-EFI_STATUS 
-InitializePPB (
-  IN PCI_IO_DEVICE *PciIoDevice 
-);
-
-EFI_STATUS 
-InitializeP2C (
-  IN PCI_IO_DEVICE *PciIoDevice 
-);
-
-PCI_IO_DEVICE* 
-CreatePciIoDevice (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
-  IN PCI_TYPE00                       *Pci,
-  UINT8                               Bus,
-  UINT8                               Device,
-  UINT8                               Func
-);
-
-
-PCI_IO_DEVICE*
-GatherP2CInfo (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
-  IN PCI_TYPE00                       *Pci,
-  UINT8                               Bus,
-  UINT8                               Device,
-  UINT8                               Func
-);
-
-UINTN
-PciParseBar (
-  IN PCI_IO_DEVICE  *PciIoDevice,
-  IN UINTN          Offset,
-  IN UINTN          BarIndex
-);
-
-
-EFI_STATUS
-PciSearchDevice (
-  IN PCI_IO_DEVICE                      *Bridge,
-  PCI_TYPE00                            *Pci,
-  UINT8                                 Bus,
-  UINT8                                 Device,
-  UINT8                                 Func,
-  PCI_IO_DEVICE                         **PciDevice
-);
-
-
-EFI_STATUS 
-DetermineDeviceAttribute (
-  IN PCI_IO_DEVICE                      *PciIoDevice
-);
-
-EFI_STATUS 
-BarExisted (
-  IN PCI_IO_DEVICE *PciIoDevice,
-  IN UINTN         Offset,
-  OUT UINT32       *BarLengthValue,
-  OUT UINT32       *OriginalBarValue
-  );
-
-
-
-EFI_DEVICE_PATH_PROTOCOL*
-CreatePciDevicePath(
-  IN  EFI_DEVICE_PATH_PROTOCOL *ParentDevicePath,
-  IN  PCI_IO_DEVICE            *PciIoDevice 
-);
-
-PCI_IO_DEVICE* 
-GatherDeviceInfo (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
-  IN PCI_TYPE00                       *Pci,
-  UINT8                               Bus,
-  UINT8                               Device,
-  UINT8                               Func
-);
-
-PCI_IO_DEVICE* 
-GatherPPBInfo (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
-  IN PCI_TYPE00                       *Pci,
-  UINT8                               Bus,
-  UINT8                               Device,
-  UINT8                               Func
-);
-
 EFI_STATUS
 PciDevicePresent (
   IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
@@ -310,7 +223,7 @@ Returns:
 
     if (IS_CARDBUS_BRIDGE (Pci)) {
       PciIoDevice = GatherP2CInfo (
-                      Bridge->PciRootBridgeIo,
+                      Bridge,
                       Pci,
                       Bus,
                       Device,
@@ -325,7 +238,7 @@ Returns:
       // Create private data for Pci Device
       //
       PciIoDevice = GatherDeviceInfo (
-                      Bridge->PciRootBridgeIo,
+                      Bridge,
                       Pci,
                       Bus,
                       Device,
@@ -339,8 +252,8 @@ Returns:
     //
     // Create private data for PPB
     //
-    PciIoDevice = GatherPPBInfo (
-                    Bridge->PciRootBridgeIo,
+    PciIoDevice = GatherPpbInfo (
+                    Bridge,
                     Pci,
                     Bus,
                     Device,
@@ -351,7 +264,7 @@ Returns:
     // Special initialization for PPB including making the PPB quiet
     //
     if ((PciIoDevice != NULL) && (gFullEnumeration == TRUE)) {
-      InitializePPB (PciIoDevice);
+      InitializePpb (PciIoDevice);
     }
   }
 
@@ -366,6 +279,10 @@ Returns:
     Bridge->DevicePath,
     PciIoDevice 
     );
+
+  if (PciIoDevice->DevicePath == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
   
   //
   // Detect this function has option rom
@@ -379,16 +296,8 @@ Returns:
     }
 
     ResetPowerManagementFeature (PciIoDevice);
-    
-  } 
-  else {
-    PciRomGetRomResourceFromPciOptionRomTable (
-      &gPciBusDriverBinding,
-      PciIoDevice->PciRootBridgeIo,
-      PciIoDevice
-      );
-  }
 
+  }
  
   //
   // Insert it into a global tree for future reference
@@ -409,7 +318,7 @@ Returns:
 
 PCI_IO_DEVICE *
 GatherDeviceInfo (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
+  IN PCI_IO_DEVICE                    *Bridge,
   IN PCI_TYPE00                       *Pci,
   UINT8                               Bus,
   UINT8                               Device,
@@ -430,7 +339,9 @@ Returns:
   UINTN                           Offset;
   UINTN                           BarIndex;
   PCI_IO_DEVICE                   *PciIoDevice;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
 
+  PciRootBridgeIo = Bridge->PciRootBridgeIo;
   PciIoDevice = CreatePciIoDevice (
                   PciRootBridgeIo,
                   Pci,
@@ -463,8 +374,8 @@ Returns:
 }
 
 PCI_IO_DEVICE *
-GatherPPBInfo (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
+GatherPpbInfo (
+  IN PCI_IO_DEVICE                    *Bridge,
   IN PCI_TYPE00                       *Pci,
   UINT8                               Bus,
   UINT8                               Device,
@@ -482,12 +393,14 @@ Returns:
 
 --*/
 {
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
   PCI_IO_DEVICE                   *PciIoDevice;
   EFI_STATUS                      Status;
   UINT8                           Value;
   EFI_PCI_IO_PROTOCOL             *PciIo;
   UINT8                           Temp;
 
+  PciRootBridgeIo = Bridge->PciRootBridgeIo;
   PciIoDevice = CreatePciIoDevice (
                   PciRootBridgeIo,
                   Pci,
@@ -564,7 +477,7 @@ Returns:
 
 PCI_IO_DEVICE *
 GatherP2CInfo (
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
+  IN PCI_IO_DEVICE                    *Bridge,
   IN PCI_TYPE00                       *Pci,
   UINT8                               Bus,
   UINT8                               Device,
@@ -582,8 +495,10 @@ Returns:
 
 --*/
 {
-  PCI_IO_DEVICE         *PciIoDevice;
-  
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
+  PCI_IO_DEVICE                   *PciIoDevice;
+
+  PciRootBridgeIo = Bridge->PciRootBridgeIo;
   PciIoDevice = CreatePciIoDevice (
                   PciRootBridgeIo,
                   Pci,
@@ -608,7 +523,7 @@ Returns:
   //
   // P2C only has one bar that is in 0x10
   //
-  PciParseBar(PciIoDevice, 0x10, 0);
+  PciParseBar (PciIoDevice, 0x10, P2C_BAR_0);
   
   PciIoDevice->Decodes = EFI_BRIDGE_MEM32_DECODE_SUPPORTED  |
                          EFI_BRIDGE_PMEM32_DECODE_SUPPORTED |
@@ -724,6 +639,62 @@ Returns:
   }
 }
 
+EFI_STATUS
+ProcessOptionRomLight (
+  IN PCI_IO_DEVICE                      *PciIoDevice
+  )
+/*++
+
+Routine Description:
+ 
+  Process the option ROM for all the children of the specified parent PCI device.
+  It can only be used after the first full Option ROM process.
+
+Arguments:
+
+Returns:
+
+  None
+
+--*/
+// TODO:    PciIoDevice - add argument and description to function comment
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
+  PCI_IO_DEVICE   *Temp;
+  EFI_LIST_ENTRY  *CurrentLink;
+
+  //
+  // For RootBridge, PPB , P2C, go recursively to traverse all its children
+  //
+  CurrentLink = PciIoDevice->ChildList.ForwardLink;
+  while (CurrentLink && CurrentLink != &PciIoDevice->ChildList) {
+
+    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+
+    if (!IsListEmpty (&Temp->ChildList)) {
+      ProcessOptionRomLight (Temp);
+    }
+
+    //
+    // We search the ROM image for this Pci device in the internal RomTable,
+    //  if we can find something, it means we are in the 2nd round of enumeration or the device has no rom image
+    //  else we should try get it from Configuration Table.
+    //
+    if (PciRomGetImageMapping (Temp)) {
+
+      //
+      // The OpRom has already been processed in the first round
+      //
+      Temp->AllOpRomProcessed = TRUE;
+    } else {
+      LoadOpRomImage (Temp);
+    }
+
+    CurrentLink = CurrentLink->ForwardLink;
+  }
+
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
 DetermineDeviceAttribute (
@@ -1037,7 +1008,7 @@ Returns:
 }
 
 EFI_STATUS
-InitializePPB (
+InitializePpb (
   IN PCI_IO_DEVICE *PciIoDevice
   )
 /*++
@@ -1174,9 +1145,12 @@ Returns:
     PciIoDevice->Allocated = TRUE;
   }
 
+  PciIoDevice->Registered         = FALSE;
   PciIoDevice->Attributes         = 0;
   PciIoDevice->Supports           = 0;
   PciIoDevice->BusOverride        = FALSE;
+  PciIoDevice->AllOpRomProcessed  = FALSE;
+
   PciIoDevice->IsPciExp           = FALSE;
 
   EfiCopyMem (&(PciIoDevice->Pci), Pci, sizeof (PCI_TYPE01));
@@ -1185,13 +1159,12 @@ Returns:
   // Initialize the PCI I/O instance structure
   //
 
-  Status  = InitializePciIoInstance (PciIoDevice);
-  Status  = InitializePciDriverOverrideInstance (PciIoDevice);
+  InitializePciIoInstance (PciIoDevice);
+  InitializePciDriverOverrideInstance (PciIoDevice);
 
-  if (EFI_ERROR (Status)) {
-    gBS->FreePool (PciIoDevice);
-    return NULL;
-  }
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  InitializePciLoadFile2 (PciIoDevice);
+#endif
 
   //
   // Initialize the reserved resource list
@@ -1232,7 +1205,6 @@ Returns:
 {
 
   EFI_STATUS                        Status;
-  EFI_DEVICE_PATH_PROTOCOL          *ParentDevicePath;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *PciRootBridgeIo;
   PCI_IO_DEVICE                     *RootBridgeDev;
   UINT16                            MinBus;
@@ -1244,25 +1216,10 @@ Returns:
   Descriptors = NULL;
 
   //
-  // If this host bridge has been already enumerated, then return successfully
+  // If this root bridge has been already enumerated, then return successfully
   //
-  if (RootBridgeExisted (Controller)) {
+  if (GetRootBridgeByHandle (Controller) != NULL) {
     return EFI_SUCCESS;
-  }
-
-  //
-  // Open the IO Abstraction(s) needed to perform the supported test
-  //
-  Status = gBS->OpenProtocol (
-                  Controller      ,   
-                  &gEfiDevicePathProtocolGuid,  
-                  (VOID **)&ParentDevicePath,
-                  gPciBusDriverBinding.DriverBindingHandle,     
-                  Controller,   
-                  EFI_OPEN_PROTOCOL_BY_DRIVER
-                  );
-  if (EFI_ERROR (Status) && Status != EFI_ALREADY_STARTED) {
-    return Status;
   }
 
   //
@@ -1280,29 +1237,24 @@ Returns:
     return Status;
   }
 
-  //
-  // Load all EFI Drivers from all PCI Option ROMs behind the PCI Root Bridge 
-  //
-  Status = PciRomLoadEfiDriversFromOptionRomTable (&gPciBusDriverBinding, PciRootBridgeIo);
-
   Status = PciRootBridgeIo->Configuration (PciRootBridgeIo, (VOID **) &Descriptors);
 
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  while (PciGetBusRange (Descriptors, &MinBus, &MaxBus, NULL) == EFI_SUCCESS) {
+  while (PciGetBusRange (&Descriptors, &MinBus, &MaxBus, NULL) == EFI_SUCCESS) {
 
     //
     // Create a device node for root bridge device with a NULL host bridge controller handle
     //
     RootBridgeDev = CreateRootBridge (Controller);
 
-    //
-    // Record the root bridge device path
-    //
-    RootBridgeDev->DevicePath = ParentDevicePath;
-
+    if (!RootBridgeDev) {
+      Descriptors++;
+      continue;
+    }
+    
     //
     // Record the root bridge io protocol
     //
@@ -1314,6 +1266,10 @@ Returns:
               );
 
     if (!EFI_ERROR (Status)) {
+      //
+      // Process option rom light
+      //
+      ProcessOptionRomLight (RootBridgeDev);
 
       //
       // If successfully, insert the node into device pool
@@ -1335,7 +1291,7 @@ Returns:
 
 EFI_STATUS
 PciGetBusRange (
-  IN     EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  *Descriptors,
+  IN     EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  **Descriptors,
   OUT    UINT16                             *MinBus,
   OUT    UINT16                             *MaxBus,
   OUT    UINT16                             *BusRange
@@ -1360,23 +1316,24 @@ Returns:
 --*/
 {
 
-  while (Descriptors->Desc != ACPI_END_TAG_DESCRIPTOR) {
-    if (Descriptors->ResType == ACPI_ADDRESS_SPACE_TYPE_BUS) {
+  while ((*Descriptors)->Desc != ACPI_END_TAG_DESCRIPTOR) {
+    if ((*Descriptors)->ResType == ACPI_ADDRESS_SPACE_TYPE_BUS) {
       if (MinBus != NULL) {
-        *MinBus = (UINT16)Descriptors->AddrRangeMin;
+        *MinBus = (UINT16) (*Descriptors)->AddrRangeMin;
       }
 
       if (MaxBus != NULL) {
-        *MaxBus = (UINT16)Descriptors->AddrRangeMax;
+        *MaxBus = (UINT16) (*Descriptors)->AddrRangeMax;
       }
 
       if (BusRange != NULL) {
-        *BusRange = (UINT16)Descriptors->AddrLen;
+        *BusRange = (UINT16) (*Descriptors)->AddrLen;
       }
+
       return EFI_SUCCESS;
     }
 
-    Descriptors ++;
+    (*Descriptors)++;
   }
 
   return EFI_NOT_FOUND;

@@ -282,7 +282,7 @@ CFormPkg::BuildPkgHdr (
     return VFR_RETURN_OUT_FOR_RESOURCES;
   }
 
-  (*PkgHdr)->Type = EFI_HII_PACKAGE_FORM;
+  (*PkgHdr)->Type = EFI_HII_PACKAGE_FORMS;
   (*PkgHdr)->Length = mPkgLength + sizeof (EFI_HII_PACKAGE_HEADER);
   return VFR_RETURN_SUCCESS;
 }
@@ -702,7 +702,7 @@ static struct {
   { sizeof (EFI_IFR_DATE), 1 },                // EFI_IFR_DATE_OP
   { sizeof (EFI_IFR_TIME), 1 },                // EFI_IFR_TIME_OP
   { sizeof (EFI_IFR_STRING), 1 },              // EFI_IFR_STRING_OP
-  { sizeof (EFI_IFR_REFRESH), 1 },             // EFI_IFR_REFRESH_OP
+  { sizeof (EFI_IFR_REFRESH), 0 },             // EFI_IFR_REFRESH_OP
   { sizeof (EFI_IFR_DISABLE_IF), 1 },          // EFI_IFR_DISABLE_IF_OP - 0x1E
   { 0, 0 },                                    // 0x1F
   { sizeof (EFI_IFR_TO_LOWER), 0 },            // EFI_IFR_TO_LOWER_OP - 0x20

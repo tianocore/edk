@@ -20,7 +20,7 @@ Abstract:
 --*/
 
 #include "exec.h"
-#include "..\hand\hand.h"
+#include "hand.h"
 
 //
 // Enumerate the valid types

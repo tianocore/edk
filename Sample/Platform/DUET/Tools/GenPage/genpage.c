@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright 2006 - 2007, Intel Corporation                                                         
+Copyright 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -39,6 +39,9 @@ memset (void *, char, long);
 
 unsigned int
 xtoi (char  *);
+
+#define UTILITY_NAME                "GenPage"
+#define UTILITY_VERSION             "v1.0"
 
 #define EFI_PAGE_BASE_OFFSET_IN_LDR 0x70000
 #define EFI_PAGE_BASE_ADDRESS       (EFI_PAGE_BASE_OFFSET_IN_LDR + 0x20000)
@@ -230,6 +233,33 @@ return:
   return 0;
 }
 
+VOID
+Usage (
+  VOID
+  )
+{
+  int         Index;
+  const char  *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel Generate Page Table Utility",
+    "  Copyright (C), 2006 - 2008 Intel Corporation",
+    
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" SOURCE DEST [BASEADDRESS OFFSET]",
+    "Description:",
+    "  Generate a 4G page table (2M pages) in DUET x64 build for LongMode switching.",
+    "  The tool put the page table in the OFFSET of SOURCE and write the whole to",
+    "  DEST. The page table is to be put at BASEADDRESS in runtime.",
+    NULL
+  };
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
+  }
+}
+
 int
 main (
   int argc,
@@ -243,7 +273,7 @@ main (
   // Check parameter
   //
   if ((argc != 3) && (argc != 5)) {
-    printf ("Usage: GenPage.exe NoPageFile PageFile [<PageTableBaseAddrss> <PageTableOffsetInFile>]\n");
+    Usage ();
     return 1;
   }
 

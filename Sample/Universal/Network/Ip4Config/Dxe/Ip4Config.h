@@ -25,6 +25,8 @@ Abstract:
 #include "Tiano.h"
 #include "EfiDriverLib.h"
 #include "NetLib.h"
+#include "EfiCommonLib.h"
+#include "EfiPrintLib.h"
 
 #include EFI_PROTOCOL_CONSUMER (Dhcp4)
 #include EFI_PROTOCOL_CONSUMER (NicIp4Config)

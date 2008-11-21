@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,7 +24,7 @@ Revision History
 #ifndef _EFI_PCI_IO_PROTOCOL_H
 #define _EFI_PCI_IO_PROTOCOL_H
 
-EFI_STATUS
+VOID
 InitializePciIoInstance (
   PCI_IO_DEVICE  *PciIoDevice
   )
@@ -40,7 +40,7 @@ Arguments:
 
 Returns:
 
-  TODO: add return values
+  None.
 
 --*/
 ;

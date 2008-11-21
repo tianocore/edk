@@ -37,7 +37,8 @@ Abstract:
 #include "EfiUtilityMsgs.h"
 #include "TianoBind.h"
 
-#define PROGRAM_NAME  "ProcessDsc"
+#define UTILITY_NAME    "ProcessDsc"
+#define UTILITY_VERSION "v1.0"
 
 //
 // Common symbol name definitions. For example, the user can reference
@@ -601,7 +602,7 @@ Returns:
   SYMBOL                *TempSymbol;
   COMPONENTS_ITEM       *TempComponents;
 
-  SetUtilityName (PROGRAM_NAME);
+  SetUtilityName (UTILITY_NAME);
 
   InitExceptions ();
 
@@ -4588,21 +4589,29 @@ Usage (
   VOID
   )
 {
-  int               i;
-  static const INT8 *Help[] = {
-    "Usage:  ProcessDsc {options} [Dsc Filename]",
-    "    Options:",
-    "       -d var=value        to define symbol 'var' to 'value'",
-    "       -v                  for verbose mode",
-    "       -g filename         to preparse GUID listing file",
-    "       -x filename         to create a cross-reference file",
-    "       -n threadnumber     to build with multi-thread",
-    "       -t target           to build the specified target:",
-    "                           all, libraries or components",
+  int         Index;
+  const char  *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel Process DSC File Utility",
+    "  Copyright (C), 2004 - 2008 Intel Corporation",
+    
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" [OPTION]... DSCFILE",
+    "Options:",
+    "  -d var=value        to define symbol 'var' to 'value'",
+    "  -v                  for verbose mode",
+    "  -g filename         to preparse GUID listing file",
+    "  -x filename         to create a cross-reference file",
+    "  -n threadnumber     to build with multi-thread",
+    "  -t target           to build the specified target:",
+    "                      all, libraries or components",
     NULL
   };
-  for (i = 0; Help[i] != NULL; i++) {
-    fprintf (stdout, "%s\n", Help[i]);
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
   }
 }
 

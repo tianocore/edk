@@ -711,7 +711,12 @@ typedef struct {
 //
 // Misc. Hardware Security - SMBIOS Type 24
 //
-#define EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA_RECORD_NUMBER 0x00000012
+#define EFI_MISC_HARDWARE_SECURITY_RECORD_NUMBER 0x00000012
+
+//
+// Backward Compatibility
+//
+#define EFI_MISC_HARDWARE_SECURITY_SETTINGS_DATA_RECORD_NUMBER  EFI_MISC_HARDWARE_SECURITY_RECORD_NUMBER
 
 typedef enum {
   EfiHardwareSecurityStatusDisabled = 0,
@@ -1013,7 +1018,7 @@ typedef struct {
 } POWER_SUPPLY_CHARACTERISTICS;
 
 typedef struct {
-  UINT8                           PowerUnitGroup;
+  UINT16                          PowerUnitGroup;
   STRING_REF                      PowerSupplyLocation;
   STRING_REF                      PowerSupplyDeviceName;
   STRING_REF                      PowerSupplyManufacturer;

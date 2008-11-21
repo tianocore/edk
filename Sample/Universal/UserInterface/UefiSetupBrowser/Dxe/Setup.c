@@ -37,8 +37,8 @@ EFI_HII_DATABASE_PROTOCOL         *mHiiDatabase;
 EFI_HII_STRING_PROTOCOL           *mHiiString;
 EFI_HII_CONFIG_ROUTING_PROTOCOL   *mHiiConfigRouting;
 
-BANNER_DATA           *BannerData;
-EFI_HII_HANDLE        FrontPageHandle;
+BANNER_DATA           *gBannerData;
+EFI_HII_HANDLE        gFrontPageHandle;
 UINTN                 gClassOfVfr;
 UINTN                 gFunctionKeySetting;
 BOOLEAN               gResetRequired;
@@ -58,6 +58,7 @@ CHAR16            *gFunctionNineString;
 CHAR16            *gFunctionTenString;
 CHAR16            *gEnterString;
 CHAR16            *gEnterCommitString;
+CHAR16            *gEnterEscapeString;
 CHAR16            *gEscapeString;
 CHAR16            *gSaveFailed;
 CHAR16            *gMoveHighlight;
@@ -81,6 +82,7 @@ CHAR16            *gPlusString;
 CHAR16            *gMinusString;
 CHAR16            *gAdjustNumber;
 CHAR16            *gSaveChanges;
+CHAR16            *gOptionMismatch;
 
 CHAR16            gPromptBlockWidth;
 CHAR16            gOptionBlockWidth;
@@ -90,6 +92,8 @@ EFI_GUID  gZeroGuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 EFI_GUID  gSetupBrowserGuid = {
   0xab368524, 0xb60c, 0x495b, 0xa0, 0x9, 0x12, 0xe8, 0x5b, 0x1a, 0xea, 0x32
 };
+EFI_GUID  gPlatformSetupClassGuid = EFI_HII_PLATFORM_SETUP_FORMSET_GUID;
+EFI_GUID  gFrontPageClassGuid = EFI_HII_FRONT_PAGE_CLASS_GUID;
 
 FUNCTIION_KEY_SETTING gFunctionKeySettingTable[] = {
   //
@@ -271,7 +275,7 @@ Returns:
   InitializeBrowserStrings ();
 
   gFunctionKeySetting = DEFAULT_FUNCTION_KEY_SETTING;
-  gClassOfVfr         = EFI_SETUP_APPLICATION_SUBCLASS;
+  gClassOfVfr         = FORMSET_CLASS_PLATFORM_SETUP;
 
   //
   // Ensure we are in Text mode
@@ -571,8 +575,8 @@ Returns:
   //
   // Initialize Driver private data
   //
-  BannerData = EfiLibAllocateZeroPool (sizeof (BANNER_DATA));
-  ASSERT (BannerData != NULL);
+  gBannerData = EfiLibAllocateZeroPool (sizeof (BANNER_DATA));
+  ASSERT (gBannerData != NULL);
 
   //
   // Install FormBrowser2 protocol
@@ -1061,6 +1065,7 @@ Returns:
   CHAR16              *Progress;
   CHAR16              *Result;
   CHAR16              *Value;
+  CHAR16              *StringPtr;
   UINTN               Length;
   BOOLEAN             IsBufferStorage;
   BOOLEAN             IsString;
@@ -1254,6 +1259,16 @@ Returns:
     // Skip '=', point to value
     //
     Value = Value + 1;
+
+    //
+    // Suppress <AltResp> if any
+    //
+    StringPtr = Value;
+    while (*StringPtr != L'\0' && *StringPtr != L'&') {
+      StringPtr++;
+    }
+    *StringPtr = L'\0';
+
     if (!IsBufferStorage && IsString) {
       //
       // Convert Config String to Unicode String, e.g "0041004200430044" => "ABCD"
@@ -1844,21 +1859,16 @@ Returns:
   // For Questions without default
   //
   switch (Question->Operand) {
-  case EFI_IFR_NUMERIC_OP:
-    //
-    // Take minimal value as numeric's default value
-    //
-    HiiValue->Value.u64 = Question->Minimum;
-    break;
-
   case EFI_IFR_ONE_OF_OP:
     //
     // Take first oneof option as oneof's default value
     //
-    Link = GetFirstNode (&Question->OptionListHead);
-    if (!IsNull (&Question->OptionListHead, Link)) {
-      Option = QUESTION_OPTION_FROM_LINK (Link);
-      EfiCopyMem (HiiValue, &Option->Value, sizeof (EFI_HII_VALUE));
+    if (ValueToOption (Question, HiiValue) == NULL) {
+      Link = GetFirstNode (&Question->OptionListHead);
+      if (!IsNull (&Question->OptionListHead, Link)) {
+        Option = QUESTION_OPTION_FROM_LINK (Link);
+        EfiCopyMem (HiiValue, &Option->Value, sizeof (EFI_HII_VALUE));
+      }
     }
     break;
 
@@ -1919,6 +1929,16 @@ Returns:
   while (!IsNull (&Form->StatementListHead, Link)) {
     Question = FORM_BROWSER_STATEMENT_FROM_LINK (Link);
     Link = GetNextNode (&Form->StatementListHead, Link);
+
+    //
+    // If Question is disabled, don't reset it to default
+    //
+    if (Question->DisableExpression != NULL) {
+      Status = EvaluateExpression (FormSet, Form, Question->DisableExpression);
+      if (!EFI_ERROR (Status) && Question->DisableExpression->Result.Value.b) {
+        continue;
+      }
+    }
 
     //
     // Reset Question to its default value
@@ -2140,6 +2160,9 @@ Returns:
   BOOLEAN                      ReturnDefault;
   UINT32                       PackageListLength;
   EFI_HII_PACKAGE_HEADER       PackageHeader;
+  UINT8                        Index;
+  UINT8                        NumberOfClassGuid;
+  BOOLEAN                      IsSetupClassGuid;
 
   OpCodeData = NULL;
   Package = NULL;
@@ -2181,7 +2204,7 @@ Returns:
     Package = ((UINT8 *) HiiPackageList) + Offset;
     EfiCopyMem (&PackageHeader, Package, sizeof (EFI_HII_PACKAGE_HEADER));
 
-    if (PackageHeader.Type == EFI_HII_PACKAGE_FORM) {
+    if (PackageHeader.Type == EFI_HII_PACKAGE_FORMS) {
       //
       // Search FormSet in this Form Package
       //
@@ -2194,7 +2217,27 @@ Returns:
           // Check whether return default FormSet
           //
           if (ReturnDefault) {
-            break;
+            if (((EFI_IFR_OP_HEADER *) OpCodeData)->Length <= ((UINTN) &((EFI_IFR_FORM_SET *) 0)->Flags)) {
+              //
+              // This is the old version of formset OpCode
+              //
+              break;
+            }
+
+            //
+            // This is new version of formset OpCode, check whether ClassGuid
+            //
+            IsSetupClassGuid = FALSE;
+            NumberOfClassGuid = ((EFI_IFR_FORM_SET *) OpCodeData)->Flags & 0x3;
+            for (Index = 0; Index < NumberOfClassGuid; Index++) {
+              if (EfiCompareMem (&((EFI_IFR_FORM_SET *) OpCodeData)->ClassGuid[Index], &gPlatformSetupClassGuid, sizeof (EFI_GUID)) == 0) {
+                IsSetupClassGuid = TRUE;
+                break;
+              }
+            }
+            if (IsSetupClassGuid) {
+              break;
+            }
           }
 
           //
@@ -2315,9 +2358,17 @@ Returns:
     return Status;
   }
 
-  gClassOfVfr = FormSet->SubClass;
-  if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
-    FrontPageHandle = FormSet->HiiHandle;
+  gClassOfVfr = FORMSET_CLASS_PLATFORM_SETUP;
+  if (IsClassGuidMatch (FormSet, &gFrontPageClassGuid)) {
+    gClassOfVfr = FORMSET_CLASS_FRONT_PAGE;
+  }
+#ifdef TIANO_EXTENDED_CLASS_SUBCLASS_SUPPORT
+  if (FormSet->SubClass == EFI_FRONT_PAGE_SUBCLASS) {
+    gClassOfVfr = FORMSET_CLASS_FRONT_PAGE;
+  }
+#endif
+  if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
+    gFrontPageHandle = FormSet->HiiHandle;
   }
 
   //

@@ -37,6 +37,7 @@ formset
   guid     = FORMSET_GUID,
   title    = STRING_TOKEN(STR_BM_BANNER),
   help     = STRING_TOKEN(STR_LAST_STRING),
+  classguid = FORMSET_GUID,
   class    = BOOT_MANAGER_CLASS,
   subclass = BOOT_MANAGER_SUBCLASS,
 

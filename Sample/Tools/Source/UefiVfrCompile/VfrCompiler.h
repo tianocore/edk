@@ -26,8 +26,8 @@ Abstract:
 #include "VfrFormPkg.h"
 #include "VfrUtilityLib.h"
 
-#define PROGRAM_NAME                       "VfrCompile"
-#define VFR_COMPILER_VERSION               "UEFI 2.1"
+#define UTILITY_NAME                        "VfrCompile"
+#define UTILITY_VERSION                     "v1.0"
 
 //
 // This is how we invoke the C preprocessor on the VFR source file

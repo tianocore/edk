@@ -86,17 +86,15 @@ UpdateFormPackageData (
   OUT UINT32                 *TempBufferSize
   )
 {
-  UINTN                     AddSize;
   UINT8                     *BufferPos;
   EFI_HII_PACKAGE_HEADER    PackageHeader;
-  UINTN                     Offset;
+  UINT32                    Offset;
   EFI_IFR_OP_HEADER         *IfrOpHdr;
   BOOLEAN                   GetFormSet;
   BOOLEAN                   GetForm;
   UINT8                     ExtendOpCode;
   UINT16                    LabelNumber;
   BOOLEAN                   Updated;
-  EFI_IFR_OP_HEADER         *AddOpCode;
 
   if ((TempBuffer == NULL) || (TempBufferSize == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -122,7 +120,7 @@ UpdateFormPackageData (
   GetForm    = FALSE;
   Updated    = FALSE;
 
-  while (Offset < PackageHeader.Length) {
+  while (!Updated && Offset < PackageHeader.Length) {
     EfiCopyMem (BufferPos, IfrOpHdr, IfrOpHdr->Length);
     BufferPos += IfrOpHdr->Length;
     *TempBufferSize += IfrOpHdr->Length;
@@ -132,6 +130,8 @@ UpdateFormPackageData (
       if (FormSetGuid != NULL) {
         if (EfiCompareMem (&((EFI_IFR_FORM_SET *) IfrOpHdr)->Guid, FormSetGuid, sizeof (EFI_GUID)) == 0) {
           GetFormSet = TRUE;
+        } else {
+          GetFormSet = FALSE;
         }
       }
       break;
@@ -139,17 +139,24 @@ UpdateFormPackageData (
     case EFI_IFR_FORM_OP:
       if (EfiCompareMem (&((EFI_IFR_FORM *) IfrOpHdr)->FormId, &FormId, sizeof (EFI_FORM_ID)) == 0) {
         GetForm = TRUE;
+      } else {
+        GetForm = FALSE;
       }
       break;
 
     case EFI_IFR_GUID_OP :
-      if (!GetFormSet || !GetForm || Updated) {
+      if (!GetFormSet || !GetForm) {
         //
         // Go to the next Op-Code
         //
-        Offset   += IfrOpHdr->Length;
-        IfrOpHdr = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (IfrOpHdr) + IfrOpHdr->Length);
-        continue;
+        break;
+      }
+
+      if (!EfiCompareGuid (&((EFI_IFR_GUID *) IfrOpHdr)->Guid, &mIfrVendorGuid)) {
+        //
+        // GUID mismatch, skip this op-code
+        //
+        break;
       }
 
       ExtendOpCode = ((EFI_IFR_GUID_LABEL *) IfrOpHdr)->ExtendOpCode;
@@ -158,29 +165,18 @@ UpdateFormPackageData (
         //
         // Go to the next Op-Code
         //
-        Offset   += IfrOpHdr->Length;
-        IfrOpHdr = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (IfrOpHdr) + IfrOpHdr->Length);
-        continue;
+        break;
       }
 
-      if (Insert && (Data != NULL)) {
+      if (Insert) {
         //
-        // insert the DataCount amount of opcodes to TempBuffer if Data is NULL remove
-        // DataCount amount of opcodes unless runing into a label.
+        // Insert data after current Label, skip myself
         //
-        AddOpCode = (EFI_IFR_OP_HEADER *)Data->Data;
-        AddSize   = 0;
-        while (AddSize < Data->Offset) {
-          EfiCopyMem (BufferPos, AddOpCode, AddOpCode->Length);
-          BufferPos += AddOpCode->Length;
-          *TempBufferSize += AddOpCode->Length;
-
-          AddSize += AddOpCode->Length;
-          AddOpCode = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (AddOpCode) + AddOpCode->Length);
-        }
+        Offset   += IfrOpHdr->Length;
+        IfrOpHdr = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (IfrOpHdr) + IfrOpHdr->Length);
       } else {
         //
-        // Search the next Label.
+        // Replace data between two paired Label, try to find the next Label.
         //
         while (TRUE) {
           Offset   += IfrOpHdr->Length;
@@ -193,32 +189,27 @@ UpdateFormPackageData (
           IfrOpHdr = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (IfrOpHdr) + IfrOpHdr->Length);
           if (IfrOpHdr->OpCode == EFI_IFR_GUID_OP) {
             ExtendOpCode = ((EFI_IFR_GUID_LABEL *) IfrOpHdr)->ExtendOpCode;
-            if (ExtendOpCode == EFI_IFR_EXTEND_OP_LABEL) {
+            if (EfiCompareGuid (&((EFI_IFR_GUID *) IfrOpHdr)->Guid, &mIfrVendorGuid) && ExtendOpCode == EFI_IFR_EXTEND_OP_LABEL) {
               break;
             }
           }
         }
-
-        if (Data != NULL) {
-          AddOpCode = (EFI_IFR_OP_HEADER *)Data->Data;
-          AddSize   = 0;
-          while (AddSize < Data->Offset) {
-            EfiCopyMem (BufferPos, AddOpCode, AddOpCode->Length);
-            BufferPos += AddOpCode->Length;
-            *TempBufferSize += AddOpCode->Length;
-
-            AddSize   += AddOpCode->Length;
-            AddOpCode = (EFI_IFR_OP_HEADER *) ((CHAR8 *) (AddOpCode) + AddOpCode->Length);
-          }
-        }
-
-        //
-        // copy the next label
-        //
-        EfiCopyMem (BufferPos, IfrOpHdr, IfrOpHdr->Length);
-        BufferPos += IfrOpHdr->Length;
-        *TempBufferSize += IfrOpHdr->Length;
       }
+
+      //
+      // Fill in the update data
+      //
+      if (Data != NULL) {
+        EfiCopyMem (BufferPos, Data->Data, Data->Offset);
+        BufferPos += Data->Offset;
+        *TempBufferSize += Data->Offset;
+      }
+
+      //
+      // Copy the reset data
+      //
+      EfiCopyMem (BufferPos, IfrOpHdr, PackageHeader.Length - Offset);
+      *TempBufferSize += PackageHeader.Length - Offset;
 
       Updated = TRUE;
       break;
@@ -249,7 +240,7 @@ Fail:
   return EFI_SUCCESS;
 }
 
-VOID
+EFI_STATUS
 IfrLibInitUpdateData (
   IN OUT EFI_HII_UPDATE_DATA   *UpdateData,
   IN UINT32                    BufferSize
@@ -264,17 +255,51 @@ Arguments:
   BufferSize     - Length of the buffer to fill dynamic opcodes.
 
 Returns:
-  None.
+  EFI_SUCCESS           - Update data is initialized.
+  EFI_INVALID_PARAMETER - UpdateData is NULL.
+  EFI_OUT_OF_RESOURCES  - No enough memory to allocate.
 
 --*/
 {
-    ASSERT (UpdateData != NULL);
+  if (UpdateData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
-    UpdateData->BufferSize = BufferSize;
-    UpdateData->Offset = 0;
-    UpdateData->Data = EfiLibAllocatePool (BufferSize);
+  UpdateData->BufferSize = BufferSize;
+  UpdateData->Offset = 0;
+  UpdateData->Data = EfiLibAllocatePool (BufferSize);
 
-    ASSERT (UpdateData->Data != NULL);
+  return (UpdateData->Data != NULL) ? EFI_SUCCESS : EFI_OUT_OF_RESOURCES;
+}
+
+EFI_STATUS
+IfrLibFreeUpdateData (
+  IN EFI_HII_UPDATE_DATA       *UpdateData
+  )
+/*++
+
+Routine Description:
+  This function free the resource of update data.
+
+Arguments:
+  UpdateData     - The adding data;
+
+Returns:
+  EFI_SUCCESS           - Resource in UpdateData is released.
+  EFI_INVALID_PARAMETER - UpdateData is NULL.
+
+--*/
+{
+  EFI_STATUS  Status;
+
+  if (UpdateData == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->FreePool (UpdateData->Data);
+  UpdateData->Data = NULL;
+
+  return Status;
 }
 
 EFI_STATUS
@@ -367,7 +392,7 @@ Returns:
     Status = GetPackageDataFromPackageList (HiiPackageList, Index, &PackageLength, &Package);
     if (Status == EFI_SUCCESS) {
       EfiCopyMem (&PackageHeader, Package, sizeof (EFI_HII_PACKAGE_HEADER));
-      if ((PackageHeader.Type == EFI_HII_PACKAGE_FORM) && !Updated) {
+      if ((PackageHeader.Type == EFI_HII_PACKAGE_FORMS) && !Updated) {
         Status = UpdateFormPackageData (FormSetGuid, FormId, Package, PackageLength, Label, Insert, Data, (UINT8 **)&TempBuffer, &TempBufferSize);
         if (!EFI_ERROR(Status)) {
           if (FormSetGuid == NULL) {
@@ -1787,8 +1812,8 @@ Returns:
                            &BufferSize,
                            StringPtr,
                            FALSE,
-                           NULL,
-                           NULL
+                           VariableGuid,
+                           VariableName
                            );
   gBS->FreePool (ConfigResp);
   return Status;

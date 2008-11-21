@@ -321,4 +321,25 @@ Returns:
 
 --*/
 ;
+EFI_STATUS
+FreePciDevice (
+  IN PCI_IO_DEVICE *PciIoDevice
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  PciIoDevice - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 #endif

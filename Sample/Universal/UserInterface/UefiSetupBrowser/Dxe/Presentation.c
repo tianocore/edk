@@ -191,7 +191,7 @@ DisplayPageFrame (
     Buffer[Index] = Character;
   }
 
-  if (gClassOfVfr == EFI_FRONT_PAGE_SUBCLASS) {
+  if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
     //
     //    ClearLines(0, LocalScreen.RightColumn, 0, BANNER_HEIGHT-1, BANNER_TEXT | BANNER_BACKGROUND);
     //
@@ -213,10 +213,10 @@ DisplayPageFrame (
            Alignment < BANNER_COLUMNS + (UINT8) LocalScreen.LeftColumn;
            Alignment++
           ) {
-        if (BannerData->Banner[Line - (UINT8) LocalScreen.TopRow][Alignment - (UINT8) LocalScreen.LeftColumn] != 0x0000) {
+        if (gBannerData->Banner[Line - (UINT8) LocalScreen.TopRow][Alignment - (UINT8) LocalScreen.LeftColumn] != 0x0000) {
           StrFrontPageBanner = GetToken (
-                                BannerData->Banner[Line - (UINT8) LocalScreen.TopRow][Alignment - (UINT8) LocalScreen.LeftColumn],
-                                FrontPageHandle
+                                gBannerData->Banner[Line - (UINT8) LocalScreen.TopRow][Alignment - (UINT8) LocalScreen.LeftColumn],
+                                gFrontPageHandle
                                 );
         } else {
           continue;
@@ -266,7 +266,7 @@ DisplayPageFrame (
     KEYHELP_TEXT | KEYHELP_BACKGROUND
     );
 
-  if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
+  if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
     ClearLines (
       LocalScreen.LeftColumn,
       LocalScreen.RightColumn,
@@ -301,7 +301,7 @@ DisplayPageFrame (
     Character = BOXDRAW_UP_LEFT;
     PrintChar (Character);
 
-    if (gClassOfVfr == EFI_SETUP_APPLICATION_SUBCLASS) {
+    if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
       //
       // Print Bottom border line
       // +------------------------------------------------------------------------------+
@@ -441,7 +441,7 @@ DisplayForm (
 
   StringPtr = GetToken (Selection->Form->FormTitle, Handle);
 
-  if (gClassOfVfr != EFI_FRONT_PAGE_SUBCLASS) {
+  if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
     gST->ConOut->SetAttribute (gST->ConOut, TITLE_TEXT | TITLE_BACKGROUND);
     PrintStringAt (
       (LocalScreen.RightColumn + LocalScreen.LeftColumn - GetStringWidth (StringPtr) / 2) / 2,
@@ -450,7 +450,7 @@ DisplayForm (
       );
   }
 
-  if (gClassOfVfr == EFI_SETUP_APPLICATION_SUBCLASS) {
+  if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
     gST->ConOut->SetAttribute (gST->ConOut, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
     //
@@ -459,24 +459,6 @@ DisplayForm (
     if (!IsListEmpty (&gMenuList)) {
       PrintStringAt (LocalScreen.LeftColumn + 2, LocalScreen.TopRow + 1, gFunctionTwoString);
     }
-
-    PrintStringAt (LocalScreen.LeftColumn + 2, LocalScreen.BottomRow - 4, gFunctionOneString);
-    PrintStringAt (
-      LocalScreen.LeftColumn + (LocalScreen.RightColumn - LocalScreen.LeftColumn) / 3,
-      LocalScreen.BottomRow - 4,
-      gFunctionNineString
-      );
-    PrintStringAt (
-      LocalScreen.LeftColumn + (LocalScreen.RightColumn - LocalScreen.LeftColumn) * 2 / 3,
-      LocalScreen.BottomRow - 4,
-      gFunctionTenString
-      );
-    PrintAt (LocalScreen.LeftColumn + 2, LocalScreen.BottomRow - 3, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
-    PrintStringAt (
-      LocalScreen.LeftColumn + (LocalScreen.RightColumn - LocalScreen.LeftColumn) / 3,
-      LocalScreen.BottomRow - 3,
-      gEscapeString
-      );
   }
   //
   // Remove Buffer allocated for StringPtr after it has been used.
@@ -499,6 +481,10 @@ DisplayForm (
       Suppress = Statement->SuppressExpression->Result.Value.b;
     } else {
       Suppress = FALSE;
+    }
+
+    if (Statement->DisableExpression != NULL) {
+      Suppress = Suppress || Statement->DisableExpression->Result.Value.b;
     }
 
     if (!Suppress) {
@@ -548,6 +534,7 @@ InitializeBrowserStrings (
   gFunctionTenString    = GetToken (STRING_TOKEN (FUNCTION_TEN_STRING), gHiiHandle);
   gEnterString          = GetToken (STRING_TOKEN (ENTER_STRING), gHiiHandle);
   gEnterCommitString    = GetToken (STRING_TOKEN (ENTER_COMMIT_STRING), gHiiHandle);
+  gEnterEscapeString    = GetToken (STRING_TOKEN (ENTER_ESCAPE_STRING), gHiiHandle);
   gEscapeString         = GetToken (STRING_TOKEN (ESCAPE_STRING), gHiiHandle);
   gSaveFailed           = GetToken (STRING_TOKEN (SAVE_FAILED), gHiiHandle);
   gMoveHighlight        = GetToken (STRING_TOKEN (MOVE_HIGHLIGHT), gHiiHandle);
@@ -571,6 +558,7 @@ InitializeBrowserStrings (
   gMinusString          = GetToken (STRING_TOKEN (MINUS_STRING), gHiiHandle);
   gAdjustNumber         = GetToken (STRING_TOKEN (ADJUST_NUMBER), gHiiHandle);
   gSaveChanges          = GetToken (STRING_TOKEN (SAVE_CHANGES), gHiiHandle);
+  gOptionMismatch       = GetToken (STRING_TOKEN (OPTION_MISMATCH), gHiiHandle);
   return ;
 }
 
@@ -585,6 +573,7 @@ FreeBrowserStrings (
   EfiLibSafeFreePool (gFunctionTenString);
   EfiLibSafeFreePool (gEnterString);
   EfiLibSafeFreePool (gEnterCommitString);
+  EfiLibSafeFreePool (gEnterEscapeString);
   EfiLibSafeFreePool (gEscapeString);
   EfiLibSafeFreePool (gMoveHighlight);
   EfiLibSafeFreePool (gMakeSelection);
@@ -607,6 +596,7 @@ FreeBrowserStrings (
   EfiLibSafeFreePool (gMinusString);
   EfiLibSafeFreePool (gAdjustNumber);
   EfiLibSafeFreePool (gSaveChanges);
+  EfiLibSafeFreePool (gOptionMismatch);
   return ;
 }
 
@@ -650,10 +640,6 @@ Returns:
   TopRowOfHelp      = LocalScreen.BottomRow - 4;
   BottomRowOfHelp   = LocalScreen.BottomRow - 3;
 
-  if (gClassOfVfr == EFI_GENERAL_APPLICATION_SUBCLASS) {
-    return ;
-  }
-
   gST->ConOut->SetAttribute (gST->ConOut, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
   Statement = MenuOption->ThisTag;
@@ -666,7 +652,7 @@ Returns:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
     if (!Selected) {
-      if (gClassOfVfr == EFI_SETUP_APPLICATION_SUBCLASS) {
+      if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
         PrintStringAt (StartColumnOfHelp, TopRowOfHelp, gFunctionOneString);
         PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
         PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
@@ -674,8 +660,7 @@ Returns:
       }
 
       if ((Statement->Operand == EFI_IFR_DATE_OP) ||
-          (Statement->Operand == EFI_IFR_TIME_OP) ||
-          (Statement->Operand == EFI_IFR_NUMERIC_OP && Statement->Step != 0)) {
+          (Statement->Operand == EFI_IFR_TIME_OP)) {
         PrintAt (
           StartColumnOfHelp,
           BottomRowOfHelp,
@@ -689,7 +674,11 @@ Returns:
         PrintStringAt (SecCol, BottomRowOfHelp, gAdjustNumber);
       } else {
         PrintAt (StartColumnOfHelp, BottomRowOfHelp, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
-        PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
+        if (Statement->Operand == EFI_IFR_NUMERIC_OP && Statement->Step != 0) {
+          PrintStringAt (SecCol, BottomRowOfHelp, gAdjustNumber);
+        } else {
+          PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
+        }
       }
     } else {
       PrintStringAt (SecCol, BottomRowOfHelp, gEnterCommitString);
@@ -712,14 +701,14 @@ Returns:
         PrintStringAt (ThdCol, TopRowOfHelp, gMinusString);
       }
 
-      PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
+      PrintStringAt (ThdCol, BottomRowOfHelp, gEnterEscapeString);
     }
     break;
 
   case EFI_IFR_CHECKBOX_OP:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
-    if (gClassOfVfr == EFI_SETUP_APPLICATION_SUBCLASS) {
+    if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
       PrintStringAt (StartColumnOfHelp, TopRowOfHelp, gFunctionOneString);
       PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
       PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
@@ -739,7 +728,7 @@ Returns:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
     if (!Selected) {
-      if (gClassOfVfr == EFI_SETUP_APPLICATION_SUBCLASS) {
+      if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
         PrintStringAt (StartColumnOfHelp, TopRowOfHelp, gFunctionOneString);
         PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
         PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
@@ -757,7 +746,7 @@ Returns:
           BottomRowOfHelp,
           gEnterCommitString
           );
-        PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
+        PrintStringAt (ThdCol, BottomRowOfHelp, gEnterEscapeString);
       }
     }
     break;
@@ -808,7 +797,7 @@ SetupBrowser (
   //
   Status = mHiiDatabase->RegisterPackageNotify (
                            mHiiDatabase,
-                           EFI_HII_PACKAGE_FORM,
+                           EFI_HII_PACKAGE_FORMS,
                            NULL,
                            FormUpdateNotify,
                            EFI_HII_DATABASE_NOTIFY_REMOVE_PACK,
@@ -837,6 +826,13 @@ SetupBrowser (
       Selection->FormId = Selection->Form->FormId;
     } else {
       Selection->Form = IdToForm (Selection->FormSet, Selection->FormId);
+    }
+
+    if (Selection->Form == NULL) {
+      //
+      // No Form to display
+      //
+      return EFI_NOT_FOUND;
     }
 
     //

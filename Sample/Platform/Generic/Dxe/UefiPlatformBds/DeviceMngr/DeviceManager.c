@@ -33,6 +33,7 @@ DEVICE_MANAGER_CALLBACK_DATA  gDeviceManagerPrivate = {
 };
 
 EFI_GUID mDeviceManagerGuid = DEVICE_MANAGER_FORMSET_GUID;
+EFI_GUID mPlatformSetupClassGuid = EFI_HII_PLATFORM_SETUP_FORMSET_GUID;
 
 DEVICE_MANAGER_MENU_ITEM  mDeviceManagerMenuItemTable[] = {
   { STRING_TOKEN (STR_DISK_DEVICE),     EFI_DISK_DEVICE_CLASS },
@@ -212,10 +213,13 @@ Returns:
   UINTN                       NumberOfHiiHandles;
   EFI_HII_HANDLE              HiiHandle;
   UINT16                      FormSetClass;
+  UINT16                      FormSetClass2;
   EFI_STRING_ID               FormSetTitle;
   EFI_STRING_ID               FormSetHelp;
   EFI_BROWSER_ACTION_REQUEST  ActionRequest;
   EFI_HII_PACKAGE_LIST_HEADER *PackageList;
+  UINT8                       NumberOfClassGuid;
+  EFI_GUID                    *ClassGuid;
 
   IfrOptionList       = NULL;
   VideoOption         = NULL;
@@ -265,7 +269,34 @@ Returns:
   //
   NumberOfHiiHandles = HandleBufferLength / sizeof (EFI_HII_HANDLE);
   for (Index = 0; Index < NumberOfHiiHandles; Index++) {
-    ExtractClassFromHiiHandle (HiiHandles[Index], &FormSetClass, &FormSetTitle, &FormSetHelp);
+
+    FormSetClass = EFI_NON_DEVICE_CLASS;
+
+    ClassGuid = NULL;
+    NumberOfClassGuid = 0;
+    ExtractClassGuidFromHiiHandle (HiiHandles[Index], &NumberOfClassGuid, &ClassGuid, &FormSetTitle, &FormSetHelp);
+    if (NumberOfClassGuid != 0) {
+      //
+      // Check whether ClassGuid match EFI_HII_PLATFORM_SETUP_FORMSET_GUID
+      //
+      while (NumberOfClassGuid > 0) {
+        if (EfiCompareGuid (&ClassGuid[NumberOfClassGuid - 1], &mPlatformSetupClassGuid)) {
+          FormSetClass = EFI_OTHER_DEVICE_CLASS;
+          break;
+        }
+
+        NumberOfClassGuid--;
+      }
+      gBS->FreePool (ClassGuid);
+    }
+
+    //
+    // Try to extrat Tiano extend GUIDed Class
+    //
+    Status = ExtractClassFromHiiHandle (HiiHandles[Index], &FormSetClass2, &FormSetTitle, &FormSetHelp);
+    if (!EFI_ERROR (Status)) {
+      FormSetClass = FormSetClass2;
+    }
 
     if (FormSetClass == EFI_NON_DEVICE_CLASS) {
       continue;
@@ -374,7 +405,7 @@ Returns:
                            gFormBrowser2,
                            &HiiHandle,
                            1,
-                           NULL,
+                           &mDeviceManagerGuid,
                            0,
                            NULL,
                            &ActionRequest

@@ -225,6 +225,10 @@ Returns:
   EFI_IMAGE_NT_HEADERS64    *PeHdr;
   EFI_TCG_PLATFORM_PROTOCOL *TcgPlatformProtocol;
   IMAGE_FILE_HANDLE         *FHandle;
+#ifdef EFI_LOAD_DRIVER_AT_FIXED_OFFSET
+  BOOLEAN OffsetMode;
+  STATIC BOOLEAN PrintTopAddress = TRUE;
+#endif
   
   DEBUG_CODE (
     UINTN   Index;
@@ -274,6 +278,45 @@ Returns:
     }
 
     Image->NumberOfPages = EFI_SIZE_TO_PAGES (Size);
+    //
+    // Following code is to support load a PE image at fixed offset relative to TOLM
+    //
+#ifdef EFI_LOAD_DRIVER_AT_FIXED_OFFSET
+    {
+      typedef struct {
+        EFI_PHYSICAL_ADDRESS  BaseAddress;
+        EFI_PHYSICAL_ADDRESS  MaximumAddress;
+        UINT64                CurrentNumberOfPages;
+        UINT64                NumberOfPages;
+        UINTN                 InformationIndex;
+        BOOLEAN               Special;
+        BOOLEAN               Runtime;
+      } EFI_MEMORY_TYPE_STAISTICS;
+
+    
+      extern EFI_MEMORY_TYPE_STAISTICS mMemoryTypeStatistics[EfiMaxMemoryType + 1];
+      INT32 Offset;
+      UINTN ReadSize = sizeof (UINT32);
+
+      if (PrintTopAddress) {
+        DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Runtime code top address: %lX\n", mMemoryTypeStatistics[EfiRuntimeServicesCode].MaximumAddress + 1));
+        DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Boot time code top address: %lX\n", mMemoryTypeStatistics[EfiBootServicesCode].MaximumAddress + 1));
+        PrintTopAddress = FALSE;
+      }
+      OffsetMode = FALSE;
+      Status = Image->ImageContext.ImageRead (
+                                     Image->ImageContext.Handle,
+                                     Image->ImageContext.PeCoffHeaderOffset + 12,
+                                     &ReadSize,
+                                     &Offset
+                                     );
+      if (!EFI_ERROR (Status) && Offset != 0 && 
+          Image->ImageContext.ImageCodeMemoryType != EfiLoaderCode) {
+            OffsetMode = TRUE;
+            Image->ImageContext.ImageAddress = mMemoryTypeStatistics[Image->ImageContext.ImageCodeMemoryType].MaximumAddress + 1 - Offset;
+      }
+    }
+#endif
 
     //
     // If the image relocations have not been stripped, then load at any address. 
@@ -290,6 +333,11 @@ Returns:
                  Image->NumberOfPages,
                  &Image->ImageContext.ImageAddress
                  );
+#ifdef EFI_LOAD_DRIVER_AT_FIXED_OFFSET
+        if (EFI_ERROR (Status) && OffsetMode) {
+          DEBUG((EFI_D_ERROR, "\nOffset mode load failure!"));
+        }
+#endif
     }
     if (EFI_ERROR (Status) && !Image->ImageContext.RelocationsStripped) {
       Status = CoreAllocatePages (

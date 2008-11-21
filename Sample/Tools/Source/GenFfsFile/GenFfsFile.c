@@ -43,7 +43,7 @@ Abstract:
 #include "SimpleFileParsing.h"
 
 #define UTILITY_NAME    "GenFfsFile"
-#define TOOLVERSION     "0.32"
+#define UTILITY_VERSION "v1.0"
 #define MAX_ARRAY_SIZE  100
 
 static
@@ -188,22 +188,33 @@ Returns:
 
 --*/
 {
-  printf ("Usage:\n");
-  printf (UTILITY_NAME " -b \"build directory\" -p1 \"package1.inf\" -p2 \"package2.inf\"\n");
-  printf ("           -d \"name=value\" -v\n");
-  printf ("   -b \"build directory\":\n");
-  printf ("       specifies the full path to the component build directory.\n");
-  printf ("   -p1 \"P1_path\":\n");
-  printf ("       specifies fully qualified file name to the primary package file.\n");
-  printf ("       This file will normally exist in the same directory as the makefile\n");
-  printf ("       for the component. Required.\n");
-  printf ("   -p2 \"P2_path\":\n");
-  printf ("       specifies fully qualified file name to the override package file.\n");
-  printf ("       This file will normally exist in the build tip. Optional.\n");
-  printf ("   -d \"name=value\":\n");
-  printf ("       add a macro definition for package file. Optional.\n");
-  printf ("   -v :\n");
-  printf ("       verbose. Optional.\n");
+  int         Index;
+  const char  *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel Generate FFS File Utility",
+    "  Copyright (C), 2004 - 2008 Intel Corporation",
+    
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" [OPTION]...",
+    "Options:",
+    "  -b BuildDirectory  Specifies the full path to the component build directory",
+    "  -p1 P1Path         Specifies fully qualified file name to the primary package",
+    "                     file. This file will normally exist in the same directory",
+    "                     as the makefile for the component. Required.",
+    "  -p2 P2Path         Specifies fully qualified file name to the override",
+    "                     package. This file will normally exist in the build tip.",
+    "                     Optional.",
+    "  -d Name=Value      Add a macro definition for the package file. Optional.",
+    "  -o OutputFile      Specifies the file name of output file. Optional.",
+    "  -v                 Verbose. Optional.",
+    NULL
+  };
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
+  }
 }
 
 static

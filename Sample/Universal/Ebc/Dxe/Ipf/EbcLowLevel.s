@@ -40,6 +40,7 @@ name::
          mov ar##.##pfs=loc1 ;;\
          br##.##ret##.##dpnt  b0;;
 
+.global EfiCommonLibCopyMem
 .type EfiCommonLibCopyMem, @function;  
 
 //-----------------------------------------------------------------------------

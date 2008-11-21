@@ -1292,7 +1292,7 @@ Returns:
                              gFormBrowser2,
                              &CallbackData->BmmHiiHandle,
                              1,
-                             NULL,
+                             &mBootMaintGuid,
                              0,
                              NULL,
                              &ActionRequest
@@ -1314,7 +1314,7 @@ Returns:
                                gFormBrowser2,
                                &CallbackData->FeHiiHandle,
                                1,
-                               NULL,
+                               &mFileExplorerGuid,
                                0,
                                NULL,
                                &ActionRequest

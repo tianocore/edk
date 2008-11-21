@@ -755,10 +755,11 @@ Returns:
     FileName[EfiStrLen (FileName) - 1]  = 0;
   }
   //
-  // If file name does not equal to "." or "..", 
+  // If file name does not equal to "." or ".." and not trailed with "\..",
   // then we trim the leading/trailing blanks and trailing dots
   //
-  if (EfiStrCmp (FileName, L".") != 0 && EfiStrCmp (FileName, L"..") != 0) {
+  if (EfiStrCmp (FileName, L".") != 0 && EfiStrCmp (FileName, L"..") != 0 &&
+	  ((EfiStrLen (FileName) >= 3) ? (EfiStrCmp (&FileName[EfiStrLen (FileName) - 3], L"\\..") != 0) : TRUE)) {
     //
     // Trim leading blanks
     //

@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2006 - 2007, Intel Corporation                                                         
+Copyright 2006 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -25,6 +25,9 @@ Abstract:
 #include "fat.h"
 #include "mbr.h"
 #include "EfiUtilityMsgs.h"
+
+#define UTILITY_NAME    "BootSectImage"
+#define UTILITY_VERSION "v1.0"
 
 #define DEBUG_WARN  0x1
 #define DEBUG_ERROR 0x2
@@ -771,17 +774,32 @@ PrintUsage (
   void
   )
 {
-  printf (
-    "Usage:\n"
-    "bootsectimage [-m] [-v] -p SrcImage\n"
-    "bootsectimage [-m] [-v] [-f] -g SrcImage DstImage\n"
-    "where\n"
-    "  -p: parse SrcImage\n"
-    "  -g: get info from SrcImage, and patch to DstImage\n"
-    "  -f: force patch even FAT type of SrcImage and DstImage mismatch\n"
-    "  -m: process MBR instead of boot sector\n"
-    "  -v: verbose\n"
-    );
+  int         Index;
+  const char  *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel Patch MBR/Bootsector Utility",
+    "  Copyright (C), 2006 - 2008 Intel Corporation",
+    
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" [OPTION]...",
+    "Description:",
+    "  Patch the BPB information in bootsector image file, ",
+    "  or Patch the MBR code in MBR image file.",
+    "Options:",
+    "  -p IMAGE          Parse IMAGE",
+    "  -g SRCIMG DSTIMG  Get info from SRCIMAGE and patch to DSTIMAGE",
+    "  -f                Force patch even FAT type of SRCIMG and DSTIMG mismatch",
+    "  -m                Process MBR instead of boot sector",
+    "  -v                Verbose",
+    NULL
+  };
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
+  }
+
 }
 
 int

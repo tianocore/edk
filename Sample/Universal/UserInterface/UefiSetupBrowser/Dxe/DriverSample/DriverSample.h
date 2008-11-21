@@ -65,7 +65,12 @@ extern UINT8  InventoryBin[];
 //
 extern UINT8  DriverSampleStrings[];
 
-#define SAMPLE_STRING               L"This is an error!"
+#define VAR_OFFSET(Field)    \
+  ((UINT16) ((UINTN) &(((DRIVER_SAMPLE_CONFIGURATION *) 0)->Field)))
+
+#define DYNAMIC_ONE_OF_VAR_OFFSET        VAR_OFFSET (DynamicOneof)
+#define DYNAMIC_ORDERED_LIST_VAR_OFFSET  VAR_OFFSET (DynamicOrderedList)
+
 
 #define DRIVER_SAMPLE_PRIVATE_SIGNATURE EFI_SIGNATURE_32 ('D', 'S', 'p', 's')
 

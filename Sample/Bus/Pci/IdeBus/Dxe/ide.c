@@ -553,6 +553,7 @@ DiscoverIdeDevice (
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
   EFI_STATUS  Status;
+  EFI_STATUS  LongPhyStatus;
   
   //
   // If a channel has not been checked, check it now. Then set it to "checked" state
@@ -617,7 +618,12 @@ DiscoverIdeDevice (
   //
   // Init Block I/O interface
   //
-  IdeDev->BlkIo.Revision            = EFI_BLOCK_IO_PROTOCOL_REVISION;
+  LongPhyStatus = AtaEnableLongPhysicalSector (IdeDev);
+  if (!EFI_ERROR (LongPhyStatus)) {
+    IdeDev->BlkIo.Revision = EFI_BLOCK_IO_PROTOCOL_REVISION2;
+  } else {
+    IdeDev->BlkIo.Revision = EFI_BLOCK_IO_PROTOCOL_REVISION;
+  }
   IdeDev->BlkIo.Reset               = IDEBlkIoReset;
   IdeDev->BlkIo.ReadBlocks          = IDEBlkIoReadBlocks;
   IdeDev->BlkIo.WriteBlocks         = IDEBlkIoWriteBlocks;

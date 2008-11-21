@@ -85,6 +85,7 @@ COMPONENT_TYPE       = BS_DRIVER
   $(EDK_SOURCE)\Foundation\Framework\Include
   $(EDK_SOURCE)\Foundation\Include\IndustryStandard
   $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Core\Dxe\Hand
   $(EDK_SOURCE)\Foundation\Core\Dxe\Include
   $(EDK_SOURCE)\Foundation\Core\Dxe\Misc
   $(EDK_SOURCE)\Foundation\Core\Dxe\FwVolBlock

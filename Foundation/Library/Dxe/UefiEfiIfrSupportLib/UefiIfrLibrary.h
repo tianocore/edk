@@ -694,6 +694,32 @@ Returns:
 --*/
 ;
 
+EFI_STATUS
+ExtractClassGuidFromHiiHandle (
+  IN      EFI_HII_HANDLE      Handle,
+  OUT     UINT8               *NumberOfClassGuid,
+  OUT     EFI_GUID            **ClassGuid,
+  OUT     EFI_STRING_ID       *FormSetTitle,
+  OUT     EFI_STRING_ID       *FormSetHelp
+  )
+/*++
+
+Routine Description:
+  Extract formset ClassGuid for given HII handle.
+
+Arguments:
+  HiiHandle         - Hii handle
+  NumberOfClassGuid - Number of ClassGuid
+  ClassGuid         - Pointer to callee allocated buffer, an array of ClassGuid
+  FormSetTitle      - Formset title string
+  FormSetHelp       - Formset help string
+
+Returns:
+  EFI_SUCCESS     - Successfully extract Class for specified Hii handle.
+
+--*/
+;
+
 VOID
 ToLower (
   IN OUT CHAR16    *Str
@@ -1242,7 +1268,7 @@ Returns:
 --*/
 ;
 
-VOID
+EFI_STATUS
 IfrLibInitUpdateData (
   IN OUT EFI_HII_UPDATE_DATA   *UpdateData,
   IN UINT32                    BufferSize
@@ -1257,7 +1283,28 @@ Arguments:
   BufferSize     - Length of the buffer to fill dynamic opcodes.
 
 Returns:
-  None.
+  EFI_SUCCESS           - Update data is initialized.
+  EFI_INVALID_PARAMETER - UpdateData is NULL.
+  EFI_OUT_OF_RESOURCES  - No enough memory to allocate.
+
+--*/
+;
+
+EFI_STATUS
+IfrLibFreeUpdateData (
+  IN EFI_HII_UPDATE_DATA       *UpdateData
+  )
+/*++
+
+Routine Description:
+  This function free the resource of update data.
+
+Arguments:
+  UpdateData     - The adding data;
+
+Returns:
+  EFI_SUCCESS           - Resource in UpdateData is released.
+  EFI_INVALID_PARAMETER - UpdateData is NULL.
 
 --*/
 ;

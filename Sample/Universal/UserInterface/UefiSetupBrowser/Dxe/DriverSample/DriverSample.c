@@ -258,15 +258,6 @@ ExtractConfig (
   HiiConfigRouting = PrivateData->HiiConfigRouting;
 
   //
-  // Check routing data in <ConfigHdr>.
-  // Note: if only one Storage is used, then this checking could be skipped.
-  //
-  if (!IsConfigHdrMatch (Request, &mFormSetGuid, VariableName)) {
-    *Progress = Request;
-    return EFI_NOT_FOUND;
-  }
-
-  //
   // Get Buffer Storage data from EFI variable
   //
   BufferSize = sizeof (DRIVER_SAMPLE_CONFIGURATION);
@@ -303,6 +294,15 @@ ExtractConfig (
                );
 
     return Status;
+  }
+
+  //
+  // Check routing data in <ConfigHdr>.
+  // Note: if only one Storage is used, then this checking could be skipped.
+  //
+  if (!IsConfigHdrMatch (Request, &mFormSetGuid, VariableName)) {
+    *Progress = Request;
+    return EFI_NOT_FOUND;
   }
 
   //
@@ -350,6 +350,10 @@ RouteConfig (
   UINTN                            BufferSize;
   DRIVER_SAMPLE_PRIVATE_DATA       *PrivateData;
   EFI_HII_CONFIG_ROUTING_PROTOCOL  *HiiConfigRouting;
+
+  if (Configuration == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   PrivateData = DRIVER_SAMPLE_PRIVATE_FROM_THIS (This);
   HiiConfigRouting = PrivateData->HiiConfigRouting;
@@ -443,6 +447,7 @@ DriverCallback (
   EFI_STATUS                      Status;
   EFI_HII_UPDATE_DATA             UpdateData;
   IFR_OPTION                      *IfrOptionList;
+  UINT8                           MyVar;
 
   if ((Value == NULL) || (ActionRequest == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -454,7 +459,7 @@ DriverCallback (
   switch (QuestionId) {
   case 0x1234:
     //
-    // Create dynamic page for this interactive goto
+    // Initialize the container for dynamic opcodes
     //
     IfrLibInitUpdateData (&UpdateData, 0x1000);
 
@@ -469,61 +474,126 @@ DriverCallback (
     IfrOptionList[1].Value.u8     = 2;
 
     CreateActionOpCode (
-      0x1237,
-      STRING_TOKEN(STR_EXIT_TEXT),
-      STRING_TOKEN(STR_EXIT_TEXT),
-      EFI_IFR_FLAG_CALLBACK,
-      0,
-      &UpdateData
+      0x1237,                           // Question ID
+      STRING_TOKEN(STR_EXIT_TEXT),      // Prompt text
+      STRING_TOKEN(STR_EXIT_TEXT),      // Help text
+      EFI_IFR_FLAG_CALLBACK,            // Question flag
+      0,                                // Action String ID
+      &UpdateData                       // Container for dynamic created opcodes
       );
 
+    //
+    // Prepare initial value for the dynamic created oneof Question
+    //
+    PrivateData->Configuration.DynamicOneof = 2;
+    Status = gRT->SetVariable(
+                    VariableName,
+                    &mFormSetGuid,
+                    EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                    sizeof (DRIVER_SAMPLE_CONFIGURATION),
+                    &PrivateData->Configuration
+                    );
     CreateOneOfOpCode (
-      0x8001,
-      0,
-      0,
-      STRING_TOKEN (STR_ONE_OF_PROMPT),
-      STRING_TOKEN (STR_ONE_OF_HELP),
-      EFI_IFR_FLAG_CALLBACK,
-      EFI_IFR_NUMERIC_SIZE_1,
-      IfrOptionList,
-      2,
-      &UpdateData
+      0x8001,                           // Question ID (or call it "key")
+      CONFIGURATION_VARSTORE_ID,        // VarStore ID
+      DYNAMIC_ONE_OF_VAR_OFFSET,        // Offset in Buffer Storage
+      STRING_TOKEN (STR_ONE_OF_PROMPT), // Question prompt text
+      STRING_TOKEN (STR_ONE_OF_HELP),   // Question help text
+      EFI_IFR_FLAG_CALLBACK,            // Question flag
+      EFI_IFR_NUMERIC_SIZE_1,           // Data type of Question Value
+      IfrOptionList,                    // Option list
+      2,                                // Number of options in Option list
+      &UpdateData                       // Container for dynamic created opcodes
       );
 
     CreateOrderedListOpCode (
-      0x8002,
-      0,
-      0,
-      STRING_TOKEN (STR_BOOT_OPTIONS),
-      STRING_TOKEN (STR_BOOT_OPTIONS),
-      EFI_IFR_FLAG_RESET_REQUIRED,
-      0,
-      EFI_IFR_NUMERIC_SIZE_1,
-      10,
-      IfrOptionList,
-      2,
-      &UpdateData
+      0x8002,                           // Question ID
+      CONFIGURATION_VARSTORE_ID,        // VarStore ID
+      DYNAMIC_ORDERED_LIST_VAR_OFFSET,  // Offset in Buffer Storage
+      STRING_TOKEN (STR_BOOT_OPTIONS),  // Question prompt text
+      STRING_TOKEN (STR_BOOT_OPTIONS),  // Question help text
+      EFI_IFR_FLAG_RESET_REQUIRED,      // Question flag
+      0,                                // Ordered list flag, e.g. EFI_IFR_UNIQUE_SET
+      EFI_IFR_NUMERIC_SIZE_1,           // Data type of Question value
+      5,                                // Maximum container
+      IfrOptionList,                    // Option list
+      2,                                // Number of options in Option list
+      &UpdateData                       // Container for dynamic created opcodes
       );
 
     CreateGotoOpCode (
-      1,
-      STRING_TOKEN (STR_GOTO_FORM1),
-      STRING_TOKEN (STR_GOTO_HELP),
-      0,
-      0x8003,
-      &UpdateData
+      1,                                // Target Form ID
+      STRING_TOKEN (STR_GOTO_FORM1),    // Prompt text
+      STRING_TOKEN (STR_GOTO_HELP),     // Help text
+      0,                                // Question flag
+      0x8003,                           // Question ID
+      &UpdateData                       // Container for dynamic created opcodes
       );
 
     Status = IfrLibUpdateForm (
-               PrivateData->HiiHandle[0],
-               &mFormSetGuid,
-               0x1234,
-               0x1234,
-               TRUE,
-               &UpdateData
+               PrivateData->HiiHandle[0],  // HII handle
+               &mFormSetGuid,              // Formset GUID
+               0x1234,                     // Form ID
+               0x1234,                     // Label for where to insert opcodes
+               TRUE,                       // Append or replace
+               &UpdateData                 // Dynamic created opcodes
                );
     gBS->FreePool (IfrOptionList);
-    gBS->FreePool (UpdateData.Data);
+    IfrLibFreeUpdateData (&UpdateData);
+    break;
+
+  case 0x5678:
+    //
+    // We will reach here once the Question is refreshed
+    //
+    IfrLibInitUpdateData (&UpdateData, 0x1000);
+
+    IfrOptionList = EfiLibAllocatePool (2 * sizeof (IFR_OPTION));
+    ASSERT (IfrOptionList != NULL);
+
+    CreateActionOpCode (
+      0x1237,                           // Question ID
+      STRING_TOKEN(STR_EXIT_TEXT),      // Prompt text
+      STRING_TOKEN(STR_EXIT_TEXT),      // Help text
+      EFI_IFR_FLAG_CALLBACK,            // Question flag
+      0,                                // Action String ID
+      &UpdateData                       // Container for dynamic created opcodes
+      );
+
+    Status = IfrLibUpdateForm (
+               PrivateData->HiiHandle[0],  // HII handle
+               &mFormSetGuid,              // Formset GUID
+               3,                          // Form ID
+               0x2234,                     // Label for where to insert opcodes
+               TRUE,                       // Append or replace
+               &UpdateData                 // Dynamic created opcodes
+               );
+    IfrLibFreeUpdateData (&UpdateData);
+
+    //
+    // Refresh the Question value
+    //
+    PrivateData->Configuration.DynamicRefresh++;
+    Status = gRT->SetVariable(
+                    VariableName,
+                    &mFormSetGuid,
+                    EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                    sizeof (DRIVER_SAMPLE_CONFIGURATION),
+                    &PrivateData->Configuration
+                    );
+
+    //
+    // Change an EFI Variable storage (MyEfiVar) asynchronous, this will cause
+    // the first statement in Form 3 be suppressed
+    //
+    MyVar = 111;
+    Status = gRT->SetVariable(
+                    L"MyVar",
+                    &mFormSetGuid,
+                    EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                    1,
+                    &MyVar
+                    );
     break;
 
   case 0x1237:

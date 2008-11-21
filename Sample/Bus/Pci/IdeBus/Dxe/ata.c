@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -2273,6 +2273,59 @@ AtaSMARTSupport (
   }
 
   return ;
+}
+
+EFI_STATUS
+AtaEnableLongPhysicalSector (
+  IN  IDE_BLK_IO_DEV  *IdeDev
+  )
+{
+  EFI_ATA_IDENTIFY_DATA  *AtaIdentifyData;
+  UINT16                 PhyLogicSectorSupport;
+
+  ASSERT (IdeDev->pIdData != NULL);
+  //
+  // Only valid for ATA device
+  //
+  AtaIdentifyData       = (EFI_ATA_IDENTIFY_DATA *) &IdeDev->pIdData->AtaData;
+  if (AtaIdentifyData->config & 0x8000) {
+    return EFI_UNSUPPORTED;
+  }
+  PhyLogicSectorSupport = AtaIdentifyData->phy_logic_sector_support;
+  //
+  // Check whether Long Physical Sector Feature is supported
+  //
+  if ((PhyLogicSectorSupport & 0xc000) == 0x4000) {
+    IdeDev->BlkIo.Media->LogicalBlocksPerPhysicalBlock = 1;
+    IdeDev->BlkIo.Media->LowestAlignedLba              = 0;
+    //
+    // Check whether one physical block contains multiple physical blocks
+    //
+    if (PhyLogicSectorSupport & 0x2000) {
+      IdeDev->BlkIo.Media->LogicalBlocksPerPhysicalBlock =
+        (UINT32) (1 << (PhyLogicSectorSupport & 0x000f));
+      //
+      // Check lowest alignment of logical blocks within physical block
+      //
+      if ((AtaIdentifyData->alignment_logic_in_phy_blocks & 0xc000) == 0x4000) {
+        IdeDev->BlkIo.Media->LowestAlignedLba =
+          (EFI_LBA) (AtaIdentifyData->alignment_logic_in_phy_blocks & 0x3fff);
+      }
+    }
+    //
+    // Check logical block size
+    //
+    IdeDev->BlkIo.Media->BlockSize = 0x200;
+    if (PhyLogicSectorSupport & 0x1000) {
+      IdeDev->BlkIo.Media->BlockSize = (UINT32) (
+        ((AtaIdentifyData->logic_sector_size_hi << 16) |
+         AtaIdentifyData->logic_sector_size_lo) * sizeof (UINT16)
+        );
+    }
+    return EFI_SUCCESS;
+  } else {
+    return EFI_UNSUPPORTED;
+  }
 }
 
 EFI_STATUS

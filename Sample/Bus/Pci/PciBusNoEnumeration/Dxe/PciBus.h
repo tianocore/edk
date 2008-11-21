@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -31,7 +31,6 @@ Revision History
 #include "acpi.h"
 #include "linkedlist.h"
 
-
 //
 // Driver Consumed Protocol Prototypes
 //
@@ -49,8 +48,9 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
-
-
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include EFI_PROTOCOL_DEFINITION (LoadFile2)
+#endif
 
 //
 // Driver Produced Protocol Prototypes
@@ -88,6 +88,7 @@ typedef struct {
   UINT8         Offset;
 } PCI_BAR;
 
+#define P2C_BAR_0                 0
 #define PCI_IO_DEVICE_SIGNATURE   EFI_SIGNATURE_32 ('p','c','i','o')
 
 #define EFI_BRIDGE_IO32_DECODE_SUPPORTED        0x0001 
@@ -108,6 +109,9 @@ typedef struct _PCI_IO_DEVICE {
   EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL PciDriverOverride;
   EFI_DEVICE_PATH_PROTOCOL                  *DevicePath;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL           *PciRootBridgeIo;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_LOAD_FILE2_PROTOCOL                   LoadFile2;
+#endif
 
   //
   // PCI configuration space header type
@@ -168,6 +172,11 @@ typedef struct _PCI_IO_DEVICE {
   UINT64                                    RomSize;
 
   //
+  // TRUE if all OpROM (in device or in platform specific position) have been processed
+  //
+  BOOLEAN                                   AllOpRomProcessed;
+
+  //
   // TRUE if there is any EFI driver in the OptionRom
   //
   BOOLEAN                                   BusOverride;
@@ -195,6 +204,9 @@ typedef struct _PCI_IO_DEVICE {
 
 #define PCI_IO_DEVICE_FROM_LINK(a) \
   CR (a, PCI_IO_DEVICE, Link, PCI_IO_DEVICE_SIGNATURE)
+
+#define PCI_IO_DEVICE_FROM_LOAD_FILE2_THIS(a) \
+  CR (a, PCI_IO_DEVICE, LoadFile2, PCI_IO_DEVICE_SIGNATURE)
 
 //
 // Global Variables

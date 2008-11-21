@@ -73,14 +73,13 @@ formset
   guid     = FORMSET_GUID,
   title    = STRING_TOKEN(STR_FORM_SET_TITLE),
   help     = STRING_TOKEN(STR_FORM_SET_TITLE_HELP),
-  class    = EFI_ON_BOARD_DEVICE_CLASS,
-  subclass = EFI_SETUP_APPLICATION_SUBCLASS,
+  classguid = EFI_HII_PLATFORM_SETUP_FORMSET_GUID,  // If classguid is not defined, VfrCompiler will generate default EFI_HII_PLATFORM_SETUP_FORMSET_GUID
 
   //
   // Define a Buffer Storage (EFI_IFR_VARSTORE)
   //
   varstore DRIVER_SAMPLE_CONFIGURATION,     // This is the data structure type
-    varid = 0x1234,                         // Optional VarStore ID
+    varid = CONFIGURATION_VARSTORE_ID,      // Optional VarStore ID
     name  = MyIfrNVData,                    // Define referenced name in vfr
     guid  = FORMSET_GUID;                   // GUID of this buffer storage
 
@@ -126,19 +125,23 @@ formset
       text   = STRING_TOKEN(STR_CPU_STRING),      // Prompt string
         text   = STRING_TOKEN(STR_CPU_STRING2);   // TextTwo
 
+    //
+    // Define action button (EFI_IFR_ACTION)
+    //
     text
       help   = STRING_TOKEN(STR_EXIT_TEXT),
       text   = STRING_TOKEN(STR_EXIT_TEXT),
         text   = STRING_TOKEN(STR_EXIT_TEXT),
-      flags  = INTERACTIVE,
+      flags  = INTERACTIVE,   // VfrCompiler will generate opcode EFI_IFR_ACTION for Text marked as INTERACTIVE
       key    = 0x1237;
 
     //
     // Define oneof (EFI_IFR_ONE_OF)
     //
-    oneof varid   = MyIfrNVData.SuppressGrayOutSomething,    // Use "DataStructure.Member" to reference Buffer Storage
-      prompt      = STRING_TOKEN(STR_ONE_OF_PROMPT),
-      help        = STRING_TOKEN(STR_ONE_OF_HELP),
+    oneof name = MyOneOf,                                // Define reference name for Question
+      varid   = MyIfrNVData.SuppressGrayOutSomething,    // Use "DataStructure.Member" to reference Buffer Storage
+      prompt  = STRING_TOKEN(STR_ONE_OF_PROMPT),
+      help    = STRING_TOKEN(STR_ONE_OF_HELP),
       //
       // Define an option (EFI_IFR_ONE_OF_OPTION)
       //
@@ -158,7 +161,7 @@ formset
     endoneof;
 
     grayoutif  ideqval MyIfrNVData.SuppressGrayOutSomething == 0x1;
-      suppressif ideqval MyIfrNVData.SuppressGrayOutSomething == 0x0;
+      suppressif questionref(MyOneOf) == 0x0;
 
         checkbox varid   = MyIfrNVData.ChooseToActivateNuclearWeaponry,
                  prompt   = STRING_TOKEN(STR_CHECK_BOX_PROMPT),
@@ -196,7 +199,7 @@ formset
                 option text = STRING_TOKEN(STR_BOOT_OPTION1), value = 1, flags = RESET_REQUIRED;
                 option text = STRING_TOKEN(STR_BOOT_OPTION3), value = 3, flags = RESET_REQUIRED;
               suppressif ideqval MyIfrNVData.BootOrderLarge == 0;
-                option text = STRING_TOKEN(STR_BOOT_OPTION4), value = 4, flags = 0;
+                option text = STRING_TOKEN(STR_BOOT_OPTION4), value = 4, flags = RESET_REQUIRED;
               endif
       endlist;
 
@@ -287,7 +290,8 @@ formset
             maximum = 0xf0,
             step    = 0,          // Stepping of 0 equates to a manual entering
                                   // of a value, otherwise it will be adjusted by "+"/"-"
-            default = 21,
+            default = 21,         // defaultstore could be used to specify the default type
+                                  // If no defaultstore is specified, it implies Standard Default
 
     endnumeric;
 
@@ -329,10 +333,23 @@ formset
               minimum = 0,
               maximum = 243,
               step    = 1,
-              default = 18,
+              default = 18, defaultstore = MyStandardDefault,     // This is standard default value
+              default = 19, defaultstore = MyManufactureDefault,  // This is manufacture default value
 
       endnumeric;
     endif;
+
+    resetbutton
+      defaultstore = MyStandardDefault,
+      prompt   = STRING_TOKEN(STR_STANDARD_DEFAULT_PROMPT),
+      help     = STRING_TOKEN(STR_STANDARD_DEFAULT_HELP),
+    endresetbutton;
+
+    resetbutton
+      defaultstore = MyManufactureDefault,
+      prompt   = STRING_TOKEN(STR_MANUFACTURE_DEFAULT_PROMPT),
+      help     = STRING_TOKEN(STR_MANUFACTURE_DEFAULT_HELP),
+    endresetbutton;
 
     //
     // Non-interactive password, validate by Setup Browser
@@ -480,11 +497,30 @@ formset
 
   form formid = 3, title = STRING_TOKEN(STR_FORM3_TITLE);  // note formid is a variable (for readability) (UINT16) - also added Form to the line to signify the Op-Code
 
-    grayoutif  ideqval MyIfrNVData.SuppressGrayOutSomething == 0x1;
+    suppressif  ideqval MyEfiVar == 111;
       text
         help = STRING_TOKEN(STR_TEXT_HELP),
         text = STRING_TOKEN(STR_TEXT_TEXT_1);
     endif;
+
+    goto 1,
+      prompt = STRING_TOKEN(STR_GOTO_FORM1), //MainSetupPage
+      help   = STRING_TOKEN(STR_GOTO_HELP);
+
+    numeric varid   = MyIfrNVData.DynamicRefresh,
+            prompt  = STRING_TOKEN(STR_NUMERIC_MANUAL_PROMPT),
+            help    = STRING_TOKEN(STR_NUMERIC_HELP0),
+            flags   = INTERACTIVE,
+            key     = 0x5678,
+            minimum = 0,
+            maximum = 0xff,
+            step    = 0,
+            default = 0,
+            refresh interval = 3             // Refresh interval in seconds
+    endnumeric;
+
+    label 0x2234;
+    label LABEL_END;
 
   endform;
 

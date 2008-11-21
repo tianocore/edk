@@ -28,8 +28,10 @@ UINT16           mExpressionOpCodeIndex;
 BOOLEAN          mInScopeSubtitle;
 BOOLEAN          mInScopeSuppress;
 BOOLEAN          mInScopeGrayOut;
+BOOLEAN          mInScopeDisable;
 FORM_EXPRESSION  *mSuppressExpression;
 FORM_EXPRESSION  *mGrayOutExpression;
+FORM_EXPRESSION  *mDisableExpression;
 
 EFI_GUID  gTianoHiiIfrGuid = EFI_IFR_TIANO_GUID;
 
@@ -86,6 +88,10 @@ Returns:
 
   if (mInScopeGrayOut) {
     Statement->GrayOutExpression = mGrayOutExpression;
+  }
+
+  if (mInScopeDisable) {
+    Statement->DisableExpression = mDisableExpression;
   }
 
   Statement->InSubtitle = mInScopeSubtitle;
@@ -688,6 +694,37 @@ Returns:
   }
 }
 
+BOOLEAN
+IsClassGuidMatch (
+  IN  FORM_BROWSER_FORMSET  *FormSet,
+  IN  EFI_GUID              *ClassGuid
+  )
+/*++
+
+Routine Description:
+  Check whether a FormSet match with a given ClassGuid.
+
+Arguments:
+  FormSet      - The FormSet to be counted.
+  ClassGuid    - The class GUID.
+
+Returns:
+  TRUE         - FormSet match with given ClassGuid.
+  FALSE        - FormSet doesn't match with given ClassGuid.
+
+--*/
+{
+  UINT8 Index;
+
+  for (Index = 0; Index < FormSet->NumberOfClassGuid; Index++) {
+    if (EfiCompareGuid (ClassGuid, &FormSet->ClassGuid[Index])) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
 VOID
 CountOpCodes (
   IN  FORM_BROWSER_FORMSET  *FormSet,
@@ -778,7 +815,6 @@ Returns:
   BOOLEAN                 SuppressForOption;
   BOOLEAN                 InScopeOptionSuppress;
   FORM_EXPRESSION         *OptionSuppressExpression;
-  BOOLEAN                 InScopeDisable;
   UINT16                  DepthOfDisable;
   BOOLEAN                 OpCodeDisabled;
   BOOLEAN                 SingleOpCodeExpression;
@@ -790,7 +826,7 @@ Returns:
   mInScopeSuppress         = FALSE;
   InScopeOptionSuppress    = FALSE;
   mInScopeGrayOut          = FALSE;
-  InScopeDisable           = FALSE;
+  mInScopeDisable           = FALSE;
   DepthOfDisable           = 0;
   OpCodeDisabled           = FALSE;
   SingleOpCodeExpression   = FALSE;
@@ -857,7 +893,7 @@ Returns:
 
         if (ScopeOpCode == EFI_IFR_DISABLE_IF_OP) {
           if (DepthOfDisable == 0) {
-            InScopeDisable = FALSE;
+            mInScopeDisable = FALSE;
             OpCodeDisabled = FALSE;
           } else {
             DepthOfDisable--;
@@ -1001,9 +1037,9 @@ Returns:
         //
         SingleOpCodeExpression = FALSE;
 
-        if (InScopeDisable) {
+        if (mInScopeDisable && CurrentForm == NULL) {
           //
-          // Evaluate DisableIf expression
+          // This is DisableIf expression for Form, it should be a constant expression
           //
           Status = EvaluateExpression (FormSet, CurrentForm, CurrentExpression);
           if (EFI_ERROR (Status)) {
@@ -1029,7 +1065,7 @@ Returns:
 
     case EFI_IFR_FORM_SET_OP:
       //
-      // check the formset GUID
+      // Check the formset GUID
       //
       if (EfiCompareMem (&FormSet->Guid, &((EFI_IFR_FORM_SET *) OpCodeData)->Guid, sizeof (EFI_GUID)) != 0) {
         return EFI_INVALID_PARAMETER;
@@ -1037,6 +1073,13 @@ Returns:
 
       EfiCopyMem (&FormSet->FormSetTitle, &((EFI_IFR_FORM_SET *) OpCodeData)->FormSetTitle, sizeof (EFI_STRING_ID));
       EfiCopyMem (&FormSet->Help,         &((EFI_IFR_FORM_SET *) OpCodeData)->Help,         sizeof (EFI_STRING_ID));
+      if (OpCodeLength > ((UINTN) &((EFI_IFR_FORM_SET *) 0)->Flags)) {
+        //
+        // This is the new version of formset OpCode
+        //
+        FormSet->NumberOfClassGuid = ((EFI_IFR_FORM_SET *) OpCodeData)->Flags & 0x3;
+        EfiCopyMem (FormSet->ClassGuid, ((EFI_IFR_FORM_SET *) OpCodeData)->ClassGuid, FormSet->NumberOfClassGuid * sizeof (EFI_GUID));
+      }
       break;
 
     case EFI_IFR_FORM_OP:
@@ -1458,8 +1501,16 @@ Returns:
       CurrentExpression->Type = EFI_HII_EXPRESSION_DISABLE_IF;
       InitializeListHead (&CurrentExpression->OpCodeListHead);
 
-      InScopeDisable = TRUE;
+      if (CurrentForm != NULL) {
+        //
+        // This is DisableIf for Question, enqueue it to Form expression list
+        //
+        InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
+      }
+
+      mInScopeDisable = TRUE;
       OpCodeDisabled = FALSE;
+      mDisableExpression = CurrentExpression;
 
       //
       // Take a look at next OpCode to see whether current expression consists
@@ -1553,16 +1604,29 @@ Returns:
           break;
 
         case EFI_IFR_EXTEND_OP_BANNER:
+          if (IsClassGuidMatch (FormSet, &gFrontPageClassGuid)) {
+            EfiCopyMem (
+              &gBannerData->Banner[((EFI_IFR_GUID_BANNER *) OpCodeData)->LineNumber][
+              ((EFI_IFR_GUID_BANNER *) OpCodeData)->Alignment],
+              &((EFI_IFR_GUID_BANNER *) OpCodeData)->Title,
+              sizeof (EFI_STRING_ID)
+              );
+            break;
+          }
+
+#ifdef TIANO_EXTENDED_CLASS_SUBCLASS_SUPPORT
           if (FormSet->SubClass == EFI_FRONT_PAGE_SUBCLASS) {
             EfiCopyMem (
-              &BannerData->Banner[((EFI_IFR_GUID_BANNER *) OpCodeData)->LineNumber][
+              &gBannerData->Banner[((EFI_IFR_GUID_BANNER *) OpCodeData)->LineNumber][
               ((EFI_IFR_GUID_BANNER *) OpCodeData)->Alignment],
               &((EFI_IFR_GUID_BANNER *) OpCodeData)->Title,
               sizeof (EFI_STRING_ID)
               );
           }
+#endif
           break;
 
+#ifdef TIANO_EXTENDED_CLASS_SUBCLASS_SUPPORT
         case EFI_IFR_EXTEND_OP_CLASS:
           EfiCopyMem (&FormSet->Class, &((EFI_IFR_GUID_CLASS *) OpCodeData)->Class, sizeof (UINT16));
           break;
@@ -1570,6 +1634,7 @@ Returns:
         case EFI_IFR_EXTEND_OP_SUBCLASS:
           EfiCopyMem (&FormSet->SubClass, &((EFI_IFR_GUID_SUBCLASS *) OpCodeData)->SubClass, sizeof (UINT16));
           break;
+#endif
 
         default:
           break;
@@ -1634,7 +1699,7 @@ Returns:
         break;
 
       case EFI_IFR_DISABLE_IF_OP:
-        InScopeDisable = FALSE;
+        mInScopeDisable = FALSE;
         OpCodeDisabled = FALSE;
         break;
 
@@ -1649,9 +1714,9 @@ Returns:
 
       default:
         if (IsExpressionOpCode (ScopeOpCode)) {
-          if (InScopeDisable) {
+          if (mInScopeDisable && CurrentForm == NULL) {
             //
-            // Evaluate DisableIf expression
+            // This is DisableIf expression for Form, it should be a constant expression
             //
             Status = EvaluateExpression (FormSet, CurrentForm, CurrentExpression);
             if (EFI_ERROR (Status)) {

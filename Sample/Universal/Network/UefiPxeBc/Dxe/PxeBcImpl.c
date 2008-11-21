@@ -1097,7 +1097,108 @@ Returns:
 
 --*/
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS                Status;
+  PXEBC_PRIVATE_DATA        *Private;
+  EFI_PXE_BASE_CODE_MODE    *Mode;
+  UINTN                     Index;
+  BOOLEAN                   PromiscuousNeed;
+
+  if (This == NULL || NewFilter == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
+  Mode = Private->PxeBc.Mode;
+
+  if (!Mode->Started) {
+    return EFI_NOT_STARTED;
+  }
+
+  PromiscuousNeed = FALSE;
+  for (Index = 0; Index < NewFilter->IpCnt; ++Index) {
+    if (IP4_IS_LOCAL_BROADCAST (EFI_IP4 (NewFilter->IpList[Index].v4))) {
+      //
+      // The IP is a broadcast address.
+      //
+      DEBUG ((EFI_D_ERROR, "There is broadcast address in NewFilter.\n"));
+      return EFI_INVALID_PARAMETER;
+    }
+    if (Ip4IsUnicast (EFI_IP4 (NewFilter->IpList[Index].v4), 0) &&
+        (NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP)
+       ) {
+      //
+      // If EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP is set and IP4 address is in IpList,
+      // promiscuous mode is needed.
+      //
+      PromiscuousNeed = TRUE;
+    }
+  }
+
+  //
+  // Clear the UDP instance configuration, all joined groups will be left
+  // during the operation.
+  //
+  Private->Udp4Read->Configure (Private->Udp4Read, NULL);
+  Private->Udp4CfgData.AcceptPromiscuous  = FALSE;
+  Private->Udp4CfgData.AcceptBroadcast    = FALSE;
+
+  if (PromiscuousNeed ||
+      NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_PROMISCUOUS ||
+      NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_PROMISCUOUS_MULTICAST
+     ) {
+    //
+    // Configure the udp4 filter to receive all packages
+    //
+    Private->Udp4CfgData.AcceptPromiscuous  = TRUE;
+
+    //
+    // Configure the UDP instance with the new configuration.
+    //
+    Status = Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+  } else {
+
+    if (NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_BROADCAST) {
+      //
+      // Configure the udp4 filter to receive all broadcast packages
+      //
+      Private->Udp4CfgData.AcceptBroadcast    = TRUE;
+    }
+
+    //
+    // Configure the UDP instance with the new configuration.
+    //
+    Status = Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    if (NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP) {
+
+      for (Index = 0; Index < NewFilter->IpCnt; ++Index) {
+        if (IP4_IS_MULTICAST (EFI_NTOHL (NewFilter->IpList[Index].v4))) {
+          //
+          // Join the mutilcast group
+          //
+          Status = Private->Udp4Read->Groups (Private->Udp4Read, TRUE, &NewFilter->IpList[Index].v4);
+          if (EFI_ERROR (Status)) {
+            return Status;
+          }
+        }
+      }
+    }
+  }
+
+
+  //
+  // Save the new filter.
+  //
+  EfiCopyMem (&Mode->IpFilter, NewFilter, sizeof (Mode->IpFilter));
+
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -1618,16 +1719,24 @@ Returns:
     Packet = &Private->Dhcp4Ack;
   }
 
-  NetCopyMem (&Private->ServerIp, &Packet->Packet.Offer.Dhcp4.Header.ServerAddr, sizeof (EFI_IPv4_ADDRESS));
-  if (Private->ServerIp.Addr[0] == 0) {
-    //
-    // next server ip address is zero, use option 54 instead
-    //
+  //
+  // use option 54, if zero, use siaddr in header
+  //
+  if (Packet->Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID] != NULL) {
     NetCopyMem (
       &Private->ServerIp,
       Packet->Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID]->Data,
       sizeof (EFI_IPv4_ADDRESS)
       );
+  } else {
+    NetCopyMem (
+      &Private->ServerIp, 
+      &Packet->Packet.Offer.Dhcp4.Header.ServerAddr, 
+      sizeof (EFI_IPv4_ADDRESS)
+      );
+  }
+  if (Private->ServerIp.Addr[0] == 0) {
+    return EFI_DEVICE_ERROR;
   }
 
   ASSERT (Packet->Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] != NULL);

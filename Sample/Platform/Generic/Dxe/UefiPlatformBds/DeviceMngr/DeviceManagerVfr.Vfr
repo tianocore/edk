@@ -44,6 +44,7 @@ formset
   guid     = FORMSET_GUID,
   title    = STRING_TOKEN(STR_DEVICE_MANAGER_TITLE),
   help     = STRING_TOKEN(STR_EMPTY_STRING),
+  classguid = FORMSET_GUID,
   class    = DEVICE_MANAGER_CLASS,
   subclass = FRONT_PAGE_SUBCLASS,
 

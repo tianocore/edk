@@ -1818,13 +1818,12 @@ Returns:
   // Initialize the PCI I/O instance structure
   //
 
-  Status  = InitializePciIoInstance (PciIoDevice);
-  Status  = InitializePciDriverOverrideInstance (PciIoDevice);
+  InitializePciIoInstance (PciIoDevice);
+  InitializePciDriverOverrideInstance (PciIoDevice);
 
-  if (EFI_ERROR (Status)) {
-    gBS->FreePool (PciIoDevice);
-    return NULL;
-  }
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  InitializePciLoadFile2 (PciIoDevice);
+#endif
 
   //
   // Initialize the reserved resource list

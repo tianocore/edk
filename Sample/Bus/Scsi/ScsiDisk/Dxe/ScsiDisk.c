@@ -1215,41 +1215,67 @@ Returns:
 
 --*/
 {
-  EFI_SCSI_DISK_CAPACITY_DATA CapacityData;
-  UINT32                      DataLength;
-  UINT8                       HostAdapterStatus;
-  UINT8                       TargetStatus;
-  EFI_STATUS                  CommandStatus;
-  EFI_STATUS                  Status;
-  UINT8                       Index;
-  UINT8                       MaxRetry;
-  UINT8                       SenseDataLength;
+  UINT8                         HostAdapterStatus;
+  UINT8                         TargetStatus;
+  EFI_STATUS                    CommandStatus;
+  EFI_STATUS                    Status;
+  UINT8                         Index;
+  UINT8                         MaxRetry;
+  UINT8                         SenseDataLength;
+  UINT8                         ScsiVersion;
+  UINT32                        DataLength10;
+  UINT32                        DataLength16;
+  EFI_SCSI_DISK_CAPACITY_DATA   CapacityData10;
+  EFI_SCSI_DISK_CAPACITY_DATA16 CapacityData16;
 
-  SenseDataLength = 0;
-  EfiZeroMem (&CapacityData, sizeof (EFI_SCSI_DISK_CAPACITY_DATA));
-  DataLength          = sizeof (EFI_SCSI_DISK_CAPACITY_DATA);
+
+  SenseDataLength       = 0;
+  DataLength10          = sizeof (EFI_SCSI_DISK_CAPACITY_DATA);
+  DataLength16          = sizeof (EFI_SCSI_DISK_CAPACITY_DATA16);
+  EfiZeroMem (&CapacityData10, sizeof (EFI_SCSI_DISK_CAPACITY_DATA));
+  EfiZeroMem (&CapacityData16, sizeof (EFI_SCSI_DISK_CAPACITY_DATA16));
 
   *NumberOfSenseKeys  = 0;
   *NeedRetry          = FALSE;
-  //
-  // submit Read Capacity Command. in this call,not request sense data
-  //
-  CommandStatus = SubmitReadCapacityCommand (
-                    ScsiDiskDevice->ScsiIo,
-                    EfiScsiStallSeconds (1),
-                    NULL,
-                    &SenseDataLength,
-                    &HostAdapterStatus,
-                    &TargetStatus,
-                    (VOID *) &CapacityData,
-                    &DataLength,
-                    FALSE
-                    );
-  //
+  ScsiVersion         = (UINT8)(ScsiDiskDevice->InquiryData.Version & 0x03);
+
+  if (ScsiVersion < SCSI_COMMAND_VERSION_3) {
+    //
+    // submit Read Capacity(10) Command. in this call,not request sense data
+    //
+    CommandStatus = SubmitReadCapacityCommand (
+                      ScsiDiskDevice->ScsiIo,
+                      EfiScsiStallSeconds (1),
+                      NULL,
+                      &SenseDataLength,
+                      &HostAdapterStatus,
+                      &TargetStatus,
+                      (VOID *) &CapacityData10,
+                      &DataLength10,
+                      FALSE
+                      );
+    } else {
+      //
+      // submit Read Capacity(16) Command to get parameter LogicalBlocksPerPhysicalBlock
+      // and LowestAlignedLba
+      //
+      CommandStatus = SubmitReadCapacity16Command (
+                        ScsiDiskDevice->ScsiIo,
+                        EfiScsiStallSeconds (1),
+                        NULL,
+                        &SenseDataLength,
+                        &HostAdapterStatus,
+                        &TargetStatus,
+                        (VOID *) &CapacityData16,
+                        &DataLength16,
+                        FALSE
+                        );
+    }
+    //
     // no need to check HostAdapterStatus and TargetStatus
     //
    if (CommandStatus == EFI_SUCCESS) {
-     GetMediaInfo (ScsiDiskDevice, &CapacityData);
+     GetMediaInfo (ScsiDiskDevice, &CapacityData10,&CapacityData16);
      return EFI_SUCCESS;
  
    } else if (CommandStatus == EFI_NOT_READY) {
@@ -1524,8 +1550,9 @@ Returns:
 
 VOID
 GetMediaInfo (
-  SCSI_DISK_DEV                 *ScsiDiskDevice,
-  EFI_SCSI_DISK_CAPACITY_DATA   *Capacity
+  SCSI_DISK_DEV                   *ScsiDiskDevice,
+  EFI_SCSI_DISK_CAPACITY_DATA     *Capacity10,
+  EFI_SCSI_DISK_CAPACITY_DATA16   *Capacity16
   )
 /*++
 
@@ -1536,7 +1563,8 @@ Routine Description:
 Arguments:
 
   ScsiDiskDevice  - The pointer of SCSI_DISK_DEV
-  Capacity        - The pointer of EFI_SCSI_DISK_CAPACITY_DATA
+  Capacity10      - The pointer of EFI_SCSI_DISK_CAPACITY_DATA
+  Capacity16      - The pointer of EFI_SCSI_DISK_CAPACITY_DATA16
 
 Returns:
 
@@ -1544,16 +1572,50 @@ Returns:
 
 --*/
 {
-  ScsiDiskDevice->BlkIo.Media->LastBlock =  (Capacity->LastLba3 << 24) |
-                                            (Capacity->LastLba2 << 16) |
-                                            (Capacity->LastLba1 << 8)  |
-                                             Capacity->LastLba0;
+  UINT8       ScsiVersion;
+  UINT8       *Ptr;
+
+  ScsiVersion    = (UINT8)(ScsiDiskDevice->InquiryData.Version & 0x03);
+  ScsiDiskDevice->BlkIo.Media->LowestAlignedLba               = 0;
+  ScsiDiskDevice->BlkIo.Media->LogicalBlocksPerPhysicalBlock  = 1;
+  
+
+  if (ScsiVersion < SCSI_COMMAND_VERSION_3) {
+    ScsiDiskDevice->BlkIo.Media->LastBlock =  (Capacity10->LastLba3 << 24) |
+                                              (Capacity10->LastLba2 << 16) |
+                                              (Capacity10->LastLba1 << 8)  |
+                                               Capacity10->LastLba0;
+  
+    ScsiDiskDevice->BlkIo.Media->BlockSize = (Capacity10->BlockSize3 << 24) |
+                                             (Capacity10->BlockSize2 << 16) | 
+                                             (Capacity10->BlockSize1 << 8)  |
+                                              Capacity10->BlockSize0;
+    ScsiDiskDevice->BlkIo.Revision = EFI_BLOCK_IO_PROTOCOL_REVISION;      
+  } else {
+
+    Ptr = (UINT8*)&ScsiDiskDevice->BlkIo.Media->LastBlock;
+    *Ptr++ = Capacity16->LastLba0;
+    *Ptr++ = Capacity16->LastLba1;
+    *Ptr++ = Capacity16->LastLba2;
+    *Ptr++ = Capacity16->LastLba3;
+    *Ptr++ = Capacity16->LastLba4;
+    *Ptr++ = Capacity16->LastLba5;
+    *Ptr++ = Capacity16->LastLba6;
+    *Ptr   = Capacity16->LastLba7;
+  
+    ScsiDiskDevice->BlkIo.Media->BlockSize = (Capacity16->BlockSize3 << 24) |
+                                             (Capacity16->BlockSize2 << 16) | 
+                                             (Capacity16->BlockSize1 << 8)  |
+                                              Capacity16->BlockSize0;
+
+    ScsiDiskDevice->BlkIo.Media->LowestAlignedLba = (Capacity16->LowestAlignLogic2 << 8)|(Capacity16->LowestAlignLogic1);
+    ScsiDiskDevice->BlkIo.Media->LogicalBlocksPerPhysicalBlock  = Capacity16->LogicPerPhysical;
+    ScsiDiskDevice->BlkIo.Revision = EFI_BLOCK_IO_PROTOCOL_REVISION2;  
+  }
+
 
   ScsiDiskDevice->BlkIo.Media->MediaPresent = TRUE;
-  ScsiDiskDevice->BlkIo.Media->BlockSize = (Capacity->BlockSize3 << 24) |
-                                           (Capacity->BlockSize2 << 16) | 
-                                           (Capacity->BlockSize1 << 8)  |
-                                            Capacity->BlockSize0;
+  
   if (ScsiDiskDevice->DeviceType == EFI_SCSI_TYPE_DISK) {
     ScsiDiskDevice->BlkIo.Media->BlockSize = 0x200;
   }

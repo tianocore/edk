@@ -25,6 +25,9 @@ Abstract:
 #include <stdio.h>
 #include <string.h>
 
+#define UTILITY_NAME                          "GenBootsector"
+#define UTILITY_VERSION                       "v1.0"
+
 #define MAX_DRIVE                             26
 #define PARTITION_TABLE_OFFSET                0x1BE
 
@@ -512,24 +515,37 @@ Return:
 
 VOID
 PrintUsage (
-  CHAR* AppName
+  VOID
   )
 {
-  fprintf (
-    stdout,
-    "Usage: %s [OPTIONS]...\n"
-    "Copy file content from/to bootsector.\n"
-    "\n"
-    "  -l        list disks\n"
-    "  -if=FILE  specified an input, can be files or disks\n"
-    "  -of=FILE  specified an output, can be files or disks\n"
-    "  -mbr      process MBR also\n"
-    "  -h        print this message\n"
-    "\n"
-    "FILE providing a volume plus a colon (X:), indicates a disk\n"
-    "FILE providing other format, indicates a file\n",
-    AppName
-    );
+  int         Index;
+  const char  *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel Generate MBR/Bootsector Utility",
+    "  Copyright (C), 2006 - 2008 Intel Corporation",
+    
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" [OPTION]...",
+    "Description:",
+    "  Copy the file content from/to MBR/Bootsector.",
+    "Options:",
+    "  -l        list disks",
+    "  -if=FILE  specified an input, can be files or disks",
+    "  -of=FILE  specified an output, can be files or disks",
+    "  -mbr      process MBR also",
+    "  -h        print this message",
+    "",
+    "FILE is treated as the disk type if it's a volume plus a colon (X:),",
+    "FILE is treated as the file type otherwise.",
+    NULL
+  };
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
+  }
+
 }
  
 INT
@@ -586,7 +602,7 @@ main (
       }
     }
     else {
-      PrintUsage (AppName);
+      PrintUsage ();
       return 1;
     }
   }
@@ -596,13 +612,13 @@ main (
   //
   if (VolumeLetter == 0) {
     fprintf (stderr, "ERROR: Volume isn't provided!\n");
-    PrintUsage (AppName);
+    PrintUsage ();
     return 1;
   }
   
   if (FilePath == NULL) {
     fprintf (stderr, "ERROR: File isn't pvovided!\n");
-    PrintUsage (AppName);
+    PrintUsage ();
     return 1;
   }
     

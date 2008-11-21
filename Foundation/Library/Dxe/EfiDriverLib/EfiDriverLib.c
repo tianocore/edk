@@ -21,6 +21,18 @@ Abstract:
 
 #include "Tiano.h"
 #include "EfiDriverLib.h"
+#include EFI_ARCH_PROTOCOL_DEFINITION (StatusCode)
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+VOID
+EFIAPI
+OnStatusCodeInstall (
+  IN EFI_EVENT        Event,
+  IN VOID             *Context
+  );
+
+#endif
 
 //
 // Global Interface for Debug Mask Protocol
@@ -50,6 +62,10 @@ Returns:
 
 --*/
 {
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  VOID *Registration;
+#endif
+  
   gST = SystemTable;
 
   ASSERT (gST != NULL);
@@ -70,6 +86,21 @@ Returns:
         (VOID *) &gDebugMaskInterface
         );
 #endif
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  //
+  // Register EFI_STATUS_CODE_PROTOCOL notify function
+  //
+  EfiLibCreateProtocolNotifyEvent (
+    &gEfiStatusCodeRuntimeProtocolGuid,
+    EFI_TPL_CALLBACK,
+    OnStatusCodeInstall,
+    NULL,
+    &Registration
+    );
+
+#endif
+
   //
   // Should be at EFI_D_INFO, but lets us know things are running
   //

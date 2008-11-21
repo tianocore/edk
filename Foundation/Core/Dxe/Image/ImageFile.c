@@ -84,6 +84,9 @@ Returns:
   EFI_FILE_HANDLE                   FileHandle;
   EFI_FILE_HANDLE                   LastHandle;
   EFI_LOAD_FILE_PROTOCOL            *LoadFile;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_LOAD_FILE2_PROTOCOL           *LoadFile2;
+#endif
   EFI_SECTION_TYPE                  SectionType;
   UINT8                             *Pe32Buffer;
   UINTN                             Pe32BufferSize;
@@ -306,10 +309,49 @@ Returns:
   } 
 
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Try LoadFile2 style
+  //
+  if (!BootPolicy) {
+    TempFilePath = *FilePath;
+    Status = CoreDevicePathToInterface (
+               &gEfiLoadFile2ProtocolGuid,
+               &TempFilePath,
+               (VOID*)&LoadFile2,
+               DeviceHandle
+               );
+    if (!EFI_ERROR (Status)) {
+      //
+      // Call LoadFile2 with the correct buffer size
+      //
+      while (CoreGrowBuffer (&Status, &ImageFileHandle->Source, ImageFileHandle->SourceSize)) {
+        Status = LoadFile2->LoadFile (
+                              LoadFile2,
+                              TempFilePath,
+                              BootPolicy,
+                              &ImageFileHandle->SourceSize,
+                              ImageFileHandle->Source
+                              );
+        //
+        // If success or other error happens, stop loop
+        //
+        if (Status != EFI_BUFFER_TOO_SMALL) {
+          break;
+        }
+      }
+
+      if (!EFI_ERROR (Status)) {
+        ImageFileHandle->FreeBuffer = TRUE;
+        goto Done;
+      }
+    }
+  }
+#endif
+
   //
   // Try LoadFile style
   //
-
   TempFilePath = *FilePath;
   Status = CoreDevicePathToInterface (
               &gEfiLoadFileProtocolGuid,

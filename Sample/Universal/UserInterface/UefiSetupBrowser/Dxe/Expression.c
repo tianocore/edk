@@ -53,7 +53,7 @@ Routine Description:
 Arguments:
   Stack     - On input: old stack; On output: new stack
   StackPtr  - On input: old stack pointer; On output: new stack pointer
-  StackPtr  - On input: old stack end; On output: new stack end
+  StackEnd  - On input: old stack end; On output: new stack end
 
 Returns:
   EFI_SUCCESS          - Grow stack success.
@@ -115,7 +115,7 @@ Routine Description:
 Arguments:
   Stack     - On input: old stack; On output: new stack
   StackPtr  - On input: old stack pointer; On output: new stack pointer
-  StackPtr  - On input: old stack end; On output: new stack end
+  StackEnd  - On input: old stack end; On output: new stack end
   Data      - Data to push.
 
 Returns:
@@ -162,7 +162,7 @@ Routine Description:
 Arguments:
   Stack     - On input: old stack; On output: new stack
   StackPtr  - On input: old stack pointer; On output: new stack pointer
-  StackPtr  - On input: old stack end; On output: new stack end
+  StackEnd  - On input: old stack end; On output: new stack end
   Data      - Data to pop.
 
 Returns:
@@ -465,6 +465,14 @@ Returns:
 
     Question = IdToQuestion2 (Form, QuestionId);
     if (Question != NULL) {
+      //
+      // EFI variable storage may be updated by Callback() asynchronous,
+      // to keep synchronous, always reload the Question Value.
+      //
+      if (Question->Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE) {
+        GetQuestionValue (FormSet, Form, Question, FALSE);
+      }
+
       return Question;
     }
 

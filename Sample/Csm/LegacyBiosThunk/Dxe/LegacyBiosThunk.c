@@ -374,7 +374,11 @@ LegacyBiosFarCall86 (
   ThunkRegSet.E.ES   = Regs->E.ES;
 
   EfiCommonLibCopyMem (&(ThunkRegSet.E.EFLAGS), &(Regs->E.EFlags), sizeof (UINT32));
- 
+
+  if ((Stack != NULL) && (StackSize != 0)) {
+    AsmThunk16SetUserStack (&mThunkContext, Stack, StackSize);
+  } 
+
   //
   // The call to Legacy16 is a critical section to EFI
   //

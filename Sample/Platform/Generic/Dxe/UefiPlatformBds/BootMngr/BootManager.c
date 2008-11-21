@@ -286,7 +286,7 @@ Returns:
                            gFormBrowser2,
                            &HiiHandle,
                            1,
-                           NULL,
+                           &mBootManagerGuid,
                            0,
                            NULL,
                            &ActionRequest

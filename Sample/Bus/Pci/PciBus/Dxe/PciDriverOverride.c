@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -23,7 +23,7 @@ Revision History
 
 #include "pcibus.h"
 
-EFI_STATUS
+VOID
 InitializePciDriverOverrideInstance (
   PCI_IO_DEVICE  *PciIoDevice
   )
@@ -34,17 +34,16 @@ Routine Description:
   Initializes a PCI Driver Override Instance
 
 Arguments:
-  
+
+  PciIoDevice -  PCI IO Device
+
 Returns:
 
   None
 
 --*/
-// TODO:    PciIoDevice - add argument and description to function comment
-// TODO:    EFI_SUCCESS - add return value to function comment
 {
   PciIoDevice->PciDriverOverride.GetDriver = GetDriver;
-  return EFI_SUCCESS;
 }
 
 EFI_STATUS

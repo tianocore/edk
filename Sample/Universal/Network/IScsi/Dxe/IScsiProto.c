@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -291,7 +291,7 @@ Returns:
   //
   // set the default connection-only parameters
   //
-  Conn->MaxRecvDataSegmentLength  = MAX_RECV_DATA_SEG_LEN_IN_FFP;
+  Conn->MaxRecvDataSegmentLength  = DEFAULT_MAX_RECV_DATA_SEG_LEN;
   Conn->HeaderDigest              = ISCSI_DIGEST_NONE;
   Conn->DataDigest                = ISCSI_DIGEST_NONE;
 
@@ -1547,7 +1547,7 @@ Returns:
   ASPrint (Value, sizeof (Value), "%a", Session->ImmediateData ? "Yes" : "No");
   IScsiAddKeyValuePair (Pdu, ISCSI_KEY_IMMEDIATE_DATA, Value);
 
-  ASPrint (Value, sizeof (Value), "%d", Conn->MaxRecvDataSegmentLength);
+  ASPrint (Value, sizeof (Value), "%d", MAX_RECV_DATA_SEG_LEN_IN_FFP);
   IScsiAddKeyValuePair (Pdu, ISCSI_KEY_MAX_RECV_DATA_SEGMENT_LENGTH, Value);
 
   ASPrint (Value, sizeof (Value), "%d", Session->MaxBurstLength);

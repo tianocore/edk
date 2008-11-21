@@ -71,7 +71,7 @@ CVfrCompiler::OptionInitialization (
     } else if (_stricmp(Argv[Index], "-i") == 0) {
       Index++;
       if ((Index >= Argc) || (Argv[Index][0] == '-')) {
-        printf ("%s -i - missing path argument\n", PROGRAM_NAME);
+        printf ("%s -i - missing path argument\n", UTILITY_NAME);
         goto Fail;
       }
 
@@ -79,7 +79,7 @@ CVfrCompiler::OptionInitialization (
     } else if (_stricmp(Argv[Index], "-od") == 0) {
       Index++;
       if ((Index >= Argc) || (Argv[Index][0] == '-')) {
-        printf ("%s -od - missing output directory name\n", PROGRAM_NAME);
+        printf ("%s -od - missing output directory name\n", UTILITY_NAME);
         goto Fail;
       }
       strcpy (mOptions.OutputDirectory, Argv[Index]);
@@ -92,20 +92,20 @@ CVfrCompiler::OptionInitialization (
     } else if (_stricmp(Argv[Index], "-ppflag") == 0) {
       Index++;
       if ((Index >= Argc) || (Argv[Index][0] == '-')) {
-        printf ("%s -od - missing C-preprocessor argument\n", PROGRAM_NAME);
+        printf ("%s -od - missing C-preprocessor argument\n", UTILITY_NAME);
         goto Fail;
       }
 
       AppendCPreprocessorOptions (Argv[Index]);
     } else {
-      printf ("%s unrecognized option %s\n", PROGRAM_NAME, Argv[Index]);
+      printf ("%s unrecognized option %s\n", UTILITY_NAME, Argv[Index]);
       Usage ();
       goto Fail;
     }
   }
 
   if (Index != Argc - 1) {
-    printf ("%s must specify VFR file name", PROGRAM_NAME);
+    printf ("%s must specify VFR file name\n", UTILITY_NAME);
     Usage ();
     goto Fail;
   } else {
@@ -165,7 +165,7 @@ CVfrCompiler::AppendIncludePath (
   }
   IncludePaths = new INT8[Len];
   if (IncludePaths == NULL) {
-    printf ("%s memory allocation failure\n", PROGRAM_NAME);
+    printf ("%s memory allocation failure\n", UTILITY_NAME);
     return;
   }
   IncludePaths[0] = '\0';
@@ -194,7 +194,7 @@ CVfrCompiler::AppendCPreprocessorOptions (
   }
   Opt = new INT8[Len];
   if (Opt == NULL) {
-    printf ("%s memory allocation failure\n", PROGRAM_NAME);
+    printf ("%s memory allocation failure\n", UTILITY_NAME);
     return;
   }
   Opt[0] = 0;
@@ -346,30 +346,34 @@ CVfrCompiler::Usage (
   VOID
   )
 {
-  UINT32 Index;
-  CONST  INT8 *Help[] = {
-    " ",
-    "VfrCompile version " VFR_COMPILER_VERSION,
-    " ",
-    "  Usage: VfrCompile {options} [VfrFile]",
-    " ",
-    "    where options include:",
-    "      -? or -h       prints this help",
-    "      -l             create an output IFR listing file",
-    "      -i IncPath     add IncPath to the search path for VFR included files",
-    "      -od OutputDir  deposit all output files to directory OutputDir (default=cwd)",
-    "      -ibin          create an IFR HII pack file",
-    "      -nopp          do not preprocess",
-    "      -ppflag        C-preprocessor argument",
-    "    where parameters include:",
-    "      VfrFile        name of the input VFR script file",
-    " ",
+  int          Index;
+  const char   *Str[] = {
+    UTILITY_NAME" "UTILITY_VERSION" - Intel UEFI VFR Compiler Utility",
+    "  Copyright (C), 2004 - 2008 Intel Corporation",
+#if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
+    "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
+#endif
+    "",
+    "Usage:",
+    "  "UTILITY_NAME" [OPTION] VFRFILE",
+    "Description:",
+    "  Compile VFRFILE.",
+    "Options:",
+    "  -? or -h        print this help",
+    "  -l              create an output IFR listing file",
+    "  -i IncPath      add IncPath to the search path for VFR included files",
+    "  -od OutputDir   deposit all output files to directory OutputDir (default=cwd)",
+    "  -ibin           create an IFR HII pack file",
+    "  -ppflag CFlags  pass Flags as C-preprocessor-flag",
+    "  -v or -version  print version information",
     NULL
-    };
-  for (Index = 0; Help[Index] != NULL; Index++) {
-    fprintf (stdout, "%s\n", Help[Index]);
+  };
+
+  for (Index = 0; Str[Index] != NULL; Index++) {
+    fprintf (stdout, "%s\n", Str[Index]);
   }
 }
+
 
 VOID
 CVfrCompiler::PreProcess (
@@ -389,12 +393,12 @@ CVfrCompiler::PreProcess (
   }
 
   if ((pVfrFile = fopen (mOptions.VfrFileName, "r")) == NULL) {
-    printf ("%s could not open input VFR file - %s\n", PROGRAM_NAME, mOptions.VfrFileName);
+    printf ("%s could not open input VFR file - %s\n", UTILITY_NAME, mOptions.VfrFileName);
     goto Fail;
   }
   fclose (pVfrFile);
 
-  CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) +
+  CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) + 
   	       strlen (mOptions.VfrFileName) + strlen (mOptions.PreprocessorOutputFileName);
   if (mOptions.CPreprocessorOptions != NULL) {
     CmdLen += strlen (mOptions.CPreprocessorOptions);
@@ -405,7 +409,7 @@ CVfrCompiler::PreProcess (
 
   PreProcessCmd = new INT8[CmdLen + 10];
   if (PreProcessCmd == NULL) {
-    printf ("%s could not allocate memory\n", PROGRAM_NAME);
+    printf ("%s could not allocate memory\n", UTILITY_NAME);
     goto Fail;
   }
   strcpy (PreProcessCmd, mPreProcessCmd), strcat (PreProcessCmd, " ");
@@ -420,7 +424,7 @@ CVfrCompiler::PreProcess (
   strcat (PreProcessCmd, mOptions.PreprocessorOutputFileName);
 
   if (system (PreProcessCmd) != 0) {
-    printf ("%s failed to spawn C preprocessor on VFR file \n\t - %s\n", PROGRAM_NAME, PreProcessCmd);
+    printf ("%s failed to spawn C preprocessor on VFR file \n\t - %s\n", UTILITY_NAME, PreProcessCmd);
     goto Fail;
   }
 
@@ -456,7 +460,7 @@ CVfrCompiler::Compile (
   gCVfrErrorHandle.SetInputFile (InFileName);
 
   if ((pInFile = fopen (InFileName, "r")) == NULL) {
-    printf ("%s failed to open input file - %s\n", PROGRAM_NAME, InFileName);
+    printf ("%s failed to open input file - %s\n", UTILITY_NAME, InFileName);
     goto Fail;
   }
 
@@ -476,7 +480,7 @@ CVfrCompiler::Compile (
 
 Fail:
   if (!IS_RUN_STATUS(STATUS_DEAD)) {
-    printf ("%s compile error!\n", PROGRAM_NAME);
+    printf ("%s compile error!\n", UTILITY_NAME);
     SET_RUN_STATUS (STATUS_FAILED);
   }
   if (pInFile != NULL) {
@@ -582,16 +586,16 @@ CVfrCompiler::GenRecordListFile (
     }
 
     if ((pInFile = fopen (InFileName, "r")) == NULL) {
-      printf ("%s failed to open input VFR preprocessor output file - %s\n", PROGRAM_NAME, InFileName);
+      printf ("%s failed to open input VFR preprocessor output file - %s\n", UTILITY_NAME, InFileName);
       return;
     }
 
     if ((pOutFile = fopen (mOptions.RecordListFile, "w")) == NULL) {
-      printf ("%s failed to open record list file for writing - %s\n", PROGRAM_NAME, mOptions.RecordListFile);
+      printf ("%s failed to open record list file for writing - %s\n", UTILITY_NAME, mOptions.RecordListFile);
       goto Err1;
     }
 
-    fprintf (pOutFile, "//\n//  VFR compiler version " VFR_COMPILER_VERSION "\n//\n");
+    fprintf (pOutFile, "//\n//  VFR compiler version " UTILITY_VERSION "\n//\n");
     LineNo = 0;
     while (!feof (pInFile)) {
       if (fgets (LineBuf, MAX_LINE_LEN, pInFile) != NULL) {

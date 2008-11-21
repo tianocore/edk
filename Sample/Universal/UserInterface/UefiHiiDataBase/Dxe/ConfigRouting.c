@@ -365,7 +365,6 @@ AppendToMultiString (
   // Append the incoming string
   //
   EfiStrCat (*MultiString, AppendString);
-
   return EFI_SUCCESS;
 }
 
@@ -510,8 +509,7 @@ HiiConfigRoutingExtractConfig (
   EFI_HII_CONFIG_ACCESS_PROTOCOL      *ConfigAccess;
   EFI_STRING                          AccessProgress;
   EFI_STRING                          AccessResults;
-  UINTN                               RemainSize;
-  EFI_STRING                          TmpPtr;
+  BOOLEAN                             FirstElement;
   
   if (This == NULL || Progress == NULL || Results == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -533,6 +531,8 @@ HiiConfigRoutingExtractConfig (
   if (EfiStrnCmp (StringPtr, L"GUID=", EfiStrLen (L"GUID=")) != 0) {    
     return EFI_INVALID_PARAMETER;
   }
+
+  FirstElement = TRUE;
 
   //
   // Allocate a fix length of memory to store Results. Reallocate memory for 
@@ -631,20 +631,27 @@ HiiConfigRoutingExtractConfig (
       // AccessProgress indicates the parsing progress on <ConfigRequest>.
       // Map it to the progress on <MultiConfigRequest> then return it.
       //
-      RemainSize = EfiStrSize (AccessProgress);
-      for (TmpPtr = StringPtr; EfiCompareMem (TmpPtr, AccessProgress, RemainSize) != 0; TmpPtr++);      
-      *Progress = TmpPtr;
-
+      *Progress = EfiStrStr (StringPtr, AccessProgress);
       EfiLibSafeFreePool (ConfigRequest);      
       return Status;
     }
 
     //
-    // Attach this <ConfigAltResp> to a <MultiConfigAltResp>
+    // Attach this <ConfigAltResp> to a <MultiConfigAltResp>. There is a '&'
+    // which seperates the first <ConfigAltResp> and the following ones.
     //
     ASSERT (*AccessProgress == 0);
+
+    if (!FirstElement) {
+      Status = AppendToMultiString (Results, L"&");
+      ASSERT_EFI_ERROR (Status);
+    }
+    
     Status = AppendToMultiString (Results, AccessResults);
     ASSERT_EFI_ERROR (Status);
+
+    FirstElement = FALSE;
+    
     EfiLibSafeFreePool (AccessResults);
     AccessResults = NULL;
     EfiLibSafeFreePool (ConfigRequest);
@@ -660,7 +667,6 @@ HiiConfigRoutingExtractConfig (
     }
 
     StringPtr++;
-
   }
 
   return EFI_SUCCESS;  
@@ -710,6 +716,7 @@ HiiConfigRoutingExportConfig (
   UINTN                               Index;
   EFI_HANDLE                          *ConfigAccessHandles;
   UINTN                               NumberConfigAccessHandles;
+  BOOLEAN                             FirstElement;
 
   if (This == NULL || Results == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -738,6 +745,8 @@ HiiConfigRoutingExportConfig (
     return Status;
   }
 
+  FirstElement = TRUE;
+
   for (Index = 0; Index < NumberConfigAccessHandles; Index++) {
     Status = gBS->HandleProtocol (
                     ConfigAccessHandles[Index],
@@ -756,14 +765,24 @@ HiiConfigRoutingExportConfig (
                              );
     if (!EFI_ERROR (Status)) {
       //
-      // Attach this <ConfigAltResp> to a <MultiConfigAltResp>
+      // Attach this <ConfigAltResp> to a <MultiConfigAltResp>. There is a '&'
+      // which seperates the first <ConfigAltResp> and the following ones.      
       //
+      if (!FirstElement) {
+        Status = AppendToMultiString (Results, L"&");
+        ASSERT_EFI_ERROR (Status);
+      }
+      
       Status = AppendToMultiString (Results, AccessResults);
       ASSERT_EFI_ERROR (Status);
+
+      FirstElement = FALSE;
+      
       EfiLibSafeFreePool (AccessResults);
       AccessResults = NULL;
     }
   }
+  
   gBS->FreePool (ConfigAccessHandles);
 
   return EFI_SUCCESS;  
@@ -821,8 +840,6 @@ HiiConfigRoutingRouteConfig (
   EFI_HANDLE                          DriverHandle;
   EFI_HII_CONFIG_ACCESS_PROTOCOL      *ConfigAccess;
   EFI_STRING                          AccessProgress;
-  UINTN                               RemainSize;
-  EFI_STRING                          TmpPtr;  
 
   if (This == NULL || Progress == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -936,10 +953,7 @@ HiiConfigRoutingRouteConfig (
       // AccessProgress indicates the parsing progress on <ConfigResp>.
       // Map it to the progress on <MultiConfigResp> then return it.
       //
-      RemainSize = EfiStrSize (AccessProgress);
-      for (TmpPtr = StringPtr; EfiCompareMem (TmpPtr, AccessProgress, RemainSize) != 0; TmpPtr++);      
-      *Progress = TmpPtr;
-
+      *Progress = EfiStrStr (StringPtr, AccessProgress);
       EfiLibSafeFreePool (ConfigResp);      
       return Status;
     }
@@ -1212,9 +1226,9 @@ HiiBlockToConfig (
     if (*StringPtr == 0) {
       break;
     }
+
     AppendToMultiString (Config, L"&");
     StringPtr++;
-
   }
 
   if (*StringPtr != 0) {

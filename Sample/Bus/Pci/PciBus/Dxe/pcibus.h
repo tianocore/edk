@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -54,6 +54,9 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (PciHotPlugRequest)
 #include EFI_PROTOCOL_DEFINITION (IncompatiblePciDeviceSupport)
 #include EFI_PROTOCOL_DEFINITION (PciHotPlugInit)
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include EFI_PROTOCOL_DEFINITION (LoadFile2)
+#endif
 
 //
 // Driver Consumed Protocols and GUIDs
@@ -144,6 +147,9 @@ typedef struct _PCI_IO_DEVICE {
   EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL PciDriverOverride;
   EFI_DEVICE_PATH_PROTOCOL                  *DevicePath;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL           *PciRootBridgeIo;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_LOAD_FILE2_PROTOCOL                   LoadFile2;
+#endif
 
   //
   // PCI configuration space header type
@@ -244,6 +250,9 @@ typedef struct _PCI_IO_DEVICE {
 
 #define PCI_IO_DEVICE_FROM_LINK(a) \
   CR (a, PCI_IO_DEVICE, Link, PCI_IO_DEVICE_SIGNATURE)
+
+#define PCI_IO_DEVICE_FROM_LOAD_FILE2_THIS(a) \
+  CR (a, PCI_IO_DEVICE, LoadFile2, PCI_IO_DEVICE_SIGNATURE)
 
 //
 // Global Variables

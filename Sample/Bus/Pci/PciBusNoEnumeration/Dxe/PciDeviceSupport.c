@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,6 +22,7 @@ Revision History
 --*/
 
 #include "Pcibus.h"
+#include "PciDeviceSupport.h"
 
 //
 // This device structure is serviced as a header.
@@ -54,7 +55,7 @@ Returns:
 
 EFI_STATUS
 InsertRootBridge (
-  IN PCI_IO_DEVICE *RootBridge
+  PCI_IO_DEVICE *RootBridge
   )
 /*++
 
@@ -128,7 +129,42 @@ Returns:
 {
   DestroyPciDeviceTree (RootBridge);
 
-  gBS->FreePool (RootBridge);
+  FreePciDevice (RootBridge);
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+FreePciDevice (
+  IN PCI_IO_DEVICE *PciIoDevice
+  )
+/*++
+
+Routine Description:
+
+  Destroy a pci device node.
+  Also all direct or indirect allocated resource for this node will be freed.   
+
+Arguments:
+
+  PciIoDevice   - A pointer to the PCI_IO_DEVICE.
+
+Returns:
+
+  None
+
+--*/
+// TODO:    EFI_SUCCESS - add return value to function comment
+{
+
+  //
+  // Assume all children have been removed underneath this device
+  //
+  if (PciIoDevice->DevicePath != NULL) {
+    gBS->FreePool (PciIoDevice->DevicePath);
+  }
+
+  gBS->FreePool (PciIoDevice);
 
   return EFI_SUCCESS;
 }
@@ -168,10 +204,10 @@ Returns:
 
     Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
-    if (IS_PCI_BRIDGE (&(Temp->Pci))) {
+    if (!IsListEmpty (&Temp->ChildList)) {
       DestroyPciDeviceTree (Temp);
     }
-    gBS->FreePool (Temp);
+    FreePciDevice (Temp);
   }
   
   return EFI_SUCCESS;
@@ -214,7 +250,7 @@ Returns:
 
       DestroyPciDeviceTree (Temp);
 
-      gBS->FreePool(Temp);
+      FreePciDevice (Temp);
 
       return EFI_SUCCESS;
     }
@@ -254,52 +290,21 @@ Returns:
 {
   EFI_STATUS          Status;
   UINT8               PciExpressCapRegOffset;
+  BOOLEAN             HasEfiImage;
 
   //
-  // Install the pciio protocol, device path protocol and 
-  // Bus Specific Driver Override Protocol
+  // Install the pciio protocol, device path protocol
   //
-
-  if (PciIoDevice->BusOverride) {
-    Status = gBS->InstallMultipleProtocolInterfaces (
-                  &PciIoDevice->Handle,             
-                  &gEfiDevicePathProtocolGuid,
-                  PciIoDevice->DevicePath,
-                  &gEfiPciIoProtocolGuid,
-                  &PciIoDevice->PciIo,
-                  &gEfiBusSpecificDriverOverrideProtocolGuid,
-                  &PciIoDevice->PciDriverOverride,
-                  NULL
-                  );
-  } else {
-    Status = gBS->InstallMultipleProtocolInterfaces (
-                  &PciIoDevice->Handle,             
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &PciIoDevice->Handle,
                   &gEfiDevicePathProtocolGuid,
                   PciIoDevice->DevicePath,
                   &gEfiPciIoProtocolGuid,
                   &PciIoDevice->PciIo,
                   NULL
                   );
-  }
-
   if (EFI_ERROR (Status)) {
     return Status;
-  } else {
-    Status = gBS->OpenProtocol (
-                    Controller,           
-                    &gEfiPciRootBridgeIoProtocolGuid, 
-                    (VOID **)&(PciIoDevice->PciRootBridgeIo),
-                    gPciBusDriverBinding.DriverBindingHandle,
-                    PciIoDevice->Handle,   
-                    EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-                    );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-  }
-
-  if (Handle != NULL) {
-    *Handle = PciIoDevice->Handle;
   }
 
   //
@@ -314,9 +319,101 @@ Returns:
              );
   if (!EFI_ERROR (Status)) {
     PciIoDevice->IsPciExp = TRUE;
-    DEBUG ((EFI_D_ERROR, "PciExp - %x (B-%x, D-%x, F-%x)\n", PciIoDevice->IsPciExp, PciIoDevice->BusNumber, PciIoDevice->DeviceNumber, PciIoDevice->FunctionNumber));
+    DEBUG ((EFI_D_ERROR, "PciExp - %x (B-%x, D-%x, F-%x)\n", (UINTN) PciIoDevice->IsPciExp, (UINTN) PciIoDevice->BusNumber, (UINTN) PciIoDevice->DeviceNumber, (UINTN) PciIoDevice->FunctionNumber));
   }
-  
+
+  //
+  // Determine if there are EFI images in the option rom
+  //
+  HasEfiImage = ContainEfiImage (PciIoDevice->PciIo.RomImage, PciIoDevice->PciIo.RomSize);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  if (HasEfiImage) {
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &PciIoDevice->Handle,
+                    &gEfiLoadFile2ProtocolGuid,
+                    &PciIoDevice->LoadFile2,
+                    NULL
+                    );
+    if (EFI_ERROR (Status)) {
+      gBS->UninstallMultipleProtocolInterfaces (
+             &PciIoDevice->Handle,
+             &gEfiDevicePathProtocolGuid,
+             PciIoDevice->DevicePath,
+             &gEfiPciIoProtocolGuid,
+             &PciIoDevice->PciIo,
+             NULL
+             );
+      return Status;
+    }
+  }
+#endif
+
+  if (!PciIoDevice->AllOpRomProcessed) {
+
+    PciIoDevice->AllOpRomProcessed = TRUE;
+    //
+    // Dispatch the EFI OpRom for the PCI device.
+    // The OpRom is got from platform in the above code
+    //   or loaded from device in the previous round of bus enumeration
+    //
+    if (HasEfiImage) {
+      ProcessOpRomImage (PciIoDevice);
+    }
+  }
+
+
+  if (PciIoDevice->BusOverride) {
+    //
+    // Install BusSpecificDriverOverride Protocol
+    //
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &PciIoDevice->Handle,
+                    &gEfiBusSpecificDriverOverrideProtocolGuid,
+                    &PciIoDevice->PciDriverOverride,
+                    NULL
+                    );
+    if (EFI_ERROR (Status)) {
+      gBS->UninstallMultipleProtocolInterfaces (
+             &PciIoDevice->Handle,
+             &gEfiDevicePathProtocolGuid,
+             PciIoDevice->DevicePath,
+             &gEfiPciIoProtocolGuid,
+             &PciIoDevice->PciIo,
+             NULL
+             );
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+      if (HasEfiImage) {
+        gBS->UninstallMultipleProtocolInterfaces (
+               &PciIoDevice->Handle,
+               &gEfiLoadFile2ProtocolGuid,
+               &PciIoDevice->LoadFile2,
+               NULL
+               );
+      }
+#endif
+      
+      return Status;
+    }
+  }
+
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  (VOID **) &(PciIoDevice->PciRootBridgeIo),
+                  gPciBusDriverBinding.DriverBindingHandle,
+                  PciIoDevice->Handle,
+                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (Handle != NULL) {
+    *Handle = PciIoDevice->Handle;
+  }
+
   //
   // Indicate the pci device is registered
   //
@@ -379,7 +476,7 @@ Returns:
     // If it is PPB, first de-register its children
     //
 
-    if (IS_PCI_BRIDGE (&(PciIoDevice->Pci))) {
+    if (!IsListEmpty (&PciIoDevice->ChildList)) {
 
       CurrentLink = PciIoDevice->ChildList.ForwardLink;
 
@@ -438,6 +535,34 @@ Returns:
                       NULL
                       );
     }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    if (!EFI_ERROR (Status)) {
+      //
+      // Try to uninstall LoadFile2 protocol if exists
+      //
+      Status = gBS->OpenProtocol (
+                      Handle,
+                      &gEfiLoadFile2ProtocolGuid,
+                      NULL,
+                      gPciBusDriverBinding.DriverBindingHandle,
+                      Controller,
+                      EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                      );
+      if (!EFI_ERROR (Status)) {
+        Status = gBS->UninstallMultipleProtocolInterfaces (
+                        Handle,
+                        &gEfiLoadFile2ProtocolGuid,
+                        &PciIoDevice->LoadFile2,
+                        NULL
+                        );
+      }
+      //
+      // Restore Status
+      //
+      Status = EFI_SUCCESS;
+    }
+#endif
 
     if (EFI_ERROR (Status)) {
       gBS->OpenProtocol (
@@ -551,7 +676,6 @@ Returns:
 
 --*/
 {
-  PCI_IO_DEVICE             *Temp;
   PCI_IO_DEVICE             *PciIoDevice;
   EFI_DEV_PATH_PTR          Node;
   EFI_DEVICE_PATH_PROTOCOL  *CurrentDevicePath;
@@ -562,13 +686,13 @@ Returns:
 
   while (CurrentLink && CurrentLink != &RootBridge->ChildList) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+    PciIoDevice = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
     if (RemainingDevicePath != NULL) {
 
       Node.DevPath = RemainingDevicePath;
 
-      if (Node.Pci->Device != Temp->DeviceNumber || 
-          Node.Pci->Function != Temp->FunctionNumber) {
+      if (Node.Pci->Device != PciIoDevice->DeviceNumber || 
+          Node.Pci->Function != PciIoDevice->FunctionNumber) {
         CurrentLink = CurrentLink->ForwardLink;
         continue;
       }
@@ -576,7 +700,7 @@ Returns:
       //
       // Check if the device has been assigned with required resource
       //
-      if (!Temp->Allocated) {
+      if (!PciIoDevice->Allocated) {
         return EFI_NOT_READY;
       }
       
@@ -584,14 +708,12 @@ Returns:
       // Check if the current node has been registered before
       // If it is not, register it
       //
-      if (!Temp->Registered) {
-        PciIoDevice = Temp;
-
+      if (!PciIoDevice->Registered) {
         Status = RegisterPciDevice (
-                  Controller,
-                  PciIoDevice,
-                  NULL
-                  );
+                   Controller,
+                   PciIoDevice,
+                   NULL
+                   );
 
       }
       
@@ -606,13 +728,13 @@ Returns:
       //
       // If it is a PPB
       //
-      if (IS_PCI_BRIDGE (&(Temp->Pci))) {
+      if (!IsListEmpty (&PciIoDevice->ChildList)) {
         Status = StartPciDevicesOnBridge (
-                  Controller,
-                  Temp,
-                  CurrentDevicePath
-                  );
-        EnableBridgeAttributes (Temp);
+                   Controller,
+                   PciIoDevice,
+                   CurrentDevicePath
+                   );
+        EnableBridgeAttributes (PciIoDevice);
 
         return Status;
       } else {
@@ -630,10 +752,7 @@ Returns:
       // try to enable all the pci devices under this bridge
       //
 
-      if (!Temp->Registered && Temp->Allocated) {
-
-        PciIoDevice = Temp;
-
+      if (!PciIoDevice->Registered && PciIoDevice->Allocated) {
         Status = RegisterPciDevice (
                   Controller,
                   PciIoDevice,
@@ -642,17 +761,16 @@ Returns:
 
       }
 
-      if (IS_PCI_BRIDGE (&(Temp->Pci))) {
+      if (!IsListEmpty (&PciIoDevice->ChildList)) {
         Status = StartPciDevicesOnBridge ( 
                    Controller,
-                   Temp,
+                   PciIoDevice,
                    RemainingDevicePath
                    );
-        EnableBridgeAttributes (Temp);
+        EnableBridgeAttributes (PciIoDevice);
       }
 
       CurrentLink = CurrentLink->ForwardLink;
-      continue;
     }
   }
 
@@ -743,6 +861,8 @@ Returns:
 
   EFI_STATUS                      Status;
   PCI_IO_DEVICE                   *Dev;
+  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
 
   Dev = NULL;
   Status = gBS->AllocatePool (
@@ -759,6 +879,60 @@ Returns:
   Dev->Signature  = PCI_IO_DEVICE_SIGNATURE;
   Dev->Handle     = RootBridgeHandle;
   InitializeListHead (&Dev->ChildList);
+
+  Status = gBS->OpenProtocol (
+                  RootBridgeHandle,
+                  &gEfiDevicePathProtocolGuid,
+                  (VOID **) &ParentDevicePath,
+                  gPciBusDriverBinding.DriverBindingHandle,
+                  RootBridgeHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+
+  if (EFI_ERROR (Status)) {
+    gBS->FreePool (Dev);
+    return NULL;
+  }
+
+  //
+  // Record the root bridge parent device path
+  //
+  Dev->DevicePath = EfiDuplicateDevicePath (ParentDevicePath);
+
+  //
+  // Get the pci root bridge io protocol
+  //
+  Status = gBS->OpenProtocol (
+                  RootBridgeHandle,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  (VOID **) &PciRootBridgeIo,
+                  gPciBusDriverBinding.DriverBindingHandle,
+                  RootBridgeHandle,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+
+  if (EFI_ERROR (Status)) {
+    FreePciDevice (Dev);
+    return NULL;
+  }
+
+  Dev->PciRootBridgeIo = PciRootBridgeIo;
+
+  //
+  // Initialize the PCI I/O instance structure
+  //
+  InitializePciIoInstance (Dev);
+  InitializePciDriverOverrideInstance (Dev);
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  InitializePciLoadFile2 (Dev);
+#endif
+
+  //
+  // Initialize reserved resource list and
+  // option rom driver list
+  //
+  InitializeListHead (&Dev->ReservedResourceList);
+  InitializeListHead (&Dev->OptionRomDriverList);
 
   return Dev;
 }
@@ -798,40 +972,6 @@ Returns:
   }
 
   return NULL;
-}
-
-BOOLEAN
-RootBridgeExisted (
-  IN EFI_HANDLE RootBridgeHandle
-  )
-/*++
-
-Routine Description:
-
-  This function searches if RootBridgeHandle has already existed
-  in current device pool.
-
-  If so, it means the given root bridge has been already enumerated.
-
-Arguments:
-
-  RootBridgeHandle   - An efi handle.
-
-Returns:
-
-  None
-
---*/
-{
-  PCI_IO_DEVICE *Bridge;
-
-  Bridge = GetRootBridgeByHandle (RootBridgeHandle);
-
-  if (Bridge != NULL) {
-    return TRUE;
-  }
-
-  return FALSE;
 }
 
 BOOLEAN

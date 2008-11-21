@@ -344,6 +344,34 @@ IsFontInfoExisted (
 ;
 
 EFI_STATUS
+InvokeRegisteredFunction (
+  IN HII_DATABASE_PRIVATE_DATA    *Private, 
+  IN EFI_HII_DATABASE_NOTIFY_TYPE NotifyType,
+  IN VOID                         *PackageInstance,
+  IN UINT8                        PackageType,
+  IN EFI_HII_HANDLE               Handle
+  )
+/*++
+
+  Routine Description:
+    This function invokes the matching registered function.
+    
+  Arguments:          
+    Private           - HII Database driver private structure.
+    NotifyType        - The type of change concerning the database.
+    PackageInstance   - Points to the package referred to by the notification.
+    PackageType       - Package type
+    Handle            - The handle of the package list which contains the specified package.
+    
+  Returns:
+    EFI_SUCCESS            - Already checked all registered function and invoked 
+                             if matched.
+    EFI_INVALID_PARAMETER  - Any input parameter is not valid.
+     
+--*/
+;
+
+EFI_STATUS
 GetSystemFont (
   IN  HII_DATABASE_PRIVATE_DATA      *Private,
   OUT EFI_FONT_DISPLAY_INFO          **FontInfo,

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -57,33 +57,7 @@ Returns:
 --*/
 ;
 
-
-EFI_STATUS
-PciRomGetRomResourceFromPciOptionRomTable (
-  IN EFI_DRIVER_BINDING_PROTOCOL      *This,
-  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo,
-  PCI_IO_DEVICE                       *PciIoDevice
-  )
-/*++
-
-Routine Description:
-
-  TODO: Add function description
-
-Arguments:
-
-  This            - TODO: add argument description
-  PciRootBridgeIo - TODO: add argument description
-  PciIoDevice     - TODO: add argument description
-
-Returns:
-
-  TODO: add return values
-
---*/
-;
-
-EFI_STATUS
+BOOLEAN
 PciRomGetImageMapping (
   PCI_IO_DEVICE                       *PciIoDevice
   )

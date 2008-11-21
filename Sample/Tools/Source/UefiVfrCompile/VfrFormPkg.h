@@ -419,10 +419,11 @@ private:
   EFI_IFR_FORM_SET *mFormSet;
 
 public:
-  CIfrFormSet () : CIfrObj (EFI_IFR_FORM_SET_OP, (CHAR8 **)&mFormSet),
+  CIfrFormSet (UINT8 Size) : CIfrObj (EFI_IFR_FORM_SET_OP, (CHAR8 **)&mFormSet, Size),
                    CIfrOpHeader (EFI_IFR_FORM_SET_OP, &mFormSet->Header) {
     mFormSet->Help         = EFI_STRING_ID_INVALID;
     mFormSet->FormSetTitle = EFI_STRING_ID_INVALID;
+    mFormSet->Flags        = 0;
     memset (&mFormSet->Guid, 0, sizeof (EFI_GUID));
   }
 
@@ -436,6 +437,17 @@ public:
 
   VOID SetHelp (IN EFI_STRING_ID Help) {
     mFormSet->Help = Help;
+  }
+
+  VOID SetClassGuid (IN EFI_GUID *Guid) {
+    if (mFormSet->Flags > 0 && ExpendObjBin(sizeof(EFI_GUID))) {
+      IncLength (sizeof (EFI_GUID));
+    }
+    memcpy (&(mFormSet->ClassGuid[mFormSet->Flags++]), Guid, sizeof (EFI_GUID));
+  }
+
+  UINT8 GetFlags() {
+    return mFormSet->Flags;
   }
 };
 

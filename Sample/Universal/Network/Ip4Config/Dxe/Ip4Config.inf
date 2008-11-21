@@ -52,6 +52,8 @@ COMPONENT_TYPE       = BS_DRIVER
   EdkProtocolLib
   NetLib
   EdkGuidLib
-
+  EfiCommonLib
+  PrintLib
+  
 [nmake.common]
   IMAGE_ENTRY_POINT=Ip4ConfigDriverEntryPoint  

@@ -699,10 +699,16 @@ Returns:
   Private->ParentBlockIo    = ParentBlockIo;
   Private->DiskIo           = ParentDiskIo;
 
-  Private->BlockIo.Revision = EFI_BLOCK_IO_PROTOCOL_REVISION;
+  Private->BlockIo.Revision = ParentBlockIo->Revision;
 
   Private->BlockIo.Media    = &Private->Media;
-  EfiCopyMem (Private->BlockIo.Media, ParentBlockIo->Media, sizeof (EFI_BLOCK_IO_MEDIA));
+  //
+  // Because partition block is logical, only copy EFI_BLOCK_IO_MEDIA revision 1 part
+  // and when the revision is 2, leave LowestAlignedLba and LogicalBlocksPerPhysicalBlock
+  // as zero per UEFI Spec.
+  //
+  EfiCopyMem (Private->BlockIo.Media, ParentBlockIo->Media, SIZE_OF_EFI_BLOCK_IO_MEDIA_REV1);
+
   Private->Media.LogicalPartition = TRUE;
   Private->Media.LastBlock = DivU64x32 (
                               MultU64x32 (End - Start + 1,
