@@ -1068,7 +1068,7 @@ Returns:
                                           ScsiIoDevice->Lun,
                                           &ScsiDevicePath
                                           );
-    if (Status == EFI_OUT_OF_RESOURCES) {
+    if (EFI_ERROR(Status)) {
       gBS->FreePool (ScsiIoDevice);
       return Status;
     }
@@ -1079,7 +1079,7 @@ Returns:
                                           ScsiIoDevice->Lun,
                                           &ScsiDevicePath
                                           );
-    if (Status == EFI_OUT_OF_RESOURCES) {
+    if (EFI_ERROR(Status)) {
       gBS->FreePool (ScsiIoDevice);
       return Status;
     }

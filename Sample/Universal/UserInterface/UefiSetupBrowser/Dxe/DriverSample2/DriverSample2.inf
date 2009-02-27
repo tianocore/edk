@@ -1,0 +1,53 @@
+#/*++
+#
+# Copyright (c) 2008, Intel Corporation
+# All rights reserved. This program and the accompanying materials
+# are licensed and made available under the terms and conditions of the BSD License
+# which accompanies this distribution.  The full text of the license may be found at
+# http://opensource.org/licenses/bsd-license.php
+#
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#  Module Name:
+#
+#    DriverSample2.inf
+#
+#  Abstract:
+#
+#
+#
+#--*/
+
+
+[defines]
+BASE_NAME            = DriverSample2
+FILE_GUID            = 8F2A6EDA-DAB8-4938-9C2E-45D9FBFC31D5
+COMPONENT_TYPE       = BS_DRIVER
+
+[sources.common]
+  SampleStrings.uni
+  Sample.vfr
+  DriverSample2.c
+
+[includes.common]
+  $(EDK_SOURCE)\Foundation\Framework
+  $(EDK_SOURCE)\Foundation
+  $(EDK_SOURCE)\Foundation\Efi
+  .
+  $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Include
+  $(EDK_SOURCE)\Foundation\Efi\Include
+  $(EDK_SOURCE)\Foundation\Framework\Include
+  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
+  $(DEST_DIR)
+
+[libraries.common]
+  EdkProtocolLib
+  EfiDriverLib
+
+[nmake.common]
+  IMAGE_ENTRY_POINT=DriverSampleInit
+  DPX_SOURCE=DriverSample2.dxs
+  EFI_GENERATE_HII_RESOURCE=YES    # Build HII Package List into PE/COFF resource section

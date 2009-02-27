@@ -89,7 +89,7 @@ COMPONENT_TYPE  = LIBRARY
   Ia32/DisablePaging32.c
   Ia32/DivU64x32.c
   Ia32/DivU64x32Remainder.c
-  Ia32/DivU64x64Remainder.c
+  Ia32/DivU64x64Remainder.asm
   Ia32/EnableDisableInterrupts.c
   Ia32/EnableInterrupts.c
   Ia32/EnablePaging32.c

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1365,16 +1365,11 @@ Returns:
   Session->ImmediateData = Session->ImmediateData && (BOOLEAN) (EfiAsciiStrCmp (Value, "Yes") == 0);
 
   //
-  // MaxRecvDataSegmentLength, result function is Mininum.
+  // MaxRecvDataSegmentLength is declarative.
   //
   Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_MAX_RECV_DATA_SEGMENT_LENGTH);
   if (Value != NULL) {
-    //
-    // MaxRecvDataSegmentLength is declarative.
-    //
-    NumericValue                    = NetAtoi (Value);
-
-    Conn->MaxRecvDataSegmentLength  = (UINT32) NET_MIN (Conn->MaxRecvDataSegmentLength, NumericValue);
+      Conn->MaxRecvDataSegmentLength = (UINT32) NetAtoi (Value);
   }
   //
   // MaxBurstLength, result funtion is Mininum.
@@ -2775,6 +2770,7 @@ Returns:
   Status        = EFI_SUCCESS;
   Tcb           = NULL;
   TimeoutEvent  = NULL;
+  Timeout       = 0;
 
   if (Session->State != SESSION_STATE_LOGGED_IN) {
     return EFI_DEVICE_ERROR;
@@ -2789,15 +2785,6 @@ Returns:
 
   if (Packet->Timeout != 0) {
     Timeout = MultU64x32 (Packet->Timeout, 2);
-    //
-    // Start the timeout timer.
-    //
-    Status = gBS->SetTimer (Conn->TimeoutEvent, TimerRelative, Timeout);
-    if (EFI_ERROR (Status)) {
-      goto ON_EXIT;
-    }
-
-    TimeoutEvent = Conn->TimeoutEvent;
   }
 
   Status = IScsiNewTcb (Conn, &Tcb);
@@ -2852,6 +2839,18 @@ Returns:
   InBufferContext.InDataLen = Packet->InTransferLength;
 
   while (!Tcb->StatusXferd) {
+    //
+    // Start the timeout timer.
+    //
+    if (Timeout != 0) {
+      Status = gBS->SetTimer (Conn->TimeoutEvent, TimerRelative, Timeout);
+      if (EFI_ERROR (Status)) {
+        goto ON_EXIT;
+      }
+      TimeoutEvent = Conn->TimeoutEvent;
+    }
+
+   
     //
     // try to receive PDU from target.
     //

@@ -268,5 +268,6 @@ Abstract:
 #include "Library\EdkIIGlueUefiBootServicesTableLib.h"
 #include "Library\EdkIIGlueUefiDriverEntryPoint.h"
 #include "Library\EdkIIGlueUefiRuntimeServicesTableLib.h"
+#include "Library\EdkIIGlueOemHookStatusCodeLib.h"
 
 #endif

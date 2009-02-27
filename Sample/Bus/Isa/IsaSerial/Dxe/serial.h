@@ -115,6 +115,7 @@ typedef struct {
   BOOLEAN                                HardwareFlowControl;
   EFI_UART_TYPE                          Type;
   EFI_UNICODE_STRING_TABLE               *ControllerNameTable;
+  BOOLEAN                                UseHalfHandshake;
 } SERIAL_DEV;
 
 #ifndef SIZE_REDUCTION_ISA_COMBINED

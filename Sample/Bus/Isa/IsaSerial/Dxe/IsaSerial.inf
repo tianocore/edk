@@ -50,3 +50,4 @@ COMPONENT_TYPE       = BS_DRIVER
 
 [nmake.common]
   IMAGE_ENTRY_POINT=SerialControllerDriverEntryPoint
+#  C_STD_FLAGS = $(C_STD_FLAGS) /DUSE_HALF_HANDSHAKE

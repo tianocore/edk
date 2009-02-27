@@ -420,7 +420,7 @@ private:
 
 public:
   CIfrFormSet (UINT8 Size) : CIfrObj (EFI_IFR_FORM_SET_OP, (CHAR8 **)&mFormSet, Size),
-                   CIfrOpHeader (EFI_IFR_FORM_SET_OP, &mFormSet->Header) {
+                   CIfrOpHeader (EFI_IFR_FORM_SET_OP, &mFormSet->Header, Size) {
     mFormSet->Help         = EFI_STRING_ID_INVALID;
     mFormSet->FormSetTitle = EFI_STRING_ID_INVALID;
     mFormSet->Flags        = 0;
@@ -830,7 +830,7 @@ private:
 public:
   CIfrResetButton () : CIfrObj (EFI_IFR_RESET_BUTTON_OP, (CHAR8 **)&mResetButton),
                        CIfrOpHeader (EFI_IFR_RESET_BUTTON_OP, &mResetButton->Header), 
-					   CIfrStatementHeader (&mResetButton->Question.Header) {
+					   CIfrStatementHeader (&mResetButton->Statement) {
     mResetButton->DefaultId = EFI_HII_DEFAULT_CLASS_STANDARD;
   }
 

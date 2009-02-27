@@ -33,6 +33,7 @@ Abstract:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 #include EFI_PROTOCOL_PRODUCER (LoadedImageDevicePath)
 #include EFI_PROTOCOL_CONSUMER (LoadFile2)
+#include EFI_PROTOCOL_PRODUCER (HiiPackageList)
 #endif
 
 #include EFI_PROTOCOL_CONSUMER (Ebc)

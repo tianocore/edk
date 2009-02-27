@@ -30,12 +30,29 @@ Revision History
 
 typedef struct {
   EFI_LOCK  RtcLock;
-  UINT16    SavedTimeZone;
-  UINT8     Daylight;
+  EFI_GUID  TimeVarGuid;
+  CHAR16    TimeVarName[11];
+  CHAR16    TimeWakeUpVarName[17];
 } PC_RTC_MODULE_GLOBALS;
 
 #define PCAT_RTC_ADDRESS_REGISTER 0x70
 #define PCAT_RTC_DATA_REGISTER    0x71
+
+
+#define EFI_TIME_INFO_VARIABLE_GUID \
+  { \
+    0x470733de, 0xdf43, 0x448b, 0x8b, 0x45, 0x4e, 0xeb, 0xd, 0xf8, 0xc8, 0x12 \
+  }
+
+//
+//Variable definition for TimeZone and Daylight
+//
+#define TIME_VARIABLE  L"RtcTimeVar"
+
+//
+//Variable definition for wakeup time for TimeZone and Daylight
+//
+#define TIME_WAKEUP_VARIABLE  L"RtcTimeWakeUpVar"
 
 //
 // Dallas DS12C887 Real Time Clock
@@ -136,6 +153,20 @@ typedef union {
   UINT8               Data;
 } RTC_REGISTER_D;
 
+typedef struct {
+  INT16  TimeZone;
+  UINT8  Daylight;
+  UINT8  Pad;
+} RTC_TIME_VARIABLE;
+
+typedef struct {
+  UINT16  YearWakeUp;
+  UINT8   MonthWakeUp;
+  UINT8   DayWakeUp;  
+  INT16   TimeZoneWakeup;
+  UINT8   DaylightWakeup;
+  UINT8   Pad;
+} RTC_TIME_WAKEUP_VARIABLE;
 #pragma pack()
 
 EFI_STATUS

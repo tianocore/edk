@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -223,7 +223,7 @@ typedef enum {
   EfiProcessorFamilyIntelCeleronD = 0xBA,
   EfiProcessorFamilyIntelPentiumD = 0xBB,
   EfiProcessorFamilyIntelPentiumEx = 0xBC,
-  EfiProcessorFamilyIntelCoreBrand = 0xBD,
+  EfiProcessorFamilyIntelCoreSolo  = 0xBD,  // SMBIOS spec 2.6 correct this value
   EfiProcessorFamilyReserved       = 0xBE,
   EfiProcessorFamilyIntelCore2     = 0xBF,
   EfiProcessorFamilyIBM390       = 0xC8,

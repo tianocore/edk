@@ -1002,7 +1002,7 @@ Returns:
     IfrLibUpdateForm (
       BmmCallbackInfo->BmmHiiHandle,
       &mBootMaintGuid,
-      FORM_MAIN_ID,
+      FORM_BOOT_SETUP_ID,
       FORM_BOOT_LEGACY_DEVICE_ID,
       FALSE,
       &gUpdateData

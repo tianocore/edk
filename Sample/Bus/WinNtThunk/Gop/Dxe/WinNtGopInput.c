@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation
+Copyright (c) 2006 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -787,7 +787,7 @@ WinNtGopSimpleTextInExRegisterKeyNotify (
   EFI_LIST_ENTRY                     *Link;
   WIN_NT_GOP_SIMPLE_TEXTIN_EX_NOTIFY *NewNotify;      
 
-  if (KeyData == NULL || NotifyHandle == NULL) {
+  if (KeyData == NULL || NotifyHandle == NULL || KeyNotificationFunction == NULL) {
     return EFI_INVALID_PARAMETER;
   }  
 

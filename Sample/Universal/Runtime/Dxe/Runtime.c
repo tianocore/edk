@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -59,8 +59,6 @@ Revision History:
 
 #if (EFI_SPECIFICATION_VERSION < 0x00020000)
 EFI_GUID                      mLocalEfiUgaIoProtocolGuid  = EFI_UGA_IO_PROTOCOL_GUID;
-#else
-EFI_GUID                      mCapsuleInfoGuid            = EFI_CAPSULE_INFO_GUID;
 #endif
 EFI_MEMORY_DESCRIPTOR         *mVirtualMap                = NULL;
 UINTN                         mVirtualMapDescriptorSize;
@@ -299,17 +297,10 @@ Returns:
   EFI_RUNTIME_IMAGE_ENTRY       *RuntimeImage;
   EFI_LIST_ENTRY                *Link;
   UINTN                         Index;
-  UINTN                         Index1;
 #if (EFI_SPECIFICATION_VERSION < 0x00020000)
+  UINTN                         Index1;
   EFI_DRIVER_OS_HANDOFF_HEADER  *DriverOsHandoffHeader;
   EFI_DRIVER_OS_HANDOFF         *DriverOsHandoff;
-#else
-  UINTN                         Index2;
-  UINTN                         Index3;
-  EFI_CAPSULE_TABLE             *CapsuleTable; 
-  EFI_CAPSULE_INFO_TABLE        *CapsuleInfoTable; 
-  BOOLEAN                       CapsuleScaned;
-  CapsuleScaned   =  FALSE;
 #endif
 
   //
@@ -415,42 +406,6 @@ Returns:
       }
 
       RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index].VendorTable));
-    }
-#else
-    //
-    // CapsuleInfoGuid in ConfigTable refers to an array of CapsuleGuid, it is information
-    // from which you can tell which vendorGuids in ConfigTable are related to CapsuleTable.
-    // Each CapsuleTable points to a array of capsules across a system reset. Then convert 
-    // the array contents to make these capsules visiable in Runtime.
-    //
-    if (CapsuleScaned) {
-      continue;
-    }
-    //
-    // Firstly, Get CapsulInfoGuid in ConfigTable, it points to CapsuleInfoTable, which
-    // gather all the installed capsules' guids.
-    //
-    if (EfiCompareGuid (&mCapsuleInfoGuid, &(mMyST->ConfigurationTable[Index].VendorGuid))) {
-      CapsuleInfoTable = mMyST->ConfigurationTable[Index].VendorTable;
-      //
-      // For each known CapsuleGuid in CapsuleInfoTable, loop the whole ConfigTable to
-      // find out this guid related to CapsuleTable.
-      //
-      for (Index1 = 0; Index1 < CapsuleInfoTable->CapsuleGuidNumber; Index1++) {
-        for (Index2 = 0; Index2 < mMyST->NumberOfTableEntries; Index2++) {
-          //
-          // Find out certain CapsuleTable, go through its contents array, and convert them.
-          //
-          if (EfiCompareGuid (&CapsuleInfoTable->CapsuleGuidPtr[Index1], &(mMyST->ConfigurationTable[Index2].VendorGuid))) {
-            CapsuleTable = mMyST->ConfigurationTable[Index2].VendorTable;
-            for (Index3 = 0; Index3 < CapsuleTable->CapsuleArrayNumber; Index3++) {
-              RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &CapsuleTable->CapsulePtr[Index3]);
-            }     
-            RuntimeDriverConvertPointer (EFI_OPTIONAL_POINTER, (VOID **) &(mMyST->ConfigurationTable[Index2].VendorTable));
-          }
-        }
-      }
-      CapsuleScaned = TRUE;
     }
 #endif
   }

@@ -126,6 +126,7 @@ COMMON_PROCESSDSC_OPTIONS =                        \
     -d ATAPI_PASS_THRU_INF=$(ATAPI_PASS_THRU_INF)  \
     -d DEVPATH_INF=$(DEVPATH_INF)                  \
     -d GRAPHICS_INF=$(GRAPHICS_INF)                \
+    -d DRIVER_SAMPLE2_INF=$(DRIVER_SAMPLE2_INF)    \
     -g $(EDK_TOOLS_OUTPUT)\GuidDatabase.txt        \
     -xref FV\Guid.xref
 

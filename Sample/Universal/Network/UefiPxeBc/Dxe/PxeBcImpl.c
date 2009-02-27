@@ -250,6 +250,9 @@ Returns:
     NetCopyMem (&Private->SubnetMask, &Dhcp4Mode.SubnetMask, sizeof (EFI_IPv4_ADDRESS));
     NetCopyMem (&Private->GatewayIp, &Dhcp4Mode.RouterAddress, sizeof (EFI_IPv4_ADDRESS));
 
+    NetCopyMem (&Mode->StationIp, &Private->StationIp, sizeof (EFI_IPv4_ADDRESS));
+    NetCopyMem (&Mode->SubnetMask, &Private->SubnetMask, sizeof (EFI_IPv4_ADDRESS));
+
     //
     // Check the selected offer to see whether BINL is required, if no or BINL is
     // finished, set the various Mode members.
@@ -585,10 +588,6 @@ Returns:
               BlockSize,
               BufferSize
               );
-
-    if (!EFI_ERROR (Status)) {
-      Status = EFI_BUFFER_TOO_SMALL;
-    }
 
     break;
 
@@ -1870,10 +1869,25 @@ Returns:
 
     if (sizeof (UINTN) < sizeof (UINT64) && (TmpBufSize > 0xFFFFFFFF)) {
       Status = EFI_DEVICE_ERROR;
-    } else {
+    } else if (*BufferSize >= (UINTN) TmpBufSize && Buffer != NULL) {
       *BufferSize = (UINTN) TmpBufSize;
+      Status = PxeBc->Mtftp (
+                        PxeBc,
+                        EFI_PXE_BASE_CODE_TFTP_READ_FILE,
+                        Buffer,
+                        FALSE,
+                        &TmpBufSize,
+                        &BlockSize,
+                        &Private->ServerIp,
+                        Private->BootFileName,
+                        NULL,
+                        FALSE
+                        );
+	} else {
+      *BufferSize = (UINTN) TmpBufSize;
+      Status      = EFI_BUFFER_TOO_SMALL;
     }
-  } else if (Buffer == NULL) {
+  } else if (Buffer == NULL || Private->FileSize > *BufferSize) {
     *BufferSize = Private->FileSize;
     Status      = EFI_BUFFER_TOO_SMALL;
   } else {

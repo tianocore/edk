@@ -183,9 +183,10 @@ PxeBcConfigureUdpWriteInstance (
 
   NetZeroMem (&Udp4CfgData, sizeof (Udp4CfgData));
 
-  Udp4CfgData.ReceiveTimeout = 1000;
-  Udp4CfgData.TypeOfService  = DEFAULT_ToS;
-  Udp4CfgData.TimeToLive     = DEFAULT_TTL;
+  Udp4CfgData.ReceiveTimeout     = 1000;
+  Udp4CfgData.TypeOfService      = DEFAULT_ToS;
+  Udp4CfgData.TimeToLive         = DEFAULT_TTL;
+  Udp4CfgData.AllowDuplicatePort = TRUE;
 
   NetCopyMem (&Udp4CfgData.StationAddress, StationIp, sizeof (*StationIp));
   NetCopyMem (&Udp4CfgData.SubnetMask, SubnetMask, sizeof (*SubnetMask));

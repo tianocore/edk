@@ -150,18 +150,31 @@ Returns:
 
 --*/
 {
-  EFI_STATUS      Status;
-  RTC_REGISTER_A  RegisterA;
-  RTC_REGISTER_B  RegisterB;
-  RTC_REGISTER_C  RegisterC;
-  RTC_REGISTER_D  RegisterD;
-  UINT8           Century;
-  EFI_TIME        Time;
+  EFI_STATUS        Status;
+  RTC_REGISTER_A    RegisterA;
+  RTC_REGISTER_B    RegisterB;
+  RTC_REGISTER_C    RegisterC;
+  RTC_REGISTER_D    RegisterD;
+  UINT8             Century;
+  EFI_TIME          Time;
+  UINTN             VarSize;
+  EFI_GUID          TimeInfoGuid = EFI_TIME_INFO_VARIABLE_GUID;
+  RTC_TIME_VARIABLE TimeVar;
 
   //
   // Acquire RTC Lock to make access to RTC atomic
   //
   EfiAcquireLock (&Global->RtcLock);
+
+  //
+  // Initialize the name and GUID of the NV variable used to record
+  // data of daylight saving and time zone.
+  // These variables are envelopped into a global variable in order to
+  // convert all pointers to new virtual address in runtime.
+  //
+  EfiStrnCpy (Global->TimeVarName, TIME_VARIABLE, EfiStrLen (TIME_VARIABLE)); 
+  EfiStrnCpy (Global->TimeWakeUpVarName, TIME_WAKEUP_VARIABLE, EfiStrLen (TIME_WAKEUP_VARIABLE));  
+  EfiCopyMem (&Global->TimeVarGuid, &TimeInfoGuid, sizeof (EFI_GUID));
 
   //
   // Initialize RTC Register
@@ -213,14 +226,41 @@ Returns:
   Time.Year = (UINT16) (Century * 100 + Time.Year);
 
   //
+  // Read Register B
+  //
+  RegisterB.Data = RtcRead (RTC_ADDRESS_REGISTER_B);
+  RegisterB.Data = RegisterB.Data | RTC_INIT_REGISTER_B;
+  //
   // Set RTC configuration after get original time
   //
-  RtcWrite (RTC_ADDRESS_REGISTER_B, RTC_INIT_REGISTER_B);
+  RtcWrite (RTC_ADDRESS_REGISTER_B, RegisterB.Data);
 
   //
   // Release RTC Lock.
   //
   EfiReleaseLock (&Global->RtcLock);
+
+  //
+  // Get Time variable for TimeZone and Daylight
+  //
+  EfiZeroMem (&TimeVar, sizeof (RTC_TIME_VARIABLE));
+  VarSize = sizeof (RTC_TIME_VARIABLE);
+  Status = EfiGetVariable (
+             Global->TimeVarName,
+             &Global->TimeVarGuid,
+             NULL,
+             &VarSize,
+             &TimeVar
+             );
+  if (Status == EFI_NOT_FOUND) {
+    Time.TimeZone = EFI_UNSPECIFIED_TIMEZONE;
+    Time.Daylight = 0;
+  } else if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
+  } else {
+    Time.TimeZone = TimeVar.TimeZone;
+    Time.Daylight = TimeVar.Daylight;
+  }
 
   //
   // Validate time fields
@@ -233,12 +273,13 @@ Returns:
     Time.Day    = RTC_INIT_DAY;
     Time.Month  = RTC_INIT_MONTH;
     Time.Year   = RTC_INIT_YEAR;
+    Time.TimeZone = EFI_UNSPECIFIED_TIMEZONE;
+    Time.Daylight = 0;
+    //
+    // Reset time value if Time is not valid in RTC and variable
+    //
+    PcRtcSetTime (&Time, Global);
   }
-  //
-  // Reset time value according to new RTC configuration
-  //
-  PcRtcSetTime (&Time, Global);
-
   return EFI_SUCCESS;
 }
 
@@ -263,10 +304,11 @@ Routine Description:
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS      Status;
-  RTC_REGISTER_B  RegisterB;
-  UINT8           Century;
-  UINTN           BufferSize;
+  EFI_STATUS        Status;
+  RTC_REGISTER_B    RegisterB;
+  UINT8             Century;
+  UINTN             VarSize;
+  RTC_TIME_VARIABLE TimeVar;
 
   //
   // Check parameters for null pointer
@@ -316,12 +358,26 @@ Routine Description:
   EfiReleaseLock (&Global->RtcLock);
 
   //
-  // Get the variable that containts the TimeZone and Daylight fields
+  // Get Time variable for TimeZone and Daylight
   //
-  Time->TimeZone  = Global->SavedTimeZone;
-  Time->Daylight  = Global->Daylight;
-
-  BufferSize      = sizeof (INT16) + sizeof (UINT8);
+  EfiZeroMem (&TimeVar, sizeof (RTC_TIME_VARIABLE));
+  VarSize = sizeof (RTC_TIME_VARIABLE);
+  Status = EfiGetVariable (
+             Global->TimeVarName,
+             &Global->TimeVarGuid,
+             NULL,
+             &VarSize,
+             &TimeVar
+             );
+  if (Status == EFI_NOT_FOUND) {
+    Time->TimeZone = EFI_UNSPECIFIED_TIMEZONE;
+    Time->Daylight = 0;
+  } else if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
+  } else {
+    Time->TimeZone = TimeVar.TimeZone;
+    Time->Daylight = TimeVar.Daylight;
+  }
 
   //
   // Make sure all field values are in correct range
@@ -365,10 +421,13 @@ Routine Description:
 // TODO:    Global - add argument and description to function comment
 // TODO:    EFI_INVALID_PARAMETER - add return value to function comment
 {
-  EFI_STATUS      Status;
-  EFI_TIME        RtcTime;
-  RTC_REGISTER_B  RegisterB;
-  UINT8           Century;
+  EFI_STATUS        Status;
+  EFI_TIME          RtcTime;
+  RTC_REGISTER_B    RegisterB;
+  UINT8             Century;
+  UINT32            VarAttrib;
+  UINTN             VarSize;
+  RTC_TIME_VARIABLE TimeVar;
 
   if (Time == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -427,9 +486,24 @@ Routine Description:
   //
   // Set the variable that containts the TimeZone and Daylight fields
   //
-  Global->SavedTimeZone = Time->TimeZone;
-  Global->Daylight      = Time->Daylight;
-  return Status;
+  EfiZeroMem (&TimeVar, sizeof (RTC_TIME_VARIABLE));
+  TimeVar.TimeZone = Time->TimeZone;
+  TimeVar.Daylight = Time->Daylight;
+  VarAttrib = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE;
+  
+  VarSize = sizeof (RTC_TIME_VARIABLE);
+  Status = EfiSetVariable (
+             Global->TimeVarName,
+             &Global->TimeVarGuid,
+             VarAttrib,
+             VarSize,
+             &TimeVar
+             );
+  if (EFI_ERROR (Status)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -459,11 +533,13 @@ Returns:
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS      Status;
-  RTC_REGISTER_B  RegisterB;
-  RTC_REGISTER_C  RegisterC;
-  UINT8           Century;
-
+  EFI_STATUS                Status;
+  RTC_REGISTER_B            RegisterB;
+  RTC_REGISTER_C            RegisterC;
+  UINT8                     Century;
+  UINTN                     VarSize;
+  RTC_TIME_WAKEUP_VARIABLE  TimeWakeUpVar;
+ 
   //
   // Check paramters for null pointers
   //
@@ -498,9 +574,6 @@ Returns:
     Time->Second  = RtcRead (RTC_ADDRESS_SECONDS_ALARM);
     Time->Minute  = RtcRead (RTC_ADDRESS_MINUTES_ALARM);
     Time->Hour    = RtcRead (RTC_ADDRESS_HOURS_ALARM);
-    Time->Day     = RtcRead (RTC_ADDRESS_DAY_OF_THE_MONTH);
-    Time->Month   = RtcRead (RTC_ADDRESS_MONTH);
-    Time->Year    = RtcRead (RTC_ADDRESS_YEAR);
   } else {
     Time->Second  = 0;
     Time->Minute  = 0;
@@ -508,6 +581,8 @@ Returns:
     Time->Day     = RtcRead (RTC_ADDRESS_DAY_OF_THE_MONTH);
     Time->Month   = RtcRead (RTC_ADDRESS_MONTH);
     Time->Year    = RtcRead (RTC_ADDRESS_YEAR);
+    Time->TimeZone = EFI_UNSPECIFIED_TIMEZONE;
+    Time->Daylight = 0;
   }
 
   ConvertRtcTimeToEfiTime (Time, RegisterB);
@@ -520,6 +595,29 @@ Returns:
   // Release RTC Lock.
   //
   EfiReleaseLock (&Global->RtcLock);
+
+  if (*Enabled) {
+    //
+    //Get Time wakeup variable
+    //
+    EfiZeroMem (&TimeWakeUpVar, sizeof (RTC_TIME_WAKEUP_VARIABLE));
+    VarSize = sizeof (RTC_TIME_WAKEUP_VARIABLE);
+    Status = EfiGetVariable (
+               Global->TimeWakeUpVarName,
+               &Global->TimeVarGuid,
+               NULL,
+               &VarSize,
+               &TimeWakeUpVar
+               );
+    if (EFI_ERROR (Status)) {
+      return EFI_DEVICE_ERROR;
+    }
+    Time->Day      = TimeWakeUpVar.DayWakeUp;
+    Time->Month    = TimeWakeUpVar.MonthWakeUp;
+    Time->Year     = TimeWakeUpVar.YearWakeUp;
+    Time->TimeZone = TimeWakeUpVar.TimeZoneWakeup;
+    Time->Daylight = TimeWakeUpVar.DaylightWakeup;    
+  }
 
   //
   // Make sure all field values are in correct range
@@ -560,11 +658,14 @@ Returns:
 // TODO:    EFI_DEVICE_ERROR - add return value to function comment
 // TODO:    EFI_SUCCESS - add return value to function comment
 {
-  EFI_STATUS            Status;
-  EFI_TIME              RtcTime;
-  RTC_REGISTER_B        RegisterB;
-  UINT8                 Century;
-  EFI_TIME_CAPABILITIES Capabilities;
+  EFI_STATUS                Status;
+  EFI_TIME                  RtcTime;
+  RTC_REGISTER_B            RegisterB;
+  UINT8                     Century;
+  EFI_TIME_CAPABILITIES     Capabilities;
+  UINT32                    VarAttrib;
+  UINTN                     VarSize;
+  RTC_TIME_WAKEUP_VARIABLE  TimeWakeUpVar;
 
   if (Enable) {
 
@@ -637,6 +738,32 @@ Returns:
   // Release RTC Lock.
   //
   EfiReleaseLock (&Global->RtcLock);
+
+  if (Enable) {
+    EfiZeroMem (&TimeWakeUpVar, sizeof (RTC_TIME_WAKEUP_VARIABLE));
+    TimeWakeUpVar.YearWakeUp     = Time->Year;
+    TimeWakeUpVar.MonthWakeUp    = Time->Month;
+    TimeWakeUpVar.DayWakeUp      = Time->Day;
+    TimeWakeUpVar.TimeZoneWakeup = Time->TimeZone;
+    TimeWakeUpVar.DaylightWakeup = Time->Daylight;
+    
+    VarAttrib = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE;
+    
+    //
+    //Set Time wakeup variable
+    //
+    VarSize = sizeof (RTC_TIME_WAKEUP_VARIABLE);
+    Status = EfiSetVariable (
+               Global->TimeWakeUpVarName,
+               &Global->TimeVarGuid,
+               VarAttrib,
+               VarSize,
+               &TimeWakeUpVar
+               );
+    if (EFI_ERROR (Status)) {
+      return EFI_DEVICE_ERROR;
+    }
+  }
 
   return EFI_SUCCESS;
 }
@@ -716,8 +843,6 @@ Returns:
   }
 
   Time->Nanosecond  = 0;
-  Time->TimeZone    = EFI_UNSPECIFIED_TIMEZONE;
-  Time->Daylight    = 0;
 }
 
 EFI_STATUS

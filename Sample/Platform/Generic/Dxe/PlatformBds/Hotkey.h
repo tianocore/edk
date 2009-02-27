@@ -1,13 +1,13 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                     
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2007 - 2008, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
@@ -32,23 +32,27 @@ Revision History
 
 #include EFI_PROTOCOL_DEFINITION (SimpleTextInputEx)
 
+typedef union {
+  struct {
+    UINT32 Revision : 8;
+    UINT32 ShiftPressed : 1;
+    UINT32 ControlPressed : 1;
+    UINT32 AltPressed : 1;
+    UINT32 LogoPressed : 1;
+    UINT32 MenuPressed : 1;
+    UINT32 SysReqPressed : 1;
+    UINT32 Reserved : 16;
+    UINT32 InputKeyCount : 2;
+  } Options;
+  UINT32  PackedValue;
+} EFI_BOOT_KEY_DATA;
 
 typedef struct _EFI_KEY_OPTION {
-  UINT32         KeyOptions;
-  UINT32         BootOptionCrc;
-  UINT16         BootOption;
-//EFI_INPUT_KEY  Keys[];
+  EFI_BOOT_KEY_DATA   KeyData;
+  UINT32              BootOptionCrc;
+  UINT16              BootOption;
+//EFI_INPUT_KEY       Keys[];
 } EFI_KEY_OPTION;
-
-#define EFI_KEY_OPTION_SHIFT     0x00000001
-#define EFI_KEY_OPTION_CONTROL   0x00000002
-#define EFI_KEY_OPTION_ALT       0x00000004
-#define EFI_KEY_OPTION_LOGO      0x00000008
-#define EFI_KEY_OPTION_MENU      0x00000010
-#define EFI_KEY_OPTION_SYSREQ    0x00000020
-#define EFI_KEY_CODE_COUNT       0x00000300
-
-#define GET_KEY_CODE_COUNT(KeyOptions)      (((KeyOptions) & EFI_KEY_CODE_COUNT) >> 8)
 
 #define BDS_HOTKEY_OPTION_SIGNATURE EFI_SIGNATURE_32 ('B', 'd', 'K', 'O')
 typedef struct {

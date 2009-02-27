@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -35,7 +35,6 @@ Abstract:
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 STATIC EFI_GUID mUpdateFlashCapsuleGuid = EFI_CAPSULE_GUID;
-STATIC EFI_GUID  mCapsuleInfoGuid  = EFI_CAPSULE_INFO_GUID;
 #endif
 
 
@@ -189,7 +188,6 @@ Note:
   BOOLEAN                     CachedFlag;
   VOID                        *CapsulePtr[MAX_SUPPORT_CAPSULE_NUM];
   EFI_GUID                    CapsuleGuidCache[MAX_SUPPORT_CAPSULE_NUM];  
-  EFI_CAPSULE_INFO_TABLE      *CapsuleInfoTable; 
 
   PopulateIndex = 0;
   CapsuleNumber = 0;
@@ -322,20 +320,6 @@ Note:
       CacheIndex++;
     }
 
-    //
-    // Install CapsuleInformationGuid to EFI ConfigTable to carry the information what
-    // CapsuleGuid array has been installed in the ConfigTable. When comes to Runtime,
-    // SetVirtualAddressMap can find out the related CapsuleGuid array and convert the 
-    // related CapsuleTable contents.
-    //
-    if (CacheNumber != 0) {
-      Size = sizeof(EFI_CAPSULE_INFO_TABLE) + (CacheNumber -1) * sizeof(EFI_GUID);
-      Status  = gBS->AllocatePool (EfiRuntimeServicesData, Size, (VOID **) &CapsuleInfoTable);
-      CapsuleInfoTable->CapsuleGuidNumber = CacheNumber;
-      gBS->CopyMem(&CapsuleInfoTable->CapsuleGuidPtr[0], CapsuleGuidCache, CacheNumber * sizeof(EFI_GUID));
-      Status = gBS->InstallConfigurationTable (&mCapsuleInfoGuid, (VOID*)CapsuleInfoTable);
-      ASSERT_EFI_ERROR (Status);
-    }
     //
     // Besides ones with CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flag, all capsules left are
     // recognized by platform with CapsuleGuid. For general platform driver, UpdateFlash 

@@ -469,7 +469,7 @@ vfrFormSetDefinition :
   <<
      EFI_GUID    Guid;
      EFI_GUID    DefaultClassGuid = EFI_HII_PLATFORM_SETUP_FORMSET_GUID;
-     EFI_GUID    ClassGuid1, ClassGuid2, ClassGuid3, ClassGuid4, ClassGuid5;
+     EFI_GUID    ClassGuids[10];
      UINT8       ClassGuidNum = 0;
      CIfrFormSet *FSObj = NULL;
      UINT16      C, SC;
@@ -479,13 +479,10 @@ vfrFormSetDefinition :
   Title "=" "STRING_TOKEN" "\(" S1:Number "\)" ","
   Help  "=" "STRING_TOKEN" "\(" S2:Number "\)" ","
   {
-    ClassGuid "=" guidDefinition[ClassGuid1]             <<  ++ClassGuidNum; >>
-                  {
-                   "\|" guidDefinition[ClassGuid2]        << ++ClassGuidNum; >>
-                  }
-                  {
-                   "\|" guidDefinition[ClassGuid3]        << ++ClassGuidNum; >>
-                  }
+    ClassGuid "=" guidDefinition[ClassGuids[ClassGuidNum]]        <<  ++ClassGuidNum; >>
+                  (
+                   "\|" guidDefinition[ClassGuids[ClassGuidNum]]  << ++ClassGuidNum; >>
+                  )*
                   ","
   }
                                                     <<
@@ -496,18 +493,18 @@ vfrFormSetDefinition :
                                                         break;
                                                       case 1:
                                                         FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET));
-                                                        FSObj->SetClassGuid(&ClassGuid1);
+                                                        FSObj->SetClassGuid(&ClassGuids[0]);
                                                         break;
                                                       case 2:
                                                         FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET) + sizeof(EFI_GUID));
-                                                        FSObj->SetClassGuid(&ClassGuid1);
-                                                        FSObj->SetClassGuid(&ClassGuid2);
+                                                        FSObj->SetClassGuid(&ClassGuids[0]);
+                                                        FSObj->SetClassGuid(&ClassGuids[1]);
                                                         break;
                                                       default:
                                                         FSObj = new CIfrFormSet(sizeof(EFI_IFR_FORM_SET) + 2 * sizeof(EFI_GUID));
-                                                        FSObj->SetClassGuid(&ClassGuid1);
-                                                        FSObj->SetClassGuid(&ClassGuid2);
-                                                        FSObj->SetClassGuid(&ClassGuid3);
+                                                        FSObj->SetClassGuid(&ClassGuids[0]);
+                                                        FSObj->SetClassGuid(&ClassGuids[1]);
+                                                        FSObj->SetClassGuid(&ClassGuids[2]);
                                                         break;
                                                       }
 

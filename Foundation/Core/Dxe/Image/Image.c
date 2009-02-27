@@ -860,6 +860,21 @@ Returns:
   if (EFI_ERROR (Status)) {
     goto Done;
   }
+
+  //
+  // Install HII Package List Protocol onto the image handle
+  //
+  if (Image->ImageContext.HiiResourceData != 0) {
+    Status = CoreInstallProtocolInterface (
+               &Image->Handle,
+               &gEfiHiiPackageListProtocolGuid,
+               EFI_NATIVE_INTERFACE,
+               (VOID *) (UINTN) Image->ImageContext.HiiResourceData
+               );
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  }
 #endif
 
   //
@@ -1317,6 +1332,14 @@ Returns:
 
     if (Image->LoadedImageDevicePath != NULL) {
       CoreFreePool (Image->LoadedImageDevicePath);
+    }
+
+    if (Image->ImageContext.HiiResourceData != 0) {
+      Status = CoreUninstallProtocolInterface (
+                 Image->Handle,
+                 &gEfiHiiPackageListProtocolGuid,
+                 (VOID *) (UINTN) Image->ImageContext.HiiResourceData
+                 );
     }
 #endif
 

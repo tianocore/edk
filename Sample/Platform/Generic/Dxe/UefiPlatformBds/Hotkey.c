@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2008, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -124,11 +124,11 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  KeyOptionSize = sizeof (EFI_KEY_OPTION) + GET_KEY_CODE_COUNT (KeyOption->KeyOptions) * sizeof (EFI_INPUT_KEY);
+  KeyOptionSize = sizeof (EFI_KEY_OPTION) + KeyOption->KeyData.Options.InputKeyCount * sizeof (EFI_INPUT_KEY);
   UpdateBootOption = FALSE;
 
   //
-  // check whether HotKey conflict with keys used by Setup Browser
+  // Check whether HotKey conflict with keys used by Setup Browser
   //
 
   KeyOrder = BdsLibGetVariableAndSize (
@@ -166,8 +166,8 @@ Returns:
       return EFI_SUCCESS;
     }
 
-    if (KeyOption->KeyOptions == TempOption->KeyOptions) {
-      if (GET_KEY_CODE_COUNT (KeyOption->KeyOptions) == 0 ||
+    if (KeyOption->KeyData.PackedValue == TempOption->KeyData.PackedValue) {
+      if (KeyOption->KeyData.Options.InputKeyCount == 0 ||
           EfiCompareMem (
             ((UINT8 *) TempOption) + sizeof (EFI_KEY_OPTION),
             ((UINT8 *) KeyOption) + sizeof (EFI_KEY_OPTION),
@@ -383,7 +383,7 @@ Returns:
     HotkeyData = &Hotkey->KeyData[Hotkey->WaitingKey];
     if ((KeyData->Key.ScanCode == HotkeyData->Key.ScanCode) &&
        (KeyData->Key.UnicodeChar == HotkeyData->Key.UnicodeChar) &&
-       ((HotkeyData->KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) ? (KeyData->KeyState.KeyShiftState == HotkeyData->KeyState.KeyShiftState) : 1)) {
+       ((HotkeyData->KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) ? (KeyData->KeyState.KeyShiftState == HotkeyData->KeyState.KeyShiftState) : TRUE)) {
       //
       // Receive an expecting key stroke
       //
@@ -597,7 +597,7 @@ Returns:
   BDS_HOTKEY_OPTION  *HotkeyLeft;
   BDS_HOTKEY_OPTION  *HotkeyRight;
   UINTN              Index;
-  UINT32             KeyOptions;
+  EFI_BOOT_KEY_DATA  KeyOptions;
   UINT32             KeyShiftStateLeft;
   UINT32             KeyShiftStateRight;
   EFI_INPUT_KEY      *InputKey;
@@ -611,19 +611,32 @@ Returns:
   HotkeyLeft->Signature = BDS_HOTKEY_OPTION_SIGNATURE;
   HotkeyLeft->BootOptionNumber = KeyOption->BootOption;
 
-  KeyOptions = KeyOption->KeyOptions;
+  KeyOptions = KeyOption->KeyData;
 
-  HotkeyLeft->CodeCount = (UINT8) GET_KEY_CODE_COUNT (KeyOptions);
+  HotkeyLeft->CodeCount = (UINT8) KeyOptions.Options.InputKeyCount;
 
   //
   // Map key shift state from KeyOptions to EFI_KEY_DATA.KeyState
   //
-  KeyShiftStateRight = (KeyOptions & EFI_KEY_OPTION_SHIFT) |
-                       ((KeyOptions & EFI_KEY_OPTION_CONTROL) << 1) |
-                       ((KeyOptions & EFI_KEY_OPTION_ALT) << 2) |
-                       ((KeyOptions & EFI_KEY_OPTION_LOGO) << 3) |
-                       ((KeyOptions & (EFI_KEY_OPTION_MENU | EFI_KEY_OPTION_SYSREQ)) << 4) |
-                       EFI_SHIFT_STATE_VALID;
+  KeyShiftStateRight = EFI_SHIFT_STATE_VALID;
+  if (KeyOptions.Options.ShiftPressed) {
+    KeyShiftStateRight |= EFI_RIGHT_SHIFT_PRESSED;
+  }
+  if (KeyOptions.Options.ControlPressed) {
+    KeyShiftStateRight |= EFI_RIGHT_CONTROL_PRESSED;
+  }
+  if (KeyOptions.Options.AltPressed) {
+    KeyShiftStateRight |= EFI_RIGHT_ALT_PRESSED;
+  }
+  if (KeyOptions.Options.LogoPressed) {
+    KeyShiftStateRight |= EFI_RIGHT_LOGO_PRESSED;
+  }
+  if (KeyOptions.Options.MenuPressed) {
+    KeyShiftStateRight |= EFI_MENU_KEY_PRESSED;
+  }
+  if (KeyOptions.Options.SysReqPressed) {
+    KeyShiftStateRight |= EFI_SYS_REQ_PRESSED;
+  }
 
   KeyShiftStateLeft = (KeyShiftStateRight & 0xffffff00) | ((KeyShiftStateRight & 0xff) << 1);
 
@@ -703,12 +716,14 @@ Returns:
 
   //
   // Export our capability - EFI_BOOT_OPTION_SUPPORT_KEY and EFI_BOOT_OPTION_SUPPORT_APP
+  // with maximum number of key presses of 3
   //
   BootOptionSupport = EFI_BOOT_OPTION_SUPPORT_KEY | EFI_BOOT_OPTION_SUPPORT_APP;
+  SET_BOOT_OPTION_SUPPORT_KEY_COUNT (BootOptionSupport, 3);
   Status = gRT->SetVariable (
                   L"BootOptionSupport",
                   &gEfiGlobalVariableGuid,
-                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
                   sizeof (UINT32),
                   &BootOptionSupport
                   );

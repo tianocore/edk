@@ -117,6 +117,8 @@ COMPONENT_TYPE=   LIBRARY
   HiiFont\HiiFont.c
   HiiImage\HiiImage.h
   HiiImage\HiiImage.c
+  HiiPackageList\HiiPackageList.h
+  HiiPackageList\HiiPackageList.c
   HiiString\HiiString.h
   HiiString\HiiString.c  
   Ip4\Ip4.h

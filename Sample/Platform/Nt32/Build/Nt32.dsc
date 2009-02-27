@@ -330,6 +330,10 @@ Sample\Universal\Disk\Partition\Dxe\Partition.inf
 Sample\Bus\Pci\PciBus\Dxe\PciBus.inf
 Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\SetupBrowser.inf
 Sample\Universal\UserInterface\$(UEFI_PREFIX)SetupBrowser\Dxe\DriverSample\DriverSample.inf
+# In EFI mode,  DRIVER_SAMPLE2_INF = NULL
+# In UEFI mode, DRIVER_SAMPLE2_INF = Sample\Universal\UserInterface\UefiSetupBrowser\Dxe\DriverSample2\DriverSample2.inf
+$(DRIVER_SAMPLE2_INF)
+
 Other\Maintained\Application\UefiShell\Bin\Shell.inf
 Sample\Universal\Disk\UnicodeCollation\English\Dxe\English.inf
 Sample\Bus\WinNtThunk\BlockIo\Dxe\WinNtBlockIo.inf

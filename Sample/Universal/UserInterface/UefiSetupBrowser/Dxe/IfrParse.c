@@ -1209,7 +1209,7 @@ Returns:
       break;
 
     case EFI_IFR_RESET_BUTTON_OP:
-      CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
+      CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
 
       EfiCopyMem (&CurrentStatement->DefaultId, &((EFI_IFR_RESET_BUTTON *) OpCodeData)->DefaultId, sizeof (EFI_DEFAULT_ID));
       break;

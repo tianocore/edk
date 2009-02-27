@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -1730,11 +1730,8 @@ USBParseKey (
       break;
 
     //
-    // F11,F12,PrintScreen,Pause/Break
-    // could not be retrieved via SimpleTxtInEx protocol
+    // PrintScreen,Pause/Break could not be retrieved via SimpleTxtInEx protocol
     //
-    case EFI_FUNCTION_KEY_ELEVEN_MODIFIER:
-    case EFI_FUNCTION_KEY_TWELVE_MODIFIER:
     case EFI_PAUSE_MODIFIER:
     case EFI_BREAK_MODIFIER:
       //
