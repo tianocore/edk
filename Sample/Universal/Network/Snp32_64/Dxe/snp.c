@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -286,6 +286,43 @@ Returns:
   }
 }
 #endif
+
+VOID
+EFIAPI
+SnpNotifyExitBootService ( 
+    EFI_EVENT           EVENT,
+    VOID                *Context
+)
+
+/*++
+
+Route Description:
+
+
+Arguments:
+
+    Event    - EFI_EVENT structure
+    Context  - Event Context
+
+Returns:
+
+    None
+    
+--*/
+{
+  SNP_DRIVER             *Snp;
+
+  Snp  = (SNP_DRIVER *)Context;
+
+  //
+  // Shutdown and stop UNDI driver
+  //
+  pxe_shutdown (Snp);
+  pxe_stop (Snp);
+
+  return;
+}
+
 
 STATIC
 EFI_STATUS
@@ -1093,6 +1130,21 @@ Arguments:
   pxe_stop (snp);
 
   //
+  // Register an exitbootservice event to stop UNDI driver.
+  //
+  
+  Status = gBS->CreateEvent (
+                   EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                   EFI_TPL_NOTIFY,
+                   SnpNotifyExitBootService,
+                   snp,
+                   &snp->ExitBootServicesEvent
+                   );
+  if (EFI_ERROR (Status)) {
+    goto Error_DeleteSNP;
+  }
+  
+  //
   //  add SNP to the undi handle
   //
   Status = gBS->InstallProtocolInterface (
@@ -1238,6 +1290,14 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
+  //
+  // Close the ExitBootServices event
+  //
+
+
+  gBS->CloseEvent(Snp->ExitBootServicesEvent);
+  
 
   if (!Snp->IsOldUndi) {
     Status = gBS->CloseProtocol (

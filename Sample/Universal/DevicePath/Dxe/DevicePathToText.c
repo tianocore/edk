@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2008, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -22,7 +22,7 @@ Abstract:
 #include "DevicePathDriver.h"
 
 EFI_DEVICE_PATH_PROTOCOL *
-UnpackDevicePath (
+UnpackDevicePathPreserveLength (
   IN EFI_DEVICE_PATH_PROTOCOL  *DevPath
   )
 /*++
@@ -80,7 +80,6 @@ UnpackDevicePath (
       Size = DevicePathNodeLength (Src);
       EfiCopyMem (Dest, Src, Size);
       Size += ALIGN_SIZE (Size);
-      SetDevicePathNodeLength (Dest, Size);
       Dest->Type |= EFI_DP_TYPE_UNPACKED;
       Dest = (EFI_DEVICE_PATH_PROTOCOL *) (((UINT8 *) Dest) + Size);
 
@@ -1546,6 +1545,7 @@ ConvertDevicePathToText (
   EFI_DEVICE_PATH_PROTOCOL  *UnpackDevPath;
   UINTN                     Index;
   UINTN                     NewSize;
+  UINTN                     Size;
   VOID                      (*DumpNode) (POOL_PRINT *, VOID *, BOOLEAN, BOOLEAN);
 
   if (DevicePath == NULL) {
@@ -1557,7 +1557,7 @@ ConvertDevicePathToText (
   //
   // Unpacked the device path
   //
-  UnpackDevPath = UnpackDevicePath ((EFI_DEVICE_PATH_PROTOCOL *) DevicePath);
+  UnpackDevPath = UnpackDevicePathPreserveLength ((EFI_DEVICE_PATH_PROTOCOL *) DevicePath);
   ASSERT (UnpackDevPath != NULL);
 
   //
@@ -1600,7 +1600,9 @@ ConvertDevicePathToText (
     //
     // Next device path node
     //
-    DevPathNode = NextDevicePathNode (DevPathNode);
+    Size = DevicePathNodeLength(DevPathNode);
+    Size += ALIGN_SIZE(Size);
+    DevPathNode = (EFI_DEVICE_PATH_PROTOCOL *) ( ((UINT8 *) (DevPathNode)) + Size );
   }
   //
   // Shrink pool used for string allocation

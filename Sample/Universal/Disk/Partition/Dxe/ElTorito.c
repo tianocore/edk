@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -109,10 +109,10 @@ Returns:
       break;
     }
 
-    Status = BlockIo->ReadBlocks (
-                        BlockIo,
+    Status = DiskIo->ReadDisk (
+                        DiskIo,
                         Media->MediaId,
-                        VolDescriptorLba,
+                        MultU64x32 (VolDescriptorLba, Media->BlockSize),
                         Media->BlockSize,
                         VolDescriptor
                         );
@@ -152,10 +152,10 @@ Returns:
       continue;
     }
 
-    Status = BlockIo->ReadBlocks (
-                        BlockIo,
+    Status = DiskIo->ReadDisk (
+                        DiskIo,
                         Media->MediaId,
-                        Lba,
+                        MultU64x32 (Lba, Media->BlockSize),
                         Media->BlockSize,
                         Catalog
                         );

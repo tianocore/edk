@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -565,7 +565,10 @@ Returns:
     // Pe image and in Te image header there is not a field to describe the imagesize,
     // we use the largest VirtualAddress plus Size in each directory entry to describe the imagesize
     //
-    ImageContext->ImageSize         = (UINT64) (Hdr.Te->DataDirectory[0].VirtualAddress + Hdr.Te->DataDirectory[0].Size);
+    ImageContext->ImageSize = (UINT64) (Hdr.Te->DataDirectory[0].VirtualAddress + Hdr.Te->DataDirectory[0].Size);
+    if(Hdr.Te->DataDirectory[1].VirtualAddress > Hdr.Te->DataDirectory[0].VirtualAddress) {
+      ImageContext->ImageSize = (UINT64) (Hdr.Te->DataDirectory[1].VirtualAddress + Hdr.Te->DataDirectory[1].Size);
+    }
     ImageContext->SectionAlignment  = 4096;
     ImageContext->SizeOfHeaders     = sizeof (EFI_TE_IMAGE_HEADER) + (UINTN) Hdr.Te->BaseOfCode - (UINTN) Hdr.Te->StrippedSize;
 

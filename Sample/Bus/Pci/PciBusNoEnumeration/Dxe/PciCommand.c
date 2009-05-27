@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -433,11 +433,7 @@ Returns:
     }
   }
 
-  while (CapabilityPtr > 0x3F) {
-    //
-    // Mask it to DWORD alignment per PCI spec
-    //
-    CapabilityPtr &= 0xFC;
+  while ((CapabilityPtr >= 0x40) && ((CapabilityPtr & 0x03) == 0x00)) {
     PciIoDevice->PciIo.Pci.Read (
                              &PciIoDevice->PciIo,
                              EfiPciIoWidthUint16,

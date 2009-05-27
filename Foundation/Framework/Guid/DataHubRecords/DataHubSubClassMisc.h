@@ -596,6 +596,7 @@ typedef struct {
   EFI_INTER_LINK_DATA GroupLink;
   UINT16              GroupId;
   UINT16              GroupElementId;
+  UINT8               ItemType;
 } EFI_MISC_GROUP_ITEM_SET_DATA;
 
 //
@@ -972,6 +973,7 @@ typedef struct {
   EFI_INTER_LINK_DATA   ManagementDeviceLink;
   EFI_INTER_LINK_DATA   ManagementDeviceComponentLink;
   EFI_INTER_LINK_DATA   ManagementDeviceThresholdLink;
+  UINT8                 ComponentType;
 } EFI_MISC_MANAGEMENT_DEVICE_COMPONENT_DESCRIPTION;
 
 //
@@ -1104,18 +1106,62 @@ typedef struct {
 //  Misc. System Event Log  - SMBIOS Type 15
 //
 #define EFI_MISC_SYSTEM_EVENT_LOG_RECORD_NUMBER 0x00000020
+
+typedef enum {  
+  EfiEventLogTypeReserved1                          = 0,
+  EfiEventLogTypeSingleBitEccMemoryError            = 1,
+  EfiEventLogTypeMultiBitEccMemoryError             = 2,
+  EfiEventLogTypeParityMemoryError                  = 3,
+  EfiEventLogTypeBusTimeOut                         = 4,
+  EfiEventLogTypeIoChannelCheck                     = 5,
+  EfiEventLogTypeSoftwareNmi                        = 6,
+  EfiEventLogTypePostMemoryResize                   = 7,
+  EfiEventLogTypePostError                          = 8,
+  EfiEventLogTypePciParityError                     = 9,
+  EfiEventLogTypePciSystemError                     = 0xA,
+  EfiEventLogTypeCpuFailure                         = 0xB,
+  EfiEventLogTypeEisaFailSafeTimerTimeOut           = 0xC,
+  EfiEventLogTypeCorrectableMemoryLogDisabled       = 0xD,
+  EfiEventLogTypeLoggingDisabled                    = 0xE,
+  EfiEventLogTypeReserved2                          = 0xF,
+  EfiEventLogTypeSystemLimitExceeded                = 0x10,
+  EfiEventLogTypeAsynchronousHardwareTimerExpired   = 0x11,
+  EfiEventLogTypeSystemConfigurationInformation     = 0x12,
+  EfiEventLogTypeHardDiskInformation                = 0x13,
+  EfiEventLogTypeSystemReconfigured                 = 0x14,
+  EfiEventLogTypeUncorrectableCpuComplexError       = 0x15,
+  EfiEventLogTypeLogAreaResetCleared                = 0x16,
+  EfiEventLogTypeSystemBoot                         = 0x17,
+  EfiEventLogTypeEndOfLog                           = 0xFF
+} EFI_MISC_LOG_TYPE;
+
+typedef enum {  
+  EfiEventLogDataFormatTypeNone = 0,
+  EfiEventLogDataFormatTypeHandle = 1,
+  EfiEventLogDataFormatTypeMultipleEvent = 2,
+  EfiEventLogDataFormatTypeMultipleEventHandle = 3,
+  EfiEventLogDataFormatTypePostResultsBitmap = 4,
+  EfiEventLogDataFormatTypeSystemManagement = 5,
+  EfiEventLogDataFormatTypeMultipleEventSystemManagement = 6
+} EFI_MISC_VARIABLE_DATA_FORMAT_TYPE;
+
 typedef struct {
-  //SMBIOS_STRUCTURE_HDR  Header;
-  UINT16                LogAreaLength;
-  UINT16                LogHeaderStartOffset;
-  UINT16                LogDataStartOffset;
-  UINT8                 AccessMethod;
-  UINT8                 LogStatus;
-  UINT32                LogChangeToken;
-  UINT32                AccessMethodAddress;
-  UINT8                 LogHeaderFormat;
-  UINT8                 NumberOfSupportedLogType;
-  UINT8                 LengthOfLogDescriptor;
+  UINT8                 LogType;
+  UINT8                 DataFormatType;
+} EFI_MISC_EVENT_LOG_TYPE;
+
+typedef struct {
+  UINT16                    LogAreaLength;
+  UINT16                    LogHeaderStartOffset;
+  UINT16                    LogDataStartOffset;
+  UINT8                     AccessMethod;
+  UINT8                     LogStatus;
+  UINT32                    LogChangeToken;
+  UINT32                    AccessMethodAddress;
+  UINT8                     LogHeaderFormat;
+  UINT8                     NumberOfSupportedLogType;
+  UINT8                     LengthOfLogDescriptor;
+  EFI_PHYSICAL_ADDRESS      EventLogTypeDescriptors; // Pointer to EFI_MISC_EVENT_LOG_TYPE
 } EFI_MISC_SYSTEM_EVENT_LOG;
 
 //

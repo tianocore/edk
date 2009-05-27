@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -933,14 +933,17 @@ Returns:
   }
 
   //
+  // Disable Timer
+  //
+  gTimer->SetTimerPeriod (gTimer, 0);
+
+
+  //
   // Notify other drivers that we are exiting boot services.
   //
   CoreNotifySignalList (&gEfiEventExitBootServicesGuid);
 
-  //
-  // Disable Timer
-  //
-  gTimer->SetTimerPeriod (gTimer, 0);
+
 
   //
   // Disable CPU Interrupts

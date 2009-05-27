@@ -220,6 +220,50 @@ PxeBcConfigureUdpWriteInstance (
   return Status;
 }
 
+BOOLEAN
+PxeBcCheckIpByFilter (
+  EFI_PXE_BASE_CODE_MODE    *PxeBcMode,
+  EFI_UDP4_SESSION_DATA     *Session
+  )
+{
+  UINTN                   Index;
+  EFI_IPv4_ADDRESS        Ip4Address;
+  EFI_IPv4_ADDRESS        DestIp4Address;
+
+  if (PxeBcMode->IpFilter.Filters & EFI_PXE_BASE_CODE_IP_FILTER_PROMISCUOUS) {
+    return TRUE;
+  }
+
+  NetCopyMem (&DestIp4Address, &Session->DestinationAddress, sizeof (DestIp4Address));
+  if ((PxeBcMode->IpFilter.Filters & EFI_PXE_BASE_CODE_IP_FILTER_PROMISCUOUS_MULTICAST) &&
+      IP4_IS_MULTICAST (EFI_NTOHL (DestIp4Address))
+      ) {
+    return TRUE;
+  }
+
+  if ((PxeBcMode->IpFilter.Filters & EFI_PXE_BASE_CODE_IP_FILTER_BROADCAST) &&
+      IP4_IS_LOCAL_BROADCAST (EFI_NTOHL (DestIp4Address))
+      ) {
+    return TRUE;
+  }
+
+  NetCopyMem (&Ip4Address, &PxeBcMode->StationIp.v4, sizeof (Ip4Address));
+  if ((PxeBcMode->IpFilter.Filters & EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP) &&
+      EFI_IP4_EQUAL (Ip4Address, DestIp4Address)
+      ) {
+    return TRUE;
+  }
+
+  for (Index = 0; Index < PxeBcMode->IpFilter.IpCnt; ++Index) {
+    NetCopyMem (&Ip4Address, &PxeBcMode->IpFilter.IpList[Index].v4, sizeof (Ip4Address));
+    if (EFI_IP4_EQUAL (Ip4Address, DestIp4Address)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
 VOID
 CvtNum (
   IN UINTN  Number,

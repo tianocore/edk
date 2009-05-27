@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -783,6 +783,54 @@ Returns:
   NONE
 
 --*/
+;
+
+VOID *
+EFIAPI
+GetParentProtocol (
+  IN  EFI_GUID                          *ProtocolGuid,
+  IN  EFI_HANDLE                        ChildHandle
+  )
+/*++
+
+Routine Description:
+
+  Search protocol database and check to see if the protocol
+  specified by ProtocolGuid is present on a ControllerHandle and opened by
+  ChildHandle with an attribute of EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER.
+  If the ControllerHandle is found, then the protocol specified by ProtocolGuid
+  will be opened on it.  
+  
+Arguments:
+
+  ProtocolGuid   - ProtocolGuid pointer
+  ChildHandle    - Child Handle to retrieve Parent information
+  
+Returns:
+
+--*/  
+;
+
+BOOLEAN
+DetermineInstallBlockIo (
+  IN  EFI_HANDLE      ChildHandle
+  )
+/*++
+
+Routine Description:
+
+  Determine if Block Io should be produced
+  
+Arguments:
+
+  ChildHandle    - Child Handle to retrive Parent information
+  
+Returns:
+
+  TRUE          -  Should produce Block Io
+  FALSE         -  Should not produce Block Io
+
+--*/ 
 ;
 
 #endif

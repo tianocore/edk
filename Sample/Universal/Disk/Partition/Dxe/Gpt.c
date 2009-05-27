@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -141,8 +141,8 @@ Returns:
   //
   // Read the Protective MBR from LBA #0
   //
-  Status = BlockIo->ReadBlocks (
-                      BlockIo,
+  Status = DiskIo->ReadDisk (
+                      DiskIo,
                       BlockIo->Media->MediaId,
                       0,
                       BlockIo->Media->BlockSize,
@@ -361,10 +361,10 @@ Returns:
   //
   // Read the EFI Partition Table Header
   //
-  Status = BlockIo->ReadBlocks (
-                      BlockIo,
+  Status = DiskIo->ReadDisk (
+                      DiskIo,
                       BlockIo->Media->MediaId,
-                      Lba,
+                      MultU64x32 (Lba, BlockSize),
                       BlockSize,
                       PartHdr
                       );

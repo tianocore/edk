@@ -189,6 +189,8 @@ typedef struct {
   UINT16                      MemorySpeed;
   EFI_MEMORY_STATE            MemoryState;
   UINT8                       MemoryAttributes;
+  UINT8                       MemoryBankConnections;
+  UINT8                       MemoryErrorStatus;
 } EFI_MEMORY_ARRAY_LINK;
 
 

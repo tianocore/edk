@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2006, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -158,7 +158,7 @@ Returns:
   BMP_COLOR_MAP                 *BmpColorMap;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL *BltBuffer;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Blt;
-  UINTN                         BltBufferSize;
+  UINT64                        BltBufferSize;
   UINTN                         Index;
   UINTN                         Height;
   UINTN                         Width;
@@ -187,17 +187,24 @@ Returns:
   ImageHeader   = Image;
 
   BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
+  if ( BltBufferSize >= SIZE_4G ) {
+     //
+     // The buffer size extends the limitation
+     //
+     return EFI_UNSUPPORTED;
+  }
+
   IsAllocated   = FALSE;
   if (*GopBlt == NULL) {
-    *GopBltSize = BltBufferSize;
+    *GopBltSize = (UINTN) BltBufferSize;
     *GopBlt     = EfiLibAllocatePool (*GopBltSize);
     IsAllocated = TRUE;
     if (*GopBlt == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
   } else {
-    if (*GopBltSize < BltBufferSize) {
-      *GopBltSize = BltBufferSize;
+    if (*GopBltSize < (UINTN) BltBufferSize) {
+      *GopBltSize = (UINTN) BltBufferSize;
       return EFI_BUFFER_TOO_SMALL;
     }
   }

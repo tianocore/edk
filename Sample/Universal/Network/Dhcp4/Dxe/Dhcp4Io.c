@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -257,7 +257,7 @@ Returns:
 
   DhcpSb->CurRetry      = 0;
   DhcpSb->PacketToLive  = 0;
-
+  DhcpSb->LastTimeout   = 0;
   DhcpSb->DhcpState     = State;
   return EFI_SUCCESS;
 }
@@ -299,7 +299,8 @@ Returns:
   }
 
   DhcpSb->PacketToLive = Times[DhcpSb->CurRetry];
-
+  DhcpSb->LastTimeout  = DhcpSb->PacketToLive;
+  
   return;
 }
 
@@ -540,11 +541,12 @@ Returns:
   }
 
   if (DhcpSb->LastPacket != NULL) {
-    NetbufFree (DhcpSb->LastPacket);
+    NetFreePool (DhcpSb->LastPacket);
     DhcpSb->LastPacket = NULL;
   }
-
+  
   DhcpSb->PacketToLive  = 0;
+  DhcpSb->LastTimeout   = 0;
   DhcpSb->CurRetry      = 0;
   DhcpSb->MaxRetries    = 0;
   DhcpSb->LeaseLife     = 0;
@@ -1485,13 +1487,12 @@ Returns:
   // Save it as the last sent packet for retransmission
   //
   if (DhcpSb->LastPacket != NULL) {
-    NetbufFree (DhcpSb->LastPacket);
+    NetFreePool (DhcpSb->LastPacket);
   }
-
-  NET_GET_REF (Wrap);
-  DhcpSb->LastPacket = Wrap;
+  
+  DhcpSb->LastPacket = Packet;
   DhcpSetTransmitTimer (DhcpSb);
-
+  
   //
   // Broadcast the message, unless we know the server address.
   // Use the lease UdpIo port to send the unicast packet.
@@ -1509,10 +1510,19 @@ Returns:
   }
 
   ASSERT (UdpIo != NULL);
-  Status = UdpIoSendDatagram (UdpIo, Wrap, &EndPoint, 0, DhcpOnPacketSent, DhcpSb);
+  NET_GET_REF (Wrap);
+  
+  Status = UdpIoSendDatagram (
+             UdpIo, 
+             Wrap, 
+             &EndPoint, 
+             0, 
+             DhcpOnPacketSent, 
+             DhcpSb
+             );
 
   if (EFI_ERROR (Status)) {
-    NetbufFree (Wrap);
+    NET_PUT_REF (Wrap);
     return EFI_ACCESS_DENIED;
   }
 
@@ -1543,10 +1553,25 @@ Returns:
 {
   UDP_IO_PORT               *UdpIo;
   UDP_POINTS                EndPoint;
+  NET_BUF                   *Wrap;
+  NET_FRAGMENT              Frag;
   EFI_STATUS                Status;
-
+  
   ASSERT (DhcpSb->LastPacket != NULL);
 
+  DhcpSb->LastPacket->Dhcp4.Header.Seconds = HTONS (*(UINT16 *)(&DhcpSb->LastTimeout));
+
+  //
+  // Wrap it into a netbuf then send it.
+  //
+  Frag.Bulk = (UINT8 *) &DhcpSb->LastPacket->Dhcp4.Header;
+  Frag.Len  = DhcpSb->LastPacket->Length;
+  Wrap      = NetbufFromExt (&Frag, 1, 0, 0, DhcpReleasePacket, DhcpSb->LastPacket);
+
+  if (Wrap == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  
   //
   // Broadcast the message, unless we know the server address.
   //
@@ -1564,10 +1589,10 @@ Returns:
 
   ASSERT (UdpIo != NULL);
 
-  NET_GET_REF (DhcpSb->LastPacket);
+  NET_GET_REF (Wrap);
   Status = UdpIoSendDatagram (
              UdpIo,
-             DhcpSb->LastPacket,
+             Wrap,
              &EndPoint,
              0,
              DhcpOnPacketSent,
@@ -1575,7 +1600,7 @@ Returns:
              );
 
   if (EFI_ERROR (Status)) {
-    NET_PUT_REF (DhcpSb->LastPacket);
+    NET_PUT_REF (Wrap);
     return EFI_ACCESS_DENIED;
   }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2008, Intel Corporation
+Copyright (c) 2006 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -1523,6 +1523,41 @@ EhcCreateUsb2Hc (
   return Ehc;
 }
 
+VOID
+EFIAPI
+EhcExitBootService (
+  EFI_EVENT                      Event,
+  VOID                           *Context
+  )
+/*++
+
+Routine Description:
+
+  Callback function for exit boot service event
+
+Arguments:
+
+  Event   - EFI_EVENT structure
+  Context - Event context
+
+Returns:
+
+  None
+
+--*/
+{
+  USB2_HC_DEV   *Ehc;
+
+  Ehc = (USB2_HC_DEV *) Context;
+
+  //
+  // Stop the Host Controller
+  //
+  EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
+
+  return;
+}
+
 EFI_STATUS
 EFIAPI
 EhcDriverBindingStart (
@@ -1628,6 +1663,20 @@ EhcDriverBindingStart (
     EHC_ERROR (("EhcDriverBindingStart: failed to start async interrupt monitor\n"));
     
     EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
+    goto UNINSTALL_USBHC;
+  }
+
+  //
+  // Create event to stop the HC when exit boot service.
+  //
+  Status = gBS->CreateEvent (
+                  EFI_EVENT_SIGNAL_EXIT_BOOT_SERVICES,
+                  EFI_TPL_NOTIFY,
+                  EhcExitBootService,
+                  Ehc,
+                  &Ehc->ExitBootServiceEvent
+                  );
+  if (EFI_ERROR (Status)) {
     goto UNINSTALL_USBHC;
   }
   
@@ -1741,6 +1790,10 @@ EhcDriverBindingStop (
 
   if (Ehc->PollTimer != NULL) {
     gBS->CloseEvent (Ehc->PollTimer);
+  }
+
+  if (Ehc->ExitBootServiceEvent != NULL) {
+    gBS->CloseEvent (Ehc->ExitBootServiceEvent);
   }
 
   EhcFreeSched (Ehc);

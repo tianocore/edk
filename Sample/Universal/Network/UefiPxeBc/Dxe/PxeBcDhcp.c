@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1136,6 +1136,7 @@ Returns:
   EFI_DHCP4_PACKET_OPTION             *PxeOpt;
   PXEBC_OPTION_BOOT_ITEM              *PxeBootItem;
   UINT8                               VendorOptLen;
+  UINT32                              Xid;
 
   Mode      = Private->PxeBc.Mode;
   Dhcp4     = Private->Dhcp4;
@@ -1193,13 +1194,14 @@ Returns:
     return Status;
   }
 
-  Token.Packet->Dhcp4.Header.Xid      = NET_RANDOM (NetRandomInitSeed ());
-  Token.Packet->Dhcp4.Header.Reserved = (IsBCast) ? 0xf000 : 0x0;
+  Xid                                 = NET_RANDOM (NetRandomInitSeed ());
+  Token.Packet->Dhcp4.Header.Xid      = HTONL(Xid);
+  Token.Packet->Dhcp4.Header.Reserved = HTONS((IsBCast) ? 0x8000 : 0);
   NetCopyMem (&Token.Packet->Dhcp4.Header.ClientAddr, &Private->StationIp, sizeof (EFI_IPv4_ADDRESS));
 
   Token.RemotePort = Sport;
 
-  if (DestIp == NULL) {
+  if (IsBCast) {
     NetSetMem (&Token.RemoteAddress, sizeof (EFI_IPv4_ADDRESS), 0xff);
   } else {
     NetCopyMem (&Token.RemoteAddress, DestIp, sizeof (EFI_IPv4_ADDRESS));
@@ -1219,9 +1221,10 @@ Returns:
   //
   for (TryIndex = 1; TryIndex <= PXEBC_BOOT_REQUEST_RETRIES; TryIndex++) {
 
-    Token.TimeoutValue  = PXEBC_BOOT_REQUEST_TIMEOUT * TryIndex;
-
-    Status              = Dhcp4->TransmitReceive (Dhcp4, &Token);
+    Token.TimeoutValue                  = (UINT16) (PXEBC_BOOT_REQUEST_TIMEOUT * TryIndex);
+    Token.Packet->Dhcp4.Header.Seconds  = (UINT16) (PXEBC_BOOT_REQUEST_TIMEOUT * (TryIndex - 1));
+		
+    Status = Dhcp4->TransmitReceive (Dhcp4, &Token);
 
     if (Token.Status != EFI_TIMEOUT) {
       break;

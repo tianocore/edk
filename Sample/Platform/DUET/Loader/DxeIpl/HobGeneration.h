@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -111,6 +111,7 @@ typedef struct {
   EFI_HOB_RESOURCE_DESCRIPTOR       MemoryAbove1MB;
   EFI_HOB_RESOURCE_DESCRIPTOR       MemoryAbove4GB;
   EFI_HOB_MEMORY_ALLOCATION_MODULE  DxeCore;
+  EFI_HOB_RESOURCE_DESCRIPTOR       MemoryDxeCore;
   MEMORY_TYPE_INFORMATION_HOB       MemoryTypeInfo;
   TABLE_HOB                         Acpi;
   TABLE_HOB                         Acpi20;
@@ -125,12 +126,10 @@ typedef struct {
   MEMORY_DESC_HOB                   MemoryDescriptor;
   PCI_EXPRESS_BASE_HOB              PciExpress;
   ACPI_DESCRIPTION_HOB              AcpiInfo;
-  
   EFI_HOB_RESOURCE_DESCRIPTOR       NvStorageFvResource;
-
   FVB_HOB                           NvStorageFvb;
   FVB_HOB                           NvStorage;
-
+  EFI_HOB_RESOURCE_DESCRIPTOR       NvFtwFvResource;
   FVB_HOB                           NvFtwFvb;
   FVB_HOB                           NvFtwWorking;
   FVB_HOB                           NvFtwSpare;

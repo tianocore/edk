@@ -1,17 +1,17 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
-All rights reserved. This program and the accompanying materials                          
-are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution.  The full text of the license may be found at        
-http://opensource.org/licenses/bsd-license.php                                            
-                                                                                          
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
+Copyright (c) 2004 - 2009, Intel Corporation
+All rights reserved. This program and the accompanying materials
+are licensed and made available under the terms and conditions of the BSD License
+which accompanies this distribution.  The full text of the license may be found at
+http://opensource.org/licenses/bsd-license.php
+
+THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  StrGather.c  
+  StrGather.c
 
 Abstract:
 
@@ -30,7 +30,7 @@ Abstract:
 #include "StringDB.h"
 
 #define UTILITY_NAME     "StrGather"
-#define UTILITY_VERSION  "v1.1"
+#define UTILITY_VERSION  "v1.2"
 
 typedef UINT16  WCHAR;
 
@@ -47,6 +47,15 @@ typedef UINT16  WCHAR;
 #define MODE_PARSE    1
 #define MODE_SCAN     2
 #define MODE_DUMP     3
+
+//
+// This is how we invoke the C preprocessor on the source file
+// to resolve #if, #else, etc.
+//
+#define PREPROCESSOR_COMMAND                "cl"
+#define PREPROCESSOR_OPTIONS                "/nologo /EP /TC /DSTRGATHER"
+#define PREPROCESS_TEMP_FILE_EXTENSION      ".ii"
+#define PREPROCESS_OUTPUT_FILE_EXTENSION    ".iii"
 
 //
 // We keep a linked list of these for the source files we process
@@ -84,6 +93,8 @@ static struct {
   TEXT_STRING_LIST            *LastIndirectionFileName;
   TEXT_STRING_LIST            *DatabaseFileName;
   TEXT_STRING_LIST            *LastDatabaseFileName;
+  TEXT_STRING_LIST            *PreprocessFlags;
+  TEXT_STRING_LIST            *LastPreprocessFlags;
   WCHAR_STRING_LIST           *Language;
   WCHAR_STRING_LIST           *LastLanguage;
   WCHAR_MATCHING_STRING_LIST  *IndirectionList;                 // from indirection file(s)
@@ -95,6 +106,8 @@ static struct {
   BOOLEAN                     IgnoreNotFound;                   // when scanning
   BOOLEAN                     VerboseScan;
   BOOLEAN                     UnquotedStrings;                  // -uqs option
+  BOOLEAN                     Preprocess;                       // -ppflag option
+  INT8                        PreprocessFileName[MAX_PATH];
   INT8                        OutputDatabaseFileName[MAX_PATH];
   INT8                        StringHFileName[MAX_PATH];
   INT8                        StringCFileName[MAX_PATH];        // output .C filename
@@ -305,7 +318,7 @@ main (
 Routine Description:
 
   Call the routine to parse the command-line options, then process the file.
-  
+
 Arguments:
 
   Argc - Standard C main() argc and argv.
@@ -315,7 +328,7 @@ Returns:
 
   0       if successful
   nonzero otherwise
-  
+
 --*/
 {
   STATUS  Status;
@@ -370,12 +383,12 @@ Returns:
       if ((mGlobals.OutputDependencyFptr = fopen (mGlobals.OutputDependencyFileName, "w")) == NULL) {
         Error (NULL, 0, 0, mGlobals.OutputDependencyFileName, "failed to open output dependency file");
         goto Finish;
-      }    
+      }
     }
     Status = ProcessIncludeFile (&mGlobals.SourceFiles, NULL);
     if (mGlobals.OutputDependencyFptr != NULL) {
       fclose (mGlobals.OutputDependencyFptr);
-    }    
+    }
     if (Status != STATUS_SUCCESS) {
       goto Finish;
     }
@@ -454,7 +467,7 @@ ProcessIncludeFile (
 Routine Description:
 
   Given a source file, open the file and parse it
-  
+
 Arguments:
 
   SourceFile        - name of file to parse
@@ -463,7 +476,7 @@ Arguments:
 Returns:
 
   Standard status.
-  
+
 --*/
 {
   static UINT32 NestDepth = 0;
@@ -510,18 +523,18 @@ Returns:
       goto Finish;
     }
   }
-  
+
   //
-  // Output the dependency 
+  // Output the dependency
   //
   if (mGlobals.OutputDependencyFptr != NULL) {
-    fprintf (mGlobals.OutputDependencyFptr, "%s : %s\n", mGlobals.DatabaseFileName->Str, FoundFileName);    
+    fprintf (mGlobals.OutputDependencyFptr, "%s : %s\n", mGlobals.DatabaseFileName->Str, FoundFileName);
     //
     // Add pseudo target to avoid incremental build failure when the file is deleted
     //
-    fprintf (mGlobals.OutputDependencyFptr, "%s : \n", FoundFileName); 
+    fprintf (mGlobals.OutputDependencyFptr, "%s : \n", FoundFileName);
   }
-   
+
   //
   // Process the file found
   //
@@ -692,13 +705,13 @@ PreprocessFile (
 Routine Description:
   Preprocess a file to replace all carriage returns with NULLs so
   we can print lines from the file to the screen.
-  
+
 Arguments:
   SourceFile - structure that we use to keep track of an input file.
 
 Returns:
   Nothing.
-  
+
 --*/
 {
   BOOLEAN InComment;
@@ -1767,6 +1780,9 @@ ProcessArgs (
   )
 {
   TEXT_STRING_LIST  *NewList;
+  char              *Cptr;
+  char              *Cptr2;
+
   //
   // Clear our globals
   //
@@ -2120,6 +2136,66 @@ ProcessArgs (
       strcpy (mGlobals.OutputDatabaseFileName, Argv[1]);
       Argv++;
       Argc--;
+    } else if (_stricmp (Argv[0], "-ppflag") == 0) {
+      //
+      // -ppflag "Preprocess flags" -- check for another arg
+      //
+      if ((Argc <= 1) || (Argv[1][0] == '-')) {
+        Error (UTILITY_NAME, 0, 0, Argv[0], "missing preprocess flags");
+        Usage ();
+        return STATUS_ERROR;
+      }
+
+      //
+      // Allocate memory for a new list element, fill it in, and
+      // add it to our list of preprocess flag.
+      //
+      NewList = malloc (sizeof (TEXT_STRING_LIST));
+      if (NewList == NULL) {
+        Error (UTILITY_NAME, 0, 0, NULL, "memory allocation failure");
+        return STATUS_ERROR;
+      }
+
+      memset ((char *) NewList, 0, sizeof (TEXT_STRING_LIST));
+      NewList->Str = malloc (strlen (Argv[1]) * 2 + 1);
+      if (NewList->Str == NULL) {
+        free (NewList);
+        Error (UTILITY_NAME, 0, 0, NULL, "memory allocation failure");
+        return STATUS_ERROR;
+      }
+
+      //
+      // Convert '"' to '\"' in preprocess flag
+      //
+      Cptr = Argv[1];
+      Cptr2 = NewList->Str;
+      if (*Cptr == '"') {
+        *Cptr2++ = '\\';
+        *Cptr2++ = '"';
+        Cptr++;
+      }
+      while (*Cptr != '\0') {
+        if ((*Cptr == '"') && (*(Cptr - 1) != '\\')) {
+          *Cptr2++ = '\\';
+        }
+        *Cptr2++ = *Cptr++;
+      }
+      *Cptr2 = '\0';
+
+      //
+      // Add it to our linked list
+      //
+      if (mGlobals.PreprocessFlags == NULL) {
+        mGlobals.PreprocessFlags = NewList;
+      } else {
+        mGlobals.LastPreprocessFlags->Next = NewList;
+      }
+      mGlobals.LastPreprocessFlags = NewList;
+
+      mGlobals.Preprocess = TRUE;
+
+      Argv++;
+      Argc--;
     } else {
       //
       // Unrecognized arg
@@ -2172,6 +2248,14 @@ ProcessArgs (
   if (mGlobals.Mode == MODE_SCAN) {
     if (Argc < 1) {
       Error (UTILITY_NAME, 0, 0, NULL, "must specify at least one source file to scan with -scan");
+      Usage ();
+      return STATUS_ERROR;
+    }
+    //
+    // If -ppflag is specified, -oh should also be specified for preprocess
+    //
+    if (mGlobals.Preprocess && (mGlobals.StringHFileName[0] == 0)) {
+      Error (UTILITY_NAME, 0, 0, NULL, "must specify string defines file name to preprocess before scan");
       Usage ();
       return STATUS_ERROR;
     }
@@ -2401,6 +2485,166 @@ Done:
 }
 
 static
+INTN
+PreprocessSourceFile (
+  UINT8 *SourceFileName
+  )
+{
+  char              *Cptr;
+  FILE              *InFptr;
+  FILE              *OutFptr;
+  UINT32            CmdLen;
+  char              *PreProcessCmd;
+  char              BaseName[MAX_PATH];
+  char              TempFileName[MAX_PATH];
+  char              SourceFileDir[MAX_PATH];
+  char              Line[MAX_LINE_LEN];
+  TEXT_STRING_LIST  *List;
+  char              InsertLine[] = "#undef STRING_TOKEN\n";
+  int               Status;
+
+  //
+  // Check whehter source file exist
+  //
+  InFptr = fopen (SourceFileName, "r");
+  if (InFptr == NULL) {
+    Error (NULL, 0, 0, SourceFileName, "failed to open input file for scanning");
+    return STATUS_ERROR;
+  }
+
+  //
+  // Get source file directory
+  //
+  strcpy (SourceFileDir, SourceFileName);
+  Cptr = strrchr (SourceFileDir, '\\');
+  if (Cptr != NULL) {
+    *Cptr = '\0';
+  }
+
+  //
+  // Generate preprocess output file name
+  //
+  strcpy (BaseName, mGlobals.OutputDatabaseFileName);
+  Cptr = strrchr (BaseName, '\\');
+  if (Cptr != NULL) {
+    *++Cptr = '\0';
+  }
+
+  Cptr = strrchr (SourceFileName, '\\');
+  if (Cptr != NULL) {
+    Cptr++;
+  }
+  strcat (BaseName, Cptr);
+
+  Cptr = strrchr (BaseName, '.');
+  if (Cptr != NULL) {
+    *Cptr = '\0';
+  }
+
+  strcpy (mGlobals.PreprocessFileName, BaseName);
+  strcat (mGlobals.PreprocessFileName, PREPROCESS_OUTPUT_FILE_EXTENSION);
+
+  strcpy (TempFileName, BaseName);
+  strcat (TempFileName, PREPROCESS_TEMP_FILE_EXTENSION);
+
+  //
+  // Insert "#undef STRING_TOKEN" after each line of "#include ...", so as to
+  // preserve the STRING_TOKEN() for scanning after preprocess
+  //
+  OutFptr = fopen (TempFileName, "w");
+  if (OutFptr == NULL) {
+    Error (NULL, 0, 0, TempFileName, "failed to open file for write");
+    fclose (InFptr);
+    return STATUS_ERROR;
+  }
+  while (fgets (Line, MAX_LINE_LEN, InFptr) != NULL) {
+    fputs (Line, OutFptr);
+    Cptr = Line;
+
+    //
+    // Skip leading blank space
+    //
+    while (*Cptr == ' ' || *Cptr == '\t') {
+      Cptr++;
+    }
+
+    if (*Cptr == '#' && strncmp (Cptr + 1, "include", 7) == 0){
+      fputs (InsertLine, OutFptr);
+    }
+  }
+  fclose (InFptr);
+  fclose (OutFptr);
+
+  //
+  // Prepare preprocess command
+  //
+  CmdLen = 1;
+  CmdLen += strlen (PREPROCESSOR_COMMAND);
+  CmdLen++;
+  CmdLen += strlen (PREPROCESSOR_OPTIONS);
+  CmdLen++;
+
+  //
+  // "-I SourceFileDir "
+  //
+  CmdLen += strlen (SourceFileDir);
+  CmdLen += 4;
+
+  List = mGlobals.PreprocessFlags;
+  while (List != NULL) {
+    CmdLen += strlen (List->Str);
+    CmdLen++;
+
+    List = List->Next;
+  }
+
+  CmdLen += strlen (TempFileName);
+  CmdLen += 3;
+  CmdLen += strlen (mGlobals.PreprocessFileName);
+
+  PreProcessCmd = malloc (CmdLen);
+  if (PreProcessCmd == NULL) {
+    Error (NULL, 0, 0, UTILITY_NAME, "memory allocation fail (%d bytes)\n", CmdLen);
+    return STATUS_ERROR;
+  }
+
+  strcpy (PreProcessCmd, PREPROCESSOR_COMMAND);
+  strcat (PreProcessCmd, " ");
+  strcat (PreProcessCmd, PREPROCESSOR_OPTIONS);
+  strcat (PreProcessCmd, " ");
+
+
+  strcat (PreProcessCmd, "-I ");
+  strcat (PreProcessCmd, SourceFileDir);
+  strcat (PreProcessCmd, " ");
+
+  List = mGlobals.PreprocessFlags;
+  while (List != NULL) {
+    strcat (PreProcessCmd, List->Str);
+    strcat (PreProcessCmd, " ");
+
+    List = List->Next;
+  }
+
+  strcat (PreProcessCmd, TempFileName);
+  strcat (PreProcessCmd, " > ");
+  strcat (PreProcessCmd, mGlobals.PreprocessFileName);
+
+  //
+  // Preprocess the source file
+  //
+  Status = system (PreProcessCmd);
+  if (Status != 0) {
+    Error (NULL, 0, 0, PreProcessCmd, "failed to spawn C preprocessor on source file\n");
+    free (PreProcessCmd);
+    return STATUS_ERROR;
+  }
+
+  free (PreProcessCmd);
+  return STATUS_SUCCESS;
+}
+
+static
 STATUS
 ScanFiles (
   TEXT_STRING_LIST *ScanFiles
@@ -2408,6 +2652,7 @@ ScanFiles (
 {
   char              Line[MAX_LINE_LEN];
   FILE              *Fptr;
+  char              *FileName;
   UINT32            LineNum;
   char              *Cptr;
   char              *SavePtr;
@@ -2415,6 +2660,7 @@ ScanFiles (
   char              *StringTokenPos;
   TEXT_STRING_LIST  *SList;
   BOOLEAN           SkipIt;
+  BOOLEAN           FileExist;
 
   //
   // Put a null-terminator at the end of the line. If we read in
@@ -2425,6 +2671,7 @@ ScanFiles (
   // Process each file. If they gave us a skip extension list, then
   // skip it if the extension matches.
   //
+  FileExist = FALSE;
   while (ScanFiles != NULL) {
     SkipIt = FALSE;
     for (SList = mGlobals.SkipExt; SList != NULL; SList = SList->Next) {
@@ -2444,9 +2691,36 @@ ScanFiles (
         printf ("Scanning %s\n", ScanFiles->Str);
       }
 
-      Fptr = fopen (ScanFiles->Str, "r");
+      if (mGlobals.Preprocess) {
+        //
+        // Create an empty string defines file for preprocessor
+        //
+        if (!FileExist) {
+          Fptr = fopen (mGlobals.StringHFileName, "w");
+          if (Fptr == NULL) {
+            Error (NULL, 0, 0, mGlobals.StringHFileName, "failed to open file for write");
+            return STATUS_ERROR;
+          }
+
+          fclose (Fptr);
+          FileExist = TRUE;
+        }
+
+        //
+        // Preprocess using C preprocessor
+        //
+        if (PreprocessSourceFile (ScanFiles->Str) != STATUS_SUCCESS) {
+          return STATUS_ERROR;
+        }
+
+        FileName = mGlobals.PreprocessFileName;
+      } else {
+        FileName = ScanFiles->Str;
+      }
+
+      Fptr = fopen (FileName, "r");
       if (Fptr == NULL) {
-        Error (NULL, 0, 0, ScanFiles->Str, "failed to open input file for scanning");
+        Error (NULL, 0, 0, FileName, "failed to open input file for scanning");
         return STATUS_ERROR;
       }
 
@@ -2564,6 +2838,13 @@ ScanFiles (
     ScanFiles = ScanFiles->Next;
   }
 
+  //
+  // Remove the empty string defines file
+  //
+  if (FileExist) {
+    remove (mGlobals.StringHFileName);
+  }
+
   return STATUS_SUCCESS;
 }
 //
@@ -2596,6 +2877,15 @@ FreeLists (
     free (mGlobals.ScanFileName->Str);
     free (mGlobals.ScanFileName);
     mGlobals.ScanFileName = Temp;
+  }
+  //
+  // Free up preprocess flags list
+  //
+  while (mGlobals.PreprocessFlags != NULL) {
+    Temp = mGlobals.PreprocessFlags->Next;
+    free (mGlobals.PreprocessFlags->Str);
+    free (mGlobals.PreprocessFlags);
+    mGlobals.PreprocessFlags = Temp;
   }
   //
   // If they gave us a list of filename extensions to
@@ -2718,7 +3008,7 @@ Usage (
 Routine Description:
 
   Print usage information for this utility.
-  
+
 Arguments:
 
   None.
@@ -2726,14 +3016,14 @@ Arguments:
 Returns:
 
   Nothing.
-  
+
 --*/
 {
   int         Index;
   const char  *Str[] = {
     UTILITY_NAME" "UTILITY_VERSION" - Intel UEFI String Gather Utility",
     "  Copyright (C), 2004 - 2008 Intel Corporation",
-    
+
 #if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
     "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
 #endif
@@ -2762,6 +3052,8 @@ Returns:
     "Scan options include:",
     "  -scan            scan text file(s) for STRING_TOKEN() usage",
     "  -skipext .ext    to skip scan of files with .ext filename extension",
+    "  -ppflag \"Flags\"  to specify the C preprocessor flags",
+    "  -oh FileName     to specify string defines file name for preprocessor",
     "  -ignorenotfound  ignore if a given STRING_TOKEN(STR) is not ",
     "                   found in the database",
     "  FileNames        one or more files to scan",

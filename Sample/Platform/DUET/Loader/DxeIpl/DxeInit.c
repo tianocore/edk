@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -100,14 +100,16 @@ MemoryAbove1MB.PhysicalStart <--------------------------------------------------
                         <------------------------------+           |               |
         Permament Stack (0x20 Pages = 128K)                        |               |
                         <- Phit.EfiMemoryTop ----------+-----------+---------------+
-        DxeCore                                                                    |
-                                                                                DxeCore
-        DxeIpl                                                                     |
-                        <----------------------------------------------------------+
-        NvFV + FtwFV                                                               |
+        NvFV (64K)                                                                 |
                                                                                  MMIO
-        BFV                                                                        |
-                        <- Top of Free Memory reported by E820 --------------------+
+        FtwFV (128K)                                                               |
+                        <----------------------------------------------------------+<---------+
+        DxeCore                                                                    |          |
+                                                                                DxeCore       |
+        DxeIpl                                                                     |   Allocated in EfiLdr
+                        <----------------------------------------------------------+          |
+        BFV                                                                      MMIO         |
+                        <- Top of Free Memory reported by E820 --------------------+<---------+
         ACPINVS        or
         ACPIReclaim    or
         Reserved
@@ -158,7 +160,7 @@ Returns:
   VOID                  *MemoryDescriptor;
   VOID                  *NvStorageBase;
 
-/*
+#if 0
   ClearScreen();
   PrintString("handoff:\n");
   PrintString("Handoff.BfvBase = ");   
@@ -179,7 +181,7 @@ Returns:
   PrintString("DxeCoreImageSize = ");   
   PrintValue64(Handoff->DxeCoreImageSize);
   PrintString("\n");   
-*/
+#endif
   //
   // Hob Generation Guild line:
   //   * Don't report FV as physical memory
@@ -227,7 +229,7 @@ Returns:
 
   CompleteHobGeneration ();
 
-/*
+#if 0
   //
   // Print Hob Info
   //
@@ -258,10 +260,43 @@ Returns:
   PrintString(" Length = ");
   PrintValue64(gHob->NvFtwFvb.FvbInfo.Entries[0].Length);
   PrintString("\n");
+  PrintString("BfvResource = ");
+  PrintValue64(gHob->BfvResource.PhysicalStart);
+  PrintString(" Length = ");
+  PrintValue64(gHob->BfvResource.ResourceLength);
+  PrintString("\n");
+  PrintString("NvStorageFvResource = ");
+  PrintValue64(gHob->NvStorageFvResource.PhysicalStart);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvStorageFvResource.ResourceLength);
+  PrintString("\n");
+  PrintString("NvStorage = ");
+  PrintValue64(gHob->NvStorage.FvbInfo.Entries[0].Base);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvStorage.FvbInfo.Entries[0].Length);
+  PrintString("\n");
+  PrintString("NvFtwFvResource = ");
+  PrintValue64(gHob->NvFtwFvResource.PhysicalStart);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvFtwFvResource.ResourceLength);
+  PrintString("\n");
+  PrintString("NvFtwWorking = ");
+  PrintValue64(gHob->NvFtwWorking.FvbInfo.Entries[0].Base);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvFtwWorking.FvbInfo.Entries[0].Length);
+  PrintString("\n");
+  PrintString("NvFtwSpare = ");
+  PrintValue64(gHob->NvFtwSpare.FvbInfo.Entries[0].Base);
+  PrintString(" Length = ");
+  PrintValue64(gHob->NvFtwSpare.FvbInfo.Entries[0].Length);
+  PrintString("\n");
   PrintString("Stack = ");   
   PrintValue64(gHob->Stack.AllocDescriptor.MemoryBaseAddress);
   PrintString(" StackLength = ");   
   PrintValue64(gHob->Stack.AllocDescriptor.MemoryLength);
+  PrintString("\n");   
+  PrintString("PageTable = ");   
+  PrintValue64((UINTN)PageTableBase);
   PrintString("\n");   
   PrintString("MemoryFreeUnder1MB = ");   
   PrintValue64(gHob->MemoryFreeUnder1MB.PhysicalStart);
@@ -289,7 +324,7 @@ Returns:
   PrintValue64(gHob->MemoryAllocation.AllocDescriptor.MemoryLength);
   PrintString("\n");   
   EFI_DEADLOOP();
-*/
+#endif
 
   ClearScreen();
   PrintString("\n\n\n\n\n\n\n\n\n\n");

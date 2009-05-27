@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2008, Intel Corporation                                                  
+Copyright (c) 2006 - 2009, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1390,6 +1390,11 @@ DevPathFromTextMAC (
   MAC->IfType   = (UINT8) Strtoi (IfTypeStr);
 
   Length = sizeof (EFI_MAC_ADDRESS);
+
+  if ( MAC->IfType == 0 || MAC->IfType == 1) {
+    Length = 6;
+  }
+  
   StrToBuf (&MAC->MacAddress.Addr[0], Length, AddressStr);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) MAC;

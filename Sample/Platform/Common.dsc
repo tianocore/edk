@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2004 - 2008, Intel Corporation                                                         
+# Copyright (c) 2004 - 2009, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution.  The full text of the license may be found at        
@@ -524,6 +524,15 @@ $(DEST_DIR)\$(BASE_NAME).res : $(DEST_DIR)\$(BASE_NAME).rc
 #
 HII_PACK_FILES    = $(HII_PACK_FILES) $(DEST_DIR)\$(BASE_NAME)Strings.hpk
 LOCALIZE_TARGETS  = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME).hii
+!ENDIF
+
+!IF ("$(EFI_SPECIFICATION_VERSION)" >= "0x0002000A")
+#
+# Note: currently -ppflag option is only available for UefiStrGather
+# Note: /GS- will cause warning for preprocess, so filter it out from STRGATHER_PPFLAG
+#
+STRGATHER_PPFLAG = $(C_FLAGS: /GS-=)
+STRGATHER_FLAGS  = $(STRGATHER_FLAGS) -ppflag "$(STRGATHER_PPFLAG)" -oh $(DEST_DIR)\$(BASE_NAME)StrDefs.h
 !ENDIF
 
 $(DEST_DIR)\$(BASE_NAME).sdb : $(SDB_FILES) $(SOURCE_FILES)
@@ -1118,6 +1127,15 @@ $(DEST_DIR)\$(BASE_NAME).res : $(DEST_DIR)\$(BASE_NAME).rc
 HII_PACK_FILES = $(HII_PACK_FILES) $(DEST_DIR)\$(BASE_NAME)Strings.hpk
 
 LOCALIZE_TARGETS  = $(LOCALIZE_TARGETS) $(DEST_DIR)\$(BASE_NAME).hii
+!ENDIF
+
+!IF ("$(EFI_SPECIFICATION_VERSION)" >= "0x0002000A")
+#
+# Note: currently -ppflag option is only available for UefiStrGather
+# Note: /GS- will cause warning for preprocess, so filter it out from STRGATHER_PPFLAG
+#
+STRGATHER_PPFLAG = $(EBC_C_FLAGS: /GS-=)
+STRGATHER_FLAGS  = $(STRGATHER_FLAGS) -ppflag "$(STRGATHER_PPFLAG)" -oh $(DEST_DIR)\$(BASE_NAME)StrDefs.h
 !ENDIF
 
 $(DEST_DIR)\$(BASE_NAME).sdb : $(SDB_FILES) $(SOURCE_FILES)

@@ -60,6 +60,12 @@ PxeBcConfigureUdpWriteInstance (
   IN OUT UINT16         *SrcPort
   );
 
+BOOLEAN
+PxeBcCheckIpByFilter (
+  EFI_PXE_BASE_CODE_MODE    *PxeBcMode,
+  EFI_UDP4_SESSION_DATA     *Session
+  );
+
 VOID
 CvtNum (
   IN UINTN  Number,
