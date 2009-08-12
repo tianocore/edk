@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1197,8 +1197,19 @@ ON_ERROR:
     // Keep polling until timeout if no error happens and the CompletionEvent
     // is NULL.
     //
-    while (Instance->Timeout != 0) {
-      Instance->UdpIo->Udp->Poll (Instance->UdpIo->Udp);
+    while (1) {
+      OldTpl  = NET_RAISE_TPL (NET_TPL_LOCK);
+	  //
+	  // Raise TPL to protect the UDPIO in instance, in case that DhcpOnTimerTick
+	  // free it when timeout.
+	  //
+      if (Instance->Timeout > 0) {
+        Instance->UdpIo->Udp->Poll (Instance->UdpIo->Udp);
+        NET_RESTORE_TPL (OldTpl);
+      } else {
+        NET_RESTORE_TPL (OldTpl);
+        break;
+      }
     }
   }
 

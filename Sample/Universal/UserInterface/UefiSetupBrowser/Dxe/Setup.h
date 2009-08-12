@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation
+Copyright (c) 2007 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -68,10 +68,8 @@ extern UINT8  SetupBrowserStrings[];
 // Definition for function key setting
 //
 #define NONE_FUNCTION_KEY_SETTING     0
-#define DEFAULT_FUNCTION_KEY_SETTING  (FUNCTION_ONE | FUNCTION_TWO | FUNCTION_NINE | FUNCTION_TEN)
+#define DEFAULT_FUNCTION_KEY_SETTING  (FUNCTION_NINE | FUNCTION_TEN)
 
-#define FUNCTION_ONE                  (1 << 0)
-#define FUNCTION_TWO                  (1 << 1)
 #define FUNCTION_NINE                 (1 << 2)
 #define FUNCTION_TEN                  (1 << 3)
 
@@ -200,8 +198,8 @@ typedef struct {
 #define FORM_INCONSISTENT_VALIDATION         0
 #define FORM_NO_SUBMIT_VALIDATION            1
 
-#define FORMSET_CLASS_PLATFORM_SETUP         0
-#define FORMSET_CLASS_FRONT_PAGE             1
+#define FORMSET_CLASS_PLATFORM_SETUP         0x0001
+#define FORMSET_CLASS_FRONT_PAGE             0x0002
 
 typedef struct {
   UINT8               Type;
@@ -353,6 +351,7 @@ typedef struct {
 
   EFI_HII_VALUE         HiiValue;         // Edit copy for checkbox, numberic, oneof
   UINT8                 *BufferValue;     // Edit copy for string, password, orderedlist
+  UINT8                 ValueType;        // Data type for orderedlist value array
 
   //
   // OpCode specific members
@@ -472,8 +471,6 @@ extern BOOLEAN               gDownArrow;
 //
 // Browser Global Strings
 //
-extern CHAR16            *gFunctionOneString;
-extern CHAR16            *gFunctionTwoString;
 extern CHAR16            *gFunctionNineString;
 extern CHAR16            *gFunctionTenString;
 extern CHAR16            *gEnterString;
@@ -709,6 +706,12 @@ EFI_STATUS
 LoadFormConfig (
   IN FORM_BROWSER_FORMSET             *FormSet,
   IN FORM_BROWSER_FORM                *Form
+  )
+;
+
+EFI_STATUS
+LoadFormSetConfig (
+  IN FORM_BROWSER_FORMSET             *FormSet
   )
 ;
 

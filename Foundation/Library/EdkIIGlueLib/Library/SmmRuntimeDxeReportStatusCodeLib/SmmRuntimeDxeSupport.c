@@ -32,7 +32,7 @@ BOOLEAN               mInSmm;
 
 EFI_SMM_BASE_PROTOCOL *mSmmBase;
 
-EFI_RUNTIME_SERVICES  *mRT;
+EFI_RUNTIME_SERVICES  *mRTSmmRuntimeDxeReportStatusCodeLib;
 
 BOOLEAN               mHaveExitedBootServices = FALSE;
 
@@ -67,8 +67,8 @@ InternalGetReportStatusCode (
     }
   }
 #elif (TIANO_RELEASE_VERSION != 0)
-  } else if (mRT != NULL) {
-    return mRT->ReportStatusCode;
+  } else if (mRTSmmRuntimeDxeReportStatusCodeLib != NULL) {
+    return mRTSmmRuntimeDxeReportStatusCodeLib->ReportStatusCode;
   }
 #endif
 
@@ -90,10 +90,10 @@ ReportStatusCodeLibVirtualAddressChange (
   )
 {
   if (NULL != mReportStatusCode) {
-    mRT->ConvertPointer (0, (VOID **) &mReportStatusCode);
+    mRTSmmRuntimeDxeReportStatusCodeLib->ConvertPointer (0, (VOID **) &mReportStatusCode);
   }
-  mRT->ConvertPointer (0, (VOID **) &mStatusCodeData);
-  mRT->ConvertPointer (0, (VOID **) &mRT);
+  mRTSmmRuntimeDxeReportStatusCodeLib->ConvertPointer (0, (VOID **) &mStatusCodeData);
+  mRTSmmRuntimeDxeReportStatusCodeLib->ConvertPointer (0, (VOID **) &mRTSmmRuntimeDxeReportStatusCodeLib);
 }
 
 /**
@@ -153,7 +153,7 @@ ReportStatusCodeLibConstruct (
   // Library should not use the gRT directly, since it
   // may be converted by other library instance.
   // 
-  mRT     = gRT;
+  mRTSmmRuntimeDxeReportStatusCodeLib = gRT;
   mInSmm  = FALSE;
 
   (gBS->AllocatePool) (EfiRuntimeServicesData, sizeof (EFI_STATUS_CODE_DATA) + EFI_STATUS_CODE_DATA_MAX_SIZE, (VOID **)&mStatusCodeData);

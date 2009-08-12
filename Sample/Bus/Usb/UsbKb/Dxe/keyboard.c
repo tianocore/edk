@@ -752,6 +752,10 @@ SetKeyboardLayoutEvent (
 
   UsbKeyboardDevice = (USB_KB_DEV *) Context;
 
+  if (UsbKeyboardDevice->Signature != USB_KB_DEV_SIGNATURE) {
+    return;
+  }
+
   //
   // Try to get current Keyboard Layout from HII database
   //

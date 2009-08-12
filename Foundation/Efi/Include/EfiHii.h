@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation
+Copyright (c) 2007 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -238,8 +238,8 @@ typedef struct _EFI_HII_GUID_PACKAGE_HDR {
 // String Package
 //
 
-#define UEFI_CONFIG_LANG  L"x-UEFI"
-#define UEFI_CONFIG_LANG2 L"x-i-UEFI"     // BUGBUG, spec need to be updated.
+#define UEFI_CONFIG_LANG   "x-UEFI"
+#define UEFI_CONFIG_LANG_2 "x-i-UEFI"
 
 typedef struct _EFI_HII_STRING_PACKAGE_HDR {
   EFI_HII_PACKAGE_HEADER  Header;

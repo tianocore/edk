@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -111,8 +111,8 @@ typedef
 EFI_STATUS
 (EFIAPI *EFI_TCG_PASS_THROUGH_TO_TPM) (
   IN      EFI_TCG_PROTOCOL          *This,
-  IN      UINT32                    TpmInputParamterBlockSize,
-  IN      UINT8                     *TpmInputParamterBlock,
+  IN      UINT32                    TpmInputParameterBlockSize,
+  IN      UINT8                     *TpmInputParameterBlock,
   IN      UINT32                    TpmOutputParameterBlockSize,
   IN      UINT8                     *TpmOutputParameterBlock
   );

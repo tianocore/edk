@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -52,9 +52,9 @@ typedef enum {
 typedef struct _ISCSI_CHAP_AUTH_CONFIG_NVDATA {
   UINT8 CHAPType;
   CHAR8 CHAPName[ISCSI_CHAP_NAME_MAX_LEN];
-  CHAR8 CHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
+  CHAR8 CHAPSecret[ISCSI_CHAP_SECRET_STORAGE];
   CHAR8 ReverseCHAPName[ISCSI_CHAP_NAME_MAX_LEN];
-  CHAR8 ReverseCHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
+  CHAR8 ReverseCHAPSecret[ISCSI_CHAP_SECRET_STORAGE];
 } ISCSI_CHAP_AUTH_CONFIG_NVDATA;
 
 #pragma pack()

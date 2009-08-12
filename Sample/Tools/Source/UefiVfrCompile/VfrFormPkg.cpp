@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -505,10 +505,7 @@ SIfrRecord::~SIfrRecord (
   VOID
   )
 {
-  if (mIfrBinBuf != NULL) {
-    delete mIfrBinBuf;
-    mIfrBinBuf = NULL;
-  }
+  mIfrBinBuf   = NULL;
   mLineNo      = 0xFFFFFFFF;
   mOffset      = 0xFFFFFFFF;
   mBinBufLen   = 0;
@@ -598,23 +595,25 @@ CIfrRecordInfoDB::IfrRecordInfoUpdate (
   )
 {
   SIfrRecord *pNode;
+  SIfrRecord *Prev;
 
   if ((pNode = GetRecordInfoFromIdx (RecordIdx)) == NULL) {
     return;
   }
 
+  if (LineNo == 0) {
+    //
+    // Line number is not specified explicitly, try to use line number of previous opcode
+    //
+    Prev = GetRecordInfoFromIdx (RecordIdx - 1);
+    if (Prev != NULL) {
+      LineNo = Prev->mLineNo;
+    }
+  }
   pNode->mLineNo    = LineNo;
   pNode->mOffset    = Offset;
   pNode->mBinBufLen = BinBufLen;
-  if (BinBuf != NULL) {
-    if (pNode->mIfrBinBuf != NULL) {
-      delete pNode->mIfrBinBuf;
-    }
-    pNode->mIfrBinBuf = new CHAR8[BinBufLen];
-    if (pNode->mIfrBinBuf != NULL) {
-      memcpy (pNode->mIfrBinBuf, BinBuf, BinBufLen);
-    }
-  }
+  pNode->mIfrBinBuf = BinBuf;
 }
 
 VOID
@@ -663,6 +662,7 @@ CIfrObj::_EMIT_PENDING_OBJ (
 
   if (mObjBinBuf != NULL) {
     delete mObjBinBuf;
+    mObjBinBuf = ObjBinBuf;
   }
 }
 
@@ -829,11 +829,11 @@ CIfrObj::~CIfrObj (
   VOID
   )
 {
-  gCIfrRecordInfoDB.IfrRecordInfoUpdate (mRecordIdx, mLineNo, mObjBinBuf, mObjBinLen, mPkgOffset);
-
   if ((mDelayEmit == TRUE) && ((gCreateOp == TRUE))) {
     _EMIT_PENDING_OBJ ();
   }
+
+  gCIfrRecordInfoDB.IfrRecordInfoUpdate (mRecordIdx, mLineNo, mObjBinBuf, mObjBinLen, mPkgOffset);
 }
 
 /*

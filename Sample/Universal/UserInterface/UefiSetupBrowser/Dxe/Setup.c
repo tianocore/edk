@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2007 - 2008, Intel Corporation
+Copyright (c) 2007 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -52,8 +52,6 @@ BOOLEAN               gDownArrow;
 //
 // Browser Global Strings
 //
-CHAR16            *gFunctionOneString;
-CHAR16            *gFunctionTwoString;
 CHAR16            *gFunctionNineString;
 CHAR16            *gFunctionTenString;
 CHAR16            *gEnterString;
@@ -94,6 +92,8 @@ EFI_GUID  gSetupBrowserGuid = {
 };
 EFI_GUID  gPlatformSetupClassGuid = EFI_HII_PLATFORM_SETUP_FORMSET_GUID;
 EFI_GUID  gFrontPageClassGuid = EFI_HII_FRONT_PAGE_CLASS_GUID;
+
+FORM_BROWSER_FORMSET  *gOldFormSet = NULL;
 
 FUNCTIION_KEY_SETTING gFunctionKeySettingTable[] = {
   //
@@ -275,7 +275,6 @@ Returns:
   InitializeBrowserStrings ();
 
   gFunctionKeySetting = DEFAULT_FUNCTION_KEY_SETTING;
-  gClassOfVfr         = FORMSET_CLASS_PLATFORM_SETUP;
 
   //
   // Ensure we are in Text mode
@@ -292,6 +291,8 @@ Returns:
       EfiCopyMem (&Selection->FormSetGuid, FormSetGuid, sizeof (EFI_GUID));
       Selection->FormId = FormId;
     }
+
+    gNvUpdateRequired = FALSE;
 
     do {
       FormSet = EfiLibAllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
@@ -324,13 +325,21 @@ Returns:
       Status = SetupBrowser (Selection);
 
       gCurrentSelection = NULL;
-      DestroyFormSet (FormSet);
+      if (gOldFormSet != NULL) {
+        DestroyFormSet (gOldFormSet);
+      }
+      gOldFormSet = FormSet;
 
       if (EFI_ERROR (Status)) {
         break;
       }
 
     } while (Selection->Action == UI_ACTION_REFRESH_FORMSET);
+
+    if (gOldFormSet != NULL) {
+      DestroyFormSet (gOldFormSet);
+      gOldFormSet = NULL;
+    }
 
     gBS->FreePool (Selection);
   }
@@ -994,7 +1003,11 @@ Returns:
     break;
 
   case EFI_HII_VARSTORE_NAME_VALUE:
-    StrPtr = EfiStrStr (ConfigResp, L"&");
+    StrPtr = EfiStrStr (ConfigResp, L"PATH");
+    if (StrPtr == NULL) {
+      break;
+    }
+    StrPtr = EfiStrStr (StrPtr, L"&");
     while (StrPtr != NULL) {
       //
       // Skip '&'
@@ -1881,7 +1894,7 @@ Returns:
     while (!IsNull (&Question->OptionListHead, Link)) {
       Option = QUESTION_OPTION_FROM_LINK (Link);
 
-      Question->BufferValue[Index] = Option->Value.Value.u8;
+      SetArrayData (Question->BufferValue, Question->ValueType, Index, Option->Value.Value.u64);
 
       Index++;
       if (Index >= Question->MaxContainers) {
@@ -2002,6 +2015,45 @@ Returns:
 }
 
 EFI_STATUS
+LoadFormSetConfig (
+  IN FORM_BROWSER_FORMSET             *FormSet
+  )
+/*++
+
+Routine Description:
+  Initialize Question's Edit copy from Storage for the whole Formset.
+
+Arguments:
+  FormSet     -  FormSet data structure.
+
+Returns:
+  EFI_SUCCESS    -  The function completed successfully.
+
+--*/
+{
+  EFI_STATUS              Status;
+  EFI_LIST_ENTRY          *Link;
+  FORM_BROWSER_FORM       *Form;
+
+  Link = GetFirstNode (&FormSet->FormListHead);
+  while (!IsNull (&FormSet->FormListHead, Link)) {
+    Form = FORM_BROWSER_FORM_FROM_LINK (Link);
+
+    //
+    // Initialize local copy of Value for each Form
+    //
+    Status = LoadFormConfig (FormSet, Form);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Link = GetNextNode (&FormSet->FormListHead, Link);
+  }
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
 LoadStorage (
   IN FORM_BROWSER_FORMSET    *FormSet,
   IN FORMSET_STORAGE         *Storage
@@ -2067,6 +2119,57 @@ Returns:
 }
 
 EFI_STATUS
+CopyStorage (
+  IN OUT FORMSET_STORAGE     *Dst,
+  IN FORMSET_STORAGE         *Src
+  )
+/*++
+
+Routine Description:
+  Copy uncommitted data from source Storage to destination Storage.
+
+Arguments:
+  Dst     -  Target Storage for uncommitted data.
+  Src     -  Source Storage for uncommitted data.
+
+Returns:
+  EFI_SUCCESS           -  The function completed successfully.
+  EFI_INVALID_PARAMETER -  Source and destination Storage is not the same type.
+
+--*/
+{
+  EFI_LIST_ENTRY          *Link;
+  NAME_VALUE_NODE         *Node;
+
+  if ((Dst->Type != Src->Type) || (Dst->Size != Src->Size)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  switch (Src->Type) {
+  case EFI_HII_VARSTORE_BUFFER:
+    EfiCopyMem (Dst->EditBuffer, Src->EditBuffer, Src->Size);
+    break;
+
+  case EFI_HII_VARSTORE_NAME_VALUE:
+    Link = GetFirstNode (&Src->NameValueListHead);
+    while (!IsNull (&Src->NameValueListHead, Link)) {
+      Node = NAME_VALUE_NODE_FROM_LINK (Link);
+
+      SetValueByName (Dst, Node->Name, Node->EditValue);
+
+      Link = GetNextNode (&Src->NameValueListHead, Link);
+    }
+    break;
+
+  case EFI_HII_VARSTORE_EFI_VARIABLE:
+  default:
+    break;
+  }
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
 InitializeCurrentSetting (
   IN OUT FORM_BROWSER_FORMSET             *FormSet
   )
@@ -2085,7 +2188,10 @@ Returns:
 {
   EFI_STATUS              Status;
   EFI_LIST_ENTRY          *Link;
+  EFI_LIST_ENTRY          *Link2;
   FORMSET_STORAGE         *Storage;
+  FORMSET_STORAGE         *StorageSrc;
+  FORMSET_STORAGE         *OldStorage;
   FORM_BROWSER_FORM       *Form;
 
   Status = EFI_SUCCESS;
@@ -2109,7 +2215,35 @@ Returns:
   while (!IsNull (&FormSet->StorageListHead, Link)) {
     Storage = FORMSET_STORAGE_FROM_LINK (Link);
 
-    Status = LoadStorage (FormSet, Storage);
+    OldStorage = NULL;
+    if (gOldFormSet != NULL) {
+      //
+      // Try to find the Storage in backup formset gOldFormSet
+      //
+      Link2 = GetFirstNode (&gOldFormSet->StorageListHead);
+      while (!IsNull (&gOldFormSet->StorageListHead, Link2)) {
+        StorageSrc = FORMSET_STORAGE_FROM_LINK (Link2);
+
+        if (StorageSrc->VarStoreId == Storage->VarStoreId) {
+          OldStorage = StorageSrc;
+          break;
+        }
+
+        Link2 = GetNextNode (&gOldFormSet->StorageListHead, Link2);
+      }
+    }
+
+    if (OldStorage == NULL) {
+      //
+      // Storage is not found in backup formset, request it from ConfigDriver
+      //
+      Status = LoadStorage (FormSet, Storage);
+    } else {
+      //
+      // Storage found in backup formset, use it
+      //
+      Status = CopyStorage (Storage, OldStorage);
+    }
 
     //
     // Now Edit Buffer is filled with default values(lower priority) and current
@@ -2353,21 +2487,34 @@ Returns:
   //
   // Parse the IFR binary OpCodes
   //
+  FormSet->SubClass = 0xffff;
   Status = ParseOpCodes (FormSet);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  gClassOfVfr = FORMSET_CLASS_PLATFORM_SETUP;
-  if (IsClassGuidMatch (FormSet, &gFrontPageClassGuid)) {
-    gClassOfVfr = FORMSET_CLASS_FRONT_PAGE;
-  }
+  gClassOfVfr = 0;
 #ifdef TIANO_EXTENDED_CLASS_SUBCLASS_SUPPORT
-  if (FormSet->SubClass == EFI_FRONT_PAGE_SUBCLASS) {
-    gClassOfVfr = FORMSET_CLASS_FRONT_PAGE;
+  if (FormSet->SubClass != 0xffff) {
+    //
+    // Extended subclass opcode(EFI_IFR_EXTEND_OP_SUBCLASS) was extracted from IFR
+    //
+    if (FormSet->SubClass == EFI_FRONT_PAGE_SUBCLASS) {
+      gClassOfVfr = FORMSET_CLASS_FRONT_PAGE;
+    } else {
+      gClassOfVfr = FORMSET_CLASS_PLATFORM_SETUP;
+    }
   }
 #endif
-  if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
+
+  if (IsClassGuidMatch (FormSet, &gFrontPageClassGuid)) {
+    gClassOfVfr |= FORMSET_CLASS_FRONT_PAGE;
+  }
+  if (IsClassGuidMatch (FormSet, &gPlatformSetupClassGuid)) {
+    gClassOfVfr |= FORMSET_CLASS_PLATFORM_SETUP;
+  }
+
+  if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) != 0) {
     gFrontPageHandle = FormSet->HiiHandle;
   }
 
@@ -2383,14 +2530,6 @@ Returns:
       //
       // Function key prompt can not be displayed if the function key has been disabled.
       //
-      if ((gFunctionKeySetting & FUNCTION_ONE) != FUNCTION_ONE) {
-        gFunctionOneString = GetToken (STRING_TOKEN (EMPTY_STRING), gHiiHandle);
-      }
-
-      if ((gFunctionKeySetting & FUNCTION_TWO) != FUNCTION_TWO) {
-        gFunctionTwoString = GetToken (STRING_TOKEN (EMPTY_STRING), gHiiHandle);
-      }
-
       if ((gFunctionKeySetting & FUNCTION_NINE) != FUNCTION_NINE) {
         gFunctionNineString = GetToken (STRING_TOKEN (EMPTY_STRING), gHiiHandle);
       }

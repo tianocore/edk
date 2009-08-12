@@ -322,7 +322,9 @@ Returns:
   }
 
 Done:
-  gBS->FreePool (Mbr);
+  if (Mbr != NULL) {
+    gBS->FreePool (Mbr);
+  }
 
   return Found;
 }

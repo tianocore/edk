@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2007 - 2008, Intel Corporation
+Copyright (c) 2007 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -808,6 +808,7 @@ Returns:
   FORMSET_DEFAULTSTORE    *DefaultStore;
   QUESTION_DEFAULT        *CurrentDefault;
   QUESTION_OPTION         *CurrentOption;
+  UINT8                   Width;
   CHAR8                   *AsciiString;
   UINT16                  NumberOfStatement;
   UINT16                  NumberOfExpression;
@@ -1027,6 +1028,7 @@ Returns:
         break;
       }
 
+      ASSERT (CurrentExpression != NULL);
       InsertTailList (&CurrentExpression->OpCodeListHead, &ExpressionOpCode->Link);
 
       if (SingleOpCodeExpression) {
@@ -1192,6 +1194,12 @@ Returns:
       EfiCopyMem (&CurrentStatement->TextTwo, &((EFI_IFR_TEXT *) OpCodeData)->TextTwo, sizeof (EFI_STRING_ID));
       break;
 
+    case EFI_IFR_RESET_BUTTON_OP:
+      CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
+
+      EfiCopyMem (&CurrentStatement->DefaultId, &((EFI_IFR_RESET_BUTTON *) OpCodeData)->DefaultId, sizeof (EFI_DEFAULT_ID));
+      break;
+
     //
     // Questions
     //
@@ -1206,12 +1214,6 @@ Returns:
       } else {
         EfiCopyMem (&CurrentStatement->QuestionConfig, &((EFI_IFR_ACTION *) OpCodeData)->QuestionConfig, sizeof (EFI_STRING_ID));
       }
-      break;
-
-    case EFI_IFR_RESET_BUTTON_OP:
-      CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
-
-      EfiCopyMem (&CurrentStatement->DefaultId, &((EFI_IFR_RESET_BUTTON *) OpCodeData)->DefaultId, sizeof (EFI_DEFAULT_ID));
       break;
 
     case EFI_IFR_REF_OP:
@@ -1440,6 +1442,42 @@ Returns:
       // Insert to Option list of current Question
       //
       InsertTailList (&CurrentStatement->OptionListHead, &CurrentOption->Link);
+
+      //
+      // Now we know the Storage width of nested Ordered List
+      //
+      if ((CurrentStatement->Operand == EFI_IFR_ORDERED_LIST_OP) && (CurrentStatement->BufferValue == NULL)) {
+        Width = 1;
+        switch (CurrentOption->Value.Type) {
+        case EFI_IFR_TYPE_NUM_SIZE_8:
+          Width = 1;
+          break;
+
+        case EFI_IFR_TYPE_NUM_SIZE_16:
+          Width = 2;
+          break;
+
+        case EFI_IFR_TYPE_NUM_SIZE_32:
+          Width = 4;
+          break;
+
+        case EFI_IFR_TYPE_NUM_SIZE_64:
+          Width = 8;
+          break;
+
+        default:
+          //
+          // Invalid type for Ordered List
+          //
+          break;
+        }
+
+        CurrentStatement->StorageWidth = CurrentStatement->MaxContainers * Width;
+        CurrentStatement->BufferValue = EfiLibAllocateZeroPool (CurrentStatement->StorageWidth);
+        CurrentStatement->ValueType = CurrentOption->Value.Type;
+
+        InitializeRequestElement (FormSet, CurrentStatement);
+      }
       break;
 
     //

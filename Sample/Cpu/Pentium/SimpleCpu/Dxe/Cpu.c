@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -17,6 +17,7 @@ Abstract:
 --*/
 
 #include "CpuDxe.h"
+#include "EfiPrintLib.h"
 
 //
 // Global Variables
@@ -531,90 +532,6 @@ DumpExceptionDataDebugOut (
 #endif
 
 STATIC
-UINTN
-SPrint (
-  IN OUT    CHAR16  *Buffer,
-  IN CONST  CHAR16  *Format,
-  ...
-  )
-{
-  VA_LIST   Marker;
-  UINTN     Index;
-  UINTN     Flags;
-  UINTN     Width;
-  UINT64    Value;
-
-  VA_START (Marker, Format);
-
-  //
-  // Process the format string. Stop if Buffer is over run.
-  //
-
-  for (Index = 0; *Format != 0; Format++) {
-    if (*Format != L'%') {
-      Buffer[Index++] = *Format;
-    } else {
-      
-      //
-      // Now it's time to parse what follows after %
-      // Support: % [ 0 width ] [ l ] x
-      // width - fill 0, to ensure the width of x will be "width"
-      // l        - UINT64 instead of UINT32
-      //
-      Width = 0;
-      Flags = 0;
-      Format ++;
-
-      if (*Format == L'0') {
-        Flags |= PREFIX_ZERO;
-        do {
-          Width += Width * 10 + (*Format - L'0');
-          Format ++;
-        } while (*Format >= L'1' && *Format <= L'9');
-      }
-
-      if (*Format == L'l') {
-        Flags |= LONG_TYPE;
-        Format ++;
-      }
-
-      
-      switch (*Format) {
-      case 'X':
-        Flags |= PREFIX_ZERO;
-        Width = sizeof (UINT64) * 2;
-        //
-        // break skiped on purpose
-        //
-      case 'x':
-        if ((Flags & LONG_TYPE) == LONG_TYPE) {
-          Value = VA_ARG (Marker, UINT64);
-        } else {
-          Value = VA_ARG (Marker, UINTN);
-        }
-
-        EfiValueToHexStr (Buffer+Index, Value, Flags, Width);
-        
-        for ( ; Buffer[Index] != L'\0'; Index ++) {
-        }
-
-        break;
-
-      default:
-        //
-        // if the type is unknown print it to the screen
-        //
-        Buffer[Index++] = *Format;
-      }
-    } 
-  }
-  Buffer[Index++] = '\0'; 
-   
-  VA_END (Marker);
-  return Index;
-}
-
-STATIC
 VOID
 DumpExceptionDataVgaOut (
   IN EFI_EXCEPTION_TYPE   InterruptType,
@@ -634,15 +551,24 @@ DumpExceptionDataVgaOut (
   VideoBufferBase = (CHAR16 *) (UINTN) 0xb8000;
   VideoBuffer     = (CHAR16 *) (UINTN) 0xb8000;
 
+  //
+  // Clear the frame buffer first
+  //
+  for (Index = 0; Index < COLUMN_MAX * ROW_MAX; Index++) {
+    VideoBufferBase[Index] = 0x0c20;
+  }
+
 #ifdef EFI32
   SPrint (
     VideoBuffer, 
+    0,
     L"!!!! IA32 Exception Type - %08x !!!!",
     InterruptType
     );
   VideoBuffer += COLUMN_MAX;
   SPrint (
     VideoBuffer, 
+    0,
     L"EIP - %08x, CS - %08x, EFLAGS - %08x",
     SystemContext.SystemContextIa32->Eip,
     SystemContext.SystemContextIa32->Cs,
@@ -652,6 +578,7 @@ DumpExceptionDataVgaOut (
   if (ErrorCodeFlag & (1 << InterruptType)) {
     SPrint (
       VideoBuffer,
+      0,
       L"ExceptionData - %08x",
       SystemContext.SystemContextIa32->ExceptionData
     );
@@ -659,6 +586,7 @@ DumpExceptionDataVgaOut (
   }
   SPrint (
     VideoBuffer,
+    0,
     L"EAX - %08x, ECX - %08x, EDX - %08x, EBX - %08x",
     SystemContext.SystemContextIa32->Eax,
     SystemContext.SystemContextIa32->Ecx,
@@ -669,6 +597,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"ESP - %08x, EBP - %08x, ESI - %08x, EDI - %08x",
     SystemContext.SystemContextIa32->Esp,
     SystemContext.SystemContextIa32->Ebp,
@@ -679,6 +608,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"DS - %08x, ES - %08x, FS - %08x, GS - %08x, SS - %08x",
     SystemContext.SystemContextIa32->Ds,
     SystemContext.SystemContextIa32->Es,
@@ -690,6 +620,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"GDTR - %08x %08x, IDTR - %08x %08x",
     SystemContext.SystemContextIa32->Gdtr[0],
     SystemContext.SystemContextIa32->Gdtr[1],
@@ -700,6 +631,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"LDTR - %08x, TR - %08x",
     SystemContext.SystemContextIa32->Ldtr,
     SystemContext.SystemContextIa32->Tr
@@ -708,6 +640,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"CR0 - %08x, CR2 - %08x, CR3 - %08x, CR4 - %08x",
     SystemContext.SystemContextIa32->Cr0,
     SystemContext.SystemContextIa32->Cr2,
@@ -718,6 +651,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"DR0 - %08x, DR1 - %08x, DR2 - %08x, DR3 - %08x",
     SystemContext.SystemContextIa32->Dr0,
     SystemContext.SystemContextIa32->Dr1,
@@ -728,6 +662,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"DR6 - %08x, DR7 - %08x",
     SystemContext.SystemContextIa32->Dr6,
     SystemContext.SystemContextIa32->Dr7
@@ -736,6 +671,7 @@ DumpExceptionDataVgaOut (
 #else
   SPrint (
     VideoBuffer,
+    0,
     L"!!!! X64 Exception Type - %016lx !!!!",
     (UINT64)InterruptType
     );
@@ -743,6 +679,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"RIP - %016lx, CS - %016lx, RFLAGS - %016lx",
     SystemContext.SystemContextX64->Rip,
     SystemContext.SystemContextX64->Cs,
@@ -753,6 +690,7 @@ DumpExceptionDataVgaOut (
   if (ErrorCodeFlag & (1 << InterruptType)) {
     SPrint (
       VideoBuffer,
+      0,
       L"ExceptionData - %016lx",
       SystemContext.SystemContextX64->ExceptionData
       );
@@ -761,6 +699,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"RAX - %016lx, RCX - %016lx, RDX - %016lx",
     SystemContext.SystemContextX64->Rax,
     SystemContext.SystemContextX64->Rcx,
@@ -770,6 +709,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"RBX - %016lx, RSP - %016lx, RBP - %016lx",
     SystemContext.SystemContextX64->Rbx,
     SystemContext.SystemContextX64->Rsp,
@@ -779,6 +719,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"RSI - %016lx, RDI - %016lx",
     SystemContext.SystemContextX64->Rsi,
     SystemContext.SystemContextX64->Rdi
@@ -787,6 +728,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"R8 - %016lx, R9 - %016lx, R10 - %016lx",
     SystemContext.SystemContextX64->R8,
     SystemContext.SystemContextX64->R9,
@@ -796,6 +738,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"R11 - %016lx, R12 - %016lx, R13 - %016lx",
     SystemContext.SystemContextX64->R11,
     SystemContext.SystemContextX64->R12,
@@ -805,6 +748,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"R14 - %016lx, R15 - %016lx",
     SystemContext.SystemContextX64->R14,
     SystemContext.SystemContextX64->R15
@@ -813,6 +757,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"DS - %016lx, ES - %016lx, FS - %016lx",
     SystemContext.SystemContextX64->Ds,
     SystemContext.SystemContextX64->Es,
@@ -822,6 +767,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"GS - %016lx, SS - %016lx",
     SystemContext.SystemContextX64->Gs,
     SystemContext.SystemContextX64->Ss
@@ -830,6 +776,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"GDTR - %016lx %016lx, LDTR - %016lx",
     SystemContext.SystemContextX64->Gdtr[0],
     SystemContext.SystemContextX64->Gdtr[1],
@@ -839,6 +786,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"IDTR - %016lx %016lx, TR - %016lx",
     SystemContext.SystemContextX64->Idtr[0],
     SystemContext.SystemContextX64->Idtr[1],
@@ -848,6 +796,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"CR0 - %016lx, CR2 - %016lx, CR3 - %016lx",
     SystemContext.SystemContextX64->Cr0,
     SystemContext.SystemContextX64->Cr2,
@@ -857,6 +806,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"CR4 - %016lx, CR8 - %016lx",
     SystemContext.SystemContextX64->Cr4,
     SystemContext.SystemContextX64->Cr8
@@ -865,6 +815,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"DR0 - %016lx, DR1 - %016lx, DR2 - %016lx",
     SystemContext.SystemContextX64->Dr0,
     SystemContext.SystemContextX64->Dr1,
@@ -874,6 +825,7 @@ DumpExceptionDataVgaOut (
 
   SPrint (
     VideoBuffer,
+    0,
     L"DR3 - %016lx, DR6 - %016lx, DR7 - %016lx",
     SystemContext.SystemContextX64->Dr3,
     SystemContext.SystemContextX64->Dr6,

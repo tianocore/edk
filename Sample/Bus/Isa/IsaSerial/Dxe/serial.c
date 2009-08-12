@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -522,9 +522,9 @@ SerialControllerDriverStart (
     EfiCopyMem (&SerialDevice->UartDevicePath, RemainingDevicePath, sizeof (UART_DEVICE_PATH));
   } else {
     //
-    // Build the device path by appending the UART node to the ParentDevicePath
-    // from the WinNtIo handle. The Uart setings are zero here, since
-    // SetAttribute() will update them to match the default setings.
+    // Build the device path by appending the UART node to the ParentDevicePath.
+    // The Uart setings are zero here, since SetAttribute() will update them to match
+    // the default setings.
     //
     EfiZeroMem (&SerialDevice->UartDevicePath, sizeof (UART_DEVICE_PATH));
     SerialDevice->UartDevicePath.Header.Type    = MESSAGING_DEVICE_PATH;

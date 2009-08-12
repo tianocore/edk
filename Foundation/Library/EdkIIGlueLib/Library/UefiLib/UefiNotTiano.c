@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -67,7 +67,7 @@ GlueEfiCreateEventLegacyBoot (
 {
   return EfiCreateEventLegacyBootEx (
            EFI_TPL_CALLBACK,
-           InternalEmptyFuntion,
+           NULL,
            NULL,
            LegacyBootEvent
            );
@@ -101,29 +101,50 @@ EfiCreateEventLegacyBootEx (
   OUT EFI_EVENT         *LegacyBootEvent
   )
 {
-  EFI_STATUS    Status;
+  EFI_STATUS        Status;
+  UINT32            EventType;
+  EFI_EVENT_NOTIFY  WorkerNotifyFunction;
 
   ASSERT (LegacyBootEvent != NULL);
 
 #if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+
+  if (NotifyFunction == NULL) {
+    EventType = EFI_EVENT_SIGNAL_LEGACY_BOOT | EFI_EVENT_NOTIFY_SIGNAL_ALL;
+  } else {
+    EventType = EFI_EVENT_SIGNAL_LEGACY_BOOT;
+  }
+  WorkerNotifyFunction = NotifyFunction;
+
   //
   // prior to UEFI 2.0 use Tiano extension to EFI
   //
   Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_LEGACY_BOOT | EFI_EVENT_NOTIFY_SIGNAL_ALL,
+                  EventType,
                   NotifyTpl,
-                  NotifyFunction,
+                  WorkerNotifyFunction,
                   NotifyContext,
                   LegacyBootEvent
                   );
 #else
+
+  EventType = EVENT_NOTIFY_SIGNAL;
+  if (NotifyFunction == NULL) {
+    //
+    // CreatEventEx will check NotifyFunction is NULL or not
+    //
+    WorkerNotifyFunction = InternalEmptyFuntion;
+  } else {
+    WorkerNotifyFunction = NotifyFunction;
+  }
+
   //
   // For UEFI 2.0 and the future use an Event Group
   //
   Status = gBS->CreateEventEx (
-                  EVENT_NOTIFY_SIGNAL,
+                  EventType,
                   NotifyTpl,
-                  NotifyFunction,
+                  WorkerNotifyFunction,
                   NotifyContext,
                   &gEfiEventLegacyBootGuid,
                   LegacyBootEvent
@@ -157,7 +178,7 @@ GlueEfiCreateEventReadyToBoot (
 {
   return EfiCreateEventReadyToBootEx (
            EFI_TPL_CALLBACK,
-           InternalEmptyFuntion,
+           NULL,
            NULL,
            ReadyToBootEvent
            );
@@ -191,29 +212,51 @@ EfiCreateEventReadyToBootEx (
   OUT EFI_EVENT         *ReadyToBootEvent
   )
 {
-  EFI_STATUS    Status;
+  EFI_STATUS        Status;
+  UINT32            EventType;
+  EFI_EVENT_NOTIFY	WorkerNotifyFunction;
 
   ASSERT (ReadyToBootEvent != NULL);
 
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+  
+  if (NotifyFunction == NULL) {
+	EventType = EFI_EVENT_SIGNAL_READY_TO_BOOT | EFI_EVENT_NOTIFY_SIGNAL_ALL;
+  } else {
+	EventType = EFI_EVENT_SIGNAL_READY_TO_BOOT;
+  }
+  WorkerNotifyFunction = NotifyFunction;
+
   //
   // prior to UEFI 2.0 use Tiano extension to EFI
   //
   Status = gBS->CreateEvent (
-                  EFI_EVENT_SIGNAL_READY_TO_BOOT | EFI_EVENT_NOTIFY_SIGNAL_ALL,
+                  EventType,
                   NotifyTpl,
-                  NotifyFunction,
+                  WorkerNotifyFunction,
                   NotifyContext,
                   ReadyToBootEvent
                   );
 #else
+
+  EventType = EVENT_NOTIFY_SIGNAL;
+
+  if (NotifyFunction == NULL) {
+    //
+    // CreatEventEx will check NotifyFunction is NULL or not
+    //
+    WorkerNotifyFunction = InternalEmptyFuntion;
+  } else {
+    WorkerNotifyFunction = NotifyFunction;
+  }
+
   //
   // For UEFI 2.0 and the future use an Event Group
   //
   Status = gBS->CreateEventEx (
-                  EVENT_NOTIFY_SIGNAL,
+                  EventType,
                   NotifyTpl,
-                  NotifyFunction,
+                  WorkerNotifyFunction,
                   NotifyContext,
                   &gEfiEventReadyToBootGuid,
                   ReadyToBootEvent

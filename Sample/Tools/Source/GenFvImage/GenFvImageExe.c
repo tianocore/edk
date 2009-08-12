@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -52,7 +52,7 @@ Returns:
   int         Index;
   const char  *Str[] = {
     UTILITY_NAME" "UTILITY_VERSION" - Intel Generate Firmware Volume Utility",
-    "  Copyright (C), 2004 - 2008 Intel Corporation",
+    "  Copyright (C), 2004 - 2009 Intel Corporation",
     
 #if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
     "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -43,7 +43,7 @@ Abstract:
 #include "SimpleFileParsing.h"
 
 #define UTILITY_NAME    "GenFfsFile"
-#define UTILITY_VERSION "v1.0"
+#define UTILITY_VERSION "v1.1"
 #define MAX_ARRAY_SIZE  100
 
 static
@@ -191,7 +191,7 @@ Returns:
   int         Index;
   const char  *Str[] = {
     UTILITY_NAME" "UTILITY_VERSION" - Intel Generate FFS File Utility",
-    "  Copyright (C), 2004 - 2008 Intel Corporation",
+    "  Copyright (C), 2004 - 2009 Intel Corporation",
     
 #if ( defined(UTILITY_BUILD) && defined(UTILITY_VENDOR) )
     "  Built from "UTILITY_BUILD", project of "UTILITY_VENDOR,
@@ -2264,7 +2264,11 @@ here:
                                                   sizeof (EFI_FFS_FILE_HEADER)
                                                   );
     if (FileHeader.Attributes & FFS_ATTRIB_CHECKSUM) {
+#if (PI_SPECIFICATION_VERSION < 0x00010000)  
       FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) &FileHeader, FileSize);
+#else
+      FileHeader.IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) ((UINTN)&FileHeader + sizeof (EFI_FFS_FILE_HEADER)), FileSize - sizeof (EFI_FFS_FILE_HEADER));
+#endif
     } else {
       FileHeader.IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
     }

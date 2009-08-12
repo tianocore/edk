@@ -155,10 +155,15 @@ Returns:
   //
   // Verify that the Protective MBR is valid
   //
-  if (ProtectiveMbr->Partition[0].BootIndicator != 0x00 ||
-      ProtectiveMbr->Partition[0].OSIndicator != PMBR_GPT_PARTITION ||
-      UNPACK_UINT32 (ProtectiveMbr->Partition[0].StartingLBA) != 1
-      ) {
+  for (Index = 0; Index < MAX_MBR_PARTITIONS; Index++) {
+    if (ProtectiveMbr->Partition[Index].BootIndicator == 0x00 &&
+        ProtectiveMbr->Partition[Index].OSIndicator == PMBR_GPT_PARTITION &&
+        UNPACK_UINT32 (ProtectiveMbr->Partition[Index].StartingLBA) == 1
+        ) {
+      break;
+    }
+  }
+  if (Index == MAX_MBR_PARTITIONS) {
     goto Done;
   }
 
@@ -514,7 +519,13 @@ Returns:
   PartHdr->PartitionEntryLBA  = PEntryLBA;
   PartitionSetCrc ((EFI_TABLE_HEADER *) PartHdr);
 
-  Status = BlockIo->WriteBlocks (BlockIo, BlockIo->Media->MediaId, PartHdr->MyLBA, BlockSize, PartHdr);
+  Status = DiskIo->WriteDisk (
+                    DiskIo,
+                    BlockIo->Media->MediaId,
+                    MultU64x32 (PartHdr->MyLBA, BlockIo->Media->BlockSize),
+                    BlockSize,
+                    PartHdr
+                    );
   if (EFI_ERROR (Status)) {
     goto Done;
   }

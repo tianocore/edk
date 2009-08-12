@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2007, Intel Corporation
+Copyright (c) 2006 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -78,10 +78,21 @@ Returns:
 
 --*/
 {
-  if (Variable == NULL ||
-      Variable->StartId != VARIABLE_DATA ||
-      (sizeof (VARIABLE_HEADER) + Variable->NameSize + Variable->DataSize) > MAX_VARIABLE_SIZE
-      ) {
+  if (Variable == NULL || Variable->StartId != VARIABLE_DATA) {
+    return FALSE;
+  }
+  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  //
+  // Hardware error record variable needs larger size.
+  //
+  if ((Variable->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == EFI_VARIABLE_HARDWARE_ERROR_RECORD) {
+    if ((sizeof (VARIABLE_HEADER) + Variable->NameSize + Variable->DataSize) > MAX_HARDWARE_ERROR_VARIABLE_SIZE) {
+      return FALSE;
+    }
+  } else
+#endif
+  if ((sizeof (VARIABLE_HEADER) + Variable->NameSize + Variable->DataSize) > MAX_VARIABLE_SIZE) {
     return FALSE;
   }
 

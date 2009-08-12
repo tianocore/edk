@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -64,7 +64,6 @@ typedef enum {
   CfPrepareToReadKey,
   CfReadKey,
   CfScreenOperation,
-  CfUiPrevious,
   CfUiSelect,
   CfUiReset,
   CfUiLeft,
@@ -115,6 +114,11 @@ typedef struct {
   FORM_BROWSER_FORMSET    *FormSet;
   FORM_BROWSER_FORM       *Form;
   FORM_BROWSER_STATEMENT  *Statement;
+
+  //
+  // Whether the Form is editable
+  //
+  BOOLEAN                 FormEditable;
 } UI_MENU_SELECTION;
 
 #define UI_MENU_OPTION_SIGNATURE  EFI_SIGNATURE_32 ('u', 'i', 'm', 'm')
@@ -147,17 +151,30 @@ typedef struct {
 
   BOOLEAN                 GrayOut;
   BOOLEAN                 ReadOnly;
+
+  //
+  // Whether user could change value of this item
+  //
+  BOOLEAN                 IsQuestion;
 } UI_MENU_OPTION;
 
 #define MENU_OPTION_FROM_LINK(a)  CR (a, UI_MENU_OPTION, Link, UI_MENU_OPTION_SIGNATURE)
 
-typedef struct {
-  UINTN           Signature;
-  EFI_LIST_ENTRY  MenuLink;
+typedef struct _UI_MENU_LIST UI_MENU_LIST;
 
+struct _UI_MENU_LIST {
+  UINTN           Signature;
+  EFI_LIST_ENTRY  Link;
+
+  EFI_GUID        FormSetGuid;
   UINT16          FormId;
   UINT16          QuestionId;
-} UI_MENU_LIST;
+
+  UI_MENU_LIST    *Parent;
+  EFI_LIST_ENTRY  ChildListHead;
+};
+
+#define UI_MENU_LIST_FROM_LINK(a)  CR (a, UI_MENU_LIST, Link, UI_MENU_LIST_SIGNATURE)
 
 typedef struct _MENU_REFRESH_ENTRY {
   struct _MENU_REFRESH_ENTRY  *Next;
@@ -179,7 +196,6 @@ typedef struct {
 } SCREEN_OPERATION_T0_CONTROL_FLAG;
 
 
-extern EFI_LIST_ENTRY      gMenuList;
 extern MENU_REFRESH_ENTRY  *gMenuRefreshHead;
 extern UI_MENU_SELECTION   *gCurrentSelection;
 extern BOOLEAN             mHiiPackageListUpdated;
@@ -194,36 +210,34 @@ UiInitMenu (
 ;
 
 VOID
-UiInitMenuList (
-  VOID
-  )
-;
-
-VOID
-UiRemoveMenuListEntry (
-  OUT UI_MENU_SELECTION  *Selection
-  )
-;
-
-VOID
-UiFreeMenuList (
-  VOID
-  )
-;
-
-VOID
-UiAddMenuListEntry (
-  IN UI_MENU_SELECTION            *Selection
-  )
-;
-
-VOID
 UiFreeMenu (
   VOID
   )
 ;
 
-VOID
+UI_MENU_LIST *
+UiAddMenuList (
+  IN OUT UI_MENU_LIST     *Parent,
+  IN EFI_GUID             *FormSetGuid,
+  IN UINT16               FormId
+  )
+;
+
+UI_MENU_LIST *
+UiFindChildMenuList (
+  IN UI_MENU_LIST         *Parent,
+  IN UINT16               FormId
+  )
+;
+
+UI_MENU_LIST *
+UiFindMenuList (
+  IN EFI_GUID             *FormSetGuid,
+  IN UINT16               FormId
+  )
+;
+
+UI_MENU_OPTION *
 UiAddMenuOption (
   IN CHAR16                  *String,
   IN EFI_HII_HANDLE          Handle,
@@ -352,6 +366,23 @@ ValueToOption (
   )
 ;
 
+UINT64
+GetArrayData (
+  IN VOID                     *Array,
+  IN UINT8                    Type,
+  IN UINTN                    Index
+  )
+;
+
+VOID
+SetArrayData (
+  IN VOID                     *Array,
+  IN UINT8                    Type,
+  IN UINTN                    Index,
+  IN UINT64                   Value
+  )
+;
+
 EFI_STATUS
 ProcessOptions (
   IN  UI_MENU_SELECTION           *Selection,
@@ -371,6 +402,7 @@ ProcessHelpString (
 
 VOID
 UpdateKeyHelp (
+  IN  UI_MENU_SELECTION           *Selection,
   IN  UI_MENU_OPTION              *MenuOption,
   IN  BOOLEAN                     Selected
   )

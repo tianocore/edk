@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -191,7 +191,7 @@ DisplayPageFrame (
     Buffer[Index] = Character;
   }
 
-  if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
+  if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) != 0) {
     //
     //    ClearLines(0, LocalScreen.RightColumn, 0, BANNER_HEIGHT-1, BANNER_TEXT | BANNER_BACKGROUND);
     //
@@ -266,7 +266,7 @@ DisplayPageFrame (
     KEYHELP_TEXT | KEYHELP_BACKGROUND
     );
 
-  if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
+  if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) == 0) {
     ClearLines (
       LocalScreen.LeftColumn,
       LocalScreen.RightColumn,
@@ -301,7 +301,7 @@ DisplayPageFrame (
     Character = BOXDRAW_UP_LEFT;
     PrintChar (Character);
 
-    if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
+    if ((gClassOfVfr & FORMSET_CLASS_PLATFORM_SETUP) != 0) {
       //
       // Print Bottom border line
       // +------------------------------------------------------------------------------+
@@ -385,7 +385,7 @@ Returns:
 
 /*
 +------------------------------------------------------------------------------+
-?F2=Previous Page                 Setup Page                                  ?
+?                                 Setup Page                                  ?
 +------------------------------------------------------------------------------+
 
 
@@ -405,7 +405,7 @@ Returns:
 
 
 +------------------------------------------------------------------------------+
-?F1=Scroll Help                 F9=Reset to Defaults        F10=Save and Exit ?
+|                            F9=Reset to Defaults          F10=Save and Exit   |
 | ^"=Move Highlight          <Spacebar> Toggles Checkbox   Esc=Discard Changes |
 +------------------------------------------------------------------------------+
 */
@@ -428,6 +428,7 @@ DisplayForm (
   FORM_BROWSER_STATEMENT *Statement;
   UINT16                 NumberOfLines;
   EFI_STATUS             Status;
+  UI_MENU_OPTION         *MenuOption;
 
   Handle        = Selection->Handle;
   FormId        = 0;
@@ -441,7 +442,7 @@ DisplayForm (
 
   StringPtr = GetToken (Selection->Form->FormTitle, Handle);
 
-  if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
+  if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) == 0) {
     gST->ConOut->SetAttribute (gST->ConOut, TITLE_TEXT | TITLE_BACKGROUND);
     PrintStringAt (
       (LocalScreen.RightColumn + LocalScreen.LeftColumn - GetStringWidth (StringPtr) / 2) / 2,
@@ -450,16 +451,6 @@ DisplayForm (
       );
   }
 
-  if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
-    gST->ConOut->SetAttribute (gST->ConOut, KEYHELP_TEXT | KEYHELP_BACKGROUND);
-
-    //
-    // Display the infrastructure strings
-    //
-    if (!IsListEmpty (&gMenuList)) {
-      PrintStringAt (LocalScreen.LeftColumn + 2, LocalScreen.TopRow + 1, gFunctionTwoString);
-    }
-  }
   //
   // Remove Buffer allocated for StringPtr after it has been used.
   //
@@ -473,6 +464,7 @@ DisplayForm (
     return Status;
   }
 
+  Selection->FormEditable = FALSE;
   Link = GetFirstNode (&Selection->Form->StatementListHead);
   while (!IsNull (&Selection->Form->StatementListHead, Link)) {
     Statement = FORM_BROWSER_STATEMENT_FROM_LINK (Link);
@@ -509,8 +501,15 @@ DisplayForm (
       // We are NOT!! removing this StringPtr buffer via FreePool since it is being used in the menuoptions, we will do
       // it in UiFreeMenu.
       //
-      UiAddMenuOption (StringPtr, Selection->Handle, Statement, NumberOfLines, MenuItemCount);
+      MenuOption = UiAddMenuOption (StringPtr, Selection->Handle, Statement, NumberOfLines, MenuItemCount);
       MenuItemCount++;
+
+      if (MenuOption->IsQuestion && !MenuOption->ReadOnly) {
+        //
+        // At least one item is not readonly, this Form is considered as editable
+        //
+        Selection->FormEditable = TRUE;
+      }
     }
 
     Link = GetNextNode (&Selection->Form->StatementListHead, Link);
@@ -528,8 +527,6 @@ InitializeBrowserStrings (
   VOID
   )
 {
-  gFunctionOneString    = GetToken (STRING_TOKEN (FUNCTION_ONE_STRING), gHiiHandle);
-  gFunctionTwoString    = GetToken (STRING_TOKEN (FUNCTION_TWO_STRING), gHiiHandle);
   gFunctionNineString   = GetToken (STRING_TOKEN (FUNCTION_NINE_STRING), gHiiHandle);
   gFunctionTenString    = GetToken (STRING_TOKEN (FUNCTION_TEN_STRING), gHiiHandle);
   gEnterString          = GetToken (STRING_TOKEN (ENTER_STRING), gHiiHandle);
@@ -567,8 +564,6 @@ FreeBrowserStrings (
   VOID
   )
 {
-  EfiLibSafeFreePool (gFunctionOneString);
-  EfiLibSafeFreePool (gFunctionTwoString);
   EfiLibSafeFreePool (gFunctionNineString);
   EfiLibSafeFreePool (gFunctionTenString);
   EfiLibSafeFreePool (gEnterString);
@@ -602,6 +597,7 @@ FreeBrowserStrings (
 
 VOID
 UpdateKeyHelp (
+  IN  UI_MENU_SELECTION           *Selection,
   IN  UI_MENU_OPTION              *MenuOption,
   IN  BOOLEAN                     Selected
   )
@@ -652,10 +648,11 @@ Returns:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
     if (!Selected) {
-      if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
-        PrintStringAt (StartColumnOfHelp, TopRowOfHelp, gFunctionOneString);
-        PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
-        PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
+      if ((gClassOfVfr & FORMSET_CLASS_PLATFORM_SETUP) != 0) {
+        if (Selection->FormEditable) {
+          PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
+          PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
+        }
         PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
       }
 
@@ -676,7 +673,7 @@ Returns:
         PrintAt (StartColumnOfHelp, BottomRowOfHelp, L"%c%c%s", ARROW_UP, ARROW_DOWN, gMoveHighlight);
         if (Statement->Operand == EFI_IFR_NUMERIC_OP && Statement->Step != 0) {
           PrintStringAt (SecCol, BottomRowOfHelp, gAdjustNumber);
-        } else {
+        } else if (!MenuOption->ReadOnly) {
           PrintStringAt (SecCol, BottomRowOfHelp, gEnterString);
         }
       }
@@ -708,10 +705,11 @@ Returns:
   case EFI_IFR_CHECKBOX_OP:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
-    if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
-      PrintStringAt (StartColumnOfHelp, TopRowOfHelp, gFunctionOneString);
-      PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
-      PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
+    if ((gClassOfVfr & FORMSET_CLASS_PLATFORM_SETUP) != 0) {
+      if (Selection->FormEditable) {
+        PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
+        PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
+      }
       PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
     }
 
@@ -728,10 +726,11 @@ Returns:
     ClearLines (LeftColumnOfHelp, RightColumnOfHelp, TopRowOfHelp, BottomRowOfHelp, KEYHELP_TEXT | KEYHELP_BACKGROUND);
 
     if (!Selected) {
-      if (gClassOfVfr == FORMSET_CLASS_PLATFORM_SETUP) {
-        PrintStringAt (StartColumnOfHelp, TopRowOfHelp, gFunctionOneString);
-        PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
-        PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
+      if ((gClassOfVfr & FORMSET_CLASS_PLATFORM_SETUP) != 0) {
+        if (Selection->FormEditable) {
+          PrintStringAt (SecCol, TopRowOfHelp, gFunctionNineString);
+          PrintStringAt (ThdCol, TopRowOfHelp, gFunctionTenString);
+        }
         PrintStringAt (ThdCol, BottomRowOfHelp, gEscapeString);
       }
 
@@ -782,15 +781,9 @@ SetupBrowser (
   EFI_HII_VALUE                   *HiiValue;
   FORM_BROWSER_STATEMENT          *Statement;
   EFI_HII_CONFIG_ACCESS_PROTOCOL  *ConfigAccess;
-  EFI_INPUT_KEY                   Key;
-  CHAR16                          YesResponse;
-  CHAR16                          NoResponse;
 
   gMenuRefreshHead = NULL;
   gResetRequired = FALSE;
-  gNvUpdateRequired = FALSE;
-
-  UiInitMenuList ();
 
   //
   // Register notify for Form package update
@@ -808,11 +801,6 @@ SetupBrowser (
   }
 
   do {
-    //
-    // Displays the Header and Footer borders
-    //
-    DisplayPageFrame ();
-
     //
     // Initialize Selection->Form
     //
@@ -838,10 +826,15 @@ SetupBrowser (
     //
     // Load Questions' Value for display
     //
-    Status = LoadFormConfig (Selection->FormSet, Selection->Form);
+    Status = LoadFormSetConfig (Selection->FormSet);
     if (EFI_ERROR (Status)) {
       return Status;
     }
+
+    //
+    // Displays the Header and Footer borders
+    //
+    DisplayPageFrame ();
 
     //
     // Display form
@@ -914,6 +907,17 @@ SetupBrowser (
           default:
             break;
           }
+        } else if (Status != EFI_UNSUPPORTED) {
+          //
+          // Callback return error status other than EFI_UNSUPPORTED
+          //
+          if (Statement->Operand == EFI_IFR_REF_OP) {
+            //
+            // Cross reference will not be taken
+            //
+            Selection->FormId = Selection->Form->FormId;
+            Selection->QuestionId = 0;
+          }
         }
       }
 
@@ -925,32 +929,6 @@ SetupBrowser (
         // Force to reparse IFR binary of target Formset
         //
         Selection->Action = UI_ACTION_REFRESH_FORMSET;
-
-        //
-        // Uncommitted data will be lost after IFR binary re-pasing, so confirm on whether to save
-        //
-        if (gNvUpdateRequired) {
-          Status      = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-
-          YesResponse = gYesResponse[0];
-          NoResponse  = gNoResponse[0];
-
-          do {
-            CreateDialog (3, TRUE, 0, NULL, &Key, gEmptyString, gSaveChanges, gEmptyString);
-          } while
-          (
-            (Key.ScanCode != SCAN_ESC) &&
-            ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (NoResponse | UPPER_LOWER_CASE_OFFSET)) &&
-            ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (YesResponse | UPPER_LOWER_CASE_OFFSET))
-          );
-
-          if ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) == (YesResponse | UPPER_LOWER_CASE_OFFSET)) {
-            //
-            // If the user hits the YesResponse key
-            //
-            SubmitForm (Selection->FormSet, Selection->Form);
-          }
-        }
       }
     }
   } while (Selection->Action == UI_ACTION_REFRESH_FORM);

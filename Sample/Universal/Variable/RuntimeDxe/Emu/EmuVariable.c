@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -125,9 +125,18 @@ Returns:
   //
   VarHeader = (VARIABLE_HEADER *) (GetVariableDataPtr (Variable) + Variable->DataSize + GET_PAD_SIZE (Variable->DataSize));
 
-  if (VarHeader->StartId != VARIABLE_DATA ||
-      (sizeof (VARIABLE_HEADER) + VarHeader->DataSize + VarHeader->NameSize) > MAX_VARIABLE_SIZE
-      ) {
+  if (VarHeader->StartId != VARIABLE_DATA) {
+    return NULL;
+  }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  if ((VarHeader->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == EFI_VARIABLE_HARDWARE_ERROR_RECORD) {
+    if ((sizeof (VARIABLE_HEADER) + VarHeader->DataSize + VarHeader->NameSize) > MAX_HARDWARE_ERROR_VARIABLE_SIZE) {
+      return NULL;
+    }
+  } else
+#endif
+  if ((sizeof (VARIABLE_HEADER) + VarHeader->DataSize + VarHeader->NameSize) > MAX_VARIABLE_SIZE) {
     return NULL;
   }
 

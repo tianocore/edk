@@ -185,14 +185,15 @@ Returns:
   Image         = ((UINT8 *) BmpImage) + BmpHeader->ImageOffset;
   ImageHeader   = Image;
 
-  BltBufferSize = BmpHeader->PixelWidth * BmpHeader->PixelHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
-  if ( BltBufferSize >= SIZE_4G ) {
-     //
-     // The buffer size extends the limitation
-     //
+  BltBufferSize = MultU64x32 ((UINT64) BmpHeader->PixelWidth, BmpHeader->PixelHeight);
+  //
+  // Ensure the BltBufferSize * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) doesn't overflow
+  //
+  if (BltBufferSize > DivU64x32 ((UINTN) ~0, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), NULL)) {
      return EFI_UNSUPPORTED;
   }
-  
+  BltBufferSize = MultU64x32 (BltBufferSize, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
+
   IsAllocated   = FALSE;
   if (*GopBlt == NULL) {
     *GopBltSize = (UINTN) BltBufferSize;

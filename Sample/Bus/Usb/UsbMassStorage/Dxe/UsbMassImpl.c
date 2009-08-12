@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                  
+Copyright (c) 2007 - 2009, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -633,6 +633,7 @@ UsbMassInitNonLun (
   if (UsbMass == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
+
   Status = gBS->OpenProtocol (
                   Controller,
                   &gEfiUsbIoProtocolGuid,
@@ -693,12 +694,15 @@ ON_ERROR:
   if (UsbMass != NULL) {
     gBS->FreePool (UsbMass);
   }
-  gBS->CloseProtocol (
-         Controller,
-         &gEfiUsbIoProtocolGuid,
-         This->DriverBindingHandle,
-         Controller
-         );
+  if (UsbIo != NULL) {
+    gBS->CloseProtocol (
+           Controller,
+           &gEfiUsbIoProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
+  }
+  
   return Status;  
 }
 
@@ -817,6 +821,7 @@ Returns:
   USB_MASS_TRANSPORT            *Transport;
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   EFI_DEVICE_PATH_PROTOCOL      *DevicePath;
+  EFI_USB_IO_PROTOCOL           *UsbIo; 
 #endif
   VOID                          *Context;
   UINT8                         MaxLun;
@@ -864,6 +869,26 @@ Returns:
       return Status;
     }
 
+    Status = gBS->OpenProtocol (
+                    Controller,
+                    &gEfiUsbIoProtocolGuid,
+                    (VOID **) &UsbIo,
+                    This->DriverBindingHandle,
+                    Controller,
+                    EFI_OPEN_PROTOCOL_BY_DRIVER
+                    );
+  
+    if (EFI_ERROR (Status)) {
+      DEBUG ((mUsbMscError, "USBMassDriverBindingStart: OpenUsbIoProtocol By Driver (%r)\n", Status));
+      gBS->CloseProtocol (
+             Controller,
+             &gEfiDevicePathProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
+      return Status;
+    }
+	
     //
     // Try best to initialize all LUNs, and return success only if one of LUNs successed to initialized.
     //
@@ -872,6 +897,12 @@ Returns:
      gBS->CloseProtocol (
             Controller,
             &gEfiDevicePathProtocolGuid,
+            This->DriverBindingHandle,
+            Controller
+            );
+     gBS->CloseProtocol (
+            Controller,
+            &gEfiUsbIoProtocolGuid,
             This->DriverBindingHandle,
             Controller
             );
@@ -919,10 +950,10 @@ Returns:
 
   //
   // This a bus driver stop function since multi-lun supported. There are three 
-  // kinds of device handle might be passed, 1st is a handle with devicepath/
-  // usbio/blockio installed(non-multi-lun), 2nd is a handle with devicepath/
-  // usbio installed(multi-lun root), 3rd is a handle with devicepath/blockio
-  // installed(multi-lun).
+  // kinds of device handle might be passed:
+  // 1st is a handle with usbio opened and blockio installed; (non-multi-lun)
+  // 2nd is a handle with devicepath+usbio opened; (multi-lun-root)
+  // 3rd is a handle with usbio opened and devicepath+blockio installed. (multi-lun-node)
   //
   if (NumberOfChildren == 0) {
     //
@@ -939,15 +970,21 @@ Returns:
   
     if (EFI_ERROR(Status)) {
       //
-      // This is a 2nd type handle(multi-lun root), which only needs close 
-      // devicepath protocol.
+      // This is a 2nd type handle(multi-lun root), it needs to close devicepath
+      // and usbio protocol.
       //
       gBS->CloseProtocol (
-            Controller,
-            &gEfiDevicePathProtocolGuid,
-            This->DriverBindingHandle,
-            Controller
-            );
+             Controller,
+             &gEfiDevicePathProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
+      gBS->CloseProtocol (
+             Controller,
+             &gEfiUsbIoProtocolGuid,
+             This->DriverBindingHandle,
+             Controller
+             );
       DEBUG ((mUsbMscInfo, "Success to stop multi-lun root handle\n"));
       return EFI_SUCCESS;
     }
@@ -972,11 +1009,11 @@ Returns:
     }
   
     gBS->CloseProtocol (
-          Controller,
-          &gEfiUsbIoProtocolGuid,
-          This->DriverBindingHandle,
-          Controller
-          );
+           Controller,
+           &gEfiUsbIoProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
   
     UsbMass->Transport->Fini (UsbMass->Context);
     gBS->FreePool (UsbMass);

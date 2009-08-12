@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -48,7 +48,7 @@ enum {
   USB_MAX_INTERFACE         = 16,
   USB_MAX_DEVICES           = 128,
 
-  USB_BUS_1_MILLISECOND     = 1000,
+  USB_BUS_STALL_1_MSEC      = 1000,
 
   //
   // Roothub and hub's polling interval, set by experience,
@@ -62,58 +62,58 @@ enum {
   // Wait for port stable to work, refers to specification
   // [USB20-9.1.2]
   //
-  USB_WAIT_PORT_STABLE_STALL     = 100 * USB_BUS_1_MILLISECOND,
+  USB_WAIT_PORT_STABLE_STALL     = 100 * USB_BUS_STALL_1_MSEC,
 
   // 
   // Wait for port statue reg change, set by experience
   //
-  USB_WAIT_PORT_STS_CHANGE_STALL = 5 * USB_BUS_1_MILLISECOND,
+  USB_WAIT_PORT_STS_CHANGE_STALL = 5 * USB_BUS_STALL_1_MSEC,
 
   //
   // Wait for set device address, refers to specification
   // [USB20-9.2.6.3, it says 2ms]
   //
-  USB_SET_DEVICE_ADDRESS_STALL   = 20 * USB_BUS_1_MILLISECOND,
+  USB_SET_DEVICE_ADDRESS_STALL   = 20 * USB_BUS_STALL_1_MSEC,
 
   //
   // Wait for retry max packet size, set by experience
   //
-  USB_RETRY_MAX_PACK_SIZE_STALL  = 100 * USB_BUS_1_MILLISECOND,
+  USB_RETRY_MAX_PACK_SIZE_STALL  = 100 * USB_BUS_STALL_1_MSEC,
 
   //
   // Wait for hub port power-on, refers to specification
   // [USB20-11.23.2]
   //
-  USB_SET_PORT_POWER_STALL       = 2 * USB_BUS_1_MILLISECOND,
+  USB_SET_PORT_POWER_STALL       = 2 * USB_BUS_STALL_1_MSEC,
 
   //
   // Wait for port reset, refers to specification 
   // [USB20-7.1.7.5, it says 10ms for hub and 50ms for 
   // root hub]
   //
-  USB_SET_PORT_RESET_STALL       = 20 * USB_BUS_1_MILLISECOND,
-  USB_SET_ROOT_PORT_RESET_STALL  = 50 * USB_BUS_1_MILLISECOND,
+  USB_SET_PORT_RESET_STALL       = 20 * USB_BUS_STALL_1_MSEC,
+  USB_SET_ROOT_PORT_RESET_STALL  = 50 * USB_BUS_STALL_1_MSEC,
 
   //
   // Wait for clear roothub port reset, set by experience
   //
-  USB_CLR_ROOT_PORT_RESET_STALL  = 1 * USB_BUS_1_MILLISECOND,
+  USB_CLR_ROOT_PORT_RESET_STALL  = 1 * USB_BUS_STALL_1_MSEC,
 
   //
   // Wait for set roothub port enable, set by experience
   // 
-  USB_SET_ROOT_PORT_ENABLE_STALL = 20 * USB_BUS_1_MILLISECOND,
+  USB_SET_ROOT_PORT_ENABLE_STALL = 20 * USB_BUS_STALL_1_MSEC,
 
   //
-  // Send general device request timeout, refers to 
+  // Send general device request timeout 50ms, refers to 
   // specification[USB20-11.24.1]
   //
-  USB_GENERAL_DEVICE_REQUEST_TIMEOUT = 50 * USB_BUS_1_MILLISECOND,
+  USB_GENERAL_DEVICE_REQUEST_TIMEOUT = 50,
 
   //
-  // Send clear feature request timeout, set by experience
+  // Send clear feature request timeout 10ms, set by experience
   //
-  USB_CLEAR_FEATURE_REQUEST_TIMEOUT  = 10 * USB_BUS_1_MILLISECOND,
+  USB_CLEAR_FEATURE_REQUEST_TIMEOUT  = 10,
   
   //
   // Bus raises TPL to TPL_NOTIFY to serialize all its operations

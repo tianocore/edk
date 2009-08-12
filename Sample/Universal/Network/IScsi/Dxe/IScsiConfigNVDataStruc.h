@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -76,8 +76,12 @@ Abstract:
 #define KEY_DEVICE_ENTRY_BASE     0x1000
 
 #define ISCSI_LUN_STR_MAX_LEN     21
-#define ISCSI_CHAP_SECRET_MIN_LEN 13
-#define ISCSI_CHAP_SECRET_MAX_LEN 17
+#define ISCSI_CHAP_SECRET_MIN_LEN 12
+#define ISCSI_CHAP_SECRET_MAX_LEN 16
+//
+//  ISCSI_CHAP_SECRET_STORAGE = ISCSI_CHAP_SECRET_MAX_LEN + sizeof (NULL-Terminator)
+//
+#define ISCSI_CHAP_SECRET_STORAGE 17
 #define ISCSI_CHAP_NAME_MAX_LEN   126
 
 #pragma pack(1)
@@ -101,9 +105,9 @@ typedef struct _ISCSI_CONFIG_IFR_NVDATA {
   UINT8   CHAPType;
   UINT8   Padding2;
   CHAR16  CHAPName[ISCSI_CHAP_NAME_MAX_LEN];
-  CHAR16  CHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
+  CHAR16  CHAPSecret[ISCSI_CHAP_SECRET_STORAGE];
   CHAR16  ReverseCHAPName[ISCSI_CHAP_NAME_MAX_LEN];
-  CHAR16  ReverseCHAPSecret[ISCSI_CHAP_SECRET_MAX_LEN];
+  CHAR16  ReverseCHAPSecret[ISCSI_CHAP_SECRET_STORAGE];
 } ISCSI_CONFIG_IFR_NVDATA;
 #pragma pack()
 

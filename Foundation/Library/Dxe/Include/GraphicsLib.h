@@ -30,8 +30,6 @@ Abstract:
 
 #include EFI_GUID_DEFINITION (Bmp)
 
-#define SIZE_4G     0x100000000
-
 EFI_STATUS
 GetGraphicsBitMapFromFV (
   IN  EFI_GUID      *FileNameGuid,

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1336,7 +1336,11 @@ Returns:
   PadFile->State                          = 0;
   PadFile->IntegrityCheck.Checksum.Header = CalculateChecksum8 ((UINT8 *) PadFile, sizeof (EFI_FFS_FILE_HEADER));
   if (PadFile->Attributes & FFS_ATTRIB_CHECKSUM) {
+#if (PI_SPECIFICATION_VERSION < 0x00010000)  
     PadFile->IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) PadFile, PadFileSize);
+#else
+    PadFile->IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) ((UINTN)PadFile + sizeof (EFI_FFS_FILE_HEADER)), PadFileSize - sizeof (EFI_FFS_FILE_HEADER));
+#endif
   } else {
     PadFile->IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
   }
@@ -2137,7 +2141,11 @@ Returns:
       }
 
       if ((*VtfFileImage)->Attributes & FFS_ATTRIB_CHECKSUM) {
+    #if (PI_SPECIFICATION_VERSION < 0x00010000)
         VtfFileChecksum = CalculateChecksum8 ((UINT8 *) *VtfFileImage, FileSize - TailSize);
+    #else
+        VtfFileChecksum = CalculateChecksum8 ((UINT8 *) ((UINTN)*VtfFileImage + sizeof (EFI_FFS_FILE_HEADER)), FileSize - TailSize - sizeof(EFI_FFS_FILE_HEADER));
+    #endif
         (*VtfFileImage)->IntegrityCheck.Checksum.File = VtfFileChecksum;
       } else {
         (*VtfFileImage)->IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
@@ -2460,7 +2468,11 @@ Returns:
   PadFile->State                          = 0;
   PadFile->IntegrityCheck.Checksum.Header = CalculateChecksum8 ((UINT8 *) PadFile, sizeof (EFI_FFS_FILE_HEADER));
   if (PadFile->Attributes & FFS_ATTRIB_CHECKSUM) {
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     PadFile->IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) PadFile, FileSize);
+#else
+    PadFile->IntegrityCheck.Checksum.File = CalculateChecksum8 ((UINT8 *) ((UINTN) PadFile + sizeof (EFI_FFS_FILE_HEADER)), FileSize - sizeof (EFI_FFS_FILE_HEADER));
+#endif
   } else {
     PadFile->IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
   }
@@ -2739,10 +2751,18 @@ Returns:
   VtfFile->IntegrityCheck.Checksum.File = 0;
   VtfFile->State                        = 0;
   if (VtfFile->Attributes & FFS_ATTRIB_CHECKSUM) {
+#if (PI_SPECIFICATION_VERSION < 0x00010000)
     VtfFile->IntegrityCheck.Checksum.File = CalculateChecksum8 (
                                               (UINT8 *) VtfFile,
                                               GetLength (VtfFile->Size) - TailSize
                                               );
+
+#else
+    VtfFile->IntegrityCheck.Checksum.File = CalculateChecksum8 (
+                                              (UINT8 *) ((UINTN)VtfFile + sizeof (EFI_FFS_FILE_HEADER)),
+                                              GetLength (VtfFile->Size) - TailSize - sizeof (EFI_FFS_FILE_HEADER)
+                                              );
+#endif
   } else {
     VtfFile->IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM;
   }

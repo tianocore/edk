@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -691,9 +691,10 @@ subclassDefinition[UINT16 & SubClass] :
 vfrStatementDisableIfFormSet :
   <<
     CIfrDisableIf DIObj;
+    UINT32 ExpOpCount = 0;
   >>
   D:DisableIf                                       << DIObj.SetLineNo(D->getLine()); >>
-  vfrStatementExpression[0] ";"                     << mConstantOnlyInExpression = FALSE; >>
+  vfrStatementExpression[0, ExpOpCount] ";"         << mConstantOnlyInExpression = FALSE; >>
   vfrFormSetList
   E:EndIf                                           << CRT_END_OP (E); >>
   ";"
@@ -948,13 +949,16 @@ vfrFormDefinition :
   ;
 
 vfrStatementRules :
-  << CIfrRule RObj; >>
+  << 
+    CIfrRule RObj;
+    UINT32 ExpOpCount = 0;
+  >>
   R:Rule                                            << RObj.SetLineNo(R->getLine()); >>
   S1:StringIdentifier ","                           <<
                                                        mCVfrRulesDB.RegisterRule (S1->getText());
                                                        RObj.SetRuleId (mCVfrRulesDB.GetRuleId(S1->getText()));
                                                     >>
-  vfrStatementExpression[0]
+  vfrStatementExpression[0, ExpOpCount]
   E:EndRule                                         << CRT_END_OP (E); >>
   ";"
   ;
@@ -971,7 +975,7 @@ vfrStatementDefault :
   D:Default                                         << DObj.SetLineNo(D->getLine()); >>
   (
     (
-        vfrStatementValue ","                       << IsExp = TRUE; DObj.SetScope (1); >>
+        vfrStatementValue ","                       << IsExp = TRUE; DObj.SetScope (1); { CIfrEnd EndObj1; EndObj1.SetLineNo(0); } >>
       | "=" vfrConstantValueField[_GET_CURRQEST_DATATYPE()] > [Val] ","
                                                     << DObj.SetType (_GET_CURRQEST_DATATYPE()); DObj.SetValue(Val); >>
     )
@@ -1031,9 +1035,13 @@ flagsField :
   ;
 
 vfrStatementValue :
-  << CIfrValue VObj; >>
+  << 
+    CIfrValue VObj;
+    UINT32 ExpOpCount = 0;
+  >>
   V:Value                                              << VObj.SetLineNo(V->getLine()); >>
-  "=" vfrStatementExpression[0]
+  "=" vfrStatementExpression[0, ExpOpCount]
+                                                       << { CIfrEnd EndObj; EndObj.SetLineNo(0); } >>
   ;
 
 vfrStatementSubTitle :
@@ -1077,6 +1085,7 @@ vfrStatementStaticText :
                                                        <<
                                                           if (Flags & EFI_IFR_FLAG_CALLBACK) {
                                                             CIfrAction AObj;
+                                                            AObj.SetLineNo (T->getLine());
                                                             mCVfrQuestionDB.RegisterQuestion (NULL, NULL, QId);
                                                             AObj.SetQuestionId (QId);
                                                             AObj.SetPrompt (_STOSID(S2->getText()));
@@ -1406,7 +1415,7 @@ vfrStatementDate :
 														  DObj.SetHelp (_STOSID(YH->getText()));
 														  if (VarIdStr[0] != NULL) { delete VarIdStr[0]; } if (VarIdStr[1] != NULL) { delete VarIdStr[1]; } if (VarIdStr[2] != NULL) { delete VarIdStr[2]; }
                                                        >>
-	                                                   << {CIfrDefault DObj(EFI_HII_DEFAULT_CLASS_STANDARD, EFI_IFR_TYPE_DATE, Val);} >>
+	                                                   << {CIfrDefault DObj(EFI_HII_DEFAULT_CLASS_STANDARD, EFI_IFR_TYPE_DATE, Val); DObj.SetLineNo (D1Y->getLine());} >>
       ( vfrStatementInconsistentIf )*
     )
   )
@@ -1625,7 +1634,7 @@ vfrStatementOrderedList :
   >>
   L:OrderedList                                        << OLObj.SetLineNo(L->getLine()); >>
   vfrQuestionHeader[OLObj] ","
-                                                       << OLObj.SetMaxContainers ((UINT8)_GET_CURRQEST_VARSIZE()); >>
+                                                       << OLObj.SetMaxContainers ((UINT8)_GET_CURRQEST_ARRAY_SIZE()); >>
   {
     MaxContainers "=" M:Number ","                     << OLObj.SetMaxContainers (_STOU8(M->getText())); >>
   }
@@ -1692,7 +1701,7 @@ vfrStatementTime :
 														  TObj.SetHelp (_STOSID(HH->getText()));
 														  if (VarIdStr[0] != NULL) { delete VarIdStr[0]; } if (VarIdStr[1] != NULL) { delete VarIdStr[1]; } if (VarIdStr[2] != NULL) { delete VarIdStr[2]; }
                                                        >>
-                                                       << {CIfrDefault DObj(EFI_HII_DEFAULT_CLASS_STANDARD, EFI_IFR_TYPE_TIME, Val);} >>
+                                                       << {CIfrDefault DObj(EFI_HII_DEFAULT_CLASS_STANDARD, EFI_IFR_TYPE_TIME, Val); DObj.SetLineNo (T1H->getLine());} >>
     )
   )
   E:EndTime                                            << CRT_END_OP (E); >>
@@ -1769,29 +1778,36 @@ vfrStatementStatList :
 vfrStatementDisableIfStat :
   <<
     CIfrDisableIf DIObj;
+    UINT32 ExpOpCount = 0;
   >>
   L:DisableIf                                          << DIObj.SetLineNo(L->getLine()); >>
-  vfrStatementExpression[0] ";"                        << mConstantOnlyInExpression = FALSE; >>
+  vfrStatementExpression[0, ExpOpCount] ";"            << mConstantOnlyInExpression = FALSE; >>
   ( vfrStatementStatList )*
   E:EndIf                                              << CRT_END_OP (E); >>
   ";"
   ;
 
 vfrStatementSuppressIfStat :
-  << CIfrSuppressIf SIObj; >>
+  <<
+    CIfrSuppressIf SIObj;
+    UINT32 ExpOpCount = 0;
+  >>
   L:SuppressIf                                         << SIObj.SetLineNo(L->getLine()); >>
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0] ";"
+  vfrStatementExpression[0, ExpOpCount] ";"
   ( vfrStatementStatList )*
   E:EndIf                                              << CRT_END_OP (E); >>
   ";"
   ;
 
 vfrStatementGrayOutIfStat :
-  << CIfrGrayOutIf GOIObj; >>
+  <<
+    CIfrGrayOutIf GOIObj;
+    UINT32 ExpOpCount = 0;
+  >>
   L:GrayOutIf                                          << GOIObj.SetLineNo(L->getLine()); >>
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0]
+  vfrStatementExpression[0, ExpOpCount]
   ";"
   ( vfrStatementStatList )*
   E:EndIf                                              << CRT_END_OP (E); >>
@@ -1828,29 +1844,36 @@ vfrStatementLocked :
   ;
 
 vfrStatementInconsistentIf :
-  << CIfrInconsistentIf IIObj; >>
+  <<
+    CIfrInconsistentIf IIObj;
+    UINT32 ExpOpCount = 0;
+  >>
   L:InconsistentIf                                     << IIObj.SetLineNo(L->getLine()); >>
   Prompt "=" "STRING_TOKEN" "\(" S:Number "\)" ","     << IIObj.SetError (_STOSID(S->getText())); >>
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0]
+  vfrStatementExpression[0, ExpOpCount]
   E:EndIf                                              << CRT_END_OP (E); >>
   ;
 
 vfrStatementNoSubmitIf :
-  << CIfrNoSubmitIf NSIObj; >>
+  <<
+    CIfrNoSubmitIf NSIObj;
+    UINT32 ExpOpCount = 0;
+  >>
   L:NoSubmitIf                                         << NSIObj.SetLineNo(L->getLine()); >>
   Prompt "=" "STRING_TOKEN" "\(" S:Number "\)" ","     << NSIObj.SetError (_STOSID(S->getText())); >>
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0]
+  vfrStatementExpression[0, ExpOpCount]
   E:EndIf                                              << CRT_END_OP (E); >>
   ;
 
 vfrStatementDisableIfQuest :
   <<
     CIfrDisableIf DIObj;
+    UINT32 ExpOpCount = 0;
   >>
   L:DisableIf                                          << DIObj.SetLineNo(L->getLine()); >>
-  vfrStatementExpression[0] ";"                        << mConstantOnlyInExpression = FALSE; >>
+  vfrStatementExpression[0, ExpOpCount] ";"            << mConstantOnlyInExpression = FALSE; >>
   vfrStatementQuestionOptionList
   E:EndIf                                              << CRT_END_OP (E); >>
   ;
@@ -1868,10 +1891,13 @@ vfrStatementVarstoreDevice :
   ;
 
 vfrStatementSuppressIfQuest :
-  << CIfrSuppressIf SIObj; >>
+  <<
+    CIfrSuppressIf SIObj;
+    UINT32 ExpOpCount = 0;
+  >>
   L:SuppressIf                                         << SIObj.SetLineNo(L->getLine()); >>
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0] ";"
+  vfrStatementExpression[0, ExpOpCount] ";"
   vfrStatementQuestionOptionList
   E:EndIf                                              << CRT_END_OP (E); >>
   ;
@@ -1911,7 +1937,7 @@ vfrStatementOneOfOption :
 
 vfrOneOfOptionFlags [CIfrOneOfOption & OOOObj, UINT32 LineNum] :
   <<
-     UINT8 LFlags = _GET_CURRQEST_DATATYPE();
+     UINT8 LFlags = 0;
      UINT8 HFlags = 0;
   >>
   oneofoptionFlagsField[HFlags, LFlags] ( "\|" oneofoptionFlagsField[HFlags, LFlags] )*
@@ -1970,10 +1996,11 @@ vfrStatementInvalidHidden :
   ;
 
 vfrStatementInvalidInconsistentIf :
+  << UINT32 ExpOpCount = 0; >>
   InconsistentIf
   Prompt "=" "STRING_TOKEN" "\(" S:Number "\)" ","
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0]
+  vfrStatementExpression[0, ExpOpCount]
   EndIf
   ";"
   ;
@@ -2035,13 +2062,13 @@ vfrStatementInvalidSaveRestoreDefaults :
 #token QuestionRefVal("questionrefval")         "questionrefval"
 #token StringRefVal("stringrefval")             "stringrefval"
 
-vfrStatementExpression [UINT32 RootLevel, UINT32 ExpOpCount = 0] :
+vfrStatementExpression [UINT32 RootLevel, UINT32 & ExpOpCount] :
 													   << if ($RootLevel == 0) {_CLEAR_SAVED_OPHDR ();} >>
   andTerm[$RootLevel, $ExpOpCount]
   (
     L:OR andTerm[$RootLevel, $ExpOpCount]              << $ExpOpCount++; CIfrOr OObj(L->getLine()); >>
   )*
-                                                       << if ($ExpOpCount > 1) {_SET_SAVED_OPHDR_SCOPE(); CIfrEnd EObj; } >>
+                                                       << if (($RootLevel == 0) && ($ExpOpCount > 1)) {_SET_SAVED_OPHDR_SCOPE(); CIfrEnd EObj; EObj.SetLineNo (0);} >>
   ;
 
 andTerm[UINT32 & RootLevel, UINT32 & ExpOpCount] :
@@ -2626,6 +2653,7 @@ private:
 
   UINT8               _GET_CURRQEST_DATATYPE ();
   UINT32              _GET_CURRQEST_VARSIZE ();
+  UINT32              _GET_CURRQEST_ARRAY_SIZE ();
 
 public:
   VOID                _PCATCH (IN INTN, IN INTN, IN ANTLRTokenPtr, IN INT8 *);
@@ -2744,6 +2772,37 @@ EfiVfrParser::_GET_CURRQEST_VARSIZE (
   )
 {
   return mCurrQestVarInfo.mVarTotalSize;
+}
+
+UINT32
+EfiVfrParser::_GET_CURRQEST_ARRAY_SIZE (
+  VOID
+  )
+{
+  UINT8 Size = 1;
+
+  switch (mCurrQestVarInfo.mVarType) {
+  case EFI_IFR_TYPE_NUM_SIZE_8:
+    Size = 1;
+    break;
+
+  case EFI_IFR_TYPE_NUM_SIZE_16:
+    Size = 2;
+    break;
+
+  case EFI_IFR_TYPE_NUM_SIZE_32:
+    Size = 4;
+    break;
+
+  case EFI_IFR_TYPE_NUM_SIZE_64:
+    Size = 8;
+    break;
+
+  default:
+    break;
+  }
+
+  return (mCurrQestVarInfo.mVarTotalSize / Size);
 }
 
 VOID

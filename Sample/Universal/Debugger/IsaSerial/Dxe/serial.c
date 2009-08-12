@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -483,6 +483,10 @@ SerialControllerDriverStart (
   SerialDevice->Transmit.Last           = 0;
   SerialDevice->Transmit.Surplus        = SERIAL_MAX_BUFFER_SIZE;
 
+#ifdef USE_HALF_HANDSHAKE
+  SerialDevice->UseHalfHandshake        = TRUE;
+#endif
+
   //
   // Serial I/O
   //
@@ -504,9 +508,9 @@ SerialControllerDriverStart (
     EfiCopyMem (&SerialDevice->UartDevicePath, RemainingDevicePath, sizeof (UART_DEVICE_PATH));
   } else {
     //
-    // Build the device path by appending the UART node to the ParentDevicePath
-    // from the WinNtIo handle. The Uart setings are zero here, since
-    // SetAttribute() will update them to match the default setings.
+    // Build the device path by appending the UART node to the ParentDevicePath.
+    // The Uart setings are zero here, since SetAttribute() will update them to match
+    // the default setings.
     //
     EfiZeroMem (&SerialDevice->UartDevicePath, sizeof (UART_DEVICE_PATH));
     SerialDevice->UartDevicePath.Header.Type    = MESSAGING_DEVICE_PATH;
@@ -913,6 +917,18 @@ IsaSerialReceiveTransmit (
     } while (!IsaSerialFifoEmpty (&SerialDevice->Transmit));
   } else {
     ReceiveFifoFull = IsaSerialFifoFull (&SerialDevice->Receive);
+    //
+    // For full handshake flow control, tell the peer to send data
+    // if receive buffer is available.
+    //
+    if (SerialDevice->HardwareFlowControl &&
+        !SerialDevice->UseHalfHandshake   &&
+        !ReceiveFifoFull
+        ) {
+      Mcr.Data     = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
+      Mcr.Bits.RTS = 1;
+      WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
+    }
     do {
       Lsr.Data = READ_LSR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
 #ifdef EFI_NT_EMULATOR
@@ -935,27 +951,23 @@ IsaSerialReceiveTransmit (
               continue;
             }
           }
-          //
-          // Make sure the receive data will not be missed, Assert DTR
-          //
-          if (SerialDevice->HardwareFlowControl) {
-            Mcr.Data = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
-            Mcr.Bits.DTRC &= 0;
-            WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
-          }
 
           Data = READ_RBR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
 
+          IsaSerialFifoAdd (&SerialDevice->Receive, Data);
+
           //
-          // Deassert DTR
+          // For full handshake flow control, if receive buffer full
+          // tell the peer to stop sending data.
           //
-          if (SerialDevice->HardwareFlowControl) {
-            Mcr.Data = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
-            Mcr.Bits.DTRC |= 1;
+          if (SerialDevice->HardwareFlowControl &&
+              !SerialDevice->UseHalfHandshake   &&
+              IsaSerialFifoFull (&SerialDevice->Receive)
+              ) {
+            Mcr.Data     = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
+            Mcr.Bits.RTS = 0;
             WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
           }
-
-          IsaSerialFifoAdd (&SerialDevice->Receive, Data);
 
           continue;
         } else {
@@ -970,17 +982,19 @@ IsaSerialReceiveTransmit (
         //
         if (SerialDevice->HardwareFlowControl) {
           //
-          // Send RTS
+          // For half handshake flow control assert RTS before sending.
           //
-          Mcr.Data = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
-          Mcr.Bits.RTS |= 1;
-          WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
+          if (SerialDevice->UseHalfHandshake) {
+            Mcr.Data     = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
+            Mcr.Bits.RTS = 0;
+            WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
+          }
           //
           // Wait for CTS
           //
           TimeOut   = 0;
           Msr.Data  = READ_MSR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
-          while (!Msr.Bits.CTS) {
+          while (Msr.Bits.DCD == 1 && (!Msr.Bits.CTS ^ SerialDevice->UseHalfHandshake)) {
             gBS->Stall (TIMEOUT_STALL_INTERVAL);
             TimeOut++;
             if (TimeOut > 5) {
@@ -990,28 +1004,21 @@ IsaSerialReceiveTransmit (
             Msr.Data = READ_MSR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
           }
 
-          if (Msr.Bits.CTS) {
+          if (Msr.Bits.DCD == 0 || (Msr.Bits.CTS ^ SerialDevice->UseHalfHandshake)) {
             IsaSerialFifoRemove (&SerialDevice->Transmit, &Data);
             WRITE_THR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Data);
           }
-        }
-        //
-        // write the data out
-        //
-        if (!SerialDevice->HardwareFlowControl) {
+          //
+          // For half handshake flow control, tell DCE we are done.
+          //
+          if (SerialDevice->UseHalfHandshake) {
+            Mcr.Data = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
+            Mcr.Bits.RTS = 1;
+            WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
+          }
+        } else {
           IsaSerialFifoRemove (&SerialDevice->Transmit, &Data);
           WRITE_THR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Data);
-        }
-        //
-        // Make sure the transmit data will not be missed
-        //
-        if (SerialDevice->HardwareFlowControl) {
-          //
-          // Assert RTS
-          //
-          Mcr.Data = READ_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress);
-          Mcr.Bits.RTS &= 0;
-          WRITE_MCR (SerialDevice->IsaIo, SerialDevice->BaseAddress, Mcr.Data);
         }
       }
     } while (Lsr.Bits.THRE && !IsaSerialFifoEmpty (&SerialDevice->Transmit));

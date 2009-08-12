@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -25,7 +25,7 @@ Revision History
 #include "Setup.h"
 
 EFI_LIST_ENTRY      Menu;
-EFI_LIST_ENTRY      gMenuList;
+EFI_LIST_ENTRY      gMenuList = INITIALIZE_LIST_HEAD_VARIABLE (gMenuList);
 MENU_REFRESH_ENTRY  *gMenuRefreshHead;
 
 //
@@ -42,8 +42,6 @@ SCAN_CODE_TO_SCREEN_OPERATION     gScanCodeToOperation[] = {
   UiPageDown,
   SCAN_ESC,
   UiReset,
-  SCAN_F2,
-  UiPrevious,
   SCAN_LEFT,
   UiLeft,
   SCAN_RIGHT,
@@ -73,8 +71,6 @@ SCREEN_OPERATION_T0_CONTROL_FLAG  gScreenOperationToControlFlag[] = {
   CfUiReset,
   UiSave,
   CfUiSave,
-  UiPrevious,
-  CfUiPrevious,
   UiPageUp,
   CfUiPageUp,
   UiPageDown,
@@ -160,110 +156,6 @@ Returns:
 }
 
 VOID
-UiInitMenuList (
-  VOID
-  )
-/*++
-
-Routine Description:
-  Initialize Menu option list.
-
-Arguments:
-  None.
-
-Returns:
-  None.
-
---*/
-{
-  InitializeListHead (&gMenuList);
-}
-
-VOID
-UiRemoveMenuListEntry (
-  IN OUT UI_MENU_SELECTION  *Selection
-  )
-/*++
-
-Routine Description:
-  Remove a Menu in list, and return FormId/QuestionId for previous Menu.
-
-Arguments:
-  Selection - Menu selection.
-
-Returns:
-  None.
-
---*/
-{
-  UI_MENU_LIST  *UiMenuList;
-
-  if (!IsListEmpty (&gMenuList)) {
-    UiMenuList = CR (gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
-
-    Selection->FormId = UiMenuList->FormId;
-    Selection->QuestionId = UiMenuList->QuestionId;
-    RemoveEntryList (&UiMenuList->MenuLink);
-    gBS->FreePool (UiMenuList);
-  }
-}
-
-VOID
-UiFreeMenuList (
-  VOID
-  )
-/*++
-
-Routine Description:
-  Free Menu option linked list.
-
-Arguments:
-  None.
-
-Returns:
-  None.
-
---*/
-{
-  UI_MENU_LIST  *UiMenuList;
-
-  while (!IsListEmpty (&gMenuList)) {
-    UiMenuList = CR (gMenuList.ForwardLink, UI_MENU_LIST, MenuLink, UI_MENU_LIST_SIGNATURE);
-    RemoveEntryList (&UiMenuList->MenuLink);
-    gBS->FreePool (UiMenuList);
-  }
-}
-
-VOID
-UiAddMenuListEntry (
-  IN UI_MENU_SELECTION            *Selection
-  )
-/*++
-
-Routine Description:
-  Add one menu entry to the linked lst
-
-Arguments:
-  Selection - Menu selection.
-
-Returns:
-  None.
-
---*/
-{
-  UI_MENU_LIST  *UiMenuList;
-
-  UiMenuList = EfiLibAllocateZeroPool (sizeof (UI_MENU_LIST));
-  ASSERT (UiMenuList != NULL);
-
-  UiMenuList->Signature = UI_MENU_LIST_SIGNATURE;
-  UiMenuList->FormId = Selection->FormId;
-  UiMenuList->QuestionId = Selection->QuestionId;
-
-  InsertHeadList (&gMenuList, &UiMenuList->MenuLink);
-}
-
-VOID
 UiFreeMenu (
   VOID
   )
@@ -299,6 +191,142 @@ Returns:
     }
     gBS->FreePool (MenuOption);
   }
+}
+
+UI_MENU_LIST *
+UiAddMenuList (
+  IN OUT UI_MENU_LIST     *Parent,
+  IN EFI_GUID             *FormSetGuid,
+  IN UINT16               FormId
+  )
+/*++
+
+Routine Description:
+  Create a menu with specified formset GUID and form ID, and add it as a child
+  of the given parent menu.
+
+Arguments:
+  Parent      - The parent of this menu.
+  FormSetGuid - The formset Guid of this menu.
+  FormId      - The form ID of this menu.
+
+Returns:
+  Pointer to the newly added menu
+  NULL - insufficient memory
+
+--*/
+{
+  UI_MENU_LIST  *MenuList;
+
+  MenuList = EfiLibAllocateZeroPool (sizeof (UI_MENU_LIST));
+  if (MenuList == NULL) {
+    return NULL;
+  }
+
+  MenuList->Signature = UI_MENU_LIST_SIGNATURE;
+  InitializeListHead (&MenuList->ChildListHead);
+
+  EfiCopyMem (&MenuList->FormSetGuid, FormSetGuid, sizeof (EFI_GUID));
+  MenuList->FormId = FormId;
+  MenuList->Parent = Parent;
+
+  if (Parent == NULL) {
+    //
+    // The parent is not specified, so this is the root Form of a Formset
+    //
+    InsertTailList (&gMenuList, &MenuList->Link);
+  } else {
+    InsertTailList (&Parent->ChildListHead, &MenuList->Link);
+  }
+
+  return MenuList;
+}
+
+UI_MENU_LIST *
+UiFindChildMenuList (
+  IN UI_MENU_LIST         *Parent,
+  IN UINT16               FormId
+  )
+/*++
+
+Routine Description:
+  Search Menu with given FormId in the parent menu and all its child menu.
+
+Arguments:
+  Parent    - The parent menu.
+  FormId    - The FormId of the menu to search.
+
+Returns:
+  Pointer to the menu with this FormId
+  NULL - menu not found
+
+--*/
+{
+  EFI_LIST_ENTRY  *Link;
+  UI_MENU_LIST    *Child;
+  UI_MENU_LIST    *MenuList;
+
+  if (Parent->FormId == FormId) {
+    return Parent;
+  }
+
+  Link = GetFirstNode (&Parent->ChildListHead);
+  while (!IsNull (&Parent->ChildListHead, Link)) {
+    Child = UI_MENU_LIST_FROM_LINK (Link);
+
+    MenuList = UiFindChildMenuList (Child, FormId);
+    if (MenuList != NULL) {
+      return MenuList;
+    }
+
+    Link = GetNextNode (&Parent->ChildListHead, Link);
+  }
+
+  return NULL;
+}
+
+UI_MENU_LIST *
+UiFindMenuList (
+  IN EFI_GUID             *FormSetGuid,
+  IN UINT16               FormId
+  )
+/*++
+
+Routine Description:
+  Search Menu with given FormSetGuid and FormId in all menu list.
+
+Arguments:
+  FormSetGuid - The formset GUID of the menu to search.
+  FormId      - The FormId of the menu to search.
+
+Returns:
+  Pointer to the menu found
+  NULL - menu not found
+
+--*/
+{
+  EFI_LIST_ENTRY  *Link;
+  UI_MENU_LIST    *MenuList;
+  UI_MENU_LIST    *Child;
+
+  Link = GetFirstNode (&gMenuList);
+  while (!IsNull (&gMenuList, Link)) {
+    MenuList = UI_MENU_LIST_FROM_LINK (Link);
+
+    if (EfiCompareGuid (FormSetGuid, &MenuList->FormSetGuid)) {
+      //
+      // This is the formset we are looking for, find the form in this formset
+      //
+      Child = UiFindChildMenuList (MenuList, FormId);
+      if (Child != NULL) {
+        return Child;
+      }
+    }
+
+    Link = GetNextNode (&gMenuList, Link);
+  }
+
+  return NULL;
 }
 
 VOID
@@ -355,9 +383,11 @@ Returns:
   EFI_HII_CONFIG_ACCESS_PROTOCOL  *ConfigAccess;
   EFI_HII_VALUE                   *HiiValue;
   EFI_BROWSER_ACTION_REQUEST      ActionRequest;
+  BOOLEAN                         ValueChanged;
 
   if (gMenuRefreshHead != NULL) {
 
+    ValueChanged = FALSE;
     MenuRefreshEntry = gMenuRefreshHead;
 
     //
@@ -440,6 +470,13 @@ Returns:
         }
       }
 
+      if ((Question->Operand != EFI_IFR_DATE_OP) && (Question->Operand != EFI_IFR_TIME_OP)) {
+        //
+        // Ignore the change for EFI_IFR_DATE and EFI_IFR_TIME
+        //
+        ValueChanged = TRUE;
+      }
+
       MenuRefreshEntry = MenuRefreshEntry->Next;
 
     } while (MenuRefreshEntry != NULL);
@@ -450,6 +487,14 @@ Returns:
       //
       mHiiPackageListUpdated = FALSE;
       Selection->Action = UI_ACTION_REFRESH_FORMSET;
+      return EFI_SUCCESS;
+    }
+
+    if (ValueChanged) {
+      //
+      // Question's value may be changed, need refresh the Form
+      //
+      Selection->Action = UI_ACTION_REFRESH_FORM;
       return EFI_SUCCESS;
     }
   }
@@ -560,7 +605,7 @@ Returns:
   return Status;
 }
 
-VOID
+UI_MENU_OPTION *
 UiAddMenuOption (
   IN CHAR16                  *String,
   IN EFI_HII_HANDLE          Handle,
@@ -590,6 +635,7 @@ Returns:
   UINTN           Count;
 
   Count = 1;
+  MenuOption = NULL;
 
   if (Statement->Operand == EFI_IFR_DATE_OP || Statement->Operand == EFI_IFR_TIME_OP) {
     //
@@ -634,6 +680,26 @@ Returns:
       MenuOption->GrayOut = Statement->GrayOutExpression->Result.Value.b;
     }
 
+    switch (Statement->Operand) {
+    case EFI_IFR_ORDERED_LIST_OP:
+    case EFI_IFR_ONE_OF_OP:
+    case EFI_IFR_NUMERIC_OP:
+    case EFI_IFR_TIME_OP:
+    case EFI_IFR_DATE_OP:
+    case EFI_IFR_CHECKBOX_OP:
+    case EFI_IFR_PASSWORD_OP:
+    case EFI_IFR_STRING_OP:
+      //
+      // User could change the value of these items
+      //
+      MenuOption->IsQuestion = TRUE;
+      break;
+
+    default:
+      MenuOption->IsQuestion = FALSE;
+      break;
+    }
+
     if ((Statement->ValueExpression != NULL) ||
         (Statement->QuestionFlags & EFI_IFR_FLAG_READ_ONLY)) {
       MenuOption->ReadOnly = TRUE;
@@ -641,6 +707,8 @@ Returns:
 
     InsertTailList (&Menu, &MenuOption->Link);
   }
+
+  return MenuOption;
 }
 
 EFI_STATUS
@@ -693,6 +761,7 @@ Returns:
   UINTN         CurrentAttribute;
   UINTN         DimensionsWidth;
   UINTN         DimensionsHeight;
+  BOOLEAN       CursorVisible;
 
   DimensionsWidth   = gScreenDimensions.RightColumn - gScreenDimensions.LeftColumn;
   DimensionsHeight  = gScreenDimensions.BottomRow - gScreenDimensions.TopRow;
@@ -725,6 +794,7 @@ Returns:
   //
   // Disable cursor
   //
+  CursorVisible = gST->ConOut->Mode->CursorVisible;
   gST->ConOut->EnableCursor (gST->ConOut, FALSE);
 
   LargestString = (GetStringWidth (String) / 2);
@@ -779,7 +849,7 @@ Returns:
           gBS->FreePool (TempString);
           gBS->FreePool (BufferedString);
           gST->ConOut->SetAttribute (gST->ConOut, CurrentAttribute);
-          gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+          gST->ConOut->EnableCursor (gST->ConOut, CursorVisible);
           return EFI_DEVICE_ERROR;
 
         default:
@@ -793,7 +863,7 @@ Returns:
         gBS->FreePool (TempString);
         gBS->FreePool (BufferedString);
         gST->ConOut->SetAttribute (gST->ConOut, CurrentAttribute);
-        gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+        gST->ConOut->EnableCursor (gST->ConOut, CursorVisible);
         return EFI_SUCCESS;
         break;
 
@@ -847,7 +917,7 @@ Returns:
   }
 
   gST->ConOut->SetAttribute (gST->ConOut, CurrentAttribute);
-  gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+  gST->ConOut->EnableCursor (gST->ConOut, CursorVisible);
   return EFI_SUCCESS;
 }
 
@@ -1009,7 +1079,7 @@ Returns:
     break;
 
   case NV_UPDATE_REQUIRED:
-    if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
+    if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) == 0) {
       if (State) {
         gST->ConOut->SetAttribute (gST->ConOut, INFO_TEXT);
         PrintStringAt (
@@ -1305,7 +1375,7 @@ Returns:
 --*/
 {
   if ((MenuOption->ThisTag->Operand == EFI_IFR_SUBTITLE_OP) ||
-      MenuOption->GrayOut || MenuOption->ReadOnly) {
+      MenuOption->GrayOut) {
     return FALSE;
   } else {
     return TRUE;
@@ -1553,6 +1623,8 @@ Returns:
   UINT16                          DefaultId;
   EFI_DEVICE_PATH_PROTOCOL        *DevicePath;
   FORM_BROWSER_STATEMENT          *Statement;
+  UI_MENU_LIST                    *CurrentMenu;
+  UI_MENU_LIST                    *MenuList;
 
   EfiCopyMem (&LocalScreen, &gScreenDimensions, sizeof (EFI_SCREEN_DESCRIPTOR));
 
@@ -1577,7 +1649,7 @@ Returns:
 
   EfiZeroMem (&Key, sizeof (EFI_INPUT_KEY));
 
-  if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
+  if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) != 0) {
     TopRow  = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
     Row     = LocalScreen.TopRow + FRONT_PAGE_HEADER_HEIGHT + SCROLL_ARROW_HEIGHT;
   } else {
@@ -1597,6 +1669,25 @@ Returns:
   TopOfScreen = Menu.ForwardLink;
   Repaint     = TRUE;
   MenuOption  = NULL;
+
+  //
+  // Find current Menu
+  //
+  CurrentMenu = UiFindMenuList (&Selection->FormSetGuid, Selection->FormId);
+  if (CurrentMenu == NULL) {
+    //
+    // Current menu not found, add it to the menu tree
+    //
+    CurrentMenu = UiAddMenuList (NULL, &Selection->FormSetGuid, Selection->FormId);
+  }
+  ASSERT (CurrentMenu != NULL);
+
+  if (Selection->QuestionId == 0) {
+    //
+    // Highlight not specified, fetch it from cached menu
+    //
+    Selection->QuestionId = CurrentMenu->QuestionId;
+  }
 
   //
   // Get user's selection
@@ -1965,7 +2056,7 @@ Returns:
           gST->ConOut->SetCursorPosition (gST->ConOut, MenuOption->Col, MenuOption->Row);
           ProcessOptions (Selection, MenuOption, FALSE, &OptionString);
           gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
-          if (OptionString != NULL) {
+          if ((OptionString != NULL) && (!MenuOption->ReadOnly)) {
             if ((MenuOption->ThisTag->Operand == EFI_IFR_DATE_OP) ||
                 (MenuOption->ThisTag->Operand == EFI_IFR_TIME_OP)
                ) {
@@ -2051,6 +2142,10 @@ Returns:
         //
         Statement = MenuOption->ThisTag;
         Selection->Statement = Statement;
+        //
+        // Record highlight for current menu
+        //
+        CurrentMenu->QuestionId = Statement->QuestionId;
 
         //
         // Set reverse attribute
@@ -2073,7 +2168,7 @@ Returns:
         }
 
         ProcessOptions (Selection, MenuOption, FALSE, &OptionString);
-        if (OptionString != NULL) {
+        if ((OptionString != NULL) && (!MenuOption->ReadOnly)) {
           if (Statement->Operand == EFI_IFR_DATE_OP || Statement->Operand == EFI_IFR_TIME_OP) {
             //
             // If leading spaces on OptionString - remove the spaces
@@ -2134,7 +2229,7 @@ Returns:
           }
         }
 
-        UpdateKeyHelp (MenuOption, FALSE);
+        UpdateKeyHelp (Selection, MenuOption, FALSE);
 
         //
         // Clear reverse attribute
@@ -2206,24 +2301,16 @@ Returns:
         //
         // IFR is updated in Callback of refresh opcode, re-parse it
         //
-        ControlFlag = CfUiReset;
         Selection->Statement = NULL;
-        break;
+        return EFI_SUCCESS;
       }
 
       Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
       //
-      // if we encounter error, continue to read another key in.
+      // If we encounter error, continue to read another key in.
       //
       if (EFI_ERROR (Status)) {
         ControlFlag = CfReadKey;
-        break;
-      }
-
-      if (IsListEmpty (&Menu) && Key.UnicodeChar != CHAR_NULL) {
-        //
-        // If the screen has no menu items, and the user didn't select UiPrevious, or UiReset
-        //
         break;
       }
 
@@ -2271,7 +2358,7 @@ Returns:
         break;
 
       case ' ':
-        if (gClassOfVfr != FORMSET_CLASS_FRONT_PAGE) {
+        if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) == 0) {
           if (MenuOption->ThisTag->Operand == EFI_IFR_CHECKBOX_OP && !MenuOption->GrayOut) {
             ScreenOperation = UiSelect;
           }
@@ -2279,9 +2366,7 @@ Returns:
         break;
 
       case CHAR_NULL:
-        if (((Key.ScanCode == SCAN_F1) && ((gFunctionKeySetting & FUNCTION_ONE) != FUNCTION_ONE)) ||
-            ((Key.ScanCode == SCAN_F2) && ((gFunctionKeySetting & FUNCTION_TWO) != FUNCTION_TWO)) ||
-            ((Key.ScanCode == SCAN_F9) && ((gFunctionKeySetting & FUNCTION_NINE) != FUNCTION_NINE)) ||
+        if (((Key.ScanCode == SCAN_F9) && ((gFunctionKeySetting & FUNCTION_NINE) != FUNCTION_NINE)) ||
             ((Key.ScanCode == SCAN_F10) && ((gFunctionKeySetting & FUNCTION_TEN) != FUNCTION_TEN))
             ) {
           //
@@ -2306,9 +2391,9 @@ Returns:
       break;
 
     case CfScreenOperation:
-      if (ScreenOperation != UiPrevious && ScreenOperation != UiReset) {
+      if (ScreenOperation != UiReset) {
         //
-        // If the screen has no menu items, and the user didn't select UiPrevious, or UiReset
+        // If the screen has no menu items, and the user didn't select UiReset
         // ignore the selection and go back to reading keys.
         //
         if (IsListEmpty (&Menu)) {
@@ -2329,12 +2414,6 @@ Returns:
           ControlFlag = CfPrepareToReadKey;
           break;
         }
-      } else if (ScreenOperation == UiReset) {
-        //
-        // Press ESC to exit FormSet
-        //
-        Selection->Action = UI_ACTION_EXIT;
-        Selection->Statement = NULL;
       }
 
       for (Index = 0;
@@ -2348,26 +2427,6 @@ Returns:
       }
       break;
 
-    case CfUiPrevious:
-      ControlFlag = CfCheckSelection;
-
-      if (IsListEmpty (&gMenuList)) {
-        Selection->Action = UI_ACTION_NONE;
-        if (IsListEmpty (&Menu)) {
-          ControlFlag = CfReadKey;
-        }
-        break;
-      }
-
-      //
-      // Remove the Cached page entry
-      //
-      UiRemoveMenuListEntry (Selection);
-
-      Selection->Action = UI_ACTION_REFRESH_FORM;
-      Selection->Statement = NULL;
-      break;
-
     case CfUiSelect:
       ControlFlag = CfCheckSelection;
 
@@ -2375,7 +2434,8 @@ Returns:
       if ((Statement->Operand == EFI_IFR_TEXT_OP) ||
           (Statement->Operand == EFI_IFR_DATE_OP) ||
           (Statement->Operand == EFI_IFR_TIME_OP) ||
-          (Statement->Operand == EFI_IFR_NUMERIC_OP && Statement->Step != 0)) {
+          (Statement->Operand == EFI_IFR_NUMERIC_OP && Statement->Step != 0) ||
+          MenuOption->ReadOnly) {
         break;
       }
 
@@ -2390,7 +2450,7 @@ Returns:
           //
           // Goto another Hii Package list
           //
-          ControlFlag = CfUiReset;
+          ControlFlag = CfCheckSelection;
           Selection->Action = UI_ACTION_REFRESH_FORMSET;
 
           StringPtr = GetToken (Statement->RefDevicePath, Selection->FormSet->HiiHandle);
@@ -2426,7 +2486,7 @@ Returns:
           //
           // Goto another Formset, check for uncommitted data
           //
-          ControlFlag = CfUiReset;
+          ControlFlag = CfCheckSelection;
           Selection->Action = UI_ACTION_REFRESH_FORMSET;
 
           EfiCopyMem (&Selection->FormSetGuid, &Statement->RefFormSetId, sizeof (EFI_GUID));
@@ -2439,9 +2499,12 @@ Returns:
           Selection->Action = UI_ACTION_REFRESH_FORM;
 
           //
-          // Link current form so that we can always go back when someone hits the UiPrevious
+          // Link current form so that we can always go back when someone hits the ESC
           //
-          UiAddMenuListEntry (Selection);
+          MenuList = UiFindMenuList (&Selection->FormSetGuid, Statement->RefFormId);
+          if (MenuList == NULL) {
+            MenuList = UiAddMenuList (CurrentMenu, &Selection->FormSetGuid, Statement->RefFormId);
+          }
 
           Selection->FormId = Statement->RefFormId;
           Selection->QuestionId = Statement->RefQuestionId;
@@ -2489,13 +2552,13 @@ Returns:
         //
         // Editable Questions: oneof, ordered list, checkbox, numeric, string, password
         //
-        UpdateKeyHelp (MenuOption, TRUE);
+        UpdateKeyHelp (Selection, MenuOption, TRUE);
         Status = ProcessOptions (Selection, MenuOption, TRUE, &OptionString);
 
         if (EFI_ERROR (Status)) {
           Repaint = TRUE;
           NewLine = TRUE;
-          UpdateKeyHelp (MenuOption, FALSE);
+          UpdateKeyHelp (Selection, MenuOption, FALSE);
         } else {
           Selection->Action = UI_ACTION_REFRESH_FORM;
         }
@@ -2507,21 +2570,44 @@ Returns:
 
     case CfUiReset:
       //
-      // We are going to leave current FormSet, so check uncommited data in this FormSet
+      // We come here when someone press ESC
       //
       ControlFlag = CfCheckSelection;
 
-      if (gClassOfVfr == FORMSET_CLASS_FRONT_PAGE) {
+      if (CurrentMenu->Parent != NULL) {
         //
-        // There is no parent menu for FrontPage
+        // we have a parent, so go to the parent menu
+        //
+        if (EfiCompareGuid (&CurrentMenu->FormSetGuid, &CurrentMenu->Parent->FormSetGuid)) {
+          //
+          // The parent menu and current menu are in the same formset
+          //
+          Selection->Action = UI_ACTION_REFRESH_FORM;
+        } else {
+          Selection->Action = UI_ACTION_REFRESH_FORMSET;
+        }
+        Selection->Statement = NULL;
+
+        Selection->FormId = CurrentMenu->Parent->FormId;
+        Selection->QuestionId = CurrentMenu->Parent->QuestionId;
+
+        //
+        // Clear highlight record for this menu
+        //
+        CurrentMenu->QuestionId = 0;
+        break;
+      }
+
+      if ((gClassOfVfr & FORMSET_CLASS_FRONT_PAGE) != 0) {
+        //
+        // We never exit FrontPage, so skip the ESC
         //
         Selection->Action = UI_ACTION_NONE;
-        Selection->Statement = MenuOption->ThisTag;
         break;
       }
 
       //
-      // If NV flag is up, prompt user
+      // We are going to leave current FormSet, so check uncommited data in this FormSet
       //
       if (gNvUpdateRequired) {
         Status      = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
@@ -2529,8 +2615,11 @@ Returns:
         YesResponse = gYesResponse[0];
         NoResponse  = gNoResponse[0];
 
+        //
+        // If NV flag is up, prompt user
+        //
         do {
-          CreateDialog (3, TRUE, 0, NULL, &Key, gEmptyString, gAreYouSure, gEmptyString);
+          CreateDialog (4, TRUE, 0, NULL, &Key, gEmptyString, gSaveChanges, gAreYouSure, gEmptyString);
         } while
         (
           (Key.ScanCode != SCAN_ESC) &&
@@ -2538,24 +2627,29 @@ Returns:
           ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) != (YesResponse | UPPER_LOWER_CASE_OFFSET))
         );
 
-        //
-        // If the user hits the YesResponse key
-        //
-        if ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) == (YesResponse | UPPER_LOWER_CASE_OFFSET)) {
-        } else {
+        if (Key.ScanCode == SCAN_ESC) {
+          //
+          // User hits the ESC key
+          //
           Repaint = TRUE;
           NewLine = TRUE;
 
           Selection->Action = UI_ACTION_NONE;
           break;
         }
+
+        //
+        // If the user hits the YesResponse key
+        //
+        if ((Key.UnicodeChar | UPPER_LOWER_CASE_OFFSET) == (YesResponse | UPPER_LOWER_CASE_OFFSET)) {
+          Status = SubmitForm (Selection->FormSet, Selection->Form);
+        }
       }
 
-      gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
-      gST->ConOut->EnableCursor (gST->ConOut, TRUE);
+      Selection->Action = UI_ACTION_EXIT;
+      Selection->Statement = NULL;
+      CurrentMenu->QuestionId = 0;
 
-      UiFreeMenuList ();
-      gST->ConOut->ClearScreen (gST->ConOut);
       return EFI_SUCCESS;
 
     case CfUiLeft:
@@ -2940,6 +3034,12 @@ Returns:
 
     case CfUiDefault:
       ControlFlag = CfCheckSelection;
+      if (!Selection->FormEditable) {
+        //
+        // This Form is not editable, ignore the F9 (reset to default)
+        //
+        break;
+      }
 
       Status = ExtractFormDefault (Selection->FormSet, Selection->Form, DefaultId);
 
@@ -2962,9 +3062,6 @@ Returns:
       UiFreeRefreshList ();
 
       gST->ConOut->SetAttribute (gST->ConOut, EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_BLACK));
-      gST->ConOut->SetCursorPosition (gST->ConOut, 0, Row + 4);
-      gST->ConOut->EnableCursor (gST->ConOut, TRUE);
-      gST->ConOut->OutputString (gST->ConOut, L"\n");
 
       return EFI_SUCCESS;
 
