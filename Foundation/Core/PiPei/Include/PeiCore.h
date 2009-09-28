@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -89,7 +89,7 @@ typedef struct {
 
 
 #define PEI_CORE_MAX_FV_SUPPORTED   4
-#define PEI_CORE_MAX_PEIM_PER_FV    32
+#define PEI_CORE_MAX_PEIM_PER_FV    64
 
 //
 // PEI_CORE_FV_HANDE.PeimState
@@ -877,8 +877,8 @@ EFIAPI
 PeiFfsFindNextFile (
   IN CONST  EFI_PEI_SERVICES        **PeiServices,
   IN EFI_FV_FILETYPE                SearchType,
-  IN CONST EFI_PEI_FV_HANDLE        *FwVolHeader,
-  IN OUT EFI_PEI_FILE_HANDLE        **FileHandle
+  IN CONST EFI_PEI_FV_HANDLE        FvHandle,
+  IN OUT EFI_PEI_FILE_HANDLE        *FileHandle
   )
 /*++
 
@@ -889,7 +889,7 @@ Routine Description:
 Arguments:
   PeiServices  - Pointer to the PEI Core Services Table.
   SearchType   - Filter to find only file of this type.
-  FwVolHeader  - Pointer to the current FV to search.
+  FvHandle     - Pointer to the current FV to search.  
   FileHandle   - Pointer to the file matching SearchType in FwVolHeader.
                 - NULL if file not found
 Returns:
@@ -903,7 +903,7 @@ EFIAPI
 PeiFfsFindSectionData (
   IN CONST  EFI_PEI_SERVICES    **PeiServices,
   IN EFI_SECTION_TYPE           SectionType,
-  IN EFI_PEI_FILE_HANDLE        *FileHandle,
+  IN EFI_PEI_FILE_HANDLE        FileHandle,
   OUT VOID                      **SectionData
   )
 /*++
@@ -914,8 +914,8 @@ Routine Description:
 
 Arguments:
     PeiServices - Pointer to the PEI Core Services Table.
-    SearchType - Filter to find only sections of this type.
-    FfsFileHeader  - Pointer to the current file to search.
+    SearchType  - Filter to find only sections of this type.
+    FileHandle  - Pointer to the current file to search.
     SectionData - Pointer to the Section matching SectionType in FfsFileHeader.
                 - NULL if section not found
 
@@ -1295,7 +1295,7 @@ Returns:
 EFI_STATUS
 EFIAPI 
 PeiFfsGetVolumeInfo (
-  IN EFI_PEI_FV_HANDLE  *VolumeHandle,
+  IN EFI_PEI_FV_HANDLE  VolumeHandle,
   OUT EFI_FV_INFO       *VolumeInfo
   )
 /*++

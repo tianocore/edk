@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -164,7 +164,7 @@ PeiFindFileEx (
   IN  CONST EFI_GUID                 *FileName,   OPTIONAL
   IN        EFI_FV_FILETYPE          SearchType,
   IN OUT    EFI_PEI_FILE_HANDLE      *FileHandle,
-  IN OUT    EFI_PEI_FV_HANDLE        *AprioriFile  OPTIONAL
+  IN OUT    EFI_PEI_FILE_HANDLE      *AprioriFile  OPTIONAL
   )
 /*++
 
@@ -449,8 +449,8 @@ EFIAPI
 PeiFfsFindNextFile (
   IN CONST  EFI_PEI_SERVICES        **PeiServices,
   IN EFI_FV_FILETYPE                SearchType,
-  IN CONST EFI_PEI_FV_HANDLE        *FwVolHeader,
-  IN OUT EFI_PEI_FILE_HANDLE        **FileHandle
+  IN CONST EFI_PEI_FV_HANDLE        FvHandle,
+  IN OUT EFI_PEI_FILE_HANDLE        *FileHandle
   )
 /*++
 
@@ -461,7 +461,7 @@ Routine Description:
 Arguments:
   PeiServices  - Pointer to the PEI Core Services Table.
   SearchType   - Filter to find only file of this type.
-  FwVolHeader  - Pointer to the current FV to search.
+  FvHandle     - Pointer to the current FV to search.
   FileHandle   - Pointer to the file matching SearchType in FwVolHeader.
                 - NULL if file not found
 Returns:
@@ -469,7 +469,7 @@ Returns:
   
 --*/
 {
-  return PeiFindFileEx (*FwVolHeader, NULL, SearchType, *FileHandle, NULL);
+  return PeiFindFileEx (FvHandle, NULL, SearchType, FileHandle, NULL);
 }
 
 EFI_STATUS
@@ -581,7 +581,7 @@ EFIAPI
 PeiFfsFindSectionData (
   IN CONST  EFI_PEI_SERVICES    **PeiServices,
   IN EFI_SECTION_TYPE           SectionType,
-  IN EFI_PEI_FILE_HANDLE        *FileHandle,
+  IN EFI_PEI_FILE_HANDLE        FileHandle,
   OUT VOID                      **SectionData
   )
 /*++
@@ -610,7 +610,7 @@ Returns:
   UINT32                                  AuthenticationStatus;
 
 
-  FfsFileHeader = (EFI_FFS_FILE_HEADER *)(*FileHandle);
+  FfsFileHeader = (EFI_FFS_FILE_HEADER *)FileHandle;
 
   //
   // Size is 24 bits wide so mask upper 8 bits. 
@@ -738,7 +738,7 @@ Returns:
 EFI_STATUS
 EFIAPI 
 PeiFfsGetVolumeInfo (
-  IN EFI_PEI_FV_HANDLE  *VolumeHandle,
+  IN EFI_PEI_FV_HANDLE  VolumeHandle,
   OUT EFI_FV_INFO       *VolumeInfo
   )
 /*++
@@ -763,7 +763,7 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(*VolumeHandle);
+  FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *)VolumeHandle;
   VolumeInfo->FvAttributes = FwVolHeader->Attributes;
   VolumeInfo->FvStart = FwVolHeader;
   VolumeInfo->FvSize = FwVolHeader->FvLength;

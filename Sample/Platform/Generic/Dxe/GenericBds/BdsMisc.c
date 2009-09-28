@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -1466,9 +1466,11 @@ Returns:
     Previous = PreviousMemoryTypeInformation[Index].NumberOfPages;
 
     //
-    // Write next varible to 125% * current and Inconsistent Memory Reserved across bootings may lead to S4 fail
+    // Write next varible to 125% * current when current size is larger than previous (increase)
+    // or smaller than previous/2 (shrink).
+    // Inconsistent Memory Reserved across bootings may lead to S4 fail.
     //
-    if (Current > Previous) {
+    if (Current > Previous || Current < (Previous >> 1)) {
       Next = Current + (Current >> 2);
     } else {
       Next = Previous;

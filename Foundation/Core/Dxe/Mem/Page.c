@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -27,16 +27,16 @@ Revision History
 #define EFI_DEFAULT_PAGE_ALLOCATION_ALIGNMENT  (EFI_PAGE_SIZE)
 
 //
-// Entry for tracking the memory regions for each memory type to help cooalese like memory types
+// Entry for tracking the memory regions for each memory type to help coalesce like memory types
 //
 typedef struct {
-  EFI_PHYSICAL_ADDRESS  BaseAddress;
-  EFI_PHYSICAL_ADDRESS  MaximumAddress;
-  UINT64                CurrentNumberOfPages;
-  UINT64                NumberOfPages;
-  UINTN                 InformationIndex;
-  BOOLEAN               Special;
-  BOOLEAN               Runtime;
+  EFI_PHYSICAL_ADDRESS  BaseAddress;           // Base address of the coalesce bin if NumberOfPages is not 0, or 0 otherwise
+  EFI_PHYSICAL_ADDRESS  MaximumAddress;        // Top address of the coalesce bin if NumberOfPages is not 0, or the top address below all bin ranges
+  UINT64                CurrentNumberOfPages;  // CurrentNumberOfPages allocated for this memory type
+  UINT64                NumberOfPages;         // Number of pages specified in gMemoryTypeInformation
+  UINTN                 InformationIndex;      // Index into gMemoryTypeInformation
+  BOOLEAN               Special;               // If this type of coalesce bin needs to be filled in memory map
+  BOOLEAN               Runtime;               // If this type is runtime available
 } EFI_MEMORY_TYPE_STAISTICS;
 
 //
@@ -240,6 +240,7 @@ Returns:
         Entry->EndAddress, 
         Entry->Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
         );
+      mMemoryTypeStatistics[EfiConventionalMemory].CurrentNumberOfPages += RShiftU64 ((Entry->EndAddress - Entry->BaseAddress + 1), EFI_PAGE_SHIFT);
       CoreFreeMemoryMapStack ();
       
     }
@@ -302,6 +303,7 @@ Returns:
   CoreAcquireMemoryLock ();
   End = Start + LShiftU64 (NumberOfPages, EFI_PAGE_SHIFT) - 1;
   CoreAddRange (Type, Start, End, Attribute);
+  mMemoryTypeStatistics[Type].CurrentNumberOfPages += NumberOfPages;
   CoreFreeMemoryMapStack ();
   CoreReleaseMemoryLock ();
 
@@ -412,7 +414,6 @@ Returns:
         mMemoryTypeStatistics[Type].InformationIndex = Index;
       }
     }
-    mMemoryTypeStatistics[Type].CurrentNumberOfPages = 0;
     if (mMemoryTypeStatistics[Type].MaximumAddress == EFI_MAX_ADDRESS) {
       mMemoryTypeStatistics[Type].MaximumAddress = mDefaultMaximumAddress;
     }
@@ -738,6 +739,7 @@ Returns:
   UINT64          Attribute;
   EFI_LIST_ENTRY  *Link;
   MEMORY_MAP      *Entry;
+  UINT64          NumberOfRangePages;
 
   Entry = NULL;
   NumberOfBytes = LShiftU64 (NumberOfPages, EFI_PAGE_SHIFT);
@@ -796,27 +798,18 @@ Returns:
     //
     // Update counters for the number of pages allocated to each memory type
     //
+    NumberOfRangePages = RShiftU64 (RangeEnd - Start + 1, EFI_PAGE_SHIFT);
     if (Entry->Type >= 0 && Entry->Type < EfiMaxMemoryType) {
-      if (Start >= mMemoryTypeStatistics[Entry->Type].BaseAddress && 
-          Start <= mMemoryTypeStatistics[Entry->Type].MaximumAddress) {
-        if (NumberOfPages > mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages) {
-          mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages = 0;
-        } else {
-          mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages -= NumberOfPages;
-        }
-      }
+      ASSERT (NumberOfRangePages <= mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages);
+      mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages -= NumberOfRangePages;
+      gMemoryTypeInformation[mMemoryTypeStatistics[Entry->Type].InformationIndex].NumberOfPages = (UINT32)mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages;
     }
 
     if (NewType >= 0 && NewType < EfiMaxMemoryType) {
-      if (Start >= mMemoryTypeStatistics[NewType].BaseAddress && Start <= mMemoryTypeStatistics[NewType].MaximumAddress) {
-        mMemoryTypeStatistics[NewType].CurrentNumberOfPages += NumberOfPages;
-        if (mMemoryTypeStatistics[NewType].CurrentNumberOfPages > 
-            gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages) {
-          gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages = (UINT32)mMemoryTypeStatistics[NewType].CurrentNumberOfPages;
-        }
-      }
+      mMemoryTypeStatistics[NewType].CurrentNumberOfPages += NumberOfRangePages;
+      gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages = (UINT32)mMemoryTypeStatistics[NewType].CurrentNumberOfPages;
     }
-
+    
     //
     // Pull range out of descriptor
     //

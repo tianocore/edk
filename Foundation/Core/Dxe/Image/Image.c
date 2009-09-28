@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -225,6 +225,7 @@ Returns:
   EFI_IMAGE_NT_HEADERS64    *PeHdr;
   EFI_TCG_PLATFORM_PROTOCOL *TcgPlatformProtocol;
   IMAGE_FILE_HANDLE         *FHandle;
+  BOOLEAN                   NeedAllocateAddress;
 #ifdef EFI_LOAD_DRIVER_AT_FIXED_OFFSET
   BOOLEAN OffsetMode;
   STATIC BOOLEAN PrintTopAddress = TRUE;
@@ -319,14 +320,24 @@ Returns:
 #endif
 
     //
-    // If the image relocations have not been stripped, then load at any address. 
-    // Otherwise load at the address at which it was linked.
+    // If the image relocations are stripped, or fixed address/offset feature is valid,
+    // try to load the image to the specified address first.
+    // Otherwise try to load the image at any page if image relocations are available.
     //
-    // Images with preferred load address < 1MB are believed not processed by
-    // PeiRebase and thus will not be loaded at their preferred addresses.
-    //
+    NeedAllocateAddress = FALSE;
+    if (Image->ImageContext.RelocationsStripped) {
+      NeedAllocateAddress = TRUE;
+    }
+#ifdef EFI_LOAD_DRIVER_AT_FIXED_ADDRESS
+    NeedAllocateAddress = TRUE;
+#endif
+#ifdef EFI_LOAD_DRIVER_AT_FIXED_OFFSET
+    if (OffsetMode) {
+      NeedAllocateAddress = TRUE;
+    }
+#endif
     Status = EFI_OUT_OF_RESOURCES;
-    if (Image->ImageContext.ImageAddress >= 0x100000 || Image->ImageContext.RelocationsStripped) {
+    if (NeedAllocateAddress) {
       Status = CoreAllocatePages (
                  AllocateAddress,
                  Image->ImageContext.ImageCodeMemoryType,
@@ -334,9 +345,9 @@ Returns:
                  &Image->ImageContext.ImageAddress
                  );
 #ifdef EFI_LOAD_DRIVER_AT_FIXED_OFFSET
-        if (EFI_ERROR (Status) && OffsetMode) {
-          DEBUG((EFI_D_ERROR, "\nOffset mode load failure!"));
-        }
+      if (EFI_ERROR (Status) && OffsetMode) {
+        DEBUG((EFI_D_ERROR, "\nOffset mode load failure!"));
+      }
 #endif
     }
     if (EFI_ERROR (Status) && !Image->ImageContext.RelocationsStripped) {

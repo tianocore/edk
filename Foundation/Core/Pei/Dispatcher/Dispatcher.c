@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -73,8 +73,8 @@ Returns:
   //
   PEI_DEBUG_CODE (
 
-    UINT32        DebugNotDispatchedBitmap;
-    EFI_GUID      DebugFoundPeimList[32];
+    UINT64        DebugNotDispatchedBitmap;
+    EFI_GUID      DebugFoundPeimList[64];
     UINT8         DebugFoundPeimPoint;
 
   )
@@ -334,7 +334,7 @@ Returns:
     // through all PEIMs again.
     //
     if ((~(DispatchData->DispatchedPeimBitMap) & 
-         ((1 << DispatchData->CurrentPeim)-1)) == 0) {
+         (LShiftU64 (1, DispatchData->CurrentPeim)-1)) == 0) {
       break;
     }
       
@@ -368,7 +368,7 @@ Returns:
     // Get bitmap of Peims that were not dispatched,
     // 
 
-    DebugNotDispatchedBitmap = ((DispatchData->DispatchedPeimBitMap) ^ ((1 << DispatchData->CurrentPeim)-1));
+    DebugNotDispatchedBitmap = ((DispatchData->DispatchedPeimBitMap) ^ (LShiftU64 (1, DispatchData->CurrentPeim)-1));
     //
     // Scan bitmap of Peims not installed and print GUIDS
     //
@@ -381,7 +381,7 @@ Returns:
           );
       }
       DebugFoundPeimPoint++;
-      DebugNotDispatchedBitmap >>= 1;
+      DebugNotDispatchedBitmap = RShiftU64 (DebugNotDispatchedBitmap, 1);
     }
 
   )
@@ -436,7 +436,7 @@ Returns:
 BOOLEAN
 Dispatched (
   IN UINT8  CurrentPeim,
-  IN UINT32 DispatchedPeimBitMap
+  IN UINT64 DispatchedPeimBitMap
   )
 /*++
 
@@ -455,14 +455,14 @@ Returns:
 
 --*/
 {
-  return (BOOLEAN)((DispatchedPeimBitMap & (1 << CurrentPeim)) != 0);
+  return (BOOLEAN)((DispatchedPeimBitMap & LShiftU64 (1, CurrentPeim)) != 0);
 }
 
 VOID 
 SetDispatched ( 
   IN EFI_PEI_SERVICES   **PeiServices,
   IN UINT8              CurrentPeim,
-  OUT UINT32            *DispatchedPeimBitMap
+  OUT UINT64            *DispatchedPeimBitMap
   ) 
 /*++
 
@@ -491,7 +491,7 @@ PEI_DEBUG_CODE (
     ASSERT_PEI_ERROR (PeiServices, EFI_OUT_OF_RESOURCES);
   }
 )
-  *DispatchedPeimBitMap |= (1 << CurrentPeim);
+  *DispatchedPeimBitMap |= LShiftU64 (1, CurrentPeim);
   return;
 }
 

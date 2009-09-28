@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2008, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,6 +32,7 @@ Abstract:
 
 #include EFI_GUID_DEFINITION (FlashMapHob)
 #include EFI_GUID_DEFINITION (Hob)
+#include EFI_GUID_DEFINITION (Capsule)
 
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 STATIC EFI_GUID mUpdateFlashCapsuleGuid = EFI_CAPSULE_GUID;
@@ -420,6 +421,54 @@ Note:
   }
   BdsLockNonUpdatableFlash ();
 
+  return Status;
+}
+
+EFI_STATUS
+AllocateCapsuleLongModeBuffer (
+  VOID
+  )
+/*++
+
+Routine Description:
+  Allocate long mode buffer for Capsule Coalesce in PEI phase when
+  PEI runs in 32-bit mode while OS runtime runs in 64-bit mode. This
+  buffer will be used by 32-bit to 64-bit thunk.
+  The buffer base and length will be saved in a variable so that PEI
+  code knows where it is.
+
+Returns:
+  EFI_SUCCESS     - Buffer allocation and variable set successfully
+  Other           - Failed for some reason
+
+--*/
+{
+  EFI_STATUS                   Status;
+  EFI_CAPSULE_LONG_MODE_BUFFER LongModeBuffer;
+  UINTN                        NumPages;
+
+  NumPages              = 32;
+  LongModeBuffer.Base   = 0xFFFFFFFF;
+  LongModeBuffer.Length = EFI_PAGES_TO_SIZE (NumPages);
+  Status = gBS->AllocatePages (
+                 AllocateMaxAddress,
+                 EfiReservedMemoryType,
+                 NumPages,
+                 &LongModeBuffer.Base
+                 );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  Status = gRT->SetVariable (
+                  EFI_CAPSULE_LONG_MODE_BUFFER_NAME,
+                  &gEfiCapsuleVendorGuid,
+                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                  sizeof (EFI_CAPSULE_LONG_MODE_BUFFER),
+                  &LongModeBuffer
+                  );
+  if (EFI_ERROR (Status)) {
+    gBS->FreePages (LongModeBuffer.Base, NumPages);
+  }
   return Status;
 }
 

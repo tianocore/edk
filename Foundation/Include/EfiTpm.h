@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2008, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -30,7 +30,7 @@ Abstract:
 // The start of TPM return codes
 //
 #define TPM_BASE                    (EFI_MAX_BIT + (EFI_MAX_BIT >> 1))
-#include "IndustryStandard/Tpm12.h"
+#include "Tpm12.h"
 
 //
 // Standard event types

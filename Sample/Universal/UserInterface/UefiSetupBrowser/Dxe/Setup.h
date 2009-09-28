@@ -451,6 +451,64 @@ typedef struct {
   EFI_LIST_ENTRY                  FormListHead;         // Form list (FORM_BROWSER_FORM)
 } FORM_BROWSER_FORMSET;
 
+#define BROWSER_CONTEXT_SIGNATURE  EFI_SIGNATURE_32 ('B', 'C', 'T', 'X')
+
+typedef struct {
+  UINTN                 Signature;
+  EFI_LIST_ENTRY        Link;
+
+  //
+  // Globals defined in Setup.c
+  //
+  BANNER_DATA           *BannerData;
+  UINTN                 ClassOfVfr;
+  UINTN                 FunctionKeySetting;
+  BOOLEAN               ResetRequired;
+  BOOLEAN               NvUpdateRequired;
+  UINT16                Direction;
+  EFI_SCREEN_DESCRIPTOR ScreenDimensions;
+  CHAR16                *FunctionNineString;
+  CHAR16                *FunctionTenString;
+  CHAR16                *EnterString;
+  CHAR16                *EnterCommitString;
+  CHAR16                *EnterEscapeString;
+  CHAR16                *EscapeString;
+  CHAR16                *SaveFailed;
+  CHAR16                *MoveHighlight;
+  CHAR16                *MakeSelection;
+  CHAR16                *DecNumericInput;
+  CHAR16                *HexNumericInput;
+  CHAR16                *ToggleCheckBox;
+  CHAR16                *PromptForData;
+  CHAR16                *PromptForPassword;
+  CHAR16                *PromptForNewPassword;
+  CHAR16                *ConfirmPassword;
+  CHAR16                *ConfirmError;
+  CHAR16                *PassowordInvalid;
+  CHAR16                *PressEnter;
+  CHAR16                *EmptyString;
+  CHAR16                *AreYouSure;
+  CHAR16                *YesResponse;
+  CHAR16                *NoResponse;
+  CHAR16                *MiniString;
+  CHAR16                *PlusString;
+  CHAR16                *MinusString;
+  CHAR16                *AdjustNumber;
+  CHAR16                *SaveChanges;
+  CHAR16                *OptionMismatch;
+  CHAR16                PromptBlockWidth;
+  CHAR16                OptionBlockWidth;
+  CHAR16                HelpBlockWidth;
+  FORM_BROWSER_FORMSET  *OldFormSet;
+
+  //
+  // Globals defined in Ui.c
+  //
+  EFI_LIST_ENTRY        Menu;
+  VOID                 *MenuRefreshHead;
+} BROWSER_CONTEXT;
+
+#define BROWSER_CONTEXT_FROM_LINK(a)  CR (a, BROWSER_CONTEXT, Link, BROWSER_CONTEXT_SIGNATURE)
 
 extern EFI_HII_DATABASE_PROTOCOL         *mHiiDatabase;
 extern EFI_HII_STRING_PROTOCOL           *mHiiString;
@@ -465,8 +523,6 @@ extern BOOLEAN               gNvUpdateRequired;
 extern EFI_HII_HANDLE        gHiiHandle;
 extern UINT16                gDirection;
 extern EFI_SCREEN_DESCRIPTOR gScreenDimensions;
-extern BOOLEAN               gUpArrow;
-extern BOOLEAN               gDownArrow;
 
 //
 // Browser Global Strings
@@ -744,6 +800,16 @@ GetIfrBinaryData (
   OUT UINT8            **BinaryData
   )
 ;
+
+VOID
+SaveBrowserContext (
+  VOID
+  );
+
+VOID
+RestoreBrowserContext (
+  VOID
+  );
 
 EFI_STATUS
 EFIAPI

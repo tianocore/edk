@@ -1604,6 +1604,8 @@ Returns:
   BOOLEAN                         NewLine;
   BOOLEAN                         Repaint;
   BOOLEAN                         SavedValue;
+  BOOLEAN                         UpArrow;
+  BOOLEAN                         DownArrow;
   EFI_STATUS                      Status;
   EFI_INPUT_KEY                   Key;
   EFI_LIST_ENTRY                  *Link;
@@ -1637,8 +1639,8 @@ Returns:
   DefaultId           = 0;
 
   OutputString        = NULL;
-  gUpArrow            = FALSE;
-  gDownArrow          = FALSE;
+  UpArrow            = FALSE;
+  DownArrow          = FALSE;
   SkipValue           = 0;
   OldSkipValue        = 0;
   MenuRefreshEntry    = gMenuRefreshHead;
@@ -1724,8 +1726,8 @@ Returns:
         //
         // Display menu
         //
-        gDownArrow      = FALSE;
-        gUpArrow        = FALSE;
+        DownArrow      = FALSE;
+        UpArrow        = FALSE;
         Row             = TopRow;
 
         Temp            = SkipValue;
@@ -1948,7 +1950,7 @@ Returns:
 
           if (Row > BottomRow) {
             if (!ValueIsScroll (FALSE, Link)) {
-              gDownArrow = TRUE;
+              DownArrow = TRUE;
             }
 
             Row = BottomRow + 1;
@@ -1957,10 +1959,10 @@ Returns:
         }
 
         if (!ValueIsScroll (TRUE, TopOfScreen)) {
-          gUpArrow = TRUE;
+          UpArrow = TRUE;
         }
 
-        if (gUpArrow) {
+        if (UpArrow) {
           gST->ConOut->SetAttribute (gST->ConOut, ARROW_TEXT | ARROW_BACKGROUND);
           PrintAt (
             LocalScreen.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + 1,
@@ -1971,7 +1973,7 @@ Returns:
           gST->ConOut->SetAttribute (gST->ConOut, FIELD_TEXT | FIELD_BACKGROUND);
         }
 
-        if (gDownArrow) {
+        if (DownArrow) {
           gST->ConOut->SetAttribute (gST->ConOut, ARROW_TEXT | ARROW_BACKGROUND);
           PrintAt (
             LocalScreen.LeftColumn + gPromptBlockWidth + gOptionBlockWidth + 1,

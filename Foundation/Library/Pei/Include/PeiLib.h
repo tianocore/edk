@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -141,8 +141,8 @@ EFI_STATUS
 EFIAPI
 PeiLibFfsFindNextFile (
   IN EFI_FV_FILETYPE            SearchType,
-  IN EFI_PEI_FV_HANDLE          FwVolHeader,
-  IN OUT EFI_PEI_FILE_HANDLE    *FileHeader
+  IN EFI_PEI_FV_HANDLE          FvHandle,
+  IN OUT EFI_PEI_FILE_HANDLE    *FileHandle
   )
 /*++
 
@@ -153,7 +153,7 @@ Routine Description:
 Arguments:
 
   SearchType   - Filter to find only file of this type.
-  FwVolHeader  - Pointer to the current FV to search.
+  FvHandle     - Pointer to the current FV to search.
   FileHandle   - Pointer to the file matching SearchType in FwVolHeader.
                 - NULL if file not found
 
@@ -217,7 +217,7 @@ Returns:
 EFI_STATUS
 EFIAPI
 PeiLibFfsGetVolumeInfo (
-  IN EFI_PEI_FV_HANDLE  *VolumeHandle,
+  IN EFI_PEI_FV_HANDLE  VolumeHandle,
   OUT EFI_FV_INFO       *VolumeInfo
   )
 /*++

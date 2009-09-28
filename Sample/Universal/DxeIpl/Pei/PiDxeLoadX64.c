@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -47,16 +47,6 @@ EFI_GUID                          mPeiEfiTianoDecompressProtocolGuid = EFI_TIANO
 // Interface and GUID for the user customized Decompression APIs shared between PEI and DXE
 //
 EFI_GUID                          mPeiEfiCustomizedDecompressProtocolGuid = EFI_CUSTOMIZED_DECOMPRESS_PROTOCOL_GUID;
-
-//
-// Interface and GUID for the Instruction Cache Flushing APIs shared between PEI and DXE
-//
-EFI_GUID                          mPeiEfiPeiFlushInstructionCacheGuid = EFI_PEI_FLUSH_INSTRUCTION_CACHE_GUID;
-
-//
-// Interface and GUID for the PE/COFF Loader APIs shared between PEI and DXE
-//
-EFI_GUID                          mPeiEfiPeiPeCoffLoaderGuid = EFI_PEI_PE_COFF_LOADER_GUID;
 
 //
 // Interface and GUID for the setjump()/longjump() APIs shared between PEI and DXE
@@ -142,8 +132,6 @@ Returns:
 EFI_STATUS
 PeiLoadx64File (
   IN  EFI_PEI_SERVICES                          **PeiServices,
-  IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
-  IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
   IN  EFI_PEI_FILE_HANDLE                       FileHandle,
   OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
   OUT UINT64                                    *ImageSize,
@@ -158,9 +146,6 @@ Routine Description:
 Arguments:
 
   PeiService                      - General purpose services available to every PEIM.
-  PeiEfiPeiPeCoffLoader           - Pointer to a PE COFF loader protocol
-  PeiEfiPeiFlushInstructionCache  - Pointer to a flush-instruction-cache protocol so
-                                    we can flush the cache after loading
   PeiImage                        - The base address of the PE/COFF file that is to be loaded and relocated
   ImageAddress                    - The base address of the relocated PE/COFF image
   ImageSize                       - The size of the relocated PE/COFF image
@@ -429,7 +414,7 @@ Returns:
           // This new Firmware Volume comes from a firmware file within a firmware volume.
           // Record the original Firmware Volume Name.
           //
-          PeiLibFfsGetVolumeInfo(&VolumeHandle, &VolumeInfo);
+          PeiLibFfsGetVolumeInfo(VolumeHandle, &VolumeInfo);
 
           //
           // Prepare to install FirmwareVolumeInfo PPI to expose new FV to PeiCore.
@@ -578,8 +563,6 @@ Returns:
   EFI_PHYSICAL_ADDRESS                                      PpisNeededByDxeAddress;
   UINT64                                                    PpisNeededByDxeSize;
   EFI_PHYSICAL_ADDRESS                                      PpisNeededByDxeEntryPoint;
-  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL                  *PeiEfiPeiFlushInstructionCache;
-  EFI_PEI_PE_COFF_LOADER_PROTOCOL                           *PeiEfiPeiPeCoffLoader;
   EFI_BOOT_MODE                                             BootMode;
   PEI_RECOVERY_MODULE_INTERFACE                             *PeiRecovery;
   PEI_S3_RESUME_PPI                                         *S3Resume;
@@ -598,7 +581,6 @@ Returns:
   BaseOfStack = 0;
   BspStore    = 0;
   Status      = EFI_SUCCESS;
-  PeiEfiPeiPeCoffLoader = NULL;
 
   //
   // if in S3 Resume, restore configure
@@ -617,12 +599,6 @@ Returns:
     Status = S3Resume->S3RestoreConfig (PeiServices);
     ASSERT_PEI_ERROR (PeiServices, Status);
   }
-
-  //
-  // Install the PEI Protocols that are shared between PEI and DXE
-  //
-  Status                = InstallEfiPeiFlushInstructionCache (&PeiEfiPeiFlushInstructionCache);
-  ASSERT_PEI_ERROR (PeiServices, Status);
 
   //
   // Allocate 128KB for the Stack
@@ -728,15 +704,11 @@ Returns:
 
   PageTables = CreateIdentityMappingPageTables (PeiServices, SizeOfMemorySpace);
 
-  InstallEfiPeiPeCoffLoader (PeiServices, &PeiEfiPeiPeCoffLoader, NULL);
-
   //
   // Load the PpiNeededByDxe from a Firmware Volume
   //
   Status = PeiLoadx64File (
              PeiServices,
-             PeiEfiPeiPeCoffLoader,
-             PeiEfiPeiFlushInstructionCache,
              FileHandle,
              &PpisNeededByDxeAddress,
              &PpisNeededByDxeSize,
@@ -750,8 +722,6 @@ Returns:
   //
   Status = PeiLoadx64File (
              PeiServices,
-             PeiEfiPeiPeCoffLoader,
-             PeiEfiPeiFlushInstructionCache,
              DxeCoreFileHandle,
              &DxeCoreAddress,
              &DxeCoreSize,
@@ -821,8 +791,6 @@ Returns:
 EFI_STATUS
 PeiLoadx64File (
   IN  EFI_PEI_SERVICES                          **PeiServices,
-  IN  EFI_PEI_PE_COFF_LOADER_PROTOCOL           *PeiEfiPeiPeCoffLoader,
-  IN  EFI_PEI_FLUSH_INSTRUCTION_CACHE_PROTOCOL  *PeiEfiPeiFlushInstructionCache,
   IN  EFI_PEI_FILE_HANDLE                       FileHandle,
   OUT EFI_PHYSICAL_ADDRESS                      *ImageAddress,
   OUT UINT64                                    *ImageSize,
@@ -837,9 +805,6 @@ Routine Description:
 Arguments:
 
   PeiService                      - General purpose services available to every PEIM.
-  PeiEfiPeiPeCoffLoader           - Pointer to a PE COFF loader protocol
-  PeiEfiPeiFlushInstructionCache  - Pointer to a flush-instruction-cache protocol so
-                                    we can flush the cache after loading
   PeiImage                        - The base address of the PE/COFF file that is to be loaded and relocated
   ImageAddress                    - The base address of the relocated PE/COFF image
   ImageSize                       - The size of the relocated PE/COFF image
@@ -853,101 +818,33 @@ Returns:
 --*/
 {
   EFI_STATUS                            Status;
-  EFI_PEI_PE_COFF_LOADER_IMAGE_CONTEXT  ImageContext;
-  EFI_PHYSICAL_ADDRESS                  MemoryBuffer;
-  VOID                                  *Pe32Data;
-  EFI_TE_IMAGE_HEADER                   *TEImageHeader;
+  EFI_PEI_LOAD_FILE_PPI                 *LoadFile;
+  UINTN                                 Instance;
+  UINT32                                AuthenticationState;
 
-  //
-  // Try to find PE32 or a TE section.
-  //
-  Status = (*PeiServices)->FfsFindSectionData (
-            PeiServices,
-            EFI_SECTION_PE32,
-            &FileHandle,
-            &Pe32Data
-            );
-  if (EFI_ERROR (Status)) {
-    Status = (*PeiServices)->FfsFindSectionData (
-               PeiServices,
-               EFI_SECTION_TE,
-               &FileHandle,
-               (VOID **)&TEImageHeader
-               );
-    Pe32Data = TEImageHeader;
-  }
-  
-  if (EFI_ERROR (Status)) {
-    //
-    // NO image types we support so exit.
-    //
-    return Status;
-  }
+  Instance = 0;
+  do {
+    Status = (*PeiServices)->LocatePpi (
+                              PeiServices,
+                              &gEfiLoadFile2PpiGuid,
+                              Instance++,
+                              NULL,
+                              (VOID **)&LoadFile
+                              );
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+    Status = LoadFile->LoadFile (
+                        LoadFile, 
+                        FileHandle, 
+                        ImageAddress, 
+                        ImageSize,
+                        EntryPoint,
+                        &AuthenticationState
+                        );
+  } while (EFI_ERROR (Status));
 
-
-  (*PeiServices)->SetMem (
-                    &ImageContext,
-                    sizeof (ImageContext),
-                    0
-                    );
-  ImageContext.Handle = Pe32Data;
-  Status              = GetImageReadFunction (PeiServices, &ImageContext);
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-  
-  Status = PeiEfiPeiPeCoffLoader->GetImageInfo (PeiEfiPeiPeCoffLoader, &ImageContext);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  //
-  // Allocate Memory for the image
-  //
-  Status = (*PeiServices)->AllocatePages (
-                             PeiServices,
-                             EfiBootServicesData,
-                             EFI_SIZE_TO_PAGES ((UINT32) ImageContext.ImageSize),
-                             &MemoryBuffer
-                             );
-
-  ASSERT_PEI_ERROR (PeiServices, Status);
-
-  ImageContext.ImageAddress = MemoryBuffer;
-
-  //
-  // Load the image to our new buffer
-  //
-
-  Status = PeiEfiPeiPeCoffLoader->LoadImage (PeiEfiPeiPeCoffLoader, &ImageContext);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-  
-  //
-  // Relocate the image in our new buffer
-  //
-  Status = PeiEfiPeiPeCoffLoader->RelocateImage (PeiEfiPeiPeCoffLoader, &ImageContext);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  //
-  // Flush the instruction cache so the image data is written before we execute it
-  //
-  Status = PeiEfiPeiFlushInstructionCache->Flush (
-                                             PeiEfiPeiFlushInstructionCache,
-                                             ImageContext.ImageAddress,
-                                             ImageContext.ImageSize
-                                             );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  *ImageAddress = ImageContext.ImageAddress;
-  *ImageSize    = ImageContext.ImageSize;
-  *EntryPoint   = ImageContext.EntryPoint;
-
-  return EFI_SUCCESS;
+  return Status;
 }
 
 EFI_PHYSICAL_ADDRESS

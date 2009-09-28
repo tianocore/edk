@@ -60,7 +60,7 @@ COMPONENT_TYPE  = LIBRARY
   Math.c
   
 [sources.x64]
-  x64\EfiCopyMemRep1.asm
+  x64\EfiCopyMemRep4.asm
   x64\EfiSetMemRep4.asm
   x64\EfiZeroMemRep4.asm
 #  x64\EfiCopyMem.asm

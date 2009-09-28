@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -333,7 +333,7 @@ Returns:
   Status = PeiFfsFindSectionData (
              PeiServices,
              EFI_SECTION_TE,
-             &FileHandle,
+             FileHandle,
              (VOID **)&TEImageHeader
              );
   Pe32Data = TEImageHeader;
@@ -341,7 +341,7 @@ Returns:
     Status = PeiFfsFindSectionData (
               PeiServices,
               EFI_SECTION_PE32,
-              &FileHandle,
+              FileHandle,
               &Pe32Data
               );
   }
@@ -357,7 +357,8 @@ Returns:
   // Check image header machine type. If not supported, skip it.
   //
   if (TEImageHeader != NULL) {
-    if (TEImageHeader->Machine != EFI_IMAGE_MACHINE_TYPE) {
+    if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (TEImageHeader->Machine) &&
+        !EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED (TEImageHeader->Machine)) {
       return EFI_UNSUPPORTED;
     }
   } else {
@@ -365,7 +366,8 @@ Returns:
     // Get PE32 Header to check machine type.
     //
     PeHdr = GetPeHeader(PeiServices, Pe32Data);
-    if (PeHdr->FileHeader.Machine != EFI_IMAGE_MACHINE_TYPE) {
+    if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (PeHdr->FileHeader.Machine) &&
+        !EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED (PeHdr->FileHeader.Machine)) {
       return EFI_UNSUPPORTED;
     }
   }
@@ -679,7 +681,11 @@ Returns:
   EFI_PEI_LOAD_FILE_PPI   *LoadFile;
   EFI_PHYSICAL_ADDRESS    ImageAddress;
   UINT64                  ImageSize;
-
+  UINT16                  Magic;
+  UINT16                  Machine;
+  EFI_IMAGE_NT_HEADERS    *PeHdr;
+  EFI_TE_IMAGE_HEADER     *TeHdr;
+  
   //
   // If any instances of PEI_LOAD_FILE_PPI are installed, they are called.
   // one at a time, until one reports EFI_SUCCESS.
@@ -703,25 +709,33 @@ Returns:
                           AuthenticationState
                           );
       if (!EFI_ERROR (Status)) {
-        return Status;
+        //
+        // Only support image machine type that is the same as PEI core.
+        // Get the image's machine type to check if supported.
+        //
+        Magic = *(UINT16 *)(UINTN) ImageAddress;
+        if (Magic == EFI_TE_IMAGE_HEADER_SIGNATURE) {
+          TeHdr   = (EFI_TE_IMAGE_HEADER *)(UINTN) ImageAddress;
+          Machine = TeHdr->Machine;
+        } else {
+          if (Magic == EFI_IMAGE_DOS_SIGNATURE) {
+            PeHdr = (EFI_IMAGE_NT_HEADERS *)((UINTN) ImageAddress + (UINTN) ((((EFI_IMAGE_DOS_HEADER *)(UINTN) ImageAddress)->e_lfanew) & 0x0ffff));
+          } else {
+            PeHdr = (EFI_IMAGE_NT_HEADERS *)(UINTN) ImageAddress;
+          }
+          Machine = PeHdr->FileHeader.Machine;
+        }
+        if (Machine == EFI_IMAGE_MACHINE_TYPE) {
+          return EFI_SUCCESS;
+        } else {
+          return EFI_UNSUPPORTED;
+        }
       }
     }
     Index++;
   } while (!EFI_ERROR (PpiStatus));
 
-  //
-  // If no instances reports EFI_SUCCESS, then build-in support for
-  // the PE32+/TE XIP image format is used.
-  //
-  Status = PeiLoadImageLoadImage (
-            PeiServices, 
-            FileHandle, 
-            NULL, 
-            NULL, 
-            EntryPoint, 
-            AuthenticationState
-            );
-  return Status;
+  return PpiStatus;
 }
 
 

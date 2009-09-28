@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -337,7 +337,7 @@ Returns:
           // This new Firmware Volume comes from a firmware file within a firmware volume.
           // Record the original Firmware Volume Name.
           //
-          PeiLibFfsGetVolumeInfo(&VolumeHandle, &VolumeInfo);
+          PeiLibFfsGetVolumeInfo(VolumeHandle, &VolumeInfo);
 
           //
           // Prepare to install FirmwareVolumeInfo PPI to expose new FV to PeiCore.
@@ -776,14 +776,14 @@ Returns:
   Status = (*PeiServices)->FfsFindSectionData (
             PeiServices,
             EFI_SECTION_PE32,
-            &FileHandle,
+            FileHandle,
             &Pe32Data
             );
   if (EFI_ERROR (Status)) {
     Status = (*PeiServices)->FfsFindSectionData (
                PeiServices,
                EFI_SECTION_TE,
-               &FileHandle,
+               FileHandle,
                (VOID **)&TEImageHeader
                );
     Pe32Data = TEImageHeader;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -75,8 +75,8 @@ typedef struct {
 typedef struct {
   UINT8                       CurrentPeim;
   UINT8                       CurrentFv;
-  UINT32                      DispatchedPeimBitMap;
-  UINT32                      PreviousPeimBitMap;
+  UINT64                      DispatchedPeimBitMap;
+  UINT64                      PreviousPeimBitMap;
   EFI_FFS_FILE_HEADER         *CurrentPeimAddress;
   EFI_FIRMWARE_VOLUME_HEADER  *CurrentFvAddress;
   EFI_FIRMWARE_VOLUME_HEADER  *BootFvAddress;
@@ -327,7 +327,7 @@ Returns:
 BOOLEAN
 Dispatched (
   IN UINT8  CurrentPeim,
-  IN UINT32 DispatchedPeimBitMap
+  IN UINT64 DispatchedPeimBitMap
   )
 /*++
 
@@ -351,7 +351,7 @@ VOID
 SetDispatched (
   IN EFI_PEI_SERVICES   **PeiServices,
   IN UINT8              CurrentPeim,
-  OUT UINT32            *DispatchedPeimBitMap
+  OUT UINT64            *DispatchedPeimBitMap
   )
 /*++
 

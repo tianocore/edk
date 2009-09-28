@@ -1,7 +1,7 @@
       TITLE   SwitchCoreStacks.asm: Core stack switching routine
 
 ;------------------------------------------------------------------------------
-;Copyright (c) 2005 - 2007, Intel Corporation                                                         
+;Copyright (c) 2005 - 2009, Intel Corporation                                                         
 ;All rights reserved. This program and the accompanying materials                          
 ;are licensed and made available under the terms and conditions of the BSD License         
 ;which accompanies this distribution.  The full text of the license may be found at        
@@ -22,6 +22,19 @@
 ;------------------------------------------------------------------------------
 
 text    SEGMENT
+
+;------------------------------------------------------------------------------
+; VOID
+; EFIAPI
+; AsmWriteMm7 (
+;   IN UINT64   Value
+;   );
+;------------------------------------------------------------------------------
+AsmWriteMm7 PROC PUBLIC
+    db 48h, 0fh, 06eh, 0f9h ; movq    mm7, rcx
+    ret
+AsmWriteMm7 ENDP
+
 
 ;------------------------------------------------------------------------------
 ; VOID

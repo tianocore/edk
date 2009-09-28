@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -373,8 +373,8 @@ EFI_STATUS
 (EFIAPI *EFI_PEI_FFS_FIND_NEXT_FILE2) (
   IN CONST  EFI_PEI_SERVICES        **PeiServices,
   IN EFI_FV_FILETYPE                SearchType,
-  IN CONST EFI_PEI_FV_HANDLE        *FwVolHeader,
-  IN OUT EFI_PEI_FILE_HANDLE        **FileHandle  
+  IN CONST EFI_PEI_FV_HANDLE        FvHandle,
+  IN OUT EFI_PEI_FILE_HANDLE        *FileHandle  
   );
 
 typedef
@@ -382,7 +382,7 @@ EFI_STATUS
 (EFIAPI *EFI_PEI_FFS_FIND_SECTION_DATA2) (
   IN CONST  EFI_PEI_SERVICES    **PeiServices,
   IN EFI_SECTION_TYPE           SectionType,
-  IN EFI_PEI_FILE_HANDLE        *FileHandle,
+  IN EFI_PEI_FILE_HANDLE        FileHandle,
   OUT VOID                      **SectionData
   );
 
@@ -455,7 +455,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *EFI_PEI_FFS_GET_VOLUME_INFO) (
-  IN  EFI_PEI_FV_HANDLE     *VolumeHandle,
+  IN  EFI_PEI_FV_HANDLE     VolumeHandle,
   OUT EFI_FV_INFO           *VolumeInfo
   );
 
