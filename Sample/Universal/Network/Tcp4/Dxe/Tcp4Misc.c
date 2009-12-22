@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -537,7 +537,7 @@ Returns:
 
 --*/
 {
-  EFI_SIMPLE_NETWORK_MODE SnpMode;
+  EFI_IP4_MODE_DATA       Ip4Mode;  
   TCP4_PROTO_DATA         *TcpProto;
   EFI_IP4_PROTOCOL        *Ip;
 
@@ -547,9 +547,9 @@ Returns:
   Ip       = TcpProto->TcpService->IpIo->Ip;
   ASSERT (Ip);
 
-  Ip->GetModeData (Ip, NULL, NULL, &SnpMode);
-
-  return (UINT16) (SnpMode.MaxPacketSize - 40);
+  Ip->GetModeData (Ip, &Ip4Mode, NULL, NULL);
+  
+  return (UINT16) (Ip4Mode.MaxPacketSize - sizeof (TCP_HEAD));
 }
 
 VOID

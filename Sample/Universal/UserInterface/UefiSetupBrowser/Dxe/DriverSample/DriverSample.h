@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation
+Copyright (c) 2007 - 2009, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -71,6 +71,16 @@ extern UINT8  DriverSampleStrings[];
 #define DYNAMIC_ONE_OF_VAR_OFFSET        VAR_OFFSET (DynamicOneof)
 #define DYNAMIC_ORDERED_LIST_VAR_OFFSET  VAR_OFFSET (DynamicOrderedList)
 
+//
+// Number of name in Name/Value storage
+//
+#define NAME_VALUE_NAME_NUMBER       3
+
+//
+// Maximum string length of Name/Value storage Name
+//
+#define NAME_VALUE_MAX_STRING_LEN    40
+
 
 #define DRIVER_SAMPLE_PRIVATE_SIGNATURE EFI_SIGNATURE_32 ('D', 'S', 'p', 's')
 
@@ -81,6 +91,12 @@ typedef struct {
   EFI_HII_HANDLE                   HiiHandle[2];
   DRIVER_SAMPLE_CONFIGURATION      Configuration;
   UINT8                            PasswordState;
+
+  //
+  // Name/Value storage Name list
+  //
+  EFI_STRING_ID                    NameStringId[NAME_VALUE_NAME_NUMBER];
+  CHAR16                           NameValueName[NAME_VALUE_NAME_NUMBER][NAME_VALUE_MAX_STRING_LEN];
 
   //
   // Consumed protocol

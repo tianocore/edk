@@ -2762,9 +2762,8 @@ HiiNewPackageList (
     DatabaseRecord = CR (Link, HII_DATABASE_RECORD, DatabaseEntry, HII_DATABASE_RECORD_SIGNATURE);
     if (EfiCompareGuid (
           &(DatabaseRecord->PackageList->PackageListHdr.PackageListGuid),
-          &PackageListGuid
-          )
-        ) {
+          &PackageListGuid) &&
+        DatabaseRecord->DriverHandle == DriverHandle) {
       return EFI_INVALID_PARAMETER;
     }
   }

@@ -55,4 +55,3 @@ $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiSmbusLib\PeiSmbusLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\DxePerformanceLib\DxePerformanceLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\PeiPerformanceLib\PeiPerformanceLib.inf
 $(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\SmmRuntimeDxeReportStatusCodeLib\SmmRuntimeDxeReportStatusCodeLib.inf
-$(EDK_PREFIX)Foundation\Library\EdkIIGlueLib\Library\OemHookStatusCodeLibNull\OemHookStatusCodeLibNull.inf

@@ -21,6 +21,7 @@ Abstract:
 --*/
 
 #include "ReportStatusCodeLibInternal.h"
+#include EFI_PROTOCOL_DEFINITION (SmmStatusCode)
 
 EFI_EVENT             mVirtualAddressChangeEvent;
 
@@ -35,6 +36,36 @@ EFI_SMM_BASE_PROTOCOL *mSmmBase;
 EFI_RUNTIME_SERVICES  *mRTSmmRuntimeDxeReportStatusCodeLib;
 
 BOOLEAN               mHaveExitedBootServices = FALSE;
+
+EFI_SMM_STATUS_CODE_PROTOCOL  *mSmmStatusCode;
+
+VOID
+SmmStatusCodeInitialize (
+  VOID
+  )
+{
+  EFI_STATUS Status;
+
+  Status = gBS->LocateProtocol (&gEfiSmmStatusCodeProtocolGuid, NULL, (VOID **) &mSmmStatusCode);
+  if (EFI_ERROR (Status)) {
+    mSmmStatusCode = NULL;
+  }
+}
+
+EFI_STATUS
+SmmStatusCodeReport (
+  IN EFI_STATUS_CODE_TYPE     Type,
+  IN EFI_STATUS_CODE_VALUE    Value,
+  IN UINT32                   Instance,
+  IN EFI_GUID                 *CallerId OPTIONAL,
+  IN EFI_STATUS_CODE_DATA     *Data     OPTIONAL
+  )
+{
+  if (mSmmStatusCode != NULL) {
+    (mSmmStatusCode->ReportStatusCode) (mSmmStatusCode, Type, Value, Instance, CallerId, Data);
+  }
+  return EFI_SUCCESS;
+}
 
 /**
   Locate he report status code service.
@@ -53,7 +84,7 @@ InternalGetReportStatusCode (
 #endif
 
   if (mInSmm) {
-    return (EFI_REPORT_STATUS_CODE) OemHookStatusCodeReport;
+    return (EFI_REPORT_STATUS_CODE) SmmStatusCodeReport;
 #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   } else if (!mHaveExitedBootServices) {
   	//
@@ -144,7 +175,7 @@ ReportStatusCodeLibConstruct (
                            (VOID **) &mStatusCodeData
                            );
       ASSERT_EFI_ERROR (Status);
-      OemHookStatusCodeInitialize ();
+      SmmStatusCodeInitialize ();
       return EFI_SUCCESS;
     }
   }

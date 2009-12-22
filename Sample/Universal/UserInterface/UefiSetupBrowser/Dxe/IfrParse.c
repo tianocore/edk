@@ -353,8 +353,8 @@ Returns:
                RequestElement,
                30 * sizeof (CHAR16),
                L"&OFFSET=%x&WIDTH=%x",
-               Question->VarStoreInfo.VarOffset,
-               Question->StorageWidth
+               (UINTN) Question->VarStoreInfo.VarOffset,
+               (UINTN) Question->StorageWidth
                );
     Question->BlockName = EfiLibAllocateCopyPool ((StrLen + 1) * sizeof (CHAR16), RequestElement);
   } else {

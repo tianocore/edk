@@ -37,10 +37,11 @@ Abstract:
 //  0x9000  - add SmmRuntimeDxeReportStatusCodeLib and OemHookStatusCodeLibNull, Feb, 2009
 //  0x9100  - change to use unique member RT variable names in various library instances, June, 2009
 //  0x9200  - Update LEGACY_BOOT and READY_TO_BOOT event handling in UefiLib, July, 2009
+//  0x9300  - Remove OemHookStatusCodeLibNull. SmmRuntimeDxeReportStatusCodeLib uses SMM StatusCode Protocol, Oct, 2009
 //
 //  For reference only, don't change the value
 //
-#define EDKII_GLUE_LIBRARY_VERSION 0x9200
+#define EDKII_GLUE_LIBRARY_VERSION 0x9300
 
 
 //

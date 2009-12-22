@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2007, Intel Corporation                                                         
+Copyright (c) 2004 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -24,7 +24,7 @@ Revision History
 
 --*/
 
-#include "bootmaint.h"
+#include "BootMaint.h"
 #include "BBSsupport.h"
 
 BM_MENU_ENTRY *
@@ -715,7 +715,7 @@ Returns:
 
   DirectoryMenu.MenuNumber = OptionNumber;
   SafeFreePool (DirInfo);
-  return TRUE;
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS
@@ -1390,80 +1390,88 @@ Returns:
 }
 
 UINT16
+BOpt_GetOptionNumber (
+  CHAR16        *Type
+  )
+/*++
+
+Routine Description:
+  Get the Option Number that does not used
+
+Arguments:
+
+Returns:
+  The Option Number
+
+--*/
+{
+  UINT16        *OrderList;
+  UINTN         OrderListSize;
+  UINTN         Index;
+  CHAR16        StrTemp[20];
+  UINT16        *OptionBuffer;
+  UINT16        OptionNumber;
+  UINTN         OptionSize;
+
+  OrderListSize = 0;
+  OrderList     = NULL;
+  OptionNumber  = 0;
+
+  SPrint (StrTemp, sizeof (StrTemp), L"%sOrder", Type);
+  
+  OrderList = BdsLibGetVariableAndSize (
+                    StrTemp,
+                    &gEfiGlobalVariableGuid,
+                    &OrderListSize
+                    );
+  for (OptionNumber = 0; ; OptionNumber++) {
+    for (Index = 0; Index < OrderListSize / sizeof (UINT16); Index++) {
+      if (OptionNumber == OrderList[Index]) {
+        break;
+      }
+    }
+    if (Index < OrderListSize / sizeof (UINT16)) {
+      //
+      // The OptionNumber occurs in the OrderList, continue to use next one
+      //
+      continue;
+    }
+
+    SPrint (StrTemp, sizeof (StrTemp), L"%s%04x", Type, (UINTN) OptionNumber);
+    DEBUG((EFI_D_ERROR,"Option = %s\n", StrTemp));
+    OptionBuffer = BdsLibGetVariableAndSize (
+                     StrTemp,
+                     &gEfiGlobalVariableGuid,
+                     &OptionSize
+                     );
+    if (NULL == OptionBuffer) {
+      //
+      // The Boot[OptionNumber] / Driver[OptionNumber] NOT occurs, we found it
+      //
+      break;
+    }
+  }
+
+  return OptionNumber;
+}
+
+UINT16
 BOpt_GetBootOptionNumber (
   VOID
   )
 /*++
 
 Routine Description:
-  Get the Option Number that does not used 
-  
+  Get the Option Number for Boot#### that does not used
+
 Arguments:
 
 Returns:
   The Option Number
-  
+
 --*/
 {
-  BM_MENU_ENTRY *NewMenuEntry;
-  UINT16        *BootOrderList;
-  UINTN         BootOrderListSize;
-  UINT16        Number;
-  UINTN         Index;
-  UINTN         Index2;
-  BOOLEAN       Found;
-  CHAR16        StrTemp[100];
-  UINT16        *OptionBuffer;
-  UINTN         OptionSize;
-
-  BootOrderListSize = 0;
-  BootOrderList     = NULL;
-
-  BootOrderList = BdsLibGetVariableAndSize (
-                    L"BootOrder",
-                    &gEfiGlobalVariableGuid,
-                    &BootOrderListSize
-                    );
-  if (BootOrderList) {
-    //
-    // already have Boot####
-    //
-    // AlreadyBootNumbers = BootOrderListSize / sizeof(UINT16);
-    //
-    for (Index = 0; Index < BootOrderListSize / sizeof (UINT16); Index++) {
-      Found = TRUE;
-      for (Index2 = 0; Index2 < BootOptionMenu.MenuNumber; Index2++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&BootOptionMenu, Index2);
-        if (Index == NewMenuEntry->OptionNumber) {
-          Found = FALSE;
-          break;
-        }
-      }
-
-      if (Found) {
-	   SPrint (StrTemp, 100, L"Boot%04x", Index);
-	   DEBUG((EFI_D_ERROR,"INdex= %s\n", StrTemp));
-          OptionBuffer = BdsLibGetVariableAndSize (
-                    StrTemp,
-                    &gEfiGlobalVariableGuid,
-                    &OptionSize
-                    );
-         if (NULL == OptionBuffer) 
-            break;
-      }
-    }
-    //
-    // end for Index
-    //
-    Number = (UINT16) Index;
-  } else {
-    //
-    // No Boot####
-    //
-    Number = 0;
-  }
-
-  return Number;
+  return BOpt_GetOptionNumber (L"Boot");
 }
 
 UINT16
@@ -1473,63 +1481,16 @@ BOpt_GetDriverOptionNumber (
 /*++
 
 Routine Description:
-  Get the Option Number that does not used 
-  
+  Get the Option Number for Driver#### that does not used
+
 Arguments:
 
 Returns:
   The Option Number
-  
+
 --*/
 {
-  BM_MENU_ENTRY *NewMenuEntry;
-  UINT16        *DriverOrderList;
-  UINTN         DriverOrderListSize;
-  UINT16        Number;
-  UINTN         Index;
-  UINTN         Index2;
-  BOOLEAN       Found;
-
-  DriverOrderListSize = 0;
-  DriverOrderList     = NULL;
-
-  DriverOrderList = BdsLibGetVariableAndSize (
-                      L"DriverOrder",
-                      &gEfiGlobalVariableGuid,
-                      &DriverOrderListSize
-                      );
-  if (DriverOrderList) {
-    //
-    // already have Driver####
-    //
-    // AlreadyDriverNumbers = DriverOrderListSize / sizeof(UINT16);
-    //
-    for (Index = 0; Index < DriverOrderListSize / sizeof (UINT16); Index++) {
-      Found = TRUE;
-      for (Index2 = 0; Index2 < DriverOptionMenu.MenuNumber; Index2++) {
-        NewMenuEntry = BOpt_GetMenuEntry (&DriverOptionMenu, Index2);
-        if (Index == NewMenuEntry->OptionNumber) {
-          Found = FALSE;
-          break;
-        }
-      }
-
-      if (Found) {
-        break;
-      }
-    }
-    //
-    // end for Index
-    //
-    Number = (UINT16) Index;
-  } else {
-    //
-    // No Driver####
-    //
-    Number = 0;
-  }
-
-  return Number;
+  return BOpt_GetOptionNumber (L"Driver");
 }
 
 EFI_STATUS

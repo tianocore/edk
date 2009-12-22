@@ -713,19 +713,19 @@ Returns:
       switch (MenuOption->Sequence) {
       case 0:
         *OptionString[0] = LEFT_NUMERIC_DELIMITER;
-        SPrint (OptionString[0] + 1, 21 * sizeof (CHAR16), L"%02d", QuestionValue->Value.date.Month);
+        SPrint (OptionString[0] + 1, 21 * sizeof (CHAR16), L"%02d", (UINTN) QuestionValue->Value.date.Month);
         *(OptionString[0] + 3) = DATE_SEPARATOR;
         break;
 
       case 1:
         SetUnicodeMem (OptionString[0], 4, L' ');
-        SPrint (OptionString[0] + 4, 21 * sizeof (CHAR16), L"%02d", QuestionValue->Value.date.Day);
+        SPrint (OptionString[0] + 4, 21 * sizeof (CHAR16), L"%02d", (UINTN) QuestionValue->Value.date.Day);
         *(OptionString[0] + 6) = DATE_SEPARATOR;
         break;
 
       case 2:
         SetUnicodeMem (OptionString[0], 7, L' ');
-        SPrint (OptionString[0] + 7, 21 * sizeof (CHAR16), L"%4d", QuestionValue->Value.date.Year);
+        SPrint (OptionString[0] + 7, 21 * sizeof (CHAR16), L"%4d", (UINTN) QuestionValue->Value.date.Year);
         *(OptionString[0] + 11) = RIGHT_NUMERIC_DELIMITER;
         break;
       }
@@ -745,19 +745,19 @@ Returns:
       switch (MenuOption->Sequence) {
       case 0:
         *OptionString[0] = LEFT_NUMERIC_DELIMITER;
-        SPrint (OptionString[0] + 1, 21 * sizeof (CHAR16), L"%02d", QuestionValue->Value.time.Hour);
+        SPrint (OptionString[0] + 1, 21 * sizeof (CHAR16), L"%02d", (UINTN) QuestionValue->Value.time.Hour);
         *(OptionString[0] + 3) = TIME_SEPARATOR;
         break;
 
       case 1:
         SetUnicodeMem (OptionString[0], 4, L' ');
-        SPrint (OptionString[0] + 4, 21 * sizeof (CHAR16), L"%02d", QuestionValue->Value.time.Minute);
+        SPrint (OptionString[0] + 4, 21 * sizeof (CHAR16), L"%02d", (UINTN) QuestionValue->Value.time.Minute);
         *(OptionString[0] + 6) = TIME_SEPARATOR;
         break;
 
       case 2:
         SetUnicodeMem (OptionString[0], 7, L' ');
-        SPrint (OptionString[0] + 7, 21 * sizeof (CHAR16), L"%02d", QuestionValue->Value.time.Second);
+        SPrint (OptionString[0] + 7, 21 * sizeof (CHAR16), L"%02d", (UINTN) QuestionValue->Value.time.Second);
         *(OptionString[0] + 9) = RIGHT_NUMERIC_DELIMITER;
         break;
       }

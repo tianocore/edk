@@ -140,7 +140,9 @@ typedef enum _EFI_MEMORY_ARRAY_TYPE {
   EfiMemoryTypeRdram                          = 0x11,
   EfiMemoryTypeDdr                            = 0x12,
   EfiMemoryTypeDdr2                           = 0x13,
-  EfiMemoryTypeDdr2FbDimm                     = 0x14
+  EfiMemoryTypeDdr2FbDimm                     = 0x14,
+  EfiMemoryTypeDdr3                           = 0x18,
+  EfiMemoryTypeFbd2                           = 0x19
 } EFI_MEMORY_ARRAY_TYPE;
 
 typedef struct {

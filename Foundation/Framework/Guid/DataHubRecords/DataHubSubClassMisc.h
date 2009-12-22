@@ -429,7 +429,13 @@ typedef enum {
   EfiSlotTypePciExpressX2 = 0xA7,
   EfiSlotTypePciExpressX4 = 0xA8,
   EfiSlotTypePciExpressX8 = 0xA9,
-  EfiSlotTypePciExpressX16 = 0xAA
+  EfiSlotTypePciExpressX16 = 0xAA,
+  EfiSlotTypePciExpressGen2    = 0xAB,
+  EfiSlotTypePciExpressGen2X1  = 0xAC,
+  EfiSlotTypePciExpressGen2X2  = 0xAD,
+  EfiSlotTypePciExpressGen2X4  = 0xAE,
+  EfiSlotTypePciExpressGen2X8  = 0xAF,
+  EfiSlotTypePciExpressGen2X16 = 0xB0
 } EFI_MISC_SLOT_TYPE;
 
 typedef enum {  

@@ -1523,7 +1523,7 @@ vfrStatementNumeric :
 
 vfrNumericFlags [CIfrNumeric & NObj, UINT32 LineNum] :
   <<
-     UINT8 LFlags = _GET_CURRQEST_DATATYPE();
+     UINT8 LFlags = _GET_CURRQEST_DATATYPE() & EFI_IFR_NUMERIC_SIZE;
      UINT8 HFlags = 0;
   >>
   numericFlagsField[HFlags, LFlags] ( "\|" numericFlagsField[HFlags, LFlags] )*
@@ -1532,9 +1532,13 @@ vfrNumericFlags [CIfrNumeric & NObj, UINT32 LineNum] :
 
 numericFlagsField [UINT8 & HFlags, UINT8 & LFlags] :
     N:Number                                           << _PCATCH(_STOU8(N->getText()) == 0 ? VFR_RETURN_SUCCESS : VFR_RETURN_UNSUPPORTED, N->getLine()); >>
-  | "DISPLAY_INT_DEC"                                  << $LFlags |= 0x00; >>
-  | "DISPLAY_UINT_DEC"                                 << $LFlags |= 0x10; >>
-  | "DISPLAY_UINT_HEX"                                 << $LFlags |= 0x20; >>
+  | "NUMERIC_SIZE_1"                                   << $LFlags = ($LFlags & ~EFI_IFR_NUMERIC_SIZE) | EFI_IFR_NUMERIC_SIZE_1; >>
+  | "NUMERIC_SIZE_2"                                   << $LFlags = ($LFlags & ~EFI_IFR_NUMERIC_SIZE) | EFI_IFR_NUMERIC_SIZE_2; >>
+  | "NUMERIC_SIZE_4"                                   << $LFlags = ($LFlags & ~EFI_IFR_NUMERIC_SIZE) | EFI_IFR_NUMERIC_SIZE_4; >>
+  | "NUMERIC_SIZE_8"                                   << $LFlags = ($LFlags & ~EFI_IFR_NUMERIC_SIZE) | EFI_IFR_NUMERIC_SIZE_8; >>
+  | "DISPLAY_INT_DEC"                                  << $LFlags = ($LFlags & ~EFI_IFR_DISPLAY) | EFI_IFR_DISPLAY_INT_DEC; >>
+  | "DISPLAY_UINT_DEC"                                 << $LFlags = ($LFlags & ~EFI_IFR_DISPLAY) | EFI_IFR_DISPLAY_UINT_DEC; >>
+  | "DISPLAY_UINT_HEX"                                 << $LFlags = ($LFlags & ~EFI_IFR_DISPLAY) | EFI_IFR_DISPLAY_UINT_HEX; >>
   | questionheaderFlagsField[HFlags]
   ;
 
