@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -254,29 +254,29 @@ FindStringBlock (
 /*++
 
   Routine Description:
-    Parse all string blocks to find a String block specified by StringId.
+  Parse all string blocks to find a String block specified by StringId.
+  If StringId = (EFI_STRING_ID) (-1), find out all EFI_HII_SIBT_FONT blocks
+  within this string package and backup its information. If LastStringId is 
+  specified, the string id of last string block will also be output.
+  If StringId = 0, output the string id of last string block (EFI_HII_SIBT_STRING).
     
-    If StringId = (EFI_STRING_ID) (-1), find out all EFI_HII_SIBT_FONT blocks 
-    within this string package and backup its information.
-
-    If StringId = 0, output the string id of last string block (EFI_HII_SIBT_END).
-        
+    
   Arguments:  
     Private                - Hii database private structure.      
     StringPackage          - Hii string package instance.
-    StringId               - The string¡¯s id, which is unique within PackageList.    
+    StringId               - The string¡¯s id, which is unique within PackageList.
     BlockType              - Output the block type of found string block.
     StringBlockAddr        - Output the block address of found string block.
     StringTextOffset       - Offset, relative to the found block address, of the 
                              string text information.
-    LastStringId           - Output the last string id when StringId = 0.                         
+    LastStringId           - Output the last string id when StringId = 0 or StringId = -1.
 
   Returns:
     EFI_SUCCESS            - The string text and font is retrieved successfully.
     EFI_NOT_FOUND          - The specified text or font info can not be found out.
-    EFI_OUT_OF_RESOURCES   - The system is out of resources to accomplish the task.    
+    EFI_OUT_OF_RESOURCES   - The system is out of resources to accomplish the task.
     
---*/      
+--*/    
 {
   UINT8                                *BlockHdr;
   EFI_STRING_ID                        CurrentStringId;
@@ -306,8 +306,15 @@ FindStringBlock (
 
   if (StringId != (EFI_STRING_ID) (-1) && StringId != 0) {
     ASSERT (BlockType != NULL && StringBlockAddr != NULL && StringTextOffset != NULL);
+    if (StringId > StringPackage->MaxStringId) {
+      return EFI_NOT_FOUND;
+    }
   } else {
     ASSERT (Private != NULL && Private->Signature == HII_DATABASE_PRIVATE_DATA_SIGNATURE);
+    if (StringId == 0 && LastStringId != NULL) {
+      *LastStringId = StringPackage->MaxStringId;
+      return EFI_SUCCESS;
+    }
   }
 
   EfiZeroMem (&Zero, sizeof (CHAR16));
@@ -559,12 +566,11 @@ FindStringBlock (
     
   }
 
+  //
+  // Get last string ID
+  //
   if (StringId == (EFI_STRING_ID) (-1)) {
-    return EFI_SUCCESS;
-  }
-
-  if (StringId == 0 && LastStringId != NULL) {
-    *LastStringId = CurrentStringId;
+    *LastStringId = CurrentStringId - 1;
     return EFI_SUCCESS;
   }
 
@@ -578,7 +584,7 @@ GetStringWorker (
   IN  HII_STRING_PACKAGE_INSTANCE     *StringPackage,
   IN  EFI_STRING_ID                   StringId,
   OUT EFI_STRING                      String,
-  IN  OUT UINTN                       *StringSize,
+  IN  OUT UINTN                       *StringSize, OPTIONAL
   OUT EFI_FONT_INFO                   **StringFontInfo OPTIONAL
   )
 /*++
@@ -610,7 +616,7 @@ GetStringWorker (
   EFI_STATUS                           Status;
   UINT8                                FontId;
 
-  ASSERT (StringPackage != NULL && StringSize != NULL);
+  ASSERT (StringPackage != NULL);
   ASSERT (Private != NULL && Private->Signature == HII_DATABASE_PRIVATE_DATA_SIGNATURE);
 
   //
@@ -627,6 +633,13 @@ GetStringWorker (
              );
   if (EFI_ERROR (Status)) {
     return Status;
+  }
+
+  if (StringSize == NULL) {
+    //
+    // String text is not requested
+    //
+    return EFI_SUCCESS;
   }
 
   //
@@ -923,6 +936,8 @@ HiiNewString (
   Routine Description:
     This function adds the string String to the group of strings owned by PackageList, with the
     specified font information StringFontInfo and returns a new string id.                         
+    The new string identifier is guaranteed to be unique within the package list. 
+    That new string identifier is reserved for all languages in the package list. 
     
   Arguments:          
     This              - A pointer to the EFI_HII_STRING_PROTOCOL instance.
@@ -948,7 +963,6 @@ HiiNewString (
 {
   EFI_STATUS                          Status;
   EFI_LIST_ENTRY                      *Link;
-  BOOLEAN                             Matched;
   HII_DATABASE_PRIVATE_DATA           *Private;
   HII_DATABASE_RECORD                 *DatabaseRecord;
   HII_DATABASE_PACKAGE_LIST_INSTANCE  *PackageListNode;  
@@ -964,6 +978,11 @@ HiiNewString (
   EFI_HII_SIBT_EXT2_BLOCK             Ext2;
   HII_FONT_INFO                       *LocalFont;
   HII_GLOBAL_FONT_INFO                *GlobalFont;
+  EFI_STRING_ID                       NewStringId;
+  EFI_STRING_ID                       NextStringId;
+  EFI_STRING_ID                       Index;
+  HII_STRING_PACKAGE_INSTANCE         *MatchStringPackage;
+  BOOLEAN                             NewStringPackageCreated;
   
   if (This == NULL || String == NULL || StringId == NULL || Language == NULL || PackageList == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1000,36 +1019,112 @@ HiiNewString (
     return EFI_NOT_FOUND;
   }
 
-  //
-  // Try to get the matching string package. Create a new string package when failed.
-  //
+  Status = EFI_SUCCESS;
+  NewStringPackageCreated = FALSE;
+  NewStringId   = 0;
+  NextStringId  = 0;
   StringPackage = NULL;
-  Matched       = FALSE;
+  MatchStringPackage = NULL;
   for (Link = PackageListNode->StringPkgHdr.ForwardLink; 
        Link != &PackageListNode->StringPkgHdr;
        Link = Link->ForwardLink
       ) {
     StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
-    if (EfiLibCompareLanguage (StringPackage->StringPkgHdr->Language, (CHAR8 *) Language)) {
-      Matched = TRUE;
-      break;
+    //
+    // Create a string block and corresponding font block if exists, then append them
+    // to the end of the string package.
+    //
+    Status = FindStringBlock (
+               Private,
+               StringPackage,
+               0,
+               NULL,
+               NULL,
+               NULL,
+               &NextStringId
+               );
+    if (EFI_ERROR (Status)) {
+      goto Done;
     }
-  } 
+    //
+    // Make sure that new StringId is same in all String Packages for the different language.
+    //
+    if (NewStringId != 0 && NewStringId != NextStringId) {
+      ASSERT (FALSE);
+      Status = EFI_INVALID_PARAMETER;
+      goto Done;
+    }
+    NewStringId = NextStringId;
+    //
+    // Get the matched string package with language.
+    //
+    if (EfiLibCompareLanguage (StringPackage->StringPkgHdr->Language, (CHAR8 *) Language)) {
+      MatchStringPackage = StringPackage;
+    } else {
+      OldBlockSize = StringPackage->StringPkgHdr->Header.Length - StringPackage->StringPkgHdr->HdrSize;
+      //
+      // Create a blank EFI_HII_SIBT_STRING_UCS2_BLOCK to reserve new string ID.
+      //
+      Ucs2BlockSize = (UINT32) sizeof (EFI_HII_SIBT_STRING_UCS2_BLOCK);
 
-  if (!Matched) {
+      StringBlock = (UINT8 *) EfiLibAllocateZeroPool (OldBlockSize + Ucs2BlockSize);
+      if (StringBlock == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Done;
+      }
+      //
+      // Copy original string blocks, except the EFI_HII_SIBT_END.
+      //
+      EfiCopyMem (StringBlock, StringPackage->StringBlock, OldBlockSize - sizeof (EFI_HII_SIBT_END_BLOCK));
+      //
+      // Create a blank EFI_HII_SIBT_STRING_UCS2 block
+      //
+      BlockPtr  = StringBlock + OldBlockSize - sizeof (EFI_HII_SIBT_END_BLOCK);
+      *BlockPtr = EFI_HII_SIBT_STRING_UCS2;
+      BlockPtr  += sizeof (EFI_HII_SIBT_STRING_UCS2_BLOCK);
+
+      //
+      // Append a EFI_HII_SIBT_END block to the end.
+      //
+      *BlockPtr = EFI_HII_SIBT_END;
+      gBS->FreePool (StringPackage->StringBlock);
+      StringPackage->StringBlock = StringBlock;
+      StringPackage->StringPkgHdr->Header.Length += Ucs2BlockSize;
+      PackageListNode->PackageListHdr.PackageLength += Ucs2BlockSize;
+    }
+  }
+  if (NewStringId == 0) {
+    //
+    // No string package is found.
+    // Create new string package. StringId 1 is reserved for Language Name string.
+    //
+    *StringId = 2;
+  } else {
+    //
+    // Set new StringId
+    //
+    *StringId = NewStringId + 1;
+  }
+
+  if (MatchStringPackage != NULL) {
+    StringPackage = MatchStringPackage;
+  } else {
     //
     // LanguageName is required to create a new string package.
     //
     if (LanguageName == NULL) {
-      return EFI_INVALID_PARAMETER;
+      Status = EFI_INVALID_PARAMETER;
+      goto Done;
     }
     
     StringPackage = EfiLibAllocateZeroPool (sizeof (HII_STRING_PACKAGE_INSTANCE));
     if (StringPackage == NULL) {
-      return EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
 
     StringPackage->Signature = HII_STRING_PACKAGE_SIGNATURE;
+    StringPackage->MaxStringId = *StringId;
     StringPackage->FontId    = 0;
     InitializeListHead (&StringPackage->FontInfoList);
     
@@ -1040,12 +1135,13 @@ HiiNewString (
     StringPackage->StringPkgHdr = EfiLibAllocateZeroPool (HeaderSize);
     if (StringPackage->StringPkgHdr == NULL) {
       EfiLibSafeFreePool (StringPackage);
-      return EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }       
     StringPackage->StringPkgHdr->Header.Type      = EFI_HII_PACKAGE_STRINGS;
     StringPackage->StringPkgHdr->HdrSize          = HeaderSize;
     StringPackage->StringPkgHdr->StringInfoOffset = HeaderSize;
-    EfiCopyMem (StringPackage->StringPkgHdr->LanguageWindow, mLanguageWindow, 16 * sizeof (CHAR16));;
+    EfiCopyMem (StringPackage->StringPkgHdr->LanguageWindow, mLanguageWindow, 16 * sizeof (CHAR16));
     StringPackage->StringPkgHdr->LanguageName     = 1;
     EfiAsciiStrCpy (StringPackage->StringPkgHdr->Language, (CHAR8 *) Language);
 
@@ -1054,14 +1150,15 @@ HiiNewString (
     // printable language full name and EFI_HII_SIBT_END_BLOCK.
     //
     Ucs2BlockSize = (UINT32) (EfiStrSize ((CHAR16 *) LanguageName) + 
-                              sizeof (EFI_HII_SIBT_STRING_UCS2_BLOCK) - sizeof (CHAR16));
+                              (*StringId - 1) * sizeof (EFI_HII_SIBT_STRING_UCS2_BLOCK) - sizeof (CHAR16));
                     
     BlockSize     = Ucs2BlockSize + sizeof (EFI_HII_SIBT_END_BLOCK);
     StringPackage->StringBlock = (UINT8 *) EfiLibAllocateZeroPool (BlockSize);
     if (StringPackage->StringBlock == NULL) {
       EfiLibSafeFreePool (StringPackage->StringPkgHdr);
       EfiLibSafeFreePool (StringPackage);
-      return EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
 
     //
@@ -1072,7 +1169,10 @@ HiiNewString (
     BlockPtr  += sizeof (EFI_HII_STRING_BLOCK);
     EfiCopyMem (BlockPtr, (EFI_STRING) LanguageName, EfiStrSize ((EFI_STRING) LanguageName));
     BlockPtr += EfiStrSize ((EFI_STRING) LanguageName);
-
+    for (Index = 2; Index <= *StringId - 1; Index ++) {
+      *BlockPtr = EFI_HII_SIBT_STRING_UCS2;
+      BlockPtr += sizeof (EFI_HII_SIBT_STRING_UCS2_BLOCK);
+    }
     //
     // Insert the end block
     //
@@ -1084,23 +1184,7 @@ HiiNewString (
     StringPackage->StringPkgHdr->Header.Length    = HeaderSize + BlockSize;
     PackageListNode->PackageListHdr.PackageLength += StringPackage->StringPkgHdr->Header.Length;
     InsertTailList (&PackageListNode->StringPkgHdr, &StringPackage->StringEntry);
-  }
-  
-  //
-  // Create a string block and corresponding font block if exists, then append them
-  // to the end of the string package.
-  //
-  Status = FindStringBlock (
-             Private,
-             StringPackage,
-             0, 
-             NULL, 
-             NULL,
-             NULL,
-             StringId
-             );
-  if (EFI_ERROR (Status)) {
-    return Status;
+    NewStringPackageCreated = TRUE;
   }
 
   OldBlockSize = StringPackage->StringPkgHdr->Header.Length - StringPackage->StringPkgHdr->HdrSize;
@@ -1115,7 +1199,8 @@ HiiNewString (
 
     StringBlock = (UINT8 *) EfiLibAllocateZeroPool (OldBlockSize + Ucs2BlockSize);
     if (StringBlock == NULL) {      
-      return EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
     //
     // Copy original string blocks, except the EFI_HII_SIBT_END.
@@ -1154,7 +1239,8 @@ HiiNewString (
       //
       StringBlock = (UINT8 *) EfiLibAllocateZeroPool (OldBlockSize + Ucs2FontBlockSize);
       if (StringBlock == NULL) {      
-        return EFI_OUT_OF_RESOURCES;
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Done;
       }
       //
       // Copy original string blocks, except the EFI_HII_SIBT_END.
@@ -1190,7 +1276,8 @@ HiiNewString (
                                 sizeof (EFI_HII_SIBT_FONT_BLOCK) - sizeof (CHAR16));
       StringBlock = (UINT8 *) EfiLibAllocateZeroPool (OldBlockSize + FontBlockSize + Ucs2FontBlockSize);
       if (StringBlock == NULL) {
-        return EFI_OUT_OF_RESOURCES;
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Done;
       }
       //
       // Copy original string blocks, except the EFI_HII_SIBT_END.
@@ -1220,7 +1307,7 @@ HiiNewString (
         &((EFI_FONT_INFO *) StringFontInfo)->FontName, 
         EfiStrSize (((EFI_FONT_INFO *) StringFontInfo)->FontName)
         );
-      
+      BlockPtr += EfiStrSize (((EFI_FONT_INFO *) StringFontInfo)->FontName);
       //
       // Create a EFI_HII_SIBT_STRING_UCS2_FONT_BLOCK
       //
@@ -1248,20 +1335,42 @@ HiiNewString (
     }   
   }
 
-  //
-  // Trigger any registered notification function
-  //
-  if (!Matched) {  
-    return InvokeRegisteredFunction (
-             Private,
-             EFI_HII_DATABASE_NOTIFY_NEW_PACK,
-             (VOID *) StringPackage,
-             EFI_HII_PACKAGE_STRINGS,
-             PackageList
-             );
+Done:
+  if (!EFI_ERROR (Status) && NewStringPackageCreated) {
+    //
+    // Trigger any registered notification function for new string package
+    //
+    Status = InvokeRegisteredFunction (
+               Private,
+               EFI_HII_DATABASE_NOTIFY_NEW_PACK,
+               (VOID *) StringPackage,
+               EFI_HII_PACKAGE_STRINGS,
+               PackageList
+               );
   }
 
-  return EFI_SUCCESS;
+  if (!EFI_ERROR (Status)) {
+    //
+    // Update MaxString Id to new StringId
+    //
+    for (Link = PackageListNode->StringPkgHdr.ForwardLink;
+      Link != &PackageListNode->StringPkgHdr;
+      Link = Link->ForwardLink
+      ) {
+        StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
+        StringPackage->MaxStringId = *StringId;
+    }
+  } else if (NewStringPackageCreated) {
+    //
+    // Free the allocated new string Package when new string can't be added.
+    //
+    RemoveEntryList (&StringPackage->StringEntry);
+    gBS->FreePool (StringPackage->StringBlock);
+    gBS->FreePool (StringPackage->StringPkgHdr);
+    gBS->FreePool (StringPackage);
+  }
+
+  return Status;
 }
 
 EFI_STATUS
@@ -1363,7 +1472,7 @@ HiiGetString (
          Link =  Link->ForwardLink
         ) {
       StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);      
-      Status = GetStringWorker (Private, StringPackage, StringId, String, StringSize, StringFontInfo);
+      Status = GetStringWorker (Private, StringPackage, StringId, NULL, NULL, NULL);
       if (!EFI_ERROR (Status)) {
         return EFI_INVALID_LANGUAGE;
       }
@@ -1532,7 +1641,7 @@ HiiGetLanguages (
       ) {
     StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
     ResultSize += EfiAsciiStrSize (StringPackage->StringPkgHdr->Language);
-    if (ResultSize < *LanguagesSize) {
+    if (ResultSize <= *LanguagesSize) {
       Languages = EfiAsciiStrCpy (Languages, StringPackage->StringPkgHdr->Language);
       *(Languages - 1) = L';';
     }        

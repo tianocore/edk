@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -192,6 +192,7 @@ public:
 
   EFI_VFR_RETURN_CODE GetDataType (IN INT8 *, OUT SVfrDataType **);
   EFI_VFR_RETURN_CODE GetDataTypeSize (IN INT8 *, OUT UINT32 *);
+  EFI_VFR_RETURN_CODE GetDataTypeSize (IN UINT8, OUT UINT32 *);
   EFI_VFR_RETURN_CODE GetDataFieldInfo (IN INT8 *, OUT UINT16 &, OUT UINT8 &, OUT UINT32 &);
 
   EFI_VFR_RETURN_CODE GetUserDefinedTypeNameList (OUT INT8 ***, OUT UINT32 *);
@@ -289,6 +290,7 @@ public:
 
   EFI_VFR_RETURN_CODE GetVarStoreId (IN INT8 *, OUT EFI_VARSTORE_ID *);
   EFI_VFR_RETURN_CODE GetVarStoreType (IN INT8 *, OUT EFI_VFR_VARSTORE_TYPE &);
+  EFI_VFR_VARSTORE_TYPE GetVarStoreType (IN EFI_VARSTORE_ID);
   EFI_VFR_RETURN_CODE GetVarStoreName (IN EFI_VARSTORE_ID, OUT INT8 **);
 
   EFI_VFR_RETURN_CODE GetBufferVarStoreDataTypeName (IN INT8 *, OUT INT8 **);

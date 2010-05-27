@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2007 - 2009, Intel Corporation
+Copyright (c) 2007 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -540,6 +540,7 @@ Returns:
 
   EfiLibSafeFreePool (Statement->VariableName);
   EfiLibSafeFreePool (Statement->BlockName);
+  EfiLibSafeFreePool (Statement->BufferValue);
 }
 
 VOID
@@ -1289,8 +1290,6 @@ Returns:
 
       CurrentStatement->Flags = ((EFI_IFR_ORDERED_LIST *) OpCodeData)->Flags;
       CurrentStatement->MaxContainers = ((EFI_IFR_ORDERED_LIST *) OpCodeData)->MaxContainers;
-      CurrentStatement->StorageWidth = CurrentStatement->MaxContainers * sizeof (UINT8);
-      InitializeRequestElement (FormSet, CurrentStatement);
 
       //
       // No buffer type is defined in EFI_IFR_TYPE_VALUE, so a Configuration Driver
@@ -1298,7 +1297,7 @@ Returns:
       // an interactive orderedlist (i.e. with EFI_IFR_FLAG_CALLBACK flag set).
       //
       CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_OTHER;
-      CurrentStatement->BufferValue = EfiLibAllocateZeroPool (CurrentStatement->StorageWidth);
+      CurrentStatement->BufferValue = NULL;
 
       if (Scope) {
         SuppressForOption = TRUE;

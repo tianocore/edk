@@ -322,24 +322,20 @@ Returns:
   Offer = &Private->Dhcp4Offers[Index].Packet.Offer;
 
   //
-  // use option 54, if zero, use siaddr in header
+  // Use siaddr in header, or use option 54 if siaddr is zero.
   //
   NetZeroMem (&ServerIp, sizeof(EFI_IP_ADDRESS));
-  if (Private->Dhcp4Offers[Index].Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID] != NULL) {
+  NetCopyMem (
+    &ServerIp.Addr[0], 
+    &Offer->Dhcp4.Header.ServerAddr, 
+    sizeof (EFI_IPv4_ADDRESS)
+    );
+  if (ServerIp.Addr[0] == 0) {
     NetCopyMem (
       &ServerIp.Addr[0],
       Private->Dhcp4Offers[Index].Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID]->Data,
       sizeof (EFI_IPv4_ADDRESS)
       );
-  } else {
-    NetCopyMem (
-      &ServerIp.Addr[0], 
-      &Offer->Dhcp4.Header.ServerAddr, 
-      sizeof (EFI_IPv4_ADDRESS)
-      );
-  }
-  if (ServerIp.Addr[0] == 0) {
-    return FALSE;
   }
 
   CachedPacket = &Private->ProxyOffer;

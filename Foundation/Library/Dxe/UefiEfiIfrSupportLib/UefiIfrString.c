@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation
+Copyright (c) 2007 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -552,19 +552,36 @@ IfrLibNewString (
 
   Languages = GetSupportedLanguages (PackageList);
 
+  if (StringId == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  *StringId = 0;
+
   LangStrings = Languages;
   while (*LangStrings != 0) {
     GetNextLanguage (&LangStrings, Lang);
 
-    Status = gIfrLibHiiString->NewString (
-                                 gIfrLibHiiString,
-                                 PackageList,
-                                 StringId,
-                                 Lang,
-                                 NULL,
-                                 String,
-                                 NULL
-                                 );
+    if (*StringId == 0) {
+      Status = gIfrLibHiiString->NewString (
+                                   gIfrLibHiiString,
+                                   PackageList,
+                                   StringId,
+                                   Lang,
+                                   NULL,
+                                   String,
+                                   NULL
+                                   );
+    } else {
+      Status = gIfrLibHiiString->SetString (
+                                   gIfrLibHiiString,
+                                   PackageList,
+                                   *StringId,
+                                   Lang,
+                                   String,
+                                   NULL
+                                   );
+    }
+
     if (EFI_ERROR (Status)) {
       break;
     }

@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2008, Intel Corporation
+Copyright (c) 2004 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -1115,6 +1115,38 @@ CVfrVarDataTypeDB::GetDataType (
 
 EFI_VFR_RETURN_CODE
 CVfrVarDataTypeDB::GetDataTypeSize (
+  IN  UINT8   DataType,
+  OUT UINT32 *Size
+  )
+{
+  SVfrDataType *pDataType = NULL;
+
+  if (Size == NULL) {
+    return VFR_RETURN_FATAL_ERROR;
+  }
+
+  *Size    = 0;
+  DataType = DataType & 0x0F;
+
+  //
+  // For user defined data type, the size can't be got by this function.
+  //
+  if (DataType == EFI_IFR_TYPE_OTHER) {
+    return VFR_RETURN_SUCCESS;
+  }
+
+  for (pDataType = mDataTypeList; pDataType != NULL; pDataType = pDataType->mNext) {
+    if (DataType == pDataType->mType) {
+      *Size = pDataType->mTotalSize;
+      return VFR_RETURN_SUCCESS;
+    }
+  }
+
+  return VFR_RETURN_UNDEFINED;
+}
+
+EFI_VFR_RETURN_CODE
+CVfrVarDataTypeDB::GetDataTypeSize (
   IN  INT8   *TypeName,
   OUT UINT32 *Size
   )
@@ -1687,6 +1719,44 @@ CVfrDataStorage::GetVarStoreType (
 
   VarStoreType = EFI_VFR_VARSTORE_INVALID;
   return VFR_RETURN_UNDEFINED;
+}
+
+EFI_VFR_VARSTORE_TYPE
+CVfrDataStorage::GetVarStoreType (
+  IN  EFI_VARSTORE_ID        VarStoreId
+  )
+{
+  SVfrVarStorageNode    *pNode;
+  EFI_VFR_VARSTORE_TYPE VarStoreType;
+
+  VarStoreType = EFI_VFR_VARSTORE_INVALID;
+
+  if (VarStoreId == EFI_VARSTORE_ID_INVALID) {
+    return VarStoreType;
+  }
+
+  for (pNode = mBufferVarStoreList; pNode != NULL; pNode = pNode->mNext) {
+    if (pNode->mVarStoreId == VarStoreId) {
+      VarStoreType = pNode->mVarStoreType;
+      return VarStoreType;
+    }
+  }
+
+  for (pNode = mEfiVarStoreList; pNode != NULL; pNode = pNode->mNext) {
+    if (pNode->mVarStoreId == VarStoreId) {
+      VarStoreType = pNode->mVarStoreType;
+      return VarStoreType;
+    }
+  }
+
+  for (pNode = mNameVarStoreList; pNode != NULL; pNode = pNode->mNext) {
+    if (pNode->mVarStoreId == VarStoreId) {
+      VarStoreType = pNode->mVarStoreType;
+      return VarStoreType;
+    }
+  }
+
+  return VarStoreType;
 }
 
 EFI_VFR_RETURN_CODE

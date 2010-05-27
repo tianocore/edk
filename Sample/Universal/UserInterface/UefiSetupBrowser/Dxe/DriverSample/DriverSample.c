@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2009, Intel Corporation
+Copyright (c) 2004 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -685,6 +685,8 @@ DriverCallback (
   EFI_HII_UPDATE_DATA             UpdateData;
   IFR_OPTION                      *IfrOptionList;
   UINT8                           MyVar;
+  UINTN                           BufferSize;
+  DRIVER_SAMPLE_CONFIGURATION     *Configuration;
 
   if ((Value == NULL) || (ActionRequest == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -730,6 +732,30 @@ DriverCallback (
                     sizeof (DRIVER_SAMPLE_CONFIGURATION),
                     &PrivateData->Configuration
                     );
+
+    //
+    // Set initial vlaue of dynamic created oneof Question in Form Browser
+    //
+    BufferSize = sizeof (DRIVER_SAMPLE_CONFIGURATION);
+    Configuration = EfiLibAllocateZeroPool (sizeof (DRIVER_SAMPLE_CONFIGURATION));
+    ASSERT (Configuration != NULL);
+    Status = GetBrowserData (&mFormSetGuid, VariableName, &BufferSize, (UINT8 *) Configuration);
+    if (!EFI_ERROR (Status)) {
+      Configuration->DynamicOneof = 2;
+
+      //
+      // Update uncommitted data of Browser
+      //
+      SetBrowserData (
+        &mFormSetGuid,
+        VariableName,
+        sizeof (DRIVER_SAMPLE_CONFIGURATION),
+        (UINT8 *) Configuration,
+        NULL
+        );
+    }
+    gBS->FreePool (Configuration);
+
     CreateOneOfOpCode (
       0x8001,                           // Question ID (or call it "key")
       CONFIGURATION_VARSTORE_ID,        // VarStore ID

@@ -1725,23 +1725,19 @@ Returns:
   }
 
   //
-  // use option 54, if zero, use siaddr in header
+  // Use siaddr in header, or use option 54 if siaddr is zero.
   //
-  if (Packet->Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID] != NULL) {
+  NetCopyMem (
+    &Private->ServerIp, 
+    &Packet->Packet.Offer.Dhcp4.Header.ServerAddr, 
+    sizeof (EFI_IPv4_ADDRESS)
+    );
+  if (Private->ServerIp.Addr[0] == 0) {
     NetCopyMem (
       &Private->ServerIp,
       Packet->Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_SERVER_ID]->Data,
       sizeof (EFI_IPv4_ADDRESS)
       );
-  } else {
-    NetCopyMem (
-      &Private->ServerIp, 
-      &Packet->Packet.Offer.Dhcp4.Header.ServerAddr, 
-      sizeof (EFI_IPv4_ADDRESS)
-      );
-  }
-  if (Private->ServerIp.Addr[0] == 0) {
-    return EFI_DEVICE_ERROR;
   }
 
   ASSERT (Packet->Dhcp4Option[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] != NULL);

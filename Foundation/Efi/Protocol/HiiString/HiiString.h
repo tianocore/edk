@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -54,6 +54,8 @@ EFI_STATUS
   Routine Description:
     This function adds the string String to the group of strings owned by PackageList, with the
     specified font information StringFontInfo and returns a new string id.                         
+    The new string identifier is guaranteed to be unique within the package list. 
+    That new string identifier is reserved for all languages in the package list. 
     
   Arguments:          
     This              - A pointer to the EFI_HII_STRING_PROTOCOL instance.

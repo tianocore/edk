@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007 - 2008, Intel Corporation                                                         
+Copyright (c) 2007 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -878,7 +878,7 @@ InsertStringPackage (
   //
   // Collect all font block info
   //
-  Status = FindStringBlock (Private, StringPackage, (EFI_STRING_ID) (-1), NULL, NULL, NULL, NULL);
+  Status = FindStringBlock (Private, StringPackage, (EFI_STRING_ID) (-1), NULL, NULL, NULL, &StringPackage->MaxStringId);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -901,6 +901,88 @@ Error:
   EfiLibSafeFreePool (StringPackage);  
   
   return Status;  
+}
+
+EFI_STATUS
+AdjustStringPackage (
+  IN OUT HII_DATABASE_PACKAGE_LIST_INSTANCE *PackageList
+)
+/*++
+
+  Routine Description:
+    Adjust all string packages in a single package list to have the same max string ID.
+
+  Arguments:          
+    PackageList       - Pointer to a package list which will be inserted to.
+    
+  Returns:
+    EFI_SUCCESS       - Adjust all string packages successfully.
+    others            - Can't adjust string packges.
+
+--*/
+{
+  EFI_LIST_ENTRY              *Link;
+  HII_STRING_PACKAGE_INSTANCE *StringPackage;
+  UINT32                      Skip2BlockSize;
+  UINT32                      OldBlockSize;
+  UINT8                       *StringBlock;
+  UINT8                       *BlockPtr;
+  EFI_STRING_ID               MaxStringId;
+  UINT16                      SkipCount;
+
+  MaxStringId = 0;
+  for (Link = PackageList->StringPkgHdr.ForwardLink;
+       Link != &PackageList->StringPkgHdr;
+       Link = Link->ForwardLink
+      ) {
+    StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
+    if (MaxStringId < StringPackage->MaxStringId) {
+      MaxStringId = StringPackage->MaxStringId;
+    }
+  }
+
+  for (Link = PackageList->StringPkgHdr.ForwardLink;
+       Link != &PackageList->StringPkgHdr;
+       Link = Link->ForwardLink
+      ) {
+    StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
+    if (StringPackage->MaxStringId < MaxStringId) {
+      OldBlockSize = StringPackage->StringPkgHdr->Header.Length - StringPackage->StringPkgHdr->HdrSize;
+      //
+      // Create SKIP2 EFI_HII_SIBT_SKIP2_BLOCKs to reserve the missing string IDs.
+      //
+      SkipCount      = (UINT16) (MaxStringId - StringPackage->MaxStringId);
+      Skip2BlockSize = (UINT32) sizeof (EFI_HII_SIBT_SKIP2_BLOCK);
+
+      StringBlock = (UINT8 *) EfiLibAllocateZeroPool (OldBlockSize + Skip2BlockSize);
+      if (StringBlock == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+      //
+      // Copy original string blocks, except the EFI_HII_SIBT_END.
+      //
+      EfiCopyMem (StringBlock, StringPackage->StringBlock, OldBlockSize - sizeof (EFI_HII_SIBT_END_BLOCK));
+      //
+      // Create SKIP2 EFI_HII_SIBT_SKIP2_BLOCK blocks
+      //
+      BlockPtr  = StringBlock + OldBlockSize - sizeof (EFI_HII_SIBT_END_BLOCK);
+      *BlockPtr = EFI_HII_SIBT_SKIP2;
+      EfiCopyMem (BlockPtr + 1, &SkipCount, sizeof (UINT16));
+      BlockPtr  += sizeof (EFI_HII_SIBT_SKIP2_BLOCK);
+
+      //
+      // Append a EFI_HII_SIBT_END block to the end.
+      //
+      *BlockPtr = EFI_HII_SIBT_END;
+      gBS->FreePool (StringPackage->StringBlock);
+      StringPackage->StringBlock = StringBlock;
+      StringPackage->StringPkgHdr->Header.Length += Skip2BlockSize;
+      PackageList->PackageListHdr.PackageLength += Skip2BlockSize;
+      StringPackage->MaxStringId = MaxStringId;
+    }
+  }
+
+  return EFI_SUCCESS;
 }
 
 STATIC
@@ -2367,6 +2449,13 @@ AddPackages (
   EFI_HII_PACKAGE_HEADER               *PackageHdrPtr;
   EFI_HII_PACKAGE_HEADER               PackageHeader;
   UINT32                               OldPackageListLen;
+  BOOLEAN                              StringPkgIsAdd;
+
+  //
+  // Initialize Variables
+  //
+  StringPkgIsAdd = FALSE;
+  FontPackage = NULL;
   
   //
   // Process the package list header
@@ -2460,6 +2549,7 @@ AddPackages (
                  (UINT8) (PackageHeader.Type),
                  DatabaseRecord->Handle
                  );      
+      StringPkgIsAdd = TRUE;
       break;      
     case EFI_HII_PACKAGE_FONTS:
       Status = InsertFontPackage (
@@ -2536,6 +2626,13 @@ AddPackages (
     //    
     PackageHdrPtr = (EFI_HII_PACKAGE_HEADER *) ((UINT8 *) PackageHdrPtr + PackageHeader.Length);
     EfiCopyMem (&PackageHeader, PackageHdrPtr, sizeof (EFI_HII_PACKAGE_HEADER));
+  }
+
+  //
+  // Adjust String Package to make sure all string packages have the same max string ID.
+  //
+  if (!EFI_ERROR (Status) && StringPkgIsAdd) {
+    Status = AdjustStringPackage (DatabaseRecord->PackageList);
   }
 
   return Status;

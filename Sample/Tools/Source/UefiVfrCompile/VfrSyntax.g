@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2004 - 2009, Intel Corporation
+Copyright (c) 2004 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -975,25 +975,35 @@ vfrStatementDefault :
   D:Default                                         << DObj.SetLineNo(D->getLine()); >>
   (
     (
-        vfrStatementValue ","                       << IsExp = TRUE; DObj.SetScope (1); { CIfrEnd EndObj1; EndObj1.SetLineNo(0); } >>
-      | "=" vfrConstantValueField[_GET_CURRQEST_DATATYPE()] > [Val] ","
-                                                    << DObj.SetType (_GET_CURRQEST_DATATYPE()); DObj.SetValue(Val); >>
+        vfrStatementValue ","                       << IsExp = TRUE; DObj.SetScope (1); CIfrEnd EndObj1; EndObj1.SetLineNo(D->getLine()); >>
+      | "=" vfrConstantValueField[_GET_CURRQEST_DATATYPE()] > [Val] ","  << 
+                                                        if (gCurrentMinMaxData != NULL && gCurrentMinMaxData->IsNumericOpcode()) {
+                                                          //check default value is valid for Numeric Opcode
+                                                          if (Val.u64 < gCurrentMinMaxData->GetMinData(_GET_CURRQEST_DATATYPE()) || Val.u64 > gCurrentMinMaxData->GetMaxData(_GET_CURRQEST_DATATYPE())) {
+                                                            _PCATCH (VFR_RETURN_INVALID_PARAMETER, D->getLine(), "Numeric default value must be between MinValue and MaxValue.");
+                                                          }
+                                                        }
+                                                        DObj.SetType (_GET_CURRQEST_DATATYPE()); 
+                                                        DObj.SetValue(Val);
+                                                    >>
     )
     {
       DefaultStore "=" SN:StringIdentifier ","      << _PCATCH(mCVfrDefaultStore.GetDefaultId (SN->getText(), &DefaultId), SN); DObj.SetDefaultId (DefaultId); >>
     }
                                                     <<
-													   _PCATCH(mCVfrDataStorage.GetVarStoreName (_GET_CURRQEST_VARTINFO().mVarStoreId, &VarStoreName), D->getLine());
-													   _PCATCH(mCVfrDataStorage.GetVarStoreType (VarStoreName, VarStoreType), D->getLine());
-													   if ((IsExp == FALSE) && (VarStoreType == EFI_VFR_VARSTORE_BUFFER)) {
-													     _PCATCH(mCVfrDefaultStore.BufferVarStoreAltConfigAdd (
-																                     DefaultId,
-																					 _GET_CURRQEST_VARTINFO(),
-																					 VarStoreName,
-																					 _GET_CURRQEST_DATATYPE (),
-																					 Val), D);
-													   }
-													>>
+                                                       _PCATCH(mCVfrDataStorage.GetVarStoreName (_GET_CURRQEST_VARTINFO().mVarStoreId, &VarStoreName), D->getLine());
+                                                       _PCATCH(mCVfrDataStorage.GetVarStoreType (VarStoreName, VarStoreType), D->getLine());
+                                                       if ((IsExp == FALSE) && (VarStoreType == EFI_VFR_VARSTORE_BUFFER)) {
+                                                         _PCATCH(mCVfrDefaultStore.BufferVarStoreAltConfigAdd (
+                                                                   DefaultId,
+                                                                   _GET_CURRQEST_VARTINFO(),
+                                                                   VarStoreName,
+                                                                   _GET_CURRQEST_DATATYPE (),
+                                                                   Val),
+                                                                   D->getLine()
+                                                                   );
+                                                       }
+                                                    >>
   )
   ;
 
@@ -1525,9 +1535,25 @@ vfrNumericFlags [CIfrNumeric & NObj, UINT32 LineNum] :
   <<
      UINT8 LFlags = _GET_CURRQEST_DATATYPE() & EFI_IFR_NUMERIC_SIZE;
      UINT8 HFlags = 0;
+     EFI_VFR_VARSTORE_TYPE VarStoreType = EFI_VFR_VARSTORE_INVALID;
   >>
   numericFlagsField[HFlags, LFlags] ( "\|" numericFlagsField[HFlags, LFlags] )*
-                                                       << _PCATCH(NObj.SetFlags (HFlags, LFlags), LineNum); >>
+                                                       <<
+                                                          //check data type flag
+                                                          VarStoreType = mCVfrDataStorage.GetVarStoreType (_GET_CURRQEST_VARTINFO().mVarStoreId);
+                                                          if (VarStoreType == EFI_VFR_VARSTORE_BUFFER || VarStoreType == EFI_VFR_VARSTORE_EFI) {
+                                                            if (_GET_CURRQEST_DATATYPE() != (LFlags & EFI_IFR_NUMERIC_SIZE)) {
+                                                              _PCATCH(VFR_RETURN_INVALID_PARAMETER, LineNum, "Numeric Flag is not same to Numeric VarData type");
+                                                            }
+                                                          } else {
+                                                            // update data type for name/value store
+                                                            UINT32 DataTypeSize;
+                                                            _GET_CURRQEST_VARTINFO().mVarType = LFlags & EFI_IFR_NUMERIC_SIZE;
+                                                            mCVfrVarDataTypeDB.GetDataTypeSize (_GET_CURRQEST_DATATYPE(), &DataTypeSize);
+                                                            _GET_CURRQEST_VARTINFO().mVarTotalSize = DataTypeSize;
+                                                          }
+                                                          _PCATCH(NObj.SetFlags (HFlags, LFlags), LineNum);
+                                                       >>
   ;
 
 numericFlagsField [UINT8 & HFlags, UINT8 & LFlags] :
@@ -1559,11 +1585,27 @@ vfrStatementOneOf :
 
 vfrOneofFlagsField [CIfrOneOf & OObj, UINT32 LineNum] :
   <<
-     UINT8 LFlags = _GET_CURRQEST_DATATYPE();
+     UINT8 LFlags = _GET_CURRQEST_DATATYPE() & EFI_IFR_NUMERIC_SIZE;
      UINT8 HFlags = 0;
+     EFI_VFR_VARSTORE_TYPE VarStoreType = EFI_VFR_VARSTORE_INVALID;
   >>
   numericFlagsField[HFlags, LFlags] ( "\|" numericFlagsField[HFlags, LFlags] )*
-                                                       << _PCATCH(OObj.SetFlags (HFlags, LFlags), LineNum); >>
+                                                       <<
+                                                          //check data type flag
+                                                          VarStoreType = mCVfrDataStorage.GetVarStoreType (_GET_CURRQEST_VARTINFO().mVarStoreId);
+                                                          if (VarStoreType == EFI_VFR_VARSTORE_BUFFER || VarStoreType == EFI_VFR_VARSTORE_EFI) {
+                                                            if (_GET_CURRQEST_DATATYPE() != (LFlags & EFI_IFR_NUMERIC_SIZE)) {
+                                                              _PCATCH(VFR_RETURN_INVALID_PARAMETER, LineNum, "Numeric Flag is not same to Numeric VarData type");
+                                                            }
+                                                          } else {
+                                                            // update data type for Name/Value store
+                                                            UINT32 DataTypeSize;
+                                                            _GET_CURRQEST_VARTINFO().mVarType = LFlags & EFI_IFR_NUMERIC_SIZE;
+                                                            mCVfrVarDataTypeDB.GetDataTypeSize (_GET_CURRQEST_DATATYPE(), &DataTypeSize);
+                                                            _GET_CURRQEST_VARTINFO().mVarTotalSize = DataTypeSize;
+                                                          }
+                                                          _PCATCH(OObj.SetFlags (HFlags, LFlags), LineNum);
+                                                       >>
   ;
 
 vfrStatementStringType :
@@ -1676,7 +1718,7 @@ vfrStatementTime :
     (
       vfrQuestionHeader[TObj, QUESTION_TIME] ","
 	  { F:FLAGS "=" vfrTimeFlags[TObj, F->getLine()] "," }
-      vfrStatementDefault
+      vfrStatementQuestionOptionList
     )
     |
     (
@@ -1919,7 +1961,31 @@ vfrStatementOneOfOption :
   >>
   L:Option                                             << OOOObj.SetLineNo(L->getLine()); >>
   Text  "=" "STRING_TOKEN" "\(" S:Number "\)" ","      << OOOObj.SetOption (_STOSID(S->getText())); >>
-  Value "=" vfrConstantValueField[_GET_CURRQEST_DATATYPE()] >[Val] ","    << OOOObj.SetType (_GET_CURRQEST_DATATYPE()); OOOObj.SetValue (Val); >>
+  Value "=" vfrConstantValueField[_GET_CURRQEST_DATATYPE()] >[Val] ","    
+                                                       << 
+                                                          if (gCurrentMinMaxData != NULL) {
+                                                            //set min/max value for oneof opcode
+                                                            UINT64 Step = gCurrentMinMaxData->GetStepData(_GET_CURRQEST_DATATYPE());
+                                                            switch (_GET_CURRQEST_DATATYPE()) {
+                                                            case EFI_IFR_TYPE_NUM_SIZE_64:
+                                                              gCurrentMinMaxData->SetMinMaxStepData(Val.u64, Val.u64, Step);
+                                                              break;
+                                                            case EFI_IFR_TYPE_NUM_SIZE_32:
+                                                              gCurrentMinMaxData->SetMinMaxStepData(Val.u32, Val.u32, (UINT32) Step);
+                                                              break;
+                                                            case EFI_IFR_TYPE_NUM_SIZE_16:
+                                                              gCurrentMinMaxData->SetMinMaxStepData(Val.u16, Val.u16, (UINT16) Step);
+                                                              break;
+                                                            case EFI_IFR_TYPE_NUM_SIZE_8:
+                                                              gCurrentMinMaxData->SetMinMaxStepData(Val.u8, Val.u8, (UINT8) Step);
+                                                              break;
+                                                            default:
+                                                              break;
+                                                            }
+                                                          }
+                                                          OOOObj.SetType (_GET_CURRQEST_DATATYPE()); 
+                                                          OOOObj.SetValue (Val); 
+                                                       >>
   F:FLAGS "=" vfrOneOfOptionFlags[OOOObj, F->getLine()]
                                                        <<
                                                           if (OOOObj.GetFlags () & 0x10) {
@@ -2664,6 +2730,7 @@ public:
   VOID                _PCATCH (IN EFI_VFR_RETURN_CODE);
   VOID                _PCATCH (IN EFI_VFR_RETURN_CODE, IN ANTLRTokenPtr);
   VOID                _PCATCH (IN EFI_VFR_RETURN_CODE, IN UINT32);
+  VOID                _PCATCH (IN EFI_VFR_RETURN_CODE, IN UINT32, IN INT8 *);
 
   VOID                syn     (ANTLRAbstractToken  *, ANTLRChar *, SetWordType *, ANTLRTokenType, INT32);
 
@@ -2847,6 +2914,16 @@ EfiVfrParser::_PCATCH (
   )
 {
   mParserStatus += gCVfrErrorHandle.HandleError (ReturnCode, LineNum);
+}
+
+VOID
+EfiVfrParser::_PCATCH (
+  IN EFI_VFR_RETURN_CODE ReturnCode,
+  IN UINT32              LineNum,
+  IN INT8                *ErrorMsg
+  )
+{
+  mParserStatus = mParserStatus + gCVfrErrorHandle.HandleError (ReturnCode, LineNum, ErrorMsg);
 }
 
 VOID

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2004 - 2009, Intel Corporation
+Copyright (c) 2004 - 2010, Intel Corporation
 All rights reserved. This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -463,6 +463,13 @@ Returns:
   switch (Question->Operand) {
   case EFI_IFR_ORDERED_LIST_OP:
     //
+    // Check whether there are Options of this OrderedList
+    //
+    if (IsListEmpty (&Question->OptionListHead)) {
+      break;
+    }
+
+    //
     // Initialize Option value array
     //
     if (GetArrayData (ValueArray, ValueType, 0) == 0) {
@@ -549,6 +556,13 @@ Returns:
     break;
 
   case EFI_IFR_ONE_OF_OP:
+    //
+    // Check whether there are Options of this OneOf
+    //
+    if (IsListEmpty (&Question->OptionListHead)) {
+      break;
+    }
+
     if (Selected) {
       //
       // Go ask for input
